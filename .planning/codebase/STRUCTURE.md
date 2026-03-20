@@ -1,280 +1,293 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-02-27
+**Analysis Date:** 2026-03-20
 
 ## Directory Layout
 
 ```
-Konfipoints/
-├── backend/                       # Node.js Express API server
-│   ├── data/                      # SQLite backup (legacy, not used)
-│   ├── init-scripts/              # Database initialization scripts for PostgreSQL
-│   ├── middleware/                # RBAC and auth middleware
-│   ├── migrations/                # Database migration files (SQLite → PostgreSQL)
-│   ├── routes/                    # API endpoint definitions (13+ route modules)
-│   ├── services/                  # Background jobs, email, push notifications
-│   ├── uploads/                   # User-uploaded files (chat, activity requests)
-│   ├── utils/                     # Helper utilities (RBAC, password, chat, date)
-│   ├── server.js                  # Main Express + Socket.io server
-│   ├── database.js                # PostgreSQL connection pool
-│   ├── package.json               # Dependencies: express, pg, socket.io, bcrypt, nodemailer
-│   └── Dockerfile                 # Docker build config
-├── frontend/                      # React 19 + Ionic 8 Capacitor app
+Konfipoints/                        # Repository-Root
+├── backend/                        # Node.js/Express API
+│   ├── server.js                   # Haupt-Einstiegspunkt, alle Routes gemountet
+│   ├── database.js                 # PostgreSQL Pool (pg)
+│   ├── Dockerfile                  # Backend Docker Image
+│   ├── routes/                     # 17 Route-Module (Factory-Pattern)
+│   ├── middleware/                 # RBAC + Validierung
+│   ├── services/                   # Background-, Push-, Email-Services
+│   ├── push/                       # Firebase Admin SDK
+│   ├── utils/                      # Stateless Hilfsfunktionen
+│   ├── migrations/                 # SQL-Migrationsdateien
+│   ├── uploads/                    # Datei-Uploads (runtime, nicht committet)
+│   │   ├── chat/                   # Chat-Dateianhänge
+│   │   ├── requests/               # Aktivitäts-Antrag-Bilder
+│   │   └── material/               # Material-Uploads
+│   └── data/                       # Legacy SQLite-Daten (nicht mehr aktiv)
+├── frontend/                       # React/Ionic SPA + Capacitor
 │   ├── src/
-│   │   ├── components/            # UI components organized by domain
-│   │   ├── contexts/              # React Context API state management
-│   │   ├── services/              # API client, WebSocket, auth
-│   │   ├── types/                 # TypeScript type definitions
-│   │   ├── utils/                 # Utility functions
-│   │   ├── theme/                 # CSS variables and styling
-│   │   ├── App.tsx                # Root component with providers
-│   │   └── main.tsx               # Vite entry point
-│   ├── public/                    # Static assets (icons, images)
-│   ├── android/                   # Capacitor Android build config
-│   ├── ios/                       # Capacitor iOS build config
-│   ├── dist/                      # Production build output
-│   ├── package.json               # Dependencies: react 19, @ionic/react 8, capacitor, vite
-│   ├── vite.config.ts             # Vite build config
-│   ├── tsconfig.json              # TypeScript config
-│   └── Dockerfile                 # Docker build config
-├── init-scripts/                  # Database schema and initial data
-├── docs/                          # Project documentation
-├── .planning/                     # GSD planning artifacts
-├── docker-compose.yml             # PostgreSQL + Backend + Frontend services
-├── CLAUDE.md                      # Project guidelines (German, RBAC, no emojis)
-└── package-lock.json              # Root lockfile (monorepo)
+│   │   ├── main.tsx                # React DOM-Einstiegspunkt
+│   │   ├── App.tsx                 # Auth-Guard, Context-Provider-Baum
+│   │   ├── components/             # Alle UI-Komponenten (nach Rolle organisiert)
+│   │   │   ├── admin/              # Admin-Rolle
+│   │   │   │   ├── pages/          # IonPage-Komponenten (Tab-Ziele)
+│   │   │   │   ├── views/          # Detailansichten (innerhalb Pages)
+│   │   │   │   ├── modals/         # useIonModal-Modals
+│   │   │   │   └── settings/       # Settings-Sub-Komponenten
+│   │   │   ├── konfi/              # Konfi-Rolle
+│   │   │   │   ├── pages/          # IonPage-Komponenten
+│   │   │   │   ├── views/          # Detailansichten
+│   │   │   │   └── modals/         # Modals
+│   │   │   ├── teamer/             # Teamer-Rolle
+│   │   │   │   ├── pages/          # IonPage-Komponenten
+│   │   │   │   └── views/          # Detailansichten
+│   │   │   ├── chat/               # Chat (rollenübergreifend)
+│   │   │   │   ├── pages/          # ChatOverviewPage
+│   │   │   │   ├── views/          # ChatRoomView
+│   │   │   │   └── modals/         # Chat-spezifische Modals
+│   │   │   ├── auth/               # Login, Register, Passwort-Reset
+│   │   │   ├── common/             # Kleine Shared-Komponenten (LoadingSpinner, PushSettings)
+│   │   │   ├── shared/             # Wiederverwendbare Layout-Komponenten
+│   │   │   └── layout/             # MainTabs (Role-Router)
+│   │   ├── contexts/               # React Contexts (globaler State)
+│   │   ├── services/               # API-Client, Auth, WebSocket
+│   │   ├── types/                  # TypeScript Interfaces
+│   │   ├── utils/                  # Stateless Hilfsfunktionen
+│   │   └── theme/                  # CSS-Variablen (variables.css)
+│   ├── android/                    # Capacitor Android-Projekt
+│   ├── ios/                        # Capacitor iOS-Projekt
+│   ├── capacitor.config.ts         # Capacitor-Konfiguration
+│   ├── vite.config.ts              # Vite Build-Konfiguration
+│   └── Dockerfile                  # Frontend Docker Image (nginx)
+├── init-scripts/                   # PostgreSQL-Init-Scripts (beim DB-Start ausgeführt)
+│   └── 01-create-schema.sql        # Haupt-Schema-Definition
+├── portainer-stack.yml             # Docker Compose für Portainer-Deployment
+├── .github/workflows/              # CI/CD (GitHub Actions)
+└── .planning/                      # GSD Planungsdokumente
+    ├── codebase/                   # Codebase-Analyse-Dokumente
+    ├── milestones/                 # Abgeschlossene Milestone-Planung
+    └── phases/                     # Aktuelle + geplante Phasen
 ```
+
+---
 
 ## Directory Purposes
 
-**backend/:**
-- Purpose: REST API and real-time server for all client requests
-- Contains: Express routes, database queries, business logic, Socket.io handlers
-- Key files: `server.js` (entry), `routes/` (endpoints), `middleware/rbac.js` (auth), `database.js` (DB pool)
+**`backend/routes/`:**
+- Purpose: Alle HTTP-Endpunkte, als Factory-Funktionen exportiert
+- Contains: 17 `.js`-Dateien, eine pro Domäne
+- Key files:
+  - `backend/routes/auth.js` — Login, Logout, Passwort-Reset, Registrierung
+  - `backend/routes/konfi.js` — Konfi-Selfservice (Dashboard, Badges, Events buchen, Profil)
+  - `backend/routes/konfi-managment.js` — Admin-Verwaltung von Konfis (Punkte, Aktivitäten)
+  - `backend/routes/activities.js` — Aktivitäten-CRUD + Antrags-Workflow
+  - `backend/routes/badges.js` — Badge-CRUD + `checkAndAwardBadges()`
+  - `backend/routes/events.js` — Event-CRUD, Buchungen, Timeslots, Waitlist
+  - `backend/routes/chat.js` — Chat-Rooms, Nachrichten, File-Upload, Reaktionen
+  - `backend/routes/organizations.js` — Multi-Tenant Organisations-Verwaltung
+  - `backend/routes/users.js` — User-CRUD (scoped auf Organisation)
+  - `backend/routes/notifications.js` — Push-Token-Verwaltung, Notification-Preferences
+  - `backend/routes/material.js` — Material-Upload + Abruf
+  - `backend/routes/teamer.js` — Teamer-spezifische Endpoints (Konfi-Stats, Punkte vergeben)
+  - `backend/routes/settings.js` — Organisations-Einstellungen, Dashboard-Konfiguration
+  - `backend/routes/levels.js` — Level-System-Konfiguration
+  - `backend/routes/jahrgaenge.js` — Jahrgangs-CRUD
+  - `backend/routes/categories.js` — Aktivitäts-Kategorien
+  - `backend/routes/roles.js` — Rollen-Abfragen
 
-**backend/routes/:**
-- Purpose: Define API endpoints grouped by domain
-- Contains: 13+ modules, each exporting a router function
-- Key modules:
-  - `auth.js` (1762 lines) - Login, registration, password reset (unified RBAC)
-  - `konfi.js` (1437 lines) - Konfi dashboard, points, activities, requests
-  - `chat.js` (1730 lines) - Chat messages, polls, files, room management
-  - `events.js` (1437 lines) - Event CRUD, registration, waitlist, timeslots
-  - `konfi-management.js` - Admin panel for Konfi data
-  - `activities.js` - Activity categories and definitions
-  - `badges.js` - Badge definitions and earning logic
-  - `users.js` - User management (admin)
-  - `organizations.js` - Multi-tenant org management
-  - `jahrgaenge.js` - Age group/year management
-  - `categories.js` - Activity categories
-  - `levels.js` - Point level definitions
-  - `notifications.js` - Device token registration, notification sending
-  - `settings.js` - Global settings
+**`backend/middleware/`:**
+- Purpose: Wiederverwendbare Express-Middleware
+- Key files:
+  - `backend/middleware/rbac.js` — JWT-Verifikation + alle Rollen-Guards
+  - `backend/middleware/validation.js` — express-validator Helpers
 
-**backend/middleware/:**
-- Purpose: Request authentication and authorization
-- Contains: RBAC verification middleware
-- Key: `rbac.js` - `verifyTokenRBAC` middleware used by all protected routes
+**`backend/services/`:**
+- Purpose: Domänen-Services mit Seiteneffekten
+- Key files:
+  - `backend/services/backgroundService.js` — Intervall-Jobs: Badge-Updates (5 Min), Event-Reminder, Token-Cleanup
+  - `backend/services/pushService.js` — FCM Push-Notifications, 20+ typisierte Methoden
+  - `backend/services/emailService.js` — SMTP E-Mails (Passwort-Reset)
 
-**backend/services/:**
-- Purpose: Background processes and external integrations
-- Contains:
-  - `emailService.js` - Send password resets, notifications via SMTP
-  - `pushService.js` - Firebase Cloud Messaging for mobile push notifications
-  - `backgroundService.js` - Background tasks like cleanup, reporting
+**`backend/utils/`:**
+- Purpose: Pure Hilfsfunktionen ohne Seiteneffekte
+- Key files:
+  - `backend/utils/roleHierarchy.js` — Hierarchie-Logik + Middleware für User-Management
+  - `backend/utils/chatUtils.js` — Chat-Room-Initialisierung beim Start
+  - `backend/utils/liveUpdate.js` — Helper für Socket.io Live-Update-Events
+  - `backend/utils/pointTypeGuard.js` — Type-Validation für Punkt-Typen
 
-**backend/utils/:**
-- Purpose: Shared utility functions
-- Contains:
-  - `roleHierarchy.js` - Role permission levels and checks
-  - `passwordUtils.js` - Password validation and hashing
-  - `chatUtils.js` - Chat-specific helpers
-  - `liveUpdate.js` - Socket.io notification broadcasting
-  - `dateUtils.js` - Date formatting
+**`frontend/src/components/admin/pages/`:**
+- Purpose: Top-Level-Seiten für Admin-Tabs (IonPage-Komponenten)
+- Key files: `AdminKonfisPage.tsx`, `AdminEventsPage.tsx`, `AdminActivitiesPage.tsx`, `AdminBadgesPage.tsx`, `AdminActivityRequestsPage.tsx`, `AdminSettingsPage.tsx`, `AdminUsersPage.tsx`, `AdminOrganizationsPage.tsx`, `AdminMaterialPage.tsx`, `AdminCertificatesPage.tsx`
 
-**backend/uploads/:**
-- Purpose: Store user-uploaded files
-- Contains:
-  - `chat/` - Images/files from chat messages
-  - `requests/` - Files from activity requests
+**`frontend/src/components/admin/views/`:**
+- Purpose: Detailansichten die innerhalb von Pages gerendert werden (kein eigener Tab)
+- Key files: `KonfiDetailView.tsx`, `EventDetailView.tsx`, `ActivityRings.tsx`
 
-**backend/init-scripts/:**
-- Purpose: Database initialization when PostgreSQL container starts
-- Contains: SQL scripts that create schema, tables, indexes, initial data
+**`frontend/src/components/admin/modals/`:**
+- Purpose: Alle Admin-Modals (via `useIonModal` Hook geöffnet — NIEMALS `<IonModal isOpen={...}>`)
+- Key files: `KonfiModal.tsx`, `EventModal.tsx`, `ActivityModal.tsx`, `BadgeManagementModal.tsx`, `UserManagementModal.tsx`, `LevelManagementModal.tsx`, `QRDisplayModal.tsx`, `BonusModal.tsx`, `OrganizationManagementModal.tsx`
 
-**frontend/src/components/:**
-- Purpose: React component tree organized by feature domain
-- Structure:
-  - `admin/` - Admin panel (management pages for konfis, activities, events, etc.)
-    - `pages/` - Full-page views (AdminKonfisPage, AdminEventsPage, etc.)
-    - `views/` - Reusable view components (KonfiDetailView, EventDetailView)
-    - `modals/` - Popup modals for forms
-    - `settings/` - Admin settings components
-  - `konfi/` - Konfi user interface (their dashboard, badges, events)
-    - `pages/` - KonfiDashboardPage, KonfiEventsPage, KonfiProfilePage
-    - `views/` - DashboardView, EventsView, BadgesView, ProfileView
-    - `modals/` - ActivityRequestModal, EditProfileModal, ChangePasswordModal
-  - `chat/` - Chat/messaging interface
-    - `pages/` - ChatOverviewPage (room list)
-    - `views/` - ChatRoomView (message feed)
-    - `modals/` - Create room, options, direct message modals
-  - `auth/` - Authentication pages
-    - LoginView, KonfiRegisterPage, ForgotPasswordPage, ResetPasswordPage
-  - `layout/` - Navigation structure
-    - `MainTabs.tsx` - Tab bar routing (switches layout based on user role)
-  - `common/` - Reusable components
-    - LoadingSpinner, PushNotificationSettings, shared UI elements
+**`frontend/src/components/konfi/`:**
+- Purpose: Alle Konfi-Ansichten (selbst-Service)
+- Pages: `KonfiDashboardPage.tsx`, `KonfiEventsPage.tsx`, `KonfiBadgesPage.tsx`, `KonfiRequestsPage.tsx`, `KonfiProfilePage.tsx`, `KonfiEventDetailPage.tsx`
+- Views: `DashboardView.tsx`, `EventsView.tsx` (Referenz-Implementierung für Design-Patterns), `BadgesView.tsx`, `RequestsView.tsx`, `ProfileView.tsx`
+- Modals: `QRScannerModal.tsx`, `ActivityRequestModal.tsx`, `PointsHistoryModal.tsx`
 
-**frontend/src/contexts/:**
-- Purpose: Global state management via React Context API
-- Contains:
-  - `AppContext.tsx` - User auth state, profile, organization, role, JWT token
-  - `BadgeContext.tsx` - Chat unread count badge state
-  - `LiveUpdateContext.tsx` - Real-time WebSocket event subscriptions
-  - `ModalContext.tsx` - Modal presentation state (deprecated, using useIonModal instead)
+**`frontend/src/components/teamer/`:**
+- Purpose: Teamer-Ansichten
+- Pages: `TeamerDashboardPage.tsx`, `TeamerEventsPage.tsx`, `TeamerMaterialPage.tsx`, `TeamerProfilePage.tsx`, `TeamerBadgesPage.tsx`, `TeamerKonfiStatsPage.tsx`, `TeamerMaterialDetailPage.tsx`
+- Views: `TeamerBadgesView.tsx`
 
-**frontend/src/services/:**
-- Purpose: Communication with backend and native features
-- Contains:
-  - `api.ts` - Axios client with baseURL, auth interceptors, error handling
-  - `auth.ts` - Auth service functions (login, register, logout, password reset)
-  - `websocket.ts` - Socket.io initialization, room join/leave, event handling
+**`frontend/src/components/chat/`:**
+- Purpose: Chat-System (rollenübergreifend verwendet)
+- Pages: `ChatOverviewPage.tsx` — Raum-Liste
+- Views: `ChatRoomView.tsx` — Nachrichten-View (wird von allen Rollen geteilt)
+- Modals: `ChatOptionsModal.tsx`, `DirectMessageModal.tsx`, `FileViewerModal.tsx`, `MembersModal.tsx`, `PollModal.tsx`, `SimpleCreateChatModal.tsx`
 
-**frontend/src/types/:**
-- Purpose: TypeScript type definitions
-- Contains: Models for User, Konfi, Event, ChatMessage, Badge, Activity, etc.
+**`frontend/src/components/shared/`:**
+- Purpose: Generische UI-Building-Blocks
+- Key files: `SectionHeader.tsx`, `EmptyState.tsx`, `ListSection.tsx` (alle via `src/components/shared/index.ts` exportiert)
 
-**frontend/src/theme/:**
-- Purpose: Design system and CSS variables
-- Contains: `variables.css` - CSS custom properties for colors, spacing, fonts
+**`frontend/src/contexts/`:**
+- Purpose: Globaler React-State via Context API
+- Key files:
+  - `AppContext.tsx` — User-State, Push-Permissions (`useApp()` Hook)
+  - `BadgeContext.tsx` — Unread-Counts, initialisiert WebSocket (`useBadge()` Hook)
+  - `LiveUpdateContext.tsx` — WebSocket-Listener, pub/sub für komponentenbasierte Refreshes (`useLiveUpdate()` Hook)
+  - `ModalContext.tsx` — Modal-Zustand
 
-**frontend/src/utils/:**
-- Purpose: Frontend utility functions
-- Contains: Date formatting, API error parsing, validation helpers
+**`frontend/src/services/`:**
+- Purpose: Externe Kommunikation
+- Key files:
+  - `api.ts` — axios-Instanz mit `https://konfi-quest.de/api` als Base-URL, Auth-Interceptor, 401/429-Handling
+  - `auth.ts` — Login, Logout, `checkAuth()` (localStorage)
+  - `websocket.ts` — Socket.io-Client, `initializeWebSocket()`, `joinRoom()`, `leaveRoom()`
+
+**`frontend/src/types/`:**
+- Purpose: TypeScript-Interface-Definitionen
+- Key files: `chat.ts` (Message, ChatRoom, Reaction), `dashboard.ts` (Badge, DashboardEvent, RankingEntry)
+
+**`frontend/src/theme/`:**
+- Purpose: CSS Custom Properties für Ionic + App-spezifische Design-Tokens
+- Key files: `variables.css` — alle CSS-Variablen
+
+---
 
 ## Key File Locations
 
 **Entry Points:**
-- Backend: `backend/server.js` - Starts Express + Socket.io on port 5000
-- Frontend: `frontend/src/main.tsx` - Vite entry, mounts App to DOM
-- App Root: `frontend/src/App.tsx` - Provider wrapping, auth check, route dispatch
+- `backend/server.js`: Backend-Start, alle Mounts
+- `frontend/src/main.tsx`: React DOM render
+- `frontend/src/App.tsx`: Auth-Guard + Context-Provider-Baum
+- `frontend/src/components/layout/MainTabs.tsx`: Role-basiertes Routing
 
 **Configuration:**
-- Database: `backend/database.js` - PostgreSQL pool configuration
-- API Client: `frontend/src/services/api.ts` - Axios baseURL, interceptors
-- WebSocket: `frontend/src/services/websocket.ts` - Socket.io connection config
-- Build: `frontend/vite.config.ts`, `backend/Dockerfile`, `docker-compose.yml`
+- `portainer-stack.yml`: Docker Compose (Deployment)
+- `frontend/capacitor.config.ts`: Capacitor App-ID, Server-URL
+- `frontend/vite.config.ts`: Build-Konfiguration
+- `init-scripts/01-create-schema.sql`: PostgreSQL-Schema
+- `backend/migrations/`: Delta-Migrations nach initialem Schema
 
 **Core Logic:**
-- RBAC Middleware: `backend/middleware/rbac.js` - User + role loading, permission checks
-- Role Hierarchy: `backend/utils/roleHierarchy.js` - Role level comparisons
-- Auth Routes: `backend/routes/auth.js` - Login, registration, password reset
-- Konfi Routes: `backend/routes/konfi.js` - Konfi dashboard, points, activities
-- Chat Routes: `backend/routes/chat.js` - Messages, polls, rooms, files
-- Events Routes: `backend/routes/events.js` - Event CRUD, booking, waitlist
+- `backend/middleware/rbac.js`: Gesamte RBAC-Implementierung
+- `backend/utils/roleHierarchy.js`: Rollen-Hierarchie und Vergleichsfunktionen
+- `backend/routes/badges.js`: `checkAndAwardBadges()` — zentrale Badge-Vergabe-Logik
+- `frontend/src/contexts/BadgeContext.tsx`: WebSocket-Init + globale Unread-Counts
 
-**Testing:**
-- Frontend: `frontend/cypress/` - E2E tests via Cypress
-- Frontend: `frontend/src/App.test.tsx` - Unit test example
-- Backend: No test framework configured (run via `npm test` → error)
-
-## Naming Conventions
-
-**Files:**
-- Backend routes: PascalCase (auth.js, activities.js, konfi.js, chat.js)
-- Frontend components: PascalCase.tsx (LoginView.tsx, AdminKonfisPage.tsx)
-- Utilities: camelCase.js (roleHierarchy.js, passwordUtils.js)
-- Styles: variables.css (not per-component, global theme)
-
-**Directories:**
-- Backend domain modules: lowercase plural (routes/, services/, utils/, middleware/)
-- Frontend domains: lowercase singular (admin/, konfi/, chat/, auth/)
-- Sub-paths in frontend: pages/, views/, modals/ (organizing component types within each domain)
-
-**Functions & Methods:**
-- API routes: camelCase (router.get(), router.post(), router.put())
-- Middleware: verb + Noun (verifyTokenRBAC, checkAndAwardBadges)
-- React hooks: use* (useApp, useBadge, useLocation from React Router)
-
-**Types & Interfaces:**
-- User, Konfi, Event, ChatMessage, Badge (PascalCase, singular)
-- Props interfaces: ComponentNameProps (e.g., LoginViewProps)
-
-**Database Tables:**
-- Plural snake_case (users, konfi_profiles, chat_messages, event_bookings)
-- Junction tables: both_singular_snake_case (user_jahrgang_assignments, chat_participants)
-
-## Where to Add New Code
-
-**New Feature (e.g., Reports, Leaderboard):**
-- Primary code: `backend/routes/reports.js` - Create new route module, export router function
-- API client: `frontend/src/services/api.ts` - Add helper functions for report endpoints
-- Components: `frontend/src/components/admin/pages/AdminReportsPage.tsx` - New admin page
-- Tests: `backend/backup_sqlite/routes/reports.js` - Reference if migrating from SQLite
-- Integration: Register route in `backend/server.js` → `app.use('/api/reports', reportsRoutes(db, rbacVerifier, ...))`
-
-**New Component (Page/Modal/View):**
-- Location: `frontend/src/components/{domain}/{pages|views|modals}/ComponentName.tsx`
-- Import context: `import { useApp } from '../../contexts/AppContext'` (adjust path)
-- Use Ionic components: `IonPage`, `IonHeader`, `IonToolbar`, `IonContent`
-- Modal pattern: Use `useIonModal` hook (NOT `<IonModal isOpen>`)
-- Styling: Apply CSS classes from `src/theme/variables.css`
-
-**New Utility Function:**
-- Shared backend: `backend/utils/newHelper.js` - Export function, import in routes
-- Shared frontend: `frontend/src/utils/newHelper.ts` - Import in components/services
-- Specific to route: Define inline in `backend/routes/module.js` (no export needed)
-
-**New Database Table:**
-- Create migration: `backend/migrations/YYYY-MM-DD_description.sql`
-- Add init script: `backend/init-scripts/10-tables.sql` - SQL CREATE statement
-- Update TypeScript: `frontend/src/types/index.ts` - Add interface for type safety
-- Add query helpers: `backend/routes/newModule.js` - CRUD operations
-
-**New Admin Page:**
-- Location: `frontend/src/components/admin/pages/AdminNewFeaturePage.tsx`
-- View logic: `frontend/src/components/admin/views/NewFeatureView.tsx`
-- Modals: `frontend/src/components/admin/modals/NewFeatureModal.tsx`
-- Integration: Import in `frontend/src/components/layout/MainTabs.tsx` → Add route + tab button
-
-**New Konfi Feature:**
-- Location: `frontend/src/components/konfi/pages/KonfiNewPage.tsx`
-- View: `frontend/src/components/konfi/views/NewView.tsx`
-- Modals: `frontend/src/components/konfi/modals/NewModal.tsx`
-- Integration: Import in MainTabs.tsx, add route
-
-## Special Directories
-
-**backend/data/:**
-- Purpose: Legacy SQLite database (not actively used)
-- Generated: No, checked in for reference
-- Committed: Yes (historical backup)
-
-**backend/migrations/:**
-- Purpose: Database schema change scripts
-- Generated: No, manually created for major schema updates
-- Committed: Yes (track schema evolution)
-
-**backend/uploads/:**
-- Purpose: Runtime storage of uploaded files (chat images, request attachments)
-- Generated: Yes, populated at runtime
-- Committed: No (in .gitignore)
-
-**frontend/dist/:**
-- Purpose: Production build output (compiled JS, HTML, assets)
-- Generated: Yes, created by `npm run build`
-- Committed: No (in .gitignore)
-
-**frontend/android/ & frontend/ios/:**
-- Purpose: Capacitor native app configurations and build metadata
-- Generated: Partially (updated by Capacitor CLI)
-- Committed: Yes (templates and config)
-
-**.planning/codebase/:**
-- Purpose: GSD mapping artifacts (this file and others)
-- Generated: By mapping agent
-- Committed: Yes (design documentation)
+**Design Reference:**
+- `frontend/src/components/konfi/views/EventsView.tsx`: Referenz-View für Design-Patterns
+- `frontend/src/theme/variables.css`: Alle CSS Design-Tokens
 
 ---
 
-*Structure analysis: 2026-02-27*
+## Naming Conventions
+
+**Backend-Dateien:**
+- Routes: `kebab-case.js` — `konfi-managment.js`, `jahrgaenge.js`
+- Services/Utils: `camelCase.js` — `backgroundService.js`, `roleHierarchy.js`
+- SQL: `NN_beschreibung.sql` — `007_levels.sql`
+
+**Frontend-Dateien:**
+- Komponenten: `PascalCase.tsx` — `AdminKonfisPage.tsx`, `EventsView.tsx`
+- Services/Utils/Contexts: `camelCase.ts` — `api.ts`, `AppContext.tsx`
+- CSS: `kebab-case.css` — `variables.css`
+
+**Komponenten-Suffix-Konvention:**
+- `*Page.tsx` — Top-Level IonPage, registriert in Router (Tab-Ziel)
+- `*View.tsx` — Unter-Komponente/Detailansicht, wird innerhalb einer Page gerendert
+- `*Modal.tsx` — Wird via `useIonModal()` Hook geöffnet
+
+**Verzeichnisse:**
+- Nach Rolle sortiert: `admin/`, `konfi/`, `teamer/`, `chat/`
+- Innerhalb jeder Rolle: `pages/`, `views/`, `modals/`
+
+---
+
+## Where to Add New Code
+
+**Neuer Admin-Feature:**
+- Backend-Route: `backend/routes/` (neue Datei oder in bestehende Route einfügen)
+- Route mounten: `backend/server.js` unter `app.use('/api/admin/...',...)`
+- Frontend-Seite: `frontend/src/components/admin/pages/AdminNEWPage.tsx`
+- Route registrieren: `frontend/src/components/layout/MainTabs.tsx` im Admin-Block
+- Modals: `frontend/src/components/admin/modals/NEWModal.tsx`
+
+**Neues Konfi-Feature:**
+- Backend: in `backend/routes/konfi.js` oder neue Route
+- Frontend-Seite: `frontend/src/components/konfi/pages/KonfiNEWPage.tsx`
+- View (Detailansicht): `frontend/src/components/konfi/views/NEWView.tsx`
+- Route registrieren: `frontend/src/components/layout/MainTabs.tsx` im Konfi-Block
+
+**Neues Teamer-Feature:**
+- Backend: in `backend/routes/teamer.js`
+- Frontend: `frontend/src/components/teamer/pages/TeamerNEWPage.tsx`
+- Route: `frontend/src/components/layout/MainTabs.tsx` im Teamer-Block
+
+**Neue TypeScript-Typen:**
+- Domänen-spezifisch: in bestehende Datei in `frontend/src/types/`
+- Neue Domäne: neue Datei in `frontend/src/types/`
+
+**Neue Hilfsfunktionen:**
+- Frontend: `frontend/src/utils/helpers.ts` oder `frontend/src/utils/dateUtils.ts`
+- Backend: `backend/utils/` (neue Datei für separate Domäne)
+
+**Shared UI-Komponenten:**
+- Kleine, generische Komponenten: `frontend/src/components/shared/`
+- In `frontend/src/components/shared/index.ts` re-exportieren
+
+**Neue Push-Notification-Typen:**
+- Backend: neue statische Methode in `backend/services/pushService.js`
+
+**Neue DB-Tabelle:**
+- Migration anlegen: `backend/migrations/BESCHREIBUNG.sql`
+
+---
+
+## Special Directories
+
+**`backend/uploads/`:**
+- Purpose: Runtime-Datei-Uploads (Bilder, PDFs, Videos)
+- Generated: Ja (beim Server-Start)
+- Committed: Nein (in .gitignore)
+- Zugriff: Nur über geschützte Backend-Endpoints (kein statisches Serving)
+
+**`frontend/android/` und `frontend/ios/`:**
+- Purpose: Capacitor native Projekte
+- Generated: Teilweise (Capacitor sync)
+- Committed: Ja (native Konfiguration)
+
+**`frontend/dist/`:**
+- Purpose: Vite Build-Output für Production
+- Generated: Ja (`npm run build`)
+- Committed: Nein
+
+**`.planning/`:**
+- Purpose: GSD Planungsdokumente, Codebase-Analyse, Milestone-History
+- Generated: Nein
+- Committed: Ja
+
+**`init-scripts/`:**
+- Purpose: SQL-Scripts die beim ersten DB-Start ausgeführt werden (Docker `docker-entrypoint-initdb.d`)
+- Key file: `init-scripts/01-create-schema.sql`
+
+---
+
+*Structure analysis: 2026-03-20*

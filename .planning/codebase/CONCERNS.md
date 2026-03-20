@@ -1,340 +1,282 @@
 # Codebase Concerns
 
-**Analysis Date:** 2026-02-27
-
-## Tech Debt
-
-**Incomplete Badge Streak & Time-Based Calculation:**
-- Issue: Streak calculation and time-based progress calculation are stubbed with TODO comments but not implemented
-- Files: `backend/routes/konfi.js` (lines 962-970)
-- Impact: Badge progress tracking for streak-based and time-based badges always shows 0% progress. Users cannot accurately track progress toward these badge types.
-- Fix approach: Implement streak calculation logic (track consecutive completed activities) and time-based calculation (track time spent on activities). May require schema changes to track activity timestamps and streaks.
-
-**SQL Injection Vulnerability in Dynamic Column Updates:**
-- Issue: Template literal interpolation in UPDATE statements with unvalidated column names (`${pointField}`)
-- Files: `backend/routes/activities.js` (lines 211, 275, 374, 406)
-- Impact: While `pointField` is validated as either `gottesdienst_points` or `gemeinde_points` before use, the pattern is brittle and could become a vulnerability if refactored. Dynamic SQL construction is error-prone.
-- Fix approach: Use CASE statements or parameterized queries instead of template literals. Example: `UPDATE konfi_profiles SET gottesdienst_points = CASE WHEN $3 = 'gottesdienst' THEN gottesdienst_points + $1 ELSE gottesdienst_points END WHERE user_id = $2`
-
-**Deprecated Date Utilities Still Used:**
-- Issue: `parseLocalTime` and `getLocalNow` are marked DEPRECATED but may still be referenced
-- Files: `frontend/src/utils/dateUtils.ts` (lines 118, 127)
-- Impact: These deprecated functions should be fully migrated away from to avoid future confusion and potential breakage
-- Fix approach: Search codebase for all usages and migrate to the recommended replacements. Document the replacement pattern in CONVENTIONS.md.
-
-**Unvalidated SQLite Migration References:**
-- Issue: Code references `backup_sqlite/` directory as a fallback and reference point
-- Files: `backend/` entire routes directory and CLAUDE.md (line 170)
-- Impact: SQLite version is out of sync with PostgreSQL version. If PostgreSQL migration is incomplete or a developer references SQLite code, features may differ between versions.
-- Fix approach: Complete full SQLite→PostgreSQL migration for all routes. Remove SQLite backup after verification or clearly document it as reference-only and frozen.
-
-**Partially Migrated RBAC System:**
-- Issue: Some systems (badges, statistics, organizations, auth) still need PostgreSQL migration from SQLite equivalents
-- Files: See CLAUDE.md lines 153-158 for incomplete list
-- Impact: Inconsistent schema patterns, unclear which code references old vs. new tables. Badge system uses potentially incomplete queries that may not filter by organization correctly.
-- Fix approach: Follow systematic migration approach: complete badge system migration (next priority), then statistics, organizations, auth. Ensure each migration includes organization_id filtering.
-
-## Known Bugs
-
-**Poll-Voting 404 with Fallback Logic:**
-- Symptoms: Poll votes return 404 initially because frontend sent message_id instead of poll_id
-- Files: `backend/routes/chat.js` (poll voting implementation)
-- Trigger: User votes on a poll in chat
-- Workaround: Fallback-logic implemented in backend to accept both message_id and poll_id. Works but indicates schema design issue or poor API specification.
-- Fix approach: Clarify chat schema (is poll_id or message_id primary?). Document API contract clearly. Consider removing fallback after confirming all frontend clients are updated.
-
-**TabBar Effect Library Limitations (6+ tabs):**
-- Symptoms: `registerTabBarEffect` from `@rdlabo/ionic-theme-ios26` fails on iOS with more than 5-6 tabs
-- Files: `frontend/src/components/layout/MainTabs.tsx`
-- Trigger: Render 6+ tabs on iOS device
-- Workaround: Currently limit to 5-6 tabs or implement alternative tab styling for iOS
-- Fix approach: Either migrate to stable tab library, use conditional rendering to hide tabs on iOS, or implement custom tab effect handling.
-
-**Rate Limiter Blocking (15-min Cooldown):**
-- Symptoms: After 10 failed login attempts, user is blocked for 15 minutes
-- Files: `backend/server.js` (rate limiter configuration)
-- Trigger: 10+ failed login attempts in short time window
-- Workaround: Server restart resets limiter state (not recommended for production)
-- Fix approach: Document rate limiter in frontend UI. Implement "account locked" notification. Consider persistent rate limiter (Redis) that survives server restarts.
-
-**Badge Count Calculation Double-Addition Risk:**
-- Symptoms: Bonus points may be counted twice if not handled carefully
-- Files: `backend/routes/konfi.js` (dashboard endpoint), bonus point accumulation
-- Trigger: Dashboard load after bonus point award
-- Workaround: CLAUDE.md explicitly warns against double-counting
-- Fix approach: Implement clear separation: `konfi_profiles.gottesdienst_points` = activity-only, separate `bonus_points` table for bonuses. Dashboard query must sum these separately.
-
-**Missing Routes from SQLite Migration:**
-- Symptoms: 4 routes missing from chat system (polls, files, etc.)
-- Files: `backend/routes/chat.js` missing compared to `backend/backup_sqlite/routes/chat.js`
-- Trigger: User attempts poll/file operations beyond basic voting
-- Workaround: Routes were added from SQLite backup
-- Fix approach: Complete feature parity audit between SQLite backup and PostgreSQL implementation.
-
-## Security Considerations
-
-**Organization-Based Access Control Gaps:**
-- Risk: Multi-tenant system must filter all queries by organization_id, but not all routes enforce this consistently
-- Files: Multiple backend routes, especially recently migrated ones
-- Current mitigation: CLAUDE.md documents the security fix (July 2025), chat system now filters by organization_id
-- Recommendations:
-  1. Audit ALL routes for organization_id filtering in WHERE clauses
-  2. Create automated test suite to verify organization isolation
-  3. Add middleware that enforces organization_id validation on all queries
-  4. Document organization_id filtering as required pattern in CONVENTIONS.md
-
-**JWT Token Expiration (24 hours):**
-- Risk: Long-lived tokens (24h) increase risk if token is compromised. No refresh token mechanism.
-- Files: `backend/routes/auth.js` (line 90)
-- Current mitigation: Tokens are transmitted over HTTPS only
-- Recommendations:
-  1. Implement refresh token mechanism with shorter access token lifetime (1-2 hours)
-  2. Add token rotation on each refresh
-  3. Implement token blacklist for logout
-  4. Add device/user-agent validation to tokens
-
-**Email Verification Not Implemented:**
-- Risk: Users can register with invalid email addresses
-- Files: `backend/routes/auth.js` (registration flow)
-- Current mitigation: None
-- Recommendations:
-  1. Implement email verification flow
-  2. Prevent password reset/notification delivery to unverified emails
-  3. Add rate limiting on email verification attempts
-
-**Push Notification Token Leakage:**
-- Risk: Push notification tokens stored in push_tokens table without clear cleanup policy
-- Files: `backend/services/pushService.js`, database schema
-- Current mitigation: Tokens filtered by max(id) per device
-- Recommendations:
-  1. Implement token expiration (30-90 days)
-  2. Add cleanup job for expired tokens
-  3. Add user logout endpoint that invalidates push tokens
-  4. Document token lifecycle clearly
-
-**Firebase Admin Credentials:**
-- Risk: Firebase credentials must be in environment or file not tracked in git
-- Files: `backend/push/firebase.js` (loaded from env)
-- Current mitigation: Credentials in .env file (not in git)
-- Recommendations:
-  1. Verify .gitignore includes firebase credentials
-  2. Document credential setup in README
-  3. Implement credential rotation mechanism
-  4. Add monitoring for invalid/expired credentials
-
-## Performance Bottlenecks
-
-**Large Monolithic Route Files:**
-- Problem: konfi.js (1,762 lines) and chat.js (1,730 lines) are too large for effective maintenance
-- Files: `backend/routes/konfi.js`, `backend/routes/chat.js`, `backend/routes/events.js` (1,437 lines)
-- Cause: Multiple features bundled in single module. Middleware, helpers, and main handlers mixed together.
-- Improvement path:
-  1. Break konfi.js into: dashboard.js, points.js, badges.js, levels.js
-  2. Break chat.js into: messages.js, rooms.js, participants.js, polls.js
-  3. Extract utility functions to separate utils files
-  4. Create separate middleware files per domain
-
-**N+1 Query Problem in Dashboard:**
-- Problem: Badge progress calculation runs separate query for each badge (lines 953-980 in konfi.js)
-- Files: `backend/routes/konfi.js` (dashboard endpoint)
-- Cause: Loop over badges array, querying database in each iteration
-- Improvement path:
-  1. Consolidate badge progress queries using SQL window functions or CTEs
-  2. Fetch all badge progress in single query with LEFT JOINs
-  3. Cache badge configuration (rarely changes)
-
-**Redundant Organization Filtering:**
-- Problem: Complex dynamic SQL generation for organization_id filtering on each request
-- Files: `backend/middleware/rbac.js` (line 35: `${placeholders}.map...` pattern)
-- Cause: Database queries need to filter by user's assigned jahrgänge
-- Improvement path:
-  1. Cache user's assigned jahrgänge in JWT token (if small)
-  2. Use database-level row-level security (RLS) instead of manual filtering
-  3. Create materialized view for user→jahrgang→organization relationships
-
-**Unindexed Foreign Keys in Queries:**
-- Problem: Many WHERE clauses filtering by `user_id`, `konfi_id`, `organization_id` without confirmed indexes
-- Files: Entire backend (check database.js)
-- Cause: Database schema may be missing indexes on frequently queried columns
-- Improvement path:
-  1. Run EXPLAIN ANALYZE on slow queries
-  2. Add indexes on: organization_id, jahrgang_id, konfi_id, user_id for all tables
-  3. Monitor query performance in production
-  4. Consider connection pooling optimization
-
-**Frontend Context Re-renders on Every Update:**
-- Problem: AppContext may trigger re-renders on every state update affecting entire app
-- Files: `frontend/src/contexts/AppContext.tsx` (630 lines)
-- Cause: Single context for all app state without value memoization
-- Improvement path:
-  1. Split AppContext into multiple contexts (auth, user, organization, ui)
-  2. Wrap context values in useMemo to prevent unnecessary re-renders
-  3. Use useCallback for context-updating functions
-  4. Consider Redux or Zustand for complex state
-
-## Fragile Areas
-
-**Chat Room Membership Synchronization:**
-- Files: `backend/routes/chat.js` (lines 16-71: ensureAdminJahrgangChatMembership)
-- Why fragile: Complex logic auto-adds/removes admins from jahrgang chats based on assignments. If jahrgang assignment is deleted but admin is still in chat, sync may fail silently.
-- Safe modification:
-  1. Add tests verifying all admin→jahrgang→chat transitions
-  2. Add logging of sync operations
-  3. Implement idempotent operations (safe to run multiple times)
-- Test coverage: Likely missing integration tests for admin assignment changes
-
-**Badge Award Logic:**
-- Files: `backend/routes/konfi.js` (checkAndAwardBadges function)
-- Why fragile: Award logic needs to check criteria, update badges table, verify org_id. If schema changes (new badge type), logic breaks.
-- Safe modification:
-  1. Create badge award service class (like PushService)
-  2. Add comprehensive test suite for each badge criteria type
-  3. Document all badge criteria types and their logic
-- Test coverage: No tests visible for badge awarding
-
-**Event Booking with Waitlist:**
-- Files: `backend/routes/events.js` (1,437 lines of event logic)
-- Why fragile: Complex state machine (available→booked→waitlisted) with slot management. Concurrent bookings could cause race conditions.
-- Safe modification:
-  1. Use database transactions (already in use)
-  2. Add pessimistic locking if high concurrency expected
-  3. Document state transitions clearly
-- Test coverage: Unknown if concurrent booking tests exist
-
-**Modal System in Frontend:**
-- Files: `frontend/src/components/**/*Modal.tsx` (20+ modal files)
-- Why fragile: CLAUDE.md shows old pattern deprecated. Some modals may still use `isOpen={state}` pattern
-- Safe modification:
-  1. Audit all modals for isOpen vs useIonModal pattern
-  2. Create modal component wrapper enforcing correct pattern
-  3. Add linter rule to catch old pattern
-- Test coverage: No visual regression tests for modals
-
-## Scaling Limits
-
-**PostgreSQL Connection Pool:**
-- Current capacity: Limited by pool size in database.js (default pg pool ~10 connections)
-- Limit: If concurrent requests exceed pool size, they queue indefinitely
-- Scaling path:
-  1. Configure pool size based on max expected concurrent requests
-  2. Monitor connection usage in production
-  3. Implement connection pooling service (pgBouncer) if needed
-  4. Add queue timeout to fail fast instead of hanging
-
-**Chat Message Storage:**
-- Current capacity: All messages stored in PostgreSQL (unlimited theoretically)
-- Limit: Query performance degrades as chat_messages table grows. Pagination is required.
-- Scaling path:
-  1. Implement message pagination/infinite scroll (likely already done)
-  2. Archive old messages after 1-2 years
-  3. Consider separate document DB (MongoDB) for message history
-  4. Implement full-text search for message search feature
-
-**Firebase Push Notification Queue:**
-- Current capacity: Serial processing (one notification at a time per user)
-- Limit: If many users need notifications, delivery is delayed
-- Scaling path:
-  1. Implement batch sending (Firebase supports bulk operations)
-  2. Use message queue (Redis, RabbitMQ) for async notification dispatch
-  3. Monitor Firebase API rate limits
-  4. Implement exponential backoff for failed sends
-
-**User Count in Organization:**
-- Current capacity: No documented limits
-- Limit: Complex queries may timeout with thousands of users per organization
-- Scaling path:
-  1. Implement pagination on user lists
-  2. Add search/filter optimization
-  3. Cache frequently accessed user lists
-  4. Consider denormalization if user lists queried frequently
-
-## Dependencies at Risk
-
-**Vulnerable Dependency: express-rate-limit:**
-- Risk: Rate limiter state is in-memory, lost on server restart. No documented minimum version.
-- Impact: Users blocked for 15 minutes have no way to unblock except wait or admin intervention
-- Migration plan: Upgrade to version with Redis backing. Implement external cache-based rate limiting. Add admin override endpoint.
-
-**Fragile Dependency: @rdlabo/ionic-theme-ios26:**
-- Risk: Undocumented library, not maintained, fails with 6+ tabs
-- Impact: iOS tab bar breaks on complex layouts
-- Migration plan: Replace with stable tab solution or implement custom iOS tab styling
-
-**Firebase SDK Dependency:**
-- Risk: Version compatibility with React 19 unclear
-- Impact: Push notifications break if Firebase SDK isn't compatible
-- Migration plan: Verify Firebase SDK supports React 19. Test with latest versions in staging.
-
-**Outdated Multer Configuration:**
-- Risk: `legacyHeaders: false` set on 6 different endpoints, inconsistent approach
-- Impact: Unclear what headers are expected, file upload may fail with certain clients
-- Migration plan: Centralize upload configuration, use consistent middleware
-
-## Missing Critical Features
-
-**Offline Support:**
-- Problem: No offline-first features for mobile app. Users need continuous connectivity.
-- Blocks: Mobile app reliability, user experience on poor networks
-- Priority: Medium (nice-to-have for mobile app)
-
-**Email Notifications:**
-- Problem: Only push notifications supported. Email notifications not implemented.
-- Blocks: Users on Android devices without Firebase may not receive notifications
-- Priority: High (accessibility feature)
-
-**Audit Logging:**
-- Problem: No centralized audit log for admin actions (points awarded, activities deleted, etc.)
-- Blocks: Compliance, debugging, security investigations
-- Priority: High (compliance/legal requirement)
-
-**Data Export:**
-- Problem: No bulk data export for users or admins. No GDPR data export endpoint.
-- Blocks: GDPR compliance, user data portability
-- Priority: High (legal requirement)
-
-**API Documentation:**
-- Problem: No OpenAPI/Swagger documentation. API endpoints not documented.
-- Blocks: Third-party integrations, client development, maintenance
-- Priority: Medium (developer experience)
-
-## Test Coverage Gaps
-
-**Auth System Testing:**
-- What's not tested: Token refresh, password reset flow, email verification
-- Files: `backend/routes/auth.js` (all password/email flows)
-- Risk: Auth bugs in production would break user access
-- Priority: Critical - add comprehensive auth test suite
-
-**Badge Awarding Logic:**
-- What's not tested: All badge criteria types, edge cases (user already has badge, etc.)
-- Files: `backend/routes/konfi.js` (checkAndAwardBadges)
-- Risk: Badges awarded incorrectly or not awarded when earned
-- Priority: High - badges are core gamification
-
-**Chat Organization Isolation:**
-- What's not tested: Multi-organization chat room access, organization boundary enforcement
-- Files: `backend/routes/chat.js` (entire org filtering)
-- Risk: Users from one org could access chats from another org
-- Priority: Critical - security vulnerability
-
-**Event Booking Race Conditions:**
-- What's not tested: Concurrent bookings, slot exhaustion, waitlist promotion
-- Files: `backend/routes/events.js` (booking logic)
-- Risk: Overbooking or wrong waitlist behavior
-- Priority: High - business logic correctness
-
-**Frontend Integration Tests:**
-- What's not tested: Modal flows, form submissions, error handling
-- Files: `frontend/cypress/e2e/test.cy.ts` (appears minimal)
-- Risk: UI bugs ship to production without detection
-- Priority: Medium - frontend stability
-
-**Database Migration Tests:**
-- What's not tested: SQLite→PostgreSQL data integrity, no lost records
-- Files: No visible migration tests
-- Risk: Data loss or corruption during migration
-- Priority: Critical - data integrity
+**Analysis Date:** 2026-03-20
 
 ---
 
-*Concerns audit: 2026-02-27*
+## Tech Debt
+
+**ICON_MAP / BADGE_ICONS als globales Duplikat:**
+- Issue: Die Icon-Lookup-Map (Ionicon-Name → importiertes Icon-Objekt) ist 8x in verschiedenen Dateien kopiert, mit leicht unterschiedlichen Typsignaturen
+- Files: `src/components/konfi/views/DashboardView.tsx`, `src/components/konfi/views/BadgesView.tsx`, `src/components/teamer/views/TeamerBadgesView.tsx`, `src/components/teamer/pages/TeamerBadgesPage.tsx`, `src/components/teamer/pages/TeamerDashboardPage.tsx`, `src/components/teamer/pages/TeamerKonfiStatsPage.tsx`, `src/components/admin/BadgesView.tsx`, `src/components/admin/modals/BadgeManagementModal.tsx`, `src/components/admin/pages/AdminCertificatesPage.tsx`
+- Impact: Jede Icon-Erweiterung muss 8x gepflegt werden; aktuell unterschiedliche Typen (`Record<string, string>` vs. `Record<string, {icon, name, category}>`)
+- Fix approach: Zentrales `src/utils/iconMap.ts` mit exportierten Hilfsfunktionen `getBadgeIcon(name)` und `getCertificateIcon(name)` erstellen
+
+**Inline-Typdeklarationen statt gemeinsamer Typen:**
+- Issue: Die Interfaces `Konfi`, `Badge`, `Event`, `Jahrgang` sind je 5–10x in verschiedenen Komponenten lokal deklariert, obwohl `src/types/dashboard.ts` existiert
+- Files: `src/components/admin/KonfisView.tsx`, `src/components/admin/pages/AdminKonfisPage.tsx`, `src/components/admin/views/KonfiDetailView.tsx`, `src/components/admin/modals/ParticipantManagementModal.tsx`, `src/utils/helpers.ts` (Konfi/Badge); `src/components/konfi/views/EventsView.tsx`, `src/components/konfi/pages/KonfiEventsPage.tsx`, `src/components/admin/EventsView.tsx`, etc. (Event)
+- Impact: Inkonsistente Felder zwischen Komponenten, TypeScript-Fehler werden unterdrückt mit `any`
+- Fix approach: Getrennte `src/types/entities.ts` mit `Konfi`, `Badge`, `Event`, `Jahrgang` als kanonische Typen; alle lokalen Interfaces ersetzen
+
+**Legacy Upload-Konfiguration in server.js:**
+- Issue: `upload` (line 334 in `backend/server.js`) ist explizit als deprecated kommentiert (`Legacy upload for other parts`), wird aber noch weitergegeben (`activitiesRouter`)
+- Files: `backend/server.js:334`, `backend/routes/activities.js`
+- Impact: Unklares Upload-Verhalten für Aktivitäten; Dateien landen ungekennzeichnet in `uploads/`
+- Fix approach: Alle Upload-Routen auf spezifische Multer-Konfigurationen migrieren, legacy `upload` entfernen
+
+**verifyToken vs verifyTokenRBAC doppelt vorhanden:**
+- Issue: Zwei separate Token-Verifikations-Middlewares existieren in `backend/server.js` (`verifyToken`) und `backend/middleware/rbac.js` (`verifyTokenRBAC`). `verifyToken` lädt keine User-Daten aus der DB und wird noch von `auth.js`-Routen genutzt.
+- Files: `backend/server.js:374`, `backend/middleware/rbac.js:19`, `backend/routes/auth.js:162`
+- Impact: Inkonsistente User-Daten in Requests; `verifyToken` prüft nicht `is_active` oder Organization-Status
+- Fix approach: `verifyToken` vollständig durch `verifyTokenRBAC` ersetzen
+
+**Typo im Dateinamen des Backend-Routers:**
+- Issue: `backend/routes/konfi-managment.js` (fehlendes 'e' in management)
+- Files: `backend/routes/konfi-managment.js`, `backend/server.js:415`
+- Impact: Verwirrend bei Suchen, erschwertes Onboarding
+- Fix approach: Umbenennen auf `konfi-management.js` und Imports aktualisieren
+
+**Inline Schema-Migrationen in Route-Dateien:**
+- Issue: `CREATE TABLE IF NOT EXISTS` wird beim Server-Start innerhalb von Route-Modulen ausgeführt, nicht in einer zentralen Migrations-Pipeline
+- Files: `backend/routes/material.js:12`, `backend/routes/teamer.js:10`, `backend/routes/badges.js:630`
+- Impact: Schemaänderungen werden nicht versioniert; kein Rollback möglich; jeder Server-Start führt potenziell DDL aus
+- Fix approach: Migrations-Verzeichnis `backend/migrations/` mit nummerierten SQL-Dateien; bei Start einmalig ausführen
+
+**`ExploreContainer` — ungenutzter Ionic-Scaffold-Code:**
+- Issue: `src/components/ExploreContainer.tsx` ist ein Überbleibsel aus dem Ionic-Projektgerüst und wird nirgendwo importiert
+- Files: `src/components/ExploreContainer.tsx`
+- Impact: Toter Code im Repo; verwirrt neue Entwickler
+- Fix approach: Datei und zugehörige CSS-Datei löschen
+
+**`window.location.href` statt React Router Navigation:**
+- Issue: An 11 Stellen wird `window.location.href` für Navigation verwendet, was einen Full-Page-Reload auslöst und den SPA-Routing-State zerstört
+- Files: `src/contexts/AppContext.tsx:390`, `src/components/konfi/views/ProfileView.tsx:159,165`, `src/components/teamer/pages/TeamerProfilePage.tsx:145,150`, `src/components/admin/views/EventDetailView.tsx:570,1001`, `src/components/admin/pages/AdminOrganizationsPage.tsx:71`, `src/components/admin/pages/AdminSettingsPage.tsx:63,69`, `src/services/api.ts:32`
+- Impact: Verlust von React-State, schlechtere Nutzererfahrung durch vollständigen Reload; unterdrückt Ionic-Page-Transitions
+- Fix approach: `useHistory().push()` bzw. `useHistory().replace()` verwenden; für Push-Navigation in `AppContext` einen custom Router-Event-Bus implementieren
+
+**DOM-Custom-Events als Cross-Component-Kommunikation:**
+- Issue: Mehrere Komponenten nutzen `window.dispatchEvent(new CustomEvent(...))` und `window.addEventListener(...)` für State-Updates, obwohl ein WebSocket-basierter `LiveUpdateContext` existiert
+- Files: `src/contexts/BadgeContext.tsx:152`, `src/components/konfi/views/EventDetailView.tsx:132,145,164`, `src/components/admin/views/KonfiDetailView.tsx:168,180,378,402`, `src/components/admin/views/EventDetailView.tsx:410,487,510,525`
+- Impact: Zwei parallele Aktualisierungssysteme; schwer testbar; Race Conditions möglich
+- Fix approach: Alle Custom Events durch `LiveUpdateContext.triggerRefresh()` und `useLiveRefresh()` ersetzen
+
+**Dangling Event Listeners (nie dispatcht):**
+- Issue: Vier Admin-Pages registrieren `window.addEventListener` für Events, die nirgendwo im Code dispatcht werden
+- Files: `src/components/admin/pages/AdminActivityRequestsPage.tsx:85` (`activity-requests-updated`), `src/components/admin/pages/AdminBadgesPage.tsx:89` (`badges-updated`), `src/components/admin/pages/AdminOrganizationsPage.tsx:102` (`organizations-updated`), `src/components/admin/pages/AdminUsersPage.tsx:77` (`users-updated`), `src/components/admin/pages/AdminActivitiesPage.tsx:78` (`activities-updated`)
+- Impact: Dead Code; diese Seiten aktualisieren sich nach Änderungen in Modals nicht automatisch
+- Fix approach: Entweder Dispatcher in den Modals hinzufügen, oder (bevorzugt) auf `useLiveRefresh()` migrieren
+
+**`dateUtils` wird kaum genutzt:**
+- Issue: `src/utils/dateUtils.ts` stellt Datum-Formatierungsfunktionen bereit, aber 165 Vorkommen von `new Date(...)`, `.toLocaleDateString()` und `.toLocaleTimeString()` sind direkt in Komponenten; `dateUtils`-Funktionen werden nur in `helpers.ts` importiert
+- Files: `src/utils/dateUtils.ts`, fast alle Page- und View-Komponenten
+- Impact: Inkonsistente Datums-Formatierung, schwer anpassbar (z.B. Locale-Wechsel)
+- Fix approach: `dateUtils`-Nutzung in neuen Komponenten forcieren; schrittweise bestehende Inline-Formatierungen migrieren
+
+**`global.io` als WebSocket-Bus:**
+- Issue: Socket.io-Instanz wird auf `global.io` gesetzt und aus 20 Stellen in Route-Dateien direkt als `global.io` abgerufen
+- Files: `backend/server.js:109`, `backend/utils/liveUpdate.js:13,27,38,61,77,100,120,141`, `backend/routes/chat.js:696,1354`, `backend/routes/users.js:260`
+- Impact: Starke Kopplung; nicht testbar; potenzielle Probleme bei späterem Clustering/Scaling
+- Fix approach: `io` als Dependency in Router-Factory-Funktionen injizieren (analog zum `db`-Pattern)
+
+---
+
+## Bekannte Bugs / Unvollständige Features
+
+**Badge-Kriterien `streak` und `time_based` nicht implementiert:**
+- Symptoms: Badges mit `criteria_type = 'streak'` oder `'time_based'` zeigen immer 0% Fortschritt
+- Files: `backend/routes/konfi.js:1018-1026`
+- Trigger: Jedes Mal wenn ein Konfi seine Badges lädt
+- Workaround: Admins können solche Badge-Typen anlegen, aber Konfis sehen keinen Fortschritt
+
+**Push-Notification-Listener doppelt registriert:**
+- Symptoms: `pushNotificationReceived` und `pushNotificationActionPerformed` werden in `App.tsx` UND `AppContext.tsx` registriert. `App.tsx` ruft zusätzlich `PushNotifications.removeAllListeners()` auf, was die Listeners aus `AppContext.tsx` löscht.
+- Files: `src/App.tsx:100`, `src/contexts/AppContext.tsx:309,319,325`
+- Trigger: App-Start auf nativer Plattform
+- Workaround: Nicht bekannt; führt zu inkonsistenter Verarbeitung von Push-Events
+
+**Event-Chat-Navigation bricht SPA-State:**
+- Symptoms: Navigation zum Event-Chat über `window.location.href` löscht React-State
+- Files: `src/components/admin/views/EventDetailView.tsx:570`
+- Trigger: Klick auf "Chat öffnen" in der Event-Detailansicht
+
+**Badge-Counter in MainTabs läuft auf eigenem 60s-Intervall:**
+- Symptoms: `MainTabs.tsx` lädt Badge-Count alle 60 Sekunden, obwohl `BadgeContext` bereits WebSocket-basierte Echtzeit-Updates bereitstellt
+- Files: `src/components/layout/MainTabs.tsx:77-96`
+- Impact: Doppelte API-Last; potenziell veraltete Zahlen wenn WebSocket und Polling divergieren
+
+**Tageslosung wird jedes Render neu geladen:**
+- Symptoms: `DashboardView` reagiert auf `dailyVerse` als `useEffect`-Dependency, aber lädt selbst die Losung vom Backend nach – doppelter Request wenn `KonfiDashboardPage` die Losung ebenfalls lädt
+- Files: `src/components/konfi/views/DashboardView.tsx:463-498`, `src/components/konfi/pages/KonfiDashboardPage.tsx:174`
+
+**`initializeChatRooms` falsch mit `setImmediate` aufgerufen:**
+- Symptoms: `setImmediate(initializeChatRooms(db))` ruft `initializeChatRooms(db)` sofort aus und übergibt das Ergebnis (eine async Funktion) an `setImmediate`. Das bedeutet `setImmediate` empfängt eine Funktion und ruft sie nie auf
+- Files: `backend/server.js:493`, `backend/utils/chatUtils.js:4`
+- Impact: Chat-Räume für neue Jahrgänge werden beim Server-Start nicht automatisch angelegt
+- Fix approach: `setImmediate(initializeChatRooms(db))` → `setImmediate(() => initializeChatRooms(db)())`
+
+---
+
+## Sicherheitsbedenken
+
+**TLS-Validierung deaktiviert:**
+- Risk: SMTP-Verbindungen akzeptieren ungültige Zertifikate (`rejectUnauthorized: false`)
+- Files: `backend/server.js:132`, `backend/services/emailService.js:39`
+- Current mitigation: SMTP-Server liegt auf eigenem Server (selbes Netzwerk)
+- Recommendations: Eigenes Zertifikat konfigurieren oder `rejectUnauthorized: true` nach Zertifikat-Fix aktivieren
+
+**Content Security Policy vollständig deaktiviert:**
+- Risk: XSS-Angriffe werden nicht durch Browser-seitige CSP blockiert
+- Files: `backend/server.js:225`
+- Current mitigation: Helmet übrige Header sind aktiv (X-Frame-Options, X-XSS-Protection)
+- Recommendations: Schrittweise CSP für API-Responses einführen; für die App selbst ist CSP im Capacitor-Kontext tatsächlich schwierig
+
+**JWT-Token-Laufzeit 90 Tage ohne Refresh-Mechanismus:**
+- Risk: Gestohlene Tokens sind 90 Tage gültig; kein Token-Revoke außer Benutzer-Deaktivierung
+- Files: `backend/routes/auth.js:132`, `backend/routes/auth.js:640`
+- Current mitigation: `is_active`-Check in `verifyTokenRBAC` macht inaktive User ungültig
+- Recommendations: Refresh-Token-System implementieren; Token-Laufzeit auf 7-14 Tage reduzieren
+
+**MD5 für Upload-Dateinamen:**
+- Risk: MD5 ist kein sicherer Hash (kollisionsanfällig)
+- Files: `backend/server.js:265,300,355`
+- Current mitigation: Zusätzliches `Math.random()` und Timestamp; Files werden nicht direkt öffentlich serviert
+- Recommendations: `crypto.randomBytes(16).toString('hex')` statt MD5 verwenden
+
+**`(window as any)` für native Plugin-Zugriffe:**
+- Risk: Typ-Sicherheit aufgehoben; falsche Plugin-Namen/Methoden führen zu silent failures
+- Files: `src/contexts/AppContext.tsx:132,160` (FCMPlugin-Zugriff über `window.Capacitor.Plugins`)
+- Recommendations: Typisierten Capacitor-Plugin-Wrapper erstellen
+
+**`crypto` wird nach der ersten Verwendung in `server.js` require'd:**
+- Issue: `const crypto = require('crypto')` steht auf Zeile 347, wird aber bereits ab Zeile 265 genutzt (funktioniert wegen Node.js-Hoisting nicht, aber nur weil es davor in einem anderen Scope verwendet wird)
+- Files: `backend/server.js:265,300,347`
+- Fix approach: `crypto` require an Dateianfang verschieben
+
+---
+
+## Performance-Probleme
+
+**Mega-Komponenten (1000-1500 Zeilen):**
+- Problem: Mehrere Komponenten sind zu groß für effektives Rendering und Wartbarkeit
+- Files: `src/components/admin/views/KonfiDetailView.tsx` (1517 Zeilen), `src/components/konfi/views/DashboardView.tsx` (1491 Zeilen), `src/components/admin/views/EventDetailView.tsx` (1414 Zeilen), `src/components/admin/modals/EventModal.tsx` (1401 Zeilen)
+- Cause: Fehlende Aufteilung in Sub-Komponenten
+- Improvement path: Logisch getrennte Abschnitte (z.B. "Aktivitätsliste", "Bonus-Sektion") in eigene Komponenten auslagern
+
+**Wenig Memoization trotz größerer Listen:**
+- Problem: Nur 82 Vorkommen von `useCallback`/`useMemo`/`React.memo` in 119 TypeScript-Dateien; Komponenten mit Konfi-Listen, Badge-Grids und Event-Listings re-rendern bei jedem Parent-Update
+- Files: `src/components/admin/KonfisView.tsx`, `src/components/admin/BadgesView.tsx`, `src/components/admin/EventsView.tsx`
+- Improvement path: Listenpositionen mit `React.memo` wrappen; Filter/Sort-Berechnungen mit `useMemo` cachen
+
+**`SELECT *` in 22 Backend-Queries:**
+- Problem: Überflüssige Felder werden über das Netzwerk transportiert
+- Files: `backend/routes/events.js:520,1143`, `backend/routes/auth.js:175`, `backend/routes/levels.js:37`, `backend/routes/badges.js:139,306`, u.a.
+- Improvement path: Explizite Spalten auflisten, besonders bei `users`-Queries
+
+**Background-Service läuft alle 5 Minuten für alle User:**
+- Problem: `BackgroundService.updateAllUserBadges()` fragt alle User mit Push-Tokens ab und sendet ggf. Pushes — keine Prüfung ob Änderungen stattgefunden haben
+- Files: `backend/services/backgroundService.js:17`
+- Improvement path: Änderungsbasiertes System (nur Push wenn Badge-Count sich geändert hat) — teilweise implementiert, aber vollständig prüfen
+
+---
+
+## Fragile Bereiche
+
+**Push-Notification-Setup (iOS/Testflight):**
+- Files: `src/contexts/AppContext.tsx:128-178`
+- Why fragile: Mehrfache Workarounds für iOS APNS-Registrierung über undokumentierte `window.Capacitor.Plugins.FCM`-Calls; `setTimeout` von 2s für Token-Retrieval
+- Safe modification: Gesamten APNS-Block nie verändern ohne Testflight-Test
+- Test coverage: Keine automatisierten Tests
+
+**`verifyTokenRBAC` macht DB-Query bei jedem Request:**
+- Files: `backend/middleware/rbac.js:44`
+- Why fragile: 3 DB-Queries pro Request (user, jahrgaenge); bei DB-Ausfall schlagen alle authentifizierten Requests fehl
+- Safe modification: Keine Caching-Logik einführen ohne Cache-Invalidierung bei Rollen-/Org-Änderungen zu beachten
+
+**Chat-WebSocket und HTTP-Requests parallel:**
+- Files: `src/components/chat/ChatRoom.tsx:30`, `src/services/websocket.ts`
+- Why fragile: `ChatRoom` nutzt sowohl WebSocket (für neue Nachrichten) als auch HTTP (für Pagination/History); Socket-Reconnect-Logic ist in `websocket.ts` implementiert, aber `ChatRoom` registriert eigene Socket-Events die beim Unmount nicht immer sauber aufgeräumt werden
+- Safe modification: Socket-Listener immer im `useEffect`-Cleanup entfernen
+
+**Inline-Migrations beim Modullade-Zeitpunkt:**
+- Files: `backend/routes/material.js:109`, `backend/routes/teamer.js:50`, `backend/routes/badges.js:714`
+- Why fragile: Migrations laufen bei jedem `require()` des Moduls; bei DB-Fehler startet der Server trotzdem (Fehler wird nur geloggt, nicht geworfen)
+- Safe modification: Migrationen nie auf Tabellenumbenennungen oder Index-Drops ausweiten ohne Rollback-Plan
+
+---
+
+## Skalierungsgrenzen
+
+**Single-Server-WebSocket:**
+- Current capacity: Eine Node.js-Instanz
+- Limit: Horizontale Skalierung (mehrere Prozesse/Container) ist mit `global.io` nicht möglich — WebSocket-Rooms sind prozess-lokal
+- Scaling path: Redis-Adapter für Socket.io (`socket.io-redis`) oder auf Message-Broker migrieren
+
+**Upload-Dateien auf dem Server-Dateisystem:**
+- Current capacity: Verfügbarer Hetzner-Disk-Speicher
+- Limit: Skalierung auf mehrere Instanzen unmöglich; kein CDN
+- Scaling path: Objekt-Storage (S3/MinIO) mit signierten URLs
+
+---
+
+## Abhängigkeiten mit Risiko
+
+**`react-router-dom` v5 (veraltet):**
+- Risk: React Router v5 ist nicht mit React 19 kompatibel (nur v6+); aktuell funktioniert es, aber React-Concurrent-Features sind eingeschränkt
+- Impact: `useHistory` statt `useNavigate`; kein `<Outlet>`-Pattern; schwieriger Upgrade-Pfad
+- Files: `package.json:react-router-dom ^5.3.4`; alle Komponenten mit `useHistory`
+
+**`@rdlabo/ionic-theme-ios26` und `ionic-theme-md3`:**
+- Risk: Third-Party Pakete, nicht von Ionic offiziell; bekanntes Problem mit `registerTabBarEffect` bei 6 Tabs (in MEMORY.md dokumentiert)
+- Impact: Tab-Bar-Animationen können brechen nach Ionic-Updates
+
+**`qr-scanner` (Browser-basiert, nicht Capacitor-native):**
+- Risk: Nutzt WebRTC/MediaDevices API; auf nativen Apps ist der native Kamera-Stack performanter und zuverlässiger
+- Files: `src/components/konfi/modals/QRScannerModal.tsx`
+- Migration plan: Capacitor-eigenes QR-Scanner-Plugin oder `@capacitor-mlkit/barcode-scanning`
+
+**`@capacitor-community/photoviewer` installiert aber nie importiert:**
+- Risk: Erhöht Bundle-Größe und App-Größe ohne Nutzen
+- Files: `package.json:@capacitor-community/photoviewer ^7.1.0`
+- Migration plan: Aus `package.json` entfernen
+
+---
+
+## Fehlende kritische Features
+
+**Kein Token-Refresh-Mechanismus:**
+- Problem: JWTs laufen nach 90 Tagen ab; es gibt keinen `/auth/refresh`-Endpoint
+- Blocks: User werden nach 90 Tagen ohne Warnung ausgeloggt
+
+**Streak/Zeitbasierte Badge-Kriterien nicht implementiert:**
+- Problem: `streak` und `time_based` Kriterien-Typen im Backend sind Stubs (geben immer 0 zurück)
+- Files: `backend/routes/konfi.js:1018-1026`
+- Blocks: Badges mit diesen Kriterien können nicht sinnvoll genutzt werden
+
+**Dark Mode deaktiviert:**
+- Problem: Dark Mode ist explizit deaktiviert (`import '@ionic/react/css/palettes/dark.always.css'` auskommentiert); Systemeinstellung wird ignoriert
+- Files: `src/App.tsx:67-69`
+- Blocks: Nutzer die System-Dark-Mode verwenden bekommen hellen Modus
+
+**Kein Error Boundary:**
+- Problem: Keine React Error Boundary in der App; ein Render-Fehler in einer Komponente stürzt die gesamte App ab
+- Files: `src/App.tsx`
+
+---
+
+## Test-Coverage-Lücken
+
+**Nahezu keine Tests vorhanden:**
+- What's not tested: Gesamtes Frontend außer einem Smoke-Test; gesamtes Backend
+- Files: `src/App.test.tsx` (einzige Test-Datei; prüft nur ob App rendert)
+- Risk: Regressions bei Refactoring nicht erkennbar
+- Priority: Hoch — besonders für kritische Pfade: Login, Punkte-Vergabe, Badge-Vergabe
+
+**Backend ohne Tests:**
+- What's not tested: Alle 15 Route-Module; RBAC-Middleware; Badge-Award-Logik; Push-Service
+- Files: Alle `backend/routes/*.js`, `backend/middleware/rbac.js`, `backend/services/`
+- Risk: Sicherheits-kritische RBAC-Regeln könnten durch Refactoring versehentlich geändert werden
+- Priority: Hoch — RBAC-Tests zuerst
+
+---
+
+*Concerns-Audit: 2026-03-20*
