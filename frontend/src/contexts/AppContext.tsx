@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { Device } from '@capacitor/device';
-import { checkAuth } from '../services/auth';
 import api from '../services/api';
+import { getUser, getDeviceId, setDeviceId, getPushTokenTimestamp, setPushTokenTimestamp } from '../services/tokenStore';
 import { networkMonitor } from '../services/networkMonitor';
 import { App } from '@capacitor/app';
 import { PushNotifications } from '@capacitor/push-notifications';
@@ -38,11 +38,13 @@ const sendTokenToServer = async (token: string) => {
   } catch (err) {
     console.error('Fehler beim Senden des FCM-Tokens:', err);
 
-    // Fallback zu localStorage Device ID
+    // Fallback zu TokenStore Device ID
     try {
-      const fallbackDeviceId = localStorage.getItem('device_id') ||
-        `${Capacitor.getPlatform()}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      localStorage.setItem('device_id', fallbackDeviceId);
+      let fallbackDeviceId = getDeviceId();
+      if (!fallbackDeviceId) {
+        fallbackDeviceId = `${Capacitor.getPlatform()}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        await setDeviceId(fallbackDeviceId);
+      }
 
       await api.post('/notifications/device-token', {
         token,
@@ -92,7 +94,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(checkAuth());
+  const [user, setUser] = useState<User | null>(getUser());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -277,12 +279,12 @@ useEffect(() => {
 
         // Token bei App-Resume erneuern (max alle 12 Stunden)
         if (Capacitor.isNativePlatform()) {
-          const lastTokenRefresh = parseInt(localStorage.getItem('push_token_last_refresh') || '0');
+          const lastTokenRefresh = getPushTokenTimestamp();
           const twelveHours = 12 * 60 * 60 * 1000;
           if (now - lastTokenRefresh > twelveHours) {
             try {
               await PushNotifications.register();
-              localStorage.setItem('push_token_last_refresh', now.toString());
+              await setPushTokenTimestamp(now);
             } catch (err) {
               console.warn('Token refresh failed:', err);
             }

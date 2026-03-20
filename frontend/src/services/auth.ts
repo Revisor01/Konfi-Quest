@@ -1,6 +1,7 @@
 import api from './api';
 import { Device } from '@capacitor/device';
 import { Capacitor } from '@capacitor/core';
+import { getUser, setToken, setUser, clearAuth, getDeviceId, setDeviceId } from './tokenStore';
 
 interface User {
   id: number;
@@ -18,16 +19,16 @@ interface User {
 }
 
 export const loginWithAutoDetection = async (username: string, password: string): Promise<User> => {
-  
+
   try {
     const response = await api.post('/auth/login', { username, password });
     const { token, user } = response.data;
-    
+
     if (!token || !user) throw new Error('Fehlender Token oder Benutzer');
-    
-    localStorage.setItem('konfi_token', token);
-    localStorage.setItem('konfi_user', JSON.stringify(user));
-    
+
+    await setToken(token);
+    await setUser(user);
+
     return user;
   } catch (error: unknown) {
     const err = error as { response?: { status?: number; statusText?: string; data?: { error?: string } }; message?: string; code?: string };
@@ -67,11 +68,16 @@ export const logout = async (): Promise<void> => {
         const deviceInfo = await Device.getId();
         deviceId = deviceInfo.identifier;
       } catch (err) {
- console.warn('Could not get device ID via Capacitor, using localStorage fallback:', err);
-        deviceId = localStorage.getItem('device_id') || undefined;
+ console.warn('Could not get device ID via Capacitor, using TokenStore fallback:', err);
+        deviceId = getDeviceId() || undefined;
       }
     } else {
-      deviceId = localStorage.getItem('device_id') || undefined;
+      deviceId = getDeviceId() || undefined;
+      if (!deviceId) {
+        const fallbackId = `${Capacitor.getPlatform()}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        await setDeviceId(fallbackId);
+        deviceId = fallbackId;
+      }
     }
     
     if (deviceId) {
@@ -99,28 +105,18 @@ export const logout = async (): Promise<void> => {
     // Logout sollte trotzdem funktionieren, auch wenn Push Token removal fehlschlägt
   }
 
-  localStorage.removeItem('konfi_token');
-  localStorage.removeItem('konfi_user');
-  // Device ID NICHT löschen - bleibt für das Gerät persistent
+  await clearAuth();
+  // Device ID NICHT loeschen - bleibt fuer das Geraet persistent
   
   // Reset logout lock
   logoutInProgress = false;
 };
 
 export const checkAuth = (): User | null => {
-  const token = localStorage.getItem('konfi_token');
-  const rawUser = localStorage.getItem('konfi_user');
+  return getUser();
+};
 
-  if (token && rawUser) {
-    try {
-      return JSON.parse(rawUser);
-    } catch (err) {
- console.error('Fehler beim Parsen von konfi_user:', err);
-      localStorage.removeItem('konfi_user');
-      return null;
-    }
-  }
-
-  return null;
+export const checkAuthAsync = async (): Promise<User | null> => {
+  return getUser();
 };
 
