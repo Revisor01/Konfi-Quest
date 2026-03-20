@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { getToken, clearAuth } from './tokenStore';
+import { networkMonitor } from './networkMonitor';
 
 const API_BASE_URL = 'https://konfi-quest.de/api';
 
@@ -9,9 +11,9 @@ const api = axios.create({
 // Export API_BASE_URL für andere Komponenten
 export const API_URL = API_BASE_URL;
 
-// Add token to requests
+// Add token to requests (synchron aus Memory-Cache)
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('konfi_token');
+  const token = getToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -23,13 +25,18 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Don't redirect during login attempts
       const isLoginRequest = error.config?.url?.includes('/login');
       if (!isLoginRequest) {
-        // Token expired or invalid
-        localStorage.removeItem('konfi_token');
-        localStorage.removeItem('konfi_user');
-        window.location.href = '/';
+        if (networkMonitor.isOnline) {
+          // Online und 401 = Token wirklich ungueltig
+          clearAuth().then(() => {
+            window.location.href = '/';
+          });
+        } else {
+          // Offline und 401 = Netzwerkproblem, Token behalten
+          console.warn('401 waehrend Offline — Token wird behalten');
+          return Promise.reject(error);
+        }
       }
     }
 
