@@ -10,10 +10,10 @@ Requirements fuer Milestone v2.1 App-Resilienz. Offline-Faehigkeit und Zuverlaes
 
 ### Storage-Migration (STR)
 
-- [ ] **STR-01**: JWT-Token und User-Daten werden in Capacitor Preferences statt localStorage gespeichert (iOS-sicher)
-- [ ] **STR-02**: Device-ID und Push-Token-Timestamp werden in Capacitor Preferences gespeichert
-- [ ] **STR-03**: Bestehende localStorage-Daten werden beim App-Start automatisch migriert (einmalig)
-- [ ] **STR-04**: Globaler TokenStore (In-Memory-Cache + async Preferences) ersetzt alle 28 localStorage-Zugriffe in 14 Dateien
+- [x] **STR-01**: JWT-Token und User-Daten werden in Capacitor Preferences statt localStorage gespeichert (iOS-sicher)
+- [x] **STR-02**: Device-ID und Push-Token-Timestamp werden in Capacitor Preferences gespeichert
+- [x] **STR-03**: Bestehende localStorage-Daten werden beim App-Start automatisch migriert (einmalig)
+- [x] **STR-04**: Globaler TokenStore (In-Memory-Cache + async Preferences) ersetzt alle 28 localStorage-Zugriffe in 14 Dateien
 
 ### Offline-Erkennung (NET)
 
@@ -205,10 +205,10 @@ Deferred. Onboarding, Landing Website, Readme, Wiki.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| STR-01 | Phase 55 | Pending |
-| STR-02 | Phase 55 | Pending |
-| STR-03 | Phase 55 | Pending |
-| STR-04 | Phase 55 | Pending |
+| STR-01 | Phase 55 | Complete |
+| STR-02 | Phase 55 | Complete |
+| STR-03 | Phase 55 | Complete |
+| STR-04 | Phase 55 | Complete |
 | NET-01 | Phase 55 | Complete |
 | NET-02 | Phase 55 | Complete |
 | NET-03 | Phase 55 | Pending |
