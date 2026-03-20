@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: App-Resilienz
 status: unknown
-stopped_at: v2.1 Roadmap erstellt, bereit fuer Phase 55 Planung
-last_updated: "2026-03-20T20:39:47.540Z"
+stopped_at: Completed 55-01-PLAN.md (TokenStore + Migration)
+last_updated: "2026-03-20T20:46:52.575Z"
 progress:
-  total_phases: 9
+  total_phases: 10
   completed_phases: 0
   total_plans: 4
-  completed_plans: 0
+  completed_plans: 2
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-20)
 ## Current Position
 
 Phase: 55 (Fundament) — EXECUTING
-Plan: 1 of 4
+Plan: 3 of 4
 
 ## Accumulated Context
 
@@ -37,6 +37,8 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 - Corner-Badge System: Flex-Container mit korrekten Rundungen fuer 1-3 Badges nebeneinander (Referenz: PointsHistoryModal)
 - Material mit Dateien in Queue: Metadaten + Datei-Referenz in Queue, Datei lokal in Capacitor Filesystem, Upload nur im Vordergrund
 - Teamer kann Events offline buchen/abmelden (anders als Konfi, da Teamer keine Kapazitaetspruefung braucht)
+- [Phase 55]: Debounce 300ms fuer Netzwerkwechsel, Web-Fallback mit navigator.onLine, optimistischer Start (_isOnline = true)
+- [Phase 55]: TokenStore Pattern: sync Memory-Getter + async Preferences-Setter fuer Axios-Interceptor Kompatibilitaet
 
 ### Roadmap Evolution
 
@@ -55,6 +57,6 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-03-20
-Stopped at: v2.1 Roadmap erstellt, bereit fuer Phase 55 Planung
+Last session: 2026-03-20T20:46:52.573Z
+Stopped at: Completed 55-01-PLAN.md (TokenStore + Migration)
 Resume file: None
