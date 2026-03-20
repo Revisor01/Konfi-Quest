@@ -4,12 +4,12 @@ milestone: v2.1
 milestone_name: App-Resilienz
 status: unknown
 stopped_at: Completed 55-01-PLAN.md (TokenStore + Migration)
-last_updated: "2026-03-20T20:46:52.575Z"
+last_updated: "2026-03-20T20:52:16.298Z"
 progress:
-  total_phases: 10
+  total_phases: 14
   completed_phases: 0
   total_plans: 4
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Project State

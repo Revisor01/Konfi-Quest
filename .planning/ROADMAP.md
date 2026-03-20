@@ -345,13 +345,3 @@ Plans:
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 68 to break down)
-
-### Phase 69: Dependency-Upgrades — react-router-dom v7, qr-scanner Capacitor-native, Altlasten-Pakete
-
-**Goal:** [To be planned]
-**Requirements**: TBD
-**Depends on:** Phase 68
-**Plans:** 0 plans
-
-Plans:
-- [ ] TBD (run /gsd:plan-phase 69 to break down)
