@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: App-Resilienz
 status: unknown
-stopped_at: Completed 55-04-PLAN.md (Chat-Reconnect)
-last_updated: "2026-03-20T20:52:41.066Z"
+stopped_at: Completed 55-02-PLAN.md (localStorage-Migration)
+last_updated: "2026-03-20T20:53:15.628Z"
 progress:
   total_phases: 14
   completed_phases: 1
@@ -40,6 +40,7 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 55]: Debounce 300ms fuer Netzwerkwechsel, Web-Fallback mit navigator.onLine, optimistischer Start (_isOnline = true)
 - [Phase 55]: TokenStore Pattern: sync Memory-Getter + async Preferences-Setter fuer Axios-Interceptor Kompatibilitaet
 - [Phase 55]: LIMIT 200 als Sicherheitsgrenze fuer ?after Chat-Queries
+- [Phase 55]: Alias-Import setTokenStoreUser um Namenskollision mit AppContext setUser zu vermeiden
 
 ### Roadmap Evolution
 
@@ -63,6 +64,6 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-03-20T20:52:41.064Z
-Stopped at: Completed 55-04-PLAN.md (Chat-Reconnect)
+Last session: 2026-03-20T20:53:15.625Z
+Stopped at: Completed 55-02-PLAN.md (localStorage-Migration)
 Resume file: None
