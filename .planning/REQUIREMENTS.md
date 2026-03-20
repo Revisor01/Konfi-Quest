@@ -19,7 +19,7 @@ Requirements fuer Milestone v2.1 App-Resilienz. Offline-Faehigkeit und Zuverlaes
 
 - [x] **NET-01**: App erkennt Online/Offline-Status ueber @capacitor/network + Axios-Error-Fallback
 - [x] **NET-02**: isOnline Status im AppContext fuer alle Komponenten verfuegbar
-- [ ] **NET-03**: Socket.io Reconnect nach Offline-Phase laedt verpasste Daten nach (Chat-Nachrichten via ?after=lastMessageId)
+- [x] **NET-03**: Socket.io Reconnect nach Offline-Phase laedt verpasste Daten nach (Chat-Nachrichten via ?after=lastMessageId)
 - [x] **NET-04**: Axios 401-Handler prueft Netzwerkstatus bevor Token geloescht wird (kein Offline-Logout)
 
 ### Lese-Cache (CAC)
@@ -211,7 +211,7 @@ Deferred. Onboarding, Landing Website, Readme, Wiki.
 | STR-04 | Phase 55 | Complete |
 | NET-01 | Phase 55 | Complete |
 | NET-02 | Phase 55 | Complete |
-| NET-03 | Phase 55 | Pending |
+| NET-03 | Phase 55 | Complete |
 | NET-04 | Phase 55 | Complete |
 | CAC-01 | Phase 56 | Pending |
 | CAC-02 | Phase 56 | Pending |

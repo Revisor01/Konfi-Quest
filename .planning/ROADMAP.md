@@ -162,7 +162,7 @@ Kein Phase-Nummern-Block — separater Update-Milestone ohne Plans.
 
 **Milestone Goal:** Offline-Lese-Cache fuer alle Daten, Schreib-Queue fuer Nachrichten/Antraege, Offline-UI, Retry-Logik, Double-Submit-Schutz, inkrementeller Sync bei App-Start + Reconnect.
 
-- [ ] **Phase 55: Fundament** - Storage-Migration localStorage->Preferences + Netzwerk-Erkennung + 401-Handler-Fix
+- [x] **Phase 55: Fundament** - Storage-Migration localStorage->Preferences + Netzwerk-Erkennung + 401-Handler-Fix (completed 2026-03-20)
 - [ ] **Phase 56: Lese-Cache** - useOfflineQuery Hook + SWR-Pattern + Migration aller 30 Pages
 - [ ] **Phase 57: Retry + Schutz** - axios-retry + Double-Submit-Schutz + Idempotency-Keys Backend
 - [ ] **Phase 58: Corner-Badge System** - Flex-Container fuer Multi-Badge-Listen + Queue-Badge Design
@@ -183,12 +183,12 @@ Kein Phase-Nummern-Block — separater Update-Milestone ohne Plans.
   3. App zeigt in allen Komponenten den korrekten Online/Offline-Status an (isOnline im AppContext)
   4. Bei Netzwerkausfall wird der User NICHT ausgeloggt — der 401-Handler prueft den Netzwerkstatus bevor er Token loescht
   5. Nach einer Offline-Phase laed Socket.io verpasste Chat-Nachrichten automatisch nach
-**Plans:** 2/4 plans executed
+**Plans:** 4/4 plans complete
 Plans:
 - [x] 55-01-PLAN.md — TokenStore + Storage-Migration + Async Boot + Core-Services
-- [ ] 55-02-PLAN.md — Verbleibende localStorage-Zugriffe auf TokenStore migrieren
+- [x] 55-02-PLAN.md — Verbleibende localStorage-Zugriffe auf TokenStore migrieren
 - [x] 55-03-PLAN.md — NetworkMonitor + isOnline + 401-Handler Offline-Fix
-- [ ] 55-04-PLAN.md — Socket.io Reconnect Chat-Nachladen + Backend ?after Parameter
+- [x] 55-04-PLAN.md — Socket.io Reconnect Chat-Nachladen + Backend ?after Parameter
 
 ### Phase 56: Lese-Cache
 **Goal**: Alle Seiten zeigen gecachte Daten sofort an wenn offline — keine leeren Seiten oder Spinner mehr
@@ -277,7 +277,7 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 55. Fundament | 2/4 | In Progress|  |
+| 55. Fundament | 4/4 | Complete   | 2026-03-20 |
 | 56. Lese-Cache | 0/? | Not started | - |
 | 57. Retry + Schutz | 0/? | Not started | - |
 | 58. Corner-Badge System | 0/? | Not started | - |

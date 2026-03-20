@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: App-Resilienz
 status: unknown
-stopped_at: Completed 55-01-PLAN.md (TokenStore + Migration)
-last_updated: "2026-03-20T20:52:16.298Z"
+stopped_at: Completed 55-04-PLAN.md (Chat-Reconnect)
+last_updated: "2026-03-20T20:52:41.066Z"
 progress:
   total_phases: 14
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-20)
 ## Current Position
 
 Phase: 55 (Fundament) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 
 ## Accumulated Context
 
@@ -39,6 +39,7 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 - Teamer kann Events offline buchen/abmelden (anders als Konfi, da Teamer keine Kapazitaetspruefung braucht)
 - [Phase 55]: Debounce 300ms fuer Netzwerkwechsel, Web-Fallback mit navigator.onLine, optimistischer Start (_isOnline = true)
 - [Phase 55]: TokenStore Pattern: sync Memory-Getter + async Preferences-Setter fuer Axios-Interceptor Kompatibilitaet
+- [Phase 55]: LIMIT 200 als Sicherheitsgrenze fuer ?after Chat-Queries
 
 ### Roadmap Evolution
 
@@ -62,6 +63,6 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-03-20T20:46:52.573Z
-Stopped at: Completed 55-01-PLAN.md (TokenStore + Migration)
+Last session: 2026-03-20T20:52:41.064Z
+Stopped at: Completed 55-04-PLAN.md (Chat-Reconnect)
 Resume file: None
