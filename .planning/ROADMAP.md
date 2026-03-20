@@ -280,3 +280,13 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 | 60. Queue-Kern + Konfi-Aktionen | 0/? | Not started | - |
 | 61. Admin- + Teamer-Queue | 0/? | Not started | - |
 | 62. Sync | 0/? | Not started | - |
+
+### Phase 63: Codebase Cleanup — Quick-Wins, Konsolidierung, Bug-Fixes
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 62
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 63 to break down)

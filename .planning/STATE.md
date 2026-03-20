@@ -46,6 +46,7 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 ### Roadmap Evolution
 
 - 2026-03-20: v2.1 Roadmap erstellt — 8 Phasen (55-62), 122 Requirements, Dependency Chain STR+NET -> CAC -> RET -> OUI+OOA -> QUE+SYN
+- Phase 63 added: Codebase Cleanup — Quick-Wins, Konsolidierung, Bug-Fixes
 
 ### Pending Todos
 
