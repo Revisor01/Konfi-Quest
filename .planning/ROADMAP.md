@@ -183,7 +183,12 @@ Kein Phase-Nummern-Block — separater Update-Milestone ohne Plans.
   3. App zeigt in allen Komponenten den korrekten Online/Offline-Status an (isOnline im AppContext)
   4. Bei Netzwerkausfall wird der User NICHT ausgeloggt — der 401-Handler prueft den Netzwerkstatus bevor er Token loescht
   5. Nach einer Offline-Phase laed Socket.io verpasste Chat-Nachrichten automatisch nach
-**Plans**: TBD
+**Plans:** 4 plans
+Plans:
+- [ ] 55-01-PLAN.md — TokenStore + Storage-Migration + Async Boot + Core-Services
+- [ ] 55-02-PLAN.md — Verbleibende localStorage-Zugriffe auf TokenStore migrieren
+- [ ] 55-03-PLAN.md — NetworkMonitor + isOnline + 401-Handler Offline-Fix
+- [ ] 55-04-PLAN.md — Socket.io Reconnect Chat-Nachladen + Backend ?after Parameter
 
 ### Phase 56: Lese-Cache
 **Goal**: Alle Seiten zeigen gecachte Daten sofort an wenn offline — keine leeren Seiten oder Spinner mehr
@@ -272,7 +277,7 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 55. Fundament | 0/? | Not started | - |
+| 55. Fundament | 0/4 | Planned | - |
 | 56. Lese-Cache | 0/? | Not started | - |
 | 57. Retry + Schutz | 0/? | Not started | - |
 | 58. Corner-Badge System | 0/? | Not started | - |
