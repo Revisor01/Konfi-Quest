@@ -28,7 +28,7 @@ import {
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
 import api from '../../services/api';
-import { initializeWebSocket, getSocket, joinRoom, leaveRoom, disconnectWebSocket } from '../../services/websocket';
+import { initializeWebSocket, getSocket, joinRoom, leaveRoom, disconnectWebSocket, onReconnect } from '../../services/websocket';
 import { getToken } from '../../services/tokenStore';
 import { Message, Reaction, ChatRoomProps as ChatRoomComponentProps } from '../../types/chat';
 import { formatFileSize } from '../../utils/helpers';
@@ -339,6 +339,37 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       // Loading wird im ChatRoomView gehandhabt
     }
   };
+
+  // Ref fuer aktuelle Messages (verhindert haeufige Re-Subscriptions im Reconnect-Effect)
+  const messagesRef = useRef<Message[]>(messages);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+
+  const loadMissedMessages = async (afterId: number) => {
+    if (!room) return;
+    try {
+      const response = await api.get(`/chat/rooms/${room.id}/messages?after=${afterId}`);
+      const missedMessages = response.data;
+      if (missedMessages.length > 0) {
+        setMessages(prev => [...prev, ...missedMessages]);
+      }
+    } catch (err) {
+      console.error('Fehler beim Nachladen verpasster Nachrichten:', err);
+    }
+  };
+
+  // Bei Socket-Reconnect verpasste Nachrichten nachladen
+  useEffect(() => {
+    const unsubReconnect = onReconnect(() => {
+      const currentMessages = messagesRef.current;
+      if (currentMessages.length > 0) {
+        const lastId = currentMessages[currentMessages.length - 1].id;
+        loadMissedMessages(lastId);
+      } else {
+        loadMessages();
+      }
+    });
+    return () => { unsubReconnect(); };
+  }, [room?.id]);
 
   const markRoomAsRead = async () => {
     if (!room) return;

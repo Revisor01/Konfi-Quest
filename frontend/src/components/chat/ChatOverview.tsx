@@ -44,7 +44,7 @@ import { useBadge } from '../../contexts/BadgeContext';
 import { SectionHeader, EmptyState } from '../shared';
 import { useModalPage } from '../../contexts/ModalContext';
 import api from '../../services/api';
-import { initializeWebSocket, getSocket } from '../../services/websocket';
+import { initializeWebSocket, getSocket, onReconnect } from '../../services/websocket';
 import { getToken } from '../../services/tokenStore';
 import LoadingSpinner from '../common/LoadingSpinner';
 import SimpleCreateChatModal from './modals/SimpleCreateChatModal';
@@ -97,17 +97,19 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
       loadChatRooms(true); // Silent reload
     };
 
-    const handleReconnect = () => {
-      loadChatRooms(true); // Silent reload
-    };
-
     socket.on('newMessage', handleNewMessage);
-    socket.on('connect', handleReconnect); // Bei jedem (Re-)Connect Rooms aktualisieren
 
     return () => {
       socket.off('newMessage', handleNewMessage);
-      socket.off('connect', handleReconnect);
     };
+  }, []);
+
+  // Bei Socket-Reconnect Raumliste neu laden
+  useEffect(() => {
+    const unsubReconnect = onReconnect(() => {
+      loadChatRooms(true); // Silent reload bei Reconnect
+    });
+    return () => { unsubReconnect(); };
   }, []);
 
   const loadChatRooms = async (silent: boolean = false) => {
