@@ -544,7 +544,9 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
         return res.status(403).json({ error: 'Zugriff verweigert' });
       }
       
-      const messagesQuery = `
+      const after = parseInt(req.query.after) || null;
+
+      const selectColumns = `
       SELECT m.*,
               m.user_id as sender_id,
               m.user_type as sender_type,
@@ -573,12 +575,24 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       LEFT JOIN roles ro ON u.role_id = ro.id
       LEFT JOIN chat_polls p ON m.id = p.message_id
       LEFT JOIN chat_messages reply_msg ON m.reply_to = reply_msg.id
-      LEFT JOIN users reply_user ON reply_msg.user_id = reply_user.id
-      WHERE m.room_id = $1
-      ORDER BY m.created_at DESC
-      LIMIT $2 OFFSET $3
-    `;
-      const { rows: messages } = await db.query(messagesQuery, [roomId, limit, offset]);
+      LEFT JOIN users reply_user ON reply_msg.user_id = reply_user.id`;
+
+      let messagesQuery, queryParams;
+      if (after) {
+        messagesQuery = `${selectColumns}
+        WHERE m.room_id = $1 AND m.id > $2
+        ORDER BY m.created_at ASC
+        LIMIT 200`;
+        queryParams = [roomId, after];
+      } else {
+        messagesQuery = `${selectColumns}
+        WHERE m.room_id = $1
+        ORDER BY m.created_at DESC
+        LIMIT $2 OFFSET $3`;
+        queryParams = [roomId, limit, offset];
+      }
+
+      const { rows: messages } = await db.query(messagesQuery, queryParams);
 
       // Load votes for poll messages AND reactions for all messages
       const processedMessages = await Promise.all(messages.map(async (msg) => {
@@ -614,7 +628,8 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
         return msg;
       }));
       
-      res.json(processedMessages.reverse());
+      // Bei ?after ist die Query bereits ASC sortiert, kein reverse noetig
+      res.json(after ? processedMessages : processedMessages.reverse());
     } catch (err) {
  console.error(`Database error in GET /rooms/${req.params.roomId}/messages:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });

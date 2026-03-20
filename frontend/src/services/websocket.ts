@@ -5,6 +5,16 @@ const WS_URL = 'https://konfi-quest.de';
 
 let socket: Socket | null = null;
 
+// Reconnect-Callback-System: Benachrichtigt Listener bei Socket-Reconnect
+type ReconnectCallback = () => void;
+const reconnectCallbacks: Set<ReconnectCallback> = new Set();
+let _hasConnectedOnce = false;
+
+export const onReconnect = (callback: ReconnectCallback): (() => void) => {
+  reconnectCallbacks.add(callback);
+  return () => { reconnectCallbacks.delete(callback); };
+};
+
 export const initializeWebSocket = (token: string): Socket => {
   // Pruefen ob Socket bereits existiert (auch wenn noch nicht connected)
   if (socket) {
@@ -22,7 +32,13 @@ export const initializeWebSocket = (token: string): Socket => {
   });
 
   socket.on('connect', () => {
-    // Verbindung hergestellt
+    if (_hasConnectedOnce) {
+      // Reconnect — Callbacks benachrichtigen
+      reconnectCallbacks.forEach(cb => {
+        try { cb(); } catch (e) { console.error('Reconnect callback error:', e); }
+      });
+    }
+    _hasConnectedOnce = true;
   });
 
   socket.on('disconnect', (reason) => {
@@ -47,6 +63,7 @@ export const disconnectWebSocket = () => {
     socket.disconnect();
     socket = null;
   }
+  _hasConnectedOnce = false;
 };
 
 export const joinRoom = (roomId: number) => {
