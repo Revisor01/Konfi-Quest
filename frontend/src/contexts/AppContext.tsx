@@ -3,6 +3,7 @@ import { Capacitor, registerPlugin } from '@capacitor/core';
 import { Device } from '@capacitor/device';
 import { checkAuth } from '../services/auth';
 import api from '../services/api';
+import { networkMonitor } from '../services/networkMonitor';
 import { App } from '@capacitor/app';
 import { PushNotifications } from '@capacitor/push-notifications';
 
@@ -77,6 +78,7 @@ interface AppContextType {
   loading: boolean;
   error: string;
   success: string;
+  isOnline: boolean;
   pushNotificationsPermission: string;
   setUser: (user: User | null) => void;
   setError: (error: string) => void;
@@ -94,6 +96,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isOnline, setIsOnline] = useState<boolean>(true);
 
   // Push notifications state
   const [pushNotificationsPermission, setPushNotificationsPermission] = useState<string>('prompt');
@@ -201,6 +204,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return () => clearTimeout(timer);
     }
   }, [error, success]);
+
+  // NetworkMonitor initialisieren und isOnline State synchronisieren
+  useEffect(() => {
+    networkMonitor.init();
+    const unsubscribe = networkMonitor.subscribe((online) => {
+      setIsOnline(online);
+    });
+    // Initialen Status setzen
+    setIsOnline(networkMonitor.isOnline);
+    return () => { unsubscribe(); };
+  }, []);
 
 useEffect(() => {
   // NUR AUSFUEHREN, WENN EIN USER EINGELOGGT IST!
@@ -420,6 +434,7 @@ useEffect(() => {
     loading,
     error,
     success,
+    isOnline,
     pushNotificationsPermission,
     setUser,
     setError,
