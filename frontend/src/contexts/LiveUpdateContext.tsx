@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useCallback, ReactNode } from 'react';
 import { initializeWebSocket, getSocket } from '../services/websocket';
+import { getToken } from '../services/tokenStore';
 
 // Live Update Event Types
 export type LiveUpdateType =
@@ -40,7 +41,7 @@ export const LiveUpdateProvider = ({ children }: { children: ReactNode }) => {
 
   // Setup WebSocket listener
   useEffect(() => {
-    const token = localStorage.getItem('konfi_token');
+    const token = getToken();
     if (!token) return;
 
     const socket = initializeWebSocket(token);

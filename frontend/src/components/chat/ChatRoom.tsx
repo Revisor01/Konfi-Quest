@@ -29,6 +29,7 @@ import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
 import api from '../../services/api';
 import { initializeWebSocket, getSocket, joinRoom, leaveRoom, disconnectWebSocket } from '../../services/websocket';
+import { getToken } from '../../services/tokenStore';
 import { Message, Reaction, ChatRoomProps as ChatRoomComponentProps } from '../../types/chat';
 import { formatFileSize } from '../../utils/helpers';
 import MessageBubble from './MessageBubble';
@@ -202,7 +203,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     markRoomAsRead();
 
     // WebSocket: Join room and listen for new messages
-    const token = localStorage.getItem('konfi_token');
+    const token = getToken();
     if (token) {
       const socket = initializeWebSocket(token);
 

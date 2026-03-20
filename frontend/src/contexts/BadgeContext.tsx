@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, ReactNode, useEffect, useCa
 import { Badge } from '@capawesome/capacitor-badge';
 import api from '../services/api';
 import { initializeWebSocket, getSocket } from '../services/websocket';
+import { getToken } from '../services/tokenStore';
 import { useApp } from './AppContext';
 
 // Badge Context Interface
@@ -122,7 +123,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
 
   // WebSocket: Live-Update bei neuen Nachrichten
   useEffect(() => {
-    const token = localStorage.getItem('konfi_token');
+    const token = getToken();
     if (!token || !user) return;
 
     const socket = initializeWebSocket(token);

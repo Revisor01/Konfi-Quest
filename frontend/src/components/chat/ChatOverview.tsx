@@ -45,6 +45,7 @@ import { SectionHeader, EmptyState } from '../shared';
 import { useModalPage } from '../../contexts/ModalContext';
 import api from '../../services/api';
 import { initializeWebSocket, getSocket } from '../../services/websocket';
+import { getToken } from '../../services/tokenStore';
 import LoadingSpinner from '../common/LoadingSpinner';
 import SimpleCreateChatModal from './modals/SimpleCreateChatModal';
 import { ChatRoomOverview } from '../../types/chat';
@@ -87,7 +88,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
 
   // WebSocket: Live-Update wenn neue Nachrichten ankommen
   useEffect(() => {
-    const token = localStorage.getItem('konfi_token');
+    const token = getToken();
     if (!token) return;
 
     const socket = initializeWebSocket(token);
