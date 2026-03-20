@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: App-Resilienz
-status: defining
-stopped_at: Defining requirements
+status: roadmap_complete
+stopped_at: Roadmap erstellt, bereit fuer Phase 55 Planung
 last_updated: "2026-03-20"
-last_activity: 2026-03-20 — Milestone v2.1 gestartet, Requirements definiert (99 Requirements)
+last_activity: 2026-03-20 — Roadmap fuer v2.1 erstellt (8 Phasen, 122 Requirements)
 progress:
-  total_phases: 0
+  total_phases: 8
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-20)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v2.1 App-Resilienz — Offline-Cache, Schreib-Queue, Retry-Logik
+**Current focus:** v2.1 App-Resilienz — Phase 55 (Fundament)
 
 ## Current Position
 
-Phase: Not started (creating roadmap)
-Plan: —
-Status: Creating roadmap
-Last activity: 2026-03-20 — Milestone v2.1 gestartet
+Phase: 55 of 62 (Fundament — Storage-Migration + Netzwerk-Erkennung)
+Plan: 0 of ? in current phase
+Status: Ready to plan
+Last activity: 2026-03-20 — Roadmap fuer v2.1 erstellt (8 Phasen, 122 Requirements)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -41,23 +41,23 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 - Kein globales Offline-Banner, stattdessen kontextbezogene UI (Corner-Badge Uhr-Icon, Button-Text "Du bist offline")
 - Corner-Badge System: Flex-Container mit korrekten Rundungen fuer 1-3 Badges nebeneinander (Referenz: PointsHistoryModal)
 - Material mit Dateien in Queue: Metadaten + Datei-Referenz in Queue, Datei lokal in Capacitor Filesystem, Upload nur im Vordergrund
-- Bonus-Punkte vergeben in Queue (QUE-A20), aber normale Punkte-Vergabe bleibt online-only (Server-Autoritaet)
 - Teamer kann Events offline buchen/abmelden (anders als Konfi, da Teamer keine Kapazitaetspruefung braucht)
 
 ### Roadmap Evolution
 
-None yet.
+- 2026-03-20: v2.1 Roadmap erstellt — 8 Phasen (55-62), 122 Requirements, Dependency Chain STR+NET -> CAC -> RET -> OUI+OOA -> QUE+SYN
 
 ### Pending Todos
 
-- v3.0 Milestone geplant: Onboarding, Landing Website mit Erklaerung, Readme Github, Wiki — letzter Schritt vor oeffentlichem Launch.
+- v3.0 Milestone geplant: Onboarding, Landing Website, Readme, Wiki
 
 ### Blockers/Concerns
 
-None.
+- Research Flag: Phase 60 (Queue) — Socket.io + HTTP-Idempotency-Interaktion pruefen
+- Research Flag: Phase 62 (Sync) — updated_at Felder auf DB-Tabellen pruefen
 
 ## Session Continuity
 
 Last session: 2026-03-20
-Stopped at: Creating roadmap for v2.1
+Stopped at: v2.1 Roadmap erstellt, bereit fuer Phase 55 Planung
 Resume file: None

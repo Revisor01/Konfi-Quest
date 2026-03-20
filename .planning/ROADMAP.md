@@ -11,7 +11,9 @@
 - Shipped **v1.6 Dashboard-Konfig + Punkte-Logik** - Phases 30-33 (shipped 2026-03-09)
 - Shipped **v1.7 Unterricht + Pflicht-Events** - Phases 34-37 (shipped 2026-03-09)
 - Shipped **v1.8 Teamer** - Phases 38-43 (shipped 2026-03-12)
-- v1.9 Bugfix + Polish - Phases 44-51 (in progress)
+- Shipped **v1.9 Bugfix + Polish** - Phases 44-54 (shipped 2026-03-19)
+- **v2.0 Ionic Update + Theme** (shipped 2026-03-19)
+- **v2.1 App-Resilienz** - Phases 55-62 (planned)
 
 ## Phases
 
@@ -131,179 +133,150 @@ Phase 43: Profil + Chat (2 plans, complete)
 
 </details>
 
-### v1.9 Bugfix + Polish (In Progress)
+<details>
+<summary>Shipped v1.9 Bugfix + Polish (Phases 44-54) - SHIPPED 2026-03-19</summary>
 
-**Milestone Goal:** Alle nach dem Grundaufbau gefundenen Bugs, UI-Inkonsistenzen und Logik-Luecken schliessen -- App produktionsreif machen.
+Phase 44: Push-Debug (1 plan, complete)
+Phase 45: Event-Sichtbarkeit + Filterung (2 plans, complete)
+Phase 46: Event-Admin + Teamer-Logik (2 plans, complete)
+Phase 47: Punkte-Logik (2 plans, complete)
+Phase 48: Admin-Struktur (1 plan, complete)
+Phase 49: Badge-UI (1 plan, complete)
+Phase 50: UI-Polish (1 plan, complete)
+Phase 51: Teamer-Profil (abgedeckt durch Phase 52)
+Phase 52: Teamer-Profilseite mit Tabs (1 plan, complete)
+Phase 53: Chat verlassen (1 plan, complete)
+Phase 54: Teamer Dashboard Zertifikat-Ansicht (1 plan, complete)
 
-- [x] **Phase 44: Push-Debug** - Ghost-Push-Bug fuer Admins debuggen und fixen (completed 2026-03-18)
-- [x] **Phase 45: Event-Sichtbarkeit + Filterung** - Jahrgangs-Filter, abgesagte Events, Auto-Enrollment und Konfi-Event-Segmente korrigieren (completed 2026-03-18)
-- [x] **Phase 46: Event-Admin + Teamer-Logik** - Admin-Event-Verwaltung, Teamer-only Felder, Event-Chat-Erstellung (completed 2026-03-18)
-- [x] **Phase 47: Punkte-Logik** - Toggle-Sperre, Admin-Listen-Korrektur, Ein-Typ-Statusbalken, History-Header (completed 2026-03-18)
-- [x] **Phase 48: Admin-Struktur** - Zertifikate, Dashboard-Einstellungen und Badges als Unterseiten, Event-Badge, Chat-Filter (completed 2026-03-18)
-- [x] **Phase 49: Badge-UI** - Badge-Modal-Selection, Segment-Position, Teamer-Badge-Ansicht (completed 2026-03-19)
-- [x] **Phase 50: UI-Polish** - Toggles, QR-Button, Badge-Rundung, Chat-Badge, Befoerdern-Text (completed 2026-03-19)
-- [x] **Phase 51: Teamer-Profil** - Teamer-Profilseite ordentlich gestalten (abgedeckt durch Phase 52)
+</details>
+
+<details>
+<summary>Shipped v2.0 Ionic Update + Theme - SHIPPED 2026-03-19</summary>
+
+Ionic 8.8.1, Ionicons 8, rdlabo iOS26 2.3.0 + MD3 1.1.0, alle Capacitor Plugins auf v7 Stand.
+Kein Phase-Nummern-Block — separater Update-Milestone ohne Plans.
+
+</details>
+
+### v2.1 App-Resilienz (Planned)
+
+**Milestone Goal:** Offline-Lese-Cache fuer alle Daten, Schreib-Queue fuer Nachrichten/Antraege, Offline-UI, Retry-Logik, Double-Submit-Schutz, inkrementeller Sync bei App-Start + Reconnect.
+
+- [ ] **Phase 55: Fundament** - Storage-Migration localStorage->Preferences + Netzwerk-Erkennung + 401-Handler-Fix
+- [ ] **Phase 56: Lese-Cache** - useOfflineQuery Hook + SWR-Pattern + Migration aller 30 Pages
+- [ ] **Phase 57: Retry + Schutz** - axios-retry + Double-Submit-Schutz + Idempotency-Keys Backend
+- [ ] **Phase 58: Corner-Badge System** - Flex-Container fuer Multi-Badge-Listen + Queue-Badge Design
+- [ ] **Phase 59: Online-Only Buttons** - 42 Online-Only-Aktionen disablen + Chat-Queue-Status-UI
+- [ ] **Phase 60: Queue-Kern + Konfi-Aktionen** - Queue-Infrastruktur + Konfi-Queue + Fire-and-Forget + Chat-Queue-UI
+- [ ] **Phase 61: Admin- + Teamer-Queue** - 21 Admin-Aktionen + 2 Teamer-Aktionen queue-faehig
+- [ ] **Phase 62: Sync** - SWR-Revalidierung + Socket.io-Reconnect-Sync + App-Resume-Sync
 
 ## Phase Details
 
-### Phase 44: Push-Debug
-**Goal**: Admin erhaelt keine unerklaeerten leeren Push-Benachrichtigungen mehr
-**Depends on**: Nothing (standalone Debugging)
-**Requirements**: PUSH-01
+### Phase 55: Fundament
+**Goal**: App hat eine iOS-sichere Storage-Grundlage und erkennt zuverlaessig den Netzwerkstatus — kein faelschlicher Offline-Logout mehr
+**Depends on**: Nothing (Grundlage fuer alles Nachfolgende)
+**Requirements**: STR-01, STR-02, STR-03, STR-04, NET-01, NET-02, NET-03, NET-04
 **Success Criteria** (what must be TRUE):
-  1. Admin-Geraet zeigt keine leeren Push-Benachrichtigungen mehr (Ghost-Pushes alle 5 Min sind eliminiert)
-  2. Root Cause ist identifiziert und dokumentiert (welcher Sender, welcher Trigger)
-**Plans**: 1 plan
+  1. JWT-Token und User-Daten ueberleben einen App-Neustart auf iOS zuverlaessig (kein Datenverlust durch WKWebView Storage-Eviction)
+  2. Bestehende User mit localStorage-Daten werden beim naechsten App-Start automatisch migriert ohne erneuten Login
+  3. App zeigt in allen Komponenten den korrekten Online/Offline-Status an (isOnline im AppContext)
+  4. Bei Netzwerkausfall wird der User NICHT ausgeloggt — der 401-Handler prueft den Netzwerkstatus bevor er Token loescht
+  5. Nach einer Offline-Phase laed Socket.io verpasste Chat-Nachrichten automatisch nach
+**Plans**: TBD
 
-Plans:
-- [ ] 44-01-PLAN.md -- Ghost-Push-Fix: Silent Push, Admin-Ausschluss, Badge-Change-Detection
-
-### Phase 45: Event-Sichtbarkeit + Filterung
-**Goal**: Konfis sehen nur die fuer sie relevanten Events und werden korrekt zu Pflicht-Events enrollt
-**Depends on**: Nothing (Bugfixes auf bestehendem System)
-**Requirements**: EVT-v19-01, EVT-v19-02, EVT-v19-03, EVT-v19-04, EVT-v19-08, EVT-v19-09
+### Phase 56: Lese-Cache
+**Goal**: Alle Seiten zeigen gecachte Daten sofort an wenn offline — keine leeren Seiten oder Spinner mehr
+**Depends on**: Phase 55 (Storage + Netzwerk-Erkennung muessen stehen)
+**Requirements**: CAC-01, CAC-02, CAC-03, CAC-04, CAC-05, CAC-06, CAC-07, CAC-08, CAC-09, CAC-10, CAC-11
 **Success Criteria** (what must be TRUE):
-  1. Konfi sieht ausschliesslich Events seines eigenen Jahrgangs (keine fremden Pflicht-Events oder Konfirmationen)
-  2. Abgesagte Events tauchen nicht mehr in der Konfi-Event-Liste auf
-  3. Konfi sieht keinen Abmelde-Button bei Pflicht-Events, bei denen er nicht angemeldet ist
-  4. Neuer Konfi in einem Jahrgang wird automatisch zu allen bestehenden Pflicht-Events des Jahrgangs hinzugefuegt
-  5. Konfi-Events zeigen "Meine" als erstes Segment, Admin-Event-Liste hat Jahrgangs-Filter mit Jahrgang in Listen-Details
-**Plans**: 1 plan
+  1. Konfi sieht Dashboard (Punkte, Ringe, Level, Ranking), Events und Chat-Verlauf auch ohne Internetverbindung
+  2. Admin sieht alle Stammdaten-Listen (Konfis, Aktivitaeten, Badges, Kategorien, Jahrgaenge, Level, Zertifikat-Typen, Settings) auch offline
+  3. Teamer sieht Material-Liste, Badges und Konfi-Stats auch offline
+  4. Gecachte Daten werden sofort angezeigt und im Hintergrund aktualisiert sobald online (SWR-Pattern sichtbar: Daten da, kurzes Update)
+  5. Nach Logout sind alle user-spezifischen Cache-Daten geloescht
+**Plans**: TBD
 
-Plans:
-- [ ] 45-01-PLAN.md -- Backend Jahrgangs-Filter + Abgesagte-Events + Auto-Enrollment, Frontend Segmente Meine/Alle/Konfi + Opt-out-Fix
-- [ ] 45-02-PLAN.md -- Admin-Event-Liste Jahrgangs-Filter Dropdown
-
-### Phase 46: Event-Admin + Teamer-Logik
-**Goal**: Admin kann Events vollstaendig verwalten inkl. Absagen, Teamer-Felder und Event-Chat-Erstellung
-**Depends on**: Phase 45
-**Requirements**: EVT-v19-05, EVT-v19-06, EVT-v19-07, EVT-v19-10, EVT-v19-11, EVT-v19-12
+### Phase 57: Retry + Schutz
+**Goal**: Transiente Netzwerk-Fehler werden automatisch wiederholt und kein Button kann doppelt abgeschickt werden
+**Depends on**: Phase 56 (Lese-Pfad muss stabil sein bevor Schreib-Pfad abgesichert wird)
+**Requirements**: RET-01, RET-02, RET-03
 **Success Criteria** (what must be TRUE):
-  1. Admin kann ein Event absagen und die Absage wird korrekt verarbeitet
-  2. Teamer-only Events blenden Punkt-Typ, Teilnehmer-Limit, Warteliste und Jahrgangszuordnung aus
-  3. "Mitbringen" und "Pflicht" werden in Event-Liste und Details farbig hervorgehoben
-  4. Admin Event-Details zeigen korrekte Hinweise (kein doppelter Teamer-Hinweis, getrennte Listen fuer Teamer und Konfis hinzufuegen)
-  5. Aus einem Event kann ein Chat mit allen angemeldeten Teilnehmer:innen erstellt werden
-**Plans**: 1 plan
+  1. Bei kurzem Netzwerkausbruch (z.B. Tunnelfahrt) werden fehlgeschlagene API-Calls automatisch 3x mit steigendem Abstand wiederholt — ohne User-Interaktion
+  2. Alle Submit-Buttons (Chat senden, Antrag stellen, Event erstellen, etc.) sind waehrend des Requests disabled und zeigen einen Loading-Spinner
+  3. Backend akzeptiert Idempotency-Keys (client_id UUID) und verhindert doppelte Eintraege bei Retry
+**Plans**: TBD
 
-Plans:
-- [ ] 46-01-PLAN.md -- EventModal Teamer-only Felder + Pflicht/Mitbringen Hervorhebung
-- [ ] 46-02-PLAN.md -- EventDetailView Cancel, Chat, getrennte Add-Buttons, Teamer-Hinweis
-
-### Phase 47: Punkte-Logik
-**Goal**: Punkte-System funktioniert korrekt bei ein oder zwei aktiven Typen mit konsistenter Anzeige
-**Depends on**: Nothing (Bugfixes auf bestehendem System)
-**Requirements**: PKT-v19-01, PKT-v19-02, PKT-v19-03, PKT-v19-04
+### Phase 58: Corner-Badge System
+**Goal**: Listen-Elemente koennen mehrere Status-Badges nebeneinander anzeigen — Voraussetzung fuer Queue-Status-Badges
+**Depends on**: Phase 57 (Idempotency-Keys muessen vor Queue-Arbeit stehen)
+**Requirements**: OUI-01, OUI-02, OUI-03, OUI-04, OUI-05, OUI-06, OUI-07
 **Success Criteria** (what must be TRUE):
-  1. Beim Deaktivieren eines Punkt-Typs wird der Toggle des anderen ausgegraut mit Hinweis zur Konfi-Anzahl
-  2. Admin-Konfi-Liste zeigt korrekte Gesamtpunkte basierend auf aktiven Typen
-  3. Bei nur einem aktiven Punkt-Typ wird ein breiter Statusbalken angezeigt (analog zum Gesamtbalken bei zwei Typen)
-  4. Punkte-History Header zeigt korrekte Daten mit besserem Layout fuer 6 Stats
-**Plans**: 1 plan
+  1. Alle bestehenden Corner-Badges nutzen den neuen `.app-corner-badges` Flex-Container (keine absolute Positionierung mehr)
+  2. Badge-Rundung folgt dem PointsHistory-Referenz-Pattern: letztes Kind hat Card-Ecke oben-rechts, alle anderen unten-beidseitig, 2px weisser Trenner dazwischen
+  3. Queue-Badge (Uhr-Icon, orange) erscheint als linkster Badge bei pending Queue-Items und verschwindet nach Zustellung
+  4. Fehler-Badge (Ausrufezeichen, rot) erscheint bei permanentem Fehler mit Tap-Optionen "Erneut senden" oder "Loeschen"
+**Plans**: TBD
 
-Plans:
-- [ ] 47-01-PLAN.md — Toggle-Sperre, getTotalPoints Fix, Ein-Typ-Statusbalken
-- [ ] 47-02-PLAN.md — History-Header 3x2 Grid + Teamer-Konfi-History
-
-### Phase 48: Admin-Struktur
-**Goal**: Admin-Bereich ist sauber strukturiert mit Zertifikate, Dashboard und Badges als eigene Unterseiten
-**Depends on**: Nothing (Strukturumbau)
-**Requirements**: ADM-01, ADM-02, ADM-03, ADM-04, ADM-05
+### Phase 59: Online-Only Buttons
+**Goal**: Alle Aktionen die Server-Validierung brauchen zeigen klar "Du bist offline" statt kryptischer Fehler
+**Depends on**: Phase 55 (isOnline-Status aus AppContext)
+**Requirements**: OUI-08, OUI-09, OUI-10, OUI-11, OUI-12, OOA-01, OOA-02, OOA-03, OOA-04, OOA-05, OOA-06, OOA-07, OOA-08, OOA-09, OOA-10, OOA-11, OOA-12, OOA-13, OOA-14, OOA-15, OOA-16, OOA-17, OOA-18, OOA-19, OOA-20, OOA-21, OOA-22, OOA-23, OOA-24, OOA-25, OOA-26, OOA-27, OOA-28, OOA-29, OOA-30, OOA-31, OOA-32, OOA-33, OOA-34, OOA-35, OOA-36, OOA-37, OOA-38, OOA-39, OOA-40, OOA-41, OOA-42
 **Success Criteria** (what must be TRUE):
-  1. Zertifikat-Verwaltung, Dashboard-Einstellungen und Badge-Verwaltung sind als Unterseiten im Inhalt-Bereich erreichbar (nicht inline in Settings)
-  2. Badge-Erstellung fragt vorab den Typ (Konfi/Teamer) ab
-  3. Events-Tab zeigt ein Badge fuer Events die noch verbucht werden muessen
-  4. Chat-Filter zeigt "Konfis" und "Team" statt "Admins"
-**Plans**: 1 plan
+  1. Alle 42 Online-Only-Aktionen (destruktive Ops, Punkte-Vergabe, Server-Validierung) zeigen "Du bist offline" als Button-Text und sind disabled wenn offline
+  2. Kein globales Offline-Banner — nur kontextbezogene Hinweise an betroffenen Buttons/Elementen
+  3. Pending Chat-Nachrichten zeigen Uhr-Icon neben dem Zeitstempel; nach Zustellung verschwindet die Uhr
+  4. Fehlgeschlagene Chat-Nachrichten zeigen rotes Ausrufezeichen mit "Erneut senden" oder "Loeschen" bei Tap
+**Plans**: TBD
 
-Plans:
-- [ ] 48-01-PLAN.md -- Chat-Filter Konfis/Team + ADM-01 bis ADM-04 Verifizierung
-
-### Phase 49: Badge-UI
-**Goal**: Badge-Verwaltung und -Anzeige sind konsistent und korrekt gestaltet
-**Depends on**: Phase 48 (Badge-Verwaltung als Unterseite muss stehen)
-**Requirements**: UI-05, UI-06, UI-07
+### Phase 60: Queue-Kern + Konfi-Aktionen
+**Goal**: Konfis koennen Chat-Nachrichten senden und Aktivitaets-Antraege stellen auch wenn sie offline sind — alles wird bei Reconnect automatisch zugestellt
+**Depends on**: Phase 58 (Corner-Badge System), Phase 59 (Chat-Queue-UI)
+**Requirements**: QUE-I01, QUE-I02, QUE-I03, QUE-I04, QUE-I05, QUE-K01, QUE-K02, QUE-K03, QUE-K04, QUE-K05, QUE-FF01, QUE-FF02, QUE-FF03, QUE-FF04, QUE-FF05, QUE-FF06, QUE-FF07, QUE-FF08, OUI-13
 **Success Criteria** (what must be TRUE):
-  1. Badge-Modal-Auswahl nutzt backgroundColor-Change Pattern (keine Umrandung)
-  2. Badge-Segment (Konfi/Teamer) steht unter dem Header, "Teamer:innen" ist bei Auswahl nicht lila/fett
-  3. Teamer-Badge-Ansicht ist 1:1 wie Konfi-Badge-Ansicht aufgebaut mit Segment-Wechsel (Teamer vorausgewaehlt)
-**Plans**: 1 plan
+  1. Konfi kann offline eine Chat-Nachricht (Text + Bild) senden — die Nachricht erscheint sofort mit Uhr-Icon und wird bei Reconnect automatisch zugestellt
+  2. Konfi kann offline einen Aktivitaets-Antrag (mit/ohne Foto) stellen — der Antrag erscheint sofort in der Liste mit Uhr-Icon
+  3. Queue ueberlebt App-Neustart und wird bei App-Resume und Reconnect automatisch abgearbeitet
+  4. Fire-and-Forget-Aktionen (Mark-Read, Reaktionen, Poll, Settings-Toggles, Bibeluebersetzung, Funktionsbeschreibung) werden rein optimistisch ausgefuehrt ohne Queue-Feedback
+  5. Fehlgeschlagene Queue-Items (4xx) werden entfernt und der User informiert; retribare Fehler (5xx) bleiben in der Queue (max 5 Retries)
+**Plans**: TBD
 
-Plans:
-- [ ] 49-01-PLAN.md -- Badge-Modal backgroundColor-Change + Segment-Styling (UI-07 bereits erledigt durch Phase 52)
-
-### Phase 50: UI-Polish
-**Goal**: Kleinere UI-Inkonsistenzen in verschiedenen Bereichen sind behoben
-**Depends on**: Nothing (unabhaengige UI-Fixes)
-**Requirements**: UI-01, UI-02, UI-03, UI-04, UI-08
+### Phase 61: Admin- + Teamer-Queue
+**Goal**: Admins und Teamer koennen ihre haeufigsten Aktionen auch offline ausfuehren — Events, Aktivitaeten, Badges, Kategorien, Levels, Zertifikate, Material erstellen/bearbeiten
+**Depends on**: Phase 60 (Queue-Infrastruktur muss stehen)
+**Requirements**: QUE-A01, QUE-A02, QUE-A03, QUE-A04, QUE-A05, QUE-A06, QUE-A07, QUE-A08, QUE-A09, QUE-A10, QUE-A11, QUE-A12, QUE-A13, QUE-A14, QUE-A15, QUE-A16, QUE-A17, QUE-A18, QUE-A19, QUE-A20, QUE-A21, QUE-T01, QUE-T02
 **Success Criteria** (what must be TRUE):
-  1. Toggle-Switches stehen rechts aussen in Jahrgang-Modal und Dashboard-Einstellungen
-  2. QR-Scanner-Button ist oben rechts im Header positioniert (kein FAB unten rechts)
-  3. Badge-Fortschritt zeigt keine Nachkommastellen
-  4. Chat-Tab-Badge wird nicht abgeschnitten (z-index/Overflow korrigiert)
-  5. Befoerdern-Button zeigt Info-Hinweistext ueber dem Button
-  6. Beschreibungstexte in Event-Details und Material-Details haben lesbare Schriftgroesse
-**Plans**: 1 plan
+  1. Admin kann offline Events (einzeln + Serie), Aktivitaeten, Badges, Kategorien, Jahrgaenge, Levels und Zertifikat-Typen erstellen/bearbeiten — alles erscheint sofort mit Uhr-Icon
+  2. Admin kann offline Material erstellen/bearbeiten (Metadaten sofort, Datei-Upload bei naechstem Vordergrund-Aufenthalt)
+  3. Admin kann offline Antraege genehmigen/ablehnen/zuruecksetzen, Bonus-Punkte vergeben und Aktivitaeten zuweisen
+  4. Teamer kann offline Events buchen und sich abmelden — beides mit Uhr-Icon am Event
+**Plans**: TBD
 
-Plans:
-- [ ] 50-01-PLAN.md -- Toggle-Position, QR-Header, Badge-Rundung, Chat-Badge-Overflow, Befoerdern-Hinweis, Beschreibungstexte
-
-### Phase 51: Teamer-Profil -- COMPLETE (abgedeckt durch Phase 52)
-**Goal**: Teamer hat eine ordentliche, vollstaendige Profilseite
-**Status**: Erledigt -- Phase 52 (Teamer-Profilseite mit Tabs) deckt alle Anforderungen ab
+### Phase 62: Sync
+**Goal**: App ist nach App-Resume und Socket.io-Reconnect sofort aktuell — keine verpassten Daten, korrekte Reihenfolge
+**Depends on**: Phase 60 (Queue muss vor Sync stehen — Reihenfolge: Queue flushen -> Cache invalidieren -> Badge-Counts)
+**Requirements**: SYN-01, SYN-02, SYN-03, SYN-04
+**Success Criteria** (what must be TRUE):
+  1. Bei App-Start zeigt die App sofort gecachte Daten und aktualisiert im Hintergrund (kein sichtbarer Ladebalken bei guten Daten)
+  2. Nach Socket.io-Reconnect: Queue wird zuerst geleert, dann Cache invalidiert, dann Badge-Counts aktualisiert — in dieser Reihenfolge
+  3. Backend Chat-Route liefert mit ?after=lastMessageId nur verpasste Nachrichten (kein kompletter Reload)
+  4. Bei App-Resume (Hintergrund -> Vordergrund) wird die aktive Seite automatisch revalidiert
+**Plans**: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 44 -> 45 -> 46 -> 47 -> 48 -> 49 -> 50 -> 51
+Phases execute in numeric order: 55 -> 56 -> 57 -> 58 -> 59 -> 60 -> 61 -> 62
+
+Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kann parallel zu 56-58 geplant werden, muss aber VOR Phase 60 abgeschlossen sein.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 44. Push-Debug | 1/1 | Complete    | 2026-03-18 |
-| 45. Event-Sichtbarkeit + Filterung | 2/2 | Complete    | 2026-03-18 |
-| 46. Event-Admin + Teamer-Logik | 2/2 | Complete    | 2026-03-18 |
-| 47. Punkte-Logik | 2/2 | Complete    | 2026-03-18 |
-| 48. Admin-Struktur | 1/1 | Complete    | 2026-03-18 |
-| 49. Badge-UI | 1/1 | Complete    | 2026-03-19 |
-| 50. UI-Polish | 1/1 | Complete    | 2026-03-19 |
-| 51. Teamer-Profil | 0/1 | Not started | - |
-
-### Phase 52: Teamer-Profilseite mit Tabs (Badges, Konfi-Stats)
-
-**Goal:** Teamer-Profilseite vollstaendig ueberarbeiten mit AdminProfilePage-Layout, Konto-Einstellungen, Teamer-Badges im Konfi-Grid-Look, Konfi-Badges und Konfi-Stats (conditional)
-**Requirements**: PRF-02, PRF-03, TMR-01
-**Depends on:** Phase 51
-**Plans:** 1/1 plans complete
-
-Plans:
-- [ ] 52-01-PLAN.md -- Backend erweitern + TeamerProfilePage komplett ueberarbeiten
-
-### Phase 53: Chat verlassen -- Gruppenchats (z.B. Event-Chats) verlassen, Jahrgangschat nicht verlassbar
-
-**Goal:** Konfis und Teamer:innen koennen Gruppenchats verlassen, Jahrgangschats und Direct-Chats bleiben unverlassbar
-**Requirements**: CHAT-LEAVE-01, CHAT-LEAVE-02
-**Depends on:** Phase 52
-**Success Criteria** (what must be TRUE):
-  1. Konfi/Teamer kann einen Gruppenchat (type=group) ueber Drei-Punkte-Menu verlassen
-  2. Teamer kann einen Admin-Chat verlassen, Admins nicht
-  3. Jahrgangschats und Direct-Chats haben keine Verlassen-Option
-  4. Nach Verlassen verschwindet der Chat aus der eigenen Liste
-**Plans:** 1/1 plans complete
-
-Plans:
-- [ ] 53-01-PLAN.md -- Backend Self-Leave Endpoint + Frontend Drei-Punkte-Menu im Chat-Header
-
-### Phase 54: Teamer Dashboard Zertifikat-Ansicht anpassen
-
-**Goal:** Zertifikat-Sektion im Teamer-Dashboard von horizontalem Scroll auf 2x2 Grid umstellen, kompaktere Karten, 4 Standard-Zertifikate bei Org-Erstellung automatisch anlegen
-**Requirements**: CERT-GRID-01, CERT-GRID-02, CERT-SEED-01, CERT-SEED-02
-**Depends on:** Phase 53
-**Success Criteria** (what must be TRUE):
-  1. Teamer-Dashboard zeigt Zertifikate in einem 2x2 Grid statt horizontalem Scroll
-  2. Zertifikat-Karten sind kompakter mit weniger Padding und kleineren Icons
-  3. Neue Organisationen erhalten automatisch 4 Standard-Zertifikat-Typen
-  4. Bestehende Organisationen ohne Zertifikat-Typen erhalten die 4 Standards beim naechsten Deploy
-**Plans:** 1/1 plans complete
-
-Plans:
-- [ ] 54-01-PLAN.md -- 2x2 Grid Layout + kompakte Karten + Default-Zertifikat-Seed bei Org-Erstellung
+| 55. Fundament | 0/? | Not started | - |
+| 56. Lese-Cache | 0/? | Not started | - |
+| 57. Retry + Schutz | 0/? | Not started | - |
+| 58. Corner-Badge System | 0/? | Not started | - |
+| 59. Online-Only Buttons | 0/? | Not started | - |
+| 60. Queue-Kern + Konfi-Aktionen | 0/? | Not started | - |
+| 61. Admin- + Teamer-Queue | 0/? | Not started | - |
+| 62. Sync | 0/? | Not started | - |

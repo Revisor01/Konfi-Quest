@@ -205,134 +205,134 @@ Deferred. Onboarding, Landing Website, Readme, Wiki.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| STR-01 | TBD | Pending |
-| STR-02 | TBD | Pending |
-| STR-03 | TBD | Pending |
-| STR-04 | TBD | Pending |
-| NET-01 | TBD | Pending |
-| NET-02 | TBD | Pending |
-| NET-03 | TBD | Pending |
-| NET-04 | TBD | Pending |
-| CAC-01 | TBD | Pending |
-| CAC-02 | TBD | Pending |
-| CAC-03 | TBD | Pending |
-| CAC-04 | TBD | Pending |
-| CAC-05 | TBD | Pending |
-| CAC-06 | TBD | Pending |
-| CAC-07 | TBD | Pending |
-| CAC-08 | TBD | Pending |
-| CAC-09 | TBD | Pending |
-| CAC-10 | TBD | Pending |
-| CAC-11 | TBD | Pending |
-| RET-01 | TBD | Pending |
-| RET-02 | TBD | Pending |
-| RET-03 | TBD | Pending |
-| OUI-01 | TBD | Pending |
-| OUI-02 | TBD | Pending |
-| OUI-03 | TBD | Pending |
-| OUI-04 | TBD | Pending |
-| OUI-05 | TBD | Pending |
-| OUI-06 | TBD | Pending |
-| OUI-07 | TBD | Pending |
-| OUI-08 | TBD | Pending |
-| OUI-09 | TBD | Pending |
-| OUI-10 | TBD | Pending |
-| OUI-11 | TBD | Pending |
-| OUI-12 | TBD | Pending |
-| OUI-13 | TBD | Pending |
-| QUE-K01 | TBD | Pending |
-| QUE-K02 | TBD | Pending |
-| QUE-K03 | TBD | Pending |
-| QUE-K04 | TBD | Pending |
-| QUE-K05 | TBD | Pending |
-| QUE-FF01 | TBD | Pending |
-| QUE-FF02 | TBD | Pending |
-| QUE-FF03 | TBD | Pending |
-| QUE-FF04 | TBD | Pending |
-| QUE-FF05 | TBD | Pending |
-| QUE-FF06 | TBD | Pending |
-| QUE-FF07 | TBD | Pending |
-| QUE-FF08 | TBD | Pending |
-| QUE-A01 | TBD | Pending |
-| QUE-A02 | TBD | Pending |
-| QUE-A03 | TBD | Pending |
-| QUE-A04 | TBD | Pending |
-| QUE-A05 | TBD | Pending |
-| QUE-A06 | TBD | Pending |
-| QUE-A07 | TBD | Pending |
-| QUE-A08 | TBD | Pending |
-| QUE-A09 | TBD | Pending |
-| QUE-A10 | TBD | Pending |
-| QUE-A11 | TBD | Pending |
-| QUE-A12 | TBD | Pending |
-| QUE-A13 | TBD | Pending |
-| QUE-A14 | TBD | Pending |
-| QUE-A15 | TBD | Pending |
-| QUE-A16 | TBD | Pending |
-| QUE-A17 | TBD | Pending |
-| QUE-A18 | TBD | Pending |
-| QUE-A19 | TBD | Pending |
-| QUE-A20 | TBD | Pending |
-| QUE-A21 | TBD | Pending |
-| QUE-T01 | TBD | Pending |
-| QUE-T02 | TBD | Pending |
-| QUE-I01 | TBD | Pending |
-| QUE-I02 | TBD | Pending |
-| QUE-I03 | TBD | Pending |
-| QUE-I04 | TBD | Pending |
-| QUE-I05 | TBD | Pending |
-| OOA-01 | TBD | Pending |
-| OOA-02 | TBD | Pending |
-| OOA-03 | TBD | Pending |
-| OOA-04 | TBD | Pending |
-| OOA-05 | TBD | Pending |
-| OOA-06 | TBD | Pending |
-| OOA-07 | TBD | Pending |
-| OOA-08 | TBD | Pending |
-| OOA-09 | TBD | Pending |
-| OOA-10 | TBD | Pending |
-| OOA-11 | TBD | Pending |
-| OOA-12 | TBD | Pending |
-| OOA-13 | TBD | Pending |
-| OOA-14 | TBD | Pending |
-| OOA-15 | TBD | Pending |
-| OOA-16 | TBD | Pending |
-| OOA-17 | TBD | Pending |
-| OOA-18 | TBD | Pending |
-| OOA-19 | TBD | Pending |
-| OOA-20 | TBD | Pending |
-| OOA-21 | TBD | Pending |
-| OOA-22 | TBD | Pending |
-| OOA-23 | TBD | Pending |
-| OOA-24 | TBD | Pending |
-| OOA-25 | TBD | Pending |
-| OOA-26 | TBD | Pending |
-| OOA-27 | TBD | Pending |
-| OOA-28 | TBD | Pending |
-| OOA-29 | TBD | Pending |
-| OOA-30 | TBD | Pending |
-| OOA-31 | TBD | Pending |
-| OOA-32 | TBD | Pending |
-| OOA-33 | TBD | Pending |
-| OOA-34 | TBD | Pending |
-| OOA-35 | TBD | Pending |
-| OOA-36 | TBD | Pending |
-| OOA-37 | TBD | Pending |
-| OOA-38 | TBD | Pending |
-| OOA-39 | TBD | Pending |
-| OOA-40 | TBD | Pending |
-| OOA-41 | TBD | Pending |
-| OOA-42 | TBD | Pending |
-| SYN-01 | TBD | Pending |
-| SYN-02 | TBD | Pending |
-| SYN-03 | TBD | Pending |
-| SYN-04 | TBD | Pending |
+| STR-01 | Phase 55 | Pending |
+| STR-02 | Phase 55 | Pending |
+| STR-03 | Phase 55 | Pending |
+| STR-04 | Phase 55 | Pending |
+| NET-01 | Phase 55 | Pending |
+| NET-02 | Phase 55 | Pending |
+| NET-03 | Phase 55 | Pending |
+| NET-04 | Phase 55 | Pending |
+| CAC-01 | Phase 56 | Pending |
+| CAC-02 | Phase 56 | Pending |
+| CAC-03 | Phase 56 | Pending |
+| CAC-04 | Phase 56 | Pending |
+| CAC-05 | Phase 56 | Pending |
+| CAC-06 | Phase 56 | Pending |
+| CAC-07 | Phase 56 | Pending |
+| CAC-08 | Phase 56 | Pending |
+| CAC-09 | Phase 56 | Pending |
+| CAC-10 | Phase 56 | Pending |
+| CAC-11 | Phase 56 | Pending |
+| RET-01 | Phase 57 | Pending |
+| RET-02 | Phase 57 | Pending |
+| RET-03 | Phase 57 | Pending |
+| OUI-01 | Phase 58 | Pending |
+| OUI-02 | Phase 58 | Pending |
+| OUI-03 | Phase 58 | Pending |
+| OUI-04 | Phase 58 | Pending |
+| OUI-05 | Phase 58 | Pending |
+| OUI-06 | Phase 58 | Pending |
+| OUI-07 | Phase 58 | Pending |
+| OUI-08 | Phase 59 | Pending |
+| OUI-09 | Phase 59 | Pending |
+| OUI-10 | Phase 59 | Pending |
+| OUI-11 | Phase 59 | Pending |
+| OUI-12 | Phase 59 | Pending |
+| OUI-13 | Phase 60 | Pending |
+| QUE-K01 | Phase 60 | Pending |
+| QUE-K02 | Phase 60 | Pending |
+| QUE-K03 | Phase 60 | Pending |
+| QUE-K04 | Phase 60 | Pending |
+| QUE-K05 | Phase 60 | Pending |
+| QUE-FF01 | Phase 60 | Pending |
+| QUE-FF02 | Phase 60 | Pending |
+| QUE-FF03 | Phase 60 | Pending |
+| QUE-FF04 | Phase 60 | Pending |
+| QUE-FF05 | Phase 60 | Pending |
+| QUE-FF06 | Phase 60 | Pending |
+| QUE-FF07 | Phase 60 | Pending |
+| QUE-FF08 | Phase 60 | Pending |
+| QUE-A01 | Phase 61 | Pending |
+| QUE-A02 | Phase 61 | Pending |
+| QUE-A03 | Phase 61 | Pending |
+| QUE-A04 | Phase 61 | Pending |
+| QUE-A05 | Phase 61 | Pending |
+| QUE-A06 | Phase 61 | Pending |
+| QUE-A07 | Phase 61 | Pending |
+| QUE-A08 | Phase 61 | Pending |
+| QUE-A09 | Phase 61 | Pending |
+| QUE-A10 | Phase 61 | Pending |
+| QUE-A11 | Phase 61 | Pending |
+| QUE-A12 | Phase 61 | Pending |
+| QUE-A13 | Phase 61 | Pending |
+| QUE-A14 | Phase 61 | Pending |
+| QUE-A15 | Phase 61 | Pending |
+| QUE-A16 | Phase 61 | Pending |
+| QUE-A17 | Phase 61 | Pending |
+| QUE-A18 | Phase 61 | Pending |
+| QUE-A19 | Phase 61 | Pending |
+| QUE-A20 | Phase 61 | Pending |
+| QUE-A21 | Phase 61 | Pending |
+| QUE-T01 | Phase 61 | Pending |
+| QUE-T02 | Phase 61 | Pending |
+| QUE-I01 | Phase 60 | Pending |
+| QUE-I02 | Phase 60 | Pending |
+| QUE-I03 | Phase 60 | Pending |
+| QUE-I04 | Phase 60 | Pending |
+| QUE-I05 | Phase 60 | Pending |
+| OOA-01 | Phase 59 | Pending |
+| OOA-02 | Phase 59 | Pending |
+| OOA-03 | Phase 59 | Pending |
+| OOA-04 | Phase 59 | Pending |
+| OOA-05 | Phase 59 | Pending |
+| OOA-06 | Phase 59 | Pending |
+| OOA-07 | Phase 59 | Pending |
+| OOA-08 | Phase 59 | Pending |
+| OOA-09 | Phase 59 | Pending |
+| OOA-10 | Phase 59 | Pending |
+| OOA-11 | Phase 59 | Pending |
+| OOA-12 | Phase 59 | Pending |
+| OOA-13 | Phase 59 | Pending |
+| OOA-14 | Phase 59 | Pending |
+| OOA-15 | Phase 59 | Pending |
+| OOA-16 | Phase 59 | Pending |
+| OOA-17 | Phase 59 | Pending |
+| OOA-18 | Phase 59 | Pending |
+| OOA-19 | Phase 59 | Pending |
+| OOA-20 | Phase 59 | Pending |
+| OOA-21 | Phase 59 | Pending |
+| OOA-22 | Phase 59 | Pending |
+| OOA-23 | Phase 59 | Pending |
+| OOA-24 | Phase 59 | Pending |
+| OOA-25 | Phase 59 | Pending |
+| OOA-26 | Phase 59 | Pending |
+| OOA-27 | Phase 59 | Pending |
+| OOA-28 | Phase 59 | Pending |
+| OOA-29 | Phase 59 | Pending |
+| OOA-30 | Phase 59 | Pending |
+| OOA-31 | Phase 59 | Pending |
+| OOA-32 | Phase 59 | Pending |
+| OOA-33 | Phase 59 | Pending |
+| OOA-34 | Phase 59 | Pending |
+| OOA-35 | Phase 59 | Pending |
+| OOA-36 | Phase 59 | Pending |
+| OOA-37 | Phase 59 | Pending |
+| OOA-38 | Phase 59 | Pending |
+| OOA-39 | Phase 59 | Pending |
+| OOA-40 | Phase 59 | Pending |
+| OOA-41 | Phase 59 | Pending |
+| OOA-42 | Phase 59 | Pending |
+| SYN-01 | Phase 62 | Pending |
+| SYN-02 | Phase 62 | Pending |
+| SYN-03 | Phase 62 | Pending |
+| SYN-04 | Phase 62 | Pending |
 
 **Coverage v2.1:**
-- v2.1 requirements: 99 total
-- Mapped to phases: 0
-- Unmapped: 99
+- v2.1 requirements: 122 total
+- Mapped to phases: 122
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-19*
-*Updated: 2026-03-20 — Queue-Scope erweitert, vollstaendige Aktions-Klassifizierung (Queue vs Online-Only)*
+*Updated: 2026-03-20 — Roadmap erstellt, alle 122 Requirements auf Phasen 55-62 gemappt*
