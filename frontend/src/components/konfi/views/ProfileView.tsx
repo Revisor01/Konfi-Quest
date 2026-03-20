@@ -30,6 +30,7 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { logout } from '../../../services/auth';
+import { clearAuth } from '../../../services/tokenStore';
 import { SectionHeader } from '../../shared';
 import ChangePasswordModal from '../modals/ChangePasswordModal';
 import ChangeEmailModal from '../modals/ChangeEmailModal';
@@ -160,8 +161,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
             } catch (error) {
  console.error('Logout error:', error);
               // Fallback: direct logout even if token removal fails
-              localStorage.removeItem('konfi_token');
-              localStorage.removeItem('konfi_user');
+              await clearAuth();
               window.location.href = '/';
             }
           }

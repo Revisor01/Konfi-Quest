@@ -34,6 +34,7 @@ import { useModalPage } from '../../../contexts/ModalContext';
 import { useHistory } from 'react-router-dom';
 import api from '../../../services/api';
 import { logout } from '../../../services/auth';
+import { setUser as setTokenStoreUser, clearAuth } from '../../../services/tokenStore';
 import ChangeEmailModal from '../../konfi/modals/ChangeEmailModal';
 import ChangePasswordModal from '../../konfi/modals/ChangePasswordModal';
 import ChangeRoleTitleModal from '../../admin/modals/ChangeRoleTitleModal';
@@ -98,7 +99,7 @@ const TeamerProfilePage: React.FC = () => {
         const response = await api.get('/auth/me');
         if (user) {
           const updatedUser = { ...user, email: response.data.email };
-          localStorage.setItem('konfi_user', JSON.stringify(updatedUser));
+          await setTokenStoreUser(updatedUser);
           setUser(updatedUser);
         }
       } catch (err) {
@@ -145,8 +146,7 @@ const TeamerProfilePage: React.FC = () => {
               window.location.href = '/';
             } catch (error) {
               console.error('Logout error:', error);
-              localStorage.removeItem('konfi_token');
-              localStorage.removeItem('konfi_user');
+              await clearAuth();
               window.location.href = '/';
             }
           }

@@ -35,6 +35,7 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { logout } from '../../../services/auth';
+import { clearAuth } from '../../../services/tokenStore';
 import { useHistory } from 'react-router-dom';
 
 const AdminSettingsPage: React.FC = () => {
@@ -64,8 +65,7 @@ const AdminSettingsPage: React.FC = () => {
             } catch (error) {
 console.error('Logout error:', error);
               // Fallback: direct logout even if token removal fails
-              localStorage.removeItem('konfi_token');
-              localStorage.removeItem('konfi_user');
+              await clearAuth();
               window.location.href = '/';
             }
           }

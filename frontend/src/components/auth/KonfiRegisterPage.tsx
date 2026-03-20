@@ -29,6 +29,7 @@ import {
 } from 'ionicons/icons';
 import { useLocation, useHistory } from 'react-router-dom';
 import api from '../../services/api';
+import { setToken, setUser as setTokenStoreUser } from '../../services/tokenStore';
 import { useApp } from '../../contexts/AppContext';
 
 interface PasswordCheck {
@@ -233,8 +234,8 @@ const KonfiRegisterPage: React.FC = () => {
       // Auto-Login nach Registrierung
       const { token, user } = response.data;
       if (token && user) {
-        localStorage.setItem('konfi_token', token);
-        localStorage.setItem('konfi_user', JSON.stringify(user));
+        await setToken(token);
+        await setTokenStoreUser(user);
         setUser(user);
         setAppSuccess('Willkommen bei Konfi Quest!');
         // Kurz warten fuer visuelles Feedback, dann zum Dashboard

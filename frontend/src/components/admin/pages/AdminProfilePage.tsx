@@ -30,6 +30,7 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
+import { setUser as setTokenStoreUser } from '../../../services/tokenStore';
 import ChangeEmailModal from '../modals/ChangeEmailModal';
 import ChangePasswordModal from '../modals/ChangePasswordModal';
 import ChangeRoleTitleModal from '../modals/ChangeRoleTitleModal';
@@ -61,10 +62,10 @@ const AdminProfilePage: React.FC = () => {
       try {
         const response = await api.get('/auth/me');
         setProfileData(response.data);
-        // User im Context und localStorage aktualisieren
+        // User im Context und TokenStore aktualisieren
         if (user) {
           const updatedUser = { ...user, email: response.data.email };
-          localStorage.setItem('konfi_user', JSON.stringify(updatedUser));
+          await setTokenStoreUser(updatedUser);
           setUser(updatedUser);
         }
       } catch (err) {
