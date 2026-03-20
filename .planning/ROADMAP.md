@@ -305,3 +305,53 @@ Plans:
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 64 to break down)
+
+### Phase 65: Navigation und State-Konsistenz — Router-Migration, CustomEvents durch LiveUpdateContext ersetzen
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 64
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 65 to break down)
+
+### Phase 66: Error Boundary und Sicherheitshärtung — Error Boundary, CSP, MD5 ersetzen, TLS
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 65
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 66 to break down)
+
+### Phase 67: Performance-Optimierung — Mega-Komponenten aufteilen, Memoization, SELECT-Stern, BackgroundService
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 66
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 67 to break down)
+
+### Phase 68: Token-Refresh-System — Refresh-Tokens, kürzere JWT-Laufzeit, Revoke-Mechanismus
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 67
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 68 to break down)
+
+### Phase 69: Dependency-Upgrades — react-router-dom v6, qr-scanner Capacitor-native, Altlasten-Pakete
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 68
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 69 to break down)

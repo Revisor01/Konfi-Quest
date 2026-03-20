@@ -45,6 +45,11 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 - 2026-03-20: v2.1 Roadmap erstellt — 8 Phasen (55-62), 122 Requirements, Dependency Chain STR+NET -> CAC -> RET -> OUI+OOA -> QUE+SYN
 - Phase 63 added: Codebase Cleanup — Quick-Wins, Konsolidierung, Bug-Fixes
 - Phase 64 added: DB-Schema-Konsolidierung — Einheitliches Schema, Altlasten, Indizes, Foreign Keys
+- Phase 65 added: Navigation und State-Konsistenz — Router-Migration, CustomEvents → LiveUpdateContext
+- Phase 66 added: Error Boundary und Sicherheitshärtung
+- Phase 67 added: Performance-Optimierung — Mega-Komponenten, Memoization, SELECT *, BackgroundService
+- Phase 68 added: Token-Refresh-System
+- Phase 69 added: Dependency-Upgrades — react-router-dom v6, qr-scanner native
 
 ### Pending Todos
 
