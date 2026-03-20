@@ -2,16 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: App-Resilienz
-status: roadmap_complete
-stopped_at: Roadmap erstellt, bereit fuer Phase 55 Planung
-last_updated: "2026-03-20"
-last_activity: 2026-03-20 — Roadmap fuer v2.1 erstellt (8 Phasen, 122 Requirements)
+status: unknown
+stopped_at: v2.1 Roadmap erstellt, bereit fuer Phase 55 Planung
+last_updated: "2026-03-20T20:39:47.540Z"
 progress:
-  total_phases: 8
+  total_phases: 9
   completed_phases: 0
-  total_plans: 0
+  total_plans: 4
   completed_plans: 0
-  percent: 0
 ---
 
 # Project State
@@ -21,22 +19,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-20)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v2.1 App-Resilienz — Phase 55 (Fundament)
+**Current focus:** Phase 55 — Fundament
 
 ## Current Position
 
-Phase: 55 of 62 (Fundament — Storage-Migration + Netzwerk-Erkennung)
-Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-03-20 — Roadmap fuer v2.1 erstellt (8 Phasen, 122 Requirements)
-
-Progress: [░░░░░░░░░░] 0%
+Phase: 55 (Fundament) — EXECUTING
+Plan: 1 of 4
 
 ## Accumulated Context
 
 ### Decisions
 
 All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
+
 - Queue-Scope erweitert: Nicht nur Chat + Antraege, sondern auch Admin-CRUD (Events, Aktivitaeten, Badges, Kategorien, Jahrgaenge, Level, Zertifikate, Material)
 - Kein globales Offline-Banner, stattdessen kontextbezogene UI (Corner-Badge Uhr-Icon, Button-Text "Du bist offline")
 - Corner-Badge System: Flex-Container mit korrekten Rundungen fuer 1-3 Badges nebeneinander (Referenz: PointsHistoryModal)
@@ -47,6 +42,7 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 
 - 2026-03-20: v2.1 Roadmap erstellt — 8 Phasen (55-62), 122 Requirements, Dependency Chain STR+NET -> CAC -> RET -> OUI+OOA -> QUE+SYN
 - Phase 63 added: Codebase Cleanup — Quick-Wins, Konsolidierung, Bug-Fixes
+- Phase 64 added: DB-Schema-Konsolidierung — Einheitliches Schema, Altlasten, Indizes, Foreign Keys
 
 ### Pending Todos
 
