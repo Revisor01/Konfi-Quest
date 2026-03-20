@@ -1,100 +1,63 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.9
-milestone_name: Bugfix + Polish
-status: completed
-stopped_at: Completed 54-01-PLAN.md
-last_updated: "2026-03-19T16:34:49.347Z"
-last_activity: 2026-03-18 — EventModal Teamer-only Felder + Pflicht Hervorhebung
+milestone: v2.1
+milestone_name: App-Resilienz
+status: defining
+stopped_at: Defining requirements
+last_updated: "2026-03-20"
+last_activity: 2026-03-20 — Milestone v2.1 gestartet, Requirements definiert (99 Requirements)
 progress:
-  total_phases: 11
-  completed_phases: 10
-  total_plans: 13
-  completed_plans: 13
-  percent: 75
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-13)
+See: .planning/PROJECT.md (updated 2026-03-20)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v1.9 Phase 46 Event-Admin-Teamer-Logik
+**Current focus:** v2.1 App-Resilienz — Offline-Cache, Schreib-Queue, Retry-Logik
 
 ## Current Position
 
-Phase: 46 of 51 (Event-Admin-Teamer-Logik) -- 3 of 8 in v1.9
-Plan: 01 complete (1/2)
-Status: Plan 46-01 complete
-Last activity: 2026-03-18 — EventModal Teamer-only Felder + Pflicht Hervorhebung
+Phase: Not started (creating roadmap)
+Plan: —
+Status: Creating roadmap
+Last activity: 2026-03-20 — Milestone v2.1 gestartet
 
-Progress: [████████░░] 75%
-
-## Performance Metrics
-
-**Velocity:**
-- Total plans completed: 1
-- Average duration: 2min
-- Total execution time: 2min
+Progress: [░░░░░░░░░░] 0%
 
 ## Accumulated Context
 
 ### Decisions
 
-All v1.0-v1.8 decisions archived in PROJECT.md Key Decisions table.
-- [Phase 52]: Badge-Grid inline statt TeamerBadgesView Import
-- [Phase 44]: Silent Push via apns-push-type background fuer badge-count-only updates
-- [Phase 45]: Clientseitige Jahrgangs-Filterung statt Backend-Query fuer Admin-Events
-- [Phase 45]: Jahrgangs-Filter via INNER JOIN -- Konfi ohne Jahrgang sieht keine Events
-- [Phase 45]: Segment Meine als Default statt Alle -- persoenliche Relevanz zuerst
-- [Phase 46]: filterRole Prop statt separater Modals fuer Teamer/Konfi Filterung
-- [Phase 46]: Zeitfenster-Sektion bei teamer_only ebenfalls ausgeblendet
-- [Phase 47]: Inline-Hinweis statt Toast fuer Toggle-Sperre
-- [Phase 47]: CSS Grid statt Flexbox info-row fuer konsistentes 3-Spalten Stats-Layout
-- [Phase 48]: Team-Segment nur fuer Admins sichtbar, da Konfis/Teamer keine Admin-Chats haben
-- [Phase 49]: Task 2 keine Aenderung noetig - Segment war bereits korrekt positioniert und gestyled
-- [Phase 50]: QR-Scanner von EventsView (FAB) nach KonfiEventsPage (Header-Button) verschoben
-- [Phase 53]: Direkter Alert statt ActionSheet fuer Chat-Verlassen-Bestaetigung
-- [Phase 54]: CSS Grid inline statt neues CSS-File fuer Zertifikat-Layout
-- [Phase 54]: Seed-Funktion innerhalb module.exports da db-Zugriff benoetigt
+All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
+- Queue-Scope erweitert: Nicht nur Chat + Antraege, sondern auch Admin-CRUD (Events, Aktivitaeten, Badges, Kategorien, Jahrgaenge, Level, Zertifikate, Material)
+- Kein globales Offline-Banner, stattdessen kontextbezogene UI (Corner-Badge Uhr-Icon, Button-Text "Du bist offline")
+- Corner-Badge System: Flex-Container mit korrekten Rundungen fuer 1-3 Badges nebeneinander (Referenz: PointsHistoryModal)
+- Material mit Dateien in Queue: Metadaten + Datei-Referenz in Queue, Datei lokal in Capacitor Filesystem, Upload nur im Vordergrund
+- Bonus-Punkte vergeben in Queue (QUE-A20), aber normale Punkte-Vergabe bleibt online-only (Server-Autoritaet)
+- Teamer kann Events offline buchen/abmelden (anders als Konfi, da Teamer keine Kapazitaetspruefung braucht)
 
 ### Roadmap Evolution
 
-- Phase 52 added: Teamer-Profilseite mit Tabs (Badges, Konfi-Stats)
-- Phase 53 added: Chat verlassen — Gruppenchats verlassbar, Jahrgangschat nicht
-- Phase 54 added: Teamer Dashboard Zertifikat-Ansicht anpassen
-- Phase 53 added: Chat verlassen — Gruppenchats verlassbar, Jahrgangschat nicht
+None yet.
 
 ### Pending Todos
 
-- v3.0 Milestone geplant: Onboarding, Landing Website mit Erklaerung, Readme Github, Wiki — letzter Schritt vor oeffentlichem Launch. Ausfuehrung mit /gsd:new-milestone wenn v1.9 abgeschlossen.
+- v3.0 Milestone geplant: Onboarding, Landing Website mit Erklaerung, Readme Github, Wiki — letzter Schritt vor oeffentlichem Launch.
 
 ### Blockers/Concerns
 
 None.
 
-### Quick Tasks Completed
-
-| # | Description | Date | Commit | Directory |
-|---|-------------|------|--------|-----------|
-| Q1 | SMTP-Sicherheitsvorfall: Queue geleert, Credentials rotiert, TLS-Fix, trust proxy, Firebase Keys | 2026-03-17 | b9ab7f2 | — |
-| Phase 52 P01 | 4min | 2 tasks | 2 files |
-| Phase 44 P01 | 2min | 2 tasks | 3 files |
-| Phase 45 P01 | 3min | 2 tasks | 5 files |
-| Phase 46 P02 | 3min | 3 tasks | 3 files |
-| Phase 46 P01 | 2min | 2 tasks | 2 files |
-| Phase 47 P01 | 1min | 1 tasks | 2 files |
-| Phase 47 P02 | 1min | 2 tasks | 2 files |
-| Phase 48 P01 | 1min | 1 tasks | 1 files |
-| Phase 49 P01 | 1min | 2 tasks | 1 files |
-| Phase 50 P01 | 4min | 2 tasks | 9 files |
-| Phase 53 P01 | 2min | 2 tasks | 2 files |
-| Phase 54 P01 | 2min | 2 tasks | 2 files |
-
 ## Session Continuity
 
-Last session: 2026-03-19T11:21:11.584Z
-Stopped at: Completed 54-01-PLAN.md
+Last session: 2026-03-20
+Stopped at: Creating roadmap for v2.1
 Resume file: None
