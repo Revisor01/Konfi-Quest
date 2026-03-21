@@ -215,7 +215,11 @@ Plans:
   1. Bei kurzem Netzwerkausbruch (z.B. Tunnelfahrt) werden fehlgeschlagene API-Calls automatisch 3x mit steigendem Abstand wiederholt — ohne User-Interaktion
   2. Alle Submit-Buttons (Chat senden, Antrag stellen, Event erstellen, etc.) sind waehrend des Requests disabled und zeigen einen Loading-Spinner
   3. Backend akzeptiert Idempotency-Keys (client_id UUID) und verhindert doppelte Eintraege bei Retry
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 57-01-PLAN.md — axios-retry + useActionGuard Hook + Double-Submit-Schutz
+- [ ] 57-02-PLAN.md — Backend Idempotency-Keys (client_id UUID) fuer Chat + Antraege
 
 ### Phase 58: Corner-Badge System
 **Goal**: Listen-Elemente koennen mehrere Status-Badges nebeneinander anzeigen — Voraussetzung fuer Queue-Status-Badges
@@ -284,7 +288,7 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 |-------|----------------|--------|-----------|
 | 55. Fundament | 4/4 | Complete    | 2026-03-20 |
 | 56. Lese-Cache | 4/4 | Complete    | 2026-03-21 |
-| 57. Retry + Schutz | 0/? | Not started | - |
+| 57. Retry + Schutz | 0/2 | Not started | - |
 | 58. Corner-Badge System | 0/? | Not started | - |
 | 59. Online-Only Buttons | 0/? | Not started | - |
 | 60. Queue-Kern + Konfi-Aktionen | 0/? | Not started | - |
