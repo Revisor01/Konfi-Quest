@@ -50,7 +50,7 @@ import { CACHE_TTL } from '../../../services/offlineCache';
 import { SectionHeader } from '../../shared';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
-import FileViewerModal from '../../chat/modals/FileViewerModal';
+import FileViewerModal from '../../shared/FileViewerModal';
 
 interface Material {
   id: number;

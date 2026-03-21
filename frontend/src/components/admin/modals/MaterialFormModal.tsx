@@ -45,7 +45,7 @@ import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
-import FileViewerModal from '../../chat/modals/FileViewerModal';
+import FileViewerModal from '../../shared/FileViewerModal';
 
 interface MaterialFile {
   id: number;

@@ -33,9 +33,7 @@ import {
   create
 } from 'ionicons/icons';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
-import { Filesystem, Directory } from '@capacitor/filesystem';
-import { FileViewer } from '@capacitor/file-viewer';
-import { FileOpener } from '@capacitor-community/file-opener';
+// Native FileViewer/FileOpener/Filesystem entfernt — alles ueber In-App FileViewerModal
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
@@ -43,7 +41,7 @@ import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import EmptyState from '../../shared/EmptyState';
 import { SectionHeader } from '../../shared';
-import FileViewerModal from '../../chat/modals/FileViewerModal';
+import FileViewerModal, { FileItem } from '../../shared/FileViewerModal';
 
 interface MaterialFile {
   id: number;
@@ -82,26 +80,19 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
     { ttl: CACHE_TTL.PROFILE, enabled: !!materialId }
   );
 
-  // FileViewer Modal (In-App Dateivorschau mit Backdrop)
-  const viewerDataRef = useRef({ blobUrl: '', fileName: '', mimeType: '' });
+  // FileViewer Modal (universeller Datei-Viewer mit Swipe)
+  const viewerRef = useRef<{ files: FileItem[]; initialIndex: number }>({ files: [], initialIndex: 0 });
   const [presentFileViewer, dismissFileViewer] = useIonModal(FileViewerModal, {
-    get blobUrl() { return viewerDataRef.current.blobUrl; },
-    get fileName() { return viewerDataRef.current.fileName; },
-    get mimeType() { return viewerDataRef.current.mimeType; },
+    get files() { return viewerRef.current.files; },
+    get initialIndex() { return viewerRef.current.initialIndex; },
     onClose: () => {
       dismissFileViewer();
-      if (viewerDataRef.current.blobUrl) {
-        URL.revokeObjectURL(viewerDataRef.current.blobUrl);
-        viewerDataRef.current = { blobUrl: '', fileName: '', mimeType: '' };
-      }
+      viewerRef.current.files.forEach(f => {
+        if (f.url.startsWith('blob:')) URL.revokeObjectURL(f.url);
+      });
+      viewerRef.current = { files: [], initialIndex: 0 };
     }
   });
-
-  const openInAppViewer = (blob: Blob, fileName: string, mimeType: string) => {
-    const url = URL.createObjectURL(new Blob([blob], { type: mimeType }));
-    viewerDataRef.current = { blobUrl: url, fileName, mimeType };
-    presentFileViewer();
-  };
 
   const getFileIcon = (mimeType: string) => {
     if (mimeType.startsWith('image/')) return imageOutline;
@@ -127,48 +118,30 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
   const openFile = async (file: MaterialFile) => {
     try {
       await Haptics.impact({ style: ImpactStyle.Medium });
-      const response = await api.get(`/material/files/${file.stored_name}`, {
-        responseType: 'blob'
-      });
+
+      // Angeklickte Datei als Blob laden
+      const response = await api.get(`/material/files/${file.stored_name}`, { responseType: 'blob' });
       const blob = response.data;
-      const base64Data = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64 = (reader.result as string).split(',')[1];
-          resolve(base64);
-        };
-        reader.readAsDataURL(blob);
-      });
+      const mime = response.headers?.['content-type'] || file.mime_type;
+      const blobUrl = URL.createObjectURL(new Blob([blob], { type: mime }));
 
-      const ext = file.original_name.split('.').pop() || '';
-      const tempPath = `temp/material_${file.id}.${ext}`;
+      // Alle Material-Dateien als FileItem-Array (Swipe-Kontext)
+      const files: FileItem[] = (material?.files || []).map(f => ({
+        url: `/api/material/files/${f.stored_name}`,
+        fileName: f.original_name,
+        mimeType: f.mime_type
+      }));
 
-      try {
-        await Filesystem.mkdir({ path: 'temp', directory: Directory.Documents, recursive: true });
-      } catch { /* existiert bereits */ }
-
-      await Filesystem.writeFile({
-        path: tempPath,
-        data: base64Data,
-        directory: Directory.Documents,
-        recursive: true
-      });
-
-      const fileUri = await Filesystem.getUri({ directory: Directory.Documents, path: tempPath });
-
-      if (file.mime_type.startsWith('image/')) {
-        await FileOpener.open({ filePath: fileUri.uri, contentType: file.mime_type });
-      } else {
-        await FileViewer.openDocumentFromLocalPath({ path: fileUri.uri });
+      // Angeklickte Datei: Blob-URL setzen (bereits geladen)
+      const clickedIdx = (material?.files || []).findIndex(f => f.id === file.id);
+      if (clickedIdx >= 0) {
+        files[clickedIdx] = { url: blobUrl, fileName: file.original_name, mimeType: mime };
       }
-    } catch (err) {
-      console.warn('Native file viewer failed, using in-app fallback:', err);
-      try {
-        const response = await api.get(`/material/files/${file.stored_name}`, { responseType: 'blob' });
-        openInAppViewer(response.data, file.original_name, file.mime_type);
-      } catch {
-        setError('Fehler beim Öffnen der Datei');
-      }
+
+      viewerRef.current = { files, initialIndex: Math.max(0, clickedIdx) };
+      presentFileViewer({ cssClass: 'file-viewer-modal' });
+    } catch {
+      setError('Fehler beim Öffnen der Datei');
     }
   };
 

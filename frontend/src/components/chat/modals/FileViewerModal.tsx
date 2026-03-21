@@ -1,3 +1,4 @@
+// DEPRECATED: Ersetzt durch shared/FileViewerModal.tsx — universeller Viewer mit Zoom/Pan/Swipe
 import React from 'react';
 import {
   IonPage,
