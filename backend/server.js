@@ -262,7 +262,7 @@ const chatUpload = multer({
     },
     filename: (req, file, cb) => {
       // Generate encrypted filename
-      const hash = crypto.createHash('md5').update(Date.now() + file.originalname + Math.random().toString()).digest('hex');
+      const hash = crypto.createHash('sha256').update(Date.now() + file.originalname + Math.random().toString()).digest('hex');
       cb(null, hash);
     }
   }),
@@ -297,7 +297,7 @@ const materialUpload = multer({
       cb(null, materialDir);
     },
     filename: (req, file, cb) => {
-      const hash = crypto.createHash('md5').update(Date.now() + file.originalname + Math.random().toString()).digest('hex');
+      const hash = crypto.createHash('sha256').update(Date.now() + file.originalname + Math.random().toString()).digest('hex');
       cb(null, hash);
     }
   }),
@@ -352,7 +352,7 @@ const requestUpload = multer({
     },
     filename: (req, file, cb) => {
       // Generate encrypted filename
-      const hash = crypto.createHash('md5').update(Date.now() + file.originalname + Math.random().toString()).digest('hex');
+      const hash = crypto.createHash('sha256').update(Date.now() + file.originalname + Math.random().toString()).digest('hex');
       cb(null, hash);
     }
   }),

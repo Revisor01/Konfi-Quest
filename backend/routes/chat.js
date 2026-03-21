@@ -1031,7 +1031,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       // Path-Traversal-Schutz: nur den Dateinamen ohne Verzeichniskomponenten verwenden
       const filename = path.basename(req.params.filename);
 
-      // Nur Hex-Hashes (multer MD5) als Dateinamen akzeptieren
+      // Nur Hex-Hashes (multer SHA-256) als Dateinamen akzeptieren
       if (!/^[a-f0-9]+$/.test(filename)) {
         return res.status(400).json({ error: 'Ungültiger Dateiname' });
       }
