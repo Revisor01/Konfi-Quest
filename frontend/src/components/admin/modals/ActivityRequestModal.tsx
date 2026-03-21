@@ -28,6 +28,8 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import { writeQueue } from '../../../services/writeQueue';
+import { networkMonitor } from '../../../services/networkMonitor';
 
 interface ActivityRequest {
   id: number;
@@ -122,17 +124,38 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
     }
 
     await guard(async () => {
-      try {
-        await api.put(`/admin/activities/requests/${request.id}`, {
-          status: selectedAction === 'approve' ? 'approved' : 'rejected',
-          admin_comment: adminComment
+      const body = {
+        status: selectedAction === 'approve' ? 'approved' : 'rejected',
+        admin_comment: adminComment
+      };
+
+      if (networkMonitor.isOnline) {
+        try {
+          await api.put(`/admin/activities/requests/${request.id}`, body);
+          setSuccess(`Antrag von "${request.konfi_name}" ${selectedAction === 'approve' ? 'genehmigt' : 'abgelehnt'}`);
+          window.dispatchEvent(new CustomEvent('requestStatusChanged'));
+          onSuccess();
+          onClose();
+        } catch (err: any) {
+          setError(err.response?.data?.error || `Fehler beim ${selectedAction === 'approve' ? 'Genehmigen' : 'Ablehnen'} des Antrags`);
+        }
+      } else {
+        await writeQueue.enqueue({
+          method: 'PUT',
+          url: `/admin/activities/requests/${request.id}`,
+          body,
+          maxRetries: 5,
+          hasFileUpload: false,
+          metadata: {
+            type: 'admin',
+            clientId: crypto.randomUUID(),
+            label: `Antrag ${selectedAction === 'approve' ? 'genehmigen' : 'ablehnen'}`
+          }
         });
-        setSuccess(`Antrag von "${request.konfi_name}" ${selectedAction === 'approve' ? 'genehmigt' : 'abgelehnt'}`);
+        setSuccess('Wird gespeichert sobald du wieder online bist');
         window.dispatchEvent(new CustomEvent('requestStatusChanged'));
         onSuccess();
         onClose();
-      } catch (err: any) {
-        setError(err.response?.data?.error || `Fehler beim ${selectedAction === 'approve' ? 'Genehmigen' : 'Ablehnen'} des Antrags`);
       }
     });
   };
@@ -193,8 +216,8 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           </IonButtons>
           {isPending && selectedAction && (
             <IonButtons slot="end">
-              <IonButton onClick={handleSubmit} disabled={isSubmitting || (selectedAction === 'reject' && !adminComment.trim()) || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--activities">
-                {!isOnline ? 'Du bist offline' : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+              <IonButton onClick={handleSubmit} disabled={isSubmitting || (selectedAction === 'reject' && !adminComment.trim())} className="app-modal-submit-btn app-modal-submit-btn--activities">
+                {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
               </IonButton>
             </IonButtons>
           )}

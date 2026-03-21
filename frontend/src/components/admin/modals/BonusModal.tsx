@@ -17,10 +17,13 @@ import {
   IonTextarea,
   IonCard,
   IonCardContent,
+  IonSpinner,
 } from '@ionic/react';
 import { closeOutline, checkmarkOutline, gift, calendar, removeOutline, addOutline, chatbubbleOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import { writeQueue } from '../../../services/writeQueue';
+import { networkMonitor } from '../../../services/networkMonitor';
 
 interface BonusModalProps {
   konfiId: number;
@@ -48,18 +51,37 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
   const handleSave = async () => {
     if (!name.trim() || points <= 0) return;
 
+    const body = {
+      points: points,
+      type: type,
+      description: `${name.trim()}${reason.trim() ? ': ' + reason.trim() : ''}`,
+      completed_date: selectedDate
+    };
+
     await guard(async () => {
-      try {
-        await api.post(`/admin/konfis/${konfiId}/bonus-points`, {
-          points: points,
-          type: type,
-          description: `${name.trim()}${reason.trim() ? ': ' + reason.trim() : ''}`,
-          completed_date: selectedDate
+      if (networkMonitor.isOnline) {
+        try {
+          await api.post(`/admin/konfis/${konfiId}/bonus-points`, body);
+          await onSave();
+          handleClose();
+        } catch (err) {
+          console.error('Error saving bonus points:', err);
+        }
+      } else {
+        await writeQueue.enqueue({
+          method: 'POST',
+          url: `/admin/konfis/${konfiId}/bonus-points`,
+          body,
+          maxRetries: 5,
+          hasFileUpload: false,
+          metadata: {
+            type: 'admin',
+            clientId: crypto.randomUUID(),
+            label: 'Bonus-Punkte vergeben'
+          }
         });
         await onSave();
         handleClose();
-      } catch (err) {
-        console.error('Error saving bonus points:', err);
       }
     });
   };
@@ -77,8 +99,8 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={!isValid || isSubmitting || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--konfi">
-              {!isOnline ? 'Du bist offline' : <IonIcon icon={checkmarkOutline} />}
+            <IonButton onClick={handleSave} disabled={!isValid || isSubmitting} className="app-modal-submit-btn app-modal-submit-btn--konfi">
+              {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>

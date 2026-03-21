@@ -14,6 +14,8 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
+import { writeQueue } from '../../../services/writeQueue';
+import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import ActivityRequestsView from '../ActivityRequestsView';
@@ -88,7 +90,6 @@ const AdminActivityRequestsPage: React.FC = () => {
   }, [refreshRequests]);
 
   const handleResetRequest = async (request: ActivityRequest) => {
-    if (!isOnline) return;
     const statusText = request.status === 'approved' ? 'genehmigten' : 'abgelehnten';
     presentAlert({
       header: 'Antrag zurücksetzen',
@@ -98,16 +99,32 @@ const AdminActivityRequestsPage: React.FC = () => {
         {
           text: 'Zurücksetzen',
           handler: async () => {
-            try {
-              await api.put(`/admin/activities/requests/${request.id}/reset`);
-              setSuccess(`Antrag wurde auf "Offen" zurückgesetzt`);
-              await refreshRequests();
-            } catch (err: any) {
-              if (err.response?.data?.error) {
-                setError(err.response.data.error);
-              } else {
-                setError('Fehler beim Zurücksetzen des Antrags');
+            if (networkMonitor.isOnline) {
+              try {
+                await api.put(`/admin/activities/requests/${request.id}/reset`);
+                setSuccess(`Antrag wurde auf "Offen" zurückgesetzt`);
+                await refreshRequests();
+              } catch (err: any) {
+                if (err.response?.data?.error) {
+                  setError(err.response.data.error);
+                } else {
+                  setError('Fehler beim Zurücksetzen des Antrags');
+                }
               }
+            } else {
+              await writeQueue.enqueue({
+                method: 'PUT',
+                url: `/admin/activities/requests/${request.id}/reset`,
+                body: {},
+                maxRetries: 5,
+                hasFileUpload: false,
+                metadata: {
+                  type: 'admin',
+                  clientId: crypto.randomUUID(),
+                  label: 'Antrag zurücksetzen'
+                }
+              });
+              setSuccess('Wird gespeichert sobald du wieder online bist');
             }
           }
         }

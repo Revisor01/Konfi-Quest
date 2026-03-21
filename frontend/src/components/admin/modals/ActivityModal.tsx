@@ -17,11 +17,14 @@ import {
   IonTextarea,
   IonCard,
   IonCardContent,
+  IonSpinner,
   useIonAlert
 } from '@ionic/react';
 import { closeOutline, checkmarkOutline, flash, calendar, home, people, pricetag } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import { writeQueue } from '../../../services/writeQueue';
+import { networkMonitor } from '../../../services/networkMonitor';
 
 interface Activity {
   id: number;
@@ -101,19 +104,38 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
   const handleSave = async () => {
     if (!selectedActivity) return;
 
-    await guard(async () => {
-      try {
-        await api.post(`/admin/konfis/${konfiId}/activities`, {
-          activity_id: selectedActivity,
-          completed_date: selectedDate,
-          comment: comment
-        });
+    const body = {
+      activity_id: selectedActivity,
+      completed_date: selectedDate,
+      comment: comment
+    };
 
+    await guard(async () => {
+      if (networkMonitor.isOnline) {
+        try {
+          await api.post(`/admin/konfis/${konfiId}/activities`, body);
+          setIsDirty(false);
+          await onSave();
+          doClose();
+        } catch (err) {
+          console.error('Error saving activity:', err);
+        }
+      } else {
+        await writeQueue.enqueue({
+          method: 'POST',
+          url: `/admin/konfis/${konfiId}/activities`,
+          body,
+          maxRetries: 5,
+          hasFileUpload: false,
+          metadata: {
+            type: 'admin',
+            clientId: crypto.randomUUID(),
+            label: 'Aktivität zuweisen'
+          }
+        });
         setIsDirty(false);
         await onSave();
         doClose();
-      } catch (err) {
-        console.error('Error saving activity:', err);
       }
     });
   };
@@ -133,8 +155,8 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={!selectedActivity || isSubmitting || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--activities">
-              {!isOnline ? 'Du bist offline' : <IonIcon icon={checkmarkOutline} />}
+            <IonButton onClick={handleSave} disabled={!selectedActivity || isSubmitting} className="app-modal-submit-btn app-modal-submit-btn--activities">
+              {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>
