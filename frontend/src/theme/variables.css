@@ -274,19 +274,41 @@ ion-item.app-list-item:last-child {
 }
 
 /* === Corner Badges === */
-/* App Corner Badge - Eselsohr-Style Badge oben rechts */
-.app-corner-badge {
+/* Flex-Container fuer mehrere Badges nebeneinander (oben rechts) */
+.app-corner-badges {
   position: absolute;
   top: 0;
   right: 0;
+  display: flex;
+  flex-direction: row;
+  z-index: 10;
+}
+/* Trenner zwischen Badges (2px weiss) */
+.app-corner-badges__separator {
+  width: 2px;
+  background: white;
+  align-self: stretch;
+}
+/* Einzelner Badge (ohne Positionierung — Container uebernimmt) */
+.app-corner-badge {
   font-size: 0.65rem;
-  font-weight: 600;
+  font-weight: 700;
   padding: 4px 10px;
-  border-radius: 0 10px 0 10px;
   color: white;
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
+/* Badge-Rundung innerhalb des Containers */
+.app-corner-badges .app-corner-badge {
+  border-radius: 0 0 10px 10px;
+}
+.app-corner-badges .app-corner-badge:last-child {
+  border-radius: 0 10px 10px 10px;
+}
+.app-corner-badges .app-corner-badge:only-child {
+  border-radius: 0 10px 10px 10px;
+}
+/* Bestehende Farb-Varianten */
 .app-corner-badge--events { background-color: #dc2626; }
 .app-corner-badge--success { background-color: #34c759; }
 .app-corner-badge--warning { background-color: #ff9500; }
@@ -294,6 +316,23 @@ ion-item.app-list-item:last-child {
 .app-corner-badge--info { background-color: #007aff; }
 .app-corner-badge--chat { background-color: #06b6d4; }
 .app-corner-badge--purple { background-color: #5b21b6; }
+/* Queue-Badge (orange, Icon-only, schmaler Padding) */
+.app-corner-badge--queue {
+  background-color: #ff9500;
+  padding: 4px 6px;
+}
+.app-corner-badge--queue ion-icon {
+  font-size: 0.75rem;
+}
+/* Fehler-Badge (rot, Icon-only, klickbar) */
+.app-corner-badge--error {
+  background-color: #dc3545;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+.app-corner-badge--error ion-icon {
+  font-size: 0.75rem;
+}
 
 /* === Section Header Icons === */
 /* App Section Header Icon - runder farbiger Icon-Container */
