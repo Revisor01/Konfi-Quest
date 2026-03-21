@@ -29,6 +29,8 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import { writeQueue } from '../../../services/writeQueue';
+import { networkMonitor } from '../../../services/networkMonitor';
 import { logout } from '../../../services/auth';
 import { clearAuth } from '../../../services/tokenStore';
 import { SectionHeader } from '../../shared';
@@ -121,6 +123,21 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
   }, []);
   
   const handleTranslationChange = async (translation: string) => {
+    // Offline: Optimistic UI + Queue-Fallback (fire-and-forget)
+    if (!networkMonitor.isOnline) {
+      setSelectedTranslation(translation);
+      setSuccess(`Bibelübersetzung auf ${getTranslationName(translation)} geändert`);
+      writeQueue.enqueue({
+        method: 'PUT',
+        url: '/konfi/bible-translation',
+        body: { translation },
+        maxRetries: 3,
+        hasFileUpload: false,
+        metadata: { type: 'fire-and-forget', clientId: `bible-translation-${translation}-${Date.now()}`, label: 'Bibelübersetzung' },
+      });
+      return;
+    }
+
     try {
       await api.put('/konfi/bible-translation', { translation });
       setSelectedTranslation(translation);

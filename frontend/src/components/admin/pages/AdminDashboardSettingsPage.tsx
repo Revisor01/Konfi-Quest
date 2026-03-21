@@ -23,6 +23,8 @@ import {
 import { arrowBack, appsOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import { writeQueue } from '../../../services/writeQueue';
+import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { SectionHeader } from '../../shared';
@@ -87,19 +89,51 @@ const AdminDashboardSettingsPage: React.FC = () => {
   );
 
   const handleDashboardToggle = async (key: keyof DashboardConfig, value: boolean) => {
+    // Optimistic UI zuerst
+    setDashboardConfig(prev => ({ ...prev, [key]: value }));
+
+    if (!networkMonitor.isOnline) {
+      writeQueue.enqueue({
+        method: 'PUT',
+        url: '/settings',
+        body: { [`dashboard_${key}`]: value },
+        maxRetries: 3,
+        hasFileUpload: false,
+        metadata: { type: 'fire-and-forget', clientId: `dashboard-${key}-${Date.now()}`, label: 'Dashboard-Einstellung' },
+      });
+      return;
+    }
+
     try {
       await api.put('/settings', { [`dashboard_${key}`]: value });
-      setDashboardConfig(prev => ({ ...prev, [key]: value }));
     } catch {
+      // Revert bei Fehler
+      setDashboardConfig(prev => ({ ...prev, [key]: !value }));
       setError('Fehler beim Speichern');
     }
   };
 
   const handleTeamerDashboardToggle = async (key: keyof TeamerDashboardConfig, value: boolean) => {
+    // Optimistic UI zuerst
+    setTeamerDashboardConfig(prev => ({ ...prev, [key]: value }));
+
+    if (!networkMonitor.isOnline) {
+      writeQueue.enqueue({
+        method: 'PUT',
+        url: '/settings',
+        body: { [`teamer_dashboard_${key}`]: value },
+        maxRetries: 3,
+        hasFileUpload: false,
+        metadata: { type: 'fire-and-forget', clientId: `teamer-dashboard-${key}-${Date.now()}`, label: 'Teamer-Dashboard-Einstellung' },
+      });
+      return;
+    }
+
     try {
       await api.put('/settings', { [`teamer_dashboard_${key}`]: value });
-      setTeamerDashboardConfig(prev => ({ ...prev, [key]: value }));
     } catch {
+      // Revert bei Fehler
+      setTeamerDashboardConfig(prev => ({ ...prev, [key]: !value }));
       setError('Fehler beim Speichern');
     }
   };

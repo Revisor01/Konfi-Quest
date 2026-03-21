@@ -26,6 +26,8 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import { writeQueue } from '../../../services/writeQueue';
+import { networkMonitor } from '../../../services/networkMonitor';
 
 interface ChangeRoleTitleModalProps {
   onClose: () => void;
@@ -49,6 +51,21 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
   const { isSubmitting, guard } = useActionGuard();
 
   const handleSave = async () => {
+    // Offline: Queue-Fallback (fire-and-forget)
+    if (!networkMonitor.isOnline) {
+      writeQueue.enqueue({
+        method: 'POST',
+        url: '/auth/update-role-title',
+        body: { role_title: roleTitle.trim() },
+        maxRetries: 3,
+        hasFileUpload: false,
+        metadata: { type: 'fire-and-forget', clientId: `role-title-${Date.now()}`, label: 'Funktionsbeschreibung' },
+      });
+      setSuccess('Funktionsbeschreibung wird bei Verbindung aktualisiert');
+      onSuccess();
+      return;
+    }
+
     await guard(async () => {
       try {
         await api.post('/auth/update-role-title', {

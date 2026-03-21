@@ -74,6 +74,8 @@ import {
 } from 'ionicons/icons';
 import { SectionHeader, EmptyState } from '../../shared';
 import api from '../../../services/api';
+import { writeQueue } from '../../../services/writeQueue';
+import { networkMonitor } from '../../../services/networkMonitor';
 
 // Badge Icon Mapping
 const BADGE_ICONS: Record<string, string> = {
@@ -229,10 +231,20 @@ const TeamerBadgesView: React.FC = () => {
       // Ungesehene Badges als gesehen markieren
       const unseenBadges = (response.data || []).filter((b: TeamerBadge) => b.is_new && b.is_earned);
       if (unseenBadges.length > 0) {
-        try {
-          await api.put('/teamer/badges/mark-seen');
-        } catch {
-          // Ignorieren
+        if (!networkMonitor.isOnline) {
+          writeQueue.enqueue({
+            method: 'PUT',
+            url: '/teamer/badges/mark-seen',
+            maxRetries: 3,
+            hasFileUpload: false,
+            metadata: { type: 'fire-and-forget', clientId: `teamer-badges-mark-seen-${Date.now()}`, label: 'Teamer-Badges gesehen' },
+          });
+        } else {
+          try {
+            await api.put('/teamer/badges/mark-seen');
+          } catch {
+            // Ignorieren
+          }
         }
       }
     } catch (err) {

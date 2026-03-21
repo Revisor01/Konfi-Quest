@@ -16,6 +16,8 @@ import {
 import { chatbubbles, save } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import { writeQueue } from '../../../services/writeQueue';
+import { networkMonitor } from '../../../services/networkMonitor';
 
 const ChatPermissionsSettings: React.FC = () => {
   const { setError, setSuccess } = useApp();
@@ -37,6 +39,20 @@ const ChatPermissionsSettings: React.FC = () => {
   };
 
   const saveSettings = async () => {
+    // Offline: Queue-Fallback (fire-and-forget)
+    if (!networkMonitor.isOnline) {
+      writeQueue.enqueue({
+        method: 'PUT',
+        url: '/admin/settings',
+        body: { konfi_chat_permissions: permissions },
+        maxRetries: 3,
+        hasFileUpload: false,
+        metadata: { type: 'fire-and-forget', clientId: `chat-permissions-${Date.now()}`, label: 'Chat-Berechtigungen' },
+      });
+      setSuccess('Chat-Berechtigungen werden bei Verbindung gespeichert');
+      return;
+    }
+
     setSaving(true);
     try {
       await api.put('/admin/settings', {

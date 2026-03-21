@@ -14,6 +14,8 @@ import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import api from '../../../services/api';
+import { writeQueue } from '../../../services/writeQueue';
+import { networkMonitor } from '../../../services/networkMonitor';
 import BadgesView from '../views/BadgesView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 
@@ -77,9 +79,19 @@ const KonfiBadgesPage: React.FC = () => {
     if (badgeData) {
       const hasUnseenBadges = badgeData.earned.some((badge: any) => !badge.seen);
       if (hasUnseenBadges) {
-        api.post('/konfi/badges/mark-seen').catch((markError) => {
-          console.warn('Badges konnten nicht als gesehen markiert werden:', markError);
-        });
+        if (!networkMonitor.isOnline) {
+          writeQueue.enqueue({
+            method: 'POST',
+            url: '/konfi/badges/mark-seen',
+            maxRetries: 3,
+            hasFileUpload: false,
+            metadata: { type: 'fire-and-forget', clientId: `badges-mark-seen-${Date.now()}`, label: 'Badges gesehen' },
+          });
+        } else {
+          api.post('/konfi/badges/mark-seen').catch((markError) => {
+            console.warn('Badges konnten nicht als gesehen markiert werden:', markError);
+          });
+        }
       }
     }
   }, [badgeData]);
