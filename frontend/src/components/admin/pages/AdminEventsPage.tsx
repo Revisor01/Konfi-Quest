@@ -26,6 +26,7 @@ import EventsView from '../EventsView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import EventModal from '../modals/EventModal';
 import { Event } from '../../../types/event';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 const AdminEventsPage: React.FC = () => {
   const { user, setSuccess, setError, isOnline } = useApp();
@@ -340,7 +341,7 @@ const AdminEventsPage: React.FC = () => {
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           refreshAllEvents();
           e.detail.complete();
-        }}>
+        }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
         

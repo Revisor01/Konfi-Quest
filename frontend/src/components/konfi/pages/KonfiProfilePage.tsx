@@ -16,6 +16,7 @@ import { CACHE_TTL } from '../../../services/offlineCache';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import ProfileView from '../views/ProfileView';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 interface KonfiProfile {
   id: number;
@@ -115,7 +116,7 @@ const KonfiProfilePage: React.FC = () => {
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
           await refresh();
           e.detail.complete();
-        }}>
+        }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 

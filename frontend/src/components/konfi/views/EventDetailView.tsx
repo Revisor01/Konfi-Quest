@@ -50,6 +50,7 @@ import UnregisterModal from '../modals/UnregisterModal';
 import QRScannerModal from '../modals/QRScannerModal';
 import { Event, Category } from '../../../types/event';
 import { useLiveUpdate } from '../../../contexts/LiveUpdateContext';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 interface EventDetailViewProps {
   eventId: number;
@@ -458,7 +459,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           loadEventData();
           e.detail.complete();
-        }}>
+        }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent />
         </IonRefresher>
 

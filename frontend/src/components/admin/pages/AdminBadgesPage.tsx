@@ -23,6 +23,7 @@ import { CACHE_TTL } from '../../../services/offlineCache';
 import BadgesView from '../BadgesView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import BadgeManagementModal from '../modals/BadgeManagementModal';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 interface Badge {
   id: number;
@@ -155,7 +156,7 @@ const AdminBadgesPage: React.FC = () => {
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           refreshBadges();
           e.detail.complete();
-        }}>
+        }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 

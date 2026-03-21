@@ -23,6 +23,7 @@ import { CACHE_TTL } from '../../../services/offlineCache';
 import ActivitiesView from '../ActivitiesView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import ActivityManagementModal from '../modals/ActivityManagementModal';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 interface Activity {
   id: number;
@@ -149,7 +150,7 @@ const AdminActivitiesPage: React.FC = () => {
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           refreshActivities();
           e.detail.complete();
-        }}>
+        }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 

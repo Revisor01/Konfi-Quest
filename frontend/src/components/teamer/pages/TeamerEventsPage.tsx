@@ -60,6 +60,7 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import QRScannerModal from '../../konfi/modals/QRScannerModal';
 import TeamerMaterialDetailPage from './TeamerMaterialDetailPage';
 import { Event } from '../../../types/event';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 const TeamerEventsPage: React.FC = () => {
   const { user, setSuccess, setError } = useApp();
@@ -382,7 +383,7 @@ const TeamerEventsPage: React.FC = () => {
             const updated = safeEvents.find(ev => ev.id === selectedEvent.id);
             if (updated) setSelectedEvent(updated);
             e.detail.complete();
-          }}>
+          }} onIonPull={triggerPullHaptic}>
             <IonRefresherContent />
           </IonRefresher>
 
@@ -690,7 +691,7 @@ const TeamerEventsPage: React.FC = () => {
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           refresh();
           e.detail.complete();
-        }}>
+        }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent />
         </IonRefresher>
 

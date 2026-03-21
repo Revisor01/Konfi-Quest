@@ -87,6 +87,7 @@ import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 interface TeamerBadge {
   id: number;
@@ -383,7 +384,7 @@ const TeamerBadgesPage: React.FC = () => {
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
           await refresh();
           e.detail.complete();
-        }}>
+        }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent />
         </IonRefresher>
 

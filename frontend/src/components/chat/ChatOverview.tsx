@@ -51,6 +51,7 @@ import { getToken } from '../../services/tokenStore';
 import LoadingSpinner from '../common/LoadingSpinner';
 import SimpleCreateChatModal from './modals/SimpleCreateChatModal';
 import { ChatRoomOverview } from '../../types/chat';
+import { triggerPullHaptic } from '../../utils/haptics';
 
 interface ChatOverviewProps {
   onSelectRoom: (room: ChatRoomOverview) => void;
@@ -303,7 +304,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
           await refresh();
           e.detail.complete();
-        }}>
+        }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 

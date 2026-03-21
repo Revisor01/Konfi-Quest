@@ -18,6 +18,7 @@ import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import BadgesView from '../views/BadgesView';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 interface Badge {
   id: number;
@@ -189,7 +190,7 @@ const KonfiBadgesPage: React.FC = () => {
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
           await Promise.all([refreshBadges(), refreshProfile()]);
           e.detail.complete();
-        }}>
+        }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 

@@ -18,6 +18,7 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import DashboardView from '../views/DashboardView';
 import PointsHistoryModal from '../modals/PointsHistoryModal';
 import { Event } from '../../../types/event';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 interface PointConfig {
   gottesdienst_enabled: boolean;
@@ -259,7 +260,7 @@ const KonfiDashboardPage: React.FC = () => {
           </IonToolbar>
         </IonHeader>
 
-        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh} onIonPull={triggerPullHaptic}>
           <IonRefresherContent />
         </IonRefresher>
 

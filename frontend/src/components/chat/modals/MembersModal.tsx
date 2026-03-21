@@ -40,6 +40,7 @@ import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { ChatUser } from '../../../types/user';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 interface Participant {
   user_id: number;
@@ -384,7 +385,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
           Promise.all([loadParticipants(), loadAllUsers()]).finally(() => {
             e.detail.complete();
           });
-        }}>
+        }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent />
         </IonRefresher>
 

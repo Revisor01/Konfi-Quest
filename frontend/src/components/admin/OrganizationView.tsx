@@ -30,6 +30,7 @@ import {
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
+import { triggerPullHaptic } from '../../utils/haptics';
 
 interface Organization {
   id: number;
@@ -110,7 +111,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
 
   return (
     <>
-      <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+      <IonRefresher slot="fixed" onIonRefresh={handleRefresh} onIonPull={triggerPullHaptic}>
         <IonRefresherContent />
       </IonRefresher>
 

@@ -45,6 +45,7 @@ import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader } from '../../shared';
 import MaterialFormModal from '../modals/MaterialFormModal';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 
 interface Material {
@@ -191,7 +192,7 @@ const AdminMaterialPage: React.FC = () => {
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
           await refreshMaterial();
           e.detail.complete();
-        }}>
+        }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent />
         </IonRefresher>
 

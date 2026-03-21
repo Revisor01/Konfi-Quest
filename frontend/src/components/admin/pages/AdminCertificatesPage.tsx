@@ -97,6 +97,7 @@ import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader, ListSection } from '../../shared';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 const CERT_ICONS: Record<string, { icon: any; name: string; category: string }> = {
   ribbon: { icon: ribbon, name: 'Band', category: 'Erfolg' },
@@ -481,7 +482,7 @@ const AdminCertificatesPage: React.FC = () => {
           </IonToolbar>
         </IonHeader>
 
-        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh} onIonPull={triggerPullHaptic}>
           <IonRefresherContent refreshingSpinner="crescent" />
         </IonRefresher>
 

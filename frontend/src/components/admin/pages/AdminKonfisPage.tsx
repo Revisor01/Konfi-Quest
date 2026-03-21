@@ -24,6 +24,7 @@ import { CACHE_TTL } from '../../../services/offlineCache';
 import KonfisView from '../KonfisView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import KonfiModal from '../modals/KonfiModal';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 interface Konfi {
   id: number;
@@ -225,7 +226,7 @@ const AdminKonfisPage: React.FC = () => {
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           refreshAll();
           e.detail.complete();
-        }}>
+        }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
         

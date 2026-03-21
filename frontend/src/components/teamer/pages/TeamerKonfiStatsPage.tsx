@@ -110,6 +110,7 @@ import {
   cubeOutline,
   handLeft
 } from 'ionicons/icons';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 const BADGE_ICONS: Record<string, string> = {
   trophy, medal, ribbon, star, checkmarkCircle, diamond, shield,
@@ -281,7 +282,7 @@ const TeamerKonfiStatsPage: React.FC = () => {
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
           await refresh();
           e.detail.complete();
-        }}>
+        }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent />
         </IonRefresher>
 

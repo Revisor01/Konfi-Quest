@@ -24,6 +24,7 @@ import EventsView from '../views/EventsView';
 import QRScannerModal from '../modals/QRScannerModal';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { Event } from '../../../types/event';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 const KonfiEventsPage: React.FC = () => {
   const { user, setSuccess, setError } = useApp();
@@ -130,7 +131,7 @@ const KonfiEventsPage: React.FC = () => {
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
           await refresh();
           e.detail.complete();
-        }}>
+        }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 

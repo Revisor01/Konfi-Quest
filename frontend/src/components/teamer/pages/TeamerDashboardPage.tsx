@@ -74,6 +74,7 @@ import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 // Badge/Certificate Icon Mapping (shared with DashboardView)
 const ICON_MAP: Record<string, string> = {
@@ -290,6 +291,7 @@ const TeamerDashboardPage: React.FC = () => {
             await Promise.all([refreshDashboard(), refreshVerse()]);
             e.detail.complete();
           }}
+          onIonPull={triggerPullHaptic}
         >
           <IonRefresherContent />
         </IonRefresher>

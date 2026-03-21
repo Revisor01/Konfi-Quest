@@ -24,6 +24,7 @@ import UsersView from '../UsersView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import UserManagementModal from '../modals/UserManagementModal';
 import { AdminUser } from '../../../types/user';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 const AdminUsersPage: React.FC = () => {
   const { setSuccess, setError, user, isOnline } = useApp();
@@ -135,7 +136,7 @@ const AdminUsersPage: React.FC = () => {
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           refreshUsers();
           e.detail.complete();
-        }}>
+        }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
         

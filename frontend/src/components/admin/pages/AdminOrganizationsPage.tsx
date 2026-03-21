@@ -25,6 +25,7 @@ import { logout } from '../../../services/auth';
 import OrganizationView from '../OrganizationView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import OrganizationManagementModal from '../modals/OrganizationManagementModal';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 interface Organization {
   id: number;
@@ -178,7 +179,7 @@ const AdminOrganizationsPage: React.FC = () => {
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           loadOrganizations();
           e.detail.complete();
-        }}>
+        }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
         

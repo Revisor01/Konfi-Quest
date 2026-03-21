@@ -49,6 +49,7 @@ import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader, ListSection } from '../../shared';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 interface Jahrgang {
   id: number;
@@ -462,7 +463,7 @@ const AdminJahrgaengeePage: React.FC = () => {
           </IonToolbar>
         </IonHeader>
         
-        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh} onIonPull={triggerPullHaptic}>
           <IonRefresherContent refreshingSpinner="crescent" />
         </IonRefresher>
 

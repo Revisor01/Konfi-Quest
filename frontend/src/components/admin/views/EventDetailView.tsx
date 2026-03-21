@@ -27,6 +27,7 @@ import {
   TimeslotsSection
 } from './EventDetailSections';
 import type { Participant, Unregistration } from './EventDetailSections';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 interface Category {
   id: number;
@@ -517,7 +518,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           </IonToolbar>
         </IonHeader>
 
-        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh} onIonPull={triggerPullHaptic}>
           <IonRefresherContent refreshingSpinner="crescent" />
         </IonRefresher>
 

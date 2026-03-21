@@ -29,6 +29,7 @@ import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { SectionHeader } from '../../shared';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 interface DashboardConfig {
   show_konfirmation: boolean;
@@ -176,7 +177,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
           await refreshSettings();
           e.detail.complete();
-        }}>
+        }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent />
         </IonRefresher>
 

@@ -30,6 +30,7 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import RequestsView from '../views/RequestsView';
 import ActivityRequestModal from '../modals/ActivityRequestModal';
 import RequestDetailModal from '../modals/RequestDetailModal';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 interface ActivityRequest {
   id: number;
@@ -220,7 +221,7 @@ const KonfiRequestsPage: React.FC = () => {
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
           await Promise.all([refresh(), loadPendingFromQueue()]);
           e.detail.complete();
-        }}>
+        }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 

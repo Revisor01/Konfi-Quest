@@ -51,6 +51,7 @@ import { SectionHeader } from '../../shared';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import FileViewerModal from '../../shared/FileViewerModal';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 interface Material {
   id: number;
@@ -265,7 +266,7 @@ const TeamerMaterialPage: React.FC = () => {
               setSelectedMaterial(res.data);
             } catch { /* ignore */ }
             e.detail.complete();
-          }}>
+          }} onIonPull={triggerPullHaptic}>
             <IonRefresherContent />
           </IonRefresher>
 
@@ -417,7 +418,7 @@ const TeamerMaterialPage: React.FC = () => {
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
           await Promise.all([refreshMaterial(), refreshJahrgaenge()]);
           e.detail.complete();
-        }}>
+        }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent />
         </IonRefresher>
 

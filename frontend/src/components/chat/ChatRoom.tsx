@@ -36,6 +36,7 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { writeQueue } from '../../services/writeQueue';
 import { networkMonitor } from '../../services/networkMonitor';
 import { ChatHeader, MessageInput, autoCapitalize, MIME_EXT_MAP, takePicture as takePictureHelper, selectFromGallery as selectFromGalleryHelper } from './ChatRoomSections';
+import { triggerPullHaptic } from '../../utils/haptics';
 
 
 
@@ -999,7 +1000,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           loadMessages();
           e.detail.complete();
-        }}>
+        }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 

@@ -41,6 +41,7 @@ import ChangeEmailModal from '../../konfi/modals/ChangeEmailModal';
 import ChangePasswordModal from '../../konfi/modals/ChangePasswordModal';
 import ChangeRoleTitleModal from '../../admin/modals/ChangeRoleTitleModal';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 interface TeamerProfile {
   user: {
@@ -197,7 +198,7 @@ const TeamerProfilePage: React.FC = () => {
 
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           refresh().then(() => e.detail.complete());
-        }}>
+        }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent />
         </IonRefresher>
 

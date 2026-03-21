@@ -35,6 +35,7 @@ import {
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
 import { AdminUser } from '../../types/user';
+import { triggerPullHaptic } from '../../utils/haptics';
 
 interface UsersViewProps {
   users: AdminUser[];
@@ -132,7 +133,7 @@ const UsersView: React.FC<UsersViewProps> = ({
 
   return (
     <>
-      <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+      <IonRefresher slot="fixed" onIonRefresh={handleRefresh} onIonPull={triggerPullHaptic}>
         <IonRefresherContent />
       </IonRefresher>
 

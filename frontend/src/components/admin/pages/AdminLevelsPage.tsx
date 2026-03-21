@@ -81,6 +81,7 @@ import { CACHE_TTL } from '../../../services/offlineCache';
 import LevelManagementModal from '../modals/LevelManagementModal';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader, ListSection } from '../../shared';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 // Icon Mapping (same as in LevelManagementModal)
 const LEVEL_ICONS: Record<string, any> = {
@@ -195,7 +196,7 @@ const AdminLevelsPage: React.FC = () => {
           </IonToolbar>
         </IonHeader>
 
-        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh} onIonPull={triggerPullHaptic}>
           <IonRefresherContent refreshingSpinner="crescent" />
         </IonRefresher>
 

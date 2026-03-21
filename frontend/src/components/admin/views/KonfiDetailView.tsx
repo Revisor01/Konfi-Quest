@@ -29,6 +29,7 @@ import {
   TeamerSinceSection, KonfiHistorySection, PromoteSection
 } from './KonfiDetailSections';
 import type { Konfi, Activity } from './KonfiDetailSections';
+import { triggerPullHaptic } from '../../../utils/haptics';
 
 interface KonfiDetailViewProps {
   konfiId: number;
@@ -536,6 +537,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
             loadKonfiData();
             e.detail.complete();
           }}
+          onIonPull={triggerPullHaptic}
         >
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
