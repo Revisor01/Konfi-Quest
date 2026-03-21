@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Codebase-Hardening
 status: unknown
-stopped_at: Completed 70-02-PLAN.md
-last_updated: "2026-03-21T23:02:12.225Z"
+stopped_at: Completed 71-01-PLAN.md
+last_updated: "2026-03-21T23:45:29.600Z"
 progress:
-  total_phases: 15
+  total_phases: 16
   completed_phases: 8
-  total_plans: 15
-  completed_plans: 15
+  total_plans: 18
+  completed_plans: 17
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 70 — Rollen-Audit Fixes
+**Current focus:** Phase 71 — Teamer+Badge Polish
 
 ## Current Position
 
-Phase: 70
-Plan: Not started
+Phase: 71 (Teamer+Badge Polish) — EXECUTING
+Plan: 3 of 3
 
 ## Accumulated Context
 
@@ -52,6 +52,8 @@ All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestone
 - [Phase 70-01]: S2 organizations.js bereits korrekt - kein Code-Change, nur Verifikation
 - [Phase 70]: Timeslots/Participants separat ohne Cache laden — nur Event-Stammdaten gecacht
 - [Phase 70]: KonfiRequestsPage Delete-Handler nutzt setError statt silent return — Swipe-Actions haben kein disabled
+- [Phase 71]: margin-top statt padding-top bei .app-icon-circle (Icon-Position erhalten)
+- [Phase 71]: Hauptmetriken einmalig per Promise.all abfragen statt pro Badge einzeln
 
 ### Roadmap Evolution
 
@@ -70,6 +72,6 @@ All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestone
 
 ## Session Continuity
 
-Last session: 2026-03-21T22:59:24.006Z
-Stopped at: Completed 70-02-PLAN.md
+Last session: 2026-03-21T23:45:29.597Z
+Stopped at: Completed 71-01-PLAN.md
 Resume file: None
