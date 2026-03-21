@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Codebase-Hardening
 status: unknown
-stopped_at: Completed 70-01-PLAN.md
-last_updated: "2026-03-21T22:56:39.301Z"
+stopped_at: Completed 70-02-PLAN.md
+last_updated: "2026-03-21T22:59:24.009Z"
 progress:
   total_phases: 15
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 15
-  completed_plans: 14
+  completed_plans: 15
 ---
 
 # Project State
@@ -50,6 +50,8 @@ All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestone
 - [Phase 69]: Eigene Pinch-to-Zoom statt Library (CSS transform + Touch-Events), dunkles Overlay-UI statt IonPage
 - [Phase 69]: API-Pfade als FileItem-URLs mit lazy Blob-Aufloesung im Viewer statt Vorladen aller Dateien
 - [Phase 70-01]: S2 organizations.js bereits korrekt - kein Code-Change, nur Verifikation
+- [Phase 70]: Timeslots/Participants separat ohne Cache laden — nur Event-Stammdaten gecacht
+- [Phase 70]: KonfiRequestsPage Delete-Handler nutzt setError statt silent return — Swipe-Actions haben kein disabled
 
 ### Roadmap Evolution
 
@@ -67,6 +69,6 @@ All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestone
 
 ## Session Continuity
 
-Last session: 2026-03-21T22:56:39.299Z
-Stopped at: Completed 70-01-PLAN.md
+Last session: 2026-03-21T22:59:24.006Z
+Stopped at: Completed 70-02-PLAN.md
 Resume file: None
