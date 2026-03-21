@@ -238,6 +238,32 @@ const TeamerProfilePage: React.FC = () => {
           </div>
         </div>
 
+        {/* Punkte-Statistiken */}
+        {profile.konfi_data?.jahrgang_name && (
+          <div className="app-stats-section" style={{ padding: '0 16px', marginTop: '-8px' }}>
+            <div className="app-stats-row" style={{
+              display: 'flex',
+              gap: '8px',
+              justifyContent: 'center'
+            }}>
+              <div className="app-stats-row__item">
+                <span className="app-stats-row__value" style={{ color: '#e11d48' }}>
+                  {(profile.konfi_data.gottesdienst_points || 0) + (profile.konfi_data.gemeinde_points || 0)}
+                </span>
+                <span className="app-stats-row__label">Gesamt</span>
+              </div>
+              <div className="app-stats-row__item">
+                <span className="app-stats-row__value">{profile.konfi_data.gottesdienst_points || 0}</span>
+                <span className="app-stats-row__label">Gottesdienst</span>
+              </div>
+              <div className="app-stats-row__item">
+                <span className="app-stats-row__value">{profile.konfi_data.gemeinde_points || 0}</span>
+                <span className="app-stats-row__label">Gemeinde</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* B. Konto-Einstellungen */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
