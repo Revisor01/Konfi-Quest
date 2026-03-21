@@ -244,10 +244,11 @@ Plans:
   2. Kein globales Offline-Banner — nur kontextbezogene Hinweise an betroffenen Buttons/Elementen
   3. Pending Chat-Nachrichten zeigen Uhr-Icon neben dem Zeitstempel; nach Zustellung verschwindet die Uhr
   4. Fehlgeschlagene Chat-Nachrichten zeigen rotes Ausrufezeichen mit "Erneut senden" oder "Loeschen" bei Tap
-**Plans**: 2 plans
+**Plans**: 3 plans
 Plans:
-- [x] 58-01-PLAN.md — CSS-Infrastruktur: Corner-Badge Flex-Container + Queue/Fehler-Badge Klassen
-- [ ] 58-02-PLAN.md — Migration aller ~23 bestehenden Corner-Badge Verwendungen auf Flex-Container
+- [ ] 59-01-PLAN.md — Chat Queue-Status UI (MessageBubble Uhr/Fehler-Icon + ChatRoom ActionSheet)
+- [ ] 59-02-PLAN.md — Online-Only Buttons Batch 1: 23 Modals (Admin + Konfi + Chat)
+- [ ] 59-03-PLAN.md — Online-Only Buttons Batch 2: Pages/Views + Auth (destruktive Aktionen + QR + Registration)
 
 ### Phase 60: Queue-Kern + Konfi-Aktionen
 **Goal**: Konfis koennen Chat-Nachrichten senden und Aktivitaets-Antraege stellen auch wenn sie offline sind — alles wird bei Reconnect automatisch zugestellt
@@ -261,8 +262,7 @@ Plans:
   5. Fehlgeschlagene Queue-Items (4xx) werden entfernt und der User informiert; retribare Fehler (5xx) bleiben in der Queue (max 5 Retries)
 **Plans**: 2 plans
 Plans:
-- [ ] 58-01-PLAN.md — CSS-Infrastruktur: Corner-Badge Flex-Container + Queue/Fehler-Badge Klassen
-- [ ] 58-02-PLAN.md — Migration aller ~23 bestehenden Corner-Badge Verwendungen auf Flex-Container
+- [ ] TBD (run /gsd:plan-phase 60 to break down)
 
 ### Phase 61: Admin- + Teamer-Queue
 **Goal**: Admins und Teamer koennen ihre haeufigsten Aktionen auch offline ausfuehren — Events, Aktivitaeten, Badges, Kategorien, Levels, Zertifikate, Material erstellen/bearbeiten
@@ -275,8 +275,7 @@ Plans:
   4. Teamer kann offline Events buchen und sich abmelden — beides mit Uhr-Icon am Event
 **Plans**: 2 plans
 Plans:
-- [ ] 58-01-PLAN.md — CSS-Infrastruktur: Corner-Badge Flex-Container + Queue/Fehler-Badge Klassen
-- [ ] 58-02-PLAN.md — Migration aller ~23 bestehenden Corner-Badge Verwendungen auf Flex-Container
+- [ ] TBD (run /gsd:plan-phase 61 to break down)
 
 ### Phase 62: Sync
 **Goal**: App ist nach App-Resume und Socket.io-Reconnect sofort aktuell — keine verpassten Daten, korrekte Reihenfolge
@@ -289,8 +288,7 @@ Plans:
   4. Bei App-Resume (Hintergrund -> Vordergrund) wird die aktive Seite automatisch revalidiert
 **Plans**: 2 plans
 Plans:
-- [ ] 58-01-PLAN.md — CSS-Infrastruktur: Corner-Badge Flex-Container + Queue/Fehler-Badge Klassen
-- [ ] 58-02-PLAN.md — Migration aller ~23 bestehenden Corner-Badge Verwendungen auf Flex-Container
+- [ ] TBD (run /gsd:plan-phase 62 to break down)
 
 ## Progress
 
@@ -305,7 +303,7 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 | 56. Lese-Cache | 4/4 | Complete    | 2026-03-21 |
 | 57. Retry + Schutz | 2/2 | Complete    | 2026-03-21 |
 | 58. Corner-Badge System | 2/2 | Complete    | 2026-03-21 |
-| 59. Online-Only Buttons | 0/? | Not started | - |
+| 59. Online-Only Buttons | 0/3 | Not started | - |
 | 60. Queue-Kern + Konfi-Aktionen | 0/? | Not started | - |
 | 61. Admin- + Teamer-Queue | 0/? | Not started | - |
 | 62. Sync | 0/? | Not started | - |
