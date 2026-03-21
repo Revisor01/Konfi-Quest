@@ -307,7 +307,7 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 | 57. Retry + Schutz | 2/2 | Complete    | 2026-03-21 |
 | 58. Corner-Badge System | 2/2 | Complete    | 2026-03-21 |
 | 59. Online-Only Buttons | 3/3 | Complete    | 2026-03-21 |
-| 60. Queue-Kern + Konfi-Aktionen | 4/4 | Complete   | 2026-03-21 |
+| 60. Queue-Kern + Konfi-Aktionen | 4/4 | Complete    | 2026-03-21 |
 | 61. Admin- + Teamer-Queue | 0/? | Not started | - |
 | 62. Sync | 0/? | Not started | - |
 

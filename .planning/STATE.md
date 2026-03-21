@@ -4,7 +4,7 @@ milestone: v2.1
 milestone_name: App-Resilienz
 status: unknown
 stopped_at: Completed 60-04-PLAN.md (Fire-and-Forget Aktionen)
-last_updated: "2026-03-21T10:04:52.107Z"
+last_updated: "2026-03-21T11:07:17.917Z"
 progress:
   total_phases: 15
   completed_phases: 6
@@ -23,8 +23,8 @@ See: .planning/PROJECT.md (updated 2026-03-20)
 
 ## Current Position
 
-Phase: 60 (Queue-Kern + Konfi-Aktionen) — EXECUTING
-Plan: 4 of 4
+Phase: 63
+Plan: Not started
 
 ## Accumulated Context
 
