@@ -14,6 +14,8 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import ActivityRequestsView from '../ActivityRequestsView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import ActivityRequestModal from '../modals/ActivityRequestModal';
@@ -36,12 +38,15 @@ interface ActivityRequest {
 }
 
 const AdminActivityRequestsPage: React.FC = () => {
-  const { setSuccess, setError } = useApp();
+  const { user, setSuccess, setError } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-requests');
-  
-  // State
-  const [requests, setRequests] = useState<ActivityRequest[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  // Offline-Query: Requests
+  const { data: requests, loading, refresh: refreshRequests } = useOfflineQuery<ActivityRequest[]>(
+    'admin:requests:' + user?.organization_id,
+    async () => { const res = await api.get('/admin/activities/requests'); return res.data; },
+    { ttl: CACHE_TTL.REQUESTS }
+  );
   
   // Modal state
   const [selectedRequest, setSelectedRequest] = useState<ActivityRequest | null>(null);
@@ -62,24 +67,17 @@ const AdminActivityRequestsPage: React.FC = () => {
       dismissRequestModalHook();
       setSelectedRequest(null);
       setModalRequestId(null);
-      loadRequests();
+      refreshRequests();
     }
   });
-
-  // Memoized refresh function for live updates
-  const refreshRequests = useCallback(() => {
-    loadRequests();
-  }, []);
 
   // Subscribe to live updates for requests
   useLiveRefresh('requests', refreshRequests);
 
   useEffect(() => {
-    loadRequests();
-
-    // Event-Listener für Updates
+    // Event-Listener fuer Updates
     const handleRequestsUpdated = () => {
-      loadRequests();
+      refreshRequests();
     };
 
     window.addEventListener('activity-requests-updated', handleRequestsUpdated);
@@ -87,20 +85,7 @@ const AdminActivityRequestsPage: React.FC = () => {
     return () => {
       window.removeEventListener('activity-requests-updated', handleRequestsUpdated);
     };
-  }, []);
-
-  const loadRequests = async () => {
-    setLoading(true);
-    try {
-      const response = await api.get('/admin/activities/requests');
-      setRequests(response.data);
-    } catch (err) {
-      setError('Fehler beim Laden der Anträge');
- console.error('Error loading activity requests:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [refreshRequests]);
 
   const handleResetRequest = async (request: ActivityRequest) => {
     const statusText = request.status === 'approved' ? 'genehmigten' : 'abgelehnten';
@@ -115,7 +100,7 @@ const AdminActivityRequestsPage: React.FC = () => {
             try {
               await api.put(`/admin/activities/requests/${request.id}/reset`);
               setSuccess(`Antrag wurde auf "Offen" zurückgesetzt`);
-              await loadRequests();
+              await refreshRequests();
             } catch (err: any) {
               if (err.response?.data?.error) {
                 setError(err.response.data.error);
@@ -142,7 +127,7 @@ const AdminActivityRequestsPage: React.FC = () => {
             try {
               await api.delete(`/activity-requests/${request.id}`);
               setSuccess(`Antrag von "${request.konfi_name}" gelöscht`);
-              await loadRequests();
+              await refreshRequests();
             } catch (err: any) {
               if (err.response?.data?.error) {
                 setError(err.response.data.error);
@@ -179,7 +164,7 @@ const AdminActivityRequestsPage: React.FC = () => {
         </IonHeader>
         
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
-          loadRequests();
+          refreshRequests();
           e.detail.complete();
         }}>
           <IonRefresherContent></IonRefresherContent>
@@ -189,8 +174,8 @@ const AdminActivityRequestsPage: React.FC = () => {
           <LoadingSpinner message="Anträge werden geladen..." />
         ) : (
           <ActivityRequestsView
-            requests={requests}
-            onUpdate={loadRequests}
+            requests={requests || []}
+            onUpdate={refreshRequests}
             onSelectRequest={handleSelectRequest}
             onDeleteRequest={handleDeleteRequest}
             onResetRequest={handleResetRequest}

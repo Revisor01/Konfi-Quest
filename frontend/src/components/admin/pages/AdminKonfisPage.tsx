@@ -19,6 +19,8 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import KonfisView from '../KonfisView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import KonfiModal from '../modals/KonfiModal';
@@ -57,18 +59,35 @@ const AdminKonfisPage: React.FC = () => {
   const history = useHistory();
   const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-konfis');
   
-  // State
-  const [konfis, setKonfis] = useState<Konfi[]>([]);
-  const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
-  const [settings, setSettings] = useState<Settings>({});
-  const [loading, setLoading] = useState(true);
-  
-  // Alert Hook für Bestätigungsdialoge
+  // Offline-Query: Konfis
+  const { data: konfis, loading: konfisLoading, refresh: refreshKonfis } = useOfflineQuery<Konfi[]>(
+    'admin:konfis:' + user?.organization_id,
+    async () => { const res = await api.get('/admin/konfis'); return res.data; },
+    { ttl: CACHE_TTL.KONFIS }
+  );
+
+  // Offline-Query: Jahrgaenge
+  const { data: jahrgaenge, refresh: refreshJahrgaenge } = useOfflineQuery<Jahrgang[]>(
+    'admin:jahrgaenge:' + user?.organization_id,
+    async () => { const res = await api.get('/admin/jahrgaenge'); return res.data; },
+    { ttl: CACHE_TTL.STAMMDATEN }
+  );
+
+  // Offline-Query: Settings
+  const { data: settings, refresh: refreshSettings } = useOfflineQuery<Settings>(
+    'admin:settings:' + user?.organization_id,
+    async () => { const res = await api.get('/settings'); return res.data; },
+    { ttl: CACHE_TTL.SETTINGS }
+  );
+
+  const loading = konfisLoading;
+
+  // Alert Hook fuer Bestaetigungsdialoge
   const [presentAlert] = useIonAlert();
 
   // Modal mit useIonModal Hook - löst Tab-Navigation Problem
   const [presentKonfiModalHook, dismissKonfiModalHook] = useIonModal(KonfiModal, {
-    jahrgaenge: jahrgaenge,
+    jahrgaenge: jahrgaenge || [],
     onClose: () => dismissKonfiModalHook(),
     onSave: (konfiData: any) => {
       handleAddKonfi(konfiData);
@@ -78,48 +97,27 @@ const AdminKonfisPage: React.FC = () => {
   });
 
   // Memoized refresh function for live updates
-  const refreshData = useCallback(() => {
-    loadData();
-  }, []);
+  const refreshAll = useCallback(() => {
+    refreshKonfis();
+    refreshJahrgaenge();
+    refreshSettings();
+  }, [refreshKonfis, refreshJahrgaenge, refreshSettings]);
 
   // Subscribe to live updates for konfis
-  useLiveRefresh('konfis', refreshData);
+  useLiveRefresh('konfis', refreshAll);
 
   useEffect(() => {
-    loadData();
-    // Setze das presentingElement nach dem ersten Mount
-    
-    // Event-Listener für Updates aus KonfiDetailView
+    // Event-Listener fuer Updates aus KonfiDetailView
     const handleKonfisUpdated = () => {
-      loadData();
+      refreshAll();
     };
-    
+
     window.addEventListener('konfis-updated', handleKonfisUpdated);
-    
+
     return () => {
       window.removeEventListener('konfis-updated', handleKonfisUpdated);
     };
-  }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [konfisRes, jahrgaengeRes, settingsRes] = await Promise.all([
-        api.get('/admin/konfis'),
-        api.get('/admin/jahrgaenge'),
-        api.get('/settings')
-      ]);
-      
-      setKonfis(konfisRes.data);
-      setJahrgaenge(jahrgaengeRes.data);
-      setSettings(settingsRes.data);
-    } catch (err) {
-      setError('Fehler beim Laden der Daten');
- console.error('Error loading data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [refreshAll]);
 
   const handleDeleteKonfi = async (konfi: Konfi) => {
     presentAlert({
@@ -134,7 +132,7 @@ const AdminKonfisPage: React.FC = () => {
             try {
               await api.delete(`/admin/konfis/${konfi.id}`);
               setSuccess(`Konfi "${konfi.name}" gelöscht`);
-              await loadData();
+              await refreshKonfis();
             } catch (err) {
               setError('Fehler beim Löschen');
             }
@@ -186,7 +184,7 @@ const AdminKonfisPage: React.FC = () => {
       }
 
       // Sofortige Aktualisierung
-      await loadData();
+      await refreshKonfis();
     } catch (err: any) {
       if (err.response?.status === 409) {
         setError('Ein Konfi mit diesem Namen existiert bereits. Bitte wählen Sie einen anderen Namen.');
@@ -237,7 +235,7 @@ const AdminKonfisPage: React.FC = () => {
         </IonHeader>
         
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
-          loadData();
+          refreshAll();
           e.detail.complete();
         }}>
           <IonRefresherContent></IonRefresherContent>
@@ -247,10 +245,10 @@ const AdminKonfisPage: React.FC = () => {
           <LoadingSpinner message="Konfis werden geladen..." />
         ) : (
           <KonfisView 
-            konfis={konfis}
-            jahrgaenge={jahrgaenge}
-            settings={settings}
-            onUpdate={loadData}
+            konfis={konfis || []}
+            jahrgaenge={jahrgaenge || []}
+            settings={settings || {}}
+            onUpdate={refreshAll}
             onAddKonfiClick={presentKonfiModal}
             onSelectKonfi={handleSelectKonfi}
             onDeleteKonfi={handleDeleteKonfi}

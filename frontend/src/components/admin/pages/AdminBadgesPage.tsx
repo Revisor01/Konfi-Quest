@@ -18,6 +18,8 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import BadgesView from '../BadgesView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import BadgeManagementModal from '../modals/BadgeManagementModal';
@@ -38,13 +40,18 @@ interface Badge {
 }
 
 const AdminBadgesPage: React.FC = () => {
-  const { setSuccess, setError } = useApp();
+  const { user, setSuccess, setError } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-badges');
 
   // State
-  const [badges, setBadges] = useState<Badge[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedRole, setSelectedRole] = useState<'konfi' | 'teamer'>('konfi');
+
+  // Offline-Query: Badges (key enthaelt selectedRole)
+  const { data: badges, loading, refresh: refreshBadges } = useOfflineQuery<Badge[]>(
+    `admin:badges:${user?.organization_id}:${selectedRole}`,
+    async () => { const res = await api.get(`/admin/badges?target_role=${selectedRole}`); return res.data; },
+    { ttl: CACHE_TTL.STAMMDATEN }
+  );
 
   // Modal state
   const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
@@ -66,24 +73,17 @@ const AdminBadgesPage: React.FC = () => {
       dismissBadgeModalHook();
       setSelectedBadge(null);
       setModalBadgeId(null);
-      loadBadges();
+      refreshBadges();
     }
   });
-
-  // Memoized refresh function for live updates
-  const refreshBadges = useCallback(() => {
-    loadBadges();
-  }, []);
 
   // Subscribe to live updates for badges
   useLiveRefresh('badges', refreshBadges);
 
   useEffect(() => {
-    loadBadges();
-
-    // Event-Listener für Updates
+    // Event-Listener fuer Updates
     const handleBadgesUpdated = () => {
-      loadBadges();
+      refreshBadges();
     };
 
     window.addEventListener('badges-updated', handleBadgesUpdated);
@@ -91,21 +91,7 @@ const AdminBadgesPage: React.FC = () => {
     return () => {
       window.removeEventListener('badges-updated', handleBadgesUpdated);
     };
-  }, []);
-
-  const loadBadges = async (role?: 'konfi' | 'teamer') => {
-    setLoading(true);
-    try {
-      const targetRole = role || selectedRole;
-      const response = await api.get(`/admin/badges?target_role=${targetRole}`);
-      setBadges(response.data);
-    } catch (err) {
-      setError('Fehler beim Laden der Badges');
-      console.error('Error loading badges:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [refreshBadges]);
 
   const handleDeleteBadge = async (badge: Badge) => {
     presentAlert({
@@ -120,7 +106,7 @@ const AdminBadgesPage: React.FC = () => {
             try {
               await api.delete(`/badges/${badge.id}`);
               setSuccess(`Badge "${badge.name}" gelöscht`);
-              await loadBadges();
+              await refreshBadges();
             } catch (err: any) {
               if (err.response?.data?.error) {
                 setError(err.response.data.error);
@@ -152,7 +138,6 @@ const AdminBadgesPage: React.FC = () => {
 
   const handleRoleChange = (role: 'konfi' | 'teamer') => {
     setSelectedRole(role);
-    loadBadges(role);
   };
 
   return (
@@ -180,7 +165,7 @@ const AdminBadgesPage: React.FC = () => {
         </IonHeader>
         
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
-          loadBadges();
+          refreshBadges();
           e.detail.complete();
         }}>
           <IonRefresherContent></IonRefresherContent>
@@ -190,8 +175,8 @@ const AdminBadgesPage: React.FC = () => {
           <LoadingSpinner message="Badges werden geladen..." />
         ) : (
           <BadgesView
-            badges={badges}
-            onUpdate={loadBadges}
+            badges={badges || []}
+            onUpdate={refreshBadges}
             onAddBadgeClick={presentBadgeModal}
             onSelectBadge={handleSelectBadge}
             onDeleteBadge={handleDeleteBadge}

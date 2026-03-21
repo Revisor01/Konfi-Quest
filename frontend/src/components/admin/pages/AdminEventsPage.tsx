@@ -20,6 +20,8 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import EventsView from '../EventsView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import EventModal from '../modals/EventModal';
@@ -64,15 +66,33 @@ const AdminEventsPage: React.FC = () => {
   const [presentActionSheet] = useIonActionSheet();
   const [presentAlert] = useIonAlert();
   
+  // Offline-Query: Events
+  const { data: allEventsRaw, loading: eventsLoading, refresh: refreshEvents } = useOfflineQuery<Event[]>(
+    'admin:events:' + user?.organization_id,
+    async () => { const res = await api.get('/events'); return res.data; },
+    { ttl: CACHE_TTL.EVENTS }
+  );
+  const events = allEventsRaw?.filter((e: Event) => e.registration_status !== 'cancelled') || [];
+
+  // Offline-Query: Abgesagte Events
+  const { data: cancelledEvents, refresh: refreshCancelled } = useOfflineQuery<Event[]>(
+    'admin:events-cancelled:' + user?.organization_id,
+    async () => { const res = await api.get('/events/cancelled'); return res.data; },
+    { ttl: CACHE_TTL.SETTINGS }
+  );
+
+  // Offline-Query: Jahrgaenge
+  const { data: jahrgaenge, refresh: refreshJahrgaenge } = useOfflineQuery<Array<{id: number; name: string}>>(
+    'admin:jahrgaenge:' + user?.organization_id,
+    async () => { const res = await api.get('/jahrgaenge'); return res.data; },
+    { ttl: CACHE_TTL.STAMMDATEN }
+  );
+
   // State
-  const [events, setEvents] = useState<Event[]>([]);
-  const [cancelledEvents, setCancelledEvents] = useState<Event[]>([]);
-  const [pastEvents, setPastEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
+  const loading = eventsLoading;
   const [activeTab, setActiveTab] = useState<'all' | 'upcoming' | 'konfirmation'>('upcoming');
-  const [jahrgaenge, setJahrgaenge] = useState<Array<{id: number; name: string}>>([]);
   const [selectedJahrgang, setSelectedJahrgang] = useState<number | null>(null);
-  
+
   const [editEvent, setEditEvent] = useState<Event | null>(null);
 
   // Modal mit useIonModal Hook - löst Tab-Navigation Problem
@@ -85,28 +105,19 @@ const AdminEventsPage: React.FC = () => {
     onSuccess: () => {
       dismissEventModalHook();
       setEditEvent(null);
-      loadEvents();
+      refreshEvents();
+      refreshCancelled();
     }
   });
 
   // Memoized refresh function for live updates
   const refreshAllEvents = useCallback(() => {
-    loadEvents();
-    loadCancelledEvents();
-    loadPastEvents();
-  }, []);
+    refreshEvents();
+    refreshCancelled();
+  }, [refreshEvents, refreshCancelled]);
 
   // Subscribe to live updates for events
   useLiveRefresh('events', refreshAllEvents);
-
-  const loadJahrgaenge = async () => {
-    try {
-      const response = await api.get('/jahrgaenge');
-      setJahrgaenge(response.data);
-    } catch (err) {
-      console.error('Error loading jahrgaenge:', err);
-    }
-  };
 
   const filterByJahrgang = (eventList: Event[]) => {
     if (!selectedJahrgang) return eventList;
@@ -118,15 +129,9 @@ const AdminEventsPage: React.FC = () => {
   };
 
   useEffect(() => {
-    loadEvents();
-    loadCancelledEvents();
-    loadPastEvents();
-    loadJahrgaenge();
     // Event-Listener fuer Updates aus EventDetailView (legacy support)
     const handleEventsUpdated = () => {
-      loadEvents();
-      loadCancelledEvents();
-      loadPastEvents();
+      refreshAllEvents();
     };
 
     window.addEventListener('events-updated', handleEventsUpdated);
@@ -134,52 +139,11 @@ const AdminEventsPage: React.FC = () => {
     return () => {
       window.removeEventListener('events-updated', handleEventsUpdated);
     };
-  }, []);
-
-  
-  const loadEvents = async () => {
-    setLoading(true);
-    try {
-      const response = await api.get('/events');
-      // Filter out cancelled events (they're loaded separately)
-      const activeEvents = response.data.filter((event: Event) =>
-        event.registration_status !== 'cancelled'
-      );
-      setEvents(activeEvents);
-    } catch (err) {
-      setError('Fehler beim Laden der Events');
- console.error('Error loading events:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadCancelledEvents = async () => {
-    try {
-      const response = await api.get('/events/cancelled');
-      setCancelledEvents(response.data);
-    } catch (err) {
- console.error('Error loading cancelled events:', err);
-      // Don't show error for cancelled events as it's not critical
-    }
-  };
-
-  const loadPastEvents = async () => {
-    try {
-      const response = await api.get('/events');
-      const now = new Date();
-      const pastEventsFiltered = response.data.filter((event: Event) => 
-        new Date(event.event_date) < now
-      );
-      setPastEvents(pastEventsFiltered);
-    } catch (err) {
- console.error('Error loading past events:', err);
-    }
-  };
+  }, [refreshAllEvents]);
 
   // Get combined events for "Alle" tab (active + cancelled) - ohne Duplikate
   const getAllEvents = () => {
-    const combinedEvents = [...events, ...cancelledEvents];
+    const combinedEvents = [...events, ...(cancelledEvents || [])];
     // Duplikate entfernen basierend auf ID
     const uniqueEvents = Array.from(new Map(combinedEvents.map(e => [e.id, e])).values());
     return uniqueEvents.sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
@@ -213,7 +177,7 @@ const AdminEventsPage: React.FC = () => {
     // Check if this is part of a series
     if (event.is_series && event.series_id) {
       // Get other events in the series
-      const allEvents = [...events, ...cancelledEvents, ...pastEvents];
+      const allEvents = [...events, ...(cancelledEvents || [])];
       const seriesEvents = allEvents.filter(e => 
         e.series_id === event.series_id && e.id !== event.id
       );
@@ -262,9 +226,8 @@ const AdminEventsPage: React.FC = () => {
             try {
               await api.delete(`/events/${event.id}`);
               setSuccess(`Event "${event.name}" gelöscht`);
-              await loadEvents();
-              await loadCancelledEvents();
-              await loadPastEvents();
+              await refreshEvents();
+              await refreshCancelled();
             } catch (error: any) {
               if (error.response?.data?.error) {
                 setError(error.response.data.error);
@@ -292,9 +255,8 @@ const AdminEventsPage: React.FC = () => {
               const deletePromises = seriesEvents.map(event => api.delete(`/events/${event.id}`));
               await Promise.all(deletePromises);
               setSuccess(`Serie mit ${seriesEvents.length} Terminen gelöscht`);
-              await loadEvents();
-              await loadCancelledEvents();
-              await loadPastEvents();
+              await refreshEvents();
+              await refreshCancelled();
             } catch (error: any) {
               if (error.response?.data?.error) {
                 setError(error.response.data.error);
@@ -344,9 +306,8 @@ const AdminEventsPage: React.FC = () => {
         notification_message: message
       });
       setSuccess(`Event "${event.name}" wurde abgesagt`);
-      await loadEvents();
-      await loadCancelledEvents();
-      await loadPastEvents();
+      await refreshEvents();
+      await refreshCancelled();
     } catch (error: any) {
       if (error.response?.data?.error) {
         setError(error.response.data.error);
@@ -420,9 +381,7 @@ const AdminEventsPage: React.FC = () => {
         </IonHeader>
         
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
-          loadEvents();
-          loadCancelledEvents();
-          loadPastEvents();
+          refreshAllEvents();
           e.detail.complete();
         }}>
           <IonRefresherContent></IonRefresherContent>
@@ -438,7 +397,7 @@ const AdminEventsPage: React.FC = () => {
               activeTab === 'konfirmation' ? filterByJahrgang(getKonfirmationEvents()) :
               filterByJahrgang(getFutureEvents())
             }
-            onUpdate={loadEvents}
+            onUpdate={refreshEvents}
             onAddEventClick={handleAddEventClick}
             onSelectEvent={handleSelectEvent}
             onDeleteEvent={canDelete ? handleDeleteEvent : undefined}
@@ -451,7 +410,7 @@ const AdminEventsPage: React.FC = () => {
               upcoming: filterByJahrgang(getFutureEvents()).length,
               konfirmation: filterByJahrgang(getKonfirmationEvents()).length
             }}
-            jahrgaenge={jahrgaenge}
+            jahrgaenge={jahrgaenge || []}
             selectedJahrgang={selectedJahrgang}
             onJahrgangChange={setSelectedJahrgang}
           />

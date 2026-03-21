@@ -18,6 +18,8 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import ActivitiesView from '../ActivitiesView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import ActivityManagementModal from '../modals/ActivityManagementModal';
@@ -37,9 +39,14 @@ const AdminActivitiesPage: React.FC = () => {
   const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-activities');
   
   // State
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedRole, setSelectedRole] = useState<'konfi' | 'teamer'>('konfi');
+
+  // Offline-Query: Activities (key enthaelt selectedRole)
+  const { data: activities, loading, refresh: refreshActivities } = useOfflineQuery<Activity[]>(
+    `admin:activities:${user?.organization_id}:${selectedRole}`,
+    async () => { const res = await api.get(`/admin/activities?target_role=${selectedRole}`); return res.data; },
+    { ttl: CACHE_TTL.STAMMDATEN }
+  );
 
   // Modal state
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
@@ -55,24 +62,17 @@ const AdminActivitiesPage: React.FC = () => {
     onClose: () => dismissActivityModalHook(),
     onSuccess: () => {
       dismissActivityModalHook();
-      loadActivities();
+      refreshActivities();
     }
   });
-
-  // Memoized refresh function for live updates
-  const refreshActivities = useCallback(() => {
-    loadActivities();
-  }, []);
 
   // Subscribe to live updates for activities
   useLiveRefresh('activities', refreshActivities);
 
   useEffect(() => {
-    loadActivities();
-
-    // Event-Listener für Updates
+    // Event-Listener fuer Updates
     const handleActivitiesUpdated = () => {
-      loadActivities();
+      refreshActivities();
     };
 
     window.addEventListener('activities-updated', handleActivitiesUpdated);
@@ -80,22 +80,7 @@ const AdminActivitiesPage: React.FC = () => {
     return () => {
       window.removeEventListener('activities-updated', handleActivitiesUpdated);
     };
-  }, []);
-
-
-  const loadActivities = async (role?: 'konfi' | 'teamer') => {
-    setLoading(true);
-    try {
-      const targetRole = role || selectedRole;
-      const response = await api.get(`/admin/activities?target_role=${targetRole}`);
-      setActivities(response.data);
-    } catch (err) {
-      setError('Fehler beim Laden der Aktivitäten');
-      console.error('Error loading activities:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [refreshActivities]);
 
   const handleDeleteActivity = async (activity: Activity) => {
     presentAlert({
@@ -110,7 +95,7 @@ const AdminActivitiesPage: React.FC = () => {
             try {
               await api.delete(`/admin/activities/${activity.id}`);
               setSuccess(`Aktivität "${activity.name}" gelöscht`);
-              await loadActivities();
+              await refreshActivities();
             } catch (err: any) {
               const errorMessage = err.response?.data?.error || 'Fehler beim Löschen der Aktivität';
               setError(errorMessage);
@@ -137,7 +122,7 @@ const AdminActivitiesPage: React.FC = () => {
 
   const handleRoleChange = (role: 'konfi' | 'teamer') => {
     setSelectedRole(role);
-    loadActivities(role);
+    // useOfflineQuery reagiert automatisch auf selectedRole-Aenderung im cacheKey
   };
 
   // Rollen-basierte Berechtigungen (org_admin und admin duerfen alles)
@@ -174,7 +159,7 @@ const AdminActivitiesPage: React.FC = () => {
         </IonHeader>
         
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
-          loadActivities();
+          refreshActivities();
           e.detail.complete();
         }}>
           <IonRefresherContent></IonRefresherContent>
@@ -184,8 +169,8 @@ const AdminActivitiesPage: React.FC = () => {
           <LoadingSpinner message="Aktivitäten werden geladen..." />
         ) : (
           <ActivitiesView
-            activities={activities}
-            onUpdate={loadActivities}
+            activities={activities || []}
+            onUpdate={refreshActivities}
             onAddActivityClick={presentActivityModal}
             onSelectActivity={handleSelectActivity}
             onDeleteActivity={handleDeleteActivity}
