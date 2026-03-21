@@ -33,7 +33,7 @@ import { CACHE_TTL } from '../../services/offlineCache';
 import api from '../../services/api';
 import { initializeWebSocket, getSocket, joinRoom, leaveRoom, disconnectWebSocket, onReconnect } from '../../services/websocket';
 import { getToken } from '../../services/tokenStore';
-import { Message, Reaction, ChatRoomProps as ChatRoomComponentProps } from '../../types/chat';
+import { Message, Reaction, PollVote, ChatRoomProps as ChatRoomComponentProps } from '../../types/chat';
 import { formatFileSize } from '../../utils/helpers';
 import MessageBubble from './MessageBubble';
 import PollModal from './modals/PollModal';
@@ -45,6 +45,8 @@ import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { FileViewer } from '@capacitor/file-viewer';
 import { FileOpener } from '@capacitor-community/file-opener';
+import { writeQueue } from '../../services/writeQueue';
+import { networkMonitor } from '../../services/networkMonitor';
 
 
 
@@ -168,17 +170,52 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       buttons: [
         {
           text: 'Erneut senden',
-          handler: () => {
-            // Phase 60 wird hier die Queue-Retry-Logik einhaengen
-            console.log('Retry message:', message.localId);
+          handler: async () => {
+            // Message als pending markieren
+            setMessages(prev => prev.map(m =>
+              m.localId === message.localId ? { ...m, queueStatus: 'pending' as const } : m
+            ));
+            // Queue-Item finden und erneut enqueuen
+            const queueItems = await writeQueue.getByMetadata({ roomId: room?.id, type: 'chat' });
+            const item = queueItems.find(qi => qi.metadata.clientId === message.localId || qi.id === message.localId);
+            if (item) {
+              await writeQueue.remove(item.id);
+              const retryItem = { ...item, retryCount: 0 };
+              // retryCount/id/createdAt werden von enqueue ueberschrieben, also Omit-kompatibel machen
+              await writeQueue.enqueue({
+                method: retryItem.method,
+                url: retryItem.url,
+                body: retryItem.body,
+                headers: retryItem.headers,
+                maxRetries: retryItem.maxRetries,
+                hasFileUpload: retryItem.hasFileUpload,
+                metadata: retryItem.metadata,
+              });
+            }
+            // Flush versuchen wenn online
+            if (networkMonitor.isOnline) {
+              writeQueue.flush();
+            }
           }
         },
         {
           text: 'Nachricht l\u00f6schen',
           role: 'destructive',
-          handler: () => {
-            // Phase 60 wird hier die Queue-Remove-Logik einhaengen
-            console.log('Delete queued message:', message.localId);
+          handler: async () => {
+            // Aus UI entfernen
+            setMessages(prev => prev.filter(m => m.localId !== message.localId));
+            // Aus Queue entfernen
+            const queueItems = await writeQueue.getByMetadata({ roomId: room?.id, type: 'chat' });
+            const item = queueItems.find(qi => qi.metadata.clientId === message.localId || qi.id === message.localId);
+            if (item) {
+              await writeQueue.remove(item.id);
+              // Lokale Datei l\u00f6schen falls vorhanden
+              if (item.body?._localFilePath) {
+                try {
+                  await Filesystem.deleteFile({ path: item.body._localFilePath, directory: Directory.Data });
+                } catch { /* ignore */ }
+              }
+            }
           }
         },
         {
@@ -189,9 +226,21 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     });
   };
 
-  const handleDeleteQueuedMessage = (message: Message) => {
-    // Phase 60 wird hier die Queue-Remove-Logik einhaengen
-    console.log('Delete queued message:', message.localId);
+  const handleDeleteQueuedMessage = async (message: Message) => {
+    // Aus UI entfernen
+    setMessages(prev => prev.filter(m => m.localId !== message.localId));
+    // Aus Queue entfernen
+    const queueItems = await writeQueue.getByMetadata({ roomId: room?.id, type: 'chat' });
+    const item = queueItems.find(qi => qi.metadata.clientId === message.localId || qi.id === message.localId);
+    if (item) {
+      await writeQueue.remove(item.id);
+      // Lokale Datei l\u00f6schen falls vorhanden
+      if (item.body?._localFilePath) {
+        try {
+          await Filesystem.deleteFile({ path: item.body._localFilePath, directory: Directory.Data });
+        } catch { /* ignore */ }
+      }
+    }
   };
 
   // Poll Modal mit useIonModal Hook (iOS Card Design)
@@ -495,6 +544,36 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
 
 
   const voteInPoll = async (messageId: number, optionIndex: number) => {
+    // Offline: Optimistic UI + Queue-Fallback (fire-and-forget)
+    if (!networkMonitor.isOnline) {
+      setShouldAutoScroll(false);
+
+      // Optimistisch den Vote anzeigen
+      setMessages(prev => prev.map(m => {
+        if (m.id === messageId && m.votes) {
+          const newVote: PollVote = {
+            user_id: user?.id ?? 0,
+            user_type: (user?.role_name === 'konfi' ? 'konfi' : 'admin') as 'admin' | 'konfi',
+            option_index: optionIndex,
+          };
+          return { ...m, votes: [...m.votes, newVote] };
+        }
+        return m;
+      }));
+
+      writeQueue.enqueue({
+        method: 'POST',
+        url: `/chat/polls/${messageId}/vote`,
+        body: { option_index: optionIndex },
+        maxRetries: 3,
+        hasFileUpload: false,
+        metadata: { type: 'fire-and-forget', clientId: `poll-${messageId}-${optionIndex}-${Date.now()}`, label: 'Abstimmung' },
+      });
+
+      setTimeout(() => setShouldAutoScroll(true), 1000);
+      return;
+    }
+
     try {
       setShouldAutoScroll(false); // Prevent auto-scroll when voting
       await api.post(`/chat/polls/${messageId}/vote`, { option_index: optionIndex });
@@ -536,6 +615,48 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
 
   // Reaktion hinzufügen/entfernen
   const toggleReaction = async (messageId: number, emoji: string) => {
+    // Offline: Optimistic UI + Queue-Fallback (fire-and-forget)
+    if (!networkMonitor.isOnline) {
+      await Haptics.impact({ style: ImpactStyle.Light });
+      setShouldAutoScroll(false);
+
+      // Optimistisch toggeln
+      setMessages(prev => prev.map(msg => {
+        if (msg.id !== messageId) return msg;
+        const reactions = msg.reactions || [];
+        const existing = reactions.find(r =>
+          r.user_id === user!.id && r.user_type === user!.type && r.emoji === emoji
+        );
+        if (existing) {
+          return { ...msg, reactions: reactions.filter(r => r !== existing) };
+        }
+        return {
+          ...msg,
+          reactions: [...reactions, {
+            id: 0,
+            emoji,
+            user_id: user!.id,
+            user_type: user!.type as 'admin' | 'konfi',
+            user_name: user!.display_name || ''
+          }]
+        };
+      }));
+
+      writeQueue.enqueue({
+        method: 'POST',
+        url: `/chat/messages/${messageId}/reactions`,
+        body: { emoji },
+        maxRetries: 3,
+        hasFileUpload: false,
+        metadata: { type: 'fire-and-forget', clientId: `reaction-${messageId}-${emoji}-${Date.now()}`, label: 'Reaktion' },
+      });
+
+      setShowReactionPicker(false);
+      setReactionTargetMessage(null);
+      setTimeout(() => setShouldAutoScroll(true), 500);
+      return;
+    }
+
     try {
       await Haptics.impact({ style: ImpactStyle.Light });
       setShouldAutoScroll(false);

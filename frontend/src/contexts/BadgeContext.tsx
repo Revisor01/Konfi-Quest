@@ -1,6 +1,8 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo } from 'react';
 import { Badge } from '@capawesome/capacitor-badge';
 import api from '../services/api';
+import { writeQueue } from '../services/writeQueue';
+import { networkMonitor } from '../services/networkMonitor';
 import { initializeWebSocket, getSocket } from '../services/websocket';
 import { getToken } from '../services/tokenStore';
 import { useApp } from './AppContext';
@@ -102,7 +104,17 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       return Math.max(0, prev - currentUnread);
     });
 
-    // API Call im Hintergrund
+    // API Call im Hintergrund — offline: Queue-Fallback
+    if (!networkMonitor.isOnline) {
+      writeQueue.enqueue({
+        method: 'POST',
+        url: `/chat/rooms/${roomId}/mark-read`,
+        maxRetries: 3,
+        hasFileUpload: false,
+        metadata: { type: 'fire-and-forget', clientId: `mark-read-${roomId}-${Date.now()}`, label: 'Mark-Read' },
+      });
+      return;
+    }
     api.post(`/chat/rooms/${roomId}/mark-read`).catch(err => {
       console.error('BadgeContext: markRoomAsRead API fehlgeschlagen:', err);
     });
