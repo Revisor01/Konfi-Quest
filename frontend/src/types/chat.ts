@@ -44,6 +44,9 @@ export interface Message {
   reply_to_sender_name?: string;
   // Reaktionen
   reactions?: Reaction[];
+  // Queue-Status (Offline-Queue)
+  queueStatus?: 'pending' | 'error';
+  localId?: string;
 }
 
 export interface ChatParticipant {

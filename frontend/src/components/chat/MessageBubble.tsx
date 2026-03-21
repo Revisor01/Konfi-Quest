@@ -16,7 +16,9 @@ import {
   addOutline,
   arrowUndoOutline,
   shareOutline,
-  trashOutline
+  trashOutline,
+  timeOutline,
+  alertCircleOutline
 } from 'ionicons/icons';
 import { Message, Reaction, ChatRoomBase, ReactionEmojiData } from '../../types/chat';
 import { REACTION_EMOJIS } from './constants';
@@ -49,6 +51,8 @@ interface MessageBubbleProps {
   onError: (error: string) => void;
   onDeselectMessage: () => void;
   textareaRef: React.RefObject<HTMLIonTextareaElement | null>;
+  onRetry?: (message: Message) => void;
+  onDeleteQueued?: (message: Message) => void;
 }
 
 const formatMessageTime = (dateString: string) => {
@@ -85,7 +89,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   onImageClick,
   onError,
   onDeselectMessage,
-  textareaRef
+  textareaRef,
+  onRetry,
+  onDeleteQueued
 }) => {
   const isOwnMessage = message.sender_id === user?.id && message.sender_type === user?.type;
 
@@ -143,7 +149,14 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           cursor: 'pointer',
           boxShadow: isOwnMessage
             ? '0 2px 8px rgba(6, 182, 212, 0.25)'
-            : '0 1px 4px rgba(0,0,0,0.08)'
+            : '0 1px 4px rgba(0,0,0,0.08)',
+          ...(message.queueStatus === 'pending' ? { opacity: 0.7 } : {})
+        }}
+        onClick={(e) => {
+          if (message.queueStatus === 'error' && onRetry) {
+            e.stopPropagation();
+            onRetry(message);
+          }
         }}
         onContextMenu={(e) => {
           e.preventDefault();
@@ -492,6 +505,19 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           textAlign: 'right'
         }}>
           {formatMessageTime(message.created_at)}
+          {message.queueStatus === 'pending' && (
+            <IonIcon icon={timeOutline} style={{ fontSize: '0.75rem', marginLeft: '4px', verticalAlign: 'middle' }} />
+          )}
+          {message.queueStatus === 'error' && (
+            <IonIcon
+              icon={alertCircleOutline}
+              style={{ fontSize: '0.75rem', marginLeft: '4px', color: '#dc3545', verticalAlign: 'middle', cursor: 'pointer' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onRetry) onRetry(message);
+              }}
+            />
+          )}
         </div>
 
         {/* Reaktionen Anzeige */}
