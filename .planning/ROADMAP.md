@@ -188,7 +188,7 @@ Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 63. Codebase Cleanup | 0/2 | Planned | - |
+| 63. Codebase Cleanup | 1/2 | In Progress|  |
 | 64. DB-Schema-Konsolidierung | 0/? | Not started | - |
 | 65. Navigation + State | 0/? | Not started | - |
 | 66. Error Boundary + Sicherheit | 0/? | Not started | - |
@@ -201,16 +201,16 @@ Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69
 **Goal:** Doppelte Type-Definitionen (User 9x, Event 8x) konsolidieren, as-any reduzieren, Debug-Logs entfernen
 **Requirements**: [CLEANUP-01, CLEANUP-02]
 **Depends on:** Phase 62
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 63-01-PLAN.md — Typ-Konsolidierung: User + Event Interfaces zentralisieren
-- [ ] 63-02-PLAN.md — Console-Cleanup + restliche as-any Reduktion
+- [x] 63-02-PLAN.md — Console-Cleanup + restliche as-any Reduktion
 
 ### Phase 64: DB-Schema-Konsolidierung — Einheitliches Schema, Altlasten, Indizes, Foreign Keys
 
-**Goal:** Doppelte Type-Definitionen (User 9x, Event 8x) konsolidieren, as-any reduzieren, Debug-Logs entfernen
-**Requirements**: [CLEANUP-01, CLEANUP-02]
+**Goal:** Einheitliches DB-Schema, Altlasten bereinigen, fehlende Indizes und Foreign Keys ergaenzen
+**Requirements**: TBD
 **Depends on:** Phase 63
 **Plans:** 0 plans
 
@@ -219,8 +219,8 @@ Plans:
 
 ### Phase 65: Navigation und State-Konsistenz — Router-Migration, CustomEvents durch LiveUpdateContext ersetzen
 
-**Goal:** Doppelte Type-Definitionen (User 9x, Event 8x) konsolidieren, as-any reduzieren, Debug-Logs entfernen
-**Requirements**: [CLEANUP-01, CLEANUP-02]
+**Goal:** CustomEvents durch LiveUpdateContext ersetzen, Router-Konsistenz sicherstellen
+**Requirements**: TBD
 **Depends on:** Phase 64
 **Plans:** 0 plans
 
@@ -229,8 +229,8 @@ Plans:
 
 ### Phase 66: Error Boundary und Sicherheitshärtung — Error Boundary, CSP, MD5 ersetzen, TLS
 
-**Goal:** Doppelte Type-Definitionen (User 9x, Event 8x) konsolidieren, as-any reduzieren, Debug-Logs entfernen
-**Requirements**: [CLEANUP-01, CLEANUP-02]
+**Goal:** Error Boundaries einbauen, CSP konfigurieren, MD5 durch sichere Hashes ersetzen, TLS haerten
+**Requirements**: TBD
 **Depends on:** Phase 65
 **Plans:** 0 plans
 
@@ -239,8 +239,8 @@ Plans:
 
 ### Phase 67: Performance-Optimierung — Mega-Komponenten aufteilen, Memoization, SELECT-Stern, BackgroundService
 
-**Goal:** Doppelte Type-Definitionen (User 9x, Event 8x) konsolidieren, as-any reduzieren, Debug-Logs entfernen
-**Requirements**: [CLEANUP-01, CLEANUP-02]
+**Goal:** Mega-Komponenten aufteilen, React.memo/useMemo wo noetig, SELECT * durch explizite Spalten ersetzen, BackgroundService optimieren
+**Requirements**: TBD
 **Depends on:** Phase 66
 **Plans:** 0 plans
 
@@ -249,8 +249,8 @@ Plans:
 
 ### Phase 68: Token-Refresh-System — Refresh-Tokens, kürzere JWT-Laufzeit, Revoke-Mechanismus
 
-**Goal:** Doppelte Type-Definitionen (User 9x, Event 8x) konsolidieren, as-any reduzieren, Debug-Logs entfernen
-**Requirements**: [CLEANUP-01, CLEANUP-02]
+**Goal:** Refresh-Token-Mechanismus einbauen, JWT-Laufzeit verkuerzen, Token-Revoke ermoeglichen
+**Requirements**: TBD
 **Depends on:** Phase 67
 **Plans:** 0 plans
 
@@ -259,8 +259,8 @@ Plans:
 
 ### Phase 69: Universeller Datei-Viewer — Fullscreen Zoom/Pan für Bilder in Chat + Material, Desktop + Mobile + Native
 
-**Goal:** Doppelte Type-Definitionen (User 9x, Event 8x) konsolidieren, as-any reduzieren, Debug-Logs entfernen
-**Requirements**: [CLEANUP-01, CLEANUP-02]
+**Goal:** Fullscreen Bild-Viewer mit Zoom/Pan fuer Chat und Material, Desktop + Mobile + Native kompatibel
+**Requirements**: TBD
 **Depends on:** Phase 68
 **Plans:** 0 plans
 
