@@ -164,7 +164,10 @@ const KonfiRequestsPage: React.FC = () => {
   };
 
   const handleDeleteRequest = (request: ActivityRequest) => {
-    if (!isOnline) return;
+    if (!isOnline) {
+      setError('Löschen nicht möglich — du bist offline');
+      return;
+    }
     if (request.status !== 'pending') {
       setError('Nur wartende Anträge können gelöscht werden');
       return;
