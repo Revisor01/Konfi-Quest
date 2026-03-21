@@ -44,7 +44,7 @@ const verifyTokenRBAC = (db) => {
       // User-Query mit LEFT JOIN für super_admin (organization_id kann NULL sein)
       const userQuery = `
         SELECT u.id, u.organization_id, u.username, u.display_name, u.is_active,
-               u.role_title, u.is_super_admin,
+               u.role_title, u.is_super_admin, u.token_invalidated_at,
                r.name as role_name, r.display_name as role_display_name,
                o.name as organization_name, o.slug as organization_slug,
                COALESCE(o.is_active, true) as organization_active
@@ -61,6 +61,15 @@ const verifyTokenRBAC = (db) => {
 
       if (!user.is_active) {
         return res.status(401).json({ error: 'User account is inactive' });
+      }
+
+      // Soft-Revoke: Token vor Invalidierung ausgestellt -> 401
+      if (user.token_invalidated_at) {
+        const tokenIssuedAt = decoded.iat; // Unix-Timestamp aus JWT
+        const invalidatedAt = Math.floor(new Date(user.token_invalidated_at).getTime() / 1000);
+        if (tokenIssuedAt < invalidatedAt) {
+          return res.status(401).json({ error: 'Token invalidated' });
+        }
       }
 
       // Super-Admin hat keine Organization - Skip org check
