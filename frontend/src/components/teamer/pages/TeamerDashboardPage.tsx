@@ -360,6 +360,7 @@ const TeamerDashboardPage: React.FC = () => {
                     return (
                       <div
                         key={cert.id}
+                        className="app-cert-card"
                         onClick={(e) => {
                           certPopoverRef.current = cert;
                           presentCertPopover({ event: e as any });
@@ -605,9 +606,9 @@ const TeamerDashboardPage: React.FC = () => {
               </div>
 
               <div className="app-dashboard-section__content" style={{ padding: '60px 20px 24px 20px' }}>
-                {dashboardData.badges.earned_count === 0 ? (
+                {dashboardData.badges.total_count === 0 ? (
                   <div style={{ textAlign: 'center', padding: '20px', color: 'rgba(255,255,255,0.7)' }}>
-                    Noch keine Badges erhalten
+                    Noch keine Badges erstellt
                   </div>
                 ) : (
                   <>
@@ -629,7 +630,7 @@ const TeamerDashboardPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Badge Icons Grid */}
+                    {/* Badge Icons Grid - verdiente + graue Platzhalter */}
                     <div style={{
                       display: 'flex',
                       flexWrap: 'wrap',
@@ -637,6 +638,7 @@ const TeamerDashboardPage: React.FC = () => {
                       justifyContent: 'center',
                       marginBottom: '16px'
                     }}>
+                      {/* Verdiente Badges */}
                       {dashboardData.badges.recent.map((badge) => (
                         <div
                           key={badge.id}
@@ -649,19 +651,28 @@ const TeamerDashboardPage: React.FC = () => {
                             alignItems: 'center',
                             justifyContent: 'center',
                             boxShadow: '0 4px 12px rgba(245, 158, 11, 0.4)',
-                            border: '2px solid rgba(255, 255, 255, 0.3)',
-                            transition: 'all 0.3s ease',
-                            cursor: 'pointer'
+                            border: '2px solid rgba(255, 255, 255, 0.3)'
                           }}
                         >
                           <IonIcon
                             icon={getIconFromString(badge.icon)}
-                            style={{
-                              fontSize: '1.2rem',
-                              color: 'white',
-                              filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))'
-                            }}
+                            style={{ fontSize: '1.2rem', color: 'white' }}
                           />
+                        </div>
+                      ))}
+                      {/* Graue Platzhalter für nicht-verdiente */}
+                      {Array.from({ length: Math.min(dashboardData.badges.total_count - dashboardData.badges.earned_count, 12) }).map((_, i) => (
+                        <div key={`placeholder-${i}`} style={{
+                          width: '44px',
+                          height: '44px',
+                          borderRadius: '50%',
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          border: '2px dashed rgba(255, 255, 255, 0.2)'
+                        }}>
+                          <IonIcon icon={helpCircle} style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.3)' }} />
                         </div>
                       ))}
                     </div>
@@ -670,7 +681,7 @@ const TeamerDashboardPage: React.FC = () => {
                     <div style={{ display: 'flex', justifyContent: 'center' }}>
                       <div
                         className="app-dashboard-glass-chip"
-                        onClick={() => history.push('/teamer/profil')}
+                        onClick={() => history.push('/teamer/profile/badges')}
                         style={{
                           cursor: 'pointer',
                           display: 'flex',
