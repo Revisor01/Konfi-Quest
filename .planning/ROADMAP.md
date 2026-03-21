@@ -192,7 +192,7 @@ Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69
 | 64. DB-Schema-Konsolidierung | 2/2 | Complete    | 2026-03-21 |
 | 65. Navigation + State | 2/2 | Complete    | 2026-03-21 |
 | 66. Error Boundary + Sicherheit | 1/1 | Complete    | 2026-03-21 |
-| 67. Performance | 0/2 | Not started | - |
+| 67. Performance | 1/2 | In Progress|  |
 | 68. Token-Refresh | 0/? | Not started | - |
 | 69. Datei-Viewer | 0/? | Not started | - |
 
@@ -244,10 +244,10 @@ Plans:
 **Goal:** 5 Mega-Komponenten (>1400 Zeilen) in wartbare Teile aufteilen, SELECT * durch explizite Spalten ersetzen
 **Requirements**: [PERF-01, PERF-02, PERF-03, PERF-04, PERF-05, PERF-06]
 **Depends on:** Phase 66
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
-- [ ] 67-01-PLAN.md — Admin-Mega-Komponenten aufteilen (KonfiDetailView, EventDetailView, EventModal)
+- [x] 67-01-PLAN.md — Admin-Mega-Komponenten aufteilen (KonfiDetailView, EventDetailView, EventModal)
 - [ ] 67-02-PLAN.md — DashboardView + ChatRoom aufteilen, SELECT * ersetzen
 
 ### Phase 68: Token-Refresh-System — Refresh-Tokens, kuerzere JWT-Laufzeit, Revoke-Mechanismus
