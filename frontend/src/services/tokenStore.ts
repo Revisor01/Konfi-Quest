@@ -6,6 +6,7 @@ let _token: string | null = null;
 let _user: BaseUser | null = null;
 let _deviceId: string | null = null;
 let _pushTokenTimestamp: number = 0;
+let _refreshToken: string | null = null;
 
 // --- Synchrone Getter (lesen nur aus Memory) ---
 
@@ -16,6 +17,8 @@ export const getUser = (): BaseUser | null => _user;
 export const getDeviceId = (): string | null => _deviceId;
 
 export const getPushTokenTimestamp = (): number => _pushTokenTimestamp;
+
+export const getRefreshToken = (): string | null => _refreshToken;
 
 // --- Async Setter (schreiben in Memory + Preferences) ---
 
@@ -39,13 +42,20 @@ export const setPushTokenTimestamp = async (ts: number): Promise<void> => {
   await Preferences.set({ key: 'push_token_last_refresh', value: ts.toString() });
 };
 
+export const setRefreshToken = async (token: string): Promise<void> => {
+  _refreshToken = token;
+  await Preferences.set({ key: 'konfi_refresh_token', value: token });
+};
+
 // --- Auth loeschen (Device-ID bleibt erhalten) ---
 
 export const clearAuth = async (): Promise<void> => {
   _token = null;
   _user = null;
+  _refreshToken = null;
   await Preferences.remove({ key: 'konfi_token' });
   await Preferences.remove({ key: 'konfi_user' });
+  await Preferences.remove({ key: 'konfi_refresh_token' });
 };
 
 // --- Initialisierung: Preferences -> Memory laden ---
@@ -70,4 +80,7 @@ export const initTokenStore = async (): Promise<void> => {
 
   const pushResult = await Preferences.get({ key: 'push_token_last_refresh' });
   _pushTokenTimestamp = pushResult.value ? parseInt(pushResult.value, 10) || 0 : 0;
+
+  const refreshResult = await Preferences.get({ key: 'konfi_refresh_token' });
+  _refreshToken = refreshResult.value;
 };
