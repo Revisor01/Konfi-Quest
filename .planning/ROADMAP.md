@@ -230,7 +230,7 @@ Plans:
   2. Badge-Rundung folgt dem PointsHistory-Referenz-Pattern: letztes Kind hat Card-Ecke oben-rechts, alle anderen unten-beidseitig, 2px weisser Trenner dazwischen
   3. Queue-Badge (Uhr-Icon, orange) erscheint als linkster Badge bei pending Queue-Items und verschwindet nach Zustellung
   4. Fehler-Badge (Ausrufezeichen, rot) erscheint bei permanentem Fehler mit Tap-Optionen "Erneut senden" oder "Loeschen"
-**Plans**: 2 plans
+**Plans**: 1 plan
 Plans:
 - [x] 58-01-PLAN.md — CSS-Infrastruktur: Corner-Badge Flex-Container + Queue/Fehler-Badge Klassen
 - [x] 58-02-PLAN.md — Migration aller ~23 bestehenden Corner-Badge Verwendungen auf Flex-Container
@@ -291,9 +291,9 @@ Plans:
   2. Nach Socket.io-Reconnect: Queue wird zuerst geleert, dann Cache invalidiert, dann Badge-Counts aktualisiert — in dieser Reihenfolge
   3. Backend Chat-Route liefert mit ?after=lastMessageId nur verpasste Nachrichten (kein kompletter Reload)
   4. Bei App-Resume (Hintergrund -> Vordergrund) wird die aktive Seite automatisch revalidiert
-**Plans**: 2 plans
+**Plans**: 1 plan
 Plans:
-- [ ] TBD (run /gsd:plan-phase 62 to break down)
+- [ ] 62-01-PLAN.md — Koordinierte Reconnect-Sequenz + App-Resume Cache-Invalidierung
 
 ## Progress
 
@@ -311,7 +311,7 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 | 59. Online-Only Buttons | 3/3 | Complete    | 2026-03-21 |
 | 60. Queue-Kern + Konfi-Aktionen | 4/4 | Complete    | 2026-03-21 |
 | 61. Admin- + Teamer-Queue | 3/3 | Complete    | 2026-03-21 |
-| 62. Sync | 0/? | Not started | - |
+| 62. Sync | 0/1 | Not started | - |
 
 ### Phase 63: Codebase Cleanup — Quick-Wins, Konsolidierung, Bug-Fixes
 
