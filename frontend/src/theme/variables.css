@@ -1848,6 +1848,29 @@ ion-tab-button ion-badge {
   border-radius: 8px;
 }
 
+/* === Badge-Grid === */
+/* Badge-Grid: Feste Breite, Name mit Ellipsis */
+.app-badge-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.app-badge-grid__item {
+  min-width: 0;  /* Verhindert Grid-Overflow durch langen Text */
+}
+
+.app-badge-grid__name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Dark Mode Support - DISABLED
 @media (prefers-color-scheme: dark) {
   body {
