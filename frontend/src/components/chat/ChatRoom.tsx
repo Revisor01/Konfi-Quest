@@ -7,9 +7,6 @@ import {
   IonButton,
   IonButtons,
   IonIcon,
-  IonTextarea,
-  IonFooter,
-  IonSpinner,
   IonRefresher,
   IonRefresherContent,
   useIonModal,
@@ -17,14 +14,7 @@ import {
   useIonActionSheet
 } from '@ionic/react';
 import {
-  arrowBack,
-  send,
-  attach,
-  barChart,
-  people,
-  returnUpBack,
-  closeCircle,
-  ellipsisVertical
+  arrowBack
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
@@ -34,12 +24,11 @@ import api from '../../services/api';
 import { initializeWebSocket, getSocket, joinRoom, leaveRoom, disconnectWebSocket, onReconnect } from '../../services/websocket';
 import { getToken } from '../../services/tokenStore';
 import { Message, Reaction, PollVote, ChatRoomProps as ChatRoomComponentProps } from '../../types/chat';
-import { formatFileSize } from '../../utils/helpers';
 import MessageBubble from './MessageBubble';
 import PollModal from './modals/PollModal';
 import MembersModal from './modals/MembersModal';
 import FileViewerModal from './modals/FileViewerModal';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+// Camera is now handled via ChatRoomSections helpers
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
@@ -47,6 +36,7 @@ import { FileViewer } from '@capacitor/file-viewer';
 import { FileOpener } from '@capacitor-community/file-opener';
 import { writeQueue } from '../../services/writeQueue';
 import { networkMonitor } from '../../services/networkMonitor';
+import { ChatHeader, MessageInput, autoCapitalize, MIME_EXT_MAP, takePicture as takePictureHelper, selectFromGallery as selectFromGalleryHelper } from './ChatRoomSections';
 
 
 
@@ -75,12 +65,6 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedFilePreview, setSelectedFilePreview] = useState<string | null>(null);
 
-  // Validiert URLs fuer img src, erlaubt nur sichere Protokolle (blob: und data:)
-  const getSafePreviewUrl = (url: string | null | undefined): string | null => {
-    if (!url) return null;
-    if (url.startsWith('blob:') || url.startsWith('data:image/')) return url;
-    return null;
-  };
   const [uploading, setUploading] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
@@ -99,15 +83,15 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   const openImageWithFileOpener = async (filePath: string) => {
     try {
       await Haptics.impact({ style: ImpactStyle.Light });
-      
+
       // Download with authentication
       const response = await api.get(`/chat/files/${filePath}`, {
         responseType: 'blob'
       });
-      
+
       const blob = response.data;
       const safeFileName = `chat_${filePath.substring(0, 8)}.jpg`;
-      
+
       // Convert to base64
       const base64Data = await new Promise<string>((resolve) => {
         const reader = new FileReader();
@@ -117,7 +101,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         };
         reader.readAsDataURL(blob);
       });
-      
+
       // Ensure temp directory exists
       try {
         await Filesystem.mkdir({
@@ -128,7 +112,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       } catch (e) {
         // Directory might already exist
       }
-      
+
       // Write file
       const path = `temp/${safeFileName}`;
       await Filesystem.writeFile({
@@ -136,13 +120,13 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         data: base64Data,
         directory: Directory.Documents
       });
-      
+
       // Get file URI
       const fileUri = await Filesystem.getUri({
         directory: Directory.Documents,
         path
       });
-      
+
       // Open with FileOpener
       await FileOpener.open({
         filePath: fileUri.uri,
@@ -252,7 +236,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     },
     roomId: room?.id ?? 0 // ?? statt || für klarere Intention
   });
-  
+
   const openPollModal = () => {
     if (!room) return;
     presentPollModalHook({
@@ -268,9 +252,9 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       loadMessages();
     },
     roomId: room?.id ?? 0,
-    roomType: room?.type ?? 'group' 
+    roomType: room?.type ?? 'group'
   });
-  
+
   const openMembersModal = () => {
     if (!room) return;
     presentMembersModalHook({
@@ -431,7 +415,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     try {
       const response = await api.get(`/chat/rooms/${room.id}/messages?limit=100`);
       setMessages(response.data);
-      
+
       // Don't pre-load images anymore - use lazy loading instead for better performance
     } catch (err) {
       setError('Fehler beim Laden der Nachrichten');
@@ -825,53 +809,20 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     }
   };
 
-  // Auto-capitalize function for text input
   const handleTextInputChange = (value: string) => {
-    if (!value) {
-      setMessageText('');
-      return;
-    }
-
-    // Auto-capitalize first letter of new message
-    if (value.length === 1) {
-      setMessageText(value.toUpperCase());
-      return;
-    }
-
-    // Auto-capitalize after period, question mark, exclamation mark followed by space
-    const lastTwoChars = value.slice(-3, -1);
-    if ((lastTwoChars.endsWith('. ') || lastTwoChars.endsWith('? ') || lastTwoChars.endsWith('! '))) {
-      const newChar = value.slice(-1);
-      if (newChar !== newChar.toUpperCase() && /[a-zäöü]/.test(newChar)) {
-        setMessageText(value.slice(0, -1) + newChar.toUpperCase());
-        return;
-      }
-    }
-
-    setMessageText(value);
+    setMessageText(autoCapitalize(value));
   };
 
   const takePicture = async () => {
     try {
-      const photo = await Camera.getPhoto({
-        resultType: CameraResultType.DataUrl,
-        source: CameraSource.Camera,
-        quality: 90
-      });
-
-      if (photo.dataUrl) {
-        // Convert dataUrl to File
-        const response = await fetch(photo.dataUrl);
-        const blob = await response.blob();
-        const file = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
-
-        if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      const result = await takePictureHelper();
+      if (result) {
+        if (result.file.size > 10 * 1024 * 1024) {
           setError('Foto ist zu groß (max. 10MB)');
           return;
         }
-
-        setSelectedFile(file);
-        setSelectedFilePreview(photo.dataUrl); // Set preview directly from dataUrl
+        setSelectedFile(result.file);
+        setSelectedFilePreview(result.previewUrl);
       }
     } catch (error) {
  console.error('Camera error:', error);
@@ -881,25 +832,14 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
 
   const selectFromGallery = async () => {
     try {
-      const photo = await Camera.getPhoto({
-        resultType: CameraResultType.DataUrl,
-        source: CameraSource.Photos,
-        quality: 90
-      });
-
-      if (photo.dataUrl) {
-        // Convert dataUrl to File
-        const response = await fetch(photo.dataUrl);
-        const blob = await response.blob();
-        const file = new File([blob], 'gallery-photo.jpg', { type: 'image/jpeg' });
-
-        if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      const result = await selectFromGalleryHelper();
+      if (result) {
+        if (result.file.size > 10 * 1024 * 1024) {
           setError('Foto ist zu groß (max. 10MB)');
           return;
         }
-
-        setSelectedFile(file);
-        setSelectedFilePreview(photo.dataUrl); // Set preview directly from dataUrl
+        setSelectedFile(result.file);
+        setSelectedFilePreview(result.previewUrl);
       }
     } catch (error) {
  console.error('Gallery error:', error);
@@ -935,14 +875,14 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
 
   const handleShare = async () => {
     if (!selectedMessage) return;
-    
+
     try {
       if (selectedMessage.file_path) {
         // For files, share the actual file natively (with auth token)
         const response = await api.get(`/chat/files/${selectedMessage.file_path}`, { responseType: 'blob' });
         const blob = response.data;
         const fileName = selectedMessage.file_name || 'file';
-        
+
         // Write to Documents directory for sharing
         const base64Data = await new Promise<string>((resolve) => {
           const reader = new FileReader();
@@ -952,7 +892,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           };
           reader.readAsDataURL(blob);
         });
-        
+
         const path = `share/${fileName}`;
         await Filesystem.writeFile({
           path,
@@ -960,13 +900,13 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           directory: Directory.Documents,
           recursive: true
         });
-        
+
         // Get local file URI for sharing
         const fileUri = await Filesystem.getUri({
           directory: Directory.Documents,
           path
         });
-        
+
         await Share.share({
           title: 'Datei aus Konfi Quest',
           text: selectedMessage.content || fileName,
@@ -991,7 +931,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   const getDisplayRoomName = () => {
       if (!room) return 'Chat wird geladen...';
       if (room.type === 'direct' && room.participants) {
-        const otherParticipant = room.participants.find(p => 
+        const otherParticipant = room.participants.find(p =>
           !(p.user_id === user?.id && p.user_type === user?.type)
         );
         if (otherParticipant) {
@@ -1050,14 +990,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           reader.readAsDataURL(blob);
         });
         // Extension aus MIME-Type ableiten (fileName kann Hash ohne Extension sein)
-        const mimeExtMap: Record<string, string> = {
-          'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp',
-          'application/pdf': 'pdf', 'text/plain': 'txt',
-          'application/msword': 'doc', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
-          'application/vnd.ms-excel': 'xls', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
-          'application/vnd.ms-powerpoint': 'ppt', 'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx'
-        };
-        const fileExt = fileName.includes('.') ? fileName.split('.').pop() : mimeExtMap[mime] || 'bin';
+        const fileExt = fileName.includes('.') ? fileName.split('.').pop() : MIME_EXT_MAP[mime] || 'bin';
         const path = `temp/chat_${Date.now()}.${fileExt}`;
         try {
           await Filesystem.mkdir({ path: 'temp', directory: Directory.Documents, recursive: true });
@@ -1110,33 +1043,16 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
 
   return (
     <>
-      <IonHeader translucent={true}>
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton onClick={onBack}>
-              <IonIcon icon={arrowBack} />
-            </IonButton>
-          </IonButtons>
-          <IonTitle>{getDisplayRoomName()}</IonTitle>
-          <IonButtons slot="end">
-            {user?.type === 'admin' && (
-              <>
-                <IonButton onClick={openMembersModal}>
-                  <IonIcon icon={people} />
-                </IonButton>
-                <IonButton onClick={openPollModal}>
-                  <IonIcon icon={barChart} />
-                </IonButton>
-              </>
-            )}
-            {canLeaveChat() && (
-              <IonButton disabled={!isOnline} onClick={handleLeaveChat}>
-                <IonIcon icon={ellipsisVertical} />
-              </IonButton>
-            )}
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
+      <ChatHeader
+        roomName={getDisplayRoomName()}
+        isAdmin={user?.type === 'admin'}
+        canLeave={canLeaveChat()}
+        isOnline={isOnline}
+        onBack={onBack}
+        onOpenMembers={openMembersModal}
+        onOpenPoll={openPollModal}
+        onLeaveChat={handleLeaveChat}
+      />
 
       <IonContent
         ref={contentRef}
@@ -1184,228 +1100,22 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           ))}
         </div>
       </IonContent>
-      <IonFooter style={{ backgroundColor: 'rgba(248, 249, 250, 0.95)', backdropFilter: 'blur(10px)' }}>
-        {/* Reply Preview */}
-        {replyToMessage && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            padding: '8px 16px',
-            backgroundColor: 'rgba(6, 182, 212, 0.08)',
-            borderTop: '1px solid rgba(6, 182, 212, 0.15)',
-            borderLeft: '3px solid #06b6d4',
-            gap: '8px'
-          }}>
-            <IonIcon icon={returnUpBack} style={{ fontSize: '1.2rem', color: '#06b6d4' }} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: '600', fontSize: '0.8rem', color: '#06b6d4' }}>
-                {replyToMessage.sender_name}
-              </div>
-              <div style={{
-                fontSize: '0.85rem',
-                color: '#666',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-              }}>
-                {replyToMessage.message_type === 'image' || replyToMessage.message_type === 'video'
-                  ? (replyToMessage.file_name || 'Medieninhalt')
-                  : replyToMessage.message_type === 'file'
-                    ? (replyToMessage.file_name || 'Datei')
-                    : replyToMessage.message_type === 'poll'
-                      ? 'Umfrage'
-                      : (replyToMessage.content || '')}
-              </div>
-            </div>
-            <IonButton
-              fill="clear"
-              size="small"
-              onClick={() => setReplyToMessage(null)}
-              style={{ '--padding-start': '4px', '--padding-end': '4px' }}
-            >
-              <IonIcon icon={closeCircle} style={{ fontSize: '1.2rem', color: '#8e8e93' }} />
-            </IonButton>
-          </div>
-        )}
 
-        {/* File Preview - direkt an Input angehängt wie Reply */}
-        {selectedFile && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            padding: '10px 16px',
-            backgroundColor: 'rgba(6, 182, 212, 0.06)',
-            borderTop: '1px solid rgba(6, 182, 212, 0.12)',
-            borderLeft: '3px solid #06b6d4',
-            gap: '10px'
-          }}>
-            {/* Image Preview or File Icon */}
-            {selectedFilePreview ? (
-              <div style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '8px',
-                overflow: 'hidden',
-                flexShrink: 0,
-                border: '2px solid #06b6d4'
-              }}>
-                <img
-                  src={getSafePreviewUrl(selectedFilePreview) || ''}
-                  alt="Preview"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover'
-                  }}
-                />
-              </div>
-            ) : (
-              <div style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '8px',
-                backgroundColor: 'rgba(6, 182, 212, 0.15)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0
-              }}>
-                <IonIcon icon={attach} style={{ fontSize: '1.4rem', color: '#06b6d4' }} />
-              </div>
-            )}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{
-                fontWeight: '600',
-                fontSize: '0.9rem',
-                color: '#1a1a1a',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-              }}>
-                {selectedFile.name}
-              </div>
-              <div style={{ fontSize: '0.75rem', color: '#06b6d4', fontWeight: '500' }}>
-                {formatFileSize(selectedFile.size)}
-              </div>
-            </div>
-            <IonButton
-              fill="clear"
-              size="small"
-              onClick={clearSelectedFile}
-              style={{ '--padding-start': '6px', '--padding-end': '6px' }}
-            >
-              <IonIcon icon={closeCircle} style={{ fontSize: '1.4rem', color: '#8e8e93' }} />
-            </IonButton>
-          </div>
-        )}
-
-        <IonToolbar style={{
-          '--background': 'transparent',
-          '--min-height': 'auto',
-          '--padding-start': '12px',
-          '--padding-end': '12px',
-          '--padding-top': '8px',
-          '--padding-bottom': '8px'
-        }}>
-          {/* Flex-Container für Input und Buttons - vertikal zentriert */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            width: '100%'
-          }}>
-            <IonButton
-              fill="clear"
-              size="small"
-              onClick={() => fileInputRef.current?.click()}
-              style={{
-                '--padding-start': '4px',
-                '--padding-end': '4px',
-                '--color': '#06b6d4',
-                '--height': '38px',
-                '--min-height': '38px',
-                fontSize: '22px'
-              }}
-            >
-              <IonIcon icon={attach} />
-            </IonButton>
-
-            <div style={{
-              flex: 1,
-              backgroundColor: 'white',
-              borderRadius: '20px',
-              border: '1.5px solid rgba(6, 182, 212, 0.3)',
-              overflow: 'hidden',
-              boxShadow: '0 1px 4px rgba(6, 182, 212, 0.1)',
-              display: 'flex',
-              alignItems: 'center'
-            }}>
-              <IonTextarea
-                ref={textareaRef}
-                value={messageText}
-                onIonInput={(e) => handleTextInputChange(e.detail.value || '')}
-                onIonFocus={handleTextareaFocus}
-                placeholder="Nachricht schreiben..."
-                autoGrow
-                rows={1}
-                autocapitalize="sentences"
-                style={{
-                  '--background': 'transparent',
-                  '--border-radius': '0',
-                  '--padding-start': '14px',
-                  '--padding-end': '14px',
-                  '--padding-top': '10px',
-                  '--padding-bottom': '10px',
-                  '--box-shadow': 'none',
-                  margin: '0',
-                  '--color': '#1a1a1a',
-                  '--placeholder-color': '#8e8e93',
-                  minHeight: '38px'
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                  }
-                }}
-              />
-            </div>
-
-            <IonButton
-              fill="solid"
-              shape="round"
-              size="small"
-              disabled={(!messageText.trim() && !selectedFile) || uploading}
-              onClick={sendMessage}
-              style={{
-                '--background': '#06b6d4',
-                '--background-activated': '#0891b2',
-                '--background-hover': '#0891b2',
-                '--height': '38px',
-                '--min-height': '38px',
-                '--border-radius': '19px',
-                '--padding-start': '0',
-                '--padding-end': '0',
-                '--box-shadow': '0 2px 8px rgba(6, 182, 212, 0.35)',
-                minWidth: '38px',
-                maxWidth: '38px',
-                fontSize: '15px'
-              }}
-            >
-              {uploading ? <IonSpinner name="dots" /> : <IonIcon icon={send} />}
-            </IonButton>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              style={{ display: 'none' }}
-              onChange={handleFileSelect}
-              accept="image/*,video/*,.pdf,.doc,.docx,.txt"
-            />
-          </div>
-        </IonToolbar>
-      </IonFooter>
-
+      <MessageInput
+        messageText={messageText}
+        uploading={uploading}
+        selectedFile={selectedFile}
+        selectedFilePreview={selectedFilePreview}
+        replyToMessage={replyToMessage}
+        textareaRef={textareaRef}
+        fileInputRef={fileInputRef}
+        onTextChange={handleTextInputChange}
+        onFocus={handleTextareaFocus}
+        onSend={sendMessage}
+        onFileSelect={handleFileSelect}
+        onClearFile={clearSelectedFile}
+        onClearReply={() => setReplyToMessage(null)}
+      />
 
     </>
   );
