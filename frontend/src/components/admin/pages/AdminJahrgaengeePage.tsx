@@ -26,7 +26,8 @@ import {
   IonDatetime,
   IonDatetimeButton,
   IonModal,
-  IonToggle
+  IonToggle,
+  IonRange
 } from '@ionic/react';
 import {
   add,
@@ -261,16 +262,11 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                 {formData.gottesdienst_enabled && (
                   <IonItem lines="full" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Ziel Gottesdienst</IonLabel>
-                    <IonInput
-                      type="number"
-                      min="0"
+                    <IonRange
+                      min={1} max={40} step={1}
+                      pin={true} pinFormatter={(value: number) => `${value}`}
                       value={formData.target_gottesdienst}
-                      onIonInput={(e) => {
-                        const val = parseInt(e.detail.value || '0', 10);
-                        if (!isNaN(val) && val >= 0) {
-                          setFormData({ ...formData, target_gottesdienst: val });
-                        }
-                      }}
+                      onIonChange={(e) => setFormData({ ...formData, target_gottesdienst: e.detail.value as number })}
                       disabled={loading}
                     />
                   </IonItem>
@@ -292,16 +288,11 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                 {formData.gemeinde_enabled && (
                   <IonItem lines="none" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Ziel Gemeinde</IonLabel>
-                    <IonInput
-                      type="number"
-                      min="0"
+                    <IonRange
+                      min={1} max={40} step={1}
+                      pin={true} pinFormatter={(value: number) => `${value}`}
                       value={formData.target_gemeinde}
-                      onIonInput={(e) => {
-                        const val = parseInt(e.detail.value || '0', 10);
-                        if (!isNaN(val) && val >= 0) {
-                          setFormData({ ...formData, target_gemeinde: val });
-                        }
-                      }}
+                      onIonChange={(e) => setFormData({ ...formData, target_gemeinde: e.detail.value as number })}
                       disabled={loading}
                     />
                   </IonItem>

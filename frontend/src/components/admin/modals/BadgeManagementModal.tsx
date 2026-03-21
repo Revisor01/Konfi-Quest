@@ -30,6 +30,7 @@ import {
   IonListHeader,
   IonAccordion,
   IonAccordionGroup,
+  IonRange,
   useIonAlert
 } from '@ionic/react';
 import {
@@ -39,8 +40,6 @@ import {
   settings,
   trophy,
   star,
-  removeOutline,
-  addOutline,
   medal,
   flame,
   heart,
@@ -612,45 +611,13 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         return (
           <IonItem lines="none" style={{ '--background': 'transparent', marginTop: '16px' }}>
             <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Zeitraum (Wochen)</IonLabel>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
-              <IonButton
-                fill="outline"
-                size="small"
-                disabled={loading || (extraCriteria.weeks || 4) <= 1}
-                onClick={() => setExtraCriteria({ ...extraCriteria, weeks: Math.max(1, (extraCriteria.weeks || 4) - 1) })}
-                style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
-              >
-                <IonIcon icon={removeOutline} />
-              </IonButton>
-              <IonInput
-                type="text"
-                inputMode="numeric"
-                value={(extraCriteria.weeks || 4).toString()}
-                onIonInput={(e) => {
-                  const value = e.detail.value!;
-                  if (value === '') {
-                    setExtraCriteria({ ...extraCriteria, weeks: 1 });
-                  } else {
-                    const num = parseInt(value);
-                    if (!isNaN(num) && num >= 1 && num <= 52) {
-                      setExtraCriteria({ ...extraCriteria, weeks: num });
-                    }
-                  }
-                }}
-                placeholder="4"
-                disabled={loading}
-                style={{ textAlign: 'center', flex: 1 }}
-              />
-              <IonButton
-                fill="outline"
-                size="small"
-                disabled={loading || (extraCriteria.weeks || 4) >= 52}
-                onClick={() => setExtraCriteria({ ...extraCriteria, weeks: Math.min(52, (extraCriteria.weeks || 4) + 1) })}
-                style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
-              >
-                <IonIcon icon={addOutline} />
-              </IonButton>
-            </div>
+            <IonRange
+              min={1} max={52} step={1}
+              pin={true} pinFormatter={(value: number) => `${value}`}
+              value={extraCriteria.weeks || 4}
+              onIonChange={(e) => setExtraCriteria({ ...extraCriteria, weeks: e.detail.value as number })}
+              disabled={loading}
+            />
           </IonItem>
         );
 
@@ -1092,44 +1059,13 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             <IonList style={{ background: 'transparent' }} lines="none">
               <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px', marginTop: '16px' }}>
                 <IonLabel position="stacked" style={{ marginBottom: '8px' }}>{getValueLabel()}</IonLabel>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
-                  <IonButton
-                    fill="outline"
-                    size="small"
-                    disabled={loading || formData.criteria_value <= 1}
-                    onClick={() => setFormData({ ...formData, criteria_value: Math.max(1, formData.criteria_value - 1) })}
-                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
-                  >
-                    <IonIcon icon={removeOutline} />
-                  </IonButton>
-                  <IonInput
-                    type="text"
-                    inputMode="numeric"
-                    value={formData.criteria_value.toString()}
-                    onIonInput={(e) => {
-                      const value = e.detail.value!;
-                      if (value === '') {
-                        setFormData({ ...formData, criteria_value: 1 });
-                      } else {
-                        const num = parseInt(value);
-                        if (!isNaN(num)) {
-                          setFormData({ ...formData, criteria_value: Math.min(1000, Math.max(1, num)) });
-                        }
-                      }
-                    }}
-                    disabled={loading}
-                    style={{ textAlign: 'center', flex: 1 }}
-                  />
-                  <IonButton
-                    fill="outline"
-                    size="small"
-                    disabled={loading || formData.criteria_value >= 1000}
-                    onClick={() => setFormData({ ...formData, criteria_value: Math.min(1000, formData.criteria_value + 1) })}
-                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
-                  >
-                    <IonIcon icon={addOutline} />
-                  </IonButton>
-                </div>
+                <IonRange
+                  min={1} max={20} step={1}
+                  pin={true} pinFormatter={(value: number) => `${value}`}
+                  value={formData.criteria_value}
+                  onIonChange={(e) => setFormData({ ...formData, criteria_value: e.detail.value as number })}
+                  disabled={loading}
+                />
               </IonItem>
 
               {renderCriteriaSpecificFields()}

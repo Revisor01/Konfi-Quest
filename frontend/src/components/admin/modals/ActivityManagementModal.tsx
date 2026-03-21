@@ -16,9 +16,10 @@ import {
   IonListHeader,
   IonCard,
   IonCardContent,
+  IonRange,
   useIonAlert
 } from '@ionic/react';
-import { checkmarkOutline, closeOutline, create, pricetag, addOutline, removeOutline, checkmarkCircle, peopleOutline } from 'ionicons/icons';
+import { checkmarkOutline, closeOutline, create, pricetag, checkmarkCircle, peopleOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
@@ -362,45 +363,13 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                 {formData.target_role !== 'teamer' && (
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Punkte *</IonLabel>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '8px 0' }}>
-                    <IonButton
-                      fill="outline"
-                      size="small"
-                      disabled={loading || formData.points <= 1}
-                      onClick={() => setFormData({ ...formData, points: Math.max(1, formData.points - 1) })}
-                      style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
-                    >
-                      <IonIcon icon={removeOutline} />
-                    </IonButton>
-                    <IonInput
-                      type="text"
-                      inputMode="numeric"
-                      value={formData.points.toString()}
-                      onIonInput={(e) => {
-                        const value = e.detail.value!;
-                        if (value === '') {
-                          setFormData({ ...formData, points: 1 });
-                        } else {
-                          const num = parseInt(value);
-                          if (!isNaN(num) && num >= 1 && num <= 50) {
-                            setFormData({ ...formData, points: num });
-                          }
-                        }
-                      }}
-                      placeholder="1"
-                      disabled={loading}
-                      style={{ textAlign: 'center', flex: 1 }}
-                    />
-                    <IonButton
-                      fill="outline"
-                      size="small"
-                      disabled={loading || formData.points >= 50}
-                      onClick={() => setFormData({ ...formData, points: Math.min(50, formData.points + 1) })}
-                      style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
-                    >
-                      <IonIcon icon={addOutline} />
-                    </IonButton>
-                  </div>
+                  <IonRange
+                    min={1} max={5} step={1}
+                    pin={true} pinFormatter={(value: number) => `${value}`}
+                    value={formData.points}
+                    onIonChange={(e) => setFormData({ ...formData, points: e.detail.value as number })}
+                    disabled={loading}
+                  />
                 </IonItem>
                 )}
 
