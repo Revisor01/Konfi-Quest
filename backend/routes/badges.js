@@ -390,6 +390,8 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
       }
 
       case 'teamer_year': {
+        // Zählt nur Jahre mit mind. 1 Aktivität/Event. Lücken erlaubt.
+        // Beispiel: Teamer aktiv in 2024 und 2026 (nicht 2025) -> years_active = 2
         // Transition-Datum ermitteln (Fallback-Kette)
         let startYear = null;
 
