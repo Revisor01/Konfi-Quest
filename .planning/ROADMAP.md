@@ -194,7 +194,7 @@ Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69
 | 66. Error Boundary + Sicherheit | 1/1 | Complete    | 2026-03-21 |
 | 67. Performance | 2/2 | Complete    | 2026-03-21 |
 | 68. Token-Refresh | 2/2 | Complete    | 2026-03-21 |
-| 69. Datei-Viewer | 0/? | Not started | - |
+| 69. Datei-Viewer | 0/2 | Not started | - |
 
 ### Phase 63: Codebase Cleanup — Quick-Wins, Konsolidierung, Bug-Fixes
 
@@ -263,10 +263,11 @@ Plans:
 
 ### Phase 69: Universeller Datei-Viewer — Fullscreen Zoom/Pan fuer Bilder in Chat + Material, Desktop + Mobile + Native
 
-**Goal:** Fullscreen Bild-Viewer mit Zoom/Pan fuer Chat und Material, Desktop + Mobile + Native kompatibel
-**Requirements**: TBD
+**Goal:** Universelles FileViewerModal mit Zoom/Pan/Pinch, Swipe, PDF/Video/Download-Support fuer Chat und Material
+**Requirements**: [FV-01, FV-02, FV-03, FV-04, FV-05, FV-06, FV-07, FV-08, FV-09]
 **Depends on:** Phase 68
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 69 to break down)
+- [ ] 69-01-PLAN.md — FileViewerModal Komponente: Zoom/Pan/Pinch, Swipe, PDF, Video, Download, Share
+- [ ] 69-02-PLAN.md — Integration in Chat (MessageBubble/ChatRoom) + Material (TeamerMaterialDetailPage)
