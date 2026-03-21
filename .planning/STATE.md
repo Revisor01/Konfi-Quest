@@ -58,6 +58,7 @@ All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestone
 - 2026-03-21: v2.1 App-Resilienz shipped (8 Phasen, 23 Plans, 122 Requirements)
 - 2026-03-21: Phasen 63-69 als v2.2 Codebase-Hardening markiert
 - Phase 70 added: Rollen-Audit Fixes — Sicherheit, Logik, Frontend-Konsistenz
+- Phase 71 added: Teamer+Badge Polish — Profil-Modale, Badge-Grid, Listen-Padding, Dashboard-Badges, Jahres-Badge-Luecken, Zertifikat-Karten
 
 ### Pending Todos
 

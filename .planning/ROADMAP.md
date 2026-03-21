@@ -283,3 +283,13 @@ Plans:
 Plans:
 - [x] 70-01-PLAN.md — Backend: Multi-Tenant bonus-points, Org-Users Zugriff, letzte org_admin, pending Antraege
 - [x] 70-02-PLAN.md — Frontend: EventDetailView useOfflineQuery, isOnline-Buttons, Kategorie-Filter
+
+### Phase 71: Teamer+Badge Polish — Profil-Modale Backdrop, Badge-Anzeige komplett (Filter, Grid, geheim), Zurueck-Buttons, Listen-Padding, Dashboard-Badges wie Konfi, Jahres-Badge-Luecken, Zertifikat-Karten-Groesse, Stats-Header
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 70
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 71 to break down)
