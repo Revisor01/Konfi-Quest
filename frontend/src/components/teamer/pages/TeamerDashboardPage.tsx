@@ -299,7 +299,9 @@ const TeamerDashboardPage: React.FC = () => {
         <div style={{ padding: '16px' }}>
           {/* Begruessung */}
           {dashboardData && (
-            <div className="app-dashboard-header">
+            <div className="app-dashboard-header" style={{
+              background: 'linear-gradient(135deg, #e11d48 0%, #be185d 50%, #9f1239 100%)'
+            }}>
               <div className="app-dashboard-header__circle" style={{
                 top: '-40px', right: '-40px', width: '140px', height: '140px',
                 background: 'rgba(255, 255, 255, 0.08)'
