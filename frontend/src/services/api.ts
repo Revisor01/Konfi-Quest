@@ -1,4 +1,5 @@
 import axios from 'axios';
+import axiosRetry from 'axios-retry';
 import { getToken, clearAuth } from './tokenStore';
 import { networkMonitor } from './networkMonitor';
 
@@ -6,6 +7,22 @@ const API_BASE_URL = 'https://konfi-quest.de/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+});
+
+// Automatischer Retry fuer transiente Fehler (5xx, 408, 429)
+axiosRetry(api, {
+  retries: 3,
+  retryDelay: (retryCount) => {
+    return axiosRetry.exponentialDelay(retryCount) + Math.random() * 200;
+  },
+  retryCondition: (error) => {
+    const status = error.response?.status;
+    if (status === 429) return true;
+    return axiosRetry.isNetworkOrIdempotentRequestError(error) || (status !== undefined && status >= 500);
+  },
+  onRetry: (retryCount, error) => {
+    console.log(`Retry ${retryCount} für ${error.config?.url}`);
+  }
 });
 
 // Export API_BASE_URL für andere Komponenten
