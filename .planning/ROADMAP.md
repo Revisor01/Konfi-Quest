@@ -195,7 +195,7 @@ Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69 -> 70
 | 67. Performance | 2/2 | Complete    | 2026-03-21 |
 | 68. Token-Refresh | 2/2 | Complete    | 2026-03-21 |
 | 69. Datei-Viewer | 2/2 | Complete    | 2026-03-21 |
-| 70. Rollen-Audit Fixes | 0/2 | Planned    | - |
+| 70. Rollen-Audit Fixes | 1/2 | In Progress|  |
 
 ### Phase 63: Codebase Cleanup — Quick-Wins, Konsolidierung, Bug-Fixes
 
@@ -278,8 +278,8 @@ Plans:
 **Goal:** Sicherheitsluecken und Logikfehler aus Rollen-Audit schliessen, Frontend-Konsistenz verbessern (Offline-Cache, Button-States, Kategorie-Filter)
 **Requirements**: [AUDIT-S1, AUDIT-S2, AUDIT-L1, AUDIT-L2, AUDIT-L5, AUDIT-L6, AUDIT-F3]
 **Depends on:** Phase 69
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
-- [ ] 70-01-PLAN.md — Backend: Multi-Tenant bonus-points, Org-Users Zugriff, letzte org_admin, pending Antraege
+- [x] 70-01-PLAN.md — Backend: Multi-Tenant bonus-points, Org-Users Zugriff, letzte org_admin, pending Antraege
 - [ ] 70-02-PLAN.md — Frontend: EventDetailView useOfflineQuery, isOnline-Buttons, Kategorie-Filter
