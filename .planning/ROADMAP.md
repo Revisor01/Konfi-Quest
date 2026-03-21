@@ -230,7 +230,10 @@ Plans:
   2. Badge-Rundung folgt dem PointsHistory-Referenz-Pattern: letztes Kind hat Card-Ecke oben-rechts, alle anderen unten-beidseitig, 2px weisser Trenner dazwischen
   3. Queue-Badge (Uhr-Icon, orange) erscheint als linkster Badge bei pending Queue-Items und verschwindet nach Zustellung
   4. Fehler-Badge (Ausrufezeichen, rot) erscheint bei permanentem Fehler mit Tap-Optionen "Erneut senden" oder "Loeschen"
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 58-01-PLAN.md — CSS-Infrastruktur: Corner-Badge Flex-Container + Queue/Fehler-Badge Klassen
+- [ ] 58-02-PLAN.md — Migration aller ~23 bestehenden Corner-Badge Verwendungen auf Flex-Container
 
 ### Phase 59: Online-Only Buttons
 **Goal**: Alle Aktionen die Server-Validierung brauchen zeigen klar "Du bist offline" statt kryptischer Fehler
@@ -241,7 +244,10 @@ Plans:
   2. Kein globales Offline-Banner — nur kontextbezogene Hinweise an betroffenen Buttons/Elementen
   3. Pending Chat-Nachrichten zeigen Uhr-Icon neben dem Zeitstempel; nach Zustellung verschwindet die Uhr
   4. Fehlgeschlagene Chat-Nachrichten zeigen rotes Ausrufezeichen mit "Erneut senden" oder "Loeschen" bei Tap
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 58-01-PLAN.md — CSS-Infrastruktur: Corner-Badge Flex-Container + Queue/Fehler-Badge Klassen
+- [ ] 58-02-PLAN.md — Migration aller ~23 bestehenden Corner-Badge Verwendungen auf Flex-Container
 
 ### Phase 60: Queue-Kern + Konfi-Aktionen
 **Goal**: Konfis koennen Chat-Nachrichten senden und Aktivitaets-Antraege stellen auch wenn sie offline sind — alles wird bei Reconnect automatisch zugestellt
@@ -253,7 +259,10 @@ Plans:
   3. Queue ueberlebt App-Neustart und wird bei App-Resume und Reconnect automatisch abgearbeitet
   4. Fire-and-Forget-Aktionen (Mark-Read, Reaktionen, Poll, Settings-Toggles, Bibeluebersetzung, Funktionsbeschreibung) werden rein optimistisch ausgefuehrt ohne Queue-Feedback
   5. Fehlgeschlagene Queue-Items (4xx) werden entfernt und der User informiert; retribare Fehler (5xx) bleiben in der Queue (max 5 Retries)
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 58-01-PLAN.md — CSS-Infrastruktur: Corner-Badge Flex-Container + Queue/Fehler-Badge Klassen
+- [ ] 58-02-PLAN.md — Migration aller ~23 bestehenden Corner-Badge Verwendungen auf Flex-Container
 
 ### Phase 61: Admin- + Teamer-Queue
 **Goal**: Admins und Teamer koennen ihre haeufigsten Aktionen auch offline ausfuehren — Events, Aktivitaeten, Badges, Kategorien, Levels, Zertifikate, Material erstellen/bearbeiten
@@ -264,7 +273,10 @@ Plans:
   2. Admin kann offline Material erstellen/bearbeiten (Metadaten sofort, Datei-Upload bei naechstem Vordergrund-Aufenthalt)
   3. Admin kann offline Antraege genehmigen/ablehnen/zuruecksetzen, Bonus-Punkte vergeben und Aktivitaeten zuweisen
   4. Teamer kann offline Events buchen und sich abmelden — beides mit Uhr-Icon am Event
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 58-01-PLAN.md — CSS-Infrastruktur: Corner-Badge Flex-Container + Queue/Fehler-Badge Klassen
+- [ ] 58-02-PLAN.md — Migration aller ~23 bestehenden Corner-Badge Verwendungen auf Flex-Container
 
 ### Phase 62: Sync
 **Goal**: App ist nach App-Resume und Socket.io-Reconnect sofort aktuell — keine verpassten Daten, korrekte Reihenfolge
@@ -275,7 +287,10 @@ Plans:
   2. Nach Socket.io-Reconnect: Queue wird zuerst geleert, dann Cache invalidiert, dann Badge-Counts aktualisiert — in dieser Reihenfolge
   3. Backend Chat-Route liefert mit ?after=lastMessageId nur verpasste Nachrichten (kein kompletter Reload)
   4. Bei App-Resume (Hintergrund -> Vordergrund) wird die aktive Seite automatisch revalidiert
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 58-01-PLAN.md — CSS-Infrastruktur: Corner-Badge Flex-Container + Queue/Fehler-Badge Klassen
+- [ ] 58-02-PLAN.md — Migration aller ~23 bestehenden Corner-Badge Verwendungen auf Flex-Container
 
 ## Progress
 
@@ -289,7 +304,7 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 | 55. Fundament | 4/4 | Complete    | 2026-03-20 |
 | 56. Lese-Cache | 4/4 | Complete    | 2026-03-21 |
 | 57. Retry + Schutz | 2/2 | Complete    | 2026-03-21 |
-| 58. Corner-Badge System | 0/? | Not started | - |
+| 58. Corner-Badge System | 0/2 | Not started | - |
 | 59. Online-Only Buttons | 0/? | Not started | - |
 | 60. Queue-Kern + Konfi-Aktionen | 0/? | Not started | - |
 | 61. Admin- + Teamer-Queue | 0/? | Not started | - |
