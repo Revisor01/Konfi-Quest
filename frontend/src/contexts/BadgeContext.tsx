@@ -171,6 +171,20 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [user, refreshAllCounts]);
 
+  // Sync: Reconnect + Resume Badge-Refresh
+  useEffect(() => {
+    if (!user) return;
+
+    const handleSyncReconnect = () => {
+      refreshAllCounts();
+    };
+
+    window.addEventListener('sync:reconnect', handleSyncReconnect);
+    return () => {
+      window.removeEventListener('sync:reconnect', handleSyncReconnect);
+    };
+  }, [user, refreshAllCounts]);
+
   // Initialer Load + Polling fuer Admin-Counts (30s)
   useEffect(() => {
     if (!user) return;

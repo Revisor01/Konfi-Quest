@@ -7,6 +7,7 @@ import { networkMonitor } from '../services/networkMonitor';
 import { App } from '@capacitor/app';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { writeQueue } from '../services/writeQueue';
+import { offlineCache } from '../services/offlineCache';
 import { BackgroundTask } from '@capawesome/capacitor-background-task';
 
 // FCM Token wird über Window Events empfangen (siehe AppDelegate.swift)
@@ -302,11 +303,15 @@ useEffect(() => {
       stateChangeListener = await App.addListener('appStateChange', async ({ isActive }) => {
         if (isActive) {
           handleAppActive();
-          // Queue-Flush bei App-Resume (async, nicht blockierend)
-          writeQueue.flush().then(result => {
+          // Koordinierte Resume-Sequenz: flush -> invalidate -> badges
+          writeQueue.flush().then(async (result) => {
             if (result.failed.length > 0) {
               console.warn('Queue flush failures:', result.failed.length);
             }
+            // Cache invalidieren damit useOfflineQuery revalidiert
+            await offlineCache.invalidateAll();
+            // Badge-Refresh triggern
+            window.dispatchEvent(new CustomEvent('sync:reconnect'));
           });
         } else {
           // Background: Nur Text-Items flushen (keine Datei-Uploads)
