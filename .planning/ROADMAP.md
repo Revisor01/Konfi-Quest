@@ -311,7 +311,7 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 | 59. Online-Only Buttons | 3/3 | Complete    | 2026-03-21 |
 | 60. Queue-Kern + Konfi-Aktionen | 4/4 | Complete    | 2026-03-21 |
 | 61. Admin- + Teamer-Queue | 3/3 | Complete    | 2026-03-21 |
-| 62. Sync | 1/1 | Complete   | 2026-03-21 |
+| 62. Sync | 1/1 | Complete    | 2026-03-21 |
 
 ### Phase 63: Codebase Cleanup — Quick-Wins, Konsolidierung, Bug-Fixes
 
