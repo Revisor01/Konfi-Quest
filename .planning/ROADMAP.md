@@ -189,7 +189,7 @@ Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 63. Codebase Cleanup | 2/2 | Complete    | 2026-03-21 |
-| 64. DB-Schema-Konsolidierung | 0/? | Not started | - |
+| 64. DB-Schema-Konsolidierung | 0/2 | Not started | - |
 | 65. Navigation + State | 0/? | Not started | - |
 | 66. Error Boundary + Sicherheit | 0/? | Not started | - |
 | 67. Performance | 0/? | Not started | - |
@@ -210,12 +210,13 @@ Plans:
 ### Phase 64: DB-Schema-Konsolidierung — Einheitliches Schema, Altlasten, Indizes, Foreign Keys
 
 **Goal:** Einheitliches DB-Schema, Altlasten bereinigen, fehlende Indizes und Foreign Keys ergaenzen
-**Requirements**: TBD
+**Requirements**: [SCHEMA-IDX, SCHEMA-FK, SCHEMA-CONSOLIDATE, SCHEMA-CLEANUP]
 **Depends on:** Phase 63
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 64 to break down)
+- [ ] 64-01-PLAN.md — Fehlende Indizes + Foreign Keys als SQL-Migrations
+- [ ] 64-02-PLAN.md — Inline Schema-Erstellung aus Routes in zentrale Migration extrahieren
 
 ### Phase 65: Navigation und State-Konsistenz — Router-Migration, CustomEvents durch LiveUpdateContext ersetzen
 
@@ -227,7 +228,7 @@ Plans:
 Plans:
 - [ ] TBD (run /gsd:plan-phase 65 to break down)
 
-### Phase 66: Error Boundary und Sicherheitshärtung — Error Boundary, CSP, MD5 ersetzen, TLS
+### Phase 66: Error Boundary und Sicherheitshaertung — Error Boundary, CSP, MD5 ersetzen, TLS
 
 **Goal:** Error Boundaries einbauen, CSP konfigurieren, MD5 durch sichere Hashes ersetzen, TLS haerten
 **Requirements**: TBD
@@ -247,7 +248,7 @@ Plans:
 Plans:
 - [ ] TBD (run /gsd:plan-phase 67 to break down)
 
-### Phase 68: Token-Refresh-System — Refresh-Tokens, kürzere JWT-Laufzeit, Revoke-Mechanismus
+### Phase 68: Token-Refresh-System — Refresh-Tokens, kuerzere JWT-Laufzeit, Revoke-Mechanismus
 
 **Goal:** Refresh-Token-Mechanismus einbauen, JWT-Laufzeit verkuerzen, Token-Revoke ermoeglichen
 **Requirements**: TBD
@@ -257,7 +258,7 @@ Plans:
 Plans:
 - [ ] TBD (run /gsd:plan-phase 68 to break down)
 
-### Phase 69: Universeller Datei-Viewer — Fullscreen Zoom/Pan für Bilder in Chat + Material, Desktop + Mobile + Native
+### Phase 69: Universeller Datei-Viewer — Fullscreen Zoom/Pan fuer Bilder in Chat + Material, Desktop + Mobile + Native
 
 **Goal:** Fullscreen Bild-Viewer mit Zoom/Pan fuer Chat und Material, Desktop + Mobile + Native kompatibel
 **Requirements**: TBD
