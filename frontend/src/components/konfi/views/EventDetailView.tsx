@@ -41,6 +41,7 @@ import {
   qrCodeOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
@@ -78,8 +79,15 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const [presentAlert] = useIonAlert();
   const [presentActionSheet] = useIonActionSheet();
 
-  const [loading, setLoading] = useState(true);
-  const [eventData, setEventData] = useState<Event | null>(null);
+  // Event-Daten ueber useOfflineQuery mit 10min TTL Cache
+  const { data: allEvents, loading, refresh: refreshEvents } = useOfflineQuery<Event[]>(
+    `konfi:event-detail:${eventId}`,
+    () => api.get('/konfi/events').then(r => r.data),
+    { ttl: 10 * 60 * 1000 }
+  );
+
+  const eventData = allEvents?.find((e: Event) => e.id === eventId) || null;
+
   const [hasExistingKonfirmation, setHasExistingKonfirmation] = useState(false);
   const [timeslots, setTimeslots] = useState<DetailTimeslot[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -99,7 +107,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           client_id: clientId,
         });
         setSuccess(`Von "${eventData.name}" abgemeldet`);
-        await loadEventData();
+        await refreshEvents();
         triggerRefresh('events');
       } catch (err: any) {
         setError(err.response?.data?.error || 'Fehler bei der Abmeldung');
@@ -127,7 +135,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     try {
       await api.post(`/konfi/events/${eventData.id}/opt-in`);
       setSuccess(`Wieder für "${eventData.name}" angemeldet`);
-      await loadEventData();
+      await refreshEvents();
       triggerRefresh('events');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Fehler bei der Wiederanmeldung');
@@ -135,7 +143,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   };
 
   const handleUnregister = async (reason: string) => {
-    if (!isOnline) return;
     if (!eventData || !reason.trim()) {
       setError('Bitte gib einen Grund für die Abmeldung an');
       return;
@@ -147,7 +154,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       });
 
       setSuccess(`Von "${eventData.name}" abgemeldet`);
-      await loadEventData();
+      await refreshEvents();
       triggerRefresh('events');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Fehler bei der Abmeldung');
@@ -158,12 +165,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     eventName: eventData?.name || '',
     onClose: () => {
       dismissUnregisterModal();
-      loadEventData();
+      refreshEvents();
     },
     onUnregister: handleUnregister,
     dismiss: (data?: string, role?: string) => {
       dismissUnregisterModal(data, role);
-      loadEventData();
+      refreshEvents();
     }
   });
 
@@ -183,54 +190,32 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     onClose: () => dismissScannerModal(),
     onSuccess: (eventId: number, eventName: string) => {
       dismissScannerModal();
-      loadEventData();
+      refreshEvents();
       setSuccess('Erfolgreich eingecheckt!');
     }
   });
 
+  // Timeslots, Participants und Konfirmations-Check separat laden (nicht gecacht)
   useEffect(() => {
-    loadEventData();
-  }, [eventId]);
-
-  const loadEventData = async () => {
-    setLoading(true);
-    try {
-      const eventsResponse = await api.get('/konfi/events');
-      const event = eventsResponse.data.find((e: Event) => e.id === eventId);
-
-      if (!event) {
-        setError('Event nicht gefunden');
-        return;
-      }
-
-      setEventData(event);
-
-      if (event.has_timeslots) {
-        try {
-          const timeslotsResponse = await api.get(`/konfi/events/${eventId}/timeslots`);
-          setTimeslots(timeslotsResponse.data || []);
-        } catch (err) {
+    if (!eventData) return;
+    const loadDetails = async () => {
+      try {
+        if (eventData.has_timeslots) {
+          const tsRes = await api.get(`/konfi/events/${eventId}/timeslots`);
+          setTimeslots(tsRes.data || []);
+        } else {
           setTimeslots([]);
         }
-      } else {
-        setTimeslots([]);
-      }
-
-      const hasKonfirmation = await checkExistingKonfirmation();
-      setHasExistingKonfirmation(hasKonfirmation);
-
-      try {
-        const participantsResponse = await api.get(`/konfi/events/${eventId}/participants`);
-        setParticipants(participantsResponse.data || []);
+        const partRes = await api.get(`/konfi/events/${eventId}/participants`);
+        setParticipants(partRes.data || []);
+        const hasKonf = await checkExistingKonfirmation();
+        setHasExistingKonfirmation(hasKonf);
       } catch (err) {
-        setParticipants([]);
+        // Timeslot/Participant-Laden darf fehlschlagen ohne Error-State
       }
-    } catch (err) {
-      setError('Fehler beim Laden der Event-Details');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    loadDetails();
+  }, [eventData?.id]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('de-DE', {
@@ -285,7 +270,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       }
       await api.post(`/konfi/events/${eventData.id}/register`, payload);
       setSuccess(`Erfolgreich für "${eventData.name}" angemeldet!`);
-      await loadEventData();
+      await refreshEvents();
       triggerRefresh('events');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Fehler bei der Anmeldung');
@@ -293,7 +278,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   };
 
   const handleRegister = async () => {
-    if (!isOnline) return;
     if (!eventData) return;
 
     if (isKonfirmationEvent(eventData)) {
@@ -457,7 +441,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         </IonHeader>
 
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
-          loadEventData();
+          refreshEvents();
           e.detail.complete();
         }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent />
