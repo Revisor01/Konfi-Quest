@@ -20,9 +20,7 @@ axiosRetry(api, {
     if (status === 429) return true;
     return axiosRetry.isNetworkOrIdempotentRequestError(error) || (status !== undefined && status >= 500);
   },
-  onRetry: (retryCount, error) => {
-    console.log(`Retry ${retryCount} für ${error.config?.url}`);
-  }
+  onRetry: () => {}
 });
 
 // Export API_BASE_URL für andere Komponenten

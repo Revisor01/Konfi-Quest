@@ -149,11 +149,8 @@ const AppContent: React.FC = () => {
   // Auto-refresh every 30 seconds - DISABLED wegen Spam
   // useEffect(() => {
   //   if (!user) return;
-
- // console.log('AppContent: Starting auto-refresh every 30s');
   //   const interval = setInterval(refreshFromAPI, 30000);
   //   return () => {
- // console.log('AppContent: Stopping auto-refresh');
   //     clearInterval(interval);
   //   };
   // }, [user, refreshFromAPI]);

@@ -342,7 +342,6 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
         onSuccess();
       } catch (err: any) {
         console.error('Error creating group chat:', err);
-        console.error('Error response:', err.response?.data);
         setError(`Fehler beim Erstellen des Gruppenchats: ${err.response?.data?.error || err.message}`);
       }
     });
