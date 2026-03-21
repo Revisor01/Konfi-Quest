@@ -190,7 +190,7 @@ Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69
 |-------|----------------|--------|-----------|
 | 63. Codebase Cleanup | 2/2 | Complete    | 2026-03-21 |
 | 64. DB-Schema-Konsolidierung | 2/2 | Complete    | 2026-03-21 |
-| 65. Navigation + State | 0/? | Not started | - |
+| 65. Navigation + State | 0/2 | Not started | - |
 | 66. Error Boundary + Sicherheit | 0/? | Not started | - |
 | 67. Performance | 0/? | Not started | - |
 | 68. Token-Refresh | 0/? | Not started | - |
@@ -218,15 +218,16 @@ Plans:
 - [x] 64-01-PLAN.md — Fehlende Indizes + Foreign Keys als SQL-Migrations
 - [x] 64-02-PLAN.md — Inline Schema-Erstellung aus Routes in zentrale Migration extrahieren
 
-### Phase 65: Navigation und State-Konsistenz — Router-Migration, CustomEvents durch LiveUpdateContext ersetzen
+### Phase 65: Navigation und State-Konsistenz — CustomEvents durch LiveUpdateContext ersetzen
 
-**Goal:** CustomEvents durch LiveUpdateContext ersetzen, Router-Konsistenz sicherstellen
-**Requirements**: TBD
+**Goal:** Alle window.dispatchEvent/addEventListener fuer Daten-Updates auf LiveUpdateContext Pub-Sub migrieren
+**Requirements**: [NAV-01, NAV-02, NAV-03, NAV-04]
 **Depends on:** Phase 64
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 65 to break down)
+- [ ] 65-01-PLAN.md — LiveUpdateType erweitern + Dispatcher migrieren (triggerRefresh statt dispatchEvent)
+- [ ] 65-02-PLAN.md — Redundante addEventListener entfernen + BadgeContext/UsersPage/OrgsPage migrieren
 
 ### Phase 66: Error Boundary und Sicherheitshaertung — Error Boundary, CSP, MD5 ersetzen, TLS
 
