@@ -283,7 +283,7 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 55. Fundament | 4/4 | Complete    | 2026-03-20 |
-| 56. Lese-Cache | 4/4 | Complete   | 2026-03-21 |
+| 56. Lese-Cache | 4/4 | Complete    | 2026-03-21 |
 | 57. Retry + Schutz | 0/? | Not started | - |
 | 58. Corner-Badge System | 0/? | Not started | - |
 | 59. Online-Only Buttons | 0/? | Not started | - |
