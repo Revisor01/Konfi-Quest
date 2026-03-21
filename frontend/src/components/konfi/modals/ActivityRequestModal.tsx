@@ -363,7 +363,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                                     {activity.category_names && (
                                       <div className="app-list-item__meta">
                                         <span className="app-list-item__meta-item">
-                                          <IonIcon icon={pricetag} style={{ color: '#5b21b6' }} />
+                                          <IonIcon icon={pricetag} style={{ color: '#0ea5e9' }} />
                                           {activity.category_names}
                                         </span>
                                       </div>

@@ -294,7 +294,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                   className="app-list-item app-list-item--primary"
                   style={{
                     width: '100%',
-                    borderLeftColor: '#5b21b6',
+                    borderLeftColor: '#e11d48',
                     position: 'relative',
                     overflow: 'hidden'
                   }}
@@ -302,7 +302,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                   <div className="app-corner-badges">
                     <div
                       className="app-corner-badge"
-                      style={{ backgroundColor: '#5b21b6' }}
+                      style={{ backgroundColor: '#e11d48' }}
                     >
                       TEAM
                     </div>
@@ -311,7 +311,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                     <div className="app-list-item__main">
                       <div
                         className="app-icon-circle app-icon-circle--lg"
-                        style={{ backgroundColor: '#5b21b6', color: 'white', fontWeight: '600' }}
+                        style={{ backgroundColor: '#e11d48', color: 'white', fontWeight: '600' }}
                       >
                         {(teamer.display_name || teamer.name || '??').trim().split(/\s+/).length === 1
                           ? (teamer.display_name || teamer.name || '??').substring(0, 2).toUpperCase()
@@ -325,7 +325,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                         </div>
                         <div className="app-list-item__meta">
                           <span className="app-list-item__meta-item">
-                            <IonIcon icon={ribbonOutline} style={{ color: '#5b21b6' }} />
+                            <IonIcon icon={ribbonOutline} style={{ color: '#e11d48' }} />
                             {teamer.badge_count || 0} Badges
                           </span>
                           <span className="app-list-item__meta-item">

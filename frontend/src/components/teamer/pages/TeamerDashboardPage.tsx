@@ -326,7 +326,7 @@ const TeamerDashboardPage: React.FC = () => {
           {/* Zertifikate */}
           {config?.show_zertifikate !== false && dashboardData && dashboardData.certificates.length > 0 && (
             <div className="app-dashboard-section" style={{
-              background: 'linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%)'
+              background: 'linear-gradient(135deg, #e11d48 0%, #be185d 100%)'
             }}>
               <div className="app-dashboard-section__bg-text">
                 <h2 className="app-dashboard-section__bg-label">DEINE</h2>

@@ -14,6 +14,8 @@ import {
   IonButtons,
   IonList,
   IonListHeader,
+  IonRefresher,
+  IonRefresherContent,
   useIonModal
 } from '@ionic/react';
 import {
@@ -33,6 +35,7 @@ import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { setUser as setTokenStoreUser } from '../../../services/tokenStore';
+import { triggerPullHaptic } from '../../../utils/haptics';
 import ChangeEmailModal from '../modals/ChangeEmailModal';
 import ChangePasswordModal from '../modals/ChangePasswordModal';
 import ChangeRoleTitleModal from '../modals/ChangeRoleTitleModal';
@@ -121,6 +124,13 @@ const AdminProfilePage: React.FC = () => {
             <IonTitle size="large">Admin-Profil</IonTitle>
           </IonToolbar>
         </IonHeader>
+
+        <IonRefresher slot="fixed" onIonRefresh={(e) => {
+          refreshProfile().then(() => e.detail.complete());
+        }} onIonPull={triggerPullHaptic}>
+          <IonRefresherContent />
+        </IonRefresher>
+
         {/* Header - Dashboard-Style mit app-detail-header CSS-Klassen */}
         <div className="app-detail-header" style={{
           background: 'linear-gradient(135deg, #667eea 0%, #5567d5 100%)',

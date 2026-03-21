@@ -331,7 +331,7 @@ export const DescriptionSection = React.memo<DescriptionSectionProps>(({ descrip
     </IonListHeader>
     <IonCard className="app-card">
       <IonCardContent className="app-card-content">
-        <p style={{ fontSize: '0.95rem', lineHeight: '1.5', color: '#374151', whiteSpace: 'pre-wrap', margin: 0 }}>
+        <p className="app-description-text">
           {description}
         </p>
       </IonCardContent>
