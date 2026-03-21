@@ -144,33 +144,33 @@ Diese Aktionen zeigen "Du bist offline" am Button wenn offline. Keine Queue.
 - [ ] **OOA-07**: Chat-Raum erstellen (braucht Server-generierte Room-ID + Teilnehmer-Validierung)
 - [ ] **OOA-08**: Chat-Raum loeschen — destruktiv
 - [ ] **OOA-09**: Chat-Mitglieder verwalten (hinzufuegen/entfernen) — Verwirrend wenn verzoegert
-- [ ] **OOA-10**: Chat verlassen — Server muss Teilnehmer sofort entfernen
-- [ ] **OOA-11**: Chat-Nachricht loeschen — Server muss sofort loeschen + WebSocket-Event
+- [x] **OOA-10**: Chat verlassen — Server muss Teilnehmer sofort entfernen
+- [x] **OOA-11**: Chat-Nachricht loeschen — Server muss sofort loeschen + WebSocket-Event
 - [ ] **OOA-12**: Passwort aendern — Sicherheitskritisch
 - [ ] **OOA-13**: E-Mail aendern — Server-Validierung (Format, Duplikat)
-- [ ] **OOA-14**: QR-Check-in — Server-Validierung (Zeitfenster, Token)
-- [ ] **OOA-15**: QR-Code generieren — Server generiert JWT
+- [x] **OOA-14**: QR-Check-in — Server-Validierung (Zeitfenster, Token)
+- [x] **OOA-15**: QR-Code generieren — Server generiert JWT
 - [ ] **OOA-16**: Event-Chat erstellen — Server erstellt Raum + Teilnehmer
 - [ ] **OOA-17**: Konfi registrieren — Server-Validierung (Username, Invite-Code)
 - [ ] **OOA-18**: Invite-Code erstellen/verlaengern/loeschen — Server generiert Code
 - [ ] **OOA-19**: Organisation CRUD (Super-Admin) — sehr selten, Sicherheitskritisch
 - [ ] **OOA-20**: User CRUD (Rollen-Zuweisung, Jahrgangs-Zuweisung)
 - [ ] **OOA-21**: Passwort zuruecksetzen / Passwort-Reset anfordern
-- [ ] **OOA-22**: Passwort regenerieren (Admin fuer Konfi)
-- [ ] **OOA-23**: Konfi loeschen — destruktiv
-- [ ] **OOA-24**: Aktivitaet loeschen — destruktiv
-- [ ] **OOA-25**: Badge loeschen — destruktiv
-- [ ] **OOA-26**: Kategorie loeschen — destruktiv
-- [ ] **OOA-27**: Jahrgang loeschen — destruktiv (Konfi-Zuordnung betroffen)
-- [ ] **OOA-28**: Level loeschen — destruktiv
-- [ ] **OOA-29**: Zertifikat-Typ loeschen — destruktiv
-- [ ] **OOA-30**: Material loeschen — destruktiv
-- [ ] **OOA-31**: Material-Datei loeschen — destruktiv
-- [ ] **OOA-32**: Aktivitaet bei Konfi entfernen — destruktiv
-- [ ] **OOA-33**: Bonus-Punkte bei Konfi entfernen — destruktiv
-- [ ] **OOA-34**: Zertifikat bei Konfi entfernen — destruktiv
-- [ ] **OOA-35**: Konfi Antrag loeschen — destruktiv
-- [ ] **OOA-36**: Antrag loeschen (Admin) — destruktiv
+- [x] **OOA-22**: Passwort regenerieren (Admin fuer Konfi)
+- [x] **OOA-23**: Konfi loeschen — destruktiv
+- [x] **OOA-24**: Aktivitaet loeschen — destruktiv
+- [x] **OOA-25**: Badge loeschen — destruktiv
+- [x] **OOA-26**: Kategorie loeschen — destruktiv
+- [x] **OOA-27**: Jahrgang loeschen — destruktiv (Konfi-Zuordnung betroffen)
+- [x] **OOA-28**: Level loeschen — destruktiv
+- [x] **OOA-29**: Zertifikat-Typ loeschen — destruktiv
+- [x] **OOA-30**: Material loeschen — destruktiv
+- [x] **OOA-31**: Material-Datei loeschen — destruktiv
+- [x] **OOA-32**: Aktivitaet bei Konfi entfernen — destruktiv
+- [x] **OOA-33**: Bonus-Punkte bei Konfi entfernen — destruktiv
+- [x] **OOA-34**: Zertifikat bei Konfi entfernen — destruktiv
+- [x] **OOA-35**: Konfi Antrag loeschen — destruktiv
+- [x] **OOA-36**: Antrag loeschen (Admin) — destruktiv
 - [ ] **OOA-37**: Teilnehmer zu Event hinzufuegen — Server-Validierung (Kapazitaet)
 - [ ] **OOA-38**: Teilnehmer von Event entfernen — Nachrueck-Logik
 - [ ] **OOA-39**: Teilnehmer-Status aendern (Anwesenheit) — Server-Validierung
@@ -290,33 +290,33 @@ Deferred. Onboarding, Landing Website, Readme, Wiki.
 | OOA-07 | Phase 59 | Pending |
 | OOA-08 | Phase 59 | Pending |
 | OOA-09 | Phase 59 | Pending |
-| OOA-10 | Phase 59 | Pending |
-| OOA-11 | Phase 59 | Pending |
+| OOA-10 | Phase 59 | Complete |
+| OOA-11 | Phase 59 | Complete |
 | OOA-12 | Phase 59 | Pending |
 | OOA-13 | Phase 59 | Pending |
-| OOA-14 | Phase 59 | Pending |
-| OOA-15 | Phase 59 | Pending |
+| OOA-14 | Phase 59 | Complete |
+| OOA-15 | Phase 59 | Complete |
 | OOA-16 | Phase 59 | Pending |
 | OOA-17 | Phase 59 | Pending |
 | OOA-18 | Phase 59 | Pending |
 | OOA-19 | Phase 59 | Pending |
 | OOA-20 | Phase 59 | Pending |
 | OOA-21 | Phase 59 | Pending |
-| OOA-22 | Phase 59 | Pending |
-| OOA-23 | Phase 59 | Pending |
-| OOA-24 | Phase 59 | Pending |
-| OOA-25 | Phase 59 | Pending |
-| OOA-26 | Phase 59 | Pending |
-| OOA-27 | Phase 59 | Pending |
-| OOA-28 | Phase 59 | Pending |
-| OOA-29 | Phase 59 | Pending |
-| OOA-30 | Phase 59 | Pending |
-| OOA-31 | Phase 59 | Pending |
-| OOA-32 | Phase 59 | Pending |
-| OOA-33 | Phase 59 | Pending |
-| OOA-34 | Phase 59 | Pending |
-| OOA-35 | Phase 59 | Pending |
-| OOA-36 | Phase 59 | Pending |
+| OOA-22 | Phase 59 | Complete |
+| OOA-23 | Phase 59 | Complete |
+| OOA-24 | Phase 59 | Complete |
+| OOA-25 | Phase 59 | Complete |
+| OOA-26 | Phase 59 | Complete |
+| OOA-27 | Phase 59 | Complete |
+| OOA-28 | Phase 59 | Complete |
+| OOA-29 | Phase 59 | Complete |
+| OOA-30 | Phase 59 | Complete |
+| OOA-31 | Phase 59 | Complete |
+| OOA-32 | Phase 59 | Complete |
+| OOA-33 | Phase 59 | Complete |
+| OOA-34 | Phase 59 | Complete |
+| OOA-35 | Phase 59 | Complete |
+| OOA-36 | Phase 59 | Complete |
 | OOA-37 | Phase 59 | Pending |
 | OOA-38 | Phase 59 | Pending |
 | OOA-39 | Phase 59 | Pending |

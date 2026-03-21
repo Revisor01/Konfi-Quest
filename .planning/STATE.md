@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: App-Resilienz
 status: unknown
-stopped_at: Completed 59-01-PLAN.md (Chat Queue-Status UI)
-last_updated: "2026-03-21T09:34:04.459Z"
+stopped_at: Completed 59-03-PLAN.md (Online-Only Guards Pages/Views)
+last_updated: "2026-03-21T09:40:20.051Z"
 progress:
   total_phases: 15
   completed_phases: 4
   total_plans: 15
-  completed_plans: 13
+  completed_plans: 14
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-20)
 ## Current Position
 
 Phase: 59 (Online-Only Buttons) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Accumulated Context
 
@@ -54,6 +54,8 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 58]: font-weight von 600 auf 700 angeglichen (PointsHistory-Referenz)
 - [Phase 58]: AdminInvitePage: exakter Farbton #059669 beibehalten statt --success Klasse
 - [Phase 59]: Queue-Status Icons neben Zeitstempel statt separater Bereich
+- [Phase 59]: Handler-Guards + Button-Disable auf beiden Ebenen fuer doppelte Offline-Sicherheit
+- [Phase 59]: QRScannerModal: Inline-Banner statt Alert bei Offline-Scan
 
 ### Roadmap Evolution
 
@@ -79,6 +81,6 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-03-21T09:34:04.457Z
-Stopped at: Completed 59-01-PLAN.md (Chat Queue-Status UI)
+Last session: 2026-03-21T09:40:20.048Z
+Stopped at: Completed 59-03-PLAN.md (Online-Only Guards Pages/Views)
 Resume file: None
