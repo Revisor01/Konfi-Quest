@@ -291,6 +291,26 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       return res.status(400).json({ error: 'Du kannst dein eigenes Konto nicht löschen' });
     }
 
+    // Prüfe ob letzter Org-Admin
+    try {
+      const targetUser = await db.query('SELECT role_id FROM users WHERE id = $1 AND organization_id = $2', [id, organizationId]);
+      if (targetUser.rows[0]) {
+        const targetRole = await db.query('SELECT name FROM roles WHERE id = $1', [targetUser.rows[0].role_id]);
+        if (targetRole.rows[0]?.name === 'org_admin') {
+          const orgAdminCount = await db.query(
+            'SELECT COUNT(*)::int as count FROM users u JOIN roles r ON u.role_id = r.id WHERE r.name = $1 AND u.organization_id = $2 AND u.id != $3',
+            ['org_admin', organizationId, id]
+          );
+          if (orgAdminCount.rows[0].count === 0) {
+            return res.status(409).json({ error: 'Letzter Org-Admin kann nicht gelöscht werden' });
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error checking last org_admin:', err);
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    }
+
     const client = await db.getClient();
     try {
       await client.query('BEGIN');

@@ -198,6 +198,18 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         return res.status(409).json({ error: `Aktivität kann nicht gelöscht werden: ${usage.count} Zuordnung(en) zu Konfis vorhanden.` });
       }
 
+      // Pending Anträge prüfen
+      const { rows: [pendingCheck] } = await db.query(
+        `SELECT COUNT(*)::int as count FROM activity_requests ar
+         WHERE ar.activity_id = $1 AND ar.status = 'pending'`,
+        [activityId]
+      );
+      if (pendingCheck.count > 0) {
+        return res.status(409).json({
+          error: `Aktivität kann nicht gelöscht werden: ${pendingCheck.count} offene Anträge vorhanden.`
+        });
+      }
+
       const deleteQuery = "DELETE FROM activities WHERE id = $1 AND organization_id = $2";
       const { rowCount } = await db.query(deleteQuery, [activityId, req.user.organization_id]);
 

@@ -724,7 +724,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         try {
             await client.query('BEGIN');
 
-            const { rows: [bonus] } = await client.query('SELECT * FROM bonus_points WHERE id = $1 AND konfi_id = $2', [req.params.bonusId, req.params.id]);
+            const { rows: [bonus] } = await client.query(
+                'SELECT bp.* FROM bonus_points bp JOIN users u ON bp.konfi_id = u.id WHERE bp.id = $1 AND bp.konfi_id = $2 AND u.organization_id = $3',
+                [req.params.bonusId, req.params.id, req.user.organization_id]
+            );
 
             if (!bonus) {
                 await client.query('ROLLBACK');
