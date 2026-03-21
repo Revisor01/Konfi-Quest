@@ -190,7 +190,7 @@ Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69
 |-------|----------------|--------|-----------|
 | 63. Codebase Cleanup | 2/2 | Complete    | 2026-03-21 |
 | 64. DB-Schema-Konsolidierung | 2/2 | Complete    | 2026-03-21 |
-| 65. Navigation + State | 2/2 | Complete   | 2026-03-21 |
+| 65. Navigation + State | 2/2 | Complete    | 2026-03-21 |
 | 66. Error Boundary + Sicherheit | 0/? | Not started | - |
 | 67. Performance | 0/? | Not started | - |
 | 68. Token-Refresh | 0/? | Not started | - |
