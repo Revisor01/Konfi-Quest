@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Codebase-Hardening
 status: unknown
-stopped_at: Completed 63-02-PLAN.md
-last_updated: "2026-03-21T12:47:41.949Z"
+stopped_at: Completed 63-01-PLAN.md
+last_updated: "2026-03-21T12:56:41.765Z"
 progress:
   total_phases: 8
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -33,6 +33,7 @@ Plan: 2 of 2
 All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestones/.
 
 - [Phase 63]: reduce-Accumulator mit generischem Typ-Parameter statt as any[] typisiert
+- [Phase 63]: Zentrale Type-Dateien: User (BaseUser/AdminUser/ChatUser) und Event in types/ — alle Consumer importieren
 
 ### Roadmap Evolution
 
@@ -49,6 +50,6 @@ All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestone
 
 ## Session Continuity
 
-Last session: 2026-03-21T12:47:41.946Z
-Stopped at: Completed 63-02-PLAN.md
+Last session: 2026-03-21T12:56:41.762Z
+Stopped at: Completed 63-01-PLAN.md
 Resume file: None

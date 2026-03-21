@@ -188,7 +188,7 @@ Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 63. Codebase Cleanup | 1/2 | In Progress|  |
+| 63. Codebase Cleanup | 2/2 | Complete   | 2026-03-21 |
 | 64. DB-Schema-Konsolidierung | 0/? | Not started | - |
 | 65. Navigation + State | 0/? | Not started | - |
 | 66. Error Boundary + Sicherheit | 0/? | Not started | - |
@@ -201,10 +201,10 @@ Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69
 **Goal:** Doppelte Type-Definitionen (User 9x, Event 8x) konsolidieren, as-any reduzieren, Debug-Logs entfernen
 **Requirements**: [CLEANUP-01, CLEANUP-02]
 **Depends on:** Phase 62
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
-- [ ] 63-01-PLAN.md — Typ-Konsolidierung: User + Event Interfaces zentralisieren
+- [x] 63-01-PLAN.md — Typ-Konsolidierung: User + Event Interfaces zentralisieren
 - [x] 63-02-PLAN.md — Console-Cleanup + restliche as-any Reduktion
 
 ### Phase 64: DB-Schema-Konsolidierung — Einheitliches Schema, Altlasten, Indizes, Foreign Keys
