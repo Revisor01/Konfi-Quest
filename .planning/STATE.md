@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: App-Resilienz
 status: unknown
-stopped_at: Completed 60-04-PLAN.md (Fire-and-Forget Aktionen)
-last_updated: "2026-03-21T11:07:17.917Z"
+stopped_at: Completed 61-03-PLAN.md (TeamerEventsPage Queue)
+last_updated: "2026-03-21T11:29:43.234Z"
 progress:
   total_phases: 15
   completed_phases: 6
-  total_plans: 19
-  completed_plans: 19
+  total_plans: 22
+  completed_plans: 20
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-20)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 60 — Queue-Kern + Konfi-Aktionen
+**Current focus:** Phase 61 — Admin- + Teamer-Queue
 
 ## Current Position
 
-Phase: 63
-Plan: Not started
+Phase: 61 (Admin- + Teamer-Queue) — EXECUTING
+Plan: 2 of 3
 
 ## Accumulated Context
 
@@ -66,6 +66,7 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 60]: crypto.randomUUID statt uuid-Library fuer clientId/localId — vermeidet Dependency
 - [Phase 60]: Optimistic Message mit negativer ID (-Date.now()) als temporaerer Platzhalter
 - [Phase 60]: Fire-and-Forget offline: Kein Queue-Feedback, rein optimistisch, maxRetries 3
+- [Phase 61]: Kein refresh/selectedEvent-Update im Offline-Pfad — Daten kommen erst nach Queue-Flush
 
 ### Roadmap Evolution
 
@@ -91,6 +92,6 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-03-21T10:04:52.105Z
-Stopped at: Completed 60-04-PLAN.md (Fire-and-Forget Aktionen)
+Last session: 2026-03-21T11:29:43.231Z
+Stopped at: Completed 61-03-PLAN.md (TeamerEventsPage Queue)
 Resume file: None

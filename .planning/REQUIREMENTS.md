@@ -120,8 +120,8 @@ Queue-faehige Aktionen werden bei Offline in eine persistente Queue geschrieben 
 
 #### Teamer-Aktionen (2 Aktionen)
 
-- [ ] **QUE-T01**: Event buchen (Teamer) — Uhr-Icon am Event
-- [ ] **QUE-T02**: Event abmelden (Teamer) — Uhr-Icon am Event
+- [x] **QUE-T01**: Event buchen (Teamer) — Uhr-Icon am Event
+- [x] **QUE-T02**: Event abmelden (Teamer) — Uhr-Icon am Event
 
 #### Queue-Infrastruktur
 
@@ -274,8 +274,8 @@ Deferred. Onboarding, Landing Website, Readme, Wiki.
 | QUE-A19 | Phase 61 | Pending |
 | QUE-A20 | Phase 61 | Pending |
 | QUE-A21 | Phase 61 | Pending |
-| QUE-T01 | Phase 61 | Pending |
-| QUE-T02 | Phase 61 | Pending |
+| QUE-T01 | Phase 61 | Complete |
+| QUE-T02 | Phase 61 | Complete |
 | QUE-I01 | Phase 60 | Complete |
 | QUE-I02 | Phase 60 | Complete |
 | QUE-I03 | Phase 60 | Complete |

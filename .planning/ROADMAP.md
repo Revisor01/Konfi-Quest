@@ -276,11 +276,11 @@ Plans:
   2. Admin kann offline Material erstellen/bearbeiten (Metadaten sofort, Datei-Upload bei naechstem Vordergrund-Aufenthalt)
   3. Admin kann offline Antraege genehmigen/ablehnen/zuruecksetzen, Bonus-Punkte vergeben und Aktivitaeten zuweisen
   4. Teamer kann offline Events buchen und sich abmelden — beides mit Uhr-Icon am Event
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 Plans:
 - [ ] 61-01-PLAN.md — Admin Modals Queue: EventModal, ActivityManagementModal, BadgeManagementModal, LevelManagementModal, MaterialFormModal
 - [ ] 61-02-PLAN.md — Admin Pages + restliche Modals Queue: Categories, Jahrgaenge, Certificates, ActivityRequestModal, BonusModal, ActivityModal
-- [ ] 61-03-PLAN.md — Teamer Queue: TeamerEventsPage buchen/abmelden
+- [x] 61-03-PLAN.md — Teamer Queue: TeamerEventsPage buchen/abmelden
 
 ### Phase 62: Sync
 **Goal**: App ist nach App-Resume und Socket.io-Reconnect sofort aktuell — keine verpassten Daten, korrekte Reihenfolge
@@ -310,7 +310,7 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 | 58. Corner-Badge System | 2/2 | Complete    | 2026-03-21 |
 | 59. Online-Only Buttons | 3/3 | Complete    | 2026-03-21 |
 | 60. Queue-Kern + Konfi-Aktionen | 4/4 | Complete    | 2026-03-21 |
-| 61. Admin- + Teamer-Queue | 0/3 | Not started | - |
+| 61. Admin- + Teamer-Queue | 1/3 | In Progress|  |
 | 62. Sync | 0/? | Not started | - |
 
 ### Phase 63: Codebase Cleanup — Quick-Wins, Konsolidierung, Bug-Fixes
