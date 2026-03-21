@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -16,6 +16,7 @@ import {
 import { add, arrowBack } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
+import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
@@ -58,18 +59,8 @@ const AdminUsersPage: React.FC = () => {
     }
   });
 
-  useEffect(() => {
-    // Event-Listener fuer Updates
-    const handleUsersUpdated = () => {
-      refreshUsers();
-    };
-
-    window.addEventListener('users-updated', handleUsersUpdated);
-
-    return () => {
-      window.removeEventListener('users-updated', handleUsersUpdated);
-    };
-  }, [refreshUsers]);
+  // Subscribe to live updates for users
+  useLiveRefresh('users', refreshUsers);
 
   const handleDeleteUser = async (userToDelete: AdminUser) => {
     if (!isOnline) return;

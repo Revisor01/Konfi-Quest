@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -19,6 +19,7 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
+import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import { logout } from '../../../services/auth';
 import OrganizationView from '../OrganizationView';
@@ -91,22 +92,7 @@ const AdminOrganizationsPage: React.FC = () => {
     }
   });
 
-  useEffect(() => {
-    loadOrganizations();
-    
-    // Event-Listener für Updates
-    const handleOrganizationsUpdated = () => {
-      loadOrganizations();
-    };
-    
-    window.addEventListener('organizations-updated', handleOrganizationsUpdated);
-    
-    return () => {
-      window.removeEventListener('organizations-updated', handleOrganizationsUpdated);
-    };
-  }, []);
-
-  const loadOrganizations = async () => {
+  const loadOrganizations = useCallback(async () => {
     setLoading(true);
     try {
       const response = await api.get('/organizations');
@@ -117,7 +103,15 @@ const AdminOrganizationsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setError]);
+
+  // Subscribe to live updates for organizations
+  useLiveRefresh('organizations', loadOrganizations);
+
+  // Initialer Load
+  useEffect(() => {
+    loadOrganizations();
+  }, [loadOrganizations]);
 
   const handleDeleteOrganization = async (organization: Organization) => {
     if (!isOnline) return;

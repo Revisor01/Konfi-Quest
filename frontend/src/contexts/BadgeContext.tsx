@@ -6,6 +6,7 @@ import { networkMonitor } from '../services/networkMonitor';
 import { initializeWebSocket, getSocket } from '../services/websocket';
 import { getToken } from '../services/tokenStore';
 import { useApp } from './AppContext';
+import { useLiveRefresh } from './LiveUpdateContext';
 
 // Badge Context Interface
 interface BadgeContextType {
@@ -151,25 +152,8 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [refreshAllCounts, user]);
 
-  // Window Event Listeners fuer sofortige Aktualisierung
-  useEffect(() => {
-    if (!user) return;
-
-    const handleRequestStatusChanged = () => {
-      refreshAllCounts();
-    };
-    const handleEventsUpdated = () => {
-      refreshAllCounts();
-    };
-
-    window.addEventListener('requestStatusChanged', handleRequestStatusChanged);
-    window.addEventListener('events-updated', handleEventsUpdated);
-
-    return () => {
-      window.removeEventListener('requestStatusChanged', handleRequestStatusChanged);
-      window.removeEventListener('events-updated', handleEventsUpdated);
-    };
-  }, [user, refreshAllCounts]);
+  // LiveUpdateContext-basierte Subscriptions fuer Daten-Events
+  useLiveRefresh(['requests', 'events'], refreshAllCounts);
 
   // Sync: Reconnect + Resume Badge-Refresh
   useEffect(() => {
