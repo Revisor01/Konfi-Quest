@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -10,15 +10,21 @@ import {
   IonButtons,
   IonButton,
   IonIcon,
+  IonCard,
+  IonCardContent,
+  IonList,
+  IonListHeader,
+  IonLabel,
   useIonModal,
   useIonAlert
 } from '@ionic/react';
-import { add, home, people } from 'ionicons/icons';
+import { add, home, people, timeOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
+import { writeQueue, QueueItem } from '../../../services/writeQueue';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import RequestsView from '../views/RequestsView';
@@ -54,6 +60,16 @@ const KonfiRequestsPage: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [selectedRequest, setSelectedRequest] = useState<ActivityRequest | null>(null);
+  const [pendingQueueItems, setPendingQueueItems] = useState<QueueItem[]>([]);
+
+  const loadPendingFromQueue = async () => {
+    const queueItems = await writeQueue.getByMetadata({ type: 'request' });
+    setPendingQueueItems(queueItems);
+  };
+
+  useEffect(() => {
+    loadPendingFromQueue();
+  }, [requests]);
 
   const [presentRequestModal, dismissRequestModal] = useIonModal(
     ActivityRequestModal,
@@ -202,11 +218,52 @@ const KonfiRequestsPage: React.FC = () => {
         </IonHeader>
 
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
-          await refresh();
+          await Promise.all([refresh(), loadPendingFromQueue()]);
           e.detail.complete();
         }}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
+
+        {/* Pending Queue-Anträge */}
+        {pendingQueueItems.length > 0 && (
+          <IonList inset={true} className="app-segment-wrapper">
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--warning">
+                <IonIcon icon={timeOutline} />
+              </div>
+              <IonLabel>Wird gesendet...</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent>
+                {pendingQueueItems.map(qi => (
+                  <div key={qi.id} className="app-list-item app-list-item--warning">
+                    <div className="app-corner-badges">
+                      <div className="app-corner-badge" style={{ background: '#ff9500' }}>
+                        <IonIcon icon={timeOutline} style={{ fontSize: '0.7rem', marginRight: '2px' }} />
+                        Wartend
+                      </div>
+                    </div>
+                    <div className="app-list-item__row">
+                      <div className="app-list-item__main">
+                        <div className="app-icon-circle app-icon-circle--warning">
+                          <IonIcon icon={timeOutline} />
+                        </div>
+                        <div className="app-list-item__content">
+                          <div className="app-list-item__title" style={{ paddingRight: '60px' }}>
+                            {qi.metadata.label || 'Antrag'}
+                          </div>
+                          <div className="app-list-item__subtitle">
+                            {qi.body?.description || 'Wird gesendet sobald du online bist'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
 
         {loading ? (
           <LoadingSpinner message="Aktivitäten werden geladen..." />

@@ -42,6 +42,8 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import { writeQueue } from '../../../services/writeQueue';
+import { networkMonitor } from '../../../services/networkMonitor';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader } from '../../shared';
 import UnregisterModal from '../modals/UnregisterModal';
@@ -125,13 +127,34 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       return;
     }
 
-    try {
-      await api.post(`/konfi/events/${eventData.id}/opt-out`, { reason: reason.trim() });
-      setSuccess(`Von "${eventData.name}" abgemeldet`);
-      await loadEventData();
-      window.dispatchEvent(new CustomEvent('events-updated'));
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler bei der Abmeldung');
+    const clientId = crypto.randomUUID();
+
+    if (networkMonitor.isOnline) {
+      try {
+        await api.post(`/konfi/events/${eventData.id}/opt-out`, {
+          reason: reason.trim(),
+          client_id: clientId,
+        });
+        setSuccess(`Von "${eventData.name}" abgemeldet`);
+        await loadEventData();
+        window.dispatchEvent(new CustomEvent('events-updated'));
+      } catch (err: any) {
+        setError(err.response?.data?.error || 'Fehler bei der Abmeldung');
+      }
+    } else {
+      await writeQueue.enqueue({
+        method: 'POST',
+        url: `/konfi/events/${eventData.id}/opt-out`,
+        body: { reason: reason.trim(), client_id: clientId },
+        maxRetries: 5,
+        hasFileUpload: false,
+        metadata: {
+          type: 'opt-out',
+          clientId,
+          label: `Abmeldung von "${eventData.name}"`,
+        },
+      });
+      setSuccess('Abmeldung wird gesendet sobald du wieder online bist');
     }
   };
 
