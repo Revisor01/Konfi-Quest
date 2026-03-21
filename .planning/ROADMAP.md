@@ -14,7 +14,7 @@
 - Shipped **v1.9 Bugfix + Polish** - Phases 44-54 (shipped 2026-03-19)
 - **v2.0 Ionic Update + Theme** (shipped 2026-03-19)
 - Shipped **v2.1 App-Resilienz** - Phases 55-62 (shipped 2026-03-21)
-- v2.2 Codebase-Hardening - Phases 63-70 (planned)
+- v2.2 Codebase-Hardening - Phases 63-71 (planned)
 
 ## Phases
 
@@ -184,7 +184,7 @@ Phase 62: Sync (1 plan, complete)
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69 -> 70
+Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69 -> 70 -> 71
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -196,6 +196,7 @@ Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69 -> 70
 | 68. Token-Refresh | 2/2 | Complete    | 2026-03-21 |
 | 69. Datei-Viewer | 2/2 | Complete    | 2026-03-21 |
 | 70. Rollen-Audit Fixes | 2/2 | Complete    | 2026-03-21 |
+| 71. Teamer+Badge Polish | 0/3 | Planned    | - |
 
 ### Phase 63: Codebase Cleanup — Quick-Wins, Konsolidierung, Bug-Fixes
 
@@ -286,10 +287,12 @@ Plans:
 
 ### Phase 71: Teamer+Badge Polish — Profil-Modale Backdrop, Badge-Anzeige komplett (Filter, Grid, geheim), Zurueck-Buttons, Listen-Padding, Dashboard-Badges wie Konfi, Jahres-Badge-Luecken, Zertifikat-Karten-Groesse, Stats-Header
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** 11 Testing-Issues beheben: Badge-Filter-Bug (teamer_year Kategorie fehlt), geheime Badges, Zurueck-Buttons, Badge-Grid CSS, Listen-Padding, Dashboard-Badges mit Platzhaltern, Jahres-Badge-Logik, Zertifikat-Karten, Stats-Header
+**Requirements**: [POLISH-01, POLISH-02, POLISH-03, POLISH-04, POLISH-05, POLISH-06, POLISH-07, POLISH-08, POLISH-09, POLISH-10, POLISH-11]
 **Depends on:** Phase 70
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 71 to break down)
+- [ ] 71-01-PLAN.md — Backend: Badge-Progress-Daten + Jahres-Badge-Logik verifizieren
+- [ ] 71-02-PLAN.md — CSS: Badge-Grid, Listen-Padding, Zertifikat-Karten min-height
+- [ ] 71-03-PLAN.md — Frontend: teamer_year Fix, geheime Badges, Zurueck-Buttons, Dashboard-Badges, Stats-Header
