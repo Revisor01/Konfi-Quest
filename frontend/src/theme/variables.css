@@ -410,6 +410,7 @@ ion-list[inset] ion-list-header {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  margin-top: 4px;
 }
 .app-icon-circle--lg {
   width: 32px;
@@ -510,6 +511,7 @@ ion-list[inset] ion-list-header {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  padding-top: 4px;
 }
 .app-list-item__subtitle {
   font-size: 0.8rem;
@@ -1846,6 +1848,16 @@ ion-tab-button ion-badge {
   line-height: 16px;
   padding: 0 4px;
   border-radius: 8px;
+}
+
+/* === Zertifikat-Karten === */
+/* Zertifikat-Karten: Gleiche Mindesthoehe */
+.app-cert-card {
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 /* === Badge-Grid === */
