@@ -69,7 +69,7 @@ Listen-Elemente zeigen Queue-Status als zusaetzliches Corner-Badge neben bestehe
 
 #### Fire-and-Forget
 
-- [ ] **OUI-13**: Fire-and-Forget Aktionen (Mark-Read, Reaktionen, Poll, Settings-Toggles) zeigen kein Queue-Feedback — rein optimistisch
+- [x] **OUI-13**: Fire-and-Forget Aktionen (Mark-Read, Reaktionen, Poll, Settings-Toggles) zeigen kein Queue-Feedback — rein optimistisch
 
 ### Schreib-Queue (QUE)
 
@@ -85,14 +85,14 @@ Queue-faehige Aktionen werden bei Offline in eine persistente Queue geschrieben 
 
 #### Alle Rollen: Fire-and-Forget (5 Aktionen)
 
-- [ ] **QUE-FF01**: Chat mark-as-read — kein UI-Feedback noetig
-- [ ] **QUE-FF02**: Emoji-Reaktion toggle — sofort optimistisch, Queue im Hintergrund
-- [ ] **QUE-FF03**: Badges als gesehen markieren (Konfi + Teamer) — kein UI-Feedback noetig
-- [ ] **QUE-FF04**: Poll-Abstimmung — sofort optimistisch
-- [ ] **QUE-FF05**: Bibeluebersetzung waehlen (Konfi) — sofort optimistisch
-- [ ] **QUE-FF06**: Dashboard-Settings Toggle (Admin) — sofort optimistisch
-- [ ] **QUE-FF07**: Chat-Permissions Toggle (Admin) — sofort optimistisch
-- [ ] **QUE-FF08**: Funktionsbeschreibung aendern — sofort optimistisch
+- [x] **QUE-FF01**: Chat mark-as-read — kein UI-Feedback noetig
+- [x] **QUE-FF02**: Emoji-Reaktion toggle — sofort optimistisch, Queue im Hintergrund
+- [x] **QUE-FF03**: Badges als gesehen markieren (Konfi + Teamer) — kein UI-Feedback noetig
+- [x] **QUE-FF04**: Poll-Abstimmung — sofort optimistisch
+- [x] **QUE-FF05**: Bibeluebersetzung waehlen (Konfi) — sofort optimistisch
+- [x] **QUE-FF06**: Dashboard-Settings Toggle (Admin) — sofort optimistisch
+- [x] **QUE-FF07**: Chat-Permissions Toggle (Admin) — sofort optimistisch
+- [x] **QUE-FF08**: Funktionsbeschreibung aendern — sofort optimistisch
 
 #### Admin-Aktionen (17 Aktionen)
 
@@ -239,20 +239,20 @@ Deferred. Onboarding, Landing Website, Readme, Wiki.
 | OUI-10 | Phase 59 | Complete |
 | OUI-11 | Phase 59 | Complete |
 | OUI-12 | Phase 59 | Complete |
-| OUI-13 | Phase 60 | Pending |
+| OUI-13 | Phase 60 | Complete |
 | QUE-K01 | Phase 60 | Complete |
 | QUE-K02 | Phase 60 | Complete |
 | QUE-K03 | Phase 60 | Complete |
 | QUE-K04 | Phase 60 | Complete |
 | QUE-K05 | Phase 60 | Complete |
-| QUE-FF01 | Phase 60 | Pending |
-| QUE-FF02 | Phase 60 | Pending |
-| QUE-FF03 | Phase 60 | Pending |
-| QUE-FF04 | Phase 60 | Pending |
-| QUE-FF05 | Phase 60 | Pending |
-| QUE-FF06 | Phase 60 | Pending |
-| QUE-FF07 | Phase 60 | Pending |
-| QUE-FF08 | Phase 60 | Pending |
+| QUE-FF01 | Phase 60 | Complete |
+| QUE-FF02 | Phase 60 | Complete |
+| QUE-FF03 | Phase 60 | Complete |
+| QUE-FF04 | Phase 60 | Complete |
+| QUE-FF05 | Phase 60 | Complete |
+| QUE-FF06 | Phase 60 | Complete |
+| QUE-FF07 | Phase 60 | Complete |
+| QUE-FF08 | Phase 60 | Complete |
 | QUE-A01 | Phase 61 | Pending |
 | QUE-A02 | Phase 61 | Pending |
 | QUE-A03 | Phase 61 | Pending |
