@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -50,6 +50,8 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import { SectionHeader, ListSection } from '../../shared';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -91,12 +93,10 @@ interface Event {
 }
 
 const TeamerEventsPage: React.FC = () => {
-  const { setSuccess, setError } = useApp();
+  const { user, setSuccess, setError } = useApp();
   const { pageRef, presentingElement } = useModalPage('teamer-events');
   const routerLocation = useLocation<{ selectedEventId?: number }>();
 
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'meine' | 'alle' | 'team'>('meine');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
@@ -104,6 +104,13 @@ const TeamerEventsPage: React.FC = () => {
   const [eventMaterials, setEventMaterials] = useState<any[]>([]);
   const materialIdRef = useRef<number | null>(null);
   const history = useHistory();
+
+  // Offline-Query: Events
+  const { data: events, loading, refresh } = useOfflineQuery<Event[]>(
+    'teamer:events:' + user?.id,
+    async () => { const res = await api.get('/events'); return res.data; },
+    { ttl: CACHE_TTL.EVENTS }
+  );
 
   // Material Detail Modal (useRef fuer dynamische materialId)
   const [presentMaterialModal, dismissMaterialModal] = useIonModal(TeamerMaterialDetailPage, {
@@ -117,19 +124,11 @@ const TeamerEventsPage: React.FC = () => {
     onSuccess: (_eventId: number, eventName: string) => {
       dismissScannerModal();
       setSuccess(`Eingecheckt bei: ${eventName}`);
-      loadEvents();
+      refresh();
     }
   });
 
-  const refreshEvents = useCallback(() => {
-    loadEvents();
-  }, []);
-
-  useLiveRefresh('events', refreshEvents);
-
-  useEffect(() => {
-    loadEvents();
-  }, []);
+  useLiveRefresh('events', refresh);
 
   // Material fuer ausgewaehltes Event laden
   useEffect(() => {
@@ -144,7 +143,7 @@ const TeamerEventsPage: React.FC = () => {
 
   // Wenn von Dashboard mit selectedEventId navigiert wurde, Event direkt oeffnen
   useEffect(() => {
-    if (!initialEventHandled && !loading && events.length > 0 && routerLocation.state?.selectedEventId) {
+    if (!initialEventHandled && !loading && events && events.length > 0 && routerLocation.state?.selectedEventId) {
       const eventToSelect = events.find(e => e.id === routerLocation.state!.selectedEventId);
       if (eventToSelect) {
         setSelectedEvent(eventToSelect);
@@ -152,19 +151,6 @@ const TeamerEventsPage: React.FC = () => {
       setInitialEventHandled(true);
     }
   }, [loading, events, routerLocation.state, initialEventHandled]);
-
-  const loadEvents = async () => {
-    setLoading(true);
-    try {
-      const response = await api.get('/events');
-      setEvents(response.data);
-    } catch (err) {
-      setError('Fehler beim Laden der Events');
-      console.error('Error loading events:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Formatierung
   const formatDate = (dateString: string) => {
@@ -200,25 +186,27 @@ const TeamerEventsPage: React.FC = () => {
     });
   };
 
+  const safeEvents = events || [];
+
   // Gefilterte Events per Segment
   const meineEvents = useMemo(() =>
-    sortEvents(events.filter(e => e.is_registered)),
-  [events]);
+    sortEvents(safeEvents.filter(e => e.is_registered)),
+  [safeEvents]);
 
   const alleEvents = useMemo(() =>
-    sortEvents(events.filter(e => !e.teamer_only)),
-  [events]);
+    sortEvents(safeEvents.filter(e => !e.teamer_only)),
+  [safeEvents]);
 
   const teamEvents = useMemo(() =>
-    sortEvents(events.filter(e => e.teamer_needed || e.teamer_only)),
-  [events]);
+    sortEvents(safeEvents.filter(e => e.teamer_needed || e.teamer_only)),
+  [safeEvents]);
 
   const getFilteredEvents = () => {
     switch (activeTab) {
       case 'meine': return meineEvents;
       case 'alle': return alleEvents;
       case 'team': return teamEvents;
-      default: return events;
+      default: return safeEvents;
     }
   };
 
@@ -226,10 +214,10 @@ const TeamerEventsPage: React.FC = () => {
 
   // Stats
   const eventCounts = useMemo(() => ({
-    gesamt: events.length,
-    anstehend: events.filter(e => new Date(e.event_date) >= new Date()).length,
-    gebucht: events.filter(e => e.is_registered).length
-  }), [events]);
+    gesamt: safeEvents.length,
+    anstehend: safeEvents.filter(e => new Date(e.event_date) >= new Date()).length,
+    gebucht: safeEvents.filter(e => e.is_registered).length
+  }), [safeEvents]);
 
   const statsData = [
     { value: eventCounts.gesamt, label: 'Gesamt' },
@@ -285,7 +273,7 @@ const TeamerEventsPage: React.FC = () => {
     try {
       await api.post(`/events/${event.id}/book`);
       setSuccess('Du bist dabei!');
-      await loadEvents();
+      await refresh();
       // Update selectedEvent
       const updated = (await api.get('/events')).data.find((e: Event) => e.id === event.id);
       if (updated) setSelectedEvent(updated);
@@ -301,7 +289,7 @@ const TeamerEventsPage: React.FC = () => {
     try {
       await api.delete(`/events/${event.id}/book`);
       setSuccess('Du bist nicht mehr dabei');
-      await loadEvents();
+      await refresh();
       const updated = (await api.get('/events')).data.find((e: Event) => e.id === event.id);
       if (updated) setSelectedEvent(updated);
     } catch (err: any) {
@@ -389,8 +377,8 @@ const TeamerEventsPage: React.FC = () => {
           </IonHeader>
 
           <IonRefresher slot="fixed" onIonRefresh={async (e) => {
-            await loadEvents();
-            const updated = events.find(ev => ev.id === selectedEvent.id);
+            await refresh();
+            const updated = safeEvents.find(ev => ev.id === selectedEvent.id);
             if (updated) setSelectedEvent(updated);
             e.detail.complete();
           }}>
@@ -699,7 +687,7 @@ const TeamerEventsPage: React.FC = () => {
         </IonHeader>
 
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
-          loadEvents();
+          refresh();
           e.detail.complete();
         }}>
           <IonRefresherContent />

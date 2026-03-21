@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -69,7 +69,10 @@ import {
   bagHandle
 } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
+import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 
 // Badge/Certificate Icon Mapping (shared with DashboardView)
@@ -179,17 +182,40 @@ const CertPopoverContent: React.FC<{
 
 const TeamerDashboardPage: React.FC = () => {
   const history = useHistory();
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [dailyVerse, setDailyVerse] = useState<DailyVerse | null>(null);
-  const [loadingVerse, setLoadingVerse] = useState(true);
-  const [showLosung, setShowLosung] = useState(true);
+  const { user } = useApp();
+  const [showLosung] = useState(() => Math.random() > 0.5);
 
   // Certificate Popover
   const certPopoverRef = React.useRef<Certificate | null>(null);
   const [presentCertPopover] = useIonPopover(CertPopoverContent, {
     dataRef: certPopoverRef
   });
+
+  // Offline-Query: Dashboard
+  const { data: dashboardData, loading, refresh: refreshDashboard } = useOfflineQuery<DashboardData>(
+    'teamer:dashboard:' + user?.id,
+    async () => { const res = await api.get('/teamer/dashboard'); return res.data; },
+    { ttl: CACHE_TTL.DASHBOARD }
+  );
+
+  // Offline-Query: Tageslosung
+  const { data: dailyVerse, loading: loadingVerse, refresh: refreshVerse } = useOfflineQuery<DailyVerse | null>(
+    'teamer:tageslosung:' + new Date().toISOString().split('T')[0],
+    async () => {
+      const response = await api.get('/teamer/tageslosung');
+      if (response.data && response.data.success) {
+        const { losung, lehrtext } = response.data.data;
+        return {
+          losungstext: losung?.text,
+          losungsvers: losung?.reference,
+          lehrtext: lehrtext?.text,
+          lehrtextvers: lehrtext?.reference
+        };
+      }
+      return null;
+    },
+    { ttl: CACHE_TTL.TAGESLOSUNG }
+  );
 
   const getFirstName = (name: string) => name.split(' ')[0];
 
@@ -245,44 +271,6 @@ const TeamerDashboardPage: React.FC = () => {
     });
   };
 
-  const loadDashboard = async () => {
-    try {
-      const response = await api.get('/teamer/dashboard');
-      setDashboardData(response.data);
-    } catch (err) {
-      console.error('Dashboard laden fehlgeschlagen:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadTageslosung = async () => {
-    setShowLosung(Math.random() > 0.5);
-    try {
-      const response = await api.get('/teamer/tageslosung');
-      if (response.data && response.data.success) {
-        const { losung, lehrtext } = response.data.data;
-        setDailyVerse({
-          losungstext: losung?.text,
-          losungsvers: losung?.reference,
-          lehrtext: lehrtext?.text,
-          lehrtextvers: lehrtext?.reference
-        });
-      } else {
-        setDailyVerse(null);
-      }
-    } catch {
-      setDailyVerse(null);
-    } finally {
-      setLoadingVerse(false);
-    }
-  };
-
-  useEffect(() => {
-    loadDashboard();
-    loadTageslosung();
-  }, []);
-
   const config = dashboardData?.config;
 
   if (loading) {
@@ -307,7 +295,7 @@ const TeamerDashboardPage: React.FC = () => {
         <IonRefresher
           slot="fixed"
           onIonRefresh={async (e) => {
-            await Promise.all([loadDashboard(), loadTageslosung()]);
+            await Promise.all([refreshDashboard(), refreshVerse()]);
             e.detail.complete();
           }}
         >

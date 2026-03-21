@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -82,7 +82,10 @@ import {
   handLeft,
   checkmark
 } from 'ionicons/icons';
+import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 
 interface TeamerBadge {
@@ -286,27 +289,18 @@ const BadgePopoverContent: React.FC<{
 };
 
 const TeamerBadgesPage: React.FC = () => {
-  const [badges, setBadges] = useState<TeamerBadge[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useApp();
   const [selectedFilter, setSelectedFilter] = useState<string>('alle');
 
   const badgePopoverRef = useRef<{ badge: TeamerBadge | null; getBadgeColor: (badge: TeamerBadge) => string }>({ badge: null, getBadgeColor: () => '#f59e0b' });
 
-  const loadBadges = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await api.get('/teamer/badges');
-      setBadges(response.data || []);
-    } catch (err) {
-      console.error('Error loading teamer badges:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadBadges();
-  }, [loadBadges]);
+  // Offline-Query: Badges
+  const { data: badgesData, loading, refresh } = useOfflineQuery<TeamerBadge[]>(
+    'teamer:badges:' + user?.id,
+    async () => { const res = await api.get('/teamer/badges'); return res.data || []; },
+    { ttl: CACHE_TTL.BADGES }
+  );
+  const badges = badgesData || [];
 
   const getBadgeColor = (badge: TeamerBadge) => {
     if (badge.color) return badge.color;
@@ -386,8 +380,9 @@ const TeamerBadgesPage: React.FC = () => {
           </IonToolbar>
         </IonHeader>
 
-        <IonRefresher slot="fixed" onIonRefresh={(e) => {
-          loadBadges().then(() => e.detail.complete());
+        <IonRefresher slot="fixed" onIonRefresh={async (e) => {
+          await refresh();
+          e.detail.complete();
         }}>
           <IonRefresherContent />
         </IonRefresher>
