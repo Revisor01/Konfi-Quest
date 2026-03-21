@@ -292,6 +292,7 @@ const BadgePopoverContent: React.FC<{
 const TeamerBadgesPage: React.FC = () => {
   const { user } = useApp();
   const [selectedFilter, setSelectedFilter] = useState<string>('alle');
+  const [badgeVisibility, setBadgeVisibility] = useState<string>('sichtbar');
 
   const badgePopoverRef = useRef<{ badge: TeamerBadge | null; getBadgeColor: (badge: TeamerBadge) => string }>({ badge: null, getBadgeColor: () => '#f59e0b' });
 
@@ -308,6 +309,8 @@ const TeamerBadgesPage: React.FC = () => {
     return '#f59e0b';
   };
 
+  const hasSecretBadges = badges.some(b => b.is_hidden);
+
   const getCategories = () => {
     let filtered = badges;
     switch (selectedFilter) {
@@ -319,6 +322,13 @@ const TeamerBadgesPage: React.FC = () => {
         break;
       default:
         filtered = badges;
+    }
+
+    // Sichtbarkeits-Filter
+    if (badgeVisibility === 'sichtbar') {
+      filtered = filtered.filter(b => !b.is_hidden || b.earned);
+    } else if (badgeVisibility === 'geheim') {
+      filtered = filtered.filter(b => b.is_hidden);
     }
 
     const categories: { key: string; title: string; icon: string; color: string; badges: TeamerBadge[] }[] = [
@@ -335,6 +345,7 @@ const TeamerBadgesPage: React.FC = () => {
       { key: 'streak', title: 'Serien-Champion', icon: flame, color: '#eb445a', badges: filtered.filter(b => b.criteria_type === 'streak').sort((a, b) => a.criteria_value - b.criteria_value) },
       { key: 'time_based', title: 'Zeitreisender', icon: time, color: '#8e8e93', badges: filtered.filter(b => b.criteria_type === 'time_based').sort((a, b) => a.criteria_value - b.criteria_value) },
       { key: 'event_count', title: 'Event-Champion', icon: calendar, color: '#e63946', badges: filtered.filter(b => b.criteria_type === 'event_count').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'teamer_year', title: 'Erfahrung', icon: ribbon, color: '#5b21b6', badges: filtered.filter(b => b.criteria_type === 'teamer_year').sort((a, b) => a.criteria_value - b.criteria_value) },
       { key: 'collection', title: 'Sammler', icon: trophy, color: '#ffd700', badges: filtered.filter(b => b.criteria_type === 'collection').sort((a, b) => a.criteria_value - b.criteria_value) },
       { key: 'yearly', title: 'Jahres-Badges', icon: calendarOutline, color: '#8e8e93', badges: filtered.filter(b => b.criteria_type === 'yearly').sort((a, b) => a.criteria_value - b.criteria_value) }
     ];
@@ -432,6 +443,16 @@ const TeamerBadgesPage: React.FC = () => {
           </IonSegment>
         </div>
 
+        {/* Sichtbar / Geheim Segment */}
+        {hasSecretBadges && (
+          <div style={{ margin: '0 16px 16px' }}>
+            <IonSegment value={badgeVisibility} onIonChange={(e) => setBadgeVisibility(e.detail.value as string)}>
+              <IonSegmentButton value="sichtbar"><IonLabel>Sichtbar</IonLabel></IonSegmentButton>
+              <IonSegmentButton value="geheim"><IonLabel>Geheim</IonLabel></IonSegmentButton>
+            </IonSegment>
+          </div>
+        )}
+
         {/* Badges Grid */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
@@ -496,11 +517,7 @@ const TeamerBadgesPage: React.FC = () => {
                     </div>
 
                     {/* 3-Column Badge Grid */}
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(3, 1fr)',
-                      gap: '12px'
-                    }}>
+                    <div className="app-badge-grid">
                       {category.badges.map((badge) => {
                         const bColor = getBadgeColor(badge);
                         const isEarned = badge.earned;

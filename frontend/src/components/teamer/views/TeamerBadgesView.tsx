@@ -461,29 +461,27 @@ const TeamerBadgesView: React.FC = () => {
                   </div>
 
                   {/* 3-Column Badge Grid */}
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(3, 1fr)',
-                    gap: '12px'
-                  }}>
+                  <div className="app-badge-grid">
                     {typeBadges.map((badge) => {
                       const badgeColor = getBadgeColor(badge);
                       const isEarned = badge.is_earned;
                       const isNew = badge.is_new && isEarned;
+                      const isSecret = badge.is_hidden && !isEarned;
 
                       return (
                         <div
                           key={badge.id}
-                          onClick={(e) => handleBadgeClick(badge, e)}
+                          className="app-badge-grid__item"
+                          onClick={(e) => !isSecret && handleBadgeClick(badge, e)}
                           style={{
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
                             padding: '12px 8px',
                             borderRadius: '16px',
-                            background: isEarned ? `${badgeColor}10` : '#f5f5f5',
+                            background: isSecret ? '#e8e8e8' : isEarned ? `${badgeColor}10` : '#f5f5f5',
                             border: isEarned ? `2px solid ${badgeColor}40` : '2px solid transparent',
-                            cursor: 'pointer',
+                            cursor: isSecret ? 'default' : 'pointer',
                             transition: 'transform 0.2s',
                             position: 'relative'
                           }}
@@ -504,6 +502,22 @@ const TeamerBadgesView: React.FC = () => {
                             </div>
                           )}
 
+                          {/* GEHEIM Corner-Badge für verdiente geheime Badges */}
+                          {badge.is_hidden && isEarned && (
+                            <div className="app-corner-badges">
+                              <div
+                                className="app-corner-badge"
+                                style={{
+                                  background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+                                  fontSize: '0.5rem',
+                                  padding: '3px 8px'
+                                }}
+                              >
+                                GEHEIM
+                              </div>
+                            </div>
+                          )}
+
                           {/* Badge Icon */}
                           <div style={{
                             width: '56px',
@@ -512,17 +526,19 @@ const TeamerBadgesView: React.FC = () => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            background: isEarned
-                              ? `linear-gradient(145deg, ${badgeColor} 0%, ${badgeColor}cc 100%)`
-                              : 'linear-gradient(145deg, #d0d0d0 0%, #b8b8b8 100%)',
+                            background: isSecret
+                              ? 'linear-gradient(145deg, #c0c0c0 0%, #a0a0a0 100%)'
+                              : isEarned
+                                ? `linear-gradient(145deg, ${badgeColor} 0%, ${badgeColor}cc 100%)`
+                                : 'linear-gradient(145deg, #d0d0d0 0%, #b8b8b8 100%)',
                             boxShadow: isEarned ? `0 4px 12px ${badgeColor}40` : '0 2px 8px rgba(0,0,0,0.1)',
                             position: 'relative',
                             marginBottom: '8px'
                           }}>
                             <IonIcon
-                              icon={getIconFromString(badge.icon)}
+                              icon={isSecret ? helpCircle : getIconFromString(badge.icon)}
                               style={{
-                                fontSize: '1.8rem',
+                                fontSize: isSecret ? '1.5rem' : '1.8rem',
                                 color: isEarned ? 'white' : '#999'
                               }}
                             />
@@ -546,8 +562,8 @@ const TeamerBadgesView: React.FC = () => {
                               </div>
                             )}
 
-                            {/* Lock for not earned */}
-                            {!isEarned && (
+                            {/* Lock for not earned (non-hidden) */}
+                            {!isEarned && !isSecret && (
                               <div style={{
                                 position: 'absolute',
                                 bottom: '-2px',
@@ -567,7 +583,7 @@ const TeamerBadgesView: React.FC = () => {
                           </div>
 
                           {/* Badge Name */}
-                          <span style={{
+                          <span className="app-badge-grid__name" style={{
                             fontSize: '0.75rem',
                             fontWeight: '600',
                             color: isEarned ? '#333' : '#999',
@@ -580,7 +596,7 @@ const TeamerBadgesView: React.FC = () => {
                             WebkitLineClamp: 2,
                             WebkitBoxOrient: 'vertical'
                           }}>
-                            {badge.name}
+                            {isSecret ? '???' : badge.name}
                           </span>
                         </div>
                       );
