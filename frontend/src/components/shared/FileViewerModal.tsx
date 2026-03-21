@@ -4,7 +4,22 @@ import { closeOutline, downloadOutline, shareOutline, documentOutline } from 'io
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
+import api from '../../services/api';
 import './FileViewerModal.css';
+
+// --- Hilfsfunktion: API-Pfade erkennen und per Auth-fetch in Blob-URL wandeln ---
+const isApiPath = (url: string): boolean => {
+  return url.startsWith('/api/') || url.startsWith('api/');
+};
+
+const resolveUrl = async (url: string): Promise<string> => {
+  if (!isApiPath(url)) return url;
+  // Relativer API-Pfad → per axios (mit Auth-Header) laden
+  const cleanPath = url.startsWith('/api/') ? url.substring(4) : url.startsWith('api/') ? '/' + url.substring(4) : url;
+  const response = await api.get(cleanPath, { responseType: 'blob' });
+  const mime = response.headers?.['content-type'] || 'application/octet-stream';
+  return URL.createObjectURL(new Blob([response.data], { type: mime }));
+};
 
 // --- Interfaces ---
 
@@ -63,6 +78,8 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
+  const [urlLoading, setUrlLoading] = useState(false);
 
   // Refs fuer Touch-Handling
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -72,12 +89,46 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
   const panStartRef = useRef<{ x: number; y: number } | null>(null);
   const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  // Cache fuer aufgeloeste URLs (API-Pfade → Blob-URLs)
+  const resolvedUrlsRef = useRef<Record<string, string>>({});
 
   // Desktop Mouse-Refs
   const mouseDownRef = useRef<{ x: number; y: number } | null>(null);
   const mousePanStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const currentFile = files[currentIndex];
+
+  // URL-Aufloesung: API-Pfade per Auth-fetch in Blob-URL wandeln
+  useEffect(() => {
+    if (!currentFile) return;
+    const url = currentFile.url;
+
+    // Bereits aufgeloeste URL aus Cache nutzen
+    if (resolvedUrlsRef.current[url]) {
+      setResolvedUrl(resolvedUrlsRef.current[url]);
+      setUrlLoading(false);
+      return;
+    }
+
+    // Kein API-Pfad → direkt verwenden
+    if (!isApiPath(url)) {
+      setResolvedUrl(url);
+      setUrlLoading(false);
+      return;
+    }
+
+    // API-Pfad → async laden
+    setUrlLoading(true);
+    setResolvedUrl(null);
+    resolveUrl(url).then(resolved => {
+      resolvedUrlsRef.current[url] = resolved;
+      setResolvedUrl(resolved);
+      setUrlLoading(false);
+    }).catch(() => {
+      setResolvedUrl(null);
+      setUrlLoading(false);
+    });
+  }, [currentFile]);
 
   // Reset Zoom bei Index-Wechsel
   useEffect(() => {
@@ -226,12 +277,12 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
 
   // --- Download ---
   const handleDownload = useCallback(async () => {
-    if (!currentFile) return;
+    if (!currentFile || !resolvedUrl) return;
 
     if (Capacitor.isNativePlatform()) {
       try {
-        // Datei als Blob laden
-        const response = await fetch(currentFile.url);
+        // Datei als Blob laden (resolvedUrl ist immer blob: oder direkte URL)
+        const response = await fetch(resolvedUrl);
         const blob = await response.blob();
         const reader = new FileReader();
         reader.onload = async () => {
@@ -251,12 +302,12 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
         reader.readAsDataURL(blob);
       } catch {
         // Fallback: Browser-Download
-        triggerBrowserDownload(currentFile.url, currentFile.fileName);
+        triggerBrowserDownload(resolvedUrl, currentFile.fileName);
       }
     } else {
-      triggerBrowserDownload(currentFile.url, currentFile.fileName);
+      triggerBrowserDownload(resolvedUrl, currentFile.fileName);
     }
-  }, [currentFile]);
+  }, [currentFile, resolvedUrl]);
 
   const triggerBrowserDownload = (url: string, name: string) => {
     const a = window.document.createElement('a');
@@ -270,10 +321,10 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
 
   // --- Share (nur nativ) ---
   const handleShare = useCallback(async () => {
-    if (!currentFile || !Capacitor.isNativePlatform()) return;
+    if (!currentFile || !resolvedUrl || !Capacitor.isNativePlatform()) return;
 
     try {
-      const response = await fetch(currentFile.url);
+      const response = await fetch(resolvedUrl);
       const blob = await response.blob();
       const reader = new FileReader();
       reader.onload = async () => {
@@ -293,7 +344,7 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
     } catch {
       // Share fehlgeschlagen — still ignorieren
     }
-  }, [currentFile]);
+  }, [currentFile, resolvedUrl]);
 
   // --- Keyboard-Handler ---
   useEffect(() => {
@@ -313,6 +364,15 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
   const isNative = Capacitor.isNativePlatform();
 
   const renderContent = () => {
+    // Ladeindikator fuer API-Pfade
+    if (urlLoading || !resolvedUrl) {
+      return (
+        <div className="file-viewer-fallback">
+          <p className="file-viewer-fallback-name">Datei wird geladen...</p>
+        </div>
+      );
+    }
+
     switch (category) {
       case 'image':
         return (
@@ -329,7 +389,7 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
             onMouseLeave={handleMouseUp}
           >
             <img
-              src={currentFile.url}
+              src={resolvedUrl}
               alt={currentFile.fileName}
               className={`file-viewer-image${!isDragging ? ' transitioning' : ''}`}
               style={{
@@ -343,7 +403,7 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
       case 'pdf':
         return (
           <iframe
-            src={currentFile.url}
+            src={resolvedUrl}
             title={currentFile.fileName}
             className="file-viewer-pdf"
             allow="fullscreen"
@@ -353,7 +413,7 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
       case 'video':
         return (
           <video
-            src={currentFile.url}
+            src={resolvedUrl}
             className="file-viewer-video"
             controls
             playsInline

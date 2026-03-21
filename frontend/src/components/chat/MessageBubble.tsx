@@ -26,6 +26,18 @@ import { formatFileSize } from '../../utils/helpers';
 import VideoPreview from './VideoPreview';
 import LazyImage from './LazyImage';
 
+const getMimeFromFileName = (fileName: string): string => {
+  const ext = (fileName.split('.').pop() || '').toLowerCase();
+  const mimeMap: Record<string, string> = {
+    jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp',
+    mp4: 'video/mp4', mov: 'video/quicktime', avi: 'video/x-msvideo', webm: 'video/webm', m4v: 'video/mp4',
+    pdf: 'application/pdf',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  };
+  return mimeMap[ext] || 'application/octet-stream';
+};
+
 interface MessageBubbleUser {
   id: number;
   type: 'admin' | 'konfi' | 'teamer' | 'user';
@@ -47,7 +59,7 @@ interface MessageBubbleProps {
   onToggleReaction: (messageId: number, emoji: string) => void;
   onOpenReactionPicker: (message: Message) => void;
   onVoteInPoll: (messageId: number, optionIndex: number) => void;
-  onImageClick: (filePath: string) => void;
+  onFileClick: (filePath: string, fileName: string, mimeType: string) => void;
   onError: (error: string) => void;
   onDeselectMessage: () => void;
   textareaRef: React.RefObject<HTMLIonTextareaElement | null>;
@@ -86,7 +98,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   onToggleReaction,
   onOpenReactionPicker,
   onVoteInPoll,
-  onImageClick,
+  onFileClick,
   onError,
   onDeselectMessage,
   textareaRef,
@@ -439,7 +451,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   onError={() => onError('Fehler beim Laden des Bildes')}
                   onClick={() => {
                     if (message.file_path) {
-                      onImageClick(message.file_path);
+                      onFileClick(message.file_path, message.file_name || 'Bild', getMimeFromFileName(message.file_name || 'bild.jpg'));
                     }
                   }}
                 />
@@ -448,10 +460,16 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 </div>
               </div>
             ) : message.file_name?.match(/\.(mp4|mov|avi|webm|m4v)$/i) ? (
-              <VideoPreview
-                message={message}
-                onError={(error) => onError('Fehler beim Laden des Videos: ' + error)}
-              />
+              <div onClick={() => {
+                if (message.file_path) {
+                  onFileClick(message.file_path, message.file_name || 'Video', getMimeFromFileName(message.file_name || 'video.mp4'));
+                }
+              }}>
+                <VideoPreview
+                  message={message}
+                  onError={(error) => onError('Fehler beim Laden des Videos: ' + error)}
+                />
+              </div>
             ) : (
               <div
                 style={{
@@ -467,7 +485,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 onClick={(e) => {
                   e.stopPropagation();
                   if (message.file_path) {
-                    onImageClick(message.file_path);
+                    onFileClick(message.file_path, message.file_name || 'Datei', getMimeFromFileName(message.file_name || ''));
                   }
                 }}
               >

@@ -27,13 +27,12 @@ import { Message, Reaction, PollVote, ChatRoomProps as ChatRoomComponentProps } 
 import MessageBubble from './MessageBubble';
 import PollModal from './modals/PollModal';
 import MembersModal from './modals/MembersModal';
-import FileViewerModal from './modals/FileViewerModal';
+import FileViewerModal, { FileItem } from '../shared/FileViewerModal';
 // Camera is now handled via ChatRoomSections helpers
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
-import { FileViewer } from '@capacitor/file-viewer';
-import { FileOpener } from '@capacitor-community/file-opener';
+// Native FileViewer/FileOpener entfernt — alles ueber In-App FileViewerModal
 import { writeQueue } from '../../services/writeQueue';
 import { networkMonitor } from '../../services/networkMonitor';
 import { ChatHeader, MessageInput, autoCapitalize, MIME_EXT_MAP, takePicture as takePictureHelper, selectFromGallery as selectFromGalleryHelper } from './ChatRoomSections';
@@ -76,75 +75,10 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLIonTextareaElement>(null);
   const scrollPositionRef = useRef<number>(0);
-  const viewerDataRef = useRef<{ blobUrl: string; fileName: string; mimeType: string }>({ blobUrl: '', fileName: '', mimeType: '' });
+  const viewerRef = useRef<{ files: FileItem[]; initialIndex: number }>({ files: [], initialIndex: 0 });
 
 
-  // Open image with FileOpener (like Activity Requests)
-  const openImageWithFileOpener = async (filePath: string) => {
-    try {
-      await Haptics.impact({ style: ImpactStyle.Light });
-
-      // Download with authentication
-      const response = await api.get(`/chat/files/${filePath}`, {
-        responseType: 'blob'
-      });
-
-      const blob = response.data;
-      const safeFileName = `chat_${filePath.substring(0, 8)}.jpg`;
-
-      // Convert to base64
-      const base64Data = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64 = (reader.result as string).split(',')[1];
-          resolve(base64);
-        };
-        reader.readAsDataURL(blob);
-      });
-
-      // Ensure temp directory exists
-      try {
-        await Filesystem.mkdir({
-          path: 'temp',
-          directory: Directory.Documents,
-          recursive: true
-        });
-      } catch (e) {
-        // Directory might already exist
-      }
-
-      // Write file
-      const path = `temp/${safeFileName}`;
-      await Filesystem.writeFile({
-        path,
-        data: base64Data,
-        directory: Directory.Documents
-      });
-
-      // Get file URI
-      const fileUri = await Filesystem.getUri({
-        directory: Directory.Documents,
-        path
-      });
-
-      // Open with FileOpener
-      await FileOpener.open({
-        filePath: fileUri.uri,
-        contentType: 'image/jpeg'
-      });
-    } catch (error) {
-      console.warn('Native image opener failed, using in-app viewer:', error);
-      try {
-        const fallbackResponse = await api.get(`/chat/files/${filePath}`, { responseType: 'blob' });
-        const fallbackFileName = filePath.split('/').pop() || 'Bild';
-        openInAppViewer(fallbackResponse.data, fallbackFileName, 'image/jpeg');
-      } catch {
-        setError('Fehler beim Öffnen des Bildes');
-      }
-    }
-  };
-
-  // Hooks müssen vor conditional returns stehen!
+  // Hooks muessen vor conditional returns stehen!
   const [presentAlert] = useIonAlert();
   const [presentActionSheet] = useIonActionSheet();
 
@@ -262,25 +196,18 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     });
   };
 
-  // FileViewer Modal mit useIonModal Hook (In-App Dateivorschau)
+  // FileViewer Modal mit useIonModal Hook (universeller Datei-Viewer)
   const [presentFileViewer, dismissFileViewer] = useIonModal(FileViewerModal, {
-    get blobUrl() { return viewerDataRef.current.blobUrl; },
-    get fileName() { return viewerDataRef.current.fileName; },
-    get mimeType() { return viewerDataRef.current.mimeType; },
+    get files() { return viewerRef.current.files; },
+    get initialIndex() { return viewerRef.current.initialIndex; },
     onClose: () => {
       dismissFileViewer();
-      if (viewerDataRef.current.blobUrl) {
-        URL.revokeObjectURL(viewerDataRef.current.blobUrl);
-        viewerDataRef.current = { blobUrl: '', fileName: '', mimeType: '' };
-      }
+      viewerRef.current.files.forEach(f => {
+        if (f.url.startsWith('blob:')) URL.revokeObjectURL(f.url);
+      });
+      viewerRef.current = { files: [], initialIndex: 0 };
     }
   });
-
-  const openInAppViewer = useCallback((blob: Blob, fileName: string, mimeType: string) => {
-    const url = URL.createObjectURL(new Blob([blob], { type: mimeType }));
-    viewerDataRef.current = { blobUrl: url, fileName, mimeType };
-    presentFileViewer();
-  }, [presentFileViewer]);
 
   // Setup WebSocket for real-time updates (initial load via useOfflineQuery)
   useEffect(() => {
@@ -969,46 +896,49 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     handleShare();
   };
 
-  const handleImageOrFileClick = async (filePath: string) => {
-    const fileName = filePath.split('/').pop() || 'file';
+  const handleFileClick = async (filePath: string, fileName: string, mimeType: string) => {
     try {
-      await Haptics.impact({ style: ImpactStyle.Medium });
-      const response = await api.get(`/chat/files/${filePath}`, {
-        responseType: 'blob'
-      });
-      const blob = response.data;
-      const mime = response.headers?.['content-type'] || 'application/octet-stream';
+      await Haptics.impact({ style: ImpactStyle.Light });
 
-      // Nativer Pfad versuchen
-      try {
-        const base64Data = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const base64 = (reader.result as string).split(',')[1];
-            resolve(base64);
-          };
-          reader.readAsDataURL(blob);
-        });
-        // Extension aus MIME-Type ableiten (fileName kann Hash ohne Extension sein)
-        const fileExt = fileName.includes('.') ? fileName.split('.').pop() : MIME_EXT_MAP[mime] || 'bin';
-        const path = `temp/chat_${Date.now()}.${fileExt}`;
-        try {
-          await Filesystem.mkdir({ path: 'temp', directory: Directory.Documents, recursive: true });
-        } catch { /* existiert bereits */ }
-        await Filesystem.writeFile({ path, data: base64Data, directory: Directory.Documents, recursive: true });
-        const fileUri = await Filesystem.getUri({ directory: Directory.Documents, path });
-        if (mime.startsWith('image/')) {
-          await FileOpener.open({ filePath: fileUri.uri, contentType: mime });
-        } else {
-          await FileViewer.openDocumentFromLocalPath({ path: fileUri.uri });
+      // Angeklickte Datei als Blob laden
+      const response = await api.get(`/chat/files/${filePath}`, { responseType: 'blob' });
+      const blob = response.data;
+      const mime = response.headers?.['content-type'] || mimeType;
+      const blobUrl = URL.createObjectURL(new Blob([blob], { type: mime }));
+
+      // Alle Datei-Nachrichten im Chat fuer Swipe-Kontext sammeln
+      const allFileMessages = messages.filter(m => m.file_path);
+      const files: FileItem[] = allFileMessages.map(m => {
+        if (m.file_path === filePath) {
+          return { url: blobUrl, fileName: m.file_name || fileName, mimeType: mime };
         }
-      } catch (nativeError) {
-        console.warn('Native viewer failed, using in-app viewer:', nativeError);
-        openInAppViewer(blob, fileName, mime);
-      }
+        // Andere Dateien: API-Pfad (FileViewerModal laedt lazy per fetch)
+        return {
+          url: `/api/chat/files/${m.file_path}`,
+          fileName: m.file_name || 'Datei',
+          mimeType: m.file_name ? getMimeFromFileName(m.file_name) : 'application/octet-stream'
+        };
+      });
+
+      const clickedIndex = allFileMessages.findIndex(m => m.file_path === filePath);
+      viewerRef.current = { files, initialIndex: Math.max(0, clickedIndex) };
+      presentFileViewer({ cssClass: 'file-viewer-modal' });
     } catch {
       setError('Fehler beim Öffnen der Datei');
     }
+  };
+
+  // MIME-Type aus Dateiname ableiten
+  const getMimeFromFileName = (name: string): string => {
+    const ext = (name.split('.').pop() || '').toLowerCase();
+    const map: Record<string, string> = {
+      jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp',
+      mp4: 'video/mp4', mov: 'video/quicktime', avi: 'video/x-msvideo', webm: 'video/webm', m4v: 'video/mp4',
+      pdf: 'application/pdf',
+      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    };
+    return map[ext] || 'application/octet-stream';
   };
 
   const canLeaveChat = (): boolean => {
@@ -1090,7 +1020,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
               onToggleReaction={toggleReaction}
               onOpenReactionPicker={openReactionPicker}
               onVoteInPoll={voteInPoll}
-              onImageClick={handleImageOrFileClick}
+              onFileClick={handleFileClick}
               onError={setError}
               onDeselectMessage={() => setSelectedMessage(null)}
               textareaRef={textareaRef}
