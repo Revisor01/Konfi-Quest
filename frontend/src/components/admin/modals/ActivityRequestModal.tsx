@@ -60,7 +60,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
   onClose,
   onSuccess
 }) => {
-  const { setSuccess, setError } = useApp();
+  const { setSuccess, setError, isOnline } = useApp();
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [request, setRequest] = useState<ActivityRequest | null>(null);
@@ -193,8 +193,8 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           </IonButtons>
           {isPending && selectedAction && (
             <IonButtons slot="end">
-              <IonButton onClick={handleSubmit} disabled={isSubmitting || (selectedAction === 'reject' && !adminComment.trim())} className="app-modal-submit-btn app-modal-submit-btn--activities">
-                {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+              <IonButton onClick={handleSubmit} disabled={isSubmitting || (selectedAction === 'reject' && !adminComment.trim()) || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--activities">
+                {!isOnline ? 'Du bist offline' : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
               </IonButton>
             </IonButtons>
           )}

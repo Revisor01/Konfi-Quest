@@ -20,6 +20,7 @@ import {
   useIonAlert
 } from '@ionic/react';
 import { closeOutline, checkmarkOutline, flash, calendar, home, people, pricetag } from 'ionicons/icons';
+import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 
 interface Activity {
@@ -39,6 +40,7 @@ interface ActivityModalProps {
 }
 
 const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave, dismiss, targetRole }) => {
+  const { isOnline } = useApp();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [selectedActivity, setSelectedActivity] = useState<number | null>(null);
   const [comment, setComment] = useState('');
@@ -131,8 +133,8 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={!selectedActivity || isSubmitting} className="app-modal-submit-btn app-modal-submit-btn--activities">
-              <IonIcon icon={checkmarkOutline} />
+            <IonButton onClick={handleSave} disabled={!selectedActivity || isSubmitting || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--activities">
+              {!isOnline ? 'Du bist offline' : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>

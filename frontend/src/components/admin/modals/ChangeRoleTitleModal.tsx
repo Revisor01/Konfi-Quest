@@ -44,7 +44,7 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
   submitBtnClass = 'app-modal-submit-btn--settings',
   infoBoxClass = 'app-info-box--blue'
 }) => {
-  const { setSuccess, setError } = useApp();
+  const { setSuccess, setError, isOnline } = useApp();
   const [roleTitle, setRoleTitle] = useState(initialRoleTitle);
   const { isSubmitting, guard } = useActionGuard();
 
@@ -73,8 +73,8 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={isSubmitting} className={`app-modal-submit-btn ${submitBtnClass}`}>
-              {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+            <IonButton onClick={handleSave} disabled={isSubmitting || !isOnline} className={`app-modal-submit-btn ${submitBtnClass}`}>
+              {!isOnline ? 'Du bist offline' : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>

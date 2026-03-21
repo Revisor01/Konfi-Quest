@@ -180,7 +180,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
       onClose();
     }
   };
-  const { setSuccess, setError } = useApp();
+  const { setSuccess, setError, isOnline } = useApp();
   const [formData, setFormData] = useState<Level>({
     name: '',
     title: '',
@@ -264,10 +264,10 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
           <IonButtons slot="end">
             <IonButton
               onClick={handleSubmit}
-              disabled={!isFormValid || loading || isSubmitting}
+              disabled={!isFormValid || loading || isSubmitting || !isOnline}
               className="app-modal-submit-btn app-modal-submit-btn--level"
             >
-              {loading ? (
+              {!isOnline ? 'Du bist offline' : loading ? (
                 <IonSpinner name="crescent" />
               ) : (
                 <IonIcon icon={checkmarkOutline} />

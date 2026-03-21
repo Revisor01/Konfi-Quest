@@ -76,7 +76,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
   dismiss,
   filterRole
 }) => {
-  const { setSuccess, setError } = useApp();
+  const { setSuccess, setError, isOnline } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [availableKonfis, setAvailableKonfis] = useState<Konfi[]>([]);
   const [selectedKonfis, setSelectedKonfis] = useState<number[]>([]);
@@ -244,6 +244,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
   };
 
   const handleRemoveParticipant = async (participantId: number) => {
+    if (!isOnline) return;
     try {
       await api.delete(`/events/${eventId}/bookings/${participantId}`);
       setSuccess('Teilnehmer entfernt');
@@ -270,8 +271,8 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
           </IonButtons>
           <IonButtons slot="end">
             {selectedKonfis.length > 0 && (
-              <IonButton onClick={handleAddParticipants} disabled={loading || isSubmitting} className="app-modal-submit-btn app-modal-submit-btn--events">
-                <IonIcon icon={checkmarkOutline} slot="icon-only" />
+              <IonButton onClick={handleAddParticipants} disabled={loading || isSubmitting || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--events">
+                {!isOnline ? 'Du bist offline' : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
               </IonButton>
             )}
           </IonButtons>

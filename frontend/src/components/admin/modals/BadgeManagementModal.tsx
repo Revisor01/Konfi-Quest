@@ -223,7 +223,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   onClose,
   onSuccess
 }) => {
-  const { setSuccess, setError } = useApp();
+  const { setSuccess, setError, isOnline } = useApp();
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
@@ -750,10 +750,10 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           <IonButtons slot="end">
             <IonButton
               onClick={handleSave}
-              disabled={loading || isSubmitting || !formData.name.trim()}
+              disabled={loading || isSubmitting || !formData.name.trim() || !isOnline}
               className="app-modal-submit-btn app-modal-submit-btn--badges"
             >
-              {loading ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+              {!isOnline ? 'Du bist offline' : loading ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>

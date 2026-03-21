@@ -22,6 +22,7 @@ import {
   IonText
 } from '@ionic/react';
 import { closeOutline, checkmarkOutline, personOutline, informationCircleOutline } from 'ionicons/icons';
+import { useApp } from '../../../contexts/AppContext';
 
 interface Jahrgang {
   id: number;
@@ -36,6 +37,7 @@ interface KonfiModalProps {
 }
 
 const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, dismiss }) => {
+  const { isOnline } = useApp();
   const [name, setName] = useState('');
   const [jahrgang, setJahrgang] = useState('');
   const { isSubmitting, guard } = useActionGuard();
@@ -74,8 +76,8 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={!isValid || isSubmitting} className="app-modal-submit-btn app-modal-submit-btn--konfi">
-              {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+            <IonButton onClick={handleSave} disabled={!isValid || isSubmitting || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--konfi">
+              {!isOnline ? 'Du bist offline' : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>

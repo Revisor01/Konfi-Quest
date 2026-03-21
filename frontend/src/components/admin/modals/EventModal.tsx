@@ -86,7 +86,7 @@ const EventModal: React.FC<EventModalProps> = ({
   onSuccess,
   dismiss
 }) => {
-  const { setSuccess, setError } = useApp();
+  const { setSuccess, setError, isOnline } = useApp();
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -453,10 +453,10 @@ const EventModal: React.FC<EventModalProps> = ({
           <IonButtons slot="end">
             <IonButton
               onClick={handleSubmit}
-              disabled={!isFormValid || loading || isSubmitting}
+              disabled={!isFormValid || loading || isSubmitting || !isOnline}
               className="app-modal-submit-btn app-modal-submit-btn--events"
             >
-              {loading ? (
+              {!isOnline ? 'Du bist offline' : loading ? (
                 <IonSpinner name="crescent" />
               ) : (
                 <IonIcon icon={checkmarkOutline} />

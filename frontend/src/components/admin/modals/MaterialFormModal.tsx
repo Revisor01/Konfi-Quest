@@ -87,7 +87,7 @@ interface MaterialFormModalProps {
 }
 
 const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose, onSuccess }) => {
-  const { setError, setSuccess } = useApp();
+  const { setError, setSuccess, isOnline } = useApp();
   const [presentAlert] = useIonAlert();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pageRef = useRef<HTMLElement>(null);
@@ -297,8 +297,8 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
           </IonButtons>
           <IonTitle>{material ? 'Material bearbeiten' : 'Neues Material'}</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={isSubmitting}>
-              {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
+            <IonButton onClick={handleSave} disabled={isSubmitting || !isOnline}>
+              {!isOnline ? 'Du bist offline' : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
             </IonButton>
           </IonButtons>
         </IonToolbar>

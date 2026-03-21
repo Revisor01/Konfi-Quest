@@ -19,6 +19,7 @@ import {
   IonCardContent,
 } from '@ionic/react';
 import { closeOutline, checkmarkOutline, gift, calendar, removeOutline, addOutline, chatbubbleOutline } from 'ionicons/icons';
+import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 
 interface BonusModalProps {
@@ -29,6 +30,7 @@ interface BonusModalProps {
 }
 
 const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismiss }) => {
+  const { isOnline } = useApp();
   const handleClose = () => {
     if (dismiss) {
       dismiss();
@@ -75,8 +77,8 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={!isValid || isSubmitting} className="app-modal-submit-btn app-modal-submit-btn--konfi">
-              <IonIcon icon={checkmarkOutline} />
+            <IonButton onClick={handleSave} disabled={!isValid || isSubmitting || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--konfi">
+              {!isOnline ? 'Du bist offline' : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>

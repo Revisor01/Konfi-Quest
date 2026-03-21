@@ -64,7 +64,7 @@ const PasswordCheckItem: React.FC<{ label: string; checked: boolean }> = ({ labe
 );
 
 const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSuccess }) => {
-  const { setSuccess, setError } = useApp();
+  const { setSuccess, setError, isOnline } = useApp();
   const { isSubmitting, guard } = useActionGuard();
 
   const [passwordData, setPasswordData] = useState({
@@ -143,8 +143,8 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={isSubmitting || !isValid} className="app-modal-submit-btn app-modal-submit-btn--settings">
-              {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+            <IonButton onClick={handleSave} disabled={isSubmitting || !isValid || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--settings">
+              {!isOnline ? 'Du bist offline' : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>

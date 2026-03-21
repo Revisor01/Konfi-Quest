@@ -76,7 +76,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   onClose,
   onSuccess
 }) => {
-  const { setSuccess, setError } = useApp();
+  const { setSuccess, setError, isOnline } = useApp();
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
@@ -349,8 +349,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
             <IonButton onClick={onClose} disabled={isSubmitting} className="app-modal-close-btn"><IonIcon icon={closeOutline} /></IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={!isValid || isSubmitting} className="app-modal-submit-btn app-modal-submit-btn--settings">
-              {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+            <IonButton onClick={handleSave} disabled={!isValid || isSubmitting || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--settings">
+              {!isOnline ? 'Du bist offline' : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -572,10 +572,10 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                             <IonButton
                               size="small"
                               onClick={() => handleResetPassword(admin.id)}
-                              disabled={selectedAdminId !== admin.id || !newPassword.trim() || resettingPassword}
+                              disabled={selectedAdminId !== admin.id || !newPassword.trim() || resettingPassword || !isOnline}
                               style={{ '--background': '#667eea', '--background-activated': '#5a67d8' }}
                             >
-                              {resettingPassword && selectedAdminId === admin.id ? <IonSpinner name="crescent" /> : 'Setzen'}
+                              {!isOnline ? 'Du bist offline' : resettingPassword && selectedAdminId === admin.id ? <IonSpinner name="crescent" /> : 'Setzen'}
                             </IonButton>
                           </div>
                         </div>
@@ -639,10 +639,10 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                       <IonButton
                         expand="block"
                         onClick={handleAddAdmin}
-                        disabled={!newAdminData.display_name.trim() || !newAdminData.username.trim() || !newAdminData.password.trim() || addingAdmin}
+                        disabled={!newAdminData.display_name.trim() || !newAdminData.username.trim() || !newAdminData.password.trim() || addingAdmin || !isOnline}
                         style={{ flex: 1, '--background': '#667eea', '--background-activated': '#5a67d8' }}
                       >
-                        {addingAdmin ? <IonSpinner name="crescent" /> : 'Hinzufügen'}
+                        {!isOnline ? 'Du bist offline' : addingAdmin ? <IonSpinner name="crescent" /> : 'Hinzufügen'}
                       </IonButton>
                     </div>
                   </div>
