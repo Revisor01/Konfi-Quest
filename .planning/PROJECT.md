@@ -14,18 +14,24 @@ Alle Bugs, UI-Inkonsistenzen und Logik-Luecken nach dem Grundaufbau geschlossen.
 
 Ionic 8.8.1, Ionicons 8, rdlabo iOS26 2.3.0 + MD3 1.1.0, alle Capacitor Plugins auf neuestem v7 Stand.
 
-## Current Milestone: v2.1 App-Resilienz
+## Shipped: v2.1 App-Resilienz (2026-03-21)
 
-**Goal:** Offline-Lese-Cache fuer alle Daten, Schreib-Queue fuer Nachrichten/Antraege, Offline-Banner, Retry-Logik, Double-Submit-Schutz, inkrementeller Sync bei App-Start + Hintergrund.
+Offline-First: Alle 30 Pages mit SWR-Cache, WriteQueue fuer Chat/Antraege/Admin-CRUD (30 Queue-Aktionen), Corner-Badge System fuer Queue-Status, 42 Online-Only Buttons, axios-retry + Idempotency-Keys, koordinierter Reconnect-Sync.
+
+**Geliefert:** TokenStore (Capacitor Preferences statt localStorage), NetworkMonitor, offlineCache + useOfflineQuery (SWR), WriteQueue (FIFO persistent), Corner-Badge Flex-Container, Online-Only Guards, axios-retry + useActionGuard, Backend Idempotency-Keys (client_id UUID), koordinierte Sync-Sequenz (flush → invalidate → badges).
+
+## Current Milestone: v2.2 Codebase-Hardening
+
+**Goal:** Codebase aufraeumen, DB-Schema konsolidieren, Navigation stabilisieren, Error Boundaries, Performance-Optimierung, Token-Refresh, Datei-Viewer.
 
 **Target features:**
-- Offline-Lese-Cache: Chats, Antraege, Dashboard, Events, Profil — fuer alle Rollen
-- Schreib-Queue: Chat-Nachrichten und Aktivitaets-Antraege offline erfassen, bei Reconnect senden
-- Offline-Banner: Klar kommunizieren wenn offline, was geht und was nicht
-- Retry-Logik: Automatischer Retry bei transienten Fehlern mit Exponential Backoff
-- Double-Submit-Schutz: Loading-States und Button-Disable konsistent ueberall
-- Inkrementeller Sync: App-Start + Hintergrund-Sync alle X Minuten + WebSocket-Updates
-- Stale-While-Revalidate: Gecachte Daten sofort anzeigen, im Hintergrund aktualisieren
+- Codebase Cleanup: Quick-Wins, Konsolidierung, Bug-Fixes
+- DB-Schema: Einheitliches Schema, Altlasten, Indizes, Foreign Keys
+- Navigation: Router-Migration, CustomEvents durch LiveUpdateContext ersetzen
+- Error Boundary + Sicherheit: CSP, MD5 ersetzen, TLS
+- Performance: Mega-Komponenten aufteilen, Memoization, SELECT-Stern
+- Token-Refresh: Refresh-Tokens, kuerzere JWT-Laufzeit, Revoke
+- Datei-Viewer: Fullscreen Zoom/Pan fuer Bilder in Chat + Material
 
 ## Geplant: v3.0 Onboarding + Landing
 

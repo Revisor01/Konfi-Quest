@@ -13,7 +13,8 @@
 - Shipped **v1.8 Teamer** - Phases 38-43 (shipped 2026-03-12)
 - Shipped **v1.9 Bugfix + Polish** - Phases 44-54 (shipped 2026-03-19)
 - **v2.0 Ionic Update + Theme** (shipped 2026-03-19)
-- **v2.1 App-Resilienz** - Phases 55-62 (planned)
+- Shipped **v2.1 App-Resilienz** - Phases 55-62 (shipped 2026-03-21)
+- v2.2 Codebase-Hardening - Phases 63-69 (planned)
 
 ## Phases
 
@@ -158,160 +159,42 @@ Kein Phase-Nummern-Block — separater Update-Milestone ohne Plans.
 
 </details>
 
-### v2.1 App-Resilienz (Planned)
+<details>
+<summary>Shipped v2.1 App-Resilienz (Phases 55-62) - SHIPPED 2026-03-21</summary>
 
-**Milestone Goal:** Offline-Lese-Cache fuer alle Daten, Schreib-Queue fuer Nachrichten/Antraege, Offline-UI, Retry-Logik, Double-Submit-Schutz, inkrementeller Sync bei App-Start + Reconnect.
+See .planning/milestones/v2.1-ROADMAP.md for full details.
 
-- [x] **Phase 55: Fundament** - Storage-Migration localStorage->Preferences + Netzwerk-Erkennung + 401-Handler-Fix (completed 2026-03-20)
-- [x] **Phase 56: Lese-Cache** - useOfflineQuery Hook + SWR-Pattern + Migration aller 30 Pages (completed 2026-03-21)
-- [x] **Phase 57: Retry + Schutz** - axios-retry + Double-Submit-Schutz + Idempotency-Keys Backend (completed 2026-03-21)
-- [x] **Phase 58: Corner-Badge System** - Flex-Container fuer Multi-Badge-Listen + Queue-Badge Design (completed 2026-03-21)
-- [x] **Phase 59: Online-Only Buttons** - 42 Online-Only-Aktionen disablen + Chat-Queue-Status-UI (completed 2026-03-21)
-- [x] **Phase 60: Queue-Kern + Konfi-Aktionen** - Queue-Infrastruktur + Konfi-Queue + Fire-and-Forget + Chat-Queue-UI (completed 2026-03-21)
-- [x] **Phase 61: Admin- + Teamer-Queue** - 21 Admin-Aktionen + 2 Teamer-Aktionen queue-faehig (completed 2026-03-21)
-- [x] **Phase 62: Sync** - SWR-Revalidierung + Socket.io-Reconnect-Sync + App-Resume-Sync (completed 2026-03-21)
+Phase 55: Fundament (4 plans, complete)
+Phase 56: Lese-Cache (4 plans, complete)
+Phase 57: Retry + Schutz (2 plans, complete)
+Phase 58: Corner-Badge System (2 plans, complete)
+Phase 59: Online-Only Buttons (3 plans, complete)
+Phase 60: Queue-Kern + Konfi-Aktionen (4 plans, complete)
+Phase 61: Admin- + Teamer-Queue (3 plans, complete)
+Phase 62: Sync (1 plan, complete)
+
+</details>
+
+### v2.2 Codebase-Hardening (Planned)
+
+**Milestone Goal:** Codebase aufraeumen, DB-Schema konsolidieren, Navigation stabilisieren, Error Boundaries, Performance, Token-Refresh, Datei-Viewer.
 
 ## Phase Details
-
-### Phase 55: Fundament
-**Goal**: App hat eine iOS-sichere Storage-Grundlage und erkennt zuverlaessig den Netzwerkstatus — kein faelschlicher Offline-Logout mehr
-**Depends on**: Nothing (Grundlage fuer alles Nachfolgende)
-**Requirements**: STR-01, STR-02, STR-03, STR-04, NET-01, NET-02, NET-03, NET-04
-**Success Criteria** (what must be TRUE):
-  1. JWT-Token und User-Daten ueberleben einen App-Neustart auf iOS zuverlaessig (kein Datenverlust durch WKWebView Storage-Eviction)
-  2. Bestehende User mit localStorage-Daten werden beim naechsten App-Start automatisch migriert ohne erneuten Login
-  3. App zeigt in allen Komponenten den korrekten Online/Offline-Status an (isOnline im AppContext)
-  4. Bei Netzwerkausfall wird der User NICHT ausgeloggt — der 401-Handler prueft den Netzwerkstatus bevor er Token loescht
-  5. Nach einer Offline-Phase laed Socket.io verpasste Chat-Nachrichten automatisch nach
-**Plans:** 4/4 plans complete
-Plans:
-- [x] 55-01-PLAN.md — TokenStore + Storage-Migration + Async Boot + Core-Services
-- [x] 55-02-PLAN.md — Verbleibende localStorage-Zugriffe auf TokenStore migrieren
-- [x] 55-03-PLAN.md — NetworkMonitor + isOnline + 401-Handler Offline-Fix
-- [x] 55-04-PLAN.md — Socket.io Reconnect Chat-Nachladen + Backend ?after Parameter
-
-### Phase 56: Lese-Cache
-**Goal**: Alle Seiten zeigen gecachte Daten sofort an wenn offline — keine leeren Seiten oder Spinner mehr
-**Depends on**: Phase 55 (Storage + Netzwerk-Erkennung muessen stehen)
-**Requirements**: CAC-01, CAC-02, CAC-03, CAC-04, CAC-05, CAC-06, CAC-07, CAC-08, CAC-09, CAC-10, CAC-11
-**Success Criteria** (what must be TRUE):
-  1. Konfi sieht Dashboard (Punkte, Ringe, Level, Ranking), Events und Chat-Verlauf auch ohne Internetverbindung
-  2. Admin sieht alle Stammdaten-Listen (Konfis, Aktivitaeten, Badges, Kategorien, Jahrgaenge, Level, Zertifikat-Typen, Settings) auch offline
-  3. Teamer sieht Material-Liste, Badges und Konfi-Stats auch offline
-  4. Gecachte Daten werden sofort angezeigt und im Hintergrund aktualisiert sobald online (SWR-Pattern sichtbar: Daten da, kurzes Update)
-  5. Nach Logout sind alle user-spezifischen Cache-Daten geloescht
-**Plans:** 4/4 plans complete
-Plans:
-- [x] 56-01-PLAN.md — offlineCache Service + useOfflineQuery Hook + Logout Cache-Clearing
-- [x] 56-02-PLAN.md — Konfi-Pages + Chat-Komponenten auf useOfflineQuery migrieren
-- [x] 56-03-PLAN.md — Admin-Pages auf useOfflineQuery migrieren
-- [x] 56-04-PLAN.md — Teamer-Pages auf useOfflineQuery migrieren
-
-### Phase 57: Retry + Schutz
-**Goal**: Transiente Netzwerk-Fehler werden automatisch wiederholt und kein Button kann doppelt abgeschickt werden
-**Depends on**: Phase 56 (Lese-Pfad muss stabil sein bevor Schreib-Pfad abgesichert wird)
-**Requirements**: RET-01, RET-02, RET-03
-**Success Criteria** (what must be TRUE):
-  1. Bei kurzem Netzwerkausbruch (z.B. Tunnelfahrt) werden fehlgeschlagene API-Calls automatisch 3x mit steigendem Abstand wiederholt — ohne User-Interaktion
-  2. Alle Submit-Buttons (Chat senden, Antrag stellen, Event erstellen, etc.) sind waehrend des Requests disabled und zeigen einen Loading-Spinner
-  3. Backend akzeptiert Idempotency-Keys (client_id UUID) und verhindert doppelte Eintraege bei Retry
-**Plans:** 2/2 plans complete
-
-Plans:
-- [x] 57-01-PLAN.md — axios-retry + useActionGuard Hook + Double-Submit-Schutz
-- [x] 57-02-PLAN.md — Backend Idempotency-Keys (client_id UUID) fuer Chat + Antraege
-
-### Phase 58: Corner-Badge System
-**Goal**: Listen-Elemente koennen mehrere Status-Badges nebeneinander anzeigen — Voraussetzung fuer Queue-Status-Badges
-**Depends on**: Phase 57 (Idempotency-Keys muessen vor Queue-Arbeit stehen)
-**Requirements**: OUI-01, OUI-02, OUI-03, OUI-04, OUI-05, OUI-06, OUI-07
-**Success Criteria** (what must be TRUE):
-  1. Alle bestehenden Corner-Badges nutzen den neuen `.app-corner-badges` Flex-Container (keine absolute Positionierung mehr)
-  2. Badge-Rundung folgt dem PointsHistory-Referenz-Pattern: letztes Kind hat Card-Ecke oben-rechts, alle anderen unten-beidseitig, 2px weisser Trenner dazwischen
-  3. Queue-Badge (Uhr-Icon, orange) erscheint als linkster Badge bei pending Queue-Items und verschwindet nach Zustellung
-  4. Fehler-Badge (Ausrufezeichen, rot) erscheint bei permanentem Fehler mit Tap-Optionen "Erneut senden" oder "Loeschen"
-**Plans**: 1 plan
-Plans:
-- [x] 58-01-PLAN.md — CSS-Infrastruktur: Corner-Badge Flex-Container + Queue/Fehler-Badge Klassen
-- [x] 58-02-PLAN.md — Migration aller ~23 bestehenden Corner-Badge Verwendungen auf Flex-Container
-
-### Phase 59: Online-Only Buttons
-**Goal**: Alle Aktionen die Server-Validierung brauchen zeigen klar "Du bist offline" statt kryptischer Fehler
-**Depends on**: Phase 55 (isOnline-Status aus AppContext)
-**Requirements**: OUI-08, OUI-09, OUI-10, OUI-11, OUI-12, OOA-01, OOA-02, OOA-03, OOA-04, OOA-05, OOA-06, OOA-07, OOA-08, OOA-09, OOA-10, OOA-11, OOA-12, OOA-13, OOA-14, OOA-15, OOA-16, OOA-17, OOA-18, OOA-19, OOA-20, OOA-21, OOA-22, OOA-23, OOA-24, OOA-25, OOA-26, OOA-27, OOA-28, OOA-29, OOA-30, OOA-31, OOA-32, OOA-33, OOA-34, OOA-35, OOA-36, OOA-37, OOA-38, OOA-39, OOA-40, OOA-41, OOA-42
-**Success Criteria** (what must be TRUE):
-  1. Alle 42 Online-Only-Aktionen (destruktive Ops, Punkte-Vergabe, Server-Validierung) zeigen "Du bist offline" als Button-Text und sind disabled wenn offline
-  2. Kein globales Offline-Banner — nur kontextbezogene Anzeigen an betroffenen Elementen
-  3. Pending Chat-Nachrichten zeigen Uhr-Icon neben dem Zeitstempel; nach Zustellung verschwindet die Uhr
-  4. Fehlgeschlagene Chat-Nachrichten zeigen rotes Ausrufezeichen mit "Erneut senden" oder "Loeschen" bei Tap
-**Plans**: 3 plans
-Plans:
-- [x] 59-01-PLAN.md — Chat Queue-Status UI (MessageBubble Uhr/Fehler-Icon + ChatRoom ActionSheet)
-- [x] 59-02-PLAN.md — Online-Only Buttons Batch 1: 23 Modals (Admin + Konfi + Chat)
-- [x] 59-03-PLAN.md — Online-Only Buttons Batch 2: Pages/Views + Auth (destruktive Aktionen + QR + Registration)
-
-### Phase 60: Queue-Kern + Konfi-Aktionen
-**Goal**: Konfis koennen Chat-Nachrichten senden und Aktivitaets-Antraege stellen auch wenn sie offline sind — alles wird bei Reconnect automatisch zugestellt
-**Depends on**: Phase 58 (Corner-Badge System), Phase 59 (Chat-Queue-UI)
-**Requirements**: QUE-I01, QUE-I02, QUE-I03, QUE-I04, QUE-I05, QUE-K01, QUE-K02, QUE-K03, QUE-K04, QUE-K05, QUE-FF01, QUE-FF02, QUE-FF03, QUE-FF04, QUE-FF05, QUE-FF06, QUE-FF07, QUE-FF08, OUI-13
-**Success Criteria** (what must be TRUE):
-  1. Konfi kann offline eine Chat-Nachricht (Text + Bild) senden — die Nachricht erscheint sofort mit Uhr-Icon und wird bei Reconnect automatisch zugestellt
-  2. Konfi kann offline einen Aktivitaets-Antrag (mit/ohne Foto) stellen — der Antrag erscheint sofort in der Liste mit Uhr-Icon
-  3. Queue ueberlebt App-Neustart und wird bei App-Resume und Reconnect automatisch abgearbeitet
-  4. Fire-and-Forget-Aktionen (Mark-Read, Reaktionen, Poll, Settings-Toggles, Bibeluebersetzung, Funktionsbeschreibung) werden rein optimistisch ausgefuehrt ohne Queue-Feedback
-  5. Fehlgeschlagene Queue-Items (4xx) werden entfernt und der User informiert; retribare Fehler (5xx) bleiben in der Queue (max 5 Retries)
-**Plans**: 4 plans
-Plans:
-- [x] 60-01-PLAN.md — WriteQueue Service + Background-Task + Queue-Flush bei Reconnect/Resume
-- [x] 60-02-PLAN.md — Chat Queue: sendMessage offline + Optimistic UI + Bild-Queue
-- [x] 60-03-PLAN.md — Aktivitaets-Antraege + Opt-out Queue
-- [x] 60-04-PLAN.md — Fire-and-Forget Aktionen (8 Endpunkte, rein optimistisch)
-
-### Phase 61: Admin- + Teamer-Queue
-**Goal**: Admins und Teamer koennen ihre haeufigsten Aktionen auch offline ausfuehren — Events, Aktivitaeten, Badges, Kategorien, Levels, Zertifikate, Material erstellen/bearbeiten
-**Depends on**: Phase 60 (Queue-Infrastruktur muss stehen)
-**Requirements**: QUE-A01, QUE-A02, QUE-A03, QUE-A04, QUE-A05, QUE-A06, QUE-A07, QUE-A08, QUE-A09, QUE-A10, QUE-A11, QUE-A12, QUE-A13, QUE-A14, QUE-A15, QUE-A16, QUE-A17, QUE-A18, QUE-A19, QUE-A20, QUE-A21, QUE-T01, QUE-T02
-**Success Criteria** (what must be TRUE):
-  1. Admin kann offline Events (einzeln + Serie), Aktivitaeten, Badges, Kategorien, Jahrgaenge, Levels und Zertifikat-Typen erstellen/bearbeiten — alles erscheint sofort mit Uhr-Icon
-  2. Admin kann offline Material erstellen/bearbeiten (Metadaten sofort, Datei-Upload bei naechstem Vordergrund-Aufenthalt)
-  3. Admin kann offline Antraege genehmigen/ablehnen/zuruecksetzen, Bonus-Punkte vergeben und Aktivitaeten zuweisen
-  4. Teamer kann offline Events buchen und sich abmelden — beides mit Uhr-Icon am Event
-**Plans:** 3/3 plans complete
-Plans:
-- [x] 61-01-PLAN.md — Admin Modals Queue: EventModal, ActivityManagementModal, BadgeManagementModal, LevelManagementModal, MaterialFormModal
-- [x] 61-02-PLAN.md — Admin Pages + restliche Modals Queue: Categories, Jahrgaenge, Certificates, ActivityRequestModal, BonusModal, ActivityModal
-- [x] 61-03-PLAN.md — Teamer Queue: TeamerEventsPage buchen/abmelden
-
-### Phase 62: Sync
-**Goal**: App ist nach App-Resume und Socket.io-Reconnect sofort aktuell — keine verpassten Daten, korrekte Reihenfolge
-**Depends on**: Phase 60 (Queue muss vor Sync stehen — Reihenfolge: Queue flushen -> Cache invalidieren -> Badge-Counts)
-**Requirements**: SYN-01, SYN-02, SYN-03, SYN-04
-**Success Criteria** (what must be TRUE):
-  1. Bei App-Start zeigt die App sofort gecachte Daten und aktualisiert im Hintergrund (kein sichtbarer Ladebalken bei guten Daten)
-  2. Nach Socket.io-Reconnect: Queue wird zuerst geleert, dann Cache invalidiert, dann Badge-Counts aktualisiert — in dieser Reihenfolge
-  3. Backend Chat-Route liefert mit ?after=lastMessageId nur verpasste Nachrichten (kein kompletter Reload)
-  4. Bei App-Resume (Hintergrund -> Vordergrund) wird die aktive Seite automatisch revalidiert
-**Plans**: 1 plan
-Plans:
-- [x] 62-01-PLAN.md — Koordinierte Reconnect-Sequenz + App-Resume Cache-Invalidierung
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 55 -> 56 -> 57 -> 58 -> 59 -> 60 -> 61 -> 62
-
-Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kann parallel zu 56-58 geplant werden, muss aber VOR Phase 60 abgeschlossen sein.
+Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 55. Fundament | 4/4 | Complete    | 2026-03-20 |
-| 56. Lese-Cache | 4/4 | Complete    | 2026-03-21 |
-| 57. Retry + Schutz | 2/2 | Complete    | 2026-03-21 |
-| 58. Corner-Badge System | 2/2 | Complete    | 2026-03-21 |
-| 59. Online-Only Buttons | 3/3 | Complete    | 2026-03-21 |
-| 60. Queue-Kern + Konfi-Aktionen | 4/4 | Complete    | 2026-03-21 |
-| 61. Admin- + Teamer-Queue | 3/3 | Complete    | 2026-03-21 |
-| 62. Sync | 1/1 | Complete    | 2026-03-21 |
+| 63. Codebase Cleanup | 0/? | Not started | - |
+| 64. DB-Schema-Konsolidierung | 0/? | Not started | - |
+| 65. Navigation + State | 0/? | Not started | - |
+| 66. Error Boundary + Sicherheit | 0/? | Not started | - |
+| 67. Performance | 0/? | Not started | - |
+| 68. Token-Refresh | 0/? | Not started | - |
+| 69. Datei-Viewer | 0/? | Not started | - |
 
 ### Phase 63: Codebase Cleanup — Quick-Wins, Konsolidierung, Bug-Fixes
 

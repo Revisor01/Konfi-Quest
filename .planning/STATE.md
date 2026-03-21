@@ -1,89 +1,47 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.1
-milestone_name: App-Resilienz
-status: unknown
-stopped_at: Completed 62-01-PLAN.md (Sync-Sequenz)
-last_updated: "2026-03-21T11:44:26.846Z"
+milestone: v2.2
+milestone_name: Codebase-Hardening
+status: roadmap_complete
+stopped_at: v2.1 shipped, v2.2 ready to plan Phase 63
+last_updated: "2026-03-21"
+last_activity: 2026-03-21 — v2.1 App-Resilienz shipped (8 Phasen, 23 Plans, 122 Req), v2.2 gestartet
 progress:
-  total_phases: 15
-  completed_phases: 8
-  total_plans: 23
-  completed_plans: 23
+  total_phases: 7
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-20)
+See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 62 — Sync
+**Current focus:** v2.2 Codebase-Hardening — Phase 63 (Codebase Cleanup)
 
 ## Current Position
 
-Phase: 63
-Plan: Not started
+Phase: 63 of 69 (Codebase Cleanup) -- 1 of 7 in v2.2
+Plan: 0 of ? in current phase
+Status: Ready to plan
+Last activity: 2026-03-21 — v2.1 shipped, v2.2 gestartet
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Accumulated Context
 
 ### Decisions
 
-All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
-
-- Queue-Scope erweitert: Nicht nur Chat + Antraege, sondern auch Admin-CRUD (Events, Aktivitaeten, Badges, Kategorien, Jahrgaenge, Level, Zertifikate, Material)
-- Kein globales Offline-Banner, stattdessen kontextbezogene UI (Corner-Badge Uhr-Icon, Button-Text "Du bist offline")
-- Corner-Badge System: Flex-Container mit korrekten Rundungen fuer 1-3 Badges nebeneinander (Referenz: PointsHistoryModal)
-- Material mit Dateien in Queue: Metadaten + Datei-Referenz in Queue, Datei lokal in Capacitor Filesystem, Upload nur im Vordergrund
-- Teamer kann Events offline buchen/abmelden (anders als Konfi, da Teamer keine Kapazitaetspruefung braucht)
-- [Phase 55]: Debounce 300ms fuer Netzwerkwechsel, Web-Fallback mit navigator.onLine, optimistischer Start (_isOnline = true)
-- [Phase 55]: TokenStore Pattern: sync Memory-Getter + async Preferences-Setter fuer Axios-Interceptor Kompatibilitaet
-- [Phase 55]: LIMIT 200 als Sicherheitsgrenze fuer ?after Chat-Queries
-- [Phase 55]: Alias-Import setTokenStoreUser um Namenskollision mit AppContext setUser zu vermeiden
-- [Phase 56-01]: cache: Praefix fuer Key-Isolation, clearAll loescht nur Cache-Keys nicht Auth-Daten
-- [Phase 56]: KonfiEventDetailPage nicht migriert - delegiert an shared EventDetailView, kein eigener API-Call
-- [Phase 56]: ChatRoom Hybrid-Pattern: useOfflineQuery Initial-Load + lokaler State fuer WebSocket Live-Updates
-- [Phase 56]: TeamerMaterialPage: Client-seitiges Filtern statt API-Params fuer vollstaendigen Offline-Cache
-- [Phase 56]: TeamerKonfiStatsPage teilt Cache-Key mit TeamerProfilePage (SWR-Deduplizierung)
-- [Phase 56]: AdminSettingsPage hat keine API-Calls, keine Migration noetig
-- [Phase 56]: AdminProfilePage nutzt userId statt organization_id (persoenliche Daten)
-- [Phase 56]: AdminMaterialPage: search+filter im Cache-Key fuer granulares Offline-Caching
-- [Phase 57]: Check-then-Insert + UNIQUE-Index-Fallback fuer Idempotency statt ON CONFLICT
-- [Phase 57]: axios-retry mit Jitter zur Thundering-Herd-Vermeidung, guardRef fuer synchronen Double-Submit-Check
-- [Phase 58]: font-weight von 600 auf 700 angeglichen (PointsHistory-Referenz)
-- [Phase 58]: AdminInvitePage: exakter Farbton #059669 beibehalten statt --success Klasse
-- [Phase 59]: Queue-Status Icons neben Zeitstempel statt separater Bereich
-- [Phase 59]: Handler-Guards + Button-Disable auf beiden Ebenen fuer doppelte Offline-Sicherheit
-- [Phase 59]: QRScannerModal: Inline-Banner statt Alert bei Offline-Scan
-- [Phase 59]: Icon-only Submit-Buttons zeigen 'Du bist offline' als Text statt Icon wenn offline
-- [Phase 59]: Action-Handler ohne Submit-Button haben if (\!isOnline) return; Guard
-- [Phase 60]: Lazy-Load In-Memory-Cache statt _initialized Pattern fuer WriteQueue
-- [Phase 60]: Transiente Fehler brechen Flush ab statt naechstes Item — verhindert Out-of-Order
-- [Phase 60]: crypto.randomUUID() statt uuid-Paket für clientId-Generierung
-- [Phase 60]: resolveLocalPhoto in writeQueue.ts für Zwei-Schritt Foto-Upload beim Flush
-- [Phase 60]: Pending Queue-Items als separate IonList-Sektion über RequestsView
-- [Phase 60]: crypto.randomUUID statt uuid-Library fuer clientId/localId — vermeidet Dependency
-- [Phase 60]: Optimistic Message mit negativer ID (-Date.now()) als temporaerer Platzhalter
-- [Phase 60]: Fire-and-Forget offline: Kein Queue-Feedback, rein optimistisch, maxRetries 3
-- [Phase 61]: Kein refresh/selectedEvent-Update im Offline-Pfad — Daten kommen erst nach Queue-Flush
-- [Phase 61]: Material Offline: Nur Metadaten queuen, Dateien nur online hochladbar
-- [Phase 61]: Alle Admin Submit-Buttons immer klickbar, Queue uebernimmt bei Offline
-- [Phase 61]: Submit-Buttons bleiben ohne Offline-Disable — Queue uebernimmt
-- [Phase 62-sync]: CustomEvent sync:reconnect als Bruecke zwischen Service-Schicht und React-Tree
-- [Phase 62-sync]: invalidateAll setzt timestamp=0 statt clearAll — SWR-kompatible Cache-Invalidierung
+All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestones/.
 
 ### Roadmap Evolution
 
-- 2026-03-20: v2.1 Roadmap erstellt — 8 Phasen (55-62), 122 Requirements, Dependency Chain STR+NET -> CAC -> RET -> OUI+OOA -> QUE+SYN
-- Phase 63 added: Codebase Cleanup — Quick-Wins, Konsolidierung, Bug-Fixes
-- Phase 64 added: DB-Schema-Konsolidierung — Einheitliches Schema, Altlasten, Indizes, Foreign Keys
-- Phase 65 added: Navigation und State-Konsistenz — Router-Migration, CustomEvents → LiveUpdateContext
-- Phase 66 added: Error Boundary und Sicherheitshärtung
-- Phase 67 added: Performance-Optimierung — Mega-Komponenten, Memoization, SELECT *, BackgroundService
-- Phase 68 added: Token-Refresh-System
-- Phase 69 removed: Dependency-Upgrades — Ionic 8 inkompatibel mit react-router v6/v7
-- Phase 69 added: Universeller Datei-Viewer — Fullscreen Zoom/Pan für Chat + Material
+- 2026-03-21: v2.1 App-Resilienz shipped (8 Phasen, 23 Plans, 122 Requirements)
+- 2026-03-21: Phasen 63-69 als v2.2 Codebase-Hardening markiert
 
 ### Pending Todos
 
@@ -91,12 +49,10 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 
 ### Blockers/Concerns
 
-- Research Flag: Phase 60 (Queue) — Socket.io + HTTP-Idempotency-Interaktion pruefen
-- Research Flag: Phase 62 (Sync) — updated_at Felder auf DB-Tabellen pruefen
-- Research Flag: Phase 69 (Datei-Viewer) — Library-Wahl (react-zoom-pan-pinch vs swiper vs eigene Loesung), Capacitor-Kompatibilitaet, FileViewerModal Refactor-Scope
+- Research Flag: Phase 69 (Datei-Viewer) — Library-Wahl (react-zoom-pan-pinch vs swiper vs eigene Loesung)
 
 ## Session Continuity
 
-Last session: 2026-03-21T11:41:56.907Z
-Stopped at: Completed 62-01-PLAN.md (Sync-Sequenz)
+Last session: 2026-03-21
+Stopped at: v2.1 shipped, v2.2 ready to plan Phase 63
 Resume file: None
