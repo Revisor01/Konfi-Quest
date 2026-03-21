@@ -121,7 +121,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     });
   }, [chatUnreadByRoom]);
 
-  // Sync Device Badge bei Aenderung von totalBadgeCount
+  // Sync Device Badge bei Änderung von totalBadgeCount
   useEffect(() => {
     try {
       if (totalBadgeCount > 0) {
@@ -130,7 +130,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
         Badge.clear();
       }
     } catch (error) {
-      console.warn('BadgeContext: Badge nicht verfuegbar:', error);
+      console.warn('BadgeContext: Badge nicht verfügbar:', error);
     }
   }, [totalBadgeCount]);
 
@@ -152,7 +152,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [refreshAllCounts, user]);
 
-  // LiveUpdateContext-basierte Subscriptions fuer Daten-Events
+  // LiveUpdateContext-basierte Subscriptions für Daten-Events
   useLiveRefresh(['requests', 'events'], refreshAllCounts);
 
   // Sync: Reconnect + Resume Badge-Refresh
@@ -169,14 +169,14 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [user, refreshAllCounts]);
 
-  // Initialer Load + Polling fuer Admin-Counts (30s)
+  // Initialer Load + Polling für Admin-Counts (30s)
   useEffect(() => {
     if (!user) return;
 
     // Initialer Load
     refreshAllCounts();
 
-    // Polling nur fuer Admin (requests + events aendern sich nicht per WebSocket)
+    // Polling nur für Admin (requests + events ändern sich nicht per WebSocket)
     if (isAdmin) {
       const interval = setInterval(refreshAllCounts, 30000);
       return () => clearInterval(interval);

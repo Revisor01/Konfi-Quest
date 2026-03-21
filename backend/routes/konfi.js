@@ -542,7 +542,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         [konfiId, orgId]
       );
 
-      // konfi_profiles enthaelt bereits alle Punkte (Aktivitaeten + Events + Bonus)
+      // konfi_profiles enthält bereits alle Punkte (Aktivitäten + Events + Bonus)
       // Single Source of Truth - direkt verwenden
       const totals = {
         gottesdienst: konfiProfile?.gottesdienst_points || 0,
@@ -1577,9 +1577,9 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
   });
 
   // Register for event
-  // HINWEIS: Dieser Endpunkt ist die primaere Konfi-Buchungsroute.
-  // events.js POST /:id/book ist die aeltere Route (wird vom Admin-Frontend genutzt).
-  // Beide verwenden einheitlich status='waitlist' fuer Wartelisten-Eintraege.
+  // HINWEIS: Dieser Endpunkt ist die primäre Konfi-Buchungsroute.
+  // events.js POST /:id/book ist die ältere Route (wird vom Admin-Frontend genutzt).
+  // Beide verwenden einheitlich status='waitlist' für Wartelisten-Einträge.
   router.post('/events/:id/register', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
@@ -1590,7 +1590,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       const eventId = req.params.id;
       const { timeslot_id } = req.body; // Optional timeslot for timeslot events
 
-      // Transaktion starten fuer Race-Condition-Schutz
+      // Transaktion starten für Race-Condition-Schutz
       const client = await db.getClient();
       try {
       await client.query('BEGIN');
@@ -1658,12 +1658,12 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         return res.status(404).json({ error: 'Event nicht gefunden' });
       }
 
-      // Registrierungsfenster pruefen
+      // Registrierungsfenster prüfen
       const now = new Date();
       if (event.registration_opens_at && now < new Date(event.registration_opens_at)) {
         await client.query('ROLLBACK');
         client.release();
-        return res.status(400).json({ error: 'Anmeldung noch nicht geoeffnet' });
+        return res.status(400).json({ error: 'Anmeldung noch nicht geöffnet' });
       }
       if (event.registration_closes_at && now > new Date(event.registration_closes_at)) {
         await client.query('ROLLBACK');
@@ -1828,10 +1828,10 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         [konfiId, eventId]
       );
 
-      // Nachruecken von Warteliste wenn ein bestaetigter Platz frei wird
+      // Nachrücken von Warteliste wenn ein bestätigter Platz frei wird
       if (registration.status === 'confirmed') {
         try {
-          // Bei Timeslot-Events nur innerhalb desselben Timeslots nachruecken
+          // Bei Timeslot-Events nur innerhalb desselben Timeslots nachrücken
           const promotionQuery = registration.timeslot_id
             ? "SELECT id, user_id FROM event_bookings WHERE event_id = $1 AND timeslot_id = $2 AND status = 'waitlist' ORDER BY created_at ASC LIMIT 1"
             : "SELECT id, user_id FROM event_bookings WHERE event_id = $1 AND status = 'waitlist' ORDER BY created_at ASC LIMIT 1";
@@ -1844,14 +1844,14 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
           if (nextInLine) {
             await db.query("UPDATE event_bookings SET status = 'confirmed' WHERE id = $1", [nextInLine.id]);
 
-            // Push-Notification an nachgerueckten Konfi
+            // Push-Notification an nachgerückten Konfi
             try {
               await PushService.sendWaitlistPromotionToKonfi(db, nextInLine.user_id, event.name, event.event_date, eventId);
             } catch (pushErr) {
               console.error('Error sending waitlist promotion push:', pushErr);
             }
 
-            // Live-Update an nachgerueckten Konfi
+            // Live-Update an nachgerückten Konfi
             liveUpdate.sendToKonfi(nextInLine.user_id, 'events', 'update');
           }
         } catch (promotionErr) {

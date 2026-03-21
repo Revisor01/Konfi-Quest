@@ -166,7 +166,7 @@ const getIconFromString = (iconName: string): string => {
   return BADGE_ICONS[iconName]?.icon || trophy;
 };
 
-// Popover Content Komponente fuer Badge-Details
+// Popover Content Komponente für Badge-Details
 const BadgePopoverContent: React.FC<{
   badgeRef: React.RefObject<{ badge: TeamerBadge | null; getBadgeColor: (badge: TeamerBadge) => string } | null>;
 }> = ({ badgeRef }) => {

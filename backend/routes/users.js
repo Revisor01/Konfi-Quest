@@ -255,11 +255,11 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
 
       res.json({ message: 'Benutzer erfolgreich aktualisiert' });
 
-      // Bei Rollenaenderung: Socket.io-Verbindungen des Users trennen
+      // Bei Rollenänderung: Socket.io-Verbindungen des Users trennen
       // damit der Client sich mit neuem Token (neue Rolle) neu verbindet
       if (role_id !== undefined && global.io) {
         // User-Room-Name folgt dem Pattern aus server.js: user_{type}_{id}
-        // Beide moeglichen Typen pruefen (admin und konfi)
+        // Beide möglichen Typen prüfen (admin und konfi)
         const userRoomAdmin = `user_admin_${id}`;
         const userRoomKonfi = `user_konfi_${id}`;
 
@@ -529,7 +529,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
     }
 
     try {
-      // Pruefen ob User existiert
+      // Prüfen ob User existiert
       const { rows: [targetUser] } = await db.query(`
         SELECT u.id, u.organization_id, r.name as role_name
         FROM users u
@@ -541,7 +541,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
         return res.status(404).json({ error: 'Benutzer nicht gefunden' });
       }
 
-      // Berechtigungspruefung
+      // Berechtigungsprüfung
       const isSuperAdmin = req.user.role_name === 'super_admin';
       const isOrgAdmin = req.user.role_name === 'org_admin';
       const isSameOrg = req.user.organization_id === targetUser.organization_id;

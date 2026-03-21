@@ -112,7 +112,7 @@ export const KonfiHeaderCard = React.memo<KonfiHeaderCardProps>(({
       overflow: 'hidden'
     }}
   >
-    {/* Ueberschrift - gross und ueberlappend */}
+    {/* Überschrift - gross und überlappend */}
     <div
       style={{
         position: 'absolute',
@@ -198,7 +198,7 @@ export const KonfiHeaderCard = React.memo<KonfiHeaderCardProps>(({
       </div>
     )}
 
-    {/* Activity Rings - nur fuer Konfis */}
+    {/* Activity Rings - nur für Konfis */}
     {!isTeamer && (
       <ActivityRings
         totalPoints={getTotalPoints()}
@@ -237,7 +237,7 @@ export const KonfiHeaderCard = React.memo<KonfiHeaderCardProps>(({
       </div>
     )}
 
-    {/* Badge Count - nur fuer Konfis (Teamer haben Stats Chips) */}
+    {/* Badge Count - nur für Konfis (Teamer haben Stats Chips) */}
     {!isTeamer && (
       <div
         style={{
@@ -317,7 +317,7 @@ export const BonusSection = React.memo<BonusSectionProps>(({
                       ...(isTypeDisabled ? { opacity: 0.4, filter: 'grayscale(100%)' } : {})
                     }}
                   >
-                    {/* Corner Badge fuer Punkte */}
+                    {/* Corner Badge für Punkte */}
                     <div className="app-corner-badges">
                       <div
                         className="app-corner-badge"
@@ -428,7 +428,7 @@ export const EventPointsSection = React.memo<EventPointsSectionProps>(({
                   ...(isEventTypeDisabled ? { opacity: 0.4, filter: 'grayscale(100%)' } : {})
                 }}
               >
-                {/* Corner Badge fuer Punkte */}
+                {/* Corner Badge für Punkte */}
                 <div className="app-corner-badges">
                   <div
                     className="app-corner-badge"
@@ -756,7 +756,7 @@ export const ActivitiesSection = React.memo<ActivitiesSectionProps>(({
                       ...(isActivityTypeDisabled ? { filter: 'grayscale(100%)' } : {})
                     }}
                   >
-                    {/* Corner Badge fuer Punkte - bei Teamer ausblenden */}
+                    {/* Corner Badge für Punkte - bei Teamer ausblenden */}
                     {!isTeamer && (
                       <div className="app-corner-badges">
                         <div

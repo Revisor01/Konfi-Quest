@@ -37,7 +37,7 @@ let logoutInProgress = false;
 
 export const logout = async (): Promise<void> => {
   if (logoutInProgress) {
- console.warn('Logout bereits in Bearbeitung, wird uebersprungen');
+ console.warn('Logout bereits in Bearbeitung, wird übersprungen');
     return;
   }
   
@@ -94,9 +94,9 @@ export const logout = async (): Promise<void> => {
   }
 
   await clearAuth();
-  // Cache loeschen — alle gecachten API-Daten entfernen
+  // Cache löschen — alle gecachten API-Daten entfernen
   await offlineCache.clearAll();
-  // Device ID NICHT loeschen - bleibt fuer das Geraet persistent
+  // Device ID NICHT löschen - bleibt für das Gerät persistent
 
   // Reset logout lock
   logoutInProgress = false;

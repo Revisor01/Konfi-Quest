@@ -37,7 +37,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
   // Refresh-Token generieren (64 Bytes = 128 Hex-Zeichen)
   const generateRefreshToken = () => crypto.randomBytes(64).toString('hex');
 
-  // SHA-256 Hash fuer DB-Speicherung (konsistent mit Phase 66)
+  // SHA-256 Hash für DB-Speicherung (konsistent mit Phase 66)
   const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
   // ===== UNIFIED LOGIN ENDPOINTS =====
@@ -117,7 +117,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
       
       const passwordMatch = await bcrypt.compare(password, user.password_hash);
       if (!passwordMatch) {
- console.warn(`Login fehlgeschlagen: Falsches Passwort fuer '${username}'`);
+ console.warn(`Login fehlgeschlagen: Falsches Passwort für '${username}'`);
         return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
       }
 
@@ -624,7 +624,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
           console.error('Push for new registration failed:', pushErr);
         }
 
-        // Auto-Enrollment fuer zukuenftige Pflicht-Events
+        // Auto-Enrollment für zukünftige Pflicht-Events
         try {
           const enrollFutureEventsQuery = `
             INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
@@ -725,7 +725,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
 
   // ===== TOKEN REFRESH =====
 
-  // Refresh Access-Token mit Rotation (altes Refresh-Token wird ungueltig)
+  // Refresh Access-Token mit Rotation (altes Refresh-Token wird ungültig)
   router.post('/refresh', async (req, res) => {
     const { refresh_token } = req.body;
     if (!refresh_token) {

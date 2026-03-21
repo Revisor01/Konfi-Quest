@@ -83,9 +83,9 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     { ttl: CACHE_TTL.CHAT_ROOMS }
   );
 
-  // Live-Update der Chat-Raeume wenn Badge Count sich aendert
+  // Live-Update der Chat-Räume wenn Badge Count sich ändert
   useEffect(() => {
-    if (rooms && rooms.length > 0) { // Nur wenn bereits Raeume geladen sind
+    if (rooms && rooms.length > 0) { // Nur wenn bereits Räume geladen sind
       refresh(); // Silent reload via useOfflineQuery
     }
   }, [chatUnreadByRoom]);

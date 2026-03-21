@@ -47,7 +47,7 @@ const AdminBadgesPage: React.FC = () => {
   // State
   const [selectedRole, setSelectedRole] = useState<'konfi' | 'teamer'>('konfi');
 
-  // Offline-Query: Badges (key enthaelt selectedRole)
+  // Offline-Query: Badges (key enthält selectedRole)
   const { data: badges, loading, refresh: refreshBadges } = useOfflineQuery<Badge[]>(
     `admin:badges:${user?.organization_id}:${selectedRole}`,
     async () => { const res = await api.get(`/admin/badges?target_role=${selectedRole}`); return res.data; },

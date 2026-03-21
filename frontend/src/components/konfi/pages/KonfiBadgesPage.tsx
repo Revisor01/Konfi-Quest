@@ -59,7 +59,7 @@ const KonfiBadgesPage: React.FC = () => {
     { ttl: CACHE_TTL.BADGES }
   );
 
-  // --- useOfflineQuery: Profile (fuer Punkte-Progress) ---
+  // --- useOfflineQuery: Profile (für Punkte-Progress) ---
   const { data: konfiData, refresh: refreshProfile } = useOfflineQuery<any>(
     'konfi:profile:' + user?.id,
     () => api.get('/konfi/profile').then(r => r.data),

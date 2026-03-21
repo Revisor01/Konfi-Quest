@@ -42,7 +42,7 @@ const AdminActivitiesPage: React.FC = () => {
   // State
   const [selectedRole, setSelectedRole] = useState<'konfi' | 'teamer'>('konfi');
 
-  // Offline-Query: Activities (key enthaelt selectedRole)
+  // Offline-Query: Activities (key enthält selectedRole)
   const { data: activities, loading, refresh: refreshActivities } = useOfflineQuery<Activity[]>(
     `admin:activities:${user?.organization_id}:${selectedRole}`,
     async () => { const res = await api.get(`/admin/activities?target_role=${selectedRole}`); return res.data; },
@@ -111,10 +111,10 @@ const AdminActivitiesPage: React.FC = () => {
 
   const handleRoleChange = (role: 'konfi' | 'teamer') => {
     setSelectedRole(role);
-    // useOfflineQuery reagiert automatisch auf selectedRole-Aenderung im cacheKey
+    // useOfflineQuery reagiert automatisch auf selectedRole-Änderung im cacheKey
   };
 
-  // Rollen-basierte Berechtigungen (org_admin und admin duerfen alles)
+  // Rollen-basierte Berechtigungen (org_admin und admin dürfen alles)
   const isAdmin = ['org_admin', 'admin'].includes(user?.role_name || '');
   const canCreate = isAdmin;
   const canEdit = isAdmin;

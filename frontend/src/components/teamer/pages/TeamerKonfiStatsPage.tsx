@@ -127,7 +127,7 @@ const getIconFromString = (iconName: string): string => {
   return BADGE_ICONS[iconName] || trophy;
 };
 
-// Popover Content fuer Badge-Details
+// Popover Content für Badge-Details
 const KonfiBadgePopoverContent: React.FC<{
   badgeRef: React.RefObject<{ badge: KonfiBadge | null } | null>;
 }> = ({ badgeRef }) => {

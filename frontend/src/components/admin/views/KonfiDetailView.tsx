@@ -184,7 +184,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
       const konfiData = konfiRes.data;
       const allActivities = konfiData.activities || [];
 
-      // Rolle setzen fuer bedingte Anzeige
+      // Rolle setzen für bedingte Anzeige
       setTargetRole(konfiData.role_name || 'konfi');
 
       // Teamer-Daten aus dem Detail-Response
@@ -194,7 +194,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
         if (konfiData.konfiHistory) setKonfiHistory(konfiData.konfiHistory);
       }
 
-      // Zertifikat-Typen laden (fuer die Zuweisung)
+      // Zertifikat-Typen laden (für die Zuweisung)
       if (konfiData.role_name === 'teamer') {
         try {
           const certTypesRes = await api.get('/teamer/certificate-types');
@@ -399,7 +399,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
     );
 
     if (availableTypes.length === 0) {
-      setError('Keine verfuegbaren Zertifikat-Typen mehr');
+      setError('Keine verfügbaren Zertifikat-Typen mehr');
       return;
     }
 
@@ -554,7 +554,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           activities={activities}
         />
 
-        {/* Bonuspunkte - nur fuer Konfis */}
+        {/* Bonuspunkte - nur für Konfis */}
         {!isTeamer && (
           <BonusSection
             bonusEntries={bonusEntries}
@@ -567,7 +567,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           />
         )}
 
-        {/* Event Points - nur fuer Konfis */}
+        {/* Event Points - nur für Konfis */}
         {!isTeamer && (
           <EventPointsSection
             eventPoints={eventPoints}
@@ -575,7 +575,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           />
         )}
 
-        {/* Anwesenheit - Pflicht-Events - nur fuer Konfis */}
+        {/* Anwesenheit - Pflicht-Events - nur für Konfis */}
         {!isTeamer && attendanceStats && attendanceStats.total_mandatory > 0 && (
           <AttendanceSection attendanceStats={attendanceStats} />
         )}
@@ -600,7 +600,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           presentingElement={presentingElement}
         />
 
-        {/* Zertifikate - nur fuer Teamer */}
+        {/* Zertifikate - nur für Teamer */}
         {isTeamer && (
           <CertificatesSection
             certificates={certificates}
@@ -623,7 +623,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           />
         )}
 
-        {/* Konfi-Historie - nur fuer promoted Teamer */}
+        {/* Konfi-Historie - nur für promoted Teamer */}
         {isTeamer && konfiHistory && (
           <KonfiHistorySection
             konfiHistory={konfiHistory}
@@ -631,7 +631,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           />
         )}
 
-        {/* Teamer-Befoerderung - nur fuer Konfis */}
+        {/* Teamer-Beförderung - nur für Konfis */}
         {!isTeamer && (
           <PromoteSection
             isOnline={isOnline}

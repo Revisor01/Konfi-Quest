@@ -86,7 +86,7 @@ const CRITERIA_TYPES = {
   teamer_year: {
     label: "Teamer-Jahr",
     description: "Aktive Teamer-Jahre",
-    help: "Badge wird vergeben wenn der Teamer in X verschiedenen Jahren aktiv war (mind. 1 Aktivitaet oder Event pro Jahr). Inaktive Jahre werden uebersprungen."
+    help: "Badge wird vergeben wenn der Teamer in X verschiedenen Jahren aktiv war (mind. 1 Aktivität oder Event pro Jahr). Inaktive Jahre werden übersprungen."
   }
 };
 
@@ -98,7 +98,7 @@ function getISOWeeksInYear(year) {
 
 const checkAndAwardBadges = async (db, userId) => {
   try {
-    // Rolle des Users pruefen
+    // Rolle des Users prüfen
     const roleCheckQuery = `SELECT u.organization_id, u.display_name as name, r.name as role_name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = $1`;
     const { rows: [userInfo] } = await db.query(roleCheckQuery, [userId]);
     if (!userInfo) return { count: 0, badges: [] };
@@ -298,7 +298,7 @@ const checkAndAwardBadges = async (db, userId) => {
 };
 
 // =====================================================================
-// Teamer-Badge-Pruefung
+// Teamer-Badge-Prüfung
 // =====================================================================
 async function checkAndAwardTeamerBadges(db, userId, organizationId) {
   // Teamer-Badges laden
@@ -311,7 +311,7 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
   const { rows: earned } = await db.query("SELECT badge_id FROM user_badges WHERE user_id = $1 AND organization_id = $2", [userId, organizationId]);
   const alreadyEarned = earned.map(e => e.badge_id);
 
-  // Punkte-basierte Kriterien-Typen die fuer Teamer irrelevant sind
+  // Punkte-basierte Kriterien-Typen die für Teamer irrelevant sind
   const pointsCriteria = ['total_points', 'gottesdienst_points', 'gemeinde_points', 'both_categories', 'bonus_points'];
 
   let newBadges = 0;
@@ -321,7 +321,7 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
   for (const badge of badges) {
     if (alreadyEarned.includes(badge.id)) continue;
 
-    // Punkte-basierte Kriterien sofort ueberspringen
+    // Punkte-basierte Kriterien sofort überspringen
     if (pointsCriteria.includes(badge.criteria_type)) continue;
 
     let badgeEarned = false;
@@ -329,7 +329,7 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
 
     switch (badge.criteria_type) {
       case 'activity_count': {
-        // Teamer-Aktivitaeten + Events zaehlen
+        // Teamer-Aktivitäten + Events zählen
         const actCountQuery = `
           SELECT (
             (SELECT COUNT(*) FROM user_activities ua
@@ -359,7 +359,7 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
       case 'activity_combination': {
         let allMet = true;
 
-        // Aktivitaeten-Namen pruefen
+        // Aktivitäten-Namen prüfen
         if (criteria.required_activities && criteria.required_activities.length > 0) {
           const { rows: completedActs } = await db.query(
             `SELECT DISTINCT a.name FROM user_activities ua
@@ -372,7 +372,7 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
           if (actMatch < criteria.required_activities.length) allMet = false;
         }
 
-        // Event-Namen pruefen (falls vorhanden)
+        // Event-Namen prüfen (falls vorhanden)
         if (allMet && criteria.required_events && criteria.required_events.length > 0) {
           const { rows: attendedEvents } = await db.query(
             `SELECT DISTINCT e.title FROM event_bookings eb
@@ -406,7 +406,7 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
           // Tabelle existiert nicht - Fallback
         }
 
-        // 2. Fallback: aelteste Teamer-Aktivitaet
+        // 2. Fallback: älteste Teamer-Aktivität
         if (!startYear) {
           const { rows: [firstAct] } = await db.query(
             `SELECT MIN(ua.completed_date) as min_date FROM user_activities ua
@@ -425,7 +425,7 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
           break;
         }
 
-        // Alle Aktivitaets- und Event-Daten sammeln
+        // Alle Aktivitäts- und Event-Daten sammeln
         const { rows: allDates } = await db.query(
           `SELECT ua.completed_date as date FROM user_activities ua
            JOIN activities a ON ua.activity_id = a.id
@@ -437,14 +437,14 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
           [userId, organizationId]
         );
 
-        // Jahre zaehlen in denen mind. 1 Eintrag existiert
+        // Jahre zählen in denen mind. 1 Eintrag existiert
         const activeYears = new Set();
         for (const row of allDates) {
           if (row.date) {
             activeYears.add(new Date(row.date).getFullYear());
           }
         }
-        // Nur Jahre ab Transition zaehlen
+        // Nur Jahre ab Transition zählen
         const relevantYears = Array.from(activeYears).filter(y => y >= startYear);
         badgeEarned = relevantYears.length >= badge.criteria_value;
         break;
@@ -539,7 +539,7 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
 }
 
 // =====================================================================
-// Shared: Streak-Pruefung (Konfi + Teamer)
+// Shared: Streak-Prüfung (Konfi + Teamer)
 // =====================================================================
 async function checkStreakCriteria(db, userId, organizationId, criteriaValue) {
   const streakQuery = `

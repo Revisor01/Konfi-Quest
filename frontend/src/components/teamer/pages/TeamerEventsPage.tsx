@@ -82,7 +82,7 @@ const TeamerEventsPage: React.FC = () => {
     { ttl: CACHE_TTL.EVENTS }
   );
 
-  // Material Detail Modal (useRef fuer dynamische materialId)
+  // Material Detail Modal (useRef für dynamische materialId)
   const [presentMaterialModal, dismissMaterialModal] = useIonModal(TeamerMaterialDetailPage, {
     get materialId() { return materialIdRef.current; },
     onClose: () => dismissMaterialModal()
@@ -100,7 +100,7 @@ const TeamerEventsPage: React.FC = () => {
 
   useLiveRefresh('events', refresh);
 
-  // Material fuer ausgewaehltes Event laden
+  // Material für ausgewähltes Event laden
   useEffect(() => {
     if (selectedEvent) {
       api.get(`/material/by-event/${selectedEvent.id}`)
@@ -111,7 +111,7 @@ const TeamerEventsPage: React.FC = () => {
     }
   }, [selectedEvent?.id]);
 
-  // Wenn von Dashboard mit selectedEventId navigiert wurde, Event direkt oeffnen
+  // Wenn von Dashboard mit selectedEventId navigiert wurde, Event direkt öffnen
   useEffect(() => {
     if (!initialEventHandled && !loading && events && events.length > 0 && routerLocation.state?.selectedEventId) {
       const eventToSelect = events.find(e => e.id === routerLocation.state!.selectedEventId);
@@ -195,7 +195,7 @@ const TeamerEventsPage: React.FC = () => {
     { value: eventCounts.gebucht, label: 'Gebucht' }
   ];
 
-  // Status-Infos fuer Event-Karten
+  // Status-Infos für Event-Karten
   const getEventStatusInfo = (event: Event) => {
     const isPastEvent = new Date(event.event_date) < new Date();
     const isTeamerEvent = event.teamer_needed || event.teamer_only;
@@ -301,7 +301,7 @@ const TeamerEventsPage: React.FC = () => {
     }
   };
 
-  // Status-Farben fuer SectionHeader (1:1 wie Konfi EventDetailView)
+  // Status-Farben für SectionHeader (1:1 wie Konfi EventDetailView)
   const getStatusColors = (event: Event): { primary: string; secondary: string } => {
     const isPastEvent = new Date(event.event_date) < new Date();
     const isOnWaitlist = event.booking_status === 'waitlist' || event.booking_status === 'pending';
@@ -317,7 +317,7 @@ const TeamerEventsPage: React.FC = () => {
     return { primary: '#dc2626', secondary: '#b91c1c' };
   };
 
-  // Status-Text fuer Header (1:1 wie Konfi EventDetailView)
+  // Status-Text für Header (1:1 wie Konfi EventDetailView)
   const getStatusText = (event: Event): string => {
     const isPastEvent = new Date(event.event_date) < new Date();
     const isOnWaitlist = event.booking_status === 'waitlist' || event.booking_status === 'pending';

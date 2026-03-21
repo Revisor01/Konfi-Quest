@@ -306,7 +306,7 @@ const AdminEventsPage: React.FC = () => {
     presentEventModal('single');
   };
 
-  // Rollen-basierte Berechtigungen (org_admin, admin UND teamer duerfen Events verwalten)
+  // Rollen-basierte Berechtigungen (org_admin, admin UND teamer dürfen Events verwalten)
   const canManageEvents = ['org_admin', 'admin', 'teamer'].includes(user?.role_name || '');
   const canCreate = canManageEvents;
   const canEdit = canManageEvents;

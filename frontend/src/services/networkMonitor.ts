@@ -21,7 +21,7 @@ async function initNetworkMonitor(): Promise<void> {
     const status = await Network.getStatus();
     _isOnline = status.connected;
 
-    // Listener fuer Status-Aenderungen
+    // Listener für Status-Änderungen
     Network.addListener('networkStatusChange', (status) => {
       if (_debounceTimer) clearTimeout(_debounceTimer);
       _debounceTimer = setTimeout(() => {
@@ -30,10 +30,10 @@ async function initNetworkMonitor(): Promise<void> {
       }, 300);
     });
   } catch (err) {
-    console.warn('Capacitor Network Plugin nicht verfuegbar, nutze Web-Fallback');
+    console.warn('Capacitor Network Plugin nicht verfügbar, nutze Web-Fallback');
   }
 
-  // Web-Fallback (fuer Browser-Dev und falls Capacitor-Plugin nicht verfuegbar)
+  // Web-Fallback (für Browser-Dev und falls Capacitor-Plugin nicht verfügbar)
   if (!Capacitor.isNativePlatform()) {
     _isOnline = navigator.onLine;
 

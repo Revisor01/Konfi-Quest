@@ -9,7 +9,7 @@ const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
-// Automatischer Retry fuer transiente Fehler (5xx, 408, 429)
+// Automatischer Retry für transiente Fehler (5xx, 408, 429)
 axiosRetry(api, {
   retries: 3,
   retryDelay: (retryCount) => {
@@ -65,7 +65,7 @@ api.interceptors.response.use(
 
       // Offline: Token behalten, gecachte Daten nutzen
       if (!networkMonitor.isOnline) {
-        console.warn('401 waehrend Offline — Token wird behalten');
+        console.warn('401 während Offline — Token wird behalten');
         return Promise.reject(error);
       }
 
@@ -125,7 +125,7 @@ api.interceptors.response.use(
       if (error.response.data?.error) {
         error.rateLimitMessage = error.response.data.error;
       }
-      // Generisches Rate-Limit Event fuer nicht-Login Requests
+      // Generisches Rate-Limit Event für nicht-Login Requests
       const isLoginRequest = error.config?.url?.includes('/login');
       if (!isLoginRequest) {
         window.dispatchEvent(new CustomEvent('rate-limit', {

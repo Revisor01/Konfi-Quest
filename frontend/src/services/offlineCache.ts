@@ -29,7 +29,7 @@ async function get<T>(key: string): Promise<CacheEntry<T> | null> {
     if (!result.value) return null;
     return JSON.parse(result.value) as CacheEntry<T>;
   } catch {
-    // Korruptes JSON — Key loeschen und null zurueckgeben
+    // Korruptes JSON — Key löschen und null zurückgeben
     await Preferences.remove({ key: prefKey });
     return null;
   }

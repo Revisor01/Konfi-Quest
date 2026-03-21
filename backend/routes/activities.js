@@ -108,7 +108,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     const { name, points, type, category_ids, target_role } = req.body;
     const activityTargetRole = target_role || 'konfi';
 
-    // Teamer-Aktivitaeten: points und type sind optional
+    // Teamer-Aktivitäten: points und type sind optional
     if (activityTargetRole === 'teamer') {
       if (!name) return res.status(400).json({ error: 'Name ist erforderlich' });
     } else {
@@ -148,7 +148,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     const { name, points, type, category_ids, target_role } = req.body;
     const activityTargetRole = target_role || 'konfi';
 
-    // Teamer-Aktivitaeten: points und type sind optional
+    // Teamer-Aktivitäten: points und type sind optional
     if (activityTargetRole === 'teamer') {
       if (!name) return res.status(400).json({ error: 'Name ist erforderlich' });
     } else {
@@ -480,11 +480,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         }
       }
 
-      // Teamer-Aktivitaeten: Keine Punkte-Vergabe und keinen pointTypeGuard-Check
+      // Teamer-Aktivitäten: Keine Punkte-Vergabe und keinen pointTypeGuard-Check
       const isTeamerActivity = activity.target_role === 'teamer';
 
       if (!isTeamerActivity) {
-        // Guard: Punkte-Typ muss fuer den Jahrgang aktiviert sein
+        // Guard: Punkte-Typ muss für den Jahrgang aktiviert sein
         const { enabled, error } = await checkPointTypeEnabled(db, konfiId, activity.type);
         if (!enabled) return res.status(400).json({ error });
       }
@@ -508,7 +508,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         client.release();
       }
 
-      // Badge-Check NACH COMMIT (verwendet db Pool) - fuer Konfis UND Teamer
+      // Badge-Check NACH COMMIT (verwendet db Pool) - für Konfis UND Teamer
       const badgeResult = await checkAndAwardBadges(db, konfiId);
 
       // Level-Check NACH Badge-Check

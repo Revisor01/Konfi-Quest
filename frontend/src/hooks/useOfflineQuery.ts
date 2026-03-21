@@ -40,11 +40,11 @@ export function useOfflineQuery<T>(
   const [isStale, setIsStale] = useState(false);
   const [isOffline, setIsOffline] = useState(!networkMonitor.isOnline);
 
-  // Race-Condition-Schutz: Key kann sich aendern waehrend fetch laeuft
+  // Race-Condition-Schutz: Key kann sich ändern während fetch läuft
   const currentKeyRef = useRef(cacheKey);
   const mountedRef = useRef(true);
 
-  // Refs fuer Callbacks (vermeidet Dependency-Probleme)
+  // Refs für Callbacks (vermeidet Dependency-Probleme)
   const onSuccessRef = useRef(onSuccess);
   const onErrorRef = useRef(onError);
   const selectRef = useRef(select);
@@ -55,7 +55,7 @@ export function useOfflineQuery<T>(
   const revalidate = useCallback(async () => {
     try {
       const freshData = await fetcher();
-      // Race-Condition: Pruefen ob Key sich geaendert hat
+      // Race-Condition: Prüfen ob Key sich geändert hat
       if (!mountedRef.current || currentKeyRef.current !== cacheKey) return;
 
       // Raw-Daten in Cache speichern (vor select)
@@ -121,7 +121,7 @@ export function useOfflineQuery<T>(
         revalidate();
       } else {
         // Kein Cache + offline
-        setError('Keine Daten verfuegbar (offline)');
+        setError('Keine Daten verfügbar (offline)');
         setLoading(false);
         setIsStale(false);
       }

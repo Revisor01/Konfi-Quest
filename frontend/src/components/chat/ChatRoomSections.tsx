@@ -24,7 +24,7 @@ import { Message } from '../../types/chat';
 import { formatFileSize } from '../../utils/helpers';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 
-// Validiert URLs fuer img src, erlaubt nur sichere Protokolle (blob: und data:)
+// Validiert URLs für img src, erlaubt nur sichere Protokolle (blob: und data:)
 export const getSafePreviewUrl = (url: string | null | undefined): string | null => {
   if (!url) return null;
   if (url.startsWith('blob:') || url.startsWith('data:image/')) return url;

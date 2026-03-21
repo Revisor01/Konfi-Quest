@@ -141,7 +141,7 @@ const PushNotificationSettings: React.FC = () => {
                     window.open('app-settings:', '_system');
                   } else {
                     // Fallback für andere Plattformen
- console.warn('Bitte Benachrichtigungen in den Geraeteeinstellungen aktivieren');
+ console.warn('Bitte Benachrichtigungen in den Geräteeinstellungen aktivieren');
                   }
                 }}
                 style={{ marginTop: '8px' }}

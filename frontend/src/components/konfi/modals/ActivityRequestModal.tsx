@@ -286,7 +286,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
       </IonHeader>
 
       <IonContent className="app-gradient-background">
-        {/* Aktivitaet Sektion - iOS26 Pattern mit Akkordeon */}
+        {/* Aktivität Sektion - iOS26 Pattern mit Akkordeon */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--requests">
@@ -311,7 +311,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                     </IonLabel>
                   </IonItem>
                   <div slot="content" style={{ padding: '0 16px 16px' }}>
-                    {/* Aktivitaeten Liste */}
+                    {/* Aktivitäten Liste */}
                     <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
                       {activities.length === 0 ? (
                         <div className="app-info-box app-info-box--neutral" style={{ textAlign: 'center' }}>

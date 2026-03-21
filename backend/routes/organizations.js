@@ -6,7 +6,7 @@ const { handleValidationErrors } = require('../middleware/validation');
 
 // Organizations routes
 // ============================================
-// super_admin: Kann ALLE Orgs sehen, erstellen, loeschen
+// super_admin: Kann ALLE Orgs sehen, erstellen, löschen
 // org_admin: Kann NUR eigene Org sehen und bearbeiten
 // ============================================
 module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
@@ -296,7 +296,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
         contact_phone, address, website_url, is_active
       } = req.body;
 
-      // Zugriffspruefung
+      // Zugriffsprüfung
       const isSuperAdmin = req.user.role_name === 'super_admin';
       const isOwnOrg = req.user.organization_id === parseInt(id) && req.user.role_name === 'org_admin';
 

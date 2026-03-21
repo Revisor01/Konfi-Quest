@@ -45,7 +45,7 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const currentPath = location.pathname;
     let currentTabId = '';
 
-    // Admin Routes - Tab IDs muessen mit MainTabs.tsx uebereinstimmen
+    // Admin Routes - Tab IDs müssen mit MainTabs.tsx übereinstimmen
     if (currentPath.includes('/admin/konfis')) currentTabId = 'admin-konfis';
     else if (currentPath.includes('/admin/chat')) currentTabId = 'admin-chat';
     else if (currentPath.includes('/admin/activities')) currentTabId = 'admin-activities';

@@ -82,7 +82,7 @@ const AdminMaterialPage: React.FC = () => {
     { ttl: CACHE_TTL.STAMMDATEN }
   );
 
-  // Offline-Query: Material (cache-key enthaelt search + jahrgang filter)
+  // Offline-Query: Material (cache-key enthält search + jahrgang filter)
   const { data: materials, loading, refresh: refreshMaterial } = useOfflineQuery<Material[]>(
     `admin:material:${user?.organization_id}:${search}:${activeJahrgangId || ''}`,
     async () => {

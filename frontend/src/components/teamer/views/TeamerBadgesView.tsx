@@ -112,7 +112,7 @@ interface TeamerBadge {
   progress_points?: number;
 }
 
-// Popover fuer Badge-Details
+// Popover für Badge-Details
 const BadgePopoverContent: React.FC<{
   badgeRef: React.RefObject<{ badge: TeamerBadge | null; getBadgeColor: (badge: TeamerBadge) => string }>;
 }> = ({ badgeRef }) => {
@@ -261,7 +261,7 @@ const TeamerBadgesView: React.FC = () => {
 
   const getBadgeColor = (badge: TeamerBadge) => {
     if (badge.color) return badge.color;
-    return '#5b21b6'; // Lila Default fuer Teamer
+    return '#5b21b6'; // Lila Default für Teamer
   };
 
   const [presentBadgePopover] = useIonPopover(BadgePopoverContent, {
@@ -406,7 +406,7 @@ const TeamerBadgesView: React.FC = () => {
                 <EmptyState
                   icon={checkmarkCircle}
                   title="Alle Badges erreicht!"
-                  message="Du hast alle verfuegbaren Teamer-Badges eingesammelt."
+                  message="Du hast alle verfügbaren Teamer-Badges eingesammelt."
                   iconColor="#22c55e"
                 />
               ) : (

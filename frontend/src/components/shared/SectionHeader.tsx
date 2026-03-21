@@ -24,7 +24,7 @@ const PRESET_COLORS: Record<string, { primary: string; secondary: string }> = {
   level: { primary: '#ec4899', secondary: '#db2777' },
 };
 
-// Hilfsfunktion: HEX zu RGB-String fuer rgba()
+// Hilfsfunktion: HEX zu RGB-String für rgba()
 const hexToRgb = (hex: string): string => {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   if (!result) return '0, 0, 0';

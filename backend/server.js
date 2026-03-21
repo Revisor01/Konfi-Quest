@@ -69,7 +69,7 @@ io.use((socket, next) => {
 
 // Socket.io Connection Handler
 io.on('connection', (socket) => {
-  // User tritt automatisch seinem persoenlichen Room bei (fuer globale Benachrichtigungen)
+  // User tritt automatisch seinem persönlichen Room bei (für globale Benachrichtigungen)
   const userRoom = `user_${socket.user.type}_${socket.user.id}`;
   socket.join(userRoom);
 
@@ -174,7 +174,7 @@ const registerLimiter = rateLimit({
   legacyHeaders: false
 });
 
-// Rate Limiter fuer Chat-Nachrichten (Spam-Schutz)
+// Rate Limiter für Chat-Nachrichten (Spam-Schutz)
 const chatMessageLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 Minute
   max: 30, // Max 30 Nachrichten pro Minute
@@ -183,29 +183,29 @@ const chatMessageLimiter = rateLimit({
   legacyHeaders: false
 });
 
-// Rate Limiter fuer Event-Buchungen
+// Rate Limiter für Event-Buchungen
 const eventBookingLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 Minuten
   max: 20, // Max 20 Buchungen pro 15 Minuten
-  message: { error: 'Zu viele Buchungsanfragen. Bitte versuche es spaeter erneut.' },
+  message: { error: 'Zu viele Buchungsanfragen. Bitte versuche es später erneut.' },
   standardHeaders: true,
   legacyHeaders: false
 });
 
-// Rate Limiter fuer File-Uploads
+// Rate Limiter für File-Uploads
 const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 Minuten
   max: 30, // Max 30 Uploads pro 15 Minuten
-  message: { error: 'Zu viele Uploads. Bitte versuche es spaeter erneut.' },
+  message: { error: 'Zu viele Uploads. Bitte versuche es später erneut.' },
   standardHeaders: true,
   legacyHeaders: false
 });
 
-// Rate Limiter fuer Organisations-Verwaltung (Schutz vor Missbrauch)
+// Rate Limiter für Organisations-Verwaltung (Schutz vor Missbrauch)
 const orgLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 Minuten
   max: 20, // Max 20 schreibende Org-Requests pro 15 Minuten
-  message: { error: 'Zu viele Anfragen an die Organisationsverwaltung. Bitte versuche es spaeter erneut.' },
+  message: { error: 'Zu viele Anfragen an die Organisationsverwaltung. Bitte versuche es später erneut.' },
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -301,7 +301,7 @@ const materialUpload = multer({
       cb(null, hash);
     }
   }),
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB fuer Material
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB für Material
   fileFilter: (req, file, cb) => {
     const allowedMimes = [
       'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif',
@@ -518,7 +518,7 @@ try {
   const fbApp = firebase.initializeFirebase();
   if (fbApp) firebaseStatus = 'Verbunden';
 } catch (e) {
-  // Firebase nicht verfuegbar
+  // Firebase nicht verfügbar
 }
 
 const smtpStatus = SMTP_CONFIG.auth.pass ? 'Konfiguriert' : 'Nicht konfiguriert';

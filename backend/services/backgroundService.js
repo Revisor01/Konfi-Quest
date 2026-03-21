@@ -7,7 +7,7 @@ class BackgroundService {
   static tokenCleanupInterval = null;
 
   /**
-   * Startet regelmaessige Badge Updates fuer alle User (alle 5 Minuten)
+   * Startet regelmäßige Badge Updates für alle User (alle 5 Minuten)
    */
   static startBadgeUpdateService(db) {
     if (this.badgeUpdateInterval) {
@@ -35,7 +35,7 @@ class BackgroundService {
   }
 
   /**
-   * Aktualisiert Badge Counts fuer alle User mit Push Tokens
+   * Aktualisiert Badge Counts für alle User mit Push Tokens
    */
   static async updateAllUserBadges(db) {
     try {
@@ -55,7 +55,7 @@ class BackgroundService {
         return { updated: 0 };
       }
 
-      // Badge-Counts VOR dem Sync laden (fuer Change-Detection)
+      // Badge-Counts VOR dem Sync laden (für Change-Detection)
       const { rows: badgeCounts } = await db.query(`
         SELECT user_id, COUNT(*)::int as badge_count
         FROM user_badges
@@ -71,7 +71,7 @@ class BackgroundService {
 
       for (const user of users) {
         try {
-          // Badge Count fuer User berechnen (nur Chat-Unread fuer Konfis/Teamer)
+          // Badge Count für User berechnen (nur Chat-Unread für Konfis/Teamer)
           const badgeQuery = `
             SELECT
               (SELECT COUNT(DISTINCT cm.id)::int FROM chat_messages cm
@@ -264,7 +264,7 @@ class BackgroundService {
   // ====================================================================
 
   /**
-   * Startet den Service fuer Admin-Erinnerungen (alle 4 Stunden)
+   * Startet den Service für Admin-Erinnerungen (alle 4 Stunden)
    */
   static startPendingEventsService(db) {
     if (this.pendingEventsInterval) {
@@ -292,7 +292,7 @@ class BackgroundService {
   }
 
   /**
-   * Prueft ob es Events gibt die verbucht werden muessen
+   * Prüft ob es Events gibt die verbucht werden müssen
    */
   static async checkPendingEvents(db) {
     try {
@@ -364,7 +364,7 @@ class BackgroundService {
    * Bereinigt verwaiste und fehlerhafte Push-Tokens
    * - error_count >= 10: Token hat zu viele Fehler
    * - updated_at > 30 Tage: Token ist inaktiv
-   * - user_id nicht in users: User wurde geloescht
+   * - user_id nicht in users: User wurde gelöscht
    */
   static async cleanupStaleTokens(db) {
     try {

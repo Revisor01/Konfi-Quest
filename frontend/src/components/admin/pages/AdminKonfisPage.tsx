@@ -83,7 +83,7 @@ const AdminKonfisPage: React.FC = () => {
 
   const loading = konfisLoading;
 
-  // Alert Hook fuer Bestaetigungsdialoge
+  // Alert Hook für Bestätigungsdialoge
   const [presentAlert] = useIonAlert();
 
   // Modal mit useIonModal Hook - löst Tab-Navigation Problem

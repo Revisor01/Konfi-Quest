@@ -62,7 +62,7 @@ class PushService {
       const tokens = await this.getTokensForUser(db, userId);
 
       if (tokens.length === 0) {
- console.warn(`Keine Push-Tokens fuer User ${userId} gefunden`);
+ console.warn(`Keine Push-Tokens für User ${userId} gefunden`);
         return { success: false, message: 'No tokens found' };
       }
 
@@ -160,7 +160,7 @@ class PushService {
       const { rows: tokens } = await db.query(query, queryParams);
 
       if (!tokens || tokens.length === 0) {
- console.warn('Keine Push-Tokens fuer User gefunden:', userId);
+ console.warn('Keine Push-Tokens für User gefunden:', userId);
         return { success: false, message: 'No tokens found' };
       }
 
@@ -260,7 +260,7 @@ class PushService {
           ];
           if (fatalCodes.includes(result.errorCode)) {
             await db.query('DELETE FROM push_tokens WHERE id = $1', [token.id]);
-            console.warn(`Token ${token.id} geloescht (${result.errorCode})`);
+            console.warn(`Token ${token.id} gelöscht (${result.errorCode})`);
           } else {
             await db.query(
               'UPDATE push_tokens SET error_count = error_count + 1, last_error_at = NOW() WHERE id = $1',
@@ -338,7 +338,7 @@ class PushService {
       );
 
       if (admins.length === 0) {
- console.warn('Keine Admins fuer Organisation gefunden');
+ console.warn('Keine Admins für Organisation gefunden');
         return { success: false, message: 'No admins found' };
       }
 
@@ -556,7 +556,7 @@ class PushService {
       );
 
       if (admins.length === 0) {
- console.warn('Keine Admins fuer Organisation gefunden');
+ console.warn('Keine Admins für Organisation gefunden');
         return { success: false, message: 'No admins found' };
       }
 
@@ -613,7 +613,7 @@ class PushService {
 
       // 4. Vergleich mit gespeichertem Level — nur wenn Level AUFGESTIEGEN
       if (newLevel && newLevel.id !== profile.current_level_id) {
-        // Pruefen ob neues Level HOEHER ist (nicht Level-Down bei Punkte-Abzug)
+        // Prüfen ob neues Level HÖHER ist (nicht Level-Down bei Punkte-Abzug)
         const oldLevel = levels.find(l => l.id === profile.current_level_id);
         if (oldLevel && newLevel.points_required <= oldLevel.points_required) {
           // Level-Down oder gleiches Level — kein Push, aber Level-ID updaten
@@ -764,7 +764,7 @@ class PushService {
       const konfiIds = konfis.map(k => k.id);
 
       if (konfiIds.length === 0) {
- console.warn('Keine Konfis fuer Organisation gefunden:', organizationId);
+ console.warn('Keine Konfis für Organisation gefunden:', organizationId);
         return { success: true, sent: 0 };
       }
 

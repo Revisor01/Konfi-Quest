@@ -18,7 +18,7 @@ export const onReconnect = (callback: ReconnectCallback): (() => void) => {
 };
 
 export const initializeWebSocket = (token: string): Socket => {
-  // Pruefen ob Socket bereits existiert (auch wenn noch nicht connected)
+  // Prüfen ob Socket bereits existiert (auch wenn noch nicht connected)
   if (socket) {
     return socket;
   }
@@ -40,7 +40,7 @@ export const initializeWebSocket = (token: string): Socket => {
         try {
           // 1. Queue flushen (Server-State aktuell machen)
           await writeQueue.flush();
-          // 2. Cache invalidieren (stale markieren fuer Revalidierung)
+          // 2. Cache invalidieren (stale markieren für Revalidierung)
           await offlineCache.invalidateAll();
           // 3. Badge-Refresh via CustomEvent (BadgeContext hoert darauf)
           window.dispatchEvent(new CustomEvent('sync:reconnect'));

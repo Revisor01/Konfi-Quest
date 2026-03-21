@@ -154,7 +154,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
     }
   };
 
-  // Event-, Aktivitaeten- und Bonus-Anzahl aus gefilterter History berechnen
+  // Event-, Aktivitäten- und Bonus-Anzahl aus gefilterter History berechnen
   const eventCount = filteredHistory.filter(h => h.source_type === 'event').length;
   const activityCount = filteredHistory.filter(h => h.source_type === 'activity').length;
   const bonusCount = filteredHistory.filter(h => h.source_type === 'bonus').length;

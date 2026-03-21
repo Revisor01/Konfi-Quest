@@ -70,7 +70,7 @@ const KonfiRegisterPage: React.FC = () => {
     password_confirm: ''
   });
 
-  // Username-Verfuegbarkeitspruefung
+  // Username-Verfügbarkeitsprüfung
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
   const usernameCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -115,7 +115,7 @@ const KonfiRegisterPage: React.FC = () => {
   };
 
   const handleUsernameBlur = () => {
-    // Sofort pruefen falls noch nicht geprueft
+    // Sofort prüfen falls noch nicht geprüft
     if (formData.username.length >= 3 && usernameStatus === 'idle') {
       if (usernameCheckTimer.current) {
         clearTimeout(usernameCheckTimer.current);
@@ -138,7 +138,7 @@ const KonfiRegisterPage: React.FC = () => {
     }
   }, [location]);
 
-  // Passwort-Check bei jeder Aenderung
+  // Passwort-Check bei jeder Änderung
   useEffect(() => {
     const pw = formData.password;
     setPasswordChecks({
@@ -238,7 +238,7 @@ const KonfiRegisterPage: React.FC = () => {
         await setTokenStoreUser(user);
         setUser(user);
         setAppSuccess('Willkommen bei Konfi Quest!');
-        // Kurz warten fuer visuelles Feedback, dann zum Dashboard
+        // Kurz warten für visuelles Feedback, dann zum Dashboard
         setTimeout(() => {
           history.replace('/konfi/dashboard');
         }, 1500);
@@ -428,7 +428,7 @@ const KonfiRegisterPage: React.FC = () => {
                     />
                   </IonItem>
 
-                  {/* Username-Verfuegbarkeits-Status */}
+                  {/* Username-Verfügbarkeits-Status */}
                   {usernameStatus === 'checking' && (
                     <div className="app-auth-username-status app-auth-username-status--checking">
                       <IonSpinner name="dots" style={{ width: '16px', height: '16px' }} />
@@ -499,7 +499,7 @@ const KonfiRegisterPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Passwort bestaetigen */}
+                  {/* Passwort bestätigen */}
                   <IonItem lines="none" className="app-auth-input" style={{ marginBottom: '16px' }}>
                     <IonIcon icon={key} slot="start" color="medium" />
                     <IonLabel position="stacked" className="app-auth-input__label">
@@ -521,7 +521,7 @@ const KonfiRegisterPage: React.FC = () => {
                     />
                   </IonItem>
 
-                  {/* Passwoerter stimmen nicht ueberein */}
+                  {/* Passwörter stimmen nicht überein */}
                   {formData.password && formData.password_confirm && formData.password !== formData.password_confirm && (
                     <div className="app-auth-password-match-error">
                       <IonIcon icon={alertCircle} />

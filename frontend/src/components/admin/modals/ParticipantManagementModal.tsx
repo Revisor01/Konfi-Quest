@@ -108,14 +108,14 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
       const loadedParticipants: Participant[] = eventResponse.data.participants || [];
       setCurrentParticipants(loadedParticipants);
 
-      // Dann verfuegbare Konfis laden (braucht Participants fuer Filterung)
+      // Dann verfügbare Konfis laden (braucht Participants für Filterung)
       await loadAvailableKonfis(loadedParticipants);
     } catch (error) {
       setError('Fehler beim Laden der Daten');
     }
   };
 
-  // Event-Jahrgaenge ermitteln (fuer Filter)
+  // Event-Jahrgänge ermitteln (für Filter)
   const eventJahrgaenge = eventData?.jahrgaenge?.map(j => j.name) ||
     (eventData?.jahrgang_name ? [eventData.jahrgang_name] : []);
   const hasEventJahrgaenge = eventJahrgaenge.length > 0;
@@ -145,7 +145,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
         roleFiltered = available.filter((p: Konfi) => p.role_name !== 'teamer');
       }
 
-      // Extract available Jahrgaenge (wird nur fuer Dropdown gebraucht wenn Event keine Jahrgaenge hat)
+      // Extract available Jahrgänge (wird nur für Dropdown gebraucht wenn Event keine Jahrgänge hat)
       const jahrgaenge = [...new Set(
         roleFiltered
           .filter((k: Konfi) => k.jahrgang_name)
@@ -229,7 +229,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
 
         setSuccess(`${selectedKonfis.length} Teilnehmer hinzugefügt`);
         setSelectedKonfis([]);
-        // Participants und verfuegbare Konfis neu laden
+        // Participants und verfügbare Konfis neu laden
         const eventResponse = await api.get(`/events/${eventId}`);
         const updatedParticipants: Participant[] = eventResponse.data.participants || [];
         setCurrentParticipants(updatedParticipants);
@@ -248,7 +248,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
     try {
       await api.delete(`/events/${eventId}/bookings/${participantId}`);
       setSuccess('Teilnehmer entfernt');
-      // Participants und verfuegbare Konfis neu laden
+      // Participants und verfügbare Konfis neu laden
       const eventResponse = await api.get(`/events/${eventId}`);
       const updatedParticipants: Participant[] = eventResponse.data.participants || [];
       setCurrentParticipants(updatedParticipants);

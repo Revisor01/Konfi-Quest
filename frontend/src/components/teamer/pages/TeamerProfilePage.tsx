@@ -276,7 +276,7 @@ const TeamerProfilePage: React.FC = () => {
                   </div>
                 </IonItem>
 
-                {/* E-Mail aendern */}
+                {/* E-Mail ändern */}
                 <IonItem
                   button
                   onClick={() => presentEmailModal({ presentingElement: presentingElement || undefined })}
@@ -303,7 +303,7 @@ const TeamerProfilePage: React.FC = () => {
                   </div>
                 </IonItem>
 
-                {/* Passwort aendern */}
+                {/* Passwort ändern */}
                 <IonItem
                   button
                   onClick={() => presentPasswordModal({ presentingElement: presentingElement || undefined })}

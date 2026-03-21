@@ -345,7 +345,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     doRegister();
   };
 
-  // Status-Farben fuer SectionHeader (dynamisch basierend auf Event-Zustand)
+  // Status-Farben für SectionHeader (dynamisch basierend auf Event-Zustand)
   const getStatusColors = (): { primary: string; secondary: string } => {
     if (!eventData) return { primary: '#dc2626', secondary: '#b91c1c' };
 

@@ -93,7 +93,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     is_active: true
   });
 
-  // isDirty nach Initialisierung bei jeder formData-Aenderung setzen
+  // isDirty nach Initialisierung bei jeder formData-Änderung setzen
   useEffect(() => {
     if (initializedRef.current) {
       setIsDirty(true);

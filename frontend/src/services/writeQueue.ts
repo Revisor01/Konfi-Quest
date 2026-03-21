@@ -50,7 +50,7 @@ async function _load(): Promise<QueueItem[]> {
     _items = JSON.parse(result.value) as QueueItem[];
     return _items;
   } catch {
-    // Korruptes JSON — zuruecksetzen
+    // Korruptes JSON — zurücksetzen
     await Preferences.remove({ key: QUEUE_KEY });
     _items = [];
     return _items;
@@ -88,7 +88,7 @@ async function showFailedToast(label: string): Promise<void> {
     });
     await toast.present();
   } catch {
-    // Toast nicht verfuegbar (z.B. im Background)
+    // Toast nicht verfügbar (z.B. im Background)
   }
 }
 
@@ -99,7 +99,7 @@ function handleFlushResult(result: FlushResult): void {
   }
 }
 
-// --- Foto-Upload Helfer fuer Queue-Items mit _localPhotoPath ---
+// --- Foto-Upload Helfer für Queue-Items mit _localPhotoPath ---
 
 async function resolveLocalPhoto(body: any): Promise<void> {
   if (!body?._localPhotoPath) return;
@@ -133,21 +133,21 @@ async function resolveLocalPhoto(body: any): Promise<void> {
   // Filename in body setzen, lokale Felder entfernen
   body.photo_filename = uploadResponse.data.filename;
 
-  // Lokale Datei loeschen (best-effort)
+  // Lokale Datei löschen (best-effort)
   try {
     await Filesystem.deleteFile({
       path: body._localPhotoPath,
       directory: Directory.Data,
     });
   } catch {
-    // Ignorieren — wird beim naechsten Cleanup aufgeraeumt
+    // Ignorieren — wird beim nächsten Cleanup aufgeräumt
   }
 
   delete body._localPhotoPath;
   delete body._photoFileName;
 }
 
-// --- Chat-Bild-Upload Helfer fuer Queue-Items mit _localFilePath ---
+// --- Chat-Bild-Upload Helfer für Queue-Items mit _localFilePath ---
 
 async function resolveLocalFile(item: QueueItem): Promise<void> {
   const body = item.body;
@@ -181,7 +181,7 @@ async function resolveLocalFile(item: QueueItem): Promise<void> {
   item.body = formData;
   item.headers = { 'Content-Type': 'multipart/form-data' };
 
-  // Lokale Datei loeschen (best-effort)
+  // Lokale Datei löschen (best-effort)
   try {
     await Filesystem.deleteFile({
       path: body._localFilePath,
@@ -192,7 +192,7 @@ async function resolveLocalFile(item: QueueItem): Promise<void> {
   }
 }
 
-// --- Oeffentliche API ---
+// --- Öffentliche API ---
 
 async function enqueue(
   item: Omit<QueueItem, 'id' | 'retryCount' | 'createdAt'>
@@ -221,7 +221,7 @@ async function flush(): Promise<FlushResult> {
     while (items.length > 0) {
       const item = items[0];
       try {
-        // Lokales Foto zuerst hochladen falls vorhanden (Aktivitaets-Antraege)
+        // Lokales Foto zuerst hochladen falls vorhanden (Aktivitäts-Anträge)
         if (item.body?._localPhotoPath) {
           await resolveLocalPhoto(item.body);
           await _save(items); // Body-Update persistieren
@@ -259,14 +259,14 @@ async function flush(): Promise<FlushResult> {
           items.shift();
           await _save(items);
         } else {
-          // 5xx, 408, 429, Netzwerkfehler: retryCount erhoehen
+          // 5xx, 408, 429, Netzwerkfehler: retryCount erhöhen
           item.retryCount++;
           if (item.retryCount >= item.maxRetries) {
             const failedItem: FailedQueueItem = { ...item, error: { status, message } };
             result.failed.push(failedItem);
             items.shift();
           } else {
-            // Item behalten mit erhoehtem retryCount
+            // Item behalten mit erhöhtem retryCount
           }
           await _save(items);
           // Bei transientem Fehler restliche Items nicht weiter abarbeiten
@@ -295,7 +295,7 @@ async function flushTextOnly(): Promise<FlushResult> {
     while (i < items.length) {
       const item = items[i];
 
-      // Datei-Uploads ueberspringen
+      // Datei-Uploads überspringen
       if (item.hasFileUpload) {
         i++;
         continue;

@@ -95,7 +95,7 @@ const AppContent: React.FC = () => {
     if (!user) return;
 
     // Badge-Counts werden bereits vom BadgeContext initialisiert
-    // Push-Listener fuer sofortiges Refresh bei eingehender Notification
+    // Push-Listener für sofortiges Refresh bei eingehender Notification
     const setupListeners = async () => {
       if (!Capacitor.isNativePlatform()) return;
       await PushNotifications.removeAllListeners();

@@ -164,7 +164,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
     return { godiEnabled, gemEnabled, targetGodi, targetGem, targetTotal };
   };
 
-  // Farbe: Lila fuer alle auf dem Weg, Gruen fuer fertige
+  // Farbe: Lila für alle auf dem Weg, Grün für fertige
   const getStatusColor = (konfi: Konfi) => {
     const { targetTotal } = getKonfiTargets(konfi);
     const total = getTotalPoints(konfi);
@@ -223,7 +223,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
               placeholder={viewMode === 'teamer' ? 'Teamer:in suchen...' : 'Konfi suchen...'}
             />
           </IonItem>
-          {/* Jahrgang Filter - nur fuer Konfis */}
+          {/* Jahrgang Filter - nur für Konfis */}
           {viewMode === 'konfis' && (
             <IonItem>
               <IonIcon icon={calendarOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
@@ -241,7 +241,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
               </IonSelect>
             </IonItem>
           )}
-          {/* Sortierung - nur fuer Konfis */}
+          {/* Sortierung - nur für Konfis */}
           {viewMode === 'konfis' && (
             <IonItem>
               <IonIcon icon={swapVertical} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
@@ -486,7 +486,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                                 </div>
                               </>
                             ) : (
-                              /* Ein breiter Balken fuer den aktiven Typ */
+                              /* Ein breiter Balken für den aktiven Typ */
                               <div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
                                   <span style={{ fontSize: '0.7rem', color: godiEnabled ? '#3b82f6' : '#059669', fontWeight: '700' }}>

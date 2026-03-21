@@ -216,7 +216,7 @@ useEffect(() => {
     const token = event.detail;
 
     if (token && token.length > 100) {
-      // ANTI-SPAM fuer native Events verwenden
+      // ANTI-SPAM für native Events verwenden
       sendTokenToServer(token);
     }
   };
@@ -226,7 +226,7 @@ useEffect(() => {
   // WICHTIG: Nach dem Setup des Listeners manuell den Token abfragen,
   // falls er schon da ist (z.B. bei App-Start mit eingeloggtem User).
   // Deine AppDelegate-Logik sendet ihn bei App-Aktivierung ohnehin,
-  // aber dies ist eine zusaetzliche Sicherheit.
+  // aber dies ist eine zusätzliche Sicherheit.
   if (Capacitor.isNativePlatform() && (window as any).Capacitor?.Plugins?.App) {
       const { App } = (window as any).Capacitor.Plugins;
       // Dies simuliert, dass die App aktiv wird und triggert den Token-Send in Swift
@@ -236,7 +236,7 @@ useEffect(() => {
             data: {}
         });
       } catch (e) {
-        // Ignore — nicht auf allen Plattformen verfuegbar
+        // Ignore — nicht auf allen Plattformen verfügbar
       }
   }
 
@@ -244,7 +244,7 @@ useEffect(() => {
   return () => {
     window.removeEventListener('fcmToken', handleNativeFCMToken);
   };
-}, [user]); // <--- WICHTIGSTE AENDERUNG: Abhaengigkeit von 'user'
+}, [user]); // <--- WICHTIGSTE ÄNDERUNG: Abhängigkeit von 'user'
 
   useEffect(() => {
     // Nur EINMAL Push-Permissions anfordern nach Login
@@ -330,7 +330,7 @@ useEffect(() => {
     const setupPushNotifications = async () => {
       if (!Capacitor.isNativePlatform()) return;
       try {
-        // WICHTIG: Registration Listener fuer Android (und iOS Fallback)
+        // WICHTIG: Registration Listener für Android (und iOS Fallback)
         PushNotifications.addListener('registration', (token) => {
           // Token an Server senden
           sendTokenToServer(token.value);
@@ -436,9 +436,9 @@ useEffect(() => {
     };
 
     setupPushNotifications();
-  }, [user]); // Abhaengigkeit ist korrekt
+  }, [user]); // Abhängigkeit ist korrekt
 
-  // hasPermission entfernt - Berechtigung jetzt ueber user.role_name pruefen
+  // hasPermission entfernt - Berechtigung jetzt über user.role_name prüfen
 
   const value: AppContextType = {
     user,

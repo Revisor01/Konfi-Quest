@@ -152,7 +152,7 @@ interface Badge {
   progress_percentage?: number;
 }
 
-// Popover Content Komponente fuer Badge-Details
+// Popover Content Komponente für Badge-Details
 const BadgePopoverContent: React.FC<{
   badgeRef: React.RefObject<{ badge: Badge | null; getBadgeColor: (badge: Badge) => string }>;
 }> = ({ badgeRef }) => {

@@ -306,7 +306,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
 
             await client.query('COMMIT');
 
-            // Auto-Enrollment fuer zukuenftige Pflicht-Events des neuen Jahrgangs
+            // Auto-Enrollment für zukünftige Pflicht-Events des neuen Jahrgangs
             if (currentProfile && currentProfile.jahrgang_id !== parseInt(jahrgang_id)) {
               try {
                 const enrollFutureEventsQuery = `
@@ -469,7 +469,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             `;
             const { rows: [badgeResult] } = await db.query(badgeQuery, [konfiId, konfi.role_name]);
 
-            // Zertifikate fuer Teamer mitladen
+            // Zertifikate für Teamer mitladen
             let certificates = [];
             let teamerEvents = [];
             if (konfi.role_name === 'teamer') {
@@ -483,7 +483,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 const { rows: certRows } = await db.query(certQuery, [konfiId, req.user.organization_id]);
                 certificates = certRows;
 
-                // Events fuer Teamer: gebuchte Events mit Status
+                // Events für Teamer: gebuchte Events mit Status
                 const eventsQuery = `
                     SELECT e.id, e.name, e.event_date, e.location, e.teamer_only, e.teamer_needed,
                            eb.status as booking_status, eb.booking_date
@@ -496,7 +496,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 teamerEvents = eventRows;
             }
 
-            // Konfi-Historie: Punkte-History fuer promoted Teamer
+            // Konfi-Historie: Punkte-History für promoted Teamer
             let konfiHistory = null;
             if (konfi.role_name === 'teamer' && konfi.gottesdienst_points !== null) {
                 // Activities aus der Konfi-Zeit
@@ -710,8 +710,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update', { konfiId: req.params.id });
 
         } catch (err) {
-            if (err.message === 'Ungueltiger Punktetyp') {
-                return res.status(400).json({ error: 'Ungueltiger Punktetyp. Erlaubt: gottesdienst, gemeinde' });
+            if (err.message === 'Ungültiger Punktetyp') {
+                return res.status(400).json({ error: 'Ungültiger Punktetyp. Erlaubt: gottesdienst, gemeinde' });
             }
  console.error('Database error in POST /konfis/:id/bonus-points:', err);
             res.status(500).json({ error: 'Datenbankfehler' });
@@ -781,7 +781,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             const isTeamerActivity = activity.target_role === 'teamer';
 
             if (!isTeamerActivity) {
-                // Guard: Punkte-Typ muss fuer den Jahrgang aktiviert sein
+                // Guard: Punkte-Typ muss für den Jahrgang aktiviert sein
                 const { enabled: ptEnabled, error: ptError } = await checkPointTypeEnabled(db, req.params.id, activity.type);
                 if (!ptEnabled) return res.status(400).json({ error: ptError });
             }
@@ -885,7 +885,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         }
     });
 
-    // PUT teamer_since - Aktiv-seit-Datum aendern
+    // PUT teamer_since - Aktiv-seit-Datum ändern
     router.put('/:id/teamer-since', rbacVerifier, requireAdmin, validateParamId, async (req, res) => {
         try {
             const { teamer_since } = req.body;
@@ -949,16 +949,16 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 return res.status(500).json({ error: 'Teamer-Rolle nicht gefunden' });
             }
 
-            // 3. Rolle aendern + teamer_since setzen
+            // 3. Rolle ändern + teamer_since setzen
             await client.query('UPDATE users SET role_id = $1, teamer_since = CURRENT_DATE WHERE id = $2', [teamerRole.id, konfiId]);
 
-            // 4. Event-Buchungen loeschen
+            // 4. Event-Buchungen löschen
             await client.query('DELETE FROM event_bookings WHERE user_id = $1', [konfiId]);
 
-            // 5. Offene Antraege loeschen
+            // 5. Offene Anträge löschen
             await client.query("DELETE FROM activity_requests WHERE konfi_id = $1 AND status = 'pending'", [konfiId]);
 
-            // 6. Jahrgang aus konfi_profiles in user_jahrgang_assignments uebertragen
+            // 6. Jahrgang aus konfi_profiles in user_jahrgang_assignments übertragen
             const { rows: [konfiProfile] } = await client.query(
                 'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1', [konfiId]
             );

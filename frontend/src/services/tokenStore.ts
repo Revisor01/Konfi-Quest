@@ -47,7 +47,7 @@ export const setRefreshToken = async (token: string): Promise<void> => {
   await Preferences.set({ key: 'konfi_refresh_token', value: token });
 };
 
-// --- Auth loeschen (Device-ID bleibt erhalten) ---
+// --- Auth löschen (Device-ID bleibt erhalten) ---
 
 export const clearAuth = async (): Promise<void> => {
   _token = null;

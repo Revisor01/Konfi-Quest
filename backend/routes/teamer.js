@@ -10,11 +10,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // TEAMER PROFIL
   // ====================================================================
 
-  // GET /teamer/profile - Eingefrorene Konfi-Daten fuer Teamer
+  // GET /teamer/profile - Eingefrorene Konfi-Daten für Teamer
   router.get('/profile', rbacVerifier, (req, res, next) => {
-    // Nur Teamer duerfen ihr Profil abrufen
+    // Nur Teamer dürfen ihr Profil abrufen
     if (req.user.role_name !== 'teamer') {
-      return res.status(403).json({ error: 'Nur Teamer koennen dieses Profil abrufen' });
+      return res.status(403).json({ error: 'Nur Teamer können dieses Profil abrufen' });
     }
     next();
   }, async (req, res) => {
@@ -79,11 +79,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // TEAMER KONFI-HISTORY (Punkte-Verlauf aus der Konfi-Zeit)
   // ====================================================================
 
-  // GET /teamer/konfi-history - Punkte-Verlauf fuer ehemalige Konfis (jetzt Teamer)
+  // GET /teamer/konfi-history - Punkte-Verlauf für ehemalige Konfis (jetzt Teamer)
   router.get('/konfi-history', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       if (req.user.role_name !== 'teamer') {
-        return res.status(403).json({ error: 'Nur Teamer koennen die Konfi-Historie abrufen' });
+        return res.status(403).json({ error: 'Nur Teamer können die Konfi-Historie abrufen' });
       }
 
       const userId = req.user.id;
@@ -173,11 +173,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // TEAMER-BADGES
   // ====================================================================
 
-  // GET /teamer/badges - Alle verfuegbaren Teamer-Badges mit earned-Status
+  // GET /teamer/badges - Alle verfügbaren Teamer-Badges mit earned-Status
   router.get('/badges', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       if (req.user.role_name !== 'teamer') {
-        return res.status(403).json({ error: 'Nur Teamer koennen Teamer-Badges abrufen' });
+        return res.status(403).json({ error: 'Nur Teamer können Teamer-Badges abrufen' });
       }
 
       const badgesQuery = `
@@ -201,7 +201,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   router.get('/badges/unseen', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       if (req.user.role_name !== 'teamer') {
-        return res.status(403).json({ error: 'Nur Teamer koennen Badge-Status abrufen' });
+        return res.status(403).json({ error: 'Nur Teamer können Badge-Status abrufen' });
       }
 
       const { rows: [result] } = await db.query(
@@ -219,7 +219,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   router.put('/badges/mark-seen', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       if (req.user.role_name !== 'teamer') {
-        return res.status(403).json({ error: 'Nur Teamer koennen Badges als gesehen markieren' });
+        return res.status(403).json({ error: 'Nur Teamer können Badges als gesehen markieren' });
       }
 
       await db.query(
@@ -303,7 +303,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       }
 
       if (updates.length === 0) {
-        return res.status(400).json({ error: 'Keine Aenderungen angegeben' });
+        return res.status(400).json({ error: 'Keine Änderungen angegeben' });
       }
 
       params.push(req.params.id, req.user.organization_id);
@@ -326,10 +326,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     }
   });
 
-  // DELETE /teamer/certificate-types/:id - Typ loeschen (nur wenn nicht zugewiesen)
+  // DELETE /teamer/certificate-types/:id - Typ löschen (nur wenn nicht zugewiesen)
   router.delete('/certificate-types/:id', rbacVerifier, requireOrgAdmin, async (req, res) => {
     try {
-      // Pruefen ob Zertifikate zugewiesen sind
+      // Prüfen ob Zertifikate zugewiesen sind
       const { rows: [usage] } = await db.query(
         'SELECT COUNT(*) as count FROM user_certificates WHERE certificate_type_id = $1',
         [req.params.id]
@@ -337,7 +337,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
       if (parseInt(usage.count) > 0) {
         return res.status(409).json({
-          error: 'Zertifikat-Typ kann nicht geloescht werden, da er bereits zugewiesen ist. Deaktivieren Sie ihn stattdessen.'
+          error: 'Zertifikat-Typ kann nicht gelöscht werden, da er bereits zugewiesen ist. Deaktivieren Sie ihn stattdessen.'
         });
       }
 
@@ -349,10 +349,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       if (rowCount === 0) {
         return res.status(404).json({ error: 'Zertifikat-Typ nicht gefunden' });
       }
-      res.json({ message: 'Zertifikat-Typ erfolgreich geloescht' });
+      res.json({ message: 'Zertifikat-Typ erfolgreich gelöscht' });
     } catch (err) {
       console.error('Error deleting certificate type:', err);
-      res.status(500).json({ error: 'Fehler beim Loeschen des Zertifikat-Typs' });
+      res.status(500).json({ error: 'Fehler beim Löschen des Zertifikat-Typs' });
     }
   });
 
@@ -388,7 +388,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         return res.status(400).json({ error: 'Zertifikat-Typ und Ausstellungsdatum sind erforderlich' });
       }
 
-      // Pruefen: User existiert und ist Teamer
+      // Prüfen: User existiert und ist Teamer
       const { rows: [user] } = await db.query(
         `SELECT u.id FROM users u
          JOIN roles r ON u.role_id = r.id
@@ -400,7 +400,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         return res.status(404).json({ error: 'Teamer nicht gefunden' });
       }
 
-      // Pruefen: Zertifikat-Typ gehoert zur Organisation
+      // Prüfen: Zertifikat-Typ gehört zur Organisation
       const { rows: [certType] } = await db.query(
         'SELECT id FROM certificate_types WHERE id = $1 AND organization_id = $2 AND is_active = true',
         [certificate_type_id, req.user.organization_id]
@@ -449,11 +449,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // TEAMER-DASHBOARD
   // ====================================================================
 
-  // GET /teamer/dashboard - Dashboard-Daten fuer Teamer
+  // GET /teamer/dashboard - Dashboard-Daten für Teamer
   router.get('/dashboard', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       if (req.user.role_name !== 'teamer') {
-        return res.status(403).json({ error: 'Nur Teamer koennen das Dashboard abrufen' });
+        return res.status(403).json({ error: 'Nur Teamer können das Dashboard abrufen' });
       }
 
       const userId = req.user.id;
@@ -561,7 +561,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   });
 
   // ====================================================================
-  // TAGESLOSUNG (eigener Endpoint fuer Teamer)
+  // TAGESLOSUNG (eigener Endpoint für Teamer)
   // ====================================================================
   router.get('/tageslosung', rbacVerifier, requireTeamer, async (req, res) => {
     try {

@@ -147,7 +147,7 @@ const TeamerMaterialPage: React.FC = () => {
     presentFileViewer();
   };
 
-  // Detail oeffnen - API laden und inline anzeigen
+  // Detail öffnen - API laden und inline anzeigen
   const openDetail = async (matId: number) => {
     try {
       setDetailLoading(true);

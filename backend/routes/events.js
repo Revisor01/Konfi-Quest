@@ -235,7 +235,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
   
   // ====================================================================
   // QR-CODE CHECK-IN ENDPOINTS
-  // WICHTIG: Diese muessen VOR den parametrisierten /:id Routes stehen,
+  // WICHTIG: Diese müssen VOR den parametrisierten /:id Routes stehen,
   // damit Express "qr-checkin" nicht als :id Parameter interpretiert.
   // ====================================================================
 
@@ -280,7 +280,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         return res.status(403).json({ error: 'Kein Zugriff auf dieses Event', error_type: 'wrong_organization' });
       }
 
-      // Zeitfenster-Pruefung (komplett in PostgreSQL fuer korrekte Zeitzonen)
+      // Zeitfenster-Prüfung (komplett in PostgreSQL für korrekte Zeitzonen)
       const { rows: [timeCheck] } = await client.query(
         `SELECT NOW() BETWEEN (event_date - ($1 || ' minutes')::interval) AND (event_date + ($1 || ' minutes')::interval) AS in_window,
                 NOW() < (event_date - ($1 || ' minutes')::interval) AS too_early,
@@ -308,7 +308,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         });
       }
 
-      // Booking pruefen
+      // Booking prüfen
       const { rows: [booking] } = await client.query(
         `SELECT id, status, attendance_status FROM event_bookings WHERE event_id = $1 AND user_id = $2`,
         [eventId, userId]
@@ -380,7 +380,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       await client.query('COMMIT');
       client.release();
 
-      // Badge-Check fuer Teamer NACH COMMIT (Konfis bekommen Badge-Check schon oben)
+      // Badge-Check für Teamer NACH COMMIT (Konfis bekommen Badge-Check schon oben)
       if (req.user.type === 'teamer') {
         try {
           await checkAndAwardBadges(db, userId);
@@ -433,12 +433,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         return res.status(404).json({ error: 'Event nicht gefunden' });
       }
 
-      // Wenn Token bereits existiert: direkt zurueckgeben
+      // Wenn Token bereits existiert: direkt zurückgeben
       if (event.qr_token) {
         return res.json({ qr_token: event.qr_token });
       }
 
-      // Neuen Token generieren (kein expiresIn - Zeitfenster laeuft ueber event_date)
+      // Neuen Token generieren (kein expiresIn - Zeitfenster läuft über event_date)
       const token = jwt.sign(
         { eid: parseInt(id), oid: req.user.organization_id },
         QR_SECRET,
@@ -674,7 +674,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       return res.status(400).json({ error: 'Pflicht-Events benötigen mindestens einen Jahrgang' });
     }
 
-    // Guards fuer Pflicht-Events
+    // Guards für Pflicht-Events
     const effectivePoints = mandatory ? 0 : (points || 0);
     const effectiveMaxParticipants = mandatory ? 0 : max_participants;
     const effectiveWaitlist = mandatory ? false : (waitlist_enabled !== undefined ? waitlist_enabled : true);
@@ -729,7 +729,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       
       await Promise.all(promises);
 
-      // Auto-Enrollment fuer Pflicht-Events
+      // Auto-Enrollment für Pflicht-Events
       if (mandatory && jahrgang_ids && jahrgang_ids.length > 0) {
         const enrollQuery = `
           INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
@@ -807,7 +807,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     // checkin_window validieren (5-120, Default 30)
     const effectiveCheckinWindow = Math.max(5, Math.min(120, parseInt(checkin_window) || 30));
 
-    // Guards fuer Pflicht-Events
+    // Guards für Pflicht-Events
     const effectivePoints = mandatory ? 0 : points;
     const effectiveMaxParticipants = mandatory ? 0 : max_participants;
     const effectiveWaitlist = mandatory ? false : (waitlist_enabled !== undefined ? waitlist_enabled : true);
@@ -816,7 +816,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     try {
       await client.query('BEGIN');
 
-      // Alten mandatory-Wert lesen fuer bedingte Auto-Enrollment-Logik
+      // Alten mandatory-Wert lesen für bedingte Auto-Enrollment-Logik
       const { rows: [oldEvent] } = await client.query('SELECT mandatory FROM events WHERE id = $1', [id]);
 
       const updateQuery = `
@@ -926,12 +926,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         }
       }
 
-      // Nachrueck-Logik: Wenn Kapazitaet erhoeht wurde, Wartelisten-Eintraege nachruecken lassen
+      // Nachrück-Logik: Wenn Kapazität erhöht wurde, Wartelisten-Einträge nachrücken lassen
       const promotedUsers = [];
       if (has_timeslots && timeslots && Array.isArray(timeslots) && timeslots.length > 0) {
-        // Bei Timeslot-Events: Fuer jeden Timeslot separat pruefen
+        // Bei Timeslot-Events: Für jeden Timeslot separat prüfen
         for (const slot of timeslots) {
-          if (!slot.id) continue; // Nur bestehende Timeslots pruefen
+          if (!slot.id) continue; // Nur bestehende Timeslots prüfen
           const { rows: [tsCapacity] } = await client.query(
             "SELECT COUNT(*)::int as confirmed_count FROM event_bookings WHERE timeslot_id = $1 AND status = 'confirmed'",
             [slot.id]
@@ -949,7 +949,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           }
         }
       } else if (max_participants > 0) {
-        // Bei normalen Events: Gesamtkapazitaet pruefen
+        // Bei normalen Events: Gesamtkapazität prüfen
         const { rows: [currentCounts] } = await client.query(
           "SELECT COUNT(*)::int as confirmed_count FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'",
           [id]
@@ -970,7 +970,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       await client.query('COMMIT');
       client.release();
 
-      // Push-Notifications und Live-Updates fuer nachgerueckte Konfis (nach COMMIT)
+      // Push-Notifications und Live-Updates für nachgerückte Konfis (nach COMMIT)
       if (promotedUsers.length > 0) {
         const { rows: [eventInfo] } = await db.query("SELECT name FROM events WHERE id = $1", [id]);
         for (const userId of promotedUsers) {
@@ -1383,7 +1383,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
     const client = await db.getClient();
     try {
-      // Transaktion starten fuer Race-Condition-Schutz
+      // Transaktion starten für Race-Condition-Schutz
       await client.query('BEGIN');
 
       // 1. Get event details (FOR UPDATE sperrt die Zeile)
@@ -1809,7 +1809,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       return res.status(400).json({ error: 'Ungültiger Anwesenheitsstatus' });
     }
 
-    // Dedizierter Client fuer Transaction - pool.query() kann verschiedene
+    // Dedizierter Client für Transaction - pool.query() kann verschiedene
     // Connections nutzen, was BEGIN/COMMIT auf unterschiedliche Connections verteilt!
     const client = await db.getClient();
     try {
@@ -1891,7 +1891,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       await client.query('COMMIT');
       client.release();
 
-      // Badge-Check NACH COMMIT fuer alle User (Teamer + Konfis)
+      // Badge-Check NACH COMMIT für alle User (Teamer + Konfis)
       if (attendance_status === 'present') {
         try {
           await checkAndAwardBadges(db, eventData.user_id);

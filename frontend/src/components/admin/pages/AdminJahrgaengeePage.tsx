@@ -420,7 +420,7 @@ const AdminJahrgaengeePage: React.FC = () => {
     presentJahrgangModalHook({ presentingElement });
   };
 
-  // Rollen-basierte Berechtigungen (org_admin und admin duerfen alles)
+  // Rollen-basierte Berechtigungen (org_admin und admin dürfen alles)
   const isAdmin = ['org_admin', 'admin'].includes(user?.role_name || '');
   const canCreate = isAdmin;
   const canEdit = isAdmin;

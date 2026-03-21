@@ -115,7 +115,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
     admin_password: ''
   });
 
-  // isDirty nach Initialisierung bei jeder formData-Aenderung setzen
+  // isDirty nach Initialisierung bei jeder formData-Änderung setzen
   useEffect(() => {
     if (initializedRef.current) {
       setIsDirty(true);
@@ -476,7 +476,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                 <IonList style={{ background: 'transparent' }}>
                   <IonItem lines="full" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Name des Administrators *</IonLabel>
-                    <IonInput value={formData.admin_name} onIonInput={(e) => setFormData({ ...formData, admin_name: e.detail.value! })} placeholder="z.B. Pastor Mueller" disabled={isSubmitting} />
+                    <IonInput value={formData.admin_name} onIonInput={(e) => setFormData({ ...formData, admin_name: e.detail.value! })} placeholder="z.B. Pastor Müller" disabled={isSubmitting} />
                   </IonItem>
                   <IonItem lines="full" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Login-Benutzername *</IonLabel>

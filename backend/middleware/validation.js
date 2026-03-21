@@ -1,7 +1,7 @@
 const { validationResult, body, param, query } = require('express-validator');
 
 /**
- * Middleware: Prueft express-validator Ergebnisse und gibt 400 zurueck bei Fehlern.
+ * Middleware: Prüft express-validator Ergebnisse und gibt 400 zurück bei Fehlern.
  */
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
@@ -18,8 +18,8 @@ const handleValidationErrors = (req, res, next) => {
 };
 
 /**
- * Whitelist-validierter Spaltennamen-Resolver fuer Punktetypen.
- * Verhindert SQL-Injection ueber dynamische Spaltennamen in Template Literals.
+ * Whitelist-validierter Spaltennamen-Resolver für Punktetypen.
+ * Verhindert SQL-Injection über dynamische Spaltennamen in Template Literals.
  */
 const VALID_POINT_FIELDS = {
   gottesdienst: 'gottesdienst_points',
@@ -29,7 +29,7 @@ const VALID_POINT_FIELDS = {
 function getPointField(type) {
   const field = VALID_POINT_FIELDS[type];
   if (!field) {
-    throw new Error('Ungueltiger Punktetyp');
+    throw new Error('Ungültiger Punktetyp');
   }
   return field;
 }
@@ -43,7 +43,7 @@ const validatePagination = [
   query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit muss zwischen 1 und 100 liegen')
 ];
 
-// Gemeinsame Validierungen fuer haeufige Felder
+// Gemeinsame Validierungen für häufige Felder
 const commonValidations = {
   name: body('name').trim().notEmpty().withMessage('Name ist erforderlich')
     .isLength({ min: 2, max: 100 }).withMessage('Name muss zwischen 2 und 100 Zeichen lang sein'),

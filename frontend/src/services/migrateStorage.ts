@@ -2,11 +2,11 @@ import { Preferences } from '@capacitor/preferences';
 
 /**
  * Einmalige Migration von localStorage nach Capacitor Preferences.
- * localStorage-Keys werden NICHT geloescht (Fallback fuer Rollback).
+ * localStorage-Keys werden NICHT gelöscht (Fallback für Rollback).
  */
 export const migrateToPreferences = async (): Promise<void> => {
   try {
-    // Pruefe ob Migration bereits durchgefuehrt wurde
+    // Prüfe ob Migration bereits durchgeführt wurde
     const migrated = await Preferences.get({ key: 'storage_migrated_v1' });
     if (migrated.value) {
       return;

@@ -81,7 +81,7 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
   const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
   const [urlLoading, setUrlLoading] = useState(false);
 
-  // Refs fuer Touch-Handling
+  // Refs für Touch-Handling
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const lastTapRef = useRef<number>(0);
   const pinchStartDistRef = useRef<number>(0);
@@ -89,7 +89,7 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
   const panStartRef = useRef<{ x: number; y: number } | null>(null);
   const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  // Cache fuer aufgeloeste URLs (API-Pfade → Blob-URLs)
+  // Cache für aufgelöste URLs (API-Pfade → Blob-URLs)
   const resolvedUrlsRef = useRef<Record<string, string>>({});
 
   // Desktop Mouse-Refs
@@ -103,7 +103,7 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
     if (!currentFile) return;
     const url = currentFile.url;
 
-    // Bereits aufgeloeste URL aus Cache nutzen
+    // Bereits aufgelöste URL aus Cache nutzen
     if (resolvedUrlsRef.current[url]) {
       setResolvedUrl(resolvedUrlsRef.current[url]);
       setUrlLoading(false);
@@ -215,7 +215,7 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
       const dy = (e.changedTouches[0]?.clientY ?? 0) - swipeStartRef.current.y;
       const elapsed = now - touchStartRef.current.time;
 
-      // Horizontaler Swipe fuer Navigation
+      // Horizontaler Swipe für Navigation
       if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) && elapsed < 500) {
         if (dx < 0) goToNext();
         else goToPrev();
@@ -227,7 +227,7 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
       }
     }
 
-    // Snap zurueck bei Zoom < 1
+    // Snap zurück bei Zoom < 1
     if (scale < 1) {
       setScale(1);
       setPosition({ x: 0, y: 0 });
@@ -292,7 +292,7 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
             data: base64,
             directory: Directory.Cache
           });
-          // Nach dem Speichern: Share oeffnen fuer "Speichern unter"
+          // Nach dem Speichern: Share öffnen für "Speichern unter"
           await Share.share({
             title: currentFile.fileName,
             url: result.uri,
@@ -364,7 +364,7 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
   const isNative = Capacitor.isNativePlatform();
 
   const renderContent = () => {
-    // Ladeindikator fuer API-Pfade
+    // Ladeindikator für API-Pfade
     if (urlLoading || !resolvedUrl) {
       return (
         <div className="file-viewer-fallback">

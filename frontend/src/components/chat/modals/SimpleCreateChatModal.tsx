@@ -99,7 +99,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
   const [groupName, setGroupName] = useState('');
   const [selectedParticipants, setSelectedParticipants] = useState<Set<string>>(new Set());
 
-  // isDirty bei relevanten Aenderungen setzen
+  // isDirty bei relevanten Änderungen setzen
   useEffect(() => {
     if (groupName.trim() || selectedParticipants.size > 0) {
       setIsDirty(true);
@@ -214,7 +214,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
               role_description: admin.role_title || admin.role_display_name || admin.role_name
             }));
         } catch (err) {
- console.warn('Admins fuer Chat konnten nicht geladen werden:', err);
+ console.warn('Admins für Chat konnten nicht geladen werden:', err);
         }
 
         const allUsers = [...konfis, ...adminUsers];

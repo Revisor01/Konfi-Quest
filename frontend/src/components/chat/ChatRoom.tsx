@@ -51,7 +51,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     { ttl: CACHE_TTL.CHAT_MESSAGES, enabled: !!room?.id }
   );
 
-  // Lokaler messages-State fuer Live-Updates (WebSocket aktualisiert diesen direkt)
+  // Lokaler messages-State für Live-Updates (WebSocket aktualisiert diesen direkt)
   const [messages, setMessages] = useState<Message[]>([]);
 
   // Initiale Nachrichten aus Cache/API in lokalen State kopieren
@@ -79,7 +79,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   const viewerRef = useRef<{ files: FileItem[]; initialIndex: number }>({ files: [], initialIndex: 0 });
 
 
-  // Hooks muessen vor conditional returns stehen!
+  // Hooks müssen vor conditional returns stehen!
   const [presentAlert] = useIonAlert();
   const [presentActionSheet] = useIonActionSheet();
 
@@ -100,7 +100,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
             if (item) {
               await writeQueue.remove(item.id);
               const retryItem = { ...item, retryCount: 0 };
-              // retryCount/id/createdAt werden von enqueue ueberschrieben, also Omit-kompatibel machen
+              // retryCount/id/createdAt werden von enqueue überschrieben, also Omit-kompatibel machen
               await writeQueue.enqueue({
                 method: retryItem.method,
                 url: retryItem.url,
@@ -353,7 +353,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     }
   };
 
-  // Ref fuer aktuelle Messages (verhindert haeufige Re-Subscriptions im Reconnect-Effect)
+  // Ref für aktuelle Messages (verhindert häufige Re-Subscriptions im Reconnect-Effect)
   const messagesRef = useRef<Message[]>(messages);
   useEffect(() => { messagesRef.current = messages; }, [messages]);
 
@@ -390,7 +390,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       // BadgeContext macht optimistisches Update + API Call
       badgeMarkRoomAsRead(room.id);
 
-      // Badge Context neu laden fuer genaue Counts
+      // Badge Context neu laden für genaue Counts
       await refreshAllCounts();
 
     } catch (err) {
@@ -907,7 +907,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       const mime = response.headers?.['content-type'] || mimeType;
       const blobUrl = URL.createObjectURL(new Blob([blob], { type: mime }));
 
-      // Alle Datei-Nachrichten im Chat fuer Swipe-Kontext sammeln
+      // Alle Datei-Nachrichten im Chat für Swipe-Kontext sammeln
       const allFileMessages = messages.filter(m => m.file_path);
       const files: FileItem[] = allFileMessages.map(m => {
         if (m.file_path === filePath) {

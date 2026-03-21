@@ -202,7 +202,7 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ message, onError }) => {
         onPause={() => setIsPlaying(false)}
         onPlay={() => setIsPlaying(true)}
         onError={() => {
-          console.error('Video-Element-Fehler fuer:', message.file_name);
+          console.error('Video-Element-Fehler für:', message.file_name);
           setHasError(true);
           onError('Video kann nicht abgespielt werden');
         }}

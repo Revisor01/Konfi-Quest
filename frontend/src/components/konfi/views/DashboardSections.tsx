@@ -203,7 +203,7 @@ export const LevelPopoverContent: React.FC<{
   );
 };
 
-// Badge Popover Content Komponente fuer Dashboard
+// Badge Popover Content Komponente für Dashboard
 export const DashboardBadgePopoverContent: React.FC<{
   dataRef: React.RefObject<{ badge: Badge | null; isEarned: boolean; getBadgeColor: (badge: Badge) => string }>;
 }> = ({ dataRef }) => {

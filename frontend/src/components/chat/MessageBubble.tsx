@@ -601,7 +601,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           </div>
         )}
 
-        {/* Inline Aktionsleiste unter ausgewaehlter Nachricht */}
+        {/* Inline Aktionsleiste unter ausgewählter Nachricht */}
         {selectedMessage?.id === message.id && !showReactionPicker && (
           <div
             style={{

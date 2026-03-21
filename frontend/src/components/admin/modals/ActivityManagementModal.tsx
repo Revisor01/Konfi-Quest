@@ -100,7 +100,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
     target_role: targetRole
   });
 
-  // isDirty nach Initialisierung bei jeder formData-Aenderung setzen
+  // isDirty nach Initialisierung bei jeder formData-Änderung setzen
   useEffect(() => {
     if (initializedRef.current) {
       setIsDirty(true);

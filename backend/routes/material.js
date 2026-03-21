@@ -74,7 +74,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
     }
   });
 
-  // DELETE /tags/:id - Tag loeschen (CASCADE loescht Zuordnungen)
+  // DELETE /tags/:id - Tag löschen (CASCADE löscht Zuordnungen)
   router.delete('/tags/:id', rbacVerifier, requireOrgAdmin, async (req, res) => {
     try {
       const { rowCount } = await db.query(
@@ -85,10 +85,10 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       if (rowCount === 0) {
         return res.status(404).json({ error: 'Tag nicht gefunden' });
       }
-      res.json({ message: 'Tag geloescht' });
+      res.json({ message: 'Tag gelöscht' });
     } catch (err) {
-      console.error('Fehler beim Loeschen des Tags:', err.message);
-      res.status(500).json({ error: 'Fehler beim Loeschen des Tags' });
+      console.error('Fehler beim Löschen des Tags:', err.message);
+      res.status(500).json({ error: 'Fehler beim Löschen des Tags' });
     }
   });
 
@@ -146,7 +146,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       if (materials.length > 0) {
         const materialIds = materials.map(m => m.id);
 
-        // Tags fuer alle Materialien laden
+        // Tags für alle Materialien laden
         const { rows: tags } = await db.query(
           `SELECT mft.material_id, mt.id, mt.name
            FROM material_file_tags mft
@@ -155,7 +155,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
           [materialIds]
         );
 
-        // Events fuer alle Materialien laden
+        // Events für alle Materialien laden
         const { rows: matEvents } = await db.query(
           `SELECT me.material_id, e.id, e.name
            FROM material_events me
@@ -176,7 +176,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
           eventsByMaterial[ev.material_id].push({ id: ev.id, name: ev.name });
         }
 
-        // Jahrgaenge fuer alle Materialien laden
+        // Jahrgänge für alle Materialien laden
         const { rows: matJahrgaenge } = await db.query(
           `SELECT mj.material_id, j.id, j.name
            FROM material_jahrgaenge mj
@@ -320,7 +320,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         [title.trim(), description || null, req.user.organization_id, req.user.id]
       );
 
-      // Events zuordnen (Many-to-Many) - unterstuetzt event_ids Array oder legacy event_id
+      // Events zuordnen (Many-to-Many) - unterstützt event_ids Array oder legacy event_id
       const resolvedEventIds = event_ids || (event_id ? [event_id] : []);
       if (resolvedEventIds.length > 0) {
         const eventValues = resolvedEventIds.map((_, i) => `($1, $${i + 2})`).join(', ');
@@ -331,7 +331,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         );
       }
 
-      // Jahrgaenge zuordnen (Many-to-Many) - unterstuetzt jahrgang_ids Array oder legacy jahrgang_id
+      // Jahrgaenge zuordnen (Many-to-Many) - unterstützt jahrgang_ids Array oder legacy jahrgang_id
       const resolvedJahrgangIds = jahrgang_ids || (jahrgang_id ? [jahrgang_id] : []);
       if (resolvedJahrgangIds.length > 0) {
         const jgValues = resolvedJahrgangIds.map((_, i) => `($1, $${i + 2})`).join(', ');
@@ -366,7 +366,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       const orgId = req.user.organization_id;
       const materialId = req.params.id;
 
-      // Pruefen ob Material existiert und zur Organisation gehoert
+      // Prüfen ob Material existiert und zur Organisation gehört
       const { rows: [existing] } = await db.query(
         'SELECT id FROM materials WHERE id = $1 AND organization_id = $2',
         [materialId, orgId]
@@ -400,7 +400,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         );
       }
 
-      // Events aktualisieren (DELETE + INSERT) - unterstuetzt event_ids Array oder legacy event_id
+      // Events aktualisieren (DELETE + INSERT) - unterstützt event_ids Array oder legacy event_id
       const resolvedEventIds = event_ids !== undefined ? event_ids : (event_id !== undefined ? (event_id ? [event_id] : []) : undefined);
       if (resolvedEventIds !== undefined) {
         await db.query('DELETE FROM material_events WHERE material_id = $1', [materialId]);
@@ -414,7 +414,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         }
       }
 
-      // Jahrgaenge aktualisieren (DELETE + INSERT) - unterstuetzt jahrgang_ids Array oder legacy jahrgang_id
+      // Jahrgaenge aktualisieren (DELETE + INSERT) - unterstützt jahrgang_ids Array oder legacy jahrgang_id
       const resolvedJahrgangIds = jahrgang_ids !== undefined ? jahrgang_ids : (jahrgang_id !== undefined ? (jahrgang_id ? [jahrgang_id] : []) : undefined);
       if (resolvedJahrgangIds !== undefined) {
         await db.query('DELETE FROM material_jahrgaenge WHERE material_id = $1', [materialId]);
@@ -448,7 +448,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
     }
   });
 
-  // DELETE /:id - Material loeschen
+  // DELETE /:id - Material löschen
   router.delete('/:id', rbacVerifier, requireOrgAdmin, async (req, res) => {
     try {
       const orgId = req.user.organization_id;
@@ -471,7 +471,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         return res.status(404).json({ error: 'Material nicht gefunden' });
       }
 
-      // Dateien vom Dateisystem loeschen
+      // Dateien vom Dateisystem löschen
       const materialDir = path.join(__dirname, '..', 'uploads', 'material');
       for (const file of files) {
         try {
@@ -480,14 +480,14 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
             fs.unlinkSync(filePath);
           }
         } catch (fileErr) {
-          console.warn(`Konnte Datei ${file.stored_name} nicht loeschen:`, fileErr.message);
+          console.warn(`Konnte Datei ${file.stored_name} nicht löschen:`, fileErr.message);
         }
       }
 
-      res.json({ message: 'Material geloescht' });
+      res.json({ message: 'Material gelöscht' });
     } catch (err) {
-      console.error('Fehler beim Loeschen des Materials:', err.message);
-      res.status(500).json({ error: 'Fehler beim Loeschen des Materials' });
+      console.error('Fehler beim Löschen des Materials:', err.message);
+      res.status(500).json({ error: 'Fehler beim Löschen des Materials' });
     }
   });
 
@@ -501,7 +501,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       const orgId = req.user.organization_id;
       const materialId = req.params.id;
 
-      // Pruefen ob Material existiert und zur Organisation gehoert
+      // Prüfen ob Material existiert und zur Organisation gehört
       const { rows: [material] } = await db.query(
         'SELECT id FROM materials WHERE id = $1 AND organization_id = $2',
         [materialId, orgId]
@@ -543,10 +543,10 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
 
       // Path-Traversal-Schutz: Nur Hex-Hashes akzeptieren
       if (!/^[a-f0-9]{32}$/.test(filename)) {
-        return res.status(400).json({ error: 'Ungueltiger Dateiname' });
+        return res.status(400).json({ error: 'Ungültiger Dateiname' });
       }
 
-      // Pruefen ob Datei existiert und zur gleichen Organisation gehoert
+      // Prüfen ob Datei existiert und zur gleichen Organisation gehört
       const { rows: [fileRecord] } = await db.query(
         `SELECT mf.id, mf.original_name, mf.mime_type, mf.file_size
          FROM material_files mf
@@ -577,13 +577,13 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
     }
   });
 
-  // DELETE /files/:fileId - Einzelne Datei loeschen
+  // DELETE /files/:fileId - Einzelne Datei löschen
   router.delete('/files/:fileId', rbacVerifier, requireOrgAdmin, async (req, res) => {
     try {
       const orgId = req.user.organization_id;
       const fileId = req.params.fileId;
 
-      // Datei-Info holen und Organisation pruefen
+      // Datei-Info holen und Organisation prüfen
       const { rows: [fileRecord] } = await db.query(
         `SELECT mf.id, mf.stored_name, mf.material_id
          FROM material_files mf
@@ -596,10 +596,10 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         return res.status(404).json({ error: 'Datei nicht gefunden' });
       }
 
-      // DB-Eintrag loeschen
+      // DB-Eintrag löschen
       await db.query('DELETE FROM material_files WHERE id = $1', [fileId]);
 
-      // Datei vom Dateisystem loeschen
+      // Datei vom Dateisystem löschen
       const materialDir = path.join(__dirname, '..', 'uploads', 'material');
       const filePath = path.join(materialDir, fileRecord.stored_name);
       try {
@@ -607,16 +607,16 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
           fs.unlinkSync(filePath);
         }
       } catch (fileErr) {
-        console.warn(`Konnte Datei ${fileRecord.stored_name} nicht loeschen:`, fileErr.message);
+        console.warn(`Konnte Datei ${fileRecord.stored_name} nicht löschen:`, fileErr.message);
       }
 
       // updated_at aktualisieren
       await db.query('UPDATE materials SET updated_at = NOW() WHERE id = $1', [fileRecord.material_id]);
 
-      res.json({ message: 'Datei geloescht' });
+      res.json({ message: 'Datei gelöscht' });
     } catch (err) {
-      console.error('Fehler beim Loeschen der Datei:', err.message);
-      res.status(500).json({ error: 'Fehler beim Loeschen der Datei' });
+      console.error('Fehler beim Löschen der Datei:', err.message);
+      res.status(500).json({ error: 'Fehler beim Löschen der Datei' });
     }
   });
 

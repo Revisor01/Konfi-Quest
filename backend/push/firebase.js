@@ -1,6 +1,6 @@
 const admin = require('firebase-admin');
 
-// Firebase Admin initialisieren (Service Account wird spaeter hinzugefuegt)
+// Firebase Admin initialisieren (Service Account wird später hinzugefügt)
 let firebaseApp = null;
 
 const initializeFirebase = () => {
