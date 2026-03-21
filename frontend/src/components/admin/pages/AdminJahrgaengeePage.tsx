@@ -43,6 +43,8 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
+import { writeQueue } from '../../../services/writeQueue';
+import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -122,35 +124,53 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
       return;
     }
 
-    setLoading(true);
-    try {
-      const payload = {
-        name: formData.name.trim(),
-        confirmation_date: formData.confirmation_date.trim() || null,
-        gottesdienst_enabled: formData.gottesdienst_enabled,
-        gemeinde_enabled: formData.gemeinde_enabled,
-        target_gottesdienst: formData.target_gottesdienst,
-        target_gemeinde: formData.target_gemeinde
-      };
+    const payload = {
+      name: formData.name.trim(),
+      confirmation_date: formData.confirmation_date.trim() || null,
+      gottesdienst_enabled: formData.gottesdienst_enabled,
+      gemeinde_enabled: formData.gemeinde_enabled,
+      target_gottesdienst: formData.target_gottesdienst,
+      target_gemeinde: formData.target_gemeinde
+    };
 
-      if (jahrgang) {
-        await api.put(`/admin/jahrgaenge/${jahrgang.id}`, payload);
-        setSuccess('Jahrgang aktualisiert');
-      } else {
-        await api.post('/admin/jahrgaenge', payload);
-        setSuccess('Jahrgang erstellt');
+    if (networkMonitor.isOnline) {
+      setLoading(true);
+      try {
+        if (jahrgang) {
+          await api.put(`/admin/jahrgaenge/${jahrgang.id}`, payload);
+          setSuccess('Jahrgang aktualisiert');
+        } else {
+          await api.post('/admin/jahrgaenge', payload);
+          setSuccess('Jahrgang erstellt');
+        }
+
+        onSuccess();
+        handleClose();
+      } catch (error: any) {
+        if (error.response?.data?.error) {
+          setError(error.response.data.error);
+        } else {
+          setError('Fehler beim Speichern des Jahrgangs');
+        }
+      } finally {
+        setLoading(false);
       }
-      
+    } else {
+      await writeQueue.enqueue({
+        method: jahrgang ? 'PUT' : 'POST',
+        url: jahrgang ? `/admin/jahrgaenge/${jahrgang.id}` : '/admin/jahrgaenge',
+        body: payload,
+        maxRetries: 5,
+        hasFileUpload: false,
+        metadata: {
+          type: 'admin',
+          clientId: crypto.randomUUID(),
+          label: jahrgang ? 'Jahrgang bearbeiten' : 'Jahrgang erstellen'
+        }
+      });
+      setSuccess('Wird gespeichert sobald du wieder online bist');
       onSuccess();
       handleClose();
-    } catch (error: any) {
-      if (error.response?.data?.error) {
-        setError(error.response.data.error);
-      } else {
-        setError('Fehler beim Speichern des Jahrgangs');
-      }
-    } finally {
-      setLoading(false);
     }
   };
 

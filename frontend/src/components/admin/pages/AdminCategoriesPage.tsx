@@ -39,6 +39,8 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
+import { writeQueue } from '../../../services/writeQueue';
+import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -99,31 +101,49 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
       return;
     }
 
-    setLoading(true);
-    try {
-      const payload = {
-        name: formData.name.trim(),
-        description: formData.description.trim() || null
-      };
+    const payload = {
+      name: formData.name.trim(),
+      description: formData.description.trim() || null
+    };
 
-      if (category) {
-        await api.put(`/admin/categories/${category.id}`, payload);
-        setSuccess('Kategorie aktualisiert');
-      } else {
-        await api.post('/admin/categories', payload);
-        setSuccess('Kategorie erstellt');
+    if (networkMonitor.isOnline) {
+      setLoading(true);
+      try {
+        if (category) {
+          await api.put(`/admin/categories/${category.id}`, payload);
+          setSuccess('Kategorie aktualisiert');
+        } else {
+          await api.post('/admin/categories', payload);
+          setSuccess('Kategorie erstellt');
+        }
+
+        onSuccess();
+        handleClose();
+      } catch (error: any) {
+        if (error.response?.data?.error) {
+          setError(error.response.data.error);
+        } else {
+          setError('Fehler beim Speichern der Kategorie');
+        }
+      } finally {
+        setLoading(false);
       }
-      
+    } else {
+      await writeQueue.enqueue({
+        method: category ? 'PUT' : 'POST',
+        url: category ? `/admin/categories/${category.id}` : '/admin/categories',
+        body: payload,
+        maxRetries: 5,
+        hasFileUpload: false,
+        metadata: {
+          type: 'admin',
+          clientId: crypto.randomUUID(),
+          label: category ? 'Kategorie bearbeiten' : 'Kategorie erstellen'
+        }
+      });
+      setSuccess('Wird gespeichert sobald du wieder online bist');
       onSuccess();
       handleClose();
-    } catch (error: any) {
-      if (error.response?.data?.error) {
-        setError(error.response.data.error);
-      } else {
-        setError('Fehler beim Speichern der Kategorie');
-      }
-    } finally {
-      setLoading(false);
     }
   };
 

@@ -91,6 +91,8 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
+import { writeQueue } from '../../../services/writeQueue';
+import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -204,28 +206,42 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
       return;
     }
 
-    setLoading(true);
-    try {
-      if (certificateType) {
-        await api.put(`/teamer/certificate-types/${certificateType.id}`, {
-          name: name.trim(),
-          icon
-        });
-        setSuccess('Zertifikat aktualisiert');
-      } else {
-        await api.post('/teamer/certificate-types', {
-          name: name.trim(),
-          icon
-        });
-        setSuccess('Zertifikat erstellt');
-      }
+    const payload = { name: name.trim(), icon };
 
+    if (networkMonitor.isOnline) {
+      setLoading(true);
+      try {
+        if (certificateType) {
+          await api.put(`/teamer/certificate-types/${certificateType.id}`, payload);
+          setSuccess('Zertifikat aktualisiert');
+        } else {
+          await api.post('/teamer/certificate-types', payload);
+          setSuccess('Zertifikat erstellt');
+        }
+
+        onSuccess();
+        handleClose();
+      } catch (error: any) {
+        setError(error.response?.data?.error || 'Fehler beim Speichern');
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      await writeQueue.enqueue({
+        method: certificateType ? 'PUT' : 'POST',
+        url: certificateType ? `/teamer/certificate-types/${certificateType.id}` : '/teamer/certificate-types',
+        body: payload,
+        maxRetries: 5,
+        hasFileUpload: false,
+        metadata: {
+          type: 'admin',
+          clientId: crypto.randomUUID(),
+          label: certificateType ? 'Zertifikat bearbeiten' : 'Zertifikat erstellen'
+        }
+      });
+      setSuccess('Wird gespeichert sobald du wieder online bist');
       onSuccess();
       handleClose();
-    } catch (error: any) {
-      setError(error.response?.data?.error || 'Fehler beim Speichern');
-    } finally {
-      setLoading(false);
     }
   };
 
