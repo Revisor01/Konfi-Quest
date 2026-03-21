@@ -64,8 +64,8 @@ Listen-Elemente zeigen Queue-Status als zusaetzliches Corner-Badge neben bestehe
 
 #### Online-Only Buttons
 
-- [ ] **OUI-11**: Online-only Buttons zeigen "Du bist offline" als Text und sind disabled wenn offline
-- [ ] **OUI-12**: Kein globales Offline-Banner — nur kontextbezogene Anzeigen an betroffenen Elementen
+- [x] **OUI-11**: Online-only Buttons zeigen "Du bist offline" als Text und sind disabled wenn offline
+- [x] **OUI-12**: Kein globales Offline-Banner — nur kontextbezogene Anzeigen an betroffenen Elementen
 
 #### Fire-and-Forget
 
@@ -135,27 +135,27 @@ Queue-faehige Aktionen werden bei Offline in eine persistente Queue geschrieben 
 
 Diese Aktionen zeigen "Du bist offline" am Button wenn offline. Keine Queue.
 
-- [ ] **OOA-01**: Punkte vergeben (Server-Autoritaet, Duplikat-Risiko bei zwei Admins)
-- [ ] **OOA-02**: Konfi befoerdern zu Teamer (Sicherheitskritisch, Rollen-Aenderung)
-- [ ] **OOA-03**: Konfi bearbeiten (Jahrgang-Zuweisung, Teamer-Since)
-- [ ] **OOA-04**: Event buchen/abmelden (Konfi) — Kapazitaetspruefung, Wartelisten-Logik
-- [ ] **OOA-05**: Event absagen — loest Push-Notifications aus, muss sofort passieren
-- [ ] **OOA-06**: Event loeschen / Serie loeschen — destruktiv, nicht umkehrbar
-- [ ] **OOA-07**: Chat-Raum erstellen (braucht Server-generierte Room-ID + Teilnehmer-Validierung)
-- [ ] **OOA-08**: Chat-Raum loeschen — destruktiv
-- [ ] **OOA-09**: Chat-Mitglieder verwalten (hinzufuegen/entfernen) — Verwirrend wenn verzoegert
+- [x] **OOA-01**: Punkte vergeben (Server-Autoritaet, Duplikat-Risiko bei zwei Admins)
+- [x] **OOA-02**: Konfi befoerdern zu Teamer (Sicherheitskritisch, Rollen-Aenderung)
+- [x] **OOA-03**: Konfi bearbeiten (Jahrgang-Zuweisung, Teamer-Since)
+- [x] **OOA-04**: Event buchen/abmelden (Konfi) — Kapazitaetspruefung, Wartelisten-Logik
+- [x] **OOA-05**: Event absagen — loest Push-Notifications aus, muss sofort passieren
+- [x] **OOA-06**: Event loeschen / Serie loeschen — destruktiv, nicht umkehrbar
+- [x] **OOA-07**: Chat-Raum erstellen (braucht Server-generierte Room-ID + Teilnehmer-Validierung)
+- [x] **OOA-08**: Chat-Raum loeschen — destruktiv
+- [x] **OOA-09**: Chat-Mitglieder verwalten (hinzufuegen/entfernen) — Verwirrend wenn verzoegert
 - [x] **OOA-10**: Chat verlassen — Server muss Teilnehmer sofort entfernen
 - [x] **OOA-11**: Chat-Nachricht loeschen — Server muss sofort loeschen + WebSocket-Event
-- [ ] **OOA-12**: Passwort aendern — Sicherheitskritisch
-- [ ] **OOA-13**: E-Mail aendern — Server-Validierung (Format, Duplikat)
+- [x] **OOA-12**: Passwort aendern — Sicherheitskritisch
+- [x] **OOA-13**: E-Mail aendern — Server-Validierung (Format, Duplikat)
 - [x] **OOA-14**: QR-Check-in — Server-Validierung (Zeitfenster, Token)
 - [x] **OOA-15**: QR-Code generieren — Server generiert JWT
-- [ ] **OOA-16**: Event-Chat erstellen — Server erstellt Raum + Teilnehmer
-- [ ] **OOA-17**: Konfi registrieren — Server-Validierung (Username, Invite-Code)
-- [ ] **OOA-18**: Invite-Code erstellen/verlaengern/loeschen — Server generiert Code
-- [ ] **OOA-19**: Organisation CRUD (Super-Admin) — sehr selten, Sicherheitskritisch
-- [ ] **OOA-20**: User CRUD (Rollen-Zuweisung, Jahrgangs-Zuweisung)
-- [ ] **OOA-21**: Passwort zuruecksetzen / Passwort-Reset anfordern
+- [x] **OOA-16**: Event-Chat erstellen — Server erstellt Raum + Teilnehmer
+- [x] **OOA-17**: Konfi registrieren — Server-Validierung (Username, Invite-Code)
+- [x] **OOA-18**: Invite-Code erstellen/verlaengern/loeschen — Server generiert Code
+- [x] **OOA-19**: Organisation CRUD (Super-Admin) — sehr selten, Sicherheitskritisch
+- [x] **OOA-20**: User CRUD (Rollen-Zuweisung, Jahrgangs-Zuweisung)
+- [x] **OOA-21**: Passwort zuruecksetzen / Passwort-Reset anfordern
 - [x] **OOA-22**: Passwort regenerieren (Admin fuer Konfi)
 - [x] **OOA-23**: Konfi loeschen — destruktiv
 - [x] **OOA-24**: Aktivitaet loeschen — destruktiv
@@ -171,12 +171,12 @@ Diese Aktionen zeigen "Du bist offline" am Button wenn offline. Keine Queue.
 - [x] **OOA-34**: Zertifikat bei Konfi entfernen — destruktiv
 - [x] **OOA-35**: Konfi Antrag loeschen — destruktiv
 - [x] **OOA-36**: Antrag loeschen (Admin) — destruktiv
-- [ ] **OOA-37**: Teilnehmer zu Event hinzufuegen — Server-Validierung (Kapazitaet)
-- [ ] **OOA-38**: Teilnehmer von Event entfernen — Nachrueck-Logik
-- [ ] **OOA-39**: Teilnehmer-Status aendern (Anwesenheit) — Server-Validierung
-- [ ] **OOA-40**: Teilnehmer-Wartelisten-Status aendern — Nachrueck-Logik
-- [ ] **OOA-41**: Zertifikat einem Konfi ausstellen — Server-Autoritaet
-- [ ] **OOA-42**: Jahrgangs-Chat erstellen (Admin bei Konfi-Erstellung)
+- [x] **OOA-37**: Teilnehmer zu Event hinzufuegen — Server-Validierung (Kapazitaet)
+- [x] **OOA-38**: Teilnehmer von Event entfernen — Nachrueck-Logik
+- [x] **OOA-39**: Teilnehmer-Status aendern (Anwesenheit) — Server-Validierung
+- [x] **OOA-40**: Teilnehmer-Wartelisten-Status aendern — Nachrueck-Logik
+- [x] **OOA-41**: Zertifikat einem Konfi ausstellen — Server-Autoritaet
+- [x] **OOA-42**: Jahrgangs-Chat erstellen (Admin bei Konfi-Erstellung)
 
 ### Sync (SYN)
 
@@ -237,8 +237,8 @@ Deferred. Onboarding, Landing Website, Readme, Wiki.
 | OUI-08 | Phase 59 | Complete |
 | OUI-09 | Phase 59 | Complete |
 | OUI-10 | Phase 59 | Complete |
-| OUI-11 | Phase 59 | Pending |
-| OUI-12 | Phase 59 | Pending |
+| OUI-11 | Phase 59 | Complete |
+| OUI-12 | Phase 59 | Complete |
 | OUI-13 | Phase 60 | Pending |
 | QUE-K01 | Phase 60 | Pending |
 | QUE-K02 | Phase 60 | Pending |
@@ -281,27 +281,27 @@ Deferred. Onboarding, Landing Website, Readme, Wiki.
 | QUE-I03 | Phase 60 | Pending |
 | QUE-I04 | Phase 60 | Pending |
 | QUE-I05 | Phase 60 | Pending |
-| OOA-01 | Phase 59 | Pending |
-| OOA-02 | Phase 59 | Pending |
-| OOA-03 | Phase 59 | Pending |
-| OOA-04 | Phase 59 | Pending |
-| OOA-05 | Phase 59 | Pending |
-| OOA-06 | Phase 59 | Pending |
-| OOA-07 | Phase 59 | Pending |
-| OOA-08 | Phase 59 | Pending |
-| OOA-09 | Phase 59 | Pending |
+| OOA-01 | Phase 59 | Complete |
+| OOA-02 | Phase 59 | Complete |
+| OOA-03 | Phase 59 | Complete |
+| OOA-04 | Phase 59 | Complete |
+| OOA-05 | Phase 59 | Complete |
+| OOA-06 | Phase 59 | Complete |
+| OOA-07 | Phase 59 | Complete |
+| OOA-08 | Phase 59 | Complete |
+| OOA-09 | Phase 59 | Complete |
 | OOA-10 | Phase 59 | Complete |
 | OOA-11 | Phase 59 | Complete |
-| OOA-12 | Phase 59 | Pending |
-| OOA-13 | Phase 59 | Pending |
+| OOA-12 | Phase 59 | Complete |
+| OOA-13 | Phase 59 | Complete |
 | OOA-14 | Phase 59 | Complete |
 | OOA-15 | Phase 59 | Complete |
-| OOA-16 | Phase 59 | Pending |
-| OOA-17 | Phase 59 | Pending |
-| OOA-18 | Phase 59 | Pending |
-| OOA-19 | Phase 59 | Pending |
-| OOA-20 | Phase 59 | Pending |
-| OOA-21 | Phase 59 | Pending |
+| OOA-16 | Phase 59 | Complete |
+| OOA-17 | Phase 59 | Complete |
+| OOA-18 | Phase 59 | Complete |
+| OOA-19 | Phase 59 | Complete |
+| OOA-20 | Phase 59 | Complete |
+| OOA-21 | Phase 59 | Complete |
 | OOA-22 | Phase 59 | Complete |
 | OOA-23 | Phase 59 | Complete |
 | OOA-24 | Phase 59 | Complete |
@@ -317,12 +317,12 @@ Deferred. Onboarding, Landing Website, Readme, Wiki.
 | OOA-34 | Phase 59 | Complete |
 | OOA-35 | Phase 59 | Complete |
 | OOA-36 | Phase 59 | Complete |
-| OOA-37 | Phase 59 | Pending |
-| OOA-38 | Phase 59 | Pending |
-| OOA-39 | Phase 59 | Pending |
-| OOA-40 | Phase 59 | Pending |
-| OOA-41 | Phase 59 | Pending |
-| OOA-42 | Phase 59 | Pending |
+| OOA-37 | Phase 59 | Complete |
+| OOA-38 | Phase 59 | Complete |
+| OOA-39 | Phase 59 | Complete |
+| OOA-40 | Phase 59 | Complete |
+| OOA-41 | Phase 59 | Complete |
+| OOA-42 | Phase 59 | Complete |
 | SYN-01 | Phase 62 | Pending |
 | SYN-02 | Phase 62 | Pending |
 | SYN-03 | Phase 62 | Pending |

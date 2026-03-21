@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: App-Resilienz
 status: unknown
-stopped_at: Completed 59-03-PLAN.md (Online-Only Guards Pages/Views)
-last_updated: "2026-03-21T09:40:20.051Z"
+stopped_at: Completed 59-02-PLAN.md (Modal Online-Only Buttons)
+last_updated: "2026-03-21T09:41:37.107Z"
 progress:
   total_phases: 15
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 15
-  completed_plans: 14
+  completed_plans: 15
 ---
 
 # Project State
@@ -56,6 +56,8 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 59]: Queue-Status Icons neben Zeitstempel statt separater Bereich
 - [Phase 59]: Handler-Guards + Button-Disable auf beiden Ebenen fuer doppelte Offline-Sicherheit
 - [Phase 59]: QRScannerModal: Inline-Banner statt Alert bei Offline-Scan
+- [Phase 59]: Icon-only Submit-Buttons zeigen 'Du bist offline' als Text statt Icon wenn offline
+- [Phase 59]: Action-Handler ohne Submit-Button haben if (\!isOnline) return; Guard
 
 ### Roadmap Evolution
 
@@ -81,6 +83,6 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-03-21T09:40:20.048Z
-Stopped at: Completed 59-03-PLAN.md (Online-Only Guards Pages/Views)
+Last session: 2026-03-21T09:41:37.104Z
+Stopped at: Completed 59-02-PLAN.md (Modal Online-Only Buttons)
 Resume file: None
