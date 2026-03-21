@@ -257,11 +257,13 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                     }}
                   >
                     {/* Eselsohr-Style Corner Badge */}
-                    <div
-                      className="app-corner-badge"
-                      style={{ backgroundColor: typeColor }}
-                    >
-                      +{activity.points}P
+                    <div className="app-corner-badges">
+                      <div
+                        className="app-corner-badge"
+                        style={{ backgroundColor: typeColor }}
+                      >
+                        +{activity.points}P
+                      </div>
                     </div>
 
                     <div className="app-list-item__row">

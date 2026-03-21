@@ -410,11 +410,13 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                             }}
                           >
                             {/* Eselsohr-Style Corner Badge - Chat-Typ */}
-                            <div
-                              className="app-corner-badge"
-                              style={{ backgroundColor: color }}
-                            >
-                              {getRoomSubtitle(room)}
+                            <div className="app-corner-badges">
+                              <div
+                                className="app-corner-badge"
+                                style={{ backgroundColor: color }}
+                              >
+                                {getRoomSubtitle(room)}
+                              </div>
                             </div>
 
                             <div className="app-list-item__row">

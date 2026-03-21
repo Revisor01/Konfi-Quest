@@ -278,15 +278,16 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                               style={{ cursor: 'pointer', position: 'relative', background: isSelected ? (activity.type === 'gottesdienst' ? 'rgba(0, 122, 255, 0.08)' : 'rgba(5, 150, 105, 0.08)') : undefined }}
                             >
                               {/* Punkte Eselsohr oben rechts */}
-                              <div
-                                className="app-corner-badge"
-                                style={{
-                                  background: `linear-gradient(135deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
-                                  fontWeight: '700',
-                                  whiteSpace: 'nowrap'
-                                }}
-                              >
-                                +{activity.points}P
+                              <div className="app-corner-badges">
+                                <div
+                                  className="app-corner-badge"
+                                  style={{
+                                    background: `linear-gradient(135deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
+                                    whiteSpace: 'nowrap'
+                                  }}
+                                >
+                                  +{activity.points}P
+                                </div>
                               </div>
 
                               <div className="app-list-item__row">

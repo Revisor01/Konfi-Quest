@@ -121,11 +121,13 @@ console.error('Logout error:', error);
                 }}
               >
                 {pushNotificationsPermission === 'granted' && (
-                  <div
-                    className="app-corner-badge"
-                    style={{ backgroundColor: '#059669' }}
-                  >
-                    Aktiviert
+                  <div className="app-corner-badges">
+                    <div
+                      className="app-corner-badge"
+                      style={{ backgroundColor: '#059669' }}
+                    >
+                      Aktiviert
+                    </div>
                   </div>
                 )}
                 <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">

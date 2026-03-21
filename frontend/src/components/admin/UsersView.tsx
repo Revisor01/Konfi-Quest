@@ -244,11 +244,13 @@ const UsersView: React.FC<UsersViewProps> = ({
                     style={{ borderLeftColor: roleColor, opacity: user.is_active ? 1 : 0.6 }}
                   >
                     {/* Eselsohr-Style Corner Badge */}
-                    <div
-                      className="app-corner-badge"
-                      style={{ backgroundColor: roleColor }}
-                    >
-                      {user.role_name === 'org_admin' ? 'Admin' : user.role_name === 'admin' ? 'Hauptamt' : 'Team'}
+                    <div className="app-corner-badges">
+                      <div
+                        className="app-corner-badge"
+                        style={{ backgroundColor: roleColor }}
+                      >
+                        {user.role_name === 'org_admin' ? 'Admin' : user.role_name === 'admin' ? 'Hauptamt' : 'Team'}
+                      </div>
                     </div>
 
                     <div className="app-list-item__row">

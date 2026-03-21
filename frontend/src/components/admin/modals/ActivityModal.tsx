@@ -215,11 +215,13 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
                       >
                         {/* Corner Badge - nur bei Nicht-Teamer anzeigen */}
                         {targetRole !== 'teamer' && (
-                          <div
-                            className="app-corner-badge"
-                            style={{ backgroundColor: typeColor }}
-                          >
-                            +{activity.points}P
+                          <div className="app-corner-badges">
+                            <div
+                              className="app-corner-badge"
+                              style={{ backgroundColor: typeColor }}
+                            >
+                              +{activity.points}P
+                            </div>
                           </div>
                         )}
 

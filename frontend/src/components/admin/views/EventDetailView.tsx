@@ -884,8 +884,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                       {/* Slot Header */}
                       <div className={`app-list-item ${isFull ? 'app-list-item--danger' : 'app-list-item--success'}`} >
                         {/* Corner Badge für Verfügbar/Voll */}
-                        <div className={`app-corner-badge ${isFull ? 'app-corner-badge--danger' : 'app-corner-badge--success'}`}>
-                          {isFull ? 'Voll' : 'Frei'}
+                        <div className="app-corner-badges">
+                          <div className={`app-corner-badge ${isFull ? 'app-corner-badge--danger' : 'app-corner-badge--success'}`}>
+                            {isFull ? 'Voll' : 'Frei'}
+                          </div>
                         </div>
                         <div className="app-list-item__row">
                           <div className="app-list-item__main">
@@ -926,8 +928,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                                 >
                                   <div className="app-list-item app-list-item--booked app-event-detail__list-item-flush">
                                     {/* Eselsohr-Style Status Badge */}
-                                    <div className={`app-corner-badge ${cornerBadgeClass}`}>
-                                      {statusText}
+                                    <div className="app-corner-badges">
+                                      <div className={`app-corner-badge ${cornerBadgeClass}`}>
+                                        {statusText}
+                                      </div>
                                     </div>
                                     <div className="app-list-item__row">
                                       <div className="app-list-item__main">
@@ -1001,8 +1005,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                       onClick={() => window.location.href = `/admin/events/${seriesEvent.id}`}
                     >
                       {/* Eselsohr-Style Status Badge */}
-                      <div className={`app-corner-badge ${isFull ? 'app-corner-badge--danger' : 'app-corner-badge--success'}`}>
-                        {isFull ? 'Voll' : 'Frei'}
+                      <div className="app-corner-badges">
+                        <div className={`app-corner-badge ${isFull ? 'app-corner-badge--danger' : 'app-corner-badge--success'}`}>
+                          {isFull ? 'Voll' : 'Frei'}
+                        </div>
                       </div>
                       <div className="app-list-item__row">
                         <div className="app-list-item__main">
@@ -1100,8 +1106,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   }}
                 >
                   <div className={`app-list-item ${listItemClass} app-event-detail__list-item-flush`}>
-                    <div className={`app-corner-badge ${cornerBadgeClass}`}>
-                      {statusText}
+                    <div className="app-corner-badges">
+                      <div className={`app-corner-badge ${cornerBadgeClass}`}>
+                        {statusText}
+                      </div>
                     </div>
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">

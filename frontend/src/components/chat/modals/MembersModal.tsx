@@ -310,11 +310,13 @@ const MembersModal: React.FC<MembersModalProps> = ({
         style={{ cursor: isSelectable ? 'pointer' : 'default', position: 'relative', overflow: 'hidden', width: '100%' }}
       >
         {/* Eselsohr mit Rolle/Funktion */}
-        <div
-          className="app-corner-badge"
-          style={{ backgroundColor: badgeColor }}
-        >
-          {roleText}
+        <div className="app-corner-badges">
+          <div
+            className="app-corner-badge"
+            style={{ backgroundColor: badgeColor }}
+          >
+            {roleText}
+          </div>
         </div>
 
         <div className="app-list-item__row">

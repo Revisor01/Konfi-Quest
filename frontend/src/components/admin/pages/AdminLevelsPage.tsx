@@ -247,11 +247,13 @@ const AdminLevelsPage: React.FC = () => {
                               style={{ borderLeftColor: level.color || '#ec4899' }}
                             >
                               {/* Corner Badge für Punkte */}
-                              <div
-                                className="app-corner-badge"
-                                style={{ backgroundColor: level.color || '#ec4899' }}
-                              >
-                                {level.points_required}P
+                              <div className="app-corner-badges">
+                                <div
+                                  className="app-corner-badge"
+                                  style={{ backgroundColor: level.color || '#ec4899' }}
+                                >
+                                  {level.points_required}P
+                                </div>
                               </div>
                               <div className="app-list-item__row">
                                 <div className="app-list-item__main">

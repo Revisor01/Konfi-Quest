@@ -321,11 +321,13 @@ const EventsView: React.FC<EventsViewProps> = ({
                 >
                   {/* Eselsohr-Style Corner Badge */}
                   {showBadge && (
-                    <div
-                      className="app-corner-badge"
-                      style={{ backgroundColor: statusColor }}
-                    >
-                      {statusText}
+                    <div className="app-corner-badges">
+                      <div
+                        className="app-corner-badge"
+                        style={{ backgroundColor: statusColor }}
+                      >
+                        {statusText}
+                      </div>
                     </div>
                   )}
 

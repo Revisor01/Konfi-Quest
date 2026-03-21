@@ -795,13 +795,15 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                           }}
                         >
                           {/* Corner Badge für Punkte */}
-                          <div
-                            className="app-corner-badge"
-                            style={{
-                              backgroundColor: bonus.type === 'gottesdienst' ? '#3b82f6' : '#059669'
-                            }}
-                          >
-                            +{bonus.points}P
+                          <div className="app-corner-badges">
+                            <div
+                              className="app-corner-badge"
+                              style={{
+                                backgroundColor: bonus.type === 'gottesdienst' ? '#3b82f6' : '#059669'
+                              }}
+                            >
+                              +{bonus.points}P
+                            </div>
                           </div>
                           <div className="app-list-item__row">
                             <div className="app-list-item__main">
@@ -893,13 +895,15 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                       }}
                     >
                       {/* Corner Badge für Punkte */}
-                      <div
-                        className="app-corner-badge"
-                        style={{
-                          backgroundColor: eventPoint.point_type === 'gottesdienst' ? '#3b82f6' : '#059669'
-                        }}
-                      >
-                        +{eventPoint.points}P
+                      <div className="app-corner-badges">
+                        <div
+                          className="app-corner-badge"
+                          style={{
+                            backgroundColor: eventPoint.point_type === 'gottesdienst' ? '#3b82f6' : '#059669'
+                          }}
+                        >
+                          +{eventPoint.points}P
+                        </div>
                       </div>
                       <div className="app-list-item__row">
                         <div className="app-list-item__main">
@@ -1077,8 +1081,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                           }}
                         >
                           {event.teamer_only && (
-                            <div className="app-corner-badge" style={{ backgroundColor: '#5b21b6' }}>
-                              TEAM
+                            <div className="app-corner-badges">
+                              <div className="app-corner-badge" style={{ backgroundColor: '#5b21b6' }}>
+                                TEAM
+                              </div>
                             </div>
                           )}
                           <div className="app-list-item__row">
@@ -1158,17 +1164,19 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                         >
                           {/* Corner Badge fuer Punkte - bei Teamer ausblenden */}
                           {!isTeamer && (
-                            <div
-                              className="app-corner-badge"
-                              style={{
-                                backgroundColor: activity.isPending
-                                  ? '#f59e0b'
-                                  : activity.type === 'gottesdienst'
-                                  ? '#3b82f6'
-                                  : '#059669'
-                              }}
-                            >
-                              {activity.isPending ? '?' : '+'}{activity.points}P
+                            <div className="app-corner-badges">
+                              <div
+                                className="app-corner-badge"
+                                style={{
+                                  backgroundColor: activity.isPending
+                                    ? '#f59e0b'
+                                    : activity.type === 'gottesdienst'
+                                    ? '#3b82f6'
+                                    : '#059669'
+                                }}
+                              >
+                                {activity.isPending ? '?' : '+'}{activity.points}P
+                              </div>
                             </div>
                           )}
                           <div className="app-list-item__row">
@@ -1278,8 +1286,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                             }}
                           >
                             {cert.status === 'expired' && (
-                              <div className="app-corner-badge" style={{ backgroundColor: '#ef4444' }}>
-                                Abgelaufen
+                              <div className="app-corner-badges">
+                                <div className="app-corner-badge" style={{ backgroundColor: '#ef4444' }}>
+                                  Abgelaufen
+                                </div>
                               </div>
                             )}
                             <div className="app-list-item__row">
@@ -1446,8 +1456,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                           className="app-list-item"
                           style={{ borderLeftColor: categoryColor, position: 'relative', overflow: 'hidden' }}
                         >
-                          <div className="app-corner-badge" style={{ backgroundColor: categoryColor }}>
-                            +{entry.points}P
+                          <div className="app-corner-badges">
+                            <div className="app-corner-badge" style={{ backgroundColor: categoryColor }}>
+                              +{entry.points}P
+                            </div>
                           </div>
                           <div className="app-list-item__row">
                             <div className="app-list-item__main">

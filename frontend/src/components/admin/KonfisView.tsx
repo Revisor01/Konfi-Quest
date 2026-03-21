@@ -299,11 +299,13 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                     overflow: 'hidden'
                   }}
                 >
-                  <div
-                    className="app-corner-badge"
-                    style={{ backgroundColor: '#5b21b6' }}
-                  >
-                    TEAM
+                  <div className="app-corner-badges">
+                    <div
+                      className="app-corner-badge"
+                      style={{ backgroundColor: '#5b21b6' }}
+                    >
+                      TEAM
+                    </div>
                   </div>
                   <div className="app-list-item__row">
                     <div className="app-list-item__main">
