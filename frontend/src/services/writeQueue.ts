@@ -147,6 +147,51 @@ async function resolveLocalPhoto(body: any): Promise<void> {
   delete body._photoFileName;
 }
 
+// --- Chat-Bild-Upload Helfer fuer Queue-Items mit _localFilePath ---
+
+async function resolveLocalFile(item: QueueItem): Promise<void> {
+  const body = item.body;
+  if (!body?._localFilePath) return;
+
+  // Datei aus Capacitor Filesystem lesen
+  const fileResult = await Filesystem.readFile({
+    path: body._localFilePath,
+    directory: Directory.Data,
+  });
+
+  // Base64 zu Blob konvertieren
+  const base64Data = typeof fileResult.data === 'string'
+    ? fileResult.data
+    : '';
+  const rawBase64 = base64Data.includes(',') ? base64Data.split(',')[1] : base64Data;
+  const byteChars = atob(rawBase64);
+  const byteArray = new Uint8Array(byteChars.length);
+  for (let i = 0; i < byteChars.length; i++) {
+    byteArray[i] = byteChars.charCodeAt(i);
+  }
+  const blob = new Blob([byteArray], { type: body._fileType || 'image/jpeg' });
+
+  // FormData aufbauen (Chat-Bild-Upload)
+  const formData = new FormData();
+  formData.append('content', body.content || '');
+  formData.append('file', blob, body._fileName || 'image.jpg');
+  if (body.client_id) formData.append('client_id', body.client_id);
+
+  // Item-Body durch FormData ersetzen und URL beibehalten
+  item.body = formData;
+  item.headers = { 'Content-Type': 'multipart/form-data' };
+
+  // Lokale Datei loeschen (best-effort)
+  try {
+    await Filesystem.deleteFile({
+      path: body._localFilePath,
+      directory: Directory.Data,
+    });
+  } catch {
+    // Ignorieren
+  }
+}
+
 // --- Oeffentliche API ---
 
 async function enqueue(
@@ -176,10 +221,16 @@ async function flush(): Promise<FlushResult> {
     while (items.length > 0) {
       const item = items[0];
       try {
-        // Lokales Foto zuerst hochladen falls vorhanden
+        // Lokales Foto zuerst hochladen falls vorhanden (Aktivitaets-Antraege)
         if (item.body?._localPhotoPath) {
           await resolveLocalPhoto(item.body);
           await _save(items); // Body-Update persistieren
+        }
+
+        // Chat-Bild aus lokalem Filesystem zu FormData konvertieren
+        if (item.body?._localFilePath) {
+          await resolveLocalFile(item);
+          // Nicht persistieren — FormData ist nicht serialisierbar
         }
 
         const config: any = {};
