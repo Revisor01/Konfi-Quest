@@ -43,6 +43,8 @@ import { FileOpener } from '@capacitor-community/file-opener';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
+import { writeQueue } from '../../../services/writeQueue';
+import { networkMonitor } from '../../../services/networkMonitor';
 import FileViewerModal from '../../chat/modals/FileViewerModal';
 
 interface MaterialFile {
@@ -251,8 +253,6 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
 
     await guard(async () => {
       try {
-        let materialId = material?.id;
-
         const payload: any = {
           title: title.trim(),
           description: description.trim() || null,
@@ -260,25 +260,47 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
           jahrgang_ids: jahrgangIds
         };
 
-        if (material) {
-          await api.put(`/material/${material.id}`, payload);
+        if (networkMonitor.isOnline) {
+          // Online-Pfad: direkt senden
+          let materialId = material?.id;
+
+          if (material) {
+            await api.put(`/material/${material.id}`, payload);
+          } else {
+            const res = await api.post('/material', payload);
+            materialId = res.data.id;
+          }
+
+          // Neue Dateien hochladen
+          if (newFiles.length > 0 && materialId) {
+            const formData = new FormData();
+            newFiles.forEach(file => {
+              formData.append('files', file);
+            });
+            await api.post(`/material/${materialId}/files`, formData, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+            });
+          }
+
+          setSuccess(material ? 'Material aktualisiert' : 'Material erstellt');
         } else {
-          const res = await api.post('/material', payload);
-          materialId = res.data.id;
+          // Offline-Pfad: Nur Metadaten queuen (Dateien nur online)
+          await writeQueue.enqueue({
+            method: material ? 'PUT' : 'POST',
+            url: material ? `/material/${material.id}` : '/material',
+            body: payload,
+            maxRetries: 5,
+            hasFileUpload: false,
+            metadata: { type: 'admin', clientId: crypto.randomUUID(), label: material ? 'Material bearbeiten' : 'Material erstellen' },
+          });
+
+          if (newFiles.length > 0) {
+            setSuccess('Material-Metadaten werden offline gespeichert. Dateien kannst du hochladen sobald du wieder online bist');
+          } else {
+            setSuccess('Material wird gespeichert sobald du wieder online bist');
+          }
         }
 
-        // Neue Dateien hochladen
-        if (newFiles.length > 0 && materialId) {
-          const formData = new FormData();
-          newFiles.forEach(file => {
-            formData.append('files', file);
-          });
-          await api.post(`/material/${materialId}/files`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
-        }
-
-        setSuccess(material ? 'Material aktualisiert' : 'Material erstellt');
         onSuccess();
       } catch (err: any) {
         setError(err.response?.data?.error || 'Fehler beim Speichern');
@@ -297,8 +319,8 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
           </IonButtons>
           <IonTitle>{material ? 'Material bearbeiten' : 'Neues Material'}</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={isSubmitting || !isOnline}>
-              {!isOnline ? 'Du bist offline' : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
+            <IonButton onClick={handleSave} disabled={isSubmitting}>
+              {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
             </IonButton>
           </IonButtons>
         </IonToolbar>

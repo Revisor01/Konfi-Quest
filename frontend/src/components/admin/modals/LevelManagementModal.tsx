@@ -82,6 +82,8 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
+import { writeQueue } from '../../../services/writeQueue';
+import { networkMonitor } from '../../../services/networkMonitor';
 
 // Level Icon Mapping
 const LEVEL_ICONS = {
@@ -230,12 +232,38 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
         is_active: formData.is_active !== false
       };
 
-      if (level?.id) {
-        await api.put(`/levels/${level.id}`, payload);
-        setSuccess('Level aktualisiert');
+      if (networkMonitor.isOnline) {
+        // Online-Pfad: direkt senden
+        if (level?.id) {
+          await api.put(`/levels/${level.id}`, payload);
+          setSuccess('Level aktualisiert');
+        } else {
+          await api.post('/levels', payload);
+          setSuccess('Level erstellt');
+        }
       } else {
-        await api.post('/levels', payload);
-        setSuccess('Level erstellt');
+        // Offline-Pfad: Queue-Fallback
+        if (level?.id) {
+          await writeQueue.enqueue({
+            method: 'PUT',
+            url: `/levels/${level.id}`,
+            body: payload,
+            maxRetries: 5,
+            hasFileUpload: false,
+            metadata: { type: 'admin', clientId: crypto.randomUUID(), label: 'Level bearbeiten' },
+          });
+          setSuccess('Level wird aktualisiert sobald du wieder online bist');
+        } else {
+          await writeQueue.enqueue({
+            method: 'POST',
+            url: '/levels',
+            body: payload,
+            maxRetries: 5,
+            hasFileUpload: false,
+            metadata: { type: 'admin', clientId: crypto.randomUUID(), label: 'Level erstellen' },
+          });
+          setSuccess('Level wird erstellt sobald du wieder online bist');
+        }
       }
       onSuccess();
       handleClose();
@@ -264,10 +292,10 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
           <IonButtons slot="end">
             <IonButton
               onClick={handleSubmit}
-              disabled={!isFormValid || loading || isSubmitting || !isOnline}
+              disabled={!isFormValid || loading || isSubmitting}
               className="app-modal-submit-btn app-modal-submit-btn--level"
             >
-              {!isOnline ? 'Du bist offline' : loading ? (
+              {loading ? (
                 <IonSpinner name="crescent" />
               ) : (
                 <IonIcon icon={checkmarkOutline} />
