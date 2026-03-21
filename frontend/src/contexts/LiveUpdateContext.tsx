@@ -15,7 +15,9 @@ export type LiveUpdateType =
   | 'activities'     // Aktivitäten-Verwaltung
   | 'categories'     // Kategorien-Verwaltung
   | 'jahrgaenge'     // Jahrgänge-Verwaltung
-  | 'levels';        // Level-Verwaltung
+  | 'levels'         // Level-Verwaltung
+  | 'users'          // Benutzer-Verwaltung
+  | 'organizations'; // Organisations-Verwaltung
 
 export interface LiveUpdateEvent {
   type: LiveUpdateType;
@@ -79,6 +81,8 @@ export const LiveUpdateProvider = ({ children }: { children: ReactNode }) => {
     socket.on('categoriesUpdate', (data: any) => handleLiveUpdate({ type: 'categories', action: 'refresh', data }));
     socket.on('jahrgaengeUpdate', (data: any) => handleLiveUpdate({ type: 'jahrgaenge', action: 'refresh', data }));
     socket.on('levelsUpdate', (data: any) => handleLiveUpdate({ type: 'levels', action: 'refresh', data }));
+    socket.on('usersUpdate', (data: any) => handleLiveUpdate({ type: 'users', action: 'refresh', data }));
+    socket.on('organizationsUpdate', (data: any) => handleLiveUpdate({ type: 'organizations', action: 'refresh', data }));
 
     return () => {
       socket.off('liveUpdate', handleLiveUpdate);
@@ -93,6 +97,8 @@ export const LiveUpdateProvider = ({ children }: { children: ReactNode }) => {
       socket.off('categoriesUpdate');
       socket.off('jahrgaengeUpdate');
       socket.off('levelsUpdate');
+      socket.off('usersUpdate');
+      socket.off('organizationsUpdate');
     };
   }, []);
 

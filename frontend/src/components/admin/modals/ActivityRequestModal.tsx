@@ -30,6 +30,7 @@ import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
+import { useLiveUpdate } from '../../../contexts/LiveUpdateContext';
 
 interface ActivityRequest {
   id: number;
@@ -63,6 +64,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
   onSuccess
 }) => {
   const { setSuccess, setError, isOnline } = useApp();
+  const { triggerRefresh } = useLiveUpdate();
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [request, setRequest] = useState<ActivityRequest | null>(null);
@@ -133,7 +135,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         try {
           await api.put(`/admin/activities/requests/${request.id}`, body);
           setSuccess(`Antrag von "${request.konfi_name}" ${selectedAction === 'approve' ? 'genehmigt' : 'abgelehnt'}`);
-          window.dispatchEvent(new CustomEvent('requestStatusChanged'));
+          triggerRefresh('requests');
           onSuccess();
           onClose();
         } catch (err: any) {
@@ -153,7 +155,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           }
         });
         setSuccess('Wird gespeichert sobald du wieder online bist');
-        window.dispatchEvent(new CustomEvent('requestStatusChanged'));
+        triggerRefresh('requests');
         onSuccess();
         onClose();
       }

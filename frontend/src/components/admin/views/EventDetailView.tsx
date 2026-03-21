@@ -60,6 +60,7 @@ import EventModal from '../modals/EventModal';
 import ParticipantManagementModal from '../modals/ParticipantManagementModal';
 import QRDisplayModal from '../modals/QRDisplayModal';
 import TeamerMaterialDetailPage from '../../teamer/pages/TeamerMaterialDetailPage';
+import { useLiveUpdate } from '../../../contexts/LiveUpdateContext';
 
 interface Category {
   id: number;
@@ -145,6 +146,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const pageRef = useRef<HTMLElement>(null);
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
   const { setSuccess, setError, isOnline } = useApp();
+  const { triggerRefresh } = useLiveUpdate();
   const [presentActionSheet] = useIonActionSheet();
   const [presentAlert] = useIonAlert();
 
@@ -408,7 +410,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       }
 
       // Trigger events update for main list
-      window.dispatchEvent(new CustomEvent('events-updated'));
+      triggerRefresh('events');
     } catch (error) {
       // Rollback bei Fehler
       setParticipants(prev => prev.map(p =>
@@ -487,7 +489,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       await loadEventData(); // Reload to update list
 
       // Trigger events update for main list
-      window.dispatchEvent(new CustomEvent('events-updated'));
+      triggerRefresh('events');
     } catch (error) {
  console.error('Promote participant error:', error);
       setError('Fehler beim Bestätigen des Teilnehmers');
@@ -510,7 +512,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       await loadEventData(); // Reload to update list
 
       // Trigger events update for main list
-      window.dispatchEvent(new CustomEvent('events-updated'));
+      triggerRefresh('events');
     } catch (error) {
  console.error('Demote participant error:', error);
       setError('Fehler beim Verschieben auf Warteliste');
@@ -526,7 +528,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       await loadEventData(); // Reload to update list
 
       // Trigger events update for main list
-      window.dispatchEvent(new CustomEvent('events-updated'));
+      triggerRefresh('events');
     } catch (error) {
  console.error('Delete participant error:', error);
       setError('Fehler beim Entfernen des Teilnehmers');
@@ -550,7 +552,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               await api.put(`/events/${eventData?.id}/cancel`);
               setSuccess('Event wurde abgesagt');
               loadEventData();
-              window.dispatchEvent(new CustomEvent('events-updated'));
+              triggerRefresh('events');
             } catch (error: any) {
               setError(error.response?.data?.error || 'Fehler beim Absagen');
             }

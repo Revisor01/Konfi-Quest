@@ -55,6 +55,7 @@ import { useApp } from '../../../contexts/AppContext';
 import ActivityModal from '../modals/ActivityModal';
 import BonusModal from '../modals/BonusModal';
 import ActivityRings from './ActivityRings';
+import { useLiveUpdate } from '../../../contexts/LiveUpdateContext';
 
 interface Konfi {
   id: number;
@@ -102,6 +103,7 @@ interface KonfiDetailViewProps {
 
 const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) => {
   const { setSuccess, setError, isOnline } = useApp();
+  const { triggerRefresh } = useLiveUpdate();
   const [presentAlert] = useIonAlert();
   const pageRef = React.useRef<HTMLElement>(null);
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
@@ -165,7 +167,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
     onSave: async () => {
       await loadKonfiData();
       setSuccess('Aktivität hinzugefügt');
-      window.dispatchEvent(new CustomEvent('konfis-updated'));
+      triggerRefresh('konfis');
       dismissActivityModalHook();
     }
   });
@@ -177,7 +179,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
     onSave: async () => {
       await loadKonfiData();
       setSuccess('Bonuspunkte hinzugefügt');
-      window.dispatchEvent(new CustomEvent('konfis-updated'));
+      triggerRefresh('konfis');
       dismissBonusModalHook();
     }
   });
@@ -377,7 +379,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
               await api.delete(`/admin/konfis/${konfiId}/activities/${activity.id}`);
               setSuccess(`Aktivität "${activity.name}" gelöscht`);
               await loadKonfiData();
-              window.dispatchEvent(new CustomEvent('konfis-updated'));
+              triggerRefresh('konfis');
             } catch (err) {
               setError('Fehler beim Löschen der Aktivität');
             }
@@ -402,7 +404,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
               await api.delete(`/admin/konfis/${konfiId}/bonus-points/${bonus.id}`);
               setSuccess(`Bonuspunkte "${bonus.description}" gelöscht`);
               await loadKonfiData();
-              window.dispatchEvent(new CustomEvent('konfis-updated'));
+              triggerRefresh('konfis');
             } catch (err) {
               setError('Fehler beim Löschen der Bonuspunkte');
             }
@@ -432,7 +434,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           { text: 'Fertig', role: 'cancel' }
         ]
       });
-      window.dispatchEvent(new CustomEvent('konfis-updated'));
+      triggerRefresh('konfis');
     } catch (err) {
       setError('Fehler beim Zurücksetzen des Passworts');
     }
@@ -564,7 +566,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
             try {
               await api.post(`/admin/konfis/${konfiId}/promote-teamer`);
               setSuccess(`${currentKonfi.name} wurde zum Teamer befördert`);
-              window.dispatchEvent(new CustomEvent('konfis-updated'));
+              triggerRefresh('konfis');
               onBack();
             } catch (err: any) {
               setError(err.response?.data?.error || 'Fehler beim Befördern');

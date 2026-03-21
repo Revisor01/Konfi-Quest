@@ -49,6 +49,7 @@ import { SectionHeader } from '../../shared';
 import UnregisterModal from '../modals/UnregisterModal';
 import QRScannerModal from '../modals/QRScannerModal';
 import { Event, Category } from '../../../types/event';
+import { useLiveUpdate } from '../../../contexts/LiveUpdateContext';
 
 interface EventDetailViewProps {
   eventId: number;
@@ -72,6 +73,7 @@ interface Participant {
 const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) => {
   const pageRef = useRef<HTMLElement>(null);
   const { setSuccess, setError, isOnline } = useApp();
+  const { triggerRefresh } = useLiveUpdate();
   const [presentAlert] = useIonAlert();
   const [presentActionSheet] = useIonActionSheet();
 
@@ -97,7 +99,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         });
         setSuccess(`Von "${eventData.name}" abgemeldet`);
         await loadEventData();
-        window.dispatchEvent(new CustomEvent('events-updated'));
+        triggerRefresh('events');
       } catch (err: any) {
         setError(err.response?.data?.error || 'Fehler bei der Abmeldung');
       }
@@ -125,7 +127,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       await api.post(`/konfi/events/${eventData.id}/opt-in`);
       setSuccess(`Wieder für "${eventData.name}" angemeldet`);
       await loadEventData();
-      window.dispatchEvent(new CustomEvent('events-updated'));
+      triggerRefresh('events');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Fehler bei der Wiederanmeldung');
     }
@@ -145,7 +147,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
       setSuccess(`Von "${eventData.name}" abgemeldet`);
       await loadEventData();
-      window.dispatchEvent(new CustomEvent('events-updated'));
+      triggerRefresh('events');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Fehler bei der Abmeldung');
     }
@@ -283,7 +285,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       await api.post(`/konfi/events/${eventData.id}/register`, payload);
       setSuccess(`Erfolgreich für "${eventData.name}" angemeldet!`);
       await loadEventData();
-      window.dispatchEvent(new CustomEvent('events-updated'));
+      triggerRefresh('events');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Fehler bei der Anmeldung');
     }
