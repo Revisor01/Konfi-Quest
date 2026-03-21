@@ -4,50 +4,7 @@ const router = express.Router();
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireTeamer, requireOrgAdmin, requireAdmin } = roleHelpers;
 
-  // ====================================================================
-  // IDEMPOTENTE MIGRATION: certificate_types + user_certificates
-  // ====================================================================
-  const runCertificateMigration = async () => {
-    try {
-      // certificate_types Tabelle
-      await db.query(`
-        CREATE TABLE IF NOT EXISTS certificate_types (
-          id SERIAL PRIMARY KEY,
-          name VARCHAR(100) NOT NULL,
-          icon VARCHAR(50) DEFAULT 'ribbon',
-          organization_id INTEGER REFERENCES organizations(id),
-          is_active BOOLEAN DEFAULT true,
-          created_at TIMESTAMP DEFAULT NOW(),
-          UNIQUE(organization_id, name)
-        )
-      `);
-
-      // user_certificates Tabelle
-      await db.query(`
-        CREATE TABLE IF NOT EXISTS user_certificates (
-          id SERIAL PRIMARY KEY,
-          user_id INTEGER REFERENCES users(id),
-          certificate_type_id INTEGER REFERENCES certificate_types(id),
-          organization_id INTEGER REFERENCES organizations(id),
-          issued_date DATE NOT NULL,
-          expiry_date DATE,
-          admin_id INTEGER REFERENCES users(id),
-          created_at TIMESTAMP DEFAULT NOW(),
-          UNIQUE(user_id, certificate_type_id)
-        )
-      `);
-
-      // teamer_since Spalte auf users (fuer Teamer-Aktiv-seit)
-      await db.query(`
-        ALTER TABLE users ADD COLUMN IF NOT EXISTS teamer_since DATE
-      `);
-    } catch (err) {
-      console.error('Certificate migration error:', err.message);
-    }
-  };
-
-  // Migration beim Laden ausfuehren
-  runCertificateMigration();
+  // Schema: siehe backend/migrations/064_consolidate_inline_schemas.sql
 
   // ====================================================================
   // TEAMER PROFIL
