@@ -1,0 +1,287 @@
+import { Preferences } from '@capacitor/preferences';
+import { toastController } from '@ionic/core';
+import { networkMonitor } from './networkMonitor';
+import api from './api';
+
+// --- Interfaces ---
+
+export interface QueueItem {
+  id: string;
+  method: 'POST' | 'PUT' | 'DELETE';
+  url: string;
+  body?: any;
+  headers?: Record<string, string>;
+  maxRetries: number;
+  retryCount: number;
+  createdAt: number;
+  hasFileUpload: boolean;
+  metadata: {
+    type: 'chat' | 'request' | 'opt-out' | 'fire-and-forget' | 'admin' | 'teamer';
+    clientId: string;
+    roomId?: number;
+    label?: string;
+  };
+}
+
+export interface FailedQueueItem extends QueueItem {
+  error: { status: number; message: string };
+}
+
+export interface FlushResult {
+  succeeded: QueueItem[];
+  failed: FailedQueueItem[];
+}
+
+// --- Persistenz-Layer ---
+
+const QUEUE_KEY = 'queue:items';
+let _items: QueueItem[] | null = null; // In-Memory-Cache, lazy geladen
+let _flushing = false;
+
+async function _load(): Promise<QueueItem[]> {
+  if (_items !== null) return _items;
+  try {
+    const result = await Preferences.get({ key: QUEUE_KEY });
+    if (!result.value) {
+      _items = [];
+      return _items;
+    }
+    _items = JSON.parse(result.value) as QueueItem[];
+    return _items;
+  } catch {
+    // Korruptes JSON — zuruecksetzen
+    await Preferences.remove({ key: QUEUE_KEY });
+    _items = [];
+    return _items;
+  }
+}
+
+async function _save(items: QueueItem[]): Promise<void> {
+  _items = items;
+  await Preferences.set({ key: QUEUE_KEY, value: JSON.stringify(items) });
+}
+
+// --- UUID Helper ---
+
+function generateId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+// --- Fehler-Toast ---
+
+async function showFailedToast(label: string): Promise<void> {
+  try {
+    const toast = await toastController.create({
+      message: `${label} konnte nicht gesendet werden`,
+      duration: 4000,
+      position: 'bottom',
+      color: 'danger',
+    });
+    await toast.present();
+  } catch {
+    // Toast nicht verfuegbar (z.B. im Background)
+  }
+}
+
+function handleFlushResult(result: FlushResult): void {
+  for (const item of result.failed) {
+    const label = item.metadata.label || 'Aktion';
+    showFailedToast(label);
+  }
+}
+
+// --- Oeffentliche API ---
+
+async function enqueue(
+  item: Omit<QueueItem, 'id' | 'retryCount' | 'createdAt'>
+): Promise<QueueItem> {
+  const items = await _load();
+  const newItem: QueueItem = {
+    ...item,
+    id: generateId(),
+    retryCount: 0,
+    createdAt: Date.now(),
+  };
+  items.push(newItem);
+  await _save(items);
+  return newItem;
+}
+
+async function flush(): Promise<FlushResult> {
+  if (_flushing) return { succeeded: [], failed: [] };
+  _flushing = true;
+
+  const result: FlushResult = { succeeded: [], failed: [] };
+
+  try {
+    const items = await _load();
+
+    while (items.length > 0) {
+      const item = items[0];
+      try {
+        const config: any = {};
+        if (item.headers) config.headers = item.headers;
+
+        if (item.method === 'DELETE') {
+          await api.delete(item.url, config);
+        } else if (item.method === 'PUT') {
+          await api.put(item.url, item.body, config);
+        } else {
+          await api.post(item.url, item.body, config);
+        }
+
+        // Erfolg: Item entfernen
+        result.succeeded.push(item);
+        items.shift();
+        await _save(items);
+      } catch (err: any) {
+        const status = err?.response?.status || 0;
+        const message = err?.response?.data?.error || err?.message || 'Unbekannter Fehler';
+
+        if (status >= 400 && status < 500 && status !== 408 && status !== 429) {
+          // 4xx (ausser 408/429): Item entfernen, als failed markieren
+          const failedItem: FailedQueueItem = { ...item, error: { status, message } };
+          result.failed.push(failedItem);
+          items.shift();
+          await _save(items);
+        } else {
+          // 5xx, 408, 429, Netzwerkfehler: retryCount erhoehen
+          item.retryCount++;
+          if (item.retryCount >= item.maxRetries) {
+            const failedItem: FailedQueueItem = { ...item, error: { status, message } };
+            result.failed.push(failedItem);
+            items.shift();
+          } else {
+            // Item behalten mit erhoehtem retryCount
+          }
+          await _save(items);
+          // Bei transientem Fehler restliche Items nicht weiter abarbeiten
+          break;
+        }
+      }
+    }
+  } finally {
+    _flushing = false;
+  }
+
+  handleFlushResult(result);
+  return result;
+}
+
+async function flushTextOnly(): Promise<FlushResult> {
+  if (_flushing) return { succeeded: [], failed: [] };
+  _flushing = true;
+
+  const result: FlushResult = { succeeded: [], failed: [] };
+
+  try {
+    const items = await _load();
+    let i = 0;
+
+    while (i < items.length) {
+      const item = items[i];
+
+      // Datei-Uploads ueberspringen
+      if (item.hasFileUpload) {
+        i++;
+        continue;
+      }
+
+      try {
+        const config: any = {};
+        if (item.headers) config.headers = item.headers;
+
+        if (item.method === 'DELETE') {
+          await api.delete(item.url, config);
+        } else if (item.method === 'PUT') {
+          await api.put(item.url, item.body, config);
+        } else {
+          await api.post(item.url, item.body, config);
+        }
+
+        result.succeeded.push(item);
+        items.splice(i, 1);
+        await _save(items);
+      } catch (err: any) {
+        const status = err?.response?.status || 0;
+        const message = err?.response?.data?.error || err?.message || 'Unbekannter Fehler';
+
+        if (status >= 400 && status < 500 && status !== 408 && status !== 429) {
+          const failedItem: FailedQueueItem = { ...item, error: { status, message } };
+          result.failed.push(failedItem);
+          items.splice(i, 1);
+          await _save(items);
+        } else {
+          item.retryCount++;
+          if (item.retryCount >= item.maxRetries) {
+            const failedItem: FailedQueueItem = { ...item, error: { status, message } };
+            result.failed.push(failedItem);
+            items.splice(i, 1);
+          } else {
+            i++;
+          }
+          await _save(items);
+          break;
+        }
+      }
+    }
+  } finally {
+    _flushing = false;
+  }
+
+  handleFlushResult(result);
+  return result;
+}
+
+async function remove(id: string): Promise<void> {
+  const items = await _load();
+  const filtered = items.filter(item => item.id !== id);
+  await _save(filtered);
+}
+
+async function getAll(): Promise<QueueItem[]> {
+  const items = await _load();
+  return [...items];
+}
+
+async function getByMetadata(filter: Partial<QueueItem['metadata']>): Promise<QueueItem[]> {
+  const items = await _load();
+  return items.filter(item => {
+    for (const key of Object.keys(filter) as Array<keyof QueueItem['metadata']>) {
+      if (item.metadata[key] !== filter[key]) return false;
+    }
+    return true;
+  });
+}
+
+async function clear(): Promise<void> {
+  await _save([]);
+}
+
+// --- Auto-Flush bei Online-Wechsel ---
+
+networkMonitor.subscribe((isOnline) => {
+  if (isOnline) {
+    flush();
+  }
+});
+
+// --- Export ---
+
+export const writeQueue = {
+  enqueue,
+  flush,
+  flushTextOnly,
+  remove,
+  getAll,
+  getByMetadata,
+  clear,
+};
