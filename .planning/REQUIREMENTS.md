@@ -58,9 +58,9 @@ Listen-Elemente zeigen Queue-Status als zusaetzliches Corner-Badge neben bestehe
 
 #### Chat-Nachrichten Queue-Status
 
-- [ ] **OUI-08**: Pending Chat-Nachricht zeigt Uhr-Icon (timeOutline) neben dem Zeitstempel rechts unten in der Bubble
-- [ ] **OUI-09**: Nach Zustellung verschwindet die Uhr (kein Haekchen)
-- [ ] **OUI-10**: Bei Fehler wechselt Uhr zu Ausrufezeichen rot, Tap auf Nachricht zeigt "Erneut senden" oder "Loeschen"
+- [x] **OUI-08**: Pending Chat-Nachricht zeigt Uhr-Icon (timeOutline) neben dem Zeitstempel rechts unten in der Bubble
+- [x] **OUI-09**: Nach Zustellung verschwindet die Uhr (kein Haekchen)
+- [x] **OUI-10**: Bei Fehler wechselt Uhr zu Ausrufezeichen rot, Tap auf Nachricht zeigt "Erneut senden" oder "Loeschen"
 
 #### Online-Only Buttons
 
@@ -234,9 +234,9 @@ Deferred. Onboarding, Landing Website, Readme, Wiki.
 | OUI-05 | Phase 58 | Complete |
 | OUI-06 | Phase 58 | Complete |
 | OUI-07 | Phase 58 | Complete |
-| OUI-08 | Phase 59 | Pending |
-| OUI-09 | Phase 59 | Pending |
-| OUI-10 | Phase 59 | Pending |
+| OUI-08 | Phase 59 | Complete |
+| OUI-09 | Phase 59 | Complete |
+| OUI-10 | Phase 59 | Complete |
 | OUI-11 | Phase 59 | Pending |
 | OUI-12 | Phase 59 | Pending |
 | OUI-13 | Phase 60 | Pending |

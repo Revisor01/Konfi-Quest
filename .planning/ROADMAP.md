@@ -246,7 +246,7 @@ Plans:
   4. Fehlgeschlagene Chat-Nachrichten zeigen rotes Ausrufezeichen mit "Erneut senden" oder "Loeschen" bei Tap
 **Plans**: 3 plans
 Plans:
-- [ ] 59-01-PLAN.md — Chat Queue-Status UI (MessageBubble Uhr/Fehler-Icon + ChatRoom ActionSheet)
+- [x] 59-01-PLAN.md — Chat Queue-Status UI (MessageBubble Uhr/Fehler-Icon + ChatRoom ActionSheet)
 - [ ] 59-02-PLAN.md — Online-Only Buttons Batch 1: 23 Modals (Admin + Konfi + Chat)
 - [ ] 59-03-PLAN.md — Online-Only Buttons Batch 2: Pages/Views + Auth (destruktive Aktionen + QR + Registration)
 
@@ -303,7 +303,7 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 | 56. Lese-Cache | 4/4 | Complete    | 2026-03-21 |
 | 57. Retry + Schutz | 2/2 | Complete    | 2026-03-21 |
 | 58. Corner-Badge System | 2/2 | Complete    | 2026-03-21 |
-| 59. Online-Only Buttons | 0/3 | Not started | - |
+| 59. Online-Only Buttons | 1/3 | In Progress|  |
 | 60. Queue-Kern + Konfi-Aktionen | 0/? | Not started | - |
 | 61. Admin- + Teamer-Queue | 0/? | Not started | - |
 | 62. Sync | 0/? | Not started | - |
@@ -313,7 +313,7 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 **Goal:** [To be planned]
 **Requirements**: TBD
 **Depends on:** Phase 62
-**Plans:** 2/2 plans complete
+**Plans:** 1/3 plans executed
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 63 to break down)

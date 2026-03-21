@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: App-Resilienz
 status: unknown
-stopped_at: Completed 58-02-PLAN.md (Corner-Badge Migration)
-last_updated: "2026-03-21T09:21:03.998Z"
+stopped_at: Completed 59-01-PLAN.md (Chat Queue-Status UI)
+last_updated: "2026-03-21T09:34:04.459Z"
 progress:
   total_phases: 15
   completed_phases: 4
-  total_plans: 12
-  completed_plans: 12
+  total_plans: 15
+  completed_plans: 13
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-20)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 58 — Corner-Badge System
+**Current focus:** Phase 59 — Online-Only Buttons
 
 ## Current Position
 
-Phase: 63
-Plan: Not started
+Phase: 59 (Online-Only Buttons) — EXECUTING
+Plan: 2 of 3
 
 ## Accumulated Context
 
@@ -53,6 +53,7 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 57]: axios-retry mit Jitter zur Thundering-Herd-Vermeidung, guardRef fuer synchronen Double-Submit-Check
 - [Phase 58]: font-weight von 600 auf 700 angeglichen (PointsHistory-Referenz)
 - [Phase 58]: AdminInvitePage: exakter Farbton #059669 beibehalten statt --success Klasse
+- [Phase 59]: Queue-Status Icons neben Zeitstempel statt separater Bereich
 
 ### Roadmap Evolution
 
@@ -78,6 +79,6 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-03-21T09:17:58.160Z
-Stopped at: Completed 58-02-PLAN.md (Corner-Badge Migration)
+Last session: 2026-03-21T09:34:04.457Z
+Stopped at: Completed 59-01-PLAN.md (Chat Queue-Status UI)
 Resume file: None
