@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: App-Resilienz
 status: unknown
-stopped_at: Completed 61-01-PLAN.md (Admin-Modals Queue)
-last_updated: "2026-03-21T11:35:47.408Z"
+stopped_at: Completed 62-01-PLAN.md (Sync-Sequenz)
+last_updated: "2026-03-21T11:41:56.910Z"
 progress:
   total_phases: 15
-  completed_phases: 7
-  total_plans: 22
-  completed_plans: 22
+  completed_phases: 8
+  total_plans: 23
+  completed_plans: 23
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-20)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 61 — Admin- + Teamer-Queue
+**Current focus:** Phase 62 — Sync
 
 ## Current Position
 
-Phase: 63
-Plan: Not started
+Phase: 62 (Sync) — EXECUTING
+Plan: 1 of 1
 
 ## Accumulated Context
 
@@ -70,6 +70,8 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 61]: Material Offline: Nur Metadaten queuen, Dateien nur online hochladbar
 - [Phase 61]: Alle Admin Submit-Buttons immer klickbar, Queue uebernimmt bei Offline
 - [Phase 61]: Submit-Buttons bleiben ohne Offline-Disable — Queue uebernimmt
+- [Phase 62-sync]: CustomEvent sync:reconnect als Bruecke zwischen Service-Schicht und React-Tree
+- [Phase 62-sync]: invalidateAll setzt timestamp=0 statt clearAll — SWR-kompatible Cache-Invalidierung
 
 ### Roadmap Evolution
 
@@ -95,6 +97,6 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-03-21T11:32:20.058Z
-Stopped at: Completed 61-01-PLAN.md (Admin-Modals Queue)
+Last session: 2026-03-21T11:41:56.907Z
+Stopped at: Completed 62-01-PLAN.md (Sync-Sequenz)
 Resume file: None

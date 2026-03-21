@@ -180,10 +180,10 @@ Diese Aktionen zeigen "Du bist offline" am Button wenn offline. Keine Queue.
 
 ### Sync (SYN)
 
-- [ ] **SYN-01**: Bei App-Start wird Cache revalidiert (SWR-Pattern, keine separate Sync-Logik)
-- [ ] **SYN-02**: Bei Socket.io Reconnect: Erst Queue flushen, dann Cache invalidieren, dann Badge-Counts aktualisieren
-- [ ] **SYN-03**: Backend Chat-Route unterstuetzt ?after=lastMessageId Parameter fuer verpasste Nachrichten
-- [ ] **SYN-04**: Bei App-Resume (appStateChange) wird aktive Page revalidiert
+- [x] **SYN-01**: Bei App-Start wird Cache revalidiert (SWR-Pattern, keine separate Sync-Logik)
+- [x] **SYN-02**: Bei Socket.io Reconnect: Erst Queue flushen, dann Cache invalidieren, dann Badge-Counts aktualisieren
+- [x] **SYN-03**: Backend Chat-Route unterstuetzt ?after=lastMessageId Parameter fuer verpasste Nachrichten
+- [x] **SYN-04**: Bei App-Resume (appStateChange) wird aktive Page revalidiert
 
 ## v3.0 Requirements
 
@@ -323,10 +323,10 @@ Deferred. Onboarding, Landing Website, Readme, Wiki.
 | OOA-40 | Phase 59 | Complete |
 | OOA-41 | Phase 59 | Complete |
 | OOA-42 | Phase 59 | Complete |
-| SYN-01 | Phase 62 | Pending |
-| SYN-02 | Phase 62 | Pending |
-| SYN-03 | Phase 62 | Pending |
-| SYN-04 | Phase 62 | Pending |
+| SYN-01 | Phase 62 | Complete |
+| SYN-02 | Phase 62 | Complete |
+| SYN-03 | Phase 62 | Complete |
+| SYN-04 | Phase 62 | Complete |
 
 **Coverage v2.1:**
 - v2.1 requirements: 122 total
