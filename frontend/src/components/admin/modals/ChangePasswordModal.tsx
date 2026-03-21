@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useActionGuard } from '../../../hooks/useActionGuard';
 import {
   IonPage,
   IonHeader,
@@ -64,7 +65,7 @@ const PasswordCheckItem: React.FC<{ label: string; checked: boolean }> = ({ labe
 
 const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSuccess }) => {
   const { setSuccess, setError } = useApp();
-  const [saving, setSaving] = useState(false);
+  const { isSubmitting, guard } = useActionGuard();
 
   const [passwordData, setPasswordData] = useState({
     current_password: '',
@@ -115,19 +116,18 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
       return;
     }
 
-    setSaving(true);
-    try {
-      await api.post('/auth/change-password', {
-        currentPassword: passwordData.current_password,
-        newPassword: passwordData.new_password
-      });
-      setSuccess('Passwort erfolgreich geändert');
-      onSuccess();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Ändern des Passworts');
-    } finally {
-      setSaving(false);
-    }
+    await guard(async () => {
+      try {
+        await api.post('/auth/change-password', {
+          currentPassword: passwordData.current_password,
+          newPassword: passwordData.new_password
+        });
+        setSuccess('Passwort erfolgreich geändert');
+        onSuccess();
+      } catch (err: any) {
+        setError(err.response?.data?.error || 'Fehler beim Ändern des Passworts');
+      }
+    });
   };
 
   const isValid = passwordData.current_password && isPasswordValid && passwordsMatch;
@@ -138,13 +138,13 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
         <IonToolbar>
           <IonTitle>Passwort ändern</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} disabled={saving} className="app-modal-close-btn">
+            <IonButton onClick={onClose} disabled={isSubmitting} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={saving || !isValid} className="app-modal-submit-btn app-modal-submit-btn--settings">
-              {saving ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+            <IonButton onClick={handleSave} disabled={isSubmitting || !isValid} className="app-modal-submit-btn app-modal-submit-btn--settings">
+              {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -169,7 +169,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
                     value={passwordData.current_password}
                     onIonInput={(e) => setPasswordData(prev => ({ ...prev, current_password: e.detail.value! }))}
                     placeholder="Aktuelles Passwort eingeben"
-                    disabled={saving}
+                    disabled={isSubmitting}
                   />
                   <IonButton
                     slot="end"
@@ -202,7 +202,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
                     value={passwordData.new_password}
                     onIonInput={(e) => setPasswordData(prev => ({ ...prev, new_password: e.detail.value! }))}
                     placeholder="Neues Passwort eingeben"
-                    disabled={saving}
+                    disabled={isSubmitting}
                   />
                   <IonButton
                     slot="end"
@@ -220,7 +220,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
                     value={passwordData.confirm_password}
                     onIonInput={(e) => setPasswordData(prev => ({ ...prev, confirm_password: e.detail.value! }))}
                     placeholder="Neues Passwort bestätigen"
-                    disabled={saving}
+                    disabled={isSubmitting}
                   />
                   <IonButton
                     slot="end"

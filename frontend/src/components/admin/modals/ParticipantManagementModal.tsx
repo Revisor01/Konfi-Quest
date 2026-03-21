@@ -21,6 +21,7 @@ import {
 import { person, closeOutline, checkmarkOutline, personAdd, search, filterOutline, time, calendarOutline } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
+import { useActionGuard } from '../../../hooks/useActionGuard';
 
 interface Konfi {
   id: number;
@@ -79,6 +80,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [availableKonfis, setAvailableKonfis] = useState<Konfi[]>([]);
   const [selectedKonfis, setSelectedKonfis] = useState<number[]>([]);
+  const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [eventData, setEventData] = useState<Event | null>(null);
   const [selectedTimeslot, setSelectedTimeslot] = useState<number | null>(null);
@@ -200,43 +202,45 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
 
   const handleAddParticipants = async () => {
     if (selectedKonfis.length === 0) return;
-    
+
     // For events with timeslots, require timeslot selection
     if (eventData?.has_timeslots && !selectedTimeslot) {
       setError('Bitte wähle einen Zeitslot aus');
       return;
     }
-    
-    setLoading(true);
-    try {
-      // Add each selected konfi as participant
-      for (const konfiId of selectedKonfis) {
-        const requestData: any = {
-          user_id: konfiId,
-          status: 'confirmed' // Admin fügt direkt als bestätigt hinzu (übersteuert Kapazität)
-        };
-        
-        // Add timeslot_id if event has timeslots
-        if (eventData?.has_timeslots && selectedTimeslot) {
-          requestData.timeslot_id = selectedTimeslot;
+
+    await guard(async () => {
+      setLoading(true);
+      try {
+        // Add each selected konfi as participant
+        for (const konfiId of selectedKonfis) {
+          const requestData: any = {
+            user_id: konfiId,
+            status: 'confirmed' // Admin fügt direkt als bestätigt hinzu (übersteuert Kapazität)
+          };
+
+          // Add timeslot_id if event has timeslots
+          if (eventData?.has_timeslots && selectedTimeslot) {
+            requestData.timeslot_id = selectedTimeslot;
+          }
+
+          await api.post(`/events/${eventId}/participants`, requestData);
         }
-        
-        await api.post(`/events/${eventId}/participants`, requestData);
+
+        setSuccess(`${selectedKonfis.length} Teilnehmer hinzugefügt`);
+        setSelectedKonfis([]);
+        // Participants und verfuegbare Konfis neu laden
+        const eventResponse = await api.get(`/events/${eventId}`);
+        const updatedParticipants: Participant[] = eventResponse.data.participants || [];
+        setCurrentParticipants(updatedParticipants);
+        await loadAvailableKonfis(updatedParticipants);
+        onSuccess();
+      } catch (error) {
+        setError('Fehler beim Hinzufügen der Teilnehmer');
+      } finally {
+        setLoading(false);
       }
-      
-      setSuccess(`${selectedKonfis.length} Teilnehmer hinzugefügt`);
-      setSelectedKonfis([]);
-      // Participants und verfuegbare Konfis neu laden
-      const eventResponse = await api.get(`/events/${eventId}`);
-      const updatedParticipants: Participant[] = eventResponse.data.participants || [];
-      setCurrentParticipants(updatedParticipants);
-      await loadAvailableKonfis(updatedParticipants);
-      onSuccess();
-    } catch (error) {
-      setError('Fehler beim Hinzufügen der Teilnehmer');
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   const handleRemoveParticipant = async (participantId: number) => {
@@ -266,7 +270,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
           </IonButtons>
           <IonButtons slot="end">
             {selectedKonfis.length > 0 && (
-              <IonButton onClick={handleAddParticipants} disabled={loading} className="app-modal-submit-btn app-modal-submit-btn--events">
+              <IonButton onClick={handleAddParticipants} disabled={loading || isSubmitting} className="app-modal-submit-btn app-modal-submit-btn--events">
                 <IonIcon icon={checkmarkOutline} slot="icon-only" />
               </IonButton>
             )}

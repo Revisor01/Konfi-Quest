@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useActionGuard } from '../../../hooks/useActionGuard';
 import {
   IonPage,
   IonHeader,
@@ -39,7 +40,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
 }) => {
   const { setSuccess, setError } = useApp();
   const [email, setEmail] = useState(initialEmail);
-  const [saving, setSaving] = useState(false);
+  const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(true);
 
   // Load current email from server when modal opens
@@ -69,23 +70,22 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
       }
     }
 
-    setSaving(true);
-    try {
-      await api.post('/auth/update-email', {
-        email: email.trim() || null
-      });
-      setSuccess('E-Mail-Adresse erfolgreich aktualisiert');
-      onSuccess();
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.error;
-      if (errorMsg?.includes('bereits verwendet') || err.response?.status === 409) {
-        setError('Diese E-Mail-Adresse wird bereits von einem anderen Konto verwendet.');
-      } else {
-        setError(errorMsg || 'Fehler beim Aktualisieren der E-Mail-Adresse');
+    await guard(async () => {
+      try {
+        await api.post('/auth/update-email', {
+          email: email.trim() || null
+        });
+        setSuccess('E-Mail-Adresse erfolgreich aktualisiert');
+        onSuccess();
+      } catch (err: any) {
+        const errorMsg = err.response?.data?.error;
+        if (errorMsg?.includes('bereits verwendet') || err.response?.status === 409) {
+          setError('Diese E-Mail-Adresse wird bereits von einem anderen Konto verwendet.');
+        } else {
+          setError(errorMsg || 'Fehler beim Aktualisieren der E-Mail-Adresse');
+        }
       }
-    } finally {
-      setSaving(false);
-    }
+    });
   };
 
   return (
@@ -94,13 +94,13 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
         <IonToolbar>
           <IonTitle>E-Mail ändern</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} disabled={saving} className="app-modal-close-btn">
+            <IonButton onClick={onClose} disabled={isSubmitting} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={saving || loading} className="app-modal-submit-btn app-modal-submit-btn--settings">
-              {saving ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+            <IonButton onClick={handleSave} disabled={isSubmitting || loading} className="app-modal-submit-btn app-modal-submit-btn--settings">
+              {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -130,7 +130,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
                       value={email}
                       onIonInput={(e) => setEmail(e.detail.value!)}
                       placeholder="deine@email.de"
-                      disabled={saving}
+                      disabled={isSubmitting}
                       clearInput={true}
                     />
                   )}

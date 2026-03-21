@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useActionGuard } from '../../../hooks/useActionGuard';
 import {
   IonPage,
   IonHeader,
@@ -39,16 +40,19 @@ const UnregisterModal: React.FC<UnregisterModalProps> = ({
   dismiss
 }) => {
   const [reason, setReason] = useState('');
+  const { isSubmitting, guard } = useActionGuard();
 
   const minLength = mandatory ? 5 : 1;
   const isValid = reason.trim().length >= minLength;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!isValid) {
       return;
     }
-    onUnregister(reason.trim());
-    dismiss(reason.trim(), 'confirm');
+    await guard(async () => {
+      onUnregister(reason.trim());
+      dismiss(reason.trim(), 'confirm');
+    });
   };
 
   const handleClose = () => {
@@ -66,7 +70,7 @@ const UnregisterModal: React.FC<UnregisterModalProps> = ({
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSubmit} disabled={!isValid}>
+            <IonButton className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSubmit} disabled={!isValid || isSubmitting}>
               <IonIcon icon={checkmarkOutline} />
             </IonButton>
           </IonButtons>

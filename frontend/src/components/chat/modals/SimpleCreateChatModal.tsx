@@ -36,6 +36,7 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useBadge } from '../../../contexts/BadgeContext';
+import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 
 interface User {
@@ -97,7 +98,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
   const [existingChats, setExistingChats] = useState<any[]>([]);
   const [searchText, setSearchText] = useState('');
   const [loading, setLoading] = useState(false);
-  const [creating, setCreating] = useState(false);
+  const { isSubmitting: creating, guard } = useActionGuard();
 
   // Filter states
   const [selectedRole, setSelectedRole] = useState<string>('alle');
@@ -286,23 +287,22 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
       return;
     }
 
-    setCreating(true);
-    try {
-      const response = await api.post('/chat/direct', {
-        target_user_id: targetUser.id,
-        target_user_type: targetUser.type
-      });
+    await guard(async () => {
+      try {
+        await api.post('/chat/direct', {
+          target_user_id: targetUser.id,
+          target_user_type: targetUser.type
+        });
 
-      setSuccess(`Direktnachricht mit ${targetUser.name || targetUser.display_name} erstellt`);
-      await refreshFromAPI(); // Update badge context
-      handleModalClose();
-      onSuccess();
-    } catch (err) {
-      setError('Fehler beim Erstellen der Direktnachricht');
- console.error('Error creating direct message:', err);
-    } finally {
-      setCreating(false);
-    }
+        setSuccess(`Direktnachricht mit ${targetUser.name || targetUser.display_name} erstellt`);
+        await refreshFromAPI(); // Update badge context
+        handleModalClose();
+        onSuccess();
+      } catch (err) {
+        setError('Fehler beim Erstellen der Direktnachricht');
+        console.error('Error creating direct message:', err);
+      }
+    });
   };
 
   const createGroupChat = async () => {
@@ -316,36 +316,35 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
       return;
     }
 
-    setCreating(true);
-    try {
-      // Convert participant IDs from "type-id" format to objects
-      const participants = Array.from(selectedParticipants).map(participantId => {
-        const [type, id] = participantId.split('-');
-        return {
-          user_id: parseInt(id),
-          user_type: type
+    await guard(async () => {
+      try {
+        // Convert participant IDs from "type-id" format to objects
+        const participants = Array.from(selectedParticipants).map(participantId => {
+          const [type, id] = participantId.split('-');
+          return {
+            user_id: parseInt(id),
+            user_type: type
+          };
+        });
+
+        const groupData = {
+          name: groupName.trim(),
+          type: 'group',
+          participants: participants
         };
-      });
 
-      const groupData = {
-        name: groupName.trim(),
-        type: 'group',
-        participants: participants
-      };
+        await api.post('/chat/rooms', groupData);
 
-      const response = await api.post('/chat/rooms', groupData);
-
-      setSuccess(`Gruppenchat "${groupName}" erstellt`);
-      await refreshFromAPI(); // Update badge context
-      handleModalClose();
-      onSuccess();
-    } catch (err: any) {
- console.error('Error creating group chat:', err);
- console.error('Error response:', err.response?.data);
-      setError(`Fehler beim Erstellen des Gruppenchats: ${err.response?.data?.error || err.message}`);
-    } finally {
-      setCreating(false);
-    }
+        setSuccess(`Gruppenchat "${groupName}" erstellt`);
+        await refreshFromAPI(); // Update badge context
+        handleModalClose();
+        onSuccess();
+      } catch (err: any) {
+        console.error('Error creating group chat:', err);
+        console.error('Error response:', err.response?.data);
+        setError(`Fehler beim Erstellen des Gruppenchats: ${err.response?.data?.error || err.message}`);
+      }
+    });
   };
 
   const handleModalClose = () => {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useActionGuard } from '../../../hooks/useActionGuard';
 import {
   IonPage,
   IonHeader,
@@ -42,7 +43,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
   const [selectedActivity, setSelectedActivity] = useState<number | null>(null);
   const [comment, setComment] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [loading, setLoading] = useState(false);
+  const { isSubmitting, guard } = useActionGuard();
   const [isDirty, setIsDirty] = useState(false);
   const [presentAlert] = useIonAlert();
   const initializedRef = useRef(false);
@@ -98,22 +99,21 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
   const handleSave = async () => {
     if (!selectedActivity) return;
 
-    setLoading(true);
-    try {
-      await api.post(`/admin/konfis/${konfiId}/activities`, {
-        activity_id: selectedActivity,
-        completed_date: selectedDate,
-        comment: comment
-      });
+    await guard(async () => {
+      try {
+        await api.post(`/admin/konfis/${konfiId}/activities`, {
+          activity_id: selectedActivity,
+          completed_date: selectedDate,
+          comment: comment
+        });
 
-      setIsDirty(false);
-      await onSave();
-      doClose();
-    } catch (err) {
- console.error('Error saving activity:', err);
-    } finally {
-      setLoading(false);
-    }
+        setIsDirty(false);
+        await onSave();
+        doClose();
+      } catch (err) {
+        console.error('Error saving activity:', err);
+      }
+    });
   };
 
   // Farben für Aktivitäten
@@ -126,12 +126,12 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
         <IonToolbar>
           <IonTitle>Aktivität hinzufügen</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose} disabled={loading} className="app-modal-close-btn">
+            <IonButton onClick={handleClose} disabled={isSubmitting} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={!selectedActivity || loading} className="app-modal-submit-btn app-modal-submit-btn--activities">
+            <IonButton onClick={handleSave} disabled={!selectedActivity || isSubmitting} className="app-modal-submit-btn app-modal-submit-btn--activities">
               <IonIcon icon={checkmarkOutline} />
             </IonButton>
           </IonButtons>
@@ -156,7 +156,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
                     type="date"
                     value={selectedDate}
                     onIonInput={(e) => setSelectedDate(e.detail.value!)}
-                    disabled={loading}
+                    disabled={isSubmitting}
                   />
                 </IonItem>
 
@@ -167,7 +167,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
                     onIonInput={(e) => setComment(e.detail.value!)}
                     placeholder="Zusätzliche Informationen..."
                     rows={3}
-                    disabled={loading}
+                    disabled={isSubmitting}
                   />
                 </IonItem>
               </IonList>
@@ -202,10 +202,10 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
                       <div
                         key={activity.id}
                         className="app-list-item app-list-item--activities"
-                        onClick={() => !loading && setSelectedActivity(activity.id)}
+                        onClick={() => !isSubmitting && setSelectedActivity(activity.id)}
                         style={{
-                          cursor: loading ? 'default' : 'pointer',
-                          opacity: loading ? 0.6 : 1,
+                          cursor: isSubmitting ? 'default' : 'pointer',
+                          opacity: isSubmitting ? 0.6 : 1,
                           marginBottom: '0',
                           borderLeftColor: typeColor,
                           backgroundColor: isSelected ? `${typeColor}10` : undefined,

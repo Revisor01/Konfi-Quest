@@ -36,6 +36,7 @@ import {
   addOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 
 interface Organization {
@@ -76,8 +77,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   onSuccess
 }) => {
   const { setSuccess, setError } = useApp();
+  const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [presentAlert] = useIonAlert();
   const initializedRef = useRef(false);
@@ -228,43 +229,42 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
       }
     }
 
-    setSaving(true);
-    try {
-      const systemName = generateSystemName(formData.display_name);
+    await guard(async () => {
+      try {
+        const systemName = generateSystemName(formData.display_name);
 
-      const orgData: any = {
-        name: systemName,
-        slug: systemName,
-        display_name: formData.display_name.trim(),
-        description: formData.description.trim() || null,
-        contact_email: formData.contact_email.trim() || null,
-        contact_phone: formData.contact_phone.trim() || null,
-        address: formData.address.trim() || null,
-        website_url: formData.website_url.trim() || null,
-        is_active: formData.is_active
-      };
+        const orgData: any = {
+          name: systemName,
+          slug: systemName,
+          display_name: formData.display_name.trim(),
+          description: formData.description.trim() || null,
+          contact_email: formData.contact_email.trim() || null,
+          contact_phone: formData.contact_phone.trim() || null,
+          address: formData.address.trim() || null,
+          website_url: formData.website_url.trim() || null,
+          is_active: formData.is_active
+        };
 
-      if (!isEditMode) {
-        orgData.admin_username = formData.admin_username.trim();
-        orgData.admin_password = formData.admin_password.trim();
-        orgData.admin_display_name = formData.admin_name.trim();
+        if (!isEditMode) {
+          orgData.admin_username = formData.admin_username.trim();
+          orgData.admin_password = formData.admin_password.trim();
+          orgData.admin_display_name = formData.admin_name.trim();
+        }
+
+        if (isEditMode) {
+          await api.put(`/organizations/${organizationId}`, orgData);
+          setSuccess('Organisation erfolgreich aktualisiert');
+        } else {
+          await api.post('/organizations', orgData);
+          setSuccess('Organisation und Administrator erfolgreich erstellt');
+        }
+
+        setIsDirty(false);
+        onSuccess();
+      } catch (err: any) {
+        setError(err.response?.data?.error || 'Fehler beim Speichern');
       }
-
-      if (isEditMode) {
-        await api.put(`/organizations/${organizationId}`, orgData);
-        setSuccess('Organisation erfolgreich aktualisiert');
-      } else {
-        await api.post('/organizations', orgData);
-        setSuccess('Organisation und Administrator erfolgreich erstellt');
-      }
-
-      setIsDirty(false);
-      onSuccess();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Speichern');
-    } finally {
-      setSaving(false);
-    }
+    });
   };
 
   const handleResetPassword = async (adminId: number) => {
@@ -346,11 +346,11 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         <IonToolbar>
           <IonTitle>{isEditMode ? 'Organisation bearbeiten' : 'Neue Organisation'}</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} disabled={saving} className="app-modal-close-btn"><IonIcon icon={closeOutline} /></IonButton>
+            <IonButton onClick={onClose} disabled={isSubmitting} className="app-modal-close-btn"><IonIcon icon={closeOutline} /></IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={!isValid || saving} className="app-modal-submit-btn app-modal-submit-btn--settings">
-              {saving ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+            <IonButton onClick={handleSave} disabled={!isValid || isSubmitting} className="app-modal-submit-btn app-modal-submit-btn--settings">
+              {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -374,7 +374,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     value={formData.display_name}
                     onIonInput={(e) => setFormData({ ...formData, display_name: e.detail.value! })}
                     placeholder="z.B. Kirchspiel West"
-                    disabled={saving}
+                    disabled={isSubmitting}
                   />
                 </IonItem>
 
@@ -386,7 +386,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     placeholder="Kurze Beschreibung"
                     autoGrow={true}
                     rows={2}
-                    disabled={saving}
+                    disabled={isSubmitting}
                   />
                 </IonItem>
               </IonList>
@@ -407,11 +407,11 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
               <IonList style={{ background: 'transparent' }}>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">E-Mail</IonLabel>
-                  <IonInput type="email" value={formData.contact_email} onIonInput={(e) => setFormData({ ...formData, contact_email: e.detail.value! })} placeholder="kontakt@beispiel.de" disabled={saving} />
+                  <IonInput type="email" value={formData.contact_email} onIonInput={(e) => setFormData({ ...formData, contact_email: e.detail.value! })} placeholder="kontakt@beispiel.de" disabled={isSubmitting} />
                 </IonItem>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Telefon</IonLabel>
-                  <IonInput type="tel" value={formData.contact_phone} onIonInput={(e) => setFormData({ ...formData, contact_phone: e.detail.value! })} placeholder="04834 12345" disabled={saving} />
+                  <IonInput type="tel" value={formData.contact_phone} onIonInput={(e) => setFormData({ ...formData, contact_phone: e.detail.value! })} placeholder="04834 12345" disabled={isSubmitting} />
                 </IonItem>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Adresse</IonLabel>
@@ -421,12 +421,12 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     placeholder="Kirchstraße 1, 25764 Wesselburen"
                     autoGrow={true}
                     rows={2}
-                    disabled={saving}
+                    disabled={isSubmitting}
                   />
                 </IonItem>
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Website</IonLabel>
-                  <IonInput type="url" value={formData.website_url} onIonInput={(e) => setFormData({ ...formData, website_url: e.detail.value! })} placeholder="https://www.beispiel.de" disabled={saving} />
+                  <IonInput type="url" value={formData.website_url} onIonInput={(e) => setFormData({ ...formData, website_url: e.detail.value! })} placeholder="https://www.beispiel.de" disabled={isSubmitting} />
                 </IonItem>
               </IonList>
             </IonCardContent>
@@ -449,7 +449,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     <h3 style={{ fontWeight: '500', margin: '0 0 4px 0' }}>Organisation aktiv</h3>
                     <p style={{ color: '#666', margin: 0, fontSize: '0.85rem' }}>Benutzer können sich anmelden</p>
                   </IonLabel>
-                  <IonToggle slot="end" checked={formData.is_active} onIonChange={(e) => setFormData({ ...formData, is_active: e.detail.checked })} disabled={saving} />
+                  <IonToggle slot="end" checked={formData.is_active} onIonChange={(e) => setFormData({ ...formData, is_active: e.detail.checked })} disabled={isSubmitting} />
                 </IonItem>
                 {!formData.is_active && (
                   <IonItem lines="none" style={{ '--background': 'rgba(239, 68, 68, 0.08)', borderRadius: '10px', marginTop: '8px' }}>
@@ -476,15 +476,15 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                 <IonList style={{ background: 'transparent' }}>
                   <IonItem lines="full" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Name des Administrators *</IonLabel>
-                    <IonInput value={formData.admin_name} onIonInput={(e) => setFormData({ ...formData, admin_name: e.detail.value! })} placeholder="z.B. Pastor Mueller" disabled={saving} />
+                    <IonInput value={formData.admin_name} onIonInput={(e) => setFormData({ ...formData, admin_name: e.detail.value! })} placeholder="z.B. Pastor Mueller" disabled={isSubmitting} />
                   </IonItem>
                   <IonItem lines="full" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Login-Benutzername *</IonLabel>
-                    <IonInput value={formData.admin_username} onIonInput={(e) => setFormData({ ...formData, admin_username: e.detail.value! })} placeholder="z.B. pmueller" disabled={saving} />
+                    <IonInput value={formData.admin_username} onIonInput={(e) => setFormData({ ...formData, admin_username: e.detail.value! })} placeholder="z.B. pmueller" disabled={isSubmitting} />
                   </IonItem>
                   <IonItem lines="none" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Passwort *</IonLabel>
-                    <IonInput type="password" value={formData.admin_password} onIonInput={(e) => setFormData({ ...formData, admin_password: e.detail.value! })} placeholder="Mindestens 6 Zeichen" disabled={saving} />
+                    <IonInput type="password" value={formData.admin_password} onIonInput={(e) => setFormData({ ...formData, admin_password: e.detail.value! })} placeholder="Mindestens 6 Zeichen" disabled={isSubmitting} />
                   </IonItem>
                 </IonList>
 

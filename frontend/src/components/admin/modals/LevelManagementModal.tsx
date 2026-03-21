@@ -80,6 +80,7 @@ import {
   time
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 
 // Level Icon Mapping
@@ -189,6 +190,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
     color: '#ec4899',
     is_active: true
   });
+  const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -202,6 +204,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
   const handleSubmit = async () => {
     if (!isFormValid) return;
 
+    await guard(async () => {
     setLoading(true);
     try {
       // Auto-generate name from title if empty
@@ -241,6 +244,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
     } finally {
       setLoading(false);
     }
+    });
   };
 
   return (
@@ -260,7 +264,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
           <IonButtons slot="end">
             <IonButton
               onClick={handleSubmit}
-              disabled={!isFormValid || loading}
+              disabled={!isFormValid || loading || isSubmitting}
               className="app-modal-submit-btn app-modal-submit-btn--level"
             >
               {loading ? (

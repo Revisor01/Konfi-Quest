@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useActionGuard } from '../../../hooks/useActionGuard';
 import {
   IonHeader,
   IonToolbar,
@@ -223,6 +224,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   onSuccess
 }) => {
   const { setSuccess, setError } = useApp();
+  const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [presentAlert] = useIonAlert();
@@ -395,6 +397,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       return;
     }
 
+    await guard(async () => {
     setLoading(true);
     try {
       // Prepare criteria_extra based on criteria_type
@@ -443,6 +446,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
     } finally {
       setLoading(false);
     }
+    });
   };
 
   const renderCriteriaSpecificFields = () => {
@@ -746,7 +750,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           <IonButtons slot="end">
             <IonButton
               onClick={handleSave}
-              disabled={loading || !formData.name.trim()}
+              disabled={loading || isSubmitting || !formData.name.trim()}
               className="app-modal-submit-btn app-modal-submit-btn--badges"
             >
               {loading ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}

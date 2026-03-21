@@ -31,6 +31,7 @@ import {
   timeOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 
 interface PollModalProps {
@@ -56,7 +57,7 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
   const [multipleChoice, setMultipleChoice] = useState(false);
   const [hasExpiration, setHasExpiration] = useState(false);
   const [expirationHours, setExpirationHours] = useState(24);
-  const [creating, setCreating] = useState(false);
+  const { isSubmitting: creating, guard } = useActionGuard();
 
   const resetForm = () => {
     setQuestion('');
@@ -98,27 +99,26 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
       return;
     }
 
-    setCreating(true);
-    try {
-      const pollData = {
-        question: trimmedQuestion,
-        options: validOptions,
-        multiple_choice: multipleChoice,
-        expires_in_hours: hasExpiration ? expirationHours : null
-      };
+    await guard(async () => {
+      try {
+        const pollData = {
+          question: trimmedQuestion,
+          options: validOptions,
+          multiple_choice: multipleChoice,
+          expires_in_hours: hasExpiration ? expirationHours : null
+        };
 
-      await api.post(`/chat/rooms/${roomId}/polls`, pollData);
+        await api.post(`/chat/rooms/${roomId}/polls`, pollData);
 
-      setSuccess('Umfrage erstellt');
-      resetForm();
-      onSuccess();
-      handleClose();
-    } catch (err) {
-      setError('Fehler beim Erstellen der Umfrage');
- console.error('Error creating poll:', err);
-    } finally {
-      setCreating(false);
-    }
+        setSuccess('Umfrage erstellt');
+        resetForm();
+        onSuccess();
+        handleClose();
+      } catch (err) {
+        setError('Fehler beim Erstellen der Umfrage');
+        console.error('Error creating poll:', err);
+      }
+    });
   };
 
   const canCreate = () => {

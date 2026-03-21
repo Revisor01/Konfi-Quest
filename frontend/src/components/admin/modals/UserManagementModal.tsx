@@ -28,6 +28,7 @@ import {
   schoolOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 
 interface User {
@@ -82,8 +83,8 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   onSuccess
 }) => {
   const { setSuccess, setError, user: currentUser } = useApp();
+  const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [presentAlert] = useIonAlert();
   const initializedRef = useRef(false);
@@ -221,53 +222,52 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
       return;
     }
 
-    setSaving(true);
-    try {
-      const userData: any = {
-        username: formData.username.trim(),
-        email: formData.email.trim() || null,
-        display_name: formData.display_name.trim(),
-        role_title: formData.role_title.trim() || null,
-        role_id: formData.role_id,
-        is_active: formData.is_active
-      };
+    await guard(async () => {
+      try {
+        const userData: any = {
+          username: formData.username.trim(),
+          email: formData.email.trim() || null,
+          display_name: formData.display_name.trim(),
+          role_title: formData.role_title.trim() || null,
+          role_id: formData.role_id,
+          is_active: formData.is_active
+        };
 
-      if (formData.password.trim()) {
-        userData.password = formData.password;
+        if (formData.password.trim()) {
+          userData.password = formData.password;
+        }
+
+        let userIdForAssignments = userId;
+        if (isEditMode) {
+          await api.put(`/users/${userId}`, userData);
+          setSuccess('Benutzer erfolgreich aktualisiert');
+        } else {
+          const response = await api.post('/users', userData);
+          userIdForAssignments = response.data.id;
+          setSuccess('Benutzer erfolgreich erstellt');
+        }
+
+        // Update jahrgang assignments
+        const assignments = Object.entries(jahrgangAssignments)
+          .filter(([_, isAssigned]) => isAssigned)
+          .map(([jahrgangId, _]) => ({
+            jahrgang_id: parseInt(jahrgangId),
+            can_view: true,
+            can_edit: true
+          }));
+
+        if (userIdForAssignments) {
+          await api.post(`/users/${userIdForAssignments}/jahrgaenge`, {
+            jahrgang_assignments: assignments
+          });
+        }
+
+        setIsDirty(false);
+        onSuccess();
+      } catch (err: any) {
+        setError(err.response?.data?.error || 'Fehler beim Speichern des Benutzers');
       }
-
-      let userIdForAssignments = userId;
-      if (isEditMode) {
-        await api.put(`/users/${userId}`, userData);
-        setSuccess('Benutzer erfolgreich aktualisiert');
-      } else {
-        const response = await api.post('/users', userData);
-        userIdForAssignments = response.data.id;
-        setSuccess('Benutzer erfolgreich erstellt');
-      }
-
-      // Update jahrgang assignments
-      const assignments = Object.entries(jahrgangAssignments)
-        .filter(([_, isAssigned]) => isAssigned)
-        .map(([jahrgangId, _]) => ({
-          jahrgang_id: parseInt(jahrgangId),
-          can_view: true,
-          can_edit: true
-        }));
-
-      if (userIdForAssignments) {
-        await api.post(`/users/${userIdForAssignments}/jahrgaenge`, {
-          jahrgang_assignments: assignments
-        });
-      }
-
-      setIsDirty(false);
-      onSuccess();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Speichern des Benutzers');
-    } finally {
-      setSaving(false);
-    }
+    });
   };
 
   const handleJahrgangAssignment = (jahrgangId: number, value: boolean) => {
@@ -333,13 +333,13 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         <IonToolbar>
           <IonTitle>{isEditMode ? 'Benutzer bearbeiten' : 'Neuer Benutzer'}</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} disabled={saving} className="app-modal-close-btn">
+            <IonButton onClick={onClose} disabled={isSubmitting} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={!isValid || saving} className="app-modal-submit-btn app-modal-submit-btn--settings">
-              {saving ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+            <IonButton onClick={handleSave} disabled={!isValid || isSubmitting} className="app-modal-submit-btn app-modal-submit-btn--settings">
+              {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -363,7 +363,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     value={formData.display_name}
                     onIonInput={(e) => setFormData({ ...formData, display_name: e.detail.value! })}
                     placeholder="Max Mustermann"
-                    disabled={saving}
+                    disabled={isSubmitting}
                   />
                 </IonItem>
 
@@ -373,7 +373,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     value={formData.username}
                     onIonInput={(e) => setFormData({ ...formData, username: e.detail.value! })}
                     placeholder="max.mustermann"
-                    disabled={saving}
+                    disabled={isSubmitting}
                   />
                 </IonItem>
 
@@ -383,7 +383,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     value={formData.role_title}
                     onIonInput={(e) => setFormData({ ...formData, role_title: e.detail.value! })}
                     placeholder="z.B. Pastor, Diakonin, Jugendmitarbeiter"
-                    disabled={saving}
+                    disabled={isSubmitting}
                   />
                 </IonItem>
 
@@ -394,7 +394,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     value={formData.email}
                     onIonInput={(e) => setFormData({ ...formData, email: e.detail.value! })}
                     placeholder="max@example.com"
-                    disabled={saving}
+                    disabled={isSubmitting}
                   />
                 </IonItem>
 
@@ -407,7 +407,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     value={formData.password}
                     onIonInput={(e) => setFormData({ ...formData, password: e.detail.value! })}
                     placeholder={isEditMode ? "Leer lassen um nicht zu ändern" : "Passwort eingeben"}
-                    disabled={saving}
+                    disabled={isSubmitting}
                   />
                 </IonItem>
               </IonList>
@@ -439,10 +439,10 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                       <div
                         key={role.id}
                         className="app-list-item"
-                        onClick={() => !saving && setFormData({ ...formData, role_id: role.id })}
+                        onClick={() => !isSubmitting && setFormData({ ...formData, role_id: role.id })}
                         style={{
-                          cursor: saving ? 'default' : 'pointer',
-                          opacity: saving ? 0.6 : 1,
+                          cursor: isSubmitting ? 'default' : 'pointer',
+                          opacity: isSubmitting ? 0.6 : 1,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
@@ -492,7 +492,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 <IonToggle
                   checked={formData.is_active}
                   onIonChange={(e) => setFormData({ ...formData, is_active: e.detail.checked })}
-                  disabled={saving}
+                  disabled={isSubmitting}
                 />
               </div>
             </IonCardContent>
@@ -524,10 +524,10 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     <div
                       key={jahrgang.id}
                       className="app-list-item app-list-item--users"
-                      onClick={() => !saving && handleJahrgangAssignment(jahrgang.id, !isAssigned)}
+                      onClick={() => !isSubmitting && handleJahrgangAssignment(jahrgang.id, !isAssigned)}
                       style={{
-                        cursor: saving ? 'default' : 'pointer',
-                        opacity: saving ? 0.6 : 1,
+                        cursor: isSubmitting ? 'default' : 'pointer',
+                        opacity: isSubmitting ? 0.6 : 1,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',

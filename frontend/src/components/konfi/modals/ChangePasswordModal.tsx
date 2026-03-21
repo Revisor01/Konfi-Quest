@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useActionGuard } from '../../../hooks/useActionGuard';
 import {
   IonPage,
   IonHeader,
@@ -71,7 +72,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
   submitBtnClass = 'app-modal-submit-btn--konfi'
 }) => {
   const { setSuccess, setError } = useApp();
-  const [saving, setSaving] = useState(false);
+  const { isSubmitting, guard } = useActionGuard();
 
   const [passwordData, setPasswordData] = useState({
     current_password: '',
@@ -122,19 +123,18 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
       return;
     }
 
-    setSaving(true);
-    try {
-      await api.post('/auth/change-password', {
-        currentPassword: passwordData.current_password,
-        newPassword: passwordData.new_password
-      });
-      setSuccess('Passwort erfolgreich geändert');
-      onSuccess();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Ändern des Passworts');
-    } finally {
-      setSaving(false);
-    }
+    await guard(async () => {
+      try {
+        await api.post('/auth/change-password', {
+          currentPassword: passwordData.current_password,
+          newPassword: passwordData.new_password
+        });
+        setSuccess('Passwort erfolgreich geändert');
+        onSuccess();
+      } catch (err: any) {
+        setError(err.response?.data?.error || 'Fehler beim Ändern des Passworts');
+      }
+    });
   };
 
   const isValid = passwordData.current_password && isPasswordValid && passwordsMatch;
@@ -145,13 +145,13 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         <IonToolbar>
           <IonTitle>Passwort ändern</IonTitle>
           <IonButtons slot="start">
-            <IonButton className="app-modal-close-btn" onClick={onClose} disabled={saving}>
+            <IonButton className="app-modal-close-btn" onClick={onClose} disabled={isSubmitting}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton className={`app-modal-submit-btn ${submitBtnClass}`} onClick={handleSave} disabled={saving || !isValid}>
-              {saving ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+            <IonButton className={`app-modal-submit-btn ${submitBtnClass}`} onClick={handleSave} disabled={isSubmitting || !isValid}>
+              {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -176,7 +176,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                     value={passwordData.current_password}
                     onIonInput={(e) => setPasswordData(prev => ({ ...prev, current_password: e.detail.value! }))}
                     placeholder="Aktuelles Passwort eingeben"
-                    disabled={saving}
+                    disabled={isSubmitting}
                   />
                   <IonButton
                     slot="end"
@@ -209,7 +209,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                     value={passwordData.new_password}
                     onIonInput={(e) => setPasswordData(prev => ({ ...prev, new_password: e.detail.value! }))}
                     placeholder="Neues Passwort eingeben"
-                    disabled={saving}
+                    disabled={isSubmitting}
                   />
                   <IonButton
                     slot="end"
@@ -227,7 +227,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                     value={passwordData.confirm_password}
                     onIonInput={(e) => setPasswordData(prev => ({ ...prev, confirm_password: e.detail.value! }))}
                     placeholder="Neues Passwort bestätigen"
-                    disabled={saving}
+                    disabled={isSubmitting}
                   />
                   <IonButton
                     slot="end"

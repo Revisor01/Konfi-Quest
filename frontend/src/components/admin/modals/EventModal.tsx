@@ -27,6 +27,7 @@ import {
 } from '@ionic/react';
 import { checkmarkOutline, closeOutline, add, trash, create, calendar, people, time, location, copy, removeOutline, addOutline, shieldCheckmark, bagHandle, scanOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 
 interface Event {
@@ -86,6 +87,7 @@ const EventModal: React.FC<EventModalProps> = ({
   dismiss
 }) => {
   const { setSuccess, setError } = useApp();
+  const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
@@ -355,6 +357,7 @@ const EventModal: React.FC<EventModalProps> = ({
   const handleSubmit = async () => {
     if (!formData.name.trim() || !formData.event_date) return;
 
+    await guard(async () => {
     setLoading(true);
     try {
       // Helper function to convert local time string to ISO with timezone
@@ -426,6 +429,7 @@ const EventModal: React.FC<EventModalProps> = ({
     } finally {
       setLoading(false);
     }
+    });
   };
 
   const isFormValid = formData.name.trim().length > 0 && formData.event_date && (teamerAccess === 'teamer_only' || !formData.mandatory || formData.jahrgang_ids.length > 0);
@@ -449,7 +453,7 @@ const EventModal: React.FC<EventModalProps> = ({
           <IonButtons slot="end">
             <IonButton
               onClick={handleSubmit}
-              disabled={!isFormValid || loading}
+              disabled={!isFormValid || loading || isSubmitting}
               className="app-modal-submit-btn app-modal-submit-btn--events"
             >
               {loading ? (

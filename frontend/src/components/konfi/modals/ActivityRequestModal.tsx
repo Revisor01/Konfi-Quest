@@ -38,6 +38,7 @@ import {
   pricetag
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 
 interface Activity {
@@ -63,7 +64,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const { isSubmitting, guard } = useActionGuard();
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const [formData, setFormData] = useState({
@@ -169,33 +170,33 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
   };
 
   const submitRequest = async () => {
-    setSubmitting(true);
-    setUploadProgress(0);
-
-    try {
-      let photoFilename: string | null = null;
-
-      if (formData.photo_file) {
-        photoFilename = await uploadPhoto();
-      }
-
-      const requestData = {
-        activity_id: parseInt(formData.activity_id),
-        description: formData.description.trim(),
-        requested_date: formData.requested_date,
-        photo_filename: photoFilename
-      };
-
-      await api.post('/konfi/requests', requestData);
-
-      setSuccess('Antrag erfolgreich eingereicht!');
-      onSuccess();
-    } catch (error: any) {
-      setError(error.response?.data?.error || error.message || 'Fehler beim Einreichen des Antrags');
-    } finally {
-      setSubmitting(false);
+    await guard(async () => {
       setUploadProgress(0);
-    }
+
+      try {
+        let photoFilename: string | null = null;
+
+        if (formData.photo_file) {
+          photoFilename = await uploadPhoto();
+        }
+
+        const requestData = {
+          activity_id: parseInt(formData.activity_id),
+          description: formData.description.trim(),
+          requested_date: formData.requested_date,
+          photo_filename: photoFilename
+        };
+
+        await api.post('/konfi/requests', requestData);
+
+        setSuccess('Antrag erfolgreich eingereicht!');
+        onSuccess();
+      } catch (error: any) {
+        setError(error.response?.data?.error || error.message || 'Fehler beim Einreichen des Antrags');
+      } finally {
+        setUploadProgress(0);
+      }
+    });
   };
 
   const removePhoto = () => {
@@ -211,17 +212,17 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         <IonToolbar>
           <IonTitle>Neuer Antrag</IonTitle>
           <IonButtons slot="start">
-            <IonButton className="app-modal-close-btn" onClick={onClose} disabled={submitting}>
+            <IonButton className="app-modal-close-btn" onClick={onClose} disabled={isSubmitting}>
               <IonIcon icon={close} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSubmit} disabled={submitting || loading}>
+            <IonButton className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSubmit} disabled={isSubmitting || loading}>
               <IonIcon icon={checkmark} />
             </IonButton>
           </IonButtons>
         </IonToolbar>
-        {submitting && uploadProgress > 0 && (
+        {isSubmitting && uploadProgress > 0 && (
           <IonProgressBar value={uploadProgress / 100} />
         )}
       </IonHeader>

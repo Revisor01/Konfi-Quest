@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useActionGuard } from '../../../hooks/useActionGuard';
 import {
   IonHeader,
   IonToolbar,
@@ -60,6 +61,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
   onSuccess
 }) => {
   const { setSuccess, setError } = useApp();
+  const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [request, setRequest] = useState<ActivityRequest | null>(null);
   const [adminComment, setAdminComment] = useState('');
@@ -119,21 +121,20 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
       return;
     }
 
-    setLoading(true);
-    try {
-      await api.put(`/admin/activities/requests/${request.id}`, {
-        status: selectedAction === 'approve' ? 'approved' : 'rejected',
-        admin_comment: adminComment
-      });
-      setSuccess(`Antrag von "${request.konfi_name}" ${selectedAction === 'approve' ? 'genehmigt' : 'abgelehnt'}`);
-      window.dispatchEvent(new CustomEvent('requestStatusChanged'));
-      onSuccess();
-      onClose();
-    } catch (err: any) {
-      setError(err.response?.data?.error || `Fehler beim ${selectedAction === 'approve' ? 'Genehmigen' : 'Ablehnen'} des Antrags`);
-    } finally {
-      setLoading(false);
-    }
+    await guard(async () => {
+      try {
+        await api.put(`/admin/activities/requests/${request.id}`, {
+          status: selectedAction === 'approve' ? 'approved' : 'rejected',
+          admin_comment: adminComment
+        });
+        setSuccess(`Antrag von "${request.konfi_name}" ${selectedAction === 'approve' ? 'genehmigt' : 'abgelehnt'}`);
+        window.dispatchEvent(new CustomEvent('requestStatusChanged'));
+        onSuccess();
+        onClose();
+      } catch (err: any) {
+        setError(err.response?.data?.error || `Fehler beim ${selectedAction === 'approve' ? 'Genehmigen' : 'Ablehnen'} des Antrags`);
+      }
+    });
   };
 
   const formatDate = (dateString: string) => {
@@ -186,14 +187,14 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         <IonToolbar>
           <IonTitle>Antrag prüfen</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} disabled={loading} className="app-modal-close-btn">
+            <IonButton onClick={onClose} disabled={isSubmitting} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           {isPending && selectedAction && (
             <IonButtons slot="end">
-              <IonButton onClick={handleSubmit} disabled={loading || (selectedAction === 'reject' && !adminComment.trim())} className="app-modal-submit-btn app-modal-submit-btn--activities">
-                {loading ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+              <IonButton onClick={handleSubmit} disabled={isSubmitting || (selectedAction === 'reject' && !adminComment.trim())} className="app-modal-submit-btn app-modal-submit-btn--activities">
+                {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
               </IonButton>
             </IonButtons>
           )}

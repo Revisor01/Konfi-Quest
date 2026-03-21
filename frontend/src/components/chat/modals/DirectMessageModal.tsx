@@ -20,6 +20,7 @@ import {
 } from '@ionic/react';
 import { close, person, people, chevronForward, searchOutline, peopleOutline, informationCircleOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 
@@ -43,7 +44,7 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSucc
   const [users, setUsers] = useState<User[]>([]);
   const [searchText, setSearchText] = useState('');
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
+  const { isSubmitting: creating, guard } = useActionGuard();
 
   useEffect(() => {
     loadUsers();
@@ -77,22 +78,21 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSucc
   };
 
   const createDirectMessage = async (targetUser: User) => {
-    setCreating(true);
-    try {
-      const response = await api.post('/chat/direct', {
-        target_user_id: targetUser.id,
-        target_user_type: targetUser.type
-      });
+    await guard(async () => {
+      try {
+        await api.post('/chat/direct', {
+          target_user_id: targetUser.id,
+          target_user_type: targetUser.type
+        });
 
-      setSuccess(`Direktnachricht mit ${targetUser.name || targetUser.display_name} erstellt`);
-      onSuccess();
-      handleClose();
-    } catch (err) {
-      setError('Fehler beim Erstellen der Direktnachricht');
- console.error('Error creating direct message:', err);
-    } finally {
-      setCreating(false);
-    }
+        setSuccess(`Direktnachricht mit ${targetUser.name || targetUser.display_name} erstellt`);
+        onSuccess();
+        handleClose();
+      } catch (err) {
+        setError('Fehler beim Erstellen der Direktnachricht');
+        console.error('Error creating direct message:', err);
+      }
+    });
   };
 
   const handleClose = () => {

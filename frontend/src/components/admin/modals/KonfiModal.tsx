@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useActionGuard } from '../../../hooks/useActionGuard';
 import {
   IonPage,
   IonHeader,
@@ -37,7 +38,7 @@ interface KonfiModalProps {
 const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, dismiss }) => {
   const [name, setName] = useState('');
   const [jahrgang, setJahrgang] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { isSubmitting, guard } = useActionGuard();
 
   const handleClose = () => {
     if (dismiss) {
@@ -50,17 +51,14 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
   const handleSave = async () => {
     if (!name.trim() || !jahrgang) return;
 
-    setLoading(true);
-    try {
+    await guard(async () => {
       const konfiData = {
         name: name.trim(),
         jahrgang_id: jahrgaenge.find(jg => jg.name === jahrgang)?.id || 1
       };
 
       await onSave(konfiData);
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   const isValid = name.trim().length > 0 && jahrgang;
@@ -71,13 +69,13 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
         <IonToolbar>
           <IonTitle>Konfi erstellen</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose} disabled={loading} className="app-modal-close-btn">
+            <IonButton onClick={handleClose} disabled={isSubmitting} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={!isValid || loading} className="app-modal-submit-btn app-modal-submit-btn--konfi">
-              {loading ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+            <IonButton onClick={handleSave} disabled={!isValid || isSubmitting} className="app-modal-submit-btn app-modal-submit-btn--konfi">
+              {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -101,7 +99,7 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
                     value={name}
                     onIonInput={(e) => setName(e.detail.value!)}
                     placeholder="Vor- und Nachname"
-                    disabled={loading}
+                    disabled={isSubmitting}
                     clearInput={true}
                   />
                 </IonItem>
@@ -112,7 +110,7 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
                     value={jahrgang}
                     onIonChange={(e) => setJahrgang(e.detail.value)}
                     placeholder="Jahrgang wählen"
-                    disabled={loading}
+                    disabled={isSubmitting}
                     interface="popover"
                   >
                     {jahrgaenge.map(jg => (

@@ -41,6 +41,7 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { FileViewer } from '@capacitor/file-viewer';
 import { FileOpener } from '@capacitor-community/file-opener';
 import { useApp } from '../../../contexts/AppContext';
+import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import FileViewerModal from '../../chat/modals/FileViewerModal';
 
@@ -101,7 +102,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
   );
   const [existingFiles, setExistingFiles] = useState<MaterialFile[]>(material?.files || []);
   const [newFiles, setNewFiles] = useState<File[]>([]);
-  const [saving, setSaving] = useState(false);
+  const { isSubmitting, guard } = useActionGuard();
 
   const [events, setEvents] = useState<EventOption[]>([]);
   const [jahrgaenge, setJahrgaenge] = useState<JahrgangOption[]>([]);
@@ -248,42 +249,41 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
       return;
     }
 
-    setSaving(true);
-    try {
-      let materialId = material?.id;
+    await guard(async () => {
+      try {
+        let materialId = material?.id;
 
-      const payload: any = {
-        title: title.trim(),
-        description: description.trim() || null,
-        event_ids: eventIds,
-        jahrgang_ids: jahrgangIds
-      };
+        const payload: any = {
+          title: title.trim(),
+          description: description.trim() || null,
+          event_ids: eventIds,
+          jahrgang_ids: jahrgangIds
+        };
 
-      if (material) {
-        await api.put(`/material/${material.id}`, payload);
-      } else {
-        const res = await api.post('/material', payload);
-        materialId = res.data.id;
+        if (material) {
+          await api.put(`/material/${material.id}`, payload);
+        } else {
+          const res = await api.post('/material', payload);
+          materialId = res.data.id;
+        }
+
+        // Neue Dateien hochladen
+        if (newFiles.length > 0 && materialId) {
+          const formData = new FormData();
+          newFiles.forEach(file => {
+            formData.append('files', file);
+          });
+          await api.post(`/material/${materialId}/files`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+        }
+
+        setSuccess(material ? 'Material aktualisiert' : 'Material erstellt');
+        onSuccess();
+      } catch (err: any) {
+        setError(err.response?.data?.error || 'Fehler beim Speichern');
       }
-
-      // Neue Dateien hochladen
-      if (newFiles.length > 0 && materialId) {
-        const formData = new FormData();
-        newFiles.forEach(file => {
-          formData.append('files', file);
-        });
-        await api.post(`/material/${materialId}/files`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-      }
-
-      setSuccess(material ? 'Material aktualisiert' : 'Material erstellt');
-      onSuccess();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Speichern');
-    } finally {
-      setSaving(false);
-    }
+    });
   };
 
   return (
@@ -297,8 +297,8 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
           </IonButtons>
           <IonTitle>{material ? 'Material bearbeiten' : 'Neues Material'}</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={saving}>
-              {saving ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
+            <IonButton onClick={handleSave} disabled={isSubmitting}>
+              {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
             </IonButton>
           </IonButtons>
         </IonToolbar>

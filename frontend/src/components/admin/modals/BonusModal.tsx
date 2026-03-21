@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useActionGuard } from '../../../hooks/useActionGuard';
 import {
   IonPage,
   IonHeader,
@@ -40,26 +41,25 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
   const [reason, setReason] = useState('');
   const [type, setType] = useState('gemeinde');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [loading, setLoading] = useState(false);
+  const { isSubmitting, guard } = useActionGuard();
 
   const handleSave = async () => {
     if (!name.trim() || points <= 0) return;
 
-    setLoading(true);
-    try {
-      await api.post(`/admin/konfis/${konfiId}/bonus-points`, {
-        points: points,
-        type: type,
-        description: `${name.trim()}${reason.trim() ? ': ' + reason.trim() : ''}`,
-        completed_date: selectedDate
-      });
-      await onSave();
-      handleClose();
-    } catch (err) {
- console.error('Error saving bonus points:', err);
-    } finally {
-      setLoading(false);
-    }
+    await guard(async () => {
+      try {
+        await api.post(`/admin/konfis/${konfiId}/bonus-points`, {
+          points: points,
+          type: type,
+          description: `${name.trim()}${reason.trim() ? ': ' + reason.trim() : ''}`,
+          completed_date: selectedDate
+        });
+        await onSave();
+        handleClose();
+      } catch (err) {
+        console.error('Error saving bonus points:', err);
+      }
+    });
   };
 
   const isValid = name.trim().length > 0 && points > 0;
@@ -70,12 +70,12 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
         <IonToolbar>
           <IonTitle>Bonuspunkte hinzufügen</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose} disabled={loading} className="app-modal-close-btn">
+            <IonButton onClick={handleClose} disabled={isSubmitting} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={!isValid || loading} className="app-modal-submit-btn app-modal-submit-btn--konfi">
+            <IonButton onClick={handleSave} disabled={!isValid || isSubmitting} className="app-modal-submit-btn app-modal-submit-btn--konfi">
               <IonIcon icon={checkmarkOutline} />
             </IonButton>
           </IonButtons>
@@ -101,7 +101,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                     onIonInput={(e) => setName(e.detail.value!)}
                     placeholder="z.B. Hilfe beim Aufräumen"
                     clearInput={true}
-                    disabled={loading}
+                    disabled={isSubmitting}
                   />
                 </IonItem>
 
@@ -111,7 +111,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                     type="date"
                     value={selectedDate}
                     onIonInput={(e) => setSelectedDate(e.detail.value!)}
-                    disabled={loading}
+                    disabled={isSubmitting}
                   />
                 </IonItem>
 
@@ -121,7 +121,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                     <IonButton
                       fill="outline"
                       size="small"
-                      disabled={loading || points <= 1}
+                      disabled={isSubmitting || points <= 1}
                       onClick={() => setPoints(Math.max(1, points - 1))}
                       style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
                     >
@@ -143,13 +143,13 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                         }
                       }}
                       placeholder="1"
-                      disabled={loading}
+                      disabled={isSubmitting}
                       style={{ textAlign: 'center', flex: 1 }}
                     />
                     <IonButton
                       fill="outline"
                       size="small"
-                      disabled={loading || points >= 50}
+                      disabled={isSubmitting || points >= 50}
                       onClick={() => setPoints(Math.min(50, points + 1))}
                       style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
                     >
@@ -165,10 +165,10 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div
                   className="app-list-item"
-                  onClick={() => !loading && setType('gemeinde')}
+                  onClick={() => !isSubmitting && setType('gemeinde')}
                   style={{
-                    cursor: loading ? 'default' : 'pointer',
-                    opacity: loading ? 0.6 : 1,
+                    cursor: isSubmitting ? 'default' : 'pointer',
+                    opacity: isSubmitting ? 0.6 : 1,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
@@ -181,10 +181,10 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                 </div>
                 <div
                   className="app-list-item"
-                  onClick={() => !loading && setType('gottesdienst')}
+                  onClick={() => !isSubmitting && setType('gottesdienst')}
                   style={{
-                    cursor: loading ? 'default' : 'pointer',
-                    opacity: loading ? 0.6 : 1,
+                    cursor: isSubmitting ? 'default' : 'pointer',
+                    opacity: isSubmitting ? 0.6 : 1,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
@@ -218,7 +218,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                     onIonInput={(e) => setReason(e.detail.value!)}
                     placeholder="Warum werden diese Bonuspunkte vergeben?"
                     rows={3}
-                    disabled={loading}
+                    disabled={isSubmitting}
                   />
                 </IonItem>
               </IonList>

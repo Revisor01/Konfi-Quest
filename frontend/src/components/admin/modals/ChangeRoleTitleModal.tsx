@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useActionGuard } from '../../../hooks/useActionGuard';
 import {
   IonPage,
   IonHeader,
@@ -45,21 +46,20 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
 }) => {
   const { setSuccess, setError } = useApp();
   const [roleTitle, setRoleTitle] = useState(initialRoleTitle);
-  const [saving, setSaving] = useState(false);
+  const { isSubmitting, guard } = useActionGuard();
 
   const handleSave = async () => {
-    setSaving(true);
-    try {
-      await api.post('/auth/update-role-title', {
-        role_title: roleTitle.trim()
-      });
-      setSuccess('Funktionsbeschreibung erfolgreich aktualisiert');
-      onSuccess();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Aktualisieren der Funktionsbeschreibung');
-    } finally {
-      setSaving(false);
-    }
+    await guard(async () => {
+      try {
+        await api.post('/auth/update-role-title', {
+          role_title: roleTitle.trim()
+        });
+        setSuccess('Funktionsbeschreibung erfolgreich aktualisiert');
+        onSuccess();
+      } catch (err: any) {
+        setError(err.response?.data?.error || 'Fehler beim Aktualisieren der Funktionsbeschreibung');
+      }
+    });
   };
 
   return (
@@ -68,13 +68,13 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
         <IonToolbar>
           <IonTitle>Funktionsbeschreibung</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} disabled={saving} className="app-modal-close-btn">
+            <IonButton onClick={onClose} disabled={isSubmitting} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={saving} className={`app-modal-submit-btn ${submitBtnClass}`}>
-              {saving ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+            <IonButton onClick={handleSave} disabled={isSubmitting} className={`app-modal-submit-btn ${submitBtnClass}`}>
+              {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -98,7 +98,7 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
                     value={roleTitle}
                     onIonInput={(e) => setRoleTitle(e.detail.value!)}
                     placeholder="z.B. Pastor, Diakonin, Jugendmitarbeiter"
-                    disabled={saving}
+                    disabled={isSubmitting}
                     clearInput={true}
                   />
                 </IonItem>

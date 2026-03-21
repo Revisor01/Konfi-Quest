@@ -20,6 +20,7 @@ import {
 } from '@ionic/react';
 import { checkmarkOutline, closeOutline, create, pricetag, addOutline, removeOutline, checkmarkCircle, peopleOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 
 interface Activity {
@@ -55,6 +56,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
   dismiss
 }) => {
   const { setSuccess, setError } = useApp();
+  const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -190,6 +192,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
   const handleSubmit = async () => {
     if (!formData.name.trim()) return;
 
+    await guard(async () => {
     setLoading(true);
     try {
       const payload: any = {
@@ -219,6 +222,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
     } finally {
       setLoading(false);
     }
+    });
   };
 
   const isFormValid = formData.name.trim().length > 0;
@@ -242,7 +246,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
           <IonButtons slot="end">
             <IonButton
               onClick={handleSubmit}
-              disabled={!isFormValid || loading}
+              disabled={!isFormValid || loading || isSubmitting}
               className="app-modal-submit-btn app-modal-submit-btn--activities"
             >
               {loading ? (
