@@ -20,18 +20,9 @@ Offline-First: Alle 30 Pages mit SWR-Cache, WriteQueue fuer Chat/Antraege/Admin-
 
 **Geliefert:** TokenStore (Capacitor Preferences statt localStorage), NetworkMonitor, offlineCache + useOfflineQuery (SWR), WriteQueue (FIFO persistent), Corner-Badge Flex-Container, Online-Only Guards, axios-retry + useActionGuard, Backend Idempotency-Keys (client_id UUID), koordinierte Sync-Sequenz (flush → invalidate → badges).
 
-## Current Milestone: v2.2 Codebase-Hardening
+## Shipped: v2.2 Codebase-Hardening (2026-03-21)
 
-**Goal:** Codebase aufraeumen, DB-Schema konsolidieren, Navigation stabilisieren, Error Boundaries, Performance-Optimierung, Token-Refresh, Datei-Viewer.
-
-**Target features:**
-- Codebase Cleanup: Quick-Wins, Konsolidierung, Bug-Fixes
-- DB-Schema: Einheitliches Schema, Altlasten, Indizes, Foreign Keys
-- Navigation: Router-Migration, CustomEvents durch LiveUpdateContext ersetzen
-- Error Boundary + Sicherheit: CSP, MD5 ersetzen, TLS
-- Performance: Mega-Komponenten aufteilen, Memoization, SELECT-Stern
-- Token-Refresh: Refresh-Tokens, kuerzere JWT-Laufzeit, Revoke
-- Datei-Viewer: Fullscreen Zoom/Pan fuer Bilder in Chat + Material
+Types konsolidiert (User 9x→1, Event 8x→1), 73 DB-Indizes + 23 Foreign Keys, CustomEvents→LiveUpdateContext, ErrorBoundary + MD5→SHA-256, 5 Mega-Komponenten gesplittet + 16 SELECT* eliminiert, Token-Refresh (Access 15min + Refresh 90d rotierend + Soft-Revoke), universeller Datei-Viewer (Zoom/Pan/Pinch/Swipe/Download/Share).
 
 ## Geplant: v3.0 Onboarding + Landing
 

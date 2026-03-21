@@ -1,5 +1,26 @@
 # Milestones
 
+## v2.2 Codebase-Hardening (Shipped: 2026-03-21)
+
+**Phases completed:** 14 phases, 13 plans, 24 tasks
+
+**Key accomplishments:**
+
+- User (9x) und Event (8x) duplizierte Interfaces in zentrale types/ Dateien konsolidiert, 19 as-any Casts eliminiert, -404 Netto-Zeilen
+- Debug-console.logs entfernt (App.tsx, api.ts, SimpleCreateChatModal) und 4 as-any Casts durch korrekte TypeScript-Typisierung ersetzt
+- 73 CREATE INDEX IF NOT EXISTS und 23 ADD CONSTRAINT FK-Statements fuer alle ~30 Tabellen basierend auf WHERE/JOIN-Analyse aller 17 Route-Dateien
+- Inline CREATE TABLE Statements aus material.js und teamer.js in zentrale Migration 064 extrahiert, 145 Zeilen Schema-Code aus Routes entfernt
+- 17 window.dispatchEvent-Aufrufe (events-updated, konfis-updated, requestStatusChanged) durch LiveUpdateContext.triggerRefresh() ersetzt, LiveUpdateType um users + organizations erweitert
+- Alle 9 window.addEventListener-Bloecke fuer Daten-Events entfernt/migriert — useLiveRefresh ist einziger Daten-Update-Mechanismus
+- 3 Admin-Mega-Komponenten (4373 Zeilen gesamt) in je Haupt-Datei + Sektionen-Datei aufgeteilt mit 24 React.memo-Komponenten
+- ChatRoom unter 750 Zeilen nicht erreicht (1124 statt <750)
+- Refresh-Token-Rotation mit SHA-256 Hashing, 15min Access-Tokens und Soft-Revoke via token_invalidated_at
+- Automatischer 401-Refresh mit Race-Condition-Schutz, Refresh-Token in Capacitor Preferences und Re-Login-Dialog bei abgelaufenem Session
+- Fullscreen FileViewerModal mit CSS-transform Pinch-to-Zoom, Multi-Datei-Swipe, PDF/Video/Fallback-Support und nativem Download/Share via Capacitor
+- Chat und Material nutzen einheitlichen Fullscreen-Viewer mit Swipe-Kontext, API-Pfad-Aufloesung fuer Auth-geschuetzte Dateien, kein nativer FileOpener mehr
+
+---
+
 ## v2.1 App-Resilienz (Shipped: 2026-03-21)
 
 **Phases completed:** 15 phases, 23 plans, 43 tasks
