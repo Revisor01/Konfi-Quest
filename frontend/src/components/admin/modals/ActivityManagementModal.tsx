@@ -31,6 +31,7 @@ interface Activity {
   points: number;
   type: 'gottesdienst' | 'gemeinde';
   categories?: Category[];
+  target_role?: 'konfi' | 'teamer';
 }
 
 interface Category {
@@ -149,7 +150,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
             points: activity.points,
             type: activity.type,
             category_ids: activity.categories?.map((cat: Category) => cat.id) || [],
-            target_role: (activity as any).target_role || targetRole
+            target_role: activity.target_role || targetRole
           });
         } else {
           // Reset form for new activity

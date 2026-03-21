@@ -439,9 +439,9 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
   };
 
   const handlePhotoClick = async (activity: Activity) => {
-    if (activity.hasPhoto && (activity as any).requestId) {
+    if (activity.hasPhoto && activity.requestId) {
       try {
-        const response = await api.get(`/admin/activities/requests/${(activity as any).requestId}/photo`, {
+        const response = await api.get(`/admin/activities/requests/${activity.requestId}/photo`, {
           responseType: 'blob'
         });
         const photoUrl = URL.createObjectURL(response.data);

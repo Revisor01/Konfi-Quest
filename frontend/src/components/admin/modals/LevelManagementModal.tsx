@@ -412,21 +412,21 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
                       </IonLabel>
                     </IonItem>
                     <div slot="content" style={{ padding: '16px' }}>
-                      {Object.entries(LEVEL_ICONS).reduce((acc, [key, data]) => {
-                        const categoryIndex = acc.findIndex((group: any) => group.category === data.category);
+                      {Object.entries(LEVEL_ICONS).reduce<{ category: string; icons: { key: string; data: typeof LEVEL_ICONS[keyof typeof LEVEL_ICONS] }[] }[]>((acc, [key, data]) => {
+                        const categoryIndex = acc.findIndex((group) => group.category === data.category);
                         if (categoryIndex === -1) {
                           acc.push({ category: data.category, icons: [{ key, data }] });
                         } else {
                           acc[categoryIndex].icons.push({ key, data });
                         }
                         return acc;
-                      }, [] as any[]).map((group: any) => (
+                      }, []).map((group) => (
                         <div key={group.category} style={{ marginBottom: '16px' }}>
                           <span className="app-settings-item__subtitle" style={{ fontWeight: '600', marginBottom: '8px', display: 'block' }}>
                             {group.category}
                           </span>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '8px' }}>
-                            {group.icons.map(({ key, data }: any) => (
+                            {group.icons.map(({ key, data }) => (
                               <div
                                 key={key}
                                 onClick={() => setFormData({ ...formData, icon: key })}

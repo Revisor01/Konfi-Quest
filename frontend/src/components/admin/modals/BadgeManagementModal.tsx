@@ -896,21 +896,21 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                       </IonLabel>
                     </IonItem>
                     <div slot="content" style={{ padding: '16px' }}>
-                      {Object.entries(BADGE_ICONS).reduce((acc, [key, data]) => {
-                        const categoryIndex = acc.findIndex((group: any) => group.category === data.category);
+                      {Object.entries(BADGE_ICONS).reduce<{ category: string; icons: { key: string; data: typeof BADGE_ICONS[keyof typeof BADGE_ICONS] }[] }[]>((acc, [key, data]) => {
+                        const categoryIndex = acc.findIndex((group) => group.category === data.category);
                         if (categoryIndex === -1) {
                           acc.push({ category: data.category, icons: [{ key, data }] });
                         } else {
                           acc[categoryIndex].icons.push({ key, data });
                         }
                         return acc;
-                      }, [] as any[]).map((group: any) => (
+                      }, []).map((group) => (
                         <div key={group.category} style={{ marginBottom: '16px' }}>
                           <IonText style={{ fontSize: '0.85rem', fontWeight: '600', color: '#666', marginBottom: '8px', display: 'block' }}>
                             {group.category}
                           </IonText>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '8px' }}>
-                            {group.icons.map(({ key, data }: any) => (
+                            {group.icons.map(({ key, data }) => (
                               <div
                                 key={key}
                                 onClick={() => setFormData({ ...formData, icon: key })}
