@@ -1,4 +1,5 @@
 import { Preferences } from '@capacitor/preferences';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 import { toastController } from '@ionic/core';
 import { networkMonitor } from './networkMonitor';
 import api from './api';
@@ -98,6 +99,54 @@ function handleFlushResult(result: FlushResult): void {
   }
 }
 
+// --- Foto-Upload Helfer fuer Queue-Items mit _localPhotoPath ---
+
+async function resolveLocalPhoto(body: any): Promise<void> {
+  if (!body?._localPhotoPath) return;
+
+  // Datei aus Capacitor Filesystem lesen
+  const fileResult = await Filesystem.readFile({
+    path: body._localPhotoPath,
+    directory: Directory.Data,
+  });
+
+  // Base64 zu Blob konvertieren
+  const base64Data = typeof fileResult.data === 'string'
+    ? fileResult.data
+    : '';
+  // data URL prefix entfernen falls vorhanden
+  const rawBase64 = base64Data.includes(',') ? base64Data.split(',')[1] : base64Data;
+  const byteChars = atob(rawBase64);
+  const byteArray = new Uint8Array(byteChars.length);
+  for (let i = 0; i < byteChars.length; i++) {
+    byteArray[i] = byteChars.charCodeAt(i);
+  }
+  const blob = new Blob([byteArray], { type: 'image/jpeg' });
+
+  // Upload via FormData
+  const formData = new FormData();
+  formData.append('photo', blob, body._photoFileName || 'photo.jpg');
+  const uploadResponse = await api.post('/konfi/upload-photo', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
+  // Filename in body setzen, lokale Felder entfernen
+  body.photo_filename = uploadResponse.data.filename;
+
+  // Lokale Datei loeschen (best-effort)
+  try {
+    await Filesystem.deleteFile({
+      path: body._localPhotoPath,
+      directory: Directory.Data,
+    });
+  } catch {
+    // Ignorieren — wird beim naechsten Cleanup aufgeraeumt
+  }
+
+  delete body._localPhotoPath;
+  delete body._photoFileName;
+}
+
 // --- Oeffentliche API ---
 
 async function enqueue(
@@ -127,6 +176,12 @@ async function flush(): Promise<FlushResult> {
     while (items.length > 0) {
       const item = items[0];
       try {
+        // Lokales Foto zuerst hochladen falls vorhanden
+        if (item.body?._localPhotoPath) {
+          await resolveLocalPhoto(item.body);
+          await _save(items); // Body-Update persistieren
+        }
+
         const config: any = {};
         if (item.headers) config.headers = item.headers;
 

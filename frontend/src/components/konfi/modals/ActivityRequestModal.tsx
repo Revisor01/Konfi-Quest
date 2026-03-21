@@ -37,9 +37,12 @@ import {
   imageOutline,
   pricetag
 } from 'ionicons/icons';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
+import { writeQueue } from '../../../services/writeQueue';
+import { networkMonitor } from '../../../services/networkMonitor';
 
 interface Activity {
   id: number;
@@ -173,28 +176,83 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
     await guard(async () => {
       setUploadProgress(0);
 
-      try {
-        let photoFilename: string | null = null;
+      const clientId = crypto.randomUUID();
 
-        if (formData.photo_file) {
-          photoFilename = await uploadPhoto();
+      if (networkMonitor.isOnline) {
+        // Online-Pfad: direkt senden
+        try {
+          let photoFilename: string | null = null;
+
+          if (formData.photo_file) {
+            photoFilename = await uploadPhoto();
+          }
+
+          const requestData: any = {
+            activity_id: parseInt(formData.activity_id),
+            description: formData.description.trim(),
+            requested_date: formData.requested_date,
+            photo_filename: photoFilename,
+            client_id: clientId,
+          };
+
+          await api.post('/konfi/requests', requestData);
+
+          setSuccess('Antrag erfolgreich eingereicht!');
+          onSuccess();
+        } catch (error: any) {
+          setError(error.response?.data?.error || error.message || 'Fehler beim Einreichen des Antrags');
+        } finally {
+          setUploadProgress(0);
         }
-
-        const requestData = {
+      } else {
+        // Offline-Pfad: Queue-Fallback
+        let hasFileUpload = false;
+        const queueBody: any = {
           activity_id: parseInt(formData.activity_id),
           description: formData.description.trim(),
           requested_date: formData.requested_date,
-          photo_filename: photoFilename
+          client_id: clientId,
         };
 
-        await api.post('/konfi/requests', requestData);
+        if (formData.photo_file) {
+          // Foto lokal speichern
+          hasFileUpload = true;
+          try {
+            const reader = new FileReader();
+            const base64 = await new Promise<string>((resolve, reject) => {
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(formData.photo_file!);
+            });
+            const fileName = `queue_${clientId}_photo.jpg`;
+            await Filesystem.writeFile({
+              path: `queue-uploads/${fileName}`,
+              data: base64,
+              directory: Directory.Data,
+            });
+            queueBody._localPhotoPath = `queue-uploads/${fileName}`;
+            queueBody._photoFileName = formData.photo_file.name;
+          } catch (err) {
+            setError('Foto konnte nicht lokal gespeichert werden');
+            return;
+          }
+        }
 
-        setSuccess('Antrag erfolgreich eingereicht!');
+        await writeQueue.enqueue({
+          method: 'POST',
+          url: '/konfi/requests',
+          body: queueBody,
+          maxRetries: 5,
+          hasFileUpload,
+          metadata: {
+            type: 'request',
+            clientId,
+            label: 'Aktivitäts-Antrag',
+          },
+        });
+
+        setSuccess('Antrag wird gesendet sobald du wieder online bist');
         onSuccess();
-      } catch (error: any) {
-        setError(error.response?.data?.error || error.message || 'Fehler beim Einreichen des Antrags');
-      } finally {
-        setUploadProgress(0);
       }
     });
   };
@@ -217,8 +275,8 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSubmit} disabled={isSubmitting || loading || !isOnline}>
-              {!isOnline ? 'Du bist offline' : <IonIcon icon={checkmark} />}
+            <IonButton className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSubmit} disabled={isSubmitting || loading}>
+              <IonIcon icon={checkmark} />
             </IonButton>
           </IonButtons>
         </IonToolbar>
