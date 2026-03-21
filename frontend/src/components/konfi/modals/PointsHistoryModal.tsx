@@ -272,32 +272,18 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
                             style={{ position: 'relative', overflow: 'hidden' }}
                           >
                             {/* Corner Badges Container - oben rechts */}
-                            <div style={{
-                              position: 'absolute',
-                              top: '0',
-                              right: '0',
-                              display: 'flex',
-                              flexDirection: 'row',
-                              zIndex: 10
-                            }}>
+                            <div className="app-corner-badges">
                               {/* Typ-Badge (Bonus/Event) */}
                               {typeBadgeColor && typeBadgeLabel && (
-                                <div style={{
-                                  backgroundColor: typeBadgeColor,
-                                  color: 'white',
-                                  fontSize: '0.65rem',
-                                  fontWeight: '700',
-                                  padding: '4px 8px',
-                                  borderRadius: '0 0 8px 8px'
-                                }}>
-                                  {typeBadgeLabel}
-                                </div>
-                              )}
-                              {typeBadgeColor && (
-                                <div style={{ width: '2px', background: 'white' }} />
+                                <>
+                                  <div className="app-corner-badge" style={{ backgroundColor: typeBadgeColor }}>
+                                    {typeBadgeLabel}
+                                  </div>
+                                  <div className="app-corner-badges__separator" />
+                                </>
                               )}
                               {/* Punkte-Badge */}
-                              <div className="app-corner-badge" style={{ backgroundColor: categoryColor, position: 'static' }}>
+                              <div className="app-corner-badge" style={{ backgroundColor: categoryColor }}>
                                 +{entry.points}P
                               </div>
                             </div>

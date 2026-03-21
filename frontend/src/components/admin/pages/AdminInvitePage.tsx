@@ -366,8 +366,8 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                               }}
                             >
                               {/* Corner Badge - Gültigkeit */}
-                              <div style={{ position: 'absolute', top: '0', right: '0', zIndex: 10 }}>
-                                <div style={{ backgroundColor: '#059669', color: 'white', fontSize: '0.65rem', fontWeight: '700', padding: '4px 8px', borderRadius: '0 8px 0 8px' }}>
+                              <div className="app-corner-badges">
+                                <div className="app-corner-badge" style={{ backgroundColor: '#059669' }}>
                                   {formatExpiryDate(invite.expires_at)}
                                 </div>
                               </div>

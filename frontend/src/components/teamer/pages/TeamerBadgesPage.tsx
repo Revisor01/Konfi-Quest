@@ -624,15 +624,17 @@ const TeamerBadgesPage: React.FC = () => {
 
                             {/* Secret Badge */}
                             {badge.is_hidden && badge.earned && (
-                              <div
-                                className="app-corner-badge"
-                                style={{
-                                  background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-                                  fontSize: '0.5rem',
-                                  padding: '3px 8px'
-                                }}
-                              >
-                                GEHEIM
+                              <div className="app-corner-badges">
+                                <div
+                                  className="app-corner-badge"
+                                  style={{
+                                    background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+                                    fontSize: '0.5rem',
+                                    padding: '3px 8px'
+                                  }}
+                                >
+                                  GEHEIM
+                                </div>
                               </div>
                             )}
                           </div>

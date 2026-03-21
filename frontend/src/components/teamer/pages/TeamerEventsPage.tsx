@@ -770,35 +770,17 @@ const TeamerEventsPage: React.FC = () => {
                       >
                         {/* Corner Badges Container - oben rechts */}
                         {(showBadge || isTeamerEvent) && (
-                          <div style={{
-                            position: 'absolute',
-                            top: '0',
-                            right: '0',
-                            display: 'flex',
-                            flexDirection: 'row',
-                            zIndex: 10
-                          }}>
+                          <div className="app-corner-badges">
                             {isTeamerEvent && (
                               <>
-                                <div style={{
-                                  backgroundColor: '#5b21b6',
-                                  color: 'white',
-                                  fontSize: '0.65rem',
-                                  fontWeight: '600',
-                                  padding: '4px 8px',
-                                  borderRadius: '0 0 8px 8px',
-                                  textTransform: 'uppercase',
-                                  letterSpacing: '0.3px'
-                                }}>
+                                <div className="app-corner-badge app-corner-badge--purple">
                                   TEAM
                                 </div>
-                                {showBadge && (
-                                  <div style={{ width: '2px', background: 'white' }} />
-                                )}
+                                {showBadge && <div className="app-corner-badges__separator" />}
                               </>
                             )}
                             {showBadge && (
-                              <div className="app-corner-badge" style={{ backgroundColor: statusColor, position: 'static' }}>
+                              <div className="app-corner-badge" style={{ backgroundColor: statusColor }}>
                                 {statusText}
                               </div>
                             )}

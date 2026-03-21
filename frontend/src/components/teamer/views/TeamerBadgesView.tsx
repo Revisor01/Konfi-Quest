@@ -478,15 +478,17 @@ const TeamerBadgesView: React.FC = () => {
                         >
                           {/* Neu Badge */}
                           {isNew && (
-                            <div
-                              className="app-corner-badge"
-                              style={{
-                                background: 'linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%)',
-                                fontSize: '0.5rem',
-                                padding: '3px 8px'
-                              }}
-                            >
-                              NEU
+                            <div className="app-corner-badges">
+                              <div
+                                className="app-corner-badge"
+                                style={{
+                                  background: 'linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%)',
+                                  fontSize: '0.5rem',
+                                  padding: '3px 8px'
+                                }}
+                              >
+                                NEU
+                              </div>
                             </div>
                           )}
 

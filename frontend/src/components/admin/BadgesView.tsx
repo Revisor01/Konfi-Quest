@@ -422,36 +422,14 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                               }}
                             >
                               {/* Dual Corner Badges - Aktivität + Sichtbarkeit */}
-                              <div style={{
-                                position: 'absolute',
-                                top: '0',
-                                right: '0',
-                                display: 'flex',
-                                flexDirection: 'row',
-                                zIndex: 10
-                              }}>
+                              <div className="app-corner-badges">
                                 {/* Sichtbarkeits-Badge */}
-                                <div style={{
-                                  backgroundColor: visibilityColor,
-                                  color: 'white',
-                                  fontSize: '0.65rem',
-                                  fontWeight: '700',
-                                  padding: '4px 8px',
-                                  borderRadius: '0 0 8px 8px'
-                                }}>
+                                <div className="app-corner-badge" style={{ backgroundColor: visibilityColor }}>
                                   {visibilityText}
                                 </div>
-                                {/* Weißer Abstand */}
-                                <div style={{ width: '2px', background: 'white' }} />
+                                <div className="app-corner-badges__separator" />
                                 {/* Aktiv/Inaktiv-Badge */}
-                                <div style={{
-                                  backgroundColor: activeColor,
-                                  color: 'white',
-                                  fontSize: '0.65rem',
-                                  fontWeight: '700',
-                                  padding: '4px 8px',
-                                  borderRadius: '0 8px 0 8px'
-                                }}>
+                                <div className="app-corner-badge" style={{ backgroundColor: activeColor }}>
                                   {activeText}
                                 </div>
                               </div>
