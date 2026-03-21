@@ -262,7 +262,7 @@ Plans:
   5. Fehlgeschlagene Queue-Items (4xx) werden entfernt und der User informiert; retribare Fehler (5xx) bleiben in der Queue (max 5 Retries)
 **Plans**: 4 plans
 Plans:
-- [ ] 60-01-PLAN.md — WriteQueue Service + Background-Task + Queue-Flush bei Reconnect/Resume
+- [x] 60-01-PLAN.md — WriteQueue Service + Background-Task + Queue-Flush bei Reconnect/Resume
 - [ ] 60-02-PLAN.md — Chat Queue: sendMessage offline + Optimistic UI + Bild-Queue
 - [ ] 60-03-PLAN.md — Aktivitaets-Antraege + Opt-out Queue
 - [ ] 60-04-PLAN.md — Fire-and-Forget Aktionen (8 Endpunkte, rein optimistisch)
@@ -307,7 +307,7 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 | 57. Retry + Schutz | 2/2 | Complete    | 2026-03-21 |
 | 58. Corner-Badge System | 2/2 | Complete    | 2026-03-21 |
 | 59. Online-Only Buttons | 3/3 | Complete    | 2026-03-21 |
-| 60. Queue-Kern + Konfi-Aktionen | 0/4 | Not started | - |
+| 60. Queue-Kern + Konfi-Aktionen | 1/4 | In Progress|  |
 | 61. Admin- + Teamer-Queue | 0/? | Not started | - |
 | 62. Sync | 0/? | Not started | - |
 
@@ -316,7 +316,7 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 **Goal:** [To be planned]
 **Requirements**: TBD
 **Depends on:** Phase 62
-**Plans:** 3/3 plans complete
+**Plans:** 1/4 plans executed
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 63 to break down)

@@ -125,11 +125,11 @@ Queue-faehige Aktionen werden bei Offline in eine persistente Queue geschrieben 
 
 #### Queue-Infrastruktur
 
-- [ ] **QUE-I01**: Queue wird beim App-Resume und bei Reconnect automatisch abgearbeitet
-- [ ] **QUE-I02**: Queue ueberlebt App-Neustart (persistent in Capacitor Preferences)
-- [ ] **QUE-I03**: Queue-Flush bei App-Background via @capawesome/capacitor-background-task (nur Text, keine Datei-Uploads)
-- [ ] **QUE-I04**: Fehlgeschlagene Items (4xx) werden aus Queue entfernt und User informiert
-- [ ] **QUE-I05**: Retribare Fehler (5xx, 408, 429) bleiben in Queue fuer naechsten Flush (max 5 Retries)
+- [x] **QUE-I01**: Queue wird beim App-Resume und bei Reconnect automatisch abgearbeitet
+- [x] **QUE-I02**: Queue ueberlebt App-Neustart (persistent in Capacitor Preferences)
+- [x] **QUE-I03**: Queue-Flush bei App-Background via @capawesome/capacitor-background-task (nur Text, keine Datei-Uploads)
+- [x] **QUE-I04**: Fehlgeschlagene Items (4xx) werden aus Queue entfernt und User informiert
+- [x] **QUE-I05**: Retribare Fehler (5xx, 408, 429) bleiben in Queue fuer naechsten Flush (max 5 Retries)
 
 ### Online-Only Aktionen (OOA)
 
@@ -276,11 +276,11 @@ Deferred. Onboarding, Landing Website, Readme, Wiki.
 | QUE-A21 | Phase 61 | Pending |
 | QUE-T01 | Phase 61 | Pending |
 | QUE-T02 | Phase 61 | Pending |
-| QUE-I01 | Phase 60 | Pending |
-| QUE-I02 | Phase 60 | Pending |
-| QUE-I03 | Phase 60 | Pending |
-| QUE-I04 | Phase 60 | Pending |
-| QUE-I05 | Phase 60 | Pending |
+| QUE-I01 | Phase 60 | Complete |
+| QUE-I02 | Phase 60 | Complete |
+| QUE-I03 | Phase 60 | Complete |
+| QUE-I04 | Phase 60 | Complete |
+| QUE-I05 | Phase 60 | Complete |
 | OOA-01 | Phase 59 | Complete |
 | OOA-02 | Phase 59 | Complete |
 | OOA-03 | Phase 59 | Complete |

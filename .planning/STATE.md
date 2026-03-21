@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: App-Resilienz
 status: unknown
-stopped_at: Completed 59-02-PLAN.md (Modal Online-Only Buttons)
-last_updated: "2026-03-21T09:45:24.842Z"
+stopped_at: Completed 60-01-PLAN.md (WriteQueue Infrastruktur)
+last_updated: "2026-03-21T09:59:01.493Z"
 progress:
   total_phases: 15
   completed_phases: 5
-  total_plans: 15
-  completed_plans: 15
+  total_plans: 19
+  completed_plans: 16
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-20)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 59 — Online-Only Buttons
+**Current focus:** Phase 60 — Queue-Kern + Konfi-Aktionen
 
 ## Current Position
 
-Phase: 63
-Plan: Not started
+Phase: 60 (Queue-Kern + Konfi-Aktionen) — EXECUTING
+Plan: 2 of 4
 
 ## Accumulated Context
 
@@ -58,6 +58,8 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 59]: QRScannerModal: Inline-Banner statt Alert bei Offline-Scan
 - [Phase 59]: Icon-only Submit-Buttons zeigen 'Du bist offline' als Text statt Icon wenn offline
 - [Phase 59]: Action-Handler ohne Submit-Button haben if (\!isOnline) return; Guard
+- [Phase 60]: Lazy-Load In-Memory-Cache statt _initialized Pattern fuer WriteQueue
+- [Phase 60]: Transiente Fehler brechen Flush ab statt naechstes Item — verhindert Out-of-Order
 
 ### Roadmap Evolution
 
@@ -83,6 +85,6 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-03-21T09:41:37.104Z
-Stopped at: Completed 59-02-PLAN.md (Modal Online-Only Buttons)
+Last session: 2026-03-21T09:59:01.490Z
+Stopped at: Completed 60-01-PLAN.md (WriteQueue Infrastruktur)
 Resume file: None
