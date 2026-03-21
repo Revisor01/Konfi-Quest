@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: App-Resilienz
 status: unknown
-stopped_at: Completed 57-01-PLAN.md (Retry + Double-Submit-Schutz)
-last_updated: "2026-03-21T08:59:19.433Z"
+stopped_at: Completed 58-01-PLAN.md (CSS-Infrastruktur Corner-Badge System)
+last_updated: "2026-03-21T09:11:51.137Z"
 progress:
   total_phases: 15
   completed_phases: 3
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 12
+  completed_plans: 11
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-20)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 57 — Retry + Schutz
+**Current focus:** Phase 58 — Corner-Badge System
 
 ## Current Position
 
-Phase: 63
-Plan: Not started
+Phase: 58 (Corner-Badge System) — EXECUTING
+Plan: 2 of 2
 
 ## Accumulated Context
 
@@ -51,6 +51,7 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 56]: AdminMaterialPage: search+filter im Cache-Key fuer granulares Offline-Caching
 - [Phase 57]: Check-then-Insert + UNIQUE-Index-Fallback fuer Idempotency statt ON CONFLICT
 - [Phase 57]: axios-retry mit Jitter zur Thundering-Herd-Vermeidung, guardRef fuer synchronen Double-Submit-Check
+- [Phase 58]: font-weight von 600 auf 700 angeglichen (PointsHistory-Referenz)
 
 ### Roadmap Evolution
 
@@ -76,6 +77,6 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-03-21T08:56:40.244Z
-Stopped at: Completed 57-01-PLAN.md (Retry + Double-Submit-Schutz)
+Last session: 2026-03-21T09:11:51.135Z
+Stopped at: Completed 58-01-PLAN.md (CSS-Infrastruktur Corner-Badge System)
 Resume file: None

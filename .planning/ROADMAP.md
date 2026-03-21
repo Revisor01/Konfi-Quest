@@ -232,7 +232,7 @@ Plans:
   4. Fehler-Badge (Ausrufezeichen, rot) erscheint bei permanentem Fehler mit Tap-Optionen "Erneut senden" oder "Loeschen"
 **Plans**: 2 plans
 Plans:
-- [ ] 58-01-PLAN.md — CSS-Infrastruktur: Corner-Badge Flex-Container + Queue/Fehler-Badge Klassen
+- [x] 58-01-PLAN.md — CSS-Infrastruktur: Corner-Badge Flex-Container + Queue/Fehler-Badge Klassen
 - [ ] 58-02-PLAN.md — Migration aller ~23 bestehenden Corner-Badge Verwendungen auf Flex-Container
 
 ### Phase 59: Online-Only Buttons
@@ -304,7 +304,7 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 | 55. Fundament | 4/4 | Complete    | 2026-03-20 |
 | 56. Lese-Cache | 4/4 | Complete    | 2026-03-21 |
 | 57. Retry + Schutz | 2/2 | Complete    | 2026-03-21 |
-| 58. Corner-Badge System | 0/2 | Not started | - |
+| 58. Corner-Badge System | 1/2 | In Progress|  |
 | 59. Online-Only Buttons | 0/? | Not started | - |
 | 60. Queue-Kern + Konfi-Aktionen | 0/? | Not started | - |
 | 61. Admin- + Teamer-Queue | 0/? | Not started | - |
@@ -315,7 +315,7 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 **Goal:** [To be planned]
 **Requirements**: TBD
 **Depends on:** Phase 62
-**Plans:** 0 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 63 to break down)
