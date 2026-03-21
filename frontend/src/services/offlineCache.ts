@@ -62,10 +62,27 @@ async function clearAll(): Promise<void> {
   }
 }
 
+async function invalidateAll(): Promise<void> {
+  const { keys } = await Preferences.keys();
+  const cacheKeys = keys.filter(k => k.startsWith(CACHE_PREFIX));
+  for (const key of cacheKeys) {
+    try {
+      const result = await Preferences.get({ key });
+      if (!result.value) continue;
+      const entry = JSON.parse(result.value) as CacheEntry<unknown>;
+      entry.timestamp = 0; // Macht isStale() => true
+      await Preferences.set({ key, value: JSON.stringify(entry) });
+    } catch {
+      // Korrupter Eintrag — ignorieren
+    }
+  }
+}
+
 export const offlineCache = {
   get,
   set,
   isStale,
   remove,
   clearAll,
+  invalidateAll,
 };

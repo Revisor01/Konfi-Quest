@@ -1,4 +1,6 @@
 import { io, Socket } from 'socket.io-client';
+import { writeQueue } from './writeQueue';
+import { offlineCache } from './offlineCache';
 
 // Hardcoded URL wie in api.ts - VITE_API_URL funktioniert nicht in nativen Apps
 const WS_URL = 'https://konfi-quest.de';
@@ -33,10 +35,23 @@ export const initializeWebSocket = (token: string): Socket => {
 
   socket.on('connect', () => {
     if (_hasConnectedOnce) {
-      // Reconnect — Callbacks benachrichtigen
-      reconnectCallbacks.forEach(cb => {
-        try { cb(); } catch (e) { console.error('Reconnect callback error:', e); }
-      });
+      // Koordinierte Sync-Sequenz: flush -> invalidate -> badges -> callbacks
+      (async () => {
+        try {
+          // 1. Queue flushen (Server-State aktuell machen)
+          await writeQueue.flush();
+          // 2. Cache invalidieren (stale markieren fuer Revalidierung)
+          await offlineCache.invalidateAll();
+          // 3. Badge-Refresh via CustomEvent (BadgeContext hoert darauf)
+          window.dispatchEvent(new CustomEvent('sync:reconnect'));
+        } catch (e) {
+          console.error('Reconnect sync error:', e);
+        }
+        // 4. Bestehende Reconnect-Callbacks (Chat-Nachladen etc.)
+        reconnectCallbacks.forEach(cb => {
+          try { cb(); } catch (e) { console.error('Reconnect callback error:', e); }
+        });
+      })();
     }
     _hasConnectedOnce = true;
   });
