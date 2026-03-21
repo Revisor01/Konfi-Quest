@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: App-Resilienz
 status: unknown
-stopped_at: Completed 55-02-PLAN.md (localStorage-Migration)
-last_updated: "2026-03-20T20:57:42.340Z"
+stopped_at: Completed 56-01-PLAN.md (offlineCache + useOfflineQuery)
+last_updated: "2026-03-21T07:10:40.327Z"
 progress:
-  total_phases: 14
+  total_phases: 15
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 8
+  completed_plans: 5
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-20)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 55 — Fundament
+**Current focus:** Phase 56 — Lese-Cache
 
 ## Current Position
 
-Phase: 63
-Plan: Not started
+Phase: 56 (Lese-Cache) — EXECUTING
+Plan: 2 of 4
 
 ## Accumulated Context
 
@@ -41,6 +41,7 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 55]: TokenStore Pattern: sync Memory-Getter + async Preferences-Setter fuer Axios-Interceptor Kompatibilitaet
 - [Phase 55]: LIMIT 200 als Sicherheitsgrenze fuer ?after Chat-Queries
 - [Phase 55]: Alias-Import setTokenStoreUser um Namenskollision mit AppContext setUser zu vermeiden
+- [Phase 56-01]: cache: Praefix fuer Key-Isolation, clearAll loescht nur Cache-Keys nicht Auth-Daten
 
 ### Roadmap Evolution
 
@@ -66,6 +67,6 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-03-20T20:53:15.625Z
-Stopped at: Completed 55-02-PLAN.md (localStorage-Migration)
+Last session: 2026-03-21T07:10:40.325Z
+Stopped at: Completed 56-01-PLAN.md (offlineCache + useOfflineQuery)
 Resume file: None
