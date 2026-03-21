@@ -164,7 +164,7 @@ Kein Phase-Nummern-Block — separater Update-Milestone ohne Plans.
 
 - [x] **Phase 55: Fundament** - Storage-Migration localStorage->Preferences + Netzwerk-Erkennung + 401-Handler-Fix (completed 2026-03-20)
 - [x] **Phase 56: Lese-Cache** - useOfflineQuery Hook + SWR-Pattern + Migration aller 30 Pages (completed 2026-03-21)
-- [ ] **Phase 57: Retry + Schutz** - axios-retry + Double-Submit-Schutz + Idempotency-Keys Backend
+- [x] **Phase 57: Retry + Schutz** - axios-retry + Double-Submit-Schutz + Idempotency-Keys Backend (completed 2026-03-21)
 - [ ] **Phase 58: Corner-Badge System** - Flex-Container fuer Multi-Badge-Listen + Queue-Badge Design
 - [ ] **Phase 59: Online-Only Buttons** - 42 Online-Only-Aktionen disablen + Chat-Queue-Status-UI
 - [ ] **Phase 60: Queue-Kern + Konfi-Aktionen** - Queue-Infrastruktur + Konfi-Queue + Fire-and-Forget + Chat-Queue-UI
@@ -215,10 +215,10 @@ Plans:
   1. Bei kurzem Netzwerkausbruch (z.B. Tunnelfahrt) werden fehlgeschlagene API-Calls automatisch 3x mit steigendem Abstand wiederholt — ohne User-Interaktion
   2. Alle Submit-Buttons (Chat senden, Antrag stellen, Event erstellen, etc.) sind waehrend des Requests disabled und zeigen einen Loading-Spinner
   3. Backend akzeptiert Idempotency-Keys (client_id UUID) und verhindert doppelte Eintraege bei Retry
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
-- [ ] 57-01-PLAN.md — axios-retry + useActionGuard Hook + Double-Submit-Schutz
+- [x] 57-01-PLAN.md — axios-retry + useActionGuard Hook + Double-Submit-Schutz
 - [x] 57-02-PLAN.md — Backend Idempotency-Keys (client_id UUID) fuer Chat + Antraege
 
 ### Phase 58: Corner-Badge System
@@ -288,7 +288,7 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 |-------|----------------|--------|-----------|
 | 55. Fundament | 4/4 | Complete    | 2026-03-20 |
 | 56. Lese-Cache | 4/4 | Complete    | 2026-03-21 |
-| 57. Retry + Schutz | 1/2 | In Progress|  |
+| 57. Retry + Schutz | 2/2 | Complete   | 2026-03-21 |
 | 58. Corner-Badge System | 0/? | Not started | - |
 | 59. Online-Only Buttons | 0/? | Not started | - |
 | 60. Queue-Kern + Konfi-Aktionen | 0/? | Not started | - |

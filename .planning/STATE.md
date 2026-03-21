@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: App-Resilienz
 status: unknown
-stopped_at: Completed 57-02-PLAN.md (Backend Idempotency Keys)
-last_updated: "2026-03-21T08:40:31.050Z"
+stopped_at: Completed 57-01-PLAN.md (Retry + Double-Submit-Schutz)
+last_updated: "2026-03-21T08:56:40.246Z"
 progress:
   total_phases: 15
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 10
-  completed_plans: 9
+  completed_plans: 10
 ---
 
 # Project State
@@ -50,6 +50,7 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 56]: AdminProfilePage nutzt userId statt organization_id (persoenliche Daten)
 - [Phase 56]: AdminMaterialPage: search+filter im Cache-Key fuer granulares Offline-Caching
 - [Phase 57]: Check-then-Insert + UNIQUE-Index-Fallback fuer Idempotency statt ON CONFLICT
+- [Phase 57]: axios-retry mit Jitter zur Thundering-Herd-Vermeidung, guardRef fuer synchronen Double-Submit-Check
 
 ### Roadmap Evolution
 
@@ -75,6 +76,6 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-03-21T08:40:31.048Z
-Stopped at: Completed 57-02-PLAN.md (Backend Idempotency Keys)
+Last session: 2026-03-21T08:56:40.244Z
+Stopped at: Completed 57-01-PLAN.md (Retry + Double-Submit-Schutz)
 Resume file: None
