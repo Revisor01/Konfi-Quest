@@ -18,7 +18,7 @@ let pushRegistrationInProgress = false;
 let pushAlreadyRegistered = false;
 
 // Funktion, um Duplikate zu vermeiden
-const sendTokenToServer = async (token: string) => {
+const sendTokenToServer = async (token: string, retryCount = 0) => {
   // ANTI-SPAM: Prüfe ob Token in letzten 10 Sekunden bereits gesendet wurde
   const lastSent = (window as any).fcmTokenLastSent || 0;
   const now = Date.now();
@@ -29,7 +29,7 @@ const sendTokenToServer = async (token: string) => {
   // Gespeicherte Device ID nutzen (wird bei App-Start einmalig persistiert)
   const deviceId = getDeviceId();
   if (!deviceId) {
-    console.warn('Keine Device ID verfuegbar - Token-Send wird uebersprungen');
+    console.warn('Keine Device ID verfügbar - Token-Send wird übersprungen');
     return;
   }
 
@@ -45,6 +45,10 @@ const sendTokenToServer = async (token: string) => {
     await setPushTokenTimestamp(now); // Bug 3: Timestamp nach jedem Send persistieren
   } catch (err) {
     console.error('Fehler beim Senden des FCM-Tokens:', err);
+    // Retry einmal nach 5 Sekunden
+    if (retryCount < 1) {
+      setTimeout(() => sendTokenToServer(token, retryCount + 1), 5000);
+    }
   }
 };
 
@@ -424,6 +428,8 @@ useEffect(() => {
             }
 
             if (targetUrl) {
+              // Hard navigation (intentional): App kommt aus Background/Killed-State,
+              // React Router State kann veraltet sein. Full Reload sichert frische Daten.
               window.location.href = targetUrl;
             }
           }, 100);
