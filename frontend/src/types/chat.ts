@@ -20,7 +20,7 @@ export interface Message {
   sender_name: string;
   sender_role_title?: string;
   sender_role_display_name?: string;
-  sender_type: 'admin' | 'konfi';
+  sender_type: 'admin' | 'konfi' | 'teamer';
   created_at: string;
   file_path?: string;
   file_name?: string;

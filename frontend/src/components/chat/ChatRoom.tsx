@@ -415,7 +415,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       content: content || (file ? file.name : ''),
       sender_id: user?.id ?? 0,
       sender_name: user?.display_name ?? '',
-      sender_type: (user?.role_name === 'konfi' ? 'konfi' : 'admin') as 'admin' | 'konfi',
+      sender_type: (user?.type || 'konfi') as 'admin' | 'konfi' | 'teamer',
       created_at: new Date().toISOString(),
       message_type: file ? 'image' : 'text',
       file_name: file?.name,

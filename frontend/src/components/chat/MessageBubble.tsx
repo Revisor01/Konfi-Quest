@@ -526,6 +526,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           {message.queueStatus === 'pending' && (
             <IonIcon icon={timeOutline} style={{ fontSize: '0.75rem', marginLeft: '4px', verticalAlign: 'middle' }} />
           )}
+          {isOwnMessage && !message.queueStatus && (
+            <IonIcon icon={checkmark} style={{ fontSize: '0.75rem', marginLeft: '4px', verticalAlign: 'middle', opacity: 0.7 }} />
+          )}
           {message.queueStatus === 'error' && (
             <IonIcon
               icon={alertCircleOutline}
