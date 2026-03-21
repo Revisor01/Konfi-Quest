@@ -165,7 +165,7 @@ Kein Phase-Nummern-Block — separater Update-Milestone ohne Plans.
 - [x] **Phase 55: Fundament** - Storage-Migration localStorage->Preferences + Netzwerk-Erkennung + 401-Handler-Fix (completed 2026-03-20)
 - [x] **Phase 56: Lese-Cache** - useOfflineQuery Hook + SWR-Pattern + Migration aller 30 Pages (completed 2026-03-21)
 - [x] **Phase 57: Retry + Schutz** - axios-retry + Double-Submit-Schutz + Idempotency-Keys Backend (completed 2026-03-21)
-- [ ] **Phase 58: Corner-Badge System** - Flex-Container fuer Multi-Badge-Listen + Queue-Badge Design
+- [x] **Phase 58: Corner-Badge System** - Flex-Container fuer Multi-Badge-Listen + Queue-Badge Design (completed 2026-03-21)
 - [ ] **Phase 59: Online-Only Buttons** - 42 Online-Only-Aktionen disablen + Chat-Queue-Status-UI
 - [ ] **Phase 60: Queue-Kern + Konfi-Aktionen** - Queue-Infrastruktur + Konfi-Queue + Fire-and-Forget + Chat-Queue-UI
 - [ ] **Phase 61: Admin- + Teamer-Queue** - 21 Admin-Aktionen + 2 Teamer-Aktionen queue-faehig
@@ -233,7 +233,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 58-01-PLAN.md — CSS-Infrastruktur: Corner-Badge Flex-Container + Queue/Fehler-Badge Klassen
-- [ ] 58-02-PLAN.md — Migration aller ~23 bestehenden Corner-Badge Verwendungen auf Flex-Container
+- [x] 58-02-PLAN.md — Migration aller ~23 bestehenden Corner-Badge Verwendungen auf Flex-Container
 
 ### Phase 59: Online-Only Buttons
 **Goal**: Alle Aktionen die Server-Validierung brauchen zeigen klar "Du bist offline" statt kryptischer Fehler
@@ -246,7 +246,7 @@ Plans:
   4. Fehlgeschlagene Chat-Nachrichten zeigen rotes Ausrufezeichen mit "Erneut senden" oder "Loeschen" bei Tap
 **Plans**: 2 plans
 Plans:
-- [ ] 58-01-PLAN.md — CSS-Infrastruktur: Corner-Badge Flex-Container + Queue/Fehler-Badge Klassen
+- [x] 58-01-PLAN.md — CSS-Infrastruktur: Corner-Badge Flex-Container + Queue/Fehler-Badge Klassen
 - [ ] 58-02-PLAN.md — Migration aller ~23 bestehenden Corner-Badge Verwendungen auf Flex-Container
 
 ### Phase 60: Queue-Kern + Konfi-Aktionen
@@ -304,7 +304,7 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 | 55. Fundament | 4/4 | Complete    | 2026-03-20 |
 | 56. Lese-Cache | 4/4 | Complete    | 2026-03-21 |
 | 57. Retry + Schutz | 2/2 | Complete    | 2026-03-21 |
-| 58. Corner-Badge System | 1/2 | In Progress|  |
+| 58. Corner-Badge System | 2/2 | Complete   | 2026-03-21 |
 | 59. Online-Only Buttons | 0/? | Not started | - |
 | 60. Queue-Kern + Konfi-Aktionen | 0/? | Not started | - |
 | 61. Admin- + Teamer-Queue | 0/? | Not started | - |
@@ -315,7 +315,7 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 **Goal:** [To be planned]
 **Requirements**: TBD
 **Depends on:** Phase 62
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 63 to break down)

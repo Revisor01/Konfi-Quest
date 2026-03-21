@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: App-Resilienz
 status: unknown
-stopped_at: Completed 58-01-PLAN.md (CSS-Infrastruktur Corner-Badge System)
-last_updated: "2026-03-21T09:11:51.137Z"
+stopped_at: Completed 58-02-PLAN.md (Corner-Badge Migration)
+last_updated: "2026-03-21T09:17:58.162Z"
 progress:
   total_phases: 15
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 12
-  completed_plans: 11
+  completed_plans: 12
 ---
 
 # Project State
@@ -52,6 +52,7 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 57]: Check-then-Insert + UNIQUE-Index-Fallback fuer Idempotency statt ON CONFLICT
 - [Phase 57]: axios-retry mit Jitter zur Thundering-Herd-Vermeidung, guardRef fuer synchronen Double-Submit-Check
 - [Phase 58]: font-weight von 600 auf 700 angeglichen (PointsHistory-Referenz)
+- [Phase 58]: AdminInvitePage: exakter Farbton #059669 beibehalten statt --success Klasse
 
 ### Roadmap Evolution
 
@@ -77,6 +78,6 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-03-21T09:11:51.135Z
-Stopped at: Completed 58-01-PLAN.md (CSS-Infrastruktur Corner-Badge System)
+Last session: 2026-03-21T09:17:58.160Z
+Stopped at: Completed 58-02-PLAN.md (Corner-Badge Migration)
 Resume file: None

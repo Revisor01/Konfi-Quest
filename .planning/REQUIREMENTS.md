@@ -52,9 +52,9 @@ Listen-Elemente zeigen Queue-Status als zusaetzliches Corner-Badge neben bestehe
 - [x] **OUI-02**: Badge-Rundung: Alle ausser letztes Kind `border-radius: 0 0 10px 10px` (unten beide), letztes Kind `border-radius: 0 10px 0 10px` (oben-rechts Card-Ecke + unten-links Eselsohr)
 - [x] **OUI-03**: 2px weisser Trenner zwischen Badges (wie PointsHistory)
 - [x] **OUI-04**: Queue-Badge ist immer das linkste Badge im Container — nur Uhr-Icon (timeOutline), kein Text, orange #ff9500
-- [ ] **OUI-05**: Nach erfolgreicher Zustellung verschwindet das Queue-Badge einfach (kein Haekchen, kein Feedback)
+- [x] **OUI-05**: Nach erfolgreicher Zustellung verschwindet das Queue-Badge einfach (kein Haekchen, kein Feedback)
 - [x] **OUI-06**: Bei permanentem Fehler (4xx) wechselt Uhr-Icon zu Ausrufezeichen (alertCircleOutline), Farbe wird rot #dc3545
-- [ ] **OUI-07**: Fehlgeschlagene Queue-Items zeigen bei Tap "Erneut senden" oder "Loeschen" als Optionen
+- [x] **OUI-07**: Fehlgeschlagene Queue-Items zeigen bei Tap "Erneut senden" oder "Loeschen" als Optionen
 
 #### Chat-Nachrichten Queue-Status
 
@@ -231,9 +231,9 @@ Deferred. Onboarding, Landing Website, Readme, Wiki.
 | OUI-02 | Phase 58 | Complete |
 | OUI-03 | Phase 58 | Complete |
 | OUI-04 | Phase 58 | Complete |
-| OUI-05 | Phase 58 | Pending |
+| OUI-05 | Phase 58 | Complete |
 | OUI-06 | Phase 58 | Complete |
-| OUI-07 | Phase 58 | Pending |
+| OUI-07 | Phase 58 | Complete |
 | OUI-08 | Phase 59 | Pending |
 | OUI-09 | Phase 59 | Pending |
 | OUI-10 | Phase 59 | Pending |
