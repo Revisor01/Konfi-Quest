@@ -1,6 +1,6 @@
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
-import { getToken, clearAuth } from './tokenStore';
+import { getToken, getRefreshToken, setToken, setRefreshToken, clearAuth } from './tokenStore';
 import { networkMonitor } from './networkMonitor';
 
 const API_BASE_URL = 'https://konfi-quest.de/api';
@@ -35,23 +35,84 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Verhindere parallele Refresh-Requests
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
+
+const onTokenRefreshed = (token: string) => {
+  refreshSubscribers.forEach(cb => cb(token));
+  refreshSubscribers = [];
+};
+
+const addRefreshSubscriber = (cb: (token: string) => void) => {
+  refreshSubscribers.push(cb);
+};
+
 // Handle auth errors and rate limiting
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
+
     if (error.response?.status === 401) {
-      const isLoginRequest = error.config?.url?.includes('/login');
-      if (!isLoginRequest) {
-        if (networkMonitor.isOnline) {
-          // Online und 401 = Token wirklich ungueltig
-          clearAuth().then(() => {
-            window.location.href = '/';
+      const isLoginRequest = originalRequest?.url?.includes('/login');
+      const isRefreshRequest = originalRequest?.url?.includes('/refresh');
+
+      // Login- und Refresh-Requests nicht retry'en
+      if (isLoginRequest || isRefreshRequest) {
+        return Promise.reject(error);
+      }
+
+      // Offline: Token behalten, gecachte Daten nutzen
+      if (!networkMonitor.isOnline) {
+        console.warn('401 waehrend Offline — Token wird behalten');
+        return Promise.reject(error);
+      }
+
+      const refreshToken = getRefreshToken();
+      if (!refreshToken) {
+        // Kein Refresh-Token → direkt Re-Login
+        await clearAuth();
+        window.dispatchEvent(new CustomEvent('auth:relogin-required'));
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        // Anderer Request refresht bereits → warten
+        return new Promise((resolve) => {
+          addRefreshSubscriber((newToken: string) => {
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            resolve(api(originalRequest));
           });
-        } else {
-          // Offline und 401 = Netzwerkproblem, Token behalten
-          console.warn('401 waehrend Offline — Token wird behalten');
-          return Promise.reject(error);
-        }
+        });
+      }
+
+      isRefreshing = true;
+
+      try {
+        // Refresh-Versuch mit direktem axios (nicht api, um Interceptor-Loop zu vermeiden)
+        const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+          refresh_token: refreshToken
+        });
+
+        const { token: newToken, refresh_token: newRefreshToken } = response.data;
+        await setToken(newToken);
+        await setRefreshToken(newRefreshToken);
+
+        isRefreshing = false;
+        onTokenRefreshed(newToken);
+
+        // Original-Request mit neuem Token wiederholen
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        isRefreshing = false;
+        refreshSubscribers = [];
+
+        // Refresh fehlgeschlagen → Re-Login-Dialog
+        await clearAuth();
+        window.dispatchEvent(new CustomEvent('auth:relogin-required'));
+        return Promise.reject(refreshError);
       }
     }
 

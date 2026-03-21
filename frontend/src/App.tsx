@@ -147,6 +147,26 @@ const AppContent: React.FC = () => {
     };
   }, [handleRateLimit]);
 
+  // Re-Login-Dialog bei abgelaufenem Refresh-Token
+  useEffect(() => {
+    const handler = () => {
+      const alert = document.createElement('ion-alert');
+      alert.header = 'Sitzung abgelaufen';
+      alert.message = 'Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.';
+      alert.buttons = [{
+        text: 'Anmelden',
+        handler: () => {
+          window.location.href = '/';
+        }
+      }];
+      alert.backdropDismiss = false;
+      document.body.appendChild(alert);
+      (alert as HTMLIonAlertElement).present();
+    };
+    window.addEventListener('auth:relogin-required', handler);
+    return () => window.removeEventListener('auth:relogin-required', handler);
+  }, []);
+
   // Auto-refresh every 30 seconds - DISABLED wegen Spam
   // useEffect(() => {
   //   if (!user) return;

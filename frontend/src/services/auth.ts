@@ -1,7 +1,7 @@
 import api from './api';
 import { Device } from '@capacitor/device';
 import { Capacitor } from '@capacitor/core';
-import { getUser, setToken, setUser, clearAuth, getDeviceId, setDeviceId } from './tokenStore';
+import { getUser, setToken, setUser, setRefreshToken, clearAuth, getDeviceId, setDeviceId } from './tokenStore';
 import { offlineCache } from './offlineCache';
 import { BaseUser } from '../types/user';
 
@@ -9,11 +9,12 @@ export const loginWithAutoDetection = async (username: string, password: string)
 
   try {
     const response = await api.post('/auth/login', { username, password });
-    const { token, user } = response.data;
+    const { token, refresh_token, user } = response.data;
 
     if (!token || !user) throw new Error('Fehlender Token oder Benutzer');
 
     await setToken(token);
+    if (refresh_token) await setRefreshToken(refresh_token);
     await setUser(user);
 
     return user;
