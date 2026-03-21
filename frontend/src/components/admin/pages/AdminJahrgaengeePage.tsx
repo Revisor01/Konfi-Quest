@@ -43,6 +43,8 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader, ListSection } from '../../shared';
 
@@ -312,8 +314,13 @@ const AdminJahrgaengeePage: React.FC = () => {
   const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-jahrgaenge');
   const { user, setSuccess, setError } = useApp();
 
-  const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Offline-Query: Jahrgaenge
+  const { data: jahrgaenge, loading, refresh: refreshJahrgaenge } = useOfflineQuery<Jahrgang[]>(
+    'admin:jahrgaenge-detail:' + user?.organization_id,
+    async () => { const res = await api.get('/admin/jahrgaenge'); return res.data; },
+    { ttl: CACHE_TTL.STAMMDATEN }
+  );
+
   const [editJahrgang, setEditJahrgang] = useState<Jahrgang | null>(null);
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
 
@@ -326,35 +333,15 @@ const AdminJahrgaengeePage: React.FC = () => {
     onClose: () => dismissJahrgangModalHook(),
     onSuccess: () => {
       dismissJahrgangModalHook();
-      loadJahrgaenge();
+      refreshJahrgaenge();
     }
   });
-
-  // Memoized refresh function for live updates
-  const refreshJahrgaenge = useCallback(() => {
-    loadJahrgaenge();
-  }, []);
 
   // Subscribe to live updates for jahrgaenge
   useLiveRefresh('jahrgaenge', refreshJahrgaenge);
 
-  const loadJahrgaenge = async () => {
-    try {
-      const response = await api.get('/admin/jahrgaenge');
-      setJahrgaenge(response.data);
-    } catch (error) {
-      setError('Fehler beim Laden der Jahrgänge');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadJahrgaenge();
-  }, []);
-
   const handleRefresh = async (event: CustomEvent) => {
-    await loadJahrgaenge();
+    await refreshJahrgaenge();
     (event.target as HTMLIonRefresherElement).complete();
   };
 
@@ -365,7 +352,7 @@ const AdminJahrgaengeePage: React.FC = () => {
         const url = forceDelete ? `/admin/jahrgaenge/${jahrgang.id}?force=true` : `/admin/jahrgaenge/${jahrgang.id}`;
         await api.delete(url);
         setSuccess(`Jahrgang "${jahrgang.name}" gelöscht`);
-        loadJahrgaenge();
+        refreshJahrgaenge();
       } catch (error: any) {
         if (slidingElement) {
           await slidingElement.close();
@@ -468,7 +455,7 @@ const AdminJahrgaengeePage: React.FC = () => {
               icon={school}
               preset="jahrgang"
               stats={[
-                { value: jahrgaenge.length, label: 'GESAMT' }
+                { value: (jahrgaenge || []).length, label: 'GESAMT' }
               ]}
             />
 
@@ -476,14 +463,14 @@ const AdminJahrgaengeePage: React.FC = () => {
         <ListSection
           icon={schoolOutline}
           title="Jahrgänge"
-          count={jahrgaenge.length}
+          count={(jahrgaenge || []).length}
           iconColorClass="jahrgang"
           emptyIcon={school}
           emptyTitle="Keine Jahrgänge gefunden"
           emptyMessage="Noch keine Jahrgänge angelegt"
           emptyIconColor="#007aff"
         >
-                  {jahrgaenge.map((jahrgang, index) => (
+                  {(jahrgaenge || []).map((jahrgang, index) => (
                     <IonItemSliding
                       key={jahrgang.id}
                       ref={(el) => {
@@ -493,7 +480,7 @@ const AdminJahrgaengeePage: React.FC = () => {
                           slidingRefs.current.delete(jahrgang.id);
                         }
                       }}
-                      style={{ marginBottom: index < jahrgaenge.length - 1 ? '8px' : '0' }}
+                      style={{ marginBottom: index < (jahrgaenge || []).length - 1 ? '8px' : '0' }}
                     >
                       <IonItem
                         button={canEdit}

@@ -76,6 +76,8 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import LevelManagementModal from '../modals/LevelManagementModal';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader, ListSection } from '../../shared';
@@ -115,35 +117,22 @@ interface Level {
 const AdminLevelsPage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-levels');
   const { user, setSuccess, setError } = useApp();
-  const [levels, setLevels] = useState<Level[]>([]);
-  const [loading, setLoading] = useState(true);
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
   const [editLevel, setEditLevel] = useState<Level | undefined>(undefined);
 
-  const loadLevels = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get('/levels');
-      setLevels(response.data);
-    } catch (error: any) {
- console.error('Fehler beim Laden der Level:', error);
- console.error('Error details:', error.response);
-      setError(error.response?.data?.error || 'Fehler beim Laden der Level');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadLevels();
-  }, []);
+  // Offline-Query: Levels
+  const { data: levels, loading, refresh: refreshLevels } = useOfflineQuery<Level[]>(
+    'admin:levels:' + user?.organization_id,
+    async () => { const res = await api.get('/levels'); return res.data; },
+    { ttl: CACHE_TTL.STAMMDATEN }
+  );
 
   const [presentLevelModal, dismissLevelModal] = useIonModal(LevelManagementModal, {
     level: editLevel,
     onClose: () => dismissLevelModal(),
     onSuccess: () => {
       dismissLevelModal();
-      loadLevels();
+      refreshLevels();
     }
   });
 
@@ -165,7 +154,7 @@ const AdminLevelsPage: React.FC = () => {
     try {
       await api.delete(`/levels/${level.id}`);
       setSuccess('Level gelöscht');
-      await loadLevels();
+      await refreshLevels();
     } catch (error: any) {
       if (slidingElement) {
         await slidingElement.close();
@@ -176,7 +165,7 @@ const AdminLevelsPage: React.FC = () => {
   };
 
   const handleRefresh = async (event: CustomEvent) => {
-    await loadLevels();
+    await refreshLevels();
     event.detail.complete();
   };
 
@@ -219,7 +208,7 @@ const AdminLevelsPage: React.FC = () => {
               icon={trophy}
               preset="level"
               stats={[
-                { value: levels.length, label: 'GESAMT' }
+                { value: (levels || []).length, label: 'GESAMT' }
               ]}
             />
 
@@ -227,14 +216,14 @@ const AdminLevelsPage: React.FC = () => {
             <ListSection
               icon={trophy}
               title="Level"
-              count={levels.length}
+              count={(levels || []).length}
               iconColorClass="level"
               emptyIcon={trophy}
               emptyTitle="Keine Level gefunden"
               emptyMessage="Noch keine Level angelegt"
               emptyIconColor="#5b21b6"
             >
-                      {levels.map((level, index) => (
+                      {(levels || []).map((level, index) => (
                         <IonItemSliding
                           key={level.id}
                           ref={(el) => {
@@ -244,7 +233,7 @@ const AdminLevelsPage: React.FC = () => {
                               slidingRefs.current.delete(level.id);
                             }
                           }}
-                          style={{ marginBottom: index < levels.length - 1 ? '8px' : '0' }}
+                          style={{ marginBottom: index < (levels || []).length - 1 ? '8px' : '0' }}
                         >
                           <IonItem
                             button

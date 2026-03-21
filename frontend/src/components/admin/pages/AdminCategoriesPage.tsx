@@ -39,6 +39,8 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader, ListSection } from '../../shared';
 
@@ -197,8 +199,13 @@ const AdminCategoriesPage: React.FC = () => {
   const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-categories');
   const { user, setSuccess, setError } = useApp();
 
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Offline-Query: Categories
+  const { data: categories, loading, refresh: refreshCategories } = useOfflineQuery<Category[]>(
+    'admin:categories:' + user?.organization_id,
+    async () => { const res = await api.get('/admin/categories'); return res.data; },
+    { ttl: CACHE_TTL.STAMMDATEN }
+  );
+
   const [editCategory, setEditCategory] = useState<Category | null>(null);
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
 
@@ -211,36 +218,15 @@ const AdminCategoriesPage: React.FC = () => {
     onClose: () => dismissCategoryModalHook(),
     onSuccess: () => {
       dismissCategoryModalHook();
-      loadCategories();
+      refreshCategories();
     }
   });
-
-  // Memoized refresh function for live updates
-  const refreshCategories = useCallback(() => {
-    loadCategories();
-  }, []);
 
   // Subscribe to live updates for categories
   useLiveRefresh('categories', refreshCategories);
 
-  const loadCategories = async () => {
-    try {
-      const response = await api.get('/admin/categories');
-      setCategories(response.data);
-    } catch (error) {
-      setError('Fehler beim Laden der Kategorien');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadCategories();
-  }, []);
-
-
   const handleRefresh = async (event: CustomEvent) => {
-    await loadCategories();
+    await refreshCategories();
     (event.target as HTMLIonRefresherElement).complete();
   };
 
@@ -258,7 +244,7 @@ const AdminCategoriesPage: React.FC = () => {
             try {
               await api.delete(`/admin/categories/${category.id}`);
               setSuccess(`Kategorie "${category.name}" gelöscht`);
-              loadCategories();
+              refreshCategories();
             } catch (error: any) {
               if (slidingElement) {
                 await slidingElement.close();
@@ -340,7 +326,7 @@ const AdminCategoriesPage: React.FC = () => {
           icon={pricetag}
           preset="categories"
           stats={[
-            { value: categories.length, label: 'GESAMT' }
+            { value: (categories || []).length, label: 'GESAMT' }
           ]}
         />
 
@@ -348,14 +334,14 @@ const AdminCategoriesPage: React.FC = () => {
         <ListSection
           icon={pricetagOutline}
           title="Kategorien"
-          count={categories.length}
+          count={(categories || []).length}
           iconColorClass="categories"
           emptyIcon={pricetag}
           emptyTitle="Keine Kategorien gefunden"
           emptyMessage="Noch keine Kategorien angelegt"
           emptyIconColor="#0ea5e9"
         >
-                  {categories.map((category, index) => (
+                  {(categories || []).map((category, index) => (
                     <IonItemSliding
                       key={category.id}
                       ref={(el) => {
@@ -365,7 +351,7 @@ const AdminCategoriesPage: React.FC = () => {
                           slidingRefs.current.delete(category.id);
                         }
                       }}
-                      style={{ marginBottom: index < categories.length - 1 ? '8px' : '0' }}
+                      style={{ marginBottom: index < (categories || []).length - 1 ? '8px' : '0' }}
                     >
                       <IonItem
                         button={canEdit}

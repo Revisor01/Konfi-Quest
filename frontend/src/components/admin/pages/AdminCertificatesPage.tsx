@@ -91,6 +91,8 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader, ListSection } from '../../shared';
 
@@ -355,8 +357,13 @@ const AdminCertificatesPage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-certificates');
   const { user, setSuccess, setError } = useApp();
 
-  const [certificateTypes, setCertificateTypes] = useState<CertificateType[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Offline-Query: Certificate Types
+  const { data: certificateTypes, loading, refresh: refreshCertificateTypes } = useOfflineQuery<CertificateType[]>(
+    'admin:certificates:' + user?.organization_id,
+    async () => { const res = await api.get('/teamer/certificate-types'); return res.data; },
+    { ttl: CACHE_TTL.STAMMDATEN }
+  );
+
   const [editCert, setEditCert] = useState<CertificateType | null>(null);
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
 
@@ -367,27 +374,12 @@ const AdminCertificatesPage: React.FC = () => {
     onClose: () => dismissCertModal(),
     onSuccess: () => {
       dismissCertModal();
-      loadCertificateTypes();
+      refreshCertificateTypes();
     }
   });
 
-  const loadCertificateTypes = async () => {
-    try {
-      const response = await api.get('/teamer/certificate-types');
-      setCertificateTypes(response.data);
-    } catch (error) {
-      setError('Fehler beim Laden der Zertifikate');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadCertificateTypes();
-  }, []);
-
   const handleRefresh = async (event: CustomEvent) => {
-    await loadCertificateTypes();
+    await refreshCertificateTypes();
     (event.target as HTMLIonRefresherElement).complete();
   };
 
@@ -405,7 +397,7 @@ const AdminCertificatesPage: React.FC = () => {
             try {
               await api.delete(`/teamer/certificate-types/${certType.id}`);
               setSuccess(`"${certType.name}" gelöscht`);
-              loadCertificateTypes();
+              refreshCertificateTypes();
             } catch (error: any) {
               if (slidingElement) {
                 await slidingElement.close();
@@ -482,21 +474,21 @@ const AdminCertificatesPage: React.FC = () => {
           icon={ribbon}
           colors={{ primary: '#5b21b6', secondary: '#4c1d95' }}
           stats={[
-            { value: certificateTypes.length, label: 'Gesamt' }
+            { value: (certificateTypes || []).length, label: 'Gesamt' }
           ]}
         />
 
         <ListSection
           icon={ribbonOutline}
           title="Zertifikate"
-          count={certificateTypes.length}
+          count={(certificateTypes || []).length}
           iconColorClass="purple"
           emptyIcon={ribbon}
           emptyTitle="Keine Zertifikate"
           emptyMessage="Noch keine Zertifikate angelegt"
           emptyIconColor="#5b21b6"
         >
-          {certificateTypes.map((certType, index) => (
+          {(certificateTypes || []).map((certType, index) => (
             <IonItemSliding
               key={certType.id}
               ref={(el) => {
@@ -506,7 +498,7 @@ const AdminCertificatesPage: React.FC = () => {
                   slidingRefs.current.delete(certType.id);
                 }
               }}
-              style={{ marginBottom: index < certificateTypes.length - 1 ? '8px' : '0' }}
+              style={{ marginBottom: index < (certificateTypes || []).length - 1 ? '8px' : '0' }}
             >
               <IonItem
                 button={isAdmin}

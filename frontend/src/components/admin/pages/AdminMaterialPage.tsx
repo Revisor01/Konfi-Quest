@@ -39,6 +39,8 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader } from '../../shared';
@@ -60,12 +62,9 @@ interface Material {
 const AdminMaterialPage: React.FC = () => {
   const pageRef = useRef<HTMLElement>(null);
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
-  const { setError, setSuccess } = useApp();
+  const { user, setError, setSuccess } = useApp();
   const [presentAlert] = useIonAlert();
 
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const [jahrgaenge, setJahrgaenge] = useState<{ id: number; name: string }[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [activeJahrgangId, setActiveJahrgangId] = useState<number | undefined>();
   const [segment, setSegment] = useState<'alle' | 'mit_event' | 'ohne_event'>('alle');
@@ -75,40 +74,29 @@ const AdminMaterialPage: React.FC = () => {
     setPresentingElement(pageRef.current);
   }, []);
 
-  // Jahrgaenge einmalig laden
-  useEffect(() => {
-    const loadJahrgaenge = async () => {
-      try {
-        const res = await api.get('/jahrgaenge');
-        setJahrgaenge(res.data);
-      } catch {
-        // Nicht kritisch
-      }
-    };
-    loadJahrgaenge();
-  }, []);
+  // Offline-Query: Jahrgaenge
+  const { data: jahrgaenge } = useOfflineQuery<{ id: number; name: string }[]>(
+    'admin:jahrgaenge:' + user?.organization_id,
+    async () => { const res = await api.get('/jahrgaenge'); return res.data; },
+    { ttl: CACHE_TTL.STAMMDATEN }
+  );
 
-  const loadData = useCallback(async () => {
-    try {
+  // Offline-Query: Material (cache-key enthaelt search + jahrgang filter)
+  const { data: materials, loading, refresh: refreshMaterial } = useOfflineQuery<Material[]>(
+    `admin:material:${user?.organization_id}:${search}:${activeJahrgangId || ''}`,
+    async () => {
       const res = await api.get('/material', {
         params: {
           ...(search ? { search } : {}),
           ...(activeJahrgangId ? { jahrgang_id: activeJahrgangId } : {})
         }
       });
-      setMaterials(res.data);
-    } catch {
-      setError('Fehler beim Laden der Materialien');
-    } finally {
-      setLoading(false);
-    }
-  }, [search, activeJahrgangId]);
+      return res.data;
+    },
+    { ttl: CACHE_TTL.PROFILE }
+  );
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  const filteredMaterials = materials.filter(m => {
+  const filteredMaterials = (materials || []).filter(m => {
     if (segment === 'mit_event') return (m.event_count || 0) > 0;
     if (segment === 'ohne_event') return (m.event_count || 0) === 0;
     return true;
@@ -127,7 +115,7 @@ const AdminMaterialPage: React.FC = () => {
             try {
               await api.delete(`/material/${material.id}`);
               setSuccess('Material gelöscht');
-              loadData();
+              refreshMaterial();
             } catch (err: any) {
               setError(err.response?.data?.error || 'Fehler beim Löschen');
             }
@@ -147,7 +135,7 @@ const AdminMaterialPage: React.FC = () => {
     onSuccess: () => {
       setEditMaterial(null);
       dismissFormModal();
-      loadData();
+      refreshMaterial();
     }
   });
 
@@ -200,7 +188,7 @@ const AdminMaterialPage: React.FC = () => {
         </IonHeader>
 
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
-          await loadData();
+          await refreshMaterial();
           e.detail.complete();
         }}>
           <IonRefresherContent />
@@ -216,8 +204,8 @@ const AdminMaterialPage: React.FC = () => {
               icon={documentIcon}
               colors={{ primary: '#d97706', secondary: '#b45309' }}
               stats={[
-                { value: materials.length, label: 'Material' },
-                { value: materials.reduce((sum, m) => sum + (m.file_count || 0), 0), label: 'Dateien' }
+                { value: (materials || []).length, label: 'Material' },
+                { value: (materials || []).reduce((sum, m) => sum + (m.file_count || 0), 0), label: 'Dateien' }
               ]}
             />
 
@@ -237,7 +225,7 @@ const AdminMaterialPage: React.FC = () => {
                   debounce={300}
                 />
                 {/* Jahrgang-Filter Chips */}
-                {jahrgaenge.length > 0 && (
+                {(jahrgaenge || []).length > 0 && (
                   <div style={{ padding: '0 16px 8px', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <span style={{ fontSize: '12px', color: '#6c757d', flexShrink: 0 }}>Jahrgang:</span>
                     <IonChip
@@ -250,7 +238,7 @@ const AdminMaterialPage: React.FC = () => {
                     >
                       <IonLabel>Alle</IonLabel>
                     </IonChip>
-                    {jahrgaenge.map(jg => (
+                    {(jahrgaenge || []).map(jg => (
                       <IonChip
                         key={jg.id}
                         onClick={() => setActiveJahrgangId(activeJahrgangId === jg.id ? undefined : jg.id)}

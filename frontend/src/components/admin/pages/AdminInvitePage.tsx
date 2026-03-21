@@ -37,6 +37,8 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import QRCode from 'qrcode';
 
 interface Jahrgang {
@@ -59,7 +61,7 @@ interface AdminInviteModalProps {
 }
 
 const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) => {
-  const { setSuccess, setError } = useApp();
+  const { user, setSuccess, setError } = useApp();
   const [presentAlert] = useIonAlert();
   const handleClose = () => {
     if (dismiss) {
@@ -68,60 +70,59 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
       onClose();
     }
   };
-  const [loading, setLoading] = useState(true);
-  const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
+
+  // Offline-Query: Jahrgaenge
+  const { data: jahrgaenge, refresh: refreshJahrgaenge } = useOfflineQuery<Jahrgang[]>(
+    'admin:jahrgaenge:' + user?.organization_id,
+    async () => { const res = await api.get('/admin/jahrgaenge'); return res.data; },
+    { ttl: CACHE_TTL.STAMMDATEN }
+  );
+
+  // Offline-Query: Invite Codes
+  const { data: existingInvites, loading, refresh: refreshInvites } = useOfflineQuery<ExistingInvite[]>(
+    'admin:invite-codes:' + user?.organization_id,
+    async () => {
+      try {
+        const res = await api.get('/auth/invite-codes');
+        return res.data || [];
+      } catch {
+        return [];
+      }
+    },
+    { ttl: CACHE_TTL.STAMMDATEN }
+  );
+
   const [selectedJahrgang, setSelectedJahrgang] = useState<number | null>(null);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
   const [generatingCode, setGeneratingCode] = useState(false);
-  const [existingInvites, setExistingInvites] = useState<ExistingInvite[]>([]);
   const [extendingInvite, setExtendingInvite] = useState<number | null>(null);
+  const [initialQrShown, setInitialQrShown] = useState(false);
 
+  // Initialen Jahrgang und QR-Code setzen wenn Daten geladen
   useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const [jahrgaengeRes, invitesRes] = await Promise.all([
-        api.get('/admin/jahrgaenge'),
-        api.get('/auth/invite-codes').catch((err) => {
-          console.error('Fehler beim Laden der Einladungscodes:', err);
-          return { data: [] };
-        })
-      ]);
-      setJahrgaenge(jahrgaengeRes.data);
-      const invites = invitesRes.data || [];
-      setExistingInvites(invites);
-      if (jahrgaengeRes.data.length > 0) {
-        setSelectedJahrgang(jahrgaengeRes.data[0].id);
-      }
-
-      // Automatisch den ersten gueltigen Invite-Code als QR anzeigen
-      const validInvites = invites.filter((invite: ExistingInvite) => {
-        const date = new Date(invite.expires_at);
-        const now = new Date();
-        return date.getTime() > now.getTime();
-      });
-      if (validInvites.length > 0) {
-        const firstValid = validInvites[0];
-        const registrationUrl = `https://konfi-quest.de/register?code=${firstValid.invite_code}`;
-        const qrDataUrl = await QRCode.toDataURL(registrationUrl, {
-          width: 256,
-          margin: 2,
-          color: { dark: '#000000', light: '#ffffff' }
-        });
+    if (initialQrShown || !jahrgaenge || !existingInvites) return;
+    if (jahrgaenge.length > 0 && !selectedJahrgang) {
+      setSelectedJahrgang(jahrgaenge[0].id);
+    }
+    const validInvites = (existingInvites || []).filter((invite: ExistingInvite) => {
+      return new Date(invite.expires_at).getTime() > Date.now();
+    });
+    if (validInvites.length > 0) {
+      const firstValid = validInvites[0];
+      const registrationUrl = `https://konfi-quest.de/register?code=${firstValid.invite_code}`;
+      QRCode.toDataURL(registrationUrl, {
+        width: 256, margin: 2, color: { dark: '#000000', light: '#ffffff' }
+      }).then(qrDataUrl => {
         setInviteCode(firstValid.invite_code);
         setQrCodeDataUrl(qrDataUrl);
         setSelectedJahrgang(firstValid.jahrgang_id);
-      }
-    } catch (error: any) {
-      setError('Fehler beim Laden der Daten');
-    } finally {
-      setLoading(false);
+        setInitialQrShown(true);
+      });
+    } else {
+      setInitialQrShown(true);
     }
-  };
+  }, [jahrgaenge, existingInvites, initialQrShown, selectedJahrgang]);
 
   const generateInviteCode = async () => {
     if (!selectedJahrgang) {
@@ -151,7 +152,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
       setQrCodeDataUrl(qrDataUrl);
 
       setSuccess('Einladungscode generiert');
-      await loadData(); // Reload to show in existing invites
+      await refreshInvites(); // Reload to show in existing invites
     } catch (error: any) {
       setError(error.response?.data?.error || 'Fehler beim Generieren des Codes');
     } finally {
@@ -164,7 +165,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
       setExtendingInvite(inviteId);
       await api.post(`/auth/invite-codes/${inviteId}/extend`);
       setSuccess('Einladungscode um 7 Tage verlängert');
-      await loadData();
+      await refreshInvites();
     } catch (error: any) {
       setError(error.response?.data?.error || 'Fehler beim Verlängern des Codes');
     } finally {
@@ -189,7 +190,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                 setInviteCode(null);
                 setQrCodeDataUrl(null);
               }
-              await loadData();
+              await refreshInvites();
             } catch (err: any) {
               setError(err.response?.data?.error || 'Fehler beim Löschen');
             }
@@ -237,7 +238,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
     if (!inviteCode) return;
 
     const registrationUrl = `https://konfi-quest.de/register?code=${inviteCode}`;
-    const jahrgangName = jahrgaenge.find(j => j.id === selectedJahrgang)?.name || 'Konfi';
+    const jahrgangName = (jahrgaenge || []).find(j => j.id === selectedJahrgang)?.name || 'Konfi';
 
     if (navigator.share) {
       try {
@@ -298,7 +299,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                         placeholder="Jahrgang wählen"
                         interface="popover"
                       >
-                        {jahrgaenge.map((jahrgang) => (
+                        {(jahrgaenge || []).map((jahrgang) => (
                           <IonSelectOption key={jahrgang.id} value={jahrgang.id}>
                             {jahrgang.name}
                           </IonSelectOption>
@@ -327,7 +328,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
             </IonList>
 
             {/* Bestehende Einladungscodes */}
-            {existingInvites.length > 0 && (
+            {(existingInvites || []).length > 0 && (
               <IonList inset={true} className="app-segment-wrapper">
                 <IonListHeader>
                   <div className="app-section-icon app-section-icon--users">
@@ -338,8 +339,8 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                 <IonCard className="app-card">
                   <IonCardContent>
                     <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
-                      {existingInvites.map((invite, index) => (
-                        <IonItemSliding key={invite.id} style={{ marginBottom: index < existingInvites.length - 1 ? '8px' : '0' }}>
+                      {(existingInvites || []).map((invite, index) => (
+                        <IonItemSliding key={invite.id} style={{ marginBottom: index < (existingInvites || []).length - 1 ? '8px' : '0' }}>
                           <IonItem
                             button
                             onClick={() => showExistingInviteQR(invite)}

@@ -23,6 +23,8 @@ import {
 import { arrowBack, appsOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import { SectionHeader } from '../../shared';
 import LoadingSpinner from '../../common/LoadingSpinner';
 
@@ -42,8 +44,7 @@ interface TeamerDashboardConfig {
 }
 
 const AdminDashboardSettingsPage: React.FC = () => {
-  const { setSuccess, setError } = useApp();
-  const [loading, setLoading] = useState(true);
+  const { user, setSuccess, setError } = useApp();
   const [dashboardSegment, setDashboardSegment] = useState<'konfi' | 'teamer'>('konfi');
 
   const [dashboardConfig, setDashboardConfig] = useState<DashboardConfig>({
@@ -61,33 +62,29 @@ const AdminDashboardSettingsPage: React.FC = () => {
     show_losung: true
   });
 
-  useEffect(() => {
-    loadSettings();
-  }, []);
-
-  const loadSettings = async () => {
-    try {
-      const response = await api.get('/settings');
-      const data = response.data;
-      setDashboardConfig({
-        show_konfirmation: data.dashboard_show_konfirmation ?? true,
-        show_events: data.dashboard_show_events ?? true,
-        show_losung: data.dashboard_show_losung ?? true,
-        show_badges: data.dashboard_show_badges ?? true,
-        show_ranking: data.dashboard_show_ranking ?? true
-      });
-      setTeamerDashboardConfig({
-        show_zertifikate: data.teamer_dashboard_show_zertifikate ?? true,
-        show_events: data.teamer_dashboard_show_events ?? true,
-        show_badges: data.teamer_dashboard_show_badges ?? true,
-        show_losung: data.teamer_dashboard_show_losung ?? true
-      });
-    } catch {
-      setError('Fehler beim Laden der Einstellungen');
-    } finally {
-      setLoading(false);
+  // Offline-Query: Settings
+  const { loading, refresh: refreshSettings } = useOfflineQuery<any>(
+    'admin:settings:' + user?.organization_id,
+    async () => { const res = await api.get('/settings'); return res.data; },
+    {
+      ttl: CACHE_TTL.SETTINGS,
+      onSuccess: (data: any) => {
+        setDashboardConfig({
+          show_konfirmation: data.dashboard_show_konfirmation ?? true,
+          show_events: data.dashboard_show_events ?? true,
+          show_losung: data.dashboard_show_losung ?? true,
+          show_badges: data.dashboard_show_badges ?? true,
+          show_ranking: data.dashboard_show_ranking ?? true
+        });
+        setTeamerDashboardConfig({
+          show_zertifikate: data.teamer_dashboard_show_zertifikate ?? true,
+          show_events: data.teamer_dashboard_show_events ?? true,
+          show_badges: data.teamer_dashboard_show_badges ?? true,
+          show_losung: data.teamer_dashboard_show_losung ?? true
+        });
+      }
     }
-  };
+  );
 
   const handleDashboardToggle = async (key: keyof DashboardConfig, value: boolean) => {
     try {
@@ -143,7 +140,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
         </IonHeader>
 
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
-          await loadSettings();
+          await refreshSettings();
           e.detail.complete();
         }}>
           <IonRefresherContent />

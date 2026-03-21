@@ -17,6 +17,8 @@ import { add, arrowBack } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import UsersView from '../UsersView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import UserManagementModal from '../modals/UserManagementModal';
@@ -39,9 +41,12 @@ const AdminUsersPage: React.FC = () => {
   const { setSuccess, setError, user } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-users');
   
-  // State
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Offline-Query: Users
+  const { data: users, loading, refresh: refreshUsers } = useOfflineQuery<User[]>(
+    'admin:users:' + user?.organization_id,
+    async () => { const res = await api.get('/users'); return res.data; },
+    { ttl: CACHE_TTL.KONFIS }
+  );
   
   // Modal state
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -62,37 +67,22 @@ const AdminUsersPage: React.FC = () => {
       dismissUserModalHook();
       setSelectedUser(null);
       setModalUserId(null);
-      loadUsers();
+      refreshUsers();
     }
   });
 
   useEffect(() => {
-    loadUsers();
-    
-    // Event-Listener für Updates
+    // Event-Listener fuer Updates
     const handleUsersUpdated = () => {
-      loadUsers();
+      refreshUsers();
     };
-    
+
     window.addEventListener('users-updated', handleUsersUpdated);
-    
+
     return () => {
       window.removeEventListener('users-updated', handleUsersUpdated);
     };
-  }, []);
-
-  const loadUsers = async () => {
-    setLoading(true);
-    try {
-      const response = await api.get('/users');
-      setUsers(response.data);
-    } catch (err) {
-      setError('Fehler beim Laden der Benutzer');
- console.error('Error loading users:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [refreshUsers]);
 
   const handleDeleteUser = async (userToDelete: User) => {
     presentAlert({
@@ -107,7 +97,7 @@ const AdminUsersPage: React.FC = () => {
             try {
               await api.delete(`/users/${userToDelete.id}`);
               setSuccess(`Benutzer "${userToDelete.display_name}" gelöscht`);
-              await loadUsers();
+              await refreshUsers();
             } catch (err: any) {
               if (err.response?.data?.error) {
                 setError(err.response.data.error);
@@ -164,7 +154,7 @@ const AdminUsersPage: React.FC = () => {
         </IonHeader>
         
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
-          loadUsers();
+          refreshUsers();
           e.detail.complete();
         }}>
           <IonRefresherContent></IonRefresherContent>
@@ -174,8 +164,8 @@ const AdminUsersPage: React.FC = () => {
           <LoadingSpinner message="Benutzer werden geladen..." />
         ) : (
           <UsersView 
-            users={users}
-            onUpdate={loadUsers}
+            users={users || []}
+            onUpdate={refreshUsers}
             onAddUserClick={presentUserModal}
             onSelectUser={handleSelectUser}
             onDeleteUser={handleDeleteUser}

@@ -30,6 +30,8 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import { setUser as setTokenStoreUser } from '../../../services/tokenStore';
 import ChangeEmailModal from '../modals/ChangeEmailModal';
 import ChangePasswordModal from '../modals/ChangePasswordModal';
@@ -38,20 +40,13 @@ import ChangeRoleTitleModal from '../modals/ChangeRoleTitleModal';
 const AdminProfilePage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-profile');
   const { user, setUser, setSuccess, setError } = useApp();
-  const [profileData, setProfileData] = useState<{ role_title?: string; email?: string; created_at?: string }>({});
 
-  // Profildaten laden
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const response = await api.get('/auth/me');
-        setProfileData(response.data);
-      } catch (err) {
- console.error('Error loading profile:', err);
-      }
-    };
-    loadProfile();
-  }, []);
+  // Offline-Query: Profile (user-spezifisch)
+  const { data: profileData, refresh: refreshProfile } = useOfflineQuery<{ role_title?: string; email?: string; created_at?: string }>(
+    'user:me:' + user?.id,
+    async () => { const res = await api.get('/auth/me'); return res.data; },
+    { ttl: CACHE_TTL.SETTINGS }
+  );
 
   // Email Modal mit useIonModal Hook
   const [presentEmailModalHook, dismissEmailModalHook] = useIonModal(ChangeEmailModal, {
@@ -59,20 +54,18 @@ const AdminProfilePage: React.FC = () => {
     onSuccess: async () => {
       dismissEmailModalHook();
       // User-Daten im Context aktualisieren
+      await refreshProfile();
       try {
         const response = await api.get('/auth/me');
-        setProfileData(response.data);
-        // User im Context und TokenStore aktualisieren
         if (user) {
           const updatedUser = { ...user, email: response.data.email };
           await setTokenStoreUser(updatedUser);
           setUser(updatedUser);
         }
       } catch (err) {
- console.error('Error refreshing user:', err);
+        // Profile bereits via refreshProfile aktualisiert
       }
     }
-    // initialEmail wird nicht mehr benötigt - Modal lädt selbst vom Server
   });
 
   // Password Modal mit useIonModal Hook
@@ -86,10 +79,9 @@ const AdminProfilePage: React.FC = () => {
     onClose: () => dismissRoleTitleModalHook(),
     onSuccess: () => {
       dismissRoleTitleModalHook();
-      // Profil neu laden
- api.get('/auth/me').then(res => setProfileData(res.data)).catch(console.error);
+      refreshProfile();
     },
-    initialRoleTitle: profileData.role_title || ''
+    initialRoleTitle: profileData?.role_title || ''
   });
 
   const handleOpenEmailModal = () => {
@@ -147,21 +139,21 @@ const AdminProfilePage: React.FC = () => {
             </div>
             <h1 className="app-detail-header__title">{user?.display_name || 'Administrator'}</h1>
             <p className="app-detail-header__subtitle">
-              {profileData.role_title
+              {profileData?.role_title
                 ? `Administrator - ${profileData.role_title}`
                 : 'Administrator'}
             </p>
             <div className="app-detail-header__info-row" style={{ justifyContent: 'center' }}>
-              {(profileData.email || user?.email) && (
+              {(profileData?.email || user?.email) && (
                 <div className="app-detail-header__info-chip">
                   <IonIcon icon={mailOutline} style={{ fontSize: '0.85rem' }} />
-                  {profileData.email || user?.email}
+                  {profileData?.email || user?.email}
                 </div>
               )}
-              {profileData.created_at && (
+              {profileData?.created_at && (
                 <div className="app-detail-header__info-chip">
                   <IonIcon icon={calendarOutline} style={{ fontSize: '0.85rem' }} />
-                  Seit {new Date(profileData.created_at).toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  Seit {new Date(profileData?.created_at || '').toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </div>
               )}
             </div>
@@ -209,7 +201,7 @@ const AdminProfilePage: React.FC = () => {
                           <div className="app-list-item__title">Funktionsbeschreibung</div>
                           <div className="app-list-item__meta">
                             <span className="app-list-item__meta-item">
-                              {profileData.role_title ? `Aktuell: ${profileData.role_title}` : 'z.B. Pastor, Diakonin'}
+                              {profileData?.role_title ? `Aktuell: ${profileData.role_title}` : 'z.B. Pastor, Diakonin'}
                             </span>
                           </div>
                         </div>
@@ -248,7 +240,7 @@ const AdminProfilePage: React.FC = () => {
                           <div className="app-list-item__title">E-Mail-Adresse ändern</div>
                           <div className="app-list-item__meta">
                             <span className="app-list-item__meta-item">
-                              {(profileData.email || user?.email) ? `Aktuell: ${profileData.email || user?.email}` : 'E-Mail für Benachrichtigungen'}
+                              {(profileData?.email || user?.email) ? `Aktuell: ${profileData?.email || user?.email}` : 'E-Mail für Benachrichtigungen'}
                             </span>
                           </div>
                         </div>
