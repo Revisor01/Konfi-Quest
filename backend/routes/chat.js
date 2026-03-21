@@ -22,6 +22,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
   const validateSendMessage = [
     param('roomId').isInt({ min: 1 }).withMessage('Ungültige Raum-ID'),
     body('content').optional().trim(),
+    body('client_id').optional().isUUID().withMessage('client_id muss eine UUID sein'),
     handleValidationErrors
   ];
 
@@ -640,12 +641,27 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
   router.post('/rooms/:roomId/messages', verifyTokenRBAC, chatUpload.single('file'), validateSendMessage, async (req, res) => {
     try {
       const roomId = req.params.roomId;
-      const { content, message_type = 'text', reply_to } = req.body;
+      const { content, message_type = 'text', reply_to, client_id } = req.body;
       const userId = req.user.id;
       const userType = req.user.type;
 
       if (!content && !req.file) {
         return res.status(400).json({ error: 'Inhalt oder Datei erforderlich' });
+      }
+
+      // Idempotency: Prüfen ob Nachricht mit dieser client_id bereits existiert
+      if (client_id) {
+        const existingQuery = `
+          SELECT m.*, m.user_id as sender_id, m.user_type as sender_type,
+                 u.display_name as sender_name, u.username as sender_username
+          FROM chat_messages m
+          JOIN users u ON m.user_id = u.id
+          WHERE m.client_id = $1
+        `;
+        const { rows: [existing] } = await db.query(existingQuery, [client_id]);
+        if (existing) {
+          return res.status(200).json(existing);
+        }
       }
       
       // Check access
@@ -677,11 +693,11 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       
       // Insert message and get its ID back
       const insertQuery = `
-      INSERT INTO chat_messages (room_id, user_id, user_type, message_type, content, file_path, file_name, file_size, reply_to)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      INSERT INTO chat_messages (room_id, user_id, user_type, message_type, content, file_path, file_name, file_size, reply_to, client_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING id
     `;
-      const { rows: [newMessage] } = await db.query(insertQuery, [roomId, userId, userType, actualMessageType, content, filePath, fileName, fileSize, reply_to]);
+      const { rows: [newMessage] } = await db.query(insertQuery, [roomId, userId, userType, actualMessageType, content, filePath, fileName, fileSize, reply_to, client_id || null]);
       const messageId = newMessage.id;
       
       // Fetch the complete message object to send back and for push notifications
@@ -783,7 +799,21 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       })();
       
     } catch (err) {
- console.error(`Database error in POST /rooms/${req.params.roomId}/messages:`, err);
+      // Race Condition: Nachricht wurde zwischen Check und Insert eingefügt
+      if (err.code === '23505' && err.detail?.includes('client_id')) {
+        try {
+          const { rows: [existing] } = await db.query(
+            `SELECT m.*, m.user_id as sender_id, m.user_type as sender_type,
+                    u.display_name as sender_name, u.username as sender_username
+             FROM chat_messages m JOIN users u ON m.user_id = u.id
+             WHERE m.client_id = $1`, [req.body.client_id]
+          );
+          if (existing) return res.status(200).json(existing);
+        } catch (lookupErr) {
+          console.error('Error looking up duplicate message:', lookupErr);
+        }
+      }
+      console.error(`Database error in POST /rooms/${req.params.roomId}/messages:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });

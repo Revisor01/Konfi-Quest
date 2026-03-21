@@ -20,6 +20,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
   const validateCreateRequest = [
     body('activity_id').isInt({ min: 1 }).withMessage('Ungültige Aktivitäts-ID'),
     body('requested_date').notEmpty().isISO8601().withMessage('Gültiges Datum erforderlich'),
+    body('client_id').optional().isUUID().withMessage('client_id muss eine UUID sein'),
     handleValidationErrors
   ];
 
@@ -590,10 +591,20 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
     
     try {
       const konfiId = req.user.id;
-      const { activity_id, description, photo_filename, requested_date } = req.body;
-      
+      const { activity_id, description, photo_filename, requested_date, client_id } = req.body;
+
       if (!activity_id) {
         return res.status(400).json({ error: 'Aktivitäts-ID ist erforderlich' });
+      }
+
+      // Idempotency: Prüfen ob Antrag mit dieser client_id bereits existiert
+      if (client_id) {
+        const { rows: [existing] } = await db.query(
+          'SELECT * FROM activity_requests WHERE client_id = $1', [client_id]
+        );
+        if (existing) {
+          return res.status(200).json(existing);
+        }
       }
       
       const date = requested_date || new Date().toISOString().split('T')[0];
@@ -609,11 +620,11 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       }
 
       const insertQuery = `
-        INSERT INTO activity_requests (konfi_id, activity_id, requested_date, comment, photo_filename, status, organization_id)
-        VALUES ($1, $2, $3, $4, $5, 'pending', $6)
+        INSERT INTO activity_requests (konfi_id, activity_id, requested_date, comment, photo_filename, status, organization_id, client_id)
+        VALUES ($1, $2, $3, $4, $5, 'pending', $6, $7)
         RETURNING id
       `;
-      const { rows: [newRequest] } = await db.query(insertQuery, [konfiId, activity_id, date, description, photo_filename, req.user.organization_id]);
+      const { rows: [newRequest] } = await db.query(insertQuery, [konfiId, activity_id, date, description, photo_filename, req.user.organization_id, client_id || null]);
       
       // Send confirmation notification to konfi
       try {
@@ -694,7 +705,18 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       // Live-Update an alle Admins über neuen Antrag senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'create');
     } catch (err) {
- console.error('Database error in POST /requests:', err);
+      // Race Condition: Antrag wurde zwischen Check und Insert eingefügt
+      if (err.code === '23505' && err.detail?.includes('client_id')) {
+        try {
+          const { rows: [existing] } = await db.query(
+            'SELECT * FROM activity_requests WHERE client_id = $1', [req.body.client_id]
+          );
+          if (existing) return res.status(200).json(existing);
+        } catch (lookupErr) {
+          console.error('Error looking up duplicate request:', lookupErr);
+        }
+      }
+      console.error('Database error in POST /requests:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
