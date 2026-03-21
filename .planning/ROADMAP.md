@@ -271,3 +271,13 @@ Plans:
 Plans:
 - [x] 69-01-PLAN.md — FileViewerModal Komponente: Zoom/Pan/Pinch, Swipe, PDF, Video, Download, Share
 - [x] 69-02-PLAN.md — Integration in Chat (MessageBubble/ChatRoom) + Material (TeamerMaterialDetailPage)
+
+### Phase 70: Rollen-Audit Fixes — Sicherheit (Multi-Tenant, Zugriff), Logik (letzte org_admin, pending Anträge), Frontend (EventDetail offline, isOnline-Buttons konsistent, Aktivitäten-Kategorie-Filter)
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 69
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 70 to break down)
