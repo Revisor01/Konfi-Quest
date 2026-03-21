@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: App-Resilienz
 status: unknown
-stopped_at: Completed 56-04-PLAN.md (Teamer-Pages Offline-Cache)
-last_updated: "2026-03-21T07:21:44.902Z"
+stopped_at: Completed 56-03-PLAN.md (Admin-Pages Offline-Cache)
+last_updated: "2026-03-21T07:28:04.552Z"
 progress:
   total_phases: 15
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -46,6 +46,9 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 56]: ChatRoom Hybrid-Pattern: useOfflineQuery Initial-Load + lokaler State fuer WebSocket Live-Updates
 - [Phase 56]: TeamerMaterialPage: Client-seitiges Filtern statt API-Params fuer vollstaendigen Offline-Cache
 - [Phase 56]: TeamerKonfiStatsPage teilt Cache-Key mit TeamerProfilePage (SWR-Deduplizierung)
+- [Phase 56]: AdminSettingsPage hat keine API-Calls, keine Migration noetig
+- [Phase 56]: AdminProfilePage nutzt userId statt organization_id (persoenliche Daten)
+- [Phase 56]: AdminMaterialPage: search+filter im Cache-Key fuer granulares Offline-Caching
 
 ### Roadmap Evolution
 
@@ -71,6 +74,6 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-03-21T07:21:44.900Z
-Stopped at: Completed 56-04-PLAN.md (Teamer-Pages Offline-Cache)
+Last session: 2026-03-21T07:28:04.550Z
+Stopped at: Completed 56-03-PLAN.md (Admin-Pages Offline-Cache)
 Resume file: None

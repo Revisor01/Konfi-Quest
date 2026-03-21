@@ -163,7 +163,7 @@ Kein Phase-Nummern-Block — separater Update-Milestone ohne Plans.
 **Milestone Goal:** Offline-Lese-Cache fuer alle Daten, Schreib-Queue fuer Nachrichten/Antraege, Offline-UI, Retry-Logik, Double-Submit-Schutz, inkrementeller Sync bei App-Start + Reconnect.
 
 - [x] **Phase 55: Fundament** - Storage-Migration localStorage->Preferences + Netzwerk-Erkennung + 401-Handler-Fix (completed 2026-03-20)
-- [ ] **Phase 56: Lese-Cache** - useOfflineQuery Hook + SWR-Pattern + Migration aller 30 Pages
+- [x] **Phase 56: Lese-Cache** - useOfflineQuery Hook + SWR-Pattern + Migration aller 30 Pages (completed 2026-03-21)
 - [ ] **Phase 57: Retry + Schutz** - axios-retry + Double-Submit-Schutz + Idempotency-Keys Backend
 - [ ] **Phase 58: Corner-Badge System** - Flex-Container fuer Multi-Badge-Listen + Queue-Badge Design
 - [ ] **Phase 59: Online-Only Buttons** - 42 Online-Only-Aktionen disablen + Chat-Queue-Status-UI
@@ -200,11 +200,11 @@ Plans:
   3. Teamer sieht Material-Liste, Badges und Konfi-Stats auch offline
   4. Gecachte Daten werden sofort angezeigt und im Hintergrund aktualisiert sobald online (SWR-Pattern sichtbar: Daten da, kurzes Update)
   5. Nach Logout sind alle user-spezifischen Cache-Daten geloescht
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 Plans:
 - [x] 56-01-PLAN.md — offlineCache Service + useOfflineQuery Hook + Logout Cache-Clearing
 - [x] 56-02-PLAN.md — Konfi-Pages + Chat-Komponenten auf useOfflineQuery migrieren
-- [ ] 56-03-PLAN.md — Admin-Pages auf useOfflineQuery migrieren
+- [x] 56-03-PLAN.md — Admin-Pages auf useOfflineQuery migrieren
 - [x] 56-04-PLAN.md — Teamer-Pages auf useOfflineQuery migrieren
 
 ### Phase 57: Retry + Schutz
@@ -283,7 +283,7 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 55. Fundament | 4/4 | Complete    | 2026-03-20 |
-| 56. Lese-Cache | 3/4 | In Progress|  |
+| 56. Lese-Cache | 4/4 | Complete   | 2026-03-21 |
 | 57. Retry + Schutz | 0/? | Not started | - |
 | 58. Corner-Badge System | 0/? | Not started | - |
 | 59. Online-Only Buttons | 0/? | Not started | - |

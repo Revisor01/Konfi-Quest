@@ -30,7 +30,7 @@ Requirements fuer Milestone v2.1 App-Resilienz. Offline-Faehigkeit und Zuverlaes
 - [x] **CAC-04**: Events (angemeldete + anstehende) sind offline lesbar — alle Rollen
 - [x] **CAC-05**: Eigene Antraege mit Status sind offline lesbar (Konfi + Admin-Antrags-Liste)
 - [x] **CAC-06**: Profil-Daten sind offline lesbar — alle Rollen
-- [ ] **CAC-07**: Admin-Stammdaten offline lesbar: Konfis-Liste, Aktivitaeten, Badges, Kategorien, Jahrgaenge, Level, Zertifikat-Typen, Settings, Invite-Codes
+- [x] **CAC-07**: Admin-Stammdaten offline lesbar: Konfis-Liste, Aktivitaeten, Badges, Kategorien, Jahrgaenge, Level, Zertifikat-Typen, Settings, Invite-Codes
 - [x] **CAC-08**: Teamer-spezifische Daten offline lesbar: Material-Liste (Metadaten, keine Dateien), Badges, Konfi-Stats
 - [x] **CAC-09**: Alle 30 Pages nutzen useOfflineQuery statt direktem api.get()
 - [x] **CAC-10**: Gecachte Daten werden sofort angezeigt, im Hintergrund aktualisiert (SWR-Pattern)
@@ -219,7 +219,7 @@ Deferred. Onboarding, Landing Website, Readme, Wiki.
 | CAC-04 | Phase 56 | Complete |
 | CAC-05 | Phase 56 | Complete |
 | CAC-06 | Phase 56 | Complete |
-| CAC-07 | Phase 56 | Pending |
+| CAC-07 | Phase 56 | Complete |
 | CAC-08 | Phase 56 | Complete |
 | CAC-09 | Phase 56 | Complete |
 | CAC-10 | Phase 56 | Complete |
