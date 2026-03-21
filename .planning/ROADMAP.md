@@ -241,7 +241,7 @@ Plans:
 **Requirements**: OUI-08, OUI-09, OUI-10, OUI-11, OUI-12, OOA-01, OOA-02, OOA-03, OOA-04, OOA-05, OOA-06, OOA-07, OOA-08, OOA-09, OOA-10, OOA-11, OOA-12, OOA-13, OOA-14, OOA-15, OOA-16, OOA-17, OOA-18, OOA-19, OOA-20, OOA-21, OOA-22, OOA-23, OOA-24, OOA-25, OOA-26, OOA-27, OOA-28, OOA-29, OOA-30, OOA-31, OOA-32, OOA-33, OOA-34, OOA-35, OOA-36, OOA-37, OOA-38, OOA-39, OOA-40, OOA-41, OOA-42
 **Success Criteria** (what must be TRUE):
   1. Alle 42 Online-Only-Aktionen (destruktive Ops, Punkte-Vergabe, Server-Validierung) zeigen "Du bist offline" als Button-Text und sind disabled wenn offline
-  2. Kein globales Offline-Banner — nur kontextbezogene Hinweise an betroffenen Buttons/Elementen
+  2. Kein globales Offline-Banner — nur kontextbezogene Anzeigen an betroffenen Elementen
   3. Pending Chat-Nachrichten zeigen Uhr-Icon neben dem Zeitstempel; nach Zustellung verschwindet die Uhr
   4. Fehlgeschlagene Chat-Nachrichten zeigen rotes Ausrufezeichen mit "Erneut senden" oder "Loeschen" bei Tap
 **Plans**: 3 plans
@@ -276,9 +276,11 @@ Plans:
   2. Admin kann offline Material erstellen/bearbeiten (Metadaten sofort, Datei-Upload bei naechstem Vordergrund-Aufenthalt)
   3. Admin kann offline Antraege genehmigen/ablehnen/zuruecksetzen, Bonus-Punkte vergeben und Aktivitaeten zuweisen
   4. Teamer kann offline Events buchen und sich abmelden — beides mit Uhr-Icon am Event
-**Plans**: 2 plans
+**Plans:** 3 plans
 Plans:
-- [ ] TBD (run /gsd:plan-phase 61 to break down)
+- [ ] 61-01-PLAN.md — Admin Modals Queue: EventModal, ActivityManagementModal, BadgeManagementModal, LevelManagementModal, MaterialFormModal
+- [ ] 61-02-PLAN.md — Admin Pages + restliche Modals Queue: Categories, Jahrgaenge, Certificates, ActivityRequestModal, BonusModal, ActivityModal
+- [ ] 61-03-PLAN.md — Teamer Queue: TeamerEventsPage buchen/abmelden
 
 ### Phase 62: Sync
 **Goal**: App ist nach App-Resume und Socket.io-Reconnect sofort aktuell — keine verpassten Daten, korrekte Reihenfolge
@@ -308,7 +310,7 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 | 58. Corner-Badge System | 2/2 | Complete    | 2026-03-21 |
 | 59. Online-Only Buttons | 3/3 | Complete    | 2026-03-21 |
 | 60. Queue-Kern + Konfi-Aktionen | 4/4 | Complete    | 2026-03-21 |
-| 61. Admin- + Teamer-Queue | 0/? | Not started | - |
+| 61. Admin- + Teamer-Queue | 0/3 | Not started | - |
 | 62. Sync | 0/? | Not started | - |
 
 ### Phase 63: Codebase Cleanup — Quick-Wins, Konsolidierung, Bug-Fixes
