@@ -49,7 +49,7 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
       onClose();
     }
   };
-  const { setError, setSuccess } = useApp();
+  const { setError, setSuccess, isOnline } = useApp();
   const pageRef = useRef<HTMLElement>(null);
 
   const [question, setQuestion] = useState('');
@@ -136,8 +136,8 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
           </IonButtons>
           <IonTitle>Neue Umfrage</IonTitle>
           <IonButtons slot="end">
-            <IonButton className="app-modal-submit-btn app-modal-submit-btn--chat" onClick={createPoll} disabled={!canCreate() || creating}>
-              {creating ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
+            <IonButton className="app-modal-submit-btn app-modal-submit-btn--chat" onClick={createPoll} disabled={!canCreate() || creating || !isOnline}>
+              {!isOnline ? 'Du bist offline' : creating ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
             </IonButton>
           </IonButtons>
         </IonToolbar>

@@ -44,7 +44,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
   submitBtnClass = 'app-modal-submit-btn--konfi',
   infoBoxClass = 'app-info-box--purple'
 }) => {
-  const { setSuccess, setError } = useApp();
+  const { setSuccess, setError, isOnline } = useApp();
   const [email, setEmail] = useState(initialEmail);
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(true);
@@ -105,8 +105,8 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton className={`app-modal-submit-btn ${submitBtnClass}`} onClick={handleSave} disabled={isSubmitting || loading}>
-              {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+            <IonButton className={`app-modal-submit-btn ${submitBtnClass}`} onClick={handleSave} disabled={isSubmitting || loading || !isOnline}>
+              {!isOnline ? 'Du bist offline' : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>

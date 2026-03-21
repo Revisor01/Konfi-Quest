@@ -39,7 +39,7 @@ interface DirectMessageModalProps {
 }
 
 const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSuccess, dismiss }) => {
-  const { user, setError, setSuccess } = useApp();
+  const { user, setError, setSuccess, isOnline } = useApp();
   const pageRef = useRef<HTMLElement>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [searchText, setSearchText] = useState('');
@@ -78,6 +78,7 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSucc
   };
 
   const createDirectMessage = async (targetUser: User) => {
+    if (!isOnline) return;
     await guard(async () => {
       try {
         await api.post('/chat/direct', {
@@ -172,7 +173,7 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSucc
                       key={`${targetUser.type}-${targetUser.id}`}
                       button
                       onClick={() => createDirectMessage(targetUser)}
-                      disabled={creating}
+                      disabled={creating || !isOnline}
                       style={{ '--min-height': '60px' }}
                     >
                       <IonAvatar slot="start" style={{
@@ -227,8 +228,8 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSucc
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent>
-                  <p style={{ margin: 0, fontSize: '0.9rem', color: '#666', lineHeight: '1.4' }}>
-                    Wähle eine Person aus, um eine private Unterhaltung zu starten.
+                  <p style={{ margin: 0, fontSize: '0.9rem', color: !isOnline ? '#ef4444' : '#666', lineHeight: '1.4' }}>
+                    {!isOnline ? 'Du bist offline' : 'Wähle eine Person aus, um eine private Unterhaltung zu starten.'}
                   </p>
                 </IonCardContent>
               </IonCard>

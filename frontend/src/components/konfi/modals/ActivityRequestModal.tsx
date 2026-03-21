@@ -59,7 +59,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
   onClose,
   onSuccess
 }) => {
-  const { setSuccess, setError } = useApp();
+  const { setSuccess, setError, isOnline } = useApp();
   const [presentAlert] = useIonAlert();
 
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -217,8 +217,8 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSubmit} disabled={isSubmitting || loading}>
-              <IonIcon icon={checkmark} />
+            <IonButton className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSubmit} disabled={isSubmitting || loading || !isOnline}>
+              {!isOnline ? 'Du bist offline' : <IonIcon icon={checkmark} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>

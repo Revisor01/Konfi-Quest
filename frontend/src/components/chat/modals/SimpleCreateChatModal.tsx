@@ -61,7 +61,7 @@ interface Settings {
 }
 
 const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, onSuccess, dismiss }) => {
-  const { user, setError, setSuccess } = useApp();
+  const { user, setError, setSuccess, isOnline } = useApp();
   const { refreshFromAPI } = useBadge();
   const [presentDuplicateAlert] = useIonAlert();
   const [presentUnsavedAlert] = useIonAlert();
@@ -277,6 +277,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
   };
 
   const createDirectMessage = async (targetUser: User) => {
+    if (!isOnline) return;
     // Check if chat already exists
     if (checkDirectChatExists(targetUser)) {
       presentDuplicateAlert({
@@ -421,8 +422,8 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           <IonTitle>{chatType === 'direct' ? 'Neue Direktnachricht' : 'Neuer Gruppenchat'}</IonTitle>
           {chatType === 'group' && (
             <IonButtons slot="end">
-              <IonButton className="app-modal-submit-btn app-modal-submit-btn--chat" onClick={createGroupChat} disabled={!isFormValid || creating}>
-                {creating ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
+              <IonButton className="app-modal-submit-btn app-modal-submit-btn--chat" onClick={createGroupChat} disabled={!isFormValid || creating || !isOnline}>
+                {!isOnline ? 'Du bist offline' : creating ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
               </IonButton>
             </IonButtons>
           )}

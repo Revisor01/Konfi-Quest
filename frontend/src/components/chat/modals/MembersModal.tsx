@@ -76,7 +76,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
   roomId,
   roomType
 }) => {
-  const { user, setError, setSuccess } = useApp();
+  const { user, setError, setSuccess, isOnline } = useApp();
   const [presentRemoveAlert] = useIonAlert();
   const pageRef = useRef<HTMLElement>(null);
 
@@ -212,6 +212,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
   };
 
   const confirmRemoveUser = (participant: Participant) => {
+    if (!isOnline) return;
     presentRemoveAlert({
       header: 'Mitglied entfernen',
       message: `${participant.name} wirklich aus dem Chat entfernen?`,
@@ -374,9 +375,9 @@ const MembersModal: React.FC<MembersModalProps> = ({
                 <IonButton
                   className="app-modal-submit-btn app-modal-submit-btn--chat"
                   onClick={addSelectedUsers}
-                  disabled={selectedUsers.size === 0 || adding}
+                  disabled={selectedUsers.size === 0 || adding || !isOnline}
                 >
-                  {adding ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
+                  {!isOnline ? 'Du bist offline' : adding ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
                 </IonButton>
               ) : (
                 <IonButton onClick={() => setShowAddMode(true)}>

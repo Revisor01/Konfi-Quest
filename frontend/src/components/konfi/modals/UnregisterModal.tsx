@@ -23,6 +23,7 @@ import {
   calendarOutline,
   chatbubbleOutline
 } from 'ionicons/icons';
+import { useApp } from '../../../contexts/AppContext';
 
 interface UnregisterModalProps {
   eventName: string;
@@ -39,6 +40,7 @@ const UnregisterModal: React.FC<UnregisterModalProps> = ({
   onUnregister,
   dismiss
 }) => {
+  const { isOnline } = useApp();
   const [reason, setReason] = useState('');
   const { isSubmitting, guard } = useActionGuard();
 
@@ -70,8 +72,8 @@ const UnregisterModal: React.FC<UnregisterModalProps> = ({
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSubmit} disabled={!isValid || isSubmitting}>
-              <IonIcon icon={checkmarkOutline} />
+            <IonButton className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSubmit} disabled={!isValid || isSubmitting || !isOnline}>
+              {!isOnline ? 'Du bist offline' : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>

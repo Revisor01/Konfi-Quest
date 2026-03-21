@@ -71,7 +71,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
   sectionIconClass = 'app-section-icon--purple',
   submitBtnClass = 'app-modal-submit-btn--konfi'
 }) => {
-  const { setSuccess, setError } = useApp();
+  const { setSuccess, setError, isOnline } = useApp();
   const { isSubmitting, guard } = useActionGuard();
 
   const [passwordData, setPasswordData] = useState({
@@ -150,8 +150,8 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton className={`app-modal-submit-btn ${submitBtnClass}`} onClick={handleSave} disabled={isSubmitting || !isValid}>
-              {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+            <IonButton className={`app-modal-submit-btn ${submitBtnClass}`} onClick={handleSave} disabled={isSubmitting || !isValid || !isOnline}>
+              {!isOnline ? 'Du bist offline' : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>
