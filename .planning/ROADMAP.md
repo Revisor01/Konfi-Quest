@@ -14,7 +14,7 @@
 - Shipped **v1.9 Bugfix + Polish** - Phases 44-54 (shipped 2026-03-19)
 - **v2.0 Ionic Update + Theme** (shipped 2026-03-19)
 - Shipped **v2.1 App-Resilienz** - Phases 55-62 (shipped 2026-03-21)
-- v2.2 Codebase-Hardening - Phases 63-69 (planned)
+- v2.2 Codebase-Hardening - Phases 63-70 (planned)
 
 ## Phases
 
@@ -184,7 +184,7 @@ Phase 62: Sync (1 plan, complete)
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69
+Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69 -> 70
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -195,6 +195,7 @@ Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69
 | 67. Performance | 2/2 | Complete    | 2026-03-21 |
 | 68. Token-Refresh | 2/2 | Complete    | 2026-03-21 |
 | 69. Datei-Viewer | 2/2 | Complete    | 2026-03-21 |
+| 70. Rollen-Audit Fixes | 0/2 | Planned    | - |
 
 ### Phase 63: Codebase Cleanup — Quick-Wins, Konsolidierung, Bug-Fixes
 
@@ -272,12 +273,13 @@ Plans:
 - [x] 69-01-PLAN.md — FileViewerModal Komponente: Zoom/Pan/Pinch, Swipe, PDF, Video, Download, Share
 - [x] 69-02-PLAN.md — Integration in Chat (MessageBubble/ChatRoom) + Material (TeamerMaterialDetailPage)
 
-### Phase 70: Rollen-Audit Fixes — Sicherheit (Multi-Tenant, Zugriff), Logik (letzte org_admin, pending Anträge), Frontend (EventDetail offline, isOnline-Buttons konsistent, Aktivitäten-Kategorie-Filter)
+### Phase 70: Rollen-Audit Fixes — Sicherheit (Multi-Tenant, Zugriff), Logik (letzte org_admin, pending Antraege), Frontend (EventDetail offline, isOnline-Buttons konsistent, Aktivitaeten-Kategorie-Filter)
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Sicherheitsluecken und Logikfehler aus Rollen-Audit schliessen, Frontend-Konsistenz verbessern (Offline-Cache, Button-States, Kategorie-Filter)
+**Requirements**: [AUDIT-S1, AUDIT-S2, AUDIT-L1, AUDIT-L2, AUDIT-L5, AUDIT-L6, AUDIT-F3]
 **Depends on:** Phase 69
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 70 to break down)
+- [ ] 70-01-PLAN.md — Backend: Multi-Tenant bonus-points, Org-Users Zugriff, letzte org_admin, pending Antraege
+- [ ] 70-02-PLAN.md — Frontend: EventDetailView useOfflineQuery, isOnline-Buttons, Kategorie-Filter
