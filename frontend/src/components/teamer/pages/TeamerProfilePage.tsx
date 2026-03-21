@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import {
   IonPage,
   IonHeader,
@@ -33,6 +33,8 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useHistory } from 'react-router-dom';
 import api from '../../../services/api';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import { logout } from '../../../services/auth';
 import { setUser as setTokenStoreUser, clearAuth } from '../../../services/tokenStore';
 import ChangeEmailModal from '../../konfi/modals/ChangeEmailModal';
@@ -69,32 +71,19 @@ const TeamerProfilePage: React.FC = () => {
   const [presentAlert] = useIonAlert();
   const history = useHistory();
 
-  const [profile, setProfile] = useState<TeamerProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const loadProfile = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await api.get('/teamer/profile');
-      setProfile(response.data);
-    } catch (err) {
-      setError('Fehler beim Laden des Profils');
-      console.error('Error loading teamer profile:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [setError]);
-
-  useEffect(() => {
-    loadProfile();
-  }, [loadProfile]);
+  // Offline-Query: Profil
+  const { data: profile, loading, refresh } = useOfflineQuery<TeamerProfile>(
+    'teamer:profile:' + user?.id,
+    async () => { const res = await api.get('/teamer/profile'); return res.data; },
+    { ttl: CACHE_TTL.PROFILE }
+  );
 
   // Modals
   const [presentEmailModal, dismissEmailModal] = useIonModal(ChangeEmailModal, {
     onClose: () => dismissEmailModal(),
     onSuccess: async () => {
       dismissEmailModal();
-      await loadProfile();
+      await refresh();
       try {
         const response = await api.get('/auth/me');
         if (user) {
@@ -122,7 +111,7 @@ const TeamerProfilePage: React.FC = () => {
     onClose: () => dismissRoleTitleModal(),
     onSuccess: () => {
       dismissRoleTitleModal();
-      loadProfile();
+      refresh();
     },
     initialRoleTitle: profile?.user.role_title || '',
     sectionIconClass: 'app-section-icon--teamer',
@@ -207,7 +196,7 @@ const TeamerProfilePage: React.FC = () => {
         </IonHeader>
 
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
-          loadProfile().then(() => e.detail.complete());
+          refresh().then(() => e.detail.complete());
         }}>
           <IonRefresherContent />
         </IonRefresher>

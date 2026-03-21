@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -45,6 +45,8 @@ import { FileOpener } from '@capacitor-community/file-opener';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import { SectionHeader } from '../../shared';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -84,16 +86,44 @@ interface MaterialDetail {
 }
 
 const TeamerMaterialPage: React.FC = () => {
-  const { setError } = useApp();
+  const { user, setError } = useApp();
   const { presentingElement } = useModalPage('teamer-material');
 
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const [jahrgaenge, setJahrgaenge] = useState<{ id: number; name: string }[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [activeJahrgangId, setActiveJahrgangId] = useState<number | undefined>();
   const [selectedMaterial, setSelectedMaterial] = useState<MaterialDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+
+  // Offline-Query: Jahrgaenge
+  const { data: jahrgaengeData, refresh: refreshJahrgaenge } = useOfflineQuery<{ id: number; name: string }[]>(
+    'teamer:jahrgaenge:' + user?.organization_id,
+    async () => { const res = await api.get('/jahrgaenge'); return res.data; },
+    { ttl: CACHE_TTL.STAMMDATEN }
+  );
+  const jahrgaenge = jahrgaengeData || [];
+
+  // Offline-Query: Material (alle Materialien, clientseitig gefiltert)
+  const { data: allMaterials, loading, refresh: refreshMaterial } = useOfflineQuery<Material[]>(
+    'teamer:material:' + user?.organization_id,
+    async () => { const res = await api.get('/material'); return res.data; },
+    { ttl: CACHE_TTL.PROFILE }
+  );
+
+  // Clientseitiges Filtern nach Suche und Jahrgang
+  const materials = useMemo(() => {
+    let filtered = allMaterials || [];
+    if (search) {
+      const lower = search.toLowerCase();
+      filtered = filtered.filter(m =>
+        m.title.toLowerCase().includes(lower) ||
+        (m.description && m.description.toLowerCase().includes(lower))
+      );
+    }
+    if (activeJahrgangId) {
+      filtered = filtered.filter(m => m.jahrgang_id === activeJahrgangId);
+    }
+    return filtered;
+  }, [allMaterials, search, activeJahrgangId]);
 
   // FileViewer Modal (In-App Dateivorschau mit Backdrop)
   const viewerDataRef = useRef({ blobUrl: '', fileName: '', mimeType: '' });
@@ -110,44 +140,11 @@ const TeamerMaterialPage: React.FC = () => {
     }
   });
 
-  const openInAppViewer = useCallback((blob: Blob, fileName: string, mimeType: string) => {
+  const openInAppViewer = (blob: Blob, fileName: string, mimeType: string) => {
     const url = URL.createObjectURL(new Blob([blob], { type: mimeType }));
     viewerDataRef.current = { blobUrl: url, fileName, mimeType };
     presentFileViewer();
-  }, [presentFileViewer]);
-
-  // Jahrgaenge einmalig laden
-  useEffect(() => {
-    const loadJahrgaenge = async () => {
-      try {
-        const res = await api.get('/jahrgaenge');
-        setJahrgaenge(res.data);
-      } catch {
-        // Nicht kritisch
-      }
-    };
-    loadJahrgaenge();
-  }, []);
-
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const matRes = await api.get('/material', {
-        params: {
-          ...(search ? { search } : {}),
-          ...(activeJahrgangId ? { jahrgang_id: activeJahrgangId } : {})
-        }
-      });
-      setMaterials(matRes.data);
-    } catch {
-      setError('Fehler beim Laden der Materialien');
-    }
-    setLoading(false);
-  }, [search, activeJahrgangId]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  };
 
   // Detail oeffnen - API laden und inline anzeigen
   const openDetail = async (matId: number) => {
@@ -418,7 +415,7 @@ const TeamerMaterialPage: React.FC = () => {
         </IonHeader>
 
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
-          await loadData();
+          await Promise.all([refreshMaterial(), refreshJahrgaenge()]);
           e.detail.complete();
         }}>
           <IonRefresherContent />

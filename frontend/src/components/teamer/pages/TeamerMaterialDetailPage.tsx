@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -38,6 +38,8 @@ import { FileViewer } from '@capacitor/file-viewer';
 import { FileOpener } from '@capacitor-community/file-opener';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import EmptyState from '../../shared/EmptyState';
 import { SectionHeader } from '../../shared';
@@ -73,8 +75,12 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
   const { setError } = useApp();
   const pageRef = useRef<HTMLElement>(null);
 
-  const [material, setMaterial] = useState<MaterialDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Offline-Query: Material-Detail (Metadaten, keine Dateien)
+  const { data: material, loading, refresh } = useOfflineQuery<MaterialDetail>(
+    'teamer:material-detail:' + materialId,
+    async () => { const res = await api.get(`/material/${materialId}`); return res.data; },
+    { ttl: CACHE_TTL.PROFILE, enabled: !!materialId }
+  );
 
   // FileViewer Modal (In-App Dateivorschau mit Backdrop)
   const viewerDataRef = useRef({ blobUrl: '', fileName: '', mimeType: '' });
@@ -91,25 +97,10 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
     }
   });
 
-  const openInAppViewer = useCallback((blob: Blob, fileName: string, mimeType: string) => {
+  const openInAppViewer = (blob: Blob, fileName: string, mimeType: string) => {
     const url = URL.createObjectURL(new Blob([blob], { type: mimeType }));
     viewerDataRef.current = { blobUrl: url, fileName, mimeType };
     presentFileViewer();
-  }, [presentFileViewer]);
-
-  useEffect(() => {
-    loadMaterial();
-  }, [materialId]);
-
-  const loadMaterial = async () => {
-    try {
-      const res = await api.get(`/material/${materialId}`);
-      setMaterial(res.data);
-    } catch {
-      setError('Fehler beim Laden des Materials');
-    } finally {
-      setLoading(false);
-    }
   };
 
   const getFileIcon = (mimeType: string) => {
@@ -197,7 +188,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
       <IonContent className="app-gradient-background" fullscreen>
 
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
-          await loadMaterial();
+          await refresh();
           e.detail.complete();
         }}>
           <IonRefresherContent />

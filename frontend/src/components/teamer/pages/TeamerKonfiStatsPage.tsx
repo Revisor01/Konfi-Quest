@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -29,6 +29,8 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import PointsHistoryModal from '../../konfi/modals/PointsHistoryModal';
 import LoadingSpinner from '../../common/LoadingSpinner';
 
@@ -199,9 +201,7 @@ const KonfiBadgePopoverContent: React.FC<{
 
 const TeamerKonfiStatsPage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('teamer-konfi-stats');
-  const { setError } = useApp();
-  const [konfiData, setKonfiData] = useState<KonfiData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, setError } = useApp();
 
   const badgePopoverRef = useRef<{ badge: KonfiBadge | null }>({ badge: null });
 
@@ -226,22 +226,13 @@ const TeamerKonfiStatsPage: React.FC = () => {
     apiEndpoint: '/teamer/konfi-history'
   });
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await api.get('/teamer/profile');
-      setKonfiData(response.data.konfi_data);
-    } catch (err) {
-      setError('Fehler beim Laden der Konfi-Historie');
-      console.error('Error loading konfi stats:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [setError]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  // Offline-Query: Teamer-Profil (gleicher Cache-Key wie TeamerProfilePage — SWR-Deduplizierung)
+  const { data: profileData, loading, refresh } = useOfflineQuery<{ konfi_data: KonfiData }>(
+    'teamer:profile:' + user?.id,
+    async () => { const res = await api.get('/teamer/profile'); return res.data; },
+    { ttl: CACHE_TTL.PROFILE }
+  );
+  const konfiData = profileData?.konfi_data || null;
 
   if (loading) {
     return <LoadingSpinner message="Konfi-Historie wird geladen..." />;
@@ -287,8 +278,9 @@ const TeamerKonfiStatsPage: React.FC = () => {
           </IonToolbar>
         </IonHeader>
 
-        <IonRefresher slot="fixed" onIonRefresh={(e) => {
-          loadData().then(() => e.detail.complete());
+        <IonRefresher slot="fixed" onIonRefresh={async (e) => {
+          await refresh();
+          e.detail.complete();
         }}>
           <IonRefresherContent />
         </IonRefresher>
