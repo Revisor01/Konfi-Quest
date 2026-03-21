@@ -173,6 +173,7 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
   }, [scale, position]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    e.preventDefault(); // iOS: Standard-Scroll/Zoom unterdruecken
     if (e.touches.length === 2) {
       // Pinch Zoom
       const dist = getDistance(e.touches[0], e.touches[1]);
@@ -454,12 +455,13 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
         </div>
 
         <div className="file-viewer-toolbar-right">
-          <button className="file-viewer-btn" onClick={handleDownload} aria-label="Herunterladen">
-            <IonIcon icon={downloadOutline} />
-          </button>
-          {isNative && (
+          {isNative ? (
             <button className="file-viewer-btn" onClick={handleShare} aria-label="Teilen">
               <IonIcon icon={shareOutline} />
+            </button>
+          ) : (
+            <button className="file-viewer-btn" onClick={handleDownload} aria-label="Herunterladen">
+              <IonIcon icon={downloadOutline} />
             </button>
           )}
         </div>
