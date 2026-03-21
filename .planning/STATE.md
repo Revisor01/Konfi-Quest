@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: App-Resilienz
 status: unknown
-stopped_at: Completed 60-03-PLAN.md (Konfi-Aktionen offline)
-last_updated: "2026-03-21T10:04:02.529Z"
+stopped_at: Completed 60-02-PLAN.md (Chat Offline-Queue)
+last_updated: "2026-03-21T10:04:19.197Z"
 progress:
   total_phases: 15
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 19
-  completed_plans: 18
+  completed_plans: 19
 ---
 
 # Project State
@@ -63,6 +63,8 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 60]: crypto.randomUUID() statt uuid-Paket für clientId-Generierung
 - [Phase 60]: resolveLocalPhoto in writeQueue.ts für Zwei-Schritt Foto-Upload beim Flush
 - [Phase 60]: Pending Queue-Items als separate IonList-Sektion über RequestsView
+- [Phase 60]: crypto.randomUUID statt uuid-Library fuer clientId/localId — vermeidet Dependency
+- [Phase 60]: Optimistic Message mit negativer ID (-Date.now()) als temporaerer Platzhalter
 
 ### Roadmap Evolution
 
@@ -88,6 +90,6 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-03-21T10:03:55.244Z
-Stopped at: Completed 60-03-PLAN.md (Konfi-Aktionen offline)
+Last session: 2026-03-21T10:04:19.194Z
+Stopped at: Completed 60-02-PLAN.md (Chat Offline-Queue)
 Resume file: None

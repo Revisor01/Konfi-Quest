@@ -167,7 +167,7 @@ Kein Phase-Nummern-Block — separater Update-Milestone ohne Plans.
 - [x] **Phase 57: Retry + Schutz** - axios-retry + Double-Submit-Schutz + Idempotency-Keys Backend (completed 2026-03-21)
 - [x] **Phase 58: Corner-Badge System** - Flex-Container fuer Multi-Badge-Listen + Queue-Badge Design (completed 2026-03-21)
 - [x] **Phase 59: Online-Only Buttons** - 42 Online-Only-Aktionen disablen + Chat-Queue-Status-UI (completed 2026-03-21)
-- [ ] **Phase 60: Queue-Kern + Konfi-Aktionen** - Queue-Infrastruktur + Konfi-Queue + Fire-and-Forget + Chat-Queue-UI
+- [x] **Phase 60: Queue-Kern + Konfi-Aktionen** - Queue-Infrastruktur + Konfi-Queue + Fire-and-Forget + Chat-Queue-UI (completed 2026-03-21)
 - [ ] **Phase 61: Admin- + Teamer-Queue** - 21 Admin-Aktionen + 2 Teamer-Aktionen queue-faehig
 - [ ] **Phase 62: Sync** - SWR-Revalidierung + Socket.io-Reconnect-Sync + App-Resume-Sync
 
@@ -265,7 +265,7 @@ Plans:
 - [x] 60-01-PLAN.md — WriteQueue Service + Background-Task + Queue-Flush bei Reconnect/Resume
 - [x] 60-02-PLAN.md — Chat Queue: sendMessage offline + Optimistic UI + Bild-Queue
 - [x] 60-03-PLAN.md — Aktivitaets-Antraege + Opt-out Queue
-- [ ] 60-04-PLAN.md — Fire-and-Forget Aktionen (8 Endpunkte, rein optimistisch)
+- [x] 60-04-PLAN.md — Fire-and-Forget Aktionen (8 Endpunkte, rein optimistisch)
 
 ### Phase 61: Admin- + Teamer-Queue
 **Goal**: Admins und Teamer koennen ihre haeufigsten Aktionen auch offline ausfuehren — Events, Aktivitaeten, Badges, Kategorien, Levels, Zertifikate, Material erstellen/bearbeiten
@@ -307,7 +307,7 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 | 57. Retry + Schutz | 2/2 | Complete    | 2026-03-21 |
 | 58. Corner-Badge System | 2/2 | Complete    | 2026-03-21 |
 | 59. Online-Only Buttons | 3/3 | Complete    | 2026-03-21 |
-| 60. Queue-Kern + Konfi-Aktionen | 3/4 | In Progress|  |
+| 60. Queue-Kern + Konfi-Aktionen | 4/4 | Complete   | 2026-03-21 |
 | 61. Admin- + Teamer-Queue | 0/? | Not started | - |
 | 62. Sync | 0/? | Not started | - |
 
@@ -316,7 +316,7 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 **Goal:** [To be planned]
 **Requirements**: TBD
 **Depends on:** Phase 62
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 63 to break down)

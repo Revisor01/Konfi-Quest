@@ -77,8 +77,8 @@ Queue-faehige Aktionen werden bei Offline in eine persistente Queue geschrieben 
 
 #### Konfi-Aktionen (5 Aktionen)
 
-- [ ] **QUE-K01**: Chat-Nachricht senden (Text) — Uhr-Icon an Nachricht
-- [ ] **QUE-K02**: Chat-Nachricht senden (mit Bild) — Bild lokal in Capacitor Filesystem, Upload nur im Vordergrund
+- [x] **QUE-K01**: Chat-Nachricht senden (Text) — Uhr-Icon an Nachricht
+- [x] **QUE-K02**: Chat-Nachricht senden (mit Bild) — Bild lokal in Capacitor Filesystem, Upload nur im Vordergrund
 - [x] **QUE-K03**: Aktivitaets-Antrag stellen (ohne Foto) — Uhr-Icon am Antrag in der Liste
 - [x] **QUE-K04**: Aktivitaets-Antrag stellen (mit Foto) — Foto lokal, Upload nur im Vordergrund
 - [x] **QUE-K05**: Opt-out bei Pflicht-Event mit Begruendung — Uhr-Icon am Event
@@ -240,8 +240,8 @@ Deferred. Onboarding, Landing Website, Readme, Wiki.
 | OUI-11 | Phase 59 | Complete |
 | OUI-12 | Phase 59 | Complete |
 | OUI-13 | Phase 60 | Pending |
-| QUE-K01 | Phase 60 | Pending |
-| QUE-K02 | Phase 60 | Pending |
+| QUE-K01 | Phase 60 | Complete |
+| QUE-K02 | Phase 60 | Complete |
 | QUE-K03 | Phase 60 | Complete |
 | QUE-K04 | Phase 60 | Complete |
 | QUE-K05 | Phase 60 | Complete |
