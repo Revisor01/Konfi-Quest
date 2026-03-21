@@ -94,6 +94,8 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import { writeQueue } from '../../../services/writeQueue';
+import { networkMonitor } from '../../../services/networkMonitor';
 
 // Badge Icon Mapping
 const BADGE_ICONS = {
@@ -431,12 +433,38 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         criteria_extra: criteriaExtra
       };
 
-      if (isEditMode) {
-        await api.put(`/admin/badges/${badgeId}`, badgeData);
-        setSuccess('Badge erfolgreich aktualisiert');
+      if (networkMonitor.isOnline) {
+        // Online-Pfad: direkt senden
+        if (isEditMode) {
+          await api.put(`/admin/badges/${badgeId}`, badgeData);
+          setSuccess('Badge erfolgreich aktualisiert');
+        } else {
+          await api.post('/admin/badges', badgeData);
+          setSuccess('Badge erfolgreich erstellt');
+        }
       } else {
-        await api.post('/admin/badges', badgeData);
-        setSuccess('Badge erfolgreich erstellt');
+        // Offline-Pfad: Queue-Fallback
+        if (isEditMode) {
+          await writeQueue.enqueue({
+            method: 'PUT',
+            url: `/admin/badges/${badgeId}`,
+            body: badgeData,
+            maxRetries: 5,
+            hasFileUpload: false,
+            metadata: { type: 'admin', clientId: crypto.randomUUID(), label: 'Badge bearbeiten' },
+          });
+          setSuccess('Badge wird aktualisiert sobald du wieder online bist');
+        } else {
+          await writeQueue.enqueue({
+            method: 'POST',
+            url: '/admin/badges',
+            body: badgeData,
+            maxRetries: 5,
+            hasFileUpload: false,
+            metadata: { type: 'admin', clientId: crypto.randomUUID(), label: 'Badge erstellen' },
+          });
+          setSuccess('Badge wird erstellt sobald du wieder online bist');
+        }
       }
 
       setIsDirty(false);
@@ -750,10 +778,10 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           <IonButtons slot="end">
             <IonButton
               onClick={handleSave}
-              disabled={loading || isSubmitting || !formData.name.trim() || !isOnline}
+              disabled={loading || isSubmitting || !formData.name.trim()}
               className="app-modal-submit-btn app-modal-submit-btn--badges"
             >
-              {!isOnline ? 'Du bist offline' : loading ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+              {loading ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>

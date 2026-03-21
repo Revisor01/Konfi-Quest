@@ -29,6 +29,8 @@ import { checkmarkOutline, closeOutline, add, trash, create, calendar, people, t
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
+import { writeQueue } from '../../../services/writeQueue';
+import { networkMonitor } from '../../../services/networkMonitor';
 
 interface Event {
   id: number;
@@ -402,21 +404,58 @@ const EventModal: React.FC<EventModalProps> = ({
         teamer_only: teamerAccess === 'teamer_only'
       };
 
-      if (event && event.id && event.id > 0) {
-        // Remove series fields for existing event updates
-        const { is_series, series_count, series_interval, ...updatePayload } = payload;
-        await api.put(`/events/${event.id}`, updatePayload);
-        setSuccess('Event aktualisiert');
-      } else {
-        if (formData.is_series) {
-          await api.post('/events/series', payload);
-          setSuccess(`Event-Serie mit ${formData.series_count} Events erstellt`);
+      if (networkMonitor.isOnline) {
+        // Online-Pfad: direkt senden
+        if (event && event.id && event.id > 0) {
+          // Remove series fields for existing event updates
+          const { is_series, series_count, series_interval, ...updatePayload } = payload;
+          await api.put(`/events/${event.id}`, updatePayload);
+          setSuccess('Event aktualisiert');
         } else {
-          await api.post('/events', payload);
-          setSuccess('Event erstellt');
+          if (formData.is_series) {
+            await api.post('/events/series', payload);
+            setSuccess(`Event-Serie mit ${formData.series_count} Events erstellt`);
+          } else {
+            await api.post('/events', payload);
+            setSuccess('Event erstellt');
+          }
+        }
+      } else {
+        // Offline-Pfad: Queue-Fallback
+        if (event && event.id && event.id > 0) {
+          const { is_series, series_count, series_interval, ...updatePayload } = payload;
+          await writeQueue.enqueue({
+            method: 'PUT',
+            url: `/events/${event.id}`,
+            body: updatePayload,
+            maxRetries: 5,
+            hasFileUpload: false,
+            metadata: { type: 'admin', clientId: crypto.randomUUID(), label: 'Event bearbeiten' },
+          });
+          setSuccess('Event wird aktualisiert sobald du wieder online bist');
+        } else if (formData.is_series) {
+          await writeQueue.enqueue({
+            method: 'POST',
+            url: '/events/series',
+            body: payload,
+            maxRetries: 5,
+            hasFileUpload: false,
+            metadata: { type: 'admin', clientId: crypto.randomUUID(), label: 'Event-Serie erstellen' },
+          });
+          setSuccess('Event-Serie wird erstellt sobald du wieder online bist');
+        } else {
+          await writeQueue.enqueue({
+            method: 'POST',
+            url: '/events',
+            body: payload,
+            maxRetries: 5,
+            hasFileUpload: false,
+            metadata: { type: 'admin', clientId: crypto.randomUUID(), label: 'Event erstellen' },
+          });
+          setSuccess('Event wird erstellt sobald du wieder online bist');
         }
       }
-      
+
       setIsDirty(false);
       onSuccess();
       doClose();
@@ -453,10 +492,10 @@ const EventModal: React.FC<EventModalProps> = ({
           <IonButtons slot="end">
             <IonButton
               onClick={handleSubmit}
-              disabled={!isFormValid || loading || isSubmitting || !isOnline}
+              disabled={!isFormValid || loading || isSubmitting}
               className="app-modal-submit-btn app-modal-submit-btn--events"
             >
-              {!isOnline ? 'Du bist offline' : loading ? (
+              {loading ? (
                 <IonSpinner name="crescent" />
               ) : (
                 <IonIcon icon={checkmarkOutline} />

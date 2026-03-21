@@ -22,6 +22,8 @@ import { checkmarkOutline, closeOutline, create, pricetag, addOutline, removeOut
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
+import { writeQueue } from '../../../services/writeQueue';
+import { networkMonitor } from '../../../services/networkMonitor';
 
 interface Activity {
   id: number;
@@ -203,12 +205,38 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
         target_role: formData.target_role
       };
 
-      if (currentActivity) {
-        await api.put(`/admin/activities/${currentActivity.id}`, payload);
-        setSuccess('Aktivität aktualisiert');
+      if (networkMonitor.isOnline) {
+        // Online-Pfad: direkt senden
+        if (currentActivity) {
+          await api.put(`/admin/activities/${currentActivity.id}`, payload);
+          setSuccess('Aktivität aktualisiert');
+        } else {
+          await api.post('/admin/activities', payload);
+          setSuccess('Aktivität erstellt');
+        }
       } else {
-        await api.post('/admin/activities', payload);
-        setSuccess('Aktivität erstellt');
+        // Offline-Pfad: Queue-Fallback
+        if (currentActivity) {
+          await writeQueue.enqueue({
+            method: 'PUT',
+            url: `/admin/activities/${currentActivity.id}`,
+            body: payload,
+            maxRetries: 5,
+            hasFileUpload: false,
+            metadata: { type: 'admin', clientId: crypto.randomUUID(), label: 'Aktivität bearbeiten' },
+          });
+          setSuccess('Aktivität wird aktualisiert sobald du wieder online bist');
+        } else {
+          await writeQueue.enqueue({
+            method: 'POST',
+            url: '/admin/activities',
+            body: payload,
+            maxRetries: 5,
+            hasFileUpload: false,
+            metadata: { type: 'admin', clientId: crypto.randomUUID(), label: 'Aktivität erstellen' },
+          });
+          setSuccess('Aktivität wird erstellt sobald du wieder online bist');
+        }
       }
 
       setIsDirty(false);
@@ -246,10 +274,10 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
           <IonButtons slot="end">
             <IonButton
               onClick={handleSubmit}
-              disabled={!isFormValid || loading || isSubmitting || !isOnline}
+              disabled={!isFormValid || loading || isSubmitting}
               className="app-modal-submit-btn app-modal-submit-btn--activities"
             >
-              {!isOnline ? 'Du bist offline' : loading ? (
+              {loading ? (
                 <IonSpinner name="crescent" />
               ) : (
                 <IonIcon icon={checkmarkOutline} />
