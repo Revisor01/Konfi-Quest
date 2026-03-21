@@ -12,12 +12,10 @@ import {
   IonToggle,
   IonCard,
   IonCardContent,
-  IonButton,
   IonRange
 } from '@ionic/react';
 import {
-  create, people, shieldCheckmark, scanOutline, copy,
-  removeOutline, addOutline
+  create, people, shieldCheckmark, scanOutline, copy
 } from 'ionicons/icons';
 import { Category, Jahrgang } from '../../../types/event';
 
@@ -242,58 +240,28 @@ export const PointsParticipantsSection = React.memo<PointsParticipantsSectionPro
             {formData.max_participants !== 0 && (
               <IonItem lines="none">
                 <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Teilnehmer</IonLabel>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-                  <IonButton fill="outline" size="small"
-                    disabled={loading || formData.max_participants <= 1}
-                    onClick={() => setFormData({ ...formData, max_participants: Math.max(1, formData.max_participants - 1) })}
-                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}>
-                    <IonIcon icon={removeOutline} />
-                  </IonButton>
-                  <IonInput type="text" inputMode="numeric"
-                    value={formData.max_participants.toString()}
-                    onIonInput={(e) => {
-                      const value = e.detail.value!;
-                      if (value === '') setFormData({ ...formData, max_participants: 1 });
-                      else { const num = parseInt(value); if (!isNaN(num) && num >= 1 && num <= 999) setFormData({ ...formData, max_participants: num }); }
-                    }}
-                    placeholder="5" disabled={loading} style={{ textAlign: 'center', flex: 1 }} />
-                  <IonButton fill="outline" size="small"
-                    disabled={loading || formData.max_participants >= 999}
-                    onClick={() => setFormData({ ...formData, max_participants: Math.min(999, formData.max_participants + 1) })}
-                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}>
-                    <IonIcon icon={addOutline} />
-                  </IonButton>
-                </div>
+                <IonRange
+                  min={1} max={100} step={1}
+                  pin={true} pinFormatter={(value: number) => `${value}`}
+                  value={formData.max_participants}
+                  onIonChange={(e) => setFormData({ ...formData, max_participants: e.detail.value as number })}
+                  disabled={loading}
+                />
               </IonItem>
             )}
           </>
         )}
 
-        {/* Punkte mit Stepper */}
+        {/* Punkte */}
         <IonItem lines="none">
           <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Punkte</IonLabel>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
-            <IonButton fill="outline" size="small"
-              disabled={loading || formData.points <= 0}
-              onClick={() => setFormData({ ...formData, points: Math.max(0, formData.points - 1) })}
-              style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}>
-              <IonIcon icon={removeOutline} />
-            </IonButton>
-            <IonInput type="text" inputMode="numeric"
-              value={formData.points.toString()}
-              onIonInput={(e) => {
-                const value = e.detail.value!;
-                if (value === '') setFormData({ ...formData, points: 0 });
-                else { const num = parseInt(value); if (!isNaN(num) && num >= 0 && num <= 999) setFormData({ ...formData, points: num }); }
-              }}
-              placeholder="0" disabled={loading} style={{ textAlign: 'center', flex: 1 }} />
-            <IonButton fill="outline" size="small"
-              disabled={loading || formData.points >= 999}
-              onClick={() => setFormData({ ...formData, points: Math.min(999, formData.points + 1) })}
-              style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}>
-              <IonIcon icon={addOutline} />
-            </IonButton>
-          </div>
+          <IonRange
+            min={1} max={5} step={1}
+            pin={true} pinFormatter={(value: number) => `${value}`}
+            value={formData.points}
+            onIonChange={(e) => setFormData({ ...formData, points: e.detail.value as number })}
+            disabled={loading}
+          />
         </IonItem>
 
         <IonItem lines="none" style={{ '--background': 'transparent', paddingBottom: '8px', paddingTop: '16px' }}>
@@ -471,28 +439,13 @@ export const WaitlistSection = React.memo<WaitlistSectionProps>(({
         {formData.waitlist_enabled && (
           <IonItem lines="none">
             <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Wartelisten-Plätze</IonLabel>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
-              <IonButton fill="outline" size="small"
-                disabled={loading || formData.max_waitlist_size <= 0}
-                onClick={() => setFormData({ ...formData, max_waitlist_size: Math.max(0, formData.max_waitlist_size - 1) })}
-                style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}>
-                <IonIcon icon={removeOutline} />
-              </IonButton>
-              <IonInput type="text" inputMode="numeric"
-                value={formData.max_waitlist_size.toString()}
-                onIonInput={(e) => {
-                  const value = e.detail.value!;
-                  if (value === '') setFormData({ ...formData, max_waitlist_size: 0 });
-                  else { const num = parseInt(value); if (!isNaN(num) && num >= 0 && num <= 999) setFormData({ ...formData, max_waitlist_size: num }); }
-                }}
-                placeholder="10" disabled={loading} style={{ textAlign: 'center', flex: 1 }} />
-              <IonButton fill="outline" size="small"
-                disabled={loading || formData.max_waitlist_size >= 999}
-                onClick={() => setFormData({ ...formData, max_waitlist_size: Math.min(999, formData.max_waitlist_size + 1) })}
-                style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}>
-                <IonIcon icon={addOutline} />
-              </IonButton>
-            </div>
+            <IonRange
+              min={1} max={10} step={1}
+              pin={true} pinFormatter={(value: number) => `${value}`}
+              value={formData.max_waitlist_size}
+              onIonChange={(e) => setFormData({ ...formData, max_waitlist_size: e.detail.value as number })}
+              disabled={loading}
+            />
           </IonItem>
         )}
       </IonList>

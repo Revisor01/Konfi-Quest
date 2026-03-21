@@ -3,9 +3,9 @@ import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton,
   IonItem, IonLabel, IonInput, IonDatetime, IonIcon, IonSpinner,
   IonList, IonListHeader, IonToggle, IonCard, IonCardContent, IonModal,
-  IonDatetimeButton, useIonAlert
+  IonDatetimeButton, useIonAlert, IonRange
 } from '@ionic/react';
-import { checkmarkOutline, closeOutline, add, trash, time, calendar, removeOutline, addOutline } from 'ionicons/icons';
+import { checkmarkOutline, closeOutline, add, trash, time, calendar } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
@@ -395,28 +395,13 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
                   {timeslot.max_participants !== 0 && (
                     <IonItem lines="none">
                       <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Teilnehmer pro Slot</IonLabel>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
-                        <IonButton fill="outline" size="small"
-                          disabled={loading || timeslot.max_participants <= 1}
-                          onClick={() => updateTimeslot(index, 'max_participants', Math.max(1, timeslot.max_participants - 1))}
-                          style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}>
-                          <IonIcon icon={removeOutline} />
-                        </IonButton>
-                        <IonInput type="text" inputMode="numeric"
-                          value={timeslot.max_participants.toString()}
-                          onIonInput={(e) => {
-                            const value = e.detail.value!;
-                            if (value === '') updateTimeslot(index, 'max_participants', 1);
-                            else { const num = parseInt(value); if (!isNaN(num) && num >= 1 && num <= 999) updateTimeslot(index, 'max_participants', num); }
-                          }}
-                          placeholder="10" disabled={loading} style={{ textAlign: 'center', flex: 1 }} />
-                        <IonButton fill="outline" size="small"
-                          disabled={loading || timeslot.max_participants >= 999}
-                          onClick={() => updateTimeslot(index, 'max_participants', Math.min(999, timeslot.max_participants + 1))}
-                          style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}>
-                          <IonIcon icon={addOutline} />
-                        </IonButton>
-                      </div>
+                      <IonRange
+                        min={1} max={10} step={1}
+                        pin={true} pinFormatter={(value: number) => `${value}`}
+                        value={timeslot.max_participants}
+                        onIonChange={(e) => updateTimeslot(index, 'max_participants', e.detail.value as number)}
+                        disabled={loading}
+                      />
                     </IonItem>
                   )}
                 </IonList>

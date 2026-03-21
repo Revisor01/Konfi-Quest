@@ -18,13 +18,12 @@ import {
   IonList,
   IonListHeader,
   IonAccordion,
-  IonAccordionGroup
+  IonAccordionGroup,
+  IonRange
 } from '@ionic/react';
 import {
   checkmarkOutline,
   closeOutline,
-  removeOutline,
-  addOutline,
   create,
   trophy,
   medal,
@@ -330,45 +329,13 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
 
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Benötigte Punkte *</IonLabel>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '8px 0' }}>
-                    <IonButton
-                      fill="outline"
-                      size="small"
-                      disabled={loading || formData.points_required <= 0}
-                      onClick={() => setFormData({ ...formData, points_required: Math.max(0, formData.points_required - 1) })}
-                      style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
-                    >
-                      <IonIcon icon={removeOutline} />
-                    </IonButton>
-                    <IonInput
-                      type="text"
-                      inputMode="numeric"
-                      value={formData.points_required.toString()}
-                      onIonInput={(e) => {
-                        const value = e.detail.value!;
-                        if (value === '') {
-                          setFormData({ ...formData, points_required: 0 });
-                        } else {
-                          const num = parseInt(value);
-                          if (!isNaN(num) && num >= 0 && num <= 9999) {
-                            setFormData({ ...formData, points_required: num });
-                          }
-                        }
-                      }}
-                      placeholder="0"
-                      disabled={loading}
-                      style={{ textAlign: 'center', flex: 1 }}
-                    />
-                    <IonButton
-                      fill="outline"
-                      size="small"
-                      disabled={loading || formData.points_required >= 9999}
-                      onClick={() => setFormData({ ...formData, points_required: Math.min(9999, formData.points_required + 1) })}
-                      style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
-                    >
-                      <IonIcon icon={addOutline} />
-                    </IonButton>
-                  </div>
+                  <IonRange
+                    min={1} max={40} step={1}
+                    pin={true} pinFormatter={(value: number) => `${value}`}
+                    value={formData.points_required}
+                    onIonChange={(e) => setFormData({ ...formData, points_required: e.detail.value as number })}
+                    disabled={loading}
+                  />
                 </IonItem>
 
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
