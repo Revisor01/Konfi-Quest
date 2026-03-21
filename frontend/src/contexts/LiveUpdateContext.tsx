@@ -136,7 +136,12 @@ export const LiveUpdateProvider = ({ children }: { children: ReactNode }) => {
 export const useLiveUpdate = () => {
   const context = useContext(LiveUpdateContext);
   if (context === undefined) {
-    throw new Error('useLiveUpdate must be used within a LiveUpdateProvider');
+    // Graceful fallback fuer Komponenten die ausserhalb des Provider-Trees gerendert werden
+    // (z.B. useIonModal Modals). Statt Crash: no-op Funktionen zurueckgeben.
+    return {
+      subscribe: () => () => {},
+      triggerRefresh: () => {},
+    } as LiveUpdateContextType;
   }
   return context;
 };
