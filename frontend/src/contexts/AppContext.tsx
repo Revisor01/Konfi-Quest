@@ -45,9 +45,10 @@ const sendTokenToServer = async (token: string, retryCount = 0) => {
     await setPushTokenTimestamp(now); // Bug 3: Timestamp nach jedem Send persistieren
   } catch (err) {
     console.error('Fehler beim Senden des FCM-Tokens:', err);
-    // Retry einmal nach 5 Sekunden
-    if (retryCount < 1) {
-      setTimeout(() => sendTokenToServer(token, retryCount + 1), 5000);
+    // Retry mit steigendem Abstand (5s, 15s, 30s)
+    const retryDelays = [5000, 15000, 30000];
+    if (retryCount < retryDelays.length) {
+      setTimeout(() => sendTokenToServer(token, retryCount + 1), retryDelays[retryCount]);
     }
   }
 };
