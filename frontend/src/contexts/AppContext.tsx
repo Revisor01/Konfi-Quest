@@ -6,6 +6,8 @@ import { getUser, getDeviceId, setDeviceId, getPushTokenTimestamp, setPushTokenT
 import { networkMonitor } from '../services/networkMonitor';
 import { App } from '@capacitor/app';
 import { PushNotifications } from '@capacitor/push-notifications';
+import { writeQueue } from '../services/writeQueue';
+import { BackgroundTask } from '@capawesome/capacitor-background-task';
 
 // FCM Token wird über Window Events empfangen (siehe AppDelegate.swift)
 
@@ -297,9 +299,26 @@ useEffect(() => {
 
     // Setup single listener for app state changes
     const setupListener = async () => {
-      stateChangeListener = await App.addListener('appStateChange', ({ isActive }) => {
+      stateChangeListener = await App.addListener('appStateChange', async ({ isActive }) => {
         if (isActive) {
           handleAppActive();
+          // Queue-Flush bei App-Resume (async, nicht blockierend)
+          writeQueue.flush().then(result => {
+            if (result.failed.length > 0) {
+              console.warn('Queue flush failures:', result.failed.length);
+            }
+          });
+        } else {
+          // Background: Nur Text-Items flushen (keine Datei-Uploads)
+          if (Capacitor.isNativePlatform()) {
+            const taskId = await BackgroundTask.beforeExit(async () => {
+              try {
+                await writeQueue.flushTextOnly();
+              } finally {
+                BackgroundTask.finish({ taskId });
+              }
+            });
+          }
         }
       });
     };

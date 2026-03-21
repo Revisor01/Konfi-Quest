@@ -29,6 +29,7 @@
     "@capacitor/push-notifications": "^7.0.6",
     "@capacitor/share": "^7.0.4",
     "@capacitor/status-bar": "7.0.1",
+    "@capawesome/capacitor-background-task": "^8.0.2",
     "@capawesome/capacitor-badge": "^7.0.1",
     "@ionic/react": "^8.5.0",
     "@ionic/react-router": "^8.5.0",
