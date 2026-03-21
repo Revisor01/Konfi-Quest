@@ -1,66 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonButtons,
-  IonButton,
-  IonIcon,
-  IonCard,
-  IonCardContent,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonListHeader,
-  IonRefresher,
-  IonRefresherContent,
-  useIonModal,
-  IonItemSliding,
-  IonItemOptions,
-  IonItemOption,
-  useIonActionSheet,
-  useIonAlert
+  IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
+  IonButtons, IonButton, IonIcon, IonCard, IonCardContent,
+  IonItem, IonLabel, IonList, IonListHeader,
+  IonRefresher, IonRefresherContent, useIonModal,
+  IonItemSliding, IonItemOptions, IonItemOption,
+  useIonActionSheet, useIonAlert
 } from '@ionic/react';
 import {
-  arrowBack,
-  createOutline,
-  calendar,
-  location,
-  people,
-  time,
-  flash,
-  personAdd,
-  checkmarkCircle,
-  closeCircle,
-  checkmark,
-  trash,
-  list,
-  listOutline,
-  home,
-  pricetag,
-  returnUpBack,
-  trophy,
-  informationCircle,
-  shieldCheckmark,
-  bagHandle,
-  qrCodeOutline,
-  document as documentIcon,
-  attachOutline,
-  ban,
-  chatbubbles
+  arrowBack, createOutline, calendar, people,
+  personAdd, checkmarkCircle, closeCircle, checkmark, trash,
+  returnUpBack, qrCodeOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { parseLocalTime, getLocalNow } from '../../../utils/dateUtils';
-import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader } from '../../shared';
 import EventModal from '../modals/EventModal';
 import ParticipantManagementModal from '../modals/ParticipantManagementModal';
 import QRDisplayModal from '../modals/QRDisplayModal';
 import TeamerMaterialDetailPage from '../../teamer/pages/TeamerMaterialDetailPage';
 import { useLiveUpdate } from '../../../contexts/LiveUpdateContext';
+import {
+  EventInfoCard, DescriptionSection, SeriesEventsSection,
+  UnregistrationsSection, EventMaterialSection, EventActionsSection,
+  TimeslotsSection
+} from './EventDetailSections';
+import type { Participant, Unregistration } from './EventDetailSections';
 
 interface Category {
   id: number;
@@ -106,35 +72,12 @@ interface Jahrgang {
   name: string;
 }
 
-interface Participant {
-  id: number;
-  user_id?: number;
-  participant_name: string;
-  jahrgang_name?: string;
-  role_name?: string;
-  created_at: string;
-  status?: 'confirmed' | 'waitlist' | 'pending' | 'opted_out';
-  attendance_status?: 'present' | 'absent' | null;
-  timeslot_start_time?: string;
-  timeslot_end_time?: string;
-  opt_out_reason?: string;
-  opt_out_date?: string;
-}
-
 interface Timeslot {
   id: number;
   start_time: string;
   end_time: string;
   max_participants: number;
   registered_count: number;
-}
-
-interface Unregistration {
-  id: number;
-  user_id: number;
-  konfi_name: string;
-  reason?: string;
-  unregistered_at: string;
 }
 
 interface EventDetailViewProps {
@@ -189,7 +132,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     onClose: () => dismissParticipantModalHook(),
     onSuccess: () => {
       dismissParticipantModalHook();
-      loadEventData(); // Reload to get updated participant list
+      loadEventData();
     },
     dismiss: () => dismissParticipantModalHook()
   });
@@ -223,7 +166,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   }, [eventId]);
 
   useEffect(() => {
-    // Setze das presentingElement nach dem ersten Mount
     setPresentingElement(pageRef.current);
   }, []);
 
@@ -234,7 +176,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       setEventData(eventRes.data);
       setParticipants(eventRes.data.participants || []);
       setUnregistrations(eventRes.data.unregistrations || []);
-      // Material fuer dieses Event laden
       try {
         const matRes = await api.get(`/material/by-event/${eventId}`);
         setEventMaterials(matRes.data || []);
@@ -255,10 +196,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('de-DE', {
-      weekday: 'long',
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric'
+      weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
     });
   };
 
@@ -266,90 +204,34 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     if (!dateString) return '';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return '';
-    return date.toLocaleTimeString('de-DE', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const getRegistrationStatusColor = (status: string) => {
-    switch (status) {
-      case 'upcoming': return 'medium';
-      case 'open': return 'success';
-      case 'closed': return 'danger';
-      default: return 'medium';
-    }
-  };
-
-  const getRegistrationStatusText = (status: string, event?: Event | null) => {
-    switch (status) {
-      case 'upcoming': return 'Bald verfügbar';
-      case 'open': return 'Anmeldung offen';
-      case 'closed': {
-        if (event) {
-          const waitlistEnabled = (event as any)?.waitlist_enabled;
-          const maxWaitlistSize = (event as any)?.max_waitlist_size || 0;
-          const pendingCount = participants.filter(p => p.status === 'waitlist').length;
-          const eventFull = event.max_participants > 0 && event.registered_count >= event.max_participants;
-
-          if (eventFull) {
-            if (waitlistEnabled && pendingCount < maxWaitlistSize) {
-              return 'Warteliste offen';
-            }
-            return 'Ausgebucht';
-          }
-        }
-        return 'Anmeldung geschlossen';
-      }
-      default: return 'Unbekannt';
-    }
+    return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
   };
 
   const calculateRegistrationStatus = (event: Event): 'upcoming' | 'open' | 'closed' => {
     const now = getLocalNow();
-
-    // If registration hasn't opened yet
     if (event.registration_opens_at) {
       const opensAt = parseLocalTime(event.registration_opens_at);
-      if (now < opensAt) {
-        return 'upcoming';
-      }
+      if (now < opensAt) return 'upcoming';
     }
-
-    // If registration has closed
     if (event.registration_closes_at) {
       const closesAt = parseLocalTime(event.registration_closes_at);
-      if (now > closesAt) {
-        return 'closed';
-      }
+      if (now > closesAt) return 'closed';
     }
-
-    // If event is full (nur wenn max_participants > 0, sonst unbegrenzt)
-    if (event.max_participants > 0 && event.registered_count >= event.max_participants) {
-      return 'closed';
-    }
-
+    if (event.max_participants > 0 && event.registered_count >= event.max_participants) return 'closed';
     return 'open';
   };
 
-  const handleEditSuccess = () => {
-    // Reload event data
-    onBack();
-  };
+  const handleEditSuccess = () => { onBack(); };
 
-  // Status-Farben fuer SectionHeader (dynamisch basierend auf Event-Zustand)
   const getStatusColors = (): { primary: string; secondary: string } => {
     if (!eventData) return { primary: '#dc2626', secondary: '#b91c1c' };
-
     const isPastEvent = new Date(eventData.event_date) < new Date();
-    const isKonfirmationEvent = eventData.categories?.some(cat =>
-      cat.name.toLowerCase().includes('konfirmation')
-    );
-    const isCancelled = eventData.registration_status === 'cancelled' as string;
+    const isKonfirmationEvent = eventData.categories?.some(cat => cat.name.toLowerCase().includes('konfirmation'));
+    const isCancelledStatus = eventData.registration_status === 'cancelled' as string;
     const hasUnprocessedBookings = isPastEvent && eventData.registered_count > 0 &&
       participants.some(p => p.status === 'confirmed' && !p.attendance_status);
 
-    if (isCancelled) return { primary: '#dc3545', secondary: '#c82333' };
+    if (isCancelledStatus) return { primary: '#dc3545', secondary: '#c82333' };
     if (isKonfirmationEvent && !isPastEvent) return { primary: '#5b21b6', secondary: '#4c1d95' };
     if (hasUnprocessedBookings) return { primary: '#007aff', secondary: '#0066d6' };
     if (isPastEvent) return { primary: '#6c757d', secondary: '#5a6268' };
@@ -362,19 +244,15 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     return { primary: '#dc2626', secondary: '#b91c1c' };
   };
 
-  // Status-Text fuer SectionHeader
   const getStatusText = () => {
     if (!eventData) return 'Event';
-
     const isPastEvent = new Date(eventData.event_date) < new Date();
-    const isKonfirmationEvent = eventData.categories?.some(cat =>
-      cat.name.toLowerCase().includes('konfirmation')
-    );
-    const isCancelled = eventData.registration_status === 'cancelled' as string;
+    const isKonfirmationEvent = eventData.categories?.some(cat => cat.name.toLowerCase().includes('konfirmation'));
+    const isCancelledStatus = eventData.registration_status === 'cancelled' as string;
     const hasUnprocessedBookings = isPastEvent && eventData.registered_count > 0 &&
       participants.some(p => p.status === 'confirmed' && !p.attendance_status);
 
-    if (isCancelled) return 'Abgesagt';
+    if (isCancelledStatus) return 'Abgesagt';
     if (isKonfirmationEvent && !isPastEvent) return 'Konfirmation';
     if (hasUnprocessedBookings) return 'Verbuchen';
     if (isPastEvent && !hasUnprocessedBookings) return 'Verbucht';
@@ -389,18 +267,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
   const handleAttendanceUpdate = async (participant: Participant, status: 'present' | 'absent') => {
     if (!isOnline) return;
-    // Optimistisches UI-Update: sofort anzeigen
     setParticipants(prev => prev.map(p =>
       p.id === participant.id ? { ...p, attendance_status: status } : p
     ));
-
     try {
-      // Update attendance status using new API
       const response = await api.put(`/events/${eventId}/participants/${participant.id}/attendance`, {
         attendance_status: status
       });
-
-      // Show appropriate success message based on response
       if (response.data.points_awarded) {
         setSuccess(`Anwesenheit bestätigt und ${response.data.points} ${response.data.point_type} Punkte vergeben`);
       } else if (response.data.points_removed) {
@@ -408,11 +281,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       } else {
         setSuccess(`Anwesenheit ${status === 'present' ? 'bestätigt' : 'als abwesend markiert'}`);
       }
-
-      // Trigger events update for main list
       triggerRefresh('events');
     } catch (error) {
-      // Rollback bei Fehler
       setParticipants(prev => prev.map(p =>
         p.id === participant.id ? { ...p, attendance_status: participant.attendance_status } : p
       ));
@@ -423,36 +293,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const showAttendanceActionSheet = (participant: Participant) => {
     if (!isOnline) return;
     const buttons: any[] = [];
-
-    // Anwesend Button
     if (participant.attendance_status !== 'present') {
-      buttons.push({
-        text: 'Anwesend',
-        icon: checkmarkCircle,
-        handler: () => handleAttendanceUpdate(participant, 'present')
-      });
+      buttons.push({ text: 'Anwesend', icon: checkmarkCircle, handler: () => handleAttendanceUpdate(participant, 'present') });
     }
-
-    // Abwesend Button
     if (participant.attendance_status !== 'absent') {
-      buttons.push({
-        text: 'Abwesend',
-        icon: closeCircle,
-        handler: () => handleAttendanceUpdate(participant, 'absent')
-      });
+      buttons.push({ text: 'Abwesend', icon: closeCircle, handler: () => handleAttendanceUpdate(participant, 'absent') });
     }
-
-    // Cancel Button
-    buttons.push({
-      text: 'Abbrechen',
-      role: 'cancel'
-    });
-
-    presentActionSheet({
-      header: participant.participant_name,
-      subHeader: 'Anwesenheit verwalten',
-      buttons
-    });
+    buttons.push({ text: 'Abbrechen', role: 'cancel' });
+    presentActionSheet({ header: participant.participant_name, subHeader: 'Anwesenheit verwalten', buttons });
   };
 
   const showWaitlistActionSheet = (participant: Participant) => {
@@ -461,34 +309,18 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       header: participant.participant_name,
       subHeader: 'Warteliste verwalten',
       buttons: [
-        {
-          text: 'Bestätigen',
-          icon: checkmark,
-          handler: () => handlePromoteParticipant(participant)
-        },
-        {
-          text: 'Entfernen',
-          icon: trash,
-          role: 'destructive',
-          handler: () => handleRemoveParticipant(participant)
-        },
-        {
-          text: 'Abbrechen',
-          role: 'cancel'
-        }
+        { text: 'Bestätigen', icon: checkmark, handler: () => handlePromoteParticipant(participant) },
+        { text: 'Entfernen', icon: trash, role: 'destructive', handler: () => handleRemoveParticipant(participant) },
+        { text: 'Abbrechen', role: 'cancel' }
       ]
     });
   };
 
   const handlePromoteParticipant = async (participant: Participant) => {
     try {
-      await api.put(`/events/${eventId}/participants/${participant.id}/status`, {
-        status: 'confirmed'
-      });
+      await api.put(`/events/${eventId}/participants/${participant.id}/status`, { status: 'confirmed' });
       setSuccess(`${participant.participant_name} von Warteliste bestätigt`);
-      await loadEventData(); // Reload to update list
-
-      // Trigger events update for main list
+      await loadEventData();
       triggerRefresh('events');
     } catch (error) {
  console.error('Promote participant error:', error);
@@ -498,20 +330,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
   const handleDemoteParticipant = async (participant: Participant) => {
     try {
-      await api.put(`/events/${eventId}/participants/${participant.id}/status`, {
-        status: 'waitlist'
-      });
+      await api.put(`/events/${eventId}/participants/${participant.id}/status`, { status: 'waitlist' });
       setSuccess(`${participant.participant_name} auf Warteliste gesetzt`);
-
-      // Close sliding item
       const slidingItem = slidingRefs.current.get(participant.id);
-      if (slidingItem) {
-        await slidingItem.close();
-      }
-
-      await loadEventData(); // Reload to update list
-
-      // Trigger events update for main list
+      if (slidingItem) await slidingItem.close();
+      await loadEventData();
       triggerRefresh('events');
     } catch (error) {
  console.error('Demote participant error:', error);
@@ -522,12 +345,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const handleRemoveParticipant = async (participant: Participant) => {
     if (!isOnline) return;
     try {
-      // Use booking ID for deletion, not user ID
       await api.delete(`/events/${eventId}/bookings/${participant.id}`);
       setSuccess('Teilnehmer entfernt');
-      await loadEventData(); // Reload to update list
-
-      // Trigger events update for main list
+      await loadEventData();
       triggerRefresh('events');
     } catch (error) {
  console.error('Delete participant error:', error);
@@ -545,8 +365,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
-          text: 'Absagen',
-          role: 'destructive',
+          text: 'Absagen', role: 'destructive',
           handler: async () => {
             try {
               await api.put(`/events/${eventData?.id}/cancel`);
@@ -574,8 +393,102 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   };
 
   const handleNavigateToChat = () => {
-    // Navigate via admin chat tab
     window.location.href = `/admin/chat/${eventData?.chat_room_id}`;
+  };
+
+  const handleMaterialClick = (materialId: number) => {
+    materialIdRef.current = materialId;
+    presentMaterialModal({ presentingElement: presentingElement || pageRef.current || undefined });
+  };
+
+  // Helper: Einzelnen Teilnehmer rendern
+  const renderParticipant = (participant: Participant) => {
+    const isWaitlist = participant.status === 'waitlist';
+    const isOptedOut = participant.status === 'opted_out';
+    const listItemClass = isOptedOut ? 'app-list-item--danger' :
+                          participant.attendance_status === 'present' ? 'app-list-item--success' :
+                          participant.attendance_status === 'absent' ? 'app-list-item--danger' :
+                          isWaitlist ? 'app-list-item--warning' : 'app-list-item--info';
+    const iconCircleClass = isOptedOut ? 'app-icon-circle--danger' :
+                            participant.attendance_status === 'present' ? 'app-icon-circle--success' :
+                            participant.attendance_status === 'absent' ? 'app-icon-circle--danger' :
+                            isWaitlist ? 'app-icon-circle--warning' : 'app-icon-circle--info';
+    const statusIcon = isOptedOut ? closeCircle :
+                       participant.attendance_status === 'present' ? checkmarkCircle :
+                       participant.attendance_status === 'absent' ? closeCircle : people;
+    const statusText = isOptedOut ? 'Abgemeldet' :
+                       participant.attendance_status === 'present' ? 'Anwesend' :
+                       participant.attendance_status === 'absent' ? 'Abwesend' :
+                       isWaitlist ? 'Warteliste' : 'Gebucht';
+    const cornerBadgeClass = isOptedOut ? 'app-corner-badge--danger' :
+                             participant.attendance_status === 'present' ? 'app-corner-badge--success' :
+                             participant.attendance_status === 'absent' ? 'app-corner-badge--danger' :
+                             isWaitlist ? 'app-corner-badge--warning' : 'app-corner-badge--info';
+
+    return (
+      <IonItemSliding
+        key={participant.id}
+        ref={(el) => {
+          if (el) { slidingRefs.current.set(participant.id, el); }
+          else { slidingRefs.current.delete(participant.id); }
+        }}
+        className="app-event-detail__sliding-item"
+      >
+        <IonItem
+          className="app-item-transparent"
+          button detail={false} lines="none"
+          onClick={() => {
+            if (participant.status === 'confirmed') showAttendanceActionSheet(participant);
+            else if (participant.status === 'waitlist') showWaitlistActionSheet(participant);
+          }}
+        >
+          <div className={`app-list-item ${listItemClass} app-event-detail__list-item-flush`}>
+            <div className="app-corner-badges">
+              <div className={`app-corner-badge ${cornerBadgeClass}`}>{statusText}</div>
+            </div>
+            <div className="app-list-item__row">
+              <div className="app-list-item__main">
+                <div className={`app-icon-circle ${iconCircleClass}`}>
+                  <IonIcon icon={statusIcon} />
+                </div>
+                <div className="app-list-item__content">
+                  <div className="app-list-item__title app-list-item__title--badge-space-lg">
+                    {participant.participant_name}
+                  </div>
+                  <div className="app-list-item__subtitle">
+                    {participant.jahrgang_name && <>{participant.jahrgang_name}</>}
+                    {participant.timeslot_start_time && participant.timeslot_end_time && (
+                      <>{participant.jahrgang_name ? ' | ' : ''}{formatTime(participant.timeslot_start_time)} - {formatTime(participant.timeslot_end_time)}</>
+                    )}
+                  </div>
+                  {isOptedOut && participant.opt_out_reason && (
+                    <div style={{ color: '#666', fontSize: '0.8rem', marginTop: '2px' }}>
+                      {participant.opt_out_reason}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </IonItem>
+        {(participant.role_name === 'teamer' || !eventData?.mandatory) && (
+        <IonItemOptions className="app-swipe-actions" side="end">
+          {participant.role_name !== 'teamer' && participant.status === 'confirmed' && (
+            <IonItemOption className="app-swipe-action" onClick={() => handleDemoteParticipant(participant)}>
+              <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
+                <IonIcon icon={returnUpBack} />
+              </div>
+            </IonItemOption>
+          )}
+          <IonItemOption className="app-swipe-action" onClick={() => handleRemoveParticipant(participant)}>
+            <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+              <IonIcon icon={trash} />
+            </div>
+          </IonItemOption>
+        </IonItemOptions>
+        )}
+      </IonItemSliding>
+    );
   };
 
   return (
@@ -583,9 +496,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton onClick={onBack}>
-              <IonIcon icon={arrowBack} />
-            </IonButton>
+            <IonButton onClick={onBack}><IonIcon icon={arrowBack} /></IonButton>
           </IonButtons>
           <IonTitle>{eventData?.name || 'Event Details'}</IonTitle>
           <IonButtons slot="end">
@@ -605,12 +516,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             <IonTitle size="large">{eventData?.name || 'Event Details'}</IonTitle>
           </IonToolbar>
         </IonHeader>
-        
+
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
           <IonRefresherContent refreshingSpinner="crescent" />
         </IonRefresher>
 
-        {/* Event Header - SectionHeader mit status-basierten Farben */}
+        {/* Event Header */}
         <SectionHeader
           title={eventData?.name || 'Event'}
           subtitle={getStatusText()}
@@ -644,543 +555,62 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         />
 
         {/* Event Details */}
-        <IonList className="app-section-inset" inset={true}>
-          <IonListHeader>
-            <div className="app-section-icon app-section-icon--events">
-              <IonIcon icon={calendar} />
-            </div>
-            <IonLabel>Details</IonLabel>
-          </IonListHeader>
-          <IonCard className="app-card">
-            <IonCardContent className="app-card-content">
-              {/* Datum */}
-              <div className="app-info-row">
-                <IonIcon icon={calendar} className="app-info-row__icon app-icon-color--events" />
-                <div>
-                  <div className="app-info-row__content app-list-item__title">
-                    {formatDate(eventData?.event_date || '')}
-                  </div>
-                  <div className="app-info-row__sublabel">
-                    {formatTime(eventData?.event_date || '')}
-                    {eventData?.event_end_time && ` - ${formatTime(eventData.event_end_time)}`}
-                  </div>
-                </div>
-              </div>
+        {eventData && (
+          <EventInfoCard
+            eventData={eventData as any}
+            participants={participants}
+            formatDate={formatDate}
+            formatTime={formatTime}
+          />
+        )}
 
-              {/* Zeitslots anzeigen wenn vorhanden */}
-              {eventData?.has_timeslots && eventData?.timeslots && eventData.timeslots.length > 0 && (
-                <div className="app-info-row app-info-row--top">
-                  <IonIcon icon={time} className="app-info-row__icon app-icon-color--events app-event-detail__icon--align-top" />
-                  <div className="app-event-detail__timeslot-list">
-                    <div className="app-list-item__title">Zeitfenster:</div>
-                    {eventData.timeslots.map((slot, idx) => (
-                      <div key={slot.id || idx} className="app-info-row__sublabel app-event-detail__timeslot-entry">
-                        {formatTime(slot.start_time)} - {formatTime(slot.end_time)} ({slot.registered_count || 0}/{slot.max_participants} TN)
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* TN gesamt - Konfis und Teamer getrennt */}
-              {(() => {
-                const konfiOnly = participants.filter(p => p.role_name !== 'teamer');
-                const teamerOnly = participants.filter(p => p.role_name === 'teamer');
-                const konfiPresent = konfiOnly.filter(p => p.attendance_status === 'present').length;
-                const konfiConfirmed = konfiOnly.filter(p => p.status === 'confirmed').length;
-                return (
-                  <>
-                    <div className="app-info-row">
-                      <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
-                      <div className="app-info-row__content">
-                        {eventData?.mandatory
-                          ? `${konfiPresent}/${konfiOnly.length} Konfis`
-                          : `${konfiConfirmed} / ${(eventData?.max_participants || 0) > 0 ? eventData?.max_participants : '\u221E'} Konfis`
-                        }
-                      </div>
-                    </div>
-                    {teamerOnly.length > 0 && (
-                      <div className="app-info-row">
-                        <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
-                        <div className="app-info-row__content">
-                          {teamerOnly.length} Team
-                        </div>
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
-
-              {/* Warteliste */}
-              {(eventData as any)?.waitlist_enabled && (
-                <div className="app-info-row">
-                  <IonIcon icon={listOutline} className="app-info-row__icon app-icon-color--warning" />
-                  <div className="app-info-row__content">
-                    {participants.filter(p => p.status === 'waitlist').length} / {(eventData as any)?.max_waitlist_size || 10} auf Warteliste
-                  </div>
-                </div>
-              )}
-
-              {/* Punkte - bei Pflicht-Events ausblenden */}
-              {!eventData?.mandatory && (
-              <div className="app-info-row">
-                <IonIcon icon={trophy} className="app-info-row__icon app-icon-color--badges" />
-                <div className="app-info-row__content">
-                  {eventData?.points || 0} Punkte
-                </div>
-              </div>
-              )}
-
-              {/* Typ - bei Pflicht-Events ausblenden */}
-              {!eventData?.mandatory && (
-              <div className="app-info-row">
-                <IonIcon
-                  icon={eventData?.point_type === 'gottesdienst' ? home : people}
-                  className="app-info-row__icon"
-                  style={{ color: eventData?.point_type === 'gottesdienst' ? '#007aff' : '#2dd36f' }}
-                />
-                <div className="app-info-row__content">
-                  {eventData?.point_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
-                </div>
-              </div>
-              )}
-
-              {/* Kategorien */}
-              {eventData?.categories && eventData.categories.length > 0 && (
-                <div className="app-info-row">
-                  <IonIcon icon={pricetag} className="app-info-row__icon app-icon-color--category" />
-                  <div className="app-info-row__content">
-                    {eventData.categories.map(c => c.name).join(', ')}
-                  </div>
-                </div>
-              )}
-
-              {/* Ort */}
-              {eventData?.location && (
-                <div className="app-info-row">
-                  <IonIcon icon={location} className="app-info-row__icon app-icon-color--events" />
-                  <div
-                    className="app-info-row__content app-event-detail__location-link"
-                    onClick={() => {
-                      if (eventData.location_maps_url) {
-                        window.open(eventData.location_maps_url, '_blank');
-                      } else if (eventData.location) {
-                        const mapsUrl = `https://maps.apple.com/?q=${encodeURIComponent(eventData.location)}`;
-                        window.open(mapsUrl, '_blank');
-                      }
-                    }}
-                  >
-                    {eventData.location}
-                  </div>
-                </div>
-              )}
-
-              {/* Pflicht-Badge */}
-              {eventData?.mandatory && (
-                <div className="app-info-row">
-                  <IonIcon icon={shieldCheckmark} className="app-info-row__icon" style={{ color: '#dc2626' }} />
-                  <div className="app-info-row__content">
-                    Pflicht-Event
-                  </div>
-                </div>
-              )}
-
-              {/* Teamer-Zugang Badge - nur wenn teamer_only oder wenn teamer_needed und noch keine Teamer angemeldet */}
-              {(eventData?.teamer_only || (eventData?.teamer_needed && participants.filter(p => p.role_name === 'teamer' && p.status === 'confirmed').length === 0)) && (
-                <div className="app-info-row">
-                  <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
-                  <div className="app-info-row__content">
-                    {eventData?.teamer_only ? 'Nur Team' : 'Team gesucht'}
-                  </div>
-                </div>
-              )}
-
-              {/* Was mitbringen */}
-              {eventData?.bring_items && (
-                <div className="app-info-row">
-                  <IonIcon icon={bagHandle} className="app-info-row__icon" style={{ color: '#8b5cf6' }} />
-                  <div className="app-info-row__content">
-                    {eventData.bring_items}
-                  </div>
-                </div>
-              )}
-
-              {/* Anmeldezeitraum */}
-              {!eventData?.mandatory && (
-              <div className="app-info-row app-info-row--top">
-                <IonIcon icon={time} className="app-info-row__icon app-icon-color--events app-event-detail__icon--align-top-sm" />
-                <div className="app-info-row__content">
-                  {eventData?.registration_opens_at ? (
-                    <>
-                      <div>von {new Date(eventData.registration_opens_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_opens_at)}</div>
-                      {eventData?.registration_closes_at && (
-                        <div className="app-info-row__sublabel">bis {new Date(eventData.registration_closes_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_closes_at)}</div>
-                      )}
-                    </>
-                  ) : (
-                    'Sofort möglich'
-                  )}
-                </div>
-              </div>
-              )}
-
-              {/* Jahrgang */}
-              {eventData?.jahrgaenge && eventData.jahrgaenge.length > 0 && (
-                <div className="app-info-row">
-                  <IonIcon icon={people} className="app-info-row__icon app-icon-color--jahrgang" />
-                  <div className="app-info-row__content">
-                    {eventData.jahrgaenge.map(j => j.name).join(', ')}
-                  </div>
-                </div>
-              )}
-
-            </IonCardContent>
-          </IonCard>
-        </IonList>
-
-        {/* Beschreibung - eigene Card (wie Konfi-Ansicht) */}
+        {/* Beschreibung */}
         {eventData?.description && (
-          <IonList className="app-section-inset" inset={true}>
-            <IonListHeader>
-              <div className="app-section-icon app-section-icon--events">
-                <IonIcon icon={informationCircle} />
-              </div>
-              <IonLabel>Beschreibung</IonLabel>
-            </IonListHeader>
-            <IonCard className="app-card">
-              <IonCardContent className="app-card-content">
-                <p style={{ fontSize: '0.95rem', lineHeight: '1.5', color: '#374151', whiteSpace: 'pre-wrap', margin: 0 }}>
-                  {eventData.description}
-                </p>
-              </IonCardContent>
-            </IonCard>
-          </IonList>
+          <DescriptionSection description={eventData.description} />
         )}
 
         {/* Timeslots mit Teilnehmern */}
         {eventData?.has_timeslots && eventData?.timeslots && eventData.timeslots.length > 0 && (
-          <IonList className="app-section-inset" inset={true}>
-            <IonListHeader>
-              <div className="app-section-icon app-section-icon--events">
-                <IonIcon icon={time} />
-              </div>
-              <IonLabel>Zeitslots ({eventData.timeslots.length})</IonLabel>
-            </IonListHeader>
-            <IonCard className="app-card">
-              <IonCardContent className="app-card-content">
-                {eventData.timeslots.map((timeslot, slotIndex) => {
-                  // Vergleiche über timeslot_id (primär) oder formatierte Zeiten (fallback)
-                  const slotStartFormatted = formatTime(timeslot.start_time);
-                  const slotEndFormatted = formatTime(timeslot.end_time);
-                  const slotParticipants = participants.filter(p => {
-                    if (p.status !== 'confirmed') return false;
-                    // Wenn timeslot_id vorhanden, nutze diese
-                    if ((p as any).timeslot_id && (timeslot as any).id) {
-                      return (p as any).timeslot_id === (timeslot as any).id;
-                    }
-                    // Fallback: Zeit-Vergleich
-                    if (p.timeslot_start_time && p.timeslot_end_time) {
-                      return formatTime(p.timeslot_start_time) === slotStartFormatted &&
-                             formatTime(p.timeslot_end_time) === slotEndFormatted;
-                    }
-                    return false;
-                  });
-                  const isFull = (timeslot.registered_count || 0) >= timeslot.max_participants;
-
-                  return (
-                    <div key={timeslot.id} className="app-event-detail__slot-group">
-                      {/* Slot Header */}
-                      <div className={`app-list-item ${isFull ? 'app-list-item--danger' : 'app-list-item--success'}`} >
-                        {/* Corner Badge für Verfügbar/Voll */}
-                        <div className="app-corner-badges">
-                          <div className={`app-corner-badge ${isFull ? 'app-corner-badge--danger' : 'app-corner-badge--success'}`}>
-                            {isFull ? 'Voll' : 'Frei'}
-                          </div>
-                        </div>
-                        <div className="app-list-item__row">
-                          <div className="app-list-item__main">
-                            <div className={`app-icon-circle ${isFull ? 'app-icon-circle--danger' : 'app-icon-circle--success'}`}>
-                              <IonIcon icon={time} />
-                            </div>
-                            <div className="app-list-item__content">
-                              <div className="app-list-item__title app-list-item__title--badge-space">
-                                {slotStartFormatted} - {slotEndFormatted}
-                              </div>
-                              <div className="app-list-item__subtitle">
-                                {timeslot.registered_count || 0}/{timeslot.max_participants} Teilnehmer
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Teilnehmer dieses Slots */}
-                      {slotParticipants.length > 0 && (
-                        <div className="app-event-detail__slot-participants">
-                          {slotParticipants.map((participant, pIndex) => {
-                            const statusText = participant.attendance_status === 'present' ? 'Anwesend' :
-                                               participant.attendance_status === 'absent' ? 'Abwesend' : 'Gebucht';
-                            const cornerBadgeClass = participant.attendance_status === 'present' ? 'app-corner-badge--success' :
-                                                     participant.attendance_status === 'absent' ? 'app-corner-badge--danger' : 'app-corner-badge--info';
-                            return (
-                              <IonItemSliding
-                                key={participant.id}
-                                className="app-event-detail__sliding-item"
-                              >
-                                <IonItem
-                                  className="app-item-transparent"
-                                  button
-                                  detail={false}
-                                  lines="none"
-                                  onClick={() => showAttendanceActionSheet(participant)}
-                                >
-                                  <div className="app-list-item app-list-item--booked app-event-detail__list-item-flush">
-                                    {/* Eselsohr-Style Status Badge */}
-                                    <div className="app-corner-badges">
-                                      <div className={`app-corner-badge ${cornerBadgeClass}`}>
-                                        {statusText}
-                                      </div>
-                                    </div>
-                                    <div className="app-list-item__row">
-                                      <div className="app-list-item__main">
-                                        <div className={`app-icon-circle ${
-                                          participant.attendance_status === 'present' ? 'app-icon-circle--success' :
-                                          participant.attendance_status === 'absent' ? 'app-icon-circle--danger' : 'app-icon-circle--info'
-                                        }`}>
-                                          <IonIcon icon={participant.attendance_status === 'present' ? checkmarkCircle :
-                                                participant.attendance_status === 'absent' ? closeCircle : people} />
-                                        </div>
-                                        <div className="app-list-item__content">
-                                          <div className="app-list-item__title app-list-item__title--badge-space-lg">{participant.participant_name}</div>
-                                          <div className="app-list-item__subtitle">
-                                            {participant.jahrgang_name || ''}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </IonItem>
-                                {!eventData?.mandatory && (
-                                <IonItemOptions className="app-swipe-actions" side="end">
-                                  <IonItemOption
-                                    className="app-swipe-action"
-                                    onClick={() => handleDemoteParticipant(participant)}
-                                  >
-                                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
-                                      <IonIcon icon={returnUpBack} />
-                                    </div>
-                                  </IonItemOption>
-                                  <IonItemOption
-                                    className="app-swipe-action"
-                                    onClick={() => handleRemoveParticipant(participant)}
-                                  >
-                                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-                                      <IonIcon icon={trash} />
-                                    </div>
-                                  </IonItemOption>
-                                </IonItemOptions>
-                                )}
-                              </IonItemSliding>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </IonCardContent>
-            </IonCard>
-          </IonList>
+          <TimeslotsSection
+            timeslots={eventData.timeslots}
+            participants={participants}
+            eventMandatory={eventData?.mandatory}
+            formatTime={formatTime}
+            showAttendanceActionSheet={showAttendanceActionSheet}
+            handleDemoteParticipant={handleDemoteParticipant}
+            handleRemoveParticipant={handleRemoveParticipant}
+          />
         )}
 
         {/* Series Events */}
         {eventData?.is_series && eventData?.series_events && eventData.series_events.length > 0 && (
-          <IonList className="app-section-inset" inset={true}>
-            <IonListHeader>
-              <div className="app-section-icon app-section-icon--info">
-                <IonIcon icon={calendar} />
-              </div>
-              <IonLabel>Weitere Termine dieser Serie</IonLabel>
-            </IonListHeader>
-            <IonCard className="app-card">
-              <IonCardContent className="app-card-content">
-                {eventData.series_events.map((seriesEvent) => {
-                  const isFull = (seriesEvent.registered_count || 0) >= seriesEvent.max_participants;
-                  return (
-                    <div
-                      key={seriesEvent.id}
-                      className={`app-list-item ${isFull ? 'app-list-item--danger' : 'app-list-item--success'} app-event-detail__series-link`}
-                      onClick={() => window.location.href = `/admin/events/${seriesEvent.id}`}
-                    >
-                      {/* Eselsohr-Style Status Badge */}
-                      <div className="app-corner-badges">
-                        <div className={`app-corner-badge ${isFull ? 'app-corner-badge--danger' : 'app-corner-badge--success'}`}>
-                          {isFull ? 'Voll' : 'Frei'}
-                        </div>
-                      </div>
-                      <div className="app-list-item__row">
-                        <div className="app-list-item__main">
-                          <div className={`app-icon-circle ${isFull ? 'app-icon-circle--danger' : 'app-icon-circle--success'}`}>
-                            <IonIcon icon={calendar} />
-                          </div>
-                          <div className="app-list-item__content">
-                            <div className="app-list-item__title app-list-item__title--badge-space-md">
-                              {seriesEvent.name}
-                            </div>
-                            <div className="app-list-item__subtitle">
-                              {formatDate(seriesEvent.event_date)} {formatTime(seriesEvent.event_date)} | {seriesEvent.registered_count || 0}/{seriesEvent.max_participants} TN
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </IonCardContent>
-            </IonCard>
-          </IonList>
+          <SeriesEventsSection
+            seriesEvents={eventData.series_events as any}
+            formatDate={formatDate}
+            formatTime={formatTime}
+          />
         )}
 
         {/* Participants List */}
         {(() => {
-          // Teilnehmer nach Rolle aufteilen
           const konfiParticipants = participants.filter(p => p.role_name !== 'teamer');
           const teamerParticipants = participants.filter(p => p.role_name === 'teamer');
-
-          // Bei Timeslot-Events: zeige Teilnehmer ohne Slot-Zuordnung + Warteliste
-          // Bei normalen Events: zeige alle Konfis
           const confirmedParticipants = konfiParticipants.filter(p => p.status === 'confirmed');
           const waitlistParticipants = konfiParticipants.filter(p => p.status === 'waitlist');
-
-          // Bei Timeslot-Events: Teilnehmer ohne Slot-Zuordnung finden
           const unassignedParticipants = eventData?.has_timeslots
-            ? confirmedParticipants.filter(p => !(p as any).timeslot_id && !p.timeslot_start_time)
-            : [];
-
+            ? confirmedParticipants.filter(p => !(p as any).timeslot_id && !p.timeslot_start_time) : [];
           const displayParticipants = eventData?.has_timeslots
-            ? [...unassignedParticipants, ...waitlistParticipants]
-            : konfiParticipants;
-
+            ? [...unassignedParticipants, ...waitlistParticipants] : konfiParticipants;
           const hasWaitlist = (eventData as any)?.waitlist_enabled && waitlistParticipants.length > 0;
           const hasUnassigned = unassignedParticipants.length > 0;
 
-          // Helper: Einzelnen Teilnehmer rendern
-          const renderParticipant = (participant: Participant) => {
-            const isWaitlist = participant.status === 'waitlist';
-            const isOptedOut = participant.status === 'opted_out';
-            const listItemClass = isOptedOut ? 'app-list-item--danger' :
-                                  participant.attendance_status === 'present' ? 'app-list-item--success' :
-                                  participant.attendance_status === 'absent' ? 'app-list-item--danger' :
-                                  isWaitlist ? 'app-list-item--warning' : 'app-list-item--info';
-            const iconCircleClass = isOptedOut ? 'app-icon-circle--danger' :
-                                    participant.attendance_status === 'present' ? 'app-icon-circle--success' :
-                                    participant.attendance_status === 'absent' ? 'app-icon-circle--danger' :
-                                    isWaitlist ? 'app-icon-circle--warning' : 'app-icon-circle--info';
-            const statusIcon = isOptedOut ? closeCircle :
-                               participant.attendance_status === 'present' ? checkmarkCircle :
-                               participant.attendance_status === 'absent' ? closeCircle : people;
-            const statusText = isOptedOut ? 'Abgemeldet' :
-                               participant.attendance_status === 'present' ? 'Anwesend' :
-                               participant.attendance_status === 'absent' ? 'Abwesend' :
-                               isWaitlist ? 'Warteliste' : 'Gebucht';
-            const cornerBadgeClass = isOptedOut ? 'app-corner-badge--danger' :
-                                     participant.attendance_status === 'present' ? 'app-corner-badge--success' :
-                                     participant.attendance_status === 'absent' ? 'app-corner-badge--danger' :
-                                     isWaitlist ? 'app-corner-badge--warning' : 'app-corner-badge--info';
-
-            return (
-              <IonItemSliding
-                key={participant.id}
-                ref={(el) => {
-                  if (el) {
-                    slidingRefs.current.set(participant.id, el);
-                  } else {
-                    slidingRefs.current.delete(participant.id);
-                  }
-                }}
-                className="app-event-detail__sliding-item"
-              >
-                <IonItem
-                  className="app-item-transparent"
-                  button
-                  detail={false}
-                  lines="none"
-                  onClick={() => {
-                    if (participant.status === 'confirmed') {
-                      showAttendanceActionSheet(participant);
-                    } else if (participant.status === 'waitlist') {
-                      showWaitlistActionSheet(participant);
-                    }
-                  }}
-                >
-                  <div className={`app-list-item ${listItemClass} app-event-detail__list-item-flush`}>
-                    <div className="app-corner-badges">
-                      <div className={`app-corner-badge ${cornerBadgeClass}`}>
-                        {statusText}
-                      </div>
-                    </div>
-                    <div className="app-list-item__row">
-                      <div className="app-list-item__main">
-                        <div className={`app-icon-circle ${iconCircleClass}`}>
-                          <IonIcon icon={statusIcon} />
-                        </div>
-                        <div className="app-list-item__content">
-                          <div className="app-list-item__title app-list-item__title--badge-space-lg">
-                            {participant.participant_name}
-                          </div>
-                          <div className="app-list-item__subtitle">
-                            {participant.jahrgang_name && <>{participant.jahrgang_name}</>}
-                            {participant.timeslot_start_time && participant.timeslot_end_time && (
-                              <>{participant.jahrgang_name ? ' | ' : ''}{formatTime(participant.timeslot_start_time)} - {formatTime(participant.timeslot_end_time)}</>
-                            )}
-                          </div>
-                          {isOptedOut && participant.opt_out_reason && (
-                            <div style={{ color: '#666', fontSize: '0.8rem', marginTop: '2px' }}>
-                              {participant.opt_out_reason}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </IonItem>
-                {(participant.role_name === 'teamer' || !eventData?.mandatory) && (
-                <IonItemOptions className="app-swipe-actions" side="end">
-                  {participant.role_name !== 'teamer' && participant.status === 'confirmed' && (
-                    <IonItemOption
-                      className="app-swipe-action"
-                      onClick={() => handleDemoteParticipant(participant)}
-                    >
-                      <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
-                        <IonIcon icon={returnUpBack} />
-                      </div>
-                    </IonItemOption>
-                  )}
-                  <IonItemOption
-                    className="app-swipe-action"
-                    onClick={() => handleRemoveParticipant(participant)}
-                  >
-                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-                      <IonIcon icon={trash} />
-                    </div>
-                  </IonItemOption>
-                </IonItemOptions>
-                )}
-              </IonItemSliding>
-            );
-          };
-
-          // Wenn keine Teilnehmer und keine Warteliste, nur Button zeigen
           if (displayParticipants.length === 0 && teamerParticipants.length === 0) {
             return (
               <IonList className="app-section-inset" inset={true}>
                 <IonCard className="app-card">
                   <IonCardContent className="app-card-content">
-                    <IonButton
-                      expand="block"
-                      fill="outline"
-                      onClick={() => presentKonfiModal({ presentingElement: presentingElement || undefined })}
-                    >
+                    <IonButton expand="block" fill="outline"
+                      onClick={() => presentKonfiModal({ presentingElement: presentingElement || undefined })}>
                       <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
                       Kind hinzufügen
                     </IonButton>
@@ -1190,16 +620,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             );
           }
 
-          // Konfis Header-Text bestimmen
           let konfiHeaderText = '';
           if (eventData?.has_timeslots) {
-            if (hasUnassigned && hasWaitlist) {
-              konfiHeaderText = `Nicht zugeordnet (${unassignedParticipants.length}) + Warteliste (${waitlistParticipants.length})`;
-            } else if (hasUnassigned) {
-              konfiHeaderText = `Nicht zugeordnet (${unassignedParticipants.length})`;
-            } else {
-              konfiHeaderText = `Warteliste (${waitlistParticipants.length})`;
-            }
+            if (hasUnassigned && hasWaitlist) konfiHeaderText = `Nicht zugeordnet (${unassignedParticipants.length}) + Warteliste (${waitlistParticipants.length})`;
+            else if (hasUnassigned) konfiHeaderText = `Nicht zugeordnet (${unassignedParticipants.length})`;
+            else konfiHeaderText = `Warteliste (${waitlistParticipants.length})`;
           } else if (eventData?.mandatory) {
             konfiHeaderText = `Konfis (${confirmedParticipants.length}/${konfiParticipants.length})`;
           } else {
@@ -1208,24 +633,18 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
           return (
             <>
-              {/* Konfis Sektion */}
               {displayParticipants.length > 0 && (
                 <IonList className="app-section-inset" inset={true}>
                   <IonListHeader>
-                    <div className="app-section-icon app-section-icon--events">
-                      <IonIcon icon={people} />
-                    </div>
+                    <div className="app-section-icon app-section-icon--events"><IonIcon icon={people} /></div>
                     <IonLabel>{konfiHeaderText}</IonLabel>
                   </IonListHeader>
                   <IonCard className="app-card">
                     <IonCardContent className="app-card-content">
                       {displayParticipants.map(renderParticipant)}
                       <div className="app-event-detail__add-button-wrapper">
-                        <IonButton
-                          expand="block"
-                          fill="outline"
-                          onClick={() => presentKonfiModal({ presentingElement: presentingElement || undefined })}
-                        >
+                        <IonButton expand="block" fill="outline"
+                          onClick={() => presentKonfiModal({ presentingElement: presentingElement || undefined })}>
                           <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
                           Kind hinzufügen
                         </IonButton>
@@ -1234,25 +653,18 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   </IonCard>
                 </IonList>
               )}
-
-              {/* Teamer:innen Sektion */}
               {(teamerParticipants.length > 0 || eventData?.teamer_needed || eventData?.teamer_only) && (
                 <IonList className="app-section-inset" inset={true}>
                   <IonListHeader>
-                    <div className="app-section-icon app-section-icon--events">
-                      <IonIcon icon={people} />
-                    </div>
+                    <div className="app-section-icon app-section-icon--events"><IonIcon icon={people} /></div>
                     <IonLabel>Teamer:innen ({teamerParticipants.length})</IonLabel>
                   </IonListHeader>
                   <IonCard className="app-card">
                     <IonCardContent className="app-card-content">
                       {teamerParticipants.map(renderParticipant)}
                       <div className="app-event-detail__add-button-wrapper">
-                        <IonButton
-                          expand="block"
-                          fill="outline"
-                          onClick={() => presentTeamerModal({ presentingElement: presentingElement || undefined })}
-                        >
+                        <IonButton expand="block" fill="outline"
+                          onClick={() => presentTeamerModal({ presentingElement: presentingElement || undefined })}>
                           <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
                           Teamer:in hinzufügen
                         </IonButton>
@@ -1261,17 +673,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   </IonCard>
                 </IonList>
               )}
-
-              {/* Button wenn keine Konfis aber Teamer vorhanden */}
               {displayParticipants.length === 0 && teamerParticipants.length > 0 && (
                 <IonList className="app-section-inset" inset={true}>
                   <IonCard className="app-card">
                     <IonCardContent className="app-card-content">
-                      <IonButton
-                        expand="block"
-                        fill="outline"
-                        onClick={() => presentKonfiModal({ presentingElement: presentingElement || undefined })}
-                      >
+                      <IonButton expand="block" fill="outline"
+                        onClick={() => presentKonfiModal({ presentingElement: presentingElement || undefined })}>
                         <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
                         Kind hinzufügen
                       </IonButton>
@@ -1283,146 +690,29 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           );
         })()}
 
-        {/* Abmeldungen (Unregistrations) */}
+        {/* Abmeldungen */}
         {unregistrations.length > 0 && (
-          <IonList className="app-section-inset" inset={true}>
-            <IonListHeader>
-              <div className="app-section-icon app-section-icon--danger">
-                <IonIcon icon={closeCircle} />
-              </div>
-              <IonLabel>Abmeldungen ({unregistrations.length})</IonLabel>
-            </IonListHeader>
-            <IonCard className="app-card">
-              <IonCardContent className="app-card-content">
-                {unregistrations.map((unreg) => (
-                  <div key={unreg.id} className="app-list-item app-list-item--danger">
-                    <div className="app-list-item__row">
-                      <div className="app-list-item__main">
-                        <IonIcon icon={closeCircle} className="app-icon-color--danger app-event-detail__icon-lg" />
-                        <div className="app-list-item__content">
-                          <div className="app-list-item__title">
-                            {unreg.konfi_name}
-                          </div>
-                          <div className="app-list-item__subtitle">
-                            Abgemeldet am {new Date(unreg.unregistered_at).toLocaleString('de-DE', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    {unreg.reason && (
-                      <div className="app-reason-box app-reason-box--danger app-event-detail__reason-indent">
-                        <span className="app-reason-box__label">Grund:</span> {unreg.reason}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </IonCardContent>
-            </IonCard>
-          </IonList>
+          <UnregistrationsSection unregistrations={unregistrations} />
         )}
 
         {/* Material */}
         {eventMaterials.length > 0 && (
-          <IonList className="app-section-inset" inset={true}>
-            <IonListHeader>
-              <div className="app-section-icon app-section-icon--events">
-                <IonIcon icon={documentIcon} />
-              </div>
-              <IonLabel>Material ({eventMaterials.length})</IonLabel>
-            </IonListHeader>
-            <IonCard className="app-card">
-              <IonCardContent className="app-card-content">
-                {eventMaterials.map((mat: any) => (
-                  <div
-                    key={mat.id}
-                    className="app-list-item"
-                    style={{
-                      borderLeftColor: '#d97706',
-                      cursor: 'pointer',
-                      marginBottom: '8px'
-                    }}
-                    onClick={() => {
-                      materialIdRef.current = mat.id;
-                      presentMaterialModal({ presentingElement: presentingElement || pageRef.current || undefined });
-                    }}
-                  >
-                    <div className="app-list-item__row">
-                      <div className="app-list-item__main">
-                        <div className="app-icon-circle" style={{ backgroundColor: '#d97706' }}>
-                          <IonIcon icon={documentIcon} />
-                        </div>
-                        <div className="app-list-item__content">
-                          <div className="app-list-item__title">{mat.title}</div>
-                          <div className="app-list-item__meta">
-                            <span className="app-list-item__meta-item">
-                              <IonIcon icon={attachOutline} style={{ color: '#d97706' }} />
-                              {mat.file_count || 0} {(mat.file_count || 0) === 1 ? 'Datei' : 'Dateien'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </IonCardContent>
-            </IonCard>
-          </IonList>
+          <EventMaterialSection
+            eventMaterials={eventMaterials}
+            onMaterialClick={handleMaterialClick}
+          />
         )}
 
-        {/* Event-Chat */}
-        {eventData && !isCancelled && (
-          <IonList className="app-section-inset" inset={true}>
-            <IonCard className="app-card">
-              <IonCardContent className="app-card-content">
-                {eventData.chat_room_id ? (
-                  <IonButton
-                    expand="block"
-                    fill="outline"
-                    onClick={handleNavigateToChat}
-                  >
-                    <IonIcon icon={chatbubbles} className="app-event-detail__icon-gap" />
-                    Zum Chat
-                  </IonButton>
-                ) : (
-                  <IonButton
-                    expand="block"
-                    fill="outline"
-                    disabled={!isOnline}
-                    onClick={handleCreateEventChat}
-                  >
-                    <IonIcon icon={chatbubbles} className="app-event-detail__icon-gap" />
-                    {!isOnline ? 'Du bist offline' : 'Chat erstellen'}
-                  </IonButton>
-                )}
-              </IonCardContent>
-            </IonCard>
-          </IonList>
-        )}
-
-        {/* Event absagen */}
-        {eventData && !isCancelled && (
-          <IonList className="app-section-inset" inset={true}>
-            <IonCard className="app-card">
-              <IonCardContent className="app-card-content">
-                <IonButton
-                  expand="block"
-                  fill="outline"
-                  color="danger"
-                  disabled={!isOnline}
-                  onClick={handleCancelEvent}
-                >
-                  <IonIcon icon={ban} className="app-event-detail__icon-gap" />
-                  {!isOnline ? 'Du bist offline' : 'Event absagen'}
-                </IonButton>
-              </IonCardContent>
-            </IonCard>
-          </IonList>
+        {/* Event-Chat + Event absagen */}
+        {eventData && (
+          <EventActionsSection
+            eventData={eventData as any}
+            isCancelled={!!isCancelled}
+            isOnline={isOnline}
+            handleNavigateToChat={handleNavigateToChat}
+            handleCreateEventChat={handleCreateEventChat}
+            handleCancelEvent={handleCancelEvent}
+          />
         )}
 
       </IonContent>
