@@ -29,7 +29,7 @@ export interface AdminUser {
   role_id?: number;
   role_name: string;
   role_display_name: string;
-  assigned_jahrgaenge_count?: number;
+  assigned_jahrgaenge_count: number;
   assigned_jahrgaenge?: { id: number; name: string; can_view?: boolean; can_edit?: boolean; assigned_at?: string; assigned_by_name?: string }[];
   can_edit?: boolean;
 }

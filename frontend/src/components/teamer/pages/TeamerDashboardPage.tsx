@@ -101,16 +101,8 @@ interface Certificate {
   status: 'valid' | 'expired' | 'not_earned';
 }
 
-interface DashboardEvent {
-  id: number;
-  title: string;
-  event_date: string;
-  location: string;
-  is_registered: boolean;
-  booking_status?: string;
-  cancelled?: boolean;
-  bring_items?: string;
-}
+// DashboardEvent kommt aus types/event ueber types/dashboard Re-Export
+type DashboardEvent = import('../../../types/event').Event;
 
 interface Badge {
   id: number;

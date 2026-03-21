@@ -14,7 +14,7 @@ export interface Badge {
 }
 
 // DashboardEvent ist jetzt ein Re-Export von Event
-export { Event as DashboardEvent } from './event';
+export type { Event as DashboardEvent } from './event';
 
 export interface RankingEntry {
   user_id: number;

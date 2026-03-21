@@ -38,17 +38,7 @@ import { useApp } from '../../../contexts/AppContext';
 import { useBadge } from '../../../contexts/BadgeContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
-
-interface User {
-  id: number;
-  name?: string;
-  display_name?: string;
-  type: 'admin' | 'konfi';
-  jahrgang?: string;
-  jahrgang_name?: string;
-  role_name?: string;
-  role_description?: string;
-}
+import { ChatUser } from '../../../types/user';
 
 interface SimpleCreateChatModalProps {
   onClose: () => void;
@@ -94,7 +84,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
       doClose();
     }
   };
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<ChatUser[]>([]);
   const [existingChats, setExistingChats] = useState<any[]>([]);
   const [searchText, setSearchText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -189,7 +179,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           allowedJahrgangIds = userJahrgangRes.data.map((j: any) => j.jahrgang_id);
         }
 
-        let konfis: User[] = konfisRes.data
+        let konfis: ChatUser[] = konfisRes.data
           .filter((konfi: any) => {
             // Nur Konfis mit erlaubten Jahrgängen zeigen
             if (allowedJahrgangIds.length > 0) {
@@ -207,7 +197,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           }));
 
         // Auch andere Admins laden
-        let adminUsers: User[] = [];
+        let adminUsers: ChatUser[] = [];
         try {
           const usersRes = await api.get('/admin/users');
           adminUsers = usersRes.data
@@ -256,7 +246,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
     }
   };
 
-  const checkDirectChatExists = (targetUser: User) => {
+  const checkDirectChatExists = (targetUser: ChatUser) => {
     return existingChats.some(chat =>
       chat.type === 'direct' &&
       chat.participants &&
@@ -276,7 +266,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
     setSelectedParticipants(newSelected);
   };
 
-  const createDirectMessage = async (targetUser: User) => {
+  const createDirectMessage = async (targetUser: ChatUser) => {
     if (!isOnline) return;
     // Check if chat already exists
     if (checkDirectChatExists(targetUser)) {
@@ -380,7 +370,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
     return true;
   });
 
-  const getUserDisplayName = (user: User) => {
+  const getUserDisplayName = (user: ChatUser) => {
     return user.name || user.display_name || 'Unbekannt';
   };
 

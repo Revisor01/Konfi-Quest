@@ -35,44 +35,7 @@ import { useApp } from '../../contexts/AppContext';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { parseLocalTime, getLocalNow } from '../../utils/dateUtils';
 import { SectionHeader, ListSection } from '../shared';
-
-interface Category {
-  id: number;
-  name: string;
-}
-
-interface Event {
-  id: number;
-  name: string;
-  description?: string;
-  event_date: string;
-  event_end_time?: string;
-  location?: string;
-  location_maps_url?: string;
-  points: number;
-  categories?: Category[];
-  category_names?: string;
-  type: string;
-  max_participants: number;
-  registration_opens_at?: string;
-  registration_closes_at?: string;
-  registered_count: number;
-  registration_status: 'upcoming' | 'open' | 'closed' | 'cancelled';
-  created_at: string;
-  waitlist_enabled?: boolean;
-  max_waitlist_size?: number;
-  is_series?: boolean;
-  series_id?: number;
-  waitlist_count?: number;
-  pending_bookings_count?: number;
-  mandatory?: boolean;
-  bring_items?: string;
-  teamer_count?: number;
-  teamer_needed?: boolean;
-  teamer_only?: boolean;
-  jahrgang_names?: string;
-  material_count?: number;
-}
+import { Event } from '../../types/event';
 
 interface EventsViewProps {
   events: Event[];

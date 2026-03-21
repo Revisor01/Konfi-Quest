@@ -23,14 +23,7 @@ import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
-
-interface User {
-  id: number;
-  name?: string;
-  display_name?: string;
-  type: 'admin' | 'konfi';
-  jahrgang?: string;
-}
+import { ChatUser } from '../../../types/user';
 
 interface DirectMessageModalProps {
   onClose: () => void;
@@ -41,7 +34,7 @@ interface DirectMessageModalProps {
 const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSuccess, dismiss }) => {
   const { user, setError, setSuccess, isOnline } = useApp();
   const pageRef = useRef<HTMLElement>(null);
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<ChatUser[]>([]);
   const [searchText, setSearchText] = useState('');
   const [loading, setLoading] = useState(true);
   const { isSubmitting: creating, guard } = useActionGuard();
@@ -58,7 +51,7 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSucc
         api.get('/users').catch(() => ({ data: [] })) // Fallback if endpoint doesn't exist
       ]);
 
-      const allUsers: User[] = [
+      const allUsers: ChatUser[] = [
         ...konfisRes.data.map((konfi: any) => ({ ...konfi, type: 'konfi' as const })),
         ...adminsRes.data.map((admin: any) => ({ ...admin, type: 'admin' as const }))
       ];
@@ -77,7 +70,7 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSucc
     }
   };
 
-  const createDirectMessage = async (targetUser: User) => {
+  const createDirectMessage = async (targetUser: ChatUser) => {
     if (!isOnline) return;
     await guard(async () => {
       try {
@@ -111,7 +104,7 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSucc
            (user.jahrgang && user.jahrgang.toLowerCase().includes(searchText.toLowerCase()));
   });
 
-  const getUserDisplayName = (user: User) => {
+  const getUserDisplayName = (user: ChatUser) => {
     return user.name || user.display_name || 'Unbekannt';
   };
 

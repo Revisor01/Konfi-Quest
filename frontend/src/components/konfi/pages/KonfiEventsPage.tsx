@@ -23,51 +23,7 @@ import api from '../../../services/api';
 import EventsView from '../views/EventsView';
 import QRScannerModal from '../modals/QRScannerModal';
 import LoadingSpinner from '../../common/LoadingSpinner';
-
-interface Category {
-  id: number;
-  name: string;
-}
-
-interface Event {
-  id: number;
-  name: string;
-  description?: string;
-  event_date: string;
-  event_end_time?: string;
-  location?: string;
-  location_maps_url?: string;
-  points: number;
-  categories?: Category[];
-  category_names?: string;
-  type: string;
-  max_participants: number;
-  registration_opens_at?: string;
-  registration_closes_at?: string;
-  registered_count: number;
-  registration_status: 'upcoming' | 'open' | 'closed' | 'cancelled';
-  created_at: string;
-  waitlist_enabled?: boolean;
-  max_waitlist_size?: number;
-  is_series?: boolean;
-  series_id?: number;
-  is_registered?: boolean;
-  can_register?: boolean;
-  attendance_status?: 'present' | 'absent' | null;
-  cancelled?: boolean;
-  waitlist_count?: number;
-  waitlist_position?: number;
-  registration_status_detail?: string;
-  booking_status?: 'confirmed' | 'waitlist' | 'pending' | 'opted_out' | null;
-  mandatory?: boolean;
-  bring_items?: string;
-  is_opted_out?: boolean;
-  point_type?: 'gottesdienst' | 'gemeinde';
-  has_timeslots?: boolean;
-  booked_timeslot_id?: number;
-  booked_timeslot_start?: string;
-  booked_timeslot_end?: string;
-}
+import { Event } from '../../../types/event';
 
 const KonfiEventsPage: React.FC = () => {
   const { user, setSuccess, setError } = useApp();

@@ -25,39 +25,7 @@ import { CACHE_TTL } from '../../../services/offlineCache';
 import EventsView from '../EventsView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import EventModal from '../modals/EventModal';
-
-interface Category {
-  id: number;
-  name: string;
-}
-
-interface Event {
-  id: number;
-  name: string;
-  description?: string;
-  event_date: string;
-  event_end_time?: string;
-  location?: string;
-  location_maps_url?: string;
-  points: number;
-  categories?: Category[];
-  category_names?: string;
-  type: string;
-  max_participants: number;
-  registration_opens_at?: string;
-  registration_closes_at?: string;
-  registered_count: number;
-  registration_status: 'upcoming' | 'open' | 'closed' | 'cancelled';
-  created_at: string;
-  waitlist_enabled?: boolean;
-  max_waitlist_size?: number;
-  is_series?: boolean;
-  series_id?: number;
-  waitlist_count?: number;
-  pending_bookings_count?: number;
-  jahrgang_ids?: string;
-  jahrgang_names?: string;
-}
+import { Event } from '../../../types/event';
 
 const AdminEventsPage: React.FC = () => {
   const { user, setSuccess, setError, isOnline } = useApp();

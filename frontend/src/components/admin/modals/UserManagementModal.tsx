@@ -30,31 +30,7 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
-
-interface User {
-  id: number;
-  username: string;
-  email?: string;
-  display_name: string;
-  role_title?: string; // Funktionsbeschreibung z.B. "Pastor", "Diakonin"
-  is_active: boolean;
-  last_login_at?: string;
-  created_at: string;
-  updated_at: string;
-  role_id: number;
-  role_name: string;
-  role_display_name: string;
-  assigned_jahrgaenge?: AssignedJahrgang[];
-}
-
-interface AssignedJahrgang {
-  id: number;
-  name: string;
-  can_view: boolean;
-  can_edit: boolean;
-  assigned_at: string;
-  assigned_by_name?: string;
-}
+import { AdminUser } from '../../../types/user';
 
 interface Role {
   id: number;
@@ -127,7 +103,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   // Available data
   const [roles, setRoles] = useState<Role[]>([]);
   const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AdminUser | null>(null);
 
   // Jahrgang assignments
   const [jahrgangAssignments, setJahrgangAssignments] = useState<{ [key: number]: boolean }>({});
@@ -198,8 +174,8 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
       const assignments: { [key: number]: boolean } = {};
       if (userData.assigned_jahrgaenge) {
-        userData.assigned_jahrgaenge.forEach((assignment: AssignedJahrgang) => {
-          assignments[assignment.id] = assignment.can_view || assignment.can_edit;
+        userData.assigned_jahrgaenge.forEach((assignment: { id: number; name: string; can_view?: boolean; can_edit?: boolean; assigned_at?: string; assigned_by_name?: string }) => {
+          assignments[assignment.id] = !!(assignment.can_view || assignment.can_edit);
         });
       }
       setJahrgangAssignments(assignments);
@@ -574,7 +550,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                           {assignment.name}
                         </span>
                         <span style={{ fontSize: '0.75rem', color: '#8e8e93' }}>
-                          {new Date(assignment.assigned_at).toLocaleDateString('de-DE')}
+                          {assignment.assigned_at && new Date(assignment.assigned_at).toLocaleDateString('de-DE')}
                           {assignment.assigned_by_name && ` von ${assignment.assigned_by_name}`}
                         </span>
                       </div>

@@ -3,23 +3,9 @@ import { Device } from '@capacitor/device';
 import { Capacitor } from '@capacitor/core';
 import { getUser, setToken, setUser, clearAuth, getDeviceId, setDeviceId } from './tokenStore';
 import { offlineCache } from './offlineCache';
+import { BaseUser } from '../types/user';
 
-interface User {
-  id: number;
-  type: 'admin' | 'konfi' | 'teamer' | 'user';
-  display_name: string;
-  username?: string;
-  email?: string;
-  organization?: string;
-  organization_id?: number;
-  roles?: string[];
-  role_name?: string;
-  jahrgang?: string;
-  is_super_admin?: boolean;
-  // permissions entfernt - jetzt rollen-basiert (role_name)
-}
-
-export const loginWithAutoDetection = async (username: string, password: string): Promise<User> => {
+export const loginWithAutoDetection = async (username: string, password: string): Promise<BaseUser> => {
 
   try {
     const response = await api.post('/auth/login', { username, password });
@@ -115,11 +101,11 @@ export const logout = async (): Promise<void> => {
   logoutInProgress = false;
 };
 
-export const checkAuth = (): User | null => {
+export const checkAuth = (): BaseUser | null => {
   return getUser();
 };
 
-export const checkAuthAsync = async (): Promise<User | null> => {
+export const checkAuthAsync = async (): Promise<BaseUser | null> => {
   return getUser();
 };
 

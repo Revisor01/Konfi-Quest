@@ -1,22 +1,9 @@
 import { Preferences } from '@capacitor/preferences';
-
-interface User {
-  id: number;
-  type: 'admin' | 'konfi' | 'teamer' | 'user';
-  display_name: string;
-  username?: string;
-  email?: string;
-  organization?: string;
-  organization_id?: number;
-  roles?: string[];
-  role_name?: string;
-  jahrgang?: string;
-  is_super_admin?: boolean;
-}
+import { BaseUser } from '../types/user';
 
 // In-Memory-Cache — synchrone Reads, async Writes nach Preferences
 let _token: string | null = null;
-let _user: User | null = null;
+let _user: BaseUser | null = null;
 let _deviceId: string | null = null;
 let _pushTokenTimestamp: number = 0;
 
@@ -24,7 +11,7 @@ let _pushTokenTimestamp: number = 0;
 
 export const getToken = (): string | null => _token;
 
-export const getUser = (): User | null => _user;
+export const getUser = (): BaseUser | null => _user;
 
 export const getDeviceId = (): string | null => _deviceId;
 
@@ -37,7 +24,7 @@ export const setToken = async (token: string): Promise<void> => {
   await Preferences.set({ key: 'konfi_token', value: token });
 };
 
-export const setUser = async (user: User): Promise<void> => {
+export const setUser = async (user: BaseUser): Promise<void> => {
   _user = user;
   await Preferences.set({ key: 'konfi_user', value: JSON.stringify(user) });
 };

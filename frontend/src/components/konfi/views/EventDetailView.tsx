@@ -48,55 +48,15 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader } from '../../shared';
 import UnregisterModal from '../modals/UnregisterModal';
 import QRScannerModal from '../modals/QRScannerModal';
-
-interface Category {
-  id: number;
-  name: string;
-}
-
-interface Event {
-  id: number;
-  name: string;
-  description?: string;
-  event_date: string;
-  event_end_time?: string;
-  location?: string;
-  location_maps_url?: string;
-  points: number;
-  point_type?: 'gottesdienst' | 'gemeinde';
-  categories?: Category[];
-  category_names?: string;
-  type: string;
-  max_participants: number;
-  registration_opens_at?: string;
-  registration_closes_at?: string;
-  registered_count: number;
-  registration_status: 'upcoming' | 'open' | 'closed' | 'cancelled';
-  is_registered?: boolean;
-  can_register?: boolean;
-  waitlist_enabled?: boolean;
-  max_waitlist_size?: number;
-  cancelled?: boolean;
-  attendance_status?: 'present' | 'absent' | null;
-  waitlist_count?: number;
-  waitlist_position?: number;
-  registration_status_detail?: string;
-  booking_status?: 'confirmed' | 'waitlist' | 'pending' | 'opted_out' | null;
-  is_opted_out?: boolean;
-  has_timeslots?: boolean;
-  mandatory?: boolean;
-  bring_items?: string;
-  booked_timeslot_id?: number;
-  booked_timeslot_start?: string;
-  booked_timeslot_end?: string;
-}
+import { Event, Category } from '../../../types/event';
 
 interface EventDetailViewProps {
   eventId: number;
   onBack: () => void;
 }
 
-interface Timeslot {
+// Timeslot importiert aus types/event, lokaler Alias mit registered_count
+interface DetailTimeslot {
   id: number;
   start_time: string;
   end_time: string;
@@ -118,7 +78,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const [loading, setLoading] = useState(true);
   const [eventData, setEventData] = useState<Event | null>(null);
   const [hasExistingKonfirmation, setHasExistingKonfirmation] = useState(false);
-  const [timeslots, setTimeslots] = useState<Timeslot[]>([]);
+  const [timeslots, setTimeslots] = useState<DetailTimeslot[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
 
   const handleOptOut = async (reason: string) => {
@@ -242,7 +202,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
       setEventData(event);
 
-      if ((event as any).has_timeslots) {
+      if (event.has_timeslots) {
         try {
           const timeslotsResponse = await api.get(`/konfi/events/${eventId}/timeslots`);
           setTimeslots(timeslotsResponse.data || []);
@@ -345,7 +305,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       }
     }
 
-    const hasTimeslots = (eventData as any).has_timeslots && timeslots.length > 0;
+    const hasTimeslots = eventData.has_timeslots && timeslots.length > 0;
     if (hasTimeslots) {
       const timeslotButtons = timeslots.map((slot) => {
         const isFull = slot.max_participants > 0 && parseInt(String(slot.registered_count || 0)) >= slot.max_participants;
@@ -388,7 +348,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
     const isPastEvent = new Date(eventData.event_date) < new Date();
     const isKonfi = isKonfirmationEvent(eventData);
-    const isOnWaitlist = (eventData as any).booking_status === 'waitlist' || (eventData as any).booking_status === 'pending';
+    const isOnWaitlist = eventData.booking_status === 'waitlist' || eventData.booking_status === 'pending';
     const isAusstehend = isPastEvent && eventData.is_registered && !isOnWaitlist && !eventData.attendance_status;
 
     if (eventData.cancelled) return { primary: '#dc3545', secondary: '#c82333' };
@@ -400,7 +360,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     if (isOnWaitlist) return { primary: '#fd7e14', secondary: '#e8650e' };
     if (eventData.is_registered && !isPastEvent) return { primary: '#007aff', secondary: '#0066d6' };
     if (isPastEvent) return { primary: '#6c757d', secondary: '#5a6268' };
-    if (eventData.registration_status === 'open' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants && (eventData as any).waitlist_enabled) return { primary: '#fd7e14', secondary: '#e8650e' };
+    if (eventData.registration_status === 'open' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants && eventData.waitlist_enabled) return { primary: '#fd7e14', secondary: '#e8650e' };
     if (eventData.registration_status === 'open' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants) return { primary: '#dc3545', secondary: '#c82333' };
     if (eventData.registration_status === 'open') return { primary: '#34c759', secondary: '#2db84d' };
     if (eventData.registration_status === 'upcoming') return { primary: '#fd7e14', secondary: '#e8650e' };
@@ -412,7 +372,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     if (!eventData) return 'Event';
     const isPastEvent = new Date(eventData.event_date) < new Date();
     const isKonfi = isKonfirmationEvent(eventData);
-    const isOnWaitlist = (eventData as any).booking_status === 'waitlist' || (eventData as any).booking_status === 'pending';
+    const isOnWaitlist = eventData.booking_status === 'waitlist' || eventData.booking_status === 'pending';
     const isAusstehend = isPastEvent && eventData.is_registered && !isOnWaitlist && !eventData.attendance_status;
 
     if (eventData.cancelled) return 'Abgesagt';
@@ -425,7 +385,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     if (eventData.is_registered && !isPastEvent) return 'Angemeldet';
     if (isPastEvent) return 'Vergangen';
     // Voll aber Warteliste aktiv
-    if (eventData.registration_status === 'open' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants && (eventData as any).waitlist_enabled) return 'Warteliste';
+    if (eventData.registration_status === 'open' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants && eventData.waitlist_enabled) return 'Warteliste';
     // Voll ohne Warteliste
     if (eventData.registration_status === 'open' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants) return 'Ausgebucht';
     if (eventData.registration_status === 'open') return 'Offen';
@@ -609,8 +569,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 <div className="app-info-row">
                   <IonIcon icon={listOutline} className="app-info-row__icon app-icon-color--warning" />
                   <div className="app-info-row__content">
-                    {(eventData as any).waitlist_count || 0} / {eventData.max_waitlist_size || 10} auf Warteliste
-                    {(eventData as any).waitlist_position && <strong> (Du: Platz {(eventData as any).waitlist_position})</strong>}
+                    {eventData.waitlist_count || 0} / {eventData.max_waitlist_size || 10} auf Warteliste
+                    {eventData.waitlist_position && <strong> (Du: Platz {eventData.waitlist_position})</strong>}
                   </div>
                 </div>
               )}
@@ -904,7 +864,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               onClick={handleRegister}
             >
               <IonIcon icon={hourglass} slot="start" />
-              {!isOnline ? 'Du bist offline' : `Warteliste offen (${(eventData as any).waitlist_count || 0}/${eventData.max_waitlist_size || 0})`}
+              {!isOnline ? 'Du bist offline' : `Warteliste offen (${eventData.waitlist_count || 0}/${eventData.max_waitlist_size || 0})`}
             </IonButton>
           ) : (
             <IonButton

@@ -34,29 +34,14 @@ import {
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
-
-interface User {
-  id: number;
-  username: string;
-  email?: string;
-  display_name: string;
-  role_title?: string; // Funktionsbeschreibung z.B. "Pastor", "Diakonin"
-  is_active: boolean;
-  last_login_at?: string;
-  created_at: string;
-  updated_at: string;
-  role_name: string;
-  role_display_name: string;
-  assigned_jahrgaenge_count: number;
-  can_edit?: boolean;
-}
+import { AdminUser } from '../../types/user';
 
 interface UsersViewProps {
-  users: User[];
+  users: AdminUser[];
   onUpdate: () => void;
   onAddUserClick: () => void;
-  onSelectUser: (user: User) => void;
-  onDeleteUser: (user: User) => void;
+  onSelectUser: (user: AdminUser) => void;
+  onDeleteUser: (user: AdminUser) => void;
 }
 
 const UsersView: React.FC<UsersViewProps> = ({

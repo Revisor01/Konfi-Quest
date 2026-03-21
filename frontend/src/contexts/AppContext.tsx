@@ -9,6 +9,7 @@ import { PushNotifications } from '@capacitor/push-notifications';
 import { writeQueue } from '../services/writeQueue';
 import { offlineCache } from '../services/offlineCache';
 import { BackgroundTask } from '@capawesome/capacitor-background-task';
+import { BaseUser } from '../types/user';
 
 // FCM Token wird über Window Events empfangen (siehe AppDelegate.swift)
 
@@ -63,41 +64,25 @@ const sendTokenToServer = async (token: string) => {
   }
 };
 
-interface User {
-  id: number;
-  type: 'admin' | 'konfi' | 'teamer' | 'user';
-  display_name: string;
-  username?: string;
-  email?: string;
-  organization?: string;
-  organization_id?: number;
-  roles?: string[];
-  role_name?: string;
-  jahrgang?: string;
-  is_super_admin?: boolean;
-  // permissions entfernt - jetzt rollen-basiert (role_name)
-}
-
 interface AppContextType {
-  user: User | null;
+  user: BaseUser | null;
   loading: boolean;
   error: string;
   success: string;
   isOnline: boolean;
   pushNotificationsPermission: string;
-  setUser: (user: User | null) => void;
+  setUser: (user: BaseUser | null) => void;
   setError: (error: string) => void;
   setSuccess: (success: string) => void;
   clearMessages: () => void;
   requestPushPermissions: () => Promise<void>;
-  // hasPermission entfernt - jetzt rollen-basiert (user.role_name prüfen)
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(getUser());
+  const [user, setUser] = useState<BaseUser | null>(getUser());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');

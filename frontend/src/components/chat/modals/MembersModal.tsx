@@ -39,6 +39,7 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import { ChatUser } from '../../../types/user';
 
 interface Participant {
   user_id: number;
@@ -49,17 +50,6 @@ interface Participant {
   jahrgang_id?: number;
   jahrgang_name?: string;
   joined_at: string;
-}
-
-interface User {
-  id: number;
-  name?: string;
-  display_name?: string;
-  type: 'admin' | 'konfi';
-  jahrgang?: string;
-  jahrgang_name?: string;
-  role_title?: string;
-  role_description?: string;
 }
 
 interface MembersModalProps {
@@ -81,7 +71,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
   const pageRef = useRef<HTMLElement>(null);
 
   const [participants, setParticipants] = useState<Participant[]>([]);
-  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [allUsers, setAllUsers] = useState<ChatUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [showAddMode, setShowAddMode] = useState(false);
@@ -115,7 +105,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
         api.get('/users').catch(() => ({ data: [] }))
       ]);
 
-      const allUsers: User[] = [
+      const allUsers: ChatUser[] = [
         ...konfisRes.data.map((konfi: any) => ({
           ...konfi,
           type: 'konfi' as const,
@@ -170,7 +160,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
   // Sortierte Teilnehmer
   const sortedParticipants = sortUsers(participants);
 
-  const handleUserToggle = (user: User) => {
+  const handleUserToggle = (user: ChatUser) => {
     const userId = `${user.type}-${user.id}`;
     const newSelected = new Set(selectedUsers);
 
@@ -244,7 +234,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
     onClose();
   };
 
-  const getUserDisplayName = (user: User | Participant) => {
+  const getUserDisplayName = (user: ChatUser | Participant) => {
     if ('display_name' in user) {
       return user.name || user.display_name || 'Unbekannt';
     }
@@ -255,7 +245,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
   const canManageMembers = user?.type === 'admin' && isGroupChat;
 
   // Rolle/Funktion ermitteln (für Eselsohr)
-  const getRoleText = (targetUser: User | Participant) => {
+  const getRoleText = (targetUser: ChatUser | Participant) => {
     const isAdmin = 'user_type' in targetUser
       ? targetUser.user_type === 'admin'
       : targetUser.type === 'admin';
@@ -277,7 +267,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
   };
 
   // Jahrgang ermitteln (für Meta-Zeile)
-  const getJahrgang = (targetUser: User | Participant) => {
+  const getJahrgang = (targetUser: ChatUser | Participant) => {
     if ('jahrgang_name' in targetUser && targetUser.jahrgang_name) {
       return targetUser.jahrgang_name;
     }
@@ -289,7 +279,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
 
   // Render User Item - mit CSS-Klassen
   const renderUserItem = (
-    targetUser: User | Participant,
+    targetUser: ChatUser | Participant,
     isSelectable: boolean,
     isSelected: boolean,
     onToggle?: () => void

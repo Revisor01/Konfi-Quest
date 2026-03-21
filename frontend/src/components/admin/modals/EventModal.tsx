@@ -31,49 +31,7 @@ import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
-
-interface Event {
-  id: number;
-  name: string;
-  description?: string;
-  event_date: string;
-  event_end_time?: string;
-  location?: string;
-  points: number;
-  point_type?: 'gottesdienst' | 'gemeinde';
-  category?: string;
-  categories?: Category[];
-  jahrgaenge?: Jahrgang[];
-  type: string;
-  max_participants: number;
-  registration_opens_at?: string;
-  registration_closes_at?: string;
-  has_timeslots?: boolean;
-  mandatory?: boolean;
-  bring_items?: string;
-  checkin_window?: number;
-  teamer_needed?: boolean;
-  teamer_only?: boolean;
-}
-
-interface Jahrgang {
-  id: number;
-  name: string;
-}
-
-interface Timeslot {
-  id?: number;
-  start_time: string;
-  end_time: string;
-  max_participants: number;
-}
-
-interface Category {
-  id: number;
-  name: string;
-  description?: string;
-  type: 'activity' | 'event' | 'both';
-}
+import { Event, Category, Timeslot, Jahrgang } from '../../../types/event';
 
 interface EventModalProps {
   event?: Event | null;
@@ -192,19 +150,19 @@ const EventModal: React.FC<EventModalProps> = ({
         registration_opens_at: utcToLocalISO(event.registration_opens_at || ''),
         registration_closes_at: utcToLocalISO(event.registration_closes_at || ''),
         has_timeslots: event.has_timeslots || false,
-        waitlist_enabled: (event as any).waitlist_enabled !== undefined ? (event as any).waitlist_enabled : true,
-        max_waitlist_size: (event as any).max_waitlist_size || 3,
-        is_series: (event as any).is_series || false,
+        waitlist_enabled: event.waitlist_enabled !== undefined ? event.waitlist_enabled : true,
+        max_waitlist_size: event.max_waitlist_size || 3,
+        is_series: event.is_series || false,
         series_count: 1,
         series_interval: 'week',
-        mandatory: (event as any).mandatory || false,
-        bring_items: (event as any).bring_items || '',
-        checkin_window: (event as any).checkin_window || 30
+        mandatory: event.mandatory || false,
+        bring_items: event.bring_items || '',
+        checkin_window: event.checkin_window || 30
       });
       // Teamer-Zugang aus Event-Daten ableiten
-      if ((event as any).teamer_only) {
+      if (event.teamer_only) {
         setTeamerAccess('teamer_only');
-      } else if ((event as any).teamer_needed) {
+      } else if (event.teamer_needed) {
         setTeamerAccess('teamer_needed');
       } else {
         setTeamerAccess('normal');

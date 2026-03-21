@@ -17,6 +17,7 @@ import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import DashboardView from '../views/DashboardView';
 import PointsHistoryModal from '../modals/PointsHistoryModal';
+import { Event } from '../../../types/event';
 
 interface PointConfig {
   gottesdienst_enabled: boolean;
@@ -55,17 +56,7 @@ interface DashboardData {
   dashboard_config?: DashboardConfig;
 }
 
-interface Event {
-  id: number;
-  title: string;
-  event_date: string;
-  date?: string;
-  start_time?: string;
-  location?: string;
-  registered: boolean;
-  is_registered?: boolean;
-  booking_status?: string;
-}
+// Event-Typ importiert aus types/event
 
 interface BadgeStats {
   totalAvailable: number;

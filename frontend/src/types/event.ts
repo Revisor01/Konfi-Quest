@@ -40,8 +40,8 @@ export interface Event {
   max_participants: number;
   registration_opens_at?: string;
   registration_closes_at?: string;
-  registered_count?: number;
-  registration_status?: 'upcoming' | 'open' | 'closed' | 'cancelled';
+  registered_count: number;
+  registration_status: 'upcoming' | 'open' | 'closed' | 'cancelled';
   created_at?: string;
   is_registered?: boolean;
   registered?: boolean;
@@ -77,6 +77,7 @@ export interface Event {
   series_id?: number;
   // Admin-spezifisch
   pending_bookings_count?: number;
+  jahrgang_ids?: string;
   jahrgang_names?: string;
   jahrgaenge?: Jahrgang[];
   material_count?: number;

@@ -59,40 +59,7 @@ import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import QRScannerModal from '../../konfi/modals/QRScannerModal';
 import TeamerMaterialDetailPage from './TeamerMaterialDetailPage';
-
-interface Category {
-  id: number;
-  name: string;
-}
-
-interface Event {
-  id: number;
-  name: string;
-  description?: string;
-  event_date: string;
-  event_end_time?: string;
-  location?: string;
-  location_maps_url?: string;
-  points: number;
-  categories?: Category[];
-  category_names?: string;
-  type: string;
-  max_participants: number;
-  registration_opens_at?: string;
-  registration_closes_at?: string;
-  registered_count: number;
-  registration_status: 'upcoming' | 'open' | 'closed' | 'cancelled';
-  is_registered?: boolean;
-  can_register?: boolean;
-  attendance_status?: 'present' | 'absent' | null;
-  booking_status?: 'confirmed' | 'waitlist' | 'pending' | 'opted_out' | null;
-  mandatory?: boolean;
-  bring_items?: string;
-  teamer_needed?: boolean;
-  teamer_only?: boolean;
-  teamer_count?: number;
-  material_count?: number;
-}
+import { Event } from '../../../types/event';
 
 const TeamerEventsPage: React.FC = () => {
   const { user, setSuccess, setError } = useApp();

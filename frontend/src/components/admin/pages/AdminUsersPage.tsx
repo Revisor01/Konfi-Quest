@@ -22,34 +22,21 @@ import { CACHE_TTL } from '../../../services/offlineCache';
 import UsersView from '../UsersView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import UserManagementModal from '../modals/UserManagementModal';
-
-interface User {
-  id: number;
-  username: string;
-  email?: string;
-  display_name: string;
-  is_active: boolean;
-  last_login_at?: string;
-  created_at: string;
-  updated_at: string;
-  role_name: string;
-  role_display_name: string;
-  assigned_jahrgaenge_count: number;
-}
+import { AdminUser } from '../../../types/user';
 
 const AdminUsersPage: React.FC = () => {
   const { setSuccess, setError, user, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-users');
   
   // Offline-Query: Users
-  const { data: users, loading, refresh: refreshUsers } = useOfflineQuery<User[]>(
+  const { data: users, loading, refresh: refreshUsers } = useOfflineQuery<AdminUser[]>(
     'admin:users:' + user?.organization_id,
     async () => { const res = await api.get('/users'); return res.data; },
     { ttl: CACHE_TTL.KONFIS }
   );
   
   // Modal state
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [modalUserId, setModalUserId] = useState<number | null>(null);
 
   // Alert Hook für Bestätigungsdialoge
@@ -84,7 +71,7 @@ const AdminUsersPage: React.FC = () => {
     };
   }, [refreshUsers]);
 
-  const handleDeleteUser = async (userToDelete: User) => {
+  const handleDeleteUser = async (userToDelete: AdminUser) => {
     if (!isOnline) return;
     presentAlert({
       header: 'Benutzer löschen',
@@ -112,7 +99,7 @@ const AdminUsersPage: React.FC = () => {
     });
   };
 
-  const handleSelectUser = (user: User) => {
+  const handleSelectUser = (user: AdminUser) => {
     setSelectedUser(user);
     setModalUserId(user.id);
     presentUserModalHook({
