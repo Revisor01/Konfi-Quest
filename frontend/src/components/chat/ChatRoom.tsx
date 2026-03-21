@@ -491,50 +491,113 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     if (!messageText.trim() && !selectedFile) return;
     if (!room) return;
 
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      if (messageText.trim()) {
-        formData.append('content', messageText.trim());
-      }
-      if (selectedFile) {
-        formData.append('file', selectedFile);
-      }
-      // Reply-Referenz hinzufügen wenn vorhanden
-      if (replyToMessage) {
-        formData.append('reply_to', replyToMessage.id.toString());
-      }
+    const clientId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const localId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const content = messageText.trim();
+    const file = selectedFile;
+    const currentReplyTo = replyToMessage;
 
+    // Optimistic UI: Nachricht sofort in messages-State einfuegen
+    const optimisticMsg: Message = {
+      id: -Date.now(),
+      content: content || (file ? file.name : ''),
+      sender_id: user?.id ?? 0,
+      sender_name: user?.display_name ?? '',
+      sender_type: (user?.role_name === 'konfi' ? 'konfi' : 'admin') as 'admin' | 'konfi',
+      created_at: new Date().toISOString(),
+      message_type: file ? 'image' : 'text',
+      file_name: file?.name,
+      queueStatus: 'pending',
+      localId,
+    };
 
-      await api.post(`/chat/rooms/${room.id}/messages`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
+    // UI sofort aktualisieren
+    setMessages(prev => [...prev, optimisticMsg]);
+    setMessageText('');
+    setReplyToMessage(null);
+    clearSelectedFile();
+    setShouldAutoScroll(true);
+    setTimeout(() => contentRef.current?.scrollToBottom(300), 100);
+
+    if (networkMonitor.isOnline) {
+      // Online: Normal senden
+      setUploading(true);
+      try {
+        const formData = new FormData();
+        if (content) formData.append('content', content);
+        if (file) formData.append('file', file);
+        if (currentReplyTo) formData.append('reply_to', currentReplyTo.id.toString());
+        formData.append('client_id', clientId);
+
+        await api.post(`/chat/rooms/${room.id}/messages`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+
+        // Optimistic msg wird durch WebSocket newMessage Event ersetzt
+        setTimeout(() => {
+          setMessages(prev => prev.filter(m => m.localId !== localId));
+        }, 2000);
+
+        if (room) markRoomAsRead();
+        setShouldAutoScroll(true);
+        await loadMessages();
+      } catch (err) {
+        // Bei Fehler: optimistic msg als error markieren
+        setMessages(prev => prev.map(m =>
+          m.localId === localId ? { ...m, queueStatus: 'error' as const } : m
+        ));
+      } finally {
+        setUploading(false);
+      }
+    } else {
+      // Offline: In Queue schreiben
+      let hasFileUpload = false;
+      const queueBody: Record<string, any> = { content, client_id: clientId };
+
+      if (file) {
+        // Bild lokal speichern
+        hasFileUpload = true;
+        try {
+          const reader = new FileReader();
+          const base64 = await new Promise<string>((resolve, reject) => {
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+          const fileName = `queue_${clientId}_${file.name}`;
+          await Filesystem.writeFile({
+            path: `queue-uploads/${fileName}`,
+            data: base64,
+            directory: Directory.Data,
+          });
+          queueBody._localFilePath = `queue-uploads/${fileName}`;
+          queueBody._fileName = file.name;
+          queueBody._fileType = file.type;
+        } catch (fileErr) {
+          console.error('Fehler beim lokalen Speichern der Datei:', fileErr);
+          setMessages(prev => prev.map(m =>
+            m.localId === localId ? { ...m, queueStatus: 'error' as const } : m
+          ));
+          return;
         }
+      }
+
+      if (currentReplyTo) queueBody.reply_to = currentReplyTo.id.toString();
+
+      await writeQueue.enqueue({
+        method: 'POST',
+        url: `/chat/rooms/${room.id}/messages`,
+        body: queueBody,
+        headers: { 'Content-Type': file ? 'multipart/form-data' : 'application/json' },
+        maxRetries: 5,
+        hasFileUpload,
+        metadata: {
+          type: 'chat',
+          clientId,
+          roomId: room.id,
+          label: 'Chat-Nachricht',
+        },
       });
-      // Force multipart/form-data content type for file uploads
-
-      setMessageText('');
-      setReplyToMessage(null); // Reset reply after sending
-      clearSelectedFile();
-
-      // Mark as read BEFORE loading messages to prevent badge increment
-      if (room) markRoomAsRead();
-      
-      // Force scroll to bottom after sending message
-      setShouldAutoScroll(true);
-      await loadMessages();
-      
-      // Ensure scroll to bottom after message is loaded
-      setTimeout(() => {
-        if (contentRef.current) {
-          contentRef.current.scrollToBottom(300);
-        }
-      }, 100);
-    } catch (err) {
-      setError('Fehler beim Senden der Nachricht');
- console.error('Error sending message:', err);
-    } finally {
-      setUploading(false);
     }
   };
 
