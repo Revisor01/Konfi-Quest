@@ -13,7 +13,8 @@ import {
   IonRefresher,
   IonRefresherContent,
   useIonModal,
-  useIonAlert
+  useIonAlert,
+  useIonActionSheet
 } from '@ionic/react';
 import {
   arrowBack,
@@ -159,6 +160,39 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
 
   // Hooks müssen vor conditional returns stehen!
   const [presentAlert] = useIonAlert();
+  const [presentActionSheet] = useIonActionSheet();
+
+  const handleRetryMessage = (message: Message) => {
+    presentActionSheet({
+      header: 'Nachricht fehlgeschlagen',
+      buttons: [
+        {
+          text: 'Erneut senden',
+          handler: () => {
+            // Phase 60 wird hier die Queue-Retry-Logik einhaengen
+            console.log('Retry message:', message.localId);
+          }
+        },
+        {
+          text: 'Nachricht l\u00f6schen',
+          role: 'destructive',
+          handler: () => {
+            // Phase 60 wird hier die Queue-Remove-Logik einhaengen
+            console.log('Delete queued message:', message.localId);
+          }
+        },
+        {
+          text: 'Abbrechen',
+          role: 'cancel'
+        }
+      ]
+    });
+  };
+
+  const handleDeleteQueuedMessage = (message: Message) => {
+    // Phase 60 wird hier die Queue-Remove-Logik einhaengen
+    console.log('Delete queued message:', message.localId);
+  };
 
   // Poll Modal mit useIonModal Hook (iOS Card Design)
   const [presentPollModalHook, dismissPollModalHook] = useIonModal(PollModal, {
@@ -958,6 +992,8 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
               onError={setError}
               onDeselectMessage={() => setSelectedMessage(null)}
               textareaRef={textareaRef}
+              onRetry={handleRetryMessage}
+              onDeleteQueued={handleDeleteQueuedMessage}
             />
           ))}
         </div>
