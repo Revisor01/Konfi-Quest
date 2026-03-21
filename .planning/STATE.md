@@ -51,7 +51,8 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 - Phase 66 added: Error Boundary und Sicherheitshärtung
 - Phase 67 added: Performance-Optimierung — Mega-Komponenten, Memoization, SELECT *, BackgroundService
 - Phase 68 added: Token-Refresh-System
-- Phase 69 added: Dependency-Upgrades — react-router-dom v6, qr-scanner native
+- Phase 69 removed: Dependency-Upgrades — Ionic 8 inkompatibel mit react-router v6/v7
+- Phase 69 added: Universeller Datei-Viewer — Fullscreen Zoom/Pan für Chat + Material
 
 ### Pending Todos
 
@@ -61,6 +62,7 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 
 - Research Flag: Phase 60 (Queue) — Socket.io + HTTP-Idempotency-Interaktion pruefen
 - Research Flag: Phase 62 (Sync) — updated_at Felder auf DB-Tabellen pruefen
+- Research Flag: Phase 69 (Datei-Viewer) — Library-Wahl (react-zoom-pan-pinch vs swiper vs eigene Loesung), Capacitor-Kompatibilitaet, FileViewerModal Refactor-Scope
 
 ## Session Continuity
 
