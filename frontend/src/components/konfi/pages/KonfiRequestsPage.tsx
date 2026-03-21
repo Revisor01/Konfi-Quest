@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -17,6 +17,8 @@ import { add, home, people } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import RequestsView from '../views/RequestsView';
@@ -39,12 +41,17 @@ interface ActivityRequest {
 }
 
 const KonfiRequestsPage: React.FC = () => {
-  const { setSuccess, setError } = useApp();
+  const { user, setSuccess, setError } = useApp();
   const { pageRef, presentingElement } = useModalPage('konfi-requests');
   const [presentAlert] = useIonAlert();
 
-  const [requests, setRequests] = useState<ActivityRequest[]>([]);
-  const [loading, setLoading] = useState(true);
+  // --- useOfflineQuery: Requests ---
+  const { data: requests, loading, refresh } = useOfflineQuery<ActivityRequest[]>(
+    'konfi:requests:' + user?.id,
+    () => api.get('/konfi/requests').then(r => r.data),
+    { ttl: CACHE_TTL.REQUESTS }
+  );
+
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [selectedRequest, setSelectedRequest] = useState<ActivityRequest | null>(null);
 
@@ -54,7 +61,7 @@ const KonfiRequestsPage: React.FC = () => {
       onClose: () => dismissRequestModal(),
       onSuccess: () => {
         dismissRequestModal();
-        loadRequests();
+        refresh();
       }
     }
   );
@@ -75,30 +82,8 @@ const KonfiRequestsPage: React.FC = () => {
     }
   );
 
-  // Memoized refresh function for live updates
-  const refreshRequests = useCallback(() => {
-    loadRequests();
-  }, []);
-
   // Subscribe to live updates for requests
-  useLiveRefresh('requests', refreshRequests);
-
-  useEffect(() => {
-    loadRequests();
-  }, []);
-
-  const loadRequests = async () => {
-    setLoading(true);
-    try {
-      const response = await api.get('/konfi/requests');
-      setRequests(response.data);
-    } catch (err) {
-      setError('Fehler beim Laden der Aktivitäten');
- console.error('Error loading requests:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useLiveRefresh('requests', refresh);
 
   const handleAddRequest = () => {
     presentRequestModal({
@@ -148,15 +133,16 @@ const KonfiRequestsPage: React.FC = () => {
   };
 
   const getFilteredRequests = () => {
+    const allRequests = requests || [];
     switch (activeTab) {
       case 'pending':
-        return requests.filter(r => r.status === 'pending');
+        return allRequests.filter(r => r.status === 'pending');
       case 'approved':
-        return requests.filter(r => r.status === 'approved');
+        return allRequests.filter(r => r.status === 'approved');
       case 'rejected':
-        return requests.filter(r => r.status === 'rejected');
+        return allRequests.filter(r => r.status === 'rejected');
       default:
-        return requests;
+        return allRequests;
     }
   };
 
@@ -181,7 +167,7 @@ const KonfiRequestsPage: React.FC = () => {
             try {
               await api.delete(`/konfi/requests/${request.id}`);
               setSuccess('Antrag erfolgreich gelöscht');
-              loadRequests();
+              refresh();
             } catch (error: any) {
               setError(error.response?.data?.error || 'Fehler beim Löschen des Antrags');
             }
@@ -204,7 +190,7 @@ const KonfiRequestsPage: React.FC = () => {
           </IonButtons>
         </IonToolbar>
       </IonHeader>
-      
+
       <IonContent className="app-gradient-background" fullscreen>
         <IonHeader collapse="condense">
           <IonToolbar className="app-condense-toolbar">
@@ -214,8 +200,8 @@ const KonfiRequestsPage: React.FC = () => {
           </IonToolbar>
         </IonHeader>
 
-        <IonRefresher slot="fixed" onIonRefresh={(e) => {
-          loadRequests();
+        <IonRefresher slot="fixed" onIonRefresh={async (e) => {
+          await refresh();
           e.detail.complete();
         }}>
           <IonRefresherContent></IonRefresherContent>

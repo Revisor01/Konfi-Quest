@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React from 'react';
 import {
   IonPage,
   IonHeader,
@@ -11,6 +11,8 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import ProfileView from '../views/ProfileView';
@@ -66,36 +68,18 @@ interface ProgressOverview {
 }
 
 const KonfiProfilePage: React.FC = () => {
-  const { setError } = useApp();
+  const { user, setError } = useApp();
   const { pageRef, presentingElement } = useModalPage('profile');
 
-  const [profile, setProfile] = useState<KonfiProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // Memoized refresh function for live updates
-  const refreshProfile = useCallback(() => {
-    loadProfile();
-  }, []);
+  // --- useOfflineQuery: Profile ---
+  const { data: profile, loading, refresh } = useOfflineQuery<KonfiProfile>(
+    'konfi:profile:' + user?.id,
+    () => api.get('/konfi/profile').then(r => r.data),
+    { ttl: CACHE_TTL.PROFILE }
+  );
 
   // Subscribe to live updates for points and badges
-  useLiveRefresh(['points', 'badges'], refreshProfile);
-
-  useEffect(() => {
-    loadProfile();
-  }, []);
-
-  const loadProfile = async () => {
-    setLoading(true);
-    try {
-      const response = await api.get('/konfi/profile');
-      setProfile(response.data);
-    } catch (err) {
-      setError('Fehler beim Laden des Profils');
- console.error('Error loading profile:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useLiveRefresh(['points', 'badges'], refresh);
 
   if (loading) {
     return <LoadingSpinner message="Profil wird geladen..." />;
@@ -120,7 +104,7 @@ const KonfiProfilePage: React.FC = () => {
           <IonTitle>Profil</IonTitle>
         </IonToolbar>
       </IonHeader>
-      
+
       <IonContent className="app-gradient-background" fullscreen>
         <IonHeader collapse="condense">
           <IonToolbar className="app-condense-toolbar">
@@ -128,14 +112,14 @@ const KonfiProfilePage: React.FC = () => {
           </IonToolbar>
         </IonHeader>
 
-        <IonRefresher slot="fixed" onIonRefresh={(e) => {
-          loadProfile();
+        <IonRefresher slot="fixed" onIonRefresh={async (e) => {
+          await refresh();
           e.detail.complete();
         }}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 
-        <ProfileView profile={profile} onReload={loadProfile} presentingElement={presentingElement || null} pageRef={pageRef} />
+        <ProfileView profile={profile} onReload={refresh} presentingElement={presentingElement || null} pageRef={pageRef} />
       </IonContent>
     </IonPage>
   );

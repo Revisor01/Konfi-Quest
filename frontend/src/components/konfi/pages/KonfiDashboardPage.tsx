@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -11,6 +11,8 @@ import {
 } from '@ionic/react';
 import { useApp } from '../../../contexts/AppContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import DashboardView from '../views/DashboardView';
@@ -62,6 +64,7 @@ interface Event {
   location?: string;
   registered: boolean;
   is_registered?: boolean;
+  booking_status?: string;
 }
 
 interface BadgeStats {
@@ -89,14 +92,97 @@ interface DailyVerse {
 
 const KonfiDashboardPage: React.FC = () => {
   const { user, setError } = useApp();
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-  const [dailyVerse, setDailyVerse] = useState<DailyVerse | null>(null);
   const [showLehrtext, setShowLehrtext] = useState(false);
-  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
-  const [badgeStats, setBadgeStats] = useState<BadgeStats>({ totalAvailable: 0, totalEarned: 0, secretAvailable: 0, secretEarned: 0 });
-  const [allBadges, setAllBadges] = useState<AllBadgesData>({ available: [], earned: [] });
-  const [loading, setLoading] = useState(true);
   const pageRef = useRef<HTMLElement>(null);
+
+  // --- useOfflineQuery: Dashboard ---
+  const { data: dashboardData, loading: dashLoading, refresh: refreshDashboard } = useOfflineQuery<DashboardData>(
+    'konfi:dashboard:' + user?.id,
+    () => api.get('/konfi/dashboard').then(r => r.data),
+    { ttl: CACHE_TTL.DASHBOARD }
+  );
+
+  // --- useOfflineQuery: Tageslosung ---
+  const { data: dailyVerse, refresh: refreshVerse } = useOfflineQuery<DailyVerse>(
+    'konfi:tageslosung:' + new Date().toISOString().split('T')[0],
+    async () => {
+      try {
+        const response = await api.get('/konfi/tageslosung');
+
+        if (response.data.success && response.data.data) {
+          const apiData = response.data.data;
+          const useLosung = Math.random() > 0.5;
+          const cleanText = (text: string) => text?.replace(/\[|\]/g, '') || '';
+
+          setShowLehrtext(useLosung);
+
+          return {
+            losungstext: cleanText(apiData.losung?.text) || "Der HERR ist mein Hirte, mir wird nichts mangeln.",
+            losungsvers: apiData.losung?.reference || "Psalm 23,1",
+            lehrtext: cleanText(apiData.lehrtext?.text) || "Jesus spricht: Ich bin der gute Hirte.",
+            lehrtextvers: apiData.lehrtext?.reference || "Johannes 10,11",
+            date: apiData.date || new Date().toLocaleDateString('de-DE', { weekday: 'long' }),
+            translation: apiData.translation?.name || 'Lutherbibel 2017',
+            fallback: response.data.fallback || false,
+            cached: response.data.cached || false
+          };
+        }
+        throw new Error('Invalid API response');
+      } catch (err) {
+        console.warn('Tageslosung konnte nicht geladen werden, verwende Fallback:', err);
+        setShowLehrtext(Math.random() > 0.5);
+        return {
+          losungstext: "Der HERR ist mein Hirte, mir wird nichts mangeln.",
+          losungsvers: "Psalm 23,1",
+          lehrtext: "Jesus spricht: Ich bin der gute Hirte. Der gute Hirte lässt sein Leben für die Schafe.",
+          lehrtextvers: "Johannes 10,11",
+          date: new Date().toLocaleDateString('de-DE', { weekday: 'long' }),
+          translation: 'Lutherbibel 2017 (Offline)',
+          fallback: true
+        };
+      }
+    },
+    { ttl: CACHE_TTL.TAGESLOSUNG }
+  );
+
+  // --- useOfflineQuery: Events ---
+  const { data: upcomingEvents, refresh: refreshEvents } = useOfflineQuery<Event[]>(
+    'konfi:events:' + user?.id,
+    () => api.get('/konfi/events').then(r => r.data),
+    {
+      ttl: CACHE_TTL.EVENTS,
+      select: (events) => events.filter((event: any) =>
+        new Date(event.event_date || event.date) >= new Date() &&
+        (event.is_registered || event.booking_status === 'confirmed' || event.booking_status === 'waitlist')
+      )
+    }
+  );
+
+  // --- useOfflineQuery: Badges ---
+  const { data: badgesRaw, refresh: refreshBadges } = useOfflineQuery<any>(
+    'konfi:badges:' + user?.id,
+    () => api.get('/konfi/badges').then(r => r.data),
+    { ttl: CACHE_TTL.BADGES }
+  );
+
+  // Derived state from badges
+  const badgeStats: BadgeStats = (() => {
+    if (!badgesRaw) return { totalAvailable: 0, totalEarned: 0, secretAvailable: 0, secretEarned: 0 };
+    const { available, earned, stats } = badgesRaw;
+    const visibleEarned = earned?.filter((badge: any) => !badge.is_hidden).length || 0;
+    const visibleTotal = stats?.totalVisible || 0;
+    const secretEarned = earned?.filter((badge: any) => badge.is_hidden === true).length || 0;
+    const secretTotal = stats?.totalSecret || 0;
+    return { totalAvailable: visibleTotal, totalEarned: visibleEarned, secretAvailable: secretTotal, secretEarned: secretEarned };
+  })();
+
+  const allBadges: AllBadgesData = {
+    available: badgesRaw?.available || [],
+    earned: badgesRaw?.earned || []
+  };
+
+  // Loading nur vom Dashboard-Query bestimmt
+  const loading = dashLoading;
 
   // Points History Modal
   const [presentPointsHistoryModal, dismissPointsHistoryModal] = useIonModal(PointsHistoryModal, {
@@ -110,137 +196,18 @@ const KonfiDashboardPage: React.FC = () => {
     });
   };
 
-
   // Memoized refresh function for live updates
   const refreshAllData = useCallback(() => {
-    loadDashboardData();
-    loadUpcomingEvents();
-    loadBadgeStats();
-  }, []);
+    refreshDashboard();
+    refreshEvents();
+    refreshBadges();
+  }, [refreshDashboard, refreshEvents, refreshBadges]);
 
   // Subscribe to live updates for dashboard and events
   useLiveRefresh(['dashboard', 'events', 'badges'], refreshAllData);
 
-  useEffect(() => {
-    loadDashboardData();
-    loadDailyVerse();
-    loadUpcomingEvents();
-    loadBadgeStats();
-  }, []);
-
-  const loadDashboardData = async () => {
-    setLoading(true);
-    try {
-      const dashboardResponse = await api.get('/konfi/dashboard');
-      setDashboardData(dashboardResponse.data);
-    } catch (err) {
-      setError('Fehler beim Laden der Dashboard-Daten');
-      console.error('Error loading dashboard:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadDailyVerse = async () => {
-    try {
-      // Echte Tageslosung von API laden
-      const response = await api.get('/konfi/tageslosung');
-      
-      if (response.data.success && response.data.data) {
-        const apiData = response.data.data;
-        
-        // Random zwischen Losung und Lehrtext wählen
-        const useLosung = Math.random() > 0.5;
-        
-        // Entferne eckige Klammern aus den Texten
-        const cleanText = (text: string) => text?.replace(/\[|\]/g, '') || '';
-        
-        setDailyVerse({
-          losungstext: cleanText(apiData.losung?.text) || "Der HERR ist mein Hirte, mir wird nichts mangeln.",
-          losungsvers: apiData.losung?.reference || "Psalm 23,1",
-          lehrtext: cleanText(apiData.lehrtext?.text) || "Jesus spricht: Ich bin der gute Hirte.",
-          lehrtextvers: apiData.lehrtext?.reference || "Johannes 10,11",
-          date: apiData.date || new Date().toLocaleDateString('de-DE', { weekday: 'long' }),
-          translation: apiData.translation?.name || 'Lutherbibel 2017',
-          fallback: response.data.fallback || false,
-          cached: response.data.cached || false
-        });
-        
-        setShowLehrtext(useLosung);
-      } else {
-        throw new Error('Invalid API response');
-      }
-    } catch (err) {
- console.warn('Tageslosung konnte nicht geladen werden, verwende Fallback:', err);
-      
-      // Fallback-Daten wenn API nicht funktioniert
-      const fallbackVerses = [
-        {
-          losungstext: "Der HERR ist mein Hirte, mir wird nichts mangeln.",
-          losungsvers: "Psalm 23,1",
-          lehrtext: "Jesus spricht: Ich bin der gute Hirte. Der gute Hirte lässt sein Leben für die Schafe.",
-          lehrtextvers: "Johannes 10,11"
-        }
-      ];
-      
-      const randomVerse = fallbackVerses[0];
-      setShowLehrtext(Math.random() > 0.5);
-      
-      setDailyVerse({
-        ...randomVerse,
-        date: new Date().toLocaleDateString('de-DE', { weekday: 'long' }),
-        translation: 'Lutherbibel 2017 (Offline)',
-        fallback: true
-      });
-    }
-  };
-
-  const loadUpcomingEvents = async () => {
-    try {
-      const response = await api.get('/konfi/events');
-      // Show ALL upcoming events where konfi is registered or on waitlist (no limit!)
-      const registeredEvents = response.data
-        .filter((event: any) =>
-          new Date(event.event_date || event.date) >= new Date() &&
-          (event.is_registered || event.booking_status === 'confirmed' || event.booking_status === 'waitlist')
-        );
-      setUpcomingEvents(registeredEvents);
-    } catch (err) {
- console.error('Error loading events:', err);
-      // Events nicht kritisch für Dashboard
-    }
-  };
-
-  const loadBadgeStats = async () => {
-    try {
-      const response = await api.get('/konfi/badges');
-      const { available, earned, stats } = response.data;
-
-      // Speichere alle Badges für Dashboard-Anzeige
-      setAllBadges({ available: available || [], earned: earned || [] });
-
-      // Count visible badges earned vs available
-      const visibleEarned = earned.filter((badge: any) => !badge.is_hidden).length;
-      const visibleTotal = stats?.totalVisible || 0;
-
-      // Count secret badges earned vs total secret
-      const secretEarned = earned.filter((badge: any) => badge.is_hidden === true).length;
-      const secretTotal = stats?.totalSecret || 0;
-
-      setBadgeStats({
-        totalAvailable: visibleTotal,
-        totalEarned: visibleEarned,
-        secretAvailable: secretTotal,
-        secretEarned: secretEarned
-      });
-    } catch (err) {
- console.error('Error loading badge stats:', err);
-      // Badge stats nicht kritisch für Dashboard
-    }
-  };
-
   const handleRefresh = async (event: CustomEvent) => {
-    await Promise.all([loadDashboardData(), loadDailyVerse(), loadUpcomingEvents(), loadBadgeStats()]);
+    await Promise.all([refreshDashboard(), refreshVerse(), refreshEvents(), refreshBadges()]);
     event.detail.complete();
   };
 
@@ -310,7 +277,7 @@ const KonfiDashboardPage: React.FC = () => {
           dailyVerse={dailyVerse}
           badgeStats={badgeStats}
           allBadges={allBadges}
-          upcomingEvents={upcomingEvents}
+          upcomingEvents={upcomingEvents || []}
           targetGottesdienst={targetGottesdienst}
           targetGemeinde={targetGemeinde}
           gottesdienstEnabled={gottesdienstEnabled}

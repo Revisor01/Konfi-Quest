@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -11,6 +11,8 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import api from '../../../services/api';
 import BadgesView from '../views/BadgesView';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -45,139 +47,113 @@ interface BadgeData {
 const KonfiBadgesPage: React.FC = () => {
   const { user, setError } = useApp();
   const { pageRef, presentingElement } = useModalPage('konfi-badges');
-  const [badges, setBadges] = useState<Badge[]>([]);
-  const [badgeStats, setBadgeStats] = useState<{totalVisible: number, totalSecret: number}>({totalVisible: 0, totalSecret: 0});
-  const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState('alle');
 
-  // Memoized refresh function for live updates
-  const refreshBadges = useCallback(() => {
-    loadBadges();
-  }, []);
+  // --- useOfflineQuery: Badges ---
+  const { data: badgeData, loading: badgesLoading, refresh: refreshBadges } = useOfflineQuery<BadgeData>(
+    'konfi:badges:' + user?.id,
+    () => api.get('/konfi/badges').then(r => r.data),
+    { ttl: CACHE_TTL.BADGES }
+  );
+
+  // --- useOfflineQuery: Profile (fuer Punkte-Progress) ---
+  const { data: konfiData, refresh: refreshProfile } = useOfflineQuery<any>(
+    'konfi:profile:' + user?.id,
+    () => api.get('/konfi/profile').then(r => r.data),
+    { ttl: CACHE_TTL.PROFILE }
+  );
+
+  const loading = badgesLoading;
 
   // Subscribe to live updates for badges
-  useLiveRefresh('badges', refreshBadges);
+  const refreshAll = () => {
+    refreshBadges();
+    refreshProfile();
+  };
+  useLiveRefresh('badges', refreshAll);
 
+  // Mark badges as seen (Write-Aktion, nicht cachen)
   useEffect(() => {
-    loadBadges();
-  }, []);
-
-  const loadBadges = async () => {
-    setLoading(true);
-    try {
-      if (!user?.id) {
-        throw new Error('Keine Benutzer-ID verfügbar');
-      }
-
-      // Get current konfi data for progress calculation
-      const [badgesResponse, konfiResponse] = await Promise.all([
-        api.get(`/konfi/badges`),
-        api.get(`/konfi/profile`)
-      ]);
-
-      const badgeData: BadgeData = badgesResponse.data;
-      
-      // Save badge stats from API
-      if (badgeData.stats) {
-        setBadgeStats(badgeData.stats);
-      }
-      const konfiData = konfiResponse.data;
-      
-      // Punkte direkt aus konfi_profiles verwenden
-      // Backend liefert per COALESCE immer Werte (nie null)
-      // konfi_profiles enthält bereits Aktivitäts- + Event- + Bonus-Punkte (akkumuliert)
-      const currentGottesdienstPoints = konfiData.gottesdienst_points || 0;
-      const currentGemeindePoints = konfiData.gemeinde_points || 0;
-      const currentTotalPoints = konfiData.total_points || (currentGottesdienstPoints + currentGemeindePoints);
-
-      // Process ALL badges (available + earned) - show ALL badges for motivation
-      const allBadges = [...badgeData.available, ...badgeData.earned];
-      
-      // Remove duplicates and process
-      const uniqueBadges = allBadges.reduce((acc: any[], current: any) => {
-        const existingIndex = acc.findIndex(badge => badge.id === current.id);
-        if (existingIndex === -1) {
-          acc.push(current);
-        } else {
-          // If we already have this badge, prefer the earned version
-          if (current.earned && !acc[existingIndex].earned) {
-            acc[existingIndex] = current;
-          }
-        }
-        return acc;
-      }, []);
-      
-      const processedBadges: Badge[] = uniqueBadges
-        // Show ALL badges - even hidden ones for completionist motivation
-        .map((badge: any) => {
-          const isEarned = badgeData.earned.some((earned: any) => earned.id === badge.id);
-          const earnedBadge = badgeData.earned.find((earned: any) => earned.id === badge.id);
-          
-          // Use progress from backend if available, otherwise calculate
-          let progressPoints = badge.progress?.current || 0;
-          let progressPercentage = badge.progress?.percentage || 0;
-          
-          // If backend didn't provide progress, calculate basic ones
-          if (!badge.progress && !isEarned) {
-            if (badge.criteria_type === 'total_points') {
-              progressPoints = Math.min(currentTotalPoints, badge.criteria_value);
-              progressPercentage = (progressPoints / badge.criteria_value) * 100;
-            } else if (badge.criteria_type === 'gottesdienst_points') {
-              progressPoints = Math.min(currentGottesdienstPoints, badge.criteria_value);
-              progressPercentage = (progressPoints / badge.criteria_value) * 100;
-            } else if (badge.criteria_type === 'gemeinde_points') {
-              progressPoints = Math.min(currentGemeindePoints, badge.criteria_value);
-              progressPercentage = (progressPoints / badge.criteria_value) * 100;
-            } else if (badge.criteria_type === 'both_categories') {
-              // For both_categories, show progress as minimum of both
-              const gottesdienstProgress = Math.min(currentGottesdienstPoints, badge.criteria_value);
-              const gemeindeProgress = Math.min(currentGemeindePoints, badge.criteria_value);
-              progressPoints = Math.min(gottesdienstProgress, gemeindeProgress);
-              progressPercentage = (progressPoints / badge.criteria_value) * 100;
-            }
-          }
-          
-          return {
-            id: badge.id,
-            name: badge.name,
-            description: badge.description,
-            icon: badge.icon,
-            criteria_type: badge.criteria_type,
-            criteria_value: badge.criteria_value,
-            criteria_extra: badge.criteria_extra,
-            is_hidden: badge.is_hidden,
-            is_active: badge.is_active,
-            color: badge.color, // Include badge color
-            is_earned: isEarned,
-            earned_at: earnedBadge?.earned_at,
-            progress_points: progressPoints,
-            progress_percentage: progressPercentage
-          };
-        });
-
-      setBadges(processedBadges);
-
-      // Mark all badges as seen (removes TabBar badge)
+    if (badgeData) {
       const hasUnseenBadges = badgeData.earned.some((badge: any) => !badge.seen);
       if (hasUnseenBadges) {
-        try {
-          await api.post('/konfi/badges/mark-seen');
-        } catch (markError) {
- console.warn('Badges konnten nicht als gesehen markiert werden:', markError);
+        api.post('/konfi/badges/mark-seen').catch((markError) => {
+          console.warn('Badges konnten nicht als gesehen markiert werden:', markError);
+        });
+      }
+    }
+  }, [badgeData]);
+
+  // Derive processed badges from cached data
+  const badgeStats = badgeData?.stats || { totalVisible: 0, totalSecret: 0 };
+
+  const processedBadges: Badge[] = (() => {
+    if (!badgeData || !konfiData) return [];
+
+    // Punkte direkt aus konfi_profiles verwenden
+    const currentGottesdienstPoints = konfiData.gottesdienst_points || 0;
+    const currentGemeindePoints = konfiData.gemeinde_points || 0;
+    const currentTotalPoints = konfiData.total_points || (currentGottesdienstPoints + currentGemeindePoints);
+
+    // Process ALL badges (available + earned)
+    const allBadges = [...badgeData.available, ...badgeData.earned];
+
+    // Remove duplicates and process
+    const uniqueBadges = allBadges.reduce((acc: any[], current: any) => {
+      const existingIndex = acc.findIndex(badge => badge.id === current.id);
+      if (existingIndex === -1) {
+        acc.push(current);
+      } else {
+        if (current.earned && !acc[existingIndex].earned) {
+          acc[existingIndex] = current;
+        }
+      }
+      return acc;
+    }, []);
+
+    return uniqueBadges.map((badge: any) => {
+      const isEarned = badgeData.earned.some((earned: any) => earned.id === badge.id);
+      const earnedBadge = badgeData.earned.find((earned: any) => earned.id === badge.id);
+
+      let progressPoints = badge.progress?.current || 0;
+      let progressPercentage = badge.progress?.percentage || 0;
+
+      if (!badge.progress && !isEarned) {
+        if (badge.criteria_type === 'total_points') {
+          progressPoints = Math.min(currentTotalPoints, badge.criteria_value);
+          progressPercentage = (progressPoints / badge.criteria_value) * 100;
+        } else if (badge.criteria_type === 'gottesdienst_points') {
+          progressPoints = Math.min(currentGottesdienstPoints, badge.criteria_value);
+          progressPercentage = (progressPoints / badge.criteria_value) * 100;
+        } else if (badge.criteria_type === 'gemeinde_points') {
+          progressPoints = Math.min(currentGemeindePoints, badge.criteria_value);
+          progressPercentage = (progressPoints / badge.criteria_value) * 100;
+        } else if (badge.criteria_type === 'both_categories') {
+          const gottesdienstProgress = Math.min(currentGottesdienstPoints, badge.criteria_value);
+          const gemeindeProgress = Math.min(currentGemeindePoints, badge.criteria_value);
+          progressPoints = Math.min(gottesdienstProgress, gemeindeProgress);
+          progressPercentage = (progressPoints / badge.criteria_value) * 100;
         }
       }
 
-    } catch (err) {
-      setError('Fehler beim Laden der Badges');
- console.error('Error loading badges:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
-
-
+      return {
+        id: badge.id,
+        name: badge.name,
+        description: badge.description,
+        icon: badge.icon,
+        criteria_type: badge.criteria_type,
+        criteria_value: badge.criteria_value,
+        criteria_extra: badge.criteria_extra,
+        is_hidden: badge.is_hidden,
+        is_active: badge.is_active,
+        color: badge.color,
+        is_earned: isEarned,
+        earned_at: earnedBadge?.earned_at,
+        progress_points: progressPoints,
+        progress_percentage: progressPercentage
+      };
+    });
+  })();
 
   if (loading) {
     return <LoadingSpinner message="Badges werden geladen..." />;
@@ -190,29 +166,26 @@ const KonfiBadgesPage: React.FC = () => {
           <IonTitle>Badges</IonTitle>
         </IonToolbar>
       </IonHeader>
-      
+
       <IonContent className="app-gradient-background" fullscreen>
         <IonHeader collapse="condense">
           <IonToolbar className="app-condense-toolbar">
             <IonTitle size="large">Badges</IonTitle>
           </IonToolbar>
         </IonHeader>
-        
-        <IonRefresher slot="fixed" onIonRefresh={(e) => {
-          loadBadges();
+
+        <IonRefresher slot="fixed" onIonRefresh={async (e) => {
+          await Promise.all([refreshBadges(), refreshProfile()]);
           e.detail.complete();
         }}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 
-
-
-
         {loading ? (
           <LoadingSpinner message="Badges werden geladen..." />
         ) : (
-          <BadgesView 
-            badges={badges}
+          <BadgesView
+            badges={processedBadges}
             badgeStats={badgeStats}
             selectedFilter={selectedFilter}
             onFilterChange={setSelectedFilter}
