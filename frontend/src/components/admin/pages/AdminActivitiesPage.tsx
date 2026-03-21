@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useLayoutEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -68,19 +68,6 @@ const AdminActivitiesPage: React.FC = () => {
 
   // Subscribe to live updates for activities
   useLiveRefresh('activities', refreshActivities);
-
-  useEffect(() => {
-    // Event-Listener fuer Updates
-    const handleActivitiesUpdated = () => {
-      refreshActivities();
-    };
-
-    window.addEventListener('activities-updated', handleActivitiesUpdated);
-
-    return () => {
-      window.removeEventListener('activities-updated', handleActivitiesUpdated);
-    };
-  }, [refreshActivities]);
 
   const handleDeleteActivity = async (activity: Activity) => {
     if (!isOnline) return;

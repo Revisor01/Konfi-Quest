@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -75,19 +75,6 @@ const AdminActivityRequestsPage: React.FC = () => {
 
   // Subscribe to live updates for requests
   useLiveRefresh('requests', refreshRequests);
-
-  useEffect(() => {
-    // Event-Listener fuer Updates
-    const handleRequestsUpdated = () => {
-      refreshRequests();
-    };
-
-    window.addEventListener('activity-requests-updated', handleRequestsUpdated);
-
-    return () => {
-      window.removeEventListener('activity-requests-updated', handleRequestsUpdated);
-    };
-  }, [refreshRequests]);
 
   const handleResetRequest = async (request: ActivityRequest) => {
     const statusText = request.status === 'approved' ? 'genehmigten' : 'abgelehnten';

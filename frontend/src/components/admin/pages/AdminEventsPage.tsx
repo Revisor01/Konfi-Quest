@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
   IonPage,
@@ -95,19 +95,6 @@ const AdminEventsPage: React.FC = () => {
       return ids.includes(selectedJahrgang);
     });
   };
-
-  useEffect(() => {
-    // Event-Listener fuer Updates aus EventDetailView (legacy support)
-    const handleEventsUpdated = () => {
-      refreshAllEvents();
-    };
-
-    window.addEventListener('events-updated', handleEventsUpdated);
-
-    return () => {
-      window.removeEventListener('events-updated', handleEventsUpdated);
-    };
-  }, [refreshAllEvents]);
 
   // Get combined events for "Alle" tab (active + cancelled) - ohne Duplikate
   const getAllEvents = () => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
   IonPage,
@@ -51,19 +51,6 @@ const KonfiEventsPage: React.FC = () => {
 
   // Subscribe to live updates for events
   useLiveRefresh('events', refresh);
-
-  // Event-Listener für Updates aus EventDetailView (legacy support)
-  useEffect(() => {
-    const handleEventsUpdated = () => {
-      refresh();
-    };
-
-    window.addEventListener('events-updated', handleEventsUpdated);
-
-    return () => {
-      window.removeEventListener('events-updated', handleEventsUpdated);
-    };
-  }, [refresh]);
 
   // Get filtered events by tab
   const getFilteredEvents = () => {

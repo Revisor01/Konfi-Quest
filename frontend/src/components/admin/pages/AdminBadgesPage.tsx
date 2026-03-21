@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -79,19 +79,6 @@ const AdminBadgesPage: React.FC = () => {
 
   // Subscribe to live updates for badges
   useLiveRefresh('badges', refreshBadges);
-
-  useEffect(() => {
-    // Event-Listener fuer Updates
-    const handleBadgesUpdated = () => {
-      refreshBadges();
-    };
-
-    window.addEventListener('badges-updated', handleBadgesUpdated);
-
-    return () => {
-      window.removeEventListener('badges-updated', handleBadgesUpdated);
-    };
-  }, [refreshBadges]);
 
   const handleDeleteBadge = async (badge: Badge) => {
     if (!isOnline) return;

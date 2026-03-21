@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
   IonPage,
@@ -105,19 +105,6 @@ const AdminKonfisPage: React.FC = () => {
 
   // Subscribe to live updates for konfis
   useLiveRefresh('konfis', refreshAll);
-
-  useEffect(() => {
-    // Event-Listener fuer Updates aus KonfiDetailView
-    const handleKonfisUpdated = () => {
-      refreshAll();
-    };
-
-    window.addEventListener('konfis-updated', handleKonfisUpdated);
-
-    return () => {
-      window.removeEventListener('konfis-updated', handleKonfisUpdated);
-    };
-  }, [refreshAll]);
 
   const handleDeleteKonfi = async (konfi: Konfi) => {
     if (!isOnline) return;
