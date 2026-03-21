@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: App-Resilienz
 status: unknown
-stopped_at: Completed 60-01-PLAN.md (WriteQueue Infrastruktur)
-last_updated: "2026-03-21T09:59:01.493Z"
+stopped_at: Completed 60-03-PLAN.md (Konfi-Aktionen offline)
+last_updated: "2026-03-21T10:04:02.529Z"
 progress:
   total_phases: 15
   completed_phases: 5
   total_plans: 19
-  completed_plans: 16
+  completed_plans: 18
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-20)
 ## Current Position
 
 Phase: 60 (Queue-Kern + Konfi-Aktionen) — EXECUTING
-Plan: 2 of 4
+Plan: 4 of 4
 
 ## Accumulated Context
 
@@ -60,6 +60,9 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 59]: Action-Handler ohne Submit-Button haben if (\!isOnline) return; Guard
 - [Phase 60]: Lazy-Load In-Memory-Cache statt _initialized Pattern fuer WriteQueue
 - [Phase 60]: Transiente Fehler brechen Flush ab statt naechstes Item — verhindert Out-of-Order
+- [Phase 60]: crypto.randomUUID() statt uuid-Paket für clientId-Generierung
+- [Phase 60]: resolveLocalPhoto in writeQueue.ts für Zwei-Schritt Foto-Upload beim Flush
+- [Phase 60]: Pending Queue-Items als separate IonList-Sektion über RequestsView
 
 ### Roadmap Evolution
 
@@ -85,6 +88,6 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-03-21T09:59:01.490Z
-Stopped at: Completed 60-01-PLAN.md (WriteQueue Infrastruktur)
+Last session: 2026-03-21T10:03:55.244Z
+Stopped at: Completed 60-03-PLAN.md (Konfi-Aktionen offline)
 Resume file: None

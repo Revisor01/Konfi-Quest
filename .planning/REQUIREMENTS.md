@@ -79,9 +79,9 @@ Queue-faehige Aktionen werden bei Offline in eine persistente Queue geschrieben 
 
 - [ ] **QUE-K01**: Chat-Nachricht senden (Text) — Uhr-Icon an Nachricht
 - [ ] **QUE-K02**: Chat-Nachricht senden (mit Bild) — Bild lokal in Capacitor Filesystem, Upload nur im Vordergrund
-- [ ] **QUE-K03**: Aktivitaets-Antrag stellen (ohne Foto) — Uhr-Icon am Antrag in der Liste
-- [ ] **QUE-K04**: Aktivitaets-Antrag stellen (mit Foto) — Foto lokal, Upload nur im Vordergrund
-- [ ] **QUE-K05**: Opt-out bei Pflicht-Event mit Begruendung — Uhr-Icon am Event
+- [x] **QUE-K03**: Aktivitaets-Antrag stellen (ohne Foto) — Uhr-Icon am Antrag in der Liste
+- [x] **QUE-K04**: Aktivitaets-Antrag stellen (mit Foto) — Foto lokal, Upload nur im Vordergrund
+- [x] **QUE-K05**: Opt-out bei Pflicht-Event mit Begruendung — Uhr-Icon am Event
 
 #### Alle Rollen: Fire-and-Forget (5 Aktionen)
 
@@ -242,9 +242,9 @@ Deferred. Onboarding, Landing Website, Readme, Wiki.
 | OUI-13 | Phase 60 | Pending |
 | QUE-K01 | Phase 60 | Pending |
 | QUE-K02 | Phase 60 | Pending |
-| QUE-K03 | Phase 60 | Pending |
-| QUE-K04 | Phase 60 | Pending |
-| QUE-K05 | Phase 60 | Pending |
+| QUE-K03 | Phase 60 | Complete |
+| QUE-K04 | Phase 60 | Complete |
+| QUE-K05 | Phase 60 | Complete |
 | QUE-FF01 | Phase 60 | Pending |
 | QUE-FF02 | Phase 60 | Pending |
 | QUE-FF03 | Phase 60 | Pending |
