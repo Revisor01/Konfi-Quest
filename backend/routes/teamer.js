@@ -173,12 +173,15 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // TEAMER-BADGES
   // ====================================================================
 
-  // GET /teamer/badges - Alle verfügbaren Teamer-Badges mit earned-Status
+  // GET /teamer/badges - Alle verfügbaren Teamer-Badges mit earned-Status und Fortschritt
   router.get('/badges', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       if (req.user.role_name !== 'teamer') {
         return res.status(403).json({ error: 'Nur Teamer können Teamer-Badges abrufen' });
       }
+
+      const userId = req.user.id;
+      const orgId = req.user.organization_id;
 
       const badgesQuery = `
         SELECT cb.*,
@@ -189,8 +192,100 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         WHERE cb.organization_id = $2 AND cb.target_role = 'teamer' AND (cb.is_active = true OR ub.id IS NOT NULL)
         ORDER BY ub.awarded_date DESC NULLS LAST, cb.name
       `;
-      const { rows } = await db.query(badgesQuery, [req.user.id, req.user.organization_id]);
-      res.json(rows);
+      const { rows: badges } = await db.query(badgesQuery, [userId, orgId]);
+
+      // Hauptmetriken einmalig abfragen für Fortschrittsberechnung
+      const [actCountRes, evCountRes, uniqueActRes, activeYearsRes] = await Promise.all([
+        // Teamer-Aktivitäten + Events
+        db.query(
+          `SELECT (
+            (SELECT COUNT(*) FROM user_activities ua
+             JOIN activities a ON ua.activity_id = a.id
+             WHERE ua.user_id = $1 AND ua.organization_id = $2 AND a.target_role = 'teamer') +
+            (SELECT COUNT(*) FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2)
+          ) as count`,
+          [userId, orgId]
+        ),
+        // Nur Events
+        db.query(
+          "SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2",
+          [userId, orgId]
+        ),
+        // Unique Activities
+        db.query(
+          `SELECT COUNT(DISTINCT ua.activity_id) as count FROM user_activities ua
+           JOIN activities a ON ua.activity_id = a.id
+           WHERE ua.user_id = $1 AND ua.organization_id = $2 AND a.target_role = 'teamer'`,
+          [userId, orgId]
+        ),
+        // Aktive Jahre (Jahre mit mind. 1 Teamer-Aktivität oder Event)
+        db.query(
+          `SELECT DISTINCT EXTRACT(YEAR FROM d.date)::int as year FROM (
+            SELECT ua.completed_date as date FROM user_activities ua
+            JOIN activities a ON ua.activity_id = a.id
+            WHERE ua.user_id = $1 AND ua.organization_id = $2 AND a.target_role = 'teamer'
+            UNION ALL
+            SELECT e.event_date as date FROM event_bookings eb
+            JOIN events e ON eb.event_id = e.id
+            WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2
+          ) d WHERE d.date IS NOT NULL`,
+          [userId, orgId]
+        )
+      ]);
+
+      const activityCount = parseInt(actCountRes.rows[0].count);
+      const eventCount = parseInt(evCountRes.rows[0].count);
+      const uniqueActivities = parseInt(uniqueActRes.rows[0].count);
+      const activeYears = activeYearsRes.rows.length;
+
+      // Punkte-basierte Kriterien (irrelevant für Teamer)
+      const pointsCriteria = ['total_points', 'gottesdienst_points', 'gemeinde_points', 'both_categories', 'bonus_points'];
+
+      // Fortschritt für jede Badge berechnen
+      const enrichedBadges = badges.map(badge => {
+        if (badge.earned) {
+          return { ...badge, progress_points: badge.criteria_value, progress_percentage: 100 };
+        }
+
+        let progressPoints = 0;
+        const criteriaValue = badge.criteria_value || 1;
+
+        if (pointsCriteria.includes(badge.criteria_type)) {
+          progressPoints = 0;
+        } else {
+          switch (badge.criteria_type) {
+            case 'activity_count':
+              progressPoints = activityCount;
+              break;
+            case 'event_count':
+              progressPoints = eventCount;
+              break;
+            case 'unique_activities':
+              progressPoints = uniqueActivities;
+              break;
+            case 'teamer_year':
+              progressPoints = activeYears;
+              break;
+            case 'specific_activity':
+            case 'category_activities':
+            case 'streak':
+            case 'activity_combination':
+            case 'time_based':
+            case 'collection':
+            case 'yearly':
+              // Komplexere Berechnung - 0 als Fallback (exakte Werte in Badge-Check)
+              progressPoints = 0;
+              break;
+            default:
+              progressPoints = 0;
+          }
+        }
+
+        const progressPercentage = Math.min(100, Math.round((progressPoints / criteriaValue) * 100));
+        return { ...badge, progress_points: progressPoints, progress_percentage: progressPercentage };
+      });
+
+      res.json(enrichedBadges);
     } catch (err) {
       console.error('Error loading teamer badges:', err);
       res.status(500).json({ error: 'Fehler beim Laden der Teamer-Badges' });
