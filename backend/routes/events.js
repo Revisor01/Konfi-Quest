@@ -517,12 +517,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     const eventId = req.params.id;
     try {
       // Get event details
-      const { rows: [event] } = await db.query("SELECT * FROM events WHERE id = $1 AND organization_id = $2", [eventId, req.user.organization_id]);
-      
+      const { rows: [event] } = await db.query("SELECT id, name, description, event_date, event_end_time, location, location_maps_url, points, point_type, type, max_participants, registration_opens_at, registration_closes_at, has_timeslots, waitlist_enabled, max_waitlist_size, is_series, series_id, mandatory, bring_items, checkin_window, teamer_needed, teamer_only, cancelled, cancelled_at, qr_token, created_by, organization_id, created_at FROM events WHERE id = $1 AND organization_id = $2", [eventId, req.user.organization_id]);
+
       if (!event) {
         return res.status(404).json({ error: 'Event nicht gefunden' });
       }
-      
+
       // Get participants
       const participantsQuery = `
         SELECT eb.*, eb.opt_out_reason, eb.opt_out_date,
@@ -1140,7 +1140,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
       // 1. Check if event exists (FOR UPDATE sperrt die Zeile)
       const { rows: [event] } = await client.query(
-        "SELECT * FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE",
+        "SELECT id, name, description, event_date, event_end_time, location, points, point_type, type, max_participants, registration_opens_at, registration_closes_at, has_timeslots, waitlist_enabled, max_waitlist_size, is_series, series_id, mandatory, bring_items, checkin_window, teamer_needed, teamer_only, cancelled, qr_token, created_by, organization_id FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE",
         [eventId, req.user.organization_id]
       );
       if (!event) {
@@ -1387,7 +1387,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       await client.query('BEGIN');
 
       // 1. Get event details (FOR UPDATE sperrt die Zeile)
-      const { rows: [event] } = await client.query("SELECT * FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE", [eventId, req.user.organization_id]);
+      const { rows: [event] } = await client.query("SELECT id, name, description, event_date, event_end_time, location, points, point_type, type, max_participants, registration_opens_at, registration_closes_at, has_timeslots, waitlist_enabled, max_waitlist_size, is_series, series_id, mandatory, bring_items, checkin_window, teamer_needed, teamer_only, cancelled, qr_token, created_by, organization_id FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE", [eventId, req.user.organization_id]);
       if (!event) {
         await client.query('ROLLBACK');
         client.release();
@@ -1410,7 +1410,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           client.release();
           return res.status(400).json({ error: 'Zeitslot-Auswahl für dieses Event erforderlich' });
         }
-        const { rows: [ts] } = await client.query("SELECT * FROM event_timeslots WHERE id = $1 AND event_id = $2 AND organization_id = $3", [timeslot_id, eventId, req.user.organization_id]);
+        const { rows: [ts] } = await client.query("SELECT id, event_id, start_time, end_time, max_participants, organization_id FROM event_timeslots WHERE id = $1 AND event_id = $2 AND organization_id = $3", [timeslot_id, eventId, req.user.organization_id]);
         if (!ts) {
           await client.query('ROLLBACK');
           client.release();

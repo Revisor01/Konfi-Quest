@@ -183,7 +183,8 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
 
       // Get ALL levels for this organization to calculate correct level dynamically
       const allLevelsQuery = `
-        SELECT * FROM levels
+        SELECT id, name, title, icon, color, points_required, sort_order
+        FROM levels
         WHERE organization_id = $1 AND is_active = true
         ORDER BY points_required ASC
       `;
@@ -600,7 +601,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       // Idempotency: Prüfen ob Antrag mit dieser client_id bereits existiert
       if (client_id) {
         const { rows: [existing] } = await db.query(
-          'SELECT * FROM activity_requests WHERE client_id = $1', [client_id]
+          'SELECT id, konfi_id, activity_id, requested_date, comment, photo_filename, status, organization_id, client_id, created_at, updated_at FROM activity_requests WHERE client_id = $1', [client_id]
         );
         if (existing) {
           return res.status(200).json(existing);
@@ -709,7 +710,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       if (err.code === '23505' && err.detail?.includes('client_id')) {
         try {
           const { rows: [existing] } = await db.query(
-            'SELECT * FROM activity_requests WHERE client_id = $1', [req.body.client_id]
+            'SELECT id, konfi_id, activity_id, requested_date, comment, photo_filename, status, organization_id, client_id, created_at, updated_at FROM activity_requests WHERE client_id = $1', [req.body.client_id]
           );
           if (existing) return res.status(200).json(existing);
         } catch (lookupErr) {
@@ -798,7 +799,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       
       // Check if request exists and belongs to this konfi and is pending
       const { rows: [request] } = await db.query(
-        "SELECT * FROM activity_requests WHERE id = $1 AND konfi_id = $2 AND organization_id = $3",
+        "SELECT id, konfi_id, activity_id, requested_date, comment, photo_filename, status, organization_id, client_id, created_at, updated_at FROM activity_requests WHERE id = $1 AND konfi_id = $2 AND organization_id = $3",
         [requestId, konfiId, req.user.organization_id]
       );
       
@@ -1265,10 +1266,10 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       
       // Check if konfi is registered
       const { rows: [registration] } = await db.query(
-        'SELECT * FROM event_bookings WHERE user_id = $1 AND event_id = $2',
+        'SELECT id, user_id, event_id, status, booking_date, timeslot_id, organization_id FROM event_bookings WHERE user_id = $1 AND event_id = $2',
         [konfiId, eventId]
       );
-      
+
       // Get event details with same logic as events API
       const { rows: [event] } = await db.query(`
         SELECT e.*, 
@@ -1685,7 +1686,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
 
         // Validate timeslot exists and belongs to this event
         const { rows: [timeslot] } = await client.query(
-          'SELECT * FROM event_timeslots WHERE id = $1 AND event_id = $2',
+          'SELECT id, event_id, start_time, end_time, max_participants, organization_id FROM event_timeslots WHERE id = $1 AND event_id = $2',
           [timeslot_id, eventId]
         );
 
@@ -1792,10 +1793,10 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
 
       // Check if konfi is registered
       const { rows: [registration] } = await db.query(
-        'SELECT * FROM event_bookings WHERE user_id = $1 AND event_id = $2',
+        'SELECT id, user_id, event_id, status, booking_date, timeslot_id, organization_id FROM event_bookings WHERE user_id = $1 AND event_id = $2',
         [konfiId, eventId]
       );
-      
+
       if (!registration) {
         return res.status(400).json({ error: 'Du bist nicht für dieses Event angemeldet' });
       }

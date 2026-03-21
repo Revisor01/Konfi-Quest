@@ -136,7 +136,7 @@ const checkAndAwardBadges = async (db, userId) => {
 
     // Nur Konfi-Badges laden
     const { rows: badges } = await db.query(
-      "SELECT * FROM custom_badges WHERE is_active = true AND organization_id = $1 AND target_role = 'konfi'",
+      "SELECT id, name, description, icon, color, criteria_type, criteria_value, criteria_extra, is_hidden, sort_order, is_active, target_role, organization_id FROM custom_badges WHERE is_active = true AND organization_id = $1 AND target_role = 'konfi'",
       [konfi.organization_id]
     );
     if (badges.length === 0) return { count: 0, badges: [] };
@@ -303,7 +303,7 @@ const checkAndAwardBadges = async (db, userId) => {
 async function checkAndAwardTeamerBadges(db, userId, organizationId) {
   // Teamer-Badges laden
   const { rows: badges } = await db.query(
-    "SELECT * FROM custom_badges WHERE is_active = true AND organization_id = $1 AND target_role = 'teamer'",
+    "SELECT id, name, description, icon, color, criteria_type, criteria_value, criteria_extra, is_hidden, sort_order, is_active, target_role, organization_id FROM custom_badges WHERE is_active = true AND organization_id = $1 AND target_role = 'teamer'",
     [organizationId]
   );
   if (badges.length === 0) return { count: 0, badges: [] };

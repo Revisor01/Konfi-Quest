@@ -172,7 +172,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
     }
     
     try {
-      const { rows: [user] } = await db.query(`SELECT * FROM users WHERE id = $1`, [userId]);
+      const { rows: [user] } = await db.query(`SELECT id, display_name, username, password_hash, role_id, organization_id, profile_image FROM users WHERE id = $1`, [userId]);
       if (!user) {
         return res.status(404).json({ error: 'Benutzer nicht gefunden' });
       }
@@ -405,7 +405,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
 
     try {
       const { rows: [invite] } = await db.query(`
-        SELECT * FROM invite_codes WHERE id = $1 AND organization_id = $2
+        SELECT id, code, role_id, jahrgang_id, organization_id, expires_at, created_at FROM invite_codes WHERE id = $1 AND organization_id = $2
       `, [id, organizationId]);
 
       if (!invite) {
@@ -677,7 +677,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
     
     try {
       const { rows: [resetRecord] } = await db.query(
-        'SELECT * FROM password_resets WHERE token = $1 AND used_at IS NULL AND expires_at > NOW()',
+        'SELECT id, user_id, token, expires_at, used_at, created_at FROM password_resets WHERE token = $1 AND used_at IS NULL AND expires_at > NOW()',
         [token]
       );
 
