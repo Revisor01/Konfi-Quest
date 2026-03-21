@@ -2,6 +2,7 @@ import api from './api';
 import { Device } from '@capacitor/device';
 import { Capacitor } from '@capacitor/core';
 import { getUser, setToken, setUser, clearAuth, getDeviceId, setDeviceId } from './tokenStore';
+import { offlineCache } from './offlineCache';
 
 interface User {
   id: number;
@@ -106,8 +107,10 @@ export const logout = async (): Promise<void> => {
   }
 
   await clearAuth();
+  // Cache loeschen — alle gecachten API-Daten entfernen
+  await offlineCache.clearAll();
   // Device ID NICHT loeschen - bleibt fuer das Geraet persistent
-  
+
   // Reset logout lock
   logoutInProgress = false;
 };
