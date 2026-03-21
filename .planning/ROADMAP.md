@@ -196,7 +196,7 @@ Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69 -> 70 ->
 | 68. Token-Refresh | 2/2 | Complete    | 2026-03-21 |
 | 69. Datei-Viewer | 2/2 | Complete    | 2026-03-21 |
 | 70. Rollen-Audit Fixes | 2/2 | Complete    | 2026-03-21 |
-| 71. Teamer+Badge Polish | 2/3 | In Progress|  |
+| 71. Teamer+Badge Polish | 3/3 | Complete   | 2026-03-21 |
 
 ### Phase 63: Codebase Cleanup — Quick-Wins, Konsolidierung, Bug-Fixes
 
@@ -290,9 +290,9 @@ Plans:
 **Goal:** 11 Testing-Issues beheben: Badge-Filter-Bug (teamer_year Kategorie fehlt), geheime Badges, Zurueck-Buttons, Badge-Grid CSS, Listen-Padding, Dashboard-Badges mit Platzhaltern, Jahres-Badge-Logik, Zertifikat-Karten, Stats-Header
 **Requirements**: [POLISH-01, POLISH-02, POLISH-03, POLISH-04, POLISH-05, POLISH-06, POLISH-07, POLISH-08, POLISH-09, POLISH-10, POLISH-11]
 **Depends on:** Phase 70
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 71-01-PLAN.md — Backend: Badge-Progress-Daten + Jahres-Badge-Logik verifizieren
 - [x] 71-02-PLAN.md — CSS: Badge-Grid, Listen-Padding, Zertifikat-Karten min-height
-- [ ] 71-03-PLAN.md — Frontend: teamer_year Fix, geheime Badges, Zurueck-Buttons, Dashboard-Badges, Stats-Header
+- [x] 71-03-PLAN.md — Frontend: teamer_year Fix, geheime Badges, Zurueck-Buttons, Dashboard-Badges, Stats-Header

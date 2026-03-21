@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Codebase-Hardening
 status: unknown
-stopped_at: Completed 71-01-PLAN.md
-last_updated: "2026-03-21T23:45:29.600Z"
+stopped_at: Completed 71-03-PLAN.md
+last_updated: "2026-03-21T23:51:04.923Z"
 progress:
   total_phases: 16
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 18
-  completed_plans: 17
+  completed_plans: 18
 ---
 
 # Project State
@@ -54,6 +54,9 @@ All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestone
 - [Phase 70]: KonfiRequestsPage Delete-Handler nutzt setError statt silent return — Swipe-Actions haben kein disabled
 - [Phase 71]: margin-top statt padding-top bei .app-icon-circle (Icon-Position erhalten)
 - [Phase 71]: Hauptmetriken einmalig per Promise.all abfragen statt pro Badge einzeln
+- [Phase 71]: teamer_year Kategorie zwischen event_count und collection platziert
+- [Phase 71]: Geheime Badge-Visibility als separates Segment (orthogonal zu Hauptfilter)
+- [Phase 71]: Dashboard Badge-Platzhalter auf max 12 begrenzt
 
 ### Roadmap Evolution
 
@@ -72,6 +75,6 @@ All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestone
 
 ## Session Continuity
 
-Last session: 2026-03-21T23:45:29.597Z
-Stopped at: Completed 71-01-PLAN.md
+Last session: 2026-03-21T23:51:04.915Z
+Stopped at: Completed 71-03-PLAN.md
 Resume file: None
