@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: App-Resilienz
 status: unknown
-stopped_at: Completed 56-01-PLAN.md (offlineCache + useOfflineQuery)
-last_updated: "2026-03-21T07:10:40.327Z"
+stopped_at: Completed 56-02-PLAN.md (Konfi-Pages + Chat auf useOfflineQuery)
+last_updated: "2026-03-21T07:19:58.722Z"
 progress:
   total_phases: 15
   completed_phases: 1
   total_plans: 8
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-20)
 ## Current Position
 
 Phase: 56 (Lese-Cache) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 
 ## Accumulated Context
 
@@ -42,6 +42,8 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 55]: LIMIT 200 als Sicherheitsgrenze fuer ?after Chat-Queries
 - [Phase 55]: Alias-Import setTokenStoreUser um Namenskollision mit AppContext setUser zu vermeiden
 - [Phase 56-01]: cache: Praefix fuer Key-Isolation, clearAll loescht nur Cache-Keys nicht Auth-Daten
+- [Phase 56]: KonfiEventDetailPage nicht migriert - delegiert an shared EventDetailView, kein eigener API-Call
+- [Phase 56]: ChatRoom Hybrid-Pattern: useOfflineQuery Initial-Load + lokaler State fuer WebSocket Live-Updates
 
 ### Roadmap Evolution
 
@@ -67,6 +69,6 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-03-21T07:10:40.325Z
-Stopped at: Completed 56-01-PLAN.md (offlineCache + useOfflineQuery)
+Last session: 2026-03-21T07:19:58.720Z
+Stopped at: Completed 56-02-PLAN.md (Konfi-Pages + Chat auf useOfflineQuery)
 Resume file: None

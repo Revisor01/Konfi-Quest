@@ -25,14 +25,14 @@ Requirements fuer Milestone v2.1 App-Resilienz. Offline-Faehigkeit und Zuverlaes
 ### Lese-Cache (CAC)
 
 - [x] **CAC-01**: useOfflineQuery Hook cached API-Responses in Capacitor Preferences mit Stale-While-Revalidate
-- [ ] **CAC-02**: Dashboard-Daten (Punkte, Badges, Level, Ranking) sind offline lesbar — Konfi, Admin, Teamer
-- [ ] **CAC-03**: Chat-Raeume und letzte Nachrichten sind offline lesbar (bis 100 Msgs/Raum, 1h TTL)
-- [ ] **CAC-04**: Events (angemeldete + anstehende) sind offline lesbar — alle Rollen
-- [ ] **CAC-05**: Eigene Antraege mit Status sind offline lesbar (Konfi + Admin-Antrags-Liste)
-- [ ] **CAC-06**: Profil-Daten sind offline lesbar — alle Rollen
+- [x] **CAC-02**: Dashboard-Daten (Punkte, Badges, Level, Ranking) sind offline lesbar — Konfi, Admin, Teamer
+- [x] **CAC-03**: Chat-Raeume und letzte Nachrichten sind offline lesbar (bis 100 Msgs/Raum, 1h TTL)
+- [x] **CAC-04**: Events (angemeldete + anstehende) sind offline lesbar — alle Rollen
+- [x] **CAC-05**: Eigene Antraege mit Status sind offline lesbar (Konfi + Admin-Antrags-Liste)
+- [x] **CAC-06**: Profil-Daten sind offline lesbar — alle Rollen
 - [ ] **CAC-07**: Admin-Stammdaten offline lesbar: Konfis-Liste, Aktivitaeten, Badges, Kategorien, Jahrgaenge, Level, Zertifikat-Typen, Settings, Invite-Codes
 - [ ] **CAC-08**: Teamer-spezifische Daten offline lesbar: Material-Liste (Metadaten, keine Dateien), Badges, Konfi-Stats
-- [ ] **CAC-09**: Alle 30 Pages nutzen useOfflineQuery statt direktem api.get()
+- [x] **CAC-09**: Alle 30 Pages nutzen useOfflineQuery statt direktem api.get()
 - [x] **CAC-10**: Gecachte Daten werden sofort angezeigt, im Hintergrund aktualisiert (SWR-Pattern)
 - [x] **CAC-11**: Bei Logout werden alle user-spezifischen Cache-Keys geloescht
 
@@ -214,14 +214,14 @@ Deferred. Onboarding, Landing Website, Readme, Wiki.
 | NET-03 | Phase 55 | Complete |
 | NET-04 | Phase 55 | Complete |
 | CAC-01 | Phase 56 | Complete |
-| CAC-02 | Phase 56 | Pending |
-| CAC-03 | Phase 56 | Pending |
-| CAC-04 | Phase 56 | Pending |
-| CAC-05 | Phase 56 | Pending |
-| CAC-06 | Phase 56 | Pending |
+| CAC-02 | Phase 56 | Complete |
+| CAC-03 | Phase 56 | Complete |
+| CAC-04 | Phase 56 | Complete |
+| CAC-05 | Phase 56 | Complete |
+| CAC-06 | Phase 56 | Complete |
 | CAC-07 | Phase 56 | Pending |
 | CAC-08 | Phase 56 | Pending |
-| CAC-09 | Phase 56 | Pending |
+| CAC-09 | Phase 56 | Complete |
 | CAC-10 | Phase 56 | Complete |
 | CAC-11 | Phase 56 | Complete |
 | RET-01 | Phase 57 | Pending |
