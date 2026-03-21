@@ -13,25 +13,8 @@ export interface Badge {
   earned_at?: string;
 }
 
-export interface DashboardEvent {
-  id: number;
-  title?: string;
-  name?: string;
-  description?: string;
-  event_date: string;
-  date?: string;
-  location?: string;
-  is_registered?: boolean;
-  booking_status?: string;
-  waitlist_position?: number;
-  booked_timeslot_start?: string;
-  booked_timeslot_end?: string;
-  max_participants?: number;
-  cancelled?: boolean;
-  category_names?: string;
-  mandatory?: boolean;
-  bring_items?: string;
-}
+// DashboardEvent ist jetzt ein Re-Export von Event
+export { Event as DashboardEvent } from './event';
 
 export interface RankingEntry {
   user_id: number;
