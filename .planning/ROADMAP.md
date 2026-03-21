@@ -296,3 +296,13 @@ Plans:
 - [x] 71-01-PLAN.md — Backend: Badge-Progress-Daten + Jahres-Badge-Logik verifizieren
 - [x] 71-02-PLAN.md — CSS: Badge-Grid, Listen-Padding, Zertifikat-Karten min-height
 - [x] 71-03-PLAN.md — Frontend: teamer_year Fix, geheime Badges, Zurueck-Buttons, Dashboard-Badges, Stats-Header
+
+### Phase 72: UI-Testing Fixes — Material-Suchleiste Groesse, Event-Suche+Filter, Teamer-Chat Konfi-Zugriff (DirectMessageModal 403), Teamer-Cache Luecken, Offline-Button Icon
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 71
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 72 to break down)
