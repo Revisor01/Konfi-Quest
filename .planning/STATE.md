@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Codebase-Hardening
 status: unknown
-stopped_at: Completed 69-01-PLAN.md
-last_updated: "2026-03-21T19:27:13.943Z"
+stopped_at: Completed 69-02-PLAN.md
+last_updated: "2026-03-21T19:36:28.020Z"
 progress:
   total_phases: 14
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 13
-  completed_plans: 12
+  completed_plans: 13
 ---
 
 # Project State
@@ -48,6 +48,7 @@ All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestone
 - [Phase 68]: axios.post direkt fuer Refresh-Call um Interceptor-Loop zu vermeiden
 - [Phase 68]: Subscriber-Pattern fuer parallele 401-Requests, auth:relogin-required CustomEvent
 - [Phase 69]: Eigene Pinch-to-Zoom statt Library (CSS transform + Touch-Events), dunkles Overlay-UI statt IonPage
+- [Phase 69]: API-Pfade als FileItem-URLs mit lazy Blob-Aufloesung im Viewer statt Vorladen aller Dateien
 
 ### Roadmap Evolution
 
@@ -64,6 +65,6 @@ All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestone
 
 ## Session Continuity
 
-Last session: 2026-03-21T19:27:13.941Z
-Stopped at: Completed 69-01-PLAN.md
+Last session: 2026-03-21T19:36:28.016Z
+Stopped at: Completed 69-02-PLAN.md
 Resume file: None

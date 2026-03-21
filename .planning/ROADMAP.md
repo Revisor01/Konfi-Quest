@@ -194,7 +194,7 @@ Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69
 | 66. Error Boundary + Sicherheit | 1/1 | Complete    | 2026-03-21 |
 | 67. Performance | 2/2 | Complete    | 2026-03-21 |
 | 68. Token-Refresh | 2/2 | Complete    | 2026-03-21 |
-| 69. Datei-Viewer | 1/2 | In Progress|  |
+| 69. Datei-Viewer | 2/2 | Complete   | 2026-03-21 |
 
 ### Phase 63: Codebase Cleanup — Quick-Wins, Konsolidierung, Bug-Fixes
 
@@ -266,8 +266,8 @@ Plans:
 **Goal:** Universelles FileViewerModal mit Zoom/Pan/Pinch, Swipe, PDF/Video/Download-Support fuer Chat und Material
 **Requirements**: [FV-01, FV-02, FV-03, FV-04, FV-05, FV-06, FV-07, FV-08, FV-09]
 **Depends on:** Phase 68
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 69-01-PLAN.md — FileViewerModal Komponente: Zoom/Pan/Pinch, Swipe, PDF, Video, Download, Share
-- [ ] 69-02-PLAN.md — Integration in Chat (MessageBubble/ChatRoom) + Material (TeamerMaterialDetailPage)
+- [x] 69-02-PLAN.md — Integration in Chat (MessageBubble/ChatRoom) + Material (TeamerMaterialDetailPage)
