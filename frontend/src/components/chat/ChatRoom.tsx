@@ -27,6 +27,8 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
+import { useOfflineQuery } from '../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../services/offlineCache';
 import api from '../../services/api';
 import { initializeWebSocket, getSocket, joinRoom, leaveRoom, disconnectWebSocket, onReconnect } from '../../services/websocket';
 import { getToken } from '../../services/tokenStore';
@@ -48,7 +50,24 @@ import { FileOpener } from '@capacitor-community/file-opener';
 const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingElement }) => {
   const { user, setError, setSuccess } = useApp();
   const { markRoomAsRead: badgeMarkRoomAsRead, refreshAllCounts } = useBadge();
+
+  // --- useOfflineQuery: Initial messages load mit Cache ---
+  const { data: initialMessages, refresh: refreshMessagesCache } = useOfflineQuery<Message[]>(
+    'chat:messages:' + room?.id,
+    () => api.get(`/chat/rooms/${room?.id}/messages?limit=100`).then(r => r.data),
+    { ttl: CACHE_TTL.CHAT_MESSAGES, enabled: !!room?.id }
+  );
+
+  // Lokaler messages-State fuer Live-Updates (WebSocket aktualisiert diesen direkt)
   const [messages, setMessages] = useState<Message[]>([]);
+
+  // Initiale Nachrichten aus Cache/API in lokalen State kopieren
+  useEffect(() => {
+    if (initialMessages && initialMessages.length > 0) {
+      setMessages(initialMessages);
+    }
+  }, [initialMessages]);
+
   const [messageText, setMessageText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedFilePreview, setSelectedFilePreview] = useState<string | null>(null);
@@ -196,10 +215,9 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     presentFileViewer();
   }, [presentFileViewer]);
 
-  // Load messages on mount and setup WebSocket for real-time updates
+  // Setup WebSocket for real-time updates (initial load via useOfflineQuery)
   useEffect(() => {
     if (!room?.id) return;
-    loadMessages();
     markRoomAsRead();
 
     // WebSocket: Join room and listen for new messages

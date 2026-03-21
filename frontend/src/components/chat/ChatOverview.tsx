@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -43,6 +43,8 @@ import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
 import { SectionHeader, EmptyState } from '../shared';
 import { useModalPage } from '../../contexts/ModalContext';
+import { useOfflineQuery } from '../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../services/offlineCache';
 import api from '../../services/api';
 import { initializeWebSocket, getSocket, onReconnect } from '../../services/websocket';
 import { getToken } from '../../services/tokenStore';
@@ -62,8 +64,6 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   const { user, setError, setSuccess } = useApp();
   const [presentAlert] = useIonAlert();
   const { chatUnreadByRoom, refreshAllCounts } = useBadge();
-  const [rooms, setRooms] = useState<ChatRoomOverview[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [filterType, setFilterType] = useState<string>('alle');
 
@@ -75,14 +75,17 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   const tabId = location.pathname.startsWith('/admin') ? 'admin-chat' : 'chat';
   const { pageRef, presentingElement } = useModalPage(tabId);
 
-  useEffect(() => {
-    loadChatRooms();
-  }, []);
+  // --- useOfflineQuery: Chat Rooms ---
+  const { data: rooms, loading, refresh } = useOfflineQuery<ChatRoomOverview[]>(
+    'chat:rooms:' + user?.id,
+    () => api.get('/chat/rooms').then(r => r.data),
+    { ttl: CACHE_TTL.CHAT_ROOMS }
+  );
 
   // Live-Update der Chat-Raeume wenn Badge Count sich aendert
   useEffect(() => {
-    if (rooms.length > 0) { // Nur wenn bereits Raeume geladen sind
-      loadChatRooms(true); // Silent reload
+    if (rooms && rooms.length > 0) { // Nur wenn bereits Raeume geladen sind
+      refresh(); // Silent reload via useOfflineQuery
     }
   }, [chatUnreadByRoom]);
 
@@ -94,7 +97,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     const socket = initializeWebSocket(token);
 
     const handleNewMessage = () => {
-      loadChatRooms(true); // Silent reload
+      refresh(); // Silent reload via useOfflineQuery
     };
 
     socket.on('newMessage', handleNewMessage);
@@ -102,35 +105,22 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     return () => {
       socket.off('newMessage', handleNewMessage);
     };
-  }, []);
+  }, [refresh]);
 
   // Bei Socket-Reconnect Raumliste neu laden
   useEffect(() => {
     const unsubReconnect = onReconnect(() => {
-      loadChatRooms(true); // Silent reload bei Reconnect
+      refresh(); // Silent reload bei Reconnect
     });
     return () => { unsubReconnect(); };
-  }, []);
-
-  const loadChatRooms = async (silent: boolean = false) => {
-    if (!silent) setLoading(true);
-    try {
-      const response = await api.get('/chat/rooms');
-      setRooms(response.data);
-    } catch (err) {
-      if (!silent) setError('Fehler beim Laden der Chaträume');
- console.error('Error loading chat rooms:', err);
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  };
+  }, [refresh]);
 
   // Modal mit useIonModal Hook
   const [presentChatModalHook, dismissChatModalHook] = useIonModal(SimpleCreateChatModal, {
     onClose: () => dismissChatModalHook(),
     onSuccess: () => {
       dismissChatModalHook();
-      loadChatRooms(); // Chatliste neu laden
+      refresh(); // Chatliste neu laden
     }
   });
 
@@ -140,9 +130,9 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     });
   };
 
-  // Expose loadChatRooms to parent component
+  // Expose refresh to parent component (backward-compatible as loadChatRooms)
   React.useImperativeHandle(ref, () => ({
-    loadChatRooms
+    loadChatRooms: () => refresh()
   }));
 
   const deleteRoom = (room: ChatRoomOverview) => {
@@ -159,7 +149,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
             api.delete(`/chat/rooms/${room.id}`)
               .then(() => {
                 setSuccess(`Chat "${room.name}" gelöscht`);
-                loadChatRooms();
+                refresh();
               })
               .catch((error: any) => {
                 if (error.response?.data?.canForceDelete) {
@@ -177,7 +167,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                             api.delete(`/chat/rooms/${room.id}?force=true`)
                               .then(() => {
                                 setSuccess(`Chat "${room.name}" gelöscht`);
-                                loadChatRooms();
+                                refresh();
                               })
                               .catch(() => setError('Fehler beim Löschen'));
                           }
@@ -195,7 +185,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     });
   };
 
-  const filteredRooms = rooms
+  const filteredRooms = (rooms || [])
     .filter(room => {
       // Suchfilter
       const matchesSearch = room.name.toLowerCase().includes(searchText.toLowerCase());
@@ -309,8 +299,8 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
           </IonToolbar>
         </IonHeader>
 
-        <IonRefresher slot="fixed" onIonRefresh={(e) => {
-          loadChatRooms();
+        <IonRefresher slot="fixed" onIonRefresh={async (e) => {
+          await refresh();
           e.detail.complete();
         }}>
           <IonRefresherContent></IonRefresherContent>
@@ -322,9 +312,9 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
           icon={chatbubbles}
           colors={{ primary: '#06b6d4', secondary: '#0891b2' }}
           stats={[
-            { value: rooms.length, label: 'CHATS' },
+            { value: (rooms || []).length, label: 'CHATS' },
             { value: Object.values(chatUnreadByRoom).reduce((sum, c) => sum + c, 0), label: 'UNGELESEN' },
-            { value: rooms.filter(room => room.last_message && new Date(room.last_message.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length, label: 'AKTIV' }
+            { value: (rooms || []).filter(room => room.last_message && new Date(room.last_message.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length, label: 'AKTIV' }
           ]}
         />
 
