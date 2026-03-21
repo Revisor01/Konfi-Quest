@@ -446,6 +446,7 @@ const TeamerMaterialPage: React.FC = () => {
               </IonListHeader>
               <IonItemGroup>
                 <IonSearchbar
+                  className="ios26-searchbar-classic"
                   value={search}
                   onIonInput={(e) => setSearch(e.detail.value || '')}
                   placeholder="Material durchsuchen..."

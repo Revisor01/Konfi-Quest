@@ -135,6 +135,7 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSucc
                 <IonLabel>Suche</IonLabel>
               </IonListHeader>
               <IonSearchbar
+                className="ios26-searchbar-classic"
                 value={searchText}
                 onIonInput={(e) => setSearchText(e.detail.value!)}
                 placeholder="Person suchen..."
