@@ -193,7 +193,7 @@ Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69
 | 65. Navigation + State | 2/2 | Complete    | 2026-03-21 |
 | 66. Error Boundary + Sicherheit | 1/1 | Complete    | 2026-03-21 |
 | 67. Performance | 2/2 | Complete    | 2026-03-21 |
-| 68. Token-Refresh | 1/2 | In progress | - |
+| 68. Token-Refresh | 2/2 | Complete   | 2026-03-21 |
 | 69. Datei-Viewer | 0/? | Not started | - |
 
 ### Phase 63: Codebase Cleanup — Quick-Wins, Konsolidierung, Bug-Fixes
@@ -255,11 +255,11 @@ Plans:
 **Goal:** Refresh-Token-Mechanismus mit 15min Access-Token, 90 Tage Refresh-Token (rotierend), Soft-Revoke via token_invalidated_at
 **Requirements**: [TOKEN-DB, TOKEN-REFRESH, TOKEN-REVOKE, TOKEN-LOGIN, TOKEN-STORE, TOKEN-REFRESH-FE, TOKEN-RELOGIN, TOKEN-OFFLINE]
 **Depends on:** Phase 67
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 68-01-PLAN.md — Backend: DB-Migration, /auth/refresh Endpoint, verifyTokenRBAC Update, JWT 15min
-- [ ] 68-02-PLAN.md — Frontend: tokenStore Refresh-Token, api.ts Refresh-Logik, Re-Login-Dialog
+- [x] 68-02-PLAN.md — Frontend: tokenStore Refresh-Token, api.ts Refresh-Logik, Re-Login-Dialog
 
 ### Phase 69: Universeller Datei-Viewer — Fullscreen Zoom/Pan fuer Bilder in Chat + Material, Desktop + Mobile + Native
 

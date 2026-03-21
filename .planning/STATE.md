@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Codebase-Hardening
 status: unknown
-stopped_at: Completed 68-01-PLAN.md
-last_updated: "2026-03-21T19:13:10Z"
+stopped_at: Completed 68-02-PLAN.md
+last_updated: "2026-03-21T19:18:21.635Z"
 progress:
   total_phases: 14
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 11
-  completed_plans: 10
+  completed_plans: 11
 ---
 
 # Project State
@@ -45,6 +45,8 @@ All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestone
 - [Phase 68]: SHA-256 fuer Refresh-Token-Hash konsistent mit Phase 66 Pattern
 - [Phase 68]: Token-Rotation: altes Refresh-Token wird bei jedem Refresh sofort revoked
 - [Phase 68]: Cleanup-Job im Auth-Modul via setInterval (24h Intervall)
+- [Phase 68]: axios.post direkt fuer Refresh-Call um Interceptor-Loop zu vermeiden
+- [Phase 68]: Subscriber-Pattern fuer parallele 401-Requests, auth:relogin-required CustomEvent
 
 ### Roadmap Evolution
 
@@ -61,6 +63,6 @@ All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestone
 
 ## Session Continuity
 
-Last session: 2026-03-21T19:13:10Z
-Stopped at: Completed 68-01-PLAN.md
+Last session: 2026-03-21T19:18:21.633Z
+Stopped at: Completed 68-02-PLAN.md
 Resume file: None
