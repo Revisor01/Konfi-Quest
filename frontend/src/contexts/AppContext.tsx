@@ -45,10 +45,13 @@ const sendTokenToServer = async (token: string, retryCount = 0) => {
     await setPushTokenTimestamp(now); // Bug 3: Timestamp nach jedem Send persistieren
   } catch (err) {
     console.error('Fehler beim Senden des FCM-Tokens:', err);
-    // Retry mit steigendem Abstand (5s, 15s, 30s)
+    // Retry mit steigendem Abstand (5s, 15s, 30s), danach bei naechstem Online-Wechsel
     const retryDelays = [5000, 15000, 30000];
     if (retryCount < retryDelays.length) {
       setTimeout(() => sendTokenToServer(token, retryCount + 1), retryDelays[retryCount]);
+    } else {
+      // Alle Retries fehlgeschlagen — Token fuer Reconnect-Retry merken
+      (window as any)._pendingFcmToken = token;
     }
   }
 };
@@ -240,6 +243,16 @@ useEffect(() => {
 
   window.addEventListener('fcmToken', handleNativeFCMToken);
 
+  // Bei Reconnect: Fehlgeschlagenen Token-Send nachholen
+  const handleReconnectTokenRetry = () => {
+    const pendingToken = (window as any)._pendingFcmToken;
+    if (pendingToken) {
+      delete (window as any)._pendingFcmToken;
+      sendTokenToServer(pendingToken);
+    }
+  };
+  window.addEventListener('sync:reconnect', handleReconnectTokenRetry);
+
   // WICHTIG: Nach dem Setup des Listeners manuell den Token abfragen,
   // falls er schon da ist (z.B. bei App-Start mit eingeloggtem User).
   // Deine AppDelegate-Logik sendet ihn bei App-Aktivierung ohnehin,
@@ -260,6 +273,7 @@ useEffect(() => {
 
   return () => {
     window.removeEventListener('fcmToken', handleNativeFCMToken);
+    window.removeEventListener('sync:reconnect', handleReconnectTokenRetry);
   };
 }, [user]); // <--- WICHTIGSTE ÄNDERUNG: Abhängigkeit von 'user'
 
