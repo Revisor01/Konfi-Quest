@@ -34,6 +34,12 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
     return crypto.randomBytes(32).toString('hex');
   };
 
+  // Refresh-Token generieren (64 Bytes = 128 Hex-Zeichen)
+  const generateRefreshToken = () => crypto.randomBytes(64).toString('hex');
+
+  // SHA-256 Hash fuer DB-Speicherung (konsistent mit Phase 66)
+  const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
+
   // ===== UNIFIED LOGIN ENDPOINTS =====
 
   // Rate Limiter Middleware für Login (falls vorhanden)
@@ -129,7 +135,16 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
         organization_id: user.organization_id,
         role_name: user.role_name,
         is_super_admin: user.is_super_admin || false
-      }, JWT_SECRET, { expiresIn: '90d' });
+      }, JWT_SECRET, { expiresIn: '15m' });
+
+      // Refresh-Token erstellen und in DB speichern
+      const refreshToken = generateRefreshToken();
+      const refreshTokenHash = hashToken(refreshToken);
+      const refreshExpiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 90 Tage
+      await db.query(
+        'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)',
+        [user.id, refreshTokenHash, refreshExpiresAt]
+      );
 
       const responseUser = {
         id: user.id,
@@ -148,7 +163,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
         responseUser.gemeinde_points = user.gemeinde_points || 0;
       }
       
-      res.json({ token, user: responseUser });
+      res.json({ token, refresh_token: refreshToken, user: responseUser });
 
     } catch (err) {
  console.error('Database error in POST /api/auth/login:', err);
@@ -637,11 +652,21 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
           organization_id: invite.organization_id,
           role_name: 'konfi',
           is_super_admin: false
-        }, JWT_SECRET, { expiresIn: '90d' });
+        }, JWT_SECRET, { expiresIn: '15m' });
+
+        // Refresh-Token erstellen und in DB speichern
+        const refreshToken = generateRefreshToken();
+        const refreshTokenHash = hashToken(refreshToken);
+        const refreshExpiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 90 Tage
+        await db.query(
+          'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)',
+          [newUser.id, refreshTokenHash, refreshExpiresAt]
+        );
 
         res.json({
           message: 'Registrierung erfolgreich',
           token,
+          refresh_token: refreshToken,
           user: {
             id: newUser.id,
             display_name: display_name,
@@ -697,6 +722,90 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
       res.status(500).json({ error: 'Fehler beim Zurücksetzen des Passworts' });
     }
   });
+
+  // ===== TOKEN REFRESH =====
+
+  // Refresh Access-Token mit Rotation (altes Refresh-Token wird ungueltig)
+  router.post('/refresh', async (req, res) => {
+    const { refresh_token } = req.body;
+    if (!refresh_token) {
+      return res.status(400).json({ error: 'Refresh-Token ist erforderlich' });
+    }
+
+    const tokenHash = hashToken(refresh_token);
+
+    try {
+      // Altes Token suchen (nicht revoked, nicht abgelaufen)
+      const { rows: [existing] } = await db.query(
+        'SELECT id, user_id, expires_at FROM refresh_tokens WHERE token_hash = $1 AND revoked_at IS NULL AND expires_at > NOW()',
+        [tokenHash]
+      );
+
+      if (!existing) {
+        return res.status(401).json({ error: 'Ungültiger oder abgelaufener Refresh-Token' });
+      }
+
+      // Altes Token sofort revoken (Rotation)
+      await db.query('UPDATE refresh_tokens SET revoked_at = NOW() WHERE id = $1', [existing.id]);
+
+      // User-Daten laden (gleiche Query wie Login)
+      const { rows: [user] } = await db.query(`
+        SELECT u.id, u.username, u.display_name, u.organization_id, u.email, u.role_id,
+               u.is_super_admin,
+               r.name as role_name,
+               kp.jahrgang_id, j.name as jahrgang_name,
+               kp.gottesdienst_points, kp.gemeinde_points
+        FROM users u
+        LEFT JOIN roles r ON u.role_id = r.id
+        LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
+        LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
+        WHERE u.id = $1
+      `, [existing.user_id]);
+
+      if (!user) {
+        return res.status(401).json({ error: 'Benutzer nicht gefunden' });
+      }
+
+      const userType = user.role_name === 'konfi' ? 'konfi' : user.role_name === 'teamer' ? 'teamer' : 'admin';
+
+      // Neuer Access-Token (15min)
+      const newAccessToken = jwt.sign({
+        id: user.id,
+        type: userType,
+        display_name: user.display_name,
+        email: user.email,
+        organization_id: user.organization_id,
+        role_name: user.role_name,
+        is_super_admin: user.is_super_admin || false
+      }, JWT_SECRET, { expiresIn: '15m' });
+
+      // Neuer Refresh-Token (Rotation)
+      const newRefreshToken = generateRefreshToken();
+      const newRefreshHash = hashToken(newRefreshToken);
+      const newRefreshExpiry = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+      await db.query(
+        'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)',
+        [user.id, newRefreshHash, newRefreshExpiry]
+      );
+
+      res.json({ token: newAccessToken, refresh_token: newRefreshToken });
+    } catch (err) {
+      console.error('Database error in POST /api/auth/refresh:', err);
+      res.status(500).json({ error: 'Fehler beim Token-Refresh' });
+    }
+  });
+
+  // Abgelaufene + revoked Refresh-Tokens alle 24h aufraeumen
+  setInterval(async () => {
+    try {
+      const { rowCount } = await db.query(
+        "DELETE FROM refresh_tokens WHERE expires_at < NOW() OR (revoked_at IS NOT NULL AND revoked_at < NOW() - INTERVAL '7 days')"
+      );
+      if (rowCount > 0) console.log(`Cleanup: ${rowCount} abgelaufene Refresh-Tokens entfernt`);
+    } catch (err) {
+      console.error('Refresh-Token Cleanup Fehler:', err);
+    }
+  }, 24 * 60 * 60 * 1000);
 
   return router;
 };
