@@ -40,7 +40,7 @@ Requirements fuer Milestone v2.1 App-Resilienz. Offline-Faehigkeit und Zuverlaes
 
 - [ ] **RET-01**: Transiente Netzwerk-Fehler werden automatisch 3x mit Exponential Backoff wiederholt (axios-retry)
 - [ ] **RET-02**: Alle Submit-Buttons haben Loading-State und sind waehrend Request disabled (Double-Submit-Schutz)
-- [ ] **RET-03**: Backend unterstuetzt Idempotency-Keys (client_id UUID) fuer alle queue-faehigen Aktionen
+- [x] **RET-03**: Backend unterstuetzt Idempotency-Keys (client_id UUID) fuer alle queue-faehigen Aktionen
 
 ### Offline-UI (OUI)
 
@@ -226,7 +226,7 @@ Deferred. Onboarding, Landing Website, Readme, Wiki.
 | CAC-11 | Phase 56 | Complete |
 | RET-01 | Phase 57 | Pending |
 | RET-02 | Phase 57 | Pending |
-| RET-03 | Phase 57 | Pending |
+| RET-03 | Phase 57 | Complete |
 | OUI-01 | Phase 58 | Pending |
 | OUI-02 | Phase 58 | Pending |
 | OUI-03 | Phase 58 | Pending |

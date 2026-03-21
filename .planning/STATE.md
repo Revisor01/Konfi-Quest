@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: App-Resilienz
 status: unknown
-stopped_at: Completed 56-03-PLAN.md (Admin-Pages Offline-Cache)
-last_updated: "2026-03-21T07:32:27.209Z"
+stopped_at: Completed 57-02-PLAN.md (Backend Idempotency Keys)
+last_updated: "2026-03-21T08:40:31.050Z"
 progress:
   total_phases: 15
   completed_phases: 2
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 10
+  completed_plans: 9
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-20)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 56 — Lese-Cache
+**Current focus:** Phase 57 — Retry + Schutz
 
 ## Current Position
 
-Phase: 63
-Plan: Not started
+Phase: 57 (Retry + Schutz) — EXECUTING
+Plan: 2 of 2
 
 ## Accumulated Context
 
@@ -49,6 +49,7 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 56]: AdminSettingsPage hat keine API-Calls, keine Migration noetig
 - [Phase 56]: AdminProfilePage nutzt userId statt organization_id (persoenliche Daten)
 - [Phase 56]: AdminMaterialPage: search+filter im Cache-Key fuer granulares Offline-Caching
+- [Phase 57]: Check-then-Insert + UNIQUE-Index-Fallback fuer Idempotency statt ON CONFLICT
 
 ### Roadmap Evolution
 
@@ -74,6 +75,6 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-03-21T07:28:04.550Z
-Stopped at: Completed 56-03-PLAN.md (Admin-Pages Offline-Cache)
+Last session: 2026-03-21T08:40:31.048Z
+Stopped at: Completed 57-02-PLAN.md (Backend Idempotency Keys)
 Resume file: None
