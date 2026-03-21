@@ -191,7 +191,7 @@ Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69
 | 63. Codebase Cleanup | 2/2 | Complete    | 2026-03-21 |
 | 64. DB-Schema-Konsolidierung | 2/2 | Complete    | 2026-03-21 |
 | 65. Navigation + State | 2/2 | Complete    | 2026-03-21 |
-| 66. Error Boundary + Sicherheit | 0/? | Not started | - |
+| 66. Error Boundary + Sicherheit | 0/1 | Not started | - |
 | 67. Performance | 0/? | Not started | - |
 | 68. Token-Refresh | 0/? | Not started | - |
 | 69. Datei-Viewer | 0/? | Not started | - |
@@ -229,15 +229,15 @@ Plans:
 - [x] 65-01-PLAN.md — LiveUpdateType erweitern + Dispatcher migrieren (triggerRefresh statt dispatchEvent)
 - [x] 65-02-PLAN.md — Redundante addEventListener entfernen + BadgeContext/UsersPage/OrgsPage migrieren
 
-### Phase 66: Error Boundary und Sicherheitshaertung — Error Boundary, CSP, MD5 ersetzen, TLS
+### Phase 66: Error Boundary und Sicherheitshaertung — Error Boundary, MD5 ersetzen, Sicherheits-Audit
 
-**Goal:** Error Boundaries einbauen, CSP konfigurieren, MD5 durch sichere Hashes ersetzen, TLS haerten
-**Requirements**: TBD
+**Goal:** Error Boundary Komponente erstellen und App absichern, MD5 durch SHA-256 ersetzen, helmet-Konfiguration verifizieren
+**Requirements**: [EB-01, EB-02, SEC-01, SEC-02]
 **Depends on:** Phase 65
-**Plans:** 0 plans
+**Plans:** 1 plan
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 66 to break down)
+- [ ] 66-01-PLAN.md — ErrorBoundary Komponente + MD5-zu-SHA256 Migration
 
 ### Phase 67: Performance-Optimierung — Mega-Komponenten aufteilen, Memoization, SELECT-Stern, BackgroundService
 
