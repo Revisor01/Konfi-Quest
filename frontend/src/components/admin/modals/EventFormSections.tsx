@@ -12,7 +12,8 @@ import {
   IonToggle,
   IonCard,
   IonCardContent,
-  IonButton
+  IonButton,
+  IonRange
 } from '@ionic/react';
 import {
   create, people, shieldCheckmark, scanOutline, copy,
@@ -187,38 +188,13 @@ export const CheckinSection = React.memo<CheckinSectionProps>(({
       <IonList>
         <IonItem lines="none">
           <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Check-in-Fenster (Minuten)</IonLabel>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
-            <IonButton
-              fill="outline" size="small"
-              disabled={loading || formData.checkin_window <= 5}
-              onClick={() => setFormData({ ...formData, checkin_window: Math.max(5, formData.checkin_window - 5) })}
-              style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
-            >
-              <IonIcon icon={removeOutline} />
-            </IonButton>
-            <IonInput
-              type="text" inputMode="numeric"
-              value={formData.checkin_window.toString()}
-              onIonInput={(e) => {
-                const value = e.detail.value!;
-                if (value === '') { setFormData({ ...formData, checkin_window: 30 }); }
-                else {
-                  const num = parseInt(value);
-                  if (!isNaN(num) && num >= 5 && num <= 120) setFormData({ ...formData, checkin_window: num });
-                }
-              }}
-              placeholder="30" disabled={loading}
-              style={{ textAlign: 'center', flex: 1 }}
-            />
-            <IonButton
-              fill="outline" size="small"
-              disabled={loading || formData.checkin_window >= 120}
-              onClick={() => setFormData({ ...formData, checkin_window: Math.min(120, formData.checkin_window + 5) })}
-              style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
-            >
-              <IonIcon icon={addOutline} />
-            </IonButton>
-          </div>
+          <IonRange
+            min={5} max={120} step={5}
+            pin={true} pinFormatter={(value: number) => `${value}`}
+            value={formData.checkin_window}
+            onIonChange={(e) => setFormData({ ...formData, checkin_window: e.detail.value as number })}
+            disabled={loading}
+          />
         </IonItem>
         <p style={{ fontSize: '0.8rem', color: '#888', margin: '4px 16px 8px 16px', lineHeight: '1.4' }}>
           QR-Code Check-in ist {formData.checkin_window} Min. vor bis {formData.checkin_window} Min. nach Event-Start möglich
@@ -559,28 +535,13 @@ export const SeriesSection = React.memo<SeriesSectionProps>(({
             <>
               <IonItem lines="none">
                 <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Anzahl Events</IonLabel>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
-                  <IonButton fill="outline" size="small"
-                    disabled={loading || formData.series_count <= 2}
-                    onClick={() => setFormData({ ...formData, series_count: Math.max(2, formData.series_count - 1) })}
-                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}>
-                    <IonIcon icon={removeOutline} />
-                  </IonButton>
-                  <IonInput type="text" inputMode="numeric"
-                    value={formData.series_count.toString()}
-                    onIonInput={(e) => {
-                      const value = e.detail.value!;
-                      if (value === '') setFormData({ ...formData, series_count: 2 });
-                      else { const num = parseInt(value); if (!isNaN(num) && num >= 2 && num <= 52) setFormData({ ...formData, series_count: num }); }
-                    }}
-                    placeholder="4" disabled={loading} style={{ textAlign: 'center', flex: 1 }} />
-                  <IonButton fill="outline" size="small"
-                    disabled={loading || formData.series_count >= 52}
-                    onClick={() => setFormData({ ...formData, series_count: Math.min(52, formData.series_count + 1) })}
-                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}>
-                    <IonIcon icon={addOutline} />
-                  </IonButton>
-                </div>
+                <IonRange
+                  min={2} max={52} step={1}
+                  pin={true} pinFormatter={(value: number) => `${value}`}
+                  value={formData.series_count}
+                  onIonChange={(e) => setFormData({ ...formData, series_count: e.detail.value as number })}
+                  disabled={loading}
+                />
               </IonItem>
               <IonItem lines="none">
                 <IonLabel position="stacked">Intervall</IonLabel>

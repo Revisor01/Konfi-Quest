@@ -18,8 +18,9 @@ import {
   IonCard,
   IonCardContent,
   IonSpinner,
+  IonRange,
 } from '@ionic/react';
-import { closeOutline, checkmarkOutline, gift, calendar, removeOutline, addOutline, chatbubbleOutline } from 'ionicons/icons';
+import { closeOutline, checkmarkOutline, gift, chatbubbleOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
@@ -141,45 +142,13 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
 
                 <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
                   <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Punkte *</IonLabel>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
-                    <IonButton
-                      fill="outline"
-                      size="small"
-                      disabled={isSubmitting || points <= 1}
-                      onClick={() => setPoints(Math.max(1, points - 1))}
-                      style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
-                    >
-                      <IonIcon icon={removeOutline} />
-                    </IonButton>
-                    <IonInput
-                      type="text"
-                      inputMode="numeric"
-                      value={points.toString()}
-                      onIonInput={(e) => {
-                        const value = e.detail.value!;
-                        if (value === '') {
-                          setPoints(1);
-                        } else {
-                          const num = parseInt(value);
-                          if (!isNaN(num) && num >= 1 && num <= 50) {
-                            setPoints(num);
-                          }
-                        }
-                      }}
-                      placeholder="1"
-                      disabled={isSubmitting}
-                      style={{ textAlign: 'center', flex: 1 }}
-                    />
-                    <IonButton
-                      fill="outline"
-                      size="small"
-                      disabled={isSubmitting || points >= 50}
-                      onClick={() => setPoints(Math.min(50, points + 1))}
-                      style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
-                    >
-                      <IonIcon icon={addOutline} />
-                    </IonButton>
-                  </div>
+                  <IonRange
+                    min={1} max={50} step={1}
+                    pin={true} pinFormatter={(value: number) => `${value}`}
+                    value={points}
+                    onIonChange={(e) => setPoints(e.detail.value as number)}
+                    disabled={isSubmitting}
+                  />
                 </IonItem>
               </IonList>
 
