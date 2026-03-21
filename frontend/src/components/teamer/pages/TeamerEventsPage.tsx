@@ -50,6 +50,8 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
+import { writeQueue } from '../../../services/writeQueue';
+import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { SectionHeader, ListSection } from '../../shared';
@@ -271,12 +273,28 @@ const TeamerEventsPage: React.FC = () => {
   const handleBook = async (event: Event) => {
     setBookingLoading(true);
     try {
-      await api.post(`/events/${event.id}/book`);
-      setSuccess('Du bist dabei!');
-      await refresh();
-      // Update selectedEvent
-      const updated = (await api.get('/events')).data.find((e: Event) => e.id === event.id);
-      if (updated) setSelectedEvent(updated);
+      if (networkMonitor.isOnline) {
+        await api.post(`/events/${event.id}/book`);
+        setSuccess('Du bist dabei!');
+        await refresh();
+        // Update selectedEvent
+        const updated = (await api.get('/events')).data.find((e: Event) => e.id === event.id);
+        if (updated) setSelectedEvent(updated);
+      } else {
+        await writeQueue.enqueue({
+          method: 'POST',
+          url: `/events/${event.id}/book`,
+          body: {},
+          maxRetries: 5,
+          hasFileUpload: false,
+          metadata: {
+            type: 'teamer',
+            clientId: crypto.randomUUID(),
+            label: 'Event buchen',
+          },
+        });
+        setSuccess('Buchung wird gesendet sobald du wieder online bist');
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Fehler bei der Buchung');
     } finally {
@@ -287,11 +305,27 @@ const TeamerEventsPage: React.FC = () => {
   const handleUnbook = async (event: Event) => {
     setBookingLoading(true);
     try {
-      await api.delete(`/events/${event.id}/book`);
-      setSuccess('Du bist nicht mehr dabei');
-      await refresh();
-      const updated = (await api.get('/events')).data.find((e: Event) => e.id === event.id);
-      if (updated) setSelectedEvent(updated);
+      if (networkMonitor.isOnline) {
+        await api.delete(`/events/${event.id}/book`);
+        setSuccess('Du bist nicht mehr dabei');
+        await refresh();
+        const updated = (await api.get('/events')).data.find((e: Event) => e.id === event.id);
+        if (updated) setSelectedEvent(updated);
+      } else {
+        await writeQueue.enqueue({
+          method: 'DELETE',
+          url: `/events/${event.id}/book`,
+          body: {},
+          maxRetries: 5,
+          hasFileUpload: false,
+          metadata: {
+            type: 'teamer',
+            clientId: crypto.randomUUID(),
+            label: 'Event abmelden',
+          },
+        });
+        setSuccess('Abmeldung wird gesendet sobald du wieder online bist');
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Fehler beim Stornieren');
     } finally {
