@@ -189,7 +189,7 @@ Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 63. Codebase Cleanup | 2/2 | Complete    | 2026-03-21 |
-| 64. DB-Schema-Konsolidierung | 1/2 | In Progress|  |
+| 64. DB-Schema-Konsolidierung | 2/2 | Complete   | 2026-03-21 |
 | 65. Navigation + State | 0/? | Not started | - |
 | 66. Error Boundary + Sicherheit | 0/? | Not started | - |
 | 67. Performance | 0/? | Not started | - |
@@ -212,10 +212,10 @@ Plans:
 **Goal:** Einheitliches DB-Schema, Altlasten bereinigen, fehlende Indizes und Foreign Keys ergaenzen
 **Requirements**: [SCHEMA-IDX, SCHEMA-FK, SCHEMA-CONSOLIDATE, SCHEMA-CLEANUP]
 **Depends on:** Phase 63
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
-- [ ] 64-01-PLAN.md — Fehlende Indizes + Foreign Keys als SQL-Migrations
+- [x] 64-01-PLAN.md — Fehlende Indizes + Foreign Keys als SQL-Migrations
 - [x] 64-02-PLAN.md — Inline Schema-Erstellung aus Routes in zentrale Migration extrahieren
 
 ### Phase 65: Navigation und State-Konsistenz — Router-Migration, CustomEvents durch LiveUpdateContext ersetzen
