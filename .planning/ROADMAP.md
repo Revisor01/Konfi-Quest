@@ -168,7 +168,7 @@ Kein Phase-Nummern-Block — separater Update-Milestone ohne Plans.
 - [x] **Phase 58: Corner-Badge System** - Flex-Container fuer Multi-Badge-Listen + Queue-Badge Design (completed 2026-03-21)
 - [x] **Phase 59: Online-Only Buttons** - 42 Online-Only-Aktionen disablen + Chat-Queue-Status-UI (completed 2026-03-21)
 - [x] **Phase 60: Queue-Kern + Konfi-Aktionen** - Queue-Infrastruktur + Konfi-Queue + Fire-and-Forget + Chat-Queue-UI (completed 2026-03-21)
-- [ ] **Phase 61: Admin- + Teamer-Queue** - 21 Admin-Aktionen + 2 Teamer-Aktionen queue-faehig
+- [x] **Phase 61: Admin- + Teamer-Queue** - 21 Admin-Aktionen + 2 Teamer-Aktionen queue-faehig (completed 2026-03-21)
 - [ ] **Phase 62: Sync** - SWR-Revalidierung + Socket.io-Reconnect-Sync + App-Resume-Sync
 
 ## Phase Details
@@ -276,10 +276,10 @@ Plans:
   2. Admin kann offline Material erstellen/bearbeiten (Metadaten sofort, Datei-Upload bei naechstem Vordergrund-Aufenthalt)
   3. Admin kann offline Antraege genehmigen/ablehnen/zuruecksetzen, Bonus-Punkte vergeben und Aktivitaeten zuweisen
   4. Teamer kann offline Events buchen und sich abmelden — beides mit Uhr-Icon am Event
-**Plans:** 1/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
-- [ ] 61-01-PLAN.md — Admin Modals Queue: EventModal, ActivityManagementModal, BadgeManagementModal, LevelManagementModal, MaterialFormModal
-- [ ] 61-02-PLAN.md — Admin Pages + restliche Modals Queue: Categories, Jahrgaenge, Certificates, ActivityRequestModal, BonusModal, ActivityModal
+- [x] 61-01-PLAN.md — Admin Modals Queue: EventModal, ActivityManagementModal, BadgeManagementModal, LevelManagementModal, MaterialFormModal
+- [x] 61-02-PLAN.md — Admin Pages + restliche Modals Queue: Categories, Jahrgaenge, Certificates, ActivityRequestModal, BonusModal, ActivityModal
 - [x] 61-03-PLAN.md — Teamer Queue: TeamerEventsPage buchen/abmelden
 
 ### Phase 62: Sync
@@ -310,7 +310,7 @@ Note: Phase 59 hat nur eine weiche Abhaengigkeit von Phase 55 (isOnline) und kan
 | 58. Corner-Badge System | 2/2 | Complete    | 2026-03-21 |
 | 59. Online-Only Buttons | 3/3 | Complete    | 2026-03-21 |
 | 60. Queue-Kern + Konfi-Aktionen | 4/4 | Complete    | 2026-03-21 |
-| 61. Admin- + Teamer-Queue | 1/3 | In Progress|  |
+| 61. Admin- + Teamer-Queue | 3/3 | Complete   | 2026-03-21 |
 | 62. Sync | 0/? | Not started | - |
 
 ### Phase 63: Codebase Cleanup — Quick-Wins, Konsolidierung, Bug-Fixes

@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: App-Resilienz
 status: unknown
-stopped_at: Completed 61-03-PLAN.md (TeamerEventsPage Queue)
-last_updated: "2026-03-21T11:29:43.234Z"
+stopped_at: Completed 61-01-PLAN.md (Admin-Modals Queue)
+last_updated: "2026-03-21T11:32:20.060Z"
 progress:
   total_phases: 15
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 22
-  completed_plans: 20
+  completed_plans: 22
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-20)
 ## Current Position
 
 Phase: 61 (Admin- + Teamer-Queue) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Accumulated Context
 
@@ -67,6 +67,9 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 60]: Optimistic Message mit negativer ID (-Date.now()) als temporaerer Platzhalter
 - [Phase 60]: Fire-and-Forget offline: Kein Queue-Feedback, rein optimistisch, maxRetries 3
 - [Phase 61]: Kein refresh/selectedEvent-Update im Offline-Pfad — Daten kommen erst nach Queue-Flush
+- [Phase 61]: Material Offline: Nur Metadaten queuen, Dateien nur online hochladbar
+- [Phase 61]: Alle Admin Submit-Buttons immer klickbar, Queue uebernimmt bei Offline
+- [Phase 61]: Submit-Buttons bleiben ohne Offline-Disable — Queue uebernimmt
 
 ### Roadmap Evolution
 
@@ -92,6 +95,6 @@ All v1.0-v1.9 decisions archived in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-03-21T11:29:43.231Z
-Stopped at: Completed 61-03-PLAN.md (TeamerEventsPage Queue)
+Last session: 2026-03-21T11:32:20.058Z
+Stopped at: Completed 61-01-PLAN.md (Admin-Modals Queue)
 Resume file: None

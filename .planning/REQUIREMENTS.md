@@ -96,27 +96,27 @@ Queue-faehige Aktionen werden bei Offline in eine persistente Queue geschrieben 
 
 #### Admin-Aktionen (17 Aktionen)
 
-- [ ] **QUE-A01**: Event erstellen (einzeln) — Uhr-Icon am Event in der Liste
-- [ ] **QUE-A02**: Event bearbeiten — Uhr-Icon am Event
-- [ ] **QUE-A03**: Event-Serie erstellen — Uhr-Icon an allen Serien-Events
-- [ ] **QUE-A04**: Aktivitaet erstellen — Uhr-Icon an Aktivitaet
-- [ ] **QUE-A05**: Aktivitaet bearbeiten — Uhr-Icon an Aktivitaet
-- [ ] **QUE-A06**: Badge erstellen — Uhr-Icon am Badge
-- [ ] **QUE-A07**: Badge bearbeiten — Uhr-Icon am Badge
-- [ ] **QUE-A08**: Kategorie erstellen — Uhr-Icon an Kategorie
-- [ ] **QUE-A09**: Kategorie bearbeiten — Uhr-Icon an Kategorie
-- [ ] **QUE-A10**: Jahrgang erstellen — Uhr-Icon am Jahrgang
-- [ ] **QUE-A11**: Jahrgang bearbeiten — Uhr-Icon am Jahrgang
-- [ ] **QUE-A12**: Level erstellen — Uhr-Icon am Level
-- [ ] **QUE-A13**: Level bearbeiten — Uhr-Icon am Level
-- [ ] **QUE-A14**: Zertifikat-Typ erstellen — Uhr-Icon am Typ
-- [ ] **QUE-A15**: Zertifikat-Typ bearbeiten — Uhr-Icon am Typ
-- [ ] **QUE-A16**: Material erstellen (Metadaten + Dateien) — Uhr-Icon am Material, Dateien lokal in Filesystem, Upload im Vordergrund
-- [ ] **QUE-A17**: Material bearbeiten (Metadaten) — Uhr-Icon am Material
-- [ ] **QUE-A18**: Antrag genehmigen/ablehnen — Uhr-Icon am Antrag
-- [ ] **QUE-A19**: Antrag zuruecksetzen — Uhr-Icon am Antrag
-- [ ] **QUE-A20**: Bonus-Punkte vergeben — Uhr-Icon am Bonus-Eintrag
-- [ ] **QUE-A21**: Aktivitaet einem Konfi zuweisen — Uhr-Icon an Aktivitaet
+- [x] **QUE-A01**: Event erstellen (einzeln) — Uhr-Icon am Event in der Liste
+- [x] **QUE-A02**: Event bearbeiten — Uhr-Icon am Event
+- [x] **QUE-A03**: Event-Serie erstellen — Uhr-Icon an allen Serien-Events
+- [x] **QUE-A04**: Aktivitaet erstellen — Uhr-Icon an Aktivitaet
+- [x] **QUE-A05**: Aktivitaet bearbeiten — Uhr-Icon an Aktivitaet
+- [x] **QUE-A06**: Badge erstellen — Uhr-Icon am Badge
+- [x] **QUE-A07**: Badge bearbeiten — Uhr-Icon am Badge
+- [x] **QUE-A08**: Kategorie erstellen — Uhr-Icon an Kategorie
+- [x] **QUE-A09**: Kategorie bearbeiten — Uhr-Icon an Kategorie
+- [x] **QUE-A10**: Jahrgang erstellen — Uhr-Icon am Jahrgang
+- [x] **QUE-A11**: Jahrgang bearbeiten — Uhr-Icon am Jahrgang
+- [x] **QUE-A12**: Level erstellen — Uhr-Icon am Level
+- [x] **QUE-A13**: Level bearbeiten — Uhr-Icon am Level
+- [x] **QUE-A14**: Zertifikat-Typ erstellen — Uhr-Icon am Typ
+- [x] **QUE-A15**: Zertifikat-Typ bearbeiten — Uhr-Icon am Typ
+- [x] **QUE-A16**: Material erstellen (Metadaten + Dateien) — Uhr-Icon am Material, Dateien lokal in Filesystem, Upload im Vordergrund
+- [x] **QUE-A17**: Material bearbeiten (Metadaten) — Uhr-Icon am Material
+- [x] **QUE-A18**: Antrag genehmigen/ablehnen — Uhr-Icon am Antrag
+- [x] **QUE-A19**: Antrag zuruecksetzen — Uhr-Icon am Antrag
+- [x] **QUE-A20**: Bonus-Punkte vergeben — Uhr-Icon am Bonus-Eintrag
+- [x] **QUE-A21**: Aktivitaet einem Konfi zuweisen — Uhr-Icon an Aktivitaet
 
 #### Teamer-Aktionen (2 Aktionen)
 
@@ -253,27 +253,27 @@ Deferred. Onboarding, Landing Website, Readme, Wiki.
 | QUE-FF06 | Phase 60 | Complete |
 | QUE-FF07 | Phase 60 | Complete |
 | QUE-FF08 | Phase 60 | Complete |
-| QUE-A01 | Phase 61 | Pending |
-| QUE-A02 | Phase 61 | Pending |
-| QUE-A03 | Phase 61 | Pending |
-| QUE-A04 | Phase 61 | Pending |
-| QUE-A05 | Phase 61 | Pending |
-| QUE-A06 | Phase 61 | Pending |
-| QUE-A07 | Phase 61 | Pending |
-| QUE-A08 | Phase 61 | Pending |
-| QUE-A09 | Phase 61 | Pending |
-| QUE-A10 | Phase 61 | Pending |
-| QUE-A11 | Phase 61 | Pending |
-| QUE-A12 | Phase 61 | Pending |
-| QUE-A13 | Phase 61 | Pending |
-| QUE-A14 | Phase 61 | Pending |
-| QUE-A15 | Phase 61 | Pending |
-| QUE-A16 | Phase 61 | Pending |
-| QUE-A17 | Phase 61 | Pending |
-| QUE-A18 | Phase 61 | Pending |
-| QUE-A19 | Phase 61 | Pending |
-| QUE-A20 | Phase 61 | Pending |
-| QUE-A21 | Phase 61 | Pending |
+| QUE-A01 | Phase 61 | Complete |
+| QUE-A02 | Phase 61 | Complete |
+| QUE-A03 | Phase 61 | Complete |
+| QUE-A04 | Phase 61 | Complete |
+| QUE-A05 | Phase 61 | Complete |
+| QUE-A06 | Phase 61 | Complete |
+| QUE-A07 | Phase 61 | Complete |
+| QUE-A08 | Phase 61 | Complete |
+| QUE-A09 | Phase 61 | Complete |
+| QUE-A10 | Phase 61 | Complete |
+| QUE-A11 | Phase 61 | Complete |
+| QUE-A12 | Phase 61 | Complete |
+| QUE-A13 | Phase 61 | Complete |
+| QUE-A14 | Phase 61 | Complete |
+| QUE-A15 | Phase 61 | Complete |
+| QUE-A16 | Phase 61 | Complete |
+| QUE-A17 | Phase 61 | Complete |
+| QUE-A18 | Phase 61 | Complete |
+| QUE-A19 | Phase 61 | Complete |
+| QUE-A20 | Phase 61 | Complete |
+| QUE-A21 | Phase 61 | Complete |
 | QUE-T01 | Phase 61 | Complete |
 | QUE-T02 | Phase 61 | Complete |
 | QUE-I01 | Phase 60 | Complete |
