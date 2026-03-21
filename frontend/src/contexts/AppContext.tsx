@@ -26,11 +26,14 @@ const sendTokenToServer = async (token: string) => {
     return;
   }
 
-  try {
-    // Device ID via Capacitor Device Plugin abrufen
-    const deviceInfo = await Device.getId();
-    const deviceId = deviceInfo.identifier;
+  // Gespeicherte Device ID nutzen (wird bei App-Start einmalig persistiert)
+  const deviceId = getDeviceId();
+  if (!deviceId) {
+    console.warn('Keine Device ID verfuegbar - Token-Send wird uebersprungen');
+    return;
+  }
 
+  try {
     await api.post('/notifications/device-token', {
       token,
       platform: Capacitor.getPlatform(),
@@ -39,28 +42,9 @@ const sendTokenToServer = async (token: string) => {
 
     (window as any).fcmTokenSent = token; // Markiere Token als gesendet
     (window as any).fcmTokenLastSent = now; // Timestamp setzen
+    await setPushTokenTimestamp(now); // Bug 3: Timestamp nach jedem Send persistieren
   } catch (err) {
     console.error('Fehler beim Senden des FCM-Tokens:', err);
-
-    // Fallback zu TokenStore Device ID
-    try {
-      let fallbackDeviceId = getDeviceId();
-      if (!fallbackDeviceId) {
-        fallbackDeviceId = `${Capacitor.getPlatform()}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        await setDeviceId(fallbackDeviceId);
-      }
-
-      await api.post('/notifications/device-token', {
-        token,
-        platform: Capacitor.getPlatform(),
-        device_id: fallbackDeviceId
-      });
-
-      (window as any).fcmTokenSent = token;
-      (window as any).fcmTokenLastSent = now;
-    } catch (fallbackErr) {
-      console.error('Error sending FCM token with fallback:', fallbackErr);
-    }
   }
 };
 
@@ -92,6 +76,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [pushNotificationsPermission, setPushNotificationsPermission] = useState<string>('prompt');
 
   // Badge sync through state updates only (no custom events)
+
+  // Device ID einmalig bei App-Start persistieren
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const deviceInfo = await Device.getId();
+          const currentStored = getDeviceId();
+          if (!currentStored || currentStored !== deviceInfo.identifier) {
+            await setDeviceId(deviceInfo.identifier);
+          }
+        } catch {
+          // Fallback: Generieren falls nicht gespeichert
+          if (!getDeviceId()) {
+            const fallbackId = `${Capacitor.getPlatform()}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            await setDeviceId(fallbackId);
+          }
+        }
+      } else {
+        // Web: Generieren falls nicht gespeichert
+        if (!getDeviceId()) {
+          const fallbackId = `web_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          await setDeviceId(fallbackId);
+        }
+      }
+    })();
+  }, [user]);
 
   // Push notifications functions
   const requestPushPermissions = useCallback(async () => {

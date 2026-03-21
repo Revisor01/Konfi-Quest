@@ -3,8 +3,13 @@ import { Device } from '@capacitor/device';
 import { Capacitor } from '@capacitor/core';
 import { getUser, setToken, setUser, setRefreshToken, clearAuth, getDeviceId, setDeviceId } from './tokenStore';
 import { offlineCache } from './offlineCache';
+import { writeQueue } from './writeQueue';
+import { networkMonitor } from './networkMonitor';
 import { BaseUser } from '../types/user';
 
+// Race Condition User-Wechsel: Backend POST /device-token loescht alte Tokens
+// (anderer user_id mit gleichem device_token) automatisch VOR dem INSERT.
+// Frontend-seitig wird logout() mit await ausgefuehrt und blockiert bis DELETE durch ist.
 export const loginWithAutoDetection = async (username: string, password: string): Promise<BaseUser> => {
 
   try {
@@ -73,11 +78,34 @@ export const logout = async (): Promise<void> => {
         device_id: deviceId,
         platform: Capacitor.getPlatform()
       };
-      
-      const response = await api.delete('/notifications/device-token', {
-        data: deleteData
-      });
-      
+
+      if (networkMonitor.isOnline) {
+        try {
+          await api.delete('/notifications/device-token', {
+            data: deleteData
+          });
+        } catch (error) {
+          // Falls Request fehlschlaegt: in Queue fuer spaeter
+          await writeQueue.enqueue({
+            method: 'DELETE',
+            url: '/notifications/device-token',
+            body: deleteData,
+            maxRetries: 3,
+            hasFileUpload: false,
+            metadata: { type: 'fire-and-forget', clientId: `push_cleanup_${Date.now()}`, label: 'Push-Token entfernen' }
+          });
+        }
+      } else {
+        // Offline: direkt in Queue
+        await writeQueue.enqueue({
+          method: 'DELETE',
+          url: '/notifications/device-token',
+          body: deleteData,
+          maxRetries: 3,
+          hasFileUpload: false,
+          metadata: { type: 'fire-and-forget', clientId: `push_cleanup_${Date.now()}`, label: 'Push-Token entfernen' }
+        });
+      }
     } else {
  console.warn('No device ID found - skipping push token removal');
     }
