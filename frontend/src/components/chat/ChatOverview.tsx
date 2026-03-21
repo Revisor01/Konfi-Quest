@@ -61,7 +61,7 @@ interface ChatOverviewRef {
 }
 
 const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onSelectRoom }, ref) => {
-  const { user, setError, setSuccess } = useApp();
+  const { user, setError, setSuccess, isOnline } = useApp();
   const [presentAlert] = useIonAlert();
   const { chatUnreadByRoom, refreshAllCounts } = useBadge();
   const [searchText, setSearchText] = useState('');
@@ -136,6 +136,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   }));
 
   const deleteRoom = (room: ChatRoomOverview) => {
+    if (!isOnline) return;
     presentAlert({
       header: 'Chat löschen?',
       message: `"${room.name}" und alle Nachrichten unwiderruflich löschen?`,

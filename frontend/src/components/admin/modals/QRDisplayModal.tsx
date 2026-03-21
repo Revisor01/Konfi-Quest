@@ -13,6 +13,7 @@ import {
 import { closeOutline, printOutline } from 'ionicons/icons';
 import QRCode from 'qrcode';
 import api from '../../../services/api';
+import { useApp } from '../../../contexts/AppContext';
 
 interface QRDisplayModalProps {
   eventId: number;
@@ -22,6 +23,7 @@ interface QRDisplayModalProps {
 }
 
 const QRDisplayModal: React.FC<QRDisplayModalProps> = ({ eventId, eventName, eventDate, onClose }) => {
+  const { isOnline } = useApp();
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -124,7 +126,7 @@ const QRDisplayModal: React.FC<QRDisplayModalProps> = ({ eventId, eventName, eve
           ) : error ? (
             <div style={{ textAlign: 'center', color: 'var(--ion-color-danger)' }}>
               <p>{error}</p>
-              <IonButton fill="outline" onClick={loadQR}>Erneut versuchen</IonButton>
+              <IonButton fill="outline" disabled={!isOnline} onClick={loadQR}>{!isOnline ? 'Du bist offline' : 'Erneut versuchen'}</IonButton>
             </div>
           ) : (
             <>

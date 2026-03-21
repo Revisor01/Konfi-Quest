@@ -109,7 +109,7 @@ interface Participant {
 
 const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) => {
   const pageRef = useRef<HTMLElement>(null);
-  const { setSuccess, setError } = useApp();
+  const { setSuccess, setError, isOnline } = useApp();
   const [presentAlert] = useIonAlert();
   const [presentActionSheet] = useIonActionSheet();
 
@@ -149,6 +149,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   };
 
   const handleUnregister = async (reason: string) => {
+    if (!isOnline) return;
     if (!eventData || !reason.trim()) {
       setError('Bitte gib einen Grund für die Abmeldung an');
       return;
@@ -306,6 +307,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   };
 
   const handleRegister = async () => {
+    if (!isOnline) return;
     if (!eventData) return;
 
     if (isKonfirmationEvent(eventData)) {
@@ -790,12 +792,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                       expand="block"
                       fill="outline"
                       color="danger"
+                      disabled={!isOnline}
                       onClick={() => presentOptOutModal({
                         presentingElement: pageRef.current || undefined
                       })}
                     >
                       <IonIcon icon={closeCircle} slot="start" />
-                      Abmelden
+                      {!isOnline ? 'Du bist offline' : 'Abmelden'}
                     </IonButton>
                   </div>
                 );
@@ -817,12 +820,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   expand="block"
                   fill="outline"
                   color="danger"
+                  disabled={!isOnline}
                   onClick={() => presentUnregisterModal({
                     presentingElement: pageRef.current || undefined
                   })}
                 >
                   <IonIcon icon={closeCircle} slot="start" />
-                  Abmelden
+                  {!isOnline ? 'Du bist offline' : 'Abmelden'}
                 </IonButton>
               ) : (
                 <IonButton
@@ -851,6 +855,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             <IonButton
               className="app-action-button"
               expand="block"
+              disabled={!isOnline}
               style={{
                 '--background': '#34c759',
                 '--background-activated': '#2da84e',
@@ -860,12 +865,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               onClick={handleRegister}
             >
               <IonIcon icon={checkmarkCircle} slot="start" />
-              Anmelden ({eventData.registered_count}/{eventData.max_participants})
+              {!isOnline ? 'Du bist offline' : `Anmelden (${eventData.registered_count}/${eventData.max_participants})`}
             </IonButton>
           ) : eventData.waitlist_enabled && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants && eventData.registration_status === 'open' ? (
             <IonButton
               className="app-action-button"
               expand="block"
+              disabled={!isOnline}
               style={{
                 '--background': '#fd7e14',
                 '--background-activated': '#e8650e',
@@ -875,7 +881,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               onClick={handleRegister}
             >
               <IonIcon icon={hourglass} slot="start" />
-              Warteliste offen ({(eventData as any).waitlist_count || 0}/{eventData.max_waitlist_size || 0})
+              {!isOnline ? 'Du bist offline' : `Warteliste offen (${(eventData as any).waitlist_count || 0}/${eventData.max_waitlist_size || 0})`}
             </IonButton>
           ) : (
             <IonButton

@@ -43,7 +43,7 @@ interface PasswordCheck {
 const KonfiRegisterPage: React.FC = () => {
   const location = useLocation();
   const history = useHistory();
-  const { setUser, setSuccess: setAppSuccess } = useApp();
+  const { setUser, setSuccess: setAppSuccess, isOnline } = useApp();
 
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
@@ -556,12 +556,14 @@ const KonfiRegisterPage: React.FC = () => {
                   <IonButton
                     expand="full"
                     onClick={handleSubmit}
-                    disabled={registering || !isPasswordValid || usernameStatus === 'taken'}
+                    disabled={registering || !isPasswordValid || usernameStatus === 'taken' || !isOnline}
                     className="app-auth-button"
                     style={{ marginBottom: '16px' }}
                   >
                     {registering ? (
                       <IonSpinner name="crescent" style={{ '--color': 'white' }} />
+                    ) : !isOnline ? (
+                      'Du bist offline'
                     ) : (
                       <>
                         <IonIcon icon={sparkles} slot="start" />

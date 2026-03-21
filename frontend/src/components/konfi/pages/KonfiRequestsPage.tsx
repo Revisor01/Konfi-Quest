@@ -41,7 +41,7 @@ interface ActivityRequest {
 }
 
 const KonfiRequestsPage: React.FC = () => {
-  const { user, setSuccess, setError } = useApp();
+  const { user, setSuccess, setError, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('konfi-requests');
   const [presentAlert] = useIonAlert();
 
@@ -147,6 +147,7 @@ const KonfiRequestsPage: React.FC = () => {
   };
 
   const handleDeleteRequest = (request: ActivityRequest) => {
+    if (!isOnline) return;
     if (request.status !== 'pending') {
       setError('Nur wartende Anträge können gelöscht werden');
       return;

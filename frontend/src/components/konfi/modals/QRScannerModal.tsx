@@ -13,6 +13,7 @@ import { closeOutline, cameraOutline } from 'ionicons/icons';
 import QrScanner from 'qr-scanner';
 import QrScannerWorkerPath from 'qr-scanner/qr-scanner-worker.min.js?url';
 import api from '../../../services/api';
+import { useApp } from '../../../contexts/AppContext';
 
 QrScanner.WORKER_PATH = QrScannerWorkerPath;
 
@@ -22,6 +23,7 @@ interface QRScannerModalProps {
 }
 
 const QRScannerModal: React.FC<QRScannerModalProps> = ({ onClose, onSuccess }) => {
+  const { isOnline } = useApp();
   const videoRef = useRef<HTMLVideoElement>(null);
   const scannerRef = useRef<QrScanner | null>(null);
   const [scanning, setScanning] = useState(false);
@@ -63,6 +65,10 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ onClose, onSuccess }) =
 
   const handleScanResult = async (data: string) => {
     if (scanning) return;
+    if (!isOnline) {
+      setBanner({ type: 'error', message: 'Du bist offline' });
+      return;
+    }
     setScanning(true);
 
     if (scannerRef.current) {

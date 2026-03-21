@@ -61,7 +61,7 @@ interface AdminInviteModalProps {
 }
 
 const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) => {
-  const { user, setSuccess, setError } = useApp();
+  const { user, setSuccess, setError, isOnline } = useApp();
   const [presentAlert] = useIonAlert();
   const handleClose = () => {
     if (dismiss) {
@@ -125,6 +125,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
   }, [jahrgaenge, existingInvites, initialQrShown, selectedJahrgang]);
 
   const generateInviteCode = async () => {
+    if (!isOnline) return;
     if (!selectedJahrgang) {
       setError('Bitte wähle einen Jahrgang aus');
       return;
@@ -161,6 +162,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
   };
 
   const extendInvite = async (inviteId: number) => {
+    if (!isOnline) return;
     try {
       setExtendingInvite(inviteId);
       await api.post(`/auth/invite-codes/${inviteId}/extend`);
@@ -174,6 +176,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
   };
 
   const deleteInvite = (invite: ExistingInvite) => {
+    if (!isOnline) return;
     presentAlert({
       header: 'Code löschen',
       message: `Einladungscode "${invite.invite_code}" wirklich löschen?`,
@@ -311,11 +314,13 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                     expand="block"
                     fill="outline"
                     onClick={generateInviteCode}
-                    disabled={generatingCode || !selectedJahrgang}
+                    disabled={generatingCode || !selectedJahrgang || !isOnline}
                     style={{ marginTop: '16px' }}
                   >
                     {generatingCode ? (
                       <IonSpinner name="crescent" />
+                    ) : !isOnline ? (
+                      'Du bist offline'
                     ) : (
                       <>
                         <IonIcon icon={add} slot="start" />

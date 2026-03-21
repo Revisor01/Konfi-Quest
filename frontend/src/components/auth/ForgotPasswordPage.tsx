@@ -14,8 +14,10 @@ import {
 } from '@ionic/react';
 import { mailOutline, arrowBack, checkmarkCircle, alertCircle, informationCircleOutline, refreshOutline } from 'ionicons/icons';
 import api from '../../services/api';
+import { useApp } from '../../contexts/AppContext';
 
 const ForgotPasswordPage: React.FC = () => {
+  const { isOnline } = useApp();
   const history = useHistory();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -171,12 +173,14 @@ const ForgotPasswordPage: React.FC = () => {
                   <IonButton
                     expand="full"
                     onClick={handleSubmit}
-                    disabled={loading}
+                    disabled={loading || !isOnline}
                     className="app-auth-button"
                     style={{ marginBottom: '16px' }}
                   >
                     {loading ? (
                       <IonSpinner name="crescent" style={{ '--color': 'white' }} />
+                    ) : !isOnline ? (
+                      'Du bist offline'
                     ) : (
                       'Link senden'
                     )}

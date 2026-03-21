@@ -49,7 +49,7 @@ import { FileOpener } from '@capacitor-community/file-opener';
 
 
 const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingElement }) => {
-  const { user, setError, setSuccess } = useApp();
+  const { user, setError, setSuccess, isOnline } = useApp();
   const { markRoomAsRead: badgeMarkRoomAsRead, refreshAllCounts } = useBadge();
 
   // --- useOfflineQuery: Initial messages load mit Cache ---
@@ -509,6 +509,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   };
 
   const deleteMessage = (messageId: number) => {
+    if (!isOnline) return;
     presentAlert({
       header: 'Nachricht löschen?',
       message: 'Diese Nachricht unwiderruflich löschen?',
@@ -901,6 +902,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   };
 
   const handleLeaveChat = () => {
+    if (!isOnline) return;
     presentAlert({
       header: 'Chat verlassen',
       message: 'Chat wirklich verlassen? Du erhältst keine Nachrichten mehr aus diesem Chat.',
@@ -944,7 +946,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
               </>
             )}
             {canLeaveChat() && (
-              <IonButton onClick={handleLeaveChat}>
+              <IonButton disabled={!isOnline} onClick={handleLeaveChat}>
                 <IonIcon icon={ellipsisVertical} />
               </IonButton>
             )}
