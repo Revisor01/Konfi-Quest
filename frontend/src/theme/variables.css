@@ -303,10 +303,10 @@ ion-item.app-list-item:last-child {
   border-radius: 0 0 10px 10px;
 }
 .app-corner-badges .app-corner-badge:last-child {
-  border-radius: 0 10px 10px 10px;
+  border-radius: 0 10px 0 10px;
 }
 .app-corner-badges .app-corner-badge:only-child {
-  border-radius: 0 10px 10px 10px;
+  border-radius: 0 10px 0 10px;
 }
 /* Bestehende Farb-Varianten */
 .app-corner-badge--events { background-color: #dc2626; }
