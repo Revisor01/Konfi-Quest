@@ -38,7 +38,7 @@ interface User {
 }
 
 const AdminUsersPage: React.FC = () => {
-  const { setSuccess, setError, user } = useApp();
+  const { setSuccess, setError, user, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-users');
   
   // Offline-Query: Users
@@ -85,6 +85,7 @@ const AdminUsersPage: React.FC = () => {
   }, [refreshUsers]);
 
   const handleDeleteUser = async (userToDelete: User) => {
+    if (!isOnline) return;
     presentAlert({
       header: 'Benutzer löschen',
       message: `Benutzer "${userToDelete.display_name}" (@${userToDelete.username}) wirklich löschen?`,

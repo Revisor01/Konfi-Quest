@@ -312,7 +312,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
 
 const AdminJahrgaengeePage: React.FC = () => {
   const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-jahrgaenge');
-  const { user, setSuccess, setError } = useApp();
+  const { user, setSuccess, setError, isOnline } = useApp();
 
   // Offline-Query: Jahrgaenge
   const { data: jahrgaenge, loading, refresh: refreshJahrgaenge } = useOfflineQuery<Jahrgang[]>(
@@ -346,6 +346,7 @@ const AdminJahrgaengeePage: React.FC = () => {
   };
 
   const handleDeleteWithSlideClose = async (jahrgang: Jahrgang, forceDelete = false) => {
+    if (!isOnline) return;
     const performDelete = async () => {
       const slidingElement = slidingRefs.current.get(jahrgang.id);
       try {

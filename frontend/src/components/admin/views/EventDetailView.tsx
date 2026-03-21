@@ -144,7 +144,7 @@ interface EventDetailViewProps {
 const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) => {
   const pageRef = useRef<HTMLElement>(null);
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
-  const { setSuccess, setError } = useApp();
+  const { setSuccess, setError, isOnline } = useApp();
   const [presentActionSheet] = useIonActionSheet();
   const [presentAlert] = useIonAlert();
 
@@ -386,6 +386,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   };
 
   const handleAttendanceUpdate = async (participant: Participant, status: 'present' | 'absent') => {
+    if (!isOnline) return;
     // Optimistisches UI-Update: sofort anzeigen
     setParticipants(prev => prev.map(p =>
       p.id === participant.id ? { ...p, attendance_status: status } : p
@@ -418,6 +419,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   };
 
   const showAttendanceActionSheet = (participant: Participant) => {
+    if (!isOnline) return;
     const buttons: any[] = [];
 
     // Anwesend Button
@@ -452,6 +454,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   };
 
   const showWaitlistActionSheet = (participant: Participant) => {
+    if (!isOnline) return;
     presentActionSheet({
       header: participant.participant_name,
       subHeader: 'Warteliste verwalten',
@@ -515,6 +518,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   };
 
   const handleRemoveParticipant = async (participant: Participant) => {
+    if (!isOnline) return;
     try {
       // Use booking ID for deletion, not user ID
       await api.delete(`/events/${eventId}/bookings/${participant.id}`);
@@ -532,6 +536,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const isCancelled = eventData?.cancelled || eventData?.registration_status === ('cancelled' as string);
 
   const handleCancelEvent = async () => {
+    if (!isOnline) return;
     presentAlert({
       header: 'Event absagen',
       message: 'Wirklich absagen? Alle Teilnehmer:innen werden benachrichtigt.',
@@ -556,6 +561,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   };
 
   const handleCreateEventChat = async () => {
+    if (!isOnline) return;
     try {
       await api.post(`/events/${eventData?.id}/chat`);
       setSuccess('Chat erstellt');
@@ -1385,10 +1391,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   <IonButton
                     expand="block"
                     fill="outline"
+                    disabled={!isOnline}
                     onClick={handleCreateEventChat}
                   >
                     <IonIcon icon={chatbubbles} className="app-event-detail__icon-gap" />
-                    Chat erstellen
+                    {!isOnline ? 'Du bist offline' : 'Chat erstellen'}
                   </IonButton>
                 )}
               </IonCardContent>
@@ -1405,10 +1412,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   expand="block"
                   fill="outline"
                   color="danger"
+                  disabled={!isOnline}
                   onClick={handleCancelEvent}
                 >
                   <IonIcon icon={ban} className="app-event-detail__icon-gap" />
-                  Event absagen
+                  {!isOnline ? 'Du bist offline' : 'Event absagen'}
                 </IonButton>
               </IonCardContent>
             </IonCard>

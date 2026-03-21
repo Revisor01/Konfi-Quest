@@ -40,7 +40,7 @@ interface Badge {
 }
 
 const AdminBadgesPage: React.FC = () => {
-  const { user, setSuccess, setError } = useApp();
+  const { user, setSuccess, setError, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-badges');
 
   // State
@@ -94,6 +94,7 @@ const AdminBadgesPage: React.FC = () => {
   }, [refreshBadges]);
 
   const handleDeleteBadge = async (badge: Badge) => {
+    if (!isOnline) return;
     presentAlert({
       header: 'Badge löschen',
       message: `Badge "${badge.name}" wirklich löschen?`,

@@ -35,7 +35,7 @@ interface Activity {
 }
 
 const AdminActivitiesPage: React.FC = () => {
-  const { user, setSuccess, setError } = useApp();
+  const { user, setSuccess, setError, isOnline } = useApp();
   const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-activities');
   
   // State
@@ -83,6 +83,7 @@ const AdminActivitiesPage: React.FC = () => {
   }, [refreshActivities]);
 
   const handleDeleteActivity = async (activity: Activity) => {
+    if (!isOnline) return;
     presentAlert({
       header: 'Aktivität löschen',
       message: `Aktivität "${activity.name}" wirklich löschen?`,

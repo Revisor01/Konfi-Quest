@@ -62,7 +62,7 @@ interface Material {
 const AdminMaterialPage: React.FC = () => {
   const pageRef = useRef<HTMLElement>(null);
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
-  const { user, setError, setSuccess } = useApp();
+  const { user, setError, setSuccess, isOnline } = useApp();
   const [presentAlert] = useIonAlert();
 
   const [search, setSearch] = useState('');
@@ -103,6 +103,7 @@ const AdminMaterialPage: React.FC = () => {
   });
 
   const handleDelete = (material: Material) => {
+    if (!isOnline) return;
     presentAlert({
       header: 'Material löschen',
       message: `"${material.title}" wirklich löschen? Alle zugehörigen Dateien werden ebenfalls gelöscht.`,

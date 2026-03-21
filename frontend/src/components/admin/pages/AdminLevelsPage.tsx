@@ -116,7 +116,7 @@ interface Level {
 
 const AdminLevelsPage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-levels');
-  const { user, setSuccess, setError } = useApp();
+  const { user, setSuccess, setError, isOnline } = useApp();
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
   const [editLevel, setEditLevel] = useState<Level | undefined>(undefined);
 
@@ -147,6 +147,7 @@ const AdminLevelsPage: React.FC = () => {
   };
 
   const handleDelete = async (level: Level) => {
+    if (!isOnline) return;
     if (!confirm(`Level "${level.title}" wirklich löschen?`)) return;
 
     const slidingElement = slidingRefs.current.get(level.id);

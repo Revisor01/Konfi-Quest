@@ -55,7 +55,7 @@ interface Settings {
 
 
 const AdminKonfisPage: React.FC = () => {
-  const { setSuccess, setError, user } = useApp();
+  const { setSuccess, setError, user, isOnline } = useApp();
   const history = useHistory();
   const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-konfis');
   
@@ -120,6 +120,7 @@ const AdminKonfisPage: React.FC = () => {
   }, [refreshAll]);
 
   const handleDeleteKonfi = async (konfi: Konfi) => {
+    if (!isOnline) return;
     presentAlert({
       header: 'Konfi löschen',
       message: `Konfi "${konfi.name}" wirklich löschen?`,

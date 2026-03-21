@@ -101,7 +101,7 @@ interface KonfiDetailViewProps {
 }
 
 const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) => {
-  const { setSuccess, setError } = useApp();
+  const { setSuccess, setError, isOnline } = useApp();
   const [presentAlert] = useIonAlert();
   const pageRef = React.useRef<HTMLElement>(null);
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
@@ -346,6 +346,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
   };
 
   const handlePasswordAction = () => {
+    if (!isOnline) return;
     presentAlert({
       header: 'Einmalpasswort generieren',
       message: 'Es wird ein neues temporäres Passwort erstellt. Das aktuelle Passwort wird überschrieben.',
@@ -362,6 +363,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
   };
 
   const handleDeleteActivity = async (activity: Activity) => {
+    if (!isOnline) return;
     presentAlert({
       header: 'Aktivität löschen',
       message: `Aktivität "${activity.name}" wirklich löschen?`,
@@ -386,6 +388,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
   };
 
   const handleDeleteBonus = async (bonus: any) => {
+    if (!isOnline) return;
     presentAlert({
       header: 'Bonuspunkte löschen',
       message: `Bonuspunkte "${bonus.description}" wirklich löschen?`,
@@ -453,6 +456,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
   };
 
   const handleAssignCertificate = () => {
+    if (!isOnline) return;
     const availableTypes = certificateTypes.filter(
       ct => ct.is_active && !certificates.some(c => c.certificate_type_id === ct.id)
     );
@@ -518,6 +522,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
   };
 
   const handleDeleteCertificate = (cert: { id: number; name: string }) => {
+    if (!isOnline) return;
     presentAlert({
       header: 'Zertifikat entfernen',
       message: `"${cert.name}" wirklich entfernen?`,
@@ -541,6 +546,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
   };
 
   const handlePromoteToTeamer = async () => {
+    if (!isOnline) return;
     if (!currentKonfi) return;
     presentAlert({
       header: 'Zum Teamer befördern',
@@ -580,7 +586,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           </IonButtons>
           <IonTitle>{currentKonfi?.name || (isTeamer ? 'Teamer:in Details' : 'Konfi Details')}</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={handlePasswordAction}>
+            <IonButton disabled={!isOnline} onClick={handlePasswordAction}>
               <IonIcon icon={key} />
             </IonButton>
           </IonButtons>
@@ -1339,10 +1345,11 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                 <IonButton
                   expand="block"
                   fill="outline"
+                  disabled={!isOnline}
                   onClick={handleAssignCertificate}
                 >
                   <IonIcon icon={add} slot="start" />
-                  Zertifikat zuweisen
+                  {!isOnline ? 'Du bist offline' : 'Zertifikat zuweisen'}
                 </IonButton>
               </IonCardContent>
             </IonCard>
@@ -1510,10 +1517,11 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                 <IonButton
                   expand="block"
                   style={{ '--background': '#5b21b6', '--background-hover': '#4c1d95' }}
+                  disabled={!isOnline}
                   onClick={handlePromoteToTeamer}
                 >
                   <IonIcon icon={ribbon} slot="start" />
-                  Zum Teamer befördern
+                  {!isOnline ? 'Du bist offline' : 'Zum Teamer befördern'}
                 </IonButton>
               </IonCardContent>
             </IonCard>

@@ -43,7 +43,7 @@ interface Organization {
 }
 
 const AdminOrganizationsPage: React.FC = () => {
-  const { setSuccess, setError } = useApp();
+  const { setSuccess, setError, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-organizations');
   
   // State
@@ -120,6 +120,7 @@ const AdminOrganizationsPage: React.FC = () => {
   };
 
   const handleDeleteOrganization = async (organization: Organization) => {
+    if (!isOnline) return;
     presentAlert({
       header: 'Organisation löschen',
       message: `Organisation "${organization.display_name}" (${organization.name}) wirklich löschen?\n\nWarnung: Alle zugehörigen Daten (Benutzer, Konfis, Aktivitäten) werden ebenfalls gelöscht!`,

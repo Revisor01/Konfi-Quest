@@ -355,7 +355,7 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
 
 const AdminCertificatesPage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-certificates');
-  const { user, setSuccess, setError } = useApp();
+  const { user, setSuccess, setError, isOnline } = useApp();
 
   // Offline-Query: Certificate Types
   const { data: certificateTypes, loading, refresh: refreshCertificateTypes } = useOfflineQuery<CertificateType[]>(
@@ -384,6 +384,7 @@ const AdminCertificatesPage: React.FC = () => {
   };
 
   const handleDelete = async (certType: CertificateType) => {
+    if (!isOnline) return;
     presentAlert({
       header: 'Zertifikat löschen',
       message: `"${certType.name}" wirklich löschen?`,

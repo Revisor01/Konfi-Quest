@@ -38,7 +38,7 @@ interface ActivityRequest {
 }
 
 const AdminActivityRequestsPage: React.FC = () => {
-  const { user, setSuccess, setError } = useApp();
+  const { user, setSuccess, setError, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-requests');
 
   // Offline-Query: Requests
@@ -88,6 +88,7 @@ const AdminActivityRequestsPage: React.FC = () => {
   }, [refreshRequests]);
 
   const handleResetRequest = async (request: ActivityRequest) => {
+    if (!isOnline) return;
     const statusText = request.status === 'approved' ? 'genehmigten' : 'abgelehnten';
     presentAlert({
       header: 'Antrag zurücksetzen',
@@ -115,6 +116,7 @@ const AdminActivityRequestsPage: React.FC = () => {
   };
 
   const handleDeleteRequest = async (request: ActivityRequest) => {
+    if (!isOnline) return;
     presentAlert({
       header: 'Antrag löschen',
       message: `Antrag von "${request.konfi_name}" für "${request.activity_name}" wirklich löschen?`,

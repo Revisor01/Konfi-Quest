@@ -60,7 +60,7 @@ interface Event {
 }
 
 const AdminEventsPage: React.FC = () => {
-  const { user, setSuccess, setError } = useApp();
+  const { user, setSuccess, setError, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-events');
   const history = useHistory();
   const [presentActionSheet] = useIonActionSheet();
@@ -174,6 +174,7 @@ const AdminEventsPage: React.FC = () => {
   };
 
   const handleDeleteEvent = async (event: Event) => {
+    if (!isOnline) return;
     // Check if this is part of a series
     if (event.is_series && event.series_id) {
       // Get other events in the series
@@ -294,6 +295,7 @@ const AdminEventsPage: React.FC = () => {
   };
 
   const handleCancelEvent = async (event: Event) => {
+    if (!isOnline) return;
     const message = prompt(
       `Event "${event.name}" absagen?\n\nNachricht an die Teilnehmer (optional):`,
       'Das Event wurde leider abgesagt. Wir entschuldigen uns für die Unannehmlichkeiten.'

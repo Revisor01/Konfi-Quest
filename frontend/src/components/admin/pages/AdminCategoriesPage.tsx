@@ -197,7 +197,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
 
 const AdminCategoriesPage: React.FC = () => {
   const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-categories');
-  const { user, setSuccess, setError } = useApp();
+  const { user, setSuccess, setError, isOnline } = useApp();
 
   // Offline-Query: Categories
   const { data: categories, loading, refresh: refreshCategories } = useOfflineQuery<Category[]>(
@@ -231,6 +231,7 @@ const AdminCategoriesPage: React.FC = () => {
   };
 
   const handleDelete = async (category: Category) => {
+    if (!isOnline) return;
     presentAlert({
       header: 'Kategorie löschen',
       message: `Kategorie "${category.name}" wirklich löschen?`,
