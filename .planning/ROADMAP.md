@@ -234,7 +234,7 @@ Plans:
 **Goal:** Error Boundary Komponente erstellen und App absichern, MD5 durch SHA-256 ersetzen, helmet-Konfiguration verifizieren
 **Requirements**: [EB-01, EB-02, SEC-01, SEC-02]
 **Depends on:** Phase 65
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
 - [x] 66-01-PLAN.md — ErrorBoundary Komponente + MD5-zu-SHA256 Migration

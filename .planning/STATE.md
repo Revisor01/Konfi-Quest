@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Codebase-Hardening
-status: executing
+status: unknown
 stopped_at: Completed 66-01-PLAN.md
-last_updated: "2026-03-21T13:24:23Z"
+last_updated: "2026-03-21T13:26:08.937Z"
 progress:
   total_phases: 11
   completed_phases: 4
@@ -23,8 +23,8 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 
 ## Current Position
 
-Phase: 67 (Performance-Optimierung) — PENDING
-Plan: 0 of 0 (plans not yet created)
+Phase: 67
+Plan: Not started
 
 ## Accumulated Context
 
