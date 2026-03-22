@@ -14,7 +14,8 @@
 - Shipped **v1.9 Bugfix + Polish** - Phases 44-54 (shipped 2026-03-19)
 - **v2.0 Ionic Update + Theme** (shipped 2026-03-19)
 - Shipped **v2.1 App-Resilienz** - Phases 55-62 (shipped 2026-03-21)
-- v2.2 Codebase-Hardening - Phases 63-73 (planned)
+- Shipped **v2.2 Codebase-Hardening** - Phases 63-74 (shipped 2026-03-22)
+- v2.3 Konfi + Teamer Wrapped - Phases 75-79 (planned)
 
 ## Phases
 
@@ -155,7 +156,7 @@ Phase 54: Teamer Dashboard Zertifikat-Ansicht (1 plan, complete)
 <summary>Shipped v2.0 Ionic Update + Theme - SHIPPED 2026-03-19</summary>
 
 Ionic 8.8.1, Ionicons 8, rdlabo iOS26 2.3.0 + MD3 1.1.0, alle Capacitor Plugins auf v7 Stand.
-Kein Phase-Nummern-Block — separater Update-Milestone ohne Plans.
+Kein Phase-Nummern-Block -- separater Update-Milestone ohne Plans.
 
 </details>
 
@@ -175,160 +176,101 @@ Phase 62: Sync (1 plan, complete)
 
 </details>
 
-### v2.2 Codebase-Hardening (Planned)
+<details>
+<summary>Shipped v2.2 Codebase-Hardening (Phases 63-74) - SHIPPED 2026-03-22</summary>
 
-**Milestone Goal:** Codebase aufraeumen, DB-Schema konsolidieren, Navigation stabilisieren, Error Boundaries, Performance, Token-Refresh, Datei-Viewer.
+Phase 63: Codebase Cleanup (2 plans, complete)
+Phase 64: DB-Schema-Konsolidierung (2 plans, complete)
+Phase 65: Navigation + State (2 plans, complete)
+Phase 66: Error Boundary + Sicherheit (1 plan, complete)
+Phase 67: Performance (2 plans, complete)
+Phase 68: Token-Refresh (2 plans, complete)
+Phase 69: Datei-Viewer (2 plans, complete)
+Phase 70: Rollen-Audit Fixes (2 plans, complete)
+Phase 71: Teamer+Badge Polish (3 plans, complete)
+Phase 72: UI-Testing Fixes (3 plans, complete)
+Phase 73: Testing-Fixes Runde 2 (2 plans, complete)
+Phase 74: Nativer Datei-Viewer (2 plans, complete)
+
+</details>
+
+### v2.3 Konfi + Teamer Wrapped (Planned)
+
+**Milestone Goal:** Spotify-Wrapped-Style Jahresrueckblick fuer Konfis (vor Konfirmation) und Teamer:innen (Jahresende). Horizontale Slides, Animationen, Share-Funktion, Dashboard-Integration.
+
+- [ ] **Phase 75: Backend-Aggregation + DB-Schema** - Wrapped-Snapshots, Konfirmationsdatum, Trigger-Logik, API-Endpoints
+- [ ] **Phase 76: Slide-Container + Konfi-Slides** - Swiper-Setup, Fullscreen-Modal, alle 9 Konfi-Slides mit Animationen
+- [ ] **Phase 77: Teamer-Slides** - 7 Teamer-spezifische Slides auf Basis der Konfi-Wrapped-Infrastruktur
+- [ ] **Phase 78: Share-Funktion** - Screenshot-Export, natives Share-Sheet, Share-Card-Design
+- [ ] **Phase 79: Dashboard-Integration + Freischaltung** - Dashboard-Cards, Push-Notification, Verfuegbarkeitslogik
 
 ## Phase Details
+
+### Phase 75: Backend-Aggregation + DB-Schema
+**Goal**: Backend liefert vollstaendige Wrapped-Daten als JSONB-Snapshots fuer Konfis und Teamer:innen, mit konfigurierbarem Konfirmationsdatum und automatischer/manueller Ausloesung
+**Depends on**: Phase 74
+**Requirements**: DAT-01, DAT-02, DAT-03, DAT-04, DAT-05, DAT-06, DAT-07, DAT-08
+**Success Criteria** (what must be TRUE):
+  1. GET /api/wrapped/:userId liefert einen vollstaendigen JSONB-Snapshot mit Punkten, Events, Badges, Chat-Stats und aktivstem Monat fuer einen Konfi
+  2. GET /api/wrapped/:userId liefert einen vollstaendigen JSONB-Snapshot mit Events geleitet, Konfis betreut, Badges, Zertifikaten und Jahren aktiv fuer eine:n Teamer:in
+  3. Admin kann im Jahrgangs-Settings ein Konfirmationsdatum setzen, und am 1. des Konfirmationsmonats werden Konfi-Wrapped-Snapshots automatisch generiert
+  4. Am 1. Dezember werden Teamer-Wrapped-Snapshots automatisch generiert
+  5. Admin kann Wrapped-Generierung manuell frueher oder spaeter ausloesen (ueberschreibt automatischen Trigger)
+**Plans**: TBD
+
+### Phase 76: Slide-Container + Konfi-Slides
+**Goal**: Konfis koennen ihren Jahresrueckblick als animierte Fullscreen-Slideshow durchblaettern, mit allen 9 inhaltlichen Slides und Story-artiger Navigation
+**Depends on**: Phase 75
+**Requirements**: UI-01, UI-02, UI-03, UI-04, UI-05, UI-06, KS-01, KS-02, KS-03, KS-04, KS-05, KS-06, KS-07, KS-08, KS-09
+**Success Criteria** (what must be TRUE):
+  1. Konfi oeffnet Wrapped und sieht eine Fullscreen-Slideshow mit dunklem Hintergrund und lila Akzenten, die per horizontalem Swipe navigiert wird
+  2. Oben zeigt ein Progress-Indicator (Dots/Balken) den Fortschritt durch die Slides an, und ein X-Button schliesst die Ansicht
+  3. Jeder Slide zeigt animierte Inhalte (Count-up Zahlen, Fade-in Elemente) -- Intro, Punkte, Events, Badges, aktivster Monat, Chat, optionaler Endspurt, Abschluss
+  4. Slides zeigen ausschliesslich eigene Daten des Konfis, keine Vergleiche mit anderen Konfis
+  5. Wrapped oeffnet als Fullscreen-Modal (kein eigener Route), sodass kein Swipe-Back-Konflikt mit der Navigation entsteht
+**Plans**: TBD
+
+### Phase 77: Teamer-Slides
+**Goal**: Teamer:innen koennen ihren eigenen Jahresrueckblick mit 7 Slides durchblaettern, der die Konfi-Wrapped-Infrastruktur wiederverwendet
+**Depends on**: Phase 76
+**Requirements**: TS-01, TS-02, TS-03, TS-04, TS-05, TS-06, TS-07
+**Success Criteria** (what must be TRUE):
+  1. Teamer:in oeffnet Wrapped und sieht Fullscreen-Slideshow mit dunklem Hintergrund und rosa Akzenten
+  2. Alle 7 Teamer-Slides zeigen korrekte Daten: Intro, Events geleitet, Konfis betreut, Badges, Zertifikate, aktive Jahre, Abschluss mit Danke
+  3. Der Slide-Container (Swiper, Progress-Bar, Schliessen-Button, Animationen) ist identisch zum Konfi-Wrapped und wird wiederverwendet
+**Plans**: TBD
+
+### Phase 78: Share-Funktion
+**Goal**: Nutzer:innen koennen jeden einzelnen Wrapped-Slide als Bild im Story-Format teilen
+**Depends on**: Phase 77
+**Requirements**: SHR-01, SHR-02, SHR-03, SHR-04, SHR-05, SHR-06
+**Success Criteria** (what must be TRUE):
+  1. Auf jedem Slide ist ein Share-Button sichtbar, der den aktuellen Slide als 1080x1920 Bild exportiert
+  2. Nach dem Export oeffnet sich das native Share-Sheet (iOS/Android) mit dem Bild
+  3. Share-Cards werden als reine HTML/CSS-Elemente gerendert (keine Ionic-Shadow-DOM-Komponenten) und enthalten ein dezentes Wasserzeichen/Logo
+  4. Wenn der Bild-Export fehlschlaegt, wird automatisch ein Text-Fallback geteilt
+**Plans**: TBD
+
+### Phase 79: Dashboard-Integration + Freischaltung
+**Goal**: Konfis und Teamer:innen werden auf dem Dashboard auf ihr verfuegbares Wrapped hingewiesen und per Push benachrichtigt
+**Depends on**: Phase 78
+**Requirements**: INT-01, INT-02, INT-03, INT-04
+**Success Criteria** (what must be TRUE):
+  1. Konfi-Dashboard zeigt eine "Dein Wrapped ist da!" Card, sobald ein Wrapped-Snapshot fuer den Konfi existiert
+  2. Teamer-Dashboard zeigt eine "Dein Teamer-Jahr!" Card, sobald ein Teamer-Wrapped-Snapshot existiert
+  3. Beim Freischalten eines Wrapped erhalten betroffene Nutzer:innen eine Push-Notification
+  4. Wrapped ist pro Jahr/Zeitraum einmalig -- ein bereits generierter Snapshot wird nicht erneut generiert
+**Plans**: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69 -> 70 -> 71 -> 72 -> 73
+Phases execute in numeric order: 75 -> 76 -> 77 -> 78 -> 79
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 63. Codebase Cleanup | 2/2 | Complete    | 2026-03-21 |
-| 64. DB-Schema-Konsolidierung | 2/2 | Complete    | 2026-03-21 |
-| 65. Navigation + State | 2/2 | Complete    | 2026-03-21 |
-| 66. Error Boundary + Sicherheit | 1/1 | Complete    | 2026-03-21 |
-| 67. Performance | 2/2 | Complete    | 2026-03-21 |
-| 68. Token-Refresh | 2/2 | Complete    | 2026-03-21 |
-| 69. Datei-Viewer | 2/2 | Complete    | 2026-03-21 |
-| 70. Rollen-Audit Fixes | 2/2 | Complete    | 2026-03-21 |
-| 71. Teamer+Badge Polish | 3/3 | Complete    | 2026-03-21 |
-| 72. UI-Testing Fixes | 3/3 | Complete    | 2026-03-22 |
-| 73. Testing-Fixes Runde 2 | 2/2 | Complete    | 2026-03-22 |
-
-### Phase 63: Codebase Cleanup — Quick-Wins, Konsolidierung, Bug-Fixes
-
-**Goal:** Doppelte Type-Definitionen (User 9x, Event 8x) konsolidieren, as-any reduzieren, Debug-Logs entfernen
-**Requirements**: [CLEANUP-01, CLEANUP-02]
-**Depends on:** Phase 62
-**Plans:** 2/2 plans complete
-
-Plans:
-- [x] 63-01-PLAN.md — Typ-Konsolidierung: User + Event Interfaces zentralisieren
-- [x] 63-02-PLAN.md — Console-Cleanup + restliche as-any Reduktion
-
-### Phase 64: DB-Schema-Konsolidierung — Einheitliches Schema, Altlasten, Indizes, Foreign Keys
-
-**Goal:** Einheitliches DB-Schema, Altlasten bereinigen, fehlende Indizes und Foreign Keys ergaenzen
-**Requirements**: [SCHEMA-IDX, SCHEMA-FK, SCHEMA-CONSOLIDATE, SCHEMA-CLEANUP]
-**Depends on:** Phase 63
-**Plans:** 2/2 plans complete
-
-Plans:
-- [x] 64-01-PLAN.md — Fehlende Indizes + Foreign Keys als SQL-Migrations
-- [x] 64-02-PLAN.md — Inline Schema-Erstellung aus Routes in zentrale Migration extrahieren
-
-### Phase 65: Navigation und State-Konsistenz — CustomEvents durch LiveUpdateContext ersetzen
-
-**Goal:** Alle window.dispatchEvent/addEventListener fuer Daten-Updates auf LiveUpdateContext Pub-Sub migrieren
-**Requirements**: [NAV-01, NAV-02, NAV-03, NAV-04]
-**Depends on:** Phase 64
-**Plans:** 2/2 plans complete
-
-Plans:
-- [x] 65-01-PLAN.md — LiveUpdateType erweitern + Dispatcher migrieren (triggerRefresh statt dispatchEvent)
-- [x] 65-02-PLAN.md — Redundante addEventListener entfernen + BadgeContext/UsersPage/OrgsPage migrieren
-
-### Phase 66: Error Boundary und Sicherheitshaertung — Error Boundary, MD5 ersetzen, Sicherheits-Audit
-
-**Goal:** Error Boundary Komponente erstellen und App absichern, MD5 durch SHA-256 ersetzen, helmet-Konfiguration verifizieren
-**Requirements**: [EB-01, EB-02, SEC-01, SEC-02]
-**Depends on:** Phase 65
-**Plans:** 1/1 plans complete
-
-Plans:
-- [x] 66-01-PLAN.md — ErrorBoundary Komponente + MD5-zu-SHA256 Migration
-
-### Phase 67: Performance-Optimierung — Mega-Komponenten aufteilen, Memoization, SELECT-Stern
-
-**Goal:** 5 Mega-Komponenten (>1400 Zeilen) in wartbare Teile aufteilen, SELECT * durch explizite Spalten ersetzen
-**Requirements**: [PERF-01, PERF-02, PERF-03, PERF-04, PERF-05, PERF-06]
-**Depends on:** Phase 66
-**Plans:** 2/2 plans complete
-
-Plans:
-- [x] 67-01-PLAN.md — Admin-Mega-Komponenten aufteilen (KonfiDetailView, EventDetailView, EventModal)
-- [x] 67-02-PLAN.md — DashboardView + ChatRoom aufteilen, SELECT * ersetzen
-
-### Phase 68: Token-Refresh-System — Refresh-Tokens, kuerzere JWT-Laufzeit, Revoke-Mechanismus
-
-**Goal:** Refresh-Token-Mechanismus mit 15min Access-Token, 90 Tage Refresh-Token (rotierend), Soft-Revoke via token_invalidated_at
-**Requirements**: [TOKEN-DB, TOKEN-REFRESH, TOKEN-REVOKE, TOKEN-LOGIN, TOKEN-STORE, TOKEN-REFRESH-FE, TOKEN-RELOGIN, TOKEN-OFFLINE]
-**Depends on:** Phase 67
-**Plans:** 2/2 plans complete
-
-Plans:
-- [x] 68-01-PLAN.md — Backend: DB-Migration, /auth/refresh Endpoint, verifyTokenRBAC Update, JWT 15min
-- [x] 68-02-PLAN.md — Frontend: tokenStore Refresh-Token, api.ts Refresh-Logik, Re-Login-Dialog
-
-### Phase 69: Universeller Datei-Viewer — Fullscreen Zoom/Pan fuer Bilder in Chat + Material, Desktop + Mobile + Native
-
-**Goal:** Universelles FileViewerModal mit Zoom/Pan/Pinch, Swipe, PDF/Video/Download-Support fuer Chat und Material
-**Requirements**: [FV-01, FV-02, FV-03, FV-04, FV-05, FV-06, FV-07, FV-08, FV-09]
-**Depends on:** Phase 68
-**Plans:** 2/2 plans complete
-
-Plans:
-- [x] 69-01-PLAN.md — FileViewerModal Komponente: Zoom/Pan/Pinch, Swipe, PDF, Video, Download, Share
-- [x] 69-02-PLAN.md — Integration in Chat (MessageBubble/ChatRoom) + Material (TeamerMaterialDetailPage)
-
-### Phase 70: Rollen-Audit Fixes — Sicherheit (Multi-Tenant, Zugriff), Logik (letzte org_admin, pending Antraege), Frontend (EventDetail offline, isOnline-Buttons konsistent, Aktivitaeten-Kategorie-Filter)
-
-**Goal:** Sicherheitsluecken und Logikfehler aus Rollen-Audit schliessen, Frontend-Konsistenz verbessern (Offline-Cache, Button-States, Kategorie-Filter)
-**Requirements**: [AUDIT-S1, AUDIT-S2, AUDIT-L1, AUDIT-L2, AUDIT-L5, AUDIT-L6, AUDIT-F3]
-**Depends on:** Phase 69
-**Plans:** 2/2 plans complete
-
-Plans:
-- [x] 70-01-PLAN.md — Backend: Multi-Tenant bonus-points, Org-Users Zugriff, letzte org_admin, pending Antraege
-- [x] 70-02-PLAN.md — Frontend: EventDetailView useOfflineQuery, isOnline-Buttons, Kategorie-Filter
-
-### Phase 71: Teamer+Badge Polish — Profil-Modale Backdrop, Badge-Anzeige komplett (Filter, Grid, geheim), Zurueck-Buttons, Listen-Padding, Dashboard-Badges wie Konfi, Jahres-Badge-Luecken, Zertifikat-Karten-Groesse, Stats-Header
-
-**Goal:** 11 Testing-Issues beheben: Badge-Filter-Bug (teamer_year Kategorie fehlt), geheime Badges, Zurueck-Buttons, Badge-Grid CSS, Listen-Padding, Dashboard-Badges mit Platzhaltern, Jahres-Badge-Logik, Zertifikat-Karten, Stats-Header
-**Requirements**: [POLISH-01, POLISH-02, POLISH-03, POLISH-04, POLISH-05, POLISH-06, POLISH-07, POLISH-08, POLISH-09, POLISH-10, POLISH-11]
-**Depends on:** Phase 70
-**Plans:** 3/3 plans complete
-
-Plans:
-- [x] 71-01-PLAN.md — Backend: Badge-Progress-Daten + Jahres-Badge-Logik verifizieren
-- [x] 71-02-PLAN.md — CSS: Badge-Grid, Listen-Padding, Zertifikat-Karten min-height
-- [x] 71-03-PLAN.md — Frontend: teamer_year Fix, geheime Badges, Zurueck-Buttons, Dashboard-Badges, Stats-Header
-
-### Phase 72: UI-Testing Fixes — Material-Suchleiste Groesse, Event-Suche+Filter, Teamer-Chat Konfi-Zugriff (DirectMessageModal 403), Teamer-Cache Luecken, Offline-Button Icon
-
-**Goal:** 5 Testing-Issues beheben: Material-Suchleiste Sizing, Event-Suche auf 3 Pages, DirectMessageModal 403 fuer Teamer, Cache-Pruefung, Offline-Icon ueberall
-**Requirements**: [FIX-01, FIX-02, FIX-03, FIX-04, FIX-05]
-**Depends on:** Phase 71
-**Plans:** 3/3 plans complete
-
-Plans:
-- [x] 72-01-PLAN.md — Backend: GET /teamer/konfis Endpoint + Cache-Verifizierung
-- [x] 72-02-PLAN.md — Frontend: Event-Suche, Material-Suchleiste, Offline-Icons
-- [x] 72-03-PLAN.md — Frontend: DirectMessageModal rollen-basierter Konfis-Endpoint
-
-### Phase 73: Testing-Fixes Runde 2 — TeamerProfile Stats weg, Modal-Backdrop, Back-Pfeile, Material-Beschreibung Groesse, FileViewer PDF/DOCX Skalierung
-
-**Goal:** 5 Testing-Bugs beheben: Stats aus Profil entfernen und in KonfiStats-SectionHeader verschieben, Modal-Backdrop fixen, IonBackButton durch arrowBack ersetzen, Material-Beschreibung pruefen, PDF/DOCX nativ oeffnen per FileOpener
-**Requirements**: [BUG-01, BUG-02, BUG-03, BUG-04, BUG-05]
-**Depends on:** Phase 72
-**Plans:** 2/2 plans complete
-
-Plans:
-- [x] 73-01-PLAN.md — Frontend-Fixes: Stats entfernen, Modal-Backdrop, arrowBack, Beschreibung
-- [x] 73-02-PLAN.md — FileViewer: PDF/DOCX nativ oeffnen per FileOpener
-
-### Phase 74: Nativer Datei-Viewer — Alle Dateien via FileViewer/FileOpener nativ oeffnen, FileViewerModal nur Web-Fallback, Chat-Video onClick Fix
-
-**Goal:** Zentrale openFileNatively Utility erstellen, alle Consumer umstellen (nativ oeffnen mit FileViewerModal als Web-Fallback), Chat-Video onClick-Wrapper entfernen
-**Requirements**: [NATIVE-01, NATIVE-02, NATIVE-03, VIDEO-01]
-**Depends on:** Phase 73
-**Plans:** 2/2 plans complete
-
-Plans:
-- [x] 74-01-PLAN.md — openFileNatively Utility + Chat Video onClick Fix
-- [x] 74-02-PLAN.md — Consumer umstellen: ChatRoom, TeamerMaterialDetailPage, TeamerMaterialPage
+| 75. Backend-Aggregation + DB-Schema | 0/TBD | Not started | - |
+| 76. Slide-Container + Konfi-Slides | 0/TBD | Not started | - |
+| 77. Teamer-Slides | 0/TBD | Not started | - |
+| 78. Share-Funktion | 0/TBD | Not started | - |
+| 79. Dashboard-Integration + Freischaltung | 0/TBD | Not started | - |

@@ -79,51 +79,51 @@ Requirements fuer Milestone v2.3 Konfi + Teamer Wrapped.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DAT-01 | TBD | Pending |
-| DAT-02 | TBD | Pending |
-| DAT-03 | TBD | Pending |
-| DAT-04 | TBD | Pending |
-| DAT-05 | TBD | Pending |
-| DAT-06 | TBD | Pending |
-| DAT-07 | TBD | Pending |
-| DAT-08 | TBD | Pending |
-| KS-01 | TBD | Pending |
-| KS-02 | TBD | Pending |
-| KS-03 | TBD | Pending |
-| KS-04 | TBD | Pending |
-| KS-05 | TBD | Pending |
-| KS-06 | TBD | Pending |
-| KS-07 | TBD | Pending |
-| KS-08 | TBD | Pending |
-| KS-09 | TBD | Pending |
-| TS-01 | TBD | Pending |
-| TS-02 | TBD | Pending |
-| TS-03 | TBD | Pending |
-| TS-04 | TBD | Pending |
-| TS-05 | TBD | Pending |
-| TS-06 | TBD | Pending |
-| TS-07 | TBD | Pending |
-| UI-01 | TBD | Pending |
-| UI-02 | TBD | Pending |
-| UI-03 | TBD | Pending |
-| UI-04 | TBD | Pending |
-| UI-05 | TBD | Pending |
-| UI-06 | TBD | Pending |
-| SHR-01 | TBD | Pending |
-| SHR-02 | TBD | Pending |
-| SHR-03 | TBD | Pending |
-| SHR-04 | TBD | Pending |
-| SHR-05 | TBD | Pending |
-| SHR-06 | TBD | Pending |
-| INT-01 | TBD | Pending |
-| INT-02 | TBD | Pending |
-| INT-03 | TBD | Pending |
-| INT-04 | TBD | Pending |
+| DAT-01 | Phase 75 | Pending |
+| DAT-02 | Phase 75 | Pending |
+| DAT-03 | Phase 75 | Pending |
+| DAT-04 | Phase 75 | Pending |
+| DAT-05 | Phase 75 | Pending |
+| DAT-06 | Phase 75 | Pending |
+| DAT-07 | Phase 75 | Pending |
+| DAT-08 | Phase 75 | Pending |
+| KS-01 | Phase 76 | Pending |
+| KS-02 | Phase 76 | Pending |
+| KS-03 | Phase 76 | Pending |
+| KS-04 | Phase 76 | Pending |
+| KS-05 | Phase 76 | Pending |
+| KS-06 | Phase 76 | Pending |
+| KS-07 | Phase 76 | Pending |
+| KS-08 | Phase 76 | Pending |
+| KS-09 | Phase 76 | Pending |
+| UI-01 | Phase 76 | Pending |
+| UI-02 | Phase 76 | Pending |
+| UI-03 | Phase 76 | Pending |
+| UI-04 | Phase 76 | Pending |
+| UI-05 | Phase 76 | Pending |
+| UI-06 | Phase 76 | Pending |
+| TS-01 | Phase 77 | Pending |
+| TS-02 | Phase 77 | Pending |
+| TS-03 | Phase 77 | Pending |
+| TS-04 | Phase 77 | Pending |
+| TS-05 | Phase 77 | Pending |
+| TS-06 | Phase 77 | Pending |
+| TS-07 | Phase 77 | Pending |
+| SHR-01 | Phase 78 | Pending |
+| SHR-02 | Phase 78 | Pending |
+| SHR-03 | Phase 78 | Pending |
+| SHR-04 | Phase 78 | Pending |
+| SHR-05 | Phase 78 | Pending |
+| SHR-06 | Phase 78 | Pending |
+| INT-01 | Phase 79 | Pending |
+| INT-02 | Phase 79 | Pending |
+| INT-03 | Phase 79 | Pending |
+| INT-04 | Phase 79 | Pending |
 
 **Coverage v2.3:**
 - v2.3 requirements: 37 total
-- Mapped to phases: 0
-- Unmapped: 37
+- Mapped to phases: 37
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-22*
