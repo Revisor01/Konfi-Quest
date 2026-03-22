@@ -4,7 +4,7 @@ milestone: v2.2
 milestone_name: Codebase-Hardening
 status: unknown
 stopped_at: Completed 74-02-PLAN.md
-last_updated: "2026-03-22T09:31:29.184Z"
+last_updated: "2026-03-22T09:31:58.667Z"
 progress:
   total_phases: 19
   completed_phases: 12
@@ -23,8 +23,8 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 
 ## Current Position
 
-Phase: 74 (Nativer Datei-Viewer) — EXECUTING
-Plan: 2 of 2
+Phase: 74
+Plan: Not started
 
 ## Accumulated Context
 
