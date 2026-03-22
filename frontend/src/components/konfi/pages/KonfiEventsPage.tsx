@@ -1,5 +1,4 @@
 import React, { useState, useCallback } from 'react';
-import { useHistory } from 'react-router-dom';
 import {
   IonPage,
   IonHeader,
@@ -12,8 +11,10 @@ import {
   IonButton,
   IonIcon,
   IonSearchbar,
-  useIonModal
+  useIonModal,
+  useIonRouter
 } from '@ionic/react';
+// useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { qrCodeOutline, searchOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -30,7 +31,7 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 const KonfiEventsPage: React.FC = () => {
   const { user, setSuccess, setError } = useApp();
   const { pageRef, presentingElement } = useModalPage('konfi-events');
-  const history = useHistory();
+  const router = useIonRouter();
 
   // --- useOfflineQuery: Events ---
   const { data: events, loading, refresh } = useOfflineQuery<Event[]>(
@@ -116,7 +117,7 @@ const KonfiEventsPage: React.FC = () => {
 
   const handleSelectEvent = (event: Event) => {
     // Navigate to event detail page using React Router
-    history.push(`/konfi/events/${event.id}`);
+    router.push(`/konfi/events/${event.id}`);
   };
 
   return (

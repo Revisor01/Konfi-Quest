@@ -1,5 +1,7 @@
 import React from 'react';
-import { useParams, useHistory } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useIonRouter } from '@ionic/react';
+// useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import EventDetailView from '../views/EventDetailView';
 
 interface RouteParams {
@@ -8,10 +10,14 @@ interface RouteParams {
 
 const KonfiEventDetailPage: React.FC = () => {
   const { id } = useParams<RouteParams>();
-  const history = useHistory();
+  const router = useIonRouter();
 
   const handleBack = () => {
-    history.goBack();
+    if (router.canGoBack()) {
+      router.goBack();
+    } else {
+      router.push('/konfi/events', 'back', 'pop');
+    }
   };
 
   return (

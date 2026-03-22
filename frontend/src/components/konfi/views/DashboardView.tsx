@@ -2,10 +2,11 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   IonIcon,
   useIonAlert,
-  useIonPopover
+  useIonPopover,
+  useIonRouter
 } from '@ionic/react';
+// useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import ActivityRings from '../../admin/views/ActivityRings';
-import { useHistory } from 'react-router-dom';
 import {
   calendar,
   location,
@@ -146,7 +147,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenPointsHistory,
   dashboardConfig
 }) => {
-  const history = useHistory();
+  const router = useIonRouter();
   const [presentAlert] = useIonAlert();
   const [actualDailyVerse, setActualDailyVerse] = useState<DailyVerse | null>(null);
   const [loadingVerse, setLoadingVerse] = useState(true);
@@ -382,7 +383,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 <EventCard
                   key={event.id}
                   event={event}
-                  onClick={() => history.push(`/konfi/events/${event.id}`)}
+                  onClick={() => router.push(`/konfi/events/${event.id}`)}
                 />
               ))}
             </div>
@@ -529,7 +530,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             </>
 
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
-              <div className="app-dashboard-glass-chip" onClick={() => history.push('/konfi/badges')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div className="app-dashboard-glass-chip" onClick={() => router.push('/konfi/badges')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span>Alle Badges anzeigen</span>
                 <IonIcon icon={chevronForward} style={{ fontSize: '0.9rem' }} />
               </div>
