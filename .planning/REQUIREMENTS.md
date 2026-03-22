@@ -20,15 +20,15 @@ Requirements fuer Milestone v2.3 Konfi + Teamer Wrapped.
 
 ### Konfi-Slides (KS)
 
-- [ ] **KS-01**: Intro-Slide: "Dein Konfi-Jahr [Jahr]" mit Name und Jahrgang
-- [ ] **KS-02**: Punkte-Slide: Gesamtpunkte (Gottesdienst + Gemeinde) mit animiertem Count-up
-- [ ] **KS-03**: Events-Slide: Anzahl besuchter Events + Highlight-Event
-- [ ] **KS-04**: Badges-Slide: Verdiente Badges mit Icons, Anzahl von Total
+- [x] **KS-01**: Intro-Slide: "Dein Konfi-Jahr [Jahr]" mit Name und Jahrgang
+- [x] **KS-02**: Punkte-Slide: Gesamtpunkte (Gottesdienst + Gemeinde) mit animiertem Count-up
+- [x] **KS-03**: Events-Slide: Anzahl besuchter Events + Highlight-Event
+- [x] **KS-04**: Badges-Slide: Verdiente Badges mit Icons, Anzahl von Total
 - [ ] **KS-05**: Aktivster-Monat-Slide: Monat mit den meisten Aktivitaeten/Events
 - [ ] **KS-06**: Chat-Slide: Nachrichten gesendet, Reaktionen gegeben
 - [ ] **KS-07**: Endspurt-Slide: Wenn unter Zielwert, motivierende Nachricht mit fehlenden Punkten
 - [ ] **KS-08**: Abschluss-Slide: Zusammenfassung + Einladung Teamer:in zu werden
-- [ ] **KS-09**: Slides nur mit eigenen Daten, keine Vergleiche mit anderen Konfis (Datenschutz)
+- [x] **KS-09**: Slides nur mit eigenen Daten, keine Vergleiche mit anderen Konfis (Datenschutz)
 
 ### Teamer-Slides (TS)
 
@@ -87,15 +87,15 @@ Requirements fuer Milestone v2.3 Konfi + Teamer Wrapped.
 | DAT-06 | Phase 75 | Complete |
 | DAT-07 | Phase 75 | Complete |
 | DAT-08 | Phase 75 | Complete |
-| KS-01 | Phase 76 | Pending |
-| KS-02 | Phase 76 | Pending |
-| KS-03 | Phase 76 | Pending |
-| KS-04 | Phase 76 | Pending |
+| KS-01 | Phase 76 | Complete |
+| KS-02 | Phase 76 | Complete |
+| KS-03 | Phase 76 | Complete |
+| KS-04 | Phase 76 | Complete |
 | KS-05 | Phase 76 | Pending |
 | KS-06 | Phase 76 | Pending |
 | KS-07 | Phase 76 | Pending |
 | KS-08 | Phase 76 | Pending |
-| KS-09 | Phase 76 | Pending |
+| KS-09 | Phase 76 | Complete |
 | UI-01 | Phase 76 | Complete |
 | UI-02 | Phase 76 | Complete |
 | UI-03 | Phase 76 | Complete |
