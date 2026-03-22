@@ -48,9 +48,9 @@ Requirements fuer Milestone v2.4 Codebase-Cleanup.
 - [x] **CLN-04**: Deprecated FileViewerModal.tsx aus chat/modals/ loeschen
 - [x] **CLN-05**: crypto require in server.js an den Anfang der Datei verschieben
 - [x] **CLN-06**: SMTP_SECURE Bug fixen (|| true entfernen)
-- [ ] **CLN-07**: konfi-managment.js in konfi-management.js umbenennen (Typo)
-- [ ] **CLN-08**: activity_requests.konfi_id in user_id umbenennen (Schema-Konsistenz)
-- [ ] **CLN-09**: express-validator Validierung auf material.js und teamer.js ergaenzen
+- [x] **CLN-07**: konfi-managment.js in konfi-management.js umbenennen (Typo)
+- [x] **CLN-08**: activity_requests.konfi_id in user_id umbenennen (Schema-Konsistenz)
+- [x] **CLN-09**: express-validator Validierung auf material.js und teamer.js ergaenzen
 
 ## Out of Scope
 
@@ -88,9 +88,9 @@ Requirements fuer Milestone v2.4 Codebase-Cleanup.
 | CLN-04 | Phase 85 | Complete |
 | CLN-05 | Phase 85 | Complete |
 | CLN-06 | Phase 85 | Complete |
-| CLN-07 | Phase 85 | Pending |
-| CLN-08 | Phase 85 | Pending |
-| CLN-09 | Phase 85 | Pending |
+| CLN-07 | Phase 85 | Complete |
+| CLN-08 | Phase 85 | Complete |
+| CLN-09 | Phase 85 | Complete |
 
 **Coverage v2.4:**
 - v2.4 requirements: 22 total

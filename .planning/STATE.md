@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: Codebase-Cleanup
 status: unknown
-stopped_at: Completed 85-01-PLAN.md
-last_updated: "2026-03-22T22:50:32.024Z"
+stopped_at: Completed 85-02-PLAN.md
+last_updated: "2026-03-22T22:54:05.947Z"
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 12
-  completed_plans: 11
+  completed_plans: 12
 ---
 
 # Project State
@@ -47,6 +47,7 @@ Plan: 2 of 2
 - [Phase 84]: Fail-fast bei Migration-Fehler: Server startet nicht wenn .sql fehlschlaegt
 - [Phase 84-schema-hygiene]: Inline-Migrations-Funktionen vollstaendig loeschen statt auskommentieren: sauberer Schnitt, kein totes Code-Rauschen
 - [Phase 85-code-cleanup]: SMTP_SECURE: !== 'false' statt === 'true' || true — konsistent mit emailService.js Pattern
+- [Phase 85]: teamer.js hat keine PUT /:id Route -- Validierung auf certificate-types und certificates Routen fokussiert
 
 ### Pending Todos
 
@@ -59,6 +60,6 @@ Plan: 2 of 2
 
 ## Session Continuity
 
-Last session: 2026-03-22T22:50:32.021Z
-Stopped at: Completed 85-01-PLAN.md
+Last session: 2026-03-22T22:54:00.348Z
+Stopped at: Completed 85-02-PLAN.md
 Resume file: None
