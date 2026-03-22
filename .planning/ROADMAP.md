@@ -221,16 +221,20 @@ Phase 80: Wrapped Persistenz + Individualisierung (3 plans, complete)
 
 ## Phase Details
 
-### Phase 81: React Router Migration
-**Goal**: Die App nutzt durchgehend React Router v6 und ist damit kompatibel mit React 19
+### Phase 81: useHistory → useIonRouter Migration
+**Goal**: Alle useHistory-Aufrufe sind durch Ionics useIonRouter ersetzt (React Router v6 ist mit Ionic 8 nicht kompatibel -- useIonRouter ist der offizielle Ersatz)
 **Depends on**: Nothing (erstes Phase dieses Milestones)
 **Requirements**: RR-01, RR-02, RR-03
 **Success Criteria** (what must be TRUE):
-  1. Alle `useHistory`-Aufrufe sind durch `useNavigate` ersetzt
-  2. Alle `<Route component={...}>` sind durch `<Route element={<.../>}>` ersetzt
+  1. Kein `useHistory` Import mehr im gesamten Frontend
+  2. Alle programmatischen Navigationen nutzen `useIonRouter` (push, goBack, canGoBack)
   3. Navigation in Konfi-, Teamer- und Admin-Bereichen funktioniert identisch wie vor der Migration
-  4. TypeScript meldet keine React-Router-v5-spezifischen Typ-Fehler mehr
-**Plans**: TBD
+  4. TypeScript-Build fehlerfrei
+**Plans**: 3 plans
+Plans:
+- [ ] 81-01-PLAN.md — Auth + Konfi useHistory → useIonRouter
+- [ ] 81-02-PLAN.md — Admin + Teamer + Chat + MainTabs Migration
+- [ ] 81-03-PLAN.md — Verifikation + @types Cleanup
 
 ### Phase 82: Backend-Sicherheit + Cron
 **Goal**: Hardcodierte Geheimnisse sind aus dem Quellcode entfernt, Chat-Rooms sind organisationsgebunden, und der Wrapped-Cron verpasst nach einem Neustart keine Trigger mehr
@@ -280,7 +284,7 @@ Phase 80: Wrapped Persistenz + Individualisierung (3 plans, complete)
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 81. React Router Migration | 0/TBD | Not started | - |
+| 81. React Router Migration | 0/3 | Not started | - |
 | 82. Backend-Sicherheit + Cron | 0/TBD | Not started | - |
 | 83. Performance + Capacitor | 0/TBD | Not started | - |
 | 84. Schema-Hygiene | 0/TBD | Not started | - |
