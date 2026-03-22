@@ -324,10 +324,11 @@ Plans:
 
 ### Phase 74: Nativer Datei-Viewer — Alle Dateien via FileViewer/FileOpener nativ oeffnen, FileViewerModal nur Web-Fallback, Chat-Video onClick Fix
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Zentrale openFileNatively Utility erstellen, alle Consumer umstellen (nativ oeffnen mit FileViewerModal als Web-Fallback), Chat-Video onClick-Wrapper entfernen
+**Requirements**: [NATIVE-01, NATIVE-02, NATIVE-03, VIDEO-01]
 **Depends on:** Phase 73
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 74 to break down)
+- [ ] 74-01-PLAN.md — openFileNatively Utility + Chat Video onClick Fix
+- [ ] 74-02-PLAN.md — Consumer umstellen: ChatRoom, TeamerMaterialDetailPage, TeamerMaterialPage
