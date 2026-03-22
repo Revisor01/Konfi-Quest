@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -254,14 +254,20 @@ const TeamerKonfiStatsPage: React.FC = () => {
       .catch(() => {});
   }, [user?.id]);
 
-  const wrappedModalRef = useRef<WrappedHistoryEntry | null>(null);
+  const [wrappedModalData, setWrappedModalData] = useState<WrappedHistoryEntry | null>(null);
   const [presentWrappedModal, dismissWrappedModal] = useIonModal(WrappedModal, {
     onClose: () => dismissWrappedModal(),
     displayName: user?.display_name || '',
     wrappedType: 'konfi' as const,
-    initialData: wrappedModalRef.current?.data,
-    initialYear: wrappedModalRef.current?.year
+    initialData: wrappedModalData?.data,
+    initialYear: wrappedModalData?.year
   });
+
+  useEffect(() => {
+    if (wrappedModalData) {
+      presentWrappedModal({ cssClass: 'wrapped-modal-fullscreen' });
+    }
+  }, [wrappedModalData]);
 
   if (loading) {
     return <LoadingSpinner message="Konfi-Historie wird geladen..." />;
@@ -342,8 +348,7 @@ const TeamerKonfiStatsPage: React.FC = () => {
                   className="app-list-item"
                   style={{ width: '100%', cursor: 'pointer', borderLeftColor: '#5b21b6' }}
                   onClick={() => {
-                    wrappedModalRef.current = konfiWrapped;
-                    presentWrappedModal({ cssClass: 'wrapped-modal-fullscreen' });
+                    setWrappedModalData(konfiWrapped);
                   }}
                 >
                   <div className="app-list-item__row">

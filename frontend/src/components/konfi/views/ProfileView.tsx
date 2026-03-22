@@ -120,20 +120,25 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
   }, [profile?.id]);
 
   // WrappedModal per useIonModal mit dynamischen Daten
-  const wrappedModalRef = React.useRef<WrappedHistoryEntry | null>(null);
+  const [wrappedModalData, setWrappedModalData] = React.useState<WrappedHistoryEntry | null>(null);
   const [presentWrappedModal, dismissWrappedModal] = useIonModal(WrappedModal, {
     onClose: () => dismissWrappedModal(),
     displayName: profile.display_name,
     jahrgangName: profile.jahrgang_name || '',
-    wrappedType: wrappedModalRef.current?.wrapped_type || 'konfi',
-    initialData: wrappedModalRef.current?.data,
-    initialYear: wrappedModalRef.current?.year
+    wrappedType: wrappedModalData?.wrapped_type || 'konfi',
+    initialData: wrappedModalData?.data,
+    initialYear: wrappedModalData?.year
   });
 
-  const openWrapped = (entry: WrappedHistoryEntry) => {
-    wrappedModalRef.current = entry;
-    presentWrappedModal({ cssClass: 'wrapped-modal-fullscreen' });
-  };
+  const openWrapped = React.useCallback((entry: WrappedHistoryEntry) => {
+    setWrappedModalData(entry);
+  }, []);
+
+  React.useEffect(() => {
+    if (wrappedModalData) {
+      presentWrappedModal({ cssClass: 'wrapped-modal-fullscreen' });
+    }
+  }, [wrappedModalData]);
   
   // Load badges for accurate count
   React.useEffect(() => {

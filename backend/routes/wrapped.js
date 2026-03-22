@@ -286,10 +286,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     const { rows: konfiRows } = await client.query(
       `SELECT COUNT(DISTINCT kp.user_id) as total,
               ARRAY_AGG(DISTINCT j.name) as jahrgaenge
-       FROM teamer_jahrgang_assignments tja
-       JOIN jahrgaenge j ON tja.jahrgang_id = j.id
+       FROM user_jahrgang_assignments uja
+       JOIN jahrgaenge j ON uja.jahrgang_id = j.id
        JOIN konfi_profiles kp ON kp.jahrgang_id = j.id
-       WHERE tja.user_id = $1 AND j.organization_id = $2`,
+       WHERE uja.user_id = $1 AND j.organization_id = $2`,
       [userId, orgId]
     );
     const totalKonfis = konfiRows.length > 0 ? parseInt(konfiRows[0].total, 10) || 0 : 0;
@@ -386,43 +386,6 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     } catch (err) {
       console.error('Error loading wrapped snapshot:', err);
       res.status(500).json({ error: 'Fehler beim Laden des Wrapped-Snapshots' });
-    }
-  });
-
-  // GET /status - Wrapped-Verfuegbarkeit pruefen
-  router.get('/status', rbacVerifier, async (req, res) => {
-    try {
-      const roleName = req.user.role_name;
-      const currentYear = new Date().getFullYear();
-
-      if (roleName === 'konfi') {
-        // Konfi: Pruefen ob wrapped_released_at auf dem Jahrgang gesetzt ist
-        const { rows } = await db.query(
-          `SELECT j.wrapped_released_at FROM konfi_profiles kp
-           JOIN jahrgaenge j ON kp.jahrgang_id = j.id
-           WHERE kp.user_id = $1`,
-          [req.user.id]
-        );
-        const available = rows.length > 0 && rows[0].wrapped_released_at != null;
-        return res.json({ available, year: currentYear });
-      }
-
-      if (roleName === 'teamer') {
-        // Teamer: Pruefen ob ein Snapshot existiert
-        const { rows } = await db.query(
-          `SELECT id FROM wrapped_snapshots
-           WHERE user_id = $1 AND wrapped_type = 'teamer'
-           ORDER BY year DESC LIMIT 1`,
-          [req.user.id]
-        );
-        return res.json({ available: rows.length > 0, year: currentYear });
-      }
-
-      // Admin/OrgAdmin: immer false (haben kein eigenes Wrapped)
-      res.json({ available: false, year: currentYear });
-    } catch (err) {
-      console.error('Error checking wrapped status:', err);
-      res.status(500).json({ error: 'Fehler beim Pr\u00fcfen des Wrapped-Status' });
     }
   });
 

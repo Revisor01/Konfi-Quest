@@ -133,14 +133,20 @@ const TeamerProfilePage: React.FC = () => {
       .catch(() => {});
   }, [user?.id]);
 
-  const wrappedModalRef = React.useRef<WrappedHistoryEntry | null>(null);
+  const [wrappedModalData, setWrappedModalData] = React.useState<WrappedHistoryEntry | null>(null);
   const [presentWrappedModal, dismissWrappedModal] = useIonModal(WrappedModal, {
     onClose: () => dismissWrappedModal(),
     displayName: profile?.user?.display_name || '',
-    wrappedType: wrappedModalRef.current?.wrapped_type || 'teamer',
-    initialData: wrappedModalRef.current?.data,
-    initialYear: wrappedModalRef.current?.year
+    wrappedType: wrappedModalData?.wrapped_type || 'teamer',
+    initialData: wrappedModalData?.data,
+    initialYear: wrappedModalData?.year
   });
+
+  React.useEffect(() => {
+    if (wrappedModalData) {
+      presentWrappedModal({ cssClass: 'wrapped-modal-fullscreen' });
+    }
+  }, [wrappedModalData]);
 
   // Logout
   const handleLogout = () => {
@@ -414,8 +420,7 @@ const TeamerProfilePage: React.FC = () => {
                     className="app-list-item"
                     style={{ width: '100%', cursor: 'pointer', marginBottom: '8px', borderLeftColor: '#e11d48' }}
                     onClick={() => {
-                      wrappedModalRef.current = entry;
-                      presentWrappedModal({ cssClass: 'wrapped-modal-fullscreen' });
+                      setWrappedModalData(entry);
                     }}
                   >
                     <div className="app-list-item__row">
