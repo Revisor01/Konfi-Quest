@@ -289,7 +289,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 81. React Router Migration | 3/3 | Complete    | 2026-03-22 |
-| 82. Backend-Sicherheit + Cron | 3/3 | Complete   | 2026-03-22 |
+| 82. Backend-Sicherheit + Cron | 3/3 | Complete    | 2026-03-22 |
 | 83. Performance + Capacitor | 0/TBD | Not started | - |
 | 84. Schema-Hygiene | 0/TBD | Not started | - |
 | 85. Code-Cleanup | 0/TBD | Not started | - |
