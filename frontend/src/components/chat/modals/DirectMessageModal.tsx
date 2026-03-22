@@ -46,8 +46,9 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSucc
   const loadUsers = async () => {
     setLoading(true);
     try {
+      const konfisEndpoint = user?.type === 'teamer' ? '/teamer/konfis' : '/admin/konfis';
       const [konfisRes, adminsRes] = await Promise.all([
-        api.get('/admin/konfis'),
+        api.get(konfisEndpoint),
         api.get('/users').catch(() => ({ data: [] })) // Fallback if endpoint doesn't exist
       ]);
 
