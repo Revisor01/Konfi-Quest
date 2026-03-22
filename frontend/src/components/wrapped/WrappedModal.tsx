@@ -5,7 +5,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, EffectCreative } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import api from '../../services/api';
-import type { KonfiWrappedData } from '../../types/wrapped';
+import type { KonfiWrappedData, TeamerWrappedData, WrappedResponse } from '../../types/wrapped';
 import IntroSlide from './slides/IntroSlide';
 import PunkteSlide from './slides/PunkteSlide';
 import EventsSlide from './slides/EventsSlide';
@@ -14,6 +14,13 @@ import AktivsterMonatSlide from './slides/AktivsterMonatSlide';
 import ChatSlide from './slides/ChatSlide';
 import EndspurtSlide from './slides/EndspurtSlide';
 import AbschlussSlide from './slides/AbschlussSlide';
+import TeamerIntroSlide from './slides/teamer/TeamerIntroSlide';
+import TeamerEventsSlide from './slides/teamer/TeamerEventsSlide';
+import TeamerKonfisSlide from './slides/teamer/TeamerKonfisSlide';
+import TeamerBadgesSlide from './slides/teamer/TeamerBadgesSlide';
+import TeamerZertifikateSlide from './slides/teamer/TeamerZertifikateSlide';
+import TeamerJahreSlide from './slides/teamer/TeamerJahreSlide';
+import TeamerAbschlussSlide from './slides/teamer/TeamerAbschlussSlide';
 import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/effect-creative';
@@ -22,20 +29,24 @@ import './WrappedModal.css';
 interface WrappedModalProps {
   onClose: () => void;
   displayName: string;
-  jahrgangName: string;
+  jahrgangName?: string;
+  wrappedType?: 'konfi' | 'teamer';
 }
 
-const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrgangName }) => {
-  const [data, setData] = useState<KonfiWrappedData | null>(null);
+const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrgangName, wrappedType: initialType }) => {
+  const [data, setData] = useState<KonfiWrappedData | TeamerWrappedData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [year, setYear] = useState<number | null>(null);
+  const [wrappedType, setWrappedType] = useState<'konfi' | 'teamer'>(initialType || 'konfi');
 
   useEffect(() => {
     api.get('/wrapped/me')
       .then((res) => {
-        setData(res.data.data);
-        setYear(res.data.year);
+        const response = res.data as WrappedResponse;
+        setData(response.data);
+        setYear(response.year);
+        setWrappedType(response.wrapped_type);
       })
       .catch((err) => {
         if (err.response?.status === 404) {
@@ -50,120 +61,133 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
     setActiveIndex(swiper.activeIndex);
   }, []);
 
-  // Slides dynamisch aufbauen (Endspurt nur wenn aktiv)
-  const buildSlides = () => {
-    if (!data || !year) return [];
-
+  // Konfi-Slides aufbauen (Endspurt nur wenn aktiv)
+  const buildKonfiSlides = (konfiData: KonfiWrappedData, slideYear: number) => {
     const slides: Array<{ key: string; content: React.ReactNode }> = [];
     let slideIndex = 0;
 
-    // 0: Intro
     slides.push({
       key: 'intro',
       content: (
         <IntroSlide
           isActive={activeIndex === slideIndex}
           displayName={displayName}
-          jahrgangName={jahrgangName}
-          year={year}
+          jahrgangName={jahrgangName || ''}
+          year={slideYear}
         />
       ),
     });
     slideIndex++;
 
-    // 1: Punkte
     slides.push({
       key: 'punkte',
-      content: (
-        <PunkteSlide
-          isActive={activeIndex === slideIndex}
-          punkte={data.slides.punkte}
-        />
-      ),
+      content: <PunkteSlide isActive={activeIndex === slideIndex} punkte={konfiData.slides.punkte} />,
     });
     slideIndex++;
 
-    // 2: Events
     slides.push({
       key: 'events',
-      content: (
-        <EventsSlide
-          isActive={activeIndex === slideIndex}
-          events={data.slides.events}
-        />
-      ),
+      content: <EventsSlide isActive={activeIndex === slideIndex} events={konfiData.slides.events} />,
     });
     slideIndex++;
 
-    // 3: Badges
     slides.push({
       key: 'badges',
-      content: (
-        <BadgesSlide
-          isActive={activeIndex === slideIndex}
-          badges={data.slides.badges}
-        />
-      ),
+      content: <BadgesSlide isActive={activeIndex === slideIndex} badges={konfiData.slides.badges} />,
     });
     slideIndex++;
 
-    // 4: Aktivster Monat
     slides.push({
       key: 'aktivster-monat',
-      content: (
-        <AktivsterMonatSlide
-          isActive={activeIndex === slideIndex}
-          aktivsterMonat={data.slides.aktivster_monat}
-        />
-      ),
+      content: <AktivsterMonatSlide isActive={activeIndex === slideIndex} aktivsterMonat={konfiData.slides.aktivster_monat} />,
     });
     slideIndex++;
 
-    // 5: Chat
     slides.push({
       key: 'chat',
-      content: (
-        <ChatSlide
-          isActive={activeIndex === slideIndex}
-          chat={data.slides.chat}
-        />
-      ),
+      content: <ChatSlide isActive={activeIndex === slideIndex} chat={konfiData.slides.chat} />,
     });
     slideIndex++;
 
-    // 6: Endspurt (nur wenn aktiv)
-    if (data.slides.endspurt.aktiv) {
+    if (konfiData.slides.endspurt.aktiv) {
       slides.push({
         key: 'endspurt',
-        content: (
-          <EndspurtSlide
-            isActive={activeIndex === slideIndex}
-            endspurt={data.slides.endspurt}
-          />
-        ),
+        content: <EndspurtSlide isActive={activeIndex === slideIndex} endspurt={konfiData.slides.endspurt} />,
       });
       slideIndex++;
     }
 
-    // Letzter Slide: Abschluss
     slides.push({
       key: 'abschluss',
-      content: (
-        <AbschlussSlide
-          isActive={activeIndex === slideIndex}
-          data={data}
-          year={year}
-        />
-      ),
+      content: <AbschlussSlide isActive={activeIndex === slideIndex} data={konfiData} year={slideYear} />,
     });
 
     return slides;
   };
 
+  // Teamer-Slides aufbauen (7 Slides)
+  const buildTeamerSlides = (teamerData: TeamerWrappedData, slideYear: number) => {
+    const slides: Array<{ key: string; content: React.ReactNode }> = [];
+    let slideIndex = 0;
+
+    slides.push({
+      key: 'teamer-intro',
+      content: <TeamerIntroSlide isActive={activeIndex === slideIndex} displayName={displayName} year={slideYear} />,
+    });
+    slideIndex++;
+
+    slides.push({
+      key: 'teamer-events',
+      content: <TeamerEventsSlide isActive={activeIndex === slideIndex} events={teamerData.slides.events_geleitet} />,
+    });
+    slideIndex++;
+
+    slides.push({
+      key: 'teamer-konfis',
+      content: <TeamerKonfisSlide isActive={activeIndex === slideIndex} konfis={teamerData.slides.konfis_betreut} />,
+    });
+    slideIndex++;
+
+    slides.push({
+      key: 'teamer-badges',
+      content: <TeamerBadgesSlide isActive={activeIndex === slideIndex} badges={teamerData.slides.badges} />,
+    });
+    slideIndex++;
+
+    slides.push({
+      key: 'teamer-zertifikate',
+      content: <TeamerZertifikateSlide isActive={activeIndex === slideIndex} zertifikate={teamerData.slides.zertifikate} />,
+    });
+    slideIndex++;
+
+    slides.push({
+      key: 'teamer-jahre',
+      content: <TeamerJahreSlide isActive={activeIndex === slideIndex} engagement={teamerData.slides.engagement} />,
+    });
+    slideIndex++;
+
+    slides.push({
+      key: 'teamer-abschluss',
+      content: <TeamerAbschlussSlide isActive={activeIndex === slideIndex} data={teamerData} year={slideYear} />,
+    });
+
+    return slides;
+  };
+
+  // Slides dynamisch aufbauen basierend auf wrappedType
+  const buildSlides = () => {
+    if (!data || !year) return [];
+
+    if (wrappedType === 'teamer') {
+      return buildTeamerSlides(data as TeamerWrappedData, year);
+    }
+    return buildKonfiSlides(data as KonfiWrappedData, year);
+  };
+
   const slides = data ? buildSlides() : [];
 
   return (
-    <div className="wrapped-overlay">
+    <div className={`wrapped-overlay${wrappedType === 'teamer' ? ' wrapped-overlay--teamer' : ''}`}>
       <div className="wrapped-header">
         <div className="wrapped-pagination" />
         <button className="wrapped-close-btn" onClick={onClose} aria-label="Schlie&szlig;en">
