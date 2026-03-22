@@ -1,6 +1,6 @@
 // MainTabs.tsx
 import React, { useState, useEffect } from 'react';
-import { Redirect, Route, useLocation } from 'react-router-dom'; // useLocation importieren!
+import { Redirect, Route, RouteComponentProps, useLocation } from 'react-router-dom'; // useLocation importieren!
 import {
   IonIcon,
   IonLabel,
@@ -24,6 +24,8 @@ import {
   people, chatbubbles, star, ellipsisHorizontal,
   person, home, flash, document as documentIcon, calendar, business
 } from 'ionicons/icons';
+import { useIonRouter } from '@ionic/react';
+// useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
 import api from '../../services/api';
@@ -64,6 +66,32 @@ import TeamerMaterialPage from '../teamer/pages/TeamerMaterialPage';
 import TeamerProfilePage from '../teamer/pages/TeamerProfilePage';
 import TeamerBadgesPage from '../teamer/pages/TeamerBadgesPage';
 import TeamerKonfiStatsPage from '../teamer/pages/TeamerKonfiStatsPage';
+
+// Wrapper-Komponenten fuer Route render-props (migriert von props.history.goBack())
+const KonfiDetailRoute: React.FC<RouteComponentProps<{ id: string }>> = ({ match }) => {
+  const router = useIonRouter();
+  return <KonfiDetailView konfiId={parseInt(match.params.id)} onBack={() => router.goBack()} />;
+};
+
+const AdminEventDetailRoute: React.FC<RouteComponentProps<{ id: string }>> = ({ match }) => {
+  const router = useIonRouter();
+  return <EventDetailView eventId={parseInt(match.params.id)} onBack={() => router.goBack()} />;
+};
+
+const AdminChatRoomRoute: React.FC<RouteComponentProps<{ roomId: string }>> = ({ match }) => {
+  const router = useIonRouter();
+  return <ChatRoomView roomId={parseInt(match.params.roomId)} onBack={() => router.goBack()} />;
+};
+
+const TeamerChatRoomRoute: React.FC<RouteComponentProps<{ roomId: string }>> = ({ match }) => {
+  const router = useIonRouter();
+  return <ChatRoomView roomId={parseInt(match.params.roomId)} onBack={() => router.goBack()} />;
+};
+
+const KonfiChatRoomRoute: React.FC<RouteComponentProps<{ roomId: string }>> = ({ match }) => {
+  const router = useIonRouter();
+  return <ChatRoomView roomId={parseInt(match.params.roomId)} onBack={() => router.goBack()} />;
+};
 
 const MainTabs: React.FC = () => {
   const { user } = useApp();
@@ -122,23 +150,14 @@ const MainTabs: React.FC = () => {
         <IonRouterOutlet>
           <Route exact path="/admin" render={() => <Redirect to="/admin/konfis" />} />
           <Route exact path="/admin/konfis" component={AdminKonfisPage} />
-          <Route path="/admin/konfis/:id" render={(props) => {
-            const konfiId = parseInt(props.match.params.id);
-            return <KonfiDetailView konfiId={konfiId} onBack={() => props.history.goBack()} />;
-          }} />
+          <Route path="/admin/konfis/:id" component={KonfiDetailRoute} />
 
           {/* CHAT ROUTEN - Nach Konfis-Pattern */}
           <Route exact path="/admin/chat" component={ChatOverviewPage} />
-          <Route path="/admin/chat/room/:roomId" render={(props) => {
-            const roomId = parseInt(props.match.params.roomId);
-            return <ChatRoomView roomId={roomId} onBack={() => props.history.goBack()} />;
-          }} />
+          <Route path="/admin/chat/room/:roomId" component={AdminChatRoomRoute} />
 
           <Route exact path="/admin/activities" component={AdminActivitiesPage} />
-          <Route path="/admin/events/:id" render={(props) => {
-            const eventId = parseInt(props.match.params.id);
-            return <EventDetailView eventId={eventId} onBack={() => props.history.goBack()} />;
-          }} />
+          <Route path="/admin/events/:id" component={AdminEventDetailRoute} />
           <Route exact path="/admin/events" component={AdminEventsPage} />
           <Route exact path="/admin/settings/categories" component={AdminCategoriesPage} />
           <Route exact path="/admin/settings/jahrgaenge" component={AdminJahrgaengeePage} />
@@ -207,10 +226,7 @@ const MainTabs: React.FC = () => {
           <Route exact path="/teamer" render={() => <Redirect to="/teamer/dashboard" />} />
           <Route exact path="/teamer/dashboard" component={TeamerDashboardPage} />
           <Route exact path="/teamer/chat" component={ChatOverviewPage} />
-          <Route path="/teamer/chat/room/:roomId" render={(props) => {
-            const roomId = parseInt(props.match.params.roomId);
-            return <ChatRoomView roomId={roomId} onBack={() => props.history.goBack()} />;
-          }} />
+          <Route path="/teamer/chat/room/:roomId" component={TeamerChatRoomRoute} />
           <Route exact path="/teamer/events" component={TeamerEventsPage} />
           <Route exact path="/teamer/material" component={TeamerMaterialPage} />
 
@@ -263,10 +279,7 @@ const MainTabs: React.FC = () => {
 
           {/* CHAT ROUTEN - Nach Konfis-Pattern */}
           <Route exact path="/konfi/chat" component={ChatOverviewPage} />
-          <Route path="/konfi/chat/room/:roomId" render={(props) => {
-            const roomId = parseInt(props.match.params.roomId);
-            return <ChatRoomView roomId={roomId} onBack={() => props.history.goBack()} />;
-          }} />
+          <Route path="/konfi/chat/room/:roomId" component={KonfiChatRoomRoute} />
 
           <Route exact path="/konfi/requests" component={KonfiRequestsPage} />
           <Route exact path="/konfi/profile" component={KonfiProfilePage} />
