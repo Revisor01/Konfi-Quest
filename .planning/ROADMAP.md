@@ -198,7 +198,7 @@ Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69 -> 70 ->
 | 70. Rollen-Audit Fixes | 2/2 | Complete    | 2026-03-21 |
 | 71. Teamer+Badge Polish | 3/3 | Complete    | 2026-03-21 |
 | 72. UI-Testing Fixes | 3/3 | Complete    | 2026-03-22 |
-| 73. Testing-Fixes Runde 2 | 0/2 | Planned    | |
+| 73. Testing-Fixes Runde 2 | 1/2 | In Progress|  |
 
 ### Phase 63: Codebase Cleanup — Quick-Wins, Konsolidierung, Bug-Fixes
 
@@ -316,8 +316,8 @@ Plans:
 **Goal:** 5 Testing-Bugs beheben: Stats aus Profil entfernen und in KonfiStats-SectionHeader verschieben, Modal-Backdrop fixen, IonBackButton durch arrowBack ersetzen, Material-Beschreibung pruefen, PDF/DOCX nativ oeffnen per FileOpener
 **Requirements**: [BUG-01, BUG-02, BUG-03, BUG-04, BUG-05]
 **Depends on:** Phase 72
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 73-01-PLAN.md — Frontend-Fixes: Stats entfernen, Modal-Backdrop, arrowBack, Beschreibung
-- [ ] 73-02-PLAN.md — FileViewer: PDF/DOCX nativ oeffnen per FileOpener
+- [x] 73-02-PLAN.md — FileViewer: PDF/DOCX nativ oeffnen per FileOpener

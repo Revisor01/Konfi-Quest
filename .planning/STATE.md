@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Codebase-Hardening
 status: unknown
-stopped_at: Completed 72-03-PLAN.md
-last_updated: "2026-03-22T07:43:15.797Z"
+stopped_at: Completed 73-02-PLAN.md
+last_updated: "2026-03-22T08:29:01.355Z"
 progress:
-  total_phases: 17
+  total_phases: 18
   completed_phases: 10
-  total_plans: 21
-  completed_plans: 21
+  total_plans: 23
+  completed_plans: 22
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 72 — UI-Testing Fixes
+**Current focus:** Phase 73 — Testing-Fixes Runde 2
 
 ## Current Position
 
-Phase: 72
-Plan: Not started
+Phase: 73 (Testing-Fixes Runde 2) — EXECUTING
+Plan: 2 of 2
 
 ## Accumulated Context
 
@@ -61,6 +61,7 @@ All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestone
 - [Phase 72]: Cache-Luecken (D-14) sind erwartetes useOfflineQuery-Verhalten, kein Bug
 - [Phase 72]: Searchbar in Pages statt Views eingefuegt - clientseitiger Filter vor Weitergabe
 - [Phase 72]: user.type === 'teamer' als Unterscheidung fuer Konfis-Endpoint im DirectMessageModal
+- [Phase 73]: Automatisches natives Oeffnen per useEffect bei PDF/DOCX auf nativer Plattform
 
 ### Roadmap Evolution
 
@@ -80,6 +81,6 @@ All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestone
 
 ## Session Continuity
 
-Last session: 2026-03-22T07:42:31.908Z
-Stopped at: Completed 72-03-PLAN.md
+Last session: 2026-03-22T08:29:01.353Z
+Stopped at: Completed 73-02-PLAN.md
 Resume file: None
