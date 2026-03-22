@@ -14,7 +14,7 @@
 - Shipped **v1.9 Bugfix + Polish** - Phases 44-54 (shipped 2026-03-19)
 - **v2.0 Ionic Update + Theme** (shipped 2026-03-19)
 - Shipped **v2.1 App-Resilienz** - Phases 55-62 (shipped 2026-03-21)
-- v2.2 Codebase-Hardening - Phases 63-72 (planned)
+- v2.2 Codebase-Hardening - Phases 63-73 (planned)
 
 ## Phases
 
@@ -184,7 +184,7 @@ Phase 62: Sync (1 plan, complete)
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69 -> 70 -> 71 -> 72
+Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69 -> 70 -> 71 -> 72 -> 73
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -198,6 +198,7 @@ Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69 -> 70 ->
 | 70. Rollen-Audit Fixes | 2/2 | Complete    | 2026-03-21 |
 | 71. Teamer+Badge Polish | 3/3 | Complete    | 2026-03-21 |
 | 72. UI-Testing Fixes | 3/3 | Complete    | 2026-03-22 |
+| 73. Testing-Fixes Runde 2 | 0/2 | Planned    | |
 
 ### Phase 63: Codebase Cleanup — Quick-Wins, Konsolidierung, Bug-Fixes
 
@@ -312,10 +313,11 @@ Plans:
 
 ### Phase 73: Testing-Fixes Runde 2 — TeamerProfile Stats weg, Modal-Backdrop, Back-Pfeile, Material-Beschreibung Groesse, FileViewer PDF/DOCX Skalierung
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** 5 Testing-Bugs beheben: Stats aus Profil entfernen und in KonfiStats-SectionHeader verschieben, Modal-Backdrop fixen, IonBackButton durch arrowBack ersetzen, Material-Beschreibung pruefen, PDF/DOCX nativ oeffnen per FileOpener
+**Requirements**: [BUG-01, BUG-02, BUG-03, BUG-04, BUG-05]
 **Depends on:** Phase 72
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 73 to break down)
+- [ ] 73-01-PLAN.md — Frontend-Fixes: Stats entfernen, Modal-Backdrop, arrowBack, Beschreibung
+- [ ] 73-02-PLAN.md — FileViewer: PDF/DOCX nativ oeffnen per FileOpener
