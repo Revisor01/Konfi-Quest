@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -33,6 +33,8 @@ import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import PointsHistoryModal from '../../konfi/modals/PointsHistoryModal';
+import WrappedModal from '../../wrapped/WrappedModal';
+import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader } from '../../shared';
 
@@ -110,7 +112,8 @@ import {
   gridOutline,
   prismOutline,
   cubeOutline,
-  handLeft
+  handLeft,
+  timeOutline
 } from 'ionicons/icons';
 import { triggerPullHaptic } from '../../../utils/haptics';
 
@@ -237,6 +240,29 @@ const TeamerKonfiStatsPage: React.FC = () => {
   );
   const konfiData = profileData?.konfi_data || null;
 
+  // Konfi-Wrapped laden
+  const [konfiWrapped, setKonfiWrapped] = useState<WrappedHistoryEntry | null>(null);
+
+  React.useEffect(() => {
+    if (!user?.id) return;
+    api.get(`/wrapped/history/${user.id}`)
+      .then(res => {
+        const entries: WrappedHistoryEntry[] = res.data || [];
+        const konfiEntry = entries.find(e => e.wrapped_type === 'konfi');
+        if (konfiEntry) setKonfiWrapped(konfiEntry);
+      })
+      .catch(() => {});
+  }, [user?.id]);
+
+  const wrappedModalRef = useRef<WrappedHistoryEntry | null>(null);
+  const [presentWrappedModal, dismissWrappedModal] = useIonModal(WrappedModal, {
+    onClose: () => dismissWrappedModal(),
+    displayName: user?.display_name || '',
+    wrappedType: 'konfi' as const,
+    initialData: wrappedModalRef.current?.data,
+    initialYear: wrappedModalRef.current?.year
+  });
+
   if (loading) {
     return <LoadingSpinner message="Konfi-Historie wird geladen..." />;
   }
@@ -306,6 +332,42 @@ const TeamerKonfiStatsPage: React.FC = () => {
             ]}
           />
         </div>
+
+        {/* Konfi-Wrapped Card */}
+        {konfiWrapped && (
+          <IonList inset={true} style={{ margin: '16px' }}>
+            <IonCard className="app-card">
+              <IonCardContent style={{ padding: '16px' }}>
+                <div
+                  className="app-list-item"
+                  style={{ width: '100%', cursor: 'pointer', borderLeftColor: '#5b21b6' }}
+                  onClick={() => {
+                    wrappedModalRef.current = konfiWrapped;
+                    presentWrappedModal({ cssClass: 'wrapped-modal-fullscreen' });
+                  }}
+                >
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                      <div className="app-icon-circle" style={{ backgroundColor: '#5b21b6' }}>
+                        <IonIcon icon={timeOutline} />
+                      </div>
+                      <div className="app-list-item__content">
+                        <div className="app-list-item__title">
+                          Dein Konfi-Wrapped {konfiWrapped.year}
+                        </div>
+                        <div className="app-list-item__meta">
+                          <span className="app-list-item__meta-item">
+                            Dein persönlicher Rückblick aus der Konfi-Zeit
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
 
         {/* Konfi-Badges */}
         {konfiData.badges.length > 0 && (() => {
