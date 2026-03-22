@@ -24,18 +24,9 @@ Offline-First: Alle 30 Pages mit SWR-Cache, WriteQueue fuer Chat/Antraege/Admin-
 
 Types konsolidiert, 73 DB-Indizes + 23 FKs, CustomEvents→LiveUpdateContext, ErrorBoundary, Performance-Splits, Token-Refresh (15min+90d+Soft-Revoke), nativer Datei-Viewer, Rollen-Audit-Fixes, Teamer+Badge-Polish, UI-Testing-Fixes (12 Phasen, 25 Plans).
 
-## Current Milestone: v2.3 Konfi + Teamer Wrapped
+## Shipped: v2.3 Konfi + Teamer Wrapped (2026-03-22)
 
-**Goal:** Spotify-Wrapped-Style Jahresrueckblick fuer Konfis (vor Konfirmation) und Teamer:innen (Jahresende). Horizontale Slides, Prozent-Vergleiche, Share-Funktion, Teamer-Einladung.
-
-**Target features:**
-- Konfi Wrapped: Punkte, Ranking, Badges, Events, Vergleiche ("mehr als X%"), Teamer-Einladung
-- Teamer Wrapped: Events geleitet, Konfis betreut, Badges, Zertifikate, Vergleiche
-- Horizontaler Slide-through (wie Spotify Wrapped), dunkler Hintergrund, animiert
-- Share-Funktion (Screenshot/natives Share)
-- Backend Aggregations-Queries mit Caching
-- Konfirmations-Datum pro Jahrgang konfigurierbar (Trigger fuer Konfi Wrapped)
-- Admin-Steuerung: Wrapped freischalten
+Spotify-Wrapped-Style Jahresrueckblick: 9 Konfi-Slides + 7 Teamer-Slides mit Swiper 12, EffectCreative, Count-up Animationen. Share-Funktion (html-to-image, 1080x1920 Story-Export, natives Share-Sheet). Individualisierung: highlight_type-basierte Slide-Reihenfolge, seed-gesteuerte Formulierungen, KategorieSlide-Balkendiagramm, GottesdienstSlide-Counter, UeberDasZiel-Konfetti. Dashboard-Cards + Push bei Freischaltung. Wiederansicht "Meine Wrappeds" in Profilen. 6 Phasen, 11 Plans, 2213 LOC.
 
 ## Geplant: v2.4 Design-Angleich
 
@@ -119,26 +110,21 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 - QR-Code Self-Check-in mit Zeitfenster-Validierung und manuelle Admin-Korrektur -- v1.7
 - "Was mitbringen"-Textfeld auf Events mit Dashboard-Widget-Integration -- v1.7
 - Pro-Konfi Anwesenheitsstatistik mit Farbcodierung und verpasste-Events-Liste -- v1.7
+- Offline-First SWR-Cache, WriteQueue, Corner-Badges, axios-retry, koordinierter Sync -- v2.1
+- Token-Refresh (15min Access + 90d Refresh + Soft-Revoke), nativer Datei-Viewer, 73 DB-Indizes -- v2.2
+- Konfi-Wrapped: 9 Slides (Intro, Punkte, Events, Badges, Monat, Chat, Endspurt, Abschluss) mit Swiper 12 -- v2.3
+- Teamer-Wrapped: 7 Slides mit Rosa-Farbschema und geteilter Infrastruktur -- v2.3
+- Share-Funktion: 1080x1920 Story-Export via html-to-image + natives Share-Sheet -- v2.3
+- Wrapped-Individualisierung: highlight_type, Kategorie-Balkendiagramm, Gottesdienst-Counter, Konfetti, Formulierungen -- v2.3
+- Dashboard-Integration: Wrapped-Cards + Push-Notification bei Freischaltung -- v2.3
+- Wiederansicht "Meine Wrappeds" in Konfi- und Teamer-Profilen -- v2.3
 
 ### Active
 
-- [ ] Ghost-Push-Bug debuggen und fixen (leere Admin-Push alle 5 Min)
-- [ ] Event-Sichtbarkeit: Jahrgangs-Filter, abgesagte Events, Pflicht-Events korrekt
-- [ ] Auto-Enrollment bei Jahrgangs-Beitritt fuer bestehende Pflicht-Events
-- [ ] Punkte-Toggle-Sperre, Admin-Listen-Korrektur, Ein-Typ-Statusbalken
-- [ ] Punkte-History Header Layout und korrekte Datenanzeige
-- [ ] UI-Polish: Toggles, Badge-Rundung, Chat-Badge, QR-Button, Befoerdern-Text
-- [ ] Admin-Struktur: Zertifikate/Dashboard/Badges als Unterseiten im Inhalt-Bereich
-- [ ] Event-Logik: Teamer-only Felder, Absagen, Teilnehmer-Filter, Event-Chat
-- [ ] Badge-UI: Modal-Selection, Segment-Position, Teamer-Badge-Ansicht
-- [ ] Teamer-Profil ordentlich gestalten
-- [ ] Admin-Badge fuer unverbuchte Events
+(Frisch fuer naechsten Milestone)
 
 ### Out of Scope
 
-- Teamer-System (Rolle, Dashboard, Badges, Events, Chat) -- shipped v1.8
-- Konfi Wrapped -- eigener Milestone (Timing-abhaengig)
-- Offline-Support -- Komplexitaet zu hoch, nur bei konkretem Bedarf
 - App Store Submission -- erst nach Stabilisierung
 - Komplettes Backend-Refactoring (Route-Splitting) -- funktioniert, nur kritische Fixes
 - API-Dokumentation (Swagger/OpenAPI) -- kein externer Zugriff geplant
@@ -155,8 +141,9 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 - v1.6 shipped: Dashboard-Konfig + Punkte-Logik (4 Phasen, 7 Plans, 13 Requirements, 18 Dateien, +866/-524 Zeilen)
 - v1.7 shipped: Unterricht + Pflicht-Events (4 Phasen, 8 Plans, 17 Requirements, 23 Dateien, +2312/-523 Zeilen)
 - v1.8 shipped: Teamer (5 Phasen, 14 Plans, 27 Requirements, Rolle+Events+Badges+Zertifikate+Material)
-- Gesamt: 43 Phasen, 92 Plans ueber 9 Milestones shipped
-- Codebase: ~34.259 Zeilen (TS/TSX/CSS)
+- v2.3 shipped: Konfi + Teamer Wrapped (6 Phasen, 11 Plans, 51 Requirements, 2213 LOC neue Wrapped-Komponenten)
+- Gesamt: 80 Phasen, 130+ Plans ueber 14 Milestones shipped
+- Codebase: ~36.500 Zeilen (TS/TSX/CSS)
 - Frontend nutzt iOS 26 Theme und MD3 Theme (beide aktiv, platform-scoped)
 - Deployment: git push -> Portainer Docker auto-build -> Xcode Build fuer iOS-Test auf echtem Geraet
 - PostgreSQL-Migration: Alle 15 Backend-Routes vollstaendig migriert
@@ -213,5 +200,13 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | Check-in-Fenster bei allen Event-Typen | Pflicht + freiwillig, konfigurierbar 5-120 Min | Bestaetigt v1.7 |
 | Scanner-Feedback als inline Banners | Ueber Video-Feed statt Toast, bessere UX | Bestaetigt v1.7 |
 
+| Swiper 12 fuer Wrapped-Slides | Offiziell von Ionic empfohlen, EffectCreative fuer 3D-Uebergaenge | Bestaetigt v2.3 |
+| html-to-image statt html2canvas | 3-4x schneller, kleinerer Bundle | Bestaetigt v2.3 |
+| CSS @keyframes statt Framer Motion | +50KB fuer triviale Animationen vermieden | Bestaetigt v2.3 |
+| Share-Cards als reines HTML/CSS | Ionic Shadow-DOM wird von html-to-image nicht zuverlaessig gerendert | Bestaetigt v2.3 |
+| Keine Percentil-Vergleiche | Datenschutz Minderjaehrige (DSG-EKD) | Bestaetigt v2.3 |
+| Renderer-Map Pattern statt cloneElement | TypeScript-kompatible dynamische Slide-Reihenfolge | Bestaetigt v2.3 |
+| Formulierung-Seed deterministisch | (userId * 31 + year * 17) % 97 -- reproduzierbar pro User/Jahr | Bestaetigt v2.3 |
+
 ---
-*Last updated: 2026-03-13 after v1.9 milestone start*
+*Last updated: 2026-03-22 after v2.3 milestone*

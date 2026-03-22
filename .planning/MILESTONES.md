@@ -1,5 +1,25 @@
 # Milestones
 
+## v2.3 Konfi + Teamer Wrapped (Shipped: 2026-03-22)
+
+**Phases completed:** 6 phases, 11 plans, 22 tasks
+
+**Key accomplishments:**
+
+- wrapped_snapshots Tabelle + 5 API-Endpoints mit Konfi/Teamer-Aggregation (Punkte, Events, Badges, Chat, Endspurt-Flag)
+- Wrapped-Cron mit automatischer Monatsanfang-Generierung (Konfi+Teamer) und has_wrapped Flag in beiden Dashboards
+- Swiper 12 Fullscreen-Container mit EffectCreative-Slides, Progress-Dots, CSS-Animationssystem und TypeScript-Interfaces fuer Konfi+Teamer Wrapped
+- 4 Konfi-Slides (Intro, Punkte, Events, Badges) mit Count-up Animationen, Badge-Grid und Highlight-Event Box
+- AktivsterMonatSlide, ChatSlide, EndspurtSlide (bedingt) und AbschlussSlide mit Teamer-CTA -- komplette Konfi-Slideshow mit 7-8 Slides verdrahtet
+- 7 Teamer-Slide-Komponenten mit Rosa-Farbschema (#e11d48/#fb7185) und WrappedModal-Integration via wrappedType=teamer
+- html-to-image basierter Bild-Export fuer Wrapped-Slides als 1080x1920 Story-Bilder mit nativem Share-Sheet und Text-Fallback
+- Wrapped-Cards in Konfi/Teamer-Dashboard mit useIonModal und Push-Notification bei Wrapped-Generierung via PushService
+- Konfi-Snapshots um highlight_type, formulierung_seed, Gottesdienst-Count und Kategorie-Verteilung erweitert, History-Endpoint fuer Wiederansicht
+- Drei neue Slide-Komponenten (Kategorie-Balkendiagramm, Gottesdienst-Count-up, UeberDasZiel-Konfetti) mit highlight_type-basierter Reihenfolge und seed-gesteuerten Formulierungsvarianten
+- Meine Wrappeds Sektionen in Konfi- und Teamer-Profilen + Konfi-Wrapped Card in Teamer Konfi-Historie mit WrappedModal-Wiederansicht
+
+---
+
 ## v2.2 Codebase-Hardening (Shipped: 2026-03-22)
 
 **Phases completed:** 19 phases, 25 plans, 47 tasks

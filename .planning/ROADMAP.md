@@ -15,7 +15,7 @@
 - **v2.0 Ionic Update + Theme** (shipped 2026-03-19)
 - Shipped **v2.1 App-Resilienz** - Phases 55-62 (shipped 2026-03-21)
 - Shipped **v2.2 Codebase-Hardening** - Phases 63-74 (shipped 2026-03-22)
-- v2.3 Konfi + Teamer Wrapped - Phases 75-80 (planned)
+- Shipped **v2.3 Konfi + Teamer Wrapped** - Phases 75-80 (shipped 2026-03-22)
 
 ## Phases
 
@@ -194,115 +194,20 @@ Phase 74: Nativer Datei-Viewer (2 plans, complete)
 
 </details>
 
-### v2.3 Konfi + Teamer Wrapped (Planned)
+<details>
+<summary>Shipped v2.3 Konfi + Teamer Wrapped (Phases 75-80) - SHIPPED 2026-03-22</summary>
 
-**Milestone Goal:** Spotify-Wrapped-Style Jahresrueckblick fuer Konfis (vor Konfirmation) und Teamer:innen (Jahresende). Horizontale Slides, Animationen, Share-Funktion, Dashboard-Integration.
+See .planning/milestones/v2.3-ROADMAP.md for full details.
 
-- [x] **Phase 75: Backend-Aggregation + DB-Schema** - Wrapped-Snapshots, Konfirmationsdatum, Trigger-Logik, API-Endpoints (completed 2026-03-22)
-- [x] **Phase 76: Slide-Container + Konfi-Slides** - Swiper-Setup, Fullscreen-Modal, alle 9 Konfi-Slides mit Animationen (completed 2026-03-22)
-- [x] **Phase 77: Teamer-Slides** - 7 Teamer-spezifische Slides auf Basis der Konfi-Wrapped-Infrastruktur (completed 2026-03-22)
-- [x] **Phase 78: Share-Funktion** - Screenshot-Export, natives Share-Sheet, Share-Card-Design (completed 2026-03-22)
-- [x] **Phase 79: Dashboard-Integration + Freischaltung** - Dashboard-Cards, Push-Notification, Verfuegbarkeitslogik (completed 2026-03-22)
-- [x] **Phase 80: Wrapped Persistenz + Individualisierung** - Wiederansicht, Konfi-History Card, individualisierte Slides (planned) (completed 2026-03-22)
+Phase 75: Backend-Aggregation + DB-Schema (2 plans, complete)
+Phase 76: Slide-Container + Konfi-Slides (3 plans, complete)
+Phase 77: Teamer-Slides (1 plan, complete)
+Phase 78: Share-Funktion (1 plan, complete)
+Phase 79: Dashboard-Integration + Freischaltung (1 plan, complete)
+Phase 80: Wrapped Persistenz + Individualisierung (3 plans, complete)
 
-## Phase Details
-
-### Phase 75: Backend-Aggregation + DB-Schema
-**Goal**: Backend liefert vollstaendige Wrapped-Daten als JSONB-Snapshots fuer Konfis und Teamer:innen, mit konfigurierbarem Konfirmationsdatum und automatischer/manueller Ausloesung
-**Depends on**: Phase 74
-**Requirements**: DAT-01, DAT-02, DAT-03, DAT-04, DAT-05, DAT-06, DAT-07, DAT-08
-**Success Criteria** (what must be TRUE):
-  1. GET /api/wrapped/:userId liefert einen vollstaendigen JSONB-Snapshot mit Punkten, Events, Badges, Chat-Stats und aktivstem Monat fuer einen Konfi
-  2. GET /api/wrapped/:userId liefert einen vollstaendigen JSONB-Snapshot mit Events geleitet, Konfis betreut, Badges, Zertifikaten und Jahren aktiv fuer eine:n Teamer:in
-  3. Admin kann im Jahrgangs-Settings ein Konfirmationsdatum setzen, und am 1. des Konfirmationsmonats werden Konfi-Wrapped-Snapshots automatisch generiert
-  4. Am 1. Dezember werden Teamer-Wrapped-Snapshots automatisch generiert
-  5. Admin kann Wrapped-Generierung manuell frueher oder spaeter ausloesen (ueberschreibt automatischen Trigger)
-**Plans**: 2 plans
-Plans:
-- [x] 75-01-PLAN.md -- DB-Migration + Route + Aggregation-Queries + API-Endpoints
-- [x] 75-02-PLAN.md -- Cron-Trigger + Dashboard has_wrapped Flag
-
-### Phase 76: Slide-Container + Konfi-Slides
-**Goal**: Konfis koennen ihren Jahresrueckblick als animierte Fullscreen-Slideshow durchblaettern, mit allen 9 inhaltlichen Slides und Story-artiger Navigation
-**Depends on**: Phase 75
-**Requirements**: UI-01, UI-02, UI-03, UI-04, UI-05, UI-06, KS-01, KS-02, KS-03, KS-04, KS-05, KS-06, KS-07, KS-08, KS-09
-**Success Criteria** (what must be TRUE):
-  1. Konfi oeffnet Wrapped und sieht eine Fullscreen-Slideshow mit dunklem Hintergrund und lila Akzenten, die per horizontalem Swipe navigiert wird
-  2. Oben zeigt ein Progress-Indicator (Dots/Balken) den Fortschritt durch die Slides an, und ein X-Button schliesst die Ansicht
-  3. Jeder Slide zeigt animierte Inhalte (Count-up Zahlen, Fade-in Elemente) -- Intro, Punkte, Events, Badges, aktivster Monat, Chat, optionaler Endspurt, Abschluss
-  4. Slides zeigen ausschliesslich eigene Daten des Konfis, keine Vergleiche mit anderen Konfis
-  5. Wrapped oeffnet als Fullscreen-Modal (kein eigener Route), sodass kein Swipe-Back-Konflikt mit der Navigation entsteht
-**Plans**: 3 plans
-Plans:
-- [x] 76-01-PLAN.md -- Swiper 12 Setup + WrappedModal Container + CSS-Animationen + useCountUp Hook + TypeScript-Interfaces
-- [x] 76-02-PLAN.md -- Konfi-Slides 1-4 (Intro, Punkte, Events, Badges)
-- [x] 76-03-PLAN.md -- Konfi-Slides 5-8 (Aktivster Monat, Chat, Endspurt, Abschluss)
-
-### Phase 77: Teamer-Slides
-**Goal**: Teamer:innen koennen ihren eigenen Jahresrueckblick mit 7 Slides durchblaettern, der die Konfi-Wrapped-Infrastruktur wiederverwendet
-**Depends on**: Phase 76
-**Requirements**: TS-01, TS-02, TS-03, TS-04, TS-05, TS-06, TS-07
-**Success Criteria** (what must be TRUE):
-  1. Teamer:in oeffnet Wrapped und sieht Fullscreen-Slideshow mit dunklem Hintergrund und rosa Akzenten
-  2. Alle 7 Teamer-Slides zeigen korrekte Daten: Intro, Events geleitet, Konfis betreut, Badges, Zertifikate, aktive Jahre, Abschluss mit Danke
-  3. Der Slide-Container (Swiper, Progress-Bar, Schliessen-Button, Animationen) ist identisch zum Konfi-Wrapped und wird wiederverwendet
-**Plans**: 1 plan
-Plans:
-- [x] 77-01-PLAN.md -- 7 Teamer-Slides + WrappedModal type='teamer' Integration
-
-### Phase 78: Share-Funktion
-**Goal**: Nutzer:innen koennen jeden einzelnen Wrapped-Slide als Bild im Story-Format teilen
-**Depends on**: Phase 77
-**Requirements**: SHR-01, SHR-02, SHR-03, SHR-04, SHR-05, SHR-06
-**Success Criteria** (what must be TRUE):
-  1. Auf jedem Slide ist ein Share-Button sichtbar, der den aktuellen Slide als 1080x1920 Bild exportiert
-  2. Nach dem Export oeffnet sich das native Share-Sheet (iOS/Android) mit dem Bild
-  3. Share-Cards werden als reine HTML/CSS-Elemente gerendert (keine Ionic-Shadow-DOM-Komponenten) und enthalten ein dezentes Wasserzeichen/Logo
-  4. Wenn der Bild-Export fehlschlaegt, wird automatisch ein Text-Fallback geteilt
-**Plans**: 1 plan
-Plans:
-- [x] 78-01-PLAN.md -- ShareCard-Komponenten + shareUtils + Share-Button Integration
-
-### Phase 79: Dashboard-Integration + Freischaltung
-**Goal**: Konfis und Teamer:innen werden auf dem Dashboard auf ihr verfuegbares Wrapped hingewiesen und per Push benachrichtigt
-**Depends on**: Phase 78
-**Requirements**: INT-01, INT-02, INT-03, INT-04
-**Success Criteria** (what must be TRUE):
-  1. Konfi-Dashboard zeigt eine "Dein Wrapped ist da!" Card, sobald ein Wrapped-Snapshot fuer den Konfi existiert
-  2. Teamer-Dashboard zeigt eine "Dein Teamer-Jahr!" Card, sobald ein Teamer-Wrapped-Snapshot existiert
-  3. Beim Freischalten eines Wrapped erhalten betroffene Nutzer:innen eine Push-Notification
-  4. Wrapped ist pro Jahr/Zeitraum einmalig -- ein bereits generierter Snapshot wird nicht erneut generiert
-**Plans**: 1 plan
-Plans:
-- [x] 79-01-PLAN.md -- Dashboard-Cards + Push-Notification bei Wrapped-Generierung
-
-### Phase 80: Wrapped Persistenz + Individualisierung
-**Goal**: Jedes Wrapped wird individuell: persoenlicher Highlight-Slide, Kategorie-Vorlieben, Gottesdienst-Zaehler, goldener Ueber-das-Ziel-Slide mit Konfetti, variable Formulierungen, und Wiederansicht aller vergangenen Wrappeds im Profil
-**Depends on**: Phase 79
-**Requirements**: D-01, D-02, D-03, D-04, D-05, D-06, D-07, D-08, D-09, D-10, D-11, D-12, D-13, D-14
-**Success Criteria** (what must be TRUE):
-  1. Konfi-Snapshots enthalten highlight_type, formulierung_seed, gottesdienst_count und kategorie_verteilung
-  2. Slide-Reihenfolge ist individualisiert: Highlight-Slide kommt als 2. nach Intro, Formulierungen variieren per Seed
-  3. UeberDasZielSlide zeigt goldenen Hintergrund + Konfetti wenn Zielwert uebertroffen
-  4. KategorieSlide zeigt Verteilung als Balkendiagramm, GottesdienstSlide zeigt animierten Count-up
-  5. Konfi- und Teamer-Profil zeigen "Meine Wrappeds" Sektion mit Tap-to-Reopen
-  6. Teamer Konfi-History zeigt Card "Dein Konfi-Wrapped" wenn alter Snapshot existiert
-**Plans**: 3 plans
-Plans:
-- [x] 80-01-PLAN.md -- Backend-Aggregation erweitern + History-Endpoint + TypeScript-Interfaces
-- [x] 80-02-PLAN.md -- Neue Slides (Kategorie, Gottesdienst, UeberDasZiel) + Individualisierung (Reihenfolge, Formulierungen)
-- [x] 80-03-PLAN.md -- Wiederansicht (Meine Wrappeds) + Konfi-History Wrapped Card
+</details>
 
 ## Progress
 
-**Execution Order:**
-Phases execute in numeric order: 75 -> 76 -> 77 -> 78 -> 79 -> 80
-
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 75. Backend-Aggregation + DB-Schema | 2/2 | Complete    | 2026-03-22 |
-| 76. Slide-Container + Konfi-Slides | 3/3 | Complete    | 2026-03-22 |
-| 77. Teamer-Slides | 1/1 | Complete    | 2026-03-22 |
-| 78. Share-Funktion | 1/1 | Complete    | 2026-03-22 |
-| 79. Dashboard-Integration + Freischaltung | 1/1 | Complete    | 2026-03-22 |
-| 80. Wrapped Persistenz + Individualisierung | 3/3 | Complete    | 2026-03-22 |
+Alle Phasen bis v2.3 abgeschlossen. Naechster Milestone: TBD
