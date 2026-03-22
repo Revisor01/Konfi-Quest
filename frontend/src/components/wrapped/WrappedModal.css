@@ -394,3 +394,72 @@
     font-size: clamp(2.5rem, 10vw, 4rem);
   }
 }
+
+/* ========================================
+   Teamer Slides - Rosa Farbschema
+   ======================================== */
+
+.teamer-intro-slide { background: linear-gradient(135deg, #4c0519 0%, #0a0a0a 60%); }
+.teamer-konfis-slide { background: linear-gradient(135deg, #4c0519 0%, #0a0a0a 60%); }
+.teamer-zertifikate-slide { background: linear-gradient(135deg, #831843 0%, #0a0a0a 60%); }
+.teamer-jahre-slide { background: linear-gradient(135deg, #881337 0%, #0a0a0a 60%); }
+.teamer-abschluss-slide { background: linear-gradient(135deg, #4c0519 0%, #0a0a0a 60%); }
+
+/* Teamer Abschluss Summary */
+.teamer-abschluss-summary {
+  display: flex;
+  gap: 24px;
+  margin-top: 32px;
+  padding: 20px 24px;
+  background: rgba(225, 29, 72, 0.1);
+  border-radius: 16px;
+  border: 1px solid rgba(225, 29, 72, 0.2);
+}
+.teamer-abschluss-stat-value { font-size: 1.5rem; font-weight: 700; color: #fb7185; }
+
+/* Teamer Konfis Tags */
+.teamer-konfis-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; justify-content: center; }
+.teamer-konfis-tag {
+  background: rgba(225, 29, 72, 0.2);
+  border: 1px solid rgba(225, 29, 72, 0.4);
+  border-radius: 12px;
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Teamer Zertifikate Liste */
+.teamer-zertifikat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 24px;
+  width: 100%;
+  max-width: 300px;
+}
+.teamer-zertifikat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(225, 29, 72, 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(225, 29, 72, 0.2);
+}
+.teamer-zertifikat-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+.teamer-zertifikat-date {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Teamer Pagination */
+.wrapped-overlay--teamer .wrapped-pagination .swiper-pagination-bullet-active {
+  background: #e11d48;
+}
+.wrapped-overlay--teamer .wrapped-loading ion-spinner {
+  --color: #e11d48;
+}
