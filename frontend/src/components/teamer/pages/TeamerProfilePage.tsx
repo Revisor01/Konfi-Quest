@@ -16,8 +16,10 @@ import {
   IonCardContent,
   IonButton,
   useIonModal,
-  useIonAlert
+  useIonAlert,
+  useIonRouter
 } from '@ionic/react';
+// useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import {
   mailOutline,
   keyOutline,
@@ -32,7 +34,6 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
-import { useHistory } from 'react-router-dom';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
@@ -73,7 +74,7 @@ const TeamerProfilePage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('profile');
   const { user, setUser, setError } = useApp();
   const [presentAlert] = useIonAlert();
-  const history = useHistory();
+  const router = useIonRouter();
 
   // Offline-Query: Profil
   const { data: profile, loading, refresh } = useOfflineQuery<TeamerProfile>(
@@ -373,7 +374,7 @@ const TeamerProfilePage: React.FC = () => {
               <div
                 className="app-list-item app-settings-item"
                 style={{ borderLeftColor: '#f59e0b' }}
-                onClick={() => history.push('/teamer/profile/badges')}
+                onClick={() => router.push('/teamer/profile/badges')}
               >
                 <div className="app-icon-circle app-icon-circle--lg" style={{ backgroundColor: '#f59e0b' }}>
                   <IonIcon icon={trophy} />
@@ -388,7 +389,7 @@ const TeamerProfilePage: React.FC = () => {
                 <div
                   className="app-list-item app-settings-item"
                   style={{ borderLeftColor: '#5b21b6' }}
-                  onClick={() => history.push('/teamer/profile/konfi-stats')}
+                  onClick={() => router.push('/teamer/profile/konfi-stats')}
                 >
                   <div className="app-icon-circle app-icon-circle--lg" style={{ backgroundColor: '#5b21b6' }}>
                     <IonIcon icon={schoolOutline} />

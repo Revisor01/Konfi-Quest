@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useIonRouter } from '@ionic/react';
+// useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { useApp } from '../../../contexts/AppContext';
 import ChatOverview from '../ChatOverview';
 
@@ -15,13 +16,13 @@ interface ChatRoomData {
 
 const ChatOverviewPage: React.FC = () => {
   const { user } = useApp();
-  const history = useHistory();
+  const router = useIonRouter();
   const overviewRef = useRef<ChatOverviewRef>(null);
 
   const handleSelectRoom = (room: ChatRoomData) => {
     // Navigate to room view with proper routing
     const basePath = user?.type === 'admin' ? '/admin' : user?.type === 'teamer' ? '/teamer' : '/konfi';
-    history.push(`${basePath}/chat/room/${room.id}`);
+    router.push(`${basePath}/chat/room/${room.id}`);
   };
 
   return (

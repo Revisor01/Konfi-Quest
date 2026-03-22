@@ -1,5 +1,4 @@
 import React, { useState, useCallback } from 'react';
-import { useHistory } from 'react-router-dom';
 import {
   IonPage,
   IonHeader,
@@ -14,8 +13,10 @@ import {
   IonSearchbar,
   useIonModal,
   useIonActionSheet,
-  useIonAlert
+  useIonAlert,
+  useIonRouter
 } from '@ionic/react';
+// useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { add, ban, list, archive, calendar, time, checkmarkCircle, close } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -32,7 +33,7 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 const AdminEventsPage: React.FC = () => {
   const { user, setSuccess, setError, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-events');
-  const history = useHistory();
+  const router = useIonRouter();
   const [presentActionSheet] = useIonActionSheet();
   const [presentAlert] = useIonAlert();
   
@@ -279,7 +280,7 @@ const AdminEventsPage: React.FC = () => {
 
   const handleSelectEvent = (event: Event) => {
     // Anstatt den State zu ändern, navigieren wir zur neuen Route
-    history.push(`/admin/events/${event.id}`);
+    router.push(`/admin/events/${event.id}`);
   };
 
   const presentEventModal = (eventType: 'single' | 'series' = 'single') => {

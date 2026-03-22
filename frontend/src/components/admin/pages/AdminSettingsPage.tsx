@@ -36,13 +36,14 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { logout } from '../../../services/auth';
 import { clearAuth } from '../../../services/tokenStore';
-import { useHistory } from 'react-router-dom';
+import { useIonRouter } from '@ionic/react';
+// useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 
 const AdminSettingsPage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-settings');
   const { user, pushNotificationsPermission, requestPushPermissions } = useApp();
   const [presentAlert] = useIonAlert();
-  const history = useHistory();
+  const router = useIonRouter();
 
   const [presentInviteModal, dismissInviteModal] = useIonModal(AdminInvitePage, {
     onClose: () => dismissInviteModal(),
@@ -100,7 +101,7 @@ console.error('Logout error:', error);
             <IonCardContent>
               <div
                 className="app-list-item app-list-item--users app-settings-item"
-                onClick={() => history.push('/admin/profile')}
+                onClick={() => router.push('/admin/profile')}
               >
                 <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
                   <IonIcon icon={person} />
@@ -156,7 +157,7 @@ console.error('Logout error:', error);
               <IonCardContent>
                 <div
                   className="app-list-item app-list-item--users app-settings-item"
-                  onClick={() => history.push('/admin/users')}
+                  onClick={() => router.push('/admin/users')}
                 >
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
                     <IonIcon icon={people} />
@@ -170,7 +171,7 @@ console.error('Logout error:', error);
                 {user?.role_name === 'org_admin' && (
                   <div
                     className="app-list-item app-list-item--users app-settings-item"
-                    onClick={() => history.push('/admin/settings/dashboard')}
+                    onClick={() => router.push('/admin/settings/dashboard')}
                   >
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
                       <IonIcon icon={appsOutline} />
@@ -212,7 +213,7 @@ console.error('Logout error:', error);
               <IonCardContent>
                 <div
                   className="app-list-item app-list-item--success app-settings-item"
-                  onClick={() => history.push('/admin/organizations')}
+                  onClick={() => router.push('/admin/organizations')}
                 >
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--success">
                     <IonIcon icon={business} />
@@ -240,7 +241,7 @@ console.error('Logout error:', error);
               <IonCardContent>
                 <div
                   className="app-list-item app-list-item--activities app-settings-item"
-                  onClick={() => history.push('/admin/activities')}
+                  onClick={() => router.push('/admin/activities')}
                 >
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--activities">
                     <IonIcon icon={flash} />
@@ -253,7 +254,7 @@ console.error('Logout error:', error);
 
                 <div
                   className="app-list-item app-list-item--badges app-settings-item"
-                  onClick={() => history.push('/admin/badges')}
+                  onClick={() => router.push('/admin/badges')}
                 >
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--badges">
                     <IonIcon icon={ribbon} />
@@ -266,7 +267,7 @@ console.error('Logout error:', error);
 
                 <div
                   className="app-list-item app-list-item--jahrgang app-settings-item"
-                  onClick={() => history.push('/admin/settings/jahrgaenge')}
+                  onClick={() => router.push('/admin/settings/jahrgaenge')}
                 >
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--jahrgang">
                     <IonIcon icon={school} />
@@ -279,7 +280,7 @@ console.error('Logout error:', error);
 
                 <div
                   className="app-list-item app-list-item--categories app-settings-item"
-                  onClick={() => history.push('/admin/settings/categories')}
+                  onClick={() => router.push('/admin/settings/categories')}
                 >
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--categories">
                     <IonIcon icon={pricetag} />
@@ -292,7 +293,7 @@ console.error('Logout error:', error);
 
                 <div
                   className="app-list-item app-list-item--level app-settings-item"
-                  onClick={() => history.push('/admin/settings/levels')}
+                  onClick={() => router.push('/admin/settings/levels')}
                 >
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--level">
                     <IonIcon icon={trophy} />
@@ -305,7 +306,7 @@ console.error('Logout error:', error);
 
                 <div
                   className="app-list-item app-list-item--material app-settings-item"
-                  onClick={() => history.push('/admin/material')}
+                  onClick={() => router.push('/admin/material')}
                 >
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--material">
                     <IonIcon icon={documentIcon} />
@@ -318,7 +319,7 @@ console.error('Logout error:', error);
 
                 <div
                   className="app-list-item app-list-item--purple app-settings-item"
-                  onClick={() => history.push('/admin/settings/certificates')}
+                  onClick={() => router.push('/admin/settings/certificates')}
                 >
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--purple">
                     <IonIcon icon={ribbon} />

@@ -25,7 +25,7 @@ import {
   IonSearchbar,
   useIonModal
 } from '@ionic/react';
-import { useLocation, useHistory } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import {
   calendar,
   time,
@@ -75,7 +75,6 @@ const TeamerEventsPage: React.FC = () => {
   const [initialEventHandled, setInitialEventHandled] = useState(false);
   const [eventMaterials, setEventMaterials] = useState<any[]>([]);
   const materialIdRef = useRef<number | null>(null);
-  const history = useHistory();
 
   // Offline-Query: Events
   const { data: events, loading, refresh } = useOfflineQuery<Event[]>(

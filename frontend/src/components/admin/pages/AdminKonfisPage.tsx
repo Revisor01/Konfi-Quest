@@ -1,5 +1,4 @@
 import React, { useState, useCallback } from 'react';
-import { useHistory } from 'react-router-dom';
 import {
   IonPage,
   IonHeader,
@@ -12,8 +11,10 @@ import {
   IonButton,
   IonIcon,
   useIonModal,
-  useIonAlert
+  useIonAlert,
+  useIonRouter
 } from '@ionic/react';
+// useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { add } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -57,7 +58,7 @@ interface Settings {
 
 const AdminKonfisPage: React.FC = () => {
   const { setSuccess, setError, user, isOnline } = useApp();
-  const history = useHistory();
+  const router = useIonRouter();
   const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-konfis');
   
   // Offline-Query: Konfis
@@ -132,7 +133,7 @@ const AdminKonfisPage: React.FC = () => {
   };
 
   const handleSelectKonfi = (konfi: Konfi) => {
-    history.push(`/admin/konfis/${konfi.id}`);
+    router.push(`/admin/konfis/${konfi.id}`);
   };
 
   const presentKonfiModal = () => {

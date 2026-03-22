@@ -9,7 +9,8 @@ import {
   IonRefresher,
   IonRefresherContent,
   useIonPopover,
-  useIonModal
+  useIonModal,
+  useIonRouter
 } from '@ionic/react';
 import {
   home,
@@ -69,7 +70,7 @@ import {
   documentOutline,
   bagHandle
 } from 'ionicons/icons';
-import { useHistory } from 'react-router-dom';
+// useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
@@ -177,7 +178,7 @@ const CertPopoverContent: React.FC<{
 };
 
 const TeamerDashboardPage: React.FC = () => {
-  const history = useHistory();
+  const router = useIonRouter();
   const { user } = useApp();
   const [showLosung] = useState(() => Math.random() > 0.5);
 
@@ -504,7 +505,7 @@ const TeamerDashboardPage: React.FC = () => {
                         <div
                           key={event.id}
                           className="app-dashboard-glass-card"
-                          onClick={() => history.push('/teamer/events', { selectedEventId: event.id })}
+                          onClick={() => router.push('/teamer/events', 'forward', 'push', undefined, { selectedEventId: event.id })}
                           style={{
                             background: isWaitlist
                               ? 'rgba(251, 191, 36, 0.25)'
@@ -581,7 +582,7 @@ const TeamerDashboardPage: React.FC = () => {
                     })}
                     <div
                       className="app-dashboard-glass-chip"
-                      onClick={() => history.push('/teamer/events')}
+                      onClick={() => router.push('/teamer/events')}
                       style={{
                         alignSelf: 'center',
                         cursor: 'pointer',
@@ -718,7 +719,7 @@ const TeamerDashboardPage: React.FC = () => {
                     <div style={{ display: 'flex', justifyContent: 'center' }}>
                       <div
                         className="app-dashboard-glass-chip"
-                        onClick={() => history.push('/teamer/profile/badges')}
+                        onClick={() => router.push('/teamer/profile/badges')}
                         style={{
                           cursor: 'pointer',
                           display: 'flex',
