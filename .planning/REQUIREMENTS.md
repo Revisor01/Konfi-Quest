@@ -51,12 +51,12 @@ Requirements fuer Milestone v2.3 Konfi + Teamer Wrapped.
 
 ### Share (SHR)
 
-- [ ] **SHR-01**: Share-Button auf jedem Slide
-- [ ] **SHR-02**: Bild-Export des aktuellen Slides (html-to-image, reine HTML/CSS Cards ohne Ionic-Komponenten)
-- [ ] **SHR-03**: Natives Share-Sheet via Capacitor Share
-- [ ] **SHR-04**: Text-Fallback wenn Bild-Export fehlschlaegt
-- [ ] **SHR-05**: Share-Card Format 1080x1920 (Story-Format)
-- [ ] **SHR-06**: Dezentes Wasserzeichen/Logo auf Share-Cards
+- [x] **SHR-01**: Share-Button auf jedem Slide
+- [x] **SHR-02**: Bild-Export des aktuellen Slides (html-to-image, reine HTML/CSS Cards ohne Ionic-Komponenten)
+- [x] **SHR-03**: Natives Share-Sheet via Capacitor Share
+- [x] **SHR-04**: Text-Fallback wenn Bild-Export fehlschlaegt
+- [x] **SHR-05**: Share-Card Format 1080x1920 (Story-Format)
+- [x] **SHR-06**: Dezentes Wasserzeichen/Logo auf Share-Cards
 
 ### Dashboard-Integration (INT)
 
@@ -109,12 +109,12 @@ Requirements fuer Milestone v2.3 Konfi + Teamer Wrapped.
 | TS-05 | Phase 77 | Complete |
 | TS-06 | Phase 77 | Complete |
 | TS-07 | Phase 77 | Complete |
-| SHR-01 | Phase 78 | Pending |
-| SHR-02 | Phase 78 | Pending |
-| SHR-03 | Phase 78 | Pending |
-| SHR-04 | Phase 78 | Pending |
-| SHR-05 | Phase 78 | Pending |
-| SHR-06 | Phase 78 | Pending |
+| SHR-01 | Phase 78 | Complete |
+| SHR-02 | Phase 78 | Complete |
+| SHR-03 | Phase 78 | Complete |
+| SHR-04 | Phase 78 | Complete |
+| SHR-05 | Phase 78 | Complete |
+| SHR-06 | Phase 78 | Complete |
 | INT-01 | Phase 79 | Pending |
 | INT-02 | Phase 79 | Pending |
 | INT-03 | Phase 79 | Pending |
