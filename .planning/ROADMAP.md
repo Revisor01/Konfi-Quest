@@ -216,7 +216,7 @@ Phase 80: Wrapped Persistenz + Individualisierung (3 plans, complete)
 - [x] **Phase 81: React Router Migration** - React Router v5 auf v6 migrieren (useHistory, Route component) (completed 2026-03-22)
 - [x] **Phase 82: Backend-Sicherheit + Cron** - API-Key in ENV, Socket.IO Org-Isolation, node-cron (completed 2026-03-22)
 - [x] **Phase 83: Performance + Capacitor** - Chat N+1 durch Bulk-Queries ersetzen, window-as-any typsicher machen (completed 2026-03-22)
-- [ ] **Phase 84: Schema-Hygiene** - Inline-Migrationen in SQL-Dateien auslagern, activity_requests.konfi_id umbenennen
+- [x] **Phase 84: Schema-Hygiene** - Inline-Migrationen in SQL-Dateien auslagern, activity_requests.konfi_id umbenennen (completed 2026-03-22)
 - [ ] **Phase 85: Code-Cleanup** - SQLite entfernen, Legacy-Multer, tote Dateien, Typos, Bugs, Validierung
 
 ## Phase Details
@@ -276,7 +276,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 84-01-PLAN.md — Migration-Runner in database.js + 076_badges SQL-Datei anlegen (MIG-01, MIG-02)
-- [ ] 84-02-PLAN.md — Inline-Migrationen aus badges.js, jahrgaenge.js, wrapped.js entfernen (MIG-01, MIG-03)
+- [x] 84-02-PLAN.md — Inline-Migrationen aus badges.js, jahrgaenge.js, wrapped.js entfernen (MIG-01, MIG-03)
 
 ### Phase 85: Code-Cleanup
 **Goal**: Toter Code, unbenutzte Abhaengigkeiten, Namens-Typos, und kleine Bugs sind bereinigt — die Codebase ist konsistent und wartbar
@@ -297,5 +297,5 @@ Plans:
 | 81. React Router Migration | 3/3 | Complete    | 2026-03-22 |
 | 82. Backend-Sicherheit + Cron | 3/3 | Complete    | 2026-03-22 |
 | 83. Performance + Capacitor | 2/2 | Complete    | 2026-03-22 |
-| 84. Schema-Hygiene | 1/2 | In Progress|  |
+| 84. Schema-Hygiene | 2/2 | Complete   | 2026-03-22 |
 | 85. Code-Cleanup | 0/TBD | Not started | - |

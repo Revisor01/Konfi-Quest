@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: Codebase-Cleanup
 status: unknown
-stopped_at: Completed 84-01-PLAN.md
-last_updated: "2026-03-22T22:34:40.932Z"
+stopped_at: Completed 84-02-PLAN.md
+last_updated: "2026-03-22T22:37:20.858Z"
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 10
-  completed_plans: 9
+  completed_plans: 10
 ---
 
 # Project State
@@ -45,6 +45,7 @@ Plan: 2 of 2
 - [Phase 83-performance-capacitor]: Modul-Level-Variablen statt window-Properties fuer FCM Anti-Spam-State
 - [Phase 84]: Migration-Runner ohne State-Tracking: alle .sql Dateien sind idempotent, kein Tracking noetig
 - [Phase 84]: Fail-fast bei Migration-Fehler: Server startet nicht wenn .sql fehlschlaegt
+- [Phase 84-schema-hygiene]: Inline-Migrations-Funktionen vollstaendig loeschen statt auskommentieren: sauberer Schnitt, kein totes Code-Rauschen
 
 ### Pending Todos
 
@@ -57,6 +58,6 @@ Plan: 2 of 2
 
 ## Session Continuity
 
-Last session: 2026-03-22T22:34:40.930Z
-Stopped at: Completed 84-01-PLAN.md
+Last session: 2026-03-22T22:37:20.856Z
+Stopped at: Completed 84-02-PLAN.md
 Resume file: None
