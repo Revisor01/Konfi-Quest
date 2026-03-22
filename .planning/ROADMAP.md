@@ -260,7 +260,10 @@ Plans:
   2. Reactions und Poll-Votes werden per Bulk-Query (`WHERE message_id = ANY($1::int[])`) geladen
   3. Alle `(window as any).Capacitor`-Zugriffe in AppContext.tsx sind durch typsichere Plugin-Imports ersetzt
   4. TypeScript meldet keine `any`-Fehler fuer Capacitor-Plugin-Zugriffe mehr
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 83-01-PLAN.md — Chat N+1-Queries durch Bulk-Queries ersetzen (PERF-01, PERF-02)
+- [ ] 83-02-PLAN.md — AppContext.tsx Capacitor window-as-any typsicher machen (CAP-01, CAP-02)
 
 ### Phase 84: Schema-Hygiene
 **Goal**: Inline-Migrationen sind aus Route-Dateien entfernt und das DB-Schema ist intern konsistent benannt
@@ -290,6 +293,6 @@ Plans:
 |-------|----------------|--------|-----------|
 | 81. React Router Migration | 3/3 | Complete    | 2026-03-22 |
 | 82. Backend-Sicherheit + Cron | 3/3 | Complete    | 2026-03-22 |
-| 83. Performance + Capacitor | 0/TBD | Not started | - |
+| 83. Performance + Capacitor | 0/2 | Not started | - |
 | 84. Schema-Hygiene | 0/TBD | Not started | - |
 | 85. Code-Cleanup | 0/TBD | Not started | - |
