@@ -11,6 +11,7 @@ import {
   IonButtons,
   IonButton,
   IonIcon,
+  IonSearchbar,
   useIonModal,
   useIonActionSheet,
   useIonAlert
@@ -61,6 +62,7 @@ const AdminEventsPage: React.FC = () => {
   const loading = eventsLoading;
   const [activeTab, setActiveTab] = useState<'all' | 'upcoming' | 'konfirmation'>('upcoming');
   const [selectedJahrgang, setSelectedJahrgang] = useState<number | null>(null);
+  const [searchText, setSearchText] = useState('');
 
   const [editEvent, setEditEvent] = useState<Event | null>(null);
 
@@ -306,6 +308,17 @@ const AdminEventsPage: React.FC = () => {
     presentEventModal('single');
   };
 
+  // Suchfilter
+  const applySearch = (eventList: Event[]) => {
+    if (!searchText) return eventList;
+    const lower = searchText.toLowerCase();
+    return eventList.filter(e =>
+      e.name?.toLowerCase().includes(lower) ||
+      e.title?.toLowerCase().includes(lower) ||
+      e.location?.toLowerCase().includes(lower)
+    );
+  };
+
   // Rollen-basierte Berechtigungen (org_admin, admin UND teamer dürfen Events verwalten)
   const canManageEvents = ['org_admin', 'admin', 'teamer'].includes(user?.role_name || '');
   const canCreate = canManageEvents;
@@ -344,16 +357,26 @@ const AdminEventsPage: React.FC = () => {
         }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
-        
-        
+
+        {!loading && (
+          <IonSearchbar
+            className="ios26-searchbar-classic"
+            value={searchText}
+            onIonInput={(e) => setSearchText(e.detail.value || '')}
+            placeholder="Events durchsuchen"
+            debounce={300}
+            style={{ padding: '0 16px' }}
+          />
+        )}
+
         {loading ? (
           <LoadingSpinner message="Events werden geladen..." />
         ) : (
           <EventsView
             events={
-              activeTab === 'all' ? filterByJahrgang(getAllEvents()) :
-              activeTab === 'konfirmation' ? filterByJahrgang(getKonfirmationEvents()) :
-              filterByJahrgang(getFutureEvents())
+              activeTab === 'all' ? applySearch(filterByJahrgang(getAllEvents())) :
+              activeTab === 'konfirmation' ? applySearch(filterByJahrgang(getKonfirmationEvents())) :
+              applySearch(filterByJahrgang(getFutureEvents()))
             }
             onUpdate={refreshEvents}
             onAddEventClick={handleAddEventClick}
@@ -364,9 +387,9 @@ const AdminEventsPage: React.FC = () => {
             activeTab={activeTab}
             onTabChange={setActiveTab}
             eventCounts={{
-              all: filterByJahrgang(getAllEvents()).length,
-              upcoming: filterByJahrgang(getFutureEvents()).length,
-              konfirmation: filterByJahrgang(getKonfirmationEvents()).length
+              all: applySearch(filterByJahrgang(getAllEvents())).length,
+              upcoming: applySearch(filterByJahrgang(getFutureEvents())).length,
+              konfirmation: applySearch(filterByJahrgang(getKonfirmationEvents())).length
             }}
             jahrgaenge={jahrgaenge || []}
             selectedJahrgang={selectedJahrgang}

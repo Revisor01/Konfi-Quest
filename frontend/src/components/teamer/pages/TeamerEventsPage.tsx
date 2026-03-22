@@ -22,6 +22,7 @@ import {
   IonItemSliding,
   IonButtons,
   IonBackButton,
+  IonSearchbar,
   useIonModal
 } from '@ionic/react';
 import { useLocation, useHistory } from 'react-router-dom';
@@ -68,6 +69,7 @@ const TeamerEventsPage: React.FC = () => {
   const routerLocation = useLocation<{ selectedEventId?: number }>();
 
   const [activeTab, setActiveTab] = useState<'meine' | 'alle' | 'team'>('meine');
+  const [searchText, setSearchText] = useState('');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [initialEventHandled, setInitialEventHandled] = useState(false);
@@ -172,12 +174,22 @@ const TeamerEventsPage: React.FC = () => {
   [safeEvents]);
 
   const getFilteredEvents = () => {
+    let result: Event[];
     switch (activeTab) {
-      case 'meine': return meineEvents;
-      case 'alle': return alleEvents;
-      case 'team': return teamEvents;
-      default: return safeEvents;
+      case 'meine': result = meineEvents; break;
+      case 'alle': result = alleEvents; break;
+      case 'team': result = teamEvents; break;
+      default: result = safeEvents;
     }
+    if (searchText) {
+      const lower = searchText.toLowerCase();
+      result = result.filter(e =>
+        e.name?.toLowerCase().includes(lower) ||
+        e.title?.toLowerCase().includes(lower) ||
+        e.location?.toLowerCase().includes(lower)
+      );
+    }
+    return result;
   };
 
   const filteredEvents = getFilteredEvents();
@@ -706,6 +718,15 @@ const TeamerEventsPage: React.FC = () => {
               icon={calendar}
               preset="events"
               stats={statsData}
+            />
+
+            <IonSearchbar
+              className="ios26-searchbar-classic"
+              value={searchText}
+              onIonInput={(e) => setSearchText(e.detail.value || '')}
+              placeholder="Events durchsuchen"
+              debounce={300}
+              style={{ padding: '0 16px' }}
             />
 
             {/* 3 Segmente */}

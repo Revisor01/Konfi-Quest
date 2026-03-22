@@ -452,7 +452,7 @@ const TeamerMaterialPage: React.FC = () => {
                   onIonInput={(e) => setSearch(e.detail.value || '')}
                   placeholder="Material durchsuchen..."
                   debounce={300}
-                  style={{ width: '100%' }}
+                  style={{ padding: '0 0' }}
                 />
                 {/* Jahrgang-Filter Chips */}
                 {jahrgaenge.length > 0 && (

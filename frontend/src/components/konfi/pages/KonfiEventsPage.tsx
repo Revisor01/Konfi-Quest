@@ -11,9 +11,10 @@ import {
   IonButtons,
   IonButton,
   IonIcon,
+  IonSearchbar,
   useIonModal
 } from '@ionic/react';
-import { qrCodeOutline } from 'ionicons/icons';
+import { qrCodeOutline, searchOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
@@ -49,6 +50,7 @@ const KonfiEventsPage: React.FC = () => {
 
   // State
   const [activeTab, setActiveTab] = useState<'meine' | 'alle' | 'konfirmation'>('meine');
+  const [searchText, setSearchText] = useState('');
 
   // Subscribe to live updates for events
   useLiveRefresh('events', refresh);
@@ -80,6 +82,16 @@ const KonfiEventsPage: React.FC = () => {
         break;
       default:
         filteredEvents = allEvents;
+    }
+
+    // Suchfilter
+    if (searchText) {
+      const lower = searchText.toLowerCase();
+      filteredEvents = filteredEvents.filter(e =>
+        e.name?.toLowerCase().includes(lower) ||
+        e.title?.toLowerCase().includes(lower) ||
+        e.location?.toLowerCase().includes(lower)
+      );
     }
 
     // Sort events: nächstes Event immer oben
@@ -134,6 +146,17 @@ const KonfiEventsPage: React.FC = () => {
         }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
+
+        {!loading && (
+          <IonSearchbar
+            className="ios26-searchbar-classic"
+            value={searchText}
+            onIonInput={(e) => setSearchText(e.detail.value || '')}
+            placeholder="Events durchsuchen"
+            debounce={300}
+            style={{ padding: '0 16px' }}
+          />
+        )}
 
         {loading ? (
           <LoadingSpinner message="Events werden geladen..." />
