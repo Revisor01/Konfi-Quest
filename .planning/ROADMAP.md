@@ -245,7 +245,9 @@ Plans:
   1. Teamer:in oeffnet Wrapped und sieht Fullscreen-Slideshow mit dunklem Hintergrund und rosa Akzenten
   2. Alle 7 Teamer-Slides zeigen korrekte Daten: Intro, Events geleitet, Konfis betreut, Badges, Zertifikate, aktive Jahre, Abschluss mit Danke
   3. Der Slide-Container (Swiper, Progress-Bar, Schliessen-Button, Animationen) ist identisch zum Konfi-Wrapped und wird wiederverwendet
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 77-01-PLAN.md -- 7 Teamer-Slides + WrappedModal type='teamer' Integration
 
 ### Phase 78: Share-Funktion
 **Goal**: Nutzer:innen koennen jeden einzelnen Wrapped-Slide als Bild im Story-Format teilen
@@ -278,6 +280,6 @@ Phases execute in numeric order: 75 -> 76 -> 77 -> 78 -> 79
 |-------|----------------|--------|-----------|
 | 75. Backend-Aggregation + DB-Schema | 2/2 | Complete    | 2026-03-22 |
 | 76. Slide-Container + Konfi-Slides | 3/3 | Complete    | 2026-03-22 |
-| 77. Teamer-Slides | 0/TBD | Not started | - |
+| 77. Teamer-Slides | 0/1 | Not started | - |
 | 78. Share-Funktion | 0/TBD | Not started | - |
 | 79. Dashboard-Integration + Freischaltung | 0/TBD | Not started | - |
