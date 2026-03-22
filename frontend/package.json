@@ -46,7 +46,8 @@
     "react-dom": "19.0.0",
     "react-router": "^5.3.4",
     "react-router-dom": "^5.3.4",
-    "socket.io-client": "^4.8.1"
+    "socket.io-client": "^4.8.1",
+    "swiper": "^12.1.2"
   },
   "devDependencies": {
     "@capacitor/cli": "^7.6.0",
