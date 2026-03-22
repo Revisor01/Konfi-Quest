@@ -22,7 +22,7 @@ Offline-First: Alle 30 Pages mit SWR-Cache, WriteQueue fuer Chat/Antraege/Admin-
 
 ## Shipped: v2.2 Codebase-Hardening (2026-03-21)
 
-Types konsolidiert (User 9x→1, Event 8x→1), 73 DB-Indizes + 23 Foreign Keys, CustomEvents→LiveUpdateContext, ErrorBoundary + MD5→SHA-256, 5 Mega-Komponenten gesplittet + 16 SELECT* eliminiert, Token-Refresh (Access 15min + Refresh 90d rotierend + Soft-Revoke), universeller Datei-Viewer (Zoom/Pan/Pinch/Swipe/Download/Share).
+Types konsolidiert, 73 DB-Indizes + 23 FKs, CustomEvents→LiveUpdateContext, ErrorBoundary, Performance-Splits, Token-Refresh (15min+90d+Soft-Revoke), nativer Datei-Viewer, Rollen-Audit-Fixes, Teamer+Badge-Polish, UI-Testing-Fixes (12 Phasen, 25 Plans).
 
 ## Geplant: v3.0 Onboarding + Landing
 
