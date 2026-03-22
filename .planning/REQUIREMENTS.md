@@ -67,11 +67,35 @@ Requirements fuer Milestone v2.4 Codebase-Cleanup.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
+| RR-01 | Phase 81 | Pending |
+| RR-02 | Phase 81 | Pending |
+| RR-03 | Phase 81 | Pending |
+| SEC-01 | Phase 82 | Pending |
+| SEC-02 | Phase 82 | Pending |
+| SEC-03 | Phase 82 | Pending |
+| CRON-01 | Phase 82 | Pending |
+| CRON-02 | Phase 82 | Pending |
+| PERF-01 | Phase 83 | Pending |
+| PERF-02 | Phase 83 | Pending |
+| CAP-01 | Phase 83 | Pending |
+| CAP-02 | Phase 83 | Pending |
+| MIG-01 | Phase 84 | Pending |
+| MIG-02 | Phase 84 | Pending |
+| MIG-03 | Phase 84 | Pending |
+| CLN-01 | Phase 85 | Pending |
+| CLN-02 | Phase 85 | Pending |
+| CLN-03 | Phase 85 | Pending |
+| CLN-04 | Phase 85 | Pending |
+| CLN-05 | Phase 85 | Pending |
+| CLN-06 | Phase 85 | Pending |
+| CLN-07 | Phase 85 | Pending |
+| CLN-08 | Phase 85 | Pending |
+| CLN-09 | Phase 85 | Pending |
 
 **Coverage v2.4:**
 - v2.4 requirements: 22 total
-- Mapped to phases: 0
-- Unmapped: 22
+- Mapped to phases: 22
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-22*

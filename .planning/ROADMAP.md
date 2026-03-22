@@ -16,6 +16,7 @@
 - Shipped **v2.1 App-Resilienz** - Phases 55-62 (shipped 2026-03-21)
 - Shipped **v2.2 Codebase-Hardening** - Phases 63-74 (shipped 2026-03-22)
 - Shipped **v2.3 Konfi + Teamer Wrapped** - Phases 75-80 (shipped 2026-03-22)
+- **v2.4 Codebase-Cleanup** - Phases 81-85 (in progress)
 
 ## Phases
 
@@ -208,6 +209,79 @@ Phase 80: Wrapped Persistenz + Individualisierung (3 plans, complete)
 
 </details>
 
+## v2.4 Codebase-Cleanup (In Progress)
+
+**Milestone Goal:** Technische Schulden abbauen, Sicherheitsluecken schliessen, veraltete Patterns modernisieren — ohne neue Features.
+
+- [ ] **Phase 81: React Router Migration** - React Router v5 auf v6 migrieren (useHistory, Route component)
+- [ ] **Phase 82: Backend-Sicherheit + Cron** - API-Key in ENV, Socket.IO Org-Isolation, node-cron
+- [ ] **Phase 83: Performance + Capacitor** - Chat N+1 durch Bulk-Queries ersetzen, window-as-any typsicher machen
+- [ ] **Phase 84: Schema-Hygiene** - Inline-Migrationen in SQL-Dateien auslagern, activity_requests.konfi_id umbenennen
+- [ ] **Phase 85: Code-Cleanup** - SQLite entfernen, Legacy-Multer, tote Dateien, Typos, Bugs, Validierung
+
+## Phase Details
+
+### Phase 81: React Router Migration
+**Goal**: Die App nutzt durchgehend React Router v6 und ist damit kompatibel mit React 19
+**Depends on**: Nothing (erstes Phase dieses Milestones)
+**Requirements**: RR-01, RR-02, RR-03
+**Success Criteria** (what must be TRUE):
+  1. Alle `useHistory`-Aufrufe sind durch `useNavigate` ersetzt
+  2. Alle `<Route component={...}>` sind durch `<Route element={<.../>}>` ersetzt
+  3. Navigation in Konfi-, Teamer- und Admin-Bereichen funktioniert identisch wie vor der Migration
+  4. TypeScript meldet keine React-Router-v5-spezifischen Typ-Fehler mehr
+**Plans**: TBD
+
+### Phase 82: Backend-Sicherheit + Cron
+**Goal**: Hardcodierte Geheimnisse sind aus dem Quellcode entfernt, Chat-Rooms sind organisationsgebunden, und der Wrapped-Cron verpasst nach einem Neustart keine Trigger mehr
+**Depends on**: Phase 81
+**Requirements**: SEC-01, SEC-02, SEC-03, CRON-01, CRON-02
+**Success Criteria** (what must be TRUE):
+  1. Der Losung-API-Key steht nur noch in der Umgebungsvariable `LOSUNG_API_KEY`, nicht im Quellcode
+  2. Ein Nutzer aus Org A kann keinen Socket.IO-Room aus Org B joinen (pruefbar im Serverlog)
+  3. Der Wrapped-Cron laeuft nach einem Container-Neustart am naechsten 1. des Monats korrekt an
+  4. `node-cron` ist als Dependency eingetragen und ersetzt den `setInterval`-Block in backgroundService.js
+**Plans**: TBD
+
+### Phase 83: Performance + Capacitor
+**Goal**: Der Chat-Nachrichten-Endpoint loesst keine N+1-Query-Last mehr aus, und Capacitor-Plugins werden typsicher importiert
+**Depends on**: Phase 81
+**Requirements**: PERF-01, PERF-02, CAP-01, CAP-02
+**Success Criteria** (what must be TRUE):
+  1. `/rooms/:id/messages` fuehrt maximal 3 DB-Queries aus statt bis zu 400
+  2. Reactions und Poll-Votes werden per Bulk-Query (`WHERE message_id = ANY($1::int[])`) geladen
+  3. Alle `(window as any).Capacitor`-Zugriffe in AppContext.tsx sind durch typsichere Plugin-Imports ersetzt
+  4. TypeScript meldet keine `any`-Fehler fuer Capacitor-Plugin-Zugriffe mehr
+**Plans**: TBD
+
+### Phase 84: Schema-Hygiene
+**Goal**: Inline-Migrationen sind aus Route-Dateien entfernt und das DB-Schema ist intern konsistent benannt
+**Depends on**: Phase 81
+**Requirements**: MIG-01, MIG-02, MIG-03
+**Success Criteria** (what must be TRUE):
+  1. badges.js, jahrgaenge.js und wrapped.js enthalten keine Schema-Checks oder ALTER-Statements mehr
+  2. Die ausgelagerten Migrationen liegen als SQL-Dateien unter `backend/migrations/`
+  3. Der Server startet ohne Inline-Migrationen und die DB-Struktur ist korrekt
+**Plans**: TBD
+
+### Phase 85: Code-Cleanup
+**Goal**: Toter Code, unbenutzte Abhaengigkeiten, Namens-Typos, und kleine Bugs sind bereinigt — die Codebase ist konsistent und wartbar
+**Depends on**: Phase 84
+**Requirements**: CLN-01, CLN-02, CLN-03, CLN-04, CLN-05, CLN-06, CLN-07, CLN-08, CLN-09
+**Success Criteria** (what must be TRUE):
+  1. `sqlite3` ist nicht mehr in package.json und keine .db-Dateien liegen im Repository
+  2. Der Legacy-Multer-`upload` in server.js ist entfernt und alle Stellen nutzen `requestUpload`/`materialUpload`
+  3. `konfi-managment.js` ist in `konfi-management.js` umbenannt (Typo behoben)
+  4. `activity_requests.konfi_id` heisst `user_id` (Schema-Konsistenz mit anderen Tabellen)
+  5. `express-validator`-Validierung ist auf material.js und teamer.js aktiv
+**Plans**: TBD
+
 ## Progress
 
-Alle Phasen bis v2.3 abgeschlossen. Naechster Milestone: TBD
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 81. React Router Migration | 0/TBD | Not started | - |
+| 82. Backend-Sicherheit + Cron | 0/TBD | Not started | - |
+| 83. Performance + Capacitor | 0/TBD | Not started | - |
+| 84. Schema-Hygiene | 0/TBD | Not started | - |
+| 85. Code-Cleanup | 0/TBD | Not started | - |
