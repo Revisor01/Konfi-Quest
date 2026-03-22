@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: Codebase-Cleanup
 status: unknown
-stopped_at: Completed 83-02-PLAN.md
-last_updated: "2026-03-22T22:27:52.339Z"
+stopped_at: Completed 84-01-PLAN.md
+last_updated: "2026-03-22T22:34:40.932Z"
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 10
+  completed_plans: 9
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-22)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 83 — performance-capacitor
+**Current focus:** Phase 84 — schema-hygiene
 
 ## Current Position
 
-Phase: 84
-Plan: Not started
+Phase: 84 (schema-hygiene) — EXECUTING
+Plan: 2 of 2
 
 ## Accumulated Context
 
@@ -43,6 +43,8 @@ Plan: Not started
 - [Phase 83]: Chat N+1-Bulk-Queries: ANY($1::int[]) Pattern fuer Reactions und Poll-Votes, max. 3 DB-Queries statt bis zu 400
 - [Phase 83-performance-capacitor]: registerPlugin-Pattern fuer native Capacitor-Plugins ohne npm-Paket statt (window as any).Capacitor.Plugins
 - [Phase 83-performance-capacitor]: Modul-Level-Variablen statt window-Properties fuer FCM Anti-Spam-State
+- [Phase 84]: Migration-Runner ohne State-Tracking: alle .sql Dateien sind idempotent, kein Tracking noetig
+- [Phase 84]: Fail-fast bei Migration-Fehler: Server startet nicht wenn .sql fehlschlaegt
 
 ### Pending Todos
 
@@ -55,6 +57,6 @@ Plan: Not started
 
 ## Session Continuity
 
-Last session: 2026-03-22T22:25:09.674Z
-Stopped at: Completed 83-02-PLAN.md
+Last session: 2026-03-22T22:34:40.930Z
+Stopped at: Completed 84-01-PLAN.md
 Resume file: None

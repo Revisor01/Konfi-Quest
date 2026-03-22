@@ -15,8 +15,8 @@ Requirements fuer Milestone v2.4 Codebase-Cleanup.
 
 ### Inline-Migrationen (MIG)
 
-- [ ] **MIG-01**: Alle Inline-Schema-Checks und ALTERs aus Route-Dateien entfernen (badges.js, jahrgaenge.js, wrapped.js)
-- [ ] **MIG-02**: Schema-Aenderungen in dedizierte SQL-Migrationsdateien unter backend/migrations/ verschieben (falls noch nicht vorhanden)
+- [x] **MIG-01**: Alle Inline-Schema-Checks und ALTERs aus Route-Dateien entfernen (badges.js, jahrgaenge.js, wrapped.js)
+- [x] **MIG-02**: Schema-Aenderungen in dedizierte SQL-Migrationsdateien unter backend/migrations/ verschieben (falls noch nicht vorhanden)
 - [ ] **MIG-03**: Server startet sauber ohne Inline-Migrationen
 
 ### Cron-System (CRON)
@@ -79,8 +79,8 @@ Requirements fuer Milestone v2.4 Codebase-Cleanup.
 | PERF-02 | Phase 83 | Complete |
 | CAP-01 | Phase 83 | Complete |
 | CAP-02 | Phase 83 | Complete |
-| MIG-01 | Phase 84 | Pending |
-| MIG-02 | Phase 84 | Pending |
+| MIG-01 | Phase 84 | Complete |
+| MIG-02 | Phase 84 | Complete |
 | MIG-03 | Phase 84 | Pending |
 | CLN-01 | Phase 85 | Pending |
 | CLN-02 | Phase 85 | Pending |
