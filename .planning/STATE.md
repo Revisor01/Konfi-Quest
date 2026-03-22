@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Konfi + Teamer Wrapped
 status: unknown
-stopped_at: Completed 76-03-PLAN.md
-last_updated: "2026-03-22T14:05:40.653Z"
+stopped_at: Completed 77-01-PLAN.md
+last_updated: "2026-03-22T14:15:39.707Z"
 progress:
   total_phases: 5
-  completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
+  completed_phases: 3
+  total_plans: 6
+  completed_plans: 6
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-22)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 76 — Slide-Container + Konfi-Slides
+**Current focus:** Phase 77 — Teamer-Slides
 
 ## Current Position
 
-Phase: 77
-Plan: Not started
+Phase: 77 (Teamer-Slides) — EXECUTING
+Plan: 1 of 1
 
 ## Performance Metrics
 
@@ -47,6 +47,7 @@ Plan: Not started
 | Phase 76 P01 | 3min | 2 tasks | 7 files |
 | Phase 76 P02 | 3min | 2 tasks | 6 files |
 | Phase 76 P03 | 4min | 2 tasks | 6 files |
+| Phase 77 P01 | 3min | 2 tasks | 9 files |
 
 ### Decisions
 
@@ -66,6 +67,8 @@ v2.3 Research-Entscheidungen:
 - [Phase 76]: SlideBase rendert Kinder nur bei isActive=true (Performance-Optimierung)
 - [Phase 76]: getIconFromString aus DashboardSections re-used statt neue Helper-Funktion
 - [Phase 76]: Endspurt-Slide bedingt ueber data.slides.endspurt.aktiv (7 oder 8 Slides dynamisch)
+- [Phase 77]: wrappedType aus API-Response wrapped_type steuert Slide-Auswahl
+- [Phase 77]: buildKonfiSlides/buildTeamerSlides als separate Funktionen
 
 ### Pending Todos
 
@@ -79,6 +82,6 @@ v2.3 Research-Entscheidungen:
 
 ## Session Continuity
 
-Last session: 2026-03-22T14:05:04.060Z
-Stopped at: Completed 76-03-PLAN.md
+Last session: 2026-03-22T14:15:39.705Z
+Stopped at: Completed 77-01-PLAN.md
 Resume file: None

@@ -32,13 +32,13 @@ Requirements fuer Milestone v2.3 Konfi + Teamer Wrapped.
 
 ### Teamer-Slides (TS)
 
-- [ ] **TS-01**: Intro-Slide: "Dein Teamer-Jahr [Jahr]"
-- [ ] **TS-02**: Events-Slide: Events geleitet (Anzahl + Typen)
-- [ ] **TS-03**: Konfis-Slide: Konfis im Jahrgang betreut
-- [ ] **TS-04**: Badges-Slide: Verdiente Teamer-Badges
-- [ ] **TS-05**: Zertifikate-Slide: Erhaltene Zertifikate
-- [ ] **TS-06**: Jahre-Slide: Aktive Jahre als Teamer:in
-- [ ] **TS-07**: Abschluss-Slide: Zusammenfassung + Danke
+- [x] **TS-01**: Intro-Slide: "Dein Teamer-Jahr [Jahr]"
+- [x] **TS-02**: Events-Slide: Events geleitet (Anzahl + Typen)
+- [x] **TS-03**: Konfis-Slide: Konfis im Jahrgang betreut
+- [x] **TS-04**: Badges-Slide: Verdiente Teamer-Badges
+- [x] **TS-05**: Zertifikate-Slide: Erhaltene Zertifikate
+- [x] **TS-06**: Jahre-Slide: Aktive Jahre als Teamer:in
+- [x] **TS-07**: Abschluss-Slide: Zusammenfassung + Danke
 
 ### UI + Interaktion (UI)
 
@@ -102,13 +102,13 @@ Requirements fuer Milestone v2.3 Konfi + Teamer Wrapped.
 | UI-04 | Phase 76 | Complete |
 | UI-05 | Phase 76 | Complete |
 | UI-06 | Phase 76 | Complete |
-| TS-01 | Phase 77 | Pending |
-| TS-02 | Phase 77 | Pending |
-| TS-03 | Phase 77 | Pending |
-| TS-04 | Phase 77 | Pending |
-| TS-05 | Phase 77 | Pending |
-| TS-06 | Phase 77 | Pending |
-| TS-07 | Phase 77 | Pending |
+| TS-01 | Phase 77 | Complete |
+| TS-02 | Phase 77 | Complete |
+| TS-03 | Phase 77 | Complete |
+| TS-04 | Phase 77 | Complete |
+| TS-05 | Phase 77 | Complete |
+| TS-06 | Phase 77 | Complete |
+| TS-07 | Phase 77 | Complete |
 | SHR-01 | Phase 78 | Pending |
 | SHR-02 | Phase 78 | Pending |
 | SHR-03 | Phase 78 | Pending |
