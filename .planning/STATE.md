@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: Codebase-Cleanup
 status: unknown
-stopped_at: Completed 83-01-PLAN.md
-last_updated: "2026-03-22T22:23:44.630Z"
+stopped_at: Completed 83-02-PLAN.md
+last_updated: "2026-03-22T22:25:09.677Z"
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -41,6 +41,8 @@ Plan: 2 of 2
 - [Phase 82-backend-sicherheit-cron]: Socket.IO joinRoom: db require nach oben verschoben + async Handler mit chat_rooms Organization-Isolation-Check
 - [Phase 82-backend-sicherheit-cron]: node-cron statt setInterval fuer Wrapped-Cron: kalendarisch korrekte Ausfuehrung nach Container-Neustart, kein Drift mehr
 - [Phase 83]: Chat N+1-Bulk-Queries: ANY($1::int[]) Pattern fuer Reactions und Poll-Votes, max. 3 DB-Queries statt bis zu 400
+- [Phase 83-performance-capacitor]: registerPlugin-Pattern fuer native Capacitor-Plugins ohne npm-Paket statt (window as any).Capacitor.Plugins
+- [Phase 83-performance-capacitor]: Modul-Level-Variablen statt window-Properties fuer FCM Anti-Spam-State
 
 ### Pending Todos
 
@@ -53,6 +55,6 @@ Plan: 2 of 2
 
 ## Session Continuity
 
-Last session: 2026-03-22T22:23:44.628Z
-Stopped at: Completed 83-01-PLAN.md
+Last session: 2026-03-22T22:25:09.674Z
+Stopped at: Completed 83-02-PLAN.md
 Resume file: None

@@ -37,8 +37,8 @@ Requirements fuer Milestone v2.4 Codebase-Cleanup.
 
 ### Capacitor-Imports (CAP)
 
-- [ ] **CAP-01**: Alle (window as any).Capacitor Zugriffe in AppContext.tsx durch typsichere Capacitor-Plugin-Imports ersetzen
-- [ ] **CAP-02**: TypeScript meldet keine any-Fehler fuer Capacitor-Plugin-Zugriffe
+- [x] **CAP-01**: Alle (window as any).Capacitor Zugriffe in AppContext.tsx durch typsichere Capacitor-Plugin-Imports ersetzen
+- [x] **CAP-02**: TypeScript meldet keine any-Fehler fuer Capacitor-Plugin-Zugriffe
 
 ### Cleanup (CLN)
 
@@ -77,8 +77,8 @@ Requirements fuer Milestone v2.4 Codebase-Cleanup.
 | CRON-02 | Phase 82 | Complete |
 | PERF-01 | Phase 83 | Complete |
 | PERF-02 | Phase 83 | Complete |
-| CAP-01 | Phase 83 | Pending |
-| CAP-02 | Phase 83 | Pending |
+| CAP-01 | Phase 83 | Complete |
+| CAP-02 | Phase 83 | Complete |
 | MIG-01 | Phase 84 | Pending |
 | MIG-02 | Phase 84 | Pending |
 | MIG-03 | Phase 84 | Pending |

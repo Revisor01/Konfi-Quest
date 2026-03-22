@@ -215,7 +215,7 @@ Phase 80: Wrapped Persistenz + Individualisierung (3 plans, complete)
 
 - [x] **Phase 81: React Router Migration** - React Router v5 auf v6 migrieren (useHistory, Route component) (completed 2026-03-22)
 - [x] **Phase 82: Backend-Sicherheit + Cron** - API-Key in ENV, Socket.IO Org-Isolation, node-cron (completed 2026-03-22)
-- [ ] **Phase 83: Performance + Capacitor** - Chat N+1 durch Bulk-Queries ersetzen, window-as-any typsicher machen
+- [x] **Phase 83: Performance + Capacitor** - Chat N+1 durch Bulk-Queries ersetzen, window-as-any typsicher machen (completed 2026-03-22)
 - [ ] **Phase 84: Schema-Hygiene** - Inline-Migrationen in SQL-Dateien auslagern, activity_requests.konfi_id umbenennen
 - [ ] **Phase 85: Code-Cleanup** - SQLite entfernen, Legacy-Multer, tote Dateien, Typos, Bugs, Validierung
 
@@ -263,7 +263,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 83-01-PLAN.md — Chat N+1-Queries durch Bulk-Queries ersetzen (PERF-01, PERF-02)
-- [ ] 83-02-PLAN.md — AppContext.tsx Capacitor window-as-any typsicher machen (CAP-01, CAP-02)
+- [x] 83-02-PLAN.md — AppContext.tsx Capacitor window-as-any typsicher machen (CAP-01, CAP-02)
 
 ### Phase 84: Schema-Hygiene
 **Goal**: Inline-Migrationen sind aus Route-Dateien entfernt und das DB-Schema ist intern konsistent benannt
@@ -293,6 +293,6 @@ Plans:
 |-------|----------------|--------|-----------|
 | 81. React Router Migration | 3/3 | Complete    | 2026-03-22 |
 | 82. Backend-Sicherheit + Cron | 3/3 | Complete    | 2026-03-22 |
-| 83. Performance + Capacitor | 1/2 | In Progress|  |
+| 83. Performance + Capacitor | 2/2 | Complete   | 2026-03-22 |
 | 84. Schema-Hygiene | 0/TBD | Not started | - |
 | 85. Code-Cleanup | 0/TBD | Not started | - |
