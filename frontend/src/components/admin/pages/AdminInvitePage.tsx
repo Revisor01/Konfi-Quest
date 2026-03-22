@@ -33,7 +33,8 @@ import {
   time,
   checkmarkCircle,
   people,
-  trash
+  trash,
+  cloudOfflineOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -320,7 +321,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                     {generatingCode ? (
                       <IonSpinner name="crescent" />
                     ) : !isOnline ? (
-                      'Du bist offline'
+                      <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</>
                     ) : (
                       <>
                         <IonIcon icon={add} slot="start" />

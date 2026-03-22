@@ -21,7 +21,8 @@ import {
   closeOutline,
   checkmarkOutline,
   calendarOutline,
-  chatbubbleOutline
+  chatbubbleOutline,
+  cloudOfflineOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 
@@ -73,7 +74,7 @@ const UnregisterModal: React.FC<UnregisterModalProps> = ({
           </IonButtons>
           <IonButtons slot="end">
             <IonButton className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSubmit} disabled={!isValid || isSubmitting || !isOnline}>
-              {!isOnline ? 'Du bist offline' : <IonIcon icon={checkmarkOutline} />}
+              {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>

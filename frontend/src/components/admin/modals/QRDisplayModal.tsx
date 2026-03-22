@@ -10,7 +10,7 @@ import {
   IonIcon,
   IonSpinner
 } from '@ionic/react';
-import { closeOutline, printOutline } from 'ionicons/icons';
+import { closeOutline, printOutline, cloudOfflineOutline } from 'ionicons/icons';
 import QRCode from 'qrcode';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
@@ -126,7 +126,7 @@ const QRDisplayModal: React.FC<QRDisplayModalProps> = ({ eventId, eventName, eve
           ) : error ? (
             <div style={{ textAlign: 'center', color: 'var(--ion-color-danger)' }}>
               <p>{error}</p>
-              <IonButton fill="outline" disabled={!isOnline} onClick={loadQR}>{!isOnline ? 'Du bist offline' : 'Erneut versuchen'}</IonButton>
+              <IonButton fill="outline" disabled={!isOnline} onClick={loadQR}>{!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : 'Erneut versuchen'}</IonButton>
             </div>
           ) : (
             <>

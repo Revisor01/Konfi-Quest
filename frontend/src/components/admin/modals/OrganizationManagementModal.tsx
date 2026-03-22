@@ -33,7 +33,8 @@ import {
   flash,
   callOutline,
   locationOutline,
-  addOutline
+  addOutline,
+  cloudOfflineOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
@@ -350,7 +351,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           </IonButtons>
           <IonButtons slot="end">
             <IonButton onClick={handleSave} disabled={!isValid || isSubmitting || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--settings">
-              {!isOnline ? 'Du bist offline' : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+              {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -575,7 +576,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                               disabled={selectedAdminId !== admin.id || !newPassword.trim() || resettingPassword || !isOnline}
                               style={{ '--background': '#667eea', '--background-activated': '#5a67d8' }}
                             >
-                              {!isOnline ? 'Du bist offline' : resettingPassword && selectedAdminId === admin.id ? <IonSpinner name="crescent" /> : 'Setzen'}
+                              {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : resettingPassword && selectedAdminId === admin.id ? <IonSpinner name="crescent" /> : 'Setzen'}
                             </IonButton>
                           </div>
                         </div>
@@ -642,7 +643,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                         disabled={!newAdminData.display_name.trim() || !newAdminData.username.trim() || !newAdminData.password.trim() || addingAdmin || !isOnline}
                         style={{ flex: 1, '--background': '#667eea', '--background-activated': '#5a67d8' }}
                       >
-                        {!isOnline ? 'Du bist offline' : addingAdmin ? <IonSpinner name="crescent" /> : 'Hinzufügen'}
+                        {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : addingAdmin ? <IonSpinner name="crescent" /> : 'Hinzufügen'}
                       </IonButton>
                     </div>
                   </div>

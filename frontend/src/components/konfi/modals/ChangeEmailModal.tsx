@@ -22,7 +22,8 @@ import {
   closeOutline,
   checkmarkOutline,
   mailOutline,
-  informationCircleOutline
+  informationCircleOutline,
+  cloudOfflineOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -106,7 +107,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
           </IonButtons>
           <IonButtons slot="end">
             <IonButton className={`app-modal-submit-btn ${submitBtnClass}`} onClick={handleSave} disabled={isSubmitting || loading || !isOnline}>
-              {!isOnline ? 'Du bist offline' : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+              {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>

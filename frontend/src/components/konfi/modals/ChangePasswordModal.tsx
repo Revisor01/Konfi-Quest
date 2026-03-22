@@ -28,7 +28,8 @@ import {
   eyeOffOutline,
   shieldCheckmarkOutline,
   checkmarkCircle,
-  alertCircle
+  alertCircle,
+  cloudOfflineOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -151,7 +152,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
           </IonButtons>
           <IonButtons slot="end">
             <IonButton className={`app-modal-submit-btn ${submitBtnClass}`} onClick={handleSave} disabled={isSubmitting || !isValid || !isOnline}>
-              {!isOnline ? 'Du bist offline' : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+              {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>

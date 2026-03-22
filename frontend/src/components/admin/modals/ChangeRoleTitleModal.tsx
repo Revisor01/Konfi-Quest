@@ -22,7 +22,8 @@ import {
   closeOutline,
   checkmarkOutline,
   briefcaseOutline,
-  informationCircleOutline
+  informationCircleOutline,
+  cloudOfflineOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -91,7 +92,7 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
           </IonButtons>
           <IonButtons slot="end">
             <IonButton onClick={handleSave} disabled={isSubmitting || !isOnline} className={`app-modal-submit-btn ${submitBtnClass}`}>
-              {!isOnline ? 'Du bist offline' : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+              {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>

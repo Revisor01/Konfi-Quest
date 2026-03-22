@@ -33,7 +33,8 @@ import {
   timeOutline,
   starOutline,
   flashOutline,
-  giftOutline
+  giftOutline,
+  cloudOfflineOutline
 } from 'ionicons/icons';
 import ActivityRings from './ActivityRings';
 
@@ -962,7 +963,7 @@ export const CertificatesSection = React.memo<CertificatesSectionProps>(({
           onClick={handleAssignCertificate}
         >
           <IonIcon icon={add} slot="start" />
-          {!isOnline ? 'Du bist offline' : 'Zertifikat zuweisen'}
+          {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : 'Zertifikat zuweisen'}
         </IonButton>
       </IonCardContent>
     </IonCard>
@@ -1172,7 +1173,7 @@ export const PromoteSection = React.memo<PromoteSectionProps>(({
           onClick={handlePromoteToTeamer}
         >
           <IonIcon icon={ribbon} slot="start" />
-          {!isOnline ? 'Du bist offline' : 'Zum Teamer befördern'}
+          {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : 'Zum Teamer befördern'}
         </IonButton>
       </IonCardContent>
     </IonCard>

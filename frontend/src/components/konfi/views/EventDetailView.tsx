@@ -38,7 +38,8 @@ import {
   personOutline,
   shieldCheckmark,
   bagHandle,
-  qrCodeOutline
+  qrCodeOutline,
+  cloudOfflineOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
@@ -768,7 +769,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                       })}
                     >
                       <IonIcon icon={closeCircle} slot="start" />
-                      {!isOnline ? 'Du bist offline' : 'Abmelden'}
+                      {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : 'Abmelden'}
                     </IonButton>
                   </div>
                 );
@@ -796,7 +797,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   })}
                 >
                   <IonIcon icon={closeCircle} slot="start" />
-                  {!isOnline ? 'Du bist offline' : 'Abmelden'}
+                  {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : 'Abmelden'}
                 </IonButton>
               ) : (
                 <IonButton
@@ -835,7 +836,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               onClick={handleRegister}
             >
               <IonIcon icon={checkmarkCircle} slot="start" />
-              {!isOnline ? 'Du bist offline' : `Anmelden (${eventData.registered_count}/${eventData.max_participants})`}
+              {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : `Anmelden (${eventData.registered_count}/${eventData.max_participants})`}
             </IonButton>
           ) : eventData.waitlist_enabled && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants && eventData.registration_status === 'open' ? (
             <IonButton
@@ -851,7 +852,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               onClick={handleRegister}
             >
               <IonIcon icon={hourglass} slot="start" />
-              {!isOnline ? 'Du bist offline' : `Warteliste offen (${eventData.waitlist_count || 0}/${eventData.max_waitlist_size || 0})`}
+              {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : `Warteliste offen (${eventData.waitlist_count || 0}/${eventData.max_waitlist_size || 0})`}
             </IonButton>
           ) : (
             <IonButton

@@ -25,7 +25,8 @@ import {
   checkmarkCircle,
   school,
   arrowBack,
-  refreshOutline
+  refreshOutline,
+  cloudOfflineOutline
 } from 'ionicons/icons';
 import { useLocation, useHistory } from 'react-router-dom';
 import api from '../../services/api';
@@ -563,7 +564,7 @@ const KonfiRegisterPage: React.FC = () => {
                     {registering ? (
                       <IonSpinner name="crescent" style={{ '--color': 'white' }} />
                     ) : !isOnline ? (
-                      'Du bist offline'
+                      <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</>
                     ) : (
                       <>
                         <IonIcon icon={sparkles} slot="start" />

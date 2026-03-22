@@ -31,7 +31,8 @@ import {
   returnUpBack,
   trash,
   document as documentIcon,
-  attachOutline
+  attachOutline,
+  cloudOfflineOutline
 } from 'ionicons/icons';
 
 // ---- Shared Types (re-export from main file's interfaces) ----
@@ -543,7 +544,7 @@ export const EventActionsSection = React.memo<EventActionsSectionProps>(({
                 onClick={handleCreateEventChat}
               >
                 <IonIcon icon={chatbubbles} className="app-event-detail__icon-gap" />
-                {!isOnline ? 'Du bist offline' : 'Chat erstellen'}
+                {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : 'Chat erstellen'}
               </IonButton>
             )}
           </IonCardContent>
@@ -562,7 +563,7 @@ export const EventActionsSection = React.memo<EventActionsSectionProps>(({
               onClick={handleCancelEvent}
             >
               <IonIcon icon={ban} className="app-event-detail__icon-gap" />
-              {!isOnline ? 'Du bist offline' : 'Event absagen'}
+              {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : 'Event absagen'}
             </IonButton>
           </IonCardContent>
         </IonCard>

@@ -12,7 +12,7 @@ import {
   IonSpinner,
   IonIcon
 } from '@ionic/react';
-import { mailOutline, arrowBack, checkmarkCircle, alertCircle, informationCircleOutline, refreshOutline } from 'ionicons/icons';
+import { mailOutline, arrowBack, checkmarkCircle, alertCircle, informationCircleOutline, refreshOutline, cloudOfflineOutline } from 'ionicons/icons';
 import api from '../../services/api';
 import { useApp } from '../../contexts/AppContext';
 
@@ -180,7 +180,7 @@ const ForgotPasswordPage: React.FC = () => {
                     {loading ? (
                       <IonSpinner name="crescent" style={{ '--color': 'white' }} />
                     ) : !isOnline ? (
-                      'Du bist offline'
+                      <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</>
                     ) : (
                       'Link senden'
                     )}

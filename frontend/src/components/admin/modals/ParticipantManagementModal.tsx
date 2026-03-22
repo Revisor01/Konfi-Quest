@@ -18,7 +18,7 @@ import {
   IonSelect,
   IonSelectOption
 } from '@ionic/react';
-import { person, closeOutline, checkmarkOutline, personAdd, search, filterOutline, time, calendarOutline } from 'ionicons/icons';
+import { person, closeOutline, checkmarkOutline, personAdd, search, filterOutline, time, calendarOutline, cloudOfflineOutline } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
@@ -272,7 +272,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
           <IonButtons slot="end">
             {selectedKonfis.length > 0 && (
               <IonButton onClick={handleAddParticipants} disabled={loading || isSubmitting || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--events">
-                {!isOnline ? 'Du bist offline' : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
+                {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
               </IonButton>
             )}
           </IonButtons>

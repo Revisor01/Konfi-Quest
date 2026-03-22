@@ -34,7 +34,8 @@ import {
   peopleOutline,
   trash,
   filterOutline,
-  calendar
+  calendar,
+  cloudOfflineOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -368,7 +369,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
                   onClick={addSelectedUsers}
                   disabled={selectedUsers.size === 0 || adding || !isOnline}
                 >
-                  {!isOnline ? 'Du bist offline' : adding ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
+                  {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : adding ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
                 </IonButton>
               ) : (
                 <IonButton onClick={() => setShowAddMode(true)}>

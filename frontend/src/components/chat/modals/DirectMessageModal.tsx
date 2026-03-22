@@ -18,7 +18,7 @@ import {
   IonCard,
   IonCardContent
 } from '@ionic/react';
-import { close, person, people, chevronForward, searchOutline, peopleOutline, informationCircleOutline } from 'ionicons/icons';
+import { close, person, people, chevronForward, searchOutline, peopleOutline, informationCircleOutline, cloudOfflineOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
@@ -223,7 +223,7 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSucc
               <IonCard className="app-card">
                 <IonCardContent>
                   <p style={{ margin: 0, fontSize: '0.9rem', color: !isOnline ? '#ef4444' : '#666', lineHeight: '1.4' }}>
-                    {!isOnline ? 'Du bist offline' : 'Wähle eine Person aus, um eine private Unterhaltung zu starten.'}
+                    {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4, verticalAlign: 'middle' }} /> Du bist offline</> : 'Wähle eine Person aus, um eine private Unterhaltung zu starten.'}
                   </p>
                 </IonCardContent>
               </IonCard>
