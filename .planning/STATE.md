@@ -4,7 +4,7 @@ milestone: v2.4
 milestone_name: Codebase-Cleanup
 status: unknown
 stopped_at: Completed 84-02-PLAN.md
-last_updated: "2026-03-22T22:37:20.858Z"
+last_updated: "2026-03-22T22:40:11.632Z"
 progress:
   total_phases: 5
   completed_phases: 4
@@ -23,8 +23,8 @@ See: .planning/PROJECT.md (updated 2026-03-22)
 
 ## Current Position
 
-Phase: 84 (schema-hygiene) — EXECUTING
-Plan: 2 of 2
+Phase: 85
+Plan: Not started
 
 ## Accumulated Context
 
