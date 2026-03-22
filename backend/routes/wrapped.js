@@ -71,6 +71,28 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     );
     const totalAttended = parseInt(eventCount.count, 10) || 0;
 
+    // Gottesdienst-Count (Events mit point_type = 'gottesdienst')
+    const { rows: [gdCountRow] } = await client.query(
+      `SELECT COUNT(*) as count FROM event_bookings eb
+       JOIN events e ON eb.event_id = e.id
+       WHERE eb.user_id = $1 AND eb.status = 'confirmed' AND eb.attendance_status = 'present'
+         AND e.organization_id = $2 AND e.point_type = 'gottesdienst'`,
+      [userId, orgId]
+    );
+    const gottesdienstCount = parseInt(gdCountRow.count, 10) || 0;
+
+    // Kategorie-Verteilung (Aktivitaeten nach Kategorie)
+    const { rows: kategorieVerteilung } = await client.query(
+      `SELECT c.name as kategorie, COUNT(*) as count
+       FROM user_activities ua
+       JOIN activities a ON ua.activity_id = a.id
+       JOIN categories c ON a.category_id = c.id
+       WHERE ua.user_id = $1 AND ua.organization_id = $2
+       GROUP BY c.name
+       ORDER BY count DESC`,
+      [userId, orgId]
+    );
+
     // Gesamt-Events verfuegbar fuer diesen Jahrgang
     const { rows: [totalEventsRow] } = await client.query(
       `SELECT COUNT(DISTINCT e.id) as count FROM events e
@@ -154,6 +176,30 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     const fehlendePunkte = Math.max(0, zielTotal - aktuellTotal);
     const endspurtAktiv = aktuellTotal < zielTotal;
 
+    // highlight_type berechnen: ueber_das_ziel hat hoechste Prio
+    let highlightType = 'events_held';
+    if (aktuellTotal >= zielTotal && zielTotal > 0) {
+      highlightType = 'ueber_das_ziel';
+    } else {
+      const candidates = [
+        { type: 'events_held', value: totalAttended },
+        { type: 'badge_collector', value: badgeRows.length },
+        { type: 'chat_champion', value: nachrichtenGesendet },
+        { type: 'gottesdienst_treue', value: gottesdienstCount },
+        { type: 'gemeinde_aktiv', value: gemeinde }
+      ];
+      let maxVal = -1;
+      for (const c of candidates) {
+        if (c.value > maxVal) {
+          maxVal = c.value;
+          highlightType = c.type;
+        }
+      }
+    }
+
+    // Deterministischer Formulierung-Seed
+    const formulierungSeed = (userId * 31 + year * 17) % 97;
+
     // Zeitraum
     const zeitraumStart = jahrgang && jahrgang.confirmation_date
       ? new Date(new Date(jahrgang.confirmation_date).getFullYear() - 1, 8, 1).toISOString().split('T')[0]
@@ -164,6 +210,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
     return {
       version: 1,
+      highlight_type: highlightType,
+      formulierung_seed: formulierungSeed,
       slides: {
         punkte: {
           gottesdienst,
@@ -194,6 +242,13 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         zeitraum: {
           start: zeitraumStart,
           ende: zeitraumEnde
+        },
+        gottesdienst: {
+          count: gottesdienstCount
+        },
+        kategorie: {
+          verteilung: kategorieVerteilung.map(k => ({ kategorie: k.kategorie, count: parseInt(k.count, 10) })),
+          top_kategorie: kategorieVerteilung.length > 0 ? kategorieVerteilung[0].kategorie : null
         }
       }
     };
@@ -574,6 +629,45 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         res.status(500).json({ error: 'Fehler beim L\u00f6schen der Wrapped-Snapshots' });
       } finally {
         client.release();
+      }
+    }
+  );
+
+  // GET /history/:userId - Alle Wrapped-Snapshots eines Users
+  router.get('/history/:userId',
+    rbacVerifier,
+    param('userId').isInt({ min: 1 }),
+    handleValidationErrors,
+    async (req, res) => {
+      try {
+        const targetUserId = parseInt(req.params.userId, 10);
+        // Sicherheitspruefung: Nur eigene Daten ODER Admin der gleichen Org
+        const roleName = req.user.role_name;
+        if (req.user.id !== targetUserId) {
+          if (roleName !== 'admin' && roleName !== 'org_admin') {
+            return res.status(403).json({ error: 'Keine Berechtigung' });
+          }
+          // Admin: Pruefen ob User zur gleichen Org gehoert
+          const { rows: [targetUser] } = await db.query(
+            'SELECT organization_id FROM users WHERE id = $1', [targetUserId]
+          );
+          if (!targetUser || targetUser.organization_id !== req.user.organization_id) {
+            return res.status(403).json({ error: 'Keine Berechtigung' });
+          }
+        }
+
+        const { rows } = await db.query(
+          `SELECT id, wrapped_type, year, data, computed_at
+           FROM wrapped_snapshots
+           WHERE user_id = $1
+           ORDER BY year DESC, wrapped_type`,
+          [targetUserId]
+        );
+
+        res.json(rows);
+      } catch (err) {
+        console.error('Error loading wrapped history:', err);
+        res.status(500).json({ error: 'Fehler beim Laden der Wrapped-Historie' });
       }
     }
   );
