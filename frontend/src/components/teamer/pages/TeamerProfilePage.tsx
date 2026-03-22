@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -27,7 +27,8 @@ import {
   trophy,
   logOutOutline,
   ribbon,
-  schoolOutline
+  schoolOutline,
+  timeOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -40,6 +41,8 @@ import { setUser as setTokenStoreUser, clearAuth } from '../../../services/token
 import ChangeEmailModal from '../../konfi/modals/ChangeEmailModal';
 import ChangePasswordModal from '../../konfi/modals/ChangePasswordModal';
 import ChangeRoleTitleModal from '../../admin/modals/ChangeRoleTitleModal';
+import WrappedModal from '../../wrapped/WrappedModal';
+import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { triggerPullHaptic } from '../../../utils/haptics';
 
@@ -118,6 +121,25 @@ const TeamerProfilePage: React.FC = () => {
     sectionIconClass: 'app-section-icon--teamer',
     submitBtnClass: 'app-modal-submit-btn--teamer',
     infoBoxClass: 'app-info-box--teamer'
+  });
+
+  // Wrapped-Historie
+  const [wrappedHistory, setWrappedHistory] = useState<WrappedHistoryEntry[]>([]);
+
+  React.useEffect(() => {
+    if (!user?.id) return;
+    api.get(`/wrapped/history/${user.id}`)
+      .then(res => setWrappedHistory(res.data || []))
+      .catch(() => {});
+  }, [user?.id]);
+
+  const wrappedModalRef = React.useRef<WrappedHistoryEntry | null>(null);
+  const [presentWrappedModal, dismissWrappedModal] = useIonModal(WrappedModal, {
+    onClose: () => dismissWrappedModal(),
+    displayName: profile?.user?.display_name || '',
+    wrappedType: wrappedModalRef.current?.wrapped_type || 'teamer',
+    initialData: wrappedModalRef.current?.data,
+    initialYear: wrappedModalRef.current?.year
   });
 
   // Logout
@@ -374,6 +396,51 @@ const TeamerProfilePage: React.FC = () => {
             </IonCardContent>
           </IonCard>
         </IonList>
+
+        {/* Meine Wrappeds */}
+        {wrappedHistory.length > 0 && (
+          <IonList inset={true} style={{ margin: '16px' }}>
+            <IonListHeader>
+              <div className="app-section-icon" style={{ backgroundColor: '#e11d48' }}>
+                <IonIcon icon={timeOutline} />
+              </div>
+              <IonLabel>Meine Wrappeds</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent style={{ padding: '16px' }}>
+                {wrappedHistory.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="app-list-item"
+                    style={{ width: '100%', cursor: 'pointer', marginBottom: '8px', borderLeftColor: '#e11d48' }}
+                    onClick={() => {
+                      wrappedModalRef.current = entry;
+                      presentWrappedModal({ cssClass: 'wrapped-modal-fullscreen' });
+                    }}
+                  >
+                    <div className="app-list-item__row">
+                      <div className="app-list-item__main">
+                        <div className="app-icon-circle" style={{ backgroundColor: '#e11d48' }}>
+                          <IonIcon icon={timeOutline} />
+                        </div>
+                        <div className="app-list-item__content">
+                          <div className="app-list-item__title">
+                            {entry.wrapped_type === 'konfi' ? 'Konfi-Wrapped' : 'Teamer-Wrapped'} {entry.year}
+                          </div>
+                          <div className="app-list-item__meta">
+                            <span className="app-list-item__meta-item">
+                              {new Date(entry.computed_at).toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
 
         {/* D. Logout-Button */}
         <div style={{ padding: '0 16px', marginTop: '16px' }}>

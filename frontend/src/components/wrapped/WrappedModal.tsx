@@ -13,6 +13,9 @@ import BadgesSlide from './slides/BadgesSlide';
 import AktivsterMonatSlide from './slides/AktivsterMonatSlide';
 import ChatSlide from './slides/ChatSlide';
 import EndspurtSlide from './slides/EndspurtSlide';
+import KategorieSlide from './slides/KategorieSlide';
+import GottesdienstSlide from './slides/GottesdienstSlide';
+import UeberDasZielSlide from './slides/UeberDasZielSlide';
 import AbschlussSlide from './slides/AbschlussSlide';
 import TeamerIntroSlide from './slides/teamer/TeamerIntroSlide';
 import TeamerEventsSlide from './slides/teamer/TeamerEventsSlide';
@@ -35,9 +38,70 @@ interface WrappedModalProps {
   displayName: string;
   jahrgangName?: string;
   wrappedType?: 'konfi' | 'teamer';
+  // Fuer Wiederansicht — wenn gesetzt, wird NICHT /api/wrapped/me geladen
+  initialData?: KonfiWrappedData | TeamerWrappedData;
+  initialYear?: number;
 }
 
-const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrgangName, wrappedType: initialType }) => {
+// Formulierungs-Varianten pro Slide-Typ, Auswahl per seed
+const FORMULIERUNGEN: Record<string, string[]> = {
+  punkte_titel: [
+    'Deine Punkte',
+    'So viel geschafft!',
+    'Punkte-Bilanz',
+    'Dein Punktestand'
+  ],
+  events_titel: [
+    'Deine Events',
+    'Dabei gewesen!',
+    'Mittendrin!',
+    'Event-Bilanz'
+  ],
+  badges_titel: [
+    'Deine Badges',
+    'Ausgezeichnet!',
+    'Badge-Sammlung',
+    'Verdient!'
+  ],
+  chat_titel: [
+    'Im Austausch',
+    'Deine Nachrichten',
+    'Voll vernetzt!',
+    'Chat-Bilanz'
+  ],
+  aktivster_monat_titel: [
+    'Dein aktivster Monat',
+    'Hochphase!',
+    'Voll dabei!',
+    'Dein Top-Monat'
+  ],
+  kategorie_titel: [
+    'Dein Bereich',
+    'Deine St\u00e4rke',
+    'Das liegt dir!',
+    'Dein Schwerpunkt'
+  ],
+  gottesdienst_titel: [
+    'Gottesdienst-Treue',
+    'Im Gottesdienst',
+    'Sonntags dabei',
+    'Gottesdienst-Bilanz'
+  ],
+  abschluss_titel: [
+    'Dein Konfi-Jahr',
+    'Was f\u00fcr ein Jahr!',
+    'Starke Leistung!',
+    'Dein R\u00fcckblick'
+  ]
+};
+
+function getFormulierung(key: string, seed: number): string {
+  const variants = FORMULIERUNGEN[key];
+  if (!variants || variants.length === 0) return key;
+  return variants[seed % variants.length];
+}
+
+const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrgangName, wrappedType: initialType, initialData, initialYear }) => {
   const [data, setData] = useState<KonfiWrappedData | TeamerWrappedData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -47,6 +111,13 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
   const shareCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Wiederansicht: gespeicherte Daten direkt verwenden
+    if (initialData && initialYear) {
+      setData(initialData);
+      setYear(initialYear);
+      if (initialType) setWrappedType(initialType);
+      return;
+    }
     api.get('/wrapped/me')
       .then((res) => {
         const response = res.data as WrappedResponse;

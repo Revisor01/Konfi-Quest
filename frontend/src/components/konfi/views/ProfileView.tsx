@@ -25,7 +25,8 @@ import {
   keyOutline,
   bookOutline,
   locationOutline,
-  mailOutline
+  mailOutline,
+  timeOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -37,6 +38,8 @@ import { SectionHeader } from '../../shared';
 import ChangePasswordModal from '../modals/ChangePasswordModal';
 import ChangeEmailModal from '../modals/ChangeEmailModal';
 import PointsHistoryModal from '../modals/PointsHistoryModal';
+import WrappedModal from '../../wrapped/WrappedModal';
+import type { WrappedHistoryEntry } from '../../../types/wrapped';
 
 interface KonfiProfile {
   id: number;
@@ -106,6 +109,31 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
 
   const [selectedTranslation, setSelectedTranslation] = useState<string>(profile.bible_translation || 'LUT');
   const [earnedBadgesCount, setEarnedBadgesCount] = useState<number>(0);
+  const [wrappedHistory, setWrappedHistory] = useState<WrappedHistoryEntry[]>([]);
+
+  // Wrapped-Historie laden
+  React.useEffect(() => {
+    if (!profile?.id) return;
+    api.get(`/wrapped/history/${profile.id}`)
+      .then(res => setWrappedHistory(res.data || []))
+      .catch(() => {}); // Stille Fehlerbehandlung -- optionales Feature
+  }, [profile?.id]);
+
+  // WrappedModal per useIonModal mit dynamischen Daten
+  const wrappedModalRef = React.useRef<WrappedHistoryEntry | null>(null);
+  const [presentWrappedModal, dismissWrappedModal] = useIonModal(WrappedModal, {
+    onClose: () => dismissWrappedModal(),
+    displayName: profile.display_name,
+    jahrgangName: profile.jahrgang_name || '',
+    wrappedType: wrappedModalRef.current?.wrapped_type || 'konfi',
+    initialData: wrappedModalRef.current?.data,
+    initialYear: wrappedModalRef.current?.year
+  });
+
+  const openWrapped = (entry: WrappedHistoryEntry) => {
+    wrappedModalRef.current = entry;
+    presentWrappedModal({ cssClass: 'wrapped-modal-fullscreen' });
+  };
   
   // Load badges for accurate count
   React.useEffect(() => {
@@ -388,6 +416,48 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
           </div>
         </div>
       </div>
+
+      {/* Meine Wrappeds */}
+      {wrappedHistory.length > 0 && (
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--purple">
+              <IonIcon icon={timeOutline} />
+            </div>
+            <IonLabel>Meine Wrappeds</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '16px' }}>
+              {wrappedHistory.map((entry) => (
+                <div
+                  key={entry.id}
+                  className="app-list-item app-list-item--purple"
+                  style={{ width: '100%', cursor: 'pointer', marginBottom: '8px' }}
+                  onClick={() => openWrapped(entry)}
+                >
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                      <div className="app-icon-circle app-icon-circle--purple">
+                        <IonIcon icon={timeOutline} />
+                      </div>
+                      <div className="app-list-item__content">
+                        <div className="app-list-item__title">
+                          {entry.wrapped_type === 'konfi' ? 'Konfi-Wrapped' : 'Teamer-Wrapped'} {entry.year}
+                        </div>
+                        <div className="app-list-item__meta">
+                          <span className="app-list-item__meta-item">
+                            {new Date(entry.computed_at).toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </IonCardContent>
+          </IonCard>
+        </IonList>
+      )}
 
       {/* Next Badge Progress */}
       {profile.progress_overview?.next_badge && (
