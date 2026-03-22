@@ -11,7 +11,7 @@ interface GottesdienstSlideProps extends SlideProps {
 function getMotivation(count: number): string {
   if (count === 0) return 'Der erste Gottesdienst wartet noch auf dich';
   if (count <= 3) return 'Ein guter Anfang!';
-  if (count <= 8) return 'Regelm\u00e4\u00dfig dabei!';
+  if (count <= 8) return 'Regelmäßig dabei!';
   return 'Beeindruckend treu!';
 }
 

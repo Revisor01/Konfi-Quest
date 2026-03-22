@@ -33,7 +33,7 @@ const TeamerAbschlussSlide: React.FC<TeamerAbschlussSlideProps> = ({ isActive, d
       <div className="wrapped-anim-fade wrapped-anim-delay-2" style={{ opacity: 0 }}>
         <div className="abschluss-cta">
           <p style={{ color: '#fb7185', fontSize: '1.1rem', fontWeight: 600 }}>
-            Danke f&uuml;r deinen Einsatz!
+            Danke für deinen Einsatz!
           </p>
           <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', marginTop: '8px' }}>
             Du machst den Unterschied

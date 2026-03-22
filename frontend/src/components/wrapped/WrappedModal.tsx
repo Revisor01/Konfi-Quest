@@ -77,7 +77,7 @@ const FORMULIERUNGEN: Record<string, string[]> = {
   ],
   kategorie_titel: [
     'Dein Bereich',
-    'Deine St\u00e4rke',
+    'Deine Stärke',
     'Das liegt dir!',
     'Dein Schwerpunkt'
   ],
@@ -89,9 +89,9 @@ const FORMULIERUNGEN: Record<string, string[]> = {
   ],
   abschluss_titel: [
     'Dein Konfi-Jahr',
-    'Was f\u00fcr ein Jahr!',
+    'Was für ein Jahr!',
     'Starke Leistung!',
-    'Dein R\u00fcckblick'
+    'Dein Rückblick'
   ]
 };
 
@@ -156,7 +156,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
         case 'endspurt': return { ...base, slideValue: `Noch ${k.slides.endspurt.fehlende_punkte} Punkte bis zum Ziel` };
         case 'kategorie': return { ...base, slideValue: `Dein Bereich: ${k.slides.kategorie?.top_kategorie || '-'}` };
         case 'gottesdienst': return { ...base, slideValue: `${k.slides.gottesdienst?.count || 0} Gottesdienste besucht` };
-        case 'ueber-das-ziel': return { ...base, slideValue: `${(k.slides.endspurt.aktuell_total - k.slides.endspurt.ziel_total)} Punkte \u00fcber dem Ziel!` };
+        case 'ueber-das-ziel': return { ...base, slideValue: `${(k.slides.endspurt.aktuell_total - k.slides.endspurt.ziel_total)} Punkte über dem Ziel!` };
         case 'abschluss': return { ...base, slideValue: `${k.slides.punkte.total} Punkte, ${k.slides.events.total_attended} Events, ${k.slides.badges.total_earned} Badges` };
         default: return base;
       }
@@ -341,7 +341,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
             <IonIcon icon={shareOutline} />
           </button>
         )}
-        <button className="wrapped-close-btn" onClick={onClose} aria-label="Schlie\u00dfen">
+        <button className="wrapped-close-btn" onClick={onClose} aria-label="Schließen">
           <IonIcon icon={closeOutline} />
         </button>
       </div>

@@ -100,7 +100,7 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
             <>
               <div className="share-label">Aktivster Monat</div>
               <div style={{ fontSize: 96, fontWeight: 800, lineHeight: 1.1 }}>{konfi.slides.aktivster_monat.monat_name}</div>
-              <div className="share-subtitle">{konfi.slides.aktivster_monat.aktivitaeten} Aktivit&auml;ten</div>
+              <div className="share-subtitle">{konfi.slides.aktivster_monat.aktivitaeten} Aktivitäten</div>
             </>
           );
 
@@ -182,7 +182,7 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
               <div className="share-subtitle">Events geleitet</div>
               {teamer.slides.events_geleitet.meiste_teilnehmer_event && (
                 <div style={{ marginTop: 48, padding: '24px 36px', background: 'rgba(225,29,72,0.15)', borderRadius: 24, border: '1px solid rgba(225,29,72,0.3)' }}>
-                  <div style={{ fontSize: 28, color: 'rgba(255,255,255,0.6)' }}>Gr&ouml;&szlig;tes Event</div>
+                  <div style={{ fontSize: 28, color: 'rgba(255,255,255,0.6)' }}>Größtes Event</div>
                   <div style={{ fontSize: 36, fontWeight: 600, marginTop: 8 }}>{teamer.slides.events_geleitet.meiste_teilnehmer_event.name}</div>
                   <div style={{ fontSize: 28, color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>
                     {teamer.slides.events_geleitet.meiste_teilnehmer_event.teilnehmer} Teilnehmer:innen

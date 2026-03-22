@@ -25,7 +25,7 @@ const TeamerEventsSlide: React.FC<TeamerEventsSlideProps> = ({ isActive, events 
             background: 'rgba(225, 29, 72, 0.15)',
             border: '1px solid rgba(225, 29, 72, 0.3)',
           }}>
-            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem' }}>Gr&ouml;&szlig;tes Event</p>
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem' }}>Größtes Event</p>
             <p style={{ color: '#fb7185', fontSize: '1.2rem', fontWeight: 600, marginTop: '4px' }}>
               {events.meiste_teilnehmer_event.name}
             </p>

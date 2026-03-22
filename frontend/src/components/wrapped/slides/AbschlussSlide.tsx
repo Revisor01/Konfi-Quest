@@ -36,7 +36,7 @@ const AbschlussSlide: React.FC<AbschlussSlideProps> = ({ isActive, data, year })
             Mach weiter so!
           </p>
           <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', marginTop: '8px' }}>
-            Werde Teamer:in und gestalte die n&auml;chste Generation mit
+            Werde Teamer:in und gestalte die nächste Generation mit
           </p>
         </div>
       </div>

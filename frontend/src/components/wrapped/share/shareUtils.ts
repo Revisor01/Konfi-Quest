@@ -19,7 +19,7 @@ function generateFallbackText(data: ShareTextData): string {
   if (data.slideValue) {
     return `${prefix}: ${data.slideValue}! #KonfiQuest`;
   }
-  return `${prefix} - Schau dir meinen R\u00fcckblick an! #KonfiQuest`;
+  return `${prefix} - Schau dir meinen Rückblick an! #KonfiQuest`;
 }
 
 export async function shareSlide(
