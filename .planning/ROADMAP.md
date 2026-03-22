@@ -214,7 +214,7 @@ Phase 80: Wrapped Persistenz + Individualisierung (3 plans, complete)
 **Milestone Goal:** Technische Schulden abbauen, Sicherheitsluecken schliessen, veraltete Patterns modernisieren — ohne neue Features.
 
 - [x] **Phase 81: React Router Migration** - React Router v5 auf v6 migrieren (useHistory, Route component) (completed 2026-03-22)
-- [ ] **Phase 82: Backend-Sicherheit + Cron** - API-Key in ENV, Socket.IO Org-Isolation, node-cron
+- [x] **Phase 82: Backend-Sicherheit + Cron** - API-Key in ENV, Socket.IO Org-Isolation, node-cron (completed 2026-03-22)
 - [ ] **Phase 83: Performance + Capacitor** - Chat N+1 durch Bulk-Queries ersetzen, window-as-any typsicher machen
 - [ ] **Phase 84: Schema-Hygiene** - Inline-Migrationen in SQL-Dateien auslagern, activity_requests.konfi_id umbenennen
 - [ ] **Phase 85: Code-Cleanup** - SQLite entfernen, Legacy-Multer, tote Dateien, Typos, Bugs, Validierung
@@ -249,7 +249,7 @@ Plans:
 Plans:
 - [x] 82-01-PLAN.md — LOSUNG_API_KEY aus Quellcode in Umgebungsvariable auslagern (SEC-01)
 - [x] 82-02-PLAN.md — Socket.IO joinRoom mit Organization-Isolation absichern (SEC-02, SEC-03)
-- [ ] 82-03-PLAN.md — Wrapped-Cron von setInterval auf node-cron umstellen (CRON-01, CRON-02)
+- [x] 82-03-PLAN.md — Wrapped-Cron von setInterval auf node-cron umstellen (CRON-01, CRON-02)
 
 ### Phase 83: Performance + Capacitor
 **Goal**: Der Chat-Nachrichten-Endpoint loesst keine N+1-Query-Last mehr aus, und Capacitor-Plugins werden typsicher importiert
@@ -289,7 +289,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 81. React Router Migration | 3/3 | Complete    | 2026-03-22 |
-| 82. Backend-Sicherheit + Cron | 2/3 | In Progress|  |
+| 82. Backend-Sicherheit + Cron | 3/3 | Complete   | 2026-03-22 |
 | 83. Performance + Capacitor | 0/TBD | Not started | - |
 | 84. Schema-Hygiene | 0/TBD | Not started | - |
 | 85. Code-Cleanup | 0/TBD | Not started | - |

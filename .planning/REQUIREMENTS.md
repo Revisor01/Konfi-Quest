@@ -27,8 +27,8 @@ Requirements fuer Milestone v2.4 Codebase-Cleanup.
 ### Sicherheit (SEC)
 
 - [x] **SEC-01**: Losung-API-Key aus Quellcode in Umgebungsvariable LOSUNG_API_KEY auslagern (konfi.js + teamer.js)
-- [ ] **SEC-02**: Socket.IO Room-Join prueft Organization-Zugehoerigkeit des Rooms vor socket.join()
-- [ ] **SEC-03**: Nutzer aus Org A kann nicht in Rooms von Org B joinen
+- [x] **SEC-02**: Socket.IO Room-Join prueft Organization-Zugehoerigkeit des Rooms vor socket.join()
+- [x] **SEC-03**: Nutzer aus Org A kann nicht in Rooms von Org B joinen
 
 ### Performance (PERF)
 
@@ -71,8 +71,8 @@ Requirements fuer Milestone v2.4 Codebase-Cleanup.
 | RR-02 | Phase 81 | Complete |
 | RR-03 | Phase 81 | Complete |
 | SEC-01 | Phase 82 | Complete |
-| SEC-02 | Phase 82 | Pending |
-| SEC-03 | Phase 82 | Pending |
+| SEC-02 | Phase 82 | Complete |
+| SEC-03 | Phase 82 | Complete |
 | CRON-01 | Phase 82 | Pending |
 | CRON-02 | Phase 82 | Pending |
 | PERF-01 | Phase 83 | Pending |

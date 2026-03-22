@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: Codebase-Cleanup
 status: unknown
-stopped_at: Completed 82-01-PLAN.md
-last_updated: "2026-03-22T22:14:24.472Z"
+stopped_at: Completed 82-03-PLAN.md
+last_updated: "2026-03-22T22:14:52.994Z"
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-22)
 ## Current Position
 
 Phase: 82 (backend-sicherheit-cron) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Accumulated Context
 
@@ -38,6 +38,8 @@ Plan: 2 of 3
 - [Phase 81]: useIonRouter.push hat kein State-Parameter (AnimationBuilder statt State) - useHistory fuer State-Uebergabe in TeamerDashboardPage behalten
 - [Phase 81]: Wrapper-Komponenten-Pattern in MainTabs: KonfiDetailRoute, AdminEventDetailRoute, AdminChatRoomRoute, TeamerChatRoomRoute, KonfiChatRoomRoute mit useIonRouter.goBack
 - [Phase 82]: Fallback-Wert mit TODO-Kommentar behalten bis LOSUNG_API_KEY in Portainer-Stack gesetzt ist
+- [Phase 82-backend-sicherheit-cron]: Socket.IO joinRoom: db require nach oben verschoben + async Handler mit chat_rooms Organization-Isolation-Check
+- [Phase 82-backend-sicherheit-cron]: node-cron statt setInterval fuer Wrapped-Cron: kalendarisch korrekte Ausfuehrung nach Container-Neustart, kein Drift mehr
 
 ### Pending Todos
 
@@ -50,6 +52,6 @@ Plan: 2 of 3
 
 ## Session Continuity
 
-Last session: 2026-03-22T22:14:24.470Z
-Stopped at: Completed 82-01-PLAN.md
+Last session: 2026-03-22T22:14:52.992Z
+Stopped at: Completed 82-03-PLAN.md
 Resume file: None
