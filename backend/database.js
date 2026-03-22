@@ -1,3 +1,5 @@
+const path = require('path');
+const fs = require('fs');
 const { Pool } = require('pg');
 
 // Configure pg to parse bigint as integer
@@ -13,12 +15,28 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
+async function runMigrations(pool) {
+  const migrationsDir = path.join(__dirname, 'migrations');
+  const files = fs.readdirSync(migrationsDir)
+    .filter(f => f.endsWith('.sql'))
+    .sort(); // alphabetisch = numerisch durch Dateinamen-Praefix
+  for (const file of files) {
+    const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
+    try {
+      await pool.query(sql);
+    } catch (err) {
+      console.error(`Migration failed: ${file}`, err.message);
+      throw err;
+    }
+  }
+  console.log(`Migrations applied: ${files.length} files`);
+}
+
 // Einmaliger Test beim Starten der Anwendung, um sicherzustellen, dass die DB erreichbar ist.
 pool.query('SELECT NOW()')
- .then(res => { /* DB verbunden */ })
+  .then(() => runMigrations(pool))
   .catch(err => {
- console.error('Database connection test failed:', err);
-    // Beende den Prozess, wenn die DB-Verbindung beim Start fehlschlägt.
+    console.error('Database startup failed:', err);
     process.exit(1);
   });
 
