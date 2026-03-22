@@ -32,8 +32,8 @@ Requirements fuer Milestone v2.4 Codebase-Cleanup.
 
 ### Performance (PERF)
 
-- [ ] **PERF-01**: Chat-Nachrichten-Endpoint laedt Reactions und Poll-Votes per Bulk-Query (WHERE message_id = ANY($1::int[]))
-- [ ] **PERF-02**: Max. 3 DB-Queries pro /rooms/:id/messages Request statt N+1
+- [x] **PERF-01**: Chat-Nachrichten-Endpoint laedt Reactions und Poll-Votes per Bulk-Query (WHERE message_id = ANY($1::int[]))
+- [x] **PERF-02**: Max. 3 DB-Queries pro /rooms/:id/messages Request statt N+1
 
 ### Capacitor-Imports (CAP)
 
@@ -75,8 +75,8 @@ Requirements fuer Milestone v2.4 Codebase-Cleanup.
 | SEC-03 | Phase 82 | Complete |
 | CRON-01 | Phase 82 | Complete |
 | CRON-02 | Phase 82 | Complete |
-| PERF-01 | Phase 83 | Pending |
-| PERF-02 | Phase 83 | Pending |
+| PERF-01 | Phase 83 | Complete |
+| PERF-02 | Phase 83 | Complete |
 | CAP-01 | Phase 83 | Pending |
 | CAP-02 | Phase 83 | Pending |
 | MIG-01 | Phase 84 | Pending |

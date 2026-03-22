@@ -262,7 +262,7 @@ Plans:
   4. TypeScript meldet keine `any`-Fehler fuer Capacitor-Plugin-Zugriffe mehr
 **Plans**: 2 plans
 Plans:
-- [ ] 83-01-PLAN.md — Chat N+1-Queries durch Bulk-Queries ersetzen (PERF-01, PERF-02)
+- [x] 83-01-PLAN.md — Chat N+1-Queries durch Bulk-Queries ersetzen (PERF-01, PERF-02)
 - [ ] 83-02-PLAN.md — AppContext.tsx Capacitor window-as-any typsicher machen (CAP-01, CAP-02)
 
 ### Phase 84: Schema-Hygiene
@@ -293,6 +293,6 @@ Plans:
 |-------|----------------|--------|-----------|
 | 81. React Router Migration | 3/3 | Complete    | 2026-03-22 |
 | 82. Backend-Sicherheit + Cron | 3/3 | Complete    | 2026-03-22 |
-| 83. Performance + Capacitor | 0/2 | Not started | - |
+| 83. Performance + Capacitor | 1/2 | In Progress|  |
 | 84. Schema-Hygiene | 0/TBD | Not started | - |
 | 85. Code-Cleanup | 0/TBD | Not started | - |

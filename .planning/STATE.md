@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: Codebase-Cleanup
 status: unknown
-stopped_at: Completed 82-03-PLAN.md
-last_updated: "2026-03-22T22:17:29.796Z"
+stopped_at: Completed 83-01-PLAN.md
+last_updated: "2026-03-22T22:23:44.630Z"
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 8
+  completed_plans: 7
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-22)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 82 — backend-sicherheit-cron
+**Current focus:** Phase 83 — performance-capacitor
 
 ## Current Position
 
-Phase: 83
-Plan: Not started
+Phase: 83 (performance-capacitor) — EXECUTING
+Plan: 2 of 2
 
 ## Accumulated Context
 
@@ -40,6 +40,7 @@ Plan: Not started
 - [Phase 82]: Fallback-Wert mit TODO-Kommentar behalten bis LOSUNG_API_KEY in Portainer-Stack gesetzt ist
 - [Phase 82-backend-sicherheit-cron]: Socket.IO joinRoom: db require nach oben verschoben + async Handler mit chat_rooms Organization-Isolation-Check
 - [Phase 82-backend-sicherheit-cron]: node-cron statt setInterval fuer Wrapped-Cron: kalendarisch korrekte Ausfuehrung nach Container-Neustart, kein Drift mehr
+- [Phase 83]: Chat N+1-Bulk-Queries: ANY($1::int[]) Pattern fuer Reactions und Poll-Votes, max. 3 DB-Queries statt bis zu 400
 
 ### Pending Todos
 
@@ -52,6 +53,6 @@ Plan: Not started
 
 ## Session Continuity
 
-Last session: 2026-03-22T22:14:52.992Z
-Stopped at: Completed 82-03-PLAN.md
+Last session: 2026-03-22T22:23:44.628Z
+Stopped at: Completed 83-01-PLAN.md
 Resume file: None
