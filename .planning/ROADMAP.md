@@ -309,3 +309,13 @@ Plans:
 - [x] 72-01-PLAN.md — Backend: GET /teamer/konfis Endpoint + Cache-Verifizierung
 - [x] 72-02-PLAN.md — Frontend: Event-Suche, Material-Suchleiste, Offline-Icons
 - [x] 72-03-PLAN.md — Frontend: DirectMessageModal rollen-basierter Konfis-Endpoint
+
+### Phase 73: Testing-Fixes Runde 2 — TeamerProfile Stats weg, Modal-Backdrop, Back-Pfeile, Material-Beschreibung Groesse, FileViewer PDF/DOCX Skalierung
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 72
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 73 to break down)
