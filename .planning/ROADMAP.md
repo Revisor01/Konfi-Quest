@@ -327,8 +327,8 @@ Plans:
 **Goal:** Zentrale openFileNatively Utility erstellen, alle Consumer umstellen (nativ oeffnen mit FileViewerModal als Web-Fallback), Chat-Video onClick-Wrapper entfernen
 **Requirements**: [NATIVE-01, NATIVE-02, NATIVE-03, VIDEO-01]
 **Depends on:** Phase 73
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 74-01-PLAN.md — openFileNatively Utility + Chat Video onClick Fix
-- [ ] 74-02-PLAN.md — Consumer umstellen: ChatRoom, TeamerMaterialDetailPage, TeamerMaterialPage
+- [x] 74-02-PLAN.md — Consumer umstellen: ChatRoom, TeamerMaterialDetailPage, TeamerMaterialPage
