@@ -39,9 +39,7 @@ import {
   create
 } from 'ionicons/icons';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
-import { Filesystem, Directory } from '@capacitor/filesystem';
-import { FileViewer } from '@capacitor/file-viewer';
-import { FileOpener } from '@capacitor-community/file-opener';
+import { openFileNatively } from '../../../utils/nativeFileViewer';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
@@ -193,48 +191,18 @@ const TeamerMaterialPage: React.FC = () => {
   const openFile = async (file: MaterialFile) => {
     try {
       await Haptics.impact({ style: ImpactStyle.Medium });
-      const response = await api.get(`/material/files/${file.stored_name}`, {
-        responseType: 'blob'
-      });
+      const response = await api.get(`/material/files/${file.stored_name}`, { responseType: 'blob' });
       const blob = response.data;
-      const base64Data = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64 = (reader.result as string).split(',')[1];
-          resolve(base64);
-        };
-        reader.readAsDataURL(blob);
-      });
+      const mime = response.headers?.['content-type'] || file.mime_type;
 
-      const ext = file.original_name.split('.').pop() || '';
-      const tempPath = `temp/material_${file.id}.${ext}`;
+      // Nativ oeffnen versuchen (per D-15)
+      const openedNatively = await openFileNatively(blob, file.original_name, mime);
+      if (openedNatively) return;
 
-      try {
-        await Filesystem.mkdir({ path: 'temp', directory: Directory.Documents, recursive: true });
-      } catch { /* existiert bereits */ }
-
-      await Filesystem.writeFile({
-        path: tempPath,
-        data: base64Data,
-        directory: Directory.Documents,
-        recursive: true
-      });
-
-      const fileUri = await Filesystem.getUri({ directory: Directory.Documents, path: tempPath });
-
-      if (file.mime_type.startsWith('image/')) {
-        await FileOpener.open({ filePath: fileUri.uri, contentType: file.mime_type });
-      } else {
-        await FileViewer.openDocumentFromLocalPath({ path: fileUri.uri });
-      }
-    } catch (err) {
-      console.warn('Native file viewer failed, using in-app fallback:', err);
-      try {
-        const response = await api.get(`/material/files/${file.stored_name}`, { responseType: 'blob' });
-        openInAppViewer(response.data, file.original_name, file.mime_type);
-      } catch {
-        setError('Fehler beim Öffnen der Datei');
-      }
+      // Web-Fallback: In-App Viewer
+      openInAppViewer(blob, file.original_name, mime);
+    } catch {
+      setError('Fehler beim Oeffnen der Datei');
     }
   };
 
