@@ -145,14 +145,5 @@ END $$;
 -- Aus backend/routes/badges.js
 -- ====================================================================
 
--- Tabellen-Renames (konfi_badges -> user_badges, konfi_activities -> user_activities)
--- HINWEIS: Diese werden weiterhin in badges.js ausgefuehrt, da sie komplexe
--- Existenz-Checks mit information_schema erfordern und nicht als einfache
--- IF NOT EXISTS Statements abbildbar sind. Hier nur dokumentiert.
-
--- Spalten-Renames (konfi_id -> user_id, earned_at -> awarded_date)
--- werden ebenfalls weiterhin in badges.js ausgefuehrt.
-
--- target_role Spalten (aus badges.js)
-ALTER TABLE activities ADD COLUMN IF NOT EXISTS target_role VARCHAR(10) DEFAULT 'konfi';
-ALTER TABLE custom_badges ADD COLUMN IF NOT EXISTS target_role VARCHAR(10) DEFAULT 'konfi';
+-- Tabellen-Renames und Spalten-Renames aus badges.js:
+-- Siehe 076_badges_rename_migrations.sql
