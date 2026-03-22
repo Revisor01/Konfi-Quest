@@ -198,7 +198,7 @@ Phase 74: Nativer Datei-Viewer (2 plans, complete)
 
 **Milestone Goal:** Spotify-Wrapped-Style Jahresrueckblick fuer Konfis (vor Konfirmation) und Teamer:innen (Jahresende). Horizontale Slides, Animationen, Share-Funktion, Dashboard-Integration.
 
-- [ ] **Phase 75: Backend-Aggregation + DB-Schema** - Wrapped-Snapshots, Konfirmationsdatum, Trigger-Logik, API-Endpoints
+- [x] **Phase 75: Backend-Aggregation + DB-Schema** - Wrapped-Snapshots, Konfirmationsdatum, Trigger-Logik, API-Endpoints (completed 2026-03-22)
 - [ ] **Phase 76: Slide-Container + Konfi-Slides** - Swiper-Setup, Fullscreen-Modal, alle 9 Konfi-Slides mit Animationen
 - [ ] **Phase 77: Teamer-Slides** - 7 Teamer-spezifische Slides auf Basis der Konfi-Wrapped-Infrastruktur
 - [ ] **Phase 78: Share-Funktion** - Screenshot-Export, natives Share-Sheet, Share-Card-Design
@@ -219,7 +219,7 @@ Phase 74: Nativer Datei-Viewer (2 plans, complete)
 **Plans**: 2 plans
 Plans:
 - [x] 75-01-PLAN.md -- DB-Migration + Route + Aggregation-Queries + API-Endpoints
-- [ ] 75-02-PLAN.md -- Cron-Trigger + Dashboard has_wrapped Flag
+- [x] 75-02-PLAN.md -- Cron-Trigger + Dashboard has_wrapped Flag
 
 ### Phase 76: Slide-Container + Konfi-Slides
 **Goal**: Konfis koennen ihren Jahresrueckblick als animierte Fullscreen-Slideshow durchblaettern, mit allen 9 inhaltlichen Slides und Story-artiger Navigation
@@ -272,7 +272,7 @@ Phases execute in numeric order: 75 -> 76 -> 77 -> 78 -> 79
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 75. Backend-Aggregation + DB-Schema | 1/2 | In Progress|  |
+| 75. Backend-Aggregation + DB-Schema | 2/2 | Complete   | 2026-03-22 |
 | 76. Slide-Container + Konfi-Slides | 0/TBD | Not started | - |
 | 77. Teamer-Slides | 0/TBD | Not started | - |
 | 78. Share-Funktion | 0/TBD | Not started | - |

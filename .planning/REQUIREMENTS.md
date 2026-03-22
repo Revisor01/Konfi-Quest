@@ -13,9 +13,9 @@ Requirements fuer Milestone v2.3 Konfi + Teamer Wrapped.
 - [x] **DAT-02**: Backend generiert Wrapped-Snapshot als JSONB pro Teamer (Events geleitet, Konfis betreut, Badges, Zertifikate, Jahre aktiv)
 - [x] **DAT-03**: wrapped_snapshots Tabelle mit user_id, type (konfi/teamer), year, data JSONB, generated_at
 - [x] **DAT-04**: Konfirmations-Datum (confirmation_date) pro Jahrgang konfigurierbar
-- [ ] **DAT-05**: Automatischer Trigger: Wrapped wird generiert am 1. des Monats der Konfirmation
-- [ ] **DAT-06**: Teamer Wrapped wird automatisch am 1. Dezember generiert
-- [ ] **DAT-07**: Admin kann Wrapped-Zeitpunkt ueberschreiben (manuell frueher/spaeter ausloesen)
+- [x] **DAT-05**: Automatischer Trigger: Wrapped wird generiert am 1. des Monats der Konfirmation
+- [x] **DAT-06**: Teamer Wrapped wird automatisch am 1. Dezember generiert
+- [x] **DAT-07**: Admin kann Wrapped-Zeitpunkt ueberschreiben (manuell frueher/spaeter ausloesen)
 - [x] **DAT-08**: Endspurt-Erkennung: Wenn Konfi unter Zielwert liegt, wird ein Endspurt-Flag im Snapshot gesetzt
 
 ### Konfi-Slides (KS)
@@ -83,9 +83,9 @@ Requirements fuer Milestone v2.3 Konfi + Teamer Wrapped.
 | DAT-02 | Phase 75 | Complete |
 | DAT-03 | Phase 75 | Complete |
 | DAT-04 | Phase 75 | Complete |
-| DAT-05 | Phase 75 | Pending |
-| DAT-06 | Phase 75 | Pending |
-| DAT-07 | Phase 75 | Pending |
+| DAT-05 | Phase 75 | Complete |
+| DAT-06 | Phase 75 | Complete |
+| DAT-07 | Phase 75 | Complete |
 | DAT-08 | Phase 75 | Complete |
 | KS-01 | Phase 76 | Pending |
 | KS-02 | Phase 76 | Pending |

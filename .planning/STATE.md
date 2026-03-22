@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Konfi + Teamer Wrapped
 status: unknown
-stopped_at: Completed 75-01-PLAN.md
-last_updated: "2026-03-22T13:37:44.818Z"
+stopped_at: Completed 75-02-PLAN.md
+last_updated: "2026-03-22T13:43:08.898Z"
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -43,6 +43,7 @@ Plan: 2 of 2
 ## Accumulated Context
 
 | Phase 75-backend-aggregation-db-schema P01 | 3min | 2 tasks | 3 files |
+| Phase 75 P02 | 2min | 2 tasks | 5 files |
 
 ### Decisions
 
@@ -56,6 +57,8 @@ v2.3 Research-Entscheidungen:
 - Share-Cards als reines HTML/CSS (Ionic Shadow-DOM wird von html-to-image nicht zuverlaessig gerendert)
 - Keine Percentil-Vergleiche mit anderen Konfis (Datenschutz Minderjaehrige)
 - [Phase 75]: Wrapped JSONB v1 Schema mit 7 Konfi-Slides und 6 Teamer-Slides, UPSERT fuer Admin-Override
+- [Phase 75]: Konfi has_wrapped ueber wrapped_released_at (Zeitsteuerung), Teamer has_wrapped direkt ueber wrapped_snapshots EXISTS
+- [Phase 75]: wrappedRouter als options-Parameter an BackgroundService statt globalem require
 
 ### Pending Todos
 
@@ -69,6 +72,6 @@ v2.3 Research-Entscheidungen:
 
 ## Session Continuity
 
-Last session: 2026-03-22T13:37:44.815Z
-Stopped at: Completed 75-01-PLAN.md
+Last session: 2026-03-22T13:43:08.896Z
+Stopped at: Completed 75-02-PLAN.md
 Resume file: None
