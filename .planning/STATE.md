@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Codebase-Hardening
 status: unknown
-stopped_at: Completed 72-02-PLAN.md
-last_updated: "2026-03-22T07:40:20.010Z"
+stopped_at: Completed 72-03-PLAN.md
+last_updated: "2026-03-22T07:42:31.910Z"
 progress:
   total_phases: 17
-  completed_phases: 9
+  completed_phases: 10
   total_plans: 21
-  completed_plans: 20
+  completed_plans: 21
 ---
 
 # Project State
@@ -60,6 +60,7 @@ All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestone
 - [Phase 72]: Eigener Teamer-Endpoint statt /admin/konfis — sicherer, nur zugewiesene Jahrgaenge
 - [Phase 72]: Cache-Luecken (D-14) sind erwartetes useOfflineQuery-Verhalten, kein Bug
 - [Phase 72]: Searchbar in Pages statt Views eingefuegt - clientseitiger Filter vor Weitergabe
+- [Phase 72]: user.type === 'teamer' als Unterscheidung fuer Konfis-Endpoint im DirectMessageModal
 
 ### Roadmap Evolution
 
@@ -79,6 +80,6 @@ All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestone
 
 ## Session Continuity
 
-Last session: 2026-03-22T07:40:20.008Z
-Stopped at: Completed 72-02-PLAN.md
+Last session: 2026-03-22T07:42:31.908Z
+Stopped at: Completed 72-03-PLAN.md
 Resume file: None

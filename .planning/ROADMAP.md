@@ -197,7 +197,7 @@ Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69 -> 70 ->
 | 69. Datei-Viewer | 2/2 | Complete    | 2026-03-21 |
 | 70. Rollen-Audit Fixes | 2/2 | Complete    | 2026-03-21 |
 | 71. Teamer+Badge Polish | 3/3 | Complete    | 2026-03-21 |
-| 72. UI-Testing Fixes | 2/3 | In Progress|  |
+| 72. UI-Testing Fixes | 3/3 | Complete   | 2026-03-22 |
 
 ### Phase 63: Codebase Cleanup — Quick-Wins, Konsolidierung, Bug-Fixes
 
@@ -303,9 +303,9 @@ Plans:
 **Goal:** 5 Testing-Issues beheben: Material-Suchleiste Sizing, Event-Suche auf 3 Pages, DirectMessageModal 403 fuer Teamer, Cache-Pruefung, Offline-Icon ueberall
 **Requirements**: [FIX-01, FIX-02, FIX-03, FIX-04, FIX-05]
 **Depends on:** Phase 71
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 72-01-PLAN.md — Backend: GET /teamer/konfis Endpoint + Cache-Verifizierung
 - [x] 72-02-PLAN.md — Frontend: Event-Suche, Material-Suchleiste, Offline-Icons
-- [ ] 72-03-PLAN.md — Frontend: DirectMessageModal rollen-basierter Konfis-Endpoint
+- [x] 72-03-PLAN.md — Frontend: DirectMessageModal rollen-basierter Konfis-Endpoint
