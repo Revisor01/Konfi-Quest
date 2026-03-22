@@ -17,12 +17,16 @@ import { BaseUser } from '../types/user';
 let pushRegistrationInProgress = false;
 let pushAlreadyRegistered = false;
 
+// In-Memory Anti-Spam-State fuer FCM-Token (kein window-Zugriff noetig)
+let fcmTokenSent: string | null = null;
+let fcmTokenLastSent: number = 0;
+let pendingFcmToken: string | null = null;
+
 // Funktion, um Duplikate zu vermeiden
 const sendTokenToServer = async (token: string, retryCount = 0) => {
   // ANTI-SPAM: Prüfe ob Token in letzten 10 Sekunden bereits gesendet wurde
-  const lastSent = (window as any).fcmTokenLastSent || 0;
   const now = Date.now();
-  if ((window as any).fcmTokenSent === token && (now - lastSent) < 10000) {
+  if (fcmTokenSent === token && (now - fcmTokenLastSent) < 10000) {
     return;
   }
 
@@ -40,8 +44,8 @@ const sendTokenToServer = async (token: string, retryCount = 0) => {
       device_id: deviceId
     });
 
-    (window as any).fcmTokenSent = token; // Markiere Token als gesendet
-    (window as any).fcmTokenLastSent = now; // Timestamp setzen
+    fcmTokenSent = token; // Markiere Token als gesendet
+    fcmTokenLastSent = now; // Timestamp setzen
     await setPushTokenTimestamp(now); // Bug 3: Timestamp nach jedem Send persistieren
   } catch (err) {
     console.error('Fehler beim Senden des FCM-Tokens:', err);
@@ -51,7 +55,7 @@ const sendTokenToServer = async (token: string, retryCount = 0) => {
       setTimeout(() => sendTokenToServer(token, retryCount + 1), retryDelays[retryCount]);
     } else {
       // Alle Retries fehlgeschlagen — Token fuer Reconnect-Retry merken
-      (window as any)._pendingFcmToken = token;
+      pendingFcmToken = token;
     }
   }
 };
@@ -245,9 +249,9 @@ useEffect(() => {
 
   // Bei Reconnect: Fehlgeschlagenen Token-Send nachholen
   const handleReconnectTokenRetry = () => {
-    const pendingToken = (window as any)._pendingFcmToken;
+    const pendingToken = pendingFcmToken;
     if (pendingToken) {
-      delete (window as any)._pendingFcmToken;
+      pendingFcmToken = null;
       sendTokenToServer(pendingToken);
     }
   };
