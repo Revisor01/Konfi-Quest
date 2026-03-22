@@ -213,7 +213,7 @@ Phase 80: Wrapped Persistenz + Individualisierung (3 plans, complete)
 
 **Milestone Goal:** Technische Schulden abbauen, Sicherheitsluecken schliessen, veraltete Patterns modernisieren — ohne neue Features.
 
-- [ ] **Phase 81: React Router Migration** - React Router v5 auf v6 migrieren (useHistory, Route component)
+- [x] **Phase 81: React Router Migration** - React Router v5 auf v6 migrieren (useHistory, Route component) (completed 2026-03-22)
 - [ ] **Phase 82: Backend-Sicherheit + Cron** - API-Key in ENV, Socket.IO Org-Isolation, node-cron
 - [ ] **Phase 83: Performance + Capacitor** - Chat N+1 durch Bulk-Queries ersetzen, window-as-any typsicher machen
 - [ ] **Phase 84: Schema-Hygiene** - Inline-Migrationen in SQL-Dateien auslagern, activity_requests.konfi_id umbenennen
@@ -234,7 +234,7 @@ Phase 80: Wrapped Persistenz + Individualisierung (3 plans, complete)
 Plans:
 - [x] 81-01-PLAN.md — Auth + Konfi useHistory → useIonRouter
 - [x] 81-02-PLAN.md — Admin + Teamer + Chat + MainTabs Migration
-- [ ] 81-03-PLAN.md — Verifikation + @types Cleanup
+- [x] 81-03-PLAN.md — Verifikation + @types Cleanup
 
 ### Phase 82: Backend-Sicherheit + Cron
 **Goal**: Hardcodierte Geheimnisse sind aus dem Quellcode entfernt, Chat-Rooms sind organisationsgebunden, und der Wrapped-Cron verpasst nach einem Neustart keine Trigger mehr
@@ -284,7 +284,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 81. React Router Migration | 2/3 | In Progress|  |
+| 81. React Router Migration | 3/3 | Complete    | 2026-03-22 |
 | 82. Backend-Sicherheit + Cron | 0/TBD | Not started | - |
 | 83. Performance + Capacitor | 0/TBD | Not started | - |
 | 84. Schema-Hygiene | 0/TBD | Not started | - |
