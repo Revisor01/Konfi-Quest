@@ -5,6 +5,7 @@ const { handleValidationErrors } = require('../middleware/validation');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireAdmin, requireOrgAdmin } = roleHelpers;
+  const PushService = require('../services/pushService');
 
   // Idempotente Inline-Migration
   const ensureWrappedSchema = async () => {
@@ -432,6 +433,19 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         );
 
         await client.query('COMMIT');
+
+        // Push-Notification an alle Konfis
+        try {
+          const konfiIds = konfis.map(k => k.user_id);
+          await PushService.sendToMultipleUsers(db, konfiIds, {
+            title: 'Dein Konfi-Jahr ist da!',
+            body: 'Schau dir jetzt deinen persönlichen Jahresrückblick an!',
+            data: { type: 'wrapped', wrappedType: 'konfi' }
+          });
+        } catch (pushErr) {
+          console.error('Push-Notification für Konfi-Wrapped fehlgeschlagen:', pushErr);
+        }
+
         res.json({
           message: `Wrapped f\u00fcr ${generated} Konfis generiert`,
           generated,
@@ -490,6 +504,19 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         }
 
         await client.query('COMMIT');
+
+        // Push-Notification an alle Teamer:innen
+        try {
+          const teamerIds = teamers.map(t => t.user_id);
+          await PushService.sendToMultipleUsers(db, teamerIds, {
+            title: 'Dein Teamer-Jahr ist da!',
+            body: 'Schau dir jetzt deinen persönlichen Jahresrückblick an!',
+            data: { type: 'wrapped', wrappedType: 'teamer' }
+          });
+        } catch (pushErr) {
+          console.error('Push-Notification für Teamer-Wrapped fehlgeschlagen:', pushErr);
+        }
+
         res.json({
           message: `Wrapped f\u00fcr ${generated} Teamer:innen generiert`,
           generated,
@@ -599,6 +626,19 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       );
 
       await client.query('COMMIT');
+
+      // Push (fire-and-forget, dbRef statt client da client released wird)
+      try {
+        const konfiIds = konfis.map(k => k.user_id);
+        await PushService.sendToMultipleUsers(dbRef, konfiIds, {
+          title: 'Dein Konfi-Jahr ist da!',
+          body: 'Schau dir jetzt deinen persönlichen Jahresrückblick an!',
+          data: { type: 'wrapped', wrappedType: 'konfi' }
+        });
+      } catch (pushErr) {
+        console.error('Wrapped-Cron Push fehlgeschlagen:', pushErr);
+      }
+
       return { generated, errors };
     } catch (err) {
       await client.query('ROLLBACK').catch(() => {});
@@ -645,6 +685,19 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       }
 
       await client.query('COMMIT');
+
+      // Push (fire-and-forget)
+      try {
+        const teamerIds = teamers.map(t => t.user_id);
+        await PushService.sendToMultipleUsers(dbRef, teamerIds, {
+          title: 'Dein Teamer-Jahr ist da!',
+          body: 'Schau dir jetzt deinen persönlichen Jahresrückblick an!',
+          data: { type: 'wrapped', wrappedType: 'teamer' }
+        });
+      } catch (pushErr) {
+        console.error('Wrapped-Cron Push fehlgeschlagen:', pushErr);
+      }
+
       return { generated, errors };
     } catch (err) {
       await client.query('ROLLBACK').catch(() => {});
