@@ -460,16 +460,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 </div>
               </div>
             ) : message.file_name?.match(/\.(mp4|mov|avi|webm|m4v)$/i) ? (
-              <div onClick={() => {
-                if (message.file_path) {
-                  onFileClick(message.file_path, message.file_name || 'Video', getMimeFromFileName(message.file_name || 'video.mp4'));
-                }
-              }}>
-                <VideoPreview
-                  message={message}
-                  onError={(error) => onError('Fehler beim Laden des Videos: ' + error)}
-                />
-              </div>
+              <VideoPreview
+                message={message}
+                onError={(error) => onError('Fehler beim Laden des Videos: ' + error)}
+              />
             ) : (
               <div
                 style={{
