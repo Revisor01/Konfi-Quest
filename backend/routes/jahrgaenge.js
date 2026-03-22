@@ -7,41 +7,7 @@ const liveUpdate = require('../utils/liveUpdate');
 // Jahrgänge: Teamer darf ansehen, Admin darf bearbeiten
 module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
 
-  // Idempotente Migration: Punkte-Typ-Spalten auf jahrgaenge-Tabelle
-  const ensurePointConfigColumns = async () => {
-    try {
-      const { rows } = await db.query(`
-        SELECT column_name FROM information_schema.columns
-        WHERE table_name = 'jahrgaenge' AND column_name = 'gottesdienst_enabled'
-      `);
-
-      if (rows.length === 0) {
-        await db.query('ALTER TABLE jahrgaenge ADD COLUMN gottesdienst_enabled BOOLEAN DEFAULT true');
-        await db.query('ALTER TABLE jahrgaenge ADD COLUMN gemeinde_enabled BOOLEAN DEFAULT true');
-        await db.query('ALTER TABLE jahrgaenge ADD COLUMN target_gottesdienst INTEGER DEFAULT 10');
-        await db.query('ALTER TABLE jahrgaenge ADD COLUMN target_gemeinde INTEGER DEFAULT 10');
-
-        // Bestehende org-weite target-Werte aus settings in Jahrgänge migrieren
-        await db.query(`
-          UPDATE jahrgaenge SET target_gottesdienst = COALESCE(
-            (SELECT value::int FROM settings WHERE organization_id = jahrgaenge.organization_id AND key = 'target_gottesdienst'), 10
-          )
-        `);
-        await db.query(`
-          UPDATE jahrgaenge SET target_gemeinde = COALESCE(
-            (SELECT value::int FROM settings WHERE organization_id = jahrgaenge.organization_id AND key = 'target_gemeinde'), 10
-          )
-        `);
-
-        console.log('Migration: Punkte-Typ-Spalten zu jahrgaenge hinzugefügt und Daten migriert');
-      }
-    } catch (err) {
-      console.error('Jahrgaenge migration error:', err.message);
-    }
-  };
-
-  // Migration beim Laden ausführen
-  ensurePointConfigColumns();
+  // Schema-Migrationen: siehe backend/migrations/064_consolidate_inline_schemas.sql
 
   // Validierungsregeln
   const validateCreateJahrgang = [
