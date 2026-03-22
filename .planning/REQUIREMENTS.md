@@ -42,12 +42,12 @@ Requirements fuer Milestone v2.3 Konfi + Teamer Wrapped.
 
 ### UI + Interaktion (UI)
 
-- [ ] **UI-01**: Horizontaler Slide-Container mit Swiper 12 (EffectCreative Uebergaenge)
-- [ ] **UI-02**: Dunkler Fullscreen-Hintergrund, farbige Akzente (Konfi: Lila, Teamer: Rosa)
-- [ ] **UI-03**: Animierte Zahlen (Count-up) und Fade-in Uebergaenge (CSS Animations)
-- [ ] **UI-04**: Progress-Indicator oben (Dots oder Balken wie Instagram Stories)
-- [ ] **UI-05**: Schliessen-Button (X) oben rechts
-- [ ] **UI-06**: Wrapped als Fullscreen-Modal (kein eigener Route, verhindert Swipe-Back-Konflikte)
+- [x] **UI-01**: Horizontaler Slide-Container mit Swiper 12 (EffectCreative Uebergaenge)
+- [x] **UI-02**: Dunkler Fullscreen-Hintergrund, farbige Akzente (Konfi: Lila, Teamer: Rosa)
+- [x] **UI-03**: Animierte Zahlen (Count-up) und Fade-in Uebergaenge (CSS Animations)
+- [x] **UI-04**: Progress-Indicator oben (Dots oder Balken wie Instagram Stories)
+- [x] **UI-05**: Schliessen-Button (X) oben rechts
+- [x] **UI-06**: Wrapped als Fullscreen-Modal (kein eigener Route, verhindert Swipe-Back-Konflikte)
 
 ### Share (SHR)
 
@@ -96,12 +96,12 @@ Requirements fuer Milestone v2.3 Konfi + Teamer Wrapped.
 | KS-07 | Phase 76 | Pending |
 | KS-08 | Phase 76 | Pending |
 | KS-09 | Phase 76 | Pending |
-| UI-01 | Phase 76 | Pending |
-| UI-02 | Phase 76 | Pending |
-| UI-03 | Phase 76 | Pending |
-| UI-04 | Phase 76 | Pending |
-| UI-05 | Phase 76 | Pending |
-| UI-06 | Phase 76 | Pending |
+| UI-01 | Phase 76 | Complete |
+| UI-02 | Phase 76 | Complete |
+| UI-03 | Phase 76 | Complete |
+| UI-04 | Phase 76 | Complete |
+| UI-05 | Phase 76 | Complete |
+| UI-06 | Phase 76 | Complete |
 | TS-01 | Phase 77 | Pending |
 | TS-02 | Phase 77 | Pending |
 | TS-03 | Phase 77 | Pending |
