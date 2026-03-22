@@ -21,8 +21,8 @@ Requirements fuer Milestone v2.4 Codebase-Cleanup.
 
 ### Cron-System (CRON)
 
-- [ ] **CRON-01**: Wrapped-Cron von setInterval(24h) auf node-cron mit echtem Zeitplan umstellen
-- [ ] **CRON-02**: Nach Container-Neustart wird die naechste geplante Ausfuehrung korrekt berechnet (kein Verpassen von Triggern)
+- [x] **CRON-01**: Wrapped-Cron von setInterval(24h) auf node-cron mit echtem Zeitplan umstellen
+- [x] **CRON-02**: Nach Container-Neustart wird die naechste geplante Ausfuehrung korrekt berechnet (kein Verpassen von Triggern)
 
 ### Sicherheit (SEC)
 
@@ -73,8 +73,8 @@ Requirements fuer Milestone v2.4 Codebase-Cleanup.
 | SEC-01 | Phase 82 | Complete |
 | SEC-02 | Phase 82 | Complete |
 | SEC-03 | Phase 82 | Complete |
-| CRON-01 | Phase 82 | Pending |
-| CRON-02 | Phase 82 | Pending |
+| CRON-01 | Phase 82 | Complete |
+| CRON-02 | Phase 82 | Complete |
 | PERF-01 | Phase 83 | Pending |
 | PERF-02 | Phase 83 | Pending |
 | CAP-01 | Phase 83 | Pending |
