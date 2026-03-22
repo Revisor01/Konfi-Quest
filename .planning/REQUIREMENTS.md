@@ -9,14 +9,14 @@ Requirements fuer Milestone v2.3 Konfi + Teamer Wrapped.
 
 ### Backend-Daten (DAT)
 
-- [ ] **DAT-01**: Backend generiert Wrapped-Snapshot als JSONB pro Konfi (Punkte, Events, Badges, Chat-Stats, aktivster Monat)
-- [ ] **DAT-02**: Backend generiert Wrapped-Snapshot als JSONB pro Teamer (Events geleitet, Konfis betreut, Badges, Zertifikate, Jahre aktiv)
-- [ ] **DAT-03**: wrapped_snapshots Tabelle mit user_id, type (konfi/teamer), year, data JSONB, generated_at
-- [ ] **DAT-04**: Konfirmations-Datum (confirmation_date) pro Jahrgang konfigurierbar
+- [x] **DAT-01**: Backend generiert Wrapped-Snapshot als JSONB pro Konfi (Punkte, Events, Badges, Chat-Stats, aktivster Monat)
+- [x] **DAT-02**: Backend generiert Wrapped-Snapshot als JSONB pro Teamer (Events geleitet, Konfis betreut, Badges, Zertifikate, Jahre aktiv)
+- [x] **DAT-03**: wrapped_snapshots Tabelle mit user_id, type (konfi/teamer), year, data JSONB, generated_at
+- [x] **DAT-04**: Konfirmations-Datum (confirmation_date) pro Jahrgang konfigurierbar
 - [ ] **DAT-05**: Automatischer Trigger: Wrapped wird generiert am 1. des Monats der Konfirmation
 - [ ] **DAT-06**: Teamer Wrapped wird automatisch am 1. Dezember generiert
 - [ ] **DAT-07**: Admin kann Wrapped-Zeitpunkt ueberschreiben (manuell frueher/spaeter ausloesen)
-- [ ] **DAT-08**: Endspurt-Erkennung: Wenn Konfi unter Zielwert liegt, wird ein Endspurt-Flag im Snapshot gesetzt
+- [x] **DAT-08**: Endspurt-Erkennung: Wenn Konfi unter Zielwert liegt, wird ein Endspurt-Flag im Snapshot gesetzt
 
 ### Konfi-Slides (KS)
 
@@ -79,14 +79,14 @@ Requirements fuer Milestone v2.3 Konfi + Teamer Wrapped.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DAT-01 | Phase 75 | Pending |
-| DAT-02 | Phase 75 | Pending |
-| DAT-03 | Phase 75 | Pending |
-| DAT-04 | Phase 75 | Pending |
+| DAT-01 | Phase 75 | Complete |
+| DAT-02 | Phase 75 | Complete |
+| DAT-03 | Phase 75 | Complete |
+| DAT-04 | Phase 75 | Complete |
 | DAT-05 | Phase 75 | Pending |
 | DAT-06 | Phase 75 | Pending |
 | DAT-07 | Phase 75 | Pending |
-| DAT-08 | Phase 75 | Pending |
+| DAT-08 | Phase 75 | Complete |
 | KS-01 | Phase 76 | Pending |
 | KS-02 | Phase 76 | Pending |
 | KS-03 | Phase 76 | Pending |

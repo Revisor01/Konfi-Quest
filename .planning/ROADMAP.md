@@ -218,7 +218,7 @@ Phase 74: Nativer Datei-Viewer (2 plans, complete)
   5. Admin kann Wrapped-Generierung manuell frueher oder spaeter ausloesen (ueberschreibt automatischen Trigger)
 **Plans**: 2 plans
 Plans:
-- [ ] 75-01-PLAN.md -- DB-Migration + Route + Aggregation-Queries + API-Endpoints
+- [x] 75-01-PLAN.md -- DB-Migration + Route + Aggregation-Queries + API-Endpoints
 - [ ] 75-02-PLAN.md -- Cron-Trigger + Dashboard has_wrapped Flag
 
 ### Phase 76: Slide-Container + Konfi-Slides
@@ -272,7 +272,7 @@ Phases execute in numeric order: 75 -> 76 -> 77 -> 78 -> 79
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 75. Backend-Aggregation + DB-Schema | 0/2 | Planned | - |
+| 75. Backend-Aggregation + DB-Schema | 1/2 | In Progress|  |
 | 76. Slide-Container + Konfi-Slides | 0/TBD | Not started | - |
 | 77. Teamer-Slides | 0/TBD | Not started | - |
 | 78. Share-Funktion | 0/TBD | Not started | - |
