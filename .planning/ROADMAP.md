@@ -14,7 +14,7 @@
 - Shipped **v1.9 Bugfix + Polish** - Phases 44-54 (shipped 2026-03-19)
 - **v2.0 Ionic Update + Theme** (shipped 2026-03-19)
 - Shipped **v2.1 App-Resilienz** - Phases 55-62 (shipped 2026-03-21)
-- v2.2 Codebase-Hardening - Phases 63-71 (planned)
+- v2.2 Codebase-Hardening - Phases 63-72 (planned)
 
 ## Phases
 
@@ -184,7 +184,7 @@ Phase 62: Sync (1 plan, complete)
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69 -> 70 -> 71
+Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69 -> 70 -> 71 -> 72
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -197,6 +197,7 @@ Phases execute in numeric order: 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69 -> 70 ->
 | 69. Datei-Viewer | 2/2 | Complete    | 2026-03-21 |
 | 70. Rollen-Audit Fixes | 2/2 | Complete    | 2026-03-21 |
 | 71. Teamer+Badge Polish | 3/3 | Complete    | 2026-03-21 |
+| 72. UI-Testing Fixes | 0/3 | Planned    | |
 
 ### Phase 63: Codebase Cleanup — Quick-Wins, Konsolidierung, Bug-Fixes
 
@@ -299,10 +300,12 @@ Plans:
 
 ### Phase 72: UI-Testing Fixes — Material-Suchleiste Groesse, Event-Suche+Filter, Teamer-Chat Konfi-Zugriff (DirectMessageModal 403), Teamer-Cache Luecken, Offline-Button Icon
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** 5 Testing-Issues beheben: Material-Suchleiste Sizing, Event-Suche auf 3 Pages, DirectMessageModal 403 fuer Teamer, Cache-Pruefung, Offline-Icon ueberall
+**Requirements**: [FIX-01, FIX-02, FIX-03, FIX-04, FIX-05]
 **Depends on:** Phase 71
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 72 to break down)
+- [ ] 72-01-PLAN.md — Backend: GET /teamer/konfis Endpoint + Cache-Verifizierung
+- [ ] 72-02-PLAN.md — Frontend: Event-Suche, Material-Suchleiste, Offline-Icons
+- [ ] 72-03-PLAN.md — Frontend: DirectMessageModal rollen-basierter Konfis-Endpoint
