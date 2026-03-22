@@ -6,7 +6,7 @@ import {
   IonTitle,
   IonContent,
   IonButtons,
-  IonBackButton,
+  IonButton,
   IonRefresher,
   IonRefresherContent,
   IonCard,
@@ -80,7 +80,8 @@ import {
   gridOutline,
   prismOutline,
   handLeft,
-  checkmark
+  checkmark,
+  arrowBack
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -379,7 +380,9 @@ const TeamerBadgesPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/teamer/profile" />
+            <IonButton onClick={() => window.history.back()}>
+              <IonIcon icon={arrowBack} slot="icon-only" />
+            </IonButton>
           </IonButtons>
           <IonTitle>Teamer-Badges</IonTitle>
         </IonToolbar>

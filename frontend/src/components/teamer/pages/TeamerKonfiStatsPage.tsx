@@ -6,7 +6,7 @@ import {
   IonTitle,
   IonContent,
   IonButtons,
-  IonBackButton,
+  IonButton,
   IonRefresher,
   IonRefresherContent,
   IonCard,
@@ -24,7 +24,8 @@ import {
   schoolOutline,
   starOutline,
   checkmark,
-  checkmarkCircle
+  checkmarkCircle,
+  arrowBack
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -33,6 +34,7 @@ import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import PointsHistoryModal from '../../konfi/modals/PointsHistoryModal';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import { SectionHeader } from '../../shared';
 
 interface KonfiBadge {
   badge_id: number;
@@ -245,7 +247,9 @@ const TeamerKonfiStatsPage: React.FC = () => {
         <IonHeader>
           <IonToolbar>
             <IonButtons slot="start">
-              <IonBackButton defaultHref="/teamer/profile" />
+              <IonButton onClick={() => window.history.back()}>
+                <IonIcon icon={arrowBack} slot="icon-only" />
+              </IonButton>
             </IonButtons>
             <IonTitle>Konfi-Historie</IonTitle>
           </IonToolbar>
@@ -266,7 +270,9 @@ const TeamerKonfiStatsPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/teamer/profile" />
+            <IonButton onClick={() => window.history.back()}>
+              <IonIcon icon={arrowBack} slot="icon-only" />
+            </IonButton>
           </IonButtons>
           <IonTitle>Konfi-Historie</IonTitle>
         </IonToolbar>
@@ -287,43 +293,18 @@ const TeamerKonfiStatsPage: React.FC = () => {
         </IonRefresher>
 
         {/* Punkte-Header */}
-        <div
-          className="app-detail-header"
-          style={{
-            background: 'linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%)',
-            boxShadow: '0 20px 40px rgba(91, 33, 182, 0.3)',
-            cursor: 'pointer'
-          }}
-          onClick={() => presentPointsModal({ presentingElement: presentingElement || undefined })}
-        >
-          <div className="app-detail-header__content" style={{ padding: '70px 24px 24px 24px', alignItems: 'center', textAlign: 'center' }}>
-            <div className="app-icon-circle" style={{
-              width: '64px', height: '64px',
-              background: 'rgba(255, 255, 255, 0.2)',
-              marginBottom: '12px',
-              color: 'white', fontSize: '1.6rem', fontWeight: '600',
-              border: '2px solid rgba(255, 255, 255, 0.3)'
-            }}>
-              <IonIcon icon={schoolOutline} />
-            </div>
-            <h1 className="app-detail-header__title">{totalPoints} Punkte</h1>
-            <p className="app-detail-header__subtitle">
-              {konfiData.jahrgang_name ? `Jahrgang ${konfiData.jahrgang_name}` : 'Konfi-Zeit'}
-            </p>
-            <div className="app-detail-header__info-row" style={{ justifyContent: 'center' }}>
-              <div className="app-detail-header__info-chip" style={{ textAlign: 'center', flex: '1 1 0', padding: '10px 8px' }}>
-                <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{konfiData.gottesdienst_points || 0}</div>
-                <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GOTTESDIENST</div>
-              </div>
-              <div className="app-detail-header__info-chip" style={{ textAlign: 'center', flex: '1 1 0', padding: '10px 8px' }}>
-                <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{konfiData.gemeinde_points || 0}</div>
-                <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GEMEINDE</div>
-              </div>
-            </div>
-            <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.8rem', marginTop: '8px' }}>
-              Tippe für Details
-            </p>
-          </div>
+        <div onClick={() => presentPointsModal({ presentingElement: presentingElement || undefined })}>
+          <SectionHeader
+            title={konfiData.jahrgang_name ? `Jahrgang ${konfiData.jahrgang_name}` : 'Konfi-Zeit'}
+            subtitle="Konfi-Punkte-Historie"
+            icon={schoolOutline}
+            colors={{ primary: '#5b21b6', secondary: '#4c1d95' }}
+            stats={[
+              { value: totalPoints, label: 'Gesamt' },
+              { value: konfiData.gottesdienst_points || 0, label: 'Gottesdienst' },
+              { value: konfiData.gemeinde_points || 0, label: 'Gemeinde' }
+            ]}
+          />
         </div>
 
         {/* Konfi-Badges */}
