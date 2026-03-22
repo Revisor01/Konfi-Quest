@@ -2,9 +2,35 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs');
+const { body, param } = require('express-validator');
+const { handleValidationErrors } = require('../middleware/validation');
 
 module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   const { requireTeamer, requireOrgAdmin } = roleHelpers;
+
+  // Validierungsregeln
+  const validateCreateTag = [
+    body('name').notEmpty().trim().isLength({ min: 1, max: 100 }).withMessage('Name erforderlich (1-100 Zeichen)'),
+    handleValidationErrors
+  ];
+
+  const validateUpdateTag = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    body('name').notEmpty().trim().isLength({ min: 1, max: 100 }).withMessage('Name erforderlich (1-100 Zeichen)'),
+    handleValidationErrors
+  ];
+
+  const validateCreateMaterial = [
+    body('title').notEmpty().trim().isLength({ min: 1, max: 255 }).withMessage('Titel erforderlich (1-255 Zeichen)'),
+    body('tag_ids').optional().isArray().withMessage('tag_ids muss ein Array sein'),
+    handleValidationErrors
+  ];
+
+  const validateUpdateMaterial = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    body('title').optional().trim().isLength({ min: 1, max: 255 }).withMessage('Titel max. 255 Zeichen'),
+    handleValidationErrors
+  ];
 
   // Schema: siehe backend/migrations/064_consolidate_inline_schemas.sql
 
@@ -27,7 +53,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   });
 
   // POST /tags - Neuen Tag erstellen
-  router.post('/tags', rbacVerifier, requireOrgAdmin, async (req, res) => {
+  router.post('/tags', rbacVerifier, requireOrgAdmin, validateCreateTag, async (req, res) => {
     try {
       const { name } = req.body;
       if (!name || !name.trim()) {
@@ -49,7 +75,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   });
 
   // PUT /tags/:id - Tag umbenennen
-  router.put('/tags/:id', rbacVerifier, requireOrgAdmin, async (req, res) => {
+  router.put('/tags/:id', rbacVerifier, requireOrgAdmin, validateUpdateTag, async (req, res) => {
     try {
       const { name } = req.body;
       if (!name || !name.trim()) {
@@ -305,7 +331,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   });
 
   // POST / - Material erstellen
-  router.post('/', rbacVerifier, requireOrgAdmin, async (req, res) => {
+  router.post('/', rbacVerifier, requireOrgAdmin, validateCreateMaterial, async (req, res) => {
     try {
       const { title, description, event_id, event_ids, jahrgang_id, jahrgang_ids, tag_ids } = req.body;
 
@@ -360,7 +386,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   });
 
   // PUT /:id - Material bearbeiten
-  router.put('/:id', rbacVerifier, requireOrgAdmin, async (req, res) => {
+  router.put('/:id', rbacVerifier, requireOrgAdmin, validateUpdateMaterial, async (req, res) => {
     try {
       const { title, description, event_id, event_ids, jahrgang_id, jahrgang_ids, tag_ids } = req.body;
       const orgId = req.user.organization_id;

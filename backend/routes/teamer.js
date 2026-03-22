@@ -1,10 +1,35 @@
 const express = require('express');
 const router = express.Router();
+const { body, param } = require('express-validator');
+const { handleValidationErrors } = require('../middleware/validation');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireTeamer, requireOrgAdmin, requireAdmin } = roleHelpers;
 
   // Schema: siehe backend/migrations/064_consolidate_inline_schemas.sql
+
+  // Validierungsregeln
+  const validateCreateCertificateType = [
+    body('name').notEmpty().trim().isLength({ min: 1, max: 100 }).withMessage('Name erforderlich (1-100 Zeichen)'),
+    body('icon').optional().trim().isLength({ max: 50 }).withMessage('Icon max. 50 Zeichen'),
+    handleValidationErrors
+  ];
+
+  const validateUpdateCertificateType = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    body('name').optional().trim().isLength({ min: 1, max: 100 }).withMessage('Name max. 100 Zeichen'),
+    body('icon').optional().trim().isLength({ max: 50 }).withMessage('Icon max. 50 Zeichen'),
+    body('is_active').optional().isBoolean().withMessage('is_active muss boolean sein'),
+    handleValidationErrors
+  ];
+
+  const validateCertificate = [
+    param('userId').isInt({ min: 1 }).withMessage('Ungültige Benutzer-ID'),
+    body('certificate_type_id').isInt({ min: 1 }).withMessage('certificate_type_id erforderlich'),
+    body('issued_date').notEmpty().isISO8601().withMessage('Gültiges Datum erforderlich'),
+    body('expiry_date').optional().isISO8601().withMessage('Gültiges Ablaufdatum'),
+    handleValidationErrors
+  ];
 
   // ====================================================================
   // TEAMER PROFIL
@@ -398,7 +423,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   });
 
   // POST /teamer/certificate-types - Neuen Typ erstellen
-  router.post('/certificate-types', rbacVerifier, requireOrgAdmin, async (req, res) => {
+  router.post('/certificate-types', rbacVerifier, requireOrgAdmin, validateCreateCertificateType, async (req, res) => {
     try {
       const { name, icon } = req.body;
       if (!name || !name.trim()) {
@@ -422,7 +447,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   });
 
   // PUT /teamer/certificate-types/:id - Typ bearbeiten
-  router.put('/certificate-types/:id', rbacVerifier, requireOrgAdmin, async (req, res) => {
+  router.put('/certificate-types/:id', rbacVerifier, requireOrgAdmin, validateUpdateCertificateType, async (req, res) => {
     try {
       const { name, icon, is_active } = req.body;
       const updates = [];
@@ -523,7 +548,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   });
 
   // POST /teamer/:userId/certificates - Zertifikat zuweisen
-  router.post('/:userId/certificates', rbacVerifier, requireOrgAdmin, async (req, res) => {
+  router.post('/:userId/certificates', rbacVerifier, requireOrgAdmin, validateCertificate, async (req, res) => {
     try {
       const { certificate_type_id, issued_date, expiry_date } = req.body;
 
