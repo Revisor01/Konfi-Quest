@@ -1436,7 +1436,8 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       
       // Not cached - fetch from external API
       const fetch = (await import('node-fetch')).default;
-      const apiUrl = `https://losung.konfi-quest.de/api/?api_key=ksadh8324oijcff45rfdsvcvhoids44&translation=${translation}`;
+      const losungApiKey = process.env.LOSUNG_API_KEY || 'ksadh8324oijcff45rfdsvcvhoids44'; // TODO: Fallback nach Deployment mit LOSUNG_API_KEY entfernen
+      const apiUrl = `https://losung.konfi-quest.de/api/?api_key=${losungApiKey}&translation=${translation}`;
       
       const response = await fetch(apiUrl, {
         headers: {
