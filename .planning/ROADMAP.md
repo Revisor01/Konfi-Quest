@@ -287,3 +287,13 @@ Phases execute in numeric order: 75 -> 76 -> 77 -> 78 -> 79
 | 77. Teamer-Slides | 1/1 | Complete    | 2026-03-22 |
 | 78. Share-Funktion | 1/1 | Complete    | 2026-03-22 |
 | 79. Dashboard-Integration + Freischaltung | 1/1 | Complete    | 2026-03-22 |
+
+### Phase 80: Wrapped Persistenz + Individualisierung — Wiederansicht (Meine Wrappeds), Konfi-History Wrapped-Card, individualisierte Slides (Farben, Reihenfolge, Highlights, Formulierungen pro User)
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 79
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 80 to break down)

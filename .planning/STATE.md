@@ -76,6 +76,10 @@ v2.3 Research-Entscheidungen:
 - [Phase 79]: Wrapped-Card bleibt nach Oeffnen sichtbar (kein dismissed State)
 - [Phase 79]: Push fire-and-forget nach COMMIT in wrapped.js (4 Pfade)
 
+### Roadmap Evolution
+
+- Phase 80 added: Wrapped Persistenz + Individualisierung (Wiederansicht, Konfi-History Card, individuelle Slides)
+
 ### Pending Todos
 
 - v2.4 Design-Angleich geplant
