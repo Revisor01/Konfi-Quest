@@ -301,4 +301,4 @@ Plans:
 | 82. Backend-Sicherheit + Cron | 3/3 | Complete    | 2026-03-22 |
 | 83. Performance + Capacitor | 2/2 | Complete    | 2026-03-22 |
 | 84. Schema-Hygiene | 2/2 | Complete    | 2026-03-22 |
-| 85. Code-Cleanup | 2/2 | Complete   | 2026-03-22 |
+| 85. Code-Cleanup | 2/2 | Complete    | 2026-03-22 |
