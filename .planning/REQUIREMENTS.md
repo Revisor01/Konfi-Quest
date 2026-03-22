@@ -1,338 +1,129 @@
 # Requirements: Konfi Quest
 
-**Defined:** 2026-03-19
-**Updated:** 2026-03-20
+**Defined:** 2026-03-22
 **Core Value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
 
-## v2.1 Requirements
+## v2.3 Requirements
 
-Requirements fuer Milestone v2.1 App-Resilienz. Offline-Faehigkeit und Zuverlaessigkeit.
+Requirements fuer Milestone v2.3 Konfi + Teamer Wrapped.
 
-### Storage-Migration (STR)
+### Backend-Daten (DAT)
 
-- [x] **STR-01**: JWT-Token und User-Daten werden in Capacitor Preferences statt localStorage gespeichert (iOS-sicher)
-- [x] **STR-02**: Device-ID und Push-Token-Timestamp werden in Capacitor Preferences gespeichert
-- [x] **STR-03**: Bestehende localStorage-Daten werden beim App-Start automatisch migriert (einmalig)
-- [x] **STR-04**: Globaler TokenStore (In-Memory-Cache + async Preferences) ersetzt alle 28 localStorage-Zugriffe in 14 Dateien
+- [ ] **DAT-01**: Backend generiert Wrapped-Snapshot als JSONB pro Konfi (Punkte, Events, Badges, Chat-Stats, aktivster Monat)
+- [ ] **DAT-02**: Backend generiert Wrapped-Snapshot als JSONB pro Teamer (Events geleitet, Konfis betreut, Badges, Zertifikate, Jahre aktiv)
+- [ ] **DAT-03**: wrapped_snapshots Tabelle mit user_id, type (konfi/teamer), year, data JSONB, generated_at
+- [ ] **DAT-04**: Konfirmations-Datum (confirmation_date) pro Jahrgang konfigurierbar
+- [ ] **DAT-05**: Automatischer Trigger: Wrapped wird generiert am 1. des Monats der Konfirmation
+- [ ] **DAT-06**: Teamer Wrapped wird automatisch am 1. Dezember generiert
+- [ ] **DAT-07**: Admin kann Wrapped-Zeitpunkt ueberschreiben (manuell frueher/spaeter ausloesen)
+- [ ] **DAT-08**: Endspurt-Erkennung: Wenn Konfi unter Zielwert liegt, wird ein Endspurt-Flag im Snapshot gesetzt
 
-### Offline-Erkennung (NET)
+### Konfi-Slides (KS)
 
-- [x] **NET-01**: App erkennt Online/Offline-Status ueber @capacitor/network + Axios-Error-Fallback
-- [x] **NET-02**: isOnline Status im AppContext fuer alle Komponenten verfuegbar
-- [x] **NET-03**: Socket.io Reconnect nach Offline-Phase laedt verpasste Daten nach (Chat-Nachrichten via ?after=lastMessageId)
-- [x] **NET-04**: Axios 401-Handler prueft Netzwerkstatus bevor Token geloescht wird (kein Offline-Logout)
+- [ ] **KS-01**: Intro-Slide: "Dein Konfi-Jahr [Jahr]" mit Name und Jahrgang
+- [ ] **KS-02**: Punkte-Slide: Gesamtpunkte (Gottesdienst + Gemeinde) mit animiertem Count-up
+- [ ] **KS-03**: Events-Slide: Anzahl besuchter Events + Highlight-Event
+- [ ] **KS-04**: Badges-Slide: Verdiente Badges mit Icons, Anzahl von Total
+- [ ] **KS-05**: Aktivster-Monat-Slide: Monat mit den meisten Aktivitaeten/Events
+- [ ] **KS-06**: Chat-Slide: Nachrichten gesendet, Reaktionen gegeben
+- [ ] **KS-07**: Endspurt-Slide: Wenn unter Zielwert, motivierende Nachricht mit fehlenden Punkten
+- [ ] **KS-08**: Abschluss-Slide: Zusammenfassung + Einladung Teamer:in zu werden
+- [ ] **KS-09**: Slides nur mit eigenen Daten, keine Vergleiche mit anderen Konfis (Datenschutz)
 
-### Lese-Cache (CAC)
+### Teamer-Slides (TS)
 
-- [x] **CAC-01**: useOfflineQuery Hook cached API-Responses in Capacitor Preferences mit Stale-While-Revalidate
-- [x] **CAC-02**: Dashboard-Daten (Punkte, Badges, Level, Ranking) sind offline lesbar — Konfi, Admin, Teamer
-- [x] **CAC-03**: Chat-Raeume und letzte Nachrichten sind offline lesbar (bis 100 Msgs/Raum, 1h TTL)
-- [x] **CAC-04**: Events (angemeldete + anstehende) sind offline lesbar — alle Rollen
-- [x] **CAC-05**: Eigene Antraege mit Status sind offline lesbar (Konfi + Admin-Antrags-Liste)
-- [x] **CAC-06**: Profil-Daten sind offline lesbar — alle Rollen
-- [x] **CAC-07**: Admin-Stammdaten offline lesbar: Konfis-Liste, Aktivitaeten, Badges, Kategorien, Jahrgaenge, Level, Zertifikat-Typen, Settings, Invite-Codes
-- [x] **CAC-08**: Teamer-spezifische Daten offline lesbar: Material-Liste (Metadaten, keine Dateien), Badges, Konfi-Stats
-- [x] **CAC-09**: Alle 30 Pages nutzen useOfflineQuery statt direktem api.get()
-- [x] **CAC-10**: Gecachte Daten werden sofort angezeigt, im Hintergrund aktualisiert (SWR-Pattern)
-- [x] **CAC-11**: Bei Logout werden alle user-spezifischen Cache-Keys geloescht
+- [ ] **TS-01**: Intro-Slide: "Dein Teamer-Jahr [Jahr]"
+- [ ] **TS-02**: Events-Slide: Events geleitet (Anzahl + Typen)
+- [ ] **TS-03**: Konfis-Slide: Konfis im Jahrgang betreut
+- [ ] **TS-04**: Badges-Slide: Verdiente Teamer-Badges
+- [ ] **TS-05**: Zertifikate-Slide: Erhaltene Zertifikate
+- [ ] **TS-06**: Jahre-Slide: Aktive Jahre als Teamer:in
+- [ ] **TS-07**: Abschluss-Slide: Zusammenfassung + Danke
 
-### Retry + Schutz (RET)
+### UI + Interaktion (UI)
 
-- [x] **RET-01**: Transiente Netzwerk-Fehler werden automatisch 3x mit Exponential Backoff wiederholt (axios-retry)
-- [x] **RET-02**: Alle Submit-Buttons haben Loading-State und sind waehrend Request disabled (Double-Submit-Schutz)
-- [x] **RET-03**: Backend unterstuetzt Idempotency-Keys (client_id UUID) fuer alle queue-faehigen Aktionen
+- [ ] **UI-01**: Horizontaler Slide-Container mit Swiper 12 (EffectCreative Uebergaenge)
+- [ ] **UI-02**: Dunkler Fullscreen-Hintergrund, farbige Akzente (Konfi: Lila, Teamer: Rosa)
+- [ ] **UI-03**: Animierte Zahlen (Count-up) und Fade-in Uebergaenge (CSS Animations)
+- [ ] **UI-04**: Progress-Indicator oben (Dots oder Balken wie Instagram Stories)
+- [ ] **UI-05**: Schliessen-Button (X) oben rechts
+- [ ] **UI-06**: Wrapped als Fullscreen-Modal (kein eigener Route, verhindert Swipe-Back-Konflikte)
 
-### Offline-UI (OUI)
+### Share (SHR)
 
-#### Corner-Badge System fuer Queue-Status
+- [ ] **SHR-01**: Share-Button auf jedem Slide
+- [ ] **SHR-02**: Bild-Export des aktuellen Slides (html-to-image, reine HTML/CSS Cards ohne Ionic-Komponenten)
+- [ ] **SHR-03**: Natives Share-Sheet via Capacitor Share
+- [ ] **SHR-04**: Text-Fallback wenn Bild-Export fehlschlaegt
+- [ ] **SHR-05**: Share-Card Format 1080x1920 (Story-Format)
+- [ ] **SHR-06**: Dezentes Wasserzeichen/Logo auf Share-Cards
 
-Listen-Elemente zeigen Queue-Status als zusaetzliches Corner-Badge neben bestehenden Status-Badges. Referenz-Implementierung: PointsHistoryModal (Flex-Container mit mehreren Badges).
+### Dashboard-Integration (INT)
 
-- [x] **OUI-01**: Neuer `.app-corner-badges` Flex-Container ersetzt einzelne absolute Corner-Badges — alle bestehenden Badges migrieren
-- [x] **OUI-02**: Badge-Rundung: Alle ausser letztes Kind `border-radius: 0 0 10px 10px` (unten beide), letztes Kind `border-radius: 0 10px 0 10px` (oben-rechts Card-Ecke + unten-links Eselsohr)
-- [x] **OUI-03**: 2px weisser Trenner zwischen Badges (wie PointsHistory)
-- [x] **OUI-04**: Queue-Badge ist immer das linkste Badge im Container — nur Uhr-Icon (timeOutline), kein Text, orange #ff9500
-- [x] **OUI-05**: Nach erfolgreicher Zustellung verschwindet das Queue-Badge einfach (kein Haekchen, kein Feedback)
-- [x] **OUI-06**: Bei permanentem Fehler (4xx) wechselt Uhr-Icon zu Ausrufezeichen (alertCircleOutline), Farbe wird rot #dc3545
-- [x] **OUI-07**: Fehlgeschlagene Queue-Items zeigen bei Tap "Erneut senden" oder "Loeschen" als Optionen
-
-#### Chat-Nachrichten Queue-Status
-
-- [x] **OUI-08**: Pending Chat-Nachricht zeigt Uhr-Icon (timeOutline) neben dem Zeitstempel rechts unten in der Bubble
-- [x] **OUI-09**: Nach Zustellung verschwindet die Uhr (kein Haekchen)
-- [x] **OUI-10**: Bei Fehler wechselt Uhr zu Ausrufezeichen rot, Tap auf Nachricht zeigt "Erneut senden" oder "Loeschen"
-
-#### Online-Only Buttons
-
-- [x] **OUI-11**: Online-only Buttons zeigen "Du bist offline" als Text und sind disabled wenn offline
-- [x] **OUI-12**: Kein globales Offline-Banner — nur kontextbezogene Anzeigen an betroffenen Elementen
-
-#### Fire-and-Forget
-
-- [x] **OUI-13**: Fire-and-Forget Aktionen (Mark-Read, Reaktionen, Poll, Settings-Toggles) zeigen kein Queue-Feedback — rein optimistisch
-
-### Schreib-Queue (QUE)
-
-Queue-faehige Aktionen werden bei Offline in eine persistente Queue geschrieben und bei Reconnect automatisch gesendet. Optimistic UI zeigt das Element sofort an.
-
-#### Konfi-Aktionen (5 Aktionen)
-
-- [x] **QUE-K01**: Chat-Nachricht senden (Text) — Uhr-Icon an Nachricht
-- [x] **QUE-K02**: Chat-Nachricht senden (mit Bild) — Bild lokal in Capacitor Filesystem, Upload nur im Vordergrund
-- [x] **QUE-K03**: Aktivitaets-Antrag stellen (ohne Foto) — Uhr-Icon am Antrag in der Liste
-- [x] **QUE-K04**: Aktivitaets-Antrag stellen (mit Foto) — Foto lokal, Upload nur im Vordergrund
-- [x] **QUE-K05**: Opt-out bei Pflicht-Event mit Begruendung — Uhr-Icon am Event
-
-#### Alle Rollen: Fire-and-Forget (5 Aktionen)
-
-- [x] **QUE-FF01**: Chat mark-as-read — kein UI-Feedback noetig
-- [x] **QUE-FF02**: Emoji-Reaktion toggle — sofort optimistisch, Queue im Hintergrund
-- [x] **QUE-FF03**: Badges als gesehen markieren (Konfi + Teamer) — kein UI-Feedback noetig
-- [x] **QUE-FF04**: Poll-Abstimmung — sofort optimistisch
-- [x] **QUE-FF05**: Bibeluebersetzung waehlen (Konfi) — sofort optimistisch
-- [x] **QUE-FF06**: Dashboard-Settings Toggle (Admin) — sofort optimistisch
-- [x] **QUE-FF07**: Chat-Permissions Toggle (Admin) — sofort optimistisch
-- [x] **QUE-FF08**: Funktionsbeschreibung aendern — sofort optimistisch
-
-#### Admin-Aktionen (17 Aktionen)
-
-- [x] **QUE-A01**: Event erstellen (einzeln) — Uhr-Icon am Event in der Liste
-- [x] **QUE-A02**: Event bearbeiten — Uhr-Icon am Event
-- [x] **QUE-A03**: Event-Serie erstellen — Uhr-Icon an allen Serien-Events
-- [x] **QUE-A04**: Aktivitaet erstellen — Uhr-Icon an Aktivitaet
-- [x] **QUE-A05**: Aktivitaet bearbeiten — Uhr-Icon an Aktivitaet
-- [x] **QUE-A06**: Badge erstellen — Uhr-Icon am Badge
-- [x] **QUE-A07**: Badge bearbeiten — Uhr-Icon am Badge
-- [x] **QUE-A08**: Kategorie erstellen — Uhr-Icon an Kategorie
-- [x] **QUE-A09**: Kategorie bearbeiten — Uhr-Icon an Kategorie
-- [x] **QUE-A10**: Jahrgang erstellen — Uhr-Icon am Jahrgang
-- [x] **QUE-A11**: Jahrgang bearbeiten — Uhr-Icon am Jahrgang
-- [x] **QUE-A12**: Level erstellen — Uhr-Icon am Level
-- [x] **QUE-A13**: Level bearbeiten — Uhr-Icon am Level
-- [x] **QUE-A14**: Zertifikat-Typ erstellen — Uhr-Icon am Typ
-- [x] **QUE-A15**: Zertifikat-Typ bearbeiten — Uhr-Icon am Typ
-- [x] **QUE-A16**: Material erstellen (Metadaten + Dateien) — Uhr-Icon am Material, Dateien lokal in Filesystem, Upload im Vordergrund
-- [x] **QUE-A17**: Material bearbeiten (Metadaten) — Uhr-Icon am Material
-- [x] **QUE-A18**: Antrag genehmigen/ablehnen — Uhr-Icon am Antrag
-- [x] **QUE-A19**: Antrag zuruecksetzen — Uhr-Icon am Antrag
-- [x] **QUE-A20**: Bonus-Punkte vergeben — Uhr-Icon am Bonus-Eintrag
-- [x] **QUE-A21**: Aktivitaet einem Konfi zuweisen — Uhr-Icon an Aktivitaet
-
-#### Teamer-Aktionen (2 Aktionen)
-
-- [x] **QUE-T01**: Event buchen (Teamer) — Uhr-Icon am Event
-- [x] **QUE-T02**: Event abmelden (Teamer) — Uhr-Icon am Event
-
-#### Queue-Infrastruktur
-
-- [x] **QUE-I01**: Queue wird beim App-Resume und bei Reconnect automatisch abgearbeitet
-- [x] **QUE-I02**: Queue ueberlebt App-Neustart (persistent in Capacitor Preferences)
-- [x] **QUE-I03**: Queue-Flush bei App-Background via @capawesome/capacitor-background-task (nur Text, keine Datei-Uploads)
-- [x] **QUE-I04**: Fehlgeschlagene Items (4xx) werden aus Queue entfernt und User informiert
-- [x] **QUE-I05**: Retribare Fehler (5xx, 408, 429) bleiben in Queue fuer naechsten Flush (max 5 Retries)
-
-### Online-Only Aktionen (OOA)
-
-Diese Aktionen zeigen "Du bist offline" am Button wenn offline. Keine Queue.
-
-- [x] **OOA-01**: Punkte vergeben (Server-Autoritaet, Duplikat-Risiko bei zwei Admins)
-- [x] **OOA-02**: Konfi befoerdern zu Teamer (Sicherheitskritisch, Rollen-Aenderung)
-- [x] **OOA-03**: Konfi bearbeiten (Jahrgang-Zuweisung, Teamer-Since)
-- [x] **OOA-04**: Event buchen/abmelden (Konfi) — Kapazitaetspruefung, Wartelisten-Logik
-- [x] **OOA-05**: Event absagen — loest Push-Notifications aus, muss sofort passieren
-- [x] **OOA-06**: Event loeschen / Serie loeschen — destruktiv, nicht umkehrbar
-- [x] **OOA-07**: Chat-Raum erstellen (braucht Server-generierte Room-ID + Teilnehmer-Validierung)
-- [x] **OOA-08**: Chat-Raum loeschen — destruktiv
-- [x] **OOA-09**: Chat-Mitglieder verwalten (hinzufuegen/entfernen) — Verwirrend wenn verzoegert
-- [x] **OOA-10**: Chat verlassen — Server muss Teilnehmer sofort entfernen
-- [x] **OOA-11**: Chat-Nachricht loeschen — Server muss sofort loeschen + WebSocket-Event
-- [x] **OOA-12**: Passwort aendern — Sicherheitskritisch
-- [x] **OOA-13**: E-Mail aendern — Server-Validierung (Format, Duplikat)
-- [x] **OOA-14**: QR-Check-in — Server-Validierung (Zeitfenster, Token)
-- [x] **OOA-15**: QR-Code generieren — Server generiert JWT
-- [x] **OOA-16**: Event-Chat erstellen — Server erstellt Raum + Teilnehmer
-- [x] **OOA-17**: Konfi registrieren — Server-Validierung (Username, Invite-Code)
-- [x] **OOA-18**: Invite-Code erstellen/verlaengern/loeschen — Server generiert Code
-- [x] **OOA-19**: Organisation CRUD (Super-Admin) — sehr selten, Sicherheitskritisch
-- [x] **OOA-20**: User CRUD (Rollen-Zuweisung, Jahrgangs-Zuweisung)
-- [x] **OOA-21**: Passwort zuruecksetzen / Passwort-Reset anfordern
-- [x] **OOA-22**: Passwort regenerieren (Admin fuer Konfi)
-- [x] **OOA-23**: Konfi loeschen — destruktiv
-- [x] **OOA-24**: Aktivitaet loeschen — destruktiv
-- [x] **OOA-25**: Badge loeschen — destruktiv
-- [x] **OOA-26**: Kategorie loeschen — destruktiv
-- [x] **OOA-27**: Jahrgang loeschen — destruktiv (Konfi-Zuordnung betroffen)
-- [x] **OOA-28**: Level loeschen — destruktiv
-- [x] **OOA-29**: Zertifikat-Typ loeschen — destruktiv
-- [x] **OOA-30**: Material loeschen — destruktiv
-- [x] **OOA-31**: Material-Datei loeschen — destruktiv
-- [x] **OOA-32**: Aktivitaet bei Konfi entfernen — destruktiv
-- [x] **OOA-33**: Bonus-Punkte bei Konfi entfernen — destruktiv
-- [x] **OOA-34**: Zertifikat bei Konfi entfernen — destruktiv
-- [x] **OOA-35**: Konfi Antrag loeschen — destruktiv
-- [x] **OOA-36**: Antrag loeschen (Admin) — destruktiv
-- [x] **OOA-37**: Teilnehmer zu Event hinzufuegen — Server-Validierung (Kapazitaet)
-- [x] **OOA-38**: Teilnehmer von Event entfernen — Nachrueck-Logik
-- [x] **OOA-39**: Teilnehmer-Status aendern (Anwesenheit) — Server-Validierung
-- [x] **OOA-40**: Teilnehmer-Wartelisten-Status aendern — Nachrueck-Logik
-- [x] **OOA-41**: Zertifikat einem Konfi ausstellen — Server-Autoritaet
-- [x] **OOA-42**: Jahrgangs-Chat erstellen (Admin bei Konfi-Erstellung)
-
-### Sync (SYN)
-
-- [x] **SYN-01**: Bei App-Start wird Cache revalidiert (SWR-Pattern, keine separate Sync-Logik)
-- [x] **SYN-02**: Bei Socket.io Reconnect: Erst Queue flushen, dann Cache invalidieren, dann Badge-Counts aktualisieren
-- [x] **SYN-03**: Backend Chat-Route unterstuetzt ?after=lastMessageId Parameter fuer verpasste Nachrichten
-- [x] **SYN-04**: Bei App-Resume (appStateChange) wird aktive Page revalidiert
-
-## v3.0 Requirements
-
-Deferred. Onboarding, Landing Website, Readme, Wiki.
+- [ ] **INT-01**: Konfi-Dashboard zeigt "Dein Wrapped ist da!" Card wenn verfuegbar
+- [ ] **INT-02**: Teamer-Dashboard zeigt "Dein Teamer-Jahr!" Card wenn verfuegbar
+- [ ] **INT-03**: Push-Notification wenn Wrapped freigeschaltet wird
+- [ ] **INT-04**: Wrapped nur einmal pro Jahr/Zeitraum verfuegbar (kein erneutes Generieren)
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Volle Offline-App mit lokaler DB | SQLite/PouchDB Overkill fuer Datenmenge (<230KB/User), Capacitor Preferences reicht |
-| Service Worker / PWA | iOS WKWebView hat unreliable Service Worker Support, Capacitor-native ist besser |
-| Konflikt-Aufloesung UI | Last-Write-Wins + Idempotency-Keys reichen, kein manuelles Merge noetig |
-| Periodischer Background-Sync | iOS BGTaskScheduler unzuverlaessig, App-Resume + Reconnect reichen |
-| Offline Event-Buchung (Konfi) | Kapazitaetspruefung + Warteliste braucht Server |
-| Offline Punkte-Vergabe | Server-Autoritaet, Duplikat-Risiko bei mehreren Admins |
-| Material-Dateien vorab cachen | Zu gross, nur Metadaten cachen |
+| Percentile/Vergleiche mit anderen | Datenschutz Minderjaehrige (DSG-EKD) |
+| Oeffentliche Leaderboards | Privacy |
+| KI-generierte Texte | Risiko/Aufwand |
+| Wrapped-Party/Multiplayer | Overkill |
+| Video-Export | Zu komplex, Bild reicht |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| STR-01 | Phase 55 | Complete |
-| STR-02 | Phase 55 | Complete |
-| STR-03 | Phase 55 | Complete |
-| STR-04 | Phase 55 | Complete |
-| NET-01 | Phase 55 | Complete |
-| NET-02 | Phase 55 | Complete |
-| NET-03 | Phase 55 | Complete |
-| NET-04 | Phase 55 | Complete |
-| CAC-01 | Phase 56 | Complete |
-| CAC-02 | Phase 56 | Complete |
-| CAC-03 | Phase 56 | Complete |
-| CAC-04 | Phase 56 | Complete |
-| CAC-05 | Phase 56 | Complete |
-| CAC-06 | Phase 56 | Complete |
-| CAC-07 | Phase 56 | Complete |
-| CAC-08 | Phase 56 | Complete |
-| CAC-09 | Phase 56 | Complete |
-| CAC-10 | Phase 56 | Complete |
-| CAC-11 | Phase 56 | Complete |
-| RET-01 | Phase 57 | Complete |
-| RET-02 | Phase 57 | Complete |
-| RET-03 | Phase 57 | Complete |
-| OUI-01 | Phase 58 | Complete |
-| OUI-02 | Phase 58 | Complete |
-| OUI-03 | Phase 58 | Complete |
-| OUI-04 | Phase 58 | Complete |
-| OUI-05 | Phase 58 | Complete |
-| OUI-06 | Phase 58 | Complete |
-| OUI-07 | Phase 58 | Complete |
-| OUI-08 | Phase 59 | Complete |
-| OUI-09 | Phase 59 | Complete |
-| OUI-10 | Phase 59 | Complete |
-| OUI-11 | Phase 59 | Complete |
-| OUI-12 | Phase 59 | Complete |
-| OUI-13 | Phase 60 | Complete |
-| QUE-K01 | Phase 60 | Complete |
-| QUE-K02 | Phase 60 | Complete |
-| QUE-K03 | Phase 60 | Complete |
-| QUE-K04 | Phase 60 | Complete |
-| QUE-K05 | Phase 60 | Complete |
-| QUE-FF01 | Phase 60 | Complete |
-| QUE-FF02 | Phase 60 | Complete |
-| QUE-FF03 | Phase 60 | Complete |
-| QUE-FF04 | Phase 60 | Complete |
-| QUE-FF05 | Phase 60 | Complete |
-| QUE-FF06 | Phase 60 | Complete |
-| QUE-FF07 | Phase 60 | Complete |
-| QUE-FF08 | Phase 60 | Complete |
-| QUE-A01 | Phase 61 | Complete |
-| QUE-A02 | Phase 61 | Complete |
-| QUE-A03 | Phase 61 | Complete |
-| QUE-A04 | Phase 61 | Complete |
-| QUE-A05 | Phase 61 | Complete |
-| QUE-A06 | Phase 61 | Complete |
-| QUE-A07 | Phase 61 | Complete |
-| QUE-A08 | Phase 61 | Complete |
-| QUE-A09 | Phase 61 | Complete |
-| QUE-A10 | Phase 61 | Complete |
-| QUE-A11 | Phase 61 | Complete |
-| QUE-A12 | Phase 61 | Complete |
-| QUE-A13 | Phase 61 | Complete |
-| QUE-A14 | Phase 61 | Complete |
-| QUE-A15 | Phase 61 | Complete |
-| QUE-A16 | Phase 61 | Complete |
-| QUE-A17 | Phase 61 | Complete |
-| QUE-A18 | Phase 61 | Complete |
-| QUE-A19 | Phase 61 | Complete |
-| QUE-A20 | Phase 61 | Complete |
-| QUE-A21 | Phase 61 | Complete |
-| QUE-T01 | Phase 61 | Complete |
-| QUE-T02 | Phase 61 | Complete |
-| QUE-I01 | Phase 60 | Complete |
-| QUE-I02 | Phase 60 | Complete |
-| QUE-I03 | Phase 60 | Complete |
-| QUE-I04 | Phase 60 | Complete |
-| QUE-I05 | Phase 60 | Complete |
-| OOA-01 | Phase 59 | Complete |
-| OOA-02 | Phase 59 | Complete |
-| OOA-03 | Phase 59 | Complete |
-| OOA-04 | Phase 59 | Complete |
-| OOA-05 | Phase 59 | Complete |
-| OOA-06 | Phase 59 | Complete |
-| OOA-07 | Phase 59 | Complete |
-| OOA-08 | Phase 59 | Complete |
-| OOA-09 | Phase 59 | Complete |
-| OOA-10 | Phase 59 | Complete |
-| OOA-11 | Phase 59 | Complete |
-| OOA-12 | Phase 59 | Complete |
-| OOA-13 | Phase 59 | Complete |
-| OOA-14 | Phase 59 | Complete |
-| OOA-15 | Phase 59 | Complete |
-| OOA-16 | Phase 59 | Complete |
-| OOA-17 | Phase 59 | Complete |
-| OOA-18 | Phase 59 | Complete |
-| OOA-19 | Phase 59 | Complete |
-| OOA-20 | Phase 59 | Complete |
-| OOA-21 | Phase 59 | Complete |
-| OOA-22 | Phase 59 | Complete |
-| OOA-23 | Phase 59 | Complete |
-| OOA-24 | Phase 59 | Complete |
-| OOA-25 | Phase 59 | Complete |
-| OOA-26 | Phase 59 | Complete |
-| OOA-27 | Phase 59 | Complete |
-| OOA-28 | Phase 59 | Complete |
-| OOA-29 | Phase 59 | Complete |
-| OOA-30 | Phase 59 | Complete |
-| OOA-31 | Phase 59 | Complete |
-| OOA-32 | Phase 59 | Complete |
-| OOA-33 | Phase 59 | Complete |
-| OOA-34 | Phase 59 | Complete |
-| OOA-35 | Phase 59 | Complete |
-| OOA-36 | Phase 59 | Complete |
-| OOA-37 | Phase 59 | Complete |
-| OOA-38 | Phase 59 | Complete |
-| OOA-39 | Phase 59 | Complete |
-| OOA-40 | Phase 59 | Complete |
-| OOA-41 | Phase 59 | Complete |
-| OOA-42 | Phase 59 | Complete |
-| SYN-01 | Phase 62 | Complete |
-| SYN-02 | Phase 62 | Complete |
-| SYN-03 | Phase 62 | Complete |
-| SYN-04 | Phase 62 | Complete |
+| DAT-01 | TBD | Pending |
+| DAT-02 | TBD | Pending |
+| DAT-03 | TBD | Pending |
+| DAT-04 | TBD | Pending |
+| DAT-05 | TBD | Pending |
+| DAT-06 | TBD | Pending |
+| DAT-07 | TBD | Pending |
+| DAT-08 | TBD | Pending |
+| KS-01 | TBD | Pending |
+| KS-02 | TBD | Pending |
+| KS-03 | TBD | Pending |
+| KS-04 | TBD | Pending |
+| KS-05 | TBD | Pending |
+| KS-06 | TBD | Pending |
+| KS-07 | TBD | Pending |
+| KS-08 | TBD | Pending |
+| KS-09 | TBD | Pending |
+| TS-01 | TBD | Pending |
+| TS-02 | TBD | Pending |
+| TS-03 | TBD | Pending |
+| TS-04 | TBD | Pending |
+| TS-05 | TBD | Pending |
+| TS-06 | TBD | Pending |
+| TS-07 | TBD | Pending |
+| UI-01 | TBD | Pending |
+| UI-02 | TBD | Pending |
+| UI-03 | TBD | Pending |
+| UI-04 | TBD | Pending |
+| UI-05 | TBD | Pending |
+| UI-06 | TBD | Pending |
+| SHR-01 | TBD | Pending |
+| SHR-02 | TBD | Pending |
+| SHR-03 | TBD | Pending |
+| SHR-04 | TBD | Pending |
+| SHR-05 | TBD | Pending |
+| SHR-06 | TBD | Pending |
+| INT-01 | TBD | Pending |
+| INT-02 | TBD | Pending |
+| INT-03 | TBD | Pending |
+| INT-04 | TBD | Pending |
 
-**Coverage v2.1:**
-- v2.1 requirements: 122 total
-- Mapped to phases: 122
-- Unmapped: 0
+**Coverage v2.3:**
+- v2.3 requirements: 37 total
+- Mapped to phases: 0
+- Unmapped: 37
 
 ---
-*Requirements defined: 2026-03-19*
-*Updated: 2026-03-20 — Roadmap erstellt, alle 122 Requirements auf Phasen 55-62 gemappt*
+*Requirements defined: 2026-03-22*
