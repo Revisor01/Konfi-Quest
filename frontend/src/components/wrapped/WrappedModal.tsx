@@ -154,6 +154,9 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
         case 'aktivster-monat': return { ...base, slideValue: `Aktivster Monat: ${k.slides.aktivster_monat.monat_name}` };
         case 'chat': return { ...base, slideValue: `${k.slides.chat.nachrichten_gesendet} Nachrichten` };
         case 'endspurt': return { ...base, slideValue: `Noch ${k.slides.endspurt.fehlende_punkte} Punkte bis zum Ziel` };
+        case 'kategorie': return { ...base, slideValue: `Dein Bereich: ${k.slides.kategorie?.top_kategorie || '-'}` };
+        case 'gottesdienst': return { ...base, slideValue: `${k.slides.gottesdienst?.count || 0} Gottesdienste besucht` };
+        case 'ueber-das-ziel': return { ...base, slideValue: `${(k.slides.endspurt.aktuell_total - k.slides.endspurt.ziel_total)} Punkte \u00fcber dem Ziel!` };
         case 'abschluss': return { ...base, slideValue: `${k.slides.punkte.total} Punkte, ${k.slides.events.total_attended} Events, ${k.slides.badges.total_earned} Badges` };
         default: return base;
       }
@@ -171,68 +174,88 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
     }
   };
 
-  // Konfi-Slides aufbauen (Endspurt nur wenn aktiv)
+  // Konfi-Slides aufbauen mit Individualisierung (highlight_type + formulierung_seed)
   const buildKonfiSlides = (konfiData: KonfiWrappedData, slideYear: number) => {
-    const slides: Array<{ key: string; content: React.ReactNode }> = [];
-    let slideIndex = 0;
+    const slideKeys: Array<{ key: string; render: (isActive: boolean) => React.ReactNode }> = [];
+    const highlightType = konfiData.highlight_type || 'events_held';
+    const seed = konfiData.formulierung_seed || 0;
 
-    slides.push({
-      key: 'intro',
-      content: (
-        <IntroSlide
-          isActive={activeIndex === slideIndex}
-          displayName={displayName}
-          jahrgangName={jahrgangName || ''}
-          year={slideYear}
-        />
-      ),
-    });
-    slideIndex++;
+    // Alle moeglichen Slide-Renderer
+    const renderers: Record<string, (isActive: boolean) => React.ReactNode> = {
+      'intro': (a) => <IntroSlide isActive={a} displayName={displayName} jahrgangName={jahrgangName || ''} year={slideYear} />,
+      'punkte': (a) => <PunkteSlide isActive={a} punkte={konfiData.slides.punkte} />,
+      'events': (a) => <EventsSlide isActive={a} events={konfiData.slides.events} />,
+      'badges': (a) => <BadgesSlide isActive={a} badges={konfiData.slides.badges} />,
+      'kategorie': (a) => <KategorieSlide isActive={a} kategorie={konfiData.slides.kategorie} titel={getFormulierung('kategorie_titel', seed)} />,
+      'gottesdienst': (a) => <GottesdienstSlide isActive={a} gottesdienst={konfiData.slides.gottesdienst} titel={getFormulierung('gottesdienst_titel', seed)} />,
+      'aktivster-monat': (a) => <AktivsterMonatSlide isActive={a} aktivsterMonat={konfiData.slides.aktivster_monat} />,
+      'chat': (a) => <ChatSlide isActive={a} chat={konfiData.slides.chat} />,
+      'endspurt': (a) => <EndspurtSlide isActive={a} endspurt={konfiData.slides.endspurt} />,
+      'ueber-das-ziel': (a) => <UeberDasZielSlide isActive={a} endspurt={konfiData.slides.endspurt} />,
+      'abschluss': (a) => <AbschlussSlide isActive={a} data={konfiData} year={slideYear} />,
+    };
 
-    slides.push({
-      key: 'punkte',
-      content: <PunkteSlide isActive={activeIndex === slideIndex} punkte={konfiData.slides.punkte} />,
-    });
-    slideIndex++;
+    const shown = new Set<string>();
 
-    slides.push({
-      key: 'events',
-      content: <EventsSlide isActive={activeIndex === slideIndex} events={konfiData.slides.events} />,
-    });
-    slideIndex++;
+    const addSlide = (key: string) => {
+      if (shown.has(key)) return;
+      shown.add(key);
+      slideKeys.push({ key, render: renderers[key] });
+    };
 
-    slides.push({
-      key: 'badges',
-      content: <BadgesSlide isActive={activeIndex === slideIndex} badges={konfiData.slides.badges} />,
-    });
-    slideIndex++;
+    const maybeAdd = (key: string) => addSlide(key);
 
-    slides.push({
-      key: 'aktivster-monat',
-      content: <AktivsterMonatSlide isActive={activeIndex === slideIndex} aktivsterMonat={konfiData.slides.aktivster_monat} />,
-    });
-    slideIndex++;
+    // Slide 1: IMMER Intro
+    addSlide('intro');
 
-    slides.push({
-      key: 'chat',
-      content: <ChatSlide isActive={activeIndex === slideIndex} chat={konfiData.slides.chat} />,
-    });
-    slideIndex++;
+    // Slide 2: Highlight-Slide basierend auf highlight_type
+    const highlightKeyMap: Record<string, string> = {
+      ueber_das_ziel: 'ueber-das-ziel',
+      events_held: 'events',
+      badge_collector: 'badges',
+      chat_champion: 'chat',
+      gottesdienst_treue: 'gottesdienst',
+      gemeinde_aktiv: 'punkte',
+    };
+    addSlide(highlightKeyMap[highlightType] || 'events');
 
-    if (konfiData.slides.endspurt.aktiv) {
-      slides.push({
-        key: 'endspurt',
-        content: <EndspurtSlide isActive={activeIndex === slideIndex} endspurt={konfiData.slides.endspurt} />,
-      });
-      slideIndex++;
+    // Slides 3+: Restliche Slides ohne Duplikation des Highlights
+    maybeAdd('punkte');
+    maybeAdd('events');
+    maybeAdd('badges');
+
+    // Kategorie: IMMER wenn Daten vorhanden
+    if (konfiData.slides.kategorie?.verteilung?.length > 0) {
+      maybeAdd('kategorie');
     }
 
-    slides.push({
-      key: 'abschluss',
-      content: <AbschlussSlide isActive={activeIndex === slideIndex} data={konfiData} year={slideYear} />,
-    });
+    // Gottesdienst: wenn count > 0
+    if (konfiData.slides.gottesdienst?.count > 0) {
+      maybeAdd('gottesdienst');
+    }
 
-    return slides;
+    maybeAdd('aktivster-monat');
+    maybeAdd('chat');
+
+    // Endspurt / UeberDasZiel Logik
+    const endspurt = konfiData.slides.endspurt;
+    if (highlightType !== 'ueber_das_ziel') {
+      if (endspurt.aktiv) {
+        addSlide('endspurt');
+      } else if (!endspurt.aktiv && endspurt.aktuell_total >= endspurt.ziel_total && endspurt.ziel_total > 0) {
+        maybeAdd('ueber-das-ziel');
+      }
+    }
+
+    // Abschluss: IMMER letzter Slide
+    shown.delete('abschluss'); // Immer hinzufuegen, auch wenn key schon existiert
+    addSlide('abschluss');
+
+    // Konvertiere zu finalen Slides mit korrektem isActive
+    return slideKeys.map((s, idx) => ({
+      key: s.key,
+      content: s.render(activeIndex === idx),
+    }));
   };
 
   // Teamer-Slides aufbauen (7 Slides)
