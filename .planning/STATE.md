@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Codebase-Hardening
 status: unknown
-stopped_at: Completed 72-01-PLAN.md
-last_updated: "2026-03-22T07:29:45.279Z"
+stopped_at: Completed 72-02-PLAN.md
+last_updated: "2026-03-22T07:40:20.010Z"
 progress:
   total_phases: 17
   completed_phases: 9
   total_plans: 21
-  completed_plans: 19
+  completed_plans: 20
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 ## Current Position
 
 Phase: 72 (UI-Testing Fixes) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Accumulated Context
 
@@ -59,6 +59,7 @@ All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestone
 - [Phase 71]: Dashboard Badge-Platzhalter auf max 12 begrenzt
 - [Phase 72]: Eigener Teamer-Endpoint statt /admin/konfis — sicherer, nur zugewiesene Jahrgaenge
 - [Phase 72]: Cache-Luecken (D-14) sind erwartetes useOfflineQuery-Verhalten, kein Bug
+- [Phase 72]: Searchbar in Pages statt Views eingefuegt - clientseitiger Filter vor Weitergabe
 
 ### Roadmap Evolution
 
@@ -78,6 +79,6 @@ All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestone
 
 ## Session Continuity
 
-Last session: 2026-03-22T07:29:45.276Z
-Stopped at: Completed 72-01-PLAN.md
+Last session: 2026-03-22T07:40:20.008Z
+Stopped at: Completed 72-02-PLAN.md
 Resume file: None
