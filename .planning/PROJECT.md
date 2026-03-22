@@ -24,6 +24,23 @@ Offline-First: Alle 30 Pages mit SWR-Cache, WriteQueue fuer Chat/Antraege/Admin-
 
 Types konsolidiert, 73 DB-Indizes + 23 FKs, CustomEvents→LiveUpdateContext, ErrorBoundary, Performance-Splits, Token-Refresh (15min+90d+Soft-Revoke), nativer Datei-Viewer, Rollen-Audit-Fixes, Teamer+Badge-Polish, UI-Testing-Fixes (12 Phasen, 25 Plans).
 
+## Current Milestone: v2.3 Konfi + Teamer Wrapped
+
+**Goal:** Spotify-Wrapped-Style Jahresrueckblick fuer Konfis (vor Konfirmation) und Teamer:innen (Jahresende). Horizontale Slides, Prozent-Vergleiche, Share-Funktion, Teamer-Einladung.
+
+**Target features:**
+- Konfi Wrapped: Punkte, Ranking, Badges, Events, Vergleiche ("mehr als X%"), Teamer-Einladung
+- Teamer Wrapped: Events geleitet, Konfis betreut, Badges, Zertifikate, Vergleiche
+- Horizontaler Slide-through (wie Spotify Wrapped), dunkler Hintergrund, animiert
+- Share-Funktion (Screenshot/natives Share)
+- Backend Aggregations-Queries mit Caching
+- Konfirmations-Datum pro Jahrgang konfigurierbar (Trigger fuer Konfi Wrapped)
+- Admin-Steuerung: Wrapped freischalten
+
+## Geplant: v2.4 Design-Angleich
+
+**Goal:** Finaler Design-Durchgang ueber alle Views fuer konsistentes Erscheinungsbild.
+
 ## Geplant: v3.0 Onboarding + Landing
 
 **Goal:** Onboarding-Flow, Landing Website mit Erklaerung, Github Readme, Wiki — letzter Schritt vor oeffentlichem Launch.
