@@ -422,6 +422,7 @@ const usersRoutes = require('./routes/users');
 const rolesRoutes = require('./routes/roles');
 const organizationsRoutes = require('./routes/organizations');
 const levelsRoutes = require('./routes/levels');
+const wrappedRoutes = require('./routes/wrapped');
 
 // ====================================================================
 // RBAC MIDDLEWARE SETUP
@@ -482,6 +483,7 @@ app.use('/api/organizations', orgLimiter, organizationsRoutes(db, rbacVerifier, 
 
 app.use('/api/levels', levelsRoutes(db, rbacVerifier, roleHelpers));
 app.use('/api/teamer', teamerRoutes(db, rbacVerifier, roleHelpers));
+app.use('/api/wrapped', wrappedRoutes(db, rbacVerifier, roleHelpers));
 app.use('/api/material', materialRoutes(db, rbacVerifier, roleHelpers, materialUpload));
 
 // ====================================================================
