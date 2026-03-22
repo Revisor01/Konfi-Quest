@@ -1,210 +1,177 @@
 # Architecture
 
-**Analysis Date:** 2026-03-20
+**Analysis Date:** 2026-03-22
 
 ## Pattern Overview
 
-**Overall:** Multi-Tenant REST API + SPA mit rollenbasierter Zugriffskontrolle (RBAC)
+**Overall:** Role-Based Multi-Tenant SPA mit Offline-First Client
 
 **Key Characteristics:**
-- Klare Trennung: Node.js/Express-Backend (API) + React/Ionic-Frontend (SPA) als separate Docker-Container
-- Multi-Tenancy durch `organization_id` auf allen Tabellen — jede Kirchengemeinde ist eine eigene Organisation
-- 5-stufige Rollenhierarchie (`super_admin` → `org_admin` → `admin` → `teamer` → `konfi`) mit hartem Enforcement in Middleware
-- Realtime-Kommunikation via Socket.io (Chat, Live-Updates) + Firebase FCM (Push Notifications)
-- Jahrgangs-basierte Datenisolation für Teamer (sehen nur zugewiesene Jahrgänge)
-
----
+- Multi-Tenant: Jede Organisation (Kirchengemeinde) ist isoliert via `organization_id`
+- RBAC: 5 Rollen (super_admin, org_admin, admin, teamer, konfi) mit hartem Role-Check auf jedem Route-Handler
+- Offline-First: SWR-Cache (Capacitor Preferences) + FIFO WriteQueue für Offline-Aktionen
+- Realtime: Socket.IO WebSocket für Live-Updates (Punkte, Chat, Buchungen)
+- Hybrid-App: Ionic + Capacitor Native (iOS/Android) + Web (PWA)
 
 ## Layers
 
-**API-Layer (Routes):**
-- Purpose: HTTP-Endpunkte, Request-Validierung, Response-Formatierung
+**Backend: Express Routes:**
+- Purpose: HTTP REST API + WebSocket-Server
 - Location: `backend/routes/`
-- Contains: 17 Route-Dateien, jede exportiert eine Factory-Funktion `(db, rbacVerifier, roleHelpers, ...) => Router`
-- Depends on: Middleware-Layer, Services-Layer, Database-Layer
-- Used by: Express app in `backend/server.js`
+- Contains: 18 Route-Dateien (eine pro Domäne)
+- Depends on: PostgreSQL `db`-Objekt, `rbacMiddleware`, `pushService`
+- Used by: Frontend via `https://konfi-quest.de/api`
 
-**Middleware-Layer:**
-- Purpose: JWT-Verifikation, RBAC-Enforcement, Input-Validierung
+**Backend: Middleware:**
+- Purpose: Auth-Guard und Input-Validierung
 - Location: `backend/middleware/`
-- Contains: `rbac.js` (Token-Verifikation + Rollenchecks), `validation.js` (express-validator Helpers)
-- Depends on: Database-Layer (verifyTokenRBAC lädt User aus DB bei jedem Request)
-- Used by: Alle geschützten Routes
+- Contains: `rbac.js` (JWT-Verifikation + User-Load aus DB), `validation.js` (express-validator Helpers)
+- Used by: Alle Route-Handler als `verifyTokenRBAC` Middleware
 
-**Services-Layer:**
-- Purpose: Domänen-Logik die über einzelne Routes hinausgeht
+**Backend: Services:**
+- Purpose: Side-Effect-Logik (Push, E-Mail, Background-Jobs)
 - Location: `backend/services/`
-- Contains: `backgroundService.js` (Badge-Updates, Event-Reminder, Token-Cleanup), `pushService.js` (Firebase FCM), `emailService.js` (SMTP)
-- Depends on: Database-Layer, Push-Layer
-- Used by: Routes (pushService direkt), server.js (backgroundService)
+- Contains: `pushService.js`, `emailService.js`, `backgroundService.js`
+- Used by: Route-Handler nach Zustandsänderungen
 
-**Push-Layer:**
-- Purpose: Firebase-Integration für native Push Notifications
-- Location: `backend/push/`
-- Contains: `firebase.js` (Firebase Admin SDK init + send), `firebase-service-account.json` (Credentials)
-- Depends on: Nichts (nur Firebase Admin SDK)
-- Used by: `services/pushService.js`
-
-**Database-Layer:**
-- Purpose: PostgreSQL Connection Pool, Query-Interface
-- Location: `backend/database.js`
-- Contains: pg Pool mit `query()` und `getClient()` (für Transaktionen)
-- Depends on: Env-Variable `DATABASE_URL`
-- Used by: Alle anderen Layer
-
-**Utils:**
-- Purpose: Hilfsfunktionen ohne Seiteneffekte
+**Backend: Utils:**
+- Purpose: Zustandslose Hilfsfunktionen
 - Location: `backend/utils/`
-- Contains: `chatUtils.js`, `dateUtils.js`, `liveUpdate.js`, `passwordUtils.js`, `pointTypeGuard.js`, `roleHierarchy.js`
+- Contains: `liveUpdate.js` (Socket.IO Emit), `chatUtils.js`, `dateUtils.js`, `passwordUtils.js`, `pointTypeGuard.js`, `roleHierarchy.js`
+- Used by: Route-Handler und Services
 
----
+**Frontend: Context Layer:**
+- Purpose: Globaler App-State
+- Location: `frontend/src/contexts/`
+- Contains: `AppContext.tsx` (User, Online-Status, Push), `BadgeContext.tsx` (Unread-Counts), `LiveUpdateContext.tsx` (WebSocket-Events), `ModalContext.tsx`
+- Depends on: `tokenStore.ts`, `api.ts`, `websocket.ts`
 
-## RBAC-System
+**Frontend: Services Layer:**
+- Purpose: Persistenz, Netzwerk, Offline-Infrastruktur
+- Location: `frontend/src/services/`
+- Contains: `api.ts` (Axios mit JWT-Interceptor + Refresh), `tokenStore.ts` (Memory + Preferences), `offlineCache.ts` (SWR-Cache), `writeQueue.ts` (Offline-FIFO), `networkMonitor.ts` (Singleton), `websocket.ts` (Socket.IO Client)
 
-**Rollenhierarchie** (definiert in `backend/utils/roleHierarchy.js`):
-```
-super_admin (5) — Nur Organisations-Verwaltung, kein Zugriff auf Konfi-Daten
-org_admin   (4) — Volle Rechte in eigener Organisation inkl. User-Verwaltung
-admin       (3) — Konfis, Events, Badges, Aktivitäten, Requests
-teamer      (2) — Events, Konfis ansehen (nur zugewiesene Jahrgänge), Punkte vergeben
-konfi       (1) — Nur eigene Daten
-```
+**Frontend: Hooks:**
+- Purpose: Datenlade-Pattern für Komponenten
+- Location: `frontend/src/hooks/`
+- Contains: `useOfflineQuery.ts` (SWR-Pattern für alle Seiten), `useActionGuard.ts`, `useCountUp.ts`
+- Used by: Alle Pages und Views
 
-**Enforcement-Kette** (bei jedem geschützten Request):
-1. `verifyTokenRBAC(db)` in `backend/middleware/rbac.js`: Verifiziert JWT, lädt User + Rolle + zugewiesene Jahrgänge aus DB, befüllt `req.user`
-2. Rollen-Guard (`requireAdmin`, `requireTeamer`, etc.): Prüft `req.user.role_name` gegen Allowlist
-3. Jahrgangs-Filter (`filterByJahrgangAccess`): Teamer sehen nur Konfis in ihren Jahrgängen
-
-**req.user-Struktur** (nach verifyTokenRBAC):
-```javascript
-{
-  id, organization_id, username, display_name,
-  role_name,          // 'super_admin' | 'org_admin' | 'admin' | 'teamer' | 'konfi'
-  role_title,         // Custom-Anzeigename (z.B. "Pastor")
-  organization_name, organization_slug,
-  assigned_jahrgaenge: [{ id, name, can_view, can_edit }],
-  type,               // Backward-Compat: 'admin' | 'teamer' | 'konfi'
-  is_super_admin, is_org_admin
-}
-```
-
-**Route-Factory-Pattern** (alle 17 Routes folgen diesem Muster):
-```javascript
-module.exports = (db, rbacVerifier, roleHelpers, ...) => {
-  const router = express.Router();
-  router.get('/', rbacVerifier, roleHelpers.requireAdmin, async (req, res) => { ... });
-  return router;
-};
-```
-
----
+**Frontend: Components:**
+- Purpose: UI-Schicht, nach Rolle segmentiert
+- Location: `frontend/src/components/`
+- Segmente: `admin/`, `konfi/`, `teamer/`, `chat/`, `wrapped/`, `auth/`, `common/`, `layout/`, `shared/`
+- Pattern: Pro Segment: `pages/` (Container), `views/` (Render-Logik), `modals/` (Dialoge)
 
 ## Data Flow
 
-**Typischer Admin-Request (z.B. Punkte vergeben):**
-1. Frontend: `api.post('/admin/konfis/:id/activities', data)` — axios mit JWT aus `localStorage`
-2. `api.interceptors.request`: Fügt `Authorization: Bearer <token>` hinzu
-3. Express: Rate Limiter → `verifyTokenRBAC` (DB-Query für User) → `requireTeamer` → Route-Handler
-4. Route-Handler: PostgreSQL-Query mit `organization_id` aus `req.user` (Multi-Tenant-Isolation)
-5. Optional: `PushService.sendActivityAssignedToKonfi()` → Firebase FCM → Native App
-6. Optional: `global.io.to('user_konfi_<id>').emit('liveUpdate', ...)` → WebSocket → Frontend
-7. Response: JSON zurück an Frontend
+**HTTP Request-Flow:**
 
-**Realtime-Kommunikation (Chat):**
-1. Socket.io-Verbindung: JWT-Auth in Handshake, `socket.user` wird gesetzt
-2. User tritt `user_<type>_<id>`-Room bei (für direkte Benachrichtigungen)
-3. Chat-Room-Beitritt: `socket.emit('joinRoom', roomId)` → `socket.join('room_<roomId>')`
-4. Nachricht senden: REST POST `/api/chat/rooms/:id/messages` → DB speichern → `io.to('room_<id>').emit('newMessage', ...)` → alle Room-Mitglieder
-5. Live-Updates (Punkte, Badges): Backend emittiert auf `user_<type>_<id>` → `LiveUpdateContext` dispatcht an abonnierte Komponenten
+1. Komponente ruft `api.get/post(...)` über `frontend/src/services/api.ts`
+2. Axios-Interceptor liest Access-Token synchron aus `tokenStore.ts` (Memory-Cache)
+3. Request geht an `https://konfi-quest.de/api/[route]`
+4. `verifyTokenRBAC`-Middleware in `backend/middleware/rbac.js` verifiziert JWT, lädt User aus DB
+5. Route-Handler prüft `req.user.type` und `req.user.role_name` für Berechtigung
+6. DB-Query via `pg`-Pool, Response als JSON
+7. Bei 401: Axios-Interceptor triggert Token-Refresh via `/auth/refresh`, wiederholt Request
 
-**Auth-Flow:**
-1. Login: `POST /api/auth/login` → bcrypt-Vergleich → JWT signieren → Response mit `{ token, user }`
-2. Client: `localStorage.setItem('konfi_token', token)` + `konfi_user`
-3. `checkAuth()` in `src/services/auth.ts`: Liest `konfi_user` aus localStorage für initialen State
-4. 401-Response: `api.interceptors.response` löscht localStorage und redirectet zu `/`
+**Offline-Write-Flow:**
+
+1. Konfi oder Teamer triggert Aktion (z.B. Aktivitäts-Antrag)
+2. `useActionGuard.ts` prüft `networkMonitor.isOnline`
+3. Online: direktes `api.post(...)` — Offline: `writeQueue.enqueue({method, url, body})`
+4. Bei Reconnect: `websocket.ts` flusht WriteQueue automatisch (`writeQueue.flush()`)
+5. Nach Flush: `offlineCache.invalidateAll()` markiert alle Cache-Einträge als stale
+6. `useOfflineQuery` revalidiert automatisch
+
+**Realtime-Update-Flow:**
+
+1. Backend-Route führt Änderung durch (z.B. Admin vergibt Punkte)
+2. Route-Handler ruft `liveUpdate.sendToKonfi(konfiId, 'dashboard', 'refresh')`
+3. `backend/utils/liveUpdate.js` emittiert `liveUpdate`-Event via `global.io` Socket.IO
+4. Client empfängt Event in `LiveUpdateContext.tsx`
+5. Subscribed Pages rufen `refresh()` aus `useOfflineQuery` auf
 
 **State Management:**
-- `AppContext` (`src/contexts/AppContext.tsx`): Globaler User-State, Push-Permissions
-- `BadgeContext` (`src/contexts/BadgeContext.tsx`): Unread-Counts für Chat + Admin-Badges
-- `LiveUpdateContext` (`src/contexts/LiveUpdateContext.tsx`): WebSocket-Listener, pub/sub für komponentenbasierte Refreshes
-- `ModalContext` (`src/contexts/ModalContext.tsx`): Modal-Zustand
-- Kein globales State-Management (kein Redux/Zustand) — lokaler State in Komponenten + Contexts
 
----
+- Globaler Auth-State: `AppContext` (User, Online, Push-Permission)
+- Badge/Unread-Counts: `BadgeContext` (Chat, Anträge, Events)
+- Live-Updates: `LiveUpdateContext` (WebSocket-Event-Bus)
+- Seitenspezifische Daten: `useOfflineQuery` pro Page (kein globaler Query-Cache außer localStorage)
 
 ## Key Abstractions
 
-**Organisation (Multi-Tenant-Boundary):**
-- Jede Kirchengemeinde = eine Organisation
-- Alle Tabellen haben `organization_id`
-- Alle Queries filtern nach `req.user.organization_id`
-- Beispiele: `backend/routes/konfi-managment.js`, `backend/routes/events.js`
+**verifyTokenRBAC:**
+- Purpose: Auth-Guard für alle Backend-Routes
+- Location: `backend/middleware/rbac.js`
+- Pattern: Factory-Funktion `(db) => middleware`, gibt `req.user` mit Role-Infos, verhindert Token-Reuse nach Invalidierung
 
-**Jahrgang:**
-- Konfirmanden-Jahrgang (z.B. "2024/25")
-- Teamer werden Jahrgängen mit `can_view`/`can_edit` zugewiesen
-- `filterByJahrgangAccess(req)` in `backend/middleware/rbac.js` erzeugt passende WHERE-Klausel
+**useOfflineQuery:**
+- Purpose: SWR-Pattern für alle Datenladeoperationen
+- Location: `frontend/src/hooks/useOfflineQuery.ts`
+- Pattern: `useOfflineQuery<T>(cacheKey, fetcher, options)` — lädt aus Cache, revalidiert im Hintergrund, reagiert auf Online-Wechsel
 
-**Konfi-Profil:**
-- `users`-Tabelle + `konfi_profiles`-Tabelle (gottesdienst_points, gemeinde_points, jahrgang_id)
-- Punkte in zwei Typen getrennt: `gottesdienst` + `gemeinde`
-- Bonus-Punkte in separater `bonus_points`-Tabelle
+**offlineCache:**
+- Purpose: Persistenter Read-Cache (Capacitor Preferences)
+- Location: `frontend/src/services/offlineCache.ts`
+- Pattern: TTL-basiert, `CACHE_TTL`-Konstanten pro Domäne (5 Min bis 24 Std)
 
-**Badge-System:**
-- Badges mit `criteria_type` (`total_points` | `activities_count` | `specific_activity` | `streak` | `konfi_days`)
-- Automatische Vergabe via `checkAndAwardBadges()` in `backend/routes/badges.js` — wird nach jeder Punkte-Vergabe aufgerufen
-- Hintergrund-Check via `BackgroundService.startBadgeUpdateService()` alle 5 Minuten
+**writeQueue:**
+- Purpose: FIFO-Queue für Offline-Writes
+- Location: `frontend/src/services/writeQueue.ts`
+- Pattern: Persistiert in Capacitor Preferences, flush bei Reconnect, Metadaten-Typen: `chat | request | opt-out | fire-and-forget | admin | teamer`
 
-**Route-Factory:**
-- Jede Route exportiert eine Funktion, die `db`, `rbacVerifier`, `roleHelpers` injiziert bekommt
-- Verhindert globale Variablen, ermöglicht testbares Design
-- Pattern: `backend/routes/activities.js`, `backend/routes/badges.js` etc.
+**tokenStore:**
+- Purpose: Auth-Token-Management mit synchronem Read
+- Location: `frontend/src/services/tokenStore.ts`
+- Pattern: Memory-Cache für synchrone Getter (`getToken()`), async Setter schreiben zusätzlich in Preferences
 
----
+**liveUpdate:**
+- Purpose: WebSocket-Broadcast-Helper für Backend-Routes
+- Location: `backend/utils/liveUpdate.js`
+- Pattern: `sendToKonfi(id, type, action)`, `sendToOrgAdmins(orgId, type)`, `sendToOrg(orgId, type)` — nutzt `global.io`
 
 ## Entry Points
 
-**Backend:**
-- Location: `backend/server.js`
-- Triggers: Node.js-Prozess, Docker-Container-Start
-- Responsibilities: Express-App, Socket.io, SMTP, Rate-Limiter, alle Routes mounten, BackgroundService starten
+**Backend Server:**
+- Location: `backend/` (package.json main)
+- Triggers: `node server.js` / Docker
+- Responsibilities: Express-Server aufbauen, alle 18 Routes mounten, Socket.IO initialisieren, BackgroundService starten, PostgreSQL-Pool öffnen
 
-**Frontend:**
-- Location: `frontend/src/main.tsx` → `frontend/src/App.tsx`
-- Triggers: Browser-Load oder Capacitor-App-Start
-- Responsibilities: Context-Provider-Baum, Auth-Guard, role-basiertes Routing via `MainTabs.tsx`
+**Frontend App:**
+- Location: `frontend/src/App.tsx`
+- Triggers: Browser/Capacitor-Start
+- Responsibilities: Context-Provider-Stack aufbauen (`AppProvider` > `LiveUpdateProvider` > `BadgeProvider`), Auth-Routing, `setupIonicReact` mit Plattform-Animationen, `MainTabs.tsx` laden
 
-**MainTabs (Role-Router):**
+**Navigation Hub:**
 - Location: `frontend/src/components/layout/MainTabs.tsx`
-- Triggers: Jeder Seitenaufruf nach Login
-- Responsibilities: Rendert komplett unterschiedliche Tab-Navigationen je nach `user.type` (`admin`/`teamer`/`konfi`) bzw. `super_admin`-Flag
-
----
+- Triggers: Eingeloggter User in `AppContext`
+- Responsibilities: Rollenbasiertes Routing — Admin/Teamer/Konfi/SuperAdmin bekommen unterschiedliche Tab-Bars und Routen-Trees
 
 ## Error Handling
 
-**Strategy:** Try/catch in Route-Handlern, globaler Express-Error-Handler als Fallback
+**Strategy:** Defensiv, mit Fallback auf gecachte Daten
 
 **Patterns:**
-- Alle async Route-Handler wrappen DB-Queries in try/catch mit `res.status(500).json({ error: '...' })`
-- Middleware gibt `401`/`403` mit deutschen Fehlermeldungen zurück
-- Frontend: `api.interceptors.response` fängt 401 (Logout) und 429 (Rate-Limit-Alert) global ab
-- DB-Verbindungsfehler beim Start: `process.exit(1)`
-
----
+- Backend: Express-Try-Catch in allen Route-Handlern, 500-Response mit `error: string`
+- Frontend-Netzwerk: `useOfflineQuery` behält Stale-Daten bei Fehlern, setzt `isStale: true` statt zu leeren
+- Frontend-Auth: Axios-Interceptor für 401 — Token-Refresh-Versuch, dann `auth:relogin-required` Custom-Event
+- Frontend-Push: Retry mit exponentiellem Backoff (5s, 15s, 30s), danach Retry bei Reconnect
+- Globale 429-Alerts: `App.tsx` lauscht auf `rate-limit` Window-Event, zeigt `useIonAlert`
+- ErrorBoundary: `frontend/src/components/common/ErrorBoundary.tsx`
 
 ## Cross-Cutting Concerns
 
-**Logging:** `console.log/error/warn` direkt — kein strukturiertes Logging-Framework
+**Logging:** `console.error/warn` direkt in Route-Handlern und Services, kein strukturiertes Logging-Framework
 
-**Validation:** `express-validator` in Routes + `backend/middleware/validation.js` (`handleValidationErrors`)
+**Validation:** `express-validator` im Backend (`backend/middleware/validation.js`), TypeScript-Typen im Frontend (`frontend/src/types/`)
 
-**Authentication:** JWT Bearer Token in `Authorization`-Header; Token enthält `id` und minimale Claims; vollständiger User wird bei jedem Request aus DB nachgeladen (`verifyTokenRBAC`)
+**Authentication:** JWT Access-Token (15 Min) + Refresh-Token (90 Tage, rotierend) — `backend/middleware/rbac.js`, `frontend/src/services/api.ts`
 
-**Organisation-Isolation:** Jeder geschützte Endpoint filtert nach `req.user.organization_id` — keine separate Middleware, sondern Konvention in Route-Handlern
+**Multi-Tenancy:** `organization_id` auf allen relevanten DB-Queries, in `verifyTokenRBAC` aus DB geladen und in `req.user` verfügbar
 
-**File Uploads:** `multer` mit drei konfigurierten Instanzen in `server.js`: `requestUpload` (Aktivitäts-Anträge, 5MB, nur Bilder), `chatUpload` (Chat-Dateien, 5MB, diverse MIME-Types), `materialUpload` (Material, 20MB, diverse MIME-Types). Alle mit gehashten Dateinamen (kein statischer Serve — Zugriff nur über geschützte Endpunkte).
+**Push Notifications:** FCM via `@capacitor-community/fcm`, Token in `device_tokens`-Tabelle, `backend/services/pushService.js`
 
 ---
 
-*Architecture analysis: 2026-03-20*
+*Architecture analysis: 2026-03-22*

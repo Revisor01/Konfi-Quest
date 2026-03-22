@@ -1,50 +1,77 @@
 # Testing Patterns
 
-**Analysis Date:** 2026-03-20
+**Analysis Date:** 2026-03-22
 
-## Zustand
+## Test Framework
 
-**Wichtige Vorabinformation:** Das Projekt hat so gut wie keine produktiven Tests. Es existieren nur Scaffold-Dateien und unbenutzte Konfigurationen.
+**Runner:**
+- Vitest 4.x
+- Config: `frontend/vite.config.ts` (inline `test` block)
 
----
+**Assertion Library:**
+- Vitest built-in (`expect`, `test`, `describe`)
+- `@testing-library/jest-dom` 5.x for DOM assertions
 
-## Test Frameworks (konfiguriert)
-
-**Unit Test Runner:**
-- Vitest (via `npm run test.unit`)
-- Config: Keine eigene `vitest.config.*` — läuft über Vite-Defaults
-- Assertion Library: Vitest-eigene (`expect`)
-
-**E2E-Framework:**
-- Cypress 13 (via `npm run test.e2e`)
+**E2E:**
+- Cypress 13.x
 - Config: `frontend/cypress.config.ts`
-- BaseURL: `http://localhost:5173`
-
-**Setup-Datei:**
-- `frontend/src/setupTests.ts` — importiert `@testing-library/jest-dom/extend-expect`, mockt `window.matchMedia`
 
 **Backend:**
-- Kein Test-Framework konfiguriert
-- `package.json` scripts.test: `"echo \"Error: no test specified\" && exit 1"`
+- No test framework configured — `backend/package.json` test script exits with error: `"Error: no test specified"`
 
 **Run Commands:**
 ```bash
-# Frontend
-cd frontend && npm run test.unit    # Vitest Unit Tests
-cd frontend && npm run test.e2e     # Cypress E2E Tests
+# Frontend unit tests
+cd frontend && npm run test.unit
 
-# Backend
-# Kein Test-Befehl vorhanden
+# Frontend E2E tests (requires dev server running)
+cd frontend && npm run test.e2e
+
+# Watch mode (vitest)
+cd frontend && npx vitest --watch
+
+# Coverage (vitest)
+cd frontend && npx vitest --coverage
 ```
 
----
+## Test File Organization
 
-## Tatsächliche Test-Dateien
+**Location:**
+- Unit test co-located with source: `src/App.test.tsx` alongside `src/App.tsx`
+- E2E tests in dedicated directory: `frontend/cypress/e2e/`
 
-### Einzige Unit-Test-Datei
+**Naming:**
+- Unit: `[ComponentName].test.tsx`
+- E2E: `[name].cy.ts`
 
-`frontend/src/App.test.tsx` — Scaffold, nicht produktiv:
+**Current state:**
+```
+frontend/
+  src/
+    App.test.tsx           # Only existing unit test
+    setupTests.ts          # Test setup (matchMedia mock)
+  cypress/
+    e2e/
+      test.cy.ts           # Single placeholder E2E test
+```
 
+## Test Structure
+
+**Vitest setup file** (`src/setupTests.ts`):
+```typescript
+import '@testing-library/jest-dom/extend-expect';
+
+// Required mock for Ionic (uses matchMedia internally)
+window.matchMedia = window.matchMedia || function() {
+  return {
+    matches: false,
+    addListener: function() {},
+    removeListener: function() {}
+  };
+};
+```
+
+**Only existing unit test** (`src/App.test.tsx`):
 ```typescript
 import React from 'react';
 import { render } from '@testing-library/react';
@@ -56,126 +83,132 @@ test('renders without crashing', () => {
 });
 ```
 
-### Einzige E2E-Test-Datei
-
-`frontend/cypress/e2e/test.cy.ts` — Scaffold, inhaltlich falsch (testet "Tab 1 page", das im Projekt nicht existiert):
-
+**Only existing E2E test** (`cypress/e2e/test.cy.ts`):
 ```typescript
 describe('My First Test', () => {
   it('Visits the app root url', () => {
     cy.visit('/')
-    cy.contains('ion-content', 'Tab 1 page')  // Würde fehlschlagen!
+    cy.contains('ion-content', 'Tab 1 page')
   })
 })
 ```
+Note: This E2E test is a stale placeholder — it checks for `'Tab 1 page'` which no longer exists in the app.
 
----
+## Vitest Configuration
 
-## Test-Infrastruktur-Dateien
-
-**Vorhanden, aber ungenutzt:**
-- `frontend/src/setupTests.ts` — matchMedia Mock
-- `frontend/cypress/support/commands.ts` — Cypress Custom Commands (leer)
-- `frontend/cypress/support/e2e.ts` — E2E Support
-- `frontend/cypress/fixtures/` — Fixtures-Verzeichnis (leer)
-
-**Installierte aber ungenutzte Test-Packages:**
-- `@testing-library/react` ^16.2.0
-- `@testing-library/user-event` ^14.4.3
-- `@testing-library/jest-dom` ^5.16.5
-- `vitest` ^4.1.0
-- `cypress` ^13.5.0
-- `jsdom` ^29.0.0
-
----
-
-## Coverage
-
-**Anforderungen:** Keine Enforcement.
-
-**Status:** Keine Coverage-Daten vorhanden (keine Tests laufen).
-
----
-
-## Wo Tests sinnvoll wären
-
-Basierend auf der Codeanalyse gibt es mehrere untestete kritische Bereiche:
-
-**`frontend/src/utils/helpers.ts`** — Pure Funktionen, gut testbar:
-- `calculateBadgeProgress(konfi, badge)` — Komplexe Logik für Badge-Fortschritt
-- `calculateWeekStreak(activities)` — Streak-Berechnung
-- `filterBySearchTerm()`, `filterByJahrgang()`, `sortByDate()` — Filter-Utilities
-
-**`frontend/src/utils/dateUtils.ts`** — Pure Funktionen:
-- `getYearWeek()`, `formatDate()`, `getRelativeTime()`
-
-**`frontend/src/services/api.ts`** — Interceptor-Logik:
-- 401-Redirect-Verhalten
-- Rate-Limit-Event-Dispatch
-
-**Backend-Routes** — Integration Tests mit Test-DB:
-- `backend/routes/activities.js` — RBAC-Checks, Punkte-Vergabe
-- `backend/routes/auth.js` — Login, Rate-Limiting, Password-Reset
-
----
-
-## Mocking-Ansatz (wenn Tests geschrieben werden)
-
-**Für Vitest:**
 ```typescript
-// API mocken
-vi.mock('../services/api', () => ({
-  default: {
-    get: vi.fn(),
-    post: vi.fn(),
-  }
-}));
+// frontend/vite.config.ts
+test: {
+  globals: true,          // No explicit import of describe/test/expect needed
+  environment: 'jsdom',   // Browser-like DOM environment
+  setupFiles: './src/setupTests.ts',
+}
+```
 
-// AppContext mocken
+## Mocking
+
+**Framework:** Vitest built-in mocking (`vi.mock`, `vi.fn`)
+
+**Required mocks for Ionic components:**
+- `window.matchMedia` — already in `setupTests.ts`
+- Capacitor plugins (`@capacitor/preferences`, `@capacitor/network`, etc.) — not yet mocked
+
+**No established mocking patterns exist** beyond the matchMedia stub. Any new tests will need to mock:
+- `src/services/api.ts` (axios instance)
+- `src/services/tokenStore.ts` (Capacitor Preferences)
+- `src/services/networkMonitor.ts`
+- `src/contexts/AppContext.tsx` (React context)
+
+## Test Coverage
+
+**Requirements:** None enforced — no coverage threshold configured
+
+**Current coverage:** Near zero — only `App.test.tsx` exists for the entire frontend codebase (~42,000 lines of TSX/TS)
+
+## Test Types
+
+**Unit Tests:**
+- Framework: Vitest + @testing-library/react
+- Scope: Component rendering, hook behavior
+- Current state: 1 smoke test only
+
+**Integration Tests:**
+- No integration tests exist
+
+**E2E Tests:**
+- Framework: Cypress 13
+- Base URL: `http://localhost:5173`
+- Current state: 1 stale placeholder test
+
+**Backend Tests:**
+- None — test script explicitly errors out
+
+## What Would Need Mocking for Real Tests
+
+**For testing any page component:**
+```typescript
+// Mock AppContext
 vi.mock('../contexts/AppContext', () => ({
   useApp: () => ({
-    user: { id: 1, type: 'admin' },
+    user: { id: 1, type: 'admin', display_name: 'Test Admin' },
+    isOnline: true,
     setError: vi.fn(),
     setSuccess: vi.fn(),
   })
 }));
-```
 
-**matchMedia** ist bereits in `setupTests.ts` gemockt.
+// Mock API
+vi.mock('../services/api', () => ({
+  default: {
+    get: vi.fn().mockResolvedValue({ data: [] }),
+    post: vi.fn().mockResolvedValue({ data: {} }),
+  }
+}));
 
-**Ionic-Komponenten** — Bei Bedarf mocken:
-```typescript
-vi.mock('@ionic/react', () => ({
-  IonPage: ({ children }) => <div>{children}</div>,
-  // ...
+// Mock offlineCache (requires Capacitor Preferences)
+vi.mock('../services/offlineCache', () => ({
+  offlineCache: {
+    get: vi.fn().mockResolvedValue(null),
+    set: vi.fn(),
+    isStale: vi.fn().mockReturnValue(false),
+  },
+  CACHE_TTL: { KONFIS: 300000 }
 }));
 ```
 
+## Coverage Gaps
+
+**Entire codebase is untested.** High-risk areas with no test coverage:
+
+**`src/hooks/useOfflineQuery.ts`:**
+- Race-condition logic (key change during fetch)
+- Stale-while-revalidate flow
+- Offline fallback behavior
+
+**`src/services/api.ts`:**
+- Token refresh logic (parallel request queuing)
+- 429 rate-limit event dispatch
+- `auth:relogin-required` event dispatch on refresh failure
+
+**`src/services/writeQueue.ts`:**
+- FIFO queue persistence
+- Flush/retry logic
+- Offline queue accumulation
+
+**`src/services/tokenStore.ts`:**
+- Async init from Preferences
+- Memory-sync pattern for synchronous getters
+
+**`src/hooks/useActionGuard.ts`:**
+- Double-submit prevention
+- Concurrent guard throws
+
+**Backend routes (`backend/routes/*.js`):**
+- All 18 route files have zero test coverage
+- SQL query correctness
+- RBAC permission enforcement
+- Input validation via express-validator
+
 ---
 
-## Empfohlene Test-Struktur
-
-**Wenn neue Tests geschrieben werden sollen:**
-
-Unit Tests co-located mit Quellcode:
-```
-src/utils/helpers.test.ts
-src/utils/dateUtils.test.ts
-src/services/api.test.ts
-```
-
-Komponenten-Tests:
-```
-src/components/shared/SectionHeader.test.tsx
-src/components/shared/ListSection.test.tsx
-```
-
-E2E-Tests in:
-```
-frontend/cypress/e2e/auth.cy.ts
-frontend/cypress/e2e/konfi-dashboard.cy.ts
-```
-
----
-
-*Testing analysis: 2026-03-20*
+*Testing analysis: 2026-03-22*

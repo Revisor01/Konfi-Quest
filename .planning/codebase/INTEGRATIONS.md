@@ -1,137 +1,155 @@
 # External Integrations
 
-**Analysis Date:** 2026-03-20
+**Analysis Date:** 2026-03-22
 
 ## APIs & External Services
 
 **Push Notifications:**
-- Firebase Cloud Messaging (FCM) / APNs — native Push-Benachrichtigungen für iOS und Android
-  - SDK/Client: `firebase-admin` 13.7 (Backend), `@capacitor/push-notifications` 7.0 (Frontend)
-  - Konfiguration: Service-Account-Datei `backend/push/firebase-service-account.json` oder Env-Var `FIREBASE_SERVICE_ACCOUNT`
-  - Implementierung: `backend/push/firebase.js` (Initialisierung + Versand), `backend/services/pushService.js` (20 Push-Types)
-  - Frontend-Registrierung: `frontend/src/contexts/AppContext.tsx` (FCM-Token-Empfang via Capacitor + Senden an `/api/notifications/device-token`)
-  - Hintergrund-Service: `backend/services/backgroundService.js` (Badge-Updates alle 5 Minuten, Event-Erinnerungen)
+- Firebase Cloud Messaging (FCM) - Push Notifications für iOS und Android
+  - SDK/Client: `firebase-admin` 13.7.0 (Backend)
+  - Client-Side: `@capacitor/push-notifications` 7.0.6 (Frontend)
+  - Implementation: `backend/push/firebase.js` — sendet Alert-Pushes und Silent Pushes (Badge-Updates)
+  - Auth: Service Account JSON via `backend/push/firebase-service-account.json` (bevorzugt) oder `FIREBASE_SERVICE_ACCOUNT` Env-Variable
+  - Notification Types: chat, badge_update, activity_assigned, badge_earned, bonus_points, event_registered, level_up, event_reminder u.v.m. — vollständige Liste in `backend/services/pushService.js`
 
-**E-Mail (SMTP):**
-- Eigener SMTP-Server auf `server.godsapp.de` (Port 465, SSL)
-  - SDK/Client: `nodemailer` 8.0
-  - Auth: Env-Vars `SMTP_USER`, `SMTP_PASS` (Default-Absender: `team@konfi-quest.de`)
-  - Implementierung: `backend/services/emailService.js` (gecachter Transporter), eingebunden in `backend/server.js`
-  - Verwendung: Passwort-Reset, Einladungen, Konfi-Registrierungsbestätigung
+**App Badge:**
+- `@capawesome/capacitor-badge` 7.0.1 - Zeigt App-Icon-Badge auf iOS/Android
+  - Config: `frontend/capacitor.config.ts` (persist: true, autoClear: false)
+
+**File Viewing:**
+- `@capacitor/file-viewer` 1.0.7 + `@capacitor-community/file-opener` 7.0.1 - Öffnet Dateien nativ auf dem Gerät
+- `@capacitor/share` 7.0.4 - Native Share-Sheet
 
 ## Data Storage
 
 **Databases:**
-- PostgreSQL 15 (Docker-Container: `postgres:15-alpine`)
-  - Connection: Env-Var `DATABASE_URL` (Format: `postgresql://user:pass@host:5432/db`) oder individuelle `PG*`-Vars
-  - Client: `pg` 8.16 (Pool-basiert), keine ORM — reines SQL
-  - Pool-Konfiguration: `backend/database.js`
-  - Schema-Init: `init-scripts/01-create-schema.sql`
-  - Migrations: `backend/migrations/` (manuelle SQL-Dateien: `add_invite_codes.sql`, `add_push_foundation.sql`)
-  - Daten-Volume: `/opt/Konfi-Quest/postgres` (Produktionsserver)
+- PostgreSQL 15-alpine (Primary Database)
+  - Connection: `DATABASE_URL` Env-Variable (Connection String) oder `PGHOST`/`PGUSER`/`PGDATABASE`/`PGPASSWORD`/`PGPORT`
+  - Client: `pg` 8.16.3 mit Connection Pool (`backend/database.js`)
+  - Container: `konfi-quest-db` Docker-Container
+  - Data: `/opt/Konfi-Quest/postgres` (Server-Volume)
+  - Init-Scripts: `init-scripts/` (SQL-Schemas beim ersten Start)
+  - Migrations: `backend/migrations/*.sql` (manuell anzuwenden)
+  - Tabellen: users, konfi_profiles, konfi_activities, bonus_points, konfi_badges, event_bookings, chat_rooms, chat_messages, chat_participants, push_tokens, organizations, roles, jahrgaenge, activities, badges, events, levels, materials, refresh_tokens
 
-**SQLite (Legacy):**
-- Noch als Abhängigkeit (`sqlite3` 5.1) im `backend/package.json`, aber nur für `backend/backup_sqlite/` — nicht im aktiven Betrieb
+- SQLite (Legacy/Backup, nicht aktiv)
+  - Nur noch Backup-Code in `backend/backup_sqlite/`
+  - Abhängigkeit `sqlite3` 5.1.6 noch in `backend/package.json` vorhanden
 
 **File Storage:**
-- Lokales Dateisystem (kein S3 / Cloud-Storage)
-  - Upload-Verzeichnis: `backend/uploads/` (Produktions-Volume: `/opt/Konfi-Quest/uploads`)
-  - Unterverzeichnisse: `uploads/requests/` (Aktivitätsanträge), `uploads/chat/` (Chat-Anhänge), `uploads/material/` (Kursmaterial)
-  - Dateinamen: MD5-Hash-basiert (verschleiert), keine Original-Dateinamen
-  - Limits: Chat/Requests 5 MB, Material 20 MB
-  - Zugriff: Ausschließlich über geschützte API-Endpoints (kein statisches Serving)
+- Lokales Filesystem auf dem Server
+  - Mount: `/opt/Konfi-Quest/uploads:/app/uploads` (Docker Volume)
+  - Unterverzeichnisse: `uploads/requests/`, `uploads/chat/`, `uploads/material/`
+  - Dateinamen: SHA256-Hash aus Timestamp + Originalname (kein direkter URL-Zugriff)
+  - Kein statisches Serving — alle Dateien nur über geschützte API-Endpunkte abrufbar
 
 **Caching:**
-- Kein dedizierter Cache-Dienst (kein Redis/Memcached)
-- In-Memory-Caching: Nodemailer-Transporter (`emailService.js`), Firebase-App-Instanz (`firebase.js`)
+- Frontend: In-Memory SWR-Cache (`frontend/src/services/offlineCache.ts`)
+- Frontend: Persistenter Token-Store via `@capacitor/preferences` (`frontend/src/services/tokenStore.ts`)
+- Keine serverseitige Cache-Schicht (kein Redis etc.)
 
 ## Authentication & Identity
 
 **Auth Provider:**
 - Custom JWT — kein externer Auth-Provider
-  - JWT-Erstellung: `backend/routes/auth.js`
-  - JWT-Verifikation: `backend/middleware/rbac.js` (`verifyTokenRBAC`)
-  - Secret: Env-Var `JWT_SECRET` (PFLICHTFELD)
-  - Token-Speicherung Frontend: `localStorage` (`konfi_token`, `konfi_user`)
-  - RBAC-Rollen: `super_admin` (5), `org_admin` (4), `admin` (3), `teamer` (2), `konfi` (1)
-  - Socket.IO nutzt dasselbe JWT für WebSocket-Authentifizierung (`backend/server.js` Z. 52–68)
+  - Implementation: `backend/middleware/rbac.js` + `backend/routes/auth.js`
+  - Access Token: 15 Minuten Gültigkeit
+  - Refresh Token: 90 Tage, rotierend (`backend/migrations/068_refresh_tokens.sql`)
+  - Soft-Revoke: `token_invalidated_at` in DB — Tokens vor diesem Zeitpunkt werden abgelehnt
+  - RBAC-Rollen: super_admin (5), org_admin (4), admin (3), teamer (2), konfi (1)
+  - Passwort-Hashing: `bcrypt` 5.1.1
+
+**Frontend Token Management:**
+- Synchrone Memory-Getter + asynchrone Preferences-Setter (`frontend/src/services/tokenStore.ts`)
+- Auto-Refresh bei 401 mit Queue-System für parallele Requests (`frontend/src/services/api.ts`)
 
 ## Monitoring & Observability
 
 **Error Tracking:**
-- Keines — kein Sentry, Datadog o.Ä. integriert
+- Keines — kein Sentry, Datadog oder ähnliches integriert
 
 **Logs:**
-- `console.log/warn/error` direkt (kein strukturiertes Logging-Framework)
-- Uptime-Monitoring: Uptime Kuma (`https://uptime.godsapp.de`) — externes Monitoring des Health-Endpoints `GET /api/health`
+- `console.log`/`console.error`/`console.warn` direkt im Backend-Code
+- Healthcheck-Endpoint: `GET /api/health` (für Container-Healthcheck)
+- Backend Dockerfile HEALTHCHECK: `backend/healthcheck.js` alle 30s
 
-**Health Check:**
-- `backend/healthcheck.js` — wird vom Docker-HEALTHCHECK-Befehl alle 30 Sekunden aufgerufen
+**Uptime:**
+- Extern via Uptime Kuma (https://uptime.godsapp.de, nicht im Projekt integriert)
 
 ## CI/CD & Deployment
 
 **Hosting:**
-- Hetzner VPS `server.godsapp.de` (IP: 213.109.162.132)
-- Docker-Compose-Stack (Portainer-verwalteter Stack): `portainer-stack.yml`
-  - Services: `postgres` (intern Port 5432), `backend` (extern 8623:5000), `frontend` (extern 8624:80)
+- Hetzner Server (server.godsapp.de, IP: 213.109.162.132)
+- Docker Container via Portainer Stack
+- Stack-File: `portainer-stack.yml` (Projekt-Root)
 
 **Container Registry:**
-- GitHub Container Registry (GHCR): `ghcr.io/revisor01/konfi-quest-backend:latest`, `ghcr.io/revisor01/konfi-quest-frontend:latest`
+- GitHub Container Registry (ghcr.io/revisor01/)
+  - Backend: `ghcr.io/revisor01/konfi-quest-backend:latest`
+  - Frontend: `ghcr.io/revisor01/konfi-quest-frontend:latest`
 
 **CI Pipeline:**
-- GitHub Actions: `.github/workflows/backend.yml`, `.github/workflows/frontend.yml`
-  - Backend: Automatisch bei Push auf `main` wenn `backend/**` geändert → Docker-Build → GHCR-Push → Portainer-Webhook
-  - Frontend: Nur manuell (`workflow_dispatch`) → Docker-Build → GHCR-Push → Portainer-Webhook
-- Portainer-Webhook: Secret `PORTAINER_WEBHOOK` (GitHub Secrets) — triggert automatisches Re-Deploy
+- Kein CI-System im Repo konfiguriert (kein `.github/workflows/`)
+- Deployment: git push → Portainer zieht automatisch neue Images
 
-**Reverse Proxy:**
-- Apache (KeyHelp) auf Port 443 → Traefik auf `127.0.0.1:8888` → Backend (8623) / Frontend (8624)
-- HTTPS und HSTS: Von Apache/KeyHelp-ACME verwaltet (nicht im App-Code)
+## Real-time Communication
 
-## WebSocket (Echtzeit)
+**WebSocket:**
+- Socket.io 4.7.2 (Server) / socket.io-client 4.8.1 (Frontend)
+- Server: `backend/server.js` — läuft auf demselben HTTP-Server wie REST-API
+- Client: `frontend/src/services/websocket.ts`
+- Auth: JWT-Token im Socket-Handshake (`socket.handshake.auth.token`)
+- Features: Chat-Nachrichten, Typing-Indicator, persönliche User-Rooms für Echtzeit-Benachrichtigungen
+- Transport: WebSocket first, Polling als Fallback
+- Reconnect: 10 Versuche, exponentielles Backoff mit Offline-Sync bei Wiederverbindung
 
-**Server:** Socket.IO 4.7 — eingebettet in Express-HTTP-Server (`backend/server.js`)
-- Authentifizierung: JWT via `socket.handshake.auth.token`
-- Rooms: User-Rooms (`user_{type}_{id}`) für persönliche Benachrichtigungen, Chat-Rooms (`room_{id}`)
-- Events: `joinRoom`, `leaveRoom`, `typing`, `stopTyping`, `userTyping`, `userStoppedTyping`
-- Global exportiert als `global.io` für Nutzung in Route-Handlern
+## E-Mail
 
-**Client:** Socket.IO Client 4.8 — `frontend/src/services/websocket.ts`
-- URL: `https://konfi-quest.de` (hardcodiert)
-- Transports: WebSocket (primär), Polling (Fallback)
-- Reconnection: Bis zu 10 Versuche
+**Provider:**
+- Eigener SMTP-Server (KeyHelp auf server.godsapp.de)
+  - Host: server.godsapp.de / 213.109.162.132
+  - Port: 465 (TLS)
+  - Absender: `noreply@konfi-quest.de` / `team@konfi-quest.de`
+  - Client: Nodemailer 8.0.2 (`backend/services/emailService.js`)
+  - Auth: `SMTP_USER` + `SMTP_PASS` Env-Variablen
+  - TLS: `rejectUnauthorized: false` (Docker-Interna, Zertifikat auf Hostname ausgestellt)
+  - Verwendung: Passwort-Reset, Einladungs-E-Mails via `backend/routes/auth.js`
 
-## QR-Code
+## Background Services
 
-**Generierung:** `qrcode` 1.5 (Frontend) — für Event-Check-In-Codes
-**Scan:** `qr-scanner` 1.4 (Frontend) + `@capacitor/camera` — für nativen QR-Scan
-
-## Environment Configuration
-
-**Pflicht-Env-Vars (Backend):**
-- `JWT_SECRET` — Server startet nicht ohne diesen Wert
-- `DATABASE_URL` — PostgreSQL Connection String
-- `SMTP_USER`, `SMTP_PASS` — E-Mail-Versand
-
-**Optionale Env-Vars (Backend):**
-- `SMTP_HOST` (Default: `213.109.162.132`), `SMTP_PORT` (Default: `465`), `SMTP_SECURE`
-- `CORS_ORIGINS` (Default: `https://konfi-quest.de,https://www.konfi-quest.de`)
-- `PORT` (Default: `5000`)
-- `FIREBASE_SERVICE_ACCOUNT` (alternativ zu `backend/push/firebase-service-account.json`)
-- `NODE_ENV`
-
-**Secrets-Speicherort:**
-- Produktions-Secrets: Im Portainer-Stack (Umgebungsvariablen des Containers)
-- Firebase-Credentials: `backend/push/firebase-service-account.json` (NICHT committen) oder Env-Var
+**Interner Scheduler:**
+- `backend/services/backgroundService.js` — kein externes Cron-System, `setInterval`-basiert
+- Badge-Update: alle 5 Minuten — synct Badge-Counts für alle User mit Push-Tokens
+- Event-Reminder: prüft bevorstehende Events für Push-Benachrichtigungen
+- Pending Events Approval: benachrichtigt Admins über ausstehende Event-Freigaben
+- Token Cleanup: bereinigt abgelaufene Refresh-Tokens aus der DB
+- Wrapped Cron: prüft monatlich ob Wrapped generiert werden soll (`backend/routes/wrapped.js`)
 
 ## Webhooks & Callbacks
 
-**Incoming (von GitHub Actions):**
-- Portainer-Webhook-URL (Secret `PORTAINER_WEBHOOK`) — triggert Stack-Update nach Image-Push
+**Incoming:**
+- Keine externen Webhooks konfiguriert
 
 **Outgoing:**
-- Keine ausgehenden Webhooks an externe Dienste
+- Keine ausgehenden Webhooks
+
+## Environment Configuration
+
+**Pflicht-Env-Variablen (Backend):**
+- `JWT_SECRET` — fehlt → Server-Prozess beendet sich sofort
+- `DATABASE_URL` — PostgreSQL Connection String
+
+**Optionale Env-Variablen (Backend):**
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_SECURE`, `SMTP_FROM`
+- `FIREBASE_SERVICE_ACCOUNT` — JSON-String wenn keine Service-Account-Datei vorhanden
+- `CORS_ORIGINS` — Default: `https://konfi-quest.de,https://www.konfi-quest.de`
+- `PORT` — Default: 5000
+- `NODE_ENV` — production/development
+
+**Secrets Location:**
+- Firebase Service Account: `backend/push/firebase-service-account.json` (nicht im Repo, gitignored)
+- Alle anderen Secrets: Docker Environment Variables in Portainer Stack
 
 ---
 
-*Integrations-Analyse: 2026-03-20*
+*Integration audit: 2026-03-22*
