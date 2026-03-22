@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
 const http = require('http');
@@ -144,7 +145,7 @@ global.io = io;
 const SMTP_CONFIG = {
   host: process.env.SMTP_HOST || '213.109.162.132',
   port: parseInt(process.env.SMTP_PORT || '465'),
-  secure: process.env.SMTP_SECURE === 'true' || true, // true for 465
+  secure: process.env.SMTP_SECURE !== 'false', // true for 465, via ENV steuerbar
   auth: {
     user: process.env.SMTP_USER || 'noreply@konfi-quest.de',
     pass: process.env.SMTP_PASS
@@ -353,21 +354,7 @@ const materialUpload = multer({
   }
 });
 
-// Legacy upload for other parts (deprecated - migrate to specific uploads)
-const upload = multer({ 
-  dest: uploadsDir,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(null, false);
-    }
-  }
-});
-
 // Separate multer config for activity requests (encrypted storage)
-const crypto = require('crypto');
 const requestUpload = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
@@ -466,7 +453,7 @@ const rbacVerifier = verifyTokenRBAC(db);
 const roleHelpers = { requireSuperAdmin, requireOrgAdmin, requireAdmin, requireTeamer };
 
 const badgesRouter = adminBadgesRoutes(db, rbacVerifier, roleHelpers);
-const activitiesRouter = adminActivitiesRoutes(db, rbacVerifier, roleHelpers, badgesRouter.checkAndAwardBadges, upload);
+const activitiesRouter = adminActivitiesRoutes(db, rbacVerifier, roleHelpers, badgesRouter.checkAndAwardBadges);
 
 // ====================================================================
 // ROUTE MOUNTING
@@ -477,7 +464,7 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes(db, verifyToken, transporter, SMTP_CONFIG, { authLimiter, registerLimiter }));
-app.use('/api/konfi', konfiRoutes(db, { verifyTokenRBAC: rbacVerifier }, upload, requestUpload));
+app.use('/api/konfi', konfiRoutes(db, { verifyTokenRBAC: rbacVerifier }, requestUpload));
 
 // Chat: Nachrichten-Endpunkt mit eigenem Rate-Limiter, Upload-Endpunkt ebenfalls
 app.post('/api/chat/rooms/:roomId/messages', chatMessageLimiter, uploadLimiter);

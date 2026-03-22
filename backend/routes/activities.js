@@ -8,7 +8,7 @@ const liveUpdate = require('../utils/liveUpdate');
 
 // Aktivitäten: Teamer darf ansehen und Punkte vergeben, Admin darf bearbeiten
 // Requests: NUR Admin (Datenschutz!)
-module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwardBadges, upload) => {
+module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwardBadges) => {
 
   // Validierungsregeln
   const validateCreateActivity = [

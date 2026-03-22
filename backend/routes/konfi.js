@@ -13,7 +13,7 @@ if (!JWT_SECRET) {
 }
 
 // Konfi-specific routes
-module.exports = (db, rbacMiddleware, upload, requestUpload) => {
+module.exports = (db, rbacMiddleware, requestUpload) => {
   const { verifyTokenRBAC } = rbacMiddleware;
 
   // Validierungsregeln
