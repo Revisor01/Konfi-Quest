@@ -289,7 +289,7 @@ Plans:
   6. Teamer Konfi-History zeigt Card "Dein Konfi-Wrapped" wenn alter Snapshot existiert
 **Plans**: 3 plans
 Plans:
-- [ ] 80-01-PLAN.md -- Backend-Aggregation erweitern + History-Endpoint + TypeScript-Interfaces
+- [x] 80-01-PLAN.md -- Backend-Aggregation erweitern + History-Endpoint + TypeScript-Interfaces
 - [ ] 80-02-PLAN.md -- Neue Slides (Kategorie, Gottesdienst, UeberDasZiel) + Individualisierung (Reihenfolge, Formulierungen)
 - [ ] 80-03-PLAN.md -- Wiederansicht (Meine Wrappeds) + Konfi-History Wrapped Card
 
@@ -305,4 +305,4 @@ Phases execute in numeric order: 75 -> 76 -> 77 -> 78 -> 79 -> 80
 | 77. Teamer-Slides | 1/1 | Complete    | 2026-03-22 |
 | 78. Share-Funktion | 1/1 | Complete    | 2026-03-22 |
 | 79. Dashboard-Integration + Freischaltung | 1/1 | Complete    | 2026-03-22 |
-| 80. Wrapped Persistenz + Individualisierung | 0/3 | Planned    | - |
+| 80. Wrapped Persistenz + Individualisierung | 1/3 | In Progress|  |
