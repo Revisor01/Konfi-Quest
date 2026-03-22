@@ -46,8 +46,27 @@ export interface KonfiZeitraumSlide {
   ende: string;
 }
 
+export interface KonfiGottesdienstSlide {
+  count: number;
+}
+
+export interface KonfiKategorieSlide {
+  verteilung: Array<{ kategorie: string; count: number }>;
+  top_kategorie: string | null;
+}
+
+export type HighlightType =
+  | 'events_held'
+  | 'badge_collector'
+  | 'chat_champion'
+  | 'gottesdienst_treue'
+  | 'gemeinde_aktiv'
+  | 'ueber_das_ziel';
+
 export interface KonfiWrappedData {
   version: number;
+  highlight_type: HighlightType;
+  formulierung_seed: number;
   slides: {
     punkte: KonfiPunkteSlide;
     events: KonfiEventsSlide;
@@ -56,6 +75,8 @@ export interface KonfiWrappedData {
     chat: KonfiChatSlide;
     endspurt: KonfiEndspurtSlide;
     zeitraum: KonfiZeitraumSlide;
+    gottesdienst: KonfiGottesdienstSlide;
+    kategorie: KonfiKategorieSlide;
   };
 }
 
@@ -109,6 +130,16 @@ export interface WrappedResponse {
   computed_at: string;
   year: number;
   wrapped_type: 'konfi' | 'teamer';
+}
+
+// --- History ---
+
+export interface WrappedHistoryEntry {
+  id: number;
+  wrapped_type: 'konfi' | 'teamer';
+  year: number;
+  data: KonfiWrappedData | TeamerWrappedData;
+  computed_at: string;
 }
 
 // --- Slide-Props Basis ---
