@@ -9,8 +9,8 @@ Requirements fuer Milestone v2.4 Codebase-Cleanup.
 
 ### React Router Migration (RR)
 
-- [ ] **RR-01**: React Router v5 durch Ionic-kompatible v6-Version ersetzen (useHistory → useNavigate, Route component → Route element)
-- [ ] **RR-02**: Alle Routing-Patterns in App.tsx, Konfi-, Teamer- und Admin-Bereichen auf v6-Syntax migrieren
+- [ ] **RR-01**: Alle useHistory-Aufrufe durch useIonRouter ersetzen (Ionic 8 unterstuetzt kein React Router v6, useIonRouter ist der offizielle Ersatz)
+- [ ] **RR-02**: Alle history.push/replace/goBack in Konfi-, Teamer- und Admin-Bereichen auf useIonRouter.push/goBack migrieren
 - [ ] **RR-03**: App funktioniert nach Migration identisch (keine gebrochenen Navigationen)
 
 ### Inline-Migrationen (MIG)
