@@ -1,11 +1,12 @@
 const PushService = require('./pushService');
+const cron = require('node-cron');
 
 class BackgroundService {
   static badgeUpdateInterval = null;
   static eventReminderInterval = null;
   static pendingEventsInterval = null;
   static tokenCleanupInterval = null;
-  static wrappedCronInterval = null;
+  static wrappedCronTask = null;
   static wrappedRouter = null;
 
   /**
@@ -407,30 +408,33 @@ class BackgroundService {
    * - Teamer-Wrapped: Am 1. Dezember fuer alle Organisationen generieren
    */
   static startWrappedCron(db) {
-    if (this.wrappedCronInterval) {
+    if (this.wrappedCronTask) {
       return;
     }
 
-    // Sofort einmal pruefen
-    this.checkWrappedTriggers(db);
+    console.log('Wrapped-Cron: Starte node-cron (0 6 1 * * -- jeden 1. des Monats um 06:00 Uhr)');
 
-    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-    this.wrappedCronInterval = setInterval(async () => {
+    // '0 6 1 * *' = Am 1. jeden Monats um 06:00 Uhr
+    // node-cron berechnet nach Neustart den naechsten Trigger korrekt
+    this.wrappedCronTask = cron.schedule('0 6 1 * *', async () => {
+      console.log('Wrapped-Cron: Ausfuehrung gestartet (1. des Monats)');
       try {
         await this.checkWrappedTriggers(db);
       } catch (error) {
         console.error('Wrapped-Cron service failed:', error);
       }
-    }, TWENTY_FOUR_HOURS);
+    }, {
+      timezone: 'Europe/Berlin'
+    });
   }
 
   /**
    * Stoppt den Wrapped-Cron Service
    */
   static stopWrappedCron() {
-    if (this.wrappedCronInterval) {
-      clearInterval(this.wrappedCronInterval);
-      this.wrappedCronInterval = null;
+    if (this.wrappedCronTask) {
+      this.wrappedCronTask.stop();
+      this.wrappedCronTask = null;
     }
   }
 
