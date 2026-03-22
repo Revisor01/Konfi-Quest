@@ -4,6 +4,7 @@ import { closeOutline, downloadOutline, shareOutline, documentOutline } from 'io
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
+import { FileOpener } from '@capacitor-community/file-opener';
 import api from '../../services/api';
 import './FileViewerModal.css';
 
@@ -43,11 +44,46 @@ interface FileViewerModalProps {
 
 // --- Hilfsfunktionen ---
 
-const getFileCategory = (mimeType: string): 'image' | 'pdf' | 'video' | 'fallback' => {
+const getFileCategory = (mimeType: string): 'image' | 'pdf' | 'video' | 'document' | 'fallback' => {
   if (mimeType.startsWith('image/')) return 'image';
   if (mimeType === 'application/pdf') return 'pdf';
   if (mimeType.startsWith('video/')) return 'video';
+  if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    || mimeType === 'application/msword'
+    || mimeType === 'application/vnd.oasis.opendocument.text') return 'document';
   return 'fallback';
+};
+
+const openFileNatively = async (resolvedUrl: string, fileName: string, mimeType: string): Promise<boolean> => {
+  if (!Capacitor.isNativePlatform()) return false;
+  try {
+    const response = await fetch(resolvedUrl);
+    const blob = await response.blob();
+    const reader = new FileReader();
+    return new Promise<boolean>((resolve) => {
+      reader.onload = async () => {
+        try {
+          const base64 = (reader.result as string).split(',')[1];
+          const result = await Filesystem.writeFile({
+            path: fileName,
+            data: base64,
+            directory: Directory.Cache
+          });
+          await FileOpener.open({
+            filePath: result.uri,
+            contentType: mimeType
+          });
+          resolve(true);
+        } catch {
+          resolve(false);
+        }
+      };
+      reader.onerror = () => resolve(false);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return false;
+  }
 };
 
 const getDistance = (t1: React.Touch, t2: React.Touch): number => {
@@ -80,6 +116,7 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
   const [isDragging, setIsDragging] = useState(false);
   const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
   const [urlLoading, setUrlLoading] = useState(false);
+  const [nativeOpening, setNativeOpening] = useState(false);
 
   // Refs für Touch-Handling
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -97,6 +134,7 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
   const mousePanStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const currentFile = files[currentIndex];
+  const isNative = Capacitor.isNativePlatform();
 
   // URL-Aufloesung: API-Pfade per Auth-fetch in Blob-URL wandeln
   useEffect(() => {
@@ -135,6 +173,22 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
     setScale(1);
     setPosition({ x: 0, y: 0 });
   }, [currentIndex]);
+
+  // Automatisch nativ öffnen (PDF/DOCX auf iOS/Android)
+  useEffect(() => {
+    if (!resolvedUrl || !currentFile || !isNative) return;
+    const cat = getFileCategory(currentFile.mimeType);
+    if (cat !== 'pdf' && cat !== 'document') return;
+
+    setNativeOpening(true);
+    openFileNatively(resolvedUrl, currentFile.fileName, currentFile.mimeType).then((success) => {
+      setNativeOpening(false);
+      if (success) {
+        onClose();
+      }
+      // Bei Fehler: Fallback zum bestehenden Rendering (iframe/Download)
+    });
+  }, [resolvedUrl, currentFile, isNative]);
 
   // --- Navigation ---
   const goToNext = useCallback(() => {
@@ -362,7 +416,6 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
   if (!currentFile) return null;
 
   const category = getFileCategory(currentFile.mimeType);
-  const isNative = Capacitor.isNativePlatform();
 
   const renderContent = () => {
     // Ladeindikator für API-Pfade
@@ -402,6 +455,31 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
         );
 
       case 'pdf':
+        if (isNative) {
+          return (
+            <div className="file-viewer-fallback">
+              <IonIcon icon={documentOutline} className="file-viewer-fallback-icon" />
+              <p className="file-viewer-fallback-name">{currentFile.fileName}</p>
+              <p className="file-viewer-fallback-type">
+                {nativeOpening ? 'Wird geöffnet...' : 'Tippe zum erneut Öffnen'}
+              </p>
+              {!nativeOpening && (
+                <button className="file-viewer-fallback-btn" onClick={() => {
+                  if (resolvedUrl) {
+                    setNativeOpening(true);
+                    openFileNatively(resolvedUrl, currentFile.fileName, currentFile.mimeType).then((success) => {
+                      setNativeOpening(false);
+                      if (success) onClose();
+                    });
+                  }
+                }}>
+                  <IonIcon icon={documentOutline} />
+                  Nativ öffnen
+                </button>
+              )}
+            </div>
+          );
+        }
         return (
           <iframe
             src={resolvedUrl}
@@ -409,6 +487,44 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
             className="file-viewer-pdf"
             allow="fullscreen"
           />
+        );
+
+      case 'document':
+        if (isNative) {
+          return (
+            <div className="file-viewer-fallback">
+              <IonIcon icon={documentOutline} className="file-viewer-fallback-icon" />
+              <p className="file-viewer-fallback-name">{currentFile.fileName}</p>
+              <p className="file-viewer-fallback-type">
+                {nativeOpening ? 'Wird geöffnet...' : 'Tippe zum erneut Öffnen'}
+              </p>
+              {!nativeOpening && (
+                <button className="file-viewer-fallback-btn" onClick={() => {
+                  if (resolvedUrl) {
+                    setNativeOpening(true);
+                    openFileNatively(resolvedUrl, currentFile.fileName, currentFile.mimeType).then((success) => {
+                      setNativeOpening(false);
+                      if (success) onClose();
+                    });
+                  }
+                }}>
+                  <IonIcon icon={documentOutline} />
+                  Nativ öffnen
+                </button>
+              )}
+            </div>
+          );
+        }
+        return (
+          <div className="file-viewer-fallback">
+            <IonIcon icon={documentOutline} className="file-viewer-fallback-icon" />
+            <p className="file-viewer-fallback-name">{currentFile.fileName}</p>
+            <p className="file-viewer-fallback-type">{currentFile.mimeType}</p>
+            <button className="file-viewer-fallback-btn" onClick={handleDownload}>
+              <IonIcon icon={downloadOutline} />
+              Herunterladen
+            </button>
+          </div>
         );
 
       case 'video':
