@@ -366,7 +366,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         FROM users u
         JOIN konfi_profiles kp ON u.id = kp.user_id
         JOIN roles r ON u.role_id = r.id
-        LEFT JOIN activity_requests ar ON u.id = ar.konfi_id AND ar.organization_id = $2
+        LEFT JOIN activity_requests ar ON u.id = ar.user_id AND ar.organization_id = $2
         LEFT JOIN (
           SELECT user_id, COUNT(*) as badge_count
           FROM user_badges
@@ -587,7 +587,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         SELECT ar.*, a.name as activity_name, a.points as activity_points, a.type as activity_type
         FROM activity_requests ar
         LEFT JOIN activities a ON ar.activity_id = a.id
-        WHERE ar.konfi_id = $1 AND ar.organization_id = $2
+        WHERE ar.user_id = $1 AND ar.organization_id = $2
         ORDER BY ar.created_at DESC
       `;
       const { rows: requests } = await db.query(query, [konfiId, req.user.organization_id]);
@@ -615,7 +615,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       // Idempotency: Prüfen ob Antrag mit dieser client_id bereits existiert
       if (client_id) {
         const { rows: [existing] } = await db.query(
-          'SELECT id, konfi_id, activity_id, requested_date, comment, photo_filename, status, organization_id, client_id, created_at, updated_at FROM activity_requests WHERE client_id = $1', [client_id]
+          'SELECT id, user_id, activity_id, requested_date, comment, photo_filename, status, organization_id, client_id, created_at, updated_at FROM activity_requests WHERE client_id = $1', [client_id]
         );
         if (existing) {
           return res.status(200).json(existing);
@@ -635,7 +635,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       }
 
       const insertQuery = `
-        INSERT INTO activity_requests (konfi_id, activity_id, requested_date, comment, photo_filename, status, organization_id, client_id)
+        INSERT INTO activity_requests (user_id, activity_id, requested_date, comment, photo_filename, status, organization_id, client_id)
         VALUES ($1, $2, $3, $4, $5, 'pending', $6, $7)
         RETURNING id
       `;
@@ -724,7 +724,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       if (err.code === '23505' && err.detail?.includes('client_id')) {
         try {
           const { rows: [existing] } = await db.query(
-            'SELECT id, konfi_id, activity_id, requested_date, comment, photo_filename, status, organization_id, client_id, created_at, updated_at FROM activity_requests WHERE client_id = $1', [req.body.client_id]
+            'SELECT id, user_id, activity_id, requested_date, comment, photo_filename, status, organization_id, client_id, created_at, updated_at FROM activity_requests WHERE client_id = $1', [req.body.client_id]
           );
           if (existing) return res.status(200).json(existing);
         } catch (lookupErr) {
@@ -764,7 +764,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       
       // Get request with photo filename
       const { rows: [request] } = await db.query(
-        'SELECT photo_filename, konfi_id FROM activity_requests WHERE id = $1 AND organization_id = $2',
+        'SELECT photo_filename, user_id FROM activity_requests WHERE id = $1 AND organization_id = $2',
         [requestId, req.user.organization_id]
       );
       
@@ -778,7 +778,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       
       // Check permissions: Admin can see all, Konfi can only see own
       const isAdmin = req.user.type === 'admin';
-      const isOwnRequest = req.user.type === 'konfi' && req.user.id === request.konfi_id;
+      const isOwnRequest = req.user.type === 'konfi' && req.user.id === request.user_id;
       
       if (!isAdmin && !isOwnRequest) {
         return res.status(403).json({ error: 'Zugriff verweigert' });
@@ -813,7 +813,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       
       // Check if request exists and belongs to this konfi and is pending
       const { rows: [request] } = await db.query(
-        "SELECT id, konfi_id, activity_id, requested_date, comment, photo_filename, status, organization_id, client_id, created_at, updated_at FROM activity_requests WHERE id = $1 AND konfi_id = $2 AND organization_id = $3",
+        "SELECT id, user_id, activity_id, requested_date, comment, photo_filename, status, organization_id, client_id, created_at, updated_at FROM activity_requests WHERE id = $1 AND user_id = $2 AND organization_id = $3",
         [requestId, konfiId, req.user.organization_id]
       );
       
@@ -827,7 +827,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       
       // Delete the request
       await db.query(
-        "DELETE FROM activity_requests WHERE id = $1 AND konfi_id = $2 AND organization_id = $3",
+        "DELETE FROM activity_requests WHERE id = $1 AND user_id = $2 AND organization_id = $3",
         [requestId, konfiId, req.user.organization_id]
       );
       

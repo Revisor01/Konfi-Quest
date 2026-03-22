@@ -565,8 +565,8 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
         activities: "SELECT COUNT(*)::int as count FROM activities WHERE organization_id = $1",
         events: "SELECT COUNT(*)::int as count FROM events WHERE organization_id = $1",
         badges: "SELECT COUNT(*)::int as count FROM custom_badges WHERE organization_id = $1",
-        requests: "SELECT COUNT(*)::int as count FROM activity_requests ar JOIN konfi_profiles kp ON ar.konfi_id = kp.user_id WHERE kp.organization_id = $1",
-        pending_requests: "SELECT COUNT(*)::int as count FROM activity_requests ar JOIN konfi_profiles kp ON ar.konfi_id = kp.user_id WHERE kp.organization_id = $1 AND ar.status = 'pending'"
+        requests: "SELECT COUNT(*)::int as count FROM activity_requests ar JOIN konfi_profiles kp ON ar.user_id = kp.user_id WHERE kp.organization_id = $1",
+        pending_requests: "SELECT COUNT(*)::int as count FROM activity_requests ar JOIN konfi_profiles kp ON ar.user_id = kp.user_id WHERE kp.organization_id = $1 AND ar.status = 'pending'"
       };
       
       // Execute all queries in parallel

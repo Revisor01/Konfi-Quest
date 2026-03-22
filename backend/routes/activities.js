@@ -240,7 +240,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         SELECT ar.*, u_konfi.display_name as konfi_name, a.name as activity_name, a.points as activity_points, a.type as activity_type,
                u_approved.display_name as approved_by_name
         FROM activity_requests ar
-        JOIN users u_konfi ON ar.konfi_id = u_konfi.id
+        JOIN users u_konfi ON ar.user_id = u_konfi.id
         JOIN activities a ON ar.activity_id = a.id
         LEFT JOIN users u_approved ON ar.approved_by = u_approved.id
         WHERE a.organization_id = $1
@@ -266,7 +266,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         SELECT ar.*, a.points, a.type, a.name as activity_name, u.display_name as konfi_name
         FROM activity_requests ar
         JOIN activities a ON ar.activity_id = a.id
-        JOIN users u ON ar.konfi_id = u.id
+        JOIN users u ON ar.user_id = u.id
         WHERE ar.id = $1 AND a.organization_id = $2
       `;
       const { rows: [request] } = await db.query(getRequestQuery, [requestId, req.user.organization_id]);
@@ -284,7 +284,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
           // Punkte abziehen (mit GREATEST um negative Werte zu verhindern)
           const pointField = getPointField(request.type);
-          await client.query(`UPDATE konfi_profiles SET ${pointField} = GREATEST(0, ${pointField} - $1) WHERE user_id = $2`, [request.points, request.konfi_id]);
+          await client.query(`UPDATE konfi_profiles SET ${pointField} = GREATEST(0, ${pointField} - $1) WHERE user_id = $2`, [request.points, request.user_id]);
 
           // konfi_activity Eintrag löschen
           await client.query(
@@ -295,7 +295,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                ORDER BY completed_date DESC, id DESC
                LIMIT 1
              )`,
-            [request.konfi_id, request.activity_id]
+            [request.user_id, request.activity_id]
           );
 
         }
@@ -334,7 +334,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         SELECT ar.*, a.points, a.type, a.name as activity_name, u.display_name as konfi_name
         FROM activity_requests ar
         JOIN activities a ON ar.activity_id = a.id
-        JOIN users u ON ar.konfi_id = u.id
+        JOIN users u ON ar.user_id = u.id
         WHERE ar.id = $1 AND a.organization_id = $2
       `;
       const { rows: [request] } = await db.query(getRequestQuery, [requestId, req.user.organization_id]);
@@ -347,7 +347,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
       // Guard: Bei Genehmigung prüfen ob Punkte-Typ aktiviert ist
       if (status === 'approved') {
-        const { enabled, error } = await checkPointTypeEnabled(db, request.konfi_id, request.type);
+        const { enabled, error } = await checkPointTypeEnabled(db, request.user_id, request.type);
         if (!enabled) return res.status(400).json({ error });
       }
 
@@ -361,10 +361,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         await client.query(updateRequestQuery, [status, admin_comment, req.user.id, requestId]);
 
         if (status === 'approved') {
-          await client.query("INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5)", [request.konfi_id, request.activity_id, req.user.id, request.requested_date, req.user.organization_id]);
+          await client.query("INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5)", [request.user_id, request.activity_id, req.user.id, request.requested_date, req.user.organization_id]);
 
           const pointField = getPointField(request.type);
-          await client.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [request.points, request.konfi_id]);
+          await client.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [request.points, request.user_id]);
 
           // Foto-Referenz in DB entfernen (innerhalb Transaktion)
           if (request.photo_filename) {
@@ -382,11 +382,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
       // Badge-Check NACH COMMIT (verwendet db Pool)
       if (status === 'approved') {
-        newBadges = await checkAndAwardBadges(db, request.konfi_id);
+        newBadges = await checkAndAwardBadges(db, request.user_id);
 
         // Level-Check NACH Badge-Check
         try {
-          await PushService.checkAndSendLevelUp(db, request.konfi_id, req.user.organization_id);
+          await PushService.checkAndSendLevelUp(db, request.user_id, req.user.organization_id);
         } catch (levelErr) {
           console.error('Level-up check failed:', levelErr);
         }
@@ -419,7 +419,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         await db.query(
           "INSERT INTO notifications (user_id, title, message, type, data, organization_id) VALUES ($1, $2, $3, $4, $5, $6)",
           [
-            request.konfi_id,
+            request.user_id,
             notificationTitle,
             notificationBody,
             'activity_request_decision',
@@ -437,7 +437,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         // Send push notification to konfi (mit Request ID für Navigation)
         await PushService.sendActivityRequestStatusToKonfi(
           db,
-          request.konfi_id,
+          request.user_id,
           request.activity_name,
           request.points,
           status,
@@ -453,8 +453,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
       // Live-Update für Anträge und Konfi-Punkte senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'update');
-      liveUpdate.sendToKonfi(request.konfi_id, 'points', 'update');
-      liveUpdate.sendToKonfi(request.konfi_id, 'requests', 'update');
+      liveUpdate.sendToKonfi(request.user_id, 'points', 'update');
+      liveUpdate.sendToKonfi(request.user_id, 'requests', 'update');
     } catch (err) {
  console.error(`Database error in PUT /api/activities/requests/${requestId}:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
@@ -560,9 +560,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
       // Get request with photo filename and check organization
       const { rows: [request] } = await db.query(
-        `SELECT ar.photo_filename, ar.konfi_id, u.organization_id
+        `SELECT ar.photo_filename, ar.user_id, u.organization_id
          FROM activity_requests ar
-         JOIN users u ON ar.konfi_id = u.id
+         JOIN users u ON ar.user_id = u.id
          WHERE ar.id = $1`,
         [requestId]
       );

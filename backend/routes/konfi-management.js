@@ -362,7 +362,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             await client.query("DELETE FROM event_points WHERE konfi_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
             await client.query("DELETE FROM event_bookings WHERE user_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
             await client.query("DELETE FROM user_badges WHERE user_id = $1", [userId]);
-            await client.query("DELETE FROM activity_requests WHERE konfi_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
+            await client.query("DELETE FROM activity_requests WHERE user_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
             await client.query("DELETE FROM chat_participants WHERE user_id = $1 AND user_type = 'konfi'", [userId]);
             await client.query("DELETE FROM chat_read_status WHERE user_id = $1", [userId]);
             await client.query("DELETE FROM chat_messages WHERE user_id = $1", [userId]);
@@ -959,7 +959,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             await client.query('DELETE FROM event_bookings WHERE user_id = $1', [konfiId]);
 
             // 5. Offene Anträge löschen
-            await client.query("DELETE FROM activity_requests WHERE konfi_id = $1 AND status = 'pending'", [konfiId]);
+            await client.query("DELETE FROM activity_requests WHERE user_id = $1 AND status = 'pending'", [konfiId]);
 
             // 6. Jahrgang aus konfi_profiles in user_jahrgang_assignments übertragen
             const { rows: [konfiProfile] } = await client.query(
