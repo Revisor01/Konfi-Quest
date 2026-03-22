@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Konfi + Teamer Wrapped
 status: unknown
-stopped_at: Completed 80-01-PLAN.md
-last_updated: "2026-03-22T19:30:29.233Z"
+stopped_at: Completed 80-02-PLAN.md
+last_updated: "2026-03-22T19:36:39.113Z"
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 11
-  completed_plans: 9
+  completed_plans: 11
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-22)
 ## Current Position
 
 Phase: 80 (Wrapped Individualisierung) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Performance Metrics
 
@@ -51,6 +51,8 @@ Plan: 2 of 3
 | Phase 78-share-funktion P01 | 4min | 2 tasks | 7 files |
 | Phase 79 P01 | 3min | 2 tasks | 3 files |
 | Phase 80 P01 | 2min | 2 tasks | 2 files |
+| Phase 80 P03 | 4min | 2 tasks | 4 files |
+| Phase 80 P02 | 4min | 2 tasks | 5 files |
 
 ### Decisions
 
@@ -78,6 +80,9 @@ v2.3 Research-Entscheidungen:
 - [Phase 79]: Push fire-and-forget nach COMMIT in wrapped.js (4 Pfade)
 - [Phase 80]: highlight_type ueber_das_ziel hoechste Prio, dann staerkster Bereich nach fester Reihenfolge
 - [Phase 80]: formulierung_seed deterministisch (userId * 31 + year * 17) % 97
+- [Phase 80]: wrappedModalRef (useRef) statt useState fuer dynamische useIonModal-Props bei Listen-Eintraegen
+- [Phase 80]: Renderer-Map Pattern statt cloneElement fuer TypeScript-kompatible dynamische Slide-Reihenfolge
+- [Phase 80]: Formulierungen nur in neuen Slides aktiv (kein Breaking Change fuer bestehende Slides)
 
 ### Roadmap Evolution
 
@@ -95,6 +100,6 @@ v2.3 Research-Entscheidungen:
 
 ## Session Continuity
 
-Last session: 2026-03-22T19:30:29.231Z
-Stopped at: Completed 80-01-PLAN.md
+Last session: 2026-03-22T19:36:39.110Z
+Stopped at: Completed 80-02-PLAN.md
 Resume file: None
