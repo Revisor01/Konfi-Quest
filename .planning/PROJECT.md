@@ -28,9 +28,19 @@ Types konsolidiert, 73 DB-Indizes + 23 FKs, CustomEvents→LiveUpdateContext, Er
 
 Spotify-Wrapped-Style Jahresrueckblick: 9 Konfi-Slides + 7 Teamer-Slides mit Swiper 12, EffectCreative, Count-up Animationen. Share-Funktion (html-to-image, 1080x1920 Story-Export, natives Share-Sheet). Individualisierung: highlight_type-basierte Slide-Reihenfolge, seed-gesteuerte Formulierungen, KategorieSlide-Balkendiagramm, GottesdienstSlide-Counter, UeberDasZiel-Konfetti. Dashboard-Cards + Push bei Freischaltung. Wiederansicht "Meine Wrappeds" in Profilen. 6 Phasen, 11 Plans, 2213 LOC.
 
-## Geplant: v2.4 Design-Angleich
+## Current Milestone: v2.4 Codebase-Cleanup
 
-**Goal:** Finaler Design-Durchgang ueber alle Views fuer konsistentes Erscheinungsbild.
+**Goal:** Technische Schulden abbauen, Sicherheitsluecken schliessen, veraltete Patterns modernisieren.
+
+**Target features:**
+- React Router v5 → v6 Migration (Ionic-kompatibel)
+- Inline-Migrationen aus Route-Dateien loeschen
+- Wrapped-Cron auf node-cron umstellen
+- Losung-API-Key in Umgebungsvariable auslagern
+- Socket.IO Room-Join mit Organization-Isolation
+- Chat N+1 Queries durch Bulk-Queries ersetzen
+- Capacitor window-as-any durch typsichere Imports ersetzen
+- SQLite-Dependency und DB-Dateien komplett entfernen
 
 ## Geplant: v3.0 Onboarding + Landing
 
@@ -121,7 +131,14 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 
 ### Active
 
-(Frisch fuer naechsten Milestone)
+- [ ] React Router v6 Migration
+- [ ] Inline-Migrationen entfernen
+- [ ] node-cron fuer Wrapped
+- [ ] Losung-API-Key als ENV
+- [ ] Socket.IO Org-Isolation
+- [ ] Chat N+1 Bulk-Queries
+- [ ] Capacitor typsichere Imports
+- [ ] SQLite komplett entfernen
 
 ### Out of Scope
 
@@ -209,4 +226,4 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | Formulierung-Seed deterministisch | (userId * 31 + year * 17) % 97 -- reproduzierbar pro User/Jahr | Bestaetigt v2.3 |
 
 ---
-*Last updated: 2026-03-22 after v2.3 milestone*
+*Last updated: 2026-03-22 after v2.4 milestone start*
