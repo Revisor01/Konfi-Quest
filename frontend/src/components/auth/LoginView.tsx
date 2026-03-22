@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useHistory } from 'react-router-dom';
 import {
   IonPage,
   IonContent,
@@ -10,15 +9,17 @@ import {
   IonInput,
   IonButton,
   IonSpinner,
-  IonIcon
+  IonIcon,
+  useIonRouter
 } from '@ionic/react';
+// useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { key, person, trophy, star, sparkles, alertCircle, closeCircle, eye, eyeOff, refreshOutline } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { loginWithAutoDetection } from '../../services/auth';
 
 const LoginView: React.FC = () => {
   const { setSuccess, setUser } = useApp();
-  const history = useHistory();
+  const router = useIonRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -50,11 +51,11 @@ const LoginView: React.FC = () => {
 
       // Explicit navigation based on user type
       if (user.type === 'admin') {
-        history.replace('/admin/konfis');
+        router.push('/admin/konfis', 'root', 'replace');
       } else if (user.type === 'teamer') {
-        history.replace('/teamer/dashboard');
+        router.push('/teamer/dashboard', 'root', 'replace');
       } else {
-        history.replace('/konfi/dashboard');
+        router.push('/konfi/dashboard', 'root', 'replace');
       }
     } catch (err: any) {
       const errorMessage = err.response?.data?.error || err.message;
@@ -169,7 +170,7 @@ const LoginView: React.FC = () => {
               {/* Passwort vergessen Link - immer an fester Position direkt unter Button */}
               <div className="app-auth-footer">
                 <span
-                  onClick={() => history.push('/forgot-password')}
+                  onClick={() => router.push('/forgot-password')}
                   className="app-auth-link app-auth-link--muted"
                   style={{ cursor: 'pointer' }}
                 >
@@ -214,7 +215,7 @@ const LoginView: React.FC = () => {
               {/* Register-Link mit Trennlinie */}
               <div className="app-auth-footer app-auth-footer--separator">
                 <span
-                  onClick={() => history.push('/register')}
+                  onClick={() => router.push('/register')}
                   className="app-auth-link"
                   style={{ fontSize: '0.85rem' }}
                 >

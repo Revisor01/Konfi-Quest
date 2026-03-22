@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useHistory, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import {
   IonPage,
   IonContent,
@@ -10,8 +10,10 @@ import {
   IonInput,
   IonButton,
   IonSpinner,
-  IonIcon
+  IonIcon,
+  useIonRouter
 } from '@ionic/react';
+// useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { lockClosedOutline, eye, eyeOff, checkmarkCircle, alertCircle, closeCircle, arrowBack } from 'ionicons/icons';
 import api from '../../services/api';
 
@@ -31,7 +33,7 @@ const PasswordCheckItem: React.FC<{ label: string; checked: boolean }> = ({ labe
 );
 
 const ResetPasswordPage: React.FC = () => {
-  const history = useHistory();
+  const router = useIonRouter();
   const location = useLocation();
   const [token, setToken] = useState<string | null>(null);
   const [password, setPassword] = useState('');
@@ -162,7 +164,7 @@ const ResetPasswordPage: React.FC = () => {
 
                   <IonButton
                     expand="full"
-                    onClick={() => history.push('/login')}
+                    onClick={() => router.push('/login')}
                     className="app-auth-button"
                   >
                     Zum Login
@@ -205,7 +207,7 @@ const ResetPasswordPage: React.FC = () => {
 
                   <IonButton
                     expand="full"
-                    onClick={() => history.push('/forgot-password')}
+                    onClick={() => router.push('/forgot-password')}
                     className="app-auth-button"
                   >
                     Neuen Link anfordern
@@ -298,7 +300,7 @@ const ResetPasswordPage: React.FC = () => {
                   </IonButton>
 
                   <div className="app-auth-footer">
-                    <span onClick={() => history.push('/login')} className="app-auth-link">
+                    <span onClick={() => router.push('/login')} className="app-auth-link">
                       <IonIcon icon={arrowBack} />
                       Zurück zum Login
                     </span>

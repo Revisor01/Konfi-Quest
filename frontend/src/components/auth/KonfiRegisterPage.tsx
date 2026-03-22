@@ -9,8 +9,10 @@ import {
   IonInput,
   IonButton,
   IonSpinner,
-  IonIcon
+  IonIcon,
+  useIonRouter
 } from '@ionic/react';
+// useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import {
   person,
   key,
@@ -28,7 +30,7 @@ import {
   refreshOutline,
   cloudOfflineOutline
 } from 'ionicons/icons';
-import { useLocation, useHistory } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import { setToken, setUser as setTokenStoreUser } from '../../services/tokenStore';
 import { useApp } from '../../contexts/AppContext';
@@ -43,7 +45,7 @@ interface PasswordCheck {
 
 const KonfiRegisterPage: React.FC = () => {
   const location = useLocation();
-  const history = useHistory();
+  const router = useIonRouter();
   const { setUser, setSuccess: setAppSuccess, isOnline } = useApp();
 
   const [loading, setLoading] = useState(true);
@@ -241,7 +243,7 @@ const KonfiRegisterPage: React.FC = () => {
         setAppSuccess('Willkommen bei Konfi Quest!');
         // Kurz warten für visuelles Feedback, dann zum Dashboard
         setTimeout(() => {
-          history.replace('/konfi/dashboard');
+          router.push('/konfi/dashboard', 'root', 'replace');
         }, 1500);
       }
 
@@ -375,7 +377,7 @@ const KonfiRegisterPage: React.FC = () => {
 
                   <div className="app-auth-footer">
                     <span
-                      onClick={() => history.push('/login')}
+                      onClick={() => router.push('/login')}
                       className="app-auth-link"
                     >
                       <IonIcon icon={arrowBack} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
@@ -577,7 +579,7 @@ const KonfiRegisterPage: React.FC = () => {
                     <span style={{ color: '#7f8c8d', fontSize: '0.9rem' }}>
                       Schon einen Account?{' '}
                       <span
-                        onClick={() => history.push('/login')}
+                        onClick={() => router.push('/login')}
                         className="app-auth-link app-auth-link--strong"
                       >
                         Anmelden

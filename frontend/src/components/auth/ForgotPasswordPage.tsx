@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useHistory } from 'react-router-dom';
 import {
   IonPage,
   IonContent,
@@ -10,15 +9,17 @@ import {
   IonInput,
   IonButton,
   IonSpinner,
-  IonIcon
+  IonIcon,
+  useIonRouter
 } from '@ionic/react';
+// useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { mailOutline, arrowBack, checkmarkCircle, alertCircle, informationCircleOutline, refreshOutline, cloudOfflineOutline } from 'ionicons/icons';
 import api from '../../services/api';
 import { useApp } from '../../contexts/AppContext';
 
 const ForgotPasswordPage: React.FC = () => {
   const { isOnline } = useApp();
-  const history = useHistory();
+  const router = useIonRouter();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -122,7 +123,7 @@ const ForgotPasswordPage: React.FC = () => {
 
                   <IonButton
                     expand="full"
-                    onClick={() => history.push('/login')}
+                    onClick={() => router.push('/login')}
                     className="app-auth-button"
                   >
                     Zurück zum Login
@@ -188,7 +189,7 @@ const ForgotPasswordPage: React.FC = () => {
 
                   <div className="app-auth-footer">
                     <span
-                      onClick={() => history.push('/login')}
+                      onClick={() => router.push('/login')}
                       className="app-auth-link"
                     >
                       <IonIcon icon={arrowBack} />
