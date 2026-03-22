@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Codebase-Hardening
 status: unknown
-stopped_at: Completed 71-03-PLAN.md
-last_updated: "2026-03-21T23:51:53.951Z"
+stopped_at: Completed 72-01-PLAN.md
+last_updated: "2026-03-22T07:29:45.279Z"
 progress:
-  total_phases: 16
+  total_phases: 17
   completed_phases: 9
-  total_plans: 18
-  completed_plans: 18
+  total_plans: 21
+  completed_plans: 19
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 71 — Teamer+Badge Polish
+**Current focus:** Phase 72 — UI-Testing Fixes
 
 ## Current Position
 
-Phase: 71
-Plan: Not started
+Phase: 72 (UI-Testing Fixes) — EXECUTING
+Plan: 2 of 3
 
 ## Accumulated Context
 
@@ -57,6 +57,8 @@ All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestone
 - [Phase 71]: teamer_year Kategorie zwischen event_count und collection platziert
 - [Phase 71]: Geheime Badge-Visibility als separates Segment (orthogonal zu Hauptfilter)
 - [Phase 71]: Dashboard Badge-Platzhalter auf max 12 begrenzt
+- [Phase 72]: Eigener Teamer-Endpoint statt /admin/konfis — sicherer, nur zugewiesene Jahrgaenge
+- [Phase 72]: Cache-Luecken (D-14) sind erwartetes useOfflineQuery-Verhalten, kein Bug
 
 ### Roadmap Evolution
 
@@ -76,6 +78,6 @@ All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestone
 
 ## Session Continuity
 
-Last session: 2026-03-21T23:51:04.915Z
-Stopped at: Completed 71-03-PLAN.md
+Last session: 2026-03-22T07:29:45.276Z
+Stopped at: Completed 72-01-PLAN.md
 Resume file: None
