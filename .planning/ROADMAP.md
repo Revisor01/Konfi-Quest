@@ -231,7 +231,11 @@ Plans:
   3. Jeder Slide zeigt animierte Inhalte (Count-up Zahlen, Fade-in Elemente) -- Intro, Punkte, Events, Badges, aktivster Monat, Chat, optionaler Endspurt, Abschluss
   4. Slides zeigen ausschliesslich eigene Daten des Konfis, keine Vergleiche mit anderen Konfis
   5. Wrapped oeffnet als Fullscreen-Modal (kein eigener Route), sodass kein Swipe-Back-Konflikt mit der Navigation entsteht
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 76-01-PLAN.md -- Swiper 12 Setup + WrappedModal Container + CSS-Animationen + useCountUp Hook + TypeScript-Interfaces
+- [ ] 76-02-PLAN.md -- Konfi-Slides 1-4 (Intro, Punkte, Events, Badges)
+- [ ] 76-03-PLAN.md -- Konfi-Slides 5-8 (Aktivster Monat, Chat, Endspurt, Abschluss)
 
 ### Phase 77: Teamer-Slides
 **Goal**: Teamer:innen koennen ihren eigenen Jahresrueckblick mit 7 Slides durchblaettern, der die Konfi-Wrapped-Infrastruktur wiederverwendet
@@ -273,7 +277,7 @@ Phases execute in numeric order: 75 -> 76 -> 77 -> 78 -> 79
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 75. Backend-Aggregation + DB-Schema | 2/2 | Complete    | 2026-03-22 |
-| 76. Slide-Container + Konfi-Slides | 0/TBD | Not started | - |
+| 76. Slide-Container + Konfi-Slides | 0/3 | Not started | - |
 | 77. Teamer-Slides | 0/TBD | Not started | - |
 | 78. Share-Funktion | 0/TBD | Not started | - |
 | 79. Dashboard-Integration + Freischaltung | 0/TBD | Not started | - |
