@@ -26,6 +26,7 @@ import {
   useIonModal
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
+// useLocation bleibt fuer Query-Parameter Auswertung (React Router v5 API)
 import {
   calendar,
   time,
@@ -66,7 +67,8 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 const TeamerEventsPage: React.FC = () => {
   const { user, setSuccess, setError } = useApp();
   const { pageRef, presentingElement } = useModalPage('teamer-events');
-  const routerLocation = useLocation<{ selectedEventId?: number }>();
+  const routerLocation = useLocation();
+  const queryEventId = new URLSearchParams(routerLocation.search).get('eventId');
 
   const [activeTab, setActiveTab] = useState<'meine' | 'alle' | 'team'>('meine');
   const [searchText, setSearchText] = useState('');
@@ -114,14 +116,14 @@ const TeamerEventsPage: React.FC = () => {
 
   // Wenn von Dashboard mit selectedEventId navigiert wurde, Event direkt öffnen
   useEffect(() => {
-    if (!initialEventHandled && !loading && events && events.length > 0 && routerLocation.state?.selectedEventId) {
-      const eventToSelect = events.find(e => e.id === routerLocation.state!.selectedEventId);
+    if (!initialEventHandled && !loading && events && events.length > 0 && queryEventId) {
+      const eventToSelect = events.find(e => e.id === parseInt(queryEventId, 10));
       if (eventToSelect) {
         setSelectedEvent(eventToSelect);
       }
       setInitialEventHandled(true);
     }
-  }, [loading, events, routerLocation.state, initialEventHandled]);
+  }, [loading, events, queryEventId, initialEventHandled]);
 
   // Formatierung
   const formatDate = (dateString: string) => {

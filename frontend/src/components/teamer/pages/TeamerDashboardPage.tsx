@@ -71,8 +71,6 @@ import {
   bagHandle
 } from 'ionicons/icons';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
-// useHistory bleibt fuer State-Uebergabe (useIonRouter unterstuetzt kein State)
-import { useHistory } from 'react-router-dom';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
@@ -181,7 +179,6 @@ const CertPopoverContent: React.FC<{
 
 const TeamerDashboardPage: React.FC = () => {
   const router = useIonRouter();
-  const history = useHistory();
   const { user } = useApp();
   const [showLosung] = useState(() => Math.random() > 0.5);
 
@@ -508,7 +505,7 @@ const TeamerDashboardPage: React.FC = () => {
                         <div
                           key={event.id}
                           className="app-dashboard-glass-card"
-                          onClick={() => history.push('/teamer/events', { selectedEventId: event.id })}
+                          onClick={() => router.push(`/teamer/events?eventId=${event.id}`)}
                           style={{
                             background: isWaitlist
                               ? 'rgba(251, 191, 36, 0.25)'
