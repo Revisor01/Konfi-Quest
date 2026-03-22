@@ -6,7 +6,14 @@ import { Pagination, EffectCreative } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import api from '../../services/api';
 import type { KonfiWrappedData } from '../../types/wrapped';
-import SlideBase from './slides/SlideBase';
+import IntroSlide from './slides/IntroSlide';
+import PunkteSlide from './slides/PunkteSlide';
+import EventsSlide from './slides/EventsSlide';
+import BadgesSlide from './slides/BadgesSlide';
+import AktivsterMonatSlide from './slides/AktivsterMonatSlide';
+import ChatSlide from './slides/ChatSlide';
+import EndspurtSlide from './slides/EndspurtSlide';
+import AbschlussSlide from './slides/AbschlussSlide';
 import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/effect-creative';
@@ -43,162 +50,110 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
     setActiveIndex(swiper.activeIndex);
   }, []);
 
-  // Slides aufbauen (dynamisch, Endspurt nur wenn aktiv)
+  // Slides dynamisch aufbauen (Endspurt nur wenn aktiv)
   const buildSlides = () => {
-    if (!data) return [];
+    if (!data || !year) return [];
 
     const slides: Array<{ key: string; content: React.ReactNode }> = [];
+    let slideIndex = 0;
 
     // 0: Intro
     slides.push({
       key: 'intro',
       content: (
-        <SlideBase isActive={activeIndex === slides.length}>
-          <div className="wrapped-anim-fade wrapped-anim-delay-1">
-            <p className="wrapped-subtitle">Dein Jahr in der Gemeinde</p>
-          </div>
-          <div className="wrapped-anim-scale wrapped-anim-delay-2">
-            <h1 className="wrapped-big-number">{year}</h1>
-          </div>
-          <div className="wrapped-anim-fade wrapped-anim-delay-3">
-            <p className="wrapped-subtitle">{displayName} - {jahrgangName}</p>
-          </div>
-        </SlideBase>
+        <IntroSlide
+          isActive={activeIndex === slideIndex}
+          displayName={displayName}
+          jahrgangName={jahrgangName}
+          year={year}
+        />
       ),
     });
+    slideIndex++;
 
     // 1: Punkte
     slides.push({
       key: 'punkte',
       content: (
-        <SlideBase isActive={activeIndex === slides.length}>
-          <div className="wrapped-anim-fade">
-            <p className="wrapped-label">Deine Punkte</p>
-          </div>
-          <div className="wrapped-anim-scale wrapped-anim-delay-1">
-            <h1 className="wrapped-big-number">{data.slides.punkte.total}</h1>
-          </div>
-          <div className="wrapped-anim-fade wrapped-anim-delay-2">
-            <p className="wrapped-subtitle">
-              {data.slides.punkte.gottesdienst} Gottesdienst + {data.slides.punkte.gemeinde} Gemeinde
-            </p>
-          </div>
-        </SlideBase>
+        <PunkteSlide
+          isActive={activeIndex === slideIndex}
+          punkte={data.slides.punkte}
+        />
       ),
     });
+    slideIndex++;
 
     // 2: Events
     slides.push({
       key: 'events',
       content: (
-        <SlideBase isActive={activeIndex === slides.length}>
-          <div className="wrapped-anim-fade">
-            <p className="wrapped-label">Events besucht</p>
-          </div>
-          <div className="wrapped-anim-scale wrapped-anim-delay-1">
-            <h1 className="wrapped-big-number">
-              {data.slides.events.total_attended}/{data.slides.events.total_available}
-            </h1>
-          </div>
-          {data.slides.events.lieblings_event && (
-            <div className="wrapped-anim-fade wrapped-anim-delay-2">
-              <p className="wrapped-subtitle">
-                Lieblingsevent: {data.slides.events.lieblings_event.name}
-              </p>
-            </div>
-          )}
-        </SlideBase>
+        <EventsSlide
+          isActive={activeIndex === slideIndex}
+          events={data.slides.events}
+        />
       ),
     });
+    slideIndex++;
 
     // 3: Badges
     slides.push({
       key: 'badges',
       content: (
-        <SlideBase isActive={activeIndex === slides.length}>
-          <div className="wrapped-anim-fade">
-            <p className="wrapped-label">Badges verdient</p>
-          </div>
-          <div className="wrapped-anim-scale wrapped-anim-delay-1">
-            <h1 className="wrapped-big-number">
-              {data.slides.badges.total_earned}/{data.slides.badges.total_available}
-            </h1>
-          </div>
-        </SlideBase>
+        <BadgesSlide
+          isActive={activeIndex === slideIndex}
+          badges={data.slides.badges}
+        />
       ),
     });
+    slideIndex++;
 
     // 4: Aktivster Monat
     slides.push({
       key: 'aktivster-monat',
       content: (
-        <SlideBase isActive={activeIndex === slides.length}>
-          <div className="wrapped-anim-fade">
-            <p className="wrapped-label">Dein aktivster Monat</p>
-          </div>
-          <div className="wrapped-anim-scale wrapped-anim-delay-1">
-            <h1 className="wrapped-big-number">{data.slides.aktivster_monat.monat_name}</h1>
-          </div>
-          <div className="wrapped-anim-fade wrapped-anim-delay-2">
-            <p className="wrapped-subtitle">
-              {data.slides.aktivster_monat.aktivitaeten} Aktivit&auml;ten
-            </p>
-          </div>
-        </SlideBase>
+        <AktivsterMonatSlide
+          isActive={activeIndex === slideIndex}
+          aktivsterMonat={data.slides.aktivster_monat}
+        />
       ),
     });
+    slideIndex++;
 
     // 5: Chat
     slides.push({
       key: 'chat',
       content: (
-        <SlideBase isActive={activeIndex === slides.length}>
-          <div className="wrapped-anim-fade">
-            <p className="wrapped-label">Nachrichten gesendet</p>
-          </div>
-          <div className="wrapped-anim-scale wrapped-anim-delay-1">
-            <h1 className="wrapped-big-number">{data.slides.chat.nachrichten_gesendet}</h1>
-          </div>
-        </SlideBase>
+        <ChatSlide
+          isActive={activeIndex === slideIndex}
+          chat={data.slides.chat}
+        />
       ),
     });
+    slideIndex++;
 
     // 6: Endspurt (nur wenn aktiv)
     if (data.slides.endspurt.aktiv) {
       slides.push({
         key: 'endspurt',
         content: (
-          <SlideBase isActive={activeIndex === slides.length}>
-            <div className="wrapped-anim-fade">
-              <p className="wrapped-label">Endspurt!</p>
-            </div>
-            <div className="wrapped-anim-scale wrapped-anim-delay-1">
-              <h1 className="wrapped-big-number">{data.slides.endspurt.fehlende_punkte}</h1>
-            </div>
-            <div className="wrapped-anim-fade wrapped-anim-delay-2">
-              <p className="wrapped-subtitle">
-                Punkte fehlen noch ({data.slides.endspurt.aktuell_total}/{data.slides.endspurt.ziel_total})
-              </p>
-            </div>
-          </SlideBase>
+          <EndspurtSlide
+            isActive={activeIndex === slideIndex}
+            endspurt={data.slides.endspurt}
+          />
         ),
       });
+      slideIndex++;
     }
 
-    // 7: Abschluss
+    // Letzter Slide: Abschluss
     slides.push({
       key: 'abschluss',
       content: (
-        <SlideBase isActive={activeIndex === slides.length}>
-          <div className="wrapped-anim-scale">
-            <h1 className="wrapped-big-number wrapped-anim-delay-1">Danke!</h1>
-          </div>
-          <div className="wrapped-anim-fade wrapped-anim-delay-2">
-            <p className="wrapped-subtitle">
-              F&uuml;r ein tolles Jahr in der Gemeinde
-            </p>
-          </div>
-        </SlideBase>
+        <AbschlussSlide
+          isActive={activeIndex === slideIndex}
+          data={data}
+          year={year}
+        />
       ),
     });
 
