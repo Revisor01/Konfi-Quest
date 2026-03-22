@@ -4,7 +4,7 @@ milestone: v2.2
 milestone_name: Codebase-Hardening
 status: unknown
 stopped_at: Completed 73-01-PLAN.md
-last_updated: "2026-03-22T08:29:59.131Z"
+last_updated: "2026-03-22T08:30:31.845Z"
 progress:
   total_phases: 18
   completed_phases: 11
@@ -23,8 +23,8 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 
 ## Current Position
 
-Phase: 73 (Testing-Fixes Runde 2) — EXECUTING
-Plan: 2 of 2
+Phase: 73
+Plan: Not started
 
 ## Accumulated Context
 
