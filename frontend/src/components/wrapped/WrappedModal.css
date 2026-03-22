@@ -231,6 +231,53 @@
    Responsive Anpassungen
    ======================================== */
 
+/* ========================================
+   Intro Slide
+   ======================================== */
+
+.intro-slide {
+  background: linear-gradient(135deg, #2d1065 0%, #0a0a0a 60%);
+}
+
+/* ========================================
+   Punkte Slide - Split-Anzeige
+   ======================================== */
+
+.punkte-split {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  margin-top: 24px;
+}
+
+.punkte-split-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.punkte-split-value {
+  font-size: clamp(1.5rem, 6vw, 2.5rem);
+  font-weight: 700;
+  color: #a78bfa;
+}
+
+.punkte-split-label {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 4px;
+}
+
+.punkte-split-divider {
+  width: 1px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ========================================
+   Responsive Anpassungen
+   ======================================== */
+
 @media (max-height: 600px) {
   .wrapped-slide {
     padding: 60px 16px 24px;
