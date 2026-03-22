@@ -247,8 +247,8 @@ Plans:
   4. `node-cron` ist als Dependency eingetragen und ersetzt den `setInterval`-Block in backgroundService.js
 **Plans**: 3 plans
 Plans:
-- [ ] 82-01-PLAN.md — LOSUNG_API_KEY aus Quellcode in Umgebungsvariable auslagern (SEC-01)
-- [ ] 82-02-PLAN.md — Socket.IO joinRoom mit Organization-Isolation absichern (SEC-02, SEC-03)
+- [x] 82-01-PLAN.md — LOSUNG_API_KEY aus Quellcode in Umgebungsvariable auslagern (SEC-01)
+- [x] 82-02-PLAN.md — Socket.IO joinRoom mit Organization-Isolation absichern (SEC-02, SEC-03)
 - [ ] 82-03-PLAN.md — Wrapped-Cron von setInterval auf node-cron umstellen (CRON-01, CRON-02)
 
 ### Phase 83: Performance + Capacitor
@@ -289,7 +289,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 81. React Router Migration | 3/3 | Complete    | 2026-03-22 |
-| 82. Backend-Sicherheit + Cron | 0/3 | Not started | - |
+| 82. Backend-Sicherheit + Cron | 2/3 | In Progress|  |
 | 83. Performance + Capacitor | 0/TBD | Not started | - |
 | 84. Schema-Hygiene | 0/TBD | Not started | - |
 | 85. Code-Cleanup | 0/TBD | Not started | - |

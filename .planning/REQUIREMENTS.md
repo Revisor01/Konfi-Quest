@@ -9,9 +9,9 @@ Requirements fuer Milestone v2.4 Codebase-Cleanup.
 
 ### React Router Migration (RR)
 
-- [ ] **RR-01**: Alle useHistory-Aufrufe durch useIonRouter ersetzen (Ionic 8 unterstuetzt kein React Router v6, useIonRouter ist der offizielle Ersatz)
-- [ ] **RR-02**: Alle history.push/replace/goBack in Konfi-, Teamer- und Admin-Bereichen auf useIonRouter.push/goBack migrieren
-- [ ] **RR-03**: App funktioniert nach Migration identisch (keine gebrochenen Navigationen)
+- [x] **RR-01**: Alle useHistory-Aufrufe durch useIonRouter ersetzen (Ionic 8 unterstuetzt kein React Router v6, useIonRouter ist der offizielle Ersatz)
+- [x] **RR-02**: Alle history.push/replace/goBack in Konfi-, Teamer- und Admin-Bereichen auf useIonRouter.push/goBack migrieren
+- [x] **RR-03**: App funktioniert nach Migration identisch (keine gebrochenen Navigationen)
 
 ### Inline-Migrationen (MIG)
 
@@ -26,7 +26,7 @@ Requirements fuer Milestone v2.4 Codebase-Cleanup.
 
 ### Sicherheit (SEC)
 
-- [ ] **SEC-01**: Losung-API-Key aus Quellcode in Umgebungsvariable LOSUNG_API_KEY auslagern (konfi.js + teamer.js)
+- [x] **SEC-01**: Losung-API-Key aus Quellcode in Umgebungsvariable LOSUNG_API_KEY auslagern (konfi.js + teamer.js)
 - [ ] **SEC-02**: Socket.IO Room-Join prueft Organization-Zugehoerigkeit des Rooms vor socket.join()
 - [ ] **SEC-03**: Nutzer aus Org A kann nicht in Rooms von Org B joinen
 
@@ -67,10 +67,10 @@ Requirements fuer Milestone v2.4 Codebase-Cleanup.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| RR-01 | Phase 81 | Pending |
-| RR-02 | Phase 81 | Pending |
-| RR-03 | Phase 81 | Pending |
-| SEC-01 | Phase 82 | Pending |
+| RR-01 | Phase 81 | Complete |
+| RR-02 | Phase 81 | Complete |
+| RR-03 | Phase 81 | Complete |
+| SEC-01 | Phase 82 | Complete |
 | SEC-02 | Phase 82 | Pending |
 | SEC-03 | Phase 82 | Pending |
 | CRON-01 | Phase 82 | Pending |
