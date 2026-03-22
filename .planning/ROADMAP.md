@@ -258,7 +258,9 @@ Plans:
   2. Nach dem Export oeffnet sich das native Share-Sheet (iOS/Android) mit dem Bild
   3. Share-Cards werden als reine HTML/CSS-Elemente gerendert (keine Ionic-Shadow-DOM-Komponenten) und enthalten ein dezentes Wasserzeichen/Logo
   4. Wenn der Bild-Export fehlschlaegt, wird automatisch ein Text-Fallback geteilt
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 78-01-PLAN.md -- ShareCard-Komponenten + shareUtils + Share-Button Integration
 
 ### Phase 79: Dashboard-Integration + Freischaltung
 **Goal**: Konfis und Teamer:innen werden auf dem Dashboard auf ihr verfuegbares Wrapped hingewiesen und per Push benachrichtigt
@@ -269,7 +271,9 @@ Plans:
   2. Teamer-Dashboard zeigt eine "Dein Teamer-Jahr!" Card, sobald ein Teamer-Wrapped-Snapshot existiert
   3. Beim Freischalten eines Wrapped erhalten betroffene Nutzer:innen eine Push-Notification
   4. Wrapped ist pro Jahr/Zeitraum einmalig -- ein bereits generierter Snapshot wird nicht erneut generiert
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 78-01-PLAN.md -- ShareCard-Komponenten + shareUtils + Share-Button Integration
 
 ## Progress
 
@@ -281,5 +285,5 @@ Phases execute in numeric order: 75 -> 76 -> 77 -> 78 -> 79
 | 75. Backend-Aggregation + DB-Schema | 2/2 | Complete    | 2026-03-22 |
 | 76. Slide-Container + Konfi-Slides | 3/3 | Complete    | 2026-03-22 |
 | 77. Teamer-Slides | 1/1 | Complete    | 2026-03-22 |
-| 78. Share-Funktion | 0/TBD | Not started | - |
+| 78. Share-Funktion | 0/1 | Not started | - |
 | 79. Dashboard-Integration + Freischaltung | 0/TBD | Not started | - |
