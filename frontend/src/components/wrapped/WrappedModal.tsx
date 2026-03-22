@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { IonIcon, IonSpinner } from '@ionic/react';
-import { closeOutline } from 'ionicons/icons';
+import { closeOutline, shareOutline } from 'ionicons/icons';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, EffectCreative } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
@@ -21,10 +21,14 @@ import TeamerBadgesSlide from './slides/teamer/TeamerBadgesSlide';
 import TeamerZertifikateSlide from './slides/teamer/TeamerZertifikateSlide';
 import TeamerJahreSlide from './slides/teamer/TeamerJahreSlide';
 import TeamerAbschlussSlide from './slides/teamer/TeamerAbschlussSlide';
+import ShareCard from './share/ShareCard';
+import { shareSlide } from './share/shareUtils';
+import type { ShareTextData } from './share/shareUtils';
 import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/effect-creative';
 import './WrappedModal.css';
+import './share/ShareCard.css';
 
 interface WrappedModalProps {
   onClose: () => void;
@@ -39,6 +43,8 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
   const [activeIndex, setActiveIndex] = useState(0);
   const [year, setYear] = useState<number | null>(null);
   const [wrappedType, setWrappedType] = useState<'konfi' | 'teamer'>(initialType || 'konfi');
+  const [isSharing, setIsSharing] = useState(false);
+  const shareCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     api.get('/wrapped/me')
@@ -60,6 +66,39 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
   const handleSlideChange = useCallback((swiper: SwiperType) => {
     setActiveIndex(swiper.activeIndex);
   }, []);
+
+  // Text-Fallback-Daten pro Slide zusammenbauen
+  const getSlideTextData = (slideKey: string): ShareTextData => {
+    const slideYear = year || new Date().getFullYear();
+    const base: ShareTextData = { wrappedType, displayName, year: slideYear, slideKey };
+
+    if (!data) return base;
+
+    if (wrappedType === 'konfi') {
+      const k = data as KonfiWrappedData;
+      switch (slideKey) {
+        case 'punkte': return { ...base, slideValue: `${k.slides.punkte.total} Punkte gesammelt` };
+        case 'events': return { ...base, slideValue: `${k.slides.events.total_attended} Events besucht` };
+        case 'badges': return { ...base, slideValue: `${k.slides.badges.total_earned} Badges verdient` };
+        case 'aktivster-monat': return { ...base, slideValue: `Aktivster Monat: ${k.slides.aktivster_monat.monat_name}` };
+        case 'chat': return { ...base, slideValue: `${k.slides.chat.nachrichten_gesendet} Nachrichten` };
+        case 'endspurt': return { ...base, slideValue: `Noch ${k.slides.endspurt.fehlende_punkte} Punkte bis zum Ziel` };
+        case 'abschluss': return { ...base, slideValue: `${k.slides.punkte.total} Punkte, ${k.slides.events.total_attended} Events, ${k.slides.badges.total_earned} Badges` };
+        default: return base;
+      }
+    } else {
+      const t = data as TeamerWrappedData;
+      switch (slideKey) {
+        case 'teamer-events': return { ...base, slideValue: `${t.slides.events_geleitet.total} Events geleitet` };
+        case 'teamer-konfis': return { ...base, slideValue: `${t.slides.konfis_betreut.total_konfis} Konfis betreut` };
+        case 'teamer-badges': return { ...base, slideValue: `${t.slides.badges.total_earned} Badges verdient` };
+        case 'teamer-zertifikate': return { ...base, slideValue: `${t.slides.zertifikate.total} Zertifikate erhalten` };
+        case 'teamer-jahre': return { ...base, slideValue: `${t.slides.engagement.jahre_aktiv} Jahre als Teamer:in` };
+        case 'teamer-abschluss': return { ...base, slideValue: `${t.slides.events_geleitet.total} Events, ${t.slides.konfis_betreut.total_konfis} Konfis, ${t.slides.badges.total_earned} Badges` };
+        default: return base;
+      }
+    }
+  };
 
   // Konfi-Slides aufbauen (Endspurt nur wenn aktiv)
   const buildKonfiSlides = (konfiData: KonfiWrappedData, slideYear: number) => {
@@ -186,11 +225,29 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
 
   const slides = data ? buildSlides() : [];
 
+  // Share-Handler (nach slides-Deklaration)
+  const handleShare = async () => {
+    if (isSharing || !shareCardRef.current || !data) return;
+    setIsSharing(true);
+    try {
+      const currentKey = slides[activeIndex]?.key || 'intro';
+      const textData = getSlideTextData(currentKey);
+      await shareSlide(shareCardRef.current, currentKey, wrappedType, textData);
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
   return (
     <div className={`wrapped-overlay${wrappedType === 'teamer' ? ' wrapped-overlay--teamer' : ''}`}>
       <div className="wrapped-header">
         <div className="wrapped-pagination" />
-        <button className="wrapped-close-btn" onClick={onClose} aria-label="Schlie&szlig;en">
+        {data && (
+          <button className="wrapped-share-btn" onClick={handleShare} disabled={isSharing} aria-label="Teilen">
+            <IonIcon icon={shareOutline} />
+          </button>
+        )}
+        <button className="wrapped-close-btn" onClick={onClose} aria-label="Schlie\u00dfen">
           <IonIcon icon={closeOutline} />
         </button>
       </div>
@@ -218,6 +275,18 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
             <SwiperSlide key={slide.key}>{slide.content}</SwiperSlide>
           ))}
         </Swiper>
+      )}
+
+      {data && year && (
+        <ShareCard
+          ref={shareCardRef}
+          slideKey={slides[activeIndex]?.key || 'intro'}
+          data={data}
+          wrappedType={wrappedType}
+          displayName={displayName}
+          jahrgangName={jahrgangName}
+          year={year}
+        />
       )}
     </div>
   );
