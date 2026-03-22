@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: Codebase-Cleanup
 status: unknown
-stopped_at: Completed 81-01-PLAN.md
-last_updated: "2026-03-22T21:28:03.353Z"
+stopped_at: Completed 81-02-PLAN.md
+last_updated: "2026-03-22T21:30:47.535Z"
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-22)
 ## Current Position
 
 Phase: 81 (react-router-migration) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Accumulated Context
 
@@ -35,6 +35,8 @@ Plan: 2 of 3
 - [Phase 81-react-router-migration]: useIonRouter statt useHistory: Ionic 8 verwaltet Tab-History-Stack korrekt nur ueber useIonRouter
 - [Phase 81-react-router-migration]: history.replace → router.push(path, 'root', 'replace'): Semantisch aequivalent fuer Stack-Reset nach Login
 - [Phase 81-react-router-migration]: canGoBack()-Check in KonfiEventDetailPage: Fallback auf /konfi/events wenn kein History-Stack
+- [Phase 81]: useIonRouter.push hat kein State-Parameter (AnimationBuilder statt State) - useHistory fuer State-Uebergabe in TeamerDashboardPage behalten
+- [Phase 81]: Wrapper-Komponenten-Pattern in MainTabs: KonfiDetailRoute, AdminEventDetailRoute, AdminChatRoomRoute, TeamerChatRoomRoute, KonfiChatRoomRoute mit useIonRouter.goBack
 
 ### Pending Todos
 
@@ -47,6 +49,6 @@ Plan: 2 of 3
 
 ## Session Continuity
 
-Last session: 2026-03-22T21:28:03.350Z
-Stopped at: Completed 81-01-PLAN.md
+Last session: 2026-03-22T21:30:47.533Z
+Stopped at: Completed 81-02-PLAN.md
 Resume file: None

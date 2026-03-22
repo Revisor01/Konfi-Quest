@@ -233,7 +233,7 @@ Phase 80: Wrapped Persistenz + Individualisierung (3 plans, complete)
 **Plans**: 3 plans
 Plans:
 - [x] 81-01-PLAN.md — Auth + Konfi useHistory → useIonRouter
-- [ ] 81-02-PLAN.md — Admin + Teamer + Chat + MainTabs Migration
+- [x] 81-02-PLAN.md — Admin + Teamer + Chat + MainTabs Migration
 - [ ] 81-03-PLAN.md — Verifikation + @types Cleanup
 
 ### Phase 82: Backend-Sicherheit + Cron
@@ -284,7 +284,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 81. React Router Migration | 1/3 | In Progress|  |
+| 81. React Router Migration | 2/3 | In Progress|  |
 | 82. Backend-Sicherheit + Cron | 0/TBD | Not started | - |
 | 83. Performance + Capacitor | 0/TBD | Not started | - |
 | 84. Schema-Hygiene | 0/TBD | Not started | - |
