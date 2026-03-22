@@ -216,7 +216,10 @@ Phase 74: Nativer Datei-Viewer (2 plans, complete)
   3. Admin kann im Jahrgangs-Settings ein Konfirmationsdatum setzen, und am 1. des Konfirmationsmonats werden Konfi-Wrapped-Snapshots automatisch generiert
   4. Am 1. Dezember werden Teamer-Wrapped-Snapshots automatisch generiert
   5. Admin kann Wrapped-Generierung manuell frueher oder spaeter ausloesen (ueberschreibt automatischen Trigger)
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 75-01-PLAN.md -- DB-Migration + Route + Aggregation-Queries + API-Endpoints
+- [ ] 75-02-PLAN.md -- Cron-Trigger + Dashboard has_wrapped Flag
 
 ### Phase 76: Slide-Container + Konfi-Slides
 **Goal**: Konfis koennen ihren Jahresrueckblick als animierte Fullscreen-Slideshow durchblaettern, mit allen 9 inhaltlichen Slides und Story-artiger Navigation
@@ -269,7 +272,7 @@ Phases execute in numeric order: 75 -> 76 -> 77 -> 78 -> 79
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 75. Backend-Aggregation + DB-Schema | 0/TBD | Not started | - |
+| 75. Backend-Aggregation + DB-Schema | 0/2 | Planned | - |
 | 76. Slide-Container + Konfi-Slides | 0/TBD | Not started | - |
 | 77. Teamer-Slides | 0/TBD | Not started | - |
 | 78. Share-Funktion | 0/TBD | Not started | - |
