@@ -696,7 +696,17 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         config[row.key.replace('teamer_dashboard_show_', 'show_')] = row.value === 'true' || row.value === '1';
       });
 
-      res.json({ greeting, certificates, events, badges, config });
+      // Wrapped-Verfuegbarkeit pruefen (Teamer: direkt auf wrapped_snapshots)
+      const { rows: [wrappedResult] } = await db.query(
+        `SELECT EXISTS(
+          SELECT 1 FROM wrapped_snapshots
+          WHERE user_id = $1 AND wrapped_type = 'teamer'
+        ) as has_wrapped`,
+        [userId]
+      );
+      const has_wrapped = wrappedResult?.has_wrapped || false;
+
+      res.json({ greeting, certificates, events, badges, config, has_wrapped });
     } catch (err) {
       console.error('Error loading teamer dashboard:', err);
       res.status(500).json({ error: 'Fehler beim Laden des Teamer-Dashboards' });

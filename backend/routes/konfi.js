@@ -259,6 +259,19 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         show_ranking: dashboardMap.dashboard_show_ranking !== undefined ? dashboardMap.dashboard_show_ranking : true
       };
 
+      // Wrapped-Verfuegbarkeit pruefen (ueber wrapped_released_at auf Jahrgang)
+      const { rows: [wrappedResult] } = await db.query(
+        `SELECT EXISTS(
+          SELECT 1 FROM jahrgaenge j
+          JOIN konfi_profiles kp ON kp.jahrgang_id = j.id
+          WHERE kp.user_id = $1
+            AND j.wrapped_released_at IS NOT NULL
+            AND j.wrapped_released_at <= NOW()
+        ) as has_wrapped`,
+        [konfiId]
+      );
+      const has_wrapped = wrappedResult?.has_wrapped || false;
+
       // Return dashboard data
       res.json({
         konfi: {
@@ -277,6 +290,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         total_in_jahrgang: userRanking ? userRanking.total_in_jahrgang : null,
         days_to_confirmation: daysToConfirmation > 0 ? daysToConfirmation : null,
         confirmation_date: konfi.confirmation_date,
+        has_wrapped,
         level_info: {
           current_level: currentLevel ? {
             id: currentLevel.id,
