@@ -15,7 +15,7 @@
 - **v2.0 Ionic Update + Theme** (shipped 2026-03-19)
 - Shipped **v2.1 App-Resilienz** - Phases 55-62 (shipped 2026-03-21)
 - Shipped **v2.2 Codebase-Hardening** - Phases 63-74 (shipped 2026-03-22)
-- v2.3 Konfi + Teamer Wrapped - Phases 75-79 (planned)
+- v2.3 Konfi + Teamer Wrapped - Phases 75-80 (planned)
 
 ## Phases
 
@@ -203,6 +203,7 @@ Phase 74: Nativer Datei-Viewer (2 plans, complete)
 - [x] **Phase 77: Teamer-Slides** - 7 Teamer-spezifische Slides auf Basis der Konfi-Wrapped-Infrastruktur (completed 2026-03-22)
 - [x] **Phase 78: Share-Funktion** - Screenshot-Export, natives Share-Sheet, Share-Card-Design (completed 2026-03-22)
 - [x] **Phase 79: Dashboard-Integration + Freischaltung** - Dashboard-Cards, Push-Notification, Verfuegbarkeitslogik (completed 2026-03-22)
+- [ ] **Phase 80: Wrapped Persistenz + Individualisierung** - Wiederansicht, Konfi-History Card, individualisierte Slides (planned)
 
 ## Phase Details
 
@@ -275,10 +276,27 @@ Plans:
 Plans:
 - [x] 79-01-PLAN.md -- Dashboard-Cards + Push-Notification bei Wrapped-Generierung
 
+### Phase 80: Wrapped Persistenz + Individualisierung
+**Goal**: Jedes Wrapped wird individuell: persoenlicher Highlight-Slide, Kategorie-Vorlieben, Gottesdienst-Zaehler, goldener Ueber-das-Ziel-Slide mit Konfetti, variable Formulierungen, und Wiederansicht aller vergangenen Wrappeds im Profil
+**Depends on**: Phase 79
+**Requirements**: D-01, D-02, D-03, D-04, D-05, D-06, D-07, D-08, D-09, D-10, D-11, D-12, D-13, D-14
+**Success Criteria** (what must be TRUE):
+  1. Konfi-Snapshots enthalten highlight_type, formulierung_seed, gottesdienst_count und kategorie_verteilung
+  2. Slide-Reihenfolge ist individualisiert: Highlight-Slide kommt als 2. nach Intro, Formulierungen variieren per Seed
+  3. UeberDasZielSlide zeigt goldenen Hintergrund + Konfetti wenn Zielwert uebertroffen
+  4. KategorieSlide zeigt Verteilung als Balkendiagramm, GottesdienstSlide zeigt animierten Count-up
+  5. Konfi- und Teamer-Profil zeigen "Meine Wrappeds" Sektion mit Tap-to-Reopen
+  6. Teamer Konfi-History zeigt Card "Dein Konfi-Wrapped" wenn alter Snapshot existiert
+**Plans**: 3 plans
+Plans:
+- [ ] 80-01-PLAN.md -- Backend-Aggregation erweitern + History-Endpoint + TypeScript-Interfaces
+- [ ] 80-02-PLAN.md -- Neue Slides (Kategorie, Gottesdienst, UeberDasZiel) + Individualisierung (Reihenfolge, Formulierungen)
+- [ ] 80-03-PLAN.md -- Wiederansicht (Meine Wrappeds) + Konfi-History Wrapped Card
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 75 -> 76 -> 77 -> 78 -> 79
+Phases execute in numeric order: 75 -> 76 -> 77 -> 78 -> 79 -> 80
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -287,13 +305,4 @@ Phases execute in numeric order: 75 -> 76 -> 77 -> 78 -> 79
 | 77. Teamer-Slides | 1/1 | Complete    | 2026-03-22 |
 | 78. Share-Funktion | 1/1 | Complete    | 2026-03-22 |
 | 79. Dashboard-Integration + Freischaltung | 1/1 | Complete    | 2026-03-22 |
-
-### Phase 80: Wrapped Persistenz + Individualisierung — Wiederansicht (Meine Wrappeds), Konfi-History Wrapped-Card, individualisierte Slides (Farben, Reihenfolge, Highlights, Formulierungen pro User)
-
-**Goal:** [To be planned]
-**Requirements**: TBD
-**Depends on:** Phase 79
-**Plans:** 0 plans
-
-Plans:
-- [ ] TBD (run /gsd:plan-phase 80 to break down)
+| 80. Wrapped Persistenz + Individualisierung | 0/3 | Planned    | - |
