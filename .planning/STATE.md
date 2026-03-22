@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Codebase-Hardening
 status: unknown
-stopped_at: Completed 73-01-PLAN.md
-last_updated: "2026-03-22T08:30:31.845Z"
+stopped_at: Completed 74-01-PLAN.md
+last_updated: "2026-03-22T09:27:56.278Z"
 progress:
-  total_phases: 18
+  total_phases: 19
   completed_phases: 11
-  total_plans: 23
-  completed_plans: 23
+  total_plans: 25
+  completed_plans: 24
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 73 — Testing-Fixes Runde 2
+**Current focus:** Phase 74 — Nativer Datei-Viewer
 
 ## Current Position
 
-Phase: 73
-Plan: Not started
+Phase: 74 (Nativer Datei-Viewer) — EXECUTING
+Plan: 2 of 2
 
 ## Accumulated Context
 
@@ -64,6 +64,8 @@ All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestone
 - [Phase 73]: Automatisches natives Oeffnen per useEffect bei PDF/DOCX auf nativer Plattform
 - [Phase 73]: pageRef.current direkt im onClick statt presentingElement fuer Modal-Backdrop
 - [Phase 73]: Task 3 keine Aenderung noetig — app-description-text bereits korrekt
+- [Phase 74]: openFileNatively als separate Utility-Datei statt in bestehendem Modal
+- [Phase 74]: Bilder via FileOpener, alles andere via FileViewer
 
 ### Roadmap Evolution
 
@@ -85,6 +87,6 @@ All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestone
 
 ## Session Continuity
 
-Last session: 2026-03-22T08:29:59.129Z
-Stopped at: Completed 73-01-PLAN.md
+Last session: 2026-03-22T09:27:56.275Z
+Stopped at: Completed 74-01-PLAN.md
 Resume file: None
