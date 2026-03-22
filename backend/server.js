@@ -483,7 +483,8 @@ app.use('/api/organizations', orgLimiter, organizationsRoutes(db, rbacVerifier, 
 
 app.use('/api/levels', levelsRoutes(db, rbacVerifier, roleHelpers));
 app.use('/api/teamer', teamerRoutes(db, rbacVerifier, roleHelpers));
-app.use('/api/wrapped', wrappedRoutes(db, rbacVerifier, roleHelpers));
+const wrappedRouter = wrappedRoutes(db, rbacVerifier, roleHelpers);
+app.use('/api/wrapped', wrappedRouter);
 app.use('/api/material', materialRoutes(db, rbacVerifier, roleHelpers, materialUpload));
 
 // ====================================================================
@@ -498,7 +499,7 @@ setImmediate(initializeChatRooms(db));
 // BACKGROUND SERVICES INITIALIZATION
 // ====================================================================
 
-BackgroundService.startAllServices(db);
+BackgroundService.startAllServices(db, { wrappedRouter });
 
 // ====================================================================
 // ERROR HANDLING

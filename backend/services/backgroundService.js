@@ -5,6 +5,8 @@ class BackgroundService {
   static eventReminderInterval = null;
   static pendingEventsInterval = null;
   static tokenCleanupInterval = null;
+  static wrappedCronInterval = null;
+  static wrappedRouter = null;
 
   /**
    * Startet regelmäßige Badge Updates für alle User (alle 5 Minuten)
@@ -396,17 +398,125 @@ class BackgroundService {
   }
 
   // ====================================================================
+  // WRAPPED CRON SERVICE
+  // ====================================================================
+
+  /**
+   * Startet den Wrapped-Cron Service (taeglich, prueft am 1. des Monats)
+   * - Konfi-Wrapped: Am 1. des Konfirmationsmonats automatisch generieren
+   * - Teamer-Wrapped: Am 1. Dezember fuer alle Organisationen generieren
+   */
+  static startWrappedCron(db) {
+    if (this.wrappedCronInterval) {
+      return;
+    }
+
+    // Sofort einmal pruefen
+    this.checkWrappedTriggers(db);
+
+    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+    this.wrappedCronInterval = setInterval(async () => {
+      try {
+        await this.checkWrappedTriggers(db);
+      } catch (error) {
+        console.error('Wrapped-Cron service failed:', error);
+      }
+    }, TWENTY_FOUR_HOURS);
+  }
+
+  /**
+   * Stoppt den Wrapped-Cron Service
+   */
+  static stopWrappedCron() {
+    if (this.wrappedCronInterval) {
+      clearInterval(this.wrappedCronInterval);
+      this.wrappedCronInterval = null;
+    }
+  }
+
+  /**
+   * Prueft ob Wrapped-Snapshots automatisch generiert werden muessen.
+   * Laeuft nur am 1. eines Monats.
+   */
+  static async checkWrappedTriggers(db) {
+    try {
+      const today = new Date();
+
+      // Nur am 1. des Monats ausfuehren
+      if (today.getDate() !== 1) {
+        return;
+      }
+
+      let konfiJahrgaengeGenerated = 0;
+      let teamerOrgsGenerated = 0;
+
+      // 1. Konfi-Wrapped: Jahrgaenge deren confirmation_date im aktuellen Monat+Jahr liegt
+      const { rows: jahrgaenge } = await db.query(`
+        SELECT j.id, j.organization_id
+        FROM jahrgaenge j
+        WHERE EXTRACT(MONTH FROM j.confirmation_date) = $1
+          AND EXTRACT(YEAR FROM j.confirmation_date) = $2
+          AND j.wrapped_released_at IS NULL
+      `, [today.getMonth() + 1, today.getFullYear()]);
+
+      for (const jg of jahrgaenge) {
+        try {
+          if (this.wrappedRouter && this.wrappedRouter.generateAllKonfiWrapped) {
+            await this.wrappedRouter.generateAllKonfiWrapped(db, jg.id, jg.organization_id, today.getFullYear());
+            konfiJahrgaengeGenerated++;
+          }
+        } catch (err) {
+          console.error(`Wrapped-Cron: Jahrgang ${jg.id} Fehler:`, err.message);
+        }
+      }
+
+      // 2. Teamer-Wrapped: Am 1. Dezember fuer alle Organisationen
+      if (today.getMonth() === 11) {
+        const { rows: orgs } = await db.query('SELECT id FROM organizations');
+
+        for (const org of orgs) {
+          try {
+            // Pruefen ob schon generiert (Idempotenz)
+            const { rows: existing } = await db.query(
+              `SELECT 1 FROM wrapped_snapshots WHERE organization_id = $1 AND wrapped_type = 'teamer' AND year = $2 LIMIT 1`,
+              [org.id, today.getFullYear()]
+            );
+
+            if (existing.length === 0 && this.wrappedRouter && this.wrappedRouter.generateAllTeamerWrapped) {
+              await this.wrappedRouter.generateAllTeamerWrapped(db, org.id, today.getFullYear());
+              teamerOrgsGenerated++;
+            }
+          } catch (err) {
+            console.error(`Wrapped-Cron: Teamer-Org ${org.id} Fehler:`, err.message);
+          }
+        }
+      }
+
+      if (konfiJahrgaengeGenerated > 0 || teamerOrgsGenerated > 0) {
+        console.log(`Wrapped-Cron: ${konfiJahrgaengeGenerated} Konfi-Jahrgaenge generiert, ${teamerOrgsGenerated} Teamer-Orgs generiert`);
+      }
+    } catch (error) {
+      console.error('Error in checkWrappedTriggers:', error);
+      throw error;
+    }
+  }
+
+  // ====================================================================
   // START ALL SERVICES
   // ====================================================================
 
   /**
    * Startet alle Background Services
    */
-  static startAllServices(db) {
+  static startAllServices(db, options = {}) {
+    if (options.wrappedRouter) {
+      this.wrappedRouter = options.wrappedRouter;
+    }
     this.startBadgeUpdateService(db);
     this.startEventReminderService(db);
     this.startPendingEventsService(db);
     this.startTokenCleanupService(db);
+    this.startWrappedCron(db);
   }
 
   /**
@@ -417,6 +527,7 @@ class BackgroundService {
     this.stopEventReminderService();
     this.stopPendingEventsService();
     this.stopTokenCleanupService();
+    this.stopWrappedCron();
   }
 }
 

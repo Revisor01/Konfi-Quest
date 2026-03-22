@@ -551,5 +551,108 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     }
   );
 
+  // ====================================================================
+  // BATCH-GENERIERUNG (fuer backgroundService Cron)
+  // ====================================================================
+
+  /**
+   * Generiert Konfi-Wrapped fuer alle Konfis eines Jahrgangs.
+   * Wird vom Cron oder Admin-Endpoint aufgerufen.
+   */
+  router.generateAllKonfiWrapped = async (dbRef, jahrgangId, orgId, year) => {
+    const client = await dbRef.getClient();
+    try {
+      await client.query('BEGIN');
+
+      const { rows: konfis } = await client.query(
+        `SELECT kp.user_id FROM konfi_profiles kp
+         JOIN users u ON kp.user_id = u.id
+         JOIN roles r ON u.role_id = r.id
+         WHERE kp.jahrgang_id = $1 AND r.name = 'konfi'`,
+        [jahrgangId]
+      );
+
+      let generated = 0;
+      let errors = 0;
+
+      for (const konfi of konfis) {
+        try {
+          const snapshot = await generateKonfiSnapshot(client, konfi.user_id, orgId, jahrgangId, year);
+          await client.query(
+            `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, jahrgang_id, year, data, computed_at)
+             VALUES ($1, $2, 'konfi', $3, $4, $5, NOW())
+             ON CONFLICT (user_id, wrapped_type, year)
+             DO UPDATE SET data = EXCLUDED.data, computed_at = NOW(), jahrgang_id = EXCLUDED.jahrgang_id, organization_id = EXCLUDED.organization_id`,
+            [konfi.user_id, orgId, jahrgangId, year, JSON.stringify(snapshot)]
+          );
+          generated++;
+        } catch (err) {
+          console.error(`Wrapped-Cron: Konfi ${konfi.user_id} Fehler:`, err.message);
+          errors++;
+        }
+      }
+
+      // wrapped_released_at setzen
+      await client.query(
+        `UPDATE jahrgaenge SET wrapped_released_at = NOW() WHERE id = $1`,
+        [jahrgangId]
+      );
+
+      await client.query('COMMIT');
+      return { generated, errors };
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw err;
+    } finally {
+      client.release();
+    }
+  };
+
+  /**
+   * Generiert Teamer-Wrapped fuer alle Teamer einer Organisation.
+   * Wird vom Cron oder Admin-Endpoint aufgerufen.
+   */
+  router.generateAllTeamerWrapped = async (dbRef, orgId, year) => {
+    const client = await dbRef.getClient();
+    try {
+      await client.query('BEGIN');
+
+      const { rows: teamers } = await client.query(
+        `SELECT u.id as user_id FROM users u
+         JOIN roles r ON u.role_id = r.id
+         WHERE r.name = 'teamer' AND u.organization_id = $1`,
+        [orgId]
+      );
+
+      let generated = 0;
+      let errors = 0;
+
+      for (const teamer of teamers) {
+        try {
+          const snapshot = await generateTeamerSnapshot(client, teamer.user_id, orgId, year);
+          await client.query(
+            `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, year, data, computed_at)
+             VALUES ($1, $2, 'teamer', $3, $4, NOW())
+             ON CONFLICT (user_id, wrapped_type, year)
+             DO UPDATE SET data = EXCLUDED.data, computed_at = NOW(), organization_id = EXCLUDED.organization_id`,
+            [teamer.user_id, orgId, year, JSON.stringify(snapshot)]
+          );
+          generated++;
+        } catch (err) {
+          console.error(`Wrapped-Cron: Teamer ${teamer.user_id} Fehler:`, err.message);
+          errors++;
+        }
+      }
+
+      await client.query('COMMIT');
+      return { generated, errors };
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw err;
+    } finally {
+      client.release();
+    }
+  };
+
   return router;
 };
