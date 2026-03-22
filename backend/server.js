@@ -435,7 +435,7 @@ const BackgroundService = require('./services/backgroundService');
 
 const adminBadgesRoutes = require('./routes/badges');
 const adminActivitiesRoutes = require('./routes/activities');
-const adminKonfisRoutes = require('./routes/konfi-managment');
+const adminKonfisRoutes = require('./routes/konfi-management');
 const adminJahrgaengeRoutes = require('./routes/jahrgaenge');
 const adminCategoriesRoutes = require('./routes/categories');
 
