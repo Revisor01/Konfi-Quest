@@ -28,19 +28,9 @@ Types konsolidiert, 73 DB-Indizes + 23 FKs, CustomEvents→LiveUpdateContext, Er
 
 Spotify-Wrapped-Style Jahresrueckblick: 9 Konfi-Slides + 7 Teamer-Slides mit Swiper 12, EffectCreative, Count-up Animationen. Share-Funktion (html-to-image, 1080x1920 Story-Export, natives Share-Sheet). Individualisierung: highlight_type-basierte Slide-Reihenfolge, seed-gesteuerte Formulierungen, KategorieSlide-Balkendiagramm, GottesdienstSlide-Counter, UeberDasZiel-Konfetti. Dashboard-Cards + Push bei Freischaltung. Wiederansicht "Meine Wrappeds" in Profilen. 6 Phasen, 11 Plans, 2213 LOC.
 
-## Current Milestone: v2.4 Codebase-Cleanup
+## Shipped: v2.4 Codebase-Cleanup (2026-03-22)
 
-**Goal:** Technische Schulden abbauen, Sicherheitsluecken schliessen, veraltete Patterns modernisieren.
-
-**Target features:**
-- React Router v5 → v6 Migration (Ionic-kompatibel)
-- Inline-Migrationen aus Route-Dateien loeschen
-- Wrapped-Cron auf node-cron umstellen
-- Losung-API-Key in Umgebungsvariable auslagern
-- Socket.IO Room-Join mit Organization-Isolation
-- Chat N+1 Queries durch Bulk-Queries ersetzen
-- Capacitor window-as-any durch typsichere Imports ersetzen
-- SQLite-Dependency und DB-Dateien komplett entfernen
+useHistory → useIonRouter (14 Dateien), Losung-API-Key in ENV, Socket.IO Org-Isolation, node-cron statt setInterval, Chat N+1 → 3 Bulk-Queries, Capacitor typsichere Imports, Migration-Runner in database.js, SQLite raus, Legacy-Multer raus, SMTP-Bug gefixt, konfi-management.js Typo, activity_requests.konfi_id→user_id, express-validator auf material.js+teamer.js. 5 Phasen, 12 Plans.
 
 ## Geplant: v3.0 Onboarding + Landing
 
@@ -226,4 +216,10 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | Formulierung-Seed deterministisch | (userId * 31 + year * 17) % 97 -- reproduzierbar pro User/Jahr | Bestaetigt v2.3 |
 
 ---
-*Last updated: 2026-03-22 after v2.4 milestone start*
+| useIonRouter statt React Router v6 | Ionic 8 inkompatibel mit RR v6 (peerDep ^5.0.1) | Bestaetigt v2.4 |
+| Migration-Runner in database.js | Inline-Migrationen in Routes eliminiert | Bestaetigt v2.4 |
+| node-cron statt setInterval | Kein Drift nach Container-Neustart | Bestaetigt v2.4 |
+| Bulk-Queries fuer Chat-Reactions | N+1 (400 Queries) → 3 Bulk-Queries | Bestaetigt v2.4 |
+
+---
+*Last updated: 2026-03-22 after v2.4 milestone*

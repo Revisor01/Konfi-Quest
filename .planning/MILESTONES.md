@@ -1,5 +1,24 @@
 # Milestones
 
+## v2.4 Codebase-Cleanup (Shipped: 2026-03-22)
+
+**Phases completed:** 5 phases, 12 plans, 19 tasks
+
+**Key accomplishments:**
+
+- useHistory aus 7 Auth/Konfi-Dateien entfernt und durch useIonRouter (Ionic 8 native API) mit korrektem replace/push/goBack-Pattern ersetzt
+- 8 Dateien auf useIonRouter migriert, MainTabs mit 5 Wrapper-Komponenten statt props.history in Route render-props
+- One-liner:
+- Socket.IO joinRoom-Handler mit asynchronem DB-Check gegen Cross-Org-Room-Beitritt abgesichert (chat_rooms.organization_id-Vergleich)
+- GET /rooms/:id/messages von bis zu 400 N+1-Queries auf maximal 3 Bulk-Queries mit ANY($1::int[]) umgestellt
+- FCM-Plugin per registerPlugin<FCMPlugin> typsicher eingebunden, alle window-as-any-Capacitor-Zugriffe und In-Memory-State von window auf Modul-Level-Variablen migriert
+- Migration-Runner in database.js eingebaut, der alle .sql-Dateien aus migrations/ beim Server-Start ausfuehrt, und badges.js Inline-Migrationen als idempotentes 076_badges_rename_migrations.sql ausgelagert
+- Drei Inline-Migrations-Funktionen (runMigrations, ensurePointConfigColumns, ensureWrappedSchema) aus Route-Dateien geloescht — SQL-Dateien unter backend/migrations/ sind jetzt alleinige Schema-Quelle
+- SQLite-Dependency entfernt, Legacy-Multer-Block geloescht, crypto-Reihenfolge-Bug und SMTP_SECURE-Bug in server.js behoben, tote Frontend-Komponente geloescht
+- One-liner:
+
+---
+
 ## v2.3 Konfi + Teamer Wrapped (Shipped: 2026-03-22)
 
 **Phases completed:** 6 phases, 11 plans, 22 tasks
