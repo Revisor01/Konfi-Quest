@@ -8,7 +8,8 @@ import {
   IonIcon,
   IonRefresher,
   IonRefresherContent,
-  useIonPopover
+  useIonPopover,
+  useIonModal
 } from '@ionic/react';
 import {
   home,
@@ -74,6 +75,7 @@ import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import WrappedModal from '../../wrapped/WrappedModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
 
 // Badge/Certificate Icon Mapping (shared with DashboardView)
@@ -125,6 +127,7 @@ interface DashboardData {
   events: DashboardEvent[];
   badges: { recent: Badge[]; earned_count: number; total_count: number };
   config: DashboardConfig;
+  has_wrapped?: boolean;
 }
 
 interface DailyVerse {
@@ -209,6 +212,17 @@ const TeamerDashboardPage: React.FC = () => {
     },
     { ttl: CACHE_TTL.TAGESLOSUNG }
   );
+
+  // Wrapped Modal
+  const [presentWrappedModal, dismissWrappedModal] = useIonModal(WrappedModal, {
+    onClose: () => dismissWrappedModal(),
+    displayName: dashboardData?.greeting?.display_name || '',
+    wrappedType: 'teamer' as const
+  });
+
+  const openWrapped = () => {
+    presentWrappedModal({ cssClass: 'wrapped-modal-fullscreen' });
+  };
 
   const getFirstName = (name: string) => name.split(' ')[0];
 
@@ -321,6 +335,29 @@ const TeamerDashboardPage: React.FC = () => {
                   {getGreeting(dashboardData.greeting.display_name)}
                 </h2>
                 <p className="app-dashboard-subtitle">Teamer:in</p>
+              </div>
+            </div>
+          )}
+
+          {/* Wrapped Card */}
+          {dashboardData?.has_wrapped && (
+            <div onClick={openWrapped} style={{
+              marginBottom: '16px',
+              padding: '20px',
+              borderRadius: '16px',
+              background: 'linear-gradient(135deg, #db2777 0%, #ec4899 50%, #f472b6 100%)',
+              color: 'white',
+              cursor: 'pointer',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <IonIcon icon={sparkles} style={{ fontSize: '2rem' }} />
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700' }}>Dein Teamer-Jahr ist da!</h3>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.85rem', opacity: 0.9 }}>Schau dir deinen Jahresrückblick an</p>
+                </div>
+                <IonIcon icon={chevronForward} style={{ fontSize: '1.2rem', marginLeft: 'auto' }} />
               </div>
             </div>
           )}

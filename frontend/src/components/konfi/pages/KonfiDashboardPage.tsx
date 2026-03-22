@@ -7,8 +7,10 @@ import {
   IonContent,
   IonRefresher,
   IonRefresherContent,
+  IonIcon,
   useIonModal
 } from '@ionic/react';
+import { sparkles, chevronForward } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
@@ -17,6 +19,7 @@ import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import DashboardView from '../views/DashboardView';
 import PointsHistoryModal from '../modals/PointsHistoryModal';
+import WrappedModal from '../../wrapped/WrappedModal';
 import { Event } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
 
@@ -55,6 +58,7 @@ interface DashboardData {
   confirmation_date?: string;
   point_config?: PointConfig;
   dashboard_config?: DashboardConfig;
+  has_wrapped?: boolean;
 }
 
 // Event-Typ importiert aus types/event
@@ -188,6 +192,18 @@ const KonfiDashboardPage: React.FC = () => {
     });
   };
 
+  // Wrapped Modal
+  const [presentWrappedModal, dismissWrappedModal] = useIonModal(WrappedModal, {
+    onClose: () => dismissWrappedModal(),
+    displayName: dashboardData?.konfi?.display_name || '',
+    jahrgangName: dashboardData?.konfi?.jahrgang_name || '',
+    wrappedType: 'konfi' as const
+  });
+
+  const openWrapped = () => {
+    presentWrappedModal({ cssClass: 'wrapped-modal-fullscreen' });
+  };
+
   // Memoized refresh function for live updates
   const refreshAllData = useCallback(() => {
     refreshDashboard();
@@ -263,6 +279,28 @@ const KonfiDashboardPage: React.FC = () => {
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh} onIonPull={triggerPullHaptic}>
           <IonRefresherContent />
         </IonRefresher>
+
+        {dashboardData.has_wrapped && (
+          <div onClick={openWrapped} style={{
+            margin: '0 16px 16px',
+            padding: '20px',
+            borderRadius: '16px',
+            background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #c084fc 100%)',
+            color: 'white',
+            cursor: 'pointer',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <IonIcon icon={sparkles} style={{ fontSize: '2rem' }} />
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700' }}>Dein Wrapped ist da!</h3>
+                <p style={{ margin: '4px 0 0', fontSize: '0.85rem', opacity: 0.9 }}>Schau dir deinen Konfi-Jahresrückblick an</p>
+              </div>
+              <IonIcon icon={chevronForward} style={{ fontSize: '1.2rem', marginLeft: 'auto' }} />
+            </div>
+          </div>
+        )}
 
         <DashboardView
           dashboardData={dashboardData}
