@@ -72,6 +72,8 @@ All v1.0-v2.1 decisions archived in PROJECT.md Key Decisions table and milestone
 - Phase 70 added: Rollen-Audit Fixes — Sicherheit, Logik, Frontend-Konsistenz
 - Phase 71 added: Teamer+Badge Polish — Profil-Modale, Badge-Grid, Listen-Padding, Dashboard-Badges, Jahres-Badge-Luecken, Zertifikat-Karten
 - Phase 72 added: UI-Testing Fixes — Suchleiste, Event-Suche, Teamer-Chat 403, Cache-Luecken, Offline-Icon
+- Phase 73 added: Testing-Fixes Runde 2 — Stats, Backdrop, Back-Pfeile, Material-Text, FileViewer PDF/DOCX
+- Phase 74 added: Nativer Datei-Viewer — FileViewer/FileOpener nativ, FileViewerModal nur Web-Fallback, Chat-Video onClick Fix
 
 ### Pending Todos
 

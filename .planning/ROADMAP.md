@@ -321,3 +321,13 @@ Plans:
 Plans:
 - [x] 73-01-PLAN.md — Frontend-Fixes: Stats entfernen, Modal-Backdrop, arrowBack, Beschreibung
 - [x] 73-02-PLAN.md — FileViewer: PDF/DOCX nativ oeffnen per FileOpener
+
+### Phase 74: Nativer Datei-Viewer — Alle Dateien via FileViewer/FileOpener nativ oeffnen, FileViewerModal nur Web-Fallback, Chat-Video onClick Fix
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 73
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 74 to break down)
