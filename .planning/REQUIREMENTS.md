@@ -60,10 +60,10 @@ Requirements fuer Milestone v2.3 Konfi + Teamer Wrapped.
 
 ### Dashboard-Integration (INT)
 
-- [ ] **INT-01**: Konfi-Dashboard zeigt "Dein Wrapped ist da!" Card wenn verfuegbar
-- [ ] **INT-02**: Teamer-Dashboard zeigt "Dein Teamer-Jahr!" Card wenn verfuegbar
-- [ ] **INT-03**: Push-Notification wenn Wrapped freigeschaltet wird
-- [ ] **INT-04**: Wrapped nur einmal pro Jahr/Zeitraum verfuegbar (kein erneutes Generieren)
+- [x] **INT-01**: Konfi-Dashboard zeigt "Dein Wrapped ist da!" Card wenn verfuegbar
+- [x] **INT-02**: Teamer-Dashboard zeigt "Dein Teamer-Jahr!" Card wenn verfuegbar
+- [x] **INT-03**: Push-Notification wenn Wrapped freigeschaltet wird
+- [x] **INT-04**: Wrapped nur einmal pro Jahr/Zeitraum verfuegbar (kein erneutes Generieren)
 
 ## Out of Scope
 
@@ -115,10 +115,10 @@ Requirements fuer Milestone v2.3 Konfi + Teamer Wrapped.
 | SHR-04 | Phase 78 | Complete |
 | SHR-05 | Phase 78 | Complete |
 | SHR-06 | Phase 78 | Complete |
-| INT-01 | Phase 79 | Pending |
-| INT-02 | Phase 79 | Pending |
-| INT-03 | Phase 79 | Pending |
-| INT-04 | Phase 79 | Pending |
+| INT-01 | Phase 79 | Complete |
+| INT-02 | Phase 79 | Complete |
+| INT-03 | Phase 79 | Complete |
+| INT-04 | Phase 79 | Complete |
 
 **Coverage v2.3:**
 - v2.3 requirements: 37 total

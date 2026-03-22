@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Konfi + Teamer Wrapped
 status: unknown
-stopped_at: Completed 78-01-PLAN.md
-last_updated: "2026-03-22T18:22:19.186Z"
+stopped_at: Completed 79-01-PLAN.md
+last_updated: "2026-03-22T18:32:01.182Z"
 progress:
   total_phases: 5
-  completed_phases: 4
-  total_plans: 7
-  completed_plans: 7
+  completed_phases: 5
+  total_plans: 8
+  completed_plans: 8
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-22)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 78 — Share-Funktion
+**Current focus:** Phase 79 — Dashboard-Integration
 
 ## Current Position
 
-Phase: 79
-Plan: Not started
+Phase: 79 (Dashboard-Integration) — EXECUTING
+Plan: 1 of 1
 
 ## Performance Metrics
 
@@ -49,6 +49,7 @@ Plan: Not started
 | Phase 76 P03 | 4min | 2 tasks | 6 files |
 | Phase 77 P01 | 3min | 2 tasks | 9 files |
 | Phase 78-share-funktion P01 | 4min | 2 tasks | 7 files |
+| Phase 79 P01 | 3min | 2 tasks | 3 files |
 
 ### Decisions
 
@@ -72,6 +73,8 @@ v2.3 Research-Entscheidungen:
 - [Phase 77]: buildKonfiSlides/buildTeamerSlides als separate Funktionen
 - [Phase 78]: ShareCard als reines HTML/CSS mit Inline-Styles (kein Ionic Shadow-DOM)
 - [Phase 78]: handleShare als async Funktion statt useCallback (slides-Deklarationsreihenfolge)
+- [Phase 79]: Wrapped-Card bleibt nach Oeffnen sichtbar (kein dismissed State)
+- [Phase 79]: Push fire-and-forget nach COMMIT in wrapped.js (4 Pfade)
 
 ### Pending Todos
 
@@ -85,6 +88,6 @@ v2.3 Research-Entscheidungen:
 
 ## Session Continuity
 
-Last session: 2026-03-22T18:21:38.855Z
-Stopped at: Completed 78-01-PLAN.md
+Last session: 2026-03-22T18:32:01.180Z
+Stopped at: Completed 79-01-PLAN.md
 Resume file: None

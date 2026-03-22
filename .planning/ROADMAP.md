@@ -202,7 +202,7 @@ Phase 74: Nativer Datei-Viewer (2 plans, complete)
 - [x] **Phase 76: Slide-Container + Konfi-Slides** - Swiper-Setup, Fullscreen-Modal, alle 9 Konfi-Slides mit Animationen (completed 2026-03-22)
 - [x] **Phase 77: Teamer-Slides** - 7 Teamer-spezifische Slides auf Basis der Konfi-Wrapped-Infrastruktur (completed 2026-03-22)
 - [x] **Phase 78: Share-Funktion** - Screenshot-Export, natives Share-Sheet, Share-Card-Design (completed 2026-03-22)
-- [ ] **Phase 79: Dashboard-Integration + Freischaltung** - Dashboard-Cards, Push-Notification, Verfuegbarkeitslogik
+- [x] **Phase 79: Dashboard-Integration + Freischaltung** - Dashboard-Cards, Push-Notification, Verfuegbarkeitslogik (completed 2026-03-22)
 
 ## Phase Details
 
@@ -273,7 +273,7 @@ Plans:
   4. Wrapped ist pro Jahr/Zeitraum einmalig -- ein bereits generierter Snapshot wird nicht erneut generiert
 **Plans**: 1 plan
 Plans:
-- [ ] 79-01-PLAN.md -- Dashboard-Cards + Push-Notification bei Wrapped-Generierung
+- [x] 79-01-PLAN.md -- Dashboard-Cards + Push-Notification bei Wrapped-Generierung
 
 ## Progress
 
@@ -286,4 +286,4 @@ Phases execute in numeric order: 75 -> 76 -> 77 -> 78 -> 79
 | 76. Slide-Container + Konfi-Slides | 3/3 | Complete    | 2026-03-22 |
 | 77. Teamer-Slides | 1/1 | Complete    | 2026-03-22 |
 | 78. Share-Funktion | 1/1 | Complete    | 2026-03-22 |
-| 79. Dashboard-Integration + Freischaltung | 0/1 | Not started | - |
+| 79. Dashboard-Integration + Freischaltung | 1/1 | Complete   | 2026-03-22 |
