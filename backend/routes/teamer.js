@@ -76,6 +76,54 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   });
 
   // ====================================================================
+  // TEAMER KONFIS (für DirectMessageModal — nur zugewiesene Jahrgänge)
+  // ====================================================================
+
+  // GET /teamer/konfis - Konfis der zugewiesenen Jahrgänge (Chat-Auswahl)
+  router.get('/konfis', rbacVerifier, requireTeamer, async (req, res) => {
+    try {
+      const orgId = req.user.organization_id;
+
+      // Für org_admin/admin: alle Konfis der Organisation
+      // Für teamer: nur Konfis der zugewiesenen Jahrgänge
+      let jahrgangFilter = '';
+      let params = [orgId];
+      let placeholderIndex = 2;
+
+      if (req.user.role_name === 'teamer') {
+        const viewableJahrgaenge = req.user.assigned_jahrgaenge
+          .filter(j => j.can_view)
+          .map(j => j.id);
+
+        if (viewableJahrgaenge.length === 0) {
+          return res.json([]);
+        }
+
+        const placeholders = viewableJahrgaenge.map(() => `$${placeholderIndex++}`).join(',');
+        jahrgangFilter = `AND j.id IN (${placeholders})`;
+        params.push(...viewableJahrgaenge);
+      }
+
+      const query = `
+        SELECT u.id, u.display_name as name, u.username,
+               j.name as jahrgang_name, j.id as jahrgang_id
+        FROM users u
+        JOIN roles r ON u.role_id = r.id
+        LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
+        LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
+        WHERE r.name = 'konfi' AND u.organization_id = $1 ${jahrgangFilter}
+        ORDER BY j.name DESC, u.display_name
+      `;
+
+      const { rows } = await db.query(query, params);
+      res.json(rows);
+    } catch (err) {
+      console.error('Database error in GET /teamer/konfis:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // ====================================================================
   // TEAMER KONFI-HISTORY (Punkte-Verlauf aus der Konfi-Zeit)
   // ====================================================================
 
