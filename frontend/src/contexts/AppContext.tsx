@@ -13,6 +13,14 @@ import { BaseUser } from '../types/user';
 
 // FCM Token wird über Window Events empfangen (siehe AppDelegate.swift)
 
+interface FCMPlugin {
+  forceAPNSRegistration(): Promise<void>;
+  forceTokenRetrieval(): Promise<void>;
+}
+
+// Typsichere Bridge zum nativen FCM-Plugin (registriert via AppDelegate.swift)
+const FCM = registerPlugin<FCMPlugin>('FCM');
+
 // ANTI-SPAM: Verhindere mehrfache Push-Registrierung (Global Scope)
 let pushRegistrationInProgress = false;
 let pushAlreadyRegistered = false;
@@ -145,22 +153,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           // TESTFLIGHT FIX: Force APNS registration via native plugin
           if (Capacitor.getPlatform() === 'ios') {
             try {
-              // Use direct window access for custom plugins
-              const FCMPlugin = (window as any).Capacitor?.Plugins?.FCM;
-              if (FCMPlugin) {
-                await FCMPlugin.forceAPNSRegistration();
+              await FCM.forceAPNSRegistration();
 
-                // Force FCM token retrieval after APNS registration
-                setTimeout(async () => {
-                  try {
-                    await FCMPlugin.forceTokenRetrieval();
-                  } catch (error) {
-                    console.warn('Could not force FCM token retrieval:', error);
-                  }
-                }, 2000);
-              } else {
-                console.warn('FCM Plugin not available');
-              }
+              // Force FCM token retrieval after APNS registration
+              setTimeout(async () => {
+                try {
+                  await FCM.forceTokenRetrieval();
+                } catch (error) {
+                  console.warn('Could not force FCM token retrieval:', error);
+                }
+              }, 2000);
             } catch (error) {
               console.warn('Could not force iOS APNS registration:', error);
             }
@@ -174,21 +176,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // TESTFLIGHT FIX: Force APNS registration for already granted permissions
         if (Capacitor.getPlatform() === 'ios') {
           try {
-            const FCMPlugin = (window as any).Capacitor?.Plugins?.FCM;
-            if (FCMPlugin) {
-              await FCMPlugin.forceAPNSRegistration();
+            await FCM.forceAPNSRegistration();
 
-              // Force FCM token retrieval after APNS registration
-              setTimeout(async () => {
-                try {
-                  await FCMPlugin.forceTokenRetrieval();
-                } catch (error) {
-                  console.warn('Could not force FCM token retrieval:', error);
-                }
-              }, 2000);
-            } else {
-              console.warn('FCM Plugin not available for existing permissions');
-            }
+            // Force FCM token retrieval after APNS registration
+            setTimeout(async () => {
+              try {
+                await FCM.forceTokenRetrieval();
+              } catch (error) {
+                console.warn('Could not force FCM token retrieval:', error);
+              }
+            }, 2000);
           } catch (error) {
             console.warn('Could not force iOS APNS registration:', error);
           }
@@ -261,17 +258,13 @@ useEffect(() => {
   // falls er schon da ist (z.B. bei App-Start mit eingeloggtem User).
   // Deine AppDelegate-Logik sendet ihn bei App-Aktivierung ohnehin,
   // aber dies ist eine zusätzliche Sicherheit.
-  if (Capacitor.isNativePlatform() && (window as any).Capacitor?.Plugins?.App) {
-      const { App } = (window as any).Capacitor.Plugins;
-      // Dies simuliert, dass die App aktiv wird und triggert den Token-Send in Swift
-      try {
-        App.fireRestoredResult({
-            methodName: "getLaunchUrl",
-            data: {}
-        });
-      } catch (e) {
-        // Ignore — nicht auf allen Plattformen verfügbar
-      }
+  if (Capacitor.isNativePlatform()) {
+    // Dies simuliert, dass die App aktiv wird und triggert den Token-Send in Swift
+    try {
+      (App as any).fireRestoredResult({ methodName: 'getLaunchUrl', data: {} });
+    } catch (e) {
+      // Ignore — nicht auf allen Plattformen verfügbar
+    }
   }
 
 
