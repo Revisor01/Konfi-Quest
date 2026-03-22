@@ -33,7 +33,8 @@ import {
   create
 } from 'ionicons/icons';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
-// Native FileViewer/FileOpener/Filesystem entfernt — alles ueber In-App FileViewerModal
+// Native FileViewer ueber openFileNatively, FileViewerModal als Web-Fallback
+import { openFileNatively } from '../../../utils/nativeFileViewer';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
@@ -119,30 +120,29 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
   const openFile = async (file: MaterialFile) => {
     try {
       await Haptics.impact({ style: ImpactStyle.Medium });
-
-      // Angeklickte Datei als Blob laden
       const response = await api.get(`/material/files/${file.stored_name}`, { responseType: 'blob' });
       const blob = response.data;
       const mime = response.headers?.['content-type'] || file.mime_type;
-      const blobUrl = URL.createObjectURL(new Blob([blob], { type: mime }));
 
-      // Alle Material-Dateien als FileItem-Array (Swipe-Kontext)
+      // Nativ oeffnen versuchen (per D-13)
+      const openedNatively = await openFileNatively(blob, file.original_name, mime);
+      if (openedNatively) return;
+
+      // Web-Fallback: FileViewerModal mit Swipe-Kontext
+      const blobUrl = URL.createObjectURL(new Blob([blob], { type: mime }));
       const files: FileItem[] = (material?.files || []).map(f => ({
         url: `/api/material/files/${f.stored_name}`,
         fileName: f.original_name,
         mimeType: f.mime_type
       }));
-
-      // Angeklickte Datei: Blob-URL setzen (bereits geladen)
       const clickedIdx = (material?.files || []).findIndex(f => f.id === file.id);
       if (clickedIdx >= 0) {
         files[clickedIdx] = { url: blobUrl, fileName: file.original_name, mimeType: mime };
       }
-
       viewerRef.current = { files, initialIndex: Math.max(0, clickedIdx) };
       presentFileViewer({ cssClass: 'file-viewer-modal' });
     } catch {
-      setError('Fehler beim Öffnen der Datei');
+      setError('Fehler beim Oeffnen der Datei');
     }
   };
 

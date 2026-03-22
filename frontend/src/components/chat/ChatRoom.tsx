@@ -32,7 +32,8 @@ import FileViewerModal, { FileItem } from '../shared/FileViewerModal';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
-// Native FileViewer/FileOpener entfernt — alles ueber In-App FileViewerModal
+// Native FileViewer ueber openFileNatively, FileViewerModal als Web-Fallback
+import { openFileNatively } from '../../utils/nativeFileViewer';
 import { writeQueue } from '../../services/writeQueue';
 import { networkMonitor } from '../../services/networkMonitor';
 import { ChatHeader, MessageInput, autoCapitalize, MIME_EXT_MAP, takePicture as takePictureHelper, selectFromGallery as selectFromGalleryHelper } from './ChatRoomSections';
@@ -905,22 +906,24 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       const response = await api.get(`/chat/files/${filePath}`, { responseType: 'blob' });
       const blob = response.data;
       const mime = response.headers?.['content-type'] || mimeType;
-      const blobUrl = URL.createObjectURL(new Blob([blob], { type: mime }));
 
-      // Alle Datei-Nachrichten im Chat für Swipe-Kontext sammeln
+      // Nativ oeffnen versuchen (per D-12)
+      const openedNatively = await openFileNatively(blob, fileName, mime);
+      if (openedNatively) return;
+
+      // Web-Fallback: FileViewerModal mit Swipe-Kontext
+      const blobUrl = URL.createObjectURL(new Blob([blob], { type: mime }));
       const allFileMessages = messages.filter(m => m.file_path);
       const files: FileItem[] = allFileMessages.map(m => {
         if (m.file_path === filePath) {
           return { url: blobUrl, fileName: m.file_name || fileName, mimeType: mime };
         }
-        // Andere Dateien: API-Pfad (FileViewerModal laedt lazy per fetch)
         return {
           url: `/api/chat/files/${m.file_path}`,
           fileName: m.file_name || 'Datei',
           mimeType: m.file_name ? getMimeFromFileName(m.file_name) : 'application/octet-stream'
         };
       });
-
       const clickedIndex = allFileMessages.findIndex(m => m.file_path === filePath);
       viewerRef.current = { files, initialIndex: Math.max(0, clickedIndex) };
       presentFileViewer({ cssClass: 'file-viewer-modal' });
