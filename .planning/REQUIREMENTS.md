@@ -17,7 +17,7 @@ Requirements fuer Milestone v2.4 Codebase-Cleanup.
 
 - [x] **MIG-01**: Alle Inline-Schema-Checks und ALTERs aus Route-Dateien entfernen (badges.js, jahrgaenge.js, wrapped.js)
 - [x] **MIG-02**: Schema-Aenderungen in dedizierte SQL-Migrationsdateien unter backend/migrations/ verschieben (falls noch nicht vorhanden)
-- [ ] **MIG-03**: Server startet sauber ohne Inline-Migrationen
+- [x] **MIG-03**: Server startet sauber ohne Inline-Migrationen
 
 ### Cron-System (CRON)
 
@@ -42,12 +42,12 @@ Requirements fuer Milestone v2.4 Codebase-Cleanup.
 
 ### Cleanup (CLN)
 
-- [ ] **CLN-01**: sqlite3 aus backend/package.json dependencies entfernen
-- [ ] **CLN-02**: SQLite-DB-Dateien (backend/data/*.db) aus Repository entfernen und in .gitignore aufnehmen
-- [ ] **CLN-03**: Legacy-Multer upload aus server.js entfernen und alle Stellen auf requestUpload/materialUpload migrieren
-- [ ] **CLN-04**: Deprecated FileViewerModal.tsx aus chat/modals/ loeschen
-- [ ] **CLN-05**: crypto require in server.js an den Anfang der Datei verschieben
-- [ ] **CLN-06**: SMTP_SECURE Bug fixen (|| true entfernen)
+- [x] **CLN-01**: sqlite3 aus backend/package.json dependencies entfernen
+- [x] **CLN-02**: SQLite-DB-Dateien (backend/data/*.db) aus Repository entfernen und in .gitignore aufnehmen
+- [x] **CLN-03**: Legacy-Multer upload aus server.js entfernen und alle Stellen auf requestUpload/materialUpload migrieren
+- [x] **CLN-04**: Deprecated FileViewerModal.tsx aus chat/modals/ loeschen
+- [x] **CLN-05**: crypto require in server.js an den Anfang der Datei verschieben
+- [x] **CLN-06**: SMTP_SECURE Bug fixen (|| true entfernen)
 - [ ] **CLN-07**: konfi-managment.js in konfi-management.js umbenennen (Typo)
 - [ ] **CLN-08**: activity_requests.konfi_id in user_id umbenennen (Schema-Konsistenz)
 - [ ] **CLN-09**: express-validator Validierung auf material.js und teamer.js ergaenzen
@@ -81,13 +81,13 @@ Requirements fuer Milestone v2.4 Codebase-Cleanup.
 | CAP-02 | Phase 83 | Complete |
 | MIG-01 | Phase 84 | Complete |
 | MIG-02 | Phase 84 | Complete |
-| MIG-03 | Phase 84 | Pending |
-| CLN-01 | Phase 85 | Pending |
-| CLN-02 | Phase 85 | Pending |
-| CLN-03 | Phase 85 | Pending |
-| CLN-04 | Phase 85 | Pending |
-| CLN-05 | Phase 85 | Pending |
-| CLN-06 | Phase 85 | Pending |
+| MIG-03 | Phase 84 | Complete |
+| CLN-01 | Phase 85 | Complete |
+| CLN-02 | Phase 85 | Complete |
+| CLN-03 | Phase 85 | Complete |
+| CLN-04 | Phase 85 | Complete |
+| CLN-05 | Phase 85 | Complete |
+| CLN-06 | Phase 85 | Complete |
 | CLN-07 | Phase 85 | Pending |
 | CLN-08 | Phase 85 | Pending |
 | CLN-09 | Phase 85 | Pending |

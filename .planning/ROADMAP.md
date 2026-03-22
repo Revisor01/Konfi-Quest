@@ -290,7 +290,7 @@ Plans:
   5. `express-validator`-Validierung ist auf material.js und teamer.js aktiv
 **Plans**: 2 plans
 Plans:
-- [ ] 85-01-PLAN.md — SQLite entfernen, Legacy-Multer bereinigen, FileViewerModal loeschen, crypto+SMTP Bugs fixen (CLN-01 bis CLN-06)
+- [x] 85-01-PLAN.md — SQLite entfernen, Legacy-Multer bereinigen, FileViewerModal loeschen, crypto+SMTP Bugs fixen (CLN-01 bis CLN-06)
 - [ ] 85-02-PLAN.md — konfi-managment Typo korrigieren, activity_requests.konfi_id umbenennen, express-validator ergaenzen (CLN-07 bis CLN-09)
 
 ## Progress
@@ -301,4 +301,4 @@ Plans:
 | 82. Backend-Sicherheit + Cron | 3/3 | Complete    | 2026-03-22 |
 | 83. Performance + Capacitor | 2/2 | Complete    | 2026-03-22 |
 | 84. Schema-Hygiene | 2/2 | Complete    | 2026-03-22 |
-| 85. Code-Cleanup | 0/2 | Not started | - |
+| 85. Code-Cleanup | 1/2 | In Progress|  |

@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: Codebase-Cleanup
 status: unknown
-stopped_at: Completed 84-02-PLAN.md
-last_updated: "2026-03-22T22:40:11.632Z"
+stopped_at: Completed 85-01-PLAN.md
+last_updated: "2026-03-22T22:50:32.024Z"
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 12
+  completed_plans: 11
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-22)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 84 — schema-hygiene
+**Current focus:** Phase 85 — code-cleanup
 
 ## Current Position
 
-Phase: 85
-Plan: Not started
+Phase: 85 (code-cleanup) — EXECUTING
+Plan: 2 of 2
 
 ## Accumulated Context
 
@@ -46,6 +46,7 @@ Plan: Not started
 - [Phase 84]: Migration-Runner ohne State-Tracking: alle .sql Dateien sind idempotent, kein Tracking noetig
 - [Phase 84]: Fail-fast bei Migration-Fehler: Server startet nicht wenn .sql fehlschlaegt
 - [Phase 84-schema-hygiene]: Inline-Migrations-Funktionen vollstaendig loeschen statt auskommentieren: sauberer Schnitt, kein totes Code-Rauschen
+- [Phase 85-code-cleanup]: SMTP_SECURE: !== 'false' statt === 'true' || true — konsistent mit emailService.js Pattern
 
 ### Pending Todos
 
@@ -58,6 +59,6 @@ Plan: Not started
 
 ## Session Continuity
 
-Last session: 2026-03-22T22:37:20.856Z
-Stopped at: Completed 84-02-PLAN.md
+Last session: 2026-03-22T22:50:32.021Z
+Stopped at: Completed 85-01-PLAN.md
 Resume file: None
