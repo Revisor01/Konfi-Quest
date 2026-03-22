@@ -595,39 +595,67 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
 
       const { rows: messages } = await db.query(messagesQuery, queryParams);
 
-      // Load votes for poll messages AND reactions for all messages
-      const processedMessages = await Promise.all(messages.map(async (msg) => {
-        // Load reactions for all messages
-        const reactionsQuery = `
-          SELECT r.id, r.emoji, r.user_id, r.user_type, u.display_name as user_name
-          FROM chat_message_reactions r
-          JOIN users u ON r.user_id = u.id
-          WHERE r.message_id = $1
-          ORDER BY r.created_at ASC
-        `;
-        const { rows: reactions } = await db.query(reactionsQuery, [msg.id]);
-        msg.reactions = reactions || [];
+      // Bulk-Query fuer Reactions und Poll-Votes (statt N+1 Queries)
+      const messageIds = messages.map(m => m.id);
 
-        if (msg.message_type === 'poll' && msg.options) {
-          // Parse options from JSON string (since stored as TEXT in chat_polls table)
-          try {
-            msg.options = JSON.parse(msg.options);
-          } catch (e) {
- console.error('Failed to parse poll options:', msg.options, e);
-            msg.options = [];
-          }
-          const votesQuery = `
-          SELECT v.*, u.display_name as voter_name
-          FROM chat_poll_votes v
-          LEFT JOIN users u ON v.user_id = u.id
-          WHERE v.poll_id = $1
-        `;
-          const { rows: votes } = await db.query(votesQuery, [msg.poll_id]);
-          msg.votes = votes || [];
-          msg.multiple_choice = Boolean(msg.multiple_choice);
+      let processedMessages = [];
+      if (messageIds.length === 0) {
+        processedMessages = [];
+      } else {
+        // Reactions in einer einzigen Bulk-Query laden
+        const { rows: allReactions } = await db.query(
+          `SELECT r.id, r.emoji, r.user_id, r.user_type, u.display_name as user_name, r.message_id
+           FROM chat_message_reactions r
+           JOIN users u ON r.user_id = u.id
+           WHERE r.message_id = ANY($1::int[])
+           ORDER BY r.created_at ASC`,
+          [messageIds]
+        );
+
+        // Reactions-Map aufbauen (message_id -> reactions[])
+        const reactionsMap = {};
+        for (const r of allReactions) {
+          if (!reactionsMap[r.message_id]) reactionsMap[r.message_id] = [];
+          reactionsMap[r.message_id].push(r);
         }
-        return msg;
-      }));
+
+        // Poll-IDs aus poll-Nachrichten ermitteln
+        const pollMessages = messages.filter(m => m.message_type === 'poll' && m.options && m.poll_id);
+        const pollIds = pollMessages.map(m => m.poll_id);
+
+        // Votes in einer einzigen Bulk-Query laden (nur wenn pollIds vorhanden)
+        let votesMap = {};
+        if (pollIds.length > 0) {
+          const { rows: allVotes } = await db.query(
+            `SELECT v.*, u.display_name as voter_name
+             FROM chat_poll_votes v
+             LEFT JOIN users u ON v.user_id = u.id
+             WHERE v.poll_id = ANY($1::int[])`,
+            [pollIds]
+          );
+          for (const v of allVotes) {
+            if (!votesMap[v.poll_id]) votesMap[v.poll_id] = [];
+            votesMap[v.poll_id].push(v);
+          }
+        }
+
+        // Nachrichten mit Daten anreichern (synchron, kein await)
+        processedMessages = messages.map(msg => {
+          msg.reactions = reactionsMap[msg.id] || [];
+
+          if (msg.message_type === 'poll' && msg.options) {
+            try {
+              msg.options = JSON.parse(msg.options);
+            } catch (e) {
+              console.error('Failed to parse poll options:', msg.options, e);
+              msg.options = [];
+            }
+            msg.votes = votesMap[msg.poll_id] || [];
+            msg.multiple_choice = Boolean(msg.multiple_choice);
+          }
+          return msg;
+        });
+      }
       
       // Bei ?after ist die Query bereits ASC sortiert, kein reverse noetig
       res.json(after ? processedMessages : processedMessages.reverse());
