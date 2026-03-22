@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: Codebase-Cleanup
-status: ready_to_plan
-stopped_at: Roadmap v2.4 erstellt (5 Phasen, 22 Requirements mapped)
-last_updated: "2026-03-22T22:30:00Z"
+status: unknown
+stopped_at: Completed 81-01-PLAN.md
+last_updated: "2026-03-22T21:28:03.353Z"
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 3
+  completed_plans: 1
 ---
 
 # Project State
@@ -19,16 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-22)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 81 — React Router Migration
+**Current focus:** Phase 81 — react-router-migration
 
 ## Current Position
 
-Phase: 81 of 85 (React Router Migration)
-Plan: — (noch nicht geplant)
-Status: Ready to plan
-Last activity: 2026-03-22 — Roadmap v2.4 erstellt
-
-Progress: [░░░░░░░░░░] 0%
+Phase: 81 (react-router-migration) — EXECUTING
+Plan: 2 of 3
 
 ## Accumulated Context
 
@@ -36,6 +32,9 @@ Progress: [░░░░░░░░░░] 0%
 
 - v2.4: 5 Phasen fuer Cleanup-Arbeit (81-85), kein neues Feature-Work
 - v2.3: Renderer-Map Pattern, html-to-image statt html2canvas, deterministische Seeds
+- [Phase 81-react-router-migration]: useIonRouter statt useHistory: Ionic 8 verwaltet Tab-History-Stack korrekt nur ueber useIonRouter
+- [Phase 81-react-router-migration]: history.replace → router.push(path, 'root', 'replace'): Semantisch aequivalent fuer Stack-Reset nach Login
+- [Phase 81-react-router-migration]: canGoBack()-Check in KonfiEventDetailPage: Fallback auf /konfi/events wenn kein History-Stack
 
 ### Pending Todos
 
@@ -48,6 +47,6 @@ Progress: [░░░░░░░░░░] 0%
 
 ## Session Continuity
 
-Last session: 2026-03-22
-Stopped at: Roadmap v2.4 erstellt, bereit fuer /gsd:plan-phase 81
+Last session: 2026-03-22T21:28:03.350Z
+Stopped at: Completed 81-01-PLAN.md
 Resume file: None

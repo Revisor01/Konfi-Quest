@@ -232,7 +232,7 @@ Phase 80: Wrapped Persistenz + Individualisierung (3 plans, complete)
   4. TypeScript-Build fehlerfrei
 **Plans**: 3 plans
 Plans:
-- [ ] 81-01-PLAN.md — Auth + Konfi useHistory → useIonRouter
+- [x] 81-01-PLAN.md — Auth + Konfi useHistory → useIonRouter
 - [ ] 81-02-PLAN.md — Admin + Teamer + Chat + MainTabs Migration
 - [ ] 81-03-PLAN.md — Verifikation + @types Cleanup
 
@@ -284,7 +284,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 81. React Router Migration | 0/3 | Not started | - |
+| 81. React Router Migration | 1/3 | In Progress|  |
 | 82. Backend-Sicherheit + Cron | 0/TBD | Not started | - |
 | 83. Performance + Capacitor | 0/TBD | Not started | - |
 | 84. Schema-Hygiene | 0/TBD | Not started | - |
