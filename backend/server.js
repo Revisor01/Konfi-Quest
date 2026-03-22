@@ -28,6 +28,12 @@ if (!JWT_SECRET) {
 }
 
 // ====================================================================
+// DATABASE INITIALIZATION
+// ====================================================================
+
+const db = require('./database');
+
+// ====================================================================
 // SOCKET.IO SETUP
 // ====================================================================
 
@@ -73,9 +79,32 @@ io.on('connection', (socket) => {
   const userRoom = `user_${socket.user.type}_${socket.user.id}`;
   socket.join(userRoom);
 
-  // User tritt seinen Chat-Rooms bei
-  socket.on('joinRoom', (roomId) => {
-    socket.join(`room_${roomId}`);
+  // User tritt seinen Chat-Rooms bei (mit Organization-Isolation)
+  socket.on('joinRoom', async (roomId) => {
+    try {
+      // Sicherheits-Check: Room zur selben Organisation?
+      const { rows } = await db.query(
+        'SELECT organization_id FROM chat_rooms WHERE id = $1',
+        [roomId]
+      );
+
+      if (rows.length === 0) {
+        console.warn(`Socket joinRoom: Room ${roomId} nicht gefunden (User ${socket.user.id})`);
+        return;
+      }
+
+      const roomOrgId = rows[0].organization_id;
+      const userOrgId = socket.user.organization_id;
+
+      if (roomOrgId !== userOrgId) {
+        console.warn(`Socket joinRoom: Org-Isolation-Verletzung! User ${socket.user.id} (Org ${userOrgId}) versucht Room ${roomId} (Org ${roomOrgId}) beizutreten`);
+        return;
+      }
+
+      socket.join(`room_${roomId}`);
+    } catch (err) {
+      console.error('Socket joinRoom Fehler:', err.message);
+    }
   });
 
   socket.on('leaveRoom', (roomId) => {
@@ -107,12 +136,6 @@ io.on('connection', (socket) => {
 
 // Export io for use in routes
 global.io = io;
-
-// ====================================================================
-// DATABASE INITIALIZATION
-// ====================================================================
-
-const db = require('./database'); 
 
 // ====================================================================
 // SMTP CONFIGURATION
