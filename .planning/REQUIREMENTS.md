@@ -14,8 +14,8 @@ Requirements fuer Milestone v2.7 Backend-Hardening.
 
 ### Performance (PERF)
 
-- [ ] **PERF-08**: backgroundService Badge-Check nutzt Bulk-SQL statt N+1 pro User (checkAndAwardBadges + Chat-Unread in einer Query)
-- [ ] **PERF-09**: verifyTokenRBAC cached User-Objekte in LRU-Cache (30s TTL) statt DB-Query bei jedem Request
+- [x] **PERF-08**: backgroundService Badge-Check nutzt Bulk-SQL statt N+1 pro User (checkAndAwardBadges + Chat-Unread in einer Query)
+- [x] **PERF-09**: verifyTokenRBAC cached User-Objekte in LRU-Cache (30s TTL) statt DB-Query bei jedem Request
 
 ### Architektur (ARCH)
 
@@ -41,8 +41,8 @@ Requirements fuer Milestone v2.7 Backend-Hardening.
 |-------------|-------|--------|
 | SEC-07 | Phase 92 | Pending |
 | SEC-08 | Phase 92 | Pending |
-| PERF-08 | Phase 92 | Pending |
-| PERF-09 | Phase 92 | Pending |
+| PERF-08 | Phase 92 | Complete |
+| PERF-09 | Phase 92 | Complete |
 | ARCH-06 | Phase 93 | Pending |
 | ARCH-07 | Phase 93 | Pending |
 | ARCH-08 | Phase 93 | Pending |

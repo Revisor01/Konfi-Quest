@@ -269,7 +269,7 @@ Phase 91: Frontend-Fixes + Bugfixes (1 plan, complete)
 
 Plans:
 - [ ] 92-01: Auth-RBAC-Migration + MIME-Validierung
-- [ ] 92-02: Badge-Bulk + Token-Cache
+- [x] 92-02: Badge-Bulk + Token-Cache
 
 ### Phase 93: Architektur-Refactoring
 **Goal**: Duplizierte und fragile Backend-Logik ist in wartbare Utils extrahiert, Frontend-Fetcher verursachen keine unnuetigen Re-Renders
@@ -291,5 +291,5 @@ Phases execute in numeric order: 92 -> 93
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 92. Sicherheit + Performance | 0/2 | Not started | - |
+| 92. Sicherheit + Performance | 1/2 | In Progress|  |
 | 93. Architektur-Refactoring | 0/1 | Not started | - |
