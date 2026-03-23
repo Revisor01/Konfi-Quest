@@ -113,19 +113,39 @@ io.on('connection', (socket) => {
   });
 
   // Typing Indicator
-  socket.on('typing', (roomId) => {
-    socket.to(`room_${roomId}`).emit('userTyping', {
-      roomId,
-      userId: socket.user.id,
-      userName: socket.user.display_name
-    });
+  socket.on('typing', async (roomId) => {
+    try {
+      const { rows } = await db.query(
+        'SELECT organization_id FROM chat_rooms WHERE id = $1',
+        [roomId]
+      );
+      if (rows.length === 0) return;
+      if (rows[0].organization_id !== socket.user.organization_id) return;
+      socket.to(`room_${roomId}`).emit('userTyping', {
+        roomId,
+        userId: socket.user.id,
+        userName: socket.user.display_name
+      });
+    } catch (err) {
+      console.error('Socket typing Fehler:', err.message);
+    }
   });
 
-  socket.on('stopTyping', (roomId) => {
-    socket.to(`room_${roomId}`).emit('userStoppedTyping', {
-      roomId,
-      userId: socket.user.id
-    });
+  socket.on('stopTyping', async (roomId) => {
+    try {
+      const { rows } = await db.query(
+        'SELECT organization_id FROM chat_rooms WHERE id = $1',
+        [roomId]
+      );
+      if (rows.length === 0) return;
+      if (rows[0].organization_id !== socket.user.organization_id) return;
+      socket.to(`room_${roomId}`).emit('userStoppedTyping', {
+        roomId,
+        userId: socket.user.id
+      });
+    } catch (err) {
+      console.error('Socket stopTyping Fehler:', err.message);
+    }
   });
 
   socket.on('disconnect', (reason) => {
