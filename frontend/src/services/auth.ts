@@ -1,7 +1,7 @@
 import api from './api';
 import { Device } from '@capacitor/device';
 import { Capacitor } from '@capacitor/core';
-import { getUser, setToken, setUser, setRefreshToken, clearAuth, getDeviceId, setDeviceId } from './tokenStore';
+import { getUser, setToken, setUser, setRefreshToken, getRefreshToken, clearAuth, getDeviceId, setDeviceId } from './tokenStore';
 import { offlineCache } from './offlineCache';
 import { writeQueue } from './writeQueue';
 import { networkMonitor } from './networkMonitor';
@@ -119,6 +119,17 @@ export const logout = async (): Promise<void> => {
       fullError: error
     });
     // Logout sollte trotzdem funktionieren, auch wenn Push Token removal fehlschlägt
+  }
+
+  // SEC-02: Refresh Token serverseitig revokieren, bevor lokale Daten gelöscht werden
+  try {
+    const refreshToken = getRefreshToken();
+    if (refreshToken && networkMonitor.isOnline) {
+      await api.post('/auth/logout', { refresh_token: refreshToken });
+    }
+  } catch (error) {
+    // Best-effort: Logout geht immer durch, auch wenn Backend nicht erreichbar
+    console.warn('Serverseitiges Token-Revoke fehlgeschlagen (wird lokal gelöscht):', error);
   }
 
   await clearAuth();
