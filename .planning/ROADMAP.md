@@ -281,5 +281,5 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 90. Backend-Cleanup + Performance | v2.6 | 2/2 | Complete   | 2026-03-23 |
+| 90. Backend-Cleanup + Performance | v2.6 | 2/2 | Complete    | 2026-03-23 |
 | 91. Frontend-Fixes + Bugfixes | v2.6 | 0/1 | Not started | - |
