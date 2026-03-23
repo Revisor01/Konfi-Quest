@@ -148,6 +148,29 @@ const checkAndAwardBadges = async (db, userId) => {
     const earnedBadgeIds = [];
     const earnedBadgeDetails = [];
 
+    // Vorab-Queries: activity_count, event_count, bonus_count, completed_activities, unique_activities
+    const [
+      { rows: [preActCount] },
+      { rows: [preEvCount] },
+      { rows: [preBonusCount] },
+      { rows: preCompletedActs },
+      { rows: preUniqueActs }
+    ] = await Promise.all([
+      db.query("SELECT COUNT(*) as count FROM user_activities WHERE user_id = $1 AND organization_id = $2", [userId, konfi.organization_id]),
+      db.query("SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2", [userId, konfi.organization_id]),
+      db.query("SELECT COUNT(*) as count FROM bonus_points WHERE konfi_id = $1 AND organization_id = $2", [userId, konfi.organization_id]),
+      db.query("SELECT DISTINCT a.name FROM user_activities ua JOIN activities a ON ua.activity_id = a.id WHERE ua.user_id = $1 AND a.organization_id = $2", [userId, konfi.organization_id]),
+      db.query("SELECT DISTINCT activity_id FROM user_activities WHERE user_id = $1 AND organization_id = $2", [userId, konfi.organization_id])
+    ]);
+
+    const preloaded = {
+      activityCount: parseInt(preActCount.count),
+      eventCount: parseInt(preEvCount.count),
+      bonusCount: parseInt(preBonusCount.count),
+      completedActivityNames: preCompletedActs.map(r => r.name),
+      uniqueActivityCount: preUniqueActs.length
+    };
+
     for (const badge of badges) {
       if (alreadyEarned.includes(badge.id)) continue;
 
@@ -178,16 +201,18 @@ const checkAndAwardBadges = async (db, userId) => {
 
         case 'specific_activity':
           if (criteria.required_activity_name) {
-            const { rows: [result] } = await db.query(`SELECT COUNT(*) as count FROM user_activities ka JOIN activities a ON ka.activity_id = a.id WHERE ka.user_id = $1 AND a.name = $2 AND a.organization_id = $3`, [userId, criteria.required_activity_name, konfi.organization_id]);
-            earned = result && parseInt(result.count) >= badge.criteria_value;
+            if (badge.criteria_value <= 1) {
+              earned = preloaded.completedActivityNames.includes(criteria.required_activity_name);
+            } else {
+              const { rows: [result] } = await db.query(`SELECT COUNT(*) as count FROM user_activities ka JOIN activities a ON ka.activity_id = a.id WHERE ka.user_id = $1 AND a.name = $2 AND a.organization_id = $3`, [userId, criteria.required_activity_name, konfi.organization_id]);
+              earned = result && parseInt(result.count) >= badge.criteria_value;
+            }
           }
           break;
 
         case 'activity_combination':
           if (criteria.required_activities) {
-            const { rows: results } = await db.query(`SELECT DISTINCT a.name FROM user_activities ka JOIN activities a ON ka.activity_id = a.id WHERE ka.user_id = $1 AND a.organization_id = $2`, [userId, konfi.organization_id]);
-            const completedActivities = results.map(r => r.name);
-            const matchCount = criteria.required_activities.filter(req => completedActivities.includes(req)).length;
+            const matchCount = criteria.required_activities.filter(req => preloaded.completedActivityNames.includes(req)).length;
             earned = matchCount >= badge.criteria_value;
           }
           break;
@@ -237,35 +262,22 @@ const checkAndAwardBadges = async (db, userId) => {
           break;
 
         case 'activity_count': {
-          const activityCountQuery = `
-            SELECT (
-              (SELECT COUNT(*) FROM user_activities WHERE user_id = $1 AND organization_id = $2) +
-              (SELECT COUNT(*) FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2)
-            ) as count
-          `;
-          const { rows: [activityCountResult] } = await db.query(activityCountQuery, [userId, konfi.organization_id]);
-          earned = activityCountResult && parseInt(activityCountResult.count) >= badge.criteria_value;
+          earned = (preloaded.activityCount + preloaded.eventCount) >= badge.criteria_value;
           break;
         }
 
         case 'event_count': {
-          const { rows: [eventCountResult] } = await db.query(
-            "SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2",
-            [userId, konfi.organization_id]
-          );
-          earned = eventCountResult && parseInt(eventCountResult.count) >= badge.criteria_value;
+          earned = preloaded.eventCount >= badge.criteria_value;
           break;
         }
 
         case 'bonus_points': {
-          const { rows: [bonusResult] } = await db.query("SELECT COUNT(*) as count FROM bonus_points WHERE konfi_id = $1 AND organization_id = $2", [userId, konfi.organization_id]);
-          earned = bonusResult && parseInt(bonusResult.count) >= badge.criteria_value;
+          earned = preloaded.bonusCount >= badge.criteria_value;
           break;
         }
 
         case 'unique_activities': {
-          const { rows: uniqueResults } = await db.query("SELECT DISTINCT activity_id FROM user_activities WHERE user_id = $1 AND organization_id = $2", [userId, konfi.organization_id]);
-          earned = uniqueResults.length >= badge.criteria_value;
+          earned = preloaded.uniqueActivityCount >= badge.criteria_value;
           break;
         }
 
@@ -318,6 +330,26 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
   const earnedBadgeIds = [];
   const earnedBadgeDetails = [];
 
+  // Vorab-Queries: Teamer activity_count, event_count, completed_activities, unique_activities
+  const [
+    { rows: [teamerActCount] },
+    { rows: [teamerEvCount] },
+    { rows: teamerCompletedActs },
+    { rows: teamerUniqueActs }
+  ] = await Promise.all([
+    db.query(`SELECT COUNT(*) as count FROM user_activities ua JOIN activities a ON ua.activity_id = a.id WHERE ua.user_id = $1 AND ua.organization_id = $2 AND a.target_role = 'teamer'`, [userId, organizationId]),
+    db.query("SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2", [userId, organizationId]),
+    db.query(`SELECT DISTINCT a.name FROM user_activities ua JOIN activities a ON ua.activity_id = a.id WHERE ua.user_id = $1 AND a.organization_id = $2 AND a.target_role = 'teamer'`, [userId, organizationId]),
+    db.query(`SELECT DISTINCT ua.activity_id FROM user_activities ua JOIN activities a ON ua.activity_id = a.id WHERE ua.user_id = $1 AND ua.organization_id = $2 AND a.target_role = 'teamer'`, [userId, organizationId])
+  ]);
+
+  const teamerPreloaded = {
+    activityCount: parseInt(teamerActCount.count),
+    eventCount: parseInt(teamerEvCount.count),
+    completedActivityNames: teamerCompletedActs.map(r => r.name),
+    uniqueActivityCount: teamerUniqueActs.length
+  };
+
   for (const badge of badges) {
     if (alreadyEarned.includes(badge.id)) continue;
 
@@ -329,26 +361,12 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
 
     switch (badge.criteria_type) {
       case 'activity_count': {
-        // Teamer-Aktivitäten + Events zählen
-        const actCountQuery = `
-          SELECT (
-            (SELECT COUNT(*) FROM user_activities ua
-             JOIN activities a ON ua.activity_id = a.id
-             WHERE ua.user_id = $1 AND ua.organization_id = $2 AND a.target_role = 'teamer') +
-            (SELECT COUNT(*) FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2)
-          ) as count
-        `;
-        const { rows: [actResult] } = await db.query(actCountQuery, [userId, organizationId]);
-        badgeEarned = actResult && parseInt(actResult.count) >= badge.criteria_value;
+        badgeEarned = (teamerPreloaded.activityCount + teamerPreloaded.eventCount) >= badge.criteria_value;
         break;
       }
 
       case 'event_count': {
-        const { rows: [evResult] } = await db.query(
-          "SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2",
-          [userId, organizationId]
-        );
-        badgeEarned = evResult && parseInt(evResult.count) >= badge.criteria_value;
+        badgeEarned = teamerPreloaded.eventCount >= badge.criteria_value;
         break;
       }
 
@@ -361,14 +379,7 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
 
         // Aktivitäten-Namen prüfen
         if (criteria.required_activities && criteria.required_activities.length > 0) {
-          const { rows: completedActs } = await db.query(
-            `SELECT DISTINCT a.name FROM user_activities ua
-             JOIN activities a ON ua.activity_id = a.id
-             WHERE ua.user_id = $1 AND a.organization_id = $2 AND a.target_role = 'teamer'`,
-            [userId, organizationId]
-          );
-          const actNames = completedActs.map(r => r.name);
-          const actMatch = criteria.required_activities.filter(req => actNames.includes(req)).length;
+          const actMatch = criteria.required_activities.filter(req => teamerPreloaded.completedActivityNames.includes(req)).length;
           if (actMatch < criteria.required_activities.length) allMet = false;
         }
 
@@ -454,13 +465,17 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
 
       case 'specific_activity':
         if (criteria.required_activity_name) {
-          const { rows: [result] } = await db.query(
-            `SELECT COUNT(*) as count FROM user_activities ua
-             JOIN activities a ON ua.activity_id = a.id
-             WHERE ua.user_id = $1 AND a.name = $2 AND a.organization_id = $3 AND a.target_role = 'teamer'`,
-            [userId, criteria.required_activity_name, organizationId]
-          );
-          badgeEarned = result && parseInt(result.count) >= badge.criteria_value;
+          if (badge.criteria_value <= 1) {
+            badgeEarned = teamerPreloaded.completedActivityNames.includes(criteria.required_activity_name);
+          } else {
+            const { rows: [result] } = await db.query(
+              `SELECT COUNT(*) as count FROM user_activities ua
+               JOIN activities a ON ua.activity_id = a.id
+               WHERE ua.user_id = $1 AND a.name = $2 AND a.organization_id = $3 AND a.target_role = 'teamer'`,
+              [userId, criteria.required_activity_name, organizationId]
+            );
+            badgeEarned = result && parseInt(result.count) >= badge.criteria_value;
+          }
         }
         break;
 
@@ -488,13 +503,7 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
         break;
 
       case 'unique_activities': {
-        const { rows: uniqueResults } = await db.query(
-          `SELECT DISTINCT ua.activity_id FROM user_activities ua
-           JOIN activities a ON ua.activity_id = a.id
-           WHERE ua.user_id = $1 AND ua.organization_id = $2 AND a.target_role = 'teamer'`,
-          [userId, organizationId]
-        );
-        badgeEarned = uniqueResults.length >= badge.criteria_value;
+        badgeEarned = teamerPreloaded.uniqueActivityCount >= badge.criteria_value;
         break;
       }
 
