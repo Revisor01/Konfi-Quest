@@ -380,9 +380,12 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       }
       
       // Admins and Konfis use the same optimized query now.
+      // Uses LATERAL joins to avoid N+1 queries for direct-chat names
+      // and correlated subquery in ORDER BY.
       const query = `
       SELECT
-          r.*,
+          r.id, r.type, r.organization_id, r.jahrgang_id, r.created_by, r.created_at,
+          COALESCE(CASE WHEN r.type = 'direct' THEN dm.direct_name ELSE r.name END, r.name) as name,
           j.name as jahrgang_name,
           (
               SELECT COUNT(*)
@@ -409,38 +412,37 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
               WHERE m.room_id = r.id AND m.deleted_at IS NULL
               ORDER BY m.created_at DESC
               LIMIT 1
-          ) as last_message
+          ) as last_message,
+          lm.last_message_at
       FROM chat_rooms r
       INNER JOIN chat_participants p ON r.id = p.room_id AND p.user_id = $1 AND p.user_type = $2
       LEFT JOIN jahrgaenge j ON r.jahrgang_id = j.id
       LEFT JOIN chat_read_status crs ON r.id = crs.room_id AND crs.user_id = $1 AND crs.user_type = $2
+      LEFT JOIN LATERAL (
+          SELECT u.display_name as direct_name
+          FROM chat_participants dp
+          JOIN users u ON dp.user_id = u.id
+          WHERE dp.room_id = r.id
+            AND NOT (dp.user_id = $1 AND dp.user_type = $2)
+          LIMIT 1
+      ) dm ON r.type = 'direct'
+      LEFT JOIN LATERAL (
+          SELECT created_at as last_message_at
+          FROM chat_messages
+          WHERE room_id = r.id AND deleted_at IS NULL
+          ORDER BY created_at DESC
+          LIMIT 1
+      ) lm ON true
       WHERE r.organization_id = $3
-      GROUP BY r.id, j.name, crs.last_read_at
-      ORDER BY (SELECT created_at FROM chat_messages WHERE room_id = r.id AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1) DESC NULLS LAST
+      GROUP BY r.id, r.type, r.organization_id, r.jahrgang_id, r.created_by, r.created_at, r.name,
+               j.name, crs.last_read_at, dm.direct_name, lm.last_message_at
+      ORDER BY lm.last_message_at DESC NULLS LAST
     `;
       const params = [userId, userType, organizationId];
-      
-      let { rows: rooms } = await db.query(query, params);
-      
-      // Fix direct chat names - get other participant's name for each direct chat
-      const finalRooms = await Promise.all(rooms.map(async (room) => {
-        if (room.type === 'direct') {
-          const otherParticipantQuery = `
-          SELECT u.display_name as participant_name
-          FROM chat_participants p
-          JOIN users u ON p.user_id = u.id
-          WHERE p.room_id = $1 AND NOT (p.user_id = $2 AND p.user_type = $3)
-          LIMIT 1
-        `;
-          const { rows: [otherParticipant] } = await db.query(otherParticipantQuery, [room.id, userId, userType]);
-          if (otherParticipant && otherParticipant.participant_name) {
-            room.name = otherParticipant.participant_name;
-          }
-        }
-        return room;
-      }));
-      
-      res.json(finalRooms);
+
+      const { rows: rooms } = await db.query(query, params);
+
+      res.json(rooms);
       
     } catch (err) {
  console.error('Database error in GET /rooms:', err);
