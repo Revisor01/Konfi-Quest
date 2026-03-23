@@ -227,7 +227,7 @@ Phase 85: Code-Cleanup (2 plans, complete)
 
 - [x] **Phase 86: Logout-Absicherung** - Refresh Token wird beim Logout serverseitig revokiert (completed 2026-03-23)
 - [x] **Phase 87: Security-Fixes** - Passwortlimit, Chat-Limit, Typing-Org-Check, Losung-Fallback, Frontend-Stale-Closure (completed 2026-03-23)
-- [ ] **Phase 88: Backend-Performance** - N+1 Chat, N+1 Wrapped, korrelierte Subquery, DB Pool
+- [x] **Phase 88: Backend-Performance** - N+1 Chat, N+1 Wrapped, korrelierte Subquery, DB Pool (completed 2026-03-23)
 - [ ] **Phase 89: Architektur + Cleanup** - global.io DI, material.js Legacy, Migrations-Versionstabelle, Cron-Guard
 
 ## Phase Details
@@ -272,8 +272,8 @@ Plans:
 **Plans**: 2 Plaene
 
 Plans:
-- [ ] 88-01-PLAN.md — Chat N+1 + korrelierte Subquery (chat.js)
-- [ ] 88-02-PLAN.md — Wrapped Promise.allSettled + DB Pool Konfiguration
+- [x] 88-01-PLAN.md — Chat N+1 + korrelierte Subquery (chat.js)
+- [x] 88-02-PLAN.md — Wrapped Promise.allSettled + DB Pool Konfiguration
 
 ### Phase 89: Architektur + Cleanup
 **Goal**: global.io ist eliminiert, material.js ist bereinigt, das Migrations-System traeckt Versionen, und der Cron-Guard ist konsistent
@@ -300,5 +300,5 @@ Alle Phasen bis v2.4 abgeschlossen.
 | 85. Code-Cleanup | 2/2 | Complete | 2026-03-22 |
 | 86. Logout-Absicherung | 1/1 | Complete    | 2026-03-23 |
 | 87. Security-Fixes | 1/1 | Complete    | 2026-03-23 |
-| 88. Backend-Performance | 0/2 | Not started | - |
+| 88. Backend-Performance | 2/2 | Complete   | 2026-03-23 |
 | 89. Architektur + Cleanup | 0/2 | Not started | - |
