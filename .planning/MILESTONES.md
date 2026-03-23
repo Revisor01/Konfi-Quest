@@ -1,5 +1,20 @@
 # Milestones
 
+## v2.5 Security-Hardening + Polish (Shipped: 2026-03-23)
+
+**Phases completed:** 4 phases, 6 plans, 17 tasks
+
+**Key accomplishments:**
+
+- Serverseitiges Refresh-Token-Revoke beim Logout: POST /api/auth/logout in Express + Frontend-Aufruf vor clearAuth() mit Online-Guard
+- 5 unabhängige Sicherheits- und Bug-Fixes: API-Key-Fallback entfernt, Passwort-Minimum auf 8, Chat-Limit 4000, Typing Org-Isolation via DB-Check, useOfflineQuery Stale-Closure via dataRef beseitigt
+- GET /chat/rooms mit LATERAL Joins: Direct-Namen inline geladen, ORDER BY ohne korrelierte Subquery
+- Wrapped-Snapshot-Generierung parallelisiert via Promise.allSettled mit eigenem DB-Client pro Konfi, Pool-Konfiguration explizit mit PG_POOL_MAX ENV
+- global.io aus dem gesamten Backend entfernt und durch explizite Dependency Injection (init/Parameter) ersetzt
+- material.js Legacy-Singular-Felder entfernt, schema_migrations Tracking eingefuehrt, doppelter Wrapped-Cron Date-Guard entfernt
+
+---
+
 ## v2.4 Codebase-Cleanup (Shipped: 2026-03-22)
 
 **Phases completed:** 5 phases, 12 plans, 19 tasks

@@ -4,7 +4,7 @@ milestone: v2.5
 milestone_name: Security-Hardening + Polish
 status: unknown
 stopped_at: Completed 89-01-PLAN.md
-last_updated: "2026-03-23T13:31:45.424Z"
+last_updated: "2026-03-23T13:47:13.951Z"
 progress:
   total_phases: 4
   completed_phases: 4

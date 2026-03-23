@@ -32,25 +32,9 @@ Spotify-Wrapped-Style Jahresrueckblick: 9 Konfi-Slides + 7 Teamer-Slides mit Swi
 
 useHistory → useIonRouter (14 Dateien), Losung-API-Key in ENV, Socket.IO Org-Isolation, node-cron statt setInterval, Chat N+1 → 3 Bulk-Queries, Capacitor typsichere Imports, Migration-Runner in database.js, SQLite raus, Legacy-Multer raus, SMTP-Bug gefixt, konfi-management.js Typo, activity_requests.konfi_id→user_id, express-validator auf material.js+teamer.js. 5 Phasen, 12 Plans.
 
-## Current Milestone: v2.5 Security-Hardening + Polish
+## Shipped: v2.5 Security-Hardening + Polish (2026-03-23)
 
-**Goal:** Letzte Sicherheitsluecken schliessen, Performance-Engpaesse beseitigen, und verbleibende Tech-Debt-Items abarbeiten bevor die App an die EKD geht.
-
-**Target features:**
-- Backend-Logout-Endpunkt (Refresh Token revokieren)
-- Losung-API-Key Fallback entfernen
-- Passwort-Minimum 6→8 Zeichen
-- Chat-Nachrichten Laengenlimit
-- Socket.IO Typing Org-Check
-- N+1 Chat-Raum-Uebersicht (Direct-Message-Namen)
-- N+1 Wrapped-Snapshot-Generierung parallelisieren
-- Korrelierte Subquery in Chat-Uebersicht
-- global.io → Dependency Injection
-- Legacy Single-ID Felder in material.js entfernen
-- Migrations-System Versionstabelle
-- DB Pool-Limit konfigurieren
-- Wrapped-Cron doppelter Date-Guard entfernen
-- useOfflineQuery Stale-Closure Fix
+Letzte Sicherheitsluecken geschlossen, Performance-Engpaesse beseitigt, Architektur bereinigt: Logout-Token-Revoke, 5 Security-Fixes (Passwort/Chat/Typing/API-Key/Stale-Closure), Chat N+1 mit LATERAL Joins, Wrapped parallelisiert, global.io durch DI ersetzt, schema_migrations Tracking, material.js Array-only, DB Pool konfigurierbar, Cron-Guard bereinigt. 4 Phasen, 6 Plans, 15 Requirements.
 
 ## Geplant: v3.0 Onboarding + Landing
 
@@ -138,22 +122,23 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 - Wrapped-Individualisierung: highlight_type, Kategorie-Balkendiagramm, Gottesdienst-Counter, Konfetti, Formulierungen -- v2.3
 - Dashboard-Integration: Wrapped-Cards + Push-Notification bei Freischaltung -- v2.3
 - Wiederansicht "Meine Wrappeds" in Konfi- und Teamer-Profilen -- v2.3
+- Backend-Logout mit Refresh-Token-Revoke (POST /api/auth/logout) -- v2.5
+- Losung-API-Key Fallback entfernt, 503 bei fehlendem ENV -- v2.5
+- Passwort-Minimum auf 8 Zeichen erhoeht -- v2.5
+- Chat-Nachrichten Laengenlimit 4000 Zeichen -- v2.5
+- Socket.IO Typing Org-Isolation via DB-Check -- v2.5
+- Chat N+1 eliminiert (LATERAL Joins fuer DM-Namen + Sortierung) -- v2.5
+- Wrapped-Generierung parallelisiert (Promise.allSettled) -- v2.5
+- global.io durch Dependency Injection ersetzt (liveUpdate.init, Parameter) -- v2.5
+- material.js nur noch Array-Format (event_ids, jahrgang_ids) -- v2.5
+- schema_migrations Tracking-Tabelle (Migrationen nur einmal ausfuehren) -- v2.5
+- DB Pool explizit konfigurierbar (PG_POOL_MAX, idleTimeout, connectionTimeout) -- v2.5
+- Wrapped-Cron Date-Guard entfernt (node-cron Schedule reicht) -- v2.5
+- useOfflineQuery Stale-Closure via dataRef beseitigt -- v2.5
 
 ### Active
 
-- [ ] Backend-Logout mit Refresh-Token-Revoke
-- [ ] Losung-API-Key Fallback entfernen
-- [ ] Passwort-Minimum erhoehen
-- [ ] Chat-Nachrichten Laengenlimit
-- [ ] Socket.IO Typing Org-Check
-- [ ] Chat-Performance (N+1 Rooms, korrelierte Subquery)
-- [ ] Wrapped-Performance (Parallel statt sequenziell)
-- [ ] global.io durch DI ersetzen
-- [ ] material.js Legacy-Felder entfernen
-- [ ] Migrations-Versionstabelle
-- [ ] DB Pool-Limit
-- [ ] Wrapped-Cron Guard bereinigen
-- [ ] useOfflineQuery Stale-Closure Fix
+(Keine aktiven Requirements — naechster Milestone definiert neue)
 
 ### Out of Scope
 
@@ -174,8 +159,9 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 - v1.7 shipped: Unterricht + Pflicht-Events (4 Phasen, 8 Plans, 17 Requirements, 23 Dateien, +2312/-523 Zeilen)
 - v1.8 shipped: Teamer (5 Phasen, 14 Plans, 27 Requirements, Rolle+Events+Badges+Zertifikate+Material)
 - v2.3 shipped: Konfi + Teamer Wrapped (6 Phasen, 11 Plans, 51 Requirements, 2213 LOC neue Wrapped-Komponenten)
-- Gesamt: 80 Phasen, 130+ Plans ueber 14 Milestones shipped
-- Codebase: ~36.500 Zeilen (TS/TSX/CSS)
+- v2.5 shipped: Security-Hardening + Polish (4 Phasen, 6 Plans, 15 Requirements, 14 Dateien, +225/-135 Zeilen)
+- Gesamt: 89 Phasen, 140+ Plans ueber 15 Milestones shipped
+- Codebase: ~36.600 Zeilen (TS/TSX/CSS)
 - Frontend nutzt iOS 26 Theme und MD3 Theme (beide aktiv, platform-scoped)
 - Deployment: git push -> Portainer Docker auto-build -> Xcode Build fuer iOS-Test auf echtem Geraet
 - PostgreSQL-Migration: Alle 15 Backend-Routes vollstaendig migriert
@@ -246,5 +232,11 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | node-cron statt setInterval | Kein Drift nach Container-Neustart | Bestaetigt v2.4 |
 | Bulk-Queries fuer Chat-Reactions | N+1 (400 Queries) → 3 Bulk-Queries | Bestaetigt v2.4 |
 
+| Logout best-effort (online-only Revoke) | Offline-Logout loescht nur lokal, Token laeuft natuerlich ab | Bestaetigt v2.5 |
+| LATERAL Join statt korrelierter Subquery | PostgreSQL-spezifisch aber deutlich performanter | Bestaetigt v2.5 |
+| Promise.allSettled statt for-of | Fehlerhafte Konfis blockieren andere nicht | Bestaetigt v2.5 |
+| liveUpdate.init(io) DI-Pattern | Analog zum bestehenden db-DI-Pattern | Bestaetigt v2.5 |
+| schema_migrations Tracking | Einfache Tabelle statt externes Tool (knex/umzug) | Bestaetigt v2.5 |
+
 ---
-*Last updated: 2026-03-22 after v2.4 milestone*
+*Last updated: 2026-03-23 after v2.5 milestone*
