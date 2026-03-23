@@ -270,7 +270,7 @@ Plans:
   2. Event-Detail Chat-Erstellung navigiert korrekt zur Chat-Seite (kein schwarzer Bildschirm)
   3. Event-Serie-Navigation nutzt useIonRouter statt window.location.href
   4. Badge-Progress fuer streak- und time_based-Kriterien zeigt den tatsaechlichen Fortschritt statt 0%
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
 - [ ] 91-01: Frontend-Architektur + Bugfixes (LiveUpdateContext, useIonRouter Navigation, Badge-Progress)
