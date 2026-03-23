@@ -333,7 +333,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   // POST / - Material erstellen
   router.post('/', rbacVerifier, requireOrgAdmin, validateCreateMaterial, async (req, res) => {
     try {
-      const { title, description, event_id, event_ids, jahrgang_id, jahrgang_ids, tag_ids } = req.body;
+      const { title, description, event_ids, jahrgang_ids, tag_ids } = req.body;
 
       if (!title || !title.trim()) {
         return res.status(400).json({ error: 'Titel ist erforderlich' });
@@ -346,8 +346,8 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         [title.trim(), description || null, req.user.organization_id, req.user.id]
       );
 
-      // Events zuordnen (Many-to-Many) - unterstützt event_ids Array oder legacy event_id
-      const resolvedEventIds = event_ids || (event_id ? [event_id] : []);
+      // Events zuordnen (Many-to-Many)
+      const resolvedEventIds = event_ids || [];
       if (resolvedEventIds.length > 0) {
         const eventValues = resolvedEventIds.map((_, i) => `($1, $${i + 2})`).join(', ');
         const eventParams = [material.id, ...resolvedEventIds];
@@ -357,8 +357,8 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         );
       }
 
-      // Jahrgaenge zuordnen (Many-to-Many) - unterstützt jahrgang_ids Array oder legacy jahrgang_id
-      const resolvedJahrgangIds = jahrgang_ids || (jahrgang_id ? [jahrgang_id] : []);
+      // Jahrgaenge zuordnen (Many-to-Many)
+      const resolvedJahrgangIds = jahrgang_ids || [];
       if (resolvedJahrgangIds.length > 0) {
         const jgValues = resolvedJahrgangIds.map((_, i) => `($1, $${i + 2})`).join(', ');
         const jgParams = [material.id, ...resolvedJahrgangIds];
@@ -388,7 +388,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   // PUT /:id - Material bearbeiten
   router.put('/:id', rbacVerifier, requireOrgAdmin, validateUpdateMaterial, async (req, res) => {
     try {
-      const { title, description, event_id, event_ids, jahrgang_id, jahrgang_ids, tag_ids } = req.body;
+      const { title, description, event_ids, jahrgang_ids, tag_ids } = req.body;
       const orgId = req.user.organization_id;
       const materialId = req.params.id;
 
@@ -426,8 +426,8 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         );
       }
 
-      // Events aktualisieren (DELETE + INSERT) - unterstützt event_ids Array oder legacy event_id
-      const resolvedEventIds = event_ids !== undefined ? event_ids : (event_id !== undefined ? (event_id ? [event_id] : []) : undefined);
+      // Events aktualisieren (DELETE + INSERT)
+      const resolvedEventIds = event_ids;
       if (resolvedEventIds !== undefined) {
         await db.query('DELETE FROM material_events WHERE material_id = $1', [materialId]);
         if (resolvedEventIds.length > 0) {
@@ -440,8 +440,8 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         }
       }
 
-      // Jahrgaenge aktualisieren (DELETE + INSERT) - unterstützt jahrgang_ids Array oder legacy jahrgang_id
-      const resolvedJahrgangIds = jahrgang_ids !== undefined ? jahrgang_ids : (jahrgang_id !== undefined ? (jahrgang_id ? [jahrgang_id] : []) : undefined);
+      // Jahrgaenge aktualisieren (DELETE + INSERT)
+      const resolvedJahrgangIds = jahrgang_ids;
       if (resolvedJahrgangIds !== undefined) {
         await db.query('DELETE FROM material_jahrgaenge WHERE material_id = $1', [materialId]);
         if (resolvedJahrgangIds.length > 0) {
