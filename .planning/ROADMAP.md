@@ -258,7 +258,7 @@ Plans:
 **Plans**: 1 Plan
 
 Plans:
-- [ ] 86-01-PLAN.md — Backend POST /api/auth/logout + Frontend-Revoke-Aufruf
+- [ ] 87-01-PLAN.md — Losung-Fallback, Passwort-Limit, Chat-Limit, Typing Org-Check, Stale-Closure Fix
 
 ### Phase 88: Backend-Performance
 **Goal**: Chat-Uebersicht und Wrapped-Generierung sind frei von N+1-Problemen und der DB Pool ist konfiguriert
