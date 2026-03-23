@@ -20,8 +20,8 @@ Requirements fuer Milestone v2.5 Security-Hardening + Polish.
 
 - [x] **PERF-01**: Chat-Raum-Uebersicht: Direct-Message-Namen per JOIN statt N+1 Query laden
 - [x] **PERF-02**: Chat-Raum-Sortierung: korrelierte Subquery durch LATERAL Join oder last_message_at Spalte ersetzen
-- [ ] **PERF-03**: Wrapped-Snapshot-Generierung: Queries pro Konfi parallel mit Promise.all statt sequenziell
-- [ ] **PERF-04**: DB Pool-Limit explizit konfigurieren (max, idleTimeoutMillis, connectionTimeoutMillis)
+- [x] **PERF-03**: Wrapped-Snapshot-Generierung: Queries pro Konfi parallel mit Promise.all statt sequenziell
+- [x] **PERF-04**: DB Pool-Limit explizit konfigurieren (max, idleTimeoutMillis, connectionTimeoutMillis)
 
 ### Architektur (ARCH)
 
@@ -58,8 +58,8 @@ Requirements fuer Milestone v2.5 Security-Hardening + Polish.
 | CLN-02 | Phase 87 | Complete |
 | PERF-01 | Phase 88 | Complete |
 | PERF-02 | Phase 88 | Complete |
-| PERF-03 | Phase 88 | Pending |
-| PERF-04 | Phase 88 | Pending |
+| PERF-03 | Phase 88 | Complete |
+| PERF-04 | Phase 88 | Complete |
 | ARCH-01 | Phase 89 | Pending |
 | ARCH-02 | Phase 89 | Pending |
 | ARCH-03 | Phase 89 | Pending |
