@@ -54,7 +54,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
 
   const validateChangePassword = [
     body('currentPassword').notEmpty().withMessage('Aktuelles Passwort ist erforderlich'),
-    body('newPassword').isLength({ min: 6 }).withMessage('Neues Passwort muss mindestens 6 Zeichen lang sein'),
+    body('newPassword').isLength({ min: 8 }).withMessage('Neues Passwort muss mindestens 8 Zeichen lang sein'),
     handleValidationErrors
   ];
 
@@ -83,7 +83,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
 
   const validateResetPassword = [
     body('token').notEmpty().withMessage('Token ist erforderlich'),
-    body('newPassword').isLength({ min: 6 }).withMessage('Neues Passwort muss mindestens 6 Zeichen lang sein'),
+    body('newPassword').isLength({ min: 8 }).withMessage('Neues Passwort muss mindestens 8 Zeichen lang sein'),
     handleValidationErrors
   ];
 
@@ -698,7 +698,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
     const { token, newPassword } = req.body;
     
     if (!token || !newPassword) return res.status(400).json({ error: 'Token und neues Passwort sind erforderlich' });
-    if (newPassword.length < 6) return res.status(400).json({ error: 'Das Passwort muss mindestens 6 Zeichen lang sein' });
+    if (newPassword.length < 8) return res.status(400).json({ error: 'Das Passwort muss mindestens 8 Zeichen lang sein' });
     
     try {
       const { rows: [resetRecord] } = await db.query(

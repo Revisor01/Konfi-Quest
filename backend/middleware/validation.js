@@ -56,7 +56,7 @@ const commonValidations = {
     .isLength({ min: 3, max: 50 }).withMessage('Benutzername muss zwischen 3 und 50 Zeichen lang sein')
     .matches(/^[a-zA-Z0-9._-]+$/).withMessage('Benutzername darf nur Buchstaben, Zahlen, Punkte, Bindestriche und Unterstriche enthalten'),
   password: body('password')
-    .isLength({ min: 6 }).withMessage('Passwort muss mindestens 6 Zeichen lang sein'),
+    .isLength({ min: 8 }).withMessage('Passwort muss mindestens 8 Zeichen lang sein'),
   date: body('completed_date').optional().isISO8601().withMessage('Ungültiges Datumsformat'),
 };
 
