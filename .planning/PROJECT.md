@@ -32,6 +32,26 @@ Spotify-Wrapped-Style Jahresrueckblick: 9 Konfi-Slides + 7 Teamer-Slides mit Swi
 
 useHistory → useIonRouter (14 Dateien), Losung-API-Key in ENV, Socket.IO Org-Isolation, node-cron statt setInterval, Chat N+1 → 3 Bulk-Queries, Capacitor typsichere Imports, Migration-Runner in database.js, SQLite raus, Legacy-Multer raus, SMTP-Bug gefixt, konfi-management.js Typo, activity_requests.konfi_id→user_id, express-validator auf material.js+teamer.js. 5 Phasen, 12 Plans.
 
+## Current Milestone: v2.5 Security-Hardening + Polish
+
+**Goal:** Letzte Sicherheitsluecken schliessen, Performance-Engpaesse beseitigen, und verbleibende Tech-Debt-Items abarbeiten bevor die App an die EKD geht.
+
+**Target features:**
+- Backend-Logout-Endpunkt (Refresh Token revokieren)
+- Losung-API-Key Fallback entfernen
+- Passwort-Minimum 6→8 Zeichen
+- Chat-Nachrichten Laengenlimit
+- Socket.IO Typing Org-Check
+- N+1 Chat-Raum-Uebersicht (Direct-Message-Namen)
+- N+1 Wrapped-Snapshot-Generierung parallelisieren
+- Korrelierte Subquery in Chat-Uebersicht
+- global.io → Dependency Injection
+- Legacy Single-ID Felder in material.js entfernen
+- Migrations-System Versionstabelle
+- DB Pool-Limit konfigurieren
+- Wrapped-Cron doppelter Date-Guard entfernen
+- useOfflineQuery Stale-Closure Fix
+
 ## Geplant: v3.0 Onboarding + Landing
 
 **Goal:** Onboarding-Flow, Landing Website mit Erklaerung, Github Readme, Wiki — letzter Schritt vor oeffentlichem Launch.
@@ -121,14 +141,19 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 
 ### Active
 
-- [ ] React Router v6 Migration
-- [ ] Inline-Migrationen entfernen
-- [ ] node-cron fuer Wrapped
-- [ ] Losung-API-Key als ENV
-- [ ] Socket.IO Org-Isolation
-- [ ] Chat N+1 Bulk-Queries
-- [ ] Capacitor typsichere Imports
-- [ ] SQLite komplett entfernen
+- [ ] Backend-Logout mit Refresh-Token-Revoke
+- [ ] Losung-API-Key Fallback entfernen
+- [ ] Passwort-Minimum erhoehen
+- [ ] Chat-Nachrichten Laengenlimit
+- [ ] Socket.IO Typing Org-Check
+- [ ] Chat-Performance (N+1 Rooms, korrelierte Subquery)
+- [ ] Wrapped-Performance (Parallel statt sequenziell)
+- [ ] global.io durch DI ersetzen
+- [ ] material.js Legacy-Felder entfernen
+- [ ] Migrations-Versionstabelle
+- [ ] DB Pool-Limit
+- [ ] Wrapped-Cron Guard bereinigen
+- [ ] useOfflineQuery Stale-Closure Fix
 
 ### Out of Scope
 
