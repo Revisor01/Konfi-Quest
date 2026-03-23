@@ -72,24 +72,29 @@ class BackgroundService {
       let updatedCount = 0;
       const checkAndAwardBadges = require('../routes/badges').checkAndAwardBadges;
 
+      // BULK: Chat-Unread fuer ALLE User auf einmal berechnen (statt N einzelne Queries)
+      const chatUnreadQuery = `
+        SELECT cp.user_id, cp.user_type, COUNT(DISTINCT cm.id)::int as chat_unread
+        FROM chat_participants cp
+        JOIN chat_messages cm ON cm.room_id = cp.room_id
+        LEFT JOIN chat_read_status crs ON cm.room_id = crs.room_id
+          AND crs.user_id = cp.user_id AND crs.user_type = cp.user_type
+        WHERE cm.created_at > COALESCE(crs.last_read_at, '1970-01-01')
+          AND cm.deleted_at IS NULL
+          AND NOT (cm.user_id = cp.user_id AND cm.user_type = cp.user_type)
+        GROUP BY cp.user_id, cp.user_type
+        HAVING COUNT(DISTINCT cm.id) > 0
+      `;
+      const { rows: unreadRows } = await db.query(chatUnreadQuery);
+      const chatUnreadMap = {};
+      for (const row of unreadRows) {
+        chatUnreadMap[`${row.user_id}_${row.user_type}`] = row.chat_unread;
+      }
+
       for (const user of users) {
         try {
-          // Badge Count für User berechnen (nur Chat-Unread für Konfis/Teamer)
-          const badgeQuery = `
-            SELECT
-              (SELECT COUNT(DISTINCT cm.id)::int FROM chat_messages cm
-               JOIN chat_participants cp ON cm.room_id = cp.room_id
-               LEFT JOIN chat_read_status crs ON cm.room_id = crs.room_id
-                 AND crs.user_id = $1 AND crs.user_type = $2
-               WHERE cp.user_id = $1 AND cp.user_type = $2
-                 AND cm.created_at > COALESCE(crs.last_read_at, '1970-01-01')
-                 AND cm.deleted_at IS NULL
-                 AND NOT (cm.user_id = $1 AND cm.user_type = $2)
-              ) as chat_unread
-          `;
-          const { rows: [result] } = await db.query(badgeQuery, [user.user_id, user.user_type]);
-
-          const badgeCount = result?.chat_unread || 0;
+          // Chat-Unread aus Bulk-Map lesen (kein DB-Query mehr pro User)
+          const badgeCount = chatUnreadMap[`${user.user_id}_${user.user_type}`] || 0;
 
           // Silent badge-count update (App-Icon Badge) wenn Count > 0
           if (badgeCount > 0) {
