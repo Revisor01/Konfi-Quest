@@ -269,7 +269,7 @@ Plans:
   2. Die Chat-Raumsortierung verwendet einen LATERAL Join oder last_message_at statt korrelierter Subquery
   3. Die Wrapped-Snapshot-Generierung parallelisiert Queries pro Konfi mit Promise.allSettled
   4. Der DB Pool hat explizite max/idleTimeout/connectionTimeout Werte und ist ueber Umgebungsvariable konfigurierbar
-**Plans**: 2 Plans
+**Plans**: 2 Plaene
 
 Plans:
 - [ ] 88-01-PLAN.md — Chat N+1 + korrelierte Subquery (chat.js)
@@ -284,10 +284,11 @@ Plans:
   2. material.js akzeptiert ausschliesslich das Array-Format (event_ids, jahrgang_ids), Legacy-Einzelfeld-Pfad ist entfernt
   3. Ausgefuehrte Migrationen werden in einer schema_migrations Tabelle gespeichert und beim naechsten Start nicht erneut ausgefuehrt
   4. Der doppelte Date-Guard im Wrapped-Cron ist entfernt, die node-cron Schedule ist die einzige Ausfuehrungs-Bedingung
-**Plans**: 1 Plan
+**Plans**: 2 Plaene
 
 Plans:
-- [ ] 89-01-PLAN.md — global.io DI, material.js Legacy-Pfad, schema_migrations, Cron-Guard
+- [ ] 89-01-PLAN.md — global.io DI: liveUpdate.init(io), chat.js + users.js io-Parameter, server.js Injektion
+- [ ] 89-02-PLAN.md — material.js Legacy entfernen, schema_migrations Tracking, Cron-Guard bereinigen
 
 ## Progress
 
@@ -297,7 +298,7 @@ Alle Phasen bis v2.4 abgeschlossen.
 |-------|----------------|--------|-----------|
 | 84. Schema-Hygiene | 2/2 | Complete | 2026-03-22 |
 | 85. Code-Cleanup | 2/2 | Complete | 2026-03-22 |
-| 86. Logout-Absicherung | 0/? | Not started | - |
-| 87. Security-Fixes | 0/? | Not started | - |
+| 86. Logout-Absicherung | 0/1 | Not started | - |
+| 87. Security-Fixes | 0/1 | Not started | - |
 | 88. Backend-Performance | 0/2 | Not started | - |
-| 89. Architektur + Cleanup | 0/? | Not started | - |
+| 89. Architektur + Cleanup | 0/2 | Not started | - |
