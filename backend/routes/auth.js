@@ -795,6 +795,29 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
     }
   });
 
+  // POST /api/auth/logout — Revokiert das aktive Refresh Token
+  router.post('/logout', verifyToken, async (req, res) => {
+    const { refresh_token } = req.body;
+
+    // Best-effort: Logout geht immer durch, auch ohne Token
+    if (!refresh_token) {
+      return res.json({ message: 'Logout erfolgreich' });
+    }
+
+    try {
+      const hash = hashToken(refresh_token);
+      await db.query(
+        'UPDATE refresh_tokens SET revoked_at = NOW() WHERE token_hash = $1 AND revoked_at IS NULL',
+        [hash]
+      );
+      res.json({ message: 'Logout erfolgreich' });
+    } catch (err) {
+      console.error('Fehler beim Revoke des Refresh Tokens:', err);
+      // Best-effort: Fehler nicht an Client weitergeben, Logout trotzdem bestätigen
+      res.json({ message: 'Logout erfolgreich' });
+    }
+  });
+
   // Abgelaufene + revoked Refresh-Tokens alle 24h aufraeumen
   setInterval(async () => {
     try {
