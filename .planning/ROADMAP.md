@@ -299,6 +299,6 @@ Alle Phasen bis v2.4 abgeschlossen.
 | 84. Schema-Hygiene | 2/2 | Complete | 2026-03-22 |
 | 85. Code-Cleanup | 2/2 | Complete | 2026-03-22 |
 | 86. Logout-Absicherung | 1/1 | Complete    | 2026-03-23 |
-| 87. Security-Fixes | 1/1 | Complete   | 2026-03-23 |
+| 87. Security-Fixes | 1/1 | Complete    | 2026-03-23 |
 | 88. Backend-Performance | 0/2 | Not started | - |
 | 89. Architektur + Cleanup | 0/2 | Not started | - |
