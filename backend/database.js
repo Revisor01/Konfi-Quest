@@ -6,13 +6,13 @@ const { Pool } = require('pg');
 const types = require('pg').types;
 types.setTypeParser(20, (val) => parseInt(val, 10)); // bigint
 
-// Der Pool verwendet automatisch die Standard-Umgebungsvariablen für PostgreSQL
-// (PGHOST, PGUSER, PGDATABASE, PGPASSWORD, PGPORT) oder die DATABASE_URL.
-// Wenn Ihr Node.js-Server und Ihre PostgreSQL-DB im selben Docker-Compose-Netzwerk laufen,
-// ist die DATABASE_URL der empfohlene Weg.
-// Beispiel: DATABASE_URL="postgresql://user:password@postgres:5432/konfi-db"
+// Pool-Konfiguration: PG_POOL_MAX (Standard 20), PG_IDLE_TIMEOUT (Standard 30s), PG_CONN_TIMEOUT (Standard 5s)
+// Bei EKD-Skalierung PG_POOL_MAX im Docker-Compose setzen (z.B. 50).
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  max: parseInt(process.env.PG_POOL_MAX || '20', 10),
+  idleTimeoutMillis: parseInt(process.env.PG_IDLE_TIMEOUT || '30000', 10),
+  connectionTimeoutMillis: parseInt(process.env.PG_CONN_TIMEOUT || '5000', 10),
 });
 
 async function runMigrations(pool) {
