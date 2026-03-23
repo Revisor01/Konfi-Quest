@@ -4,7 +4,7 @@ milestone: v2.5
 milestone_name: Security-Hardening + Polish
 status: unknown
 stopped_at: Completed 86-01-PLAN.md
-last_updated: "2026-03-23T10:20:32.282Z"
+last_updated: "2026-03-23T10:22:41.577Z"
 progress:
   total_phases: 4
   completed_phases: 1
@@ -23,8 +23,8 @@ See: .planning/PROJECT.md (updated 2026-03-23)
 
 ## Current Position
 
-Phase: 86 (logout-absicherung) — EXECUTING
-Plan: 1 of 1
+Phase: 87
+Plan: Not started
 
 ## Accumulated Context
 
