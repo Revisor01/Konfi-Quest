@@ -346,12 +346,14 @@ interface SeriesEventsSectionProps {
   seriesEvents: EventData[];
   formatDate: (dateString: string) => string;
   formatTime: (dateString: string) => string;
+  onNavigate: (eventId: number) => void;
 }
 
 export const SeriesEventsSection = React.memo<SeriesEventsSectionProps>(({
   seriesEvents,
   formatDate,
-  formatTime
+  formatTime,
+  onNavigate
 }) => (
   <IonList className="app-section-inset" inset={true}>
     <IonListHeader>
@@ -368,7 +370,7 @@ export const SeriesEventsSection = React.memo<SeriesEventsSectionProps>(({
             <div
               key={seriesEvent.id}
               className={`app-list-item ${isFull ? 'app-list-item--danger' : 'app-list-item--success'} app-event-detail__series-link`}
-              onClick={() => window.location.href = `/admin/events/${seriesEvent.id}`}
+              onClick={() => onNavigate(seriesEvent.id)}
             >
               <div className="app-corner-badges">
                 <div className={`app-corner-badge ${isFull ? 'app-corner-badge--danger' : 'app-corner-badge--success'}`}>

@@ -5,7 +5,7 @@ import {
   IonItem, IonLabel, IonList, IonListHeader,
   IonRefresher, IonRefresherContent, useIonModal,
   IonItemSliding, IonItemOptions, IonItemOption,
-  useIonActionSheet, useIonAlert
+  useIonActionSheet, useIonAlert, useIonRouter
 } from '@ionic/react';
 import {
   arrowBack, createOutline, calendar, people,
@@ -90,6 +90,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const pageRef = useRef<HTMLElement>(null);
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
   const { setSuccess, setError, isOnline } = useApp();
+  const router = useIonRouter();
   const { triggerRefresh } = useLiveUpdate();
   const [presentActionSheet] = useIonActionSheet();
   const [presentAlert] = useIonAlert();
@@ -394,7 +395,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   };
 
   const handleNavigateToChat = () => {
-    window.location.href = `/admin/chat/${eventData?.chat_room_id}`;
+    router.push(`/admin/chat/${eventData?.chat_room_id}`, 'forward');
   };
 
   const handleMaterialClick = (materialId: number) => {
@@ -589,6 +590,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             seriesEvents={eventData.series_events as any}
             formatDate={formatDate}
             formatTime={formatTime}
+            onNavigate={(eventId) => router.push(`/admin/events/${eventId}`, 'forward')}
           />
         )}
 
