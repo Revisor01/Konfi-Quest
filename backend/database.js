@@ -16,20 +16,43 @@ const pool = new Pool({
 });
 
 async function runMigrations(pool) {
+  // Tracking-Tabelle sicherstellen (idempotent)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS schema_migrations (
+      name TEXT PRIMARY KEY,
+      applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
   const migrationsDir = path.join(__dirname, 'migrations');
   const files = fs.readdirSync(migrationsDir)
     .filter(f => f.endsWith('.sql'))
-    .sort(); // alphabetisch = numerisch durch Dateinamen-Praefix
+    .sort();
+
+  // Bereits ausgefuehrte Migrationen laden
+  const { rows: applied } = await pool.query('SELECT name FROM schema_migrations');
+  const appliedSet = new Set(applied.map(r => r.name));
+
+  let newCount = 0;
   for (const file of files) {
+    if (appliedSet.has(file)) {
+      continue; // Bereits ausgefuehrt, ueberspringen
+    }
     const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
     try {
       await pool.query(sql);
+      await pool.query('INSERT INTO schema_migrations (name) VALUES ($1)', [file]);
+      newCount++;
     } catch (err) {
       console.error(`Migration failed: ${file}`, err.message);
       throw err;
     }
   }
-  console.log(`Migrations applied: ${files.length} files`);
+  if (newCount > 0) {
+    console.log(`Migrations applied: ${newCount} new (${files.length} total)`);
+  } else {
+    console.log(`Migrations: alle ${files.length} bereits ausgefuehrt`);
+  }
 }
 
 // Einmaliger Test beim Starten der Anwendung, um sicherzustellen, dass die DB erreichbar ist.
