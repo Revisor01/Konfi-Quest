@@ -332,6 +332,30 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     };
   }
 
+  /**
+   * Parallele Hilfsfunktion: Generiert und speichert einen Konfi-Snapshot.
+   * Holt eigenen DB-Client aus dem Pool (kein geteilter Client fuer parallele Queries).
+   */
+  async function generateAndSaveKonfiSnapshot(dbRef, userId, orgId, jahrgangId, year) {
+    const konfiClient = await dbRef.getClient();
+    try {
+      const snapshot = await generateKonfiSnapshot(konfiClient, userId, orgId, jahrgangId, year);
+      await konfiClient.query(
+        `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, jahrgang_id, year, data, computed_at)
+         VALUES ($1, $2, 'konfi', $3, $4, $5, NOW())
+         ON CONFLICT (user_id, wrapped_type, year)
+         DO UPDATE SET data = EXCLUDED.data, computed_at = NOW(), jahrgang_id = EXCLUDED.jahrgang_id, organization_id = EXCLUDED.organization_id`,
+        [userId, orgId, jahrgangId, year, JSON.stringify(snapshot)]
+      );
+      return { userId, ok: true };
+    } catch (err) {
+      console.error(`Wrapped generation error for konfi ${userId}:`, err.message);
+      return { userId, ok: false, err };
+    } finally {
+      konfiClient.release();
+    }
+  }
+
   // ====================================================================
   // ENDPOINTS
   // ====================================================================
@@ -400,26 +424,12 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           [jahrgangId]
         );
 
-        let generated = 0;
-        let errors = 0;
-
-        for (const konfi of konfis) {
-          try {
-            const snapshot = await generateKonfiSnapshot(client, konfi.user_id, req.user.organization_id, jahrgangId, currentYear);
-
-            await client.query(
-              `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, jahrgang_id, year, data, computed_at)
-               VALUES ($1, $2, 'konfi', $3, $4, $5, NOW())
-               ON CONFLICT (user_id, wrapped_type, year)
-               DO UPDATE SET data = EXCLUDED.data, computed_at = NOW(), jahrgang_id = EXCLUDED.jahrgang_id, organization_id = EXCLUDED.organization_id`,
-              [konfi.user_id, req.user.organization_id, jahrgangId, currentYear, JSON.stringify(snapshot)]
-            );
-            generated++;
-          } catch (err) {
-            console.error(`Wrapped generation error for konfi ${konfi.user_id}:`, err.message);
-            errors++;
-          }
-        }
+        // Parallele Snapshot-Generierung (jeder Konfi holt eigenen DB-Client)
+        const results = await Promise.allSettled(
+          konfis.map(konfi => generateAndSaveKonfiSnapshot(db, konfi.user_id, req.user.organization_id, jahrgangId, currentYear))
+        );
+        const generated = results.filter(r => r.status === 'fulfilled' && r.value.ok).length;
+        const errors = results.length - generated;
 
         // wrapped_released_at setzen (auch bei erneutem Generieren)
         await client.query(
@@ -633,25 +643,12 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         [jahrgangId]
       );
 
-      let generated = 0;
-      let errors = 0;
-
-      for (const konfi of konfis) {
-        try {
-          const snapshot = await generateKonfiSnapshot(client, konfi.user_id, orgId, jahrgangId, year);
-          await client.query(
-            `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, jahrgang_id, year, data, computed_at)
-             VALUES ($1, $2, 'konfi', $3, $4, $5, NOW())
-             ON CONFLICT (user_id, wrapped_type, year)
-             DO UPDATE SET data = EXCLUDED.data, computed_at = NOW(), jahrgang_id = EXCLUDED.jahrgang_id, organization_id = EXCLUDED.organization_id`,
-            [konfi.user_id, orgId, jahrgangId, year, JSON.stringify(snapshot)]
-          );
-          generated++;
-        } catch (err) {
-          console.error(`Wrapped-Cron: Konfi ${konfi.user_id} Fehler:`, err.message);
-          errors++;
-        }
-      }
+      // Parallele Snapshot-Generierung (jeder Konfi holt eigenen DB-Client)
+      const results = await Promise.allSettled(
+        konfis.map(konfi => generateAndSaveKonfiSnapshot(dbRef, konfi.user_id, orgId, jahrgangId, year))
+      );
+      const generated = results.filter(r => r.status === 'fulfilled' && r.value.ok).length;
+      const errors = results.length - generated;
 
       // wrapped_released_at setzen
       await client.query(
