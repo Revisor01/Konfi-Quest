@@ -9,9 +9,9 @@ Requirements fuer Milestone v2.6 Final Polish + Bugfixes.
 
 ### Performance (PERF)
 
-- [ ] **PERF-05**: bcrypt.hashSync/compareSync durch async-Varianten ersetzen (konfi-management.js, users.js)
-- [ ] **PERF-06**: Badge-Progress-Berechnung: Punkte-Daten einmal vorab laden statt N+1 Query pro Badge
-- [ ] **PERF-07**: Notification-Insert bei Aktivitaetsantrag: Bulk-INSERT statt Schleife pro Admin
+- [x] **PERF-05**: bcrypt.hashSync/compareSync durch async-Varianten ersetzen (konfi-management.js, users.js)
+- [x] **PERF-06**: Badge-Progress-Berechnung: Punkte-Daten einmal vorab laden statt N+1 Query pro Badge
+- [x] **PERF-07**: Notification-Insert bei Aktivitaetsantrag: Bulk-INSERT statt Schleife pro Admin
 
 ### Konfiguration (CONF)
 
@@ -52,9 +52,9 @@ Requirements fuer Milestone v2.6 Final Polish + Bugfixes.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PERF-05 | Phase 90 | Pending |
-| PERF-06 | Phase 90 | Pending |
-| PERF-07 | Phase 90 | Pending |
+| PERF-05 | Phase 90 | Complete |
+| PERF-06 | Phase 90 | Complete |
+| PERF-07 | Phase 90 | Complete |
 | CONF-01 | Phase 90 | Pending |
 | CONF-02 | Phase 90 | Pending |
 | CONF-03 | Phase 90 | Pending |

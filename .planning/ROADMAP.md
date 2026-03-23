@@ -258,7 +258,7 @@ Phase 89: Architektur + Cleanup (2 plans, complete)
 **Plans**: 2 plans
 
 Plans:
-- [ ] 90-01: Performance-Fixes (bcrypt async, Badge N+1, Notification Bulk-Insert)
+- [x] 90-01: Performance-Fixes (bcrypt async, Badge N+1, Notification Bulk-Insert)
 - [ ] 90-02: Konfiguration + Cleanup (ENV-Variablen, Fallbacks entfernen, SQLite weg, Migrations-Namen, losungService, SIGTERM)
 
 ### Phase 91: Frontend-Fixes + Bugfixes
@@ -281,5 +281,5 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 90. Backend-Cleanup + Performance | v2.6 | 0/2 | Not started | - |
+| 90. Backend-Cleanup + Performance | v2.6 | 1/2 | In Progress|  |
 | 91. Frontend-Fixes + Bugfixes | v2.6 | 0/1 | Not started | - |
