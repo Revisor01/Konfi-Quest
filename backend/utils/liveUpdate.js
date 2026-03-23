@@ -1,6 +1,12 @@
 // Live Update Helper
 // Sendet WebSocket-Events an User für Echtzeit-Aktualisierungen
 
+let _io = null;
+
+function init(io) {
+  _io = io;
+}
+
 /**
  * Sendet ein Live-Update an einen spezifischen User
  * @param {string} userType - 'konfi' oder 'admin'
@@ -10,7 +16,7 @@
  * @param {object} data - Optionale zusätzliche Daten
  */
 function sendToUser(userType, userId, updateType, action = 'refresh', data = null) {
-  if (!global.io) {
+  if (!_io) {
     return;
   }
 
@@ -24,7 +30,7 @@ function sendToUser(userType, userId, updateType, action = 'refresh', data = nul
     timestamp: new Date().toISOString()
   };
 
-  global.io.to(userRoom).emit('liveUpdate', event);
+  _io.to(userRoom).emit('liveUpdate', event);
 }
 
 /**
@@ -35,7 +41,7 @@ function sendToUser(userType, userId, updateType, action = 'refresh', data = nul
  * @param {object} data - Optionale zusätzliche Daten
  */
 async function sendToOrgAdmins(organizationId, updateType, action = 'refresh', data = null) {
-  if (!global.io) {
+  if (!_io) {
     return;
   }
 
@@ -58,7 +64,7 @@ async function sendToOrgAdmins(organizationId, updateType, action = 'refresh', d
 
     adminsResult.rows.forEach(admin => {
       const userRoom = `user_admin_${admin.id}`;
-      global.io.to(userRoom).emit('liveUpdate', event);
+      _io.to(userRoom).emit('liveUpdate', event);
     });
 
   } catch (error) {
@@ -74,7 +80,7 @@ async function sendToOrgAdmins(organizationId, updateType, action = 'refresh', d
  * @param {object} data - Optionale zusätzliche Daten
  */
 async function sendToOrgKonfis(organizationId, updateType, action = 'refresh', data = null) {
-  if (!global.io) {
+  if (!_io) {
     return;
   }
 
@@ -97,7 +103,7 @@ async function sendToOrgKonfis(organizationId, updateType, action = 'refresh', d
 
     konfisResult.rows.forEach(konfi => {
       const userRoom = `user_konfi_${konfi.id}`;
-      global.io.to(userRoom).emit('liveUpdate', event);
+      _io.to(userRoom).emit('liveUpdate', event);
     });
 
   } catch (error) {
@@ -117,7 +123,7 @@ async function sendToOrg(organizationId, updateType, action = 'refresh', data = 
  * Sendet ein Live-Update an alle Konfis eines bestimmten Jahrgangs
  */
 async function sendToJahrgang(jahrgangId, updateType, action = 'refresh', data = null) {
-  if (!global.io) {
+  if (!_io) {
     return;
   }
 
@@ -138,7 +144,7 @@ async function sendToJahrgang(jahrgangId, updateType, action = 'refresh', data =
 
     konfisResult.rows.forEach(konfi => {
       const userRoom = `user_konfi_${konfi.id}`;
-      global.io.to(userRoom).emit('liveUpdate', event);
+      _io.to(userRoom).emit('liveUpdate', event);
     });
 
   } catch (error) {
@@ -169,6 +175,7 @@ function sendToAdmin(adminId, updateType, action = 'refresh', data = null) {
 }
 
 module.exports = {
+  init,
   sendToUser,
   sendToKonfi,
   sendToAdmin,
