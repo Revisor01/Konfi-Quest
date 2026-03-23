@@ -9,12 +9,12 @@ Requirements fuer Milestone v2.5 Security-Hardening + Polish.
 
 ### Sicherheit (SEC)
 
-- [ ] **SEC-01**: Backend-Endpoint POST /api/auth/logout revokiert das aktive Refresh Token (revoked_at = NOW())
-- [ ] **SEC-02**: Frontend-Logout ruft /api/auth/logout auf bevor lokale Daten geloescht werden
-- [ ] **SEC-03**: Losung-API-Key Fallback-Wert aus konfi.js und teamer.js entfernen (nur process.env, kein Fallback)
-- [ ] **SEC-04**: Passwort-Minimum von 6 auf 8 Zeichen erhoehen (auth.js + validation.js)
-- [ ] **SEC-05**: Chat-Nachrichten Laengenlimit isLength({ max: 4000 }) in Validierung
-- [ ] **SEC-06**: Socket.IO typing/stopTyping Events pruefen Org-Zugehoerigkeit vor Weiterleitung
+- [x] **SEC-01**: Backend-Endpoint POST /api/auth/logout revokiert das aktive Refresh Token (revoked_at = NOW())
+- [x] **SEC-02**: Frontend-Logout ruft /api/auth/logout auf bevor lokale Daten geloescht werden
+- [x] **SEC-03**: Losung-API-Key Fallback-Wert aus konfi.js und teamer.js entfernen (nur process.env, kein Fallback)
+- [x] **SEC-04**: Passwort-Minimum von 6 auf 8 Zeichen erhoehen (auth.js + validation.js)
+- [x] **SEC-05**: Chat-Nachrichten Laengenlimit isLength({ max: 4000 }) in Validierung
+- [x] **SEC-06**: Socket.IO typing/stopTyping Events pruefen Org-Zugehoerigkeit vor Weiterleitung
 
 ### Performance (PERF)
 
@@ -32,7 +32,7 @@ Requirements fuer Milestone v2.5 Security-Hardening + Polish.
 ### Cleanup (CLN)
 
 - [ ] **CLN-01**: Wrapped-Cron doppelter Date-Guard entfernen (node-cron Schedule reicht)
-- [ ] **CLN-02**: useOfflineQuery Stale-Closure Fix (data aus revalidate-Closure entfernen, setData nutzen)
+- [x] **CLN-02**: useOfflineQuery Stale-Closure Fix (data aus revalidate-Closure entfernen, setData nutzen)
 
 ## Out of Scope
 
@@ -49,13 +49,13 @@ Requirements fuer Milestone v2.5 Security-Hardening + Polish.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SEC-01 | Phase 86 | Pending |
-| SEC-02 | Phase 86 | Pending |
-| SEC-03 | Phase 87 | Pending |
-| SEC-04 | Phase 87 | Pending |
-| SEC-05 | Phase 87 | Pending |
-| SEC-06 | Phase 87 | Pending |
-| CLN-02 | Phase 87 | Pending |
+| SEC-01 | Phase 86 | Complete |
+| SEC-02 | Phase 86 | Complete |
+| SEC-03 | Phase 87 | Complete |
+| SEC-04 | Phase 87 | Complete |
+| SEC-05 | Phase 87 | Complete |
+| SEC-06 | Phase 87 | Complete |
+| CLN-02 | Phase 87 | Complete |
 | PERF-01 | Phase 88 | Pending |
 | PERF-02 | Phase 88 | Pending |
 | PERF-03 | Phase 88 | Pending |

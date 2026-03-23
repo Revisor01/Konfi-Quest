@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: Security-Hardening + Polish
 status: unknown
-stopped_at: Completed 86-01-PLAN.md
-last_updated: "2026-03-23T10:22:41.577Z"
+stopped_at: Completed 87-01-PLAN.md
+last_updated: "2026-03-23T10:27:11.766Z"
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-23)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 86 — logout-absicherung
+**Current focus:** Phase 87 — security-fixes
 
 ## Current Position
 
-Phase: 87
-Plan: Not started
+Phase: 87 (security-fixes) — EXECUTING
+Plan: 1 of 1
 
 ## Accumulated Context
 
@@ -47,7 +47,7 @@ Alle v1.0-v2.4 Entscheidungen in PROJECT.md und milestones/ archiviert.
 
 ## Session Continuity
 
-Last session: 2026-03-23T10:20:32.279Z
-Stopped at: Completed 86-01-PLAN.md
+Last session: 2026-03-23T10:27:11.764Z
+Stopped at: Completed 87-01-PLAN.md
 Resume file: None
 Next action: /gsd:plan-phase 86

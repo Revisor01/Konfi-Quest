@@ -226,7 +226,7 @@ Phase 85: Code-Cleanup (2 plans, complete)
 ### v2.5 Security-Hardening + Polish (Phases 86-89)
 
 - [x] **Phase 86: Logout-Absicherung** - Refresh Token wird beim Logout serverseitig revokiert (completed 2026-03-23)
-- [ ] **Phase 87: Security-Fixes** - Passwortlimit, Chat-Limit, Typing-Org-Check, Losung-Fallback, Frontend-Stale-Closure
+- [x] **Phase 87: Security-Fixes** - Passwortlimit, Chat-Limit, Typing-Org-Check, Losung-Fallback, Frontend-Stale-Closure (completed 2026-03-23)
 - [ ] **Phase 88: Backend-Performance** - N+1 Chat, N+1 Wrapped, korrelierte Subquery, DB Pool
 - [ ] **Phase 89: Architektur + Cleanup** - global.io DI, material.js Legacy, Migrations-Versionstabelle, Cron-Guard
 
@@ -258,7 +258,7 @@ Plans:
 **Plans**: 1 Plan
 
 Plans:
-- [ ] 87-01-PLAN.md — Losung-Fallback, Passwort-Limit, Chat-Limit, Typing Org-Check, Stale-Closure Fix
+- [x] 87-01-PLAN.md — Losung-Fallback, Passwort-Limit, Chat-Limit, Typing Org-Check, Stale-Closure Fix
 
 ### Phase 88: Backend-Performance
 **Goal**: Chat-Uebersicht und Wrapped-Generierung sind frei von N+1-Problemen und der DB Pool ist konfiguriert
@@ -299,6 +299,6 @@ Alle Phasen bis v2.4 abgeschlossen.
 | 84. Schema-Hygiene | 2/2 | Complete | 2026-03-22 |
 | 85. Code-Cleanup | 2/2 | Complete | 2026-03-22 |
 | 86. Logout-Absicherung | 1/1 | Complete    | 2026-03-23 |
-| 87. Security-Fixes | 0/1 | Not started | - |
+| 87. Security-Fixes | 1/1 | Complete   | 2026-03-23 |
 | 88. Backend-Performance | 0/2 | Not started | - |
 | 89. Architektur + Cleanup | 0/2 | Not started | - |
