@@ -8,7 +8,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const PushService = require('../services/pushService');
 
-module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
+module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   const { verifyTokenRBAC } = rbacMiddleware;
   // Using passed-in encrypted chatUpload from server.js
 
@@ -754,8 +754,8 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       res.json(message); // Respond immediately
 
       // WebSocket: Broadcast new message to room (für User die den Chat offen haben)
-      if (global.io) {
-        global.io.to(`room_${roomId}`).emit('newMessage', {
+      if (io) {
+        io.to(`room_${roomId}`).emit('newMessage', {
           roomId: parseInt(roomId),
           message: message
         });
@@ -769,7 +769,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
         const { rows: allParticipants } = await db.query(participantsQuery, [roomId]);
         for (const p of allParticipants) {
           const userRoom = `user_${p.user_type}_${p.user_id}`;
-          global.io.to(userRoom).emit('newMessage', {
+          io.to(userRoom).emit('newMessage', {
             roomId: parseInt(roomId),
             message: message
           });
@@ -1426,8 +1426,8 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       await db.query("UPDATE chat_messages SET deleted_at = NOW() WHERE id = $1", [messageId]);
 
       // WebSocket: Broadcast message deletion to room
-      if (global.io) {
-        global.io.to(`room_${message.room_id}`).emit('messageDeleted', {
+      if (io) {
+        io.to(`room_${message.room_id}`).emit('messageDeleted', {
           roomId: message.room_id,
           messageId: parseInt(messageId)
         });
@@ -1718,8 +1718,8 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
         await db.query('DELETE FROM chat_message_reactions WHERE id = $1', [existing.id]);
 
         // Broadcast via WebSocket
-        if (global.io) {
-          global.io.to(`room_${message.room_id}`).emit('reactionRemoved', {
+        if (io) {
+          io.to(`room_${message.room_id}`).emit('reactionRemoved', {
             roomId: message.room_id,
             messageId: parseInt(messageId),
             userId,
@@ -1740,8 +1740,8 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       const { rows: [newReaction] } = await db.query(insertQuery, [messageId, userId, userType, emoji]);
 
       // Broadcast via WebSocket
-      if (global.io) {
-        global.io.to(`room_${message.room_id}`).emit('reactionAdded', {
+      if (io) {
+        io.to(`room_${message.room_id}`).emit('reactionAdded', {
           roomId: message.room_id,
           messageId: parseInt(messageId),
           reaction: {

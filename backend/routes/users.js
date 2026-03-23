@@ -9,7 +9,7 @@ const { checkUserHierarchy, filterUsersByHierarchy } = require('../utils/roleHie
 // WICHTIGER HINWEIS: Das übergebene 'db'-Objekt ist eine PostgreSQL Pool-Instanz.
 // Transaktionen verwenden einen dedizierten Client via db.getClient() (pool.connect()).
 // Users: Nur org_admin darf verwalten
-module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
+module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
 
   // Validierungsregeln
   const validateCreateUser = [
@@ -257,14 +257,14 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
 
       // Bei Rollenänderung: Socket.io-Verbindungen des Users trennen
       // damit der Client sich mit neuem Token (neue Rolle) neu verbindet
-      if (role_id !== undefined && global.io) {
+      if (role_id !== undefined && io) {
         // User-Room-Name folgt dem Pattern aus server.js: user_{type}_{id}
         // Beide möglichen Typen prüfen (admin und konfi)
         const userRoomAdmin = `user_admin_${id}`;
         const userRoomKonfi = `user_konfi_${id}`;
 
         for (const roomName of [userRoomAdmin, userRoomKonfi]) {
-          const sockets = await global.io.in(roomName).fetchSockets();
+          const sockets = await io.in(roomName).fetchSockets();
           for (const s of sockets) {
             s.emit('forceDisconnect', { reason: 'role_changed' });
             s.disconnect(true);
