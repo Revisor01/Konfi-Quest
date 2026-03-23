@@ -4,213 +4,189 @@
 
 ## Pattern Overview
 
-**Overall:** Client-Server with Role-Based Access Control (RBAC) and Offline-First Frontend
+**Overall:** Monorepo mit getrenntem Backend (REST-API + WebSocket) und Frontend (SPA/Hybrid-App)
 
 **Key Characteristics:**
-- Strict multi-tenancy via `organization_id` on every data resource
-- Five-tier role hierarchy enforced at middleware level: `super_admin` > `org_admin` > `admin` > `teamer` > `konfi`
-- Offline-First SWR pattern on all 30+ frontend pages via `useOfflineQuery`
-- Real-time updates via Socket.IO with organization-isolated rooms
-- Persistent write queue for offline mutations (FIFO, survives app restarts)
+- Backend: Node.js Express REST-API mit Socket.IO für Echtzeit-Kommunikation
+- Frontend: React 19 + Ionic 8 als Capacitor-App (iOS/Android/Web) mit Offline-First-Architektur
+- Datenhaltung: PostgreSQL mit migrationsbasiertem Schema-Lifecycle
+- RBAC: Rollenbasierte Zugriffskontrolle mit 5 Stufen (super_admin → konfi)
+- Multi-Tenancy: Vollständige Organisation-Isolation auf allen Schichten
 
 ## Layers
 
-**Backend: Route Layer:**
-- Purpose: HTTP request handling, input validation, rate limiting
+**API Layer (Backend):**
+- Purpose: REST-Endpunkte pro Domain, JWT-Auth, Rate-Limiting, File-Uploads
 - Location: `backend/routes/`
-- Contains: 19 route files (`.js`), each exports a factory function `(db, verifyTokenRBAC, roleHelpers, ...) => router`
-- Depends on: middleware (rbac, validation), services, utils, database
-- Used by: `backend/server.js` (mounted at `/api/*`)
+- Contains: 15 Router-Module, jedes als Factory-Funktion `(db, rbacVerifier, roleHelpers) => Router`
+- Depends on: `backend/database.js`, `backend/middleware/rbac.js`
+- Used by: Frontend via Axios, mobile App via Capacitor
 
-**Backend: Middleware Layer:**
-- Purpose: Authentication, authorization, input sanitization
-- Location: `backend/middleware/rbac.js`, `backend/middleware/validation.js`
-- Contains: `verifyTokenRBAC` (JWT decode + DB user lookup + jahrgang assignments), `requireRole`, `requireAdmin`, `requireTeamer`, `checkJahrgangAccess`, `filterByJahrgangAccess`
-- Depends on: `backend/database.js`, `pg` pool, `jsonwebtoken`
-- Used by: all route files via `server.js` dependency injection
+**Middleware Layer (Backend):**
+- Purpose: JWT-Verifikation, RBAC-Prüfung, Input-Validierung
+- Location: `backend/middleware/`
+- Contains: `rbac.js` (verifyTokenRBAC, requireSuperAdmin, requireOrgAdmin, requireAdmin, requireTeamer), `validation.js` (express-validator wrapper)
+- Depends on: `backend/database.js` (DB-Lookup bei jeder Anfrage)
+- Used by: Alle Routes via Dependency Injection
 
-**Backend: Service Layer:**
-- Purpose: Cross-cutting business logic not tied to a single route
+**Database Layer (Backend):**
+- Purpose: PostgreSQL-Verbindungspool, automatische Migrationen beim Start
+- Location: `backend/database.js`, `backend/migrations/*.sql`
+- Contains: pg-Pool, `runMigrations()` scannt `migrations/` alphabetisch, `schema_migrations` Tracking-Tabelle
+- Depends on: `DATABASE_URL` Umgebungsvariable
+- Used by: Alle Routes, Services, Middleware
+
+**Services Layer (Backend):**
+- Purpose: Hintergrundprozesse, Push-Notifications, E-Mail, externe APIs
 - Location: `backend/services/`
-- Contains: `pushService.js` (FCM push notifications), `emailService.js` (SMTP via nodemailer), `backgroundService.js` (cron jobs: badge checks every 5 min, event reminders, wrapped generation, token cleanup)
-- Depends on: `backend/database.js`
-- Used by: route files, `server.js` (background services), `database.js` (on startup)
+- Contains: `backgroundService.js` (Cron-Jobs via node-cron), `pushService.js` (Firebase FCM), `emailService.js` (Nodemailer), `losungService.js` (externe Losungen-API)
+- Depends on: `backend/database.js`, `backend/push/firebase.js`
+- Used by: `backend/server.js` beim Start
 
-**Backend: Utils Layer:**
-- Purpose: Shared helper functions
+**Utils Layer (Backend):**
+- Purpose: Querschnittsfunktionen ohne eigene Datenbankverbindung
 - Location: `backend/utils/`
-- Contains: `liveUpdate.js` (Socket.IO emit wrappers), `chatUtils.js` (chat room initialization), `dateUtils.js`, `passwordUtils.js`, `pointTypeGuard.js`, `roleHierarchy.js`
-- Depends on: `backend/database.js` (liveUpdate lazy-requires it)
-- Used by: route files, `server.js`
+- Contains: `liveUpdate.js` (Socket.IO-Wrapper), `chatUtils.js`, `dateUtils.js`, `passwordUtils.js`, `roleHierarchy.js`, `pointTypeGuard.js`
+- Depends on: Socket.IO-Instanz (via `liveUpdate.init(io)`)
+- Used by: Routes und Services
 
-**Backend: Database Layer:**
-- Purpose: PostgreSQL connection pool and migration runner
-- Location: `backend/database.js`
-- Contains: `pg.Pool` wrapper exposing `query(text, params)` and `getClient()` for transactions; auto-runs SQL migrations from `backend/migrations/*.sql` on startup
-- Depends on: `DATABASE_URL` env var
-- Used by: all route files and services
-
-**Frontend: Context Layer:**
-- Purpose: Global application state shared across component tree
+**Context Layer (Frontend):**
+- Purpose: Globaler App-Zustand, Authentication, Echtzeit-Updates, Badge-Counts
 - Location: `frontend/src/contexts/`
-- Contains: `AppContext.tsx` (user session, online status, push registration), `BadgeContext.tsx` (unread counts, pending requests), `LiveUpdateContext.tsx` (Socket.IO event routing to subscribers), `ModalContext.tsx` (modal stack management)
-- Depends on: `services/tokenStore.ts`, `services/api.ts`, `services/websocket.ts`
-- Used by: `frontend/src/App.tsx` (providers wrap entire tree), all page/view components
+- Contains: `AppContext.tsx` (User, Auth, Push-Token-Management), `BadgeContext.tsx` (Unread-Counts + Socket-Integration), `LiveUpdateContext.tsx` (WebSocket-Event-Bus), `ModalContext.tsx`
+- Depends on: `frontend/src/services/`
+- Used by: Alle Komponenten über Hooks (`useApp`, `useBadge`, `useLiveRefresh`)
 
-**Frontend: Services Layer:**
-- Purpose: Data access abstractions and platform bridges
+**Services Layer (Frontend):**
+- Purpose: HTTP-Client, Token-Persistenz, Offline-Infrastruktur
 - Location: `frontend/src/services/`
-- Contains: `api.ts` (axios instance with JWT interceptor, silent token refresh, retry), `tokenStore.ts` (in-memory + Capacitor Preferences sync), `offlineCache.ts` (TTL cache via Capacitor Preferences), `writeQueue.ts` (FIFO persistent offline mutation queue), `websocket.ts` (Socket.IO singleton with reconnect sync), `networkMonitor.ts` (online/offline detection), `auth.ts`, `websocket.ts`
-- Depends on: `@capacitor/preferences`, `axios`, `socket.io-client`
-- Used by: contexts, hooks, page components
+- Contains: `api.ts` (Axios + axiosRetry + Token-Refresh-Interceptor), `tokenStore.ts` (sync Memory-Getter + async Preferences-Setter), `offlineCache.ts` (SWR-Cache), `writeQueue.ts` (FIFO-Persistenz für Offline-Schreibvorgänge), `networkMonitor.ts`, `websocket.ts`
+- Depends on: `@capacitor/preferences` für Persistenz
+- Used by: Contexts, Hooks, Komponenten
 
-**Frontend: Hooks Layer:**
-- Purpose: Reusable data-fetching and UI logic
+**Hooks Layer (Frontend):**
+- Purpose: Wiederverwendbare Datenabruf-Logik mit Offline-Support
 - Location: `frontend/src/hooks/`
-- Contains: `useOfflineQuery.ts` (SWR pattern: cache-first, background revalidation, stale detection), `useActionGuard.ts` (prevents duplicate mutations), `useCountUp.ts` (animated number counters)
+- Contains: `useOfflineQuery.ts` (SWR-Pattern: Cache zuerst, dann Netzwerk), `useActionGuard.ts`, `useCountUp.ts`
 - Depends on: `services/offlineCache.ts`, `services/networkMonitor.ts`
-- Used by: all page and view components
+- Used by: Alle Page-Komponenten
 
-**Frontend: Component Layer:**
-- Purpose: UI rendering, role-specific views, modals
+**Components Layer (Frontend):**
+- Purpose: UI nach Rolle und Funktion organisiert
 - Location: `frontend/src/components/`
-- Contains: Role-segmented subdirectories (`admin/`, `konfi/`, `teamer/`, `chat/`, `wrapped/`, `auth/`, `common/`, `shared/`, `layout/`)
-- Depends on: contexts, hooks, services, `@ionic/react`
-- Used by: `frontend/src/App.tsx` via React Router routes
+- Contains: `admin/`, `konfi/`, `teamer/`, `chat/`, `auth/`, `common/`, `shared/`, `wrapped/`, `layout/`
+- Depends on: Contexts, Hooks, Services
+- Used by: `MainTabs.tsx` als Router-Ziel
 
 ## Data Flow
 
-**Standard Read Flow (Online):**
+**Read-Flow (Normalfall online):**
 
-1. Page/view mounts, calls `useOfflineQuery(cacheKey, fetcher, options)`
-2. Hook checks `offlineCache.get(cacheKey)` — returns cached data immediately if fresh
-3. Simultaneously fires `fetcher()` (calls `api.get(...)`)
-4. `api.ts` interceptor attaches `Authorization: Bearer <token>` from `tokenStore.getToken()`
-5. Backend `verifyTokenRBAC` middleware validates JWT, loads user + `assigned_jahrgaenge` from DB
-6. Route handler queries PostgreSQL via `db.query(...)` with `organization_id` filter
-7. Response flows back; hook updates state and writes to `offlineCache`
+1. Page-Komponente ruft `useOfflineQuery(cacheKey, fetcher)` auf
+2. Hook prüft `offlineCache` → bei Cache-Hit wird sofort gerendert
+3. Im Hintergrund wird `api.get(...)` ausgeführt (SWR-Revalidierung)
+4. `api.ts`-Interceptor hängt JWT aus `tokenStore.getToken()` an
+5. Backend-Route prüft Token via `verifyTokenRBAC` (DB-Lookup)
+6. Route liest aus PostgreSQL via `db.query()`
+7. Antwort wird in `offlineCache` geschrieben, Komponente re-rendert
 
-**Standard Read Flow (Offline):**
+**Write-Flow (online):**
 
-1. `useOfflineQuery` checks `offlineCache` — returns stale cached data
-2. Marks data as `isStale: true`
-3. When network returns, `networkMonitor` fires, hook calls `revalidate()`
+1. Komponente ruft `api.post/put/delete(...)` direkt auf
+2. Backend ändert Datenbankzustand
+3. Backend ruft `liveUpdate.sendToUser/sendToOrg(...)` auf
+4. Socket.IO emittiert `liveUpdate`-Event an betroffene User
+5. `LiveUpdateContext` empfängt Event und benachrichtigt Subscriber
+6. Subscriber-Page ruft `refresh()` von `useOfflineQuery` auf
 
-**Write Flow (Online):**
+**Write-Flow (offline, WriteQueue):**
 
-1. Component calls `api.post/put/delete(...)` directly
-2. On success, `liveUpdate.sendToUser()` or `sendToOrgAdmins()` fires Socket.IO event
-3. `LiveUpdateContext` routes event to subscribed views → triggers `refresh()`
+1. Komponente erstellt `QueueItem` und ruft `writeQueue.enqueue(item)` auf
+2. Item wird in `@capacitor/preferences` persistiert
+3. Bei `networkMonitor`-Event `online` wird `writeQueue.flush()` ausgeführt
+4. Fehlgeschlagene Items bleiben in Queue (FIFO, max Retries)
 
-**Write Flow (Offline):**
+**Auth-Flow:**
 
-1. Component calls `writeQueue.enqueue({ method, url, body, metadata })`
-2. Queue persists to `Capacitor.Preferences` under `queue:items`
-3. On reconnect: `websocket.ts` calls `writeQueue.flush()` → replays items in FIFO order
-4. After flush: `offlineCache.invalidateAll()` marks all cache stale → background revalidation
-
-**Token Refresh Flow:**
-
-1. `api.ts` response interceptor catches HTTP 401
-2. If offline: keeps token, rejects error (cached data remains available)
-3. If online + refresh token available: calls `POST /api/auth/refresh`
-4. On success: updates `tokenStore` with new access + refresh tokens
-5. Replays all queued requests that arrived during refresh (`refreshSubscribers`)
-6. On failure: clears auth, dispatches `auth:relogin-required` CustomEvent
-
-**Real-Time Update Flow:**
-
-1. Backend route calls `liveUpdate.sendToUser(userType, userId, updateType, action)` after mutation
-2. Socket.IO emits `liveUpdate` event to room `user_<type>_<id>`
-3. `LiveUpdateContext` socket listener receives event, calls registered callbacks by `updateType`
-4. Subscribed page/view calls `refresh()` on its `useOfflineQuery` instance
+1. Login → Backend gibt `accessToken` (15min) + `refreshToken` (90d rotierend)
+2. `tokenStore` speichert beides in Memory + `@capacitor/preferences`
+3. Bei 401: `api.ts`-Interceptor versucht Token-Refresh via `/auth/refresh`
+4. Rotation: Neues Refresh-Token ersetzt altes (Soft-Revoke via `token_invalidated_at`)
+5. Fehlgeschlagener Refresh → `auth:relogin-required` Window-Event → Login-Dialog
 
 **State Management:**
-- Global session state: `AppContext` (user object, online status)
-- Badge/unread counts: `BadgeContext` (computed via `useMemo` from chat + requests + events)
-- Real-time subscriptions: `LiveUpdateContext` (Map of `LiveUpdateType → Set<callback>`)
-- Local UI state: `useState` within components
-- Token storage: dual-layer — synchronous in-memory `_token` + async `Capacitor.Preferences`
+
+- Globaler User-State: `AppContext` (user, loading, isOnline)
+- Badge-Counts: `BadgeContext` (chatUnreadByRoom, pendingRequestsCount, pendingEventsCount)
+- Server-Push: `LiveUpdateContext` als pub/sub Event-Bus über WebSocket
+- Lokaler Daten-State: `useOfflineQuery` pro Page/View
+- Persistenz: `tokenStore` + `offlineCache` + `writeQueue` via `@capacitor/preferences`
 
 ## Key Abstractions
 
-**RBAC Middleware:**
-- Purpose: Authenticates every request and enriches `req.user` with role, organization, jahrgang assignments
+**RBAC Middleware (`verifyTokenRBAC`):**
+- Purpose: JWT prüfen + User aus DB laden + Jahrgang-Zuweisungen laden + `req.user` befüllen
 - Examples: `backend/middleware/rbac.js`
-- Pattern: Factory function takes `db`, returns Express middleware. Each request does a live DB lookup to catch deactivated users and soft-revoked tokens
+- Pattern: Factory-Funktion `verifyTokenRBAC(db)` → Middleware-Funktion; alle Routes nutzen via Dependency Injection
 
-**Route Factory Pattern:**
-- Purpose: Dependency injection — routes receive `db`, `verifyTokenRBAC`, `roleHelpers` as constructor arguments
-- Examples: `backend/routes/activities.js`, `backend/routes/events.js`, `backend/routes/chat.js`
-- Pattern: `module.exports = (db, rbacVerifier, roleHelpers, ...) => { const router = express.Router(); ... return router; }`
+**Route-Factory:**
+- Purpose: Routes erhalten `db`, `rbacVerifier`, `roleHelpers` als Parameter statt global
+- Examples: `backend/routes/konfi.js`, `backend/routes/activities.js`
+- Pattern: `module.exports = (db, rbacVerifier, roleHelpers) => { const router = express.Router(); ...; return router; }`
 
 **useOfflineQuery Hook:**
-- Purpose: SWR cache-first data fetching with offline support
-- Examples: Used on all 30+ pages; pattern: `const { data, loading, refresh } = useOfflineQuery('cache:key', () => api.get('/endpoint').then(r => r.data))`
-- Pattern: Accepts `cacheKey`, async `fetcher`, `options`. Always returns cached data first, revalidates in background when online
+- Purpose: SWR-Datenabruf mit Offline-Fallback, Race-Condition-Schutz, TTL-Cache
+- Examples: `frontend/src/hooks/useOfflineQuery.ts`
+- Pattern: `useOfflineQuery<T>(cacheKey, fetcher, options)` → `{ data, loading, error, isStale, isOffline, refresh }`
 
-**WriteQueue:**
-- Purpose: Persistent offline mutation queue; survives app restarts
-- Examples: `frontend/src/services/writeQueue.ts`
-- Pattern: `writeQueue.enqueue({ method, url, body, metadata })` — flush happens automatically on reconnect via `websocket.ts`
+**Page/View/Modal Trennung:**
+- Purpose: Pages halten Datenabruf-Logik; Views rendern UI aus Props; Modals via `useIonModal`
+- Examples: `frontend/src/components/konfi/pages/KonfiDashboardPage.tsx`, `frontend/src/components/konfi/views/DashboardView.tsx`
+- Pattern: Page = `useOfflineQuery` + Handler + `<View data={data} />`; View = reine Darstellung
 
-**Organization Isolation:**
-- Purpose: Multi-tenant data separation — every query filters by `organization_id`
-- Examples: All backend routes, Socket.IO `joinRoom` handler in `backend/server.js`
-- Pattern: `WHERE organization_id = $1` with `req.user.organization_id` parameter on every query
-
-**Badge System:**
-- Purpose: Automatic badge award checking after points/activities/events change
-- Examples: `backend/routes/badges.js` exports `checkAndAwardBadges` function, injected into `activities.js`, `events.js`, `konfi-management.js`
-- Pattern: Called after every mutation that could trigger a badge condition
+**liveUpdate Modul:**
+- Purpose: Typisierte Socket.IO-Events von beliebigen Backend-Modulen absenden
+- Examples: `backend/utils/liveUpdate.js`
+- Pattern: Singleton mit `init(io)`, dann `sendToKonfi(id, type, action)` / `sendToOrg(orgId, type, action)` etc.
 
 ## Entry Points
 
 **Backend:**
 - Location: `backend/server.js`
-- Triggers: `node server.js` (Docker container start), healthcheck at `GET /api/health`
-- Responsibilities: Express app setup, Socket.IO server, SMTP transporter, rate limiters, route mounting (19 routes), chat room initialization, background service startup
+- Triggers: `node server.js` oder Docker-Container-Start
+- Responsibilities: Express-App erstellen, Socket.IO binden, Middleware registrieren, alle 15 Routes mounten, Background-Services starten, Graceful-Shutdown registrieren
 
-**Frontend (Web):**
+**Frontend:**
 - Location: `frontend/src/main.tsx`
-- Triggers: Browser load or Capacitor native app launch
-- Responsibilities: React DOM render, wraps `<App />` with context providers
+- Triggers: Vite-Dev-Server oder Capacitor-App-Start
+- Responsibilities: React-Root rendern mit `<App />`
 
-**Frontend (App Shell):**
+**App-Shell:**
 - Location: `frontend/src/App.tsx`
-- Responsibilities: Ionic setup, platform-specific theme (iOS26 / MD3 based on `isPlatform`), auth guard routing, provider hierarchy: `AppProvider > BadgeProvider > LiveUpdateProvider > ModalProvider`
+- Triggers: Geladen von `main.tsx`
+- Responsibilities: Context-Provider stacken (AppProvider → BadgeProvider → LiveUpdateProvider → ErrorBoundary), Auth-Guard (Login/App trennen), Push-Listener registrieren, `<MainTabs>` mounten
 
-**Route Guard:**
-- Location: `frontend/src/App.tsx` (inline `AppContent` component)
-- Pattern: `user === null` → redirect to `/login`; `user.type` determines which tab set renders in `MainTabs.tsx`
-
-**Tab Router:**
+**Routing:**
 - Location: `frontend/src/components/layout/MainTabs.tsx`
-- Responsibilities: Role-conditional tab bars (admin / konfi / teamer), all route definitions for authenticated pages, lazy modal rendering via `useIonModal`
+- Triggers: User ist eingeloggt
+- Responsibilities: `user.type` und `role_name` bestimmen welcher Tab-Set gerendert wird (super_admin / admin / teamer / konfi); alle Routen pro Rolle definieren
 
 ## Error Handling
 
-**Strategy:** HTTP status codes + structured JSON error responses on backend; toast notifications on frontend
+**Strategy:** Fehler werden so früh wie möglich abgefangen; Backend antwortet mit strukturierten `{ error: string }`-Objekten; Frontend unterscheidet Offline-Fehler von echten API-Fehlern
 
 **Patterns:**
-- Backend routes: `try/catch` blocks, `res.status(4xx/5xx).json({ error: '...' })` with German error messages
-- Frontend mutations: catch blocks dispatch `setError()` to `AppContext`, displayed as `IonToast`
-- Frontend reads: `useOfflineQuery` surfaces `error` string from component, shows `EmptyState` component
-- Auth failures: `api.ts` interceptor handles 401 globally, dispatches `auth:relogin-required` CustomEvent
-- Unhandled: `ErrorBoundary` component wraps the app in `frontend/src/components/common/ErrorBoundary.tsx`
-- Background services: `try/catch` with `console.error`, services continue running after individual failures
+- Backend: Try/catch in jedem Route-Handler; globaler Express-Fehler-Handler in `server.js` für 500er
+- Frontend API: `api.ts` Interceptor fängt 401 (Token-Refresh), 429 (Rate-Limit-Event) ab; `axiosRetry` für 5xx und Netzwerkfehler
+- Frontend Offline: `useOfflineQuery` zeigt Cached-Data mit `isStale=true` statt Fehler; echte Fehler nur wenn kein Cache vorhanden
+- Frontend App: `ErrorBoundary` in `App.tsx` als letzter Fallback
 
 ## Cross-Cutting Concerns
 
-**Logging:** `console.log/warn/error` — no structured logging library; console output captured by Docker
-
-**Validation:** Backend uses `express-validator` (`body()`, `param()` chains) with shared `handleValidationErrors` from `backend/middleware/validation.js`. Frontend uses inline checks before API calls.
-
-**Authentication:** JWT access tokens (15 min TTL) + rotating refresh tokens (90 day TTL) stored in `Capacitor.Preferences`. Soft-revoke via `token_invalidated_at` DB field checked on every request in `verifyTokenRBAC`.
-
-**Multi-tenancy:** Every database query filters by `req.user.organization_id`. Socket.IO enforces org isolation on `joinRoom` and typing events. Chat room creation restricted to same organization.
-
-**Rate Limiting:** Per-endpoint `express-rate-limit` instances — general (1000/15min), auth (10/15min), register (5/hr), chat (30/min), booking (20/15min), upload (30/15min), org management (20/15min).
+**Logging:** `console.log/warn/error` direkt, kein Log-Framework; Server-Start gibt strukturierten Status-Block aus
+**Validation:** `express-validator` in Routes via `handleValidationErrors` aus `backend/middleware/validation.js`
+**Authentication:** JWT Bearer Token in `Authorization`-Header; Socket.IO prüft Token in `handshake.auth.token`
+**Multi-Tenancy:** `organization_id` auf `req.user` (gesetzt von RBAC-Middleware); alle Queries filtern danach; `rbac.js` prüft Organisation-Isolation auch für Socket.IO-Rooms
 
 ---
 

@@ -6,201 +6,160 @@
 
 ## Tech Debt
 
-**Synchrone bcrypt-Aufrufe blockieren den Event Loop:**
-- Issue: `bcrypt.hashSync()` und `bcrypt.compareSync()` in mehreren Routen blockieren den Node.js Event Loop während des Hashing-Vorgangs. bcrypt ist absichtlich langsam; synchrone Varianten frieren den gesamten Server ein.
-- Files: `backend/routes/konfi-management.js` (Zeilen 140, 392), `backend/routes/users.js` (Zeilen 169, 236)
-- Impact: Während einem Passwort-Hash (typisch 100–300 ms) können keine anderen Requests verarbeitet werden. Bei gleichzeitigen Logins spürbare Verzögerungen.
-- Fix approach: Alle `bcrypt.hashSync` / `bcrypt.compareSync` durch `await bcrypt.hash` / `await bcrypt.compare` ersetzen. Vorbild: `backend/routes/auth.js` (bereits korrekt async).
+**Zwei parallele Auth-Middleware (verifyToken vs. verifyTokenRBAC):**
+- Issue: `verifyToken` in `backend/server.js` (Zeile 405–418) prüft nur die JWT-Signatur. Die RBAC-Middleware `verifyTokenRBAC` in `backend/middleware/rbac.js` prüft zusätzlich `is_active`, `token_invalidated_at` (Soft-Revoke) und `organization_active`. Die Auth-Routes `/change-password`, `/update-email`, `/update-role-title`, `/me`, `/invite-code*` und `/logout` nutzen weiterhin das alte `verifyToken` ohne diese Checks.
+- Files: `backend/routes/auth.js` (Zeilen 177, 213, 241, 268, 336, 384, 413, 452, 799), `backend/server.js` (Zeile 405)
+- Impact: Gesperrte oder deaktivierte User können Passwörter ändern, E-Mails aktualisieren und sich ausloggen, bis ihr JWT abläuft (15 min). Soft-Revoke gilt für diese Endpunkte nicht.
+- Fix approach: Auth-Routes auf `verifyTokenRBAC` umstellen, `verifyToken`-Funktion aus `server.js` entfernen.
 
-**Hardcoded Produktions-URLs ohne Umgebungsvariable:**
-- Issue: API-Basis-URL, WebSocket-URL und Invite-URLs sind direkt im Code hardcodiert. Kein lokales Entwickeln mit anderem Backend möglich, ohne Quellcode zu ändern.
-- Files:
-  - `frontend/src/services/api.ts` (Zeile 6): `const API_BASE_URL = 'https://konfi-quest.de/api'`
-  - `frontend/src/services/websocket.ts` (Zeile 6): `const WS_URL = 'https://konfi-quest.de'`
-  - `frontend/src/components/admin/pages/AdminInvitePage.tsx` (Zeilen 114, 145, 208, 232, 244)
-  - `backend/routes/auth.js` (Zeile 314): Reset-URL hardcodiert
-  - `backend/services/emailService.js` (Zeile 127, 191): Logo-URL hardcodiert
-- Impact: Keine Staging-Umgebung möglich. Lokale Entwicklung gegen Produktion läuft.
-- Fix approach: `VITE_API_URL` als Vite-Env-Variable einführen, in nativen Apps über Capacitor-Config oder Build-Skript injizieren. Kommentar in `websocket.ts` Zeile 5 erläutert warum `VITE_API_URL` dort nicht funktioniert — alternativer Ansatz nötig (z.B. Capacitor Preferences beim App-Start).
+**Hardcodierte Admin-User-ID 1 in chatUtils:**
+- Issue: Beim automatischen Erstellen von Jahrgangs-Chat-Räumen beim Serverstart wird `created_by = 1` hartcodiert.
+- Files: `backend/utils/chatUtils.js` (Zeile 21 — INSERT mit `1` als created_by-Wert)
+- Impact: Bei Multi-Tenant-Einsatz (EKD-Skalierung) verweist `created_by` in neuen Organisationen auf einen fremden User oder einen nicht existierenden User-Eintrag. Referentielle Integrität kann verletzt werden.
+- Fix approach: Ersten aktiven Admin der jeweiligen Organisation per Sub-Query ermitteln oder die Spalte auf NULL erlauben.
 
-**Migrations-Namenskonvention inkonsistent:**
-- Issue: Drei Migrationen ohne numerisches Präfix (`add_idempotency_keys.sql`, `add_invite_codes.sql`, `add_push_foundation.sql`). Das Migrations-System sortiert per `.sort()` alphabetisch. Diese Dateien sortieren hinter `077_...` ein, aber zukünftige Dateien mit höheren Nummern würden vor ihnen laufen.
-- Files: `backend/migrations/add_idempotency_keys.sql`, `backend/migrations/add_invite_codes.sql`, `backend/migrations/add_push_foundation.sql`, `backend/database.js` (Zeile 30)
-- Impact: Eine neue Migration `078_something.sql` würde nach `077_...` aber vor `add_*` laufen, obwohl `add_*` bereits in der DB liegt. Solange `add_*` bereits angewendet wurden, ist es aktuell sicher.
-- Fix approach: Neue Migrationen immer mit numerischem Präfix anlegen. Bestehende `add_*`-Dateien umbenennen ist riskant wenn sie bereits in Produktion angewendet wurden.
+**Doppelte Event-Buchungslogik in konfi.js und events.js:**
+- Issue: Waitlist-Positionsberechnung, Buchungsstatus-Ermittlung und Buchungs-Cancel mit Waitlist-Nachrücken sind sowohl in `backend/routes/konfi.js` als auch in `backend/routes/events.js` implementiert. Beide Dateien übersteigen 2000 Zeilen.
+- Files: `backend/routes/konfi.js` (Zeilen 1242–1409), `backend/routes/events.js` (Zeilen 940–1000)
+- Impact: Bugfixes müssen an zwei Stellen gepflegt werden. Abweichungen zwischen beiden Implementierungen sind bereits vorhanden (z. B. Timeslot-Handling-Detailunterschiede).
+- Fix approach: Booking-Logik in `backend/utils/bookingUtils.js` extrahieren.
 
-**Veraltete SQLite-Skripte in package.json:**
-- Issue: `start:sqlite` und `dev:sqlite` Skripte verweisen auf `backend/backup_sqlite/server.js`, das nicht existiert.
-- Files: `backend/package.json` (Zeilen 8, 10)
-- Impact: Verwirrend bei Onboarding, würde sofort mit einem Fehler scheitern.
-- Fix approach: Skripte aus `package.json` entfernen.
+**Routen-Dateigrößen über Wartbarkeitsgrenze:**
+- Issue: Mehrere Route-Dateien sind so groß, dass sie kaum noch einzeln überschaubar sind.
+  - `backend/routes/events.js`: 2071 Zeilen
+  - `backend/routes/konfi.js`: 2052 Zeilen
+  - `backend/routes/chat.js`: 1877 Zeilen
+- Files: `backend/routes/events.js`, `backend/routes/konfi.js`, `backend/routes/chat.js`
+- Impact: Onboarding-Kosten hoch, unabsichtliche Seiteneffekte bei Änderungen schwer erkennbar.
+- Fix approach: Events in Sub-Router aufteilen (booking, checkin, management). Konfi-Route analog aufteilen.
 
-**Globaler Module-Level Listener-Map in LiveUpdateContext:**
-- Issue: `listeners` Map in `frontend/src/contexts/LiveUpdateContext.tsx` (Zeile 40) ist auf Modul-Ebene deklariert, nicht innerhalb des Providers. Sie wird bei Logout/Login nicht geleert. Alte Callback-Referenzen können akkumulieren wenn der Provider mehrfach gemountet wird.
-- Files: `frontend/src/contexts/LiveUpdateContext.tsx`
-- Impact: Potentiell alte Callbacks die nach Logout noch feuern. Speicherleck bei wiederholtem Mount/Unmount (selten in normaler App-Nutzung).
-- Fix approach: `listeners` als `useRef` innerhalb des Providers oder als `Map` die beim Provider-Unmount geleert wird.
+**Frontend: inline Fetcher-Funktionen in useOfflineQuery (instabile Referenzen):**
+- Issue: Alle Aufrufstellen von `useOfflineQuery` übergeben den Fetcher als inline-`async () => { ... }`-Funktion. Die `revalidate`-Funktion in `useOfflineQuery` hat `fetcher` als Dependency im `useCallback`. Inline-Funktionen sind bei jedem Render eine neue Referenz, was potenziell zu redundanten Revalidierungen führt.
+- Files: `frontend/src/components/admin/pages/AdminKonfisPage.tsx` (Zeile 67), alle weiteren Seiten die `useOfflineQuery` nutzen (mind. 30 Stellen).
+- Impact: Erhöhte API-Last durch doppelte Fetches nach State-Updates auf Seiten mit mehreren `useOfflineQuery`-Aufrufen. In der Praxis abgefedert durch Cache-TTL, aber nicht vollständig verhindert.
+- Fix approach: Fetcher-Funktionen mit `useCallback` memoizen oder `useOfflineQuery` intern so absichern, dass Fetcher-Referenzwechsel ignoriert werden (Ref-Pattern).
 
-**SIGTERM-Handler fehlt:**
-- Issue: Nur `SIGINT` wird behandelt, nicht `SIGTERM`. Docker sendet beim Container-Stop `SIGTERM`, nach 10 Sekunden `SIGKILL`. Ohne SIGTERM-Handler gibt es keinen Graceful Shutdown bei Docker-Deployments.
-- Files: `backend/server.js` (Zeile 582)
-- Impact: Laufende Requests werden abgebrochen. Datenbankverbindungen nicht sauber geschlossen.
-- Fix approach: `process.on('SIGTERM', ...)` identisch zu `SIGINT` hinzufügen.
+**Fehlende MIME-Type-Validierung auf Magic-Bytes-Ebene:**
+- Issue: Der Upload-Filter in `backend/server.js` validiert Dateitypen ausschließlich anhand des vom Client gemeldeten `Content-Type`-Headers (`file.mimetype`). Multer liest diesen Header aus der Multipart-Form; ein Angreifer kann beliebige Dateien hochladen, indem er den MIME-Type manuell setzt.
+- Files: `backend/server.js` (Zeilen 315–334, 350–375, 391–398)
+- Impact: Möglicherweise schadhafte Dateien (z. B. ausführbare Scripte mit `.png`-Extension) landen im Upload-Verzeichnis. Aktuell werden Uploads nicht als static serviert (positiv), aber Verarbeitungsrisiken bestehen.
+- Fix approach: `file-type`-Paket (Magic-Bytes-Analyse) als zusätzlichen Check nach dem Multer-Filter einbauen.
 
 ---
 
-## Performance Bottlenecks
+## Sicherheit
 
-**N+1 Query-Pattern bei Badge-Progress-Berechnung:**
-- Problem: In `GET /badges` werden alle Badges eines Konfis geladen, dann für jedes nicht-verdiente Badge 1–2 separate DB-Queries ausgeführt (je nach `criteria_type`). Bei 20 Badges = bis zu 40 Queries.
-- Files: `backend/routes/konfi.js` (Zeilen 900–1072)
-- Cause: `for (let badge of badges)` mit `await db.query()` innerhalb. Verschiedene Kriterien-Typen (`total_points`, `gottesdienst_points`, `gemeinde_points`, `activity_count`, `specific_activity`, `category_activities`, `activity_combination`, `unique_activities`) erfordern jeweils unterschiedliche Queries.
-- Improvement path: Punkte-Daten (die sich für alle Badges eines Konfis nicht ändern) einmal vorab laden. Kriterien-unabhängige Daten (`konfi_profiles`, `user_activities` Aggregationen) in einem JOIN-Query sammeln statt einzeln.
+**TLS-Zertifikatsvalidierung deaktiviert für SMTP:**
+- Risk: `rejectUnauthorized: false` in der SMTP-Konfiguration deaktiviert die Server-Zertifikat-Prüfung. Man-in-the-Middle-Angriffe auf E-Mail-Übertragungen sind möglich.
+- Files: `backend/server.js` (Zeile 177), `backend/services/emailService.js` (Zeile 39)
+- Current mitigation: Intern (Docker → Hetzner SMTP). Kommentar im Code erklärt den Grund (Zertifikat auf Hostname ausgestellt, Docker nutzt IP).
+- Recommendations: SMTP-Host so konfigurieren, dass er über den im Zertifikat eingetragenen Hostname erreichbar ist, und `rejectUnauthorized` wieder auf `true` setzen.
 
-**N+1 Notification-Insert beim Aktivitäts-Antrag:**
-- Problem: Beim Einreichen eines Antrags wird für jeden Admin der Organisation eine separate `INSERT INTO notifications` Query ausgeführt.
-- Files: `backend/routes/konfi.js` (Zeilen 681–699)
-- Cause: `for (const admin of admins) { await db.query("INSERT INTO notifications ...") }`
-- Improvement path: Bulk-Insert mit `INSERT INTO notifications ... SELECT ... FROM unnest($1::int[])` oder mit `VALUES ($1, ...), ($2, ...), ...` konstruiert per Array.
+**Content Security Policy vollständig deaktiviert:**
+- Risk: Kein CSP-Header schützt vor Cross-Site-Scripting. XSS-Angriffe, die externe Scripts nachladen, werden nicht geblockt.
+- Files: `backend/server.js` (Zeile 267: `contentSecurityPolicy: false`)
+- Current mitigation: Ionic/React serialisiert Template-Strings über JSX, direktes `dangerouslySetInnerHTML` ist nicht erkennbar in den Quellen.
+- Recommendations: Striktes CSP mit `nonce`-Ansatz für Ionic-kompatible Konfiguration evaluieren (zumindest `default-src 'self'` mit Inline-Script-Whitelist).
 
-**Keine Paginierung für viele Endpoints:**
-- Problem: Mehrere Listen-Endpoints in `backend/routes/konfi.js` liefern alle Datensätze ohne `LIMIT`/`OFFSET` zurück (z.B. Events-Liste, Activities-Liste, Requests-Liste).
-- Files: `backend/routes/konfi.js` (Abschnitte mit `ORDER BY` ohne `LIMIT`)
-- Cause: Bisher akzeptable Datenmenge pro Organisation. Bei EKD-Skalierung (4000+ User) problematisch.
-- Improvement path: Cursor-basierte oder Offset-Paginierung einführen, Frontend entsprechend anpassen.
+**Benutzernamen werden in Login-Logs im Klartext protokolliert:**
+- Risk: Login-Versuche werden mit dem Benutzernamen geloggt (`console.warn("Login-Versuch: ${username}")`). Bei falschen Passwörtern erscheint der Benutzername ebenfalls im Log.
+- Files: `backend/routes/auth.js` (Zeilen 93, 114, 120)
+- Current mitigation: Logs liegen nur auf dem Server, kein externer Log-Dienst erkennbar.
+- Recommendations: Benutzernamen in Logs maskieren oder nur Hash-Präfix loggen.
 
-**Kein Code Splitting im Frontend:**
-- Problem: Alle Routen und große Komponenten werden beim ersten App-Load vollständig gebündelt. Keine `React.lazy()`-Verwendung.
-- Files: `frontend/src/components/layout/MainTabs.tsx` (alle Imports synchron)
-- Cause: Bisher wurden keine Lazy-Loading-Optimierungen vorgenommen.
-- Improvement path: Routen-Ebenen mit `React.lazy()` und `Suspense` wrappen, besonders für Admin- und Teamer-Bereiche.
-
----
-
-## Security Considerations
-
-**Content Security Policy deaktiviert:**
-- Risk: Kein CSP bedeutet vollständige XSS-Ausnutzbarkeit falls XSS-Vektoren existieren.
-- Files: `backend/server.js` (Zeilen 267, 270)
-- Current mitigation: Kommentar erklärt: Ionic/React benötigt Inline-Styles/Scripts. Helmet-Header `xXssProtection` ist aktiv.
-- Recommendations: Nonce-basierte CSP für Ionic evaluieren oder zumindest `default-src 'self'` mit eng gefassten Ausnahmen konfigurieren.
-
-**MIME-Typ-Validierung nur über Client-Header:**
-- Risk: `multer` prüft nur `file.mimetype`, das vom Client geliefert wird und manipulierbar ist. Magic-Byte-Validierung fehlt.
-- Files: `backend/server.js` (Zeilen 316–335 für Chat-Upload, 360–375 für Material-Upload)
-- Current mitigation: Dateinamen werden als SHA-256-Hash gespeichert (verhindert Ausführung), statische Dateiauslieferung ist deaktiviert, alle Files werden über Auth-geschützte Endpoints serviert.
-- Recommendations: `file-type` npm-Paket zur Magic-Byte-Prüfung ergänzen. Besonders relevant für Video/Audio-Uploads die als Schadcode getarnt sein könnten.
-
-**Hardcodierter Server-IP-Fallback in SMTP-Konfiguration:**
-- Risk: Falls `SMTP_HOST` nicht gesetzt ist, wird die Produktions-IP `213.109.162.132` als SMTP-Host verwendet.
-- Files: `backend/server.js` (Zeile 167), `backend/services/emailService.js` (Zeile 31)
-- Current mitigation: In Produktion sind ENV-Variablen gesetzt.
-- Recommendations: Fallback-IP entfernen, stattdessen mit `process.exit(1)` auf fehlende `SMTP_HOST`-Variable reagieren.
-
-**QR-Code-Secret fällt auf JWT_SECRET zurück:**
-- Risk: QR-Codes für Event-Check-In nutzen denselben Secret wie Auth-JWTs wenn `QR_SECRET` nicht gesetzt ist.
-- Files: `backend/routes/events.js` (Zeile 10): `const QR_SECRET = process.env.QR_SECRET || process.env.JWT_SECRET`
-- Current mitigation: QR-Codes haben kurze Gültigkeit.
-- Recommendations: Eigenen `QR_SECRET` als Pflichtumgebungsvariable definieren.
+**JWT_SECRET an mehreren Stellen separat geladen:**
+- Risk: `JWT_SECRET` wird in `server.js`, `routes/auth.js`, `routes/konfi.js`, `middleware/rbac.js` und `routes/chat.js` (direkt via `process.env.JWT_SECRET`) separat eingelesen. Chat-Route verwendet `process.env.JWT_SECRET` ohne den Start-Check.
+- Files: `backend/routes/chat.js` (Zeile 1055), `backend/routes/konfi.js` (Zeile 11), `backend/routes/auth.js` (Zeile 22)
+- Current mitigation: Startup-Check in `server.js` und `middleware/rbac.js` schlägt fehl, wenn `JWT_SECRET` fehlt.
+- Recommendations: Zentrales Auth-Modul erstellen, das `JWT_SECRET` einmalig liest und exportiert.
 
 ---
 
-## Fragile Areas
+## Performance-Engpässe
 
-**Badge-Progress-Berechnung mit unimplementierten Kriterien-Typen:**
-- Files: `backend/routes/konfi.js` (Zeilen 1055–1063)
-- Why fragile: `streak` und `time_based` Kriterien-Typen geben immer `current: 0` zurück (TODO-Kommentare). Badges mit diesen Typen zeigen nie Fortschritt, auch wenn der Konfi die Bedingung erfüllen würde. Im Gegensatz dazu sind diese Typen in `backend/routes/badges.js` (Zeile 546) korrekt implementiert für die Badge-Vergabe. Inkonsistenz zwischen Vergabe und Fortschrittsanzeige.
-- Safe modification: `checkStreakCriteria` aus `badges.js` in eine gemeinsame Util-Funktion extrahieren und in `konfi.js` für die Progress-Berechnung verwenden.
+**Background Badge Service: Serielle DB-Abfragen pro User (N+1):**
+- Problem: `backgroundService.js` iteriert alle User mit Push-Tokens in einer `for`-Schleife und führt für jeden User mehrere DB-Abfragen durch (`checkAndAwardBadges` + Chat-Unread-Count + Badge-Count).
+- Files: `backend/services/backgroundService.js` (Zeilen 75–109)
+- Cause: `checkAndAwardBadges` lädt für jeden User individuell alle Badges der Organisation plus earned-Badges. Bei 100+ Usern mit Push-Tokens: 300+ sequentielle DB-Queries alle 5 Minuten.
+- Improvement path: Badge-Check auf einen bulk-fähigen SQL-Query umschreiben; Chat-Unread-Count via GROUP BY in einer Query für alle User aggregieren.
+
+**verifyTokenRBAC: DB-Query bei jedem Request:**
+- Problem: `verifyTokenRBAC` führt bei jedem authentifizierten Request zwei DB-Abfragen aus: User-Lookup + Jahrgangs-Assignments.
+- Files: `backend/middleware/rbac.js` (Zeilen 43–91)
+- Cause: Kein Caching. Bei aktivem System mit vielen gleichzeitigen Usern liegt die Auth-Last proportional zu allen API-Requests an.
+- Improvement path: Short-lived In-Memory-Cache (z. B. 30 Sekunden) mit LRU-Strategie für User-Objekte.
+
+**Chat: Nachrichten-Limit hardcoded auf 200:**
+- Problem: Die initiale Chat-Nachrichtenladung ist auf 200 Nachrichten hart begrenzt ohne Pagination für ältere Nachrichten.
+- Files: `backend/routes/chat.js` (Zeile 588: `LIMIT 200`)
+- Cause: Einfache Implementierung ohne Cursor-basiertes Pagination.
+- Improvement path: Cursor-Pagination implementieren (vor/nach `message_id`), sodass die App nachladen kann.
+
+---
+
+## Fragile Bereiche
+
+**setImmediate mit falschem Aufruf in server.js:**
+- Files: `backend/server.js` (Zeile 527)
+- Why fragile: `setImmediate(initializeChatRooms(db))` ruft `initializeChatRooms(db)` sofort auf und übergibt das zurückgegebene Promise an `setImmediate` — nicht die Funktion selbst. Das Ergebnis ist, dass die Chat-Raum-Initialisierung synchron im Startup-Code läuft (noch vor dem Server-Listen) und Fehler darin den Start nicht blockieren, aber das Promise unkontrolliert im Hintergrund läuft.
+- Safe modification: Ändern zu `setImmediate(() => initializeChatRooms(db)())` oder besser `initializeChatRooms(db)().catch(...)` im Server-Start-Block.
+- Test coverage: Keine Tests vorhanden.
+
+**checkAndAwardBadges: globale Seiteneffekte via routerexport:**
+- Files: `backend/routes/badges.js` (Zeilen 818, 823)
+- Why fragile: `checkAndAwardBadges` ist sowohl an `router.checkAndAwardBadges` als auch an `module.exports.checkAndAwardBadges` gehängt. Andere Routes (`activities.js`, `events.js`, `konfi.js`, `backgroundService.js`) importieren diese Funktion auf unterschiedliche Wege (über `badgesRouter.checkAndAwardBadges` aus `server.js` DI, bzw. `require('../routes/badges').checkAndAwardBadges` direkt in `backgroundService.js`).
+- Safe modification: Funktion in eigene Datei `backend/utils/badgeUtils.js` auslagern.
 - Test coverage: Keine automatisierten Tests.
 
-**Migration Runner ohne Transaktionen:**
-- Files: `backend/database.js` (Zeilen 37–50)
-- Why fragile: Jede Migration läuft ohne Transaktion. Wenn eine Migration halb ausgeführt wird und dann fehlschlägt, können Schema-Änderungen teilweise angewendet sein ohne Eintrag in `schema_migrations`. Neustart würde die Migration erneut versuchen, was zu Doppel-Ausführungsfehlern führt.
-- Safe modification: Jede Migration in `BEGIN`/`COMMIT` wrappen, `schema_migrations`-Insert innerhalb derselben Transaktion.
+**Gemischte asynchrone Dateioperationen:**
+- Files: `backend/routes/material.js` (Zeilen 506, 633 — `fs.unlinkSync`), `backend/routes/activities.js` (Zeile 400 — Callback-Style `fs.unlink`), `backend/routes/chat.js` / `backend/routes/jahrgaenge.js` / `backend/routes/events.js` (async `fs.unlink`)
+- Why fragile: `fs.unlinkSync` blockiert den Node.js-Eventloop in Request-Handlern. `fs.unlink` mit Callback in einem async-Kontext wird nicht awaited. Fehler beim Callback-Style werden nur ignoriert, wenn `err` nicht geprüft wird.
+- Safe modification: Einheitlich `fs.promises.unlink` mit `await` verwenden.
 
-**`window.location.href` Navigation statt useIonRouter:**
-- Files:
-  - `frontend/src/App.tsx` (Zeile 159)
-  - `frontend/src/components/admin/pages/AdminOrganizationsPage.tsx` (Zeile 73)
-  - `frontend/src/components/admin/pages/AdminSettingsPage.tsx` (Zeile 65)
-  - `frontend/src/components/admin/views/EventDetailSections.tsx` (Zeile 371)
-  - `frontend/src/components/admin/views/EventDetailView.tsx` (Zeile 397)
-  - `frontend/src/components/konfi/views/ProfileView.tsx` (Zeilen 210, 215)
-  - `frontend/src/components/teamer/pages/TeamerProfilePage.tsx` (Zeilen 165, 169)
-  - `frontend/src/contexts/AppContext.tsx` (Zeile 445)
-- Why fragile: `window.location.href` triggert einen vollständigen Seiten-Reload statt Ionic-Navigation. Verliert App-State, Ionic-Animationen, und kann auf nativem iOS/Android zu unerwünschtem Verhalten führen.
-- Safe modification: Logout-Flows können als Full-Reload akzeptabel sein (State soll gelöscht werden). `EventDetailSections.tsx` Zeile 371 (Serie-Navigation) und `EventDetailView.tsx` Zeile 397 (Chat-Navigation) sollten auf `useIonRouter` umgestellt werden.
-
-**Große monolithische Komponenten:**
-- Files:
-  - `frontend/src/components/admin/views/KonfiDetailSections.tsx` (1181 Zeilen)
-  - `frontend/src/components/admin/modals/BadgeManagementModal.tsx` (1124 Zeilen)
-  - `frontend/src/components/chat/ChatRoom.tsx` (1058 Zeilen)
-  - `frontend/src/components/teamer/pages/TeamerEventsPage.tsx` (921 Zeilen)
-  - `frontend/src/components/konfi/views/EventDetailView.tsx` (875 Zeilen)
-- Why fragile: Sehr große Dateien sind schwer zu lesen und zu testen. Änderungen in einem Bereich der Komponente können unerwartete Seiteneffekte in anderen Bereichen haben.
-- Safe modification: Inkrementell auslagern — Helper-Hooks für Geschäftslogik, kleinere Unter-Komponenten für UI-Abschnitte.
-
-**Dual-Duplikat-Routen `teamer.js` / `konfi.js` für Tageslosung:**
-- Files: `backend/routes/teamer.js` (Zeile 771), `backend/routes/konfi.js` (Zeile 1444)
-- Why fragile: Dieselbe externe Losung-API wird von zwei Routen unabhängig aufgerufen. Änderungen (API-Key, URL, Fehlerbehandlung) müssen an zwei Stellen synchron gehalten werden.
-- Safe modification: Losung-Abruf in `backend/services/losungService.js` auslagern.
+**Chatutils: N+1-Schleife beim Server-Start:**
+- Files: `backend/utils/chatUtils.js` (Schleife über alle Jahrgänge + innere Schleife über Konfis)
+- Why fragile: Beim Start werden für jede Organisation alle Jahrgänge geladen; für jeden Jahrgang wird ein Raum geprüft/erstellt; für jeden Raum werden alle Konfis als Teilnehmer eingetragen. Bei großen Datenbeständen (EKD-Skalierung) läuft dies sequentiell und belastet die DB stark.
+- Safe modification: Transaktion mit Bulk-Insert oder idempotentes Migrations-SQL.
+- Test coverage: Keine Tests.
 
 ---
 
 ## Test Coverage Gaps
 
-**Keine Backend-Tests vorhanden:**
-- What's not tested: Gesamte Backend-Logik — Routes, Middleware, Datenbankoperationen, Business-Logik (Badge-Vergabe, Event-Booking, Punkte-Berechnung).
-- Files: `backend/` (komplett)
-- Risk: Regressionen werden erst in Produktion entdeckt. Kritische Pfade wie Race-Condition-Schutz bei Event-Buchungen sind ohne Tests schwer zu verifizieren.
+**Nahezu keine Testabdeckung vorhanden:**
+- What's not tested: Das gesamte Backend (alle 15 Routes, alle Services, Middleware), die gesamte Frontend-Business-Logik (Offline-Queue, Badge-Logik, Auth-Flow).
+- Files: `backend/routes/*.js` (0 Tests), `frontend/src/**/*.tsx` (0 Tests außer `App.test.tsx` mit Trivial-Smoke-Test)
+- Risk: Jede Änderung an kritischen Pfaden (Buchung, Punkte, Badge-Award) kann unbemerkt Regressionen einführen.
 - Priority: Hoch
 
-**Frontend-Tests minimal:**
-- What's not tested: Ein einziger Smoke-Test (`App.test.tsx` — prüft nur ob App rendert ohne zu crashen). Cypress-E2E hat nur einen Placeholder-Test (`cypress/e2e/test.cy.ts` — prüft einen nicht vorhandenen "Tab 1 page" Text).
-- Files: `frontend/src/App.test.tsx`, `frontend/cypress/e2e/test.cy.ts`
-- Risk: UI-Regressionen, kaputte Formulare und Navigations-Flows werden nicht automatisch erkannt.
-- Priority: Hoch — besonders für kritische Flows (Login, Aktivitäts-Antrag, Event-Buchung).
+**Cypress E2E nur als Stub vorhanden:**
+- What's not tested: Der einzige Cypress-Test (`frontend/cypress/e2e/test.cy.ts`) prüft einen Inhalt (`Tab 1 page`), der im aktuellen Stand der App nicht existiert.
+- Files: `frontend/cypress/e2e/test.cy.ts`
+- Risk: CI kann nicht feststellen, ob die App grundlegend funktioniert.
+- Priority: Hoch
 
 ---
 
-## Known Bugs
+## Fehlende kritische Features
 
-**Badge-Fortschrittsanzeige für `streak` und `time_based` immer 0%:**
-- Symptoms: Konfis mit streak- oder zeitbasierten Badges sehen 0% Fortschritt, auch wenn Aktivitäten vorhanden sind.
-- Files: `backend/routes/konfi.js` (Zeilen 1055–1063)
-- Trigger: Aufruf von `GET /konfi/badges` für einen Konfi mit Badges dieser Kriterien-Typen.
-- Workaround: Keiner. Badges können dennoch vergeben werden (badges.js berechnet korrekt), aber der Fortschritt im Frontend zeigt immer 0.
+**Kein Logging-Framework (nur console.*):**
+- Problem: 279 `console.error/warn/log`-Aufrufe im Backend ohne strukturiertes Logging. Kein Log-Level-Management, kein zentrales Error-Tracking.
+- Blocks: Effektives Monitoring in Produktion, Fehleranalyse ohne direkten Serverzugriff.
 
----
-
-## Scaling Limits
-
-**PostgreSQL Connection Pool:**
-- Current capacity: `PG_POOL_MAX` Standard 20 Connections
-- Limit: Bei EKD-Skalierung (4000+ User, viele parallele Badge-Progress-Berechnungen mit N+1-Queries) wird der Pool zum Flaschenhals.
-- Scaling path: `PG_POOL_MAX` im Docker-Compose erhöhen (z.B. auf 50), N+1-Queries durch Bulk-Queries ersetzen, Read-Replica für lesende Queries einführen.
-
-**Kein Database Backup-Prozess im Code:**
-- Current capacity: Kein automatisierter Backup im Codebase sichtbar.
-- Limit: Datenverlust bei Serverausfall oder fehlerhafter Migration ohne Rollback-Möglichkeit.
-- Scaling path: Automatisierte `pg_dump` Cronjobs auf dem Server einrichten, Backup-Rotation definieren.
+**Keine Datenbankbackup-Strategie im Code konfiguriert:**
+- Problem: Es gibt keine automatischen Backup-Jobs oder Hinweise auf eine Backup-Strategie im Code oder in den Docker-Konfigurationsdateien.
+- Blocks: Datenwiederherststellung nach Datenverlust.
 
 ---
 
 ## Dependencies at Risk
 
-**`bcrypt` v5 (synchrone API in Verwendung):**
-- Risk: Wie oben beschrieben — synchrone Varianten werden aktiv genutzt trotz async-API.
-- Impact: Performance-Degradation unter Last.
-- Migration plan: Async-API der gleichen Version verwenden — kein Paket-Wechsel nötig.
-
-**Frontend ohne Produktions-Monitoring:**
-- Risk: Kein Sentry, Bugsnag oder ähnliches. Produktionsfehler sind nur über `console.error` im ErrorBoundary sichtbar.
-- Files: `frontend/src/components/common/ErrorBoundary.tsx` (Zeile 31)
-- Impact: Fehler in Produktion werden nur entdeckt wenn User sich aktiv beschweren.
-- Migration plan: Sentry SDK ergänzen (`@sentry/capacitor` für native Apps), im ErrorBoundary und in kritischen catch-Blöcken aufrufen.
+**Keine automatisierten Dependency-Updates:**
+- Risk: Sicherheitslücken in transitiven Dependencies werden nicht automatisch erkannt.
+  - `backend/package.json` enthält keine `audit`-CI-Pipeline.
+- Impact: Bekannte CVEs in direkten oder transitiven Dependencies bleiben unentdeckt bis zu manuellem `npm audit`.
+- Migration plan: `npm audit` in CI/CD-Workflow (`.github/workflows/`) integrieren und automatischen Dependabot-Scan aktivieren.
 
 ---
 
-*Concerns-Audit: 2026-03-23*
+*Concerns-Analyse: 2026-03-23*
