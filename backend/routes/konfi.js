@@ -678,11 +678,13 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           [konfiId]
         );
 
-        for (const admin of admins) {
+        if (admins.length > 0) {
+          const adminIds = admins.map(a => a.id);
           await db.query(
-            "INSERT INTO notifications (user_id, title, message, type, data, organization_id) VALUES ($1, $2, $3, $4, $5, $6)",
+            `INSERT INTO notifications (user_id, title, message, type, data, organization_id)
+             SELECT unnest($1::int[]), $2, $3, $4, $5, $6`,
             [
-              admin.id,
+              adminIds,
               'Neuer Antrag eingegangen',
               `${konfiData.display_name} hat einen Antrag für "${activity.name}" (${activity.points} ${activity.points === 1 ? 'Punkt' : 'Punkte'}) eingereicht.`,
               'new_activity_request',

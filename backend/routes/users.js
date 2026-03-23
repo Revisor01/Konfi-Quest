@@ -166,7 +166,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
       }
 
       // Hash password
-      const passwordHash = bcrypt.hashSync(password, 10);
+      const passwordHash = await bcrypt.hash(password, 10);
 
       const insertQuery = `
         INSERT INTO users (organization_id, username, email, display_name, role_title, password_hash, role_id)
@@ -233,7 +233,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
 
       if (password) {
         updateFields.push(`password_hash = $${updateParams.length + 1}`);
-        updateParams.push(bcrypt.hashSync(password, 10));
+        updateParams.push(await bcrypt.hash(password, 10));
       }
 
       if (updateFields.length === 0) {

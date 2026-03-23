@@ -137,7 +137,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         }
 
         const password = generateBiblicalPassword();
-        const hashedPassword = bcrypt.hashSync(password, 10);
+        const hashedPassword = await bcrypt.hash(password, 10);
         const username = name.toLowerCase().replace(/\s+/g, '.').replace(/[^a-z.äöüß]/g, '');
 
         const client = await db.getClient();
@@ -389,7 +389,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
     // Regenerate password for a konfi
     router.post('/:id/regenerate-password', rbacVerifier, requireAdmin, validateParamId, async (req, res) => {
         const newPassword = generateBiblicalPassword();
-        const hashedPassword = bcrypt.hashSync(newPassword, 10);
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
 
         const client = await db.getClient();
         try {
