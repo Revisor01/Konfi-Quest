@@ -763,7 +763,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
       // Fetch from API
       const fetch = (await import('node-fetch')).default;
-      const losungApiKey = process.env.LOSUNG_API_KEY || 'ksadh8324oijcff45rfdsvcvhoids44'; // TODO: Fallback nach Deployment mit LOSUNG_API_KEY entfernen
+      const losungApiKey = process.env.LOSUNG_API_KEY;
+      if (!losungApiKey) {
+        console.error('LOSUNG_API_KEY Umgebungsvariable fehlt');
+        return res.status(503).json({ error: 'Losung-Dienst nicht verfügbar' });
+      }
       const apiUrl = `https://losung.konfi-quest.de/api/?api_key=${losungApiKey}&translation=${translation}`;
 
       const response = await fetch(apiUrl, {
