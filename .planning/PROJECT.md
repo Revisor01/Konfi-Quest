@@ -40,6 +40,19 @@ Letzte Sicherheitsluecken geschlossen, Performance-Engpaesse beseitigt, Architek
 
 Verbleibende Tech-Debt abgearbeitet: bcrypt async, Badge/Notification N+1 eliminiert, URLs via ENV konfigurierbar, SMTP/QR-Fallbacks bereinigt, losungService extrahiert, SIGTERM-Handler, LiveUpdateContext useRef, Event-Navigation useIonRouter (schwarzer Screen gefixt), Badge-Progress streak/time_based implementiert. 2 Phasen, 3 Plans, 14 Requirements.
 
+## Current Milestone: v2.7 Backend-Hardening
+
+**Goal:** Verbleibende Sicherheits- und Performance-Luecken im Backend schliessen bevor die App an die EKD geht.
+
+**Target features:**
+- Auth-Routes von verifyToken auf verifyTokenRBAC umstellen (gesperrte User sofort blockiert)
+- Hardcoded created_by=1 in chatUtils durch dynamischen Admin-Lookup ersetzen
+- Doppelte Event-Buchungslogik aus konfi.js/events.js in bookingUtils extrahieren
+- useOfflineQuery inline Fetcher stabilisieren (useCallback oder Ref-Pattern)
+- MIME Magic-Bytes-Validierung bei Uploads einbauen (file-type Paket)
+- backgroundService Badge-Check N+1 durch Bulk-Query ersetzen
+- verifyTokenRBAC DB-Query Caching (LRU, 30s TTL)
+
 ## Geplant: v3.0 Onboarding + Landing
 
 **Goal:** Onboarding-Flow, Landing Website mit Erklaerung, Github Readme, Wiki — letzter Schritt vor oeffentlichem Launch.
@@ -142,7 +155,13 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 
 ### Active
 
-(Keine aktiven Requirements — naechster Milestone definiert neue)
+- [ ] Auth-Routes auf verifyTokenRBAC umstellen
+- [ ] chatUtils created_by dynamisch
+- [ ] Event-Buchungslogik in bookingUtils extrahieren
+- [ ] useOfflineQuery Fetcher stabilisieren
+- [ ] MIME Magic-Bytes-Validierung
+- [ ] backgroundService Badge-Check Bulk
+- [ ] verifyTokenRBAC LRU-Cache
 
 ### Out of Scope
 
@@ -250,4 +269,4 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | QR_SECRET Pflicht-ENV | Kein Fallback auf JWT_SECRET mehr | Bestaetigt v2.6 |
 
 ---
-*Last updated: 2026-03-23 after v2.6 milestone*
+*Last updated: 2026-03-23 after v2.7 milestone start*

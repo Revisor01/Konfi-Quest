@@ -1,15 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.6
-milestone_name: Final Polish + Bugfixes
-status: unknown
-stopped_at: Completed 91-01-PLAN.md
-last_updated: "2026-03-23T18:57:27.061Z"
+milestone: v2.7
+milestone_name: Backend-Hardening
+status: defining_requirements
+last_updated: "2026-03-23T17:00:00Z"
 progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 3
-  completed_plans: 3
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
@@ -19,57 +18,30 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-23)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 91 — frontend-fixes-bugfixes
+**Current focus:** v2.7 Backend-Hardening - Defining requirements
 
 ## Current Position
 
-Phase: 91
-Plan: Not started
-
-## Performance Metrics
-
-**Velocity:**
-
-- Total plans completed: 0
-- Average duration: -
-- Total execution time: 0h
-
-**By Phase:**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| - | - | - | - |
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-23 — Milestone v2.7 started
 
 ## Accumulated Context
 
-| Phase 90 P01 | 3min | 2 tasks | 4 files |
-| Phase 90 P02 | 3min | 2 tasks | 11 files |
-| Phase 91 P01 | 3min | 3 tasks | 4 files |
-
-### Decisions
-
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
-
-- v2.5: Logout best-effort (online-only Revoke)
-- v2.5: schema_migrations Tracking statt externes Tool
-- [Phase 90]: Preloaded Counts Pattern fuer Badge-Schleifen (Promise.all vor Iteration)
-- [Phase 90]: VITE_API_URL mit Produktions-Fallback fuer Staging-Betrieb
-- [Phase 90]: QR_SECRET ohne Fallback - process.exit(1) bei fehlendem ENV
-- [Phase 90]: Gemeinsamer gracefulShutdown fuer SIGINT und SIGTERM
-- [Phase 91]: Streak/time_based Logik direkt in konfi.js (minimal-invasiv)
-- [Phase 91]: onNavigate Callback-Prop fuer React.memo Sections
+Alle v1.0-v2.6 Entscheidungen in PROJECT.md und milestones/ archiviert.
 
 ### Pending Todos
 
-- v3.0 Onboarding + Landing geplant (nach v2.6)
+- v3.0 Onboarding + Landing geplant (nach v2.7)
 
 ### Blockers/Concerns
 
-None.
+(keine)
 
 ## Session Continuity
 
-Last session: 2026-03-23T18:53:38.889Z
-Stopped at: Completed 91-01-PLAN.md
+Last session: 2026-03-23
+Stopped at: Milestone v2.7 initialization
 Resume file: None
+Next action: Define requirements → Create roadmap
