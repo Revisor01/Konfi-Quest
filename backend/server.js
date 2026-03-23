@@ -484,7 +484,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Konfi Points API is running' });
 });
 
-app.use('/api/auth', authRoutes(db, verifyToken, transporter, SMTP_CONFIG, { authLimiter, registerLimiter }));
+app.use('/api/auth', authRoutes(db, verifyToken, transporter, SMTP_CONFIG, { authLimiter, registerLimiter }, rbacVerifier));
 app.use('/api/konfi', konfiRoutes(db, { verifyTokenRBAC: rbacVerifier }, requestUpload));
 
 // Chat: Nachrichten-Endpunkt mit eigenem Rate-Limiter, Upload-Endpunkt ebenfalls

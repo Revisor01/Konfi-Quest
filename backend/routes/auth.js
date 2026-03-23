@@ -25,7 +25,7 @@ if (!JWT_SECRET) {
 }
 
 // Unified auth routes - combines all login functionality
-module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) => {
+module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, rbacVerifier) => {
   const { authLimiter, registerLimiter } = rateLimiters;
   const emailService = require('../services/emailService');
 
@@ -174,7 +174,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
   // ===== PASSWORD MANAGEMENT =====
 
   // Change password (for authenticated users)
-  router.post('/change-password', verifyToken, validateChangePassword, async (req, res) => {
+  router.post('/change-password', rbacVerifier, validateChangePassword, async (req, res) => {
     const { currentPassword, newPassword } = req.body;
     const userId = req.user.id;
     
@@ -210,7 +210,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
   });
 
   // Update email address (for authenticated users)
-  router.post('/update-email', verifyToken, validateUpdateEmail, async (req, res) => {
+  router.post('/update-email', rbacVerifier, validateUpdateEmail, async (req, res) => {
     const { email } = req.body;
     const userId = req.user.id;
 
@@ -238,12 +238,12 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
   });
 
   // Update role title / Funktionsbeschreibung (for authenticated users - only admins/teamers)
-  router.post('/update-role-title', verifyToken, async (req, res) => {
+  router.post('/update-role-title', rbacVerifier, async (req, res) => {
     const { role_title } = req.body;
     const userId = req.user.id;
 
     // Nur Admins und Teamer können ihren Titel ändern (keine Konfis)
-    if (req.user.type === 'konfi') {
+    if (req.user.role_name === 'konfi') {
       return res.status(403).json({ error: 'Konfis können keine Funktionsbeschreibung setzen' });
     }
 
@@ -265,7 +265,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
   });
 
   // Get current user profile (for authenticated users)
-  router.get('/me', verifyToken, async (req, res) => {
+  router.get('/me', rbacVerifier, async (req, res) => {
     const userId = req.user.id;
 
     try {
@@ -333,7 +333,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
   // ===== INVITE CODE SYSTEM =====
 
   // Generate invite code for Konfi registration (org_admin only)
-  router.post('/invite-code', verifyToken, validateInviteCode, async (req, res) => {
+  router.post('/invite-code', rbacVerifier, validateInviteCode, async (req, res) => {
     const { jahrgang_id } = req.body;
     const userId = req.user.id;
     const organizationId = req.user.organization_id;
@@ -381,7 +381,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
   });
 
   // Get all invite codes for organization (org_admin only)
-  router.get('/invite-codes', verifyToken, async (req, res) => {
+  router.get('/invite-codes', rbacVerifier, async (req, res) => {
     const organizationId = req.user.organization_id;
 
     if (req.user.role_name !== 'org_admin') {
@@ -410,7 +410,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
   });
 
   // Extend invite code by 7 days (org_admin only)
-  router.post('/invite-codes/:id/extend', verifyToken, async (req, res) => {
+  router.post('/invite-codes/:id/extend', rbacVerifier, async (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
 
@@ -449,7 +449,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
   });
 
   // Delete invite code (org_admin only)
-  router.delete('/invite-codes/:id', verifyToken, async (req, res) => {
+  router.delete('/invite-codes/:id', rbacVerifier, async (req, res) => {
     const organizationId = req.user.organization_id;
     if (req.user.role_name !== 'org_admin') {
       return res.status(403).json({ error: 'Nur Administratoren können Einladungscodes löschen' });
@@ -796,7 +796,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
   });
 
   // POST /api/auth/logout — Revokiert das aktive Refresh Token
-  router.post('/logout', verifyToken, async (req, res) => {
+  router.post('/logout', rbacVerifier, async (req, res) => {
     const { refresh_token } = req.body;
 
     // Best-effort: Logout geht immer durch, auch ohne Token
