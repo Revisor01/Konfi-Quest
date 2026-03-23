@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const PushService = require('../services/pushService');
+const { validateMagicBytes } = require('../middleware/uploadValidation');
 
 module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   const { verifyTokenRBAC } = rbacMiddleware;
@@ -668,7 +669,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   });
   
   // Send message
-  router.post('/rooms/:roomId/messages', verifyTokenRBAC, chatUpload.single('file'), validateSendMessage, async (req, res) => {
+  router.post('/rooms/:roomId/messages', verifyTokenRBAC, chatUpload.single('file'), validateMagicBytes, validateSendMessage, async (req, res) => {
     try {
       const roomId = req.params.roomId;
       const { content, message_type = 'text', reply_to, client_id } = req.body;

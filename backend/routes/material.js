@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
+const { validateMagicBytes } = require('../middleware/uploadValidation');
 
 module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   const { requireTeamer, requireOrgAdmin } = roleHelpers;
@@ -522,7 +523,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   // ====================================================================
 
   // POST /:id/files - Dateien zu Material hochladen
-  router.post('/:id/files', rbacVerifier, requireOrgAdmin, materialUpload.array('files', 10), async (req, res) => {
+  router.post('/:id/files', rbacVerifier, requireOrgAdmin, materialUpload.array('files', 10), validateMagicBytes, async (req, res) => {
     try {
       const orgId = req.user.organization_id;
       const materialId = req.params.id;

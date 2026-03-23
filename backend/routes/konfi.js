@@ -7,6 +7,7 @@ const { handleValidationErrors } = require('../middleware/validation');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { fetchTageslosung } = require('../services/losungService');
+const { validateMagicBytes } = require('../middleware/uploadValidation');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -740,7 +741,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
   });
 
   // Upload photo for activity request (encrypted storage)
-  router.post('/upload-photo', verifyTokenRBAC, requestUpload.single('photo'), async (req, res) => {
+  router.post('/upload-photo', verifyTokenRBAC, requestUpload.single('photo'), validateMagicBytes, async (req, res) => {
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
