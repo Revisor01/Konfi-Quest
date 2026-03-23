@@ -9,8 +9,8 @@ Requirements fuer Milestone v2.7 Backend-Hardening.
 
 ### Sicherheit (SEC)
 
-- [ ] **SEC-07**: Alle Auth-Routes (change-password, update-email, update-role-title, me, invite-code, logout) nutzen verifyTokenRBAC statt verifyToken — gesperrte/deaktivierte User werden sofort blockiert
-- [ ] **SEC-08**: Upload-Filter validiert Dateitypen zusaetzlich ueber Magic-Bytes (file-type Paket) statt nur Client-MIME-Header
+- [x] **SEC-07**: Alle Auth-Routes (change-password, update-email, update-role-title, me, invite-code, logout) nutzen verifyTokenRBAC statt verifyToken — gesperrte/deaktivierte User werden sofort blockiert
+- [x] **SEC-08**: Upload-Filter validiert Dateitypen zusaetzlich ueber Magic-Bytes (file-type Paket) statt nur Client-MIME-Header
 
 ### Performance (PERF)
 
@@ -39,8 +39,8 @@ Requirements fuer Milestone v2.7 Backend-Hardening.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SEC-07 | Phase 92 | Pending |
-| SEC-08 | Phase 92 | Pending |
+| SEC-07 | Phase 92 | Complete |
+| SEC-08 | Phase 92 | Complete |
 | PERF-08 | Phase 92 | Complete |
 | PERF-09 | Phase 92 | Complete |
 | ARCH-06 | Phase 93 | Pending |
