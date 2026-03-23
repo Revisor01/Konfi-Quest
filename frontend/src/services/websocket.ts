@@ -2,8 +2,9 @@ import { io, Socket } from 'socket.io-client';
 import { writeQueue } from './writeQueue';
 import { offlineCache } from './offlineCache';
 
-// Hardcoded URL wie in api.ts - VITE_API_URL funktioniert nicht in nativen Apps
-const WS_URL = 'https://konfi-quest.de';
+const WS_URL = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL.replace(/\/api$/, '')
+  : 'https://konfi-quest.de';
 
 let socket: Socket | null = null;
 

@@ -164,7 +164,7 @@ liveUpdate.init(io);
 // ====================================================================
 
 const SMTP_CONFIG = {
-  host: process.env.SMTP_HOST || '213.109.162.132',
+  host: process.env.SMTP_HOST || 'server.godsapp.de',
   port: parseInt(process.env.SMTP_PORT || '465'),
   secure: process.env.SMTP_SECURE !== 'false', // true for 465, via ENV steuerbar
   auth: {

@@ -3,7 +3,7 @@ import axiosRetry from 'axios-retry';
 import { getToken, getRefreshToken, setToken, setRefreshToken, clearAuth } from './tokenStore';
 import { networkMonitor } from './networkMonitor';
 
-const API_BASE_URL = 'https://konfi-quest.de/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://konfi-quest.de/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,

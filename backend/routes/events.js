@@ -7,7 +7,11 @@ const jwt = require('jsonwebtoken');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 
-const QR_SECRET = process.env.QR_SECRET || process.env.JWT_SECRET;
+const QR_SECRET = process.env.QR_SECRET;
+if (!QR_SECRET) {
+  console.error('FATAL: QR_SECRET Umgebungsvariable fehlt!');
+  process.exit(1);
+}
 
 // Events routes
 // Events: Teamer darf alles (view, create, edit, delete, manage_bookings)
