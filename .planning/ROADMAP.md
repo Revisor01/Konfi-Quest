@@ -19,6 +19,7 @@
 - Shipped **v2.4 Codebase-Cleanup** - Phases 81-85 (shipped 2026-03-22)
 - Shipped **v2.5 Security-Hardening + Polish** - Phases 86-89 (shipped 2026-03-23)
 - Shipped **v2.6 Final Polish + Bugfixes** - Phases 90-91 (shipped 2026-03-23)
+- Current **v2.7 Backend-Hardening** - Phases 92-93 (in progress)
 
 ## Phases
 
@@ -216,7 +217,7 @@ Phase 80: Wrapped Persistenz + Individualisierung (3 plans, complete)
 
 See .planning/milestones/v2.4-ROADMAP.md for full details.
 
-Phase 81: useHistory → useIonRouter Migration (3 plans, complete)
+Phase 81: useHistory -> useIonRouter Migration (3 plans, complete)
 Phase 82: Backend-Sicherheit + Cron (3 plans, complete)
 Phase 83: Performance + Capacitor (2 plans, complete)
 Phase 84: Schema-Hygiene (2 plans, complete)
@@ -245,3 +246,50 @@ Phase 90: Backend-Cleanup + Performance (2 plans, complete)
 Phase 91: Frontend-Fixes + Bugfixes (1 plan, complete)
 
 </details>
+
+### Current: v2.7 Backend-Hardening (In Progress)
+
+**Milestone Goal:** Verbleibende Sicherheits- und Performance-Luecken im Backend schliessen bevor die App an die EKD geht.
+
+- [ ] **Phase 92: Sicherheit + Performance** - Auth-RBAC-Migration, MIME-Validierung, Badge-Bulk-Query, Token-Cache
+- [ ] **Phase 93: Architektur-Refactoring** - chatUtils dynamisch, bookingUtils Extraktion, useOfflineQuery Fetcher-Stabilisierung
+
+## Phase Details
+
+### Phase 92: Sicherheit + Performance
+**Goal**: Alle API-Zugriffe pruefen aktiven User-Status, Uploads sind gegen manipulierte MIME-Types geschuetzt, und Backend-Hotpaths sind performant gecached
+**Depends on**: Nothing (first phase of v2.7)
+**Requirements**: SEC-07, SEC-08, PERF-08, PERF-09
+**Success Criteria** (what must be TRUE):
+  1. Ein gesperrter oder deaktivierter User erhaelt bei allen Auth-Endpoints (change-password, update-email, me, invite-code, logout) sofort 403 statt eine erfolgreiche Antwort
+  2. Eine Datei mit falschem MIME-Header (z.B. .exe umbenannt in .jpg) wird beim Upload abgelehnt -- nur echte Bild-/Dokument-Formate passieren die Validierung
+  3. Der backgroundService Badge-Cron laueft mit einer festen Anzahl SQL-Queries unabhaengig von der User-Zahl (kein N+1)
+  4. Wiederholte API-Requests desselben Users innerhalb von 30 Sekunden loesen keine erneute DB-Abfrage in verifyTokenRBAC aus (LRU-Cache Hit)
+**Plans**: TBD
+
+Plans:
+- [ ] 92-01: Auth-RBAC-Migration + MIME-Validierung
+- [ ] 92-02: Badge-Bulk + Token-Cache
+
+### Phase 93: Architektur-Refactoring
+**Goal**: Duplizierte und fragile Backend-Logik ist in wartbare Utils extrahiert, Frontend-Fetcher verursachen keine unnuetigen Re-Renders
+**Depends on**: Phase 92
+**Requirements**: ARCH-06, ARCH-07, ARCH-08
+**Success Criteria** (what must be TRUE):
+  1. Neue Chat-Raeume werden mit dem ersten aktiven Admin der jeweiligen Organisation als Ersteller angelegt -- nicht mehr mit hardcodiertem User ID 1
+  2. Event-Buchung, -Stornierung und Waitlist-Nachruecken laufen ueber eine einzige bookingUtils-Datei -- konfi.js und events.js enthalten keine eigene Buchungslogik mehr
+  3. useOfflineQuery-Komponenten revalidieren nur bei echten Daten-Aenderungen, nicht bei jedem Re-Render (stabile Fetcher-Referenz)
+**Plans**: TBD
+
+Plans:
+- [ ] 93-01: chatUtils + bookingUtils + Fetcher-Stabilisierung
+
+## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 92 -> 93
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 92. Sicherheit + Performance | 0/2 | Not started | - |
+| 93. Architektur-Refactoring | 0/1 | Not started | - |

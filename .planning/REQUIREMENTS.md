@@ -39,18 +39,18 @@ Requirements fuer Milestone v2.7 Backend-Hardening.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SEC-07 | - | Pending |
-| SEC-08 | - | Pending |
-| PERF-08 | - | Pending |
-| PERF-09 | - | Pending |
-| ARCH-06 | - | Pending |
-| ARCH-07 | - | Pending |
-| ARCH-08 | - | Pending |
+| SEC-07 | Phase 92 | Pending |
+| SEC-08 | Phase 92 | Pending |
+| PERF-08 | Phase 92 | Pending |
+| PERF-09 | Phase 92 | Pending |
+| ARCH-06 | Phase 93 | Pending |
+| ARCH-07 | Phase 93 | Pending |
+| ARCH-08 | Phase 93 | Pending |
 
 **Coverage v2.7:**
 - v2.7 requirements: 7 total
-- Mapped to phases: 0
-- Unmapped: 7
+- Mapped to phases: 7
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-23*
