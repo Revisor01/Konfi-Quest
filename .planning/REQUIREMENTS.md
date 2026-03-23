@@ -25,7 +25,7 @@ Requirements fuer Milestone v2.5 Security-Hardening + Polish.
 
 ### Architektur (ARCH)
 
-- [ ] **ARCH-01**: global.io durch Dependency Injection ersetzen (io als Parameter an Routes wie db)
+- [x] **ARCH-01**: global.io durch Dependency Injection ersetzen (io als Parameter an Routes wie db)
 - [x] **ARCH-02**: material.js Legacy Single-ID Felder (event_id, jahrgang_id) entfernen, nur Array-Format
 - [x] **ARCH-03**: Migrations-System mit schema_migrations Versionstabelle (nur neue Migrationen ausfuehren)
 
@@ -60,7 +60,7 @@ Requirements fuer Milestone v2.5 Security-Hardening + Polish.
 | PERF-02 | Phase 88 | Complete |
 | PERF-03 | Phase 88 | Complete |
 | PERF-04 | Phase 88 | Complete |
-| ARCH-01 | Phase 89 | Pending |
+| ARCH-01 | Phase 89 | Complete |
 | ARCH-02 | Phase 89 | Complete |
 | ARCH-03 | Phase 89 | Complete |
 | CLN-01 | Phase 89 | Complete |
