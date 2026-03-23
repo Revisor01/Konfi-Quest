@@ -36,6 +36,25 @@ useHistory → useIonRouter (14 Dateien), Losung-API-Key in ENV, Socket.IO Org-I
 
 Letzte Sicherheitsluecken geschlossen, Performance-Engpaesse beseitigt, Architektur bereinigt: Logout-Token-Revoke, 5 Security-Fixes (Passwort/Chat/Typing/API-Key/Stale-Closure), Chat N+1 mit LATERAL Joins, Wrapped parallelisiert, global.io durch DI ersetzt, schema_migrations Tracking, material.js Array-only, DB Pool konfigurierbar, Cron-Guard bereinigt. 4 Phasen, 6 Plans, 15 Requirements.
 
+## Current Milestone: v2.6 Final Polish + Bugfixes
+
+**Goal:** Verbleibende Tech-Debt-Items aus CONCERNS.md abarbeiten und einen gemeldeten Bug fixen — letzter Cleanup vor v3.0 Onboarding.
+
+**Target features:**
+- bcrypt sync → async (Event-Loop nicht mehr blockieren)
+- Hardcoded URLs → Umgebungsvariablen (Staging-faehig)
+- Migrations-Namenskonvention bereinigen (3 Dateien ohne Praefix)
+- Veraltete SQLite-Skripte entfernen
+- LiveUpdateContext listeners Map in Provider verschieben
+- SIGTERM-Handler fuer Docker Graceful Shutdown
+- Badge N+1 Progress-Berechnung optimieren
+- N+1 Notification-Insert → Bulk-Insert
+- Dual-Duplikat Losung-Route → losungService.js extrahieren
+- window.location.href → useIonRouter (Event-Chat + Serie)
+- streak/time_based Badge-Progress implementieren (zeigt aktuell immer 0%)
+- Bug: Chat erstellen aus Event-Detail leitet auf schwarze Seite
+- SMTP-IP-Fallback und QR_SECRET-Fallback entfernen
+
 ## Geplant: v3.0 Onboarding + Landing
 
 **Goal:** Onboarding-Flow, Landing Website mit Erklaerung, Github Readme, Wiki — letzter Schritt vor oeffentlichem Launch.
@@ -138,7 +157,19 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 
 ### Active
 
-(Keine aktiven Requirements — naechster Milestone definiert neue)
+- [ ] bcrypt async statt sync
+- [ ] Hardcoded URLs durch ENV-Variablen ersetzen
+- [ ] Migrations-Namenskonvention bereinigen
+- [ ] SQLite-Skripte aus package.json entfernen
+- [ ] LiveUpdateContext listeners in Provider verschieben
+- [ ] SIGTERM-Handler hinzufuegen
+- [ ] Badge N+1 Progress optimieren
+- [ ] Notification N+1 → Bulk-Insert
+- [ ] Losung-Duplikat → losungService.js
+- [ ] window.location.href → useIonRouter
+- [ ] streak/time_based Badge-Progress implementieren
+- [ ] Bug: Event-Chat Navigation schwarze Seite
+- [ ] SMTP-IP-Fallback und QR_SECRET-Fallback entfernen
 
 ### Out of Scope
 
@@ -239,4 +270,4 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | schema_migrations Tracking | Einfache Tabelle statt externes Tool (knex/umzug) | Bestaetigt v2.5 |
 
 ---
-*Last updated: 2026-03-23 after v2.5 milestone*
+*Last updated: 2026-03-23 after v2.6 milestone start*
