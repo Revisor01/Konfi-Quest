@@ -265,7 +265,7 @@ Phase 91: Frontend-Fixes + Bugfixes (1 plan, complete)
   2. Eine Datei mit falschem MIME-Header (z.B. .exe umbenannt in .jpg) wird beim Upload abgelehnt -- nur echte Bild-/Dokument-Formate passieren die Validierung
   3. Der backgroundService Badge-Cron laueft mit einer festen Anzahl SQL-Queries unabhaengig von der User-Zahl (kein N+1)
   4. Wiederholte API-Requests desselben Users innerhalb von 30 Sekunden loesen keine erneute DB-Abfrage in verifyTokenRBAC aus (LRU-Cache Hit)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
 - [ ] 92-01: Auth-RBAC-Migration + MIME-Validierung
@@ -279,7 +279,7 @@ Plans:
   1. Neue Chat-Raeume werden mit dem ersten aktiven Admin der jeweiligen Organisation als Ersteller angelegt -- nicht mehr mit hardcodiertem User ID 1
   2. Event-Buchung, -Stornierung und Waitlist-Nachruecken laufen ueber eine einzige bookingUtils-Datei -- konfi.js und events.js enthalten keine eigene Buchungslogik mehr
   3. useOfflineQuery-Komponenten revalidieren nur bei echten Daten-Aenderungen, nicht bei jedem Re-Render (stabile Fetcher-Referenz)
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
 - [ ] 93-01: chatUtils + bookingUtils + Fetcher-Stabilisierung
