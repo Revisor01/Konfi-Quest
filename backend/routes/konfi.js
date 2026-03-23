@@ -1055,15 +1055,75 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
               progress.current = parseInt(bonusResult?.total || 0);
               break;
               
-            case 'streak':
-              // TODO: Implement streak calculation (complex)
-              progress.current = 0;
+            case 'streak': {
+              // Streak: Wochen mit mindestens einer Aktivitaet/Event in Folge
+              const streakQuery = `
+                SELECT completed_date as date FROM user_activities WHERE user_id = $1 AND organization_id = $2
+                UNION ALL
+                SELECT e.event_date as date FROM event_bookings eb
+                JOIN events e ON eb.event_id = e.id
+                WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2
+                ORDER BY date DESC
+              `;
+              const { rows: streakResults } = await db.query(streakQuery, [konfiId, req.user.organization_id]);
+
+              function getYearWeek(date) {
+                const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+                const dayNum = d.getUTCDay() || 7;
+                d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+                const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+                const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+                return `${d.getUTCFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
+              }
+
+              function getISOWeeksInYear(year) {
+                const dec28 = new Date(Date.UTC(year, 11, 28));
+                const dayOfYear = Math.ceil((dec28 - new Date(Date.UTC(year, 0, 1))) / 86400000) + 1;
+                return Math.ceil((dayOfYear - (dec28.getUTCDay() || 7) + 10) / 7);
+              }
+
+              const activityWeeks = new Set(streakResults.map(r => getYearWeek(new Date(r.date))).filter(w => w && !w.includes('NaN')));
+              const sortedWeeks = Array.from(activityWeeks).sort().reverse();
+
+              let currentStreak = 0;
+              if (sortedWeeks.length > 0) {
+                currentStreak = 1;
+                for (let i = 0; i < sortedWeeks.length - 1; i++) {
+                  const [year, week] = sortedWeeks[i].split('-W').map(Number);
+                  let ey = year, ew = week - 1;
+                  if (ew === 0) { ey -= 1; ew = getISOWeeksInYear(ey); }
+                  if (sortedWeeks[i + 1] === `${ey}-W${ew.toString().padStart(2, '0')}`) { currentStreak++; } else { break; }
+                }
+              }
+              progress.current = currentStreak;
               break;
-              
-            case 'time_based':
-              // TODO: Implement time-based calculation (complex)
-              progress.current = 0;
+            }
+
+            case 'time_based': {
+              // Time-based: Anzahl Aktivitaeten/Events im konfigurierten Zeitraum
+              let tbDays = null;
+              try {
+                const extraData = JSON.parse(badge.criteria_extra || '{}');
+                tbDays = extraData.days || (extraData.weeks ? extraData.weeks * 7 : null);
+              } catch (e) {
+                console.error('Error parsing criteria_extra for time_based badge:', e);
+              }
+              if (tbDays) {
+                const tbQuery = `
+                  SELECT completed_date as date FROM user_activities WHERE user_id = $1 AND organization_id = $2
+                  UNION ALL
+                  SELECT e.event_date as date FROM event_bookings eb
+                  JOIN events e ON eb.event_id = e.id
+                  WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2
+                  ORDER BY date DESC
+                `;
+                const { rows: tbResults } = await db.query(tbQuery, [konfiId, req.user.organization_id]);
+                const now = new Date();
+                const cutoff = new Date(now.getTime() - (tbDays * 24 * 60 * 60 * 1000));
+                progress.current = tbResults.filter(r => new Date(r.date) >= cutoff).length;
+              }
               break;
+            }
           }
           
           progress.percentage = Math.min((progress.current / progress.target) * 100, 100);
