@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.6
 milestone_name: Final Polish + Bugfixes
 status: unknown
-stopped_at: Completed 90-02-PLAN.md
-last_updated: "2026-03-23T18:48:23.529Z"
+stopped_at: Completed 91-01-PLAN.md
+last_updated: "2026-03-23T18:53:38.891Z"
 progress:
   total_phases: 2
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-23)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 90 — backend-cleanup-performance
+**Current focus:** Phase 91 — frontend-fixes-bugfixes
 
 ## Current Position
 
-Phase: 91
-Plan: Not started
+Phase: 91 (frontend-fixes-bugfixes) — EXECUTING
+Plan: 1 of 1
 
 ## Performance Metrics
 
@@ -44,6 +44,7 @@ Plan: Not started
 
 | Phase 90 P01 | 3min | 2 tasks | 4 files |
 | Phase 90 P02 | 3min | 2 tasks | 11 files |
+| Phase 91 P01 | 3min | 3 tasks | 4 files |
 
 ### Decisions
 
@@ -56,6 +57,8 @@ Recent decisions affecting current work:
 - [Phase 90]: VITE_API_URL mit Produktions-Fallback fuer Staging-Betrieb
 - [Phase 90]: QR_SECRET ohne Fallback - process.exit(1) bei fehlendem ENV
 - [Phase 90]: Gemeinsamer gracefulShutdown fuer SIGINT und SIGTERM
+- [Phase 91]: Streak/time_based Logik direkt in konfi.js (minimal-invasiv)
+- [Phase 91]: onNavigate Callback-Prop fuer React.memo Sections
 
 ### Pending Todos
 
@@ -67,6 +70,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-23T18:45:06.621Z
-Stopped at: Completed 90-02-PLAN.md
+Last session: 2026-03-23T18:53:38.889Z
+Stopped at: Completed 91-01-PLAN.md
 Resume file: None

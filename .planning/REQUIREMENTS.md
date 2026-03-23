@@ -28,13 +28,13 @@ Requirements fuer Milestone v2.6 Final Polish + Bugfixes.
 
 ### Architektur (ARCH)
 
-- [ ] **ARCH-04**: LiveUpdateContext listeners Map vom Modul-Scope in den Provider verschieben (useRef)
-- [ ] **ARCH-05**: window.location.href in EventDetailView (Chat-Nav) und EventDetailSections (Serie-Nav) durch useIonRouter ersetzen
+- [x] **ARCH-04**: LiveUpdateContext listeners Map vom Modul-Scope in den Provider verschieben (useRef)
+- [x] **ARCH-05**: window.location.href in EventDetailView (Chat-Nav) und EventDetailSections (Serie-Nav) durch useIonRouter ersetzen
 
 ### Bugfixes (BUG)
 
-- [ ] **BUG-01**: Event-Detail Chat-Erstellung leitet auf schwarze Seite (window.location.href → useIonRouter)
-- [ ] **BUG-02**: Badge-Progress fuer streak und time_based Kriterien zeigt immer 0% (Progress-Berechnung aus badges.js extrahieren)
+- [x] **BUG-01**: Event-Detail Chat-Erstellung leitet auf schwarze Seite (window.location.href → useIonRouter)
+- [x] **BUG-02**: Badge-Progress fuer streak und time_based Kriterien zeigt immer 0% (Progress-Berechnung aus badges.js extrahieren)
 
 ## Out of Scope
 
@@ -62,10 +62,10 @@ Requirements fuer Milestone v2.6 Final Polish + Bugfixes.
 | CLN-04 | Phase 90 | Complete |
 | CLN-05 | Phase 90 | Complete |
 | CLN-06 | Phase 90 | Complete |
-| ARCH-04 | Phase 91 | Pending |
-| ARCH-05 | Phase 91 | Pending |
-| BUG-01 | Phase 91 | Pending |
-| BUG-02 | Phase 91 | Pending |
+| ARCH-04 | Phase 91 | Complete |
+| ARCH-05 | Phase 91 | Complete |
+| BUG-01 | Phase 91 | Complete |
+| BUG-02 | Phase 91 | Complete |
 
 **Coverage v2.6:**
 - v2.6 requirements: 14 total

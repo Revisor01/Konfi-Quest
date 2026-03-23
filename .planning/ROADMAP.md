@@ -241,7 +241,7 @@ Phase 89: Architektur + Cleanup (2 plans, complete)
 **Milestone Goal:** Verbleibende Tech-Debt-Items abarbeiten und gemeldete Bugs fixen -- letzter Cleanup vor v3.0 Onboarding.
 
 - [x] **Phase 90: Backend-Cleanup + Performance** - bcrypt async, N+1 Fixes, ENV-Konfiguration, tote Artefakte entfernen, Graceful Shutdown (completed 2026-03-23)
-- [ ] **Phase 91: Frontend-Fixes + Bugfixes** - LiveUpdateContext bereinigen, Navigation-Bugs fixen, Badge-Progress implementieren
+- [x] **Phase 91: Frontend-Fixes + Bugfixes** - LiveUpdateContext bereinigen, Navigation-Bugs fixen, Badge-Progress implementieren (completed 2026-03-23)
 
 ## Phase Details
 
@@ -273,7 +273,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 91-01: Frontend-Architektur + Bugfixes (LiveUpdateContext, useIonRouter Navigation, Badge-Progress)
+- [x] 91-01: Frontend-Architektur + Bugfixes (LiveUpdateContext, useIonRouter Navigation, Badge-Progress)
 
 ## Progress
 
@@ -282,4 +282,4 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 90. Backend-Cleanup + Performance | v2.6 | 2/2 | Complete    | 2026-03-23 |
-| 91. Frontend-Fixes + Bugfixes | v2.6 | 0/1 | Not started | - |
+| 91. Frontend-Fixes + Bugfixes | v2.6 | 1/1 | Complete   | 2026-03-23 |
