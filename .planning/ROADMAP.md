@@ -17,6 +17,7 @@
 - Shipped **v2.2 Codebase-Hardening** - Phases 63-74 (shipped 2026-03-22)
 - Shipped **v2.3 Konfi + Teamer Wrapped** - Phases 75-80 (shipped 2026-03-22)
 - Shipped **v2.4 Codebase-Cleanup** - Phases 81-85 (shipped 2026-03-22)
+- **v2.5 Security-Hardening + Polish** - Phases 86-89 (active)
 
 ## Phases
 
@@ -222,8 +223,68 @@ Phase 85: Code-Cleanup (2 plans, complete)
 
 </details>
 
+### v2.5 Security-Hardening + Polish (Phases 86-89)
+
+- [ ] **Phase 86: Logout-Absicherung** - Refresh Token wird beim Logout serverseitig revokiert
+- [ ] **Phase 87: Security-Fixes** - Passwortlimit, Chat-Limit, Typing-Org-Check, Losung-Fallback, Frontend-Stale-Closure
+- [ ] **Phase 88: Backend-Performance** - N+1 Chat, N+1 Wrapped, korrelierte Subquery, DB Pool
+- [ ] **Phase 89: Architektur + Cleanup** - global.io DI, material.js Legacy, Migrations-Versionstabelle, Cron-Guard
+
+## Phase Details
+
+### Phase 86: Logout-Absicherung
+**Goal**: Ein Logout macht die Sitzung serverseitig vollstaendig ungueltig
+**Depends on**: Phase 85 (v2.4 abgeschlossen)
+**Requirements**: SEC-01, SEC-02
+**Success Criteria** (was nach dieser Phase TRUE sein muss):
+  1. Nach einem Logout ist das Refresh Token in der DB mit revoked_at markiert und kann nicht mehr fuer neue Access Tokens verwendet werden
+  2. Der Frontend-Logout-Flow ruft /api/auth/logout auf, bevor lokale Token-Daten geloescht werden
+  3. Ein abgegriffenes Refresh Token ist nach dem Logout des Users wertlos
+**Plans**: TBD
+
+### Phase 87: Security-Fixes
+**Goal**: Alle verbleibenden kleinen Sicherheitsluecken und ein Frontend-Bug sind geschlossen
+**Depends on**: Phase 86
+**Requirements**: SEC-03, SEC-04, SEC-05, SEC-06, CLN-02
+**Success Criteria** (was nach dieser Phase TRUE sein muss):
+  1. Passwortregistrierung mit weniger als 8 Zeichen wird vom Backend abgewiesen
+  2. Eine Chat-Nachricht mit mehr als 4000 Zeichen wird vom Backend abgewiesen
+  3. Typing-Events werden nicht an andere Organisationen weitergeleitet
+  4. Der Losung-API-Key hat keinen Fallback-Wert mehr im Quellcode
+  5. useOfflineQuery verwendet keinen stale data-Closure mehr und revalidate ist sicher in den Dependencies
+**Plans**: TBD
+
+### Phase 88: Backend-Performance
+**Goal**: Chat-Uebersicht und Wrapped-Generierung sind frei von N+1-Problemen und der DB Pool ist konfiguriert
+**Depends on**: Phase 87
+**Requirements**: PERF-01, PERF-02, PERF-03, PERF-04
+**Success Criteria** (was nach dieser Phase TRUE sein muss):
+  1. Die Chat-Raumuebersicht laedt Direct-Message-Namen per JOIN statt einer Query pro Raum
+  2. Die Chat-Raumsortierung verwendet einen LATERAL Join oder last_message_at statt korrelierter Subquery
+  3. Die Wrapped-Snapshot-Generierung parallelisiert Queries pro Konfi mit Promise.all
+  4. Der DB Pool hat explizite max/idleTimeout/connectionTimeout Werte und ist ueber Umgebungsvariable konfigurierbar
+**Plans**: TBD
+
+### Phase 89: Architektur + Cleanup
+**Goal**: global.io ist eliminiert, material.js ist bereinigt, das Migrations-System traeckt Versionen, und der Cron-Guard ist konsistent
+**Depends on**: Phase 88
+**Requirements**: ARCH-01, ARCH-02, ARCH-03, CLN-01
+**Success Criteria** (was nach dieser Phase TRUE sein muss):
+  1. Socket.io wird als Parameter an Route-Module injiziert, global.io existiert nicht mehr
+  2. material.js akzeptiert ausschliesslich das Array-Format (event_ids, jahrgang_ids), Legacy-Einzelfeld-Pfad ist entfernt
+  3. Ausgefuehrte Migrationen werden in einer schema_migrations Tabelle gespeichert und beim naechsten Start nicht erneut ausgefuehrt
+  4. Der doppelte Date-Guard im Wrapped-Cron ist entfernt, die node-cron Schedule ist die einzige Ausfuehrungs-Bedingung
+**Plans**: TBD
+
 ## Progress
 
-Alle Phasen bis v2.4 abgeschlossen. Naechster Milestone: TBD
-| 84. Schema-Hygiene | 2/2 | Complete    | 2026-03-22 |
-| 85. Code-Cleanup | 2/2 | Complete    | 2026-03-22 |
+Alle Phasen bis v2.4 abgeschlossen.
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 84. Schema-Hygiene | 2/2 | Complete | 2026-03-22 |
+| 85. Code-Cleanup | 2/2 | Complete | 2026-03-22 |
+| 86. Logout-Absicherung | 0/? | Not started | - |
+| 87. Security-Fixes | 0/? | Not started | - |
+| 88. Backend-Performance | 0/? | Not started | - |
+| 89. Architektur + Cleanup | 0/? | Not started | - |

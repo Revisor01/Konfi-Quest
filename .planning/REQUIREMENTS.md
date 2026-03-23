@@ -49,11 +49,26 @@ Requirements fuer Milestone v2.5 Security-Hardening + Polish.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
+| SEC-01 | Phase 86 | Pending |
+| SEC-02 | Phase 86 | Pending |
+| SEC-03 | Phase 87 | Pending |
+| SEC-04 | Phase 87 | Pending |
+| SEC-05 | Phase 87 | Pending |
+| SEC-06 | Phase 87 | Pending |
+| CLN-02 | Phase 87 | Pending |
+| PERF-01 | Phase 88 | Pending |
+| PERF-02 | Phase 88 | Pending |
+| PERF-03 | Phase 88 | Pending |
+| PERF-04 | Phase 88 | Pending |
+| ARCH-01 | Phase 89 | Pending |
+| ARCH-02 | Phase 89 | Pending |
+| ARCH-03 | Phase 89 | Pending |
+| CLN-01 | Phase 89 | Pending |
 
 **Coverage v2.5:**
 - v2.5 requirements: 15 total
-- Mapped to phases: 0
-- Unmapped: 15
+- Mapped to phases: 15
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-23*
