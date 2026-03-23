@@ -1,5 +1,17 @@
 # Milestones
 
+## v2.6 Final Polish + Bugfixes (Shipped: 2026-03-23)
+
+**Phases completed:** 2 phases, 3 plans, 7 tasks
+
+**Key accomplishments:**
+
+- bcrypt sync durch async ersetzt, Notification-Schleife durch Bulk-INSERT, Badge N+1 Queries durch Vorab-Laden eliminiert
+- Frontend-URLs via VITE_API_URL konfigurierbar, SMTP/QR-Fallbacks bereinigt, losungService extrahiert, SIGTERM-Handler mit server.close implementiert
+- LiveUpdateContext useRef-Migration, Event-Detail useIonRouter-Navigation, streak/time_based Badge-Progress implementiert
+
+---
+
 ## v2.5 Security-Hardening + Polish (Shipped: 2026-03-23)
 
 **Phases completed:** 4 phases, 6 plans, 17 tasks

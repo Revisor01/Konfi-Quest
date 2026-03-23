@@ -36,24 +36,9 @@ useHistory → useIonRouter (14 Dateien), Losung-API-Key in ENV, Socket.IO Org-I
 
 Letzte Sicherheitsluecken geschlossen, Performance-Engpaesse beseitigt, Architektur bereinigt: Logout-Token-Revoke, 5 Security-Fixes (Passwort/Chat/Typing/API-Key/Stale-Closure), Chat N+1 mit LATERAL Joins, Wrapped parallelisiert, global.io durch DI ersetzt, schema_migrations Tracking, material.js Array-only, DB Pool konfigurierbar, Cron-Guard bereinigt. 4 Phasen, 6 Plans, 15 Requirements.
 
-## Current Milestone: v2.6 Final Polish + Bugfixes
+## Shipped: v2.6 Final Polish + Bugfixes (2026-03-23)
 
-**Goal:** Verbleibende Tech-Debt-Items aus CONCERNS.md abarbeiten und einen gemeldeten Bug fixen — letzter Cleanup vor v3.0 Onboarding.
-
-**Target features:**
-- bcrypt sync → async (Event-Loop nicht mehr blockieren)
-- Hardcoded URLs → Umgebungsvariablen (Staging-faehig)
-- Migrations-Namenskonvention bereinigen (3 Dateien ohne Praefix)
-- Veraltete SQLite-Skripte entfernen
-- LiveUpdateContext listeners Map in Provider verschieben
-- SIGTERM-Handler fuer Docker Graceful Shutdown
-- Badge N+1 Progress-Berechnung optimieren
-- N+1 Notification-Insert → Bulk-Insert
-- Dual-Duplikat Losung-Route → losungService.js extrahieren
-- window.location.href → useIonRouter (Event-Chat + Serie)
-- streak/time_based Badge-Progress implementieren (zeigt aktuell immer 0%)
-- Bug: Chat erstellen aus Event-Detail leitet auf schwarze Seite
-- SMTP-IP-Fallback und QR_SECRET-Fallback entfernen
+Verbleibende Tech-Debt abgearbeitet: bcrypt async, Badge/Notification N+1 eliminiert, URLs via ENV konfigurierbar, SMTP/QR-Fallbacks bereinigt, losungService extrahiert, SIGTERM-Handler, LiveUpdateContext useRef, Event-Navigation useIonRouter (schwarzer Screen gefixt), Badge-Progress streak/time_based implementiert. 2 Phasen, 3 Plans, 14 Requirements.
 
 ## Geplant: v3.0 Onboarding + Landing
 
@@ -157,19 +142,7 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 
 ### Active
 
-- [ ] bcrypt async statt sync
-- [ ] Hardcoded URLs durch ENV-Variablen ersetzen
-- [ ] Migrations-Namenskonvention bereinigen
-- [ ] SQLite-Skripte aus package.json entfernen
-- [ ] LiveUpdateContext listeners in Provider verschieben
-- [ ] SIGTERM-Handler hinzufuegen
-- [ ] Badge N+1 Progress optimieren
-- [ ] Notification N+1 → Bulk-Insert
-- [ ] Losung-Duplikat → losungService.js
-- [ ] window.location.href → useIonRouter
-- [ ] streak/time_based Badge-Progress implementieren
-- [ ] Bug: Event-Chat Navigation schwarze Seite
-- [ ] SMTP-IP-Fallback und QR_SECRET-Fallback entfernen
+(Keine aktiven Requirements — naechster Milestone definiert neue)
 
 ### Out of Scope
 
@@ -191,8 +164,9 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 - v1.8 shipped: Teamer (5 Phasen, 14 Plans, 27 Requirements, Rolle+Events+Badges+Zertifikate+Material)
 - v2.3 shipped: Konfi + Teamer Wrapped (6 Phasen, 11 Plans, 51 Requirements, 2213 LOC neue Wrapped-Komponenten)
 - v2.5 shipped: Security-Hardening + Polish (4 Phasen, 6 Plans, 15 Requirements, 14 Dateien, +225/-135 Zeilen)
-- Gesamt: 89 Phasen, 140+ Plans ueber 15 Milestones shipped
-- Codebase: ~36.600 Zeilen (TS/TSX/CSS)
+- v2.6 shipped: Final Polish + Bugfixes (2 Phasen, 3 Plans, 14 Requirements)
+- Gesamt: 91 Phasen, 143 Plans ueber 16 Milestones shipped
+- Codebase: ~36.700 Zeilen (TS/TSX/CSS)
 - Frontend nutzt iOS 26 Theme und MD3 Theme (beide aktiv, platform-scoped)
 - Deployment: git push -> Portainer Docker auto-build -> Xcode Build fuer iOS-Test auf echtem Geraet
 - PostgreSQL-Migration: Alle 15 Backend-Routes vollstaendig migriert
@@ -270,4 +244,10 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | schema_migrations Tracking | Einfache Tabelle statt externes Tool (knex/umzug) | Bestaetigt v2.5 |
 
 ---
-*Last updated: 2026-03-23 after v2.6 milestone start*
+| bcrypt async statt sync | hashSync blockiert Event-Loop 100-300ms | Bestaetigt v2.6 |
+| VITE_API_URL fuer Frontend | Staging-Umgebung moeglich machen | Bestaetigt v2.6 |
+| losungService.js extrahiert | Dual-Duplikat konfi.js/teamer.js eliminiert | Bestaetigt v2.6 |
+| QR_SECRET Pflicht-ENV | Kein Fallback auf JWT_SECRET mehr | Bestaetigt v2.6 |
+
+---
+*Last updated: 2026-03-23 after v2.6 milestone*

@@ -4,7 +4,7 @@ milestone: v2.6
 milestone_name: Final Polish + Bugfixes
 status: unknown
 stopped_at: Completed 91-01-PLAN.md
-last_updated: "2026-03-23T18:56:33.028Z"
+last_updated: "2026-03-23T18:57:27.061Z"
 progress:
   total_phases: 2
   completed_phases: 2
