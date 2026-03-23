@@ -1,226 +1,191 @@
 # Codebase Concerns
 
-**Analysis Date:** 2026-03-22
+**Analysis Date:** 2026-03-23
 
 ---
 
 ## Tech Debt
 
-### N+1 Query in Chat-Nachrichten-Endpunkt
-- Issue: Für jede der bis zu 200 geladenen Nachrichten wird eine separate SQL-Query für Reactions ausgeführt (und ggf. eine weitere für Poll-Votes). Bei 200 Nachrichten = bis zu 400 zusätzliche Queries pro Request.
-- Files: `backend/routes/chat.js` (Zeilen 599–630)
-- Impact: Deutliche Verlangsamung bei aktiven Chat-Räumen; skaliert schlecht mit wachsender Nutzerzahl.
-- Fix approach: Reactions und Poll-Votes in einer einzigen JOIN-Query oder zwei Bulk-Queries laden (IN (array of message_ids)), dann im Applikationscode zuordnen.
+**Massiv überdimensionierte Route-Dateien:**
+- Issue: Drei Backend-Routen überschreiten 2000 Zeilen — `backend/routes/konfi.js` (2081 Z.), `backend/routes/events.js` (2067 Z.), `backend/routes/chat.js` (1875 Z.). Business-Logik, DB-Queries und HTTP-Handler sind nicht getrennt.
+- Files: `backend/routes/konfi.js`, `backend/routes/events.js`, `backend/routes/chat.js`
+- Impact: Änderungen an einem Endpunkt erfordern das Durchsuchen von 2000+ Zeilen. Merge-Konflikte bei paralleler Arbeit. Kein Wiederverwenden von Logik möglich.
+- Fix approach: Extrahieren von Datenbankzugriffen in `backend/services/` Module (z.B. `konfiService.js`, `eventService.js`). HTTP-Handler auf <50 Zeilen reduzieren.
 
-### Legacy-Multer-Upload (`upload`) noch im Einsatz
-- Issue: In `backend/server.js` wird ein nicht typisierter Legacy-Multer (`const upload = multer({ dest: uploadsDir })`) als "deprecated" kommentiert, aber noch als Parameter an `konfiRoutes` und `activitiesRouter` übergeben.
-- Files: `backend/server.js` (Zeilen 334–344, 446, 457), `backend/routes/konfi.js`, `backend/routes/activities.js`
-- Impact: Dateien landen unkontrolliert in `uploads/` ohne Hash-Namensgebung; mögliche Namenskollisionen.
-- Fix approach: Alle Stellen auf `requestUpload` oder `materialUpload` migrieren; Legacy-Config entfernen.
+**Gleiches im Frontend: überdimensionierte Komponenten:**
+- Issue: Mehrere Komponenten überschreiten 900 Zeilen. `KonfiDetailSections.tsx` (1181 Z.), `BadgeManagementModal.tsx` (1124 Z.), `ChatRoom.tsx` (1058 Z.), `TeamerEventsPage.tsx` (921 Z.).
+- Files: `frontend/src/components/admin/views/KonfiDetailSections.tsx`, `frontend/src/components/admin/modals/BadgeManagementModal.tsx`, `frontend/src/components/chat/ChatRoom.tsx`, `frontend/src/components/teamer/pages/TeamerEventsPage.tsx`
+- Impact: Schwer zu testen, schwer zu lesen. Kleines UI-Bugfix erfordert Navigation durch 1000+ Zeilen.
+- Fix approach: Aufteilen in kleinere Subkomponenten analog zu `EventDetailSections.tsx`-Pattern.
 
-### `sqlite3` als Produktions-Dependency
-- Issue: `sqlite3` ist in `backend/package.json` als normale Dependency enthalten, obwohl die SQLite-Datenbank vollständig auf PostgreSQL migriert wurde. Der aktive Code verwendet SQLite nicht mehr.
-- Files: `backend/package.json` (Zeile 35)
-- Impact: Unnötige Build-Zeit, potenzielle Sicherheitslücken in einer unbenutzten Abhängigkeit, vergrößertes Docker-Image.
-- Fix approach: `sqlite3` aus `dependencies` entfernen. SQLite-DB-Dateien (`backend/data/konfi-points.db`, `backend/data/konfi.db`) ebenfalls löschen oder in `.gitignore` aufnehmen.
+**Hartkodierter API-Key als Fallback:**
+- Issue: In `backend/routes/konfi.js:1439` und `backend/routes/teamer.js:766` steht ein hartkodierter API-Key als Fallback-Wert für `LOSUNG_API_KEY`. Kommentar sagt "TODO: Fallback nach Deployment entfernen", ist aber noch drin.
+- Files: `backend/routes/konfi.js` (Zeile 1439), `backend/routes/teamer.js` (Zeile 766)
+- Impact: API-Key im Source-Code ist ein Security-Risiko. Wenn der Key jemals rotiert wird, muss der Code geändert werden.
+- Fix approach: Fallback entfernen. Wenn `LOSUNG_API_KEY` fehlt, Request mit klarem Fehler abweisen statt mit altem Key senden.
 
-### Veraltete SQLite-DB-Dateien im Repository
-- Issue: `backend/data/konfi-points.db` und `backend/data/konfi.db` existieren noch im `backend/data/`-Verzeichnis.
-- Files: `backend/data/`
-- Impact: Möglicher Datenleck älterer Produktionsdaten; unnötiger Speicher in Git-History.
-- Fix approach: Dateien aus Repository entfernen, `.gitignore` für `backend/data/*.db` ergänzen.
+**`global.io` als Socket.io Kommunikationskanal:**
+- Issue: Der Socket.io-Server wird in `backend/server.js:139` als `global.io` exportiert. Routen in `chat.js`, `users.js` greifen direkt auf `global.io` zu statt ein sauber injiziertes Objekt zu verwenden.
+- Files: `backend/server.js` (Zeile 139), `backend/routes/chat.js` (Zeilen 755-770), `backend/routes/users.js` (Zeilen 260-267)
+- Impact: Implizite globale Abhängigkeit. Testbarkeit nicht gegeben. Ändert man die Socket-Initialisierung, brechen Routen ohne Typ-Fehler.
+- Fix approach: `io` als Parameter in Route-Module injizieren (gleich wie `db`), `global.io` entfernen.
 
-### Typo im Dateinamen einer zentralen Route
-- Issue: Die Route für Konfi-Verwaltung heißt `konfi-managment.js` (fehlendes 'e' in management). Alle Imports referenzieren diesen Tippfehler.
-- Files: `backend/routes/konfi-managment.js`, `backend/server.js` (Zeile 415)
-- Impact: Irreführend für alle neuen Entwickler:innen; erschwert Suche nach der Datei.
-- Fix approach: Datei in `konfi-management.js` umbenennen und alle Imports anpassen.
+**Legacy Single-ID Felder in material.js:**
+- Issue: `backend/routes/material.js` unterstützt sowohl altes `event_id`/`jahrgang_id` als auch neues `event_ids`/`jahrgang_ids` Array-Format in POST und PUT (Zeilen 349-369, 429-464).
+- Files: `backend/routes/material.js`
+- Impact: Zwei Codepfade für dieselbe Operation. Frontend wurde bereits auf Array-Format migriert, Legacy-Pfad kann entfernt werden.
+- Fix approach: Überprüfen ob Frontend noch `event_id` (singular) sendet. Falls nicht: Legacy-Pfad entfernen.
 
-### Hardcodierte API-URLs im Frontend ohne Env-Variable
-- Issue: Die Backend-URL und WebSocket-URL sind direkt als String-Konstanten hardcodiert. Der Kommentar in `websocket.ts` erklärt, dass `VITE_API_URL` in nativen Capacitor-Apps nicht funktioniert, aber eine Lösung fehlt.
-- Files: `frontend/src/services/api.ts` (Zeile 6), `frontend/src/services/websocket.ts` (Zeile 6)
-- Impact: Jeder Umgebungswechsel (Staging, Dev) erfordert manuelle Code-Änderung; kein lokales Entwickeln gegen anderen Server möglich.
-- Fix approach: Capacitor-kompatible Konfiguration über `capacitor.config.ts`-Server-URL oder Build-Time-Konstanten in `vite.config.ts`.
+**Kein DB-Connection-Pool-Limit konfiguriert:**
+- Issue: `backend/database.js` erstellt einen `pg.Pool` ohne explizites `max`-Setting (Standard pg: 10 Connections).
+- Files: `backend/database.js`
+- Impact: Bei steigender Last (4000+ User EKD-Skalierung) kann der Pool erschöpft werden, bevor das Limit greift. Kein Monitoring möglich.
+- Fix approach: `max`, `idleTimeoutMillis` und `connectionTimeoutMillis` explizit setzen. Umgebungsvariable `PG_POOL_MAX` für Deployment-spezifische Konfiguration.
 
-### Hardcodierter Losung-API-Key im Quellcode
-- Issue: Der API-Schlüssel für die Losung-API (`ksadh8324oijcff45rfdsvcvhoids44`) ist direkt im Quellcode in zwei Route-Dateien als String-Literal hardcodiert.
-- Files: `backend/routes/teamer.js` (Zeile 741), `backend/routes/konfi.js` (Zeile 1439)
-- Impact: API-Key ist in Git-History sichtbar und nicht rotierbar ohne Code-Änderung.
-- Fix approach: In Umgebungsvariable `LOSUNG_API_KEY` auslagern.
+---
 
-### Deprecated Chat-Komponente nicht entfernt
-- Issue: `frontend/src/components/chat/modals/FileViewerModal.tsx` ist mit `// DEPRECATED: Ersetzt durch shared/FileViewerModal.tsx` markiert, existiert aber noch und exportiert eine Default-Komponente.
-- Files: `frontend/src/components/chat/modals/FileViewerModal.tsx`
-- Impact: Verwirrung über welche Komponente genutzt werden soll; toter Code erhöht Bundle-Größe marginal.
-- Fix approach: Datei löschen, da kein aktiver Import gefunden wurde.
+## Known Bugs / Unfertige Features
 
-### `activity_requests.konfi_id` vs. RBAC-Namenskonvention
-- Issue: Die Tabelle `activity_requests` verwendet noch `konfi_id` als Fremdschlüssel statt `user_id`, während alle anderen migrierten Tabellen (`user_activities`, `user_badges`) bereits auf `user_id` umgestellt wurden.
-- Files: `backend/routes/konfi.js` (Zeile 638), `backend/routes/konfi-managment.js` (Zeile 365), `backend/routes/activities.js` (mehrere)
-- Impact: Inkonsistenz im Schema; erschwertes Queryjoin-Pattern bei zukünftigen Erweiterungen.
-- Fix approach: Migration schreiben: `ALTER TABLE activity_requests RENAME COLUMN konfi_id TO user_id`.
-
-### Inline-Migrationen in Routes beim Server-Start
-- Issue: `backend/routes/badges.js` führt bei jedem Server-Start Schema-Checks und ALTERs durch (konfi_badges → user_badges etc.). `backend/routes/jahrgaenge.js` und `backend/routes/wrapped.js` tun dasselbe. Dies sind idempotente Schema-Migrationen, die in Route-Dateien eingebettet sind.
-- Files: `backend/routes/badges.js` (Zeilen 631–710), `backend/routes/jahrgaenge.js`, `backend/routes/wrapped.js` (Zeile 15–30)
-- Impact: Erhöhte Server-Startzeit; unklar ob Migrationen vollständig ausgeführt wurden; Vermischung von Initialisierungs- und Request-Handler-Code.
-- Fix approach: Einmal-Migrationen in `backend/migrations/` SQL-Dateien auslagern; in `backend/database.js` beim Start einmalig ausführen.
-
-### Unvollständige Input-Validierung auf mehreren Route-Dateien
-- Issue: `backend/routes/material.js` und `backend/routes/teamer.js` haben keine `express-validator`-Imports. `material.js` greift direkt auf `req.body.name`, `req.body.title`, `req.body.tag_ids` zu ohne Validierung.
-- Files: `backend/routes/material.js`, `backend/routes/teamer.js`
-- Impact: Potenzielle unerwartete Typen / leere Strings in der Datenbank; fehlende Fehlermeldungen für Client.
-- Fix approach: `express-validator` body-Validierungen analog zu `categories.js` ergänzen.
-
-### `crypto` wird vor `require` verwendet
-- Issue: In `backend/server.js` wird `crypto` auf Zeile 265 und 300 in Multer-Storage-Callbacks verwendet, aber erst auf Zeile 347 `require`'d. Node.js hoisted das `require` nicht; die frühen Aufrufe landen aber nicht direkt beim Start, da sie nur in Callbacks ausgeführt werden – trotzdem ist die Reihenfolge irreführend und fehlerträchtig.
-- Files: `backend/server.js` (Zeilen 265, 300, 347)
-- Impact: Potentieller Laufzeitfehler wenn Callback vor Zeile 347 ausgeführt wird; schwer zu debuggendes Problem.
-- Fix approach: `const crypto = require('crypto')` an den Anfang der Datei verschieben.
-
-### `secure: process.env.SMTP_SECURE === 'true' || true` – Bug
-- Issue: Der SMTP-`secure`-Wert ist immer `true`, da `|| true` den gesamten Ausdruck auf `true` fixiert, unabhängig vom Env-Wert. Die env-Variable hat damit keinen Effekt.
-- Files: `backend/server.js` (Zeile 124)
-- Impact: Kann nicht auf Nicht-TLS-SMTP-Ports umgestellt werden ohne Code-Änderung.
-- Fix approach: `secure: process.env.SMTP_SECURE !== 'false'` (wie in `emailService.js` korrekt implementiert).
+**Badge-Kriterien `streak` und `time_based` nicht implementiert:**
+- Symptoms: Badges mit `criteria_type = 'streak'` oder `criteria_type = 'time_based'` zeigen immer `progress.current = 0`. Kein Fortschritt wird berechnet.
+- Files: `backend/routes/konfi.js` (Zeilen 1055-1063)
+- Trigger: Wenn ein Admin einen Badge mit `criteria_type = 'streak'` oder `'time_based'` erstellt und ein Konfi diesen sieht.
+- Workaround: Keine solchen Badge-Typen erstellen.
 
 ---
 
 ## Security Considerations
 
-### TLS-Zertifikatsvalidierung deaktiviert für SMTP
-- Risk: SMTP-Verbindungen akzeptieren ungültige oder selbst-signierte Zertifikate.
-- Files: `backend/server.js` (Zeile 132), `backend/services/emailService.js` (Zeile 39)
-- Current mitigation: Interne Server-zu-Server-Verbindung im Docker-Netzwerk.
-- Recommendations: Entweder Zertifikat auf den Docker-internen Hostname ausstellen oder intern ohne TLS kommunizieren und nur nach außen TLS erzwingen. Alternat: `ca`-Option mit dem tatsächlichen Zertifikat statt `rejectUnauthorized: false`.
+**Content Security Policy deaktiviert:**
+- Risk: `contentSecurityPolicy: false` in `backend/server.js:249`. Kein CSP-Header wird gesendet. XSS-Angriffe werden nicht durch Browser-Mechanismus abgemildert.
+- Files: `backend/server.js` (Zeile 249)
+- Current mitigation: Kommentar sagt "Ionic/React braucht inline Styles". `innerHTMLTemplatesEnabled: true` in `frontend/src/App.tsx:81` erweitert die Angriffsfläche.
+- Recommendations: Schrittweise CSP mit `'unsafe-inline'`-Ausnahmen für Ionic einführen. `innerHTMLTemplatesEnabled` prüfen ob wirklich benötigt.
 
-### Hardcodierter Fallback-SMTP-Host und -Username
-- Risk: Produktions-IP `213.109.162.132` und E-Mail-Adresse `noreply@konfi-quest.de` sind als Fallback-Werte hardcodiert.
-- Files: `backend/server.js` (Zeilen 122, 126), `backend/services/emailService.js` (Zeilen 31, 57)
-- Current mitigation: Env-Variablen haben Vorrang wenn gesetzt.
-- Recommendations: Keinen Produktions-Fallback in Code – Pflichtfelder ohne Default erzwingen (analog zu `JWT_SECRET`).
+**TLS-Zertifikat-Validierung deaktiviert (SMTP):**
+- Risk: `rejectUnauthorized: false` in `backend/server.js:156` und `backend/services/emailService.js:39`. SMTP-Verbindungen akzeptieren ungültige oder selbstsignierte Zertifikate.
+- Files: `backend/server.js` (Zeile 156), `backend/services/emailService.js` (Zeile 39)
+- Current mitigation: Kommentar erklärt Docker-zu-IP-Problem. Verbindung geht intern auf `213.109.162.132`.
+- Recommendations: Eigenes SMTP-Zertifikat auf IP ausstellen oder Hostname statt IP verwenden, damit `rejectUnauthorized: true` gesetzt werden kann.
 
-### Rate-Limiter nutzt In-Memory-Store
-- Risk: Alle Rate-Limiter (`authLimiter`, `registerLimiter` etc.) nutzen den Standard In-Memory-Store von `express-rate-limit`. Bei Container-Neustart oder horizontaler Skalierung werden Limits zurückgesetzt.
-- Files: `backend/server.js` (Zeilen 150–211)
-- Current mitigation: Single-Instance-Deployment hinter Traefik.
-- Recommendations: Bei Skalierung auf Redis-Store (`rate-limit-redis`) umstellen. Aktuell kein Problem bei Single-Instance.
+**Logout revokiert kein Refresh Token:**
+- Risk: `frontend/src/services/auth.ts:logout()` löscht nur den Push-Token des Geräts. Das Refresh Token (90 Tage gültig) wird nicht auf dem Server invalidiert. Wer das Refresh Token abgegriffen hat, kann 90 Tage lang neue Access Tokens holen.
+- Files: `frontend/src/services/auth.ts` (Zeilen 43-130), `backend/routes/auth.js`
+- Current mitigation: Token-Rotation beim Refresh: altes Token wird sofort revokiert. Rotation schützt aber nur wenn das Token einmal verwendet wurde.
+- Recommendations: Backend-Endpunkt `/auth/logout` implementieren der das aktive Refresh Token des Users per `revoked_at = NOW()` invalidiert. Frontend-Logout soll diesen Endpunkt aufrufen.
 
-### `global.io` als globale Variable
-- Risk: Die Socket.IO-Instanz wird als `global.io` gesetzt und aus Route-Dateien direkt verwendet. Dieses Muster macht implizite Abhängigkeiten und ist schwer testbar.
-- Files: `backend/server.js` (Zeile 109), `backend/routes/users.js` (Zeile 260), `backend/routes/chat.js` (Zeilen 727–742)
-- Current mitigation: Kein unmittelbares Sicherheitsrisiko.
-- Recommendations: `io` als Parameter an Routes übergeben (wie `db`).
+**Minimale Passwortrichtlinie (6 Zeichen):**
+- Risk: Passwörter müssen nur 6 Zeichen lang sein. Keine Komplexitätsanforderungen (Zahlen, Sonderzeichen). Bei EKD-Betrieb mit 4000+ Usern ist das schwach.
+- Files: `backend/routes/auth.js` (Zeile 57, 86, 701), `backend/middleware/validation.js` (Zeile 59)
+- Current mitigation: bcrypt mit 10 Runden. Rate Limiter auf Auth-Endpoint (10 Versuche / 15 Min).
+- Recommendations: Minimum auf 8 Zeichen erhöhen. Optional: Zeichen-Klassen-Anforderung hinzufügen.
+
+**Chat-Nachrichten ohne Längenbegrenzung:**
+- Risk: `validateSendMessage` in `backend/routes/chat.js:22-27` validiert `content` nur als `optional().trim()` ohne `isLength`-Limit. Kein Max-Length.
+- Files: `backend/routes/chat.js` (Zeilen 22-27)
+- Current mitigation: `chatMessageLimiter` (Rate Limiting auf Endpunkt). DB-Feld hat kein `VARCHAR`-Limit (vermutlich `TEXT`).
+- Recommendations: `isLength({ max: 4000 })` zur Validierung hinzufügen. Schützt vor Speicher-Erschöpfung und absichtlich langen Nachrichten.
 
 ---
 
 ## Performance Bottlenecks
 
-### N+1 Queries bei Chat-Nachrichten-Reaktionen
-- Problem: Pro geladener Nachricht wird eine separate DB-Query für Reactions ausgeführt; bei Polls zusätzlich eine für Votes. Max. 400+ Queries pro `/rooms/:id/messages`-Aufruf.
-- Files: `backend/routes/chat.js` (Zeilen 599–630)
-- Cause: `Promise.all(messages.map(async (msg) => db.query(...)))` innerhalb des Nachrichten-Loaders.
-- Improvement path: Bulk-Query mit `WHERE message_id = ANY($1::int[])`, dann im JS-Code den Nachrichten zuordnen.
+**N+1-Problem: Chat-Räume / Direct-Message-Namen:**
+- Problem: Beim Laden der Chat-Übersicht (`GET /chat/rooms`) wird für jeden Direct-Chat-Raum eine separate DB-Query ausgeführt, um den Namen des anderen Teilnehmers zu holen.
+- Files: `backend/routes/chat.js` (Zeilen 426-441)
+- Cause: `Promise.all(rooms.map(async (room) => ...db.query(...)))` — ein Query pro Direct-Room.
+- Improvement path: Sub-Query oder JOIN in der Haupt-Room-Query, die für Direct-Chats den anderen Participant-Namen direkt mitlädt.
 
-### Wrapped-Snapshot-Generierung ist sequenziell pro Nutzer
-- Problem: Beim manuellen Generieren von Konfi- oder Teamer-Wrappeds werden Snapshots in einer `for...of`-Schleife mit `await` sequenziell generiert. Bei 30+ Konfis dauert das entsprechend lange.
-- Files: `backend/routes/wrapped.js` (Zeilen 429–445, 506–521)
-- Cause: Bewusste Entscheidung zur Fehlertoleranz (einzelne Fehler werden geloggt, nicht abgebrochen), aber keine Parallelisierung.
-- Improvement path: `Promise.allSettled` mit einem Concurrency-Limit (z.B. 5 gleichzeitig) statt vollständig sequenziell.
+**N+1-Problem: Wrapped-Snapshot-Generierung:**
+- Problem: Beim Generieren von Wrapped-Snapshots (manuell und per Cron) werden pro Konfi 8-10 einzelne DB-Queries in `generateKonfiSnapshot()` ausgeführt: Profil, Bonus, Events, Gottesdienst-Count, Kategorie-Verteilung, Events gesamt, Lieblings-Event, Badges, Badge-Total, Chat-Nachrichten, aktivster Monat.
+- Files: `backend/routes/wrapped.js` (Zeilen 22-233, 406-422, 639-654), `backend/services/backgroundService.js` (Zeilen 419-428)
+- Cause: Sequentielle `await client.query()` calls in einer `for...of`-Schleife über alle Konfis.
+- Improvement path: Queries parallel mit `Promise.all()` pro Konfi ausführen. Langfristig: Bulk-Queries die alle Konfis eines Jahrgangs in einer Abfrage berechnen (z.B. `GROUP BY user_id`).
 
-### Admin-Views ohne Offline-/SWR-Caching
-- Problem: Viele Admin-Komponenten und Modals führen API-Calls direkt über `api.get/post` ohne `useOfflineQuery` durch. Jedes Öffnen eines Modals triggert einen neuen Netzwerk-Request ohne Cache.
-- Files: `frontend/src/components/admin/KonfisView.tsx`, `frontend/src/components/admin/BadgesView.tsx`, `frontend/src/components/admin/EventsView.tsx`, `frontend/src/components/admin/modals/ActivityManagementModal.tsx`, `frontend/src/components/admin/modals/UserManagementModal.tsx` (und ~18 weitere Admin-Dateien)
-- Cause: `useOfflineQuery` wurde primär für Konfi/Teamer-Views implementiert; Admin-Views wurden nicht nachgezogen.
-- Improvement path: Admin-Views schrittweise auf `useOfflineQuery` migrieren.
+**Korrelierte Subquery in Chat-Übersicht:**
+- Problem: `ORDER BY (SELECT created_at FROM chat_messages WHERE room_id = r.id ...)` in `backend/routes/chat.js:419` ist eine korrelierte Subquery — wird für jede Zeile des Resultsets ausgeführt.
+- Files: `backend/routes/chat.js` (Zeile 419)
+- Cause: Kein Materialized CTE oder Lateral Join wird verwendet.
+- Improvement path: In `LATERAL` Sub-Query oder CTE umschreiben, oder eine `last_message_at`-Spalte in `chat_rooms` pflegen und bei neuen Nachrichten updaten.
 
 ---
 
 ## Fragile Areas
 
-### Großdateien mit mehreren Verantwortlichkeiten
-- Files:
-  - `backend/routes/events.js` (2067 Zeilen) – Eventmanagement, Buchungslogik, QR-Check-in, Timeslots, Badge-Vergabe
-  - `backend/routes/chat.js` (1847 Zeilen) – Chat-Rooms, Nachrichten, Datei-Upload, Polls, Reaktionen, Teilnehmer
-  - `backend/routes/konfi-managment.js` (1008 Zeilen) – Konfi-Verwaltung, Punkte, Aktivitäten, Import/Export
-  - `frontend/src/components/admin/views/KonfiDetailSections.tsx` (1181 Zeilen)
-  - `frontend/src/components/admin/modals/BadgeManagementModal.tsx` (1124 Zeilen)
-  - `frontend/src/components/chat/ChatRoom.tsx` (1058 Zeilen)
-- Why fragile: Änderungen in einem Bereich können unbemerkt andere Bereiche brechen; hoher Cognitive Load; schwer zu testen.
-- Safe modification: Immer vollständige Datei lesen; nach Änderungen alle betroffenen Features manuell testen.
-- Test coverage: Keine automatisierten Tests vorhanden.
+**useOfflineQuery: `revalidate` bewusst aus Dependencies ausgelassen:**
+- Files: `frontend/src/hooks/useOfflineQuery.ts` (Zeile 135)
+- Why fragile: `revalidate` fehlt in `useEffect`-Dependencies mit Kommentar "wuerde Loop verursachen". Das ist ein symptomatischer Fix für ein Architekturproblem — `revalidate` schließt `data` per Closure ein, was Stale-Closure-Bugs verursachen kann.
+- Safe modification: `data`-Parameter aus `revalidate`-Closure entfernen. `setData` verwenden um Stale-Closure zu vermeiden. Dann kann `revalidate` sicher in Dependencies aufgenommen werden.
+- Test coverage: Kein Testfile für `useOfflineQuery.ts`.
 
-### Wrapped-Cron läuft über `setInterval` ohne echten Cron-Scheduler
-- Files: `backend/services/backgroundService.js` (Zeile 418)
-- Why fragile: `setInterval(24h)` driftet über Zeit; bei Container-Neustart nach dem 1. eines Monats kann der Trigger verpasst werden, da der nächste Check erst 24h nach Start kommt.
-- Safe modification: Immer manuellen Trigger-Button testen nach Deployment-Änderungen.
-- Improvement path: `node-cron` oder ähnliches einsetzen, das nach einem Restart die nächste geplante Ausführung korrekt berechnet.
+**Migrations-System ohne Versionstabelle:**
+- Files: `backend/database.js`, `backend/migrations/`
+- Why fragile: Alle SQL-Dateien werden bei jedem Server-Start ausgeführt. Die meisten sind idempotent (IF NOT EXISTS), aber `077_activity_requests_rename_konfi_id.sql` und Teile anderer Migrations sind es nur durch `DO $$` Blöcke. Kein Tracking welche Migrations bereits gelaufen sind (kein `schema_migrations`-Tabelle).
+- Safe modification: Keine neue Migration schreiben ohne `IF NOT EXISTS`-Schutz oder `DO $$`-Block. Migration-Namen nie umbenennen.
+- Test coverage: Keine.
 
-### Socket.IO-Authentifizierung überprüft keine Organization-Isolation
-- Files: `backend/server.js` (Zeilen 53–68, 71–106)
-- Why fragile: Socket.IO-JWT-Auth prüft nur ob der Token gültig ist, nicht ob der User zu einer aktiven Organisation gehört. Ein Nutzer aus Org A könnte theoretisch einem Room von Org B beitreten, wenn er die `roomId` kennt (`socket.on('joinRoom', roomId)` ohne Validierung).
-- Safe modification: Vor `socket.join(room_${roomId})` die Organization-Zugehörigkeit des Rooms prüfen.
+**Socket.io Typing-Indicator ohne Org-Isolation:**
+- Files: `backend/server.js` (Zeilen 115-129)
+- Why fragile: `socket.on('typing', (roomId) => ...)` leitet den Typing-Event ohne zu prüfen ob der sendende User zum Room gehört. `joinRoom` prüft Org-Isolation, aber `typing` und `stopTyping` tun das nicht.
+- Safe modification: Vor dem Weiterleiten des Typing-Events Org-Check durchführen (analog zu `joinRoom`-Handler).
+- Test coverage: Keine.
 
-### Übermäßige `window as any`-Zugriffe für Capacitor-Plugins
-- Files: `frontend/src/contexts/AppContext.tsx` (Zeilen 23, 25, 54, 145, 173, 248, 250, 260–261)
-- Why fragile: Capacitor-Plugins werden über `(window as any).Capacitor?.Plugins?.FCM` angesprochen statt über typsichere Imports. Bei Capacitor-Updates bricht der Code stumm (kein TypeScript-Fehler).
-- Safe modification: Vor Capacitor-Version-Upgrades alle `window as any`-Zugriffe testen.
-- Fix approach: Korrekten Capacitor-Plugin-Import nutzen: `import { FCM } from '@capacitor-community/fcm'`.
-
-### React Router v5 mit React 19
-- Files: `frontend/src/App.tsx`, `frontend/src/components/konfi/views/DashboardView.tsx`, `frontend/src/components/konfi/pages/KonfiEventsPage.tsx`, `frontend/src/components/konfi/pages/KonfiEventDetailPage.tsx`
-- Why fragile: Die App verwendet React Router v5 (`useHistory`, `<Route component=...>`) mit React 19. React Router v5 ist offiziell nicht mit React 19 kompatibel; manche Features können unerwartet brechen.
-- Safe modification: Keine React-Router-Patterns aus v6/v7 einführen, da die App explizit v5 verwendet.
-- Improvement path: Migration auf React Router v6 + Ionic-kompatibles Routing-Pattern.
-
----
-
-## Test Coverage Gaps
-
-### Backend: Kein einziger Test vorhanden
-- What's not tested: Alle 18 Route-Dateien, Auth-Logik, Punkte-Berechnung, Badge-Vergabe, Wrapped-Generierung, Event-Buchungslogik.
-- Files: `backend/routes/` (alle), `backend/services/` (alle), `backend/middleware/` (alle)
-- Risk: Refactorings und Datenbankmigrationen können unbemerkt Produktions-Fehler einführen.
-- Priority: High
-
-### Frontend: Praktisch keine Tests
-- What's not tested: Fast alle Komponenten, Hooks, Contexts, Services. Einziger vorhandener Test ist ein trivialer Smoke-Test.
-- Files: `frontend/src/App.test.tsx` (Zeile 5–8 – einziger Test)
-- Risk: Regressions in Kernfunktionen (Punkte-Anzeige, Badge-Vergabe, Chat, Events) werden nicht automatisch erkannt.
-- Priority: High
-
-### Kritische Business-Logik ohne Tests
-- What's not tested: Punkte-Berechnung (gottesdienst vs. gemeinde), Badge-Vergabe-Trigger, Wrapped-Snapshot-Generierung, Invite-Code-Flow, Token-Refresh-Rotation.
-- Files: `backend/routes/activities.js`, `backend/routes/badges.js`, `backend/routes/wrapped.js`, `backend/routes/auth.js` (Zeilen 760–800)
-- Risk: Logikfehler bei Punkte-Vergabe könnten zu falschen Konfi-Abschlüssen führen.
-- Priority: High
+**Wrapped-Cron: Doppelter Date-Guard:**
+- Files: `backend/services/backgroundService.js` (Zeile 450), `backend/routes/wrapped.js` (Zeilen 639-741)
+- Why fragile: Der Cron-Job ist auf `0 6 1 * *` (1. des Monats) eingestellt UND enthält in `checkWrappedTriggers()` einen manuellen `if (today.getDate() !== 1)` Guard. Der Guard ist redundant und verschleiert die eigentliche Bedingung.
+- Safe modification: Guard entfernen, da cron-schedule bereits sicherstellt wann ausgeführt wird. Oder cron-schedule entfernen und nur auf den Guard verlassen.
 
 ---
 
 ## Scaling Limits
 
-### File-Upload-Storage ist lokales Dateisystem
-- Current capacity: Lokaler Docker-Volume auf dem Server.
-- Limit: Kein automatisches CDN oder Backup; bei Server-Migration müssen alle Uploads manuell migriert werden; bei hohem Upload-Volumen (Videos, PDFs) wächst der Docker-Volume unbegrenzt.
-- Files: `backend/server.js` (Zeilen 244–253), `backend/routes/chat.js`, `backend/routes/material.js`, `backend/routes/konfi.js`
-- Scaling path: S3-kompatibles Object Storage (z.B. Hetzner Object Storage oder MinIO).
+**Kein Database Connection Pool Limit:**
+- Current capacity: pg-Default-Pool-Größe 10 Connections.
+- Limit: Bei vielen gleichzeitigen Requests (Wrapped-Generierung für großen Jahrgang, viele Cron-Jobs gleichzeitig) kann der Pool erschöpft sein und Requests warten.
+- Scaling path: `max: parseInt(process.env.PG_POOL_MAX || '20')` in `backend/database.js` konfigurieren. Bei EKD-Skalierung auf 4000+ User separaten Read-Replica Datenbankserver in Betracht ziehen.
+
+**Wrapped-Generierung blockiert DB-Connection für gesamten Jahrgang:**
+- Current capacity: Sequentielle Verarbeitung eines Jahrgangs in einer DB-Transaktion. Für ~30 Konfis ca. 30 × 10 Queries = 300 DB-Calls in einer Transaktion.
+- Limit: Bei Jahrgängen mit 50+ Konfis dauert die Transaktion länger als HTTP-Timeout (Apache Default 300s). Bei gleichzeitiger Ausführung für mehrere Orgs (EKD): Contention.
+- Scaling path: Generierung asynchron über Job-Queue (z.B. Bull/BullMQ). HTTP-Response sofort senden, Fortschritt über SSE oder Polling melden.
 
 ---
 
 ## Dependencies at Risk
 
-### `react-router-dom` v5 mit React 19
-- Risk: React Router v5 unterstützt React 19 offiziell nicht. Die Abhängigkeit ist eingefroren (`^5.3.4`).
-- Files: `frontend/package.json`, `frontend/src/App.tsx`
-- Impact: Potenzielle Breaking Changes bei React-Minor-Updates; keine Bugfixes mehr für v5.
-- Migration plan: Migration auf React Router v6 (erfordert Umbau aller `useHistory` → `useNavigate` und `<Route component>` → `<Route element>` Patterns).
-
-### `@rdlabo/ionic-theme-ios26` mit bekanntem Problem
-- Risk: `registerTabBarEffect` funktioniert nur teilweise bei 6 Tabs (bekannt aus MEMORY.md).
-- Files: `frontend/src/App.tsx` (Zeile 29), `frontend/package.json`
-- Impact: Tab-Bar-Effekt auf iOS26 ist visuell unvollständig.
-- Migration plan: Bug im Package beobachten; ggf. auf native Ionic-iOS26-Unterstützung warten.
+**Backend komplett in JavaScript (kein TypeScript):**
+- Risk: Alle `backend/routes/*.js`-Dateien sind reines JavaScript ohne Type-Checking. Refactorings wie Umbenennen von Datenbankfeldern (`konfi_id` → `user_id` in Migration 077) erzeugen keine Kompilierfehler.
+- Impact: Typ-Fehler werden erst zur Laufzeit entdeckt. Beispiel: Falscher Spaltenname in SQL-Template-Literal wird erst beim ersten Request-Aufruf sichtbar.
+- Migration plan: Schrittweise auf TypeScript migrieren. Beginnen mit `backend/middleware/` und `backend/services/`. Routes zuletzt.
 
 ---
 
-*Concerns-Audit: 2026-03-22*
+## Missing Critical Features
+
+**Kein Backend-Logout-Endpunkt:**
+- Problem: Es gibt keinen `POST /api/auth/logout`-Endpunkt der das aktive Refresh Token des Users revokiert.
+- Blocks: Sicherer Logout (Refresh Token bleibt 90 Tage gültig nach Logout). Session-Invalidierung nach Passwortänderung.
+
+**Kein Error-Monitoring / Alerting:**
+- Problem: Alle Fehler werden nur per `console.error()` geloggt. Kein Sentry, kein strukturiertes Logging, kein Alerting.
+- Blocks: Produktionsfehler können unentdeckt bleiben bis ein User sie meldet. Keine Fehler-Trends sichtbar.
+
+---
+
+## Test Coverage Gaps
+
+**Kein Test für Backend-Logik:**
+- What's not tested: Alle 15 Route-Dateien, alle Services (pushService, backgroundService, emailService), Datenbankmigrationen.
+- Files: `backend/routes/` (alle), `backend/services/`
+- Risk: Regressionsfehler in Punkte-Logik, Badge-Vergabe, Event-Buchungen werden erst durch manuelle Tests oder User-Berichte entdeckt.
+- Priority: Hoch — besonders `backend/routes/activities.js` (Punkte-Vergabe), `backend/routes/badges.js` (Badge-Kriterien), `backend/routes/wrapped.js` (Snapshot-Logik).
+
+**Frontend: Ein einziger Smoke-Test:**
+- What's not tested: `frontend/src/App.test.tsx` prüft nur "renders without crashing". Keine Tests für Formulare, Validierung, Hooks, Context oder Business-Logik.
+- Files: `frontend/src/App.test.tsx`
+- Risk: Regressionsfehler in kritischen Flows (Login, Punkte-Antrag, Event-Buchung) nicht abgefangen.
+- Priority: Mittel — zumindest `useOfflineQuery`, `AppContext`, `BadgeContext` sollten Unit-Tests haben.
+
+---
+
+*Concerns-Audit: 2026-03-23*

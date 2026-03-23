@@ -1,127 +1,112 @@
 # Technology Stack
 
-**Analysis Date:** 2026-03-22
+**Analysis Date:** 2026-03-23
 
 ## Languages
 
 **Primary:**
-- TypeScript 5.1 - Frontend (React/Ionic), strict mode enabled
-- JavaScript (CommonJS) - Backend (Node.js Express), alle Routes und Services
+- TypeScript 5.1 - Frontend (alle `.ts`/`.tsx` Dateien in `frontend/src/`)
+- JavaScript (CommonJS) - Backend (alle `.js` Dateien in `backend/`)
 
 **Secondary:**
-- SQL - PostgreSQL Migrations in `backend/migrations/*.sql`
-- HTML/CSS - `frontend/public/` (Landing, Datenschutz), `frontend/src/theme/`
+- SQL - Datenbankmigrationen in `backend/migrations/` (`.sql`-Dateien)
+- HTML/CSS - `frontend/index.html`, `frontend/src/theme/`
 
 ## Runtime
 
 **Environment:**
-- Node.js >= 16.0.0 (Backend, laut `engines` in `backend/package.json`)
-- Node.js 18-alpine (Frontend Build-Stage Docker), Node.js 18-bullseye (Backend Docker)
-- Browser/Capacitor Native Runtime (Frontend)
+- Node.js >=16.0.0 (Backend-Anforderung laut `backend/package.json`)
+- Aktuelle Dev-Umgebung: Node.js v25.8.1
 
 **Package Manager:**
-- npm (beide Workspaces)
-- Lockfile: `frontend/package-lock.json` und `backend/package-lock.json` vorhanden
+- npm (Frontend + Backend)
+- Lockfiles: `frontend/package-lock.json`, `backend/package-lock.json`, Root-`package-lock.json`
 
 ## Frameworks
 
-**Core Frontend:**
-- React 19.0.0 - UI Framework (`frontend/package.json`)
-- Ionic React 8.5.0 (`@ionic/react`) - Mobile UI-Komponenten
-- Ionic React Router 8.5.0 (`@ionic/react-router`) - Routing
-- Capacitor 7.x / 8.x - Native iOS/Android Bridge
-- Swiper 12.1.2 - Slides/Carousel (Wrapped-Feature)
+**Frontend-Core:**
+- React 19.0.0 - UI-Framework (`frontend/src/`)
+- Ionic React 8.5.0 - Mobile UI-Komponenten und Navigation (`@ionic/react`)
+- React Router v5.3.4 - Client-Side-Routing (`react-router-dom`)
+- Capacitor 7.x/8.x - Native iOS/Android-Brücke (App-ID: `de.godsapp.konfiquest`)
 
-**Core Backend:**
-- Express 4.18.2 - HTTP Framework (`backend/package.json`)
-- Socket.io 4.7.2 - WebSocket/Real-time Chat
+**Backend-Core:**
+- Express 4.18 - HTTP-Framework (`backend/server.js`)
+- Socket.IO 4.7 - WebSocket-Server für Chat und Echtzeit-Events
 
-**Theme/Design:**
-- `@rdlabo/ionic-theme-ios26` 2.2.0 - iOS 26 Design-Theme
-- `@rdlabo/ionic-theme-md3` 1.0.2 - Material 3 Design-Theme
-- Ionicons 8.0.13 - Icon Library
+**Theming:**
+- `@rdlabo/ionic-theme-ios26` 2.2.0 - iOS26/HIG-Design
+- `@rdlabo/ionic-theme-md3` 1.0.2 - Material Design 3
 
-**Testing:**
-- Vitest 4.1.0 - Unit Test Runner (`frontend/vite.config.ts`)
-- Cypress 13.5.0 - E2E Tests (`frontend/cypress.config.ts`)
-- Testing Library (React, DOM, user-event) - Test Utilities
-
-**Build/Dev:**
-- Vite 6.4.1 - Frontend Build-Tool (`frontend/vite.config.ts`)
-- Nodemon 3.0.2 - Backend Dev-Reload
-- TypeScript ESLint 8.24.0 + ESLint 9.20.1 - Linting
+**Build/Dev (Frontend):**
+- Vite 6.4 - Build-Tool und Dev-Server
+- TypeScript-ESLint 8.24 - Linting
+- Vitest 4.1 - Unit Tests
+- Cypress 13.5 - E2E Tests
 
 ## Key Dependencies
 
 **Frontend - Kritisch:**
-- `axios` 1.10.0 + `axios-retry` 4.5.0 - HTTP Client mit Auto-Retry (`frontend/src/services/api.ts`)
-- `socket.io-client` 4.8.1 - WebSocket Client (`frontend/src/services/websocket.ts`)
-- `@capacitor/push-notifications` 7.0.6 - Native Push Notifications
-- `@capacitor/preferences` 8.0.1 - Persistenter Token-Store (`frontend/src/services/tokenStore.ts`)
-- `@capacitor/network` 8.0.1 - Netzwerk-Status für Offline-Erkennung
-- `@capawesome/capacitor-background-task` 8.0.2 - Background Sync
-- `@capawesome/capacitor-badge` 7.0.1 - App-Badge auf Icon
-- `qrcode` 1.5.4 + `qr-scanner` 1.4.2 - QR-Code Generierung und Scannen
-- `html-to-image` 1.11.13 - Wrapped-Card als Bild exportieren
+- `axios` 1.10 + `axios-retry` 4.5 - HTTP-Client mit exponential-Retry (`frontend/src/services/api.ts`)
+- `socket.io-client` 4.8 - WebSocket-Client (`frontend/src/services/websocket.ts`)
+- `@capacitor/preferences` 8.0 - Persistenter Token-Store (`frontend/src/services/tokenStore.ts`)
+- `@capacitor/push-notifications` 7.0 - FCM/APNS Push-Registrierung
+- `@capacitor/network` 8.0 - Netzwerk-Monitoring für Offline-First
+- `swiper` 12.1 - Wrapped-Slide-Komponente
+- `html-to-image` 1.11 - Wrapped-Screenshot-Export
+- `qrcode` / `qr-scanner` - QR-Code-Generierung und -Scan
 
 **Backend - Kritisch:**
-- `pg` 8.16.3 - PostgreSQL Client (`backend/database.js`)
-- `jsonwebtoken` 9.0.2 - JWT Auth (`backend/middleware/rbac.js`)
-- `bcrypt` 5.1.1 - Passwort-Hashing
-- `firebase-admin` 13.7.0 - FCM Push Notifications (`backend/push/firebase.js`)
-- `socket.io` 4.7.2 - WebSocket Server (`backend/server.js`)
-- `multer` 2.1.1 - File Uploads (Chat, Material, Aktivitäten-Requests)
-- `nodemailer` 8.0.2 - E-Mail Versand (`backend/services/emailService.js`)
-- `helmet` 8.1.0 - HTTP Security Headers
-- `express-rate-limit` 8.3.1 - Rate Limiting (Auth, Chat, Events, Uploads)
-- `express-validator` 7.3.1 - Input-Validierung
-
-**Backend - Legacy (nicht aktiv genutzt):**
-- `sqlite3` 5.1.6 - Nur noch für Backup/Migration (`backend/backup_sqlite/`)
+- `pg` 8.16 - PostgreSQL-Client (Connection-Pool in `backend/database.js`)
+- `jsonwebtoken` 9.0 - JWT Access-Token (15 min) + Refresh-Token (90 Tage)
+- `bcrypt` 5.1 - Passwort-Hashing
+- `firebase-admin` 13.7 - FCM Push-Nachrichten (`backend/push/firebase.js`)
+- `nodemailer` 8.0 - E-Mail-Versand (`backend/services/emailService.js`)
+- `node-cron` 3.0 - Wrapped-Cron, Event-Erinnerungen (`backend/services/backgroundService.js`)
+- `multer` 2.1 - Datei-Uploads (Chat, Material, Activity-Requests)
+- `helmet` 8.1 - HTTP-Security-Header
+- `express-rate-limit` 8.3 - Brute-Force-Schutz (6 separate Limiter)
+- `express-validator` 7.3 - Input-Validierung
 
 ## Configuration
 
 **Environment (Backend):**
-- `JWT_SECRET` - Pflicht, Server-Start schlägt fehl ohne diesen Wert
-- `DATABASE_URL` - PostgreSQL Connection String (`backend/database.js`)
+- `DATABASE_URL` - PostgreSQL-Verbindung (Format: `postgresql://user:pass@host:5432/db`)
 - `PGHOST`, `PGUSER`, `PGDATABASE`, `PGPASSWORD`, `PGPORT` - Alternativ zu DATABASE_URL
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_SECURE`, `SMTP_FROM` - E-Mail
-- `FIREBASE_SERVICE_ACCOUNT` - JSON-String als Alternative zu `backend/push/firebase-service-account.json`
-- `CORS_ORIGINS` - Kommaseparierte erlaubte Origins (Default: konfi-quest.de)
-- `PORT` - HTTP Port (Default: 5000)
-- `NODE_ENV` - Umgebung (production/development)
+- `JWT_SECRET` - Pflicht; Server startet nicht ohne diesen Wert
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_SECURE` - E-Mail-Konfiguration
+- `FIREBASE_SERVICE_ACCOUNT` - Firebase Service Account als JSON-String (alternativ: `backend/push/firebase-service-account.json`)
+- `LOSUNG_API_KEY` - API-Key für externe Losungen-API
+- `CORS_ORIGINS` - Komma-getrennte CORS-Origins (Default: `https://konfi-quest.de,https://www.konfi-quest.de`)
+- `NODE_ENV` - `production` aktiviert strengere Einstellungen
 
-**Frontend:**
-- Keine `.env`-Variablen aktiv genutzt — API-URL ist hardcoded als `https://konfi-quest.de/api` in `frontend/src/services/api.ts`
-- WebSocket-URL hardcoded als `https://konfi-quest.de` in `frontend/src/services/websocket.ts`
-- App-ID: `de.godsapp.konfiquest` (`frontend/capacitor.config.ts`)
+**Environment (Frontend):**
+- API-URL ist hardcoded: `https://konfi-quest.de/api` in `frontend/src/services/api.ts`
+- WebSocket-URL ist hardcoded: `https://konfi-quest.de` in `frontend/src/services/websocket.ts`
+- Kein `.env`-File für Vite-Build-Variablen aktiv
 
 **Build:**
-- `frontend/vite.config.ts` - Vite Build-Config mit Vitest-Konfiguration
-- `frontend/tsconfig.json` - TypeScript strict mode, ESNext target
-- `frontend/capacitor.config.ts` - Capacitor App-Config (Plugins, App-ID)
-- `frontend/ionic.config.json` - Ionic Project-Config (type: react-vite)
+- `frontend/vite.config.ts` - Vite-Konfiguration (Vitest jsdom-Umgebung)
+- `frontend/tsconfig.json` - TypeScript ESNext + strict mode
+- `frontend/capacitor.config.ts` - Capacitor-Plugins und App-ID
 
 ## Platform Requirements
 
 **Development:**
-- Node.js >= 18 empfohlen (Docker-Base-Image)
-- Backend: `cd backend && npm start` (Port 5000)
-- Frontend: `cd frontend && npm run dev` (Port 5173)
-- PostgreSQL Docker Container
+- Node.js >= 16 (empfohlen: aktuell v18+ wegen Dockerfiles)
+- npm
+- PostgreSQL 15 (lokal oder Docker)
+- Xcode (iOS-Build via Capacitor)
+- Android Studio (Android-Build via Capacitor)
 
 **Production:**
-- Docker (3 Container: postgres, backend, frontend)
-- Stack-Definiton: `portainer-stack.yml` (Root)
-- Backend-Image: `ghcr.io/revisor01/konfi-quest-backend:latest`
-- Frontend-Image: `ghcr.io/revisor01/konfi-quest-frontend:latest` (Nginx:alpine)
-- PostgreSQL 15-alpine
-- Backend Docker-Port: 127.0.0.1:8623:5000
-- Frontend Docker-Port: 127.0.0.1:8624:80
-- Reverse Proxy: Apache (KeyHelp) → Traefik → Docker (server.godsapp.de)
-- Deployment: git push → Portainer automatisch (kein docker-compose manuell)
-- iOS/Android: Capacitor Native Apps, App-ID `de.godsapp.konfiquest`
+- Docker-Compose mit 3 Services: `postgres:15-alpine`, `node:18-bullseye` (Backend), `nginx:alpine` (Frontend)
+- Container-Images via GHCR: `ghcr.io/revisor01/konfi-quest-backend:latest` und `ghcr.io/revisor01/konfi-quest-frontend:latest`
+- Deployment via Portainer auf `server.godsapp.de` - **kein manuelles docker-compose**
+- Apache als Reverse-Proxy vor Traefik (Port 8888 intern)
+- Backend: Port 8623 → intern 5000
+- Frontend: Port 8624 → intern 80
 
 ---
 
-*Stack analysis: 2026-03-22*
+*Stack-Analyse: 2026-03-23*
