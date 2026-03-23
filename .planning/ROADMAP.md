@@ -255,7 +255,7 @@ Phase 89: Architektur + Cleanup (2 plans, complete)
   3. Frontend API-URL und WebSocket-URL sind ueber VITE_API_URL konfigurierbar, Backend hat keine hardcodierten IP-Fallbacks und QR_SECRET ist Pflicht-ENV
   4. Keine SQLite-Referenzen mehr in package.json, alle Migrationen haben numerisches Praefix, Losung-Abruf liegt in eigenem Service
   5. Server faehrt bei SIGTERM sauber herunter (DB-Pool + HTTP-Server schliessen)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
 - [ ] 90-01: Performance-Fixes (bcrypt async, Badge N+1, Notification Bulk-Insert)
