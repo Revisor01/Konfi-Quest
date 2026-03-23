@@ -6,6 +6,41 @@ if (!JWT_SECRET) {
 }
 
 // ============================================
+// LRU-CACHE fuer User-Objekte (30s TTL, max 500 Eintraege)
+// ============================================
+const USER_CACHE_TTL = 30 * 1000; // 30 Sekunden
+const USER_CACHE_MAX = 500;
+const userCache = new Map();
+
+const getCachedUser = (userId) => {
+  const entry = userCache.get(userId);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > USER_CACHE_TTL) {
+    userCache.delete(userId);
+    return null;
+  }
+  return entry.data;
+};
+
+const setCachedUser = (userId, data) => {
+  // Evict aelteste Eintraege wenn Max erreicht
+  if (userCache.size >= USER_CACHE_MAX) {
+    const firstKey = userCache.keys().next().value;
+    userCache.delete(firstKey);
+  }
+  userCache.set(userId, { data, timestamp: Date.now() });
+};
+
+// Cache invalidieren bei User-Aenderungen (Export fuer andere Module)
+const invalidateUserCache = (userId) => {
+  if (userId) {
+    userCache.delete(userId);
+  } else {
+    userCache.clear();
+  }
+};
+
+// ============================================
 // ROLLEN-HIERARCHIE (vereinfacht)
 // ============================================
 // super_admin (5) - Organisations-übergreifend, nur Org-Verwaltung
@@ -41,6 +76,21 @@ const verifyTokenRBAC = (db) => {
     }
 
     try {
+      // Cache-Check VOR DB-Query
+      const cached = getCachedUser(decoded.id);
+      if (cached) {
+        // Soft-Revoke Check auch mit cached Data
+        if (cached.token_invalidated_at) {
+          const tokenIssuedAt = decoded.iat;
+          const invalidatedAt = Math.floor(new Date(cached.token_invalidated_at).getTime() / 1000);
+          if (tokenIssuedAt < invalidatedAt) {
+            return res.status(401).json({ error: 'Token invalidated' });
+          }
+        }
+        req.user = cached.userObj;
+        return next();
+      }
+
       // User-Query mit LEFT JOIN für super_admin (organization_id kann NULL sein)
       const userQuery = `
         SELECT u.id, u.organization_id, u.username, u.display_name, u.is_active,
@@ -108,6 +158,12 @@ const verifyTokenRBAC = (db) => {
         is_super_admin: user.role_name === 'super_admin' || user.is_super_admin === true,
         is_org_admin: user.role_name === 'org_admin'
       };
+
+      // User-Objekt cachen (30s TTL)
+      setCachedUser(decoded.id, {
+        token_invalidated_at: user.token_invalidated_at,
+        userObj: req.user
+      });
 
       next();
     } catch (err) {
@@ -257,6 +313,7 @@ const requireSameOrganization = (req, res, next) => {
 
 module.exports = {
   verifyTokenRBAC,
+  invalidateUserCache,
   // Rollen-Checks
   requireRole,
   requireSuperAdmin,
