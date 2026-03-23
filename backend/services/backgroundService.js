@@ -446,11 +446,6 @@ class BackgroundService {
     try {
       const today = new Date();
 
-      // Nur am 1. des Monats ausfuehren
-      if (today.getDate() !== 1) {
-        return;
-      }
-
       let konfiJahrgaengeGenerated = 0;
       let teamerOrgsGenerated = 0;
 
