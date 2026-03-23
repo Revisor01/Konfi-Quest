@@ -155,8 +155,9 @@ io.on('connection', (socket) => {
   });
 });
 
-// Export io for use in routes
-global.io = io;
+// liveUpdate mit io initialisieren (DI statt globaler Variable)
+const liveUpdate = require('./utils/liveUpdate');
+liveUpdate.init(io);
 
 // ====================================================================
 // SMTP CONFIGURATION
@@ -488,7 +489,7 @@ app.use('/api/konfi', konfiRoutes(db, { verifyTokenRBAC: rbacVerifier }, request
 
 // Chat: Nachrichten-Endpunkt mit eigenem Rate-Limiter, Upload-Endpunkt ebenfalls
 app.post('/api/chat/rooms/:roomId/messages', chatMessageLimiter, uploadLimiter);
-app.use('/api/chat', chatRoutes(db, { verifyTokenRBAC: rbacVerifier }, uploadsDir, chatUpload));
+app.use('/api/chat', chatRoutes(db, { verifyTokenRBAC: rbacVerifier }, uploadsDir, chatUpload, io));
 
 app.use('/api/notifications', notificationsRoutes(db, rbacVerifier));
 
@@ -505,9 +506,9 @@ app.use('/api/admin/badges', badgesRouter);
 app.use('/api/admin/konfis', adminKonfisRoutes(db, rbacVerifier, roleHelpers, filterByJahrgangAccess, badgesRouter.checkAndAwardBadges));
 app.use('/api/admin/jahrgaenge', adminJahrgaengeRoutes(db, rbacVerifier, roleHelpers));
 app.use('/api/admin/categories', adminCategoriesRoutes(db, rbacVerifier, roleHelpers));
-app.use('/api/admin/users', usersRoutes(db, rbacVerifier, roleHelpers));
+app.use('/api/admin/users', usersRoutes(db, rbacVerifier, roleHelpers, io));
 
-app.use('/api/users', usersRoutes(db, rbacVerifier, roleHelpers));
+app.use('/api/users', usersRoutes(db, rbacVerifier, roleHelpers, io));
 app.use('/api/roles', rolesRoutes(db, rbacVerifier, roleHelpers));
 app.use('/api/organizations', orgLimiter, organizationsRoutes(db, rbacVerifier, roleHelpers));
 
