@@ -267,12 +267,13 @@ Plans:
 **Success Criteria** (was nach dieser Phase TRUE sein muss):
   1. Die Chat-Raumuebersicht laedt Direct-Message-Namen per JOIN statt einer Query pro Raum
   2. Die Chat-Raumsortierung verwendet einen LATERAL Join oder last_message_at statt korrelierter Subquery
-  3. Die Wrapped-Snapshot-Generierung parallelisiert Queries pro Konfi mit Promise.all
+  3. Die Wrapped-Snapshot-Generierung parallelisiert Queries pro Konfi mit Promise.allSettled
   4. Der DB Pool hat explizite max/idleTimeout/connectionTimeout Werte und ist ueber Umgebungsvariable konfigurierbar
-**Plans**: 1 Plan
+**Plans**: 2 Plans
 
 Plans:
-- [ ] 86-01-PLAN.md — Backend POST /api/auth/logout + Frontend-Revoke-Aufruf
+- [ ] 88-01-PLAN.md — Chat N+1 + korrelierte Subquery (chat.js)
+- [ ] 88-02-PLAN.md — Wrapped Promise.allSettled + DB Pool Konfiguration
 
 ### Phase 89: Architektur + Cleanup
 **Goal**: global.io ist eliminiert, material.js ist bereinigt, das Migrations-System traeckt Versionen, und der Cron-Guard ist konsistent
@@ -286,7 +287,7 @@ Plans:
 **Plans**: 1 Plan
 
 Plans:
-- [ ] 86-01-PLAN.md — Backend POST /api/auth/logout + Frontend-Revoke-Aufruf
+- [ ] 89-01-PLAN.md — global.io DI, material.js Legacy-Pfad, schema_migrations, Cron-Guard
 
 ## Progress
 
@@ -298,5 +299,5 @@ Alle Phasen bis v2.4 abgeschlossen.
 | 85. Code-Cleanup | 2/2 | Complete | 2026-03-22 |
 | 86. Logout-Absicherung | 0/? | Not started | - |
 | 87. Security-Fixes | 0/? | Not started | - |
-| 88. Backend-Performance | 0/? | Not started | - |
+| 88. Backend-Performance | 0/2 | Not started | - |
 | 89. Architektur + Cleanup | 0/? | Not started | - |
