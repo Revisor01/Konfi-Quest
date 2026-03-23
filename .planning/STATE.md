@@ -4,7 +4,7 @@ milestone: v2.5
 milestone_name: Security-Hardening + Polish
 status: unknown
 stopped_at: Completed 89-01-PLAN.md
-last_updated: "2026-03-23T13:29:13.347Z"
+last_updated: "2026-03-23T13:31:45.424Z"
 progress:
   total_phases: 4
   completed_phases: 4
@@ -23,8 +23,8 @@ See: .planning/PROJECT.md (updated 2026-03-23)
 
 ## Current Position
 
-Phase: 89 (architektur-cleanup) — EXECUTING
-Plan: 2 of 2
+Phase: 89
+Plan: Not started
 
 ## Accumulated Context
 
