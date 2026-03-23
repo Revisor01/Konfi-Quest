@@ -240,7 +240,10 @@ Phase 85: Code-Cleanup (2 plans, complete)
   1. Nach einem Logout ist das Refresh Token in der DB mit revoked_at markiert und kann nicht mehr fuer neue Access Tokens verwendet werden
   2. Der Frontend-Logout-Flow ruft /api/auth/logout auf, bevor lokale Token-Daten geloescht werden
   3. Ein abgegriffenes Refresh Token ist nach dem Logout des Users wertlos
-**Plans**: TBD
+**Plans**: 1 Plan
+
+Plans:
+- [ ] 86-01-PLAN.md — Backend POST /api/auth/logout + Frontend-Revoke-Aufruf
 
 ### Phase 87: Security-Fixes
 **Goal**: Alle verbleibenden kleinen Sicherheitsluecken und ein Frontend-Bug sind geschlossen
@@ -252,7 +255,10 @@ Phase 85: Code-Cleanup (2 plans, complete)
   3. Typing-Events werden nicht an andere Organisationen weitergeleitet
   4. Der Losung-API-Key hat keinen Fallback-Wert mehr im Quellcode
   5. useOfflineQuery verwendet keinen stale data-Closure mehr und revalidate ist sicher in den Dependencies
-**Plans**: TBD
+**Plans**: 1 Plan
+
+Plans:
+- [ ] 86-01-PLAN.md — Backend POST /api/auth/logout + Frontend-Revoke-Aufruf
 
 ### Phase 88: Backend-Performance
 **Goal**: Chat-Uebersicht und Wrapped-Generierung sind frei von N+1-Problemen und der DB Pool ist konfiguriert
@@ -263,7 +269,10 @@ Phase 85: Code-Cleanup (2 plans, complete)
   2. Die Chat-Raumsortierung verwendet einen LATERAL Join oder last_message_at statt korrelierter Subquery
   3. Die Wrapped-Snapshot-Generierung parallelisiert Queries pro Konfi mit Promise.all
   4. Der DB Pool hat explizite max/idleTimeout/connectionTimeout Werte und ist ueber Umgebungsvariable konfigurierbar
-**Plans**: TBD
+**Plans**: 1 Plan
+
+Plans:
+- [ ] 86-01-PLAN.md — Backend POST /api/auth/logout + Frontend-Revoke-Aufruf
 
 ### Phase 89: Architektur + Cleanup
 **Goal**: global.io ist eliminiert, material.js ist bereinigt, das Migrations-System traeckt Versionen, und der Cron-Guard ist konsistent
@@ -274,7 +283,10 @@ Phase 85: Code-Cleanup (2 plans, complete)
   2. material.js akzeptiert ausschliesslich das Array-Format (event_ids, jahrgang_ids), Legacy-Einzelfeld-Pfad ist entfernt
   3. Ausgefuehrte Migrationen werden in einer schema_migrations Tabelle gespeichert und beim naechsten Start nicht erneut ausgefuehrt
   4. Der doppelte Date-Guard im Wrapped-Cron ist entfernt, die node-cron Schedule ist die einzige Ausfuehrungs-Bedingung
-**Plans**: TBD
+**Plans**: 1 Plan
+
+Plans:
+- [ ] 86-01-PLAN.md — Backend POST /api/auth/logout + Frontend-Revoke-Aufruf
 
 ## Progress
 
