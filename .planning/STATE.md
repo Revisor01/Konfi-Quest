@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.6
 milestone_name: Final Polish + Bugfixes
 status: unknown
-stopped_at: Completed 90-01-PLAN.md
-last_updated: "2026-03-23T18:44:22.960Z"
+stopped_at: Completed 90-02-PLAN.md
+last_updated: "2026-03-23T18:45:06.624Z"
 progress:
   total_phases: 2
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -43,6 +43,7 @@ Plan: 2 of 2
 ## Accumulated Context
 
 | Phase 90 P01 | 3min | 2 tasks | 4 files |
+| Phase 90 P02 | 3min | 2 tasks | 11 files |
 
 ### Decisions
 
@@ -52,6 +53,9 @@ Recent decisions affecting current work:
 - v2.5: Logout best-effort (online-only Revoke)
 - v2.5: schema_migrations Tracking statt externes Tool
 - [Phase 90]: Preloaded Counts Pattern fuer Badge-Schleifen (Promise.all vor Iteration)
+- [Phase 90]: VITE_API_URL mit Produktions-Fallback fuer Staging-Betrieb
+- [Phase 90]: QR_SECRET ohne Fallback - process.exit(1) bei fehlendem ENV
+- [Phase 90]: Gemeinsamer gracefulShutdown fuer SIGINT und SIGTERM
 
 ### Pending Todos
 
@@ -63,6 +67,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-23T18:44:22.957Z
-Stopped at: Completed 90-01-PLAN.md
+Last session: 2026-03-23T18:45:06.621Z
+Stopped at: Completed 90-02-PLAN.md
 Resume file: None

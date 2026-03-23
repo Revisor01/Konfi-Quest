@@ -15,16 +15,16 @@ Requirements fuer Milestone v2.6 Final Polish + Bugfixes.
 
 ### Konfiguration (CONF)
 
-- [ ] **CONF-01**: Frontend API_BASE_URL und WS_URL ueber Umgebungsvariable konfigurierbar (VITE_API_URL)
-- [ ] **CONF-02**: Backend SMTP-Host und Email-Logo-URL ohne hardcodierte IP-Fallbacks
-- [ ] **CONF-03**: QR_SECRET als eigene Pflicht-ENV-Variable (kein Fallback auf JWT_SECRET)
+- [x] **CONF-01**: Frontend API_BASE_URL und WS_URL ueber Umgebungsvariable konfigurierbar (VITE_API_URL)
+- [x] **CONF-02**: Backend SMTP-Host und Email-Logo-URL ohne hardcodierte IP-Fallbacks
+- [x] **CONF-03**: QR_SECRET als eigene Pflicht-ENV-Variable (kein Fallback auf JWT_SECRET)
 
 ### Cleanup (CLN)
 
-- [ ] **CLN-03**: Veraltete SQLite-Skripte (start:sqlite, dev:sqlite) aus backend/package.json entfernen
-- [ ] **CLN-04**: 3 Migrationen ohne numerisches Praefix umbenennen (add_idempotency_keys, add_invite_codes, add_push_foundation)
-- [ ] **CLN-05**: Losung-API-Abruf aus konfi.js und teamer.js in losungService.js extrahieren
-- [ ] **CLN-06**: SIGTERM-Handler in server.js fuer Docker Graceful Shutdown hinzufuegen
+- [x] **CLN-03**: Veraltete SQLite-Skripte (start:sqlite, dev:sqlite) aus backend/package.json entfernen
+- [x] **CLN-04**: 3 Migrationen ohne numerisches Praefix umbenennen (add_idempotency_keys, add_invite_codes, add_push_foundation)
+- [x] **CLN-05**: Losung-API-Abruf aus konfi.js und teamer.js in losungService.js extrahieren
+- [x] **CLN-06**: SIGTERM-Handler in server.js fuer Docker Graceful Shutdown hinzufuegen
 
 ### Architektur (ARCH)
 
@@ -55,13 +55,13 @@ Requirements fuer Milestone v2.6 Final Polish + Bugfixes.
 | PERF-05 | Phase 90 | Complete |
 | PERF-06 | Phase 90 | Complete |
 | PERF-07 | Phase 90 | Complete |
-| CONF-01 | Phase 90 | Pending |
-| CONF-02 | Phase 90 | Pending |
-| CONF-03 | Phase 90 | Pending |
-| CLN-03 | Phase 90 | Pending |
-| CLN-04 | Phase 90 | Pending |
-| CLN-05 | Phase 90 | Pending |
-| CLN-06 | Phase 90 | Pending |
+| CONF-01 | Phase 90 | Complete |
+| CONF-02 | Phase 90 | Complete |
+| CONF-03 | Phase 90 | Complete |
+| CLN-03 | Phase 90 | Complete |
+| CLN-04 | Phase 90 | Complete |
+| CLN-05 | Phase 90 | Complete |
+| CLN-06 | Phase 90 | Complete |
 | ARCH-04 | Phase 91 | Pending |
 | ARCH-05 | Phase 91 | Pending |
 | BUG-01 | Phase 91 | Pending |

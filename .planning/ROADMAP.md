@@ -240,7 +240,7 @@ Phase 89: Architektur + Cleanup (2 plans, complete)
 
 **Milestone Goal:** Verbleibende Tech-Debt-Items abarbeiten und gemeldete Bugs fixen -- letzter Cleanup vor v3.0 Onboarding.
 
-- [ ] **Phase 90: Backend-Cleanup + Performance** - bcrypt async, N+1 Fixes, ENV-Konfiguration, tote Artefakte entfernen, Graceful Shutdown
+- [x] **Phase 90: Backend-Cleanup + Performance** - bcrypt async, N+1 Fixes, ENV-Konfiguration, tote Artefakte entfernen, Graceful Shutdown (completed 2026-03-23)
 - [ ] **Phase 91: Frontend-Fixes + Bugfixes** - LiveUpdateContext bereinigen, Navigation-Bugs fixen, Badge-Progress implementieren
 
 ## Phase Details
@@ -259,7 +259,7 @@ Phase 89: Architektur + Cleanup (2 plans, complete)
 
 Plans:
 - [x] 90-01: Performance-Fixes (bcrypt async, Badge N+1, Notification Bulk-Insert)
-- [ ] 90-02: Konfiguration + Cleanup (ENV-Variablen, Fallbacks entfernen, SQLite weg, Migrations-Namen, losungService, SIGTERM)
+- [x] 90-02: Konfiguration + Cleanup (ENV-Variablen, Fallbacks entfernen, SQLite weg, Migrations-Namen, losungService, SIGTERM)
 
 ### Phase 91: Frontend-Fixes + Bugfixes
 **Goal**: Keine schwarzen Seiten bei Navigation, Badge-Progress zeigt korrekte Werte, keine Module-Scope-Leaks im Context
@@ -281,5 +281,5 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 90. Backend-Cleanup + Performance | v2.6 | 1/2 | In Progress|  |
+| 90. Backend-Cleanup + Performance | v2.6 | 2/2 | Complete   | 2026-03-23 |
 | 91. Frontend-Fixes + Bugfixes | v2.6 | 0/1 | Not started | - |
