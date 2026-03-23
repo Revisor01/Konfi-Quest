@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v2.6
 milestone_name: Final Polish + Bugfixes
-status: defining_requirements
-last_updated: "2026-03-23T15:00:00Z"
+status: ready_to_plan
+last_updated: "2026-03-23T16:00:00Z"
 progress:
-  total_phases: 0
+  total_phases: 2
   completed_phases: 0
-  total_plans: 0
+  total_plans: 3
   completed_plans: 0
 ---
 
@@ -18,22 +18,39 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-23)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Defining requirements for v2.6
+**Current focus:** v2.6 Final Polish + Bugfixes - Phase 90
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-23 — Milestone v2.6 started
+Phase: 90 of 91 (Backend-Cleanup + Performance)
+Plan: 0 of 3 total plans
+Status: Ready to plan
+Last activity: 2026-03-23 -- Roadmap erstellt
+
+Progress: [░░░░░░░░░░] 0%
+
+## Performance Metrics
+
+**Velocity:**
+- Total plans completed: 0
+- Average duration: -
+- Total execution time: 0h
+
+**By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| - | - | - | - |
 
 ## Accumulated Context
 
-Alle v1.0-v2.5 Entscheidungen in PROJECT.md und milestones/ archiviert.
+### Decisions
 
-### Aktuelle Milestone-Entscheidungen
+Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
 
-(noch keine)
+- v2.5: Logout best-effort (online-only Revoke)
+- v2.5: schema_migrations Tracking statt externes Tool
 
 ### Pending Todos
 
@@ -41,11 +58,10 @@ Alle v1.0-v2.5 Entscheidungen in PROJECT.md und milestones/ archiviert.
 
 ### Blockers/Concerns
 
-(keine)
+None.
 
 ## Session Continuity
 
 Last session: 2026-03-23
-Stopped at: Milestone v2.6 initialization
+Stopped at: Roadmap erstellt, bereit fuer Phase 90 Planung
 Resume file: None
-Next action: Define requirements → Create roadmap

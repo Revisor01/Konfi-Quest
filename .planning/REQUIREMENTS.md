@@ -52,25 +52,25 @@ Requirements fuer Milestone v2.6 Final Polish + Bugfixes.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PERF-05 | - | Pending |
-| PERF-06 | - | Pending |
-| PERF-07 | - | Pending |
-| CONF-01 | - | Pending |
-| CONF-02 | - | Pending |
-| CONF-03 | - | Pending |
-| CLN-03 | - | Pending |
-| CLN-04 | - | Pending |
-| CLN-05 | - | Pending |
-| CLN-06 | - | Pending |
-| ARCH-04 | - | Pending |
-| ARCH-05 | - | Pending |
-| BUG-01 | - | Pending |
-| BUG-02 | - | Pending |
+| PERF-05 | Phase 90 | Pending |
+| PERF-06 | Phase 90 | Pending |
+| PERF-07 | Phase 90 | Pending |
+| CONF-01 | Phase 90 | Pending |
+| CONF-02 | Phase 90 | Pending |
+| CONF-03 | Phase 90 | Pending |
+| CLN-03 | Phase 90 | Pending |
+| CLN-04 | Phase 90 | Pending |
+| CLN-05 | Phase 90 | Pending |
+| CLN-06 | Phase 90 | Pending |
+| ARCH-04 | Phase 91 | Pending |
+| ARCH-05 | Phase 91 | Pending |
+| BUG-01 | Phase 91 | Pending |
+| BUG-02 | Phase 91 | Pending |
 
 **Coverage v2.6:**
 - v2.6 requirements: 14 total
-- Mapped to phases: 0
-- Unmapped: 14
+- Mapped to phases: 14
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-23*

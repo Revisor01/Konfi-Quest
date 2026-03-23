@@ -18,6 +18,7 @@
 - Shipped **v2.3 Konfi + Teamer Wrapped** - Phases 75-80 (shipped 2026-03-22)
 - Shipped **v2.4 Codebase-Cleanup** - Phases 81-85 (shipped 2026-03-22)
 - Shipped **v2.5 Security-Hardening + Polish** - Phases 86-89 (shipped 2026-03-23)
+- **v2.6 Final Polish + Bugfixes** - Phases 90-91 (in progress)
 
 ## Phases
 
@@ -234,3 +235,51 @@ Phase 88: Backend-Performance (2 plans, complete)
 Phase 89: Architektur + Cleanup (2 plans, complete)
 
 </details>
+
+### v2.6 Final Polish + Bugfixes (In Progress)
+
+**Milestone Goal:** Verbleibende Tech-Debt-Items abarbeiten und gemeldete Bugs fixen -- letzter Cleanup vor v3.0 Onboarding.
+
+- [ ] **Phase 90: Backend-Cleanup + Performance** - bcrypt async, N+1 Fixes, ENV-Konfiguration, tote Artefakte entfernen, Graceful Shutdown
+- [ ] **Phase 91: Frontend-Fixes + Bugfixes** - LiveUpdateContext bereinigen, Navigation-Bugs fixen, Badge-Progress implementieren
+
+## Phase Details
+
+### Phase 90: Backend-Cleanup + Performance
+**Goal**: Backend ist staging-faehig konfiguriert, blockiert nicht mehr die Event-Loop, und enthaelt keine veralteten Artefakte
+**Depends on**: Nothing (erster Phase im Milestone)
+**Requirements**: PERF-05, PERF-06, PERF-07, CONF-01, CONF-02, CONF-03, CLN-03, CLN-04, CLN-05, CLN-06
+**Success Criteria** (what must be TRUE):
+  1. Passwort-Hashing und -Vergleich blockieren die Event-Loop nicht mehr (async bcrypt auf allen Stellen)
+  2. Badge-Progress-Endpoint laed Punkte-Daten einmal vorab statt pro Badge, Notification-Insert nutzt Bulk-INSERT statt Schleife
+  3. Frontend API-URL und WebSocket-URL sind ueber VITE_API_URL konfigurierbar, Backend hat keine hardcodierten IP-Fallbacks und QR_SECRET ist Pflicht-ENV
+  4. Keine SQLite-Referenzen mehr in package.json, alle Migrationen haben numerisches Praefix, Losung-Abruf liegt in eigenem Service
+  5. Server faehrt bei SIGTERM sauber herunter (DB-Pool + HTTP-Server schliessen)
+**Plans**: TBD
+
+Plans:
+- [ ] 90-01: Performance-Fixes (bcrypt async, Badge N+1, Notification Bulk-Insert)
+- [ ] 90-02: Konfiguration + Cleanup (ENV-Variablen, Fallbacks entfernen, SQLite weg, Migrations-Namen, losungService, SIGTERM)
+
+### Phase 91: Frontend-Fixes + Bugfixes
+**Goal**: Keine schwarzen Seiten bei Navigation, Badge-Progress zeigt korrekte Werte, keine Module-Scope-Leaks im Context
+**Depends on**: Phase 90 (CONF-01 ENV-Setup wird von Frontend genutzt)
+**Requirements**: ARCH-04, ARCH-05, BUG-01, BUG-02
+**Success Criteria** (what must be TRUE):
+  1. LiveUpdateContext listeners Map lebt im Provider (useRef) statt im Module-Scope -- kein Shared-State zwischen Mounts
+  2. Event-Detail Chat-Erstellung navigiert korrekt zur Chat-Seite (kein schwarzer Bildschirm)
+  3. Event-Serie-Navigation nutzt useIonRouter statt window.location.href
+  4. Badge-Progress fuer streak- und time_based-Kriterien zeigt den tatsaechlichen Fortschritt statt 0%
+**Plans**: TBD
+
+Plans:
+- [ ] 91-01: Frontend-Architektur + Bugfixes (LiveUpdateContext, useIonRouter Navigation, Badge-Progress)
+
+## Progress
+
+**Execution Order:** 90 -> 91
+
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 90. Backend-Cleanup + Performance | v2.6 | 0/2 | Not started | - |
+| 91. Frontend-Fixes + Bugfixes | v2.6 | 0/1 | Not started | - |
