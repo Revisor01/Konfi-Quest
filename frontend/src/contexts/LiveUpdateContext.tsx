@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { initializeWebSocket, getSocket } from '../services/websocket';
 import { getToken } from '../services/tokenStore';
 
@@ -36,10 +36,8 @@ interface LiveUpdateContextType {
 
 const LiveUpdateContext = createContext<LiveUpdateContextType | undefined>(undefined);
 
-// Event listeners storage
-const listeners: Map<LiveUpdateType, Set<(event: LiveUpdateEvent) => void>> = new Map();
-
 export const LiveUpdateProvider = ({ children }: { children: ReactNode }) => {
+  const listenersRef = useRef<Map<LiveUpdateType, Set<(event: LiveUpdateEvent) => void>>>(new Map());
 
   // Setup WebSocket listener
   useEffect(() => {
@@ -51,7 +49,7 @@ export const LiveUpdateProvider = ({ children }: { children: ReactNode }) => {
     // Main handler for all live updates
     const handleLiveUpdate = (event: LiveUpdateEvent) => {
       // Notify all listeners for this type
-      const typeListeners = listeners.get(event.type);
+      const typeListeners = listenersRef.current.get(event.type);
       if (typeListeners) {
         typeListeners.forEach(callback => {
           try {
@@ -104,21 +102,21 @@ export const LiveUpdateProvider = ({ children }: { children: ReactNode }) => {
 
   // Subscribe function
   const subscribe = useCallback((type: LiveUpdateType, callback: (event: LiveUpdateEvent) => void) => {
-    if (!listeners.has(type)) {
-      listeners.set(type, new Set());
+    if (!listenersRef.current.has(type)) {
+      listenersRef.current.set(type, new Set());
     }
-    listeners.get(type)!.add(callback);
+    listenersRef.current.get(type)!.add(callback);
 
     // Return unsubscribe function
     return () => {
-      listeners.get(type)?.delete(callback);
+      listenersRef.current.get(type)?.delete(callback);
     };
   }, []);
 
   // Manual trigger for testing
   const triggerRefresh = useCallback((type: LiveUpdateType) => {
     const event: LiveUpdateEvent = { type, action: 'refresh' };
-    const typeListeners = listeners.get(type);
+    const typeListeners = listenersRef.current.get(type);
     if (typeListeners) {
       typeListeners.forEach(callback => callback(event));
     }
