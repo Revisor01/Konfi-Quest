@@ -35,6 +35,7 @@ export function useOfflineQuery<T>(
   } = options || {};
 
   const [data, setData] = useState<T | null>(null);
+  const dataRef = useRef<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isStale, setIsStale] = useState(false);
@@ -63,6 +64,7 @@ export function useOfflineQuery<T>(
 
       const transformed = selectRef.current ? selectRef.current(freshData) : freshData;
       setData(transformed);
+      dataRef.current = transformed;
       setIsStale(false);
       setError(null);
       setLoading(false);
@@ -73,7 +75,7 @@ export function useOfflineQuery<T>(
       const message = err instanceof Error ? err.message : 'Unbekannter Fehler';
 
       // Wenn Cache vorhanden: Daten behalten, als stale markieren
-      if (data !== null) {
+      if (dataRef.current !== null) {
         setIsStale(true);
       } else {
         setError(message);
@@ -81,7 +83,7 @@ export function useOfflineQuery<T>(
       }
       onErrorRef.current?.(err instanceof Error ? err : new Error(message));
     }
-  }, [cacheKey, fetcher, ttl, data]);
+  }, [cacheKey, fetcher, ttl]);
 
   // Initial Load
   useEffect(() => {
@@ -101,6 +103,7 @@ export function useOfflineQuery<T>(
       if (cached) {
         const transformed = selectRef.current ? selectRef.current(cached.data) : cached.data;
         setData(transformed);
+        dataRef.current = transformed;
         setLoading(false);
         setError(null);
 
@@ -132,7 +135,7 @@ export function useOfflineQuery<T>(
     return () => {
       cancelled = true;
     };
-  }, [cacheKey, enabled]); // revalidate bewusst nicht in deps (wuerde Loop verursachen)
+  }, [cacheKey, enabled, revalidate]);
 
   // Network-Listener: Bei Online-Wechsel revalidieren
   useEffect(() => {
