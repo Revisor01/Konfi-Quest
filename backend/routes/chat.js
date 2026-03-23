@@ -21,7 +21,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
 
   const validateSendMessage = [
     param('roomId').isInt({ min: 1 }).withMessage('Ungültige Raum-ID'),
-    body('content').optional().trim(),
+    body('content').optional().trim().isLength({ max: 4000 }).withMessage('Nachricht darf maximal 4000 Zeichen lang sein'),
     body('client_id').optional().isUUID().withMessage('client_id muss eine UUID sein'),
     handleValidationErrors
   ];
