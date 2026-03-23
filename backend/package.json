@@ -5,10 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "start:sqlite": "node backend/backup_sqlite/server.js",
     "dev": "nodemon server.js",
-    "dev:sqlite": "nodemon backend/backup_sqlite/server.js",
-    "migrate": "node ../migrate-sqlite-to-postgres.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

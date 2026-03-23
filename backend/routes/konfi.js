@@ -6,6 +6,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
+const { fetchTageslosung } = require('../services/losungService');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -1408,148 +1409,52 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
-    
+
     try {
       const konfiId = req.user.id;
-      
+
       // Get konfi's preferred translation
       const { rows: [konfi] } = await db.query(
         'SELECT kp.bible_translation FROM users u JOIN konfi_profiles kp ON u.id = kp.user_id WHERE u.id = $1',
         [konfiId]
       );
-      
-      const translation = konfi?.bible_translation || 'LUT'; // Default: Lutherbibel
-      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-      
-      // Check if we have cached verse for today and this translation
-      const { rows: [cachedVerse] } = await db.query(
-        'SELECT verse_data FROM daily_verses WHERE date = $1 AND translation = $2',
-        [today, translation]
-      );
-      
-      if (cachedVerse) {
-        return res.json({
-          success: true,
-          data: cachedVerse.verse_data,
-          translation: translation,
-          cached: true
-        });
-      }
-      
-      // Not cached - fetch from external API
-      const fetch = (await import('node-fetch')).default;
-      const losungApiKey = process.env.LOSUNG_API_KEY;
-      if (!losungApiKey) {
-        console.error('LOSUNG_API_KEY Umgebungsvariable fehlt');
-        return res.status(503).json({ error: 'Losung-Dienst nicht verfügbar' });
-      }
-      const apiUrl = `https://losung.konfi-quest.de/api/?api_key=${losungApiKey}&translation=${translation}`;
-      
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'Konfi-Quest-App/1.0'
-        },
-        timeout: 10000
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Losungen API error: ${response.status}`);
-      }
-      
-      const losungData = await response.json();
-      
-      if (!losungData.success) {
-        throw new Error('Losungen API returned error');
-      }
-      
-      // Cache the verse for today
-      try {
-        await db.query(
-          'INSERT INTO daily_verses (date, translation, verse_data) VALUES ($1, $2, $3) ON CONFLICT (date, translation) DO NOTHING',
-          [today, translation, losungData.data]
-        );
-      } catch (cacheErr) {
- console.error('Error caching verse:', cacheErr);
-        // Don't fail the request if caching fails
-      }
-      
-      // Clean up old verses (older than 7 days)
-      try {
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const cleanupDate = sevenDaysAgo.toISOString().split('T')[0];
-        
-        const { rowCount } = await db.query(
-          'DELETE FROM daily_verses WHERE date < $1',
-          [cleanupDate]
-        );
-        
-        if (rowCount > 0) {
-        }
-      } catch (cleanupErr) {
- console.error('Error cleaning up old verses:', cleanupErr);
-        // Don't fail the request if cleanup fails
-      }
-      
-      res.json({
-        success: true,
-        data: losungData.data,
-        translation: translation,
-        cached: false
-      });
-      
+
+      const translation = konfi?.bible_translation || 'LUT';
+      const result = await fetchTageslosung(db, translation);
+
+      res.json({ success: true, ...result });
     } catch (err) {
- console.error('Error fetching Tageslosung:', err);
-      
-      // Try to get a cached verse from previous days as fallback
+      console.error('Error fetching Tageslosung:', err);
+
+      // Fallback: letzte gecachte Losung aus DB
       try {
         const { rows: [fallbackCached] } = await db.query(
-          'SELECT verse_data FROM daily_verses WHERE translation = $1 ORDER BY date DESC LIMIT 1',
-          [translation]
+          'SELECT verse_data, translation FROM daily_verses ORDER BY date DESC LIMIT 1'
         );
-        
+
         if (fallbackCached) {
           return res.json({
             success: true,
             data: fallbackCached.verse_data,
-            translation: translation,
+            translation: fallbackCached.translation,
             fallback: true,
             error: 'Aktuelle Tageslosung nicht verfügbar - verwende letzte verfügbare Losung'
           });
         }
       } catch (fallbackErr) {
- console.error('Error getting fallback cached verse:', fallbackErr);
+        console.error('Fallback cache error:', fallbackErr.message);
       }
-      
-      // Final fallback data if all else fails
-      const fallbackVerses = [
-        {
-          date: new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
-          losung: {
-            text: "Der HERR ist mein Hirte, mir wird nichts mangeln.",
-            reference: "Psalm 23,1",
-            testament: "AT"
-          },
-          lehrtext: {
-            text: "Jesus spricht: Ich bin der gute Hirte. Der gute Hirte lässt sein Leben für die Schafe.",
-            reference: "Johannes 10,11", 
-            testament: "NT"
-          },
-          translation: {
-            code: "LUT",
-            name: "Lutherbibel 2017",
-            language: "German"
-          },
-          source: "Fallback"
-        }
-      ];
-      
-      const randomVerse = fallbackVerses[Math.floor(Math.random() * fallbackVerses.length)];
-      
+
+      // Statischer Fallback
       res.json({
         success: true,
-        data: randomVerse,
+        data: {
+          date: new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+          losung: { text: "Der HERR ist mein Hirte, mir wird nichts mangeln.", reference: "Psalm 23,1", testament: "AT" },
+          lehrtext: { text: "Jesus spricht: Ich bin der gute Hirte. Der gute Hirte lässt sein Leben für die Schafe.", reference: "Johannes 10,11", testament: "NT" },
+          translation: { code: "LUT", name: "Lutherbibel 2017", language: "German" },
+          source: "Fallback"
+        },
         fallback: true,
         error: 'Losungen API nicht erreichbar - Fallback verwendet'
       });

@@ -578,15 +578,25 @@ server.listen(PORT, () => {
 // GRACEFUL SHUTDOWN
 // ====================================================================
 
-// GEÄNDERT: Der Shutdown-Prozess verwendet jetzt db.end() und async/await.
-process.on('SIGINT', async () => {
-  console.warn('Server wird heruntergefahren...');
-  try {
-    await db.end();
-    console.warn('Datenbankverbindung geschlossen.');
-  } catch (err) {
- console.error('Error closing the database pool:', err.message);
-  } finally {
+const gracefulShutdown = (signal) => {
+  console.warn(`${signal} empfangen - Graceful Shutdown...`);
+  server.close(async () => {
+    console.warn('HTTP-Server geschlossen.');
+    try {
+      await db.end();
+      console.warn('Datenbankverbindung geschlossen.');
+    } catch (err) {
+      console.error('Fehler beim Schliessen der Datenbankverbindung:', err.message);
+    }
     process.exit(0);
-  }
-});
+  });
+
+  // Timeout nach 10 Sekunden erzwingen
+  setTimeout(() => {
+    console.error('Shutdown-Timeout erreicht - erzwinge Beendigung');
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));

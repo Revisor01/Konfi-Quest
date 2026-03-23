@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
+const { fetchTageslosung } = require('../services/losungService');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireTeamer, requireOrgAdmin, requireAdmin } = roleHelpers;
@@ -743,66 +744,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // ====================================================================
   router.get('/tageslosung', rbacVerifier, requireTeamer, async (req, res) => {
     try {
-      const translation = 'LUT'; // Teamer: immer Lutherbibel
-      const today = new Date().toISOString().split('T')[0];
-
-      // Check cache
-      const { rows: [cachedVerse] } = await db.query(
-        'SELECT verse_data FROM daily_verses WHERE date = $1 AND translation = $2',
-        [today, translation]
-      );
-
-      if (cachedVerse) {
-        return res.json({
-          success: true,
-          data: cachedVerse.verse_data,
-          translation,
-          cached: true
-        });
-      }
-
-      // Fetch from API
-      const fetch = (await import('node-fetch')).default;
-      const losungApiKey = process.env.LOSUNG_API_KEY;
-      if (!losungApiKey) {
-        console.error('LOSUNG_API_KEY Umgebungsvariable fehlt');
-        return res.status(503).json({ error: 'Losung-Dienst nicht verfügbar' });
-      }
-      const apiUrl = `https://losung.konfi-quest.de/api/?api_key=${losungApiKey}&translation=${translation}`;
-
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'Konfi-Quest-App/1.0'
-        },
-        timeout: 10000
-      });
-
-      if (!response.ok) {
-        throw new Error(`Losungen API error: ${response.status}`);
-      }
-
-      const losungData = await response.json();
-
-      if (!losungData.success) {
-        throw new Error('Losungen API returned error');
-      }
-
-      // Cache
-      try {
-        await db.query(
-          'INSERT INTO daily_verses (date, translation, verse_data) VALUES ($1, $2, $3) ON CONFLICT (date, translation) DO NOTHING',
-          [today, translation, losungData.data]
-        );
-      } catch (cacheErr) {
-        console.error('Cache write error:', cacheErr.message);
-      }
-
-      res.json({
-        success: true,
-        data: losungData.data,
-        translation
-      });
+      const result = await fetchTageslosung(db, 'LUT');
+      res.json({ success: true, ...result });
     } catch (err) {
       console.error('Tageslosung error:', err.message);
       res.status(500).json({ success: false, error: 'Tageslosung konnte nicht geladen werden' });
