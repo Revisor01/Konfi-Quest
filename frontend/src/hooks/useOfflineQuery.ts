@@ -49,13 +49,15 @@ export function useOfflineQuery<T>(
   const onSuccessRef = useRef(onSuccess);
   const onErrorRef = useRef(onError);
   const selectRef = useRef(select);
+  const fetcherRef = useRef(fetcher);
   onSuccessRef.current = onSuccess;
   onErrorRef.current = onError;
   selectRef.current = select;
+  fetcherRef.current = fetcher;
 
   const revalidate = useCallback(async () => {
     try {
-      const freshData = await fetcher();
+      const freshData = await fetcherRef.current();
       // Race-Condition: Prüfen ob Key sich geändert hat
       if (!mountedRef.current || currentKeyRef.current !== cacheKey) return;
 
@@ -83,7 +85,7 @@ export function useOfflineQuery<T>(
       }
       onErrorRef.current?.(err instanceof Error ? err : new Error(message));
     }
-  }, [cacheKey, fetcher, ttl]);
+  }, [cacheKey, ttl]);
 
   // Initial Load
   useEffect(() => {
