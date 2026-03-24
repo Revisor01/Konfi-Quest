@@ -44,6 +44,16 @@ Verbleibende Tech-Debt abgearbeitet: bcrypt async, Badge/Notification N+1 elimin
 
 Auth-Routes auf RBAC migriert (gesperrte User sofort blockiert), Magic-Bytes Upload-Validierung, Badge-Cron Bulk-Query, verifyTokenRBAC LRU-Cache, chatUtils dynamischer Admin, bookingUtils extrahiert, useOfflineQuery fetcherRef stabilisiert. 2 Phasen, 3 Plans, 7 Requirements.
 
+## Current Milestone: v2.8 Design-Polish
+
+**Goal:** ~50 UI-Fixes und Design-Verbesserungen ueber alle Bereiche (Teamer, Konfi, Admin, Allgemein) — letzte visuelle Bereinigung vor Launch-Vorbereitung.
+
+**Target features:**
+- Teamer:innen Dashboard/Chat/Events Fixes (11 Items)
+- Konfi Dashboard/Chat/Badges/Historie/Profil Fixes (14 Items)
+- Admin Aktivitaeten/Slider/Zertifikate/Chat/Events/Material Fixes (~25 Items)
+- Globale Listen-Abstands-Konsistenz
+
 ## Geplant: v3.0 Onboarding + Landing
 
 **Goal:** Onboarding-Flow, Landing Website mit Erklaerung, Github Readme, Wiki — letzter Schritt vor oeffentlichem Launch.
@@ -146,7 +156,7 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 
 ### Active
 
-(Keine aktiven Requirements — naechster Milestone definiert neue)
+(Definiert in REQUIREMENTS.md fuer v2.8 Design-Polish)
 
 ### Out of Scope
 
@@ -260,4 +270,4 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | file-type Magic-Bytes Upload | Client-MIME-Header allein nicht vertrauenswuerdig | Bestaetigt v2.7 |
 
 ---
-*Last updated: 2026-03-24 after v2.7 milestone*
+*Last updated: 2026-03-24 after v2.8 milestone start*
