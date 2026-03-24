@@ -502,6 +502,30 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
   });
 
 
+  // Get current user's jahrgang assignments (must be before /:id route)
+  router.get('/me/jahrgaenge', rbacVerifier, async (req, res) => {
+    const userId = req.user.id;
+    const organizationId = req.user.organization_id;
+
+    const query = `
+      SELECT j.id, j.name, uja.can_view, uja.can_edit, uja.assigned_at,
+             assigner.display_name as assigned_by_name
+      FROM user_jahrgang_assignments uja
+      JOIN jahrgaenge j ON uja.jahrgang_id = j.id
+      LEFT JOIN users assigner ON uja.assigned_by = assigner.id
+      WHERE uja.user_id = $1 AND j.organization_id = $2
+      ORDER BY j.name
+    `;
+
+    try {
+      const { rows } = await db.query(query, [userId, organizationId]);
+      res.json(rows);
+    } catch (err) {
+      console.error('Database error in GET /users/me/jahrgaenge:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
   // Get user's jahrgang assignments
   router.get('/:id/jahrgaenge', rbacVerifier, requireOrgAdmin, async (req, res) => {
     const { id } = req.params;
