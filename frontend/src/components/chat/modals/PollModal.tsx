@@ -145,7 +145,7 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
       </IonHeader>
 
       <IonContent className="app-gradient-background">
-        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
           {/* Frage */}
           <IonList inset={true}>
