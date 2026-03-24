@@ -20,7 +20,6 @@ DELETE FROM chat_read_status WHERE user_id NOT IN (SELECT id FROM users);
 DELETE FROM chat_read_status WHERE room_id NOT IN (SELECT id FROM chat_rooms);
 DELETE FROM chat_poll_votes WHERE user_id NOT IN (SELECT id FROM users);
 DELETE FROM chat_poll_votes WHERE poll_id NOT IN (SELECT id FROM chat_polls);
-DELETE FROM chat_polls WHERE room_id NOT IN (SELECT id FROM chat_rooms);
 DELETE FROM bonus_points WHERE konfi_id NOT IN (SELECT id FROM users);
 DELETE FROM bonus_points WHERE organization_id NOT IN (SELECT id FROM organizations);
 DELETE FROM activity_requests WHERE konfi_id NOT IN (SELECT id FROM users);
@@ -121,17 +120,7 @@ DO $$ BEGIN
   END IF;
 END $$;
 
--- ====================================================================
--- chat_polls.room_id -> chat_rooms(id)
--- Tabelle wird in chat.js und organizations.js referenziert
--- ====================================================================
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints
-    WHERE constraint_name = 'fk_chat_polls_room' AND table_name = 'chat_polls') THEN
-    ALTER TABLE chat_polls ADD CONSTRAINT fk_chat_polls_room
-      FOREIGN KEY (room_id) REFERENCES chat_rooms(id) ON DELETE CASCADE;
-  END IF;
-END $$;
+-- chat_polls hat message_id (nicht room_id) — FK auf chat_messages existiert bereits
 
 -- ====================================================================
 -- chat_poll_votes.poll_id -> chat_polls(id)
