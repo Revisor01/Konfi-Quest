@@ -50,7 +50,9 @@ const LoginView: React.FC = () => {
       setUser(user);
 
       // Explicit navigation based on user type
-      if (user.type === 'admin') {
+      if (user.role_name === 'super_admin') {
+        router.push('/admin/organizations', 'root', 'replace');
+      } else if (user.type === 'admin') {
         router.push('/admin/konfis', 'root', 'replace');
       } else if (user.type === 'teamer') {
         router.push('/teamer/dashboard', 'root', 'replace');
