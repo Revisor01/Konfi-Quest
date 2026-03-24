@@ -88,7 +88,7 @@ CREATE INDEX IF NOT EXISTS idx_user_badges_user_org ON user_badges(user_id, orga
 -- WHERE a.organization_id = $1, WHERE a.category_id = $1
 -- ====================================================================
 CREATE INDEX IF NOT EXISTS idx_activities_organization_id ON activities(organization_id);
-CREATE INDEX IF NOT EXISTS idx_activities_category_id ON activities(category_id);
+-- activities hat keine category_id Spalte (Kategorien laufen ueber activity_category_assignments)
 
 -- ====================================================================
 -- custom_badges (badges.js, konfi.js, konfi-managment.js)
@@ -146,7 +146,7 @@ CREATE INDEX IF NOT EXISTS idx_chat_read_status_room_user ON chat_read_status(ro
 -- chat_polls (chat.js)
 -- WHERE p.room_id = $1, WHERE p.message_id = $1
 -- ====================================================================
-CREATE INDEX IF NOT EXISTS idx_chat_polls_room_id ON chat_polls(room_id);
+-- chat_polls hat keine room_id Spalte (hat message_id)
 CREATE INDEX IF NOT EXISTS idx_chat_polls_message_id ON chat_polls(message_id);
 
 -- ====================================================================
