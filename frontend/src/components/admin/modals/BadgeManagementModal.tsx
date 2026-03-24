@@ -611,13 +611,18 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         return (
           <IonItem lines="none" style={{ '--background': 'transparent', marginTop: '16px' }}>
             <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Zeitraum (Wochen)</IonLabel>
-            <IonRange
-              min={1} max={52} step={1}
-              pin={true} pinFormatter={(value: number) => `${value}`}
-              value={extraCriteria.weeks || 4}
-              onIonChange={(e) => setExtraCriteria({ ...extraCriteria, weeks: e.detail.value as number })}
-              disabled={loading}
-            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+              <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>1</span>
+              <IonRange
+                min={1} max={26} step={1}
+                pin={true} pinFormatter={(value: number) => `${value}`}
+                value={extraCriteria.weeks || 4}
+                onIonChange={(e) => setExtraCriteria({ ...extraCriteria, weeks: e.detail.value as number })}
+                disabled={loading}
+                style={{ flex: 1 }}
+              />
+              <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>26</span>
+            </div>
           </IonItem>
         );
 
@@ -1059,13 +1064,18 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             <IonList style={{ background: 'transparent' }} lines="none">
               <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px', marginTop: '16px' }}>
                 <IonLabel position="stacked" style={{ marginBottom: '8px' }}>{getValueLabel()}</IonLabel>
-                <IonRange
-                  min={1} max={20} step={1}
-                  pin={true} pinFormatter={(value: number) => `${value}`}
-                  value={formData.criteria_value}
-                  onIonChange={(e) => setFormData({ ...formData, criteria_value: e.detail.value as number })}
-                  disabled={loading}
-                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>1</span>
+                  <IonRange
+                    min={1} max={20} step={1}
+                    pin={true} pinFormatter={(value: number) => `${value}`}
+                    value={formData.criteria_value}
+                    onIonChange={(e) => setFormData({ ...formData, criteria_value: e.detail.value as number })}
+                    disabled={loading}
+                    style={{ flex: 1 }}
+                  />
+                  <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>20</span>
+                </div>
               </IonItem>
 
               {renderCriteriaSpecificFields()}

@@ -363,13 +363,18 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                 {formData.target_role !== 'teamer' && (
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Punkte *</IonLabel>
-                  <IonRange
-                    min={1} max={5} step={1}
-                    pin={true} pinFormatter={(value: number) => `${value}`}
-                    value={formData.points}
-                    onIonChange={(e) => setFormData({ ...formData, points: e.detail.value as number })}
-                    disabled={loading}
-                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>1</span>
+                    <IonRange
+                      min={1} max={5} step={1}
+                      pin={true} pinFormatter={(value: number) => `${value}`}
+                      value={formData.points}
+                      onIonChange={(e) => setFormData({ ...formData, points: e.detail.value as number })}
+                      disabled={loading}
+                      style={{ flex: 1 }}
+                    />
+                    <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>5</span>
+                  </div>
                 </IonItem>
                 )}
 

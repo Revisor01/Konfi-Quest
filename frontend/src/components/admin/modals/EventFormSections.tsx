@@ -186,13 +186,18 @@ export const CheckinSection = React.memo<CheckinSectionProps>(({
       <IonList>
         <IonItem lines="none">
           <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Check-in-Fenster (Minuten)</IonLabel>
-          <IonRange
-            min={5} max={120} step={5}
-            pin={true} pinFormatter={(value: number) => `${value}`}
-            value={formData.checkin_window}
-            onIonChange={(e) => setFormData({ ...formData, checkin_window: e.detail.value as number })}
-            disabled={loading}
-          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+            <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>5</span>
+            <IonRange
+              min={5} max={60} step={5}
+              pin={true} pinFormatter={(value: number) => `${value}`}
+              value={formData.checkin_window}
+              onIonChange={(e) => setFormData({ ...formData, checkin_window: e.detail.value as number })}
+              disabled={loading}
+              style={{ flex: 1 }}
+            />
+            <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>60</span>
+          </div>
         </IonItem>
         <p style={{ fontSize: '0.8rem', color: '#888', margin: '4px 16px 8px 16px', lineHeight: '1.4' }}>
           QR-Code Check-in ist {formData.checkin_window} Min. vor bis {formData.checkin_window} Min. nach Event-Start möglich
@@ -240,13 +245,18 @@ export const PointsParticipantsSection = React.memo<PointsParticipantsSectionPro
             {formData.max_participants !== 0 && (
               <IonItem lines="none">
                 <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Teilnehmer</IonLabel>
-                <IonRange
-                  min={1} max={100} step={1}
-                  pin={true} pinFormatter={(value: number) => `${value}`}
-                  value={formData.max_participants}
-                  onIonChange={(e) => setFormData({ ...formData, max_participants: e.detail.value as number })}
-                  disabled={loading}
-                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>1</span>
+                  <IonRange
+                    min={1} max={50} step={1}
+                    pin={true} pinFormatter={(value: number) => `${value}`}
+                    value={formData.max_participants}
+                    onIonChange={(e) => setFormData({ ...formData, max_participants: e.detail.value as number })}
+                    disabled={loading}
+                    style={{ flex: 1 }}
+                  />
+                  <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>50</span>
+                </div>
               </IonItem>
             )}
           </>
@@ -255,13 +265,18 @@ export const PointsParticipantsSection = React.memo<PointsParticipantsSectionPro
         {/* Punkte */}
         <IonItem lines="none">
           <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Punkte</IonLabel>
-          <IonRange
-            min={1} max={5} step={1}
-            pin={true} pinFormatter={(value: number) => `${value}`}
-            value={formData.points}
-            onIonChange={(e) => setFormData({ ...formData, points: e.detail.value as number })}
-            disabled={loading}
-          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+            <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>1</span>
+            <IonRange
+              min={1} max={5} step={1}
+              pin={true} pinFormatter={(value: number) => `${value}`}
+              value={formData.points}
+              onIonChange={(e) => setFormData({ ...formData, points: e.detail.value as number })}
+              disabled={loading}
+              style={{ flex: 1 }}
+            />
+            <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>5</span>
+          </div>
         </IonItem>
 
         <IonItem lines="none" style={{ '--background': 'transparent', paddingBottom: '8px', paddingTop: '16px' }}>
@@ -439,13 +454,18 @@ export const WaitlistSection = React.memo<WaitlistSectionProps>(({
         {formData.waitlist_enabled && (
           <IonItem lines="none">
             <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Wartelisten-Plätze</IonLabel>
-            <IonRange
-              min={1} max={10} step={1}
-              pin={true} pinFormatter={(value: number) => `${value}`}
-              value={formData.max_waitlist_size}
-              onIonChange={(e) => setFormData({ ...formData, max_waitlist_size: e.detail.value as number })}
-              disabled={loading}
-            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+              <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>1</span>
+              <IonRange
+                min={1} max={10} step={1}
+                pin={true} pinFormatter={(value: number) => `${value}`}
+                value={formData.max_waitlist_size}
+                onIonChange={(e) => setFormData({ ...formData, max_waitlist_size: e.detail.value as number })}
+                disabled={loading}
+                style={{ flex: 1 }}
+              />
+              <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>10</span>
+            </div>
           </IonItem>
         )}
       </IonList>
@@ -488,13 +508,18 @@ export const SeriesSection = React.memo<SeriesSectionProps>(({
             <>
               <IonItem lines="none">
                 <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Anzahl Events</IonLabel>
-                <IonRange
-                  min={2} max={52} step={1}
-                  pin={true} pinFormatter={(value: number) => `${value}`}
-                  value={formData.series_count}
-                  onIonChange={(e) => setFormData({ ...formData, series_count: e.detail.value as number })}
-                  disabled={loading}
-                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>2</span>
+                  <IonRange
+                    min={2} max={26} step={1}
+                    pin={true} pinFormatter={(value: number) => `${value}`}
+                    value={formData.series_count}
+                    onIonChange={(e) => setFormData({ ...formData, series_count: e.detail.value as number })}
+                    disabled={loading}
+                    style={{ flex: 1 }}
+                  />
+                  <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>26</span>
+                </div>
               </IonItem>
               <IonItem lines="none">
                 <IonLabel position="stacked">Intervall</IonLabel>

@@ -142,13 +142,18 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
 
                 <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
                   <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Punkte *</IonLabel>
-                  <IonRange
-                    min={1} max={50} step={1}
-                    pin={true} pinFormatter={(value: number) => `${value}`}
-                    value={points}
-                    onIonChange={(e) => setPoints(e.detail.value as number)}
-                    disabled={isSubmitting}
-                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>1</span>
+                    <IonRange
+                      min={1} max={10} step={1}
+                      pin={true} pinFormatter={(value: number) => `${value}`}
+                      value={points}
+                      onIonChange={(e) => setPoints(e.detail.value as number)}
+                      disabled={isSubmitting}
+                      style={{ flex: 1 }}
+                    />
+                    <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>10</span>
+                  </div>
                 </IonItem>
               </IonList>
 

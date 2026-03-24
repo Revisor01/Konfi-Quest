@@ -395,13 +395,18 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
                   {timeslot.max_participants !== 0 && (
                     <IonItem lines="none">
                       <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Teilnehmer pro Slot</IonLabel>
-                      <IonRange
-                        min={1} max={10} step={1}
-                        pin={true} pinFormatter={(value: number) => `${value}`}
-                        value={timeslot.max_participants}
-                        onIonChange={(e) => updateTimeslot(index, 'max_participants', e.detail.value as number)}
-                        disabled={loading}
-                      />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                        <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>1</span>
+                        <IonRange
+                          min={1} max={10} step={1}
+                          pin={true} pinFormatter={(value: number) => `${value}`}
+                          value={timeslot.max_participants}
+                          onIonChange={(e) => updateTimeslot(index, 'max_participants', e.detail.value as number)}
+                          disabled={loading}
+                          style={{ flex: 1 }}
+                        />
+                        <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>10</span>
+                      </div>
                     </IonItem>
                   )}
                 </IonList>

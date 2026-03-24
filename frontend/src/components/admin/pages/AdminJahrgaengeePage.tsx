@@ -262,13 +262,18 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                 {formData.gottesdienst_enabled && (
                   <IonItem lines="full" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Ziel Gottesdienst</IonLabel>
-                    <IonRange
-                      min={1} max={40} step={1}
-                      pin={true} pinFormatter={(value: number) => `${value}`}
-                      value={formData.target_gottesdienst}
-                      onIonChange={(e) => setFormData({ ...formData, target_gottesdienst: e.detail.value as number })}
-                      disabled={loading}
-                    />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                      <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>1</span>
+                      <IonRange
+                        min={1} max={20} step={1}
+                        pin={true} pinFormatter={(value: number) => `${value}`}
+                        value={formData.target_gottesdienst}
+                        onIonChange={(e) => setFormData({ ...formData, target_gottesdienst: e.detail.value as number })}
+                        disabled={loading}
+                        style={{ flex: 1 }}
+                      />
+                      <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>20</span>
+                    </div>
                   </IonItem>
                 )}
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
@@ -288,13 +293,18 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                 {formData.gemeinde_enabled && (
                   <IonItem lines="none" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Ziel Gemeinde</IonLabel>
-                    <IonRange
-                      min={1} max={40} step={1}
-                      pin={true} pinFormatter={(value: number) => `${value}`}
-                      value={formData.target_gemeinde}
-                      onIonChange={(e) => setFormData({ ...formData, target_gemeinde: e.detail.value as number })}
-                      disabled={loading}
-                    />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                      <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>1</span>
+                      <IonRange
+                        min={1} max={20} step={1}
+                        pin={true} pinFormatter={(value: number) => `${value}`}
+                        value={formData.target_gemeinde}
+                        onIonChange={(e) => setFormData({ ...formData, target_gemeinde: e.detail.value as number })}
+                        disabled={loading}
+                        style={{ flex: 1 }}
+                      />
+                      <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>20</span>
+                    </div>
                   </IonItem>
                 )}
               </IonList>
