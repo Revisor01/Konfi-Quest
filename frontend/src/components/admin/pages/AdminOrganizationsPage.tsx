@@ -51,14 +51,15 @@ const AdminOrganizationsPage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-organizations');
   
   // SWR-Cache für Organisationen
-  const { data: organizations, loading, revalidate: loadOrganizations } = useOfflineQuery<Organization[]>(
+  const { data: organizationsData, loading, refresh: loadOrganizations } = useOfflineQuery<Organization[]>(
     'super-admin-organizations',
     useCallback(async () => {
       const response = await api.get('/organizations');
       return response.data;
     }, []),
-    { ttl: CACHE_TTL.MEDIUM, fallback: [] }
+    { ttl: CACHE_TTL.STAMMDATEN }
   );
+  const organizations = organizationsData ?? [];
 
   // Modal state
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
