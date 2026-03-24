@@ -418,17 +418,6 @@ const verifyToken = async (req, res, next) => {
 };
 
 // ====================================================================
-// DATA DIRECTORIES SETUP
-// ====================================================================
-
-// GEÄNDERT: Das 'data'-Verzeichnis für die SQLite-DB wird nicht mehr benötigt.
-// Wir behalten es aber für den Fall, dass andere Daten dort landen.
-const dataDir = path.join(__dirname, 'data');
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
-}
-
-// ====================================================================
 // ROUTE IMPORTS
 // ====================================================================
 
@@ -524,7 +513,7 @@ app.use('/api/material', materialRoutes(db, rbacVerifier, roleHelpers, materialU
 
 const { initializeChatRooms } = require('./utils/chatUtils');
 // Wir gehen davon aus, dass chatUtils.js bereits auf async/await umgestellt wurde
-setImmediate(initializeChatRooms(db));
+setImmediate(() => initializeChatRooms(db));
 
 // ====================================================================
 // BACKGROUND SERVICES INITIALIZATION

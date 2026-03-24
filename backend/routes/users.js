@@ -4,6 +4,8 @@ const router = express.Router();
 const { body, param } = require('express-validator');
 const { handleValidationErrors, commonValidations } = require('../middleware/validation');
 const { checkUserHierarchy, filterUsersByHierarchy } = require('../utils/roleHierarchy');
+const { validatePassword } = require('../utils/passwordUtils');
+const { invalidateUserCache } = require('../middleware/rbac');
 
 // User management routes
 // WICHTIGER HINWEIS: Das übergebene 'db'-Objekt ist eine PostgreSQL Pool-Instanz.
@@ -34,7 +36,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
 
   const validateResetPassword = [
     param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
-    body('password').isLength({ min: 6 }).withMessage('Passwort muss mindestens 6 Zeichen lang sein'),
+    body('password').isLength({ min: 8 }).withMessage('Passwort muss mindestens 8 Zeichen lang sein'),
     handleValidationErrors
   ];
 
@@ -165,6 +167,12 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
         return res.status(409).json({ error: 'Benutzername existiert bereits (muss systemweit eindeutig sein)' });
       }
 
+      // Passwort-Policy prüfen
+      const passwordError = validatePassword(password);
+      if (passwordError) {
+        return res.status(400).json({ error: passwordError });
+      }
+
       // Hash password
       const passwordHash = await bcrypt.hash(password, 10);
 
@@ -254,6 +262,11 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
       }
 
       res.json({ message: 'Benutzer erfolgreich aktualisiert' });
+
+      // Cache invalidieren damit neues Token sofort wirkt
+      if (role_id !== undefined) {
+        invalidateUserCache(parseInt(id));
+      }
 
       // Bei Rollenänderung: Socket.io-Verbindungen des Users trennen
       // damit der Client sich mit neuem Token (neue Rolle) neu verbindet
@@ -544,8 +557,9 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
     const { id } = req.params;
     const { password } = req.body;
 
-    if (!password || password.length < 6) {
-      return res.status(400).json({ error: 'Passwort muss mindestens 6 Zeichen lang sein' });
+    const passwordError = validatePassword(password || '');
+    if (passwordError) {
+      return res.status(400).json({ error: passwordError });
     }
 
     try {
