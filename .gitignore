@@ -124,3 +124,7 @@ docker-compose.yml
 # Firebase Config (API Keys)
 **/GoogleService-Info.plist
 **/google-services.json
+
+# APNs Keys
+docs/AuthKey_*.p8
+*.p8
