@@ -1,5 +1,17 @@
 # Milestones
 
+## v2.7 Backend-Hardening (Shipped: 2026-03-24)
+
+**Phases completed:** 2 phases, 3 plans, 7 tasks
+
+**Key accomplishments:**
+
+- Auth-Routes auf verifyTokenRBAC umgestellt und Magic-Bytes Upload-Validierung mit file-type@19 in alle 3 Upload-Pfade eingebaut
+- Badge-Cron N+1 durch Bulk Chat-Unread-Query eliminiert und verifyTokenRBAC mit LRU-Cache (30s TTL, 500 Eintraege) versehen
+- chatUtils dynamischer Admin-Lookup, bookingUtils mit 5 Shared-Funktionen, useOfflineQuery fetcherRef-Stabilisierung
+
+---
+
 ## v2.6 Final Polish + Bugfixes (Shipped: 2026-03-23)
 
 **Phases completed:** 2 phases, 3 plans, 7 tasks

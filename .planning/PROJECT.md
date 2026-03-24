@@ -40,18 +40,9 @@ Letzte Sicherheitsluecken geschlossen, Performance-Engpaesse beseitigt, Architek
 
 Verbleibende Tech-Debt abgearbeitet: bcrypt async, Badge/Notification N+1 eliminiert, URLs via ENV konfigurierbar, SMTP/QR-Fallbacks bereinigt, losungService extrahiert, SIGTERM-Handler, LiveUpdateContext useRef, Event-Navigation useIonRouter (schwarzer Screen gefixt), Badge-Progress streak/time_based implementiert. 2 Phasen, 3 Plans, 14 Requirements.
 
-## Current Milestone: v2.7 Backend-Hardening
+## Shipped: v2.7 Backend-Hardening (2026-03-24)
 
-**Goal:** Verbleibende Sicherheits- und Performance-Luecken im Backend schliessen bevor die App an die EKD geht.
-
-**Target features:**
-- Auth-Routes von verifyToken auf verifyTokenRBAC umstellen (gesperrte User sofort blockiert)
-- Hardcoded created_by=1 in chatUtils durch dynamischen Admin-Lookup ersetzen
-- Doppelte Event-Buchungslogik aus konfi.js/events.js in bookingUtils extrahieren
-- useOfflineQuery inline Fetcher stabilisieren (useCallback oder Ref-Pattern)
-- MIME Magic-Bytes-Validierung bei Uploads einbauen (file-type Paket)
-- backgroundService Badge-Check N+1 durch Bulk-Query ersetzen
-- verifyTokenRBAC DB-Query Caching (LRU, 30s TTL)
+Auth-Routes auf RBAC migriert (gesperrte User sofort blockiert), Magic-Bytes Upload-Validierung, Badge-Cron Bulk-Query, verifyTokenRBAC LRU-Cache, chatUtils dynamischer Admin, bookingUtils extrahiert, useOfflineQuery fetcherRef stabilisiert. 2 Phasen, 3 Plans, 7 Requirements.
 
 ## Geplant: v3.0 Onboarding + Landing
 
@@ -155,13 +146,7 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 
 ### Active
 
-- [ ] Auth-Routes auf verifyTokenRBAC umstellen
-- [ ] chatUtils created_by dynamisch
-- [ ] Event-Buchungslogik in bookingUtils extrahieren
-- [ ] useOfflineQuery Fetcher stabilisieren
-- [ ] MIME Magic-Bytes-Validierung
-- [ ] backgroundService Badge-Check Bulk
-- [ ] verifyTokenRBAC LRU-Cache
+(Keine aktiven Requirements — naechster Milestone definiert neue)
 
 ### Out of Scope
 
@@ -184,8 +169,9 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 - v2.3 shipped: Konfi + Teamer Wrapped (6 Phasen, 11 Plans, 51 Requirements, 2213 LOC neue Wrapped-Komponenten)
 - v2.5 shipped: Security-Hardening + Polish (4 Phasen, 6 Plans, 15 Requirements, 14 Dateien, +225/-135 Zeilen)
 - v2.6 shipped: Final Polish + Bugfixes (2 Phasen, 3 Plans, 14 Requirements)
-- Gesamt: 91 Phasen, 143 Plans ueber 16 Milestones shipped
-- Codebase: ~36.700 Zeilen (TS/TSX/CSS)
+- v2.7 shipped: Backend-Hardening (2 Phasen, 3 Plans, 7 Requirements)
+- Gesamt: 93 Phasen, 146 Plans ueber 17 Milestones shipped
+- Codebase: ~36.800 Zeilen (TS/TSX/CSS)
 - Frontend nutzt iOS 26 Theme und MD3 Theme (beide aktiv, platform-scoped)
 - Deployment: git push -> Portainer Docker auto-build -> Xcode Build fuer iOS-Test auf echtem Geraet
 - PostgreSQL-Migration: Alle 15 Backend-Routes vollstaendig migriert
@@ -269,4 +255,9 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | QR_SECRET Pflicht-ENV | Kein Fallback auf JWT_SECRET mehr | Bestaetigt v2.6 |
 
 ---
-*Last updated: 2026-03-23 after v2.7 milestone start*
+| verifyTokenRBAC LRU-Cache 30s | DB-Query pro Request eliminiert bei 500 aktiven Usern | Bestaetigt v2.7 |
+| bookingUtils Shared-Funktionen | Duplikat-Code aus konfi.js/events.js eliminiert | Bestaetigt v2.7 |
+| file-type Magic-Bytes Upload | Client-MIME-Header allein nicht vertrauenswuerdig | Bestaetigt v2.7 |
+
+---
+*Last updated: 2026-03-24 after v2.7 milestone*
