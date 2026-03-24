@@ -19,9 +19,9 @@ Requirements fuer Milestone v2.7 Backend-Hardening.
 
 ### Architektur (ARCH)
 
-- [ ] **ARCH-06**: chatUtils erstellt Raeume mit dynamischem Admin (erster aktiver Admin der Organisation) statt hardcodiertem created_by=1
-- [ ] **ARCH-07**: Event-Buchungslogik (Waitlist, Cancel, Nachruecken) liegt in bookingUtils.js — konfi.js und events.js delegieren dorthin
-- [ ] **ARCH-08**: useOfflineQuery Fetcher-Referenzen sind stabil (useCallback oder internes Ref-Pattern) — keine redundanten Revalidierungen bei Re-Render
+- [x] **ARCH-06**: chatUtils erstellt Raeume mit dynamischem Admin (erster aktiver Admin der Organisation) statt hardcodiertem created_by=1
+- [x] **ARCH-07**: Event-Buchungslogik (Waitlist, Cancel, Nachruecken) liegt in bookingUtils.js — konfi.js und events.js delegieren dorthin
+- [x] **ARCH-08**: useOfflineQuery Fetcher-Referenzen sind stabil (useCallback oder internes Ref-Pattern) — keine redundanten Revalidierungen bei Re-Render
 
 ## Out of Scope
 
@@ -43,9 +43,9 @@ Requirements fuer Milestone v2.7 Backend-Hardening.
 | SEC-08 | Phase 92 | Complete |
 | PERF-08 | Phase 92 | Complete |
 | PERF-09 | Phase 92 | Complete |
-| ARCH-06 | Phase 93 | Pending |
-| ARCH-07 | Phase 93 | Pending |
-| ARCH-08 | Phase 93 | Pending |
+| ARCH-06 | Phase 93 | Complete |
+| ARCH-07 | Phase 93 | Complete |
+| ARCH-08 | Phase 93 | Complete |
 
 **Coverage v2.7:**
 - v2.7 requirements: 7 total

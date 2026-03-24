@@ -252,7 +252,7 @@ Phase 91: Frontend-Fixes + Bugfixes (1 plan, complete)
 **Milestone Goal:** Verbleibende Sicherheits- und Performance-Luecken im Backend schliessen bevor die App an die EKD geht.
 
 - [x] **Phase 92: Sicherheit + Performance** - Auth-RBAC-Migration, MIME-Validierung, Badge-Bulk-Query, Token-Cache (completed 2026-03-23)
-- [ ] **Phase 93: Architektur-Refactoring** - chatUtils dynamisch, bookingUtils Extraktion, useOfflineQuery Fetcher-Stabilisierung
+- [x] **Phase 93: Architektur-Refactoring** - chatUtils dynamisch, bookingUtils Extraktion, useOfflineQuery Fetcher-Stabilisierung (completed 2026-03-24)
 
 ## Phase Details
 
@@ -282,7 +282,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 93-01: chatUtils + bookingUtils + Fetcher-Stabilisierung
+- [x] 93-01: chatUtils + bookingUtils + Fetcher-Stabilisierung
 
 ## Progress
 
@@ -292,4 +292,4 @@ Phases execute in numeric order: 92 -> 93
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 92. Sicherheit + Performance | 2/2 | Complete    | 2026-03-23 |
-| 93. Architektur-Refactoring | 0/1 | Not started | - |
+| 93. Architektur-Refactoring | 1/1 | Complete   | 2026-03-24 |
