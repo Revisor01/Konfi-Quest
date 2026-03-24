@@ -56,6 +56,12 @@ Alle v1.0-v2.6 Entscheidungen in PROJECT.md und milestones/ archiviert.
 
 (keine)
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260324-k6j | GitHub README mit allen 17 Milestones | 2026-03-24 | 38fede8 | [260324-k6j](./quick/260324-k6j-github-readme-aktualisieren-mit-allen-17/) |
+
 ## Session Continuity
 
 Last session: 2026-03-24T00:11:44.367Z
