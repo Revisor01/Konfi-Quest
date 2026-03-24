@@ -65,7 +65,6 @@ const AdminSettingsPage: React.FC = () => {
               window.location.href = '/';
             } catch (error) {
 console.error('Logout error:', error);
-              // Fallback: direct logout even if token removal fails
               await clearAuth();
               window.location.href = '/';
             }
