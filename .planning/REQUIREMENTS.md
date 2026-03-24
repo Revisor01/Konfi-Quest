@@ -17,7 +17,7 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 
 - [ ] **TCH-01**: Chat erstellen zeigt User-Liste korrekt an
 - [ ] **TCH-02**: Gruppenchats fuer Teamer:innen moeglich
-- [ ] **TCH-03**: Chat-Farbschema: Teamer/Team Rosa, Konfis Lila, Jahrgang Tuerkis
+- [x] **TCH-03**: Chat-Farbschema: Teamer/Team Rosa, Konfis Lila, Jahrgang Tuerkis
 - [ ] **TCH-04**: Chats werden zuverlaessig geladen
 
 ### Teamer Events
@@ -34,7 +34,7 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 
 ### Konfi Chat
 
-- [ ] **KCH-01**: "Team"-Chat in korrekter Farbe
+- [x] **KCH-01**: "Team"-Chat in korrekter Farbe
 
 ### Konfi Events
 
@@ -88,7 +88,7 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 
 ### Admin Chat
 
-- [ ] **ACH-01**: Chat-Farblogik konsistent (Teamer Rosa, Konfi Lila, Jahrgang Tuerkis)
+- [x] **ACH-01**: Chat-Farblogik konsistent (Teamer Rosa, Konfi Lila, Jahrgang Tuerkis)
 - [ ] **ACH-02**: User-Liste beim Chat-Erstellen performant laden
 - [ ] **ACH-03**: Modal "Mitglieder hinzufuegen" korrektes Pattern (Haekchen, Umrandungen, Farben)
 - [ ] **ACH-04**: Poll-erstellen Modal: Abstaende rechts/links pruefen
@@ -161,10 +161,10 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 | AUI-02 | Phase 94 | Complete |
 | TCH-01 | Phase 95 | Pending |
 | TCH-02 | Phase 95 | Pending |
-| TCH-03 | Phase 95 | Pending |
+| TCH-03 | Phase 95 | Complete |
 | TCH-04 | Phase 95 | Pending |
-| KCH-01 | Phase 95 | Pending |
-| ACH-01 | Phase 95 | Pending |
+| KCH-01 | Phase 95 | Complete |
+| ACH-01 | Phase 95 | Complete |
 | ACH-02 | Phase 95 | Pending |
 | ACH-03 | Phase 95 | Pending |
 | ACH-04 | Phase 95 | Pending |
