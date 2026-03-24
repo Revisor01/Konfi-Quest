@@ -70,6 +70,24 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
 
   const isAdmin = user?.type === 'admin';
 
+  const getRoomColor = (type: string): string => {
+    switch (type) {
+      case 'admin': return '#e11d48';   // Rosa — Team/Admin-Chat
+      case 'jahrgang': return '#06b6d4'; // Tuerkis
+      case 'group': return '#f97316';    // Orange
+      default: return '#5b21b6';         // Lila — Konfi/Direct
+    }
+  };
+
+  const getRoomColorClass = (type: string): string => {
+    switch (type) {
+      case 'admin': return 'team';
+      case 'jahrgang': return 'chat-jahrgang';
+      case 'group': return 'group';
+      default: return 'konfi';
+    }
+  };
+
   // Nutze den useModalPage Hook, um die Seite zu registrieren
   const location = useLocation();
   // Bestimme die korrekte Tab-ID basierend auf dem Pfad
@@ -140,7 +158,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     if (!isOnline) return;
     presentAlert({
       header: 'Chat löschen?',
-      message: `"${room.name}" und alle Nachrichten unwiderruflich löschen?`,
+      message: `"${room.name}" wird für alle Teilnehmer:innen gelöscht. Alle Nachrichten und Dateien gehen unwiderruflich verloren.`,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
@@ -379,10 +397,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
               ) : (
                 <IonList lines="none" style={{ background: 'transparent', padding: '0' }}>
                   {filteredRooms.map((room, index) => {
-                    // Admin/Jahrgang türkis, Direkt lila, Gruppe orange
-                    const color = room.type === 'admin' ? '#06b6d4' :
-                                  room.type === 'jahrgang' ? '#06b6d4' :
-                                  room.type === 'group' ? '#f97316' : '#5b21b6';
+                    const colorClass = getRoomColorClass(room.type);
                     // Nur Admins dürfen direct/group Chats löschen
                     const canDelete = isAdmin && (room.type === 'direct' || room.type === 'group');
 
@@ -403,10 +418,9 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                           }}
                         >
                           <div
-                            className="app-list-item"
+                            className={`app-list-item app-list-item--${colorClass}`}
                             style={{
                               width: '100%',
-                              borderLeftColor: color,
                               position: 'relative',
                               overflow: 'hidden'
                             }}
@@ -414,8 +428,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                             {/* Eselsohr-Style Corner Badge - Chat-Typ */}
                             <div className="app-corner-badges">
                               <div
-                                className="app-corner-badge"
-                                style={{ backgroundColor: color }}
+                                className={`app-corner-badge app-corner-badge--${colorClass}`}
                               >
                                 {getRoomSubtitle(room)}
                               </div>
@@ -426,8 +439,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                                 {/* Icon mit Unread-Badge */}
                                 <div style={{ position: 'relative', flexShrink: 0 }}>
                                   <div
-                                    className="app-icon-circle app-icon-circle--lg"
-                                    style={{ backgroundColor: color }}
+                                    className={`app-icon-circle app-icon-circle--lg app-icon-circle--${colorClass}`}
                                   >
                                     <IonIcon icon={getRoomIcon(room)} />
                                   </div>

@@ -139,6 +139,12 @@ ion-item.app-list-item:last-child {
 .app-list-item--requests, ion-item.app-list-item--requests { border-left-color: #5b21b6; }
 .app-list-item--jahrgang, ion-item.app-list-item--jahrgang { border-left-color: #007aff; }
 
+/* Chat-Raumtyp-Farben */
+.app-list-item--team, ion-item.app-list-item--team { border-left-color: #e11d48; }
+.app-list-item--chat-jahrgang, ion-item.app-list-item--chat-jahrgang { border-left-color: #06b6d4; }
+.app-list-item--konfi, ion-item.app-list-item--konfi { border-left-color: #5b21b6; }
+.app-list-item--group, ion-item.app-list-item--group { border-left-color: #f97316; }
+
 /* Selected State fuer List Items - Events (Rot) */
 .app-list-item--events.app-list-item--selected {
   border-color: #dc2626;
@@ -148,6 +154,11 @@ ion-item.app-list-item:last-child {
 .app-list-item--chat.app-list-item--selected {
   border-color: #06b6d4;
   background: rgba(6, 182, 212, 0.08);
+}
+/* Selected State fuer Chat-Raumtypen */
+.app-list-item--team.app-list-item--selected {
+  border-color: #e11d48;
+  background: rgba(225, 29, 72, 0.08);
 }
 /* Selected State fuer List Items - Warning/Konfi (Orange) */
 .app-list-item--warning.app-list-item--selected {
@@ -316,6 +327,11 @@ ion-item.app-list-item:last-child {
 .app-corner-badge--info { background-color: #007aff; }
 .app-corner-badge--chat { background-color: #06b6d4; }
 .app-corner-badge--purple { background-color: #5b21b6; }
+/* Chat-Raumtyp-Farben */
+.app-corner-badge--team { background-color: #e11d48; }
+.app-corner-badge--chat-jahrgang { background-color: #06b6d4; }
+.app-corner-badge--konfi { background-color: #5b21b6; }
+.app-corner-badge--group { background-color: #f97316; }
 /* Queue-Badge (orange, Icon-only, schmaler Padding) */
 .app-corner-badge--queue {
   background-color: #ff9500;
@@ -432,6 +448,11 @@ ion-list[inset] ion-list-header {
 .app-icon-circle--organizations { background-color: #667eea; }
 .app-icon-circle--badges { background-color: #f59e0b; }
 .app-icon-circle--categories { background-color: #0ea5e9; }
+/* Chat-Raumtyp-Farben */
+.app-icon-circle--team { background-color: #e11d48; }
+.app-icon-circle--chat-jahrgang { background-color: #06b6d4; }
+.app-icon-circle--konfi { background-color: #5b21b6; }
+.app-icon-circle--group { background-color: #f97316; }
 .app-icon-circle--material { background-color: #d97706; }
 .app-icon-circle--jahrgang { background-color: #007aff; }
 .app-icon-circle ion-icon {
