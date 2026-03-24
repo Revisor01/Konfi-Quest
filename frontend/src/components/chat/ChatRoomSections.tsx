@@ -34,6 +34,7 @@ export const getSafePreviewUrl = (url: string | null | undefined): string | null
 // ChatHeader Komponente
 interface ChatHeaderProps {
   roomName: string;
+  roomType: string;
   isAdmin: boolean;
   canLeave: boolean;
   isOnline: boolean;
@@ -43,8 +44,18 @@ interface ChatHeaderProps {
   onLeaveChat: () => void;
 }
 
+const getHeaderColor = (roomType: string): string => {
+  switch (roomType) {
+    case 'admin': return '#e11d48';
+    case 'jahrgang': return '#06b6d4';
+    case 'group': return '#f97316';
+    default: return '#5b21b6';
+  }
+};
+
 export const ChatHeader = React.memo<ChatHeaderProps>(({
   roomName,
+  roomType,
   isAdmin,
   canLeave,
   isOnline,
@@ -52,35 +63,38 @@ export const ChatHeader = React.memo<ChatHeaderProps>(({
   onOpenMembers,
   onOpenPoll,
   onLeaveChat
-}) => (
-  <IonHeader translucent={true}>
-    <IonToolbar>
-      <IonButtons slot="start">
-        <IonButton onClick={onBack}>
-          <IonIcon icon={arrowBack} />
-        </IonButton>
-      </IonButtons>
-      <IonTitle>{roomName}</IonTitle>
-      <IonButtons slot="end">
-        {isAdmin && (
-          <>
-            <IonButton onClick={onOpenMembers}>
-              <IonIcon icon={people} />
-            </IonButton>
-            <IonButton onClick={onOpenPoll}>
-              <IonIcon icon={barChart} />
-            </IonButton>
-          </>
-        )}
-        {canLeave && (
-          <IonButton disabled={!isOnline} onClick={onLeaveChat}>
-            <IonIcon icon={ellipsisVertical} />
+}) => {
+  const headerColor = getHeaderColor(roomType);
+  return (
+    <IonHeader translucent={true}>
+      <IonToolbar style={{ borderBottom: `3px solid ${headerColor}` }}>
+        <IonButtons slot="start">
+          <IonButton onClick={onBack}>
+            <IonIcon icon={arrowBack} />
           </IonButton>
-        )}
-      </IonButtons>
-    </IonToolbar>
-  </IonHeader>
-));
+        </IonButtons>
+        <IonTitle>{roomName}</IonTitle>
+        <IonButtons slot="end">
+          {isAdmin && (
+            <>
+              <IonButton onClick={onOpenMembers}>
+                <IonIcon icon={people} />
+              </IonButton>
+              <IonButton onClick={onOpenPoll}>
+                <IonIcon icon={barChart} />
+              </IonButton>
+            </>
+          )}
+          {canLeave && (
+            <IonButton disabled={!isOnline} onClick={onLeaveChat}>
+              <IonIcon icon={ellipsisVertical} />
+            </IonButton>
+          )}
+        </IonButtons>
+      </IonToolbar>
+    </IonHeader>
+  );
+});
 
 // ReplyPreview Komponente
 interface ReplyPreviewProps {

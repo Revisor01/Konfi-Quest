@@ -982,6 +982,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     <>
       <ChatHeader
         roomName={getDisplayRoomName()}
+        roomType={room?.type ?? 'group'}
         isAdmin={user?.type === 'admin'}
         canLeave={canLeaveChat()}
         isOnline={isOnline}
