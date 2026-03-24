@@ -291,7 +291,11 @@ Plans:
   3. Teamer:innen koennen Gruppenchats erstellen
   4. Chats werden zuverlaessig geladen ohne Reload-Probleme
   5. Admins koennen einen Chat nicht verlassen; der Hinweistext erklaert warum; Chat-Loeschverhalten bei verbleibenden Teilnehmer:innen ist korrekt
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 95-01-PLAN.md -- Chat-Farbschema CSS-Klassen + ChatOverview + ChatRoom Header
+- [ ] 95-02-PLAN.md -- Chat-Bugs: Teamer Gruppenchats, MembersModal, PollModal, Ladeprobleme
+- [ ] 95-03-PLAN.md -- Admin Chat-Regeln: Leave-Sperre + Loesch-Dialog
 
 ### Phase 96: Konfi UI
 **Goal**: Konfis sehen ein poliertes, konsistentes UI in allen eigenen Bereichen
@@ -354,7 +358,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 94. Globale UI-Patterns | 1/1 | Complete    | 2026-03-24 |
-| 95. Chat-Farbschema + Korrekturen | 0/? | Not started | - |
+| 95. Chat-Farbschema + Korrekturen | 0/3 | Not started | - |
 | 96. Konfi UI | 0/? | Not started | - |
 | 97. Teamer UI | 0/? | Not started | - |
 | 98. Admin Aktivitaeten, Details, Antraege, Profil, Jahrgaenge | 0/? | Not started | - |
