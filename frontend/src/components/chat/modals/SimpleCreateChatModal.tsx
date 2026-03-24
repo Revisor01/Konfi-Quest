@@ -167,8 +167,8 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
 
         setUsers(availableUsers);
 
-      } else if (user?.type === 'admin') {
-        // Admin: Verwende bestehende Admin-APIs
+      } else if (user?.type === 'admin' || user?.type === 'teamer') {
+        // Admin/Teamer: Verwende bestehende Admin-APIs
         const [konfisRes, userJahrgangRes] = await Promise.all([
           api.get('/admin/konfis'),
           api.get('/admin/users/me/jahrgaenge').catch(() => ({ data: [] }))
@@ -383,7 +383,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
   };
 
   const getAvailableChatTypes = () => {
-    if (user?.type === 'admin') {
+    if (user?.type === 'admin' || user?.type === 'teamer') {
       return [
         { value: 'direct', label: 'Direktnachricht' },
         { value: 'group', label: 'Gruppenchat' }
@@ -398,6 +398,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
 
   const isFormValid = chatType === 'direct' || (chatType === 'group' && groupName.trim() && selectedParticipants.size > 0);
   const isAdmin = user?.type === 'admin';
+  const isTeamer = user?.type === 'teamer';
 
   return (
     <IonPage ref={pageRef}>
@@ -418,8 +419,8 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
             </IonButtons>
           )}
         </IonToolbar>
-        {/* Segment im Header für Admin */}
-        {isAdmin && (
+        {/* Segment im Header für Admin und Teamer:innen */}
+        {(isAdmin || isTeamer) && (
           <IonToolbar>
             <IonSegment
               value={chatType}
@@ -486,8 +487,8 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                   placeholder="Person suchen..."
                 />
               </IonItem>
-              {/* Rolle Filter - nur für Admins */}
-              {isAdmin && (
+              {/* Rolle Filter - für Admins und Teamer:innen */}
+              {(isAdmin || isTeamer) && (
                 <IonItem>
                   <IonIcon
                     icon={personOutline}
@@ -507,8 +508,8 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                   </IonSelect>
                 </IonItem>
               )}
-              {/* Jahrgang Filter - nur für Admins */}
-              {isAdmin && availableJahrgaenge.length > 0 && (
+              {/* Jahrgang Filter - für Admins und Teamer:innen */}
+              {(isAdmin || isTeamer) && availableJahrgaenge.length > 0 && (
                 <IonItem>
                   <IonIcon
                     icon={calendar}

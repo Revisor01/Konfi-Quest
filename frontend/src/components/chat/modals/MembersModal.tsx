@@ -102,25 +102,40 @@ const MembersModal: React.FC<MembersModalProps> = ({
 
   const loadAllUsers = async () => {
     try {
-      const [konfisRes, adminsRes] = await Promise.all([
+      const [konfisRes, userJahrgangRes, adminsRes] = await Promise.all([
         api.get('/admin/konfis'),
-        api.get('/users').catch(() => ({ data: [] }))
+        api.get('/admin/users/me/jahrgaenge').catch(() => ({ data: [] })),
+        api.get('/admin/users').catch(() => ({ data: [] }))
       ]);
 
-      const allUsers: ChatUser[] = [
-        ...konfisRes.data.map((konfi: any) => ({
+      // Jahrgangs-Filter wie SimpleCreateChatModal
+      let allowedJahrgangIds: number[] = [];
+      if (userJahrgangRes.data.length > 0) {
+        allowedJahrgangIds = userJahrgangRes.data.map((j: any) => j.jahrgang_id);
+      }
+
+      const konfis: ChatUser[] = konfisRes.data
+        .filter((konfi: any) => {
+          if (allowedJahrgangIds.length > 0) {
+            return konfi.jahrgang_id && allowedJahrgangIds.includes(konfi.jahrgang_id);
+          }
+          return true;
+        })
+        .map((konfi: any) => ({
           ...konfi,
           type: 'konfi' as const,
           jahrgang_name: konfi.jahrgang_name || konfi.jahrgang
-        })),
-        ...adminsRes.data.map((admin: any) => ({
+        }));
+
+      const adminUsers: ChatUser[] = adminsRes.data
+        .filter((u: any) => u.role_name !== 'konfi')
+        .map((admin: any) => ({
           ...admin,
           type: 'admin' as const,
           role_description: admin.role_title || admin.role_display_name
-        }))
-      ];
+        }));
 
-      setAllUsers(allUsers);
+      setAllUsers([...konfis, ...adminUsers]);
     } catch (err) {
  console.error('Error loading users:', err);
     }
@@ -293,12 +308,12 @@ const MembersModal: React.FC<MembersModalProps> = ({
     const participantId = `${isAdmin ? 'admin' : 'konfi'}-${'user_id' in targetUser ? targetUser.user_id : targetUser.id}`;
     const roleText = getRoleText(targetUser);
     const jahrgang = getJahrgang(targetUser);
-    const badgeColor = isAdmin ? '#06b6d4' : '#ff9500';
+    const badgeColor = isAdmin ? '#06b6d4' : '#5b21b6';
 
     return (
       <div
         key={participantId}
-        className={`app-list-item ${isAdmin ? 'app-list-item--chat' : 'app-list-item--warning'} ${isSelected ? 'app-list-item--selected' : ''}`}
+        className={`app-list-item ${isAdmin ? 'app-list-item--chat' : 'app-list-item--primary'} ${isSelected ? 'app-list-item--selected' : ''}`}
         onClick={isSelectable ? onToggle : undefined}
         style={{ cursor: isSelectable ? 'pointer' : 'default', position: 'relative', overflow: 'hidden', width: '100%' }}
       >
@@ -314,7 +329,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
 
         <div className="app-list-item__row">
           <div className="app-list-item__main">
-            <div className={`app-icon-circle app-icon-circle--lg ${isAdmin ? 'app-icon-circle--chat' : 'app-icon-circle--warning'}`}>
+            <div className={`app-icon-circle app-icon-circle--lg ${isAdmin ? 'app-icon-circle--chat' : 'app-icon-circle--primary'}`}>
               <IonIcon icon={person} />
             </div>
             <div className="app-list-item__content">
