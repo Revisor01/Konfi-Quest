@@ -1017,13 +1017,14 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.status(404).json({ error: 'Raum nicht gefunden' });
       }
 
-      // Check if room type is leavable
-      if (room.type === 'jahrgang' || room.type === 'direct') {
-        return res.status(400).json({ error: 'Dieser Chat kann nicht verlassen werden' });
+      // Admins duerfen NIEMALS irgendeinen Chat verlassen
+      if (userType === 'admin') {
+        return res.status(403).json({ error: 'Admins können Chats nicht verlassen' });
       }
 
-      if (room.type === 'admin' && userType === 'admin') {
-        return res.status(403).json({ error: 'Admins können diesen Chat nicht verlassen' });
+      // Jahrgang und Direct sind generell nicht verlassbar
+      if (room.type === 'jahrgang' || room.type === 'direct') {
+        return res.status(400).json({ error: 'Dieser Chat kann nicht verlassen werden' });
       }
 
       const { rowCount } = await db.query(

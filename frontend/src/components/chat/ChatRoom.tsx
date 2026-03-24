@@ -947,8 +947,11 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
 
   const canLeaveChat = (): boolean => {
     if (!room) return false;
+    // Admins duerfen NIEMALS einen Chat verlassen
+    if (user?.type === 'admin') return false;
+    // Teamer:innen duerfen group und admin-Chats verlassen
     if (room.type === 'group') return true;
-    if (room.type === 'admin' && user?.type !== 'admin') return true;
+    if (room.type === 'admin') return true;
     return false;
   };
 
@@ -1006,6 +1009,20 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
+
+        {user?.type === 'admin' && room && (room.type === 'group' || room.type === 'admin') && (
+          <div style={{
+            margin: '8px 16px 0',
+            padding: '8px 12px',
+            backgroundColor: 'rgba(0,0,0,0.05)',
+            borderRadius: '8px',
+            fontSize: '0.8rem',
+            color: '#666',
+            textAlign: 'center'
+          }}>
+            Admins können Chats nicht verlassen. Chats können nur gelöscht werden.
+          </div>
+        )}
 
         <div style={{ paddingBottom: '120px' }}>
           {messages.map((message) => (
