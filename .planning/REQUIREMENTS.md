@@ -157,13 +157,76 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (wird durch Roadmap gefuellt) | | |
+| AUI-01 | Phase 94 | Pending |
+| AUI-02 | Phase 94 | Pending |
+| TCH-01 | Phase 95 | Pending |
+| TCH-02 | Phase 95 | Pending |
+| TCH-03 | Phase 95 | Pending |
+| TCH-04 | Phase 95 | Pending |
+| KCH-01 | Phase 95 | Pending |
+| ACH-01 | Phase 95 | Pending |
+| ACH-02 | Phase 95 | Pending |
+| ACH-03 | Phase 95 | Pending |
+| ACH-04 | Phase 95 | Pending |
+| ACH-05 | Phase 95 | Pending |
+| ACH-06 | Phase 95 | Pending |
+| KDB-01 | Phase 96 | Pending |
+| KDB-02 | Phase 96 | Pending |
+| KEV-01 | Phase 96 | Pending |
+| KEV-02 | Phase 96 | Pending |
+| KEV-03 | Phase 96 | Pending |
+| KBD-01 | Phase 96 | Pending |
+| KBD-02 | Phase 96 | Pending |
+| KBD-03 | Phase 96 | Pending |
+| KAK-01 | Phase 96 | Pending |
+| KHI-01 | Phase 96 | Pending |
+| KHI-02 | Phase 96 | Pending |
+| KPR-01 | Phase 96 | Pending |
+| KPR-02 | Phase 96 | Pending |
+| TDB-01 | Phase 97 | Pending |
+| TDB-02 | Phase 97 | Pending |
+| TDB-03 | Phase 97 | Pending |
+| TEV-01 | Phase 97 | Pending |
+| TEV-02 | Phase 97 | Pending |
+| TEV-03 | Phase 97 | Pending |
+| TEV-04 | Phase 97 | Pending |
+| AAK-01 | Phase 98 | Pending |
+| AAK-02 | Phase 98 | Pending |
+| AAK-03 | Phase 98 | Pending |
+| AAK-04 | Phase 98 | Pending |
+| AAK-05 | Phase 98 | Pending |
+| ATD-01 | Phase 98 | Pending |
+| AAN-01 | Phase 98 | Pending |
+| AAN-02 | Phase 98 | Pending |
+| APR-01 | Phase 98 | Pending |
+| APR-02 | Phase 98 | Pending |
+| AJG-01 | Phase 98 | Pending |
+| AEV-01 | Phase 99 | Pending |
+| AEV-02 | Phase 99 | Pending |
+| AEV-03 | Phase 99 | Pending |
+| AEV-04 | Phase 99 | Pending |
+| AEV-05 | Phase 99 | Pending |
+| AEV-06 | Phase 99 | Pending |
+| AEV-07 | Phase 99 | Pending |
+| AEV-08 | Phase 99 | Pending |
+| ABG-01 | Phase 99 | Pending |
+| ABG-02 | Phase 99 | Pending |
+| AZE-01 | Phase 100 | Pending |
+| AZE-02 | Phase 100 | Pending |
+| AZE-03 | Phase 100 | Pending |
+| AZE-04 | Phase 100 | Pending |
+| AMA-01 | Phase 100 | Pending |
+| AMA-02 | Phase 100 | Pending |
+| AMA-03 | Phase 100 | Pending |
+| AMA-04 | Phase 100 | Pending |
+| ADA-01 | Phase 100 | Pending |
+| ADA-02 | Phase 100 | Pending |
 
 **Coverage:**
-- v2.8 Requirements: 51 total
-- Mapped to phases: 0
-- Unmapped: 51
+- v2.8 Requirements: 64 total (Hinweis: urspruenglich als 51 angegeben, tatsaechlich 64 durch Zaehlung)
+- Mapped to phases: 64
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-24*
-*Last updated: 2026-03-24 after initial definition*
+*Last updated: 2026-03-24 after roadmap creation (Phase 94-100)*

@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v2.8
 milestone_name: Design-Polish
-status: defining_requirements
+status: roadmap_ready
 last_updated: "2026-03-24"
 progress:
-  total_phases: 0
+  total_phases: 7
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -22,14 +22,40 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 94 (not started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-03-24 — Milestone v2.8 started
+Status: Roadmap erstellt, bereit fuer Phase-Planning
+Last activity: 2026-03-24 — Roadmap v2.8 erstellt (7 Phasen, 64 Requirements)
+
+```
+v2.8 Progress: [                                        ] 0/7 Phasen
+```
+
+## Performance Metrics
+
+| Metric | Value |
+|--------|-------|
+| Requirements total | 64 |
+| Requirements mapped | 64 |
+| Phases planned | 7 |
+| Phases completed | 0 |
+| Plans completed | 0 |
 
 ## Accumulated Context
 
 Alle v1.0-v2.7 Entscheidungen in PROJECT.md und milestones/ archiviert.
+
+### Phase-Uebersicht v2.8
+
+| Phase | Requirements | Inhalt |
+|-------|-------------|--------|
+| 94 | AUI-01, AUI-02 | Globale UI-Patterns (Slider, Listen-Abstand) |
+| 95 | TCH-01-04, KCH-01, ACH-01-06 | Chat-Farbschema + Korrekturen |
+| 96 | KDB-01-02, KEV-01-03, KBD-01-03, KAK-01, KHI-01-02, KPR-01-02 | Konfi UI |
+| 97 | TDB-01-03, TEV-01-04 | Teamer UI |
+| 98 | AAK-01-05, ATD-01, AAN-01-02, APR-01-02, AJG-01 | Admin Teil 1 |
+| 99 | AEV-01-08, ABG-01-02 | Admin Events + Bugs |
+| 100 | AZE-01-04, AMA-01-04, ADA-01-02 | Admin Teil 2 |
 
 ### Pending Todos
 
