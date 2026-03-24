@@ -24,7 +24,8 @@ import {
   IonSegment,
   IonSegmentButton,
   useIonModal,
-  useIonAlert
+  useIonAlert,
+  useIonViewWillEnter
 } from '@ionic/react';
 import {
   chatbubbles,
@@ -133,6 +134,11 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     });
     return () => { unsubReconnect(); };
   }, [refresh]);
+
+  // Bei Rückkehr zur View (z.B. nach ChatRoom) Raumliste aktualisieren
+  useIonViewWillEnter(() => {
+    refresh();
+  });
 
   // Modal mit useIonModal Hook
   const [presentChatModalHook, dismissChatModalHook] = useIonModal(SimpleCreateChatModal, {
