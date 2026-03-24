@@ -92,8 +92,8 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 - [ ] **ACH-02**: User-Liste beim Chat-Erstellen performant laden
 - [ ] **ACH-03**: Modal "Mitglieder hinzufuegen" korrektes Pattern (Haekchen, Umrandungen, Farben)
 - [ ] **ACH-04**: Poll-erstellen Modal: Abstaende rechts/links pruefen
-- [ ] **ACH-05**: Chat verlassen: Admins nicht erlauben + Hinweis-Text
-- [ ] **ACH-06**: Chat loeschen: Verhalten bei anderen Teilnehmer:innen pruefen und fixen
+- [x] **ACH-05**: Chat verlassen: Admins nicht erlauben + Hinweis-Text
+- [x] **ACH-06**: Chat loeschen: Verhalten bei anderen Teilnehmer:innen pruefen und fixen
 
 ### Admin Events
 
@@ -168,8 +168,8 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 | ACH-02 | Phase 95 | Pending |
 | ACH-03 | Phase 95 | Pending |
 | ACH-04 | Phase 95 | Pending |
-| ACH-05 | Phase 95 | Pending |
-| ACH-06 | Phase 95 | Pending |
+| ACH-05 | Phase 95 | Complete |
+| ACH-06 | Phase 95 | Complete |
 | KDB-01 | Phase 96 | Pending |
 | KDB-02 | Phase 96 | Pending |
 | KEV-01 | Phase 96 | Pending |
