@@ -261,7 +261,7 @@ Phase 93: Architektur-Refactoring (1 plan, complete)
 ### v2.8 Design-Polish (Phases 94-100)
 
 - [x] **Phase 94: Globale UI-Patterns** - Slider-Verhalten und Listen-Abstands-Konsistenz als gemeinsame Basis (completed 2026-03-24)
-- [ ] **Phase 95: Chat-Farbschema + Korrekturen** - Einheitliches Farbschema und Bugs quer ueber alle Rollen
+- [x] **Phase 95: Chat-Farbschema + Korrekturen** - Einheitliches Farbschema und Bugs quer ueber alle Rollen (completed 2026-03-24)
 - [ ] **Phase 96: Konfi UI** - Dashboard, Events, Badges, Aktivitaeten, Historie, Profil
 - [ ] **Phase 97: Teamer UI** - Dashboard, Events, Material
 - [ ] **Phase 98: Admin Aktivitaeten, Details, Antraege, Profil, Jahrgaenge** - Admin Teil 1
@@ -294,7 +294,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [x] 95-01-PLAN.md -- Chat-Farbschema CSS-Klassen + ChatOverview + ChatRoom Header
-- [ ] 95-02-PLAN.md -- Chat-Bugs: Teamer Gruppenchats, MembersModal, PollModal, Ladeprobleme
+- [x] 95-02-PLAN.md -- Chat-Bugs: Teamer Gruppenchats, MembersModal, PollModal, Ladeprobleme
 - [x] 95-03-PLAN.md -- Admin Chat-Regeln: Leave-Sperre + Loesch-Dialog
 
 ### Phase 96: Konfi UI
@@ -358,7 +358,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 94. Globale UI-Patterns | 1/1 | Complete    | 2026-03-24 |
-| 95. Chat-Farbschema + Korrekturen | 2/3 | In Progress|  |
+| 95. Chat-Farbschema + Korrekturen | 3/3 | Complete   | 2026-03-24 |
 | 96. Konfi UI | 0/? | Not started | - |
 | 97. Teamer UI | 0/? | Not started | - |
 | 98. Admin Aktivitaeten, Details, Antraege, Profil, Jahrgaenge | 0/? | Not started | - |
