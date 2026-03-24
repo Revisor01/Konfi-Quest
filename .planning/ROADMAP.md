@@ -306,8 +306,13 @@ Plans:
   2. Badge-Kacheln sind gleich gross, 3 pro Zeile, Titel wird abgeschnitten; Popover-Breite passt sich dem Titel an; Suchleiste traegt "Suche & Filter" als Zwischenueberschrift
   3. Event-Suche hat korrekte Breite/Position mit "Suche & Filter" Zwischenueberschrift; Teilnehmer:innen-Liste hat reduzierten Abstand
   4. Antrag-Modal zeigt keine Kategorien-Auswahl mehr
-  5. Punkte-Uebersicht und Badges in der Historie sind ausklappbare Akkordeons mit "Fuer Uebersicht klicken" Hinweis und GD/Bonus Stats
-**Plans**: TBD
+  5. Punkte-Uebersicht und Badges in der Historie sind ausklappbare Akkordeons mit GD/Bonus Stats
+**Plans**: 4 plans
+Plans:
+- [ ] 96-01-PLAN.md -- Dashboard Events-Card immer sichtbar + Layout
+- [ ] 96-02-PLAN.md -- Badge-Grid gleichmaessig + Suche & Filter Header
+- [ ] 96-03-PLAN.md -- Events-Suche + Aktivitaeten-Modal Kategorien entfernen
+- [ ] 96-04-PLAN.md -- Profil Stats + Akkordeon-Historie + Bibel-Modal
 
 ### Phase 97: Teamer UI
 **Goal**: Teamer:innen sehen ein poliertes Dashboard und verbesserte Events/Material-Ansichten
@@ -359,7 +364,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 94. Globale UI-Patterns | 1/1 | Complete    | 2026-03-24 |
 | 95. Chat-Farbschema + Korrekturen | 3/3 | Complete    | 2026-03-24 |
-| 96. Konfi UI | 0/? | Not started | - |
+| 96. Konfi UI | 0/4 | Planned | - |
 | 97. Teamer UI | 0/? | Not started | - |
 | 98. Admin Aktivitaeten, Details, Antraege, Profil, Jahrgaenge | 0/? | Not started | - |
 | 99. Admin Events + Bugs | 0/? | Not started | - |
