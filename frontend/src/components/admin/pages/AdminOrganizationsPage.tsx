@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -21,6 +21,8 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
 import { logout } from '../../../services/auth';
 import OrganizationView from '../OrganizationView';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -48,10 +50,16 @@ const AdminOrganizationsPage: React.FC = () => {
   const { setSuccess, setError, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-organizations');
   
-  // State
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [loading, setLoading] = useState(true);
-  
+  // SWR-Cache für Organisationen
+  const { data: organizations, loading, revalidate: loadOrganizations } = useOfflineQuery<Organization[]>(
+    'super-admin-organizations',
+    useCallback(async () => {
+      const response = await api.get('/organizations');
+      return response.data;
+    }, []),
+    { ttl: CACHE_TTL.MEDIUM, fallback: [] }
+  );
+
   // Modal state
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
   const [modalOrganizationId, setModalOrganizationId] = useState<number | null>(null);
@@ -93,26 +101,8 @@ const AdminOrganizationsPage: React.FC = () => {
     }
   });
 
-  const loadOrganizations = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await api.get('/organizations');
-      setOrganizations(response.data);
-    } catch (err) {
-      setError('Fehler beim Laden der Organisationen');
- console.error('Error loading organizations:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [setError]);
-
   // Subscribe to live updates for organizations
   useLiveRefresh('organizations', loadOrganizations);
-
-  // Initialer Load
-  useEffect(() => {
-    loadOrganizations();
-  }, [loadOrganizations]);
 
   const handleDeleteOrganization = async (organization: Organization) => {
     if (!isOnline) return;
@@ -160,14 +150,14 @@ const AdminOrganizationsPage: React.FC = () => {
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
+      <IonHeader translucent={true} collapse="condense">
         <IonToolbar>
         <IonButtons slot="start">
           <IonButton onClick={handleLogout}>
             <IonIcon icon={logOut} />
           </IonButton>
         </IonButtons>
-          <IonTitle>Organisations-Verwaltung</IonTitle>
+          <IonTitle>Organisationen</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={presentOrganizationModal}>
               <IonIcon icon={add} />
@@ -176,6 +166,11 @@ const AdminOrganizationsPage: React.FC = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent className="app-gradient-background" fullscreen>
+        <IonHeader collapse="condense">
+          <IonToolbar className="app-condense-toolbar">
+            <IonTitle size="large">Organisationen</IonTitle>
+          </IonToolbar>
+        </IonHeader>
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           loadOrganizations();
           e.detail.complete();
