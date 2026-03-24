@@ -8,6 +8,7 @@ const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { fetchTageslosung } = require('../services/losungService');
 const { validateMagicBytes } = require('../middleware/uploadValidation');
+const { checkExistingBooking, getEventWithCounts, validateRegistrationWindow, determineBookingStatus, promoteFromWaitlist } = require('../utils/bookingUtils');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -1583,8 +1584,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       await client.query('BEGIN');
 
       // Check if already registered
-      const checkQuery = 'SELECT id FROM event_bookings WHERE user_id = $1 AND event_id = $2';
-      const { rows: [existing] } = await client.query(checkQuery, [konfiId, eventId]);
+      const existing = await checkExistingBooking(client, konfiId, eventId);
 
       if (existing) {
         await client.query('ROLLBACK');
@@ -1627,17 +1627,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       }
 
       // Get event details and current registration count (FOR UPDATE sperrt die Event-Zeile)
-      const eventQuery = `
-        SELECT e.*,
-               COUNT(eb.id) FILTER (WHERE eb.status = 'confirmed') as confirmed_count,
-               COUNT(eb.id) FILTER (WHERE eb.status = 'waitlist') as waitlist_count
-        FROM events e
-        LEFT JOIN event_bookings eb ON e.id = eb.event_id
-        WHERE e.id = $1 AND e.organization_id = $2
-        GROUP BY e.id
-        FOR UPDATE OF e
-      `;
-      const { rows: [event] } = await client.query(eventQuery, [eventId, req.user.organization_id]);
+      const event = await getEventWithCounts(client, eventId, req.user.organization_id);
 
       if (!event) {
         await client.query('ROLLBACK');
@@ -1646,16 +1636,11 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       }
 
       // Registrierungsfenster prüfen
-      const now = new Date();
-      if (event.registration_opens_at && now < new Date(event.registration_opens_at)) {
+      const regCheck = validateRegistrationWindow(event);
+      if (!regCheck.valid) {
         await client.query('ROLLBACK');
         client.release();
-        return res.status(400).json({ error: 'Anmeldung noch nicht geöffnet' });
-      }
-      if (event.registration_closes_at && now > new Date(event.registration_closes_at)) {
-        await client.query('ROLLBACK');
-        client.release();
-        return res.status(400).json({ error: 'Anmeldung bereits geschlossen' });
+        return res.status(400).json({ error: regCheck.error });
       }
 
       // Check if event has timeslots and validate timeslot selection
@@ -1700,18 +1685,13 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       }
 
       // Determine registration status
-      let status;
-      if (confirmedCount < maxCapacity) {
-        status = 'confirmed';
-      } else if (event.waitlist_enabled && waitlistCount < (event.max_waitlist_size || 10)) {
-        status = 'waitlist';
-      } else {
+      const statusResult = determineBookingStatus(event, confirmedCount, waitlistCount, maxCapacity);
+      if (typeof statusResult === 'object') {
         await client.query('ROLLBACK');
         client.release();
-        return res.status(400).json({
-          error: 'Event ist voll und Warteliste ist auch voll'
-        });
+        return res.status(statusResult.status).json({ error: statusResult.error });
       }
+      const status = statusResult;
 
       // Register for event (with optional timeslot_id)
       const insertQuery = `
@@ -1818,28 +1798,18 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       // Nachrücken von Warteliste wenn ein bestätigter Platz frei wird
       if (registration.status === 'confirmed') {
         try {
-          // Bei Timeslot-Events nur innerhalb desselben Timeslots nachrücken
-          const promotionQuery = registration.timeslot_id
-            ? "SELECT id, user_id FROM event_bookings WHERE event_id = $1 AND timeslot_id = $2 AND status = 'waitlist' ORDER BY created_at ASC LIMIT 1"
-            : "SELECT id, user_id FROM event_bookings WHERE event_id = $1 AND status = 'waitlist' ORDER BY created_at ASC LIMIT 1";
-          const promotionParams = registration.timeslot_id
-            ? [eventId, registration.timeslot_id]
-            : [eventId];
+          const promotedUserId = await promoteFromWaitlist(db, eventId, registration.timeslot_id);
 
-          const { rows: [nextInLine] } = await db.query(promotionQuery, promotionParams);
-
-          if (nextInLine) {
-            await db.query("UPDATE event_bookings SET status = 'confirmed' WHERE id = $1", [nextInLine.id]);
-
+          if (promotedUserId) {
             // Push-Notification an nachgerückten Konfi
             try {
-              await PushService.sendWaitlistPromotionToKonfi(db, nextInLine.user_id, event.name, event.event_date, eventId);
+              await PushService.sendWaitlistPromotionToKonfi(db, promotedUserId, event.name, event.event_date, eventId);
             } catch (pushErr) {
               console.error('Error sending waitlist promotion push:', pushErr);
             }
 
             // Live-Update an nachgerückten Konfi
-            liveUpdate.sendToKonfi(nextInLine.user_id, 'events', 'update');
+            liveUpdate.sendToKonfi(promotedUserId, 'events', 'update');
           }
         } catch (promotionErr) {
           console.error('Error promoting from waitlist:', promotionErr);
