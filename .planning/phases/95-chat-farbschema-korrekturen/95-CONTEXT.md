@@ -28,7 +28,7 @@ Einheitliches Chat-Farbschema ueber alle 3 Rollen (Admin, Teamer, Konfi) + Beheb
 
 ### Admin Chat-Regeln
 - MembersModal Pattern (ACH-03): Auf SimpleCreateChatModal-Pattern umstellen mit app-list-item, konsistenten Farben und Checkboxen
-- Admin Chat verlassen (ACH-05): Backend gibt bereits 403 zurueck. Frontend: "Verlassen"-Button fuer Admins in Team-Chats ausblenden + Hinweistext "Admins koennen Team-Chats nicht verlassen" anzeigen
+- Admin Chat verlassen (ACH-05): Admins duerfen NIEMALS einen Chat verlassen (auch nicht wenn andere Admins drin sind). Teamer:innen duerfen verlassen. Frontend: "Verlassen"-Button fuer Admins komplett ausblenden + Hinweistext "Admins koennen Chats nicht verlassen". Backend muss ebenfalls pruefen: Admin-Rolle → immer 403 beim Leave-Versuch (nicht nur fuer admin-Raumtyp)
 - Chat loeschen (ACH-06): FK-Kaskade loescht korrekt alles inkl. Teilnehmer. Im Loesch-Dialog Info-Text "Chat wird fuer alle Teilnehmer:innen geloescht" hinzufuegen
 
 ### Claude's Discretion
