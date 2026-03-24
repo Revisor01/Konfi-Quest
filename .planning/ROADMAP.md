@@ -277,7 +277,9 @@ Phase 93: Architektur-Refactoring (1 plan, complete)
 **Success Criteria** (was muss TRUE sein):
   1. Slider zeigt aktuellen Wert prominent, hat Skala-Beschriftungen links/rechts und sinnvolle Spannen
   2. Alle Listen-Cards in der gesamten App haben identische Abstande oben/unten wie rechts/links
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 94-01-PLAN.md -- Slider Min/Max-Labels + Listen-Card Padding symmetrisch
 
 ### Phase 95: Chat-Farbschema + Korrekturen
 **Goal**: Chat-Bereiche zeigen einheitliche Farben und alle bekannten Chat-Bugs sind behoben
