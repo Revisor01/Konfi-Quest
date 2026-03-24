@@ -72,8 +72,8 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 
 ### Admin UI-Patterns
 
-- [ ] **AUI-01**: Slider: Wert stehen lassen, links/rechts Skala-Werte, Spannen tunen
-- [ ] **AUI-02**: Alle Listen-Cards gleicher Abstand oben/unten wie rechts/links
+- [x] **AUI-01**: Slider: Wert stehen lassen, links/rechts Skala-Werte, Spannen tunen
+- [x] **AUI-02**: Alle Listen-Cards gleicher Abstand oben/unten wie rechts/links
 
 ### Admin Teamer-Details
 
@@ -157,8 +157,8 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUI-01 | Phase 94 | Pending |
-| AUI-02 | Phase 94 | Pending |
+| AUI-01 | Phase 94 | Complete |
+| AUI-02 | Phase 94 | Complete |
 | TCH-01 | Phase 95 | Pending |
 | TCH-02 | Phase 95 | Pending |
 | TCH-03 | Phase 95 | Pending |

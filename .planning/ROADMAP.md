@@ -260,7 +260,7 @@ Phase 93: Architektur-Refactoring (1 plan, complete)
 
 ### v2.8 Design-Polish (Phases 94-100)
 
-- [ ] **Phase 94: Globale UI-Patterns** - Slider-Verhalten und Listen-Abstands-Konsistenz als gemeinsame Basis
+- [x] **Phase 94: Globale UI-Patterns** - Slider-Verhalten und Listen-Abstands-Konsistenz als gemeinsame Basis (completed 2026-03-24)
 - [ ] **Phase 95: Chat-Farbschema + Korrekturen** - Einheitliches Farbschema und Bugs quer ueber alle Rollen
 - [ ] **Phase 96: Konfi UI** - Dashboard, Events, Badges, Aktivitaeten, Historie, Profil
 - [ ] **Phase 97: Teamer UI** - Dashboard, Events, Material
@@ -279,7 +279,7 @@ Phase 93: Architektur-Refactoring (1 plan, complete)
   2. Alle Listen-Cards in der gesamten App haben identische Abstande oben/unten wie rechts/links
 **Plans**: 1 plan
 Plans:
-- [ ] 94-01-PLAN.md -- Slider Min/Max-Labels + Listen-Card Padding symmetrisch
+- [x] 94-01-PLAN.md -- Slider Min/Max-Labels + Listen-Card Padding symmetrisch
 
 ### Phase 95: Chat-Farbschema + Korrekturen
 **Goal**: Chat-Bereiche zeigen einheitliche Farben und alle bekannten Chat-Bugs sind behoben
@@ -353,7 +353,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 94. Globale UI-Patterns | 0/? | Not started | - |
+| 94. Globale UI-Patterns | 1/1 | Complete   | 2026-03-24 |
 | 95. Chat-Farbschema + Korrekturen | 0/? | Not started | - |
 | 96. Konfi UI | 0/? | Not started | - |
 | 97. Teamer UI | 0/? | Not started | - |
