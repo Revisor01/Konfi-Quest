@@ -164,10 +164,10 @@ CREATE INDEX IF NOT EXISTS idx_event_jahrgang_assignments_event_id ON event_jahr
 CREATE INDEX IF NOT EXISTS idx_event_jahrgang_assignments_jahrgang_id ON event_jahrgang_assignments(jahrgang_id);
 
 -- ====================================================================
--- event_category_assignments (events.js)
--- WHERE ec.event_id = $1
+-- event_categories (events.js) — Join-Tabelle Event <-> Category
 -- ====================================================================
-CREATE INDEX IF NOT EXISTS idx_event_category_assignments_event_id ON event_category_assignments(event_id);
+CREATE INDEX IF NOT EXISTS idx_event_categories_event_id ON event_categories(event_id);
+CREATE INDEX IF NOT EXISTS idx_event_categories_category_id ON event_categories(category_id);
 
 -- ====================================================================
 -- event_points (konfi.js, konfi-managment.js, organizations.js)
@@ -263,7 +263,7 @@ CREATE INDEX IF NOT EXISTS idx_material_file_tags_tag_id ON material_file_tags(t
 CREATE INDEX IF NOT EXISTS idx_materials_organization_id ON materials(organization_id);
 
 -- ====================================================================
--- activity_category_assignments (organizations.js)
--- WHERE aca.activity_id = $1
+-- activity_categories (organizations.js) — Join-Tabelle Activity <-> Category
 -- ====================================================================
-CREATE INDEX IF NOT EXISTS idx_activity_category_assignments_activity_id ON activity_category_assignments(activity_id);
+CREATE INDEX IF NOT EXISTS idx_activity_categories_activity_id ON activity_categories(activity_id);
+CREATE INDEX IF NOT EXISTS idx_activity_categories_category_id ON activity_categories(category_id);
