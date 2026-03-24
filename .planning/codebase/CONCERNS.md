@@ -1,165 +1,218 @@
 # Codebase Concerns
 
-**Analysis Date:** 2026-03-23
+**Analysis Date:** 2026-03-24
+
+---
+
+## Sicherheit (Kritisch)
+
+### APNs Private Keys in Git-History
+
+- Risk: Apple Push Notification Service (APNs) private Schlüsseldateien sind ins Git-Repository committed
+- Files: `docs/AuthKey_7AQA623H3T.p8`, `docs/AuthKey_A29U7SN796.p8`
+- Current mitigation: Keine — Dateien sind im Git-Index (`git ls-files docs/` bestätigt)
+- Recommendations: Sofort aus Git-History entfernen (`git filter-branch` oder `git-filter-repo`), Schlüssel bei Apple Developer Portal widerrufen und neu erstellen, `docs/*.p8` in `.gitignore` aufnehmen
+
+### Produktions-Secrets in portainer-stack.yml (Git-tracked)
+
+- Risk: Alle Produktions-Credentials liegen in einer versionierten Datei
+- Files: `portainer-stack.yml`
+- Betroffene Werte: `JWT_SECRET: konfi-secret-super-secure-2025`, `POSTGRES_PASSWORD: konfi_secure_password_2025`, `SMTP_PASS: "NkqFQuTx877Sia6Pp"`, `LOSUNG_API_KEY: ksadh8324oijcff45rfdsvcvhoids44`
+- Aktueller Zustand: Datei ist in `.gitignore` gelistet, aber bereits getrackt (Git ignoriert gitignorierte Dateien nur für neue Dateien, nicht für bereits getrackten Content)
+- Impact: Jeder mit Lesezugriff auf das Repo kann alle Produktions-Secrets einsehen
+- Fix approach: `git rm --cached portainer-stack.yml`, alle aufgeführten Secrets rotieren, Portainer-Stack über Portainer-Umgebungsvariablen oder Docker Secrets verwalten
+
+### TLS-Zertifikatvalidierung deaktiviert
+
+- Risk: SMTP-Verbindungen ignorieren Zertifikatsfehler
+- Files: `backend/server.js:177`, `backend/services/emailService.js:39`
+- Code: `rejectUnauthorized: false` in beiden SMTP-Konfigurationen
+- Current mitigation: Verbindung läuft nur im internen Docker-Netzwerk (127.0.0.1)
+- Recommendations: Eigentlichen Hostnamen im Docker-Container korrekt auflösen oder selbst-signiertes Zertifikat des Mailservers explizit vertrauen statt TLS-Validierung komplett zu deaktivieren
+
+### Passwort-Policy-Bypass in Admin-User-Verwaltung
+
+- Risk: Admin-Benutzer können mit schwachen Passwörtern erstellt werden
+- Files: `backend/routes/users.js:37` (Reset: min. 6 Zeichen), `backend/routes/users.js:18` (`commonValidations.password`)
+- Problem: `validatePassword` (min. 8 Zeichen + Komplexität aus `utils/passwordUtils.js`) wird in `users.js` NICHT aufgerufen. Nur `auth.js` verwendet `validatePassword`. Admin-erstellte Nutzer und Passwort-Resets durch Admins unterliegen damit nur dem 6-Zeichen-Minimum.
+- Fix approach: `validatePassword` auch in `users.js`-Validierungsregeln für `validateCreateUser` und `validateResetPassword` einbinden
+
+### Fehlende JSON-Body-Größenbegrenzung
+
+- Risk: DoS durch große JSON-Requests
+- Files: `backend/server.js:282`
+- Code: `app.use(express.json())` ohne `limit`-Option — Standard-Limit ist 100kb, was für die meisten Endpoints ausreicht, aber kein explizites Limit gesetzt
+- Recommendations: `app.use(express.json({ limit: '1mb' }))` explizit setzen für klare Dokumentation und Schutz
 
 ---
 
 ## Tech Debt
 
-**Zwei parallele Auth-Middleware (verifyToken vs. verifyTokenRBAC):**
-- Issue: `verifyToken` in `backend/server.js` (Zeile 405–418) prüft nur die JWT-Signatur. Die RBAC-Middleware `verifyTokenRBAC` in `backend/middleware/rbac.js` prüft zusätzlich `is_active`, `token_invalidated_at` (Soft-Revoke) und `organization_active`. Die Auth-Routes `/change-password`, `/update-email`, `/update-role-title`, `/me`, `/invite-code*` und `/logout` nutzen weiterhin das alte `verifyToken` ohne diese Checks.
-- Files: `backend/routes/auth.js` (Zeilen 177, 213, 241, 268, 336, 384, 413, 452, 799), `backend/server.js` (Zeile 405)
-- Impact: Gesperrte oder deaktivierte User können Passwörter ändern, E-Mails aktualisieren und sich ausloggen, bis ihr JWT abläuft (15 min). Soft-Revoke gilt für diese Endpunkte nicht.
-- Fix approach: Auth-Routes auf `verifyTokenRBAC` umstellen, `verifyToken`-Funktion aus `server.js` entfernen.
+### Legacy `user_type`-Feld im Chat-System
 
-**Hardcodierte Admin-User-ID 1 in chatUtils:**
-- Issue: Beim automatischen Erstellen von Jahrgangs-Chat-Räumen beim Serverstart wird `created_by = 1` hartcodiert.
-- Files: `backend/utils/chatUtils.js` (Zeile 21 — INSERT mit `1` als created_by-Wert)
-- Impact: Bei Multi-Tenant-Einsatz (EKD-Skalierung) verweist `created_by` in neuen Organisationen auf einen fremden User oder einen nicht existierenden User-Eintrag. Referentielle Integrität kann verletzt werden.
-- Fix approach: Ersten aktiven Admin der jeweiligen Organisation per Sub-Query ermitteln oder die Spalte auf NULL erlauben.
+- Issue: Das Chat-System verwendet ein separates `user_type`-Feld (`'admin'`, `'konfi'`, `'teamer'`) in `chat_participants` und `chat_read_status`, das parallel zur RBAC-Rollen-Struktur existiert
+- Files: `backend/routes/chat.js` (96 Vorkommen von `user_type`), `backend/middleware/rbac.js:156` (erzeugt `type` als Backward-Compatibility-Feld)
+- Impact: Teamer-Nutzer werden im Chat als `'admin'` behandelt (der Backward-Compat-Wert aus `rbac.js` mappt `teamer` → `admin`). Die Chat-Logik prüft nur `'admin'` und `'konfi'` als valide `target_user_type` Werte (Zeile 234). Eine echte Teamer-Unterscheidung im Chat ist nicht vorhanden.
+- Fix approach: `user_type` auf RBAC-`role_name` umstellen oder die Chat-Tabellen mit einem FK auf `users.id` ohne redundantes `user_type`-Feld refaktorieren
 
-**Doppelte Event-Buchungslogik in konfi.js und events.js:**
-- Issue: Waitlist-Positionsberechnung, Buchungsstatus-Ermittlung und Buchungs-Cancel mit Waitlist-Nachrücken sind sowohl in `backend/routes/konfi.js` als auch in `backend/routes/events.js` implementiert. Beide Dateien übersteigen 2000 Zeilen.
-- Files: `backend/routes/konfi.js` (Zeilen 1242–1409), `backend/routes/events.js` (Zeilen 940–1000)
-- Impact: Bugfixes müssen an zwei Stellen gepflegt werden. Abweichungen zwischen beiden Implementierungen sind bereits vorhanden (z. B. Timeslot-Handling-Detailunterschiede).
-- Fix approach: Booking-Logik in `backend/utils/bookingUtils.js` extrahieren.
+### `setImmediate` mit sofort ausgeführter Funktion (Bug)
 
-**Routen-Dateigrößen über Wartbarkeitsgrenze:**
-- Issue: Mehrere Route-Dateien sind so groß, dass sie kaum noch einzeln überschaubar sind.
-  - `backend/routes/events.js`: 2071 Zeilen
-  - `backend/routes/konfi.js`: 2052 Zeilen
-  - `backend/routes/chat.js`: 1877 Zeilen
-- Files: `backend/routes/events.js`, `backend/routes/konfi.js`, `backend/routes/chat.js`
-- Impact: Onboarding-Kosten hoch, unabsichtliche Seiteneffekte bei Änderungen schwer erkennbar.
-- Fix approach: Events in Sub-Router aufteilen (booking, checkin, management). Konfi-Route analog aufteilen.
+- Issue: `initializeChatRooms(db)` wird beim Aufruf sofort ausgeführt und gibt ein Promise zurück — `setImmediate` erhält dieses Promise, nicht die Funktion
+- Files: `backend/server.js:527`
+- Code: `setImmediate(initializeChatRooms(db));`
+- Korrekte Verwendung wäre: `setImmediate(() => initializeChatRooms(db)());`
+- Impact: Die Chat-Room-Initialisierung läuft synchron im Start-Up-Code (nicht nach dem nächsten Tick) und Fehler sind nicht vollständig abgefangen
+- Fix approach: `initializeChatRooms(db)()` direkt aufrufen oder `setImmediate(() => initializeChatRooms(db)())` verwenden
 
-**Frontend: inline Fetcher-Funktionen in useOfflineQuery (instabile Referenzen):**
-- Issue: Alle Aufrufstellen von `useOfflineQuery` übergeben den Fetcher als inline-`async () => { ... }`-Funktion. Die `revalidate`-Funktion in `useOfflineQuery` hat `fetcher` als Dependency im `useCallback`. Inline-Funktionen sind bei jedem Render eine neue Referenz, was potenziell zu redundanten Revalidierungen führt.
-- Files: `frontend/src/components/admin/pages/AdminKonfisPage.tsx` (Zeile 67), alle weiteren Seiten die `useOfflineQuery` nutzen (mind. 30 Stellen).
-- Impact: Erhöhte API-Last durch doppelte Fetches nach State-Updates auf Seiten mit mehreren `useOfflineQuery`-Aufrufen. In der Praxis abgefedert durch Cache-TTL, aber nicht vollständig verhindert.
-- Fix approach: Fetcher-Funktionen mit `useCallback` memoizen oder `useOfflineQuery` intern so absichern, dass Fetcher-Referenzwechsel ignoriert werden (Ref-Pattern).
+### Legacy `data`-Verzeichnis wird noch erstellt
 
-**Fehlende MIME-Type-Validierung auf Magic-Bytes-Ebene:**
-- Issue: Der Upload-Filter in `backend/server.js` validiert Dateitypen ausschließlich anhand des vom Client gemeldeten `Content-Type`-Headers (`file.mimetype`). Multer liest diesen Header aus der Multipart-Form; ein Angreifer kann beliebige Dateien hochladen, indem er den MIME-Type manuell setzt.
-- Files: `backend/server.js` (Zeilen 315–334, 350–375, 391–398)
-- Impact: Möglicherweise schadhafte Dateien (z. B. ausführbare Scripte mit `.png`-Extension) landen im Upload-Verzeichnis. Aktuell werden Uploads nicht als static serviert (positiv), aber Verarbeitungsrisiken bestehen.
-- Fix approach: `file-type`-Paket (Magic-Bytes-Analyse) als zusätzlichen Check nach dem Multer-Filter einbauen.
+- Issue: Das `data/`-Verzeichnis (war für SQLite-DB) wird bei jedem Server-Start noch angelegt, auch wenn es nicht mehr gebraucht wird
+- Files: `backend/server.js:424-429`
+- Impact: Kein Funktionsproblem, aber toter Code der Verwirrung stiftet
+- Fix approach: Zeilen 424-429 in `server.js` entfernen
 
----
+### `checkAndAwardBadges` als Property am Router-Objekt
 
-## Sicherheit
+- Issue: `checkAndAwardBadges` wird als Property auf dem Express-Router-Objekt exportiert (`badgesRouter.checkAndAwardBadges`), was ein ungewöhnliches und fragiles Muster ist
+- Files: `backend/routes/badges.js:818`, `backend/server.js:477`
+- Impact: Schwierig zu testen, unklar ob Property nach Hot-Reload erhalten bleibt; wird auch als `module.exports.checkAndAwardBadges` exportiert (zwei Export-Wege)
+- Fix approach: Als eigene Service-Funktion in `backend/services/badgeService.js` auslagern
 
-**TLS-Zertifikatsvalidierung deaktiviert für SMTP:**
-- Risk: `rejectUnauthorized: false` in der SMTP-Konfiguration deaktiviert die Server-Zertifikat-Prüfung. Man-in-the-Middle-Angriffe auf E-Mail-Übertragungen sind möglich.
-- Files: `backend/server.js` (Zeile 177), `backend/services/emailService.js` (Zeile 39)
-- Current mitigation: Intern (Docker → Hetzner SMTP). Kommentar im Code erklärt den Grund (Zertifikat auf Hostname ausgestellt, Docker nutzt IP).
-- Recommendations: SMTP-Host so konfigurieren, dass er über den im Zertifikat eingetragenen Hostname erreichbar ist, und `rejectUnauthorized` wieder auf `true` setzen.
+### Kein User-Cache-Invalidation bei Rollenänderungen
 
-**Content Security Policy vollständig deaktiviert:**
-- Risk: Kein CSP-Header schützt vor Cross-Site-Scripting. XSS-Angriffe, die externe Scripts nachladen, werden nicht geblockt.
-- Files: `backend/server.js` (Zeile 267: `contentSecurityPolicy: false`)
-- Current mitigation: Ionic/React serialisiert Template-Strings über JSX, direktes `dangerouslySetInnerHTML` ist nicht erkennbar in den Quellen.
-- Recommendations: Striktes CSP mit `nonce`-Ansatz für Ionic-kompatible Konfiguration evaluieren (zumindest `default-src 'self'` mit Inline-Script-Whitelist).
+- Issue: Der In-Memory-User-Cache in `rbac.js` (30s TTL) wird bei Rollenänderungen nicht explizit invalidiert
+- Files: `backend/middleware/rbac.js:35-41`, `backend/routes/users.js:260-273`
+- `invalidateUserCache` ist exportiert, wird aber in keiner Route aufgerufen
+- Impact: Nach einer Rollenänderung kann ein Nutzer bis zu 30 Sekunden lang mit der alten Rolle handeln (socket.io-Disconnect als Workaround ist vorhanden, aber HTTP-Requests laufen weiter)
+- Fix approach: `invalidateUserCache(id)` in `users.js` nach erfolgreicher Rollenänderung aufrufen
 
-**Benutzernamen werden in Login-Logs im Klartext protokolliert:**
-- Risk: Login-Versuche werden mit dem Benutzernamen geloggt (`console.warn("Login-Versuch: ${username}")`). Bei falschen Passwörtern erscheint der Benutzername ebenfalls im Log.
-- Files: `backend/routes/auth.js` (Zeilen 93, 114, 120)
-- Current mitigation: Logs liegen nur auf dem Server, kein externer Log-Dienst erkennbar.
-- Recommendations: Benutzernamen in Logs maskieren oder nur Hash-Präfix loggen.
+### Viele große Dateien ohne Aufteilung
 
-**JWT_SECRET an mehreren Stellen separat geladen:**
-- Risk: `JWT_SECRET` wird in `server.js`, `routes/auth.js`, `routes/konfi.js`, `middleware/rbac.js` und `routes/chat.js` (direkt via `process.env.JWT_SECRET`) separat eingelesen. Chat-Route verwendet `process.env.JWT_SECRET` ohne den Start-Check.
-- Files: `backend/routes/chat.js` (Zeile 1055), `backend/routes/konfi.js` (Zeile 11), `backend/routes/auth.js` (Zeile 22)
-- Current mitigation: Startup-Check in `server.js` und `middleware/rbac.js` schlägt fehl, wenn `JWT_SECRET` fehlt.
-- Recommendations: Zentrales Auth-Modul erstellen, das `JWT_SECRET` einmalig liest und exportiert.
+- Issue: Mehrere Komponenten und Routes sind sehr groß und enthalten mehrere unabhängige Verantwortlichkeiten
+- Files:
+  - `frontend/src/components/admin/views/KonfiDetailSections.tsx` (1181 Zeilen)
+  - `frontend/src/components/admin/modals/BadgeManagementModal.tsx` (1124 Zeilen)
+  - `frontend/src/components/chat/ChatRoom.tsx` (1058 Zeilen)
+  - `backend/routes/events.js` (2042 Zeilen)
+  - `backend/routes/konfi.js` (2023 Zeilen)
+  - `backend/routes/chat.js` (1878 Zeilen)
+- Impact: Schwierige Wartbarkeit, hohe kognitive Last, Merge-Konflikte wahrscheinlicher
+- Fix approach: Schrittweise in kleinere Komponenten/Module aufteilen; Backend-Routes nach REST-Ressourcen trennen
 
 ---
 
 ## Performance-Engpässe
 
-**Background Badge Service: Serielle DB-Abfragen pro User (N+1):**
-- Problem: `backgroundService.js` iteriert alle User mit Push-Tokens in einer `for`-Schleife und führt für jeden User mehrere DB-Abfragen durch (`checkAndAwardBadges` + Chat-Unread-Count + Badge-Count).
-- Files: `backend/services/backgroundService.js` (Zeilen 75–109)
-- Cause: `checkAndAwardBadges` lädt für jeden User individuell alle Badges der Organisation plus earned-Badges. Bei 100+ Usern mit Push-Tokens: 300+ sequentielle DB-Queries alle 5 Minuten.
-- Improvement path: Badge-Check auf einen bulk-fähigen SQL-Query umschreiben; Chat-Unread-Count via GROUP BY in einer Query für alle User aggregieren.
+### Badge-Update-Hintergrunddienst läuft für alle User sequenziell
 
-**verifyTokenRBAC: DB-Query bei jedem Request:**
-- Problem: `verifyTokenRBAC` führt bei jedem authentifizierten Request zwei DB-Abfragen aus: User-Lookup + Jahrgangs-Assignments.
-- Files: `backend/middleware/rbac.js` (Zeilen 43–91)
-- Cause: Kein Caching. Bei aktivem System mit vielen gleichzeitigen Usern liegt die Auth-Last proportional zu allen API-Requests an.
-- Improvement path: Short-lived In-Memory-Cache (z. B. 30 Sekunden) mit LRU-Strategie für User-Objekte.
+- Problem: `BackgroundService.updateAllUserBadges` iteriert alle User mit Push-Tokens in einer Schleife und prüft/vergibt Badges einzeln
+- Files: `backend/services/backgroundService.js:94-130`
+- Cause: `checkAndAwardBadges` wird pro User aufgerufen, macht mehrere DB-Queries je User
+- Bei EKD-Skalierung (4000+ User): Service-Zyklus (alle 5 Min.) dauert möglicherweise länger als 5 Minuten
+- Improvement path: Batch-Verarbeitung mit `Promise.all` (begrenzte Concurrency), Badge-Check nur bei tatsächlichen Punkt-Änderungen triggern statt Polling
 
-**Chat: Nachrichten-Limit hardcoded auf 200:**
-- Problem: Die initiale Chat-Nachrichtenladung ist auf 200 Nachrichten hart begrenzt ohne Pagination für ältere Nachrichten.
-- Files: `backend/routes/chat.js` (Zeile 588: `LIMIT 200`)
-- Cause: Einfache Implementierung ohne Cursor-basiertes Pagination.
-- Improvement path: Cursor-Pagination implementieren (vor/nach `message_id`), sodass die App nachladen kann.
+### Sequential Waitlist-Promotion in Event-Update
+
+- Problem: Wartelisten-Beförderung iteriert Einträge sequenziell mit einzelnen UPDATE-Queries
+- Files: `backend/routes/events.js:950-953`, `backend/routes/events.js:968-971`
+- Cause: `for (const entry of waitlistEntries) { await client.query(UPDATE ...) }`
+- Improvement path: Bulk-UPDATE mit `WHERE id = ANY($1::int[])` statt N einzelne Queries
+
+### Chat: Unbegrenztes `after`-Polling ohne Backpressure
+
+- Problem: Der `after`-Parameter in der Chat-Nachrichten-API ist auf 200 Nachrichten begrenzt, aber kein Throttling bei Reconnects
+- Files: `backend/routes/chat.js:584-590`
+- Bei Offline-Reconnect mit langem Rückstand werden alle verpassten Nachrichten auf einmal geladen
 
 ---
 
 ## Fragile Bereiche
 
-**setImmediate mit falschem Aufruf in server.js:**
-- Files: `backend/server.js` (Zeile 527)
-- Why fragile: `setImmediate(initializeChatRooms(db))` ruft `initializeChatRooms(db)` sofort auf und übergibt das zurückgegebene Promise an `setImmediate` — nicht die Funktion selbst. Das Ergebnis ist, dass die Chat-Raum-Initialisierung synchron im Startup-Code läuft (noch vor dem Server-Listen) und Fehler darin den Start nicht blockieren, aber das Promise unkontrolliert im Hintergrund läuft.
-- Safe modification: Ändern zu `setImmediate(() => initializeChatRooms(db)())` oder besser `initializeChatRooms(db)().catch(...)` im Server-Start-Block.
-- Test coverage: Keine Tests vorhanden.
+### Event-Buchungs-Transaktion: Viele separate `client.release()`-Aufrufe
 
-**checkAndAwardBadges: globale Seiteneffekte via routerexport:**
-- Files: `backend/routes/badges.js` (Zeilen 818, 823)
-- Why fragile: `checkAndAwardBadges` ist sowohl an `router.checkAndAwardBadges` als auch an `module.exports.checkAndAwardBadges` gehängt. Andere Routes (`activities.js`, `events.js`, `konfi.js`, `backgroundService.js`) importieren diese Funktion auf unterschiedliche Wege (über `badgesRouter.checkAndAwardBadges` aus `server.js` DI, bzw. `require('../routes/badges').checkAndAwardBadges` direkt in `backgroundService.js`).
-- Safe modification: Funktion in eigene Datei `backend/utils/badgeUtils.js` auslagern.
-- Test coverage: Keine automatisierten Tests.
+- Files: `backend/routes/events.js` (9 `getClient()`-Aufrufe, ~55 `client.release()`-Aufrufe)
+- Why fragile: Das Early-Return-Pattern (`ROLLBACK; client.release(); return res.status(...)`) ist fehleranfällig — jede neue early-return-Bedingung erfordert manuelles `client.release()`. Ein vergessenes Release verursacht Connection-Pool-Erschöpfung.
+- Safe modification: Try-finally-Block verwenden (`finally { client.release(); }`) statt manueller Release-Aufrufe in jedem Branch
+- Test coverage: Keine automatisierten Tests für Transaktions-Rollback-Szenarien
 
-**Gemischte asynchrone Dateioperationen:**
-- Files: `backend/routes/material.js` (Zeilen 506, 633 — `fs.unlinkSync`), `backend/routes/activities.js` (Zeile 400 — Callback-Style `fs.unlink`), `backend/routes/chat.js` / `backend/routes/jahrgaenge.js` / `backend/routes/events.js` (async `fs.unlink`)
-- Why fragile: `fs.unlinkSync` blockiert den Node.js-Eventloop in Request-Handlern. `fs.unlink` mit Callback in einem async-Kontext wird nicht awaited. Fehler beim Callback-Style werden nur ignoriert, wenn `err` nicht geprüft wird.
-- Safe modification: Einheitlich `fs.promises.unlink` mit `await` verwenden.
+### Chat-Dateizugriff prüft Membership ohne `user_type`
 
-**Chatutils: N+1-Schleife beim Server-Start:**
-- Files: `backend/utils/chatUtils.js` (Schleife über alle Jahrgänge + innere Schleife über Konfis)
-- Why fragile: Beim Start werden für jede Organisation alle Jahrgänge geladen; für jeden Jahrgang wird ein Raum geprüft/erstellt; für jeden Raum werden alle Konfis als Teilnehmer eingetragen. Bei großen Datenbeständen (EKD-Skalierung) läuft dies sequentiell und belastet die DB stark.
-- Safe modification: Transaktion mit Bulk-Insert oder idempotentes Migrations-SQL.
-- Test coverage: Keine Tests.
+- Files: `backend/routes/chat.js:1084-1088`
+- Problem: Die Membership-Check-Query für Dateizugriff (`chat_participants`) prüft `user_id` aber nicht `user_type`. Da Nutzer mehrere `user_type`-Einträge haben könnten (nach Rollenänderung), kann dies zu unerwarteten Zugriffen führen.
+- Safe modification: `AND cp.user_id = $2 AND cp.user_type = $3` mit dem korrekten `user_type` des anfragenden Users
+
+### `ensureAdminJahrgangChatMembership` kennt keine Teamer-Rolle
+
+- Files: `backend/routes/chat.js:40-100`
+- Why fragile: Die Funktion verwaltet Chat-Mitgliedschaft nur für `user_type = 'admin'`. Teamer-Nutzer werden nicht eigenständig verwaltet — sie "erben" den `admin`-user_type via Backward-Compat. Wenn das RBAC-Mapping geändert wird, bricht Chat-Membership für Teamer.
+- Test coverage: Keine Tests
+
+### Portainer-Stack SMTP-Config doppelt (postgres + backend)
+
+- Files: `portainer-stack.yml:15-18` (postgres service), `portainer-stack.yml:48-51` (backend service)
+- Why fragile: SMTP-Konfiguration ist im postgres-Service eingetragen, obwohl postgres keine E-Mails sendet. Bei Änderung der SMTP-Credentials muss der postgres-Service unnötig neugestartet werden.
+- Fix approach: SMTP-Envs aus dem postgres-Service entfernen
 
 ---
 
-## Test Coverage Gaps
+## Test-Coverage-Lücken
 
-**Nahezu keine Testabdeckung vorhanden:**
-- What's not tested: Das gesamte Backend (alle 15 Routes, alle Services, Middleware), die gesamte Frontend-Business-Logik (Offline-Queue, Badge-Logik, Auth-Flow).
-- Files: `backend/routes/*.js` (0 Tests), `frontend/src/**/*.tsx` (0 Tests außer `App.test.tsx` mit Trivial-Smoke-Test)
-- Risk: Jede Änderung an kritischen Pfaden (Buchung, Punkte, Badge-Award) kann unbemerkt Regressionen einführen.
+### Nahezu keine automatisierten Tests
+
+- What's not tested: Alle Backend-Routes, alle Frontend-Komponenten, Transaktions-Logik, Badge-Vergabe-Logik, RBAC-Middleware
+- Files: `frontend/src/App.test.tsx` (einzige Testdatei — prüft nur ob App rendert), keine Backend-Tests gefunden
+- Risk: Regressions beim Refactoring oder bei neuen Features können nicht automatisch erkannt werden
+- Priority: Hoch — besonders kritisch für Auth-, RBAC- und Transaktions-Code
+
+### Keine Integration-Tests für RBAC-Grenzen
+
+- What's not tested: Dass Konfis keine Admin-Endpoints aufrufen können, Organisations-Isolation, Jahrgangs-Zugriffs-Checks
+- Risk: Sicherheitslücken durch fehlerhafte Middleware-Komposition könnten unbemerkt eingeführt werden
 - Priority: Hoch
 
-**Cypress E2E nur als Stub vorhanden:**
-- What's not tested: Der einzige Cypress-Test (`frontend/cypress/e2e/test.cy.ts`) prüft einen Inhalt (`Tab 1 page`), der im aktuellen Stand der App nicht existiert.
-- Files: `frontend/cypress/e2e/test.cy.ts`
-- Risk: CI kann nicht feststellen, ob die App grundlegend funktioniert.
-- Priority: Hoch
+---
+
+## Fehlende Kritische Features
+
+### Kein Datei-Cleanup bei verwaisten Uploads
+
+- Problem: Wenn Chat-Nachrichten mit Anhängen gelöscht werden oder Nutzer gelöscht werden, werden Dateien im Dateisystem nicht systematisch bereinigt
+- Files: `backend/routes/chat.js:1598-1639` (löscht Dateien beim Raum-Löschen), kein allgemeiner Cleanup-Cron
+- Blocks: Langfristig wächst `backend/uploads/` unkontrolliert
+- Priority: Mittel — kein sofortiges Problem, aber auf Produktionsserver relevant
+
+### Keine Backup-Strategie dokumentiert
+
+- Problem: Kein automatisiertes DB-Backup oder Upload-Backup im Portainer-Stack sichtbar
+- Files: `portainer-stack.yml` (kein Backup-Service)
+- Blocks: Wiederherstellung nach Datenverlust
+- Priority: Hoch für Produktion
 
 ---
 
-## Fehlende kritische Features
+## Abhängigkeiten mit Risiko
 
-**Kein Logging-Framework (nur console.*):**
-- Problem: 279 `console.error/warn/log`-Aufrufe im Backend ohne strukturiertes Logging. Kein Log-Level-Management, kein zentrales Error-Tracking.
-- Blocks: Effektives Monitoring in Produktion, Fehleranalyse ohne direkten Serverzugriff.
+### React Router v5 bei React 19
 
-**Keine Datenbankbackup-Strategie im Code konfiguriert:**
-- Problem: Es gibt keine automatischen Backup-Jobs oder Hinweise auf eine Backup-Strategie im Code oder in den Docker-Konfigurationsdateien.
-- Blocks: Datenwiederherststellung nach Datenverlust.
+- Risk: React Router v5 (`^5.3.4`) ist nicht offiziell für React 19 getestet. React Router v6+ ist der aktuelle Stand.
+- Files: `frontend/package.json`
+- Impact: Potenzielle Inkompatibilitäten bei React-Updates; fehlende moderne Router-Features (Loader, Actions)
+- Migration plan: Upgrade auf React Router v6 + `@ionic/react-router` v6-Kompatibilität prüfen
+
+### Express v4 (nicht v5)
+
+- Risk: Express 5 (stable seit 2024) bringt besseres async Error-Handling. Mit Express 4 müssen unbehandelte async-Errors manuell gefangen werden.
+- Files: `backend/package.json` (`"express": "^4.18.2"`)
+- Impact: Unbehandelte Promise-Rejections in Route-Handlern werden nicht automatisch als 500-Fehler weitergegeben
+- Migration plan: Upgrade auf Express 5 ist schrittweise möglich, da v5 weitgehend kompatibel ist
+
+### `@rdlabo/ionic-theme-ios26` (Drittanbieter-Theme)
+
+- Risk: Nicht-offizielles Community-Package ohne Ionic-Support-Garantie
+- Files: `frontend/package.json`
+- Known issue: `registerTabBarEffect` funktioniert bei 6 Tabs nicht vollständig (aus MEMORY.md)
+- Migration plan: Langfristig auf offizielle Ionic-Theming-APIs wechseln wenn verfügbar
 
 ---
 
-## Dependencies at Risk
-
-**Keine automatisierten Dependency-Updates:**
-- Risk: Sicherheitslücken in transitiven Dependencies werden nicht automatisch erkannt.
-  - `backend/package.json` enthält keine `audit`-CI-Pipeline.
-- Impact: Bekannte CVEs in direkten oder transitiven Dependencies bleiben unentdeckt bis zu manuellem `npm audit`.
-- Migration plan: `npm audit` in CI/CD-Workflow (`.github/workflows/`) integrieren und automatischen Dependabot-Scan aktivieren.
-
----
-
-*Concerns-Analyse: 2026-03-23*
+*Concerns-Audit: 2026-03-24*

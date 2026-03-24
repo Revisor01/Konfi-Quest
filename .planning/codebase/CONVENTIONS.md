@@ -1,233 +1,170 @@
 # Coding Conventions
 
-**Analysis Date:** 2026-03-23
+**Analysis Date:** 2026-03-24
 
 ## Naming Patterns
 
-**Files:**
-- React-Komponenten: PascalCase mit Suffix — `AdminKonfisPage.tsx`, `KonfiEventsPage.tsx`, `KonfiModal.tsx`
-- Hooks: camelCase mit `use`-Prefix — `useOfflineQuery.ts`, `useActionGuard.ts`
-- Services/Utils: camelCase ohne Suffix — `api.ts`, `tokenStore.ts`, `helpers.ts`
-- Backend-Routes: kebab-case mit `.js` — `konfi-management.js`, `activities.js`
-- Typen-Dateien: lowercase nach Domain — `user.ts`, `event.ts`, `chat.ts`
+**Files (Frontend):**
+- React-Komponenten: PascalCase, Dateiendung `.tsx` (z.B. `KonfiEventsPage.tsx`, `ActivityModal.tsx`)
+- Hooks: camelCase mit `use`-Prefix, Dateiendung `.ts` (z.B. `useOfflineQuery.ts`, `useActionGuard.ts`)
+- Services: camelCase, Dateiendung `.ts` (z.B. `tokenStore.ts`, `writeQueue.ts`, `networkMonitor.ts`)
+- Utility-Funktionen: camelCase, Dateiendung `.ts` (z.B. `helpers.ts`, `dateUtils.ts`)
+- Typen/Interfaces: camelCase Dateinamen, PascalCase Typnamen (`user.ts`, `event.ts`)
 
-**Komponenten-Klassen:**
-- Pages (Ionic-Screens): `[Role][Feature]Page` — `AdminActivitiesPage`, `KonfiBadgesPage`
-- Modals: `[Feature]Modal` — `ActivityManagementModal`, `KonfiModal`
-- Views (darstellende Teile ohne eigenes Routing): `[Feature]View` — `EventsView`, `DashboardView`
-- Shared/wiederverwendbare Komponenten: beschreibend ohne Prefix — `SectionHeader`, `EmptyState`
+**Files (Backend):**
+- Routes: kebab-case, Dateiendung `.js` (z.B. `konfi-management.js`, `activities.js`)
+- Middleware: camelCase, Dateiendung `.js` (z.B. `validation.js`, `rbac.js`)
+- Utils: camelCase, Dateiendung `.js` (z.B. `liveUpdate.js`, `passwordUtils.js`)
+
+**Verzeichnisse (Frontend):**
+- Feature-Gruppen: Singular ohne Bindestrich (`admin/`, `konfi/`, `teamer/`, `wrapped/`)
+- Interne Unterteilung: `pages/`, `views/`, `modals/` je Feature-Gruppe
+- Querschnitts-Code: `common/`, `shared/`
 
 **Funktionen:**
-- Handler: `handle[Action]` — `handleClose`, `handleSave`, `handleSubmit`
-- Callbacks aus Eltern: `on[Event]` — `onClose`, `onSuccess`, `onTabChange`
-- Guards/Hilfs-Methoden in Hooks: camelCase ohne Prefix — `guard`, `refresh`, `revalidate`
+- Frontend: camelCase, beschreibend (z.B. `filterBySearchTerm`, `calculateBadgeProgress`)
+- Backend: camelCase (z.B. `getCachedUser`, `handleValidationErrors`, `invalidateUserCache`)
 
 **Variablen:**
-- Boolean-State: beschreibend — `isSubmitting`, `isOnline`, `isDirty`
-- State-Arrays: Plural der Domain — `events`, `konfis`, `activities`
-- Offline-Query-Destrukturierung: `data: [semantischer Name]` — `{ data: events }`, `{ data: konfis }`
-- Refs fuer Race-Condition-Schutz: `[name]Ref` — `mountedRef`, `currentKeyRef`, `guardRef`
+- camelCase durchgehend
+- Private Module-Variablen in Services: Unterstrich-Prefix (z.B. `_token`, `_items`, `_flushing`)
+- Konstanten: SCREAMING_SNAKE_CASE (z.B. `DEFAULT_TTL`, `USER_CACHE_MAX`, `QUEUE_KEY`)
 
-**TypeScript-Typen:**
-- Interfaces: PascalCase — `BaseUser`, `QueueItem`, `CacheEntry`
-- Union-Typen: PascalCase — `HighlightType`
-- Props-Interfaces: `[Komponentenname]Props` — `EventsViewProps`, `KonfiModalProps`
+**TypeScript Typen/Interfaces:**
+- Interfaces: PascalCase mit beschreibendem Namen (z.B. `BaseUser`, `QueueItem`, `LiveUpdateEvent`)
+- Props-Interfaces: `<KomponentenName>Props` (z.B. `EventsViewProps`, `ActivityModalProps`)
+- Union-Typen in Interfaces für eingeschränkte Strings (z.B. `type: 'admin' | 'konfi' | 'teamer'`)
 
 ## Code Style
 
-**Formatting:**
-- Kein Prettier konfiguriert — konsistente Einrückung mit 2 Leerzeichen (de-facto Standard)
-- Einzel-Anführungszeichen in TypeScript/JavaScript
+**Sprache:**
+- Deutsche Kommentare und UI-Texte durchgehend
+- Echte Umlaute (ä, ö, ü, ß) — niemals ae/oe/ue/ss
+- Keine Unicode-Emojis; Icons ausschließlich über `ionicons/icons`
+- Logging/Fehlermeldungen auf Deutsch (z.B. `'Unbekannter Fehler'`, `'Ungültige ID'`)
 
-**Linting:**
-- ESLint 9 mit Flat-Config — `frontend/eslint.config.js`
-- typescript-eslint + react-hooks + react-refresh Plugins
-- `no-console`: Warn in Production, deaktiviert in Development
-- TypeScript strict-Mode aktiviert — `tsconfig.json`
+**Formatierung:**
+- Kein dediziertes Prettier-Config (kein `.prettierrc` vorhanden)
+- ESLint mit TypeScript-ESLint + React Hooks + React Refresh Plugins
+- Config: `frontend/eslint.config.js`
+- `no-console`/`no-debugger` nur in Production als Warning, in Development erlaubt
 
-**Absolutes Verbot:** Keine Unicode-Emojis in Code, UI oder Strings. Nur IonIcon mit Ionicons-Icons.
+**Linting-Regeln:**
+- `@typescript-eslint` recommended Rules aktiv
+- `eslint-plugin-react-hooks` recommended Rules aktiv
+- `react-refresh/only-export-components` als Warning (mit `allowConstantExport`)
 
-**Pflicht:** Echte Umlaute (ü, ö, ä, ß) in UI-Texten und Fehlermeldungen — niemals ue/oe/ae/ss.
+## Import-Organisation
 
-## Import-Reihenfolge
+**Reihenfolge (Frontend-Konvention beobachtet):**
+1. React-Core (`import React, { useState, useEffect } from 'react'`)
+2. Ionic-Komponenten (`from '@ionic/react'`)
+3. Ionicons (`from 'ionicons/icons'`)
+4. Externe Bibliotheken (axios, socket.io-client, swiper etc.)
+5. Interne Contexts (`from '../../../contexts/AppContext'`)
+6. Interne Hooks (`from '../../../hooks/useOfflineQuery'`)
+7. Interne Services (`from '../../../services/api'`)
+8. Interne Komponenten (relativ, Views und Shared-Components)
+9. Typen (`from '../../../types/event'`)
 
-**Konvention in Frontend-Komponenten (durchgängig eingehalten):**
-1. React und React-Hooks — `import React, { useState, useCallback } from 'react'`
-2. Ionic-Komponenten und Hooks — `import { IonPage, IonHeader, useIonModal } from '@ionic/react'`
-3. Ionicons — `import { add, closeOutline } from 'ionicons/icons'`
-4. Lokale Contexts — `import { useApp } from '../../../contexts/AppContext'`
-5. Lokale Hooks — `import { useOfflineQuery } from '../../../hooks/useOfflineQuery'`
-6. Services — `import api from '../../../services/api'`
-7. Lokale Komponenten — `import EventsView from '../views/EventsView'`
-8. Typen — `import { Event } from '../../../types/event'`
-9. Utils — `import { triggerPullHaptic } from '../../../utils/haptics'`
-
-**Path Aliases:** Keine konfigurierten Aliase — alle Imports sind relative Pfade mit `../`.
-
-## Modal-Pattern
-
-**PFLICHT: Nur `useIonModal` Hook verwenden — niemals `<IonModal isOpen={state}>`.**
-
-```typescript
-// Korrekte Verwendung (aus AdminActivitiesPage.tsx)
-const [presentActivityModal, dismissActivityModal] = useIonModal(ActivityManagementModal, {
-  activity: selectedActivity,
-  onClose: () => dismissActivityModal(),
-  onSuccess: () => {
-    dismissActivityModal();
-    refreshActivities();
-  }
-});
-
-// Öffnen mit presentingElement fuer Sheet-Styling
-presentActivityModal({ presentingElement: presentingElement });
-```
-
-**Modal-Komponenten-Interface:**
-```typescript
-interface MyModalProps {
-  onClose: () => void;
-  onSuccess: () => void;
-  dismiss?: () => void; // Immer optionaler Fallback
-}
-
-const MyModal: React.FC<MyModalProps> = ({ onClose, onSuccess, dismiss }) => {
-  const doClose = () => {
-    if (dismiss) dismiss(); // dismiss bevorzugen
-    else onClose();
-  };
-  // ...
-};
-```
-
-## Data-Fetching-Pattern
-
-**Alle Pages verwenden `useOfflineQuery` (SWR-Pattern):**
-
-```typescript
-const { data: events, loading, refresh } = useOfflineQuery<Event[]>(
-  'konfi:events:' + user?.id,     // Cache-Key: [role]:[domain]:[scope-id]
-  () => api.get('/konfi/events').then(r => r.data),
-  { ttl: CACHE_TTL.EVENTS }       // TTL aus offlineCache.ts Konstanten
-);
-```
-
-**Cache-Keys-Konvention:**
-- `[role]:[domain]:[organization_id oder user_id]` — `admin:konfis:42`, `konfi:events:7`
-- Mit Zusatz-Filter: `admin:activities:42:konfi`
-
-**CACHE_TTL-Konstanten** aus `src/services/offlineCache.ts` — niemals Magic Numbers.
-
-## Offline-Write-Pattern
-
-Schreiboperationen über `writeQueue` mit Offline-Unterstützung. Doppel-Submit-Schutz durch `useActionGuard`:
-
-```typescript
-const { isSubmitting, guard } = useActionGuard();
-
-const handleSave = async () => {
-  await guard(async () => {
-    await api.post('/endpoint', data);
-    onSuccess();
-  });
-};
-```
-
-## Backend-Routen-Pattern
-
-**Alle Routes als Factory-Funktion exportiert (Dependency Injection):**
-```javascript
-module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwardBadges) => {
-  router.get('/', rbacVerifier, requireTeamer, async (req, res) => {
-    try {
-      const { rows } = await db.query(query, params);
-      res.json(rows);
-    } catch (err) {
-      console.error('Database error in GET /api/[route]:', err);
-      res.status(500).json({ error: 'Datenbankfehler' });
-    }
-  });
-  return router;
-};
-```
-
-**Middleware-Reihenfolge:** `rbacVerifier` → `requireRole` → Validierungs-Array → Handler
-
-## Error Handling
-
-**Frontend:**
-- API-Fehler: `setError(message)` aus `useApp()` — zeigt globalen Toast, löscht nach 5s automatisch
-- Erfolg: `setSuccess(message)` aus `useApp()`
-- Fehler-Format aus API: `error.response?.data?.error` oder `error.message`
-- Async-Fehler in Hooks/Services: `try/catch`, bei Offline-Zustand graceful degradation mit Cache
+**Barrel Files:**
+- `src/components/shared/index.ts` exportiert `SectionHeader`, `EmptyState`, `ListSection`
+- Kein App-weites Barrel; alle anderen Module werden direkt importiert
 
 **Backend:**
-- HTTP 400: Validierungsfehler mit `{ error: string, details?: array }` aus `handleValidationErrors`
-- HTTP 401: Auth-Fehler mit `{ error: string }` — immer englisch (JWT-Standard)
-- HTTP 403: Berechtigungsfehler mit `{ error: 'Keine Berechtigung' }` — deutsch
-- HTTP 404: `{ error: '[Ressource] nicht gefunden' }` — deutsch
-- HTTP 500: `{ error: 'Datenbankfehler' }` + `console.error()` mit Kontext-Prefix
+- CommonJS (`require`) durchgehend im Backend
+- Keine Barrel-Files; direkte Requires mit relativem Pfad
 
-**Konvention fuer console.error im Backend:**
+## Fehlerbehandlung
+
+**Frontend:**
+- API-Fehler: `try/catch` mit `err instanceof Error ? err.message : 'Unbekannter Fehler'`
+- Axios-Fehler: Zentraler Response-Interceptor in `src/services/api.ts` — behandelt 401 (Token-Refresh), 429 (Rate-Limit), dispatched Custom Events (`auth:relogin-required`, `rate-limit`)
+- Komponenten-Fehler: `ErrorBoundary`-Komponente in `src/components/common/ErrorBoundary.tsx`
+- Form-Submission: `useActionGuard` Hook verhindert Doppel-Submits und liefert `isSubmitting`-State
+- Offline-Fehler: `useOfflineQuery` behält gecachte Daten bei Netzwerkfehlern; markiert als stale statt Error anzuzeigen
+
+**Backend:**
+- Routes: `try/catch` pro Endpoint, `res.status(500).json({ error: '...' })`
+- Validierung: `express-validator` + zentrale `handleValidationErrors`-Middleware → 400 mit strukturierten `details`
+- SQL-Injection: Parameterized Queries durchgehend (`$1`, `$2` etc. mit pg-Treiber)
+- SQL-Spalten-Injektion: Whitelist-Resolver `getPointField()` in `middleware/validation.js`
+
 ```javascript
-console.error('Database error in [VERB] /api/[route]:', err);
+// Beispiel: Backend Fehlerbehandlung in Route
+try {
+  const { rows } = await db.query(query, params);
+  res.json(rows);
+} catch (err) {
+  console.error('Fehler beim Laden:', err);
+  res.status(500).json({ error: 'Interner Serverfehler' });
+}
 ```
 
 ## Logging
 
-**Frontend:** Kein dediziertes Logging-Framework. Nur `console.warn/error` fuer Fehler und unerwartete Zustände — NIE fuer normale Ablauf-Informationen.
+**Frontend:**
+- `console.warn()` für non-kritische Zustände (z.B. Offline-Token, übersprungene Aktionen)
+- `console.error()` für Fehler mit Kontext-String (z.B. `'Fehler beim Senden des FCM-Tokens:', err`)
+- Kein strukturiertes Logging-Framework
 
-**Backend:** `console.error/warn/log` direkt. Kein dediziertes Logger-Framework.
+**Backend:**
+- `console.warn()` für Auth-Fehler, Engine-Errors
+- `console.error()` für Server-Fehler mit Kontext
+- `console.log()` für Server-Start, wichtige Initialisierungen
+- Kein strukturiertes Logging-Framework (kein Winston/Pino)
 
 ## Kommentare
 
-**Wenn kommentiert wird:**
-- Deutsche Kommentare für Geschäftslogik und Sicherheitshinweise
-- Englische Kommentare sporadisch, besonders bei Capacitor/iOS-Workarounds
-- Wichtige Warnungen gross markiert: `// WICHTIG:`, `// ANTI-SPAM:`, `// TESTFLIGHT FIX:`
-- Migrationshinweise: `// useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren`
+**Wann kommentieren:**
+- Nicht-offensichtliche Business-Logik (z.B. Race-Condition-Schutz, Anti-Spam-Logik)
+- Architektur-Entscheidungen (z.B. `// FCM Token wird über Window Events empfangen`)
+- Rollen-Hierarchie-Erklärungen in `rbac.js`
+- SQL-Queries mit mehreren JOINs
 
-**JSDoc/TSDoc:** Nicht verwendet. Typen werden stattdessen über TypeScript-Interfaces kommuniziert.
+**Stil:**
+- Inline-Kommentare auf Deutsch
+- Sections durch `// ====` Trennlinien mit Titel in Backend-Dateien (z.B. `// ===== ROUTES =====`)
+- Keine JSDoc/TSDoc außer bei komplexen Utility-Funktionen
 
-## Typdefinitionen
+## Funktionsdesign
 
-**Zentrale Typen-Dateien** in `src/types/`:
-- Alle Consumer importieren von dort, keine lokal duplizierten Interfaces in Komponenten (wird angestrebt, aber nicht immer eingehalten — manche Pages definieren lokale Interfaces)
-- Kommentare zeigen Intention: `// Zentrale User-Typen — alle Consumer importieren von hier`
+**Größe:** Kein striktes Limit; große Komponenten existieren (bis ~1181 Zeilen in `KonfiDetailSections.tsx`), aber Views sind zunehmend als separate Datei ausgelagert
 
-**Lokale Interfaces:** Werden in Page-Komponenten direkt vor der Komponente definiert, wenn der Typ nur lokal relevant ist:
+**Parameter:**
+- React-Komponenten: Props-Interface immer explizit definiert (`interface XxxProps`)
+- Hooks: Optionaler `options`-Parameter mit Interface (z.B. `UseOfflineQueryOptions<T>`)
+- Generics für wiederverwendbare Utility-Funktionen (z.B. `filterByJahrgang<T>`, `sortByDate<T>`)
+
+**Return-Werte:**
+- Hooks geben strukturiertes Result-Objekt zurück (z.B. `{ data, loading, error, isStale, isOffline, refresh }`)
+- Services exportieren einzelne Funktionen, kein Klassen-Pattern (Frontend)
+- Backend-Routes geben immer JSON zurück
+
+## Modul-Design
+
+**Frontend-Muster:**
+- Services als Singleton-Module mit exportierten Funktionen (kein `class`): `tokenStore.ts`, `writeQueue.ts`, `offlineCache.ts`
+- Contexts: React-Context + Provider + Custom-Hook-Pattern (`useApp()`, `useLiveRefresh()`)
+- Modals ausschließlich über `useIonModal`-Hook; niemals `<IonModal isOpen={state}>`
+
 ```typescript
-// Aus AdminKonfisPage.tsx
-interface Konfi {
-  id: number;
-  name: string;
-  // ...
-}
-const AdminKonfisPage: React.FC = () => { ... };
+// Korrektes Modal-Muster
+const [presentModal, dismissModal] = useIonModal(MyModal, {
+  onClose: () => dismissModal(),
+  onSuccess: () => { dismissModal(); refresh(); }
+});
+presentModal({ presentingElement });
 ```
 
-## RBAC-Pattern (Backend)
+**Backend-Muster:**
+- Routes als Factory-Funktion exportiert: `module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, ...) => { ... }`
+- Validierungsregeln als Arrays am Anfang jeder Route-Factory definiert
 
-**Organisations-Isolation ist Pflicht** — jede DB-Query filtert nach `organization_id`:
-```javascript
-// Immer req.user.organization_id als Filter-Parameter
-const { rows } = await db.query(query, [req.user.organization_id]);
-```
-
-**SQL-Injection-Schutz:** Dynamische Spalten-Namen (z.B. Punktetypen) nur über Whitelist-Resolver:
-```javascript
-// Aus backend/middleware/validation.js
-const field = VALID_POINT_FIELDS[type]; // Wirft Error bei ungültigem Wert
-```
-
-## Generics-Verwendung
-
-TypeScript-Generics werden konsequent eingesetzt für wiederverwendbare Utilities:
-```typescript
-// useOfflineQuery<T>, offlineCache.get<T>, filterByJahrgang<T>, sortByDate<T>
-const { data } = useOfflineQuery<Event[]>(key, fetcher);
-```
+**Exports:**
+- Frontend: Named Exports für Utilities/Types; Default Exports für React-Komponenten
+- Barrel: Nur `src/components/shared/index.ts` vorhanden
 
 ---
 
-*Convention analysis: 2026-03-23*
+*Convention-Analyse: 2026-03-24*

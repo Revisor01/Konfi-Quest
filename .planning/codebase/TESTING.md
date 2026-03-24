@@ -1,14 +1,14 @@
 # Testing Patterns
 
-**Analysis Date:** 2026-03-23
+**Analysis Date:** 2026-03-24
 
 ## Test Framework
 
 **Runner (Unit):**
 - Vitest 4.x
-- Config: eingebettet in `frontend/vite.config.ts` unter `test:`
-- Globals aktiviert (`globals: true`) — kein expliziter Import von `describe`, `it`, `expect` nötig
-- Environment: `jsdom`
+- Config: `frontend/vite.config.ts` (eingebettet unter `test:` key)
+- Environment: jsdom
+- Globals: aktiviert (`globals: true`)
 - Setup-Datei: `frontend/src/setupTests.ts`
 
 **Runner (E2E):**
@@ -16,55 +16,40 @@
 - Config: `frontend/cypress.config.ts`
 - Base URL: `http://localhost:5173`
 
-**Assertion Library:**
-- Vitest built-in (kompatibel mit Jest API)
-- `@testing-library/jest-dom` fuer DOM-Assertions — via `setupTests.ts`
-
-**Testing Library:**
-- `@testing-library/react` 16.x
-- `@testing-library/user-event` 14.x
+**Assertion-Bibliothek:**
+- `@testing-library/jest-dom` (via `setupTests.ts`)
+- Vitest-natives `expect`
 
 **Backend:**
-- Kein Test-Framework konfiguriert — `package.json` scripts.test gibt Fehler aus
-- Keine Backend-Tests vorhanden
+- Keine Test-Infrastruktur vorhanden
+- `backend/package.json` Scripts: `"test": "echo \"Error: no test specified\" && exit 1"`
 
-**Run Commands:**
+**Kommandos:**
 ```bash
-# Frontend — im Verzeichnis frontend/
-npm run test.unit          # Vitest (alle Unit-Tests)
-npm run test.e2e           # Cypress (alle E2E-Tests)
-npm run lint               # ESLint-Check
+# Frontend (im /frontend Verzeichnis)
+npm run test.unit          # Vitest (einmalig)
+npm run test.e2e           # Cypress run (headless)
+npm run lint               # ESLint pruefen
 ```
 
-## Test File Organization
+## Test-Datei-Organisation
 
-**Location:**
-- Unit-Tests: Ko-lokiert im `src/`-Verzeichnis neben den Quelldateien
-- E2E-Tests: `frontend/cypress/e2e/`
-- Setup: `frontend/src/setupTests.ts`
+**Unit Tests:**
+- Einzelne Datei vorhanden: `frontend/src/App.test.tsx`
+- Ko-lokation (gleicher Ordner wie Quell-Datei) als Konvention erkennbar
+- Namensschema: `<ComponentName>.test.tsx` bzw. `<module>.test.ts`
 
-**Naming:**
-- Unit: `[Name].test.tsx` — z.B. `App.test.tsx`
-- E2E: `[Name].cy.ts` — z.B. `test.cy.ts`
+**E2E Tests:**
+- Verzeichnis: `frontend/cypress/e2e/`
+- Einzige Datei: `frontend/cypress/e2e/test.cy.ts` (Boilerplate, nicht produktiv genutzt)
+- Support-Datei: `frontend/cypress/support/commands.ts` (Boilerplate ohne Custom Commands)
+- Fixtures: `frontend/cypress/fixtures/` (leer)
 
-**Aktueller Umfang:**
-```
-frontend/src/
-└── App.test.tsx              # 1 Smoke-Test
-frontend/cypress/
-├── e2e/
-│   └── test.cy.ts            # 1 Placeholder-Test (Tab 1)
-├── fixtures/
-│   └── example.json          # Leeres Fixture
-└── support/
-    ├── commands.ts            # Nur auskommentierte Beispiele
-    └── e2e.ts                 # Standard-Setup
-```
+## Test-Struktur
 
-## Test Structure
-
-**Einziger vorhandener Unit-Test (App.test.tsx):**
+**Vorhandenes Unit-Test-Muster:**
 ```typescript
+// frontend/src/App.test.tsx
 import React from 'react';
 import { render } from '@testing-library/react';
 import App from './App';
@@ -75,8 +60,9 @@ test('renders without crashing', () => {
 });
 ```
 
-**Einziger vorhandener E2E-Test (cypress/e2e/test.cy.ts):**
+**Vorhandenes E2E-Muster:**
 ```typescript
+// frontend/cypress/e2e/test.cy.ts
 describe('My First Test', () => {
   it('Visits the app root url', () => {
     cy.visit('/')
@@ -85,15 +71,13 @@ describe('My First Test', () => {
 })
 ```
 
-**Befund:** Beide Tests sind Scaffolding-Placeholders aus dem Ionic-Projekt-Generator — der E2E-Test ist definitiv nicht auf die aktuelle App ausgerichtet (`Tab 1 page` existiert nicht mehr).
+## Setup und Mocks
 
-## Mocking
-
-**Framework:** Vitest built-in (`vi.mock`, `vi.fn`, `vi.spyOn`)
-
-**Konfiguriertes Mock in setupTests.ts:**
+**setupTests.ts:**
 ```typescript
-// Mock fuer window.matchMedia (Ionic benötigt dies in jsdom)
+import '@testing-library/jest-dom/extend-expect';
+
+// matchMedia Mock (Ionic benötigt das)
 window.matchMedia = window.matchMedia || function() {
   return {
     matches: false,
@@ -103,11 +87,20 @@ window.matchMedia = window.matchMedia || function() {
 };
 ```
 
-**Capacitor-Mocking:** Nicht konfiguriert. Für Tests von Komponenten die Capacitor verwenden (z.B. `Preferences`, `PushNotifications`) wären Mocks erforderlich. Aktuell nicht vorhanden.
+**Benötigte Mocks für neue Tests:**
+- `window.matchMedia` — bereits in `setupTests.ts` vorhanden
+- Capacitor-Plugins (`@capacitor/preferences`, `@capacitor/network` etc.) — müssen gemockt werden
+- `src/services/api.ts` (axios) — muss gemockt werden für Komponenten-Tests
+- `src/services/tokenStore.ts` — Synchrone Getter, einfach mockbar
+- Socket.IO-Client — muss gemockt werden für Chat-Komponenten
 
-**Empfohlenes Mock-Pattern für Capacitor (nicht implementiert):**
+## Mocking
+
+**Framework:** Vitest-natives `vi.mock()` / `vi.fn()`
+
+**Empfohlenes Mocking-Muster für dieses Projekt:**
 ```typescript
-// Für Tests die tokenStore, offlineCache etc. nutzen
+// Capacitor Preferences mocken
 vi.mock('@capacitor/preferences', () => ({
   Preferences: {
     get: vi.fn().mockResolvedValue({ value: null }),
@@ -115,79 +108,133 @@ vi.mock('@capacitor/preferences', () => ({
     remove: vi.fn().mockResolvedValue(undefined),
   }
 }));
+
+// API-Service mocken
+vi.mock('../services/api', () => ({
+  default: {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+  }
+}));
+
+// AppContext mocken
+vi.mock('../contexts/AppContext', () => ({
+  useApp: () => ({
+    user: { id: 1, type: 'konfi', display_name: 'Test Konfi' },
+    setError: vi.fn(),
+    setSuccess: vi.fn(),
+    isOnline: true,
+  })
+}));
 ```
 
-## Fixtures and Factories
+**Was gemockt werden soll:**
+- Alle Capacitor-Plugins (kein nativer Layer in Tests)
+- API-Calls (axios-Instanz)
+- AppContext (kein Provider nötig in Unit-Tests)
+- Socket.IO-Client (`src/services/websocket.ts`)
+- `networkMonitor` aus `src/services/networkMonitor.ts`
 
-**Test Data:**
-- `frontend/cypress/fixtures/example.json`: leeres Objekt `{}`
-- Keine Test-Factories oder Seeding-Utilities vorhanden
+**Was NICHT gemockt werden soll:**
+- `src/utils/helpers.ts` (pure Funktionen, direkt testbar)
+- `src/utils/dateUtils.ts` (pure Funktionen, direkt testbar)
+- `src/utils/haptics.ts` (Wrapper, kann gemockt werden aber nicht nötig)
+
+## Fixtures und Factories
+
+**Aktuell:** Keine Test-Fixtures oder Factories vorhanden (`cypress/fixtures/` leer, keine Vitest-Factories)
+
+**Empfohlenes Muster für neue Tests:**
+```typescript
+// Test-Daten-Factory (Vorschlag)
+const makeKonfi = (overrides = {}) => ({
+  id: 1,
+  display_name: 'Test Konfi',
+  type: 'konfi' as const,
+  organization_id: 1,
+  ...overrides,
+});
+
+const makeEvent = (overrides = {}) => ({
+  id: 1,
+  title: 'Test Event',
+  event_date: new Date().toISOString(),
+  is_registered: false,
+  ...overrides,
+});
+```
+
+**Fixtures-Verzeichnis:** `frontend/cypress/fixtures/` (leer, für E2E-Fixture-JSON-Dateien vorgesehen)
 
 ## Coverage
 
-**Requirements:** Keine Coverage-Anforderungen konfiguriert.
+**Anforderungen:** Keine Coverage-Ziele konfiguriert
 
-**Coverage-Report:**
+**Coverage anzeigen:**
 ```bash
-# Vitest Coverage (nicht konfiguriert, aber via CLI möglich)
 npx vitest run --coverage
 ```
 
-## Test Types
+**Aktueller Stand:** Praktisch keine Coverage — nur 1 Smoke-Test für `App.tsx`
 
-**Unit Tests:**
-- Scope: Minimal — nur ein App-Smoke-Test
-- Approach: `@testing-library/react` render + DOM-Assertion
-- Effektiv getestete Logik: keine
+## Test-Typen
 
-**Integration Tests:**
-- Nicht vorhanden
+**Unit-Tests:**
+- Scope: Einzelne Komponente, Hook, oder Utility-Funktion
+- Framework: Vitest + @testing-library/react
+- Aktuell vorhanden: 1 Datei (`App.test.tsx`)
 
-**E2E Tests:**
-- Framework: Cypress 13 (konfiguriert)
-- Basis-URL: `http://localhost:5173`
-- Effektiv getestet: Placeholder ohne Relevanz fuer die aktuelle App
+**Integration-Tests:**
+- Scope: Mehrere Schichten zusammen (z.B. Page + API-Call)
+- Framework: Vitest (möglich aber nicht genutzt)
+- Aktuell vorhanden: Keine
 
-## Zusammenfassung des Ist-Zustands
+**E2E-Tests:**
+- Framework: Cypress 13
+- Base URL: `http://localhost:5173` (Dev-Server muss laufen)
+- Aktuell vorhanden: 1 Boilerplate-Datei (nicht produktiv)
 
-**Praktisch keine automatisierten Tests vorhanden.** Das Projekt hat Testing-Infrastruktur aufgebaut (Vitest + Cypress + Testing Library), aber keine echten Tests implementiert.
+**Backend-Tests:**
+- Framework: Keines
+- Aktuell vorhanden: Keine
 
-- **Vitest**: 1 Smoke-Test der nur prüft ob `baseElement` definiert ist
-- **Cypress**: 1 outdated Placeholder-Test
-- **Backend**: Kein Test-Framework, kein einziger Test
-- **Custom Commands**: Nur auskommentierte Cypress-Beispiele
+## Async-Testing
 
-**Testbare Kandidaten mit hohem Wert** (aktuell ungetestet):
-- `src/utils/helpers.ts` — reine Funktionen: `calculateBadgeProgress`, `filterBySearchTerm`, `sortByDate`
-- `src/utils/dateUtils.ts` — reine Funktionen
-- `src/hooks/useOfflineQuery.ts` — SWR-Logik mit Netzwerk-State-Übergängen
-- `src/hooks/useActionGuard.ts` — Double-Submit-Guard
-- `src/services/tokenStore.ts` — Memory + Preferences-Sync
-- Backend-Route-Handler — Express-Routen mit Supertest testbar
-
-## Wenn Tests hinzugefügt werden
-
-**Unit-Tests platzieren:** Ko-lokiert neben der Quelldatei als `[Name].test.ts` oder `[Name].test.tsx`
-
-**Setup-Datei erweitern** für Capacitor-Mocks in `src/setupTests.ts`
-
-**Async-Testing-Pattern (Vitest):**
+**Empfohlenes Muster mit Vitest + Testing Library:**
 ```typescript
-import { render, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 
-it('loads data', async () => {
-  const { getByText } = render(<MyComponent />);
-  await waitFor(() => expect(getByText('Geladen')).toBeInTheDocument());
+test('laedt Daten asynchron', async () => {
+  render(<KonfiEventsPage />);
+  await waitFor(() => {
+    expect(screen.getByText('Events')).toBeInTheDocument();
+  });
 });
 ```
 
-**Error-Testing-Pattern (Vitest):**
+## Fehler-Testing
+
+**Empfohlenes Muster:**
 ```typescript
-it('throws on invalid input', async () => {
-  await expect(myAsyncFn(invalid)).rejects.toThrow('Ungültiger Wert');
+test('zeigt Fehlermeldung bei API-Fehler', async () => {
+  vi.mocked(api.get).mockRejectedValue(new Error('Netzwerkfehler'));
+  render(<KonfiEventsPage />);
+  await waitFor(() => {
+    expect(screen.getByText(/Fehler/)).toBeInTheDocument();
+  });
 });
 ```
+
+## Wichtige Hinweise fuer neue Tests
+
+1. **Ionic-Komponenten** rendern im Test-Environment nicht vollständig — Tests sollten auf logisches Verhalten (Callbacks, State) fokussieren, nicht auf visuelle Ionic-UI
+2. **useIonModal** muss gemockt werden (Ionic-Hook): `vi.mock('@ionic/react', () => ({ useIonModal: () => [vi.fn(), vi.fn()] }))`
+3. **useOfflineQuery** hat Abhängigkeiten auf `offlineCache` und `networkMonitor` — beide müssen gemockt werden
+4. **useIonRouter** (aus `@ionic/react`) muss für Page-Tests gemockt werden
+5. **ModalContext** (`useModalPage`) ist auf `IonPage`-Refs angewiesen — für Unit-Tests mocken
 
 ---
 
-*Testing analysis: 2026-03-23*
+*Testing-Analyse: 2026-03-24*
