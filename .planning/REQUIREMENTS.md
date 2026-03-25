@@ -81,10 +81,10 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 
 ### Admin Zertifikate
 
-- [ ] **AZE-01**: Zertifikat-Zuweisen als volles Modal
-- [ ] **AZE-02**: Teamer-seit ordentlicher Datumspicker
-- [ ] **AZE-03**: Laufzeit eingeben, automatisch Start bei Vergabe
-- [ ] **AZE-04**: Icon-Picker: gepicktes Icon im Modal anzeigen (wie bei Badges)
+- [x] **AZE-01**: Zertifikat-Zuweisen als volles Modal
+- [x] **AZE-02**: Teamer-seit ordentlicher Datumspicker
+- [x] **AZE-03**: Laufzeit eingeben, automatisch Start bei Vergabe
+- [x] **AZE-04**: Icon-Picker: gepicktes Icon im Modal anzeigen (wie bei Badges)
 
 ### Admin Chat
 
@@ -211,10 +211,10 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 | AEV-08 | Phase 99 | Complete |
 | ABG-01 | Phase 99 | Complete |
 | ABG-02 | Phase 99 | Complete |
-| AZE-01 | Phase 100 | Pending |
-| AZE-02 | Phase 100 | Pending |
-| AZE-03 | Phase 100 | Pending |
-| AZE-04 | Phase 100 | Pending |
+| AZE-01 | Phase 100 | Complete |
+| AZE-02 | Phase 100 | Complete |
+| AZE-03 | Phase 100 | Complete |
+| AZE-04 | Phase 100 | Complete |
 | AMA-01 | Phase 100 | Complete |
 | AMA-02 | Phase 100 | Complete |
 | AMA-03 | Phase 100 | Complete |
