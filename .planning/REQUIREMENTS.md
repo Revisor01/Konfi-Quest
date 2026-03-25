@@ -108,8 +108,8 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 
 ### Admin Bugs
 
-- [ ] **ABG-01**: Wartelisten-Nachruecken: Bei 3/2 gebucht soll erst bei unter Kapazitaet nachgerueckt werden
-- [ ] **ABG-02**: Chat aus Event oeffnen: schwarzer Screen beheben, Event-Chats pruefen
+- [x] **ABG-01**: Wartelisten-Nachruecken: Bei 3/2 gebucht soll erst bei unter Kapazitaet nachgerueckt werden
+- [x] **ABG-02**: Chat aus Event oeffnen: schwarzer Screen beheben, Event-Chats pruefen
 
 ### Admin Antraege
 
@@ -209,8 +209,8 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 | AEV-06 | Phase 99 | Pending |
 | AEV-07 | Phase 99 | Pending |
 | AEV-08 | Phase 99 | Pending |
-| ABG-01 | Phase 99 | Pending |
-| ABG-02 | Phase 99 | Pending |
+| ABG-01 | Phase 99 | Complete |
+| ABG-02 | Phase 99 | Complete |
 | AZE-01 | Phase 100 | Pending |
 | AZE-02 | Phase 100 | Pending |
 | AZE-03 | Phase 100 | Pending |

@@ -357,7 +357,7 @@ Plans:
 Plans:
 - [ ] 99-01-PLAN.md -- Suchfeld/Filter Zwischenueberschriften + Chat-Button + Beschreibungstext + Konfi-Umbenennung
 - [ ] 99-02-PLAN.md -- Event-Absagen ActionSheet + Loesch-Push
-- [ ] 99-03-PLAN.md -- Wartelisten-Kapazitaetspruefung + Chat-Navigation Fix
+- [x] 99-03-PLAN.md -- Wartelisten-Kapazitaetspruefung + Chat-Navigation Fix
 
 ### Phase 100: Admin Zertifikate, Material, Dashboard
 **Goal**: Admins haben vollstaendige Zertifikat-Modals, verbesserte Material-Verwaltung und ein sortierbares Dashboard
@@ -378,5 +378,5 @@ Plans:
 | 96. Konfi UI | 4/4 | Complete    | 2026-03-25 |
 | 97. Teamer UI | 2/2 | Complete    | 2026-03-25 |
 | 98. Admin Aktivitaeten, Details, Antraege, Profil, Jahrgaenge | 3/3 | Complete    | 2026-03-25 |
-| 99. Admin Events + Bugs | 0/3 | Not started | - |
+| 99. Admin Events + Bugs | 1/3 | In Progress|  |
 | 100. Admin Zertifikate, Material, Dashboard | 0/? | Not started | - |
