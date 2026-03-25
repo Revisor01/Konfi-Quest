@@ -29,8 +29,8 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 
 ### Konfi Dashboard
 
-- [ ] **KDB-01**: Events-Card immer sichtbar (auch leer), Layout wie Teamer:innen, Aufforderung Event buchen
-- [ ] **KDB-02**: Events-Card Layout: Titel+Datum+Uhrzeit, Ort, Mitbringen auf eigenen Zeilen
+- [x] **KDB-01**: Events-Card immer sichtbar (auch leer), Layout wie Teamer:innen, Aufforderung Event buchen
+- [x] **KDB-02**: Events-Card Layout: Titel+Datum+Uhrzeit, Ort, Mitbringen auf eigenen Zeilen
 
 ### Konfi Chat
 
@@ -170,8 +170,8 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 | ACH-04 | Phase 95 | Complete |
 | ACH-05 | Phase 95 | Complete |
 | ACH-06 | Phase 95 | Complete |
-| KDB-01 | Phase 96 | Pending |
-| KDB-02 | Phase 96 | Pending |
+| KDB-01 | Phase 96 | Complete |
+| KDB-02 | Phase 96 | Complete |
 | KEV-01 | Phase 96 | Pending |
 | KEV-02 | Phase 96 | Pending |
 | KEV-03 | Phase 96 | Pending |
