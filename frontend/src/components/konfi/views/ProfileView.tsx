@@ -17,8 +17,6 @@ import {
   IonRadioGroup,
   IonTitle,
   IonToolbar,
-  IonAccordion,
-  IonAccordionGroup,
   useIonModal,
   useIonAlert
 } from '@ionic/react';
@@ -36,7 +34,6 @@ import {
   locationOutline,
   mailOutline,
   timeOutline,
-  giftOutline,
   closeOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -48,6 +45,7 @@ import { clearAuth } from '../../../services/tokenStore';
 import { SectionHeader } from '../../shared';
 import ChangePasswordModal from '../modals/ChangePasswordModal';
 import ChangeEmailModal from '../modals/ChangeEmailModal';
+import PointsHistoryModal from '../modals/PointsHistoryModal';
 import WrappedModal from '../../wrapped/WrappedModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 
@@ -175,9 +173,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
   const [selectedTranslation, setSelectedTranslation] = useState<string>(profile.bible_translation || 'LUT');
   const [earnedBadgesCount, setEarnedBadgesCount] = useState<number>(0);
   const [wrappedHistory, setWrappedHistory] = useState<WrappedHistoryEntry[]>([]);
-  const [pointsHistory, setPointsHistory] = useState<any[]>([]);
-  const [pointsTotals, setPointsTotals] = useState<{ gottesdienst: number; gemeinde: number; total: number }>({ gottesdienst: 0, gemeinde: 0, total: 0 });
-
   // Wrapped-Historie laden
   React.useEffect(() => {
     if (!profile?.id) return;
@@ -185,16 +180,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
       .then(res => setWrappedHistory(res.data || []))
       .catch(() => {}); // Stille Fehlerbehandlung -- optionales Feature
   }, [profile?.id]);
-
-  // Punkte-Historie laden
-  React.useEffect(() => {
-    api.get('/konfi/points-history')
-      .then(res => {
-        setPointsHistory(res.data.history || []);
-        setPointsTotals(res.data.totals || { gottesdienst: 0, gemeinde: 0, total: 0 });
-      })
-      .catch(() => {});
-  }, []);
 
   // WrappedModal per useIonModal mit dynamischen Daten
   const [wrappedModalData, setWrappedModalData] = React.useState<WrappedHistoryEntry | null>(null);
@@ -323,6 +308,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
       handleTranslationChange(code);
       dismissBibleModal();
     }
+  });
+
+  // Modal with useIonModal Hook for Points History
+  const [presentPointsModal, dismissPointsModal] = useIonModal(PointsHistoryModal, {
+    onClose: () => dismissPointsModal()
   });
 
   const getInitials = (name: string | undefined) => {
@@ -634,69 +624,43 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         <IonCard className="app-card">
           <IonCardContent style={{ padding: '16px' }}>
             <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
-              {/* Punkte-Übersicht als Akkordeon */}
-              <IonAccordionGroup style={{ marginBottom: '8px' }}>
-                <IonAccordion value="punkte">
-                  <IonItem slot="header" lines="none" style={{ '--background': 'transparent', '--padding-start': '0', '--inner-padding-end': '0' }}>
-                    <div className="app-list-item app-list-item--purple" style={{ width: '100%' }}>
-                      <div className="app-list-item__row">
-                        <div className="app-list-item__main">
-                          <div className="app-icon-circle app-icon-circle--purple">
-                            <IonIcon icon={starOutline} />
-                          </div>
-                          <div className="app-list-item__content">
-                            <div className="app-list-item__title">Punkte-Übersicht</div>
-                            <div className="app-list-item__meta">
-                              <span className="app-list-item__meta-item">{profile.total_points || 0} Punkte gesamt</span>
-                            </div>
-                          </div>
+              {/* Punkte-Übersicht */}
+              <IonItem
+                button
+                onClick={() => {
+                  presentPointsModal({
+                    presentingElement: pageRef?.current || presentingElement || undefined
+                  });
+                }}
+                detail={false}
+                lines="none"
+                style={{
+                  '--background': 'transparent',
+                  '--padding-start': '0',
+                  '--padding-end': '0',
+                  '--inner-padding-end': '0',
+                  '--inner-border-width': '0',
+                  '--border-style': 'none',
+                  '--min-height': 'auto',
+                  marginBottom: '8px'
+                }}
+              >
+                <div className="app-list-item app-list-item--purple" style={{ width: '100%' }}>
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                      <div className="app-icon-circle app-icon-circle--purple">
+                        <IonIcon icon={starOutline} />
+                      </div>
+                      <div className="app-list-item__content">
+                        <div className="app-list-item__title">Punkte-Übersicht</div>
+                        <div className="app-list-item__meta">
+                          <span className="app-list-item__meta-item">{profile.total_points || 0} Punkte gesamt</span>
                         </div>
                       </div>
                     </div>
-                  </IonItem>
-                  <div slot="content" style={{ padding: '0 16px 16px' }}>
-                    {/* Stats Grid */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '12px' }}>
-                      <div className="app-info-box app-info-box--neutral" style={{ textAlign: 'center', padding: '8px' }}>
-                        <div style={{ fontSize: '1.1rem', fontWeight: '700' }}>{pointsTotals.gottesdienst}</div>
-                        <div style={{ fontSize: '0.7rem', color: '#666' }}>GD</div>
-                      </div>
-                      <div className="app-info-box app-info-box--neutral" style={{ textAlign: 'center', padding: '8px' }}>
-                        <div style={{ fontSize: '1.1rem', fontWeight: '700' }}>{pointsTotals.gemeinde}</div>
-                        <div style={{ fontSize: '0.7rem', color: '#666' }}>Gemeinde</div>
-                      </div>
-                      <div className="app-info-box app-info-box--neutral" style={{ textAlign: 'center', padding: '8px' }}>
-                        <div style={{ fontSize: '1.1rem', fontWeight: '700' }}>{profile.bonus_points || 0}</div>
-                        <div style={{ fontSize: '0.7rem', color: '#666' }}>Bonus</div>
-                      </div>
-                    </div>
-                    {/* Letzte Eintraege */}
-                    {pointsHistory.slice(0, 10).map((entry: any) => (
-                      <div key={`${entry.source_type}-${entry.id}`} className={`app-list-item ${entry.category === 'gottesdienst' ? 'app-list-item--info' : 'app-list-item--activities'}`} style={{ marginBottom: '4px' }}>
-                        <div className="app-list-item__row">
-                          <div className="app-list-item__main">
-                            <div className={`app-icon-circle ${entry.category === 'gottesdienst' ? 'app-icon-circle--info' : 'app-icon-circle--activities'}`}>
-                              <IonIcon icon={entry.source_type === 'bonus' ? giftOutline : entry.source_type === 'event' ? calendarOutline : starOutline} />
-                            </div>
-                            <div className="app-list-item__content">
-                              <div className="app-list-item__title">{entry.title}</div>
-                              <div className="app-list-item__meta">
-                                <span className="app-list-item__meta-item">+{entry.points}P</span>
-                                <span className="app-list-item__meta-item">{new Date(entry.date).toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    {pointsHistory.length === 0 && (
-                      <div className="app-info-box app-info-box--neutral" style={{ textAlign: 'center' }}>
-                        Noch keine Punkte-Einträge
-                      </div>
-                    )}
                   </div>
-                </IonAccordion>
-              </IonAccordionGroup>
+                </div>
+              </IonItem>
 
               {/* E-Mail ändern */}
               <IonItem
