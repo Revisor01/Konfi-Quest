@@ -84,3 +84,4 @@ Alle v1.0-v2.7 Entscheidungen in PROJECT.md und milestones/ archiviert.
 |---|-------------|------|--------|-----------|
 | 260324-k6j | GitHub README mit allen 17 Milestones | 2026-03-24 | 38fede8 | [260324-k6j](./quick/260324-k6j-github-readme-aktualisieren-mit-allen-17/) |
 | 260324-lt3 | 6 Sicherheits- und Cleanup-Fixes | 2026-03-24 | 86104ae | [260324-lt3](./quick/260324-lt3-6-sicherheits-und-cleanup-fixes/) |
+| 260325-t3v | Konfi Events-Card wie Teamer + Badge/Spacing Fixes | 2026-03-25 | d008e89 | [260325-t3v](./quick/260325-t3v-konfi-dashboard-events-card-wie-teamer-b/) |
