@@ -21,8 +21,6 @@ import {
   IonListHeader,
   IonAccordion,
   IonAccordionGroup,
-  IonSegment,
-  IonSegmentButton,
   useIonAlert
 } from '@ionic/react';
 import {
@@ -69,7 +67,6 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState<string>('all');
   const { isSubmitting, guard } = useActionGuard();
   const [uploadProgress, setUploadProgress] = useState(0);
 
@@ -265,19 +262,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
     setPhotoPreview(null);
   };
 
-  // Kategorien aus Aktivitaeten extrahieren
-  const categories = [...new Set(
-    activities
-      .map(a => a.category_names)
-      .filter(Boolean)
-      .flatMap(names => names!.split(',').map(n => n.trim()))
-  )].sort();
-
-  const filteredActivities = activeCategory === 'all'
-    ? activities
-    : activities.filter(a =>
-        a.category_names?.split(',').map(n => n.trim()).includes(activeCategory)
-      );
+  const filteredActivities = activities;
 
   const selectedActivity = activities.find(a => a.id.toString() === formData.activity_id);
 
@@ -303,25 +288,6 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
       </IonHeader>
 
       <IonContent className="app-gradient-background">
-        {/* Kategorie-Filter */}
-        {categories.length > 1 && (
-          <IonSegment
-            value={activeCategory}
-            onIonChange={e => setActiveCategory(e.detail.value as string || 'all')}
-            scrollable={true}
-            style={{ margin: '8px 16px 0', '--background': 'transparent', '--indicator-color': '#047857' } as any}
-          >
-            <IonSegmentButton value="all">
-              <IonLabel>Alle</IonLabel>
-            </IonSegmentButton>
-            {categories.map(cat => (
-              <IonSegmentButton key={cat} value={cat}>
-                <IonLabel>{cat}</IonLabel>
-              </IonSegmentButton>
-            ))}
-          </IonSegment>
-        )}
-
         {/* Aktivität Sektion - iOS26 Pattern mit Akkordeon */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
