@@ -17,6 +17,7 @@ import {
   IonLabel,
   IonList,
   IonListHeader,
+  IonSearchbar,
   useIonPopover
 } from '@ionic/react';
 import {
@@ -81,7 +82,8 @@ import {
   prismOutline,
   handLeft,
   checkmark,
-  arrowBack
+  arrowBack,
+  searchOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -294,6 +296,7 @@ const TeamerBadgesPage: React.FC = () => {
   const { user } = useApp();
   const [selectedFilter, setSelectedFilter] = useState<string>('alle');
   const [badgeVisibility, setBadgeVisibility] = useState<string>('sichtbar');
+  const [searchText, setSearchText] = useState('');
 
   const badgePopoverRef = useRef<{ badge: TeamerBadge | null; getBadgeColor: (badge: TeamerBadge) => string }>({ badge: null, getBadgeColor: () => '#f59e0b' });
 
@@ -314,6 +317,10 @@ const TeamerBadgesPage: React.FC = () => {
 
   const getCategories = () => {
     let filtered = badges;
+    if (searchText.trim()) {
+      const lower = searchText.toLowerCase();
+      filtered = filtered.filter(b => b.name.toLowerCase().includes(lower) || (b.description || '').toLowerCase().includes(lower));
+    }
     switch (selectedFilter) {
       case 'nicht_erhalten':
         filtered = badges.filter(b => !b.earned);
@@ -436,6 +443,27 @@ const TeamerBadgesPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Suche & Filter */}
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon" style={{ backgroundColor: '#f59e0b' }}>
+              <IonIcon icon={searchOutline} />
+            </div>
+            <IonLabel>Suche & Filter</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '8px 12px' }}>
+              <IonSearchbar
+                className="ios26-searchbar-classic"
+                value={searchText}
+                onIonInput={(e) => setSearchText(e.detail.value || '')}
+                placeholder="Badges durchsuchen"
+                debounce={300}
+              />
+            </IonCardContent>
+          </IonCard>
+        </IonList>
 
         {/* Filter */}
         <div style={{ margin: '16px' }}>

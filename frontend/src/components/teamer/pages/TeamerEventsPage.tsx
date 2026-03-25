@@ -46,7 +46,8 @@ import {
   shieldCheckmark,
   home,
   document as documentIcon,
-  attachOutline
+  attachOutline,
+  searchOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -620,9 +621,10 @@ const TeamerEventsPage: React.FC = () => {
                     <div style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                       padding: '12px 16px', backgroundColor: 'rgba(52, 199, 89, 0.12)',
-                      borderRadius: '12px', color: '#34c759', fontWeight: '600', fontSize: '1rem'
+                      borderRadius: '12px', color: '#34c759', fontWeight: '600', fontSize: '0.95rem',
+                      border: '1px solid rgba(52, 199, 89, 0.3)'
                     }}>
-                      <IonIcon icon={checkmarkCircle} style={{ fontSize: '1.3rem' }} />
+                      <IonIcon icon={checkmarkCircle} style={{ fontSize: '1.2rem' }} />
                       Anwesend
                     </div>
                   )}
@@ -630,9 +632,10 @@ const TeamerEventsPage: React.FC = () => {
                     <div style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                       padding: '12px 16px', backgroundColor: 'rgba(220, 53, 69, 0.12)',
-                      borderRadius: '12px', color: '#dc3545', fontWeight: '600', fontSize: '1rem'
+                      borderRadius: '12px', color: '#dc3545', fontWeight: '600', fontSize: '0.95rem',
+                      border: '1px solid rgba(220, 53, 69, 0.3)'
                     }}>
-                      <IonIcon icon={closeCircle} style={{ fontSize: '1.3rem' }} />
+                      <IonIcon icon={closeCircle} style={{ fontSize: '1.2rem' }} />
                       Abwesend
                     </div>
                   )}
@@ -640,9 +643,10 @@ const TeamerEventsPage: React.FC = () => {
                     <div style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                       padding: '12px 16px', backgroundColor: 'rgba(253, 126, 20, 0.12)',
-                      borderRadius: '12px', color: '#fd7e14', fontWeight: '600', fontSize: '1rem'
+                      borderRadius: '12px', color: '#fd7e14', fontWeight: '600', fontSize: '0.95rem',
+                      border: '1px solid rgba(253, 126, 20, 0.3)'
                     }}>
-                      <IonIcon icon={hourglass} style={{ fontSize: '1.3rem' }} />
+                      <IonIcon icon={hourglass} style={{ fontSize: '1.2rem' }} />
                       Anwesenheit ausstehend
                     </div>
                   )}
@@ -721,14 +725,25 @@ const TeamerEventsPage: React.FC = () => {
               stats={statsData}
             />
 
-            <IonSearchbar
-              className="ios26-searchbar-classic"
-              value={searchText}
-              onIonInput={(e) => setSearchText(e.detail.value || '')}
-              placeholder="Events durchsuchen"
-              debounce={300}
-              style={{ padding: '0 16px' }}
-            />
+            <IonList inset={true} style={{ margin: '16px' }}>
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--events">
+                  <IonIcon icon={searchOutline} />
+                </div>
+                <IonLabel>Suche & Filter</IonLabel>
+              </IonListHeader>
+              <IonCard className="app-card">
+                <IonCardContent style={{ padding: '8px 12px' }}>
+                  <IonSearchbar
+                    className="ios26-searchbar-classic"
+                    value={searchText}
+                    onIonInput={(e) => setSearchText(e.detail.value || '')}
+                    placeholder="Events durchsuchen"
+                    debounce={300}
+                  />
+                </IonCardContent>
+              </IonCard>
+            </IonList>
 
             {/* 3 Segmente */}
             <div className="app-segment-wrapper">
