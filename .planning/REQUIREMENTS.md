@@ -22,10 +22,10 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 
 ### Teamer Events
 
-- [ ] **TEV-01**: Suchleisten in Events + Badges ans Chat-Pattern (IonList inset + "Suche & Filter" Header)
-- [ ] **TEV-02**: MaterialModal Beschreibungstext groesser + Swipe-Back Fix nach Modal-Oeffnen
-- [ ] **TEV-03**: Buttons "Anwesend" / "Anwesenheit ausstehend" Stil anpassen
-- [ ] **TEV-04**: Material-Tab Beschreibungstext groesser
+- [x] **TEV-01**: Suchleisten in Events + Badges ans Chat-Pattern (IonList inset + "Suche & Filter" Header)
+- [x] **TEV-02**: MaterialModal Beschreibungstext groesser + Swipe-Back Fix nach Modal-Oeffnen
+- [x] **TEV-03**: Buttons "Anwesend" / "Anwesenheit ausstehend" Stil anpassen
+- [x] **TEV-04**: Material-Tab Beschreibungstext groesser
 
 ### Konfi Dashboard
 
@@ -186,10 +186,10 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 | TDB-01 | Phase 97 | Pending |
 | TDB-02 | Phase 97 | Pending |
 | TDB-03 | Phase 97 | Pending |
-| TEV-01 | Phase 97 | Pending |
-| TEV-02 | Phase 97 | Pending |
-| TEV-03 | Phase 97 | Pending |
-| TEV-04 | Phase 97 | Pending |
+| TEV-01 | Phase 97 | Complete |
+| TEV-02 | Phase 97 | Complete |
+| TEV-03 | Phase 97 | Complete |
+| TEV-04 | Phase 97 | Complete |
 | AAK-01 | Phase 98 | Pending |
 | AAK-02 | Phase 98 | Pending |
 | AAK-03 | Phase 98 | Pending |
