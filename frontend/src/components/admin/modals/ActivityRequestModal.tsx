@@ -24,7 +24,12 @@ import {
   imageOutline,
   checkmarkCircle,
   checkmarkOutline,
-  closeCircle
+  closeCircle,
+  personOutline,
+  trophyOutline,
+  calendarOutline,
+  timeOutline,
+  chatbubbleOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -240,6 +245,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
               <IonList>
                 {/* Konfi */}
                 <IonItem lines="inset">
+                  <IonIcon icon={personOutline} slot="start" style={{ color: '#5b21b6', fontSize: '1.2rem' }} />
                   <IonLabel>
                     <p>Konfi</p>
                     <h2>
@@ -255,6 +261,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
                 {/* Aktivität */}
                 <IonItem lines="inset">
+                  <IonIcon icon={documentTextOutline} slot="start" style={{ color: '#047857', fontSize: '1.2rem' }} />
                   <IonLabel>
                     <p>Aktivität ({request.activity_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'})</p>
                     <h2>{request.activity_name}</h2>
@@ -264,6 +271,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                 {/* Punkte */}
                 {request.activity_points && (
                   <IonItem lines="inset">
+                    <IonIcon icon={trophyOutline} slot="start" style={{ color: '#f59e0b', fontSize: '1.2rem' }} />
                     <IonLabel>
                       <p>Punkte</p>
                       <h2>{request.activity_points} {request.activity_points === 1 ? 'Punkt' : 'Punkte'}</h2>
@@ -273,6 +281,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
                 {/* Teilnahmedatum */}
                 <IonItem lines="inset">
+                  <IonIcon icon={calendarOutline} slot="start" style={{ color: '#007aff', fontSize: '1.2rem' }} />
                   <IonLabel>
                     <p>Teilnahmedatum</p>
                     <h2>{formatDate(request.requested_date)}</h2>
@@ -281,6 +290,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
                 {/* Eingereicht */}
                 <IonItem lines="inset">
+                  <IonIcon icon={timeOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1.2rem' }} />
                   <IonLabel>
                     <p>Eingereicht</p>
                     <h2>{formatDateTime(request.created_at)}</h2>
@@ -290,6 +300,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                 {/* Kommentar */}
                 {request.comment && (
                   <IonItem lines="none">
+                    <IonIcon icon={chatbubbleOutline} slot="start" style={{ color: '#06b6d4', fontSize: '1.2rem' }} />
                     <IonLabel className="ion-text-wrap">
                       <p>Kommentar vom Konfi</p>
                       <h2 style={{ whiteSpace: 'pre-wrap' }}>{request.comment}</h2>
@@ -408,44 +419,43 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent style={{ padding: '16px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {/* Genehmigen */}
-                  <div
-                    className="app-list-item app-list-item--activities"
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <IonButton
+                    fill="outline"
+                    expand="block"
                     onClick={() => !loading && setSelectedAction('approve')}
+                    disabled={loading}
                     style={{
-                      cursor: loading ? 'default' : 'pointer',
-                      opacity: loading ? 0.6 : 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      background: selectedAction === 'approve' ? 'rgba(5, 150, 105, 0.08)' : undefined
+                      flex: 1,
+                      '--border-color': '#059669',
+                      '--color': selectedAction === 'approve' ? 'white' : '#059669',
+                      '--background': selectedAction === 'approve' ? '#059669' : 'transparent',
+                      '--border-width': '2px',
+                      '--border-radius': '12px',
+                      fontWeight: '600'
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <IonIcon icon={checkmarkCircle} style={{ color: '#059669', fontSize: '1.2rem' }} />
-                      <span style={{ fontWeight: '500', color: '#333' }}>Genehmigen</span>
-                    </div>
-                  </div>
-
-                  {/* Ablehnen */}
-                  <div
-                    className="app-list-item app-list-item--events"
+                    <IonIcon icon={checkmarkCircle} slot="start" />
+                    Genehmigen
+                  </IonButton>
+                  <IonButton
+                    fill="outline"
+                    expand="block"
                     onClick={() => !loading && setSelectedAction('reject')}
+                    disabled={loading}
                     style={{
-                      cursor: loading ? 'default' : 'pointer',
-                      opacity: loading ? 0.6 : 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      background: selectedAction === 'reject' ? 'rgba(220, 53, 69, 0.08)' : undefined
+                      flex: 1,
+                      '--border-color': '#dc3545',
+                      '--color': selectedAction === 'reject' ? 'white' : '#dc3545',
+                      '--background': selectedAction === 'reject' ? '#dc3545' : 'transparent',
+                      '--border-width': '2px',
+                      '--border-radius': '12px',
+                      fontWeight: '600'
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <IonIcon icon={closeCircle} style={{ color: '#dc3545', fontSize: '1.2rem' }} />
-                      <span style={{ fontWeight: '500', color: '#333' }}>Ablehnen</span>
-                    </div>
-                  </div>
+                    <IonIcon icon={closeCircle} slot="start" />
+                    Ablehnen
+                  </IonButton>
                 </div>
 
                 {/* Ablehnungsgrund - nur wenn Ablehnen gewählt */}
