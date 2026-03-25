@@ -447,7 +447,8 @@ export const EventCard = React.memo<EventCardProps>(({ event, onClick }) => {
         }}>
           {event.title || event.name}
         </div>
-        <div className="app-dashboard-meta" style={{ flexWrap: 'wrap' }}>
+        {/* Zeile 1: Datum + Uhrzeit */}
+        <div className="app-dashboard-meta">
           <IonIcon icon={calendar} style={{ fontSize: '0.9rem' }} />
           <span>{formatEventDate(event.event_date || event.date)}</span>
           <span className="app-dashboard-dot" />
@@ -458,14 +459,15 @@ export const EventCard = React.memo<EventCardProps>(({ event, onClick }) => {
               : formatEventTime(event.event_date || event.date)
             }
           </span>
-          {event.location && (
-            <>
-              <span className="app-dashboard-dot" />
-              <IonIcon icon={location} style={{ fontSize: '0.9rem' }} />
-              <span>{event.location}</span>
-            </>
-          )}
         </div>
+        {/* Zeile 2: Ort (eigene Zeile) */}
+        {event.location && (
+          <div className="app-dashboard-meta" style={{ marginTop: '4px' }}>
+            <IonIcon icon={location} style={{ fontSize: '0.9rem' }} />
+            <span>{event.location}</span>
+          </div>
+        )}
+        {/* Zeile 3: Mitbringen (eigene Zeile) */}
         {event.bring_items && (
           <div className="app-dashboard-meta" style={{ marginTop: '4px', color: 'rgba(255,255,255,0.9)' }}>
             <IonIcon icon={bagHandle} style={{ fontSize: '0.9rem', color: '#c4b5fd' }} />
