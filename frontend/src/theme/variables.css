@@ -746,6 +746,7 @@ ion-item {
   gap: 8px;
   position: relative;
   z-index: 1;
+  flex-wrap: wrap;
 }
 
 .app-stats-row__item {
@@ -1539,6 +1540,13 @@ ion-button.app-modal-submit-btn--chat {
 .app-auth-footer--separator {
   padding-top: 16px;
   border-top: 1px solid #e5e7eb;
+}
+
+/* === Badge Popover auto-width === */
+.badge-popover-auto-width {
+  --width: auto;
+  --max-width: 80vw;
+  --min-width: 200px;
 }
 
 .app-auth-invite-info {

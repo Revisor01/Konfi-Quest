@@ -66,6 +66,7 @@ import {
   alertCircle,
   hammer,
   lockClosed,
+  searchOutline,
   layersOutline,
   gridOutline,
   prismOutline,
@@ -367,14 +368,24 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         ]}
       />
 
-      {/* Filter */}
-      <div style={{ margin: '16px' }}>
-        <IonSegment value={selectedFilter} onIonChange={(e) => onFilterChange(e.detail.value as string)}>
-          <IonSegmentButton value="alle"><IonLabel>Alle</IonLabel></IonSegmentButton>
-          <IonSegmentButton value="nicht_erhalten"><IonLabel>Offen</IonLabel></IonSegmentButton>
-          <IonSegmentButton value="in_arbeit"><IonLabel>In Arbeit</IonLabel></IonSegmentButton>
-        </IonSegment>
-      </div>
+      {/* Suche & Filter */}
+      <IonList inset={true} style={{ margin: '16px' }}>
+        <IonListHeader>
+          <div className="app-section-icon app-section-icon--warning">
+            <IonIcon icon={searchOutline} />
+          </div>
+          <IonLabel>Suche &amp; Filter</IonLabel>
+        </IonListHeader>
+        <IonCard className="app-card">
+          <IonCardContent style={{ padding: '8px 16px' }}>
+            <IonSegment value={selectedFilter} onIonChange={(e) => onFilterChange(e.detail.value as string)}>
+              <IonSegmentButton value="alle"><IonLabel>Alle</IonLabel></IonSegmentButton>
+              <IonSegmentButton value="nicht_erhalten"><IonLabel>Offen</IonLabel></IonSegmentButton>
+              <IonSegmentButton value="in_arbeit"><IonLabel>In Arbeit</IonLabel></IonSegmentButton>
+            </IonSegment>
+          </IonCardContent>
+        </IonCard>
+      </IonList>
 
       {/* Badges Grid */}
       <IonList inset={true} style={{ margin: '16px' }}>
