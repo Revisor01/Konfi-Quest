@@ -364,12 +364,12 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
           modules={[Pagination, EffectCreative]}
           effect="creative"
           creativeEffect={{
-            prev: { translate: ['-100%', 0, -200], scale: 0.9, opacity: 0 },
-            next: { translate: ['100%', 0, -200], scale: 0.9, opacity: 0 },
+            prev: { translate: ['-120%', 0, -500], rotate: [0, 0, -5], scale: 0.8, opacity: 0 },
+            next: { translate: ['120%', 0, -500], rotate: [0, 0, 5], scale: 0.8, opacity: 0 },
           }}
           pagination={{ clickable: true, el: '.wrapped-pagination' }}
           onSlideChange={handleSlideChange}
-          speed={400}
+          speed={500}
           className="wrapped-swiper"
         >
           {slides.map((slide) => (
