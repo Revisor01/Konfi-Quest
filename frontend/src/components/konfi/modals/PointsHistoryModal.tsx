@@ -249,13 +249,13 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
                 <IonLabel>Verlauf ({filteredHistory.length} {filteredHistory.length === 1 ? 'Eintrag' : 'Einträge'})</IonLabel>
               </IonListHeader>
               <IonCard className="app-card">
-                <IonCardContent style={{ padding: filteredHistory.length === 0 ? '16px' : '8px' }}>
+                <IonCardContent style={{ padding: filteredHistory.length === 0 ? '16px' : '12px' }}>
                   {filteredHistory.length === 0 ? (
                     <div className="app-info-box app-info-box--neutral" style={{ textAlign: 'center' }}>
                       Noch keine Einträge vorhanden
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
                       {filteredHistory.map((entry) => {
                         const categoryColor = getCategoryColor(entry.category);
                         const typeBadgeColor = getTypeBadgeColor(entry.source_type);
