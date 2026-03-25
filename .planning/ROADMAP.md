@@ -370,7 +370,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [ ] 100-01-PLAN.md -- Zertifikat-Zuweisen Modal mit Datumspicker, Laufzeit, Icon-Anzeige
-- [ ] 100-02-PLAN.md -- Material Jahrgangs-Dropdown, Ohne-Event-Text, Datei-Button
+- [x] 100-02-PLAN.md -- Material Jahrgangs-Dropdown, Ohne-Event-Text, Datei-Button
 - [ ] 100-03-PLAN.md -- Dashboard-Sektionen sortierbar mit IonReorder
 
 ## Progress Table
@@ -383,4 +383,4 @@ Plans:
 | 97. Teamer UI | 2/2 | Complete    | 2026-03-25 |
 | 98. Admin Aktivitaeten, Details, Antraege, Profil, Jahrgaenge | 3/3 | Complete    | 2026-03-25 |
 | 99. Admin Events + Bugs | 3/3 | Complete    | 2026-03-25 |
-| 100. Admin Zertifikate, Material, Dashboard | 0/3 | Not started | - |
+| 100. Admin Zertifikate, Material, Dashboard | 1/3 | In Progress|  |

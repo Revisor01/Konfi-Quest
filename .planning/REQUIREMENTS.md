@@ -128,10 +128,10 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 
 ### Admin Material
 
-- [ ] **AMA-01**: Jahrgangs-Tab-Leiste durch Dropdown mit Popover in Card mit Suche ersetzen
-- [ ] **AMA-02**: Suchleiste wie Chat-Pattern
-- [ ] **AMA-03**: "Ohne Event" Tab: Text korrigieren (Material vorhanden, nicht "Erstell dein erstes")
-- [ ] **AMA-04**: MaterialModal: Button "Datei auswaehlen" Abstand und Zentrierung fixen
+- [x] **AMA-01**: Jahrgangs-Tab-Leiste durch Dropdown mit Popover in Card mit Suche ersetzen
+- [x] **AMA-02**: Suchleiste wie Chat-Pattern
+- [x] **AMA-03**: "Ohne Event" Tab: Text korrigieren (Material vorhanden, nicht "Erstell dein erstes")
+- [x] **AMA-04**: MaterialModal: Button "Datei auswaehlen" Abstand und Zentrierung fixen
 
 ### Admin Jahrgaenge
 
@@ -215,10 +215,10 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 | AZE-02 | Phase 100 | Pending |
 | AZE-03 | Phase 100 | Pending |
 | AZE-04 | Phase 100 | Pending |
-| AMA-01 | Phase 100 | Pending |
-| AMA-02 | Phase 100 | Pending |
-| AMA-03 | Phase 100 | Pending |
-| AMA-04 | Phase 100 | Pending |
+| AMA-01 | Phase 100 | Complete |
+| AMA-02 | Phase 100 | Complete |
+| AMA-03 | Phase 100 | Complete |
+| AMA-04 | Phase 100 | Complete |
 | ADA-01 | Phase 100 | Pending |
 | ADA-02 | Phase 100 | Pending |
 
