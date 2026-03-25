@@ -38,9 +38,9 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 
 ### Konfi Events
 
-- [ ] **KEV-01**: Event-Details Beschreibungstext groesser
-- [ ] **KEV-02**: Teilnehmer:innen-Liste Abstand zwischen Elementen reduzieren
-- [ ] **KEV-03**: Events-Suchleiste korrekte Breite + Position + "Suche & Filter" Zwischenueberschrift
+- [x] **KEV-01**: Event-Details Beschreibungstext groesser
+- [x] **KEV-02**: Teilnehmer:innen-Liste Abstand zwischen Elementen reduzieren
+- [x] **KEV-03**: Events-Suchleiste korrekte Breite + Position + "Suche & Filter" Zwischenueberschrift
 
 ### Konfi Badges
 
@@ -50,7 +50,7 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 
 ### Konfi Aktivitaeten
 
-- [ ] **KAK-01**: Antrag-Modal: Kategorien-Auswahl komplett entfernen
+- [x] **KAK-01**: Antrag-Modal: Kategorien-Auswahl komplett entfernen
 
 ### Konfi Historie
 
@@ -172,13 +172,13 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 | ACH-06 | Phase 95 | Complete |
 | KDB-01 | Phase 96 | Complete |
 | KDB-02 | Phase 96 | Complete |
-| KEV-01 | Phase 96 | Pending |
-| KEV-02 | Phase 96 | Pending |
-| KEV-03 | Phase 96 | Pending |
+| KEV-01 | Phase 96 | Complete |
+| KEV-02 | Phase 96 | Complete |
+| KEV-03 | Phase 96 | Complete |
 | KBD-01 | Phase 96 | Pending |
 | KBD-02 | Phase 96 | Pending |
 | KBD-03 | Phase 96 | Pending |
-| KAK-01 | Phase 96 | Pending |
+| KAK-01 | Phase 96 | Complete |
 | KHI-01 | Phase 96 | Pending |
 | KHI-02 | Phase 96 | Pending |
 | KPR-01 | Phase 96 | Pending |
