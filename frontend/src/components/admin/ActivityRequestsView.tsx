@@ -81,7 +81,10 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
   const getRejectedCount = () => requests.filter(r => r.status === 'rejected').length;
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
+    if (!dateString) return '';
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('de-DE', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
