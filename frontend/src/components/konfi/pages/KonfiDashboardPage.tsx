@@ -36,6 +36,7 @@ interface DashboardConfig {
   show_losung: boolean;
   show_badges: boolean;
   show_ranking: boolean;
+  section_order?: string[];
 }
 
 interface DashboardData {
@@ -254,6 +255,8 @@ const KonfiDashboardPage: React.FC = () => {
     show_ranking: dashboardData.dashboard_config?.show_ranking !== false,
   };
 
+  const sectionOrder: string[] = dashboardData.dashboard_config?.section_order || ['konfirmation', 'events', 'losung', 'badges', 'ranking'];
+
   return (
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
@@ -314,6 +317,7 @@ const KonfiDashboardPage: React.FC = () => {
           gemeindeEnabled={gemeindeEnabled}
           onOpenPointsHistory={openPointsHistory}
           dashboardConfig={dashboardConfig}
+          sectionOrder={sectionOrder}
         />
       </IonContent>
     </IonPage>

@@ -191,7 +191,10 @@ interface DashboardConfig {
   show_events: boolean;
   show_badges: boolean;
   show_losung: boolean;
+  section_order?: string[];
 }
+
+const DEFAULT_TEAMER_ORDER = ['zertifikate', 'events', 'badges', 'losung'];
 
 interface DashboardData {
   greeting: { display_name: string; hour: number };
@@ -472,9 +475,13 @@ const TeamerDashboardPage: React.FC = () => {
             </div>
           )}
 
-          {/* Zertifikate */}
-          {config?.show_zertifikate !== false && dashboardData && dashboardData.certificates.length > 0 && (
-            <div className="app-dashboard-section" style={{
+          {/* Dynamische Sektionen basierend auf section_order */}
+          {(config?.section_order || DEFAULT_TEAMER_ORDER).map(sectionKey => {
+            // Zertifikate
+            if (sectionKey === 'zertifikate') {
+              if (!(config?.show_zertifikate !== false && dashboardData && dashboardData.certificates.length > 0)) return null;
+              return (
+            <div key="zertifikate" className="app-dashboard-section" style={{
               background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)'
             }}>
               <div className="app-dashboard-section__bg-text">
@@ -580,11 +587,13 @@ const TeamerDashboardPage: React.FC = () => {
                 </div>
               </div>
             </div>
-          )}
-
-          {/* Events - 1:1 wie Konfi DashboardView */}
-          {config?.show_events !== false && dashboardData && (
-            <div className="app-dashboard-section app-dashboard-section--events">
+              );
+            }
+            // Events
+            if (sectionKey === 'events') {
+              if (!(config?.show_events !== false && dashboardData)) return null;
+              return (
+            <div key="events" className="app-dashboard-section app-dashboard-section--events">
               <div className="app-dashboard-section__bg-text">
                 <h2 className="app-dashboard-section__bg-label">DEINE</h2>
                 <h2 className="app-dashboard-section__bg-label">EVENTS</h2>
@@ -706,11 +715,13 @@ const TeamerDashboardPage: React.FC = () => {
                 )}
               </div>
             </div>
-          )}
-
-          {/* Tageslosung - VOR Badges */}
-          {config?.show_losung !== false && !loadingVerse && dailyVerse && (dailyVerse.losungstext || dailyVerse.lehrtext) && (
-            <div className="app-dashboard-section app-dashboard-section--tageslosung">
+              );
+            }
+            // Tageslosung
+            if (sectionKey === 'losung') {
+              if (!(config?.show_losung !== false && !loadingVerse && dailyVerse && (dailyVerse.losungstext || dailyVerse.lehrtext))) return null;
+              return (
+            <div key="losung" className="app-dashboard-section app-dashboard-section--tageslosung">
               <div className="app-dashboard-section__bg-text">
                 <h2 className="app-dashboard-section__bg-label">TAGES</h2>
                 <h2 className="app-dashboard-section__bg-label">LOSUNG</h2>
@@ -742,11 +753,13 @@ const TeamerDashboardPage: React.FC = () => {
                 })()}
               </div>
             </div>
-          )}
-
-          {/* Badges - NACH Tageslosung */}
-          {config?.show_badges !== false && (visibleBadges.length > 0 || secretEarned.length > 0 || secretNotEarnedCount > 0) && (
-            <div className="app-dashboard-section app-dashboard-section--badges">
+              );
+            }
+            // Badges
+            if (sectionKey === 'badges') {
+              if (!(config?.show_badges !== false && (visibleBadges.length > 0 || secretEarned.length > 0 || secretNotEarnedCount > 0))) return null;
+              return (
+            <div key="badges" className="app-dashboard-section app-dashboard-section--badges">
               <div className="app-dashboard-section__bg-text">
                 <h2 className="app-dashboard-section__bg-label">DEINE</h2>
                 <h2 className="app-dashboard-section__bg-label">BADGES</h2>
@@ -879,7 +892,10 @@ const TeamerDashboardPage: React.FC = () => {
                 }
               `}</style>
             </div>
-          )}
+              );
+            }
+            return null;
+          })}
         </div>
 
         <div className="ion-padding-bottom" />

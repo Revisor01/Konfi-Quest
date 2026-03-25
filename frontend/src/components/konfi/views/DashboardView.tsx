@@ -120,6 +120,8 @@ interface DashboardConfig {
   show_ranking: boolean;
 }
 
+const DEFAULT_KONFI_ORDER = ['konfirmation', 'events', 'losung', 'badges', 'ranking'];
+
 interface DashboardViewProps {
   dashboardData: DashboardData;
   dailyVerse: DailyVerse | null;
@@ -132,6 +134,7 @@ interface DashboardViewProps {
   gemeindeEnabled?: boolean;
   onOpenPointsHistory?: () => void;
   dashboardConfig?: DashboardConfig;
+  sectionOrder?: string[];
 }
 
 const DashboardView: React.FC<DashboardViewProps> = ({
@@ -145,7 +148,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   gottesdienstEnabled = true,
   gemeindeEnabled = true,
   onOpenPointsHistory,
-  dashboardConfig
+  dashboardConfig,
+  sectionOrder
 }) => {
   const router = useIonRouter();
   const [presentAlert] = useIonAlert();
@@ -313,270 +317,278 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* Konfirmation Card */}
-      {dashboardConfig?.show_konfirmation !== false && ((dashboardData.days_to_confirmation !== null && dashboardData.days_to_confirmation !== undefined) || nextConfirmationEvent) ? (
-        <div className="app-dashboard-section app-dashboard-section--konfirmation">
-          <div className="app-dashboard-section__bg-text">
-            <h2 className="app-dashboard-section__bg-label">DEINE</h2>
-            <h2 className="app-dashboard-section__bg-label">KONFIRMATION</h2>
-          </div>
-          <div className="app-dashboard-section__content" style={{ textAlign: 'center' }}>
-            {dashboardData.days_to_confirmation !== null && dashboardData.days_to_confirmation !== undefined ? (
-              <>
-                <div style={{ fontSize: '3.5rem', fontWeight: '900', color: 'white', lineHeight: '1', marginBottom: '8px' }}>
-                  {dashboardData.days_to_confirmation}
+      {/* Dynamische Sektionen basierend auf section_order */}
+      {(sectionOrder || DEFAULT_KONFI_ORDER).map(key => {
+        const sectionRenderers: Record<string, () => React.ReactNode> = {
+          konfirmation: () => (
+            dashboardConfig?.show_konfirmation !== false && ((dashboardData.days_to_confirmation !== null && dashboardData.days_to_confirmation !== undefined) || nextConfirmationEvent) ? (
+              <div className="app-dashboard-section app-dashboard-section--konfirmation" key="konfirmation">
+                <div className="app-dashboard-section__bg-text">
+                  <h2 className="app-dashboard-section__bg-label">DEINE</h2>
+                  <h2 className="app-dashboard-section__bg-label">KONFIRMATION</h2>
                 </div>
-                <div style={{ fontSize: '1.1rem', color: 'rgba(255, 255, 255, 0.9)', marginBottom: '12px' }}>
-                  {dashboardData.days_to_confirmation === 1
-                    ? `Genau 1 Tag bis zu deiner Konfirmation`
-                    : `Noch genau ${dashboardData.days_to_confirmation} Tage bis zu deiner Konfirmation`
-                  }
-                </div>
-              </>
-            ) : nextConfirmationEvent ? (
-              <>
-                <div style={{ fontSize: '2.5rem', fontWeight: '900', color: 'white', lineHeight: '1', marginBottom: '8px' }}>
-                  {formatTimeUntil(nextConfirmationEvent.event_date || nextConfirmationEvent.date)}
-                </div>
-                <div style={{ fontSize: '1.1rem', color: 'rgba(255, 255, 255, 0.9)', marginBottom: '12px' }}>
-                  bis zu deiner Konfirmation
-                </div>
-              </>
-            ) : null}
-            <div className="app-dashboard-meta" style={{ justifyContent: 'center', flexWrap: 'wrap', fontSize: '0.85rem' }}>
-              {nextConfirmationEvent && (
-                <>
-                  <IonIcon icon={calendar} style={{ fontSize: '0.85rem' }} />
-                  <span>{formatEventDate(nextConfirmationEvent.event_date || nextConfirmationEvent.date)} um {formatEventTime(nextConfirmationEvent.event_date || nextConfirmationEvent.date)}</span>
-                </>
-              )}
-              {nextConfirmationEvent && (dashboardData.konfi.confirmation_location || nextConfirmationEvent?.location) && (
-                <span className="app-dashboard-dot" />
-              )}
-              {(dashboardData.konfi.confirmation_location || nextConfirmationEvent?.location) && (
-                <>
-                  <IonIcon icon={location} style={{ fontSize: '0.85rem' }} />
-                  <span>{dashboardData.konfi.confirmation_location || nextConfirmationEvent?.location}</span>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {/* Events Section */}
-      {dashboardConfig?.show_events !== false && (
-        <div className="app-dashboard-section app-dashboard-section--events">
-          <div className="app-dashboard-section__bg-text">
-            <h2 className="app-dashboard-section__bg-label">DEINE</h2>
-            <h2 className="app-dashboard-section__bg-label">EVENTS</h2>
-          </div>
-          <div className="app-dashboard-glass-chip" style={{
-            position: 'absolute', top: '20px', right: '20px',
-            fontSize: '0.7rem', fontWeight: '700', zIndex: 3
-          }}>
-            {regularEvents.length === 0
-              ? 'EVENTS ENTDECKEN'
-              : regularEvents.length === 1
-                ? 'DEIN EVENT'
-                : `DEINE ${regularEvents.length} EVENTS`}
-          </div>
-          <div className="app-dashboard-section__content app-dashboard-section__content--compact">
-            {regularEvents.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {regularEvents.map((event) => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    onClick={() => router.push(`/konfi/events/${event.id}`)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div
-                className="app-dashboard-glass-card"
-                onClick={() => router.push('/konfi/events')}
-                style={{ cursor: 'pointer', textAlign: 'center', padding: '20px 16px' }}
-              >
-                <div style={{ fontSize: '1rem', fontWeight: '600', color: 'white', marginBottom: '4px' }}>
-                  Buche dein nächstes Event
-                </div>
-                <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.7)' }}>
-                  Tippe hier um verfügbare Events zu sehen
+                <div className="app-dashboard-section__content" style={{ textAlign: 'center' }}>
+                  {dashboardData.days_to_confirmation !== null && dashboardData.days_to_confirmation !== undefined ? (
+                    <>
+                      <div style={{ fontSize: '3.5rem', fontWeight: '900', color: 'white', lineHeight: '1', marginBottom: '8px' }}>
+                        {dashboardData.days_to_confirmation}
+                      </div>
+                      <div style={{ fontSize: '1.1rem', color: 'rgba(255, 255, 255, 0.9)', marginBottom: '12px' }}>
+                        {dashboardData.days_to_confirmation === 1
+                          ? `Genau 1 Tag bis zu deiner Konfirmation`
+                          : `Noch genau ${dashboardData.days_to_confirmation} Tage bis zu deiner Konfirmation`
+                        }
+                      </div>
+                    </>
+                  ) : nextConfirmationEvent ? (
+                    <>
+                      <div style={{ fontSize: '2.5rem', fontWeight: '900', color: 'white', lineHeight: '1', marginBottom: '8px' }}>
+                        {formatTimeUntil(nextConfirmationEvent.event_date || nextConfirmationEvent.date)}
+                      </div>
+                      <div style={{ fontSize: '1.1rem', color: 'rgba(255, 255, 255, 0.9)', marginBottom: '12px' }}>
+                        bis zu deiner Konfirmation
+                      </div>
+                    </>
+                  ) : null}
+                  <div className="app-dashboard-meta" style={{ justifyContent: 'center', flexWrap: 'wrap', fontSize: '0.85rem' }}>
+                    {nextConfirmationEvent && (
+                      <>
+                        <IonIcon icon={calendar} style={{ fontSize: '0.85rem' }} />
+                        <span>{formatEventDate(nextConfirmationEvent.event_date || nextConfirmationEvent.date)} um {formatEventTime(nextConfirmationEvent.event_date || nextConfirmationEvent.date)}</span>
+                      </>
+                    )}
+                    {nextConfirmationEvent && (dashboardData.konfi.confirmation_location || nextConfirmationEvent?.location) && (
+                      <span className="app-dashboard-dot" />
+                    )}
+                    {(dashboardData.konfi.confirmation_location || nextConfirmationEvent?.location) && (
+                      <>
+                        <IonIcon icon={location} style={{ fontSize: '0.85rem' }} />
+                        <span>{dashboardData.konfi.confirmation_location || nextConfirmationEvent?.location}</span>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Tageslosung */}
-      {dashboardConfig?.show_losung !== false && !loadingVerse && actualDailyVerse && (actualDailyVerse.losungstext || actualDailyVerse.lehrtext) && (
-        <div className="app-dashboard-section app-dashboard-section--tageslosung">
-          <div className="app-dashboard-section__bg-text">
-            <h2 className="app-dashboard-section__bg-label">TAGES</h2>
-            <h2 className="app-dashboard-section__bg-label">LOSUNG</h2>
-          </div>
-          <div className="app-dashboard-section__content">
-            {(() => {
-              const hasLosung = actualDailyVerse.losungstext;
-              const hasLehrtext = actualDailyVerse.lehrtext;
-              let text, reference;
-              if (hasLosung && hasLehrtext) {
-                text = showLosung ? actualDailyVerse.losungstext : actualDailyVerse.lehrtext;
-                reference = showLosung ? actualDailyVerse.losungsvers : actualDailyVerse.lehrtextvers;
-              } else {
-                text = hasLosung ? actualDailyVerse.losungstext : actualDailyVerse.lehrtext || actualDailyVerse.text;
-                reference = hasLosung ? actualDailyVerse.losungsvers : actualDailyVerse.lehrtextvers || actualDailyVerse.reference;
-              }
-              return (
-                <div>
-                  <blockquote className="app-dashboard-quote">"{text}"</blockquote>
-                  <cite className="app-dashboard-cite">{reference}</cite>
+            ) : null
+          ),
+          events: () => (
+            dashboardConfig?.show_events !== false ? (
+              <div className="app-dashboard-section app-dashboard-section--events" key="events">
+                <div className="app-dashboard-section__bg-text">
+                  <h2 className="app-dashboard-section__bg-label">DEINE</h2>
+                  <h2 className="app-dashboard-section__bg-label">EVENTS</h2>
                 </div>
-              );
-            })()}
-          </div>
-        </div>
-      )}
-
-      {/* Badges Section */}
-      {dashboardConfig?.show_badges !== false && (allBadges.available.length > 0 || allBadges.earned.length > 0) && (
-        <div className="app-dashboard-section app-dashboard-section--badges">
-          <div className="app-dashboard-section__bg-text">
-            <h2 className="app-dashboard-section__bg-label">DEINE</h2>
-            <h2 className="app-dashboard-section__bg-label">BADGES</h2>
-          </div>
-          <div className="app-dashboard-section__content" style={{ padding: '60px 20px 24px 20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
-              <div className="app-dashboard-glass-chip" style={{ display: 'flex', alignItems: 'center', fontSize: '0.9rem' }}>
-                <span style={{ fontWeight: '800' }}>{badgeStats.totalEarned}/{badgeStats.totalAvailable}</span>
-                <span style={{ opacity: 0.8, marginLeft: '4px' }}>sichtbar</span>
-                {recentVisibleCount > 0 && (
-                  <>
-                    <span className="app-dashboard-dot" />
-                    <span style={{ fontWeight: '800' }}>{recentVisibleCount} {recentVisibleCount === 1 ? 'neuer' : 'neue'}</span>
-                  </>
-                )}
-              </div>
-            </div>
-
-            <>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center', marginBottom: secretEarned.length > 0 || secretNotEarnedCount > 0 ? '16px' : '0' }}>
-                {visibleBadges.map((badge) => {
-                  const isEarned = earnedIds.has(badge.id);
-                  const isRecent = recentBadgeIds.has(badge.id);
-                  const badgeClr = getBadgeColor(badge);
-                  return (
-                    <div
-                      key={badge.id}
-                      onClick={(e) => {
-                        badgePopoverRef.current = { badge, isEarned, getBadgeColor };
-                        presentBadgePopover({ event: e.nativeEvent, side: 'top', alignment: 'center', cssClass: 'badge-detail-popover' });
-                      }}
-                      style={{
-                        width: '44px', height: '44px', borderRadius: '50%',
-                        background: isEarned ? `linear-gradient(135deg, ${badgeClr} 0%, ${badgeClr}dd 100%)` : 'rgba(255, 255, 255, 0.15)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        boxShadow: isEarned ? (isRecent ? `0 0 0 3px #10b981, 0 0 20px rgba(16, 185, 129, 0.6)` : `0 4px 12px ${badgeClr}50`) : 'none',
-                        border: isRecent ? '3px solid #10b981' : isEarned ? '2px solid rgba(255, 255, 255, 0.3)' : '2px dashed rgba(255, 255, 255, 0.25)',
-                        transition: 'all 0.3s ease', opacity: isEarned ? 1 : 0.5, cursor: 'pointer',
-                        position: 'relative', animation: isRecent ? 'badgePulse 2s ease-in-out infinite' : 'none'
-                      }}
-                    >
-                      <IonIcon icon={isEarned ? getIconFromString(badge.icon) : eyeOff} style={{ fontSize: isEarned ? '1.4rem' : '1rem', color: isEarned ? 'white' : 'rgba(255, 255, 255, 0.4)', filter: isEarned ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))' : 'none' }} />
-                      {isRecent && (
-                        <div style={{ position: 'absolute', top: '-6px', right: '-6px', width: '18px', height: '18px', borderRadius: '50%', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(16, 185, 129, 0.5)' }}>
-                          <span style={{ fontSize: '10px', fontWeight: '800', color: 'white' }}>!</span>
-                        </div>
-                      )}
+                <div className="app-dashboard-glass-chip" style={{
+                  position: 'absolute', top: '20px', right: '20px',
+                  fontSize: '0.7rem', fontWeight: '700', zIndex: 3
+                }}>
+                  {regularEvents.length === 0
+                    ? 'EVENTS ENTDECKEN'
+                    : regularEvents.length === 1
+                      ? 'DEIN EVENT'
+                      : `DEINE ${regularEvents.length} EVENTS`}
+                </div>
+                <div className="app-dashboard-section__content app-dashboard-section__content--compact">
+                  {regularEvents.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {regularEvents.map((event) => (
+                        <EventCard
+                          key={event.id}
+                          event={event}
+                          onClick={() => router.push(`/konfi/events/${event.id}`)}
+                        />
+                      ))}
                     </div>
-                  );
-                })}
+                  ) : (
+                    <div
+                      className="app-dashboard-glass-card"
+                      onClick={() => router.push('/konfi/events')}
+                      style={{ cursor: 'pointer', textAlign: 'center', padding: '20px 16px' }}
+                    >
+                      <div style={{ fontSize: '1rem', fontWeight: '600', color: 'white', marginBottom: '4px' }}>
+                        Buche dein nächstes Event
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                        Tippe hier um verfügbare Events zu sehen
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-
-              {(secretEarned.length > 0 || secretNotEarnedCount > 0) && (
-                <>
-                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
-                    <div className="app-dashboard-glass-chip" style={{ fontSize: '0.9rem', display: 'flex', alignItems: 'center' }}>
-                      <span style={{ fontWeight: '800' }}>{badgeStats.secretEarned}/{badgeStats.secretAvailable}</span>
-                      <span style={{ opacity: 0.8, marginLeft: '4px' }}>geheim</span>
-                      {recentSecretCount > 0 && (
+            ) : null
+          ),
+          losung: () => (
+            dashboardConfig?.show_losung !== false && !loadingVerse && actualDailyVerse && (actualDailyVerse.losungstext || actualDailyVerse.lehrtext) ? (
+              <div className="app-dashboard-section app-dashboard-section--tageslosung" key="losung">
+                <div className="app-dashboard-section__bg-text">
+                  <h2 className="app-dashboard-section__bg-label">TAGES</h2>
+                  <h2 className="app-dashboard-section__bg-label">LOSUNG</h2>
+                </div>
+                <div className="app-dashboard-section__content">
+                  {(() => {
+                    const hasLosung = actualDailyVerse.losungstext;
+                    const hasLehrtext = actualDailyVerse.lehrtext;
+                    let text, reference;
+                    if (hasLosung && hasLehrtext) {
+                      text = showLosung ? actualDailyVerse.losungstext : actualDailyVerse.lehrtext;
+                      reference = showLosung ? actualDailyVerse.losungsvers : actualDailyVerse.lehrtextvers;
+                    } else {
+                      text = hasLosung ? actualDailyVerse.losungstext : actualDailyVerse.lehrtext || actualDailyVerse.text;
+                      reference = hasLosung ? actualDailyVerse.losungsvers : actualDailyVerse.lehrtextvers || actualDailyVerse.reference;
+                    }
+                    return (
+                      <div>
+                        <blockquote className="app-dashboard-quote">"{text}"</blockquote>
+                        <cite className="app-dashboard-cite">{reference}</cite>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            ) : null
+          ),
+          badges: () => (
+            dashboardConfig?.show_badges !== false && (allBadges.available.length > 0 || allBadges.earned.length > 0) ? (
+              <div className="app-dashboard-section app-dashboard-section--badges" key="badges">
+                <div className="app-dashboard-section__bg-text">
+                  <h2 className="app-dashboard-section__bg-label">DEINE</h2>
+                  <h2 className="app-dashboard-section__bg-label">BADGES</h2>
+                </div>
+                <div className="app-dashboard-section__content" style={{ padding: '60px 20px 24px 20px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                    <div className="app-dashboard-glass-chip" style={{ display: 'flex', alignItems: 'center', fontSize: '0.9rem' }}>
+                      <span style={{ fontWeight: '800' }}>{badgeStats.totalEarned}/{badgeStats.totalAvailable}</span>
+                      <span style={{ opacity: 0.8, marginLeft: '4px' }}>sichtbar</span>
+                      {recentVisibleCount > 0 && (
                         <>
                           <span className="app-dashboard-dot" />
-                          <span style={{ fontWeight: '800' }}>{recentSecretCount} {recentSecretCount === 1 ? 'neuer' : 'neue'}</span>
+                          <span style={{ fontWeight: '800' }}>{recentVisibleCount} {recentVisibleCount === 1 ? 'neuer' : 'neue'}</span>
                         </>
                       )}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
-                    {secretEarned.map((badge) => {
-                      const isRecent = recentBadgeIds.has(badge.id);
-                      const badgeClr = getBadgeColor(badge);
-                      return (
-                        <div key={badge.id}
-                          onClick={(e) => {
-                            badgePopoverRef.current = { badge, isEarned: true, getBadgeColor };
-                            presentBadgePopover({ event: e.nativeEvent, side: 'top', alignment: 'center', cssClass: 'badge-detail-popover' });
-                          }}
-                          style={{
-                            width: '44px', height: '44px', borderRadius: '50%',
-                            background: `linear-gradient(135deg, ${badgeClr} 0%, ${badgeClr}dd 100%)`,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            boxShadow: isRecent ? `0 0 0 3px #10b981, 0 0 20px rgba(16, 185, 129, 0.6)` : `0 4px 12px ${badgeClr}50`,
-                            border: isRecent ? '3px solid #10b981' : '2px solid rgba(255, 255, 255, 0.3)',
-                            cursor: 'pointer', position: 'relative',
-                            animation: isRecent ? 'badgePulse 2s ease-in-out infinite' : 'none'
-                          }}
-                        >
-                          <IonIcon icon={getIconFromString(badge.icon)} style={{ fontSize: '1.4rem', color: 'white', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))' }} />
-                          {isRecent && (
-                            <div style={{ position: 'absolute', top: '-6px', right: '-6px', width: '18px', height: '18px', borderRadius: '50%', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(16, 185, 129, 0.5)' }}>
-                              <span style={{ fontSize: '10px', fontWeight: '800', color: 'white' }}>!</span>
-                            </div>
-                          )}
+
+                  <>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center', marginBottom: secretEarned.length > 0 || secretNotEarnedCount > 0 ? '16px' : '0' }}>
+                      {visibleBadges.map((badge) => {
+                        const isEarned = earnedIds.has(badge.id);
+                        const isRecent = recentBadgeIds.has(badge.id);
+                        const badgeClr = getBadgeColor(badge);
+                        return (
+                          <div
+                            key={badge.id}
+                            onClick={(e) => {
+                              badgePopoverRef.current = { badge, isEarned, getBadgeColor };
+                              presentBadgePopover({ event: e.nativeEvent, side: 'top', alignment: 'center', cssClass: 'badge-detail-popover' });
+                            }}
+                            style={{
+                              width: '44px', height: '44px', borderRadius: '50%',
+                              background: isEarned ? `linear-gradient(135deg, ${badgeClr} 0%, ${badgeClr}dd 100%)` : 'rgba(255, 255, 255, 0.15)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              boxShadow: isEarned ? (isRecent ? `0 0 0 3px #10b981, 0 0 20px rgba(16, 185, 129, 0.6)` : `0 4px 12px ${badgeClr}50`) : 'none',
+                              border: isRecent ? '3px solid #10b981' : isEarned ? '2px solid rgba(255, 255, 255, 0.3)' : '2px dashed rgba(255, 255, 255, 0.25)',
+                              transition: 'all 0.3s ease', opacity: isEarned ? 1 : 0.5, cursor: 'pointer',
+                              position: 'relative', animation: isRecent ? 'badgePulse 2s ease-in-out infinite' : 'none'
+                            }}
+                          >
+                            <IonIcon icon={isEarned ? getIconFromString(badge.icon) : eyeOff} style={{ fontSize: isEarned ? '1.4rem' : '1rem', color: isEarned ? 'white' : 'rgba(255, 255, 255, 0.4)', filter: isEarned ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))' : 'none' }} />
+                            {isRecent && (
+                              <div style={{ position: 'absolute', top: '-6px', right: '-6px', width: '18px', height: '18px', borderRadius: '50%', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(16, 185, 129, 0.5)' }}>
+                                <span style={{ fontSize: '10px', fontWeight: '800', color: 'white' }}>!</span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {(secretEarned.length > 0 || secretNotEarnedCount > 0) && (
+                      <>
+                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+                          <div className="app-dashboard-glass-chip" style={{ fontSize: '0.9rem', display: 'flex', alignItems: 'center' }}>
+                            <span style={{ fontWeight: '800' }}>{badgeStats.secretEarned}/{badgeStats.secretAvailable}</span>
+                            <span style={{ opacity: 0.8, marginLeft: '4px' }}>geheim</span>
+                            {recentSecretCount > 0 && (
+                              <>
+                                <span className="app-dashboard-dot" />
+                                <span style={{ fontWeight: '800' }}>{recentSecretCount} {recentSecretCount === 1 ? 'neuer' : 'neue'}</span>
+                              </>
+                            )}
+                          </div>
                         </div>
-                      );
-                    })}
-                    {Array.from({ length: secretNotEarnedCount }).map((_, index) => (
-                      <div key={`secret-placeholder-${index}`} style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed rgba(255, 255, 255, 0.35)', opacity: 0.6 }}>
-                        <IonIcon icon={helpCircle} style={{ fontSize: '1.2rem', color: 'rgba(255, 255, 255, 0.5)' }} />
-                      </div>
-                    ))}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
+                          {secretEarned.map((badge) => {
+                            const isRecent = recentBadgeIds.has(badge.id);
+                            const badgeClr = getBadgeColor(badge);
+                            return (
+                              <div key={badge.id}
+                                onClick={(e) => {
+                                  badgePopoverRef.current = { badge, isEarned: true, getBadgeColor };
+                                  presentBadgePopover({ event: e.nativeEvent, side: 'top', alignment: 'center', cssClass: 'badge-detail-popover' });
+                                }}
+                                style={{
+                                  width: '44px', height: '44px', borderRadius: '50%',
+                                  background: `linear-gradient(135deg, ${badgeClr} 0%, ${badgeClr}dd 100%)`,
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  boxShadow: isRecent ? `0 0 0 3px #10b981, 0 0 20px rgba(16, 185, 129, 0.6)` : `0 4px 12px ${badgeClr}50`,
+                                  border: isRecent ? '3px solid #10b981' : '2px solid rgba(255, 255, 255, 0.3)',
+                                  cursor: 'pointer', position: 'relative',
+                                  animation: isRecent ? 'badgePulse 2s ease-in-out infinite' : 'none'
+                                }}
+                              >
+                                <IonIcon icon={getIconFromString(badge.icon)} style={{ fontSize: '1.4rem', color: 'white', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))' }} />
+                                {isRecent && (
+                                  <div style={{ position: 'absolute', top: '-6px', right: '-6px', width: '18px', height: '18px', borderRadius: '50%', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(16, 185, 129, 0.5)' }}>
+                                    <span style={{ fontSize: '10px', fontWeight: '800', color: 'white' }}>!</span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                          {Array.from({ length: secretNotEarnedCount }).map((_, index) => (
+                            <div key={`secret-placeholder-${index}`} style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed rgba(255, 255, 255, 0.35)', opacity: 0.6 }}>
+                              <IonIcon icon={helpCircle} style={{ fontSize: '1.2rem', color: 'rgba(255, 255, 255, 0.5)' }} />
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </>
+
+                  <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+                    <div className="app-dashboard-glass-chip" onClick={() => router.push('/konfi/badges')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>Alle Badges anzeigen</span>
+                      <IonIcon icon={chevronForward} style={{ fontSize: '0.9rem' }} />
+                    </div>
                   </div>
-                </>
-              )}
-            </>
-
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
-              <div className="app-dashboard-glass-chip" onClick={() => router.push('/konfi/badges')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span>Alle Badges anzeigen</span>
-                <IonIcon icon={chevronForward} style={{ fontSize: '0.9rem' }} />
+                </div>
+                <style>{`
+                  @keyframes badgePulse {
+                    0%, 100% { transform: scale(1); }
+                    50% { transform: scale(1.08); }
+                  }
+                `}</style>
               </div>
-            </div>
-          </div>
-          <style>{`
-            @keyframes badgePulse {
-              0%, 100% { transform: scale(1); }
-              50% { transform: scale(1.08); }
-            }
-          `}</style>
-        </div>
-      )}
-
-      {/* Ranking Section */}
-      {dashboardConfig?.show_ranking !== false && dashboardData.ranking && dashboardData.ranking.length > 0 && (
-        <RankingSection
-          ranking={dashboardData.ranking}
-          rankInJahrgang={dashboardData.rank_in_jahrgang || 1}
-          totalInJahrgang={dashboardData.total_in_jahrgang || 1}
-          konfiId={dashboardData.konfi.id}
-          konfiDisplayName={dashboardData.konfi.display_name}
-          konfiGottesdienstPoints={dashboardData.konfi.gottesdienst_points}
-          konfiGemeindePoints={dashboardData.konfi.gemeinde_points}
-          jahrgangName={dashboardData.konfi.jahrgang_name}
-        />
-      )}
+            ) : null
+          ),
+          ranking: () => (
+            dashboardConfig?.show_ranking !== false && dashboardData.ranking && dashboardData.ranking.length > 0 ? (
+              <RankingSection
+                key="ranking"
+                ranking={dashboardData.ranking}
+                rankInJahrgang={dashboardData.rank_in_jahrgang || 1}
+                totalInJahrgang={dashboardData.total_in_jahrgang || 1}
+                konfiId={dashboardData.konfi.id}
+                konfiDisplayName={dashboardData.konfi.display_name}
+                konfiGottesdienstPoints={dashboardData.konfi.gottesdienst_points}
+                konfiGemeindePoints={dashboardData.konfi.gemeinde_points}
+                jahrgangName={dashboardData.konfi.jahrgang_name}
+              />
+            ) : null
+          ),
+        };
+        return sectionRenderers[key]?.();
+      })}
 
     </div>
   );
