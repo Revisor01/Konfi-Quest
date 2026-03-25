@@ -14,9 +14,11 @@ import AktivsterMonatSlide from './slides/AktivsterMonatSlide';
 import ChatSlide from './slides/ChatSlide';
 import EndspurtSlide from './slides/EndspurtSlide';
 import KategorieSlide from './slides/KategorieSlide';
-import GottesdienstSlide from './slides/GottesdienstSlide';
 import UeberDasZielSlide from './slides/UeberDasZielSlide';
 import AbschlussSlide from './slides/AbschlussSlide';
+import KonfirmationsSlide from './slides/KonfirmationsSlide';
+import PflichtSlide from './slides/PflichtSlide';
+import RankSlide from './slides/RankSlide';
 import TeamerIntroSlide from './slides/teamer/TeamerIntroSlide';
 import TeamerEventsSlide from './slides/teamer/TeamerEventsSlide';
 import TeamerKonfisSlide from './slides/teamer/TeamerKonfisSlide';
@@ -80,12 +82,6 @@ const FORMULIERUNGEN: Record<string, string[]> = {
     'Deine Stärke',
     'Das liegt dir!',
     'Dein Schwerpunkt'
-  ],
-  gottesdienst_titel: [
-    'Gottesdienst-Treue',
-    'Im Gottesdienst',
-    'Sonntags dabei',
-    'Gottesdienst-Bilanz'
   ],
   abschluss_titel: [
     'Dein Konfi-Jahr',
@@ -155,7 +151,9 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
         case 'chat': return { ...base, slideValue: `${k.slides.chat.nachrichten_gesendet} Nachrichten` };
         case 'endspurt': return { ...base, slideValue: `Noch ${k.slides.endspurt.fehlende_punkte} Punkte bis zum Ziel` };
         case 'kategorie': return { ...base, slideValue: `Dein Bereich: ${k.slides.kategorie?.top_kategorie || '-'}` };
-        case 'gottesdienst': return { ...base, slideValue: `${k.slides.gottesdienst?.count || 0} Gottesdienste besucht` };
+        case 'pflicht': return { ...base, slideValue: 'Pflichtveranstaltungen' };
+        case 'rank': return { ...base, slideValue: 'Jahrgangs-Ranking' };
+        case 'konfirmation': return { ...base, slideValue: `Konfirmation: ${k.slides.zeitraum?.ende || ''}` };
         case 'ueber-das-ziel': return { ...base, slideValue: `${(k.slides.endspurt.aktuell_total - k.slides.endspurt.ziel_total)} Punkte über dem Ziel!` };
         case 'abschluss': return { ...base, slideValue: `${k.slides.punkte.total} Punkte, ${k.slides.events.total_attended} Events, ${k.slides.badges.total_earned} Badges` };
         default: return base;
@@ -185,13 +183,15 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
       'intro': (a) => <IntroSlide isActive={a} displayName={displayName} jahrgangName={jahrgangName || ''} year={slideYear} />,
       'punkte': (a) => <PunkteSlide isActive={a} punkte={konfiData.slides.punkte} />,
       'events': (a) => <EventsSlide isActive={a} events={konfiData.slides.events} />,
+      'pflicht': (a) => <PflichtSlide isActive={a} pflichtBesucht={0} pflichtGesamt={0} seed={seed} />,
       'badges': (a) => <BadgesSlide isActive={a} badges={konfiData.slides.badges} />,
+      'rank': (a) => <RankSlide isActive={a} rank={0} totalInJahrgang={0} displayName={displayName} />,
       'kategorie': (a) => <KategorieSlide isActive={a} kategorie={konfiData.slides.kategorie} titel={getFormulierung('kategorie_titel', seed)} />,
-      'gottesdienst': (a) => <GottesdienstSlide isActive={a} gottesdienst={konfiData.slides.gottesdienst} titel={getFormulierung('gottesdienst_titel', seed)} />,
       'aktivster-monat': (a) => <AktivsterMonatSlide isActive={a} aktivsterMonat={konfiData.slides.aktivster_monat} />,
       'chat': (a) => <ChatSlide isActive={a} chat={konfiData.slides.chat} seed={seed} />,
       'endspurt': (a) => <EndspurtSlide isActive={a} endspurt={konfiData.slides.endspurt} />,
       'ueber-das-ziel': (a) => <UeberDasZielSlide isActive={a} endspurt={konfiData.slides.endspurt} />,
+      'konfirmation': (a) => <KonfirmationsSlide isActive={a} zeitraumEnde={konfiData.slides.zeitraum.ende} displayName={displayName} />,
       'abschluss': (a) => <AbschlussSlide isActive={a} data={konfiData} year={slideYear} />,
     };
 
@@ -214,7 +214,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
       events_held: 'events',
       badge_collector: 'badges',
       chat_champion: 'chat',
-      gottesdienst_treue: 'gottesdienst',
+      gottesdienst_treue: 'punkte',
       gemeinde_aktiv: 'punkte',
     };
     addSlide(highlightKeyMap[highlightType] || 'events');
@@ -222,16 +222,18 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
     // Slides 3+: Restliche Slides ohne Duplikation des Highlights
     maybeAdd('punkte');
     maybeAdd('events');
+
+    // PflichtSlide nach Events (Dummy-Daten, wird spaeter vom Backend befuellt)
+    maybeAdd('pflicht');
+
     maybeAdd('badges');
+
+    // RankSlide nach Badges (Dummy-Daten, wird spaeter vom Backend befuellt)
+    maybeAdd('rank');
 
     // Kategorie: IMMER wenn Daten vorhanden
     if (konfiData.slides.kategorie?.verteilung?.length > 0) {
       maybeAdd('kategorie');
-    }
-
-    // Gottesdienst: wenn count > 0
-    if (konfiData.slides.gottesdienst?.count > 0) {
-      maybeAdd('gottesdienst');
     }
 
     maybeAdd('aktivster-monat');
@@ -245,6 +247,11 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
       } else if (!endspurt.aktiv && endspurt.aktuell_total >= endspurt.ziel_total && endspurt.ziel_total > 0) {
         maybeAdd('ueber-das-ziel');
       }
+    }
+
+    // KonfirmationsSlide: nur wenn zeitraum.ende vorhanden
+    if (konfiData.slides.zeitraum?.ende) {
+      maybeAdd('konfirmation');
     }
 
     // Abschluss: IMMER letzter Slide
