@@ -1309,13 +1309,28 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // If a confirmed Konfi-spot was opened, auto-promote from waitlist (nur für Konfis relevant)
       if (booking.status === 'confirmed' && isKonfi) {
         try {
-          const promotedUserId = await promoteFromWaitlist(db, eventId, booking.timeslot_id);
+          // Kapazitaet pruefen: Nur nachruecken wenn confirmedCount < maxCapacity
+          const { rows: [eventCapInfo] } = await db.query(
+            "SELECT max_participants FROM events WHERE id = $1",
+            [eventId]
+          );
+          const { rows: [countResult] } = await db.query(
+            "SELECT COUNT(*) as confirmed_count FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'",
+            [eventId]
+          );
+          const maxCapacity = eventCapInfo?.max_participants || 0;
+          const confirmedCount = parseInt(countResult?.confirmed_count || '0', 10);
 
-          if (promotedUserId) {
-            // Push-Notification an nachgerückten Konfi
-            const { rows: [eventInfo] } = await db.query("SELECT name FROM events WHERE id = $1", [eventId]);
-            if (eventInfo) {
-              await PushService.sendWaitlistPromotionToKonfi(db, promotedUserId, eventInfo.name);
+          // Nur nachruecken wenn unter Kapazitaet (0 = unbegrenzt, immer nachruecken)
+          if (maxCapacity === 0 || confirmedCount < maxCapacity) {
+            const promotedUserId = await promoteFromWaitlist(db, eventId, booking.timeslot_id);
+
+            if (promotedUserId) {
+              // Push-Notification an nachgerückten Konfi
+              const { rows: [eventInfo] } = await db.query("SELECT name FROM events WHERE id = $1", [eventId]);
+              if (eventInfo) {
+                await PushService.sendWaitlistPromotionToKonfi(db, promotedUserId, eventInfo.name);
+              }
             }
           }
         } catch (promotionError) {

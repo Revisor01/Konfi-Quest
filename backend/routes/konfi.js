@@ -1798,18 +1798,28 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       // Nachrücken von Warteliste wenn ein bestätigter Platz frei wird
       if (registration.status === 'confirmed') {
         try {
-          const promotedUserId = await promoteFromWaitlist(db, eventId, registration.timeslot_id);
+          // Kapazitaet pruefen: Nur nachruecken wenn confirmedCount < maxCapacity
+          const { rows: [countResult] } = await db.query(
+            "SELECT COUNT(*) as confirmed_count FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'",
+            [eventId]
+          );
+          const maxCapacity = event.max_participants || 0;
+          const confirmedCount = parseInt(countResult?.confirmed_count || '0', 10);
 
-          if (promotedUserId) {
-            // Push-Notification an nachgerückten Konfi
-            try {
-              await PushService.sendWaitlistPromotionToKonfi(db, promotedUserId, event.name, event.event_date, eventId);
-            } catch (pushErr) {
-              console.error('Error sending waitlist promotion push:', pushErr);
+          if (maxCapacity === 0 || confirmedCount < maxCapacity) {
+            const promotedUserId = await promoteFromWaitlist(db, eventId, registration.timeslot_id);
+
+            if (promotedUserId) {
+              // Push-Notification an nachgerückten Konfi
+              try {
+                await PushService.sendWaitlistPromotionToKonfi(db, promotedUserId, event.name, event.event_date, eventId);
+              } catch (pushErr) {
+                console.error('Error sending waitlist promotion push:', pushErr);
+              }
+
+              // Live-Update an nachgerückten Konfi
+              liveUpdate.sendToKonfi(promotedUserId, 'events', 'update');
             }
-
-            // Live-Update an nachgerückten Konfi
-            liveUpdate.sendToKonfi(promotedUserId, 'events', 'update');
           }
         } catch (promotionErr) {
           console.error('Error promoting from waitlist:', promotionErr);
