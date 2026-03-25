@@ -60,12 +60,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
     // Kategorie-Verteilung (Aktivitaeten nach Kategorie)
     const { rows: kategorieVerteilung } = await client.query(
-      `SELECT c.name as kategorie, COUNT(*) as count
+      `SELECT COALESCE(a.category, a.type) as kategorie, COUNT(*) as count
        FROM user_activities ua
        JOIN activities a ON ua.activity_id = a.id
-       JOIN categories c ON a.category_id = c.id
        WHERE ua.user_id = $1 AND ua.organization_id = $2
-       GROUP BY c.name
+       GROUP BY COALESCE(a.category, a.type)
        ORDER BY count DESC`,
       [userId, orgId]
     );
