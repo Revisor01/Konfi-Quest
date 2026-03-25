@@ -313,19 +313,19 @@ ion-modal.wrapped-modal-fullscreen {
 }
 
 .wrapped-slide--active .wrapped-anim-bounce {
-  animation: wrapped-bounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: wrapped-bounce-in 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 .wrapped-slide--active .wrapped-anim-fly-left {
-  animation: wrapped-fly-left 0.7s ease-out forwards;
+  animation: wrapped-fly-in-left 0.6s ease-out forwards;
 }
 
 .wrapped-slide--active .wrapped-anim-fly-right {
-  animation: wrapped-fly-right 0.7s ease-out forwards;
+  animation: wrapped-fly-in-right 0.6s ease-out forwards;
 }
 
 .wrapped-slide--active .wrapped-anim-number-pop {
-  animation: wrapped-number-pop 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: wrapped-number-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 /* Animation-Delays fuer gestaffeltes Einblenden */
@@ -356,7 +356,7 @@ ion-modal.wrapped-modal-fullscreen {
 }
 
 .wrapped-loading ion-spinner {
-  --color: #7c3aed;
+  --color: #a78bfa;
   width: 48px;
   height: 48px;
 }
@@ -370,7 +370,7 @@ ion-modal.wrapped-modal-fullscreen {
    ======================================== */
 
 .intro-slide {
-  background: linear-gradient(135deg, #2d1065 0%, #0a0a0a 60%);
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #5b21b6 100%);
 }
 
 /* ========================================
@@ -393,19 +393,19 @@ ion-modal.wrapped-modal-fullscreen {
 .punkte-split-value {
   font-size: clamp(1.5rem, 6vw, 2.5rem);
   font-weight: 700;
-  color: #a78bfa;
+  color: #fff;
 }
 
 .punkte-split-label {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.7);
   margin-top: 4px;
 }
 
 .punkte-split-divider {
   width: 1px;
   height: 40px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.3);
 }
 
 /* ========================================
@@ -415,9 +415,10 @@ ion-modal.wrapped-modal-fullscreen {
 .events-highlight {
   margin-top: 32px;
   padding: 16px 24px;
-  background: rgba(124, 58, 237, 0.15);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 16px;
-  border: 1px solid rgba(124, 58, 237, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
 }
 
 /* ========================================
@@ -452,7 +453,7 @@ ion-modal.wrapped-modal-fullscreen {
 
 .badge-name {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.8);
   max-width: 80px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -463,13 +464,13 @@ ion-modal.wrapped-modal-fullscreen {
    AktivsterMonat Slide - Hintergrund + Balken
    ======================================== */
 
-.monat-slide { background: linear-gradient(135deg, #1e1b4b 0%, #0a0a0a 60%); }
+.monat-slide { background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%); }
 
 .monat-bar-container { width: 100%; max-width: 240px; margin-top: 32px; }
-.monat-bar { height: 8px; background: rgba(255,255,255,0.15); border-radius: 4px; overflow: hidden; }
+.monat-bar { height: 8px; background: rgba(255,255,255,0.25); border-radius: 4px; overflow: hidden; }
 .monat-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #7c3aed, #a78bfa);
+  background: rgba(255, 255, 255, 0.9);
   border-radius: 4px;
   transition: width 1.5s ease-out;
 }

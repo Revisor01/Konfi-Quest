@@ -1,4 +1,6 @@
 import React from 'react';
+import { IonIcon } from '@ionic/react';
+import { flameOutline } from 'ionicons/icons';
 import type { SlideProps, KonfiEndspurtSlide } from '../../../types/wrapped';
 import { useCountUp } from '../../../hooks/useCountUp';
 import SlideBase from './SlideBase';
@@ -13,14 +15,22 @@ const EndspurtSlide: React.FC<EndspurtSlideProps> = ({ isActive, endspurt }) => 
 
   return (
     <SlideBase isActive={isActive} className="endspurt-slide">
-      <div className="wrapped-anim-fade" style={{ opacity: 0 }}>
-        <p className="wrapped-subtitle">Endspurt!</p>
+      <div className="wrapped-anim-fade">
+        <IonIcon icon={flameOutline} style={{ fontSize: '2.5rem', opacity: 0.7, color: '#f97316' }} />
       </div>
-      <div className="wrapped-anim-scale wrapped-anim-delay-1" style={{ opacity: 0 }}>
-        <p className="wrapped-big-number">{animatedFehlend}</p>
+      <div className="wrapped-anim-fade wrapped-anim-delay-1">
+        <p className="wrapped-label">Endspurt!</p>
+      </div>
+      <div className="wrapped-anim-number-pop wrapped-anim-delay-1">
+        <p className="wrapped-hero-text" style={{
+          textShadow: '0 0 40px rgba(249,115,22,0.4)',
+          color: '#fb923c',
+        }}>
+          {animatedFehlend}
+        </p>
         <p className="wrapped-subtitle">Punkte fehlen noch</p>
       </div>
-      <div className="wrapped-anim-fade wrapped-anim-delay-2" style={{ opacity: 0 }}>
+      <div className="wrapped-anim-fade wrapped-anim-delay-2">
         <div className="endspurt-progress">
           <div className="endspurt-progress-bar">
             <div
@@ -33,8 +43,8 @@ const EndspurtSlide: React.FC<EndspurtSlideProps> = ({ isActive, endspurt }) => 
           </p>
         </div>
       </div>
-      <div className="wrapped-anim-fade wrapped-anim-delay-3" style={{ opacity: 0 }}>
-        <p style={{ color: '#a78bfa', fontSize: '1.1rem', fontWeight: 600, marginTop: '24px' }}>
+      <div className="wrapped-anim-bounce wrapped-anim-delay-3">
+        <p style={{ color: '#fbbf24', fontSize: '1.3rem', fontWeight: 700, marginTop: '24px' }}>
           Du schaffst das!
         </p>
       </div>
