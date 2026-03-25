@@ -54,13 +54,13 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 
 ### Konfi Historie
 
-- [ ] **KHI-01**: Punkte-Uebersicht + Badges als ausklappbare Akkordeons einbauen (kein Extra-Klick)
-- [ ] **KHI-02**: SectionHeader: "Fuer Uebersicht klicken" + zweite Stats-Zeile (Events, Bonus), "GD" statt "Gottesdienst"
+- [x] **KHI-01**: Punkte-Uebersicht + Badges als ausklappbare Akkordeons einbauen (kein Extra-Klick)
+- [x] **KHI-02**: SectionHeader: "Fuer Uebersicht klicken" + zweite Stats-Zeile (Events, Bonus), "GD" statt "Gottesdienst"
 
 ### Konfi Profil
 
-- [ ] **KPR-01**: Punkte-Uebersicht SectionHeader wie Teamer:innen, 6 Stats breit (2 Reihen)
-- [ ] **KPR-02**: Bibeluebersetzung: neues Modal mit Erklaerungen zu Versionen statt einfache Liste
+- [x] **KPR-01**: Punkte-Uebersicht SectionHeader wie Teamer:innen, 6 Stats breit (2 Reihen)
+- [x] **KPR-02**: Bibeluebersetzung: neues Modal mit Erklaerungen zu Versionen statt einfache Liste
 
 ### Admin Aktivitaeten
 
@@ -179,10 +179,10 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 | KBD-02 | Phase 96 | Complete |
 | KBD-03 | Phase 96 | Complete |
 | KAK-01 | Phase 96 | Complete |
-| KHI-01 | Phase 96 | Pending |
-| KHI-02 | Phase 96 | Pending |
-| KPR-01 | Phase 96 | Pending |
-| KPR-02 | Phase 96 | Pending |
+| KHI-01 | Phase 96 | Complete |
+| KHI-02 | Phase 96 | Complete |
+| KPR-01 | Phase 96 | Complete |
+| KPR-02 | Phase 96 | Complete |
 | TDB-01 | Phase 97 | Pending |
 | TDB-02 | Phase 97 | Pending |
 | TDB-03 | Phase 97 | Pending |

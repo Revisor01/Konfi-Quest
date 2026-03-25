@@ -262,7 +262,7 @@ Phase 93: Architektur-Refactoring (1 plan, complete)
 
 - [x] **Phase 94: Globale UI-Patterns** - Slider-Verhalten und Listen-Abstands-Konsistenz als gemeinsame Basis (completed 2026-03-24)
 - [x] **Phase 95: Chat-Farbschema + Korrekturen** - Einheitliches Farbschema und Bugs quer ueber alle Rollen (completed 2026-03-24)
-- [ ] **Phase 96: Konfi UI** - Dashboard, Events, Badges, Aktivitaeten, Historie, Profil
+- [x] **Phase 96: Konfi UI** - Dashboard, Events, Badges, Aktivitaeten, Historie, Profil (completed 2026-03-25)
 - [ ] **Phase 97: Teamer UI** - Dashboard, Events, Material
 - [ ] **Phase 98: Admin Aktivitaeten, Details, Antraege, Profil, Jahrgaenge** - Admin Teil 1
 - [ ] **Phase 99: Admin Events + Bugs** - Event-Ansicht, Absagen-Flow, Wartelisten-Bug, Chat-Screen-Bug
@@ -312,7 +312,7 @@ Plans:
 - [x] 96-01-PLAN.md -- Dashboard Events-Card immer sichtbar + Layout
 - [x] 96-02-PLAN.md -- Badge-Grid gleichmaessig + Suche & Filter Header
 - [x] 96-03-PLAN.md -- Events-Suche + Aktivitaeten-Modal Kategorien entfernen
-- [ ] 96-04-PLAN.md -- Profil Stats + Akkordeon-Historie + Bibel-Modal
+- [x] 96-04-PLAN.md -- Profil Stats + Akkordeon-Historie + Bibel-Modal
 
 ### Phase 97: Teamer UI
 **Goal**: Teamer:innen sehen ein poliertes Dashboard und verbesserte Events/Material-Ansichten
@@ -364,7 +364,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 94. Globale UI-Patterns | 1/1 | Complete    | 2026-03-24 |
 | 95. Chat-Farbschema + Korrekturen | 3/3 | Complete    | 2026-03-24 |
-| 96. Konfi UI | 3/4 | In Progress|  |
+| 96. Konfi UI | 4/4 | Complete   | 2026-03-25 |
 | 97. Teamer UI | 0/? | Not started | - |
 | 98. Admin Aktivitaeten, Details, Antraege, Profil, Jahrgaenge | 0/? | Not started | - |
 | 99. Admin Events + Bugs | 0/? | Not started | - |
