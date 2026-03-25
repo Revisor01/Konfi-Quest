@@ -16,12 +16,14 @@ export interface KonfiEventsSlide {
   total_attended: number;
   total_available: number;
   lieblings_event: { name: string; date: string } | null;
+  abgesagt?: number;
 }
 
 export interface KonfiBadgesSlide {
   total_earned: number;
   total_available: number;
   badges: Array<{ name: string; icon: string; color: string }>;
+  percentile?: number;
 }
 
 export interface KonfiAktivsterMonatSlide {
@@ -55,6 +57,16 @@ export interface KonfiKategorieSlide {
   top_kategorie: string | null;
 }
 
+export interface KonfiPflichtSlide {
+  besucht: number;
+  gesamt: number;
+}
+
+export interface KonfiRankSlide {
+  position: number;
+  total_in_jahrgang: number;
+}
+
 export type HighlightType =
   | 'events_held'
   | 'badge_collector'
@@ -77,6 +89,8 @@ export interface KonfiWrappedData {
     zeitraum: KonfiZeitraumSlide;
     gottesdienst: KonfiGottesdienstSlide;
     kategorie: KonfiKategorieSlide;
+    pflicht: KonfiPflichtSlide;
+    rank: KonfiRankSlide;
   };
 }
 
