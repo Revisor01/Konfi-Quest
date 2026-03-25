@@ -177,9 +177,13 @@ const AdminEventsPage: React.FC = () => {
   };
   
   const deleteSingleEvent = async (event: Event) => {
+    const konfiCount = (event.registered_count || 0) - (event.teamer_count || 0);
+    const isCancelled = event.registration_status === 'cancelled';
     presentAlert({
       header: 'Event löschen',
-      message: `Event "${event.name}" wirklich löschen?`,
+      message: isCancelled && konfiCount > 0
+        ? `Event "${event.name}" löschen? ${konfiCount} Konfis waren angemeldet und werden per Push benachrichtigt.`
+        : `Event "${event.name}" wirklich löschen?`,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
@@ -192,11 +196,7 @@ const AdminEventsPage: React.FC = () => {
               await refreshEvents();
               await refreshCancelled();
             } catch (error: any) {
-              if (error.response?.data?.error) {
-                setError(error.response.data.error);
-              } else {
-                setError('Fehler beim Löschen des Events');
-              }
+              setError(error.response?.data?.error || 'Fehler beim Löschen des Events');
             }
           }
         }

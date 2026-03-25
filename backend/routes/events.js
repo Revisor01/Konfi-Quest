@@ -1010,29 +1010,45 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       await client.query('BEGIN');
 
       // First, verify the event belongs to the organization
-      const { rows: [event] } = await client.query("SELECT id, name FROM events WHERE id = $1 AND organization_id = $2", [id, req.user.organization_id]);
+      const { rows: [event] } = await client.query("SELECT id, name, event_date, cancelled FROM events WHERE id = $1 AND organization_id = $2", [id, req.user.organization_id]);
       if (!event) {
         await client.query('ROLLBACK');
         client.release();
         return res.status(404).json({ error: 'Event nicht gefunden' });
       }
 
-      // Check if there are bookings (confirmed participants)
-      const { rows: [bookingUsage] } = await client.query("SELECT COUNT(*)::int as count FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'", [id]);
+      // Abgesagte Events duerfen trotz Buchungen geloescht werden (Push wird gesendet)
+      if (!event.cancelled) {
+        // Check if there are bookings (confirmed participants)
+        const { rows: [bookingUsage] } = await client.query("SELECT COUNT(*)::int as count FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'", [id]);
 
-      if (bookingUsage.count > 0) {
-        await client.query('ROLLBACK');
-        client.release();
-        return res.status(409).json({ error: `Event kann nicht gelöscht werden: ${bookingUsage.count} bestätigte Anmeldung(en) vorhanden.` });
+        if (bookingUsage.count > 0) {
+          await client.query('ROLLBACK');
+          client.release();
+          return res.status(409).json({ error: `Event kann nicht gelöscht werden: ${bookingUsage.count} bestätigte Anmeldung(en) vorhanden.` });
+        }
+
+        // Check for pending bookings (waitlist)
+        const { rows: [pendingUsage] } = await client.query("SELECT COUNT(*)::int as count FROM event_bookings WHERE event_id = $1 AND status = 'waitlist'", [id]);
+
+        if (pendingUsage.count > 0) {
+          await client.query('ROLLBACK');
+          client.release();
+          return res.status(409).json({ error: `Event kann nicht gelöscht werden: ${pendingUsage.count} Wartelisten-Anmeldung(en) vorhanden.` });
+        }
       }
 
-      // Check for pending bookings (waitlist)
-      const { rows: [pendingUsage] } = await client.query("SELECT COUNT(*)::int as count FROM event_bookings WHERE event_id = $1 AND status = 'waitlist'", [id]);
-
-      if (pendingUsage.count > 0) {
-        await client.query('ROLLBACK');
-        client.release();
-        return res.status(409).json({ error: `Event kann nicht gelöscht werden: ${pendingUsage.count} Wartelisten-Anmeldung(en) vorhanden.` });
+      // Push an angemeldete Konfis wenn abgesagtes Event geloescht wird
+      let bookedKonfiUserIds = [];
+      if (event.cancelled) {
+        const { rows: bookedKonfis } = await client.query(
+          `SELECT eb.user_id FROM event_bookings eb
+           JOIN users u ON eb.user_id = u.id
+           JOIN roles r ON u.role_id = r.id
+           WHERE eb.event_id = $1 AND r.name = 'konfi' AND eb.status IN ('confirmed', 'waitlist')`,
+          [id]
+        );
+        bookedKonfiUserIds = bookedKonfis.map(b => b.user_id);
       }
 
       // Check for chat rooms with messages
@@ -1113,6 +1129,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       client.release();
 
       res.json({ message: 'Event erfolgreich gelöscht' });
+
+      // Push an Konfis wenn abgesagtes Event mit Buchungen geloescht wurde
+      if (bookedKonfiUserIds.length > 0) {
+        const eventDateFormatted = new Date(event.event_date).toLocaleDateString('de-DE');
+        try { await PushService.sendEventCancellationToKonfis(db, bookedKonfiUserIds, event.name, eventDateFormatted); } catch (e) { console.error('Push notification failed:', e); }
+      }
 
       // Live Update: Notify all konfis and admins about the event deletion
       liveUpdate.sendToOrg(req.user.organization_id, 'events', 'delete', { eventId: id });
