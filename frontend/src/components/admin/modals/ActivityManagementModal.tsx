@@ -17,6 +17,9 @@ import {
   IonCard,
   IonCardContent,
   IonRange,
+  IonModal,
+  IonDatetime,
+  IonDatetimeButton,
   useIonAlert
 } from '@ionic/react';
 import { checkmarkOutline, closeOutline, create, pricetag, checkmarkCircle, peopleOutline } from 'ionicons/icons';
@@ -66,6 +69,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
   const [categories, setCategories] = useState<Category[]>([]);
   const [currentActivity, setCurrentActivity] = useState<Activity | null>(activity || null);
   const [isDirty, setIsDirty] = useState(false);
+  const [activityDate, setActivityDate] = useState('');
   const [presentAlert] = useIonAlert();
   const initializedRef = useRef(false);
 
@@ -359,6 +363,16 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                     clearInput={true}
                   />
                 </IonItem>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Datum</IonLabel>
+                  <IonDatetimeButton datetime="activity-date" disabled={loading} />
+                </IonItem>
+
+                {formData.target_role === 'teamer' && (
+                  <div style={{ padding: '8px 16px', color: '#666', fontSize: '0.85rem' }}>
+                    Teamer:innen-Aktivitäten haben keine Punkte und keinen Typ.
+                  </div>
+                )}
 
                 {formData.target_role !== 'teamer' && (
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
@@ -484,6 +498,20 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
           </IonCardContent>
         </IonCard>
       </IonList>
+
+        <IonModal keepContentsMounted={true}>
+          <IonDatetime
+            id="activity-date"
+            presentation="date"
+            locale="de-DE"
+            value={activityDate || undefined}
+            onIonChange={(e) => {
+              const value = e.detail.value;
+              if (typeof value === 'string') setActivityDate(value.split('T')[0]);
+            }}
+            disabled={loading}
+          />
+        </IonModal>
       </IonContent>
     </IonPage>
   );
