@@ -9,9 +9,9 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 
 ### Teamer Dashboard
 
-- [ ] **TDB-01**: Zertifikate-Card Farbe Lila statt Rosa/Pink
-- [ ] **TDB-02**: Losung im Teamer-Dashboard sichtbar
-- [ ] **TDB-03**: Neue Badges markiert (Konfi-Dashboard-Pattern) mit Popover bei Klick
+- [x] **TDB-01**: Zertifikate-Card Farbe Lila statt Rosa/Pink
+- [x] **TDB-02**: Losung im Teamer-Dashboard sichtbar
+- [x] **TDB-03**: Neue Badges markiert (Konfi-Dashboard-Pattern) mit Popover bei Klick
 
 ### Teamer Chat
 
@@ -183,9 +183,9 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 | KHI-02 | Phase 96 | Complete |
 | KPR-01 | Phase 96 | Complete |
 | KPR-02 | Phase 96 | Complete |
-| TDB-01 | Phase 97 | Pending |
-| TDB-02 | Phase 97 | Pending |
-| TDB-03 | Phase 97 | Pending |
+| TDB-01 | Phase 97 | Complete |
+| TDB-02 | Phase 97 | Complete |
+| TDB-03 | Phase 97 | Complete |
 | TEV-01 | Phase 97 | Complete |
 | TEV-02 | Phase 97 | Complete |
 | TEV-03 | Phase 97 | Complete |

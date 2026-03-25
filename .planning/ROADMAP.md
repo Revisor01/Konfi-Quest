@@ -263,7 +263,7 @@ Phase 93: Architektur-Refactoring (1 plan, complete)
 - [x] **Phase 94: Globale UI-Patterns** - Slider-Verhalten und Listen-Abstands-Konsistenz als gemeinsame Basis (completed 2026-03-24)
 - [x] **Phase 95: Chat-Farbschema + Korrekturen** - Einheitliches Farbschema und Bugs quer ueber alle Rollen (completed 2026-03-24)
 - [x] **Phase 96: Konfi UI** - Dashboard, Events, Badges, Aktivitaeten, Historie, Profil (completed 2026-03-25)
-- [ ] **Phase 97: Teamer UI** - Dashboard, Events, Material
+- [x] **Phase 97: Teamer UI** - Dashboard, Events, Material (completed 2026-03-25)
 - [ ] **Phase 98: Admin Aktivitaeten, Details, Antraege, Profil, Jahrgaenge** - Admin Teil 1
 - [ ] **Phase 99: Admin Events + Bugs** - Event-Ansicht, Absagen-Flow, Wartelisten-Bug, Chat-Screen-Bug
 - [ ] **Phase 100: Admin Zertifikate, Material, Dashboard** - Admin Teil 2 Abschluss
@@ -324,7 +324,7 @@ Plans:
   3. "Anwesend"/"Anwesenheit ausstehend" Buttons haben den angepassten Stil; Beschreibungstext in Material und MaterialModal ist groesser; Swipe-Back nach Modal-Oeffnen funktioniert
 **Plans**: 2 plans
 Plans:
-- [ ] 97-01-PLAN.md -- Dashboard Zertifikate Lila + Losung Config + Badges 1:1 wie Konfi
+- [x] 97-01-PLAN.md -- Dashboard Zertifikate Lila + Losung Config + Badges 1:1 wie Konfi
 - [x] 97-02-PLAN.md -- Events/Badges Suche & Filter + Material Beschreibung + Anwesenheits-Boxen
 
 ### Phase 98: Admin Aktivitaeten, Details, Antraege, Profil, Jahrgaenge
@@ -368,7 +368,7 @@ Plans:
 | 94. Globale UI-Patterns | 1/1 | Complete    | 2026-03-24 |
 | 95. Chat-Farbschema + Korrekturen | 3/3 | Complete    | 2026-03-24 |
 | 96. Konfi UI | 4/4 | Complete    | 2026-03-25 |
-| 97. Teamer UI | 1/2 | In Progress|  |
+| 97. Teamer UI | 2/2 | Complete   | 2026-03-25 |
 | 98. Admin Aktivitaeten, Details, Antraege, Profil, Jahrgaenge | 0/? | Not started | - |
 | 99. Admin Events + Bugs | 0/? | Not started | - |
 | 100. Admin Zertifikate, Material, Dashboard | 0/? | Not started | - |
