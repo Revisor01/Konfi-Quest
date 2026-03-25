@@ -266,7 +266,7 @@ Phase 93: Architektur-Refactoring (1 plan, complete)
 - [x] **Phase 97: Teamer UI** - Dashboard, Events, Material (completed 2026-03-25)
 - [x] **Phase 98: Admin Aktivitaeten, Details, Antraege, Profil, Jahrgaenge** - Admin Teil 1 (completed 2026-03-25)
 - [x] **Phase 99: Admin Events + Bugs** - Event-Ansicht, Absagen-Flow, Wartelisten-Bug, Chat-Screen-Bug (completed 2026-03-25)
-- [ ] **Phase 100: Admin Zertifikate, Material, Dashboard** - Admin Teil 2 Abschluss
+- [x] **Phase 100: Admin Zertifikate, Material, Dashboard** - Admin Teil 2 Abschluss (completed 2026-03-25)
 
 ## Phase Details
 
@@ -371,7 +371,7 @@ Plans:
 Plans:
 - [x] 100-01-PLAN.md -- Zertifikat-Zuweisen Modal mit Datumspicker, Laufzeit, Icon-Anzeige
 - [x] 100-02-PLAN.md -- Material Jahrgangs-Dropdown, Ohne-Event-Text, Datei-Button
-- [ ] 100-03-PLAN.md -- Dashboard-Sektionen sortierbar mit IonReorder
+- [x] 100-03-PLAN.md -- Dashboard-Sektionen sortierbar mit IonReorder
 
 ## Progress Table
 
@@ -383,4 +383,4 @@ Plans:
 | 97. Teamer UI | 2/2 | Complete    | 2026-03-25 |
 | 98. Admin Aktivitaeten, Details, Antraege, Profil, Jahrgaenge | 3/3 | Complete    | 2026-03-25 |
 | 99. Admin Events + Bugs | 3/3 | Complete    | 2026-03-25 |
-| 100. Admin Zertifikate, Material, Dashboard | 2/3 | In Progress|  |
+| 100. Admin Zertifikate, Material, Dashboard | 3/3 | Complete   | 2026-03-25 |

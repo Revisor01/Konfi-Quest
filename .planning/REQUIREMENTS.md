@@ -123,8 +123,8 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 
 ### Admin Dashboard
 
-- [ ] **ADA-01**: Dashboard-Reihenfolge bei Admin und Konfi gleich
-- [ ] **ADA-02**: Dashboard-Sektionen sortierbar machen (Konfi-Dashboard steuern)
+- [x] **ADA-01**: Dashboard-Reihenfolge bei Admin und Konfi gleich
+- [x] **ADA-02**: Dashboard-Sektionen sortierbar machen (Konfi-Dashboard steuern)
 
 ### Admin Material
 
@@ -219,8 +219,8 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 | AMA-02 | Phase 100 | Complete |
 | AMA-03 | Phase 100 | Complete |
 | AMA-04 | Phase 100 | Complete |
-| ADA-01 | Phase 100 | Pending |
-| ADA-02 | Phase 100 | Pending |
+| ADA-01 | Phase 100 | Complete |
+| ADA-02 | Phase 100 | Complete |
 
 **Coverage:**
 - v2.8 Requirements: 64 total (Hinweis: urspruenglich als 51 angegeben, tatsaechlich 64 durch Zaehlung)
