@@ -367,7 +367,11 @@ Plans:
   1. Zertifikat-Zuweisen ist ein vollstaendiges Modal mit ordentlichem Datumspicker, Laufzeit-Eingabe und automatischem Start-Datum; gepicktes Icon wird im Modal angezeigt
   2. Jahrgangs-Auswahl in Material ist ein Dropdown-Popover mit Suche statt Tab-Leiste; Suchleiste folgt dem Chat-Pattern; "Ohne Event"-Tab zeigt korrekten Text; "Datei auswaehlen" Button hat korrekten Abstand und Zentrierung
   3. Dashboard-Reihenfolge ist bei Admin und Konfi gleich; Dashboard-Sektionen sind vom Admin sortierbar
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 100-01-PLAN.md -- Zertifikat-Zuweisen Modal mit Datumspicker, Laufzeit, Icon-Anzeige
+- [ ] 100-02-PLAN.md -- Material Jahrgangs-Dropdown, Ohne-Event-Text, Datei-Button
+- [ ] 100-03-PLAN.md -- Dashboard-Sektionen sortierbar mit IonReorder
 
 ## Progress Table
 
@@ -379,4 +383,4 @@ Plans:
 | 97. Teamer UI | 2/2 | Complete    | 2026-03-25 |
 | 98. Admin Aktivitaeten, Details, Antraege, Profil, Jahrgaenge | 3/3 | Complete    | 2026-03-25 |
 | 99. Admin Events + Bugs | 3/3 | Complete    | 2026-03-25 |
-| 100. Admin Zertifikate, Material, Dashboard | 0/? | Not started | - |
+| 100. Admin Zertifikate, Material, Dashboard | 0/3 | Not started | - |
