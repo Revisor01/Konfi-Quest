@@ -317,6 +317,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
             id="confirmation-date"
             presentation="date"
             locale="de-DE"
+            max="2035-12-31"
             value={formData.confirmation_date || undefined}
             onIonChange={(e) => {
               const value = e.detail.value;
