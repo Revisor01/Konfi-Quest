@@ -118,8 +118,8 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 
 ### Admin Profil
 
-- [ ] **APR-01**: Blauton bei Modal-Erlaeuterungen an SectionHeader-Blau anpassen
-- [ ] **APR-02**: "App Info" entfernen
+- [x] **APR-01**: Blauton bei Modal-Erlaeuterungen an SectionHeader-Blau anpassen
+- [x] **APR-02**: "App Info" entfernen
 
 ### Admin Dashboard
 
@@ -135,7 +135,7 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 
 ### Admin Jahrgaenge
 
-- [ ] **AJG-01**: Datumspicker Endjahreszahl erhoehen (aktuell 2026, braucht 2028+)
+- [x] **AJG-01**: Datumspicker Endjahreszahl erhoehen (aktuell 2026, braucht 2028+)
 
 ## Future Requirements
 
@@ -198,9 +198,9 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 | ATD-01 | Phase 98 | Pending |
 | AAN-01 | Phase 98 | Pending |
 | AAN-02 | Phase 98 | Pending |
-| APR-01 | Phase 98 | Pending |
-| APR-02 | Phase 98 | Pending |
-| AJG-01 | Phase 98 | Pending |
+| APR-01 | Phase 98 | Complete |
+| APR-02 | Phase 98 | Complete |
+| AJG-01 | Phase 98 | Complete |
 | AEV-01 | Phase 99 | Pending |
 | AEV-02 | Phase 99 | Pending |
 | AEV-03 | Phase 99 | Pending |
