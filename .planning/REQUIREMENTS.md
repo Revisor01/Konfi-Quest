@@ -64,11 +64,11 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 
 ### Admin Aktivitaeten
 
-- [ ] **AAK-01**: Invalid Date Bug beheben
-- [ ] **AAK-02**: Modal Aktivitaeten hinzufuegen: Datumspicker korrigieren
-- [ ] **AAK-03**: Teamer:innen-Aktivitaeten im Modal anzeigen
-- [ ] **AAK-04**: Teamer:innen-Aktivitaeten erstellen ohne Punkte-Pflicht
-- [ ] **AAK-05**: Kategorien-Symbol korrekte Farbe in Liste
+- [x] **AAK-01**: Invalid Date Bug beheben
+- [x] **AAK-02**: Modal Aktivitaeten hinzufuegen: Datumspicker korrigieren
+- [x] **AAK-03**: Teamer:innen-Aktivitaeten im Modal anzeigen
+- [x] **AAK-04**: Teamer:innen-Aktivitaeten erstellen ohne Punkte-Pflicht
+- [x] **AAK-05**: Kategorien-Symbol korrekte Farbe in Liste
 
 ### Admin UI-Patterns
 
@@ -190,11 +190,11 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 | TEV-02 | Phase 97 | Complete |
 | TEV-03 | Phase 97 | Complete |
 | TEV-04 | Phase 97 | Complete |
-| AAK-01 | Phase 98 | Pending |
-| AAK-02 | Phase 98 | Pending |
-| AAK-03 | Phase 98 | Pending |
-| AAK-04 | Phase 98 | Pending |
-| AAK-05 | Phase 98 | Pending |
+| AAK-01 | Phase 98 | Complete |
+| AAK-02 | Phase 98 | Complete |
+| AAK-03 | Phase 98 | Complete |
+| AAK-04 | Phase 98 | Complete |
+| AAK-05 | Phase 98 | Complete |
 | ATD-01 | Phase 98 | Pending |
 | AAN-01 | Phase 98 | Pending |
 | AAN-02 | Phase 98 | Pending |
