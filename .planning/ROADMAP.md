@@ -265,7 +265,7 @@ Phase 93: Architektur-Refactoring (1 plan, complete)
 - [x] **Phase 96: Konfi UI** - Dashboard, Events, Badges, Aktivitaeten, Historie, Profil (completed 2026-03-25)
 - [x] **Phase 97: Teamer UI** - Dashboard, Events, Material (completed 2026-03-25)
 - [x] **Phase 98: Admin Aktivitaeten, Details, Antraege, Profil, Jahrgaenge** - Admin Teil 1 (completed 2026-03-25)
-- [ ] **Phase 99: Admin Events + Bugs** - Event-Ansicht, Absagen-Flow, Wartelisten-Bug, Chat-Screen-Bug
+- [x] **Phase 99: Admin Events + Bugs** - Event-Ansicht, Absagen-Flow, Wartelisten-Bug, Chat-Screen-Bug (completed 2026-03-25)
 - [ ] **Phase 100: Admin Zertifikate, Material, Dashboard** - Admin Teil 2 Abschluss
 
 ## Phase Details
@@ -356,7 +356,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [x] 99-01-PLAN.md -- Suchfeld/Filter Zwischenueberschriften + Chat-Button + Beschreibungstext + Konfi-Umbenennung
-- [ ] 99-02-PLAN.md -- Event-Absagen ActionSheet + Loesch-Push
+- [x] 99-02-PLAN.md -- Event-Absagen ActionSheet + Loesch-Push
 - [x] 99-03-PLAN.md -- Wartelisten-Kapazitaetspruefung + Chat-Navigation Fix
 
 ### Phase 100: Admin Zertifikate, Material, Dashboard
@@ -378,5 +378,5 @@ Plans:
 | 96. Konfi UI | 4/4 | Complete    | 2026-03-25 |
 | 97. Teamer UI | 2/2 | Complete    | 2026-03-25 |
 | 98. Admin Aktivitaeten, Details, Antraege, Profil, Jahrgaenge | 3/3 | Complete    | 2026-03-25 |
-| 99. Admin Events + Bugs | 2/3 | In Progress|  |
+| 99. Admin Events + Bugs | 3/3 | Complete   | 2026-03-25 |
 | 100. Admin Zertifikate, Material, Dashboard | 0/? | Not started | - |

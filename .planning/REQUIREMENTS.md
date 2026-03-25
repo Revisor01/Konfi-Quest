@@ -102,9 +102,9 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 - [x] **AEV-03**: Event-Details: "Konfi hinzufuegen" statt "Kind hinzufuegen"
 - [x] **AEV-04**: Event-Details: Chat-Button oben neben QR-Code mit "Chat erstellen?" Bestaetigung
 - [x] **AEV-05**: Event-Details: Beschreibungstext groesser
-- [ ] **AEV-06**: Event-Absagen Action-Dialog verbessern (nicht nur eine Zeile)
-- [ ] **AEV-07**: Nach Event-Absage Seite reloaden, Event aus Liste entfernen
-- [ ] **AEV-08**: Abgesagtes Event loeschen: Push an angemeldete Konfis, Info "X Konfis angemeldet"
+- [x] **AEV-06**: Event-Absagen Action-Dialog verbessern (nicht nur eine Zeile)
+- [x] **AEV-07**: Nach Event-Absage Seite reloaden, Event aus Liste entfernen
+- [x] **AEV-08**: Abgesagtes Event loeschen: Push an angemeldete Konfis, Info "X Konfis angemeldet"
 
 ### Admin Bugs
 
@@ -206,9 +206,9 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 | AEV-03 | Phase 99 | Complete |
 | AEV-04 | Phase 99 | Complete |
 | AEV-05 | Phase 99 | Complete |
-| AEV-06 | Phase 99 | Pending |
-| AEV-07 | Phase 99 | Pending |
-| AEV-08 | Phase 99 | Pending |
+| AEV-06 | Phase 99 | Complete |
+| AEV-07 | Phase 99 | Complete |
+| AEV-08 | Phase 99 | Complete |
 | ABG-01 | Phase 99 | Complete |
 | ABG-02 | Phase 99 | Complete |
 | AZE-01 | Phase 100 | Pending |
