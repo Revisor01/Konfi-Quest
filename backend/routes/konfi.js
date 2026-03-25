@@ -245,21 +245,27 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         target_gemeinde: konfi.target_gemeinde || 10
       };
 
-      // Dashboard config aus Settings laden
+      // Dashboard config aus Settings laden (show_* + section_order)
       const { rows: dashboardSettings } = await db.query(
-        "SELECT key, value FROM settings WHERE organization_id = $1 AND key LIKE 'dashboard_show_%'",
+        "SELECT key, value FROM settings WHERE organization_id = $1 AND (key LIKE 'dashboard_show_%' OR key = 'dashboard_section_order')",
         [req.user.organization_id]
       );
       const dashboardMap = {};
+      let sectionOrder = null;
       dashboardSettings.forEach(row => {
-        dashboardMap[row.key] = row.value === 'true' || row.value === '1';
+        if (row.key === 'dashboard_section_order') {
+          try { sectionOrder = JSON.parse(row.value); } catch { /* ignore */ }
+        } else {
+          dashboardMap[row.key] = row.value === 'true' || row.value === '1';
+        }
       });
       const dashboard_config = {
         show_konfirmation: dashboardMap.dashboard_show_konfirmation !== undefined ? dashboardMap.dashboard_show_konfirmation : true,
         show_events: dashboardMap.dashboard_show_events !== undefined ? dashboardMap.dashboard_show_events : true,
         show_losung: dashboardMap.dashboard_show_losung !== undefined ? dashboardMap.dashboard_show_losung : true,
         show_badges: dashboardMap.dashboard_show_badges !== undefined ? dashboardMap.dashboard_show_badges : true,
-        show_ranking: dashboardMap.dashboard_show_ranking !== undefined ? dashboardMap.dashboard_show_ranking : true
+        show_ranking: dashboardMap.dashboard_show_ranking !== undefined ? dashboardMap.dashboard_show_ranking : true,
+        section_order: sectionOrder || ['konfirmation', 'events', 'losung', 'badges', 'ranking']
       };
 
       // Wrapped-Verfuegbarkeit pruefen (ueber wrapped_released_at auf Jahrgang)

@@ -18,9 +18,11 @@ import {
   IonSegment,
   IonSegmentButton,
   IonRefresher,
-  IonRefresherContent
+  IonRefresherContent,
+  IonReorder,
+  IonReorderGroup
 } from '@ionic/react';
-import { arrowBack, appsOutline } from 'ionicons/icons';
+import { arrowBack, appsOutline, reorderThreeOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
@@ -46,6 +48,24 @@ interface TeamerDashboardConfig {
   show_losung: boolean;
 }
 
+const KONFI_LABELS: Record<string, string> = {
+  konfirmation: 'Konfirmations-Countdown',
+  events: 'Events',
+  losung: 'Tageslosung',
+  badges: 'Badges',
+  ranking: 'Ranking'
+};
+
+const TEAMER_LABELS: Record<string, string> = {
+  zertifikate: 'Zertifikate',
+  events: 'Events',
+  badges: 'Badges',
+  losung: 'Tageslosung'
+};
+
+const DEFAULT_KONFI_ORDER = ['konfirmation', 'events', 'losung', 'badges', 'ranking'];
+const DEFAULT_TEAMER_ORDER = ['zertifikate', 'events', 'badges', 'losung'];
+
 const AdminDashboardSettingsPage: React.FC = () => {
   const { user, setSuccess, setError } = useApp();
   const [dashboardSegment, setDashboardSegment] = useState<'konfi' | 'teamer'>('konfi');
@@ -64,6 +84,28 @@ const AdminDashboardSettingsPage: React.FC = () => {
     show_badges: true,
     show_losung: true
   });
+
+  const [konfiOrder, setKonfiOrder] = useState<string[]>(DEFAULT_KONFI_ORDER);
+  const [teamerOrder, setTeamerOrder] = useState<string[]>(DEFAULT_TEAMER_ORDER);
+
+  const handleSaveOrder = async (key: string, value: string) => {
+    if (!networkMonitor.isOnline) {
+      writeQueue.enqueue({
+        method: 'PUT',
+        url: '/settings',
+        body: { [key]: value },
+        maxRetries: 3,
+        hasFileUpload: false,
+        metadata: { type: 'fire-and-forget', clientId: `order-${key}-${Date.now()}`, label: 'Dashboard-Reihenfolge' },
+      });
+      return;
+    }
+    try {
+      await api.put('/settings', { [key]: value });
+    } catch {
+      setError('Fehler beim Speichern der Reihenfolge');
+    }
+  };
 
   // Offline-Query: Settings
   const { loading, refresh: refreshSettings } = useOfflineQuery<any>(
@@ -85,6 +127,8 @@ const AdminDashboardSettingsPage: React.FC = () => {
           show_badges: data.teamer_dashboard_show_badges ?? true,
           show_losung: data.teamer_dashboard_show_losung ?? true
         });
+        setKonfiOrder(data.dashboard_section_order || DEFAULT_KONFI_ORDER);
+        setTeamerOrder(data.teamer_dashboard_section_order || DEFAULT_TEAMER_ORDER);
       }
     }
   );
@@ -217,46 +261,26 @@ const AdminDashboardSettingsPage: React.FC = () => {
             <IonCard className="app-card">
               <IonCardContent>
                 <IonList style={{ background: 'transparent', padding: '0' }}>
-                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                    <IonLabel>Konfirmations-Countdown</IonLabel>
-                    <IonToggle
-                      slot="end"
-                      checked={dashboardConfig.show_konfirmation}
-                      onIonChange={(e) => handleDashboardToggle('show_konfirmation', e.detail.checked)}
-                    />
-                  </IonItem>
-                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                    <IonLabel>Events</IonLabel>
-                    <IonToggle
-                      slot="end"
-                      checked={dashboardConfig.show_events}
-                      onIonChange={(e) => handleDashboardToggle('show_events', e.detail.checked)}
-                    />
-                  </IonItem>
-                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                    <IonLabel>Tageslosung</IonLabel>
-                    <IonToggle
-                      slot="end"
-                      checked={dashboardConfig.show_losung}
-                      onIonChange={(e) => handleDashboardToggle('show_losung', e.detail.checked)}
-                    />
-                  </IonItem>
-                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                    <IonLabel>Badges</IonLabel>
-                    <IonToggle
-                      slot="end"
-                      checked={dashboardConfig.show_badges}
-                      onIonChange={(e) => handleDashboardToggle('show_badges', e.detail.checked)}
-                    />
-                  </IonItem>
-                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                    <IonLabel>Ranking</IonLabel>
-                    <IonToggle
-                      slot="end"
-                      checked={dashboardConfig.show_ranking}
-                      onIonChange={(e) => handleDashboardToggle('show_ranking', e.detail.checked)}
-                    />
-                  </IonItem>
+                  <IonReorderGroup disabled={false} onIonItemReorder={(e) => {
+                    const newOrder = [...konfiOrder];
+                    const [moved] = newOrder.splice(e.detail.from, 1);
+                    newOrder.splice(e.detail.to, 0, moved);
+                    setKonfiOrder(newOrder);
+                    e.detail.complete();
+                    handleSaveOrder('dashboard_section_order', JSON.stringify(newOrder));
+                  }}>
+                    {konfiOrder.map((key, index) => (
+                      <IonItem key={key} lines={index < konfiOrder.length - 1 ? 'full' : 'none'} style={{ '--background': 'transparent' }}>
+                        <IonLabel>{KONFI_LABELS[key]}</IonLabel>
+                        <IonToggle
+                          slot="end"
+                          checked={dashboardConfig[`show_${key}` as keyof DashboardConfig]}
+                          onIonChange={(e) => handleDashboardToggle(`show_${key}` as keyof DashboardConfig, e.detail.checked)}
+                        />
+                        <IonReorder slot="end" />
+                      </IonItem>
+                    ))}
+                  </IonReorderGroup>
                 </IonList>
               </IonCardContent>
             </IonCard>
@@ -274,38 +298,26 @@ const AdminDashboardSettingsPage: React.FC = () => {
             <IonCard className="app-card">
               <IonCardContent>
                 <IonList style={{ background: 'transparent', padding: '0' }}>
-                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                    <IonLabel>Zertifikate</IonLabel>
-                    <IonToggle
-                      slot="end"
-                      checked={teamerDashboardConfig.show_zertifikate}
-                      onIonChange={(e) => handleTeamerDashboardToggle('show_zertifikate', e.detail.checked)}
-                    />
-                  </IonItem>
-                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                    <IonLabel>Events</IonLabel>
-                    <IonToggle
-                      slot="end"
-                      checked={teamerDashboardConfig.show_events}
-                      onIonChange={(e) => handleTeamerDashboardToggle('show_events', e.detail.checked)}
-                    />
-                  </IonItem>
-                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                    <IonLabel>Badges</IonLabel>
-                    <IonToggle
-                      slot="end"
-                      checked={teamerDashboardConfig.show_badges}
-                      onIonChange={(e) => handleTeamerDashboardToggle('show_badges', e.detail.checked)}
-                    />
-                  </IonItem>
-                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                    <IonLabel>Tageslosung</IonLabel>
-                    <IonToggle
-                      slot="end"
-                      checked={teamerDashboardConfig.show_losung}
-                      onIonChange={(e) => handleTeamerDashboardToggle('show_losung', e.detail.checked)}
-                    />
-                  </IonItem>
+                  <IonReorderGroup disabled={false} onIonItemReorder={(e) => {
+                    const newOrder = [...teamerOrder];
+                    const [moved] = newOrder.splice(e.detail.from, 1);
+                    newOrder.splice(e.detail.to, 0, moved);
+                    setTeamerOrder(newOrder);
+                    e.detail.complete();
+                    handleSaveOrder('teamer_dashboard_section_order', JSON.stringify(newOrder));
+                  }}>
+                    {teamerOrder.map((key, index) => (
+                      <IonItem key={key} lines={index < teamerOrder.length - 1 ? 'full' : 'none'} style={{ '--background': 'transparent' }}>
+                        <IonLabel>{TEAMER_LABELS[key]}</IonLabel>
+                        <IonToggle
+                          slot="end"
+                          checked={teamerDashboardConfig[`show_${key}` as keyof TeamerDashboardConfig]}
+                          onIonChange={(e) => handleTeamerDashboardToggle(`show_${key}` as keyof TeamerDashboardConfig, e.detail.checked)}
+                        />
+                        <IonReorder slot="end" />
+                      </IonItem>
+                    ))}
+                  </IonReorderGroup>
                 </IonList>
               </IonCardContent>
             </IonCard>

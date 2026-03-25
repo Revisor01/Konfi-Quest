@@ -704,13 +704,14 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         total_count: parseInt(totalResult.count)
       };
 
-      // 5. Config: Dashboard-Config aus settings
+      // 5. Config: Dashboard-Config aus settings (show_* + section_order)
       const configQuery = `
         SELECT key, value FROM settings
-        WHERE organization_id = $1 AND key LIKE 'teamer_dashboard_show_%'
+        WHERE organization_id = $1 AND (key LIKE 'teamer_dashboard_show_%' OR key = 'teamer_dashboard_section_order')
       `;
       const { rows: configRows } = await db.query(configQuery, [orgId]);
 
+      let teamerSectionOrder = null;
       const config = {
         show_zertifikate: true,
         show_events: true,
@@ -719,8 +720,13 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       };
 
       configRows.forEach(row => {
-        config[row.key.replace('teamer_dashboard_show_', 'show_')] = row.value === 'true' || row.value === '1';
+        if (row.key === 'teamer_dashboard_section_order') {
+          try { teamerSectionOrder = JSON.parse(row.value); } catch { /* ignore */ }
+        } else {
+          config[row.key.replace('teamer_dashboard_show_', 'show_')] = row.value === 'true' || row.value === '1';
+        }
       });
+      config.section_order = teamerSectionOrder || ['zertifikate', 'events', 'badges', 'losung'];
 
       // Wrapped-Verfuegbarkeit pruefen (Teamer: direkt auf wrapped_snapshots)
       const { rows: [wrappedResult] } = await db.query(

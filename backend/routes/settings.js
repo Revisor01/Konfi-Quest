@@ -18,6 +18,8 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
     body('teamer_dashboard_show_events').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
     body('teamer_dashboard_show_badges').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
     body('teamer_dashboard_show_losung').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
+    body('dashboard_section_order').optional().isJSON().withMessage('Section-Order muss JSON sein'),
+    body('teamer_dashboard_section_order').optional().isJSON().withMessage('Section-Order muss JSON sein'),
     handleValidationErrors
   ];
 
@@ -73,10 +75,17 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
         params
       );
 
+      const DEFAULT_KONFI_ORDER = ['konfirmation', 'events', 'losung', 'badges', 'ranking'];
+      const DEFAULT_TEAMER_ORDER = ['zertifikate', 'events', 'badges', 'losung'];
+
       const settings = {};
       rows.forEach(row => {
         if (row.key === 'max_waitlist_size') {
           settings[row.key] = parseInt(row.value, 10) || 0;
+        } else if (row.key === 'dashboard_section_order') {
+          try { settings[row.key] = JSON.parse(row.value); } catch { settings[row.key] = DEFAULT_KONFI_ORDER; }
+        } else if (row.key === 'teamer_dashboard_section_order') {
+          try { settings[row.key] = JSON.parse(row.value); } catch { settings[row.key] = DEFAULT_TEAMER_ORDER; }
         } else if (row.key === 'waitlist_enabled' || row.key.startsWith('dashboard_show_') || row.key.startsWith('teamer_dashboard_show_')) {
           settings[row.key] = row.value === 'true' || row.value === '1';
         } else {
@@ -107,7 +116,9 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
         teamer_dashboard_show_zertifikate,
         teamer_dashboard_show_events,
         teamer_dashboard_show_badges,
-        teamer_dashboard_show_losung
+        teamer_dashboard_show_losung,
+        dashboard_section_order,
+        teamer_dashboard_section_order
       } = req.body;
 
       // Dashboard-Widget-Toggles speichern (Konfi + Teamer)
@@ -129,6 +140,18 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
             `INSERT INTO settings (organization_id, key, value) VALUES ($1, $2, $3)
              ON CONFLICT (organization_id, key) DO UPDATE SET value = EXCLUDED.value`,
             [orgId, key, String(value)]
+          );
+        }
+      }
+
+      // Section-Order speichern (JSON-Strings)
+      const orderKeys = { dashboard_section_order, teamer_dashboard_section_order };
+      for (const [key, value] of Object.entries(orderKeys)) {
+        if (value !== undefined) {
+          await db.query(
+            `INSERT INTO settings (organization_id, key, value) VALUES ($1, $2, $3)
+             ON CONFLICT (organization_id, key) DO UPDATE SET value = EXCLUDED.value`,
+            [orgId, key, value]
           );
         }
       }
