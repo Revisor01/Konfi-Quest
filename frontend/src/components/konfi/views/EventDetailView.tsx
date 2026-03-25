@@ -667,7 +667,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent className="app-card-content">
-                <p className="app-info-row__sublabel">
+                <p className="app-description-text">
                   {eventData.description}
                 </p>
               </IonCardContent>
