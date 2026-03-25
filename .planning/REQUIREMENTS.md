@@ -97,11 +97,11 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 
 ### Admin Events
 
-- [ ] **AEV-01**: Suchfeld korrekte Position + Zwischenueberschriften
-- [ ] **AEV-02**: Jahrgangs-Filter in Card mit Zwischenueberschrift formatieren
-- [ ] **AEV-03**: Event-Details: "Konfi hinzufuegen" statt "Kind hinzufuegen"
-- [ ] **AEV-04**: Event-Details: Chat-Button oben neben QR-Code mit "Chat erstellen?" Bestaetigung
-- [ ] **AEV-05**: Event-Details: Beschreibungstext groesser
+- [x] **AEV-01**: Suchfeld korrekte Position + Zwischenueberschriften
+- [x] **AEV-02**: Jahrgangs-Filter in Card mit Zwischenueberschrift formatieren
+- [x] **AEV-03**: Event-Details: "Konfi hinzufuegen" statt "Kind hinzufuegen"
+- [x] **AEV-04**: Event-Details: Chat-Button oben neben QR-Code mit "Chat erstellen?" Bestaetigung
+- [x] **AEV-05**: Event-Details: Beschreibungstext groesser
 - [ ] **AEV-06**: Event-Absagen Action-Dialog verbessern (nicht nur eine Zeile)
 - [ ] **AEV-07**: Nach Event-Absage Seite reloaden, Event aus Liste entfernen
 - [ ] **AEV-08**: Abgesagtes Event loeschen: Push an angemeldete Konfis, Info "X Konfis angemeldet"
@@ -201,11 +201,11 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 | APR-01 | Phase 98 | Complete |
 | APR-02 | Phase 98 | Complete |
 | AJG-01 | Phase 98 | Complete |
-| AEV-01 | Phase 99 | Pending |
-| AEV-02 | Phase 99 | Pending |
-| AEV-03 | Phase 99 | Pending |
-| AEV-04 | Phase 99 | Pending |
-| AEV-05 | Phase 99 | Pending |
+| AEV-01 | Phase 99 | Complete |
+| AEV-02 | Phase 99 | Complete |
+| AEV-03 | Phase 99 | Complete |
+| AEV-04 | Phase 99 | Complete |
+| AEV-05 | Phase 99 | Complete |
 | AEV-06 | Phase 99 | Pending |
 | AEV-07 | Phase 99 | Pending |
 | AEV-08 | Phase 99 | Pending |
