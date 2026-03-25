@@ -395,7 +395,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   };
 
   const handleNavigateToChat = () => {
-    router.push(`/admin/chat/${eventData?.chat_room_id}`, 'forward');
+    if (!eventData?.chat_room_id) return;
+    // routerDirection 'root' verhindert schwarzen Screen beim Tab-Wechsel
+    router.push(`/admin/chat/${eventData.chat_room_id}`, 'root');
   };
 
   const handleMaterialClick = (materialId: number) => {
