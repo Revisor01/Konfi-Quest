@@ -365,7 +365,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
       ) : null}
 
       {/* Events Section */}
-      {dashboardConfig?.show_events !== false && regularEvents && regularEvents.length > 0 && (
+      {dashboardConfig?.show_events !== false && (
         <div className="app-dashboard-section app-dashboard-section--events">
           <div className="app-dashboard-section__bg-text">
             <h2 className="app-dashboard-section__bg-label">DEINE</h2>
@@ -375,18 +375,37 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             position: 'absolute', top: '20px', right: '20px',
             fontSize: '0.7rem', fontWeight: '700', zIndex: 3
           }}>
-            {regularEvents.length === 1 ? 'DEIN EVENT' : `DEINE ${regularEvents.length} EVENTS`}
+            {regularEvents.length === 0
+              ? 'EVENTS ENTDECKEN'
+              : regularEvents.length === 1
+                ? 'DEIN EVENT'
+                : `DEINE ${regularEvents.length} EVENTS`}
           </div>
           <div className="app-dashboard-section__content app-dashboard-section__content--compact">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {regularEvents.map((event) => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  onClick={() => router.push(`/konfi/events/${event.id}`)}
-                />
-              ))}
-            </div>
+            {regularEvents.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {regularEvents.map((event) => (
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    onClick={() => router.push(`/konfi/events/${event.id}`)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div
+                className="app-dashboard-glass-card"
+                onClick={() => router.push('/konfi/events')}
+                style={{ cursor: 'pointer', textAlign: 'center', padding: '20px 16px' }}
+              >
+                <div style={{ fontSize: '1rem', fontWeight: '600', color: 'white', marginBottom: '4px' }}>
+                  Buche dein nächstes Event
+                </div>
+                <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                  Tippe hier um verfügbare Events zu sehen
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
