@@ -12,14 +12,14 @@ const AktivsterMonatSlide: React.FC<AktivsterMonatSlideProps> = ({ isActive, akt
 
   return (
     <SlideBase isActive={isActive} className="monat-slide">
-      <div className="wrapped-anim-fade" style={{ opacity: 0 }}>
-        <p className="wrapped-subtitle">Dein aktivster Monat</p>
+      <div className="wrapped-anim-fly-left" style={{ opacity: 0 }}>
+        <p className="wrapped-label">Dein aktivster Monat</p>
       </div>
       <div className="wrapped-anim-scale wrapped-anim-delay-1" style={{ opacity: 0 }}>
-        <p className="wrapped-big-number">{aktivsterMonat.monat_name}</p>
+        <p className="wrapped-hero-text">{aktivsterMonat.monat_name}</p>
       </div>
       <div className="wrapped-anim-fade wrapped-anim-delay-2" style={{ opacity: 0 }}>
-        <p className="wrapped-subtitle">{animatedCount} Aktivitäten</p>
+        <p className="wrapped-subtitle">{animatedCount} Aktivitaeten</p>
       </div>
       <div className="monat-bar-container wrapped-anim-fade wrapped-anim-delay-3" style={{ opacity: 0 }}>
         <div className="monat-bar">

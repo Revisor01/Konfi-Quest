@@ -18,11 +18,13 @@ const TeamerJahreSlide: React.FC<TeamerJahreSlideProps> = ({ isActive, engagemen
 
   return (
     <SlideBase isActive={isActive} className="teamer-jahre-slide">
-      <div className="wrapped-anim-fade">
-        <p className="wrapped-subtitle">Dein Engagement</p>
+      <div className="wrapped-anim-fly-left">
+        <p className="wrapped-label">Dein Engagement</p>
       </div>
-      <div className="wrapped-anim-scale wrapped-anim-delay-1">
+      <div className="wrapped-anim-number-pop wrapped-anim-delay-1">
         <p className="wrapped-big-number">{animatedCount}</p>
+      </div>
+      <div className="wrapped-anim-fade wrapped-anim-delay-1">
         <p className="wrapped-subtitle">{engagement.jahre_aktiv === 1 ? 'Jahr als Teamer:in' : 'Jahre als Teamer:in'}</p>
       </div>
       <div className="wrapped-anim-fade wrapped-anim-delay-2">

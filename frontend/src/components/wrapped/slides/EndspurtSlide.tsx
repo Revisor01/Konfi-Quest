@@ -15,11 +15,11 @@ const EndspurtSlide: React.FC<EndspurtSlideProps> = ({ isActive, endspurt }) => 
 
   return (
     <SlideBase isActive={isActive} className="endspurt-slide">
-      <div className="wrapped-anim-fade">
-        <IonIcon icon={flameOutline} style={{ fontSize: '2.5rem', opacity: 0.7, color: '#f97316' }} />
-      </div>
-      <div className="wrapped-anim-fade wrapped-anim-delay-1">
-        <p className="wrapped-label">Endspurt!</p>
+      <div className="wrapped-anim-fly-left">
+        <p className="wrapped-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <IonIcon icon={flameOutline} style={{ fontSize: '1rem' }} />
+          Endspurt!
+        </p>
       </div>
       <div className="wrapped-anim-number-pop wrapped-anim-delay-1">
         <p className="wrapped-hero-text" style={{
@@ -28,9 +28,11 @@ const EndspurtSlide: React.FC<EndspurtSlideProps> = ({ isActive, endspurt }) => 
         }}>
           {animatedFehlend}
         </p>
+      </div>
+      <div className="wrapped-anim-fade wrapped-anim-delay-1">
         <p className="wrapped-subtitle">Punkte fehlen noch</p>
       </div>
-      <div className="wrapped-anim-fade wrapped-anim-delay-2">
+      <div className="wrapped-anim-fade wrapped-anim-delay-2" style={{ width: '100%' }}>
         <div className="endspurt-progress">
           <div className="endspurt-progress-bar">
             <div

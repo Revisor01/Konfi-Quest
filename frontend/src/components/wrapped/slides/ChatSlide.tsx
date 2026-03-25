@@ -32,11 +32,11 @@ const ChatSlide: React.FC<ChatSlideProps> = ({ isActive, chat, seed = 0 }) => {
         <IonIcon icon={chatbubblesOutline} style={{ fontSize: '12rem' }} />
       </div>
 
-      <div className="wrapped-anim-fade">
-        <IonIcon icon={chatbubblesOutline} style={{ fontSize: '2.5rem', opacity: 0.7, color: '#a78bfa' }} />
-      </div>
-      <div className="wrapped-anim-fade wrapped-anim-delay-1">
-        <p className="wrapped-label">Im Chat</p>
+      <div className="wrapped-anim-fly-left">
+        <p className="wrapped-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <IonIcon icon={chatbubblesOutline} style={{ fontSize: '1rem' }} />
+          Im Chat
+        </p>
       </div>
       <div className="wrapped-anim-number-pop wrapped-anim-delay-1">
         <p className="wrapped-big-number">{animatedCount}</p>

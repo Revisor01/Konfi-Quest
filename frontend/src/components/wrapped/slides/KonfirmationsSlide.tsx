@@ -26,11 +26,11 @@ const KonfirmationsSlide: React.FC<KonfirmationsSlideProps> = ({ isActive, zeitr
       <div className="wrapped-slide-decoration wrapped-slide-decoration--1" />
       <div className="wrapped-slide-decoration wrapped-slide-decoration--2" />
 
-      <div className="wrapped-anim-fade">
-        <IonIcon icon={calendarOutline} style={{ fontSize: '3rem', opacity: 0.7, color: '#e879f9' }} />
-      </div>
-      <div className="wrapped-anim-fade wrapped-anim-delay-1">
-        <p className="wrapped-label">Deine Konfirmation</p>
+      <div className="wrapped-anim-fly-left">
+        <p className="wrapped-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <IonIcon icon={calendarOutline} style={{ fontSize: '1rem' }} />
+          Deine Konfirmation
+        </p>
       </div>
       <div className="wrapped-anim-number-pop wrapped-anim-delay-1">
         <p className="wrapped-hero-text" style={{ fontSize: 'clamp(1.6rem, 7vw, 2.8rem)' }}>
@@ -38,7 +38,7 @@ const KonfirmationsSlide: React.FC<KonfirmationsSlideProps> = ({ isActive, zeitr
         </p>
       </div>
       <div className="wrapped-anim-bounce wrapped-anim-delay-2">
-        <p className="wrapped-subtitle" style={{
+        <p style={{
           fontSize: '1.3rem',
           fontWeight: 700,
           color: '#fbbf24',
@@ -50,9 +50,10 @@ const KonfirmationsSlide: React.FC<KonfirmationsSlideProps> = ({ isActive, zeitr
       </div>
       {daysRemaining > 0 && (
         <div className="wrapped-anim-fade wrapped-anim-delay-3">
-          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1rem', marginTop: '12px' }}>
-            {daysRemaining} Tage noch
+          <p className="wrapped-big-number" style={{ fontSize: 'clamp(2rem, 8vw, 4rem)', marginTop: '12px' }}>
+            {daysRemaining}
           </p>
+          <p className="wrapped-subtitle">Tage noch</p>
         </div>
       )}
     </SlideBase>

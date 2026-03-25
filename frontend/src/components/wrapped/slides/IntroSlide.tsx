@@ -17,17 +17,24 @@ const IntroSlide: React.FC<IntroSlideProps> = ({ isActive, displayName, jahrgang
       <div className="wrapped-slide-decoration wrapped-slide-decoration--2" />
       <div className="wrapped-slide-decoration wrapped-slide-decoration--3" />
 
-      <div className="wrapped-anim-fade">
-        <IonIcon icon={sparklesOutline} style={{ fontSize: '3rem', opacity: 0.6, color: '#a78bfa' }} />
+      <div className="wrapped-anim-fly-left">
+        <p className="wrapped-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <IonIcon icon={sparklesOutline} style={{ fontSize: '1rem' }} />
+          Willkommen zu deinem
+        </p>
       </div>
-      <div className="wrapped-anim-fade wrapped-anim-delay-1">
-        <p className="wrapped-subtitle">Willkommen zu deinem Konfi-Jahr {year}</p>
+      <div className="wrapped-anim-fly-left wrapped-anim-delay-1">
+        <h1 className="wrapped-hero-text">
+          Konfi-<br />
+          Jahr<br />
+          {year}
+        </h1>
       </div>
-      <div className="wrapped-anim-bounce wrapped-anim-delay-2">
-        <h1 className="wrapped-hero-text">{displayName}</h1>
+      <div className="wrapped-anim-fade wrapped-anim-delay-2">
+        <p className="wrapped-subtitle" style={{ marginTop: '16px' }}>{displayName}</p>
       </div>
       <div className="wrapped-anim-fade wrapped-anim-delay-3">
-        <p className="wrapped-subtitle" style={{ color: 'rgba(255,255,255,0.5)' }}>{jahrgangName}</p>
+        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', marginTop: '4px' }}>{jahrgangName}</p>
       </div>
     </SlideBase>
   );

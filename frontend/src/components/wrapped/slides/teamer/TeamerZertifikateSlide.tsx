@@ -12,11 +12,13 @@ const TeamerZertifikateSlide: React.FC<TeamerZertifikateSlideProps> = ({ isActiv
 
   return (
     <SlideBase isActive={isActive} className="teamer-zertifikate-slide">
-      <div className="wrapped-anim-fade">
-        <p className="wrapped-subtitle">Deine Zertifikate</p>
+      <div className="wrapped-anim-fly-left">
+        <p className="wrapped-label">Deine Zertifikate</p>
       </div>
-      <div className="wrapped-anim-scale wrapped-anim-delay-1">
+      <div className="wrapped-anim-number-pop wrapped-anim-delay-1">
         <p className="wrapped-big-number">{animatedCount}</p>
+      </div>
+      <div className="wrapped-anim-fade wrapped-anim-delay-1">
         <p className="wrapped-subtitle">Zertifikate erhalten</p>
       </div>
       {zertifikate.zertifikate.length > 0 && (

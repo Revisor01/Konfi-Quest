@@ -143,11 +143,11 @@ ion-modal.wrapped-modal-fullscreen {
 .wrapped-slide {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   min-height: 100vh;
-  padding: 80px 24px 40px;
-  text-align: center;
+  padding: 80px 32px 40px;
+  text-align: left;
   color: #fff;
   position: relative;
   overflow: hidden;
@@ -389,7 +389,7 @@ ion-modal.wrapped-modal-fullscreen {
 .punkte-split-item {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
 }
 
 .punkte-split-value {
@@ -438,7 +438,7 @@ ion-modal.wrapped-modal-fullscreen {
 .badge-item {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
 }
 
@@ -468,7 +468,7 @@ ion-modal.wrapped-modal-fullscreen {
 
 .monat-slide { background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%); }
 
-.monat-bar-container { width: 100%; max-width: 240px; margin-top: 32px; }
+.monat-bar-container { width: 100%; max-width: 300px; margin-top: 32px; }
 .monat-bar { height: 8px; background: rgba(255,255,255,0.25); border-radius: 4px; overflow: hidden; }
 .monat-bar-fill {
   height: 100%;
@@ -489,7 +489,7 @@ ion-modal.wrapped-modal-fullscreen {
 
 .endspurt-slide { background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%); }
 
-.endspurt-progress { width: 100%; max-width: 260px; margin-top: 24px; }
+.endspurt-progress { width: 100%; max-width: 300px; margin-top: 24px; }
 .endspurt-progress-bar { height: 12px; background: rgba(255,255,255,0.25); border-radius: 6px; overflow: hidden; }
 .endspurt-progress-fill {
   height: 100%;
@@ -514,10 +514,10 @@ ion-modal.wrapped-modal-fullscreen {
   border: 1px solid rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(8px);
 }
-.abschluss-stat { display: flex; flex-direction: column; align-items: center; flex: 1; }
+.abschluss-stat { display: flex; flex-direction: column; align-items: flex-start; flex: 1; }
 .abschluss-stat-value { font-size: 1.5rem; font-weight: 700; color: #fff; }
 .abschluss-stat-label { font-size: 0.75rem; color: rgba(255,255,255,0.7); margin-top: 4px; }
-.abschluss-cta { margin-top: 32px; text-align: center; }
+.abschluss-cta { margin-top: 32px; text-align: left; }
 
 /* ========================================
    Responsive Anpassungen
@@ -557,7 +557,7 @@ ion-modal.wrapped-modal-fullscreen {
 .teamer-abschluss-stat-value { font-size: 1.5rem; font-weight: 700; color: #fff; }
 
 /* Teamer Konfis Tags */
-.teamer-konfis-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; justify-content: center; }
+.teamer-konfis-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; justify-content: flex-start; }
 .teamer-konfis-tag {
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -608,9 +608,9 @@ ion-modal.wrapped-modal-fullscreen {
    ======================================== */
 
 .kategorie-slide { background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%); }
-.kategorie-bars { width: 100%; max-width: 300px; margin-top: 24px; display: flex; flex-direction: column; gap: 12px; }
+.kategorie-bars { width: 100%; max-width: 340px; margin-top: 24px; display: flex; flex-direction: column; gap: 12px; }
 .kategorie-bar-row { display: flex; align-items: center; gap: 8px; }
-.kategorie-bar-name { font-size: 0.85rem; color: rgba(255,255,255,0.8); min-width: 80px; text-align: right; }
+.kategorie-bar-name { font-size: 0.85rem; color: rgba(255,255,255,0.8); min-width: 80px; text-align: left; }
 .kategorie-bar-track { flex: 1; height: 8px; background: rgba(255,255,255,0.25); border-radius: 4px; overflow: hidden; }
 .kategorie-bar-fill { height: 100%; background: rgba(255, 255, 255, 0.9); border-radius: 4px; transition: width 1.5s ease-out; }
 .kategorie-bar-count { font-size: 0.85rem; color: rgba(255,255,255,0.7); min-width: 30px; }

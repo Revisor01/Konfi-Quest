@@ -38,18 +38,18 @@ const RankSlide: React.FC<RankSlideProps> = ({ isActive, rank, totalInJahrgang, 
         </div>
       )}
 
-      <div className="wrapped-anim-fade">
-        <IonIcon icon={podiumOutline} style={{ fontSize: '2.5rem', opacity: 0.7, color: '#a78bfa' }} />
-      </div>
-      <div className="wrapped-anim-fade wrapped-anim-delay-1">
-        <p className="wrapped-label">Dein Jahrgangs-Ranking</p>
+      <div className="wrapped-anim-fly-left">
+        <p className="wrapped-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <IonIcon icon={podiumOutline} style={{ fontSize: '1rem' }} />
+          Dein Jahrgangs-Ranking
+        </p>
       </div>
       <div className="wrapped-anim-bounce wrapped-anim-delay-1">
         <p className="wrapped-hero-text" style={rank <= 3 ? {
           color: '#fbbf24',
           textShadow: '0 0 40px rgba(251,191,36,0.4)',
         } : undefined}>
-          Platz {rank}
+          Platz<br />{rank}
         </p>
       </div>
       <div className="wrapped-anim-fade wrapped-anim-delay-2">

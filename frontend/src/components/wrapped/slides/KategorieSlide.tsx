@@ -25,20 +25,20 @@ const KategorieSlide: React.FC<KategorieSlideProps> = ({ isActive, kategorie, ti
 
   return (
     <SlideBase isActive={isActive} className="kategorie-slide">
-      <div className="wrapped-anim-fade">
-        <IonIcon icon={compassOutline} style={{ fontSize: '2.5rem', opacity: 0.7, color: '#a78bfa' }} />
-      </div>
-      <div className="wrapped-anim-fade wrapped-anim-delay-1">
-        <p className="wrapped-label">{titel || 'Dein Schwerpunkt'}</p>
+      <div className="wrapped-anim-fly-left">
+        <p className="wrapped-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <IonIcon icon={compassOutline} style={{ fontSize: '1rem' }} />
+          {titel || 'Dein Schwerpunkt'}
+        </p>
       </div>
       {kategorie.top_kategorie ? (
         <>
           <div className="wrapped-anim-bounce wrapped-anim-delay-1">
-            <p className="wrapped-hero-text" style={{ fontSize: 'clamp(1.8rem, 8vw, 3rem)' }}>
+            <p className="wrapped-hero-text">
               {capitalize(kategorie.top_kategorie)}
             </p>
           </div>
-          <div className="wrapped-anim-fade wrapped-anim-delay-2">
+          <div className="wrapped-anim-fade wrapped-anim-delay-2" style={{ width: '100%' }}>
             <div className="kategorie-bars">
               {topKategorien.map((k, i) => (
                 <div key={k.kategorie} className="kategorie-bar-row wrapped-anim-fly-left" style={{ animationDelay: `${0.4 + i * 0.15}s` }}>

@@ -12,14 +12,16 @@ interface BadgesSlideProps extends SlideProps {
 const BadgesSlide: React.FC<BadgesSlideProps> = ({ isActive, badges }) => {
   return (
     <SlideBase isActive={isActive} className="badges-slide">
-      <div className="wrapped-anim-fade">
-        <IonIcon icon={ribbonOutline} style={{ fontSize: '2.5rem', opacity: 0.7, color: '#a78bfa' }} />
-      </div>
-      <div className="wrapped-anim-fade wrapped-anim-delay-1">
-        <p className="wrapped-label">Deine Badges</p>
+      <div className="wrapped-anim-fly-left">
+        <p className="wrapped-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <IonIcon icon={ribbonOutline} style={{ fontSize: '1rem' }} />
+          Deine Badges
+        </p>
       </div>
       <div className="wrapped-anim-number-pop wrapped-anim-delay-1">
         <p className="wrapped-big-number">{badges.total_earned}</p>
+      </div>
+      <div className="wrapped-anim-fade wrapped-anim-delay-1">
         <p className="wrapped-subtitle">von {badges.total_available} verdient</p>
       </div>
       <div className="badges-grid wrapped-anim-fade wrapped-anim-delay-2">

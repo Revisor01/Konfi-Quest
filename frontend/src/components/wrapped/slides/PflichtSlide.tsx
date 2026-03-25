@@ -24,20 +24,22 @@ const PflichtSlide: React.FC<PflichtSlideProps> = ({ isActive, pflichtBesucht, p
 
   return (
     <SlideBase isActive={isActive} className="pflicht-slide">
-      <div className="wrapped-anim-fade">
-        <IonIcon icon={schoolOutline} style={{ fontSize: '2.5rem', opacity: 0.7, color: '#60a5fa' }} />
-      </div>
-      <div className="wrapped-anim-fade wrapped-anim-delay-1">
-        <p className="wrapped-label">Pflichtveranstaltungen</p>
+      <div className="wrapped-anim-fly-left">
+        <p className="wrapped-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <IonIcon icon={schoolOutline} style={{ fontSize: '1rem' }} />
+          Pflichtveranstaltungen
+        </p>
       </div>
       <div className="wrapped-anim-number-pop wrapped-anim-delay-1">
-        <p className="wrapped-big-number">
-          {pflichtBesucht} <span style={{ fontSize: '0.5em', fontWeight: 400, color: 'rgba(255,255,255,0.5)' }}>von {pflichtGesamt}</span>
+        <p className="wrapped-big-number">{pflichtBesucht}</p>
+      </div>
+      <div className="wrapped-anim-fade wrapped-anim-delay-1">
+        <p className="wrapped-subtitle">
+          von {pflichtGesamt} besucht
         </p>
-        <p className="wrapped-subtitle">besucht</p>
       </div>
       {pflichtGesamt > 0 && (
-        <div className="wrapped-anim-fade wrapped-anim-delay-2" style={{ width: '100%', maxWidth: '260px', marginTop: '20px' }}>
+        <div className="wrapped-anim-fade wrapped-anim-delay-2" style={{ width: '100%', maxWidth: '300px', marginTop: '20px' }}>
           <div style={{ height: '12px', background: 'rgba(255,255,255,0.15)', borderRadius: '6px', overflow: 'hidden' }}>
             <div style={{
               height: '100%',
@@ -57,7 +59,6 @@ const PflichtSlide: React.FC<PflichtSlideProps> = ({ isActive, pflichtBesucht, p
           marginTop: '20px',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
           gap: '6px',
         }}>
           {threshold.icon === 'star' && <IonIcon icon={starOutline} style={{ fontSize: '1.2rem' }} />}

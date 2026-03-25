@@ -12,11 +12,13 @@ const TeamerKonfisSlide: React.FC<TeamerKonfisSlideProps> = ({ isActive, konfis 
 
   return (
     <SlideBase isActive={isActive} className="teamer-konfis-slide">
-      <div className="wrapped-anim-fade">
-        <p className="wrapped-subtitle">Deine Konfis</p>
+      <div className="wrapped-anim-fly-left">
+        <p className="wrapped-label">Deine Konfis</p>
       </div>
-      <div className="wrapped-anim-scale wrapped-anim-delay-1">
+      <div className="wrapped-anim-number-pop wrapped-anim-delay-1">
         <p className="wrapped-big-number">{animatedCount}</p>
+      </div>
+      <div className="wrapped-anim-fade wrapped-anim-delay-1">
         <p className="wrapped-subtitle">Konfis betreut</p>
       </div>
       {konfis.jahrgaenge.length > 0 && (

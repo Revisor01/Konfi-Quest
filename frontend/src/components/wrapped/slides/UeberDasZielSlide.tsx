@@ -28,9 +28,9 @@ const UeberDasZielSlide: React.FC<UeberDasZielSlideProps> = ({ isActive, endspur
           />
         ))}
       </div>
-      <div className="wrapped-anim-bounce">
-        <p className="wrapped-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '1.2rem' }}>
-          <IonIcon icon={checkmarkCircleOutline} style={{ fontSize: '1.4rem' }} />
+      <div className="wrapped-anim-fly-left">
+        <p className="wrapped-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '1rem' }}>
+          <IonIcon icon={checkmarkCircleOutline} style={{ fontSize: '1.2rem' }} />
           {titel || 'Geschafft!'}
         </p>
       </div>
@@ -41,6 +41,8 @@ const UeberDasZielSlide: React.FC<UeberDasZielSlideProps> = ({ isActive, endspur
         }}>
           +{animatedUeberschuss}
         </p>
+      </div>
+      <div className="wrapped-anim-fade wrapped-anim-delay-1">
         <p className="wrapped-subtitle">Punkte ueber dem Ziel!</p>
       </div>
       <div className="wrapped-anim-fade wrapped-anim-delay-2">

@@ -11,11 +11,13 @@ interface TeamerBadgesSlideProps extends SlideProps {
 const TeamerBadgesSlide: React.FC<TeamerBadgesSlideProps> = ({ isActive, badges }) => {
   return (
     <SlideBase isActive={isActive}>
-      <div className="wrapped-anim-fade">
-        <p className="wrapped-subtitle">Deine Badges</p>
+      <div className="wrapped-anim-fly-left">
+        <p className="wrapped-label">Deine Badges</p>
       </div>
-      <div className="wrapped-anim-scale wrapped-anim-delay-1">
+      <div className="wrapped-anim-number-pop wrapped-anim-delay-1">
         <p className="wrapped-big-number">{badges.total_earned}</p>
+      </div>
+      <div className="wrapped-anim-fade wrapped-anim-delay-1">
         <p className="wrapped-subtitle">verdient</p>
       </div>
       <div className="badges-grid wrapped-anim-fade wrapped-anim-delay-2">
