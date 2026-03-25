@@ -30,6 +30,8 @@ http://ionicframework.com/docs/theming/ */
   --ion-color-medium-brightness-rgb: 176, 176, 176;
   --ion-color-dark-brightness: #666666;
   --ion-color-dark-brightness-rgb: 102, 102, 102;
+
+  --app-description-font-size: 1rem;
 }
 
 /* Custom App Styles */
@@ -1020,7 +1022,7 @@ ion-card-content.app-card-content {
 }
 
 .app-description-text {
-  font-size: 0.95rem;
+  font-size: var(--app-description-font-size, 1rem);
   line-height: 1.5;
   color: #374151;
   white-space: pre-wrap;

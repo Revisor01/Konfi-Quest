@@ -10,7 +10,7 @@ import {
 import {
   arrowBack, createOutline, calendar, people,
   personAdd, checkmarkCircle, closeCircle, checkmark, trash,
-  returnUpBack, qrCodeOutline
+  returnUpBack, qrCodeOutline, chatbubbleOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -400,6 +400,21 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     router.push(`/admin/chat/${eventData.chat_room_id}`, 'root');
   };
 
+  const handleChatButtonClick = () => {
+    if (eventData?.chat_room_id) {
+      handleNavigateToChat();
+    } else {
+      presentAlert({
+        header: 'Chat erstellen?',
+        message: `Möchtest du einen Chat für "${eventData?.name}" erstellen?`,
+        buttons: [
+          { text: 'Abbrechen', role: 'cancel' },
+          { text: 'Erstellen', handler: () => handleCreateEventChat() }
+        ]
+      });
+    }
+  };
+
   const handleMaterialClick = (materialId: number) => {
     materialIdRef.current = materialId;
     presentMaterialModal({ presentingElement: presentingElement || pageRef.current || undefined });
@@ -504,6 +519,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           </IonButtons>
           <IonTitle>{eventData?.name || 'Event Details'}</IonTitle>
           <IonButtons slot="end">
+            <IonButton onClick={handleChatButtonClick}>
+              <IonIcon icon={chatbubbleOutline} />
+            </IonButton>
             <IonButton onClick={() => presentQRDisplayModal({ presentingElement: presentingElement || undefined })}>
               <IonIcon icon={qrCodeOutline} />
             </IonButton>
@@ -617,7 +635,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     <IonButton expand="block" fill="outline"
                       onClick={() => presentKonfiModal({ presentingElement: presentingElement || undefined })}>
                       <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
-                      Kind hinzufügen
+                      Konfi hinzufügen
                     </IonButton>
                   </IonCardContent>
                 </IonCard>
@@ -651,7 +669,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                         <IonButton expand="block" fill="outline"
                           onClick={() => presentKonfiModal({ presentingElement: presentingElement || undefined })}>
                           <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
-                          Kind hinzufügen
+                          Konfi hinzufügen
                         </IonButton>
                       </div>
                     </IonCardContent>
@@ -685,7 +703,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                       <IonButton expand="block" fill="outline"
                         onClick={() => presentKonfiModal({ presentingElement: presentingElement || undefined })}>
                         <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
-                        Kind hinzufügen
+                        Konfi hinzufügen
                       </IonButton>
                     </IonCardContent>
                   </IonCard>
