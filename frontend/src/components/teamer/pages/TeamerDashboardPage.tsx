@@ -68,7 +68,8 @@ import {
   chevronForward,
   medkit,
   documentOutline,
-  bagHandle
+  bagHandle,
+  eyeOff
 } from 'ionicons/icons';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { useApp } from '../../../contexts/AppContext';
@@ -94,6 +95,76 @@ const ICON_MAP: Record<string, string> = {
 const getIconFromString = (iconName: string | undefined): string => {
   if (!iconName) return trophy;
   return ICON_MAP[iconName] || trophy;
+};
+
+interface TeamerBadgeFull {
+  id: number;
+  name: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  criteria_type?: string;
+  criteria_value?: number;
+  is_hidden?: boolean;
+  earned: boolean;
+  awarded_date?: string;
+}
+
+const getBadgeColor = (badge: TeamerBadgeFull): string => {
+  if (badge.color) return badge.color;
+  if (badge.criteria_type === 'total_points') {
+    if ((badge.criteria_value || 0) <= 5) return '#cd7f32';
+    if ((badge.criteria_value || 0) <= 15) return '#c0c0c0';
+    return '#ffd700';
+  }
+  return '#f59e0b';
+};
+
+// Badge Popover Content fuer Teamer-Dashboard
+const BadgePopoverContent: React.FC<{
+  dataRef: React.RefObject<{ badge: TeamerBadgeFull | null; isEarned: boolean }>;
+}> = ({ dataRef }) => {
+  const data = dataRef.current;
+  if (!data || !data.badge) return null;
+  const badge = data.badge;
+  const isEarned = data.isEarned;
+  const badgeColor = getBadgeColor(badge);
+
+  return (
+    <div style={{ padding: '12px', background: 'white', minWidth: '200px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+        <div style={{
+          width: '44px', height: '44px', borderRadius: '50%',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: isEarned ? `linear-gradient(135deg, ${badgeColor} 0%, ${badgeColor}dd 100%)` : '#e5e7eb',
+          color: 'white'
+        }}>
+          <IonIcon
+            icon={isEarned ? getIconFromString(badge.icon) : helpCircle}
+            style={{ fontSize: '1.4rem', color: isEarned ? 'white' : '#9ca3af' }}
+          />
+        </div>
+        <div>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '700', color: '#1f2937' }}>
+            {isEarned ? badge.name : '???'}
+          </h3>
+          <span style={{ fontSize: '0.75rem', color: isEarned ? '#059669' : '#9ca3af', fontWeight: '600' }}>
+            {isEarned ? 'Erhalten' : 'Noch nicht erhalten'}
+          </span>
+        </div>
+      </div>
+      {isEarned && badge.description && (
+        <div style={{ fontSize: '0.82rem', color: '#374151', marginBottom: '6px' }}>
+          {badge.description}
+        </div>
+      )}
+      {isEarned && badge.awarded_date && (
+        <div style={{ fontSize: '0.78rem', color: '#6b7280' }}>
+          Erhalten am {new Date(badge.awarded_date).toLocaleDateString('de-DE')}
+        </div>
+      )}
+    </div>
+  );
 };
 
 interface Certificate {
@@ -188,11 +259,26 @@ const TeamerDashboardPage: React.FC = () => {
     dataRef: certPopoverRef
   });
 
+  // Badge Popover
+  const badgePopoverRef = React.useRef<{ badge: TeamerBadgeFull | null; isEarned: boolean }>({
+    badge: null, isEarned: false
+  });
+  const [presentBadgePopover] = useIonPopover(BadgePopoverContent, {
+    dataRef: badgePopoverRef
+  });
+
   // Offline-Query: Dashboard
   const { data: dashboardData, loading, refresh: refreshDashboard } = useOfflineQuery<DashboardData>(
     'teamer:dashboard:' + user?.id,
     async () => { const res = await api.get('/teamer/dashboard'); return res.data; },
     { ttl: CACHE_TTL.DASHBOARD }
+  );
+
+  // Offline-Query: Alle Teamer-Badges (fuer vollstaendige Badge-Sektion)
+  const { data: allTeamerBadges, refresh: refreshBadges } = useOfflineQuery<TeamerBadgeFull[]>(
+    'teamer:all-badges:' + user?.id,
+    async () => { const res = await api.get('/teamer/badges'); return res.data || []; },
+    { ttl: CACHE_TTL.BADGES }
   );
 
   // Offline-Query: Tageslosung
@@ -281,6 +367,29 @@ const TeamerDashboardPage: React.FC = () => {
 
   const config = dashboardData?.config;
 
+  // Badge-Berechnungen aus allTeamerBadges
+  const earnedBadges = (allTeamerBadges || []).filter((b) => b.earned);
+  const earnedIds = new Set(earnedBadges.map((b) => b.id));
+  const visibleBadges = [
+    ...earnedBadges.filter((b) => !b.is_hidden),
+    ...(allTeamerBadges || []).filter((b) => !b.earned && !b.is_hidden)
+  ];
+  const secretEarned = earnedBadges.filter((b) => b.is_hidden);
+  const secretTotal = (allTeamerBadges || []).filter((b) => b.is_hidden).length;
+  const secretNotEarnedCount = secretTotal - secretEarned.length;
+  const visibleEarned = earnedBadges.filter((b) => !b.is_hidden).length;
+  const visibleTotal = (allTeamerBadges || []).filter((b) => !b.is_hidden).length;
+
+  // "Neu"-Erkennung: awarded_date < 7 Tage
+  const isRecent = (badge: TeamerBadgeFull) => {
+    if (!badge.awarded_date) return false;
+    const diff = Date.now() - new Date(badge.awarded_date).getTime();
+    return diff < 7 * 24 * 60 * 60 * 1000;
+  };
+
+  const recentVisibleCount = visibleBadges.filter((b) => earnedIds.has(b.id) && isRecent(b)).length;
+  const recentSecretCount = secretEarned.filter((b) => isRecent(b)).length;
+
   if (loading) {
     return <LoadingSpinner fullScreen message="Dashboard wird geladen..." />;
   }
@@ -303,7 +412,7 @@ const TeamerDashboardPage: React.FC = () => {
         <IonRefresher
           slot="fixed"
           onIonRefresh={async (e) => {
-            await Promise.all([refreshDashboard(), refreshVerse()]);
+            await Promise.all([refreshDashboard(), refreshVerse(), refreshBadges()]);
             e.detail.complete();
           }}
           onIonPull={triggerPullHaptic}
@@ -636,7 +745,7 @@ const TeamerDashboardPage: React.FC = () => {
           )}
 
           {/* Badges - NACH Tageslosung */}
-          {config?.show_badges !== false && dashboardData && (
+          {config?.show_badges !== false && (visibleBadges.length > 0 || secretEarned.length > 0 || secretNotEarnedCount > 0) && (
             <div className="app-dashboard-section app-dashboard-section--badges">
               <div className="app-dashboard-section__bg-text">
                 <h2 className="app-dashboard-section__bg-label">DEINE</h2>
@@ -644,95 +753,131 @@ const TeamerDashboardPage: React.FC = () => {
               </div>
 
               <div className="app-dashboard-section__content" style={{ padding: '60px 20px 24px 20px' }}>
-                {dashboardData.badges.total_count === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '20px', color: 'rgba(255,255,255,0.7)' }}>
-                    Noch keine Badges erstellt
+                {/* Sichtbare Badges Stats */}
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                  <div className="app-dashboard-glass-chip" style={{ display: 'flex', alignItems: 'center', fontSize: '0.9rem' }}>
+                    <span style={{ fontWeight: '800' }}>{visibleEarned}/{visibleTotal}</span>
+                    <span style={{ opacity: 0.8, marginLeft: '4px' }}>sichtbar</span>
+                    {recentVisibleCount > 0 && (
+                      <>
+                        <span className="app-dashboard-dot" />
+                        <span style={{ fontWeight: '800' }}>{recentVisibleCount} {recentVisibleCount === 1 ? 'neuer' : 'neue'}</span>
+                      </>
+                    )}
                   </div>
-                ) : (
-                  <>
-                    {/* Badge Stats Chip */}
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      gap: '10px',
-                      marginBottom: '20px',
-                      flexWrap: 'wrap'
-                    }}>
-                      <div className="app-dashboard-glass-chip" style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        fontSize: '0.9rem'
-                      }}>
-                        <span style={{ fontWeight: '800' }}>{dashboardData.badges.earned_count}/{dashboardData.badges.total_count}</span>
-                        <span style={{ opacity: 0.8, marginLeft: '4px' }}>erhalten</span>
-                      </div>
-                    </div>
+                </div>
 
-                    {/* Badge Icons Grid - verdiente + graue Platzhalter */}
-                    <div style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: '10px',
-                      justifyContent: 'center',
-                      marginBottom: '16px'
-                    }}>
-                      {/* Verdiente Badges */}
-                      {dashboardData.badges.recent.map((badge) => (
-                        <div
-                          key={badge.id}
-                          style={{
-                            width: '44px',
-                            height: '44px',
-                            borderRadius: '50%',
-                            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: '0 4px 12px rgba(245, 158, 11, 0.4)',
-                            border: '2px solid rgba(255, 255, 255, 0.3)'
-                          }}
-                        >
-                          <IonIcon
-                            icon={getIconFromString(badge.icon)}
-                            style={{ fontSize: '1.2rem', color: 'white' }}
-                          />
-                        </div>
-                      ))}
-                      {/* Graue Platzhalter für nicht-verdiente */}
-                      {Array.from({ length: Math.min(dashboardData.badges.total_count - dashboardData.badges.earned_count, 12) }).map((_, i) => (
-                        <div key={`placeholder-${i}`} style={{
-                          width: '44px',
-                          height: '44px',
-                          borderRadius: '50%',
-                          background: 'rgba(255, 255, 255, 0.1)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          border: '2px dashed rgba(255, 255, 255, 0.2)'
-                        }}>
-                          <IonIcon icon={helpCircle} style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.3)' }} />
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Alle Badges Link */}
-                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                {/* Sichtbare Badges Grid */}
+                <div style={{
+                  display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center',
+                  marginBottom: secretEarned.length > 0 || secretNotEarnedCount > 0 ? '16px' : '0'
+                }}>
+                  {visibleBadges.map((badge) => {
+                    const isEarned = earnedIds.has(badge.id);
+                    const recent = isRecent(badge) && isEarned;
+                    const badgeClr = getBadgeColor(badge);
+                    return (
                       <div
-                        className="app-dashboard-glass-chip"
-                        onClick={() => router.push('/teamer/profile/badges')}
+                        key={badge.id}
+                        onClick={(e) => {
+                          badgePopoverRef.current = { badge, isEarned };
+                          presentBadgePopover({ event: e.nativeEvent, side: 'top', alignment: 'center' });
+                        }}
                         style={{
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px'
+                          width: '44px', height: '44px', borderRadius: '50%',
+                          background: isEarned ? `linear-gradient(135deg, ${badgeClr} 0%, ${badgeClr}dd 100%)` : 'rgba(255, 255, 255, 0.15)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          boxShadow: isEarned ? (recent ? `0 0 0 3px #10b981, 0 0 20px rgba(16, 185, 129, 0.6)` : `0 4px 12px ${badgeClr}50`) : 'none',
+                          border: recent ? '3px solid #10b981' : isEarned ? '2px solid rgba(255, 255, 255, 0.3)' : '2px dashed rgba(255, 255, 255, 0.25)',
+                          transition: 'all 0.3s ease', opacity: isEarned ? 1 : 0.5, cursor: 'pointer',
+                          position: 'relative', animation: recent ? 'badgePulse 2s ease-in-out infinite' : 'none'
                         }}
                       >
-                        Alle Badges anzeigen <IonIcon icon={chevronForward} />
+                        <IonIcon
+                          icon={isEarned ? getIconFromString(badge.icon) : eyeOff}
+                          style={{ fontSize: isEarned ? '1.4rem' : '1rem', color: isEarned ? 'white' : 'rgba(255, 255, 255, 0.4)', filter: isEarned ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))' : 'none' }}
+                        />
+                        {recent && (
+                          <div style={{ position: 'absolute', top: '-6px', right: '-6px', width: '18px', height: '18px', borderRadius: '50%', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(16, 185, 129, 0.5)' }}>
+                            <span style={{ fontSize: '10px', fontWeight: '800', color: 'white' }}>!</span>
+                          </div>
+                        )}
                       </div>
+                    );
+                  })}
+                </div>
+
+                {/* Geheime Badges */}
+                {(secretEarned.length > 0 || secretNotEarnedCount > 0) && (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+                      <div className="app-dashboard-glass-chip" style={{ fontSize: '0.9rem', display: 'flex', alignItems: 'center' }}>
+                        <span style={{ fontWeight: '800' }}>{secretEarned.length}/{secretTotal}</span>
+                        <span style={{ opacity: 0.8, marginLeft: '4px' }}>geheim</span>
+                        {recentSecretCount > 0 && (
+                          <>
+                            <span className="app-dashboard-dot" />
+                            <span style={{ fontWeight: '800' }}>{recentSecretCount} {recentSecretCount === 1 ? 'neuer' : 'neue'}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center', marginBottom: '16px' }}>
+                      {secretEarned.map((badge) => {
+                        const recent = isRecent(badge);
+                        const badgeClr = getBadgeColor(badge);
+                        return (
+                          <div key={badge.id}
+                            onClick={(e) => {
+                              badgePopoverRef.current = { badge, isEarned: true };
+                              presentBadgePopover({ event: e.nativeEvent, side: 'top', alignment: 'center' });
+                            }}
+                            style={{
+                              width: '44px', height: '44px', borderRadius: '50%',
+                              background: `linear-gradient(135deg, ${badgeClr} 0%, ${badgeClr}dd 100%)`,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              boxShadow: recent ? `0 0 0 3px #10b981, 0 0 20px rgba(16, 185, 129, 0.6)` : `0 4px 12px ${badgeClr}50`,
+                              border: recent ? '3px solid #10b981' : '2px solid rgba(255, 255, 255, 0.3)',
+                              cursor: 'pointer', position: 'relative',
+                              animation: recent ? 'badgePulse 2s ease-in-out infinite' : 'none'
+                            }}
+                          >
+                            <IonIcon icon={getIconFromString(badge.icon)} style={{ fontSize: '1.4rem', color: 'white', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))' }} />
+                            {recent && (
+                              <div style={{ position: 'absolute', top: '-6px', right: '-6px', width: '18px', height: '18px', borderRadius: '50%', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(16, 185, 129, 0.5)' }}>
+                                <span style={{ fontSize: '10px', fontWeight: '800', color: 'white' }}>!</span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      {Array.from({ length: secretNotEarnedCount }).map((_, index) => (
+                        <div key={`secret-placeholder-${index}`} style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed rgba(255, 255, 255, 0.35)', opacity: 0.6 }}>
+                          <IonIcon icon={helpCircle} style={{ fontSize: '1.2rem', color: 'rgba(255, 255, 255, 0.5)' }} />
+                        </div>
+                      ))}
                     </div>
                   </>
                 )}
+
+                {/* Alle Badges Link */}
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <div
+                    className="app-dashboard-glass-chip"
+                    onClick={() => router.push('/teamer/profile/badges')}
+                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    Alle Badges anzeigen <IonIcon icon={chevronForward} />
+                  </div>
+                </div>
               </div>
+
+              <style>{`
+                @keyframes badgePulse {
+                  0%, 100% { transform: scale(1); }
+                  50% { transform: scale(1.08); }
+                }
+              `}</style>
             </div>
           )}
         </div>
