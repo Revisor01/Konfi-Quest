@@ -104,11 +104,15 @@ export const KonfiHeaderCard = React.memo<KonfiHeaderCardProps>(({
 }) => (
   <div
     style={{
-      background: 'linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%)',
+      background: isTeamer
+        ? 'linear-gradient(135deg, #e11d48 0%, #be185d 50%, #9f1239 100%)'
+        : 'linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%)',
       borderRadius: '24px',
       padding: '24px',
       margin: '16px',
-      boxShadow: '0 20px 40px rgba(91, 33, 182, 0.3)',
+      boxShadow: isTeamer
+        ? '0 20px 40px rgba(225, 29, 72, 0.3)'
+        : '0 20px 40px rgba(91, 33, 182, 0.3)',
       position: 'relative',
       overflow: 'hidden'
     }}
@@ -136,7 +140,7 @@ export const KonfiHeaderCard = React.memo<KonfiHeaderCardProps>(({
           maxWidth: '280px'
         }}
       >
-        {(currentKonfi?.name || 'KONFI').toUpperCase()}
+        {isTeamer ? 'TEAMER:IN' : (currentKonfi?.name || 'KONFI').toUpperCase()}
       </h2>
     </div>
 
@@ -217,10 +221,9 @@ export const KonfiHeaderCard = React.memo<KonfiHeaderCardProps>(({
     {isTeamer && (
       <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
         {[
-          { value: currentKonfi?.badgeCount || 0, label: 'Badges' },
           { value: certificates.length, label: 'Zertifikate' },
           { value: teamerEvents.length, label: 'Events' },
-          { value: activities.filter(a => !a.isPending).length, label: 'Aktivitäten' }
+          { value: currentKonfi?.badgeCount || 0, label: 'Badges' }
         ].map(stat => (
           <div
             key={stat.label}
