@@ -12,7 +12,8 @@ import {
   IonSegmentButton,
   IonLabel,
   IonIcon,
-  IonChip,
+  IonSelect,
+  IonSelectOption,
   IonList,
   IonListHeader,
   IonCard,
@@ -227,34 +228,23 @@ const AdminMaterialPage: React.FC = () => {
                   placeholder="Material durchsuchen..."
                   debounce={300}
                 />
-                {/* Jahrgang-Filter Chips */}
+                {/* Jahrgang-Filter Dropdown */}
                 {(jahrgaenge || []).length > 0 && (
-                  <div style={{ padding: '0 16px 8px', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span style={{ fontSize: '12px', color: '#6c757d', flexShrink: 0 }}>Jahrgang:</span>
-                    <IonChip
-                      onClick={() => setActiveJahrgangId(undefined)}
-                      style={{
-                        backgroundColor: !activeJahrgangId ? '#d97706' : 'transparent',
-                        color: !activeJahrgangId ? 'white' : '#d97706',
-                        border: '1px solid #d97706'
-                      }}
+                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                    <IonSelect
+                      interface="popover"
+                      label="Jahrgang"
+                      labelPlacement="stacked"
+                      value={activeJahrgangId ?? 'alle'}
+                      onIonChange={(e) => setActiveJahrgangId(e.detail.value === 'alle' ? undefined : e.detail.value)}
+                      placeholder="Alle Jahrgänge"
                     >
-                      <IonLabel>Alle</IonLabel>
-                    </IonChip>
-                    {(jahrgaenge || []).map(jg => (
-                      <IonChip
-                        key={jg.id}
-                        onClick={() => setActiveJahrgangId(activeJahrgangId === jg.id ? undefined : jg.id)}
-                        style={{
-                          backgroundColor: activeJahrgangId === jg.id ? '#d97706' : 'transparent',
-                          color: activeJahrgangId === jg.id ? 'white' : '#d97706',
-                          border: '1px solid #d97706'
-                        }}
-                      >
-                        <IonLabel>{jg.name}</IonLabel>
-                      </IonChip>
-                    ))}
-                  </div>
+                      <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
+                      {(jahrgaenge || []).map(jg => (
+                        <IonSelectOption key={jg.id} value={jg.id}>{jg.name}</IonSelectOption>
+                      ))}
+                    </IonSelect>
+                  </IonItem>
                 )}
               </IonItemGroup>
             </IonList>
@@ -291,7 +281,13 @@ const AdminMaterialPage: React.FC = () => {
                     <EmptyState
                       icon={documentOutline}
                       title="Keine Materialien"
-                      message="Erstelle dein erstes Material mit dem + Button"
+                      message={
+                        segment === 'ohne_event' && (materials || []).length > 0
+                          ? 'Alle Materialien sind einem Event zugeordnet'
+                          : segment === 'mit_event' && (materials || []).length > 0
+                            ? 'Kein Material ist einem Event zugeordnet'
+                            : 'Erstelle dein erstes Material mit dem + Button'
+                      }
                       iconColor="#d97706"
                     />
                   ) : (
