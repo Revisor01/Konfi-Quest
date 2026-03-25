@@ -337,7 +337,11 @@ Plans:
   3. Teamer-Detail-Header lautet "Teamer:in" mit rosa Farbe und zeigt nur 3 Stats (Zertifikate, Events, Badges)
   4. Antrags-Modal hat Icons in den Antragsdaten; Entscheidungs-Buttons sind rot/gruen
   5. Admin-Profil: Blauton an SectionHeader-Blau angeglichen; "App Info" Abschnitt entfernt; Datumspicker erlaubt Endjahreszahlen bis 2028 und darueber
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 98-01-PLAN.md -- Aktivitaeten Invalid-Date-Fix + Kategorie-Farben + Datumspicker + Teamer-Punkte
+- [ ] 98-02-PLAN.md -- Teamer-Detail-Header rosa + Antrags-Modal Icons + Entscheidungs-Buttons
+- [ ] 98-03-PLAN.md -- Admin-Profil Blauton + App-Info entfernen + Jahrgaenge Datumspicker
 
 ### Phase 99: Admin Events + Bugs
 **Goal**: Admins sehen eine strukturierte Events-Ansicht und alle bekannten Event-Bugs sind behoben
@@ -369,6 +373,6 @@ Plans:
 | 95. Chat-Farbschema + Korrekturen | 3/3 | Complete    | 2026-03-24 |
 | 96. Konfi UI | 4/4 | Complete    | 2026-03-25 |
 | 97. Teamer UI | 2/2 | Complete    | 2026-03-25 |
-| 98. Admin Aktivitaeten, Details, Antraege, Profil, Jahrgaenge | 0/? | Not started | - |
+| 98. Admin Aktivitaeten, Details, Antraege, Profil, Jahrgaenge | 0/3 | Not started | - |
 | 99. Admin Events + Bugs | 0/? | Not started | - |
 | 100. Admin Zertifikate, Material, Dashboard | 0/? | Not started | - |
