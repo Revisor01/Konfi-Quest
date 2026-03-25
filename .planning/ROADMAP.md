@@ -368,7 +368,7 @@ Plans:
 | 94. Globale UI-Patterns | 1/1 | Complete    | 2026-03-24 |
 | 95. Chat-Farbschema + Korrekturen | 3/3 | Complete    | 2026-03-24 |
 | 96. Konfi UI | 4/4 | Complete    | 2026-03-25 |
-| 97. Teamer UI | 2/2 | Complete   | 2026-03-25 |
+| 97. Teamer UI | 2/2 | Complete    | 2026-03-25 |
 | 98. Admin Aktivitaeten, Details, Antraege, Profil, Jahrgaenge | 0/? | Not started | - |
 | 99. Admin Events + Bugs | 0/? | Not started | - |
 | 100. Admin Zertifikate, Material, Dashboard | 0/? | Not started | - |
