@@ -1,4 +1,6 @@
 import React from 'react';
+import { IonIcon } from '@ionic/react';
+import { trophyOutline, starOutline } from 'ionicons/icons';
 import SlideBase from './SlideBase';
 import { useCountUp } from '../../../hooks/useCountUp';
 import type { SlideProps, KonfiPunkteSlide } from '../../../types/wrapped';
@@ -15,19 +17,26 @@ const PunkteSlide: React.FC<PunkteSlideProps> = ({ isActive, punkte }) => {
   return (
     <SlideBase isActive={isActive} className="punkte-slide">
       <div className="wrapped-anim-fade">
-        <p className="wrapped-subtitle">Deine Punkte</p>
+        <IonIcon icon={trophyOutline} style={{ fontSize: '2.5rem', opacity: 0.7, color: '#a78bfa' }} />
       </div>
-      <div className="wrapped-anim-scale wrapped-anim-delay-1">
-        <p className="wrapped-big-number">{animatedTotal}</p>
+      <div className="wrapped-anim-fade wrapped-anim-delay-1">
+        <p className="wrapped-label">Deine Punkte</p>
+      </div>
+      <div className="wrapped-anim-number-pop wrapped-anim-delay-1">
+        <p className="wrapped-big-number" style={{ textShadow: '0 0 40px rgba(255,255,255,0.3)' }}>
+          {animatedTotal}
+        </p>
         <p className="wrapped-subtitle">Punkte gesammelt</p>
       </div>
-      <div className="wrapped-anim-fade wrapped-anim-delay-2">
-        <div className="punkte-split">
+      <div className="wrapped-anim-delay-2" style={{ display: 'flex', gap: '24px', alignItems: 'center', marginTop: '24px' }}>
+        <div className="wrapped-anim-fly-left wrapped-anim-delay-2">
           <div className="punkte-split-item">
             <span className="punkte-split-value">{animatedGottesdienst}</span>
             <span className="punkte-split-label">Gottesdienst</span>
           </div>
-          <div className="punkte-split-divider" />
+        </div>
+        <div className="punkte-split-divider" />
+        <div className="wrapped-anim-fly-right wrapped-anim-delay-2">
           <div className="punkte-split-item">
             <span className="punkte-split-value">{animatedGemeinde}</span>
             <span className="punkte-split-label">Gemeinde</span>
@@ -36,7 +45,8 @@ const PunkteSlide: React.FC<PunkteSlideProps> = ({ isActive, punkte }) => {
       </div>
       {punkte.bonus > 0 && (
         <div className="wrapped-anim-fade wrapped-anim-delay-3">
-          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', marginTop: '16px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '1rem', marginTop: '20px', display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
+            <IonIcon icon={starOutline} style={{ fontSize: '1.2rem', color: '#a78bfa' }} />
             davon {punkte.bonus} Bonuspunkte
           </p>
         </div>

@@ -216,10 +216,73 @@ ion-modal.wrapped-modal-fullscreen {
   }
 }
 
+/* Hero Text - Massive Typography */
+.wrapped-hero-text {
+  font-size: clamp(2.5rem, 12vw, 5rem);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+
+/* Slide Decoration - Visual Flair Circles */
+.wrapped-slide-decoration {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  pointer-events: none;
+}
+.wrapped-slide-decoration--1 {
+  width: 200px; height: 200px;
+  top: -40px; right: -60px;
+}
+.wrapped-slide-decoration--2 {
+  width: 120px; height: 120px;
+  bottom: 80px; left: -30px;
+}
+.wrapped-slide-decoration--3 {
+  width: 80px; height: 80px;
+  bottom: 160px; right: 20px;
+}
+
+/* Neue Animationen */
+@keyframes wrapped-bounce {
+  0% { opacity: 0; transform: scale(0.3) translateY(40px); }
+  50% { opacity: 1; transform: scale(1.08) translateY(-10px); }
+  70% { transform: scale(0.95) translateY(4px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes wrapped-fly-left {
+  from { opacity: 0; transform: translateX(-80px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes wrapped-fly-right {
+  from { opacity: 0; transform: translateX(80px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes wrapped-number-pop {
+  0% { opacity: 0; transform: scale(0); }
+  60% { opacity: 1; transform: scale(1.15); }
+  80% { transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes wrapped-shine {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
 /* Initial-State: unsichtbar bis Animation startet */
 .wrapped-anim-fade,
 .wrapped-anim-scale,
-.wrapped-anim-slide-up {
+.wrapped-anim-slide-up,
+.wrapped-anim-bounce,
+.wrapped-anim-fly-left,
+.wrapped-anim-fly-right,
+.wrapped-anim-number-pop {
   opacity: 0;
 }
 
@@ -234,6 +297,22 @@ ion-modal.wrapped-modal-fullscreen {
 
 .wrapped-slide--active .wrapped-anim-slide-up {
   animation: wrapped-slide-up 0.7s ease-out forwards;
+}
+
+.wrapped-slide--active .wrapped-anim-bounce {
+  animation: wrapped-bounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.wrapped-slide--active .wrapped-anim-fly-left {
+  animation: wrapped-fly-left 0.7s ease-out forwards;
+}
+
+.wrapped-slide--active .wrapped-anim-fly-right {
+  animation: wrapped-fly-right 0.7s ease-out forwards;
+}
+
+.wrapped-slide--active .wrapped-anim-number-pop {
+  animation: wrapped-number-pop 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 /* Animation-Delays fuer gestaffeltes Einblenden */
@@ -348,8 +427,8 @@ ion-modal.wrapped-modal-fullscreen {
 }
 
 .badge-icon {
-  width: 52px;
-  height: 52px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -394,13 +473,15 @@ ion-modal.wrapped-modal-fullscreen {
 
 .endspurt-slide { background: linear-gradient(135deg, #3b0764 0%, #0a0a0a 60%); }
 
-.endspurt-progress { width: 100%; max-width: 260px; margin-top: 24px; }
-.endspurt-progress-bar { height: 12px; background: rgba(255,255,255,0.15); border-radius: 6px; overflow: hidden; }
+.endspurt-progress { width: 100%; max-width: 280px; margin-top: 24px; }
+.endspurt-progress-bar { height: 16px; background: rgba(255,255,255,0.15); border-radius: 8px; overflow: hidden; }
 .endspurt-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #7c3aed, #a78bfa);
-  border-radius: 6px;
+  background: linear-gradient(90deg, #7c3aed, #a78bfa, #7c3aed);
+  background-size: 200% 100%;
+  border-radius: 8px;
   transition: width 2s ease-out;
+  animation: wrapped-shine 3s linear infinite;
 }
 
 /* ========================================
@@ -514,8 +595,8 @@ ion-modal.wrapped-modal-fullscreen {
 .kategorie-bars { width: 100%; max-width: 300px; margin-top: 24px; display: flex; flex-direction: column; gap: 12px; }
 .kategorie-bar-row { display: flex; align-items: center; gap: 8px; }
 .kategorie-bar-name { font-size: 0.85rem; color: rgba(255,255,255,0.7); min-width: 80px; text-align: right; }
-.kategorie-bar-track { flex: 1; height: 8px; background: rgba(255,255,255,0.15); border-radius: 4px; overflow: hidden; }
-.kategorie-bar-fill { height: 100%; background: linear-gradient(90deg, #7c3aed, #a78bfa); border-radius: 4px; transition: width 1.5s ease-out; }
+.kategorie-bar-track { flex: 1; height: 10px; background: rgba(255,255,255,0.2); border-radius: 5px; overflow: hidden; }
+.kategorie-bar-fill { height: 100%; background: linear-gradient(90deg, #7c3aed, #c4b5fd); border-radius: 5px; transition: width 1.5s ease-out; }
 .kategorie-bar-count { font-size: 0.85rem; color: rgba(255,255,255,0.6); min-width: 30px; }
 
 /* ========================================
@@ -546,8 +627,8 @@ ion-modal.wrapped-modal-fullscreen {
 }
 .konfetti-piece {
   position: absolute;
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   top: -10px;
   animation: konfetti-fall linear infinite;
 }
@@ -577,3 +658,13 @@ ion-modal.wrapped-modal-fullscreen {
 .konfetti-piece:nth-child(18) { left: 91%; animation-duration: 3.1s; animation-delay: 3.8s; }
 .konfetti-piece:nth-child(19) { left: 94%; animation-duration: 4.5s; animation-delay: 0.9s; }
 .konfetti-piece:nth-child(20) { left: 95%; animation-duration: 5.3s; animation-delay: 2.7s; }
+.konfetti-piece:nth-child(21) { left: 8%; animation-duration: 4.2s; animation-delay: 1.6s; }
+.konfetti-piece:nth-child(22) { left: 15%; animation-duration: 3.6s; animation-delay: 0.6s; }
+.konfetti-piece:nth-child(23) { left: 22%; animation-duration: 5.0s; animation-delay: 3.2s; }
+.konfetti-piece:nth-child(24) { left: 35%; animation-duration: 3.8s; animation-delay: 1.9s; }
+.konfetti-piece:nth-child(25) { left: 45%; animation-duration: 4.7s; animation-delay: 0.1s; }
+.konfetti-piece:nth-child(26) { left: 55%; animation-duration: 3.3s; animation-delay: 2.8s; }
+.konfetti-piece:nth-child(27) { left: 65%; animation-duration: 4.4s; animation-delay: 1.2s; }
+.konfetti-piece:nth-child(28) { left: 75%; animation-duration: 5.1s; animation-delay: 3.6s; }
+.konfetti-piece:nth-child(29) { left: 85%; animation-duration: 3.9s; animation-delay: 0.7s; }
+.konfetti-piece:nth-child(30) { left: 92%; animation-duration: 4.8s; animation-delay: 2.1s; }
