@@ -322,7 +322,10 @@ Plans:
   1. Zertifikate-Card im Teamer-Dashboard ist lila statt rosa/pink; Tageslosung ist sichtbar; neue Badges sind als "neu" markiert mit Popover bei Klick
   2. Suchleisten in Events und Badges folgen dem Chat-Pattern (IonList inset + "Suche & Filter" Header)
   3. "Anwesend"/"Anwesenheit ausstehend" Buttons haben den angepassten Stil; Beschreibungstext in Material und MaterialModal ist groesser; Swipe-Back nach Modal-Oeffnen funktioniert
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 97-01-PLAN.md -- Dashboard Zertifikate Lila + Losung Config + Badges 1:1 wie Konfi
+- [ ] 97-02-PLAN.md -- Events/Badges Suche & Filter + Material Beschreibung + Anwesenheits-Boxen
 
 ### Phase 98: Admin Aktivitaeten, Details, Antraege, Profil, Jahrgaenge
 **Goal**: Admins koennen Aktivitaeten fehlerfrei verwalten und sehen korrekte Detail-Ansichten, Antraege und Profil-Einstellungen
@@ -365,7 +368,7 @@ Plans:
 | 94. Globale UI-Patterns | 1/1 | Complete    | 2026-03-24 |
 | 95. Chat-Farbschema + Korrekturen | 3/3 | Complete    | 2026-03-24 |
 | 96. Konfi UI | 4/4 | Complete    | 2026-03-25 |
-| 97. Teamer UI | 0/? | Not started | - |
+| 97. Teamer UI | 0/2 | In Progress | - |
 | 98. Admin Aktivitaeten, Details, Antraege, Profil, Jahrgaenge | 0/? | Not started | - |
 | 99. Admin Events + Bugs | 0/? | Not started | - |
 | 100. Admin Zertifikate, Material, Dashboard | 0/? | Not started | - |
