@@ -77,7 +77,7 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 
 ### Admin Teamer-Details
 
-- [ ] **ATD-01**: SectionHeader "Teamer:in" statt "Konfi", Rosa statt Lila, nur 3 Stats (Zerts, Events, Badges)
+- [x] **ATD-01**: SectionHeader "Teamer:in" statt "Konfi", Rosa statt Lila, nur 3 Stats (Zerts, Events, Badges)
 
 ### Admin Zertifikate
 
@@ -113,8 +113,8 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 
 ### Admin Antraege
 
-- [ ] **AAN-01**: Modal 1:1 wie bei Konfis mit Icons in Antragsdaten
-- [ ] **AAN-02**: Entscheidungs-Buttons: rot/gruen statt alte Buttons
+- [x] **AAN-01**: Modal 1:1 wie bei Konfis mit Icons in Antragsdaten
+- [x] **AAN-02**: Entscheidungs-Buttons: rot/gruen statt alte Buttons
 
 ### Admin Profil
 
@@ -195,9 +195,9 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 | AAK-03 | Phase 98 | Complete |
 | AAK-04 | Phase 98 | Complete |
 | AAK-05 | Phase 98 | Complete |
-| ATD-01 | Phase 98 | Pending |
-| AAN-01 | Phase 98 | Pending |
-| AAN-02 | Phase 98 | Pending |
+| ATD-01 | Phase 98 | Complete |
+| AAN-01 | Phase 98 | Complete |
+| AAN-02 | Phase 98 | Complete |
 | APR-01 | Phase 98 | Complete |
 | APR-02 | Phase 98 | Complete |
 | AJG-01 | Phase 98 | Complete |
