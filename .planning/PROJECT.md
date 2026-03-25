@@ -44,15 +44,9 @@ Verbleibende Tech-Debt abgearbeitet: bcrypt async, Badge/Notification N+1 elimin
 
 Auth-Routes auf RBAC migriert (gesperrte User sofort blockiert), Magic-Bytes Upload-Validierung, Badge-Cron Bulk-Query, verifyTokenRBAC LRU-Cache, chatUtils dynamischer Admin, bookingUtils extrahiert, useOfflineQuery fetcherRef stabilisiert. 2 Phasen, 3 Plans, 7 Requirements.
 
-## Current Milestone: v2.8 Design-Polish
+## Shipped: v2.8 Design-Polish (2026-03-25)
 
-**Goal:** ~50 UI-Fixes und Design-Verbesserungen ueber alle Bereiche (Teamer, Konfi, Admin, Allgemein) — letzte visuelle Bereinigung vor Launch-Vorbereitung.
-
-**Target features:**
-- Teamer:innen Dashboard/Chat/Events Fixes (11 Items)
-- Konfi Dashboard/Chat/Badges/Historie/Profil Fixes (14 Items)
-- Admin Aktivitaeten/Slider/Zertifikate/Chat/Events/Material Fixes (~25 Items)
-- Globale Listen-Abstands-Konsistenz
+~50 UI-Fixes und Design-Verbesserungen ueber alle Bereiche. Chat-Farbschema (rosa/lila/tuerkis), Konfi/Teamer/Admin UI Polish, Zertifikat-Zuweisungs-Modal, sortierbare Dashboard-Sektionen, Wartelisten-Bugfix, CSS-Variable fuer Beschreibungstexte. 7 Phasen, 19 Plans, 64 Requirements.
 
 ## Geplant: v3.0 Onboarding + Landing
 
