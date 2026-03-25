@@ -8,7 +8,7 @@ import {
   useIonActionSheet, useIonAlert, useIonRouter
 } from '@ionic/react';
 import {
-  arrowBack, createOutline, calendar, people,
+  arrowBack, createOutline, calendar, people, ban,
   personAdd, checkmarkCircle, closeCircle, checkmark, trash,
   returnUpBack, qrCodeOutline, chatbubbleOutline
 } from 'ionicons/icons';
@@ -360,25 +360,32 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const isCancelled = eventData?.cancelled || eventData?.registration_status === ('cancelled' as string);
 
   const handleCancelEvent = async () => {
-    if (!isOnline) return;
-    presentAlert({
-      header: 'Event absagen',
-      message: 'Wirklich absagen? Alle Teilnehmer:innen werden benachrichtigt.',
+    if (!isOnline || !eventData) return;
+    const eventDate = new Date(eventData.event_date).toLocaleDateString('de-DE', {
+      weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
+    });
+    const konfiCount = participants.filter(p => p.role_name !== 'teamer').length;
+    presentActionSheet({
+      header: `"${eventData.name}" absagen?`,
+      subHeader: `${eventDate} | ${konfiCount} Konfis angemeldet`,
       buttons: [
-        { text: 'Abbrechen', role: 'cancel' },
         {
-          text: 'Absagen', role: 'destructive',
+          text: 'Event absagen',
+          role: 'destructive',
+          icon: ban,
           handler: async () => {
             try {
-              await api.put(`/events/${eventData?.id}/cancel`);
+              await api.put(`/events/${eventData.id}/cancel`, {
+                notification_message: 'Das Event wurde leider abgesagt.'
+              });
               setSuccess('Event wurde abgesagt');
-              loadEventData();
-              triggerRefresh('events');
+              onBack();
             } catch (error: any) {
               setError(error.response?.data?.error || 'Fehler beim Absagen');
             }
           }
-        }
+        },
+        { text: 'Abbrechen', role: 'cancel' }
       ]
     });
   };

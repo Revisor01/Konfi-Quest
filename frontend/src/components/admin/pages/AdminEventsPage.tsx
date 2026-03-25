@@ -258,27 +258,34 @@ const AdminEventsPage: React.FC = () => {
 
   const handleCancelEvent = async (event: Event) => {
     if (!isOnline) return;
-    const message = prompt(
-      `Event "${event.name}" absagen?\n\nNachricht an die Teilnehmer (optional):`,
-      'Das Event wurde leider abgesagt. Wir entschuldigen uns für die Unannehmlichkeiten.'
-    );
-    
-    if (message === null) return; // User cancelled
-    
-    try {
-      await api.put(`/events/${event.id}/cancel`, {
-        notification_message: message
-      });
-      setSuccess(`Event "${event.name}" wurde abgesagt`);
-      await refreshEvents();
-      await refreshCancelled();
-    } catch (error: any) {
-      if (error.response?.data?.error) {
-        setError(error.response.data.error);
-      } else {
-        setError('Fehler beim Absagen des Events');
-      }
-    }
+    const eventDate = new Date(event.event_date).toLocaleDateString('de-DE', {
+      weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
+    });
+    const konfiCount = (event.registered_count || 0) - (event.teamer_count || 0);
+    presentActionSheet({
+      header: `"${event.name}" absagen?`,
+      subHeader: `${eventDate} | ${konfiCount} Konfis angemeldet`,
+      buttons: [
+        {
+          text: 'Event absagen',
+          role: 'destructive',
+          icon: ban,
+          handler: async () => {
+            try {
+              await api.put(`/events/${event.id}/cancel`, {
+                notification_message: 'Das Event wurde leider abgesagt.'
+              });
+              setSuccess(`Event "${event.name}" wurde abgesagt`);
+              await refreshEvents();
+              await refreshCancelled();
+            } catch (error: any) {
+              setError(error.response?.data?.error || 'Fehler beim Absagen');
+            }
+          }
+        },
+        { text: 'Abbrechen', role: 'cancel' }
+      ]
+    });
   };
 
   const handleSelectEvent = (event: Event) => {
