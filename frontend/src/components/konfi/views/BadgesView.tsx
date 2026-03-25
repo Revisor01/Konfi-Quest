@@ -349,7 +349,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       event: e.nativeEvent,
       side: 'top',
       alignment: 'center',
-      cssClass: 'badge-detail-popover'
+      cssClass: 'badge-detail-popover badge-popover-auto-width'
     });
   };
 
@@ -481,7 +481,9 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                             border: isEarned ? `2px solid ${badgeColor}40` : '2px solid transparent',
                             cursor: 'pointer',
                             transition: 'transform 0.2s',
-                            position: 'relative'
+                            position: 'relative',
+                            minHeight: '110px',
+                            justifyContent: 'flex-start'
                           }}
                         >
                           {/* Badge Icon */}
@@ -565,7 +567,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             display: '-webkit-box',
-                            WebkitLineClamp: 2,
+                            WebkitLineClamp: 1,
                             WebkitBoxOrient: 'vertical'
                           }}>
                             {badge.name}
