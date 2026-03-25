@@ -129,7 +129,7 @@ ion-modal.wrapped-modal-fullscreen {
 }
 
 .wrapped-pagination .swiper-pagination-bullet-active {
-  background: #7c3aed;
+  background: #fff;
   width: 24px;
   border-radius: 4px;
 }
@@ -147,7 +147,22 @@ ion-modal.wrapped-modal-fullscreen {
   padding: 80px 24px 40px;
   text-align: center;
   color: #fff;
-  background: linear-gradient(135deg, #1a0533 0%, #0a0a0a 50%, #1a0533 100%);
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
+}
+
+/* ========================================
+   Dekorative Elemente
+   ======================================== */
+
+.wrapped-slide-decoration--bottom {
+  top: auto;
+  right: auto;
+  bottom: -80px;
+  left: -60px;
+  width: 250px;
+  height: 250px;
 }
 
 /* ========================================
@@ -155,26 +170,26 @@ ion-modal.wrapped-modal-fullscreen {
    ======================================== */
 
 .wrapped-big-number {
-  font-size: clamp(3rem, 12vw, 6rem);
-  font-weight: 800;
+  font-size: clamp(4rem, 15vw, 8rem);
+  font-weight: 900;
   line-height: 1.1;
   margin: 0;
   letter-spacing: -0.02em;
 }
 
 .wrapped-label {
-  font-size: clamp(0.85rem, 3vw, 1rem);
+  font-size: clamp(1rem, 3.5vw, 1.2rem);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.7);
   margin: 0 0 8px 0;
 }
 
 .wrapped-subtitle {
-  font-size: clamp(1rem, 4vw, 1.5rem);
-  font-weight: 400;
-  color: rgba(255, 255, 255, 0.8);
+  font-size: clamp(1.2rem, 5vw, 2rem);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
   margin: 8px 0 0 0;
   line-height: 1.4;
 }
@@ -218,10 +233,10 @@ ion-modal.wrapped-modal-fullscreen {
 
 /* Hero Text - Massive Typography */
 .wrapped-hero-text {
-  font-size: clamp(2.5rem, 12vw, 5rem);
+  font-size: clamp(2.5rem, 10vw, 5rem);
   font-weight: 900;
-  line-height: 1.05;
-  letter-spacing: -0.03em;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
   margin: 0;
 }
 
@@ -245,29 +260,27 @@ ion-modal.wrapped-modal-fullscreen {
   bottom: 160px; right: 20px;
 }
 
-/* Neue Animationen */
-@keyframes wrapped-bounce {
-  0% { opacity: 0; transform: scale(0.3) translateY(40px); }
-  50% { opacity: 1; transform: scale(1.08) translateY(-10px); }
-  70% { transform: scale(0.95) translateY(4px); }
-  100% { opacity: 1; transform: scale(1) translateY(0); }
+@keyframes wrapped-bounce-in {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); opacity: 1; }
 }
 
-@keyframes wrapped-fly-left {
-  from { opacity: 0; transform: translateX(-80px); }
-  to { opacity: 1; transform: translateX(0); }
+@keyframes wrapped-fly-in-left {
+  from { transform: translateX(-100px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
 }
 
-@keyframes wrapped-fly-right {
-  from { opacity: 0; transform: translateX(80px); }
-  to { opacity: 1; transform: translateX(0); }
+@keyframes wrapped-fly-in-right {
+  from { transform: translateX(100px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
 }
 
 @keyframes wrapped-number-pop {
-  0% { opacity: 0; transform: scale(0); }
-  60% { opacity: 1; transform: scale(1.15); }
-  80% { transform: scale(0.95); }
-  100% { opacity: 1; transform: scale(1); }
+  0% { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 @keyframes wrapped-shine {

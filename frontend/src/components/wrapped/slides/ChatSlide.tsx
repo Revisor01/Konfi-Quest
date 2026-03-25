@@ -7,24 +7,49 @@ import SlideBase from './SlideBase';
 
 interface ChatSlideProps extends SlideProps {
   chat: KonfiChatSlide;
+  seed?: number;
 }
 
-const ChatSlide: React.FC<ChatSlideProps> = ({ isActive, chat }) => {
+function getChatThreshold(count: number, seed: number): { text: string; glow: boolean } {
+  if (count > 50) {
+    return { text: 'Kommunikationsprofi!', glow: true };
+  }
+  if (count < 10) {
+    const variants = ['Der schweigsame Typ', 'Die schweigsame Typin'];
+    return { text: variants[seed % 2], glow: false };
+  }
+  return { text: 'Nachrichten gesendet', glow: false };
+}
+
+const ChatSlide: React.FC<ChatSlideProps> = ({ isActive, chat, seed = 0 }) => {
   const animatedCount = useCountUp(chat.nachrichten_gesendet, isActive);
+  const threshold = getChatThreshold(chat.nachrichten_gesendet, seed);
 
   return (
     <SlideBase isActive={isActive} className="chat-slide">
-      <div className="wrapped-anim-fade" style={{ opacity: 0 }}>
-        <p className="wrapped-subtitle">Im Chat</p>
+      {/* Hintergrund-Dekoration */}
+      <div style={{ position: 'absolute', top: '15%', right: '-20px', opacity: 0.06, pointerEvents: 'none' }}>
+        <IonIcon icon={chatbubblesOutline} style={{ fontSize: '12rem' }} />
       </div>
-      <div className="wrapped-anim-scale wrapped-anim-delay-1" style={{ opacity: 0 }}>
+
+      <div className="wrapped-anim-fade">
+        <IonIcon icon={chatbubblesOutline} style={{ fontSize: '2.5rem', opacity: 0.7, color: '#a78bfa' }} />
+      </div>
+      <div className="wrapped-anim-fade wrapped-anim-delay-1">
+        <p className="wrapped-label">Im Chat</p>
+      </div>
+      <div className="wrapped-anim-number-pop wrapped-anim-delay-1">
         <p className="wrapped-big-number">{animatedCount}</p>
-        <p className="wrapped-subtitle">Nachrichten gesendet</p>
       </div>
-      <div className="wrapped-anim-fade wrapped-anim-delay-2" style={{ opacity: 0 }}>
-        <div className="chat-decoration">
-          <IonIcon icon={chatbubblesOutline} style={{ fontSize: '3rem', color: 'rgba(124,58,237,0.5)' }} />
-        </div>
+      <div className="wrapped-anim-bounce wrapped-anim-delay-2">
+        <p className="wrapped-subtitle" style={threshold.glow ? {
+          fontSize: '1.3rem',
+          fontWeight: 700,
+          color: '#fbbf24',
+          textShadow: '0 0 30px rgba(251,191,36,0.4)',
+        } : undefined}>
+          {threshold.text}
+        </p>
       </div>
     </SlideBase>
   );

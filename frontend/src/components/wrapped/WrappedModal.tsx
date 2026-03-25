@@ -189,7 +189,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
       'kategorie': (a) => <KategorieSlide isActive={a} kategorie={konfiData.slides.kategorie} titel={getFormulierung('kategorie_titel', seed)} />,
       'gottesdienst': (a) => <GottesdienstSlide isActive={a} gottesdienst={konfiData.slides.gottesdienst} titel={getFormulierung('gottesdienst_titel', seed)} />,
       'aktivster-monat': (a) => <AktivsterMonatSlide isActive={a} aktivsterMonat={konfiData.slides.aktivster_monat} />,
-      'chat': (a) => <ChatSlide isActive={a} chat={konfiData.slides.chat} />,
+      'chat': (a) => <ChatSlide isActive={a} chat={konfiData.slides.chat} seed={seed} />,
       'endspurt': (a) => <EndspurtSlide isActive={a} endspurt={konfiData.slides.endspurt} />,
       'ueber-das-ziel': (a) => <UeberDasZielSlide isActive={a} endspurt={konfiData.slides.endspurt} />,
       'abschluss': (a) => <AbschlussSlide isActive={a} data={konfiData} year={slideYear} />,

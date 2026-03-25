@@ -1,10 +1,18 @@
 import React from 'react';
+import { IonIcon } from '@ionic/react';
+import { compassOutline } from 'ionicons/icons';
 import type { SlideProps, KonfiKategorieSlide } from '../../../types/wrapped';
 import SlideBase from './SlideBase';
 
 interface KategorieSlideProps extends SlideProps {
   kategorie: KonfiKategorieSlide;
   titel?: string;
+}
+
+/** Erster Buchstabe gross */
+function capitalize(s: string): string {
+  if (!s) return s;
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 const KategorieSlide: React.FC<KategorieSlideProps> = ({ isActive, kategorie, titel }) => {
@@ -17,21 +25,24 @@ const KategorieSlide: React.FC<KategorieSlideProps> = ({ isActive, kategorie, ti
 
   return (
     <SlideBase isActive={isActive} className="kategorie-slide">
-      <div className="wrapped-anim-fade" style={{ opacity: 0 }}>
-        <p className="wrapped-label">{titel || 'Dein Bereich'}</p>
+      <div className="wrapped-anim-fade">
+        <IonIcon icon={compassOutline} style={{ fontSize: '2.5rem', opacity: 0.7, color: '#a78bfa' }} />
+      </div>
+      <div className="wrapped-anim-fade wrapped-anim-delay-1">
+        <p className="wrapped-label">{titel || 'Dein Schwerpunkt'}</p>
       </div>
       {kategorie.top_kategorie ? (
         <>
-          <div className="wrapped-anim-scale wrapped-anim-delay-1" style={{ opacity: 0 }}>
-            <p className="wrapped-big-number" style={{ fontSize: 'clamp(1.8rem, 8vw, 3rem)' }}>
-              {kategorie.top_kategorie}
+          <div className="wrapped-anim-bounce wrapped-anim-delay-1">
+            <p className="wrapped-hero-text" style={{ fontSize: 'clamp(1.8rem, 8vw, 3rem)' }}>
+              {capitalize(kategorie.top_kategorie)}
             </p>
           </div>
-          <div className="wrapped-anim-fade wrapped-anim-delay-2" style={{ opacity: 0 }}>
+          <div className="wrapped-anim-fade wrapped-anim-delay-2">
             <div className="kategorie-bars">
-              {topKategorien.map((k) => (
-                <div key={k.kategorie} className="kategorie-bar-row">
-                  <span className="kategorie-bar-name">{k.kategorie}</span>
+              {topKategorien.map((k, i) => (
+                <div key={k.kategorie} className="kategorie-bar-row wrapped-anim-fly-left" style={{ animationDelay: `${0.4 + i * 0.15}s` }}>
+                  <span className="kategorie-bar-name">{capitalize(k.kategorie)}</span>
                   <div className="kategorie-bar-track">
                     <div
                       className="kategorie-bar-fill"
@@ -45,8 +56,8 @@ const KategorieSlide: React.FC<KategorieSlideProps> = ({ isActive, kategorie, ti
           </div>
         </>
       ) : (
-        <div className="wrapped-anim-fade wrapped-anim-delay-1" style={{ opacity: 0 }}>
-          <p className="wrapped-subtitle">Noch keine Aktivit&#228;ten</p>
+        <div className="wrapped-anim-fade wrapped-anim-delay-1">
+          <p className="wrapped-subtitle">Noch keine Aktivitaeten</p>
         </div>
       )}
     </SlideBase>
