@@ -604,11 +604,16 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
               />
               <IonButton
                 expand="block"
-                fill="outline"
+                fill="solid"
                 onClick={() => fileInputRef.current?.click()}
+                style={{
+                  '--background': 'var(--ion-color-primary)',
+                  marginTop: '16px',
+                  padding: '0 16px'
+                }}
               >
                 <IonIcon icon={cloudUploadOutline} slot="start" />
-                Dateien auswählen
+                Datei auswählen
               </IonButton>
             </IonCardContent>
           </IonCard>
