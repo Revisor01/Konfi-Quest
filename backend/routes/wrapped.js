@@ -105,6 +105,53 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     );
     const totalBadgesAvailable = parseInt(totalBadgesRow.count, 10) || 0;
 
+    // Badge-Perzentil im Jahrgang
+    const { rows: allKonfisInJahrgang } = await client.query(
+      `SELECT kp.user_id,
+              (SELECT COUNT(*) FROM user_badges ub WHERE ub.user_id = kp.user_id AND ub.organization_id = $2) as badge_count
+       FROM konfi_profiles kp
+       WHERE kp.jahrgang_id = $1`,
+      [jahrgangId, orgId]
+    );
+    const totalKonfisInJahrgang = allKonfisInJahrgang.length;
+    const myBadgeCount = badgeRows.length;
+    const konfisWithFewerBadges = allKonfisInJahrgang.filter(k => k.badge_count < myBadgeCount).length;
+    const badgePercentile = totalKonfisInJahrgang > 1
+      ? Math.round((konfisWithFewerBadges / (totalKonfisInJahrgang - 1)) * 100)
+      : 100;
+
+    // Rang im Jahrgang
+    const { rows: jahrgangRanking } = await client.query(
+      `SELECT kp.user_id, (kp.gottesdienst_points + kp.gemeinde_points) as total
+       FROM konfi_profiles kp
+       WHERE kp.jahrgang_id = $1
+       ORDER BY total DESC`,
+      [jahrgangId]
+    );
+    const rank = jahrgangRanking.findIndex(r => r.user_id === userId) + 1;
+
+    // Pflicht-Events
+    const { rows: [pflichtRow] } = await client.query(
+      `SELECT
+        COUNT(*) FILTER (WHERE eb.attendance_status = 'present') as besucht,
+        COUNT(*) as gesamt
+       FROM events e
+       JOIN event_jahrgang_assignments eja ON e.id = eja.event_id AND eja.jahrgang_id = $3
+       LEFT JOIN event_bookings eb ON eb.event_id = e.id AND eb.user_id = $1
+       WHERE e.organization_id = $2 AND e.mandatory = true AND e.cancelled IS NOT TRUE`,
+      [userId, orgId, jahrgangId]
+    );
+    const pflichtBesucht = parseInt(pflichtRow?.besucht || '0', 10);
+    const pflichtGesamt = parseInt(pflichtRow?.gesamt || '0', 10);
+
+    // Absagen
+    const { rows: [cancelRow] } = await client.query(
+      `SELECT COUNT(*) as count FROM event_bookings
+       WHERE user_id = $1 AND status = 'cancelled'`,
+      [userId]
+    );
+    const eventAbgesagt = parseInt(cancelRow.count, 10) || 0;
+
     // Chat-Nachrichten
     const { rows: [chatCount] } = await client.query(
       `SELECT COUNT(*) as count FROM chat_messages cm
@@ -198,12 +245,22 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         events: {
           total_attended: totalAttended,
           total_available: totalAvailable,
-          lieblings_event: lieblingsEvent
+          lieblings_event: lieblingsEvent,
+          abgesagt: eventAbgesagt
         },
         badges: {
           total_earned: badgeRows.length,
           total_available: totalBadgesAvailable,
-          badges: badgeRows.map(b => ({ name: b.name, icon: b.icon, color: b.color }))
+          badges: badgeRows.map(b => ({ name: b.name, icon: b.icon, color: b.color })),
+          percentile: badgePercentile
+        },
+        pflicht: {
+          besucht: pflichtBesucht,
+          gesamt: pflichtGesamt
+        },
+        rank: {
+          position: rank,
+          total_in_jahrgang: totalKonfisInJahrgang
         },
         aktivster_monat: aktivsterMonat,
         chat: {
