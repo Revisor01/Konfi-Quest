@@ -23,10 +23,8 @@ import {
   keyOutline,
   mailOutline,
   arrowBack,
-  informationCircleOutline,
   briefcaseOutline,
   settingsOutline,
-  shieldOutline,
   calendarOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -133,8 +131,8 @@ const AdminProfilePage: React.FC = () => {
 
         {/* Header - Dashboard-Style mit app-detail-header CSS-Klassen */}
         <div className="app-detail-header" style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #5567d5 100%)',
-          boxShadow: '0 20px 40px rgba(102, 126, 234, 0.3)'
+          background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+          boxShadow: '0 20px 40px rgba(59, 130, 246, 0.3)'
         }}>
           <div className="app-detail-header__content" style={{ padding: '70px 24px 24px 24px', alignItems: 'center', textAlign: 'center' }}>
             {/* Avatar */}
@@ -299,34 +297,6 @@ const AdminProfilePage: React.FC = () => {
           </IonCard>
         </IonList>
 
-        {/* App-Info - iOS26 Pattern */}
-        <IonList inset={true} style={{ margin: '16px' }}>
-          <IonListHeader>
-            <div className="app-section-icon app-section-icon--users">
-              <IonIcon icon={informationCircleOutline} />
-            </div>
-            <IonLabel>App-Info</IonLabel>
-          </IonListHeader>
-          <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
-              <div className="app-list-item app-list-item--users">
-                <div className="app-list-item__row">
-                  <div className="app-list-item__main">
-                    <div className="app-icon-circle app-icon-circle--users">
-                      <IonIcon icon={shieldOutline} />
-                    </div>
-                    <div className="app-list-item__content">
-                      <div className="app-list-item__title">Konfi Quest</div>
-                      <div className="app-list-item__meta">
-                        <span className="app-list-item__meta-item">Version 2.0 - Ionic 8</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </IonCardContent>
-          </IonCard>
-        </IonList>
 
       </IonContent>
     </IonPage>
