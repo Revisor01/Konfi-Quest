@@ -383,7 +383,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                   fontSize: '0.7rem', fontWeight: '700', zIndex: 3
                 }}>
                   {regularEvents.length === 0
-                    ? 'EVENTS ENTDECKEN'
+                    ? 'ERSTES EVENT ENTDECKEN'
                     : regularEvents.length === 1
                       ? 'DEIN EVENT'
                       : `DEINE ${regularEvents.length} EVENTS`}
@@ -398,6 +398,19 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                           onClick={() => router.push(`/konfi/events/${event.id}`)}
                         />
                       ))}
+                      <div
+                        className="app-dashboard-glass-chip"
+                        onClick={() => router.push('/konfi/events')}
+                        style={{
+                          alignSelf: 'center',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        Alle Events anzeigen <IonIcon icon={chevronForward} />
+                      </div>
                     </div>
                   ) : (
                     <div
