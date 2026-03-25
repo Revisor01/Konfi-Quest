@@ -9,11 +9,16 @@ import {
   IonSegment,
   IonSegmentButton,
   IonSelect,
-  IonSelectOption
+  IonSelectOption,
+  IonList,
+  IonListHeader,
+  IonCard,
+  IonCardContent
 } from '@ionic/react';
 import {
   flash,
   people,
+  peopleOutline,
   calendar,
   time,
   location,
@@ -164,26 +169,29 @@ const EventsView: React.FC<EventsViewProps> = ({
 
       {/* Jahrgangs-Filter */}
       {jahrgaenge && jahrgaenge.length > 0 && onJahrgangChange && (
-        <div style={{ padding: '0 16px 8px' }}>
-          <IonSelect
-            value={selectedJahrgang}
-            placeholder="Alle Jahrgänge"
-            interface="popover"
-            onIonChange={(e) => onJahrgangChange(e.detail.value || null)}
-            style={{
-              '--padding-start': '12px',
-              '--padding-end': '12px',
-              fontSize: '0.9rem',
-              background: 'var(--ion-color-light)',
-              borderRadius: '8px'
-            }}
-          >
-            <IonSelectOption value={null}>Alle Jahrgänge</IonSelectOption>
-            {jahrgaenge.map(j => (
-              <IonSelectOption key={j.id} value={j.id}>{j.name}</IonSelectOption>
-            ))}
-          </IonSelect>
-        </div>
+        <IonList className="app-section-inset" inset={true}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--events">
+              <IonIcon icon={peopleOutline} />
+            </div>
+            <IonLabel>Jahrgang</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent className="app-card-content">
+              <IonSelect
+                value={selectedJahrgang}
+                placeholder="Alle Jahrgänge"
+                interface="popover"
+                onIonChange={(e) => onJahrgangChange(e.detail.value || null)}
+              >
+                <IonSelectOption value={null}>Alle Jahrgänge</IonSelectOption>
+                {jahrgaenge.map(j => (
+                  <IonSelectOption key={j.id} value={j.id}>{j.name}</IonSelectOption>
+                ))}
+              </IonSelect>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
       )}
 
       {/* Tab Navigation - einfaches IonSegment */}
