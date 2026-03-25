@@ -22,6 +22,7 @@ import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 import ActivityModal from '../modals/ActivityModal';
 import BonusModal from '../modals/BonusModal';
+import CertificateAssignModal from '../modals/CertificateAssignModal';
 import { useLiveUpdate } from '../../../contexts/LiveUpdateContext';
 import {
   KonfiHeaderCard, BonusSection, EventPointsSection, AttendanceSection,
@@ -159,6 +160,20 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
       dismissPhotoModalHook();
     },
     photoUrl: selectedPhoto || ''
+  });
+
+  // Certificate Assign Modal mit useIonModal Hook
+  const availableTypes = certificateTypes.filter(
+    ct => ct.is_active && !certificates.some(c => c.certificate_type_id === ct.id)
+  );
+  const [presentCertModal, dismissCertModal] = useIonModal(CertificateAssignModal, {
+    konfiId: konfiId,
+    availableTypes: availableTypes,
+    onClose: () => dismissCertModal(),
+    onSuccess: () => {
+      dismissCertModal();
+      loadKonfiData();
+    }
   });
 
   useEffect(() => {
@@ -394,68 +409,13 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
 
   const handleAssignCertificate = () => {
     if (!isOnline) return;
-    const availableTypes = certificateTypes.filter(
-      ct => ct.is_active && !certificates.some(c => c.certificate_type_id === ct.id)
-    );
 
     if (availableTypes.length === 0) {
       setError('Keine verfügbaren Zertifikat-Typen mehr');
       return;
     }
 
-    presentAlert({
-      header: 'Zertifikat zuweisen',
-      inputs: [
-        {
-          name: 'certificate_type_id',
-          type: 'radio' as any,
-          label: availableTypes[0]?.name || '',
-          value: String(availableTypes[0]?.id || ''),
-          checked: true
-        },
-        ...availableTypes.slice(1).map(ct => ({
-          name: 'certificate_type_id',
-          type: 'radio' as any,
-          label: ct.name,
-          value: String(ct.id)
-        })),
-        {
-          name: 'issued_date',
-          type: 'date' as any,
-          label: 'Ausstellungsdatum',
-          value: new Date().toISOString().split('T')[0]
-        },
-        {
-          name: 'expiry_date',
-          type: 'date' as any,
-          label: 'Ablaufdatum (optional)'
-        }
-      ],
-      buttons: [
-        { text: 'Abbrechen', role: 'cancel' },
-        {
-          text: 'Zuweisen',
-          handler: async (data: any) => {
-            const typeId = typeof data === 'string' ? data : data?.certificate_type_id || data;
-            const issuedDate = (document.querySelector('ion-alert input[name="issued_date"]') as HTMLInputElement)?.value
-              || new Date().toISOString().split('T')[0];
-            const expiryDate = (document.querySelector('ion-alert input[name="expiry_date"]') as HTMLInputElement)?.value || null;
-
-            try {
-              await api.post(`/teamer/${konfiId}/certificates`, {
-                certificate_type_id: parseInt(typeId),
-                issued_date: issuedDate,
-                expiry_date: expiryDate || null
-              });
-              setSuccess('Zertifikat zugewiesen');
-              await loadKonfiData();
-            } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Zuweisen');
-            }
-          }
-        }
-      ]
-    });
+    presentCertModal({ presentingElement: presentingElement || undefined });
   };
 
   const handleDeleteCertificate = (cert: { id: number; name: string }) => {
