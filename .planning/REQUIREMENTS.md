@@ -44,9 +44,9 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 
 ### Konfi Badges
 
-- [ ] **KBD-01**: Zwischenueberschrift "Suche & Filter"
-- [ ] **KBD-02**: Badge-Kacheln immer gleich gross, 3 pro Zeile, Titel abschneiden
-- [ ] **KBD-03**: Popover-Breite dynamisch an Titel anpassen
+- [x] **KBD-01**: Zwischenueberschrift "Suche & Filter"
+- [x] **KBD-02**: Badge-Kacheln immer gleich gross, 3 pro Zeile, Titel abschneiden
+- [x] **KBD-03**: Popover-Breite dynamisch an Titel anpassen
 
 ### Konfi Aktivitaeten
 
@@ -175,9 +175,9 @@ Requirements fuer Design-Polish. Jedes Item maps zu einer Roadmap-Phase.
 | KEV-01 | Phase 96 | Complete |
 | KEV-02 | Phase 96 | Complete |
 | KEV-03 | Phase 96 | Complete |
-| KBD-01 | Phase 96 | Pending |
-| KBD-02 | Phase 96 | Pending |
-| KBD-03 | Phase 96 | Pending |
+| KBD-01 | Phase 96 | Complete |
+| KBD-02 | Phase 96 | Complete |
+| KBD-03 | Phase 96 | Complete |
 | KAK-01 | Phase 96 | Complete |
 | KHI-01 | Phase 96 | Pending |
 | KHI-02 | Phase 96 | Pending |
