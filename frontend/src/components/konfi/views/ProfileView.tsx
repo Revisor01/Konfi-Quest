@@ -1,17 +1,26 @@
 import React, { useState } from 'react';
 import {
   IonButton,
+  IonButtons,
   IonCard,
   IonCardContent,
+  IonContent,
+  IonHeader,
   IonIcon,
   IonItem,
   IonLabel,
   IonList,
   IonListHeader,
+  IonPage,
   IonProgressBar,
+  IonRadio,
+  IonRadioGroup,
+  IonTitle,
+  IonToolbar,
+  IonAccordion,
+  IonAccordionGroup,
   useIonModal,
-  useIonAlert,
-  useIonActionSheet
+  useIonAlert
 } from '@ionic/react';
 import {
   personOutline,
@@ -26,7 +35,9 @@ import {
   bookOutline,
   locationOutline,
   mailOutline,
-  timeOutline
+  timeOutline,
+  giftOutline,
+  closeOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -37,7 +48,6 @@ import { clearAuth } from '../../../services/tokenStore';
 import { SectionHeader } from '../../shared';
 import ChangePasswordModal from '../modals/ChangePasswordModal';
 import ChangeEmailModal from '../modals/ChangeEmailModal';
-import PointsHistoryModal from '../modals/PointsHistoryModal';
 import WrappedModal from '../../wrapped/WrappedModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 
@@ -102,14 +112,71 @@ interface ProfileViewProps {
   pageRef?: React.RefObject<HTMLElement | null>;
 }
 
+const BibleTranslationModal: React.FC<{
+  onClose: () => void;
+  currentTranslation: string;
+  onSelect: (code: string) => void;
+}> = ({ onClose, currentTranslation, onSelect }) => {
+  const translations = [
+    { code: 'LUT', name: 'Lutherbibel 2017', description: 'Die klassische deutsche Standardübersetzung, nah am Originaltext mit der Sprachkraft Martin Luthers. Weit verbreitet in evangelischen Gottesdiensten.' },
+    { code: 'ELB', name: 'Elberfelder Bibel', description: 'Besonders wörtliche Übersetzung, die sich eng an den hebräischen und griechischen Grundtext hält. Ideal zum genauen Bibelstudium.' },
+    { code: 'GNB', name: 'Gute Nachricht Bibel', description: 'Leicht verständliche Übersetzung in modernem Deutsch. Gut geeignet für Einsteiger:innen und den Konfi-Unterricht.' },
+    { code: 'BIGS', name: 'Bibel in gerechter Sprache', description: 'Übersetzung mit Fokus auf Gerechtigkeit, Inklusion und die Vielfalt biblischer Gottesbilder. Gendersensibel und theologisch reflektiert.' },
+    { code: 'NIV', name: 'New International Version', description: 'Die meistgelesene englische Bibelübersetzung. Gute Balance zwischen Wörtlichkeit und Verständlichkeit. Für alle die Englisch bevorzugen.' },
+    { code: 'LSG', name: 'Louis Segond 1910', description: 'Französische Standardübersetzung, vergleichbar mit der Lutherbibel im deutschen Sprachraum. Klassisch und weit verbreitet.' },
+    { code: 'RVR60', name: 'Reina-Valera 1960', description: 'Spanische Standardübersetzung mit großer Treue zum Grundtext. Die am häufigsten verwendete spanische Bibel.' }
+  ];
+
+  return (
+    <IonPage>
+      <IonHeader>
+        <IonToolbar>
+          <IonTitle>Bibelübersetzung</IonTitle>
+          <IonButtons slot="start">
+            <IonButton className="app-modal-close-btn" onClick={onClose}>
+              <IonIcon icon={closeOutline} />
+            </IonButton>
+          </IonButtons>
+        </IonToolbar>
+      </IonHeader>
+      <IonContent className="app-gradient-background">
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--purple">
+              <IonIcon icon={bookOutline} />
+            </div>
+            <IonLabel>Übersetzung wählen</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '8px' }}>
+              <IonRadioGroup value={currentTranslation} onIonChange={(e) => onSelect(e.detail.value)}>
+                {translations.map((t) => (
+                  <IonItem key={t.code} lines="none" style={{ '--background': 'transparent', '--padding-start': '12px', marginBottom: '4px' }}>
+                    <IonRadio slot="start" value={t.code} />
+                    <IonLabel className="ion-text-wrap">
+                      <h3 style={{ fontWeight: '600', fontSize: '0.95rem', margin: '0 0 4px 0' }}>{t.name}</h3>
+                      <p style={{ fontSize: '0.8rem', color: '#666', lineHeight: '1.4', margin: '0' }}>{t.description}</p>
+                    </IonLabel>
+                  </IonItem>
+                ))}
+              </IonRadioGroup>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
+      </IonContent>
+    </IonPage>
+  );
+};
+
 const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presentingElement, pageRef }) => {
   const { user, setSuccess, setError } = useApp();
   const [presentAlert] = useIonAlert();
-  const [presentActionSheet] = useIonActionSheet();
 
   const [selectedTranslation, setSelectedTranslation] = useState<string>(profile.bible_translation || 'LUT');
   const [earnedBadgesCount, setEarnedBadgesCount] = useState<number>(0);
   const [wrappedHistory, setWrappedHistory] = useState<WrappedHistoryEntry[]>([]);
+  const [pointsHistory, setPointsHistory] = useState<any[]>([]);
+  const [pointsTotals, setPointsTotals] = useState<{ gottesdienst: number; gemeinde: number; total: number }>({ gottesdienst: 0, gemeinde: 0, total: 0 });
 
   // Wrapped-Historie laden
   React.useEffect(() => {
@@ -118,6 +185,16 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
       .then(res => setWrappedHistory(res.data || []))
       .catch(() => {}); // Stille Fehlerbehandlung -- optionales Feature
   }, [profile?.id]);
+
+  // Punkte-Historie laden
+  React.useEffect(() => {
+    api.get('/konfi/points-history')
+      .then(res => {
+        setPointsHistory(res.data.history || []);
+        setPointsTotals(res.data.totals || { gottesdienst: 0, gemeinde: 0, total: 0 });
+      })
+      .catch(() => {});
+  }, []);
 
   // WrappedModal per useIonModal mit dynamischen Daten
   const [wrappedModalData, setWrappedModalData] = React.useState<WrappedHistoryEntry | null>(null);
@@ -238,9 +315,14 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     }
   });
 
-  // Modal with useIonModal Hook for Points History
-  const [presentPointsHistoryModal, dismissPointsHistoryModal] = useIonModal(PointsHistoryModal, {
-    onClose: () => dismissPointsHistoryModal()
+  // Modal with useIonModal Hook for Bible Translation
+  const [presentBibleModal, dismissBibleModal] = useIonModal(BibleTranslationModal, {
+    onClose: () => dismissBibleModal(),
+    currentTranslation: selectedTranslation,
+    onSelect: (code: string) => {
+      handleTranslationChange(code);
+      dismissBibleModal();
+    }
   });
 
   const getInitials = (name: string | undefined) => {
@@ -305,8 +387,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         preset="konfis"
         stats={[
           { value: profile.total_points || 0, label: 'PUNKTE' },
+          { value: profile.gottesdienst_points || 0, label: 'GD' },
+          { value: profile.gemeinde_points || 0, label: 'GEMEINDE' },
+          { value: profile.event_count || 0, label: 'EVENTS' },
           { value: earnedBadgesCount, label: 'BADGES' },
-          { value: (profile.event_count || 0) + (profile.activity_count || 0), label: 'AKTIONEN' }
+          { value: profile.bonus_points || 0, label: 'BONUS' }
         ]}
       />
 
@@ -549,43 +634,69 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         <IonCard className="app-card">
           <IonCardContent style={{ padding: '16px' }}>
             <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
-              {/* Punkte-Übersicht */}
-              <IonItem
-                button
-                onClick={() => {
-                  presentPointsHistoryModal({
-                    presentingElement: pageRef?.current || presentingElement || undefined
-                  });
-                }}
-                detail={false}
-                lines="none"
-                style={{
-                  '--background': 'transparent',
-                  '--padding-start': '0',
-                  '--padding-end': '0',
-                  '--inner-padding-end': '0',
-                  '--inner-border-width': '0',
-                  '--border-style': 'none',
-                  '--min-height': 'auto',
-                  marginBottom: '8px'
-                }}
-              >
-                <div className="app-list-item app-list-item--purple" style={{ width: '100%' }}>
-                  <div className="app-list-item__row">
-                    <div className="app-list-item__main">
-                      <div className="app-icon-circle app-icon-circle--purple">
-                        <IonIcon icon={starOutline} />
-                      </div>
-                      <div className="app-list-item__content">
-                        <div className="app-list-item__title">Punkte-Übersicht</div>
-                        <div className="app-list-item__meta">
-                          <span className="app-list-item__meta-item">{profile.total_points || 0} Punkte gesamt</span>
+              {/* Punkte-Übersicht als Akkordeon */}
+              <IonAccordionGroup style={{ marginBottom: '8px' }}>
+                <IonAccordion value="punkte">
+                  <IonItem slot="header" lines="none" style={{ '--background': 'transparent', '--padding-start': '0', '--inner-padding-end': '0' }}>
+                    <div className="app-list-item app-list-item--purple" style={{ width: '100%' }}>
+                      <div className="app-list-item__row">
+                        <div className="app-list-item__main">
+                          <div className="app-icon-circle app-icon-circle--purple">
+                            <IonIcon icon={starOutline} />
+                          </div>
+                          <div className="app-list-item__content">
+                            <div className="app-list-item__title">Punkte-Übersicht</div>
+                            <div className="app-list-item__meta">
+                              <span className="app-list-item__meta-item">{profile.total_points || 0} Punkte gesamt</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
+                  </IonItem>
+                  <div slot="content" style={{ padding: '0 16px 16px' }}>
+                    {/* Stats Grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '12px' }}>
+                      <div className="app-info-box app-info-box--neutral" style={{ textAlign: 'center', padding: '8px' }}>
+                        <div style={{ fontSize: '1.1rem', fontWeight: '700' }}>{pointsTotals.gottesdienst}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#666' }}>GD</div>
+                      </div>
+                      <div className="app-info-box app-info-box--neutral" style={{ textAlign: 'center', padding: '8px' }}>
+                        <div style={{ fontSize: '1.1rem', fontWeight: '700' }}>{pointsTotals.gemeinde}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#666' }}>Gemeinde</div>
+                      </div>
+                      <div className="app-info-box app-info-box--neutral" style={{ textAlign: 'center', padding: '8px' }}>
+                        <div style={{ fontSize: '1.1rem', fontWeight: '700' }}>{profile.bonus_points || 0}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#666' }}>Bonus</div>
+                      </div>
+                    </div>
+                    {/* Letzte Eintraege */}
+                    {pointsHistory.slice(0, 10).map((entry: any) => (
+                      <div key={`${entry.source_type}-${entry.id}`} className={`app-list-item ${entry.category === 'gottesdienst' ? 'app-list-item--info' : 'app-list-item--activities'}`} style={{ marginBottom: '4px' }}>
+                        <div className="app-list-item__row">
+                          <div className="app-list-item__main">
+                            <div className={`app-icon-circle ${entry.category === 'gottesdienst' ? 'app-icon-circle--info' : 'app-icon-circle--activities'}`}>
+                              <IonIcon icon={entry.source_type === 'bonus' ? giftOutline : entry.source_type === 'event' ? calendarOutline : starOutline} />
+                            </div>
+                            <div className="app-list-item__content">
+                              <div className="app-list-item__title">{entry.title}</div>
+                              <div className="app-list-item__meta">
+                                <span className="app-list-item__meta-item">+{entry.points}P</span>
+                                <span className="app-list-item__meta-item">{new Date(entry.date).toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {pointsHistory.length === 0 && (
+                      <div className="app-info-box app-info-box--neutral" style={{ textAlign: 'center' }}>
+                        Noch keine Punkte-Einträge
+                      </div>
+                    )}
                   </div>
-                </div>
-              </IonItem>
+                </IonAccordion>
+              </IonAccordionGroup>
 
               {/* E-Mail ändern */}
               <IonItem
@@ -669,19 +780,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
               <IonItem
                 button
                 onClick={() => {
-                  presentActionSheet({
-                    header: 'Bibelübersetzung wählen',
-                    subHeader: 'Für die Tageslosung',
-                    buttons: [
-                      { text: 'Lutherbibel 2017', role: selectedTranslation === 'LUT' ? 'selected' : undefined, handler: () => handleTranslationChange('LUT') },
-                      { text: 'Elberfelder Bibel', role: selectedTranslation === 'ELB' ? 'selected' : undefined, handler: () => handleTranslationChange('ELB') },
-                      { text: 'Gute Nachricht Bibel', role: selectedTranslation === 'GNB' ? 'selected' : undefined, handler: () => handleTranslationChange('GNB') },
-                      { text: 'Bibel in gerechter Sprache', role: selectedTranslation === 'BIGS' ? 'selected' : undefined, handler: () => handleTranslationChange('BIGS') },
-                      { text: 'New International Version', role: selectedTranslation === 'NIV' ? 'selected' : undefined, handler: () => handleTranslationChange('NIV') },
-                      { text: 'Louis Segond 1910', role: selectedTranslation === 'LSG' ? 'selected' : undefined, handler: () => handleTranslationChange('LSG') },
-                      { text: 'Reina-Valera 1960', role: selectedTranslation === 'RVR60' ? 'selected' : undefined, handler: () => handleTranslationChange('RVR60') },
-                      { text: 'Abbrechen', role: 'cancel' }
-                    ]
+                  presentBibleModal({
+                    presentingElement: pageRef?.current || presentingElement || undefined
                   });
                 }}
                 detail={false}
