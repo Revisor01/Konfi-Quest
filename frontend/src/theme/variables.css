@@ -1560,7 +1560,8 @@ ion-button.app-modal-submit-btn--chat {
 }
 
 /* === Badge Popover auto-width === */
-.badge-popover-auto-width {
+.badge-popover-auto-width,
+.badge-detail-popover {
   --width: auto;
   --max-width: 80vw;
   --min-width: 200px;

@@ -308,12 +308,12 @@ const MembersModal: React.FC<MembersModalProps> = ({
     const participantId = `${isAdmin ? 'admin' : 'konfi'}-${'user_id' in targetUser ? targetUser.user_id : targetUser.id}`;
     const roleText = getRoleText(targetUser);
     const jahrgang = getJahrgang(targetUser);
-    const badgeColor = isAdmin ? '#06b6d4' : '#5b21b6';
+    const badgeColor = isAdmin ? '#e11d48' : '#5b21b6';
 
     return (
       <div
         key={participantId}
-        className={`app-list-item ${isAdmin ? 'app-list-item--chat' : 'app-list-item--primary'} ${isSelected ? 'app-list-item--selected' : ''}`}
+        className={`app-list-item ${isAdmin ? 'app-list-item--team' : 'app-list-item--konfi'} ${isSelected ? 'app-list-item--selected' : ''}`}
         onClick={isSelectable ? onToggle : undefined}
         style={{ cursor: isSelectable ? 'pointer' : 'default', position: 'relative', overflow: 'hidden', width: '100%' }}
       >
@@ -329,7 +329,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
 
         <div className="app-list-item__row">
           <div className="app-list-item__main">
-            <div className={`app-icon-circle app-icon-circle--lg ${isAdmin ? 'app-icon-circle--chat' : 'app-icon-circle--primary'}`}>
+            <div className={`app-icon-circle app-icon-circle--lg ${isAdmin ? 'app-icon-circle--team' : 'app-icon-circle--konfi'}`}>
               <IonIcon icon={person} />
             </div>
             <div className="app-list-item__content">
@@ -351,8 +351,8 @@ const MembersModal: React.FC<MembersModalProps> = ({
             <IonCheckbox
               checked={isSelected}
               style={{
-                '--checkbox-background-checked': '#06b6d4',
-                '--border-color-checked': '#06b6d4',
+                '--checkbox-background-checked': isAdmin ? '#e11d48' : '#5b21b6',
+                '--border-color-checked': isAdmin ? '#e11d48' : '#5b21b6',
                 '--checkmark-color': 'white'
               }}
             />

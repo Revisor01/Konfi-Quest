@@ -566,7 +566,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                       return (
                         <div
                           key={participantId}
-                          className={`app-list-item ${isAdmin ? 'app-list-item--chat' : 'app-list-item--primary'}`}
+                          className={`app-list-item ${isAdmin ? 'app-list-item--team' : 'app-list-item--konfi'}`}
                           onClick={() => {
                             if (!creating) {
                               if (chatType === 'direct') {
@@ -580,17 +580,16 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                             cursor: creating ? 'default' : 'pointer',
                             opacity: creating ? 0.6 : 1,
                             marginBottom: '0',
-                            borderLeftColor: isAdmin ? '#06b6d4' : '#5b21b6',
                             position: 'relative',
                             overflow: 'hidden',
-                            background: isSelected ? (isAdmin ? 'rgba(6, 182, 212, 0.08)' : 'rgba(91, 33, 182, 0.08)') : undefined
+                            background: isSelected ? (isAdmin ? 'rgba(225, 29, 72, 0.08)' : 'rgba(91, 33, 182, 0.08)') : undefined
                           }}
                         >
                           {/* Eselsohr mit Rolle/Funktion */}
                           <div className="app-corner-badges">
                             <div
                               className="app-corner-badge"
-                              style={{ backgroundColor: isAdmin ? '#06b6d4' : '#5b21b6' }}
+                              style={{ backgroundColor: isAdmin ? '#e11d48' : '#5b21b6' }}
                             >
                               {isAdmin ? (targetUser.role_description || 'Admin') : 'Konfi'}
                             </div>
@@ -598,7 +597,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
 
                           <div className="app-list-item__row" style={chatType === 'group' ? { paddingRight: '8px' } : undefined}>
                             <div className="app-list-item__main">
-                              <div className={`app-icon-circle app-icon-circle--lg ${isAdmin ? 'app-icon-circle--chat' : 'app-icon-circle--primary'}`}>
+                              <div className={`app-icon-circle app-icon-circle--lg ${isAdmin ? 'app-icon-circle--team' : 'app-icon-circle--konfi'}`}>
                                 <IonIcon icon={person} />
                               </div>
                               <div className="app-list-item__content">

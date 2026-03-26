@@ -155,10 +155,10 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
     }
   };
 
-  // Event-, Aktivitäten- und Bonus-Anzahl aus gefilterter History berechnen
-  const eventCount = filteredHistory.filter(h => h.source_type === 'event').length;
-  const activityCount = filteredHistory.filter(h => h.source_type === 'activity').length;
-  const bonusCount = filteredHistory.filter(h => h.source_type === 'bonus').length;
+  // Punkte-Summen nach Quelle aus gefilterter History berechnen
+  const eventPoints = filteredHistory.filter(h => h.source_type === 'event').reduce((sum, h) => sum + h.points, 0);
+  const activityPoints = filteredHistory.filter(h => h.source_type === 'activity').reduce((sum, h) => sum + h.points, 0);
+  const bonusPoints = filteredHistory.filter(h => h.source_type === 'bonus').reduce((sum, h) => sum + h.points, 0);
   const showBothTypes = gottesdienstEnabled && gemeindeEnabled;
 
   return (
@@ -190,9 +190,9 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
                 ...(showBothTypes ? [{ value: filteredTotals.total, label: 'GESAMT' }] : []),
                 ...(gottesdienstEnabled ? [{ value: filteredTotals.gottesdienst, label: 'GD' }] : []),
                 ...(gemeindeEnabled ? [{ value: filteredTotals.gemeinde, label: 'GEMEINDE' }] : []),
-                { value: eventCount, label: 'EVENTS' },
-                { value: activityCount, label: 'AKTIONEN' },
-                { value: bonusCount, label: 'BONUS' }
+                { value: eventPoints, label: 'EVENTS' },
+                { value: activityPoints, label: 'AKTIONEN' },
+                { value: bonusPoints, label: 'BONUS' }
               ]}
             />
 
