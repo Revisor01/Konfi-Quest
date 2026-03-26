@@ -86,3 +86,4 @@ Alle v1.0-v2.7 Entscheidungen in PROJECT.md und milestones/ archiviert.
 | 260324-lt3 | 6 Sicherheits- und Cleanup-Fixes | 2026-03-24 | 86104ae | [260324-lt3](./quick/260324-lt3-6-sicherheits-und-cleanup-fixes/) |
 | 260325-t3v | Konfi Events-Card wie Teamer + Badge/Spacing Fixes | 2026-03-25 | d008e89 | [260325-t3v](./quick/260325-t3v-konfi-dashboard-events-card-wie-teamer-b/) |
 | 260326-ak9 | Punkte-Übersicht Stat-Bubbles 3+3 Reihen Layout | 2026-03-26 | 35edd7c | [260326-ak9](./quick/260326-ak9-punkte-uebersicht-stat-bubbles-wie-badge/) |
+| 260326-ao0 | Bugfix Events-Card 0-Events Layout + Badge Popover Skalierung | 2026-03-26 | 35e1396 | — |

@@ -413,16 +413,31 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <div
-                      className="app-dashboard-glass-card"
-                      onClick={() => router.push('/konfi/events')}
-                      style={{ cursor: 'pointer', textAlign: 'center', padding: '20px 16px' }}
-                    >
-                      <div style={{ fontSize: '1rem', fontWeight: '600', color: 'white', marginBottom: '4px' }}>
-                        Buche dein nächstes Event
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div
+                        className="app-dashboard-glass-card"
+                        onClick={() => router.push('/konfi/events')}
+                        style={{ cursor: 'pointer', textAlign: 'center', padding: '20px 16px' }}
+                      >
+                        <div style={{ fontSize: '1rem', fontWeight: '600', color: 'white', marginBottom: '4px' }}>
+                          Buche dein nächstes Event
+                        </div>
+                        <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                          Tippe hier um verfügbare Events zu sehen
+                        </div>
                       </div>
-                      <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.7)' }}>
-                        Tippe hier um verfügbare Events zu sehen
+                      <div
+                        className="app-dashboard-glass-chip"
+                        onClick={() => router.push('/konfi/events')}
+                        style={{
+                          alignSelf: 'center',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        Alle Events anzeigen <IonIcon icon={chevronForward} />
                       </div>
                     </div>
                   )}

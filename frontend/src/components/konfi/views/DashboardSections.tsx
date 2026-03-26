@@ -214,7 +214,7 @@ export const DashboardBadgePopoverContent: React.FC<{
   const badgeColor = data.getBadgeColor(badge);
 
   return (
-    <div style={{ padding: '12px', background: 'white', minWidth: '200px' }}>
+    <div style={{ padding: '12px', background: 'white', width: 'max-content', minWidth: '200px', maxWidth: '320px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <div style={{
           width: '48px',
@@ -239,7 +239,7 @@ export const DashboardBadgePopoverContent: React.FC<{
             }}
           />
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: 1 }}>
           <h3 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: '700', color: '#333', whiteSpace: 'nowrap' }}>
             {badge.name}
           </h3>
