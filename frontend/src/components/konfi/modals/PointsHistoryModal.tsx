@@ -25,6 +25,7 @@ import {
   trophyOutline
 } from 'ionicons/icons';
 import api from '../../../services/api';
+import { SectionHeader } from '../../shared';
 
 interface PointsHistoryModalProps {
   onClose: () => void;
@@ -180,65 +181,20 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
           </div>
         ) : (
           <>
-            {/* Header - Kompakter Style wie BadgesView */}
-            <div className="app-detail-header" style={{
-              background: 'linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%)',
-              borderRadius: '20px',
-              padding: '24px',
-              boxShadow: '0 8px 32px rgba(91, 33, 182, 0.25)',
-              minHeight: 'auto'
-            }}>
-              <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.1)' }} />
-              <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.08)' }} />
-
-              <div className="app-settings-item" style={{ marginBottom: '20px', position: 'relative', zIndex: 1 }}>
-                <div className="app-icon-circle app-icon-circle--lg" style={{ background: 'rgba(255, 255, 255, 0.25)', borderRadius: '14px' }}>
-                  <IonIcon icon={trophyOutline} style={{ fontSize: '1.6rem', color: 'white' }} />
-                </div>
-                <div>
-                  <h2 className="app-detail-header__title" style={{ fontSize: '1.4rem', fontWeight: '700' }}>Deine Punkte</h2>
-                  <p className="app-detail-header__subtitle">Übersicht aller gesammelten Punkte</p>
-                </div>
-              </div>
-
-              {/* Stats Boxen - 3x2 Grid */}
-              <div style={{ position: 'relative', zIndex: 1 }}>
-                {/* Reihe 1: Punkte-Typ-Stats */}
-                <div style={{ display: 'grid', gridTemplateColumns: showBothTypes ? 'repeat(3, 1fr)' : '1fr', gap: '8px' }}>
-                  {showBothTypes && (
-                    <div className="app-detail-header__info-chip" style={{ textAlign: 'center', padding: '10px 8px' }}>
-                      <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{filteredTotals.total}</div>
-                      <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GESAMT</div>
-                    </div>
-                  )}
-                  {gottesdienstEnabled && (
-                    <div className="app-detail-header__info-chip" style={{ textAlign: 'center', padding: '10px 8px' }}>
-                      <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{filteredTotals.gottesdienst}</div>
-                      <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GOTTESDIENST</div>
-                    </div>
-                  )}
-                  {gemeindeEnabled && (
-                    <div className="app-detail-header__info-chip" style={{ textAlign: 'center', padding: '10px 8px' }}>
-                      <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{filteredTotals.gemeinde}</div>
-                      <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GEMEINDE</div>
-                    </div>
-                  )}
-                </div>
-                {/* Reihe 2: Quellen-Stats (immer 3 Spalten) */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginTop: '8px' }}>
-                  {[
-                    { value: eventCount, label: 'EVENTS' },
-                    { value: activityCount, label: 'AKTIVITAETEN' },
-                    { value: bonusCount, label: 'BONUS' }
-                  ].map((stat) => (
-                    <div key={stat.label} className="app-detail-header__info-chip" style={{ textAlign: 'center', padding: '10px 8px' }}>
-                      <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{stat.value}</div>
-                      <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>{stat.label}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <SectionHeader
+              title="Deine Punkte"
+              subtitle="Übersicht aller gesammelten Punkte"
+              icon={trophyOutline}
+              preset="konfis"
+              stats={[
+                ...(showBothTypes ? [{ value: filteredTotals.total, label: 'GESAMT' }] : []),
+                ...(gottesdienstEnabled ? [{ value: filteredTotals.gottesdienst, label: 'GD' }] : []),
+                ...(gemeindeEnabled ? [{ value: filteredTotals.gemeinde, label: 'GEMEINDE' }] : []),
+                { value: eventCount, label: 'EVENTS' },
+                { value: activityCount, label: 'AKTIONEN' },
+                { value: bonusCount, label: 'BONUS' }
+              ]}
+            />
 
             {/* Verlauf Sektion - iOS26 Pattern */}
             <IonList inset={true} className="app-segment-wrapper">
