@@ -67,7 +67,7 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
       </div>
 
       {/* Stats Row */}
-      <div className="app-stats-row">
+      <div className={`app-stats-row${stats.length > 4 ? ' app-stats-row--grid' : ''}`}>
         {stats.map((stat, index) => (
           <div key={index} className="app-stats-row__item">
             <div className="app-stats-row__value">{stat.value}</div>

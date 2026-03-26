@@ -761,6 +761,20 @@ ion-item {
   max-width: 100px;
 }
 
+/* Grid-Variante fuer 5+ Stats (z.B. Profil mit 6 Stats) */
+.app-stats-row--grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 0 16px;
+}
+
+.app-stats-row--grid .app-stats-row__item {
+  min-width: unset;
+  max-width: unset;
+  flex: unset;
+}
+
 .app-stats-row__value {
   font-size: 1.3rem;
   font-weight: 800;

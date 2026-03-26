@@ -378,17 +378,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                   <h2 className="app-dashboard-section__bg-label">DEINE</h2>
                   <h2 className="app-dashboard-section__bg-label">EVENTS</h2>
                 </div>
-                <div className="app-dashboard-glass-chip" style={{
-                  position: 'absolute', top: '12px', right: '12px',
-                  fontSize: '0.7rem', fontWeight: '700', zIndex: 3
-                }}>
-                  {regularEvents.length === 0
-                    ? 'EVENT ENTDECKEN'
-                    : regularEvents.length === 1
-                      ? 'DEIN EVENT'
-                      : `DEINE ${regularEvents.length} EVENTS`}
-                </div>
-                <div className="app-dashboard-section__content app-dashboard-section__content--compact">
+<div className="app-dashboard-section__content app-dashboard-section__content--compact">
                   {regularEvents.length > 0 ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       {regularEvents.map((event) => (
