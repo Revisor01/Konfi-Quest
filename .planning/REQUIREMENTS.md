@@ -73,38 +73,38 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INF-01 | — | Pending |
-| INF-02 | — | Pending |
-| INF-03 | — | Pending |
-| INF-04 | — | Pending |
-| INF-05 | — | Pending |
-| INF-06 | — | Pending |
-| BIT-01 | — | Pending |
-| BIT-02 | — | Pending |
-| BIT-03 | — | Pending |
-| BIT-04 | — | Pending |
-| BIT-05 | — | Pending |
-| BIT-06 | — | Pending |
-| BIT-07 | — | Pending |
-| BIT-08 | — | Pending |
-| CIC-01 | — | Pending |
-| CIC-02 | — | Pending |
-| CIC-03 | — | Pending |
-| CIC-04 | — | Pending |
-| FRT-01 | — | Pending |
-| FRT-02 | — | Pending |
-| FRT-03 | — | Pending |
-| E2E-01 | — | Pending |
-| E2E-02 | — | Pending |
-| E2E-03 | — | Pending |
-| E2E-04 | — | Pending |
-| E2E-05 | — | Pending |
+| INF-01 | Phase 101 | Pending |
+| INF-02 | Phase 101 | Pending |
+| INF-03 | Phase 101 | Pending |
+| INF-04 | Phase 101 | Pending |
+| INF-05 | Phase 101 | Pending |
+| INF-06 | Phase 101 | Pending |
+| BIT-01 | Phase 102 | Pending |
+| BIT-02 | Phase 102 | Pending |
+| BIT-03 | Phase 103 | Pending |
+| BIT-04 | Phase 103 | Pending |
+| BIT-05 | Phase 103 | Pending |
+| BIT-06 | Phase 103 | Pending |
+| BIT-07 | Phase 103 | Pending |
+| BIT-08 | Phase 104 | Pending |
+| CIC-01 | Phase 105 | Pending |
+| CIC-02 | Phase 105 | Pending |
+| CIC-03 | Phase 105 | Pending |
+| CIC-04 | Phase 105 | Pending |
+| FRT-01 | Phase 106 | Pending |
+| FRT-02 | Phase 106 | Pending |
+| FRT-03 | Phase 106 | Pending |
+| E2E-01 | Phase 107 | Pending |
+| E2E-02 | Phase 107 | Pending |
+| E2E-03 | Phase 107 | Pending |
+| E2E-04 | Phase 107 | Pending |
+| E2E-05 | Phase 107 | Pending |
 
 **Coverage:**
 - v2.9 requirements: 26 total
-- Mapped to phases: 0
-- Unmapped: 26
+- Mapped to phases: 26
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-27*
-*Last updated: 2026-03-27 after initial definition*
+*Last updated: 2026-03-27 after roadmap creation*

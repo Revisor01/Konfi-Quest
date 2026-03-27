@@ -21,6 +21,7 @@
 - Shipped **v2.6 Final Polish + Bugfixes** - Phases 90-91 (shipped 2026-03-23)
 - Shipped **v2.7 Backend-Hardening** - Phases 92-93 (shipped 2026-03-24)
 - Shipped **v2.8 Design-Polish** - Phases 94-100 (shipped 2026-03-25)
+- In Progress **v2.9 Test-Suite + CI/CD** - Phases 101-107
 
 ## Phases
 
@@ -272,3 +273,110 @@ Phase 99: Admin Events + Bugs (3 plans, complete)
 Phase 100: Admin Zertifikate, Material, Dashboard (3 plans, complete)
 
 </details>
+
+### v2.9 Test-Suite + CI/CD (In Progress)
+
+**Milestone Goal:** Umfassende Test-Suite ueber die gesamte App -- Backend Integration Tests mit echtem PostgreSQL, Frontend Hook/Utility Tests, E2E Tests mit Playwright, GitHub Actions CI/CD Pipeline als Deploy-Gate.
+
+- [ ] **Phase 101: Test-Infrastruktur + server.js Refactoring** - App-Factory, Test-DB, Seed-Fixtures, Vitest-Config
+- [ ] **Phase 102: Auth + RBAC Integration Tests** - Sicherheitskritische Tests zuerst, RBAC-Matrix mit echten Tokens
+- [ ] **Phase 103: Core Business Integration Tests** - Activities, Events, Konfi, Chat, Badges
+- [ ] **Phase 104: Remaining Routes Integration Tests** - Alle verbleibenden Routes abdecken
+- [ ] **Phase 105: CI/CD Pipeline** - GitHub Actions mit PostgreSQL Service Container, Deploy-Gate
+- [ ] **Phase 106: Frontend Tests** - Hooks, Utilities, Component-Tests
+- [ ] **Phase 107: E2E Tests mit Playwright** - Docker-Compose Test-Stack, 4 Kernpfade
+
+## Phase Details
+
+### Phase 101: Test-Infrastruktur + server.js Refactoring
+**Goal**: Backend ist testbar -- Express-App als exportierbare Factory, Test-DB-Lifecycle automatisiert, Seed-Fixtures fuer alle Rollen und Organisationen bereit
+**Depends on**: Phase 100
+**Requirements**: INF-01, INF-02, INF-03, INF-04, INF-05, INF-06
+**Success Criteria** (what must be TRUE):
+  1. `npm test` im Backend-Verzeichnis startet Vitest und fuehrt mindestens einen Smoke-Test erfolgreich aus
+  2. server.js exportiert eine createApp-Funktion die eine Express-App ohne listen(), ohne Firebase, ohne Cron zurueckgibt
+  3. Test-DB wird automatisch erstellt, migriert, geseeded und nach dem Testlauf geloescht
+  4. Auth-Helpers erzeugen gueltige JWT-Tokens fuer alle 5 RBAC-Rollen (konfi, teamer, admin, orgadmin, superadmin) in 2 verschiedenen Organisationen
+**Plans**: TBD
+
+### Phase 102: Auth + RBAC Integration Tests
+**Goal**: Authentifizierung und Autorisierung sind lueckenlos getestet -- kein Login-Bug, kein Cross-Org-Zugriff, kein Rollen-Bypass geht unbemerkt durch
+**Depends on**: Phase 101
+**Requirements**: BIT-01, BIT-02
+**Success Criteria** (what must be TRUE):
+  1. Auth-Lifecycle komplett getestet: Login mit korrekten/falschen Credentials, Token-Refresh, Logout-Revoke, gesperrter User wird abgelehnt
+  2. RBAC-Matrix prueft fuer jeden geschuetzten Endpoint alle 5 Rollen -- unberechtigte Zugriffe erhalten 403
+  3. Cross-Org-Isolation verifiziert: Admin von Org A kann keine Daten von Org B lesen oder aendern
+**Plans**: TBD
+
+### Phase 103: Core Business Integration Tests
+**Goal**: Die fuenf geschaeftskritischen Route-Gruppen (Activities, Events, Konfi, Chat, Badges) sind mit Integration-Tests abgesichert
+**Depends on**: Phase 102
+**Requirements**: BIT-03, BIT-04, BIT-05, BIT-06, BIT-07
+**Success Criteria** (what must be TRUE):
+  1. Activities-Tests pruefen CRUD, Punkte-Vergabe an Konfis und Kategorie-Filterung
+  2. Events-Tests pruefen Erstellen, Buchen, Timeslot-Kapazitaet, Warteliste-Nachruecken und Pflicht-Event-Absage
+  3. Konfi-Tests pruefen Profil-Abruf, Punkte-History und Dashboard-Daten-Aggregation
+  4. Chat-Tests pruefen Raum-Erstellung, Nachrichten-CRUD, Teilnehmer-Verwaltung und Datei-Endpoints
+  5. Badge-Tests pruefen manuelle Vergabe, Level-Zuordnung, Auto-Award-Trigger und Progress-Berechnung
+**Plans**: TBD
+
+### Phase 104: Remaining Routes Integration Tests
+**Goal**: Alle verbleibenden Backend-Routes haben Integration-Tests -- die gesamte API ist abgesichert
+**Depends on**: Phase 103
+**Requirements**: BIT-08
+**Success Criteria** (what must be TRUE):
+  1. Tests existieren fuer categories, jahrgaenge, levels, notifications, organizations, roles, settings, users
+  2. Tests existieren fuer bonus, material, teamer und wrapped Routes
+  3. Jeder Test prueft mindestens den Happy-Path (200) und einen Fehlerfall (401/403/404)
+**Plans**: TBD
+
+### Phase 105: CI/CD Pipeline
+**Goal**: Tests laufen automatisch bei jedem Push und blockieren Deployments bei Fehlern
+**Depends on**: Phase 104
+**Requirements**: CIC-01, CIC-02, CIC-03, CIC-04
+**Success Criteria** (what must be TRUE):
+  1. GitHub Actions Workflow startet bei jedem Push und fuehrt Backend-Tests gegen einen PostgreSQL Service Container aus
+  2. Frontend-Tests (Vitest) laufen als separater Job in der CI Pipeline
+  3. npm audit bricht den Workflow bei critical oder high Vulnerabilities ab
+  4. Deployment (Portainer Webhook) wird nur bei gruenen Tests ausgeloest -- rote Tests blockieren das Deployment
+**Plans**: TBD
+
+### Phase 106: Frontend Tests
+**Goal**: Kritische Frontend-Logik (Hooks, Utilities, Kern-Komponenten) ist mit Tests abgesichert
+**Depends on**: Phase 101
+**Requirements**: FRT-01, FRT-02, FRT-03
+**Success Criteria** (what must be TRUE):
+  1. useOfflineQuery, useActionGuard und AppContext haben Tests die Kern-Verhalten verifizieren (Caching, Online-Guard, Rollen-Kontext)
+  2. tokenStore, networkMonitor und api-Service haben Unit-Tests fuer alle oeffentlichen Methoden
+  3. Mindestens 5 Component-Tests existieren (Dashboard, Login, EventDetail oder vergleichbare kritische Views)
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 107: E2E Tests mit Playwright
+**Goal**: Die 4 wichtigsten User-Journeys sind End-to-End im echten Browser verifiziert
+**Depends on**: Phase 105, Phase 106
+**Requirements**: E2E-01, E2E-02, E2E-03, E2E-04, E2E-05
+**Success Criteria** (what must be TRUE):
+  1. Docker-Compose Test-Stack (DB + Backend + Frontend) startet automatisch und ist fuer Playwright erreichbar
+  2. Login-Flow E2E: Konfi und Admin koennen sich einloggen und sehen ihr jeweiliges Dashboard
+  3. Punkte-Vergabe E2E: Admin vergibt Aktivitaet an Konfi, Punkte erscheinen im Konfi-Profil
+  4. Event-Buchung E2E: Konfi bucht ein Event, Buchung erscheint in der Event-Liste
+  5. Chat E2E: Nachricht wird gesendet und beim Empfaenger angezeigt
+**Plans**: TBD
+
+## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 101 -> 102 -> 103 -> 104 -> 105 -> 106 -> 107
+(Phase 106 kann parallel zu 102-104 geplant werden, haengt nur von Phase 101 ab)
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 101. Test-Infrastruktur + server.js Refactoring | 0/? | Not started | - |
+| 102. Auth + RBAC Integration Tests | 0/? | Not started | - |
+| 103. Core Business Integration Tests | 0/? | Not started | - |
+| 104. Remaining Routes Integration Tests | 0/? | Not started | - |
+| 105. CI/CD Pipeline | 0/? | Not started | - |
+| 106. Frontend Tests | 0/? | Not started | - |
+| 107. E2E Tests mit Playwright | 0/? | Not started | - |
