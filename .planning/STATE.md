@@ -1,29 +1,31 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.8
-milestone_name: Design-Polish
-status: Milestone complete
-last_updated: "2026-03-25T09:24:56.147Z"
+milestone: v2.9
+milestone_name: Test-Suite + CI/CD
+status: Defining requirements
+last_updated: "2026-03-27T00:00:00.000Z"
 progress:
-  total_phases: 7
-  completed_phases: 7
-  total_plans: 19
-  completed_plans: 19
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-24)
+See: .planning/PROJECT.md (updated 2026-03-27)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 100 — admin-zertifikate-material-dashboard
+**Current focus:** v2.9 Test-Suite + CI/CD — Defining requirements
 
 ## Current Position
 
-Phase: 100
-Plan: Not started
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-27 — Milestone v2.9 started
 
 ## Performance Metrics
 

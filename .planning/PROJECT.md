@@ -48,6 +48,17 @@ Auth-Routes auf RBAC migriert (gesperrte User sofort blockiert), Magic-Bytes Upl
 
 ~50 UI-Fixes und Design-Verbesserungen ueber alle Bereiche. Chat-Farbschema (rosa/lila/tuerkis), Konfi/Teamer/Admin UI Polish, Zertifikat-Zuweisungs-Modal, sortierbare Dashboard-Sektionen, Wartelisten-Bugfix, CSS-Variable fuer Beschreibungstexte. 7 Phasen, 19 Plans, 64 Requirements.
 
+## Current Milestone: v2.9 Test-Suite + CI/CD
+
+**Goal:** Umfassende Test-Suite ueber die gesamte App — Backend Integration Tests, Frontend Tests, E2E Tests, CI/CD Pipeline.
+
+**Target features:**
+- Vitest + supertest Integration-Tests fuer alle 15 Backend-Routes gegen echte PostgreSQL
+- Frontend Component/Unit Tests fuer kritische Flows
+- Playwright E2E Tests fuer Kernpfade (Login, Punkte, Events, Chat)
+- GitHub Actions CI/CD Pipeline (Tests bei jedem Push, npm audit)
+- Test-Datenbank Setup (Docker-basiert, isoliert)
+
 ## Geplant: v3.0 Onboarding + Landing
 
 **Goal:** Onboarding-Flow, Landing Website mit Erklaerung, Github Readme, Wiki — letzter Schritt vor oeffentlichem Launch.
