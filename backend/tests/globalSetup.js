@@ -68,6 +68,7 @@ module.exports = async function globalSetup() {
       user_type VARCHAR(20),
       token VARCHAR(255) NOT NULL,
       expires_at TIMESTAMP NOT NULL,
+      used_at TIMESTAMP,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -151,6 +152,7 @@ module.exports = async function globalSetup() {
     ALTER TABLE users ADD COLUMN IF NOT EXISTS token_invalidated_at TIMESTAMP;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255);
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image VARCHAR(500);
     -- organization_id muss NULL erlauben fuer super_admin
     ALTER TABLE users ALTER COLUMN organization_id DROP NOT NULL;
 
@@ -161,8 +163,9 @@ module.exports = async function globalSetup() {
     ALTER TABLE jahrgaenge ADD COLUMN IF NOT EXISTS target_gottesdienst INTEGER DEFAULT 10;
     ALTER TABLE jahrgaenge ADD COLUMN IF NOT EXISTS target_gemeinde INTEGER DEFAULT 10;
 
-    -- konfi_profiles braucht bible_translation
+    -- konfi_profiles braucht bible_translation + invite_code_id
     ALTER TABLE konfi_profiles ADD COLUMN IF NOT EXISTS bible_translation VARCHAR(100);
+    ALTER TABLE konfi_profiles ADD COLUMN IF NOT EXISTS invite_code_id INTEGER;
     ALTER TABLE konfi_profiles ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id);
 
     -- events braucht has_timeslots (falls nicht in init-script)

@@ -603,11 +603,11 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
           RETURNING id
         `, [username.toLowerCase(), display_name, passwordHash, konfiRole.id, invite.organization_id, email?.trim() || null]);
 
-        // Create konfi profile mit invite_code_id
+        // Create konfi profile mit invite_code_id und organization_id
         await client.query(`
-          INSERT INTO konfi_profiles (user_id, jahrgang_id, gottesdienst_points, gemeinde_points, invite_code_id)
-          VALUES ($1, $2, 0, 0, $3)
-        `, [newUser.id, invite.jahrgang_id, invite.id]);
+          INSERT INTO konfi_profiles (user_id, jahrgang_id, gottesdienst_points, gemeinde_points, invite_code_id, organization_id)
+          VALUES ($1, $2, 0, 0, $3, $4)
+        `, [newUser.id, invite.jahrgang_id, invite.id, invite.organization_id]);
 
         await client.query('COMMIT');
 
