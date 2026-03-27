@@ -1,30 +1,21 @@
 // --- START OF FILE server.js ---
+// Produktions-Wrapper: Startet Server + Socket.IO + SMTP + Cron + Firebase
+// Die Express-App wird von createApp.js erstellt (testbare Factory).
 
-const express = require('express');
-const cors = require('cors');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const path = require('path');
-const fs = require('fs');
-const crypto = require('crypto');
-const multer = require('multer');
-const nodemailer = require('nodemailer');
 const http = require('http');
+const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
 const { Server } = require('socket.io');
 const rateLimit = require('express-rate-limit');
-const helmet = require('helmet');
 
 // ====================================================================
 // SERVER CONFIGURATION
 // ====================================================================
 
-const app = express();
-app.set('trust proxy', 1); // Traefik Reverse Proxy
-const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
- console.error('FATAL: JWT_SECRET environment variable is required!');
+  console.error('FATAL: JWT_SECRET environment variable is required!');
   process.exit(1);
 }
 
@@ -33,6 +24,12 @@ if (!JWT_SECRET) {
 // ====================================================================
 
 const db = require('./database');
+
+// ====================================================================
+// HTTP SERVER (ohne App — App kommt nach Socket.IO Setup)
+// ====================================================================
+
+const server = http.createServer();
 
 // ====================================================================
 // SOCKET.IO SETUP
@@ -46,7 +43,6 @@ const io = new Server(server, {
     methods: ['GET', 'POST'],
     credentials: true
   },
-  // Debug: Mehr Logging
   pingTimeout: 60000,
   pingInterval: 25000
 });
@@ -76,14 +72,11 @@ io.use((socket, next) => {
 
 // Socket.io Connection Handler
 io.on('connection', (socket) => {
-  // User tritt automatisch seinem persönlichen Room bei (für globale Benachrichtigungen)
   const userRoom = `user_${socket.user.type}_${socket.user.id}`;
   socket.join(userRoom);
 
-  // User tritt seinen Chat-Rooms bei (mit Organization-Isolation)
   socket.on('joinRoom', async (roomId) => {
     try {
-      // Sicherheits-Check: Room zur selben Organisation?
       const { rows } = await db.query(
         'SELECT organization_id FROM chat_rooms WHERE id = $1',
         [roomId]
@@ -112,7 +105,6 @@ io.on('connection', (socket) => {
     socket.leave(`room_${roomId}`);
   });
 
-  // Typing Indicator
   socket.on('typing', async (roomId) => {
     try {
       const { rows } = await db.query(
@@ -166,13 +158,11 @@ liveUpdate.init(io);
 const SMTP_CONFIG = {
   host: process.env.SMTP_HOST || 'server.godsapp.de',
   port: parseInt(process.env.SMTP_PORT || '465'),
-  secure: process.env.SMTP_SECURE !== 'false', // true for 465, via ENV steuerbar
+  secure: process.env.SMTP_SECURE !== 'false',
   auth: {
     user: process.env.SMTP_USER || 'noreply@konfi-quest.de',
     pass: process.env.SMTP_PASS
   },
-  // TLS-Optionen: Hostname-Validierung lockern für Docker-Umgebung
-  // (Zertifikat ist auf server.godsapp.de ausgestellt, aber Docker nutzt IP)
   tls: {
     rejectUnauthorized: false
   }
@@ -182,353 +172,108 @@ const transporter = nodemailer.createTransport(SMTP_CONFIG);
 
 transporter.verify(function(error, success) {
   if (error) {
- console.error('SMTP connection failed:', error);
+    console.error('SMTP connection failed:', error);
   }
-  // SMTP-Status wird im strukturierten Server-Start ausgegeben
 });
 
 // ====================================================================
 // RATE LIMITING
 // ====================================================================
 
-// Allgemeiner Rate Limiter für alle Requests
 const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 Minuten
-  max: 1000, // Max 1000 Requests pro 15 Minuten
-  message: { error: 'Zu viele Anfragen. Bitte versuche es später erneut.' },
+  windowMs: 15 * 60 * 1000,
+  max: 1000,
+  message: { error: 'Zu viele Anfragen. Bitte versuche es spaeter erneut.' },
   standardHeaders: true,
   legacyHeaders: false
 });
 
-// Strenger Rate Limiter für Auth-Endpoints (Brute-Force Schutz)
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 Minuten
-  max: 10, // Max 10 Login-Versuche pro 15 Minuten
+  windowMs: 15 * 60 * 1000,
+  max: 10,
   message: { error: 'Zu viele Login-Versuche. Bitte warte 15 Minuten.' },
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: true // Erfolgreiche Logins nicht zählen
+  skipSuccessfulRequests: true
 });
 
-// Rate Limiter für Registrierung (Spam-Schutz)
 const registerLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 Stunde
-  max: 5, // Max 5 Registrierungen pro Stunde pro IP
+  windowMs: 60 * 60 * 1000,
+  max: 5,
   message: { error: 'Zu viele Registrierungen. Bitte warte eine Stunde.' },
   standardHeaders: true,
   legacyHeaders: false
 });
 
-// Rate Limiter für Chat-Nachrichten (Spam-Schutz)
 const chatMessageLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 Minute
-  max: 30, // Max 30 Nachrichten pro Minute
+  windowMs: 60 * 1000,
+  max: 30,
   message: { error: 'Zu viele Nachrichten. Bitte warte einen Moment.' },
   standardHeaders: true,
   legacyHeaders: false
 });
 
-// Rate Limiter für Event-Buchungen
 const eventBookingLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 Minuten
-  max: 20, // Max 20 Buchungen pro 15 Minuten
-  message: { error: 'Zu viele Buchungsanfragen. Bitte versuche es später erneut.' },
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: 'Zu viele Buchungsanfragen. Bitte versuche es spaeter erneut.' },
   standardHeaders: true,
   legacyHeaders: false
 });
 
-// Rate Limiter für File-Uploads
 const uploadLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 Minuten
-  max: 30, // Max 30 Uploads pro 15 Minuten
-  message: { error: 'Zu viele Uploads. Bitte versuche es später erneut.' },
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: { error: 'Zu viele Uploads. Bitte versuche es spaeter erneut.' },
   standardHeaders: true,
   legacyHeaders: false
 });
 
-// Rate Limiter für Organisations-Verwaltung (Schutz vor Missbrauch)
 const orgLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 Minuten
-  max: 20, // Max 20 schreibende Org-Requests pro 15 Minuten
-  message: { error: 'Zu viele Anfragen an die Organisationsverwaltung. Bitte versuche es später erneut.' },
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: 'Zu viele Anfragen an die Organisationsverwaltung. Bitte versuche es spaeter erneut.' },
   standardHeaders: true,
   legacyHeaders: false
 });
 
 // ====================================================================
-// MIDDLEWARE SETUP
+// EXPRESS APP (via createApp Factory)
 // ====================================================================
 
+const { createApp } = require('./createApp');
 
-// CORS wird komplett von Apache gehandelt
-// app.use(cors()); // DEAKTIVIERT - Apache macht das
-
-// Security Headers
-// CSP bleibt deaktiviert, da Ionic/React inline Styles und Scripts benoetigt.
-// HSTS wird von Apache/KeyHelp gesetzt, daher hier nicht doppelt konfigurieren.
-app.use(helmet({
-  contentSecurityPolicy: false,
-  strictTransportSecurity: false,
-  crossOriginEmbedderPolicy: false,
-  xContentTypeOptions: true,
-  xFrameOptions: { action: 'deny' },
-  xXssProtection: true,
-  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
-}));
-
-// Allgemeiner Rate Limiter
-app.use(generalLimiter);
-
-app.use(express.json());
-
-// ====================================================================
-// FILE UPLOADS SETUP
-// ====================================================================
-
-const uploadsDir = path.join(__dirname, 'uploads');
-const requestsDir = path.join(uploadsDir, 'requests');
-const chatDir = path.join(uploadsDir, 'chat');
-const materialDir = path.join(uploadsDir, 'material');
-
-// Create upload directories
-[uploadsDir, requestsDir, chatDir, materialDir].forEach(dir => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
+const app = createApp(db, {
+  transporter,
+  smtpConfig: SMTP_CONFIG,
+  io,
+  rateLimiters: {
+    general: generalLimiter,
+    authLimiter,
+    registerLimiter,
+    chatMessageLimiter,
+    eventBookingLimiter,
+    uploadLimiter,
+    orgLimiter,
+  },
 });
 
-// SECURITY: Removed static uploads route - all files served through protected endpoints
-
-// Separate multer config for chat (encrypted storage)
-const chatUpload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, chatDir);
-    },
-    filename: (req, file, cb) => {
-      // Generate encrypted filename
-      const hash = crypto.createHash('sha256').update(Date.now() + file.originalname + Math.random().toString()).digest('hex');
-      cb(null, hash);
-    }
-  }),
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowedMimes = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif',
-      'application/pdf',
-      'video/mp4', 'video/quicktime', 'video/webm',
-      'audio/mpeg', 'audio/mp4', 'audio/ogg', 'audio/wav',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-powerpoint',
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      'text/plain', 'text/csv'
-    ];
-    
-    const isAllowed = allowedMimes.includes(file.mimetype);
-    if (isAllowed) {
-      cb(null, true);
-    } else {
- console.warn(`Datei abgelehnt: ${file.originalname} (${file.mimetype})`);
-      cb(null, false);
-    }
-  }
-});
-
-// Material upload config (20MB limit)
-const materialUpload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, materialDir);
-    },
-    filename: (req, file, cb) => {
-      const hash = crypto.createHash('sha256').update(Date.now() + file.originalname + Math.random().toString()).digest('hex');
-      cb(null, hash);
-    }
-  }),
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB für Material
-  fileFilter: (req, file, cb) => {
-    const allowedMimes = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif',
-      'application/pdf',
-      'video/mp4', 'video/quicktime', 'video/webm',
-      'audio/mpeg', 'audio/mp4', 'audio/ogg', 'audio/wav',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-powerpoint',
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      'application/vnd.oasis.opendocument.text',
-      'application/vnd.oasis.opendocument.spreadsheet',
-      'application/vnd.oasis.opendocument.presentation',
-      'text/plain', 'text/csv'
-    ];
-
-    const isAllowed = allowedMimes.includes(file.mimetype);
-    if (isAllowed) {
-      cb(null, true);
-    } else {
-      console.warn(`Material-Datei abgelehnt: ${file.originalname} (${file.mimetype})`);
-      cb(null, false);
-    }
-  }
-});
-
-// Separate multer config for activity requests (encrypted storage)
-const requestUpload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, requestsDir);
-    },
-    filename: (req, file, cb) => {
-      // Generate encrypted filename
-      const hash = crypto.createHash('sha256').update(Date.now() + file.originalname + Math.random().toString()).digest('hex');
-      cb(null, hash);
-    }
-  }),
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(null, false);
-    }
-  }
-});
-
-// ====================================================================
-// AUTHENTICATION MIDDLEWARE
-// ====================================================================
-
-// GEÄNDERT: Umstellung auf async/await für konsistenten Code-Stil
-const verifyToken = async (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) {
-    return res.status(401).json({ error: 'No token provided' });
-  }
-  
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (err) {
-    return res.status(401).json({ error: 'Invalid token' });
-  }
-};
-
-// ====================================================================
-// ROUTE IMPORTS
-// ====================================================================
-
-
-const authRoutes = require('./routes/auth');
-const konfiRoutes = require('./routes/konfi');
-const eventsRoutes = require('./routes/events');
-const chatRoutes = require('./routes/chat');
-const settingsRoutes = require('./routes/settings');
-const notificationsRoutes = require('./routes/notifications');
-const BackgroundService = require('./services/backgroundService');
-
-const adminBadgesRoutes = require('./routes/badges');
-const adminActivitiesRoutes = require('./routes/activities');
-const adminKonfisRoutes = require('./routes/konfi-management');
-const adminJahrgaengeRoutes = require('./routes/jahrgaenge');
-const adminCategoriesRoutes = require('./routes/categories');
-
-const teamerRoutes = require('./routes/teamer');
-const materialRoutes = require('./routes/material');
-const usersRoutes = require('./routes/users');
-const rolesRoutes = require('./routes/roles');
-const organizationsRoutes = require('./routes/organizations');
-const levelsRoutes = require('./routes/levels');
-const wrappedRoutes = require('./routes/wrapped');
-
-// ====================================================================
-// RBAC MIDDLEWARE SETUP
-// ====================================================================
-
-const {
-  verifyTokenRBAC,
-  filterByJahrgangAccess,
-  requireSuperAdmin,
-  requireOrgAdmin,
-  requireAdmin,
-  requireTeamer
-} = require('./middleware/rbac');
-
-const rbacVerifier = verifyTokenRBAC(db);
-
-// Rollen-Helper Objekt für Routes
-const roleHelpers = { requireSuperAdmin, requireOrgAdmin, requireAdmin, requireTeamer };
-
-const badgesRouter = adminBadgesRoutes(db, rbacVerifier, roleHelpers);
-const activitiesRouter = adminActivitiesRoutes(db, rbacVerifier, roleHelpers, badgesRouter.checkAndAwardBadges);
-
-// ====================================================================
-// ROUTE MOUNTING
-// ====================================================================
-
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Konfi Points API is running' });
-});
-
-app.use('/api/auth', authRoutes(db, verifyToken, transporter, SMTP_CONFIG, { authLimiter, registerLimiter }, rbacVerifier));
-app.use('/api/konfi', konfiRoutes(db, { verifyTokenRBAC: rbacVerifier }, requestUpload));
-
-// Chat: Nachrichten-Endpunkt mit eigenem Rate-Limiter, Upload-Endpunkt ebenfalls
-app.post('/api/chat/rooms/:roomId/messages', chatMessageLimiter, uploadLimiter);
-app.use('/api/chat', chatRoutes(db, { verifyTokenRBAC: rbacVerifier }, uploadsDir, chatUpload, io));
-
-app.use('/api/notifications', notificationsRoutes(db, rbacVerifier));
-
-// Events: Buchungs-Endpunkt mit eigenem Rate-Limiter
-app.post('/api/events/:id/book', eventBookingLimiter);
-app.use('/api/events', eventsRoutes(db, rbacVerifier, roleHelpers, badgesRouter.checkAndAwardBadges));
-
-// Konfi: Foto-Upload mit Rate-Limiter
-app.post('/api/konfi/upload-photo', uploadLimiter);
-app.use('/api/settings', settingsRoutes(db, rbacVerifier, roleHelpers));
-
-app.use('/api/admin/activities', activitiesRouter);
-app.use('/api/admin/badges', badgesRouter);
-app.use('/api/admin/konfis', adminKonfisRoutes(db, rbacVerifier, roleHelpers, filterByJahrgangAccess, badgesRouter.checkAndAwardBadges));
-app.use('/api/admin/jahrgaenge', adminJahrgaengeRoutes(db, rbacVerifier, roleHelpers));
-app.use('/api/admin/categories', adminCategoriesRoutes(db, rbacVerifier, roleHelpers));
-app.use('/api/admin/users', usersRoutes(db, rbacVerifier, roleHelpers, io));
-
-app.use('/api/users', usersRoutes(db, rbacVerifier, roleHelpers, io));
-app.use('/api/roles', rolesRoutes(db, rbacVerifier, roleHelpers));
-app.use('/api/organizations', orgLimiter, organizationsRoutes(db, rbacVerifier, roleHelpers));
-
-app.use('/api/levels', levelsRoutes(db, rbacVerifier, roleHelpers));
-app.use('/api/teamer', teamerRoutes(db, rbacVerifier, roleHelpers));
-const wrappedRouter = wrappedRoutes(db, rbacVerifier, roleHelpers);
-app.use('/api/wrapped', wrappedRouter);
-app.use('/api/material', materialRoutes(db, rbacVerifier, roleHelpers, materialUpload));
+// HTTP-Requests an Express-App weiterleiten
+server.on('request', app);
 
 // ====================================================================
 // CHAT SYSTEM INITIALIZATION
 // ====================================================================
 
 const { initializeChatRooms } = require('./utils/chatUtils');
-// Wir gehen davon aus, dass chatUtils.js bereits auf async/await umgestellt wurde
 setImmediate(() => initializeChatRooms(db));
 
 // ====================================================================
 // BACKGROUND SERVICES INITIALIZATION
 // ====================================================================
 
-BackgroundService.startAllServices(db, { wrappedRouter });
-
-// ====================================================================
-// ERROR HANDLING
-// ====================================================================
-
-app.use((err, req, res, next) => {
- console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
-});
+const BackgroundService = require('./services/backgroundService');
+BackgroundService.startAllServices(db, { wrappedRouter: app.wrappedRouter });
 
 // ====================================================================
 // SERVER STARTUP
@@ -541,9 +286,10 @@ try {
   const fbApp = firebase.initializeFirebase();
   if (fbApp) firebaseStatus = 'Verbunden';
 } catch (e) {
-  // Firebase nicht verfügbar
+  // Firebase nicht verfuegbar
 }
 
+const uploadsDir = require('path').join(__dirname, 'uploads');
 const smtpStatus = SMTP_CONFIG.auth.pass ? 'Konfiguriert' : 'Nicht konfiguriert';
 
 server.listen(PORT, () => {
@@ -580,7 +326,6 @@ const gracefulShutdown = (signal) => {
     process.exit(0);
   });
 
-  // Timeout nach 10 Sekunden erzwingen
   setTimeout(() => {
     console.error('Shutdown-Timeout erreicht - erzwinge Beendigung');
     process.exit(1);

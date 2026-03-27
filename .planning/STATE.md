@@ -2,65 +2,95 @@
 gsd_state_version: 1.0
 milestone: v2.9
 milestone_name: Test-Suite + CI/CD
-status: Ready to plan Phase 101
-last_updated: "2026-03-27T00:00:00.000Z"
+status: In Progress
+last_updated: "2026-03-27T12:22:18Z"
 progress:
   total_phases: 7
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 3
+  completed_plans: 1
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-27)
+See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v2.9 Test-Suite + CI/CD — Phase 101: Test-Infrastruktur + server.js Refactoring
+**Current focus:** Phase 101 — test-infrastruktur-server-js-refactoring
 
 ## Current Position
 
-Phase: 101 of 107 (Test-Infrastruktur + server.js Refactoring)
-Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-03-27 — Roadmap fuer v2.9 erstellt (7 Phasen, 26 Requirements)
-
-Progress: [░░░░░░░░░░] 0%
+Phase: 101
+Plan: 01 of 3 complete
 
 ## Performance Metrics
 
-**v2.8 Referenz (letzte 19 Plans):**
-
-| Phase | Plans | Avg/Plan |
-|-------|-------|----------|
-| 94 | 1 | 10 min |
-| 95 | 3 | ~54 min |
-| 96 | 4 | ~37 min |
-| 97 | 2 | ~4 min |
-| 98 | 3 | ~2 min |
-| 99 | 3 | ~3 min |
-| 100 | 3 | ~4 min |
+| Metric | Value |
+|--------|-------|
+| Requirements total | 64 |
+| Requirements mapped | 64 |
+| Phases planned | 7 |
+| Phases completed | 0 |
+| Plans completed | 0 |
+| Phase 94-globale-ui-patterns P01 | 10 | 2 tasks | 8 files |
+| Phase 95 P01 | 134 | 2 tasks | 4 files |
+| Phase 95-chat-farbschema-korrekturen P03 | 12 | 1 tasks | 3 files |
+| Phase 95-chat-farbschema-korrekturen P02 | 15 | 2 tasks | 4 files |
+| Phase 96-konfi-ui P01 | 8 | 2 tasks | 2 files |
+| Phase 96-konfi-ui P03 | 5 | 3 tasks | 4 files |
+| Phase 96-konfi-ui P02 | 2 | 2 tasks | 2 files |
+| Phase 96-konfi-ui P04 | 131 | 2 tasks | 1 files |
+| Phase 97-teamer-ui P02 | 5 | 2 tasks | 3 files |
+| Phase 97-teamer-ui P01 | 3 | 2 tasks | 1 files |
+| Phase 98 P03 | 1 | 2 tasks | 2 files |
+| Phase 98 P01 | 2 | 2 tasks | 3 files |
+| Phase 98 P02 | 3 | 2 tasks | 2 files |
+| Phase 99 P03 | 2 | 2 tasks | 3 files |
+| Phase 99 P01 | 4 | 2 tasks | 4 files |
+| Phase 99 P02 | 4 | 2 tasks | 3 files |
+| Phase 100 P02 | 2 | 2 tasks | 2 files |
+| Phase 100 P01 | 2 | 2 tasks | 2 files |
+| Phase 100 P03 | 8 | 2 tasks | 7 files |
+| Phase 101 P01 | 6 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
-### Decisions
+Alle v1.0-v2.7 Entscheidungen in PROJECT.md und milestones/ archiviert.
 
-- Research: server.js muss als createApp-Factory refactored werden (blockiert alle Tests)
-- Research: RBAC-Middleware wird NIEMALS gemockt — echte JWT-Tokens + echte Middleware
-- Research: Vitest sequentiell fuer DB-Tests (kein paralleles Ausfuehren)
-- Research: Playwright statt Cypress (2-3x schneller, Ionic empfohlen)
-- Research: Transaction-Rollback-Pattern fuer DB-Isolation pro Test
+### Phase-Uebersicht v2.8
+
+| Phase | Requirements | Inhalt |
+|-------|-------------|--------|
+| 94 | AUI-01, AUI-02 | Globale UI-Patterns (Slider, Listen-Abstand) |
+| 95 | TCH-01-04, KCH-01, ACH-01-06 | Chat-Farbschema + Korrekturen |
+| 96 | KDB-01-02, KEV-01-03, KBD-01-03, KAK-01, KHI-01-02, KPR-01-02 | Konfi UI |
+| 97 | TDB-01-03, TEV-01-04 | Teamer UI |
+| 98 | AAK-01-05, ATD-01, AAN-01-02, APR-01-02, AJG-01 | Admin Teil 1 |
+| 99 | AEV-01-08, ABG-01-02 | Admin Events + Bugs |
+| 100 | AZE-01-04, AMA-01-04, ADA-01-02 | Admin Teil 2 |
+
+### Phase-Uebersicht v2.9
+
+| Phase | Requirements | Inhalt |
+|-------|-------------|--------|
+| 101 | INF-01, INF-03, INF-06 | Test-Infrastruktur + server.js Refactoring |
+
+### Decisions v2.9
+
+- createApp Factory: Express-App ohne Seiteneffekte, server.js als Wrapper (101-01)
+- http.createServer() ohne Argument, dann server.on('request', app) nach createApp (101-01)
+- Rate-Limiters nur wenn uebergeben (if-Guards statt Pflicht) (101-01)
+- QR_SECRET in Vitest env (Top-Level Guard in Routes) (101-01)
 
 ### Pending Todos
 
-None yet.
+- v3.0 Onboarding + Landing geplant (nach v2.9)
 
 ### Blockers/Concerns
 
-- server.js ist monolithisch — createApp-Refactoring ist Voraussetzung fuer alle Backend-Tests
-- Routes mit internen Transaktionen (activities, events) brauchen TRUNCATE statt Transaction-Rollback
+(keine)
 
 ### Quick Tasks Completed
 
@@ -68,6 +98,3 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 260324-k6j | GitHub README mit allen 17 Milestones | 2026-03-24 | 38fede8 | [260324-k6j](./quick/260324-k6j-github-readme-aktualisieren-mit-allen-17/) |
 | 260324-lt3 | 6 Sicherheits- und Cleanup-Fixes | 2026-03-24 | 86104ae | [260324-lt3](./quick/260324-lt3-6-sicherheits-und-cleanup-fixes/) |
-| 260325-t3v | Konfi Events-Card wie Teamer + Badge/Spacing Fixes | 2026-03-25 | d008e89 | [260325-t3v](./quick/260325-t3v-konfi-dashboard-events-card-wie-teamer-b/) |
-| 260326-ak9 | Punkte-Uebersicht Stat-Bubbles 3+3 Reihen Layout | 2026-03-26 | 35edd7c | [260326-ak9](./quick/260326-ak9-punkte-uebersicht-stat-bubbles-wie-badge/) |
-| 260326-ao0 | Bugfix Events-Card 0-Events Layout + Badge Popover Skalierung | 2026-03-26 | 35e1396 | -- |
