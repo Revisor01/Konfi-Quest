@@ -7,12 +7,12 @@
 
 ### Test-Infrastruktur
 
-- [ ] **INF-01**: server.js refactored — Express-App exportierbar fuer supertest (createApp-Pattern)
+- [x] **INF-01**: server.js refactored — Express-App exportierbar fuer supertest (createApp-Pattern)
 - [x] **INF-02**: createTestApp Helper erstellt Test-Express-App mit echtem pg-Pool gegen Test-DB
 - [x] **INF-03**: Test-DB Lifecycle: Setup, Migration, Seed, Teardown pro Test-Suite
 - [x] **INF-04**: Auth-Test-Helpers generieren echte JWTs fuer alle 5 RBAC-Rollen
 - [x] **INF-05**: Seed-Fixtures fuer 2+ Organisationen, alle Rollen, Beispieldaten
-- [ ] **INF-06**: Vitest Backend-Config (vitest.config.backend.ts) mit sequentieller Ausfuehrung
+- [x] **INF-06**: Vitest Backend-Config (vitest.config.backend.ts) mit sequentieller Ausfuehrung
 
 ### Backend Integration Tests
 
@@ -73,12 +73,12 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INF-01 | Phase 101 | Pending |
+| INF-01 | Phase 101 | Complete |
 | INF-02 | Phase 101 | Complete |
 | INF-03 | Phase 101 | Complete |
 | INF-04 | Phase 101 | Complete |
 | INF-05 | Phase 101 | Complete |
-| INF-06 | Phase 101 | Pending |
+| INF-06 | Phase 101 | Complete |
 | BIT-01 | Phase 102 | Pending |
 | BIT-02 | Phase 102 | Pending |
 | BIT-03 | Phase 103 | Pending |
