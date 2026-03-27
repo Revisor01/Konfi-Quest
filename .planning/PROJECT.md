@@ -52,6 +52,8 @@ Auth-Routes auf RBAC migriert (gesperrte User sofort blockiert), Magic-Bytes Upl
 
 **Goal:** Umfassende Test-Suite ueber die gesamte App — Backend Integration Tests, Frontend Tests, E2E Tests, CI/CD Pipeline.
 
+**Phase 101 complete:** Test-Infrastruktur + server.js Refactoring — createApp Factory, Test-DB Lifecycle, Seed-Fixtures, Auth-Helpers, 6 Smoke-Tests gruen.
+
 **Target features:**
 - Vitest + supertest Integration-Tests fuer alle 15 Backend-Routes gegen echte PostgreSQL
 - Frontend Component/Unit Tests fuer kritische Flows
@@ -275,4 +277,4 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | file-type Magic-Bytes Upload | Client-MIME-Header allein nicht vertrauenswuerdig | Bestaetigt v2.7 |
 
 ---
-*Last updated: 2026-03-24 after v2.8 milestone start*
+*Last updated: 2026-03-27 after Phase 101 complete*
