@@ -135,8 +135,32 @@ module.exports = async function globalSetup() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- users braucht teamer_since (aus 064_consolidate)
+    -- users braucht zusaetzliche Spalten (historisch hinzugefuegt)
     ALTER TABLE users ADD COLUMN IF NOT EXISTS teamer_since DATE;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS is_super_admin BOOLEAN DEFAULT false;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS role_title VARCHAR(255);
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS token_invalidated_at TIMESTAMP;
+    -- organization_id muss NULL erlauben fuer super_admin
+    ALTER TABLE users ALTER COLUMN organization_id DROP NOT NULL;
+
+    -- custom_badges (Badge-Definitionen, genutzt von badges.js Route)
+    CREATE TABLE IF NOT EXISTS custom_badges (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      icon VARCHAR(100),
+      description TEXT,
+      criteria_type VARCHAR(50) NOT NULL,
+      criteria_value INTEGER,
+      criteria_extra JSONB,
+      is_hidden BOOLEAN DEFAULT false,
+      color VARCHAR(7) DEFAULT '#667eea',
+      sort_order INTEGER DEFAULT 0,
+      is_active BOOLEAN DEFAULT true,
+      target_role VARCHAR(10) DEFAULT 'konfi',
+      created_by INTEGER REFERENCES users(id),
+      organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   // 5. Backend init-scripts (z.B. 007_levels.sql — braucht organizations + users)
