@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.9
-milestone_name: Test-Suite + CI/CD
-status: In Progress
-last_updated: "2026-03-27T12:22:18Z"
+milestone: v1.0
+milestone_name: milestone
+status: Ready to execute
+last_updated: "2026-03-27T12:38:43.888Z"
 progress:
-  total_phases: 7
+  total_phases: 1
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -23,7 +23,7 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 ## Current Position
 
 Phase: 101
-Plan: 01 of 3 complete
+Plan: 2 of 3 complete
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Plan: 01 of 3 complete
 | Phase 100 P01 | 2 | 2 tasks | 2 files |
 | Phase 100 P03 | 8 | 2 tasks | 7 files |
 | Phase 101 P01 | 6 | 2 tasks | 6 files |
+| Phase 101 P02 | 5 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,9 @@ Alle v1.0-v2.7 Entscheidungen in PROJECT.md und milestones/ archiviert.
 - http.createServer() ohne Argument, dann server.on('request', app) nach createApp (101-01)
 - Rate-Limiters nur wenn uebergeben (if-Guards statt Pflicht) (101-01)
 - QR_SECRET in Vitest env (Top-Level Guard in Routes) (101-01)
+- Repo-Root init-scripts als Schema-Basis, fehlende Tabellen inline in globalSetup (101-02)
+- custom_badges statt badges fuer Seed — Routes nutzen criteria_type (101-02)
+- Rollen pro Org dupliziert wegen UNIQUE(name, organization_id) Constraint (101-02)
 
 ### Pending Todos
 
