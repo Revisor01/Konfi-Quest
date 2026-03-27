@@ -3,11 +3,9 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
+    maxWorkers: 1,
+    minWorkers: 1,
+    globals: true,
     globalSetup: ['./tests/globalSetup.js'],
     include: ['tests/**/*.test.{js,ts}'],
     env: {

@@ -19,11 +19,19 @@ module.exports = async function globalSetup() {
   const testPool = new Pool({ connectionString: testUrl });
 
   // 3. Basis-Schema aus repo-root init-scripts (Kern-Tabellen)
+  //    Einzelne Statements ausfuehren um fehlerhafte Partial Indexes zu ueberspringen
   const repoInitDir = path.join(__dirname, '..', '..', 'init-scripts');
   if (fs.existsSync(repoInitDir)) {
     const initFiles = fs.readdirSync(repoInitDir).filter(f => f.endsWith('.sql')).sort();
     for (const file of initFiles) {
-      await testPool.query(fs.readFileSync(path.join(repoInitDir, file), 'utf8'));
+      let sql = fs.readFileSync(path.join(repoInitDir, file), 'utf8');
+      // Problematische Partial Indexes entfernen (CURRENT_TIMESTAMP ist nicht IMMUTABLE)
+      sql = sql.replace(/CREATE INDEX[^;]*WHERE[^;]*CURRENT_TIMESTAMP[^;]*;/gi, '-- removed non-immutable partial index');
+      try {
+        await testPool.query(sql);
+      } catch (err) {
+        console.warn(`[globalSetup] init-script ${file} Warnung: ${err.message.substring(0, 100)}`);
+      }
     }
   }
 
@@ -100,6 +108,7 @@ module.exports = async function globalSetup() {
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       badge_id INTEGER NOT NULL REFERENCES badges(id) ON DELETE CASCADE,
       organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+      awarded_date DATE DEFAULT CURRENT_DATE,
       awarded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(user_id, badge_id)
     );
@@ -140,8 +149,46 @@ module.exports = async function globalSetup() {
     ALTER TABLE users ADD COLUMN IF NOT EXISTS is_super_admin BOOLEAN DEFAULT false;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS role_title VARCHAR(255);
     ALTER TABLE users ADD COLUMN IF NOT EXISTS token_invalidated_at TIMESTAMP;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255);
     -- organization_id muss NULL erlauben fuer super_admin
     ALTER TABLE users ALTER COLUMN organization_id DROP NOT NULL;
+
+    -- jahrgaenge braucht Punkte-Konfiguration + Konfirmationsdatum
+    ALTER TABLE jahrgaenge ADD COLUMN IF NOT EXISTS confirmation_date DATE;
+    ALTER TABLE jahrgaenge ADD COLUMN IF NOT EXISTS gottesdienst_enabled BOOLEAN DEFAULT true;
+    ALTER TABLE jahrgaenge ADD COLUMN IF NOT EXISTS gemeinde_enabled BOOLEAN DEFAULT true;
+    ALTER TABLE jahrgaenge ADD COLUMN IF NOT EXISTS target_gottesdienst INTEGER DEFAULT 10;
+    ALTER TABLE jahrgaenge ADD COLUMN IF NOT EXISTS target_gemeinde INTEGER DEFAULT 10;
+
+    -- konfi_profiles braucht bible_translation
+    ALTER TABLE konfi_profiles ADD COLUMN IF NOT EXISTS bible_translation VARCHAR(100);
+    ALTER TABLE konfi_profiles ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id);
+
+    -- events braucht has_timeslots (falls nicht in init-script)
+    ALTER TABLE events ADD COLUMN IF NOT EXISTS has_timeslots BOOLEAN DEFAULT false;
+
+    -- refresh_tokens (JWT Refresh Token Store)
+    CREATE TABLE IF NOT EXISTS refresh_tokens (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash VARCHAR(255) NOT NULL,
+      expires_at TIMESTAMP NOT NULL,
+      revoked_at TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- push_tokens (Push-Notifications)
+    CREATE TABLE IF NOT EXISTS push_tokens (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token TEXT NOT NULL,
+      platform VARCHAR(20),
+      device_id VARCHAR(255),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, token)
+    );
 
     -- custom_badges (Badge-Definitionen, genutzt von badges.js Route)
     CREATE TABLE IF NOT EXISTS custom_badges (
@@ -176,6 +223,11 @@ module.exports = async function globalSetup() {
       }
     }
   }
+
+  // 5.5 Fehlende Spalten auf Tabellen die erst durch Backend-init-scripts erstellt wurden
+  await testPool.query(`
+    ALTER TABLE levels ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0;
+  `).catch(() => {});
 
   // 6. Migrationen ausfuehren (identisch mit database.js runMigrations)
   await testPool.query(`
