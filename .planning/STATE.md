@@ -18,12 +18,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 101 — test-infrastruktur-server-js-refactoring
+**Current focus:** Phase 102 — auth-rbac-integration-tests
 
 ## Current Position
 
-Phase: 101
-Plan: Not started
+Phase: 102
+Plan: 02 of 2 complete
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Plan: Not started
 | Phase 101 P01 | 6 | 2 tasks | 6 files |
 | Phase 101 P02 | 5 | 2 tasks | 7 files |
 | Phase 101 P03 | 383 | 1 tasks | 3 files |
+| Phase 102 P02 | 733 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -88,6 +89,9 @@ Alle v1.0-v2.7 Entscheidungen in PROJECT.md und milestones/ archiviert.
 - Repo-Root init-scripts als Schema-Basis, fehlende Tabellen inline in globalSetup (101-02)
 - custom_badges statt badges fuer Seed — Routes nutzen criteria_type (101-02)
 - Rollen pro Org dupliziert wegen UNIQUE(name, organization_id) Constraint (101-02)
+- Teamer-Dashboard hat eigenen role_name-Check, /teamer/konfis als requireTeamer-Repraesentant (102-02)
+- SuperAdmin nicht in requireTeamer/requireAdmin/requireOrgAdmin — nur /api/organizations (102-02)
+- activities.type, events.cancelled als fehlende Schema-Spalten in globalSetup ergaenzt (102-02)
 
 ### Pending Todos
 

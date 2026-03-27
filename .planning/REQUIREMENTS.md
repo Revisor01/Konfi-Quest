@@ -17,7 +17,7 @@
 ### Backend Integration Tests
 
 - [ ] **BIT-01**: Auth-Routes getestet (Login, Register, Refresh, Logout, Passwort-Reset)
-- [ ] **BIT-02**: RBAC-Matrix getestet — jede Route prueft alle 5 Rollen + Org-Isolation
+- [x] **BIT-02**: RBAC-Matrix getestet — jede Route prueft alle 5 Rollen + Org-Isolation
 - [ ] **BIT-03**: Activities-Routes getestet (CRUD, Punkte-Vergabe, Kategorie-Filter)
 - [ ] **BIT-04**: Events-Routes getestet (Erstellen, Buchen, Timeslots, Warteliste, Absagen)
 - [ ] **BIT-05**: Konfi-Routes getestet (Profil, Punkte-History, Dashboard-Daten)
@@ -80,7 +80,7 @@
 | INF-05 | Phase 101 | Complete |
 | INF-06 | Phase 101 | Complete |
 | BIT-01 | Phase 102 | Pending |
-| BIT-02 | Phase 102 | Pending |
+| BIT-02 | Phase 102 | Complete |
 | BIT-03 | Phase 103 | Pending |
 | BIT-04 | Phase 103 | Pending |
 | BIT-05 | Phase 103 | Pending |
