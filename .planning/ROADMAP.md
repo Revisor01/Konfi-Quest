@@ -297,7 +297,11 @@ Phase 100: Admin Zertifikate, Material, Dashboard (3 plans, complete)
   2. server.js exportiert eine createApp-Funktion die eine Express-App ohne listen(), ohne Firebase, ohne Cron zurueckgibt
   3. Test-DB wird automatisch erstellt, migriert, geseeded und nach dem Testlauf geloescht
   4. Auth-Helpers erzeugen gueltige JWT-Tokens fuer alle 5 RBAC-Rollen (konfi, teamer, admin, orgadmin, superadmin) in 2 verschiedenen Organisationen
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 101-01-PLAN.md -- createApp Factory + Vitest-Config + docker-compose.test.yml
+- [ ] 101-02-PLAN.md -- Test-DB Lifecycle + Auth-Helpers + Seed-Fixtures
+- [ ] 101-03-PLAN.md -- Smoke-Test (validiert gesamte Infrastruktur)
 
 ### Phase 102: Auth + RBAC Integration Tests
 **Goal**: Authentifizierung und Autorisierung sind lueckenlos getestet -- kein Login-Bug, kein Cross-Org-Zugriff, kein Rollen-Bypass geht unbemerkt durch
@@ -307,7 +311,11 @@ Phase 100: Admin Zertifikate, Material, Dashboard (3 plans, complete)
   1. Auth-Lifecycle komplett getestet: Login mit korrekten/falschen Credentials, Token-Refresh, Logout-Revoke, gesperrter User wird abgelehnt
   2. RBAC-Matrix prueft fuer jeden geschuetzten Endpoint alle 5 Rollen -- unberechtigte Zugriffe erhalten 403
   3. Cross-Org-Isolation verifiziert: Admin von Org A kann keine Daten von Org B lesen oder aendern
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 101-01-PLAN.md -- createApp Factory + Vitest-Config + docker-compose.test.yml
+- [ ] 101-02-PLAN.md -- Test-DB Lifecycle + Auth-Helpers + Seed-Fixtures
+- [ ] 101-03-PLAN.md -- Smoke-Test (validiert gesamte Infrastruktur)
 
 ### Phase 103: Core Business Integration Tests
 **Goal**: Die fuenf geschaeftskritischen Route-Gruppen (Activities, Events, Konfi, Chat, Badges) sind mit Integration-Tests abgesichert
@@ -319,7 +327,11 @@ Phase 100: Admin Zertifikate, Material, Dashboard (3 plans, complete)
   3. Konfi-Tests pruefen Profil-Abruf, Punkte-History und Dashboard-Daten-Aggregation
   4. Chat-Tests pruefen Raum-Erstellung, Nachrichten-CRUD, Teilnehmer-Verwaltung und Datei-Endpoints
   5. Badge-Tests pruefen manuelle Vergabe, Level-Zuordnung, Auto-Award-Trigger und Progress-Berechnung
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 101-01-PLAN.md -- createApp Factory + Vitest-Config + docker-compose.test.yml
+- [ ] 101-02-PLAN.md -- Test-DB Lifecycle + Auth-Helpers + Seed-Fixtures
+- [ ] 101-03-PLAN.md -- Smoke-Test (validiert gesamte Infrastruktur)
 
 ### Phase 104: Remaining Routes Integration Tests
 **Goal**: Alle verbleibenden Backend-Routes haben Integration-Tests -- die gesamte API ist abgesichert
@@ -329,7 +341,11 @@ Phase 100: Admin Zertifikate, Material, Dashboard (3 plans, complete)
   1. Tests existieren fuer categories, jahrgaenge, levels, notifications, organizations, roles, settings, users
   2. Tests existieren fuer bonus, material, teamer und wrapped Routes
   3. Jeder Test prueft mindestens den Happy-Path (200) und einen Fehlerfall (401/403/404)
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 101-01-PLAN.md -- createApp Factory + Vitest-Config + docker-compose.test.yml
+- [ ] 101-02-PLAN.md -- Test-DB Lifecycle + Auth-Helpers + Seed-Fixtures
+- [ ] 101-03-PLAN.md -- Smoke-Test (validiert gesamte Infrastruktur)
 
 ### Phase 105: CI/CD Pipeline
 **Goal**: Tests laufen automatisch bei jedem Push und blockieren Deployments bei Fehlern
@@ -340,7 +356,11 @@ Phase 100: Admin Zertifikate, Material, Dashboard (3 plans, complete)
   2. Frontend-Tests (Vitest) laufen als separater Job in der CI Pipeline
   3. npm audit bricht den Workflow bei critical oder high Vulnerabilities ab
   4. Deployment (Portainer Webhook) wird nur bei gruenen Tests ausgeloest -- rote Tests blockieren das Deployment
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 101-01-PLAN.md -- createApp Factory + Vitest-Config + docker-compose.test.yml
+- [ ] 101-02-PLAN.md -- Test-DB Lifecycle + Auth-Helpers + Seed-Fixtures
+- [ ] 101-03-PLAN.md -- Smoke-Test (validiert gesamte Infrastruktur)
 
 ### Phase 106: Frontend Tests
 **Goal**: Kritische Frontend-Logik (Hooks, Utilities, Kern-Komponenten) ist mit Tests abgesichert
@@ -350,7 +370,11 @@ Phase 100: Admin Zertifikate, Material, Dashboard (3 plans, complete)
   1. useOfflineQuery, useActionGuard und AppContext haben Tests die Kern-Verhalten verifizieren (Caching, Online-Guard, Rollen-Kontext)
   2. tokenStore, networkMonitor und api-Service haben Unit-Tests fuer alle oeffentlichen Methoden
   3. Mindestens 5 Component-Tests existieren (Dashboard, Login, EventDetail oder vergleichbare kritische Views)
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 101-01-PLAN.md -- createApp Factory + Vitest-Config + docker-compose.test.yml
+- [ ] 101-02-PLAN.md -- Test-DB Lifecycle + Auth-Helpers + Seed-Fixtures
+- [ ] 101-03-PLAN.md -- Smoke-Test (validiert gesamte Infrastruktur)
 **UI hint**: yes
 
 ### Phase 107: E2E Tests mit Playwright
@@ -363,7 +387,11 @@ Phase 100: Admin Zertifikate, Material, Dashboard (3 plans, complete)
   3. Punkte-Vergabe E2E: Admin vergibt Aktivitaet an Konfi, Punkte erscheinen im Konfi-Profil
   4. Event-Buchung E2E: Konfi bucht ein Event, Buchung erscheint in der Event-Liste
   5. Chat E2E: Nachricht wird gesendet und beim Empfaenger angezeigt
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 101-01-PLAN.md -- createApp Factory + Vitest-Config + docker-compose.test.yml
+- [ ] 101-02-PLAN.md -- Test-DB Lifecycle + Auth-Helpers + Seed-Fixtures
+- [ ] 101-03-PLAN.md -- Smoke-Test (validiert gesamte Infrastruktur)
 
 ## Progress
 
