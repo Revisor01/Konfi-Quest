@@ -1,641 +1,617 @@
-# Architecture: Offline-Layer Integration
+# Architecture Research: Test-Suite + CI/CD Integration
 
-**Projekt:** Konfi Quest v2.1 App-Resilienz
-**Recherchiert:** 2026-03-19
-**Fokus:** Wie Offline-Cache, Schreib-Queue und Sync in die bestehende Axios + Socket.io + React Context Architektur integriert werden
+**Domain:** Testing & CI/CD fuer bestehende Express+Ionic App
+**Researched:** 2026-03-27
+**Confidence:** HIGH
 
-## Ist-Zustand: Datenfluss heute
-
-```
-Page (z.B. KonfiDashboardPage)
-  |-- useEffect -> api.get('/konfi/dashboard') -> setState(response.data)
-  |-- useLiveRefresh(['dashboard', 'events', 'badges'], refreshAllData)
-  |-- IonRefresher -> loadDashboardData()
-
-api.ts (Axios)
-  |-- Request Interceptor: JWT aus localStorage
-  |-- Response Interceptor: 401 -> Logout, 429 -> Rate-Limit Event
-
-websocket.ts (Socket.io)
-  |-- initializeWebSocket(token) -> singleton Socket
-  |-- Events: newMessage, liveUpdate, joinRoom, leaveRoom
-
-Contexts:
-  |-- AppContext: user, error, success, push permissions
-  |-- BadgeContext: chatUnreadByRoom, pendingRequests/Events, WebSocket listener
-  |-- LiveUpdateContext: subscribe/unsubscribe Pub-Sub fuer WebSocket-Events
-  |-- ModalContext: presentingElement Management
-```
-
-### Aktuelles Datenladen-Pattern (in jeder Page)
-
-```typescript
-// Typisches Pattern in ~30 Pages:
-const [data, setData] = useState(null);
-const [loading, setLoading] = useState(true);
-
-const loadData = async () => {
-  setLoading(true);
-  try {
-    const response = await api.get('/endpoint');
-    setData(response.data);
-  } catch (err) {
-    setError('Fehler beim Laden');
-  } finally {
-    setLoading(false);
-  }
-};
-
-useEffect(() => { loadData(); }, []);
-useLiveRefresh('type', loadData);
-```
-
-**Wichtige Beobachtungen:**
-- Kein zentraler Data-Layer -- jede Page holt eigene Daten direkt via `api.get()`
-- Kein Caching -- jeder Seitenwechsel laedt alles neu
-- Kein Offline-Handling -- Netzfehler zeigen generische Fehlermeldung
-- localStorage nur fuer Auth (token, user, device_id) -- keine Datencaches
-- Socket.io hat bereits Reconnection-Logik (10 Versuche, 1s Delay)
-- IonRefresher (Pull-to-Refresh) existiert auf den meisten Pages
-
----
-
-## Empfohlene Architektur: Cache-First mit Schreib-Queue
-
-### Architektur-Ueberblick
+## System Overview: Test-Infrastruktur
 
 ```
-                                  FRONTEND
- +-----------------------------------------------------------------+
- |                                                                   |
- |  Pages (unveraendert)                                             |
- |    |                                                              |
- |    v                                                              |
- |  useOfflineQuery(key, fetcher)   <-- Neuer Hook, ersetzt         |
- |    |                                 direktes api.get()           |
- |    v                                                              |
- |  OfflineCache (Singleton Service)                                 |
- |    |-- get(key): CachedData | null                                |
- |    |-- set(key, data, ttl)                                        |
- |    |-- invalidate(key | pattern)                                  |
- |    |-- Storage: Capacitor Preferences (nativ) / localStorage      |
- |    |                                                              |
- |  WriteQueue (Singleton Service)                                   |
- |    |-- enqueue(method, url, body, metadata)                       |
- |    |-- flush(): Promise<Results>                                  |
- |    |-- getQueue(): QueueItem[]                                    |
- |    |-- Storage: Capacitor Preferences                             |
- |    |                                                              |
- |  NetworkMonitor (Singleton Service)                               |
- |    |-- isOnline: boolean                                          |
- |    |-- subscribe(callback)                                        |
- |    |-- Uses: Capacitor Network Plugin + navigator.onLine          |
- |    |                                                              |
- |  SyncManager (Singleton Service)                                  |
- |    |-- syncOnResume(): void                                       |
- |    |-- syncPeriodic(): void                                       |
- |    |-- Koordiniert: WriteQueue.flush + Cache-Invalidierung        |
- |    |                                                              |
- |  OfflineBanner (UI-Komponente)                                    |
- |    |-- Zeigt Status an: offline / syncing / online                |
- |    |                                                              |
- +-----------------------------------------------------------------+
-
-                                  BACKEND
- +-----------------------------------------------------------------+
- |  Neue Endpoints:                                                  |
- |    GET /sync/changes?since=timestamp                              |
- |      -> Inkrementelle Aenderungen seit letztem Sync               |
- |    POST /sync/batch                                               |
- |      -> Mehrere Schreiboperationen auf einmal                     |
- |  Aenderungen an bestehenden Endpoints:                            |
- |    Alle GET-Responses: + updated_at Feld                          |
- |    Chat-Nachrichten: + client_id fuer Deduplizierung              |
- +-----------------------------------------------------------------+
+┌─────────────────────────────────────────────────────────────────────┐
+│                      GitHub Actions CI Pipeline                     │
+├─────────────────────────────────────────────────────────────────────┤
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐              │
+│  │ Backend      │  │ Frontend     │  │ E2E          │              │
+│  │ Integration  │  │ Component    │  │ Playwright   │              │
+│  │ Tests        │  │ Tests        │  │ Tests        │              │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘              │
+│         │                 │                 │                       │
+├─────────┴─────────────────┴─────────────────┴───────────────────────┤
+│                      Test Infrastructure                            │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐              │
+│  │ PostgreSQL   │  │ jsdom        │  │ Backend +    │              │
+│  │ Service      │  │ (Vitest)     │  │ Frontend     │              │
+│  │ Container    │  │              │  │ (Docker)     │              │
+│  └──────────────┘  └──────────────┘  └──────────────┘              │
+├─────────────────────────────────────────────────────────────────────┤
+│  npm audit  │  TypeScript Check  │  ESLint  │  Deploy Gate          │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
----
+### Bestehende Architektur-Eigenheiten
 
-## Neue Komponenten (6 Dateien)
-
-### 1. `frontend/src/services/offlineCache.ts` -- Cache-Storage
-
-```typescript
-// Schnittstelle:
-interface CacheEntry<T> {
-  data: T;
-  timestamp: number;    // Wann gecacht
-  ttl: number;          // Time-to-live in ms
-  version: number;      // Schema-Version fuer Migrationen
-}
-
-class OfflineCache {
-  async get<T>(key: string): Promise<CacheEntry<T> | null>;
-  async set<T>(key: string, data: T, ttl?: number): Promise<void>;
-  async invalidate(pattern: string): Promise<void>;  // z.B. 'events:*'
-  async clear(): Promise<void>;
-  isStale(entry: CacheEntry<any>): boolean;
-}
-```
-
-**Storage-Entscheidung:** `@capacitor/preferences` (nicht Filesystem, nicht IndexedDB).
-
-Gruende:
-- Bereits im Capacitor-Oekosystem (kein neues Plugin)
-- Key-Value String-Storage, perfekt fuer JSON-serialisierte API-Responses
-- Nativ auf iOS (UserDefaults) und Android (SharedPreferences)
-- Synchron auf nativen Plattformen, async API
-- Limit: ~1MB pro Key ist ausreichend -- groesste Response (Dashboard) ist <50KB
-- Web-Fallback: localStorage (bereits im Einsatz)
-
-**Cache-Keys nach Konvention:**
-```
-cache:konfi:dashboard:{userId}
-cache:konfi:events:{userId}
-cache:konfi:badges:{userId}
-cache:konfi:profile:{userId}
-cache:chat:rooms:{userId}
-cache:chat:messages:{roomId}:page:{n}
-cache:admin:konfis:{orgId}
-cache:admin:events:{orgId}
-```
-
-**TTL-Defaults:**
-| Datentyp | TTL | Begruendung |
-|----------|-----|-------------|
-| Dashboard | 5 Min | Punkte aendern sich selten |
-| Events | 10 Min | Registrierungsstatus relevant |
-| Badges | 30 Min | Aendern sich sehr selten |
-| Chat-Rooms | 2 Min | Unread-Counts muessen aktuell sein |
-| Chat-Messages | 1 Stunde | Historische Nachrichten aendern sich nicht |
-| Profil | 15 Min | Aendert sich selten |
-| Admin-Listen | 5 Min | Muessen relativ aktuell sein |
-
-### 2. `frontend/src/services/writeQueue.ts` -- Offline-Schreib-Queue
-
-```typescript
-interface QueueItem {
-  id: string;           // UUID, fuer Deduplizierung
-  method: 'POST' | 'PUT' | 'DELETE';
-  url: string;
-  body: any;
-  createdAt: number;
-  retryCount: number;
-  maxRetries: number;
-  metadata: {
-    type: 'chat_message' | 'activity_request' | 'event_booking';
-    displayText: string;  // Fuer UI: "Nachricht an Allgemein"
-  };
-}
-
-class WriteQueue {
-  async enqueue(item: Omit<QueueItem, 'id' | 'createdAt' | 'retryCount'>): Promise<string>;
-  async flush(): Promise<FlushResult>;
-  async getQueue(): Promise<QueueItem[]>;
-  async remove(id: string): Promise<void>;
-  async clear(): Promise<void>;
-  get pendingCount(): number;
-}
-```
-
-**Scope der Queue -- NUR diese Operationen:**
-1. Chat-Nachrichten (`POST /chat/rooms/:id/messages`)
-2. Aktivitaets-Antraege (`POST /konfi/activities/:id/request`)
-
-**NICHT in der Queue (zu komplex/riskant):**
-- Event-Buchungen (Kapazitaetspruefung noetig)
-- Admin-Operationen (Punkte vergeben, Konfis verwalten)
-- Passwort-Aenderungen
-- Datei-Uploads
-
-**Deduplizierung:** Jedes QueueItem bekommt eine `client_id` (UUID). Backend prueft bei Chat-Messages auf Duplikate per `client_id`.
-
-### 3. `frontend/src/services/networkMonitor.ts` -- Netzwerkstatus
-
-```typescript
-class NetworkMonitor {
-  isOnline: boolean;
-  connectionType: 'wifi' | 'cellular' | 'none' | 'unknown';
-  subscribe(callback: (online: boolean) => void): () => void;
-
-  // Nutzt:
-  // - @capacitor/network Plugin (nativ)
-  // - navigator.onLine + online/offline Events (Web)
-}
-```
-
-**Neues Plugin noetig:** `@capacitor/network` (noch nicht in package.json).
-
-### 4. `frontend/src/services/syncManager.ts` -- Sync-Koordinator
-
-```typescript
-class SyncManager {
-  // Bei App-Resume (appStateChange -> isActive)
-  async syncOnResume(): Promise<void>;
-
-  // Periodisch (alle 5 Min wenn online)
-  startPeriodicSync(intervalMs?: number): void;
-  stopPeriodicSync(): void;
-
-  // Bei Reconnect (WebSocket 'connect' Event)
-  async syncOnReconnect(): Promise<void>;
-
-  // Ablauf:
-  // 1. WriteQueue.flush() -- ausstehende Schreiboperationen senden
-  // 2. Inkrementeller Sync via GET /sync/changes?since=lastSync
-  // 3. Betroffene Cache-Keys invalidieren
-  // 4. Window Event 'sync-complete' dispatchen -> Pages refreshen
-}
-```
-
-### 5. `frontend/src/hooks/useOfflineQuery.ts` -- Der zentrale Hook
-
-```typescript
-interface UseOfflineQueryResult<T> {
-  data: T | null;
-  loading: boolean;
-  error: string | null;
-  isStale: boolean;      // Daten aus Cache, Revalidierung laeuft
-  isOffline: boolean;
-  refresh: () => Promise<void>;
-}
-
-function useOfflineQuery<T>(
-  cacheKey: string,
-  fetcher: () => Promise<T>,
-  options?: {
-    ttl?: number;
-    enabled?: boolean;     // Conditional fetching
-    onSuccess?: (data: T) => void;
-  }
-): UseOfflineQueryResult<T>;
-```
-
-**Ablauf des Hooks:**
-```
-1. Cache lesen -> wenn vorhanden: sofort data setzen (isStale = true wenn TTL abgelaufen)
-2. Wenn online: fetcher() aufrufen
-   -> Erfolg: data aktualisieren, Cache schreiben, isStale = false
-   -> Fehler: Cache-Daten behalten, error setzen
-3. Wenn offline: Cache-Daten anzeigen (isStale = true), kein Fetch
-```
-
-### 6. `frontend/src/components/common/OfflineBanner.tsx` -- UI-Komponente
-
-```typescript
-// Kleiner Banner oben in der App wenn offline
-// Zeigt: "Offline - Daten werden angezeigt aus dem Cache"
-// Oder: "Synchronisiere..." mit Spinner
-// Verschwindet automatisch wenn online
-```
-
-**Positionierung:** In der App-Shell (App.tsx), ueber allen Pages. Nutzt `IonToast` oder absolut positioniertes div.
-
----
-
-## Aenderungen an bestehenden Dateien
-
-### Aenderungs-Matrix
-
-| Datei | Aenderung | Aufwand |
-|-------|-----------|---------|
-| `services/api.ts` | Offline-Erkennung im Response-Interceptor, Retry-Logik | Klein |
-| `contexts/AppContext.tsx` | `isOnline` State + NetworkMonitor Integration | Klein |
-| `contexts/BadgeContext.tsx` | Cache fuer Badge-Counts, Offline-Fallback | Mittel |
-| `contexts/LiveUpdateContext.tsx` | Bei reconnect -> SyncManager.syncOnReconnect() | Klein |
-| `services/websocket.ts` | reconnect Event -> SyncManager triggern | Klein |
-| Jede Page mit `api.get()` (~25 Pages) | `api.get()` durch `useOfflineQuery()` ersetzen | Mittel (repetitiv) |
-| `ChatRoom.tsx` | sendMessage -> WriteQueue bei offline | Mittel |
-| `App.tsx` | OfflineBanner + NetworkMonitor Init | Klein |
-| `package.json` | + @capacitor/network, @capacitor/preferences | Trivial |
-
-### Detail: `services/api.ts` Aenderungen
-
-```typescript
-// BESTEHEND (bleibt):
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // 401 Handler (bleibt)
-    // 429 Handler (bleibt)
-
-    // NEU: Retry-Logik fuer transiente Fehler
-    if (isRetryableError(error) && !error.config.__retryCount) {
-      error.config.__retryCount = (error.config.__retryCount || 0) + 1;
-      if (error.config.__retryCount <= 3) {
-        const delay = Math.pow(2, error.config.__retryCount) * 1000; // 2s, 4s, 8s
-        return new Promise(resolve =>
-          setTimeout(() => resolve(api(error.config)), delay)
-        );
-      }
-    }
-
-    return Promise.reject(error);
-  }
-);
-
-function isRetryableError(error: any): boolean {
-  // Netzwerkfehler (kein Response) oder 5xx Server-Fehler
-  return !error.response || (error.response.status >= 500 && error.response.status < 600);
-}
-```
-
-### Detail: Jede Page migrieren (Beispiel KonfiDashboardPage)
-
-```typescript
-// VORHER:
-const [dashboardData, setDashboardData] = useState(null);
-const [loading, setLoading] = useState(true);
-
-const loadDashboardData = async () => {
-  setLoading(true);
-  try {
-    const response = await api.get('/konfi/dashboard');
-    setDashboardData(response.data);
-  } catch (err) {
-    setError('Fehler beim Laden');
-  } finally {
-    setLoading(false);
-  }
-};
-
-useEffect(() => { loadDashboardData(); }, []);
-
-// NACHHER:
-const {
-  data: dashboardData,
-  loading,
-  isStale,
-  refresh: refreshDashboard
-} = useOfflineQuery(
-  `konfi:dashboard:${user?.id}`,
-  () => api.get('/konfi/dashboard').then(r => r.data),
-  { ttl: 5 * 60 * 1000 }
-);
-
-// useLiveRefresh bleibt, ruft jetzt refresh() statt loadData() auf
-useLiveRefresh(['dashboard'], refreshDashboard);
-```
-
-**Migration-Aufwand pro Page:** ~10 Minuten. Mechanische Aenderung, kein Redesign.
-
-### Detail: ChatRoom.tsx -- Offline-Schreib-Queue
-
-```typescript
-// VORHER:
-const sendMessage = async () => {
-  await api.post(`/chat/rooms/${room.id}/messages`, formData, { ... });
-};
-
-// NACHHER:
-const sendMessage = async () => {
-  const clientId = crypto.randomUUID();
-
-  if (!networkMonitor.isOnline) {
-    // Optimistisch in UI anzeigen
-    addOptimisticMessage({ clientId, content, status: 'pending' });
-
-    // In Queue einreihen
-    await writeQueue.enqueue({
-      method: 'POST',
-      url: `/chat/rooms/${room.id}/messages`,
-      body: { ...formData, client_id: clientId },
-      maxRetries: 5,
-      metadata: { type: 'chat_message', displayText: `Nachricht an ${room.name}` }
-    });
-    return;
-  }
-
-  // Online: direkt senden (wie bisher)
-  await api.post(`/chat/rooms/${room.id}/messages`, { ...formData, client_id: clientId });
-};
-```
-
----
-
-## Backend-Aenderungen
-
-### Neue Endpoints
-
-#### `GET /sync/changes?since=timestamp`
+Das Backend nutzt ein **Factory-Function-Pattern** -- jede Route-Datei exportiert eine Funktion, die `db`, `rbacVerifier`, `roleHelpers` und weitere Dependencies injiziert bekommt:
 
 ```javascript
-// Gibt alle Aenderungen seit dem Timestamp zurueck
-// Gruppiert nach Typ, damit Frontend weiss welche Caches zu invalidieren
-router.get('/sync/changes', verifyTokenRBAC, async (req, res) => {
-  const since = new Date(parseInt(req.query.since));
-  const userId = req.user.id;
-  const orgId = req.user.organization_id;
+// activities.js
+module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwardBadges) => { ... }
+// auth.js
+module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters, rbacVerifier) => { ... }
+```
 
-  const changes = {
-    dashboard: await hasDashboardChanges(userId, since),
-    events: await hasEventChanges(orgId, since),
-    badges: await hasBadgeChanges(userId, since),
-    chat: await hasChatChanges(userId, since),
-    // ... weitere Typen
-  };
+Das ist der **zentrale Hebelpunkt** fuer Integration-Tests: Die `db`-Dependency kann durch einen Test-Pool ersetzt werden, der auf eine isolierte Test-Datenbank zeigt.
 
-  res.json({ changes, serverTime: Date.now() });
+**Wichtig:** Das Backend ist CommonJS (`require`), das Frontend ist ESM (`import`). Die Test-Konfigurationen muessen das beruecksichtigen.
+
+## Neue Komponenten
+
+### 1. Backend Test-Infrastruktur (NEU)
+
+| Komponente | Datei(en) | Zweck |
+|------------|-----------|-------|
+| Test-DB-Setup | `backend/tests/setup.js` | PostgreSQL-Pool auf Test-DB, Migrations, Seed, Teardown |
+| App-Factory | `backend/tests/createTestApp.js` | Express-App mit Test-DB + gemockten Services erstellen |
+| Auth-Helper | `backend/tests/helpers/auth.js` | JWT-Tokens fuer verschiedene Rollen generieren |
+| Seed-Data | `backend/tests/helpers/seed.js` | Minimale Testdaten (Org, Rollen, Users, Jahrgang) |
+| Route-Tests | `backend/tests/routes/*.test.js` | Ein Testfile pro Route-Datei (18 Dateien) |
+
+### 2. Frontend Test-Erweiterungen (MODIFIZIERT)
+
+| Komponente | Datei(en) | Zweck |
+|------------|-----------|-------|
+| Setup erweitert | `frontend/src/setupTests.ts` | Ionic-Mocks, Capacitor-Mocks hinzufuegen |
+| Test-Utils | `frontend/src/tests/testUtils.tsx` | Custom render mit AppContext/Router-Wrapper |
+| Hook-Tests | `frontend/src/hooks/__tests__/` | useOfflineQuery, useActionGuard |
+| Context-Tests | `frontend/src/contexts/__tests__/` | AppContext Login/Logout Flows |
+
+### 3. E2E Test-Infrastruktur (NEU)
+
+| Komponente | Datei(en) | Zweck |
+|------------|-----------|-------|
+| Playwright Config | `e2e/playwright.config.ts` | Browser-Setup, Base-URL, Timeouts |
+| Page Objects | `e2e/pages/*.ts` | LoginPage, DashboardPage, EventsPage, ChatPage |
+| Test Specs | `e2e/tests/*.spec.ts` | Kernpfade: Login, Punkte, Events, Chat |
+| Docker Compose | `e2e/docker-compose.test.yml` | Backend + DB + Frontend fuer E2E |
+| Global Setup | `e2e/global-setup.ts` | DB-Seed, Server-Start, Health-Check |
+
+### 4. CI/CD Pipeline (NEU + MODIFIZIERT)
+
+| Komponente | Datei(en) | Zweck |
+|------------|-----------|-------|
+| Test-Workflow | `.github/workflows/test.yml` | NEU: Tests bei jedem Push auf alle Branches |
+| Backend-Workflow | `.github/workflows/backend.yml` | MODIFIZIERT: `needs: test` hinzufuegen |
+| Frontend-Workflow | `.github/workflows/frontend.yml` | MODIFIZIERT: `needs: test` hinzufuegen |
+
+## Empfohlene Projektstruktur (Neue Dateien)
+
+```
+backend/
+├── tests/
+│   ├── setup.js                    # globalSetup: DB erstellen, Migrations, Pool
+│   ├── teardown.js                 # globalTeardown: DB droppen, Pool schliessen
+│   ├── createTestApp.js            # Express-App Factory fuer Tests
+│   ├── vitest.config.js            # Separate Vitest-Config fuer Backend (CJS)
+│   ├── helpers/
+│   │   ├── auth.js                 # generateTestToken(role, orgId, userId)
+│   │   ├── seed.js                 # seedTestData(db) -> Basis-Datensatz
+│   │   └── request.js              # supertest(app) Wrapper mit Auth-Header
+│   └── routes/
+│       ├── auth.test.js
+│       ├── activities.test.js
+│       ├── badges.test.js
+│       ├── categories.test.js
+│       ├── chat.test.js
+│       ├── events.test.js
+│       ├── jahrgaenge.test.js
+│       ├── konfi-management.test.js
+│       ├── konfi.test.js
+│       ├── levels.test.js
+│       ├── material.test.js
+│       ├── notifications.test.js
+│       ├── organizations.test.js
+│       ├── roles.test.js
+│       ├── settings.test.js
+│       ├── teamer.test.js
+│       ├── users.test.js
+│       └── wrapped.test.js
+│
+frontend/
+├── src/
+│   ├── setupTests.ts               # MODIFIZIERT: Ionic + Capacitor Mocks
+│   └── tests/
+│       ├── testUtils.tsx            # Custom render mit Contexts
+│       ├── mocks/
+│       │   ├── ionic.ts             # useIonRouter, useIonModal Mocks
+│       │   ├── capacitor.ts         # Preferences, Network, Camera Mocks
+│       │   └── api.ts               # axios Mock-Factory
+│       ├── hooks/
+│       │   ├── useOfflineQuery.test.ts
+│       │   └── useActionGuard.test.ts
+│       └── contexts/
+│           └── AppContext.test.tsx
+│
+e2e/
+├── playwright.config.ts
+├── docker-compose.test.yml
+├── global-setup.ts
+├── pages/
+│   ├── LoginPage.ts
+│   ├── DashboardPage.ts
+│   ├── EventsPage.ts
+│   └── ChatPage.ts
+└── tests/
+    ├── auth.spec.ts
+    ├── punkte.spec.ts
+    ├── events.spec.ts
+    └── chat.spec.ts
+│
+.github/workflows/
+├── test.yml                         # NEU: Test-Pipeline
+├── backend.yml                      # MODIFIZIERT: needs: test
+└── frontend.yml                     # MODIFIZIERT: needs: test
+```
+
+## Architektur-Patterns
+
+### Pattern 1: Test-DB pro Testlauf mit Transaction-Rollback
+
+**Was:** Jeder Testlauf bekommt eine eigene PostgreSQL-Datenbank. Innerhalb des Laufs wird vor jedem Test eine Transaction gestartet und nach jedem Test ein ROLLBACK ausgefuehrt.
+
+**Warum:** Echte PostgreSQL statt SQLite/Mocks, weil das Backend LATERAL Joins, COALESCE, RANK() OVER, Array-Aggregation und andere PG-spezifische Features nutzt. Transaction-Rollback ist schneller als TRUNCATE nach jedem Test.
+
+**Umsetzung:**
+```javascript
+// backend/tests/setup.js
+const { Pool } = require('pg');
+
+const TEST_DB = `konfi_test_${process.pid}`;
+const adminPool = new Pool({
+  connectionString: process.env.TEST_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/postgres'
+});
+
+module.exports = async function globalSetup() {
+  await adminPool.query(`DROP DATABASE IF EXISTS "${TEST_DB}"`);
+  await adminPool.query(`CREATE DATABASE "${TEST_DB}"`);
+  // Migrations laufen in setup, nicht bei jedem Testfile
+  await adminPool.end();
+};
+```
+
+```javascript
+// In jedem Testfile: Transaction-Wrapper
+let client;
+beforeEach(async () => {
+  client = await testPool.connect();
+  await client.query('BEGIN');
+});
+afterEach(async () => {
+  await client.query('ROLLBACK');
+  client.release();
 });
 ```
 
-**Warum kein kompletter Delta-Sync:** Zu komplex fuer den Nutzen. Die App hat ~100 aktive Nutzer. Ein einfacher "hat sich etwas geaendert?"-Check reicht, um betroffene Caches zu invalidieren. Die Pages laden dann bei Bedarf die vollen Daten.
+**Trade-offs:**
+- PRO: Tests sind isoliert, schnell, nutzen echte PG-Syntax
+- CON: Braucht laufende PostgreSQL-Instanz (Docker oder CI Service Container)
+- WICHTIG: Nested-Transaction-Problem (siehe unten)
 
-#### Chat-Deduplizierung
+### Pattern 2: App-Factory fuer Route-Tests
 
+**Was:** Eine Funktion `createTestApp(db)` baut die Express-App mit Test-DB auf, ohne Server zu starten (kein `server.listen`). Supertest arbeitet direkt mit der App-Instanz.
+
+**Warum:** server.js ist monolithisch (Socket.IO, SMTP, Firebase, Cron-Jobs, Graceful Shutdown). Tests brauchen nur Express-Routes + DB. Die bestehende Dependency-Injection ueber Factory-Functions macht das moeglich.
+
+**Umsetzung:**
 ```javascript
-// In chat.js POST /rooms/:id/messages:
-// NEU: client_id Pruefung
-if (req.body.client_id) {
-  const existing = await pool.query(
-    'SELECT id FROM chat_messages WHERE client_id = $1',
-    [req.body.client_id]
+// backend/tests/createTestApp.js
+const express = require('express');
+const helmet = require('helmet');
+
+function createTestApp(db) {
+  const app = express();
+  app.use(express.json());
+  app.use(helmet({ contentSecurityPolicy: false, strictTransportSecurity: false }));
+
+  // KEIN Rate-Limiting in Tests (wuerde bei Parallel-Tests triggern)
+
+  // RBAC Middleware mit Test-DB
+  const { verifyTokenRBAC, requireAdmin, requireTeamer, requireSuperAdmin,
+          requireOrgAdmin, filterByJahrgangAccess } = require('../middleware/rbac');
+  const rbacVerifier = verifyTokenRBAC(db);
+  const roleHelpers = { requireSuperAdmin, requireOrgAdmin, requireAdmin, requireTeamer };
+
+  // Dummy-IO fuer Chat-Route (kein echter Socket.IO in Tests)
+  const dummyIO = {
+    to: () => ({ emit: () => {} }),
+    emit: () => {},
+    in: () => ({ emit: () => {} })
+  };
+
+  // Routes mounten -- gleiche Signatur wie server.js
+  const badgesRouter = require('../routes/badges')(db, rbacVerifier, roleHelpers);
+  const activitiesRouter = require('../routes/activities')(
+    db, rbacVerifier, roleHelpers, badgesRouter.checkAndAwardBadges
   );
-  if (existing.rows.length > 0) {
-    return res.json(existing.rows[0]); // Idempotent: gleiche Nachricht zurueckgeben
-  }
+  // ... alle 18 Routes analog
+
+  app.use('/api/admin/badges', badgesRouter);
+  app.use('/api/admin/activities', activitiesRouter);
+  // ... etc.
+
+  // Error Handler (wie in server.js)
+  app.use((err, req, res, next) => {
+    res.status(500).json({ error: 'Something went wrong!' });
+  });
+
+  return app;
 }
 ```
 
-### DB-Aenderung
+**Trade-offs:**
+- PRO: Volle Route-Integration (Middleware, Validation, Auth) ohne Server-Overhead
+- PRO: Kein Socket.IO/SMTP/Firebase noetig
+- CON: createTestApp muss bei neuen Routes aktualisiert werden (koppelt an server.js)
 
-```sql
--- chat_messages: client_id fuer Deduplizierung
-ALTER TABLE chat_messages ADD COLUMN client_id UUID;
-CREATE UNIQUE INDEX idx_chat_messages_client_id ON chat_messages(client_id) WHERE client_id IS NOT NULL;
+### Pattern 3: JWT-Token-Factory fuer Auth-Tests
 
--- updated_at Trigger auf relevanten Tabellen (falls noch nicht vorhanden)
--- Wird fuer /sync/changes benoetigt
+**Was:** Helper-Funktion generiert gueltige JWT-Tokens fuer beliebige Rollen, ohne echten Login-Flow.
+
+**Warum:** verifyTokenRBAC prueft Token UND laedt User aus DB (mit LRU-Cache, 30s TTL). Test-User muessen in der DB existieren UND ein gueltiger Token vorhanden sein.
+
+**Umsetzung:**
+```javascript
+// backend/tests/helpers/auth.js
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key-for-ci';
+
+function generateTestToken(user) {
+  return jwt.sign({
+    id: user.id,
+    type: user.role_name,
+    display_name: user.display_name,
+    organization_id: user.organization_id
+  }, JWT_SECRET, { expiresIn: '1h' });
+}
+
+// Pre-built Token-Factories (User-IDs muessen mit Seed uebereinstimmen)
+const tokens = {
+  konfi:      () => generateTestToken({ id: 100, role_name: 'konfi',       display_name: 'Test Konfi',    organization_id: 1 }),
+  teamer:     () => generateTestToken({ id: 101, role_name: 'teamer',      display_name: 'Test Teamer',   organization_id: 1 }),
+  admin:      () => generateTestToken({ id: 102, role_name: 'admin',       display_name: 'Test Admin',    organization_id: 1 }),
+  orgAdmin:   () => generateTestToken({ id: 103, role_name: 'org_admin',   display_name: 'Test OrgAdmin', organization_id: 1 }),
+  superAdmin: () => generateTestToken({ id: 104, role_name: 'super_admin', display_name: 'Test Super',    organization_id: null }),
+  // Andere Organisation (fuer Multi-Tenancy-Tests)
+  adminOrg2:  () => generateTestToken({ id: 200, role_name: 'admin',       display_name: 'Org2 Admin',    organization_id: 2 }),
+};
 ```
 
----
+**Kritisch:** JWT_SECRET muss in Tests als Environment-Variable gesetzt werden (gleicher Wert wie in der Middleware). Der LRU-Cache in rbac.js cached User-Daten 30s -- bei schnellen Tests kein Problem, aber `invalidateUserCache()` exportieren fuer Tests wo User-Daten sich aendern.
 
-## Datenfluss: Stale-While-Revalidate
+### Pattern 4: Capacitor + Ionic Mock-Layer
 
-```
-User oeffnet KonfiDashboardPage
-       |
-       v
-useOfflineQuery('konfi:dashboard:42', fetcher)
-       |
-       +-- 1. OfflineCache.get('konfi:dashboard:42')
-       |       |
-       |       +-- Cache HIT, TTL nicht abgelaufen
-       |       |     -> data = cachedData, loading = false, isStale = false
-       |       |     -> FERTIG (kein Netzwerk-Request)
-       |       |
-       |       +-- Cache HIT, TTL abgelaufen
-       |       |     -> data = cachedData, loading = false, isStale = true
-       |       |     -> Weiter zu Schritt 2 (Revalidierung im Hintergrund)
-       |       |
-       |       +-- Cache MISS
-       |             -> data = null, loading = true
-       |             -> Weiter zu Schritt 2
-       |
-       +-- 2. NetworkMonitor.isOnline?
-               |
-               +-- JA: fetcher() aufrufen
-               |     |
-               |     +-- Erfolg: data = freshData, Cache aktualisieren
-               |     +-- Fehler: Cache-Daten behalten, error setzen
-               |
-               +-- NEIN: Nichts tun (Cache-Daten bleiben)
-                         isOffline = true
+**Was:** Mock-Module fuer Capacitor Plugins und Ionic Navigation, die in jsdom nicht funktionieren.
+
+**Warum:** Frontend-Tests laufen in jsdom. Capacitor-Plugins (Preferences, Network, Camera, PushNotifications) brauchen native Bridges. Ionic Navigation (useIonRouter, useIonModal) braucht Ionic-Runtime.
+
+**Umsetzung:**
+```typescript
+// frontend/src/tests/mocks/capacitor.ts
+vi.mock('@capacitor/preferences', () => ({
+  Preferences: {
+    get: vi.fn().mockResolvedValue({ value: null }),
+    set: vi.fn().mockResolvedValue(undefined),
+    remove: vi.fn().mockResolvedValue(undefined),
+  }
+}));
+
+vi.mock('@capacitor/network', () => ({
+  Network: {
+    getStatus: vi.fn().mockResolvedValue({ connected: true, connectionType: 'wifi' }),
+    addListener: vi.fn().mockReturnValue({ remove: vi.fn() }),
+  }
+}));
 ```
 
----
+```typescript
+// frontend/src/tests/testUtils.tsx
+import { render } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 
-## Sync-Ausloeser
+function renderWithProviders(ui: React.ReactElement, options = {}) {
+  return render(
+    <MemoryRouter>
+      {/* AppContext braucht gemockten API-Client */}
+      {ui}
+    </MemoryRouter>,
+    options
+  );
+}
+```
 
-| Trigger | Aktion |
-|---------|--------|
-| App-Start (mit User) | SyncManager.syncOnResume() |
-| App wird aktiv (appStateChange isActive) | SyncManager.syncOnResume() |
-| WebSocket reconnect | SyncManager.syncOnReconnect() |
-| Periodisch (alle 5 Min) | SyncManager.syncPeriodic() |
-| Manuell (Pull-to-Refresh) | useOfflineQuery.refresh() |
-| Netzwerk-Status: offline -> online | WriteQueue.flush() + Cache-Invalidierung |
+**Hinweis:** `@ionic/react` Komponenten rendern in jsdom, aber ohne Shadow DOM. Snapshot-Tests auf Ionic-Komponenten sind fragil. Besser: Verhalten testen (Click-Handler, State-Aenderungen), nicht DOM-Struktur.
 
----
+## Data Flow: Test-Ausfuehrung
 
-## Komponentengrenzen
+### Backend Integration Test Flow
 
-| Komponente | Verantwortung | Kommuniziert mit |
-|-----------|---------------|-------------------|
-| OfflineCache | Lese-Cache Verwaltung (get/set/invalidate) | useOfflineQuery, SyncManager |
-| WriteQueue | Schreib-Queue Verwaltung (enqueue/flush) | SyncManager, ChatRoom, RequestsPage |
-| NetworkMonitor | Netzwerkstatus erkennen und melden | Alle (via subscribe) |
-| SyncManager | Orchestriert Sync-Ablauf bei Statuswechsel | WriteQueue, OfflineCache, AppContext |
-| useOfflineQuery | Hook fuer Pages: Cache-First Datenladen | OfflineCache, NetworkMonitor, api.ts |
-| OfflineBanner | UI: Offline/Syncing Status anzeigen | NetworkMonitor, SyncManager |
+```
+Vitest globalSetup
+    |
+    v
+CREATE DATABASE konfi_test_<pid>
+    |
+    v
+Run all SQL Migrations (backend/migrations/*.sql)
+    |
+    v
+Seed: Organization, Roles, Users (alle 5 Rollen), Jahrgang, Kategorien, Aktivitaeten
+    |
+    v
++-- Testfile 1 (auth.test.js) -------------------------+
+|  beforeEach: BEGIN Transaction                        |
+|  Test: supertest(app).post('/api/auth/login')...      |
+|  afterEach: ROLLBACK Transaction                      |
++-------------------------------------------------------+
++-- Testfile 2 (activities.test.js) --------------------+
+|  beforeEach: BEGIN Transaction                        |
+|  Test: supertest(app).get('/api/admin/activities')... |
+|  afterEach: ROLLBACK Transaction                      |
++-------------------------------------------------------+
+    |
+    v
+Vitest globalTeardown: DROP DATABASE, pool.end()
+```
 
-**Keine neuen Contexts noetig.** NetworkMonitor und SyncManager sind Singleton-Services (wie api.ts und websocket.ts). Der einzige State, der in die React-Welt muss (`isOnline`), geht in den bestehenden AppContext.
+### Nested-Transaction-Problem (KRITISCH)
 
----
+Einige Routes nutzen `db.getClient()` + `BEGIN/COMMIT` fuer atomare Operationen (z.B. Punkte-Vergabe in activities.js, Event-Buchung in events.js). Wenn der Test-Wrapper schon in einer Transaction ist, wuerde ein inneres `BEGIN` eine Subtransaction starten (PostgreSQL unterstuetzt das via SAVEPOINT).
 
-## Empfohlene Build-Reihenfolge
+**Loesung:** Fuer diese speziellen Tests den Transaction-Wrapper weglassen und stattdessen nach dem Test manuell aufraumen. Alternativ: `db.getClient()` im Test-Setup so wrappen, dass `BEGIN` zu `SAVEPOINT test_inner_N` wird und `COMMIT` zu `RELEASE SAVEPOINT`.
 
-Die Reihenfolge folgt den Abhaengigkeiten -- jede Phase baut auf der vorherigen auf.
+**Pragmatischer Ansatz:** Die meisten Routes nutzen `db.query()` (kein getClient). Nur 3-4 Routes nutzen Transaktionen (activities, events, konfi-management, badges). Fuer diese: `afterEach` mit explizitem TRUNCATE der betroffenen Tabellen statt Transaction-Rollback.
 
-### Phase 1: Fundament (NetworkMonitor + OfflineCache + OfflineBanner)
-- `@capacitor/network` und `@capacitor/preferences` installieren
-- `networkMonitor.ts` implementieren
-- `offlineCache.ts` implementieren (Capacitor Preferences Storage)
-- `isOnline` in AppContext integrieren
-- `OfflineBanner.tsx` in App-Shell einbauen
-- **Testbar:** Banner erscheint bei Flugmodus, Cache liest/schreibt
+### CI Pipeline Flow
 
-### Phase 2: useOfflineQuery Hook + erste Page-Migration
-- `useOfflineQuery.ts` implementieren
-- KonfiDashboardPage migrieren (Referenz-Migration)
-- KonfiEventsPage migrieren
-- KonfiBadgesPage migrieren
-- **Testbar:** Pages zeigen Cache-Daten bei Offline, Stale-Indicator
+```
+Push/PR auf beliebigen Branch
+    |
+    v
+┌─── test.yml (Parallel Jobs) ──────────────────────────────────────┐
+│                                                                    │
+│  Job 1: Backend Tests              Job 2: Frontend Tests           │
+│  ┌───────────────────────┐        ┌───────────────────────┐       │
+│  │ services:              │        │ npm ci                 │       │
+│  │   postgres:15-alpine   │        │ tsc --noEmit           │       │
+│  │ npm ci                 │        │ vitest run             │       │
+│  │ vitest run             │        │ eslint                 │       │
+│  │ npm audit --audit-level│        └───────────────────────┘       │
+│  │   =moderate            │                                        │
+│  └───────────────────────┘                                        │
+│                                                                    │
+│  Job 3: E2E Tests (nur bei PR auf main)                            │
+│  ┌──────────────────────────────────────────────────┐              │
+│  │ docker compose -f e2e/docker-compose.test.yml up  │              │
+│  │ wait-for backend:5000/api/health                   │              │
+│  │ npx playwright test                                │              │
+│  │ Upload: test-results/ als Artifact                 │              │
+│  └──────────────────────────────────────────────────┘              │
+└────────────────────────────────────────────────────────────────────┘
+    |
+    v
+Alle Jobs gruen?
+    | JA                              | NEIN
+    v                                 v
+backend.yml / frontend.yml           PR blockiert
+(Deploy via Portainer Webhook)
+```
 
-### Phase 3: Alle Pages migrieren
-- Restliche ~22 Pages systematisch migrieren
-- BadgeContext auf Cache-Fallback umstellen
-- **Testbar:** Komplette App nutzbar bei kurzem Offline
+### Socket.IO Test-Strategie
 
-### Phase 4: Retry-Logik + Double-Submit-Schutz
-- Exponential Backoff in api.ts Response-Interceptor
-- Loading-States und Button-Disable auf allen Submit-Buttons
-- **Testbar:** Flaky-Netzwerk simulieren, keine doppelten Submits
+Socket.IO wird in Backend-Integration-Tests **nicht** direkt getestet. Stattdessen:
 
-### Phase 5: WriteQueue + Chat-Offline
-- `writeQueue.ts` implementieren
-- ChatRoom.tsx fuer Offline-Nachrichten anpassen
-- Backend: client_id auf chat_messages, Deduplizierung
-- **Testbar:** Chat-Nachricht offline senden, nach Reconnect zugestellt
+1. **Chat-HTTP-Endpoints** (POST message, GET rooms, GET messages) werden per supertest getestet
+2. **Socket-Events** (typing, joinRoom) werden in E2E-Tests implizit ueber den Chat-Flow getestet
+3. In createTestApp wird ein **Dummy-IO** uebergeben, der `to().emit()` und `emit()` als No-Ops bereitstellt
+4. Die Chat-Route bekommt den Dummy-IO als Parameter:
+```javascript
+app.use('/api/chat', chatRoutes(db, { verifyTokenRBAC: rbacVerifier }, uploadsDir, chatUpload, dummyIO));
+```
 
-### Phase 6: SyncManager + Inkrementeller Sync
-- `syncManager.ts` implementieren
-- Backend: GET /sync/changes Endpoint
-- Integration in AppContext Lifecycle (appStateChange)
-- WebSocket reconnect -> Sync
-- Periodischer Sync
-- **Testbar:** App im Hintergrund, dann oeffnen -> Daten aktuell
+## Test-Datenbank Lifecycle
 
----
+### Lokale Entwicklung
 
-## Anti-Patterns zu vermeiden
+```bash
+# Option 1: Separater Test-Container (empfohlen)
+docker run -d --name konfi-test-db -p 5433:5432 \
+  -e POSTGRES_PASSWORD=test -e POSTGRES_USER=test postgres:15-alpine
 
-### Anti-Pattern 1: IndexedDB als Cache
-**Was:** IndexedDB fuer den Cache verwenden statt Capacitor Preferences.
-**Warum schlecht:** Auf iOS/WKWebView gibt es bekannte Probleme mit IndexedDB-Persistenz (Daten koennen bei Speicherdruck geloescht werden). Capacitor Preferences nutzt natives UserDefaults, das zuverlaessiger persistiert.
-**Stattdessen:** Capacitor Preferences fuer alles unter ~1MB pro Key. Falls groessere Daten noetig: Capacitor Filesystem.
+# Tests ausfuehren
+TEST_DATABASE_URL=postgresql://test:test@localhost:5433/postgres \
+JWT_SECRET=test-secret \
+npx vitest run --config backend/tests/vitest.config.js
 
-### Anti-Pattern 2: Globaler State-Store (Redux/Zustand) als Cache
-**Was:** Einen State-Manager als Cache-Layer einfuehren.
-**Warum schlecht:** Overkill fuer diesen Use-Case. Die App hat ~30 Pages mit einfachen GET-Requests. Ein Hook + Service reicht. State-Manager wuerde die gesamte Architektur aendern.
-**Stattdessen:** useOfflineQuery Hook mit Service-Singletons.
+# Option 2: Bestehenden Konfi-DB-Container nutzen (andere Database)
+# Die Test-DB wird als separate Database im gleichen Container erstellt
+```
 
-### Anti-Pattern 3: Full Offline-First mit CRDT/Conflict Resolution
-**Was:** Bidirektionaler Sync mit Konfliktloesung wie bei lokalen Datenbanken (PouchDB/CouchDB).
-**Warum schlecht:** Massiver Aufwand, die App hat <100 Nutzer und kaum gleichzeitige Schreibkonflikte. Chat-Nachrichten und Antraege sind append-only, kein Merge noetig.
-**Stattdessen:** Last-Write-Wins fuer die wenigen Offline-Writes, Client-ID-Deduplizierung.
+### CI (GitHub Actions)
 
-### Anti-Pattern 4: Service Worker fuer API-Caching
-**Was:** Service Worker mit Workbox fuer automatisches API-Response-Caching.
-**Warum schlecht:** Dies ist eine native Capacitor-App, kein PWA. Service Worker laufen nicht zuverlaessig in WKWebView. Ausserdem hat man weniger Kontrolle ueber Cache-Invalidierung.
-**Stattdessen:** App-Level Caching in TypeScript mit voller Kontrolle.
+```yaml
+services:
+  postgres:
+    image: postgres:15-alpine
+    env:
+      POSTGRES_PASSWORD: test
+      POSTGRES_USER: test
+      POSTGRES_DB: postgres
+    ports:
+      - 5432:5432
+    options: >-
+      --health-cmd pg_isready
+      --health-interval 10s
+      --health-timeout 5s
+      --health-retries 5
+```
 
----
+### Isolation-Garantien
 
-## Kapazitaets-Abschaetzung
+| Ebene | Mechanismus | Garantiert |
+|-------|------------|------------|
+| Zwischen Testlaeufen | Eigene Database pro `process.pid` | Parallele Testlaeufe kollidieren nicht |
+| Zwischen Testfiles | Shared DB, Transaction-Rollback | Kein State-Leak zwischen Files |
+| Zwischen einzelnen Tests | Transaction-Rollback (SAVEPOINT bei Nested) | Volle Isolation |
+| Multi-Tenancy | Seed mit 2 Organisationen | Org-Isolation testbar |
 
-| Datentyp | Geschaetzte Groesse | Pro User |
-|----------|---------------------|----------|
-| Dashboard | ~5 KB | 1x |
-| Events (alle) | ~20 KB | 1x |
-| Badges | ~10 KB | 1x |
-| Chat-Rooms | ~3 KB | 1x |
-| Chat-Messages (letzte 50 pro Room) | ~15 KB | pro Room |
-| Profil | ~2 KB | 1x |
-| Admin-Listen | ~30 KB | 1x |
+## Seed-Daten Struktur
 
-**Gesamt pro User:** ~100-200 KB. Capacitor Preferences kann problemlos mehrere MB halten. Kein Kapazitaetsproblem.
+Der Seed muss die RBAC-Hierarchie und Multi-Tenancy abbilden:
 
----
+```
+Organization 1: "Test-Gemeinde"
+  ├── Roles: konfi(1), teamer(2), admin(3), org_admin(4), super_admin(5)
+  ├── Users:
+  │   ├── ID 100: Konfi (role_id=1, org=1) + konfi_profile + jahrgang
+  │   ├── ID 101: Teamer (role_id=2, org=1)
+  │   ├── ID 102: Admin (role_id=3, org=1)
+  │   └── ID 103: OrgAdmin (role_id=4, org=1)
+  ├── Jahrgang: "2025/26" mit confirmation_date
+  ├── Kategorien: 2-3 Basis-Kategorien
+  └── Aktivitaeten: 3-4 mit verschiedenen Typen (gottesdienst/gemeinde)
 
-## Risiken und Mitigationen
+Organization 2: "Andere Gemeinde" (fuer Isolation-Tests)
+  ├── Users:
+  │   └── ID 200: Admin (role_id=3, org=2)
+  └── Jahrgang: eigener Jahrgang
 
-| Risiko | Wahrscheinlichkeit | Mitigation |
-|--------|---------------------|------------|
-| Capacitor Preferences zu langsam fuer grosse Payloads | Niedrig | Benchmark bei 200KB, Fallback auf Filesystem |
-| Chat-Nachrichten gehen verloren bei App-Kill waehrend offline | Mittel | WriteQueue persistiert sofort bei enqueue() |
-| Race Condition: Sync + manueller Refresh gleichzeitig | Mittel | Mutex/Lock im SyncManager |
-| Stale Daten verwirren User | Mittel | isStale-Indicator in UI, klare Kommunikation |
-| Cache waechst unbegrenzt | Niedrig | TTL + periodisches Cleanup alter Eintraege |
+Super-Admin: ID 104 (role_id=5, org=null)
+```
 
----
+## Integration Points
+
+### Bestehende Workflows modifizieren
+
+| Workflow | Aenderung | Details |
+|----------|-----------|---------|
+| `backend.yml` | `needs: [test]` beim build-and-push Job | Deploy nur nach gruenen Tests |
+| `frontend.yml` | `needs: [test]` beim build-and-push Job | Deploy nur nach gruenen Tests |
+
+**Wichtig:** backend.yml triggert aktuell nur auf `push to main` + `paths: backend/**`. Der neue test.yml triggert auf ALLE Branches. Die `needs`-Verknuepfung funktioniert nur wenn test.yml auch auf main/push triggert.
+
+### Mock-Matrix: Was wird wo gemockt?
+
+| Dependency | Backend Integration | Frontend Unit | E2E |
+|------------|---------------------|---------------|-----|
+| PostgreSQL | ECHT (Service Container) | N/A | ECHT (Docker Compose) |
+| RBAC Middleware | ECHT (verifyTokenRBAC + DB) | N/A | ECHT |
+| Firebase/FCM | MOCK (vi.mock pushService) | N/A | SKIP (kein FCM-ENV) |
+| SMTP/Nodemailer | MOCK (vi.mock emailService) | N/A | SKIP |
+| Socket.IO | DUMMY (emit-Stubs) | N/A | ECHT (Browser-Client) |
+| Capacitor Plugins | N/A | MOCK (alle Plugins) | N/A (Browser, nicht nativ) |
+| Ionic Navigation | N/A | PARTIAL MOCK (useIonRouter) | ECHT (Chromium) |
+| axios/API-Calls | N/A | MOCK (vi.mock axios) | ECHT |
+| Losungs-API | MOCK (fetch-Mock) | MOCK | SKIP |
+| file-type (Magic Bytes) | ECHT (mit Test-Dateien) | N/A | ECHT |
+
+### Interne Boundaries
+
+| Boundary | Kommunikation | Test-Relevanz |
+|----------|---------------|---------------|
+| Routes <-> DB | pg Pool queries | Kern des Integration-Tests |
+| Routes <-> RBAC Middleware | verifyTokenRBAC(db) | Immer echt, nie mocken |
+| Routes <-> PushService | pushService.send() | Mocken (kein Firebase in CI) |
+| Routes <-> emailService | emailService.send() | Mocken (kein SMTP in CI) |
+| Routes <-> liveUpdate | liveUpdate.emit() | Mocken (braucht io-Instanz) |
+| Routes <-> pointTypeGuard | checkPointTypeEnabled(db) | Echt (liest aus DB) |
+| Routes <-> bookingUtils | Shared Booking-Logik | Echt (pure Functions + DB) |
+
+## Build-Reihenfolge (empfohlen)
+
+Die Reihenfolge folgt der Dependency-Kette:
+
+### Phase 1: Backend Test-Infrastruktur
+1. `backend/tests/vitest.config.js` -- Vitest-Config (CommonJS-kompatibel)
+2. `backend/tests/setup.js` + `teardown.js` -- DB-Lifecycle
+3. `backend/tests/helpers/auth.js` -- Token-Factory
+4. `backend/tests/helpers/seed.js` -- Basis-Daten
+5. `backend/tests/createTestApp.js` -- App-Factory (alle 18 Routes)
+6. `backend/package.json` -- vitest + supertest als devDependencies
+7. **Ein Smoke-Test** (`auth.test.js` mit Login + Register) zum Validieren der Infrastruktur
+
+### Phase 2: Backend Route-Tests (18 Dateien)
+Reihenfolge nach Abhaengigkeit:
+1. `auth.test.js` -- Login, Register, Token-Refresh (Basis fuer alle)
+2. `roles.test.js` + `organizations.test.js` -- RBAC-Grundlagen
+3. `jahrgaenge.test.js` + `categories.test.js` -- Stammdaten
+4. `activities.test.js` + `badges.test.js` -- Kern-Spielmechanik (nutzen Transaktionen!)
+5. `konfi.test.js` + `konfi-management.test.js` -- Konfi-CRUD
+6. `events.test.js` -- Event-Buchung + Warteliste (komplex, nutzt Transaktionen!)
+7. `chat.test.js` -- Chat-CRUD (HTTP-Endpoints, ohne Socket)
+8. `levels.test.js` + `settings.test.js` + `notifications.test.js` + `users.test.js`
+9. `teamer.test.js` + `material.test.js` + `wrapped.test.js`
+
+### Phase 3: Frontend Test-Setup
+1. `setupTests.ts` erweitern (Capacitor + Ionic Global-Mocks)
+2. `tests/mocks/` -- Capacitor, Ionic, API Mock-Dateien
+3. `tests/testUtils.tsx` -- Custom render mit Provider-Wrapper
+4. Hook-Tests (useOfflineQuery, useActionGuard)
+5. Context-Tests (AppContext Login/Logout)
+
+### Phase 4: CI/CD Pipeline
+1. `.github/workflows/test.yml` -- Neue Test-Pipeline
+2. `backend.yml` + `frontend.yml` modifizieren (needs: test)
+3. Branch-Protection-Rule auf GitHub (require test.yml to pass)
+
+### Phase 5: E2E Tests (optional, hoehere Komplexitaet)
+1. `e2e/docker-compose.test.yml` (Backend + DB + nginx Frontend)
+2. `e2e/playwright.config.ts` + `e2e/global-setup.ts`
+3. Page Objects (LoginPage, DashboardPage, EventsPage, ChatPage)
+4. Kernpfad-Tests (Login -> Dashboard -> Event buchen -> Chat schreiben)
+
+## Anti-Patterns
+
+### Anti-Pattern 1: SQLite als Test-DB-Ersatz
+
+**Was Leute tun:** SQLite in-memory statt PostgreSQL, weil "schneller und einfacher"
+**Warum falsch:** Backend nutzt PG-spezifische Features: LATERAL JOIN, RANK() OVER, ON CONFLICT DO UPDATE, COALESCE mit Arrays, Interval-Arithmetik, JSONB. SQLite wuerde Syntax-Fehler oder falsche Ergebnisse liefern.
+**Stattdessen:** PostgreSQL 15-alpine als Docker Container. Startup dauert 2-3 Sekunden in CI.
+
+### Anti-Pattern 2: Gesamten server.js in Tests importieren
+
+**Was Leute tun:** `require('./server')` im Test, um die Express-App zu bekommen
+**Warum falsch:** server.js startet Socket.IO, SMTP-Verbindung, Firebase-Init, Background-Cron-Jobs, chatUtils.initializeChatRooms(), und ruft `server.listen()` auf. Das verursacht Port-Konflikte, haengende Prozesse, und Firebase-Fehler in CI.
+**Stattdessen:** `createTestApp(db)` baut nur Express + Routes + Middleware auf. Kein listen(), kein Socket.IO, kein SMTP.
+
+### Anti-Pattern 3: RBAC-Middleware mocken
+
+**Was Leute tun:** `verifyTokenRBAC` stubben damit alle Requests durchgehen, "um Routes isoliert zu testen"
+**Warum falsch:** 80% der sicherheitsrelevanten Bugs sind Autorisierungs-Fehler. Wenn Tests die Auth umgehen, finden sie Org-Isolation-Verletzungen, Rollen-Escalation und fehlende Checks nicht.
+**Stattdessen:** Echte Middleware + echte Tokens + Negativ-Tests ("Konfi darf KEINE Admin-Route aufrufen", "Admin Org2 sieht KEINE Daten von Org1").
+
+### Anti-Pattern 4: Snapshot-Tests fuer Ionic-Komponenten
+
+**Was Leute tun:** `expect(component).toMatchSnapshot()` auf IonCard, IonList etc.
+**Warum falsch:** Ionic rendert in jsdom ohne Shadow DOM und ohne Styling. Snapshots brechen bei jedem Ionic-Update, ohne echte Regressions-Information.
+**Stattdessen:** Verhalten testen (Button-Klick loest Aktion aus, Loading-State wird angezeigt, Fehlermeldung erscheint).
+
+## Skalierungs-Ueberlegungen
+
+| Aspekt | Jetzt (18 Route-Files) | Bei 50+ Tests pro File | Mitigation |
+|--------|------------------------|------------------------|------------|
+| CI-Dauer | ~30s Backend, ~15s Frontend | ~2-3min total | Vitest Threads (default), parallel Jobs |
+| DB-Connections | 1 Pool, max 5 | Pool-Exhaustion bei Parallelisierung | `PG_POOL_MAX=5` in Tests, `--pool=forks` statt threads |
+| Flaky E2E | Selten bei 4 Tests | Haeufig bei 20+ | Retry-Policy (2x), Screenshot + Trace on Failure |
+| Test-Wartung | createTestApp spiegelt server.js | Drift wenn Routes hinzukommen | Kommentar in server.js: "Route hier + in createTestApp.js mounten" |
 
 ## Quellen
 
-- Capacitor Preferences Plugin Dokumentation (offiziell, v7)
-- Capacitor Network Plugin Dokumentation (offiziell, v7)
-- Bestehender Codebase: api.ts, websocket.ts, AppContext.tsx, BadgeContext.tsx, LiveUpdateContext.tsx
-- Bestehende Pages: KonfiDashboardPage.tsx, KonfiEventsPage.tsx (Datenladen-Pattern)
-- Stale-While-Revalidate Pattern (HTTP RFC 5861, SWR/React-Query Konzepte)
+- Codebase-Analyse: server.js (Route-Mounting, 18 Factory-Functions), database.js (Pool, Migrations), rbac.js (LRU-Cache, Rollen-Hierarchie)
+- Bestehende CI: backend.yml + frontend.yml (GHCR Build + Portainer Webhook)
+- Bestehende Test-Infra: frontend/vite.config.ts (Vitest konfiguriert), setupTests.ts, @testing-library Dependencies, Cypress als devDep (ungenutzt)
+- Backend-Eigenheiten: CommonJS (require/module.exports), kein ESM, pg Pool mit konfigurierbarem Pool-Max
 
-**Konfidenz:** HIGH -- basiert auf direkter Codebase-Analyse und bekannten Capacitor-APIs.
+**Confidence:** HIGH -- alle Empfehlungen basieren auf direkter Analyse der bestehenden Codebase-Patterns (Factory-DI, RBAC-Middleware, PG-spezifische Queries). Kein externes Guessing noetig.
+
+---
+*Architecture research for: Test-Suite + CI/CD Integration in Konfi Quest*
+*Researched: 2026-03-27*

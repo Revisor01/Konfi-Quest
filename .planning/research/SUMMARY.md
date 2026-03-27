@@ -1,224 +1,236 @@
 # Project Research Summary
 
-**Project:** Konfi Quest v2.1 — App-Resilienz (Offline + Sync)
-**Domain:** Offline-Caching und Schreib-Queue fuer Ionic/Capacitor Hybrid-App
-**Researched:** 2026-03-19
+**Project:** Konfi Quest v2.9 — Test-Suite + CI/CD
+**Domain:** Test-Infrastruktur fuer bestehende Express/Ionic/PostgreSQL Multi-Tenant-App
+**Researched:** 2026-03-27
 **Confidence:** HIGH
 
 ## Executive Summary
 
-Konfi Quest ist eine native Hybrid-App (Capacitor 7 / React 19 / Ionic 8) fuer Kirchengemeinden mit ca. 50-200 Nutzern, die momentan keinerlei Offline-Unterstuetzung hat. Beim Wegfall der Netzwerkverbindung zeigt die App leere Seiten oder generische Fehlermeldungen — ein inakzeptabler Zustand fuer eine App, die Jugendliche bei der Konfirmationsvorbereitung begleitet. Die empfohlene Loesung ist ein schlanker, pragmatischer Offline-Layer: Lese-Cache mit Stale-While-Revalidate via Capacitor Preferences, eine begrenzte Schreib-Queue fuer Chat-Nachrichten und Aktivitaets-Antraege, sowie automatische Retry-Logik im bestehenden Axios-Interceptor. Der Ansatz nutzt das vorhandene Oekosystem (Axios, Socket.io, AppContext) und erweitert es konservativ, statt es zu ersetzen.
+Konfi Quest v2.9 baut eine vollstaendige Test-Suite und CI/CD-Pipeline fuer eine produktive Multi-Tenant-App nach. Das Projekt hat 18 Backend-Route-Dateien (~14.000 LOC), 125 Frontend-Komponenten (~42.000 LOC), RBAC mit 5 Rollen, Multi-Tenancy (organization_id), Socket.IO, Capacitor-Native-Features und eine etablierte Deployment-Pipeline via git push zu Portainer. Die Herausforderung ist nicht "neue Tests schreiben", sondern "bestehenden Code testbar machen" — das erfordert gezieltes Refactoring als Voraussetzung.
 
-Das Hauptrisiko liegt in zwei kritischen Bereichen: Erstens speichert die App derzeit JWT-Token und User-Daten in localStorage, das auf iOS vom WKWebView ohne Warnung geraeumt werden kann — eine Migration auf Capacitor Preferences muss als erstes passieren. Zweitens hat Socket.io zwar Reconnect-Logik, aber kein "Was habe ich verpasst?"-Protokoll: Nach einer Offline-Phase fehlen dem Chat Nachrichten und dem Dashboard aktuelle Punkte. Beide Risiken sind loesbar und muessen vor dem eigentlichen Cache-Aufbau addressiert werden.
+Der empfohlene Ansatz ist ein klares 4-Phasen-Modell: Zuerst Infrastruktur und Refactoring (server.js testbar machen, Test-DB aufsetzen, Fixtures), dann kritische Backend-Integration-Tests mit echtem PostgreSQL (Auth, RBAC, Events, Punkte), dann Frontend-Logik-Tests (Hooks, Context — explizit NICHT Ionic-UI-Snapshots) plus CI/CD-Pipeline, und schliesslich E2E-Tests mit Playwright fuer 4-5 Kernpfade. Die CI/CD-Pipeline blockiert Deployments bei fehlschlagenden Tests (via Portainer-Webhook nach gruenen Tests).
 
-Die Forschung empfiehlt klar, keine schweren Sync-Frameworks (RxDB, PouchDB, CouchDB) einzusetzen. Die Nutzerbasis und die append-only Natur der meisten Schreiboperationen rechtfertigen keinen vollstaendigen Offline-Modus. Ziel ist eine App, die sich bei transienter Verbindung zuverlaessig anfuehlt — nicht eine App, die wochenlang offline funktioniert. Dieser Scope-Eingrenzung sollte das Roadmap konsequent folgen.
+Die groessten Risiken sind (1) das monolithische server.js das ohne Refactoring nicht testbar ist, (2) Vitest-Parallelisierung die Race Conditions auf der gemeinsamen Test-DB erzeugt, und (3) die Versuchung alles zu testen. Mitigation: Transaction-Rollback-Pattern fuer DB-Isolation, App-Factory statt direktem server.js-Import, explizite Coverage-Ziele (75-80% Backend, 40-50% Frontend) die Wartbarkeit ueber reine Zahlen stellen.
 
 ## Key Findings
 
 ### Empfohlener Stack
 
-Die Erweiterung des Tech-Stacks ist bewusst minimal gehalten. Es werden 4 neue Pakete hinzugefuegt: `@capacitor/network` (Offline-Erkennung via nativer OS-APIs), `@capacitor/preferences` (persistenter Key-Value-Cache, ersetzt localStorage fuer kritische Daten), `@capawesome/capacitor-background-task` (Queue-Flush wenn App in Background geht) und `axios-retry` (Exponential Backoff). Alle drei Capacitor-Plugins folgen dem v7-Versionsschema des bestehenden Projekts. Drei Eigenbauten ersetzen extern nicht sinnvoll vorhandene Loesungen: ein `useCachedQuery`-Hook (SWR-Pattern), ein `QueueService` (FIFO Offline-Queue) und ein `useSubmitGuard`-Hook (Double-Submit-Schutz).
+Details in STACK.md. Minimale neue Abhaengigkeiten — das Projekt hat bereits fast alles installiert.
 
-**Core-Technologien (nur Neuzugaenge):**
-- `@capacitor/network` ^7.0.1: Netzwerkstatus via NWPathMonitor (iOS) / ConnectivityManager (Android) — zuverlaessiger als navigator.onLine
-- `@capacitor/preferences` ^7.0.1: Persistenter JSON-Cache via UserDefaults/SharedPreferences — wird NICHT vom OS geraeumt, im Gegensatz zu localStorage
-- `@capawesome/capacitor-background-task` ^7.0.1: ~30 Sekunden Background-Execution um Queue zu leeren bevor App suspendiert wird
-- `axios-retry` ^4.5.0: Community-Standard-Interceptor (5M+ weekly downloads) fuer Exponential Backoff
+**Core Technologies:**
+- Vitest 4.1: Backend-Test-Runner — bereits im Frontend installiert, einheitlicher Runner, solider CJS-Support fuer CommonJS-Backend
+- supertest 7.2: HTTP-Level-Testing der Express-Routes — De-facto-Standard, fluent API, kein Server-Start noetig
+- Playwright 1.52: E2E-Tests — 2-3x schneller als Cypress, Auto-Wait, Ionic Framework selbst nutzt Playwright
+- PostgreSQL Service Container (postgres:16): Test-DB in CI — native GitHub-Actions-Feature, kein Docker-in-Docker, Health-Check eingebaut
+- GitHub Actions: CI-Orchestrierung — bestehende Workflows (backend.yml, frontend.yml) erweitern, nicht ersetzen
 
-**Nicht installieren (Over-Engineering):**
-- SQLite, RxDB, @ionic/storage, Service Worker, tanstack-query — alle unangemessen fuer diese App-Groesse und diesen Sync-Ansatz
+**Bewusste Nicht-Entscheidungen:**
+- Cypress entfernen (installiert, ungenutzt, langsamer als Playwright, ~500MB)
+- Testcontainers abgelehnt (Over-Engineering, 15s Overhead pro Run, Docker-in-Docker)
+- pg-mem abgelehnt (unvollstaendig: LATERAL Joins, RANK() OVER, ON CONFLICT nicht unterstuetzt)
+- 100% Coverage-Enforcement abgelehnt (treibt zu sinnlosen Tests)
 
-Detailquelle: `.planning/research/STACK.md`
+**Gesamt: 2 neue npm-Pakete (Backend: vitest + supertest), 1 neues + 1 entferntes (Frontend: Playwright statt Cypress)**
 
 ### Erwartete Features
 
-Die Forschung unterscheidet klar zwischen Pflicht-Features (Table Stakes), optionalen Differenzierern und bewussten Anti-Features. Der aktuelle Offline-Support ist vollstaendig nicht vorhanden: kein Cache, kein Retry, keine Netzwerk-Erkennung, kein Double-Submit-Schutz.
+Details in FEATURES.md. Priorisiert nach Sicherheits- und Geschaeftsrisiko.
 
-**Muss vorhanden sein (Table Stakes) — User erwarten das:**
-- Offline-Lese-Cache fuer Dashboard (Punkte, Ringe, Level)
-- Offline-Lese-Cache fuer Chat-Verlauf (letzte 50 Nachrichten pro Raum)
-- Offline-Lese-Cache fuer Events (Datum, Ort, Beschreibung)
-- Offline-Banner/Indikator — User muss verstehen WARUM Aktionen nicht gehen
-- Stale-While-Revalidate — gecachte Daten sofort zeigen, im Hintergrund aktualisieren
-- Automatischer Retry bei transienten Fehlern (500er, Timeouts)
-- Double-Submit-Schutz fuer Chat-Nachrichten und Aktivitaets-Antraege
+**Muss haben (Table Stakes):**
+- Backend Integration Tests Auth-Lifecycle: Login, Token-Refresh, Logout-Revoke, gesperrte User
+- Backend Integration Tests RBAC: Jede Rolle, Cross-Org-Isolation (DSG-EKD-Pflicht)
+- Backend Integration Tests Events: Kapazitaet, Warteliste-Nachruecken, Pflicht-Events
+- Backend Integration Tests Punkte: Atomare Transaktionen (BEGIN/COMMIT), keine Race Conditions
+- Test-Datenbank-Setup mit Docker und Transaction-Rollback-Isolation
+- GitHub Actions CI Pipeline mit Tests als Deploy-Gate
 
-**Gut zu haben (Differenzierer), aber nicht zwingend:**
-- Offline-Schreib-Queue fuer Chat-Nachrichten (mit Optimistic UI)
-- Offline-Schreib-Queue fuer Aktivitaets-Antraege
-- WebSocket-Reconnect mit State-Recovery (verpasste Nachrichten nachladen)
-- App-Resume Sync via Capacitor appStateChange Event
+**Sollte haben (Differentiators):**
+- E2E Tests Playwright fuer 4-5 Kernpfade (Login, Punkte, Events, Chat, Admin-CRUD)
+- Backend Unit Tests Utility-Functions (bookingUtils, chatUtils, pointTypeGuard — hoher ROI, schnell testbar)
+- Frontend Hook-Tests: useOfflineQuery, useActionGuard, tokenStore
+- Coverage Reports in CI (Vitest --coverage eingebaut, kein Extra-Paket)
+- npm audit als Security-Gate bei jedem Push
 
-**Bewusst zurueckstellen (v2+ oder nie):**
-- Vollstaendiger Offline-Modus fuer Admin-Operationen — Konfliktpotenzial zu hoch
-- Offline-Event-Buchung — Kapazitaetspruefung benoetigt Server-Validierung
-- Offline-QR-Check-in — serverseitige Validierung zwingend
-- Periodischer Hintergrund-Sync — App-Resume reicht, spart Batterie
-- SQLite als lokale DB, CouchDB/PouchDB/RxDB — falsches Tool fuer PostgreSQL-Backend
-
-Detailquelle: `.planning/research/FEATURES.md`
+**Zurueckstellen auf Phase 2+:**
+- Socket.IO Integration Tests (hohe Infrastruktur-Komplexitaet, Chat seit v2.5 stabil)
+- Visual Regression Tests (zwei Themes iOS26 + MD3 machen Snapshots fragil)
+- Performance/Load Tests (erst vor EKD-Skalierung auf 4000+ User relevant)
+- Native E2E via Appium/Detox (erst wenn App im Store ist)
 
 ### Architektur-Ansatz
 
-Die bestehende Architektur (ca. 30 Pages die direkt `api.get()` aufrufen, kein zentraler Data-Layer) wird durch einen einheitlichen Hook erweiterbar gemacht, ohne bestehende Pages komplett neu zu schreiben. Der Kernpattern: Jede Page ersetzt `api.get()` durch `useOfflineQuery(cacheKey, fetcher)` — eine mechanische Aenderung von ca. 10 Minuten pro Page. Alle neuen Services werden als Singletons implementiert (wie das bestehende api.ts und websocket.ts), keine neuen React-Contexts ausser `isOnline`-State im bestehenden AppContext.
+Details in ARCHITECTURE.md. Das Backend nutzt ein Factory-Function-Pattern: jede Route-Datei exportiert eine Funktion die `db`, `rbacVerifier` und weitere Dependencies injiziert bekommt. Das ist der zentrale Hebelpunkt fuer Tests — `createTestApp(db)` baut die Express-App mit Test-DB auf, ohne Server zu starten. Kein Socket.IO, kein SMTP, kein Firebase, kein Cron.
 
-**Neue Hauptkomponenten:**
-1. `offlineCache.ts` — Lese-Cache: get/set/invalidate via Capacitor Preferences, TTL-basiert
-2. `writeQueue.ts` — Schreib-Queue: FIFO, persistiert sofort, nur Chat + Aktivitaets-Antraege
-3. `networkMonitor.ts` — Netzwerkstatus: Capacitor Network Plugin + navigator.onLine als Dual-Source
-4. `syncManager.ts` — Sync-Koordinator: WriteQueue.flush + Cache-Invalidierung bei Reconnect/Resume
-5. `useOfflineQuery.ts` — Cache-First Hook: ersetzt direktes api.get() in allen Pages
-6. `OfflineBanner.tsx` — UI: Offline/Syncing-Status, global in App-Shell
+**Haupt-Komponenten (neu zu erstellen):**
+1. Backend Test-Infrastruktur: `backend/tests/` — vitest.config.js, setup.js, teardown.js, createTestApp.js, helpers/ (auth, seed, request), 18 Route-Testfiles
+2. Frontend Test-Erweiterungen: setupTests.ts aktualisieren, Capacitor/Ionic Mock-Layer, testUtils.tsx Custom Render, Hook-Tests
+3. E2E Test-Infrastruktur: `e2e/` — playwright.config.ts, docker-compose.test.yml, global-setup.ts, Page Objects, Kernpfad-Specs
+4. CI/CD Pipeline: `.github/workflows/test.yml` (NEU, 3-4 Jobs), backend.yml + frontend.yml erweitern mit `needs: test`
 
-**Backend-Aenderungen:**
-- `GET /sync/changes?since=timestamp` — inkrementelle Aenderungs-Pruefung (kein Delta-Sync, nur "hat sich etwas geaendert?")
-- `client_id` Spalte auf `chat_messages` + Deduplizierungs-Logik
-- DB-Migration: `ALTER TABLE chat_messages ADD COLUMN client_id UUID` mit Unique Index
+**Schluessel-Patterns:**
+- Transaction-Rollback pro Test (BEGIN / ROLLBACK) statt TRUNCATE nach jedem Test — schnell, isoliert
+- Eigene Test-DB pro Testlauf (`konfi_test_{pid}`) verhindert Kollisionen bei parallelen Runs
+- Dummy-IO fuer Socket.IO in Integration-Tests (emit-Stubs), echtes Socket.IO nur in E2E
+- Echte PostgreSQL immer — nie SQLite, nie pg-mem — wegen PG-spezifischer Features im Backend
 
-Detailquelle: `.planning/research/ARCHITECTURE.md`
+**Mock-Strategie:**
+- PostgreSQL: immer ECHT (Service Container in CI, docker run lokal)
+- Firebase/FCM: MOCK via `DISABLE_PUSH=true` ENV-Flag
+- Socket.IO: DUMMY in Integration-Tests (No-Op emit-Stubs), ECHT in E2E
+- SMTP/Nodemailer: MOCK via ENV-Flag
+- Capacitor Plugins: MOCK in Frontend jsdom-Tests, N/A in E2E (Chromium Web-Browser)
+- RBAC Middleware: NIEMALS mocken — immer echt mit echten JWT-Tokens
 
 ### Kritische Pitfalls
 
-1. **localStorage auf iOS kann geraeumt werden** — JWT-Token, User-Daten und Write-Queue SOFORT auf `@capacitor/preferences` migrieren bevor irgendetwas anderes gebaut wird. localStorage-Migration muss erste Implementierungsaufgabe sein. Betroffen: auth.ts, api.ts, LiveUpdateContext.tsx, AppContext.tsx.
+Details in PITFALLS.md (13 Pitfalls dokumentiert, 5 kritisch, 5 moderat, 3 gering).
 
-2. **Axios 401-Handler loescht Token bei Offline-Zustand** — Aktuell unterscheidet der Handler nicht zwischen "Token abgelaufen" und "Server nicht erreichbar". Offline + 401 = sofortiger Logout. Fix: Netzwerkstatus pruefen BEVOR Token geloescht wird. Zweite Prioritaet, direkt nach Storage-Migration.
+1. **Vitest-Parallelisierung erzeugt Race Conditions auf gemeinsamer DB** — Transaction-Rollback-Pattern implementieren (BEGIN/ROLLBACK per Test), alternativ `--poolOptions.forks.singleFork` als Sofortmassnahme. Muss vor dem ersten Route-Test geloest sein.
 
-3. **Write-Queue ohne Idempotenz-Keys fuehrt zu Duplikaten** — Chat-Nachrichten und Aktivitaets-Antraege muessen bei Reconnect-Retry identifizierbar sein. client_id (UUID) muss von Anfang an in Queue und Backend vorhanden sein, nicht nachtraeglich hinzugefuegt werden.
+2. **server.js ist monolithischer Seiteneffekt-Block** — `createTestApp(db)` als App-Factory bauen (Phase-1-Voraussetzung). Minimales Refactoring: `if (require.main === module) server.listen(...)` Guard, Firebase + Cron ueber ENV-Flags deaktivierbar. Niemals `require('./server')` in Tests.
 
-4. **Socket.io reconnect ohne State-Recovery** — Nach Offline-Phase werden verpasste Chat-Nachrichten und Live-Updates nicht nachgeladen. SyncManager muss bei reconnect-Event `/sync/changes?since=lastSync` aufrufen und betroffene Cache-Keys invalidieren.
+3. **RBAC-Middleware mocken verhindert Sicherheits-Tests** — Echte JWT-Tokens mit `generateTestToken()`, echte RBAC-Middleware immer. `vi.mock` auf rbac.js ist verboten in Route-Tests. RBAC-Matrix-Tests (`rbac.test.js`) sind der wertvollste Teil der gesamten Suite.
 
-5. **Race Conditions beim Sync nach Reconnect** — Write-Queue, Socket.io Live-Updates und Hintergrund-Sync koennen sich gegenseitig ueberschreiben. Klare Sync-Reihenfolge: Erst Write-Queue abarbeiten, dann Read-Sync, dann Live-Updates aktivieren. Mutex im SyncManager.
+4. **Ionic Shadow DOM macht Component-Tests fragil** — Frontend-Tests auf Hooks und Services beschraenken. Snapshot-Tests auf Ionic-Komponenten grundsaetzlich vermeiden. Shadow-DOM-spezifische Selektoren brechen bei jedem Ionic Minor-Update.
 
-Detailquelle: `.planning/research/PITFALLS.md`
+5. **Test-Maintenance-Burden uebersteigt den Nutzen** — Assertions auf wesentliche Felder (`toHaveProperty('id')`), nicht exakte Objekte. 80/20-Regel anwenden: Auth + Punkte + Events + RBAC decken 80% der Bugs ab. Lieber 60% stabiler Coverage als 95% fragile.
 
 ## Implications for Roadmap
 
-Die Forschung zeigt eine klare Abhaengigkeitskette: Ohne stabile Storage-Grundlage bricht alles andere. Ohne Netzwerk-Erkennung kann kein Cache-Layer sinnvoll entscheiden. Ohne Cache-Layer ist der SWR-Hook nicht implementierbar. Ohne SWR-Hook ist Page-Migration nicht sinnvoll. Schreib-Queue baut auf NetworkMonitor und Cache-Layer auf. SyncManager braucht beides.
+Basierend auf der kombinierten Recherche ergibt sich ein klares 4-Phasen-Modell mit strikter Abhaengigkeits-Reihenfolge:
 
-### Phase 1: Fundament — Storage + Netzwerk + Schutzschicht
+### Phase 1: Backend-Test-Infrastruktur + Refactoring
 
-**Rationale:** Kritische Pitfalls 1 und 2 muessen zuerst geloest werden, sonst zieht jeder weitere Offline-Code auf einem instabilen Fundament. localStorage-Migration ist Voraussetzung fuer alles Nachfolgende.
-**Delivers:** App loggt User nicht mehr faelschlicherweise aus, Token ist persistent, Netzwerkstatus global verfuegbar, Offline-Banner sichtbar.
-**Addresses:** Table Stakes "Offline-Erkennung + Offline-Banner"
-**Avoids:** Pitfall 1 (localStorage iOS), Pitfall 4 (JWT offline Logout)
-**Tasks:**
-- `@capacitor/network` und `@capacitor/preferences` installieren + `npx cap sync`
-- `localStorage` -> `@capacitor/preferences` Migration fuer Token, User, DeviceID (mit Migrationspfad fuer bestehende User)
-- `networkMonitor.ts` Singleton implementieren
-- `isOnline` in AppContext integrieren
-- Axios 401-Handler um Offline-Pruefung erweitern
-- `OfflineBanner.tsx` in App-Shell einbauen
+**Rationale:** Ohne diese Phase sind alle anderen Tests unmoeoglich. server.js muss testbar gemacht werden, Test-DB-Lifecycle muss stehen, Seed-Fixtures muessen repruesentative Daten fuer alle 5 Rollen und 2 Organisationen bereitstellen.
 
-### Phase 2: Lese-Cache + SWR + Page-Migration
+**Delivers:**
+- server.js Refactoring: `require.main === module` Guard, `DISABLE_PUSH=true`, `DISABLE_CRON=true` ENV-Flags
+- `backend/tests/vitest.config.js` (CJS-kompatibel, kein jsdom, globalSetup/globalTeardown)
+- `backend/tests/setup.js` + `teardown.js` (DROP + CREATE DATABASE per Testlauf via `process.pid`)
+- `backend/tests/helpers/auth.js` (JWT-Token-Factory fuer alle 5 Rollen + Cross-Org Org2-Admin)
+- `backend/tests/helpers/seed.js` (2 Organisationen, alle Rollen, Jahrgang, Kategorien, Aktivitaeten)
+- `backend/tests/createTestApp.js` (alle 18 Routes ohne listen(), ohne Socket.IO, ohne SMTP)
+- `.env.test` mit allen noetigten Variablen (Dummy-Werte fuer Firebase, SMTP, QR_SECRET)
+- Smoke-Test `auth.test.js` zum Validieren der Infrastruktur
 
-**Rationale:** Erst wenn Storage und Netzwerk-Erkennung stabil sind, macht ein Cache-Layer Sinn. Die mechanische Page-Migration (useOfflineQuery) kann dann schnell und risikoarm durchgefuehrt werden.
-**Delivers:** App zeigt gecachte Daten bei Offline, Stale-While-Revalidate-Pattern, keine leeren Seiten mehr.
-**Addresses:** Table Stakes "Offline-Lese-Cache Dashboard/Chat/Events", "Stale-While-Revalidate"
-**Avoids:** Pitfall 9 (gefaehrlich alte Daten) durch TTL-Limits und Stale-Indikatoren
-**Tasks:**
-- `offlineCache.ts` implementieren mit TTL-Defaults (Dashboard 5 Min, Events 10 Min, Chat 1h)
-- `useOfflineQuery.ts` Hook implementieren
-- KonfiDashboardPage als Referenz-Migration
-- Restliche ~25 Pages systematisch migrieren
-- BadgeContext auf Cache-Fallback umstellen
+**Addresses:** Test-DB-Setup (Table Stakes), Basis fuer alle Route-Tests
+**Avoids:** Pitfall 2 (Monolith), Pitfall 3 (Seed-Komplexitaet), Pitfall 11 (RBAC-Cache), Pitfall 12 (Migration-Rerun), Pitfall 13 (ENV-Variablen)
+**Research Flag:** Kein Phase-Research noetig — direkt aus Codebase-Analyse ableitbar.
 
-### Phase 3: Retry-Logik + Double-Submit-Schutz
+---
 
-**Rationale:** Nachdem Read-Pfad stabil ist, Schreib-Pfad absichern. Retry-Logik und Double-Submit-Schutz sind unabhaengig voneinander und koennen parallel entwickelt werden. Idempotency-Keys hier implementieren, weil Phase 4 (Write-Queue) sie zwingend benoetigt.
-**Delivers:** Keine doppelten Chat-Nachrichten oder Aktivitaets-Antraege, transiente Fehler werden automatisch wiederholt.
-**Addresses:** Table Stakes "Automatischer Retry", "Double-Submit-Schutz"
-**Avoids:** Pitfall 3 (Duplikate ohne Idempotenz) — Idempotency-Keys als erstes implementieren
-**Tasks:**
-- `axios-retry` installieren, Response-Interceptor in api.ts erweitern (3 Retries, Exponential Backoff, Jitter)
-- `useActionGuard`-Hook fuer Frontend Button-Disable
-- Backend: Idempotency-Key Middleware + `idempotency_keys` Tabelle
-- Kritische Endpoints absichern: POST /chat/messages, POST /konfi/activities/request, POST /events/:id/book
+### Phase 2: Backend Integration Tests (Tier 1 + 2)
 
-### Phase 4: Schreib-Queue + Chat-Offline
+**Rationale:** Sicherheitskritische Tests zuerst, dann Geschaeftslogik. Auth-Tests erzeugen die JWT-Tokens die alle anderen Tests nutzen. RBAC-Matrix-Tests sind die wertvollsten Tests der gesamten Suite.
 
-**Rationale:** Komplexester Teil des Offline-Layers. Baut auf NetworkMonitor (Phase 1), Cache (Phase 2) und Idempotency-Keys (Phase 3) auf. Chat-Integration mit Socket.io erfordert sorgfaeltige Reihenfolge-Logik.
-**Delivers:** Chat-Nachrichten werden bei Offline in Queue gespeichert und nach Reconnect automatisch gesendet. Aktivitaets-Antraege ebenfalls.
-**Addresses:** Differenzierer "Offline-Schreib-Queue Chat + Aktivitaets-Antraege", "Optimistic UI"
-**Avoids:** Pitfall 3 (Duplikate), Pitfall 6 (Race Conditions beim Reconnect)
-**Tasks:**
-- `writeQueue.ts` implementieren (FIFO, Capacitor Preferences, max 5 Retries)
-- DB-Migration: `client_id` Spalte auf `chat_messages`
-- ChatRoom.tsx: sendMessage -> WriteQueue bei offline + Optimistic UI
-- RequestsPage: Aktivitaets-Antrag -> WriteQueue bei offline
-- `@capawesome/capacitor-background-task` fuer Queue-Flush bei App-Background
+**Delivers:**
+- `auth.test.js`: Login, Register, Token-Refresh, Logout-Revoke, gesperrter User, Rate-Limiting
+- RBAC-Matrix: Jeder Endpoint x jede Rolle x Cross-Org-Isolation (Org A sieht keine Daten von Org B)
+- `events.test.js`: Buchung, Kapazitaet, Warteliste-Nachruecken, Pflicht-Events, QR-Check-in
+- `konfi.test.js` + `konfi-management.test.js`: Atomare Punkte-Vergabe, kein Double-Count
+- `activities.test.js` + `badges.test.js`: Aktivitaetszuweisung, Badge-Trigger
+- Backend Unit Tests: bookingUtils, chatUtils, pointTypeGuard, roleHierarchy, passwordUtils
+- Verbleibende Tier-2/3 Routes: chat (HTTP-Endpoints), jahrgaenge, categories, levels, settings, notifications, users, teamer, wrapped
 
-### Phase 5: SyncManager + App-Resume Sync
+**Uses:** Vitest + supertest + echte PostgreSQL (Phase-1-Infrastruktur)
+**Avoids:** Pitfall 1 (Race Conditions: Transaction-Rollback), Pitfall 7 (Auth-Mocking verboten), Pitfall 10 (Maintenance-Burden: minimale Assertions)
+**Research Flag:** Kein Phase-Research noetig — Express/supertest/PostgreSQL-Pattern gut dokumentiert.
 
-**Rationale:** Letzter Baustein. Koordiniert alle vorigen Komponenten und schliesst die Sync-Luecke nach Offline-Phasen. Backend-Endpoint `/sync/changes` wird hier erst benoetigt.
-**Delivers:** App ist nach App-Resume sofort aktuell. Chat verpasst keine Nachrichten. Socket.io reconnect loest automatisch Sync aus.
-**Addresses:** Differenzierer "WebSocket-Reconnect mit State-Recovery", "App-Resume Sync"
-**Avoids:** Pitfall 2 (Socket.io reconnect ohne Resync), Pitfall 6 (Race Conditions)
-**Tasks:**
-- Backend: `GET /sync/changes?since=timestamp` Endpoint
-- `syncManager.ts` implementieren (WriteQueue.flush -> Read-Sync -> Cache-Invalidierung)
-- Integration in AppContext Lifecycle (appStateChange)
-- Socket.io reconnect -> SyncManager.syncOnReconnect()
-- Periodischer Sync alle 5 Minuten (optional, nur wenn online)
+---
+
+### Phase 3: CI/CD Pipeline + Frontend Tests
+
+**Rationale:** CI-Pipeline laeuft fruehestmoeglich, sobald Backend-Tests stabil sind — verhindert Deploy-Regression waehrend restliche Tests geschrieben werden. Frontend-Tests fokussieren explizit auf Hooks und Logic, nicht auf Ionic-UI.
+
+**Delivers:**
+- `.github/workflows/test.yml`: Job 1 backend-tests (Service Container), Job 2 frontend-tests (jsdom), Job 3 security-audit (npm audit), Job 4 e2e-tests (nur PRs auf main)
+- `backend.yml` + `frontend.yml` erweitern: `needs: test` als Deploy-Gate
+- Branch-Protection-Rule auf GitHub: test.yml als Required Check
+- `frontend/src/setupTests.ts` Update: `@testing-library/jest-dom/vitest` Import, Capacitor-Mocks, Ionic-Mocks
+- `frontend/src/tests/mocks/`: capacitor.ts, ionic.ts, api.ts Mock-Factories
+- `frontend/src/tests/testUtils.tsx`: Custom render mit AppContext/Router-Wrapper
+- `useOfflineQuery.test.ts`, `useActionGuard.test.ts`, `AppContext.test.tsx`
+
+**Implements:** CI-Pipeline-Architektur (Komponente 4), Frontend-Test-Erweiterungen (Komponente 2)
+**Avoids:** Pitfall 8 (CI-Speed: npm-Cache via setup-node@v4, Service-Container statt Testcontainers, Tests vor Build), Pitfall 9 (Shadow DOM: kein UI-Testing, nur Hook-Logic)
+**Research Flag:** setupTests.ts Ionic 8.8.1 + jsdom-Mock-Details koennen kurze Recherche benoetigen, aber Standard-Pattern deckt das ab.
+
+---
+
+### Phase 4: E2E Tests mit Playwright
+
+**Rationale:** Hoechste Setup-Komplexitaet (eigener Docker-Stack), daher nach Backend und CI. Nur 4-5 Kernpfade — Scope MUSS vor Implementierung definiert sein.
+
+**Delivers:**
+- `e2e/playwright.config.ts` + `e2e/global-setup.ts`
+- `e2e/docker-compose.test.yml` (Backend + DB + Frontend-Dev-Server)
+- Page Objects: LoginPage, DashboardPage, EventsPage, ChatPage
+- `auth.spec.ts`, `punkte.spec.ts`, `events.spec.ts`, `chat.spec.ts`
+- Nur Web-Build (localhost:5173) — keine nativen Capacitor-Features in Scope
+
+**Addresses:** E2E-Differentiator, Chat-Org-Isolation im echten Browser verifizieren, Login-Flow End-to-End
+**Avoids:** Pitfall 4 (Capacitor in Playwright: klarer Scope vorab definiert), Pitfall 5 (Socket.IO haengt: Timeouts + Socket-Registry), Pitfall 8 (CI-Speed: `reuseExistingServer: true`)
+**Research Flag:** Phase-Research empfohlen fuer Playwright + Ionic-SPA-Routing und Docker-Compose-E2E-Setup in CI.
+
+---
 
 ### Phase-Reihenfolge Begruendung
 
-- Phasen 1-2 sind Fundament: ohne sie ist kein sinnvoller Offline-Support moeglich und jede weitere Arbeit riskiert instabile Grundlage
-- Phase 3 hat keine harte Abhaengigkeit von Phase 2 (kann parallelisiert werden), aber der Read-Pfad sollte stabil sein bevor man den Schreib-Pfad absichert
-- Phase 4 hat harte Abhaengigkeit von Phase 3 (Idempotency-Keys MUESSEN vorher da sein)
-- Phase 5 ist der Integrations-Baustein — er verbindet alle vorherigen Phasen und hat die meisten Backend-Aenderungen, daher zuletzt
+- **Infrastruktur zuerst (Phase 1):** Keine Abkuerzung moeglich — ohne App-Factory und Test-DB gibt es keine Tests
+- **Backend vor Frontend (Phase 2 vor 3):** Backend-Tests sind sicherheitskritischer, besser isoliert testbar als Ionic-Components
+- **CI frueh einrichten (Phase 3):** Pipeline laeuft sobald erste Backend-Tests stabil sind — Deploy-Gate verhindert Regression
+- **E2E zuletzt (Phase 4):** Hoechste Komplexitaet, aber Integration-Tests finden 90% der Bugs schneller und billiger
+- **Kein Big-Bang:** Inkrementell — nach Phase 1+2 hat das Projekt bereits 75-80% Backend-Coverage und echten Sicherheitsschutz
 
 ### Research Flags
 
-Phasen die wahrscheinlich tiefere Recherche waehrend der Planung brauchen:
-- **Phase 4 (Write-Queue):** Chat-Queue mit Socket.io ist komplex — Reihenfolge-Garantie bei Socket.io Events und HTTP-Idempotency mischen sich auf unerwartete Weise. Konkrete Socket.io-Integration mit bestehendem websocket.ts pruefen.
-- **Phase 5 (SyncManager):** Backend `/sync/changes` Endpoint erfordert `updated_at`-Felder auf mehreren Tabellen — DB-Schema pruefen ob diese Felder bereits vorhanden sind.
+Phasen die waehrend der Planung tiefer recherchiert werden sollten:
+- **Phase 4 (E2E):** Playwright + Ionic-SPA in Docker-Compose — spezifische Konfiguration fuer Ionic-Router-Outlet, Playwright `webServer`-Config, E2E-Health-Check-Pattern in CI
 
-Phasen mit Standard-Patterns (keine tiefere Recherche noetig):
-- **Phase 1 (Storage/Netzwerk):** Capacitor Network + Preferences sind offiziell dokumentiert, kein unbekanntes Terrain
-- **Phase 2 (Lese-Cache):** Stale-While-Revalidate ist ein bewaehrtes Pattern, Page-Migration ist mechanisch
-- **Phase 3 (Retry/Idempotency):** Axios-Retry und Idempotency-Key-Pattern sind gut dokumentiert (Stripe-Pattern)
+Phasen mit Standard-Patterns (kein Phase-Research noetig):
+- **Phase 1 (Infrastruktur):** Direkt aus Codebase-Analyse ableitbar, keine externen Unbekannten
+- **Phase 2 (Backend-Tests):** supertest + PostgreSQL + Vitest ist gut dokumentiert und bewaehrt
+- **Phase 3 (CI + Frontend-Hooks):** GitHub Actions Service Container offiziell dokumentiert, Hook-Tests sind Standard-React-Testing-Library
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Offizielle Capacitor-Doku, konkrete Versionen geprueft, Over-Engineering klar ausgeschlossen |
-| Features | HIGH | Codebase direkt analysiert, Ist-Zustand vollstaendig verstanden, klare Scope-Grenzen |
-| Architecture | HIGH | Basiert auf direkter Codebase-Analyse (api.ts, websocket.ts, Contexts), keine Annahmen |
-| Pitfalls | HIGH | Referenziert konkrete GitHub Issues und offizielle Docs, iOS localStorage Problem gut dokumentiert |
+| Stack | HIGH | Vitest bereits im Projekt, supertest ist Standard, Playwright von Ionic empfohlen. Alle Entscheidungen gegen offizielle Docs verifiziert. |
+| Features | HIGH | Vollstaendige Codebase-Analyse (18 Routes, 125 Komponenten). Risiko-Priorisierung direkt aus LOC und Komplexitaet ableitbar. |
+| Architecture | HIGH | Factory-DI-Pattern direkt aus Codebase. createTestApp-Konzept ist direkte Konsequenz des bestehenden Patterns. Keine Spekulation noetig. |
+| Pitfalls | HIGH | 13 Pitfalls mit konkreter Praevention. Alle aus Codebase-Eigenheiten und offiziell dokumentierten Anti-Patterns abgeleitet. |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **updated_at Felder in DB:** Fuer `/sync/changes` braucht das Backend `updated_at` auf mehreren Tabellen. Es ist unklar ob diese bereits vorhanden sind. Bei Phase 5 Planung Schema pruefen.
-- **iOS 17 Storage Quota API:** `navigator.storage.estimate()` ist ab iOS 17 verfuegbar. Fuer aeltere Geraete faellt dieser Fallback weg. In Phase 2 entscheiden ob Quota-Pruefung noetig ist.
-- **Socket.io Connection State Recovery:** Das v4-Feature erlaubt kurze Reconnects ohne Datenverlust (nur bei Verbindungsunterbruch < 2 Minuten). In Phase 5 pruefen ob es fuer den Use-Case sinnvoll nutzbar ist.
+- **Nested-Transaction-Problem:** Routes die intern Transaktionen nutzen (activities, events, konfi-management) brauchen spezifisches Handling. Pragmatisch: TRUNCATE fuer diese wenigen Test-Suites statt Transaction-Rollback. Entscheidung pro Route-Test-File waehrend Phase-2-Implementierung.
+- **createTestApp Drift:** Die App-Factory koppelt an server.js — wenn neue Routes hinzukommen muessen beide gleichzeitig aktualisiert werden. Kommentar in server.js als Reminder empfohlen.
+- **Playwright + Ionic SPA Routing:** Ob Ionic-Router-Outlet korrekt mit Playwright interagiert ohne native Capacitor-Runtime braucht Validierung in Phase 4. Capacitor.isNativePlatform() gibt im Browser `false` zurueck — sollte funktionieren.
+- **Firebase-Mock Granularitaet:** `DISABLE_PUSH=true` als ENV-Flag reicht fuer die meisten Tests. Tests die pruefen DASS Push aufgerufen wird benoetigen `vi.mock` auf pushService — Entscheidung pro Route-Test-File.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- Capacitor Network Plugin API — https://capacitorjs.com/docs/apis/network
-- Capacitor Preferences Plugin API — https://capacitorjs.com/docs/apis/preferences
-- Capacitor Storage Guide — https://capacitorjs.com/docs/guides/storage
-- Capawesome Background Task v7 — https://capawesome.io/plugins/background-task/
-- Capacitor Issue #636 — localStorage lost on reboot (iOS)
-- WebKit Storage Policy Updates — https://webkit.org/blog/14403/updates-to-storage-policy/
-- Socket.IO Connection State Recovery Docs — https://socket.io/docs/v4/connection-state-recovery
-- MDN: Storage quotas and eviction — https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria
+- Codebase-Analyse: server.js, 18 Route-Dateien (13.947 LOC gesamt), database.js, rbac.js — direkte Quelle fuer alle Architektur-Empfehlungen
+- Vitest 4.0/4.1 Release Notes: https://vitest.dev/blog/vitest-4 und vitest-4-1 — Stack-Entscheidung
+- supertest npm: https://www.npmjs.com/package/supertest — HTTP-Testing-Standard
+- Playwright Release Notes: https://playwright.dev/docs/release-notes — E2E-Framework-Wahl
+- GitHub Actions PostgreSQL Service Containers: https://docs.github.com/en/actions/using-containerized-services/creating-postgresql-service-containers — CI-DB-Setup
+- Ionic React Testing: https://ionicframework.com/docs/react/testing/introduction — Shadow-DOM-Einschraenkungen
 
 ### Secondary (MEDIUM confidence)
-- Ionic Blog: Best Practices for Building Offline Apps — allgemeine Patterns, herstellernah
-- Ionic Blog: Choosing a Data Storage Solution — Storage-Vergleich
-- web.dev: Stale-While-Revalidate — https://web.dev/articles/stale-while-revalidate
-- web.dev: Offline UX Design Guidelines — Banner-Pattern
-- axios-retry npm — https://www.npmjs.com/package/axios-retry
-- RxDB Capacitor Database Guide — Vergleich IndexedDB vs SQLite Performance (herstellernah)
+- Vitest + Testcontainers + PostgreSQL: https://nikolamilovic.com/posts/integration-testing-node-postgres-vitest-testcontainers/ — Transaction-Rollback-Pattern
+- Socket.IO Official Testing Docs: https://socket.io/docs/v4/testing/ — Socket-Test-Cleanup-Pattern
+- Testing Strategies 2026: https://calmops.com/programming/javascript/javascript-testing-guide-2026/ — Allgemeine Best Practices
+- GitHub Actions + Vitest + PostgreSQL: https://samueldurante.com/post/setting-up-tests-environment-vitest-github-actions/ — CI-Konfiguration
 
 ### Tertiary (LOW confidence)
-- Sachith: Offline sync & conflict resolution patterns (Feb 2026) — Sync-Architektur-Vergleich, einzelne Quelle
-- LeanCode: Offline Mobile App Design — allgemeine Empfehlungen ohne Capacitor-Spezifik
+- Playwright + Ionic/Capacitor in Production Apps — Community-Berichte bestaetigen Web-Only-Einschraenkung, keine offizielle Dokumentation fuer spezifische Ionic-SPA-E2E-Konfiguration mit Playwright
 
 ---
-*Research completed: 2026-03-19*
+*Research completed: 2026-03-27*
 *Ready for roadmap: yes*

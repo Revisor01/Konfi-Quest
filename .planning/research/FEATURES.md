@@ -1,349 +1,271 @@
-# Feature Landscape: Offline/Resilienz (v2.1)
+# Feature Landscape: Test-Suite + CI/CD
 
-**Domain:** Offline-First-Faehigkeiten fuer Ionic/Capacitor Hybrid-App (Kirchengemeinde)
-**Recherchiert:** 2026-03-19
-**Konfidenz:** HIGH (etablierte Patterns, Capacitor-Oekosystem gut dokumentiert, Codebase analysiert)
+**Domain:** Testing und CI/CD fuer eine Multi-Tenant Ionic/Express App
+**Recherchiert:** 2026-03-27
+**Konfidenz:** HIGH (Testing-Patterns fuer Express/PostgreSQL/Ionic gut dokumentiert, Codebase vollstaendig analysiert)
 
-## Ist-Zustand Analyse
-
-### Aktueller Offline-Support: Keiner
-
-| Aspekt | Status | Auswirkung |
-|--------|--------|-----------|
-| API-Calls | Kein Cache, kein Retry | App zeigt leere Seite oder Fehler wenn offline |
-| Netzwerk-Erkennung | Nicht implementiert | App weiss nicht ob online/offline |
-| Schreib-Operationen | Fire-and-forget | Bei Verbindungsabbruch: Daten verloren |
-| Double-Submit | Kein Schutz | Doppelte Chat-Nachrichten, doppelte Antraege moeglich |
-| WebSocket (Chat) | Reconnect vorhanden (10 Versuche) | Verpasste Nachrichten nach Reconnect nicht nachgeladen |
-| Datenpersistenz | localStorage fuer Token/User | Keine gecachten API-Daten |
-
-### Bestehende Infrastruktur die genutzt werden kann
-
-| Komponente | Datei | Relevanz |
-|-----------|-------|---------|
-| Axios-Interceptor | `services/api.ts` | Bereits 401/429-Handler, erweiterbar um Retry + Cache |
-| Socket.io-Client | `services/websocket.ts` | Reconnect-Logik vorhanden, erweiterbar um State-Recovery |
-| AppContext | `contexts/AppContext.tsx` | Globaler State, erweiterbar um NetworkContext |
-| BadgeContext | `contexts/BadgeContext.tsx` | Unread-Counts, muessen gecacht werden |
-| Capacitor Core | `package.json` | @capacitor/core ^7.6.0 — Network Plugin verfuegbar |
+---
 
 ## Table Stakes
 
-Features die Nutzer bei einer App mit Offline-Unterstuetzung erwarten. Fehlen = App fuehlt sich unzuverlaessig an.
+Features die jede ernstzunehmende Test-Suite braucht. Ohne diese ist die Test-Suite unvollstaendig.
 
-| Feature | Warum erwartet | Komplexitaet | Abhaengigkeiten im bestehenden System |
-|---------|---------------|--------------|---------------------------------------|
-| Offline-Lese-Cache (Dashboard) | Konfis oeffnen App ohne Netz und sehen leere Seite — inakzeptabel | Mittel | AppContext laedt alle Dashboard-Daten per API-Call, kein Cache vorhanden |
-| Offline-Lese-Cache (Chat-Verlauf) | Chat ist Kernfunktion, Nachrichten muessen auch offline lesbar sein | Mittel | Socket.io liefert Live-Daten, REST liefert History — beides ohne Cache |
-| Offline-Lese-Cache (Events) | Konfi will nachschauen wann/wo Event ist, gerade unterwegs ohne Netz | Niedrig | Einfache GET-Responses, gut cachebar |
-| Offline-Banner/Indikator | Nutzer muss wissen WARUM Aktionen nicht gehen, sonst Frustration | Niedrig | @capacitor/network Plugin fuer Status, UI-Banner global |
-| Stale-While-Revalidate | Sofort gecachte Daten zeigen, im Hintergrund aktualisieren — App fuehlt sich schnell an | Mittel | Erfordert Cache-Layer zwischen API-Service und Komponenten |
-| Automatischer Retry bei transienten Fehlern | 500er/Timeout duerfen nicht sofort "Fehler" zeigen, Retry ist Standard | Niedrig | Axios-Interceptor bereits vorhanden, Erweiterung um Retry-Logik |
-| Double-Submit-Schutz | Doppeltes Absenden von Chat-Nachrichten oder Aktivitaets-Antraegen | Niedrig | Loading-States und Button-Disable pro Aktion |
+| Feature | Warum erwartet | Komplexitaet | Notizen |
+|---------|----------------|--------------|---------|
+| Backend Integration Tests (Auth) | Auth ist Security-kritisch: Login, Token-Refresh, Logout-Revoke, gesperrte User | Med | auth.js (833 LOC), JWT + bcrypt + RBAC Cache |
+| Backend Integration Tests (RBAC/Rollen) | Jede Route prueft Rollen -- falsche Checks = Datenleck | Med | rbac.js Middleware, 5 Rollen, LRU-Cache |
+| Backend Integration Tests (Events) | Groesste Route (2079 LOC), transaktionssicher, Wartelisten-Logik | High | Pflicht-Events, Timeslots, Kapazitaet, Waitlist-Nachruecken |
+| Backend Integration Tests (Punkte/Aktivitaeten) | Kernfunktion der App, atomare DB-Operationen | Med | konfi.js (2039 LOC), activities.js, bonus_points |
+| Backend Integration Tests (Chat) | Drittgroesste Route (1879 LOC), Org-Isolation kritisch | High | Socket.IO parallel, Polls, Dateiuploads, LATERAL Joins |
+| Multi-Tenant Isolation Tests | DSG-EKD Pflicht: Daten duerfen nie zwischen Orgs leaken | High | organization_id auf JEDER Query, RBAC + Org-Checks |
+| Test-Datenbank Setup (Docker) | Tests gegen echte PostgreSQL, nicht Mocks | Med | docker-compose.test.yml, Seed-Daten, Teardown |
+| GitHub Actions CI Pipeline | Tests muessen bei jedem Push automatisch laufen | Low | Bestehende Workflows erweitern, PostgreSQL Service Container |
+| npm audit in CI | Abhaengigkeiten auf bekannte Schwachstellen pruefen | Low | `npm audit --audit-level=moderate` |
+| Frontend Build-Check in CI | TypeScript-Kompilierung muss fehlerfrei sein | Low | `tsc && vite build` als CI-Schritt |
+
+---
 
 ## Differentiators
 
-Features die die App absetzen, aber nicht zwingend erwartet werden.
+Features die ueber das Minimum hinausgehen und echten Mehrwert liefern.
 
-| Feature | Wertversprechen | Komplexitaet | Abhaengigkeiten |
-|---------|----------------|--------------|-----------------|
-| Offline-Schreib-Queue (Chat) | Nachricht tippen ohne Netz, wird automatisch bei Reconnect gesendet | Hoch | Socket.io-Integration, Queue-Persistenz, Reihenfolge-Garantie |
-| Offline-Schreib-Queue (Aktivitaets-Antraege) | Konfi kann Aktivitaet beantragen auch wenn kurz kein Netz | Mittel | REST-basiert, einfacher als Chat, aber braucht Idempotency |
-| Inkrementeller Sync (Delta statt Full-Reload) | Nur geaenderte Daten laden spart Bandbreite und Zeit | Hoch | Backend muss `updated_at`/`since`-Parameter unterstuetzen, aktuell nicht vorhanden |
-| Hintergrund-Sync (periodisch) | App aktualisiert Daten ohne dass Nutzer aktiv oeffnet | Mittel | Capacitor Background Task API, begrenzt auf iOS/Android |
-| WebSocket-Reconnect mit State-Recovery | Nach Reconnect verpasste Chat-Nachrichten nachladen | Mittel | Socket.io hat reconnect, aber kein "seit wann"-Nachladen implementiert |
-| Optimistic UI fuer Chat | Nachricht sofort anzeigen, Bestaetigungs-Haekchen nach Server-ACK | Mittel | Chat-UI muss "pending"-Status pro Nachricht unterstuetzen |
+| Feature | Wertversprechen | Komplexitaet | Notizen |
+|---------|-----------------|--------------|---------|
+| E2E Tests (Playwright) fuer Kernpfade | Findet Bugs die Unit/Integration Tests nicht finden: echte Browser-Interaktion | High | Login-Flow, Punkte vergeben, Event buchen, Chat senden |
+| Backend Unit Tests (Utils/Services) | Schnelle Feedback-Schleife fuer isolierte Logik | Low | bookingUtils, chatUtils, pointTypeGuard, roleHierarchy, passwordUtils |
+| Frontend Hook Tests | useOfflineQuery, useActionGuard, useCountUp sind komplex | Med | Vitest + @testing-library/react-hooks |
+| Coverage Reports in CI | Sichtbare Metrik, verhindert Regression | Low | Vitest coverage, Badge im README |
+| Lint + Type-Check in CI | Verhindert schleichende Code-Qualitaetsverschlechterung | Low | ESLint + tsc --noEmit |
+| Socket.IO Integration Tests | Chat-Echtzeit-Funktionalitaet absichern | High | socket.io-client im Test, Rooms, Typing, Org-Isolation |
+| Badge-Cron Logik Tests | 13 Badge-Typen mit komplexen Kriterien (Streaks, Zeitbasiert) | Med | Bulk-Query-Logik, deterministische Testdaten |
+| Migration-Runner Tests | Sicherstellen dass Migrationen idempotent und korrekt sind | Low | Leere DB -> runMigrations -> Schema pruefen |
+| Seed-Daten fuer manuelle Tests | Reproduzierbare Testumgebung fuer Entwickler | Med | Mehrere Orgs, Jahrgaenge, Konfis, Teamer, Admins, Events, Badges |
+
+---
 
 ## Anti-Features
 
-Features die bewusst NICHT gebaut werden sollen.
+Features die explizit NICHT gebaut werden sollten.
 
-| Anti-Feature | Warum vermeiden | Was stattdessen tun |
-|--------------|----------------|---------------------|
-| Vollstaendiger Offline-Modus (alle Schreib-Operationen) | Kirchengemeinde-App mit ~50-200 Nutzern, nicht Notion. Admin-Aktionen (Punkte vergeben, Events erstellen) offline = Chaos mit Konflikten | Nur Lese-Cache + begrenzte Schreib-Queue (Chat + Aktivitaets-Antraege) |
-| Conflict Resolution mit User-Prompt | Konfis sind 13-14 Jahre alt, "Konflikt aufloesen" ueberfordert | Last-Write-Wins fuer die wenigen Schreib-Operationen, Server ist autoritativ |
-| CouchDB/PouchDB/RxDB Sync-Framework | Massiver Overhead fuer kleine Nutzerbasis, PostgreSQL-Backend bleibt | Einfacher Cache-Layer mit Capacitor Preferences |
-| Service Worker fuer Offline | Capacitor-App laeuft nativ im WebView, Service Worker bringt Komplexitaet ohne echten Nutzen | Nativer Cache ueber Capacitor APIs + localStorage |
-| SQLite als lokale Datenbank | Overkill fuer Cache-Daten (<50KB pro Response), zusaetzliches Plugin, Migration-Aufwand | localStorage + Capacitor Preferences fuer strukturierte JSON-Daten reichen |
-| Offline-Event-Buchung | Kapazitaetspruefung, Warteliste, Timeslots — alles Server-seitig, nicht offline sinnvoll | Event-Daten lesen: ja. Buchen: nur online mit klarer Fehlermeldung |
-| Offline-QR-Check-in | QR-Scan benoetigt Server-Validierung (Zeitfenster, Duplikat-Check) | Check-in nur online, Offline-Banner zeigt "Internetverbindung noetig" |
+| Anti-Feature | Warum vermeiden | Stattdessen |
+|--------------|-----------------|-------------|
+| 100% Code Coverage erzwingen | Treibt zu sinnlosen Tests, verlangsamt Entwicklung massiv | 70-80% Backend, 50-60% Frontend als Richtwert |
+| Snapshot Tests fuer Ionic Komponenten | Ionic Shadow-DOM macht Snapshots fragil und wertlos | Verhaltenstests mit Testing Library |
+| Mocking der gesamten Datenbank | Verfehlt den Zweck: SQL-Fehler, Constraints, Transaktionen werden nicht getestet | Echte PostgreSQL in Docker |
+| E2E Tests fuer jeden Flow | Zu langsam, zu fragil, zu teuer in Wartung | Nur 4-5 Kernpfade: Login, Punkte, Events, Chat, Admin-CRUD |
+| Frontend Component Tests fuer ALLE 125 Komponenten | Unverhaeltnismaessiger Aufwand | Nur kritische Komponenten: Auth, Dashboard, EventDetail |
+| Visual Regression Tests | Zwei Themes (iOS26 + MD3), enormer Wartungsaufwand | Manuelles Testing bei Design-Aenderungen |
+| Performance/Load Tests in CI | Zu langsam fuer CI, benoetigt eigene Infrastruktur | Separat bei Bedarf (vor EKD-Skalierung auf 4000+ User) |
+| Cypress statt Playwright | Veralteter Ansatz, langsamer, schlechtere CI-Integration | Playwright (Multi-Browser, besser fuer CI, schneller) |
+| API-Dokumentation/Contract Tests | Kein externer API-Zugriff geplant (out of scope laut PROJECT.md) | Nur interne Integration Tests |
 
-## Feature-Details
+---
 
-### 1. Cache-Layer (Stale-While-Revalidate)
+## Test-Prioritaeten nach Risiko/Impact
 
-**Pattern:** Jeder API-Call geht durch eine Cache-Schicht.
-1. Cache pruefen — wenn vorhanden, sofort zurueckgeben
-2. API-Call im Hintergrund starten
-3. Bei Erfolg: Cache aktualisieren, UI mit neuen Daten aktualisieren
-4. Bei Fehler (offline): Gecachte Daten bleiben stehen, kein Fehler-UI
+### Tier 1: Sicherheitskritisch (MUSS getestet werden)
 
-**Was cachen (nach Prioritaet):**
+| Was | Route/Modul | Warum kritisch | Testtyp |
+|-----|-------------|----------------|---------|
+| Auth-Lifecycle | auth.js (833 LOC) | Login, Token-Refresh, Logout-Revoke, gesperrte User | Integration |
+| RBAC Enforcement | rbac.js Middleware | Jede Rolle sieht nur erlaubte Daten, Cache-Invalidierung | Integration |
+| Multi-Tenant Isolation | Alle 18 Routes | Org A darf keine Daten von Org B sehen (DSG-EKD) | Integration |
+| Punkte-Atomaritaet | konfi.js (2039 LOC) | BEGIN/COMMIT, GREATEST(0,...), keine Race Conditions | Integration |
+| Event-Kapazitaet | events.js (2079 LOC) | Overbooking, Warteliste, Nachruecken transaktionssicher | Integration |
 
-| Daten | Cache-Key-Schema | TTL | Prioritaet |
-|-------|-----------------|-----|------------|
-| Dashboard (Punkte, Ringe, Level) | `cache:dashboard:{userId}` | 5 Min | P0 |
-| Chat-Raumliste | `cache:chatrooms:{userId}` | 2 Min | P0 |
-| Chat-Nachrichten (pro Raum, letzte 50) | `cache:chat:{roomId}` | 1 Min (Live via WS) | P0 |
-| Event-Liste | `cache:events:{orgId}` | 10 Min | P1 |
-| Profil-Daten | `cache:profile:{userId}` | 30 Min | P1 |
-| Eigene Antraege | `cache:requests:{userId}` | 5 Min | P1 |
-| Aktivitaeten-Katalog | `cache:activities:{orgId}` | 1 Stunde | P2 |
-| Badge-Katalog | `cache:badges:{orgId}` | 1 Stunde | P2 |
+### Tier 2: Geschaeftslogik-kritisch (SOLLTE getestet werden)
 
-**Speicher-Strategie:** `localStorage` fuer Web-Dev, gleicher Code funktioniert auch im Capacitor-WebView nativ. Kein SQLite noetig — die Datenmengen sind klein (JSON-Responses typisch < 50KB). localStorage hat 5-10MB Limit, reicht fuer diese App bei weitem.
+| Was | Route/Modul | Warum kritisch | Testtyp |
+|-----|-------------|----------------|---------|
+| Badge-Vergabe | badges.js (822 LOC) | 13 Typen, Streak-Logik, auto-awarding Cron | Integration |
+| Event-Booking Flow | events.js | Timeslots, Pflicht-Events, QR-Check-in, Opt-out | Integration |
+| Konfi-Management | konfi-management.js (1008 LOC) | Punkte vergeben, Aktivitaeten zuweisen, Bulk-Ops | Integration |
+| Chat-Nachrichten | chat.js (1879 LOC) | Senden, Org-Filter, Raum-Erstellung, Polls | Integration |
+| Wrapped-Generierung | wrapped.js (798 LOC) | Daten-Aggregation, Slide-Konfiguration | Integration |
+| Utility Functions | bookingUtils, chatUtils, pointTypeGuard | Isolierte Logik, schnell testbar, hoher ROI | Unit |
 
-**Bekanntes Risiko:** Browser/WebView kann localStorage bei Speicherdruck loeschen. Fuer eine App mit 50-200 Nutzern und kleinen Datenmengen ist das akzeptabel — Worst Case: Daten werden frisch geladen.
+### Tier 3: Nice-to-have (KANN getestet werden)
 
-**Konfidenz:** HIGH — Stale-While-Revalidate ist ein etabliertes Pattern, dokumentiert auf web.dev und in der React-Community.
+| Was | Route/Modul | Warum weniger kritisch | Testtyp |
+|-----|-------------|------------------------|---------|
+| Settings CRUD | settings.js (203 LOC) | Einfache Key-Value Operationen | Integration |
+| Levels CRUD | levels.js (298 LOC) | Simples CRUD ohne komplexe Logik | Integration |
+| Kategorien CRUD | categories.js (135 LOC) | Simples CRUD | Integration |
+| Rollen-Liste | roles.js (180 LOC) | Read-only, selten geaendert | Integration |
+| Notifications CRUD | notifications.js (153 LOC) | Einfache DB-Operationen | Integration |
+| Frontend Auth-Flow | auth.ts, tokenStore.ts | Login/Logout im Browser | E2E |
+| Dashboard-Rendering | DashboardSections.tsx (794 LOC) | Komplexes Rendering, aber UI-fokussiert | Component |
 
-### 2. Netzwerk-Status-Erkennung
+---
 
-**Technologie:** `@capacitor/network` Plugin (Teil des Capacitor-Oekosystems, muss separat installiert werden).
-
-**Pattern:**
-- `Network.addListener('networkStatusChange', ...)` fuer Live-Updates
-- `Network.getStatus()` fuer initialen Status beim App-Start
-- Globaler React-Context (`NetworkContext`) der `isOnline`-State haelt
-- Alle Komponenten koennen via `useNetwork()` den Status abfragen
-
-**Bekannte Einschraenkung:** Plugin meldet `connected: true` bei VPN ohne echte Konnektivitaet ([GitHub Issue #1917](https://github.com/ionic-team/capacitor-plugins/issues/1917)). Fuer diese App akzeptabel — bei fehlgeschlagenem API-Call wird offline-Status trotzdem korrekt erkannt via Axios-Error.
-
-**Quellen:** [Capacitor Network API Docs](https://capacitorjs.com/docs/apis/network)
-
-### 3. Offline-Banner UI
-
-**Pattern:** Globaler Banner am oberen Bildschirmrand (unter IonHeader), nicht-dismissbar solange offline.
-
-**Verhalten:**
-
-| Status | Banner-Stil | Text | Dauer |
-|--------|------------|------|-------|
-| Offline | Gelb/Orange, IonIcon `cloudOfflineOutline` | "Kein Internet — gespeicherte Daten werden angezeigt" | Permanent bis online |
-| Reconnecting | Gelb mit Spinner | "Verbindung wird hergestellt..." | Permanent bis connected |
-| Zurueck online | Gruen, IonIcon `cloudDoneOutline` | "Wieder verbunden" | 3 Sekunden, dann ausblenden |
-| Sync laeuft | Dezent grau, kleiner Spinner | "Daten werden aktualisiert..." | Bis Sync fertig |
-
-**UX-Regeln (nach web.dev Offline UX Guidelines):**
-- NICHT grau einfaerben (verwechselbar mit "deaktiviert")
-- NICHT aggressive Fehlermeldung (kein rotes X)
-- Klar kommunizieren was GEHT (lesen) und was NICHT geht (senden)
-- IonIcon verwenden, keine Unicode-Emojis (Projekt-Regel)
-
-**Implementierung:** Globale Komponente `<OfflineBanner />` in App.tsx, nutzt `useNetwork()` Hook.
-
-**Konfidenz:** HIGH — Standard-Pattern, von Slack/WhatsApp etabliert.
-
-### 4. Schreib-Queue
-
-**Nur fuer zwei Operationen:**
-1. **Chat-Nachrichten** — Nachricht in lokale Queue, Optimistic UI (Nachricht sofort anzeigen mit "pending"-Indikator), bei Reconnect in Reihenfolge senden
-2. **Aktivitaets-Antraege** — Antrag lokal speichern, bei Reconnect an API senden
-
-**Queue-Design:**
-```typescript
-interface QueueItem {
-  id: string;            // UUID, Client-generiert (= Idempotency Key)
-  type: 'chat_message' | 'activity_request';
-  payload: Record<string, unknown>;
-  created_at: number;    // Timestamp
-  retry_count: number;
-  max_retries: number;   // 5
-  status: 'pending' | 'sending' | 'failed' | 'sent';
-}
-```
-
-**Persistenz:** `localStorage` unter Key `offline_queue` (Queue ueberlebt App-Neustart).
-
-**Abarbeitung:**
-1. Bei Reconnect (NetworkContext `isOnline` wird true): Queue abarbeiten
-2. Reihenfolge: FIFO (First In, First Out) — wichtig fuer Chat-Nachrichten
-3. Zwischen Items: 200ms Pause (verhindert Server-Ueberlastung)
-4. Bei Fehler: Exponential Backoff (1s, 2s, 4s), max 5 Retries
-5. Nach 5 Fehlversuchen: Item als `failed` markieren, Nutzer informieren
-
-**Konflikt-Strategie:** Last-Write-Wins. Server ist autoritativ. Client-UUID dient als Idempotency-Key — Server lehnt Duplikate ab (identische Response zurueck).
-
-**Backend-Aenderung noetig:** `X-Idempotency-Key` Header auf POST-Endpoints fuer Chat und Aktivitaets-Antraege. Server speichert Key + Response in `idempotency_keys`-Tabelle (auto-cleanup nach 24h via bestehenden Background-Service).
-
-**Konfidenz:** MEDIUM — Pattern ist klar, aber Integration mit Socket.io-Chat erfordert sorgfaeltige Reihenfolge-Logik. Chat-Queue ist komplexer als REST-Queue weil Socket.io Events nicht direkt mit HTTP-Idempotency arbeiten.
-
-### 5. Retry-Logik (Exponential Backoff)
-
-**Wo:** Axios-Interceptor in `services/api.ts` (bereits vorhanden, muss erweitert werden).
-
-**Welche Fehler retrien:**
-- HTTP 500, 502, 503, 504 (Server-Fehler)
-- Netzwerk-Timeouts (`ECONNABORTED`)
-- `ERR_NETWORK` (kein Netz)
-
-**NICHT retrien:**
-- HTTP 400, 401, 403, 404, 422 (Client-Fehler — Retry aendert nichts)
-- HTTP 429 (Rate-Limit — bereits behandelt mit eigenem Handler)
-
-**Parameter:**
-- Max 3 Retries
-- Delays: 1s, 2s, 4s (exponential, Basis 2)
-- Jitter: +/- 500ms (verhindert Thundering Herd bei vielen gleichzeitigen Reconnects)
-- Nur GET-Requests automatisch retrien (idempotent per Definition)
-- POST/PUT/DELETE nur retrien wenn `X-Idempotency-Key` Header vorhanden
-
-**Bibliothek:** Kein externes Paket noetig — ~30 Zeilen im Axios-Interceptor. Die Logik ist trivial:
-```typescript
-const delay = Math.pow(2, retryCount) * 1000 + Math.random() * 1000;
-```
-
-**Konfidenz:** HIGH — Trivial zu implementieren, gut verstandenes Pattern.
-
-### 6. Double-Submit-Schutz
-
-**Frontend-seitig:**
-- `useActionGuard(action)` Hook: Wrapped async Aktion, setzt `isSubmitting`, disabled Button
-- Idempotency-Key pro Formular-Submit (UUID generiert bei Form-Open, regeneriert nach Erfolg)
-- Chat-Sende-Button: Disabled waehrend Nachricht gesendet wird
-
-**Backend-seitig:**
-- `X-Idempotency-Key` Header auf kritischen POST-Endpoints
-- Middleware prueft: Key bereits gesehen? -> gespeicherte Response zurueckgeben
-- Tabelle `idempotency_keys (key VARCHAR PRIMARY KEY, response JSONB, created_at TIMESTAMPTZ)`
-- Cleanup: Keys aelter als 24h loeschen (im bestehenden Background-Service `backgroundService.js`)
-
-**Kritische Endpoints fuer Idempotency:**
-- POST `/chat/messages` (Chat-Nachricht senden)
-- POST `/konfi/activities/request` (Aktivitaets-Antrag)
-- POST `/events/:id/book` (Event-Buchung)
-- POST `/bonus-points` (Bonus-Punkte vergeben)
-
-**Konfidenz:** HIGH — Standard-Pattern, von Stripe/Shopify etabliert.
-
-### 7. Inkrementeller Sync
-
-**Zwei Trigger:**
-1. **App-Start (App.tsx `useEffect`):** Alle gecachten Daten aktualisieren
-2. **App-Resume (Capacitor App `appStateChange`):** Daten aktualisieren wenn App in Vordergrund kommt
-
-**Phase 1 (ohne Backend-Aenderung):**
-- Full-Reload aller gecachten Endpoints bei App-Start/Resume
-- SWR-Pattern: Gecachte Daten sofort zeigen, im Hintergrund neu laden
-- WebSocket-Events als Live-Update-Kanal (bereits vorhanden fuer Chat)
-- Kein periodischer Hintergrund-Sync noetig — App-Resume reicht
-
-**Phase 2 (mit Backend-Aenderung, optional):**
-- `?since=ISO-Timestamp` Parameter auf GET-Endpoints
-- Backend gibt nur Aenderungen seit Timestamp zurueck
-- Spart Bandbreite bei grossen Chat-Historien
-- `updated_at` Spalte auf relevanten Tabellen (falls nicht vorhanden)
-
-**WebSocket-Recovery nach Reconnect:**
-- Socket.io `reconnect`-Event nutzen
-- Chat-Nachrichten seit letzter bekannter Message-ID nachladen (`GET /chat/:roomId/messages?after=lastMsgId`)
-- Dashboard-Daten einmal komplett neu laden
-- Badge-Counts aktualisieren
-
-**Konfidenz:** MEDIUM fuer Phase 1 (einfach), LOW fuer Phase 2 (braucht Backend-Aenderungen, muss sorgfaeltig geplant werden).
-
-## Feature-Abhaengigkeiten
+## Feature Dependencies
 
 ```
-@capacitor/network Plugin installieren
+Test-DB Setup (Docker)
+  |-> Backend Integration Tests (alle)
+  |     |-> Auth Tests (erzeugen JWT-Tokens fuer alle anderen Tests)
+  |     |     |-> RBAC Tests
+  |     |     |-> Multi-Tenant Tests
+  |     |     |-> Route-spezifische Tests
+  |     |-> Seed-Daten (konsistenter DB-Zustand)
+  |           |-> E2E Tests (brauchen volle Seed-Daten)
   |
-  v
-NetworkContext (isOnline State)
-  |
-  +--> Offline-Banner (liest isOnline)
-  |
-  +--> Cache-Layer / SWR-Pattern
-  |      |
-  |      +--> Offline-Lese-Cache (Dashboard, Chat, Events, Profil)
-  |      |
-  |      +--> Inkrementeller Sync (nutzt Cache-Invalidierung)
-  |
-  +--> Schreib-Queue
-  |      |
-  |      +--> Idempotency-Keys (Backend) <-- auch fuer Double-Submit
-  |      |
-  |      +--> Chat-Queue (Socket.io Integration)
-  |      |
-  |      +--> Aktivitaets-Antrags-Queue (REST)
-  |
-  +--> Retry-Logik (Axios-Interceptor)
-         |
-         +--> Idempotency-Keys fuer POST-Retries
-
-Double-Submit-Schutz (Frontend useActionGuard Hook)
-  |
-  +--> Idempotency-Keys (Backend, gleiche Tabelle)
+  GitHub Actions CI
+  |-> Alle Tests (muessen in CI laufen)
+  |-> npm audit
+  |-> Frontend Build-Check -> Frontend Hook Tests
+  |-> Coverage Reports
 ```
 
-## MVP-Empfehlung
+---
 
-### Phase 1 — Fundament (muss zuerst, alle anderen bauen darauf auf):
-1. NetworkContext + `@capacitor/network` Plugin
-2. Offline-Banner UI-Komponente
-3. Cache-Layer Service mit SWR-Pattern
-4. Retry-Logik im Axios-Interceptor
-5. Offline-Lese-Cache fuer Dashboard, Events, Profil, Chat-Raeume
+## Realistische Coverage-Ziele
 
-**Ergebnis:** App zeigt gecachte Daten statt leerer Seite, Nutzer sieht Offline-Status, transiente Fehler werden automatisch wiederholt.
+| Bereich | LOC (ca.) | Ziel | Begruendung |
+|---------|-----------|------|-------------|
+| Backend Routes (Tier 1) | ~7.000 | 85-90% | Sicherheitskritisch, gut testbar mit supertest |
+| Backend Routes (Tier 2) | ~5.100 | 70-80% | Geschaeftslogik, komplexere Setup-Anforderungen |
+| Backend Routes (Tier 3) | ~1.000 | 50-60% | Einfaches CRUD, geringes Risiko |
+| Backend Utils/Services | ~800 | 90%+ | Isoliert, schnell, hoher ROI |
+| Backend Middleware | ~300 | 90%+ | Wenig Code, extrem kritisch (RBAC) |
+| Frontend Hooks | ~400 | 70-80% | Komplexe Logik, gut isoliert testbar |
+| Frontend Services | ~1.200 | 60-70% | API-Wrapper, teilweise Mocking noetig |
+| Frontend Components | ~42.000 | 30-40% | Nur kritische Flows, Ionic Shadow-DOM erschwert Tests |
+| E2E (Playwright) | - | 4-5 Kernpfade | Login, Punkte, Events, Chat, Admin-CRUD |
+| **Gesamt Backend** | **~14.000** | **75-80%** | Realistisch, guter Schutz |
+| **Gesamt Frontend** | **~42.000** | **40-50%** | Realistisch mit Ionic-Einschraenkungen |
 
-### Phase 2 — Schreib-Resilienz (baut auf Phase 1 auf):
-6. Double-Submit-Schutz (Frontend `useActionGuard` Hook)
-7. Idempotency-Keys (Backend-Middleware + DB-Tabelle)
-8. Schreib-Queue Service
-9. Chat-Nachrichten-Queue mit Optimistic UI
-10. Aktivitaets-Antrags-Queue
+---
 
-**Ergebnis:** Keine doppelten Submits, Chat-Nachrichten werden bei Reconnect automatisch gesendet.
+## Test-Kategorien mit Aufwandsschaetzung
 
-### Phase 3 — Sync-Optimierung (optional, bei Bedarf):
-11. App-Resume Sync (Capacitor App Plugin `appStateChange`)
-12. WebSocket-Recovery (verpasste Nachrichten nachladen)
-13. Inkrementeller Sync mit `since`-Parameter (Backend-Erweiterung)
+### 1. Backend Integration Tests (supertest + echte PostgreSQL)
 
-**Ergebnis:** App ist nach Hintergrund-Phase sofort aktuell, Chat verpasst keine Nachrichten.
+**Anteil:** ~60% des gesamten Test-Aufwands
+**Test-Dateien:** ~18 (eine pro Route + Middleware + Helpers)
 
-### Zurueckstellen:
-- SQLite lokale DB — Overkill fuer diese Datenmenge
-- CouchDB/PouchDB/RxDB Sync — falsches Tool fuer PostgreSQL-Backend
-- Periodischer Hintergrund-Sync — App-Resume reicht, spart Batterie
-- Offline-Event-Buchung — Server-Validierung zwingend noetig
-- Offline-Admin-Operationen — Konfliktpotenzial zu hoch
+Jeder Test:
+- Laeuft gegen Docker PostgreSQL mit Seed-Daten
+- Authentifiziert sich mit vorgenerierten JWT-Tokens (verschiedene Rollen: Konfi, Teamer, Admin, Orgadmin, Superadmin)
+- Testet Happy Path + Error Cases + RBAC-Enforcement + Org-Isolation
+- Rollback nach jedem Test (Transaction-Wrapping oder TRUNCATE CASCADE)
 
-## Feature-Priorisierungs-Matrix
+Groesste Herausforderungen:
+- **events.js (2079 LOC):** Pflicht-Events mit Auto-Enrollment, Timeslots mit Kapazitaet, Wartelisten-Nachruecken, QR-Check-in mit Zeitfenster, Opt-out mit Begruendung
+- **chat.js (1879 LOC):** Socket.IO parallel zu REST-Endpunkten, Org-Isolation bei Raum-Erstellung, LATERAL Joins fuer DM-Namen, Polls und Reactions, Dateiuploads mit Magic-Bytes
+- **konfi.js (2039 LOC):** Atomare Punkte-Operationen (BEGIN/COMMIT), Bonus-Punkte ohne Double-Count, Badge-Trigger bei Punktevergabe, Profil-Aggregation
 
-| Feature | Nutzer-Wert | Implementierungskosten | Abhaengigkeiten | Prioritaet |
-|---------|------------|----------------------|-----------------|-----------|
-| NetworkContext + Plugin | HOCH (Basis fuer alles) | NIEDRIG | Keine | P0 |
-| Offline-Banner | HOCH | NIEDRIG | NetworkContext | P0 |
-| Cache-Layer SWR | HOCH | MITTEL | NetworkContext | P0 |
-| Retry-Logik | HOCH | NIEDRIG | Axios-Interceptor (existiert) | P0 |
-| Offline-Lese-Cache | HOCH | MITTEL | Cache-Layer | P0 |
-| Double-Submit-Schutz (FE) | HOCH | NIEDRIG | Keine | P1 |
-| Idempotency-Keys (BE) | HOCH | MITTEL | DB-Migration | P1 |
-| Chat-Schreib-Queue | MITTEL | HOCH | Queue-Service, Idempotency, Socket.io | P1 |
-| Aktivitaets-Queue | MITTEL | MITTEL | Queue-Service, Idempotency | P1 |
-| Optimistic UI Chat | MITTEL | MITTEL | Chat-Schreib-Queue | P1 |
-| App-Resume Sync | MITTEL | NIEDRIG | Cache-Layer, Capacitor App Plugin | P2 |
-| WS-Recovery | MITTEL | MITTEL | Socket.io, Backend-Endpoint | P2 |
-| Inkrementeller Sync | NIEDRIG | HOCH | Backend-Aenderungen (updated_at, since-Parameter) | P3 |
-| Periodischer BG-Sync | NIEDRIG | MITTEL | Capacitor Background Task | P3 |
+### 2. Backend Unit Tests (isoliert, kein DB)
+
+**Anteil:** ~10% des gesamten Test-Aufwands
+**Test-Dateien:** ~7
+
+- **bookingUtils.js:** Kapazitaetspruefung, Wartelisten-Logik, Zeitfenster
+- **chatUtils.js:** Dynamischer Admin-Lookup, Raum-Queries
+- **pointTypeGuard.js:** Deaktivierte Punkte-Typen blockieren (Gottesdienst/Gemeinde pro Jahrgang)
+- **roleHierarchy.js:** Rollen-Vergleiche (wer darf was)
+- **passwordUtils.js:** Einmalpasswort-Generierung, Hash-Validierung
+- **dateUtils.js:** Datums-Hilfsfunktionen
+- **losungService.js:** API-Abruf (HTTP-Client gemockt)
+
+### 3. Frontend Hook/Service Tests (Vitest + Testing Library)
+
+**Anteil:** ~15% des gesamten Test-Aufwands
+**Test-Dateien:** ~10
+
+- **useOfflineQuery:** SWR-Cache-Logik, Stale/Fresh-Zustaende, fetcherRef-Stabilitaet
+- **useActionGuard:** Online-Check vor Aktionen, Offline-Blocking
+- **useCountUp:** Animations-Timing (fuer Wrapped)
+- **tokenStore:** Token-Speicherung (Capacitor Preferences), sync Getter + async Setter
+- **offlineCache:** Cache-Invalidierung, TTL-Logik
+- **writeQueue:** FIFO-Reihenfolge, Persistence, Retry-Logik
+- **networkMonitor:** Online/Offline-Detection
+- **api.ts:** Interceptors, Retry-Logik, Idempotency-Keys
+
+### 4. E2E Tests (Playwright)
+
+**Anteil:** ~15% des gesamten Test-Aufwands
+**Test-Dateien:** ~5
+
+- **Login-Flow:** Konfi + Admin Login, falsches Passwort, gesperrter User, Rate-Limiting
+- **Punkte-Vergabe:** Admin vergibt Gottesdienst/Gemeinde-Punkte, Konfi sieht aktualisierte Punkte
+- **Event-Buchung:** Event erstellen, Konfi bucht Timeslot, Warteliste-Verhalten
+- **Chat:** Nachricht senden, Raum erstellen, Org-Isolation verifizieren
+- **Admin-CRUD:** Konfi anlegen, Aktivitaet erstellen, Badge vergeben
+
+Voraussetzungen:
+- Frontend muss gegen Test-Backend laufen (VITE_API_URL konfigurierbar, existiert seit v2.6)
+- Seed-Daten muessen konsistent sein
+- Playwright braucht eigenen Docker-Compose-Stack oder lokalen Setup
+
+---
+
+## Abhaengigkeiten vom bestehenden Code
+
+| Bereich | Abhaengigkeit | Impact auf Tests |
+|---------|---------------|------------------|
+| server.js ist monolithisch | Express-App + Socket.IO + Cron in einer Datei (~300 LOC Setup) | **Refactoring noetig:** app muss ohne listen() exportierbar sein fuer supertest |
+| Routes erwarten `req.db` | Database Pool Injection via Middleware in server.js | Test-Setup muss db-Pool bereitstellen und an Request haengen |
+| RBAC erwartet JWT_SECRET ENV | Umgebungsvariablen muessen in Tests gesetzt sein | .env.test Datei oder CI Secrets |
+| Firebase Push in Routes | Push-Calls in Event/Badge/Notification-Routes | **Firebase muss gemockt werden** (kein echtes Senden in Tests) |
+| Socket.IO in server.js | io-Objekt wird an Routes/liveUpdate uebergeben | Fuer Chat-Tests muss io gemockt oder separat gestartet werden |
+| Multer File-Uploads | Chat + Material Routes erwarten multipart/form-data | supertest unterstuetzt `.attach()` fuer Datei-Tests |
+| schema_migrations | Migrationen laufen bei DB-Connect automatisch | Test-DB braucht sauberen Migrations-Lauf vor Tests |
+| node-cron Jobs | Badge-Cron, Wrapped-Cron starten bei server.js Import | **Cron muss deaktivierbar sein** (ENV-Flag oder Init-Funktion) |
+| Bestehende CI | Nur Build+Deploy (backend.yml, frontend.yml), keine Tests | Tests als separater Job VOR dem Build-Job einfuegen |
+
+---
+
+## Kritischer Refactoring-Bedarf fuer Testbarkeit
+
+Minimale Aenderungen an der bestehenden Codebase, die Tests erst ermoeglichen:
+
+1. **app-Export aus server.js:** Aktuell startet server.js direkt `server.listen()`. Fuer supertest muss die Express-App ohne `listen()` exportierbar sein.
+   ```javascript
+   // Am Ende von server.js:
+   if (require.main === module) {
+     server.listen(PORT, () => { ... });
+   }
+   module.exports = { app, server, io };
+   ```
+
+2. **Firebase-Mock:** pushService.js muss mockbar sein. Entweder ENV-Flag (`DISABLE_PUSH=true` fuer Tests) oder vi.mock() auf Modul-Ebene.
+
+3. **Cron-Isolation:** node-cron Jobs sollten nicht beim Import starten. ENV-Flag `DISABLE_CRON=true` oder Refactoring zu einer expliziten `initCronJobs()` Funktion.
+
+4. **DB-Pool fuer Tests:** database.js exportiert bereits den Pool. Test-Setup braucht nur eine separate DATABASE_URL die auf die Test-DB zeigt.
+
+---
+
+## MVP Empfehlung
+
+Prioritaet fuer die erste Implementierungs-Phase:
+
+1. **Test-DB Setup** (Docker PostgreSQL + Seed-Daten + Teardown-Mechanismus)
+2. **server.js Refactoring** (app-Export, Cron-Isolation, Firebase-Mock)
+3. **Backend Integration Tests: Auth + RBAC** (Sicherheit zuerst)
+4. **Backend Integration Tests: Events + Konfi (Punkte)** (Kerngeschaeftslogik)
+5. **Backend Unit Tests: Utils** (Schnell, hoher ROI)
+6. **GitHub Actions CI: Tests + npm audit + Build-Check** (Automatisierung)
+
+Zurueckstellen fuer Phase 2:
+- **E2E Tests (Playwright):** Eigener Docker-Stack, hoher Setup-Aufwand
+- **Frontend Component/Hook Tests:** Ionic Shadow-DOM Herausforderungen
+- **Socket.IO Chat Tests:** Komplex, Chat seit v2.5 stabil
+- **Remaining Backend Routes (Tier 2+3):** Nach Tier 1 abgedeckt
+
+Zurueckstellen fuer Phase 3:
+- **Wrapped Tests:** Saisonal, nur einmal pro Jahr relevant
+- **Coverage-Enforcement:** Erst wenn Baseline steht
+
+---
 
 ## Quellen
 
-- [Ionic Blog: Best Practices for Building Offline Apps](https://ionic.io/blog/best-practices-for-building-offline-apps)
-- [Ionic: Enterprise Guide Offline](https://ionic.io/enterprise-guide/offline)
-- [Capacitor Network Plugin API](https://capacitorjs.com/docs/apis/network)
-- [Capacitor Storage Guide](https://capacitorjs.com/docs/guides/storage)
-- [web.dev: Keeping things fresh with stale-while-revalidate](https://web.dev/articles/stale-while-revalidate)
-- [web.dev: Offline UX Design Guidelines](https://web.dev/articles/offline-ux-design-guidelines)
-- [Ionic: Choosing a Data Storage Solution](https://ionic.io/blog/choosing-a-data-storage-solution-ionic-storage-capacitor-storage-sqlite-or-ionic-secure-storage)
-- [Think-it: Building Offline Apps - A Fullstack Approach](https://think-it.io/insights/offline-apps)
-- [Android Developers: Build an offline-first app](https://developer.android.com/topic/architecture/data-layer/offline-first)
-- [Sachith: Offline sync & conflict resolution patterns (Feb 2026)](https://www.sachith.co.uk/offline-sync-conflict-resolution-patterns-architecture-trade%E2%80%91offs-practical-guide-feb-19-2026/)
-- [LeanCode: Offline Mobile App Design](https://leancode.co/blog/offline-mobile-app-design)
-- [GitHub Issue #1917: Network Plugin VPN false positive](https://github.com/ionic-team/capacitor-plugins/issues/1917)
-- [npm: exponential-backoff](https://www.npmjs.com/package/exponential-backoff)
-
----
-*Feature-Research fuer: Konfi Quest v2.1 App-Resilienz (Offline/Schreib-Queue/Sync)*
-*Recherchiert: 2026-03-19*
+- Projektanalyse: 18 Backend-Route-Dateien (13.947 LOC gesamt), 125 Frontend-Komponenten (42.181 LOC gesamt)
+- Bestehende CI: GitHub Actions (backend.yml, frontend.yml) -- nur Build+Deploy, keine Tests
+- Bestehende Test-Infrastruktur: Minimal (App.test.tsx Scaffold, setupTests.ts mit Jest-DOM Mocks)
+- Frontend package.json: `test.unit: vitest` und `test.e2e: cypress run` Scripts vordefiniert (aber nicht implementiert)
+- Backend package.json: Kein Test-Framework installiert, nur Placeholder-Script
+- database.js: Pool-Export und Migration-Runner bereits vorhanden (gute Testbarkeit)
+- CLAUDE.md + MEMORY.md: Deployment via git push -> Portainer (Tests muessen VOR Deploy laufen)
