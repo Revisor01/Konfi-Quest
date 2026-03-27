@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.8
-milestone_name: Design-Polish
-status: Milestone complete
-last_updated: "2026-03-25T09:24:56.147Z"
+milestone: v2.9
+milestone_name: Test-Suite + CI/CD
+status: In Progress
+last_updated: "2026-03-27T12:22:18Z"
 progress:
   total_phases: 7
-  completed_phases: 7
-  total_plans: 19
-  completed_plans: 19
+  completed_phases: 0
+  total_plans: 3
+  completed_plans: 1
 ---
 
 # Project State
@@ -18,12 +18,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 100 — admin-zertifikate-material-dashboard
+**Current focus:** Phase 101 — test-infrastruktur-server-js-refactoring
 
 ## Current Position
 
-Phase: 100
-Plan: Not started
+Phase: 101
+Plan: 01 of 3 complete
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Plan: Not started
 | Phase 100 P02 | 2 | 2 tasks | 2 files |
 | Phase 100 P01 | 2 | 2 tasks | 2 files |
 | Phase 100 P03 | 8 | 2 tasks | 7 files |
+| Phase 101 P01 | 6 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -70,9 +71,22 @@ Alle v1.0-v2.7 Entscheidungen in PROJECT.md und milestones/ archiviert.
 | 99 | AEV-01-08, ABG-01-02 | Admin Events + Bugs |
 | 100 | AZE-01-04, AMA-01-04, ADA-01-02 | Admin Teil 2 |
 
+### Phase-Uebersicht v2.9
+
+| Phase | Requirements | Inhalt |
+|-------|-------------|--------|
+| 101 | INF-01, INF-03, INF-06 | Test-Infrastruktur + server.js Refactoring |
+
+### Decisions v2.9
+
+- createApp Factory: Express-App ohne Seiteneffekte, server.js als Wrapper (101-01)
+- http.createServer() ohne Argument, dann server.on('request', app) nach createApp (101-01)
+- Rate-Limiters nur wenn uebergeben (if-Guards statt Pflicht) (101-01)
+- QR_SECRET in Vitest env (Top-Level Guard in Routes) (101-01)
+
 ### Pending Todos
 
-- v3.0 Onboarding + Landing geplant (nach v2.8)
+- v3.0 Onboarding + Landing geplant (nach v2.9)
 
 ### Blockers/Concerns
 

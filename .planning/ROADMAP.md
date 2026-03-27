@@ -21,6 +21,7 @@
 - Shipped **v2.6 Final Polish + Bugfixes** - Phases 90-91 (shipped 2026-03-23)
 - Shipped **v2.7 Backend-Hardening** - Phases 92-93 (shipped 2026-03-24)
 - Shipped **v2.8 Design-Polish** - Phases 94-100 (shipped 2026-03-25)
+- **v2.9 Test-Suite + CI/CD** - Phases 101+ (in progress)
 
 ## Phases
 
@@ -270,5 +271,12 @@ Phase 97: Teamer UI (2 plans, complete)
 Phase 98: Admin Aktivitaeten, Details, Antraege, Profil, Jahrgaenge (3 plans, complete)
 Phase 99: Admin Events + Bugs (3 plans, complete)
 Phase 100: Admin Zertifikate, Material, Dashboard (3 plans, complete)
+
+</details>
+
+<details>
+<summary>v2.9 Test-Suite + CI/CD (Phases 101+) - IN PROGRESS</summary>
+
+Phase 101: Test-Infrastruktur + server.js Refactoring (3 plans, 1/3 complete)
 
 </details>
