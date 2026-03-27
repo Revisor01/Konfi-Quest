@@ -12,7 +12,7 @@ export default defineConfig({
       JWT_SECRET: 'test-secret-key-for-vitest',
       QR_SECRET: 'test-qr-secret-for-vitest',
       NODE_ENV: 'test',
-      TEST_DATABASE_URL: 'postgresql://postgres:postgres@localhost:5433/postgres',
+      TEST_DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/postgres',
     },
     testTimeout: 10000,
   },
