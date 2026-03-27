@@ -277,6 +277,14 @@ Phase 100: Admin Zertifikate, Material, Dashboard (3 plans, complete)
 <details>
 <summary>v2.9 Test-Suite + CI/CD (Phases 101+) - IN PROGRESS</summary>
 
-Phase 101: Test-Infrastruktur + server.js Refactoring (3 plans, 1/3 complete)
+Phase 101: Test-Infrastruktur + server.js Refactoring (3 plans, complete)
+
+Phase 102: Auth + RBAC Integration Tests (2 plans)
+**Goal:** Authentifizierung und Autorisierung sind lueckenlos getestet -- kein Login-Bug, kein Cross-Org-Zugriff, kein Rollen-Bypass geht unbemerkt durch
+**Requirements:** [BIT-01, BIT-02]
+**Plans:** 2 plans
+Plans:
+- [ ] 102-01-PLAN.md -- Auth-Lifecycle Tests (Login, Refresh, Logout, /me, Passwort, Registrierung)
+- [ ] 102-02-PLAN.md -- RBAC-Matrix + Cross-Org-Isolation Tests
 
 </details>
