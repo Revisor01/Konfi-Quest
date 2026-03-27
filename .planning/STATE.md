@@ -23,7 +23,7 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 ## Current Position
 
 Phase: 102
-Plan: 1 of 2
+Plan: 02 of 2 complete
 
 ## Performance Metrics
 
@@ -56,7 +56,7 @@ Plan: 1 of 2
 | Phase 101 P01 | 6 | 2 tasks | 6 files |
 | Phase 101 P02 | 5 | 2 tasks | 7 files |
 | Phase 101 P03 | 383 | 1 tasks | 3 files |
-| Phase 102 P01 | 402 | 1 tasks | 3 files |
+| Phase 102 P02 | 733 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -89,8 +89,9 @@ Alle v1.0-v2.7 Entscheidungen in PROJECT.md und milestones/ archiviert.
 - Repo-Root init-scripts als Schema-Basis, fehlende Tabellen inline in globalSetup (101-02)
 - custom_badges statt badges fuer Seed — Routes nutzen criteria_type (101-02)
 - Rollen pro Org dupliziert wegen UNIQUE(name, organization_id) Constraint (101-02)
-- Test-Passwoerter brauchen Sonderzeichen wegen validatePassword Policy (102-01)
-- register-konfi Bug-Fix: organization_id im konfi_profiles INSERT (102-01)
+- Teamer-Dashboard hat eigenen role_name-Check, /teamer/konfis als requireTeamer-Repraesentant (102-02)
+- SuperAdmin nicht in requireTeamer/requireAdmin/requireOrgAdmin — nur /api/organizations (102-02)
+- activities.type, events.cancelled als fehlende Schema-Spalten in globalSetup ergaenzt (102-02)
 
 ### Pending Todos
 

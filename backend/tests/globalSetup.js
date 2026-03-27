@@ -232,6 +232,16 @@ module.exports = async function globalSetup() {
     ALTER TABLE levels ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0;
   `).catch(() => {});
 
+  // 5.6 Fehlende Spalten die in Produktion existieren aber nicht in init-scripts/migrations
+  //     Einzeln ausfuehren damit ein Fehler nicht alle blockiert
+  for (const stmt of [
+    'ALTER TABLE activities ADD COLUMN IF NOT EXISTS type VARCHAR(50)',
+    'ALTER TABLE activities ADD COLUMN IF NOT EXISTS points INTEGER DEFAULT 0',
+    'ALTER TABLE events ADD COLUMN IF NOT EXISTS cancelled BOOLEAN DEFAULT false',
+  ]) {
+    await testPool.query(stmt).catch(() => {});
+  }
+
   // 6. Migrationen ausfuehren (identisch mit database.js runMigrations)
   await testPool.query(`
     CREATE TABLE IF NOT EXISTS schema_migrations (

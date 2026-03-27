@@ -284,7 +284,7 @@ Phase 102: Auth + RBAC Integration Tests (2 plans)
 **Requirements:** [BIT-01, BIT-02]
 **Plans:** 2 plans
 Plans:
-- [x] 102-01-PLAN.md -- Auth-Lifecycle Tests (Login, Refresh, Logout, /me, Passwort, Registrierung)
-- [ ] 102-02-PLAN.md -- RBAC-Matrix + Cross-Org-Isolation Tests
+- [ ] 102-01-PLAN.md -- Auth-Lifecycle Tests (Login, Refresh, Logout, /me, Passwort, Registrierung)
+- [x] 102-02-PLAN.md -- RBAC-Matrix + Cross-Org-Isolation Tests
 
 </details>
