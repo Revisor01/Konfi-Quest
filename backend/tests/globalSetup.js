@@ -241,6 +241,24 @@ module.exports = async function globalSetup() {
     'ALTER TABLE bonus_points ADD COLUMN IF NOT EXISTS completed_date DATE DEFAULT CURRENT_DATE',
     'ALTER TABLE user_badges ADD COLUMN IF NOT EXISTS seen BOOLEAN DEFAULT false',
     'ALTER TABLE event_points ADD COLUMN IF NOT EXISTS description TEXT',
+    // Chat-Messages: Fehlende Spalten die in Produktion existieren
+    'ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP',
+    'ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS message_type VARCHAR(50) DEFAULT \'text\'',
+    'ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS reply_to INTEGER REFERENCES chat_messages(id)',
+    'ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS file_name VARCHAR(500)',
+    'ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS file_size INTEGER',
+    'ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS client_id VARCHAR(100)',
+    'ALTER TABLE chat_messages ALTER COLUMN content DROP NOT NULL',
+    // Chat-Message-Reactions Tabelle
+    `CREATE TABLE IF NOT EXISTS chat_message_reactions (
+      id SERIAL PRIMARY KEY,
+      message_id INTEGER NOT NULL REFERENCES chat_messages(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      user_type VARCHAR(20) NOT NULL,
+      emoji VARCHAR(50) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(message_id, user_id, user_type, emoji)
+    )`,
   ]) {
     await testPool.query(stmt).catch(() => {});
   }
