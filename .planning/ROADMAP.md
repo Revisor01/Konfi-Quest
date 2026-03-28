@@ -296,4 +296,13 @@ Plans:
 - [x] 103-02-PLAN.md -- Konfi + Chat Integration-Tests
 - [ ] 103-03-PLAN.md -- Badge CRUD, Auto-Award + Progress Integration-Tests
 
+Phase 104: Remaining Routes Integration Tests (3 plans)
+**Goal:** Alle verbleibenden Backend-Routes haben Integration-Tests -- die gesamte API ist abgesichert
+**Requirements:** [BIT-08]
+**Plans:** 3 plans
+Plans:
+- [ ] 104-01-PLAN.md -- Categories, Jahrgaenge, Levels, Konfi-Management Integration-Tests
+- [ ] 104-02-PLAN.md -- Notifications, Organizations, Roles, Settings, Users Integration-Tests
+- [ ] 104-03-PLAN.md -- Material, Teamer, Wrapped Integration-Tests
+
 </details>
