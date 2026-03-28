@@ -175,7 +175,9 @@ const checkAndAwardBadges = async (db, userId) => {
       if (alreadyEarned.includes(badge.id)) continue;
 
       let earned = false;
-      const criteria = JSON.parse(badge.criteria_extra || '{}');
+      const criteria = typeof badge.criteria_extra === 'object' && badge.criteria_extra !== null
+        ? badge.criteria_extra
+        : JSON.parse(badge.criteria_extra || '{}');
 
       switch (badge.criteria_type) {
         case 'total_points': {
