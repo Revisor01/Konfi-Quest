@@ -18,12 +18,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 105 -- ci-cd-pipeline
+**Current focus:** Phase 106 -- frontend-tests
 
 ## Current Position
 
-Phase: 105
-Plan: Not started
+Phase: 106
+Plan: 01 complete
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Plan: Not started
 | Phase 100 P01 | 2 | 2 tasks | 2 files |
 | Phase 100 P03 | 8 | 2 tasks | 7 files |
 | Phase 105 P01 | 2 | 2 tasks | 2 files |
+| Phase 106 P01 | 4 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -76,12 +77,15 @@ Alle v1.0-v2.7 Entscheidungen in PROJECT.md und milestones/ archiviert.
 | Phase | Inhalt |
 |-------|--------|
 | 105 | CI/CD Pipeline (ci.yml mit Tests, Audit, Docker Build) |
+| 106 | Frontend Tests (Service Unit-Tests, Hook-Tests, Component-Tests) |
 
 ### Decisions v2.9
 
 - P105-01: Matrix-Strategy fuer Backend+Frontend Docker Builds statt separater Jobs
 - P105-01: npm audit --audit-level=critical informativ (blockiert nicht)
 - P105-01: --passWithNoTests fuer vitest damit Pipeline ohne Tests laeuft
+- P106-01: vi.mock statt __mocks__ fuer Capacitor-Plugins (registerPlugin-Proxy)
+- P106-01: vi.resetModules + dynamischer Import fuer Modul-Level-State-Isolation
 
 ### Pending Todos
 
