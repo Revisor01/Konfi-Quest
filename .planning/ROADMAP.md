@@ -321,4 +321,12 @@ Plans:
 - [ ] 106-02-PLAN.md -- Hook-Tests (useActionGuard, useOfflineQuery) + AppContext Tests
 - [ ] 106-03-PLAN.md -- 5 Component-Tests (EmptyState, LoadingSpinner, SectionHeader, ListSection, ErrorBoundary)
 
+Phase 107: E2E Tests mit Playwright (2 plans)
+**Goal:** Die 4 wichtigsten User-Journeys sind End-to-End im echten Browser verifiziert
+**Requirements:** [E2E-01, E2E-02, E2E-03, E2E-04, E2E-05]
+**Plans:** 2 plans
+Plans:
+- [ ] 107-01-PLAN.md -- Docker-Compose E2E Stack + Playwright Setup + Login E2E
+- [ ] 107-02-PLAN.md -- Punkte-Vergabe, Event-Buchung, Chat E2E Tests
+
 </details>
