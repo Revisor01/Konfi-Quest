@@ -225,7 +225,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
                           <div
                             key={`${entry.source_type}-${entry.id}`}
                             className={`app-list-item ${listItemClass}`}
-                            style={{ position: 'relative', overflow: 'hidden' }}
+                            style={{ position: 'relative', overflow: 'hidden', paddingTop: '20px' }}
                           >
                             {/* Corner Badges Container - oben rechts */}
                             <div className="app-corner-badges">
