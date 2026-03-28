@@ -18,12 +18,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 106 -- frontend-tests
+**Current focus:** Phase 107 -- e2e-tests-mit-playwright
 
 ## Current Position
 
-Phase: 106
-Plan: Not started
+Phase: 107
+Plan: 01 complete
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Plan: Not started
 | Phase 100 P03 | 8 | 2 tasks | 7 files |
 | Phase 105 P01 | 2 | 2 tasks | 2 files |
 | Phase 106 P01 | 4 | 2 tasks | 7 files |
+| Phase 107 P01 | 344 | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,7 @@ Alle v1.0-v2.7 Entscheidungen in PROJECT.md und milestones/ archiviert.
 |-------|--------|
 | 105 | CI/CD Pipeline (ci.yml mit Tests, Audit, Docker Build) |
 | 106 | Frontend Tests (Service Unit-Tests, Hook-Tests, Component-Tests) |
+| 107 | E2E Tests mit Playwright (Docker-Stack, Login-Flow) |
 
 ### Decisions v2.9
 
@@ -86,6 +88,9 @@ Alle v1.0-v2.7 Entscheidungen in PROJECT.md und milestones/ archiviert.
 - P105-01: --passWithNoTests fuer vitest damit Pipeline ohne Tests laeuft
 - P106-01: vi.mock statt __mocks__ fuer Capacitor-Plugins (registerPlugin-Proxy)
 - P106-01: vi.resetModules + dynamischer Import fuer Modul-Level-State-Isolation
+- P107-01: Playwright mit Chromium-only, Ionic-spezifische ion-input Selektoren
+- P107-01: Frontend Dockerfile um VITE_API_URL Build-Arg erweitert
+- P107-01: Root package.json fuer Playwright und E2E-Scripts erstellt
 
 ### Pending Todos
 

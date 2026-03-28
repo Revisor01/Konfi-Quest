@@ -326,7 +326,7 @@ Phase 107: E2E Tests mit Playwright (2 plans)
 **Requirements:** [E2E-01, E2E-02, E2E-03, E2E-04, E2E-05]
 **Plans:** 2 plans
 Plans:
-- [ ] 107-01-PLAN.md -- Docker-Compose E2E Stack + Playwright Setup + Login E2E
+- [x] 107-01-PLAN.md -- Docker-Compose E2E Stack + Playwright Setup + Login E2E
 - [ ] 107-02-PLAN.md -- Punkte-Vergabe, Event-Buchung, Chat E2E Tests
 
 </details>

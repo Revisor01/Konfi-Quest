@@ -40,8 +40,8 @@
 
 ### E2E Tests
 
-- [ ] **E2E-01**: Playwright Setup mit Docker Compose Test-Stack (DB + Backend + Frontend)
-- [ ] **E2E-02**: Login-Flow E2E (Konfi + Admin)
+- [x] **E2E-01**: Playwright Setup mit Docker Compose Test-Stack (DB + Backend + Frontend)
+- [x] **E2E-02**: Login-Flow E2E (Konfi + Admin)
 - [ ] **E2E-03**: Punkte-Vergabe E2E (Admin vergibt Aktivitaet an Konfi)
 - [ ] **E2E-04**: Event-Buchung E2E (Konfi bucht Event)
 - [ ] **E2E-05**: Chat E2E (Nachricht senden und empfangen)
@@ -94,8 +94,8 @@
 | FRT-01 | Phase 106 | Pending |
 | FRT-02 | Phase 106 | Pending |
 | FRT-03 | Phase 106 | Pending |
-| E2E-01 | Phase 107 | Pending |
-| E2E-02 | Phase 107 | Pending |
+| E2E-01 | Phase 107 | Complete |
+| E2E-02 | Phase 107 | Complete |
 | E2E-03 | Phase 107 | Pending |
 | E2E-04 | Phase 107 | Pending |
 | E2E-05 | Phase 107 | Pending |
