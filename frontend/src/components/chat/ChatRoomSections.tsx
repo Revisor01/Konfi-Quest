@@ -67,7 +67,7 @@ export const ChatHeader = React.memo<ChatHeaderProps>(({
   const headerColor = getHeaderColor(roomType);
   return (
     <IonHeader translucent={true}>
-      <IonToolbar style={{ borderBottom: `3px solid ${headerColor}` }}>
+      <IonToolbar>
         <IonButtons slot="start">
           <IonButton onClick={onBack}>
             <IonIcon icon={arrowBack} />

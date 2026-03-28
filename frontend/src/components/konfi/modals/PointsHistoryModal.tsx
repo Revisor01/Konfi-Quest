@@ -225,7 +225,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
                           <div
                             key={`${entry.source_type}-${entry.id}`}
                             className={`app-list-item ${listItemClass}`}
-                            style={{ position: 'relative', overflow: 'hidden', paddingTop: '20px' }}
+                            style={{ position: 'relative', overflow: 'hidden' }}
                           >
                             {/* Corner Badges Container - oben rechts */}
                             <div className="app-corner-badges">
@@ -250,7 +250,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
                                   <IonIcon icon={getCategoryIcon(entry.category, entry.source_type)} />
                                 </div>
                                 <div className="app-list-item__content">
-                                  <div className="app-list-item__title">{entry.title}</div>
+                                  <div className="app-list-item__title" style={{ paddingRight: typeBadgeColor ? '120px' : '70px' }}>{entry.title}</div>
                                   <div className="app-list-item__meta">
                                     <span className="app-list-item__meta-item">
                                       {getCategoryLabel(entry.category)}

@@ -579,7 +579,6 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                           style={{
                             cursor: creating ? 'default' : 'pointer',
                             opacity: creating ? 0.6 : 1,
-                            marginBottom: '0',
                             position: 'relative',
                             overflow: 'hidden',
                             background: isSelected ? (isAdmin ? 'rgba(225, 29, 72, 0.08)' : 'rgba(91, 33, 182, 0.08)') : undefined
