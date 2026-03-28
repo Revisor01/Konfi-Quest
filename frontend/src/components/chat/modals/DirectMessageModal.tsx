@@ -12,13 +12,11 @@ import {
   IonLabel,
   IonList,
   IonSearchbar,
-  IonAvatar,
-  IonText,
   IonListHeader,
   IonCard,
   IonCardContent
 } from '@ionic/react';
-import { close, person, people, chevronForward, searchOutline, peopleOutline, informationCircleOutline, cloudOfflineOutline } from 'ionicons/icons';
+import { close, person, people, searchOutline, peopleOutline, informationCircleOutline, cloudOfflineOutline, calendar } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
@@ -162,54 +160,55 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSucc
                   </IonCardContent>
                 </IonCard>
               ) : (
-                <IonList>
-                  {filteredUsers.map((targetUser) => (
-                    <IonItem
-                      key={`${targetUser.type}-${targetUser.id}`}
-                      button
-                      onClick={() => createDirectMessage(targetUser)}
-                      disabled={creating || !isOnline}
-                      style={{ '--min-height': '60px' }}
-                    >
-                      <IonAvatar slot="start" style={{
-                        width: '40px',
-                        height: '40px',
-                        backgroundColor: '#17a2b8',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        <IonIcon
-                          icon={targetUser.type === 'admin' ? person : people}
-                          style={{
-                            fontSize: '1.2rem',
-                            color: 'white'
-                          }}
-                        />
-                      </IonAvatar>
-
-                      <IonLabel>
-                        <h3 style={{ fontWeight: '600', margin: '0 0 4px 0' }}>
-                          {getUserDisplayName(targetUser)}
-                        </h3>
-                        <p style={{
-                          margin: '0',
-                          fontSize: '0.9rem',
-                          color: '#666'
-                        }}>
-                          {targetUser.type === 'admin' ? 'Admin' :
-                           (targetUser.jahrgang ? `Jahrgang ${targetUser.jahrgang}` : 'Konfi')}
-                        </p>
-                      </IonLabel>
-
-                      <IonIcon
-                        icon={chevronForward}
-                        slot="end"
-                        style={{ color: '#c7c7cc' }}
-                      />
-                    </IonItem>
-                  ))}
-                </IonList>
+                <IonCard className="app-card">
+                  <IonCardContent style={{ padding: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      {filteredUsers.map((targetUser) => {
+                        const isAdmin = targetUser.type === 'admin';
+                        const badgeColor = isAdmin ? '#e11d48' : '#5b21b6';
+                        return (
+                          <div
+                            key={`${targetUser.type}-${targetUser.id}`}
+                            className={`app-list-item ${isAdmin ? 'app-list-item--team' : 'app-list-item--konfi'}`}
+                            onClick={() => !creating && isOnline && createDirectMessage(targetUser)}
+                            style={{
+                              cursor: creating || !isOnline ? 'default' : 'pointer',
+                              opacity: creating ? 0.6 : 1,
+                              position: 'relative',
+                              overflow: 'hidden'
+                            }}
+                          >
+                            <div className="app-corner-badges">
+                              <div className="app-corner-badge" style={{ backgroundColor: badgeColor }}>
+                                {isAdmin ? 'Admin' : 'Konfi'}
+                              </div>
+                            </div>
+                            <div className="app-list-item__row">
+                              <div className="app-list-item__main">
+                                <div className={`app-icon-circle app-icon-circle--lg ${isAdmin ? 'app-icon-circle--team' : 'app-icon-circle--konfi'}`}>
+                                  <IonIcon icon={isAdmin ? person : people} />
+                                </div>
+                                <div className="app-list-item__content">
+                                  <div className="app-list-item__title" style={{ paddingRight: '70px' }}>
+                                    {getUserDisplayName(targetUser)}
+                                  </div>
+                                  {!isAdmin && targetUser.jahrgang && (
+                                    <div className="app-list-item__meta">
+                                      <span className="app-list-item__meta-item">
+                                        <IonIcon icon={calendar} style={{ color: '#5b21b6' }} />
+                                        {targetUser.jahrgang}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </IonCardContent>
+                </IonCard>
               )}
             </IonList>
 

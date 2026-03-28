@@ -542,7 +542,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
               <IonLabel>Personen ({filteredUsers.length})</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent>
+              <IonCardContent style={{ padding: filteredUsers.length === 0 ? '16px' : '12px' }}>
                 {loading ? (
                   <div style={{ padding: '40px 20px', textAlign: 'center' }}>
                     <IonSpinner name="crescent" />
@@ -557,7 +557,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                     <p style={{ margin: '0', fontSize: '1rem' }}>Keine Personen gefunden</p>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {filteredUsers.map((targetUser) => {
                       const participantId = `${targetUser.type}-${targetUser.id}`;
                       const isSelected = selectedParticipants.has(participantId);

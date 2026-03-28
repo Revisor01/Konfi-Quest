@@ -79,64 +79,32 @@ const ChatOptionsModal: React.FC<ChatOptionsModalProps> = ({ onClose, onSelectOp
           </IonListHeader>
 
         <IonCard className="app-card">
-          <IonCardContent style={{ padding: '8px 0' }}>
-            <IonList lines="none" style={{ background: 'transparent' }}>
+          <IonCardContent style={{ padding: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
               {chatOptions.map((option) => (
-                <IonItem
+                <div
                   key={option.type}
-                  button
+                  className="app-list-item app-list-item--chat"
                   onClick={() => {
                     onSelectOption(option.type);
                     handleClose();
                   }}
-                  detail={false}
-                  style={{
-                    '--min-height': '70px',
-                    '--padding-start': '16px',
-                    '--background': '#fbfbfb',
-                    '--border-radius': '12px',
-                    margin: '4px 8px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '12px'
-                  }}
+                  style={{ cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
                 >
-                  <div style={{
-                    width: '44px',
-                    height: '44px',
-                    backgroundColor: option.color,
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: '12px',
-                    flexShrink: 0,
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
-                  }}>
-                    <IonIcon
-                      icon={option.icon}
-                      style={{
-                        fontSize: '1.3rem',
-                        color: 'white'
-                      }}
-                    />
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                      <div className="app-icon-circle app-icon-circle--lg" style={{ backgroundColor: option.color }}>
+                        <IonIcon icon={option.icon} />
+                      </div>
+                      <div className="app-list-item__content">
+                        <div className="app-list-item__title">{option.title}</div>
+                        <div className="app-list-item__subtitle">{option.subtitle}</div>
+                      </div>
+                    </div>
                   </div>
-
-                  <IonLabel>
-                    <h2 style={{ fontWeight: '600', fontSize: '1rem', marginBottom: '4px' }}>
-                      {option.title}
-                    </h2>
-                    <p style={{
-                      margin: '0',
-                      fontSize: '0.85rem',
-                      color: '#666'
-                    }}>
-                      {option.subtitle}
-                    </p>
-                  </IonLabel>
-                </IonItem>
+                </div>
               ))}
-            </IonList>
+            </div>
           </IonCardContent>
         </IonCard>
         </IonList>

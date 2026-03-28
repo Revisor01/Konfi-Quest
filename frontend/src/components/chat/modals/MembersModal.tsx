@@ -443,7 +443,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
                   <IonLabel>Verfügbare Personen ({filteredAvailableUsers.length})</IonLabel>
                 </IonListHeader>
                 <IonCard className="app-card">
-                  <IonCardContent>
+                  <IonCardContent style={{ padding: filteredAvailableUsers.length === 0 ? '16px' : '12px' }}>
                     {filteredAvailableUsers.length === 0 ? (
                       <div style={{
                         padding: '40px 20px',
@@ -454,7 +454,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
                         <p style={{ margin: '0', fontSize: '1rem' }}>Keine verfügbaren Personen gefunden</p>
                       </div>
                     ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
                         {filteredAvailableUsers.map((u) => {
                           const userId = `${u.type}-${u.id}`;
                           return renderUserItem(
@@ -483,7 +483,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
                     <IonLabel>Mitglieder ({sortedParticipants.length})</IonLabel>
                   </IonListHeader>
                   <IonCard className="app-card">
-                    <IonCardContent>
+                    <IonCardContent style={{ padding: sortedParticipants.length === 0 ? '16px' : '12px' }}>
                       {sortedParticipants.length === 0 ? (
                         <div style={{
                           padding: '40px 20px',
@@ -494,9 +494,9 @@ const MembersModal: React.FC<MembersModalProps> = ({
                           <p style={{ margin: '0', fontSize: '1rem' }}>Keine Mitglieder</p>
                         </div>
                       ) : (
-                        <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
-                          {sortedParticipants.map((p, index) => (
-                            <IonItemSliding key={`${p.user_type}-${p.user_id}`} disabled={!canManageMembers} style={{ marginBottom: index < sortedParticipants.length - 1 ? '8px' : '0' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          {sortedParticipants.map((p) => (
+                            <IonItemSliding key={`${p.user_type}-${p.user_id}`} disabled={!canManageMembers}>
                               <IonItem
                                 detail={false}
                                 lines="none"
@@ -526,7 +526,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
                               )}
                             </IonItemSliding>
                           ))}
-                        </IonList>
+                        </div>
                       )}
                     </IonCardContent>
                   </IonCard>
