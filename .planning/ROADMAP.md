@@ -21,7 +21,8 @@
 - Shipped **v2.6 Final Polish + Bugfixes** - Phases 90-91 (shipped 2026-03-23)
 - Shipped **v2.7 Backend-Hardening** - Phases 92-93 (shipped 2026-03-24)
 - Shipped **v2.8 Design-Polish** - Phases 94-100 (shipped 2026-03-25)
-- **v2.9 Test-Suite + CI/CD** - Phases 101+ (in progress)
+- Shipped **v2.9 Test-Suite + CI/CD** - Phases 101-107 (shipped 2026-03-28)
+- In Progress **v2.10 Design-Polish + UX-Feinschliff** - Phases 108+
 
 ## Phases
 
@@ -275,7 +276,7 @@ Phase 100: Admin Zertifikate, Material, Dashboard (3 plans, complete)
 </details>
 
 <details>
-<summary>v2.9 Test-Suite + CI/CD (Phases 101+) - IN PROGRESS</summary>
+<summary>Shipped v2.9 Test-Suite + CI/CD (Phases 101-107) - SHIPPED 2026-03-28</summary>
 
 Phase 101: Test-Infrastruktur + server.js Refactoring (3 plans, complete)
 
@@ -330,3 +331,30 @@ Plans:
 - [ ] 107-02-PLAN.md -- Punkte-Vergabe, Event-Buchung, Chat E2E Tests
 
 </details>
+
+### v2.10 Design-Polish + UX-Feinschliff (In Progress)
+
+**Milestone Goal:** Letzte Design- und UX-Verbesserungen — Haptics, Searchbar-Styling, IonRange-Wert-Anzeige, Maximalwerte und weitere UI-Anpassungen.
+
+- [ ] **Phase 108: Haptics + Searchbar + IonRange Polish** - Pull-to-Refresh Haptics, Searchbar Classic Style, IonRange Wert-Anzeige + Maximalwerte
+
+## Phase Details
+
+### Phase 108: Haptics + Searchbar + IonRange Polish
+**Goal**: Pull-to-Refresh Haptics in allen Views, Searchbar Classic Style, IonRange-Werte sichtbar und Maximalwerte korrekt
+**Requirements**: UXH-01, SBS-01, IRV-01, IRV-02
+**Success Criteria** (what must be TRUE):
+  1. Pull-to-Refresh loest Haptics-Feedback auf iOS aus (ImpactStyle.Light bei ionPullStart)
+  2. Alle IonSearchbar-Instanzen haben ios26-searchbar-classic Klasse
+  3. IonRange zeigt den eingestellten Wert sichtbar an (auch nach dem Loslassen)
+  4. Maximalwerte der IonRange-Slider sind sinnvoll konfiguriert
+**Plans**: TBD
+
+## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 108+
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 108. Haptics + Searchbar + IonRange Polish | 0/? | Not started | - |
