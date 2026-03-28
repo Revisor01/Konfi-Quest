@@ -23,7 +23,7 @@
 - [x] **BIT-05**: Konfi-Routes getestet (Profil, Punkte-History, Dashboard-Daten)
 - [x] **BIT-06**: Chat-Routes getestet (Raeume, Nachrichten, Teilnehmer, Dateien)
 - [x] **BIT-07**: Badges-Routes getestet (Vergabe, Levels, Auto-Award, Progress)
-- [ ] **BIT-08**: Remaining Routes getestet (categories, jahrgaenge, levels, notifications, organizations, roles, settings, users, bonus, material, teamer, wrapped)
+- [x] **BIT-08**: Remaining Routes getestet (categories, jahrgaenge, levels, notifications, organizations, roles, settings, users, bonus, material, teamer, wrapped)
 
 ### CI/CD Pipeline
 
@@ -86,7 +86,7 @@
 | BIT-05 | Phase 103 | Pending |
 | BIT-06 | Phase 103 | Pending |
 | BIT-07 | Phase 103 | Complete |
-| BIT-08 | Phase 104 | Pending |
+| BIT-08 | Phase 104 | Complete |
 | CIC-01 | Phase 105 | Pending |
 | CIC-02 | Phase 105 | Pending |
 | CIC-03 | Phase 105 | Pending |
