@@ -10,6 +10,10 @@ RUN npm ci --legacy-peer-deps
 # Copy source
 COPY . .
 
+# VITE_API_URL als Build-Arg (Vite bettet env-vars zur Build-Zeit ein)
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 # Build
 RUN npm run build
 

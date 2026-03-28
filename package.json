@@ -1,0 +1,13 @@
+{
+  "name": "konfi-quest",
+  "version": "2.9.0",
+  "description": "Konfirmandenpunkte-App fuer Kirchengemeinden",
+  "private": true,
+  "scripts": {
+    "test:e2e": "npx playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "pg": "^8.20.0"
+  }
+}
