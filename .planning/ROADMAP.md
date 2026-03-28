@@ -312,4 +312,13 @@ Phase 105: CI/CD Pipeline (1 plan)
 Plans:
 - [ ] 105-01-PLAN.md -- CI/CD Workflow mit Test-Jobs als Deploy-Gate
 
+Phase 106: Frontend Tests (3 plans)
+**Goal:** Kritische Frontend-Logik (Hooks, Utilities, Kern-Komponenten) ist mit Tests abgesichert
+**Requirements:** [FRT-01, FRT-02, FRT-03]
+**Plans:** 3 plans
+Plans:
+- [ ] 106-01-PLAN.md -- Test-Infrastruktur (Capacitor-Mocks) + Service Unit-Tests (tokenStore, networkMonitor, api)
+- [ ] 106-02-PLAN.md -- Hook-Tests (useActionGuard, useOfflineQuery) + AppContext Tests
+- [ ] 106-03-PLAN.md -- 5 Component-Tests (EmptyState, LoadingSpinner, SectionHeader, ListSection, ErrorBoundary)
+
 </details>
