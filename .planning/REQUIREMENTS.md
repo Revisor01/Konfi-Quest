@@ -16,12 +16,12 @@
 
 ### Backend Integration Tests
 
-- [ ] **BIT-01**: Auth-Routes getestet (Login, Register, Refresh, Logout, Passwort-Reset)
+- [x] **BIT-01**: Auth-Routes getestet (Login, Register, Refresh, Logout, Passwort-Reset)
 - [x] **BIT-02**: RBAC-Matrix getestet — jede Route prueft alle 5 Rollen + Org-Isolation
 - [x] **BIT-03**: Activities-Routes getestet (CRUD, Punkte-Vergabe, Kategorie-Filter)
 - [x] **BIT-04**: Events-Routes getestet (Erstellen, Buchen, Timeslots, Warteliste, Absagen)
-- [ ] **BIT-05**: Konfi-Routes getestet (Profil, Punkte-History, Dashboard-Daten)
-- [ ] **BIT-06**: Chat-Routes getestet (Raeume, Nachrichten, Teilnehmer, Dateien)
+- [x] **BIT-05**: Konfi-Routes getestet (Profil, Punkte-History, Dashboard-Daten)
+- [x] **BIT-06**: Chat-Routes getestet (Raeume, Nachrichten, Teilnehmer, Dateien)
 - [x] **BIT-07**: Badges-Routes getestet (Vergabe, Levels, Auto-Award, Progress)
 - [ ] **BIT-08**: Remaining Routes getestet (categories, jahrgaenge, levels, notifications, organizations, roles, settings, users, bonus, material, teamer, wrapped)
 
