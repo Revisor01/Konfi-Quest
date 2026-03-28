@@ -260,6 +260,24 @@ module.exports = async function globalSetup() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(message_id, user_id, user_type, emoji)
     )`,
+    // roles: fehlende Spalten
+    'ALTER TABLE roles ADD COLUMN IF NOT EXISTS is_system_role BOOLEAN DEFAULT false',
+    'ALTER TABLE roles ADD COLUMN IF NOT EXISTS description TEXT',
+    'ALTER TABLE roles ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true',
+    // push_tokens: user_type Spalte + korrekter UNIQUE constraint fuer Notifications-Route
+    'ALTER TABLE push_tokens ADD COLUMN IF NOT EXISTS user_type VARCHAR(20)',
+    'ALTER TABLE push_tokens DROP CONSTRAINT IF EXISTS push_tokens_user_id_token_key',
+    `DO $$ BEGIN
+      ALTER TABLE push_tokens ADD CONSTRAINT push_tokens_user_platform_device_key UNIQUE (user_id, platform, device_id);
+    EXCEPTION WHEN duplicate_table THEN NULL; WHEN duplicate_object THEN NULL;
+    END $$`,
+    // settings: organization_id Spalte + UNIQUE constraint fuer Settings-Route
+    'ALTER TABLE settings ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id)',
+    'ALTER TABLE settings DROP CONSTRAINT IF EXISTS settings_key_key',
+    `DO $$ BEGIN
+      ALTER TABLE settings ADD CONSTRAINT settings_org_key_unique UNIQUE (organization_id, key);
+    EXCEPTION WHEN duplicate_table THEN NULL; WHEN duplicate_object THEN NULL;
+    END $$`,
   ]) {
     await testPool.query(stmt).catch(() => {});
   }
