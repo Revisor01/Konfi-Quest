@@ -48,18 +48,20 @@ Auth-Routes auf RBAC migriert (gesperrte User sofort blockiert), Magic-Bytes Upl
 
 ~50 UI-Fixes und Design-Verbesserungen ueber alle Bereiche. Chat-Farbschema (rosa/lila/tuerkis), Konfi/Teamer/Admin UI Polish, Zertifikat-Zuweisungs-Modal, sortierbare Dashboard-Sektionen, Wartelisten-Bugfix, CSS-Variable fuer Beschreibungstexte. 7 Phasen, 19 Plans, 64 Requirements.
 
-## Current Milestone: v2.9 Test-Suite + CI/CD
+## Shipped: v2.9 Test-Suite + CI/CD (2026-03-28)
 
-**Goal:** Umfassende Test-Suite ueber die gesamte App — Backend Integration Tests, Frontend Tests, E2E Tests, CI/CD Pipeline.
+458 Backend Integration-Tests (alle 15 Routes gegen echte PostgreSQL), 71 Frontend Tests (Hooks/Services/Components), 4 Playwright E2E User-Journeys, GitHub Actions CI/CD Pipeline als Deploy-Gate. 7 Phasen, 11 Plans, 26 Requirements. 3 Produktions-Bugs nebenbei gefixt (auth.js org_id, badges.js JSON.parse, wrapped.js double-release).
 
-**Phase 101 complete:** Test-Infrastruktur + server.js Refactoring — createApp Factory, Test-DB Lifecycle, Seed-Fixtures, Auth-Helpers, 6 Smoke-Tests gruen.
+## Current Milestone: v2.10 Design-Polish + UX-Feinschliff
+
+**Goal:** Letzte Design- und UX-Verbesserungen — Haptics, Searchbar-Styling, IonRange-Wert-Anzeige, Maximalwerte und weitere UI-Anpassungen.
 
 **Target features:**
-- Vitest + supertest Integration-Tests fuer alle 15 Backend-Routes gegen echte PostgreSQL
-- Frontend Component/Unit Tests fuer kritische Flows
-- Playwright E2E Tests fuer Kernpfade (Login, Punkte, Events, Chat)
-- GitHub Actions CI/CD Pipeline (Tests bei jedem Push, npm audit)
-- Test-Datenbank Setup (Docker-basiert, isoliert)
+- Pull-to-Refresh Haptics (Capacitor ImpactStyle.Light bei ionPullStart in allen Views mit IonRefresher)
+- Searchbar Classic Style (ios26-searchbar-classic auf alle IonSearchbar)
+- IonRange Wert-Anzeige (eingestellte Zahlen sichtbar halten)
+- Maximalwerte-Anpassung
+- Weitere Design-Anpassungen (wird ergaenzt)
 
 ## Geplant: v3.0 Onboarding + Landing
 
@@ -277,4 +279,4 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | file-type Magic-Bytes Upload | Client-MIME-Header allein nicht vertrauenswuerdig | Bestaetigt v2.7 |
 
 ---
-*Last updated: 2026-03-27 after Phase 101 complete*
+*Last updated: 2026-03-28 after v2.10 milestone start*
