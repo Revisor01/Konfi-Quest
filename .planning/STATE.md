@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: Milestone complete
-last_updated: "2026-03-28T02:58:11.532Z"
+milestone: v2.9
+milestone_name: CI/CD Pipeline
+status: In progress
+last_updated: "2026-03-28T06:44:13Z"
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 11
-  completed_plans: 11
+  total_phases: 7
+  completed_phases: 7
+  total_plans: 19
+  completed_plans: 19
 ---
 
 # Project State
@@ -18,12 +18,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 102 — auth-rbac-integration-tests
+**Current focus:** Phase 105 -- ci-cd-pipeline
 
 ## Current Position
 
-Phase: 104
-Plan: Not started
+Phase: 105
+Plan: 01 complete
 
 ## Performance Metrics
 
@@ -53,12 +53,7 @@ Plan: Not started
 | Phase 100 P02 | 2 | 2 tasks | 2 files |
 | Phase 100 P01 | 2 | 2 tasks | 2 files |
 | Phase 100 P03 | 8 | 2 tasks | 7 files |
-| Phase 101 P01 | 6 | 2 tasks | 6 files |
-| Phase 101 P02 | 5 | 2 tasks | 7 files |
-| Phase 101 P03 | 383 | 1 tasks | 3 files |
-| Phase 102 P02 | 733 | 2 tasks | 3 files |
-| Phase 103 P01 | 432 | 2 tasks | 4 files |
-| Phase 104 P03 | 730 | 2 tasks | 4 files |
+| Phase 105 P01 | 2 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -78,22 +73,15 @@ Alle v1.0-v2.7 Entscheidungen in PROJECT.md und milestones/ archiviert.
 
 ### Phase-Uebersicht v2.9
 
-| Phase | Requirements | Inhalt |
-|-------|-------------|--------|
-| 101 | INF-01, INF-03, INF-06 | Test-Infrastruktur + server.js Refactoring |
+| Phase | Inhalt |
+|-------|--------|
+| 105 | CI/CD Pipeline (ci.yml mit Tests, Audit, Docker Build) |
 
 ### Decisions v2.9
 
-- createApp Factory: Express-App ohne Seiteneffekte, server.js als Wrapper (101-01)
-- http.createServer() ohne Argument, dann server.on('request', app) nach createApp (101-01)
-- Rate-Limiters nur wenn uebergeben (if-Guards statt Pflicht) (101-01)
-- QR_SECRET in Vitest env (Top-Level Guard in Routes) (101-01)
-- Repo-Root init-scripts als Schema-Basis, fehlende Tabellen inline in globalSetup (101-02)
-- custom_badges statt badges fuer Seed — Routes nutzen criteria_type (101-02)
-- Rollen pro Org dupliziert wegen UNIQUE(name, organization_id) Constraint (101-02)
-- Teamer-Dashboard hat eigenen role_name-Check, /teamer/konfis als requireTeamer-Repraesentant (102-02)
-- SuperAdmin nicht in requireTeamer/requireAdmin/requireOrgAdmin — nur /api/organizations (102-02)
-- activities.type, events.cancelled als fehlende Schema-Spalten in globalSetup ergaenzt (102-02)
+- P105-01: Matrix-Strategy fuer Backend+Frontend Docker Builds statt separater Jobs
+- P105-01: npm audit --audit-level=critical informativ (blockiert nicht)
+- P105-01: --passWithNoTests fuer vitest damit Pipeline ohne Tests laeuft
 
 ### Pending Todos
 
