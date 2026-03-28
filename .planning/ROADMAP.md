@@ -294,6 +294,6 @@ Phase 103: Core Business Integration Tests (3 plans)
 Plans:
 - [ ] 103-01-PLAN.md -- Activities + Events Integration-Tests
 - [ ] 103-02-PLAN.md -- Konfi + Chat Integration-Tests
-- [ ] 103-03-PLAN.md -- Badge CRUD, Auto-Award + Progress Integration-Tests
+- [x] 103-03-PLAN.md -- Badge CRUD, Auto-Award + Progress Integration-Tests
 
 </details>

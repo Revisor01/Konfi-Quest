@@ -22,7 +22,7 @@
 - [ ] **BIT-04**: Events-Routes getestet (Erstellen, Buchen, Timeslots, Warteliste, Absagen)
 - [ ] **BIT-05**: Konfi-Routes getestet (Profil, Punkte-History, Dashboard-Daten)
 - [ ] **BIT-06**: Chat-Routes getestet (Raeume, Nachrichten, Teilnehmer, Dateien)
-- [ ] **BIT-07**: Badges-Routes getestet (Vergabe, Levels, Auto-Award, Progress)
+- [x] **BIT-07**: Badges-Routes getestet (Vergabe, Levels, Auto-Award, Progress)
 - [ ] **BIT-08**: Remaining Routes getestet (categories, jahrgaenge, levels, notifications, organizations, roles, settings, users, bonus, material, teamer, wrapped)
 
 ### CI/CD Pipeline
@@ -85,7 +85,7 @@
 | BIT-04 | Phase 103 | Pending |
 | BIT-05 | Phase 103 | Pending |
 | BIT-06 | Phase 103 | Pending |
-| BIT-07 | Phase 103 | Pending |
+| BIT-07 | Phase 103 | Complete |
 | BIT-08 | Phase 104 | Pending |
 | CIC-01 | Phase 105 | Pending |
 | CIC-02 | Phase 105 | Pending |
