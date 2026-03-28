@@ -305,4 +305,11 @@ Plans:
 - [ ] 104-02-PLAN.md -- Notifications, Organizations, Roles, Settings, Users Integration-Tests
 - [x] 104-03-PLAN.md -- Material, Teamer, Wrapped Integration-Tests
 
+Phase 105: CI/CD Pipeline (1 plan)
+**Goal:** Tests laufen automatisch bei jedem Push und blockieren Deployments bei Fehlern
+**Requirements:** [CIC-01, CIC-02, CIC-03, CIC-04]
+**Plans:** 1 plan
+Plans:
+- [ ] 105-01-PLAN.md -- CI/CD Workflow mit Test-Jobs als Deploy-Gate
+
 </details>
