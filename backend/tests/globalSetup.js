@@ -238,6 +238,9 @@ module.exports = async function globalSetup() {
     'ALTER TABLE activities ADD COLUMN IF NOT EXISTS type VARCHAR(50)',
     'ALTER TABLE activities ADD COLUMN IF NOT EXISTS points INTEGER DEFAULT 0',
     'ALTER TABLE events ADD COLUMN IF NOT EXISTS cancelled BOOLEAN DEFAULT false',
+    'ALTER TABLE bonus_points ADD COLUMN IF NOT EXISTS completed_date DATE DEFAULT CURRENT_DATE',
+    'ALTER TABLE user_badges ADD COLUMN IF NOT EXISTS seen BOOLEAN DEFAULT false',
+    'ALTER TABLE event_points ADD COLUMN IF NOT EXISTS description TEXT',
   ]) {
     await testPool.query(stmt).catch(() => {});
   }
