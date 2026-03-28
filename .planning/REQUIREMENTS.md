@@ -18,8 +18,8 @@
 
 - [ ] **BIT-01**: Auth-Routes getestet (Login, Register, Refresh, Logout, Passwort-Reset)
 - [x] **BIT-02**: RBAC-Matrix getestet — jede Route prueft alle 5 Rollen + Org-Isolation
-- [ ] **BIT-03**: Activities-Routes getestet (CRUD, Punkte-Vergabe, Kategorie-Filter)
-- [ ] **BIT-04**: Events-Routes getestet (Erstellen, Buchen, Timeslots, Warteliste, Absagen)
+- [x] **BIT-03**: Activities-Routes getestet (CRUD, Punkte-Vergabe, Kategorie-Filter)
+- [x] **BIT-04**: Events-Routes getestet (Erstellen, Buchen, Timeslots, Warteliste, Absagen)
 - [ ] **BIT-05**: Konfi-Routes getestet (Profil, Punkte-History, Dashboard-Daten)
 - [ ] **BIT-06**: Chat-Routes getestet (Raeume, Nachrichten, Teilnehmer, Dateien)
 - [ ] **BIT-07**: Badges-Routes getestet (Vergabe, Levels, Auto-Award, Progress)
@@ -81,8 +81,8 @@
 | INF-06 | Phase 101 | Complete |
 | BIT-01 | Phase 102 | Pending |
 | BIT-02 | Phase 102 | Complete |
-| BIT-03 | Phase 103 | Pending |
-| BIT-04 | Phase 103 | Pending |
+| BIT-03 | Phase 103 | Complete |
+| BIT-04 | Phase 103 | Complete |
 | BIT-05 | Phase 103 | Pending |
 | BIT-06 | Phase 103 | Pending |
 | BIT-07 | Phase 103 | Pending |
