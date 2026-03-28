@@ -260,6 +260,29 @@ module.exports = async function globalSetup() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(message_id, user_id, user_type, emoji)
     )`,
+    // chat_polls: fehlende room_id Spalte (fuer Organizations DELETE CASCADE)
+    'ALTER TABLE chat_polls ADD COLUMN IF NOT EXISTS room_id INTEGER REFERENCES chat_rooms(id) ON DELETE CASCADE',
+    // event_category_assignments Tabelle (fuer Organizations DELETE CASCADE)
+    `CREATE TABLE IF NOT EXISTS event_category_assignments (
+      event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+      category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+      PRIMARY KEY (event_id, category_id)
+    )`,
+    // activity_category_assignments (Alias-Name in organizations.js DELETE CASCADE)
+    `CREATE TABLE IF NOT EXISTS activity_category_assignments (
+      activity_id INTEGER NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
+      category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+      PRIMARY KEY (activity_id, category_id)
+    )`,
+    // organizations: fehlende Spalten
+    'ALTER TABLE organizations ADD COLUMN IF NOT EXISTS contact_phone VARCHAR(255)',
+    'ALTER TABLE organizations ADD COLUMN IF NOT EXISTS address TEXT',
+    'ALTER TABLE organizations ADD COLUMN IF NOT EXISTS website_url TEXT',
+    'ALTER TABLE organizations ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
+    `DO $$ BEGIN
+      ALTER TABLE organizations ADD CONSTRAINT organizations_slug_unique UNIQUE (slug);
+    EXCEPTION WHEN duplicate_table THEN NULL; WHEN duplicate_object THEN NULL;
+    END $$`,
     // roles: fehlende Spalten
     'ALTER TABLE roles ADD COLUMN IF NOT EXISTS is_system_role BOOLEAN DEFAULT false',
     'ALTER TABLE roles ADD COLUMN IF NOT EXISTS description TEXT',
