@@ -392,7 +392,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
             <IonLabel>Chats ({filteredRooms.length})</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
+            <IonCardContent style={{ padding: filteredRooms.length === 0 ? '16px' : '12px' }}>
               {filteredRooms.length === 0 ? (
                 <EmptyState
                   icon={chatbubbles}
@@ -401,14 +401,14 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                   iconColor="#06b6d4"
                 />
               ) : (
-                <IonList lines="none" style={{ background: 'transparent', padding: '0' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
                   {filteredRooms.map((room, index) => {
                     const colorClass = getRoomColorClass(room.type);
                     // Nur Admins dürfen direct/group Chats löschen
                     const canDelete = isAdmin && (room.type === 'direct' || room.type === 'group');
 
                     return (
-                      <IonItemSliding key={room.id} disabled={!canDelete} style={{ marginBottom: index < filteredRooms.length - 1 ? '8px' : '0' }}>
+                      <IonItemSliding key={room.id} disabled={!canDelete}>
                         <IonItem
                           onClick={() => onSelectRoom(room)}
                           lines="none"
@@ -560,7 +560,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                       </IonItemSliding>
                     );
                   })}
-                </IonList>
+                </div>
               )}
             </IonCardContent>
           </IonCard>
