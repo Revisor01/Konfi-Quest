@@ -193,10 +193,13 @@ async function seed(db) {
 
   // 8. Activities (FK: organizations)
   for (const act of Object.values(ACTIVITIES)) {
+    // type + points (neue Spalten) muessen gesetzt sein, damit assign-activity funktioniert
+    const actType = act.gp > 0 ? 'gottesdienst' : 'gemeinde';
+    const actPoints = act.gp > 0 ? act.gp : act.gep;
     await db.query(
-      `INSERT INTO activities (id, name, gottesdienst_points, gemeinde_points, organization_id)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [act.id, act.name, act.gp, act.gep, act.org_id]
+      `INSERT INTO activities (id, name, gottesdienst_points, gemeinde_points, points, type, organization_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [act.id, act.name, act.gp, act.gep, actPoints, actType, act.org_id]
     );
   }
 

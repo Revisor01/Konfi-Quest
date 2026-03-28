@@ -175,7 +175,9 @@ const checkAndAwardBadges = async (db, userId) => {
       if (alreadyEarned.includes(badge.id)) continue;
 
       let earned = false;
-      const criteria = typeof badge.criteria_extra === 'string' ? JSON.parse(badge.criteria_extra || '{}') : (badge.criteria_extra || {});
+      const criteria = typeof badge.criteria_extra === 'object' && badge.criteria_extra !== null
+        ? badge.criteria_extra
+        : JSON.parse(badge.criteria_extra || '{}');
 
       switch (badge.criteria_type) {
         case 'total_points': {
@@ -357,7 +359,7 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
     if (pointsCriteria.includes(badge.criteria_type)) continue;
 
     let badgeEarned = false;
-    const criteria = typeof badge.criteria_extra === 'string' ? JSON.parse(badge.criteria_extra || '{}') : (badge.criteria_extra || {});
+    const criteria = JSON.parse(badge.criteria_extra || '{}');
 
     switch (badge.criteria_type) {
       case 'activity_count': {
