@@ -1,9 +1,9 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.8
-milestone_name: Design-Polish
-status: Milestone complete
-last_updated: "2026-03-25T09:24:56.147Z"
+milestone: v2.9
+milestone_name: CI/CD Pipeline
+status: In progress
+last_updated: "2026-03-28T06:44:13Z"
 progress:
   total_phases: 7
   completed_phases: 7
@@ -18,12 +18,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 100 — admin-zertifikate-material-dashboard
+**Current focus:** Phase 105 -- ci-cd-pipeline
 
 ## Current Position
 
-Phase: 100
-Plan: Not started
+Phase: 105
+Plan: 01 complete
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Plan: Not started
 | Phase 100 P02 | 2 | 2 tasks | 2 files |
 | Phase 100 P01 | 2 | 2 tasks | 2 files |
 | Phase 100 P03 | 8 | 2 tasks | 7 files |
+| Phase 105 P01 | 2 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -70,9 +71,21 @@ Alle v1.0-v2.7 Entscheidungen in PROJECT.md und milestones/ archiviert.
 | 99 | AEV-01-08, ABG-01-02 | Admin Events + Bugs |
 | 100 | AZE-01-04, AMA-01-04, ADA-01-02 | Admin Teil 2 |
 
+### Phase-Uebersicht v2.9
+
+| Phase | Inhalt |
+|-------|--------|
+| 105 | CI/CD Pipeline (ci.yml mit Tests, Audit, Docker Build) |
+
+### Decisions v2.9
+
+- P105-01: Matrix-Strategy fuer Backend+Frontend Docker Builds statt separater Jobs
+- P105-01: npm audit --audit-level=critical informativ (blockiert nicht)
+- P105-01: --passWithNoTests fuer vitest damit Pipeline ohne Tests laeuft
+
 ### Pending Todos
 
-- v3.0 Onboarding + Landing geplant (nach v2.8)
+- v3.0 Onboarding + Landing geplant (nach v2.9)
 
 ### Blockers/Concerns
 
