@@ -287,4 +287,13 @@ Plans:
 - [ ] 102-01-PLAN.md -- Auth-Lifecycle Tests (Login, Refresh, Logout, /me, Passwort, Registrierung)
 - [x] 102-02-PLAN.md -- RBAC-Matrix + Cross-Org-Isolation Tests
 
+Phase 103: Core Business Integration Tests (3 plans)
+**Goal:** Die fuenf geschaeftskritischen Route-Gruppen (Activities, Events, Konfi, Chat, Badges) sind mit Integration-Tests abgesichert
+**Requirements:** [BIT-03, BIT-04, BIT-05, BIT-06, BIT-07]
+**Plans:** 3 plans
+Plans:
+- [ ] 103-01-PLAN.md -- Activities + Events Integration-Tests
+- [ ] 103-02-PLAN.md -- Konfi + Chat Integration-Tests
+- [ ] 103-03-PLAN.md -- Badge CRUD, Auto-Award + Progress Integration-Tests
+
 </details>
