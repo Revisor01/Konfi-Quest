@@ -987,7 +987,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
               // Check if specific activity was completed (criteria_extra contains activity_id)
               let specificActivityId = null;
               try {
-                const extraData = JSON.parse(badge.criteria_extra || '{}');
+                const extraData = typeof badge.criteria_extra === 'string' ? JSON.parse(badge.criteria_extra || '{}') : (badge.criteria_extra || {});
                 specificActivityId = extraData.activity_id;
               } catch (e) {
  console.error('Error parsing criteria_extra for specific_activity badge:', e);
@@ -1008,7 +1008,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
               // Count activities in specific category (criteria_extra contains required_category)
               let requiredCategory = null;
               try {
-                const extraData = JSON.parse(badge.criteria_extra || '{}');
+                const extraData = typeof badge.criteria_extra === 'string' ? JSON.parse(badge.criteria_extra || '{}') : (badge.criteria_extra || {});
                 requiredCategory = extraData.required_category;
               } catch (e) {
  console.error('Error parsing criteria_extra for category_activities badge:', e);
@@ -1034,7 +1034,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
               // Check if all activities in combination were completed
               let activityIds = [];
               try {
-                const extraData = JSON.parse(badge.criteria_extra || '{}');
+                const extraData = typeof badge.criteria_extra === 'string' ? JSON.parse(badge.criteria_extra || '{}') : (badge.criteria_extra || {});
                 activityIds = extraData.activity_ids || [];
               } catch (e) {
  console.error('Error parsing criteria_extra for activity_combination badge:', e);
@@ -1111,7 +1111,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
               // Time-based: Anzahl Aktivitaeten/Events im konfigurierten Zeitraum
               let tbDays = null;
               try {
-                const extraData = JSON.parse(badge.criteria_extra || '{}');
+                const extraData = typeof badge.criteria_extra === 'string' ? JSON.parse(badge.criteria_extra || '{}') : (badge.criteria_extra || {});
                 tbDays = extraData.days || (extraData.weeks ? extraData.weeks * 7 : null);
               } catch (e) {
                 console.error('Error parsing criteria_extra for time_based badge:', e);

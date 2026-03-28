@@ -103,17 +103,6 @@ module.exports = async function globalSetup() {
       UNIQUE(user_id, activity_id)
     );
 
-    -- user_badges (Badge-Vergabe pro User)
-    CREATE TABLE IF NOT EXISTS user_badges (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      badge_id INTEGER NOT NULL REFERENCES badges(id) ON DELETE CASCADE,
-      organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-      awarded_date DATE DEFAULT CURRENT_DATE,
-      awarded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(user_id, badge_id)
-    );
-
     -- chat_read_status
     CREATE TABLE IF NOT EXISTS chat_read_status (
       id SERIAL PRIMARY KEY,
@@ -210,6 +199,18 @@ module.exports = async function globalSetup() {
       created_by INTEGER REFERENCES users(id),
       organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- user_badges (Badge-Vergabe pro User, referenziert custom_badges)
+    CREATE TABLE IF NOT EXISTS user_badges (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      badge_id INTEGER NOT NULL REFERENCES custom_badges(id) ON DELETE CASCADE,
+      organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+      awarded_date DATE DEFAULT CURRENT_DATE,
+      awarded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      seen BOOLEAN DEFAULT false,
+      UNIQUE(user_id, badge_id)
     );
   `);
 
