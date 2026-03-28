@@ -463,7 +463,6 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           [jahrgangId, req.user.organization_id]
         );
         if (!jahrgang) {
-          client.release();
           return res.status(404).json({ error: 'Jahrgang nicht gefunden' });
         }
 
@@ -611,7 +610,6 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           [jahrgangId, req.user.organization_id]
         );
         if (!jahrgang) {
-          client.release();
           return res.status(404).json({ error: 'Jahrgang nicht gefunden' });
         }
 

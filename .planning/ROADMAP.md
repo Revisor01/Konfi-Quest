@@ -303,6 +303,6 @@ Phase 104: Remaining Routes Integration Tests (3 plans)
 Plans:
 - [x] 104-01-PLAN.md -- Categories, Jahrgaenge, Levels, Konfi-Management Integration-Tests
 - [ ] 104-02-PLAN.md -- Notifications, Organizations, Roles, Settings, Users Integration-Tests
-- [ ] 104-03-PLAN.md -- Material, Teamer, Wrapped Integration-Tests
+- [x] 104-03-PLAN.md -- Material, Teamer, Wrapped Integration-Tests
 
 </details>
