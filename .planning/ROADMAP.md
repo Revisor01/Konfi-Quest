@@ -334,27 +334,80 @@ Plans:
 
 ### v2.10 Design-Polish + UX-Feinschliff (In Progress)
 
-**Milestone Goal:** Letzte Design- und UX-Verbesserungen — Haptics, Searchbar-Styling, IonRange-Wert-Anzeige, Maximalwerte und weitere UI-Anpassungen.
+**Milestone Goal:** Globale CSS-Patterns definieren und alle Konfi-Seiten an einheitlichen Design-Stil anpassen. Patterns werden danach auf Teamer/Admin uebertragen.
 
-- [ ] **Phase 108: Haptics + Searchbar + IonRange Polish** - Pull-to-Refresh Haptics, Searchbar Classic Style, IonRange Wert-Anzeige + Maximalwerte
+- [ ] **Phase 108: Globale CSS-Patterns** - Beschreibungstext-Variable, Listen-Pattern, Suche+Filter-Pattern, Corner-Badge-Fix
+- [ ] **Phase 109: Haptics + Searchbar + IonRange** - Pull-to-Refresh Haptics, Searchbar Classic Style, IonRange Wert-Anzeige
+- [ ] **Phase 110: Konfi Events + Details** - Suche+Filter wie Chat, Listen-Stil, Beschreibungstext
+- [ ] **Phase 111: Konfi Badges + Popovers** - Tab-Leiste, Suchleiste, Badge-Grid 1/3, Popovers centered
+- [ ] **Phase 112: Konfi Aktivitaeten + Profil + Modal** - Listen-Stil, Wrapped-Padding, Modal-Abstaende
 
 ## Phase Details
 
-### Phase 108: Haptics + Searchbar + IonRange Polish
-**Goal**: Pull-to-Refresh Haptics in allen Views, Searchbar Classic Style, IonRange-Werte sichtbar und Maximalwerte korrekt
+### Phase 108: Globale CSS-Patterns
+**Goal**: Wiederverwendbare CSS-Variablen und Patterns die auf allen Seiten (Konfi, Teamer, Admin) gelten
+**Depends on**: -
+**Requirements**: CSS-01, CSS-02, CSS-03, CSS-04
+**Success Criteria** (what must be TRUE):
+  1. --app-description-font-size Variable existiert in variables.css und wird in Beschreibungstexten verwendet
+  2. Listen-Pattern dokumentiert: flex-div, 12px Card-Padding, app-list-item mit 8px margin-bottom via CSS
+  3. Suche+Filter-Pattern: Section-Header oben, Suchleiste wie Chat, Tab-Leiste ausserhalb Card
+  4. Corner-Badge Titel-Overlap via paddingRight geloest (nicht paddingTop)
+**Plans**: TBD
+
+### Phase 109: Haptics + Searchbar + IonRange
+**Goal**: Pull-to-Refresh Haptics, Searchbar Classic, IonRange-Werte sichtbar
+**Depends on**: Phase 108
 **Requirements**: UXH-01, SBS-01, IRV-01, IRV-02
 **Success Criteria** (what must be TRUE):
-  1. Pull-to-Refresh loest Haptics-Feedback auf iOS aus (ImpactStyle.Light bei ionPullStart)
+  1. Pull-to-Refresh loest Haptics-Feedback auf iOS aus
   2. Alle IonSearchbar-Instanzen haben ios26-searchbar-classic Klasse
-  3. IonRange zeigt den eingestellten Wert sichtbar an (auch nach dem Loslassen)
+  3. IonRange zeigt den eingestellten Wert sichtbar an
   4. Maximalwerte der IonRange-Slider sind sinnvoll konfiguriert
+**Plans**: TBD
+
+### Phase 110: Konfi Events + Details
+**Goal**: Events-View und Event-Details an globale CSS-Patterns angepasst
+**Depends on**: Phase 108
+**Requirements**: KEV-01, KEV-02, KEV-03, KED-01
+**Success Criteria** (what must be TRUE):
+  1. Suche+Filter unter Section-Header mit Suchleiste wie Chat
+  2. Section-Header oben an gleicher Stelle
+  3. Event-Liste mit neuem Listen-Stil (12px, flex-div)
+  4. Beschreibungstext nutzt --app-description-font-size
+**Plans**: TBD
+
+### Phase 111: Konfi Badges + Popovers
+**Goal**: Badges-View, Badge-Grid und Popovers an Design-Patterns angepasst
+**Depends on**: Phase 108
+**Requirements**: KBV-01, KBV-02, KBV-03, KBV-04, KBV-05, BPO-01, BPO-02
+**Success Criteria** (what must be TRUE):
+  1. Tab-Leiste ausserhalb Card, Suchleiste hinzugefuegt
+  2. Badge-Grid: immer 1/3 Breite (CSS Grid, nicht flex)
+  3. Teilnehmer:innen-Liste und Anmelde-Button im Listen-Stil
+  4. Popovers centered, Titel einzeilig, Beschreibung darf umbrechen
+**Plans**: TBD
+
+### Phase 112: Konfi Aktivitaeten + Profil + Modal
+**Goal**: Verbleibende Konfi-Views und Modale an Design-Patterns angepasst
+**Depends on**: Phase 108
+**Requirements**: KAV-01, KPR-01, KPR-02, MAB-01
+**Success Criteria** (what must be TRUE):
+  1. Aktivitaeten-Listen im neuen Stil
+  2. Profil-Listen im neuen Stil
+  3. Meine-Wrappeds kein Padding unten bei nur einem Wrapped
+  4. Modal Aktivitaet beantragen: Card-Abstaende wie Listen (12px)
 **Plans**: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 108+
+Phase 108 zuerst (globale CSS), dann 109-112 parallel moeglich (alle haengen nur von 108 ab)
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 108. Haptics + Searchbar + IonRange Polish | 0/? | Not started | - |
+| 108. Globale CSS-Patterns | 0/? | Not started | - |
+| 109. Haptics + Searchbar + IonRange | 0/? | Not started | - |
+| 110. Konfi Events + Details | 0/? | Not started | - |
+| 111. Konfi Badges + Popovers | 0/? | Not started | - |
+| 112. Konfi Aktivitaeten + Profil + Modal | 0/? | Not started | - |
