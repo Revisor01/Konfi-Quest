@@ -353,7 +353,9 @@ Plans:
   2. Listen-Pattern dokumentiert: flex-div, 12px Card-Padding, app-list-item mit 8px margin-bottom via CSS
   3. Suche+Filter-Pattern: Section-Header oben, Suchleiste wie Chat, Tab-Leiste ausserhalb Card
   4. Corner-Badge Titel-Overlap via paddingRight geloest (nicht paddingTop)
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 110-01-PLAN.md -- ListSection flex-div + Events-View Pattern-Konformitaet
 
 ### Phase 109: Haptics + Searchbar + IonRange
 **Goal**: Pull-to-Refresh Haptics, Searchbar Classic, IonRange-Werte sichtbar
@@ -364,7 +366,9 @@ Plans:
   2. Alle IonSearchbar-Instanzen haben ios26-searchbar-classic Klasse
   3. IonRange zeigt den eingestellten Wert sichtbar an
   4. Maximalwerte der IonRange-Slider sind sinnvoll konfiguriert
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 110-01-PLAN.md -- ListSection flex-div + Events-View Pattern-Konformitaet
 
 ### Phase 110: Konfi Events + Details
 **Goal**: Events-View und Event-Details an globale CSS-Patterns angepasst
@@ -375,7 +379,9 @@ Plans:
   2. Section-Header oben an gleicher Stelle
   3. Event-Liste mit neuem Listen-Stil (12px, flex-div)
   4. Beschreibungstext nutzt --app-description-font-size
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 110-01-PLAN.md -- ListSection flex-div + Events-View Pattern-Konformitaet
 
 ### Phase 111: Konfi Badges + Popovers
 **Goal**: Badges-View, Badge-Grid und Popovers an Design-Patterns angepasst
@@ -386,7 +392,9 @@ Plans:
   2. Badge-Grid: immer 1/3 Breite (CSS Grid, nicht flex)
   3. Teilnehmer:innen-Liste und Anmelde-Button im Listen-Stil
   4. Popovers centered, Titel einzeilig, Beschreibung darf umbrechen
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 110-01-PLAN.md -- ListSection flex-div + Events-View Pattern-Konformitaet
 
 ### Phase 112: Konfi Aktivitaeten + Profil + Modal
 **Goal**: Verbleibende Konfi-Views und Modale an Design-Patterns angepasst
@@ -397,7 +405,9 @@ Plans:
   2. Profil-Listen im neuen Stil
   3. Meine-Wrappeds kein Padding unten bei nur einem Wrapped
   4. Modal Aktivitaet beantragen: Card-Abstaende wie Listen (12px)
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 112-01-PLAN.md — Listen-Stil, Wrapped-Padding, Modal-Abstaende
 
 ## Progress
 
@@ -410,4 +420,4 @@ Phase 108 zuerst (globale CSS), dann 109-112 parallel moeglich (alle haengen nur
 | 109. Haptics + Searchbar + IonRange | 0/? | Not started | - |
 | 110. Konfi Events + Details | 0/? | Not started | - |
 | 111. Konfi Badges + Popovers | 0/? | Not started | - |
-| 112. Konfi Aktivitaeten + Profil + Modal | 0/? | Not started | - |
+| 112. Konfi Aktivitaeten + Profil + Modal | 0/1 | Planned | - |
