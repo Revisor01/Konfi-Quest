@@ -163,7 +163,7 @@ const BadgePopoverContent: React.FC<{
   const badgeColor = data.getBadgeColor(badge);
 
   return (
-    <div style={{ padding: '12px', background: 'white' }}>
+    <div style={{ padding: '12px', background: 'white', maxWidth: '100%', overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <div style={{
           width: '48px',
@@ -189,7 +189,7 @@ const BadgePopoverContent: React.FC<{
           />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h3 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: '700', color: '#333', whiteSpace: 'nowrap' }}>
+          <h3 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: '700', color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {badge.name}
           </h3>
           <p style={{
@@ -358,7 +358,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
     badgePopoverRef.current = { badge, getBadgeColor };
     presentBadgePopover({
       event: e.nativeEvent,
-      side: 'top',
+      side: 'bottom',
       alignment: 'center',
       cssClass: 'badge-detail-popover badge-popover-auto-width'
     });
