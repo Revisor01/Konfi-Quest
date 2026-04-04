@@ -621,7 +621,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 disabled={loading}
                 style={{ flex: 1 }}
               />
-              <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>26</span>
+              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ion-color-primary)', minWidth: '28px', textAlign: 'center' }}>{extraCriteria.weeks || 4}</span>
             </div>
           </IonItem>
         );
@@ -1074,7 +1074,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                     disabled={loading}
                     style={{ flex: 1 }}
                   />
-                  <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>20</span>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ion-color-primary)', minWidth: '28px', textAlign: 'center' }}>{formData.criteria_value}</span>
                 </div>
               </IonItem>
 
