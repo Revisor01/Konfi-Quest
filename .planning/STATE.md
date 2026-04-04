@@ -18,12 +18,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 110 — konfi-events-details
+**Current focus:** Phase 111 — konfi-badges-popovers
 
 ## Current Position
 
-Phase: 110
-Plan: 01 (complete)
+Phase: 111
+Plan: 2 of 2 complete
 
 ## Performance Metrics
 
@@ -53,7 +53,8 @@ Plan: 01 (complete)
 | Phase 100 P02 | 2 | 2 tasks | 2 files |
 | Phase 100 P01 | 2 | 2 tasks | 2 files |
 | Phase 100 P03 | 8 | 2 tasks | 7 files |
-| Phase 110 P01 | 2 | 2 tasks | 2 files |
+| Phase 111 P01 | 2 | 1 tasks | 1 files |
+| Phase 111 P02 | 1 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
