@@ -355,7 +355,7 @@ Plans:
   4. Corner-Badge Titel-Overlap via paddingRight geloest (nicht paddingTop)
 **Plans**: 1 plan
 Plans:
-- [ ] 110-01-PLAN.md -- ListSection flex-div + Events-View Pattern-Konformitaet
+- [x] 108-01-PLAN.md -- Globale CSS-Variablen und Patterns
 
 ### Phase 109: Haptics + Searchbar + IonRange
 **Goal**: Pull-to-Refresh Haptics, Searchbar Classic, IonRange-Werte sichtbar
@@ -366,9 +366,9 @@ Plans:
   2. Alle IonSearchbar-Instanzen haben ios26-searchbar-classic Klasse
   3. IonRange zeigt den eingestellten Wert sichtbar an
   4. Maximalwerte der IonRange-Slider sind sinnvoll konfiguriert
-**Plans**: 1 plan
+**Plans:** 1 plan
 Plans:
-- [ ] 110-01-PLAN.md -- ListSection flex-div + Events-View Pattern-Konformitaet
+- [ ] 109-01-PLAN.md -- IonRange permanente Wert-Anzeige + Verifizierung Haptics/Searchbar/Maximalwerte
 
 ### Phase 110: Konfi Events + Details
 **Goal**: Events-View und Event-Details an globale CSS-Patterns angepasst
@@ -390,11 +390,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Tab-Leiste ausserhalb Card, Suchleiste hinzugefuegt
   2. Badge-Grid: immer 1/3 Breite (CSS Grid, nicht flex)
-  3. Teilnehmer:innen-Liste und Anmelde-Button im Listen-Stil
-  4. Popovers centered, Titel einzeilig, Beschreibung darf umbrechen
-**Plans**: 1 plan
+**Plans**: 2 plans
 Plans:
-- [ ] 110-01-PLAN.md -- ListSection flex-div + Events-View Pattern-Konformitaet
+- [ ] 111-01-PLAN.md -- BadgesView Layout: Tab-Leiste, Suchleiste, Grid, Abstaende
+- [ ] 111-02-PLAN.md -- Popover-Styling: Titel einzeilig, centered, max-width
 
 ### Phase 112: Konfi Aktivitaeten + Profil + Modal
 **Goal**: Verbleibende Konfi-Views und Modale an Design-Patterns angepasst
@@ -417,7 +416,7 @@ Phase 108 zuerst (globale CSS), dann 109-112 parallel moeglich (alle haengen nur
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 108. Globale CSS-Patterns | 0/? | Not started | - |
-| 109. Haptics + Searchbar + IonRange | 0/? | Not started | - |
+| 109. Haptics + Searchbar + IonRange | 0/1 | Planned | - |
 | 110. Konfi Events + Details | 0/? | Not started | - |
 | 111. Konfi Badges + Popovers | 0/? | Not started | - |
 | 112. Konfi Aktivitaeten + Profil + Modal | 0/1 | Planned | - |
