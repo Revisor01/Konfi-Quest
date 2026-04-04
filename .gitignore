@@ -128,3 +128,4 @@ docker-compose.yml
 # APNs Keys
 docs/AuthKey_*.p8
 *.p8
+.claude/worktrees/
