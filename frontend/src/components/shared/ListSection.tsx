@@ -47,7 +47,7 @@ const ListSection: React.FC<ListSectionProps> = ({
         <IonLabel>{title} ({count})</IonLabel>
       </IonListHeader>
       <IonCard className="app-card">
-        <IonCardContent>
+        <IonCardContent style={{ padding: '12px' }}>
           {showEmpty && emptyIcon && emptyTitle && emptyMessage ? (
             <EmptyState
               icon={emptyIcon}
@@ -56,9 +56,9 @@ const ListSection: React.FC<ListSectionProps> = ({
               iconColor={emptyIconColor}
             />
           ) : (
-            <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
               {children}
-            </IonList>
+            </div>
           )}
         </IonCardContent>
       </IonCard>
