@@ -1047,7 +1047,10 @@ ion-card-content.app-card-content {
 
 /* === Titel mit Corner-Badge Platz (paddingRight fuer app-corner-badge) === */
 .app-list-item__title--with-badge {
-  padding-right: 50px;
+  padding-right: 70px;
+}
+.app-list-item__title--with-dual-badge {
+  padding-right: 120px;
 }
 
 /* === Condense-Toolbar (transparenter Large-Title Header) === */
