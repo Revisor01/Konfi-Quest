@@ -272,3 +272,10 @@ Phase 99: Admin Events + Bugs (3 plans, complete)
 Phase 100: Admin Zertifikate, Material, Dashboard (3 plans, complete)
 
 </details>
+
+<details>
+<summary>v2.9+ Konfi Events Details (Phase 110) - IN PROGRESS</summary>
+
+Phase 110: Konfi Events + Details (1 plan, 1 complete)
+
+</details>
