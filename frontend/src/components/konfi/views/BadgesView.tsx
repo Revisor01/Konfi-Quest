@@ -8,6 +8,7 @@ import {
   IonLabel,
   IonList,
   IonListHeader,
+  IonSearchbar,
   useIonPopover
 } from '@ionic/react';
 import { SectionHeader, EmptyState } from '../../shared';
@@ -66,7 +67,6 @@ import {
   alertCircle,
   hammer,
   lockClosed,
-  searchOutline,
   layersOutline,
   gridOutline,
   prismOutline,
@@ -293,6 +293,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
   onFilterChange
 }) => {
   const badgePopoverRef = useRef<{ badge: Badge | null; getBadgeColor: (badge: Badge) => string }>({ badge: null, getBadgeColor: () => '#667eea' });
+  const [searchText, setSearchText] = useState('');
 
   // Badges nach Kategorien gruppieren
   const getBadgeCategories = () => {
@@ -306,6 +307,15 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         break;
       default:
         filtered = badges;
+    }
+
+    // Suchtext-Filter
+    if (searchText.trim()) {
+      const query = searchText.trim().toLowerCase();
+      filtered = filtered.filter(badge =>
+        badge.name.toLowerCase().includes(query) ||
+        (badge.description && badge.description.toLowerCase().includes(query))
+      );
     }
 
     const categories: { key: string; title: string; icon: string; color: string; badges: Badge[] }[] = [
@@ -368,24 +378,25 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         ]}
       />
 
-      {/* Suche & Filter */}
-      <IonList inset={true} style={{ margin: '16px' }}>
-        <IonListHeader>
-          <div className="app-section-icon app-section-icon--warning">
-            <IonIcon icon={searchOutline} />
-          </div>
-          <IonLabel>Suche &amp; Filter</IonLabel>
-        </IonListHeader>
-        <IonCard className="app-card">
-          <IonCardContent style={{ padding: '8px 16px' }}>
-            <IonSegment value={selectedFilter} onIonChange={(e) => onFilterChange(e.detail.value as string)}>
-              <IonSegmentButton value="alle"><IonLabel>Alle</IonLabel></IonSegmentButton>
-              <IonSegmentButton value="nicht_erhalten"><IonLabel>Offen</IonLabel></IonSegmentButton>
-              <IonSegmentButton value="in_arbeit"><IonLabel>In Arbeit</IonLabel></IonSegmentButton>
-            </IonSegment>
-          </IonCardContent>
-        </IonCard>
-      </IonList>
+      {/* Tab Navigation */}
+      <div className="app-segment-wrapper">
+        <IonSegment value={selectedFilter} onIonChange={(e) => onFilterChange(e.detail.value as string)}>
+          <IonSegmentButton value="alle"><IonLabel>Alle</IonLabel></IonSegmentButton>
+          <IonSegmentButton value="nicht_erhalten"><IonLabel>Offen</IonLabel></IonSegmentButton>
+          <IonSegmentButton value="in_arbeit"><IonLabel>In Arbeit</IonLabel></IonSegmentButton>
+        </IonSegment>
+      </div>
+
+      {/* Suchleiste */}
+      <div style={{ margin: '0 16px' }}>
+        <IonSearchbar
+          className="ios26-searchbar-classic"
+          value={searchText}
+          onIonInput={(e) => setSearchText(e.detail.value || '')}
+          placeholder="Badges durchsuchen..."
+          showClearButton="focus"
+        />
+      </div>
 
       {/* Badges Grid */}
       <IonList inset={true} style={{ margin: '16px' }}>
@@ -433,7 +444,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
 
             return (
               <IonCard key={category.key} className="app-card" style={{ marginTop: index > 0 ? '8px' : '0' }}>
-                <IonCardContent style={{ padding: '16px' }}>
+                <IonCardContent style={{ padding: '12px' }}>
                   {/* Category Header */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -494,7 +505,9 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                             transition: 'transform 0.2s',
                             position: 'relative',
                             minHeight: '110px',
-                            justifyContent: 'flex-start'
+                            justifyContent: 'flex-start',
+                            minWidth: 0,
+                            overflow: 'hidden'
                           }}
                         >
                           {/* Badge Icon */}
