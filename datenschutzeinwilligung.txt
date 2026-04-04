@@ -1,0 +1,34 @@
+Einwilligung zur Datenverarbeitung in der App "Konfi Quest"
+
+Im Rahmen der Konfirmandenarbeit nutzt die Kirchengemeinde die App "Konfi Quest" zur Organisation, Kommunikation und Dokumentation des Konfirmandenjahres.
+
+Welche Daten werden verarbeitet?
+
+- Anzeigename, Benutzername, Passwort (verschlüsselt), E-Mail-Adresse (freiwillig)
+- Zuordnung zum Jahrgang
+- Teilnahme an Gottesdiensten, Veranstaltungen und Aktivitäten (Punkte, Level, Badges)
+- Chatnachrichten in Gruppenchats der Konfirmandengruppe
+- Hochgeladene Materialien und Dateien
+- Geräte-Token und Plattform für Push-Benachrichtigungen (Firebase Cloud Messaging, Google Ireland Ltd.)
+- Zeitstempel der letzten Anmeldung
+- Anonymisierte Nutzungsstatistiken (Seitenaufrufe, Gerätekategorie, Browsertyp, Land) über Umami Analytics — ohne Cookies, ohne personenbezogenes Tracking, selbst gehostet auf dem eigenen Server in Deutschland
+
+Zweck: Organisation der Konfirmandenarbeit, Dokumentation der Teilnahme, Kommunikation innerhalb der Gruppe, Versand von Push-Benachrichtigungen, Motivation durch spielerische Elemente, anonymisierte Nutzungsanalyse zur Verbesserung der App.
+
+Hosting und Sicherheit: Alle Daten werden verschlüsselt (HTTPS/TLS) auf einem Server in Deutschland (Hetzner Online GmbH) in einer PostgreSQL-Datenbank gespeichert. Für anonymisierte Nutzungsstatistiken wird Umami Analytics eingesetzt — selbst gehostet auf demselben Server in Deutschland, ohne Cookies, ohne personenbezogenes Tracking, vollständig DSGVO/DSG-EKD-konform. Eine Weitergabe an Dritte zu Werbe- oder Analysezwecken findet nicht statt. Einziger externer Drittdienst ist Firebase Cloud Messaging (Google Ireland Ltd.) für Push-Benachrichtigungen.
+
+Speicherdauer: Die Daten werden für die Dauer der Konfirmandenzeit gespeichert und nach Abschluss gelöscht. Bei Löschung des Accounts werden alle zugehörigen Daten automatisch entfernt.
+
+Rechtsgrundlage: Einwilligung gemäß § 11 Abs. 1 Nr. 1 DSG-EKD.
+
+Ihre Rechte: Auskunft (§ 19), Berichtigung (§ 20), Löschung (§ 21), Einschränkung der Verarbeitung (§ 22), Datenübertragbarkeit (§ 24 DSG-EKD). Beschwerderecht beim Beauftragten für den Datenschutz der EKD (§ 46 DSG-EKD).
+
+Freiwilligkeit: Die Nutzung der App ist freiwillig. Eine Nichtteilnahme hat keine negativen Auswirkungen auf die Konfirmandenarbeit. Informationen werden auch auf anderem Wege bereitgestellt.
+
+Widerruf: Diese Einwilligung kann jederzeit ohne Angabe von Gründen mit Wirkung für die Zukunft widerrufen werden. Die Rechtmäßigkeit der bis zum Widerruf erfolgten Verarbeitung bleibt unberührt.
+
+---
+
+Checkbox-Text:
+
+Ich willige als erziehungsberechtigte Person in die oben beschriebene Verarbeitung der personenbezogenen Daten meines Kindes im Rahmen der App "Konfi Quest" ein. Mir ist bekannt, dass diese Einwilligung freiwillig ist und jederzeit widerrufen werden kann.

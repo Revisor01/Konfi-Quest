@@ -312,7 +312,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                       )}
                     </IonLabel>
                   </IonItem>
-                  <div slot="content" style={{ padding: '0 16px 16px' }}>
+                  <div slot="content" style={{ padding: '0 12px 12px' }}>
                     {/* Aktivitäten Liste */}
                     <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
                       {filteredActivities.length === 0 ? (
@@ -394,7 +394,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             <IonLabel>Datum wählen</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent>
+            <IonCardContent style={{ padding: '12px' }}>
               <IonItem lines="none" style={{ '--background': 'transparent' }}>
                 <IonDatetimeButton datetime="date-picker" />
                 <IonModal keepContentsMounted={true}>
@@ -421,7 +421,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             <IonLabel>Anmerkungen (optional)</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent>
+            <IonCardContent style={{ padding: '12px' }}>
               <IonItem lines="none" style={{ '--background': 'transparent' }}>
                 <IonTextarea
                   value={formData.description}
@@ -444,7 +444,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             <IonLabel>Foto als Nachweis (optional)</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent>
+            <IonCardContent style={{ padding: '12px' }}>
               <div
                 onClick={handlePhotoSelect}
                 style={{
