@@ -390,6 +390,8 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Tab-Leiste ausserhalb Card, Suchleiste hinzugefuegt
   2. Badge-Grid: immer 1/3 Breite (CSS Grid, nicht flex)
+  3. Teilnehmer:innen-Liste und Anmelde-Button im Listen-Stil
+  4. Popovers centered, Titel einzeilig, Beschreibung darf umbrechen
 **Plans**: 2 plans
 Plans:
 - [ ] 111-01-PLAN.md -- BadgesView Layout: Tab-Leiste, Suchleiste, Grid, Abstaende
