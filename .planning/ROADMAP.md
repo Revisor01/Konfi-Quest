@@ -21,6 +21,8 @@
 - Shipped **v2.6 Final Polish + Bugfixes** - Phases 90-91 (shipped 2026-03-23)
 - Shipped **v2.7 Backend-Hardening** - Phases 92-93 (shipped 2026-03-24)
 - Shipped **v2.8 Design-Polish** - Phases 94-100 (shipped 2026-03-25)
+- Shipped **v2.9 Test-Suite + CI/CD** - Phases 101-107 (shipped 2026-03-28)
+- In Progress **v2.10 Design-Polish + UX-Feinschliff** - Phases 108+
 
 ## Phases
 
@@ -272,3 +274,151 @@ Phase 99: Admin Events + Bugs (3 plans, complete)
 Phase 100: Admin Zertifikate, Material, Dashboard (3 plans, complete)
 
 </details>
+
+<details>
+<summary>Shipped v2.9 Test-Suite + CI/CD (Phases 101-107) - SHIPPED 2026-03-28</summary>
+
+Phase 101: Test-Infrastruktur + server.js Refactoring (3 plans, complete)
+
+Phase 102: Auth + RBAC Integration Tests (2 plans)
+**Goal:** Authentifizierung und Autorisierung sind lueckenlos getestet -- kein Login-Bug, kein Cross-Org-Zugriff, kein Rollen-Bypass geht unbemerkt durch
+**Requirements:** [BIT-01, BIT-02]
+**Plans:** 2 plans
+Plans:
+- [ ] 102-01-PLAN.md -- Auth-Lifecycle Tests (Login, Refresh, Logout, /me, Passwort, Registrierung)
+- [x] 102-02-PLAN.md -- RBAC-Matrix + Cross-Org-Isolation Tests
+
+Phase 103: Core Business Integration Tests (3 plans)
+**Goal:** Die fuenf geschaeftskritischen Route-Gruppen (Activities, Events, Konfi, Chat, Badges) sind mit Integration-Tests abgesichert
+**Requirements:** [BIT-03, BIT-04, BIT-05, BIT-06, BIT-07]
+**Plans:** 3 plans
+Plans:
+- [ ] 103-01-PLAN.md -- Activities + Events Integration-Tests
+- [x] 103-02-PLAN.md -- Konfi + Chat Integration-Tests
+- [ ] 103-03-PLAN.md -- Badge CRUD, Auto-Award + Progress Integration-Tests
+
+Phase 104: Remaining Routes Integration Tests (3 plans)
+**Goal:** Alle verbleibenden Backend-Routes haben Integration-Tests -- die gesamte API ist abgesichert
+**Requirements:** [BIT-08]
+**Plans:** 3 plans
+Plans:
+- [x] 104-01-PLAN.md -- Categories, Jahrgaenge, Levels, Konfi-Management Integration-Tests
+- [ ] 104-02-PLAN.md -- Notifications, Organizations, Roles, Settings, Users Integration-Tests
+- [x] 104-03-PLAN.md -- Material, Teamer, Wrapped Integration-Tests
+
+Phase 105: CI/CD Pipeline (1 plan)
+**Goal:** Tests laufen automatisch bei jedem Push und blockieren Deployments bei Fehlern
+**Requirements:** [CIC-01, CIC-02, CIC-03, CIC-04]
+**Plans:** 1 plan
+Plans:
+- [ ] 105-01-PLAN.md -- CI/CD Workflow mit Test-Jobs als Deploy-Gate
+
+Phase 106: Frontend Tests (3 plans)
+**Goal:** Kritische Frontend-Logik (Hooks, Utilities, Kern-Komponenten) ist mit Tests abgesichert
+**Requirements:** [FRT-01, FRT-02, FRT-03]
+**Plans:** 3 plans
+Plans:
+- [ ] 106-01-PLAN.md -- Test-Infrastruktur (Capacitor-Mocks) + Service Unit-Tests (tokenStore, networkMonitor, api)
+- [ ] 106-02-PLAN.md -- Hook-Tests (useActionGuard, useOfflineQuery) + AppContext Tests
+- [ ] 106-03-PLAN.md -- 5 Component-Tests (EmptyState, LoadingSpinner, SectionHeader, ListSection, ErrorBoundary)
+
+Phase 107: E2E Tests mit Playwright (2 plans)
+**Goal:** Die 4 wichtigsten User-Journeys sind End-to-End im echten Browser verifiziert
+**Requirements:** [E2E-01, E2E-02, E2E-03, E2E-04, E2E-05]
+**Plans:** 2 plans
+Plans:
+- [x] 107-01-PLAN.md -- Docker-Compose E2E Stack + Playwright Setup + Login E2E
+- [ ] 107-02-PLAN.md -- Punkte-Vergabe, Event-Buchung, Chat E2E Tests
+
+</details>
+
+### v2.10 Design-Polish + UX-Feinschliff (In Progress)
+
+**Milestone Goal:** Globale CSS-Patterns definieren und alle Konfi-Seiten an einheitlichen Design-Stil anpassen. Patterns werden danach auf Teamer/Admin uebertragen.
+
+- [ ] **Phase 108: Globale CSS-Patterns** - Beschreibungstext-Variable, Listen-Pattern, Suche+Filter-Pattern, Corner-Badge-Fix
+- [ ] **Phase 109: Haptics + Searchbar + IonRange** - Pull-to-Refresh Haptics, Searchbar Classic Style, IonRange Wert-Anzeige
+- [ ] **Phase 110: Konfi Events + Details** - Suche+Filter wie Chat, Listen-Stil, Beschreibungstext
+- [ ] **Phase 111: Konfi Badges + Popovers** - Tab-Leiste, Suchleiste, Badge-Grid 1/3, Popovers centered
+- [ ] **Phase 112: Konfi Aktivitaeten + Profil + Modal** - Listen-Stil, Wrapped-Padding, Modal-Abstaende
+
+## Phase Details
+
+### Phase 108: Globale CSS-Patterns
+**Goal**: Wiederverwendbare CSS-Variablen und Patterns die auf allen Seiten (Konfi, Teamer, Admin) gelten
+**Depends on**: -
+**Requirements**: CSS-01, CSS-02, CSS-03, CSS-04
+**Success Criteria** (what must be TRUE):
+  1. --app-description-font-size Variable existiert in variables.css und wird in Beschreibungstexten verwendet
+  2. Listen-Pattern dokumentiert: flex-div, 12px Card-Padding, app-list-item mit 8px margin-bottom via CSS
+  3. Suche+Filter-Pattern: Section-Header oben, Suchleiste wie Chat, Tab-Leiste ausserhalb Card
+  4. Corner-Badge Titel-Overlap via paddingRight geloest (nicht paddingTop)
+**Plans**: 1 plan
+Plans:
+- [x] 108-01-PLAN.md -- Globale CSS-Variablen und Patterns
+
+### Phase 109: Haptics + Searchbar + IonRange
+**Goal**: Pull-to-Refresh Haptics, Searchbar Classic, IonRange-Werte sichtbar
+**Depends on**: Phase 108
+**Requirements**: UXH-01, SBS-01, IRV-01, IRV-02
+**Success Criteria** (what must be TRUE):
+  1. Pull-to-Refresh loest Haptics-Feedback auf iOS aus
+  2. Alle IonSearchbar-Instanzen haben ios26-searchbar-classic Klasse
+  3. IonRange zeigt den eingestellten Wert sichtbar an
+  4. Maximalwerte der IonRange-Slider sind sinnvoll konfiguriert
+**Plans:** 1 plan
+Plans:
+- [ ] 109-01-PLAN.md -- IonRange permanente Wert-Anzeige + Verifizierung Haptics/Searchbar/Maximalwerte
+
+### Phase 110: Konfi Events + Details
+**Goal**: Events-View und Event-Details an globale CSS-Patterns angepasst
+**Depends on**: Phase 108
+**Requirements**: KEV-01, KEV-02, KEV-03, KED-01
+**Success Criteria** (what must be TRUE):
+  1. Suche+Filter unter Section-Header mit Suchleiste wie Chat
+  2. Section-Header oben an gleicher Stelle
+  3. Event-Liste mit neuem Listen-Stil (12px, flex-div)
+  4. Beschreibungstext nutzt --app-description-font-size
+**Plans**: 1 plan
+Plans:
+- [ ] 110-01-PLAN.md -- ListSection flex-div + Events-View Pattern-Konformitaet
+
+### Phase 111: Konfi Badges + Popovers
+**Goal**: Badges-View, Badge-Grid und Popovers an Design-Patterns angepasst
+**Depends on**: Phase 108
+**Requirements**: KBV-01, KBV-02, KBV-03, KBV-04, KBV-05, BPO-01, BPO-02
+**Success Criteria** (what must be TRUE):
+  1. Tab-Leiste ausserhalb Card, Suchleiste hinzugefuegt
+  2. Badge-Grid: immer 1/3 Breite (CSS Grid, nicht flex)
+  3. Teilnehmer:innen-Liste und Anmelde-Button im Listen-Stil
+  4. Popovers centered, Titel einzeilig, Beschreibung darf umbrechen
+**Plans**: 2 plans
+Plans:
+- [ ] 111-01-PLAN.md -- BadgesView Layout: Tab-Leiste, Suchleiste, Grid, Abstaende
+- [ ] 111-02-PLAN.md -- Popover-Styling: Titel einzeilig, centered, max-width
+
+### Phase 112: Konfi Aktivitaeten + Profil + Modal
+**Goal**: Verbleibende Konfi-Views und Modale an Design-Patterns angepasst
+**Depends on**: Phase 108
+**Requirements**: KAV-01, KPR-01, KPR-02, MAB-01
+**Success Criteria** (what must be TRUE):
+  1. Aktivitaeten-Listen im neuen Stil
+  2. Profil-Listen im neuen Stil
+  3. Meine-Wrappeds kein Padding unten bei nur einem Wrapped
+  4. Modal Aktivitaet beantragen: Card-Abstaende wie Listen (12px)
+**Plans**: 1 plan
+Plans:
+- [ ] 112-01-PLAN.md — Listen-Stil, Wrapped-Padding, Modal-Abstaende
+
+## Progress
+
+**Execution Order:**
+Phase 108 zuerst (globale CSS), dann 109-112 parallel moeglich (alle haengen nur von 108 ab)
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 108. Globale CSS-Patterns | 0/? | Not started | - |
+| 109. Haptics + Searchbar + IonRange | 0/1 | Planned | - |
+| 110. Konfi Events + Details | 0/? | Not started | - |
+| 111. Konfi Badges + Popovers | 0/? | Not started | - |
+| 112. Konfi Aktivitaeten + Profil + Modal | 0/1 | Planned | - |
