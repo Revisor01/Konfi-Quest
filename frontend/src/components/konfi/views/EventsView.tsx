@@ -254,7 +254,7 @@ const EventsView: React.FC<EventsViewProps> = ({
           const showBadge = !isPastEvent || isParticipated || isCancelled || isOptedOut;
 
           return (
-            <IonItemSliding key={event.id} style={{ marginBottom: index < filteredEvents.length - 1 ? '4px' : '0' }}>
+            <IonItemSliding key={event.id}>
               <IonItem
                 button
                 onClick={() => onSelectEvent(event)}
