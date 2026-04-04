@@ -14,16 +14,16 @@
 
 ### UX-Haptics
 
-- [ ] **UXH-01**: Pull-to-Refresh loest Haptics-Feedback (ImpactStyle.Light) bei ionPullStart aus — in allen Views mit IonRefresher
+- [x] **UXH-01**: Pull-to-Refresh loest Haptics-Feedback (ImpactStyle.Light) bei ionPullStart aus — in allen Views mit IonRefresher
 
 ### Searchbar-Styling
 
-- [ ] **SBS-01**: Alle IonSearchbar-Instanzen nutzen ios26-searchbar-classic Klasse fuer den runderen iOS-Look
+- [x] **SBS-01**: Alle IonSearchbar-Instanzen nutzen ios26-searchbar-classic Klasse fuer den runderen iOS-Look
 
 ### IonRange-Verbesserung
 
-- [ ] **IRV-01**: IonRange zeigt den aktuell eingestellten Wert sichtbar an (Label/Badge neben dem Slider bleibt waehrend und nach dem Ziehen sichtbar)
-- [ ] **IRV-02**: Maximalwerte der IonRange-Slider sind korrekt konfiguriert und sinnvoll gewaehlt
+- [x] **IRV-01**: IonRange zeigt den aktuell eingestellten Wert sichtbar an (Label/Badge neben dem Slider bleibt waehrend und nach dem Ziehen sichtbar)
+- [x] **IRV-02**: Maximalwerte der IonRange-Slider sind korrekt konfiguriert und sinnvoll gewaehlt
 
 ### Konfi Events-View
 
@@ -77,10 +77,10 @@
 | CSS-02 | Phase 108 | Pending |
 | CSS-03 | Phase 108 | Pending |
 | CSS-04 | Phase 108 | Pending |
-| UXH-01 | Phase 109 | Pending |
-| SBS-01 | Phase 109 | Pending |
-| IRV-01 | Phase 109 | Pending |
-| IRV-02 | Phase 109 | Pending |
+| UXH-01 | Phase 109 | Complete |
+| SBS-01 | Phase 109 | Complete |
+| IRV-01 | Phase 109 | Complete |
+| IRV-02 | Phase 109 | Complete |
 | KEV-01 | Phase 110 | Pending |
 | KEV-02 | Phase 110 | Pending |
 | KEV-03 | Phase 110 | Pending |

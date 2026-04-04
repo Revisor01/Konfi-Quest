@@ -196,7 +196,7 @@ export const CheckinSection = React.memo<CheckinSectionProps>(({
               disabled={loading}
               style={{ flex: 1 }}
             />
-            <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>60</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ion-color-primary)', minWidth: '28px', textAlign: 'center' }}>{formData.checkin_window} min</span>
           </div>
         </IonItem>
         <p style={{ fontSize: '0.8rem', color: '#888', margin: '4px 16px 8px 16px', lineHeight: '1.4' }}>
@@ -255,7 +255,7 @@ export const PointsParticipantsSection = React.memo<PointsParticipantsSectionPro
                     disabled={loading}
                     style={{ flex: 1 }}
                   />
-                  <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>50</span>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ion-color-primary)', minWidth: '28px', textAlign: 'center' }}>{formData.max_participants}</span>
                 </div>
               </IonItem>
             )}
@@ -275,7 +275,7 @@ export const PointsParticipantsSection = React.memo<PointsParticipantsSectionPro
               disabled={loading}
               style={{ flex: 1 }}
             />
-            <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>5</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ion-color-primary)', minWidth: '28px', textAlign: 'center' }}>{formData.points}</span>
           </div>
         </IonItem>
 
@@ -464,7 +464,7 @@ export const WaitlistSection = React.memo<WaitlistSectionProps>(({
                 disabled={loading}
                 style={{ flex: 1 }}
               />
-              <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>10</span>
+              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ion-color-primary)', minWidth: '28px', textAlign: 'center' }}>{formData.max_waitlist_size}</span>
             </div>
           </IonItem>
         )}
@@ -518,7 +518,7 @@ export const SeriesSection = React.memo<SeriesSectionProps>(({
                     disabled={loading}
                     style={{ flex: 1 }}
                   />
-                  <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>26</span>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ion-color-primary)', minWidth: '28px', textAlign: 'center' }}>{formData.series_count}</span>
                 </div>
               </IonItem>
               <IonItem lines="none">
