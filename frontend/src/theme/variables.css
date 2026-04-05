@@ -115,10 +115,19 @@ ion-item.app-list-item::part(native) {
   padding: 12px 16px;
   border-radius: 10px;
 }
+/* Abstände: IonItemSliding Wrapper bekommt auch margin-bottom */
+ion-item-sliding:has(.app-list-item) {
+  margin-bottom: 8px;
+}
+ion-item-sliding:has(.app-list-item) .app-list-item,
+ion-item-sliding:has(.app-list-item) ion-item.app-list-item {
+  margin-bottom: 0;
+}
+
+/* Letztes Element: kein margin-bottom */
 .app-list-item:last-child,
 ion-item.app-list-item:last-child,
-ion-item-sliding:last-child .app-list-item,
-ion-item-sliding:last-child ion-item.app-list-item {
+ion-item-sliding:last-child {
   margin-bottom: 0;
 }
 
