@@ -132,6 +132,7 @@ div:last-child > ion-item.app-list-item {
 .app-list-item--danger, ion-item.app-list-item--danger { border-left-color: #dc3545; }
 .app-list-item--info, ion-item.app-list-item--info { border-left-color: #007aff; }
 .app-list-item--purple, ion-item.app-list-item--purple { border-left-color: #5b21b6; }
+.app-list-item--purple.app-list-item--selected { border-left-color: #5b21b6; background: rgba(91, 33, 182, 0.08); }
 .app-list-item--booked, ion-item.app-list-item--booked { border-left-color: #007aff; }
 .app-list-item--primary, ion-item.app-list-item--primary { border-left-color: #5b21b6; }
 .app-list-item--bonus, ion-item.app-list-item--bonus { border-left-color: #f97316; }
