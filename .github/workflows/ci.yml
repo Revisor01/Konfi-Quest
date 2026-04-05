@@ -62,7 +62,7 @@ jobs:
           TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
           JWT_SECRET: test-secret-ci
           NODE_ENV: test
-        run: npx vitest run --passWithNoTests
+        run: npx vitest run --config tests/vitest.config.ts --passWithNoTests
 
   frontend-test:
     runs-on: ubuntu-latest
