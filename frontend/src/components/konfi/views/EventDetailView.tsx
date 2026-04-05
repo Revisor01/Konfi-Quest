@@ -39,7 +39,8 @@ import {
   shieldCheckmark,
   bagHandle,
   qrCodeOutline,
-  cloudOfflineOutline
+  cloudOfflineOutline,
+  lockOpenOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
@@ -544,6 +545,30 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 </div>
               )}
 
+              {/* Anmeldezeitraum — wie Zeitfenster aufgebaut, nicht bei Pflicht-Events */}
+              {!eventData.mandatory && (
+                <div className="app-info-row app-info-row--top">
+                  <IonIcon icon={lockOpenOutline} className="app-info-row__icon app-icon-color--events app-event-detail__icon--align-top" />
+                  <div>
+                    <div className="app-text-main">Anmeldung</div>
+                    {eventData.registration_opens_at ? (
+                      <>
+                        <div className="app-text-sub">
+                          von {new Date(eventData.registration_opens_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_opens_at)}
+                        </div>
+                        {eventData.registration_closes_at && (
+                          <div className="app-text-sub">
+                            bis {new Date(eventData.registration_closes_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_closes_at)}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="app-text-sub">Sofort möglich</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* TN gesamt */}
               <div className="app-info-row">
                 <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
@@ -633,24 +658,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 </div>
               )}
 
-              {/* Anmeldezeitraum - nicht bei Pflicht-Events */}
-              {!eventData.mandatory && (
-              <div className="app-info-row app-info-row--top">
-                <IonIcon icon={time} className="app-info-row__icon app-icon-color--events app-event-detail__icon--align-top-sm" />
-                <div className="app-info-row__content">
-                  {eventData.registration_opens_at ? (
-                    <>
-                      <div>von {new Date(eventData.registration_opens_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_opens_at)}</div>
-                      {eventData.registration_closes_at && (
-                        <div className="app-info-row__sublabel">bis {new Date(eventData.registration_closes_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_closes_at)}</div>
-                      )}
-                    </>
-                  ) : (
-                    'Sofort möglich'
-                  )}
-                </div>
-              </div>
-              )}
 
             </IonCardContent>
           </IonCard>
