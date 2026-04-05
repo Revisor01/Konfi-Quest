@@ -92,7 +92,8 @@ jobs:
 
   build-and-push:
     needs: [backend-test, frontend-test]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && always()
+
     runs-on: ubuntu-latest
     permissions:
       contents: read
