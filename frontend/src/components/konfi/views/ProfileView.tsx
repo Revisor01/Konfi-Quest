@@ -507,7 +507,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
             <IonLabel>Meine Wrappeds</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: wrappedHistory.length === 1 ? '12px 12px 0 12px' : '12px' }}>
+            <IonCardContent style={{ padding: '12px' }}>
               {wrappedHistory.map((entry) => (
                 <div
                   key={entry.id}
