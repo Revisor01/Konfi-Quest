@@ -8,7 +8,9 @@ import {
   IonLabel,
   IonList,
   IonListHeader,
-  IonSearchbar,
+  IonItemGroup,
+  IonItem,
+  IonInput,
   useIonPopover
 } from '@ionic/react';
 import { SectionHeader, EmptyState } from '../../shared';
@@ -72,7 +74,9 @@ import {
   prismOutline,
   cubeOutline,
   handLeft,
-  checkmark
+  checkmark,
+  search,
+  filterOutline
 } from 'ionicons/icons';
 
 // Badge Icon Mapping
@@ -387,21 +391,24 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         </IonSegment>
       </div>
 
-      {/* Suche & Filter — wie Chat-Pattern */}
+      {/* Suche & Filter — wie Chat/Events-Pattern */}
       <IonList inset={true} style={{ margin: '16px' }}>
         <IonListHeader>
           <div className="app-section-icon app-section-icon--warning">
-            <IonIcon icon={trophyOutline} />
+            <IonIcon icon={filterOutline} />
           </div>
-          <IonLabel>Suche</IonLabel>
+          <IonLabel>Suche & Filter</IonLabel>
         </IonListHeader>
-        <IonSearchbar
-          className="ios26-searchbar-classic"
-          value={searchText}
-          onIonInput={(e) => setSearchText(e.detail.value || '')}
-          placeholder="Badges durchsuchen..."
-          showClearButton="focus"
-        />
+        <IonItemGroup>
+          <IonItem>
+            <IonIcon icon={search} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+            <IonInput
+              value={searchText}
+              onIonInput={(e) => setSearchText(e.detail.value || '')}
+              placeholder="Badges durchsuchen..."
+            />
+          </IonItem>
+        </IonItemGroup>
       </IonList>
 
       {/* Badges Grid */}
@@ -600,7 +607,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                             WebkitLineClamp: 1,
                             WebkitBoxOrient: 'vertical'
                           }}>
-                            {badge.name}
+                            {badge.name || ''}
                           </span>
 
                           {/* Progress percentage for in-progress badges */}
