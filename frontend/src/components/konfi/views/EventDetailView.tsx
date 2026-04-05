@@ -528,7 +528,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 <div className="app-info-row app-info-row--top">
                   <IonIcon icon={time} className="app-info-row__icon app-icon-color--events app-event-detail__icon--align-top" />
                   <div className="app-event-detail__timeslot-list">
-                    <div className="app-text-main">Zeitfenster:</div>
+                    <div className="app-text-main">Zeitfenster</div>
                     {timeslots.map((slot, idx) => (
                       <div key={slot.id || idx} className="app-text-sub app-event-detail__timeslot-entry">
                         {formatTime(slot.start_time)} - {formatTime(slot.end_time)} ({slot.registered_count || 0}/{slot.max_participants} TN)
