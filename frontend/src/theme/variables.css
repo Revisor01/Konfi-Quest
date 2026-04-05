@@ -361,7 +361,7 @@ ion-list[inset] ion-list-header {
 /* App Info Row - fuer Info-Zeilen mit Icon */
 .app-info-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 12px;
 }
 .app-info-row:last-child {
@@ -971,7 +971,7 @@ ion-item-option.app-swipe-action {
   --background: transparent;
   --color: transparent;
   --border-width: 0;
-  padding: 0;
+  padding: 0 2px;
   min-width: auto;
 }
 

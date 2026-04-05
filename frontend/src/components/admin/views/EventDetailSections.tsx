@@ -382,7 +382,8 @@ export const SeriesEventsSection = React.memo<SeriesEventsSectionProps>(({
       <IonLabel>Weitere Termine dieser Serie</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
-      <IonCardContent className="app-card-content">
+      <IonCardContent style={{ padding: '12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
         {seriesEvents.map((seriesEvent) => {
           const isFull = (seriesEvent.registered_count || 0) >= seriesEvent.max_participants;
           return (
@@ -414,6 +415,7 @@ export const SeriesEventsSection = React.memo<SeriesEventsSectionProps>(({
             </div>
           );
         })}
+        </div>
       </IonCardContent>
     </IonCard>
   </IonList>
@@ -434,7 +436,8 @@ export const UnregistrationsSection = React.memo<UnregistrationsSectionProps>(({
       <IonLabel>Abmeldungen ({unregistrations.length})</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
-      <IonCardContent className="app-card-content">
+      <IonCardContent style={{ padding: '12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
         {unregistrations.map((unreg) => (
           <div key={unreg.id} className="app-list-item app-list-item--danger">
             <div className="app-list-item__row">
@@ -463,6 +466,7 @@ export const UnregistrationsSection = React.memo<UnregistrationsSectionProps>(({
             )}
           </div>
         ))}
+        </div>
       </IonCardContent>
     </IonCard>
   </IonList>
@@ -487,15 +491,15 @@ export const EventMaterialSection = React.memo<EventMaterialSectionProps>(({
       <IonLabel>Material ({eventMaterials.length})</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
-      <IonCardContent className="app-card-content">
+      <IonCardContent style={{ padding: '12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
         {eventMaterials.map((mat: any) => (
           <div
             key={mat.id}
             className="app-list-item"
             style={{
               borderLeftColor: '#d97706',
-              cursor: 'pointer',
-              marginBottom: '8px'
+              cursor: 'pointer'
             }}
             onClick={() => onMaterialClick(mat.id)}
           >
@@ -517,6 +521,7 @@ export const EventMaterialSection = React.memo<EventMaterialSectionProps>(({
             </div>
           </div>
         ))}
+        </div>
       </IonCardContent>
     </IonCard>
   </IonList>
@@ -622,7 +627,8 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
       <IonLabel>Zeitslots ({timeslots.length})</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
-      <IonCardContent className="app-card-content">
+      <IonCardContent style={{ padding: '12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
         {timeslots.map((timeslot) => {
           const slotStartFormatted = formatTime(timeslot.start_time);
           const slotEndFormatted = formatTime(timeslot.end_time);
@@ -715,6 +721,7 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
             </div>
           );
         })}
+        </div>
       </IonCardContent>
     </IonCard>
   </IonList>

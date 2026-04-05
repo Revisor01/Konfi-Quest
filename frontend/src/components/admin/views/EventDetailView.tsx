@@ -670,8 +670,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     <IonLabel>{konfiHeaderText}</IonLabel>
                   </IonListHeader>
                   <IonCard className="app-card">
-                    <IonCardContent className="app-card-content">
-                      {displayParticipants.map(renderParticipant)}
+                    <IonCardContent style={{ padding: displayParticipants.length === 0 ? '16px' : '12px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        {displayParticipants.map(renderParticipant)}
+                      </div>
                       <div className="app-event-detail__add-button-wrapper">
                         <IonButton expand="block" fill="outline"
                           onClick={() => presentKonfiModal({ presentingElement: presentingElement || undefined })}>
@@ -690,8 +692,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     <IonLabel>Teamer:innen ({teamerParticipants.length})</IonLabel>
                   </IonListHeader>
                   <IonCard className="app-card">
-                    <IonCardContent className="app-card-content">
-                      {teamerParticipants.map(renderParticipant)}
+                    <IonCardContent style={{ padding: teamerParticipants.length === 0 ? '16px' : '12px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        {teamerParticipants.map(renderParticipant)}
+                      </div>
                       <div className="app-event-detail__add-button-wrapper">
                         <IonButton expand="block" fill="outline"
                           onClick={() => presentTeamerModal({ presentingElement: presentingElement || undefined })}>
