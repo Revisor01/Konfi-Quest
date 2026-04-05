@@ -118,9 +118,7 @@ ion-item.app-list-item::part(native) {
 .app-list-item:last-child,
 ion-item.app-list-item:last-child,
 ion-item-sliding:last-child .app-list-item,
-ion-item-sliding:last-child ion-item.app-list-item,
-div:last-child > .app-list-item,
-div:last-child > ion-item.app-list-item {
+ion-item-sliding:last-child ion-item.app-list-item {
   margin-bottom: 0;
 }
 
@@ -152,71 +150,22 @@ div:last-child > ion-item.app-list-item {
 .app-list-item--konfi, ion-item.app-list-item--konfi { border-left-color: #5b21b6; }
 .app-list-item--group, ion-item.app-list-item--group { border-left-color: #f97316; }
 
-/* Selected State fuer List Items - Events (Rot) */
-.app-list-item--events.app-list-item--selected {
-  border-color: #dc2626;
-  background: rgba(220, 38, 38, 0.08);
-}
-/* Selected State fuer List Items - Chat/Admin (Tuerkis) */
-.app-list-item--chat.app-list-item--selected {
-  border-color: #06b6d4;
-  background: rgba(6, 182, 212, 0.08);
-}
-/* Selected State fuer Chat-Raumtypen */
-.app-list-item--team.app-list-item--selected {
-  border-color: #e11d48;
-  background: rgba(225, 29, 72, 0.08);
-}
-/* Selected State fuer List Items - Warning/Konfi (Orange) */
-.app-list-item--warning.app-list-item--selected {
-  border-color: #ff9500;
-  background: rgba(255, 149, 0, 0.08);
-}
-/* Selected State fuer List Items - Default */
-.app-list-item--selected {
-  border-color: #ff9500;
-  background: rgba(255, 149, 0, 0.08);
-}
-/* Selected State fuer List Items - Primary (Lila) */
-.app-list-item--primary.app-list-item--selected {
-  border-color: #5b21b6;
-  background: rgba(91, 33, 182, 0.08);
-}
-/* Selected State fuer List Items - Bonus (Orange) */
-.app-list-item--bonus.app-list-item--selected {
-  border-color: #f97316;
-  background: rgba(249, 115, 22, 0.08);
-}
-/* Selected State fuer List Items - Activities (Dunkelgruen) */
-.app-list-item--activities.app-list-item--selected {
-  border-color: #047857;
-  background: rgba(4, 120, 87, 0.08);
-}
-/* Selected State fuer List Items - Users (Indigo) */
-.app-list-item--users.app-list-item--selected {
-  border-color: #667eea;
-  background: rgba(102, 126, 234, 0.08);
-}
-/* Selected State fuer List Items - Level (Lila) */
-.app-list-item--level.app-list-item--selected {
-  border-color: #5b21b6;
-  background: rgba(91, 33, 182, 0.08);
-}
-/* Selected State fuer List Items - Organizations (Blau) */
-.app-list-item--organizations.app-list-item--selected {
-  border-color: #667eea;
-  background: rgba(102, 126, 234, 0.08);
-}
-/* Selected State fuer List Items - Info (Blau) */
-.app-list-item--info.app-list-item--selected {
-  border-color: #007aff;
-  background: rgba(0, 122, 255, 0.08);
-}
-/* Selected State fuer List Items - Success (Gruen) */
-.app-list-item--success.app-list-item--selected {
-  border-color: #34c759;
-  background: rgba(52, 199, 89, 0.08);
-}
+/* Selected State — nur Hintergrundfarbe, KEIN extra border-color (linker Strich kommt aus Farbvariante) */
+.app-list-item--selected { background: rgba(91, 33, 182, 0.08); }
+.app-list-item--events.app-list-item--selected { background: rgba(220, 38, 38, 0.08); }
+.app-list-item--chat.app-list-item--selected { background: rgba(6, 182, 212, 0.08); }
+.app-list-item--team.app-list-item--selected { background: rgba(225, 29, 72, 0.08); }
+.app-list-item--warning.app-list-item--selected { background: rgba(255, 149, 0, 0.08); }
+.app-list-item--primary.app-list-item--selected { background: rgba(91, 33, 182, 0.08); }
+.app-list-item--purple.app-list-item--selected { background: rgba(91, 33, 182, 0.08); }
+.app-list-item--bonus.app-list-item--selected { background: rgba(249, 115, 22, 0.08); }
+.app-list-item--activities.app-list-item--selected { background: rgba(4, 120, 87, 0.08); }
+.app-list-item--users.app-list-item--selected { background: rgba(102, 126, 234, 0.08); }
+.app-list-item--level.app-list-item--selected { background: rgba(91, 33, 182, 0.08); }
+.app-list-item--organizations.app-list-item--selected { background: rgba(102, 126, 234, 0.08); }
+.app-list-item--info.app-list-item--selected { background: rgba(0, 122, 255, 0.08); }
+.app-list-item--success.app-list-item--selected { background: rgba(52, 199, 89, 0.08); }
+.app-list-item--konfi.app-list-item--selected { background: rgba(91, 33, 182, 0.08); }
 
 /* === Reason Boxes === */
 /* App Reason Box - fuer Abmeldungen, Ablehnungen, etc. */
