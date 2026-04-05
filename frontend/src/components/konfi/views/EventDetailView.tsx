@@ -667,9 +667,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent className="app-card-content">
-                <p className="app-description-text">
+                <div className="app-description-text">
                   {eventData.description}
-                </p>
+                </div>
               </IonCardContent>
             </IonCard>
           </IonList>
@@ -685,8 +685,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               <IonLabel>Teilnehmer:innen ({participants.length})</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent style={{ padding: '8px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <IonCardContent style={{ padding: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
                   {participants.map((participant) => (
                     <div
                       key={participant.id}
