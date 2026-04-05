@@ -34,6 +34,13 @@ interface PointsHistoryModalProps {
     gemeinde_enabled: boolean;
   };
   apiEndpoint?: string;
+  profileTotals?: {
+    total_points: number;
+    gottesdienst_points: number;
+    gemeinde_points: number;
+    bonus_points: number;
+    event_count: number;
+  };
 }
 
 interface PointEntry {
@@ -52,7 +59,7 @@ interface PointsTotals {
   total: number;
 }
 
-const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointConfig, apiEndpoint }) => {
+const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointConfig, apiEndpoint, profileTotals }) => {
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState<PointEntry[]>([]);
   const [totals, setTotals] = useState<PointsTotals>({ gottesdienst: 0, gemeinde: 0, total: 0 });
@@ -97,16 +104,17 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
     });
   }, [history, gottesdienstEnabled, gemeindeEnabled]);
 
-  // Totals direkt aus History berechnen (zuverlaessiger als Backend-totals)
+  // Totals: profileTotals (gleiche Quelle wie Profil-Seite) oder Fallback aus History
   const filteredTotals = useMemo(() => {
+    if (profileTotals) {
+      const godi = gottesdienstEnabled ? (profileTotals.gottesdienst_points || 0) : 0;
+      const gem = gemeindeEnabled ? (profileTotals.gemeinde_points || 0) : 0;
+      return { gottesdienst: godi, gemeinde: gem, total: godi + gem };
+    }
     const godi = filteredHistory.filter(h => h.category === 'gottesdienst').reduce((sum, h) => sum + h.points, 0);
     const gem = filteredHistory.filter(h => h.category === 'gemeinde').reduce((sum, h) => sum + h.points, 0);
-    return {
-      gottesdienst: godi,
-      gemeinde: gem,
-      total: godi + gem
-    };
-  }, [filteredHistory]);
+    return { gottesdienst: godi, gemeinde: gem, total: godi + gem };
+  }, [profileTotals, filteredHistory, gottesdienstEnabled, gemeindeEnabled]);
 
   // Farbe basierend auf category (gottesdienst=blau, gemeinde=grün)
   const getCategoryColor = (category: string) => {

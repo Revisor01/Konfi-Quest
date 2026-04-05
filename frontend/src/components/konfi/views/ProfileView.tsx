@@ -312,7 +312,14 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
 
   // Modal with useIonModal Hook for Points History
   const [presentPointsModal, dismissPointsModal] = useIonModal(PointsHistoryModal, {
-    onClose: () => dismissPointsModal()
+    onClose: () => dismissPointsModal(),
+    profileTotals: profile ? {
+      total_points: profile.total_points || 0,
+      gottesdienst_points: profile.gottesdienst_points || 0,
+      gemeinde_points: profile.gemeinde_points || 0,
+      bonus_points: profile.bonus_points || 0,
+      event_count: profile.event_count || 0
+    } : undefined
   });
 
   const getInitials = (name: string | undefined) => {
