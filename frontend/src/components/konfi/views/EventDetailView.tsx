@@ -649,8 +649,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {eventData.mandatory && (
                 <div className="app-info-row">
                   <IonIcon icon={shieldCheckmark} className="app-info-row__icon" style={{ color: '#dc2626' }} />
-                  <div className="app-info-row__content">
-                    Pflicht-Event
+                  <div>
+                    <div className="app-text-main">Pflicht-Event</div>
+                    <div className="app-text-sub">Teilnahme erforderlich</div>
                   </div>
                 </div>
               )}
@@ -659,8 +660,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {eventData.bring_items && (
                 <div className="app-info-row">
                   <IonIcon icon={bagHandle} className="app-info-row__icon" style={{ color: '#8b5cf6' }} />
-                  <div className="app-info-row__content">
-                    {eventData.bring_items}
+                  <div>
+                    <div className="app-text-main">Mitbringen</div>
+                    <div className="app-text-sub">{eventData.bring_items}</div>
                   </div>
                 </div>
               )}
