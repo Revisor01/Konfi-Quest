@@ -52,16 +52,9 @@ Auth-Routes auf RBAC migriert (gesperrte User sofort blockiert), Magic-Bytes Upl
 
 458 Backend Integration-Tests (alle 15 Routes gegen echte PostgreSQL), 71 Frontend Tests (Hooks/Services/Components), 4 Playwright E2E User-Journeys, GitHub Actions CI/CD Pipeline als Deploy-Gate. 7 Phasen, 11 Plans, 26 Requirements. 3 Produktions-Bugs nebenbei gefixt (auth.js org_id, badges.js JSON.parse, wrapped.js double-release).
 
-## Current Milestone: v2.10 Design-Polish + UX-Feinschliff
+## Shipped: v2.10 Design-Polish + UX-Feinschliff (2026-04-05)
 
-**Goal:** Letzte Design- und UX-Verbesserungen — Haptics, Searchbar-Styling, IonRange-Wert-Anzeige, Maximalwerte und weitere UI-Anpassungen.
-
-**Target features:**
-- Pull-to-Refresh Haptics (Capacitor ImpactStyle.Light bei ionPullStart in allen Views mit IonRefresher)
-- Searchbar Classic Style (ios26-searchbar-classic auf alle IonSearchbar)
-- IonRange Wert-Anzeige (eingestellte Zahlen sichtbar halten)
-- Maximalwerte-Anpassung
-- Weitere Design-Anpassungen (wird ergaenzt)
+Globale CSS-Patterns (Beschreibungstext-Variable, Listen-Pattern, Corner-Badge-Fix), IonRange Wert-Anzeige auf allen 12 Instanzen, BadgesView mit Suchleiste + Grid-Fix + Popover-Zentrierung, ListSection global auf flex-div, alle Konfi-Views einheitlich. 5 Phasen, 6 Plans, 23 Requirements.
 
 ## Geplant: v3.0 Onboarding + Landing
 
@@ -279,4 +272,4 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | file-type Magic-Bytes Upload | Client-MIME-Header allein nicht vertrauenswuerdig | Bestaetigt v2.7 |
 
 ---
-*Last updated: 2026-03-28 after v2.10 milestone start*
+*Last updated: 2026-04-05 after v2.10 milestone complete*
