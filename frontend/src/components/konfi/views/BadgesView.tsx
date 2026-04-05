@@ -382,16 +382,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         ]}
       />
 
-      {/* Tab Navigation */}
-      <div className="app-segment-wrapper">
-        <IonSegment value={selectedFilter} onIonChange={(e) => onFilterChange(e.detail.value as string)}>
-          <IonSegmentButton value="alle"><IonLabel>Alle</IonLabel></IonSegmentButton>
-          <IonSegmentButton value="nicht_erhalten"><IonLabel>Offen</IonLabel></IonSegmentButton>
-          <IonSegmentButton value="in_arbeit"><IonLabel>In Arbeit</IonLabel></IonSegmentButton>
-        </IonSegment>
-      </div>
-
-      {/* Suche & Filter — wie Chat/Events-Pattern */}
+      {/* Suche & Filter — wie Events-Pattern: Section-Header, Suchleiste, dann Tab-Leiste */}
       <IonList inset={true} style={{ margin: '16px' }}>
         <IonListHeader>
           <div className="app-section-icon app-section-icon--warning">
@@ -410,6 +401,14 @@ const BadgesView: React.FC<BadgesViewProps> = ({
           </IonItem>
         </IonItemGroup>
       </IonList>
+
+      <div className="app-segment-wrapper">
+        <IonSegment value={selectedFilter} onIonChange={(e) => onFilterChange(e.detail.value as string)}>
+          <IonSegmentButton value="alle"><IonLabel>Alle</IonLabel></IonSegmentButton>
+          <IonSegmentButton value="nicht_erhalten"><IonLabel>Offen</IonLabel></IonSegmentButton>
+          <IonSegmentButton value="in_arbeit"><IonLabel>In Arbeit</IonLabel></IonSegmentButton>
+        </IonSegment>
+      </div>
 
       {/* Badges Grid */}
       <IonList inset={true} style={{ margin: '16px' }}>
@@ -500,7 +499,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                     {category.badges.map((badge) => {
                       const badgeColor = getBadgeColor(badge);
                       const isEarned = badge.is_earned;
-                      const hasProgress = !isEarned && badge.progress_percentage && badge.progress_percentage > 0;
+                      const hasProgress = !isEarned && (badge.progress_percentage ?? 0) > 0;
 
                       return (
                         <div
