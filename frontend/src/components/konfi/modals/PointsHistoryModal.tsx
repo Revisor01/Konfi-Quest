@@ -97,16 +97,16 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
     });
   }, [history, gottesdienstEnabled, gemeindeEnabled]);
 
-  // Angepasste Totals: nur aktive Typen
+  // Totals direkt aus History berechnen (zuverlaessiger als Backend-totals)
   const filteredTotals = useMemo(() => {
-    const godi = gottesdienstEnabled ? totals.gottesdienst : 0;
-    const gem = gemeindeEnabled ? totals.gemeinde : 0;
+    const godi = filteredHistory.filter(h => h.category === 'gottesdienst').reduce((sum, h) => sum + h.points, 0);
+    const gem = filteredHistory.filter(h => h.category === 'gemeinde').reduce((sum, h) => sum + h.points, 0);
     return {
       gottesdienst: godi,
       gemeinde: gem,
       total: godi + gem
     };
-  }, [totals, gottesdienstEnabled, gemeindeEnabled]);
+  }, [filteredHistory]);
 
   // Farbe basierend auf category (gottesdienst=blau, gemeinde=grün)
   const getCategoryColor = (category: string) => {
