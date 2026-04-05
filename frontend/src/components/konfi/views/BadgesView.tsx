@@ -387,8 +387,14 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         </IonSegment>
       </div>
 
-      {/* Suchleiste */}
-      <div style={{ margin: '0 16px' }}>
+      {/* Suche & Filter — wie Chat-Pattern */}
+      <IonList inset={true} style={{ margin: '16px' }}>
+        <IonListHeader>
+          <div className="app-section-icon app-section-icon--warning">
+            <IonIcon icon={trophyOutline} />
+          </div>
+          <IonLabel>Suche</IonLabel>
+        </IonListHeader>
         <IonSearchbar
           className="ios26-searchbar-classic"
           value={searchText}
@@ -396,7 +402,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
           placeholder="Badges durchsuchen..."
           showClearButton="focus"
         />
-      </div>
+      </IonList>
 
       {/* Badges Grid */}
       <IonList inset={true} style={{ margin: '16px' }}>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   IonIcon,
   IonItem,
@@ -7,7 +7,11 @@ import {
   IonItemOptions,
   IonItemOption,
   IonSegment,
-  IonSegmentButton
+  IonSegmentButton,
+  IonList,
+  IonListHeader,
+  IonItemGroup,
+  IonInput
 } from '@ionic/react';
 import {
   hourglass,
@@ -19,7 +23,9 @@ import {
   trash,
   trophy,
   camera,
-  documentTextOutline
+  documentTextOutline,
+  search,
+  filterOutline
 } from 'ionicons/icons';
 import { SectionHeader, ListSection } from '../../shared';
 
@@ -63,6 +69,14 @@ const RequestsView: React.FC<RequestsViewProps> = ({
   getTypeIcon,
   getTypeText
 }) => {
+  const [searchText, setSearchText] = useState('');
+
+  const filteredRequests = requests.filter(r => {
+    if (!searchText.trim()) return true;
+    const q = searchText.toLowerCase();
+    return (r.activity_name || '').toLowerCase().includes(q);
+  });
+
   const pendingRequests = requests.filter(r => r.status === 'pending');
   const approvedRequests = requests.filter(r => r.status === 'approved');
   const rejectedRequests = requests.filter(r => r.status === 'rejected');
@@ -98,8 +112,28 @@ const RequestsView: React.FC<RequestsViewProps> = ({
         ]}
       />
 
-      {/* Tab Navigation - wie Admin */}
-      <div style={{ margin: '16px' }}>
+      {/* Suche & Filter — wie Chat-Pattern */}
+      <IonList inset={true} style={{ margin: '16px' }}>
+        <IonListHeader>
+          <div className="app-section-icon app-section-icon--success">
+            <IonIcon icon={filterOutline} />
+          </div>
+          <IonLabel>Suche & Filter</IonLabel>
+        </IonListHeader>
+        <IonItemGroup>
+          <IonItem>
+            <IonIcon icon={search} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+            <IonInput
+              value={searchText}
+              onIonInput={(e) => setSearchText(e.detail.value || '')}
+              placeholder="Aktivitäten durchsuchen..."
+            />
+          </IonItem>
+        </IonItemGroup>
+      </IonList>
+
+      {/* Tab Navigation */}
+      <div className="app-segment-wrapper">
         <IonSegment
           value={activeTab}
           onIonChange={(e) => onTabChange(e.detail.value as any)}
@@ -123,19 +157,19 @@ const RequestsView: React.FC<RequestsViewProps> = ({
       <ListSection
         icon={documentTextOutline}
         title="Aktivitäten"
-        count={requests.length}
+        count={filteredRequests.length}
         iconColorClass="success"
-        isEmpty={requests.length === 0}
+        isEmpty={filteredRequests.length === 0}
         emptyIcon={documentTextOutline}
         emptyTitle="Keine Anträge gefunden"
         emptyMessage="Noch keine Anträge gestellt"
         emptyIconColor="#059669"
       >
-        {requests.map((request, index) => {
+        {filteredRequests.map((request, index) => {
           const { statusColor, statusText, statusIcon, isPending, isApproved, isRejected } = getRequestStatusInfo(request);
 
           return (
-            <IonItemSliding key={request.id} style={{ marginBottom: index < requests.length - 1 ? '8px' : '0' }}>
+            <IonItemSliding key={request.id}>
               <IonItem
                 button
                 onClick={() => onSelectRequest?.(request)}

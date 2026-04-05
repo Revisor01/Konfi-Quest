@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   IonIcon,
   IonItem,
@@ -6,7 +6,10 @@ import {
   IonLabel,
   IonSegment,
   IonSegmentButton,
-  IonItemSliding
+  IonItemSliding,
+  IonListHeader,
+  IonItemGroup,
+  IonInput
 } from '@ionic/react';
 import {
   calendar,
@@ -22,7 +25,9 @@ import {
   lockOpenOutline,
   shieldCheckmark,
   bagHandle,
-  closeCircle
+  closeCircle,
+  search,
+  filterOutline
 } from 'ionicons/icons';
 import { SectionHeader, ListSection } from '../../shared';
 import { Event } from '../../../types/event';
@@ -42,6 +47,8 @@ const EventsView: React.FC<EventsViewProps> = ({
   onSelectEvent,
   onUpdate
 }) => {
+  const [searchText, setSearchText] = useState('');
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('de-DE', {
       day: '2-digit',
@@ -199,7 +206,13 @@ const EventsView: React.FC<EventsViewProps> = ({
     }
   };
 
-  const filteredEvents = getFilteredEvents();
+  const filteredEvents = getFilteredEvents().filter(event => {
+    if (!searchText.trim()) return true;
+    const q = searchText.toLowerCase();
+    return (event.title || '').toLowerCase().includes(q) ||
+           (event.location || '').toLowerCase().includes(q) ||
+           (event.description || '').toLowerCase().includes(q);
+  });
 
   return (
     <div>
@@ -211,7 +224,27 @@ const EventsView: React.FC<EventsViewProps> = ({
         stats={statsData.map(s => ({ value: s.count, label: s.label }))}
       />
 
-      {/* Tab Navigation - wie Admin */}
+      {/* Suche & Filter — wie Chat-Pattern */}
+      <IonList inset={true} style={{ margin: '16px' }}>
+        <IonListHeader>
+          <div className="app-section-icon app-section-icon--events">
+            <IonIcon icon={filterOutline} />
+          </div>
+          <IonLabel>Suche & Filter</IonLabel>
+        </IonListHeader>
+        <IonItemGroup>
+          <IonItem>
+            <IonIcon icon={search} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+            <IonInput
+              value={searchText}
+              onIonInput={(e) => setSearchText(e.detail.value || '')}
+              placeholder="Events durchsuchen..."
+            />
+          </IonItem>
+        </IonItemGroup>
+      </IonList>
+
+      {/* Tab Navigation */}
       <div className="app-segment-wrapper">
         <IonSegment
           value={activeTab}
