@@ -1968,7 +1968,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       }
 
       const chatName = `${event.name} - Chat`;
-      const { rows: [newChat] } = await client.query("INSERT INTO chat_rooms (name, type, event_id, created_by) VALUES ($1, 'group', $2, $3) RETURNING id", [chatName, eventId, req.user.id]);
+      const { rows: [newChat] } = await client.query("INSERT INTO chat_rooms (name, type, event_id, created_by, organization_id) VALUES ($1, 'group', $2, $3, $4) RETURNING id", [chatName, eventId, req.user.id, req.user.organization_id]);
       const chatRoomId = newChat.id;
 
       await client.query("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, 'admin')", [chatRoomId, req.user.id]);

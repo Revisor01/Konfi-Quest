@@ -10,9 +10,6 @@ import {
   IonButtons,
   IonButton,
   IonIcon,
-  IonSearchbar,
-  IonList,
-  IonListHeader,
   IonLabel,
   useIonModal,
   useIonActionSheet,
@@ -20,7 +17,7 @@ import {
   useIonRouter
 } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
-import { add, ban, list, archive, calendar, time, checkmarkCircle, close, searchOutline } from 'ionicons/icons';
+import { add, ban, list, archive, calendar, time, checkmarkCircle, close } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
@@ -369,24 +366,6 @@ const AdminEventsPage: React.FC = () => {
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 
-        {!loading && (
-          <IonList className="app-section-inset" inset={true}>
-            <IonListHeader>
-              <div className="app-section-icon app-section-icon--events">
-                <IonIcon icon={searchOutline} />
-              </div>
-              <IonLabel>Suche & Filter</IonLabel>
-            </IonListHeader>
-            <IonSearchbar
-              className="ios26-searchbar-classic"
-              value={searchText}
-              onIonInput={(e) => setSearchText(e.detail.value || '')}
-              placeholder="Events durchsuchen"
-              debounce={300}
-            />
-          </IonList>
-        )}
-
         {loading ? (
           <LoadingSpinner message="Events werden geladen..." />
         ) : (
@@ -412,6 +391,8 @@ const AdminEventsPage: React.FC = () => {
             jahrgaenge={jahrgaenge || []}
             selectedJahrgang={selectedJahrgang}
             onJahrgangChange={setSelectedJahrgang}
+            searchText={searchText}
+            onSearchChange={setSearchText}
           />
         )}
       </IonContent>

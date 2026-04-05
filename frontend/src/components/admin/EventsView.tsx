@@ -3,9 +3,11 @@ import {
   IonIcon,
   IonItem,
   IonLabel,
+  IonInput,
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
+  IonItemGroup,
   IonSegment,
   IonSegmentButton,
   IonSelect,
@@ -34,7 +36,9 @@ import {
   lockOpenOutline,
   shieldCheckmark,
   bagHandle,
-  attachOutline
+  attachOutline,
+  filterOutline,
+  search
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { filterBySearchTerm } from '../../utils/helpers';
@@ -60,6 +64,8 @@ interface EventsViewProps {
   jahrgaenge?: Array<{id: number; name: string}>;
   selectedJahrgang?: number | null;
   onJahrgangChange?: (jahrgangId: number | null) => void;
+  searchText?: string;
+  onSearchChange?: (text: string) => void;
 }
 
 const EventsView: React.FC<EventsViewProps> = ({
@@ -75,7 +81,9 @@ const EventsView: React.FC<EventsViewProps> = ({
   eventCounts,
   jahrgaenge,
   selectedJahrgang,
-  onJahrgangChange
+  onJahrgangChange,
+  searchText,
+  onSearchChange
 }) => {
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
 
@@ -167,32 +175,44 @@ const EventsView: React.FC<EventsViewProps> = ({
       />
 
 
-      {/* Jahrgangs-Filter */}
-      {jahrgaenge && jahrgaenge.length > 0 && onJahrgangChange && (
-        <IonList className="app-section-inset" inset={true}>
-          <IonListHeader>
-            <div className="app-section-icon app-section-icon--events">
-              <IonIcon icon={peopleOutline} />
-            </div>
-            <IonLabel>Jahrgang</IonLabel>
-          </IonListHeader>
-          <IonCard className="app-card">
-            <IonCardContent className="app-card-content">
+      {/* Suche & Filter */}
+      <IonList inset={true} style={{ margin: '16px' }}>
+        <IonListHeader>
+          <div className="app-section-icon app-section-icon--events">
+            <IonIcon icon={filterOutline} />
+          </div>
+          <IonLabel>Suche & Filter</IonLabel>
+        </IonListHeader>
+        <IonItemGroup>
+          {onSearchChange && (
+            <IonItem>
+              <IonIcon icon={search} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+              <IonInput
+                value={searchText}
+                onIonInput={(e) => onSearchChange(e.detail.value || '')}
+                placeholder="Event suchen..."
+              />
+            </IonItem>
+          )}
+          {jahrgaenge && jahrgaenge.length > 0 && onJahrgangChange && (
+            <IonItem>
+              <IonIcon icon={calendarOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
               <IonSelect
                 value={selectedJahrgang}
-                placeholder="Alle Jahrgänge"
-                interface="popover"
                 onIonChange={(e) => onJahrgangChange(e.detail.value || null)}
+                interface="popover"
+                placeholder="Jahrgang"
+                style={{ width: '100%' }}
               >
                 <IonSelectOption value={null}>Alle Jahrgänge</IonSelectOption>
                 {jahrgaenge.map(j => (
                   <IonSelectOption key={j.id} value={j.id}>{j.name}</IonSelectOption>
                 ))}
               </IonSelect>
-            </IonCardContent>
-          </IonCard>
-        </IonList>
-      )}
+            </IonItem>
+          )}
+        </IonItemGroup>
+      </IonList>
 
       {/* Tab Navigation - einfaches IonSegment */}
       {onTabChange && (

@@ -404,7 +404,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const handleNavigateToChat = () => {
     if (!eventData?.chat_room_id) return;
     // routerDirection 'root' verhindert schwarzen Screen beim Tab-Wechsel
-    router.push(`/admin/chat/${eventData.chat_room_id}`, 'root');
+    router.push(`/admin/chat/room/${eventData.chat_room_id}`, 'root');
   };
 
   const handleChatButtonClick = () => {

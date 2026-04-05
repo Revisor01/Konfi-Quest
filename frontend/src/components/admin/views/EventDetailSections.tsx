@@ -32,7 +32,8 @@ import {
   trash,
   document as documentIcon,
   attachOutline,
-  cloudOfflineOutline
+  cloudOfflineOutline,
+  lockOpenOutline
 } from 'ionicons/icons';
 
 // ---- Shared Types (re-export from main file's interfaces) ----
@@ -134,10 +135,10 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
         <div className="app-info-row">
           <IonIcon icon={calendar} className="app-info-row__icon app-icon-color--events" />
           <div>
-            <div className="app-info-row__content app-list-item__title">
+            <div className="app-text-main">
               {formatDate(eventData.event_date || '')}
             </div>
-            <div className="app-info-row__sublabel">
+            <div className="app-text-sub">
               {formatTime(eventData.event_date || '')}
               {eventData.event_end_time && ` - ${formatTime(eventData.event_end_time)}`}
             </div>
@@ -149,12 +150,36 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
           <div className="app-info-row app-info-row--top">
             <IonIcon icon={time} className="app-info-row__icon app-icon-color--events app-event-detail__icon--align-top" />
             <div className="app-event-detail__timeslot-list">
-              <div className="app-list-item__title">Zeitfenster:</div>
+              <div className="app-text-main">Zeitfenster</div>
               {eventData.timeslots.map((slot, idx) => (
-                <div key={slot.id || idx} className="app-info-row__sublabel app-event-detail__timeslot-entry">
+                <div key={slot.id || idx} className="app-text-sub app-event-detail__timeslot-entry">
                   {formatTime(slot.start_time)} - {formatTime(slot.end_time)} ({slot.registered_count || 0}/{slot.max_participants} TN)
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Anmeldezeitraum — wie Zeitfenster aufgebaut, nicht bei Pflicht-Events */}
+        {!eventData.mandatory && (
+          <div className="app-info-row app-info-row--top">
+            <IonIcon icon={lockOpenOutline} className="app-info-row__icon app-icon-color--events app-event-detail__icon--align-top" />
+            <div>
+              <div className="app-text-main">Anmeldung</div>
+              {eventData.registration_opens_at ? (
+                <>
+                  <div className="app-text-sub">
+                    von {new Date(eventData.registration_opens_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_opens_at)}
+                  </div>
+                  {eventData.registration_closes_at && (
+                    <div className="app-text-sub">
+                      bis {new Date(eventData.registration_closes_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_closes_at)}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="app-text-sub">Sofort möglich</div>
+              )}
             </div>
           </div>
         )}
@@ -169,18 +194,22 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
             <>
               <div className="app-info-row">
                 <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
-                <div className="app-info-row__content">
-                  {eventData.mandatory
-                    ? `${konfiPresent}/${konfiOnly.length} Konfis`
-                    : `${konfiConfirmed} / ${(eventData.max_participants || 0) > 0 ? eventData.max_participants : '\u221E'} Konfis`
-                  }
+                <div>
+                  <div className="app-text-main">Teilnehmer:innen</div>
+                  <div className="app-text-sub">
+                    {eventData.mandatory
+                      ? `${konfiPresent}/${konfiOnly.length}`
+                      : `${konfiConfirmed} / ${(eventData.max_participants || 0) > 0 ? eventData.max_participants : '\u221E'}`
+                    }
+                  </div>
                 </div>
               </div>
               {teamerOnly.length > 0 && (
                 <div className="app-info-row">
                   <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
-                  <div className="app-info-row__content">
-                    {teamerOnly.length} Team
+                  <div>
+                    <div className="app-text-main">Teamer:innen</div>
+                    <div className="app-text-sub">{teamerOnly.length}</div>
                   </div>
                 </div>
               )}
@@ -192,42 +221,48 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
         {(eventData as any)?.waitlist_enabled && (
           <div className="app-info-row">
             <IonIcon icon={listOutline} className="app-info-row__icon app-icon-color--warning" />
-            <div className="app-info-row__content">
-              {participants.filter(p => p.status === 'waitlist').length} / {(eventData as any)?.max_waitlist_size || 10} auf Warteliste
+            <div>
+              <div className="app-text-main">Warteliste</div>
+              <div className="app-text-sub">
+                {participants.filter(p => p.status === 'waitlist').length} / {(eventData as any)?.max_waitlist_size || 10}
+              </div>
             </div>
           </div>
         )}
 
         {/* Punkte - bei Pflicht-Events ausblenden */}
         {!eventData.mandatory && (
-        <div className="app-info-row">
-          <IonIcon icon={trophy} className="app-info-row__icon app-icon-color--badges" />
-          <div className="app-info-row__content">
-            {eventData.points || 0} Punkte
+          <div className="app-info-row">
+            <IonIcon icon={trophy} className="app-info-row__icon app-icon-color--badges" />
+            <div>
+              <div className="app-text-main">Punkte</div>
+              <div className="app-text-sub">{eventData.points || 0}</div>
+            </div>
           </div>
-        </div>
         )}
 
         {/* Typ - bei Pflicht-Events ausblenden */}
         {!eventData.mandatory && (
-        <div className="app-info-row">
-          <IonIcon
-            icon={eventData.point_type === 'gottesdienst' ? home : people}
-            className="app-info-row__icon"
-            style={{ color: eventData.point_type === 'gottesdienst' ? '#007aff' : '#2dd36f' }}
-          />
-          <div className="app-info-row__content">
-            {eventData.point_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
+          <div className="app-info-row">
+            <IonIcon
+              icon={eventData.point_type === 'gottesdienst' ? home : people}
+              className="app-info-row__icon"
+              style={{ color: eventData.point_type === 'gottesdienst' ? '#007aff' : '#2dd36f' }}
+            />
+            <div>
+              <div className="app-text-main">Typ</div>
+              <div className="app-text-sub">{eventData.point_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}</div>
+            </div>
           </div>
-        </div>
         )}
 
         {/* Kategorien */}
         {eventData.categories && eventData.categories.length > 0 && (
           <div className="app-info-row">
             <IonIcon icon={pricetag} className="app-info-row__icon app-icon-color--category" />
-            <div className="app-info-row__content">
-              {eventData.categories.map(c => c.name).join(', ')}
+            <div>
+              <div className="app-text-main">Kategorien</div>
+              <div className="app-text-sub">{eventData.categories.map(c => c.name).join(', ')}</div>
             </div>
           </div>
         )}
@@ -237,7 +272,6 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
           <div className="app-info-row">
             <IonIcon icon={location} className="app-info-row__icon app-icon-color--events" />
             <div
-              className="app-info-row__content app-event-detail__location-link"
               onClick={() => {
                 if (eventData.location_maps_url) {
                   window.open(eventData.location_maps_url, '_blank');
@@ -247,7 +281,8 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
                 }
               }}
             >
-              {eventData.location}
+              <div className="app-text-main">Ort</div>
+              <div className="app-text-sub app-event-detail__location-link">{eventData.location}</div>
             </div>
           </div>
         )}
@@ -256,8 +291,9 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
         {eventData.mandatory && (
           <div className="app-info-row">
             <IonIcon icon={shieldCheckmark} className="app-info-row__icon" style={{ color: '#dc2626' }} />
-            <div className="app-info-row__content">
-              Pflicht-Event
+            <div>
+              <div className="app-text-main">Pflicht-Event</div>
+              <div className="app-text-sub">Teilnahme erforderlich</div>
             </div>
           </div>
         )}
@@ -266,8 +302,8 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
         {(eventData.teamer_only || (eventData.teamer_needed && participants.filter(p => p.role_name === 'teamer' && p.status === 'confirmed').length === 0)) && (
           <div className="app-info-row">
             <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
-            <div className="app-info-row__content">
-              {eventData.teamer_only ? 'Nur Team' : 'Team gesucht'}
+            <div>
+              <div className="app-text-main">{eventData.teamer_only ? 'Nur Team' : 'Team gesucht'}</div>
             </div>
           </div>
         )}
@@ -276,37 +312,20 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
         {eventData.bring_items && (
           <div className="app-info-row">
             <IonIcon icon={bagHandle} className="app-info-row__icon" style={{ color: '#8b5cf6' }} />
-            <div className="app-info-row__content">
-              {eventData.bring_items}
+            <div>
+              <div className="app-text-main">Mitbringen</div>
+              <div className="app-text-sub">{eventData.bring_items}</div>
             </div>
           </div>
-        )}
-
-        {/* Anmeldezeitraum */}
-        {!eventData.mandatory && (
-        <div className="app-info-row app-info-row--top">
-          <IonIcon icon={time} className="app-info-row__icon app-icon-color--events app-event-detail__icon--align-top-sm" />
-          <div className="app-info-row__content">
-            {eventData.registration_opens_at ? (
-              <>
-                <div>von {new Date(eventData.registration_opens_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_opens_at)}</div>
-                {eventData.registration_closes_at && (
-                  <div className="app-info-row__sublabel">bis {new Date(eventData.registration_closes_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_closes_at)}</div>
-                )}
-              </>
-            ) : (
-              'Sofort möglich'
-            )}
-          </div>
-        </div>
         )}
 
         {/* Jahrgang */}
         {eventData.jahrgaenge && eventData.jahrgaenge.length > 0 && (
           <div className="app-info-row">
             <IonIcon icon={people} className="app-info-row__icon app-icon-color--jahrgang" />
-            <div className="app-info-row__content">
-              {eventData.jahrgaenge.map(j => j.name).join(', ')}
+            <div>
+              <div className="app-text-main">Jahrgänge</div>
+              <div className="app-text-sub">{eventData.jahrgaenge.map(j => j.name).join(', ')}</div>
             </div>
           </div>
         )}
@@ -332,9 +351,9 @@ export const DescriptionSection = React.memo<DescriptionSectionProps>(({ descrip
     </IonListHeader>
     <IonCard className="app-card">
       <IonCardContent className="app-card-content">
-        <p className="app-description-text">
+        <div className="app-description-text">
           {description}
-        </p>
+        </div>
       </IonCardContent>
     </IonCard>
   </IonList>

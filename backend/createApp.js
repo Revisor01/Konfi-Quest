@@ -3,6 +3,7 @@
 // Tests rufen createApp(testDb) auf und bekommen saubere Express-App fuer supertest.
 
 const express = require('express');
+const cors = require('cors');
 const helmet = require('helmet');
 const multer = require('multer');
 const path = require('path');
@@ -47,6 +48,16 @@ function createApp(db, options = {}) {
     xFrameOptions: { action: 'deny' },
     xXssProtection: true,
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
+  }));
+
+  // ====================================================================
+  // CORS (Capacitor iOS/Android + Web)
+  // ====================================================================
+
+  const CORS_ORIGINS = (process.env.CORS_ORIGINS || 'https://konfi-quest.de,https://www.konfi-quest.de,capacitor://localhost,http://localhost').split(',');
+  app.use(cors({
+    origin: CORS_ORIGINS,
+    credentials: true
   }));
 
   // ====================================================================
