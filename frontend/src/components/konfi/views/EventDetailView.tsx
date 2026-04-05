@@ -572,8 +572,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {/* TN gesamt */}
               <div className="app-info-row">
                 <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
-                <div className="app-description-text" style={{ padding: 0 }}>
-                  {eventData.registered_count} / {eventData.max_participants > 0 ? eventData.max_participants : '∞'} Teilnehmer:innen
+                <div>
+                  <div className="app-text-main">Teilnehmer:innen</div>
+                  <div className="app-text-sub">{eventData.registered_count} / {eventData.max_participants > 0 ? eventData.max_participants : '∞'}</div>
                 </div>
               </div>
 
@@ -581,9 +582,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {eventData.waitlist_enabled && (
                 <div className="app-info-row">
                   <IonIcon icon={listOutline} className="app-info-row__icon app-icon-color--warning" />
-                  <div className="app-description-text" style={{ padding: 0 }}>
-                    {eventData.waitlist_count || 0} / {eventData.max_waitlist_size || 10} auf Warteliste
-                    {eventData.waitlist_position && <strong> (Du: Platz {eventData.waitlist_position})</strong>}
+                  <div>
+                    <div className="app-text-main">Warteliste</div>
+                    <div className="app-text-sub">
+                      {eventData.waitlist_count || 0} / {eventData.max_waitlist_size || 10}
+                      {eventData.waitlist_position && ` (Du: Platz ${eventData.waitlist_position})`}
+                    </div>
                   </div>
                 </div>
               )}
@@ -591,8 +595,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {/* Punkte */}
               <div className="app-info-row">
                 <IonIcon icon={trophy} className="app-info-row__icon app-icon-color--badges" />
-                <div className="app-description-text" style={{ padding: 0 }}>
-                  {eventData.points} Punkte
+                <div>
+                  <div className="app-text-main">Punkte</div>
+                  <div className="app-text-sub">{eventData.points}</div>
                 </div>
               </div>
 
@@ -603,8 +608,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   className="app-info-row__icon"
                   style={{ color: eventData.point_type === 'gottesdienst' ? '#007aff' : '#2dd36f' }}
                 />
-                <div className="app-info-row__content">
-                  {eventData.point_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
+                <div>
+                  <div className="app-text-main">Typ</div>
+                  <div className="app-text-sub">{eventData.point_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}</div>
                 </div>
               </div>
 
@@ -612,8 +618,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {eventData.categories && eventData.categories.length > 0 && (
                 <div className="app-info-row">
                   <IonIcon icon={pricetag} className="app-info-row__icon app-icon-color--category" />
-                  <div className="app-info-row__content">
-                    {eventData.categories.map(c => c.name).join(', ')}
+                  <div>
+                    <div className="app-text-main">Kategorien</div>
+                    <div className="app-text-sub">{eventData.categories.map(c => c.name).join(', ')}</div>
                   </div>
                 </div>
               )}
@@ -623,7 +630,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 <div className="app-info-row">
                   <IonIcon icon={location} className="app-info-row__icon app-icon-color--events" />
                   <div
-                    className="app-info-row__content app-event-detail__location-link"
                     onClick={() => {
                       if (eventData.location_maps_url) {
                         window.open(eventData.location_maps_url, '_blank');
@@ -633,7 +639,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                       }
                     }}
                   >
-                    {eventData.location}
+                    <div className="app-text-main">Ort</div>
+                    <div className="app-text-sub app-event-detail__location-link">{eventData.location}</div>
                   </div>
                 </div>
               )}
