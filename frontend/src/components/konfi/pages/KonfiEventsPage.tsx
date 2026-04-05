@@ -153,29 +153,6 @@ const KonfiEventsPage: React.FC = () => {
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 
-        {!loading && (
-          <IonList inset={true} style={{ margin: '16px' }}>
-            <IonListHeader>
-              <div className="app-section-icon app-section-icon--events">
-                <IonIcon icon={searchOutline} />
-              </div>
-              <IonLabel>Suche & Filter</IonLabel>
-            </IonListHeader>
-            <IonCard className="app-card">
-              <IonCardContent style={{ padding: '8px 12px' }}>
-                <IonSearchbar
-                  className="ios26-searchbar-classic"
-                  value={searchText}
-                  onIonInput={(e) => setSearchText(e.detail.value || '')}
-                  placeholder="Events durchsuchen"
-                  debounce={300}
-                  style={{ padding: '0' }}
-                />
-              </IonCardContent>
-            </IonCard>
-          </IonList>
-        )}
-
         {loading ? (
           <LoadingSpinner message="Events werden geladen..." />
         ) : (
