@@ -999,6 +999,26 @@ ion-card-content.app-card-content {
   padding: 16px;
 }
 
+/* === Globale Text-Klassen (ueberall wiederverwendbar) === */
+
+/* Haupttext — Titel, Labels, primaere Info (1rem, fett) */
+.app-text-main {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Subtext — sekundaere Info, Zeitangaben, Kategorien (0.85rem) */
+.app-text-sub {
+  font-size: 0.85rem;
+  color: #666;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Beschreibung — Fliesstext, Details, laengere Texte (1rem, normal weight) */
 .app-description-text {
   font-size: var(--app-description-font-size, 1rem);
   line-height: 1.5;
