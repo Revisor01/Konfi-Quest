@@ -3,7 +3,6 @@
 // Tests rufen createApp(testDb) auf und bekommen saubere Express-App fuer supertest.
 
 const express = require('express');
-const cors = require('cors');
 const helmet = require('helmet');
 const multer = require('multer');
 const path = require('path');
@@ -51,14 +50,10 @@ function createApp(db, options = {}) {
   }));
 
   // ====================================================================
-  // CORS (Capacitor iOS/Android + Web)
+  // OPTIONS Preflight (Apache/Traefik setzt CORS-Header, Express nur 204)
   // ====================================================================
 
-  const CORS_ORIGINS = (process.env.CORS_ORIGINS || 'https://konfi-quest.de,https://www.konfi-quest.de,capacitor://localhost,http://localhost').split(',');
-  app.use(cors({
-    origin: CORS_ORIGINS,
-    credentials: true
-  }));
+  app.options('*', (req, res) => res.sendStatus(204));
 
   // ====================================================================
   // RATE LIMITING (nur wenn uebergeben)
