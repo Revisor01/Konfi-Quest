@@ -13,8 +13,6 @@ import {
   IonListHeader,
   IonPage,
   IonProgressBar,
-  IonRadio,
-  IonRadioGroup,
   IonTitle,
   IonToolbar,
   useIonModal,
@@ -146,18 +144,44 @@ const BibleTranslationModal: React.FC<{
             <IonLabel>Übersetzung wählen</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '8px' }}>
-              <IonRadioGroup value={currentTranslation} onIonChange={(e) => onSelect(e.detail.value)}>
-                {translations.map((t) => (
-                  <IonItem key={t.code} lines="none" style={{ '--background': 'transparent', '--padding-start': '12px', marginBottom: '4px' }}>
-                    <IonRadio slot="start" value={t.code} />
-                    <IonLabel className="ion-text-wrap">
-                      <h3 style={{ fontWeight: '600', fontSize: '0.95rem', margin: '0 0 4px 0' }}>{t.name}</h3>
-                      <p style={{ fontSize: '0.8rem', color: '#666', lineHeight: '1.4', margin: '0' }}>{t.description}</p>
-                    </IonLabel>
-                  </IonItem>
-                ))}
-              </IonRadioGroup>
+            <IonCardContent style={{ padding: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {translations.map((t) => {
+                  const isSelected = currentTranslation === t.code;
+                  return (
+                    <div
+                      key={t.code}
+                      className={`app-list-item app-list-item--purple ${isSelected ? 'app-list-item--selected' : ''}`}
+                      onClick={() => onSelect(t.code)}
+                      style={{
+                        cursor: 'pointer',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        background: isSelected ? 'rgba(91, 33, 182, 0.08)' : undefined
+                      }}
+                    >
+                      {isSelected && (
+                        <div className="app-corner-badges">
+                          <div className="app-corner-badge" style={{ backgroundColor: '#5b21b6' }}>
+                            Aktiv
+                          </div>
+                        </div>
+                      )}
+                      <div className="app-list-item__row">
+                        <div className="app-list-item__main">
+                          <div className="app-icon-circle app-icon-circle--purple">
+                            <IonIcon icon={bookOutline} />
+                          </div>
+                          <div className="app-list-item__content">
+                            <div className="app-list-item__title" style={{ paddingRight: isSelected ? '70px' : '0' }}>{t.name}</div>
+                            <div className="app-list-item__subtitle" style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t.description}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </IonCardContent>
           </IonCard>
         </IonList>
