@@ -512,10 +512,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               <div className="app-info-row">
                 <IonIcon icon={calendar} className="app-info-row__icon app-icon-color--events" />
                 <div>
-                  <div className="app-info-row__content app-list-item__title">
+                  <div className="app-text-main">
                     {formatDate(eventData.event_date)}
                   </div>
-                  <div className="app-info-row__sublabel">
+                  <div className="app-text-sub">
                     {formatTime(eventData.event_date)}
                     {eventData.event_end_time && ` - ${formatTime(eventData.event_end_time)}`}
                   </div>
@@ -527,9 +527,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 <div className="app-info-row app-info-row--top">
                   <IonIcon icon={time} className="app-info-row__icon app-icon-color--events app-event-detail__icon--align-top" />
                   <div className="app-event-detail__timeslot-list">
-                    <div className="app-list-item__title">Zeitfenster:</div>
+                    <div className="app-text-main">Zeitfenster:</div>
                     {timeslots.map((slot, idx) => (
-                      <div key={slot.id || idx} className="app-info-row__sublabel app-event-detail__timeslot-entry">
+                      <div key={slot.id || idx} className="app-text-sub app-event-detail__timeslot-entry">
                         {formatTime(slot.start_time)} - {formatTime(slot.end_time)} ({slot.registered_count || 0}/{slot.max_participants} TN)
                       </div>
                     ))}
@@ -547,7 +547,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {/* TN gesamt */}
               <div className="app-info-row">
                 <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
-                <div className="app-info-row__content">
+                <div className="app-description-text" style={{ padding: 0 }}>
                   {eventData.registered_count} / {eventData.max_participants > 0 ? eventData.max_participants : '∞'} Teilnehmer:innen
                 </div>
               </div>
@@ -556,7 +556,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {eventData.waitlist_enabled && (
                 <div className="app-info-row">
                   <IonIcon icon={listOutline} className="app-info-row__icon app-icon-color--warning" />
-                  <div className="app-info-row__content">
+                  <div className="app-description-text" style={{ padding: 0 }}>
                     {eventData.waitlist_count || 0} / {eventData.max_waitlist_size || 10} auf Warteliste
                     {eventData.waitlist_position && <strong> (Du: Platz {eventData.waitlist_position})</strong>}
                   </div>
@@ -566,7 +566,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {/* Punkte */}
               <div className="app-info-row">
                 <IonIcon icon={trophy} className="app-info-row__icon app-icon-color--badges" />
-                <div className="app-info-row__content">
+                <div className="app-description-text" style={{ padding: 0 }}>
                   {eventData.points} Punkte
                 </div>
               </div>
