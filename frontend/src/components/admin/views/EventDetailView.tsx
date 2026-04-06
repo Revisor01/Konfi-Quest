@@ -393,9 +393,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const handleCreateEventChat = async () => {
     if (!isOnline) return;
     try {
-      await api.post(`/events/${eventData?.id}/chat`);
+      const res = await api.post(`/events/${eventData?.id}/chat`);
       setSuccess('Chat erstellt');
-      loadEventData();
+      router.push(`/admin/chat/room/${res.data.chat_room_id}`, 'root');
     } catch (error: any) {
       setError(error.response?.data?.error || 'Fehler beim Erstellen des Chats');
     }

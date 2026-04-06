@@ -37,7 +37,8 @@ import {
   time,
   trash,
   search,
-  filterOutline
+  filterOutline,
+  calendar
 } from 'ionicons/icons';
 import { useLocation } from 'react-router-dom';
 import { useApp } from '../../contexts/AppContext';
@@ -71,8 +72,9 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
 
   const isAdmin = user?.type === 'admin';
 
-  const getRoomColor = (type: string): string => {
-    switch (type) {
+  const getRoomColor = (room: ChatRoomOverview): string => {
+    if (room.event_id) return '#dc2626'; // Rot — Event-Chat
+    switch (room.type) {
       case 'admin': return '#e11d48';   // Rosa — Team/Admin-Chat
       case 'jahrgang': return '#06b6d4'; // Tuerkis
       case 'group': return '#f97316';    // Orange
@@ -80,8 +82,9 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     }
   };
 
-  const getRoomColorClass = (type: string): string => {
-    switch (type) {
+  const getRoomColorClass = (room: ChatRoomOverview): string => {
+    if (room.event_id) return 'events';
+    switch (room.type) {
       case 'admin': return 'team';
       case 'jahrgang': return 'chat-jahrgang';
       case 'group': return 'group';
@@ -269,11 +272,18 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
       return room.name || 'Direktchat';
     }
     
+    // Event-Chats mit Prefix
+    if (room.event_id) {
+      const name = room.name?.replace(/ - Chat$/, '') || 'Event';
+      return `Event: ${name}`;
+    }
+
     // Für alle anderen Chat-Typen: normaler Name
     return room.name || 'Chat';
   };
 
   const getRoomIcon = (room: ChatRoomOverview) => {
+    if (room.event_id) return calendar;
     switch (room.type) {
       case 'admin':
         return settings;
@@ -289,15 +299,10 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   };
 
   const getRoomSubtitle = (room: ChatRoomOverview) => {
-    if (room.type === 'jahrgang') {
-      return 'Jahrgang';
-    }
-    if (room.type === 'admin' || room.type === 'group') {
-      return 'Gruppe';
-    }
-    if (room.type === 'direct') {
-      return 'Direkt';
-    }
+    if (room.event_id) return 'Event';
+    if (room.type === 'jahrgang') return 'Jahrgang';
+    if (room.type === 'admin' || room.type === 'group') return 'Gruppe';
+    if (room.type === 'direct') return 'Direkt';
     return '';
   };
 
@@ -403,7 +408,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   {filteredRooms.map((room, index) => {
-                    const colorClass = getRoomColorClass(room.type);
+                    const colorClass = getRoomColorClass(room);
                     // Nur Admins dürfen direct/group Chats löschen
                     const canDelete = isAdmin && (room.type === 'direct' || room.type === 'group');
 

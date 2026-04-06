@@ -60,6 +60,7 @@ export interface ChatRoomBase {
   id: number;
   name: string;
   type: 'group' | 'direct' | 'jahrgang' | 'admin';
+  event_id?: number | null;
   participants?: ChatParticipant[];
 }
 

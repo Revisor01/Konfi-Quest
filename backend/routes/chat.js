@@ -385,7 +385,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       // and correlated subquery in ORDER BY.
       const query = `
       SELECT
-          r.id, r.type, r.organization_id, r.jahrgang_id, r.created_by, r.created_at,
+          r.id, r.type, r.organization_id, r.jahrgang_id, r.created_by, r.created_at, r.event_id,
           COALESCE(CASE WHEN r.type = 'direct' THEN dm.direct_name ELSE r.name END, r.name) as name,
           j.name as jahrgang_name,
           (
@@ -435,7 +435,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           LIMIT 1
       ) lm ON true
       WHERE r.organization_id = $3
-      GROUP BY r.id, r.type, r.organization_id, r.jahrgang_id, r.created_by, r.created_at, r.name,
+      GROUP BY r.id, r.type, r.organization_id, r.jahrgang_id, r.created_by, r.created_at, r.event_id, r.name,
                j.name, crs.last_read_at, dm.direct_name, lm.last_message_at
       ORDER BY lm.last_message_at DESC NULLS LAST
     `;
