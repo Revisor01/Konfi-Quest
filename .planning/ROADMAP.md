@@ -23,6 +23,15 @@
 - Shipped **v2.8 Design-Polish** - Phases 94-100 (shipped 2026-03-25)
 - Shipped **v2.9 Test-Suite + CI/CD** - Phases 101-107 (shipped 2026-03-28)
 - Shipped **v2.10 Design-Polish + UX-Feinschliff** - Phases 108-112 (shipped 2026-04-05)
+- **v2.11 Admin/Teamer Design-Angleichung** - Phases 113+ (in progress)
+
+## Phases
+
+### v2.11 Admin/Teamer Design-Angleichung (In Progress)
+
+Live-Design-Angleichung mit Hot-Reload aufs Geraet. Anwendung der globalen Konfi-Patterns (app-text-Klassen, app-stats-row, flex-div Listen, Label+Sub) auf Admin- und Teamer-Views. Quick-Tasks werden waehrend Live-Arbeit gesammelt.
+
+- [ ] Phase 113: Admin/Teamer Design-Angleichung (Sammelphase, Quicks)
 
 ## Phases
 
