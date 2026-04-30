@@ -524,7 +524,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
               <IonCardContent style={{ padding: '16px' }}>
                 {/* Bestehende Admins */}
                 {orgAdmins.length > 0 ? (
-                  <IonList style={{ background: 'transparent' }} lines="none">
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {orgAdmins.map((admin) => (
                       <div key={admin.id} style={{ marginBottom: '16px' }}>
                         <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
@@ -582,7 +582,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                         </div>
                       </div>
                     ))}
-                  </IonList>
+                  </div>
                 ) : (
                   <div style={{ textAlign: 'center', padding: '16px', color: '#666' }}>
                     <IonIcon icon={alertCircleOutline} style={{ fontSize: '2rem', color: '#f59e0b', marginBottom: '8px', display: 'block' }} />
@@ -594,7 +594,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                 {showAddAdmin && (
                   <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(102, 126, 234, 0.05)', borderRadius: '12px', border: '1px dashed #667eea' }}>
                     <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem', fontWeight: '600', color: '#333' }}>Neuen Administrator hinzufügen</h4>
-                    <IonList style={{ background: 'transparent' }} lines="none">
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <IonItem style={{ '--background': 'white', '--border-radius': '10px', marginBottom: '8px' }}>
                         <IonLabel position="stacked">Name *</IonLabel>
                         <IonInput
@@ -623,7 +623,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                           disabled={addingAdmin}
                         />
                       </IonItem>
-                    </IonList>
+                    </div>
                     <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
                       <IonButton
                         expand="block"

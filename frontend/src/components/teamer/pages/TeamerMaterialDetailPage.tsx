@@ -198,9 +198,9 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                 </IonListHeader>
                 <IonCard className="app-card">
                   <IonCardContent>
-                    <p className="app-description-text">
+                    <div className="app-description-text">
                       {material.description}
-                    </p>
+                    </div>
                   </IonCardContent>
                 </IonCard>
               </IonList>
@@ -219,30 +219,34 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                   {material.events && material.events.length > 0 && (
                     <div className="app-info-row">
                       <IonIcon icon={calendar} className="app-info-row__icon" style={{ color: '#dc2626' }} />
-                      <div className="app-info-row__content">
-                        {material.events.length === 1 ? 'Event' : 'Events'}: {material.events.map(e => e.name).join(', ')}
+                      <div>
+                        <div className="app-text-main">{material.events.length === 1 ? 'Event' : 'Events'}</div>
+                        <div className="app-text-sub">{material.events.map(e => e.name).join(', ')}</div>
                       </div>
                     </div>
                   )}
                   {material.jahrgaenge && material.jahrgaenge.length > 0 && (
                     <div className="app-info-row">
                       <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
-                      <div className="app-info-row__content">
-                        {material.jahrgaenge.length === 1 ? 'Jahrgang' : 'Jahrgänge'}: {material.jahrgaenge.map(j => j.name).join(', ')}
+                      <div>
+                        <div className="app-text-main">{material.jahrgaenge.length === 1 ? 'Jahrgang' : 'Jahrgänge'}</div>
+                        <div className="app-text-sub">{material.jahrgaenge.map(j => j.name).join(', ')}</div>
                       </div>
                     </div>
                   )}
                   <div className="app-info-row">
                     <IonIcon icon={create} className="app-info-row__icon" style={{ color: '#6c757d' }} />
-                    <div className="app-info-row__content">
-                      Erstellt am {formatDate(material.created_at)}
+                    <div>
+                      <div className="app-text-main">Erstellt</div>
+                      <div className="app-text-sub">{formatDate(material.created_at)}</div>
                     </div>
                   </div>
                   {material.admin_name && (
                     <div className="app-info-row">
                       <IonIcon icon={person} className="app-info-row__icon" style={{ color: '#6c757d' }} />
-                      <div className="app-info-row__content">
-                        Von {material.admin_name}
+                      <div>
+                        <div className="app-text-main">Erstellt von</div>
+                        <div className="app-text-sub">{material.admin_name}</div>
                       </div>
                     </div>
                   )}
@@ -259,7 +263,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                 <IonLabel>Dateien ({material.files?.length || 0})</IonLabel>
               </IonListHeader>
               <IonCard className="app-card">
-                <IonCardContent>
+                <IonCardContent style={{ padding: (!material.files || material.files.length === 0) ? '16px' : '12px' }}>
                   {(!material.files || material.files.length === 0) ? (
                     <EmptyState
                       icon={documentOutline}
@@ -268,14 +272,14 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                       iconColor="#d97706"
                     />
                   ) : (
-                    material.files.map((file, index) => (
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    {material.files.map((file, index) => (
                       <div
                         key={file.id}
                         className="app-list-item"
                         style={{
                           borderLeftColor: '#d97706',
-                          cursor: 'pointer',
-                          marginBottom: index < (material.files?.length || 0) - 1 ? '8px' : '0'
+                          cursor: 'pointer'
                         }}
                         onClick={() => openFile(file)}
                       >
@@ -295,7 +299,8 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                           </div>
                         </div>
                       </div>
-                    ))
+                    ))}
+                    </div>
                   )}
                 </IonCardContent>
               </IonCard>

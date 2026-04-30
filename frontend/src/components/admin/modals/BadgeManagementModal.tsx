@@ -1061,7 +1061,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
               </IonAccordion>
             </IonAccordionGroup>
 
-            <IonList style={{ background: 'transparent' }} lines="none">
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
               <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px', marginTop: '16px' }}>
                 <IonLabel position="stacked" style={{ marginBottom: '8px' }}>{getValueLabel()}</IonLabel>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
@@ -1079,7 +1079,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
               </IonItem>
 
               {renderCriteriaSpecificFields()}
-            </IonList>
+            </div>
           </IonCardContent>
         </IonCard>
         </IonList>

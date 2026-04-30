@@ -493,7 +493,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent>
-                <IonList className="app-list-inner" lines="none">
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
                   {existingFiles.map((file, index) => (
                     <IonItemSliding key={file.id} style={{ marginBottom: index < existingFiles.length - 1 ? '8px' : '0' }}>
                       <IonItem
@@ -533,7 +533,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
                       </IonItemOptions>
                     </IonItemSliding>
                   ))}
-                </IonList>
+                </div>
               </IonCardContent>
             </IonCard>
           </IonList>
@@ -550,7 +550,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
           <IonCard className="app-card">
             <IonCardContent>
               {newFiles.length > 0 && (
-                <IonList className="app-list-inner" lines="none" style={{ marginBottom: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '12px' }}>
                   {newFiles.map((file, index) => (
                     <IonItemSliding key={index} style={{ marginBottom: index < newFiles.length - 1 ? '8px' : '0' }}>
                       <IonItem
@@ -592,7 +592,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
                       </IonItemOptions>
                     </IonItemSliding>
                   ))}
-                </IonList>
+                </div>
               )}
               <input
                 ref={fileInputRef}

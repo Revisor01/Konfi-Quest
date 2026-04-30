@@ -96,7 +96,7 @@ const TeamerMaterialPage: React.FC = () => {
   // Offline-Query: Jahrgaenge
   const { data: jahrgaengeData, refresh: refreshJahrgaenge } = useOfflineQuery<{ id: number; name: string }[]>(
     'teamer:jahrgaenge:' + user?.organization_id,
-    async () => { const res = await api.get('/jahrgaenge'); return res.data; },
+    async () => { const res = await api.get('/admin/jahrgaenge'); return res.data; },
     { ttl: CACHE_TTL.STAMMDATEN }
   );
   const jahrgaenge = jahrgaengeData || [];

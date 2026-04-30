@@ -11,7 +11,10 @@ import {
   IonItemOption,
   IonIcon,
   IonButton,
-  IonProgressBar
+  IonProgressBar,
+  IonDatetimeButton,
+  IonDatetime,
+  IonModal
 } from '@ionic/react';
 import {
   trophy,
@@ -172,7 +175,7 @@ export const KonfiHeaderCard = React.memo<KonfiHeaderCardProps>(({
             color: 'white'
           }}
         >
-          {currentKonfi?.name || 'Konfi'}
+          {currentKonfi?.display_name || currentKonfi?.name || (isTeamer ? 'Teamer:in' : 'Konfi')}
         </h1>
       </div>
     </div>
@@ -186,7 +189,9 @@ export const KonfiHeaderCard = React.memo<KonfiHeaderCardProps>(({
         fontSize: '0.85rem'
       }}
     >
-      {currentKonfi?.jahrgang_name || currentKonfi?.jahrgang} - @{currentKonfi?.username}
+      {currentKonfi?.jahrgang_name || currentKonfi?.jahrgang
+        ? `${currentKonfi?.jahrgang_name || currentKonfi?.jahrgang} - `
+        : ''}@{currentKonfi?.username}
     </div>
 
     {/* Teamer: Aktiv seit */}
@@ -219,23 +224,15 @@ export const KonfiHeaderCard = React.memo<KonfiHeaderCardProps>(({
 
     {/* Teamer Stats Chips */}
     {isTeamer && (
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
+      <div className="app-stats-row">
         {[
           { value: certificates.length, label: 'Zertifikate' },
           { value: teamerEvents.length, label: 'Events' },
           { value: currentKonfi?.badgeCount || 0, label: 'Badges' }
         ].map(stat => (
-          <div
-            key={stat.label}
-            style={{
-              background: 'rgba(255, 255, 255, 0.15)',
-              borderRadius: '10px',
-              padding: '8px 12px',
-              textAlign: 'center'
-            }}
-          >
-            <div style={{ fontSize: '1.1rem', fontWeight: '700', color: 'white' }}>{stat.value}</div>
-            <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.8)', fontWeight: '600', letterSpacing: '0.3px' }}>{stat.label.toUpperCase()}</div>
+          <div key={stat.label} className="app-stats-row__item">
+            <div className="app-stats-row__value">{stat.value}</div>
+            <div className="app-stats-row__label">{stat.label}</div>
           </div>
         ))}
       </div>
@@ -297,13 +294,13 @@ export const BonusSection = React.memo<BonusSectionProps>(({
       <IonLabel>Bonus ({getBonusPoints()})</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
-      <IonCardContent className="app-card-content">
+      <IonCardContent style={{ padding: bonusEntries.length === 0 ? '16px' : '12px' }}>
         {bonusEntries.length === 0 ? (
           <div className="app-empty-state">
             <p className="app-empty-state__text">Noch keine Bonuspunkte erhalten</p>
           </div>
         ) : (
-          <IonList className="app-list-inner" lines="none">
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
             {bonusEntries.map((bonus: any, index: number) => {
               const isTypeDisabled = (bonus.type === 'gottesdienst' && currentKonfi?.gottesdienst_enabled === false)
                 || (bonus.type === 'gemeinde' && currentKonfi?.gemeinde_enabled === false);
@@ -374,20 +371,22 @@ export const BonusSection = React.memo<BonusSectionProps>(({
               </IonItemSliding>
             );
             })}
-          </IonList>
+          </div>
         )}
-        <IonButton
-          expand="block"
-          fill="outline"
-          onClick={() =>
-            presentBonusModal({
-              presentingElement: presentingElement || undefined
-            })
-          }
-        >
-          <IonIcon icon={add} slot="start" />
-          Bonuspunkte hinzufügen
-        </IonButton>
+        <div className="app-event-detail__add-button-wrapper">
+          <IonButton
+            expand="block"
+            fill="outline"
+            onClick={() =>
+              presentBonusModal({
+                presentingElement: presentingElement || undefined
+              })
+            }
+          >
+            <IonIcon icon={add} slot="start" />
+            Bonuspunkte hinzufügen
+          </IonButton>
+        </div>
       </IonCardContent>
     </IonCard>
   </IonList>
@@ -412,13 +411,13 @@ export const EventPointsSection = React.memo<EventPointsSectionProps>(({
       <IonLabel>Events ({eventPoints.reduce((sum: number, ep: any) => sum + (ep.points || 0), 0)})</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
-      <IonCardContent className="app-card-content">
+      <IonCardContent style={{ padding: eventPoints.length === 0 ? '16px' : '12px' }}>
         {eventPoints.length === 0 ? (
           <div className="app-empty-state">
             <p className="app-empty-state__text">Noch keine Event-Punkte erhalten</p>
           </div>
         ) : (
-          <IonList className="app-list-inner" lines="none">
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
             {eventPoints.map((eventPoint: any, index: number) => {
               const isEventTypeDisabled = (eventPoint.point_type === 'gottesdienst' && currentKonfi?.gottesdienst_enabled === false)
                 || (eventPoint.point_type === 'gemeinde' && currentKonfi?.gemeinde_enabled === false);
@@ -477,7 +476,7 @@ export const EventPointsSection = React.memo<EventPointsSectionProps>(({
               </div>
             );
             })}
-          </IonList>
+          </div>
         )}
       </IonCardContent>
     </IonCard>
@@ -513,7 +512,7 @@ export const AttendanceSection = React.memo<AttendanceSectionProps>(({
       <IonLabel>Anwesenheit</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
-      <IonCardContent className="app-card-content">
+      <IonCardContent style={{ padding: '12px' }}>
         {/* Quote Summary */}
         <div style={{ marginBottom: '16px' }}>
           <div style={{
@@ -555,7 +554,7 @@ export const AttendanceSection = React.memo<AttendanceSectionProps>(({
             }}>
               Verpasste Pflicht-Events
             </div>
-            <IonList className="app-list-inner" lines="none">
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
               {attendanceStats.missed_events.map((event, index) => (
                 <div
                   key={event.event_id}
@@ -601,7 +600,7 @@ export const AttendanceSection = React.memo<AttendanceSectionProps>(({
                   </div>
                 </div>
               ))}
-            </IonList>
+            </div>
           </>
         )}
       </IonCardContent>
@@ -637,8 +636,8 @@ export const TeamerEventsSection = React.memo<TeamerEventsSectionProps>(({
       <IonLabel>Events ({teamerEvents.length})</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
-      <IonCardContent className="app-card-content">
-        <IonList className="app-list-inner" lines="none">
+      <IonCardContent style={{ padding: '12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           {teamerEvents.slice(0, 10).map((event, index) => {
             const isPast = new Date(event.event_date) < new Date();
             return (
@@ -652,17 +651,23 @@ export const TeamerEventsSection = React.memo<TeamerEventsSectionProps>(({
                 <div
                   className="app-list-item"
                   style={{
-                    borderLeftColor: isPast ? '#9ca3af' : '#dc2626',
-                    opacity: isPast ? 0.7 : 1
+                    borderLeftColor: isPast ? '#9ca3af' : '#dc2626'
                   }}
                 >
-                  {event.teamer_only && (
-                    <div className="app-corner-badges">
-                      <div className="app-corner-badge" style={{ backgroundColor: '#5b21b6' }}>
-                        TEAM
-                      </div>
+                  <div className="app-corner-badges">
+                    <div
+                      className="app-corner-badge"
+                      style={{
+                        backgroundColor: event.booking_status === 'confirmed' ? '#059669'
+                          : event.booking_status === 'absent' ? '#dc2626'
+                          : '#f59e0b'
+                      }}
+                    >
+                      {event.booking_status === 'confirmed' ? 'Anwesend'
+                        : event.booking_status === 'absent' ? 'Abwesend'
+                        : 'Ausstehend'}
                     </div>
-                  )}
+                  </div>
                   <div className="app-list-item__row">
                     <div className="app-list-item__main">
                       <div
@@ -680,9 +685,6 @@ export const TeamerEventsSection = React.memo<TeamerEventsSectionProps>(({
                             <IonIcon icon={calendarOutline} className="app-icon-color--events" />
                             {formatDate(event.event_date)}
                           </span>
-                          {event.location && (
-                            <span className="app-list-item__meta-item">{event.location}</span>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -691,7 +693,7 @@ export const TeamerEventsSection = React.memo<TeamerEventsSectionProps>(({
               </IonItem>
             );
           })}
-        </IonList>
+        </div>
       </IonCardContent>
     </IonCard>
   </IonList>
@@ -728,13 +730,13 @@ export const ActivitiesSection = React.memo<ActivitiesSectionProps>(({
       <IonLabel>Aktivitäten {!isTeamer && `(${activities.filter((a) => !a.isPending).reduce((sum, a) => sum + (a.points || 0), 0)})`} {isTeamer && `(${activities.filter((a) => !a.isPending).length})`}</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
-      <IonCardContent className="app-card-content">
+      <IonCardContent style={{ padding: activities.length === 0 ? '16px' : '12px' }}>
         {activities.length === 0 ? (
           <div className="app-empty-state">
             <p className="app-empty-state__text">Noch keine Aktivitäten vorhanden</p>
           </div>
         ) : (
-          <IonList className="app-list-inner" lines="none">
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
             {activities.slice(0, 10).map((activity, index) => {
               const isActivityTypeDisabled = !activity.isPending
                 && ((activity.type === 'gottesdienst' && currentKonfi?.gottesdienst_enabled === false)
@@ -836,20 +838,22 @@ export const ActivitiesSection = React.memo<ActivitiesSectionProps>(({
               </IonItemSliding>
             );
             })}
-          </IonList>
+          </div>
         )}
-        <IonButton
-          expand="block"
-          fill="outline"
-          onClick={() =>
-            presentActivityModal({
-              presentingElement: presentingElement || undefined
-            })
-          }
-        >
-          <IonIcon icon={add} slot="start" />
-          Aktivität hinzufügen
-        </IonButton>
+        <div className="app-event-detail__add-button-wrapper">
+          <IonButton
+            expand="block"
+            fill="outline"
+            onClick={() =>
+              presentActivityModal({
+                presentingElement: presentingElement || undefined
+              })
+            }
+          >
+            <IonIcon icon={add} slot="start" />
+            Aktivität hinzufügen
+          </IonButton>
+        </div>
       </IonCardContent>
     </IonCard>
   </IonList>
@@ -888,13 +892,13 @@ export const CertificatesSection = React.memo<CertificatesSectionProps>(({
       <IonLabel>Zertifikate</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
-      <IonCardContent className="app-card-content">
+      <IonCardContent style={{ padding: certificates.length === 0 ? '16px' : '12px' }}>
         {certificates.length === 0 ? (
           <div className="app-empty-state">
             <p className="app-empty-state__text">Noch keine Zertifikate zugewiesen</p>
           </div>
         ) : (
-          <IonList className="app-list-inner" lines="none">
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
             {certificates.map((cert, index) => (
               <IonItemSliding key={cert.id} style={{ marginBottom: index < certificates.length - 1 ? '8px' : '0' }}>
                 <IonItem
@@ -957,7 +961,7 @@ export const CertificatesSection = React.memo<CertificatesSectionProps>(({
                 </IonItemOptions>
               </IonItemSliding>
             ))}
-          </IonList>
+          </div>
         )}
         <IonButton
           expand="block"
@@ -1000,37 +1004,33 @@ export const TeamerSinceSection = React.memo<TeamerSinceSectionProps>(({
       <IonLabel>Teamer:in seit</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
-      <IonCardContent className="app-card-content">
-        <IonItem lines="none" style={{ '--background': 'transparent', '--padding-start': '0' }}>
-          <IonLabel position="stacked" style={{ fontSize: '0.85rem', color: 'var(--ion-color-medium)' }}>Aktiv seit</IonLabel>
-          <input
-            type="date"
-            value={currentKonfi?.teamer_since ? new Date(currentKonfi.teamer_since).toISOString().split('T')[0] : ''}
-            onChange={async (e) => {
-              const newDate = e.target.value;
-              if (!newDate) return;
-              try {
-                await apiInstance.put(`/admin/konfis/${konfiId}/teamer-since`, { teamer_since: newDate });
-                setCurrentKonfi(prev => prev ? { ...prev, teamer_since: newDate } : prev);
-                setSuccess('Aktiv-seit-Datum aktualisiert');
-              } catch {
-                setError('Fehler beim Aktualisieren');
-              }
-            }}
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              border: '1px solid var(--ion-color-light-shade)',
-              borderRadius: '8px',
-              fontSize: '1rem',
-              background: 'var(--ion-background-color)',
-              color: 'var(--ion-text-color)',
-              marginTop: '4px'
-            }}
-          />
-        </IonItem>
+      <IonCardContent style={{ padding: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+          <IonDatetimeButton datetime="teamer-since-date" />
+        </div>
       </IonCardContent>
     </IonCard>
+
+    <IonModal keepContentsMounted={true}>
+      <IonDatetime
+        id="teamer-since-date"
+        presentation="date"
+        locale="de-DE"
+        value={currentKonfi?.teamer_since ? new Date(currentKonfi.teamer_since).toISOString().split('T')[0] : undefined}
+        onIonChange={async (e) => {
+          const value = e.detail.value;
+          if (typeof value !== 'string') return;
+          const newDate = value.split('T')[0];
+          try {
+            await apiInstance.put(`/admin/konfis/${konfiId}/teamer-since`, { teamer_since: newDate });
+            setCurrentKonfi(prev => prev ? { ...prev, teamer_since: newDate } : prev);
+            setSuccess('Aktiv-seit-Datum aktualisiert');
+          } catch {
+            setError('Fehler beim Aktualisieren');
+          }
+        }}
+      />
+    </IonModal>
   </IonList>
 ));
 
@@ -1056,7 +1056,7 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
       <IonLabel>Konfi-Historie ({konfiHistory.totals.total} Punkte)</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
-      <IonCardContent className="app-card-content">
+      <IonCardContent style={{ padding: '12px' }}>
         {/* Punkte-Uebersicht */}
         <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
           {konfiHistory.totals.gottesdienst > 0 && (
@@ -1165,19 +1165,21 @@ export const PromoteSection = React.memo<PromoteSectionProps>(({
       <IonLabel>Rolle ändern</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
-      <IonCardContent className="app-card-content">
+      <IonCardContent style={{ padding: '12px' }}>
         <p style={{ fontSize: '0.8rem', color: 'var(--ion-color-medium)', textAlign: 'center', marginBottom: '12px' }}>
           Beim Befördern bleiben Konfi-Punkte und Badges als Historie erhalten. Event-Buchungen und offene Anträge werden gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.
         </p>
-        <IonButton
-          expand="block"
-          style={{ '--background': '#5b21b6', '--background-hover': '#4c1d95' }}
-          disabled={!isOnline}
-          onClick={handlePromoteToTeamer}
-        >
-          <IonIcon icon={ribbon} slot="start" />
-          {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : 'Zum Teamer befördern'}
-        </IonButton>
+        <div className="app-event-detail__add-button-wrapper">
+          <IonButton
+            expand="block"
+            style={{ '--background': '#5b21b6', '--background-hover': '#4c1d95' }}
+            disabled={!isOnline}
+            onClick={handlePromoteToTeamer}
+          >
+            <IonIcon icon={ribbon} slot="start" />
+            {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : 'Zum Teamer befördern'}
+          </IonButton>
+        </div>
       </IonCardContent>
     </IonCard>
   </IonList>

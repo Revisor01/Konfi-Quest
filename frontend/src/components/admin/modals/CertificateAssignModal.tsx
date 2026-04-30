@@ -20,7 +20,8 @@ import {
   IonDatetimeButton,
   IonDatetime,
   IonModal,
-  IonSpinner
+  IonSpinner,
+  IonRange
 } from '@ionic/react';
 import {
   closeOutline,
@@ -229,55 +230,39 @@ const CertificateAssignModal: React.FC<CertificateAssignModalProps> = ({
             <IonLabel>Zertifikat-Typ</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent>
-              <IonRadioGroup
-                value={selectedTypeId != null ? String(selectedTypeId) : undefined}
-                onIonChange={(e) => setSelectedTypeId(parseInt(e.detail.value))}
-              >
-                {availableTypes.map((ct) => {
+            <IonCardContent style={{ padding: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {availableTypes.map((ct, index) => {
                   const iconData = ct.icon ? CERT_ICONS[ct.icon] : null;
+                  const isSelected = selectedTypeId === ct.id;
                   return (
-                    <IonItem key={ct.id} lines="full" style={{ '--background': 'transparent' }}>
-                      {iconData ? (
-                        <IonIcon
-                          icon={iconData.icon}
-                          slot="start"
-                          style={{ color: '#5b21b6', fontSize: '1.2rem', marginRight: '8px' }}
-                        />
-                      ) : (
-                        <IonIcon
-                          icon={ribbonOutline}
-                          slot="start"
-                          style={{ color: '#5b21b6', fontSize: '1.2rem', marginRight: '8px' }}
-                        />
-                      )}
-                      <IonLabel>{ct.name}</IonLabel>
-                      <IonRadio value={String(ct.id)} />
-                    </IonItem>
+                    <div
+                      key={ct.id}
+                      className="app-list-item"
+                      onClick={() => setSelectedTypeId(ct.id)}
+                      style={{
+                        borderLeftColor: '#5b21b6',
+                        cursor: 'pointer',
+                        marginBottom: index < availableTypes.length - 1 ? '8px' : '0',
+                        background: isSelected ? 'rgba(91, 33, 182, 0.1)' : undefined
+                      }}
+                    >
+                      <div className="app-list-item__row">
+                        <div className="app-list-item__main">
+                          <div className="app-icon-circle" style={{ backgroundColor: '#5b21b6' }}>
+                            <IonIcon icon={iconData?.icon || ribbonOutline} />
+                          </div>
+                          <div className="app-list-item__content">
+                            <div className="app-list-item__title">
+                              {ct.name}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   );
                 })}
-              </IonRadioGroup>
-
-              {/* Vorschau des gewählten Typs */}
-              {selectedType && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px 16px',
-                  marginTop: '8px',
-                  backgroundColor: 'rgba(91, 33, 182, 0.08)',
-                  borderRadius: '8px'
-                }}>
-                  <IonIcon
-                    icon={selectedIconData?.icon || ribbonOutline}
-                    style={{ fontSize: '32px', color: '#5b21b6' }}
-                  />
-                  <span style={{ fontWeight: '600', fontSize: '1rem', color: '#1f2937' }}>
-                    {selectedType.name}
-                  </span>
-                </div>
-              )}
+              </div>
             </IonCardContent>
           </IonCard>
         </IonList>
@@ -291,36 +276,34 @@ const CertificateAssignModal: React.FC<CertificateAssignModalProps> = ({
             <IonLabel>Zeitraum</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent>
-              <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                <IonLabel>Teamer seit</IonLabel>
-                <IonDatetimeButton datetime="cert-start-date" />
-                <IonModal keepContentsMounted={true}>
-                  <IonDatetime
-                    id="cert-start-date"
-                    presentation="date"
-                    value={issuedDate}
-                    onIonChange={(e) => {
-                      const val = e.detail.value;
-                      if (typeof val === 'string') {
-                        setIssuedDate(val.split('T')[0]);
-                      }
-                    }}
-                    locale="de-DE"
-                  />
-                </IonModal>
-              </IonItem>
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                <IonInput
-                  label="Laufzeit (Monate)"
-                  labelPlacement="stacked"
-                  type="number"
-                  min={1}
-                  placeholder="z.B. 12"
-                  value={durationMonths}
-                  onIonInput={(e) => setDurationMonths(e.detail.value || '')}
+            <IonCardContent style={{ padding: '16px' }}>
+              <p className="app-text-sub" style={{ marginBottom: '4px' }}>Erhalten</p>
+              <IonDatetimeButton datetime="cert-start-date" style={{ justifyContent: 'flex-start' }} />
+              <IonModal keepContentsMounted={true}>
+                <IonDatetime
+                  id="cert-start-date"
+                  presentation="date"
+                  value={issuedDate}
+                  onIonChange={(e) => {
+                    const val = e.detail.value;
+                    if (typeof val === 'string') {
+                      setIssuedDate(val.split('T')[0]);
+                    }
+                  }}
+                  locale="de-DE"
                 />
-              </IonItem>
+              </IonModal>
+              <p className="app-text-sub" style={{ marginTop: '12px', marginBottom: '4px' }}>Laufzeit (Monate): {durationMonths || '0'}</p>
+              <div style={{ padding: '0 16px' }}>
+                <IonRange
+                  min={0}
+                  max={36}
+                  step={1}
+                  value={parseInt(durationMonths) || 0}
+                  onIonInput={(e) => setDurationMonths(String(e.detail.value))}
+                  style={{ '--bar-background': 'rgba(91, 33, 182, 0.2)', '--bar-background-active': '#5b21b6', '--knob-background': '#5b21b6' }}
+                />
+              </div>
             </IonCardContent>
           </IonCard>
         </IonList>

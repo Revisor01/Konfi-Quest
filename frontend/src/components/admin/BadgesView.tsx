@@ -380,8 +380,8 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                 <IonLabel>{getCriteriaTypeText(criteriaType)} ({typeBadges.length})</IonLabel>
               </IonListHeader>
               <IonCard className="app-card">
-                <IonCardContent style={{ padding: '16px' }}>
-                  <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
+                <IonCardContent style={{ padding: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {typeBadges.map((badge, index) => {
                       const badgeColor = badge.color || '#667eea';
                       const isInactive = !badge.is_active;
@@ -500,7 +500,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                         </IonItemSliding>
                       );
                     })}
-                  </IonList>
+                  </div>
                 </IonCardContent>
               </IonCard>
             </IonList>

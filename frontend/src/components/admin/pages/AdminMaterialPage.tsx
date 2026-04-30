@@ -79,7 +79,7 @@ const AdminMaterialPage: React.FC = () => {
   // Offline-Query: Jahrgaenge
   const { data: jahrgaenge } = useOfflineQuery<{ id: number; name: string }[]>(
     'admin:jahrgaenge:' + user?.organization_id,
-    async () => { const res = await api.get('/jahrgaenge'); return res.data; },
+    async () => { const res = await api.get('/admin/jahrgaenge'); return res.data; },
     { ttl: CACHE_TTL.STAMMDATEN }
   );
 
@@ -291,7 +291,7 @@ const AdminMaterialPage: React.FC = () => {
                       iconColor="#d97706"
                     />
                   ) : (
-                    <IonList className="app-list-inner" lines="none">
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
                       {filteredMaterials.map((mat, index) => (
                         <IonItemSliding key={mat.id} style={{ marginBottom: index < filteredMaterials.length - 1 ? '8px' : '0' }}>
                           <IonItem
@@ -356,7 +356,7 @@ const AdminMaterialPage: React.FC = () => {
                           </IonItemOptions>
                         </IonItemSliding>
                       ))}
-                    </IonList>
+                    </div>
                   )}
                 </IonCardContent>
               </IonCard>

@@ -78,7 +78,7 @@ const PushNotificationSettings: React.FC = () => {
         margin: '0'
       }}>
         <IonCardContent style={{ padding: '16px' }}>
-          <IonList style={{ background: 'transparent' }} lines="none">
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
             <IonItem
               lines="none"
               style={{
@@ -112,7 +112,7 @@ const PushNotificationSettings: React.FC = () => {
                 {getPermissionText()}
               </IonNote>
             </IonItem>
-          </IonList>
+          </div>
 
           {pushNotificationsPermission !== 'granted' && (
             <IonButton

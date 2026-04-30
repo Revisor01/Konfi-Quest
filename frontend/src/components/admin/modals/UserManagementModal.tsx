@@ -333,7 +333,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent>
-              <IonList style={{ background: 'transparent' }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Anzeigename *</IonLabel>
                   <IonInput
@@ -387,7 +387,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     disabled={isSubmitting}
                   />
                 </IonItem>
-              </IonList>
+              </div>
             </IonCardContent>
           </IonCard>
         </IonList>

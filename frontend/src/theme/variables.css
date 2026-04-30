@@ -1150,7 +1150,8 @@ ion-button.app-action-button {
 .app-event-detail__icon-gap { margin-right: 8px; }
 
 /* Button-Abstand oben (z.B. TN-hinzufuegen unter Liste) */
-.app-event-detail__add-button-wrapper { margin-top: 16px; }
+/* Button-Wrapper: gleicht Ionic ion-button margin (7px) aus */
+.app-event-detail__add-button-wrapper { margin-top: 12px; margin-bottom: -7px; }
 
 /* Icon etwas groesser (z.B. Abmeldungs-Icon) */
 .app-event-detail__icon-lg { font-size: 1.2rem; }

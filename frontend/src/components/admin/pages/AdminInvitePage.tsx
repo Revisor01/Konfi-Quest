@@ -290,7 +290,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent>
-                  <IonList className="app-list-inner">
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <IonItem lines="none" className="app-item-transparent">
                       <IonLabel position="stacked">Jahrgang *</IonLabel>
                       <IonSelect
@@ -310,7 +310,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                         ))}
                       </IonSelect>
                     </IonItem>
-                  </IonList>
+                  </div>
                   <IonButton
                     expand="block"
                     fill="outline"
@@ -344,7 +344,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                 </IonListHeader>
                 <IonCard className="app-card">
                   <IonCardContent>
-                    <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
                       {(existingInvites || []).map((invite, index) => (
                         <IonItemSliding key={invite.id} style={{ marginBottom: index < (existingInvites || []).length - 1 ? '8px' : '0' }}>
                           <IonItem
@@ -420,7 +420,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                           </IonItemOptions>
                         </IonItemSliding>
                       ))}
-                    </IonList>
+                    </div>
                   </IonCardContent>
                 </IonCard>
               </IonList>

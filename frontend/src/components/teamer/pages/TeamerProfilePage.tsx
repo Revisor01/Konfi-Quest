@@ -276,8 +276,8 @@ const TeamerProfilePage: React.FC = () => {
             <IonLabel>Konto-Einstellungen</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
-              <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
+            <IonCardContent style={{ padding: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
                 {/* Funktionsbeschreibung */}
                 <IonItem
                   button
@@ -356,7 +356,7 @@ const TeamerProfilePage: React.FC = () => {
                     </div>
                   </div>
                 </IonItem>
-              </IonList>
+              </div>
             </IonCardContent>
           </IonCard>
         </IonList>

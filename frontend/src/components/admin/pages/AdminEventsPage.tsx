@@ -55,7 +55,7 @@ const AdminEventsPage: React.FC = () => {
   // Offline-Query: Jahrgaenge
   const { data: jahrgaenge, refresh: refreshJahrgaenge } = useOfflineQuery<Array<{id: number; name: string}>>(
     'admin:jahrgaenge:' + user?.organization_id,
-    async () => { const res = await api.get('/jahrgaenge'); return res.data; },
+    async () => { const res = await api.get('/admin/jahrgaenge'); return res.data; },
     { ttl: CACHE_TTL.STAMMDATEN }
   );
 

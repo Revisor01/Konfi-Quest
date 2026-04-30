@@ -97,7 +97,8 @@ console.error('Logout error:', error);
             <IonLabel>Konto</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent>
+            <IonCardContent style={{ padding: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
               <div
                 className="app-list-item app-list-item--users app-settings-item"
                 onClick={() => router.push('/admin/profile')}
@@ -138,7 +139,7 @@ console.error('Logout error:', error);
                   <p className="app-settings-item__subtitle">Chat-Nachrichten und Updates</p>
                 </div>
               </div>
-
+                </div>
             </IonCardContent>
           </IonCard>
         </IonList>
@@ -153,7 +154,8 @@ console.error('Logout error:', error);
               <IonLabel>Verwaltung</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent>
+              <IonCardContent style={{ padding: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <div
                   className="app-list-item app-list-item--users app-settings-item"
                   onClick={() => router.push('/admin/users')}
@@ -194,6 +196,7 @@ console.error('Logout error:', error);
                     <p className="app-settings-item__subtitle">QR-Code für Selbstregistrierung</p>
                   </div>
                 </div>
+                </div>
               </IonCardContent>
             </IonCard>
           </IonList>
@@ -209,7 +212,8 @@ console.error('Logout error:', error);
               <IonLabel>System-Administration</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent>
+              <IonCardContent style={{ padding: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <div
                   className="app-list-item app-list-item--success app-settings-item"
                   onClick={() => router.push('/admin/organizations')}
@@ -221,6 +225,7 @@ console.error('Logout error:', error);
                     <h2 className="app-settings-item__title">Organisationen</h2>
                     <p className="app-settings-item__subtitle">Gemeinden und Organisationen verwalten</p>
                   </div>
+                </div>
                 </div>
               </IonCardContent>
             </IonCard>
@@ -237,7 +242,8 @@ console.error('Logout error:', error);
               <IonLabel>Inhalt</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent>
+              <IonCardContent style={{ padding: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <div
                   className="app-list-item app-list-item--activities app-settings-item"
                   onClick={() => router.push('/admin/activities')}
@@ -328,7 +334,7 @@ console.error('Logout error:', error);
                     <p className="app-settings-item__subtitle">Teamer:innen-Zertifikate verwalten</p>
                   </div>
                 </div>
-
+                </div>
               </IonCardContent>
             </IonCard>
           </IonList>

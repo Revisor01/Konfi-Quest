@@ -550,7 +550,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
 
         {/* Aktivitäten */}
         <ActivitiesSection
-          activities={activities}
+          activities={isTeamer ? activities.filter(a => a.target_role === 'teamer') : activities}
           currentKonfi={currentKonfi}
           isTeamer={isTeamer}
           formatDate={formatDate}

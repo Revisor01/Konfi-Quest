@@ -553,26 +553,28 @@ export const EventActionsSection = React.memo<EventActionsSectionProps>(({
       <IonList className="app-section-inset" inset={true}>
         <IonCard className="app-card">
           <IonCardContent className="app-card-content">
-            {eventData.chat_room_id ? (
-              <IonButton
-                expand="block"
-                fill="outline"
-                onClick={handleNavigateToChat}
-              >
-                <IonIcon icon={chatbubbles} className="app-event-detail__icon-gap" />
-                Zum Chat
-              </IonButton>
-            ) : (
-              <IonButton
-                expand="block"
-                fill="outline"
-                disabled={!isOnline}
-                onClick={handleCreateEventChat}
-              >
-                <IonIcon icon={chatbubbles} className="app-event-detail__icon-gap" />
-                {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : 'Chat erstellen'}
-              </IonButton>
-            )}
+            <div className="app-event-detail__add-button-wrapper">
+              {eventData.chat_room_id ? (
+                <IonButton
+                  expand="block"
+                  fill="outline"
+                  onClick={handleNavigateToChat}
+                >
+                  <IonIcon icon={chatbubbles} className="app-event-detail__icon-gap" />
+                  Zum Chat
+                </IonButton>
+              ) : (
+                <IonButton
+                  expand="block"
+                  fill="outline"
+                  disabled={!isOnline}
+                  onClick={handleCreateEventChat}
+                >
+                  <IonIcon icon={chatbubbles} className="app-event-detail__icon-gap" />
+                  {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : 'Chat erstellen'}
+                </IonButton>
+              )}
+            </div>
           </IonCardContent>
         </IonCard>
       </IonList>
@@ -581,16 +583,18 @@ export const EventActionsSection = React.memo<EventActionsSectionProps>(({
       <IonList className="app-section-inset" inset={true}>
         <IonCard className="app-card">
           <IonCardContent className="app-card-content">
-            <IonButton
-              expand="block"
-              fill="outline"
-              color="danger"
-              disabled={!isOnline}
-              onClick={handleCancelEvent}
-            >
-              <IonIcon icon={ban} className="app-event-detail__icon-gap" />
-              {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : 'Event absagen'}
-            </IonButton>
+            <div className="app-event-detail__add-button-wrapper">
+              <IonButton
+                expand="block"
+                fill="outline"
+                color="danger"
+                disabled={!isOnline}
+                onClick={handleCancelEvent}
+              >
+                <IonIcon icon={ban} className="app-event-detail__icon-gap" />
+                {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : 'Event absagen'}
+              </IonButton>
+            </div>
           </IonCardContent>
         </IonCard>
       </IonList>
