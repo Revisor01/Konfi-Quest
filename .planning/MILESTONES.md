@@ -1,5 +1,47 @@
 # Milestones
 
+## v2.10 Design-Polish + UX-Feinschliff (Shipped: 2026-04-05)
+
+**Phases completed:** 5 phases, 6 plans, 23 requirements
+
+**Key accomplishments:**
+
+- Globale CSS-Patterns: ListSection auf flex-div + 12px Padding, EventsView inline-marginBottom durch CSS-Klasse ersetzt
+- IonRange Wert-Anzeige hinzugefuegt, Pull-to-Refresh Haptics, ios26-searchbar-classic Pattern
+- BadgesView: Tab-Leiste in app-segment-wrapper, Suchleiste mit ios26-searchbar-classic, Grid-Zellen minWidth-Fix, CardContent 12px Padding
+- Badge-Popovers zentriert mit max-width min(320px, 85vw) und Titel-Ellipsis
+- Konfi-Views einheitlich: EventDetail, Aktivitaeten, Profil — alle mit globalen app-text-Klassen (app-text-main, app-text-sub, app-description-text)
+- Konfi EventDetail: Anmeldezeitraum, Zeitfenster, Kategorien, Pflicht-Event als Label+Sub Pattern
+
+---
+
+## v2.9 Test-Suite + CI/CD (Shipped: 2026-03-28)
+
+**Phases completed:** 7 phases, 11 plans, 26 requirements
+
+**Key accomplishments:**
+
+- 458 Backend Integration-Tests gegen echte PostgreSQL (alle 15 Routes), 71 Frontend Tests (Hooks/Services/Components), 4 Playwright E2E User-Journeys
+- server.js in createApp-Factory refactored, Vitest/supertest/docker-compose.test.yml + globalSetup mit Schema/Migrations/Seed
+- JWT Auth-Helper fuer alle 5 RBAC-Rollen, 6 Smoke-Tests fuer Health/Login/Auth-Guard
+- 24 Badge-Integration-Tests: CRUD, Cross-Org-Isolation, Level-Zuordnung, Auto-Award-Trigger, Progress-Berechnung
+- Unified CI Pipeline mit parallelen Test-Jobs, npm Security Audit, konditionellem Docker Build via Matrix-Strategy
+- 3 Produktions-Bugs nebenbei gefixt: register-konfi organization_id, Categories PUT type-Feld, Double-Release in wrapped.js
+
+---
+
+## v2.8 Design-Polish (Shipped: 2026-03-25)
+
+**Phases completed:** 7 phases, 19 plans, 64 requirements
+
+**Key accomplishments:**
+
+- Chat-Farbschema (Konfi/Teamer/Admin), CertificateAssignModal, sortierbare Dashboard-Sektionen
+- Konfi/Teamer/Admin UI Polish quer durch alle Views, CSS-Variable --app-description-font-size eingefuehrt
+- Wartelisten-Bugfix bei Event-Bookings
+
+---
+
 ## v2.7 Backend-Hardening (Shipped: 2026-03-24)
 
 **Phases completed:** 2 phases, 3 plans, 7 tasks
