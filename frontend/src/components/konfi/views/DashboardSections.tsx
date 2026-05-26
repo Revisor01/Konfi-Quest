@@ -469,9 +469,9 @@ export const EventCard = React.memo<EventCardProps>(({ event, onClick }) => {
         )}
         {/* Zeile 3: Mitbringen (eigene Zeile) */}
         {event.bring_items && (
-          <div className="app-dashboard-meta" style={{ marginTop: '4px', color: 'rgba(255,255,255,0.9)' }}>
-            <IonIcon icon={bagHandle} style={{ fontSize: '0.9rem', color: '#c4b5fd' }} />
-            <span style={{ fontWeight: '600' }}>Mitbringen: {event.bring_items}</span>
+          <div className="app-dashboard-meta" style={{ marginTop: '4px', alignItems: 'flex-start' }}>
+            <IonIcon icon={bagHandle} style={{ fontSize: '0.9rem', flexShrink: 0, marginTop: '2px' }} />
+            <span>Mitbringen: {event.bring_items}</span>
           </div>
         )}
       </div>

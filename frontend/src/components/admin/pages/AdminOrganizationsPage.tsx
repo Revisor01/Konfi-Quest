@@ -14,7 +14,7 @@ import {
   useIonAlert
 } from '@ionic/react';
 import {
-  logOut,
+  logOutOutline,
   add
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -153,11 +153,6 @@ const AdminOrganizationsPage: React.FC = () => {
     <IonPage ref={pageRef}>
       <IonHeader translucent={true} collapse="condense">
         <IonToolbar>
-        <IonButtons slot="start">
-          <IonButton onClick={handleLogout}>
-            <IonIcon icon={logOut} />
-          </IonButton>
-        </IonButtons>
           <IonTitle>Organisationen</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={presentOrganizationModal}>
@@ -182,13 +177,35 @@ const AdminOrganizationsPage: React.FC = () => {
         {loading ? (
           <LoadingSpinner message="Organisationen werden geladen..." />
         ) : (
-          <OrganizationView 
-            organizations={organizations}
-            onUpdate={loadOrganizations}
-            onAddOrganizationClick={presentOrganizationModal}
-            onSelectOrganization={handleSelectOrganization}
-            onDeleteOrganization={handleDeleteOrganization}
-          />
+          <>
+            <OrganizationView
+              organizations={organizations}
+              onUpdate={loadOrganizations}
+              onAddOrganizationClick={presentOrganizationModal}
+              onSelectOrganization={handleSelectOrganization}
+              onDeleteOrganization={handleDeleteOrganization}
+            />
+
+            {/* Logout-Button */}
+            <div style={{ padding: '0 16px', marginTop: '16px' }}>
+              <IonButton
+                expand="block"
+                fill="outline"
+                color="danger"
+                onClick={handleLogout}
+                style={{
+                  height: '48px',
+                  borderRadius: '12px',
+                  fontWeight: '600'
+                }}
+              >
+                <IonIcon icon={logOutOutline} slot="start" />
+                Abmelden
+              </IonButton>
+            </div>
+
+            <div style={{ height: '32px' }} />
+          </>
         )}
       </IonContent>
     </IonPage>

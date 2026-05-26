@@ -902,7 +902,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
                COALESCE(kb.seen, false) as seen
         FROM custom_badges cb
         LEFT JOIN user_badges kb ON cb.id = kb.badge_id AND kb.user_id = $1 AND kb.organization_id = $2
-        WHERE cb.is_active = TRUE AND cb.organization_id = $2
+        WHERE cb.is_active = TRUE AND cb.organization_id = $2 AND cb.target_role = 'konfi'
         ORDER BY earned DESC, cb.name
       `;
       const { rows: badges } = await db.query(query, [konfiId, req.user.organization_id]);
@@ -1186,8 +1186,8 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       }
 
       const statsQuery = `
-        SELECT 
-          (SELECT COUNT(*) FROM custom_badges WHERE organization_id = $2) as total_badges,
+        SELECT
+          (SELECT COUNT(*) FROM custom_badges WHERE organization_id = $2 AND target_role = 'konfi' AND is_active = TRUE) as total_badges,
           COUNT(kb.badge_id) as earned_badges
         FROM user_badges kb
         WHERE kb.user_id = $1 AND kb.organization_id = $2

@@ -182,7 +182,46 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="app-gradient-background">
+      <IonContent className="app-gradient-background ph-font-scope">
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap');
+
+          /* Headlines: Bricolage Grotesque */
+          .ph-font-scope .app-header-banner__title {
+            font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+          }
+          .ph-font-scope ion-list-header ion-label {
+            font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+          }
+          .ph-font-scope .app-stats-row__value {
+            font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+          }
+          .ph-font-scope .app-list-item__title {
+            font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+          }
+
+          /* Body: Inter */
+          .ph-font-scope .app-header-banner__subtitle,
+          .ph-font-scope .app-stats-row__label,
+          .ph-font-scope .app-list-item__meta-item,
+          .ph-font-scope .app-corner-badge {
+            font-family: 'Inter', system-ui, sans-serif;
+          }
+          .ph-font-scope .app-corner-badge {
+            font-weight: 700;
+          }
+          .ph-font-scope .app-stats-row__label {
+            font-weight: 600;
+          }
+        `}</style>
         {loading ? (
           <div className="app-settings-item" style={{ justifyContent: 'center', padding: '40px' }}>
             <IonSpinner name="crescent" />
@@ -260,9 +299,6 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
                                 <div className="app-list-item__content">
                                   <div className="app-list-item__title" style={{ paddingRight: typeBadgeColor ? '120px' : '70px' }}>{entry.title}</div>
                                   <div className="app-list-item__meta">
-                                    <span className="app-list-item__meta-item">
-                                      {getCategoryLabel(entry.category)}
-                                    </span>
                                     <span className="app-list-item__meta-item">
                                       {formatDate(entry.date)}
                                     </span>

@@ -140,6 +140,7 @@ const MainTabs: React.FC = () => {
       <IonRouterOutlet>
         <Route exact path="/admin" render={() => <Redirect to="/admin/organizations" />} />
         <Route exact path="/admin/organizations" component={AdminOrganizationsPage} />
+        <Route exact path="/login" render={() => <Redirect to="/admin/organizations" />} />
         <Route exact path="/" render={() => <Redirect to="/admin/organizations" />} />
       </IonRouterOutlet>
     </ModalProvider>
@@ -173,6 +174,7 @@ const MainTabs: React.FC = () => {
           <Route exact path="/admin/settings/dashboard" component={AdminDashboardSettingsPage} />
           <Route exact path="/admin/settings" component={AdminSettingsPage} />
           <Route exact path="/admin/profile" component={AdminProfilePage} />
+          <Route exact path="/login" render={() => <Redirect to="/admin/konfis" />} />
           <Route exact path="/" render={() => <Redirect to="/admin/konfis" />} />
         </IonRouterOutlet>
 
@@ -233,6 +235,7 @@ const MainTabs: React.FC = () => {
           <Route exact path="/teamer/profile" component={TeamerProfilePage} />
           <Route exact path="/teamer/profile/badges" component={TeamerBadgesPage} />
           <Route exact path="/teamer/profile/konfi-stats" component={TeamerKonfiStatsPage} />
+          <Route exact path="/login" render={() => <Redirect to="/teamer/dashboard" />} />
           <Route exact path="/" render={() => <Redirect to="/teamer/dashboard" />} />
         </IonRouterOutlet>
         {!isTabBarHidden(location.pathname) && (
@@ -283,6 +286,7 @@ const MainTabs: React.FC = () => {
 
           <Route exact path="/konfi/requests" component={KonfiRequestsPage} />
           <Route exact path="/konfi/profile" component={KonfiProfilePage} />
+          <Route exact path="/login" render={() => <Redirect to="/konfi/dashboard" />} />
           <Route exact path="/" render={() => <Redirect to="/konfi/dashboard" />} />
         </IonRouterOutlet>
 

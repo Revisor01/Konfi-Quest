@@ -51,7 +51,9 @@ const LoginView: React.FC = () => {
 
       // Explicit navigation based on user type
       if (user.role_name === 'super_admin') {
-        router.push('/admin/organizations', 'root', 'replace');
+        // Super-Admin Branch hat kein IonTabs-Wrapper -> router.push verliert die Route
+        // im Capacitor WebView. Hartes Navigieren erzwingt sauberen Re-Render.
+        window.location.replace('/admin/organizations');
       } else if (user.type === 'admin') {
         router.push('/admin/konfis', 'root', 'replace');
       } else if (user.type === 'teamer') {

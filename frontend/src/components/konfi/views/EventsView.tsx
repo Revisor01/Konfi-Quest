@@ -250,11 +250,11 @@ const EventsView: React.FC<EventsViewProps> = ({
           value={activeTab}
           onIonChange={(e) => onTabChange(e.detail.value as any)}
         >
-          <IonSegmentButton value="meine">
-            <IonLabel>Meine</IonLabel>
-          </IonSegmentButton>
           <IonSegmentButton value="alle">
             <IonLabel>Alle</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="meine">
+            <IonLabel>Meine</IonLabel>
           </IonSegmentButton>
           <IonSegmentButton value="konfirmation">
             <IonLabel>Konfi</IonLabel>
@@ -395,9 +395,9 @@ const EventsView: React.FC<EventsViewProps> = ({
                         {/* Zeile 5: Was mitbringen */}
                         {event.bring_items && (
                           <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
-                            <span className="app-list-item__meta-item">
-                              <IonIcon icon={bagHandle} style={{ color: '#8b5cf6' }} />
-                              {event.bring_items}
+                            <span className="app-list-item__meta-item" style={{ alignItems: 'flex-start' }}>
+                              <IonIcon icon={bagHandle} style={{ color: '#8b5cf6', flexShrink: 0, fontSize: '16px', marginTop: '2px' }} />
+                              <span style={{ flex: 1 }}>{event.bring_items}</span>
                             </span>
                           </div>
                         )}
