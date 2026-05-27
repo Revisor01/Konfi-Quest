@@ -11,6 +11,7 @@ import {
   IonItemOption,
   IonIcon,
   IonButton,
+  IonInput,
   IonProgressBar,
   IonDatetimeButton,
   IonDatetime,
@@ -37,7 +38,9 @@ import {
   starOutline,
   flashOutline,
   giftOutline,
-  cloudOfflineOutline
+  cloudOfflineOutline,
+  chevronDown,
+  chevronUp
 } from 'ionicons/icons';
 import ActivityRings from './ActivityRings';
 
@@ -46,6 +49,7 @@ import ActivityRings from './ActivityRings';
 export interface Konfi {
   id: number;
   name: string;
+  display_name?: string;
   username?: string;
   jahrgang?: string;
   jahrgang_name?: string;
@@ -75,6 +79,8 @@ export interface Activity {
   points: number;
   type: string;
   date: string;
+  completed_date?: string;
+  target_role?: string;
   admin?: string;
   isPending?: boolean;
   photo_filename?: string;
@@ -814,7 +820,7 @@ export const ActivitiesSection = React.memo<ActivitiesSectionProps>(({
                           <div className="app-list-item__meta">
                             <span className="app-list-item__meta-item">
                               <IonIcon icon={calendar} className="app-icon-color--events" />
-                              {formatDate(activity.date)}
+                              {formatDate(activity.completed_date || activity.date)}
                             </span>
                             <span className="app-list-item__meta-item">{activity.admin}</span>
                           </div>
@@ -886,7 +892,7 @@ export const CertificatesSection = React.memo<CertificatesSectionProps>(({
 }) => (
   <IonList className="app-section-inset" inset={true} style={{ marginBottom: '32px' }}>
     <IonListHeader>
-      <div className="app-section-icon" style={{ backgroundColor: '#5b21b6' }}>
+      <div className="app-section-icon app-section-icon--teamer">
         <IonIcon icon={documentOutline} />
       </div>
       <IonLabel>Zertifikate</IonLabel>
@@ -909,7 +915,7 @@ export const CertificatesSection = React.memo<CertificatesSectionProps>(({
                   <div
                     className="app-list-item"
                     style={{
-                      borderLeftColor: cert.status === 'valid' ? '#059669' : cert.status === 'expired' ? '#ef4444' : '#9ca3af'
+                      borderLeftColor: '#db2777'
                     }}
                   >
                     {cert.status === 'expired' && (
@@ -924,7 +930,7 @@ export const CertificatesSection = React.memo<CertificatesSectionProps>(({
                         <div
                           className="app-icon-circle"
                           style={{
-                            backgroundColor: cert.status === 'valid' ? '#059669' : cert.status === 'expired' ? '#ef4444' : '#9ca3af'
+                            backgroundColor: '#db2777'
                           }}
                         >
                           <IonIcon icon={ribbon} />
@@ -968,6 +974,7 @@ export const CertificatesSection = React.memo<CertificatesSectionProps>(({
           fill="outline"
           disabled={!isOnline}
           onClick={handleAssignCertificate}
+          style={{ marginTop: '16px' }}
         >
           <IonIcon icon={add} slot="start" />
           {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : 'Zertifikat zuweisen'}
@@ -998,39 +1005,35 @@ export const TeamerSinceSection = React.memo<TeamerSinceSectionProps>(({
 }) => (
   <IonList className="app-section-inset" inset={true} style={{ marginBottom: '32px' }}>
     <IonListHeader>
-      <div className="app-section-icon" style={{ backgroundColor: '#5b21b6' }}>
+      <div className="app-section-icon app-section-icon--teamer">
         <IonIcon icon={calendarOutline} />
       </div>
       <IonLabel>Teamer:in seit</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
-      <IonCardContent style={{ padding: '12px' }}>
-        <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-          <IonDatetimeButton datetime="teamer-since-date" />
-        </div>
+      <IonCardContent style={{ padding: '16px' }}>
+        <IonList style={{ background: 'transparent' }}>
+          <IonItem lines="none" style={{ '--background': 'transparent' }}>
+            <IonLabel position="stacked">Datum</IonLabel>
+            <IonInput
+              type="date"
+              value={currentKonfi?.teamer_since ? new Date(currentKonfi.teamer_since).toISOString().split('T')[0] : ''}
+              onIonChange={async (e) => {
+                const newDate = e.detail.value as string;
+                if (!newDate) return;
+                try {
+                  await apiInstance.put(`/admin/konfis/${konfiId}/teamer-since`, { teamer_since: newDate });
+                  setCurrentKonfi(prev => prev ? { ...prev, teamer_since: newDate } : prev);
+                  setSuccess('Aktiv-seit-Datum aktualisiert');
+                } catch {
+                  setError('Fehler beim Aktualisieren');
+                }
+              }}
+            />
+          </IonItem>
+        </IonList>
       </IonCardContent>
     </IonCard>
-
-    <IonModal keepContentsMounted={true}>
-      <IonDatetime
-        id="teamer-since-date"
-        presentation="date"
-        locale="de-DE"
-        value={currentKonfi?.teamer_since ? new Date(currentKonfi.teamer_since).toISOString().split('T')[0] : undefined}
-        onIonChange={async (e) => {
-          const value = e.detail.value;
-          if (typeof value !== 'string') return;
-          const newDate = value.split('T')[0];
-          try {
-            await apiInstance.put(`/admin/konfis/${konfiId}/teamer-since`, { teamer_since: newDate });
-            setCurrentKonfi(prev => prev ? { ...prev, teamer_since: newDate } : prev);
-            setSuccess('Aktiv-seit-Datum aktualisiert');
-          } catch {
-            setError('Fehler beim Aktualisieren');
-          }
-        }}
-      />
-    </IonModal>
   </IonList>
 ));
 
@@ -1047,7 +1050,10 @@ interface KonfiHistorySectionProps {
 export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
   konfiHistory,
   formatDate
-}) => (
+}) => {
+  const [expanded, setExpanded] = React.useState(false);
+  const visibleCount = expanded ? konfiHistory.history.length : 3;
+  return (
   <IonList className="app-section-inset" inset={true} style={{ marginBottom: '32px' }}>
     <IonListHeader>
       <div className="app-section-icon app-section-icon--purple">
@@ -1098,11 +1104,17 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
         {/* Verlauf */}
         {konfiHistory.history.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            {konfiHistory.history.slice(0, 8).map((entry) => {
+            {konfiHistory.history.slice(0, visibleCount).map((entry) => {
               const categoryColor = entry.category === 'gottesdienst' ? '#3b82f6' : '#059669';
               const entryIcon = entry.source_type === 'bonus' ? giftOutline
                 : entry.source_type === 'event' ? calendarOutline
                 : entry.category === 'gottesdienst' ? starOutline : flashOutline;
+              const typeBadgeColor = entry.source_type === 'bonus' ? '#f59e0b'
+                : entry.source_type === 'event' ? '#dc2626'
+                : null;
+              const typeBadgeLabel = entry.source_type === 'bonus' ? 'Bonus'
+                : entry.source_type === 'event' ? 'Event'
+                : null;
               return (
                 <div
                   key={`${entry.source_type}-${entry.id}`}
@@ -1110,6 +1122,14 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
                   style={{ borderLeftColor: categoryColor, position: 'relative', overflow: 'hidden' }}
                 >
                   <div className="app-corner-badges">
+                    {typeBadgeColor && typeBadgeLabel && (
+                      <>
+                        <div className="app-corner-badge" style={{ backgroundColor: typeBadgeColor }}>
+                          {typeBadgeLabel}
+                        </div>
+                        <div className="app-corner-badges__separator" />
+                      </>
+                    )}
                     <div className="app-corner-badge" style={{ backgroundColor: categoryColor }}>
                       +{entry.points}P
                     </div>
@@ -1130,10 +1150,18 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
                 </div>
               );
             })}
-            {konfiHistory.history.length > 8 && (
-              <p style={{ fontSize: '0.8rem', color: 'var(--ion-color-medium)', textAlign: 'center', margin: '8px 0 0' }}>
-                + {konfiHistory.history.length - 8} weitere Einträge
-              </p>
+            {konfiHistory.history.length > 3 && (
+              <IonButton
+                expand="block"
+                fill="outline"
+                onClick={() => setExpanded(!expanded)}
+                style={{ marginTop: '16px' }}
+              >
+                <IonIcon icon={expanded ? chevronUp : chevronDown} slot="start" />
+                {expanded
+                  ? 'Weniger anzeigen'
+                  : `${konfiHistory.history.length - 3} weitere anzeigen`}
+              </IonButton>
             )}
           </div>
         ) : (
@@ -1144,7 +1172,8 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
       </IonCardContent>
     </IonCard>
   </IonList>
-));
+  );
+});
 
 // ---- PromoteSection ----
 

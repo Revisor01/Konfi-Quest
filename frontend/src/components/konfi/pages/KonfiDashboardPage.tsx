@@ -8,9 +8,12 @@ import {
   IonRefresher,
   IonRefresherContent,
   IonIcon,
-  useIonModal
+  IonButtons,
+  IonButton,
+  useIonModal,
+  useIonRouter
 } from '@ionic/react';
-import { sparkles, chevronForward } from 'ionicons/icons';
+import { sparkles, chevronForward, personCircleOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
@@ -89,6 +92,7 @@ interface DailyVerse {
 
 const KonfiDashboardPage: React.FC = () => {
   const { user, setError } = useApp();
+  const router = useIonRouter();
   const [showLehrtext, setShowLehrtext] = useState(false);
   const pageRef = useRef<HTMLElement>(null);
 
@@ -262,6 +266,11 @@ const KonfiDashboardPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonTitle>Konfi Quest</IonTitle>
+          <IonButtons slot="end">
+            <IonButton onClick={() => router.push('/konfi/profile')}>
+              <IonIcon slot="icon-only" icon={personCircleOutline} style={{ color: '#7c3aed', fontSize: '1.7rem' }} />
+            </IonButton>
+          </IonButtons>
         </IonToolbar>
       </IonHeader>
 
@@ -297,7 +306,7 @@ const KonfiDashboardPage: React.FC = () => {
             <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '12px' }}>
               <IonIcon icon={sparkles} style={{ fontSize: '2rem' }} />
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700' }}>Dein Wrapped ist da!</h3>
+                <h3 className="app-headline" style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700' }}>Dein Wrapped ist da!</h3>
                 <p style={{ margin: '4px 0 0', fontSize: '0.85rem', opacity: 0.9 }}>Schau dir deinen Konfi-Jahresrückblick an</p>
               </div>
               <IonIcon icon={chevronForward} style={{ fontSize: '1.2rem', marginLeft: 'auto' }} />

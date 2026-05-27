@@ -179,7 +179,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
         title={viewMode === 'teamer' ? 'Teamer:innen' : 'Konfis'}
         subtitle={viewMode === 'teamer' ? 'Teamer:innen verwalten' : 'Konfirmanden verwalten'}
         icon={viewMode === 'teamer' ? ribbon : people}
-        preset="konfis"
+        preset={viewMode === 'teamer' ? 'teamer' : 'konfis'}
         stats={viewMode === 'teamer' ? [
           { value: teamers.length, label: 'Team' },
           { value: teamers.reduce((sum, t) => sum + (t.cert_count || 0), 0), label: 'Zertifikate' },
@@ -208,7 +208,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
       {/* Suche & Filter */}
       <IonList inset={true} style={{ margin: '16px' }}>
         <IonListHeader>
-          <div className="app-section-icon app-section-icon--primary">
+          <div className={`app-section-icon app-section-icon--${viewMode === 'teamer' ? 'teamer' : 'primary'}`}>
             <IonIcon icon={filterOutline} />
           </div>
           <IonLabel>Suche & Filter</IonLabel>
@@ -266,12 +266,12 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           icon={ribbon}
           title="Teamer:innen"
           count={filterBySearchTerm(teamers, searchTerm, ['name', 'display_name', 'username']).length}
-          iconColorClass="primary"
+          iconColorClass="teamer"
           isEmpty={filterBySearchTerm(teamers, searchTerm, ['name', 'display_name', 'username']).length === 0}
           emptyIcon={ribbon}
           emptyTitle="Keine Teamer:innen gefunden"
           emptyMessage={searchTerm ? 'Versuche andere Suchbegriffe' : 'Noch keine Teamer:innen vorhanden'}
-          emptyIconColor="#5b21b6"
+          emptyIconColor="#db2777"
         >
           {filterBySearchTerm(teamers, searchTerm, ['name', 'display_name', 'username']).map((teamer: any, index: number, arr: any[]) => (
             <IonItemSliding key={teamer.id} style={{ marginBottom: index < arr.length - 1 ? '8px' : '0' }}>

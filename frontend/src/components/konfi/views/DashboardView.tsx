@@ -330,10 +330,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 <div className="app-dashboard-section__content" style={{ textAlign: 'center' }}>
                   {dashboardData.days_to_confirmation !== null && dashboardData.days_to_confirmation !== undefined ? (
                     <>
-                      <div style={{ fontSize: '3.5rem', fontWeight: '900', color: 'white', lineHeight: '1', marginBottom: '8px' }}>
+                      <div className="app-headline" style={{ fontSize: '3.5rem', fontWeight: '900', color: 'white', lineHeight: '1', marginBottom: '8px' }}>
                         {dashboardData.days_to_confirmation}
                       </div>
-                      <div style={{ fontSize: '1.1rem', color: 'rgba(255, 255, 255, 0.9)', marginBottom: '12px' }}>
+                      <div className="app-headline" style={{ fontSize: '1.1rem', color: 'rgba(255, 255, 255, 0.9)', marginBottom: '12px' }}>
                         {dashboardData.days_to_confirmation === 1
                           ? `Genau 1 Tag bis zu deiner Konfirmation`
                           : `Noch genau ${dashboardData.days_to_confirmation} Tage bis zu deiner Konfirmation`
@@ -342,10 +342,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                     </>
                   ) : nextConfirmationEvent ? (
                     <>
-                      <div style={{ fontSize: '2.5rem', fontWeight: '900', color: 'white', lineHeight: '1', marginBottom: '8px' }}>
+                      <div className="app-headline" style={{ fontSize: '2.5rem', fontWeight: '900', color: 'white', lineHeight: '1', marginBottom: '8px' }}>
                         {formatTimeUntil(nextConfirmationEvent.event_date || nextConfirmationEvent.date)}
                       </div>
-                      <div style={{ fontSize: '1.1rem', color: 'rgba(255, 255, 255, 0.9)', marginBottom: '12px' }}>
+                      <div className="app-headline" style={{ fontSize: '1.1rem', color: 'rgba(255, 255, 255, 0.9)', marginBottom: '12px' }}>
                         bis zu deiner Konfirmation
                       </div>
                     </>

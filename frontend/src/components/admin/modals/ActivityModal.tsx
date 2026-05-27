@@ -143,6 +143,9 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
   // Farben für Aktivitäten
   const gottesdienstColor = '#3b82f6'; // Blau
   const gemeindeColor = '#059669'; // Dunkelgrün
+  const isTeamer = targetRole === 'teamer';
+  const teamerColor = '#db2777'; // Pink
+  const sectionClass = isTeamer ? 'teamer' : 'activities';
 
   return (
     <IonPage>
@@ -155,7 +158,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={!selectedActivity || isSubmitting} className="app-modal-submit-btn app-modal-submit-btn--activities">
+            <IonButton onClick={handleSave} disabled={!selectedActivity || isSubmitting} className={`app-modal-submit-btn app-modal-submit-btn--${sectionClass}`}>
               {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
@@ -219,13 +222,15 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
                   })
                   .map(activity => {
                     const isSelected = selectedActivity === activity.id;
-                    // Gottesdienst blau, Gemeinde dunkelgrün
-                    const typeColor = activity.type === 'gottesdienst' ? gottesdienstColor : gemeindeColor;
+                    // Bei Teamer einheitlich Pink, sonst Gottesdienst blau / Gemeinde dunkelgrün
+                    const typeColor = isTeamer
+                      ? teamerColor
+                      : (activity.type === 'gottesdienst' ? gottesdienstColor : gemeindeColor);
 
                     return (
                       <div
                         key={activity.id}
-                        className="app-list-item app-list-item--activities"
+                        className={`app-list-item app-list-item--${sectionClass}`}
                         onClick={() => !isSubmitting && setSelectedActivity(activity.id)}
                         style={{
                           cursor: isSubmitting ? 'default' : 'pointer',
@@ -264,7 +269,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
                               {activity.categories && activity.categories.length > 0 && (
                                 <div className="app-list-item__meta">
                                   <span className="app-list-item__meta-item">
-                                    <IonIcon icon={pricetag} style={{ color: '#ff9500' }} />
+                                    <IonIcon icon={pricetag} style={{ color: '#0ea5e9' }} />
                                     {activity.categories.map(cat => cat.name).join(', ')}
                                   </span>
                                 </div>

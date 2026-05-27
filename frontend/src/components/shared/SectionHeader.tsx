@@ -5,7 +5,7 @@ interface SectionHeaderProps {
   title: string;
   subtitle: string;
   icon: string;
-  preset?: 'events' | 'activities' | 'konfis' | 'users' | 'organizations' | 'badges' | 'requests' | 'jahrgang' | 'konfi-requests' | 'categories' | 'level';
+  preset?: 'events' | 'activities' | 'konfis' | 'teamer' | 'users' | 'organizations' | 'badges' | 'requests' | 'jahrgang' | 'konfi-requests' | 'categories' | 'level';
   colors?: { primary: string; secondary: string };
   stats: Array<{ value: number; label: string }>;
 }
@@ -14,6 +14,7 @@ const PRESET_COLORS: Record<string, { primary: string; secondary: string }> = {
   events: { primary: '#dc2626', secondary: '#b91c1c' },
   activities: { primary: '#047857', secondary: '#065f46' },
   konfis: { primary: '#5b21b6', secondary: '#4c1d95' },
+  teamer: { primary: '#db2777', secondary: '#9d174d' },
   users: { primary: '#667eea', secondary: '#5a67d8' },
   organizations: { primary: '#667eea', secondary: '#5a67d8' },
   badges: { primary: '#f59e0b', secondary: '#d97706' },

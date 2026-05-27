@@ -10,6 +10,49 @@ http://ionicframework.com/docs/theming/ */
 @import '@rdlabo/ionic-theme-md3/dist/css/default-variables.css';
 @import '@rdlabo/ionic-theme-md3/dist/css/ionic-theme-md3.css';
 
+/* Headline-Schrift: Bricolage Grotesque */
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap');
+
+/* Globale Headline-Typografie (Bricolage Grotesque) */
+.app-header-banner__title,
+.app-header-banner__subtitle,
+ion-list-header ion-label,
+.app-stats-row__value,
+.app-list-item__title,
+.app-dashboard-greeting,
+.app-dashboard-section__bg-label,
+.app-dashboard-section__title,
+.app-dashboard-glass-card h1,
+.app-dashboard-glass-card h2,
+.app-dashboard-glass-card h3,
+.app-text-main,
+.app-headline,
+.app-dashboard-quote {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+}
+.app-header-banner__title {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+ion-list-header ion-label {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.app-stats-row__value {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.app-list-item__title,
+.app-dashboard-glass-card h1,
+.app-dashboard-glass-card h2,
+.app-dashboard-glass-card h3 {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.app-text-main {
+  font-weight: 700;
+}
+
 /* iOS26 Required Color Brightness Variables */
 :root {
   --ion-color-primary-brightness: #96FEFF;
@@ -144,6 +187,7 @@ ion-item-sliding:last-child {
 .app-list-item--primary, ion-item.app-list-item--primary { border-left-color: #5b21b6; }
 .app-list-item--bonus, ion-item.app-list-item--bonus { border-left-color: #f97316; }
 .app-list-item--activities, ion-item.app-list-item--activities { border-left-color: #047857; }
+.app-list-item--teamer, ion-item.app-list-item--teamer { border-left-color: #db2777; }
 .app-list-item--users, ion-item.app-list-item--users { border-left-color: #667eea; }
 .app-list-item--level, ion-item.app-list-item--level { border-left-color: #ec4899; }
 .app-list-item--organizations, ion-item.app-list-item--organizations { border-left-color: #667eea; }
@@ -345,7 +389,7 @@ ion-item-sliding:last-child {
 .app-section-icon--requests { background-color: #047857; }
 .app-section-icon--jahrgang { background-color: #007aff; }
 .app-section-icon--settings { background-color: #667eea; }
-.app-section-icon--teamer { background-color: #e11d48; }
+.app-section-icon--teamer { background-color: #db2777; }
 .app-section-icon ion-icon {
   color: white;
   font-size: 0.8rem;
@@ -408,6 +452,7 @@ ion-list[inset] ion-list-header {
 .app-icon-circle--primary { background-color: #5b21b6; }
 .app-icon-circle--bonus { background-color: #f97316; }
 .app-icon-circle--activities { background-color: #047857; }
+.app-icon-circle--teamer { background-color: #db2777; }
 .app-icon-circle--users { background-color: #667eea; }
 .app-icon-circle--level { background-color: #ec4899; }
 .app-icon-circle--organizations { background-color: #667eea; }
@@ -1411,8 +1456,10 @@ ion-button.app-modal-submit-btn--chat {
 }
 
 .app-auth-card__heading h2 {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
   font-size: 1.5rem;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   margin: 0;
   color: #2c3e50;
 }
@@ -1721,8 +1768,9 @@ ion-button.app-modal-submit-btn--chat {
 }
 
 .app-dashboard-section__bg-label {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
   font-size: 2.9rem;
-  font-weight: 900;
+  font-weight: 800;
   color: rgba(255, 255, 255, 0.08);
   margin: 0;
   line-height: 0.9;
@@ -1826,11 +1874,11 @@ ion-button.app-modal-submit-btn--chat {
 .app-dashboard-quote {
   font-size: 1.25rem;
   line-height: 1.5;
-  font-style: italic;
+  font-style: normal;
   color: white;
-  font-weight: 400;
+  font-weight: 500;
   margin: 0 0 16px 0;
-  font-family: Georgia, serif;
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
   padding-left: 16px;
   border-left: 3px solid rgba(255, 255, 255, 0.5);
 }

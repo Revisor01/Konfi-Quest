@@ -224,7 +224,7 @@ const CertificateAssignModal: React.FC<CertificateAssignModalProps> = ({
         {/* Sektion 1: Zertifikat-Typ */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className="app-section-icon app-section-icon--teamer">
               <IonIcon icon={ribbonOutline} />
             </div>
             <IonLabel>Zertifikat-Typ</IonLabel>
@@ -241,15 +241,15 @@ const CertificateAssignModal: React.FC<CertificateAssignModalProps> = ({
                       className="app-list-item"
                       onClick={() => setSelectedTypeId(ct.id)}
                       style={{
-                        borderLeftColor: '#5b21b6',
+                        borderLeftColor: '#db2777',
                         cursor: 'pointer',
                         marginBottom: index < availableTypes.length - 1 ? '8px' : '0',
-                        background: isSelected ? 'rgba(91, 33, 182, 0.1)' : undefined
+                        background: isSelected ? 'rgba(219, 39, 119, 0.1)' : undefined
                       }}
                     >
                       <div className="app-list-item__row">
                         <div className="app-list-item__main">
-                          <div className="app-icon-circle" style={{ backgroundColor: '#5b21b6' }}>
+                          <div className="app-icon-circle" style={{ backgroundColor: '#db2777' }}>
                             <IonIcon icon={iconData?.icon || ribbonOutline} />
                           </div>
                           <div className="app-list-item__content">
@@ -270,29 +270,23 @@ const CertificateAssignModal: React.FC<CertificateAssignModalProps> = ({
         {/* Sektion 2: Zeitraum */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className="app-section-icon app-section-icon--teamer">
               <IonIcon icon={calendar} />
             </div>
             <IonLabel>Zeitraum</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px' }}>
-              <p className="app-text-sub" style={{ marginBottom: '4px' }}>Erhalten</p>
-              <IonDatetimeButton datetime="cert-start-date" style={{ justifyContent: 'flex-start' }} />
-              <IonModal keepContentsMounted={true}>
-                <IonDatetime
-                  id="cert-start-date"
-                  presentation="date"
-                  value={issuedDate}
-                  onIonChange={(e) => {
-                    const val = e.detail.value;
-                    if (typeof val === 'string') {
-                      setIssuedDate(val.split('T')[0]);
-                    }
-                  }}
-                  locale="de-DE"
-                />
-              </IonModal>
+              <IonList style={{ background: 'transparent' }}>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Erhalten</IonLabel>
+                  <IonInput
+                    type="date"
+                    value={issuedDate}
+                    onIonInput={(e) => setIssuedDate(e.detail.value as string)}
+                  />
+                </IonItem>
+              </IonList>
               <p className="app-text-sub" style={{ marginTop: '12px', marginBottom: '4px' }}>Laufzeit (Monate): {durationMonths || '0'}</p>
               <div style={{ padding: '0 16px' }}>
                 <IonRange
@@ -301,7 +295,7 @@ const CertificateAssignModal: React.FC<CertificateAssignModalProps> = ({
                   step={1}
                   value={parseInt(durationMonths) || 0}
                   onIonInput={(e) => setDurationMonths(String(e.detail.value))}
-                  style={{ '--bar-background': 'rgba(91, 33, 182, 0.2)', '--bar-background-active': '#5b21b6', '--knob-background': '#5b21b6' }}
+                  style={{ '--bar-background': 'rgba(219, 39, 119, 0.2)', '--bar-background-active': '#db2777', '--knob-background': '#db2777' }}
                 />
               </div>
             </IonCardContent>

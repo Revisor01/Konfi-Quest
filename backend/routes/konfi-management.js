@@ -444,7 +444,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             }
 
             const activitiesQuery = `
-                SELECT ka.*, a.name, a.points, a.type, u.display_name as admin_name
+                SELECT ka.*, a.name, a.points, a.type, a.target_role, u.display_name as admin_name
                 FROM user_activities ka
                 JOIN activities a ON ka.activity_id = a.id
                 LEFT JOIN users u ON ka.admin_id = u.id

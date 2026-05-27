@@ -24,7 +24,7 @@ import {
   people, chatbubbles, star, ellipsisHorizontal,
   person, home, flash, document as documentIcon, calendar, business
 } from 'ionicons/icons';
-import { useIonRouter } from '@ionic/react';
+import { useIonRouter, isPlatform } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
@@ -100,6 +100,57 @@ const MainTabs: React.FC = () => {
   const isSuperAdmin = user?.role_name === 'super_admin';
   const [newBadgesCount, setNewBadgesCount] = useState(0);
   const location = useLocation(); // Hook, um den aktuellen Pfad zu erhalten
+
+  // iOS26 Tab-Bar Liquid-Glass-Animation (rdlabo registerTabBarEffect)
+  useEffect(() => {
+    if (!isPlatform('ios')) return;
+    if (!user) return;
+
+    let cleanupFns: Array<() => void> = [];
+    let cancelled = false;
+
+    const setup = async () => {
+      try {
+        const mod = await import('@rdlabo/ionic-theme-ios26');
+        if (cancelled) return;
+        const register = mod.registerTabBarEffect;
+        if (typeof register !== 'function') return;
+
+        let attempts = 0;
+        const tryRegister = () => {
+          if (cancelled) return;
+          const bars = document.querySelectorAll<HTMLElement>('ion-tab-bar');
+          if (bars.length > 0) {
+            bars.forEach((bar) => {
+              try {
+                const reg = register(bar);
+                if (reg && typeof reg.destroy === 'function') {
+                  cleanupFns.push(() => {
+                    try { reg.destroy(); } catch {}
+                  });
+                }
+              } catch (e) {
+                console.warn('registerTabBarEffect skip:', e);
+              }
+            });
+          } else if (++attempts < 20) {
+            setTimeout(tryRegister, 150);
+          }
+        };
+        tryRegister();
+      } catch (e) {
+        console.warn('TabBar effect import failed:', e);
+      }
+    };
+
+    setup();
+
+    return () => {
+      cancelled = true;
+      cleanupFns.forEach((fn) => fn());
+      cleanupFns = [];
+    };
+  }, [user?.role_name, user?.type]);
 
   // Load new badges count for konfi (badges not yet seen)
   useEffect(() => {
@@ -322,10 +373,6 @@ const MainTabs: React.FC = () => {
             <IonTabButton tab="requests" href="/konfi/requests">
               <IonIcon icon={documentIcon} />
               <IonLabel>Aktivitäten</IonLabel>
-            </IonTabButton>
-            <IonTabButton tab="profile" href="/konfi/profile">
-              <IonIcon icon={person} />
-              <IonLabel>Profil</IonLabel>
             </IonTabButton>
           </IonTabBar>
         )}

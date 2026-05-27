@@ -437,7 +437,7 @@ export const EventCard = React.memo<EventCardProps>(({ event, onClick }) => {
            formatTimeUntil(event.event_date || event.date)}
       </div>
       <div>
-        <div style={{
+        <div className="app-headline" style={{
           fontSize: '1rem',
           fontWeight: '700',
           color: 'white',
