@@ -12,3 +12,13 @@ window.matchMedia = window.matchMedia || function() {
       removeListener: function() {}
   };
 };
+
+// Mock navigator.setAppBadge / clearAppBadge (jsdom hat das nicht — @capawesome/capacitor-badge ruft es im Web-Fallback auf)
+if (typeof navigator !== 'undefined') {
+  if (typeof (navigator as any).setAppBadge !== 'function') {
+    (navigator as any).setAppBadge = () => Promise.resolve();
+  }
+  if (typeof (navigator as any).clearAppBadge !== 'function') {
+    (navigator as any).clearAppBadge = () => Promise.resolve();
+  }
+}

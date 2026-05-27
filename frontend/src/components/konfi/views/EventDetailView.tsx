@@ -513,12 +513,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               <div className="app-info-row">
                 <IonIcon icon={calendar} className="app-info-row__icon app-icon-color--events" />
                 <div>
-                  <div className="app-text-main">
+                  <div className="app-info-row__label">Datum</div>
+                  <div className="app-info-row__value">
                     {formatDate(eventData.event_date)}
-                  </div>
-                  <div className="app-text-sub">
+                    {' · '}
                     {formatTime(eventData.event_date)}
-                    {eventData.event_end_time && ` - ${formatTime(eventData.event_end_time)}`}
+                    {eventData.event_end_time && ` – ${formatTime(eventData.event_end_time)}`}
                   </div>
                 </div>
               </div>
@@ -526,12 +526,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {/* Zeitslots anzeigen wenn vorhanden (wie Admin) */}
               {eventData.has_timeslots && timeslots.length > 0 && (
                 <div className="app-info-row app-info-row--top">
-                  <IonIcon icon={time} className="app-info-row__icon app-icon-color--events app-event-detail__icon--align-top" />
+                  <IonIcon icon={time} className="app-info-row__icon app-icon-color--time app-event-detail__icon--align-top" />
                   <div className="app-event-detail__timeslot-list">
-                    <div className="app-text-main">Zeitfenster</div>
+                    <div className="app-info-row__label">Zeitfenster</div>
                     {timeslots.map((slot, idx) => (
-                      <div key={slot.id || idx} className="app-text-sub app-event-detail__timeslot-entry">
-                        {formatTime(slot.start_time)} - {formatTime(slot.end_time)} ({slot.registered_count || 0}/{slot.max_participants} TN)
+                      <div key={slot.id || idx} className="app-info-row__value app-event-detail__timeslot-entry">
+                        {formatTime(slot.start_time)} – {formatTime(slot.end_time)} ({slot.registered_count || 0}/{slot.max_participants} TN)
                       </div>
                     ))}
                     {/* Gebuchter Timeslot hervorheben wenn angemeldet */}
@@ -550,20 +550,20 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 <div className="app-info-row app-info-row--top">
                   <IonIcon icon={lockOpenOutline} className="app-info-row__icon app-icon-color--events app-event-detail__icon--align-top" />
                   <div>
-                    <div className="app-text-main">Anmeldung</div>
+                    <div className="app-info-row__label">Anmeldung</div>
                     {eventData.registration_opens_at ? (
                       <>
-                        <div className="app-text-sub">
-                          von {new Date(eventData.registration_opens_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_opens_at)}
+                        <div className="app-info-row__value">
+                          von {new Date(eventData.registration_opens_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} – {formatTime(eventData.registration_opens_at)}
                         </div>
                         {eventData.registration_closes_at && (
-                          <div className="app-text-sub">
-                            bis {new Date(eventData.registration_closes_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_closes_at)}
+                          <div className="app-info-row__value">
+                            bis {new Date(eventData.registration_closes_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} – {formatTime(eventData.registration_closes_at)}
                           </div>
                         )}
                       </>
                     ) : (
-                      <div className="app-text-sub">Sofort möglich</div>
+                      <div className="app-info-row__value">Sofort möglich</div>
                     )}
                   </div>
                 </div>
@@ -573,18 +573,18 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               <div className="app-info-row">
                 <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
                 <div>
-                  <div className="app-text-main">Teilnehmer:innen</div>
-                  <div className="app-text-sub">{eventData.registered_count} / {eventData.max_participants > 0 ? eventData.max_participants : '∞'}</div>
+                  <div className="app-info-row__label">Teilnehmer:innen</div>
+                  <div className="app-info-row__value">{eventData.registered_count} / {eventData.max_participants > 0 ? eventData.max_participants : '∞'}</div>
                 </div>
               </div>
 
               {/* Warteliste */}
               {eventData.waitlist_enabled && (
                 <div className="app-info-row">
-                  <IonIcon icon={listOutline} className="app-info-row__icon app-icon-color--warning" />
+                  <IonIcon icon={listOutline} className="app-info-row__icon app-icon-color--waitlist" />
                   <div>
-                    <div className="app-text-main">Warteliste</div>
-                    <div className="app-text-sub">
+                    <div className="app-info-row__label">Warteliste</div>
+                    <div className="app-info-row__value">
                       {eventData.waitlist_count || 0} / {eventData.max_waitlist_size || 10}
                       {eventData.waitlist_position && ` (Du: Platz ${eventData.waitlist_position})`}
                     </div>
@@ -594,10 +594,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
               {/* Punkte */}
               <div className="app-info-row">
-                <IonIcon icon={trophy} className="app-info-row__icon app-icon-color--badges" />
+                <IonIcon icon={trophy} className="app-info-row__icon app-icon-color--points" />
                 <div>
-                  <div className="app-text-main">Punkte</div>
-                  <div className="app-text-sub">{eventData.points}</div>
+                  <div className="app-info-row__label">Punkte</div>
+                  <div className="app-info-row__value">{eventData.points}</div>
                 </div>
               </div>
 
@@ -605,12 +605,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               <div className="app-info-row">
                 <IonIcon
                   icon={eventData.point_type === 'gottesdienst' ? home : people}
-                  className="app-info-row__icon"
-                  style={{ color: eventData.point_type === 'gottesdienst' ? '#007aff' : '#2dd36f' }}
+                  className={`app-info-row__icon ${eventData.point_type === 'gottesdienst' ? 'app-icon-color--gottesdienst' : 'app-icon-color--gemeinde'}`}
                 />
                 <div>
-                  <div className="app-text-main">Typ</div>
-                  <div className="app-text-sub">{eventData.point_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}</div>
+                  <div className="app-info-row__label">Typ</div>
+                  <div className="app-info-row__value">{eventData.point_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}</div>
                 </div>
               </div>
 
@@ -619,8 +618,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 <div className="app-info-row">
                   <IonIcon icon={pricetag} className="app-info-row__icon app-icon-color--category" />
                   <div>
-                    <div className="app-text-main">Kategorien</div>
-                    <div className="app-text-sub">{eventData.categories.map(c => c.name).join(', ')}</div>
+                    <div className="app-info-row__label">Kategorien</div>
+                    <div className="app-info-row__value">{eventData.categories.map(c => c.name).join(', ')}</div>
                   </div>
                 </div>
               )}
@@ -628,7 +627,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {/* Ort */}
               {eventData.location && (
                 <div className="app-info-row">
-                  <IonIcon icon={location} className="app-info-row__icon app-icon-color--events" />
+                  <IonIcon icon={location} className="app-info-row__icon app-icon-color--location" />
                   <div
                     onClick={() => {
                       if (eventData.location_maps_url) {
@@ -639,8 +638,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                       }
                     }}
                   >
-                    <div className="app-text-main">Ort</div>
-                    <div className="app-text-sub app-event-detail__location-link">{eventData.location}</div>
+                    <div className="app-info-row__label">Ort</div>
+                    <div className="app-info-row__value app-event-detail__location-link">{eventData.location}</div>
                   </div>
                 </div>
               )}
@@ -648,21 +647,21 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {/* Pflicht-Badge */}
               {eventData.mandatory && (
                 <div className="app-info-row">
-                  <IonIcon icon={shieldCheckmark} className="app-info-row__icon" style={{ color: '#dc2626' }} />
+                  <IonIcon icon={shieldCheckmark} className="app-info-row__icon app-icon-color--events" />
                   <div>
-                    <div className="app-text-main">Pflicht-Event</div>
-                    <div className="app-text-sub">Teilnahme erforderlich</div>
+                    <div className="app-info-row__label">Pflicht-Event</div>
+                    <div className="app-info-row__value">Teilnahme erforderlich</div>
                   </div>
                 </div>
               )}
 
               {/* Was mitbringen */}
               {eventData.bring_items && (
-                <div className="app-info-row">
-                  <IonIcon icon={bagHandle} className="app-info-row__icon" style={{ color: '#8b5cf6' }} />
+                <div className="app-info-row app-info-row--top">
+                  <IonIcon icon={bagHandle} className="app-info-row__icon app-icon-color--bring app-event-detail__icon--align-top" />
                   <div>
-                    <div className="app-text-main">Mitbringen</div>
-                    <div className="app-text-sub">{eventData.bring_items}</div>
+                    <div className="app-info-row__label">Mitbringen</div>
+                    <div className="app-info-row__value">{eventData.bring_items}</div>
                   </div>
                 </div>
               )}

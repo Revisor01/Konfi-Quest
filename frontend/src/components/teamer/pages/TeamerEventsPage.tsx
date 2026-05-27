@@ -454,12 +454,12 @@ const TeamerEventsPage: React.FC = () => {
                 <div className="app-info-row">
                   <IonIcon icon={calendar} className="app-info-row__icon app-icon-color--events" />
                   <div>
-                    <div className="app-info-row__content app-list-item__title">
+                    <div className="app-info-row__label">Datum</div>
+                    <div className="app-info-row__value">
                       {formatDateLong(selectedEvent.event_date)}
-                    </div>
-                    <div className="app-info-row__sublabel">
+                      {' \u00B7 '}
                       {formatTime(selectedEvent.event_date)}
-                      {selectedEvent.event_end_time && ` - ${formatTime(selectedEvent.event_end_time)}`}
+                      {selectedEvent.event_end_time && ` \u2013 ${formatTime(selectedEvent.event_end_time)}`}
                     </div>
                   </div>
                 </div>
@@ -467,26 +467,31 @@ const TeamerEventsPage: React.FC = () => {
                 {/* Konfis - ohne Teamer */}
                 <div className="app-info-row">
                   <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
-                  <div className="app-info-row__content">
-                    {selectedEvent.registered_count - (selectedEvent.teamer_count || 0)} / {selectedEvent.max_participants > 0 ? selectedEvent.max_participants : '\u221E'} Konfis
+                  <div>
+                    <div className="app-info-row__label">Teilnehmer:innen</div>
+                    <div className="app-info-row__value">
+                      {selectedEvent.registered_count - (selectedEvent.teamer_count || 0)} / {selectedEvent.max_participants > 0 ? selectedEvent.max_participants : '\u221E'}
+                    </div>
                   </div>
                 </div>
 
                 {/* Team */}
                 {(selectedEvent.teamer_count !== undefined && selectedEvent.teamer_count > 0) && (
                   <div className="app-info-row">
-                    <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
-                    <div className="app-info-row__content">
-                      {selectedEvent.teamer_count} Team
+                    <IonIcon icon={people} className="app-info-row__icon app-icon-color--team" />
+                    <div>
+                      <div className="app-info-row__label">Teamer:innen</div>
+                      <div className="app-info-row__value">{selectedEvent.teamer_count}</div>
                     </div>
                   </div>
                 )}
 
                 {/* Punkte */}
                 <div className="app-info-row">
-                  <IonIcon icon={trophy} className="app-info-row__icon app-icon-color--badges" />
-                  <div className="app-info-row__content">
-                    {selectedEvent.points} Punkte
+                  <IonIcon icon={trophy} className="app-info-row__icon app-icon-color--points" />
+                  <div>
+                    <div className="app-info-row__label">Punkte</div>
+                    <div className="app-info-row__value">{selectedEvent.points}</div>
                   </div>
                 </div>
 
@@ -495,11 +500,11 @@ const TeamerEventsPage: React.FC = () => {
                   <div className="app-info-row">
                     <IonIcon
                       icon={selectedEvent.type === 'gottesdienst' ? home : people}
-                      className="app-info-row__icon"
-                      style={{ color: selectedEvent.type === 'gottesdienst' ? '#007aff' : '#2dd36f' }}
+                      className={`app-info-row__icon ${selectedEvent.type === 'gottesdienst' ? 'app-icon-color--gottesdienst' : 'app-icon-color--gemeinde'}`}
                     />
-                    <div className="app-info-row__content">
-                      {selectedEvent.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
+                    <div>
+                      <div className="app-info-row__label">Typ</div>
+                      <div className="app-info-row__value">{selectedEvent.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}</div>
                     </div>
                   </div>
                 )}
@@ -508,8 +513,9 @@ const TeamerEventsPage: React.FC = () => {
                 {selectedEvent.category_names && (
                   <div className="app-info-row">
                     <IonIcon icon={pricetag} className="app-info-row__icon app-icon-color--category" />
-                    <div className="app-info-row__content">
-                      {selectedEvent.category_names}
+                    <div>
+                      <div className="app-info-row__label">Kategorien</div>
+                      <div className="app-info-row__value">{selectedEvent.category_names}</div>
                     </div>
                   </div>
                 )}
@@ -517,9 +523,8 @@ const TeamerEventsPage: React.FC = () => {
                 {/* Ort */}
                 {selectedEvent.location && (
                   <div className="app-info-row">
-                    <IonIcon icon={location} className="app-info-row__icon app-icon-color--events" />
+                    <IonIcon icon={location} className="app-info-row__icon app-icon-color--location" />
                     <div
-                      className="app-info-row__content app-event-detail__location-link"
                       onClick={() => {
                         if (selectedEvent.location_maps_url) {
                           window.open(selectedEvent.location_maps_url, '_blank');
@@ -528,7 +533,8 @@ const TeamerEventsPage: React.FC = () => {
                         }
                       }}
                     >
-                      {selectedEvent.location}
+                      <div className="app-info-row__label">Ort</div>
+                      <div className="app-info-row__value app-event-detail__location-link">{selectedEvent.location}</div>
                     </div>
                   </div>
                 )}
@@ -536,9 +542,10 @@ const TeamerEventsPage: React.FC = () => {
                 {/* Pflicht-Event */}
                 {selectedEvent.mandatory && (
                   <div className="app-info-row">
-                    <IonIcon icon={shieldCheckmark} className="app-info-row__icon" style={{ color: '#dc2626' }} />
-                    <div className="app-info-row__content">
-                      Pflicht-Event
+                    <IonIcon icon={shieldCheckmark} className="app-info-row__icon app-icon-color--events" />
+                    <div>
+                      <div className="app-info-row__label">Pflicht-Event</div>
+                      <div className="app-info-row__value">Teilnahme erforderlich</div>
                     </div>
                   </div>
                 )}
@@ -546,19 +553,21 @@ const TeamerEventsPage: React.FC = () => {
                 {/* Team gesucht */}
                 {isTeamerEvent && (
                   <div className="app-info-row">
-                    <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
-                    <div className="app-info-row__content">
-                      {selectedEvent.teamer_only ? 'Nur Team' : 'Team gesucht'}
+                    <IonIcon icon={people} className="app-info-row__icon app-icon-color--team" />
+                    <div>
+                      <div className="app-info-row__label">Teamer-Zugang</div>
+                      <div className="app-info-row__value">{selectedEvent.teamer_only ? 'Nur Team' : 'Team gesucht'}</div>
                     </div>
                   </div>
                 )}
 
                 {/* Was mitbringen */}
                 {selectedEvent.bring_items && (
-                  <div className="app-info-row">
-                    <IonIcon icon={bagHandle} className="app-info-row__icon" style={{ color: '#8b5cf6' }} />
-                    <div className="app-info-row__content">
-                      {selectedEvent.bring_items}
+                  <div className="app-info-row app-info-row--top">
+                    <IonIcon icon={bagHandle} className="app-info-row__icon app-icon-color--bring app-event-detail__icon--align-top" />
+                    <div>
+                      <div className="app-info-row__label">Mitbringen</div>
+                      <div className="app-info-row__value">{selectedEvent.bring_items}</div>
                     </div>
                   </div>
                 )}
@@ -577,9 +586,9 @@ const TeamerEventsPage: React.FC = () => {
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent className="app-card-content">
-                  <p style={{ fontSize: '0.95rem', lineHeight: '1.5', color: '#374151', whiteSpace: 'pre-wrap', margin: 0 }}>
+                  <div className="app-description-text">
                     {selectedEvent.description}
-                  </p>
+                  </div>
                 </IonCardContent>
               </IonCard>
             </IonList>
@@ -599,12 +608,8 @@ const TeamerEventsPage: React.FC = () => {
                   {eventMaterials.map((mat: any) => (
                     <div
                       key={mat.id}
-                      className="app-list-item"
-                      style={{
-                        borderLeftColor: '#d97706',
-                        cursor: 'pointer',
-                        marginBottom: '8px'
-                      }}
+                      className="app-list-item app-list-item--material"
+                      style={{ cursor: 'pointer', marginBottom: '8px' }}
                       onClick={() => {
                         materialIdRef.current = mat.id;
                         presentMaterialModal({ presentingElement: presentingElement || pageRef.current || undefined });
@@ -612,14 +617,14 @@ const TeamerEventsPage: React.FC = () => {
                     >
                       <div className="app-list-item__row">
                         <div className="app-list-item__main">
-                          <div className="app-icon-circle" style={{ backgroundColor: '#d97706' }}>
+                          <div className="app-icon-circle app-icon-circle--material">
                             <IonIcon icon={documentIcon} />
                           </div>
                           <div className="app-list-item__content">
                             <div className="app-list-item__title">{mat.title}</div>
                             <div className="app-list-item__meta">
                               <span className="app-list-item__meta-item">
-                                <IonIcon icon={attachOutline} style={{ color: '#d97706' }} />
+                                <IonIcon icon={attachOutline} className="app-icon-color--material" />
                                 {mat.file_count || 0} {(mat.file_count || 0) === 1 ? 'Datei' : 'Dateien'}
                               </span>
                             </div>
