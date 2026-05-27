@@ -326,6 +326,31 @@ class PushService {
   /**
    * Neuer Antrag eingereicht - Push an alle Admins der Organisation
    */
+  /**
+   * Generische Push-Notification an alle Admins einer Organisation
+   * @param {object} db - DB-Pool
+   * @param {number} organizationId - Organisation ID
+   * @param {object} notification - { title, body, data? }
+   */
+  static async sendToOrgAdmins(db, organizationId, notification) {
+    try {
+      const { rows: admins } = await db.query(
+        `SELECT u.id FROM users u
+         JOIN roles r ON u.role_id = r.id
+         WHERE r.name IN ('admin', 'org_admin') AND u.organization_id = $1`,
+        [organizationId]
+      );
+      if (admins.length === 0) {
+        return { success: false, message: 'No admins found' };
+      }
+      const adminIds = admins.map(a => a.id);
+      return await this.sendToMultipleUsers(db, adminIds, notification);
+    } catch (error) {
+      console.error('sendToOrgAdmins error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   static async sendNewActivityRequestToAdmins(db, organizationId, konfiName, activityName, points) {
     try {
 

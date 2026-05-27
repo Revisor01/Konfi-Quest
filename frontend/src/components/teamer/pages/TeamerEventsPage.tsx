@@ -19,10 +19,11 @@ import {
   IonFab,
   IonFabButton,
   IonItem,
+  IonItemGroup,
   IonItemSliding,
+  IonInput,
   IonButtons,
   IonBackButton,
-  IonSearchbar,
   useIonModal
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
@@ -47,7 +48,9 @@ import {
   home,
   document as documentIcon,
   attachOutline,
-  searchOutline
+  search,
+  filterOutline,
+  lockOpenOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -196,27 +199,45 @@ const TeamerEventsPage: React.FC = () => {
 
   const filteredEvents = getFilteredEvents();
 
-  // Stats
-  const eventCounts = useMemo(() => ({
-    gesamt: safeEvents.length,
-    anstehend: safeEvents.filter(e => new Date(e.event_date) >= new Date()).length,
-    gebucht: safeEvents.filter(e => e.is_registered).length
-  }), [safeEvents]);
+  // Stats — tab-abhaengig (analog Konfi-Pattern)
+  const statsData = useMemo(() => {
+    const now = new Date();
+    const isFuture = (e: Event) => new Date(e.event_date) >= now;
+    const isPast = (e: Event) => new Date(e.event_date) < now;
 
-  const statsData = [
-    { value: eventCounts.gesamt, label: 'Gesamt' },
-    { value: eventCounts.anstehend, label: 'Anstehend' },
-    { value: eventCounts.gebucht, label: 'Gebucht' }
-  ];
+    if (activeTab === 'meine') {
+      return [
+        { value: meineEvents.length, label: 'Gebucht' },
+        { value: meineEvents.filter(isFuture).length, label: 'Anstehend' },
+        { value: meineEvents.filter(isPast).length, label: 'Vergangen' }
+      ];
+    }
+    if (activeTab === 'team') {
+      const gesucht = safeEvents.filter(e => e.teamer_needed && !e.teamer_only).length;
+      const nurTeam = safeEvents.filter(e => e.teamer_only).length;
+      const meineImTeam = teamEvents.filter(e => e.is_registered).length;
+      return [
+        { value: gesucht, label: 'Team gesucht' },
+        { value: nurTeam, label: 'Nur Team' },
+        { value: meineImTeam, label: 'Meine' }
+      ];
+    }
+    // 'alle'
+    return [
+      { value: alleEvents.length, label: 'Gesamt' },
+      { value: alleEvents.filter(isFuture).length, label: 'Anstehend' },
+      { value: alleEvents.filter(e => e.is_registered).length, label: 'Meine' }
+    ];
+  }, [activeTab, safeEvents, meineEvents, alleEvents, teamEvents]);
 
   // Status-Infos für Event-Karten
   const getEventStatusInfo = (event: Event) => {
     const isPastEvent = new Date(event.event_date) < new Date();
     const isTeamerEvent = event.teamer_needed || event.teamer_only;
 
-    let statusColor = '#fd7e14';
+    let statusColor = '#34c759';
     let statusText = 'Offen';
-    let statusIcon = calendar;
+    let statusIcon = lockOpenOutline;
 
     if (isPastEvent && event.is_registered) {
       if (event.attendance_status === 'present') {
@@ -725,24 +746,24 @@ const TeamerEventsPage: React.FC = () => {
               stats={statsData}
             />
 
+            {/* Suche & Filter — gleiches Pattern wie Konfi/Admin */}
             <IonList inset={true} style={{ margin: '16px' }}>
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--events">
-                  <IonIcon icon={searchOutline} />
+                  <IonIcon icon={filterOutline} />
                 </div>
                 <IonLabel>Suche & Filter</IonLabel>
               </IonListHeader>
-              <IonCard className="app-card">
-                <IonCardContent style={{ padding: '8px 12px' }}>
-                  <IonSearchbar
-                    className="ios26-searchbar-classic"
+              <IonItemGroup>
+                <IonItem>
+                  <IonIcon icon={search} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+                  <IonInput
                     value={searchText}
                     onIonInput={(e) => setSearchText(e.detail.value || '')}
-                    placeholder="Events durchsuchen"
-                    debounce={300}
+                    placeholder="Events durchsuchen..."
                   />
-                </IonCardContent>
-              </IonCard>
+                </IonItem>
+              </IonItemGroup>
             </IonList>
 
             {/* 3 Segmente */}
@@ -751,11 +772,11 @@ const TeamerEventsPage: React.FC = () => {
                 value={activeTab}
                 onIonChange={(e) => setActiveTab(e.detail.value as any)}
               >
-                <IonSegmentButton value="meine">
-                  <IonLabel>Meine</IonLabel>
-                </IonSegmentButton>
                 <IonSegmentButton value="alle">
                   <IonLabel>Alle</IonLabel>
+                </IonSegmentButton>
+                <IonSegmentButton value="meine">
+                  <IonLabel>Meine</IonLabel>
                 </IonSegmentButton>
                 <IonSegmentButton value="team">
                   <IonLabel>Team</IonLabel>
@@ -778,7 +799,6 @@ const TeamerEventsPage: React.FC = () => {
               {filteredEvents.map((event, index) => {
                 const { statusColor, statusText, statusIcon, isPastEvent, shouldGrayOut } = getEventStatusInfo(event);
                 const showBadge = !isPastEvent || event.is_registered;
-                const isTeamerEvent = event.teamer_needed || event.teamer_only;
 
                 return (
                   <IonItemSliding key={event.id} style={{ marginBottom: index < filteredEvents.length - 1 ? '8px' : '0' }}>
@@ -808,21 +828,11 @@ const TeamerEventsPage: React.FC = () => {
                         }}
                       >
                         {/* Corner Badges Container - oben rechts */}
-                        {(showBadge || isTeamerEvent) && (
+                        {showBadge && (
                           <div className="app-corner-badges">
-                            {isTeamerEvent && (
-                              <>
-                                <div className="app-corner-badge app-corner-badge--purple">
-                                  TEAM
-                                </div>
-                                {showBadge && <div className="app-corner-badges__separator" />}
-                              </>
-                            )}
-                            {showBadge && (
-                              <div className="app-corner-badge" style={{ backgroundColor: statusColor }}>
-                                {statusText}
-                              </div>
-                            )}
+                            <div className="app-corner-badge" style={{ backgroundColor: statusColor }}>
+                              {statusText}
+                            </div>
                           </div>
                         )}
 
@@ -843,28 +853,33 @@ const TeamerEventsPage: React.FC = () => {
                                 className="app-list-item__title"
                                 style={{
                                   color: shouldGrayOut ? '#999' : undefined,
-                                  paddingRight: (showBadge || isTeamerEvent) ? '70px' : '0',
-                                  paddingTop: (showBadge || isTeamerEvent) ? '4px' : '0'
+                                  paddingRight: showBadge ? '70px' : '0',
+                                  paddingTop: showBadge ? '4px' : '0'
                                 }}
                               >
                                 {event.name}
                               </div>
+                              {event.jahrgang_names && (
+                                <div className="app-list-item__subtitle" style={{ color: shouldGrayOut ? '#999' : undefined }}>
+                                  {event.jahrgang_names.split(',').join(' · ')}
+                                </div>
+                              )}
 
-                              {/* Buchungen + Punkte */}
+                              {/* Buchungen + Team + Punkte */}
                               <div className="app-list-item__meta">
                                 <span className="app-list-item__meta-item">
-                                  <IonIcon icon={people} style={{ color: shouldGrayOut ? '#999' : '#34c759' }} />
-                                  {event.registered_count}{event.max_participants > 0 ? `/${event.max_participants}` : ''}
+                                  <IonIcon icon={people} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--participants'} />
+                                  {event.registered_count - (event.teamer_count || 0)}{event.max_participants > 0 ? `/${event.max_participants}` : '/∞'}
                                 </span>
                                 {(event.teamer_count !== undefined && event.teamer_count > 0) && (
-                                  <span className="app-list-item__meta-item" style={{ color: '#5b21b6' }}>
-                                    <IonIcon icon={people} style={{ color: '#5b21b6' }} />
-                                    {event.teamer_count} T
+                                  <span className="app-list-item__meta-item">
+                                    <IonIcon icon={people} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--team'} />
+                                    {event.teamer_count} Team
                                   </span>
                                 )}
                                 {event.points > 0 && (
                                   <span className="app-list-item__meta-item">
-                                    <IonIcon icon={trophy} style={{ color: shouldGrayOut ? '#999' : '#ff9500' }} />
+                                    <IonIcon icon={trophy} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--points'} />
                                     {event.points}P
                                   </span>
                                 )}
@@ -873,11 +888,11 @@ const TeamerEventsPage: React.FC = () => {
                               {/* Datum + Uhrzeit */}
                               <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
                                 <span className="app-list-item__meta-item">
-                                  <IonIcon icon={calendar} style={{ color: shouldGrayOut ? '#999' : '#dc2626' }} />
+                                  <IonIcon icon={calendar} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--events'} />
                                   {formatDate(event.event_date)}
                                 </span>
                                 <span className="app-list-item__meta-item">
-                                  <IonIcon icon={time} style={{ color: shouldGrayOut ? '#999' : '#ff6b35' }} />
+                                  <IonIcon icon={time} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--time'} />
                                   {formatTime(event.event_date)}
                                 </span>
                               </div>
@@ -886,7 +901,7 @@ const TeamerEventsPage: React.FC = () => {
                               {event.location && (
                                 <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
                                   <span className="app-list-item__meta-item">
-                                    <IonIcon icon={location} style={{ color: shouldGrayOut ? '#999' : '#007aff' }} />
+                                    <IonIcon icon={location} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--location'} />
                                     {event.location}
                                   </span>
                                 </div>
@@ -895,8 +910,8 @@ const TeamerEventsPage: React.FC = () => {
                               {/* Was mitbringen */}
                               {event.bring_items && (
                                 <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
-                                  <span className="app-list-item__meta-item">
-                                    <IonIcon icon={bagHandle} style={{ color: '#8b5cf6' }} />
+                                  <span className="app-list-item__meta-item app-list-item__meta-item--multiline">
+                                    <IonIcon icon={bagHandle} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--bring'} />
                                     {event.bring_items}
                                   </span>
                                 </div>
@@ -905,7 +920,7 @@ const TeamerEventsPage: React.FC = () => {
                               {(event.material_count || 0) > 0 && (
                                 <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
                                   <span className="app-list-item__meta-item">
-                                    <IonIcon icon={attachOutline} style={{ color: '#d97706' }} />
+                                    <IonIcon icon={attachOutline} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--material'} />
                                     {event.material_count} {event.material_count === 1 ? 'Material' : 'Materialien'}
                                   </span>
                                 </div>

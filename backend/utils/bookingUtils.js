@@ -28,32 +28,32 @@ async function checkExistingBooking(client, userId, eventId) {
 async function getEventWithCounts(client, eventId, orgId, options = {}) {
   const { excludeTeamers = false } = options;
 
-  let query;
-  if (excludeTeamers) {
-    query = `
-      SELECT e.*,
-             COUNT(eb.id) FILTER (WHERE eb.status = 'confirmed') as confirmed_count,
-             COUNT(eb.id) FILTER (WHERE eb.status = 'waitlist') as waitlist_count
-      FROM events e
-      LEFT JOIN event_bookings eb ON e.id = eb.event_id
-      LEFT JOIN users u ON eb.user_id = u.id
-      LEFT JOIN roles r ON u.role_id = r.id AND r.name = 'teamer'
-      WHERE e.id = $1 AND e.organization_id = $2 AND (eb.id IS NULL OR r.id IS NULL)
-      GROUP BY e.id
-      FOR UPDATE OF e
-    `;
-  } else {
-    query = `
-      SELECT e.*,
-             COUNT(eb.id) FILTER (WHERE eb.status = 'confirmed') as confirmed_count,
-             COUNT(eb.id) FILTER (WHERE eb.status = 'waitlist') as waitlist_count
-      FROM events e
-      LEFT JOIN event_bookings eb ON e.id = eb.event_id
-      WHERE e.id = $1 AND e.organization_id = $2
-      GROUP BY e.id
-      FOR UPDATE OF e
-    `;
-  }
+  // Postgres erlaubt FOR UPDATE nicht mit GROUP BY.
+  // Loesung: Event zuerst mit FOR UPDATE sperren, Counts als Subqueries.
+  const confirmedCountSql = excludeTeamers
+    ? `(SELECT COUNT(*) FROM event_bookings eb
+         LEFT JOIN users u ON eb.user_id = u.id
+         LEFT JOIN roles r ON u.role_id = r.id AND r.name = 'teamer'
+         WHERE eb.event_id = e.id AND eb.status = 'confirmed' AND r.id IS NULL)`
+    : `(SELECT COUNT(*) FROM event_bookings eb
+         WHERE eb.event_id = e.id AND eb.status = 'confirmed')`;
+
+  const waitlistCountSql = excludeTeamers
+    ? `(SELECT COUNT(*) FROM event_bookings eb
+         LEFT JOIN users u ON eb.user_id = u.id
+         LEFT JOIN roles r ON u.role_id = r.id AND r.name = 'teamer'
+         WHERE eb.event_id = e.id AND eb.status = 'waitlist' AND r.id IS NULL)`
+    : `(SELECT COUNT(*) FROM event_bookings eb
+         WHERE eb.event_id = e.id AND eb.status = 'waitlist')`;
+
+  const query = `
+    SELECT e.*,
+           ${confirmedCountSql} AS confirmed_count,
+           ${waitlistCountSql} AS waitlist_count
+    FROM events e
+    WHERE e.id = $1 AND e.organization_id = $2
+    FOR UPDATE OF e
+  `;
 
   const { rows: [event] } = await client.query(query, [eventId, orgId]);
   return event || null;

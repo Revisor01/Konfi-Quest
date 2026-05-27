@@ -226,24 +226,35 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const handleEditSuccess = () => { onBack(); };
 
   const getStatusColors = (): { primary: string; secondary: string } => {
-    if (!eventData) return { primary: '#dc2626', secondary: '#b91c1c' };
+    // Alle Status-Farben kommen aus globalen CSS-Token (--app-color-*).
+    // Aenderung der Domain-Farbe im CSS wirkt hier automatisch.
+    const events = { primary: 'var(--app-color-events)', secondary: 'var(--app-color-events)' };
+    const danger = { primary: 'var(--app-color-danger)', secondary: 'var(--app-color-danger)' };
+    const konfirm = { primary: 'var(--app-color-info)', secondary: 'var(--app-color-info)' }; // Konfirmation = blau
+    const info = { primary: 'var(--app-color-info)', secondary: 'var(--app-color-info)' };
+    const past = { primary: '#6c757d', secondary: '#6c757d' };
+    const waitlist = { primary: 'var(--app-color-bonus)', secondary: 'var(--app-color-bonus)' };
+    const success = { primary: 'var(--app-color-success)', secondary: 'var(--app-color-success)' };
+    const upcoming = { primary: 'var(--app-color-bonus)', secondary: 'var(--app-color-bonus)' };
+
+    if (!eventData) return events;
     const isPastEvent = new Date(eventData.event_date) < new Date();
     const isKonfirmationEvent = eventData.categories?.some(cat => cat.name.toLowerCase().includes('konfirmation'));
     const isCancelledStatus = eventData.registration_status === 'cancelled' as string;
     const hasUnprocessedBookings = isPastEvent && eventData.registered_count > 0 &&
       participants.some(p => p.status === 'confirmed' && !p.attendance_status);
 
-    if (isCancelledStatus) return { primary: '#dc3545', secondary: '#c82333' };
-    if (isKonfirmationEvent && !isPastEvent) return { primary: '#5b21b6', secondary: '#4c1d95' };
-    if (hasUnprocessedBookings) return { primary: '#007aff', secondary: '#0066d6' };
-    if (isPastEvent) return { primary: '#6c757d', secondary: '#5a6268' };
+    if (isCancelledStatus) return danger;
+    if (isKonfirmationEvent && !isPastEvent) return konfirm;
+    if (hasUnprocessedBookings) return info;
+    if (isPastEvent) return past;
 
     const regStatus = calculateRegistrationStatus(eventData);
-    if (regStatus === 'closed' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants && (eventData as any).waitlist_enabled) return { primary: '#fd7e14', secondary: '#e8650e' };
-    if (regStatus === 'closed' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants) return { primary: '#dc3545', secondary: '#c82333' };
-    if (regStatus === 'open') return { primary: '#34c759', secondary: '#2db84d' };
-    if (regStatus === 'upcoming') return { primary: '#fd7e14', secondary: '#e8650e' };
-    return { primary: '#dc2626', secondary: '#b91c1c' };
+    if (regStatus === 'closed' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants && (eventData as any).waitlist_enabled) return waitlist;
+    if (regStatus === 'closed' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants) return danger;
+    if (regStatus === 'open') return success;
+    if (regStatus === 'upcoming') return upcoming;
+    return events;
   };
 
   const getStatusText = () => {

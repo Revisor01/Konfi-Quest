@@ -13,7 +13,7 @@ import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { Event, Category, Timeslot, Jahrgang } from '../../../types/event';
 import {
-  BasicInfoSection, MandatorySection, CheckinSection,
+  BasicInfoSection, CheckinSection,
   PointsParticipantsSection, CategoriesTargetSection,
   WaitlistSection, SeriesSection
 } from './EventFormSections';
@@ -278,11 +278,8 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
       </IonHeader>
 
       <IonContent className="app-gradient-background">
-        {/* EVENT GRUNDDATEN */}
-        <BasicInfoSection formData={formData} setFormData={setFormData} loading={loading} />
-
-        {/* PFLICHT-EVENT & WAS MITBRINGEN */}
-        <MandatorySection formData={formData} setFormData={setFormData}
+        {/* EVENT GRUNDDATEN (inkl. Pflicht-Event, Mitbringen, Teamer-Zugang) */}
+        <BasicInfoSection formData={formData} setFormData={setFormData}
           teamerAccess={teamerAccess} setTeamerAccess={setTeamerAccess} loading={loading} />
 
         {/* QR CHECK-IN FENSTER */}
@@ -334,7 +331,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
             <IonList>
               <IonItem lines="none">
                 <IonLabel>Zeitfenster aktivieren</IonLabel>
-                <IonToggle slot="end" checked={formData.has_timeslots}
+                <IonToggle slot="end" className="app-toggle--events" checked={formData.has_timeslots}
                   onIonChange={(e) => {
                     const hasTimeslots = e.detail.checked;
                     setFormData({ ...formData, has_timeslots: hasTimeslots });
@@ -342,12 +339,17 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
                   }} disabled={loading} />
               </IonItem>
               {formData.has_timeslots && (
-                <IonItem lines="none" style={{ '--background': 'transparent', padding: '8px 16px' }}>
-                  <IonButton fill="outline" onClick={addTimeslot} disabled={loading} style={{ width: '100%' }}>
+                <div className="app-event-detail__add-button-wrapper" style={{ padding: '0 16px' }}>
+                  <IonButton
+                    expand="block"
+                    fill="outline"
+                    onClick={addTimeslot}
+                    disabled={loading}
+                  >
                     <IonIcon icon={add} slot="start" />
                     Zeitfenster hinzufügen
                   </IonButton>
-                </IonItem>
+                </div>
               )}
             </IonList>
           </IonCardContent>
@@ -388,24 +390,24 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
                   </IonModal>
                   <IonItem lines="none">
                     <IonLabel>Unbegrenzte Teilnehmer</IonLabel>
-                    <IonToggle slot="end" checked={timeslot.max_participants === 0}
+                    <IonToggle slot="end" className="app-toggle--events" checked={timeslot.max_participants === 0}
                       onIonChange={(e) => updateTimeslot(index, 'max_participants', e.detail.checked ? 0 : 5)}
-                      disabled={loading} style={{ '--track-background-checked': '#dc2626' }} />
+                      disabled={loading} />
                   </IonItem>
                   {timeslot.max_participants !== 0 && (
                     <IonItem lines="none">
                       <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Teilnehmer pro Slot</IonLabel>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-                        <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>1</span>
+                      <div className="app-range-row">
+                        <span className="app-range-row__min">1</span>
                         <IonRange
+                          className="app-range app-range--events"
                           min={1} max={10} step={1}
                           pin={true} pinFormatter={(value: number) => `${value}`}
                           value={timeslot.max_participants}
                           onIonChange={(e) => updateTimeslot(index, 'max_participants', e.detail.value as number)}
                           disabled={loading}
-                          style={{ flex: 1 }}
                         />
-                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ion-color-primary)', minWidth: '28px', textAlign: 'center' }}>{timeslot.max_participants}</span>
+                        <span className="app-range-row__value">{timeslot.max_participants}</span>
                       </div>
                     </IonItem>
                   )}

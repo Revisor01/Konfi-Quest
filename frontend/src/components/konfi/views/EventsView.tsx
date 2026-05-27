@@ -353,19 +353,19 @@ const EventsView: React.FC<EventsViewProps> = ({
                         <div className="app-list-item__meta">
                           {!event.mandatory && (
                           <span className="app-list-item__meta-item">
-                            <IonIcon icon={people} style={{ color: shouldGrayOut ? '#999' : '#34c759' }} />
-                            {event.registered_count}/{event.max_participants}
+                            <IonIcon icon={people} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--participants'} />
+                            {event.registered_count}/{(event.max_participants || 0) > 0 ? event.max_participants : '∞'}
                           </span>
                           )}
                           {event.waitlist_enabled && (event.waitlist_count ?? 0) > 0 && (
                             <span className="app-list-item__meta-item">
-                              <IonIcon icon={listOutline} style={{ color: shouldGrayOut ? '#999' : '#fd7e14' }} />
+                              <IonIcon icon={listOutline} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--waitlist'} />
                               {event.waitlist_count}/{event.max_waitlist_size || 10}
                             </span>
                           )}
                           {event.points > 0 && (
                             <span className="app-list-item__meta-item">
-                              <IonIcon icon={trophy} style={{ color: shouldGrayOut ? '#999' : '#ff9500' }} />
+                              <IonIcon icon={trophy} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--points'} />
                               {event.points}P
                             </span>
                           )}
@@ -374,11 +374,11 @@ const EventsView: React.FC<EventsViewProps> = ({
                         {/* Zeile 3: Datum + Uhrzeit */}
                         <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
                           <span className="app-list-item__meta-item">
-                            <IonIcon icon={calendar} style={{ color: shouldGrayOut ? '#999' : '#dc2626' }} />
+                            <IonIcon icon={calendar} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--events'} />
                             {formatDate(event.event_date)}
                           </span>
                           <span className="app-list-item__meta-item">
-                            <IonIcon icon={time} style={{ color: shouldGrayOut ? '#999' : '#ff6b35' }} />
+                            <IonIcon icon={time} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--time'} />
                             {formatTime(event.event_date)}
                           </span>
                         </div>
@@ -387,7 +387,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                         {event.location && (
                           <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
                             <span className="app-list-item__meta-item">
-                              <IonIcon icon={location} style={{ color: shouldGrayOut ? '#999' : '#007aff' }} />
+                              <IonIcon icon={location} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--location'} />
                               {event.location}
                             </span>
                           </div>
@@ -395,9 +395,9 @@ const EventsView: React.FC<EventsViewProps> = ({
                         {/* Zeile 5: Was mitbringen */}
                         {event.bring_items && (
                           <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
-                            <span className="app-list-item__meta-item" style={{ alignItems: 'flex-start' }}>
-                              <IonIcon icon={bagHandle} style={{ color: '#8b5cf6', flexShrink: 0, fontSize: '16px', marginTop: '2px' }} />
-                              <span style={{ flex: 1 }}>{event.bring_items}</span>
+                            <span className="app-list-item__meta-item app-list-item__meta-item--multiline">
+                              <IonIcon icon={bagHandle} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--bring'} />
+                              {event.bring_items}
                             </span>
                           </div>
                         )}

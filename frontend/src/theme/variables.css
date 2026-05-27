@@ -119,7 +119,7 @@ ion-list-header ion-label {
   --ion-color-dark-brightness: #666666;
   --ion-color-dark-brightness-rgb: 102, 102, 102;
 
-  --app-description-font-size: 1rem;
+  --app-description-font-size: 0.85rem;
 }
 
 /* Custom App Styles */
@@ -248,6 +248,8 @@ ion-item-sliding:last-child {
 .app-list-item--chat-jahrgang, ion-item.app-list-item--chat-jahrgang { border-left-color: var(--app-color-chat); }
 .app-list-item--konfi, ion-item.app-list-item--konfi { border-left-color: var(--app-color-konfis); }
 .app-list-item--group, ion-item.app-list-item--group { border-left-color: var(--app-color-group); }
+.app-list-item--gemeinde, ion-item.app-list-item--gemeinde { border-left-color: var(--app-color-gemeinde); }
+.app-list-item--gottesdienst, ion-item.app-list-item--gottesdienst { border-left-color: var(--app-color-gottesdienst); }
 
 /* Selected State — nur Hintergrundfarbe, KEIN extra border-color (linker Strich kommt aus Farbvariante) */
 .app-list-item--selected { background: rgba(var(--app-color-konfis-rgb), 0.08); }
@@ -266,6 +268,10 @@ ion-item-sliding:last-child {
 .app-list-item--info.app-list-item--selected { background: rgba(var(--app-color-info-rgb), 0.08); }
 .app-list-item--success.app-list-item--selected { background: rgba(var(--app-color-success-rgb), 0.08); }
 .app-list-item--konfi.app-list-item--selected { background: rgba(var(--app-color-konfis-rgb), 0.08); }
+.app-list-item--gemeinde.app-list-item--selected { background: rgba(var(--app-color-gemeinde-rgb), 0.08); }
+.app-list-item--gottesdienst.app-list-item--selected { background: rgba(var(--app-color-gottesdienst-rgb), 0.08); }
+.app-list-item--categories.app-list-item--selected { background: rgba(var(--app-color-categories-rgb), 0.08); }
+.app-list-item--jahrgang.app-list-item--selected { background: rgba(var(--app-color-jahrgang-rgb), 0.08); }
 
 /* === Reason Boxes === */
 /* App Reason Box - fuer Abmeldungen, Ablehnungen, etc. */
@@ -615,6 +621,14 @@ ion-list[inset] ion-list-header {
 }
 .app-list-item__meta-item ion-icon {
   font-size: 0.8rem;
+  flex-shrink: 0;
+}
+/* Multiline-Variante: Icon oben buendig statt mittig (fuer lange Texte wie "Mitbringen") */
+.app-list-item__meta-item--multiline {
+  align-items: flex-start;
+}
+.app-list-item__meta-item--multiline ion-icon {
+  margin-top: 2px;
 }
 
 /* === App Farbvariablen === */
@@ -1113,6 +1127,37 @@ ion-card-content.app-card-content {
   margin: 0;
 }
 
+/* Detail-Info-Row: Label klein CAPS oben, Wert gross fett unten */
+/* Nutzung in EventDetail/KonfiDetail Info-Cards:
+   <div class="app-info-row">
+     <IonIcon class="app-info-row__icon app-icon-color--events" />
+     <div>
+       <div class="app-info-row__label">Datum</div>
+       <div class="app-info-row__value">12.05.2026, 18:00 Uhr</div>
+     </div>
+   </div>
+*/
+.app-info-row__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #8e8e93;
+  line-height: 1.3;
+  margin: 0 0 2px 0;
+}
+.app-info-row__value {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #333;
+  line-height: 1.35;
+  margin: 0;
+}
+.app-info-row__value--multi > div {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #333;
+  line-height: 1.35;
+}
+
 /* Beschreibung — Fliesstext, Details, laengere Texte (1rem, normal weight) */
 .app-description-text {
   font-size: var(--app-description-font-size, 1rem);
@@ -1154,6 +1199,65 @@ ion-button.app-action-button {
   font-weight: 600;
 }
 
+/* === Range-Slider Wrapper (Min-Label, Slider, Wert) === */
+/* Nutzung:
+   <div class="app-range-row">
+     <span class="app-range-row__min">1</span>
+     <IonRange class="app-range app-range--events" ... />
+     <span class="app-range-row__value">{value}</span>
+   </div>
+*/
+.app-range-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.app-range-row__min {
+  font-size: 0.75rem;
+  color: #8e8e93;
+  min-width: 24px;
+  text-align: center;
+}
+.app-range-row__value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  min-width: 28px;
+  text-align: center;
+}
+ion-range.app-range {
+  flex: 1;
+  padding: 8px 0;
+}
+/* Farb-Varianten via CSS-Token (gleiches Konzept = gleiche Farbe) */
+ion-range.app-range--events {
+  --bar-background: rgba(var(--app-color-events-rgb), 0.2);
+  --bar-background-active: var(--app-color-events);
+  --knob-background: var(--app-color-events);
+  --pin-background: var(--app-color-events);
+  --pin-color: #fff;
+}
+ion-range.app-range--events + .app-range-row__value,
+.app-range-row .app-range--events ~ .app-range-row__value {
+  color: var(--app-color-events);
+}
+/* Toggle in Events-Rot fuer Konsistenz */
+ion-toggle.app-toggle--events {
+  --track-background-checked: var(--app-color-events);
+  --handle-background-checked: #fff;
+}
+
+/* === Popover-Select breit (alle Optionen lesbar, keine Truncation) === */
+.app-select-popover--wide {
+  --width: min(92vw, 320px);
+  --max-width: 92vw;
+}
+.app-select-popover--wide ion-select-popover ion-label {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
 /* === Button-Reihe (flex, gleiche Breite) === */
 .app-button-row {
   display: flex;
@@ -1170,19 +1274,28 @@ ion-button.app-action-button {
 
 /* === Icon-Farb-Klassen === */
 /* Gleiches Konzept = gleiches Icon = gleiche Farbe ueberall */
-.app-icon-color--events { color: #dc2626; }
-.app-icon-color--participants { color: #34c759; }
-.app-icon-color--users { color: #667eea; }
-.app-icon-color--warning { color: #fd7e14; }
-.app-icon-color--badges { color: #ff9500; }
-.app-icon-color--category { color: #0ea5e9; }
-.app-icon-color--gottesdienst { color: #3b82f6; }
-.app-icon-color--gemeinde { color: #22c55e; }
-.app-icon-color--activities { color: #047857; }
-.app-icon-color--organizations { color: #667eea; }
-.app-icon-color--jahrgang { color: #007aff; }
-.app-icon-color--success { color: #34c759; }
-.app-icon-color--danger { color: #dc3545; }
+.app-icon-color--events { color: var(--app-color-events); }
+.app-icon-color--participants { color: var(--app-color-success); }
+.app-icon-color--users { color: var(--app-color-users); }
+.app-icon-color--warning { color: var(--app-color-warning); }
+.app-icon-color--badges { color: var(--app-color-warning); }
+.app-icon-color--category { color: var(--app-color-categories); }
+.app-icon-color--gottesdienst { color: var(--app-color-gottesdienst); }
+.app-icon-color--gemeinde { color: var(--app-color-gemeinde); }
+.app-icon-color--activities { color: var(--app-color-activities); }
+.app-icon-color--organizations { color: var(--app-color-users); }
+.app-icon-color--jahrgang { color: var(--app-color-jahrgang); }
+.app-icon-color--success { color: var(--app-color-success); }
+.app-icon-color--danger { color: var(--app-color-danger); }
+/* Semantische Aliase fuer Events-Listen */
+.app-icon-color--team { color: var(--app-color-konfis); }
+.app-icon-color--waitlist { color: var(--app-color-bonus); }
+.app-icon-color--points { color: var(--app-color-warning); }
+.app-icon-color--time { color: var(--app-color-bonus); }
+.app-icon-color--location { color: var(--app-color-events); }
+.app-icon-color--bring { color: var(--app-color-konfis); }
+.app-icon-color--material { color: var(--app-color-material); }
+.app-icon-color--muted { color: #999; }
 
 /* === EventDetailView Helper-Klassen === */
 /* Icon mit leichtem Top-Offset fuer vertikale Ausrichtung */

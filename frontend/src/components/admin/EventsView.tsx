@@ -170,7 +170,18 @@ const EventsView: React.FC<EventsViewProps> = ({
         stats={[
           { value: events.length, label: 'Gesamt' },
           { value: getUpcomingEvents().length, label: 'Anstehend' },
-          { value: events.reduce((sum, e) => sum + e.registered_count, 0), label: 'Gebucht' }
+          activeTab === 'konfirmation'
+            ? { value: getTotalRegistrations(), label: 'TN' }
+            : activeTab === 'all'
+              ? { value: getPastEvents().length, label: 'Vergangen' }
+              : {
+                  value: events.filter(e =>
+                    new Date(e.event_date) < new Date() &&
+                    e.registered_count > 0 &&
+                    (e.pending_bookings_count ?? 0) > 0
+                  ).length,
+                  label: 'Verbuchen'
+                }
         ]}
       />
 
@@ -368,7 +379,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                           >
                             {event.name}
                             {event.is_series && (
-                              <IonIcon icon={copy} style={{ fontSize: '0.8rem', color: '#007aff', opacity: 0.7, flexShrink: 0 }} />
+                              <IonIcon icon={copy} className="app-icon-color--location" style={{ fontSize: '0.8rem', opacity: 0.7, flexShrink: 0 }} />
                             )}
                           </div>
                           {event.jahrgang_names && (
@@ -380,7 +391,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                           {/* Zeile 2: Buchungen + Teamer + Warteliste + Punkte */}
                           <div className="app-list-item__meta">
                             <span className="app-list-item__meta-item">
-                              <IonIcon icon={people} style={{ color: shouldGrayOut ? '#999' : '#34c759' }} />
+                              <IonIcon icon={people} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--participants'} />
                               {event.mandatory
                                 ? `${event.registered_count - (event.teamer_count || 0)} Konfis`
                                 : `${event.registered_count - (event.teamer_count || 0)}/${(event.max_participants || 0) > 0 ? event.max_participants : '\u221E'}`
@@ -388,19 +399,19 @@ const EventsView: React.FC<EventsViewProps> = ({
                             </span>
                             {(event.teamer_count || 0) > 0 && (
                               <span className="app-list-item__meta-item">
-                                <IonIcon icon={people} style={{ color: shouldGrayOut ? '#999' : '#5b21b6' }} />
+                                <IonIcon icon={people} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--team'} />
                                 {event.teamer_count} Team
                               </span>
                             )}
                             {event.waitlist_enabled && (event.waitlist_count ?? 0) > 0 && (
                               <span className="app-list-item__meta-item">
-                                <IonIcon icon={listOutline} style={{ color: shouldGrayOut ? '#999' : '#fd7e14' }} />
+                                <IonIcon icon={listOutline} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--waitlist'} />
                                 {event.waitlist_count}/{event.max_waitlist_size || 10}
                               </span>
                             )}
                             {event.points > 0 && (
                               <span className="app-list-item__meta-item">
-                                <IonIcon icon={trophy} style={{ color: shouldGrayOut ? '#999' : '#ff9500' }} />
+                                <IonIcon icon={trophy} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--points'} />
                                 {event.points}P
                               </span>
                             )}
@@ -409,11 +420,11 @@ const EventsView: React.FC<EventsViewProps> = ({
                           {/* Zeile 3: Datum + Uhrzeit */}
                           <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
                             <span className="app-list-item__meta-item">
-                              <IonIcon icon={calendar} style={{ color: shouldGrayOut ? '#999' : '#dc2626' }} />
+                              <IonIcon icon={calendar} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--events'} />
                               {formatDate(event.event_date)}
                             </span>
                             <span className="app-list-item__meta-item">
-                              <IonIcon icon={time} style={{ color: shouldGrayOut ? '#999' : '#ff6b35' }} />
+                              <IonIcon icon={time} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--time'} />
                               {formatTime(event.event_date)}
                             </span>
                           </div>
@@ -422,7 +433,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                           {event.location && (
                             <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
                               <span className="app-list-item__meta-item">
-                                <IonIcon icon={location} style={{ color: shouldGrayOut ? '#999' : '#007aff' }} />
+                                <IonIcon icon={location} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--location'} />
                                 {event.location}
                               </span>
                             </div>
@@ -430,18 +441,9 @@ const EventsView: React.FC<EventsViewProps> = ({
                           {/* Zeile 5: Was mitbringen */}
                           {event.bring_items && (
                             <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
-                              <span className="app-list-item__meta-item">
-                                <IonIcon icon={bagHandle} style={{ color: shouldGrayOut ? '#999' : '#8b5cf6' }} />
+                              <span className="app-list-item__meta-item app-list-item__meta-item--multiline">
+                                <IonIcon icon={bagHandle} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--bring'} />
                                 {event.bring_items}
-                              </span>
-                            </div>
-                          )}
-                          {/* Zeile: Pflicht-Event Markierung */}
-                          {event.mandatory && !isCancelled && (
-                            <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
-                              <span className="app-list-item__meta-item">
-                                <IonIcon icon={shieldCheckmark} style={{ color: shouldGrayOut ? '#999' : '#dc2626' }} />
-                                Pflicht-Event
                               </span>
                             </div>
                           )}
@@ -449,7 +451,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                           {(event.material_count || 0) > 0 && (
                             <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
                               <span className="app-list-item__meta-item">
-                                <IonIcon icon={attachOutline} style={{ color: shouldGrayOut ? '#999' : '#d97706' }} />
+                                <IonIcon icon={attachOutline} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--material'} />
                                 {event.material_count} {event.material_count === 1 ? 'Material' : 'Materialien'}
                               </span>
                             </div>
