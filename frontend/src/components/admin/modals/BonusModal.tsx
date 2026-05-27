@@ -19,6 +19,9 @@ import {
   IonCardContent,
   IonSpinner,
   IonRange,
+  IonDatetime,
+  IonDatetimeButton,
+  IonModal,
 } from '@ionic/react';
 import { closeOutline, checkmarkOutline, gift, chatbubbleOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -100,7 +103,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={!isValid || isSubmitting} className="app-modal-submit-btn app-modal-submit-btn--konfi">
+            <IonButton onClick={handleSave} disabled={!isValid || isSubmitting} className="app-modal-submit-btn app-modal-submit-btn--bonus">
               {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
@@ -111,7 +114,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
         {/* Bonuspunkt Detail */}
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className="app-section-icon app-section-icon--bonus">
               <IonIcon icon={gift} />
             </div>
             <IonLabel>Bonuspunkt Detail</IonLabel>
@@ -130,32 +133,44 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                   />
                 </IonItem>
 
-                <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                  <IonLabel position="stacked">Datum *</IonLabel>
-                  <IonInput
-                    type="date"
-                    value={selectedDate}
-                    onIonInput={(e) => setSelectedDate(e.detail.value!)}
-                    disabled={isSubmitting}
-                  />
-                </IonItem>
-
-                <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
-                  <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Punkte *</IonLabel>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-                    <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>1</span>
-                    <IonRange
-                      min={1} max={10} step={1}
-                      pin={true} pinFormatter={(value: number) => `${value}`}
-                      value={points}
-                      onIonChange={(e) => setPoints(e.detail.value as number)}
-                      disabled={isSubmitting}
-                      style={{ flex: 1 }}
-                    />
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ion-color-primary)', minWidth: '28px', textAlign: 'center' }}>{points}</span>
-                  </div>
-                </IonItem>
               </IonList>
+
+              <p className="app-text-sub" style={{ marginTop: '16px', marginBottom: '4px' }}>Datum *</p>
+              <IonDatetimeButton datetime="bonus-date" style={{ justifyContent: 'flex-start' }} />
+              <IonModal keepContentsMounted={true}>
+                <IonDatetime
+                  id="bonus-date"
+                  presentation="date"
+                  value={selectedDate}
+                  onIonChange={(e) => {
+                    const val = e.detail.value;
+                    if (typeof val === 'string') {
+                      setSelectedDate(val.split('T')[0]);
+                    }
+                  }}
+                  locale="de-DE"
+                />
+              </IonModal>
+
+              <p className="app-text-sub" style={{ marginTop: '16px', marginBottom: '4px' }}>Punkte * ({points})</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 8px' }}>
+                <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>1</span>
+                <IonRange
+                  min={1} max={10} step={1}
+                  pin={true} pinFormatter={(value: number) => `${value}`}
+                  value={points}
+                  onIonChange={(e) => setPoints(e.detail.value as number)}
+                  disabled={isSubmitting}
+                  style={{
+                    flex: 1,
+                    '--bar-background': 'rgba(var(--app-color-bonus-rgb), 0.2)',
+                    '--bar-background-active': 'var(--app-color-bonus)',
+                    '--knob-background': 'var(--app-color-bonus)',
+                    '--pin-background': 'var(--app-color-bonus)',
+                  } as any}
+                />
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--app-color-bonus)', minWidth: '28px', textAlign: 'center' }}>10</span>
+              </div>
 
               <div style={{ marginTop: '16px', marginBottom: '8px' }}>
                 <span style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>Typ *</span>
@@ -201,7 +216,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
         {/* Begründung (optional) */}
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className="app-section-icon app-section-icon--bonus">
               <IonIcon icon={chatbubbleOutline} />
             </div>
             <IonLabel>Begründung (optional)</IonLabel>

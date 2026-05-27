@@ -320,16 +320,15 @@ export const BonusSection = React.memo<BonusSectionProps>(({
                   <div
                     className="app-list-item app-list-item--bonus"
                     style={{
-                      borderLeftColor: bonus.type === 'gottesdienst' ? '#3b82f6' : '#059669',
                       ...(isTypeDisabled ? { opacity: 0.4, filter: 'grayscale(100%)' } : {})
                     }}
                   >
-                    {/* Corner Badge für Punkte */}
+                    {/* Corner Badge: Punkt-Typ-Farbe */}
                     <div className="app-corner-badges">
                       <div
                         className="app-corner-badge"
                         style={{
-                          backgroundColor: bonus.type === 'gottesdienst' ? '#3b82f6' : '#059669'
+                          backgroundColor: bonus.type === 'gottesdienst' ? 'var(--app-color-gottesdienst)' : 'var(--app-color-gemeinde)'
                         }}
                       >
                         +{bonus.points}P
@@ -337,12 +336,7 @@ export const BonusSection = React.memo<BonusSectionProps>(({
                     </div>
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
-                        <div
-                          className="app-icon-circle"
-                          style={{
-                            backgroundColor: bonus.type === 'gottesdienst' ? '#3b82f6' : '#059669'
-                          }}
-                        >
+                        <div className="app-icon-circle app-icon-circle--bonus">
                           <IonIcon icon={gift} />
                         </div>
                         <div className="app-list-item__content">
@@ -433,16 +427,15 @@ export const EventPointsSection = React.memo<EventPointsSectionProps>(({
                 className="app-list-item app-list-item--events"
                 style={{
                   marginBottom: index < eventPoints.length - 1 ? '8px' : '0',
-                  borderLeftColor: eventPoint.point_type === 'gottesdienst' ? '#3b82f6' : '#059669',
                   ...(isEventTypeDisabled ? { opacity: 0.4, filter: 'grayscale(100%)' } : {})
                 }}
               >
-                {/* Corner Badge für Punkte */}
+                {/* Corner Badge: Punkt-Typ-Farbe */}
                 <div className="app-corner-badges">
                   <div
                     className="app-corner-badge"
                     style={{
-                      backgroundColor: eventPoint.point_type === 'gottesdienst' ? '#3b82f6' : '#059669'
+                      backgroundColor: eventPoint.point_type === 'gottesdienst' ? 'var(--app-color-gottesdienst)' : 'var(--app-color-gemeinde)'
                     }}
                   >
                     +{eventPoint.points}P
@@ -450,12 +443,7 @@ export const EventPointsSection = React.memo<EventPointsSectionProps>(({
                 </div>
                 <div className="app-list-item__row">
                   <div className="app-list-item__main">
-                    <div
-                      className="app-icon-circle"
-                      style={{
-                        backgroundColor: eventPoint.point_type === 'gottesdienst' ? '#3b82f6' : '#059669'
-                      }}
-                    >
+                    <div className="app-icon-circle app-icon-circle--events">
                       <IonIcon icon={podium} />
                     </div>
                     <div className="app-list-item__content">
@@ -509,56 +497,68 @@ interface AttendanceSectionProps {
 
 export const AttendanceSection = React.memo<AttendanceSectionProps>(({
   attendanceStats
-}) => (
+}) => {
+  const pct = attendanceStats.percentage;
+  const quoteColor = pct >= 80 ? 'var(--app-color-activities)'
+    : pct >= 50 ? 'var(--app-color-warning)'
+    : 'var(--app-color-danger)';
+  const quoteColorRgb = pct >= 80 ? 'var(--app-color-activities-rgb)'
+    : pct >= 50 ? 'var(--app-color-warning-rgb)'
+    : 'var(--app-color-danger-rgb)';
+  return (
   <IonList className="app-section-inset" inset={true}>
     <IonListHeader>
-      <div className="app-section-icon" style={{ backgroundColor: '#6366f1' }}>
+      <div className="app-section-icon app-section-icon--konfis">
         <IonIcon icon={calendar} />
       </div>
       <IonLabel>Anwesenheit</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
-      <IonCardContent style={{ padding: '12px' }}>
-        {/* Quote Summary */}
-        <div style={{ marginBottom: '16px' }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '8px'
-          }}>
-            <span style={{ fontWeight: '600', fontSize: '0.95rem' }}>
-              {attendanceStats.attended}/{attendanceStats.total_mandatory} anwesend
-            </span>
-            <span style={{
-              fontWeight: '700',
-              fontSize: '1.1rem',
-              color: attendanceStats.percentage >= 80 ? '#059669' :
-                     attendanceStats.percentage >= 50 ? '#f59e0b' : '#ef4444'
-            }}>
-              {attendanceStats.percentage}%
-            </span>
+      <IonCardContent style={{ padding: '16px' }}>
+        {/* Hero-Quote: grosse Prozent + Stat */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '16px',
+          padding: '12px 14px',
+          marginBottom: attendanceStats.missed_events.length > 0 ? '16px' : '0',
+          background: `rgba(${quoteColorRgb}, 0.08)`,
+          border: `1px solid rgba(${quoteColorRgb}, 0.18)`,
+          borderRadius: '12px'
+        }}>
+          <div style={{ flex: '0 0 auto' }}>
+            <div style={{ fontSize: '2.2rem', fontWeight: 800, lineHeight: 1, color: quoteColor, fontVariantNumeric: 'tabular-nums' }}>
+              {pct}<span style={{ fontSize: '1.2rem', fontWeight: 700 }}>%</span>
+            </div>
           </div>
-          <IonProgressBar
-            value={attendanceStats.percentage / 100}
-            color={attendanceStats.percentage >= 80 ? 'success' :
-                   attendanceStats.percentage >= 50 ? 'warning' : 'danger'}
-            style={{ borderRadius: '4px', height: '8px' }}
-          />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#111827', marginBottom: '4px' }}>
+              {attendanceStats.attended} von {attendanceStats.total_mandatory} Pflicht-Events
+            </div>
+            <IonProgressBar
+              value={pct / 100}
+              style={{
+                borderRadius: '999px',
+                height: '6px',
+                '--background': `rgba(${quoteColorRgb}, 0.18)`,
+                '--progress-background': quoteColor,
+              } as any}
+            />
+          </div>
         </div>
 
         {/* Verpasste Events Liste */}
         {attendanceStats.missed_events.length > 0 && (
           <>
             <div style={{
-              fontSize: '0.8rem',
-              fontWeight: '600',
-              color: '#999',
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              color: '#9ca3af',
               textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              marginBottom: '8px'
+              letterSpacing: '0.06em',
+              marginBottom: '10px'
             }}>
-              Verpasste Pflicht-Events
+              Verpasst ({attendanceStats.missed_events.length})
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {attendanceStats.missed_events.map((event, index) => (
@@ -567,21 +567,31 @@ export const AttendanceSection = React.memo<AttendanceSectionProps>(({
                   className="app-list-item"
                   style={{
                     marginBottom: index < attendanceStats.missed_events.length - 1 ? '8px' : '0',
-                    borderLeftColor: event.status === 'opted_out' ? '#f59e0b' : '#ef4444'
+                    borderLeftColor: event.status === 'opted_out' ? 'var(--app-color-warning)' : 'var(--app-color-danger)'
                   }}
                 >
+                  <div className="app-corner-badges">
+                    <div
+                      className="app-corner-badge"
+                      style={{
+                        backgroundColor: event.status === 'opted_out' ? 'var(--app-color-warning)' : 'var(--app-color-danger)'
+                      }}
+                    >
+                      {event.status === 'opted_out' ? 'Opt-out' : 'Fehlend'}
+                    </div>
+                  </div>
                   <div className="app-list-item__row">
                     <div className="app-list-item__main">
                       <div
                         className="app-icon-circle"
                         style={{
-                          backgroundColor: event.status === 'opted_out' ? '#f59e0b' : '#ef4444'
+                          backgroundColor: event.status === 'opted_out' ? 'var(--app-color-warning)' : 'var(--app-color-danger)'
                         }}
                       >
                         <IonIcon icon={event.status === 'opted_out' ? eyeOff : closeCircle} />
                       </div>
                       <div className="app-list-item__content">
-                        <div className="app-list-item__title">
+                        <div className="app-list-item__title app-list-item__title--badge-space">
                           {event.event_name}
                         </div>
                         <div className="app-list-item__meta">
@@ -593,13 +603,11 @@ export const AttendanceSection = React.memo<AttendanceSectionProps>(({
                               year: 'numeric'
                             })}
                           </span>
-                          <span className="app-list-item__meta-item" style={{
-                            color: event.status === 'opted_out' ? '#f59e0b' : '#ef4444'
-                          }}>
-                            {event.status === 'opted_out'
-                              ? `Opt-out: ${event.opt_out_reason || 'Ohne Begründung'}`
-                              : 'Nicht erschienen'}
-                          </span>
+                          {event.status === 'opted_out' && event.opt_out_reason && (
+                            <span className="app-list-item__meta-item" style={{ color: '#6b7280' }}>
+                              {event.opt_out_reason}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -612,7 +620,8 @@ export const AttendanceSection = React.memo<AttendanceSectionProps>(({
       </IonCardContent>
     </IonCard>
   </IonList>
-));
+  );
+});
 
 // ---- TeamerEventsSection ----
 
@@ -645,7 +654,6 @@ export const TeamerEventsSection = React.memo<TeamerEventsSectionProps>(({
       <IonCardContent style={{ padding: '12px' }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {teamerEvents.slice(0, 10).map((event, index) => {
-            const isPast = new Date(event.event_date) < new Date();
             return (
               <IonItem
                 key={event.id}
@@ -655,10 +663,7 @@ export const TeamerEventsSection = React.memo<TeamerEventsSectionProps>(({
                 style={{ marginBottom: index < Math.min(teamerEvents.length, 10) - 1 ? '8px' : '0' }}
               >
                 <div
-                  className="app-list-item"
-                  style={{
-                    borderLeftColor: isPast ? '#9ca3af' : '#dc2626'
-                  }}
+                  className="app-list-item app-list-item--events"
                 >
                   <div className="app-corner-badges">
                     <div
@@ -676,10 +681,7 @@ export const TeamerEventsSection = React.memo<TeamerEventsSectionProps>(({
                   </div>
                   <div className="app-list-item__row">
                     <div className="app-list-item__main">
-                      <div
-                        className="app-icon-circle"
-                        style={{ backgroundColor: isPast ? '#9ca3af' : '#dc2626' }}
-                      >
+                      <div className="app-icon-circle app-icon-circle--events">
                         <IonIcon icon={calendar} />
                       </div>
                       <div className="app-list-item__content">
@@ -747,6 +749,14 @@ export const ActivitiesSection = React.memo<ActivitiesSectionProps>(({
               const isActivityTypeDisabled = !activity.isPending
                 && ((activity.type === 'gottesdienst' && currentKonfi?.gottesdienst_enabled === false)
                 || (activity.type === 'gemeinde' && currentKonfi?.gemeinde_enabled === false));
+              // Border + Icon-Kreis: immer Activities-Gruen (pending = Warning-Orange)
+              const activityColor = activity.isPending ? 'var(--app-color-warning)' : 'var(--app-color-activities)';
+              // Corner-Badge: nach Punkt-Typ (Konfi)
+              const badgeColor = activity.isPending
+                ? 'var(--app-color-warning)'
+                : activity.type === 'gottesdienst'
+                ? 'var(--app-color-gottesdienst)'
+                : 'var(--app-color-gemeinde)';
               return (
               <IonItemSliding key={activity.id} style={{ marginBottom: index < Math.min(activities.length, 10) - 1 ? '8px' : '0' }}>
                 <IonItem
@@ -759,11 +769,7 @@ export const ActivitiesSection = React.memo<ActivitiesSectionProps>(({
                   <div
                     className={`app-list-item ${activity.isPending ? 'app-list-item--warning' : ''}`}
                     style={{
-                      borderLeftColor: activity.isPending
-                        ? '#f59e0b'
-                        : activity.type === 'gottesdienst'
-                        ? '#3b82f6'
-                        : '#059669',
+                      borderLeftColor: activityColor,
                       opacity: activity.isPending ? 0.8 : isActivityTypeDisabled ? 0.4 : 1,
                       ...(isActivityTypeDisabled ? { filter: 'grayscale(100%)' } : {})
                     }}
@@ -773,13 +779,7 @@ export const ActivitiesSection = React.memo<ActivitiesSectionProps>(({
                       <div className="app-corner-badges">
                         <div
                           className="app-corner-badge"
-                          style={{
-                            backgroundColor: activity.isPending
-                              ? '#f59e0b'
-                              : activity.type === 'gottesdienst'
-                              ? '#3b82f6'
-                              : '#059669'
-                          }}
+                          style={{ backgroundColor: badgeColor }}
                         >
                           {activity.isPending ? '?' : '+'}{activity.points}P
                         </div>
@@ -789,13 +789,7 @@ export const ActivitiesSection = React.memo<ActivitiesSectionProps>(({
                       <div className="app-list-item__main">
                         <div
                           className="app-icon-circle"
-                          style={{
-                            backgroundColor: activity.isPending
-                              ? '#f59e0b'
-                              : activity.type === 'gottesdienst'
-                              ? '#3b82f6'
-                              : '#059669'
-                          }}
+                          style={{ backgroundColor: activityColor }}
                         >
                           <IonIcon icon={activity.isPending ? time : activity.type === 'gottesdienst' ? school : flash} />
                         </div>
@@ -1011,29 +1005,33 @@ export const TeamerSinceSection = React.memo<TeamerSinceSectionProps>(({
       <IonLabel>Teamer:in seit</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
-      <IonCardContent style={{ padding: '16px' }}>
-        <IonList style={{ background: 'transparent' }}>
-          <IonItem lines="none" style={{ '--background': 'transparent' }}>
-            <IonLabel position="stacked">Datum</IonLabel>
-            <IonInput
-              type="date"
-              value={currentKonfi?.teamer_since ? new Date(currentKonfi.teamer_since).toISOString().split('T')[0] : ''}
-              onIonChange={async (e) => {
-                const newDate = e.detail.value as string;
-                if (!newDate) return;
-                try {
-                  await apiInstance.put(`/admin/konfis/${konfiId}/teamer-since`, { teamer_since: newDate });
-                  setCurrentKonfi(prev => prev ? { ...prev, teamer_since: newDate } : prev);
-                  setSuccess('Aktiv-seit-Datum aktualisiert');
-                } catch {
-                  setError('Fehler beim Aktualisieren');
-                }
-              }}
-            />
-          </IonItem>
-        </IonList>
+      <IonCardContent style={{ padding: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+          <IonDatetimeButton datetime="teamer-since-date" />
+        </div>
       </IonCardContent>
     </IonCard>
+
+    <IonModal keepContentsMounted={true}>
+      <IonDatetime
+        id="teamer-since-date"
+        presentation="date"
+        locale="de-DE"
+        value={currentKonfi?.teamer_since ? new Date(currentKonfi.teamer_since).toISOString().split('T')[0] : undefined}
+        onIonChange={async (e) => {
+          const value = e.detail.value;
+          if (typeof value !== 'string') return;
+          const newDate = value.split('T')[0];
+          try {
+            await apiInstance.put(`/admin/konfis/${konfiId}/teamer-since`, { teamer_since: newDate });
+            setCurrentKonfi(prev => prev ? { ...prev, teamer_since: newDate } : prev);
+            setSuccess('Aktiv-seit-Datum aktualisiert');
+          } catch {
+            setError('Fehler beim Aktualisieren');
+          }
+        }}
+      />
+    </IonModal>
   </IonList>
 ));
 

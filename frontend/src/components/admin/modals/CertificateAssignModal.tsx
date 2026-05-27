@@ -277,16 +277,22 @@ const CertificateAssignModal: React.FC<CertificateAssignModalProps> = ({
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px' }}>
-              <IonList style={{ background: 'transparent' }}>
-                <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                  <IonLabel position="stacked">Erhalten</IonLabel>
-                  <IonInput
-                    type="date"
-                    value={issuedDate}
-                    onIonInput={(e) => setIssuedDate(e.detail.value as string)}
-                  />
-                </IonItem>
-              </IonList>
+              <p className="app-text-sub" style={{ marginBottom: '4px' }}>Erhalten</p>
+              <IonDatetimeButton datetime="cert-start-date" style={{ justifyContent: 'flex-start' }} />
+              <IonModal keepContentsMounted={true}>
+                <IonDatetime
+                  id="cert-start-date"
+                  presentation="date"
+                  value={issuedDate}
+                  onIonChange={(e) => {
+                    const val = e.detail.value;
+                    if (typeof val === 'string') {
+                      setIssuedDate(val.split('T')[0]);
+                    }
+                  }}
+                  locale="de-DE"
+                />
+              </IonModal>
               <p className="app-text-sub" style={{ marginTop: '12px', marginBottom: '4px' }}>Laufzeit (Monate): {durationMonths || '0'}</p>
               <div style={{ padding: '0 16px' }}>
                 <IonRange

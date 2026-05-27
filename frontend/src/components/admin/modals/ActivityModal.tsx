@@ -18,6 +18,9 @@ import {
   IonCard,
   IonCardContent,
   IonSpinner,
+  IonDatetime,
+  IonDatetimeButton,
+  IonModal,
   useIonAlert
 } from '@ionic/react';
 import { closeOutline, checkmarkOutline, flash, calendar, home, people, pricetag } from 'ionicons/icons';
@@ -140,11 +143,11 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
     });
   };
 
-  // Farben für Aktivitäten
-  const gottesdienstColor = '#3b82f6'; // Blau
-  const gemeindeColor = '#059669'; // Dunkelgrün
+  // Farben für Aktivitäten (CSS-Variablen statt Hex)
+  const gottesdienstColor = 'var(--app-color-gottesdienst)';
+  const gemeindeColor = 'var(--app-color-gemeinde)';
   const isTeamer = targetRole === 'teamer';
-  const teamerColor = '#db2777'; // Pink
+  const teamerColor = 'var(--app-color-teamer)';
   const sectionClass = isTeamer ? 'teamer' : 'activities';
 
   return (
@@ -176,19 +179,26 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px' }}>
-              <IonList style={{ background: 'transparent' }}>
-                <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                  <IonLabel position="stacked">Datum *</IonLabel>
-                  <IonInput
-                    type="date"
-                    value={selectedDate}
-                    onIonInput={(e) => setSelectedDate(e.detail.value!)}
-                    disabled={isSubmitting}
-                  />
-                </IonItem>
+              <p className="app-text-sub" style={{ marginBottom: '4px' }}>Datum *</p>
+              <IonDatetimeButton datetime="activity-date" style={{ justifyContent: 'flex-start' }} />
+              <IonModal keepContentsMounted={true}>
+                <IonDatetime
+                  id="activity-date"
+                  presentation="date"
+                  value={selectedDate}
+                  onIonChange={(e) => {
+                    const val = e.detail.value;
+                    if (typeof val === 'string') {
+                      setSelectedDate(val.split('T')[0]);
+                    }
+                  }}
+                  locale="de-DE"
+                />
+              </IonModal>
 
+              <p className="app-text-sub" style={{ marginTop: '16px', marginBottom: '4px' }}>Kommentar (optional)</p>
+              <IonList style={{ background: 'transparent' }}>
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                  <IonLabel position="stacked">Kommentar (optional)</IonLabel>
                   <IonTextarea
                     value={comment}
                     onIonInput={(e) => setComment(e.detail.value!)}
@@ -226,6 +236,10 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
                     const typeColor = isTeamer
                       ? teamerColor
                       : (activity.type === 'gottesdienst' ? gottesdienstColor : gemeindeColor);
+                    // Selected-Background als rgba mit -rgb Variable
+                    const typeColorRgb = isTeamer
+                      ? 'var(--app-color-teamer-rgb)'
+                      : (activity.type === 'gottesdienst' ? 'var(--app-color-gottesdienst-rgb)' : 'var(--app-color-gemeinde-rgb)');
 
                     return (
                       <div
@@ -237,7 +251,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
                           opacity: isSubmitting ? 0.6 : 1,
                           marginBottom: '0',
                           borderLeftColor: typeColor,
-                          backgroundColor: isSelected ? `${typeColor}10` : undefined,
+                          backgroundColor: isSelected ? `rgba(${typeColorRgb}, 0.08)` : undefined,
                           position: 'relative',
                           overflow: 'hidden'
                         }}
@@ -263,13 +277,13 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
                               <IonIcon icon={activity.type === 'gottesdienst' ? home : people} />
                             </div>
                             <div className="app-list-item__content">
-                              <div className="app-list-item__title" style={{ paddingRight: '60px' }}>
+                              <div className="app-list-item__title" style={{ paddingRight: isTeamer ? '0' : '60px', whiteSpace: 'normal' }}>
                                 {activity.name}
                               </div>
                               {activity.categories && activity.categories.length > 0 && (
                                 <div className="app-list-item__meta">
                                   <span className="app-list-item__meta-item">
-                                    <IonIcon icon={pricetag} style={{ color: '#0ea5e9' }} />
+                                    <IonIcon icon={pricetag} style={{ color: 'var(--app-color-categories)' }} />
                                     {activity.categories.map(cat => cat.name).join(', ')}
                                   </span>
                                 </div>

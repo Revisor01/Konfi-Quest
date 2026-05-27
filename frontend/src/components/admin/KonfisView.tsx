@@ -271,7 +271,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           emptyIcon={ribbon}
           emptyTitle="Keine Teamer:innen gefunden"
           emptyMessage={searchTerm ? 'Versuche andere Suchbegriffe' : 'Noch keine Teamer:innen vorhanden'}
-          emptyIconColor="#db2777"
+          emptyIconColor="#ec4899"
         >
           {filterBySearchTerm(teamers, searchTerm, ['name', 'display_name', 'username']).map((teamer: any, index: number, arr: any[]) => (
             <IonItemSliding key={teamer.id} style={{ marginBottom: index < arr.length - 1 ? '8px' : '0' }}>
@@ -291,27 +291,23 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                 }}
               >
                 <div
-                  className="app-list-item app-list-item--primary"
+                  className="app-list-item app-list-item--teamer"
                   style={{
                     width: '100%',
-                    borderLeftColor: '#e11d48',
                     position: 'relative',
                     overflow: 'hidden'
                   }}
                 >
                   <div className="app-corner-badges">
-                    <div
-                      className="app-corner-badge"
-                      style={{ backgroundColor: '#e11d48' }}
-                    >
+                    <div className="app-corner-badge app-corner-badge--teamer">
                       TEAM
                     </div>
                   </div>
                   <div className="app-list-item__row">
                     <div className="app-list-item__main">
                       <div
-                        className="app-icon-circle app-icon-circle--lg"
-                        style={{ backgroundColor: '#e11d48', color: 'white', fontWeight: '600' }}
+                        className="app-icon-circle app-icon-circle--lg app-icon-circle--teamer"
+                        style={{ color: 'white', fontWeight: '600' }}
                       >
                         {(teamer.display_name || teamer.name || '??').trim().split(/\s+/).length === 1
                           ? (teamer.display_name || teamer.name || '??').substring(0, 2).toUpperCase()
@@ -325,7 +321,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                         </div>
                         <div className="app-list-item__meta">
                           <span className="app-list-item__meta-item">
-                            <IonIcon icon={ribbonOutline} style={{ color: '#e11d48' }} />
+                            <IonIcon icon={ribbonOutline} style={{ color: 'var(--app-color-teamer)' }} />
                             {teamer.badge_count || 0} Badges
                           </span>
                           <span className="app-list-item__meta-item">
@@ -418,7 +414,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                                 {/* Zeile 2: Jahrgang + Badges */}
                                 <div className="app-list-item__meta">
                                   <span className="app-list-item__meta-item">
-                                    <IonIcon icon={calendar} style={{ color: '#5b21b6' }} />
+                                    <IonIcon icon={calendar} style={{ color: 'var(--app-color-jahrgang)' }} />
                                     {konfi.jahrgang_name || konfi.jahrgang || 'Kein Jahrgang'}
                                   </span>
                                   <span className="app-list-item__meta-item">

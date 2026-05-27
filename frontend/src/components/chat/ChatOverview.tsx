@@ -73,13 +73,19 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   const isAdmin = user?.type === 'admin';
 
   const getRoomColor = (room: ChatRoomOverview): string => {
-    if (room.event_id) return '#dc2626'; // Rot — Event-Chat
-    switch (room.type) {
-      case 'admin': return '#e11d48';   // Rosa — Team/Admin-Chat
-      case 'jahrgang': return '#06b6d4'; // Tuerkis
-      case 'group': return '#f97316';    // Orange
-      default: return '#5b21b6';         // Lila — Konfi/Direct
+    if (room.event_id) return 'var(--app-color-events)';    // Rot - Event-Chat
+    if (room.type === 'jahrgang') return 'var(--app-color-chat)';  // Tuerkis - Jahrgangs-Chat
+    if (room.type === 'group') return 'var(--app-color-group)';     // Orange - Gruppen-Chat
+    if (room.type === 'admin') return 'var(--app-color-teamer)';    // Pink - Team-Gruppe
+    if (room.type === 'direct') {
+      // Partner-Typ aus participants ermitteln
+      const otherParticipant = room.participants?.find((p: { user_id: number; user_type: 'admin' | 'konfi'; name: string; display_name?: string }) =>
+        !(p.user_id === user?.id && p.user_type === user?.type)
+      );
+      if (otherParticipant?.user_type === 'admin') return 'var(--app-color-teamer)'; // Pink - DM zum Team
+      return 'var(--app-color-konfis)';  // Lila - DM zu Konfi
     }
+    return 'var(--app-color-konfis)';    // Fallback
   };
 
   const getRoomColorClass = (room: ChatRoomOverview): string => {

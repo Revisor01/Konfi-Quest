@@ -55,6 +55,51 @@ ion-list-header ion-label {
 
 /* iOS26 Required Color Brightness Variables */
 :root {
+  /* ============================================
+     APP COLOR TOKENS (Single Source of Truth)
+     ============================================ */
+  /* Domain-Farben - hier aendern wirkt ueberall */
+  --app-color-events: #dc2626;
+  --app-color-events-rgb: 220, 38, 38;
+  --app-color-activities: #047857;
+  --app-color-activities-rgb: 4, 120, 87;
+  --app-color-konfis: #5b21b6;
+  --app-color-konfis-rgb: 91, 33, 182;
+  --app-color-teamer: #be185d;
+  --app-color-teamer-rgb: 190, 24, 93;
+  --app-color-users: #667eea;
+  --app-color-users-rgb: 102, 126, 234;
+  --app-color-badges: #f59e0b;
+  --app-color-badges-rgb: 245, 158, 11;
+  --app-color-bonus: #f97316;
+  --app-color-bonus-rgb: 249, 115, 22;
+  --app-color-jahrgang: #007aff;
+  --app-color-jahrgang-rgb: 0, 122, 255;
+  --app-color-categories: #0ea5e9;
+  --app-color-categories-rgb: 14, 165, 233;
+  --app-color-material: #d97706;
+  --app-color-material-rgb: 217, 119, 6;
+  --app-color-chat: #06b6d4;
+  --app-color-chat-rgb: 6, 182, 212;
+  --app-color-level: #ec4899;
+  --app-color-level-rgb: 236, 72, 153;
+  --app-color-group: #f97316;
+  --app-color-group-rgb: 249, 115, 22;
+  /* Punkte-Typen */
+  --app-color-gottesdienst: #3b82f6;
+  --app-color-gottesdienst-rgb: 59, 130, 246;
+  --app-color-gemeinde: #059669;
+  --app-color-gemeinde-rgb: 5, 150, 105;
+  /* Status */
+  --app-color-success: #34c759;
+  --app-color-success-rgb: 52, 199, 89;
+  --app-color-warning: #ff9500;
+  --app-color-warning-rgb: 255, 149, 0;
+  --app-color-danger: #dc3545;
+  --app-color-danger-rgb: 220, 53, 69;
+  --app-color-info: #007aff;
+  --app-color-info-rgb: 0, 122, 255;
+
   --ion-color-primary-brightness: #96FEFF;
   --ion-color-primary-brightness-rgb: 150, 254, 255;
   --ion-color-secondary-brightness: #a0e7ff;
@@ -175,50 +220,52 @@ ion-item-sliding:last-child {
 }
 
 /* Farbvarianten fuer List Items - linke Border */
-.app-list-item--events, ion-item.app-list-item--events { border-left-color: #dc2626; }
-.app-list-item--chat, ion-item.app-list-item--chat { border-left-color: #06b6d4; }
-.app-list-item--success, ion-item.app-list-item--success { border-left-color: #34c759; }
-.app-list-item--warning, ion-item.app-list-item--warning { border-left-color: #ff9500; }
-.app-list-item--danger, ion-item.app-list-item--danger { border-left-color: #dc3545; }
-.app-list-item--info, ion-item.app-list-item--info { border-left-color: #007aff; }
-.app-list-item--purple, ion-item.app-list-item--purple { border-left-color: #5b21b6; }
-.app-list-item--purple.app-list-item--selected { border-left-color: #5b21b6; background: rgba(91, 33, 182, 0.08); }
-.app-list-item--booked, ion-item.app-list-item--booked { border-left-color: #007aff; }
-.app-list-item--primary, ion-item.app-list-item--primary { border-left-color: #5b21b6; }
-.app-list-item--bonus, ion-item.app-list-item--bonus { border-left-color: #f97316; }
-.app-list-item--activities, ion-item.app-list-item--activities { border-left-color: #047857; }
-.app-list-item--teamer, ion-item.app-list-item--teamer { border-left-color: #db2777; }
-.app-list-item--users, ion-item.app-list-item--users { border-left-color: #667eea; }
-.app-list-item--level, ion-item.app-list-item--level { border-left-color: #ec4899; }
-.app-list-item--organizations, ion-item.app-list-item--organizations { border-left-color: #667eea; }
-.app-list-item--badges, ion-item.app-list-item--badges { border-left-color: #f59e0b; }
-.app-list-item--categories, ion-item.app-list-item--categories { border-left-color: #0ea5e9; }
-.app-list-item--material, ion-item.app-list-item--material { border-left-color: #d97706; }
-.app-list-item--requests, ion-item.app-list-item--requests { border-left-color: #5b21b6; }
-.app-list-item--jahrgang, ion-item.app-list-item--jahrgang { border-left-color: #007aff; }
+.app-list-item--events, ion-item.app-list-item--events { border-left-color: var(--app-color-events); }
+.app-list-item--chat, ion-item.app-list-item--chat { border-left-color: var(--app-color-chat); }
+.app-list-item--success, ion-item.app-list-item--success { border-left-color: var(--app-color-success); }
+.app-list-item--warning, ion-item.app-list-item--warning { border-left-color: var(--app-color-warning); }
+.app-list-item--danger, ion-item.app-list-item--danger { border-left-color: var(--app-color-danger); }
+.app-list-item--info, ion-item.app-list-item--info { border-left-color: var(--app-color-info); }
+.app-list-item--purple, ion-item.app-list-item--purple { border-left-color: var(--app-color-konfis); }
+.app-list-item--purple.app-list-item--selected { border-left-color: var(--app-color-konfis); background: rgba(var(--app-color-konfis-rgb), 0.08); }
+.app-list-item--booked, ion-item.app-list-item--booked { border-left-color: var(--app-color-info); }
+.app-list-item--primary, ion-item.app-list-item--primary { border-left-color: var(--app-color-konfis); }
+.app-list-item--bonus, ion-item.app-list-item--bonus { border-left-color: var(--app-color-bonus); }
+.app-list-item--activities, ion-item.app-list-item--activities { border-left-color: var(--app-color-activities); }
+.app-list-item--teamer, ion-item.app-list-item--teamer { border-left-color: var(--app-color-teamer); }
+.app-list-item--team, ion-item.app-list-item--team { border-left-color: var(--app-color-teamer); }
+.app-list-item--users, ion-item.app-list-item--users { border-left-color: var(--app-color-users); }
+.app-list-item--level, ion-item.app-list-item--level { border-left-color: var(--app-color-level); }
+.app-list-item--organizations, ion-item.app-list-item--organizations { border-left-color: var(--app-color-users); }
+.app-list-item--badges, ion-item.app-list-item--badges { border-left-color: var(--app-color-badges); }
+.app-list-item--categories, ion-item.app-list-item--categories { border-left-color: var(--app-color-categories); }
+.app-list-item--material, ion-item.app-list-item--material { border-left-color: var(--app-color-material); }
+.app-list-item--requests, ion-item.app-list-item--requests { border-left-color: var(--app-color-activities); }
+.app-list-item--jahrgang, ion-item.app-list-item--jahrgang { border-left-color: var(--app-color-jahrgang); }
 
 /* Chat-Raumtyp-Farben */
-.app-list-item--team, ion-item.app-list-item--team { border-left-color: #e11d48; }
-.app-list-item--chat-jahrgang, ion-item.app-list-item--chat-jahrgang { border-left-color: #06b6d4; }
-.app-list-item--konfi, ion-item.app-list-item--konfi { border-left-color: #5b21b6; }
-.app-list-item--group, ion-item.app-list-item--group { border-left-color: #f97316; }
+/* (verschoben — siehe app-list-item--teamer Block) */
+.app-list-item--chat-jahrgang, ion-item.app-list-item--chat-jahrgang { border-left-color: var(--app-color-chat); }
+.app-list-item--konfi, ion-item.app-list-item--konfi { border-left-color: var(--app-color-konfis); }
+.app-list-item--group, ion-item.app-list-item--group { border-left-color: var(--app-color-group); }
 
 /* Selected State — nur Hintergrundfarbe, KEIN extra border-color (linker Strich kommt aus Farbvariante) */
-.app-list-item--selected { background: rgba(91, 33, 182, 0.08); }
-.app-list-item--events.app-list-item--selected { background: rgba(220, 38, 38, 0.08); }
-.app-list-item--chat.app-list-item--selected { background: rgba(6, 182, 212, 0.08); }
-.app-list-item--team.app-list-item--selected { background: rgba(225, 29, 72, 0.08); }
-.app-list-item--warning.app-list-item--selected { background: rgba(255, 149, 0, 0.08); }
-.app-list-item--primary.app-list-item--selected { background: rgba(91, 33, 182, 0.08); }
-.app-list-item--purple.app-list-item--selected { background: rgba(91, 33, 182, 0.08); }
-.app-list-item--bonus.app-list-item--selected { background: rgba(249, 115, 22, 0.08); }
-.app-list-item--activities.app-list-item--selected { background: rgba(4, 120, 87, 0.08); }
-.app-list-item--users.app-list-item--selected { background: rgba(102, 126, 234, 0.08); }
-.app-list-item--level.app-list-item--selected { background: rgba(91, 33, 182, 0.08); }
-.app-list-item--organizations.app-list-item--selected { background: rgba(102, 126, 234, 0.08); }
-.app-list-item--info.app-list-item--selected { background: rgba(0, 122, 255, 0.08); }
-.app-list-item--success.app-list-item--selected { background: rgba(52, 199, 89, 0.08); }
-.app-list-item--konfi.app-list-item--selected { background: rgba(91, 33, 182, 0.08); }
+.app-list-item--selected { background: rgba(var(--app-color-konfis-rgb), 0.08); }
+.app-list-item--events.app-list-item--selected { background: rgba(var(--app-color-events-rgb), 0.08); }
+.app-list-item--chat.app-list-item--selected { background: rgba(var(--app-color-chat-rgb), 0.08); }
+.app-list-item--team.app-list-item--selected { background: rgba(var(--app-color-teamer-rgb), 0.08); }
+.app-list-item--teamer.app-list-item--selected { background: rgba(var(--app-color-teamer-rgb), 0.08); }
+.app-list-item--warning.app-list-item--selected { background: rgba(var(--app-color-warning-rgb), 0.08); }
+.app-list-item--primary.app-list-item--selected { background: rgba(var(--app-color-konfis-rgb), 0.08); }
+.app-list-item--purple.app-list-item--selected { background: rgba(var(--app-color-konfis-rgb), 0.08); }
+.app-list-item--bonus.app-list-item--selected { background: rgba(var(--app-color-bonus-rgb), 0.08); }
+.app-list-item--activities.app-list-item--selected { background: rgba(var(--app-color-activities-rgb), 0.08); }
+.app-list-item--users.app-list-item--selected { background: rgba(var(--app-color-users-rgb), 0.08); }
+.app-list-item--level.app-list-item--selected { background: rgba(var(--app-color-level-rgb), 0.08); }
+.app-list-item--organizations.app-list-item--selected { background: rgba(var(--app-color-users-rgb), 0.08); }
+.app-list-item--info.app-list-item--selected { background: rgba(var(--app-color-info-rgb), 0.08); }
+.app-list-item--success.app-list-item--selected { background: rgba(var(--app-color-success-rgb), 0.08); }
+.app-list-item--konfi.app-list-item--selected { background: rgba(var(--app-color-konfis-rgb), 0.08); }
 
 /* === Reason Boxes === */
 /* App Reason Box - fuer Abmeldungen, Ablehnungen, etc. */
@@ -329,18 +376,19 @@ ion-item-sliding:last-child {
   border-radius: 0 10px 0 10px;
 }
 /* Bestehende Farb-Varianten */
-.app-corner-badge--events { background-color: #dc2626; }
-.app-corner-badge--success { background-color: #34c759; }
-.app-corner-badge--warning { background-color: #ff9500; }
-.app-corner-badge--danger { background-color: #dc3545; }
-.app-corner-badge--info { background-color: #007aff; }
-.app-corner-badge--chat { background-color: #06b6d4; }
-.app-corner-badge--purple { background-color: #5b21b6; }
+.app-corner-badge--events { background-color: var(--app-color-events); }
+.app-corner-badge--success { background-color: var(--app-color-success); }
+.app-corner-badge--warning { background-color: var(--app-color-warning); }
+.app-corner-badge--danger { background-color: var(--app-color-danger); }
+.app-corner-badge--info { background-color: var(--app-color-info); }
+.app-corner-badge--chat { background-color: var(--app-color-chat); }
+.app-corner-badge--purple { background-color: var(--app-color-konfis); }
 /* Chat-Raumtyp-Farben */
-.app-corner-badge--team { background-color: #e11d48; }
-.app-corner-badge--chat-jahrgang { background-color: #06b6d4; }
-.app-corner-badge--konfi { background-color: #5b21b6; }
-.app-corner-badge--group { background-color: #f97316; }
+.app-corner-badge--team { background-color: var(--app-color-teamer); }
+.app-corner-badge--teamer { background-color: var(--app-color-teamer); }
+.app-corner-badge--chat-jahrgang { background-color: var(--app-color-chat); }
+.app-corner-badge--konfi { background-color: var(--app-color-konfis); }
+.app-corner-badge--group { background-color: var(--app-color-group); }
 /* Queue-Badge (orange, Icon-only, schmaler Padding) */
 .app-corner-badge--queue {
   background-color: #ff9500;
@@ -370,26 +418,27 @@ ion-item-sliding:last-child {
   justify-content: center;
   margin-right: 8px;
 }
-.app-section-icon--events { background-color: #dc2626; }
-.app-section-icon--chat { background-color: #06b6d4; }
-.app-section-icon--success { background-color: #047857; }
-.app-section-icon--warning { background-color: #ff9500; }
-.app-section-icon--danger { background-color: #dc3545; }
-.app-section-icon--material { background-color: #d97706; }
-.app-section-icon--info { background-color: #007aff; }
-.app-section-icon--purple { background-color: #5b21b6; }
-.app-section-icon--primary { background-color: #5b21b6; }
-.app-section-icon--bonus { background-color: #f97316; }
-.app-section-icon--activities { background-color: #047857; }
-.app-section-icon--users { background-color: #667eea; }
-.app-section-icon--level { background-color: #ec4899; }
-.app-section-icon--organizations { background-color: #667eea; }
-.app-section-icon--badges { background-color: #f59e0b; }
-.app-section-icon--categories { background-color: #0ea5e9; }
-.app-section-icon--requests { background-color: #047857; }
-.app-section-icon--jahrgang { background-color: #007aff; }
-.app-section-icon--settings { background-color: #667eea; }
-.app-section-icon--teamer { background-color: #db2777; }
+.app-section-icon--events { background-color: var(--app-color-events); }
+.app-section-icon--chat { background-color: var(--app-color-chat); }
+.app-section-icon--success { background-color: var(--app-color-activities); }
+.app-section-icon--warning { background-color: var(--app-color-warning); }
+.app-section-icon--danger { background-color: var(--app-color-danger); }
+.app-section-icon--material { background-color: var(--app-color-material); }
+.app-section-icon--info { background-color: var(--app-color-info); }
+.app-section-icon--purple { background-color: var(--app-color-konfis); }
+.app-section-icon--konfis { background-color: var(--app-color-konfis); }
+.app-section-icon--primary { background-color: var(--app-color-konfis); }
+.app-section-icon--bonus { background-color: var(--app-color-bonus); }
+.app-section-icon--activities { background-color: var(--app-color-activities); }
+.app-section-icon--users { background-color: var(--app-color-users); }
+.app-section-icon--level { background-color: var(--app-color-level); }
+.app-section-icon--organizations { background-color: var(--app-color-users); }
+.app-section-icon--badges { background-color: var(--app-color-badges); }
+.app-section-icon--categories { background-color: var(--app-color-categories); }
+.app-section-icon--requests { background-color: var(--app-color-activities); }
+.app-section-icon--jahrgang { background-color: var(--app-color-jahrgang); }
+.app-section-icon--settings { background-color: var(--app-color-users); }
+.app-section-icon--teamer { background-color: var(--app-color-teamer); }
 .app-section-icon ion-icon {
   color: white;
   font-size: 0.8rem;
@@ -441,26 +490,27 @@ ion-list[inset] ion-list-header {
   width: 32px;
   height: 32px;
 }
-.app-icon-circle--events { background-color: #dc2626; }
-.app-icon-circle--chat { background-color: #06b6d4; }
-.app-icon-circle--success { background-color: #34c759; }
-.app-icon-circle--warning { background-color: #ff9500; }
-.app-icon-circle--danger { background-color: #dc3545; }
-.app-icon-circle--info { background-color: #007aff; }
-.app-icon-circle--purple { background-color: #5b21b6; }
-.app-icon-circle--trophy { background-color: #ff9500; }
-.app-icon-circle--primary { background-color: #5b21b6; }
-.app-icon-circle--bonus { background-color: #f97316; }
-.app-icon-circle--activities { background-color: #047857; }
-.app-icon-circle--teamer { background-color: #db2777; }
-.app-icon-circle--users { background-color: #667eea; }
-.app-icon-circle--level { background-color: #ec4899; }
-.app-icon-circle--organizations { background-color: #667eea; }
-.app-icon-circle--badges { background-color: #f59e0b; }
-.app-icon-circle--categories { background-color: #0ea5e9; }
+.app-icon-circle--events { background-color: var(--app-color-events); }
+.app-icon-circle--chat { background-color: var(--app-color-chat); }
+.app-icon-circle--success { background-color: var(--app-color-success); }
+.app-icon-circle--warning { background-color: var(--app-color-warning); }
+.app-icon-circle--danger { background-color: var(--app-color-danger); }
+.app-icon-circle--info { background-color: var(--app-color-info); }
+.app-icon-circle--purple { background-color: var(--app-color-konfis); }
+.app-icon-circle--trophy { background-color: var(--app-color-warning); }
+.app-icon-circle--primary { background-color: var(--app-color-konfis); }
+.app-icon-circle--bonus { background-color: var(--app-color-bonus); }
+.app-icon-circle--activities { background-color: var(--app-color-activities); }
+.app-icon-circle--teamer { background-color: var(--app-color-teamer); }
+.app-icon-circle--team { background-color: var(--app-color-teamer); }
+.app-icon-circle--users { background-color: var(--app-color-users); }
+.app-icon-circle--level { background-color: var(--app-color-level); }
+.app-icon-circle--organizations { background-color: var(--app-color-users); }
+.app-icon-circle--badges { background-color: var(--app-color-badges); }
+.app-icon-circle--categories { background-color: var(--app-color-categories); }
 /* Chat-Raumtyp-Farben */
-.app-icon-circle--team { background-color: #e11d48; }
-.app-icon-circle--chat-jahrgang { background-color: #06b6d4; }
+/* (verschoben — siehe app-icon-circle--teamer Block) */
+.app-icon-circle--chat-jahrgang { background-color: var(--app-color-chat); }
 .app-icon-circle--konfi { background-color: #5b21b6; }
 .app-icon-circle--group { background-color: #f97316; }
 .app-icon-circle--material { background-color: #d97706; }
@@ -746,7 +796,7 @@ ion-item {
 
 /* === Teamer Domain Color === */
 .app-header-banner--teamer {
-  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+  background: linear-gradient(135deg, var(--app-color-teamer) 0%, #be123c 100%);
 }
 
 /* === Stats Row === */
@@ -902,9 +952,9 @@ ion-item {
   color: #5b21b6;
 }
 .app-info-box--teamer {
-  background: rgba(225, 29, 72, 0.08);
-  border: 1px solid rgba(225, 29, 72, 0.2);
-  color: #e11d48;
+  background: rgba(var(--app-color-teamer-rgb), 0.08);
+  border: 1px solid rgba(var(--app-color-teamer-rgb), 0.2);
+  color: var(--app-color-teamer);
 }
 
 /* === Progress Bars === */
@@ -1305,36 +1355,40 @@ ion-button.app-modal-submit-btn {
 }
 /* Farb-Varianten passend zu Domain-Farben */
 ion-button.app-modal-submit-btn--events {
-  --background: #dc2626;
+  --background: var(--app-color-events);
   --background-hover: #b91c1c;
 }
 ion-button.app-modal-submit-btn--activities {
-  --background: #047857;
+  --background: var(--app-color-activities);
   --background-hover: #065f46;
 }
 ion-button.app-modal-submit-btn--badges {
-  --background: #f59e0b;
+  --background: var(--app-color-badges);
   --background-hover: #d97706;
 }
 ion-button.app-modal-submit-btn--konfi {
-  --background: #5b21b6;
+  --background: var(--app-color-konfis);
   --background-hover: #4c1d95;
 }
 ion-button.app-modal-submit-btn--settings {
-  --background: #667eea;
+  --background: var(--app-color-users);
   --background-hover: #5a6fd6;
 }
 ion-button.app-modal-submit-btn--teamer {
-  --background: #e11d48;
-  --background-hover: #be123c;
+  --background: var(--app-color-teamer);
+  --background-hover: #831843;
 }
 ion-button.app-modal-submit-btn--level {
-  --background: #ec4899;
+  --background: var(--app-color-level);
   --background-hover: #db2777;
 }
 ion-button.app-modal-submit-btn--chat {
-  --background: #06b6d4;
+  --background: var(--app-color-chat);
   --background-hover: #0891b2;
+}
+ion-button.app-modal-submit-btn--bonus {
+  --background: var(--app-color-bonus);
+  --background-hover: #ea580c;
 }
 
 /* === Modal Info Text === */

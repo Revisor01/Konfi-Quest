@@ -514,6 +514,11 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           activities={activities}
         />
 
+        {/* Anwesenheit - Pflicht-Events - nur für Konfis (wichtigste Info vorn) */}
+        {!isTeamer && attendanceStats && attendanceStats.total_mandatory > 0 && (
+          <AttendanceSection attendanceStats={attendanceStats} />
+        )}
+
         {/* Bonuspunkte - nur für Konfis */}
         {!isTeamer && (
           <BonusSection
@@ -533,11 +538,6 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
             eventPoints={eventPoints}
             currentKonfi={currentKonfi}
           />
-        )}
-
-        {/* Anwesenheit - Pflicht-Events - nur für Konfis */}
-        {!isTeamer && attendanceStats && attendanceStats.total_mandatory > 0 && (
-          <AttendanceSection attendanceStats={attendanceStats} />
         )}
 
         {/* Teamer Events */}

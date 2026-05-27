@@ -990,6 +990,12 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         onOpenMembers={openMembersModal}
         onOpenPoll={openPollModal}
         onLeaveChat={handleLeaveChat}
+        eventId={room?.event_id ?? null}
+        partnerType={
+          room?.type === 'direct'
+            ? (room.participants?.find(p => !(p.user_id === user?.id && p.user_type === user?.type))?.user_type ?? null)
+            : null
+        }
       />
 
       <IonContent

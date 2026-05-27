@@ -111,7 +111,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
       // Jahrgangs-Filter wie SimpleCreateChatModal
       let allowedJahrgangIds: number[] = [];
       if (userJahrgangRes.data.length > 0) {
-        allowedJahrgangIds = userJahrgangRes.data.map((j: any) => j.jahrgang_id);
+        allowedJahrgangIds = userJahrgangRes.data.map((j: any) => j.jahrgang_id ?? j.id);
       }
 
       const konfis: ChatUser[] = konfisRes.data
@@ -308,7 +308,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
     const participantId = `${isAdmin ? 'admin' : 'konfi'}-${'user_id' in targetUser ? targetUser.user_id : targetUser.id}`;
     const roleText = getRoleText(targetUser);
     const jahrgang = getJahrgang(targetUser);
-    const badgeColor = isAdmin ? '#e11d48' : '#5b21b6';
+    const badgeColor = isAdmin ? 'var(--app-color-teamer)' : 'var(--app-color-konfis)';
 
     return (
       <div
@@ -338,7 +338,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
               {!isAdmin && jahrgang && (
                 <div className="app-list-item__meta">
                   <span className="app-list-item__meta-item">
-                    <IonIcon icon={calendar} style={{ color: '#5b21b6' }} />
+                    <IonIcon icon={calendar} style={{ color: 'var(--app-color-jahrgang)' }} />
                     {jahrgang}
                   </span>
                 </div>
@@ -351,8 +351,8 @@ const MembersModal: React.FC<MembersModalProps> = ({
             <IonCheckbox
               checked={isSelected}
               style={{
-                '--checkbox-background-checked': isAdmin ? '#e11d48' : '#5b21b6',
-                '--border-color-checked': isAdmin ? '#e11d48' : '#5b21b6',
+                '--checkbox-background-checked': isAdmin ? 'var(--app-color-teamer)' : 'var(--app-color-konfis)',
+                '--border-color-checked': isAdmin ? 'var(--app-color-teamer)' : 'var(--app-color-konfis)',
                 '--checkmark-color': 'white'
               }}
             />

@@ -42,15 +42,19 @@ interface ChatHeaderProps {
   onOpenMembers: () => void;
   onOpenPoll: () => void;
   onLeaveChat: () => void;
+  eventId?: number | null;
+  partnerType?: 'admin' | 'konfi' | null;
 }
 
-const getHeaderColor = (roomType: string): string => {
-  switch (roomType) {
-    case 'admin': return '#e11d48';
-    case 'jahrgang': return '#06b6d4';
-    case 'group': return '#f97316';
-    default: return '#5b21b6';
+const getHeaderColor = (roomType: string, eventId?: number | null, partnerType?: 'admin' | 'konfi' | null): string => {
+  if (eventId) return 'var(--app-color-events)';
+  if (roomType === 'jahrgang') return 'var(--app-color-chat)';
+  if (roomType === 'group') return 'var(--app-color-group)';
+  if (roomType === 'admin') return 'var(--app-color-teamer)';
+  if (roomType === 'direct') {
+    return partnerType === 'admin' ? 'var(--app-color-teamer)' : 'var(--app-color-konfis)';
   }
+  return 'var(--app-color-konfis)';
 };
 
 export const ChatHeader = React.memo<ChatHeaderProps>(({
@@ -62,9 +66,11 @@ export const ChatHeader = React.memo<ChatHeaderProps>(({
   onBack,
   onOpenMembers,
   onOpenPoll,
-  onLeaveChat
+  onLeaveChat,
+  eventId,
+  partnerType
 }) => {
-  const headerColor = getHeaderColor(roomType);
+  const headerColor = getHeaderColor(roomType, eventId, partnerType);
   return (
     <IonHeader translucent={true}>
       <IonToolbar>

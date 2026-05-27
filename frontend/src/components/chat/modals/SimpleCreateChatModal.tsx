@@ -175,9 +175,10 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
         ]);
 
         // Filtere Konfis basierend auf Jahrgangs-Zuweisungen
+        // Backend liefert {id, name, ...} -- nicht jahrgang_id (Bug-Quelle)
         let allowedJahrgangIds: number[] = [];
         if (userJahrgangRes.data.length > 0) {
-          allowedJahrgangIds = userJahrgangRes.data.map((j: any) => j.jahrgang_id);
+          allowedJahrgangIds = userJahrgangRes.data.map((j: any) => j.jahrgang_id ?? j.id);
         }
 
         let konfis: ChatUser[] = konfisRes.data
@@ -502,9 +503,9 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                     interface="popover"
                     style={{ width: '100%' }}
                   >
-                    <IonSelectOption value="alle">Alle Rollen</IonSelectOption>
+                    <IonSelectOption value="alle">Alle</IonSelectOption>
                     <IonSelectOption value="konfi">Konfis</IonSelectOption>
-                    <IonSelectOption value="admin">Admins</IonSelectOption>
+                    <IonSelectOption value="admin">Team</IonSelectOption>
                   </IonSelect>
                 </IonItem>
               )}
@@ -581,14 +582,14 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                             opacity: creating ? 0.6 : 1,
                             position: 'relative',
                             overflow: 'hidden',
-                            background: isSelected ? (isAdmin ? 'rgba(225, 29, 72, 0.08)' : 'rgba(91, 33, 182, 0.08)') : undefined
+                            background: isSelected ? (isAdmin ? 'rgba(var(--app-color-teamer-rgb), 0.08)' : 'rgba(var(--app-color-konfis-rgb), 0.08)') : undefined
                           }}
                         >
                           {/* Eselsohr mit Rolle/Funktion */}
                           <div className="app-corner-badges">
                             <div
                               className="app-corner-badge"
-                              style={{ backgroundColor: isAdmin ? '#e11d48' : '#5b21b6' }}
+                              style={{ backgroundColor: isAdmin ? 'var(--app-color-teamer)' : 'var(--app-color-konfis)' }}
                             >
                               {isAdmin ? (targetUser.role_description || 'Admin') : 'Konfi'}
                             </div>
@@ -606,7 +607,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                                 {!isAdmin && (targetUser.jahrgang_name || targetUser.jahrgang) && (
                                   <div className="app-list-item__meta">
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={calendar} style={{ color: '#5b21b6' }} />
+                                      <IonIcon icon={calendar} style={{ color: 'var(--app-color-jahrgang)' }} />
                                       {targetUser.jahrgang_name || targetUser.jahrgang}
                                     </span>
                                   </div>

@@ -10,19 +10,27 @@ interface SectionHeaderProps {
   stats: Array<{ value: number; label: string }>;
 }
 
+// Liest --app-color-XYZ aus :root, mit Hex-Fallback fuer SSR/Initial-Render
+const cssColor = (token: string, fallback: string): string => {
+  if (typeof window === 'undefined') return fallback;
+  const v = getComputedStyle(document.documentElement).getPropertyValue(`--app-color-${token}`).trim();
+  return v || fallback;
+};
+
+// Presets: primary kommt aus CSS-Variable, secondary bleibt als feste Hover-Stufe
 const PRESET_COLORS: Record<string, { primary: string; secondary: string }> = {
-  events: { primary: '#dc2626', secondary: '#b91c1c' },
-  activities: { primary: '#047857', secondary: '#065f46' },
-  konfis: { primary: '#5b21b6', secondary: '#4c1d95' },
-  teamer: { primary: '#db2777', secondary: '#9d174d' },
-  users: { primary: '#667eea', secondary: '#5a67d8' },
-  organizations: { primary: '#667eea', secondary: '#5a67d8' },
-  badges: { primary: '#f59e0b', secondary: '#d97706' },
-  requests: { primary: '#5b21b6', secondary: '#4c1d95' },
-  'konfi-requests': { primary: '#047857', secondary: '#065f46' },
-  jahrgang: { primary: '#007aff', secondary: '#0066d6' },
-  categories: { primary: '#0ea5e9', secondary: '#0284c7' },
-  level: { primary: '#ec4899', secondary: '#db2777' },
+  events: { primary: cssColor('events', '#dc2626'), secondary: '#b91c1c' },
+  activities: { primary: cssColor('activities', '#047857'), secondary: '#065f46' },
+  konfis: { primary: cssColor('konfis', '#5b21b6'), secondary: '#4c1d95' },
+  teamer: { primary: cssColor('teamer', '#be185d'), secondary: '#831843' },
+  users: { primary: cssColor('users', '#667eea'), secondary: '#5a67d8' },
+  organizations: { primary: cssColor('users', '#667eea'), secondary: '#5a67d8' },
+  badges: { primary: cssColor('badges', '#f59e0b'), secondary: '#d97706' },
+  requests: { primary: cssColor('activities', '#047857'), secondary: '#065f46' },
+  'konfi-requests': { primary: cssColor('activities', '#047857'), secondary: '#065f46' },
+  jahrgang: { primary: cssColor('jahrgang', '#007aff'), secondary: '#0066d6' },
+  categories: { primary: cssColor('categories', '#0ea5e9'), secondary: '#0284c7' },
+  level: { primary: cssColor('level', '#ec4899'), secondary: '#db2777' },
 };
 
 // Hilfsfunktion: HEX zu RGB-String für rgba()

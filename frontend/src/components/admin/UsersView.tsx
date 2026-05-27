@@ -91,7 +91,7 @@ const UsersView: React.FC<UsersViewProps> = ({
     switch (roleName) {
       case 'org_admin': return '#3b82f6';
       case 'admin': return '#ef4444';
-      case 'teamer': return '#f59e0b';
+      case 'teamer': return '#ec4899';
       default: return '#6b7280';
     }
   };

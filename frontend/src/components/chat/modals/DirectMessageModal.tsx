@@ -165,7 +165,7 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSucc
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       {filteredUsers.map((targetUser) => {
                         const isAdmin = targetUser.type === 'admin';
-                        const badgeColor = isAdmin ? '#e11d48' : '#5b21b6';
+                        const badgeColor = isAdmin ? 'var(--app-color-teamer)' : 'var(--app-color-konfis)';
                         return (
                           <div
                             key={`${targetUser.type}-${targetUser.id}`}
@@ -195,7 +195,7 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSucc
                                   {!isAdmin && targetUser.jahrgang && (
                                     <div className="app-list-item__meta">
                                       <span className="app-list-item__meta-item">
-                                        <IonIcon icon={calendar} style={{ color: '#5b21b6' }} />
+                                        <IonIcon icon={calendar} style={{ color: 'var(--app-color-jahrgang)' }} />
                                         {targetUser.jahrgang}
                                       </span>
                                     </div>
