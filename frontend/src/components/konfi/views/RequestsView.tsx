@@ -122,7 +122,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
         </IonListHeader>
         <IonItemGroup>
           <IonItem>
-            <IonIcon icon={search} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+            <IonIcon icon={search} slot="start" className="app-icon-color--system" style={{ fontSize: '1rem' }} />
             <IonInput
               value={searchText}
               onIonInput={(e) => setSearchText(e.detail.value || '')}
@@ -228,23 +228,23 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                         {/* Zeile 2: Datum + Punkte + Typ + Foto */}
                         <div className="app-list-item__meta">
                           <span className="app-list-item__meta-item">
-                            <IonIcon icon={calendar} style={{ color: '#059669' }} />
+                            <IonIcon icon={calendar} className="app-icon-color--gemeinde" />
                             {formatDate(request.requested_date)}
                           </span>
                           <span className="app-list-item__meta-item">
-                            <IonIcon icon={trophy} style={{ color: '#ff9500' }} />
+                            <IonIcon icon={trophy} className="app-icon-color--points" />
                             {request.activity_points}P
                           </span>
                           <span className="app-list-item__meta-item">
                             <IonIcon
                               icon={request.activity_type === 'gottesdienst' ? home : people}
-                              style={{ color: getTypeColor(request.activity_type) }}
+                              className={request.activity_type === 'gottesdienst' ? 'app-icon-color--gottesdienst' : 'app-icon-color--gemeinde'}
                             />
                             {request.activity_type === 'gottesdienst' ? 'GD' : 'Gem.'}
                           </span>
                           {request.photo_filename && (
                             <span className="app-list-item__meta-item">
-                              <IonIcon icon={camera} style={{ color: '#7045f6' }} />
+                              <IonIcon icon={camera} className="app-icon-color--konfis" />
                               Foto
                             </span>
                           )}
@@ -253,7 +253,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                         {/* Zeile 3: Kommentar (falls vorhanden) */}
                         {request.comment && (
                           <div className="app-list-item__subtitle" style={{
-                            color: '#666',
+                            color: 'var(--app-text-secondary)',
                             fontStyle: 'italic',
                             marginTop: '4px'
                           }}>

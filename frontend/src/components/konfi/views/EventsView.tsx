@@ -131,25 +131,34 @@ const EventsView: React.FC<EventsViewProps> = ({
     const isOptedOut = event.is_opted_out || event.booking_status === 'opted_out';
 
     // Bestimme Farbe - Konfirmation IMMER Lila (auch wenn angemeldet)
-    let statusColor = '#fd7e14'; // Default: Orange
-    if (isCancelled) statusColor = '#dc3545'; // Rot
-    else if (isMandatory && isOptedOut) statusColor = '#dc2626'; // Rot - Abgemeldet
-    else if (isMandatory && isPastEvent && attendanceStatus === 'present') statusColor = '#34c759'; // Gruen - Anwesend
-    else if (isMandatory && isPastEvent && attendanceStatus === 'absent') statusColor = '#dc3545'; // Rot - Gefehlt
-    else if (isMandatory && isPastEvent) statusColor = '#fd7e14'; // Orange - Ausstehend
-    else if (isMandatory) statusColor = '#007aff'; // Blau - Pflicht (angemeldet)
-    else if (isKonfirmationEvent && !isPastEvent) statusColor = '#5b21b6'; // Lila - Konfirmation (immer, auch wenn angemeldet)
-    else if (isParticipated && attendanceStatus === 'present') statusColor = '#34c759'; // Gruen - Verbucht
-    else if (isParticipated && attendanceStatus === 'absent') statusColor = '#dc3545'; // Rot - Verpasst
-    else if (isAusstehend) statusColor = '#fd7e14'; // Orange - Ausstehend (auf Verbuchung wartend)
-    else if (isOnWaitlist) statusColor = '#fd7e14'; // Orange - Warteliste
-    else if (event.is_registered && !isPastEvent) statusColor = '#007aff'; // Blau - Angemeldet
-    else if (isPastEvent) statusColor = '#6c757d'; // Grau - Vergangen
-    else if (event.registration_status === 'open' && event.max_participants > 0 && event.registered_count >= event.max_participants && event.waitlist_enabled) statusColor = '#fd7e14'; // Orange - Warteliste
-    else if (event.registration_status === 'open' && event.max_participants > 0 && event.registered_count >= event.max_participants) statusColor = '#dc3545'; // Rot - Ausgebucht
-    else if (event.registration_status === 'open') statusColor = '#34c759'; // Gruen - Offen
-    else if (event.registration_status === 'upcoming') statusColor = '#fd7e14'; // Orange - Bald
-    else statusColor = '#dc3545'; // Rot - Geschlossen
+    // Alle Status-Farben aus globalen Tokens — Aenderung im CSS wirkt hier automatisch
+    const C = {
+      bonus: 'var(--app-color-bonus)',       // orange (Warteliste/Ausstehend/Bald)
+      danger: 'var(--app-color-danger)',     // rot
+      events: 'var(--app-color-events)',     // rot (Pflicht-Abgemeldet)
+      success: 'var(--app-color-success)',   // gruen (Anwesend/Offen/Verbucht)
+      info: 'var(--app-color-info)',         // blau (Pflicht angemeldet, Konfirmation, Angemeldet)
+      past: '#6c757d',                       // grau (vergangen) — kein Token
+    };
+    let statusColor = C.bonus;
+    if (isCancelled) statusColor = C.danger;
+    else if (isMandatory && isOptedOut) statusColor = C.events;
+    else if (isMandatory && isPastEvent && attendanceStatus === 'present') statusColor = C.success;
+    else if (isMandatory && isPastEvent && attendanceStatus === 'absent') statusColor = C.danger;
+    else if (isMandatory && isPastEvent) statusColor = C.bonus;
+    else if (isMandatory) statusColor = C.info;
+    else if (isKonfirmationEvent && !isPastEvent) statusColor = C.info; // Konfirmation = blau (analog Admin-Detail)
+    else if (isParticipated && attendanceStatus === 'present') statusColor = C.success;
+    else if (isParticipated && attendanceStatus === 'absent') statusColor = C.danger;
+    else if (isAusstehend) statusColor = C.bonus;
+    else if (isOnWaitlist) statusColor = C.bonus;
+    else if (event.is_registered && !isPastEvent) statusColor = C.info;
+    else if (isPastEvent) statusColor = C.past;
+    else if (event.registration_status === 'open' && event.max_participants > 0 && event.registered_count >= event.max_participants && event.waitlist_enabled) statusColor = C.bonus;
+    else if (event.registration_status === 'open' && event.max_participants > 0 && event.registered_count >= event.max_participants) statusColor = C.danger;
+    else if (event.registration_status === 'open') statusColor = C.success;
+    else if (event.registration_status === 'upcoming') statusColor = C.bonus;
+    else statusColor = C.danger;
 
     // Bestimme Text
     let statusText = 'Offen';
@@ -234,7 +243,7 @@ const EventsView: React.FC<EventsViewProps> = ({
         </IonListHeader>
         <IonItemGroup>
           <IonItem>
-            <IonIcon icon={search} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+            <IonIcon icon={search} slot="start" className="app-icon-color--system" style={{ fontSize: '1rem' }} />
             <IonInput
               value={searchText}
               onIonInput={(e) => setSearchText(e.detail.value || '')}

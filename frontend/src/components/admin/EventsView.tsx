@@ -197,7 +197,7 @@ const EventsView: React.FC<EventsViewProps> = ({
         <IonItemGroup>
           {onSearchChange && (
             <IonItem>
-              <IonIcon icon={search} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+              <IonIcon icon={search} slot="start" className="app-icon-color--system" style={{ fontSize: '1rem' }} />
               <IonInput
                 value={searchText}
                 onIonInput={(e) => onSearchChange(e.detail.value || '')}
@@ -207,7 +207,7 @@ const EventsView: React.FC<EventsViewProps> = ({
           )}
           {jahrgaenge && jahrgaenge.length > 0 && onJahrgangChange && (
             <IonItem>
-              <IonIcon icon={calendarOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+              <IonIcon icon={calendarOutline} slot="start" className="app-icon-color--system" style={{ fontSize: '1rem' }} />
               <IonSelect
                 value={selectedJahrgang}
                 onIonChange={(e) => onJahrgangChange(e.detail.value || null)}

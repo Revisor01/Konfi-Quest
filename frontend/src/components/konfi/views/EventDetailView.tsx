@@ -331,29 +331,36 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     doRegister();
   };
 
-  // Status-Farben für SectionHeader (dynamisch basierend auf Event-Zustand)
+  // Status-Farben fuer SectionHeader — alle aus globalen Tokens
   const getStatusColors = (): { primary: string; secondary: string } => {
-    if (!eventData) return { primary: '#dc2626', secondary: '#b91c1c' };
+    const events = { primary: 'var(--app-color-events)', secondary: 'var(--app-color-events)' };
+    const danger = { primary: 'var(--app-color-danger)', secondary: 'var(--app-color-danger)' };
+    const info = { primary: 'var(--app-color-info)', secondary: 'var(--app-color-info)' }; // Konfirmation=blau, Pflicht-angemeldet=blau
+    const success = { primary: 'var(--app-color-success)', secondary: 'var(--app-color-success)' };
+    const bonus = { primary: 'var(--app-color-bonus)', secondary: 'var(--app-color-bonus)' };
+    const past = { primary: '#6c757d', secondary: '#6c757d' };
+
+    if (!eventData) return events;
 
     const isPastEvent = new Date(eventData.event_date) < new Date();
     const isKonfi = isKonfirmationEvent(eventData);
     const isOnWaitlist = eventData.booking_status === 'waitlist' || eventData.booking_status === 'pending';
     const isAusstehend = isPastEvent && eventData.is_registered && !isOnWaitlist && !eventData.attendance_status;
 
-    if (eventData.cancelled) return { primary: '#dc3545', secondary: '#c82333' };
-    if (eventData.is_opted_out || eventData.booking_status === 'opted_out') return { primary: '#dc2626', secondary: '#b91c1c' };
-    if (isKonfi && !isPastEvent) return { primary: '#5b21b6', secondary: '#4c1d95' };
-    if (isPastEvent && eventData.attendance_status === 'present') return { primary: '#34c759', secondary: '#2db84d' };
-    if (isPastEvent && eventData.attendance_status === 'absent') return { primary: '#dc3545', secondary: '#c82333' };
-    if (isAusstehend) return { primary: '#fd7e14', secondary: '#e8650e' };
-    if (isOnWaitlist) return { primary: '#fd7e14', secondary: '#e8650e' };
-    if (eventData.is_registered && !isPastEvent) return { primary: '#007aff', secondary: '#0066d6' };
-    if (isPastEvent) return { primary: '#6c757d', secondary: '#5a6268' };
-    if (eventData.registration_status === 'open' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants && eventData.waitlist_enabled) return { primary: '#fd7e14', secondary: '#e8650e' };
-    if (eventData.registration_status === 'open' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants) return { primary: '#dc3545', secondary: '#c82333' };
-    if (eventData.registration_status === 'open') return { primary: '#34c759', secondary: '#2db84d' };
-    if (eventData.registration_status === 'upcoming') return { primary: '#fd7e14', secondary: '#e8650e' };
-    return { primary: '#dc2626', secondary: '#b91c1c' };
+    if (eventData.cancelled) return danger;
+    if (eventData.is_opted_out || eventData.booking_status === 'opted_out') return events;
+    if (isKonfi && !isPastEvent) return info; // Konfirmation = blau (analog Admin)
+    if (isPastEvent && eventData.attendance_status === 'present') return success;
+    if (isPastEvent && eventData.attendance_status === 'absent') return danger;
+    if (isAusstehend) return bonus;
+    if (isOnWaitlist) return bonus;
+    if (eventData.is_registered && !isPastEvent) return info;
+    if (isPastEvent) return past;
+    if (eventData.registration_status === 'open' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants && eventData.waitlist_enabled) return bonus;
+    if (eventData.registration_status === 'open' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants) return danger;
+    if (eventData.registration_status === 'open') return success;
+    if (eventData.registration_status === 'upcoming') return bonus;
+    return events;
   };
 
   // Status-Text für Header
@@ -464,19 +471,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
         {/* QR Check-in Status / Button */}
         {eventData.attendance_status === 'present' ? (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            padding: '12px 16px',
-            margin: '0 16px 8px 16px',
-            backgroundColor: 'rgba(52, 199, 89, 0.12)',
-            borderRadius: '12px',
-            color: '#34c759',
-            fontWeight: '600',
-            fontSize: '1rem'
-          }}>
+          <div className="app-status-box app-status-box--success" style={{ margin: '0 16px 8px 16px' }}>
             <IonIcon icon={checkmarkCircle} style={{ fontSize: '1.3rem' }} />
             Anwesend
           </div>
@@ -484,14 +479,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           <div style={{ padding: '0 16px', marginBottom: '8px' }}>
             <IonButton
               expand="block"
+              color="primary"
               onClick={() => presentScannerModal({
                 presentingElement: pageRef.current || undefined
               })}
-              style={{
-                '--background': '#007aff',
-                '--background-activated': '#0066d6',
-                '--color': 'white'
-              }}
             >
               <IonIcon icon={qrCodeOutline} slot="start" />
               Einchecken
@@ -744,19 +735,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               if (isOptedOut) {
                 return (
                   <div style={{ textAlign: 'center', padding: '12px 16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: '#dc2626', fontWeight: 600, fontSize: '0.95rem', marginBottom: '12px' }}>
+                    <div className="app-status-box app-status-box--events" style={{ marginBottom: '12px' }}>
                       <IonIcon icon={closeCircle} />
                       Du hast dich abgemeldet
                     </div>
                     <IonButton
                       className="app-action-button"
                       expand="block"
-                      style={{
-                        '--background': '#34c759',
-                        '--background-activated': '#2da84e',
-                        '--background-hover': '#30b853',
-                        '--color': 'white'
-                      }}
+                      color="success"
                       onClick={handleOptIn}
                     >
                       <IonIcon icon={checkmarkCircle} slot="start" />
@@ -841,13 +827,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             <IonButton
               className="app-action-button"
               expand="block"
+              color="success"
               disabled={!isOnline}
-              style={{
-                '--background': '#34c759',
-                '--background-activated': '#2da84e',
-                '--background-hover': '#30b853',
-                '--color': 'white'
-              }}
               onClick={handleRegister}
             >
               <IonIcon icon={checkmarkCircle} slot="start" />
@@ -857,13 +838,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             <IonButton
               className="app-action-button"
               expand="block"
+              color="warning"
               disabled={!isOnline}
-              style={{
-                '--background': '#fd7e14',
-                '--background-activated': '#e8650e',
-                '--background-hover': '#f4720b',
-                '--color': 'white'
-              }}
               onClick={handleRegister}
             >
               <IonIcon icon={hourglass} slot="start" />

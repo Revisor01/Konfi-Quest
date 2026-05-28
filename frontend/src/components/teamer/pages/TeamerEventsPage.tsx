@@ -235,34 +235,43 @@ const TeamerEventsPage: React.FC = () => {
     const isPastEvent = new Date(event.event_date) < new Date();
     const isTeamerEvent = event.teamer_needed || event.teamer_only;
 
-    let statusColor = '#34c759';
+    // Globale Tokens
+    const C = {
+      success: 'var(--app-color-success)',
+      danger: 'var(--app-color-danger)',
+      bonus: 'var(--app-color-bonus)',
+      info: 'var(--app-color-info)',
+      konfis: 'var(--app-color-konfis)',
+      past: '#6c757d',
+    };
+    let statusColor = C.success;
     let statusText = 'Offen';
     let statusIcon = lockOpenOutline;
 
     if (isPastEvent && event.is_registered) {
       if (event.attendance_status === 'present') {
-        statusColor = '#34c759';
+        statusColor = C.success;
         statusText = 'Anwesend';
         statusIcon = checkmarkCircle;
       } else if (event.attendance_status === 'absent') {
-        statusColor = '#dc3545';
+        statusColor = C.danger;
         statusText = 'Abwesend';
         statusIcon = closeCircle;
       } else {
-        statusColor = '#fd7e14';
+        statusColor = C.bonus;
         statusText = 'Ausstehend';
         statusIcon = hourglass;
       }
     } else if (event.is_registered && !isPastEvent) {
-      statusColor = '#007aff';
+      statusColor = C.info;
       statusText = 'Dabei';
       statusIcon = checkmarkCircle;
     } else if (isPastEvent) {
-      statusColor = '#6c757d';
+      statusColor = C.past;
       statusText = 'Vergangen';
       statusIcon = hourglass;
     } else if (isTeamerEvent) {
-      statusColor = '#5b21b6';
+      statusColor = C.konfis;
       statusText = 'Offen';
       statusIcon = calendar;
     }
@@ -336,20 +345,27 @@ const TeamerEventsPage: React.FC = () => {
     }
   };
 
-  // Status-Farben für SectionHeader (1:1 wie Konfi EventDetailView)
+  // Status-Farben fuer SectionHeader — globale Tokens
   const getStatusColors = (event: Event): { primary: string; secondary: string } => {
+    const danger = { primary: 'var(--app-color-danger)', secondary: 'var(--app-color-danger)' };
+    const success = { primary: 'var(--app-color-success)', secondary: 'var(--app-color-success)' };
+    const bonus = { primary: 'var(--app-color-bonus)', secondary: 'var(--app-color-bonus)' };
+    const info = { primary: 'var(--app-color-info)', secondary: 'var(--app-color-info)' };
+    const events = { primary: 'var(--app-color-events)', secondary: 'var(--app-color-events)' };
+    const past = { primary: '#6c757d', secondary: '#6c757d' };
+
     const isPastEvent = new Date(event.event_date) < new Date();
     const isOnWaitlist = event.booking_status === 'waitlist' || event.booking_status === 'pending';
 
-    if (event.registration_status === 'cancelled') return { primary: '#dc3545', secondary: '#c82333' };
-    if (isPastEvent && event.attendance_status === 'present') return { primary: '#34c759', secondary: '#2db84d' };
-    if (isPastEvent && event.attendance_status === 'absent') return { primary: '#dc3545', secondary: '#c82333' };
-    if (isPastEvent && event.is_registered && !event.attendance_status) return { primary: '#fd7e14', secondary: '#e8650e' };
-    if (isOnWaitlist) return { primary: '#fd7e14', secondary: '#e8650e' };
-    if (event.is_registered && !isPastEvent) return { primary: '#007aff', secondary: '#0066d6' };
-    if (isPastEvent) return { primary: '#6c757d', secondary: '#5a6268' };
-    if (event.registration_status === 'open') return { primary: '#34c759', secondary: '#2db84d' };
-    return { primary: '#dc2626', secondary: '#b91c1c' };
+    if (event.registration_status === 'cancelled') return danger;
+    if (isPastEvent && event.attendance_status === 'present') return success;
+    if (isPastEvent && event.attendance_status === 'absent') return danger;
+    if (isPastEvent && event.is_registered && !event.attendance_status) return bonus;
+    if (isOnWaitlist) return bonus;
+    if (event.is_registered && !isPastEvent) return info;
+    if (isPastEvent) return past;
+    if (event.registration_status === 'open') return success;
+    return events;
   };
 
   // Status-Text für Header (1:1 wie Konfi EventDetailView)
@@ -644,35 +660,20 @@ const TeamerEventsPage: React.FC = () => {
               selectedEvent.is_registered ? (
                 <div style={{ textAlign: 'center', padding: '12px 16px' }}>
                   {selectedEvent.attendance_status === 'present' && (
-                    <div style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                      padding: '12px 16px', backgroundColor: 'rgba(52, 199, 89, 0.12)',
-                      borderRadius: '12px', color: '#34c759', fontWeight: '600', fontSize: '0.95rem',
-                      border: '1px solid rgba(52, 199, 89, 0.3)'
-                    }}>
-                      <IonIcon icon={checkmarkCircle} style={{ fontSize: '1.2rem' }} />
+                    <div className="app-status-box app-status-box--success">
+                      <IonIcon icon={checkmarkCircle} />
                       Anwesend
                     </div>
                   )}
                   {selectedEvent.attendance_status === 'absent' && (
-                    <div style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                      padding: '12px 16px', backgroundColor: 'rgba(220, 53, 69, 0.12)',
-                      borderRadius: '12px', color: '#dc3545', fontWeight: '600', fontSize: '0.95rem',
-                      border: '1px solid rgba(220, 53, 69, 0.3)'
-                    }}>
-                      <IonIcon icon={closeCircle} style={{ fontSize: '1.2rem' }} />
+                    <div className="app-status-box app-status-box--danger">
+                      <IonIcon icon={closeCircle} />
                       Abwesend
                     </div>
                   )}
                   {!selectedEvent.attendance_status && (
-                    <div style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                      padding: '12px 16px', backgroundColor: 'rgba(253, 126, 20, 0.12)',
-                      borderRadius: '12px', color: '#fd7e14', fontWeight: '600', fontSize: '0.95rem',
-                      border: '1px solid rgba(253, 126, 20, 0.3)'
-                    }}>
-                      <IonIcon icon={hourglass} style={{ fontSize: '1.2rem' }} />
+                    <div className="app-status-box app-status-box--bonus">
+                      <IonIcon icon={hourglass} />
                       Anwesenheit ausstehend
                     </div>
                   )}
@@ -695,12 +696,7 @@ const TeamerEventsPage: React.FC = () => {
                 <IonButton
                   className="app-action-button"
                   expand="block"
-                  style={{
-                    '--background': '#34c759',
-                    '--background-activated': '#2da84e',
-                    '--background-hover': '#30b853',
-                    '--color': 'white'
-                  }}
+                  color="success"
                   onClick={() => handleBook(selectedEvent)}
                   disabled={bookingLoading}
                 >
@@ -762,7 +758,7 @@ const TeamerEventsPage: React.FC = () => {
               </IonListHeader>
               <IonItemGroup>
                 <IonItem>
-                  <IonIcon icon={search} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+                  <IonIcon icon={search} slot="start" className="app-icon-color--system" style={{ fontSize: '1rem' }} />
                   <IonInput
                     value={searchText}
                     onIonInput={(e) => setSearchText(e.detail.value || '')}
