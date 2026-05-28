@@ -60,7 +60,7 @@ import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
-import { SectionHeader, ListSection } from '../../shared';
+import { SectionHeader, ListSection, ProfileHeaderButton } from '../../shared';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import QRScannerModal from '../../konfi/modals/QRScannerModal';
@@ -721,6 +721,7 @@ const TeamerEventsPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonTitle>Events</IonTitle>
+          <ProfileHeaderButton href="/teamer/profile" variant="teamer" />
         </IonToolbar>
       </IonHeader>
 

@@ -45,7 +45,7 @@ import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
-import { SectionHeader } from '../../shared';
+import { SectionHeader, ProfileHeaderButton } from '../../shared';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import FileViewerModal from '../../shared/FileViewerModal';
@@ -373,6 +373,7 @@ const TeamerMaterialPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonTitle>Material</IonTitle>
+          <ProfileHeaderButton href="/teamer/profile" variant="teamer" />
         </IonToolbar>
       </IonHeader>
 

@@ -749,8 +749,8 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
   // Upload photo for activity request (encrypted storage)
   router.post('/upload-photo', verifyTokenRBAC, requestUpload.single('photo'), validateMagicBytes, async (req, res) => {
-    if (req.user.type !== 'konfi') {
-      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
+    if (req.user.type !== 'konfi' && req.user.type !== 'teamer') {
+      return res.status(403).json({ error: 'Konfi- oder Teamer-Zugriff erforderlich' });
     }
     
     try {
@@ -787,10 +787,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         return res.status(404).json({ error: 'Kein Foto gefunden' });
       }
       
-      // Check permissions: Admin can see all, Konfi can only see own
+      // Check permissions: Admin can see all, Konfi/Teamer can only see own
       const isAdmin = req.user.type === 'admin';
-      const isOwnRequest = req.user.type === 'konfi' && req.user.id === request.user_id;
-      
+      const isOwnRequest = (req.user.type === 'konfi' || req.user.type === 'teamer') && req.user.id === request.user_id;
+
       if (!isAdmin && !isOwnRequest) {
         return res.status(403).json({ error: 'Zugriff verweigert' });
       }

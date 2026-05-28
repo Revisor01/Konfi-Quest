@@ -1299,6 +1299,8 @@ ion-toggle.app-toggle--events {
 .app-icon-color--bring { color: var(--app-color-konfis); }
 .app-icon-color--material { color: var(--app-color-material); }
 .app-icon-color--muted { color: #999; }
+.app-icon-color--teamer { color: var(--app-color-teamer); }
+.app-icon-color--konfis { color: var(--app-color-konfis); }
 
 /* === EventDetailView Helper-Klassen === */
 /* Icon mit leichtem Top-Offset fuer vertikale Ausrichtung */

@@ -758,5 +758,138 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     }
   });
 
+  // ====================================================================
+  // AKTIVITAETEN & ANTRAEGE (Teamer)
+  // target_role='teamer' Activities mit Antrags-Workflow analog Konfi
+  // ====================================================================
+
+  const validateCreateTeamerRequest = [
+    body('activity_id').isInt({ min: 1 }).withMessage('Ungültige Aktivitäts-ID'),
+    body('requested_date').notEmpty().isISO8601().withMessage('Gültiges Datum erforderlich'),
+    body('client_id').optional().isUUID().withMessage('client_id muss eine UUID sein'),
+    handleValidationErrors
+  ];
+
+  // GET /teamer/activities — nur target_role='teamer'
+  router.get('/activities', rbacVerifier, requireTeamer, async (req, res) => {
+    try {
+      const query = `
+        SELECT a.id, a.name, a.points, a.type,
+               STRING_AGG(c.name, ', ') as category_names
+        FROM activities a
+        LEFT JOIN activity_categories ac ON a.id = ac.activity_id
+        LEFT JOIN categories c ON ac.category_id = c.id
+        WHERE a.organization_id = $1 AND a.target_role = 'teamer'
+        GROUP BY a.id, a.name, a.points, a.type
+        ORDER BY a.type, a.name
+      `;
+      const { rows: activities } = await db.query(query, [req.user.organization_id]);
+      res.json(activities);
+    } catch (err) {
+      console.error('Database error in GET /teamer/activities:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // GET /teamer/requests — eigene Antraege
+  router.get('/requests', rbacVerifier, requireTeamer, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const query = `
+        SELECT ar.*, a.name as activity_name, a.points as activity_points, a.type as activity_type
+        FROM activity_requests ar
+        LEFT JOIN activities a ON ar.activity_id = a.id
+        WHERE ar.user_id = $1 AND ar.organization_id = $2
+        ORDER BY ar.created_at DESC
+      `;
+      const { rows: requests } = await db.query(query, [userId, req.user.organization_id]);
+      res.json(requests);
+    } catch (err) {
+      console.error('Database error in GET /teamer/requests:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // POST /teamer/requests — neuen Antrag stellen
+  router.post('/requests', rbacVerifier, requireTeamer, validateCreateTeamerRequest, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { activity_id, description, photo_filename, requested_date, client_id } = req.body;
+
+      // Idempotency
+      if (client_id) {
+        const { rows: [existing] } = await db.query(
+          'SELECT id, user_id, activity_id, requested_date, comment, photo_filename, status, organization_id, client_id, created_at, updated_at FROM activity_requests WHERE client_id = $1',
+          [client_id]
+        );
+        if (existing) return res.status(200).json(existing);
+      }
+
+      const date = requested_date || new Date().toISOString().split('T')[0];
+
+      // Activity muss existieren und target_role='teamer' sein
+      const { rows: [activity] } = await db.query(
+        "SELECT name, points FROM activities WHERE id = $1 AND organization_id = $2 AND target_role = 'teamer'",
+        [activity_id, req.user.organization_id]
+      );
+      if (!activity) {
+        return res.status(404).json({ error: 'Aktivität nicht gefunden' });
+      }
+
+      const { rows: [newRequest] } = await db.query(
+        `INSERT INTO activity_requests (user_id, activity_id, requested_date, comment, photo_filename, status, organization_id, client_id)
+         VALUES ($1, $2, $3, $4, $5, 'pending', $6, $7)
+         RETURNING id`,
+        [userId, activity_id, date, description, photo_filename, req.user.organization_id, client_id || null]
+      );
+
+      // Notification an Teamer
+      try {
+        await db.query(
+          "INSERT INTO notifications (user_id, title, message, type, data, organization_id) VALUES ($1, $2, $3, $4, $5, $6)",
+          [
+            userId,
+            'Antrag eingereicht',
+            `Dein Antrag für "${activity.name}" wurde eingereicht und wird geprüft.`,
+            'activity_request_submitted',
+            JSON.stringify({ request_id: newRequest.id, activity_name: activity.name, points: activity.points }),
+            req.user.organization_id
+          ]
+        );
+      } catch (notifErr) {
+        console.error('Notification error (teamer request):', notifErr);
+      }
+
+      res.status(201).json({ id: newRequest.id, message: 'Antrag eingereicht' });
+    } catch (err) {
+      console.error('Database error in POST /teamer/requests:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // DELETE /teamer/requests/:id — eigenen Antrag loeschen
+  router.delete('/requests/:id', rbacVerifier, requireTeamer, [param('id').isInt({ min: 1 }), handleValidationErrors], async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const requestId = req.params.id;
+
+      // Nur pending eigene Antraege darf der Teamer selbst loeschen
+      const { rows: [existing] } = await db.query(
+        "SELECT id, status FROM activity_requests WHERE id = $1 AND user_id = $2 AND organization_id = $3",
+        [requestId, userId, req.user.organization_id]
+      );
+      if (!existing) return res.status(404).json({ error: 'Antrag nicht gefunden' });
+      if (existing.status !== 'pending') {
+        return res.status(400).json({ error: 'Nur ausstehende Antraege koennen geloescht werden' });
+      }
+
+      await db.query('DELETE FROM activity_requests WHERE id = $1', [requestId]);
+      res.json({ message: 'Antrag geloescht' });
+    } catch (err) {
+      console.error('Database error in DELETE /teamer/requests/:id:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
   return router;
 };

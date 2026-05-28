@@ -64,6 +64,7 @@ import TeamerEventsPage from '../teamer/pages/TeamerEventsPage';
 import TeamerMaterialPage from '../teamer/pages/TeamerMaterialPage';
 
 import TeamerProfilePage from '../teamer/pages/TeamerProfilePage';
+import TeamerRequestsPage from '../teamer/pages/TeamerRequestsPage';
 import TeamerBadgesPage from '../teamer/pages/TeamerBadgesPage';
 import TeamerKonfiStatsPage from '../teamer/pages/TeamerKonfiStatsPage';
 
@@ -282,6 +283,7 @@ const MainTabs: React.FC = () => {
           <Route path="/teamer/chat/room/:roomId" component={TeamerChatRoomRoute} />
           <Route exact path="/teamer/events" component={TeamerEventsPage} />
           <Route exact path="/teamer/material" component={TeamerMaterialPage} />
+          <Route exact path="/teamer/requests" component={TeamerRequestsPage} />
 
           <Route exact path="/teamer/profile" component={TeamerProfilePage} />
           <Route exact path="/teamer/profile/badges" component={TeamerBadgesPage} />
@@ -312,9 +314,9 @@ const MainTabs: React.FC = () => {
               <IonIcon icon={documentIcon} />
               <IonLabel>Material</IonLabel>
             </IonTabButton>
-            <IonTabButton tab="teamer-profile" href="/teamer/profile">
-              <IonIcon icon={person} />
-              <IonLabel>Profil</IonLabel>
+            <IonTabButton tab="teamer-requests" href="/teamer/requests">
+              <IonIcon icon={flash} />
+              <IonLabel>Aktivitäten</IonLabel>
             </IonTabButton>
           </IonTabBar>
         )}
