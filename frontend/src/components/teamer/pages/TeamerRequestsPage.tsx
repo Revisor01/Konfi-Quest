@@ -31,7 +31,6 @@ import RequestsView from '../../konfi/views/RequestsView';
 import TeamerActivityRequestModal from '../modals/TeamerActivityRequestModal';
 import RequestDetailModal from '../../konfi/modals/RequestDetailModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
-import { ProfileHeaderButton } from '../../shared';
 
 interface ActivityRequest {
   id: number;
@@ -204,7 +203,6 @@ const TeamerRequestsPage: React.FC = () => {
               <IonIcon icon={add} />
             </IonButton>
           </IonButtons>
-          <ProfileHeaderButton href="/teamer/profile" variant="teamer" />
         </IonToolbar>
       </IonHeader>
 

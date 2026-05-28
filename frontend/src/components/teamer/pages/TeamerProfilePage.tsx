@@ -15,6 +15,8 @@ import {
   IonCard,
   IonCardContent,
   IonButton,
+  IonButtons,
+  IonBackButton,
   useIonModal,
   useIonAlert,
   useIonRouter
@@ -30,7 +32,8 @@ import {
   logOutOutline,
   ribbon,
   schoolOutline,
-  timeOutline
+  timeOutline,
+  document as documentIcon
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -214,6 +217,9 @@ const TeamerProfilePage: React.FC = () => {
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
+          <IonButtons slot="start">
+            <IonBackButton defaultHref="/teamer/dashboard" text="Zurück" />
+          </IonButtons>
           <IonTitle>Profil</IonTitle>
         </IonToolbar>
       </IonHeader>
@@ -372,26 +378,24 @@ const TeamerProfilePage: React.FC = () => {
           <IonCard className="app-card">
             <IonCardContent>
               <div
-                className="app-list-item app-settings-item"
-                style={{ borderLeftColor: '#f59e0b' }}
-                onClick={() => router.push('/teamer/profile/badges')}
+                className="app-list-item app-settings-item app-list-item--material"
+                onClick={() => router.push('/teamer/profile/material')}
               >
-                <div className="app-icon-circle app-icon-circle--lg" style={{ backgroundColor: '#f59e0b' }}>
-                  <IonIcon icon={trophy} />
+                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--material">
+                  <IonIcon icon={documentIcon} />
                 </div>
                 <div className="app-flex-fill">
-                  <h2 className="app-settings-item__title">Badges</h2>
-                  <p className="app-settings-item__subtitle">Teamer-Badges und Fortschritt</p>
+                  <h2 className="app-settings-item__title">Material</h2>
+                  <p className="app-settings-item__subtitle">Materialien und Dateien</p>
                 </div>
               </div>
 
               {profile.konfi_data?.jahrgang_name && (
                 <div
-                  className="app-list-item app-settings-item"
-                  style={{ borderLeftColor: '#5b21b6' }}
+                  className="app-list-item app-settings-item app-list-item--konfi"
                   onClick={() => router.push('/teamer/profile/konfi-stats')}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg" style={{ backgroundColor: '#5b21b6' }}>
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--konfis">
                     <IonIcon icon={schoolOutline} />
                   </div>
                   <div className="app-flex-fill">

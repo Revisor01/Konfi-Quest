@@ -6,7 +6,9 @@ import {
   IonTitle,
   IonContent,
   IonRefresher,
-  IonRefresherContent
+  IonRefresherContent,
+  IonButtons,
+  IonBackButton
 } from '@ionic/react';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -102,6 +104,9 @@ const KonfiProfilePage: React.FC = () => {
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
+          <IonButtons slot="start">
+            <IonBackButton defaultHref="/konfi/dashboard" text="Zurück" />
+          </IonButtons>
           <IonTitle>Profil</IonTitle>
         </IonToolbar>
       </IonHeader>

@@ -283,10 +283,12 @@ const MainTabs: React.FC = () => {
           <Route path="/teamer/chat/room/:roomId" component={TeamerChatRoomRoute} />
           <Route exact path="/teamer/events" component={TeamerEventsPage} />
           <Route exact path="/teamer/material" component={TeamerMaterialPage} />
+          <Route exact path="/teamer/badges" component={TeamerBadgesPage} />
           <Route exact path="/teamer/requests" component={TeamerRequestsPage} />
 
           <Route exact path="/teamer/profile" component={TeamerProfilePage} />
           <Route exact path="/teamer/profile/badges" component={TeamerBadgesPage} />
+          <Route exact path="/teamer/profile/material" component={TeamerMaterialPage} />
           <Route exact path="/teamer/profile/konfi-stats" component={TeamerKonfiStatsPage} />
           <Route exact path="/login" render={() => <Redirect to="/teamer/dashboard" />} />
           <Route exact path="/" render={() => <Redirect to="/teamer/dashboard" />} />
@@ -310,9 +312,9 @@ const MainTabs: React.FC = () => {
               <IonIcon icon={calendar} />
               <IonLabel>Events</IonLabel>
             </IonTabButton>
-            <IonTabButton tab="teamer-material" href="/teamer/material">
-              <IonIcon icon={documentIcon} />
-              <IonLabel>Material</IonLabel>
+            <IonTabButton tab="teamer-badges" href="/teamer/badges">
+              <IonIcon icon={star} />
+              <IonLabel>Badges</IonLabel>
             </IonTabButton>
             <IonTabButton tab="teamer-requests" href="/teamer/requests">
               <IonIcon icon={flash} />

@@ -32,8 +32,7 @@ import {
   calendarOutline,
   textOutline,
   starOutline,
-  homeOutline,
-  peopleOutline,
+  briefcaseOutline,
   imageOutline,
   pricetag
 } from 'ionicons/icons';
@@ -322,12 +321,10 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
                       ) : (
                         filteredActivities.map(activity => {
                           const isSelected = formData.activity_id === activity.id.toString();
-                          const variant = activity.type === 'gottesdienst' ? 'gottesdienst' : 'gemeinde';
-
                           return (
                             <div
                               key={activity.id}
-                              className={`app-list-item app-list-item--${variant}${isSelected ? ' app-list-item--selected' : ''}`}
+                              className={`app-list-item app-list-item--teamer${isSelected ? ' app-list-item--selected' : ''}`}
                               onClick={() => {
                                 setFormData(prev => ({ ...prev, activity_id: activity.id.toString() }));
                                 if (accordionGroupRef.current) {
@@ -336,25 +333,13 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
                               }}
                               style={{ cursor: 'pointer', position: 'relative' }}
                             >
-                              {/* Punkte Eselsohr oben rechts */}
-                              <div className="app-corner-badges">
-                                <div className={`app-corner-badge app-corner-badge--${variant}`} style={{ whiteSpace: 'nowrap' }}>
-                                  +{activity.points}P
-                                </div>
-                              </div>
-
                               <div className="app-list-item__row">
                                 <div className="app-list-item__main">
-                                  {/* Icon — gottesdienst=info(blau), gemeinde=activities(gruen) */}
-                                  <div className={`app-icon-circle app-icon-circle--${activity.type === 'gottesdienst' ? 'info' : 'activities'}`}>
-                                    <IonIcon icon={activity.type === 'gottesdienst' ? homeOutline : peopleOutline} />
+                                  <div className="app-icon-circle app-icon-circle--teamer">
+                                    <IonIcon icon={briefcaseOutline} />
                                   </div>
-
-                                  {/* Content */}
                                   <div className="app-list-item__content">
-                                    <div className="app-list-item__title" style={{ paddingRight: '50px' }}>
-                                      {activity.name}
-                                    </div>
+                                    <div className="app-list-item__title">{activity.name}</div>
                                     {activity.category_names && (
                                       <div className="app-list-item__meta">
                                         <span className="app-list-item__meta-item">

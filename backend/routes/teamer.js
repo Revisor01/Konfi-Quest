@@ -67,17 +67,23 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       `;
       const { rows: [konfiProfile] } = await db.query(profileQuery, [userId]);
 
-      // Konfi-Badges (eingefroren nach Transition)
-      const badgesQuery = `
-        SELECT kb.badge_id, b.name, b.description, b.icon, b.color,
-               b.criteria_type, b.criteria_value,
-               kb.awarded_date
-        FROM user_badges kb
-        JOIN custom_badges b ON kb.badge_id = b.id
-        WHERE kb.user_id = $1
-        ORDER BY kb.awarded_date DESC
-      `;
-      const { rows: badges } = await db.query(badgesQuery, [userId]);
+      // Nur fuer beförderte Teamer (mit konfi_profiles + jahrgang) Konfi-Badges laden.
+      // Reine Teamer ohne Konfi-Vergangenheit bekommen konfi_data=null.
+      const isPromotedKonfi = !!(konfiProfile && konfiProfile.jahrgang_name);
+      let badges = [];
+      if (isPromotedKonfi) {
+        const badgesQuery = `
+          SELECT kb.badge_id, b.name, b.description, b.icon, b.color,
+                 b.criteria_type, b.criteria_value,
+                 kb.awarded_date
+          FROM user_badges kb
+          JOIN custom_badges b ON kb.badge_id = b.id
+          WHERE kb.user_id = $1
+          ORDER BY kb.awarded_date DESC
+        `;
+        const result = await db.query(badgesQuery, [userId]);
+        badges = result.rows;
+      }
 
       res.json({
         user: {
@@ -88,12 +94,12 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           teamer_since: userData?.teamer_since || null,
           organization_name: userData?.organization_name || ''
         },
-        konfi_data: {
+        konfi_data: isPromotedKonfi ? {
           gottesdienst_points: konfiProfile?.gottesdienst_points || 0,
           gemeinde_points: konfiProfile?.gemeinde_points || 0,
           jahrgang_name: konfiProfile?.jahrgang_name || '',
-          badges: badges || []
-        }
+          badges: badges
+        } : null
       });
     } catch (err) {
       console.error('Error loading teamer profile:', err);

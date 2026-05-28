@@ -2036,6 +2036,11 @@ ion-button.app-modal-submit-btn--bonus {
   box-shadow: 0 8px 32px rgba(245, 158, 11, 0.25);
 }
 
+.app-dashboard-section--zertifikate {
+  background: linear-gradient(135deg, var(--app-color-teamer) 0%, #831843 100%);
+  box-shadow: 0 8px 32px rgba(var(--app-color-teamer-rgb), 0.25);
+}
+
 .app-dashboard-section--ranking {
   background: linear-gradient(135deg, #28a745 0%, #155724 100%);
   box-shadow: 0 8px 32px rgba(40, 167, 69, 0.25);

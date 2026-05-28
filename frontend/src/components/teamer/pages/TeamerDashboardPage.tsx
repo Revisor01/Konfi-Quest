@@ -483,9 +483,7 @@ const TeamerDashboardPage: React.FC = () => {
             if (sectionKey === 'zertifikate') {
               if (!(config?.show_zertifikate !== false && dashboardData && dashboardData.certificates.length > 0)) return null;
               return (
-            <div key="zertifikate" className="app-dashboard-section" style={{
-              background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)'
-            }}>
+            <div key="zertifikate" className="app-dashboard-section app-dashboard-section--zertifikate">
               <div className="app-dashboard-section__bg-text">
                 <h2 className="app-dashboard-section__bg-label">DEINE</h2>
                 <h2 className="app-dashboard-section__bg-label">ZERTIFIKATE</h2>
