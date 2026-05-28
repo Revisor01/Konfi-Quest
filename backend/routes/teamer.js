@@ -797,15 +797,17 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     }
   });
 
-  // GET /teamer/requests — eigene Antraege
+  // GET /teamer/requests — eigene Antraege (nur Teamer-Aktivitaeten)
   router.get('/requests', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       const userId = req.user.id;
       const query = `
         SELECT ar.*, a.name as activity_name, a.points as activity_points, a.type as activity_type
         FROM activity_requests ar
-        LEFT JOIN activities a ON ar.activity_id = a.id
-        WHERE ar.user_id = $1 AND ar.organization_id = $2
+        JOIN activities a ON ar.activity_id = a.id
+        WHERE ar.user_id = $1
+          AND ar.organization_id = $2
+          AND a.target_role = 'teamer'
         ORDER BY ar.created_at DESC
       `;
       const { rows: requests } = await db.query(query, [userId, req.user.organization_id]);
