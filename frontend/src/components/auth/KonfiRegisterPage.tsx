@@ -168,12 +168,12 @@ const KonfiRegisterPage: React.FC = () => {
       // Netzwerkfehler erkennen
       if (!err.response || err.code === 'ERR_NETWORK') {
         setIsNetworkError(true);
-        setError('Verbindung fehlgeschlagen. Bitte pr\u00fcfe deine Internetverbindung.');
+        setError('Verbindung fehlgeschlagen. Bitte prÃ¼fe deine Internetverbindung.');
       } else {
         // Differenzierte Fehlermeldungen
         const errorCode = err.response?.data?.error_code;
         if (errorCode === 'not_found') {
-          setError('Dieser Einladungscode existiert nicht. Bitte pr\u00fcfe deine Eingabe.');
+          setError('Dieser Einladungscode existiert nicht. Bitte prÃ¼fe deine Eingabe.');
         } else if (errorCode === 'expired') {
           setError('Dieser Einladungscode ist abgelaufen. Bitte frage deinen Konfi-Leiter nach einem neuen Code.');
         } else {
@@ -210,12 +210,12 @@ const KonfiRegisterPage: React.FC = () => {
       return;
     }
     if (!isPasswordValid) {
-      setError('Passwort erf\u00fcllt nicht alle Anforderungen');
+      setError('Passwort erfÃ¼llt nicht alle Anforderungen');
       triggerShake();
       return;
     }
     if (formData.password !== formData.password_confirm) {
-      setError('Passw\u00f6rter stimmen nicht \u00fcberein');
+      setError('PasswÃ¶rter stimmen nicht Ã¼berein');
       triggerShake();
       return;
     }
@@ -251,7 +251,7 @@ const KonfiRegisterPage: React.FC = () => {
       // Netzwerkfehler erkennen
       if (!err.response || err.code === 'ERR_NETWORK') {
         setIsNetworkError(true);
-        setError('Verbindung fehlgeschlagen. Bitte pr\u00fcfe deine Internetverbindung.');
+        setError('Verbindung fehlgeschlagen. Bitte prÃ¼fe deine Internetverbindung.');
       } else {
         setError(err.response?.data?.error || 'Fehler bei der Registrierung');
       }
@@ -372,7 +372,7 @@ const KonfiRegisterPage: React.FC = () => {
                     className="app-auth-button"
                     style={{ marginBottom: '16px' }}
                   >
-                    Code pr\u00fcfen
+                    Code prÃ¼fen
                   </IonButton>
 
                   <div className="app-auth-footer">
@@ -381,7 +381,7 @@ const KonfiRegisterPage: React.FC = () => {
                       className="app-auth-link"
                     >
                       <IonIcon icon={arrowBack} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
-                      Zur\u00fcck zur Anmeldung
+                      ZurÃ¼ck zur Anmeldung
                     </span>
                   </div>
                 </>
@@ -435,13 +435,13 @@ const KonfiRegisterPage: React.FC = () => {
                   {usernameStatus === 'checking' && (
                     <div className="app-auth-username-status app-auth-username-status--checking">
                       <IonSpinner name="dots" style={{ width: '16px', height: '16px' }} />
-                      <span>Wird gepr\u00fcft...</span>
+                      <span>Wird geprÃ¼ft...</span>
                     </div>
                   )}
                   {usernameStatus === 'available' && (
                     <div className="app-auth-username-status app-auth-username-status--available">
                       <IonIcon icon={checkmarkCircle} />
-                      <span>Benutzername verf\u00fcgbar</span>
+                      <span>Benutzername verfÃ¼gbar</span>
                     </div>
                   )}
                   {usernameStatus === 'taken' && (
@@ -494,7 +494,7 @@ const KonfiRegisterPage: React.FC = () => {
                     <div className="app-auth-password-checks">
                       <div className="app-auth-password-checks__grid">
                         <PasswordCheckItem label="Mind. 8 Zeichen" checked={passwordChecks.minLength} />
-                        <PasswordCheckItem label="Gro\u00dfbuchstabe" checked={passwordChecks.hasUppercase} />
+                        <PasswordCheckItem label="GroÃbuchstabe" checked={passwordChecks.hasUppercase} />
                         <PasswordCheckItem label="Kleinbuchstabe" checked={passwordChecks.hasLowercase} />
                         <PasswordCheckItem label="Zahl" checked={passwordChecks.hasNumber} />
                         <PasswordCheckItem label="Sonderzeichen" checked={passwordChecks.hasSpecial} />
@@ -506,7 +506,7 @@ const KonfiRegisterPage: React.FC = () => {
                   <IonItem lines="none" className="app-auth-input" style={{ marginBottom: '16px' }}>
                     <IonIcon icon={key} slot="start" color="medium" />
                     <IonLabel position="stacked" className="app-auth-input__label">
-                      Passwort best\u00e4tigen *
+                      Passwort bestÃ¤tigen *
                     </IonLabel>
                     <IonInput
                       type={showConfirmPassword ? 'text' : 'password'}
@@ -528,7 +528,7 @@ const KonfiRegisterPage: React.FC = () => {
                   {formData.password && formData.password_confirm && formData.password !== formData.password_confirm && (
                     <div className="app-auth-password-match-error">
                       <IonIcon icon={alertCircle} />
-                      Passw\u00f6rter stimmen nicht \u00fcberein
+                      PasswÃ¶rter stimmen nicht Ã¼berein
                     </div>
                   )}
 

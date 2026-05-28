@@ -67,16 +67,16 @@ const LoginView: React.FC = () => {
 
       // Netzwerkfehler erkennen
       if (!err.response || err.code === 'ERR_NETWORK') {
-        displayError = 'Keine Verbindung zum Server. Bitte pr\u00fcfe deine Internetverbindung.';
+        displayError = 'Keine Verbindung zum Server. Bitte prÃ¼fe deine Internetverbindung.';
         setIsNetworkError(true);
       } else if (err.rateLimitMessage) {
         displayError = err.rateLimitMessage;
-      } else if (errorMessage.includes('password') || errorMessage.includes('Passwort') || errorMessage.includes('Invalid credentials') || errorMessage.includes('Ung\u00fcltige Anmeldedaten')) {
+      } else if (errorMessage.includes('password') || errorMessage.includes('Passwort') || errorMessage.includes('Invalid credentials') || errorMessage.includes('UngÃ¼ltige Anmeldedaten')) {
         displayError = 'Falsches Passwort. Bitte versuche es erneut.';
       } else if (errorMessage.includes('not found') || errorMessage.includes('nicht gefunden') || errorMessage.includes('User not found')) {
-        displayError = 'Nutzername nicht gefunden. Bitte \u00fcberpr\u00fcfe deine Eingabe.';
+        displayError = 'Nutzername nicht gefunden. Bitte Ã¼berprÃ¼fe deine Eingabe.';
       } else if (errorMessage.includes('network') || errorMessage.includes('Network')) {
-        displayError = 'Keine Verbindung zum Server. Bitte pr\u00fcfe deine Internetverbindung.';
+        displayError = 'Keine Verbindung zum Server. Bitte prÃ¼fe deine Internetverbindung.';
         setIsNetworkError(true);
       } else {
         displayError = 'Anmeldung fehlgeschlagen. Bitte versuche es erneut.';
