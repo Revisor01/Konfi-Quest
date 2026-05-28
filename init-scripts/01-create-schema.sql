@@ -451,6 +451,7 @@ CREATE TABLE chat_rooms (
     name VARCHAR(255) NOT NULL,
     type VARCHAR(50) NOT NULL CHECK (type IN ('direct', 'group', 'jahrgang')),
     jahrgang_id INTEGER REFERENCES jahrgaenge(id) ON DELETE CASCADE,
+    event_id INTEGER REFERENCES events(id) ON DELETE CASCADE,
     created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
     organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -459,6 +460,7 @@ CREATE TABLE chat_rooms (
 -- Indexes
 CREATE INDEX idx_chat_rooms_type ON chat_rooms (type);
 CREATE INDEX idx_chat_rooms_jahrgang ON chat_rooms (jahrgang_id);
+CREATE INDEX idx_chat_rooms_event_id ON chat_rooms (event_id);
 CREATE INDEX idx_chat_rooms_org ON chat_rooms (organization_id);
 
 CREATE TABLE chat_participants (
