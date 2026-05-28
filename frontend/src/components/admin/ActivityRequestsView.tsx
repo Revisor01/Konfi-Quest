@@ -39,6 +39,7 @@ interface ActivityRequest {
   admin_comment?: string;
   approved_by?: number;
   approved_by_name?: string;
+  activity_target_role?: 'konfi' | 'teamer';
   created_at: string;
   updated_at: string;
 }
@@ -62,16 +63,18 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
   const requests: ActivityRequest[] = Array.isArray(requestsRaw) ? requestsRaw : [];
 
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'konfi' | 'teamer'>('all');
 
   const filteredAndSortedRequests = (() => {
     let result = [...requests];
 
-    // Filter by status
     if (statusFilter !== 'all') {
       result = result.filter(r => r.status === statusFilter);
     }
+    if (roleFilter !== 'all') {
+      result = result.filter(r => (r.activity_target_role || 'konfi') === roleFilter);
+    }
 
-    // Sort by created_at (newest first)
     result = result.sort((a, b) => {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
@@ -117,7 +120,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
       />
 
       {/* Tab Filter - wie bei Events */}
-      <div style={{ margin: '16px' }}>
+      <div style={{ margin: '16px 16px 8px 16px' }}>
         <IonSegment
           value={statusFilter}
           onIonChange={(e) => setStatusFilter(e.detail.value as any)}
@@ -130,6 +133,22 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
           </IonSegmentButton>
           <IonSegmentButton value="rejected">
             <IonLabel>Abgelehnt</IonLabel>
+          </IonSegmentButton>
+        </IonSegment>
+      </div>
+      <div style={{ margin: '0 16px 16px 16px' }}>
+        <IonSegment
+          value={roleFilter}
+          onIonChange={(e) => setRoleFilter(e.detail.value as any)}
+        >
+          <IonSegmentButton value="all">
+            <IonLabel>Alle</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="konfi">
+            <IonLabel>Konfis</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="teamer">
+            <IonLabel>Teamer:innen</IonLabel>
           </IonSegmentButton>
         </IonSegment>
       </div>

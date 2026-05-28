@@ -238,6 +238,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     try {
       const query = `
         SELECT ar.*, u_konfi.display_name as konfi_name, a.name as activity_name, a.points as activity_points, a.type as activity_type,
+               a.target_role as activity_target_role,
                u_approved.display_name as approved_by_name
         FROM activity_requests ar
         JOIN users u_konfi ON ar.user_id = u_konfi.id
@@ -263,7 +264,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
     try {
       const getRequestQuery = `
-        SELECT ar.*, a.points, a.type, a.name as activity_name, u.display_name as konfi_name
+        SELECT ar.*, a.points, a.type, a.target_role, a.name as activity_name, u.display_name as konfi_name
         FROM activity_requests ar
         JOIN activities a ON ar.activity_id = a.id
         JOIN users u ON ar.user_id = u.id
@@ -275,6 +276,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       const oldStatus = request.status;
       if (oldStatus === 'pending') return res.status(400).json({ error: 'Antrag ist bereits ausstehend' });
 
+      const isTeamerActivity = request.target_role === 'teamer';
+
       const client = await db.getClient();
       try {
         await client.query('BEGIN');
@@ -282,9 +285,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         // SCHRITT 1: Alte Entscheidung rückgängig machen
         if (oldStatus === 'approved') {
 
-          // Punkte abziehen (mit GREATEST um negative Werte zu verhindern)
-          const pointField = getPointField(request.type);
-          await client.query(`UPDATE konfi_profiles SET ${pointField} = GREATEST(0, ${pointField} - $1) WHERE user_id = $2`, [request.points, request.user_id]);
+          // Punkte abziehen nur fuer Konfi-Activities (Teamer haben keine bekommen)
+          if (!isTeamerActivity) {
+            const pointField = getPointField(request.type);
+            await client.query(`UPDATE konfi_profiles SET ${pointField} = GREATEST(0, ${pointField} - $1) WHERE user_id = $2`, [request.points, request.user_id]);
+          }
 
           // konfi_activity Eintrag löschen
           await client.query(
@@ -331,7 +336,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
     try {
       const getRequestQuery = `
-        SELECT ar.*, a.points, a.type, a.name as activity_name, u.display_name as konfi_name
+        SELECT ar.*, a.points, a.type, a.target_role, a.name as activity_name, u.display_name as konfi_name
         FROM activity_requests ar
         JOIN activities a ON ar.activity_id = a.id
         JOIN users u ON ar.user_id = u.id
@@ -345,8 +350,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         return res.status(400).json({ error: 'Nur ausstehende Anträge können genehmigt oder abgelehnt werden' });
       }
 
-      // Guard: Bei Genehmigung prüfen ob Punkte-Typ aktiviert ist
-      if (status === 'approved') {
+      const isTeamerActivity = request.target_role === 'teamer';
+
+      // Guard: Bei Genehmigung prüfen ob Punkte-Typ aktiviert ist (nur fuer Konfi-Activities)
+      if (status === 'approved' && !isTeamerActivity) {
         const { enabled, error } = await checkPointTypeEnabled(db, request.user_id, request.type);
         if (!enabled) return res.status(400).json({ error });
       }
@@ -363,14 +370,16 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         if (status === 'approved') {
           await client.query("INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5)", [request.user_id, request.activity_id, req.user.id, request.requested_date, req.user.organization_id]);
 
-          const pointField = getPointField(request.type);
-          // Teamer haben evtl. kein konfi_profiles — UPSERT damit Punkte nicht verlorengehen
-          await client.query(
-            `INSERT INTO konfi_profiles (user_id, organization_id, ${pointField})
-             VALUES ($2, $3, $1)
-             ON CONFLICT (user_id) DO UPDATE SET ${pointField} = konfi_profiles.${pointField} + $1`,
-            [request.points, request.user_id, req.user.organization_id]
-          );
+          // Punkte nur fuer Konfi-Activities (Teamer-Activities sind nur Nachweis)
+          if (!isTeamerActivity) {
+            const pointField = getPointField(request.type);
+            await client.query(
+              `INSERT INTO konfi_profiles (user_id, organization_id, ${pointField})
+               VALUES ($2, $3, $1)
+               ON CONFLICT (user_id) DO UPDATE SET ${pointField} = konfi_profiles.${pointField} + $1`,
+              [request.points, request.user_id, req.user.organization_id]
+            );
+          }
 
           // Foto-Referenz in DB entfernen (innerhalb Transaktion)
           if (request.photo_filename) {
