@@ -364,7 +364,13 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
           await client.query("INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5)", [request.user_id, request.activity_id, req.user.id, request.requested_date, req.user.organization_id]);
 
           const pointField = getPointField(request.type);
-          await client.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [request.points, request.user_id]);
+          // Teamer haben evtl. kein konfi_profiles — UPSERT damit Punkte nicht verlorengehen
+          await client.query(
+            `INSERT INTO konfi_profiles (user_id, organization_id, ${pointField})
+             VALUES ($2, $3, $1)
+             ON CONFLICT (user_id) DO UPDATE SET ${pointField} = konfi_profiles.${pointField} + $1`,
+            [request.points, request.user_id, req.user.organization_id]
+          );
 
           // Foto-Referenz in DB entfernen (innerhalb Transaktion)
           if (request.photo_filename) {
