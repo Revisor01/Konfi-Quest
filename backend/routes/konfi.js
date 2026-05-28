@@ -866,6 +866,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         LEFT JOIN activity_categories ac ON a.id = ac.activity_id
         LEFT JOIN categories c ON ac.category_id = c.id
         WHERE a.organization_id = $1
+          AND (a.target_role IS NULL OR a.target_role = 'konfi')
         GROUP BY a.id, a.name, a.points, a.type
         ORDER BY a.type, a.name
       `;
@@ -1245,9 +1246,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
       // Get all events with konfi-specific data, filtered by jahrgang
       const query = `
-        SELECT e.*, 
+        SELECT e.*,
                COUNT(DISTINCT CASE WHEN eb_all.status = 'confirmed' THEN eb_all.id END) as registered_count,
                COUNT(DISTINCT CASE WHEN eb_all.status = 'waitlist' THEN eb_all.id END) as waitlist_count,
+               COUNT(DISTINCT CASE WHEN eb_all.status = 'confirmed' AND r_book.name = 'teamer' THEN eb_all.id END) as teamer_count,
                CASE 
                  WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
                  ELSE e.max_participants
@@ -1292,6 +1294,8 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         FROM events e
         INNER JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
         LEFT JOIN event_bookings eb_all ON e.id = eb_all.event_id
+        LEFT JOIN users u_book ON eb_all.user_id = u_book.id
+        LEFT JOIN roles r_book ON u_book.role_id = r_book.id
         LEFT JOIN event_bookings eb_konfi ON e.id = eb_konfi.event_id AND eb_konfi.user_id = $2
         LEFT JOIN event_timeslots et_booked ON eb_konfi.timeslot_id = et_booked.id
         LEFT JOIN event_categories ec ON e.id = ec.event_id
@@ -1434,15 +1438,17 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
     try {
       const eventId = req.params.id;
 
-      // Get confirmed participants with anonymized names
+      // Get confirmed participants with anonymized names — Teamer rausfiltern
       const participantsQuery = `
         SELECT
           u.id,
           u.display_name
         FROM event_bookings eb
         JOIN users u ON eb.user_id = u.id
+        LEFT JOIN roles r ON u.role_id = r.id
         WHERE eb.event_id = $1
           AND eb.status = 'confirmed'
+          AND (r.name IS NULL OR r.name <> 'teamer')
         ORDER BY u.display_name ASC
       `;
       const { rows: participants } = await db.query(participantsQuery, [eventId]);

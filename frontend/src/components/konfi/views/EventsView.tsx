@@ -354,7 +354,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                           {!event.mandatory && (
                           <span className="app-list-item__meta-item">
                             <IonIcon icon={people} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--participants'} />
-                            {event.registered_count}/{(event.max_participants || 0) > 0 ? event.max_participants : '∞'}
+                            {event.registered_count - (event.teamer_count || 0)}/{(event.max_participants || 0) > 0 ? event.max_participants : '∞'}
                           </span>
                           )}
                           {event.waitlist_enabled && (event.waitlist_count ?? 0) > 0 && (

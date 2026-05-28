@@ -387,6 +387,9 @@ ion-item-sliding:last-child {
 .app-corner-badge--warning { background-color: var(--app-color-warning); }
 .app-corner-badge--danger { background-color: var(--app-color-danger); }
 .app-corner-badge--info { background-color: var(--app-color-info); }
+.app-corner-badge--activities { background-color: var(--app-color-activities); }
+.app-corner-badge--gottesdienst { background-color: var(--app-color-gottesdienst); }
+.app-corner-badge--gemeinde { background-color: var(--app-color-gemeinde); }
 .app-corner-badge--chat { background-color: var(--app-color-chat); }
 .app-corner-badge--purple { background-color: var(--app-color-konfis); }
 /* Chat-Raumtyp-Farben */

@@ -322,38 +322,31 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                       ) : (
                         filteredActivities.map(activity => {
                           const isSelected = formData.activity_id === activity.id.toString();
-                          const colorVariant = activity.type === 'gottesdienst' ? 'info' : 'activities';
-                          const typeColor = activity.type === 'gottesdienst' ? '#007aff' : '#059669';
+                          const variant = activity.type === 'gottesdienst' ? 'gottesdienst' : 'gemeinde';
 
                           return (
                             <div
                               key={activity.id}
-                              className={`app-list-item app-list-item--${colorVariant}`}
+                              className={`app-list-item app-list-item--${variant}${isSelected ? ' app-list-item--selected' : ''}`}
                               onClick={() => {
                                 setFormData(prev => ({ ...prev, activity_id: activity.id.toString() }));
                                 if (accordionGroupRef.current) {
                                   accordionGroupRef.current.value = undefined;
                                 }
                               }}
-                              style={{ cursor: 'pointer', position: 'relative', background: isSelected ? (activity.type === 'gottesdienst' ? 'rgba(0, 122, 255, 0.08)' : 'rgba(5, 150, 105, 0.08)') : undefined }}
+                              style={{ cursor: 'pointer', position: 'relative' }}
                             >
                               {/* Punkte Eselsohr oben rechts */}
                               <div className="app-corner-badges">
-                                <div
-                                  className="app-corner-badge"
-                                  style={{
-                                    background: `linear-gradient(135deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
-                                    whiteSpace: 'nowrap'
-                                  }}
-                                >
+                                <div className={`app-corner-badge app-corner-badge--${variant}`} style={{ whiteSpace: 'nowrap' }}>
                                   +{activity.points}P
                                 </div>
                               </div>
 
                               <div className="app-list-item__row">
                                 <div className="app-list-item__main">
-                                  {/* Icon */}
-                                  <div className={`app-icon-circle app-icon-circle--${colorVariant}`}>
+                                  {/* Icon — gottesdienst=info(blau), gemeinde=activities(gruen) */}
+                                  <div className={`app-icon-circle app-icon-circle--${activity.type === 'gottesdienst' ? 'info' : 'activities'}`}>
                                     <IonIcon icon={activity.type === 'gottesdienst' ? homeOutline : peopleOutline} />
                                   </div>
 
@@ -365,7 +358,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                                     {activity.category_names && (
                                       <div className="app-list-item__meta">
                                         <span className="app-list-item__meta-item">
-                                          <IonIcon icon={pricetag} style={{ color: '#0ea5e9' }} />
+                                          <IonIcon icon={pricetag} className="app-icon-color--category" />
                                           {activity.category_names}
                                         </span>
                                       </div>
@@ -449,9 +442,9 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                 onClick={handlePhotoSelect}
                 style={{
                   padding: '16px',
-                  backgroundColor: photoPreview ? 'rgba(5, 150, 105, 0.08)' : 'transparent',
+                  backgroundColor: photoPreview ? 'rgba(var(--app-color-gemeinde-rgb), 0.08)' : 'transparent',
                   borderRadius: '10px',
-                  border: photoPreview ? '1px solid rgba(5, 150, 105, 0.2)' : '1px dashed #c7c7cc',
+                  border: photoPreview ? '1px solid rgba(var(--app-color-gemeinde-rgb), 0.2)' : '1px dashed #c7c7cc',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease'
                 }}
@@ -461,9 +454,10 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                     <div className="app-settings-item" style={{ gap: '8px' }}>
                       <IonIcon
                         icon={checkmarkCircle}
-                        style={{ fontSize: '1.2rem', color: '#059669' }}
+                        className="app-icon-color--gemeinde"
+                        style={{ fontSize: '1.2rem' }}
                       />
-                      <span style={{ fontWeight: '600', color: '#059669' }}>
+                      <span style={{ fontWeight: '600', color: 'var(--app-color-gemeinde)' }}>
                         Foto ausgewählt
                       </span>
                     </div>
@@ -483,7 +477,8 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                   <div className="app-settings-item" style={{ justifyContent: 'center' }}>
                     <IonIcon
                       icon={camera}
-                      style={{ fontSize: '1.2rem', color: '#059669' }}
+                      className="app-icon-color--gemeinde"
+                      style={{ fontSize: '1.2rem' }}
                     />
                     <span style={{ fontWeight: '500', color: '#666' }}>
                       Foto hinzufügen

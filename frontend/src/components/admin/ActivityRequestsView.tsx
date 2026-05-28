@@ -52,12 +52,15 @@ interface ActivityRequestsViewProps {
 }
 
 const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
-  requests,
+  requests: requestsRaw,
   onUpdate,
   onSelectRequest,
   onDeleteRequest,
   onResetRequest
 }) => {
+  // Defensive: bei kaputten/gecachten Responses (Object statt Array) auf [] fallen
+  const requests: ActivityRequest[] = Array.isArray(requestsRaw) ? requestsRaw : [];
+
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
 
   const filteredAndSortedRequests = (() => {

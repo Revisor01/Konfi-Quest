@@ -569,12 +569,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 </div>
               )}
 
-              {/* TN gesamt */}
+              {/* TN gesamt — ohne Teamer */}
               <div className="app-info-row">
                 <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
                 <div>
                   <div className="app-info-row__label">Teilnehmer:innen</div>
-                  <div className="app-info-row__value">{eventData.registered_count} / {eventData.max_participants > 0 ? eventData.max_participants : '∞'}</div>
+                  <div className="app-info-row__value">{eventData.registered_count - (eventData.teamer_count || 0)} / {eventData.max_participants > 0 ? eventData.max_participants : '∞'}</div>
                 </div>
               </div>
 
