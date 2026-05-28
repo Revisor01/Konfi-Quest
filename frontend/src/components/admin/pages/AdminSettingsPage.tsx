@@ -323,10 +323,10 @@ console.error('Logout error:', error);
                 </div>
 
                 <div
-                  className="app-list-item app-list-item--purple app-settings-item"
+                  className="app-list-item app-list-item--teamer app-settings-item"
                   onClick={() => router.push('/admin/settings/certificates')}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--purple">
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--teamer">
                     <IonIcon icon={ribbon} />
                   </div>
                   <div className="app-flex-fill">

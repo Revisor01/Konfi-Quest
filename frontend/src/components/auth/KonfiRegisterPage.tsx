@@ -17,8 +17,6 @@ import {
   person,
   key,
   mail,
-  trophy,
-  star,
   sparkles,
   alertCircle,
   closeCircle,
@@ -266,27 +264,24 @@ const KonfiRegisterPage: React.FC = () => {
     return (
       <IonPage>
         <IonContent className="app-auth-background">
+          <div className="app-auth-star app-auth-star--pink" style={{ top: '120px', left: '40px', width: '60px', height: '60px' }} />
+          <div className="app-auth-star app-auth-star--cyan" style={{ top: '280px', right: '30px', width: '80px', height: '80px' }} />
+          <div className="app-auth-star app-auth-star--gold" style={{ bottom: '200px', left: '30px', width: '50px', height: '50px' }} />
+
           <div className="app-auth-container" style={{ textAlign: 'center' }}>
             <div className="app-auth-success-circle">
               <IonIcon icon={checkmarkCircle} className="app-auth-success-circle__icon" />
             </div>
-            <h1 style={{
-              margin: '0 0 12px 0',
-              fontSize: '2rem',
-              fontWeight: '600',
-              color: 'white',
-              textShadow: '0 2px 4px rgba(0,0,0,0.2)'
-            }}>
-              Registrierung erfolgreich!
+            <h1 className="app-auth-hero__title--cosmic" style={{ fontSize: '2.2rem', letterSpacing: '4px' }}>
+              WILLKOMMEN!
             </h1>
-            <p style={{
-              margin: '0 0 24px 0',
-              color: 'rgba(255,255,255,0.9)',
-              fontSize: '1.1rem'
-            }}>
-              Du wirst zum Dashboard weitergeleitet...
+            <div className="app-auth-hero__divider">
+              <span className="app-auth-hero__divider-icon">◆</span>
+            </div>
+            <p className="app-auth-hero__subtitle--cosmic" style={{ marginBottom: '24px' }}>
+              Du wirst zum Dashboard weitergeleitet
             </p>
-            <IonSpinner name="dots" style={{ '--color': 'white' }} />
+            <IonSpinner name="dots" style={{ '--color': '#67e8f9' }} />
           </div>
         </IonContent>
       </IonPage>
@@ -296,21 +291,29 @@ const KonfiRegisterPage: React.FC = () => {
   return (
     <IonPage>
       <IonContent className="app-auth-background">
+        {/* Glow-Sterne */}
+        <div className="app-auth-star app-auth-star--pink" style={{ top: '80px', left: '30px', width: '50px', height: '50px' }} />
+        <div className="app-auth-star app-auth-star--cyan" style={{ top: '200px', right: '20px', width: '70px', height: '70px' }} />
+        <div className="app-auth-star app-auth-star--gold" style={{ top: '380px', left: '20px', width: '40px', height: '40px' }} />
+        <div className="app-auth-star app-auth-star--cyan" style={{ bottom: '200px', right: '40px', width: '60px', height: '60px' }} />
+        <div className="app-auth-star app-auth-star--pink" style={{ bottom: '100px', left: '50px', width: '80px', height: '80px' }} />
+        <div className="app-auth-star app-auth-star--dot" style={{ top: '110px', left: '80px', width: '2px', height: '2px' }} />
+        <div className="app-auth-star app-auth-star--dot" style={{ top: '150px', right: '90px', width: '3px', height: '3px' }} />
+        <div className="app-auth-star app-auth-star--dot" style={{ top: '300px', left: '280px', width: '2px', height: '2px' }} />
+
         <div className="app-auth-container">
 
           {/* Hero Section */}
-          <div className="app-auth-hero" style={{ marginTop: '40px' }}>
-            <div className="app-auth-hero__icons app-auth-hero__icons--small">
-              <IonIcon icon={trophy} style={{ color: '#FFD700' }} />
-              <IonIcon icon={star} style={{ color: '#FF6B6B' }} />
-              <IonIcon icon={sparkles} style={{ color: '#4ECDC4' }} />
-            </div>
-
-            <h1 className="app-auth-hero__title app-auth-hero__title--small">
-              KONFI QUEST
+          <div className="app-auth-hero" style={{ marginTop: '50px' }}>
+            <h1 className="app-auth-hero__title app-auth-hero__title--cosmic">
+              KONFI<br />QUEST
             </h1>
 
-            <p className="app-auth-hero__subtitle app-auth-hero__subtitle--small">
+            <div className="app-auth-hero__divider">
+              <span className="app-auth-hero__divider-icon">◆</span>
+            </div>
+
+            <p className="app-auth-hero__subtitle--cosmic">
               Erstelle deinen Account
             </p>
           </div>
@@ -334,7 +337,7 @@ const KonfiRegisterPage: React.FC = () => {
                   </div>
 
                   <IonItem lines="none" className="app-auth-input">
-                    <IonIcon icon={key} slot="start" color="medium" />
+                    <IonIcon icon={key} slot="start" style={{ color: "#67e8f9" }} />
                     <IonLabel position="stacked" className="app-auth-input__label">
                       Einladungscode
                     </IonLabel>
@@ -401,7 +404,7 @@ const KonfiRegisterPage: React.FC = () => {
 
                   {/* Name */}
                   <IonItem lines="none" className="app-auth-input app-auth-input--compact">
-                    <IonIcon icon={person} slot="start" color="medium" />
+                    <IonIcon icon={person} slot="start" style={{ color: "#67e8f9" }} />
                     <IonLabel position="stacked" className="app-auth-input__label">
                       Dein Name *
                     </IonLabel>
@@ -416,7 +419,7 @@ const KonfiRegisterPage: React.FC = () => {
 
                   {/* Benutzername */}
                   <IonItem lines="none" className="app-auth-input app-auth-input--compact">
-                    <IonIcon icon={person} slot="start" color="medium" />
+                    <IonIcon icon={person} slot="start" style={{ color: "#67e8f9" }} />
                     <IonLabel position="stacked" className="app-auth-input__label">
                       Benutzername *
                     </IonLabel>
@@ -453,7 +456,7 @@ const KonfiRegisterPage: React.FC = () => {
 
                   {/* E-Mail (optional) */}
                   <IonItem lines="none" className="app-auth-input app-auth-input--compact">
-                    <IonIcon icon={mail} slot="start" color="medium" />
+                    <IonIcon icon={mail} slot="start" style={{ color: "#67e8f9" }} />
                     <IonLabel position="stacked" className="app-auth-input__label">
                       E-Mail (optional)
                     </IonLabel>
@@ -469,7 +472,7 @@ const KonfiRegisterPage: React.FC = () => {
 
                   {/* Passwort */}
                   <IonItem lines="none" className="app-auth-input app-auth-input--compact" style={{ marginBottom: '8px' }}>
-                    <IonIcon icon={key} slot="start" color="medium" />
+                    <IonIcon icon={key} slot="start" style={{ color: "#67e8f9" }} />
                     <IonLabel position="stacked" className="app-auth-input__label">
                       Passwort *
                     </IonLabel>
@@ -504,7 +507,7 @@ const KonfiRegisterPage: React.FC = () => {
 
                   {/* Passwort bestätigen */}
                   <IonItem lines="none" className="app-auth-input" style={{ marginBottom: '16px' }}>
-                    <IonIcon icon={key} slot="start" color="medium" />
+                    <IonIcon icon={key} slot="start" style={{ color: "#67e8f9" }} />
                     <IonLabel position="stacked" className="app-auth-input__label">
                       Passwort bestätigen *
                     </IonLabel>
@@ -569,14 +572,14 @@ const KonfiRegisterPage: React.FC = () => {
                       <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</>
                     ) : (
                       <>
-                        <IonIcon icon={sparkles} slot="start" />
                         Registrieren
+                        <IonIcon icon={sparkles} slot="end" />
                       </>
                     )}
                   </IonButton>
 
                   <div className="app-auth-footer">
-                    <span style={{ color: '#7f8c8d', fontSize: '0.9rem' }}>
+                    <span style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.9rem' }}>
                       Schon einen Account?{' '}
                       <span
                         onClick={() => router.push('/login')}

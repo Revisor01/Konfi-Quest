@@ -34,7 +34,8 @@ import {
   document as documentIcon,
   imageOutline,
   videocamOutline,
-  musicalNotesOutline
+  musicalNotesOutline,
+  chevronDownOutline
 } from 'ionicons/icons';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Filesystem, Directory } from '@capacitor/filesystem';
@@ -373,7 +374,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '0' }}>
               <IonAccordionGroup>
-                <IonAccordion value="events">
+                <IonAccordion value="events" toggleIcon={chevronDownOutline} toggleIconSlot="end">
                   <IonItem slot="header" lines="none" style={{ '--padding-start': '16px' }}>
                     <IonLabel>
                       <h3 style={{ fontSize: '0.95rem', fontWeight: '600', color: '#374151', margin: '0 0 2px 0' }}>
@@ -429,7 +430,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
                   </div>
                 </IonAccordion>
 
-                <IonAccordion value="jahrgaenge">
+                <IonAccordion value="jahrgaenge" toggleIcon={chevronDownOutline} toggleIconSlot="end">
                   <IonItem slot="header" lines="none" style={{ '--padding-start': '16px' }}>
                     <IonLabel>
                       <h3 style={{ fontSize: '0.95rem', fontWeight: '600', color: '#374151', margin: '0 0 2px 0' }}>

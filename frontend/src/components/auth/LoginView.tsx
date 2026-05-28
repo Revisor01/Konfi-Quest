@@ -13,7 +13,7 @@ import {
   useIonRouter
 } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
-import { key, person, trophy, star, sparkles, alertCircle, closeCircle, eye, eyeOff, refreshOutline } from 'ionicons/icons';
+import { key, person, arrowForward, alertCircle, closeCircle, eye, eyeOff, refreshOutline } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { loginWithAutoDetection } from '../../services/auth';
 
@@ -92,22 +92,42 @@ const LoginView: React.FC = () => {
   return (
     <IonPage>
       <IonContent className="app-auth-background">
+        {/* Riesiges Icon als Geist im Hintergrund */}
+        <img
+          src="/assets/icon/icon-512x512.png"
+          alt=""
+          className="app-auth-ghost-icon"
+          aria-hidden="true"
+        />
+
+        {/* Glow-Sterne (Cyan, Pink, Gold) */}
+        <div className="app-auth-star app-auth-star--pink" style={{ top: '80px', left: '30px', width: '50px', height: '50px' }} />
+        <div className="app-auth-star app-auth-star--cyan" style={{ top: '200px', right: '20px', width: '70px', height: '70px' }} />
+        <div className="app-auth-star app-auth-star--gold" style={{ top: '380px', left: '20px', width: '40px', height: '40px' }} />
+        <div className="app-auth-star app-auth-star--cyan" style={{ bottom: '200px', right: '40px', width: '60px', height: '60px' }} />
+        <div className="app-auth-star app-auth-star--pink" style={{ bottom: '100px', left: '50px', width: '80px', height: '80px' }} />
+
+        {/* Weisse Dot-Sterne */}
+        <div className="app-auth-star app-auth-star--dot" style={{ top: '110px', left: '80px', width: '2px', height: '2px' }} />
+        <div className="app-auth-star app-auth-star--dot" style={{ top: '150px', right: '90px', width: '3px', height: '3px' }} />
+        <div className="app-auth-star app-auth-star--dot" style={{ top: '300px', left: '280px', width: '2px', height: '2px' }} />
+        <div className="app-auth-star app-auth-star--dot" style={{ top: '420px', left: '60px', width: '3px', height: '3px' }} />
+        <div className="app-auth-star app-auth-star--dot" style={{ top: '250px', left: '180px', width: '2px', height: '2px' }} />
+
         <div className="app-auth-container">
 
           {/* Hero Section */}
           <div className="app-auth-hero" style={{ marginTop: '60px' }}>
-            <div className="app-auth-hero__icons">
-              <IonIcon icon={trophy} style={{ color: '#FFD700' }} />
-              <IonIcon icon={star} style={{ color: '#FF6B6B' }} />
-              <IonIcon icon={sparkles} style={{ color: '#4ECDC4' }} />
-            </div>
-
-            <h1 className="app-auth-hero__title">
-              KONFI QUEST
+            <h1 className="app-auth-hero__title app-auth-hero__title--cosmic">
+              KONFI<br />QUEST
             </h1>
 
-            <p className="app-auth-hero__subtitle">
-              Dein Abenteuer in der Gemeinde
+            <div className="app-auth-hero__divider">
+              <span className="app-auth-hero__divider-icon">◆</span>
+            </div>
+
+            <p className="app-auth-hero__subtitle app-auth-hero__subtitle--cosmic">
+              Bereit für die nächste Quest?
             </p>
           </div>
 
@@ -118,8 +138,8 @@ const LoginView: React.FC = () => {
             <IonCardContent className="app-auth-card__content">
 
               <div className="app-auth-card__heading">
-                <h2>Willkommen!</h2>
-                <p>Melde dich an um deine Quest zu starten</p>
+                <h2>Anmelden</h2>
+                <p>Melde dich an um deine Quest fortzusetzen</p>
               </div>
 
               <IonItem lines="none" className="app-auth-input">
@@ -165,8 +185,8 @@ const LoginView: React.FC = () => {
                   <IonSpinner name="crescent" style={{ '--color': 'white' }} />
                 ) : (
                   <>
-                    <IonIcon icon={sparkles} slot="start" />
-                    Quest starten
+                    Anmelden
+                    <IonIcon icon={arrowForward} slot="end" />
                   </>
                 )}
               </IonButton>

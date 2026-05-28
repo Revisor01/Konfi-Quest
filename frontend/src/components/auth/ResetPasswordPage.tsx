@@ -22,7 +22,7 @@ const PasswordCheckItem: React.FC<{ label: string; checked: boolean }> = ({ labe
     display: 'flex',
     alignItems: 'center',
     gap: '6px',
-    color: checked ? '#10b981' : '#9ca3af'
+    color: checked ? '#67e8f9' : 'rgba(255, 255, 255, 0.35)'
   }}>
     <IonIcon
       icon={checked ? checkmarkCircle : closeCircle}
@@ -107,29 +107,32 @@ const ResetPasswordPage: React.FC = () => {
   return (
     <IonPage>
       <IonContent className="app-auth-background">
+        {/* Glow-Sterne */}
+        <div className="app-auth-star app-auth-star--pink" style={{ top: '80px', left: '30px', width: '50px', height: '50px' }} />
+        <div className="app-auth-star app-auth-star--cyan" style={{ top: '200px', right: '20px', width: '70px', height: '70px' }} />
+        <div className="app-auth-star app-auth-star--gold" style={{ top: '380px', left: '20px', width: '40px', height: '40px' }} />
+        <div className="app-auth-star app-auth-star--cyan" style={{ bottom: '200px', right: '40px', width: '60px', height: '60px' }} />
+        <div className="app-auth-star app-auth-star--dot" style={{ top: '110px', left: '80px', width: '2px', height: '2px' }} />
+        <div className="app-auth-star app-auth-star--dot" style={{ top: '300px', left: '280px', width: '2px', height: '2px' }} />
+
         <div className="app-auth-container">
 
           {/* Header */}
-          <div className="app-auth-hero">
-            <div className="app-auth-hero__circle">
-              <IonIcon icon={lockClosedOutline} className="app-auth-hero__circle-icon" />
+          <div className="app-auth-hero" style={{ marginTop: '60px' }}>
+            <div className="app-auth-hero__cosmic-circle">
+              <IonIcon icon={lockClosedOutline} className="app-auth-hero__cosmic-circle-icon" />
             </div>
 
-            <h1 style={{
-              fontSize: '1.8rem',
-              fontWeight: '600',
-              margin: '0 0 8px 0',
-              textShadow: '0 2px 4px rgba(0,0,0,0.2)'
-            }}>
-              Neues Passwort setzen
+            <h1 className="app-auth-hero__title--cosmic" style={{ fontSize: '2.2rem', letterSpacing: '4px' }}>
+              NEUES<br />PASSWORT
             </h1>
 
-            <p style={{
-              fontSize: '1rem',
-              opacity: 0.9,
-              margin: '0'
-            }}>
-              Wähle ein sicheres Passwort für dein Konto
+            <div className="app-auth-hero__divider">
+              <span className="app-auth-hero__divider-icon">◆</span>
+            </div>
+
+            <p className="app-auth-hero__subtitle--cosmic">
+              Wähle ein sicheres Passwort
             </p>
           </div>
 
@@ -145,16 +148,18 @@ const ResetPasswordPage: React.FC = () => {
                   </div>
 
                   <h2 style={{
-                    fontSize: '1.3rem',
-                    fontWeight: '600',
+                    fontFamily: "'Bebas Neue', sans-serif",
+                    fontSize: '1.6rem',
+                    fontWeight: 400,
+                    letterSpacing: '3px',
                     margin: '0 0 12px 0',
-                    color: '#2c3e50'
+                    color: '#fff'
                   }}>
-                    Passwort geändert!
+                    PASSWORT GEÄNDERT
                   </h2>
 
                   <p style={{
-                    color: '#7f8c8d',
+                    color: 'rgba(255, 255, 255, 0.6)',
                     fontSize: '0.9rem',
                     margin: '0 0 24px 0',
                     lineHeight: '1.5'
@@ -171,33 +176,35 @@ const ResetPasswordPage: React.FC = () => {
                   </IonButton>
                 </div>
               ) : !token ? (
-                // Kein Token - spezielles Rot-Design (Inline-Styles beibehalten)
+                // Kein Token - Pink/Magenta Cosmic-Variante statt klassisches Rot
                 <div style={{ textAlign: 'center' }}>
                   <div style={{
-                    width: '64px',
-                    height: '64px',
-                    borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                    width: '72px',
+                    height: '72px',
+                    borderRadius: '22px',
+                    background: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     margin: '0 auto 20px auto',
-                    boxShadow: '0 8px 24px rgba(239, 68, 68, 0.3)'
+                    boxShadow: '0 8px 32px rgba(236, 72, 153, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1) inset'
                   }}>
                     <IonIcon icon={alertCircle} style={{ fontSize: '2rem', color: 'white' }} />
                   </div>
 
                   <h2 style={{
-                    fontSize: '1.3rem',
-                    fontWeight: '600',
+                    fontFamily: "'Bebas Neue', sans-serif",
+                    fontSize: '1.6rem',
+                    fontWeight: 400,
+                    letterSpacing: '3px',
                     margin: '0 0 12px 0',
-                    color: '#2c3e50'
+                    color: '#fff'
                   }}>
-                    Ungültiger Link
+                    UNGÜLTIGER LINK
                   </h2>
 
                   <p style={{
-                    color: '#7f8c8d',
+                    color: 'rgba(255, 255, 255, 0.6)',
                     fontSize: '0.9rem',
                     margin: '0 0 24px 0',
                     lineHeight: '1.5'
@@ -217,7 +224,7 @@ const ResetPasswordPage: React.FC = () => {
                 // Formular
                 <>
                   <IonItem lines="none" className="app-auth-input app-auth-input--compact">
-                    <IonIcon icon={lockClosedOutline} slot="start" color="medium" />
+                    <IonIcon icon={lockClosedOutline} slot="start" style={{ color: '#67e8f9' }} />
                     <IonLabel position="stacked" className="app-auth-input__label">
                       Neues Passwort
                     </IonLabel>
@@ -226,7 +233,7 @@ const ResetPasswordPage: React.FC = () => {
                       value={password}
                       onIonInput={(e) => setPassword(e.detail.value!)}
                       placeholder="Neues Passwort"
-                      style={{ '--color': '#2c3e50' }}
+                      className="app-auth-input__value"
                     />
                     <IonIcon
                       icon={showPassword ? eyeOff : eye}
@@ -250,7 +257,7 @@ const ResetPasswordPage: React.FC = () => {
                   )}
 
                   <IonItem lines="none" className="app-auth-input">
-                    <IonIcon icon={lockClosedOutline} slot="start" color="medium" />
+                    <IonIcon icon={lockClosedOutline} slot="start" style={{ color: '#67e8f9' }} />
                     <IonLabel position="stacked" className="app-auth-input__label">
                       Passwort bestätigen
                     </IonLabel>
@@ -259,7 +266,7 @@ const ResetPasswordPage: React.FC = () => {
                       value={confirmPassword}
                       onIonInput={(e) => setConfirmPassword(e.detail.value!)}
                       placeholder="Passwort wiederholen"
-                      style={{ '--color': '#2c3e50' }}
+                      className="app-auth-input__value"
                     />
                     <IonIcon
                       icon={showConfirmPassword ? eyeOff : eye}
@@ -272,8 +279,8 @@ const ResetPasswordPage: React.FC = () => {
                   {/* Passwörter stimmen nicht überein */}
                   {confirmPassword.length > 0 && !passwordsMatch && (
                     <div className="app-auth-password-match-error">
-                      <IonIcon icon={alertCircle} style={{ fontSize: '1rem', color: '#dc2626' }} />
-                      <span style={{ fontSize: '0.8rem', color: '#991b1b' }}>
+                      <IonIcon icon={alertCircle} style={{ fontSize: '1rem', color: '#f9a8d4' }} />
+                      <span style={{ fontSize: '0.8rem', color: '#fce7f3' }}>
                         Die Passwörter stimmen nicht überein
                       </span>
                     </div>

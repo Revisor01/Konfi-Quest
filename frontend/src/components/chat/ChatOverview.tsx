@@ -312,6 +312,14 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     return '';
   };
 
+  const getRoomTypeIcon = (room: ChatRoomOverview) => {
+    if (room.event_id) return calendar;
+    if (room.type === 'jahrgang') return people;
+    if (room.type === 'admin' || room.type === 'group') return chatbubbles;
+    if (room.type === 'direct') return person;
+    return chatbubbles;
+  };
+
   if (loading) {
     return <LoadingSpinner message="Chaträume werden geladen..." />;
   }
@@ -442,12 +450,14 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                               overflow: 'hidden'
                             }}
                           >
-                            {/* Eselsohr-Style Corner Badge - Chat-Typ */}
+                            {/* Eselsohr-Style Corner Badge - Chat-Typ als Icon */}
                             <div className="app-corner-badges">
                               <div
                                 className={`app-corner-badge app-corner-badge--${colorClass}`}
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+                                title={getRoomSubtitle(room)}
                               >
-                                {getRoomSubtitle(room)}
+                                <IonIcon icon={getRoomTypeIcon(room)} style={{ color: '#fff', fontSize: '0.85rem' }} />
                               </div>
                             </div>
 

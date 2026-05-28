@@ -86,7 +86,8 @@ import {
   informationCircle,
   helpCircle,
   alertCircle,
-  hammer
+  hammer,
+  chevronDownOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -276,7 +277,7 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
       <IonContent className="app-gradient-background">
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className="app-section-icon app-section-icon--teamer">
               <IonIcon icon={ribbon} />
             </div>
             <IonLabel>Zertifikat Details</IonLabel>
@@ -297,7 +298,7 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <div style={{ width: '100%', padding: '8px 0' }}>
                     <IonAccordionGroup>
-                      <IonAccordion value="icon-picker">
+                      <IonAccordion value="icon-picker" toggleIcon={chevronDownOutline} toggleIconSlot="end">
                         <IonItem slot="header" lines="none">
                           <IonLabel>
                             <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
@@ -332,7 +333,7 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
                                     style={{
                                       width: '100%',
                                       aspectRatio: '1',
-                                      backgroundColor: icon === key ? '#5b21b6' : '#f8f9fa',
+                                      backgroundColor: icon === key ? 'var(--app-color-teamer)' : '#f8f9fa',
                                       borderRadius: '12px',
                                       display: 'flex',
                                       flexDirection: 'column',
@@ -490,7 +491,7 @@ const AdminCertificatesPage: React.FC = () => {
           title="Zertifikate"
           subtitle="Teamer:innen-Zertifikate"
           icon={ribbon}
-          colors={{ primary: '#5b21b6', secondary: '#4c1d95' }}
+          colors={{ primary: 'var(--app-color-teamer)', secondary: '#9d174d' }}
           stats={[
             { value: (certificateTypes || []).length, label: 'Gesamt' }
           ]}
@@ -500,11 +501,11 @@ const AdminCertificatesPage: React.FC = () => {
           icon={ribbonOutline}
           title="Zertifikate"
           count={(certificateTypes || []).length}
-          iconColorClass="purple"
+          iconColorClass="teamer"
           emptyIcon={ribbon}
           emptyTitle="Keine Zertifikate"
           emptyMessage="Noch keine Zertifikate angelegt"
-          emptyIconColor="#5b21b6"
+          emptyIconColor="var(--app-color-teamer)"
         >
           {(certificateTypes || []).map((certType, index) => (
             <IonItemSliding
@@ -537,12 +538,12 @@ const AdminCertificatesPage: React.FC = () => {
                   className="app-list-item"
                   style={{
                     width: '100%',
-                    borderLeftColor: '#5b21b6'
+                    borderLeftColor: 'var(--app-color-teamer)'
                   }}
                 >
                   <div className="app-list-item__row">
                     <div className="app-list-item__main">
-                      <div className="app-icon-circle app-icon-circle--lg" style={{ backgroundColor: '#5b21b6' }}>
+                      <div className="app-icon-circle app-icon-circle--lg" style={{ backgroundColor: 'var(--app-color-teamer)' }}>
                         <IonIcon icon={getIconFromString(certType.icon)} />
                       </div>
                       <div className="app-list-item__content">

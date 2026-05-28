@@ -264,9 +264,9 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
   const getRoleColor = (roleName: string) => {
     switch (roleName) {
-      case 'org_admin': return '#3b82f6';
-      case 'admin': return '#ef4444';
-      case 'teamer': return '#f59e0b';
+      case 'org_admin': return '#667eea';
+      case 'admin': return '#667eea';
+      case 'teamer': return '#be185d';
       default: return '#6b7280';
     }
   };
@@ -467,6 +467,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   </p>
                 </div>
                 <IonToggle
+                  className="app-toggle--users"
                   checked={formData.is_active}
                   onIonChange={(e) => setFormData({ ...formData, is_active: e.detail.checked })}
                   disabled={isSubmitting}

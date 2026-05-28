@@ -89,7 +89,8 @@ import {
   calendar,
   today,
   time,
-  peopleOutline
+  peopleOutline,
+  chevronDownOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -483,7 +484,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         return (
           <div style={{ marginTop: '16px' }}>
             <IonAccordionGroup>
-              <IonAccordion value="activity-picker">
+              <IonAccordion value="activity-picker" toggleIcon={chevronDownOutline} toggleIconSlot="end">
                 <IonItem slot="header" lines="none">
                   <IonLabel>
                     <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
@@ -552,7 +553,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         return (
           <div style={{ marginTop: '16px' }}>
             <IonAccordionGroup>
-              <IonAccordion value="category-picker">
+              <IonAccordion value="category-picker" toggleIcon={chevronDownOutline} toggleIconSlot="end">
                 <IonItem slot="header" lines="none">
                   <IonLabel>
                     <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
@@ -631,7 +632,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         return (
           <div style={{ marginTop: '16px' }}>
             <IonAccordionGroup>
-              <IonAccordion value="activity-combination-picker">
+              <IonAccordion value="activity-combination-picker" toggleIcon={chevronDownOutline} toggleIconSlot="end">
                 <IonItem slot="header" lines="none">
                   <IonLabel>
                     <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
@@ -854,7 +855,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
               <div style={{ marginTop: '16px' }}>
                 <IonAccordionGroup>
-                  <IonAccordion value="icon-picker">
+                  <IonAccordion value="icon-picker" toggleIcon={chevronDownOutline} toggleIconSlot="end">
                     <IonItem slot="header" lines="none">
                       <IonLabel>
                         <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
@@ -983,7 +984,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         <IonCard className="app-card">
           <IonCardContent>
             <IonAccordionGroup>
-              <IonAccordion value="criteria-types">
+              <IonAccordion value="criteria-types" toggleIcon={chevronDownOutline} toggleIconSlot="end">
                 <IonItem slot="header" lines="none">
                   <IonLabel>
                     <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
@@ -1102,9 +1103,9 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 </IonLabel>
                 <IonToggle
                   slot="end"
+                  className="app-toggle--badges"
                   checked={formData.is_active}
                   onIonChange={(e) => setFormData({ ...formData, is_active: e.detail.checked })}
-                  color="success"
                 />
               </IonItem>
 
@@ -1115,9 +1116,9 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 </IonLabel>
                 <IonToggle
                   slot="end"
+                  className="app-toggle--badges"
                   checked={formData.is_hidden}
                   onIonChange={(e) => setFormData({ ...formData, is_hidden: e.detail.checked })}
-                  color="warning"
                 />
               </IonItem>
             </IonList>

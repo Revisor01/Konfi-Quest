@@ -49,7 +49,7 @@ interface TeamerDashboardConfig {
 }
 
 const KONFI_LABELS: Record<string, string> = {
-  konfirmation: 'Konfirmations-Countdown',
+  konfirmation: 'Countdown',
   events: 'Events',
   losung: 'Tageslosung',
   badges: 'Badges',
@@ -65,6 +65,7 @@ const TEAMER_LABELS: Record<string, string> = {
 
 const DEFAULT_KONFI_ORDER = ['konfirmation', 'events', 'losung', 'badges', 'ranking'];
 const DEFAULT_TEAMER_ORDER = ['zertifikate', 'events', 'badges', 'losung'];
+
 
 const AdminDashboardSettingsPage: React.FC = () => {
   const { user, setSuccess, setError } = useApp();
@@ -270,14 +271,19 @@ const AdminDashboardSettingsPage: React.FC = () => {
                     handleSaveOrder('dashboard_section_order', JSON.stringify(newOrder));
                   }}>
                     {konfiOrder.map((key, index) => (
-                      <IonItem key={key} lines={index < konfiOrder.length - 1 ? 'full' : 'none'} style={{ '--background': 'transparent' }}>
+                      <IonItem
+                        key={key}
+                        lines={index < konfiOrder.length - 1 ? 'full' : 'none'}
+                        className="app-dashboard-settings-item"
+                      >
+                        <IonReorder slot="start" />
                         <IonLabel>{KONFI_LABELS[key]}</IonLabel>
                         <IonToggle
                           slot="end"
+                          className="app-toggle--users"
                           checked={dashboardConfig[`show_${key}` as keyof DashboardConfig]}
                           onIonChange={(e) => handleDashboardToggle(`show_${key}` as keyof DashboardConfig, e.detail.checked)}
                         />
-                        <IonReorder slot="end" />
                       </IonItem>
                     ))}
                   </IonReorderGroup>
@@ -307,14 +313,19 @@ const AdminDashboardSettingsPage: React.FC = () => {
                     handleSaveOrder('teamer_dashboard_section_order', JSON.stringify(newOrder));
                   }}>
                     {teamerOrder.map((key, index) => (
-                      <IonItem key={key} lines={index < teamerOrder.length - 1 ? 'full' : 'none'} style={{ '--background': 'transparent' }}>
+                      <IonItem
+                        key={key}
+                        lines={index < teamerOrder.length - 1 ? 'full' : 'none'}
+                        className="app-dashboard-settings-item"
+                      >
+                        <IonReorder slot="start" />
                         <IonLabel>{TEAMER_LABELS[key]}</IonLabel>
                         <IonToggle
                           slot="end"
+                          className="app-toggle--users"
                           checked={teamerDashboardConfig[`show_${key}` as keyof TeamerDashboardConfig]}
                           onIonChange={(e) => handleTeamerDashboardToggle(`show_${key}` as keyof TeamerDashboardConfig, e.detail.checked)}
                         />
-                        <IonReorder slot="end" />
                       </IonItem>
                     ))}
                   </IonReorderGroup>

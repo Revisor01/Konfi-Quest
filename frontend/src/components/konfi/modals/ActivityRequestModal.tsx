@@ -35,7 +35,8 @@ import {
   homeOutline,
   peopleOutline,
   imageOutline,
-  pricetag
+  pricetag,
+  chevronDownOutline
 } from 'ionicons/icons';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { useApp } from '../../../contexts/AppContext';
@@ -299,7 +300,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '0' }}>
               <IonAccordionGroup ref={accordionGroupRef}>
-                <IonAccordion value="activity-picker">
+                <IonAccordion value="activity-picker" toggleIcon={chevronDownOutline} toggleIconSlot="end">
                   <IonItem slot="header" lines="none" style={{ '--padding-start': '16px' }}>
                     <IonLabel>
                       <h3 className="app-settings-item__subtitle" style={{ margin: '0 0 4px 0' }}>

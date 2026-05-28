@@ -27,9 +27,10 @@ import {
   bagHandle,
   closeCircle,
   search,
+  flame,
   filterOutline
 } from 'ionicons/icons';
-import { SectionHeader, ListSection } from '../../shared';
+import { SectionHeader, ListSection, StatusBadge } from '../../shared';
 import { Event } from '../../../types/event';
 
 interface EventsViewProps {
@@ -160,15 +161,16 @@ const EventsView: React.FC<EventsViewProps> = ({
     else if (event.registration_status === 'upcoming') statusColor = C.bonus;
     else statusColor = C.danger;
 
-    // Bestimme Text
+    // Bestimme Text (Pflicht ist separates Badge, nicht im Status-Text)
     let statusText = 'Offen';
     if (isCancelled) statusText = 'Abgesagt';
     else if (isMandatory && isOptedOut) statusText = 'Abgemeldet';
     else if (isMandatory && isPastEvent && attendanceStatus === 'present') statusText = 'Anwesend';
     else if (isMandatory && isPastEvent && attendanceStatus === 'absent') statusText = 'Gefehlt';
     else if (isMandatory && isPastEvent) statusText = 'Ausstehend';
-    else if (isMandatory) statusText = 'Pflicht';
-    else if (isKonfirmationEvent && !isPastEvent) statusText = event.is_registered ? 'Angemeldet' : 'Konfirmation'; // Konfirmation Text
+    else if (isMandatory) statusText = 'Angemeldet'; // Pflicht-Event: Konfi ist automatisch angemeldet
+    else if (isKonfirmationEvent && !isPastEvent && event.is_registered) statusText = 'Angemeldet';
+    else if (isKonfirmationEvent && !isPastEvent) statusText = 'Offen';
     else if (isParticipated && attendanceStatus === 'present') statusText = 'Verbucht';
     else if (isParticipated && attendanceStatus === 'absent') statusText = 'Verpasst';
     else if (isAusstehend) statusText = 'Ausstehend';
@@ -198,7 +200,7 @@ const EventsView: React.FC<EventsViewProps> = ({
 
     const shouldGrayOut = isPastEvent && !isParticipated && !isAusstehend;
 
-    return { statusColor, statusText, statusIcon, isPastEvent, shouldGrayOut, isParticipated };
+    return { statusColor, statusText, statusIcon, isPastEvent, shouldGrayOut, isParticipated, isKonfirmationEvent };
   };
 
   // Filtere Events basierend auf aktivem Tab
@@ -290,7 +292,7 @@ const EventsView: React.FC<EventsViewProps> = ({
         emptyIconColor="#dc2626"
       >
         {filteredEvents.map((event, index) => {
-          const { statusColor, statusText, statusIcon, isPastEvent, shouldGrayOut, isParticipated } = getEventStatusInfo(event);
+          const { statusColor, statusText, statusIcon, isPastEvent, shouldGrayOut, isParticipated, isKonfirmationEvent } = getEventStatusInfo(event);
           const isCancelled = event.cancelled;
           const isOptedOut = event.is_opted_out || event.booking_status === 'opted_out';
           const showBadge = !isPastEvent || isParticipated || isCancelled || isOptedOut;
@@ -322,15 +324,46 @@ const EventsView: React.FC<EventsViewProps> = ({
                     overflow: 'hidden'
                   }}
                 >
-                  {/* Eselsohr-Style Corner Badge */}
-                  {showBadge && (
-                    <div className="app-corner-badges">
-                      <div
-                        className="app-corner-badge"
-                        style={{ backgroundColor: statusColor }}
-                      >
-                        {statusText}
-                      </div>
+                  {/* Eselsohr-Style Corner Badges - Team links innen, Konfirmation/Pflicht, Status in der Ecke */}
+                  {(showBadge || event.teamer_only || event.teamer_needed || event.mandatory || isKonfirmationEvent) && (
+                    <div className="app-corner-badges" style={{ opacity: shouldGrayOut ? 0.5 : 1 }}>
+                      {(event.teamer_only || event.teamer_needed) && (
+                        <>
+                          <div
+                            className="app-corner-badge"
+                            style={{ backgroundColor: 'var(--app-color-teamer)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+                            title={event.teamer_only ? 'Nur Team' : 'Team gesucht'}
+                          >
+                            <IonIcon icon={people} style={{ color: '#fff', fontSize: '0.85rem' }} />
+                          </div>
+                          {(isKonfirmationEvent || event.mandatory || showBadge) && <div className="app-corner-badges__separator" />}
+                        </>
+                      )}
+                      {isKonfirmationEvent && (
+                        <>
+                          <div
+                            className="app-corner-badge"
+                            style={{ backgroundColor: 'var(--app-color-konfis)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+                            title="Konfirmation"
+                          >
+                            <IonIcon icon={flame} style={{ color: '#fff', fontSize: '0.85rem' }} />
+                          </div>
+                          {(event.mandatory || showBadge) && <div className="app-corner-badges__separator" />}
+                        </>
+                      )}
+                      {event.mandatory && (
+                        <>
+                          <div
+                            className="app-corner-badge"
+                            style={{ backgroundColor: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+                            title="Pflichtveranstaltung"
+                          >
+                            <IonIcon icon={shieldCheckmark} style={{ color: '#fff', fontSize: '0.85rem' }} />
+                          </div>
+                          {showBadge && <div className="app-corner-badges__separator" />}
+                        </>
+                      )}
+                      {showBadge && <StatusBadge statusText={statusText} statusColor={statusColor} />}
                     </div>
                   )}
 

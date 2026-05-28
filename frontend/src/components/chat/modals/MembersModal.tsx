@@ -31,6 +31,7 @@ import {
   personAddOutline,
   checkmarkOutline,
   search,
+  people,
   peopleOutline,
   trash,
   filterOutline,
@@ -317,13 +318,14 @@ const MembersModal: React.FC<MembersModalProps> = ({
         onClick={isSelectable ? onToggle : undefined}
         style={{ cursor: isSelectable ? 'pointer' : 'default', position: 'relative', overflow: 'hidden', width: '100%' }}
       >
-        {/* Eselsohr mit Rolle/Funktion */}
+        {/* Eselsohr mit Rolle als Icon */}
         <div className="app-corner-badges">
           <div
             className="app-corner-badge"
-            style={{ backgroundColor: badgeColor }}
+            style={{ backgroundColor: badgeColor, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+            title={roleText}
           >
-            {roleText}
+            <IonIcon icon={isAdmin ? people : person} style={{ color: '#fff', fontSize: '0.85rem' }} />
           </div>
         </div>
 
@@ -334,7 +336,15 @@ const MembersModal: React.FC<MembersModalProps> = ({
             </div>
             <div className="app-list-item__content">
               <div className="app-list-item__title" style={{ paddingRight: '70px' }}>{name}</div>
-              {/* Meta-Zeile: Jahrgang (wie in KonfisView) */}
+              {/* Meta-Zeile: Jahrgang fuer Konfi, Rolle fuer Admin */}
+              {isAdmin && roleText && roleText !== 'Admin' && (
+                <div className="app-list-item__meta">
+                  <span className="app-list-item__meta-item">
+                    <IonIcon icon={peopleOutline} style={{ color: 'var(--app-color-teamer)' }} />
+                    {roleText}
+                  </span>
+                </div>
+              )}
               {!isAdmin && jahrgang && (
                 <div className="app-list-item__meta">
                   <span className="app-list-item__meta-item">

@@ -7,9 +7,7 @@ import {
   IonContent,
   IonButtons,
   IonButton,
-  IonSearchbar,
-  IonSegment,
-  IonSegmentButton,
+  IonInput,
   IonLabel,
   IonIcon,
   IonSelect,
@@ -36,7 +34,9 @@ import {
   trash,
   attachOutline,
   calendar,
+  calendarOutline,
   filterOutline,
+  search as searchIcon,
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -69,7 +69,6 @@ const AdminMaterialPage: React.FC = () => {
 
   const [search, setSearch] = useState('');
   const [activeJahrgangId, setActiveJahrgangId] = useState<number | undefined>();
-  const [segment, setSegment] = useState<'alle' | 'mit_event' | 'ohne_event'>('alle');
   const [editMaterial, setEditMaterial] = useState<Material | null>(null);
 
   useEffect(() => {
@@ -98,11 +97,7 @@ const AdminMaterialPage: React.FC = () => {
     { ttl: CACHE_TTL.PROFILE }
   );
 
-  const filteredMaterials = (materials || []).filter(m => {
-    if (segment === 'mit_event') return (m.event_count || 0) > 0;
-    if (segment === 'ohne_event') return (m.event_count || 0) === 0;
-    return true;
-  });
+  const filteredMaterials = materials || [];
 
   const handleDelete = (material: Material) => {
     if (!isOnline) return;
@@ -221,23 +216,24 @@ const AdminMaterialPage: React.FC = () => {
                 <IonLabel>Suche & Filter</IonLabel>
               </IonListHeader>
               <IonItemGroup>
-                <IonSearchbar
-                  className="ios26-searchbar-classic"
-                  value={search}
-                  onIonInput={(e) => setSearch(e.detail.value || '')}
-                  placeholder="Material durchsuchen..."
-                  debounce={300}
-                />
-                {/* Jahrgang-Filter Dropdown */}
+                <IonItem>
+                  <IonIcon icon={searchIcon} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+                  <IonInput
+                    value={search}
+                    onIonInput={(e) => setSearch(e.detail.value || '')}
+                    placeholder="Material durchsuchen..."
+                    debounce={300}
+                  />
+                </IonItem>
                 {(jahrgaenge || []).length > 0 && (
-                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonItem>
+                    <IonIcon icon={calendarOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
                     <IonSelect
-                      interface="popover"
-                      label="Jahrgang"
-                      labelPlacement="stacked"
                       value={activeJahrgangId ?? 'alle'}
                       onIonChange={(e) => setActiveJahrgangId(e.detail.value === 'alle' ? undefined : e.detail.value)}
-                      placeholder="Alle Jahrgänge"
+                      interface="popover"
+                      placeholder="Jahrgang"
+                      style={{ width: '100%' }}
                     >
                       <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
                       {(jahrgaenge || []).map(jg => (
@@ -248,24 +244,6 @@ const AdminMaterialPage: React.FC = () => {
                 )}
               </IonItemGroup>
             </IonList>
-
-            {/* Segment */}
-            <div className="app-segment-wrapper">
-              <IonSegment
-                value={segment}
-                onIonChange={(e) => setSegment(e.detail.value as any)}
-              >
-                <IonSegmentButton value="alle">
-                  <IonLabel>Alle</IonLabel>
-                </IonSegmentButton>
-                <IonSegmentButton value="mit_event">
-                  <IonLabel>Mit Event</IonLabel>
-                </IonSegmentButton>
-                <IonSegmentButton value="ohne_event">
-                  <IonLabel>Ohne Event</IonLabel>
-                </IonSegmentButton>
-              </IonSegment>
-            </div>
 
             {/* Material-Liste */}
             <IonList inset={true} className="app-segment-wrapper">
@@ -281,13 +259,7 @@ const AdminMaterialPage: React.FC = () => {
                     <EmptyState
                       icon={documentOutline}
                       title="Keine Materialien"
-                      message={
-                        segment === 'ohne_event' && (materials || []).length > 0
-                          ? 'Alle Materialien sind einem Event zugeordnet'
-                          : segment === 'mit_event' && (materials || []).length > 0
-                            ? 'Kein Material ist einem Event zugeordnet'
-                            : 'Erstelle dein erstes Material mit dem + Button'
-                      }
+                      message="Erstelle dein erstes Material mit dem + Button"
                       iconColor="#d97706"
                     />
                   ) : (

@@ -237,7 +237,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
         {/* Punkte-Konfiguration */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--users">
+            <div className="app-section-icon app-section-icon--jahrgang">
               <IonIcon icon={settingsOutline} />
             </div>
             <IonLabel>Punkte-Konfiguration</IonLabel>
@@ -249,6 +249,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                   <IonLabel>Gottesdienst-Punkte aktiviert</IonLabel>
                   <IonToggle
                     slot="end"
+                    className="app-toggle--jahrgang"
                     checked={formData.gottesdienst_enabled}
                     onIonChange={(e) => setFormData({ ...formData, gottesdienst_enabled: e.detail.checked })}
                     disabled={loading || (!formData.gemeinde_enabled)}
@@ -280,6 +281,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                   <IonLabel>Gemeinde-Punkte aktiviert</IonLabel>
                   <IonToggle
                     slot="end"
+                    className="app-toggle--jahrgang"
                     checked={formData.gemeinde_enabled}
                     onIonChange={(e) => setFormData({ ...formData, gemeinde_enabled: e.detail.checked })}
                     disabled={loading || (!formData.gottesdienst_enabled)}

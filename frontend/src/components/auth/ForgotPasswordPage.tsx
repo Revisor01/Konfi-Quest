@@ -65,30 +65,35 @@ const ForgotPasswordPage: React.FC = () => {
   return (
     <IonPage>
       <IonContent className="app-auth-background">
+        {/* Glow-Sterne */}
+        <div className="app-auth-star app-auth-star--pink" style={{ top: '80px', left: '30px', width: '50px', height: '50px' }} />
+        <div className="app-auth-star app-auth-star--cyan" style={{ top: '200px', right: '20px', width: '70px', height: '70px' }} />
+        <div className="app-auth-star app-auth-star--gold" style={{ top: '380px', left: '20px', width: '40px', height: '40px' }} />
+        <div className="app-auth-star app-auth-star--cyan" style={{ bottom: '200px', right: '40px', width: '60px', height: '60px' }} />
+        <div className="app-auth-star app-auth-star--pink" style={{ bottom: '100px', left: '50px', width: '80px', height: '80px' }} />
+        <div className="app-auth-star app-auth-star--dot" style={{ top: '110px', left: '80px', width: '2px', height: '2px' }} />
+        <div className="app-auth-star app-auth-star--dot" style={{ top: '150px', right: '90px', width: '3px', height: '3px' }} />
+        <div className="app-auth-star app-auth-star--dot" style={{ top: '300px', left: '280px', width: '2px', height: '2px' }} />
+        <div className="app-auth-star app-auth-star--dot" style={{ top: '420px', left: '60px', width: '3px', height: '3px' }} />
+
         <div className="app-auth-container">
 
           {/* Header */}
-          <div className="app-auth-hero">
-            <div className="app-auth-hero__circle">
-              <IonIcon icon={mailOutline} className="app-auth-hero__circle-icon" />
+          <div className="app-auth-hero" style={{ marginTop: '60px' }}>
+            <div className="app-auth-hero__cosmic-circle">
+              <IonIcon icon={mailOutline} className="app-auth-hero__cosmic-circle-icon" />
             </div>
 
-            <h1 style={{
-              fontSize: '1.8rem',
-              fontWeight: '600',
-              margin: '0 0 8px 0',
-              textShadow: '0 2px 4px rgba(0,0,0,0.2)'
-            }}>
-              Passwort vergessen?
+            <h1 className="app-auth-hero__title--cosmic" style={{ fontSize: '2.2rem', letterSpacing: '4px' }}>
+              PASSWORT<br />VERGESSEN?
             </h1>
 
-            <p style={{
-              fontSize: '1rem',
-              opacity: 0.9,
-              margin: '0',
-              maxWidth: '300px'
-            }}>
-              Kein Problem! Wir senden dir einen Link zum Zurücksetzen.
+            <div className="app-auth-hero__divider">
+              <span className="app-auth-hero__divider-icon">◆</span>
+            </div>
+
+            <p className="app-auth-hero__subtitle--cosmic">
+              Kein Problem — wir senden dir einen Link
             </p>
           </div>
 
@@ -104,16 +109,18 @@ const ForgotPasswordPage: React.FC = () => {
                   </div>
 
                   <h2 style={{
-                    fontSize: '1.3rem',
-                    fontWeight: '600',
+                    fontFamily: "'Bebas Neue', sans-serif",
+                    fontSize: '1.6rem',
+                    fontWeight: 400,
+                    letterSpacing: '3px',
                     margin: '0 0 12px 0',
-                    color: '#2c3e50'
+                    color: '#fff'
                   }}>
-                    E-Mail gesendet!
+                    E-MAIL GESENDET
                   </h2>
 
                   <p style={{
-                    color: '#7f8c8d',
+                    color: 'rgba(255, 255, 255, 0.6)',
                     fontSize: '0.9rem',
                     margin: '0 0 24px 0',
                     lineHeight: '1.5'
@@ -133,7 +140,7 @@ const ForgotPasswordPage: React.FC = () => {
                 // Formular
                 <>
                   <IonItem lines="none" className="app-auth-input">
-                    <IonIcon icon={mailOutline} slot="start" color="medium" />
+                    <IonIcon icon={mailOutline} slot="start" style={{ color: '#67e8f9' }} />
                     <IonLabel position="stacked" className="app-auth-input__label">
                       E-Mail-Adresse
                     </IonLabel>
@@ -142,7 +149,7 @@ const ForgotPasswordPage: React.FC = () => {
                       value={email}
                       onIonInput={(e) => setEmail(e.detail.value!)}
                       placeholder="deine@email.de"
-                      style={{ '--color': '#2c3e50' }}
+                      className="app-auth-input__value"
                     />
                   </IonItem>
 

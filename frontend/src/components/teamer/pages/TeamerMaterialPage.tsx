@@ -7,9 +7,7 @@ import {
   IonContent,
   IonRefresher,
   IonRefresherContent,
-  IonSearchbar,
   IonIcon,
-  IonChip,
   IonLabel,
   IonList,
   IonListHeader,
@@ -19,6 +17,9 @@ import {
   IonItemGroup,
   IonButtons,
   IonButton,
+  IonInput,
+  IonSelect,
+  IonSelectOption,
   useIonModal
 } from '@ionic/react';
 import {
@@ -29,7 +30,9 @@ import {
   musicalNotesOutline,
   attachOutline,
   calendar,
-  filter,
+  calendarOutline,
+  filterOutline,
+  search as searchIcon,
   arrowBack,
   people,
   person,
@@ -275,34 +278,46 @@ const TeamerMaterialPage: React.FC = () => {
               <IonLabel>Details</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent>
+              <IonCardContent className="app-card-content">
                 {selectedMaterial.events && selectedMaterial.events.length > 0 && (
                   <div className="app-info-row">
                     <IonIcon icon={calendar} className="app-info-row__icon" style={{ color: '#dc2626' }} />
-                    <div className="app-info-row__content">
-                      {selectedMaterial.events.length === 1 ? 'Event' : 'Events'}: {selectedMaterial.events.map(e => e.name).join(', ')}
+                    <div>
+                      <div className="app-info-row__label">
+                        {selectedMaterial.events.length === 1 ? 'Event' : 'Events'}
+                      </div>
+                      <div className="app-info-row__value">
+                        {selectedMaterial.events.map(e => e.name).join(', ')}
+                      </div>
                     </div>
                   </div>
                 )}
                 {selectedMaterial.jahrgaenge && selectedMaterial.jahrgaenge.length > 0 && (
                   <div className="app-info-row">
                     <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
-                    <div className="app-info-row__content">
-                      {selectedMaterial.jahrgaenge.length === 1 ? 'Jahrgang' : 'Jahrgänge'}: {selectedMaterial.jahrgaenge.map(j => j.name).join(', ')}
+                    <div>
+                      <div className="app-info-row__label">
+                        {selectedMaterial.jahrgaenge.length === 1 ? 'Jahrgang' : 'Jahrgänge'}
+                      </div>
+                      <div className="app-info-row__value">
+                        {selectedMaterial.jahrgaenge.map(j => j.name).join(', ')}
+                      </div>
                     </div>
                   </div>
                 )}
                 <div className="app-info-row">
                   <IonIcon icon={create} className="app-info-row__icon" style={{ color: '#6c757d' }} />
-                  <div className="app-info-row__content">
-                    Erstellt am {formatDateLong(selectedMaterial.created_at)}
+                  <div>
+                    <div className="app-info-row__label">Erstellt am</div>
+                    <div className="app-info-row__value">{formatDateLong(selectedMaterial.created_at)}</div>
                   </div>
                 </div>
                 {selectedMaterial.admin_name && (
                   <div className="app-info-row">
                     <IonIcon icon={person} className="app-info-row__icon" style={{ color: '#6c757d' }} />
-                    <div className="app-info-row__content">
-                      Von {selectedMaterial.admin_name}
+                    <div>
+                      <div className="app-info-row__label">Erstellt von</div>
+                      <div className="app-info-row__value">{selectedMaterial.admin_name}</div>
                     </div>
                   </div>
                 )}
@@ -372,6 +387,11 @@ const TeamerMaterialPage: React.FC = () => {
     <IonPage>
       <IonHeader translucent={true}>
         <IonToolbar>
+          <IonButtons slot="start">
+            <IonButton onClick={() => window.history.back()}>
+              <IonIcon icon={arrowBack} slot="icon-only" />
+            </IonButton>
+          </IonButtons>
           <IonTitle>Material</IonTitle>
         </IonToolbar>
       </IonHeader>
@@ -406,50 +426,39 @@ const TeamerMaterialPage: React.FC = () => {
             />
 
             {/* Suche & Filter */}
-            <IonList inset={true} style={{ margin: '0 16px 16px' }}>
+            <IonList inset={true} style={{ margin: '16px' }}>
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--material">
-                  <IonIcon icon={filter} />
+                  <IonIcon icon={filterOutline} />
                 </div>
                 <IonLabel>Suche & Filter</IonLabel>
               </IonListHeader>
               <IonItemGroup>
-                <IonSearchbar
-                  className="ios26-searchbar-classic"
-                  value={search}
-                  onIonInput={(e) => setSearch(e.detail.value || '')}
-                  placeholder="Material durchsuchen..."
-                  debounce={300}
-                  style={{ padding: '0 0' }}
-                />
-                {/* Jahrgang-Filter Chips */}
+                <IonItem>
+                  <IonIcon icon={searchIcon} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+                  <IonInput
+                    value={search}
+                    onIonInput={(e) => setSearch(e.detail.value || '')}
+                    placeholder="Material durchsuchen..."
+                    debounce={300}
+                  />
+                </IonItem>
                 {jahrgaenge.length > 0 && (
-                  <div style={{ padding: '0 16px 8px', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span style={{ fontSize: '12px', color: '#6c757d', flexShrink: 0 }}>Jahrgang:</span>
-                    <IonChip
-                      onClick={() => setActiveJahrgangId(undefined)}
-                      style={{
-                        backgroundColor: !activeJahrgangId ? '#d97706' : 'transparent',
-                        color: !activeJahrgangId ? 'white' : '#d97706',
-                        border: '1px solid #d97706'
-                      }}
+                  <IonItem>
+                    <IonIcon icon={calendarOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+                    <IonSelect
+                      value={activeJahrgangId ?? 'alle'}
+                      onIonChange={(e) => setActiveJahrgangId(e.detail.value === 'alle' ? undefined : e.detail.value)}
+                      interface="popover"
+                      placeholder="Jahrgang"
+                      style={{ width: '100%' }}
                     >
-                      <IonLabel>Alle</IonLabel>
-                    </IonChip>
-                    {jahrgaenge.map(jg => (
-                      <IonChip
-                        key={jg.id}
-                        onClick={() => setActiveJahrgangId(activeJahrgangId === jg.id ? undefined : jg.id)}
-                        style={{
-                          backgroundColor: activeJahrgangId === jg.id ? '#d97706' : 'transparent',
-                          color: activeJahrgangId === jg.id ? 'white' : '#d97706',
-                          border: '1px solid #d97706'
-                        }}
-                      >
-                        <IonLabel>{jg.name}</IonLabel>
-                      </IonChip>
-                    ))}
-                  </div>
+                      <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
+                      {jahrgaenge.map(jg => (
+                        <IonSelectOption key={jg.id} value={jg.id}>{jg.name}</IonSelectOption>
+                      ))}
+                    </IonSelect>
+                  </IonItem>
                 )}
               </IonItemGroup>
             </IonList>

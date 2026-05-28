@@ -227,11 +227,9 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
             <IonItemGroup>
               <IonItem>
                 <IonToggle
+                  className="app-toggle--chat"
                   checked={multipleChoice}
                   onIonChange={(e) => setMultipleChoice(e.detail.checked)}
-                  style={{
-                    '--track-background-checked': '#06b6d4'
-                  }}
                 >
                   <IonLabel>
                     <h3>Mehrfachauswahl</h3>
@@ -244,11 +242,9 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
 
               <IonItem>
                 <IonToggle
+                  className="app-toggle--chat"
                   checked={hasExpiration}
                   onIonChange={(e) => setHasExpiration(e.detail.checked)}
-                  style={{
-                    '--track-background-checked': '#06b6d4'
-                  }}
                 >
                   <IonLabel>
                     <h3>Ablaufdatum</h3>

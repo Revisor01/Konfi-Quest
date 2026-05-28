@@ -21,7 +21,7 @@ import {
   trophy,
   returnUpBack
 } from 'ionicons/icons';
-import { SectionHeader, ListSection } from '../shared';
+import { SectionHeader, ListSection, StatusBadge } from '../shared';
 
 interface ActivityRequest {
   id: number;
@@ -63,16 +63,12 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
   const requests: ActivityRequest[] = Array.isArray(requestsRaw) ? requestsRaw : [];
 
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
-  const [roleFilter, setRoleFilter] = useState<'all' | 'konfi' | 'teamer'>('all');
 
   const filteredAndSortedRequests = (() => {
     let result = [...requests];
 
     if (statusFilter !== 'all') {
       result = result.filter(r => r.status === statusFilter);
-    }
-    if (roleFilter !== 'all') {
-      result = result.filter(r => (r.activity_target_role || 'konfi') === roleFilter);
     }
 
     result = result.sort((a, b) => {
@@ -136,23 +132,6 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
           </IonSegmentButton>
         </IonSegment>
       </div>
-      <div style={{ margin: '0 16px 16px 16px' }}>
-        <IonSegment
-          value={roleFilter}
-          onIonChange={(e) => setRoleFilter(e.detail.value as any)}
-        >
-          <IonSegmentButton value="all">
-            <IonLabel>Alle</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="konfi">
-            <IonLabel>Konfis</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="teamer">
-            <IonLabel>Teamer:innen</IonLabel>
-          </IonSegmentButton>
-        </IonSegment>
-      </div>
-
       {/* Anträge Liste */}
       <ListSection
         icon={documentOutline}
@@ -201,14 +180,21 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                             overflow: 'hidden'
                           }}
                         >
-                          {/* Eselsohr-Style Corner Badge */}
+                          {/* Eselsohr-Style Corner Badges - Team links innen, Status in der Ecke */}
                           <div className="app-corner-badges">
-                            <div
-                              className="app-corner-badge"
-                              style={{ backgroundColor: statusColor }}
-                            >
-                              {statusText}
-                            </div>
+                            {request.activity_target_role === 'teamer' && (
+                              <>
+                                <div
+                                  className="app-corner-badge"
+                                  style={{ backgroundColor: 'var(--app-color-teamer)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+                                  title="Team-Antrag"
+                                >
+                                  <IonIcon icon={people} style={{ color: '#fff', fontSize: '0.85rem' }} />
+                                </div>
+                                <div className="app-corner-badges__separator" />
+                              </>
+                            )}
+                            <StatusBadge statusText={statusText} statusColor={statusColor} />
                           </div>
                           <div className="app-list-item__row">
                             <div className="app-list-item__main">

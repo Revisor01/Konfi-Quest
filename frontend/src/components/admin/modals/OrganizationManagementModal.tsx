@@ -450,7 +450,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     <h3 style={{ fontWeight: '500', margin: '0 0 4px 0' }}>Organisation aktiv</h3>
                     <p style={{ color: '#666', margin: 0, fontSize: '0.85rem' }}>Benutzer können sich anmelden</p>
                   </IonLabel>
-                  <IonToggle slot="end" checked={formData.is_active} onIonChange={(e) => setFormData({ ...formData, is_active: e.detail.checked })} disabled={isSubmitting} />
+                  <IonToggle slot="end" className="app-toggle--users" checked={formData.is_active} onIonChange={(e) => setFormData({ ...formData, is_active: e.detail.checked })} disabled={isSubmitting} />
                 </IonItem>
                 {!formData.is_active && (
                   <IonItem lines="none" style={{ '--background': 'rgba(239, 68, 68, 0.08)', borderRadius: '10px', marginTop: '8px' }}>

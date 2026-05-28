@@ -179,8 +179,12 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSucc
                             }}
                           >
                             <div className="app-corner-badges">
-                              <div className="app-corner-badge" style={{ backgroundColor: badgeColor }}>
-                                {isAdmin ? 'Admin' : 'Konfi'}
+                              <div
+                                className="app-corner-badge"
+                                style={{ backgroundColor: badgeColor, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+                                title={isAdmin ? 'Admin' : 'Konfi'}
+                              >
+                                <IonIcon icon={isAdmin ? people : person} style={{ color: '#fff', fontSize: '0.85rem' }} />
                               </div>
                             </div>
                             <div className="app-list-item__row">
@@ -192,6 +196,14 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSucc
                                   <div className="app-list-item__title" style={{ paddingRight: '70px' }}>
                                     {getUserDisplayName(targetUser)}
                                   </div>
+                                  {isAdmin && (targetUser as any).role_description && (
+                                    <div className="app-list-item__meta">
+                                      <span className="app-list-item__meta-item">
+                                        <IonIcon icon={peopleOutline} style={{ color: 'var(--app-color-teamer)' }} />
+                                        {(targetUser as any).role_description}
+                                      </span>
+                                    </div>
+                                  )}
                                   {!isAdmin && targetUser.jahrgang && (
                                     <div className="app-list-item__meta">
                                       <span className="app-list-item__meta-item">

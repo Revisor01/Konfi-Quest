@@ -233,9 +233,12 @@ const TeamerRequestsPage: React.FC = () => {
                 {pendingQueueItems.map(qi => (
                   <div key={qi.id} className="app-list-item app-list-item--warning">
                     <div className="app-corner-badges">
-                      <div className="app-corner-badge app-corner-badge--warning">
-                        <IonIcon icon={timeOutline} style={{ fontSize: '0.7rem', marginRight: '2px' }} />
-                        Wartend
+                      <div
+                        className="app-corner-badge app-corner-badge--warning"
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+                        title="Wartend (Offline-Queue)"
+                      >
+                        <IonIcon icon={timeOutline} style={{ color: '#fff', fontSize: '0.85rem' }} />
                       </div>
                     </div>
                     <div className="app-list-item__row">

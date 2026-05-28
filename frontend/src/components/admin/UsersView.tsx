@@ -89,9 +89,9 @@ const UsersView: React.FC<UsersViewProps> = ({
 
   const getRoleColor = (roleName: string) => {
     switch (roleName) {
-      case 'org_admin': return '#3b82f6';
-      case 'admin': return '#ef4444';
-      case 'teamer': return '#ec4899';
+      case 'org_admin': return '#667eea';
+      case 'admin': return '#667eea';
+      case 'teamer': return '#be185d';
       default: return '#6b7280';
     }
   };
@@ -99,7 +99,7 @@ const UsersView: React.FC<UsersViewProps> = ({
   const getRoleBadgeColor = (roleName: string) => {
     switch (roleName) {
       case 'org_admin': return 'primary';
-      case 'admin': return 'danger';
+      case 'admin': return 'primary';
       case 'teamer': return 'warning';
       default: return 'medium';
     }

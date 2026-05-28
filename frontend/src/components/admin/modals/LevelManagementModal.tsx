@@ -76,7 +76,8 @@ import {
   stopwatch,
   calendar,
   today,
-  time
+  time,
+  chevronDownOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
@@ -357,7 +358,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
               {/* Icon Picker */}
               <div style={{ marginTop: '16px' }}>
                 <IonAccordionGroup>
-                  <IonAccordion value="icon-picker">
+                  <IonAccordion value="icon-picker" toggleIcon={chevronDownOutline} toggleIconSlot="end">
                     <IonItem slot="header" lines="none" style={{ '--background': 'transparent' }}>
                       <div className="app-icon-circle app-icon-circle--lg" style={{
                         backgroundColor: formData.color,

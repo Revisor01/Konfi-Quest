@@ -129,12 +129,20 @@ const AdminProfilePage: React.FC = () => {
           <IonRefresherContent />
         </IonRefresher>
 
-        {/* Header - Dashboard-Style mit app-detail-header CSS-Klassen */}
+        {/* Header - Dashboard-Style mit Blasen-Effekt */}
         <div className="app-detail-header" style={{
-          background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-          boxShadow: '0 20px 40px rgba(59, 130, 246, 0.3)'
+          background: 'linear-gradient(135deg, #818cf8 0%, #667eea 50%, #4f46e5 100%)',
+          boxShadow: '0 20px 40px rgba(102, 126, 234, 0.35)',
+          position: 'relative',
+          overflow: 'hidden'
         }}>
-          <div className="app-detail-header__content" style={{ padding: '70px 24px 24px 24px', alignItems: 'center', textAlign: 'center' }}>
+          {/* Floating Bubbles */}
+          <div className="app-dashboard-header__circle" style={{ top: '-40px', right: '-40px', width: '140px', height: '140px', background: 'rgba(255, 255, 255, 0.08)' }} />
+          <div className="app-dashboard-header__circle" style={{ top: '60px', right: '30px', width: '60px', height: '60px' }} />
+          <div className="app-dashboard-header__circle" style={{ bottom: '-30px', left: '-30px', width: '100px', height: '100px' }} />
+          <div className="app-dashboard-header__circle" style={{ bottom: '40px', left: '40px', width: '40px', height: '40px' }} />
+
+          <div className="app-detail-header__content" style={{ padding: '70px 24px 24px 24px', alignItems: 'center', textAlign: 'center', position: 'relative', zIndex: 1 }}>
             {/* Avatar */}
             <div className="app-icon-circle" style={{
               width: '80px', height: '80px',

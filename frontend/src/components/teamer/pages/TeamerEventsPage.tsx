@@ -60,7 +60,7 @@ import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
-import { SectionHeader, ListSection } from '../../shared';
+import { SectionHeader, ListSection, StatusBadge } from '../../shared';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import QRScannerModal from '../../konfi/modals/QRScannerModal';
@@ -828,12 +828,34 @@ const TeamerEventsPage: React.FC = () => {
                           overflow: 'hidden'
                         }}
                       >
-                        {/* Corner Badges Container - oben rechts */}
-                        {showBadge && (
-                          <div className="app-corner-badges">
-                            <div className="app-corner-badge" style={{ backgroundColor: statusColor }}>
-                              {statusText}
-                            </div>
+                        {/* Corner Badges - Team links innen, Pflicht, Status in der Ecke */}
+                        {(showBadge || event.teamer_only || event.teamer_needed || event.mandatory) && (
+                          <div className="app-corner-badges" style={{ opacity: shouldGrayOut ? 0.5 : 1 }}>
+                            {(event.teamer_only || event.teamer_needed) && (
+                              <>
+                                <div
+                                  className="app-corner-badge"
+                                  style={{ backgroundColor: 'var(--app-color-teamer)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+                                  title={event.teamer_only ? 'Nur Team' : 'Team gesucht'}
+                                >
+                                  <IonIcon icon={people} style={{ color: '#fff', fontSize: '0.85rem' }} />
+                                </div>
+                                {(event.mandatory || showBadge) && <div className="app-corner-badges__separator" />}
+                              </>
+                            )}
+                            {event.mandatory && (
+                              <>
+                                <div
+                                  className="app-corner-badge"
+                                  style={{ backgroundColor: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+                                  title="Pflichtveranstaltung"
+                                >
+                                  <IonIcon icon={shieldCheckmark} style={{ color: '#fff', fontSize: '0.85rem' }} />
+                                </div>
+                                {showBadge && <div className="app-corner-badges__separator" />}
+                              </>
+                            )}
+                            {showBadge && <StatusBadge statusText={statusText} statusColor={statusColor} />}
                           </div>
                         )}
 

@@ -27,7 +27,7 @@ import {
   search,
   filterOutline
 } from 'ionicons/icons';
-import { SectionHeader, ListSection } from '../../shared';
+import { SectionHeader, ListSection, StatusBadge } from '../../shared';
 
 interface ActivityRequest {
   id: number;
@@ -196,12 +196,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                 >
                   {/* Eselsohr-Style Corner Badge */}
                   <div className="app-corner-badges">
-                    <div
-                      className="app-corner-badge"
-                      style={{ backgroundColor: statusColor }}
-                    >
-                      {statusText}
-                    </div>
+                    <StatusBadge statusText={statusText} statusColor={statusColor} />
                   </div>
 
                   <div className="app-list-item__row">

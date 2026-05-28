@@ -30,6 +30,7 @@ import {
   personOutline,
   search,
   chatbubbles,
+  people,
   peopleOutline,
   filterOutline,
   calendar,
@@ -585,13 +586,14 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                             background: isSelected ? (isAdmin ? 'rgba(var(--app-color-teamer-rgb), 0.08)' : 'rgba(var(--app-color-konfis-rgb), 0.08)') : undefined
                           }}
                         >
-                          {/* Eselsohr mit Rolle/Funktion */}
+                          {/* Eselsohr mit Rolle als Icon */}
                           <div className="app-corner-badges">
                             <div
                               className="app-corner-badge"
-                              style={{ backgroundColor: isAdmin ? 'var(--app-color-teamer)' : 'var(--app-color-konfis)' }}
+                              style={{ backgroundColor: isAdmin ? 'var(--app-color-teamer)' : 'var(--app-color-konfis)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+                              title={isAdmin ? (targetUser.role_description || 'Admin') : 'Konfi'}
                             >
-                              {isAdmin ? (targetUser.role_description || 'Admin') : 'Konfi'}
+                              <IonIcon icon={isAdmin ? people : person} style={{ color: '#fff', fontSize: '0.85rem' }} />
                             </div>
                           </div>
 
@@ -604,6 +606,14 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                                 <div className="app-list-item__title" style={{ paddingRight: '70px' }}>
                                   {getUserDisplayName(targetUser)}
                                 </div>
+                                {isAdmin && targetUser.role_description && (
+                                  <div className="app-list-item__meta">
+                                    <span className="app-list-item__meta-item">
+                                      <IonIcon icon={peopleOutline} style={{ color: 'var(--app-color-teamer)' }} />
+                                      {targetUser.role_description}
+                                    </span>
+                                  </div>
+                                )}
                                 {!isAdmin && (targetUser.jahrgang_name || targetUser.jahrgang) && (
                                   <div className="app-list-item__meta">
                                     <span className="app-list-item__meta-item">

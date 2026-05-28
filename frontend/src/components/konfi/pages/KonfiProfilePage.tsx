@@ -8,8 +8,10 @@ import {
   IonRefresher,
   IonRefresherContent,
   IonButtons,
-  IonBackButton
+  IonButton,
+  IonIcon
 } from '@ionic/react';
+import { arrowBack } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
@@ -105,7 +107,9 @@ const KonfiProfilePage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/konfi/dashboard" text="Zurück" />
+            <IonButton onClick={() => window.history.back()}>
+              <IonIcon icon={arrowBack} slot="icon-only" />
+            </IonButton>
           </IonButtons>
           <IonTitle>Profil</IonTitle>
         </IonToolbar>

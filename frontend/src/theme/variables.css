@@ -1575,11 +1575,43 @@ ion-button.app-modal-submit-btn--bonus {
 /* ===== Auth Pages (Login, Register, ForgotPassword, ResetPassword) ===== */
 
 .app-auth-background {
-  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --background:
+    radial-gradient(circle at 50% 18%, rgba(91, 33, 182, 0.14) 0%, transparent 55%),
+    linear-gradient(180deg, #ffffff 0%, #efeaff 100%);
   --overflow: auto;
+  position: relative;
 }
 .app-auth-background::part(scroll) {
   min-height: 100%;
+}
+
+/* Riesiges Icon als Wasserzeichen im Hintergrund — randlos */
+.app-auth-ghost-icon {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100vw;
+  height: 100vw;
+  max-width: none;
+  object-fit: cover;
+  opacity: 0.10;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Sterne ausgeschaltet (Cosmic-Variante deaktiviert) */
+.app-auth-star {
+  display: none;
+}
+
+/* Legacy: alte Floating Deko-Kreise (Register-Page) */
+.app-auth-bg-circle {
+  position: fixed;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .app-auth-container {
@@ -1590,14 +1622,70 @@ ion-button.app-modal-submit-btn--bonus {
   min-height: 100%;
   padding: 20px;
   padding-bottom: env(safe-area-inset-bottom, 20px);
+  position: relative;
+  z-index: 1;
 }
 
 .app-auth-hero {
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 32px;
   color: white;
 }
 
+/* App-Icon als Hero (Legacy fuer Register) */
+.app-auth-hero__logo {
+  width: 112px;
+  height: 112px;
+  border-radius: 28px;
+  display: block;
+  margin: 0 auto 24px auto;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Hero-Title (hell, App-Lila-Gradient wie Dashboard-Header) */
+.app-auth-hero__title--cosmic {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 3.4rem;
+  line-height: 0.95;
+  letter-spacing: 8px;
+  margin: 0 0 12px 0;
+  background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 50%, #4c1d95 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Divider mit lila Akzent */
+.app-auth-hero__divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 16px auto 14px;
+  width: 60%;
+}
+.app-auth-hero__divider::before,
+.app-auth-hero__divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(124, 58, 237, 0.5) 50%, transparent 100%);
+}
+.app-auth-hero__divider-icon {
+  color: #7c3aed;
+  font-size: 0.7rem;
+}
+
+.app-auth-hero__subtitle--cosmic {
+  font-size: 0.85rem;
+  opacity: 0.85;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #5b21b6;
+  text-shadow: none;
+}
+
+/* Legacy: bunte Icons-Reihe (für Register-Page noch in Nutzung) */
 .app-auth-hero__icons {
   font-size: 4rem;
   margin-bottom: 16px;
@@ -1612,12 +1700,12 @@ ion-button.app-modal-submit-btn--bonus {
 }
 
 .app-auth-hero__title {
-  font-size: 3.5rem;
+  font-size: 3rem;
   font-family: 'Bebas Neue', sans-serif;
   font-weight: 400;
   margin: 0 0 8px 0;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-  letter-spacing: 2px;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  letter-spacing: 4px;
 }
 
 .app-auth-hero__title--small {
@@ -1625,10 +1713,11 @@ ion-button.app-modal-submit-btn--bonus {
 }
 
 .app-auth-hero__subtitle {
-  font-size: 1.1rem;
-  opacity: 0.9;
+  font-size: 1rem;
+  opacity: 0.85;
   margin: 0;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  letter-spacing: 0.3px;
 }
 
 .app-auth-hero__subtitle--small {
@@ -1654,14 +1743,22 @@ ion-button.app-modal-submit-btn--bonus {
 .app-auth-card {
   width: 100%;
   max-width: 420px;
-  border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  border-radius: 22px;
   overflow: hidden;
+  background: linear-gradient(180deg, #faf7ff 0%, #f3eeff 100%);
+  border: 1px solid rgba(91, 33, 182, 0.18);
+  box-shadow:
+    0 24px 60px rgba(91, 33, 182, 0.22),
+    0 4px 12px rgba(91, 33, 182, 0.06);
+  --background: transparent;
+  --color: #1f2937;
 }
 
 .app-auth-card--error {
-  box-shadow: 0 20px 40px rgba(220,53,69,0.2);
-  border: 2px solid rgba(220,53,69,0.3);
+  border-color: rgba(220, 38, 38, 0.35);
+  box-shadow:
+    0 24px 60px rgba(220, 38, 38, 0.18),
+    0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
 .app-auth-card--narrow {
@@ -1669,7 +1766,7 @@ ion-button.app-modal-submit-btn--bonus {
 }
 
 .app-auth-card__content {
-  padding: 32px;
+  padding: 28px 24px 22px 24px;
 }
 
 .app-auth-card__content--compact {
@@ -1678,28 +1775,44 @@ ion-button.app-modal-submit-btn--bonus {
 
 .app-auth-card__heading {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 22px;
 }
 
 .app-auth-card__heading h2 {
-  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.7rem;
+  font-weight: 400;
+  letter-spacing: 3px;
   margin: 0;
-  color: #2c3e50;
+  color: #1f2937;
 }
 
 .app-auth-card__heading p {
-  color: #7f8c8d;
+  color: #6b7280;
   margin: 8px 0 0 0;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .app-auth-input {
-  --background: #f8f9fa;
-  --border-radius: 12px;
-  margin-bottom: 16px;
+  --background: #ffffff;
+  --color: #1f2937;
+  --placeholder-color: #9ca3af;
+  --placeholder-opacity: 1;
+  --highlight-color-focused: #5b21b6;
+  --inner-border-width: 0;
+  --padding-start: 14px;
+  --padding-end: 14px;
+  background: #ffffff;
+  border: 1px solid rgba(91, 33, 182, 0.15);
+  border-radius: 12px;
+  margin-bottom: 14px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.app-auth-input.item-has-focus,
+.app-auth-input:focus-within {
+  border-color: #5b21b6;
+  box-shadow: 0 0 0 3px rgba(91, 33, 182, 0.12);
 }
 
 .app-auth-input--compact {
@@ -1707,28 +1820,37 @@ ion-button.app-modal-submit-btn--bonus {
 }
 
 .app-auth-input__label {
-  color: #667eea;
-  font-weight: 500;
+  color: #5b21b6;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-size: 0.7rem;
 }
 
 .app-auth-input__value {
-  --color: #2c3e50;
+  --color: #1f2937;
+  --placeholder-color: #9ca3af;
+  --placeholder-opacity: 1;
 }
 
 .app-auth-input__toggle {
   cursor: pointer;
   font-size: 1.2rem;
-  color: #667eea;
+  color: #7c3aed;
   margin-top: 20px;
 }
 
 .app-auth-button {
-  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --color: white;
-  --border-radius: 12px;
-  height: 48px;
-  font-size: 1rem;
-  font-weight: 600;
+  --background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 50%, #4c1d95 100%);
+  --background-hover: linear-gradient(135deg, #8b4dfa 0%, #6d2bcc 50%, #5b21b6 100%);
+  --color: #fff;
+  --border-radius: 14px;
+  --box-shadow: 0 8px 24px rgba(91, 33, 182, 0.4);
+  height: 52px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 400;
+  letter-spacing: 4px;
   margin: 0;
 }
 
@@ -1736,8 +1858,8 @@ ion-button.app-modal-submit-btn--bonus {
   margin-bottom: 16px;
   padding: 12px 14px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-  border: 1px solid #f87171;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1795,13 +1917,14 @@ ion-button.app-modal-submit-btn--bonus {
 }
 
 .app-auth-link {
-  color: #667eea;
+  color: #5b21b6;
   cursor: pointer;
   font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .app-auth-link--muted {
-  color: #7f8c8d;
+  color: #6b7280;
   font-size: 0.8rem;
 }
 
@@ -1828,22 +1951,26 @@ ion-button.app-modal-submit-btn--bonus {
 }
 
 .app-auth-invite-info {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px;
+  background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+  border-radius: 14px;
   padding: 16px;
   margin-bottom: 20px;
   color: white;
   text-align: center;
+  box-shadow: 0 8px 24px rgba(91, 33, 182, 0.28);
 }
 
 .app-auth-invite-info__icon {
   font-size: 2rem;
   margin-bottom: 8px;
+  color: #fff;
 }
 
 .app-auth-invite-info__title {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 400;
+  letter-spacing: 2px;
 }
 
 .app-auth-invite-info__subtitle {
@@ -1853,7 +1980,7 @@ ion-button.app-modal-submit-btn--bonus {
 
 .app-auth-password-checks {
   background: #f8f9fa;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 12px;
   margin-bottom: 12px;
   font-size: 0.8rem;
@@ -1868,9 +1995,9 @@ ion-button.app-modal-submit-btn--bonus {
 .app-auth-password-match-error {
   margin-bottom: 12px;
   padding: 10px 12px;
-  border-radius: 10px;
-  background: #fee2e2;
-  border: 1px solid #f87171;
+  border-radius: 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
   font-size: 0.85rem;
   color: #991b1b;
   display: flex;
@@ -1882,54 +2009,77 @@ ion-button.app-modal-submit-btn--bonus {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 10px;
-  border-radius: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
   font-size: 0.8rem;
   margin-bottom: 12px;
+  border: 1px solid transparent;
 }
 
 .app-auth-username-status--available {
-  background: #d1fae5;
+  background: #ecfdf5;
+  border-color: #a7f3d0;
   color: #065f46;
 }
 
 .app-auth-username-status--taken {
-  background: #fee2e2;
+  background: #fef2f2;
+  border-color: #fecaca;
   color: #991b1b;
 }
 
 .app-auth-username-status--checking {
-  background: #f0f9ff;
-  color: #0369a1;
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
 }
 
 .app-auth-retry-button {
   --background: transparent;
-  --color: #667eea;
-  --border-color: #667eea;
-  --border-radius: 8px;
+  --color: #7c3aed;
+  --border-color: rgba(124, 58, 237, 0.4);
+  --border-radius: 10px;
   --border-width: 1px;
   --border-style: solid;
-  height: 36px;
+  height: 38px;
   font-size: 0.85rem;
   margin-top: 8px;
+}
+
+/* Lila Glass-Circle fuer Auth-Header-Icons (z.B. Mail/Lock) */
+.app-auth-hero__cosmic-circle {
+  width: 84px;
+  height: 84px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px auto;
+  box-shadow: 0 12px 28px rgba(91, 33, 182, 0.35);
+}
+
+.app-auth-hero__cosmic-circle-icon {
+  font-size: 2.4rem;
+  color: #fff;
 }
 
 .app-auth-success-circle {
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 24px auto;
-  box-shadow: 0 8px 24px rgba(52, 199, 89, 0.4);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
 }
 
 .app-auth-success-circle--small {
-  width: 64px;
-  height: 64px;
+  width: 72px;
+  height: 72px;
+  border-radius: 22px;
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   margin-bottom: 20px;
   box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
@@ -1958,7 +2108,7 @@ ion-button.app-modal-submit-btn--bonus {
 .app-auth-konfi-hint {
   background: #f0f9ff;
   border: 1px solid #bae6fd;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 10px 12px;
   font-size: 0.8rem;
   color: #0369a1;
@@ -1966,12 +2116,14 @@ ion-button.app-modal-submit-btn--bonus {
   align-items: flex-start;
   gap: 8px;
   margin-bottom: 16px;
+  line-height: 1.4;
 }
 
 .app-auth-konfi-hint ion-icon {
   font-size: 1.1rem;
   flex-shrink: 0;
   margin-top: 1px;
+  color: #0284c7;
 }
 
 /* === Dashboard Sektionen === */
@@ -2195,6 +2347,37 @@ ion-tab-button ion-badge {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* === Accordion Toggle-Icon: schmaler als Default === */
+ion-accordion ion-icon[slot="toggle-icon"],
+ion-accordion .ion-accordion-toggle-icon {
+  font-size: 18px;
+  color: var(--ion-color-medium, #92949c);
+  opacity: 0.7;
+}
+
+/* Dashboard-Settings: IonItem mit Toggle ganz rechts buendig */
+ion-item.app-dashboard-settings-item {
+  --background: transparent !important;
+  --padding-end: 0 !important;
+  --inner-padding-end: 0 !important;
+}
+/* Shadow DOM parts auf 0 */
+ion-item.app-dashboard-settings-item::part(native) {
+  padding-inline-end: 0 !important;
+  --padding-end: 0 !important;
+  --inner-padding-end: 0 !important;
+}
+/* Globales Toggle-Pattern: Switch in Page-Hauptfarbe.
+   iOS26 nutzt --track-background-checked plus --ion-color-base bei .ion-color */
+ion-toggle.app-toggle--users { --background-checked: var(--app-color-users) !important; --track-background-checked: var(--app-color-users) !important; --ion-color-base: var(--app-color-users) !important; --handle-background-checked: #fff !important; }
+ion-toggle.app-toggle--konfis { --background-checked: var(--app-color-konfis) !important; --track-background-checked: var(--app-color-konfis) !important; --ion-color-base: var(--app-color-konfis) !important; --handle-background-checked: #fff !important; }
+ion-toggle.app-toggle--teamer { --background-checked: var(--app-color-teamer) !important; --track-background-checked: var(--app-color-teamer) !important; --ion-color-base: var(--app-color-teamer) !important; --handle-background-checked: #fff !important; }
+ion-toggle.app-toggle--events { --background-checked: var(--app-color-events) !important; --track-background-checked: var(--app-color-events) !important; --ion-color-base: var(--app-color-events) !important; --handle-background-checked: #fff !important; }
+ion-toggle.app-toggle--badges { --background-checked: var(--app-color-badges) !important; --track-background-checked: var(--app-color-badges) !important; --ion-color-base: var(--app-color-badges) !important; --handle-background-checked: #fff !important; }
+ion-toggle.app-toggle--chat { --background-checked: var(--app-color-chat) !important; --track-background-checked: var(--app-color-chat) !important; --ion-color-base: var(--app-color-chat) !important; --handle-background-checked: #fff !important; }
+ion-toggle.app-toggle--jahrgang { --background-checked: var(--app-color-jahrgang) !important; --track-background-checked: var(--app-color-jahrgang) !important; --ion-color-base: var(--app-color-jahrgang) !important; --handle-background-checked: #fff !important; }
+ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !important; --track-background-checked: var(--app-color-info) !important; --ion-color-base: var(--app-color-info) !important; --handle-background-checked: #fff !important; }
 
 /* Dark Mode Support - DISABLED
 @media (prefers-color-scheme: dark) {

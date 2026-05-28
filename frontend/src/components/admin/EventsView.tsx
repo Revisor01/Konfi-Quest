@@ -38,12 +38,13 @@ import {
   bagHandle,
   attachOutline,
   filterOutline,
+  flame,
   search
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { parseLocalTime, getLocalNow } from '../../utils/dateUtils';
-import { SectionHeader, ListSection } from '../shared';
+import { SectionHeader, ListSection, StatusBadge } from '../shared';
 import { Event } from '../../types/event';
 
 interface EventsViewProps {
@@ -288,15 +289,11 @@ const EventsView: React.FC<EventsViewProps> = ({
                 return '#dc3545';
               })();
 
-              // Status-Text
+              // Status-Text (Pflicht und Konfirmation sind separate Badges)
               const statusText = (() => {
                 if (isCancelled) return 'Abgesagt';
-                if (event.mandatory && hasUnprocessedBookings) return 'Verbuchen';
-                if (event.mandatory && isFullyProcessed) return 'Verbucht';
-                if (event.mandatory) return 'Pflicht';
                 if (hasUnprocessedBookings) return 'Verbuchen';
                 if (isFullyProcessed) return 'Verbucht';
-                if (isKonfirmationEvent && !isPastEvent) return 'Konfirmation';
                 const status = calculateRegistrationStatus(event);
                 if (status === 'open' && event.max_participants > 0 && event.registered_count >= event.max_participants && event.waitlist_enabled) return 'Warteliste';
                 if (status === 'open' && event.max_participants > 0 && event.registered_count >= event.max_participants) return 'Ausgebucht';
@@ -344,14 +341,45 @@ const EventsView: React.FC<EventsViewProps> = ({
                       overflow: 'hidden'
                     }}
                   >
-                    {/* Eselsohr-Style Corner Badge */}
-                    <div className="app-corner-badges">
-                      <div
-                        className="app-corner-badge"
-                        style={{ backgroundColor: statusColor }}
-                      >
-                        {statusText}
-                      </div>
+                    {/* Eselsohr-Style Corner Badges - Team links innen, Konfirmation/Pflicht, Status in der Ecke */}
+                    <div className="app-corner-badges" style={{ opacity: shouldGrayOut ? 0.5 : 1 }}>
+                      {(event.teamer_only || event.teamer_needed) && (
+                        <>
+                          <div
+                            className="app-corner-badge"
+                            style={{ backgroundColor: 'var(--app-color-teamer)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+                            title={event.teamer_only ? 'Nur Team' : 'Team gesucht'}
+                          >
+                            <IonIcon icon={people} style={{ color: '#fff', fontSize: '0.85rem' }} />
+                          </div>
+                          <div className="app-corner-badges__separator" />
+                        </>
+                      )}
+                      {isKonfirmationEvent && (
+                        <>
+                          <div
+                            className="app-corner-badge"
+                            style={{ backgroundColor: 'var(--app-color-konfis)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+                            title="Konfirmation"
+                          >
+                            <IonIcon icon={flame} style={{ color: '#fff', fontSize: '0.85rem' }} />
+                          </div>
+                          <div className="app-corner-badges__separator" />
+                        </>
+                      )}
+                      {event.mandatory && (
+                        <>
+                          <div
+                            className="app-corner-badge"
+                            style={{ backgroundColor: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+                            title="Pflichtveranstaltung"
+                          >
+                            <IonIcon icon={shieldCheckmark} style={{ color: '#fff', fontSize: '0.85rem' }} />
+                          </div>
+                          <div className="app-corner-badges__separator" />
+                        </>
+                      )}
+                      <StatusBadge statusText={statusText} statusColor={statusColor} />
                     </div>
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">

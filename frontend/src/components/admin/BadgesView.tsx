@@ -21,6 +21,9 @@ import {
   ribbonOutline,
   trophy,
   checkmark,
+  close,
+  eye,
+  eyeOff,
   medal,
   flame,
   heart,
@@ -421,16 +424,24 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                                 overflow: 'hidden'
                               }}
                             >
-                              {/* Dual Corner Badges - Aktivität + Sichtbarkeit */}
+                              {/* Dual Corner Badges - Sichtbarkeit + Aktivitaet als Icons */}
                               <div className="app-corner-badges">
                                 {/* Sichtbarkeits-Badge */}
-                                <div className="app-corner-badge" style={{ backgroundColor: visibilityColor }}>
-                                  {visibilityText}
+                                <div
+                                  className="app-corner-badge"
+                                  style={{ backgroundColor: visibilityColor, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+                                  title={visibilityText}
+                                >
+                                  <IonIcon icon={badge.is_hidden ? eyeOff : eye} style={{ color: '#fff', fontSize: '0.85rem' }} />
                                 </div>
                                 <div className="app-corner-badges__separator" />
                                 {/* Aktiv/Inaktiv-Badge */}
-                                <div className="app-corner-badge" style={{ backgroundColor: activeColor }}>
-                                  {activeText}
+                                <div
+                                  className="app-corner-badge"
+                                  style={{ backgroundColor: activeColor, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+                                  title={activeText}
+                                >
+                                  <IonIcon icon={badge.is_active ? checkmark : close} style={{ color: '#fff', fontSize: '0.85rem' }} />
                                 </div>
                               </div>
                               <div className="app-list-item__row">

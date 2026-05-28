@@ -525,13 +525,14 @@ const TeamerDashboardPage: React.FC = () => {
                           background: isNotEarned
                             ? 'rgba(255, 255, 255, 0.1)'
                             : isValid
-                              ? 'rgba(5, 150, 105, 0.3)'
+                              ? 'rgba(255, 255, 255, 0.22)'
                               : 'rgba(239, 68, 68, 0.3)',
                           border: isNotEarned
                             ? '2px dashed rgba(255, 255, 255, 0.2)'
                             : isValid
-                              ? '2px solid rgba(5, 150, 105, 0.5)'
+                              ? '2px solid rgba(255, 255, 255, 0.55)'
                               : '2px solid rgba(239, 68, 68, 0.5)',
+                          boxShadow: isValid ? '0 4px 16px rgba(255, 255, 255, 0.15)' : 'none',
                           opacity: isNotEarned ? 0.5 : 1,
                           cursor: 'pointer',
                           display: 'flex',
@@ -547,7 +548,7 @@ const TeamerDashboardPage: React.FC = () => {
                           background: isNotEarned
                             ? 'rgba(255, 255, 255, 0.15)'
                             : isValid
-                              ? 'rgba(5, 150, 105, 0.5)'
+                              ? 'rgba(255, 255, 255, 0.4)'
                               : 'rgba(239, 68, 68, 0.5)',
                           color: 'white'
                         }}>
@@ -874,7 +875,7 @@ const TeamerDashboardPage: React.FC = () => {
                 )}
 
                 {/* Alle Badges Link */}
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
                   <div
                     className="app-dashboard-glass-chip"
                     onClick={() => router.push('/teamer/profile/badges')}
