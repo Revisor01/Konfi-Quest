@@ -15,7 +15,7 @@ import {
   useIonRouter
 } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
-import { add } from 'ionicons/icons';
+import { add, checkboxOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
@@ -25,6 +25,7 @@ import { CACHE_TTL } from '../../../services/offlineCache';
 import KonfisView from '../KonfisView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import KonfiModal from '../modals/KonfiModal';
+import AttendanceMatrixModal from '../modals/AttendanceMatrixModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
 
 interface Konfi {
@@ -96,6 +97,12 @@ const AdminKonfisPage: React.FC = () => {
       dismissKonfiModalHook();
     },
     dismiss: () => dismissKonfiModalHook()
+  });
+
+  // Anwesenheits-Matrix Modal
+  const [presentMatrixModal, dismissMatrixModal] = useIonModal(AttendanceMatrixModal, {
+    jahrgaenge: jahrgaenge || [],
+    onClose: () => dismissMatrixModal()
   });
 
   // Memoized refresh function for live updates
@@ -210,9 +217,14 @@ const AdminKonfisPage: React.FC = () => {
           <IonTitle>Konfirmand:innen</IonTitle>
           <IonButtons slot="end">
             {['org_admin', 'admin'].includes(user?.role_name || '') && (
-              <IonButton onClick={presentKonfiModal}>
-                <IonIcon icon={add} />
-              </IonButton>
+              <>
+                <IonButton onClick={() => presentMatrixModal({ presentingElement: presentingElement })}>
+                  <IonIcon icon={checkboxOutline} />
+                </IonButton>
+                <IonButton onClick={presentKonfiModal}>
+                  <IonIcon icon={add} />
+                </IonButton>
+              </>
             )}
           </IonButtons>
         </IonToolbar>

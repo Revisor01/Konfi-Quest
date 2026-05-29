@@ -2379,6 +2379,115 @@ ion-toggle.app-toggle--chat { --background-checked: var(--app-color-chat) !impor
 ion-toggle.app-toggle--jahrgang { --background-checked: var(--app-color-jahrgang) !important; --track-background-checked: var(--app-color-jahrgang) !important; --ion-color-base: var(--app-color-jahrgang) !important; --handle-background-checked: #fff !important; }
 ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !important; --track-background-checked: var(--app-color-info) !important; --ion-color-base: var(--app-color-info) !important; --handle-background-checked: #fff !important; }
 
+/* === Anwesenheits-Matrix (AttendanceMatrixModal) === */
+.attendance-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.attendance-matrix th,
+.attendance-matrix td {
+  padding: 8px 6px;
+  text-align: center;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+}
+.attendance-matrix thead th {
+  position: sticky;
+  top: 0;
+  background: #fafafa;
+  font-weight: 600;
+  color: #555;
+  border-bottom: 2px solid #ddd;
+  z-index: 1;
+}
+.attendance-matrix__th-konfi,
+.attendance-matrix__td-konfi {
+  text-align: left;
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 2;
+  min-width: 120px;
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-left: 12px;
+}
+.attendance-matrix thead .attendance-matrix__th-konfi {
+  background: #fafafa;
+  z-index: 3;
+}
+.attendance-matrix__th-event {
+  min-width: 56px;
+  max-width: 80px;
+}
+.attendance-matrix__event-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  line-height: 1.1;
+}
+.attendance-matrix__event-date {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #333;
+}
+.attendance-matrix__event-name {
+  font-size: 0.65rem;
+  color: #888;
+  max-width: 70px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.attendance-matrix__th-summary,
+.attendance-matrix__td-summary {
+  min-width: 50px;
+  font-weight: 600;
+  background: #fafafa;
+}
+.attendance-matrix__summary-text {
+  font-size: 0.8rem;
+  color: #333;
+}
+.attendance-matrix__dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 1.25rem;
+}
+.attendance-matrix__dot ion-icon {
+  font-size: 1.25rem;
+}
+.attendance-matrix__dot--present {
+  color: #22c55e;
+}
+.attendance-matrix__dot--absent {
+  color: #ef4444;
+}
+.attendance-matrix__dot--open {
+  color: #9ca3af;
+}
+.attendance-matrix__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+}
+.attendance-matrix__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #555;
+}
+
 /* Dark Mode Support - DISABLED
 @media (prefers-color-scheme: dark) {
   body {

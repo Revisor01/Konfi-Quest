@@ -255,5 +255,56 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
     }
   });
 
+  // GET attendance matrix for a jahrgang: all mandatory events x all konfis with attendance status
+  router.get('/:id/attendance-matrix', rbacVerifier, requireAdmin, validateJahrgangId, async (req, res) => {
+    const jahrgangId = parseInt(req.params.id, 10);
+    try {
+      const { rows: [jahrgang] } = await db.query(
+        'SELECT id, name FROM jahrgaenge WHERE id = $1 AND organization_id = $2',
+        [jahrgangId, req.user.organization_id]
+      );
+      if (!jahrgang) return res.status(404).json({ error: 'Jahrgang nicht gefunden' });
+
+      const { rows: konfis } = await db.query(`
+        SELECT u.id AS user_id, u.display_name, u.username
+        FROM users u
+        JOIN konfi_profiles kp ON kp.user_id = u.id
+        JOIN roles r ON u.role_id = r.id
+        WHERE kp.jahrgang_id = $1
+          AND u.organization_id = $2
+          AND r.name = 'konfi'
+        ORDER BY u.display_name ASC
+      `, [jahrgangId, req.user.organization_id]);
+
+      const { rows: events } = await db.query(`
+        SELECT DISTINCT e.id, e.name, e.event_date
+        FROM events e
+        JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
+        WHERE eja.jahrgang_id = $1
+          AND e.mandatory = true
+          AND e.organization_id = $2
+          AND (e.cancelled IS NULL OR e.cancelled = false)
+        ORDER BY e.event_date ASC
+      `, [jahrgangId, req.user.organization_id]);
+
+      const { rows: bookings } = await db.query(`
+        SELECT eb.event_id, eb.user_id, eb.status, eb.attendance_status
+        FROM event_bookings eb
+        WHERE eb.event_id = ANY($1::int[])
+          AND eb.user_id = ANY($2::int[])
+      `, [events.map(e => e.id), konfis.map(k => k.user_id)]);
+
+      res.json({
+        jahrgang: { id: jahrgang.id, name: jahrgang.name },
+        konfis,
+        events,
+        bookings
+      });
+    } catch (err) {
+      console.error(`Database error in GET /api/admin/jahrgaenge/${jahrgangId}/attendance-matrix:`, err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
   return router;
 };

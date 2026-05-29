@@ -1,7 +1,7 @@
 const request = require('supertest');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, USERS, JAHRGAENGE } = require('../helpers/seed');
+const { seed, USERS, JAHRGAENGE, EVENTS } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 
 describe('Jahrgaenge Routes', () => {
@@ -215,6 +215,78 @@ describe('Jahrgaenge Routes', () => {
       const res = await request(app)
         .delete(`/api/admin/jahrgaenge/${createRes.body.id}`)
         .set('Authorization', `Bearer ${admin2Token}`);
+
+      expect(res.status).toBe(404);
+    });
+  });
+
+  // ================================================================
+  // GET /api/admin/jahrgaenge/:id/attendance-matrix
+  // ================================================================
+  describe('GET /api/admin/jahrgaenge/:id/attendance-matrix', () => {
+    beforeEach(async () => {
+      // Pflichtevent dem Jahrgang1 zuordnen
+      await db.query(
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [EVENTS.pflichtEvent.id, JAHRGAENGE.jahrgang1.id]
+      );
+      // konfi1: anwesend, konfi2: abwesend (booking aber kein attendance)
+      await db.query(
+        `INSERT INTO event_bookings (event_id, user_id, status, attendance_status, organization_id)
+         VALUES ($1, $2, 'confirmed', 'present', $4),
+                ($1, $3, 'confirmed', 'absent',  $4)
+         ON CONFLICT (user_id, event_id) DO UPDATE SET attendance_status = EXCLUDED.attendance_status`,
+        [EVENTS.pflichtEvent.id, USERS.konfi1.id, USERS.konfi2.id, 1]
+      );
+    });
+
+    it('Admin bekommt Matrix mit Konfis, Events und Bookings', async () => {
+      const res = await request(app)
+        .get(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}/attendance-matrix`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.jahrgang.id).toBe(JAHRGAENGE.jahrgang1.id);
+      expect(Array.isArray(res.body.konfis)).toBe(true);
+      expect(Array.isArray(res.body.events)).toBe(true);
+      expect(Array.isArray(res.body.bookings)).toBe(true);
+
+      // mindestens konfi1+konfi2 in Liste
+      const konfiIds = res.body.konfis.map(k => k.user_id);
+      expect(konfiIds).toContain(USERS.konfi1.id);
+      expect(konfiIds).toContain(USERS.konfi2.id);
+
+      // Pflichtevent in events
+      const eventIds = res.body.events.map(e => e.id);
+      expect(eventIds).toContain(EVENTS.pflichtEvent.id);
+
+      // konfi1 = present, konfi2 = absent
+      const present = res.body.bookings.find(b => b.user_id === USERS.konfi1.id && b.event_id === EVENTS.pflichtEvent.id);
+      const absent = res.body.bookings.find(b => b.user_id === USERS.konfi2.id && b.event_id === EVENTS.pflichtEvent.id);
+      expect(present.attendance_status).toBe('present');
+      expect(absent.attendance_status).toBe('absent');
+    });
+
+    it('Teamer bekommt 403 (requireAdmin)', async () => {
+      const res = await request(app)
+        .get(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}/attendance-matrix`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Admin aus anderer Org bekommt 404', async () => {
+      const res = await request(app)
+        .get(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}/attendance-matrix`)
+        .set('Authorization', `Bearer ${admin2Token}`);
+
+      expect(res.status).toBe(404);
+    });
+
+    it('Nicht-existierende Jahrgang-ID gibt 404', async () => {
+      const res = await request(app)
+        .get('/api/admin/jahrgaenge/99999/attendance-matrix')
+        .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(404);
     });

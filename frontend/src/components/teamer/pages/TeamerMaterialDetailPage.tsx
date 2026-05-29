@@ -220,8 +220,8 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                     <div className="app-info-row">
                       <IonIcon icon={calendar} className="app-info-row__icon" style={{ color: '#dc2626' }} />
                       <div>
-                        <div className="app-text-main">{material.events.length === 1 ? 'Event' : 'Events'}</div>
-                        <div className="app-text-sub">{material.events.map(e => e.name).join(', ')}</div>
+                        <div className="app-info-row__label">{material.events.length === 1 ? 'Event' : 'Events'}</div>
+                        <div className="app-info-row__value">{material.events.map(e => e.name).join(', ')}</div>
                       </div>
                     </div>
                   )}
@@ -229,24 +229,24 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                     <div className="app-info-row">
                       <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
                       <div>
-                        <div className="app-text-main">{material.jahrgaenge.length === 1 ? 'Jahrgang' : 'Jahrgänge'}</div>
-                        <div className="app-text-sub">{material.jahrgaenge.map(j => j.name).join(', ')}</div>
+                        <div className="app-info-row__label">{material.jahrgaenge.length === 1 ? 'Jahrgang' : 'Jahrgänge'}</div>
+                        <div className="app-info-row__value">{material.jahrgaenge.map(j => j.name).join(', ')}</div>
                       </div>
                     </div>
                   )}
                   <div className="app-info-row">
                     <IonIcon icon={create} className="app-info-row__icon" style={{ color: '#6c757d' }} />
                     <div>
-                      <div className="app-text-main">Erstellt</div>
-                      <div className="app-text-sub">{formatDate(material.created_at)}</div>
+                      <div className="app-info-row__label">Erstellt</div>
+                      <div className="app-info-row__value">{formatDate(material.created_at)}</div>
                     </div>
                   </div>
                   {material.admin_name && (
                     <div className="app-info-row">
                       <IonIcon icon={person} className="app-info-row__icon" style={{ color: '#6c757d' }} />
                       <div>
-                        <div className="app-text-main">Erstellt von</div>
-                        <div className="app-text-sub">{material.admin_name}</div>
+                        <div className="app-info-row__label">Erstellt von</div>
+                        <div className="app-info-row__value">{material.admin_name}</div>
                       </div>
                     </div>
                   )}
