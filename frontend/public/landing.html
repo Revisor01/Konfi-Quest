@@ -22,6 +22,7 @@
  --grad:linear-gradient(120deg,#5b21b6,#7c3aed 45%,#06b6d4);
  --display:'Plus Jakarta Sans','Inter',sans-serif;
  --body:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+ --c-konfi:#7c3aed;--c-teamer:#0891b2;--c-leitung:#5b21b6;
 }
 html{scroll-behavior:smooth}
 body{font-family:var(--body);color:var(--ink);line-height:1.6;overflow-x:hidden;background:var(--bg);-webkit-font-smoothing:antialiased}
@@ -124,18 +125,40 @@ section.block{padding:6rem 0}
 .promise-body{max-width:62ch;margin:0 auto;text-align:center;color:var(--ink-soft);font-size:1.15rem}
 .promise-body b{color:var(--ink)}
 
-/* PERSPECTIVES */
-.persp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
-.pcard{background:#fff;border:1px solid var(--line);border-radius:24px;padding:2.2rem;transition:transform .25s,box-shadow .25s,border-color .25s;position:relative;overflow:hidden}
-.pcard::before{content:'';position:absolute;inset:0 0 auto 0;height:4px;background:var(--grad);transform:scaleX(0);transform-origin:left;transition:transform .3s}
-.pcard:hover{transform:translateY(-8px);box-shadow:0 26px 60px rgba(91,33,182,.13);border-color:transparent}
-.pcard:hover::before{transform:scaleX(1)}
-.picon{width:58px;height:58px;border-radius:16px;background:var(--grad);display:grid;place-items:center;margin-bottom:1.3rem}
-.pcard h3{font-family:var(--display);font-size:1.4rem;font-weight:800;margin-bottom:.25rem}
-.pcard .tag{color:var(--cyan6);font-weight:600;font-size:.92rem;margin-bottom:1.2rem}
-.pcard ul{list-style:none}
-.pcard li{position:relative;padding-left:1.7rem;margin-bottom:.6rem;color:var(--ink-soft);font-size:.96rem}
-.pcard li svg{position:absolute;left:0;top:.28em;color:var(--cyan6)}
+/* FEATURE-KARTEN (Feature × Rollen) */
+.legend{display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;margin-bottom:3rem;font-size:.88rem;font-weight:600}
+.legend span{display:inline-flex;align-items:center;gap:.45rem;color:var(--ink-soft)}
+.legend .dot{width:11px;height:11px;border-radius:50%}
+.fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.3rem}
+.fcard{background:#fff;border:1px solid var(--line);border-radius:22px;padding:1.7rem;transition:transform .25s,box-shadow .25s;position:relative;overflow:hidden}
+.fcard::before{content:'';position:absolute;inset:0 0 auto 0;height:4px;background:var(--grad);transform:scaleX(0);transform-origin:left;transition:transform .3s}
+.fcard:hover{transform:translateY(-6px);box-shadow:0 24px 56px rgba(91,33,182,.12)}
+.fcard:hover::before{transform:scaleX(1)}
+.fcard-head{display:flex;align-items:center;gap:.8rem;margin-bottom:1.3rem}
+.fcard-head .fic{width:48px;height:48px;border-radius:14px;background:var(--grad);display:grid;place-items:center;flex-shrink:0}
+.fcard-head h3{font-family:var(--display);font-size:1.25rem;font-weight:800}
+.rrow{display:flex;gap:.7rem;padding:.6rem 0;border-top:1px solid var(--line)}
+.rrow .rlabel{flex-shrink:0;width:74px;font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;display:flex;align-items:flex-start;gap:.35rem;padding-top:.1rem}
+.rrow .rlabel .dot{width:8px;height:8px;border-radius:50%;margin-top:.42em;flex-shrink:0}
+.rrow.konfi .rlabel{color:var(--c-konfi)}.rrow.teamer .rlabel{color:var(--c-teamer)}.rrow.leitung .rlabel{color:var(--c-leitung)}
+.rrow .rtext{font-size:.92rem;color:var(--ink-soft)}
+.rrow.empty .rtext{color:#cbd5e1;font-style:italic}
+.badge-explain{margin-top:1.3rem;background:linear-gradient(120deg,#fff,#f6f8fc);border:1px solid var(--line);border-radius:22px;padding:2.2rem;grid-column:1/-1}
+.be-head{display:flex;gap:1.1rem;align-items:flex-start;margin-bottom:1.5rem}
+.be-ic{width:54px;height:54px;border-radius:15px;background:var(--grad);display:grid;place-items:center;flex-shrink:0}
+.be-head h3{font-family:var(--display);font-size:1.4rem;font-weight:800;margin-bottom:.4rem}
+.be-head p{color:var(--ink-soft);font-size:1.02rem;max-width:68ch}
+.be-head p b{color:var(--ink)}
+.be-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.9rem}
+.be-item{background:#fff;border:1px solid var(--line);border-radius:14px;padding:.9rem 1.1rem;display:flex;flex-direction:column}
+.be-item b{font-family:var(--display);font-size:1rem;font-weight:700}
+.be-item span{color:var(--ink-soft);font-size:.86rem}
+.be-item.secret{background:linear-gradient(120deg,rgba(91,33,182,.08),rgba(6,182,212,.08));border-color:transparent}
+.more{margin-top:2.5rem;text-align:center}
+.more .more-h{font-family:var(--display);font-weight:700;font-size:1.1rem;color:var(--ink-soft);margin-bottom:1.2rem}
+.more-grid{display:flex;flex-wrap:wrap;gap:.7rem;justify-content:center}
+.more-chip{display:inline-flex;align-items:center;gap:.5rem;background:#fff;border:1px solid var(--line);border-radius:999px;padding:.55rem 1.1rem;font-size:.92rem;font-weight:500;color:var(--ink)}
+.more-chip svg{color:var(--cyan6);flex-shrink:0}
 
 /* SECURITY */
 .sec-banner{background:var(--ink);color:#fff;border-radius:28px;padding:3rem;display:grid;grid-template-columns:auto 1fr;gap:2rem;align-items:center;position:relative;overflow:hidden}
@@ -200,7 +223,7 @@ footer a:hover{color:#fff}
  .hero-in{grid-template-columns:1fr;text-align:center;gap:2.5rem}
  .hsub{max-width:none}.hcta,.htrust{justify-content:center}.logo-hero{margin-left:auto;margin-right:auto}
  .hero-art{order:-1}.fbadge{display:none}.device{transform:none;width:248px;height:512px}
- .split{grid-template-columns:1fr}.persp-grid,.why-grid{grid-template-columns:1fr}
+ .split{grid-template-columns:1fr}.fgrid,.why-grid{grid-template-columns:1fr}.be-grid{grid-template-columns:1fr 1fr}
  .price-grid{grid-template-columns:repeat(2,1fr)}.steps{grid-template-columns:repeat(2,1fr)}
  .stat-grid{grid-template-columns:1fr;gap:2.5rem}
  .sec-banner{grid-template-columns:1fr;text-align:center;justify-items:center}
@@ -307,53 +330,107 @@ footer a:hover{color:#fff}
 <!-- PERSPECTIVES -->
 <section class="block" id="features" style="background:var(--bg-soft)">
  <div class="wrap">
-  <p class="kicker reveal">Eine App, drei Welten</p>
-  <h2 class="sec-h reveal d1">Jede:r sieht genau das Richtige</h2>
-  <p class="sec-p reveal d2">Konfis erleben ein Spiel. Teamer:innen ein Werkzeug. Die Leitung den vollen Überblick.</p>
-  <div class="persp-grid">
-   <div class="pcard reveal d1">
-    <div class="picon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
-    <h3>Für Konfis</h3><div class="tag">Die Konfizeit wird zum Spiel</div>
-    <ul>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Punkte: Gottesdienst &amp; Gemeinde</li>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Aktivitäten per Foto-Beleg einreichen</li>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Events buchen, absagen, Warteliste</li>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Badges, Level &amp; geheime Auszeichnungen</li>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Jahrgangsranking</li>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Konfirmationstermin selbst buchen</li>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Chat mit Jahrgang, Team &amp; Leitung</li>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Tageslosung als täglicher Impuls</li>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Konfi Wrapped – der Jahresrückblick</li>
-    </ul>
+  <p class="kicker reveal">Eine App, drei Blickwinkel</p>
+  <h2 class="sec-h reveal d1">Dasselbe Feature – für jede Rolle das Richtige</h2>
+  <p class="sec-p reveal d2">Konfis erleben ein Spiel, Teamer:innen ein Werkzeug, die Leitung den Überblick. Hier seht ihr, was jede Rolle in jedem Feature tut.</p>
+  <div class="legend reveal d2">
+   <span><span class="dot" style="background:#7c3aed"></span>Konfi</span>
+   <span><span class="dot" style="background:#0891b2"></span>Teamer:in</span>
+   <span><span class="dot" style="background:#5b21b6"></span>Leitung</span>
+  </div>
+  <div class="fgrid">
+   <!-- PUNKTE -->
+   <div class="fcard reveal d1">
+    <div class="fcard-head"><span class="fic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg></span><h3>Punkte</h3></div>
+    <div class="rrow konfi"><span class="rlabel"><span class="dot" style="background:#7c3aed"></span>Konfi</span><span class="rtext">Sammelt für Gottesdienst und Gemeinde</span></div>
+    <div class="rrow teamer"><span class="rlabel"><span class="dot" style="background:#0891b2"></span>Teamer</span><span class="rtext">Behält die eigenen Punkte im Blick</span></div>
+    <div class="rrow leitung"><span class="rlabel"><span class="dot" style="background:#5b21b6"></span>Leitung</span><span class="rtext">Vergibt Punkte, legt Ziele und Typen fest</span></div>
    </div>
-   <div class="pcard reveal d2">
-    <div class="picon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-    <h3>Für Teamer:innen</h3><div class="tag">Engagement, das gesehen wird</div>
-    <ul>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Bei Events zusagen – sehen, wo man dabei ist</li>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Eigene Events erstellen &amp; mitorganisieren</li>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Aktivitäten direkt für Konfis eintragen</li>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Mehrere Jahrgänge gleichzeitig betreuen</li>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Juleica &amp; Zertifikate im Profil</li>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Teamer-only Events &amp; Team-Chat</li>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Eigene Teamer-Badges</li>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Teamer Wrapped fürs Ehrenamt</li>
-    </ul>
+   <!-- PUNKTE-VERLAUF -->
+   <div class="fcard reveal d2">
+    <div class="fcard-head"><span class="fic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg></span><h3>Punkte-Verlauf</h3></div>
+    <div class="rrow konfi"><span class="rlabel"><span class="dot" style="background:#7c3aed"></span>Konfi</span><span class="rtext">Sieht jeden Punkt mit Datum und Grund</span></div>
+    <div class="rrow teamer"><span class="rlabel"><span class="dot" style="background:#0891b2"></span>Teamer</span><span class="rtext">Ruft die eigene Historie jederzeit ab</span></div>
+    <div class="rrow leitung"><span class="rlabel"><span class="dot" style="background:#5b21b6"></span>Leitung</span><span class="rtext">Hat den vollen Verlauf pro Konfi</span></div>
    </div>
-   <div class="pcard reveal d3">
-    <div class="picon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 9l-5 5-2-2-4 4"/></svg></div>
-    <h3>Für die Leitung</h3><div class="tag">Der volle Überblick</div>
-    <ul>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Mehrere Jahrgänge parallel verwalten</li>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Konfis, Punkte &amp; Bonuspunkte verwalten</li>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Events: einzeln, Serie, Pflicht, Timeslots</li>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Anwesenheits-Matrix für Pflichttermine</li>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Anträge genehmigen, Chat moderieren</li>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Badges, Kategorien, Level &amp; Punkteziele</li>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Material für Team &amp; Leitung verwalten</li>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Einladungslinks pro Jahrgang</li>
-     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Rollen anpassen (z.&nbsp;B. „Pfarrer:in")</li>
-    </ul>
+   <!-- AKTIVITÄTEN -->
+   <div class="fcard reveal d3">
+    <div class="fcard-head"><span class="fic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15l2 2 4-4"/></svg></span><h3>Aktivitäten</h3></div>
+    <div class="rrow konfi"><span class="rlabel"><span class="dot" style="background:#7c3aed"></span>Konfi</span><span class="rtext">Reicht Erlebtes mit Foto-Beleg ein</span></div>
+    <div class="rrow teamer"><span class="rlabel"><span class="dot" style="background:#0891b2"></span>Teamer</span><span class="rtext">Reicht eigene Aktivitäten ein</span></div>
+    <div class="rrow leitung"><span class="rlabel"><span class="dot" style="background:#5b21b6"></span>Leitung</span><span class="rtext">Prüft Anträge und vergibt die Punkte</span></div>
+   </div>
+   <!-- EVENTS -->
+   <div class="fcard reveal d1">
+    <div class="fcard-head"><span class="fic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><h3>Events</h3></div>
+    <div class="rrow konfi"><span class="rlabel"><span class="dot" style="background:#7c3aed"></span>Konfi</span><span class="rtext">Meldet sich an oder ab, mit automatischer Warteliste</span></div>
+    <div class="rrow teamer"><span class="rlabel"><span class="dot" style="background:#0891b2"></span>Teamer</span><span class="rtext">Sagt zu, wo Hilfe gebraucht wird</span></div>
+    <div class="rrow leitung"><span class="rlabel"><span class="dot" style="background:#5b21b6"></span>Leitung</span><span class="rtext">Plant Einzeltermine, Reihen und Pflichtevents mit Zeitfenstern</span></div>
+   </div>
+   <!-- EVENT-CHAT -->
+   <div class="fcard reveal d2">
+    <div class="fcard-head"><span class="fic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><h3>Chat</h3></div>
+    <div class="rrow konfi"><span class="rlabel"><span class="dot" style="background:#7c3aed"></span>Konfi</span><span class="rtext">Schreibt im Jahrgang oder direkt ans Team</span></div>
+    <div class="rrow teamer"><span class="rlabel"><span class="dot" style="background:#0891b2"></span>Teamer</span><span class="rtext">Nutzt Team- und Event-Chats</span></div>
+    <div class="rrow leitung"><span class="rlabel"><span class="dot" style="background:#5b21b6"></span>Leitung</span><span class="rtext">Eröffnet zu jedem Event einen Chat, startet Umfragen</span></div>
+   </div>
+   <!-- ANWESENHEIT -->
+   <div class="fcard reveal d3">
+    <div class="fcard-head"><span class="fic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17h7"/></svg></span><h3>Anwesenheit</h3></div>
+    <div class="rrow konfi"><span class="rlabel"><span class="dot" style="background:#7c3aed"></span>Konfi</span><span class="rtext">Checkt sich per QR-Code beim Event ein</span></div>
+    <div class="rrow teamer"><span class="rlabel"><span class="dot" style="background:#0891b2"></span>Teamer</span><span class="rtext">Checkt sich selbst per QR ein</span></div>
+    <div class="rrow leitung"><span class="rlabel"><span class="dot" style="background:#5b21b6"></span>Leitung</span><span class="rtext">Wertet Pflichttermine in der Matrix aus</span></div>
+   </div>
+   <!-- JAHRGÄNGE -->
+   <div class="fcard reveal d1">
+    <div class="fcard-head"><span class="fic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></span><h3>Jahrgänge</h3></div>
+    <div class="rrow konfi"><span class="rlabel"><span class="dot" style="background:#7c3aed"></span>Konfi</span><span class="rtext">Ist im eigenen Jahrgang unterwegs</span></div>
+    <div class="rrow teamer"><span class="rlabel"><span class="dot" style="background:#0891b2"></span>Teamer</span><span class="rtext">Betreut mehrere Jahrgänge gleichzeitig</span></div>
+    <div class="rrow leitung"><span class="rlabel"><span class="dot" style="background:#5b21b6"></span>Leitung</span><span class="rtext">Verwaltet beliebig viele Jahrgänge parallel</span></div>
+   </div>
+   <!-- BADGES -->
+   <div class="fcard reveal d2">
+    <div class="fcard-head"><span class="fic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polygon points="12 2 15 9 22 9 17 14 18 21 12 17 6 21 7 14 2 9 9 9"/></svg></span><h3>Badges &amp; Level</h3></div>
+    <div class="rrow konfi"><span class="rlabel"><span class="dot" style="background:#7c3aed"></span>Konfi</span><span class="rtext">Schaltet Auszeichnungen und neue Level frei</span></div>
+    <div class="rrow teamer"><span class="rlabel"><span class="dot" style="background:#0891b2"></span>Teamer</span><span class="rtext">Sammelt eigene Teamer-Badges</span></div>
+    <div class="rrow leitung"><span class="rlabel"><span class="dot" style="background:#5b21b6"></span>Leitung</span><span class="rtext">Erstellt eigene Badges und Level</span></div>
+   </div>
+   <!-- ZERTIFIKATE -->
+   <div class="fcard reveal d3">
+    <div class="fcard-head"><span class="fic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M8.5 14l-1 7 4.5-3 4.5 3-1-7"/></svg></span><h3>Zertifikate</h3></div>
+    <div class="rrow konfi empty"><span class="rlabel"><span class="dot" style="background:#7c3aed"></span>Konfi</span><span class="rtext">Für Konfis nicht relevant</span></div>
+    <div class="rrow teamer"><span class="rlabel"><span class="dot" style="background:#0891b2"></span>Teamer</span><span class="rtext">Hinterlegt Juleica, Erste Hilfe, Rettungsschwimmer</span></div>
+    <div class="rrow leitung"><span class="rlabel"><span class="dot" style="background:#5b21b6"></span>Leitung</span><span class="rtext">Vergibt Zertifikate samt Ablaufdatum</span></div>
+   </div>
+   <!-- BADGE-ERKLÄRBOX -->
+   <div class="badge-explain reveal">
+    <div class="be-head">
+     <span class="be-ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polygon points="12 2 15 9 22 9 17 14 18 21 12 17 6 21 7 14 2 9 9 9"/></svg></span>
+     <div><h3>Was bringen Badges?</h3><p>Jede:r kennt das von Schrittzähler-Apps oder Spielen: Man tut etwas – und bekommt sichtbar etwas dafür. Genauso funktionieren Badges. Geht ein Konfi zum ersten Mal in den Gottesdienst, erscheint <b>„Gottesdienst-Neuling"</b>. Wer mehrere Wochen dranbleibt, wird zum <b>„Dranbleiber:in"</b>. Manche Badges sind versteckt und tauchen überraschend auf. So werden aus Pflichtterminen kleine Erfolgserlebnisse – und genau das motiviert, dabeizubleiben.</p></div>
+    </div>
+    <div class="be-grid">
+     <div class="be-item"><b>Gottesdienst-Neuling</b><span>Für den ersten Gottesdienstbesuch</span></div>
+     <div class="be-item"><b>Dranbleiber:in</b><span>Mehrere Wochen ohne Pause aktiv</span></div>
+     <div class="be-item"><b>Ausgewogen</b><span>Punkte in beiden Kategorien gesammelt</span></div>
+     <div class="be-item"><b>Turbo-Konfi</b><span>Besonders früh besonders aktiv</span></div>
+     <div class="be-item"><b>1 Jahr Teamer:in</b><span>Ein Jahr Treue im Ehrenamt</span></div>
+     <div class="be-item secret"><b>Geheime Badges</b><span>Erscheinen überraschend, z.&nbsp;B. zu Ostern</span></div>
+    </div>
+   </div>
+  </div>
+
+  <!-- Und außerdem -->
+  <div class="more reveal">
+   <p class="more-h">Und außerdem in jeder Konfi Quest:</p>
+   <div class="more-grid">
+    <span class="more-chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Jahrgangsranking</span>
+    <span class="more-chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Konfirmationstermin buchen</span>
+    <span class="more-chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Tageslosung</span>
+    <span class="more-chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Konfi &amp; Teamer Wrapped</span>
+    <span class="more-chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Bonuspunkte mit Begründung</span>
+    <span class="more-chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Material für Team &amp; Leitung</span>
+    <span class="more-chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Einladungslinks pro Jahrgang</span>
+    <span class="more-chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Rollennamen anpassbar</span>
    </div>
   </div>
  </div>
