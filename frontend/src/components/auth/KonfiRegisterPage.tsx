@@ -264,6 +264,7 @@ const KonfiRegisterPage: React.FC = () => {
     return (
       <IonPage>
         <IonContent className="app-auth-background">
+          <img src="/assets/icon/logo-mark.png" alt="" className="app-auth-ghost-icon" aria-hidden="true" />
           <div className="app-auth-star app-auth-star--pink" style={{ top: '120px', left: '40px', width: '60px', height: '60px' }} />
           <div className="app-auth-star app-auth-star--cyan" style={{ top: '280px', right: '30px', width: '80px', height: '80px' }} />
           <div className="app-auth-star app-auth-star--gold" style={{ bottom: '200px', left: '30px', width: '50px', height: '50px' }} />
@@ -291,6 +292,8 @@ const KonfiRegisterPage: React.FC = () => {
   return (
     <IonPage>
       <IonContent className="app-auth-background">
+        {/* Freigestelltes Logo als Wasserzeichen */}
+        <img src="/assets/icon/logo-mark.png" alt="" className="app-auth-ghost-icon" aria-hidden="true" />
         {/* Glow-Sterne */}
         <div className="app-auth-star app-auth-star--pink" style={{ top: '80px', left: '30px', width: '50px', height: '50px' }} />
         <div className="app-auth-star app-auth-star--cyan" style={{ top: '200px', right: '20px', width: '70px', height: '70px' }} />

@@ -92,9 +92,9 @@ const LoginView: React.FC = () => {
   return (
     <IonPage>
       <IonContent className="app-auth-background">
-        {/* Riesiges Icon als Geist im Hintergrund */}
+        {/* Freigestelltes Logo als grosses, angedeutetes Wasserzeichen */}
         <img
-          src="/assets/icon/icon-512x512.png"
+          src="/assets/icon/logo-mark.png"
           alt=""
           className="app-auth-ghost-icon"
           aria-hidden="true"
