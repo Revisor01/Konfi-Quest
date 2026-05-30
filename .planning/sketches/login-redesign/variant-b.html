@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Variante B — Layered Adventure</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 393px;
+      height: 852px;
+      overflow: hidden;
+      font-family: 'Inter', -apple-system, sans-serif;
+      color: #1a1a2e;
+      background: #faf8ff;
+    }
+
+    .screen {
+      width: 393px;
+      height: 852px;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(180deg, #faf8ff 0%, #f0eaff 100%);
+    }
+
+    /* Diagonale Layer wie Karte/Topografie */
+    .layer {
+      position: absolute;
+      pointer-events: none;
+      transform-origin: center;
+    }
+
+    .layer.lila {
+      top: -100px;
+      left: -50px;
+      width: 600px;
+      height: 240px;
+      background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+      transform: rotate(-8deg);
+      border-radius: 0 0 80px 0;
+      box-shadow: 0 20px 40px rgba(91, 33, 182, 0.3);
+    }
+
+    .layer.cyan {
+      top: 60px;
+      right: -150px;
+      width: 380px;
+      height: 60px;
+      background: linear-gradient(90deg, transparent 0%, #06b6d4 50%, #06b6d4 100%);
+      transform: rotate(-8deg);
+      opacity: 0.85;
+    }
+
+    .layer.pink {
+      top: 200px;
+      right: -100px;
+      width: 320px;
+      height: 28px;
+      background: linear-gradient(90deg, transparent 0%, #ec4899 100%);
+      transform: rotate(-8deg);
+      opacity: 0.7;
+    }
+
+    .layer.gold {
+      bottom: -50px;
+      left: -100px;
+      width: 600px;
+      height: 100px;
+      background: linear-gradient(90deg, #f59e0b 0%, transparent 100%);
+      transform: rotate(8deg);
+      opacity: 0.4;
+      border-radius: 50px 0 0 0;
+    }
+
+    /* Riesiges Icon angeschnitten */
+    .bg-icon {
+      position: absolute;
+      top: 30px;
+      right: -120px;
+      width: 360px;
+      height: 360px;
+      opacity: 0.22;
+      filter: drop-shadow(0 20px 40px rgba(124, 58, 237, 0.4));
+      transform: rotate(-12deg);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Hero */
+    .hero {
+      position: relative;
+      z-index: 3;
+      padding: 60px 32px 0 32px;
+      color: white;
+    }
+    .hero__kicker {
+      font-size: 0.7rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      opacity: 0.85;
+      margin-bottom: 8px;
+      color: #fde68a;
+    }
+    .hero__title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 3.6rem;
+      line-height: 0.9;
+      letter-spacing: 3px;
+      color: #fff;
+      text-shadow: 0 4px 16px rgba(76, 29, 149, 0.5);
+    }
+    .hero__subtitle {
+      font-size: 1rem;
+      margin-top: 14px;
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 500;
+      max-width: 240px;
+    }
+
+    /* Form Card weiss */
+    .form {
+      position: relative;
+      z-index: 3;
+      margin: 80px 24px 0 24px;
+      padding: 28px 24px;
+      background: #ffffff;
+      border-radius: 28px;
+      box-shadow:
+        0 30px 60px rgba(91, 33, 182, 0.18),
+        0 4px 16px rgba(0, 0, 0, 0.04);
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+    .field__label {
+      font-size: 0.72rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #5b21b6;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .field__input {
+      width: 100%;
+      background: #f5f3ff;
+      border: 2px solid transparent;
+      border-radius: 14px;
+      padding: 14px 16px;
+      color: #1a1a2e;
+      font-family: inherit;
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .field__input:focus {
+      border-color: #7c3aed;
+      background: #fff;
+    }
+
+    .btn {
+      margin-top: 6px;
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+      color: #fff;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.3rem;
+      letter-spacing: 4px;
+      cursor: pointer;
+      box-shadow:
+        0 12px 24px rgba(91, 33, 182, 0.35);
+    }
+    .btn::after {
+      content: '→';
+      margin-left: 10px;
+    }
+
+    .forgot {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 0.82rem;
+      color: #7c3aed;
+      font-weight: 600;
+    }
+
+    .register {
+      text-align: center;
+      margin-top: 18px;
+      padding: 0 24px;
+      font-size: 0.8rem;
+      color: #64748b;
+      position: relative;
+      z-index: 3;
+    }
+    .register strong {
+      color: #5b21b6;
+    }
+
+    /* Akzent-Punkte */
+    .dot {
+      position: absolute;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+  <div class="screen">
+    <!-- Diagonale Layer -->
+    <div class="layer lila"></div>
+    <div class="layer cyan"></div>
+    <div class="layer pink"></div>
+    <div class="layer gold"></div>
+
+    <!-- Riesiges angeschnittenes Icon -->
+    <img src="icon.png" class="bg-icon" alt="">
+
+    <div class="hero">
+      <div class="hero__kicker">◆ Willkommen zurück</div>
+      <h1 class="hero__title">KONFI<br>QUEST</h1>
+      <p class="hero__subtitle">Dein Abenteuer geht weiter.</p>
+    </div>
+
+    <div class="form">
+      <div class="field">
+        <div class="field__label">Benutzername</div>
+        <input class="field__input" placeholder="konfi.mueller" value="konfi.mueller">
+      </div>
+      <div class="field">
+        <div class="field__label">Passwort</div>
+        <input class="field__input" type="password" placeholder="•••••••••" value="••••••••">
+      </div>
+      <button class="btn">Anmelden</button>
+      <div class="forgot">Passwort vergessen?</div>
+    </div>
+
+    <div class="register">
+      Noch keinen Account? <strong>Mit Einladungscode registrieren</strong>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Login Variante A — Verlauf + Glas-Card</title>
+<style>
+  :root {
+    --konfi: #5b21b6;
+    --cyan: #06b6d4;
+    --teamer: #be185d;
+    --gold: #f59e0b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex; justify-content: center; align-items: center;
+    min-height: 100vh; background: #1a1530; padding: 20px;
+  }
+  /* Phone-Rahmen nur fürs Mockup */
+  .phone {
+    width: 390px; height: 844px; border-radius: 48px; overflow: hidden;
+    position: relative; box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+  }
+  /* Vollflächiger Marken-Verlauf — heller & leuchtender, weniger cosmic */
+  .bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(circle at 15% 8%, rgba(255,255,255,0.30) 0%, transparent 45%),
+      radial-gradient(circle at 92% 100%, rgba(34,211,238,0.8) 0%, transparent 52%),
+      linear-gradient(150deg, #8b5cf6 0%, #7c5cf0 32%, #5b8def 62%, #22d3ee 120%);
+  }
+  /* Freigestelltes Logo, gross + angedeutet */
+  .logo-ghost {
+    position: absolute; top: -90px; right: -110px;
+    width: 420px; height: 420px; opacity: 0.18;
+    transform: rotate(-10deg); pointer-events: none;
+  }
+  .content {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    padding: 0 28px; color: #fff;
+  }
+  /* Hero */
+  .hero { margin-top: 96px; text-align: center; }
+  .hero .mark {
+    width: 76px; height: 76px; margin: 0 auto 22px; display: block;
+    filter: drop-shadow(0 8px 24px rgba(0,0,0,0.3));
+  }
+  .hero h1 {
+    font-size: 40px; font-weight: 800; letter-spacing: 1px; line-height: 1.05;
+  }
+  .hero .sub {
+    margin-top: 12px; font-size: 15px; font-weight: 500;
+    color: rgba(255,255,255,0.85); letter-spacing: 0.3px;
+  }
+  /* Glas-Card */
+  .card {
+    margin-top: auto; margin-bottom: 36px;
+    background: rgba(255,255,255,0.22);
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 28px; padding: 26px 22px 22px;
+    box-shadow: 0 20px 50px rgba(91,33,182,0.2);
+  }
+  .card h2 { font-size: 21px; font-weight: 700; margin-bottom: 4px; }
+  .card .hint { font-size: 13px; color: rgba(255,255,255,0.75); margin-bottom: 20px; }
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.6px;
+    text-transform: uppercase; color: rgba(255,255,255,0.7); margin-bottom: 6px;
+  }
+  .field .input {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,0.95); border-radius: 14px; padding: 13px 15px;
+  }
+  .field .input svg { width: 18px; height: 18px; color: var(--konfi); flex: 0 0 auto; }
+  .field .input span { color: #9ca3af; font-size: 15px; }
+  .btn {
+    width: 100%; margin-top: 8px; padding: 16px; border: none; border-radius: 16px;
+    background: linear-gradient(135deg, #fff 0%, #f0f0ff 100%);
+    color: var(--konfi); font-size: 16px; font-weight: 800; letter-spacing: 0.3px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2); cursor: pointer;
+  }
+  .forgot { text-align: center; margin-top: 16px; }
+  .forgot a { color: rgba(255,255,255,0.85); font-size: 13px; text-decoration: none; font-weight: 600; }
+  .divider {
+    display: flex; align-items: center; gap: 12px; margin: 18px 0;
+    color: rgba(255,255,255,0.5); font-size: 11px; letter-spacing: 1px;
+  }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,0.25); }
+  .code-btn {
+    width: 100%; padding: 14px; border-radius: 14px; cursor: pointer;
+    background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.4);
+    color: #fff; font-size: 14px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .code-btn svg { width: 17px; height: 17px; }
+</style>
+</head>
+<body>
+  <div class="phone">
+    <div class="bg"></div>
+    <img class="logo-ghost" src="logo-mark.png" alt="" />
+    <div class="content">
+      <div class="hero">
+        <h1>Konfi Quest</h1>
+        <div class="sub">Bereit für die nächste Quest?</div>
+      </div>
+
+      <div class="card">
+        <h2>Anmelden</h2>
+        <div class="hint">Melde dich an, um fortzufahren.</div>
+
+        <div class="field">
+          <label>Benutzername</label>
+          <div class="input">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+            <span>dein.name</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Passwort</label>
+          <div class="input">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            <span>••••••••</span>
+          </div>
+        </div>
+
+        <button class="btn">Anmelden</button>
+        <div class="forgot"><a href="#">Passwort vergessen?</a></div>
+
+        <div class="divider">ODER</div>
+
+        <button class="code-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M19 5l-3 3M8 16l-3 3"/></svg>
+          Mit Code registrieren
+        </button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

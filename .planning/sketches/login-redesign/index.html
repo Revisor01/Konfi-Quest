@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Konfi Quest — Cosmic Quest Redesign</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(124, 58, 237, 0.2) 0%, transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.15) 0%, transparent 45%),
+        #0a0512;
+      color: #fff;
+      padding: 40px 20px 80px;
+      min-height: 100vh;
+    }
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.8rem;
+      letter-spacing: 5px;
+      margin-bottom: 8px;
+      text-align: center;
+      background: linear-gradient(135deg, #fff 0%, #c4b5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .lead {
+      text-align: center;
+      opacity: 0.6;
+      margin-bottom: 50px;
+      font-size: 0.95rem;
+      letter-spacing: 0.5px;
+    }
+    .group {
+      max-width: 1500px;
+      margin: 0 auto 60px;
+    }
+    .group__head {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.2rem;
+      letter-spacing: 4px;
+      color: #67e8f9;
+      text-align: center;
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(6, 182, 212, 0.25);
+    }
+    .row {
+      display: flex;
+      gap: 32px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .variant { text-align: center; }
+    .variant h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      letter-spacing: 3px;
+      margin-bottom: 6px;
+    }
+    .variant .desc {
+      opacity: 0.55;
+      font-size: 0.82rem;
+      margin-bottom: 16px;
+      max-width: 393px;
+      line-height: 1.4;
+    }
+    .phone-frame {
+      width: 413px;
+      height: 872px;
+      background: #000;
+      border-radius: 56px;
+      padding: 10px;
+      box-shadow: 0 30px 80px rgba(124, 58, 237, 0.3), 0 0 0 2px rgba(255,255,255,0.08);
+    }
+    iframe {
+      width: 393px;
+      height: 852px;
+      border: none;
+      border-radius: 46px;
+      display: block;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <h1>KONFI QUEST — COSMIC REDESIGN</h1>
+  <p class="lead">App-übergreifender Look basierend auf Variante A "Cosmic Quest"</p>
+
+  <div class="group">
+    <div class="group__head">◆ LOGIN VARIANTEN ◆</div>
+    <div class="row">
+      <div class="variant">
+        <h2>A — COSMIC QUEST</h2>
+        <p class="desc">Dunkel, Sterne/Glow, Icon transparent im Hintergrund.</p>
+        <div class="phone-frame"><iframe src="variant-a.html"></iframe></div>
+      </div>
+      <div class="variant">
+        <h2>B — LAYERED ADVENTURE</h2>
+        <p class="desc">Diagonale Farbschichten. Hell.</p>
+        <div class="phone-frame"><iframe src="variant-b.html"></iframe></div>
+      </div>
+      <div class="variant">
+        <h2>C — GLOW PORTAL</h2>
+        <p class="desc">Icon als Portal hinter der Form.</p>
+        <div class="phone-frame"><iframe src="variant-c.html"></iframe></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="group">
+    <div class="group__head">◆ DASHBOARDS IM COSMIC-STIL ◆</div>
+    <div class="row">
+      <div class="variant">
+        <h2>KONFI DASHBOARD</h2>
+        <p class="desc">Activity Rings im Glass-Panel, Konfirmation-Countdown, Events, Badges.</p>
+        <div class="phone-frame"><iframe src="dashboard-konfi.html"></iframe></div>
+      </div>
+      <div class="variant">
+        <h2>TEAMER DASHBOARD</h2>
+        <p class="desc">Quick-Stats-Grid, Anträge-Liste mit Badge, Events, Zertifikate.</p>
+        <div class="phone-frame"><iframe src="dashboard-teamer.html"></iframe></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

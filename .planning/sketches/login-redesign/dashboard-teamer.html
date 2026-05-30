@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Cosmic Dashboard — Teamer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 393px;
+      height: 852px;
+      overflow: hidden;
+      font-family: 'Inter', -apple-system, sans-serif;
+      color: #fff;
+      background: #0a0512;
+    }
+    .screen {
+      width: 393px;
+      height: 852px;
+      position: relative;
+      background:
+        radial-gradient(circle at 20% 5%, rgba(124, 58, 237, 0.45) 0%, transparent 35%),
+        radial-gradient(circle at 90% 30%, rgba(236, 72, 153, 0.3) 0%, transparent 40%),
+        radial-gradient(circle at 30% 70%, rgba(6, 182, 212, 0.2) 0%, transparent 45%),
+        linear-gradient(180deg, #0a0512 0%, #1a0a2e 50%, #0a0a1f 100%);
+      overflow-y: auto;
+    }
+    .screen::-webkit-scrollbar { display: none; }
+
+    /* Sterne */
+    .star { position: absolute; border-radius: 50%; pointer-events: none; }
+    .star.cyan { background: radial-gradient(circle, #06b6d4 0%, transparent 70%); filter: blur(8px); }
+    .star.pink { background: radial-gradient(circle, #ec4899 0%, transparent 70%); filter: blur(10px); }
+    .star.gold { background: radial-gradient(circle, #f59e0b 0%, transparent 70%); filter: blur(6px); }
+    .star.dot { background: #fff; box-shadow: 0 0 8px #fff; }
+
+    .status-bar {
+      height: 50px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px 0;
+      font-size: 0.85rem;
+      font-weight: 600;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Hero */
+    .hero {
+      position: relative;
+      z-index: 2;
+      padding: 8px 20px 16px;
+    }
+    .hero__top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .hero__title-wrap { flex: 1; }
+    .hero__greeting {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.4rem;
+      letter-spacing: 3px;
+      line-height: 1;
+      margin-bottom: 4px;
+      background: linear-gradient(135deg, #fff 0%, #c4b5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 2px 12px rgba(124, 58, 237, 0.4));
+    }
+    .hero__role {
+      font-size: 0.72rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #f9a8d4;
+      opacity: 0.9;
+    }
+    .hero__avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #ec4899 0%, #7c3aed 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.2rem;
+      letter-spacing: 1px;
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(236, 72, 153, 0.45), 0 0 0 1px rgba(255,255,255,0.1) inset;
+    }
+
+    /* Quick Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 6px 20px 18px;
+      position: relative;
+      z-index: 2;
+    }
+    .stat-card {
+      background: rgba(15, 15, 30, 0.55);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 16px 14px;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card--cyan { border-color: rgba(6, 182, 212, 0.4); box-shadow: 0 8px 30px rgba(0,0,0,0.4), 0 0 24px rgba(6, 182, 212, 0.15); }
+    .stat-card--pink { border-color: rgba(236, 72, 153, 0.4); box-shadow: 0 8px 30px rgba(0,0,0,0.4), 0 0 24px rgba(236, 72, 153, 0.15); }
+    .stat-card--gold { border-color: rgba(245, 158, 11, 0.4); box-shadow: 0 8px 30px rgba(0,0,0,0.4), 0 0 24px rgba(245, 158, 11, 0.15); }
+    .stat-card--purple { border-color: rgba(124, 58, 237, 0.4); box-shadow: 0 8px 30px rgba(0,0,0,0.4), 0 0 24px rgba(124, 58, 237, 0.15); }
+    .stat-card__label {
+      font-size: 0.68rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.55);
+      margin-bottom: 6px;
+    }
+    .stat-card__value {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.4rem;
+      line-height: 1;
+      letter-spacing: 1px;
+    }
+    .stat-card--cyan .stat-card__value { color: #67e8f9; text-shadow: 0 0 16px rgba(6, 182, 212, 0.5); }
+    .stat-card--pink .stat-card__value { color: #f9a8d4; text-shadow: 0 0 16px rgba(236, 72, 153, 0.5); }
+    .stat-card--gold .stat-card__value { color: #fcd34d; text-shadow: 0 0 16px rgba(245, 158, 11, 0.5); }
+    .stat-card--purple .stat-card__value { color: #c4b5fd; text-shadow: 0 0 16px rgba(124, 58, 237, 0.5); }
+    .stat-card__sub {
+      font-size: 0.72rem;
+      color: rgba(255, 255, 255, 0.5);
+      margin-top: 4px;
+    }
+
+    /* Section */
+    .section {
+      margin: 0 20px 16px;
+      padding: 18px 20px;
+      background: rgba(15, 15, 30, 0.55);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      position: relative;
+      z-index: 2;
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+        0 12px 40px rgba(0, 0, 0, 0.45);
+    }
+    .section--requests { border-color: rgba(245, 158, 11, 0.35); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04) inset, 0 12px 40px rgba(0, 0, 0, 0.45), 0 0 30px rgba(245, 158, 11, 0.15); }
+    .section--events { border-color: rgba(220, 38, 38, 0.35); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04) inset, 0 12px 40px rgba(0, 0, 0, 0.45), 0 0 30px rgba(220, 38, 38, 0.15); }
+    .section--cert { border-color: rgba(236, 72, 153, 0.35); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04) inset, 0 12px 40px rgba(0, 0, 0, 0.45), 0 0 30px rgba(236, 72, 153, 0.15); }
+
+    .section__head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+    .section__title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.2rem;
+      letter-spacing: 3px;
+      color: #fff;
+    }
+    .section__title--req::before { content: '◆ '; color: #fcd34d; }
+    .section__title--events::before { content: '◆ '; color: #fca5a5; }
+    .section__title--cert::before { content: '◆ '; color: #f9a8d4; }
+    .section__count {
+      font-size: 0.7rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.06);
+      padding: 4px 10px;
+      border-radius: 100px;
+    }
+    .section__count--alert {
+      background: rgba(245, 158, 11, 0.18);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      color: #fcd34d;
+    }
+
+    /* Request row */
+    .req-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .req-row:first-child { border-top: none; padding-top: 4px; }
+    .req-row__avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #06b6d4 0%, #7c3aed 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+      flex-shrink: 0;
+    }
+    .req-row__info { flex: 1; min-width: 0; }
+    .req-row__name { font-size: 0.92rem; font-weight: 600; }
+    .req-row__detail { font-size: 0.75rem; color: rgba(255, 255, 255, 0.5); margin-top: 2px; }
+    .req-row__action {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(245, 158, 11, 0.18);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      color: #fcd34d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+    }
+
+    /* Event row */
+    .event-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .event-row:first-child { border-top: none; padding-top: 4px; }
+    .event-row__date {
+      width: 48px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .event-row__day {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.5rem;
+      line-height: 1;
+      color: #fca5a5;
+    }
+    .event-row__month {
+      font-size: 0.65rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.5);
+      margin-top: 2px;
+    }
+    .event-row__info { flex: 1; }
+    .event-row__title { font-size: 0.92rem; font-weight: 600; }
+    .event-row__meta { font-size: 0.75rem; color: rgba(255, 255, 255, 0.5); margin-top: 2px; }
+    .event-row__bookings {
+      font-size: 0.7rem;
+      color: #fcd34d;
+      margin-top: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Cert grid mini */
+    .cert-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .cert-card {
+      aspect-ratio: 1;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(236, 72, 153, 0.18) 0%, rgba(124, 58, 237, 0.18) 100%);
+      border: 1px solid rgba(236, 72, 153, 0.35);
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 4px 16px rgba(236, 72, 153, 0.15);
+    }
+    .cert-card__icon { font-size: 1.4rem; }
+    .cert-card__title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 0.85rem;
+      letter-spacing: 1.5px;
+      line-height: 1.05;
+    }
+
+    /* Tab bar */
+    .tabbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 80px;
+      background: rgba(10, 5, 18, 0.85);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-start;
+      padding-top: 10px;
+      z-index: 10;
+    }
+    .tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 0.65rem;
+      position: relative;
+    }
+    .tab.active { color: #67e8f9; }
+    .tab svg { width: 24px; height: 24px; }
+    .tab-badge {
+      position: absolute;
+      top: -4px;
+      right: -8px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      background: linear-gradient(135deg, #ec4899, #be185d);
+      border-radius: 9px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(236, 72, 153, 0.6);
+    }
+  </style>
+</head>
+<body>
+  <div class="screen">
+    <!-- Sterne -->
+    <div class="star pink" style="top: 60px; left: 30px; width: 50px; height: 50px;"></div>
+    <div class="star cyan" style="top: 180px; right: 20px; width: 70px; height: 70px;"></div>
+    <div class="star gold" style="top: 380px; left: 20px; width: 40px; height: 40px;"></div>
+    <div class="star pink" style="top: 600px; right: 40px; width: 60px; height: 60px;"></div>
+    <div class="star dot" style="top: 110px; left: 80px; width: 2px; height: 2px;"></div>
+    <div class="star dot" style="top: 220px; right: 90px; width: 3px; height: 3px;"></div>
+    <div class="star dot" style="top: 480px; left: 280px; width: 2px; height: 2px;"></div>
+
+    <div class="status-bar">
+      <span>9:41</span>
+      <span>● ● ●</span>
+    </div>
+
+    <div class="hero">
+      <div class="hero__top">
+        <div class="hero__title-wrap">
+          <div class="hero__greeting">MOIN, SIMON!</div>
+          <div class="hero__role">◆ Teamer:in · Kirchspiel West</div>
+        </div>
+        <div class="hero__avatar">SL</div>
+      </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="stats-grid">
+      <div class="stat-card stat-card--cyan">
+        <div class="stat-card__label">Konfis aktiv</div>
+        <div class="stat-card__value">42</div>
+        <div class="stat-card__sub">in 2 Jahrgängen</div>
+      </div>
+      <div class="stat-card stat-card--gold">
+        <div class="stat-card__label">Anträge offen</div>
+        <div class="stat-card__value">7</div>
+        <div class="stat-card__sub">warten auf Freigabe</div>
+      </div>
+      <div class="stat-card stat-card--pink">
+        <div class="stat-card__label">Punkte vergeben</div>
+        <div class="stat-card__value">126</div>
+        <div class="stat-card__sub">diese Woche</div>
+      </div>
+      <div class="stat-card stat-card--purple">
+        <div class="stat-card__label">Events offen</div>
+        <div class="stat-card__value">3</div>
+        <div class="stat-card__sub">nächste 14 Tage</div>
+      </div>
+    </div>
+
+    <!-- Antraege -->
+    <div class="section section--requests">
+      <div class="section__head">
+        <div class="section__title section__title--req">ANTRÄGE</div>
+        <div class="section__count section__count--alert">7 neu</div>
+      </div>
+      <div class="req-row">
+        <div class="req-row__avatar">LM</div>
+        <div class="req-row__info">
+          <div class="req-row__name">Lara Müller</div>
+          <div class="req-row__detail">Konfi-Camp 2026 · 5 Punkte</div>
+        </div>
+        <div class="req-row__action">→</div>
+      </div>
+      <div class="req-row">
+        <div class="req-row__avatar">JK</div>
+        <div class="req-row__info">
+          <div class="req-row__name">Jonas Kruse</div>
+          <div class="req-row__detail">Gottesdienst · 3 Punkte</div>
+        </div>
+        <div class="req-row__action">→</div>
+      </div>
+      <div class="req-row">
+        <div class="req-row__avatar">EH</div>
+        <div class="req-row__info">
+          <div class="req-row__name">Emma Hansen</div>
+          <div class="req-row__detail">Gemeindedienst · 2 Punkte</div>
+        </div>
+        <div class="req-row__action">→</div>
+      </div>
+    </div>
+
+    <!-- Events -->
+    <div class="section section--events">
+      <div class="section__head">
+        <div class="section__title section__title--events">EVENTS</div>
+        <div class="section__count">3 aktiv</div>
+      </div>
+      <div class="event-row">
+        <div class="event-row__date">
+          <div class="event-row__day">15</div>
+          <div class="event-row__month">Nov</div>
+        </div>
+        <div class="event-row__info">
+          <div class="event-row__title">Konfi-Camp Sylt</div>
+          <div class="event-row__meta">3 Tage · Wochenende</div>
+          <div class="event-row__bookings">◆ 24 / 30 Plätze · 4 Warteliste</div>
+        </div>
+      </div>
+      <div class="event-row">
+        <div class="event-row__date">
+          <div class="event-row__day">22</div>
+          <div class="event-row__month">Nov</div>
+        </div>
+        <div class="event-row__info">
+          <div class="event-row__title">Ewigkeitssonntag</div>
+          <div class="event-row__meta">10:00 · St. Marien</div>
+          <div class="event-row__bookings">◆ 18 / 40 Plätze</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Zertifikate -->
+    <div class="section section--cert" style="margin-bottom: 100px;">
+      <div class="section__head">
+        <div class="section__title section__title--cert">ZERTIFIKATE</div>
+      </div>
+      <div class="cert-grid">
+        <div class="cert-card">
+          <div class="cert-card__icon">📜</div>
+          <div class="cert-card__title">Teilnahme<br>Konfi 2026</div>
+        </div>
+        <div class="cert-card">
+          <div class="cert-card__icon">🏆</div>
+          <div class="cert-card__title">Teamer<br>Award</div>
+        </div>
+        <div class="cert-card">
+          <div class="cert-card__icon">⛪</div>
+          <div class="cert-card__title">Konfir-<br>mation</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab bar -->
+    <div class="tabbar">
+      <div class="tab active">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 8h-3v9h-12v-9h-3l9-8z"/></svg>
+        Start
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="8" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><path d="M2 21c0-3 2-5 6-5s6 2 6 5"/><path d="M10 21c0-3 2-5 6-5s6 2 6 5"/></svg>
+        Konfis
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v2H3zm0 6h18v2H3zm0 6h18v2H3z"/></svg>
+        Anträge
+        <span class="tab-badge">7</span>
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5C4 4 3 5 3 6v14c0 1 1 2 2 2h14c1 0 2-1 2-2V6c0-1-1-2-2-2z"/></svg>
+        Events
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 11.5a8.38 8.38 0 0 1-9 8.5L3 22l2-9a8.5 8.5 0 1 1 16-1.5z"/></svg>
+        Chat
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Login Variante B — Header-Welle + weiße Card</title>
+<style>
+  :root { --konfi: #5b21b6; --cyan: #06b6d4; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex; justify-content: center; align-items: center;
+    min-height: 100vh; background: #1a1530; padding: 20px;
+  }
+  .phone {
+    width: 390px; height: 844px; border-radius: 48px; overflow: hidden;
+    position: relative; background: #fff; box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+  }
+  /* Farbiger Header mit Verlauf + Welle */
+  .header {
+    position: relative; height: 360px;
+    background:
+      radial-gradient(circle at 80% 20%, rgba(6,182,212,0.6) 0%, transparent 55%),
+      linear-gradient(140deg, #6d28d9 0%, #7c3aed 45%, #2563eb 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: #fff; padding-bottom: 40px;
+  }
+  .header .logo-ghost {
+    position: absolute; top: -60px; left: -80px; width: 320px; height: 320px;
+    opacity: 0.13; transform: rotate(8deg);
+  }
+  .header .mark { width: 84px; height: 84px; margin-bottom: 18px; filter: drop-shadow(0 8px 20px rgba(0,0,0,0.3)); }
+  .header h1 { font-size: 36px; font-weight: 800; letter-spacing: 1px; }
+  .header .sub { margin-top: 10px; font-size: 14px; color: rgba(255,255,255,0.85); }
+  /* Welle */
+  .wave { position: absolute; bottom: -1px; left: 0; width: 100%; height: 60px; display: block; }
+  /* Card-Bereich */
+  .body { padding: 28px 28px 0; margin-top: -24px; position: relative; z-index: 2; }
+  .body h2 { font-size: 22px; font-weight: 700; color: #1f2937; margin-bottom: 4px; }
+  .body .hint { font-size: 13px; color: #6b7280; margin-bottom: 22px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: #9ca3af; margin-bottom: 6px; }
+  .field .input { display: flex; align-items: center; gap: 10px; background: #f4f2fb; border: 1.5px solid #ece8f8; border-radius: 14px; padding: 13px 15px; }
+  .field .input svg { width: 18px; height: 18px; color: var(--konfi); flex: 0 0 auto; }
+  .field .input span { color: #9ca3af; font-size: 15px; }
+  .btn {
+    width: 100%; margin-top: 10px; padding: 16px; border: none; border-radius: 16px;
+    background: linear-gradient(135deg, #6d28d9 0%, #2563eb 100%);
+    color: #fff; font-size: 16px; font-weight: 800; cursor: pointer;
+    box-shadow: 0 10px 28px rgba(109,40,217,0.4);
+  }
+  .forgot { text-align: center; margin-top: 16px; }
+  .forgot a { color: var(--konfi); font-size: 13px; text-decoration: none; font-weight: 700; }
+  .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: #c4c0d4; font-size: 11px; letter-spacing: 1px; }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: #ece8f8; }
+  .code-btn { width: 100%; padding: 14px; border-radius: 14px; cursor: pointer; background: #fff; border: 1.5px solid #ddd6f3; color: var(--konfi); font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .code-btn svg { width: 17px; height: 17px; }
+</style>
+</head>
+<body>
+  <div class="phone">
+    <div class="header">
+      <img class="logo-ghost" src="logo-mark.png" alt="" />
+      <img class="mark" src="logo-mark.png" alt="" />
+      <h1>Konfi Quest</h1>
+      <div class="sub">Bereit für die nächste Quest?</div>
+      <svg class="wave" viewBox="0 0 390 60" preserveAspectRatio="none"><path d="M0,30 Q97,0 195,30 T390,30 L390,60 L0,60 Z" fill="#fff"/></svg>
+    </div>
+    <div class="body">
+      <h2>Anmelden</h2>
+      <div class="hint">Melde dich an, um fortzufahren.</div>
+      <div class="field">
+        <label>Benutzername</label>
+        <div class="input">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+          <span>dein.name</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Passwort</label>
+        <div class="input">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          <span>••••••••</span>
+        </div>
+      </div>
+      <button class="btn">Anmelden</button>
+      <div class="forgot"><a href="#">Passwort vergessen?</a></div>
+      <div class="divider">ODER</div>
+      <button class="code-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M19 5l-3 3M8 16l-3 3"/></svg>
+        Mit Code registrieren
+      </button>
+    </div>
+  </div>
+</body>
+</html>
