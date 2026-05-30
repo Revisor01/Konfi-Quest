@@ -58,8 +58,9 @@ nav{position:fixed;inset:0 0 auto 0;z-index:100;background:rgba(255,255,255,.8);
 .glow.c{top:24%;left:36%;width:30%;height:40%;background:radial-gradient(circle,rgba(124,58,237,.4),transparent 62%);animation:drift 18s ease-in-out 2s infinite reverse}
 @keyframes drift{0%,100%{transform:translate(0,0)}50%{transform:translate(-26px,30px)}}
 .grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(120% 80% at 50% 0%,#000,transparent 72%)}
-.hero-in{position:relative;z-index:2;display:grid;grid-template-columns:1.08fr .92fr;gap:3.2rem;align-items:center}
-.logo-hero{width:96px;height:96px;margin-bottom:1.5rem;padding:18px;border-radius:26px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(6px);box-shadow:0 16px 44px rgba(34,211,238,.32);animation:floaty 6s ease-in-out infinite}
+.hero-in{position:relative;z-index:3;display:grid;grid-template-columns:1.08fr .92fr;gap:3.2rem;align-items:center}
+/* Logo als grosses Hintergrund-Wasserzeichen (wie Social Studio): bricht oben-rechts aus, weiss, niedrige Deckkraft, leicht gedreht */
+.hero-watermark{position:absolute;top:-22%;right:-14%;width:62%;max-width:760px;opacity:.12;transform:rotate(-10deg);z-index:1;pointer-events:none;animation:floaty 9s ease-in-out infinite}
 @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
 .eyebrow{display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);padding:.4rem 1rem;border-radius:999px;font-size:.82rem;font-weight:600;margin-bottom:1.3rem}
 .eyebrow .pip{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 0 rgba(34,211,238,.5);animation:pulse 2s infinite}
@@ -226,8 +227,8 @@ footer a:hover{color:#fff}
 @media(max-width:980px){
  .hero-in{grid-template-columns:1fr;text-align:center;gap:2.5rem}
  .hsub{max-width:none;margin-left:auto;margin-right:auto}.hcta,.htrust{justify-content:center}
- .logo-hero{margin-left:auto;margin-right:auto}
- /* Reihenfolge: Logo+Headline ZUERST, Phone darunter */
+ .hero-watermark{top:-8%;right:-30%;width:90%;opacity:.09}
+ /* Reihenfolge: Headline ZUERST, Phone darunter */
  .hero-copy{order:0}.hero-art{order:1;margin-top:.5rem}
  .fbadge{display:none}.device{transform:none;width:240px;height:496px}
  .split{grid-template-columns:1fr}.fgrid,.why-grid{grid-template-columns:1fr}.be-grid{grid-template-columns:1fr 1fr}
@@ -265,9 +266,9 @@ footer a:hover{color:#fff}
 <!-- HERO -->
 <header class="hero" id="top">
  <div class="glow a"></div><div class="glow b"></div><div class="glow c"></div><div class="grid-bg"></div>
+ <img src="/assets/icon/logo-mark.png" alt="" class="hero-watermark">
  <div class="wrap hero-in">
   <div>
-   <img src="/assets/icon/logo-mark.png" alt="Konfi Quest" class="logo-hero">
    <span class="eyebrow"><span class="pip"></span>Moderne Konfi-Arbeit, die ankommt</span>
    <h1 class="hh">Die Konfizeit als&nbsp;<span class="rot" id="rot">Abenteuer</span>.</h1>
    <p class="hsub">Schluss mit Zetteln und Unterschriften. Eine App, die Jugendliche wirklich öffnen – und die euch als Team den Rücken freihält.</p>
