@@ -19,6 +19,7 @@ import { networkMonitor } from '../../../services/networkMonitor';
 import BadgesView from '../views/BadgesView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { safeUUID } from '../../../utils/uuid';
 
 interface Badge {
   id: number;
@@ -86,7 +87,7 @@ const KonfiBadgesPage: React.FC = () => {
             url: '/konfi/badges/mark-seen',
             maxRetries: 3,
             hasFileUpload: false,
-            metadata: { type: 'fire-and-forget', clientId: `badges-mark-seen-${Date.now()}`, label: 'Badges gesehen' },
+            metadata: { type: 'fire-and-forget', clientId: safeUUID(), label: 'Badges gesehen' },
           });
         } else {
           api.post('/konfi/badges/mark-seen').catch((markError) => {

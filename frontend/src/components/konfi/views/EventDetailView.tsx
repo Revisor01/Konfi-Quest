@@ -40,7 +40,8 @@ import {
   bagHandle,
   qrCodeOutline,
   cloudOfflineOutline,
-  lockOpenOutline
+  lockOpenOutline,
+  infinite
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
@@ -54,6 +55,7 @@ import QRScannerModal from '../modals/QRScannerModal';
 import { Event, Category } from '../../../types/event';
 import { useLiveUpdate } from '../../../contexts/LiveUpdateContext';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { safeUUID } from '../../../utils/uuid';
 
 interface EventDetailViewProps {
   eventId: number;
@@ -100,7 +102,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       return;
     }
 
-    const clientId = crypto.randomUUID();
+    const clientId = safeUUID();
 
     if (networkMonitor.isOnline) {
       try {
@@ -565,7 +567,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
                 <div>
                   <div className="app-info-row__label">Teilnehmer:innen</div>
-                  <div className="app-info-row__value">{eventData.registered_count - (eventData.teamer_count || 0)} / {eventData.max_participants > 0 ? eventData.max_participants : '∞'}</div>
+                  <div className="app-info-row__value">{eventData.registered_count - (eventData.teamer_count || 0)} / {eventData.max_participants > 0 ? eventData.max_participants : <IonIcon icon={infinite} style={{ verticalAlign: 'middle', fontSize: '0.9em' }} />}</div>
                 </div>
               </div>
 

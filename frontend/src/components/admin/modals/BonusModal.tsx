@@ -28,6 +28,7 @@ import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
+import { safeUUID } from '../../../utils/uuid';
 
 interface BonusModalProps {
   konfiId: number;
@@ -80,7 +81,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
           hasFileUpload: false,
           metadata: {
             type: 'admin',
-            clientId: crypto.randomUUID(),
+            clientId: safeUUID(),
             label: 'Bonus-Punkte vergeben'
           }
         });

@@ -1672,8 +1672,12 @@ ion-button.app-modal-submit-btn--bonus {
   background: linear-gradient(90deg, transparent 0%, rgba(124, 58, 237, 0.5) 50%, transparent 100%);
 }
 .app-auth-hero__divider-icon {
-  color: #7c3aed;
-  font-size: 0.7rem;
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  background: #7c3aed;
+  transform: rotate(45deg);
+  border-radius: 1px;
 }
 
 .app-auth-hero__subtitle--cosmic {

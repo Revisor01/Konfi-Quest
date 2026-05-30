@@ -28,6 +28,7 @@ import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
+import { safeUUID } from '../../../utils/uuid';
 
 interface Activity {
   id: number;
@@ -229,7 +230,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
             body: payload,
             maxRetries: 5,
             hasFileUpload: false,
-            metadata: { type: 'admin', clientId: crypto.randomUUID(), label: 'Aktivität bearbeiten' },
+            metadata: { type: 'admin', clientId: safeUUID(), label: 'Aktivität bearbeiten' },
           });
           setSuccess('Aktivität wird aktualisiert sobald du wieder online bist');
         } else {
@@ -239,7 +240,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
             body: payload,
             maxRetries: 5,
             hasFileUpload: false,
-            metadata: { type: 'admin', clientId: crypto.randomUUID(), label: 'Aktivität erstellen' },
+            metadata: { type: 'admin', clientId: safeUUID(), label: 'Aktivität erstellen' },
           });
           setSuccess('Aktivität wird erstellt sobald du wieder online bist');
         }

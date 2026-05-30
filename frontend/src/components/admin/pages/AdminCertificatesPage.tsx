@@ -99,6 +99,7 @@ import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader, ListSection } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { safeUUID } from '../../../utils/uuid';
 
 const CERT_ICONS: Record<string, { icon: any; name: string; category: string }> = {
   ribbon: { icon: ribbon, name: 'Band', category: 'Erfolg' },
@@ -237,7 +238,7 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
         hasFileUpload: false,
         metadata: {
           type: 'admin',
-          clientId: crypto.randomUUID(),
+          clientId: safeUUID(),
           label: certificateType ? 'Zertifikat bearbeiten' : 'Zertifikat erstellen'
         }
       });

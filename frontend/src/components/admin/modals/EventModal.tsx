@@ -18,6 +18,7 @@ import {
   WaitlistSection, SeriesSection
 } from './EventFormSections';
 import type { EventFormData } from './EventFormSections';
+import { safeUUID } from '../../../utils/uuid';
 
 interface EventModalProps {
   event?: Event | null;
@@ -238,13 +239,13 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
       } else {
         if (event && event.id && event.id > 0) {
           const { is_series, series_count, series_interval, ...updatePayload } = payload;
-          await writeQueue.enqueue({ method: 'PUT', url: `/events/${event.id}`, body: updatePayload, maxRetries: 5, hasFileUpload: false, metadata: { type: 'admin', clientId: crypto.randomUUID(), label: 'Event bearbeiten' } });
+          await writeQueue.enqueue({ method: 'PUT', url: `/events/${event.id}`, body: updatePayload, maxRetries: 5, hasFileUpload: false, metadata: { type: 'admin', clientId: safeUUID(), label: 'Event bearbeiten' } });
           setSuccess('Event wird aktualisiert sobald du wieder online bist');
         } else if (formData.is_series) {
-          await writeQueue.enqueue({ method: 'POST', url: '/events/series', body: payload, maxRetries: 5, hasFileUpload: false, metadata: { type: 'admin', clientId: crypto.randomUUID(), label: 'Event-Serie erstellen' } });
+          await writeQueue.enqueue({ method: 'POST', url: '/events/series', body: payload, maxRetries: 5, hasFileUpload: false, metadata: { type: 'admin', clientId: safeUUID(), label: 'Event-Serie erstellen' } });
           setSuccess('Event-Serie wird erstellt sobald du wieder online bist');
         } else {
-          await writeQueue.enqueue({ method: 'POST', url: '/events', body: payload, maxRetries: 5, hasFileUpload: false, metadata: { type: 'admin', clientId: crypto.randomUUID(), label: 'Event erstellen' } });
+          await writeQueue.enqueue({ method: 'POST', url: '/events', body: payload, maxRetries: 5, hasFileUpload: false, metadata: { type: 'admin', clientId: safeUUID(), label: 'Event erstellen' } });
           setSuccess('Event wird erstellt sobald du wieder online bist');
         }
       }

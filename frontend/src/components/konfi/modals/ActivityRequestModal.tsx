@@ -44,6 +44,7 @@ import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
+import { safeUUID } from '../../../utils/uuid';
 
 interface Activity {
   id: number;
@@ -177,7 +178,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
     await guard(async () => {
       setUploadProgress(0);
 
-      const clientId = crypto.randomUUID();
+      const clientId = safeUUID();
 
       if (networkMonitor.isOnline) {
         // Online-Pfad: direkt senden

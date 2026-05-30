@@ -46,6 +46,7 @@ import ChangeEmailModal from '../modals/ChangeEmailModal';
 import PointsHistoryModal from '../modals/PointsHistoryModal';
 import WrappedModal from '../../wrapped/WrappedModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
+import { safeUUID } from '../../../utils/uuid';
 
 interface KonfiProfile {
   id: number;
@@ -252,7 +253,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         body: { translation },
         maxRetries: 3,
         hasFileUpload: false,
-        metadata: { type: 'fire-and-forget', clientId: `bible-translation-${translation}-${Date.now()}`, label: 'Bibelübersetzung' },
+        metadata: { type: 'fire-and-forget', clientId: safeUUID(), label: 'Bibelübersetzung' },
       });
       return;
     }

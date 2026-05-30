@@ -276,7 +276,7 @@ const KonfiRegisterPage: React.FC = () => {
               WILLKOMMEN!
             </h1>
             <div className="app-auth-hero__divider">
-              <span className="app-auth-hero__divider-icon">◆</span>
+              <span className="app-auth-hero__divider-icon" />
             </div>
             <p className="app-auth-hero__subtitle--cosmic" style={{ marginBottom: '24px' }}>
               Du wirst zum Dashboard weitergeleitet
@@ -310,7 +310,7 @@ const KonfiRegisterPage: React.FC = () => {
             </h1>
 
             <div className="app-auth-hero__divider">
-              <span className="app-auth-hero__divider-icon">◆</span>
+              <span className="app-auth-hero__divider-icon" />
             </div>
 
             <p className="app-auth-hero__subtitle--cosmic">

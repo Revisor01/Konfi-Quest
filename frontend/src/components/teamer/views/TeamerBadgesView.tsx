@@ -76,6 +76,7 @@ import { SectionHeader, EmptyState } from '../../shared';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
+import { safeUUID } from '../../../utils/uuid';
 
 // Badge Icon Mapping
 const BADGE_ICONS: Record<string, string> = {
@@ -237,7 +238,7 @@ const TeamerBadgesView: React.FC = () => {
             url: '/teamer/badges/mark-seen',
             maxRetries: 3,
             hasFileUpload: false,
-            metadata: { type: 'fire-and-forget', clientId: `teamer-badges-mark-seen-${Date.now()}`, label: 'Teamer-Badges gesehen' },
+            metadata: { type: 'fire-and-forget', clientId: safeUUID(), label: 'Teamer-Badges gesehen' },
           });
         } else {
           try {

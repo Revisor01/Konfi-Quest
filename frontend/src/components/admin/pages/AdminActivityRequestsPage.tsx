@@ -22,6 +22,7 @@ import ActivityRequestsView from '../ActivityRequestsView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import ActivityRequestModal from '../modals/ActivityRequestModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { safeUUID } from '../../../utils/uuid';
 
 interface ActivityRequest {
   id: number;
@@ -108,7 +109,7 @@ const AdminActivityRequestsPage: React.FC = () => {
                 hasFileUpload: false,
                 metadata: {
                   type: 'admin',
-                  clientId: crypto.randomUUID(),
+                  clientId: safeUUID(),
                   label: 'Antrag zurücksetzen'
                 }
               });

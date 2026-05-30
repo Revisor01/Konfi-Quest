@@ -46,6 +46,7 @@ import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader, ListSection } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { safeUUID } from '../../../utils/uuid';
 
 interface Category {
   id: number;
@@ -138,7 +139,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
         hasFileUpload: false,
         metadata: {
           type: 'admin',
-          clientId: crypto.randomUUID(),
+          clientId: safeUUID(),
           label: category ? 'Kategorie bearbeiten' : 'Kategorie erstellen'
         }
       });

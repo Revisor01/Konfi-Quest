@@ -47,6 +47,7 @@ import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import FileViewerModal from '../../shared/FileViewerModal';
+import { safeUUID } from '../../../utils/uuid';
 
 interface MaterialFile {
   id: number;
@@ -292,7 +293,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
             body: payload,
             maxRetries: 5,
             hasFileUpload: false,
-            metadata: { type: 'admin', clientId: crypto.randomUUID(), label: material ? 'Material bearbeiten' : 'Material erstellen' },
+            metadata: { type: 'admin', clientId: safeUUID(), label: material ? 'Material bearbeiten' : 'Material erstellen' },
           });
 
           if (newFiles.length > 0) {

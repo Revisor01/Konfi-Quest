@@ -29,6 +29,7 @@ import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
+import { safeUUID } from '../../../utils/uuid';
 
 interface ChangeRoleTitleModalProps {
   onClose: () => void;
@@ -60,7 +61,7 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
         body: { role_title: roleTitle.trim() },
         maxRetries: 3,
         hasFileUpload: false,
-        metadata: { type: 'fire-and-forget', clientId: `role-title-${Date.now()}`, label: 'Funktionsbeschreibung' },
+        metadata: { type: 'fire-and-forget', clientId: safeUUID(), label: 'Funktionsbeschreibung' },
       });
       setSuccess('Funktionsbeschreibung wird bei Verbindung aktualisiert');
       onSuccess();

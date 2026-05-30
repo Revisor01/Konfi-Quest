@@ -50,7 +50,8 @@ import {
   attachOutline,
   search,
   filterOutline,
-  lockOpenOutline
+  lockOpenOutline,
+  infinite
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -67,6 +68,7 @@ import QRScannerModal from '../../konfi/modals/QRScannerModal';
 import TeamerMaterialDetailPage from './TeamerMaterialDetailPage';
 import { Event } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { safeUUID } from '../../../utils/uuid';
 
 const TeamerEventsPage: React.FC = () => {
   const { user, setSuccess, setError } = useApp();
@@ -301,7 +303,7 @@ const TeamerEventsPage: React.FC = () => {
           hasFileUpload: false,
           metadata: {
             type: 'teamer',
-            clientId: crypto.randomUUID(),
+            clientId: safeUUID(),
             label: 'Event buchen',
           },
         });
@@ -332,7 +334,7 @@ const TeamerEventsPage: React.FC = () => {
           hasFileUpload: false,
           metadata: {
             type: 'teamer',
-            clientId: crypto.randomUUID(),
+            clientId: safeUUID(),
             label: 'Event abmelden',
           },
         });
@@ -892,7 +894,7 @@ const TeamerEventsPage: React.FC = () => {
                               <div className="app-list-item__meta">
                                 <span className="app-list-item__meta-item">
                                   <IonIcon icon={people} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--participants'} />
-                                  {event.registered_count - (event.teamer_count || 0)}{event.max_participants > 0 ? `/${event.max_participants}` : '/∞'}
+                                  {event.registered_count - (event.teamer_count || 0)}{event.max_participants > 0 ? `/${event.max_participants}` : <>/<IonIcon icon={infinite} style={{ verticalAlign: 'middle', fontSize: '0.9em' }} /></>}
                                 </span>
                                 {(event.teamer_count !== undefined && event.teamer_count > 0) && (
                                   <span className="app-list-item__meta-item">

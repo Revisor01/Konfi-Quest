@@ -35,6 +35,7 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 // Native FileViewer ueber openFileNatively, FileViewerModal als Web-Fallback
 import { openFileNatively } from '../../utils/nativeFileViewer';
 import { writeQueue } from '../../services/writeQueue';
+import { safeUUID } from '../../utils/uuid';
 import { networkMonitor } from '../../services/networkMonitor';
 import { ChatHeader, MessageInput, autoCapitalize, MIME_EXT_MAP, takePicture as takePictureHelper, selectFromGallery as selectFromGalleryHelper } from './ChatRoomSections';
 import { triggerPullHaptic } from '../../utils/haptics';
@@ -404,8 +405,8 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     if (!messageText.trim() && !selectedFile) return;
     if (!room) return;
 
-    const clientId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const localId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const clientId = safeUUID();
+    const localId = safeUUID();
     const content = messageText.trim();
     const file = selectedFile;
     const currentReplyTo = replyToMessage;
@@ -543,7 +544,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         body: { option_index: optionIndex },
         maxRetries: 3,
         hasFileUpload: false,
-        metadata: { type: 'fire-and-forget', clientId: `poll-${messageId}-${optionIndex}-${Date.now()}`, label: 'Abstimmung' },
+        metadata: { type: 'fire-and-forget', clientId: `poll-${messageId}-${optionIndex}-${safeUUID()}`, label: 'Abstimmung' },
       });
 
       setTimeout(() => setShouldAutoScroll(true), 1000);
@@ -624,7 +625,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         body: { emoji },
         maxRetries: 3,
         hasFileUpload: false,
-        metadata: { type: 'fire-and-forget', clientId: `reaction-${messageId}-${emoji}-${Date.now()}`, label: 'Reaktion' },
+        metadata: { type: 'fire-and-forget', clientId: `reaction-${messageId}-${emoji}-${safeUUID()}`, label: 'Reaktion' },
       });
 
       setShowReactionPicker(false);

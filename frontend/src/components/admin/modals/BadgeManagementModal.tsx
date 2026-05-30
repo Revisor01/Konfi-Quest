@@ -96,6 +96,7 @@ import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
+import { safeUUID } from '../../../utils/uuid';
 
 // Badge Icon Mapping
 const BADGE_ICONS = {
@@ -451,7 +452,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             body: badgeData,
             maxRetries: 5,
             hasFileUpload: false,
-            metadata: { type: 'admin', clientId: crypto.randomUUID(), label: 'Badge bearbeiten' },
+            metadata: { type: 'admin', clientId: safeUUID(), label: 'Badge bearbeiten' },
           });
           setSuccess('Badge wird aktualisiert sobald du wieder online bist');
         } else {
@@ -461,7 +462,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             body: badgeData,
             maxRetries: 5,
             hasFileUpload: false,
-            metadata: { type: 'admin', clientId: crypto.randomUUID(), label: 'Badge erstellen' },
+            metadata: { type: 'admin', clientId: safeUUID(), label: 'Badge erstellen' },
           });
           setSuccess('Badge wird erstellt sobald du wieder online bist');
         }

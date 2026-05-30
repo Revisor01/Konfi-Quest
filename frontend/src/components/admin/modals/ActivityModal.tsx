@@ -28,6 +28,7 @@ import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
+import { safeUUID } from '../../../utils/uuid';
 
 interface Activity {
   id: number;
@@ -132,7 +133,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
           hasFileUpload: false,
           metadata: {
             type: 'admin',
-            clientId: crypto.randomUUID(),
+            clientId: safeUUID(),
             label: 'Aktivität zuweisen'
           }
         });

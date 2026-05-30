@@ -35,6 +35,7 @@ import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
+import { safeUUID } from '../../../utils/uuid';
 // triggerRefresh nicht direkt nutzen — Modal rendert via useIonModal ausserhalb des Provider-Trees
 // Stattdessen onSuccess Callback nutzen, Parent-Page hat useLiveRefresh
 
@@ -155,7 +156,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           hasFileUpload: false,
           metadata: {
             type: 'admin',
-            clientId: crypto.randomUUID(),
+            clientId: safeUUID(),
             label: `Antrag ${selectedAction === 'approve' ? 'genehmigen' : 'ablehnen'}`
           }
         });

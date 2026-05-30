@@ -128,7 +128,7 @@ const ResetPasswordPage: React.FC = () => {
             </h1>
 
             <div className="app-auth-hero__divider">
-              <span className="app-auth-hero__divider-icon">◆</span>
+              <span className="app-auth-hero__divider-icon" />
             </div>
 
             <p className="app-auth-hero__subtitle--cosmic">

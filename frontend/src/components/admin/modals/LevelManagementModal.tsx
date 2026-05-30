@@ -84,6 +84,7 @@ import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
+import { safeUUID } from '../../../utils/uuid';
 
 // Level Icon Mapping
 const LEVEL_ICONS = {
@@ -250,7 +251,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
             body: payload,
             maxRetries: 5,
             hasFileUpload: false,
-            metadata: { type: 'admin', clientId: crypto.randomUUID(), label: 'Level bearbeiten' },
+            metadata: { type: 'admin', clientId: safeUUID(), label: 'Level bearbeiten' },
           });
           setSuccess('Level wird aktualisiert sobald du wieder online bist');
         } else {
@@ -260,7 +261,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
             body: payload,
             maxRetries: 5,
             hasFileUpload: false,
-            metadata: { type: 'admin', clientId: crypto.randomUUID(), label: 'Level erstellen' },
+            metadata: { type: 'admin', clientId: safeUUID(), label: 'Level erstellen' },
           });
           setSuccess('Level wird erstellt sobald du wieder online bist');
         }

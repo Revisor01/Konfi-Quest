@@ -32,6 +32,7 @@ import { CACHE_TTL } from '../../../services/offlineCache';
 import { SectionHeader } from '../../shared';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { safeUUID } from '../../../utils/uuid';
 
 interface DashboardConfig {
   show_konfirmation: boolean;
@@ -97,7 +98,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
         body: { [key]: value },
         maxRetries: 3,
         hasFileUpload: false,
-        metadata: { type: 'fire-and-forget', clientId: `order-${key}-${Date.now()}`, label: 'Dashboard-Reihenfolge' },
+        metadata: { type: 'fire-and-forget', clientId: safeUUID(), label: 'Dashboard-Reihenfolge' },
       });
       return;
     }
@@ -145,7 +146,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
         body: { [`dashboard_${key}`]: value },
         maxRetries: 3,
         hasFileUpload: false,
-        metadata: { type: 'fire-and-forget', clientId: `dashboard-${key}-${Date.now()}`, label: 'Dashboard-Einstellung' },
+        metadata: { type: 'fire-and-forget', clientId: safeUUID(), label: 'Dashboard-Einstellung' },
       });
       return;
     }
@@ -170,7 +171,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
         body: { [`teamer_dashboard_${key}`]: value },
         maxRetries: 3,
         hasFileUpload: false,
-        metadata: { type: 'fire-and-forget', clientId: `teamer-dashboard-${key}-${Date.now()}`, label: 'Teamer-Dashboard-Einstellung' },
+        metadata: { type: 'fire-and-forget', clientId: safeUUID(), label: 'Teamer-Dashboard-Einstellung' },
       });
       return;
     }

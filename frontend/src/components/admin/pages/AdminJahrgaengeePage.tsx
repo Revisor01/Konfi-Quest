@@ -51,6 +51,7 @@ import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader, ListSection } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { safeUUID } from '../../../utils/uuid';
 
 interface Jahrgang {
   id: number;
@@ -166,7 +167,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
         hasFileUpload: false,
         metadata: {
           type: 'admin',
-          clientId: crypto.randomUUID(),
+          clientId: safeUUID(),
           label: jahrgang ? 'Jahrgang bearbeiten' : 'Jahrgang erstellen'
         }
       });
