@@ -122,7 +122,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
     switch (category) {
       case 'gottesdienst': return '#3b82f6';
       case 'gemeinde': return '#059669';
-      default: return '#5b21b6';
+      default: return 'var(--app-color-konfis)';
     }
   };
 
@@ -149,8 +149,8 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
   // Typ-Badge Farbe (orange für Bonus, rot für Event)
   const getTypeBadgeColor = (sourceType: string) => {
     switch (sourceType) {
-      case 'bonus': return '#f59e0b';
-      case 'event': return '#dc2626';
+      case 'bonus': return 'var(--app-color-badges)';
+      case 'event': return 'var(--app-color-events)';
       default: return null;
     }
   };
@@ -262,7 +262,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
                                   <div className="app-list-item__title" style={{ paddingRight: typeBadgeColor ? '120px' : '70px' }}>{entry.title}</div>
                                   <div className="app-list-item__meta">
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={calendar} style={{ color: '#dc2626' }} />
+                                      <IonIcon icon={calendar} style={{ color: 'var(--app-color-events)' }} />
                                       {formatDate(entry.date)}
                                     </span>
                                   </div>

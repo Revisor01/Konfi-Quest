@@ -430,21 +430,21 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                   icon={checkmarkCircle}
                   title="Alle Badges erreicht!"
                   message="Du hast alle sichtbaren Badges eingesammelt."
-                  iconColor="var(--app-color-badges)"
+                  iconColor="#f59e0b"
                 />
               ) : selectedFilter === 'in_arbeit' ? (
                 <EmptyState
                   icon={trophyOutline}
                   title="Keine Badges in Arbeit"
                   message="Sammle Punkte, um den Fortschritt bei Badges zu starten!"
-                  iconColor="var(--app-color-badges)"
+                  iconColor="#f59e0b"
                 />
               ) : (
                 <EmptyState
                   icon={trophyOutline}
                   title="Keine Badges gefunden"
                   message="Sammle Punkte für deine ersten Badges!"
-                  iconColor="var(--app-color-badges)"
+                  iconColor="#f59e0b"
                 />
               )}
             </IonCardContent>

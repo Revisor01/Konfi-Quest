@@ -281,7 +281,7 @@ const TeamerMaterialPage: React.FC = () => {
               <IonCardContent className="app-card-content">
                 {selectedMaterial.events && selectedMaterial.events.length > 0 && (
                   <div className="app-info-row">
-                    <IonIcon icon={calendar} className="app-info-row__icon" style={{ color: '#dc2626' }} />
+                    <IonIcon icon={calendar} className="app-info-row__icon" style={{ color: 'var(--app-color-events)' }} />
                     <div>
                       <div className="app-info-row__label">
                         {selectedMaterial.events.length === 1 ? 'Event' : 'Events'}
@@ -294,7 +294,7 @@ const TeamerMaterialPage: React.FC = () => {
                 )}
                 {selectedMaterial.jahrgaenge && selectedMaterial.jahrgaenge.length > 0 && (
                   <div className="app-info-row">
-                    <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
+                    <IonIcon icon={people} className="app-info-row__icon" style={{ color: 'var(--app-color-konfis)' }} />
                     <div>
                       <div className="app-info-row__label">
                         {selectedMaterial.jahrgaenge.length === 1 ? 'Jahrgang' : 'Jahrgänge'}
@@ -535,7 +535,7 @@ const TeamerMaterialPage: React.FC = () => {
                                   )}
                                   {(mat.event_count || 0) > 0 && (
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={calendar} style={{ color: '#dc2626' }} />
+                                      <IonIcon icon={calendar} style={{ color: 'var(--app-color-events)' }} />
                                       {mat.event_count} {mat.event_count === 1 ? 'Event' : 'Events'}
                                     </span>
                                   )}

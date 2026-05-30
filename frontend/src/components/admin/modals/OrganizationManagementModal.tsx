@@ -585,7 +585,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   </div>
                 ) : (
                   <div style={{ textAlign: 'center', padding: '16px', color: '#666' }}>
-                    <IonIcon icon={alertCircleOutline} style={{ fontSize: '2rem', color: '#f59e0b', marginBottom: '8px', display: 'block' }} />
+                    <IonIcon icon={alertCircleOutline} style={{ fontSize: '2rem', color: 'var(--app-color-badges)', marginBottom: '8px', display: 'block' }} />
                     Kein Administrator vorhanden
                   </div>
                 )}
@@ -671,12 +671,12 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     <div style={{ fontSize: '0.75rem', color: '#666' }}>Konfis</div>
                   </div>
                   <div style={{ background: '#f8f9fa', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
-                    <IonIcon icon={personOutline} style={{ fontSize: '1.2rem', color: '#f59e0b', display: 'block', margin: '0 auto 4px' }} />
+                    <IonIcon icon={personOutline} style={{ fontSize: '1.2rem', color: 'var(--app-color-badges)', display: 'block', margin: '0 auto 4px' }} />
                     <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#667eea' }}>{organization.user_count || 0}</div>
                     <div style={{ fontSize: '0.75rem', color: '#666' }}>Team</div>
                   </div>
                   <div style={{ background: '#f8f9fa', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
-                    <IonIcon icon={flash} style={{ fontSize: '1.2rem', color: '#dc2626', display: 'block', margin: '0 auto 4px' }} />
+                    <IonIcon icon={flash} style={{ fontSize: '1.2rem', color: 'var(--app-color-events)', display: 'block', margin: '0 auto 4px' }} />
                     <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#667eea' }}>{organization.event_count || 0}</div>
                     <div style={{ fontSize: '0.75rem', color: '#666' }}>Events</div>
                   </div>

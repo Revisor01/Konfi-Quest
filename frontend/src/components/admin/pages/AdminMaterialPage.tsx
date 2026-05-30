@@ -306,7 +306,7 @@ const AdminMaterialPage: React.FC = () => {
                                       )}
                                       {(mat.event_count || 0) > 0 && (
                                         <span className="app-list-item__meta-item">
-                                          <IonIcon icon={calendar} style={{ color: '#dc2626' }} />
+                                          <IonIcon icon={calendar} style={{ color: 'var(--app-color-events)' }} />
                                           {mat.event_count} {mat.event_count === 1 ? 'Event' : 'Events'}
                                         </span>
                                       )}

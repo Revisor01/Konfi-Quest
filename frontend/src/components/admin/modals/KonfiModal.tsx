@@ -137,7 +137,7 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
           </IonListHeader>
           <IonCard className="app-card" style={{ background: 'rgba(91, 33, 182, 0.08)', border: '1px solid rgba(91, 33, 182, 0.2)' }}>
             <IonCardContent style={{ padding: '16px' }}>
-              <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5', color: '#5b21b6' }}>
+              <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5', color: 'var(--app-color-konfis)' }}>
                 Benutzername und Passwort werden automatisch generiert. Du kannst das Passwort später in der Detailansicht einsehen oder zurücksetzen.
               </p>
             </IonCardContent>

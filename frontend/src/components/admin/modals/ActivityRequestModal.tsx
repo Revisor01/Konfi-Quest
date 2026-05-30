@@ -246,7 +246,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
               <IonList>
                 {/* Konfi */}
                 <IonItem lines="inset">
-                  <IonIcon icon={personOutline} slot="start" style={{ color: '#5b21b6', fontSize: '1.2rem' }} />
+                  <IonIcon icon={personOutline} slot="start" style={{ color: 'var(--app-color-konfis)', fontSize: '1.2rem' }} />
                   <IonLabel>
                     <p>Konfi</p>
                     <h2>
@@ -272,7 +272,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                 {/* Punkte */}
                 {request.activity_points && (
                   <IonItem lines="inset">
-                    <IonIcon icon={trophyOutline} slot="start" style={{ color: '#f59e0b', fontSize: '1.2rem' }} />
+                    <IonIcon icon={trophyOutline} slot="start" style={{ color: 'var(--app-color-badges)', fontSize: '1.2rem' }} />
                     <IonLabel>
                       <p>Punkte</p>
                       <h2>{request.activity_points} {request.activity_points === 1 ? 'Punkt' : 'Punkte'}</h2>

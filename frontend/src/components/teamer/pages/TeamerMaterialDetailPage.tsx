@@ -218,7 +218,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                 <IonCardContent>
                   {material.events && material.events.length > 0 && (
                     <div className="app-info-row">
-                      <IonIcon icon={calendar} className="app-info-row__icon" style={{ color: '#dc2626' }} />
+                      <IonIcon icon={calendar} className="app-info-row__icon" style={{ color: 'var(--app-color-events)' }} />
                       <div>
                         <div className="app-info-row__label">{material.events.length === 1 ? 'Event' : 'Events'}</div>
                         <div className="app-info-row__value">{material.events.map(e => e.name).join(', ')}</div>
@@ -227,7 +227,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                   )}
                   {material.jahrgaenge && material.jahrgaenge.length > 0 && (
                     <div className="app-info-row">
-                      <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
+                      <IonIcon icon={people} className="app-info-row__icon" style={{ color: 'var(--app-color-konfis)' }} />
                       <div>
                         <div className="app-info-row__label">{material.jahrgaenge.length === 1 ? 'Jahrgang' : 'Jahrgänge'}</div>
                         <div className="app-info-row__value">{material.jahrgaenge.map(j => j.name).join(', ')}</div>

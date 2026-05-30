@@ -170,7 +170,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
     const total = getTotalPoints(konfi);
     const percent = targetTotal > 0 ? (total / targetTotal) * 100 : 0;
     if (percent >= 100) return '#059669'; // Dunkelgruen - Ziel erreicht
-    return '#5b21b6'; // Lila - Auf dem Weg (Sektionsfarbe)
+    return 'var(--app-color-konfis)'; // Lila - Auf dem Weg (Sektionsfarbe)
   };
 
   return (
@@ -463,7 +463,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                                 {/* Gesamt */}
                                 <div>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                                    <span style={{ fontSize: '0.7rem', color: '#5b21b6', fontWeight: '700' }}>Gesamt</span>
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--app-color-konfis)', fontWeight: '700' }}>Gesamt</span>
                                     <span style={{ fontSize: '0.7rem', color: '#666', fontWeight: '600' }}>
                                       {totalPoints}/{targetTotal}
                                       {percentTotal > 100 && <span style={{ color: '#059669', marginLeft: '4px' }}>({percentTotal}%)</span>}
@@ -471,7 +471,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                                   </div>
                                   <div className="app-progress-bar app-progress-bar--thick">
                                     <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(91, 33, 182, 0.12)' }}>
-                                      <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentTotal)}%`, backgroundColor: '#5b21b6' }} />
+                                      <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentTotal)}%`, backgroundColor: 'var(--app-color-konfis)' }} />
                                     </div>
                                   </div>
                                 </div>

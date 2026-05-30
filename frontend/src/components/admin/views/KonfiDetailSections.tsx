@@ -670,8 +670,8 @@ export const TeamerEventsSection = React.memo<TeamerEventsSectionProps>(({
                       className="app-corner-badge"
                       style={{
                         backgroundColor: event.booking_status === 'confirmed' ? '#059669'
-                          : event.booking_status === 'absent' ? '#dc2626'
-                          : '#f59e0b'
+                          : event.booking_status === 'absent' ? 'var(--app-color-events)'
+                          : 'var(--app-color-badges)'
                       }}
                     >
                       {event.booking_status === 'confirmed' ? 'Anwesend'
@@ -797,7 +797,7 @@ export const ActivitiesSection = React.memo<ActivitiesSectionProps>(({
                           <div
                             className="app-list-item__title app-list-item__title--badge-space"
                             style={{
-                              color: activity.isPending ? '#f59e0b' : undefined,
+                              color: activity.isPending ? 'var(--app-color-badges)' : undefined,
                               display: 'flex',
                               alignItems: 'center',
                               gap: '6px'
@@ -1094,7 +1094,7 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
             padding: '10px',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '1.2rem', fontWeight: '700', color: '#5b21b6' }}>{konfiHistory.totals.total}</div>
+            <div style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--app-color-konfis)' }}>{konfiHistory.totals.total}</div>
             <div style={{ fontSize: '0.65rem', color: '#6b7280', fontWeight: '600' }}>GESAMT</div>
           </div>
         </div>
@@ -1107,8 +1107,8 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
               const entryIcon = entry.source_type === 'bonus' ? giftOutline
                 : entry.source_type === 'event' ? calendarOutline
                 : entry.category === 'gottesdienst' ? starOutline : flashOutline;
-              const typeBadgeColor = entry.source_type === 'bonus' ? '#f59e0b'
-                : entry.source_type === 'event' ? '#dc2626'
+              const typeBadgeColor = entry.source_type === 'bonus' ? 'var(--app-color-badges)'
+                : entry.source_type === 'event' ? 'var(--app-color-events)'
                 : null;
               const typeBadgeLabel = entry.source_type === 'bonus' ? 'Bonus'
                 : entry.source_type === 'event' ? 'Event'
@@ -1199,7 +1199,7 @@ export const PromoteSection = React.memo<PromoteSectionProps>(({
         <div className="app-event-detail__add-button-wrapper">
           <IonButton
             expand="block"
-            style={{ '--background': '#5b21b6', '--background-hover': '#4c1d95' }}
+            style={{ '--background': 'var(--app-color-konfis)', '--background-hover': '#4c1d95' }}
             disabled={!isOnline}
             onClick={handlePromoteToTeamer}
           >
