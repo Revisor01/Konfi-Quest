@@ -36,7 +36,17 @@ section{padding:5rem 0}
 .rrow .rtext{font-size:.92rem;color:var(--ink-soft)}
 .rrow.empty .rtext{color:#cbd5e1;font-style:italic}
 
-@media(max-width:880px){.fgrid{grid-template-columns:1fr}}
+.badge-explain{margin-top:1.3rem;background:#fff;border:1px solid var(--line);border-radius:22px;padding:2rem;grid-column:1/-1}
+.be-head{display:flex;gap:1.1rem;align-items:flex-start;margin-bottom:1.5rem}
+.be-ic{width:54px;height:54px;border-radius:15px;background:var(--grad);display:grid;place-items:center;flex-shrink:0}
+.be-head h3{font-family:var(--display);font-size:1.4rem;font-weight:800;margin-bottom:.3rem}
+.be-head p{color:var(--ink-soft);font-size:1rem;max-width:64ch}
+.be-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.9rem}
+.be-item{background:var(--bg-soft);border:1px solid var(--line);border-radius:14px;padding:.9rem 1.1rem;display:flex;flex-direction:column}
+.be-item b{font-family:var(--display);font-size:1rem;font-weight:700}
+.be-item span{color:var(--ink-soft);font-size:.86rem}
+.be-item.secret{background:linear-gradient(120deg,rgba(91,33,182,.08),rgba(6,182,212,.08));border-color:transparent}
+@media(max-width:880px){.fgrid{grid-template-columns:1fr}.be-grid{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -59,6 +69,20 @@ section{padding:5rem 0}
     <div class="rrow teamer"><span class="rlabel"><span class="dot" style="background:#0891b2"></span>Teamer</span><span class="rtext">eigene Punkte im Blick</span></div>
     <div class="rrow leitung"><span class="rlabel"><span class="dot" style="background:#5b21b6"></span>Leitung</span><span class="rtext">vergeben + Ziele &amp; Typen festlegen</span></div>
    </div>
+   <!-- PUNKTE-VERLAUF -->
+   <div class="fcard">
+    <div class="fcard-head"><span class="fic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg></span><h3>Punkte-Verlauf</h3></div>
+    <div class="rrow konfi"><span class="rlabel"><span class="dot" style="background:#7c3aed"></span>Konfi</span><span class="rtext">jeder Punkt nachvollziehbar mit Datum</span></div>
+    <div class="rrow teamer"><span class="rlabel"><span class="dot" style="background:#0891b2"></span>Teamer</span><span class="rtext">eigene Historie einsehen</span></div>
+    <div class="rrow leitung"><span class="rlabel"><span class="dot" style="background:#5b21b6"></span>Leitung</span><span class="rtext">kompletter Verlauf pro Konfi</span></div>
+   </div>
+   <!-- BONUSPUNKTE -->
+   <div class="fcard">
+    <div class="fcard-head"><span class="fic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21l2.3-7.4-6-4.6h7.6z"/></svg></span><h3>Bonuspunkte</h3></div>
+    <div class="rrow konfi"><span class="rlabel"><span class="dot" style="background:#7c3aed"></span>Konfi</span><span class="rtext">erhalten für besonderes Engagement</span></div>
+    <div class="rrow teamer empty"><span class="rlabel"><span class="dot" style="background:#0891b2"></span>Teamer</span><span class="rtext">nicht relevant</span></div>
+    <div class="rrow leitung"><span class="rlabel"><span class="dot" style="background:#5b21b6"></span>Leitung</span><span class="rtext">vergeben, mit Begründung</span></div>
+   </div>
    <!-- AKTIVITÄTEN -->
    <div class="fcard">
     <div class="fcard-head"><span class="fic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15l2 2 4-4"/></svg></span><h3>Aktivitäten</h3></div>
@@ -76,16 +100,16 @@ section{padding:5rem 0}
    <!-- BADGES -->
    <div class="fcard">
     <div class="fcard-head"><span class="fic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polygon points="12 2 15 9 22 9 17 14 18 21 12 17 6 21 7 14 2 9 9 9"/></svg></span><h3>Badges &amp; Level</h3></div>
-    <div class="rrow konfi"><span class="rlabel"><span class="dot" style="background:#7c3aed"></span>Konfi</span><span class="rtext">freischalten (auch geheime)</span></div>
+    <div class="rrow konfi"><span class="rlabel"><span class="dot" style="background:#7c3aed"></span>Konfi</span><span class="rtext">Auszeichnungen freischalten</span></div>
     <div class="rrow teamer"><span class="rlabel"><span class="dot" style="background:#0891b2"></span>Teamer</span><span class="rtext">eigene Teamer-Badges</span></div>
-    <div class="rrow leitung"><span class="rlabel"><span class="dot" style="background:#5b21b6"></span>Leitung</span><span class="rtext">erstellen, Kategorien, Level</span></div>
+    <div class="rrow leitung"><span class="rlabel"><span class="dot" style="background:#5b21b6"></span>Leitung</span><span class="rtext">selbst erstellen &amp; vergeben</span></div>
    </div>
    <!-- CHAT -->
    <div class="fcard">
     <div class="fcard-head"><span class="fic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><h3>Chat</h3></div>
     <div class="rrow konfi"><span class="rlabel"><span class="dot" style="background:#7c3aed"></span>Konfi</span><span class="rtext">Jahrgang + an Team/Leitung</span></div>
     <div class="rrow teamer"><span class="rlabel"><span class="dot" style="background:#0891b2"></span>Teamer</span><span class="rtext">Team- &amp; Event-Chat</span></div>
-    <div class="rrow leitung"><span class="rlabel"><span class="dot" style="background:#5b21b6"></span>Leitung</span><span class="rtext">moderieren, Umfragen, Fotos</span></div>
+    <div class="rrow leitung"><span class="rlabel"><span class="dot" style="background:#5b21b6"></span>Leitung</span><span class="rtext">zu jedem Event ein Chat, Umfragen, Fotos</span></div>
    </div>
    <!-- JAHRGÄNGE -->
    <div class="fcard">
@@ -114,6 +138,21 @@ section{padding:5rem 0}
     <div class="rrow konfi empty"><span class="rlabel"><span class="dot" style="background:#7c3aed"></span>Konfi</span><span class="rtext">kein Zugriff</span></div>
     <div class="rrow teamer"><span class="rlabel"><span class="dot" style="background:#0891b2"></span>Teamer</span><span class="rtext">Zugriff: Pläne &amp; PDFs</span></div>
     <div class="rrow leitung"><span class="rlabel"><span class="dot" style="background:#5b21b6"></span>Leitung</span><span class="rtext">verwalten, allgemein &amp; pro Event</span></div>
+   </div>
+   <!-- BADGE-ERKLÄRBOX -->
+   <div class="badge-explain">
+    <div class="be-head">
+     <span class="be-ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polygon points="12 2 15 9 22 9 17 14 18 21 12 17 6 21 7 14 2 9 9 9"/></svg></span>
+     <div><h3>Was sind Badges?</h3><p>Digitale Abzeichen, die Konfis automatisch freischalten – für Meilensteine, Treue und besondere Aktionen. Manche sind sichtbar, manche geheim und überraschen.</p></div>
+    </div>
+    <div class="be-grid">
+     <div class="be-item"><b>Gottesdienst-Neuling</b><span>Der erste Gottesdienstbesuch</span></div>
+     <div class="be-item"><b>Dranbleiber:in</b><span>Mehrere Wochen in Folge dabei</span></div>
+     <div class="be-item"><b>Ausgewogen</b><span>Punkte in beiden Kategorien</span></div>
+     <div class="be-item"><b>Turbo-Konfi</b><span>Besonders früh besonders aktiv</span></div>
+     <div class="be-item"><b>1 Jahr Teamer:in</b><span>Treue im Ehrenamt</span></div>
+     <div class="be-item secret"><b>Geheime Badges</b><span>z.&nbsp;B. „Osterlachen" &amp; „Adventskalender"</span></div>
+    </div>
    </div>
   </div>
  </div>
