@@ -233,7 +233,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
           colors={{ primary: '#667eea', secondary: '#5a67d8' }}
           stats={[
             { value: Object.values(dashboardConfig).filter(Boolean).length, label: 'Konfi' },
-            { value: Object.values(teamerDashboardConfig).filter(Boolean).length, label: 'Teamer' }
+            { value: Object.values(teamerDashboardConfig).filter(Boolean).length, label: 'Team' }
           ]}
         />
 

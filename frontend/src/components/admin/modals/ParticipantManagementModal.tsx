@@ -227,7 +227,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
           await api.post(`/events/${eventId}/participants`, requestData);
         }
 
-        setSuccess(`${selectedKonfis.length} Teilnehmer hinzugefügt`);
+        setSuccess(`${selectedKonfis.length} Teilnehmer:innen hinzugefügt`);
         setSelectedKonfis([]);
         // Participants und verfügbare Konfis neu laden
         const eventResponse = await api.get(`/events/${eventId}`);
@@ -236,7 +236,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
         await loadAvailableKonfis(updatedParticipants);
         onSuccess();
       } catch (error) {
-        setError('Fehler beim Hinzufügen der Teilnehmer');
+        setError('Fehler beim Hinzufügen der Teilnehmer:innen');
       } finally {
         setLoading(false);
       }
@@ -247,7 +247,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
     if (!isOnline) return;
     try {
       await api.delete(`/events/${eventId}/bookings/${participantId}`);
-      setSuccess('Teilnehmer entfernt');
+      setSuccess('Teilnehmer:in entfernt');
       // Participants und verfügbare Konfis neu laden
       const eventResponse = await api.get(`/events/${eventId}`);
       const updatedParticipants: Participant[] = eventResponse.data.participants || [];
@@ -255,7 +255,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
       await loadAvailableKonfis(updatedParticipants);
       onSuccess();
     } catch (error) {
-      setError('Fehler beim Entfernen des Teilnehmers');
+      setError('Fehler beim Entfernen der Teilnehmer:in');
     }
   };
 
@@ -263,7 +263,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>{filterRole === 'teamer' ? 'Teamer:in hinzufügen' : filterRole === 'konfi' ? 'Kind hinzufügen' : 'Teilnehmer verwalten'}</IonTitle>
+          <IonTitle>{filterRole === 'teamer' ? 'Teamer:in hinzufügen' : filterRole === 'konfi' ? 'Kind hinzufügen' : 'Teilnehmer:innen verwalten'}</IonTitle>
           <IonButtons slot="start">
             <IonButton onClick={handleClose} disabled={loading} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} slot="icon-only" />

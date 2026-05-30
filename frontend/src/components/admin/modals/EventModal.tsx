@@ -389,14 +389,14 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
                       minuteValues="0,15,30,45" disabled={loading} />
                   </IonModal>
                   <IonItem lines="none">
-                    <IonLabel>Unbegrenzte Teilnehmer</IonLabel>
+                    <IonLabel>Unbegrenzte Teilnehmer:innen</IonLabel>
                     <IonToggle slot="end" className="app-toggle--events" checked={timeslot.max_participants === 0}
                       onIonChange={(e) => updateTimeslot(index, 'max_participants', e.detail.checked ? 0 : 5)}
                       disabled={loading} />
                   </IonItem>
                   {timeslot.max_participants !== 0 && (
                     <IonItem lines="none">
-                      <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Teilnehmer pro Slot</IonLabel>
+                      <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Teilnehmer:innen pro Slot</IonLabel>
                       <div className="app-range-row">
                         <span className="app-range-row__min">1</span>
                         <IonRange

@@ -142,7 +142,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
       viewerRef.current = { files, initialIndex: Math.max(0, clickedIdx) };
       presentFileViewer({ cssClass: 'file-viewer-modal' });
     } catch {
-      setError('Fehler beim Oeffnen der Datei');
+      setError('Fehler beim Öffnen der Datei');
     }
   };
 

@@ -662,7 +662,7 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
                         {slotStartFormatted} - {slotEndFormatted}
                       </div>
                       <div className="app-list-item__subtitle">
-                        {timeslot.registered_count || 0}/{timeslot.max_participants} Teilnehmer
+                        {timeslot.registered_count || 0}/{timeslot.max_participants} Teilnehmer:innen
                       </div>
                     </div>
                   </div>

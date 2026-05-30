@@ -306,7 +306,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
     }
 
     if (selectedParticipants.size === 0) {
-      setError('Bitte wählen Sie mindestens einen Teilnehmer aus');
+      setError('Bitte wähle mindestens eine:n Teilnehmer:in aus');
       return;
     }
 

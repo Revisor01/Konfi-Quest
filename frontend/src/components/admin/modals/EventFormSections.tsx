@@ -200,7 +200,7 @@ export const PointsParticipantsSection = React.memo<PointsParticipantsSectionPro
       <div className="app-section-icon app-section-icon--events">
         <IonIcon icon={people} />
       </div>
-      <IonLabel>Punkte{!formData.has_timeslots ? ' & Teilnehmer' : ''}</IonLabel>
+      <IonLabel>Punkte{!formData.has_timeslots ? ' & Teilnehmer:innen' : ''}</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
     <IonCardContent>
@@ -209,7 +209,7 @@ export const PointsParticipantsSection = React.memo<PointsParticipantsSectionPro
         {!formData.has_timeslots && (
           <>
             <IonItem lines="none">
-              <IonLabel>Unbegrenzte Teilnehmer</IonLabel>
+              <IonLabel>Unbegrenzte Teilnehmer:innen</IonLabel>
               <IonToggle
                 slot="end"
                 className="app-toggle--events"
@@ -220,7 +220,7 @@ export const PointsParticipantsSection = React.memo<PointsParticipantsSectionPro
             </IonItem>
             {formData.max_participants !== 0 && (
               <IonItem lines="none">
-                <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Teilnehmer</IonLabel>
+                <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Teilnehmer:innen</IonLabel>
                 <div className="app-range-row">
                   <span className="app-range-row__min">1</span>
                   <IonRange

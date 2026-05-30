@@ -137,7 +137,7 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
             <IonCardContent className="app-info-box">
               <p style={{ margin: 0 }}>
                 Deine Funktionsbeschreibung wird anderen Nutzern im Chat und an anderen Stellen angezeigt.
-                Sie ersetzt nicht deine Rolle (Admin, Teamer), sondern ergänzt sie.
+                Sie ersetzt nicht deine Rolle (Admin, Teamer:in), sondern ergänzt sie.
               </p>
               <p style={{ margin: '12px 0 0 0', fontSize: '0.85rem', fontStyle: 'italic' }}>
                 Beispiele: Pastor, Diakonin, Jugendmitarbeiter, Gemeindediakon, Pfarrerin

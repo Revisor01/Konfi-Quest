@@ -205,7 +205,7 @@ const TeamerMaterialPage: React.FC = () => {
       // Web-Fallback: In-App Viewer
       openInAppViewer(blob, file.original_name, mime);
     } catch {
-      setError('Fehler beim Oeffnen der Datei');
+      setError('Fehler beim Öffnen der Datei');
     }
   };
 

@@ -561,7 +561,7 @@ const FileViewerModal: React.FC<FileViewerModalProps> = (props) => {
       {/* Toolbar */}
       <div className="file-viewer-toolbar">
         <div className="file-viewer-toolbar-left">
-          <button className="file-viewer-btn" onClick={onClose} aria-label="Schliessen">
+          <button className="file-viewer-btn" onClick={onClose} aria-label="Schließen">
             <IonIcon icon={closeOutline} />
           </button>
         </div>

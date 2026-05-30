@@ -1204,7 +1204,7 @@ export const PromoteSection = React.memo<PromoteSectionProps>(({
             onClick={handlePromoteToTeamer}
           >
             <IonIcon icon={ribbon} slot="start" />
-            {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : 'Zum Teamer befördern'}
+            {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : 'Zur Teamer:in befördern'}
           </IonButton>
         </div>
       </IonCardContent>

@@ -162,7 +162,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                     <IonLabel>Aktiv</IonLabel>
                   </IonSegmentButton>
                   <IonSegmentButton value="gross">
-                    <IonLabel>Gross</IonLabel>
+                    <IonLabel>Groß</IonLabel>
                   </IonSegmentButton>
                   <IonSegmentButton value="klein">
                     <IonLabel>Klein</IonLabel>

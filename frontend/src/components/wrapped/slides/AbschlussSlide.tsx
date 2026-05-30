@@ -73,7 +73,7 @@ const AbschlussSlide: React.FC<AbschlussSlideProps> = ({ isActive, data, year })
           gap: '6px',
         }}>
           <IonIcon icon={peopleOutline} style={{ fontSize: '1rem' }} />
-          gestalte die naechste Generation mit
+          gestalte die nächste Generation mit
         </p>
       </div>
     </SlideBase>

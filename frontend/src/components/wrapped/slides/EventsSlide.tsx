@@ -27,7 +27,7 @@ const EventsSlide: React.FC<EventsSlideProps> = ({ isActive, events }) => {
         <p className="wrapped-subtitle">Events besucht</p>
         {events.total_available > 0 && (
           <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', marginTop: '4px' }}>
-            von {events.total_available} verfuegbaren
+            von {events.total_available} verfügbaren
           </p>
         )}
       </div>

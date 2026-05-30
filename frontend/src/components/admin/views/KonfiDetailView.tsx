@@ -446,8 +446,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
     if (!isOnline) return;
     if (!currentKonfi) return;
     presentAlert({
-      header: 'Zum Teamer befördern',
-      message: `<strong>${currentKonfi.name}</strong> wirklich zum Teamer befördern?<br><br>` +
+      header: 'Zur Teamer:in befördern',
+      message: `<strong>${currentKonfi.name}</strong> wirklich zur Teamer:in befördern?<br><br>` +
         `<strong>Punkte:</strong> ${getGottesdienstPoints()} Gottesdienst, ${getGemeindePoints()} Gemeinde<br>` +
         `<strong>Badges:</strong> ${currentKonfi.badgeCount || 0}<br><br>` +
         `Konfi-Punkte und Badges bleiben als Historie erhalten. ` +
@@ -460,7 +460,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           handler: async () => {
             try {
               await api.post(`/admin/konfis/${konfiId}/promote-teamer`);
-              setSuccess(`${currentKonfi.name} wurde zum Teamer befördert`);
+              setSuccess(`${currentKonfi.name} wurde zur Teamer:in befördert`);
               triggerRefresh('konfis');
               onBack();
             } catch (err: any) {

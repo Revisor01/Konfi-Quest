@@ -43,7 +43,7 @@ const UeberDasZielSlide: React.FC<UeberDasZielSlideProps> = ({ isActive, endspur
         </p>
       </div>
       <div className="wrapped-anim-fade wrapped-anim-delay-1">
-        <p className="wrapped-subtitle">Punkte ueber dem Ziel!</p>
+        <p className="wrapped-subtitle">Punkte über dem Ziel!</p>
       </div>
       <div className="wrapped-anim-fade wrapped-anim-delay-2">
         <p style={{ color: 'rgba(252, 211, 77, 0.7)', fontSize: '0.9rem', marginTop: '16px' }}>

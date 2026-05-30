@@ -359,7 +359,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     if (!isOnline) return;
     try {
       await api.delete(`/events/${eventId}/bookings/${participant.id}`);
-      setSuccess('Teilnehmer entfernt');
+      setSuccess('Teilnehmer:in entfernt');
       await loadEventData();
       triggerRefresh('events');
     } catch (error) {

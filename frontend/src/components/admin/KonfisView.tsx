@@ -177,7 +177,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
     <>
       <SectionHeader
         title={viewMode === 'teamer' ? 'Teamer:innen' : 'Konfis'}
-        subtitle={viewMode === 'teamer' ? 'Teamer:innen verwalten' : 'Konfirmanden verwalten'}
+        subtitle={viewMode === 'teamer' ? 'Teamer:innen verwalten' : 'Konfis verwalten'}
         icon={viewMode === 'teamer' ? ribbon : people}
         preset={viewMode === 'teamer' ? 'teamer' : 'konfis'}
         stats={viewMode === 'teamer' ? [
@@ -342,12 +342,12 @@ const KonfisView: React.FC<KonfisViewProps> = ({
       /* Konfis Liste */
       <ListSection
         icon={peopleOutline}
-        title="Konfirmanden"
+        title="Konfis"
         count={filteredAndSortedKonfis.length}
         iconColorClass="primary"
         isEmpty={filteredAndSortedKonfis.length === 0}
         emptyIcon={peopleOutline}
-        emptyTitle="Keine Konfirmanden gefunden"
+        emptyTitle="Keine Konfis gefunden"
         emptyMessage={searchTerm ? 'Versuche andere Suchbegriffe' : 'Noch keine Konfis angelegt'}
         emptyIconColor="#5b21b6"
       >
