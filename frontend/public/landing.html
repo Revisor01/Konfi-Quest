@@ -1,1116 +1,476 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Konfi Quest – Moderner Konfi-Unterricht, der ankommt</title>
-    <meta name="description" content="Konfi Quest bringt eure Konfi-Arbeit in die Lebenswelt der Jugendlichen. Punkte sammeln, Events buchen, Badges freischalten – modern, pädagogisch durchdacht, für die Gemeinde gemacht.">
-    <meta property="og:title" content="Konfi Quest – Die Konfizeit als Abenteuer">
-    <meta property="og:description" content="Moderner Konfi-Unterricht, der bei den Jugendlichen ankommt. Für Konfis, Teamer:innen und die ganze Gemeinde.">
-    <meta property="og:type" content="website">
-    <link rel="icon" type="image/png" href="/favicon.png">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            /* Markenwelt: Lila → Cyan (aus Auth-Redesign) */
-            --purple: #5b21b6;
-            --purple-dark: #4c1d95;
-            --cyan: #06b6d4;
-            --cyan-dark: #0891b2;
-            --accent: #22d3ee;
-            --text: #1a202c;
-            --text-light: #64748b;
-            --bg: #ffffff;
-            --bg-alt: #f8fafc;
-            --grad: linear-gradient(135deg, var(--purple) 0%, var(--cyan) 100%);
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            color: var(--text);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
-
-        /* Navigation */
-        nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 20px rgba(0,0,0,0.05);
-        }
-
-        .nav-brand {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-        }
-
-        .nav-brand img {
-            width: 32px;
-            height: 32px;
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 800;
-            background: var(--grad);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-            list-style: none;
-            align-items: center;
-        }
-
-        .nav-links a {
-            color: var(--text);
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-
-        .nav-links a:hover {
-            color: var(--purple);
-        }
-
-        .nav-cta {
-            background: var(--grad);
-            color: white !important;
-            padding: 0.6rem 1.5rem;
-            border-radius: 50px;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-
-        .nav-cta:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(91, 33, 182, 0.35);
-        }
-
-        /* Hero Section */
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            background: linear-gradient(135deg, #5b21b6 0%, #6d28d9 35%, #0891b2 100%);
-            padding: 120px 2rem 4rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        /* Glow oben-links + Akzent unten-rechts (Login-Stil) */
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: -20%;
-            left: -10%;
-            width: 60%;
-            height: 80%;
-            background: radial-gradient(circle, rgba(255,255,255,0.18) 0%, transparent 70%);
-            pointer-events: none;
-        }
-
-        .hero::after {
-            content: '';
-            position: absolute;
-            bottom: -30%;
-            right: -15%;
-            width: 70%;
-            height: 90%;
-            background: radial-gradient(circle, rgba(34,211,238,0.25) 0%, transparent 70%);
-            pointer-events: none;
-        }
-
-        /* Freigestelltes Logo als Wasserzeichen */
-        .hero-watermark {
-            position: absolute;
-            top: 50%;
-            right: -8%;
-            transform: translateY(-50%);
-            width: 50%;
-            max-width: 640px;
-            opacity: 0.06;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .hero-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4rem;
-            align-items: center;
-            position: relative;
-            z-index: 1;
-        }
-
-        .hero-badge {
-            display: inline-block;
-            background: rgba(255,255,255,0.15);
-            border: 1px solid rgba(255,255,255,0.25);
-            color: white;
-            padding: 0.4rem 1rem;
-            border-radius: 50px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-        }
-
-        .hero-text h1 {
-            font-size: clamp(2.5rem, 5vw, 3.8rem);
-            font-weight: 900;
-            color: white;
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
-        }
-
-        .hero-text h1 span {
-            display: block;
-            background: linear-gradient(90deg, #22d3ee, #a5f3fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .hero-text p {
-            font-size: 1.25rem;
-            color: rgba(255,255,255,0.9);
-            margin-bottom: 2rem;
-            max-width: 520px;
-        }
-
-        .hero-buttons {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 1rem 2rem;
-            border-radius: 50px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s;
-            font-size: 1rem;
-            cursor: pointer;
-            border: none;
-        }
-
-        .btn-primary {
-            background: white;
-            color: var(--purple);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
-        }
-
-        .btn-secondary {
-            background: rgba(255,255,255,0.15);
-            color: white;
-            border: 2px solid rgba(255,255,255,0.35);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255,255,255,0.25);
-            transform: translateY(-3px);
-        }
-
-        .hero-image {
-            display: flex;
-            justify-content: center;
-            position: relative;
-        }
-
-        .phone-mockup {
-            width: 280px;
-            height: 580px;
-            background: #0f172a;
-            border-radius: 40px;
-            padding: 12px;
-            box-shadow: 0 50px 100px rgba(0,0,0,0.35);
-            transform: perspective(1000px) rotateY(-10deg) rotateX(5deg);
-            transition: transform 0.5s;
-        }
-
-        .phone-mockup:hover {
-            transform: perspective(1000px) rotateY(0deg) rotateX(0deg);
-        }
-
-        .phone-screen {
-            width: 100%;
-            height: 100%;
-            background: #0f172a;
-            border-radius: 30px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .phone-screen img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            object-position: top;
-            position: absolute;
-            top: 0;
-            left: 0;
-            opacity: 0;
-            transition: opacity 0.5s ease-in-out;
-        }
-
-        .phone-screen img.active {
-            opacity: 1;
-        }
-
-        .carousel-dots {
-            position: absolute;
-            bottom: -25px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 5px;
-        }
-
-        .carousel-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.4);
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .carousel-dot.active {
-            background: white;
-        }
-
-        /* Promise / Versprechen Section */
-        .promise {
-            padding: 6rem 2rem;
-            background: var(--bg);
-            text-align: center;
-        }
-
-        .promise-inner {
-            max-width: 820px;
-            margin: 0 auto;
-        }
-
-        .promise h2 {
-            font-size: clamp(1.8rem, 3.5vw, 2.6rem);
-            font-weight: 800;
-            margin-bottom: 1.5rem;
-            line-height: 1.2;
-        }
-
-        .promise .lead {
-            font-size: 1.2rem;
-            color: var(--text-light);
-            margin-bottom: 1.5rem;
-        }
-
-        .promise strong {
-            color: var(--purple);
-        }
-
-        /* Section Header (generisch) */
-        .section-header {
-            text-align: center;
-            max-width: 720px;
-            margin: 0 auto 4rem;
-        }
-
-        .section-header h2 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            margin-bottom: 1rem;
-            background: var(--grad);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .section-header p {
-            color: var(--text-light);
-            font-size: 1.2rem;
-        }
-
-        /* Perspectives (Drei Zielgruppen) */
-        .perspectives {
-            padding: 6rem 2rem;
-            background: var(--bg-alt);
-        }
-
-        .perspectives-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .perspective-card {
-            background: white;
-            border-radius: 24px;
-            padding: 2.5rem;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.06);
-            border: 1px solid #eef1f5;
-            transition: all 0.3s;
-        }
-
-        .perspective-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 24px 60px rgba(91, 33, 182, 0.12);
-        }
-
-        .perspective-icon {
-            width: 64px;
-            height: 64px;
-            background: var(--grad);
-            border-radius: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .perspective-card h3 {
-            font-size: 1.5rem;
-            font-weight: 800;
-            margin-bottom: 0.4rem;
-        }
-
-        .perspective-card .tagline {
-            color: var(--cyan-dark);
-            font-weight: 600;
-            font-size: 0.95rem;
-            margin-bottom: 1.25rem;
-        }
-
-        .perspective-card ul {
-            list-style: none;
-        }
-
-        .perspective-card li {
-            position: relative;
-            padding-left: 1.75rem;
-            margin-bottom: 0.65rem;
-            color: var(--text-light);
-            font-size: 0.98rem;
-        }
-
-        .perspective-card li::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0.55em;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--grad);
-        }
-
-        /* Why / Vertrauen Section */
-        .why {
-            padding: 6rem 2rem;
-            background: var(--bg);
-        }
-
-        .why-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-
-        .why-card {
-            padding: 2rem;
-            border-radius: 20px;
-            background: var(--bg-alt);
-            border: 1px solid #eef1f5;
-        }
-
-        .why-card h4 {
-            font-size: 1.2rem;
-            font-weight: 700;
-            margin-bottom: 0.6rem;
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-        }
-
-        .why-card h4 .dot {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            background: var(--grad);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .why-card p {
-            color: var(--text-light);
-            font-size: 0.98rem;
-        }
-
-        /* Pricing */
-        .pricing {
-            padding: 6rem 2rem;
-            background: var(--bg-alt);
-        }
-
-        .pricing-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 1.5rem;
-            max-width: 1150px;
-            margin: 0 auto 2.5rem;
-        }
-
-        .price-card {
-            background: white;
-            border-radius: 20px;
-            padding: 2rem 1.5rem;
-            text-align: center;
-            border: 2px solid #eef1f5;
-            transition: all 0.3s;
-        }
-
-        .price-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 18px 50px rgba(91, 33, 182, 0.1);
-            border-color: var(--cyan);
-        }
-
-        .price-card.featured {
-            border-color: var(--purple);
-            position: relative;
-        }
-
-        .price-card.featured::after {
-            content: 'Beliebt';
-            position: absolute;
-            top: -12px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--grad);
-            color: white;
-            font-size: 0.75rem;
-            font-weight: 700;
-            padding: 0.25rem 0.9rem;
-            border-radius: 50px;
-        }
-
-        .price-card .tier {
-            font-weight: 700;
-            font-size: 1.05rem;
-            margin-bottom: 0.25rem;
-        }
-
-        .price-card .scope {
-            color: var(--text-light);
-            font-size: 0.85rem;
-            margin-bottom: 1rem;
-            min-height: 2.4em;
-        }
-
-        .price-card .amount {
-            font-size: 2rem;
-            font-weight: 900;
-            background: var(--grad);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .price-card .period {
-            color: var(--text-light);
-            font-size: 0.8rem;
-        }
-
-        .pricing-note {
-            text-align: center;
-            max-width: 700px;
-            margin: 0 auto;
-            color: var(--text-light);
-        }
-
-        .pricing-note strong {
-            color: var(--text);
-        }
-
-        /* How it works */
-        .how-it-works {
-            padding: 6rem 2rem;
-            background: var(--bg);
-        }
-
-        .steps {
-            display: flex;
-            justify-content: center;
-            gap: 3rem;
-            flex-wrap: wrap;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .step {
-            text-align: center;
-            max-width: 250px;
-        }
-
-        .step-number {
-            width: 60px;
-            height: 60px;
-            background: var(--grad);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: white;
-            margin: 0 auto 1.5rem;
-        }
-
-        .step h3 {
-            font-size: 1.2rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .step p {
-            color: var(--text-light);
-            font-size: 0.95rem;
-        }
-
-        /* Final CTA */
-        .final-cta {
-            padding: 6rem 2rem;
-            background: linear-gradient(135deg, #5b21b6 0%, #0891b2 100%);
-            color: white;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .final-cta::after {
-            content: '';
-            position: absolute;
-            bottom: -40%;
-            right: -10%;
-            width: 60%;
-            height: 100%;
-            background: radial-gradient(circle, rgba(34,211,238,0.25) 0%, transparent 70%);
-            pointer-events: none;
-        }
-
-        .final-cta-inner {
-            max-width: 720px;
-            margin: 0 auto;
-            position: relative;
-            z-index: 1;
-        }
-
-        .final-cta h2 {
-            font-size: clamp(1.8rem, 4vw, 2.8rem);
-            font-weight: 800;
-            margin-bottom: 1rem;
-        }
-
-        .final-cta p {
-            font-size: 1.2rem;
-            color: rgba(255,255,255,0.9);
-            margin-bottom: 2rem;
-        }
-
-        /* Footer */
-        footer {
-            background: #0f172a;
-            color: white;
-            padding: 4rem 2rem 2rem;
-        }
-
-        .footer-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 3rem;
-            margin-bottom: 3rem;
-        }
-
-        .footer-section h4 {
-            font-size: 1.1rem;
-            margin-bottom: 1rem;
-            color: var(--accent);
-        }
-
-        .footer-section a {
-            display: block;
-            color: rgba(255,255,255,0.7);
-            text-decoration: none;
-            margin-bottom: 0.5rem;
-            transition: color 0.3s;
-        }
-
-        .footer-section a:hover {
-            color: white;
-        }
-
-        .footer-bottom {
-            text-align: center;
-            padding-top: 2rem;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            color: rgba(255,255,255,0.5);
-        }
-
-        .footer-spirit {
-            margin-top: 0.5rem;
-            font-style: italic;
-            color: rgba(255,255,255,0.4);
-            font-size: 0.85rem;
-        }
-
-        .footer-spirit .bird {
-            color: #ef4444;
-            font-style: normal;
-        }
-
-        /* Responsive */
-        @media (max-width: 900px) {
-            .hero-content {
-                grid-template-columns: 1fr;
-                text-align: center;
-            }
-
-            .hero-text {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .hero-text p {
-                margin-left: auto;
-                margin-right: auto;
-                text-align: center;
-            }
-
-            .hero-buttons {
-                justify-content: center;
-            }
-
-            .hero-image {
-                order: -1;
-                display: flex;
-                justify-content: center;
-                width: 100%;
-            }
-
-            .hero-watermark {
-                display: none;
-            }
-
-            .phone-mockup {
-                width: 220px;
-                height: 460px;
-                transform: none;
-                margin: 0 auto;
-            }
-
-            .nav-links {
-                display: none;
-            }
-        }
-
-        @media (max-width: 600px) {
-            .hero {
-                padding: 100px 1rem 3rem;
-            }
-
-            .hero-text h1 {
-                font-size: 2rem;
-            }
-
-            .hero-text p {
-                font-size: 1rem;
-            }
-
-            .btn {
-                padding: 0.8rem 1.5rem;
-                font-size: 0.9rem;
-            }
-
-            .section-header h2,
-            .promise h2 {
-                font-size: 1.8rem;
-            }
-
-            .phone-mockup {
-                width: 200px;
-                height: 420px;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Konfi Quest – Die Konfizeit als Abenteuer</title>
+<meta name="description" content="Schluss mit Zetteln und Unterschriften. Konfi Quest macht moderne Konfi-Arbeit, die bei Jugendlichen ankommt: Punkte, Badges, Events, Chat – pädagogisch durchdacht, kirchlich sicher.">
+<meta property="og:title" content="Konfi Quest – Die Konfizeit als Abenteuer">
+<meta property="og:description" content="Schluss mit Zetteln. Moderne Konfi-Arbeit für Konfis, Teamer:innen und die ganze Gemeinde.">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+ --purple:#5b21b6;--purple7:#6d28d9;--violet:#7c3aed;
+ --cyan:#06b6d4;--cyan6:#0891b2;--accent:#22d3ee;
+ --ink:#0f172a;--ink-soft:#475569;--line:#e9edf3;
+ --bg:#fff;--bg-soft:#f6f8fc;
+ --grad:linear-gradient(120deg,#5b21b6,#7c3aed 45%,#06b6d4);
+ --display:'Plus Jakarta Sans','Inter',sans-serif;
+ --body:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--body);color:var(--ink);line-height:1.6;overflow-x:hidden;background:var(--bg);-webkit-font-smoothing:antialiased}
+a{text-decoration:none;color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding:0 1.5rem}
+
+/* reveal on scroll — nur aktiv wenn JS die .js-anim-Klasse setzt (sonst alles sichtbar) */
+.js-anim .reveal{opacity:0;transform:translateY(34px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+.js-anim .reveal.in{opacity:1;transform:none}
+.reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}.reveal.d3{transition-delay:.24s}.reveal.d4{transition-delay:.32s}
+@media(prefers-reduced-motion:reduce){.js-anim .reveal{opacity:1;transform:none;transition:none}}
+
+/* NAV */
+nav{position:fixed;inset:0 0 auto 0;z-index:100;background:rgba(255,255,255,.8);backdrop-filter:blur(16px);border-bottom:1px solid rgba(15,23,42,.06);transition:box-shadow .3s}
+.nav-in{max-width:1180px;margin:0 auto;padding:.8rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:.55rem;font-family:var(--display);font-weight:800;font-size:1.25rem}
+.brand img{width:34px;height:34px}
+.nav-links{display:flex;gap:2rem;align-items:center}
+.nav-links a{font-weight:500;color:var(--ink-soft);transition:color .2s}
+.nav-links a:hover{color:var(--purple)}
+.nav-cta{background:var(--grad);color:#fff!important;padding:.6rem 1.3rem;border-radius:999px;font-weight:600;transition:transform .2s,box-shadow .2s;background-size:160% 160%}
+.nav-cta:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(91,33,182,.32)}
+
+/* HERO */
+.hero{position:relative;background:radial-gradient(125% 125% at 78% -5%,#7c3aed,#5b21b6 38%,#3b1382 68%,#1c0a48 100%);color:#fff;overflow:hidden;padding:8.5rem 0 8rem}
+.glow{position:absolute;border-radius:50%;pointer-events:none}
+.glow.a{top:-16%;left:-8%;width:48%;height:64%;background:radial-gradient(circle,rgba(255,255,255,.15),transparent 64%)}
+.glow.b{bottom:-34%;right:-14%;width:66%;height:100%;background:radial-gradient(circle,rgba(34,211,238,.36),transparent 60%);animation:drift 14s ease-in-out infinite}
+.glow.c{top:24%;left:36%;width:30%;height:40%;background:radial-gradient(circle,rgba(124,58,237,.4),transparent 62%);animation:drift 18s ease-in-out 2s infinite reverse}
+@keyframes drift{0%,100%{transform:translate(0,0)}50%{transform:translate(-26px,30px)}}
+.grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(120% 80% at 50% 0%,#000,transparent 72%)}
+.hero-in{position:relative;z-index:2;display:grid;grid-template-columns:1.08fr .92fr;gap:3.2rem;align-items:center}
+.logo-hero{width:74px;height:74px;margin-bottom:1.4rem;filter:drop-shadow(0 10px 30px rgba(34,211,238,.4));animation:floaty 6s ease-in-out infinite}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+.eyebrow{display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);padding:.4rem 1rem;border-radius:999px;font-size:.82rem;font-weight:600;margin-bottom:1.3rem}
+.eyebrow .pip{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 0 rgba(34,211,238,.5);animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,211,238,.5)}70%{box-shadow:0 0 0 8px rgba(34,211,238,0)}100%{box-shadow:0 0 0 0 rgba(34,211,238,0)}}
+h1.hh{font-family:var(--display);font-weight:800;font-size:clamp(2.7rem,5.6vw,4.4rem);line-height:1.03;letter-spacing:-.022em;margin-bottom:1.3rem}
+.rot{display:inline-block;background:linear-gradient(90deg,#22d3ee,#a5f3fc);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;transition:opacity .25s}
+.hsub{font-size:1.2rem;color:rgba(255,255,255,.86);max-width:34ch;margin-bottom:2rem}
+.hcta{display:flex;gap:.9rem;flex-wrap:wrap;margin-bottom:2rem}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.95rem 1.7rem;border-radius:999px;font-weight:600;font-size:1rem;transition:transform .2s,box-shadow .2s;cursor:pointer;border:none}
+.btn-light{background:#fff;color:var(--purple)}
+.btn-light:hover{transform:translateY(-3px);box-shadow:0 18px 42px rgba(0,0,0,.3)}
+.btn-ghost{background:rgba(255,255,255,.12);color:#fff;border:1.5px solid rgba(255,255,255,.32)}
+.btn-ghost:hover{background:rgba(255,255,255,.2);transform:translateY(-3px)}
+.htrust{display:flex;gap:1.5rem;flex-wrap:wrap;font-size:.86rem;color:rgba(255,255,255,.72)}
+.htrust span{display:inline-flex;align-items:center;gap:.45rem}
+.hero-art{position:relative;display:flex;justify-content:center;perspective:1500px}
+.device{position:relative;width:300px;height:618px;background:linear-gradient(160deg,#1e293b,#0f172a);border-radius:46px;padding:13px;box-shadow:0 44px 90px -22px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.06) inset;transform:rotateY(-15deg) rotateX(6deg) rotate(1deg);transition:transform .6s}
+.device:hover{transform:rotateY(-3deg) rotateX(2deg)}
+.device::before{content:'';position:absolute;top:13px;left:50%;transform:translateX(-50%);width:38%;height:25px;background:#0f172a;border-radius:0 0 16px 16px;z-index:3}
+.screen{position:relative;width:100%;height:100%;border-radius:34px;overflow:hidden;background:#0f172a}
+.screen img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;opacity:0;transition:opacity .6s}
+.screen img.on{opacity:1}
+.fbadge{position:absolute;background:rgba(255,255,255,.97);color:var(--ink);border-radius:16px;padding:.7rem .9rem;box-shadow:0 18px 40px rgba(0,0,0,.24);display:flex;align-items:center;gap:.6rem;font-size:.82rem;font-weight:600;z-index:4}
+.fbadge .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:#fff;flex-shrink:0}
+.fb1{top:13%;left:-10%;animation:bob 4s ease-in-out infinite}
+.fb2{bottom:18%;right:-12%;animation:bob 4s ease-in-out .9s infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-11px)}}
+.wave{display:block;width:100%;height:70px;margin-top:-2px}
+
+/* PROBLEM (Zettel-Story) */
+.problem{background:var(--bg-soft);position:relative}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:stretch;max-width:980px;margin:0 auto}
+.scard{border-radius:24px;padding:2.4rem;position:relative;overflow:hidden}
+.scard.old{background:#fff;border:1px solid var(--line)}
+.scard.old .tag{color:#b91c1c}
+.scard.new{background:var(--ink);color:#fff;border:1px solid transparent}
+.scard.new::after{content:'';position:absolute;bottom:-40%;right:-10%;width:60%;height:120%;background:radial-gradient(circle,rgba(34,211,238,.25),transparent 60%)}
+.scard .tag{font-weight:700;font-size:.8rem;letter-spacing:.07em;text-transform:uppercase;margin-bottom:1rem;display:inline-flex;align-items:center;gap:.5rem;position:relative;z-index:1}
+.scard.new .tag{color:var(--accent)}
+.scard h3{font-family:var(--display);font-size:1.5rem;font-weight:800;margin-bottom:1.1rem;line-height:1.2;position:relative;z-index:1}
+.scard ul{list-style:none;position:relative;z-index:1}
+.scard li{padding-left:1.9rem;position:relative;margin-bottom:.7rem;font-size:.98rem}
+.scard.old li{color:var(--ink-soft)}
+.scard.new li{color:rgba(255,255,255,.82)}
+.scard li .mk{position:absolute;left:0;top:.1em;width:22px;height:22px;border-radius:50%;display:grid;place-items:center}
+.scard.old li .mk{background:#fee2e2;color:#b91c1c}
+.scard.new li .mk{background:rgba(34,211,238,.18);color:var(--accent)}
+.arrow-mid{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:54px;height:54px;border-radius:50%;background:var(--grad);display:grid;place-items:center;box-shadow:0 12px 30px rgba(91,33,182,.4);z-index:5}
+@media(max-width:760px){.arrow-mid{display:none}}
+
+/* SECTION SHELL */
+section.block{padding:6rem 0}
+.kicker{font-weight:700;font-size:.8rem;letter-spacing:.09em;text-transform:uppercase;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-align:center;margin-bottom:.7rem}
+.sec-h{font-family:var(--display);font-weight:800;font-size:clamp(1.9rem,3.5vw,2.7rem);letter-spacing:-.02em;text-align:center;line-height:1.12;margin-bottom:1rem}
+.sec-p{text-align:center;color:var(--ink-soft);font-size:1.14rem;max-width:60ch;margin:0 auto 3.4rem}
+
+/* STATS strip */
+.stats{background:var(--ink);color:#fff;position:relative;overflow:hidden}
+.stats::before{content:'';position:absolute;inset:0;background:radial-gradient(80% 120% at 80% 0,rgba(124,58,237,.4),transparent 55%)}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;position:relative;z-index:1;text-align:center}
+.stat .num{font-family:var(--display);font-size:clamp(2.4rem,5vw,3.4rem);font-weight:800;background:linear-gradient(90deg,#22d3ee,#a5f3fc);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.stat .lbl{color:rgba(255,255,255,.7);font-size:1rem;margin-top:.3rem}
+
+/* PROMISE */
+.promise-h{font-family:var(--display);font-weight:800;font-size:clamp(1.8rem,3.6vw,2.7rem);letter-spacing:-.02em;text-align:center;max-width:20ch;margin:0 auto 1.4rem;line-height:1.16}
+.promise-h em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.promise-body{max-width:62ch;margin:0 auto;text-align:center;color:var(--ink-soft);font-size:1.15rem}
+.promise-body b{color:var(--ink)}
+
+/* PERSPECTIVES */
+.persp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
+.pcard{background:#fff;border:1px solid var(--line);border-radius:24px;padding:2.2rem;transition:transform .25s,box-shadow .25s,border-color .25s;position:relative;overflow:hidden}
+.pcard::before{content:'';position:absolute;inset:0 0 auto 0;height:4px;background:var(--grad);transform:scaleX(0);transform-origin:left;transition:transform .3s}
+.pcard:hover{transform:translateY(-8px);box-shadow:0 26px 60px rgba(91,33,182,.13);border-color:transparent}
+.pcard:hover::before{transform:scaleX(1)}
+.picon{width:58px;height:58px;border-radius:16px;background:var(--grad);display:grid;place-items:center;margin-bottom:1.3rem}
+.pcard h3{font-family:var(--display);font-size:1.4rem;font-weight:800;margin-bottom:.25rem}
+.pcard .tag{color:var(--cyan6);font-weight:600;font-size:.92rem;margin-bottom:1.2rem}
+.pcard ul{list-style:none}
+.pcard li{position:relative;padding-left:1.7rem;margin-bottom:.6rem;color:var(--ink-soft);font-size:.96rem}
+.pcard li svg{position:absolute;left:0;top:.28em;color:var(--cyan6)}
+
+/* SECURITY */
+.sec-banner{background:var(--ink);color:#fff;border-radius:28px;padding:3rem;display:grid;grid-template-columns:auto 1fr;gap:2rem;align-items:center;position:relative;overflow:hidden}
+.sec-banner::after{content:'';position:absolute;bottom:-40%;right:-8%;width:50%;height:120%;background:radial-gradient(circle,rgba(34,211,238,.22),transparent 60%)}
+.shield{width:84px;height:84px;border-radius:22px;background:var(--grad);display:grid;place-items:center;flex-shrink:0;position:relative;z-index:1}
+.sec-banner h3{font-family:var(--display);font-size:1.6rem;font-weight:800;margin-bottom:.6rem;position:relative;z-index:1}
+.sec-banner p{color:rgba(255,255,255,.82);max-width:62ch;position:relative;z-index:1}
+.sec-banner b{color:#fff}
+
+/* WHY */
+.why-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4rem}
+.wcard{background:#fff;border:1px solid var(--line);border-radius:20px;padding:1.8rem;transition:transform .2s,box-shadow .2s}
+.wcard:hover{transform:translateY(-5px);box-shadow:0 16px 40px rgba(15,23,42,.07)}
+.wcard .wic{width:46px;height:46px;border-radius:13px;background:var(--grad);display:grid;place-items:center;margin-bottom:1rem}
+.wcard h4{font-family:var(--display);font-size:1.12rem;font-weight:700;margin-bottom:.45rem}
+.wcard p{color:var(--ink-soft);font-size:.95rem}
+
+/* PRICING */
+.price-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-bottom:2rem}
+.pc{background:#fff;border:2px solid var(--line);border-radius:20px;padding:1.7rem 1.1rem;text-align:center;transition:transform .2s,border-color .2s,box-shadow .2s}
+.pc:hover{transform:translateY(-6px);border-color:var(--cyan);box-shadow:0 18px 44px rgba(6,182,212,.13)}
+.pc.feat{border-color:var(--purple);position:relative}
+.pc.feat::after{content:'Beliebt';position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--grad);color:#fff;font-size:.72rem;font-weight:700;padding:.25rem .9rem;border-radius:999px}
+.pc .tier{font-family:var(--display);font-weight:700;font-size:1.05rem}
+.pc .scope{color:var(--ink-soft);font-size:.84rem;margin:.3rem 0 1rem;min-height:2.4em}
+.pc .amt{font-family:var(--display);font-size:2rem;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.pc .per{color:var(--ink-soft);font-size:.78rem}
+.trial{max-width:760px;margin:0 auto;background:linear-gradient(120deg,rgba(91,33,182,.06),rgba(6,182,212,.06));border:1px solid var(--line);border-radius:20px;padding:1.8rem 2rem;text-align:center}
+.trial h4{font-family:var(--display);font-size:1.25rem;font-weight:800;margin-bottom:.5rem}
+.trial p{color:var(--ink-soft)}
+.trial .pills{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap;margin-top:1rem}
+.pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:.4rem 1rem;font-weight:600;font-size:.9rem}
+.pill b{color:var(--purple)}
+
+/* STEPS */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem}
+.step{text-align:center;position:relative}
+.step .num{width:56px;height:56px;border-radius:50%;background:var(--grad);color:#fff;font-family:var(--display);font-weight:800;font-size:1.35rem;display:grid;place-items:center;margin:0 auto 1.1rem}
+.step h4{font-family:var(--display);font-weight:700;font-size:1.12rem;margin-bottom:.35rem}
+.step p{color:var(--ink-soft);font-size:.94rem}
+
+/* FINAL */
+.final{background:radial-gradient(125% 130% at 50% 0,#7c3aed,#5b21b6 44%,#1c0a48);color:#fff;text-align:center;position:relative;overflow:hidden}
+.final-h{font-family:var(--display);font-weight:800;font-size:clamp(2rem,4vw,3rem);letter-spacing:-.02em;margin-bottom:1rem;position:relative;z-index:1}
+.final p{font-size:1.2rem;color:rgba(255,255,255,.86);max-width:52ch;margin:0 auto 2.2rem;position:relative;z-index:1}
+.final .btn-light{position:relative;z-index:1}
+
+/* FOOTER */
+footer{background:#0b1220;color:#fff;padding:4rem 0 2rem}
+.foot-grid{display:grid;grid-template-columns:1.5fr 1fr 1.2fr 1fr;gap:2.5rem;margin-bottom:2.5rem}
+.foot-brand{display:flex;align-items:center;gap:.5rem;font-family:var(--display);font-weight:800;font-size:1.2rem;margin-bottom:.8rem}
+.foot-brand img{width:30px;height:30px}
+footer h4{font-size:.95rem;color:var(--accent);margin-bottom:.9rem;font-weight:700}
+footer a{display:block;color:rgba(255,255,255,.66);margin-bottom:.5rem;transition:color .2s;font-size:.95rem}
+footer a:hover{color:#fff}
+.foot-note{color:rgba(255,255,255,.6);font-size:.95rem}
+.foot-bottom{border-top:1px solid rgba(255,255,255,.1);padding-top:1.6rem;text-align:center;color:rgba(255,255,255,.5);font-size:.88rem}
+.spirit{margin-top:.4rem;font-style:italic;color:rgba(255,255,255,.4);font-size:.84rem}
+.spirit .bird{color:#ef4444;font-style:normal}
+
+@media(max-width:980px){
+ .hero-in{grid-template-columns:1fr;text-align:center;gap:2.5rem}
+ .hsub{max-width:none}.hcta,.htrust{justify-content:center}.logo-hero{margin-left:auto;margin-right:auto}
+ .hero-art{order:-1}.fbadge{display:none}.device{transform:none;width:248px;height:512px}
+ .split{grid-template-columns:1fr}.persp-grid,.why-grid{grid-template-columns:1fr}
+ .price-grid{grid-template-columns:repeat(2,1fr)}.steps{grid-template-columns:repeat(2,1fr)}
+ .stat-grid{grid-template-columns:1fr;gap:2.5rem}
+ .sec-banner{grid-template-columns:1fr;text-align:center;justify-items:center}
+ .foot-grid{grid-template-columns:1fr 1fr}.nav-links{display:none}
+}
+@media(max-width:520px){.price-grid,.steps,.foot-grid{grid-template-columns:1fr}section.block{padding:4rem 0}}
+</style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav>
-        <div class="nav-brand">
-            <img src="/assets/icon/logo-mark.png" alt="Konfi Quest Logo">
-            <div class="logo">Konfi Quest</div>
-        </div>
-        <ul class="nav-links">
-            <li><a href="#perspectives">Funktionen</a></li>
-            <li><a href="#pricing">Preise</a></li>
-            <li><a href="#how-it-works">So funktioniert's</a></li>
-            <li><a href="#contact" class="nav-cta">Kontakt</a></li>
-        </ul>
-    </nav>
+<nav>
+ <div class="nav-in">
+  <a href="#top" class="brand"><img src="/assets/icon/logo-mark.png" alt="">Konfi&nbsp;Quest</a>
+  <div class="nav-links">
+   <a href="#problem">Warum</a><a href="#features">Funktionen</a><a href="#sicherheit">Sicherheit</a><a href="#preise">Preise</a>
+   <a href="#kontakt" class="nav-cta">Kostenlos testen</a>
+  </div>
+ </div>
+</nav>
 
-    <!-- Hero Section -->
-    <section class="hero">
-        <img src="/assets/icon/logo-mark.png" alt="" class="hero-watermark">
-        <div class="hero-content">
-            <div class="hero-text">
-                <span class="hero-badge">Moderner Konfi-Unterricht</span>
-                <h1>
-                    Konfi-Unterricht,
-                    <span>der bei den Jugendlichen ankommt.</span>
-                </h1>
-                <p>
-                    Konfi Quest bringt eure Konfi-Arbeit in die Lebenswelt der Jugendlichen – als App, die sie wirklich öffnen. Gamification, Community und geistliche Impulse in einem. Pädagogisch gedacht, nicht aufgesetzt.
-                </p>
-                <div class="hero-buttons">
-                    <a href="#contact" class="btn btn-primary">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                        Kostenlos testen
-                    </a>
-                    <a href="#perspectives" class="btn btn-secondary">
-                        Das Konzept ansehen
-                    </a>
-                </div>
-            </div>
-            <div class="hero-image">
-                <div class="phone-mockup">
-                    <div class="phone-screen">
-                        <img src="/screen1.png" alt="Konfi Dashboard" class="active">
-                        <img src="/screen2.png" alt="Chat">
-                        <img src="/screen3.png" alt="Events">
-                        <img src="/screen4.png" alt="Konfis">
-                        <img src="/screen5.png" alt="Mehr">
-                        <img src="/screen6.png" alt="Konfi Detail">
-                        <img src="/screen7.png" alt="Badges">
-                        <img src="/screen8.png" alt="Aktivitäten">
-                        <img src="/screen9.png" alt="Login">
-                    </div>
-                    <div class="carousel-dots">
-                        <div class="carousel-dot active" data-index="0"></div>
-                        <div class="carousel-dot" data-index="1"></div>
-                        <div class="carousel-dot" data-index="2"></div>
-                        <div class="carousel-dot" data-index="3"></div>
-                        <div class="carousel-dot" data-index="4"></div>
-                        <div class="carousel-dot" data-index="5"></div>
-                        <div class="carousel-dot" data-index="6"></div>
-                        <div class="carousel-dot" data-index="7"></div>
-                        <div class="carousel-dot" data-index="8"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+<!-- HERO -->
+<header class="hero" id="top">
+ <div class="glow a"></div><div class="glow b"></div><div class="glow c"></div><div class="grid-bg"></div>
+ <div class="wrap hero-in">
+  <div>
+   <img src="/assets/icon/logo-mark.png" alt="Konfi Quest" class="logo-hero">
+   <span class="eyebrow"><span class="pip"></span>Moderne Konfi-Arbeit, die ankommt</span>
+   <h1 class="hh">Die Konfizeit als&nbsp;<span class="rot" id="rot">Abenteuer</span>.</h1>
+   <p class="hsub">Schluss mit Zetteln und Unterschriften. Eine App, die Jugendliche wirklich öffnen – und die euch als Team den Rücken freihält.</p>
+   <div class="hcta">
+    <a href="#kontakt" class="btn btn-light">30 Tage kostenlos testen</a>
+    <a href="#problem" class="btn btn-ghost">Wie das funktioniert</a>
+   </div>
+   <div class="htrust">
+    <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Datenschutz nach DSG-EKD</span>
+    <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Funktioniert offline</span>
+    <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>iOS &amp; Android</span>
+   </div>
+  </div>
+  <div class="hero-art">
+   <div class="fbadge fb1"><span class="ic" style="background:#f59e0b"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg></span>Badge freigeschaltet!</div>
+   <div class="fbadge fb2"><span class="ic" style="background:#06b6d4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></span>+5 Punkte Gottesdienst</div>
+   <div class="device"><div class="screen">
+    <img src="/screen1.png" class="on" alt="Dashboard"><img src="/screen2.png" alt="Chat"><img src="/screen3.png" alt="Events"><img src="/screen7.png" alt="Badges"><img src="/screen8.png" alt="Aktivitäten"><img src="/screen6.png" alt="Detail">
+   </div></div>
+  </div>
+ </div>
+ <svg class="wave" viewBox="0 0 1440 70" preserveAspectRatio="none"><path fill="#f6f8fc" d="M0,46 C320,8 1120,78 1440,32 L1440,70 L0,70 Z"/></svg>
+</header>
 
-    <!-- Promise / Versprechen -->
-    <section class="promise">
-        <div class="promise-inner">
-            <h2>Konfis erreicht man heute nicht mehr mit dem Hefter von 1995.</h2>
-            <p class="lead">
-                Jugendliche leben auf dem Smartphone – und genau dort holt Konfi Quest sie ab. Nicht als Spielerei, sondern als durchdachtes pädagogisches Konzept: Was Konfis ohnehin tun – Gottesdienste besuchen, sich engagieren, an Freizeiten teilnehmen – wird sichtbar, belohnt und gefeiert.
-            </p>
-            <p class="lead">
-                <strong>Das ist moderner Konfi-Unterricht.</strong> Punkte für echtes Engagement statt Anwesenheitspflicht. Badges und Level statt Abhaken. Ein Jahresrückblick, der bleibt, statt einer Urkunde in der Schublade. Und ihr als Team bekommt ein Werkzeug, das den organisatorischen Teil nebenbei mitträgt – damit Zeit bleibt für das Eigentliche: die Beziehung zu den Jugendlichen.
-            </p>
-        </div>
-    </section>
+<!-- PROBLEM: Zettel-Story -->
+<section class="block problem" id="problem">
+ <div class="wrap">
+  <p class="kicker reveal">Mal ehrlich</p>
+  <h2 class="sec-h reveal d1">Noch immer Zettel und Unterschriften?</h2>
+  <p class="sec-p reveal d2">Konfis rennen mit Laufzetteln herum, auf denen Pastor:innen jeden Gottesdienstbesuch abzeichnen. Zettel gehen verloren, niemand hat den Überblick. Das geht 2026 wirklich besser.</p>
+  <div class="split">
+   <div class="scard old reveal d1">
+    <span class="tag"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>Vorher</span>
+    <h3>Der Zettel-Marathon</h3>
+    <ul>
+     <li><span class="mk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>Laufzettel, die Konfis verlieren</li>
+     <li><span class="mk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>Unterschriften nach jedem Gottesdienst</li>
+     <li><span class="mk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>Excel-Listen, die niemand pflegt</li>
+     <li><span class="mk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>„Warst du eigentlich da?" – keiner weiß es</li>
+     <li><span class="mk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>Pflichttermine ohne Überblick</li>
+    </ul>
+   </div>
+   <div class="arrow-mid"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+   <div class="scard new reveal d2">
+    <span class="tag"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Mit Konfi Quest</span>
+    <h3>Ein Tipp – fertig</h3>
+    <ul>
+     <li><span class="mk"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg></span>Konfi reicht ein, ihr bestätigt mit einem Tipp</li>
+     <li><span class="mk"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg></span>Foto-Beleg statt Unterschrift</li>
+     <li><span class="mk"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg></span>Punktestand live, immer aktuell</li>
+     <li><span class="mk"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg></span>QR-Check-in bei jedem Event</li>
+     <li><span class="mk"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg></span>Pflichttermine auf einen Blick ausgewertet</li>
+    </ul>
+   </div>
+  </div>
+ </div>
+</section>
 
-    <!-- Perspectives / Drei Zielgruppen -->
-    <section class="perspectives" id="perspectives">
-        <div class="section-header">
-            <h2>Drei Perspektiven, eine App</h2>
-            <p>Jede:r sieht genau das, was er oder sie braucht.</p>
-        </div>
-        <div class="perspectives-grid">
-            <!-- Konfis -->
-            <div class="perspective-card">
-                <div class="perspective-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                </div>
-                <h3>Für Konfis</h3>
-                <div class="tagline">Die Konfizeit wird zum Spiel</div>
-                <ul>
-                    <li>Punkte sammeln in zwei Kategorien: Gottesdienst und Gemeinde</li>
-                    <li>Aktivitäten per Foto-Beleg einreichen</li>
-                    <li>Events buchen – zusagen, absagen, automatische Warteliste</li>
-                    <li>Badges, Level und geheime Auszeichnungen freischalten</li>
-                    <li>Jahrgangsranking – gesunder Wettbewerb, der motiviert</li>
-                    <li>Konfirmationstermine selbst buchen</li>
-                    <li>Chat mit Jahrgang, Team und Leitung</li>
-                    <li>Tageslosung als täglicher Impuls</li>
-                    <li>QR-Check-in bei Events</li>
-                    <li>Konfi Wrapped – der persönliche Jahresrückblick</li>
-                    <li>Vom Konfi zum Teamer – der nahtlose Übergang</li>
-                </ul>
-            </div>
-            <!-- Teamer -->
-            <div class="perspective-card">
-                <div class="perspective-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                </div>
-                <h3>Für Teamer:innen</h3>
-                <div class="tagline">Engagement, das gesehen wird</div>
-                <ul>
-                    <li>Eigenes Dashboard mit allem Relevanten</li>
-                    <li>Events mithelfen, Anwesenheit markieren, Teilnehmer:innen verwalten</li>
-                    <li>Aktivitäts-Anträge genehmigen oder ablehnen, mit Kommentar</li>
-                    <li>Juleica und Zertifikate verwalten – mit Ablaufdatum</li>
-                    <li>Material-Zugriff: Ablaufpläne und PDFs pro Event</li>
-                    <li>Teamer-only Events, getrennt von den Konfis</li>
-                    <li>Teamer-Chat: Team, Event, direkt</li>
-                    <li>Eigene Teamer-Badges</li>
-                    <li>Teamer Wrapped – auch das Ehrenamt bekommt seinen Rückblick</li>
-                </ul>
-            </div>
-            <!-- Leitung -->
-            <div class="perspective-card">
-                <div class="perspective-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 3v18h18"></path><path d="M18 9l-5 5-2-2-4 4"></path></svg>
-                </div>
-                <h3>Für die Leitung</h3>
-                <div class="tagline">Endlich der Überblick</div>
-                <ul>
-                    <li>Konfis verwalten – Punkte, Bonuspunkte, Aktivitäten, Profile</li>
-                    <li>Events anlegen – einzeln, als Serie, als Pflichtevent</li>
-                    <li>Anwesenheits-Matrix zeigt erfüllte Pflichttermine je Jahrgang</li>
-                    <li>Chat moderieren – mit Umfragen, Fotos, Videos, Likes</li>
-                    <li>Badges, Kategorien und Level erstellen</li>
-                    <li>Jahrgänge verwalten, inkl. Konfirmationsdatum und -ort</li>
-                    <li>Punkteziele festlegen, Punktetypen deaktivieren</li>
-                    <li>Material verwalten – für Team und Leitung (nicht für Konfis)</li>
-                    <li>Einladungslinks generieren</li>
-                    <li>Rollen anpassen – eigene Namen wie „Pfarrer:in"</li>
-                </ul>
-            </div>
-        </div>
-    </section>
+<!-- STATS -->
+<section class="block stats">
+ <div class="wrap">
+  <div class="stat-grid">
+   <div class="stat reveal"><div class="num"><span data-count="2">0</span></div><div class="lbl">Punkte-Kategorien: Gottesdienst &amp; Gemeinde</div></div>
+   <div class="stat reveal d1"><div class="num">0<span style="font-size:.5em"> </span>Zettel</div><div class="lbl">Alles digital, nichts geht verloren</div></div>
+   <div class="stat reveal d2"><div class="num"><span data-count="3">0</span> Welten</div><div class="lbl">Konfis, Teamer:innen &amp; Leitung – eine App</div></div>
+  </div>
+ </div>
+</section>
 
-    <!-- Why / Vertrauen -->
-    <section class="why">
-        <div class="section-header">
-            <h2>Warum Konfi Quest</h2>
-            <p>Pädagogisch durchdacht, technisch solide, kirchlich sicher.</p>
-        </div>
-        <div class="why-grid">
-            <div class="why-card">
-                <h4><span class="dot"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"></path></svg></span>Pädagogisch durchdacht</h4>
-                <p>Gamification ist kein Selbstzweck. Punkte, Badges und Level setzen Anreize für genau das Engagement, das ihr euch ohnehin wünscht – und würdigen es, statt es nur zu kontrollieren.</p>
-            </div>
-            <div class="why-card">
-                <h4><span class="dot"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"></rect><line x1="12" y1="18" x2="12" y2="18"></line></svg></span>Trifft die Lebenswelt</h4>
-                <p>Eine App, die sich anfühlt wie die Apps, die Konfis sowieso nutzen – mit Streaks, Rückblicken und Chat. Konfi-Arbeit dort, wo die Jugendlichen ohnehin sind.</p>
-            </div>
-            <div class="why-card">
-                <h4><span class="dot"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 11l-3 3-2-2"></path></svg></span>Vom Konfi zum Ehrenamt</h4>
-                <p>Konfi Quest hört nicht mit der Konfirmation auf. Der Übergang vom Konfi zum Teamer ist eingebaut – inklusive Juleica-Verwaltung und eigener Anerkennung. Nachwuchsgewinnung by design.</p>
-            </div>
-            <div class="why-card">
-                <h4><span class="dot"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span>Datenschutz nach DSG-EKD</h4>
-                <p>Entwickelt nach dem Datenschutzgesetz der EKD. Strikte Mandantentrennung: jede Gemeinde sieht ausschließlich ihre eigenen Daten. Server in Deutschland.</p>
-            </div>
-            <div class="why-card">
-                <h4><span class="dot"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"></path><path d="M22 2L12 12"></path></svg></span>Funktioniert auch ohne Netz</h4>
-                <p>Im Gemeindehaus kein Empfang? Kein Problem. Konfi Quest arbeitet offline-first – Eingaben werden gespeichert und synchronisiert, sobald wieder Netz da ist.</p>
-            </div>
-            <div class="why-card">
-                <h4><span class="dot"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 3h18v18H3z"></path><path d="M3 9h18M9 21V9"></path></svg></span>Skaliert mit euch</h4>
-                <p>Von der Einzelgemeinde über das Kirchspiel bis zum ganzen Kirchenkreis – sauber getrennt pro Organisation. Echte App für iPhone und Android.</p>
-            </div>
-        </div>
-    </section>
+<!-- PROMISE -->
+<section class="block">
+ <div class="wrap">
+  <p class="kicker reveal">Warum es funktioniert</p>
+  <h2 class="promise-h reveal d1">Konfis erreicht man nicht mit dem <em>Hefter von 1995</em>.</h2>
+  <p class="promise-body reveal d2">Jugendliche leben auf dem Smartphone – genau dort holt Konfi Quest sie ab. Was Konfis ohnehin tun, wird sichtbar, belohnt und gefeiert.<br><br><b>Das ist moderne Konfi-Arbeit:</b> Punkte für echtes Engagement statt Anwesenheitspflicht. Badges und Level statt Abhaken. Ein Jahresrückblick, der bleibt – damit für euch Zeit bleibt für das Eigentliche: die Beziehung zu den Jugendlichen.</p>
+ </div>
+</section>
 
-    <!-- Pricing -->
-    <section class="pricing" id="pricing">
-        <div class="section-header">
-            <h2>Faire Preise</h2>
-            <p>Eine Jahreslizenz. Keine versteckten Kosten. Kein Abo-Kleingedrucktes.</p>
-        </div>
-        <div class="pricing-grid">
-            <div class="price-card">
-                <div class="tier">Klein</div>
-                <div class="scope">bis 15 Konfis</div>
-                <div class="amount">49 €</div>
-                <div class="period">pro Jahr</div>
-            </div>
-            <div class="price-card">
-                <div class="tier">Standard</div>
-                <div class="scope">bis 50 Konfis</div>
-                <div class="amount">99 €</div>
-                <div class="period">pro Jahr</div>
-            </div>
-            <div class="price-card featured">
-                <div class="tier">Plus</div>
-                <div class="scope">bis 75 Konfis</div>
-                <div class="amount">139 €</div>
-                <div class="period">pro Jahr</div>
-            </div>
-            <div class="price-card">
-                <div class="tier">Groß</div>
-                <div class="scope">bis 100 Konfis</div>
-                <div class="amount">179 €</div>
-                <div class="period">pro Jahr</div>
-            </div>
-            <div class="price-card">
-                <div class="tier">Organisation</div>
-                <div class="scope">bis 4 Gemeinden (Multi-Org)</div>
-                <div class="amount">390 €</div>
-                <div class="period">pro Jahr</div>
-            </div>
-        </div>
-        <div class="pricing-note">
-            <p><strong>Kostenlos bis 5 Konfis. 30 Tage unverbindlich testen.</strong></p>
-            <p>Ihr seid ein ganzer Kirchenkreis (ab 5 Gemeinden)? Meldet euch – wir rechnen euch ein passendes Angebot durch.</p>
-        </div>
-    </section>
+<!-- PERSPECTIVES -->
+<section class="block" id="features" style="background:var(--bg-soft)">
+ <div class="wrap">
+  <p class="kicker reveal">Eine App, drei Welten</p>
+  <h2 class="sec-h reveal d1">Jede:r sieht genau das Richtige</h2>
+  <p class="sec-p reveal d2">Konfis erleben ein Spiel. Teamer:innen ein Werkzeug. Die Leitung den vollen Überblick.</p>
+  <div class="persp-grid">
+   <div class="pcard reveal d1">
+    <div class="picon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+    <h3>Für Konfis</h3><div class="tag">Die Konfizeit wird zum Spiel</div>
+    <ul>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Punkte: Gottesdienst &amp; Gemeinde</li>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Aktivitäten per Foto-Beleg einreichen</li>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Events buchen, absagen, Warteliste</li>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Badges, Level &amp; geheime Auszeichnungen</li>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Jahrgangsranking</li>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Konfirmationstermin selbst buchen</li>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Chat mit Jahrgang, Team &amp; Leitung</li>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Tageslosung als täglicher Impuls</li>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Konfi Wrapped – der Jahresrückblick</li>
+    </ul>
+   </div>
+   <div class="pcard reveal d2">
+    <div class="picon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+    <h3>Für Teamer:innen</h3><div class="tag">Engagement, das gesehen wird</div>
+    <ul>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Bei Events zusagen – sehen, wo man dabei ist</li>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Eigene Events erstellen &amp; mitorganisieren</li>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Aktivitäten direkt für Konfis eintragen</li>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Mehrere Jahrgänge gleichzeitig betreuen</li>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Juleica &amp; Zertifikate im Profil</li>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Teamer-only Events &amp; Team-Chat</li>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Eigene Teamer-Badges</li>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Teamer Wrapped fürs Ehrenamt</li>
+    </ul>
+   </div>
+   <div class="pcard reveal d3">
+    <div class="picon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 9l-5 5-2-2-4 4"/></svg></div>
+    <h3>Für die Leitung</h3><div class="tag">Der volle Überblick</div>
+    <ul>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Mehrere Jahrgänge parallel verwalten</li>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Konfis, Punkte &amp; Bonuspunkte verwalten</li>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Events: einzeln, Serie, Pflicht, Timeslots</li>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Anwesenheits-Matrix für Pflichttermine</li>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Anträge genehmigen, Chat moderieren</li>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Badges, Kategorien, Level &amp; Punkteziele</li>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Material für Team &amp; Leitung verwalten</li>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Einladungslinks pro Jahrgang</li>
+     <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Rollen anpassen (z.&nbsp;B. „Pfarrer:in")</li>
+    </ul>
+   </div>
+  </div>
+ </div>
+</section>
 
-    <!-- How it works -->
-    <section class="how-it-works" id="how-it-works">
-        <div class="section-header">
-            <h2>So einfach geht's</h2>
-            <p>In wenigen Schritten zur eigenen Konfi-App für eure Gemeinde.</p>
-        </div>
-        <div class="steps">
-            <div class="step">
-                <div class="step-number">1</div>
-                <h3>Kontakt aufnehmen</h3>
-                <p>Schreibt uns – wir richten eure Organisation in Konfi Quest ein.</p>
-            </div>
-            <div class="step">
-                <div class="step-number">2</div>
-                <h3>Team einladen</h3>
-                <p>Ladet eure Teamer:innen und Hauptamtlichen ein und legt Jahrgänge an.</p>
-            </div>
-            <div class="step">
-                <div class="step-number">3</div>
-                <h3>Konfis einladen</h3>
-                <p>Konfis treten per Einladungslink bei und laden die App – fertig.</p>
-            </div>
-            <div class="step">
-                <div class="step-number">4</div>
-                <h3>Loslegen</h3>
-                <p>Aktivitäten tracken, Events planen, Punkte vergeben – los geht's!</p>
-            </div>
-        </div>
-    </section>
+<!-- SECURITY -->
+<section class="block" id="sicherheit">
+ <div class="wrap">
+  <div class="sec-banner reveal">
+   <div class="shield"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
+   <div>
+    <h3>Sicher für die Jüngsten – beruhigend für die Eltern</h3>
+    <p>Konfis können sich <b>nicht gegenseitig privat anschreiben</b>. Direktnachrichten gehen ausschließlich an Teamer:innen und die Leitung. Niemand von außen hat Zugang: Beigetreten wird nur über den <b>Einladungslink der Gemeinde</b>. Keine Werbung, kein Tracking, kein Datenverkauf. Datenschutz nach dem <b>Datenschutzgesetz der EKD (DSG-EKD)</b>, jede Gemeinde streng getrennt.</p>
+   </div>
+  </div>
+ </div>
+</section>
 
-    <!-- Final CTA -->
-    <section class="final-cta" id="contact">
-        <div class="final-cta-inner">
-            <h2>Bereit für modernen Konfi-Unterricht?</h2>
-            <p>Probiert Konfi Quest mit eurem nächsten Jahrgang aus. Einrichtung in Minuten, Einladung per Link, los geht's. Ihr werdet sehen, wie anders Konfis reagieren, wenn ihre Konfizeit sich anfühlt wie etwas, das ihnen gehört.</p>
-            <a href="mailto:team@konfi-quest.de?subject=Konfi%20Quest%20f%C3%BCr%20unsere%20Gemeinde" class="btn btn-primary">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                Kostenlos starten
-            </a>
-        </div>
-    </section>
+<!-- WHY -->
+<section class="block" style="background:var(--bg-soft)">
+ <div class="wrap">
+  <p class="kicker reveal">Mehr als eine App</p>
+  <h2 class="sec-h reveal d1">Warum Gemeinden Konfi Quest wählen</h2>
+  <p class="sec-p reveal d2">Pädagogisch durchdacht, technisch solide, kirchlich sicher.</p>
+  <div class="why-grid">
+   <div class="wcard reveal d1"><div class="wic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg></div><h4>Pädagogisch durchdacht</h4><p>Gamification ist kein Selbstzweck. Punkte und Badges würdigen genau das Engagement, das ihr euch wünscht – statt es nur zu kontrollieren.</p></div>
+   <div class="wcard reveal d2"><div class="wic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="3"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div><h4>Trifft die Lebenswelt</h4><p>Fühlt sich an wie die Apps, die Konfis sowieso nutzen – mit Streaks, Rückblicken und Chat.</p></div>
+   <div class="wcard reveal d3"><div class="wic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11l-3 3-2-2"/></svg></div><h4>Vom Konfi zum Ehrenamt</h4><p>Der Übergang zum Teamer ist eingebaut – mit Juleica-Verwaltung. Nachwuchsgewinnung fürs Ehrenamt, by design.</p></div>
+   <div class="wcard reveal d1"><div class="wic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><h4>Datenschutz nach DSG-EKD</h4><p>Nach kirchlichem Datenschutzrecht entwickelt. Jede Gemeinde streng getrennt. Server in Deutschland.</p></div>
+   <div class="wcard reveal d2"><div class="wic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg></div><h4>Funktioniert ohne Netz</h4><p>Im Gemeindehaus kein Empfang? Eingaben werden gespeichert und synchronisiert, sobald wieder Netz da ist.</p></div>
+   <div class="wcard reveal d3"><div class="wic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg></div><h4>Skaliert mit euch</h4><p>Von der Einzelgemeinde über mehrere Jahrgänge bis zum Kirchenkreis – sauber getrennt pro Organisation.</p></div>
+  </div>
+ </div>
+</section>
 
-    <!-- Footer -->
-    <footer>
-        <div class="footer-content">
-            <div class="footer-section">
-                <h4>Konfi Quest</h4>
-                <p style="color: rgba(255,255,255,0.7); margin-bottom: 1rem;">
-                    Moderner Konfi-Unterricht, der bei den Jugendlichen ankommt.
-                </p>
-            </div>
-            <div class="footer-section">
-                <h4>Links</h4>
-                <a href="/login">Zur App</a>
-                <a href="/datenschutz">Datenschutz</a>
-                <a href="/konto-loeschen">Konto löschen</a>
-            </div>
-            <div class="footer-section">
-                <h4>Kontakt</h4>
-                <p style="color: rgba(255,255,255,0.7);">
-                    Pastor Simon Luthe<br>
-                    Marktstraße 2<br>
-                    25764 Wesselburen<br>
-                    <a href="mailto:team@konfi-quest.de">team@konfi-quest.de</a>
-                </p>
-            </div>
-            <div class="footer-section">
-                <h4>Download</h4>
-                <a href="#">Apple App Store</a>
-                <a href="#">Google Play Store</a>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <p>&copy; 2026 Konfi Quest</p>
-            <p class="footer-spirit">Made with <span class="bird">&#9679;</span> in Hennstedt · Friede. Schalom. Salam.</p>
-        </div>
-    </footer>
+<!-- PRICING -->
+<section class="block" id="preise">
+ <div class="wrap">
+  <p class="kicker reveal">Faire Preise</p>
+  <h2 class="sec-h reveal d1">Eine Jahreslizenz. Keine Überraschungen.</h2>
+  <p class="sec-p reveal d2">Kein Abo-Kleingedrucktes, keine versteckten Kosten.</p>
+  <div class="price-grid reveal d1">
+   <div class="pc"><div class="tier">Klein</div><div class="scope">bis 15 Konfis</div><div class="amt">49&nbsp;€</div><div class="per">pro Jahr</div></div>
+   <div class="pc"><div class="tier">Standard</div><div class="scope">bis 50 Konfis</div><div class="amt">99&nbsp;€</div><div class="per">pro Jahr</div></div>
+   <div class="pc feat"><div class="tier">Plus</div><div class="scope">bis 75 Konfis</div><div class="amt">139&nbsp;€</div><div class="per">pro Jahr</div></div>
+   <div class="pc"><div class="tier">Groß</div><div class="scope">bis 100 Konfis</div><div class="amt">179&nbsp;€</div><div class="per">pro Jahr</div></div>
+   <div class="pc"><div class="tier">Organisation</div><div class="scope">bis 4 Gemeinden</div><div class="amt">390&nbsp;€</div><div class="per">pro Jahr</div></div>
+  </div>
+  <div class="trial reveal d2">
+   <h4>30 Tage kostenlos testen</h4>
+   <p>Unverbindlich ausprobieren – mit eurem echten Team:</p>
+   <div class="pills"><span class="pill"><b>5</b>&nbsp;Konfis</span><span class="pill"><b>2</b>&nbsp;Admins</span><span class="pill"><b>2</b>&nbsp;Teamer:innen</span></div>
+   <p style="margin-top:1rem;font-size:.92rem">Ihr seid ein ganzer Kirchenkreis (ab 5 Gemeinden)? <a href="#kontakt" style="color:var(--purple);font-weight:600">Meldet euch</a> – wir rechnen euch ein Angebot durch.</p>
+  </div>
+ </div>
+</section>
 
-    <script>
-        // Screenshot Carousel
-        const images = document.querySelectorAll('.phone-screen img');
-        const dots = document.querySelectorAll('.carousel-dot');
-        let currentIndex = 0;
+<!-- STEPS -->
+<section class="block" style="background:var(--bg-soft)">
+ <div class="wrap">
+  <p class="kicker reveal">In Minuten startklar</p>
+  <h2 class="sec-h reveal d1">So einfach geht's los</h2>
+  <p class="sec-p reveal d2">Von der Anfrage bis zum ersten Punkt – ohne IT-Abteilung.</p>
+  <div class="steps">
+   <div class="step reveal d1"><div class="num">1</div><h4>Kontakt aufnehmen</h4><p>Schreibt uns – wir richten eure Organisation ein.</p></div>
+   <div class="step reveal d2"><div class="num">2</div><h4>Team einladen</h4><p>Teamer:innen und Leitung einladen, Jahrgänge anlegen.</p></div>
+   <div class="step reveal d3"><div class="num">3</div><h4>Konfis einladen</h4><p>Pro Jahrgang ein Einladungslink – Konfis treten bei.</p></div>
+   <div class="step reveal d4"><div class="num">4</div><h4>Loslegen</h4><p>Events planen, Punkte vergeben – das Abenteuer beginnt.</p></div>
+  </div>
+ </div>
+</section>
 
-        function showSlide(index) {
-            images.forEach(img => img.classList.remove('active'));
-            dots.forEach(dot => dot.classList.remove('active'));
-            images[index].classList.add('active');
-            dots[index].classList.add('active');
-            currentIndex = index;
-        }
+<!-- FINAL -->
+<section class="block final" id="kontakt">
+ <div class="glow b" style="bottom:-50%;right:-5%;width:55%;height:130%"></div>
+ <div class="wrap">
+  <h2 class="final-h reveal">Bereit für moderne Konfi-Arbeit?</h2>
+  <p class="reveal d1">Probiert Konfi Quest mit eurem nächsten Jahrgang. Ihr werdet sehen, wie anders Konfis reagieren, wenn sich ihre Konfizeit anfühlt wie etwas, das ihnen gehört.</p>
+  <a href="mailto:team@konfi-quest.de?subject=Konfi%20Quest%20f%C3%BCr%20unsere%20Gemeinde" class="btn btn-light reveal d2">Jetzt kostenlos starten</a>
+ </div>
+</section>
 
-        // Auto-advance every 3 seconds
-        setInterval(() => {
-            const nextIndex = (currentIndex + 1) % images.length;
-            showSlide(nextIndex);
-        }, 3000);
+<!-- FOOTER -->
+<footer>
+ <div class="wrap">
+  <div class="foot-grid">
+   <div>
+    <div class="foot-brand"><img src="/assets/icon/logo-mark.png" alt="">Konfi&nbsp;Quest</div>
+    <p class="foot-note">Moderne Konfi-Arbeit, die bei den Jugendlichen ankommt – für Konfis, Teamer:innen und die ganze Gemeinde.</p>
+   </div>
+   <div><h4>Produkt</h4><a href="#problem">Warum</a><a href="#features">Funktionen</a><a href="#sicherheit">Sicherheit</a><a href="#preise">Preise</a><a href="/login">Zur App</a></div>
+   <div><h4>Kontakt</h4><p class="foot-note">Pastor Simon Luthe<br>Marktstraße 2<br>25764 Wesselburen<br><a href="mailto:team@konfi-quest.de" style="display:inline">team@konfi-quest.de</a></p></div>
+   <div><h4>Rechtliches</h4><a href="/datenschutz">Datenschutz</a><a href="/konto-loeschen">Konto löschen</a></div>
+  </div>
+  <div class="foot-bottom">
+   <p>&copy; 2026 Konfi Quest</p>
+   <p class="spirit">Made with <span class="bird">&#9679;</span> in Hennstedt · Friede. Schalom. Salam.</p>
+  </div>
+ </div>
+</footer>
 
-        // Click on dots
-        dots.forEach(dot => {
-            dot.addEventListener('click', () => {
-                showSlide(parseInt(dot.dataset.index));
-            });
-        });
-    </script>
+<script>
+// Wort-Rotator
+const words=['Abenteuer','Erlebnis','Gemeinschaft','Quest'];let wi=0;const rot=document.getElementById('rot');
+setInterval(()=>{wi=(wi+1)%words.length;rot.style.opacity='0';setTimeout(()=>{rot.textContent=words[wi];rot.style.opacity='1';},250);},2600);
+// Screenshot-Carousel
+const shots=document.querySelectorAll('.screen img');let si=0;
+setInterval(()=>{shots[si].classList.remove('on');si=(si+1)%shots.length;shots[si].classList.add('on');},2800);
+// Nav-Schatten
+const navEl=document.querySelector('nav');addEventListener('scroll',()=>{navEl.style.boxShadow=scrollY>10?'0 4px 24px rgba(15,23,42,.07)':'none';});
+// Scroll-Reveal (Progressive Enhancement: erst JS schaltet Animation scharf)
+document.body.classList.add('js-anim');
+const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.14,rootMargin:'0px 0px -8% 0px'});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+// Count-up
+const cio=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){const el=e.target,to=+el.dataset.count;let n=0;const t=setInterval(()=>{n++;el.textContent=n;if(n>=to)clearInterval(t);},180);cio.unobserve(el);}});},{threshold:.5});
+document.querySelectorAll('[data-count]').forEach(el=>cio.observe(el));
+</script>
 </body>
 </html>
