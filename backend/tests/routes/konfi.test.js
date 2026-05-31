@@ -76,6 +76,31 @@ describe('Konfi Routes', () => {
 
       expect(res.status).toBe(401);
     });
+
+    it('Soft-geloeschter Mit-Konfi zaehlt NICHT ins Ranking und erscheint nicht', async () => {
+      // konfi1 und konfi2 sind beide im selben Jahrgang (jahrgang1)
+      // Vor Soft-Delete: total_in_jahrgang = 2
+      const before = await request(app)
+        .get('/api/konfi/dashboard')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(before.status).toBe(200);
+      expect(Number(before.body.total_in_jahrgang)).toBe(2);
+
+      // konfi2 soft-loeschen
+      await db.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [USERS.konfi2.id]);
+
+      const after = await request(app)
+        .get('/api/konfi/dashboard')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(after.status).toBe(200);
+      // Nur noch 1 aktiver Konfi im Jahrgang
+      expect(Number(after.body.total_in_jahrgang)).toBe(1);
+      // Der soft-geloeschte Konfi erscheint nicht im ranking-Array
+      const rankingIds = after.body.ranking.map((r) => r.id);
+      expect(rankingIds).not.toContain(USERS.konfi2.id);
+      expect(rankingIds).toContain(USERS.konfi1.id);
+    });
   });
 
   // ================================================================

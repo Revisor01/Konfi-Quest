@@ -62,7 +62,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
           WHERE c.name = 'Konfirmation' AND e.organization_id = $2
         ) ce ON ce.jahrgang_id = kp.jahrgang_id
-        WHERE u.id = $1 AND r.name = 'konfi'
+        WHERE u.id = $1 AND r.name = 'konfi' AND u.deleted_at IS NULL
       `;
       const { rows: [konfi] } = await db.query(konfiQuery, [konfiId, req.user.organization_id]);
 
@@ -107,7 +107,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         JOIN konfi_profiles kp ON u.id = kp.user_id
         JOIN roles r ON u.role_id = r.id
         JOIN jahrgaenge j ON kp.jahrgang_id = j.id
-        WHERE kp.jahrgang_id = $1 AND r.name = 'konfi'
+        WHERE kp.jahrgang_id = $1 AND r.name = 'konfi' AND u.deleted_at IS NULL
         ORDER BY points DESC
         LIMIT 3
       `;
@@ -142,13 +142,13 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           JOIN konfi_profiles kp ON u.id = kp.user_id
           JOIN roles r ON u.role_id = r.id
           JOIN jahrgaenge j ON kp.jahrgang_id = j.id
-          WHERE kp.jahrgang_id = $1 AND r.name = 'konfi'
+          WHERE kp.jahrgang_id = $1 AND r.name = 'konfi' AND u.deleted_at IS NULL
         ), TotalCount AS (
            SELECT COUNT(*) as total_in_jahrgang
            FROM users u2
            JOIN konfi_profiles kp2 ON u2.id = kp2.user_id
            JOIN roles r2 ON u2.role_id = r2.id
-           WHERE kp2.jahrgang_id = $1 AND r2.name = 'konfi'
+           WHERE kp2.jahrgang_id = $1 AND r2.name = 'konfi' AND u2.deleted_at IS NULL
         )
         SELECT r.rank_in_jahrgang, tc.total_in_jahrgang
         FROM MyRank r, TotalCount tc
@@ -348,7 +348,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         JOIN konfi_profiles kp ON u.id = kp.user_id
         JOIN jahrgaenge j ON kp.jahrgang_id = j.id
         JOIN roles r ON u.role_id = r.id
-        WHERE u.id = $1 AND r.name = 'konfi'
+        WHERE u.id = $1 AND r.name = 'konfi' AND u.deleted_at IS NULL
       `;
       const { rows: [konfi] } = await db.query(query, [konfiId]);
       
@@ -393,7 +393,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           FROM event_bookings 
           GROUP BY user_id
         ) event_stats ON u.id = event_stats.user_id
-        WHERE u.id = $1 AND r.name = 'konfi'
+        WHERE u.id = $1 AND r.name = 'konfi' AND u.deleted_at IS NULL
         GROUP BY badge_stats.badge_count, activity_stats.activity_count, event_stats.event_count
       `;
       const { rows: [stats] } = await db.query(statsQuery, [konfiId, req.user.organization_id]);
@@ -443,13 +443,13 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           JOIN konfi_profiles kp ON u.id = kp.user_id
           JOIN roles r ON u.role_id = r.id
           JOIN jahrgaenge j ON kp.jahrgang_id = j.id
-          WHERE kp.jahrgang_id = $1 AND r.name = 'konfi'
+          WHERE kp.jahrgang_id = $1 AND r.name = 'konfi' AND u.deleted_at IS NULL
         ), TotalCount AS (
            SELECT COUNT(*) as total_in_jahrgang
            FROM users u2
            JOIN konfi_profiles kp2 ON u2.id = kp2.user_id
            JOIN roles r2 ON u2.role_id = r2.id
-           WHERE kp2.jahrgang_id = $1 AND r2.name = 'konfi'
+           WHERE kp2.jahrgang_id = $1 AND r2.name = 'konfi' AND u2.deleted_at IS NULL
         )
         SELECT r.rank_in_jahrgang, tc.total_in_jahrgang
         FROM MyRank r, TotalCount tc
