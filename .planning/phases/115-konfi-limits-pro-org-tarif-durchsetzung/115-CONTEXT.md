@@ -56,10 +56,23 @@ Limit-Absicherung von Bulk-/CSV-/Invite-Anlage-Wegen (eigene Phase falls noetig)
   `users.deleted_at IS NOT NULL`) zaehlen NICHT mit — `WHERE deleted_at IS NULL` im COUNT.
 
 ### Anlage-Wege (WAYS)
-- **D-08:** In dieser Phase wird NUR das Einzel-Anlegen (POST-Konfi-Route) mit dem Limit-Check
-  abgesichert. Researcher prueft, ob weitere Wege existieren, ueber die Konfis entstehen
-  (Bulk-Anlage, CSV-Import, Invite-Code-Registrierung — Invite-Codes existieren laut Migration 079).
-  Falls vorhanden: als Deferred dokumentieren, NICHT in dieser Phase absichern (bewusste Scope-Grenze).
+- **D-08:** Konfis entstehen auf ZWEI verifizierten Wegen — BEIDE werden in dieser Phase abgesichert:
+  1. **Leitung legt an** — POST-Konfi-Route (`konfi-management.js:134`, requireAdmin). Voller
+     3-Stufen-Grace mit Bestaetigungsdialog (D-05).
+  2. **Konfi-Selbstregistrierung per Einladungscode** — `auth.js:648` (POST, holt konfi-Rolle,
+     legt user + konfi_profiles in Transaktion an). Dieser Weg laeuft NICHT ueber die POST-Route,
+     wurde aber im Discuss-Scan gefunden — ohne Absicherung koennten sich beliebig viele Konfis
+     selbst anmelden und den Tarif aushebeln.
+- **D-08b:** Invite-Code-Verhalten im Limit (KEIN Self-Confirm moeglich, da der sich anmeldende
+  Konfi keinen "Trotzdem anlegen"-Dialog der Leitung bestaetigen kann):
+  - **Unter Limit + Grace-Bereich** (count < max_konfis + 5): Selbstregistrierung erlaubt, zaehlt
+    zur Kulanz. KEIN Bestaetigungs-Klick noetig — die Leitung hat den Code bewusst ausgegeben.
+  - **Harte Grenze** (count >= max_konfis + 5): Selbstregistrierung wird abgelehnt (403/passender
+    Code) mit Hinweis "Bitte wende dich an deine Leitung — Tarif-Upgrade noetig". Kein Override.
+  - `max_konfis IS NULL`: kein Check (unbegrenzt). COUNT filtert `deleted_at IS NULL` (wie D-07).
+- **D-08c:** Bulk-/CSV-Import existiert NICHT im Code (verifiziert: kein bulk/csv/import-Treffer in
+  routes/). Org-Admin-Anlage (`users.js:180`, `organizations.js:216/535`) legt KEINE Konfis an
+  (andere Rollen) — nicht limit-relevant. Damit sind alle Konfi-Entstehungswege abgedeckt.
 
 ### Limit-Anzeige (UI)
 - **D-09:** Org-Leitung sieht ihren aktuellen Stand read-only ("X von Y Konfis") — z.B. in der
@@ -90,7 +103,11 @@ Limit-Absicherung von Bulk-/CSV-/Invite-Anlage-Wegen (eigene Phase falls noetig)
 - `backend/routes/organizations.js:291-305` — PUT Org bearbeiten (erlaubt org_admin fuer eigene Org
   via isOwnOrg-Check — DARF max_konfis NICHT enthalten)
 - `backend/routes/konfi-management.js:134` — POST Konfi anlegen (requireAdmin, validateCreateKonfi)
-  — hier kommt der 3-Stufen-Limit-Check hin
+  — hier kommt der 3-Stufen-Limit-Check hin (Weg 1)
+- `backend/routes/auth.js:648` — Konfi-Selbstregistrierung per Einladungscode (INSERT users +
+  konfi_profiles in Transaktion, holt konfi-Rolle) — zweiter Limit-Check hin (Weg 2, D-08b)
+- Gemeinsame Limit-Pruef-Logik: Planner sollte den COUNT-vs-max_konfis-Check als wiederverwendbare
+  Util/Helper bauen (analog deleteKonfiCascade aus Phase 114), damit beide Wege dieselbe Logik nutzen
 - `backend/database.js` — Migration-Runner (alphabetisch sortiert, letzte ist 082 aus Phase 114)
 - `backend/migrations/079_add_invite_codes.sql` — Invite-Codes existieren (moeglicher zusaetzlicher
   Anlage-Weg, Researcher prueft)
@@ -132,8 +149,8 @@ Limit-Absicherung von Bulk-/CSV-/Invite-Anlage-Wegen (eigene Phase falls noetig)
 <deferred>
 ## Deferred Ideas
 
-- Limit-Absicherung von Bulk-/CSV-Import + Invite-Code-Registrierung (falls solche Wege existieren)
-  — eigene Phase, sobald die Wege identifiziert sind (D-08).
+- (ERLEDIGT in dieser Phase: Invite-Code-Registrierung wird mit abgesichert, siehe D-08b.
+  Bulk-/CSV-Import existiert nicht im Code.)
 - Teamer-/Admin-Limits pro Tarif (aktuell unbegrenzt) — falls spaeter ein Tarif das braucht.
 - `plan`/`tier`-Spalte auf organizations (statt nur max_konfis) fuer komplexere Tarif-Modelle.
 - Kirchenkreis-Hierarchie (parent_organization_id, Bundle-Limits) — nach Launch.
