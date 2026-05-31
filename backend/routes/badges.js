@@ -425,20 +425,16 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
         // Transition-Datum ermitteln (Fallback-Kette)
         let startYear = null;
 
-        // 1. Versuch: user_role_history (falls Tabelle existiert)
-        try {
-          const { rows: [roleHistory] } = await db.query(
-            "SELECT created_at FROM user_role_history WHERE user_id = $1 AND new_role = 'teamer' ORDER BY created_at ASC LIMIT 1",
-            [userId]
-          );
-          if (roleHistory) {
-            startYear = new Date(roleHistory.created_at).getFullYear();
-          }
-        } catch (e) {
-          // Tabelle existiert nicht - Fallback
+        // 1. Versuch: users.teamer_since (Promotions-Datum, Migration 064)
+        const { rows: [teamerRow] } = await db.query(
+          "SELECT teamer_since FROM users WHERE id = $1",
+          [userId]
+        );
+        if (teamerRow && teamerRow.teamer_since) {
+          startYear = new Date(teamerRow.teamer_since).getFullYear();
         }
 
-        // 2. Fallback: älteste Teamer-Aktivität
+        // 2. Fallback: älteste Teamer-Aktivität (falls teamer_since NULL, z.B. Altdaten)
         if (!startYear) {
           const { rows: [firstAct] } = await db.query(
             `SELECT MIN(ua.completed_date) as min_date FROM user_activities ua
