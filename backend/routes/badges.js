@@ -4,6 +4,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors, commonValidations } = require('../middleware/validation');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
+const { computeCurrentStreak } = require('../utils/streakCalculation');
 
 // Badge criteria types
 const CRITERIA_TYPES = {
@@ -94,12 +95,6 @@ const CRITERIA_TYPES = {
     help: "Badge wird vergeben wenn der Teamer in X verschiedenen Jahren aktiv war (mind. 1 Aktivität oder Event pro Jahr). Inaktive Jahre werden übersprungen."
   }
 };
-
-function getISOWeeksInYear(year) {
-  const dec28 = new Date(Date.UTC(year, 11, 28));
-  const dayOfYear = Math.ceil((dec28 - new Date(Date.UTC(year, 0, 1))) / 86400000) + 1;
-  return Math.ceil((dayOfYear - (dec28.getUTCDay() || 7) + 10) / 7);
-}
 
 const checkAndAwardBadges = async (db, userId) => {
   try {
@@ -578,39 +573,8 @@ async function checkStreakCriteria(db, userId, organizationId, criteriaValue) {
   `;
   const { rows: streakResults } = await db.query(streakQuery, [userId, organizationId]);
 
-  function getYearWeek(date) {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    const dayNum = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-    return `${d.getUTCFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
-  }
-
-  const activityWeeks = new Set(streakResults.map(r => getYearWeek(new Date(r.date))).filter(week => week && !week.includes('NaN')));
-  const sortedWeeks = Array.from(activityWeeks).sort().reverse();
-
-  let currentStreak = 0;
-  if (sortedWeeks.length > 0) {
-    currentStreak = 1;
-    for (let i = 0; i < sortedWeeks.length - 1; i++) {
-      const thisWeek = sortedWeeks[i];
-      const nextWeek = sortedWeeks[i + 1];
-      const [year, week] = thisWeek.split('-W').map(Number);
-      let expectedYear = year;
-      let expectedWeek = week - 1;
-      if (expectedWeek === 0) {
-        expectedYear -= 1;
-        expectedWeek = getISOWeeksInYear(expectedYear);
-      }
-      const expectedWeekStr = `${expectedYear}-W${expectedWeek.toString().padStart(2, '0')}`;
-      if (nextWeek === expectedWeekStr) {
-        currentStreak++;
-      } else {
-        break;
-      }
-    }
-  }
+  // Wochen-Streak-Rechnung aus gemeinsamer Util (Single Source of Truth).
+  const currentStreak = computeCurrentStreak(streakResults.map(r => r.date));
   return currentStreak >= criteriaValue;
 }
 

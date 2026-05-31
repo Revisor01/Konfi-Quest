@@ -9,6 +9,7 @@ const liveUpdate = require('../utils/liveUpdate');
 const { fetchTageslosung } = require('../services/losungService');
 const { validateMagicBytes } = require('../middleware/uploadValidation');
 const { checkExistingBooking, getEventWithCounts, validateRegistrationWindow, determineBookingStatus, promoteFromWaitlist } = require('../utils/bookingUtils');
+const { computeCurrentStreak } = require('../utils/streakCalculation');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -1116,35 +1117,9 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
               `;
               const { rows: streakResults } = await db.query(streakQuery, [konfiId, req.user.organization_id]);
 
-              function getYearWeek(date) {
-                const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-                const dayNum = d.getUTCDay() || 7;
-                d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-                const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-                const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-                return `${d.getUTCFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
-              }
-
-              function getISOWeeksInYear(year) {
-                const dec28 = new Date(Date.UTC(year, 11, 28));
-                const dayOfYear = Math.ceil((dec28 - new Date(Date.UTC(year, 0, 1))) / 86400000) + 1;
-                return Math.ceil((dayOfYear - (dec28.getUTCDay() || 7) + 10) / 7);
-              }
-
-              const activityWeeks = new Set(streakResults.map(r => getYearWeek(new Date(r.date))).filter(w => w && !w.includes('NaN')));
-              const sortedWeeks = Array.from(activityWeeks).sort().reverse();
-
-              let currentStreak = 0;
-              if (sortedWeeks.length > 0) {
-                currentStreak = 1;
-                for (let i = 0; i < sortedWeeks.length - 1; i++) {
-                  const [year, week] = sortedWeeks[i].split('-W').map(Number);
-                  let ey = year, ew = week - 1;
-                  if (ew === 0) { ey -= 1; ew = getISOWeeksInYear(ey); }
-                  if (sortedWeeks[i + 1] === `${ey}-W${ew.toString().padStart(2, '0')}`) { currentStreak++; } else { break; }
-                }
-              }
-              progress.current = currentStreak;
+              // Wochen-Streak-Rechnung aus gemeinsamer Util (Single Source of Truth,
+              // identisch zur Badge-Wertung in badges.js checkStreakCriteria).
+              progress.current = computeCurrentStreak(streakResults.map(r => r.date));
               break;
             }
 
