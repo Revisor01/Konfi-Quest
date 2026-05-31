@@ -149,41 +149,93 @@ const AdminKonfisPage: React.FC = () => {
     });
   };
 
+  // Erfolgsbehandlung nach erfolgreichem Anlegen (auch nach Grace-Bestätigung wiederverwendet)
+  const handleKonfiCreated = async (response: any, konfiData: any) => {
+    // Automatisch Jahrgangschat erstellen/zuweisen
+    if (konfiData.jahrgang_id) {
+      await createOrJoinJahrgangChat(konfiData.jahrgang_id, response.data.id);
+    }
+
+    const tempPassword = response.data.temporaryPassword;
+    if (tempPassword) {
+      presentAlert({
+        header: 'Einmalpasswort',
+        subHeader: tempPassword,
+        message: `Konfi "${konfiData.display_name}" erstellt. Kopiere das Passwort und gib es dem Konfi weiter.`,
+        buttons: [
+          {
+            text: 'Kopieren',
+            handler: () => {
+              navigator.clipboard.writeText(tempPassword);
+              setSuccess('Passwort kopiert');
+              return false;
+            }
+          },
+          { text: 'Fertig', role: 'cancel' }
+        ]
+      });
+    } else {
+      setSuccess(`Konfi "${response.data.name}" erfolgreich hinzugefügt`);
+    }
+
+    // Sofortige Aktualisierung
+    await refreshKonfis();
+  };
+
+  // Grace-Bestätigungsdialog: legt den Konfi nach "Trotzdem anlegen" mit confirm-Flag erneut an
+  const presentGraceDialog = (konfiData: any, data: any) => {
+    const count = data?.count;
+    const limit = data?.limit;
+    const nextTier = data?.next_tier;
+    const standText =
+      count !== undefined && limit !== undefined ? `${count} von ${limit} Konfis` : 'das Konfi-Limit';
+    const tarifHinweis = nextTier
+      ? `Der nächste Tarif gibt dir Platz für bis zu ${nextTier} Konfis.`
+      : 'Eine höhere Tarif-Stufe ist nicht verfügbar.';
+
+    presentAlert({
+      header: 'Konfi-Limit erreicht',
+      message: `Du hast ${standText} angelegt. Du kannst noch bis zu 5 weitere Konfis anlegen, danach ist ein Tarif-Upgrade nötig. ${tarifHinweis}`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Trotzdem anlegen',
+          handler: async () => {
+            try {
+              const response = await api.post('/admin/konfis', { ...konfiData, confirm: true });
+              await handleKonfiCreated(response, konfiData);
+            } catch (err: any) {
+              setError(err.response?.data?.error || 'Fehler beim Hinzufügen des Konfis');
+            }
+          }
+        }
+      ]
+    });
+  };
+
   const handleAddKonfi = async (konfiData: any) => {
     try {
       const response = await api.post('/admin/konfis', konfiData);
-
-      // Automatisch Jahrgangschat erstellen/zuweisen
-      if (konfiData.jahrgang_id) {
-        await createOrJoinJahrgangChat(konfiData.jahrgang_id, response.data.id);
-      }
-
-      const tempPassword = response.data.temporaryPassword;
-      if (tempPassword) {
-        presentAlert({
-          header: 'Einmalpasswort',
-          subHeader: tempPassword,
-          message: `Konfi "${konfiData.display_name}" erstellt. Kopiere das Passwort und gib es dem Konfi weiter.`,
-          buttons: [
-            {
-              text: 'Kopieren',
-              handler: () => {
-                navigator.clipboard.writeText(tempPassword);
-                setSuccess('Passwort kopiert');
-                return false;
-              }
-            },
-            { text: 'Fertig', role: 'cancel' }
-          ]
-        });
-      } else {
-        setSuccess(`Konfi "${response.data.name}" erfolgreich hinzugefügt`);
-      }
-
-      // Sofortige Aktualisierung
-      await refreshKonfis();
+      await handleKonfiCreated(response, konfiData);
     } catch (err: any) {
-      if (err.response?.status === 409) {
+      const errorCode = err.response?.data?.error_code;
+
+      if (errorCode === 'limit_grace') {
+        // 409 Grace: Bestätigungsdialog mit Tarif-Hinweis und "Trotzdem anlegen"
+        presentGraceDialog(konfiData, err.response?.data);
+      } else if (errorCode === 'limit_exceeded') {
+        // 403 Hard-Block: nur Hinweis, kein Override
+        const nextTier = err.response?.data?.next_tier;
+        const tarifHinweis = nextTier
+          ? `Der nächste Tarif gibt dir Platz für bis zu ${nextTier} Konfis.`
+          : 'Bitte wende dich an den Support für ein passendes Angebot.';
+        presentAlert({
+          header: 'Tarif-Upgrade nötig',
+          message: `Das Konfi-Limit ist ausgeschöpft. Um weitere Konfis anzulegen, ist ein Tarif-Upgrade nötig. ${tarifHinweis}`,
+          buttons: [{ text: 'Verstanden', role: 'cancel' }]
+        });
+      } else if (err.response?.status === 409) {
+        // Username-Kollision (unverändert)
         setError('Ein Konfi mit diesem Namen existiert bereits. Bitte wählen Sie einen anderen Namen.');
       } else {
         setError(err.response?.data?.error || 'Fehler beim Hinzufügen des Konfis');
