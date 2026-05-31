@@ -129,3 +129,4 @@ docker-compose.yml
 docs/AuthKey_*.p8
 *.p8
 .claude/worktrees/
+.playwright-mcp/
