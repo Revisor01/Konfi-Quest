@@ -309,6 +309,76 @@ describe('Auth Routes', () => {
   });
 
   // ================================================================
+  // POST /api/auth/register-konfi — Konfi-Limit (Weg 2, Hard-Block, Plan 02)
+  // ================================================================
+  describe('POST /api/auth/register-konfi — Konfi-Limit (Weg 2)', () => {
+    // Org 1 hat im Seed 2 aktive Konfis. Invite-Code wird via API erzeugt.
+    const setLimit = async (max) => {
+      await db.query('UPDATE organizations SET max_konfis = $1 WHERE id = 1', [max]);
+    };
+    const addKonfis = async (n) => {
+      for (let i = 0; i < n; i++) {
+        await db.query(
+          `INSERT INTO users (username, display_name, password_hash, role_id, organization_id, is_active)
+           VALUES ($1, $2, 'x', 1, 1, true)`,
+          [`fillkonfi${i}`, `Fill Konfi ${i}`]
+        );
+      }
+    };
+    const makeInvite = async () => {
+      const orgAdminToken = generateToken('orgAdmin1');
+      const inviteRes = await request(app)
+        .post('/api/auth/invite-code')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ jahrgang_id: JAHRGAENGE.jahrgang1.id });
+      return inviteRes.body.invite_code;
+    };
+    const countKonfis = async () => {
+      const { rows } = await db.query(
+        `SELECT COUNT(*)::int AS c FROM users u JOIN roles r ON u.role_id = r.id
+         WHERE r.name = 'konfi' AND u.organization_id = 1 AND u.deleted_at IS NULL`
+      );
+      return rows[0].c;
+    };
+
+    it('Grace-Bereich -> Registrierung gelingt OHNE confirm (kein 409)', async () => {
+      await setLimit(2); // 2 Konfis == Limit -> Grace
+      const code = await makeInvite();
+      const res = await request(app)
+        .post('/api/auth/register-konfi')
+        .send({ invite_code: code, display_name: 'Grace Konfi', username: 'gracekonfi', password: 'TestPasswort123!' });
+
+      expect(res.status).toBe(200);
+      expect(typeof res.body.token).toBe('string');
+    });
+
+    it('Hard-Block (count >= limit+5) -> 403 mit error_code limit_exceeded, kein neuer User', async () => {
+      await setLimit(2);
+      await addKonfis(5); // 2 + 5 = 7 >= 2+5
+      const before = await countKonfis();
+      const code = await makeInvite();
+      const res = await request(app)
+        .post('/api/auth/register-konfi')
+        .send({ invite_code: code, display_name: 'Block Konfi', username: 'blockkonfi', password: 'TestPasswort123!' });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error_code).toBe('limit_exceeded');
+      const after = await countKonfis();
+      expect(after).toBe(before); // kein neuer User
+    });
+
+    it('max_konfis NULL -> Registrierung normal erfolgreich', async () => {
+      // Seed setzt max_konfis nicht -> NULL.
+      const code = await makeInvite();
+      const res = await request(app)
+        .post('/api/auth/register-konfi')
+        .send({ invite_code: code, display_name: 'Null Konfi', username: 'nullkonfi', password: 'TestPasswort123!' });
+
+      expect(res.status).toBe(200);
+    });
+  });
+
+  // ================================================================
   // POST /api/auth/delete-account (Self-Delete, D-01/D-02/D-03)
   // ================================================================
   describe('POST /api/auth/delete-account', () => {
