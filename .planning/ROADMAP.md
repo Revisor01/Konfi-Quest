@@ -307,3 +307,13 @@ Phase 100: Admin Zertifikate, Material, Dashboard (3 plans, complete)
 Phase 110: Konfi Events + Details (1 plan, 1 complete)
 
 </details>
+
+### Phase 115: Konfi-Limits pro Org (Tarif-Durchsetzung)
+
+**Goal:** Pro Organisation ein Konfi-Limit (`max_konfis`) durchsetzen, damit die Preistabelle technisch wirksam wird. Nur `super_admin` setzt das Limit pro Org (passend zum gekauften Tarif); Org-Admins sehen es nur. Gezaehlt werden ausschliesslich Konfis (Rolle konfi) — Teamer:innen + Admins unbegrenzt. Grace-Verhalten beim Konfi-Anlegen: unter Limit normal; ab Limit Hinweis-Banner; zwischen Limit und Limit+5 Anlegen nur mit aktiver Bestaetigung ("Trotzdem anlegen"); ab Limit+5 harte Grenze (verweigert, Upgrade noetig). Echte Multi-Tenancy bleibt (eine DB, organization_id) — KEINE neue DB pro Kunde.
+**Requirements**: super_admin setzt max_konfis pro Org; nur Konfis zaehlen; 3-Stufen-Grace (ok / grace+bestaetigen / hart blocken bei +5); Org-Admin sieht Limit read-only; Tests mitschreiben.
+**Depends on:** Phase 114
+**Plans:** 0 plans (noch nicht geplant)
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 115 to break down)
