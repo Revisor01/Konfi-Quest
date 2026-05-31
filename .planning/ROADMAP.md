@@ -12,10 +12,10 @@ Plans:
 
 ### Phase 116: Badge-System-Audit + Pflicht-Anwesenheits-Badges (Anzahl, Teamer-Jahre)
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Badge-System um zwei Typen erweitern + Prozent-Bug fixen. (1) Pflicht-Anwesenheits-Badge: neuer criteria_type `mandatory_event_count`, zaehlt nur ANZAHL besuchter Events mit mandatory=true (attendance_status='present'), Schwellwert frei + nachtraeglich korrigierbar, kein Entzug. (2) Teamer-Jahre-Badge (existiert): Startjahr-Fix auf users.teamer_since statt nicht-existenter user_role_history. (3) Prozent-Bug: fehlende Progress-Cases (event_count/teamer_year/mandatory_event_count) + Extra-Feld-Mismatch (specific_activity/activity_combination) in konfi.js beheben. KEINE Schema-Migration noetig. Audit: 116-AUDIT.md.
+**Requirements**: mandatory_event_count criteria_type (nur Events, nur Anzahl); Leitung setzt/korrigiert Schwellwert ohne Entzug; teamer_year Startjahr ab teamer_since; Prozent-Fix fehlende Cases + Extra-Feld-Mismatch; Teamer-vs-Konfi getrennt (target_role); Tests mitschreiben.
 **Depends on:** Phase 115
-**Plans:** 0 plans
+**Plans:** 0 plans (noch nicht geplant)
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 116 to break down)
+- [ ] TBD (run /gsd:plan-phase 116 to break down)
