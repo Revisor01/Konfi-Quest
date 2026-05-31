@@ -28,8 +28,9 @@
  --cat-badges:#f59e0b;--cat-chat:#06b6d4;--cat-material:#d97706;
  --cat-konfis:#5b21b6;--cat-level:#ec4899;--cat-bonus:#f97316;--cat-teamer:#be185d;
 }
-html{scroll-behavior:smooth}
-body{font-family:var(--body);color:var(--ink);line-height:1.6;overflow-x:hidden;background:var(--bg);-webkit-font-smoothing:antialiased}
+html{scroll-behavior:smooth;overflow-x:hidden;max-width:100%}
+body{font-family:var(--body);color:var(--ink);line-height:1.6;overflow-x:hidden;max-width:100vw;background:var(--bg);-webkit-font-smoothing:antialiased}
+.hero,section,header,.final{overflow-x:clip}
 a{text-decoration:none;color:inherit}
 .wrap{max-width:1180px;margin:0 auto;padding:0 1.5rem}
 
@@ -117,12 +118,22 @@ section.block{padding:6rem 0}
 .sec-h{font-family:var(--display);font-weight:800;font-size:clamp(1.9rem,3.5vw,2.7rem);letter-spacing:-.02em;text-align:center;line-height:1.12;margin-bottom:1rem}
 .sec-p{text-align:center;color:var(--ink-soft);font-size:1.14rem;max-width:60ch;margin:0 auto 3.4rem}
 
-/* STATS strip */
-.stats{background:var(--ink);color:#fff;position:relative;overflow:hidden}
-.stats::before{content:'';position:absolute;inset:0;background:radial-gradient(80% 120% at 80% 0,rgba(124,58,237,.4),transparent 55%)}
-.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;position:relative;z-index:1;text-align:center}
-.stat .num{font-family:var(--display);font-size:clamp(2.4rem,5vw,3.4rem);font-weight:800;background:linear-gradient(90deg,#22d3ee,#a5f3fc);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-.stat .lbl{color:rgba(255,255,255,.7);font-size:1rem;margin-top:.3rem}
+/* LUTHERROSE-Sektion (dunkel) */
+.rose{background:#0f172a;color:#fff;position:relative;overflow:hidden}
+.rose-glow{position:absolute;inset:0;background:radial-gradient(70% 110% at 22% 30%,rgba(124,58,237,.45),transparent 58%),radial-gradient(60% 100% at 88% 80%,rgba(6,182,212,.4),transparent 60%);pointer-events:none}
+.rose-in{position:relative;z-index:1;display:grid;grid-template-columns:.85fr 1.15fr;gap:3.5rem;align-items:center}
+.rose-art{position:relative;display:flex;justify-content:center;align-items:center}
+.rose-ring{position:absolute;width:300px;height:300px;border-radius:50%;border:1px solid rgba(255,255,255,.12);box-shadow:0 0 80px rgba(124,58,237,.4) inset}
+.rose-logo{position:relative;width:220px;height:220px;
+ /* weisses logo-mark in Verlauffarbe einfaerben via mask */
+ background:linear-gradient(135deg,#a78bfa,#22d3ee);
+ -webkit-mask:url(/assets/icon/logo-mark.png) center/contain no-repeat;
+ mask:url(/assets/icon/logo-mark.png) center/contain no-repeat;
+ filter:drop-shadow(0 16px 40px rgba(34,211,238,.35));animation:floaty 7s ease-in-out infinite}
+.rose-kicker{font-weight:700;font-size:.8rem;letter-spacing:.09em;text-transform:uppercase;background:linear-gradient(90deg,#a78bfa,#22d3ee);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.7rem}
+.rose-h{font-family:var(--display);font-weight:800;font-size:clamp(1.7rem,3.2vw,2.5rem);letter-spacing:-.02em;line-height:1.15;margin-bottom:1rem}
+.rose-p{color:rgba(255,255,255,.8);font-size:1.1rem;max-width:60ch}
+.rose-p b{color:#fff}
 
 /* PROMISE */
 .promise-h{font-family:var(--display);font-weight:800;font-size:clamp(1.8rem,3.6vw,2.7rem);letter-spacing:-.02em;text-align:center;max-width:20ch;margin:0 auto 1.4rem;line-height:1.16}
@@ -219,8 +230,8 @@ footer a{display:block;color:rgba(255,255,255,.66);margin-bottom:.5rem;transitio
 footer a:hover{color:#fff}
 .foot-note{color:rgba(255,255,255,.6);font-size:.95rem}
 .foot-bottom{border-top:1px solid rgba(255,255,255,.1);padding-top:1.6rem;text-align:center;color:rgba(255,255,255,.5);font-size:.88rem}
-.spirit{margin-top:.4rem;font-style:italic;color:rgba(255,255,255,.4);font-size:.84rem}
-.spirit .bird{color:#ef4444;font-style:normal}
+.spirit{margin-top:.4rem;font-style:italic;color:rgba(255,255,255,.4);font-size:.84rem;display:inline-flex;align-items:center;gap:.25rem;justify-content:center;flex-wrap:wrap}
+.spirit .bird{vertical-align:middle;transform:translateY(1px)}
 
 @media(max-width:980px){
  .hero-in{grid-template-columns:1fr;text-align:center;gap:2.5rem}
@@ -231,7 +242,7 @@ footer a:hover{color:#fff}
  .fbadge{display:none}.device{transform:none;width:240px;height:496px}
  .split{grid-template-columns:1fr}.fgrid,.why-grid{grid-template-columns:1fr}.be-grid{grid-template-columns:1fr 1fr}
  .price-grid{grid-template-columns:repeat(2,1fr)}.steps{grid-template-columns:repeat(2,1fr)}
- .stat-grid{grid-template-columns:1fr;gap:2.5rem}
+ .rose-in{grid-template-columns:1fr;text-align:center;gap:2rem}.rose-art{order:-1}.rose-p{margin-left:auto;margin-right:auto}.rose-ring{width:220px;height:220px}.rose-logo{width:160px;height:160px}
  .sec-banner{grid-template-columns:1fr;text-align:center;justify-items:center}
  .foot-grid{grid-template-columns:1fr 1fr}.nav-links{display:none}
 }
@@ -281,8 +292,6 @@ footer a:hover{color:#fff}
    </div>
   </div>
   <div class="hero-art">
-   <div class="fbadge fb1"><span class="ic" style="background:#f59e0b"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg></span>Badge freigeschaltet!</div>
-   <div class="fbadge fb2"><span class="ic" style="background:#06b6d4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></span>+5 Punkte Gottesdienst</div>
    <div class="device"><div class="screen">
     <img src="/screen1.png" class="on" alt="Dashboard"><img src="/screen2.png" alt="Chat"><img src="/screen3.png" alt="Events"><img src="/screen7.png" alt="Badges"><img src="/screen8.png" alt="Aktivitäten"><img src="/screen6.png" alt="Detail">
    </div></div>
@@ -325,13 +334,18 @@ footer a:hover{color:#fff}
  </div>
 </section>
 
-<!-- STATS -->
-<section class="block stats">
- <div class="wrap">
-  <div class="stat-grid">
-   <div class="stat reveal"><div class="num"><span data-count="2">0</span></div><div class="lbl">Punkte-Kategorien: Gottesdienst &amp; Gemeinde</div></div>
-   <div class="stat reveal d1"><div class="num">0<span style="font-size:.5em"> </span>Zettel</div><div class="lbl">Alles digital, nichts geht verloren</div></div>
-   <div class="stat reveal d2"><div class="num"><span data-count="3">0</span> Welten</div><div class="lbl">Konfis, Teamer:innen &amp; Leitung – eine App</div></div>
+<!-- LUTHERROSE -->
+<section class="block rose">
+ <div class="rose-glow"></div>
+ <div class="wrap rose-in">
+  <div class="rose-art">
+   <span class="rose-ring"></span>
+   <img src="/assets/icon/logo-mark.png" alt="Konfi Quest – Lutherrose mit Herz" class="rose-logo">
+  </div>
+  <div class="rose-copy">
+   <p class="rose-kicker">Das Zeichen dahinter</p>
+   <h2 class="rose-h">Eine Lutherrose – mit einem Herz darin</h2>
+   <p class="rose-p">Unser Logo greift die <b>Lutherrose</b> auf, das Glaubenszeichen Martin Luthers: ein schwarzes Kreuz in einem roten Herzen – „der Glaube ans Kreuz macht selig". Bei Konfi Quest rückt das <b>Herz in den Mittelpunkt</b>: Es geht um die jungen Menschen, ihre Gemeinschaft und ihren eigenen Weg im Glauben. Tradition und Aufbruch in einem Zeichen – genau das ist moderne Konfi-Arbeit.</p>
   </div>
  </div>
 </section>
@@ -494,8 +508,8 @@ footer a:hover{color:#fff}
   </div>
   <div class="trial reveal d2">
    <h4>30 Tage kostenlos testen</h4>
-   <p>Unverbindlich ausprobieren – mit eurem echten Team:</p>
-   <div class="pills"><span class="pill"><b>5</b>&nbsp;Konfis</span><span class="pill"><b>2</b>&nbsp;Admins</span><span class="pill"><b>2</b>&nbsp;Teamer:innen</span></div>
+   <p>Unverbindlich ausprobieren – mit einem echten Jahrgang:</p>
+   <div class="pills"><span class="pill"><b>30</b>&nbsp;Tage</span><span class="pill"><b>5</b>&nbsp;Konfis</span><span class="pill">ohne Risiko</span></div>
    <p style="margin-top:1rem;font-size:.92rem">Ihr seid ein ganzer Kirchenkreis (ab 5 Gemeinden)? <a href="#kontakt" style="color:var(--purple);font-weight:600">Meldet euch</a> – wir rechnen euch ein Angebot durch.</p>
   </div>
  </div>
@@ -540,7 +554,7 @@ footer a:hover{color:#fff}
   </div>
   <div class="foot-bottom">
    <p>&copy; 2026 Konfi Quest</p>
-   <p class="spirit">Made with <span class="bird">&#9679;</span> in Hennstedt · Friede. Schalom. Salam.</p>
+   <p class="spirit">Made with <svg class="bird" width="15" height="15" viewBox="0 0 24 24" fill="#ef4444" aria-label="Taube" role="img"><path d="M23 3c-1.5 1-3 1.2-4.5 1-.8 2-2.6 2.6-4 2.4 1.3.7 2 .6 3 .3-.6 1.4-2 2.8-4.2 3.2C9 11 5.5 9.6 3 6c-.6 2.4.1 4.6 1.6 6.2-.9-.1-1.7-.4-2.4-.9 0 2.2 1.5 4 3.7 4.5-.8.2-1.6.3-2.4.1.7 2 2.5 3.2 4.6 3.2C8 24.5 5.6 25 3 25c5.6 3.6 12.4 1.6 15.6-3.3 2-3 2.4-6 2.4-8.8 1-.7 1.8-1.6 2-2.6-.9.4-1.8.6-2.8.7 1-.6 1.8-1.6 2.2-2.8-1 .6-2 1-3.2 1.2C21.6 5.6 22.6 4.4 23 3z"/></svg> in Hennstedt · Friede. Schalom. Salam.</p>
   </div>
  </div>
 </footer>
