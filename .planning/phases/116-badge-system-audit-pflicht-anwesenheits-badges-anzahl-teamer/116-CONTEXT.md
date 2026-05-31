@@ -67,6 +67,12 @@ Schwellwert-Anhebung, neue prozentuale Pflicht-Anzeige (nur absolute Anzahl).
   (konfi.js:906 filtert target_role='konfi') und ob Teamer ueberhaupt einen Progress-Endpoint
   haben. Falls Teamer-Badges keinen Progress bekommen, ist der teamer_year-Progress dort zu
   ergaenzen (Planner mappt die genaue Stelle: frontend teamer BadgesView + zugehoeriger Endpoint).
+  Befund (Plan-Check): Teamer-Progress laeuft ueber separaten Endpoint teamer.js:257-373.
+- **D-13:** (Plan-Check-Ergaenzung, gleicher Bug-Kreis) Bestehender activity_count-Progress-Mismatch
+  mitfixen: konfi.js:971-977 zaehlt nur user_activities, die Wertung (badges.js:266) addiert
+  activityCount + eventCount. Da wir den Progress-switch ohnehin anfassen (D-10), wird der
+  activity_count-Progress um die Event-Zaehlung ergaenzt, sodass Wertung == Progress. Gehoert zum
+  Phasen-Ziel "Prozent-Bug fixen".
 
 ### Claude's Discretion
 - Genaue Migration-Nummer falls eine noetig ist (vermutlich KEINE — kein Schema-Umbau, nur Code).
