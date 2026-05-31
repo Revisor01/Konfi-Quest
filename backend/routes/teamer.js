@@ -143,7 +143,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         JOIN roles r ON u.role_id = r.id
         LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
         LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
-        WHERE r.name = 'konfi' AND u.organization_id = $1 ${jahrgangFilter}
+        WHERE r.name = 'konfi' AND u.organization_id = $1 AND u.deleted_at IS NULL ${jahrgangFilter}
         ORDER BY j.name DESC, u.display_name
       `;
 

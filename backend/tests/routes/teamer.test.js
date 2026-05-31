@@ -99,6 +99,27 @@ describe('Teamer Routes', () => {
 
       expect(res.status).toBe(403);
     });
+
+    it('Ein soft-geloeschter Konfi erscheint NICHT in der Teamer-Konfi-Uebersicht', async () => {
+      // Vorher: beide Konfis der Org sind sichtbar
+      const before = await request(app)
+        .get('/api/teamer/konfis')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(before.status).toBe(200);
+      expect(before.body.length).toBe(2);
+
+      // Konfi1 soft-loeschen
+      await db.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [USERS.konfi1.id]);
+
+      // Nachher: nur der aktive Konfi (konfi2) ist sichtbar
+      const after = await request(app)
+        .get('/api/teamer/konfis')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(after.status).toBe(200);
+      const afterIds = after.body.map(k => k.id);
+      expect(afterIds).not.toContain(USERS.konfi1.id);
+      expect(afterIds).toContain(USERS.konfi2.id);
+    });
   });
 
   // ================================================================
