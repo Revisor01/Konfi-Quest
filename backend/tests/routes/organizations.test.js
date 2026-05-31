@@ -436,4 +436,139 @@ describe('Organizations Routes', () => {
       expect(res.status).toBe(403);
     });
   });
+
+  // ================================================================
+  // PATCH /api/organizations/:id/limit (super_admin-only Konfi-Limit)
+  // ================================================================
+  describe('PATCH /api/organizations/:id/limit', () => {
+    async function readLimit(orgId) {
+      const { rows } = await db.query('SELECT max_konfis FROM organizations WHERE id = $1', [orgId]);
+      return rows[0].max_konfis;
+    }
+
+    it('SuperAdmin setzt max_konfis -> 200 und DB-Wert stimmt', async () => {
+      const res = await request(app)
+        .patch(`/api/organizations/${ORGS.testGemeinde.id}/limit`)
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({ max_konfis: 50 });
+
+      expect(res.status).toBe(200);
+      expect(await readLimit(ORGS.testGemeinde.id)).toBe(50);
+    });
+
+    it('OrgAdmin auf eigene Org -> 403 (requireSuperAdmin)', async () => {
+      const res = await request(app)
+        .patch(`/api/organizations/${ORGS.testGemeinde.id}/limit`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ max_konfis: 999 });
+
+      expect(res.status).toBe(403);
+      // Limit darf nicht veraendert worden sein.
+      expect(await readLimit(ORGS.testGemeinde.id)).toBeNull();
+    });
+
+    it('max_konfis = null -> Spalte wird NULL (unbegrenzt)', async () => {
+      // Erst auf 10 setzen, dann auf null zuruecksetzen.
+      await db.query('UPDATE organizations SET max_konfis = 10 WHERE id = $1', [ORGS.testGemeinde.id]);
+      const res = await request(app)
+        .patch(`/api/organizations/${ORGS.testGemeinde.id}/limit`)
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({ max_konfis: null });
+
+      expect(res.status).toBe(200);
+      expect(await readLimit(ORGS.testGemeinde.id)).toBeNull();
+    });
+
+    it('Negativer Wert -> 400 (Validierung)', async () => {
+      const res = await request(app)
+        .patch(`/api/organizations/${ORGS.testGemeinde.id}/limit`)
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({ max_konfis: -1 });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('Nicht-ganzzahliger Wert -> 400 (Validierung)', async () => {
+      const res = await request(app)
+        .patch(`/api/organizations/${ORGS.testGemeinde.id}/limit`)
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({ max_konfis: 'viele' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('Nicht-existierende Org -> 404', async () => {
+      const res = await request(app)
+        .patch('/api/organizations/9999/limit')
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({ max_konfis: 50 });
+
+      expect(res.status).toBe(404);
+    });
+  });
+
+  // ================================================================
+  // PUT /api/organizations/:id ignoriert max_konfis (D-03)
+  // ================================================================
+  describe('PUT /api/organizations/:id ignoriert max_konfis', () => {
+    it('OrgAdmin kann max_konfis NICHT ueber PUT hochsetzen', async () => {
+      const res = await request(app)
+        .put(`/api/organizations/${ORGS.testGemeinde.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({
+          name: 'Test-Gemeinde',
+          slug: 'test-gemeinde',
+          display_name: 'Test-Gemeinde',
+          max_konfis: 9999
+        });
+
+      expect(res.status).toBe(200);
+      // Spalte bleibt NULL — PUT verwirft das Feld.
+      const { rows } = await db.query('SELECT max_konfis FROM organizations WHERE id = $1', [ORGS.testGemeinde.id]);
+      expect(rows[0].max_konfis).toBeNull();
+    });
+
+    it('SuperAdmin-PUT laesst zuvor gesetztes max_konfis unveraendert', async () => {
+      await db.query('UPDATE organizations SET max_konfis = 15 WHERE id = $1', [ORGS.testGemeinde.id]);
+      const res = await request(app)
+        .put(`/api/organizations/${ORGS.testGemeinde.id}`)
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          name: 'Test-Gemeinde',
+          slug: 'test-gemeinde',
+          display_name: 'Test-Gemeinde',
+          max_konfis: 9999
+        });
+
+      expect(res.status).toBe(200);
+      const { rows } = await db.query('SELECT max_konfis FROM organizations WHERE id = $1', [ORGS.testGemeinde.id]);
+      expect(rows[0].max_konfis).toBe(15); // unveraendert, PUT fasst die Spalte nicht an
+    });
+  });
+
+  // ================================================================
+  // GET /api/organizations/:id liefert max_konfis (fuer Plan 03)
+  // ================================================================
+  describe('GET /api/organizations/:id enthaelt max_konfis', () => {
+    it('Response enthaelt das Feld max_konfis', async () => {
+      await db.query('UPDATE organizations SET max_konfis = 30 WHERE id = $1', [ORGS.testGemeinde.id]);
+      const res = await request(app)
+        .get(`/api/organizations/${ORGS.testGemeinde.id}`)
+        .set('Authorization', `Bearer ${superAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('max_konfis', 30);
+      // konfi_count fuer die "X von Y"-Anzeige ist ebenfalls vorhanden.
+      expect(res.body).toHaveProperty('konfi_count');
+    });
+
+    it('Bei NULL-Limit ist max_konfis im Response null', async () => {
+      const res = await request(app)
+        .get(`/api/organizations/${ORGS.testGemeinde.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('max_konfis', null);
+    });
+  });
 });
