@@ -252,13 +252,13 @@ describe('Konfi Routes', () => {
       }
     }
 
-    // Hilfsfunktion: Aktivitaet mit Namen anlegen und konfi1 N-mal zuweisen
+    // Hilfsfunktion: Aktivitaet mit exaktem Namen anlegen und konfi1 N-mal zuweisen
     async function createActivityWithCompletions(name, count) {
       const { rows: [act] } = await db.query(
         `INSERT INTO activities (name, points, type, organization_id, target_role)
          VALUES ($1, 1, 'gottesdienst', $2, 'konfi')
          RETURNING id`,
-        [`${name}-${Math.random()}`, ORGS.testGemeinde.id]
+        [name, ORGS.testGemeinde.id]
       );
       for (let i = 0; i < count; i++) {
         await db.query(
@@ -337,8 +337,8 @@ describe('Konfi Routes', () => {
     });
 
     it('specific_activity: required_activity_name, 2 Erledigungen -> current=2 (Extra-Feld-Fix)', async () => {
-      await createActivityWithCompletions('Sonntagsgottesdienst', 2);
-      const badgeId = await createKonfiBadge('specific_activity', 5, { required_activity_name: 'Sonntagsgottesdienst' });
+      await createActivityWithCompletions('Pfingst-Spezial', 2);
+      const badgeId = await createKonfiBadge('specific_activity', 5, { required_activity_name: 'Pfingst-Spezial' });
 
       const res = await request(app)
         .get('/api/konfi/badges')

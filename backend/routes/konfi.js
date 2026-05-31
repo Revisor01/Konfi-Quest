@@ -968,13 +968,48 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
               break;
             }
               
-            case 'activity_count':
+            case 'activity_count': {
+              // Wertung (badges.js:272) addiert activityCount + eventCount.
+              // Progress muss identisch zaehlen, sonst Wertung/Progress-Mismatch.
               const { rows: [activityCountResult] } = await db.query(
-                'SELECT COUNT(*) as count FROM user_activities WHERE user_id = $1',
-                [konfiId]
+                'SELECT COUNT(*) as count FROM user_activities WHERE user_id = $1 AND organization_id = $2',
+                [konfiId, req.user.organization_id]
               );
-              progress.current = parseInt(activityCountResult?.count || 0);
+              const { rows: [acEventCountResult] } = await db.query(
+                "SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2",
+                [konfiId, req.user.organization_id]
+              );
+              progress.current = parseInt(activityCountResult?.count || 0) + parseInt(acEventCountResult?.count || 0);
               break;
+            }
+
+            case 'event_count': {
+              // Anzahl besuchter Events (Vorbild Wertung badges.js:165).
+              const { rows: [eventCountResult] } = await db.query(
+                "SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2",
+                [konfiId, req.user.organization_id]
+              );
+              progress.current = parseInt(eventCountResult?.count || 0);
+              break;
+            }
+
+            case 'mandatory_event_count': {
+              // KONSISTENZ-VERTRAG: byte-identisch zur Wertung in badges.js (Plan 01).
+              const { rows: [mandResult] } = await db.query(
+                `SELECT COUNT(*) FROM event_bookings eb JOIN events e ON eb.event_id = e.id
+             WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND e.mandatory = true AND eb.organization_id = $2`,
+                [konfiId, req.user.organization_id]
+              );
+              progress.current = parseInt(mandResult?.count || 0);
+              break;
+            }
+
+            case 'teamer_year': {
+              // teamer_year nur im Teamer-Endpoint (teamer.js) relevant; hier defensiv 0.
+              // GET /konfi/badges liefert nur target_role='konfi', dieser Case greift fuer Konfis nie.
+              progress.current = 0;
+              break;
+            }
               
             case 'unique_activities':
               const { rows: [uniqueActivitiesResult] } = await db.query(
@@ -985,19 +1020,22 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
               break;
 
             case 'specific_activity':
-              // Check if specific activity was completed (criteria_extra contains activity_id)
-              let specificActivityId = null;
+              // Extra-Feld-Fix (D-11): Wertung nutzt required_activity_name (Name), NICHT activity_id.
+              // Identisch zur Wertung badges.js:209-214 (JOIN activities a ON ... a.name = $2).
+              let requiredActivityName = null;
               try {
                 const extraData = typeof badge.criteria_extra === 'string' ? JSON.parse(badge.criteria_extra || '{}') : (badge.criteria_extra || {});
-                specificActivityId = extraData.activity_id;
+                requiredActivityName = extraData.required_activity_name;
               } catch (e) {
  console.error('Error parsing criteria_extra for specific_activity badge:', e);
               }
-              
-              if (specificActivityId) {
+
+              if (requiredActivityName) {
                 const { rows: [specificResult] } = await db.query(
-                  'SELECT COUNT(*) as count FROM user_activities WHERE user_id = $1 AND activity_id = $2',
-                  [konfiId, specificActivityId]
+                  `SELECT COUNT(*) as count FROM user_activities ua
+                   JOIN activities a ON ua.activity_id = a.id
+                   WHERE ua.user_id = $1 AND a.name = $2 AND a.organization_id = $3`,
+                  [konfiId, requiredActivityName, req.user.organization_id]
                 );
                 progress.current = parseInt(specificResult?.count || 0);
               } else {
@@ -1032,22 +1070,24 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
               break;
 
             case 'activity_combination':
-              // Check if all activities in combination were completed
-              let activityIds = [];
+              // Extra-Feld-Fix (D-11): Wertung nutzt required_activities (Namen), NICHT activity_ids.
+              // Identisch zur Wertung badges.js:221-223 (Abgleich gegen erledigte Aktivitaets-Namen).
+              let requiredActivities = [];
               try {
                 const extraData = typeof badge.criteria_extra === 'string' ? JSON.parse(badge.criteria_extra || '{}') : (badge.criteria_extra || {});
-                activityIds = extraData.activity_ids || [];
+                requiredActivities = extraData.required_activities || [];
               } catch (e) {
  console.error('Error parsing criteria_extra for activity_combination badge:', e);
               }
-              
-              if (activityIds.length > 0) {
-                const placeholders = activityIds.map((_, i) => `$${i + 2}`).join(',');
+
+              if (requiredActivities.length > 0) {
+                const placeholders = requiredActivities.map((_, i) => `$${i + 2}`).join(',');
                 const { rows: [combinationResult] } = await db.query(
-                  `SELECT COUNT(DISTINCT activity_id) as count 
-                   FROM user_activities 
-                   WHERE user_id = $1 AND activity_id IN (${placeholders})`,
-                  [konfiId, ...activityIds]
+                  `SELECT COUNT(DISTINCT a.name) as count
+                   FROM user_activities ua
+                   JOIN activities a ON ua.activity_id = a.id
+                   WHERE ua.user_id = $1 AND a.name IN (${placeholders}) AND a.organization_id = $${requiredActivities.length + 2}`,
+                  [konfiId, ...requiredActivities, req.user.organization_id]
                 );
                 progress.current = parseInt(combinationResult?.count || 0);
               } else {
