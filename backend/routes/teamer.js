@@ -275,7 +275,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       const { rows: badges } = await db.query(badgesQuery, [userId, orgId]);
 
       // Hauptmetriken einmalig abfragen für Fortschrittsberechnung
-      const [actCountRes, evCountRes, uniqueActRes, activeYearsRes] = await Promise.all([
+      const [actCountRes, evCountRes, uniqueActRes, activeYearsRes, teamerSinceRes] = await Promise.all([
         // Teamer-Aktivitäten + Events
         db.query(
           `SELECT (
@@ -310,13 +310,29 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
             WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2
           ) d WHERE d.date IS NOT NULL`,
           [userId, orgId]
+        ),
+        // Startjahr-Quelle (teamer_since, Migration 064) — konsistent zur Wertung (badges.js teamer_year)
+        db.query(
+          "SELECT teamer_since FROM users WHERE id = $1",
+          [userId]
         )
       ]);
 
       const activityCount = parseInt(actCountRes.rows[0].count);
       const eventCount = parseInt(evCountRes.rows[0].count);
       const uniqueActivities = parseInt(uniqueActRes.rows[0].count);
-      const activeYears = activeYearsRes.rows.length;
+      // Array der aktiven Jahre (INTEGER) — fuer Startjahr-Filter im teamer_year-Case.
+      const activeYearValues = activeYearsRes.rows.map(r => r.year);
+
+      // Startjahr fuer teamer_year (konsistent zur Wertung badges.js):
+      // 1. users.teamer_since; 2. Fallback aelteste aktive Jahr (entspricht aelteste Teamer-Aktivitaet).
+      let teamerStartYear = null;
+      const teamerSince = teamerSinceRes.rows[0]?.teamer_since;
+      if (teamerSince) {
+        teamerStartYear = new Date(teamerSince).getFullYear();
+      } else if (activeYearValues.length > 0) {
+        teamerStartYear = Math.min(...activeYearValues);
+      }
 
       // Punkte-basierte Kriterien (irrelevant für Teamer)
       const pointsCriteria = ['total_points', 'gottesdienst_points', 'gemeinde_points', 'both_categories', 'bonus_points'];
@@ -344,7 +360,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
               progressPoints = uniqueActivities;
               break;
             case 'teamer_year':
-              progressPoints = activeYears;
+              // Nur Jahre ab Startjahr (teamer_since) zaehlen — identisch zur Wertung (kein Mismatch).
+              progressPoints = teamerStartYear === null
+                ? 0
+                : activeYearValues.filter(y => y >= teamerStartYear).length;
               break;
             case 'specific_activity':
             case 'category_activities':
