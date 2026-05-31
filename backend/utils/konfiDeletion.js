@@ -30,6 +30,13 @@ async function deleteKonfiCascade(client, userId, organizationId) {
   await client.query("DELETE FROM activity_requests WHERE user_id = $1 AND organization_id = $2", [userId, organizationId]);
   await client.query("DELETE FROM chat_participants WHERE user_id = $1 AND user_type = 'konfi'", [userId]);
   await client.query("DELETE FROM chat_read_status WHERE user_id = $1", [userId]);
+  // chat_message_reactions: Reaktionen des Konfis entfernen (kein CASCADE garantiert).
+  // to_regclass ist transaktions-neutral (funktioniert mit und ohne umschliessende TX,
+  // da diese Funktion in beiden Modi aufgerufen wird).
+  const { rows: [reactTbl] } = await client.query("SELECT to_regclass('public.chat_message_reactions') as t");
+  if (reactTbl?.t) {
+    await client.query("DELETE FROM chat_message_reactions WHERE user_id = $1 AND user_type = 'konfi'", [userId]);
+  }
   await client.query("DELETE FROM chat_messages WHERE user_id = $1", [userId]);
   await client.query("DELETE FROM notifications WHERE user_id = $1", [userId]);
   await client.query("DELETE FROM password_resets WHERE user_id = $1", [userId]);

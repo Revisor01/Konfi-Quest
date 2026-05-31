@@ -44,15 +44,21 @@ const ResetPasswordPage: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Token aus URL extrahieren
+  // Token aus URL extrahieren und danach aus der URL entfernen,
+  // damit er nicht in Browser-History/Referer-Header hängenbleibt.
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tokenParam = params.get('token');
     if (tokenParam) {
       setToken(tokenParam);
-    } else {
+      // Token aus sichtbarer URL entfernen (best-effort, ohne Navigation)
+      if (typeof window !== 'undefined' && window.history?.replaceState) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    } else if (!token) {
       setError('Ungültiger Reset-Link. Bitte fordere einen neuen an.');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location]);
 
   // Passwort-Validierung

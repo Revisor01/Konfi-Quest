@@ -149,9 +149,14 @@ async function resolveLocalPhoto(body: any): Promise<void> {
 
 // --- Chat-Bild-Upload Helfer für Queue-Items mit _localFilePath ---
 
-async function resolveLocalFile(item: QueueItem): Promise<void> {
+// Konvertiert die lokal gespeicherte Chat-Datei zu FormData fuer den Request.
+// WICHTIG: Ueberschreibt NICHT item.body (FormData ist nicht serialisierbar und
+// wuerde beim _save zu {} werden -> Datenverlust bei Retry). Gibt FormData zurueck;
+// das persistierte Item behaelt _localFilePath, damit ein Retry erneut lesen kann.
+// Die lokale Datei wird erst nach erfolgreichem Request geloescht (siehe flush()).
+async function resolveLocalFile(item: QueueItem): Promise<FormData | null> {
   const body = item.body;
-  if (!body?._localFilePath) return;
+  if (!body?._localFilePath) return null;
 
   // Datei aus Capacitor Filesystem lesen
   const fileResult = await Filesystem.readFile({
@@ -177,18 +182,17 @@ async function resolveLocalFile(item: QueueItem): Promise<void> {
   formData.append('file', blob, body._fileName || 'image.jpg');
   if (body.client_id) formData.append('client_id', body.client_id);
 
-  // Item-Body durch FormData ersetzen und URL beibehalten
-  item.body = formData;
-  item.headers = { 'Content-Type': 'multipart/form-data' };
+  return formData;
+}
 
-  // Lokale Datei löschen (best-effort)
+// Loescht die lokale Chat-Datei nach erfolgreichem Upload (best-effort).
+async function cleanupLocalFile(item: QueueItem): Promise<void> {
+  const path = item.body?._localFilePath;
+  if (!path) return;
   try {
-    await Filesystem.deleteFile({
-      path: body._localFilePath,
-      directory: Directory.Data,
-    });
+    await Filesystem.deleteFile({ path, directory: Directory.Data });
   } catch {
-    // Ignorieren
+    // Ignorieren — wird beim naechsten Cleanup aufgeraeumt
   }
 }
 
@@ -227,24 +231,32 @@ async function flush(): Promise<FlushResult> {
           await _save(items); // Body-Update persistieren
         }
 
-        // Chat-Bild aus lokalem Filesystem zu FormData konvertieren
+        // Chat-Bild aus lokalem Filesystem zu FormData konvertieren.
+        // requestBody ist FLUECHTIG — item.body bleibt unveraendert (serialisierbar),
+        // damit ein Retry nach transientem Fehler die Datei erneut lesen kann.
+        let requestBody: any = item.body;
+        let requestHeaders = item.headers;
         if (item.body?._localFilePath) {
-          await resolveLocalFile(item);
-          // Nicht persistieren — FormData ist nicht serialisierbar
+          const formData = await resolveLocalFile(item);
+          if (formData) {
+            requestBody = formData;
+            requestHeaders = { 'Content-Type': 'multipart/form-data' };
+          }
         }
 
         const config: any = {};
-        if (item.headers) config.headers = item.headers;
+        if (requestHeaders) config.headers = requestHeaders;
 
         if (item.method === 'DELETE') {
           await api.delete(item.url, config);
         } else if (item.method === 'PUT') {
-          await api.put(item.url, item.body, config);
+          await api.put(item.url, requestBody, config);
         } else {
-          await api.post(item.url, item.body, config);
+          await api.post(item.url, requestBody, config);
         }
 
-        // Erfolg: Item entfernen
+        // Erfolg: lokale Datei aufraeumen, dann Item entfernen
+        await cleanupLocalFile(item);
         result.succeeded.push(item);
         items.shift();
         await _save(items);

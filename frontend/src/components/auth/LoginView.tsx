@@ -62,7 +62,8 @@ const LoginView: React.FC = () => {
         router.push('/konfi/dashboard', 'root', 'replace');
       }
     } catch (err: any) {
-      const errorMessage = err.response?.data?.error || err.message;
+      // Defensiv: errorMessage immer ein String, sonst werfen die .includes()-Checks unten
+      const errorMessage: string = err?.response?.data?.error || err?.message || '';
       let displayError: string;
 
       // Netzwerkfehler erkennen

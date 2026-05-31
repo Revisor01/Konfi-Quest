@@ -38,7 +38,7 @@ interface BonusModalProps {
 }
 
 const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismiss }) => {
-  const { isOnline } = useApp();
+  const { isOnline, setError, setSuccess } = useApp();
   const handleClose = () => {
     if (dismiss) {
       dismiss();
@@ -67,10 +67,12 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
       if (networkMonitor.isOnline) {
         try {
           await api.post(`/admin/konfis/${konfiId}/bonus-points`, body);
+          setSuccess('Bonus-Punkte vergeben');
           await onSave();
           handleClose();
-        } catch (err) {
+        } catch (err: any) {
           console.error('Error saving bonus points:', err);
+          setError(err?.response?.data?.error || 'Bonus-Punkte konnten nicht gespeichert werden');
         }
       } else {
         await writeQueue.enqueue({

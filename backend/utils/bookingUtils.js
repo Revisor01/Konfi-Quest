@@ -90,17 +90,26 @@ function determineBookingStatus(event, confirmedCount, waitlistCount, maxCapacit
  * @returns {number|null} User-ID des nachgerueckten Users oder null
  */
 async function promoteFromWaitlist(db, eventId, timeslotId) {
-  const query = timeslotId
-    ? "SELECT id, user_id FROM event_bookings WHERE event_id = $1 AND timeslot_id = $2 AND status = 'waitlist' ORDER BY created_at ASC LIMIT 1"
-    : "SELECT id, user_id FROM event_bookings WHERE event_id = $1 AND status = 'waitlist' ORDER BY created_at ASC LIMIT 1";
+  // Atomar: SELECT des naechsten Wartelisten-Eintrags und UPDATE in EINEM Statement.
+  // FOR UPDATE SKIP LOCKED verhindert, dass zwei gleichzeitige Stornierungen
+  // denselben Wartelistenplatz nachruecken (Race -> Doppel-Promotion ueber Kapazitaet).
+  const subSelect = timeslotId
+    ? `SELECT id FROM event_bookings
+        WHERE event_id = $1 AND timeslot_id = $2 AND status = 'waitlist'
+        ORDER BY created_at ASC LIMIT 1 FOR UPDATE SKIP LOCKED`
+    : `SELECT id FROM event_bookings
+        WHERE event_id = $1 AND status = 'waitlist'
+        ORDER BY created_at ASC LIMIT 1 FOR UPDATE SKIP LOCKED`;
   const params = timeslotId ? [eventId, timeslotId] : [eventId];
 
-  const { rows: [nextInLine] } = await db.query(query, params);
+  const { rows: [promoted] } = await db.query(
+    `UPDATE event_bookings SET status = 'confirmed'
+     WHERE id = (${subSelect})
+     RETURNING user_id`,
+    params
+  );
 
-  if (!nextInLine) return null;
-
-  await db.query("UPDATE event_bookings SET status = 'confirmed' WHERE id = $1", [nextInLine.id]);
-  return nextInLine.user_id;
+  return promoted ? promoted.user_id : null;
 }
 
 /**

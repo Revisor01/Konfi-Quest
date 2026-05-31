@@ -382,7 +382,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         stats={[
           { value: badges.filter(b => b.is_earned && !b.is_hidden).length, label: 'ERREICHT' },
           ...(badgeStats.totalSecret > 0 ? [{ value: earnedSecretCount, label: 'GEHEIM' }] : []),
-          { value: Math.round((badges.filter(b => b.is_earned).length / (badgeStats.totalVisible + badgeStats.totalSecret)) * 100) || 0, label: 'PROZENT' }
+          { value: (badgeStats.totalVisible + badgeStats.totalSecret) === 0 ? 0 : Math.round((badges.filter(b => b.is_earned).length / (badgeStats.totalVisible + badgeStats.totalSecret)) * 100), label: 'PROZENT' }
         ]}
       />
 
