@@ -127,9 +127,14 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
       return;
     }
 
+    if (!formData.confirmation_date.trim()) {
+      setError('Bitte ein Konfirmationsdatum wählen');
+      return;
+    }
+
     const payload = {
       name: formData.name.trim(),
-      confirmation_date: formData.confirmation_date.trim() || null,
+      confirmation_date: formData.confirmation_date.trim(),
       gottesdienst_enabled: formData.gottesdienst_enabled,
       gemeinde_enabled: formData.gemeinde_enabled,
       target_gottesdienst: formData.target_gottesdienst,
@@ -192,7 +197,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
           <IonButtons slot="end">
             <IonButton
               onClick={handleSubmit}
-              disabled={!formData.name.trim() || loading}
+              disabled={!formData.name.trim() || !formData.confirmation_date.trim() || loading}
             >
               {loading ? (
                 <IonSpinner name="crescent" />
@@ -227,7 +232,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                   />
                 </IonItem>
                 <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '8px' }}>
-                  <IonLabel position="stacked">Konfirmationsdatum</IonLabel>
+                  <IonLabel position="stacked">Konfirmationsdatum *</IonLabel>
                   <IonDatetimeButton datetime="confirmation-date" disabled={loading} />
                 </IonItem>
               </IonList>
