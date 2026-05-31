@@ -221,6 +221,167 @@ describe('Konfi Routes', () => {
   });
 
   // ================================================================
+  // GET /api/konfi/badges - Progress-Berechnung (Prozent-Bug-Fix, Phase 116-02)
+  // ================================================================
+  describe('GET /api/konfi/badges Progress-Berechnung', () => {
+    // Hilfsfunktion: Badge fuer Org 1, target_role=konfi anlegen
+    async function createKonfiBadge(criteriaType, criteriaValue, criteriaExtra = null) {
+      const { rows: [badge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, criteria_extra, icon, color, organization_id, target_role, is_active)
+         VALUES ($1, $2, $3, $4, 'checkmark', '#10b981', $5, 'konfi', true)
+         RETURNING id`,
+        [`Badge ${criteriaType}-${Math.random()}`, criteriaType, criteriaValue, criteriaExtra ? JSON.stringify(criteriaExtra) : null, ORGS.testGemeinde.id]
+      );
+      return badge.id;
+    }
+
+    // Hilfsfunktion: N Events anlegen und konfi1 mit attendance_status buchen
+    async function createEventsWithPresence(count, mandatory = false, present = true) {
+      for (let i = 0; i < count; i++) {
+        const { rows: [ev] } = await db.query(
+          `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants, point_type, points)
+           VALUES ($1, NOW() - interval '1 day', $2, $3, 0, 'gemeinde', 0)
+           RETURNING id`,
+          [`Event ${i}-${Math.random()}`, ORGS.testGemeinde.id, mandatory]
+        );
+        await db.query(
+          `INSERT INTO event_bookings (user_id, event_id, organization_id, status, attendance_status)
+           VALUES ($1, $2, $3, 'confirmed', $4)`,
+          [USERS.konfi1.id, ev.id, ORGS.testGemeinde.id, present ? 'present' : 'absent']
+        );
+      }
+    }
+
+    // Hilfsfunktion: Aktivitaet mit Namen anlegen und konfi1 N-mal zuweisen
+    async function createActivityWithCompletions(name, count) {
+      const { rows: [act] } = await db.query(
+        `INSERT INTO activities (name, points, type, organization_id, target_role)
+         VALUES ($1, 1, 'gottesdienst', $2, 'konfi')
+         RETURNING id`,
+        [`${name}-${Math.random()}`, ORGS.testGemeinde.id]
+      );
+      for (let i = 0; i < count; i++) {
+        await db.query(
+          `INSERT INTO user_activities (user_id, activity_id, completed_date, admin_id, organization_id)
+           VALUES ($1, $2, NOW(), $3, $4)`,
+          [USERS.konfi1.id, act.id, USERS.admin1.id, ORGS.testGemeinde.id]
+        );
+      }
+      return act.id;
+    }
+
+    function findBadge(body, badgeId) {
+      const all = Array.isArray(body) ? body : [...(body.available || []), ...(body.earned || [])];
+      return all.find(b => b.id === badgeId);
+    }
+
+    it('event_count: 4 besuchte Events, value=6 -> current=4, percentage ca. 66', async () => {
+      const badgeId = await createKonfiBadge('event_count', 6);
+      await createEventsWithPresence(4, false, true);
+
+      const res = await request(app)
+        .get('/api/konfi/badges')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      const badge = findBadge(res.body, badgeId);
+      expect(badge).toBeDefined();
+      expect(badge.progress.current).toBe(4);
+      expect(badge.progress.percentage).toBeGreaterThan(0);
+      expect(Math.round(badge.progress.percentage)).toBe(67);
+    });
+
+    it('mandatory_event_count: 3 besuchte Pflicht-Events, value=12 -> current=3, percentage=25', async () => {
+      const badgeId = await createKonfiBadge('mandatory_event_count', 12);
+      // 3 Pflicht-Events besucht + 2 Nicht-Pflicht (besucht) + 1 Pflicht (nicht besucht)
+      await createEventsWithPresence(3, true, true);
+      await createEventsWithPresence(2, false, true);
+      await createEventsWithPresence(1, true, false);
+
+      const res = await request(app)
+        .get('/api/konfi/badges')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      const badge = findBadge(res.body, badgeId);
+      expect(badge).toBeDefined();
+      expect(badge.progress.current).toBe(3);
+      expect(badge.progress.percentage).toBe(25);
+    });
+
+    it('KONSISTENZ: mandatory_event_count Progress.current == Wertungs-COUNT (gleicher Konfi)', async () => {
+      // Badge value=12, Konfi hat genau 3 besuchte Pflicht-Events
+      const badgeId = await createKonfiBadge('mandatory_event_count', 12);
+      await createEventsWithPresence(3, true, true);
+      await createEventsWithPresence(4, false, true); // Nicht-Pflicht zaehlt nicht
+      await createEventsWithPresence(2, true, false); // nicht besucht zaehlt nicht
+
+      // Pfad A: Wertung (badges.js) -> dieselbe Query
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.konfi1.id);
+      const { rows: [mandRow] } = await db.query(
+        `SELECT COUNT(*)::int as count FROM event_bookings eb JOIN events e ON eb.event_id = e.id
+         WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND e.mandatory = true AND eb.organization_id = $2`,
+        [USERS.konfi1.id, ORGS.testGemeinde.id]
+      );
+      const wertungCount = mandRow.count;
+
+      // Pfad B: Progress (konfi.js)
+      const res = await request(app)
+        .get('/api/konfi/badges')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      const badge = findBadge(res.body, badgeId);
+
+      expect(wertungCount).toBe(3);
+      expect(badge.progress.current).toBe(wertungCount); // Byte-Konsistenz der Query
+    });
+
+    it('specific_activity: required_activity_name, 2 Erledigungen -> current=2 (Extra-Feld-Fix)', async () => {
+      await createActivityWithCompletions('Sonntagsgottesdienst', 2);
+      const badgeId = await createKonfiBadge('specific_activity', 5, { required_activity_name: 'Sonntagsgottesdienst' });
+
+      const res = await request(app)
+        .get('/api/konfi/badges')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      const badge = findBadge(res.body, badgeId);
+      expect(badge).toBeDefined();
+      expect(badge.progress.current).toBe(2);
+    });
+
+    it('activity_combination: required_activities=[A,B], A erledigt -> current=1 (Extra-Feld-Fix)', async () => {
+      await createActivityWithCompletions('Kombi-A', 1);
+      const badgeId = await createKonfiBadge('activity_combination', 2, { required_activities: ['Kombi-A', 'Kombi-B'] });
+
+      const res = await request(app)
+        .get('/api/konfi/badges')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      const badge = findBadge(res.body, badgeId);
+      expect(badge).toBeDefined();
+      expect(badge.progress.current).toBe(1);
+    });
+
+    it('activity_count: zaehlt Aktivitaeten + besuchte Events (konsistent zur Wertung)', async () => {
+      // 2 Aktivitaeten + 3 besuchte Events -> current=5
+      await createActivityWithCompletions('Akt-Count', 2);
+      await createEventsWithPresence(3, false, true);
+      const badgeId = await createKonfiBadge('activity_count', 10);
+
+      const res = await request(app)
+        .get('/api/konfi/badges')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      const badge = findBadge(res.body, badgeId);
+      expect(badge).toBeDefined();
+      expect(badge.progress.current).toBe(5);
+    });
+  });
+
+  // ================================================================
   // GET /api/konfi/events
   // ================================================================
   describe('GET /api/konfi/events', () => {
