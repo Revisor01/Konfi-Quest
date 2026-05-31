@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.11
 milestone_name: Admin/Teamer Design-Angleichung
 status: in_progress
-last_updated: "2026-04-30T00:00:00.000Z"
+last_updated: "2026-05-31T16:21:10.927Z"
 progress:
-  total_phases: 1
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 13
+  completed_phases: 11
+  total_plans: 28
+  completed_plans: 23
+  percent: 82
 ---
 
 # Project State
@@ -19,12 +19,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v2.11 — Admin/Teamer Design-Angleichung (Live-Arbeit mit Hot-Reload, Quick-Tasks)
+**Current focus:** Phase 114 abgeschlossen (Self-/Auto-Loeschung, 6/6 Plans, 181 Tests gruen). Naechster Schritt: Konfi-Limits pro Org.
 
 ## Current Position
 
 Milestone: v2.11
-Phase: 113 (Sammelphase fuer Quicks)
+Phase: 114 (self-loeschung-auto-loeschung) — EXECUTING
+Plan: 1 of 6
 
 ## Performance Metrics
 

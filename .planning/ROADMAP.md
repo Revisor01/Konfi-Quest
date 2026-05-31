@@ -37,17 +37,17 @@ Live-Design-Angleichung mit Hot-Reload aufs Geraet. Anwendung der globalen Konfi
 
 Vorbereitung des oeffentlichen Launches: DSGVO/DSG-EKD-Konformitaet, Account-Loeschung, Datenaufbewahrung.
 
-- [ ] Phase 114: Self-Loeschung + Auto-Loeschung (DSGVO). In-App Account-Loeschung fuer alle Rollen (Hard-Delete mit Passwort-Bestaetigung, erfuellt Apple-Anforderung). Auto-Loeschung gekoppelt an Konfirmationsdatum des Jahrgangs (wird Pflichtfeld): Tag 0-60 Rettungsfenster (Promote-to-Teamer moeglich), Tag 60 Soft-Loeschung (archiviert, komplett unsichtbar), Tag 120 echte kaskadierende Loeschung. Ausnahme: zu Teamer:innen promotete Konfis (role != konfi) werden nie auto-geloescht. Cron-Job taeglich (Europe/Berlin). Tests mitschreiben.
+- [x] Phase 114: Self-Loeschung + Auto-Loeschung (DSGVO). In-App Account-Loeschung fuer alle Rollen (Hard-Delete mit Passwort-Bestaetigung, erfuellt Apple-Anforderung). Auto-Loeschung gekoppelt an Konfirmationsdatum des Jahrgangs (wird Pflichtfeld): Tag 0-60 Rettungsfenster (Promote-to-Teamer moeglich), Tag 60 Soft-Loeschung (archiviert, komplett unsichtbar), Tag 120 echte kaskadierende Loeschung. Ausnahme: zu Teamer:innen promotete Konfis (role != konfi) werden nie auto-geloescht. Cron-Job taeglich (Europe/Berlin). Tests mitschreiben.
 
   **Plans:** 6 plans in 3 waves
 
   Plans:
-  - [ ] 114-01-PLAN.md (Wave 1) — Migration 082 (deleted_at/archived_at, confirmation_date NOT NULL + Backfill) + gemeinsame Loesch-Funktion deleteKonfiCascade
-  - [ ] 114-02-PLAN.md (Wave 2) — Self-Loeschung: POST /api/auth/delete-account (Passwort-Bestaetigung, Hard-Delete) + DeleteAccountModal in allen Profil-Views
-  - [ ] 114-03-PLAN.md (Wave 2) — confirmation_date Pflichtfeld (Backend-Validierung + Jahrgang-Formular)
-  - [ ] 114-04-PLAN.md (Wave 2) — Soft-Delete-Filter Kern (konfi-management, konfi, levels: Listen/Ranking/Detail)
-  - [ ] 114-05-PLAN.md (Wave 2) — Soft-Delete-Filter sekundaer (events, chat, wrapped, badges, teamer)
-  - [ ] 114-06-PLAN.md (Wave 3) — Auto-Loeschung Cron (taeglich 02:00 Europe/Berlin, 60/120-Tage, Teamer-Ausnahme, idempotent)
+  - [x] 114-01-PLAN.md (Wave 1) — Migration 082 (deleted_at/archived_at, confirmation_date NOT NULL + Backfill) + gemeinsame Loesch-Funktion deleteKonfiCascade
+  - [x] 114-02-PLAN.md (Wave 2) — Self-Loeschung: POST /api/auth/delete-account (Passwort-Bestaetigung, Hard-Delete) + DeleteAccountModal in allen Profil-Views
+  - [x] 114-03-PLAN.md (Wave 2) — confirmation_date Pflichtfeld (Backend-Validierung + Jahrgang-Formular)
+  - [x] 114-04-PLAN.md (Wave 2) — Soft-Delete-Filter Kern (konfi-management, konfi, levels: Listen/Ranking/Detail)
+  - [x] 114-05-PLAN.md (Wave 2) — Soft-Delete-Filter sekundaer (events, chat, wrapped, badges, teamer)
+  - [x] 114-06-PLAN.md (Wave 3) — Auto-Loeschung Cron (taeglich 02:00 Europe/Berlin, 60/120-Tage, Teamer-Ausnahme, idempotent)
 
 
 ## Phases
