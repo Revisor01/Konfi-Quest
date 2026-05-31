@@ -1,7 +1,7 @@
 const request = require('supertest');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, USERS, JAHRGAENGE } = require('../helpers/seed');
+const { seed, USERS, JAHRGAENGE, ORGS } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 
 describe('Teamer Routes', () => {
@@ -173,6 +173,116 @@ describe('Teamer Routes', () => {
         .set('Authorization', `Bearer ${konfiToken}`);
 
       expect(res.status).toBe(403);
+    });
+  });
+
+  // ================================================================
+  // GET /api/teamer/badges - teamer_year-Progress mit Startjahr (Phase 116-02)
+  // ================================================================
+  describe('GET /api/teamer/badges teamer_year-Progress', () => {
+    // Teamer-Aktivitaet in einem bestimmten Jahr fuer teamer1 anlegen
+    async function createTeamerActivityInYear(year) {
+      const { rows: [act] } = await db.query(
+        `INSERT INTO activities (name, points, type, organization_id, target_role)
+         VALUES ($1, 1, 'gottesdienst', $2, 'teamer')
+         RETURNING id`,
+        [`Teamer-Aktion ${year}-${Math.random()}`, ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO user_activities (user_id, activity_id, completed_date, admin_id, organization_id)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [USERS.teamer1.id, act.id, `${year}-06-15`, USERS.admin1.id, ORGS.testGemeinde.id]
+      );
+    }
+
+    async function createTeamerYearBadge(criteriaValue) {
+      const { rows: [badge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ($1, 'teamer_year', $2, 'ribbon', '#7c3aed', $3, 'teamer', true)
+         RETURNING id`,
+        [`Teamer-Jahre-${Math.random()}`, criteriaValue, ORGS.testGemeinde.id]
+      );
+      return badge.id;
+    }
+
+    it('teamer_since=2026 + Aktivitaet 2024+2026 -> current=1 (nur 2026 zaehlt)', async () => {
+      await db.query('UPDATE users SET teamer_since = $1 WHERE id = $2', ['2026-01-01', USERS.teamer1.id]);
+      await createTeamerActivityInYear(2024);
+      await createTeamerActivityInYear(2026);
+      const badgeId = await createTeamerYearBadge(5);
+
+      const res = await request(app)
+        .get('/api/teamer/badges')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+      const badge = res.body.find(b => b.id === badgeId);
+      expect(badge).toBeDefined();
+      expect(badge.progress_points).toBe(1);
+    });
+
+    it('teamer_since=2024 + Aktivitaet 2024+2026 -> current=2', async () => {
+      await db.query('UPDATE users SET teamer_since = $1 WHERE id = $2', ['2024-01-01', USERS.teamer1.id]);
+      await createTeamerActivityInYear(2024);
+      await createTeamerActivityInYear(2026);
+      const badgeId = await createTeamerYearBadge(5);
+
+      const res = await request(app)
+        .get('/api/teamer/badges')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+      const badge = res.body.find(b => b.id === badgeId);
+      expect(badge).toBeDefined();
+      expect(badge.progress_points).toBe(2);
+    });
+
+    it('teamer_since=NULL -> Fallback aelteste Aktivitaet, alle Jahre ab dann', async () => {
+      await db.query('UPDATE users SET teamer_since = NULL WHERE id = $1', [USERS.teamer1.id]);
+      await createTeamerActivityInYear(2023);
+      await createTeamerActivityInYear(2024);
+      const badgeId = await createTeamerYearBadge(5);
+
+      const res = await request(app)
+        .get('/api/teamer/badges')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+      const badge = res.body.find(b => b.id === badgeId);
+      expect(badge).toBeDefined();
+      expect(badge.progress_points).toBe(2);
+    });
+
+    it('Keine Regression: event_count-Progress zaehlt weiterhin besuchte Events', async () => {
+      // 2 besuchte Events fuer teamer1
+      for (let i = 0; i < 2; i++) {
+        const { rows: [ev] } = await db.query(
+          `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants, point_type, points)
+           VALUES ($1, NOW() - interval '1 day', $2, false, 0, 'gemeinde', 0)
+           RETURNING id`,
+          [`Teamer-Event ${i}-${Math.random()}`, ORGS.testGemeinde.id]
+        );
+        await db.query(
+          `INSERT INTO event_bookings (user_id, event_id, organization_id, status, attendance_status)
+           VALUES ($1, $2, $3, 'confirmed', 'present')`,
+          [USERS.teamer1.id, ev.id, ORGS.testGemeinde.id]
+        );
+      }
+      const { rows: [badge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ($1, 'event_count', 10, 'calendar', '#10b981', $2, 'teamer', true)
+         RETURNING id`,
+        [`Event-Count-${Math.random()}`, ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .get('/api/teamer/badges')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+      const found = res.body.find(b => b.id === badge.id);
+      expect(found).toBeDefined();
+      expect(found.progress_points).toBe(2);
     });
   });
 
