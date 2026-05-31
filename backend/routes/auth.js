@@ -7,6 +7,7 @@ const { body, param } = require('express-validator');
 const validator = require('validator');
 const { handleValidationErrors, commonValidations } = require('../middleware/validation');
 const { validatePassword } = require('../utils/passwordUtils');
+const { deleteKonfiCascade } = require('../utils/konfiDeletion');
 const PushService = require('../services/pushService');
 const router = express.Router();
 
@@ -206,6 +207,52 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     } catch (err) {
  console.error('Database error in POST /api/auth/change-password:', err);
       res.status(500).json({ error: 'Fehler beim Ändern des Passworts' });
+    }
+  });
+
+  // Delete own account (Self-Delete, D-01/D-02/D-03)
+  // Gilt fuer ALLE Rollen (Konfi, Teamer, Admin) - nur rbacVerifier, kein requireAdmin.
+  // Sofortiger kaskadierender Hard-Delete nach Passwort-Bestaetigung.
+  router.post('/delete-account', rbacVerifier, async (req, res) => {
+    const { password } = req.body;
+    const userId = req.user.id;
+
+    if (!password) {
+      return res.status(400).json({ error: 'Passwort ist erforderlich' });
+    }
+
+    try {
+      const { rows: [user] } = await db.query(
+        `SELECT id, password_hash, organization_id FROM users WHERE id = $1`,
+        [userId]
+      );
+      if (!user) {
+        return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+      }
+
+      const passwordMatch = await bcrypt.compare(password, user.password_hash);
+      if (!passwordMatch) {
+        return res.status(400).json({ error: 'Aktuelles Passwort ist falsch' });
+      }
+
+      // Gesamte Kaskade in einer Transaktion (T-114-06): alles oder nichts.
+      const client = await db.getClient();
+      try {
+        await client.query('BEGIN');
+        await deleteKonfiCascade(client, userId, user.organization_id);
+        await client.query('COMMIT');
+      } catch (txErr) {
+        await client.query('ROLLBACK');
+        throw txErr;
+      } finally {
+        client.release();
+      }
+
+      res.json({ message: 'Account erfolgreich geloescht' });
+
+    } catch (err) {
+ console.error('Database error in POST /api/auth/delete-account:', err);
+      res.status(500).json({ error: 'Fehler beim Loeschen des Accounts' });
     }
   });
 
