@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v2.11
 milestone_name: Admin/Teamer Design-Angleichung
 status: in_progress
-last_updated: "2026-05-31T17:59:53.026Z"
+last_updated: "2026-05-31T18:46:43.768Z"
 progress:
   total_phases: 13
   completed_phases: 11
@@ -19,7 +19,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 115 (Konfi-Limits) abgeschlossen, 3/3 Plans, 134 Tests gruen. Naechster Schritt: Audit Badge-System (Pflicht-Anwesenheit + Teamer-Jahre).
+**Current focus:** Phase 116 (Badges: Pflicht-Anwesenheit + Teamer-Jahre + Prozent-Fix) abgeschlossen, 3/3 Plans, 96 Tests gruen (1 vorbestehender truncateAll-Deadlock, flaky). 3 Phasen unverdeployt (114,115,116).
 
 ## Current Position
 
