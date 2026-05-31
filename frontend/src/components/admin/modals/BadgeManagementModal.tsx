@@ -215,6 +215,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   streak: '#eb445a',
   time_based: '#8e8e93',
   event_count: '#e63946',
+  mandatory_event_count: '#b91c1c',
   teamer_year: '#5b21b6'
 };
 
@@ -252,7 +253,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
   // Punkte-basierte Kriterien - bei Teamer ausblenden
   const POINTS_CRITERIA_TYPES = ['total_points', 'gottesdienst_points', 'gemeinde_points', 'both_categories', 'bonus_points'];
-  const TEAMER_HIDDEN_TYPES = [...POINTS_CRITERIA_TYPES, 'time_based', 'streak', 'event_count'];
+  const TEAMER_HIDDEN_TYPES = [...POINTS_CRITERIA_TYPES, 'time_based', 'streak', 'event_count', 'mandatory_event_count'];
 
   // Form data
   const defaultCriteriaType = targetRole === 'teamer' ? 'activity_count' : 'total_points';
@@ -724,6 +725,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         return 'Anzahl (Aktivitäten & Events)';
       case 'event_count':
         return 'Anzahl (Events)';
+      case 'mandatory_event_count':
+        return 'Anzahl (Pflicht-Events)';
       case 'category_activities':
         return 'Anzahl (Kategorie-Aktivitäten & Events)';
       case 'unique_activities':
