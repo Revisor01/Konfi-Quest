@@ -331,6 +331,43 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
       // Delete user jahrgang assignments
       await client.query("DELETE FROM user_jahrgang_assignments WHERE user_id = $1", [id]);
 
+      // Verwaiste FK-Referenzen auf diesen User aufloesen, bevor users geloescht wird.
+      // admin_id/created_by referenzieren den HANDELNDEN User (nicht das Subjekt) — diese
+      // Historie der Konfis bleibt erhalten, die Referenz wird anonymisiert (SET NULL).
+      // Tabellen mit NOT-NULL-Referenz (invite_codes.created_by) werden geloescht.
+      // Pro Statement fehlertolerant: nicht vorhandene Spalten/Tabellen duerfen den
+      // Loeschvorgang nicht kippen (Schema variiert je nach Migrationsstand).
+      const nullifyRefs = [
+        "UPDATE bonus_points SET admin_id = NULL WHERE admin_id = $1",
+        "UPDATE event_points SET admin_id = NULL WHERE admin_id = $1",
+        "UPDATE user_activities SET admin_id = NULL WHERE admin_id = $1",
+        "UPDATE user_certificates SET admin_id = NULL WHERE admin_id = $1",
+        "UPDATE materials SET created_by = NULL WHERE created_by = $1",
+        "UPDATE chat_rooms SET created_by = NULL WHERE created_by = $1",
+        "UPDATE activity_requests SET approved_by = NULL WHERE approved_by = $1",
+      ];
+      for (const sql of nullifyRefs) {
+        // SAVEPOINT: bei nicht vorhandener Spalte/Tabelle (42703/42P01) nur dieses
+        // eine Statement zuruecknehmen, nicht die ganze Transaktion aborten.
+        await client.query('SAVEPOINT ref_nullify');
+        try {
+          await client.query(sql, [id]);
+          await client.query('RELEASE SAVEPOINT ref_nullify');
+        } catch (refErr) {
+          await client.query('ROLLBACK TO SAVEPOINT ref_nullify');
+          if (refErr.code !== '42703' && refErr.code !== '42P01') throw refErr;
+        }
+      }
+      // invite_codes.created_by ist NOT NULL -> Eintraege loeschen
+      await client.query("DELETE FROM invite_codes WHERE created_by = $1", [id]);
+      // Chat-Daten des Users (Teamer/Admin koennen Teilnehmer/Autoren sein)
+      await client.query("DELETE FROM chat_participants WHERE user_id = $1", [id]);
+      await client.query("DELETE FROM chat_read_status WHERE user_id = $1", [id]);
+      await client.query("DELETE FROM chat_messages WHERE user_id = $1", [id]);
+      await client.query("DELETE FROM notifications WHERE user_id = $1", [id]);
+      await client.query("DELETE FROM push_tokens WHERE user_id = $1", [id]);
+      await client.query("DELETE FROM password_resets WHERE user_id = $1", [id]);
+
       // Delete user
       const deleteUserResult = await client.query("DELETE FROM users WHERE id = $1 AND organization_id = $2", [id, organizationId]);
 
@@ -613,7 +650,8 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
       // Nur super_admin ist geschützt
 
       const hashedPassword = await bcrypt.hash(password, 10);
-      await db.query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [hashedPassword, id]);
+      // org-gescopt: id ist eindeutig, organization_id als defensiver Zusatzfilter (matcht den oben geladenen targetUser)
+      await db.query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2 AND organization_id = $3', [hashedPassword, id, targetUser.organization_id]);
 
       res.json({ message: 'Passwort erfolgreich zurückgesetzt' });
 

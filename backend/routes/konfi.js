@@ -160,8 +160,8 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
       // Get registered events count
       const { rows: [eventCountResult] } = await db.query(
-        'SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1',
-        [konfiId]
+        'SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1 AND organization_id = $2',
+        [konfiId, req.user.organization_id]
       );
       const eventCount = parseInt(eventCountResult.count, 10) || 0;
 
@@ -908,7 +908,19 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         ORDER BY earned DESC, cb.name
       `;
       const { rows: badges } = await db.query(query, [konfiId, req.user.organization_id]);
-      
+
+      // Punkte-Daten EINMAL vorab laden (statt pro Punkte-Badge erneut) — vermeidet N+1
+      // fuer die Cases total_points/gottesdienst_points/gemeinde_points/both_categories.
+      const { rows: [pointsRow] } = await db.query(
+        `SELECT kp.gottesdienst_points, kp.gemeinde_points, j.gottesdienst_enabled, j.gemeinde_enabled
+         FROM konfi_profiles kp JOIN jahrgaenge j ON kp.jahrgang_id = j.id WHERE kp.user_id = $1`,
+        [konfiId]
+      );
+      const gdEnabled = !!pointsRow?.gottesdienst_enabled;
+      const gmEnabled = !!pointsRow?.gemeinde_enabled;
+      const gdPoints = gdEnabled ? (pointsRow?.gottesdienst_points || 0) : 0;
+      const gmPoints = gmEnabled ? (pointsRow?.gemeinde_points || 0) : 0;
+
       // Calculate progress for each badge
       for (let badge of badges) {
         if (badge.earned) {
@@ -921,51 +933,21 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         try {
           switch (badge.criteria_type) {
             case 'total_points': {
-              const { rows: [totalPointsResult] } = await db.query(
-                `SELECT
-                  (CASE WHEN j.gottesdienst_enabled THEN kp.gottesdienst_points ELSE 0 END
-                  + CASE WHEN j.gemeinde_enabled THEN kp.gemeinde_points ELSE 0 END) as total
-                FROM konfi_profiles kp
-                JOIN jahrgaenge j ON kp.jahrgang_id = j.id
-                WHERE kp.user_id = $1`,
-                [konfiId]
-              );
-              progress.current = totalPointsResult?.total || 0;
+              // Nutzt vorab geladene Punkte-Daten (kein Query pro Badge)
+              progress.current = gdPoints + gmPoints;
               break;
             }
             case 'gottesdienst_points': {
-              const { rows: [gottesdienstResult] } = await db.query(
-                `SELECT CASE WHEN j.gottesdienst_enabled THEN kp.gottesdienst_points ELSE 0 END as gottesdienst_points
-                FROM konfi_profiles kp JOIN jahrgaenge j ON kp.jahrgang_id = j.id WHERE kp.user_id = $1`,
-                [konfiId]
-              );
-              progress.current = gottesdienstResult?.gottesdienst_points || 0;
+              progress.current = gdPoints;
               break;
             }
             case 'gemeinde_points': {
-              const { rows: [gemeindeResult] } = await db.query(
-                `SELECT CASE WHEN j.gemeinde_enabled THEN kp.gemeinde_points ELSE 0 END as gemeinde_points
-                FROM konfi_profiles kp JOIN jahrgaenge j ON kp.jahrgang_id = j.id WHERE kp.user_id = $1`,
-                [konfiId]
-              );
-              progress.current = gemeindeResult?.gemeinde_points || 0;
+              progress.current = gmPoints;
               break;
             }
             case 'both_categories': {
-              // For both_categories, show progress as minimum of both categories
-              const { rows: [bothCatResult] } = await db.query(
-                `SELECT kp.gottesdienst_points, kp.gemeinde_points, j.gottesdienst_enabled, j.gemeinde_enabled
-                FROM konfi_profiles kp JOIN jahrgaenge j ON kp.jahrgang_id = j.id WHERE kp.user_id = $1`,
-                [konfiId]
-              );
-              const gottesdienstPts = bothCatResult?.gottesdienst_enabled ? (bothCatResult?.gottesdienst_points || 0) : 0;
-              const gemeindePts = bothCatResult?.gemeinde_enabled ? (bothCatResult?.gemeinde_points || 0) : 0;
-              // Wenn nicht beide Typen aktiv, Progress = 0
-              if (!bothCatResult?.gottesdienst_enabled || !bothCatResult?.gemeinde_enabled) {
-                progress.current = 0;
-              } else {
-                progress.current = Math.min(gottesdienstPts, gemeindePts);
-              }
+              // Fortschritt = Minimum beider Kategorien; nur wenn beide Typen aktiv sind
+              progress.current = (!gdEnabled || !gmEnabled) ? 0 : Math.min(gdPoints, gmPoints);
               break;
             }
               

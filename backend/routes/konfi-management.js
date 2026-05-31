@@ -683,10 +683,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 await client.query(query, [req.params.id, points, type, description, req.user.id, req.user.organization_id]);
 
                 const updateQuery = `
-                    UPDATE konfi_profiles
+                    UPDATE konfi_profiles kp
                     SET ${updateField} = ${updateField} + $1
-                    WHERE user_id = $2`;
-                await client.query(updateQuery, [points, req.params.id]);
+                    FROM users u
+                    WHERE kp.user_id = $2 AND u.id = kp.user_id AND u.organization_id = $3`;
+                const { rowCount: profileUpdated } = await client.query(updateQuery, [points, req.params.id, req.user.organization_id]);
+                if (profileUpdated === 0) {
+                    throw new Error('Konfi nicht in eigener Organisation gefunden');
+                }
 
                 await client.query('COMMIT');
             } catch (txErr) {
@@ -818,10 +822,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 if (!isTeamerActivity && activity.points && activity.type) {
                     const updateField = getPointField(activity.type);
                     const updateQuery = `
-                        UPDATE konfi_profiles
+                        UPDATE konfi_profiles kp
                         SET ${updateField} = ${updateField} + $1
-                        WHERE user_id = $2`;
-                    await client.query(updateQuery, [activity.points, req.params.id]);
+                        FROM users u
+                        WHERE kp.user_id = $2 AND u.id = kp.user_id AND u.organization_id = $3`;
+                    const { rowCount: profileUpdated } = await client.query(updateQuery, [activity.points, req.params.id, req.user.organization_id]);
+                    if (profileUpdated === 0) {
+                        throw new Error('Konfi nicht in eigener Organisation gefunden');
+                    }
                 }
 
                 await client.query('COMMIT');

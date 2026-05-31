@@ -96,7 +96,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   const ensureKonfiJahrgangChatMembership = async (db, konfiId) => {
     try {
       const jahrgangQuery = `
-        SELECT kp.jahrgang_id, j.name as jahrgang_name
+        SELECT kp.jahrgang_id, j.name as jahrgang_name, j.organization_id
         FROM konfi_profiles kp
         JOIN jahrgaenge j ON kp.jahrgang_id = j.id
         WHERE kp.user_id = $1 AND kp.jahrgang_id IS NOT NULL
@@ -128,19 +128,19 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return;
       }
       
-      // Check if jahrgang chat exists
+      // Check if jahrgang chat exists (org-gescopt)
       let chatRoom;
-      const chatExistsQuery = `SELECT id FROM chat_rooms WHERE type = 'jahrgang' AND jahrgang_id = $1`;
-      const { rows: [existingChatRoom] } = await db.query(chatExistsQuery, [jahrgang.jahrgang_id]);
+      const chatExistsQuery = `SELECT id FROM chat_rooms WHERE type = 'jahrgang' AND jahrgang_id = $1 AND organization_id = $2`;
+      const { rows: [existingChatRoom] } = await db.query(chatExistsQuery, [jahrgang.jahrgang_id, jahrgang.organization_id]);
       chatRoom = existingChatRoom;
-      
+
       if (!chatRoom) {
         const createChatQuery = `
-          INSERT INTO chat_rooms (name, type, jahrgang_id, created_by)
-          VALUES ($1, 'jahrgang', $2, 1) RETURNING id
+          INSERT INTO chat_rooms (name, type, jahrgang_id, created_by, organization_id)
+          VALUES ($1, 'jahrgang', $2, $3, $4) RETURNING id
         `;
         const chatName = `Jahrgang ${jahrgang.jahrgang_name}`;
-        const { rows: [newChatRoom] } = await db.query(createChatQuery, [chatName, jahrgang.jahrgang_id]);
+        const { rows: [newChatRoom] } = await db.query(createChatQuery, [chatName, jahrgang.jahrgang_id, konfiId, jahrgang.organization_id]);
         
         chatRoom = newChatRoom;
         
@@ -181,21 +181,19 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   
   const addAllJahrgangKonfisToChat = async (db, roomId, jahrgangId) => {
     try {
-      const konfisQuery = `SELECT user_id FROM konfi_profiles WHERE jahrgang_id = $1`;
-      const { rows: konfis } = await db.query(konfisQuery, [jahrgangId]);
-      if (!konfis || konfis.length === 0) return;
-      
-      for (const konfi of konfis) {
-        const checkQuery = `SELECT id FROM chat_participants WHERE room_id = $1 AND user_id = $2 AND user_type = 'konfi'`;
-        const { rows: [existing] } = await db.query(checkQuery, [roomId, konfi.user_id]);
-        if (existing) continue;
-        
-        const insertQuery = `
-          INSERT INTO chat_participants (room_id, user_id, user_type, joined_at)
-          VALUES ($1, $2, 'konfi', NOW())
-        `;
-        await db.query(insertQuery, [roomId, konfi.user_id]);
-      }
+      // Ein einziges Set-basiertes INSERT statt N+1 Schleife.
+      // NOT EXISTS ueberspringt bereits vorhandene Teilnehmer (constraint-unabhaengig).
+      const insertQuery = `
+        INSERT INTO chat_participants (room_id, user_id, user_type, joined_at)
+        SELECT $1, kp.user_id, 'konfi', NOW()
+        FROM konfi_profiles kp
+        WHERE kp.jahrgang_id = $2
+          AND NOT EXISTS (
+            SELECT 1 FROM chat_participants cp
+            WHERE cp.room_id = $1 AND cp.user_id = kp.user_id AND cp.user_type = 'konfi'
+          )
+      `;
+      await db.query(insertQuery, [roomId, jahrgangId]);
     } catch (err) {
  console.error(`Error adding all konfis to chat ${roomId}:`, err);
     }
@@ -675,31 +673,35 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       const { content, message_type = 'text', reply_to, client_id } = req.body;
       const userId = req.user.id;
       const userType = req.user.type;
+      const organizationId = req.user.organization_id;
 
       if (!content && !req.file) {
         return res.status(400).json({ error: 'Inhalt oder Datei erforderlich' });
       }
 
-      // Idempotency: Prüfen ob Nachricht mit dieser client_id bereits existiert
+      // Idempotency: Prüfen ob Nachricht mit dieser client_id bereits existiert (org-gescopt)
       if (client_id) {
         const existingQuery = `
           SELECT m.*, m.user_id as sender_id, m.user_type as sender_type,
                  u.display_name as sender_name, u.username as sender_username
           FROM chat_messages m
           JOIN users u ON m.user_id = u.id
-          WHERE m.client_id = $1
+          JOIN chat_rooms cr ON m.room_id = cr.id
+          WHERE m.client_id = $1 AND cr.organization_id = $2
         `;
-        const { rows: [existing] } = await db.query(existingQuery, [client_id]);
+        const { rows: [existing] } = await db.query(existingQuery, [client_id, organizationId]);
         if (existing) {
           return res.status(200).json(existing);
         }
       }
-      
-      // Check access
+
+      // Check access (mit Organisations-Pruefung)
       const accessQuery = userType === 'admin'
-      ? "SELECT 1 FROM chat_rooms WHERE id = $1"
-      : "SELECT 1 FROM chat_participants WHERE room_id = $1 AND user_id = $2 AND user_type = $3";
-      const accessParams = userType === 'admin' ? [roomId] : [roomId, userId, userType];
+      ? "SELECT 1 FROM chat_rooms WHERE id = $1 AND organization_id = $2"
+      : `SELECT 1 FROM chat_participants cp
+          JOIN chat_rooms cr ON cp.room_id = cr.id
+          WHERE cp.room_id = $1 AND cp.user_id = $2 AND cp.user_type = $3 AND cr.organization_id = $4`;
+      const accessParams = userType === 'admin' ? [roomId, organizationId] : [roomId, userId, userType, organizationId];
       const { rows: [access] } = await db.query(accessQuery, accessParams);
       if (!access) {
         return res.status(403).json({ error: 'Zugriff verweigert' });
@@ -837,7 +839,8 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
             `SELECT m.*, m.user_id as sender_id, m.user_type as sender_type,
                     u.display_name as sender_name, u.username as sender_username
              FROM chat_messages m JOIN users u ON m.user_id = u.id
-             WHERE m.client_id = $1`, [req.body.client_id]
+             JOIN chat_rooms cr ON m.room_id = cr.id
+             WHERE m.client_id = $1 AND cr.organization_id = $2`, [req.body.client_id, req.user.organization_id]
           );
           if (existing) return res.status(200).json(existing);
         } catch (lookupErr) {
@@ -858,7 +861,20 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       const roomId = req.params.roomId;
       const userId = req.user.id;
       const userType = req.user.type;
-      
+      const organizationId = req.user.organization_id;
+
+      // Zugriff pruefen (mit Organisations-Pruefung)
+      const accessQuery = userType === 'admin'
+      ? "SELECT 1 FROM chat_rooms WHERE id = $1 AND organization_id = $2"
+      : `SELECT 1 FROM chat_participants cp
+          JOIN chat_rooms cr ON cp.room_id = cr.id
+          WHERE cp.room_id = $1 AND cp.user_id = $2 AND cp.user_type = $3 AND cr.organization_id = $4`;
+      const accessParams = userType === 'admin' ? [roomId, organizationId] : [roomId, userId, userType, organizationId];
+      const { rows: [access] } = await db.query(accessQuery, accessParams);
+      if (!access) {
+        return res.status(403).json({ error: 'Zugriff verweigert' });
+      }
+
       // Use PostgreSQL's "UPSERT" functionality (INSERT ON CONFLICT)
       const query = `
       INSERT INTO chat_read_status (room_id, user_id, user_type, last_read_at)
@@ -883,18 +899,21 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       const roomId = req.params.roomId;
       const userId = req.user.id;
       const userType = req.user.type;
-      
-      // Check if user has access to this room
-      const accessQuery = userType === 'admin' 
-      ? "SELECT 1 FROM chat_rooms WHERE id = $1" 
-      : "SELECT 1 FROM chat_participants WHERE room_id = $1 AND user_id = $2 AND user_type = $3";
-      const accessParams = userType === 'admin' ? [roomId] : [roomId, userId, userType];
-      
+      const organizationId = req.user.organization_id;
+
+      // Check if user has access to this room (mit Organisations-Pruefung)
+      const accessQuery = userType === 'admin'
+      ? "SELECT 1 FROM chat_rooms WHERE id = $1 AND organization_id = $2"
+      : `SELECT 1 FROM chat_participants cp
+          JOIN chat_rooms cr ON cp.room_id = cr.id
+          WHERE cp.room_id = $1 AND cp.user_id = $2 AND cp.user_type = $3 AND cr.organization_id = $4`;
+      const accessParams = userType === 'admin' ? [roomId, organizationId] : [roomId, userId, userType, organizationId];
+
       const { rows: [access] } = await db.query(accessQuery, accessParams);
       if (!access) {
         return res.status(403).json({ error: 'Zugriff verweigert' });
       }
-      
+
       // Get participants with their details
       const query = `
       SELECT
@@ -936,7 +955,8 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       const roomId = req.params.roomId;
       const { user_id, user_type } = req.body;
       const requesterType = req.user.type;
-      
+      const organizationId = req.user.organization_id;
+
       if (requesterType !== 'admin') {
         return res.status(403).json({ error: 'Nur Admins können Teilnehmer hinzufügen' });
       }
@@ -946,8 +966,8 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       if (!['admin', 'konfi'].includes(user_type)) {
         return res.status(400).json({ error: 'Ungültiger Benutzertyp' });
       }
-      
-      const { rows: [room] } = await db.query("SELECT type FROM chat_rooms WHERE id = $1", [roomId]);
+
+      const { rows: [room] } = await db.query("SELECT type FROM chat_rooms WHERE id = $1 AND organization_id = $2", [roomId, organizationId]);
       if (!room) {
         return res.status(404).json({ error: 'Raum nicht gefunden' });
       }
@@ -980,12 +1000,13 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       const userId = parseInt(req.params.userId);
       const userType = req.params.userType;
       const requesterType = req.user.type;
-      
+      const organizationId = req.user.organization_id;
+
       if (requesterType !== 'admin') {
         return res.status(403).json({ error: 'Nur Admins können Teilnehmer entfernen' });
       }
-      
-      const { rows: [room] } = await db.query("SELECT type FROM chat_rooms WHERE id = $1", [roomId]);
+
+      const { rows: [room] } = await db.query("SELECT type FROM chat_rooms WHERE id = $1 AND organization_id = $2", [roomId, organizationId]);
       if (!room) {
         return res.status(404).json({ error: 'Raum nicht gefunden' });
       }
@@ -1011,8 +1032,9 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       const roomId = req.params.roomId;
       const userId = req.user.id;
       const userType = req.user.type;
+      const organizationId = req.user.organization_id;
 
-      const { rows: [room] } = await db.query("SELECT type FROM chat_rooms WHERE id = $1", [roomId]);
+      const { rows: [room] } = await db.query("SELECT type FROM chat_rooms WHERE id = $1 AND organization_id = $2", [roomId, organizationId]);
       if (!room) {
         return res.status(404).json({ error: 'Raum nicht gefunden' });
       }
@@ -1767,8 +1789,37 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   // Get reactions for a message
   router.get('/messages/:messageId/reactions', verifyTokenRBAC, async (req, res) => {
     const messageId = req.params.messageId;
+    const userId = req.user.id;
+    const userType = req.user.type;
+    const organizationId = req.user.organization_id;
 
     try {
+      // Zugriff pruefen: Nachricht muss in der eigenen Organisation liegen
+      const messageQuery = `
+        SELECT m.room_id, cr.organization_id
+        FROM chat_messages m
+        JOIN chat_rooms cr ON m.room_id = cr.id
+        WHERE m.id = $1
+      `;
+      const { rows: [message] } = await db.query(messageQuery, [messageId]);
+      if (!message) {
+        return res.status(404).json({ error: 'Nachricht nicht gefunden' });
+      }
+      if (message.organization_id !== organizationId) {
+        return res.status(403).json({ error: 'Zugriff verweigert' });
+      }
+
+      // Admins duerfen alle Raeume ihrer Org lesen, andere muessen Teilnehmer sein
+      if (userType !== 'admin') {
+        const { rows: [isParticipant] } = await db.query(
+          "SELECT 1 FROM chat_participants WHERE room_id = $1 AND user_id = $2 AND user_type = $3",
+          [message.room_id, userId, userType]
+        );
+        if (!isParticipant) {
+          return res.status(403).json({ error: 'Zugriff verweigert' });
+        }
+      }
+
       const query = `
         SELECT r.*, u.display_name as user_name
         FROM chat_message_reactions r

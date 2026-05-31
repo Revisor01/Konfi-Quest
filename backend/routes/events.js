@@ -899,7 +899,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           if (!newIds.has(existingId)) {
             // Check if this timeslot has bookings
             const { rows: [bookingCheck] } = await client.query(
-              "SELECT COUNT(*)::int as count FROM event_bookings WHERE timeslot_id = $1", [existingId]
+              `SELECT COUNT(*)::int as count FROM event_bookings eb
+               JOIN event_timeslots et ON eb.timeslot_id = et.id
+               WHERE et.id = $1 AND et.organization_id = $2`, [existingId, req.user.organization_id]
             );
             if (bookingCheck.count === 0) {
               await client.query("DELETE FROM event_timeslots WHERE id = $1", [existingId]);
@@ -941,14 +943,17 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         for (const slot of timeslots) {
           if (!slot.id) continue; // Nur bestehende Timeslots prüfen
           const { rows: [tsCapacity] } = await client.query(
-            "SELECT COUNT(*)::int as confirmed_count FROM event_bookings WHERE timeslot_id = $1 AND status = 'confirmed'",
-            [slot.id]
+            `SELECT COUNT(*)::int as confirmed_count FROM event_bookings
+             WHERE timeslot_id = $1 AND status = 'confirmed' AND organization_id = $2`,
+            [slot.id, req.user.organization_id]
           );
           const freeSlots = slot.max_participants - tsCapacity.confirmed_count;
           if (freeSlots > 0) {
             const { rows: waitlistEntries } = await client.query(
-              "SELECT id, user_id FROM event_bookings WHERE event_id = $1 AND timeslot_id = $2 AND status = 'waitlist' ORDER BY created_at ASC LIMIT $3",
-              [id, slot.id, freeSlots]
+              `SELECT id, user_id FROM event_bookings
+               WHERE event_id = $1 AND timeslot_id = $2 AND status = 'waitlist' AND organization_id = $4
+               ORDER BY created_at ASC LIMIT $3`,
+              [id, slot.id, freeSlots, req.user.organization_id]
             );
             for (const entry of waitlistEntries) {
               await client.query("UPDATE event_bookings SET status = 'confirmed' WHERE id = $1", [entry.id]);
@@ -1283,6 +1288,43 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       const bookingStatus = statusResult;
       const message = bookingStatus === 'confirmed' ? 'Erfolgreich angemeldet' : 'Auf die Warteliste gesetzt';
 
+      // 3b. Timeslot validieren (bei Timeslot-Events): muss zum Event + zur Org gehoeren.
+      // Bei bestaetigter Buchung zusaetzlich die Einzelkapazitaet des Timeslots pruefen.
+      if (event.has_timeslots) {
+        if (!timeslot_id) {
+          await client.query('ROLLBACK');
+          client.release();
+          return res.status(400).json({ error: 'Bitte einen Zeitslot auswählen' });
+        }
+        const { rows: [slot] } = await client.query(
+          `SELECT id, max_participants FROM event_timeslots
+           WHERE id = $1 AND event_id = $2 AND organization_id = $3`,
+          [timeslot_id, eventId, req.user.organization_id]
+        );
+        if (!slot) {
+          await client.query('ROLLBACK');
+          client.release();
+          return res.status(400).json({ error: 'Ungültiger Zeitslot' });
+        }
+        if (bookingStatus === 'confirmed' && slot.max_participants > 0) {
+          const { rows: [slotCount] } = await client.query(
+            `SELECT COUNT(*)::int as confirmed_count FROM event_bookings
+             WHERE timeslot_id = $1 AND status = 'confirmed' AND organization_id = $2`,
+            [timeslot_id, req.user.organization_id]
+          );
+          if (slotCount.confirmed_count >= slot.max_participants) {
+            await client.query('ROLLBACK');
+            client.release();
+            return res.status(400).json({ error: 'Dieser Zeitslot ist bereits ausgebucht' });
+          }
+        }
+      } else if (timeslot_id) {
+        // Event ohne Timeslots: kein timeslot_id zulassen
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(400).json({ error: 'Dieses Event hat keine Zeitslots' });
+      }
+
       // 4. Create booking
       const insertBookingQuery = "INSERT INTO event_bookings (event_id, user_id, timeslot_id, status, booking_date, organization_id) VALUES ($1, $2, $3, $4, NOW(), $5) RETURNING id";
       const { rows: [newBooking] } = await client.query(insertBookingQuery, [eventId, userId, timeslot_id, bookingStatus, req.user.organization_id]);
@@ -1316,30 +1358,37 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       return res.status(403).json({ error: 'Nur Konfis und Teamer:innen können Buchungen stornieren' });
     }
 
+    let promotedUserId = null;
+    let promotedEventName = null;
     try {
+      // Stornierung + Nachruecken atomar in EINER Transaktion (verhindert stale Kapazitaet
+      // bei gleichzeitiger Buchung/Stornierung).
+      const client = await db.getClient();
+      try {
+        await client.query('BEGIN');
 
-      // Get booking details before deleting (need timeslot_id and status for waitlist promotion)
-      const { rows: [booking] } = await db.query(
-        "SELECT status, timeslot_id FROM event_bookings WHERE event_id = $1 AND user_id = $2 AND organization_id = $3",
-        [eventId, userId, req.user.organization_id]
-      );
+        // Get booking details before deleting (need timeslot_id and status for waitlist promotion)
+        const { rows: [booking] } = await client.query(
+          "SELECT status, timeslot_id FROM event_bookings WHERE event_id = $1 AND user_id = $2 AND organization_id = $3 FOR UPDATE",
+          [eventId, userId, req.user.organization_id]
+        );
 
-      if (!booking) {
-        return res.status(404).json({ error: 'Buchung nicht gefunden' });
-      }
+        if (!booking) {
+          await client.query('ROLLBACK');
+          client.release();
+          return res.status(404).json({ error: 'Buchung nicht gefunden' });
+        }
 
-      // Delete the booking
-      await db.query("DELETE FROM event_bookings WHERE event_id = $1 AND user_id = $2 AND organization_id = $3", [eventId, userId, req.user.organization_id]);
+        // Delete the booking
+        await client.query("DELETE FROM event_bookings WHERE event_id = $1 AND user_id = $2 AND organization_id = $3", [eventId, userId, req.user.organization_id]);
 
-      // If a confirmed Konfi-spot was opened, auto-promote from waitlist (nur für Konfis relevant)
-      if (booking.status === 'confirmed' && isKonfi) {
-        try {
-          // Kapazitaet pruefen: Nur nachruecken wenn confirmedCount < maxCapacity
-          const { rows: [eventCapInfo] } = await db.query(
-            "SELECT max_participants FROM events WHERE id = $1",
-            [eventId]
+        // If a confirmed Konfi-spot was opened, auto-promote from waitlist (nur für Konfis relevant)
+        if (booking.status === 'confirmed' && isKonfi) {
+          const { rows: [eventCapInfo] } = await client.query(
+            "SELECT max_participants, name FROM events WHERE id = $1 AND organization_id = $2",
+            [eventId, req.user.organization_id]
           );
-          const { rows: [countResult] } = await db.query(
+          const { rows: [countResult] } = await client.query(
             "SELECT COUNT(*) as confirmed_count FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'",
             [eventId]
           );
@@ -1348,19 +1397,25 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
           // Nur nachruecken wenn unter Kapazitaet (0 = unbegrenzt, immer nachruecken)
           if (maxCapacity === 0 || confirmedCount < maxCapacity) {
-            const promotedUserId = await promoteFromWaitlist(db, eventId, booking.timeslot_id);
-
-            if (promotedUserId) {
-              // Push-Notification an nachgerückten Konfi
-              const { rows: [eventInfo] } = await db.query("SELECT name FROM events WHERE id = $1", [eventId]);
-              if (eventInfo) {
-                await PushService.sendWaitlistPromotionToKonfi(db, promotedUserId, eventInfo.name);
-              }
-            }
+            promotedUserId = await promoteFromWaitlist(client, eventId, booking.timeslot_id);
+            if (promotedUserId) promotedEventName = eventCapInfo?.name || null;
           }
-        } catch (promotionError) {
-          // Log the error but don't fail the main cancellation request
-          console.error('Error promoting from waitlist:', promotionError);
+        }
+
+        await client.query('COMMIT');
+      } catch (txErr) {
+        await client.query('ROLLBACK');
+        throw txErr;
+      } finally {
+        client.release();
+      }
+
+      // Push-Notification an nachgerückten Konfi NACH COMMIT (Seiteneffekt, darf Storno nicht failen)
+      if (promotedUserId && promotedEventName) {
+        try {
+          await PushService.sendWaitlistPromotionToKonfi(db, promotedUserId, promotedEventName);
+        } catch (pushErr) {
+          console.error('Error sending waitlist promotion push:', pushErr);
         }
       }
 
@@ -1520,15 +1575,18 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     
     try {
       
-      // Get booking details to verify ownership and status
+      // Get booking details to verify ownership and status (Event-Org wird mitgeprueft)
       const { rows: [booking] } = await db.query(`
-        SELECT eb.*, u.organization_id 
-        FROM event_bookings eb 
-        JOIN users u ON eb.user_id = u.id 
+        SELECT eb.*, u.organization_id, e.organization_id as event_org_id
+        FROM event_bookings eb
+        JOIN users u ON eb.user_id = u.id
+        JOIN events e ON eb.event_id = e.id
         WHERE eb.id = $1 AND eb.event_id = $2`, [bookingId, eventId]);
-      
+
       if (!booking) return res.status(404).json({ error: 'Buchung nicht gefunden' });
-      if (booking.organization_id !== req.user.organization_id) return res.status(403).json({ error: 'Zugriff verweigert' });
+      if (booking.organization_id !== req.user.organization_id || booking.event_org_id !== req.user.organization_id) {
+        return res.status(403).json({ error: 'Zugriff verweigert' });
+      }
       
       // Delete the booking
       await db.query("DELETE FROM event_bookings WHERE id = $1", [bookingId]);
@@ -1587,10 +1645,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         SELECT eb.*, eb.status, e.name as event_name, e.event_date, e.location, e.mandatory, e.bring_items
         FROM event_bookings eb
         JOIN events e ON eb.event_id = e.id
-        WHERE eb.user_id = $1 AND eb.status IN ('confirmed', 'waitlist')
+        WHERE eb.user_id = $1 AND eb.status IN ('confirmed', 'waitlist') AND e.organization_id = $2
         ORDER BY e.event_date ASC
       `;
-      const { rows: bookings } = await db.query(query, [req.user.id]);
+      const { rows: bookings } = await db.query(query, [req.user.id, req.user.organization_id]);
       res.json(bookings);
       
     } catch (err) {

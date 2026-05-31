@@ -234,7 +234,7 @@ const checkAndAwardBadges = async (db, userId) => {
                 SELECT eb.id FROM event_bookings eb
                 JOIN event_categories ec ON eb.event_id = ec.event_id
                 JOIN categories c ON ec.category_id = c.id
-                WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND c.name = $2 AND c.organization_id = $3
+                WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND c.name = $2 AND c.organization_id = $3 AND eb.organization_id = $3
               ) as combined
             `;
             const { rows: [result] } = await db.query(categoryCountQuery, [userId, criteria.required_category, konfi.organization_id]);
@@ -504,7 +504,7 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
               SELECT eb.id FROM event_bookings eb
               JOIN event_categories ec ON eb.event_id = ec.event_id
               JOIN categories c ON ec.category_id = c.id
-              WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND c.name = $2 AND c.organization_id = $3
+              WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND c.name = $2 AND c.organization_id = $3 AND eb.organization_id = $3
             ) as combined
           `;
           const { rows: [result] } = await db.query(catQuery, [userId, criteria.required_category, organizationId]);

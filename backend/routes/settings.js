@@ -65,14 +65,13 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
   ensureOrgColumn();
 
   // GET settings (alle authentifizierten User der eigenen Org)
+  // Auch super_admin wird auf die aktuelle Organisation gescopt: ohne Filter
+  // wuerden Settings ALLER Orgs vermischt zurueckgegeben (key-Kollision ueberschreibt Werte).
   router.get('/', rbacVerifier, async (req, res) => {
     try {
-      const orgFilter = req.user.is_super_admin ? '' : 'WHERE organization_id = $1';
-      const params = req.user.is_super_admin ? [] : [req.user.organization_id];
-
       const { rows } = await db.query(
-        `SELECT key, value FROM settings ${orgFilter}`,
-        params
+        `SELECT key, value FROM settings WHERE organization_id = $1`,
+        [req.user.organization_id]
       );
 
       const DEFAULT_KONFI_ORDER = ['konfirmation', 'events', 'losung', 'badges', 'ranking'];

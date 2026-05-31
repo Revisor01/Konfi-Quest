@@ -46,6 +46,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
   // Rate Limiter Middleware für Login (falls vorhanden)
   const loginMiddleware = authLimiter ? [authLimiter] : [];
+  // Rate Limiter Middleware für Selbst-Registrierung (falls vorhanden)
+  const registerMiddleware = registerLimiter ? [registerLimiter] : [];
 
   // Validierungsregeln
   const validateLogin = [
@@ -485,8 +487,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       newExpiry.setDate(newExpiry.getDate() + 7);
 
       await db.query(`
-        UPDATE invite_codes SET expires_at = $1 WHERE id = $2
-      `, [newExpiry, id]);
+        UPDATE invite_codes SET expires_at = $1 WHERE id = $2 AND organization_id = $3
+      `, [newExpiry, id, organizationId]);
 
       res.json({ message: 'Einladungscode verlängert', expires_at: newExpiry });
 
@@ -578,8 +580,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     }
   });
 
-  // Register new Konfi with invite code (public endpoint)
-  router.post('/register-konfi', validateRegisterKonfi, async (req, res) => {
+  // Register new Konfi with invite code (public endpoint, rate-limited gegen Brute-Force/Spam)
+  router.post('/register-konfi', ...registerMiddleware, validateRegisterKonfi, async (req, res) => {
     const { invite_code, display_name, username, password, email } = req.body;
 
     if (!invite_code || !display_name || !username || !password) {
@@ -759,7 +761,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     const { token, newPassword } = req.body;
     
     if (!token || !newPassword) return res.status(400).json({ error: 'Token und neues Passwort sind erforderlich' });
-    if (newPassword.length < 8) return res.status(400).json({ error: 'Das Passwort muss mindestens 8 Zeichen lang sein' });
+    const newPasswordError = validatePassword(newPassword);
+    if (newPasswordError) return res.status(400).json({ error: newPasswordError });
     
     try {
       const { rows: [resetRecord] } = await db.query(

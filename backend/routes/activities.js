@@ -201,8 +201,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       // Pending Anträge prüfen
       const { rows: [pendingCheck] } = await db.query(
         `SELECT COUNT(*)::int as count FROM activity_requests ar
-         WHERE ar.activity_id = $1 AND ar.status = 'pending'`,
-        [activityId]
+         WHERE ar.activity_id = $1 AND ar.status = 'pending' AND ar.organization_id = $2`,
+        [activityId, req.user.organization_id]
       );
       if (pendingCheck.count > 0) {
         return res.status(409).json({
