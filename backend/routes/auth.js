@@ -8,6 +8,7 @@ const validator = require('validator');
 const { handleValidationErrors, commonValidations } = require('../middleware/validation');
 const { validatePassword } = require('../utils/passwordUtils');
 const { deleteKonfiCascade } = require('../utils/konfiDeletion');
+const { checkKonfiLimit } = require('../utils/konfiLimit');
 const PushService = require('../services/pushService');
 const router = express.Router();
 
@@ -642,6 +643,19 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       const client = await db.getClient();
       try {
         await client.query('BEGIN');
+
+        // Konfi-Limit-Pruefung (Weg 2, D-08b): NUR Hard-Block ablehnen. Grace und
+        // under_limit laufen unveraendert durch — der sich selbst anmeldende Konfi
+        // kann keinen "Trotzdem anlegen"-Dialog der Leitung bestaetigen (kein 409,
+        // kein confirm). max_konfis NULL -> under_limit -> kein Block.
+        const { stufe } = await checkKonfiLimit(client, invite.organization_id);
+        if (stufe === 'hard_block') {
+          await client.query('ROLLBACK');
+          return res.status(403).json({
+            error: 'Die Anzahl der Konfis ist erreicht. Bitte wende dich an deine Leitung — ein Tarif-Upgrade ist noetig.',
+            error_code: 'limit_exceeded'
+          });
+        }
 
         // Create user (mit optionaler E-Mail)
         const { rows: [newUser] } = await client.query(`
