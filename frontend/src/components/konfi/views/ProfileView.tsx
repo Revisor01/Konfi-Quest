@@ -25,6 +25,7 @@ import {
   trophy,
   flash,
   logOutOutline,
+  trashOutline,
   checkmark,
   rocket,
   keyOutline,
@@ -43,6 +44,7 @@ import { clearAuth } from '../../../services/tokenStore';
 import { SectionHeader } from '../../shared';
 import ChangePasswordModal from '../modals/ChangePasswordModal';
 import ChangeEmailModal from '../modals/ChangeEmailModal';
+import DeleteAccountModal from '../../shared/DeleteAccountModal';
 import PointsHistoryModal from '../modals/PointsHistoryModal';
 import WrappedModal from '../../wrapped/WrappedModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
@@ -323,6 +325,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     onSuccess: () => {
       dismissPasswordModal();
     }
+  });
+
+  // Modal with useIonModal Hook for Account Deletion (D-01)
+  const [presentDeleteAccount, dismissDeleteAccount] = useIonModal(DeleteAccountModal, {
+    onClose: () => dismissDeleteAccount()
   });
 
   // Modal with useIonModal Hook for Bible Translation
@@ -770,6 +777,21 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         >
           <IonIcon icon={logOutOutline} slot="start" />
           Abmelden
+        </IonButton>
+
+        <IonButton
+          expand="block"
+          fill="clear"
+          color="danger"
+          onClick={() => presentDeleteAccount({ presentingElement: pageRef?.current || presentingElement || undefined })}
+          style={{
+            height: '48px',
+            marginTop: '8px',
+            fontWeight: '600'
+          }}
+        >
+          <IonIcon icon={trashOutline} slot="start" />
+          Account löschen
         </IonButton>
       </div>
 

@@ -29,6 +29,7 @@ import {
   settingsOutline,
   trophy,
   logOutOutline,
+  trashOutline,
   ribbon,
   schoolOutline,
   timeOutline,
@@ -45,6 +46,7 @@ import { setUser as setTokenStoreUser, clearAuth } from '../../../services/token
 import ChangeEmailModal from '../../konfi/modals/ChangeEmailModal';
 import ChangePasswordModal from '../../konfi/modals/ChangePasswordModal';
 import ChangeRoleTitleModal from '../../admin/modals/ChangeRoleTitleModal';
+import DeleteAccountModal from '../../shared/DeleteAccountModal';
 import WrappedModal from '../../wrapped/WrappedModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -125,6 +127,11 @@ const TeamerProfilePage: React.FC = () => {
     sectionIconClass: 'app-section-icon--teamer',
     submitBtnClass: 'app-modal-submit-btn--teamer',
     infoBoxClass: 'app-info-box--teamer'
+  });
+
+  // Account-Loeschung (D-01)
+  const [presentDeleteAccount, dismissDeleteAccount] = useIonModal(DeleteAccountModal, {
+    onClose: () => dismissDeleteAccount()
   });
 
   // Wrapped-Historie
@@ -477,6 +484,21 @@ const TeamerProfilePage: React.FC = () => {
           >
             <IonIcon icon={logOutOutline} slot="start" />
             Abmelden
+          </IonButton>
+
+          <IonButton
+            expand="block"
+            fill="clear"
+            color="danger"
+            onClick={() => presentDeleteAccount({ presentingElement: pageRef.current ?? undefined })}
+            style={{
+              height: '48px',
+              marginTop: '8px',
+              fontWeight: '600'
+            }}
+          >
+            <IonIcon icon={trashOutline} slot="start" />
+            Account löschen
           </IonButton>
         </div>
 

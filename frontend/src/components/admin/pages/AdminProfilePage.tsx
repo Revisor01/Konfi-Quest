@@ -25,7 +25,8 @@ import {
   arrowBack,
   briefcaseOutline,
   settingsOutline,
-  calendarOutline
+  calendarOutline,
+  trashOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -37,6 +38,7 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import ChangeEmailModal from '../modals/ChangeEmailModal';
 import ChangePasswordModal from '../modals/ChangePasswordModal';
 import ChangeRoleTitleModal from '../modals/ChangeRoleTitleModal';
+import DeleteAccountModal from '../../shared/DeleteAccountModal';
 
 const AdminProfilePage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-profile');
@@ -99,6 +101,17 @@ const AdminProfilePage: React.FC = () => {
 
   const handleOpenRoleTitleModal = () => {
     presentRoleTitleModalHook({
+      presentingElement: presentingElement || undefined
+    });
+  };
+
+  // Account-Loeschung (D-01)
+  const [presentDeleteAccount, dismissDeleteAccount] = useIonModal(DeleteAccountModal, {
+    onClose: () => dismissDeleteAccount()
+  });
+
+  const handleOpenDeleteAccount = () => {
+    presentDeleteAccount({
       presentingElement: presentingElement || undefined
     });
   };
@@ -305,7 +318,23 @@ const AdminProfilePage: React.FC = () => {
           </IonCard>
         </IonList>
 
+        <div style={{ padding: '0 16px', marginTop: '16px' }}>
+          <IonButton
+            expand="block"
+            fill="clear"
+            color="danger"
+            onClick={handleOpenDeleteAccount}
+            style={{
+              height: '48px',
+              fontWeight: '600'
+            }}
+          >
+            <IonIcon icon={trashOutline} slot="start" />
+            Account löschen
+          </IonButton>
+        </div>
 
+        <div style={{ height: '32px' }} />
       </IonContent>
     </IonPage>
   );
