@@ -546,8 +546,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
         LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
         LEFT JOIN event_timeslots et ON eb.timeslot_id = et.id
-        WHERE eb.event_id = $1 AND u.organization_id = $2
-        ORDER BY 
+        WHERE eb.event_id = $1 AND u.organization_id = $2 AND u.deleted_at IS NULL
+        ORDER BY
           CASE eb.status
             WHEN 'confirmed' THEN 1
             WHEN 'waitlist' THEN 2
@@ -610,7 +610,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         SELECT eu.*, u.display_name as konfi_name
         FROM event_unregistrations eu
         JOIN users u ON eu.user_id = u.id
-        WHERE eu.event_id = $1 AND eu.organization_id = $2
+        WHERE eu.event_id = $1 AND eu.organization_id = $2 AND u.deleted_at IS NULL
         ORDER BY eu.unregistered_at DESC
       `;
       const { rows: unregistrations } = await db.query(unregistrationsQuery, [eventId, req.user.organization_id]);
@@ -745,6 +745,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           WHERE kp.jahrgang_id = ANY($2::int[])
             AND u.organization_id = $3
             AND r.name = 'konfi'
+            AND u.deleted_at IS NULL
           ON CONFLICT (user_id, event_id) DO NOTHING
         `;
         await db.query(enrollQuery, [eventId, jahrgang_ids, req.user.organization_id]);
@@ -766,6 +767,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             WHERE kp.jahrgang_id = ANY($1::int[])
               AND u.organization_id = $2
               AND r.name = 'konfi'
+              AND u.deleted_at IS NULL
           `, [jahrgang_ids, req.user.organization_id]);
 
           if (enrolledUsers.length > 0) {
@@ -875,6 +877,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           WHERE kp.jahrgang_id = ANY($2::int[])
             AND u.organization_id = $3
             AND r.name = 'konfi'
+            AND u.deleted_at IS NULL
           ON CONFLICT (user_id, event_id) DO NOTHING
         `;
         await client.query(enrollQuery, [id, jahrgang_ids, req.user.organization_id]);
@@ -1045,7 +1048,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           `SELECT eb.user_id FROM event_bookings eb
            JOIN users u ON eb.user_id = u.id
            JOIN roles r ON u.role_id = r.id
-           WHERE eb.event_id = $1 AND r.name = 'konfi' AND eb.status IN ('confirmed', 'waitlist')`,
+           WHERE eb.event_id = $1 AND r.name = 'konfi' AND eb.status IN ('confirmed', 'waitlist') AND u.deleted_at IS NULL`,
           [id]
         );
         bookedKonfiUserIds = bookedKonfis.map(b => b.user_id);
@@ -1264,7 +1267,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
          FROM event_bookings eb
          JOIN users u ON eb.user_id = u.id
          JOIN roles r ON u.role_id = r.id
-         WHERE eb.event_id = $1 AND r.name != 'teamer'`,
+         WHERE eb.event_id = $1 AND r.name != 'teamer' AND u.deleted_at IS NULL`,
         [eventId]
       );
       const confirmedCount = parseInt(counts.confirmed_count, 10);
@@ -1978,7 +1981,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         FROM event_bookings eb
         JOIN users u ON eb.user_id = u.id
         JOIN roles r ON u.role_id = r.id
-        WHERE eb.event_id = $1 AND eb.status = 'confirmed'
+        WHERE eb.event_id = $1 AND eb.status = 'confirmed' AND u.deleted_at IS NULL
       `, [eventId]);
 
       if (participants.length > 0) {
@@ -2047,7 +2050,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         SELECT DISTINCT eb.user_id, u.display_name, u.username
         FROM event_bookings eb
         JOIN users u ON eb.user_id = u.id
-        WHERE eb.event_id = $1 AND eb.status IN ('confirmed', 'waitlist')
+        WHERE eb.event_id = $1 AND eb.status IN ('confirmed', 'waitlist') AND u.deleted_at IS NULL
       `, [eventId]);
 
       await client.query('COMMIT');

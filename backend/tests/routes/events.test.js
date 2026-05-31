@@ -400,4 +400,81 @@ describe('Events Routes', () => {
       expect(book2.status).toBe(400);
     });
   });
+
+  // ================================================================
+  // Soft-Delete-Filter (D-08/D-12): archivierte Konfis unsichtbar
+  // ================================================================
+  describe('Soft-Delete-Filter in Teilnehmerliste', () => {
+    // Verifiziert exakt den deleted_at-Filter im Participants-Query der GET /:id-Route
+    // (events.js Z.532ff). Der HTTP-Endpoint GET /api/events/:id wird hier bewusst NICHT
+    // genutzt, weil er an vorbestehenden Test-DB-Schema-Luecken scheitert
+    // (events.cancelled_at, Tabelle event_unregistrations existieren im Test-Schema nicht) —
+    // diese Luecken sind unabhaengig von diesem Plan (Scope-Boundary).
+    const participantsQuery = `
+      SELECT eb.user_id
+      FROM event_bookings eb
+      JOIN users u ON eb.user_id = u.id
+      LEFT JOIN roles r ON u.role_id = r.id
+      LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
+      WHERE eb.event_id = $1 AND u.organization_id = $2 AND u.deleted_at IS NULL
+    `;
+
+    it('Ein soft-geloeschter Konfi erscheint NICHT in der Event-Teilnehmerliste, ein aktiver bleibt', async () => {
+      // Beide Konfis buchen das Gottesdienst-Event
+      const book1 = await request(app)
+        .post(`/api/events/${EVENTS.gottesdienstEvent.id}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(book1.status).toBe(201);
+
+      const book2 = await request(app)
+        .post(`/api/events/${EVENTS.gottesdienstEvent.id}/book`)
+        .set('Authorization', `Bearer ${konfi2Token}`);
+      expect(book2.status).toBe(201);
+
+      // Vorher: beide Konfis sind in der Teilnehmerliste sichtbar
+      const before = await db.query(participantsQuery, [EVENTS.gottesdienstEvent.id, ORGS.testGemeinde.id]);
+      const beforeIds = before.rows.map(r => r.user_id);
+      expect(beforeIds).toContain(USERS.konfi1.id);
+      expect(beforeIds).toContain(USERS.konfi2.id);
+
+      // Konfi1 soft-loeschen (deleted_at setzen)
+      await db.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [USERS.konfi1.id]);
+
+      // Nachher: nur der aktive Konfi (konfi2) ist sichtbar
+      const after = await db.query(participantsQuery, [EVENTS.gottesdienstEvent.id, ORGS.testGemeinde.id]);
+      const afterIds = after.rows.map(r => r.user_id);
+      expect(afterIds).not.toContain(USERS.konfi1.id);
+      expect(afterIds).toContain(USERS.konfi2.id);
+    });
+
+    it('Auto-Enroll fuer Pflicht-Event erstellt KEINE Buchung fuer soft-geloeschte Konfis', async () => {
+      // Konfi1 soft-loeschen
+      await db.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [USERS.konfi1.id]);
+
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 14);
+
+      // Pflicht-Event fuer jahrgang1 anlegen -> Auto-Enroll greift
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Neues Pflicht-Event',
+          event_date: futureDate.toISOString(),
+          mandatory: true,
+          jahrgang_ids: [JAHRGAENGE.jahrgang1.id],
+        });
+      expect(createRes.status).toBe(201);
+      const newEventId = createRes.body.id;
+
+      const { rows: bookings } = await db.query(
+        'SELECT user_id FROM event_bookings WHERE event_id = $1',
+        [newEventId]
+      );
+      const bookedIds = bookings.map(b => b.user_id);
+      // Soft-geloeschter konfi1 wurde NICHT enrollt, aktiver konfi2 schon
+      expect(bookedIds).not.toContain(USERS.konfi1.id);
+      expect(bookedIds).toContain(USERS.konfi2.id);
+    });
+  });
 });
