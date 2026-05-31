@@ -12,7 +12,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
   // Validierungsregeln
   const validateCreateJahrgang = [
     commonValidations.name,
-    body('confirmation_date').optional().isISO8601().withMessage('Ungültiges Datumsformat'),
+    body('confirmation_date').notEmpty().withMessage('Konfirmationsdatum ist erforderlich').isISO8601().withMessage('Ungültiges Datumsformat'),
     body('gottesdienst_enabled').optional().isBoolean().withMessage('gottesdienst_enabled muss Boolean sein'),
     body('gemeinde_enabled').optional().isBoolean().withMessage('gemeinde_enabled muss Boolean sein'),
     body('target_gottesdienst').optional().isInt({ min: 0 }).withMessage('target_gottesdienst muss >= 0 sein'),
@@ -23,7 +23,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
   const validateUpdateJahrgang = [
     param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
     commonValidations.name,
-    body('confirmation_date').optional().isISO8601().withMessage('Ungültiges Datumsformat'),
+    body('confirmation_date').notEmpty().withMessage('Konfirmationsdatum ist erforderlich').isISO8601().withMessage('Ungültiges Datumsformat'),
     body('gottesdienst_enabled').optional().isBoolean().withMessage('gottesdienst_enabled muss Boolean sein'),
     body('gemeinde_enabled').optional().isBoolean().withMessage('gemeinde_enabled muss Boolean sein'),
     body('target_gottesdienst').optional().isInt({ min: 0 }).withMessage('target_gottesdienst muss >= 0 sein'),
@@ -60,15 +60,15 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
     }
 
     try {
-      // confirmation_date ist seit Migration 082 NOT NULL (D-06). Wird kein
-      // Datum mitgegeben, faellt es auf das heutige Datum zurueck (COALESCE),
-      // damit bestehende Aufrufer abwaertskompatibel bleiben.
+      // confirmation_date ist seit Migration 082 NOT NULL und seit D-06 Pflichtfeld
+      // (notEmpty-Validierung). Die Validierung garantiert einen gueltigen Wert,
+      // daher kein COALESCE-Fallback mehr noetig.
       const query = `INSERT INTO jahrgaenge (name, confirmation_date, organization_id, gottesdienst_enabled, gemeinde_enabled, target_gottesdienst, target_gemeinde)
-        VALUES ($1, COALESCE($2::date, CURRENT_DATE), $3, $4, $5, $6, $7)
+        VALUES ($1, $2::date, $3, $4, $5, $6, $7)
         RETURNING *`;
       const params = [
         name,
-        confirmation_date || null,
+        confirmation_date,
         req.user.organization_id,
         gottesdienst_enabled !== undefined ? gottesdienst_enabled : true,
         gemeinde_enabled !== undefined ? gemeinde_enabled : true,
@@ -131,16 +131,17 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
         }
       }
 
-      // confirmation_date NOT NULL (D-06): omittiertes Datum behaelt den
-      // bestehenden Wert (COALESCE), statt auf NULL zu setzen.
-      const query = `UPDATE jahrgaenge SET name = $1, confirmation_date = COALESCE($2::date, confirmation_date),
+      // confirmation_date ist Pflichtfeld (D-06, notEmpty-Validierung): die
+      // Validierung garantiert einen gueltigen Wert, daher direkte Zuweisung
+      // ohne COALESCE-Fallback.
+      const query = `UPDATE jahrgaenge SET name = $1, confirmation_date = $2::date,
         gottesdienst_enabled = COALESCE($5, gottesdienst_enabled),
         gemeinde_enabled = COALESCE($6, gemeinde_enabled),
         target_gottesdienst = COALESCE($7, target_gottesdienst),
         target_gemeinde = COALESCE($8, target_gemeinde)
         WHERE id = $3 AND organization_id = $4`;
       const params = [
-        name, confirmation_date || null, req.params.id, req.user.organization_id,
+        name, confirmation_date, req.params.id, req.user.organization_id,
         gottesdienst_enabled !== undefined ? gottesdienst_enabled : null,
         gemeinde_enabled !== undefined ? gemeinde_enabled : null,
         target_gottesdienst !== undefined ? target_gottesdienst : null,

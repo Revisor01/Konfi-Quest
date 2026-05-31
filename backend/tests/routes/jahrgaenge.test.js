@@ -91,7 +91,7 @@ describe('Jahrgaenge Routes', () => {
       const res = await request(app)
         .post('/api/admin/jahrgaenge')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ name: '2026/2027' });
+        .send({ name: '2026/2027', confirmation_date: '2027-05-01' });
 
       expect(res.status).toBe(201);
       expect(res.body.id).toBeDefined();
@@ -102,7 +102,7 @@ describe('Jahrgaenge Routes', () => {
       const res = await request(app)
         .post('/api/admin/jahrgaenge')
         .set('Authorization', `Bearer ${teamerToken}`)
-        .send({ name: '2026/2027' });
+        .send({ name: '2026/2027', confirmation_date: '2027-05-01' });
 
       expect(res.status).toBe(403);
     });
@@ -111,7 +111,25 @@ describe('Jahrgaenge Routes', () => {
       const res = await request(app)
         .post('/api/admin/jahrgaenge')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ name: '' });
+        .send({ name: '', confirmation_date: '2027-05-01' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('Fehlendes confirmation_date gibt 400 (D-06 Pflichtfeld)', async () => {
+      const res = await request(app)
+        .post('/api/admin/jahrgaenge')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: '2026/2027' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('Leeres confirmation_date gibt 400', async () => {
+      const res = await request(app)
+        .post('/api/admin/jahrgaenge')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: '2026/2027', confirmation_date: '' });
 
       expect(res.status).toBe(400);
     });
@@ -122,6 +140,7 @@ describe('Jahrgaenge Routes', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: '2026/2027',
+          confirmation_date: '2027-05-01',
           gottesdienst_enabled: true,
           gemeinde_enabled: false,
           target_gottesdienst: 15,
@@ -142,17 +161,35 @@ describe('Jahrgaenge Routes', () => {
       const res = await request(app)
         .put(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ name: 'Umbenannt 2025/2026' });
+        .send({ name: 'Umbenannt 2025/2026', confirmation_date: '2026-05-01' });
 
       expect(res.status).toBe(200);
       expect(res.body.message).toContain('aktualisiert');
+    });
+
+    it('Fehlendes confirmation_date gibt 400 (D-06 Pflichtfeld)', async () => {
+      const res = await request(app)
+        .put(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Umbenannt 2025/2026' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('Leeres confirmation_date gibt 400', async () => {
+      const res = await request(app)
+        .put(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Umbenannt 2025/2026', confirmation_date: '' });
+
+      expect(res.status).toBe(400);
     });
 
     it('Nicht-existierende ID gibt 404', async () => {
       const res = await request(app)
         .put('/api/admin/jahrgaenge/99999')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ name: 'Test' });
+        .send({ name: 'Test', confirmation_date: '2026-05-01' });
 
       expect(res.status).toBe(404);
     });
@@ -161,7 +198,7 @@ describe('Jahrgaenge Routes', () => {
       const res = await request(app)
         .put(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}`)
         .set('Authorization', `Bearer ${admin2Token}`)
-        .send({ name: 'Versuch' });
+        .send({ name: 'Versuch', confirmation_date: '2026-05-01' });
 
       expect(res.status).toBe(404);
     });
@@ -185,7 +222,7 @@ describe('Jahrgaenge Routes', () => {
       const createRes = await request(app)
         .post('/api/admin/jahrgaenge')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ name: 'Leerer Jahrgang' });
+        .send({ name: 'Leerer Jahrgang', confirmation_date: '2027-05-01' });
 
       const newId = createRes.body.id;
 
@@ -210,7 +247,7 @@ describe('Jahrgaenge Routes', () => {
       const createRes = await request(app)
         .post('/api/admin/jahrgaenge')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ name: 'Org1 Jahrgang' });
+        .send({ name: 'Org1 Jahrgang', confirmation_date: '2027-05-01' });
 
       const res = await request(app)
         .delete(`/api/admin/jahrgaenge/${createRes.body.id}`)
