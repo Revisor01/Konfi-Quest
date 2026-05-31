@@ -417,6 +417,40 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
     }
   });
 
+  // Set Konfi-Limit (max_konfis) der Organisation - NUR super_admin (D-03/D-04)
+  // Eigener Endpunkt, damit org_admin (der die PUT-Route fuer die eigene Org nutzen darf)
+  // das Limit NICHT setzen und den Tarif aushebeln kann.
+  // Body: { max_konfis: <nicht-negativer Integer | null> }. null = unbegrenzt.
+  router.patch('/:id/limit', rbacVerifier, requireSuperAdmin, validateOrgId, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { max_konfis } = req.body;
+
+      // Validierung: null erlaubt (unbegrenzt), sonst nicht-negativer Integer.
+      if (max_konfis !== null && max_konfis !== undefined) {
+        if (typeof max_konfis !== 'number' || !Number.isInteger(max_konfis) || max_konfis < 0) {
+          return res.status(400).json({ error: 'max_konfis muss null oder eine nicht-negative ganze Zahl sein' });
+        }
+      }
+
+      const value = (max_konfis === undefined) ? null : max_konfis;
+
+      const { rowCount } = await db.query(
+        'UPDATE organizations SET max_konfis = $1, updated_at = NOW() WHERE id = $2',
+        [value, id]
+      );
+
+      if (rowCount === 0) {
+        return res.status(404).json({ error: 'Organisation nicht gefunden' });
+      }
+
+      res.json({ message: 'Konfi-Limit erfolgreich aktualisiert', max_konfis: value });
+    } catch (err) {
+      console.error('Error setting organization limit:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
   // Get organization users - org_admin für eigene Org, super_admin für alle
   router.get('/:id/users', rbacVerifier, async (req, res) => {
     const isSuperAdmin = req.user.role_name === 'super_admin';
