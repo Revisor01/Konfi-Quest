@@ -657,6 +657,7 @@ class BackgroundService {
     this.startPendingEventsService(db);
     this.startTokenCleanupService(db);
     this.startWrappedCron(db);
+    this.startAutoDeletionCron(db);
   }
 
   /**
@@ -668,6 +669,7 @@ class BackgroundService {
     this.stopPendingEventsService();
     this.stopTokenCleanupService();
     this.stopWrappedCron();
+    this.stopAutoDeletionCron();
   }
 }
 
