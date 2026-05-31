@@ -1,5 +1,6 @@
 const PushService = require('./pushService');
 const cron = require('node-cron');
+const { deleteKonfiCascade } = require('../utils/konfiDeletion');
 
 class BackgroundService {
   static badgeUpdateInterval = null;
@@ -7,6 +8,7 @@ class BackgroundService {
   static pendingEventsInterval = null;
   static tokenCleanupInterval = null;
   static wrappedCronTask = null;
+  static autoDeletionCronTask = null;
   static wrappedRouter = null;
 
   /**
@@ -503,6 +505,140 @@ class BackgroundService {
       console.error('Error in checkWrappedTriggers:', error);
       throw error;
     }
+  }
+
+  // ====================================================================
+  // AUTO-DELETION SERVICE (DSG-EKD Datenaufbewahrungsfristen, D-13/14/15)
+  // ====================================================================
+
+  /**
+   * Startet den Auto-Loesch-Cron (taeglich 02:00 Uhr Europe/Berlin).
+   * Prueft je Jahrgang ab confirmation_date: Tag 60 -> Soft-Loeschung,
+   * Tag 120 -> kaskadierende Hard-Loeschung.
+   */
+  static startAutoDeletionCron(db) {
+    if (this.autoDeletionCronTask) {
+      return;
+    }
+
+    console.log('Auto-Deletion-Cron: Starte node-cron 0 2 * * * Europe/Berlin');
+
+    // '0 2 * * *' = taeglich um 02:00 Uhr
+    this.autoDeletionCronTask = cron.schedule('0 2 * * *', async () => {
+      try {
+        await this.runAutoDeletion(db);
+      } catch (e) {
+        console.error('Auto-Deletion-Cron failed:', e);
+      }
+    }, {
+      timezone: 'Europe/Berlin'
+    });
+  }
+
+  /**
+   * Stoppt den Auto-Loesch-Cron.
+   */
+  static stopAutoDeletionCron() {
+    if (this.autoDeletionCronTask) {
+      this.autoDeletionCronTask.stop();
+      this.autoDeletionCronTask = null;
+    }
+  }
+
+  /**
+   * Fuehrt die Auto-Loeschung durch (D-13/14/15).
+   *
+   * Pro Jahrgang (Fehler-Isolation, D-15):
+   *  - HARD-DELETE (>= 120 Tage seit confirmation_date): aktive Konfis dieses
+   *    Jahrgangs (nur r.name='konfi' -> Teamer-Ausnahme D-10) werden kaskadierend
+   *    via deleteKonfiCascade geloescht (je Konfi eigene Transaktion).
+   *  - SOFT-DELETE (>= 60 und < 120 Tage, deleted_at IS NULL): aktive Konfis
+   *    erhalten deleted_at + archived_at (NOW()). Idempotent durch IS NULL-Bedingung.
+   *
+   * Die 120er-Schwelle hat Vorrang; die 60er-Query grenzt mit `< 120` ab, damit
+   * ein Konfi nie gleichzeitig in beiden Buckets landet (T-114-17).
+   */
+  static async runAutoDeletion(db) {
+    let totalSoft = 0;
+    let totalHard = 0;
+
+    let jahrgaenge;
+    try {
+      const res = await db.query(
+        'SELECT id, organization_id, confirmation_date FROM jahrgaenge'
+      );
+      jahrgaenge = res.rows;
+    } catch (error) {
+      console.error('Auto-Deletion: Jahrgaenge konnten nicht geladen werden:', error.message);
+      return { soft: 0, hard: 0 };
+    }
+
+    for (const jg of jahrgaenge) {
+      try {
+        // --- HARD-DELETE (>= 120 Tage) ---
+        // Nur aktive Konfis (r.name='konfi'); promotete Teamer (role gewechselt,
+        // teamer_since gesetzt) werden durch den Rollen-Filter NIE erfasst (D-10).
+        const { rows: hardKandidaten } = await db.query(
+          `SELECT u.id
+             FROM users u
+             JOIN konfi_profiles kp ON kp.user_id = u.id
+             JOIN roles r ON u.role_id = r.id
+            WHERE kp.jahrgang_id = $1
+              AND r.name = 'konfi'
+              AND (CURRENT_DATE - $2::date) >= 120`,
+          [jg.id, jg.confirmation_date]
+        );
+
+        for (const konfi of hardKandidaten) {
+          // Jeder Konfi in eigener Transaktion + try/catch (Fehler-Isolation, D-15).
+          let client;
+          try {
+            client = await db.getClient();
+          } catch (clientErr) {
+            console.error(`Auto-Deletion: Client-Fehler bei Konfi ${konfi.id} (Jahrgang ${jg.id}):`, clientErr.message);
+            continue;
+          }
+          try {
+            await client.query('BEGIN');
+            await deleteKonfiCascade(client, konfi.id, jg.organization_id);
+            await client.query('COMMIT');
+            totalHard++;
+          } catch (delErr) {
+            try { await client.query('ROLLBACK'); } catch (_) { /* ignore */ }
+            console.error(`Auto-Deletion: Hard-Delete fuer Konfi ${konfi.id} (Jahrgang ${jg.id}) fehlgeschlagen:`, delErr.message);
+          } finally {
+            client.release();
+          }
+        }
+
+        // --- SOFT-DELETE (>= 60 und < 120 Tage, deleted_at IS NULL) ---
+        // Idempotent: nur Konfis ohne gesetztes deleted_at. Rollen-Filter (D-10).
+        const { rows: softUpdated } = await db.query(
+          `UPDATE users u
+              SET deleted_at = NOW(), archived_at = NOW()
+             FROM konfi_profiles kp, roles r
+            WHERE u.id = kp.user_id
+              AND u.role_id = r.id
+              AND kp.jahrgang_id = $1
+              AND r.name = 'konfi'
+              AND u.deleted_at IS NULL
+              AND (CURRENT_DATE - $2::date) >= 60
+              AND (CURRENT_DATE - $2::date) < 120
+            RETURNING u.id`,
+          [jg.id, jg.confirmation_date]
+        );
+        totalSoft += softUpdated.length;
+      } catch (jgErr) {
+        // Fehler pro Jahrgang isolieren -> Job laeuft weiter (D-15).
+        console.error(`Auto-Deletion: Jahrgang ${jg.id} fehlgeschlagen:`, jgErr.message);
+      }
+    }
+
+    if (totalSoft > 0 || totalHard > 0) {
+      console.log(`Auto-Deletion: ${totalSoft} soft-geloescht, ${totalHard} hart-geloescht`);
+    }
+
+    return { soft: totalSoft, hard: totalHard };
   }
 
   // ====================================================================
