@@ -185,7 +185,7 @@ router.delete('/:id', verifyTokenRBAC, validateLevelId, async (req, res) => {
     const levelUsage = await db.query(`
       SELECT COUNT(*) as count FROM konfi_profiles kp
       JOIN users u ON kp.user_id = u.id
-      WHERE u.organization_id = $1 AND kp.current_level_id = $2
+      WHERE u.organization_id = $1 AND kp.current_level_id = $2 AND u.deleted_at IS NULL
     `, [organizationId, levelId]);
 
     if (parseInt(levelUsage.rows[0].count) > 0) {
@@ -232,7 +232,7 @@ router.get('/konfi/:userId', verifyTokenRBAC, async (req, res) => {
       FROM users u
       JOIN konfi_profiles kp ON u.id = kp.user_id
       LEFT JOIN levels cl ON kp.current_level_id = cl.id
-      WHERE u.id = $1 AND u.organization_id = $2
+      WHERE u.id = $1 AND u.organization_id = $2 AND u.deleted_at IS NULL
     `, [userId, organizationId]);
 
     if (konfiResult.rows.length === 0) {

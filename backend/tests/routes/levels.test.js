@@ -253,5 +253,15 @@ describe('Levels Routes', () => {
 
       expect(res.status).toBe(404);
     });
+
+    it('Soft-geloeschter Konfi gibt 404', async () => {
+      await db.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [USERS.konfi1.id]);
+
+      const res = await request(app)
+        .get(`/api/levels/konfi/${USERS.konfi1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(404);
+    });
   });
 });
