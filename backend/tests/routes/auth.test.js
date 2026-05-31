@@ -307,4 +307,105 @@ describe('Auth Routes', () => {
       expect([400, 404]).toContain(res.status);
     });
   });
+
+  // ================================================================
+  // POST /api/auth/delete-account (Self-Delete, D-01/D-02/D-03)
+  // ================================================================
+  describe('POST /api/auth/delete-account', () => {
+    it('Konfi mit korrektem Passwort wird geloescht (200, danach nicht mehr in DB)', async () => {
+      const token = generateToken('konfi1');
+
+      const res = await request(app)
+        .post('/api/auth/delete-account')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ password: PASSWORD });
+
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query('SELECT id FROM users WHERE id = $1', [USERS.konfi1.id]);
+      expect(rows.length).toBe(0);
+    });
+
+    it('Falsches Passwort gibt 400 und loescht nicht', async () => {
+      const token = generateToken('konfi1');
+
+      const res = await request(app)
+        .post('/api/auth/delete-account')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ password: 'falsch' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Aktuelles Passwort ist falsch');
+
+      const { rows } = await db.query('SELECT id FROM users WHERE id = $1', [USERS.konfi1.id]);
+      expect(rows.length).toBe(1);
+    });
+
+    it('Ohne password im Body gibt 400', async () => {
+      const token = generateToken('konfi1');
+
+      const res = await request(app)
+        .post('/api/auth/delete-account')
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+
+      expect(res.status).toBe(400);
+
+      const { rows } = await db.query('SELECT id FROM users WHERE id = $1', [USERS.konfi1.id]);
+      expect(rows.length).toBe(1);
+    });
+
+    it('Teamer kann sich selbst loeschen (rollen-unabhaengig, 200)', async () => {
+      const token = generateToken('teamer1');
+
+      const res = await request(app)
+        .post('/api/auth/delete-account')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ password: PASSWORD });
+
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query('SELECT id FROM users WHERE id = $1', [USERS.teamer1.id]);
+      expect(rows.length).toBe(0);
+    });
+
+    it('Admin kann sich selbst loeschen (rollen-unabhaengig, 200)', async () => {
+      const token = generateToken('admin1');
+
+      const res = await request(app)
+        .post('/api/auth/delete-account')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ password: PASSWORD });
+
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query('SELECT id FROM users WHERE id = $1', [USERS.admin1.id]);
+      expect(rows.length).toBe(0);
+    });
+
+    it('Loeschung kaskadiert (konfi_profiles + bonus_points des Konfis danach leer)', async () => {
+      const token = generateToken('konfi1');
+
+      const res = await request(app)
+        .post('/api/auth/delete-account')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ password: PASSWORD });
+
+      expect(res.status).toBe(200);
+
+      const profile = await db.query('SELECT user_id FROM konfi_profiles WHERE user_id = $1', [USERS.konfi1.id]);
+      expect(profile.rows.length).toBe(0);
+
+      const bonus = await db.query('SELECT id FROM bonus_points WHERE konfi_id = $1', [USERS.konfi1.id]);
+      expect(bonus.rows.length).toBe(0);
+    });
+
+    it('Ohne Auth-Header gibt 401', async () => {
+      const res = await request(app)
+        .post('/api/auth/delete-account')
+        .send({ password: PASSWORD });
+
+      expect(res.status).toBe(401);
+    });
+  });
 });
