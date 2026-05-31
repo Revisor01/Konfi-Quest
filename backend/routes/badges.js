@@ -40,6 +40,11 @@ const CRITERIA_TYPES = {
     description: "Anzahl besuchter Events",
     help: "Badge wird vergeben, wenn die angegebene Anzahl von Events besucht wurde (mit Anwesenheit bestätigt). Beispiel: Wert 6 = mindestens 6 Events besucht."
   },
+  mandatory_event_count: {
+    label: "Pflicht-Anwesenheit",
+    description: "Anzahl besuchter Pflicht-Events",
+    help: "Badge wird vergeben, wenn die angegebene Anzahl von Pflicht-Events besucht wurde. Es zählen ausschließlich Events mit Pflicht-Markierung UND bestätigter Anwesenheit. Nicht-Pflicht-Events und nicht besuchte Pflicht-Events zählen nicht mit. Beispiel: Wert 12 = mindestens 12 Pflicht-Events besucht."
+  },
   unique_activities: {
     label: "Verschiedene Aktivitäten",
     description: "Anzahl unterschiedlicher Aktivitäten",
@@ -270,6 +275,18 @@ const checkAndAwardBadges = async (db, userId) => {
 
         case 'event_count': {
           earned = preloaded.eventCount >= badge.criteria_value;
+          break;
+        }
+
+        case 'mandatory_event_count': {
+          // Zaehlt NUR besuchte Pflicht-Events (events.mandatory=true + attendance_status='present').
+          // KONSISTENZ-VERTRAG: Diese Query muss in konfi.js (Progress) byte-identisch verwendet werden.
+          const { rows: [mandResult] } = await db.query(
+            `SELECT COUNT(*) FROM event_bookings eb JOIN events e ON eb.event_id = e.id
+             WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND e.mandatory = true AND eb.organization_id = $2`,
+            [userId, konfi.organization_id]
+          );
+          earned = parseInt(mandResult.count) >= badge.criteria_value;
           break;
         }
 
