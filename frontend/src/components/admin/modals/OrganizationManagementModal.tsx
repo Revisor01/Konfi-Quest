@@ -56,6 +56,7 @@ interface Organization {
   user_count: number;
   konfi_count: number;
   event_count: number;
+  max_konfis?: number | null;
 }
 
 interface OrgAdmin {
@@ -77,7 +78,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   onClose,
   onSuccess
 }) => {
-  const { setSuccess, setError, isOnline } = useApp();
+  const { setSuccess, setError, isOnline, user } = useApp();
+  const isSuperAdmin = user?.role_name === 'super_admin';
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
@@ -124,6 +126,9 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   }, [formData]);
 
   const [organization, setOrganization] = useState<Organization | null>(null);
+  // Konfi-Limit (nur für super_admin sichtbar/setzbar). Leeres Feld = unbegrenzt (NULL).
+  const [maxKonfis, setMaxKonfis] = useState<string>('');
+  const [savingLimit, setSavingLimit] = useState(false);
   const [orgAdmins, setOrgAdmins] = useState<OrgAdmin[]>([]);
   const [newPassword, setNewPassword] = useState('');
   const [selectedAdminId, setSelectedAdminId] = useState<number | null>(null);
@@ -173,6 +178,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
       const orgData = response.data;
 
       setOrganization(orgData);
+      setMaxKonfis(orgData.max_konfis !== null && orgData.max_konfis !== undefined ? String(orgData.max_konfis) : '');
       setFormData({
         display_name: orgData.display_name || '',
         description: orgData.description || '',
@@ -266,6 +272,33 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         setError(err.response?.data?.error || 'Fehler beim Speichern');
       }
     });
+  };
+
+  const handleSaveLimit = async () => {
+    if (!organizationId) return;
+
+    const trimmed = maxKonfis.trim();
+    let value: number | null;
+    if (trimmed === '') {
+      value = null; // unbegrenzt
+    } else {
+      const parsed = parseInt(trimmed, 10);
+      if (isNaN(parsed) || parsed < 0) {
+        setError('Das Konfi-Limit muss eine Zahl ab 0 oder leer sein');
+        return;
+      }
+      value = parsed;
+    }
+
+    setSavingLimit(true);
+    try {
+      await api.patch(`/organizations/${organizationId}/limit`, { max_konfis: value });
+      setSuccess(value === null ? 'Konfi-Limit aufgehoben (unbegrenzt)' : `Konfi-Limit auf ${value} gesetzt`);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Fehler beim Speichern des Konfi-Limits');
+    } finally {
+      setSavingLimit(false);
+    }
   };
 
   const handleResetPassword = async (adminId: number) => {
@@ -648,6 +681,54 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     </div>
                   </div>
                 )}
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
+
+        {/* SEKTION: Konfi-Limit (nur super_admin, nur im Edit-Modus) */}
+        {isEditMode && isSuperAdmin && (
+          <IonList inset={true} className="app-modal-section">
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--organizations">
+                <IonIcon icon={people} />
+              </div>
+              <IonLabel>Konfi-Limit (Tarif)</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent style={{ padding: '16px' }}>
+                <IonList style={{ background: 'transparent' }}>
+                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                    <IonLabel position="stacked">Maximale Anzahl Konfis (leer = unbegrenzt)</IonLabel>
+                    <IonInput
+                      type="number"
+                      inputmode="numeric"
+                      min="0"
+                      value={maxKonfis}
+                      onIonInput={(e) => setMaxKonfis(e.detail.value ?? '')}
+                      placeholder="z.B. 15 — leer lassen für unbegrenzt"
+                      disabled={savingLimit || !isOnline}
+                    />
+                  </IonItem>
+                </IonList>
+
+                <IonItem lines="none" style={{ '--background': 'rgba(102, 126, 234, 0.08)', borderRadius: '10px', marginTop: '8px' }}>
+                  <IonIcon icon={alertCircleOutline} slot="start" style={{ color: '#667eea' }} />
+                  <IonLabel>
+                    <p style={{ color: '#667eea', margin: 0, fontSize: '0.85rem' }}>
+                      Bis zu 5 Konfis über dem Limit sind nach Bestätigung möglich. Danach ist ein Tarif-Upgrade nötig.
+                    </p>
+                  </IonLabel>
+                </IonItem>
+
+                <IonButton
+                  expand="block"
+                  onClick={handleSaveLimit}
+                  disabled={savingLimit || !isOnline}
+                  style={{ marginTop: '12px', '--background': '#667eea', '--background-activated': '#5a67d8' }}
+                >
+                  {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : savingLimit ? <IonSpinner name="crescent" /> : 'Konfi-Limit speichern'}
+                </IonButton>
               </IonCardContent>
             </IonCard>
           </IonList>

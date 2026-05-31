@@ -34,6 +34,7 @@ import {
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
 import api from '../../services/api';
+import { useApp } from '../../contexts/AppContext';
 
 interface Konfi {
   id: number;
@@ -84,12 +85,34 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   onSelectKonfi,
   onDeleteKonfi
 }) => {
+  const { user } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedJahrgang, setSelectedJahrgang] = useState('alle');
   const [sortBy, setSortBy] = useState('name');
   const [viewMode, setViewMode] = useState<'konfis' | 'teamer'>('konfis');
   const [teamers, setTeamers] = useState<any[]>([]);
   const [teamerLoading, setTeamerLoading] = useState(false);
+  // Konfi-Limit der eigenen Organisation (NULL = unbegrenzt) für read-only "X von Y"-Anzeige
+  const [konfiLimit, setKonfiLimit] = useState<number | null>(null);
+
+  // Limit der eigenen Organisation laden (kein neuer Endpunkt: GET /organizations/:id liefert max_konfis)
+  useEffect(() => {
+    if (!user?.organization_id) return;
+    let cancelled = false;
+    const loadLimit = async () => {
+      try {
+        const response = await api.get(`/organizations/${user.organization_id}`);
+        if (!cancelled) {
+          const mk = response.data?.max_konfis;
+          setKonfiLimit(mk !== null && mk !== undefined ? Number(mk) : null);
+        }
+      } catch (err) {
+        if (!cancelled) setKonfiLimit(null);
+      }
+    };
+    loadLimit();
+    return () => { cancelled = true; };
+  }, [user?.organization_id]);
 
   // Teamer laden wenn Teamer-Segment aktiv
   useEffect(() => {
@@ -190,6 +213,18 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           { value: jahrgaenge.length, label: 'Jahrgänge' }
         ]}
       />
+
+      {/* Read-only Konfi-Stand: "X von Y Konfis" (bzw. "X Konfis" bei unbegrenzt) */}
+      {viewMode === 'konfis' && (
+        <div style={{ margin: '0 16px 8px', display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
+          <IonIcon icon={peopleOutline} style={{ color: 'var(--app-color-konfis)', fontSize: '0.95rem' }} />
+          <span style={{ fontSize: '0.85rem', color: '#666', fontWeight: '500' }}>
+            {konfiLimit !== null
+              ? `${konfis.length} von ${konfiLimit} Konfis`
+              : `${konfis.length} Konfis`}
+          </span>
+        </div>
+      )}
 
       {/* Konfis / Teamer:innen Segment */}
       <IonSegment
