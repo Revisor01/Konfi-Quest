@@ -177,6 +177,47 @@ describe('Konfi-Management Routes', () => {
   });
 
   // ================================================================
+  // Soft-Delete-Filter (deleted_at IS NULL)
+  // ================================================================
+  describe('Soft-Delete-Filter (deleted_at)', () => {
+    it('Soft-geloeschter Konfi erscheint NICHT mehr in der Konfi-Liste', async () => {
+      await db.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [USERS.konfi1.id]);
+
+      const res = await request(app)
+        .get('/api/admin/konfis')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      // Org 1 hatte 2 Konfis, nach Soft-Delete nur noch 1 sichtbar
+      expect(res.body.length).toBe(1);
+      const ids = res.body.map((k) => k.id);
+      expect(ids).not.toContain(USERS.konfi1.id);
+    });
+
+    it('Aktiver Konfi bleibt nach Soft-Delete eines anderen sichtbar', async () => {
+      await db.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [USERS.konfi1.id]);
+
+      const res = await request(app)
+        .get('/api/admin/konfis')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      const ids = res.body.map((k) => k.id);
+      expect(ids).toContain(USERS.konfi2.id);
+    });
+
+    it('Detail-Lookup eines soft-geloeschten Konfis gibt 404', async () => {
+      await db.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [USERS.konfi1.id]);
+
+      const res = await request(app)
+        .get(`/api/admin/konfis/${USERS.konfi1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(404);
+    });
+  });
+
+  // ================================================================
   // POST /api/admin/konfis (Konfi erstellen)
   // ================================================================
   describe('POST /api/admin/konfis', () => {

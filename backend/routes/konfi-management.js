@@ -78,7 +78,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 JOIN roles r ON u.role_id = r.id
                 LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
                 LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
-                WHERE r.name = 'konfi' AND u.organization_id = $1 ${jahrgangFilter}
+                WHERE r.name = 'konfi' AND u.organization_id = $1 AND u.deleted_at IS NULL ${jahrgangFilter}
                 ORDER BY j.name DESC, u.display_name
             `;
 
@@ -349,7 +349,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             const checkUserQuery = `
                 SELECT u.id FROM users u
                 JOIN roles r ON u.role_id = r.id
-                WHERE u.id = $1 AND u.organization_id = $2 AND r.name = 'konfi'`;
+                WHERE u.id = $1 AND u.organization_id = $2 AND r.name = 'konfi' AND u.deleted_at IS NULL`;
             const { rows: [user] } = await client.query(checkUserQuery, [userId, req.user.organization_id]);
 
             if (!user) {
@@ -421,7 +421,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 JOIN roles r ON u.role_id = r.id
                 LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
                 LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
-                WHERE u.id = $1 AND r.name IN ('konfi', 'teamer') AND u.organization_id = $2
+                WHERE u.id = $1 AND r.name IN ('konfi', 'teamer') AND u.organization_id = $2 AND u.deleted_at IS NULL
             `;
             const { rows: [konfi] } = await db.query(konfiQuery, [konfiId, req.user.organization_id]);
 
