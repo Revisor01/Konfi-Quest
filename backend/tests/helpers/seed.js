@@ -51,9 +51,10 @@ const USERS = {
 // ====================================================================
 // JAHRGAENGE
 // ====================================================================
+// confirmation_date ist seit Migration 082 NOT NULL (D-06) -> Seed muss es setzen.
 const JAHRGAENGE = {
-  jahrgang1: { id: 1, name: '2025/2026', org_id: 1 },
-  jahrgang2: { id: 2, name: '2025/2026', org_id: 2 },
+  jahrgang1: { id: 1, name: '2025/2026', org_id: 1, confirmation_date: '2026-05-01' },
+  jahrgang2: { id: 2, name: '2025/2026', org_id: 2, confirmation_date: '2026-05-01' },
 };
 
 // ====================================================================
@@ -152,8 +153,8 @@ async function seed(db) {
   // 4. Jahrgaenge (FK: organizations)
   for (const jg of Object.values(JAHRGAENGE)) {
     await db.query(
-      `INSERT INTO jahrgaenge (id, name, organization_id, is_active) VALUES ($1, $2, $3, true)`,
-      [jg.id, jg.name, jg.org_id]
+      `INSERT INTO jahrgaenge (id, name, organization_id, confirmation_date, is_active) VALUES ($1, $2, $3, $4, true)`,
+      [jg.id, jg.name, jg.org_id, jg.confirmation_date]
     );
   }
 
