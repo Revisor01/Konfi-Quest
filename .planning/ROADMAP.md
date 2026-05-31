@@ -9,3 +9,13 @@ Plans:
 - [x] 115-01-PLAN.md (Wave 1) — Fundament: Migration 083 (organizations.max_konfis NULL) + gemeinsame Util checkKonfiLimit (Single Source of Truth) + super_admin-only PATCH /:id/limit
 - [x] 115-02-PLAN.md (Wave 2) — Durchsetzung beider Anlage-Wege: 3-Stufen-Grace in POST-Konfi-Route (201/409/403) + Hard-Block in Invite-Registrierung
 - [x] 115-03-PLAN.md (Wave 3) — Frontend: max_konfis-Feld (nur super_admin), read-only "X von Y Konfis", Grace-Bestaetigungsdialog + Hard-Block-Hinweis (haengt an 02 wegen Response-Struktur)
+
+### Phase 116: Badge-System-Audit + Pflicht-Anwesenheits-Badges (Anzahl, Teamer-Jahre)
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 115
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 116 to break down)
