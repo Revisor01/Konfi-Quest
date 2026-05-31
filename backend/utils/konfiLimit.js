@@ -8,6 +8,24 @@
 // duerfen mit Bestaetigung angelegt werden, danach harte Grenze.
 const GRACE_BUFFER = 5;
 
+// Tarif-Stufen (Preistabelle, Memory session_30mai_launch): 15/50/75/100 Konfis.
+// Solange es keine plan/tier-Spalte gibt, reicht diese statische Stufen-Liste,
+// um im 409/403-Response den naechsthoeheren Tarif zu nennen (D-05.2/3).
+const TARIF_STUFEN = [15, 50, 75, 100];
+
+/**
+ * Ermittelt die naechsthoehere Tarif-Stufe ueber dem aktuellen Limit.
+ * @param {number|null} limit - aktuelles max_konfis der Org
+ * @returns {number|null} kleinste Stufe > limit, oder null wenn keine groessere existiert
+ */
+function nextTier(limit) {
+  if (limit === null || limit === undefined) return null;
+  for (const stufe of TARIF_STUFEN) {
+    if (stufe > limit) return stufe;
+  }
+  return null;
+}
+
 /**
  * Ermittelt die Limit-Stufe einer Organisation anhand der aktiven Konfi-Anzahl.
  *
@@ -63,4 +81,4 @@ async function checkKonfiLimit(db, organizationId) {
   return { count, limit, stufe: 'hard_block' };
 }
 
-module.exports = { checkKonfiLimit, GRACE_BUFFER };
+module.exports = { checkKonfiLimit, GRACE_BUFFER, nextTier, TARIF_STUFEN };

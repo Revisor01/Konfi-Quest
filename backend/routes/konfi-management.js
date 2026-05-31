@@ -5,6 +5,7 @@ const { handleValidationErrors, commonValidations, getPointField } = require('..
 const { checkPointTypeEnabled } = require('../utils/pointTypeGuard');
 const { generateBiblicalPassword } = require('../utils/passwordUtils');
 const { deleteKonfiCascade } = require('../utils/konfiDeletion');
+const { checkKonfiLimit, nextTier } = require('../utils/konfiLimit');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const router = express.Router();
@@ -133,6 +134,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
     // POST (create) a new konfi
     router.post('/', rbacVerifier, requireAdmin, validateCreateKonfi, async (req, res) => {
         const { name, jahrgang_id } = req.body;
+        const confirm = req.body.confirm === true;
         if (!name || !jahrgang_id) {
             return res.status(400).json({ error: 'Name und Jahrgang sind erforderlich' });
         }
@@ -161,6 +163,35 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 await client.query('ROLLBACK');
                 return res.status(500).json({ error: 'Konfi-Rolle nicht gefunden' });
             }
+
+            // Konfi-Limit-Pruefung (3-Stufen-Grace, D-05). Single Source of Truth.
+            // max_konfis NULL -> stufe 'under_limit', laeuft normal durch (D-06).
+            const { count, limit, stufe } = await checkKonfiLimit(client, req.user.organization_id);
+
+            if (stufe === 'hard_block') {
+                // Harte Grenze (count >= limit + 5): kein Override, auch nicht mit confirm.
+                await client.query('ROLLBACK');
+                return res.status(403).json({
+                    error: `Tarif-Grenze erreicht (${count} von ${limit} Konfis). Ein Tarif-Upgrade ist noetig, um weitere Konfis anzulegen.`,
+                    error_code: 'limit_exceeded',
+                    count,
+                    limit,
+                    next_tier: nextTier(limit)
+                });
+            }
+
+            if (stufe === 'grace' && !confirm) {
+                // Grace-Bereich ohne Bestaetigung: 409, Frontend zeigt Dialog (D-05.2).
+                await client.query('ROLLBACK');
+                return res.status(409).json({
+                    error: `Tarif ausgeschoepft (${count} von ${limit} Konfis). Du kannst bis zu 5 weitere anlegen — danach ist ein Upgrade noetig.`,
+                    error_code: 'limit_grace',
+                    count,
+                    limit,
+                    next_tier: nextTier(limit)
+                });
+            }
+            // under_limit ODER (grace mit confirm:true) -> normal anlegen.
 
             const userQuery = `
                 INSERT INTO users (username, display_name, password_hash, role_id, organization_id)
