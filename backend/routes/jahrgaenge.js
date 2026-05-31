@@ -60,12 +60,15 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
     }
 
     try {
+      // confirmation_date ist seit Migration 082 NOT NULL (D-06). Wird kein
+      // Datum mitgegeben, faellt es auf das heutige Datum zurueck (COALESCE),
+      // damit bestehende Aufrufer abwaertskompatibel bleiben.
       const query = `INSERT INTO jahrgaenge (name, confirmation_date, organization_id, gottesdienst_enabled, gemeinde_enabled, target_gottesdienst, target_gemeinde)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        VALUES ($1, COALESCE($2::date, CURRENT_DATE), $3, $4, $5, $6, $7)
         RETURNING *`;
       const params = [
         name,
-        confirmation_date,
+        confirmation_date || null,
         req.user.organization_id,
         gottesdienst_enabled !== undefined ? gottesdienst_enabled : true,
         gemeinde_enabled !== undefined ? gemeinde_enabled : true,
@@ -128,14 +131,16 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
         }
       }
 
-      const query = `UPDATE jahrgaenge SET name = $1, confirmation_date = $2,
+      // confirmation_date NOT NULL (D-06): omittiertes Datum behaelt den
+      // bestehenden Wert (COALESCE), statt auf NULL zu setzen.
+      const query = `UPDATE jahrgaenge SET name = $1, confirmation_date = COALESCE($2::date, confirmation_date),
         gottesdienst_enabled = COALESCE($5, gottesdienst_enabled),
         gemeinde_enabled = COALESCE($6, gemeinde_enabled),
         target_gottesdienst = COALESCE($7, target_gottesdienst),
         target_gemeinde = COALESCE($8, target_gemeinde)
         WHERE id = $3 AND organization_id = $4`;
       const params = [
-        name, confirmation_date, req.params.id, req.user.organization_id,
+        name, confirmation_date || null, req.params.id, req.user.organization_id,
         gottesdienst_enabled !== undefined ? gottesdienst_enabled : null,
         gemeinde_enabled !== undefined ? gemeinde_enabled : null,
         target_gottesdienst !== undefined ? target_gottesdienst : null,

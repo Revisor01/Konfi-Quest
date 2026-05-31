@@ -4,6 +4,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors, commonValidations, getPointField } = require('../middleware/validation');
 const { checkPointTypeEnabled } = require('../utils/pointTypeGuard');
 const { generateBiblicalPassword } = require('../utils/passwordUtils');
+const { deleteKonfiCascade } = require('../utils/konfiDeletion');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const router = express.Router();
@@ -356,23 +357,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 return res.status(404).json({ error: 'Konfi nicht gefunden' });
             }
 
-            // Delete related data (in correct order to avoid FK violations)
-            await client.query("DELETE FROM user_activities WHERE user_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
-            await client.query("DELETE FROM bonus_points WHERE konfi_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
-            await client.query("DELETE FROM event_points WHERE konfi_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
-            await client.query("DELETE FROM event_bookings WHERE user_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
-            await client.query("DELETE FROM user_badges WHERE user_id = $1", [userId]);
-            await client.query("DELETE FROM activity_requests WHERE user_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
-            await client.query("DELETE FROM chat_participants WHERE user_id = $1 AND user_type = 'konfi'", [userId]);
-            await client.query("DELETE FROM chat_read_status WHERE user_id = $1", [userId]);
-            await client.query("DELETE FROM chat_messages WHERE user_id = $1", [userId]);
-            await client.query("DELETE FROM notifications WHERE user_id = $1", [userId]);
-            await client.query("DELETE FROM password_resets WHERE user_id = $1", [userId]);
-            await client.query("DELETE FROM user_jahrgang_assignments WHERE user_id = $1", [userId]);
-            await client.query("DELETE FROM chat_poll_votes WHERE user_id = $1", [userId]);
-            await client.query("DELETE FROM push_tokens WHERE user_id = $1", [userId]);
-            await client.query("DELETE FROM konfi_profiles WHERE user_id = $1", [userId]);
-            await client.query("DELETE FROM users WHERE id = $1", [userId]);
+            // Kaskadierende Loeschung ueber gemeinsame Funktion (D-04, Single Source of Truth)
+            await deleteKonfiCascade(client, userId, req.user.organization_id);
 
             await client.query('COMMIT');
             res.json({ message: 'Konfi erfolgreich gelöscht' });
