@@ -438,4 +438,193 @@ describe('Badges Routes', () => {
       expect(rows.length).toBe(1);
     });
   });
+
+  // ================================================================
+  // Pflicht-Anwesenheits-Badge (mandatory_event_count)
+  // ================================================================
+  describe('mandatory_event_count Wertung', () => {
+    // Hilfsfunktion: legt N Pflicht-Events an und bucht den Konfi mit attendance_status='present'
+    async function createMandatoryEventsWithPresence(orgId, konfiId, count, mandatory = true, present = true) {
+      for (let i = 0; i < count; i++) {
+        const { rows: [ev] } = await db.query(
+          `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants, point_type, points)
+           VALUES ($1, NOW() - interval '1 day', $2, $3, 0, 'gemeinde', 0)
+           RETURNING id`,
+          [`Pflicht-Termin ${i}-${Math.random()}`, orgId, mandatory]
+        );
+        await db.query(
+          `INSERT INTO event_bookings (user_id, event_id, organization_id, status, attendance_status)
+           VALUES ($1, $2, $3, 'confirmed', $4)`,
+          [konfiId, ev.id, orgId, present ? 'present' : 'absent']
+        );
+      }
+    }
+
+    it('Konfi mit 12 besuchten Pflicht-Events erhaelt das Badge (criteria_value=12)', async () => {
+      const { rows: [badge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ('Alle Pflichttermine', 'mandatory_event_count', 12, 'checkmark', '#10b981', $1, 'konfi', true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      await createMandatoryEventsWithPresence(ORGS.testGemeinde.id, USERS.konfi1.id, 12);
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.konfi1.id);
+
+      const { rows } = await db.query(
+        'SELECT * FROM user_badges WHERE user_id = $1 AND badge_id = $2',
+        [USERS.konfi1.id, badge.id]
+      );
+      expect(rows.length).toBe(1);
+    });
+
+    it('Konfi mit 11 besuchten Pflicht-Events erhaelt das Badge NICHT (criteria_value=12)', async () => {
+      const { rows: [badge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ('Alle Pflichttermine', 'mandatory_event_count', 12, 'checkmark', '#10b981', $1, 'konfi', true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      await createMandatoryEventsWithPresence(ORGS.testGemeinde.id, USERS.konfi1.id, 11);
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.konfi1.id);
+
+      const { rows } = await db.query(
+        'SELECT * FROM user_badges WHERE user_id = $1 AND badge_id = $2',
+        [USERS.konfi1.id, badge.id]
+      );
+      expect(rows.length).toBe(0);
+    });
+
+    it('Nicht-Pflicht-Events und nicht-besuchte Pflicht-Events zaehlen NICHT mit', async () => {
+      const { rows: [badge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ('Erster Pflichttermin', 'mandatory_event_count', 1, 'checkmark', '#10b981', $1, 'konfi', true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      // 5 Nicht-Pflicht-Events (besucht) + 3 Pflicht-Events (NICHT besucht) -> current bleibt 0
+      await createMandatoryEventsWithPresence(ORGS.testGemeinde.id, USERS.konfi1.id, 5, false, true);
+      await createMandatoryEventsWithPresence(ORGS.testGemeinde.id, USERS.konfi1.id, 3, true, false);
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.konfi1.id);
+
+      const { rows } = await db.query(
+        'SELECT * FROM user_badges WHERE user_id = $1 AND badge_id = $2',
+        [USERS.konfi1.id, badge.id]
+      );
+      expect(rows.length).toBe(0);
+    });
+
+    it('Bereits vergebenes Badge bleibt bei spaeterer Schwellwert-Anhebung erhalten (kein Entzug)', async () => {
+      const { rows: [badge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ('Pflicht-Badge', 'mandatory_event_count', 3, 'checkmark', '#10b981', $1, 'konfi', true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      await createMandatoryEventsWithPresence(ORGS.testGemeinde.id, USERS.konfi1.id, 3);
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.konfi1.id);
+
+      // Schwellwert anheben (3 -> 12), Badge bleibt bestehen
+      await db.query('UPDATE custom_badges SET criteria_value = 12 WHERE id = $1', [badge.id]);
+      await checkAndAwardBadges(db, USERS.konfi1.id);
+
+      const { rows } = await db.query(
+        'SELECT * FROM user_badges WHERE user_id = $1 AND badge_id = $2',
+        [USERS.konfi1.id, badge.id]
+      );
+      expect(rows.length).toBe(1);
+    });
+  });
+
+  // ================================================================
+  // teamer_year-Startjahr aus users.teamer_since
+  // ================================================================
+  describe('teamer_year Startjahr aus teamer_since', () => {
+    // Legt eine Teamer-Aktivitaet in einem bestimmten Jahr an
+    async function createTeamerActivityInYear(orgId, teamerId, year) {
+      const { rows: [act] } = await db.query(
+        `INSERT INTO activities (name, points, type, organization_id, target_role)
+         VALUES ($1, 1, 'gottesdienst', $2, 'teamer')
+         RETURNING id`,
+        [`Teamer-Aktion ${year}-${Math.random()}`, orgId]
+      );
+      await db.query(
+        `INSERT INTO user_activities (user_id, activity_id, completed_date, admin_id, organization_id)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [teamerId, act.id, `${year}-06-15`, USERS.admin1.id, orgId]
+      );
+    }
+
+    it('Startjahr aus teamer_since: Aktivitaeten in 2024 und 2026 -> Badge bei value=2', async () => {
+      await db.query('UPDATE users SET teamer_since = $1 WHERE id = $2', ['2024-01-01', USERS.teamer1.id]);
+      await createTeamerActivityInYear(ORGS.testGemeinde.id, USERS.teamer1.id, 2024);
+      await createTeamerActivityInYear(ORGS.testGemeinde.id, USERS.teamer1.id, 2026);
+
+      const { rows: [badge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ('Zwei Teamer-Jahre', 'teamer_year', 2, 'ribbon', '#7c3aed', $1, 'teamer', true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.teamer1.id);
+
+      const { rows } = await db.query(
+        'SELECT * FROM user_badges WHERE user_id = $1 AND badge_id = $2',
+        [USERS.teamer1.id, badge.id]
+      );
+      expect(rows.length).toBe(1);
+    });
+
+    it('Aktivitaet vor teamer_since zaehlt NICHT (teamer_since=2026, Aktivitaet 2024)', async () => {
+      await db.query('UPDATE users SET teamer_since = $1 WHERE id = $2', ['2026-01-01', USERS.teamer1.id]);
+      await createTeamerActivityInYear(ORGS.testGemeinde.id, USERS.teamer1.id, 2024);
+
+      const { rows: [badge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ('Ein Teamer-Jahr', 'teamer_year', 1, 'ribbon', '#7c3aed', $1, 'teamer', true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.teamer1.id);
+
+      const { rows } = await db.query(
+        'SELECT * FROM user_badges WHERE user_id = $1 AND badge_id = $2',
+        [USERS.teamer1.id, badge.id]
+      );
+      expect(rows.length).toBe(0);
+    });
+
+    it('teamer_since=NULL: Fallback auf aelteste Teamer-Aktivitaet', async () => {
+      await db.query('UPDATE users SET teamer_since = NULL WHERE id = $1', [USERS.teamer1.id]);
+      await createTeamerActivityInYear(ORGS.testGemeinde.id, USERS.teamer1.id, 2023);
+      await createTeamerActivityInYear(ORGS.testGemeinde.id, USERS.teamer1.id, 2024);
+
+      const { rows: [badge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ('Zwei Teamer-Jahre Fallback', 'teamer_year', 2, 'ribbon', '#7c3aed', $1, 'teamer', true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.teamer1.id);
+
+      const { rows } = await db.query(
+        'SELECT * FROM user_badges WHERE user_id = $1 AND badge_id = $2',
+        [USERS.teamer1.id, badge.id]
+      );
+      expect(rows.length).toBe(1);
+    });
+  });
 });
