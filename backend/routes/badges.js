@@ -120,7 +120,7 @@ const checkAndAwardBadges = async (db, userId) => {
       SELECT kp.*, u.display_name as name, u.organization_id
       FROM konfi_profiles kp
       JOIN users u ON kp.user_id = u.id
-      WHERE kp.user_id = $1
+      WHERE kp.user_id = $1 AND u.deleted_at IS NULL
     `;
     const { rows: [konfi] } = await db.query(konfiQuery, [userId]);
     if (!konfi) return { count: 0, badges: [] };

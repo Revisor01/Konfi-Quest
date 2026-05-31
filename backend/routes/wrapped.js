@@ -475,7 +475,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           `SELECT kp.user_id FROM konfi_profiles kp
            JOIN users u ON kp.user_id = u.id
            JOIN roles r ON u.role_id = r.id
-           WHERE kp.jahrgang_id = $1 AND r.name = 'konfi'`,
+           WHERE kp.jahrgang_id = $1 AND r.name = 'konfi' AND u.deleted_at IS NULL`,
           [jahrgangId]
         );
 
@@ -693,7 +693,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         `SELECT kp.user_id FROM konfi_profiles kp
          JOIN users u ON kp.user_id = u.id
          JOIN roles r ON u.role_id = r.id
-         WHERE kp.jahrgang_id = $1 AND r.name = 'konfi'`,
+         WHERE kp.jahrgang_id = $1 AND r.name = 'konfi' AND u.deleted_at IS NULL`,
         [jahrgangId]
       );
 

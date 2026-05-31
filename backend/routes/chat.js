@@ -240,7 +240,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.status(403).json({ error: 'Konfirmanden dürfen nur Admins anschreiben' });
       }
 
-      const { rows: [validUser] } = await db.query("SELECT id FROM users WHERE id = $1 AND organization_id = $2", [target_user_id, organizationId]);
+      const { rows: [validUser] } = await db.query("SELECT id FROM users WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL", [target_user_id, organizationId]);
       if (!validUser) {
         return res.status(403).json({ error: 'Benutzer nicht in deiner Organisation gefunden' });
       }
@@ -344,10 +344,10 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         }).filter(p => p !== null);
         await Promise.all(participantPromises);
       } else if (type === 'jahrgang') {
-        const konfisQuery = `SELECT u.id FROM users u 
-                              JOIN roles r ON u.role_id = r.id 
-                              JOIN konfi_profiles kp ON u.id = kp.user_id 
-                              WHERE r.name = 'konfi' AND kp.jahrgang_id = $1 AND u.organization_id = $2`;
+        const konfisQuery = `SELECT u.id FROM users u
+                              JOIN roles r ON u.role_id = r.id
+                              JOIN konfi_profiles kp ON u.id = kp.user_id
+                              WHERE r.name = 'konfi' AND kp.jahrgang_id = $1 AND u.organization_id = $2 AND u.deleted_at IS NULL`;
         const { rows: konfis } = await db.query(konfisQuery, [jahrgang_id, organizationId]);
         
         if (konfis.length > 0) {
@@ -502,7 +502,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       SELECT u.id as user_id, u.display_name, cp.user_type
       FROM chat_participants cp
       JOIN users u ON cp.user_id = u.id
-      WHERE cp.room_id = $1
+      WHERE cp.room_id = $1 AND u.deleted_at IS NULL
     `;
       const { rows: participants } = await db.query(participantsQuery, [roomId]);
       room.participants = participants;
