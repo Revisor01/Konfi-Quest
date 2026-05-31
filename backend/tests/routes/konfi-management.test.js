@@ -273,6 +273,116 @@ describe('Konfi-Management Routes', () => {
   });
 
   // ================================================================
+  // POST /api/admin/konfis — Konfi-Limit (3-Stufen-Grace, Phase 115 Plan 02)
+  // ================================================================
+  describe('POST /api/admin/konfis — Konfi-Limit (Weg 1)', () => {
+    // Org 1 hat im Seed 2 aktive Konfis (konfi1, konfi2). max_konfis wird je
+    // Test direkt gesetzt; zusaetzliche Konfis fuer den Hard-Block-Bereich
+    // werden inline angelegt (Rolle 'konfi' = role_id 1, Org 1).
+    const setLimit = async (max) => {
+      await db.query('UPDATE organizations SET max_konfis = $1 WHERE id = 1', [max]);
+    };
+    const addKonfis = async (n) => {
+      for (let i = 0; i < n; i++) {
+        await db.query(
+          `INSERT INTO users (username, display_name, password_hash, role_id, organization_id, is_active)
+           VALUES ($1, $2, 'x', 1, 1, true)`,
+          [`fillkonfi${i}`, `Fill Konfi ${i}`]
+        );
+      }
+    };
+
+    it('max_konfis NULL -> 201 (kein Check)', async () => {
+      // Seed setzt max_konfis nicht -> NULL.
+      const res = await request(app)
+        .post('/api/admin/konfis')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Limit Konfi A', jahrgang_id: JAHRGAENGE.jahrgang1.id });
+
+      expect(res.status).toBe(201);
+    });
+
+    it('unter Limit -> 201', async () => {
+      await setLimit(10); // 2 Konfis < 10
+      const res = await request(app)
+        .post('/api/admin/konfis')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Limit Konfi B', jahrgang_id: JAHRGAENGE.jahrgang1.id });
+
+      expect(res.status).toBe(201);
+    });
+
+    it('Grace ohne confirm -> 409 mit error_code limit_grace und count/limit/next_tier', async () => {
+      await setLimit(2); // 2 Konfis == Limit -> Grace
+      const res = await request(app)
+        .post('/api/admin/konfis')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Limit Konfi C', jahrgang_id: JAHRGAENGE.jahrgang1.id });
+
+      expect(res.status).toBe(409);
+      expect(res.body.error_code).toBe('limit_grace');
+      expect(res.body.count).toBe(2);
+      expect(res.body.limit).toBe(2);
+      expect(res.body).toHaveProperty('next_tier');
+      expect(res.body.error).toBeDefined();
+    });
+
+    it('Grace mit confirm:true -> 201 (Konfi wird angelegt)', async () => {
+      await setLimit(2);
+      const res = await request(app)
+        .post('/api/admin/konfis')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Limit Konfi D', jahrgang_id: JAHRGAENGE.jahrgang1.id, confirm: true });
+
+      expect(res.status).toBe(201);
+      expect(res.body.id).toBeDefined();
+    });
+
+    it('Hard-Block (count >= limit+5) -> 403 mit error_code limit_exceeded', async () => {
+      await setLimit(2);
+      await addKonfis(5); // 2 + 5 = 7 >= 2+5
+      const res = await request(app)
+        .post('/api/admin/konfis')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Limit Konfi E', jahrgang_id: JAHRGAENGE.jahrgang1.id });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error_code).toBe('limit_exceeded');
+      expect(res.body.count).toBe(7);
+      expect(res.body.limit).toBe(2);
+      expect(res.body).toHaveProperty('next_tier');
+    });
+
+    it('Hard-Block bleibt 403 auch mit confirm:true', async () => {
+      await setLimit(2);
+      await addKonfis(5);
+      const res = await request(app)
+        .post('/api/admin/konfis')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Limit Konfi F', jahrgang_id: JAHRGAENGE.jahrgang1.id, confirm: true });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error_code).toBe('limit_exceeded');
+    });
+
+    it('Username-Kollision bleibt 409 OHNE error_code limit_grace', async () => {
+      await setLimit(10); // under_limit, damit der Limit-Check nicht zuerst greift
+      // Gleicher Name erzeugt gleichen abgeleiteten Username -> 23505 unique_violation.
+      await request(app)
+        .post('/api/admin/konfis')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Kollision Konfi', jahrgang_id: JAHRGAENGE.jahrgang1.id });
+      const res = await request(app)
+        .post('/api/admin/konfis')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Kollision Konfi', jahrgang_id: JAHRGAENGE.jahrgang1.id });
+
+      expect(res.status).toBe(409);
+      expect(res.body.error_code).not.toBe('limit_grace');
+    });
+  });
+
+  // ================================================================
   // PUT /api/admin/konfis/:id
   // ================================================================
   describe('PUT /api/admin/konfis/:id', () => {
