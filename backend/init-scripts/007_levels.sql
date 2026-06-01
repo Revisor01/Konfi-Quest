@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS levels (
   title VARCHAR(200) NOT NULL,
   description TEXT,
   points_required INTEGER NOT NULL CHECK (points_required >= 0),
-  icon VARCHAR(10) DEFAULT '🏆',
+  icon VARCHAR(50) DEFAULT 'trophy',
   color VARCHAR(7) DEFAULT '#3880ff',
   reward_type VARCHAR(50), -- 'badge', 'points', 'special', etc.
   reward_value TEXT, -- JSON mit Belohnungsdetails
@@ -45,7 +45,7 @@ SELECT
   'Novize' as title,
   'Der erste Schritt auf deiner Konfi-Reise' as description,
   0 as points_required,
-  '🌱' as icon,
+  'leaf' as icon,
   '#10b981' as color,
   CURRENT_TIMESTAMP as created_at
 FROM organizations o
@@ -60,7 +60,7 @@ SELECT
   'Lehrling' as title,
   'Du sammelst erste Erfahrungen' as description,
   5 as points_required,
-  '📚' as icon,
+  'book' as icon,
   '#3b82f6' as color,
   CURRENT_TIMESTAMP as created_at
 FROM organizations o
@@ -75,7 +75,7 @@ SELECT
   'Gehilfe' as title,
   'Du hilfst bereits anderen' as description,
   10 as points_required,
-  '🤝' as icon,
+  'people' as icon,
   '#8b5cf6' as color,
   CURRENT_TIMESTAMP as created_at
 FROM organizations o
@@ -90,7 +90,7 @@ SELECT
   'Experte' as title,
   'Du kennst dich richtig gut aus' as description,
   15 as points_required,
-  '🎯' as icon,
+  'star' as icon,
   '#f59e0b' as color,
   CURRENT_TIMESTAMP as created_at
 FROM organizations o
@@ -105,7 +105,7 @@ SELECT
   'Meister' as title,
   'Du bist ein wahrer Könner' as description,
   20 as points_required,
-  '🏆' as icon,
+  'trophy' as icon,
   '#ef4444' as color,
   CURRENT_TIMESTAMP as created_at
 FROM organizations o
@@ -120,7 +120,7 @@ SELECT
   'Legende' as title,
   'Du hast legendären Status erreicht!' as description,
   30 as points_required,
-  '👑' as icon,
+  'medal' as icon,
   '#7c3aed' as color,
   CURRENT_TIMESTAMP as created_at
 FROM organizations o
