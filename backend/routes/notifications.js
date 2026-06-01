@@ -19,6 +19,38 @@ module.exports = (db, verifyTokenRBAC) => {
     handleValidationErrors
   ];
 
+  // Liefert den globalen Push-Master-Schalter des eingeloggten Users
+  router.get('/preferences', verifyTokenRBAC, async (req, res) => {
+    try {
+      const { rows: [row] } = await db.query(
+        'SELECT push_enabled FROM users WHERE id = $1',
+        [req.user.id]
+      );
+      res.json({ push_enabled: row ? row.push_enabled : true });
+    } catch (err) {
+      console.error('Database error in GET /preferences:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // Setzt den globalen Push-Master-Schalter des eingeloggten Users
+  router.put('/preferences', verifyTokenRBAC, [
+    body('push_enabled').isBoolean().withMessage('push_enabled muss true oder false sein'),
+    handleValidationErrors
+  ], async (req, res) => {
+    const { push_enabled } = req.body;
+    try {
+      await db.query(
+        'UPDATE users SET push_enabled = $1 WHERE id = $2',
+        [push_enabled, req.user.id]
+      );
+      res.json({ success: true, push_enabled });
+    } catch (err) {
+      console.error('Database error in PUT /preferences:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
   // Speichert oder aktualisiert einen Geräte-Token für Push-Benachrichtigungen
   router.post('/device-token', verifyTokenRBAC, validateDeviceToken, async (req, res) => {
     const { token, platform, device_id } = req.body;

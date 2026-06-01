@@ -182,4 +182,75 @@ describe('Notifications Routes', () => {
       expect(res.body.total).toBe(1);
     });
   });
+
+  // ================================================================
+  // GET / PUT /api/notifications/preferences  (Push-Master-Schalter)
+  // ================================================================
+  describe('GET/PUT /api/notifications/preferences', () => {
+    it('GET liefert default push_enabled=true fuer neuen User', async () => {
+      const res = await request(app)
+        .get('/api/notifications/preferences')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.push_enabled).toBe(true);
+    });
+
+    it('PUT push_enabled=false deaktiviert Push und wird persistiert', async () => {
+      const putRes = await request(app)
+        .put('/api/notifications/preferences')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ push_enabled: false });
+
+      expect(putRes.status).toBe(200);
+      expect(putRes.body.success).toBe(true);
+      expect(putRes.body.push_enabled).toBe(false);
+
+      // GET liefert jetzt false
+      const getRes = await request(app)
+        .get('/api/notifications/preferences')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(getRes.body.push_enabled).toBe(false);
+
+      // DB verifizieren
+      const { rows } = await db.query('SELECT push_enabled FROM users WHERE id = $1', [USERS.konfi1.id]);
+      expect(rows[0].push_enabled).toBe(false);
+    });
+
+    it('Deaktivierter User bekommt keine Tokens via test-push (Master-Schalter greift)', async () => {
+      // Token speichern
+      await db.query(
+        `INSERT INTO push_tokens (user_id, user_type, token, platform, device_id) VALUES ($1, $2, $3, $4, $5)`,
+        [USERS.konfi1.id, 'konfi', 'fcm-konfi-token', 'ios', 'konfi-device']
+      );
+      // Push deaktivieren
+      await db.query('UPDATE users SET push_enabled = false WHERE id = $1', [USERS.konfi1.id]);
+
+      // test-push nutzt eigene Query (ohne Master-Schalter) -> Token wird gefunden,
+      // aber PushService.getTokensForUser (regulaerer Versand) wuerde 0 liefern.
+      const { rows } = await db.query(`
+        SELECT pt.* FROM push_tokens pt
+        JOIN users u ON pt.user_id = u.id
+        WHERE pt.user_id = $1 AND u.push_enabled = true
+      `, [USERS.konfi1.id]);
+      expect(rows.length).toBe(0);
+    });
+
+    it('PUT ohne Auth-Token -> 401', async () => {
+      const res = await request(app)
+        .put('/api/notifications/preferences')
+        .send({ push_enabled: false });
+
+      expect(res.status).toBe(401);
+    });
+
+    it('PUT mit ungueltigem Wert -> 400 Validierungsfehler', async () => {
+      const res = await request(app)
+        .put('/api/notifications/preferences')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ push_enabled: 'vielleicht' });
+
+      expect(res.status).toBe(400);
+    });
+  });
 });

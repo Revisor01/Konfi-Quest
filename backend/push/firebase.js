@@ -46,6 +46,17 @@ const sendFirebasePushNotification = async (deviceToken, notificationData) => {
         body: notificationData.body || notificationData.alert,
       },
       data: notificationData.data || {},
+      android: {
+        // Hohe Prioritaet, damit die Notification auf Android 8+ zuverlaessig
+        // und sofort zugestellt wird. Bewusst KEINE feste channelId: das
+        // Capacitor-Push-Plugin registriert selbst einen Default-Channel —
+        // eine unbekannte channelId wuerde die Zustellung verhindern.
+        priority: 'high',
+        notification: {
+          sound: notificationData.sound || 'default',
+          defaultSound: true,
+        },
+      },
       apns: {
         payload: {
           aps: {

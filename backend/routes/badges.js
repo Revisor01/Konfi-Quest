@@ -594,7 +594,7 @@ async function insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds,
         [
           userId,
           `Neues Badge erhalten! ${badge.icon}`,
-          `Herzlichen Glueckwunsch! Du hast das Badge "${badge.name}" erhalten: ${badge.description}`,
+          `Herzlichen Glückwunsch! Du hast das Badge "${badge.name}" erhalten: ${badge.description}`,
           'badge_earned',
           JSON.stringify({
             badge_id: badge.id,

@@ -60,17 +60,6 @@ class BackgroundService {
         return { updated: 0 };
       }
 
-      // Badge-Counts VOR dem Sync laden (für Change-Detection)
-      const { rows: badgeCounts } = await db.query(`
-        SELECT user_id, COUNT(*)::int as badge_count
-        FROM user_badges
-        GROUP BY user_id
-      `);
-      const previousBadgeCounts = {};
-      for (const row of badgeCounts) {
-        previousBadgeCounts[row.user_id] = parseInt(row.badge_count);
-      }
-
       let updatedCount = 0;
       const checkAndAwardBadges = require('../routes/badges').checkAndAwardBadges;
 
@@ -104,23 +93,12 @@ class BackgroundService {
             updatedCount++;
           }
 
-          // Badge-Check durchfuehren (Streak, zeitbasiert etc.)
-          const awardResult = await checkAndAwardBadges(db, user.user_id);
-
-          // Neue Badge-Counts nach Check
-          const { rows: [newCount] } = await db.query(
-            'SELECT COUNT(*)::int as cnt FROM user_badges WHERE user_id = $1',
-            [user.user_id]
-          );
-          const prevCount = previousBadgeCounts[user.user_id] || 0;
-          const currentCount = newCount?.cnt || 0;
-
-          // Nur bei NEUEN Badges sichtbare Push senden
-          if (currentCount > prevCount && awardResult?.badges?.length > 0) {
-            for (const badge of awardResult.badges) {
-              await PushService.sendNewBadgeNotification(db, user.user_id, badge.name || 'Neues Badge');
-            }
-          }
+          // Badge-Check durchfuehren (Streak, zeitbasiert etc.).
+          // checkAndAwardBadges() vergibt neue Badges UND sendet dafuer bereits
+          // selbst die Push + In-App-Notification (via insertBadgesAndNotify ->
+          // sendBadgeEarnedToKonfi). KEIN zweiter Push hier — sonst bekommt der
+          // Konfi pro neuem Badge zwei Benachrichtigungen.
+          await checkAndAwardBadges(db, user.user_id);
         } catch (error) {
           console.error(`Badge update failed for user ${user.user_id}:`, error);
         }
