@@ -128,7 +128,7 @@ const LoginView: React.FC = () => {
             </div>
 
             <p className="app-auth-hero__subtitle app-auth-hero__subtitle--cosmic">
-              Bereit für die nächste Quest?
+              Dein Abenteuer in der Gemeinde
             </p>
           </div>
 

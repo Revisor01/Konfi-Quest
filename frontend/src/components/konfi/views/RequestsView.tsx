@@ -138,9 +138,6 @@ const RequestsView: React.FC<RequestsViewProps> = ({
           value={activeTab}
           onIonChange={(e) => onTabChange(e.detail.value as any)}
         >
-          <IonSegmentButton value="all">
-            <IonLabel>Alle</IonLabel>
-          </IonSegmentButton>
           <IonSegmentButton value="pending">
             <IonLabel>Offen</IonLabel>
           </IonSegmentButton>
@@ -201,11 +198,12 @@ const RequestsView: React.FC<RequestsViewProps> = ({
 
                   <div className="app-list-item__row">
                     <div className="app-list-item__main">
-                      {/* Aktivitäts-Typ Icon */}
+                      {/* Status-Icon (Farbe nach Status: orange/gruen/rot) */}
                       <div
-                        className={`app-icon-circle app-icon-circle--lg app-icon-circle--${request.activity_type === 'gottesdienst' ? 'info' : 'activities'}`}
+                        className="app-icon-circle app-icon-circle--lg"
+                        style={{ backgroundColor: statusColor }}
                       >
-                        <IonIcon icon={request.activity_type === 'gottesdienst' ? home : people} />
+                        <IonIcon icon={statusIcon} style={{ color: '#fff' }} />
                       </div>
 
                       {/* Content */}

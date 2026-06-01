@@ -59,7 +59,7 @@ const KonfiRequestsPage: React.FC = () => {
     { ttl: CACHE_TTL.REQUESTS }
   );
 
-  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [selectedRequest, setSelectedRequest] = useState<ActivityRequest | null>(null);
   const [pendingQueueItems, setPendingQueueItems] = useState<QueueItem[]>([]);
 

@@ -164,6 +164,15 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
     }
   };
 
+  // Typ-Badge Icon (Event/Bonus zeigen nur Icon, kein Text)
+  const getTypeBadgeIcon = (sourceType: string) => {
+    switch (sourceType) {
+      case 'bonus': return giftOutline;
+      case 'event': return calendarOutline;
+      default: return null;
+    }
+  };
+
   // Punkte-Summen nach Quelle aus gefilterter History berechnen
   const eventPoints = filteredHistory.filter(h => h.source_type === 'event').reduce((sum, h) => sum + h.points, 0);
   const activityPoints = filteredHistory.filter(h => h.source_type === 'activity').reduce((sum, h) => sum + h.points, 0);
@@ -239,10 +248,10 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
                             {/* Corner Badges Container - oben rechts */}
                             <div className="app-corner-badges">
                               {/* Typ-Badge (Bonus/Event) */}
-                              {typeBadgeColor && typeBadgeLabel && (
+                              {typeBadgeColor && getTypeBadgeIcon(entry.source_type) && (
                                 <>
                                   <div className="app-corner-badge" style={{ backgroundColor: typeBadgeColor }}>
-                                    {typeBadgeLabel}
+                                    <IonIcon icon={getTypeBadgeIcon(entry.source_type)!} />
                                   </div>
                                   <div className="app-corner-badges__separator" />
                                 </>
