@@ -423,7 +423,7 @@ class PushService {
     try {
 
       const notification = {
-        title: `Neues Badge erhalten! ${badgeIcon}`,
+        title: 'Neues Badge erhalten!',
         body: `Herzlichen Glückwunsch! Du hast das Badge "${badgeName}" erhalten.`,
         data: {
           type: 'badge_earned',
@@ -673,7 +673,7 @@ class PushService {
     try {
 
       const notification = {
-        title: `Level Up! ${levelIcon || ''}`,
+        title: 'Level Up!',
         body: `Herzlichen Glückwunsch! Du hast Level "${levelTitle || levelName}" erreicht!`,
         data: {
           type: 'level_up',
