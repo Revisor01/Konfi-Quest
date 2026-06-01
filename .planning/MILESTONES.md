@@ -1,5 +1,22 @@
 # Milestones
 
+## v2.11 Admin/Teamer Design-Angleichung + Launch-Haertung (Shipped: 2026-06-01)
+
+**Phases completed:** 15 phases, 34 plans
+
+**Range:** v2.10..HEAD — 144 Commits, 243 Dateien, +22.925/-5.312 LOC (2026-04-05 bis 2026-06-01)
+
+**Key accomplishments:**
+
+- Konfi-Views vereinheitlicht (globale app-text-Klassen), Events-Details, Badges-Popovers, Aktivitaeten/Profil-Modals, globale CSS-Patterns, Haptics/Searchbar/IonRange (Phasen 108-112)
+- DSGVO/DSG-EKD-Loeschung (Phase 114): In-App-Account-Loeschung fuer alle Rollen (loest Apple-Review-Risiko 5.1.1(v)), Auto-Loeschung-Cron (Tag 60 Soft / Tag 120 Hard ab confirmation_date), deleteKonfiCascade als Single Source of Truth, Migration 082
+- Konfi-Limits pro Org (Phase 115): max_konfis mit 3-Stufen-Grace (ok / bestaetigen / hart blocken bei +5), super_admin-only, echte Multi-Tenancy (eine DB, organization_id), Migration 083
+- Badge-Erweiterung (Phase 116): neuer criteria_type mandatory_event_count, Teamer-Jahre-Fix auf teamer_since, Prozent-Bug behoben, Streak-Dedup als gemeinsame Util
+- Voll-Audit der gesamten App (01.06.): 42 Funde behoben (15 critical, 13 high, 13 medium, 1 low) — Chat-Org-Isolation als Hauptthema (16 Funde), Race-Conditions (Warteliste), Offline-Datenverlust (writeQueue FormData), DSGVO-Loeschpfad-Luecken; 28 False Positives adversarial gefiltert, 2 neue Regressionstests
+- Tests: alle betroffenen Backend-Suites + Frontend (73, inkl. writeQueue) gruen
+
+---
+
 ## v2.10 Design-Polish + UX-Feinschliff (Shipped: 2026-04-05)
 
 **Phases completed:** 5 phases, 6 plans, 23 requirements

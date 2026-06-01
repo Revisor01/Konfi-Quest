@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
 milestone: v2.11
-milestone_name: Admin/Teamer Design-Angleichung
-status: in_progress
-last_updated: "2026-05-31T18:46:43.768Z"
+milestone_name: Admin/Teamer Design-Angleichung + Launch-Haertung
+status: complete
+last_updated: "2026-06-01T09:12:00.000Z"
 progress:
-  total_phases: 13
-  completed_phases: 11
-  total_plans: 28
-  completed_plans: 23
-  percent: 82
+  total_phases: 15
+  completed_phases: 15
+  total_plans: 34
+  completed_plans: 34
+  percent: 100
 ---
 
 # Project State
@@ -19,13 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 116 (Badges: Pflicht-Anwesenheit + Teamer-Jahre + Prozent-Fix) abgeschlossen, 3/3 Plans, 96 Tests gruen (1 vorbestehender truncateAll-Deadlock, flaky). 3 Phasen unverdeployt (114,115,116).
+**Current focus:** v2.11 ABGESCHLOSSEN (archiviert, getaggt). Voll-Audit der App durchgefuehrt, 42 Funde behoben. Offen vor Launch: Deploy (114/115/116 + Audit-Fixes, Migrationen 082+083 via Portainer), Rollen-Feature-Matrix, Screens, Store. Siehe MEMORY.md + audit_v3_todos.md.
 
 ## Current Position
 
-Milestone: v2.11
-Phase: 114 (self-loeschung-auto-loeschung) — EXECUTING
-Plan: 1 of 6
+Milestone: v2.11 — COMPLETE (Shipped 2026-06-01)
+Naechster Milestone: v3.0 Launch (via /gsd:new-milestone)
 
 ## Performance Metrics
 
