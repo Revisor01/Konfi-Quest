@@ -64,6 +64,24 @@ describe('Organizations Routes', () => {
       expect(res.status).toBe(403);
     });
 
+    it('OrgAdmin MIT is_super_admin-Flag bekommt 200 (Org-Verwaltung im eigenen Admin)', async () => {
+      // Flag auf org_admin setzen + User-Cache invalidieren (rbac.js cached 30s)
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      await db.query('UPDATE users SET is_super_admin = true WHERE id = 5');
+      invalidateUserCache(5);
+
+      const res = await request(app)
+        .get('/api/organizations')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+
+      // Cleanup: Flag zuruecksetzen + Cache invalidieren (Test-Isolation)
+      await db.query('UPDATE users SET is_super_admin = false WHERE id = 5');
+      invalidateUserCache(5);
+    });
+
     it('Konfi bekommt 403', async () => {
       const res = await request(app)
         .get('/api/organizations')

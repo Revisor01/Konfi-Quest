@@ -321,7 +321,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     try {
       const { rows: [user] } = await db.query(`
         SELECT u.id, u.username, u.display_name, u.email, u.role_title,
-               r.name as role_name, r.display_name as role_display_name
+               r.name as role_name, r.display_name as role_display_name,
+               (r.name = 'super_admin' OR u.is_super_admin = true) as is_super_admin
         FROM users u
         LEFT JOIN roles r ON u.role_id = r.id
         WHERE u.id = $1

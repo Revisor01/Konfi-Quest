@@ -202,8 +202,8 @@ console.error('Logout error:', error);
           </IonList>
         )}
 
-        {/* System-Administration - NUR für super_admin */}
-        {user?.role_name === 'super_admin' && (
+        {/* System-Administration - super_admin ODER org_admin mit is_super_admin-Flag */}
+        {user?.is_super_admin && (
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--users">

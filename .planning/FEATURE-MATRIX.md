@@ -344,10 +344,13 @@ Quelle der Wahrheit fuer 'welche Rolle darf was'. Bei Code-Aenderungen an Routes
 
 ## Zusammenfassung: Auffaelligkeiten & Klaerungsbedarf
 
-### 1. **Super-Admin hat KEINEN Zugriff auf Jahrgangsdaten**
-   - Super_admin kann Orgs verwalten, aber NICHT auf Konfis, Events, Badges zugreifen (Zeilen RBAC.js: `checkJahrgangAccess` blockiert super_admin)
-   - **Impact:** Super-Admin muss via org_admin Änderungen vornehmen oder wird komplett aus Jahrgangsdaten ausgesperrt
-   - **Klärung:** Ist dies beabsichtigt (Sicherheit) oder Bug? Müsste super_admin Fallback-Zugriff haben?
+### 1. Super-Admin hat KEINEN Zugriff auf Jahrgangsdaten — ENTSCHIEDEN: so gewollt
+   - super_admin = reine Institutions-/Org-Verwaltung. Zugriff in fremde Orgs laeuft bewusst
+     ueber Passwort-Reset der org_admins (super_admin darf das, PUT /users/:id/reset-password org-uebergreifend).
+   - NEU (01.06.): Org-Verwaltung kann via is_super_admin-FLAG an einen org_admin gekoppelt werden
+     (requireSuperAdmin + organizations.js gaten jetzt auf das Flag statt nur auf role_name).
+     Dann erscheint die "Organisationen"-Kachel zusaetzlich im Mehr-Tab dieses Admins, ohne die
+     volle org_admin-Arbeit zu verlieren. Simons Konto bekommt dieses Flag (Prod-DB beim Deploy).
 
 ### 2. ~~Konfi-Limit per confirm=true umgehbar~~ — VERIFIZIERT KORREKT (kein Bug)
    - Nachgeprueft in konfi-management.js:168-194 + konfiLimit.js: `confirm=true` umgeht NUR
@@ -355,20 +358,21 @@ Quelle der Wahrheit fuer 'welche Rolle darf was'. Bei Code-Aenderungen an Routes
      403 zurueck — explizit "kein Override, auch nicht mit confirm" (Zeile 172). Kein Tarif-Bypass.
    - 3-Stufen-Logik (Phase 115) arbeitet wie spezifiziert: under_limit -> ok, grace -> 409/confirm, hard_block -> 403.
 
-### 3. **Material & Tags nur org_admin, aber Teamer sehen Material**
-   - Material-CRUD (`POST/PUT/DELETE`) nur org_admin, aber Teamer darf Materialien zu Events anschauen
-   - **Asymmetrie:** Read für Teamer, aber nicht für Admin (wer verwaltet Material in der Praxis?)
-   - **Klärung:** Sollten Admin auch Material verwalten können (wie bei Badges)?
+### 3. Material-CRUD — ERLEDIGT: Admins duerfen jetzt verwalten
+   - material.js Tags + Material + Files CRUD von requireOrgAdmin auf requireAdmin umgestellt
+     (01.06.). admin + org_admin koennen verwalten, Teamer weiterhin nur lesen (requireTeamer).
+     Test ergaenzt (admin erstellt Tag -> 201).
 
-### 4. **Teamer: unterschiedliche Rechte je nach Kontext**
-   - Teamer können Events erstellen, wenn `teamer_needed` oder `teamer_only` ist
-   - Teamer können Aktivitäten direkt zuweisen, aber nur für zugewiesene Jahrgänge
-   - **Komplexität:** `teamer` wird teils wie `admin` behandelt (z.B. Events), teils begrenzt (z.B. Aktivitäten nur zugewiesene JG)
+### 4. Teamer-Rechte je nach Kontext — ENTSCHIEDEN: so gewollt (kein Handlungsbedarf)
+   - Teamer wie admin bei Events (teamer_needed/teamer_only), aber bei Aktivitaeten/Konfis auf
+     zugewiesene Jahrgaenge begrenzt. Das ist beabsichtigtes Design, bleibt wie ist.
 
-### 5. **Teamer-Requests: Nur Teamer, nicht für Konfis relevant**
-   - `POST/GET /teamer/requests` neue Endpoints, aber Konfis können auch Requests einreichen (via `POST /konfi/requests`)
-   - **Duplikation:** Zwei Request-Systeme parallel; Design-Intent unklar
-   - **Klärung:** Sollten beide existieren oder ist eine zum Deprecate?
+### 5. Zwei Request-Systeme — GEKLAERT: KEIN Duplikat, beide korrekt
+   - `/konfi/requests` (jeder Konfi) ist fuer KONFI-Aktivitaeten, `/teamer/requests` (requireTeamer,
+     Kommentar "nur Teamer-Aktivitaeten") fuer TEAMER-Aktivitaeten. Beide schreiben in dieselbe
+     Tabelle activity_requests, aber fuer unterschiedliche Aktivitaetstypen. Hintergrund: Konfis
+     koennen zu Teamern befoerdert werden — dann reicht dieselbe Person je nach Aktivitaetstyp ueber
+     den passenden Endpoint ein. Beide bleiben. Kein Deprecate.
 
 ---
 

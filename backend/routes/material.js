@@ -7,7 +7,7 @@ const { handleValidationErrors } = require('../middleware/validation');
 const { validateMagicBytes } = require('../middleware/uploadValidation');
 
 module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
-  const { requireTeamer, requireOrgAdmin } = roleHelpers;
+  const { requireTeamer, requireAdmin } = roleHelpers;
 
   // Validierungsregeln
   const validateCreateTag = [
@@ -36,7 +36,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   // Schema: siehe backend/migrations/064_consolidate_inline_schemas.sql
 
   // ====================================================================
-  // TAG ENDPOINTS (Lesen: requireTeamer, CRUD: requireOrgAdmin)
+  // TAG ENDPOINTS (Lesen: requireTeamer, CRUD: requireAdmin)
   // ====================================================================
 
   // GET /tags - Tags der eigenen Organisation laden
@@ -54,7 +54,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   });
 
   // POST /tags - Neuen Tag erstellen
-  router.post('/tags', rbacVerifier, requireOrgAdmin, validateCreateTag, async (req, res) => {
+  router.post('/tags', rbacVerifier, requireAdmin, validateCreateTag, async (req, res) => {
     try {
       const { name } = req.body;
       if (!name || !name.trim()) {
@@ -76,7 +76,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   });
 
   // PUT /tags/:id - Tag umbenennen
-  router.put('/tags/:id', rbacVerifier, requireOrgAdmin, validateUpdateTag, async (req, res) => {
+  router.put('/tags/:id', rbacVerifier, requireAdmin, validateUpdateTag, async (req, res) => {
     try {
       const { name } = req.body;
       if (!name || !name.trim()) {
@@ -102,7 +102,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   });
 
   // DELETE /tags/:id - Tag löschen (CASCADE löscht Zuordnungen)
-  router.delete('/tags/:id', rbacVerifier, requireOrgAdmin, async (req, res) => {
+  router.delete('/tags/:id', rbacVerifier, requireAdmin, async (req, res) => {
     try {
       const { rowCount } = await db.query(
         'DELETE FROM material_tags WHERE id = $1 AND organization_id = $2',
@@ -332,7 +332,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   });
 
   // POST / - Material erstellen
-  router.post('/', rbacVerifier, requireOrgAdmin, validateCreateMaterial, async (req, res) => {
+  router.post('/', rbacVerifier, requireAdmin, validateCreateMaterial, async (req, res) => {
     try {
       const { title, description, event_ids, jahrgang_ids, tag_ids } = req.body;
 
@@ -387,7 +387,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   });
 
   // PUT /:id - Material bearbeiten
-  router.put('/:id', rbacVerifier, requireOrgAdmin, validateUpdateMaterial, async (req, res) => {
+  router.put('/:id', rbacVerifier, requireAdmin, validateUpdateMaterial, async (req, res) => {
     try {
       const { title, description, event_ids, jahrgang_ids, tag_ids } = req.body;
       const orgId = req.user.organization_id;
@@ -476,7 +476,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   });
 
   // DELETE /:id - Material löschen
-  router.delete('/:id', rbacVerifier, requireOrgAdmin, async (req, res) => {
+  router.delete('/:id', rbacVerifier, requireAdmin, async (req, res) => {
     try {
       const orgId = req.user.organization_id;
       const materialId = req.params.id;
@@ -523,7 +523,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   // ====================================================================
 
   // POST /:id/files - Dateien zu Material hochladen
-  router.post('/:id/files', rbacVerifier, requireOrgAdmin, materialUpload.array('files', 10), validateMagicBytes, async (req, res) => {
+  router.post('/:id/files', rbacVerifier, requireAdmin, materialUpload.array('files', 10), validateMagicBytes, async (req, res) => {
     try {
       const orgId = req.user.organization_id;
       const materialId = req.params.id;
@@ -605,7 +605,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   });
 
   // DELETE /files/:fileId - Einzelne Datei löschen
-  router.delete('/files/:fileId', rbacVerifier, requireOrgAdmin, async (req, res) => {
+  router.delete('/files/:fileId', rbacVerifier, requireAdmin, async (req, res) => {
     try {
       const orgId = req.user.organization_id;
       const fileId = req.params.fileId;

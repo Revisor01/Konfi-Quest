@@ -76,7 +76,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       const { id } = req.params;
 
       // Zugriffsprüfung
-      const isSuperAdmin = req.user.role_name === 'super_admin';
+      const isSuperAdmin = req.user.is_super_admin === true;
       const isOwnOrg = req.user.organization_id === parseInt(id);
 
       if (!isSuperAdmin && !isOwnOrg) {
@@ -297,7 +297,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       } = req.body;
 
       // Zugriffsprüfung
-      const isSuperAdmin = req.user.role_name === 'super_admin';
+      const isSuperAdmin = req.user.is_super_admin === true;
       const isOwnOrg = req.user.organization_id === parseInt(id) && req.user.role_name === 'org_admin';
 
       if (!isSuperAdmin && !isOwnOrg) {
@@ -453,7 +453,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
 
   // Get organization users - org_admin für eigene Org, super_admin für alle
   router.get('/:id/users', rbacVerifier, async (req, res) => {
-    const isSuperAdmin = req.user.role_name === 'super_admin';
+    const isSuperAdmin = req.user.is_super_admin === true;
     const isOwnOrg = req.user.organization_id === parseInt(req.params.id);
     const isOrgAdmin = req.user.role_name === 'org_admin';
 
@@ -491,7 +491,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       const { id } = req.params;
 
       // Zugriffsprüfung: super_admin oder org_admin der eigenen Org
-      const isSuperAdmin = req.user.role_name === 'super_admin';
+      const isSuperAdmin = req.user.is_super_admin === true;
       const isOwnOrg = req.user.organization_id === parseInt(id) && req.user.role_name === 'org_admin';
 
       if (!isSuperAdmin && !isOwnOrg) {
@@ -522,7 +522,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       const { username, display_name, password, email } = req.body;
 
       // Zugriffsprüfung: super_admin oder org_admin der eigenen Org
-      const isSuperAdmin = req.user.role_name === 'super_admin';
+      const isSuperAdmin = req.user.is_super_admin === true;
       const isOwnOrg = req.user.organization_id === parseInt(id) && req.user.role_name === 'org_admin';
 
       if (!isSuperAdmin && !isOwnOrg) {
@@ -587,7 +587,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       const { id } = req.params;
 
       // Zugriffsprüfung: nur eigene Org (oder super_admin für alle)
-      const isSuperAdmin = req.user.role_name === 'super_admin';
+      const isSuperAdmin = req.user.is_super_admin === true;
       const isOwnOrg = req.user.organization_id === parseInt(id);
 
       if (!isSuperAdmin && !isOwnOrg) {

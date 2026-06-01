@@ -204,7 +204,19 @@ const requireRole = (...allowedRoles) => {
 // teamer: Events, Konfis ansehen, Punkte vergeben
 // ============================================
 
-const requireSuperAdmin = requireRole('super_admin');           // NUR für Org Create/Delete
+// requireSuperAdmin: super_admin-Rolle ODER gesetztes is_super_admin-Flag.
+// Das Flag erlaubt es, einem org_admin zusaetzlich die Org-Verwaltung zu geben,
+// ohne die Rolle zu wechseln (verifyTokenRBAC setzt req.user.is_super_admin
+// = role_name==='super_admin' || users.is_super_admin === true).
+const requireSuperAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Nicht angemeldet' });
+  }
+  if (!req.user.is_super_admin) {
+    return res.status(403).json({ error: 'Keine Berechtigung' });
+  }
+  next();
+};
 const requireOrgAdmin = requireRole('org_admin');               // User-Verwaltung in Org
 const requireAdmin = requireRole('org_admin', 'admin');         // Konfis, Requests, Badges, etc.
 const requireTeamer = requireRole('org_admin', 'admin', 'teamer'); // Events, Punkte vergeben

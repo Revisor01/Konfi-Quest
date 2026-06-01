@@ -78,6 +78,16 @@ describe('Material Routes', () => {
       expect(res.body.name).toBe('Gottesdienst-Material');
     });
 
+    it('Admin (nicht org_admin) erstellt Tag -> 201 (Material-CRUD fuer Admins freigegeben)', async () => {
+      const res = await request(app)
+        .post('/api/material/tags')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Admin-Material-Tag' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.id).toBeDefined();
+    });
+
     it('Teamer bekommt 403', async () => {
       const res = await request(app)
         .post('/api/material/tags')
