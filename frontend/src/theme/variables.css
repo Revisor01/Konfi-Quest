@@ -1748,15 +1748,14 @@ ion-button.app-modal-submit-btn--bonus {
 .app-auth-card {
   width: 100%;
   max-width: 420px;
-  border-radius: 28px;
+  border-radius: 20px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.22);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 20px 50px rgba(91, 33, 182, 0.20);
-  --background: transparent;
-  --color: #ffffff;
+  /* Solider App-Card-Stil (keine Glasoptik) — passend zum Rest der App */
+  background: #ffffff;
+  border: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --background: #ffffff;
+  --color: #1c1c1e;
 }
 
 .app-auth-card--error {
@@ -1789,17 +1788,17 @@ ion-button.app-modal-submit-btn--bonus {
   font-weight: 400;
   letter-spacing: 3px;
   margin: 0;
-  color: #ffffff;
+  color: #1c1c1e;
 }
 
 .app-auth-card__heading p {
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(0, 0, 0, 0.55);
   margin: 8px 0 0 0;
   font-size: 0.85rem;
 }
 
 .app-auth-input {
-  --background: rgba(255, 255, 255, 0.95);
+  --background: #f2f2f7;
   --color: #1f2937;
   --placeholder-color: #9ca3af;
   --placeholder-opacity: 1;
@@ -1807,8 +1806,8 @@ ion-button.app-modal-submit-btn--bonus {
   --inner-border-width: 0;
   --padding-start: 14px;
   --padding-end: 14px;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: #f2f2f7;
+  border: 1px solid #e5e5ea;
   border-radius: 14px;
   margin-bottom: 14px;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -1816,8 +1815,8 @@ ion-button.app-modal-submit-btn--bonus {
 
 .app-auth-input.item-has-focus,
 .app-auth-input:focus-within {
-  border-color: #ffffff;
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+  border-color: var(--ion-color-primary, #7c3aed);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
 }
 
 .app-auth-input--compact {
@@ -1825,7 +1824,7 @@ ion-button.app-modal-submit-btn--bonus {
 }
 
 .app-auth-input__label {
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(0, 0, 0, 0.55);
   font-weight: 700;
   letter-spacing: 1.5px;
   text-transform: uppercase;
