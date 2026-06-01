@@ -1375,7 +1375,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
         if (!booking) {
           await client.query('ROLLBACK');
-          client.release();
+          // KEIN client.release() hier — das finally unten released (sonst Doppel-Release)
           return res.status(404).json({ error: 'Buchung nicht gefunden' });
         }
 
