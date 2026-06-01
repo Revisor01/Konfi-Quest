@@ -369,14 +369,14 @@ useEffect(() => {
         });
 
         // Registriere Listener
-        PushNotifications.addListener('pushNotificationReceived', (notification) => {
-          // Chat notifications are now handled by BadgeContext
-
-          // Badge Updates werden jetzt vom BadgeContext behandelt
+        PushNotifications.addListener('pushNotificationReceived', () => {
+          // BadgeContext lauscht auf dieses Event und ruft refreshAllCounts()
+          window.dispatchEvent(new CustomEvent('push:received'));
         });
 
         PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-          // Chat notifications refresh removed - handled by BadgeContext
+          // Counts aktualisieren (BadgeContext lauscht auf push:received)
+          window.dispatchEvent(new CustomEvent('push:received'));
 
           const notificationType = action.notification.data?.type;
           const userType = user?.type || 'konfi';

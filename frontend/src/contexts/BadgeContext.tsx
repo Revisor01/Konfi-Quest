@@ -163,9 +163,14 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       refreshAllCounts();
     };
 
+    // Push-Empfang/-Tap: Counts sofort aktualisieren. Der Push-Listener
+    // (inkl. Navigation) liegt zentral in AppContext und feuert dieses Event,
+    // damit hier KEIN zweiter PushNotifications-Listener noetig ist.
     window.addEventListener('sync:reconnect', handleSyncReconnect);
+    window.addEventListener('push:received', handleSyncReconnect);
     return () => {
       window.removeEventListener('sync:reconnect', handleSyncReconnect);
+      window.removeEventListener('push:received', handleSyncReconnect);
     };
   }, [user, refreshAllCounts]);
 

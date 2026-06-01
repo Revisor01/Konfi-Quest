@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   IonItem,
   IonLabel,
@@ -7,14 +7,49 @@ import {
   IonNote,
   IonCard,
   IonCardContent,
-  IonList
+  IonToggle,
+  IonSpinner
 } from '@ionic/react';
 import { notifications } from 'ionicons/icons';
 import { Capacitor } from '@capacitor/core';
 import { useApp } from '../../contexts/AppContext';
+import api from '../../services/api';
 
 const PushNotificationSettings: React.FC = () => {
   const { pushNotificationsPermission, requestPushPermissions } = useApp();
+
+  // Master-Schalter: globaler Push an/aus fuer diesen User (Backend users.push_enabled)
+  const [pushEnabled, setPushEnabled] = useState<boolean>(true);
+  const [prefLoading, setPrefLoading] = useState<boolean>(true);
+  const [prefSaving, setPrefSaving] = useState<boolean>(false);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await api.get('/notifications/preferences');
+        if (active) setPushEnabled(res.data?.push_enabled !== false);
+      } catch {
+        // Bei Fehler optimistisch auf true lassen
+      } finally {
+        if (active) setPrefLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, []);
+
+  const handleToggle = async (value: boolean) => {
+    const previous = pushEnabled;
+    setPushEnabled(value); // optimistisch
+    setPrefSaving(true);
+    try {
+      await api.put('/notifications/preferences', { push_enabled: value });
+    } catch {
+      setPushEnabled(previous); // Rollback bei Fehler
+    } finally {
+      setPrefSaving(false);
+    }
+  };
 
   const getPermissionText = () => {
     switch (pushNotificationsPermission) {
@@ -112,6 +147,50 @@ const PushNotificationSettings: React.FC = () => {
                 {getPermissionText()}
               </IonNote>
             </IonItem>
+
+            {pushNotificationsPermission === 'granted' && (
+              <IonItem
+                lines="none"
+                style={{
+                  '--min-height': '56px',
+                  '--padding-start': '16px',
+                  '--background': '#fbfbfb',
+                  '--border-radius': '12px',
+                  margin: '6px 0',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '12px'
+                }}
+              >
+                <div slot="start" style={{
+                  width: '40px',
+                  height: '40px',
+                  backgroundColor: '#34c759',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: '12px'
+                }}>
+                  <IonIcon icon={notifications} style={{ fontSize: '1.2rem', color: 'white' }} />
+                </div>
+                <IonLabel>
+                  <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Alle Benachrichtigungen</h2>
+                  <p style={{ fontSize: '0.8rem', color: '#666' }}>Schalte sämtliche Push-Benachrichtigungen für dein Konto an oder aus</p>
+                </IonLabel>
+                {prefLoading ? (
+                  <IonSpinner slot="end" name="crescent" />
+                ) : (
+                  <IonToggle
+                    slot="end"
+                    className="app-toggle--green"
+                    checked={pushEnabled}
+                    disabled={prefSaving}
+                    onIonChange={(e) => handleToggle(e.detail.checked)}
+                  />
+                )}
+              </IonItem>
+            )}
           </div>
 
           {pushNotificationsPermission !== 'granted' && (

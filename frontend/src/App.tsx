@@ -31,10 +31,8 @@ import { iosTransitionAnimation, popoverEnterAnimation, popoverLeaveAnimation } 
 import { mdTransitionAnimation } from '@rdlabo/ionic-theme-md3';
 // Icons sind jetzt in MainTabs.tsx
 import { AppProvider, useApp } from './contexts/AppContext';
-import { BadgeProvider, useBadge } from './contexts/BadgeContext';
+import { BadgeProvider } from './contexts/BadgeContext';
 import { LiveUpdateProvider } from './contexts/LiveUpdateContext';
-import { Capacitor } from '@capacitor/core';
-import { PushNotifications } from '@capacitor/push-notifications';
 import LoginView from './components/auth/LoginView';
 import KonfiRegisterPage from './components/auth/KonfiRegisterPage';
 import ForgotPasswordPage from './components/auth/ForgotPasswordPage';
@@ -88,45 +86,12 @@ setupIonicReact({
 
 const AppContent: React.FC = () => {
   const { user, loading } = useApp();
-  const { refreshAllCounts } = useBadge();
 
-  // Setup badge logic when user is available
-  useEffect(() => {
-    if (!user) return;
-
-    // Badge-Counts werden bereits vom BadgeContext initialisiert
-    // Push-Listener für sofortiges Refresh bei eingehender Notification
-    const setupListeners = async () => {
-      if (!Capacitor.isNativePlatform()) return;
-      await PushNotifications.removeAllListeners();
-
-      const pushListener = await PushNotifications.addListener('pushNotificationReceived',
-        () => {
-          refreshAllCounts();
-        }
-      );
-
-      const actionListener = await PushNotifications.addListener('pushNotificationActionPerformed',
-        () => {
-          refreshAllCounts();
-        }
-      );
-
-      return () => {
-        pushListener.remove();
-        actionListener.remove();
-      };
-    };
-
-    const cleanupPromise = setupListeners();
-
-    return () => {
-      cleanupPromise.then(cleanup => {
-        if (cleanup) cleanup();
-      });
-    };
-
-  }, [user, refreshAllCounts]);
+  // HINWEIS: Push-Listener (Empfang, Tap-Navigation, Counts-Refresh) liegen
+  // zentral in AppContext. Frueher rief AppContent hier removeAllListeners()
+  // auf und ueberschrieb damit die Navigations-Listener aus AppContext
+  // (Tap auf Push navigierte dann nicht mehr). Daher hier KEINE eigenen
+  // Push-Listener mehr — BadgeContext lauscht auf das 'push:received'-Event.
 
   // Generischer 429 Rate-Limit Alert-Handler
   const [presentAlert] = useIonAlert();
