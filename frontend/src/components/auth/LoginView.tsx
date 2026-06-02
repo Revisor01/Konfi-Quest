@@ -101,6 +101,14 @@ const LoginView: React.FC = () => {
           aria-hidden="true"
         />
 
+        {/* Dashboard-Bubbles: dekorative Kreise, asymmetrisch verstreut (Icon oben rechts frei lassen) */}
+        <div className="app-auth-bubble" style={{ top: '70px', left: '-55px', width: '150px', height: '150px' }} />
+        <div className="app-auth-bubble app-auth-bubble--soft" style={{ top: '210px', left: '45px', width: '46px', height: '46px' }} />
+        <div className="app-auth-bubble" style={{ bottom: '-50px', left: '-30px', width: '180px', height: '180px' }} />
+        <div className="app-auth-bubble app-auth-bubble--soft" style={{ bottom: '130px', left: '55px', width: '64px', height: '64px' }} />
+        <div className="app-auth-bubble" style={{ bottom: '-25px', right: '-55px', width: '130px', height: '130px' }} />
+        <div className="app-auth-bubble app-auth-bubble--soft" style={{ bottom: '90px', right: '25px', width: '38px', height: '38px' }} />
+
         {/* Glow-Sterne (Cyan, Pink, Gold) */}
         <div className="app-auth-star app-auth-star--pink" style={{ top: '80px', left: '30px', width: '50px', height: '50px' }} />
         <div className="app-auth-star app-auth-star--cyan" style={{ top: '200px', right: '20px', width: '70px', height: '70px' }} />
@@ -242,9 +250,9 @@ const LoginView: React.FC = () => {
                 <span
                   onClick={() => router.push('/register')}
                   className="app-auth-link"
-                  style={{ fontSize: '0.85rem' }}
+                  style={{ fontSize: '0.85rem', display: 'block', lineHeight: 1.5 }}
                 >
-                  Noch keinen Account? <strong>Mit Einladungscode registrieren</strong>
+                  Noch keinen Account?<br /><strong>Mit Einladungscode registrieren</strong>
                 </span>
               </div>
             </IonCardContent>

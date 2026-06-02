@@ -1603,6 +1603,19 @@ ion-button.app-modal-submit-btn--bonus {
   z-index: 0;
 }
 
+/* Dekorative Bubbles im Hintergrund — hell/luftig, asymmetrisch verstreut */
+.app-auth-bubble {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.10);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app-auth-bubble--soft {
+  background: rgba(255, 255, 255, 0.06);
+}
+
 /* Sterne ausgeschaltet (Cosmic-Variante deaktiviert) */
 .app-auth-star {
   display: none;
@@ -1648,9 +1661,9 @@ ion-button.app-modal-submit-btn--bonus {
 /* Hero-Title — weiss auf dem Verlauf-BG */
 .app-auth-hero__title--cosmic {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 3.4rem;
-  line-height: 0.95;
-  letter-spacing: 8px;
+  font-size: 5.8rem;
+  line-height: 0.9;
+  letter-spacing: 6px;
   margin: 0 0 12px 0;
   color: #ffffff;
   text-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
@@ -1683,11 +1696,11 @@ ion-button.app-modal-submit-btn--bonus {
 
 .app-auth-hero__subtitle--cosmic {
   font-size: 0.85rem;
-  opacity: 0.85;
+  opacity: 0.9;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: #5b21b6;
-  text-shadow: none;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* Legacy: bunte Icons-Reihe (für Register-Page noch in Nutzung) */
@@ -1788,11 +1801,11 @@ ion-button.app-modal-submit-btn--bonus {
   font-weight: 400;
   letter-spacing: 3px;
   margin: 0;
-  color: #1c1c1e;
+  color: #5b21b6;
 }
 
 .app-auth-card__heading p {
-  color: rgba(0, 0, 0, 0.55);
+  color: rgba(0, 0, 0, 0.65);
   margin: 8px 0 0 0;
   font-size: 0.85rem;
 }
@@ -1824,11 +1837,11 @@ ion-button.app-modal-submit-btn--bonus {
 }
 
 .app-auth-input__label {
-  color: rgba(0, 0, 0, 0.55);
+  color: #5b21b6;
   font-weight: 700;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
 }
 
 .app-auth-input__value {
@@ -1846,11 +1859,13 @@ ion-button.app-modal-submit-btn--bonus {
 /* Eye-Toggle sitzt auf dem hellen Input -> lila bleibt lesbar */
 
 .app-auth-button {
-  --background: linear-gradient(135deg, #ffffff 0%, #f0f0ff 100%);
-  --background-hover: #ffffff;
-  --color: #5b21b6;
+  /* Dashboard-Backdrop-Verlauf — knallt auf der weissen Card, klare Haupt-Aktion */
+  --background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 50%, #4c1d95 100%);
+  --background-hover: linear-gradient(135deg, #8b4ff5 0%, #6b2bc7 50%, #5a23a8 100%);
+  --background-activated: linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%);
+  --color: #ffffff;
   --border-radius: 16px;
-  --box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  --box-shadow: 0 10px 28px rgba(91, 33, 182, 0.4);
   height: 52px;
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.3rem;
@@ -1922,14 +1937,15 @@ ion-button.app-modal-submit-btn--bonus {
 }
 
 .app-auth-link {
-  color: #ffffff;
+  /* Links liegen auf der weissen Card -> Lila statt Weiss (sonst unsichtbar) */
+  color: #5b21b6;
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 600;
 }
 
 .app-auth-link--muted {
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(91, 33, 182, 0.7);
   font-size: 0.8rem;
 }
 
@@ -1944,7 +1960,7 @@ ion-button.app-modal-submit-btn--bonus {
 
 .app-auth-footer--separator {
   padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 /* === Badge Popover auto-width === */

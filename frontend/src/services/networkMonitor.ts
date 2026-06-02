@@ -13,19 +13,28 @@ function notifyListeners() {
   _listeners.forEach(fn => fn(_isOnline));
 }
 
+// Robuste Online-Auswertung: Manche Plattformen (v.a. Android-Emulatoren,
+// teils auch echte Geraete) melden connected=false bei connectionType='unknown',
+// obwohl Netz vorhanden ist. In diesem Fall optimistisch online bleiben — sonst
+// blockt die App den Login VOR dem ersten Request ("Keine Verbindung").
+function evaluateOnline(status: { connected: boolean; connectionType?: string }): boolean {
+  if (status.connectionType === 'unknown') return true;
+  return status.connected;
+}
+
 async function initNetworkMonitor(): Promise<void> {
   if (_initialized) return;
 
   try {
     // Initialen Status abfragen
     const status = await Network.getStatus();
-    _isOnline = status.connected;
+    _isOnline = evaluateOnline(status);
 
     // Listener für Status-Änderungen
     Network.addListener('networkStatusChange', (status) => {
       if (_debounceTimer) clearTimeout(_debounceTimer);
       _debounceTimer = setTimeout(() => {
-        _isOnline = status.connected;
+        _isOnline = evaluateOnline(status);
         notifyListeners();
       }, 300);
     });

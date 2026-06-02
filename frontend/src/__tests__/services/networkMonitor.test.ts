@@ -67,6 +67,32 @@ describe('networkMonitor', () => {
     expect(mockGetStatus).toHaveBeenCalledTimes(1);
   });
 
+  it('connectionType "unknown" wird als online gewertet (Emulator-Fall)', async () => {
+    // Nativer Pfad: Plugin meldet connected=false bei connectionType=unknown,
+    // obwohl Netz da ist (typisch Android-Emulator) -> muss online bleiben.
+    const { Capacitor } = await import('@capacitor/core');
+    (Capacitor.isNativePlatform as any).mockReturnValue(true);
+    mockGetStatus.mockResolvedValueOnce({ connected: false, connectionType: 'unknown' });
+
+    const { networkMonitor } = await import('../../services/networkMonitor');
+    await networkMonitor.init();
+
+    expect(networkMonitor.isOnline).toBe(true);
+    (Capacitor.isNativePlatform as any).mockReturnValue(false);
+  });
+
+  it('connectionType "none" bei connected=false wird als offline gewertet', async () => {
+    const { Capacitor } = await import('@capacitor/core');
+    (Capacitor.isNativePlatform as any).mockReturnValue(true);
+    mockGetStatus.mockResolvedValueOnce({ connected: false, connectionType: 'none' });
+
+    const { networkMonitor } = await import('../../services/networkMonitor');
+    await networkMonitor.init();
+
+    expect(networkMonitor.isOnline).toBe(false);
+    (Capacitor.isNativePlatform as any).mockReturnValue(false);
+  });
+
   it('subscribe liefert Status-Updates nach init und Event', async () => {
     vi.useFakeTimers();
     const { networkMonitor } = await import('../../services/networkMonitor');
