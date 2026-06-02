@@ -116,13 +116,13 @@ const ForgotPasswordPage: React.FC = () => {
                     fontWeight: 400,
                     letterSpacing: '3px',
                     margin: '0 0 12px 0',
-                    color: '#fff'
+                    color: '#5b21b6'
                   }}>
                     E-MAIL GESENDET
                   </h2>
 
                   <p style={{
-                    color: 'rgba(255, 255, 255, 0.6)',
+                    color: 'rgba(0, 0, 0, 0.6)',
                     fontSize: '0.9rem',
                     margin: '0 0 24px 0',
                     lineHeight: '1.5'
