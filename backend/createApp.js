@@ -50,6 +50,31 @@ function createApp(db, options = {}) {
   }));
 
   // ====================================================================
+  // CORS
+  // Web laeuft same-origin (kein CORS noetig). Die native App laeuft je nach
+  // Plattform auf eigenen Capacitor-Origins:
+  //   - Android (androidScheme:https): https://localhost
+  //   - iOS:                           capacitor://localhost
+  // Ohne diese Allowlist blockiert das WebView jeden /api-Call (Preflight ohne
+  // Access-Control-Allow-Origin) -> Login schlaegt auf Android fehl.
+  // Origins via CORS_ORIGINS ueberschreibbar.
+  // ====================================================================
+  const cors = require('cors');
+  const allowedOrigins = (process.env.CORS_ORIGINS ||
+    'https://konfi-quest.de,https://www.konfi-quest.de,https://localhost,capacitor://localhost,http://localhost'
+  ).split(',').map(o => o.trim());
+  app.use(cors({
+    origin(origin, callback) {
+      // Requests ohne Origin (native HTTP, curl, Server-zu-Server) zulassen
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true
+  }));
+
+  // ====================================================================
   // RATE LIMITING (nur wenn uebergeben)
   // ====================================================================
 
