@@ -49,30 +49,11 @@ function createApp(db, options = {}) {
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
   }));
 
-  // ====================================================================
-  // CORS
-  // Web laeuft same-origin (kein CORS noetig). Die native App laeuft je nach
-  // Plattform auf eigenen Capacitor-Origins:
-  //   - Android (androidScheme:https): https://localhost
-  //   - iOS:                           capacitor://localhost
-  // Ohne diese Allowlist blockiert das WebView jeden /api-Call (Preflight ohne
-  // Access-Control-Allow-Origin) -> Login schlaegt auf Android fehl.
-  // Origins via CORS_ORIGINS ueberschreibbar.
-  // ====================================================================
-  const cors = require('cors');
-  const allowedOrigins = (process.env.CORS_ORIGINS ||
-    'https://konfi-quest.de,https://www.konfi-quest.de,https://localhost,capacitor://localhost,http://localhost'
-  ).split(',').map(o => o.trim());
-  app.use(cors({
-    origin(origin, callback) {
-      // Requests ohne Origin (native HTTP, curl, Server-zu-Server) zulassen
-      if (!origin || allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(new Error('Not allowed by CORS'));
-    },
-    credentials: true
-  }));
+  // CORS wird vom vorgelagerten Apache-vHost gesetzt (spiegelt Origin aus einer
+  // Allowlist inkl. capacitor://localhost und https://localhost, beantwortet
+  // OPTIONS-Preflights direkt). KEINE CORS-Middleware hier — ein zweiter
+  // Access-Control-Allow-Origin-Header wuerde "multiple values" erzeugen und
+  // den Request im Browser/WebView blocken.
 
   // ====================================================================
   // RATE LIMITING (nur wenn uebergeben)
