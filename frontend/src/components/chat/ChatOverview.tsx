@@ -475,8 +475,8 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                                     return unread > 0 ? (
                                       <span style={{
                                         position: 'absolute',
-                                        top: '-4px',
-                                        right: '-4px',
+                                        top: '0px',
+                                        right: '0px',
                                         fontSize: '0.55rem',
                                         color: 'white',
                                         fontWeight: '700',
@@ -487,7 +487,9 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                                        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                                        border: '2px solid white',
+                                        zIndex: 2
                                       }}>
                                         {unread > 9 ? '9+' : unread}
                                       </span>

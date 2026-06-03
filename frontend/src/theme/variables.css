@@ -683,6 +683,31 @@ ion-tab-bar.ios:not(.ios26-disabled) {
   -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
 
+/* Android (MD): Tab-Bar muss die System-Gesten-/Navigationsleiste respektieren.
+   Ohne padding-bottom sitzt die Bar zu tief, die Gesten-Bar ueberlagert die
+   Buttons und schneidet die aeusseren Labels (Start/Aktivitaeten) ab.
+   Hoehe waechst um den Safe-Area-Inset, Buttons ruecken nach oben.
+   !important gegen das global geladene iOS26-Theme-CSS. */
+ion-tab-bar.md {
+  padding-bottom: env(safe-area-inset-bottom, 8px) !important;
+  height: calc(56px + env(safe-area-inset-bottom, 8px)) !important;
+  box-sizing: content-box !important;
+}
+
+/* Aeussere Tab-Buttons leicht einruecken, damit lange Labels (Aktivitaeten)
+   nicht am Bildschirmrand abgeschnitten werden. */
+ion-tab-bar.md ion-tab-button {
+  padding-left: 1px !important;
+  padding-right: 1px !important;
+}
+
+ion-tab-bar.md ion-tab-button ion-label,
+ion-tab-bar.md ion-tab-button .tab-button-text {
+  font-size: 0.6rem !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+}
+
 /* iOS26-Library Content-Gradient komplett neutralisieren */
 /* Die Library setzt ::before/::after Pseudo-Elemente fuer einen weissen Bottom-Gradient. */
 /* Stoert auf allen Plattformen — weg damit. */
