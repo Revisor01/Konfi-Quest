@@ -686,11 +686,13 @@ ion-tab-bar.ios:not(.ios26-disabled) {
 /* Android (MD): Tab-Bar muss die System-Gesten-/Navigationsleiste respektieren.
    Ohne padding-bottom sitzt die Bar zu tief, die Gesten-Bar ueberlagert die
    Buttons und schneidet die aeusseren Labels (Start/Aktivitaeten) ab.
-   Hoehe waechst um den Safe-Area-Inset, Buttons ruecken nach oben.
+   Ohne Edge-to-Edge-Plugin liefert env(safe-area-inset-bottom) auf Android 0,
+   daher max(env, 24px): die Gesten-Bar ist ~24-48px hoch. Auf Geraeten mit
+   echtem Inset gewinnt env(), sonst der feste Mindestabstand.
    !important gegen das global geladene iOS26-Theme-CSS. */
 ion-tab-bar.md {
-  padding-bottom: env(safe-area-inset-bottom, 8px) !important;
-  height: calc(56px + env(safe-area-inset-bottom, 8px)) !important;
+  padding-bottom: max(env(safe-area-inset-bottom), 24px) !important;
+  height: calc(56px + max(env(safe-area-inset-bottom), 24px)) !important;
   box-sizing: content-box !important;
 }
 
@@ -1610,6 +1612,7 @@ ion-button.app-modal-submit-btn--bonus {
 .app-auth-background::part(scroll) {
   min-height: 100%;
 }
+
 
 /* Freigestelltes Logo (Lutherrose+Herz) als grosses, angedeutetes
    Wasserzeichen oben rechts — bricht aus dem Rahmen, einfarbig weiss. */
