@@ -11,8 +11,9 @@ import {
   IonItemOptions,
   IonItemOption,
   IonInput,
-  IonSegment,
-  IonSegmentButton,
+  IonItemGroup,
+  IonSelect,
+  IonSelectOption,
   IonRefresher,
   IonRefresherContent
 } from '@ionic/react';
@@ -26,7 +27,8 @@ import {
   checkmarkCircle,
   flash,
   closeCircle,
-  filterOutline
+  filterOutline,
+  search
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
@@ -128,47 +130,40 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
         ]}
       />
 
-      {/* Suche & Filter */}
-      <IonList inset={true} className="app-segment-wrapper">
+      {/* Suche & Filter — identisches Muster wie KonfisView */}
+      <IonList inset={true} style={{ margin: '16px' }}>
         <IonListHeader>
           <div className="app-section-icon app-section-icon--organizations">
             <IonIcon icon={filterOutline} />
           </div>
           <IonLabel>Suche & Filter</IonLabel>
         </IonListHeader>
-        <IonCard className="app-card">
-          <IonCardContent>
-            <IonList>
-              {/* Suchfeld */}
-              <IonItem lines="full">
-                <IonLabel position="stacked">Organisation suchen</IonLabel>
-                <IonInput
-                  value={searchTerm}
-                  onIonInput={(e) => setSearchTerm(e.detail.value!)}
-                  placeholder="Name eingeben..."
-                  clearInput={true}
-                />
-              </IonItem>
-              {/* Filter — Tab-Leiste ohne "Status"-Label davor (wie in anderen Views) */}
-              <IonItem lines="none">
-                <IonSegment
-                  value={selectedFilter}
-                  onIonChange={(e) => setSelectedFilter(e.detail.value as string)}
-                >
-                  <IonSegmentButton value="alle">
-                    <IonLabel>Alle</IonLabel>
-                  </IonSegmentButton>
-                  <IonSegmentButton value="aktiv">
-                    <IonLabel>Aktiv</IonLabel>
-                  </IonSegmentButton>
-                  <IonSegmentButton value="inaktiv">
-                    <IonLabel>Inaktiv</IonLabel>
-                  </IonSegmentButton>
-                </IonSegment>
-              </IonItem>
-            </IonList>
-          </IonCardContent>
-        </IonCard>
+        <IonItemGroup>
+          {/* Suchfeld */}
+          <IonItem>
+            <IonIcon icon={search} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+            <IonInput
+              value={searchTerm}
+              onIonInput={(e) => setSearchTerm(e.detail.value!)}
+              placeholder="Organisation suchen..."
+            />
+          </IonItem>
+          {/* Status-Filter */}
+          <IonItem>
+            <IonIcon icon={filterOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+            <IonSelect
+              value={selectedFilter}
+              onIonChange={(e) => setSelectedFilter(e.detail.value)}
+              interface="popover"
+              placeholder="Status"
+              style={{ width: '100%' }}
+            >
+              <IonSelectOption value="alle">Alle</IonSelectOption>
+              <IonSelectOption value="aktiv">Aktiv</IonSelectOption>
+              <IonSelectOption value="inaktiv">Inaktiv</IonSelectOption>
+            </IonSelect>
+          </IonItem>
+        </IonItemGroup>
       </IonList>
 
       {/* Organisationen-Liste */}
@@ -183,9 +178,10 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
         emptyMessage="Noch keine Gemeinden angelegt"
         emptyIconColor="#667eea"
       >
-        {filteredAndSortedOrganizations.map((organization) => (
+        {filteredAndSortedOrganizations.map((organization, index, arr) => (
               <IonItemSliding
                 key={organization.id}
+                style={{ marginBottom: index < arr.length - 1 ? '8px' : '0' }}
                 ref={(ref) => {
                   if (ref) slidingRefs.current.set(organization.id, ref);
                 }}
@@ -193,80 +189,68 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                 <IonItem
                   button
                   detail={false}
+                  lines="none"
                   onClick={() => {
                     closeAllSlidingItems();
                     onSelectOrganization(organization);
                   }}
-                  className="app-list-item app-list-item--organizations"
                   style={{
-                    '--padding-start': '16px',
-                    '--padding-top': '10px',
-                    '--padding-bottom': '10px',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    opacity: organization.is_active ? 1 : 0.7
+                    '--background': 'transparent',
+                    '--padding-start': '0',
+                    '--padding-end': '0',
+                    '--inner-padding-end': '0',
+                    '--inner-border-width': '0',
+                    '--border-style': 'none',
+                    '--min-height': 'auto'
                   }}
                 >
-                  {/* Corner-Badge: Aktiv/Inaktiv-Status (wie in anderen Listen) */}
-                  <div className="app-corner-badges">
-                    <div
-                      className="app-corner-badge"
-                      style={{
-                        backgroundColor: organization.is_active ? 'var(--app-color-success, #16a34a)' : '#6b7280',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px'
-                      }}
-                      title={organization.is_active ? 'Aktiv' : 'Inaktiv'}
-                    >
-                      <IonIcon
-                        icon={organization.is_active ? checkmarkCircle : closeCircle}
-                        style={{ color: '#fff', fontSize: '0.85rem' }}
-                      />
-                    </div>
-                  </div>
-
-                  <IonLabel>
-                    {/* Header mit Initialen-Icon */}
-                    <div className="app-list-item__main">
-                      {/* Initialen-Icon */}
+                  <div
+                    className="app-list-item app-list-item--organizations"
+                    style={{ width: '100%', position: 'relative', overflow: 'hidden', opacity: organization.is_active ? 1 : 0.7 }}
+                  >
+                    {/* Corner-Badge: Aktiv/Inaktiv-Status */}
+                    <div className="app-corner-badges">
                       <div
-                        className="app-avatar-initials app-avatar-initials--sm"
-                        style={{ backgroundColor: organization.is_active ? '#667eea' : '#6b7280' }}
+                        className="app-corner-badge"
+                        style={{
+                          backgroundColor: organization.is_active ? 'var(--app-color-success, #16a34a)' : '#6b7280',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px'
+                        }}
+                        title={organization.is_active ? 'Aktiv' : 'Inaktiv'}
                       >
-                        {getInitials(organization.display_name)}
+                        <IonIcon icon={organization.is_active ? checkmarkCircle : closeCircle} style={{ color: '#fff', fontSize: '0.85rem' }} />
                       </div>
+                    </div>
 
-                      {/* Name */}
-                      <div className="app-list-item__content">
-                        <div
-                          className="app-list-item__title"
-                          style={!organization.is_active ? { color: '#999' } : undefined}
-                        >
-                          {organization.display_name}
+                    <div className="app-list-item__row">
+                      <div className="app-list-item__main">
+                        <div className="app-icon-circle app-icon-circle--lg app-icon-circle--organizations" style={{ color: 'white', fontWeight: '600' }}>
+                          {getInitials(organization.display_name)}
+                        </div>
+                        <div className="app-list-item__content">
+                          <div className="app-list-item__title">
+                            {organization.display_name}
+                          </div>
+                          <div className="app-list-item__meta">
+                            <span className="app-list-item__meta-item">
+                              <IonIcon icon={people} style={{ color: 'var(--app-color-konfis)' }} />
+                              {organization.max_konfis != null
+                                ? `${organization.konfi_count} / ${organization.max_konfis} Konfis`
+                                : `${organization.konfi_count} Konfis`}
+                            </span>
+                            <span className="app-list-item__meta-item">
+                              <IonIcon icon={personOutline} style={{ color: 'var(--app-color-teamer)' }} />
+                              {organization.user_count} Team
+                            </span>
+                            <span className="app-list-item__meta-item">
+                              <IonIcon icon={flash} style={{ color: 'var(--app-color-events)' }} />
+                              {organization.event_count} Events
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
-
-                    {/* Details Row mit Icons */}
-                    <div className="app-list-item__meta" style={!organization.is_active ? { color: '#999' } : undefined}>
-                      {/* Konfis (mit Limit, falls gesetzt) */}
-                      <span className="app-list-item__meta-item">
-                        <IonIcon icon={people} className="app-icon-color--participants" />
-                        {organization.max_konfis != null
-                          ? `${organization.konfi_count} / ${organization.max_konfis} Konfis`
-                          : `${organization.konfi_count} Konfis`}
-                      </span>
-                      {/* Team */}
-                      <span className="app-list-item__meta-item">
-                        <IonIcon icon={personOutline} className="app-icon-color--badges" />
-                        {organization.user_count} Team
-                      </span>
-                      {/* Events */}
-                      <span className="app-list-item__meta-item">
-                        <IonIcon icon={flash} className="app-icon-color--events" />
-                        {organization.event_count} Events
-                      </span>
-                    </div>
-                  </IonLabel>
+                  </div>
                 </IonItem>
 
                 <IonItemOptions side="end" className="app-swipe-actions">
