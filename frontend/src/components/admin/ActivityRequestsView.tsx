@@ -256,12 +256,12 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                       </IonItem>
 
                       {/* Swipe Actions */}
-                      <IonItemOptions side="end" style={{ '--ion-item-background': 'transparent', border: 'none', gap: '4px' } as any}>
+                      <IonItemOptions side="end" className="app-swipe-actions">
                         {/* Reset-Button für approved/rejected */}
                         {!isPending && (
                           <IonItemOption
                             onClick={() => onResetRequest(request)}
-                            style={{ '--background': 'transparent', '--color': 'transparent', padding: '0 4px', minWidth: 'auto', '--border-width': '0' }}
+                            className="app-swipe-action"
                           >
                             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
                               <IonIcon icon={returnUpBack} />
@@ -272,7 +272,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                         {/* Löschen-Button für alle */}
                         <IonItemOption
                           onClick={() => onDeleteRequest(request)}
-                          style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: 'auto', '--border-width': '0' }}
+                          className="app-swipe-action"
                         >
                           <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                             <IonIcon icon={trash} />

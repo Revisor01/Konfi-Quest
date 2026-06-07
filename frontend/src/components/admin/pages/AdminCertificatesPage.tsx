@@ -558,10 +558,10 @@ const AdminCertificatesPage: React.FC = () => {
               </IonItem>
 
               {isAdmin && (
-                <IonItemOptions side="end" style={{ '--ion-item-background': 'transparent', border: 'none' } as any}>
+                <IonItemOptions side="end" className="app-swipe-actions">
                   <IonItemOption
                     onClick={() => handleDelete(certType)}
-                    style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: 'auto', '--border-width': '0' }}
+                    className="app-swipe-action"
                   >
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                       <IonIcon icon={trash} />

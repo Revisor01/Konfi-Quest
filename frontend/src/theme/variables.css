@@ -1107,18 +1107,40 @@ ion-item.app-item-transparent {
   --min-height: auto;
 }
 
-/* Transparente Swipe-Action-Buttons */
+/* === Swipe-Actions (global) ===
+ * Einzige Quelle der Wahrheit fuer Swipe-Buttons (Groesse, Form, Farbe, Abstaende).
+ * Views setzen NUR die Klassen .app-swipe-actions / .app-swipe-action und je einen
+ * Farb-Modifier (--danger/--warning/...) am inneren .app-icon-circle.
+ * KEINE Inline-Styles fuer Groesse/Farbe/Abstand mehr — hier zentral aendern.
+ */
 ion-item-options.app-swipe-actions {
   --ion-item-background: transparent;
   border: none;
+  border-style: none;
   gap: 0;
 }
 ion-item-option.app-swipe-action {
   --background: transparent;
+  --background-activated: transparent;
+  --background-focused: transparent;
+  --background-hover: transparent;
   --color: transparent;
+  --ripple-color: transparent;
   --border-width: 0;
-  padding: 0 2px;
+  --border-style: none;
+  padding: 0 4px;
   min-width: auto;
+}
+/* Innerer Icon-Kreis im Swipe-Button: einheitliche Groesse/Form ueberall.
+ * Ueberschreibt das margin-top der Listen-Variante, damit der Kreis mittig sitzt. */
+.app-swipe-action .app-icon-circle {
+  width: 40px;
+  height: 40px;
+  margin-top: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18), inset 0 1px 2px rgba(255, 255, 255, 0.25);
+}
+.app-swipe-action .app-icon-circle ion-icon {
+  font-size: 1.2rem;
 }
 
 /* === List-Item Title mit Corner-Badge Platz === */

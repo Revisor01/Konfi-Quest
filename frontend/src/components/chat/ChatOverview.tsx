@@ -551,36 +551,13 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
 
                         {/* Swipe Delete für direct/group chats */}
                         {canDelete && (
-                          <IonItemOptions side="end" style={{
-                            '--ion-item-background': 'transparent',
-                            '--border-style': 'none'
-                          }}>
+                          <IonItemOptions side="end" className="app-swipe-actions">
                             <IonItemOption
                               onClick={() => deleteRoom(room)}
-                              style={{
-                                '--background': 'transparent',
-                                '--background-activated': 'transparent',
-                                '--background-focused': 'transparent',
-                                '--background-hover': 'transparent',
-                                '--color': 'transparent',
-                                '--ripple-color': 'transparent',
-                                '--border-style': 'none',
-                                padding: '0 12px 0 16px',
-                                minWidth: '72px',
-                                maxWidth: '72px'
-                              }}
+                              className="app-swipe-action"
                             >
-                              <div style={{
-                                width: '44px',
-                                height: '44px',
-                                backgroundColor: '#dc3545',
-                                borderRadius: '50%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                boxShadow: '0 2px 8px rgba(220, 53, 69, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
-                              }}>
-                                <IonIcon icon={trash} style={{ fontSize: '1.2rem', color: 'white' }} />
+                              <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                                <IonIcon icon={trash} />
                               </div>
                             </IonItemOption>
                           </IonItemOptions>

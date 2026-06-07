@@ -36,7 +36,7 @@ import {
   flash,
   callOutline,
   locationOutline,
-  addOutline,
+  add,
   cloudOfflineOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -633,15 +633,6 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                 <IonIcon icon={personOutline} />
               </div>
               <IonLabel>Organisations-Administratoren</IonLabel>
-              <IonButton
-                size="small"
-                fill="clear"
-                onClick={() => setShowAddAdmin(!showAddAdmin)}
-                style={{ '--color': '#667eea' }}
-              >
-                <IonIcon icon={addOutline} slot="start" />
-                Hinzufügen
-              </IonButton>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent style={{ padding: '16px' }}>
@@ -649,10 +640,11 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                 {orgAdmins.length > 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {orgAdmins.map((admin) => (
-                      <div key={admin.id} style={{ marginBottom: '16px' }}>
+                      <div key={admin.id} style={{ marginBottom: '8px' }}>
                         <IonItem
                           button
                           detail={false}
+                          lines="none"
                           onClick={() => {
                             // Passwort-Reset-Feld per Klick auf den Admin auf-/zuklappen
                             if (passwordAdminId === admin.id) {
@@ -663,38 +655,50 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                               setNewPassword('');
                             }
                           }}
-                          className="app-list-item app-list-item--organizations"
-                          style={{ '--padding-start': '16px', '--padding-top': '10px', '--padding-bottom': '10px', marginBottom: '8px' }}
+                          style={{
+                            '--background': 'transparent',
+                            '--padding-start': '0',
+                            '--padding-end': '0',
+                            '--inner-padding-end': '0',
+                            '--inner-border-width': '0',
+                            '--border-style': 'none',
+                            '--min-height': 'auto'
+                          }}
                         >
-                          <IonLabel>
-                            <div className="app-list-item__main">
-                              <div
-                                className="app-avatar-initials app-avatar-initials--sm"
-                                style={{ backgroundColor: admin.is_active ? '#667eea' : '#6b7280' }}
-                              >
-                                {getInitials(admin.display_name)}
-                              </div>
-                              <div className="app-list-item__content">
-                                <div className="app-list-item__title">{admin.display_name}</div>
+                          <div
+                            className="app-list-item app-list-item--organizations"
+                            style={{ width: '100%', position: 'relative', overflow: 'hidden' }}
+                          >
+                            <div className="app-list-item__row">
+                              <div className="app-list-item__main">
+                                <div
+                                  className="app-icon-circle app-icon-circle--lg app-icon-circle--organizations"
+                                  style={{ color: 'white', fontWeight: '600' }}
+                                >
+                                  {getInitials(admin.display_name)}
+                                </div>
+                                <div className="app-list-item__content">
+                                  <div className="app-list-item__title">{admin.display_name}</div>
+                                  <div className="app-list-item__meta">
+                                    <span className="app-list-item__meta-item">
+                                      <IonIcon icon={personOutline} style={{ color: 'var(--app-color-badges)' }} />
+                                      {admin.username}
+                                    </span>
+                                    {admin.email && (
+                                      <span className="app-list-item__meta-item">
+                                        <IonIcon icon={mailOutline} style={{ color: 'var(--app-color-users)' }} />
+                                        {admin.email}
+                                      </span>
+                                    )}
+                                    <span className="app-list-item__meta-item">
+                                      <IonIcon icon={keyOutline} style={{ color: 'var(--app-color-events)' }} />
+                                      Passwort ändern
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                            <div className="app-list-item__meta">
-                              <span className="app-list-item__meta-item">
-                                <IonIcon icon={personOutline} className="app-icon-color--badges" />
-                                {admin.username}
-                              </span>
-                              {admin.email && (
-                                <span className="app-list-item__meta-item">
-                                  <IonIcon icon={mailOutline} className="app-icon-color--organizations" />
-                                  {admin.email}
-                                </span>
-                              )}
-                              <span className="app-list-item__meta-item">
-                                <IonIcon icon={keyOutline} className="app-icon-color--events" />
-                                Passwort
-                              </span>
-                            </div>
-                          </IonLabel>
+                          </div>
                         </IonItem>
 
                         {/* Passwort zurücksetzen — erst nach Klick auf den Admin sichtbar */}
@@ -799,6 +803,20 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                         {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : addingAdmin ? <IonSpinner name="crescent" /> : 'Hinzufügen'}
                       </IonButton>
                     </div>
+                  </div>
+                )}
+
+                {/* Hinzufügen-Button — gleiches Muster wie EventModal (expand block, outline) */}
+                {!showAddAdmin && (
+                  <div style={{ marginTop: '16px' }}>
+                    <IonButton
+                      expand="block"
+                      fill="outline"
+                      onClick={() => setShowAddAdmin(true)}
+                    >
+                      <IonIcon icon={add} slot="start" />
+                      Administrator hinzufügen
+                    </IonButton>
                   </div>
                 )}
               </IonCardContent>
