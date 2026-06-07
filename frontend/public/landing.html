@@ -77,11 +77,16 @@ h1.hh{font-family:var(--display);font-weight:800;font-size:clamp(2.7rem,5.6vw,4.
 .btn-ghost:hover{background:rgba(255,255,255,.2);transform:translateY(-3px)}
 .htrust{display:flex;gap:1.5rem;flex-wrap:wrap;font-size:.86rem;color:rgba(255,255,255,.72)}
 .htrust span{display:inline-flex;align-items:center;gap:.45rem}
-.hero-art{position:relative;display:flex;justify-content:center;perspective:1500px}
-.device{position:relative;width:300px;height:618px;background:linear-gradient(160deg,#1e293b,#0f172a);border-radius:46px;padding:13px;box-shadow:0 44px 90px -22px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.06) inset;transform:rotateY(-15deg) rotateX(6deg) rotate(1deg);transition:transform .6s}
-.device:hover{transform:rotateY(-3deg) rotateX(2deg)}
-.device::before{content:'';position:absolute;top:13px;left:50%;transform:translateX(-50%);width:38%;height:25px;background:#0f172a;border-radius:0 0 16px 16px;z-index:3}
-.screen{position:relative;width:100%;height:100%;border-radius:34px;overflow:hidden;background:#0f172a}
+.hero-art{position:relative;display:flex;justify-content:center;align-items:center;perspective:1600px}
+.device{position:relative;width:252px;height:520px;background:linear-gradient(160deg,#1e293b,#0f172a);border-radius:44px;padding:11px;box-shadow:0 44px 90px -22px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.06) inset;transition:transform .6s}
+.screen{position:relative;width:100%;height:100%;border-radius:33px;overflow:hidden;background:#0f172a}
+/* Beide Mocks: KEIN CSS-Notch/Punch-Hole — die Screenshots haben Statusbar
+   (Dynamic Island bzw. Punch-Hole) bereits eingebrannt. */
+/* Beide Mocks gleich gross. Hover: leicht aufrichten + zoomen + nach vorne. */
+.device--android{transform:translateX(-74px) translateY(8px) rotateY(20deg) rotate(-4deg);z-index:1;opacity:.97}
+.device--ios{transform:translateX(74px) translateY(8px) rotateY(-16deg) rotate(2deg);z-index:2}
+.device--android:hover{transform:translateX(-74px) translateY(-4px) rotateY(8deg) rotate(-2deg) scale(1.06);z-index:3;opacity:1}
+.device--ios:hover{transform:translateX(74px) translateY(-4px) rotateY(-6deg) rotate(1deg) scale(1.06);z-index:3}
 .screen img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;opacity:0;transition:opacity .6s}
 .screen img.on{opacity:1}
 .fbadge{position:absolute;background:rgba(255,255,255,.97);color:var(--ink);border-radius:16px;padding:.7rem .9rem;box-shadow:0 18px 40px rgba(0,0,0,.24);display:flex;align-items:center;gap:.6rem;font-size:.82rem;font-weight:600;z-index:4}
@@ -89,7 +94,7 @@ h1.hh{font-family:var(--display);font-weight:800;font-size:clamp(2.7rem,5.6vw,4.
 .fb1{top:13%;left:-10%;animation:bob 4s ease-in-out infinite}
 .fb2{bottom:18%;right:-12%;animation:bob 4s ease-in-out .9s infinite}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-11px)}}
-.wave{display:block;width:100%;height:70px;margin-top:-2px}
+.wave{position:absolute;left:0;bottom:-1px;display:block;width:100%;height:70px;z-index:2}
 
 /* PROBLEM (Zettel-Story) */
 .problem{background:var(--bg-soft);position:relative}
@@ -292,8 +297,11 @@ footer a:hover{color:#fff}
    </div>
   </div>
   <div class="hero-art">
-   <div class="device"><div class="screen">
-    <img src="/screen1.png" class="on" alt="Dashboard"><img src="/screen2.png" alt="Chat"><img src="/screen3.png" alt="Events"><img src="/screen7.png" alt="Badges"><img src="/screen8.png" alt="Aktivitäten"><img src="/screen6.png" alt="Detail">
+   <div class="device device--android"><div class="screen">
+    <img src="/hero-and-1.png" class="on" alt="Konfi Quest auf Android"><img src="/hero-and-2.png" alt=""><img src="/hero-and-3.png" alt=""><img src="/hero-and-4.png" alt="">
+   </div></div>
+   <div class="device device--ios"><div class="screen">
+    <img src="/hero-ios-1.png" class="on" alt="Konfi Quest auf iPhone"><img src="/hero-ios-2.png" alt=""><img src="/hero-ios-3.png" alt=""><img src="/hero-ios-4.png" alt="">
    </div></div>
   </div>
  </div>
@@ -564,8 +572,13 @@ footer a:hover{color:#fff}
 const words=['Abenteuer','Erlebnis','Gemeinschaft','Quest'];let wi=0;const rot=document.getElementById('rot');
 setInterval(()=>{wi=(wi+1)%words.length;rot.style.opacity='0';setTimeout(()=>{rot.textContent=words[wi];rot.style.opacity='1';},250);},2600);
 // Screenshot-Carousel
-const shots=document.querySelectorAll('.screen img');let si=0;
-setInterval(()=>{shots[si].classList.remove('on');si=(si+1)%shots.length;shots[si].classList.add('on');},2800);
+// Jede .screen rotiert unabhaengig durch ihre eigenen Screenshots (iOS bzw. Android getrennt).
+document.querySelectorAll('.screen').forEach((sc,idx)=>{
+  const imgs=sc.querySelectorAll('img');if(imgs.length<2)return;
+  // Versetzter Start je Mock, damit iOS und Android nicht denselben Screen zeigen.
+  let i=idx%imgs.length;imgs[0].classList.remove('on');imgs[i].classList.add('on');
+  setInterval(()=>{imgs[i].classList.remove('on');i=(i+1)%imgs.length;imgs[i].classList.add('on');},2800);
+});
 // Nav-Schatten
 const navEl=document.querySelector('nav');addEventListener('scroll',()=>{navEl.style.boxShadow=scrollY>10?'0 4px 24px rgba(15,23,42,.07)':'none';});
 // Scroll-Reveal (Progressive Enhancement: erst JS schaltet Animation scharf)

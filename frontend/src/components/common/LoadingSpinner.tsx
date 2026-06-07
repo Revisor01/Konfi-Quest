@@ -2,94 +2,72 @@ import React from 'react';
 import {
   IonPage,
   IonContent,
-  IonSpinner,
-  IonIcon
+  IonSpinner
 } from '@ionic/react';
-import { trophy, star, sparkles } from 'ionicons/icons';
 
 interface LoadingSpinnerProps {
   fullScreen?: boolean;
   message?: string;
 }
 
-const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ 
-  fullScreen = false, 
-  message = 'Quest wird geladen...' 
+const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
+  fullScreen = false,
+  message = 'Quest wird geladen...'
 }) => {
   if (fullScreen) {
+    // Loadingscreen identisch zum Auth-Screen: gleicher Verlauf (app-auth-background),
+    // freigestelltes Logo als Wasserzeichen (app-auth-ghost-icon), gleiche Deko-Bubbles.
     return (
       <IonPage>
-        <IonContent style={{
-          '--background': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-        }}>
+        <IonContent className="app-auth-background">
+          {/* Freigestelltes Logo als grosses, angedeutetes Wasserzeichen */}
+          <img
+            src="/assets/icon/logo-mark.png"
+            alt=""
+            className="app-auth-ghost-icon"
+            aria-hidden="true"
+          />
+
+          {/* Dekorative Bubbles wie auf den Auth-Screens */}
+          <div className="app-auth-bubble" style={{ top: '70px', left: '-55px', width: '150px', height: '150px' }} />
+          <div className="app-auth-bubble app-auth-bubble--soft" style={{ top: '210px', left: '45px', width: '46px', height: '46px' }} />
+          <div className="app-auth-bubble" style={{ bottom: '-50px', left: '-30px', width: '180px', height: '180px' }} />
+          <div className="app-auth-bubble app-auth-bubble--soft" style={{ bottom: '90px', right: '25px', width: '38px', height: '38px' }} />
+
           <div style={{
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
             alignItems: 'center',
-            height: '100vh',
+            minHeight: '100%',
             color: 'white',
-            textAlign: 'center'
+            textAlign: 'center',
+            position: 'relative',
+            zIndex: 1
           }}>
-            
-            {/* Animated Icons */}
-            <div style={{
-              fontSize: '3rem',
-              marginBottom: '24px',
-              display: 'flex',
-              gap: '16px',
-              justifyContent: 'center'
-            }}>
-              <IonIcon 
-                icon={trophy} 
-                style={{ 
-                  color: '#FFD700',
-                  animation: 'bounce 2s infinite 0s'
-                }} 
-              />
-              <IonIcon 
-                icon={star} 
-                style={{ 
-                  color: '#FF6B6B',
-                  animation: 'bounce 2s infinite 0.5s'
-                }} 
-              />
-              <IonIcon 
-                icon={sparkles} 
-                style={{ 
-                  color: '#4ECDC4',
-                  animation: 'bounce 2s infinite 1s'
-                }} 
-              />
-            </div>
 
             {/* App Title */}
-            <h1 style={{
-              fontSize: '2rem',
-              fontWeight: '700',
-              margin: '0 0 16px 0',
-              textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-            }}>
-              Konfi Quest
+            <h1 className="app-auth-hero__title--cosmic" style={{ marginBottom: '20px' }}>
+              KONFI QUEST
             </h1>
 
             {/* Loading Message */}
             <p style={{
               fontSize: '1.1rem',
-              opacity: 0.9,
+              opacity: 0.92,
               margin: '0 0 32px 0',
-              textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+              textShadow: '0 1px 2px rgba(0,0,0,0.25)'
             }}>
               {message}
             </p>
 
             {/* Spinner */}
-            <IonSpinner 
-              name="crescent" 
-              style={{ 
+            <IonSpinner
+              name="crescent"
+              style={{
                 '--color': 'white',
                 transform: 'scale(1.5)'
-              }} 
+              }}
             />
 
             {/* Progress Dots */}
@@ -114,18 +92,6 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
           </div>
 
           <style>{`
-            @keyframes bounce {
-              0%, 20%, 50%, 80%, 100% {
-                transform: translateY(0);
-              }
-              40% {
-                transform: translateY(-10px);
-              }
-              60% {
-                transform: translateY(-5px);
-              }
-            }
-
             @keyframes pulse {
               0%, 100% {
                 opacity: 0.4;
