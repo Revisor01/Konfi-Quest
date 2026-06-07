@@ -99,8 +99,9 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     try {
       const userQuery = `
         SELECT u.id, u.username, u.display_name, u.password_hash, u.organization_id, u.email, u.role_id,
-               u.is_super_admin,
+               u.is_super_admin, u.is_active as user_active,
                o.name as organization_name, o.slug as organization_slug,
+               COALESCE(o.is_active, true) as organization_active, o.trial_ends_at,
                r.name as role_name, r.display_name as role_display_name,
                kp.jahrgang_id, j.name as jahrgang_name,
                kp.gottesdienst_points, kp.gemeinde_points
@@ -123,6 +124,28 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       if (!passwordMatch) {
  console.warn(`Login fehlgeschlagen: Falsches Passwort für '${username}'`);
         return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
+      }
+
+      // Zugriffs-Sperren — super_admin (ohne Org) ist ausgenommen.
+      const isSuperAdmin = user.is_super_admin === true || user.role_name === 'super_admin';
+      if (!isSuperAdmin) {
+        // User deaktiviert
+        if (user.user_active === false) {
+ console.warn(`Login blockiert: Benutzer '${username}' ist deaktiviert`);
+          return res.status(403).json({ error: 'Dein Zugang wurde deaktiviert. Bitte wende dich an deine Gemeinde.', error_code: 'user_inactive' });
+        }
+        // Trial abgelaufen (auch falls der Cron die Org noch nicht auf inaktiv gesetzt hat)
+        const trialExpired = user.trial_ends_at && new Date(user.trial_ends_at) < new Date();
+        // Organisation gesperrt (inaktiv oder Trial abgelaufen)
+        if (user.organization_active === false || trialExpired) {
+ console.warn(`Login blockiert: Organisation von '${username}' ist gesperrt (active=${user.organization_active}, trialExpired=${trialExpired})`);
+          return res.status(403).json({
+            error: trialExpired
+              ? 'Die Testphase dieser Organisation ist abgelaufen. Bitte wende dich an deine Gemeinde, um einen Tarif zu buchen.'
+              : 'Diese Organisation ist derzeit gesperrt. Bitte wende dich an deine Gemeinde.',
+            error_code: trialExpired ? 'org_trial_expired' : 'org_inactive'
+          });
+        }
       }
 
       // last_login_at nur beim echten Login aktualisieren (nicht in Middleware)
@@ -813,14 +836,16 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       // Altes Token sofort revoken (Rotation)
       await db.query('UPDATE refresh_tokens SET revoked_at = NOW() WHERE id = $1', [existing.id]);
 
-      // User-Daten laden (gleiche Query wie Login)
+      // User-Daten laden (gleiche Query wie Login, inkl. Org-Status)
       const { rows: [user] } = await db.query(`
         SELECT u.id, u.username, u.display_name, u.organization_id, u.email, u.role_id,
-               u.is_super_admin,
+               u.is_super_admin, u.is_active as user_active,
+               COALESCE(o.is_active, true) as organization_active, o.trial_ends_at,
                r.name as role_name,
                kp.jahrgang_id, j.name as jahrgang_name,
                kp.gottesdienst_points, kp.gemeinde_points
         FROM users u
+        LEFT JOIN organizations o ON u.organization_id = o.id
         LEFT JOIN roles r ON u.role_id = r.id
         LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
         LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
@@ -829,6 +854,21 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
       if (!user) {
         return res.status(401).json({ error: 'Benutzer nicht gefunden' });
+      }
+
+      // Zugriffs-Sperre beim Refresh — altes Token ist bereits revoked, also fliegt
+      // der User bei Sperre sauber raus (kein neues Tokenpaar). super_admin ausgenommen.
+      const isSuperAdmin = user.is_super_admin === true || user.role_name === 'super_admin';
+      if (!isSuperAdmin) {
+        const trialExpired = user.trial_ends_at && new Date(user.trial_ends_at) < new Date();
+        if (user.user_active === false || user.organization_active === false || trialExpired) {
+          return res.status(403).json({
+            error: trialExpired
+              ? 'Die Testphase dieser Organisation ist abgelaufen.'
+              : 'Zugang gesperrt.',
+            error_code: trialExpired ? 'org_trial_expired' : (user.user_active === false ? 'user_inactive' : 'org_inactive')
+          });
+        }
       }
 
       const userType = user.role_name === 'konfi' ? 'konfi' : user.role_name === 'teamer' ? 'teamer' : 'admin';

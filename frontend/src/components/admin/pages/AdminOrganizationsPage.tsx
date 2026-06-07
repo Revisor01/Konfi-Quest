@@ -151,7 +151,7 @@ const AdminOrganizationsPage: React.FC = () => {
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true} collapse="condense">
+      <IonHeader translucent={true}>
         <IonToolbar>
           <IonTitle>Organisationen</IonTitle>
           <IonButtons slot="end">

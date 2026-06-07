@@ -64,6 +64,7 @@ const LoginView: React.FC = () => {
     } catch (err: any) {
       // Defensiv: errorMessage immer ein String, sonst werfen die .includes()-Checks unten
       const errorMessage: string = err?.response?.data?.error || err?.message || '';
+      const errorCode: string = err?.response?.data?.error_code || '';
       let displayError: string;
 
       // Netzwerkfehler erkennen
@@ -72,6 +73,10 @@ const LoginView: React.FC = () => {
         setIsNetworkError(true);
       } else if (err.rateLimitMessage) {
         displayError = err.rateLimitMessage;
+      } else if (errorCode === 'org_trial_expired' || errorCode === 'org_inactive' || errorCode === 'user_inactive') {
+        // Zugangs-Sperre (Testphase abgelaufen / Org gesperrt / User deaktiviert):
+        // klare Server-Meldung direkt anzeigen.
+        displayError = errorMessage || 'Zugang gesperrt. Bitte wende dich an deine Gemeinde.';
       } else if (errorMessage.includes('password') || errorMessage.includes('Passwort') || errorMessage.includes('Invalid credentials') || errorMessage.includes('Ungültige Anmeldedaten')) {
         displayError = 'Falsches Passwort. Bitte versuche es erneut.';
       } else if (errorMessage.includes('not found') || errorMessage.includes('nicht gefunden') || errorMessage.includes('User not found')) {

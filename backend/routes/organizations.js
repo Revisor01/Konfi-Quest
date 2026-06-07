@@ -165,27 +165,47 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
   router.post('/', rbacVerifier, requireSuperAdmin, validateCreateOrg, async (req, res) => {
     try {
       const {
-        name, slug, display_name, description, contact_email, 
-        contact_phone, address, website_url, admin_username,
+        name, slug, display_name, description, contact_email,
+        contact_phone, address, website_url, kirchenkreis, max_konfis, admin_username,
         admin_password, admin_display_name
       } = req.body;
-      
+
       if (!name || !slug || !display_name) {
         return res.status(400).json({ error: 'Name, Slug und Anzeigename sind erforderlich' });
       }
-      
+
       if (!admin_username || !admin_password || !admin_display_name) {
         return res.status(400).json({ error: 'Admin-Benutzername, Passwort und Anzeigename sind erforderlich' });
       }
-      
+
+      // max_konfis: nur gueltige Zahl >= 0 oder NULL (unbegrenzt)
+      let konfiLimit = null;
+      if (max_konfis !== null && max_konfis !== undefined && max_konfis !== '') {
+        const parsed = parseInt(max_konfis, 10);
+        if (isNaN(parsed) || parsed < 0) {
+          return res.status(400).json({ error: 'Konfi-Limit muss eine Zahl ab 0 oder leer sein' });
+        }
+        konfiLimit = parsed;
+      }
+
+      // Testphase: explizit mitgegebener Wert hat Vorrang.
+      //   trial_ends_at === null im Body -> bewusst KEIN Trial (bezahlt/unbegrenzt).
+      //   Feld fehlt im Body            -> Default 30-Tage-Trial ab jetzt.
+      let trialEndsAt;
+      if (Object.prototype.hasOwnProperty.call(req.body, 'trial_ends_at')) {
+        trialEndsAt = req.body.trial_ends_at || null;
+      } else {
+        trialEndsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      }
+
       // 1. Create Organization
       const orgQuery = `INSERT INTO organizations (
-        name, slug, display_name, description, contact_email, 
-        contact_phone, address, website_url
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`;
-      
+        name, slug, display_name, description, contact_email,
+        contact_phone, address, website_url, kirchenkreis, max_konfis, trial_ends_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`;
+
       const { rows: [newOrg] } = await db.query(orgQuery, [
-        name, slug, display_name, description, contact_email, contact_phone, address, website_url
+        name, slug, display_name, description, contact_email, contact_phone, address, website_url, kirchenkreis || null, konfiLimit, trialEndsAt
       ]);
       const organizationId = newOrg.id;
         
@@ -293,7 +313,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       const { id } = req.params;
       const {
         name, slug, display_name, description, contact_email,
-        contact_phone, address, website_url, is_active
+        contact_phone, address, website_url, kirchenkreis, is_active
       } = req.body;
 
       // Zugriffsprüfung
@@ -303,17 +323,29 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       if (!isSuperAdmin && !isOwnOrg) {
         return res.status(403).json({ error: 'Keine Berechtigung' });
       }
-      
-      const query = `UPDATE organizations SET 
-        name = $1, slug = $2, display_name = $3, description = $4, 
-        contact_email = $5, contact_phone = $6, address = $7, 
-        website_url = $8, is_active = $9, updated_at = NOW()
-        WHERE id = $10`;
-      
-      const { rowCount } = await db.query(query, [
-        name, slug, display_name, description, contact_email, contact_phone, 
-        address, website_url, is_active, id
-      ]);
+
+      // Basis-Felder (von super_admin UND org_admin editierbar)
+      const setClauses = [
+        'name = $1', 'slug = $2', 'display_name = $3', 'description = $4',
+        'contact_email = $5', 'contact_phone = $6', 'address = $7',
+        'website_url = $8', 'kirchenkreis = $9', 'is_active = $10', 'updated_at = NOW()'
+      ];
+      const params = [
+        name, slug, display_name, description, contact_email, contact_phone,
+        address, website_url, kirchenkreis || null, is_active
+      ];
+
+      // trial_ends_at darf NUR der super_admin aendern (Tarif/Testphase).
+      // null = bezahlt/unbegrenzt, Datum = Trial bis dahin.
+      if (isSuperAdmin && Object.prototype.hasOwnProperty.call(req.body, 'trial_ends_at')) {
+        params.push(req.body.trial_ends_at || null);
+        setClauses.push(`trial_ends_at = $${params.length}`);
+      }
+
+      params.push(id);
+      const query = `UPDATE organizations SET ${setClauses.join(', ')} WHERE id = $${params.length}`;
+
+      const { rowCount } = await db.query(query, params);
         
       if (rowCount === 0) {
         return res.status(404).json({ error: 'Organisation nicht gefunden' });

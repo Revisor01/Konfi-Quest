@@ -215,10 +215,10 @@ console.error('Logout error:', error);
               <IonCardContent style={{ padding: '12px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <div
-                  className="app-list-item app-list-item--success app-settings-item"
+                  className="app-list-item app-list-item--organizations app-settings-item"
                   onClick={() => router.push('/admin/organizations')}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--success">
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--organizations">
                     <IonIcon icon={business} />
                   </div>
                   <div className="app-flex-fill">

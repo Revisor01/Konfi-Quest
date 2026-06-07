@@ -213,7 +213,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                       <div
                         className="app-corner-badge"
                         style={{
-                          backgroundColor: organization.is_active ? 'var(--app-color-success, #16a34a)' : '#6b7280',
+                          backgroundColor: organization.is_active ? 'var(--app-color-users)' : '#6b7280',
                           display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px'
                         }}
                         title={organization.is_active ? 'Aktiv' : 'Inaktiv'}

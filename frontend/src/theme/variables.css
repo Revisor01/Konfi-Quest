@@ -1128,8 +1128,22 @@ ion-item-option.app-swipe-action {
   --ripple-color: transparent;
   --border-width: 0;
   --border-style: none;
-  padding: 0 4px;
+  /* ion-item-option hat ein inneres native-Padding (Default ~0.7em je Seite),
+   * das ueber die CSS-Variablen --padding-* gesteuert wird. Bei zwei Buttons
+   * nebeneinander wuerde sich rechtes + linkes Padding verdoppeln, daher
+   * NUR links Abstand (10px), rechts 0 -> exakt 10px zwischen den Icons. */
+  --padding-start: 10px;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  padding: 0;
   min-width: auto;
+}
+/* Sicherung: inneren native-Part direkt auf das enge Padding zwingen
+ * (falls die --padding-Variablen vom Theme ueberschrieben werden). */
+ion-item-option.app-swipe-action::part(native) {
+  padding-left: 10px;
+  padding-right: 0;
 }
 /* Innerer Icon-Kreis im Swipe-Button: einheitliche Groesse/Form ueberall.
  * Ueberschreibt das margin-top der Listen-Variante, damit der Kreis mittig sitzt. */

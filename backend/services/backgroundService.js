@@ -9,6 +9,7 @@ class BackgroundService {
   static tokenCleanupInterval = null;
   static wrappedCronTask = null;
   static autoDeletionCronTask = null;
+  static trialExpiryCronTask = null;
   static wrappedRouter = null;
 
   /**
@@ -524,6 +525,66 @@ class BackgroundService {
   }
 
   /**
+   * Startet den Trial-Ablauf-Cron: setzt Organisationen mit abgelaufener
+   * Testphase (trial_ends_at < jetzt) auf is_active = false (Sperre).
+   * Login + Refresh pruefen trial_ends_at zusaetzlich direkt, daher ist der
+   * Cron nur die persistente Sperre fuer bestehende Sessions/Listen-Anzeige.
+   */
+  static startTrialExpiryCron(db) {
+    if (this.trialExpiryCronTask) {
+      return;
+    }
+
+    console.log('Trial-Expiry-Cron: Starte node-cron 0 3 * * * Europe/Berlin');
+
+    // '0 3 * * *' = taeglich um 03:00 Uhr (nach Auto-Deletion um 02:00)
+    this.trialExpiryCronTask = cron.schedule('0 3 * * *', async () => {
+      try {
+        await this.runTrialExpiry(db);
+      } catch (e) {
+        console.error('Trial-Expiry-Cron failed:', e);
+      }
+    }, {
+      timezone: 'Europe/Berlin'
+    });
+  }
+
+  /**
+   * Stoppt den Trial-Ablauf-Cron.
+   */
+  static stopTrialExpiryCron() {
+    if (this.trialExpiryCronTask) {
+      this.trialExpiryCronTask.stop();
+      this.trialExpiryCronTask = null;
+    }
+  }
+
+  /**
+   * Sperrt Organisationen mit abgelaufener Testphase.
+   * Nur Orgs mit trial_ends_at gesetzt (NULL = bezahlt/unbegrenzt bleibt unangetastet)
+   * und die noch aktiv sind. Idempotent durch is_active = true-Bedingung.
+   */
+  static async runTrialExpiry(db) {
+    try {
+      const { rows } = await db.query(
+        `UPDATE organizations
+         SET is_active = false, updated_at = NOW()
+         WHERE trial_ends_at IS NOT NULL
+           AND trial_ends_at < NOW()
+           AND is_active = true
+         RETURNING id, display_name`
+      );
+      if (rows.length > 0) {
+        console.log(`Trial-Expiry: ${rows.length} Organisation(en) gesperrt:`, rows.map(r => r.display_name).join(', '));
+      }
+      return { locked: rows.length };
+    } catch (error) {
+      console.error('Trial-Expiry: Sperrung fehlgeschlagen:', error.message);
+      return { locked: 0 };
+    }
+  }
+
+  /**
    * Fuehrt die Auto-Loeschung durch (D-13/14/15).
    *
    * Pro Jahrgang (Fehler-Isolation, D-15):
@@ -636,6 +697,7 @@ class BackgroundService {
     this.startTokenCleanupService(db);
     this.startWrappedCron(db);
     this.startAutoDeletionCron(db);
+    this.startTrialExpiryCron(db);
   }
 
   /**
@@ -648,6 +710,7 @@ class BackgroundService {
     this.stopTokenCleanupService();
     this.stopWrappedCron();
     this.stopAutoDeletionCron();
+    this.stopTrialExpiryCron();
   }
 }
 

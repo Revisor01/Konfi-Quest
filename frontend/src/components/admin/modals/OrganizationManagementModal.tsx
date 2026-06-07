@@ -18,7 +18,10 @@ import {
   IonListHeader,
   IonSpinner,
   IonTextarea,
-  useIonAlert
+  IonSelect,
+  IonSelectOption,
+  useIonAlert,
+  useIonModal
 } from '@ionic/react';
 import {
   closeOutline,
@@ -30,18 +33,19 @@ import {
   mailOutline,
   personOutline,
   shieldOutline,
-  keyOutline,
   alertCircleOutline,
   people,
   flash,
   callOutline,
   locationOutline,
   add,
+  timeOutline,
   cloudOfflineOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
+import AdminPasswordResetModal from './AdminPasswordResetModal';
 
 interface Organization {
   id: number;
@@ -53,6 +57,8 @@ interface Organization {
   contact_phone?: string;
   address?: string;
   website_url?: string;
+  kirchenkreis?: string;
+  trial_ends_at?: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -76,6 +82,16 @@ interface OrganizationManagementModalProps {
   onSuccess: () => void;
 }
 
+// Tarif-Stufen wie auf der Website (landing.html / marketing-copy.md).
+// value als String fuer direkten Vergleich mit dem maxKonfis-Feld; '' = unbegrenzt.
+const KONFI_TARIFE: { label: string; value: string }[] = [
+  { label: 'Klein', value: '15' },
+  { label: 'Standard', value: '50' },
+  { label: 'Plus', value: '75' },
+  { label: 'Groß', value: '100' },
+  { label: 'Unbegrenzt', value: '' }
+];
+
 const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = ({
   organizationId,
   onClose,
@@ -90,6 +106,9 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   const [isDirty, setIsDirty] = useState(false);
   const [presentAlert] = useIonAlert();
   const initializedRef = useRef(false);
+  // Ref auf die IonPage dieses Modals — dient dem verschachtelten Passwort-Modal
+  // als presentingElement, damit iOS den korrekten Card-Backdrop rendert.
+  const pageRef = useRef<HTMLElement | null>(null);
 
   const doClose = () => onClose();
 
@@ -116,6 +135,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
     contact_phone: '',
     address: '',
     website_url: '',
+    kirchenkreis: '',
     is_active: true,
     // Admin-Daten für neue Organisation
     admin_name: '',        // Anzeigename des Admins (z.B. "Pastor Müller")
@@ -132,23 +152,43 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
 
   const [organization, setOrganization] = useState<Organization | null>(null);
   // Konfi-Limit (nur für super_admin sichtbar/setzbar). Leeres Feld = unbegrenzt (NULL).
+  // Wird zusammen mit dem Modal gespeichert (kein separater Button).
   const [maxKonfis, setMaxKonfis] = useState<string>('');
-  const [savingLimit, setSavingLimit] = useState(false);
+  // "Eigenes Limit"-Modus: Zahlenfeld statt Tarif-Auswahl
+  const [isCustomLimit, setIsCustomLimit] = useState(false);
+  // Testphase-Enddatum (ISO-String) oder '' = bezahlt/unbegrenzt (nur super_admin)
+  const [trialEndsAt, setTrialEndsAt] = useState<string>('');
+
+  const handleTrialChange = (value: string) => {
+    setTrialEndsAt(value);
+    if (initializedRef.current) setIsDirty(true);
+  };
   const [orgAdmins, setOrgAdmins] = useState<OrgAdmin[]>([]);
-  const [newPassword, setNewPassword] = useState('');
-  const [selectedAdminId, setSelectedAdminId] = useState<number | null>(null);
-  const [resettingPassword, setResettingPassword] = useState(false);
   const [showAddAdmin, setShowAddAdmin] = useState(false);
   const [newAdminData, setNewAdminData] = useState({ display_name: '', username: '', password: '' });
   const [addingAdmin, setAddingAdmin] = useState(false);
+  // Welcher Admin wird im Passwort-Modal bearbeitet
+  const [passwordAdmin, setPasswordAdmin] = useState<OrgAdmin | null>(null);
 
   const isEditMode = !!organizationId;
 
   // View/Edit-Modus: bestehende Org startet als read-only Uebersicht ('view'),
   // neue Org direkt im Formular ('edit'). Bearbeiten-Button oben wechselt um.
   const [viewMode, setViewMode] = useState<'view' | 'edit'>(organizationId ? 'view' : 'edit');
-  // Welcher Admin ist fuer Passwort-Reset aufgeklappt (per Klick, nicht dauerhaft).
-  const [passwordAdminId, setPasswordAdminId] = useState<number | null>(null);
+
+  // maxKonfis-Aenderung markiert das Modal als dirty (aktiviert Speichern-Button)
+  const handleMaxKonfisChange = (value: string) => {
+    setMaxKonfis(value);
+    if (initializedRef.current) setIsDirty(true);
+  };
+
+  // Passwort-Aendern-Modal (useIonModal, Konventions-Muster)
+  const [presentPasswordModal, dismissPasswordModal] = useIonModal(AdminPasswordResetModal, {
+    adminId: passwordAdmin?.id ?? 0,
+    adminName: passwordAdmin?.display_name ?? '',
+    onClose: () => dismissPasswordModal(),
+    onSuccess: () => dismissPasswordModal()
+  });
 
   // Initialen berechnen
   const getInitials = (name: string) => {
@@ -189,7 +229,11 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
       const orgData = response.data;
 
       setOrganization(orgData);
-      setMaxKonfis(orgData.max_konfis !== null && orgData.max_konfis !== undefined ? String(orgData.max_konfis) : '');
+      const loadedLimit = orgData.max_konfis !== null && orgData.max_konfis !== undefined ? String(orgData.max_konfis) : '';
+      setMaxKonfis(loadedLimit);
+      // Wenn der geladene Wert keinem Tarif entspricht (und nicht leer/unbegrenzt ist), ist es ein eigenes Limit
+      setIsCustomLimit(loadedLimit !== '' && !KONFI_TARIFE.some(t => t.value === loadedLimit));
+      setTrialEndsAt(orgData.trial_ends_at || '');
       setFormData({
         display_name: orgData.display_name || '',
         description: orgData.description || '',
@@ -197,6 +241,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         contact_phone: orgData.contact_phone || '',
         address: orgData.address || '',
         website_url: orgData.website_url || '',
+        kirchenkreis: orgData.kirchenkreis || '',
         is_active: orgData.is_active !== undefined ? orgData.is_active : true,
         admin_name: '',
         admin_username: '',
@@ -251,6 +296,20 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
       try {
         const systemName = generateSystemName(formData.display_name);
 
+        // Konfi-Limit (Tarif) — nur super_admin setzt es. NULL = unbegrenzt.
+        let limitValue: number | null = null;
+        if (isSuperAdmin) {
+          const trimmed = maxKonfis.trim();
+          if (trimmed !== '') {
+            const parsed = parseInt(trimmed, 10);
+            if (isNaN(parsed) || parsed < 0) {
+              setError('Das Konfi-Limit muss eine Zahl ab 0 oder leer sein');
+              return;
+            }
+            limitValue = parsed;
+          }
+        }
+
         const orgData: any = {
           name: systemName,
           slug: systemName,
@@ -260,17 +319,31 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           contact_phone: formData.contact_phone.trim() || null,
           address: formData.address.trim() || null,
           website_url: formData.website_url.trim() || null,
+          kirchenkreis: formData.kirchenkreis.trim() || null,
           is_active: formData.is_active
         };
+
+        // Testphase-Enddatum nur super_admin (leer = bezahlt/unbegrenzt -> null)
+        if (isSuperAdmin) {
+          orgData.trial_ends_at = trialEndsAt.trim() || null;
+        }
 
         if (!isEditMode) {
           orgData.admin_username = formData.admin_username.trim();
           orgData.admin_password = formData.admin_password.trim();
           orgData.admin_display_name = formData.admin_name.trim();
+          // Limit direkt bei der Erstellung mitgeben (super_admin)
+          if (isSuperAdmin) orgData.max_konfis = limitValue;
         }
 
         if (isEditMode) {
           await api.put(`/organizations/${organizationId}`, orgData);
+
+          // Konfi-Limit wird zusammen mit dem Modal gespeichert (eigener Endpunkt).
+          if (isSuperAdmin) {
+            await api.patch(`/organizations/${organizationId}/limit`, { max_konfis: limitValue });
+          }
+
           setSuccess('Organisation erfolgreich aktualisiert');
         } else {
           await api.post('/organizations', orgData);
@@ -285,56 +358,16 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
     });
   };
 
-  const handleSaveLimit = async () => {
-    if (!organizationId) return;
-
-    const trimmed = maxKonfis.trim();
-    let value: number | null;
-    if (trimmed === '') {
-      value = null; // unbegrenzt
-    } else {
-      const parsed = parseInt(trimmed, 10);
-      if (isNaN(parsed) || parsed < 0) {
-        setError('Das Konfi-Limit muss eine Zahl ab 0 oder leer sein');
-        return;
-      }
-      value = parsed;
-    }
-
-    setSavingLimit(true);
-    try {
-      await api.patch(`/organizations/${organizationId}/limit`, { max_konfis: value });
-      setSuccess(value === null ? 'Konfi-Limit aufgehoben (unbegrenzt)' : `Konfi-Limit auf ${value} gesetzt`);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Speichern des Konfi-Limits');
-    } finally {
-      setSavingLimit(false);
-    }
-  };
-
-  const handleResetPassword = async (adminId: number) => {
-    if (!newPassword.trim()) {
-      setError('Bitte geben Sie ein neues Passwort ein');
+  // Passwort aendern als eigenes Modal (useIonModal — Konventions-Muster mit
+  // Anforderungs-Anzeige, Augen-Toggle und Vorschlag-Funktion).
+  const openPasswordModal = (admin: OrgAdmin) => {
+    if (!isOnline) {
+      setError('Diese Aktion ist offline nicht möglich');
       return;
     }
-
-    if (newPassword.length < 6) {
-      setError('Das Passwort muss mindestens 6 Zeichen lang sein');
-      return;
-    }
-
-    setResettingPassword(true);
-    setSelectedAdminId(adminId);
-    try {
-      await api.put(`/users/${adminId}/reset-password`, { password: newPassword });
-      setSuccess('Passwort erfolgreich zurückgesetzt');
-      setNewPassword('');
-      setSelectedAdminId(null);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Zurücksetzen des Passworts');
-    } finally {
-      setResettingPassword(false);
-    }
+    setPasswordAdmin(admin);
+    // pageRef = IonPage dieses Modals -> iOS rendert den korrekten Card-Backdrop
+    presentPasswordModal({ presentingElement: pageRef.current ?? undefined });
   };
 
   const handleAddAdmin = async () => {
@@ -386,7 +419,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   }
 
   return (
-    <IonPage>
+    <IonPage ref={pageRef}>
       <IonHeader>
         <IonToolbar>
           <IonTitle>{!isEditMode ? 'Neue Organisation' : viewMode === 'view' ? 'Organisation' : 'Organisation bearbeiten'}</IonTitle>
@@ -425,7 +458,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   </div>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: '1.05rem' }}>{organization.display_name}</div>
-                    <div style={{ fontSize: '0.85rem', color: organization.is_active ? '#16a34a' : '#6b7280', fontWeight: 600 }}>
+                    <div style={{ fontSize: '0.85rem', color: organization.is_active ? '#667eea' : '#6b7280', fontWeight: 600 }}>
                       {organization.is_active ? 'Aktiv' : 'Inaktiv'}
                     </div>
                   </div>
@@ -445,6 +478,26 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                         : `${organization.konfi_count} Konfis (unbegrenzt)`}
                     </span>
                   </div>
+                  {organization.kirchenkreis && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <IonIcon icon={businessOutline} style={{ color: '#667eea' }} />
+                      <span>{organization.kirchenkreis}</span>
+                    </div>
+                  )}
+                  {isSuperAdmin && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <IonIcon icon={timeOutline} style={{ color: '#667eea' }} />
+                      {organization.trial_ends_at
+                        ? (() => {
+                            const end = new Date(organization.trial_ends_at);
+                            const days = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                            return days >= 0
+                              ? <span>Testphase bis {end.toLocaleDateString('de-DE')} ({days} Tag{days === 1 ? '' : 'e'} übrig)</span>
+                              : <span style={{ color: '#dc2626' }}>Testphase abgelaufen ({end.toLocaleDateString('de-DE')})</span>;
+                          })()
+                        : <span>Bezahlt / unbegrenzt</span>}
+                    </div>
+                  )}
                   {organization.contact_email && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <IonIcon icon={mailOutline} style={{ color: '#667eea' }} />
@@ -497,7 +550,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   />
                 </IonItem>
 
-                <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Beschreibung (optional)</IonLabel>
                   <IonTextarea
                     value={formData.description}
@@ -505,6 +558,16 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     placeholder="Kurze Beschreibung"
                     autoGrow={true}
                     rows={2}
+                    disabled={isSubmitting}
+                  />
+                </IonItem>
+
+                <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Kirchenkreis (optional)</IonLabel>
+                  <IonInput
+                    value={formData.kirchenkreis}
+                    onIonInput={(e) => setFormData({ ...formData, kirchenkreis: e.detail.value! })}
+                    placeholder="z.B. Kirchenkreis Dithmarschen"
                     disabled={isSubmitting}
                   />
                 </IonItem>
@@ -645,16 +708,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                           button
                           detail={false}
                           lines="none"
-                          onClick={() => {
-                            // Passwort-Reset-Feld per Klick auf den Admin auf-/zuklappen
-                            if (passwordAdminId === admin.id) {
-                              setPasswordAdminId(null);
-                            } else {
-                              setPasswordAdminId(admin.id);
-                              setSelectedAdminId(admin.id);
-                              setNewPassword('');
-                            }
-                          }}
+                          onClick={() => openPasswordModal(admin)}
                           style={{
                             '--background': 'transparent',
                             '--padding-start': '0',
@@ -666,13 +720,13 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                           }}
                         >
                           <div
-                            className="app-list-item app-list-item--organizations"
+                            className="app-list-item app-list-item--teamer"
                             style={{ width: '100%', position: 'relative', overflow: 'hidden' }}
                           >
                             <div className="app-list-item__row">
                               <div className="app-list-item__main">
                                 <div
-                                  className="app-icon-circle app-icon-circle--lg app-icon-circle--organizations"
+                                  className="app-icon-circle app-icon-circle--lg app-icon-circle--teamer"
                                   style={{ color: 'white', fontWeight: '600' }}
                                 >
                                   {getInitials(admin.display_name)}
@@ -681,62 +735,21 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                                   <div className="app-list-item__title">{admin.display_name}</div>
                                   <div className="app-list-item__meta">
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={personOutline} style={{ color: 'var(--app-color-badges)' }} />
+                                      <IonIcon icon={personOutline} style={{ color: 'var(--app-color-teamer)' }} />
                                       {admin.username}
                                     </span>
                                     {admin.email && (
                                       <span className="app-list-item__meta-item">
-                                        <IonIcon icon={mailOutline} style={{ color: 'var(--app-color-users)' }} />
+                                        <IonIcon icon={mailOutline} style={{ color: 'var(--app-color-teamer)' }} />
                                         {admin.email}
                                       </span>
                                     )}
-                                    <span className="app-list-item__meta-item">
-                                      <IonIcon icon={keyOutline} style={{ color: 'var(--app-color-events)' }} />
-                                      Passwort ändern
-                                    </span>
                                   </div>
                                 </div>
                               </div>
                             </div>
                           </div>
                         </IonItem>
-
-                        {/* Passwort zurücksetzen — erst nach Klick auf den Admin sichtbar */}
-                        {passwordAdminId === admin.id && (
-                        <div style={{ marginLeft: '48px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                            <IonIcon icon={keyOutline} style={{ color: '#667eea', fontSize: '0.9rem' }} />
-                            <span style={{ fontWeight: '500', fontSize: '0.85rem', color: '#666' }}>Neues Passwort setzen</span>
-                          </div>
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <IonInput
-                              type="password"
-                              value={selectedAdminId === admin.id ? newPassword : ''}
-                              onIonInput={(e) => {
-                                setSelectedAdminId(admin.id);
-                                setNewPassword(e.detail.value!);
-                              }}
-                              placeholder="Neues Passwort"
-                              disabled={resettingPassword}
-                              style={{
-                                '--background': '#f8f9fa',
-                                '--padding-start': '12px',
-                                '--padding-end': '12px',
-                                borderRadius: '8px',
-                                flex: 1
-                              }}
-                            />
-                            <IonButton
-                              size="small"
-                              onClick={() => handleResetPassword(admin.id)}
-                              disabled={selectedAdminId !== admin.id || !newPassword.trim() || resettingPassword || !isOnline}
-                              style={{ '--background': '#667eea', '--background-activated': '#5a67d8' }}
-                            >
-                              {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : resettingPassword && selectedAdminId === admin.id ? <IonSpinner name="crescent" /> : 'Setzen'}
-                            </IonButton>
-                          </div>
-                        </div>
-                        )}
                       </div>
                     ))}
                   </div>
@@ -824,8 +837,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           </IonList>
         )}
 
-        {/* SEKTION: Konfi-Limit (nur super_admin, nur im Edit-Modus) */}
-        {isEditMode && isSuperAdmin && viewMode === 'edit' && (
+        {/* SEKTION: Konfi-Limit (nur super_admin, im Erstellen- und Bearbeiten-Modus) */}
+        {isSuperAdmin && viewMode === 'edit' && (
           <IonList inset={true} className="app-modal-section">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--organizations">
@@ -836,37 +849,130 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
             <IonCard className="app-card">
               <IonCardContent style={{ padding: '16px' }}>
                 <IonList style={{ background: 'transparent' }}>
-                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                    <IonLabel position="stacked">Maximale Anzahl Konfis (leer = unbegrenzt)</IonLabel>
-                    <IonInput
-                      type="number"
-                      inputmode="numeric"
-                      min="0"
-                      value={maxKonfis}
-                      onIonInput={(e) => setMaxKonfis(e.detail.value ?? '')}
-                      placeholder="z.B. 15 — leer lassen für unbegrenzt"
-                      disabled={savingLimit || !isOnline}
-                    />
+                  {/* Tarif-Auswahl als Popover (Website-Stufen + Eigenes Limit) */}
+                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                    <IonLabel position="stacked">Tarif</IonLabel>
+                    <IonSelect
+                      value={isCustomLimit ? '__custom__' : maxKonfis.trim()}
+                      interface="popover"
+                      placeholder="Tarif wählen"
+                      onIonChange={(e) => {
+                        const val = e.detail.value;
+                        if (val === '__custom__') {
+                          // Auf Eigenes Limit umschalten: Feld leeren falls es vorher ein Tarif war
+                          setIsCustomLimit(true);
+                        } else {
+                          setIsCustomLimit(false);
+                          handleMaxKonfisChange(val);
+                        }
+                      }}
+                    >
+                      {KONFI_TARIFE.map((tarif) => (
+                        <IonSelectOption key={tarif.label} value={tarif.value}>
+                          {tarif.label}{tarif.value ? ` — bis ${tarif.value} Konfis` : ' — unbegrenzt'}
+                        </IonSelectOption>
+                      ))}
+                      <IonSelectOption value="__custom__">Eigenes Limit…</IonSelectOption>
+                    </IonSelect>
                   </IonItem>
+
+                  {/* Eigenes Limit-Feld nur wenn "Eigenes Limit" gewaehlt ist */}
+                  {isCustomLimit && (
+                    <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                      <IonLabel position="stacked">Eigenes Limit (leer = unbegrenzt)</IonLabel>
+                      <IonInput
+                        type="number"
+                        inputmode="numeric"
+                        min="0"
+                        value={maxKonfis}
+                        onIonInput={(e) => handleMaxKonfisChange(e.detail.value ?? '')}
+                        placeholder="z.B. 30 — leer lassen für unbegrenzt"
+                        disabled={!isOnline}
+                      />
+                    </IonItem>
+                  )}
                 </IonList>
 
                 <IonItem lines="none" style={{ '--background': 'rgba(102, 126, 234, 0.08)', borderRadius: '10px', marginTop: '8px' }}>
                   <IonIcon icon={alertCircleOutline} slot="start" style={{ color: '#667eea' }} />
                   <IonLabel>
                     <p style={{ color: '#667eea', margin: 0, fontSize: '0.85rem' }}>
-                      Bis zu 5 Konfis über dem Limit sind nach Bestätigung möglich. Danach ist ein Tarif-Upgrade nötig.
+                      Bis zu 5 Konfis über dem Limit sind nach Bestätigung möglich. Danach ist ein Tarif-Upgrade nötig. Wird beim Speichern oben übernommen.
                     </p>
                   </IonLabel>
                 </IonItem>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
 
-                <IonButton
-                  expand="block"
-                  onClick={handleSaveLimit}
-                  disabled={savingLimit || !isOnline}
-                  style={{ marginTop: '12px', '--background': '#667eea', '--background-activated': '#5a67d8' }}
-                >
-                  {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : savingLimit ? <IonSpinner name="crescent" /> : 'Konfi-Limit speichern'}
-                </IonButton>
+        {/* SEKTION: Testphase (nur super_admin, im Erstellen- und Bearbeiten-Modus) */}
+        {isSuperAdmin && viewMode === 'edit' && (
+          <IonList inset={true} className="app-modal-section">
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--organizations">
+                <IonIcon icon={timeOutline} />
+              </div>
+              <IonLabel>Testphase</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent style={{ padding: '16px' }}>
+                <div style={{ marginBottom: '12px', fontSize: '0.9rem', color: '#444' }}>
+                  {trialEndsAt
+                    ? (() => {
+                        const end = new Date(trialEndsAt);
+                        const days = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                        return days >= 0
+                          ? <span>Testphase läuft bis <strong>{end.toLocaleDateString('de-DE')}</strong> ({days} Tag{days === 1 ? '' : 'e'} übrig)</span>
+                          : <span style={{ color: '#dc2626' }}>Testphase ist seit <strong>{end.toLocaleDateString('de-DE')}</strong> abgelaufen ({Math.abs(days)} Tag{Math.abs(days) === 1 ? '' : 'e'})</span>;
+                      })()
+                    : <span><strong>Bezahlt / unbegrenzt</strong> — keine Testphase aktiv</span>}
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  <IonButton
+                    size="small"
+                    fill="outline"
+                    disabled={!isOnline}
+                    onClick={() => handleTrialChange(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString())}
+                    style={{ '--border-color': '#667eea', '--color': '#667eea' }}
+                  >
+                    30 Tage ab heute
+                  </IonButton>
+                  <IonButton
+                    size="small"
+                    fill="outline"
+                    disabled={!isOnline}
+                    onClick={() => {
+                      // Verlaengern: 30 Tage auf das bestehende Enddatum (oder ab heute, falls keins/abgelaufen)
+                      const base = trialEndsAt && new Date(trialEndsAt).getTime() > Date.now() ? new Date(trialEndsAt).getTime() : Date.now();
+                      handleTrialChange(new Date(base + 30 * 24 * 60 * 60 * 1000).toISOString());
+                    }}
+                    style={{ '--border-color': '#667eea', '--color': '#667eea' }}
+                  >
+                    +30 Tage verlängern
+                  </IonButton>
+                  <IonButton
+                    size="small"
+                    fill={!trialEndsAt ? 'solid' : 'outline'}
+                    disabled={!isOnline}
+                    onClick={() => handleTrialChange('')}
+                    style={!trialEndsAt
+                      ? { '--background': '#667eea', '--background-activated': '#5a67d8' }
+                      : { '--border-color': '#16a34a', '--color': '#16a34a' }}
+                  >
+                    Auf bezahlt / unbegrenzt
+                  </IonButton>
+                </div>
+
+                <IonItem lines="none" style={{ '--background': 'rgba(102, 126, 234, 0.08)', borderRadius: '10px', marginTop: '12px' }}>
+                  <IonIcon icon={alertCircleOutline} slot="start" style={{ color: '#667eea' }} />
+                  <IonLabel>
+                    <p style={{ color: '#667eea', margin: 0, fontSize: '0.85rem' }}>
+                      Nach Ablauf der Testphase wird die Organisation automatisch gesperrt — niemand kann sich mehr anmelden. Wird beim Speichern oben übernommen.
+                    </p>
+                  </IonLabel>
+                </IonItem>
               </IonCardContent>
             </IonCard>
           </IonList>
