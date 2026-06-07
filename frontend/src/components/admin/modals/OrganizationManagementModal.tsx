@@ -23,6 +23,7 @@ import {
 import {
   closeOutline,
   checkmarkOutline,
+  createOutline,
   businessOutline,
   mailOutline,
   personOutline,
@@ -138,6 +139,12 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   const [addingAdmin, setAddingAdmin] = useState(false);
 
   const isEditMode = !!organizationId;
+
+  // View/Edit-Modus: bestehende Org startet als read-only Uebersicht ('view'),
+  // neue Org direkt im Formular ('edit'). Bearbeiten-Button oben wechselt um.
+  const [viewMode, setViewMode] = useState<'view' | 'edit'>(organizationId ? 'view' : 'edit');
+  // Welcher Admin ist fuer Passwort-Reset aufgeklappt (per Klick, nicht dauerhaft).
+  const [passwordAdminId, setPasswordAdminId] = useState<number | null>(null);
 
   // Initialen berechnen
   const getInitials = (name: string) => {
@@ -378,20 +385,79 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>{isEditMode ? 'Organisation bearbeiten' : 'Neue Organisation'}</IonTitle>
+          <IonTitle>{!isEditMode ? 'Neue Organisation' : viewMode === 'view' ? 'Organisation' : 'Organisation bearbeiten'}</IonTitle>
           <IonButtons slot="start">
             <IonButton onClick={onClose} disabled={isSubmitting} className="app-modal-close-btn"><IonIcon icon={closeOutline} /></IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={!isValid || isSubmitting || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--settings">
-              {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
-            </IonButton>
+            {isEditMode && viewMode === 'view' ? (
+              <IonButton onClick={() => setViewMode('edit')} className="app-modal-submit-btn app-modal-submit-btn--settings">
+                <IonIcon icon={createOutline} />
+              </IonButton>
+            ) : (
+              <IonButton onClick={handleSave} disabled={!isValid || isSubmitting || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--settings">
+                {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+              </IonButton>
+            )}
           </IonButtons>
         </IonToolbar>
       </IonHeader>
 
       <IonContent className="app-gradient-background">
-        {/* SEKTION: Organisations-Daten */}
+        {/* VIEW-MODUS: alle Infos der Organisation auf einen Blick (read-only) */}
+        {isEditMode && viewMode === 'view' && organization && (
+          <IonList inset={true} className="app-modal-section">
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--organizations">
+                <IonIcon icon={businessOutline} />
+              </div>
+              <IonLabel>Überblick</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent style={{ padding: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                  <div className="app-avatar-initials app-avatar-initials--sm" style={{ backgroundColor: organization.is_active ? '#667eea' : '#6b7280' }}>
+                    {getInitials(organization.display_name)}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '1.05rem' }}>{organization.display_name}</div>
+                    <div style={{ fontSize: '0.85rem', color: organization.is_active ? '#16a34a' : '#6b7280', fontWeight: 600 }}>
+                      {organization.is_active ? 'Aktiv' : 'Inaktiv'}
+                    </div>
+                  </div>
+                </div>
+                {organization.description && (
+                  <p style={{ margin: '0 0 12px', color: '#555', fontSize: '0.9rem' }}>{organization.description}</p>
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.88rem', color: '#444' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <IonIcon icon={people} style={{ color: '#667eea' }} />
+                    <span>
+                      {maxKonfis
+                        ? `${organization.konfi_count} / ${maxKonfis} Konfis`
+                        : `${organization.konfi_count} Konfis (unbegrenzt)`}
+                    </span>
+                  </div>
+                  {organization.contact_email && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <IonIcon icon={mailOutline} style={{ color: '#667eea' }} />
+                      <span>{organization.contact_email}</span>
+                    </div>
+                  )}
+                  {organization.website_url && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <IonIcon icon={businessOutline} style={{ color: '#667eea' }} />
+                      <span>{organization.website_url}</span>
+                    </div>
+                  )}
+                </div>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
+
+        {/* SEKTION: Organisations-Daten (nur Edit-Modus) */}
+        {viewMode === 'edit' && (
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--organizations">
@@ -427,8 +493,10 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
             </IonCardContent>
           </IonCard>
         </IonList>
+        )}
 
-        {/* SEKTION: Kontakt */}
+        {/* SEKTION: Kontakt (nur Edit-Modus) */}
+        {viewMode === 'edit' && (
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--organizations">
@@ -466,8 +534,10 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
             </IonCardContent>
           </IonCard>
         </IonList>
+        )}
 
-        {/* SEKTION: Status */}
+        {/* SEKTION: Status (Aktiv/Inaktiv-Toggle, nur Edit-Modus) */}
+        {viewMode === 'edit' && (
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--organizations">
@@ -495,6 +565,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
             </IonCardContent>
           </IonCard>
         </IonList>
+        )}
 
         {/* SEKTION: Administrator erstellen (nur bei neuer Organisation) */}
         {!isEditMode && (
@@ -536,7 +607,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         )}
 
         {/* SEKTION: Organisations-Administratoren verwalten (nur im Edit-Modus) */}
-        {isEditMode && (
+        {isEditMode && viewMode === 'edit' && (
           <IonList inset={true} className="app-modal-section">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--organizations">
@@ -560,30 +631,59 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {orgAdmins.map((admin) => (
                       <div key={admin.id} style={{ marginBottom: '16px' }}>
-                        <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
-                          <div slot="start" style={{
-                            width: '40px', height: '40px', borderRadius: '50%',
-                            backgroundColor: admin.is_active ? '#667eea' : '#6b7280',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: 'white', fontWeight: '700', fontSize: '0.9rem',
-                            boxShadow: admin.is_active ? '0 2px 8px rgba(102, 126, 234, 0.3)' : 'none'
-                          }}>
-                            {getInitials(admin.display_name)}
-                          </div>
+                        <IonItem
+                          button
+                          detail={false}
+                          onClick={() => {
+                            // Passwort-Reset-Feld per Klick auf den Admin auf-/zuklappen
+                            if (passwordAdminId === admin.id) {
+                              setPasswordAdminId(null);
+                            } else {
+                              setPasswordAdminId(admin.id);
+                              setSelectedAdminId(admin.id);
+                              setNewPassword('');
+                            }
+                          }}
+                          className="app-list-item app-list-item--organizations"
+                          style={{ '--padding-start': '16px', '--padding-top': '10px', '--padding-bottom': '10px', marginBottom: '8px' }}
+                        >
                           <IonLabel>
-                            <h3 style={{ fontWeight: '600', margin: '0 0 4px 0' }}>{admin.display_name}</h3>
-                            <p style={{ color: '#666', margin: 0, fontSize: '0.85rem' }}>
-                              Login: {admin.username}
-                              {admin.email && ` · ${admin.email}`}
-                            </p>
+                            <div className="app-list-item__main">
+                              <div
+                                className="app-avatar-initials app-avatar-initials--sm"
+                                style={{ backgroundColor: admin.is_active ? '#667eea' : '#6b7280' }}
+                              >
+                                {getInitials(admin.display_name)}
+                              </div>
+                              <div className="app-list-item__content">
+                                <div className="app-list-item__title">{admin.display_name}</div>
+                              </div>
+                            </div>
+                            <div className="app-list-item__meta">
+                              <span className="app-list-item__meta-item">
+                                <IonIcon icon={personOutline} className="app-icon-color--badges" />
+                                {admin.username}
+                              </span>
+                              {admin.email && (
+                                <span className="app-list-item__meta-item">
+                                  <IonIcon icon={mailOutline} className="app-icon-color--organizations" />
+                                  {admin.email}
+                                </span>
+                              )}
+                              <span className="app-list-item__meta-item">
+                                <IonIcon icon={keyOutline} className="app-icon-color--events" />
+                                Passwort
+                              </span>
+                            </div>
                           </IonLabel>
                         </IonItem>
 
-                        {/* Passwort zurücksetzen für diesen Admin */}
+                        {/* Passwort zurücksetzen — erst nach Klick auf den Admin sichtbar */}
+                        {passwordAdminId === admin.id && (
                         <div style={{ marginLeft: '48px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                             <IonIcon icon={keyOutline} style={{ color: '#667eea', fontSize: '0.9rem' }} />
-                            <span style={{ fontWeight: '500', fontSize: '0.85rem', color: '#666' }}>Passwort zurücksetzen</span>
+                            <span style={{ fontWeight: '500', fontSize: '0.85rem', color: '#666' }}>Neues Passwort setzen</span>
                           </div>
                           <div style={{ display: 'flex', gap: '8px' }}>
                             <IonInput
@@ -613,6 +713,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                             </IonButton>
                           </div>
                         </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -687,7 +788,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         )}
 
         {/* SEKTION: Konfi-Limit (nur super_admin, nur im Edit-Modus) */}
-        {isEditMode && isSuperAdmin && (
+        {isEditMode && isSuperAdmin && viewMode === 'edit' && (
           <IonList inset={true} className="app-modal-section">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--organizations">
