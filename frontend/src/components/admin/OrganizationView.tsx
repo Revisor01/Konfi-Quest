@@ -25,10 +25,10 @@ import {
   personOutline,
   createOutline,
   checkmarkCircle,
-  flash,
   closeCircle,
   filterOutline,
-  search
+  search,
+  timeOutline
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
@@ -43,6 +43,8 @@ interface Organization {
   website_url?: string;
   is_active: boolean;
   max_konfis?: number | null;
+  trial_ends_at?: string | null;
+  is_trial?: boolean;
   created_at: string;
   updated_at: string;
   // Statistics
@@ -243,8 +245,19 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                               {organization.user_count} Team
                             </span>
                             <span className="app-list-item__meta-item">
-                              <IonIcon icon={flash} style={{ color: 'var(--app-color-events)' }} />
-                              {organization.event_count} Events
+                              {(() => {
+                                if (!organization.trial_ends_at) {
+                                  return <><IonIcon icon={timeOutline} style={{ color: '#667eea' }} />unbegrenzt</>;
+                                }
+                                const end = new Date(organization.trial_ends_at);
+                                const days = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                                return (
+                                  <>
+                                    <IonIcon icon={timeOutline} style={{ color: days < 0 ? '#dc2626' : '#667eea' }} />
+                                    {end.toLocaleDateString('de-DE')} {days >= 0 ? `(${days} T)` : '(abgelaufen)'}
+                                  </>
+                                );
+                              })()}
                             </span>
                           </div>
                         </div>

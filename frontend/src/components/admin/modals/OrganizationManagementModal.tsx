@@ -38,7 +38,6 @@ import {
   shieldOutline,
   alertCircleOutline,
   people,
-  flash,
   callOutline,
   locationOutline,
   add,
@@ -67,6 +66,8 @@ interface Organization {
   created_at: string;
   updated_at: string;
   user_count: number;
+  teamer_count: number;
+  admin_count: number;
   konfi_count: number;
   event_count: number;
   max_konfis?: number | null;
@@ -527,12 +528,11 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                         ? (() => {
                             const end = new Date(organization.trial_ends_at);
                             const days = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-                            const label = organization.is_trial ? 'Testphase' : 'Zugang';
                             return days >= 0
-                              ? <span>{label} bis {end.toLocaleDateString('de-DE')} ({days} Tag{days === 1 ? '' : 'e'} übrig)</span>
-                              : <span style={{ color: '#dc2626' }}>{label} abgelaufen ({end.toLocaleDateString('de-DE')})</span>;
+                              ? <span>{end.toLocaleDateString('de-DE')} ({days} Tag{days === 1 ? '' : 'e'} übrig){organization.is_trial ? ' · Testphase' : ''}</span>
+                              : <span style={{ color: '#dc2626' }}>{end.toLocaleDateString('de-DE')} (abgelaufen)</span>;
                           })()
-                        : <span>Unbegrenzt</span>}
+                        : <span>unbegrenzt</span>}
                     </div>
                   )}
                   {organization.contact_email && (
@@ -892,6 +892,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     <IonSelect
                       value={isCustomLimit ? '__custom__' : maxKonfis.trim()}
                       interface="popover"
+                      interfaceOptions={{ cssClass: 'app-select-popover--wide' }}
                       placeholder="Tarif wählen"
                       onIonChange={(e) => {
                         const val = e.detail.value;
@@ -950,22 +951,22 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
               <div className="app-section-icon app-section-icon--organizations">
                 <IonIcon icon={timeOutline} />
               </div>
-              <IonLabel>Zeitraum</IonLabel>
+              <IonLabel>Laufzeit</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent style={{ padding: '16px' }}>
                 {/* aktueller Status */}
-                <div style={{ marginBottom: '12px', fontSize: '0.9rem', color: '#444' }}>
+                <div style={{ marginBottom: '12px', fontSize: '0.9rem', color: '#444', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <IonIcon icon={timeOutline} style={{ color: '#667eea' }} />
                   {trialEndsAt
                     ? (() => {
                         const end = new Date(trialEndsAt);
                         const days = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-                        const label = isTrial ? 'Testphase' : 'Zugang';
                         return days >= 0
-                          ? <span>{label} läuft bis <strong>{end.toLocaleDateString('de-DE')}</strong> ({days} Tag{days === 1 ? '' : 'e'} übrig)</span>
-                          : <span style={{ color: '#dc2626' }}>{label} ist seit <strong>{end.toLocaleDateString('de-DE')}</strong> abgelaufen ({Math.abs(days)} Tag{Math.abs(days) === 1 ? '' : 'e'})</span>;
+                          ? <span><strong>{end.toLocaleDateString('de-DE')}</strong> ({days} Tag{days === 1 ? '' : 'e'} übrig){isTrial ? ' · Testphase' : ''}</span>
+                          : <span style={{ color: '#dc2626' }}><strong>{end.toLocaleDateString('de-DE')}</strong> (abgelaufen)</span>;
                       })()
-                    : <span><strong>Unbegrenzt</strong> — kein Ablaufdatum</span>}
+                    : <span><strong>unbegrenzt</strong></span>}
                 </div>
 
                 <IonList style={{ background: 'transparent' }}>
@@ -975,6 +976,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     <IonSelect
                       value={isCustomTrialDate ? -1 : (trialEndsAt ? -2 : 0)}
                       interface="popover"
+                      interfaceOptions={{ cssClass: 'app-select-popover--wide' }}
                       placeholder="Zeitraum wählen"
                       onIonChange={(e) => {
                         const days = e.detail.value as number;
@@ -1063,14 +1065,14 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     <div style={{ fontSize: '0.75rem', color: '#666' }}>Konfis</div>
                   </div>
                   <div style={{ background: '#f8f9fa', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
-                    <IonIcon icon={personOutline} style={{ fontSize: '1.2rem', color: 'var(--app-color-badges)', display: 'block', margin: '0 auto 4px' }} />
-                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#667eea' }}>{organization.user_count || 0}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#666' }}>Team</div>
+                    <IonIcon icon={personOutline} style={{ fontSize: '1.2rem', color: 'var(--app-color-teamer)', display: 'block', margin: '0 auto 4px' }} />
+                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#667eea' }}>{organization.teamer_count || 0}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#666' }}>Teamer:innen</div>
                   </div>
                   <div style={{ background: '#f8f9fa', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
-                    <IonIcon icon={flash} style={{ fontSize: '1.2rem', color: 'var(--app-color-events)', display: 'block', margin: '0 auto 4px' }} />
-                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#667eea' }}>{organization.event_count || 0}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#666' }}>Events</div>
+                    <IonIcon icon={shieldOutline} style={{ fontSize: '1.2rem', color: '#667eea', display: 'block', margin: '0 auto 4px' }} />
+                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#667eea' }}>{organization.admin_count || 0}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#666' }}>Admins</div>
                   </div>
                 </div>
 

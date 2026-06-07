@@ -91,6 +91,12 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
         user_count: `SELECT COUNT(*)::int as count FROM users u
                      JOIN roles r ON u.role_id = r.id
                      WHERE u.organization_id = $1 AND u.is_active = true AND r.name != 'konfi'`,
+        teamer_count: `SELECT COUNT(*)::int as count FROM users u
+                       JOIN roles r ON u.role_id = r.id
+                       WHERE u.organization_id = $1 AND u.is_active = true AND r.name = 'teamer'`,
+        admin_count: `SELECT COUNT(*)::int as count FROM users u
+                      JOIN roles r ON u.role_id = r.id
+                      WHERE u.organization_id = $1 AND u.is_active = true AND r.name IN ('admin', 'org_admin')`,
         konfi_count: "SELECT COUNT(*)::int as count FROM konfi_profiles WHERE organization_id = $1",
         jahrgang_count: "SELECT COUNT(*)::int as count FROM jahrgaenge WHERE organization_id = $1",
         activity_count: "SELECT COUNT(*)::int as count FROM activities WHERE organization_id = $1",
