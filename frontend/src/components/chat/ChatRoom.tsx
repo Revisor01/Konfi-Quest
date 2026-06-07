@@ -862,7 +862,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       if (!room) return 'Chat wird geladen...';
       if (room.type === 'direct' && room.participants) {
         const otherParticipant = room.participants.find(p =>
-          !(p.user_id === user?.id && p.user_type === user?.type)
+          p.user_id !== user?.id
         );
         if (otherParticipant) {
           return otherParticipant.display_name || otherParticipant.name || 'Unbekannt';
@@ -994,7 +994,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         eventId={room?.event_id ?? null}
         partnerType={
           room?.type === 'direct'
-            ? (room.participants?.find(p => !(p.user_id === user?.id && p.user_type === user?.type))?.user_type ?? null)
+            ? (room.participants?.find(p => p.user_id !== user?.id)?.user_type ?? null)
             : null
         }
       />

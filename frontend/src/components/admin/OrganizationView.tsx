@@ -40,6 +40,7 @@ interface Organization {
   contact_email?: string;
   website_url?: string;
   is_active: boolean;
+  max_konfis?: number | null;
   created_at: string;
   updated_at: string;
   // Statistics
@@ -148,9 +149,8 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                   clearInput={true}
                 />
               </IonItem>
-              {/* Filter */}
+              {/* Filter — Tab-Leiste ohne "Status"-Label davor (wie in anderen Views) */}
               <IonItem lines="none">
-                <IonLabel position="stacked">Status</IonLabel>
                 <IonSegment
                   value={selectedFilter}
                   onIonChange={(e) => setSelectedFilter(e.detail.value as string)}
@@ -161,11 +161,8 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                   <IonSegmentButton value="aktiv">
                     <IonLabel>Aktiv</IonLabel>
                   </IonSegmentButton>
-                  <IonSegmentButton value="gross">
-                    <IonLabel>Groß</IonLabel>
-                  </IonSegmentButton>
-                  <IonSegmentButton value="klein">
-                    <IonLabel>Klein</IonLabel>
+                  <IonSegmentButton value="inaktiv">
+                    <IonLabel>Inaktiv</IonLabel>
                   </IonSegmentButton>
                 </IonSegment>
               </IonItem>
@@ -203,11 +200,30 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                   className="app-list-item app-list-item--organizations"
                   style={{
                     '--padding-start': '16px',
-                    '--padding-top': '12px',
-                    '--padding-bottom': '12px',
+                    '--padding-top': '10px',
+                    '--padding-bottom': '10px',
+                    position: 'relative',
+                    overflow: 'hidden',
                     opacity: organization.is_active ? 1 : 0.7
                   }}
                 >
+                  {/* Corner-Badge: Aktiv/Inaktiv-Status (wie in anderen Listen) */}
+                  <div className="app-corner-badges">
+                    <div
+                      className="app-corner-badge"
+                      style={{
+                        backgroundColor: organization.is_active ? 'var(--app-color-success, #16a34a)' : '#6b7280',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px'
+                      }}
+                      title={organization.is_active ? 'Aktiv' : 'Inaktiv'}
+                    >
+                      <IonIcon
+                        icon={organization.is_active ? checkmarkCircle : closeCircle}
+                        style={{ color: '#fff', fontSize: '0.85rem' }}
+                      />
+                    </div>
+                  </div>
+
                   <IonLabel>
                     {/* Header mit Initialen-Icon */}
                     <div className="app-list-item__main">
@@ -232,10 +248,12 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
 
                     {/* Details Row mit Icons */}
                     <div className="app-list-item__meta" style={!organization.is_active ? { color: '#999' } : undefined}>
-                      {/* Konfis */}
+                      {/* Konfis (mit Limit, falls gesetzt) */}
                       <span className="app-list-item__meta-item">
                         <IonIcon icon={people} className="app-icon-color--participants" />
-                        {organization.konfi_count} Konfis
+                        {organization.max_konfis != null
+                          ? `${organization.konfi_count} / ${organization.max_konfis} Konfis`
+                          : `${organization.konfi_count} Konfis`}
                       </span>
                       {/* Team */}
                       <span className="app-list-item__meta-item">
@@ -247,22 +265,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                         <IonIcon icon={flash} className="app-icon-color--events" />
                         {organization.event_count} Events
                       </span>
-                      {/* Status */}
-                      <span className="app-list-item__meta-item">
-                        <IonIcon
-                          icon={organization.is_active ? checkmarkCircle : closeCircle}
-                          className={organization.is_active ? 'app-icon-color--success' : 'app-icon-color--danger'}
-                        />
-                        {organization.is_active ? 'Aktiv' : 'Inaktiv'}
-                      </span>
                     </div>
-
-                    {/* Beschreibung falls vorhanden */}
-                    {organization.description && (
-                      <div className="app-list-item__subtitle">
-                        {organization.description}
-                      </div>
-                    )}
                   </IonLabel>
                 </IonItem>
 

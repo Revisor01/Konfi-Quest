@@ -78,9 +78,13 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     if (room.type === 'group') return 'var(--app-color-group)';     // Orange - Gruppen-Chat
     if (room.type === 'admin') return 'var(--app-color-teamer)';    // Pink - Team-Gruppe
     if (room.type === 'direct') {
-      // Partner-Typ aus participants ermitteln
+      // Partner robust per user_id ermitteln (eindeutig), NICHT per user_type:
+      // der eigene user.type kann 'teamer' sein, participants kennen aber nur
+      // 'admin'|'konfi' -> man filterte sich selbst nicht raus und bekam faelschlich
+      // die Team-Farbe. Per ID passt sich die Farbe auch automatisch an, wenn ein
+      // Konfi zum Teamer wird.
       const otherParticipant = room.participants?.find((p: { user_id: number; user_type: 'admin' | 'konfi'; name: string; display_name?: string }) =>
-        !(p.user_id === user?.id && p.user_type === user?.type)
+        p.user_id !== user?.id
       );
       if (otherParticipant?.user_type === 'admin') return 'var(--app-color-teamer)'; // Pink - DM zum Team
       return 'var(--app-color-konfis)';  // Lila - DM zu Konfi
@@ -265,9 +269,10 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   const getDisplayRoomName = (room: ChatRoomOverview) => {
     // Für Direktchats: Zeige den Namen des Chat-Partners, nicht des eigenen Users
     if (room.type === 'direct') {
-      // Finde den Chat-Partner (nicht der aktuelle User)
-      const otherParticipant = room.participants?.find((p: { user_id: number; user_type: 'admin' | 'konfi'; name: string; display_name?: string }) => 
-        !(p.user_id === user?.id && p.user_type === user?.type)
+      // Finde den Chat-Partner (nicht der aktuelle User) — robust per user_id,
+      // NICHT per user_type (eigener type kann 'teamer' sein, participants nur 'admin'|'konfi').
+      const otherParticipant = room.participants?.find((p: { user_id: number; user_type: 'admin' | 'konfi'; name: string; display_name?: string }) =>
+        p.user_id !== user?.id
       );
       
       if (otherParticipant) {

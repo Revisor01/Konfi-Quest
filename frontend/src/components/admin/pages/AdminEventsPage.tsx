@@ -61,7 +61,7 @@ const AdminEventsPage: React.FC = () => {
 
   // State
   const loading = eventsLoading;
-  const [activeTab, setActiveTab] = useState<'all' | 'upcoming' | 'konfirmation'>('upcoming');
+  const [activeTab, setActiveTab] = useState<'aktuell' | 'verbuchen' | 'vergangen'>('aktuell');
   const [selectedJahrgang, setSelectedJahrgang] = useState<number | null>(null);
   const [searchText, setSearchText] = useState('');
 
@@ -108,28 +108,36 @@ const AdminEventsPage: React.FC = () => {
     return uniqueEvents.sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
   };
 
-  // Get current events: future events OR events with pending bookings (exclude cancelled and konfirmation)
-  const getFutureEvents = () => {
+  // Tab "Aktuell": zukuenftige/laufende Events (nicht abgesagt).
+  const getAktuellEvents = () => {
     const now = new Date();
-    const futureEvents = events.filter(event => {
+    const list = events.filter(event => {
       const eventDate = new Date(event.event_date);
-      const hasPendingBookings = event.pending_bookings_count && event.pending_bookings_count > 0;
-
-      return (
-        (eventDate >= now || hasPendingBookings) &&
-        event.registration_status !== 'cancelled' &&
-        !event.category_names?.toLowerCase().includes('konfirmation')
-      );
+      return eventDate >= now && event.registration_status !== 'cancelled';
     });
-    return futureEvents.sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
+    return list.sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
   };
 
-  // Get konfirmation events
-  const getKonfirmationEvents = () => {
-    const konfirmationEvents = events.filter(event =>
-      event.category_names?.toLowerCase().includes('konfirmation')
-    );
-    return konfirmationEvents.sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
+  // Tab "Verbuchen": vergangene Events mit offenen (unverbuchten) Buchungen.
+  const getVerbuchenEvents = () => {
+    const now = new Date();
+    const list = events.filter(event => {
+      const eventDate = new Date(event.event_date);
+      const hasPendingBookings = !!event.pending_bookings_count && event.pending_bookings_count > 0;
+      return eventDate < now && hasPendingBookings && event.registration_status !== 'cancelled';
+    });
+    return list.sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime());
+  };
+
+  // Tab "Vergangen": vergangene Events ohne offene Buchungen (fertig verbucht).
+  const getVergangenEvents = () => {
+    const now = new Date();
+    const list = events.filter(event => {
+      const eventDate = new Date(event.event_date);
+      const hasPendingBookings = !!event.pending_bookings_count && event.pending_bookings_count > 0;
+      return eventDate < now && !hasPendingBookings;
+    });
+    return list.sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime());
   };
 
   const handleDeleteEvent = async (event: Event) => {
@@ -371,9 +379,9 @@ const AdminEventsPage: React.FC = () => {
         ) : (
           <EventsView
             events={
-              activeTab === 'all' ? applySearch(filterByJahrgang(getAllEvents())) :
-              activeTab === 'konfirmation' ? applySearch(filterByJahrgang(getKonfirmationEvents())) :
-              applySearch(filterByJahrgang(getFutureEvents()))
+              activeTab === 'verbuchen' ? applySearch(filterByJahrgang(getVerbuchenEvents())) :
+              activeTab === 'vergangen' ? applySearch(filterByJahrgang(getVergangenEvents())) :
+              applySearch(filterByJahrgang(getAktuellEvents()))
             }
             onUpdate={refreshEvents}
             onAddEventClick={handleAddEventClick}
@@ -384,9 +392,9 @@ const AdminEventsPage: React.FC = () => {
             activeTab={activeTab}
             onTabChange={setActiveTab}
             eventCounts={{
-              all: applySearch(filterByJahrgang(getAllEvents())).length,
-              upcoming: applySearch(filterByJahrgang(getFutureEvents())).length,
-              konfirmation: applySearch(filterByJahrgang(getKonfirmationEvents())).length
+              aktuell: applySearch(filterByJahrgang(getAktuellEvents())).length,
+              verbuchen: applySearch(filterByJahrgang(getVerbuchenEvents())).length,
+              vergangen: applySearch(filterByJahrgang(getVergangenEvents())).length
             }}
             jahrgaenge={jahrgaenge || []}
             selectedJahrgang={selectedJahrgang}

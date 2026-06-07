@@ -214,17 +214,9 @@ const KonfisView: React.FC<KonfisViewProps> = ({
         ]}
       />
 
-      {/* Read-only Konfi-Stand: "X von Y Konfis" (bzw. "X Konfis" bei unbegrenzt) */}
-      {viewMode === 'konfis' && (
-        <div style={{ margin: '0 16px 8px', display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
-          <IonIcon icon={peopleOutline} style={{ color: 'var(--app-color-konfis)', fontSize: '0.95rem' }} />
-          <span style={{ fontSize: '0.85rem', color: '#666', fontWeight: '500' }}>
-            {konfiLimit !== null
-              ? `${konfis.length} von ${konfiLimit} Konfis`
-              : `${konfis.length} Konfis`}
-          </span>
-        </div>
-      )}
+      {/* (Entfernt) Der "X Konfis"-Zwischentext zwischen Header-Stats und Switcher
+          war redundant zum Header-Stat. Konfi-Limit ("X von Y") gehoert in die
+          Org-Verwaltung, nicht zwischen Stats und Switcher. */}
 
       {/* Konfis / Teamer:innen Segment */}
       <IonSegment

@@ -55,12 +55,12 @@ interface EventsViewProps {
   onDeleteEvent?: (event: Event) => void;
   onCopyEvent?: (event: Event) => void;
   onCancelEvent?: (event: Event) => void;
-  activeTab?: 'all' | 'upcoming' | 'konfirmation';
-  onTabChange?: (tab: 'all' | 'upcoming' | 'konfirmation') => void;
+  activeTab?: 'aktuell' | 'verbuchen' | 'vergangen';
+  onTabChange?: (tab: 'aktuell' | 'verbuchen' | 'vergangen') => void;
   eventCounts?: {
-    all: number;
-    upcoming: number;
-    konfirmation: number;
+    aktuell: number;
+    verbuchen: number;
+    vergangen: number;
   };
   jahrgaenge?: Array<{id: number; name: string}>;
   selectedJahrgang?: number | null;
@@ -77,7 +77,7 @@ const EventsView: React.FC<EventsViewProps> = ({
   onDeleteEvent,
   onCopyEvent,
   onCancelEvent,
-  activeTab = 'upcoming',
+  activeTab = 'aktuell',
   onTabChange,
   eventCounts,
   jahrgaenge,
@@ -169,20 +169,15 @@ const EventsView: React.FC<EventsViewProps> = ({
         icon={calendar}
         preset="events"
         stats={[
-          { value: events.length, label: 'Gesamt' },
           { value: getUpcomingEvents().length, label: 'Anstehend' },
-          activeTab === 'konfirmation'
-            ? { value: getTotalRegistrations(), label: 'TN' }
-            : activeTab === 'all'
-              ? { value: getPastEvents().length, label: 'Vergangen' }
-              : {
-                  value: events.filter(e =>
-                    new Date(e.event_date) < new Date() &&
-                    e.registered_count > 0 &&
-                    (e.pending_bookings_count ?? 0) > 0
-                  ).length,
-                  label: 'Verbuchen'
-                }
+          {
+            value: events.filter(e =>
+              new Date(e.event_date) < new Date() &&
+              (e.pending_bookings_count ?? 0) > 0
+            ).length,
+            label: 'Verbuchen'
+          },
+          { value: getPastEvents().length, label: 'Vergangen' }
         ]}
       />
 
@@ -233,14 +228,14 @@ const EventsView: React.FC<EventsViewProps> = ({
             value={activeTab}
             onIonChange={(e) => onTabChange(e.detail.value as any)}
           >
-            <IonSegmentButton value="upcoming">
+            <IonSegmentButton value="aktuell">
               <IonLabel>Aktuell</IonLabel>
             </IonSegmentButton>
-            <IonSegmentButton value="all">
-              <IonLabel>Alle</IonLabel>
+            <IonSegmentButton value="verbuchen">
+              <IonLabel>Verbuchen</IonLabel>
             </IonSegmentButton>
-            <IonSegmentButton value="konfirmation">
-              <IonLabel>Konfi</IonLabel>
+            <IonSegmentButton value="vergangen">
+              <IonLabel>Vergangen</IonLabel>
             </IonSegmentButton>
           </IonSegment>
         </div>
@@ -256,10 +251,10 @@ const EventsView: React.FC<EventsViewProps> = ({
         emptyIcon={calendarOutline}
         emptyTitle="Keine Events gefunden"
         emptyMessage={
-          activeTab === 'konfirmation'
-            ? 'Keine Konfirmationstermine verfügbar'
-            : activeTab === 'all'
-            ? 'Noch keine Events erstellt'
+          activeTab === 'verbuchen'
+            ? 'Keine Events zum Verbuchen'
+            : activeTab === 'vergangen'
+            ? 'Keine vergangenen Events'
             : 'Keine anstehenden Events'
         }
         emptyIconColor="#dc2626"

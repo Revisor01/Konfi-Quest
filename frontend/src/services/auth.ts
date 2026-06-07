@@ -47,56 +47,61 @@ export const logout = async (): Promise<void> => {
   }
   
   logoutInProgress = true;
-  
-  // TKN-01: Löscht nur den Token des AKTUELLEN Devices (user_id + platform + device_id)
-  // Andere Geräte des Users behalten ihre Tokens
-  // Best-effort: Logout geht immer durch, auch bei Fehler
+
+  // WICHTIG: Der LOKALE Logout (Token-Revoke + clearAuth) laeuft ZUERST und
+  // darf NIEMALS an haengenden Netzwerk-Calls scheitern. Frueher konnte ein
+  // offline/haengender Push-Cleanup-Call clearAuth() blockieren -> User blieb
+  // nach Reload eingeloggt (nur online ging es). Daher: Server-Revoke mit hartem
+  // Timeout, dann clearAuth GARANTIERT, Push-Cleanup best-effort DANACH.
+
+  // Helper: Request mit hartem Timeout, damit ein falsch-positives isOnline
+  // (Network-Plugin meldet sporadisch connected trotz keiner Verbindung) nicht haengt.
+  const withTimeout = <T>(p: Promise<T>, ms = 4000): Promise<T | undefined> =>
+    Promise.race([p, new Promise<undefined>((resolve) => setTimeout(() => resolve(undefined), ms))]);
+
+  // SEC-02: Refresh Token serverseitig revokieren (best-effort, mit Timeout)
+  try {
+    const refreshToken = getRefreshToken();
+    if (refreshToken && networkMonitor.isOnline) {
+      await withTimeout(api.post('/auth/logout', { refresh_token: refreshToken }));
+    }
+  } catch (error) {
+    console.warn('Serverseitiges Token-Revoke fehlgeschlagen (wird lokal geloescht):', error);
+  }
+
+  // GARANTIERT: lokale Auth-Daten loeschen. Ab hier ist der User ausgeloggt.
+  await clearAuth();
+  try {
+    await offlineCache.clearAll();
+  } catch (error) {
+    console.warn('Cache-Clear beim Logout fehlgeschlagen:', error);
+  }
+
+  // Push-Token-Cleanup NACH dem lokalen Logout (blockiert ihn nicht mehr).
   try {
     let deviceId: string | undefined;
-    
-    
-    // Echte Device ID via Capacitor abrufen
     if (Capacitor.isNativePlatform()) {
       try {
         const deviceInfo = await Device.getId();
         deviceId = deviceInfo.identifier;
       } catch (err) {
- console.warn('Could not get device ID via Capacitor, using TokenStore fallback:', err);
+        console.warn('Could not get device ID via Capacitor, using TokenStore fallback:', err);
         deviceId = getDeviceId() || undefined;
       }
     } else {
       deviceId = getDeviceId() || undefined;
-      if (!deviceId) {
-        const fallbackId = `${Capacitor.getPlatform()}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        await setDeviceId(fallbackId);
-        deviceId = fallbackId;
-      }
     }
-    
-    if (deviceId) {
-      const deleteData = {
-        device_id: deviceId,
-        platform: Capacitor.getPlatform()
-      };
 
+    if (deviceId) {
+      const deleteData = { device_id: deviceId, platform: Capacitor.getPlatform() };
+      let delivered = false;
       if (networkMonitor.isOnline) {
         try {
-          await api.delete('/notifications/device-token', {
-            data: deleteData
-          });
-        } catch (error) {
-          // Falls Request fehlschlaegt: in Queue fuer spaeter
-          await writeQueue.enqueue({
-            method: 'DELETE',
-            url: '/notifications/device-token',
-            body: deleteData,
-            maxRetries: 3,
-            hasFileUpload: false,
-            metadata: { type: 'fire-and-forget', clientId: `push_cleanup_${Date.now()}`, label: 'Push-Token entfernen' }
-          });
-        }
-      } else {
-        // Offline: direkt in Queue
+          await withTimeout(api.delete('/notifications/device-token', { data: deleteData }));
+          delivered = true;
+        } catch { /* in Queue fallen lassen */ }
+      }
+      if (!delivered) {
         await writeQueue.enqueue({
           method: 'DELETE',
           url: '/notifications/device-token',
@@ -106,38 +111,12 @@ export const logout = async (): Promise<void> => {
           metadata: { type: 'fire-and-forget', clientId: `push_cleanup_${Date.now()}`, label: 'Push-Token entfernen' }
         });
       }
-    } else {
- console.warn('No device ID found - skipping push token removal');
-    }
-  } catch (error: unknown) {
-    const err = error as { response?: { status?: number; statusText?: string; data?: unknown }; message?: string };
- console.error('ERROR during push token removal:', {
-      message: err.message,
-      status: err?.response?.status,
-      statusText: err?.response?.statusText,
-      data: err?.response?.data,
-      fullError: error
-    });
-    // Logout sollte trotzdem funktionieren, auch wenn Push Token removal fehlschlägt
-  }
-
-  // SEC-02: Refresh Token serverseitig revokieren, bevor lokale Daten gelöscht werden
-  try {
-    const refreshToken = getRefreshToken();
-    if (refreshToken && networkMonitor.isOnline) {
-      await api.post('/auth/logout', { refresh_token: refreshToken });
     }
   } catch (error) {
-    // Best-effort: Logout geht immer durch, auch wenn Backend nicht erreichbar
-    console.warn('Serverseitiges Token-Revoke fehlgeschlagen (wird lokal gelöscht):', error);
+    console.warn('Push-Token-Cleanup beim Logout fehlgeschlagen (unkritisch):', error);
   }
 
-  await clearAuth();
-  // Cache löschen — alle gecachten API-Daten entfernen
-  await offlineCache.clearAll();
-  // Device ID NICHT löschen - bleibt für das Gerät persistent
-
-  // Reset logout lock
+  // Device ID NICHT loeschen - bleibt fuer das Geraet persistent
   logoutInProgress = false;
 };
 
