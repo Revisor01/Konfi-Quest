@@ -186,24 +186,6 @@ const AdminOrganizationsPage: React.FC = () => {
               onDeleteOrganization={handleDeleteOrganization}
             />
 
-            {/* Logout-Button */}
-            <div style={{ padding: '0 16px', marginTop: '16px' }}>
-              <IonButton
-                expand="block"
-                fill="outline"
-                color="danger"
-                onClick={handleLogout}
-                style={{
-                  height: '48px',
-                  borderRadius: '12px',
-                  fontWeight: '600'
-                }}
-              >
-                <IonIcon icon={logOutOutline} slot="start" />
-                Abmelden
-              </IonButton>
-            </div>
-
             <div style={{ height: '32px' }} />
           </>
         )}

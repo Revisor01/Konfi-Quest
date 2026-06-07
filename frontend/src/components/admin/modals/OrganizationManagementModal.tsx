@@ -24,6 +24,8 @@ import {
   closeOutline,
   checkmarkOutline,
   createOutline,
+  documentTextOutline,
+  globeOutline,
   businessOutline,
   mailOutline,
   personOutline,
@@ -80,7 +82,9 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   onSuccess
 }) => {
   const { setSuccess, setError, isOnline, user } = useApp();
-  const isSuperAdmin = user?.role_name === 'super_admin';
+  // Super-Admin ist das Flag is_super_admin (org_admins koennen es zusaetzlich haben),
+  // NICHT role_name==='super_admin' — sonst sieht ein org_admin mit Flag die Limit-Sektion nie.
+  const isSuperAdmin = user?.is_super_admin === true || user?.role_name === 'super_admin';
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
@@ -427,7 +431,10 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   </div>
                 </div>
                 {organization.description && (
-                  <p style={{ margin: '0 0 12px', color: '#555', fontSize: '0.9rem' }}>{organization.description}</p>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', margin: '0 0 12px', color: '#555', fontSize: '0.9rem' }}>
+                    <IonIcon icon={documentTextOutline} style={{ color: '#667eea', marginTop: '2px', flexShrink: 0 }} />
+                    <span>{organization.description}</span>
+                  </div>
                 )}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.88rem', color: '#444' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -444,9 +451,21 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                       <span>{organization.contact_email}</span>
                     </div>
                   )}
+                  {organization.contact_phone && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <IonIcon icon={callOutline} style={{ color: '#667eea' }} />
+                      <span>{organization.contact_phone}</span>
+                    </div>
+                  )}
+                  {organization.address && (
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                      <IonIcon icon={locationOutline} style={{ color: '#667eea', marginTop: '2px', flexShrink: 0 }} />
+                      <span>{organization.address}</span>
+                    </div>
+                  )}
                   {organization.website_url && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <IonIcon icon={businessOutline} style={{ color: '#667eea' }} />
+                      <IonIcon icon={globeOutline} style={{ color: '#667eea' }} />
                       <span>{organization.website_url}</span>
                     </div>
                   )}
@@ -835,8 +854,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           </IonList>
         )}
 
-        {/* SEKTION: Statistiken (nur im Edit-Modus) */}
-        {isEditMode && organization && (
+        {/* SEKTION: Statistiken — nur im View-Modus (im Bearbeiten ausgeblendet) */}
+        {isEditMode && organization && viewMode === 'view' && (
           <IonList inset={true} className="app-modal-section">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--organizations">
