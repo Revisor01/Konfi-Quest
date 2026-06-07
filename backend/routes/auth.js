@@ -101,7 +101,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         SELECT u.id, u.username, u.display_name, u.password_hash, u.organization_id, u.email, u.role_id,
                u.is_super_admin, u.is_active as user_active,
                o.name as organization_name, o.slug as organization_slug,
-               COALESCE(o.is_active, true) as organization_active, o.trial_ends_at,
+               COALESCE(o.is_active, true) as organization_active, o.trial_ends_at, o.is_trial,
                r.name as role_name, r.display_name as role_display_name,
                kp.jahrgang_id, j.name as jahrgang_name,
                kp.gottesdienst_points, kp.gemeinde_points
@@ -181,7 +181,9 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         organization: user.organization_name,
         role_name: user.role_name,
         type: userType,
-        is_super_admin: user.is_super_admin || false
+        is_super_admin: user.is_super_admin || false,
+        trial_ends_at: user.trial_ends_at || null,
+        is_trial: user.is_trial === true
       };
     
       if (userType === 'konfi') {
@@ -345,9 +347,11 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       const { rows: [user] } = await db.query(`
         SELECT u.id, u.username, u.display_name, u.email, u.role_title,
                r.name as role_name, r.display_name as role_display_name,
-               (r.name = 'super_admin' OR u.is_super_admin = true) as is_super_admin
+               (r.name = 'super_admin' OR u.is_super_admin = true) as is_super_admin,
+               o.trial_ends_at, o.is_trial
         FROM users u
         LEFT JOIN roles r ON u.role_id = r.id
+        LEFT JOIN organizations o ON u.organization_id = o.id
         WHERE u.id = $1
       `, [userId]);
 

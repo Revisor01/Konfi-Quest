@@ -13,6 +13,8 @@ export interface BaseUser {
   role_name?: string;
   jahrgang?: string;
   is_super_admin?: boolean;
+  trial_ends_at?: string | null;
+  is_trial?: boolean;
 }
 
 // Admin-User-Verwaltung (UsersView, AdminUsersPage, UserManagementModal)

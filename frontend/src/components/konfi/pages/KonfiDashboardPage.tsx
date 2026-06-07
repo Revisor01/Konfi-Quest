@@ -25,6 +25,7 @@ import PointsHistoryModal from '../modals/PointsHistoryModal';
 import WrappedModal from '../../wrapped/WrappedModal';
 import { Event } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { TrialBanner } from '../../shared';
 
 interface PointConfig {
   gottesdienst_enabled: boolean;
@@ -291,6 +292,8 @@ const KonfiDashboardPage: React.FC = () => {
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh} onIonPull={triggerPullHaptic}>
           <IonRefresherContent />
         </IonRefresher>
+
+        <TrialBanner style={{ marginTop: '8px' }} />
 
         {dashboardData.has_wrapped && (
           <div onClick={openWrapped} style={{

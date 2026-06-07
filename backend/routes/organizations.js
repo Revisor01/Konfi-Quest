@@ -188,24 +188,28 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
         konfiLimit = parsed;
       }
 
-      // Testphase: explizit mitgegebener Wert hat Vorrang.
-      //   trial_ends_at === null im Body -> bewusst KEIN Trial (bezahlt/unbegrenzt).
-      //   Feld fehlt im Body            -> Default 30-Tage-Trial ab jetzt.
+      // Zeitraum (trial_ends_at) + Trial-Kennzeichnung (is_trial). Explizite Werte
+      // haben Vorrang; fehlen sie, startet eine neue Org als 30-Tage-Testphase.
+      //   trial_ends_at: NULL = unbegrenzt; Datum = Zugang bis dahin (dann Sperre).
+      //   is_trial:      true = Dashboard-Hinweis; false = stiller Lizenz-Ablauf.
       let trialEndsAt;
+      let isTrial;
       if (Object.prototype.hasOwnProperty.call(req.body, 'trial_ends_at')) {
         trialEndsAt = req.body.trial_ends_at || null;
+        isTrial = req.body.is_trial === true;
       } else {
         trialEndsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        isTrial = true;
       }
 
       // 1. Create Organization
       const orgQuery = `INSERT INTO organizations (
         name, slug, display_name, description, contact_email,
-        contact_phone, address, website_url, kirchenkreis, max_konfis, trial_ends_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`;
+        contact_phone, address, website_url, kirchenkreis, max_konfis, trial_ends_at, is_trial
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`;
 
       const { rows: [newOrg] } = await db.query(orgQuery, [
-        name, slug, display_name, description, contact_email, contact_phone, address, website_url, kirchenkreis || null, konfiLimit, trialEndsAt
+        name, slug, display_name, description, contact_email, contact_phone, address, website_url, kirchenkreis || null, konfiLimit, trialEndsAt, isTrial
       ]);
       const organizationId = newOrg.id;
         
@@ -335,11 +339,16 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
         address, website_url, kirchenkreis || null, is_active
       ];
 
-      // trial_ends_at darf NUR der super_admin aendern (Tarif/Testphase).
-      // null = bezahlt/unbegrenzt, Datum = Trial bis dahin.
+      // trial_ends_at + is_trial darf NUR der super_admin aendern.
+      //   trial_ends_at: null = unbegrenzt, Datum = Zugang bis dahin.
+      //   is_trial:      true = Dashboard-Hinweis an, false = aus (Lizenz/unbegrenzt).
       if (isSuperAdmin && Object.prototype.hasOwnProperty.call(req.body, 'trial_ends_at')) {
         params.push(req.body.trial_ends_at || null);
         setClauses.push(`trial_ends_at = $${params.length}`);
+      }
+      if (isSuperAdmin && Object.prototype.hasOwnProperty.call(req.body, 'is_trial')) {
+        params.push(req.body.is_trial === true);
+        setClauses.push(`is_trial = $${params.length}`);
       }
 
       params.push(id);

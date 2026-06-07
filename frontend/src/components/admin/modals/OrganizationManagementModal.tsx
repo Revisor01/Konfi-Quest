@@ -20,6 +20,9 @@ import {
   IonTextarea,
   IonSelect,
   IonSelectOption,
+  IonDatetime,
+  IonDatetimeButton,
+  IonModal,
   useIonAlert,
   useIonModal
 } from '@ionic/react';
@@ -59,6 +62,7 @@ interface Organization {
   website_url?: string;
   kirchenkreis?: string;
   trial_ends_at?: string | null;
+  is_trial?: boolean;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -90,6 +94,14 @@ const KONFI_TARIFE: { label: string; value: string }[] = [
   { label: 'Plus', value: '75' },
   { label: 'Groß', value: '100' },
   { label: 'Unbegrenzt', value: '' }
+];
+
+// Zeitraum-Schnellauswahl: Tage ab heute (0 = unbegrenzt, -1 = eigenes Datum)
+const ZEITRAUM_OPTIONEN: { label: string; days: number }[] = [
+  { label: '30 Tage (Testphase)', days: 30 },
+  { label: '1 Jahr (365 Tage)', days: 365 },
+  { label: 'Unbegrenzt', days: 0 },
+  { label: 'Eigenes Datum…', days: -1 }
 ];
 
 const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = ({
@@ -156,11 +168,20 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   const [maxKonfis, setMaxKonfis] = useState<string>('');
   // "Eigenes Limit"-Modus: Zahlenfeld statt Tarif-Auswahl
   const [isCustomLimit, setIsCustomLimit] = useState(false);
-  // Testphase-Enddatum (ISO-String) oder '' = bezahlt/unbegrenzt (nur super_admin)
+  // Zeitraum-Enddatum (ISO-String) oder '' = unbegrenzt (nur super_admin)
   const [trialEndsAt, setTrialEndsAt] = useState<string>('');
+  // is_trial: true = Testphase (Dashboard-Hinweis), false = Lizenz/unbegrenzt (kein Hinweis)
+  const [isTrial, setIsTrial] = useState<boolean>(false);
+  // "Eigenes Datum"-Modus fuer den Zeitraum (Datepicker statt Schnellauswahl)
+  const [isCustomTrialDate, setIsCustomTrialDate] = useState<boolean>(false);
 
   const handleTrialChange = (value: string) => {
     setTrialEndsAt(value);
+    if (initializedRef.current) setIsDirty(true);
+  };
+
+  const handleIsTrialChange = (value: boolean) => {
+    setIsTrial(value);
     if (initializedRef.current) setIsDirty(true);
   };
   const [orgAdmins, setOrgAdmins] = useState<OrgAdmin[]>([]);
@@ -175,6 +196,15 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   // View/Edit-Modus: bestehende Org startet als read-only Uebersicht ('view'),
   // neue Org direkt im Formular ('edit'). Bearbeiten-Button oben wechselt um.
   const [viewMode, setViewMode] = useState<'view' | 'edit'>(organizationId ? 'view' : 'edit');
+
+  // Neue Org: Default 30-Tage-Testphase vorbelegen (super_admin kann es aendern)
+  useEffect(() => {
+    if (!organizationId) {
+      setTrialEndsAt(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString());
+      setIsTrial(true);
+      setIsCustomTrialDate(false);
+    }
+  }, [organizationId]);
 
   // maxKonfis-Aenderung markiert das Modal als dirty (aktiviert Speichern-Button)
   const handleMaxKonfisChange = (value: string) => {
@@ -234,6 +264,9 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
       // Wenn der geladene Wert keinem Tarif entspricht (und nicht leer/unbegrenzt ist), ist es ein eigenes Limit
       setIsCustomLimit(loadedLimit !== '' && !KONFI_TARIFE.some(t => t.value === loadedLimit));
       setTrialEndsAt(orgData.trial_ends_at || '');
+      setIsTrial(orgData.is_trial === true);
+      // Wenn ein Datum gesetzt ist, das keiner Schnellauswahl entspricht -> "eigenes Datum"
+      setIsCustomTrialDate(!!orgData.trial_ends_at);
       setFormData({
         display_name: orgData.display_name || '',
         description: orgData.description || '',
@@ -323,9 +356,12 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           is_active: formData.is_active
         };
 
-        // Testphase-Enddatum nur super_admin (leer = bezahlt/unbegrenzt -> null)
+        // Zeitraum + Trial-Kennzeichnung nur super_admin.
+        // Kein Datum -> unbegrenzt, dann ist es auch keine Testphase (is_trial=false).
         if (isSuperAdmin) {
-          orgData.trial_ends_at = trialEndsAt.trim() || null;
+          const endDate = trialEndsAt.trim() || null;
+          orgData.trial_ends_at = endDate;
+          orgData.is_trial = endDate ? isTrial : false;
         }
 
         if (!isEditMode) {
@@ -491,11 +527,12 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                         ? (() => {
                             const end = new Date(organization.trial_ends_at);
                             const days = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                            const label = organization.is_trial ? 'Testphase' : 'Zugang';
                             return days >= 0
-                              ? <span>Testphase bis {end.toLocaleDateString('de-DE')} ({days} Tag{days === 1 ? '' : 'e'} übrig)</span>
-                              : <span style={{ color: '#dc2626' }}>Testphase abgelaufen ({end.toLocaleDateString('de-DE')})</span>;
+                              ? <span>{label} bis {end.toLocaleDateString('de-DE')} ({days} Tag{days === 1 ? '' : 'e'} übrig)</span>
+                              : <span style={{ color: '#dc2626' }}>{label} abgelaufen ({end.toLocaleDateString('de-DE')})</span>;
                           })()
-                        : <span>Bezahlt / unbegrenzt</span>}
+                        : <span>Unbegrenzt</span>}
                     </div>
                   )}
                   {organization.contact_email && (
@@ -906,70 +943,100 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           </IonList>
         )}
 
-        {/* SEKTION: Testphase (nur super_admin, im Erstellen- und Bearbeiten-Modus) */}
+        {/* SEKTION: Zeitraum (nur super_admin, im Erstellen- und Bearbeiten-Modus) */}
         {isSuperAdmin && viewMode === 'edit' && (
           <IonList inset={true} className="app-modal-section">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--organizations">
                 <IonIcon icon={timeOutline} />
               </div>
-              <IonLabel>Testphase</IonLabel>
+              <IonLabel>Zeitraum</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent style={{ padding: '16px' }}>
+                {/* aktueller Status */}
                 <div style={{ marginBottom: '12px', fontSize: '0.9rem', color: '#444' }}>
                   {trialEndsAt
                     ? (() => {
                         const end = new Date(trialEndsAt);
                         const days = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                        const label = isTrial ? 'Testphase' : 'Zugang';
                         return days >= 0
-                          ? <span>Testphase läuft bis <strong>{end.toLocaleDateString('de-DE')}</strong> ({days} Tag{days === 1 ? '' : 'e'} übrig)</span>
-                          : <span style={{ color: '#dc2626' }}>Testphase ist seit <strong>{end.toLocaleDateString('de-DE')}</strong> abgelaufen ({Math.abs(days)} Tag{Math.abs(days) === 1 ? '' : 'e'})</span>;
+                          ? <span>{label} läuft bis <strong>{end.toLocaleDateString('de-DE')}</strong> ({days} Tag{days === 1 ? '' : 'e'} übrig)</span>
+                          : <span style={{ color: '#dc2626' }}>{label} ist seit <strong>{end.toLocaleDateString('de-DE')}</strong> abgelaufen ({Math.abs(days)} Tag{Math.abs(days) === 1 ? '' : 'e'})</span>;
                       })()
-                    : <span><strong>Bezahlt / unbegrenzt</strong> — keine Testphase aktiv</span>}
+                    : <span><strong>Unbegrenzt</strong> — kein Ablaufdatum</span>}
                 </div>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  <IonButton
-                    size="small"
-                    fill="outline"
-                    disabled={!isOnline}
-                    onClick={() => handleTrialChange(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString())}
-                    style={{ '--border-color': '#667eea', '--color': '#667eea' }}
-                  >
-                    30 Tage ab heute
-                  </IonButton>
-                  <IonButton
-                    size="small"
-                    fill="outline"
-                    disabled={!isOnline}
-                    onClick={() => {
-                      // Verlaengern: 30 Tage auf das bestehende Enddatum (oder ab heute, falls keins/abgelaufen)
-                      const base = trialEndsAt && new Date(trialEndsAt).getTime() > Date.now() ? new Date(trialEndsAt).getTime() : Date.now();
-                      handleTrialChange(new Date(base + 30 * 24 * 60 * 60 * 1000).toISOString());
-                    }}
-                    style={{ '--border-color': '#667eea', '--color': '#667eea' }}
-                  >
-                    +30 Tage verlängern
-                  </IonButton>
-                  <IonButton
-                    size="small"
-                    fill={!trialEndsAt ? 'solid' : 'outline'}
-                    disabled={!isOnline}
-                    onClick={() => handleTrialChange('')}
-                    style={!trialEndsAt
-                      ? { '--background': '#667eea', '--background-activated': '#5a67d8' }
-                      : { '--border-color': '#16a34a', '--color': '#16a34a' }}
-                  >
-                    Auf bezahlt / unbegrenzt
-                  </IonButton>
-                </div>
+                <IonList style={{ background: 'transparent' }}>
+                  {/* Zeitraum-Auswahl als Popover */}
+                  <IonItem lines={isCustomTrialDate ? 'full' : 'full'} style={{ '--background': 'transparent' }}>
+                    <IonLabel position="stacked">Zeitraum</IonLabel>
+                    <IonSelect
+                      value={isCustomTrialDate ? -1 : (trialEndsAt ? -2 : 0)}
+                      interface="popover"
+                      placeholder="Zeitraum wählen"
+                      onIonChange={(e) => {
+                        const days = e.detail.value as number;
+                        if (days === -1) {
+                          // Eigenes Datum: Datepicker einblenden, Default heute+30 falls leer
+                          setIsCustomTrialDate(true);
+                          if (!trialEndsAt) handleTrialChange(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString());
+                        } else if (days === -2) {
+                          // no-op (Platzhalter fuer bereits gesetztes eigenes Datum)
+                        } else if (days === 0) {
+                          setIsCustomTrialDate(false);
+                          handleTrialChange('');
+                        } else {
+                          setIsCustomTrialDate(false);
+                          handleTrialChange(new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString());
+                        }
+                      }}
+                    >
+                      {ZEITRAUM_OPTIONEN.map((opt) => (
+                        <IonSelectOption key={opt.label} value={opt.days}>{opt.label}</IonSelectOption>
+                      ))}
+                      {/* unsichtbarer Wert fuer "Datum gesetzt, aber keine Schnellauswahl aktiv" */}
+                      {trialEndsAt && !isCustomTrialDate && <IonSelectOption value={-2}>Festes Datum</IonSelectOption>}
+                    </IonSelect>
+                  </IonItem>
+
+                  {/* Eigenes Datum: Datepicker */}
+                  {isCustomTrialDate && (
+                    <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                      <IonLabel position="stacked">Enddatum</IonLabel>
+                      <IonDatetimeButton datetime="trial-date-picker" />
+                      <IonModal keepContentsMounted={true}>
+                        <IonDatetime
+                          id="trial-date-picker"
+                          presentation="date"
+                          value={trialEndsAt || undefined}
+                          onIonChange={(e) => {
+                            const v = e.detail.value as string;
+                            if (v) handleTrialChange(new Date(v).toISOString());
+                          }}
+                        />
+                      </IonModal>
+                    </IonItem>
+                  )}
+
+                  {/* Trial-Haekchen: nur sinnvoll wenn ein Datum gesetzt ist */}
+                  {trialEndsAt && (
+                    <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                      <IonLabel>
+                        <h3 style={{ fontWeight: '500', margin: '0 0 4px 0' }}>Als Testphase kennzeichnen</h3>
+                        <p style={{ color: '#666', margin: 0, fontSize: '0.85rem' }}>Zeigt im Dashboard einen Hinweis mit Restlaufzeit</p>
+                      </IonLabel>
+                      <IonToggle slot="end" className="app-toggle--users" checked={isTrial} onIonChange={(e) => handleIsTrialChange(e.detail.checked)} />
+                    </IonItem>
+                  )}
+                </IonList>
 
                 <IonItem lines="none" style={{ '--background': 'rgba(102, 126, 234, 0.08)', borderRadius: '10px', marginTop: '12px' }}>
                   <IonIcon icon={alertCircleOutline} slot="start" style={{ color: '#667eea' }} />
                   <IonLabel>
                     <p style={{ color: '#667eea', margin: 0, fontSize: '0.85rem' }}>
-                      Nach Ablauf der Testphase wird die Organisation automatisch gesperrt — niemand kann sich mehr anmelden. Wird beim Speichern oben übernommen.
+                      Nach Ablauf des Zeitraums wird die Organisation automatisch gesperrt — niemand kann sich mehr anmelden. Ohne Datum bleibt der Zugang unbegrenzt. Wird beim Speichern oben übernommen.
                     </p>
                   </IonLabel>
                 </IonItem>

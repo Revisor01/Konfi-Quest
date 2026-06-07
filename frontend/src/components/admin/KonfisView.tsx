@@ -32,7 +32,7 @@ import {
   documentOutline
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
-import { SectionHeader, ListSection } from '../shared';
+import { SectionHeader, ListSection, TrialBanner } from '../shared';
 import api from '../../services/api';
 import { useApp } from '../../contexts/AppContext';
 
@@ -213,6 +213,8 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           { value: jahrgaenge.length, label: 'Jahrgänge' }
         ]}
       />
+
+      <TrialBanner />
 
       {/* (Entfernt) Der "X Konfis"-Zwischentext zwischen Header-Stats und Switcher
           war redundant zum Header-Stat. Konfi-Limit ("X von Y") gehoert in die

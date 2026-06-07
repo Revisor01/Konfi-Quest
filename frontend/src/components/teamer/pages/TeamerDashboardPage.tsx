@@ -78,7 +78,7 @@ import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import WrappedModal from '../../wrapped/WrappedModal';
-import { ProfileHeaderButton } from '../../shared';
+import { ProfileHeaderButton, TrialBanner } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
 
 // Badge/Certificate Icon Mapping (shared with DashboardView)
@@ -424,6 +424,8 @@ const TeamerDashboardPage: React.FC = () => {
         >
           <IonRefresherContent />
         </IonRefresher>
+
+        <TrialBanner style={{ marginTop: '8px' }} />
 
         <div style={{ padding: '16px' }}>
           {/* Begruessung */}
