@@ -27,8 +27,8 @@ describe('LoadingSpinner', () => {
     expect(ionPage).toBeTruthy();
   });
 
-  it('zeigt "Konfi Quest" Titel in fullScreen-Modus', () => {
+  it('zeigt "KONFI QUEST" Titel in fullScreen-Modus', () => {
     render(<LoadingSpinner fullScreen={true} />);
-    expect(screen.getByText('Konfi Quest')).toBeInTheDocument();
+    expect(screen.getByText('KONFI QUEST')).toBeInTheDocument();
   });
 });
