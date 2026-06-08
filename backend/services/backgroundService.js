@@ -1,6 +1,10 @@
 const PushService = require('./pushService');
 const cron = require('node-cron');
 const { deleteKonfiCascade } = require('../utils/konfiDeletion');
+const emailService = require('./emailService');
+
+// Vorlauf fuer die Lizenz-Ablauf-Erinnerung (Tage vor trial_ends_at)
+const LICENSE_REMINDER_DAYS = 14;
 
 class BackgroundService {
   static badgeUpdateInterval = null;
@@ -544,6 +548,13 @@ class BackgroundService {
       } catch (e) {
         console.error('Trial-Expiry-Cron failed:', e);
       }
+      try {
+        // Lizenz-Erinnerung (bezahlte Lizenzen ~14 Tage vor Ablauf) — laeuft NACH
+        // der Sperrung, damit gerade abgelaufene Orgs nicht mehr erinnert werden.
+        await this.runLicenseReminders(db);
+      } catch (e) {
+        console.error('Lizenz-Erinnerung-Cron failed:', e);
+      }
     }, {
       timezone: 'Europe/Berlin'
     });
@@ -581,6 +592,82 @@ class BackgroundService {
     } catch (error) {
       console.error('Trial-Expiry: Sperrung fehlgeschlagen:', error.message);
       return { locked: 0 };
+    }
+  }
+
+  /**
+   * Lizenz-Ablauf-Erinnerung per Mail an Org-Admins.
+   * Nur fuer BEZAHLTE Lizenzen (is_trial = false) mit gesetztem trial_ends_at,
+   * die in <= LICENSE_REMINDER_DAYS Tagen ablaufen, noch nicht abgelaufen sind
+   * und fuer die noch keine Erinnerung verschickt wurde (license_reminder_sent_at IS NULL).
+   * Trials (is_trial = true) bekommen KEINE Mail — die zeigen den App-Banner.
+   * Pro Org wird einmal erinnert; der Marker wird beim Aendern von trial_ends_at zurueckgesetzt.
+   */
+  static async runLicenseReminders(db) {
+    let sent = 0;
+    try {
+      const { rows: orgs } = await db.query(
+        `SELECT id, display_name, trial_ends_at
+         FROM organizations
+         WHERE is_trial = false
+           AND is_active = true
+           AND trial_ends_at IS NOT NULL
+           AND trial_ends_at > NOW()
+           AND trial_ends_at <= NOW() + ($1 || ' days')::interval
+           AND license_reminder_sent_at IS NULL`,
+        [LICENSE_REMINDER_DAYS]
+      );
+
+      for (const org of orgs) {
+        try {
+          // Org-Admins mit E-Mail laden (admin + org_admin, aktiv)
+          const { rows: admins } = await db.query(
+            `SELECT u.display_name, u.email
+             FROM users u
+             JOIN roles r ON u.role_id = r.id
+             WHERE u.organization_id = $1
+               AND u.is_active = true
+               AND r.name IN ('admin', 'org_admin')
+               AND u.email IS NOT NULL AND u.email <> ''`,
+            [org.id]
+          );
+
+          const end = new Date(org.trial_ends_at);
+          const daysLeft = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+
+          let anySent = false;
+          for (const admin of admins) {
+            try {
+              await emailService.sendLicenseExpiryReminderEmail(
+                admin.email, admin.display_name, org.display_name, end, daysLeft
+              );
+              anySent = true;
+              sent++;
+            } catch (mailErr) {
+              console.error(`Lizenz-Erinnerung: Mail an ${admin.email} fehlgeschlagen:`, mailErr.message);
+            }
+          }
+
+          // Marker nur setzen, wenn mindestens eine Mail rausging — sonst naechster
+          // Lauf erneut versuchen (z.B. SMTP-Ausfall).
+          if (anySent) {
+            await db.query(
+              'UPDATE organizations SET license_reminder_sent_at = NOW() WHERE id = $1',
+              [org.id]
+            );
+          }
+        } catch (orgErr) {
+          console.error(`Lizenz-Erinnerung: Org ${org.id} fehlgeschlagen:`, orgErr.message);
+        }
+      }
+
+      if (sent > 0) {
+        console.log(`Lizenz-Erinnerung: ${sent} Mail(s) fuer ${orgs.length} Organisation(en) verschickt.`);
+      }
+      return { sent };
+    } catch (error) {
+      console.error('Lizenz-Erinnerung fehlgeschlagen:', error.message);
+      return { sent: 0 };
     }
   }
 

@@ -28,7 +28,8 @@ import {
   closeCircle,
   filterOutline,
   search,
-  timeOutline
+  timeOutline,
+  flask
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
@@ -210,8 +211,23 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                     className="app-list-item app-list-item--organizations"
                     style={{ width: '100%', position: 'relative', overflow: 'hidden', opacity: organization.is_active ? 1 : 0.7 }}
                   >
-                    {/* Corner-Badge: Aktiv/Inaktiv-Status */}
+                    {/* Corner-Badges: Testversion (innen) + Aktiv/Inaktiv-Status */}
                     <div className="app-corner-badges">
+                      {organization.is_trial && (
+                        <>
+                          <div
+                            className="app-corner-badge"
+                            style={{
+                              backgroundColor: 'var(--app-color-warning, #f59e0b)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px'
+                            }}
+                            title="Testversion"
+                          >
+                            <IonIcon icon={flask} style={{ color: '#fff', fontSize: '0.85rem' }} />
+                          </div>
+                          <div className="app-corner-badges__separator" />
+                        </>
+                      )}
                       <div
                         className="app-corner-badge"
                         style={{
@@ -254,7 +270,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                                 return (
                                   <>
                                     <IonIcon icon={timeOutline} style={{ color: days < 0 ? '#dc2626' : '#667eea' }} />
-                                    {end.toLocaleDateString('de-DE')} {days >= 0 ? `(${days} T)` : '(abgelaufen)'}
+                                    {end.toLocaleDateString('de-DE')} {days >= 0 ? `(${days} Tag${days === 1 ? '' : 'e'})` : '(abgelaufen)'}
                                   </>
                                 );
                               })()}

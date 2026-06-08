@@ -180,9 +180,30 @@ transporter.verify(function(error, success) {
 // RATE LIMITING
 // ====================================================================
 
+const { ipKeyGenerator } = require('express-rate-limit');
+
+// Gemeinsamer Key-Generator: zaehlt PRO eingeloggtem User (aus dem JWT), nicht
+// pro IP. Sonst teilen sich alle Konfis/Teamer einer Gemeinde hinter EINER
+// WLAN-IP dasselbe Kontingent -> ein volles WLAN sperrt alle aus ("Zu viele
+// Anfragen", scheinbar zufaellig). Unauthentifizierte Requests (Login/Register)
+// fallen auf die IP zurueck (IPv6-sicher via ipKeyGenerator).
+const userOrIpKey = (req) => {
+  const auth = req.headers.authorization;
+  if (auth && auth.startsWith('Bearer ')) {
+    try {
+      const decoded = jwt.verify(auth.slice(7), JWT_SECRET);
+      if (decoded?.id) return `user:${decoded.id}`;
+    } catch {
+      // ungueltiges/abgelaufenes Token -> IP-Fallback
+    }
+  }
+  return ipKeyGenerator(req.ip);
+};
+
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 1000,
+  max: 2000,
+  keyGenerator: userOrIpKey,
   message: { error: 'Zu viele Anfragen. Bitte versuche es spaeter erneut.' },
   standardHeaders: true,
   legacyHeaders: false
@@ -207,7 +228,8 @@ const registerLimiter = rateLimit({
 
 const chatMessageLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 30,
+  max: 60,
+  keyGenerator: userOrIpKey,
   message: { error: 'Zu viele Nachrichten. Bitte warte einen Moment.' },
   standardHeaders: true,
   legacyHeaders: false
@@ -215,7 +237,8 @@ const chatMessageLimiter = rateLimit({
 
 const eventBookingLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 60,
+  keyGenerator: userOrIpKey,
   message: { error: 'Zu viele Buchungsanfragen. Bitte versuche es spaeter erneut.' },
   standardHeaders: true,
   legacyHeaders: false
@@ -223,19 +246,20 @@ const eventBookingLimiter = rateLimit({
 
 const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30,
+  max: 100,
+  keyGenerator: userOrIpKey,
   message: { error: 'Zu viele Uploads. Bitte versuche es spaeter erneut.' },
   standardHeaders: true,
   legacyHeaders: false
 });
 
 const orgLimiter = rateLimit({
-  // Deckt ALLE /api/organizations-Routen ab (auch Lese-Requests: Liste, Detail,
-  // Admins). 20/15min war viel zu eng — schon wenige Klicks (Liste -> Org oeffnen
-  // -> Admins laden -> zurueck) erschoepften es. 200/15min laesst fluessiges
-  // Arbeiten zu und bleibt ein Missbrauchs-Deckel. GET-Requests zaehlen nicht mit.
+  // Deckt ALLE /api/organizations-Routen ab. GET (Lesen: Liste, Detail, Admins)
+  // wird per skip ausgenommen und faellt auf den generalLimiter. Nur Schreib-Ops
+  // (POST/PUT/PATCH/DELETE) zaehlen hier, pro User (nicht pro IP).
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  max: 500,
+  keyGenerator: userOrIpKey,
   skip: (req) => req.method === 'GET',
   message: { error: 'Zu viele Anfragen an die Organisationsverwaltung. Bitte versuche es spaeter erneut.' },
   standardHeaders: true,

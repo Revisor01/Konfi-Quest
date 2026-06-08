@@ -198,6 +198,8 @@ const KonfisView: React.FC<KonfisViewProps> = ({
 
   return (
     <>
+      <TrialBanner />
+
       <SectionHeader
         title={viewMode === 'teamer' ? 'Teamer:innen' : 'Konfis'}
         subtitle={viewMode === 'teamer' ? 'Teamer:innen verwalten' : 'Konfis verwalten'}
@@ -213,8 +215,6 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           { value: jahrgaenge.length, label: 'Jahrgänge' }
         ]}
       />
-
-      <TrialBanner />
 
       {/* (Entfernt) Der "X Konfis"-Zwischentext zwischen Header-Stats und Switcher
           war redundant zum Header-Stat. Konfi-Limit ("X von Y") gehoert in die

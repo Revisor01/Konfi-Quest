@@ -76,6 +76,7 @@ interface AppContextType {
   isOnline: boolean;
   pushNotificationsPermission: string;
   setUser: (user: BaseUser | null) => void;
+  refreshUser: () => Promise<void>;
   setError: (error: string) => void;
   setSuccess: (success: string) => void;
   clearMessages: () => void;
@@ -125,32 +126,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     })();
   }, [user]);
 
-  // User-Daten beim App-Start frisch von /me ziehen (Trial-Status, Rolle etc.).
-  // Loest u.a. den Trial-Banner-Bug: aendert/entfernt der super_admin den Trial,
-  // verschwindet der Banner beim naechsten App-Start ohne manuellen Logout.
+  // User-Daten frisch von /me ziehen (Trial-Status, Rolle etc.) und in State +
+  // Cache mergen. Wird beim App-Start aufgerufen UND nach Aktionen, die den
+  // eigenen User betreffen koennen (z.B. eigene Org auf Test stellen) — damit
+  // der Trial-Banner sofort erscheint/verschwindet, ohne Logout/Neustart.
+  const refreshUser = useCallback(async () => {
+    const cached = getUser();
+    if (!cached) return; // nicht eingeloggt
+    try {
+      const res = await api.get('/auth/me');
+      if (!res?.data) return;
+      const merged = {
+        ...cached,
+        ...res.data,
+        trial_ends_at: res.data.trial_ends_at ?? null,
+        is_trial: res.data.is_trial === true
+      };
+      await persistUser(merged);
+      setUser(merged);
+    } catch {
+      // Offline / Token abgelaufen: gecachten User behalten, kein Hard-Fail
+    }
+  }, []);
+
+  // Einmal beim App-Start
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const cached = getUser();
-      if (!cached) return; // nicht eingeloggt
-      try {
-        const res = await api.get('/auth/me');
-        if (cancelled || !res?.data) return;
-        // Frische Felder ueber den gecachten User mergen (type/organization bleiben erhalten)
-        const merged = {
-          ...cached,
-          ...res.data,
-          trial_ends_at: res.data.trial_ends_at ?? null,
-          is_trial: res.data.is_trial === true
-        };
-        await persistUser(merged);   // tokenStore-Cache aktualisieren
-        if (!cancelled) setUser(merged); // React-State aktualisieren
-      } catch {
-        // Offline / Token abgelaufen: gecachten User behalten, kein Hard-Fail
-      }
-    })();
-    return () => { cancelled = true; };
-    // Nur einmal beim Mount
+    refreshUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -507,6 +508,7 @@ useEffect(() => {
     isOnline,
     pushNotificationsPermission,
     setUser,
+    refreshUser,
     setError,
     setSuccess,
     clearMessages,

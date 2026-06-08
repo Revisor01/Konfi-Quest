@@ -171,7 +171,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
   router.post('/', rbacVerifier, requireSuperAdmin, validateCreateOrg, async (req, res) => {
     try {
       const {
-        name, slug, display_name, description, contact_email,
+        name, slug, display_name, description, contact_name, contact_email,
         contact_phone, address, website_url, kirchenkreis, max_konfis, admin_username,
         admin_password, admin_display_name
       } = req.body;
@@ -210,12 +210,12 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
 
       // 1. Create Organization
       const orgQuery = `INSERT INTO organizations (
-        name, slug, display_name, description, contact_email,
+        name, slug, display_name, description, contact_name, contact_email,
         contact_phone, address, website_url, kirchenkreis, max_konfis, trial_ends_at, is_trial
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`;
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`;
 
       const { rows: [newOrg] } = await db.query(orgQuery, [
-        name, slug, display_name, description, contact_email, contact_phone, address, website_url, kirchenkreis || null, konfiLimit, trialEndsAt, isTrial
+        name, slug, display_name, description, contact_name || null, contact_email, contact_phone, address, website_url, kirchenkreis || null, konfiLimit, trialEndsAt, isTrial
       ]);
       const organizationId = newOrg.id;
         
@@ -322,7 +322,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
     try {
       const { id } = req.params;
       const {
-        name, slug, display_name, description, contact_email,
+        name, slug, display_name, description, contact_name, contact_email,
         contact_phone, address, website_url, kirchenkreis, is_active
       } = req.body;
 
@@ -337,11 +337,11 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       // Basis-Felder (von super_admin UND org_admin editierbar)
       const setClauses = [
         'name = $1', 'slug = $2', 'display_name = $3', 'description = $4',
-        'contact_email = $5', 'contact_phone = $6', 'address = $7',
-        'website_url = $8', 'kirchenkreis = $9', 'is_active = $10', 'updated_at = NOW()'
+        'contact_name = $5', 'contact_email = $6', 'contact_phone = $7', 'address = $8',
+        'website_url = $9', 'kirchenkreis = $10', 'is_active = $11', 'updated_at = NOW()'
       ];
       const params = [
-        name, slug, display_name, description, contact_email, contact_phone,
+        name, slug, display_name, description, contact_name || null, contact_email, contact_phone,
         address, website_url, kirchenkreis || null, is_active
       ];
 
@@ -351,6 +351,9 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       if (isSuperAdmin && Object.prototype.hasOwnProperty.call(req.body, 'trial_ends_at')) {
         params.push(req.body.trial_ends_at || null);
         setClauses.push(`trial_ends_at = $${params.length}`);
+        // Bei jeder Laufzeit-Aenderung den Erinnerungs-Marker zuruecksetzen,
+        // damit die naechste anstehende Lizenz-Erinnerung wieder verschickt wird.
+        setClauses.push('license_reminder_sent_at = NULL');
       }
       if (isSuperAdmin && Object.prototype.hasOwnProperty.call(req.body, 'is_trial')) {
         params.push(req.body.is_trial === true);

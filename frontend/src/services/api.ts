@@ -9,7 +9,11 @@ const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
-// Automatischer Retry für transiente Fehler (5xx, 408, 429)
+// Automatischer Retry für transiente Fehler (5xx, 408) — NICHT für 429.
+// WICHTIG: 429 (Rate-Limit) darf NICHT retried werden. Ein Retry-auf-429 zaehlt
+// erneut gegen das Limit und macht die Ueberschreitung schlimmer (Retry-Lawine) —
+// genau das war die Ursache fuer das sporadische "Zu viele Anfragen". Bei 429
+// sagt der Server "warte", die richtige Antwort ist warten, nicht sofort 3x nachfeuern.
 axiosRetry(api, {
   retries: 3,
   retryDelay: (retryCount) => {
@@ -17,7 +21,7 @@ axiosRetry(api, {
   },
   retryCondition: (error) => {
     const status = error.response?.status;
-    if (status === 429) return true;
+    if (status === 429) return false;
     return axiosRetry.isNetworkOrIdempotentRequestError(error) || (status !== undefined && status >= 500);
   },
   onRetry: () => {}

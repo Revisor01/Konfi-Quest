@@ -42,8 +42,10 @@ import {
   locationOutline,
   add,
   timeOutline,
+  calendarOutline,
   cloudOfflineOutline
 } from 'ionicons/icons';
+import { SectionHeader } from '../../shared';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
@@ -55,6 +57,7 @@ interface Organization {
   slug: string;
   display_name: string;
   description?: string;
+  contact_name?: string;
   contact_email?: string;
   contact_phone?: string;
   address?: string;
@@ -144,6 +147,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   const [formData, setFormData] = useState({
     display_name: '',
     description: '',
+    contact_name: '',
     contact_email: '',
     contact_phone: '',
     address: '',
@@ -271,6 +275,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
       setFormData({
         display_name: orgData.display_name || '',
         description: orgData.description || '',
+        contact_name: orgData.contact_name || '',
         contact_email: orgData.contact_email || '',
         contact_phone: orgData.contact_phone || '',
         address: orgData.address || '',
@@ -349,6 +354,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           slug: systemName,
           display_name: formData.display_name.trim(),
           description: formData.description.trim() || null,
+          contact_name: formData.contact_name.trim() || null,
           contact_email: formData.contact_email.trim() || null,
           contact_phone: formData.contact_phone.trim() || null,
           address: formData.address.trim() || null,
@@ -480,89 +486,152 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
       <IonContent className="app-gradient-background">
         {/* VIEW-MODUS: alle Infos der Organisation auf einen Blick (read-only) */}
         {isEditMode && viewMode === 'view' && organization && (
-          <IonList inset={true} className="app-modal-section">
-            <IonListHeader>
-              <div className="app-section-icon app-section-icon--organizations">
-                <IonIcon icon={businessOutline} />
-              </div>
-              <IonLabel>Überblick</IonLabel>
-            </IonListHeader>
-            <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                  <div className="app-avatar-initials app-avatar-initials--sm" style={{ backgroundColor: organization.is_active ? '#667eea' : '#6b7280' }}>
-                    {getInitials(organization.display_name)}
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: '1.05rem' }}>{organization.display_name}</div>
-                    <div style={{ fontSize: '0.85rem', color: organization.is_active ? '#667eea' : '#6b7280', fontWeight: 600 }}>
-                      {organization.is_active ? 'Aktiv' : 'Inaktiv'}
-                    </div>
-                  </div>
+          <>
+            <SectionHeader
+              title={organization.display_name}
+              subtitle={organization.kirchenkreis || 'Organisation'}
+              icon={businessOutline}
+              preset="organizations"
+              stats={[
+                { value: organization.konfi_count || 0, label: 'Konfis' },
+                { value: organization.teamer_count || 0, label: 'Team' },
+                { value: organization.admin_count || 0, label: 'Admins' }
+              ]}
+            />
+
+            {/* INFO-CARD: alle Org-Infos (Stil wie EventInfoCard) */}
+            <IonList className="app-section-inset" inset={true}>
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--organizations">
+                  <IonIcon icon={businessOutline} />
                 </div>
-                {organization.description && (
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', margin: '0 0 12px', color: '#555', fontSize: '0.9rem' }}>
-                    <IonIcon icon={documentTextOutline} style={{ color: '#667eea', marginTop: '2px', flexShrink: 0 }} />
-                    <span>{organization.description}</span>
-                  </div>
-                )}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.88rem', color: '#444' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <IonIcon icon={people} style={{ color: '#667eea' }} />
-                    <span>
-                      {maxKonfis
-                        ? `${organization.konfi_count} / ${maxKonfis} Konfis`
-                        : `${organization.konfi_count} Konfis (unbegrenzt)`}
-                    </span>
-                  </div>
-                  {organization.kirchenkreis && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <IonIcon icon={businessOutline} style={{ color: '#667eea' }} />
-                      <span>{organization.kirchenkreis}</span>
+                <IonLabel>Informationen</IonLabel>
+              </IonListHeader>
+              <IonCard className="app-card">
+                <IonCardContent className="app-card-content">
+                  {organization.description && (
+                    <div className="app-info-row">
+                      <IonIcon icon={documentTextOutline} className="app-info-row__icon" style={{ color: 'var(--app-color-users)' }} />
+                      <div>
+                        <div className="app-info-row__label">Beschreibung</div>
+                        <div className="app-info-row__value">{organization.description}</div>
+                      </div>
                     </div>
                   )}
-                  {isSuperAdmin && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <IonIcon icon={timeOutline} style={{ color: '#667eea' }} />
-                      {organization.trial_ends_at
-                        ? (() => {
-                            const end = new Date(organization.trial_ends_at);
-                            const days = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-                            return days >= 0
-                              ? <span>{end.toLocaleDateString('de-DE')} ({days} Tag{days === 1 ? '' : 'e'} übrig){organization.is_trial ? ' · Testphase' : ''}</span>
-                              : <span style={{ color: '#dc2626' }}>{end.toLocaleDateString('de-DE')} (abgelaufen)</span>;
-                          })()
-                        : <span>unbegrenzt</span>}
+
+                  <div className="app-info-row">
+                    <IonIcon icon={people} className="app-info-row__icon" style={{ color: 'var(--app-color-users)' }} />
+                    <div>
+                      <div className="app-info-row__label">Konfis</div>
+                      <div className="app-info-row__value">
+                        {maxKonfis
+                          ? `${organization.konfi_count} / ${maxKonfis} Konfis`
+                          : `${organization.konfi_count} Konfis (unbegrenzt)`}
+                      </div>
+                    </div>
+                  </div>
+
+                  {organization.contact_name && (
+                    <div className="app-info-row">
+                      <IonIcon icon={personOutline} className="app-info-row__icon" style={{ color: 'var(--app-color-users)' }} />
+                      <div>
+                        <div className="app-info-row__label">Ansprechpartner:in</div>
+                        <div className="app-info-row__value">{organization.contact_name}</div>
+                      </div>
                     </div>
                   )}
+
                   {organization.contact_email && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <IonIcon icon={mailOutline} style={{ color: '#667eea' }} />
-                      <span>{organization.contact_email}</span>
+                    <div className="app-info-row">
+                      <IonIcon icon={mailOutline} className="app-info-row__icon" style={{ color: 'var(--app-color-users)' }} />
+                      <div>
+                        <div className="app-info-row__label">E-Mail</div>
+                        <div className="app-info-row__value">{organization.contact_email}</div>
+                      </div>
                     </div>
                   )}
+
                   {organization.contact_phone && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <IonIcon icon={callOutline} style={{ color: '#667eea' }} />
-                      <span>{organization.contact_phone}</span>
+                    <div className="app-info-row">
+                      <IonIcon icon={callOutline} className="app-info-row__icon" style={{ color: 'var(--app-color-users)' }} />
+                      <div>
+                        <div className="app-info-row__label">Telefon</div>
+                        <div className="app-info-row__value">{organization.contact_phone}</div>
+                      </div>
                     </div>
                   )}
+
                   {organization.address && (
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                      <IonIcon icon={locationOutline} style={{ color: '#667eea', marginTop: '2px', flexShrink: 0 }} />
-                      <span>{organization.address}</span>
+                    <div className="app-info-row">
+                      <IonIcon icon={locationOutline} className="app-info-row__icon" style={{ color: 'var(--app-color-users)' }} />
+                      <div>
+                        <div className="app-info-row__label">Adresse</div>
+                        <div className="app-info-row__value">{organization.address}</div>
+                      </div>
                     </div>
                   )}
+
                   {organization.website_url && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <IonIcon icon={globeOutline} style={{ color: '#667eea' }} />
-                      <span>{organization.website_url}</span>
+                    <div className="app-info-row">
+                      <IonIcon icon={globeOutline} className="app-info-row__icon" style={{ color: 'var(--app-color-users)' }} />
+                      <div>
+                        <div className="app-info-row__label">Website</div>
+                        <div className="app-info-row__value">{organization.website_url}</div>
+                      </div>
                     </div>
                   )}
+
+                  {isSuperAdmin && (
+                    <div className="app-info-row">
+                      <IonIcon icon={timeOutline} className="app-info-row__icon" style={{ color: 'var(--app-color-users)' }} />
+                      <div>
+                        <div className="app-info-row__label">Laufzeit</div>
+                        <div className="app-info-row__value">
+                          {organization.trial_ends_at
+                            ? (() => {
+                                const end = new Date(organization.trial_ends_at);
+                                const days = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                                return days >= 0
+                                  ? <span>{end.toLocaleDateString('de-DE')} ({days} Tag{days === 1 ? '' : 'e'} übrig){organization.is_trial ? ' · Testphase' : ''}</span>
+                                  : <span style={{ color: '#dc2626' }}>{end.toLocaleDateString('de-DE')} (abgelaufen)</span>;
+                              })()
+                            : <span>unbegrenzt</span>}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </IonCardContent>
+              </IonCard>
+            </IonList>
+
+            {/* VERLAUF: Erstellt + Aktualisiert */}
+            <IonList className="app-section-inset" inset={true}>
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--organizations">
+                  <IonIcon icon={businessOutline} />
                 </div>
-              </IonCardContent>
-            </IonCard>
-          </IonList>
+                <IonLabel>Verlauf</IonLabel>
+              </IonListHeader>
+              <IonCard className="app-card">
+                <IonCardContent className="app-card-content">
+                  <div className="app-info-row">
+                    <IonIcon icon={timeOutline} className="app-info-row__icon" style={{ color: 'var(--app-color-users)' }} />
+                    <div>
+                      <div className="app-info-row__label">Erstellt</div>
+                      <div className="app-info-row__value">{new Date(organization.created_at).toLocaleDateString('de-DE')}</div>
+                    </div>
+                  </div>
+                  <div className="app-info-row">
+                    <IonIcon icon={calendarOutline} className="app-info-row__icon" style={{ color: 'var(--app-color-users)' }} />
+                    <div>
+                      <div className="app-info-row__label">Aktualisiert</div>
+                      <div className="app-info-row__value">{new Date(organization.updated_at).toLocaleDateString('de-DE')}</div>
+                    </div>
+                  </div>
+                </IonCardContent>
+              </IonCard>
+            </IonList>
+          </>
         )}
 
         {/* SEKTION: Organisations-Daten (nur Edit-Modus) */}
@@ -626,6 +695,10 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px' }}>
               <IonList style={{ background: 'transparent' }}>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Ansprechpartner:in</IonLabel>
+                  <IonInput value={formData.contact_name} onIonInput={(e) => setFormData({ ...formData, contact_name: e.detail.value! })} placeholder="z.B. Pastorin Müller" disabled={isSubmitting} />
+                </IonItem>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">E-Mail</IonLabel>
                   <IonInput type="email" value={formData.contact_email} onIonInput={(e) => setFormData({ ...formData, contact_email: e.detail.value! })} placeholder="kontakt@beispiel.de" disabled={isSubmitting} />
@@ -1047,48 +1120,6 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           </IonList>
         )}
 
-        {/* SEKTION: Statistiken — nur im View-Modus (im Bearbeiten ausgeblendet) */}
-        {isEditMode && organization && viewMode === 'view' && (
-          <IonList inset={true} className="app-modal-section">
-            <IonListHeader>
-              <div className="app-section-icon app-section-icon--organizations">
-                <IonIcon icon={businessOutline} />
-              </div>
-              <IonLabel>Statistiken</IonLabel>
-            </IonListHeader>
-            <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                  <div style={{ background: '#f8f9fa', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
-                    <IonIcon icon={people} style={{ fontSize: '1.2rem', color: '#667eea', display: 'block', margin: '0 auto 4px' }} />
-                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#667eea' }}>{organization.konfi_count || 0}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#666' }}>Konfis</div>
-                  </div>
-                  <div style={{ background: '#f8f9fa', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
-                    <IonIcon icon={personOutline} style={{ fontSize: '1.2rem', color: 'var(--app-color-teamer)', display: 'block', margin: '0 auto 4px' }} />
-                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#667eea' }}>{organization.teamer_count || 0}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#666' }}>Teamer:innen</div>
-                  </div>
-                  <div style={{ background: '#f8f9fa', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
-                    <IonIcon icon={shieldOutline} style={{ fontSize: '1.2rem', color: '#667eea', display: 'block', margin: '0 auto 4px' }} />
-                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#667eea' }}>{organization.admin_count || 0}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#666' }}>Admins</div>
-                  </div>
-                </div>
-
-                <IonItem lines="none" style={{ '--background': 'transparent', marginTop: '12px' }}>
-                  <IonLabel>
-                    <p style={{ fontSize: '0.8rem', color: '#999', margin: 0, textAlign: 'center' }}>
-                      Erstellt: {new Date(organization.created_at).toLocaleDateString('de-DE')}
-                      {' · '}
-                      Aktualisiert: {new Date(organization.updated_at).toLocaleDateString('de-DE')}
-                    </p>
-                  </IonLabel>
-                </IonItem>
-              </IonCardContent>
-            </IonCard>
-          </IonList>
-        )}
       </IonContent>
     </IonPage>
   );

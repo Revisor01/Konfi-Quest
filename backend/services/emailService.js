@@ -212,6 +212,73 @@ Dein Konfi Quest Team
 };
 
 /**
+ * Erinnert eine Org-Admin:in daran, dass die Lizenz (kein Trial) bald ablaeuft.
+ * @param {string} email - E-Mail der Admin:in
+ * @param {string} name - Anzeigename der Admin:in
+ * @param {string} orgName - Anzeigename der Organisation
+ * @param {Date}   endDate - Ablaufdatum (trial_ends_at)
+ * @param {number} daysLeft - verbleibende Tage
+ */
+const sendLicenseExpiryReminderEmail = async (email, name, orgName, endDate, daysLeft) => {
+  const dateStr = new Date(endDate).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const subject = `Lizenz läuft in ${daysLeft} Tagen ab - Konfi Quest`;
+
+  const text = `
+Hallo ${name},
+
+die Lizenz für eure Organisation "${orgName}" bei Konfi Quest läuft am ${dateStr} ab (noch ${daysLeft} Tag${daysLeft === 1 ? '' : 'e'}).
+
+Nach Ablauf wird der Zugang für eure Organisation automatisch gesperrt, bis die Lizenz verlängert wird.
+
+Bitte wende dich rechtzeitig an uns, um die Lizenz zu verlängern.
+
+Viele Grüße,
+Dein Konfi Quest Team
+  `.trim();
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px 12px 0 0; text-align: center; }
+    .header img { width: 48px; height: 48px; border-radius: 10px; margin-bottom: 10px; }
+    .header h1 { margin: 0; font-size: 24px; }
+    .content { background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px; }
+    .footer { text-align: center; color: #666; font-size: 12px; margin-top: 20px; }
+    .warning { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; margin-top: 20px; font-size: 14px; }
+    .date { font-size: 20px; font-weight: 700; color: #667eea; text-align: center; margin: 16px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="https://konfi-points.de/assets/icon/icon-192x192.png" alt="Konfi Quest" />
+      <h1>Konfi Quest</h1>
+    </div>
+    <div class="content">
+      <h2>Hallo ${name}!</h2>
+      <p>die Lizenz für eure Organisation <strong>${orgName}</strong> läuft bald ab:</p>
+      <div class="date">${dateStr} &middot; noch ${daysLeft} Tag${daysLeft === 1 ? '' : 'e'}</div>
+      <div class="warning">
+        <strong>Hinweis:</strong> Nach Ablauf wird der Zugang für eure Organisation automatisch gesperrt, bis die Lizenz verlängert wird. Bitte wende dich rechtzeitig an uns, um die Lizenz zu verlängern.
+      </div>
+    </div>
+    <div class="footer">
+      <p>Konfi Quest - Deine Konfi-App</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+
+  return sendEmail({ to: email, subject, text, html });
+};
+
+/**
  * Testet die E-Mail-Konfiguration
  */
 const testEmailConnection = async () => {
@@ -234,5 +301,6 @@ module.exports = {
   sendEmail,
   sendPasswordResetEmail,
   sendPasswordChangedEmail,
+  sendLicenseExpiryReminderEmail,
   testEmailConnection
 };

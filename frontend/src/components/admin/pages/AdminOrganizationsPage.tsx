@@ -15,7 +15,8 @@ import {
 } from '@ionic/react';
 import {
   logOutOutline,
-  add
+  add,
+  arrowBack
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -47,7 +48,7 @@ interface Organization {
 }
 
 const AdminOrganizationsPage: React.FC = () => {
-  const { setSuccess, setError, isOnline } = useApp();
+  const { setSuccess, setError, isOnline, refreshUser } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-organizations');
   
   // SWR-Cache für Organisationen
@@ -96,6 +97,11 @@ const AdminOrganizationsPage: React.FC = () => {
     },
     onSuccess: () => {
       dismissOrganizationModalHook();
+      // User-State neu laden -> Trial-Banner erscheint/verschwindet sofort
+      // (ohne Logout/Neustart). Bedingungslos: ein /me-Call ist guenstig, und
+      // der Vergleich auf die eigene Org war fehleranfaellig (modalOrganizationId
+      // wurde teils schon zurueckgesetzt). super_admin ohne Org schadet es nicht.
+      refreshUser();
       setSelectedOrganization(null);
       setModalOrganizationId(null);
       loadOrganizations();
@@ -153,6 +159,11 @@ const AdminOrganizationsPage: React.FC = () => {
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
+          <IonButtons slot="start">
+            <IonButton onClick={() => window.history.back()}>
+              <IonIcon icon={arrowBack} />
+            </IonButton>
+          </IonButtons>
           <IonTitle>Organisationen</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={presentOrganizationModal}>
