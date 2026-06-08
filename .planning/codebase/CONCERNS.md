@@ -8,17 +8,13 @@ This is a **production app** (Apple App Store v1.0 live, iOS 1.0.1 in review, Go
 
 ## Security Considerations
 
-### Secrets committed in stack config (HIGH)
+### Secrets committed in stack config (RESOLVED 09.06.2026)
 
-- **Risk:** Production `JWT_SECRET` and PostgreSQL password are hardcoded in committed compose files.
-- **Files:**
-  - `portainer-stack.yml:11` — `POSTGRES_PASSWORD: konfi_secure_password_2025`
-  - `portainer-stack.yml:41` — `JWT_SECRET: konfi-secret-super-secure-2025`
-- **Current mitigation:** None at file level. Repo is private. The live stack on the server (`konfi_quest` id 249) carries the real values in its Portainer-managed compose, also plaintext.
-- **Recommendations:**
-  - Move both to environment variables / Docker secrets resolved at deploy time, not literals in the YAML.
-  - Rotate `JWT_SECRET` and the DB password (they have been committed to git history, so they are effectively burned). Rotating `JWT_SECRET` invalidates existing access/refresh tokens — schedule during low traffic.
-  - The e2e file `docker-compose.e2e.yml` (`JWT_SECRET: e2e-test-secret-key-min-32-chars!!`, `POSTGRES_PASSWORD: postgres`) is **fine** — those are throwaway test values, not a concern.
+- **Was:** Production secrets sat in the committed `portainer-stack.yml` (git history commits `891423a`, `cb4d437`).
+- **Resolved:** All 4 live secrets rotated to distinct strong values on 09.06.2026 — `JWT_SECRET`, `QR_SECRET`, DB password, SMTP password (previously JWT=QR=SMTP were the *same* weak value `4@cZPbnxRh!@fvf#yY`). DB password changed via `ALTER USER` in `konfi_quest-postgres-1`; SMTP password via KeyHelp API on mailbox `noreply@konfi-quest.de`. Deployed via Portainer `update_stack`. Old git-history values are now worthless → no history rewrite needed.
+- **State now:** `portainer-stack.yml` is gitignored (`.gitignore:121`) and was already out of tracking. Rotated values live in `~/.claude/secrets/konfi-quest-secrets.env` (chmod 600). Details: `memory/secrets_rotation_jun9.md`.
+- **Note:** The committed file had drifted far from the live stack (different DB pw, SMTP user `team@` which doesn't even exist as a mailbox). Live stack (Portainer `konfi_quest` id 249) is the source of truth.
+- The e2e file `docker-compose.e2e.yml` throwaway test values were never a concern.
 
 ### Auth / RBAC surface (accepted, well-covered)
 
@@ -60,12 +56,13 @@ This is a **production app** (Apple App Store v1.0 live, iOS 1.0.1 in review, Go
 
 ## Build / Bundle
 
-### Large index chunk ~2.5MB+ (MEDIUM)
+### Large index chunk ~2.7MB (LOW — measured, low ROI on native)
 
-- **Problem:** The main `index` chunk is ~2.5MB+, triggering Vite's single-large-chunk warning. **Not** solved by the Vite 8 upgrade (faster build ≠ smaller bundle).
-- **Files:** `frontend/vite.config.ts` — **no `manualChunks` configured** (verified); `stats.html` is the visualizer output for inspection.
-- **Cause:** Everything bundled into one chunk; no route-level code-splitting.
-- **Improvement path:** Add `build.rollupOptions.output.manualChunks` to split vendor libs (Ionic, Swiper, axios, socket.io, qrcode), and/or `React.lazy` + `Suspense` on heavy routes (Wrapped/Swiper slides, file viewers, QR scanner). Measurable win on cold-load on real devices.
+- **Problem:** The main `index` chunk is ~2.7MB (gzip ~627KB), triggering Vite's single-large-chunk warning.
+- **Measured (09.06.2026, rollup-plugin-visualizer raw-data):** The weight is **app code (~30 eager-loaded pages/views/modals), NOT vendor libs.** Swiper/axios/socket.io are noise by comparison. Ionic components are already lazy-split by Ionic itself; the qr-scanner worker is already a separate chunk.
+- **Why the earlier `manualChunks` attempt "went badly":** vendor-chunking an app-code-heavy bundle yields almost nothing and risks init-order bugs (React/Ionic context loading in the wrong chunk → white screen). Confirmed dead end — do **not** retry vendor `manualChunks`.
+- **Real lever:** route-based `React.lazy` on the ~30 pages via `IonRouterOutlet`. Note: heavy modals (e.g. `WrappedModal` with Swiper) are mounted via `useIonModal(Component,…)`, which needs a real component — lazy-ing them requires a Suspense wrapper, not a bare `React.lazy`.
+- **ROI is low on a native app:** the bundle ships **inside the app package on-device** (Capacitor), it is not downloaded — so lazy-loading saves only parse/init time at cold start (~hundreds of ms on a modern phone), not network time. Worth doing only if (a) users report slow cold start, (b) it can be folded into larger frontend work, or (c) a **web build** is added (then the network argument applies). Until then: leave as-is, raise `build.chunkSizeWarningLimit` if the warning is noise.
 
 ---
 
@@ -78,23 +75,21 @@ This is a **production app** (Apple App Store v1.0 live, iOS 1.0.1 in review, Go
 - **Workaround:** Use `fromSurface:false` in the CDP screenshot call. App renders correctly on **real devices** (verified in Pixel_9 emulator runtime: Konfi dashboard runs, no crashes — only screenshot capture is affected).
 - **Action:** None on the app. Keep the CDP workaround documented for the screenshot toolkit.
 
-### `frontend/android` is gitignored → versionCode not versioned (MEDIUM — process risk)
+### Version not versioned in git (RESOLVED 09.06.2026)
 
-- **Problem:** `frontend/android/` is gitignored, so `android/app/build.gradle` `versionCode` is **not tracked in git**. It must be **manually bumped before every AAB build**.
-- **Impact:** Easy to forget; Google Play rejects duplicate `versionCode`. History is only in memory notes (21 → 26 → 27 → 28 → 29 over recent builds).
-- **Fix approach:** Either (a) un-ignore the minimal signing-relevant gradle files, or (b) add a pre-build script that auto-increments and records `versionCode` in a tracked file. At minimum, keep a single authoritative log of the last-used code.
+- **Was:** `frontend/android/` is gitignored, so the Android `versionCode` lived only locally and had to be hand-bumped + remembered before each build. iOS was already tracked (`project.pbxproj`) but versioned separately, so version numbers could drift between platforms.
+- **Resolved:** Single tracked source of truth `frontend/version.json` (`{version, androidVersionCode, iosBuildNumber}`). Android `build.gradle` reads it directly via `JsonSlurper`. iOS gets `frontend/scripts/apply-version.sh` (uses `agvtool` to set `MARKETING_VERSION` + `CURRENT_PROJECT_VERSION` from the same file) — tested working on this Mac. Shared `version` keeps both platforms in lockstep; per-store build numbers stay separate (Apple/Google count independently: currently 11 vs 32).
+- **Release flow now:** bump `version.json`, run `./scripts/apply-version.sh` before an iOS build; Android picks it up automatically at build time.
 
 ---
 
 ## Deployment / Operations
 
-### Manual deploy via Portainer API (MEDIUM — operational)
+### Deploy automation (NOT A CONCERN — already automated)
 
-- **Problem:** No auto-deploy. The `konfi_quest` stack is **not git-bound** (`git_config: null`) and has **no Watchtower**. `git push` only triggers GitHub Actions to build `:latest` to ghcr.io — the server does **not** pull automatically.
-- **Process (from MEMORY.md):** push → wait for CI green → Portainer `manage_image` pull (backend+frontend) → `update_stack` id 249 env 1 `pull_image:true` **with full compose_content** → verify containers + `curl` live.
-- **Impact:** Multi-step, error-prone, requires the full compose payload each time (omitting it → "Invalid request payload"). Easy to deploy a stale image if the pull step is skipped.
-- **Mitigation in place:** Rollback anchors (previous image SHAs) are recorded per deploy in `memory/upgrade_vite8_ts6_cap8.md`. CI is the deploy gate.
-- **Fix approach:** Consider git-binding the stack or adding controlled auto-pull. Until then, treat the documented runbook as mandatory and keep rollback SHAs per deploy.
+- **Reality (verified 09.06.2026):** Deploy is already fully automated and test-gated. `ci.yml` runs backend+frontend tests → builds+pushes images → `curl`s a Portainer stack webhook (`${{ secrets.PORTAINER_WEBHOOK }}`, ci.yml:143-146) which makes the server pull `:latest` and redeploy. Tests red → no build → no webhook → no deploy.
+- **Normal deploy = `git push origin main`.** Watch the GitHub Actions run; done. The `PORTAINER_WEBHOOK` secret was re-set + verified 09.06.2026 (endpoint returns HTTP 405 to GET = valid, wants POST).
+- **Manual Portainer `update_stack` is only the fallback** for compose/secret changes without a code push (e.g. the 09.06. secret rotation). Details: `memory/deploy_webhook_auto.md`.
 
 ### Express 5 empty-body regression (RESOLVED — note for future)
 
@@ -113,21 +108,18 @@ This is a **production app** (Apple App Store v1.0 live, iOS 1.0.1 in review, Go
 
 ### Deprecated / unused tables (LOW — cleanup)
 
-- **`badges` table:** 0 rows, no FK points to it, no code references it (the active path is `custom_badges`; `user_badges.badge_id → custom_badges`). **Droppable** via a migration (`DROP TABLE badges`) — never by hand on prod.
+- **`badges` table:** ✅ **DROPPED 09.06.2026** — migration `090_drop_legacy_badges.sql` (applied live + recorded in `schema_migrations`). Was 0 rows, no FK, no code path. Active path is `custom_badges`.
 - **`permissions` + `role_permissions`:** both 0 rows, intentionally unused (RBAC is role-based, not permission-granular). Harmless; can stay.
-- **Token hygiene (optional):** `refresh_tokens` ~145/213 revoked-or-expired (~232KB), `password_resets` 7 expired (harmless). Optional cleanup cron.
-- **Fix approach:** Bundle a single cleanup migration (DROP `badges` + an expired-token cron) into the next deploy. Low priority, non-blocking.
+- **Token hygiene (optional, still open):** `refresh_tokens` ~145/213 revoked-or-expired (~232KB), `password_resets` 7 expired (harmless). Optional cleanup cron — low priority, non-blocking.
 
 ---
 
 ## Test Coverage Gaps / Test Infra
 
-### Sporadic deadlock in `truncateAll` on parallel vitest runs (MEDIUM — flaky CI)
+### Sporadic deadlock in `truncateAll` on parallel vitest runs (RESOLVED 09.06.2026)
 
-- **What's wrong:** Running the multi-suite backend test set in parallel sporadically throws `deadlock detected` in `truncateAll`. Run **individually**, every suite passes green.
-- **Cause:** Not feature code — vitest `maxWorkers` / truncate ordering across suites contending on the shared test DB.
-- **Risk:** Flaky CI can mask real failures or block a deploy on a non-issue, eroding trust in the gate.
-- **Fix approach:** Pin truncate ordering (consistent table order to avoid lock cycles), or serialize the truncate step / lower `maxWorkers` for the suites that truncate. Until fixed, a CI failure here should be re-run before being treated as real.
+- **Was:** Parallel multi-suite backend runs sporadically threw `deadlock detected` in `truncateAll` (two TRUNCATE-CASCADE statements from different suites locking the same ~45 tables in non-identical order). Previous workaround was `maxWorkers: 1` (serial → slow).
+- **Resolved:** `truncateAll` now wraps the TRUNCATE in a transaction guarded by `pg_advisory_xact_lock` (`backend/tests/helpers/db.js`) — suites serialize their cleanup phase, so the deadlock is structurally impossible. `maxWorkers` raised back to 4 (parallel again → faster CI). Committed `b0cb739`. **Note:** there is no Docker on the dev Mac, so this is verified by CI, not locally (`memory/dev_no_docker_mac.md`).
 
 ### Pre-existing test-schema gap (LOW)
 
@@ -137,21 +129,20 @@ This is a **production app** (Apple App Store v1.0 live, iOS 1.0.1 in review, Go
 
 ## Severity Summary
 
+**Resolved 09.06.2026:** secrets-in-git (rotated), version-not-versioned (version.json), deploy automation (was already automated), `badges` table (dropped, migration 090), vitest `truncateAll` deadlock (advisory lock). bird.png reclassified as intentional cross-app branding (not a concern).
+
+**Still open — all accepted tradeoffs or low-ROI, nothing blocking:**
+
 | Severity | Item | Type |
 |----------|------|------|
-| HIGH | Secrets in committed `portainer-stack.yml` (rotate + externalize) | Real risk |
 | HIGH | react-router locked at v5 (Ionic v9 dependency) | Accepted (external lock) |
-| MEDIUM | Large ~2.5MB index chunk (no manualChunks) | Real opportunity |
-| MEDIUM | `frontend/android` gitignored → versionCode not versioned | Process risk |
-| MEDIUM | Manual Portainer deploy, no auto-deploy/Watchtower | Operational risk |
-| MEDIUM | Flaky parallel-vitest `truncateAll` deadlock | Test infra |
 | MEDIUM | eslint 9 / react-hooks 5 pins | Accepted decision |
+| LOW | ~2.7MB index chunk — app-code weight, low ROI on native | Measured, deferred |
 | LOW | Capacitor 8 emulator black-screenshot (GPU) | Not an app bug |
-| LOW | bird.png borrowed from GuckMal | Branding/provenance |
 | LOW | ~645 lint findings baseline | Tolerated (tsc is gate) |
 | LOW | Single Postgres / no HA | Accepted for size |
-| LOW | `badges` / `permissions` / `role_permissions` unused tables | Cleanup |
+| LOW | `permissions` / `role_permissions` unused tables; token-hygiene cron | Harmless / optional |
 
 ---
 
-*Concerns audit: 2026-06-09*
+*Concerns audit: 2026-06-09 (resolutions appended same day)*
