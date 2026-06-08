@@ -15,7 +15,10 @@ import {
   IonCardContent,
   IonSelect,
   IonSelectOption,
-  IonSpinner
+  IonSpinner,
+  IonItemGroup,
+  IonItem,
+  IonInput
 } from '@ionic/react';
 import {
   closeOutline,
@@ -23,7 +26,9 @@ import {
   closeCircle,
   ellipseOutline,
   peopleOutline,
-  calendarOutline
+  calendarOutline,
+  filterOutline,
+  search
 } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
@@ -86,6 +91,7 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
   );
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<MatrixResponse | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const loadMatrix = async (id: number) => {
     setLoading(true);
@@ -136,6 +142,17 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
     return stats;
   }, [data, bookingMap]);
 
+  // Live-Suche: Konfi-Zeilen nach Name/Benutzername filtern
+  const filteredKonfis = useMemo(() => {
+    if (!data) return [];
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return data.konfis;
+    return data.konfis.filter(k =>
+      k.display_name.toLowerCase().includes(term) ||
+      (k.username || '').toLowerCase().includes(term)
+    );
+  }, [data, searchTerm]);
+
   return (
     <IonPage>
       <IonHeader>
@@ -150,29 +167,40 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
       </IonHeader>
 
       <IonContent className="app-gradient-background" fullscreen>
-        {/* Jahrgang-Selector */}
+        {/* Suche & Filter */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--events">
-              <IonIcon icon={peopleOutline} />
+              <IonIcon icon={filterOutline} />
             </div>
-            <IonLabel>Jahrgang</IonLabel>
+            <IonLabel>Suche & Filter</IonLabel>
           </IonListHeader>
-          <IonCard className="app-card">
-            <IonCardContent style={{ padding: '0 12px' }}>
+          <IonItemGroup>
+            {/* Suchfeld */}
+            <IonItem>
+              <IonIcon icon={search} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+              <IonInput
+                value={searchTerm}
+                onIonInput={(e) => setSearchTerm(e.detail.value!)}
+                placeholder="Konfi suchen..."
+              />
+            </IonItem>
+            {/* Jahrgang Filter */}
+            <IonItem>
+              <IonIcon icon={calendarOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
               <IonSelect
                 value={jahrgangId}
-                placeholder="Jahrgang wählen"
                 onIonChange={(e) => setJahrgangId(e.detail.value)}
                 interface="popover"
+                placeholder="Jahrgang"
                 style={{ width: '100%' }}
               >
                 {jahrgaenge.map(j => (
                   <IonSelectOption key={j.id} value={j.id}>{j.name}</IonSelectOption>
                 ))}
               </IonSelect>
-            </IonCardContent>
-          </IonCard>
+            </IonItem>
+          </IonItemGroup>
         </IonList>
 
         {/* Matrix */}
@@ -205,7 +233,7 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
                 <IonIcon icon={calendarOutline} />
               </div>
               <IonLabel>
-                {data.events.length} Pflichtevent{data.events.length === 1 ? '' : 's'} · {data.konfis.length} Konfi{data.konfis.length === 1 ? '' : 's'}
+                {data.events.length} Pflichtevent{data.events.length === 1 ? '' : 's'} · {filteredKonfis.length} Konfi{filteredKonfis.length === 1 ? '' : 's'}
               </IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
@@ -226,7 +254,7 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
                     </tr>
                   </thead>
                   <tbody>
-                    {data.konfis.map(k => {
+                    {filteredKonfis.map(k => {
                       const stats = konfiStats.get(k.user_id) || { present: 0, absent: 0, open: 0 };
                       return (
                         <tr key={k.user_id}>
