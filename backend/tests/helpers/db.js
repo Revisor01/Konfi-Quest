@@ -22,13 +22,26 @@ function getTestPool() {
   };
 }
 
+// Feste Lock-ID, an der sich alle parallelen Test-Suites anstellen.
+// Verhindert, dass zwei TRUNCATE-CASCADE-Statements gleichzeitig dieselben
+// ~45 Tabellen sperren und sich gegenseitig zum Deadlock verriegeln.
+const TRUNCATE_LOCK_ID = 4711;
+
 /**
  * TRUNCATE alle Tabellen mit CASCADE und RESTART IDENTITY.
  * Per D-01: TRUNCATE CASCADE vor jedem Test fuer sauberen Zustand.
  * schema_migrations wird NICHT truncated (soll bestehen bleiben).
+ *
+ * Laeuft in EINER Transaktion mit vorgeschaltetem Advisory-Lock: parallele
+ * vitest-Suites serialisieren so ihr TRUNCATE und koennen nicht mehr in einen
+ * "deadlock detected" laufen. Der Lock wird beim COMMIT/ROLLBACK autom. frei.
  */
 async function truncateAll(db) {
-  await db.query(`TRUNCATE
+  const client = await db.getClient();
+  try {
+    await client.query('BEGIN');
+    await client.query('SELECT pg_advisory_xact_lock($1)', [TRUNCATE_LOCK_ID]);
+    await client.query(`TRUNCATE
     chat_poll_votes, chat_polls, chat_read_status,
     chat_messages, chat_participants, chat_rooms,
     event_points, event_bookings, event_timeslots,
@@ -46,6 +59,13 @@ async function truncateAll(db) {
     role_permissions, permissions, roles,
     organizations
     RESTART IDENTITY CASCADE`);
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 /**

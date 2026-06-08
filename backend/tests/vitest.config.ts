@@ -3,7 +3,9 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     pool: 'forks',
-    maxWorkers: 1,
+    // Parallel moeglich, weil truncateAll per pg_advisory_xact_lock serialisiert
+    // (kein "deadlock detected" mehr). 4 Forks bleiben unter dem Test-Pool max:5.
+    maxWorkers: 4,
     minWorkers: 1,
     globals: true,
     globalSetup: ['./tests/globalSetup.js'],

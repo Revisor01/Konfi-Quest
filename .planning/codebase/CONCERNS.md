@@ -84,12 +84,6 @@ This is a **production app** (Apple App Store v1.0 live, iOS 1.0.1 in review, Go
 - **Impact:** Easy to forget; Google Play rejects duplicate `versionCode`. History is only in memory notes (21 → 26 → 27 → 28 → 29 over recent builds).
 - **Fix approach:** Either (a) un-ignore the minimal signing-relevant gradle files, or (b) add a pre-build script that auto-increments and records `versionCode` in a tracked file. At minimum, keep a single authoritative log of the last-used code.
 
-### bird.png borrowed from GuckMal app (LOW — branding/licensing)
-
-- **Issue:** `frontend/public/assets/branding/bird.png` (and built copies) is a branding asset **borrowed from the GuckMal app**.
-- **Impact:** Asset-provenance / brand-consistency concern. Low risk if both apps are owned by the same author, but it is not a purpose-made Konfi Quest asset.
-- **Fix approach:** Replace with a dedicated Konfi Quest asset before broad public marketing, or confirm reuse is intentional and licensed.
-
 ---
 
 ## Deployment / Operations
