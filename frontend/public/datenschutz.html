@@ -213,15 +213,16 @@
                 <li>Andere Teilnehmer:innen (nur im Rahmen der Chat-Funktion)</li>
             </ul>
             <p>Der Hostingdienstleister hat als Auftragsverarbeiter technisch Zugriff auf die Daten und ist vertraglich zur Einhaltung des DSG-EKD verpflichtet.</p>
+            <p>Beim Versand von Push-Benachrichtigungen werden das Push-Token und der Inhalt der Benachrichtigung an den Dienst Firebase Cloud Messaging von Google übermittelt (siehe Abschnitt&nbsp;9).</p>
             <p>Eine Weitergabe an sonstige Dritte erfolgt nicht, es sei denn, eine gesetzliche Verpflichtung besteht.</p>
         </div>
 
         <div class="section">
             <h2>7. Hosting</h2>
-            <p>Wir hosten unsere App bei Hetzner. Anbieter ist die Hetzner Online GmbH, Industriestr. 25, 91710 Gunzenhausen.</p>
-            <p>Die personenbezogenen Daten, die in dieser App erfasst werden, werden auf den Servern des Hosters in Deutschland gespeichert.</p>
-            <p>Der Einsatz des Hosters erfolgt zum Zwecke der Vertragserfüllung (§ 6 Nr. 5 DSG-EKD) und im Interesse einer sicheren, schnellen und effizienten Bereitstellung unseres Angebots (§ 6 Nr. 4 und Nr. 8 DSG-EKD).</p>
-            <p>Wir haben einen Vertrag über Auftragsverarbeitung (AVV) mit dem Anbieter geschlossen.</p>
+            <p>Wir hosten unsere App bei Netcup. Anbieter ist die netcup GmbH, Daimlerstraße 25, 76185 Karlsruhe.</p>
+            <p>Die personenbezogenen Daten, die in dieser App erfasst werden, werden auf Servern in einem Rechenzentrum in Deutschland gespeichert. Backups werden verschlüsselt bei der Hetzner Online GmbH, Industriestr. 25, 91710 Gunzenhausen, gespeichert.</p>
+            <p>Der Einsatz der Anbieter erfolgt zum Zwecke der Vertragserfüllung (§ 6 Nr. 5 DSG-EKD) und im Interesse einer sicheren, schnellen und effizienten Bereitstellung unseres Angebots (§ 6 Nr. 4 und Nr. 8 DSG-EKD).</p>
+            <p>Mit den Anbietern haben wir jeweils einen Vertrag über Auftragsverarbeitung (AVV) geschlossen.</p>
         </div>
 
         <div class="section">
@@ -230,8 +231,18 @@
         </div>
 
         <div class="section">
-            <h2>9. Push-Benachrichtigungen</h2>
-            <p>Die App bietet optionale Push-Benachrichtigungen an. Hierfür wird ein gerätespezifisches Token gespeichert. Sie können Push-Benachrichtigungen jederzeit in den Geräteeinstellungen deaktivieren.</p>
+            <h2>9. Push-Benachrichtigungen (Firebase Cloud Messaging)</h2>
+            <p>Die App bietet optionale Push-Benachrichtigungen an, etwa über neue Chat-Nachrichten, Veranstaltungen oder vergebene Punkte. Hierfür wird ein gerätespezifisches Push-Token gespeichert.</p>
+            <p>Für den technischen Versand der Push-Benachrichtigungen nutzen wir den Dienst <strong>Firebase Cloud Messaging (FCM)</strong> der Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland. An Firebase werden das Push-Token Ihres Geräts sowie der Inhalt der jeweiligen Benachrichtigung (z.&nbsp;B. Titel und Text) übermittelt, damit diese an Ihr Gerät zugestellt werden kann.</p>
+            <p>Dabei kann es zu einer Übermittlung von Daten an Server der Google LLC in den USA kommen. Für diese Übermittlung in ein Drittland stützen wir uns auf die von der EU-Kommission erlassenen Standardvertragsklauseln. Es besteht das Risiko, dass US-Behörden unter bestimmten Voraussetzungen auf diese Daten zugreifen können.</p>
+            <p>Die Verarbeitung erfolgt ausschließlich auf Grundlage Ihrer Einwilligung, die Sie durch das Aktivieren der Push-Benachrichtigungen erteilen. Rechtsgrundlage: § 6 Nr. 2 DSG-EKD. Sie können Push-Benachrichtigungen jederzeit in den Einstellungen Ihres Geräts deaktivieren und damit Ihre Einwilligung mit Wirkung für die Zukunft widerrufen.</p>
+        </div>
+
+        <div class="section">
+            <h2>9a. Reichweitenmessung (Umami Analytics)</h2>
+            <p>Zur Verbesserung unseres Angebots erfassen wir anonymisierte Nutzungsstatistiken mit Umami Analytics. Umami wird von uns selbst auf einem Server in Deutschland gehostet; es werden keine Daten an Dritte weitergegeben.</p>
+            <p>Umami arbeitet ohne Cookies und ohne geräteübergreifende Wiedererkennung. Erfasst werden lediglich anonymisierte Angaben wie aufgerufene Seiten, ungefähre Gerätekategorie, Browsertyp und das Herkunftsland. Ein Rückschluss auf Ihre Person ist dabei nicht möglich.</p>
+            <p>Rechtsgrundlage ist unser berechtigtes Interesse an einer bedarfsgerechten Gestaltung und der Verbesserung unseres Angebots (§ 6 Nr. 8 DSG-EKD).</p>
         </div>
 
         <div class="section">
@@ -291,7 +302,7 @@
             <p>Wir behalten uns vor, diese Datenschutzerklärung anzupassen, um sie an geänderte Rechtslagen oder bei Änderungen der App anzupassen. Die aktuelle Version ist stets unter dieser Adresse abrufbar.</p>
         </div>
 
-        <p class="last-update">Stand: Dezember 2025</p>
+        <p class="last-update">Stand: Juni 2026</p>
     </div>
 </body>
 </html>

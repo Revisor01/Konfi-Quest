@@ -15,7 +15,7 @@ Welche Daten werden verarbeitet?
 
 Zweck: Organisation der Konfirmandenarbeit, Dokumentation der Teilnahme, Kommunikation innerhalb der Gruppe, Versand von Push-Benachrichtigungen, Motivation durch spielerische Elemente, anonymisierte Nutzungsanalyse zur Verbesserung der App.
 
-Hosting und Sicherheit: Alle Daten werden verschlüsselt (HTTPS/TLS) auf einem Server in Deutschland (Hetzner Online GmbH) in einer PostgreSQL-Datenbank gespeichert. Für anonymisierte Nutzungsstatistiken wird Umami Analytics eingesetzt — selbst gehostet auf demselben Server in Deutschland, ohne Cookies, ohne personenbezogenes Tracking, vollständig DSGVO/DSG-EKD-konform. Eine Weitergabe an Dritte zu Werbe- oder Analysezwecken findet nicht statt. Einziger externer Drittdienst ist Firebase Cloud Messaging (Google Ireland Ltd.) für Push-Benachrichtigungen.
+Hosting und Sicherheit: Alle Daten werden verschlüsselt (HTTPS/TLS) auf einem Server in Deutschland (netcup GmbH) in einer PostgreSQL-Datenbank gespeichert. Verschlüsselte Backups liegen bei der Hetzner Online GmbH (Deutschland). Für anonymisierte Nutzungsstatistiken wird Umami Analytics eingesetzt — selbst gehostet auf demselben Server in Deutschland, ohne Cookies, ohne personenbezogenes Tracking, vollständig DSGVO/DSG-EKD-konform. Eine Weitergabe an Dritte zu Werbe- oder Analysezwecken findet nicht statt. Einziger externer Drittdienst ist Firebase Cloud Messaging (Google Ireland Ltd.) für Push-Benachrichtigungen.
 
 Speicherdauer: Die Daten werden für die Dauer der Konfirmandenzeit gespeichert und nach Abschluss gelöscht. Bei Löschung des Accounts werden alle zugehörigen Daten automatisch entfernt.
 
