@@ -3,9 +3,13 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     pool: 'forks',
-    // Parallel moeglich, weil truncateAll per pg_advisory_xact_lock serialisiert
-    // (kein "deadlock detected" mehr). 4 Forks bleiben unter dem Test-Pool max:5.
-    maxWorkers: 4,
+    // maxWorkers MUSS 1 bleiben: alle 24 Suites teilen sich EINE Test-DB
+    // (globalSetup) und seed.js nutzt FESTE IDs (organizations id=1/2, roles
+    // id=1..). Parallele Worker wuerden sich per truncate+seed gegenseitig die
+    // Daten ueberschreiben -> "duplicate key" / "FK not present". Echte
+    // Parallelitaet braeuchte eine DB pro Worker (groesserer globalSetup-Umbau).
+    // Der pg_advisory_xact_lock in truncateAll bleibt als Haertung (schadet nie).
+    maxWorkers: 1,
     minWorkers: 1,
     globals: true,
     globalSetup: ['./tests/globalSetup.js'],
