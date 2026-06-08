@@ -65,6 +65,16 @@ function createApp(db, options = {}) {
 
   app.use(express.json());
 
+  // Express 5: req.body ist bei fehlendem/leerem Body undefined (in Express 4
+  // war es {}). Damit die vielen `const { x } = req.body`-Destrukturierungen
+  // in den Routen nicht crashen, hier zentral auf {} defaulten.
+  app.use((req, _res, next) => {
+    if (req.body === undefined) {
+      req.body = {};
+    }
+    next();
+  });
+
   // ====================================================================
   // FILE UPLOADS SETUP
   // ====================================================================
