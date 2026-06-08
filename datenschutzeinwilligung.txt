@@ -11,11 +11,12 @@ Welche Daten werden verarbeitet?
 - Hochgeladene Materialien und Dateien
 - Geräte-Token und Plattform für Push-Benachrichtigungen (Firebase Cloud Messaging, Google Ireland Ltd.)
 - Zeitstempel der letzten Anmeldung
-- Anonymisierte Nutzungsstatistiken (Seitenaufrufe, Gerätekategorie, Browsertyp, Land) über Umami Analytics — ohne Cookies, ohne personenbezogenes Tracking, selbst gehostet auf dem eigenen Server in Deutschland
 
-Zweck: Organisation der Konfirmandenarbeit, Dokumentation der Teilnahme, Kommunikation innerhalb der Gruppe, Versand von Push-Benachrichtigungen, Motivation durch spielerische Elemente, anonymisierte Nutzungsanalyse zur Verbesserung der App.
+Hinweis: Die installierte App erhebt keine Nutzungs- oder Reichweitenstatistiken. Eine anonymisierte Reichweitenmessung (Umami Analytics, cookielos, selbst gehostet in Deutschland) findet ausschließlich auf unserer Website statt, nicht in der App.
 
-Hosting und Sicherheit: Alle Daten werden verschlüsselt (HTTPS/TLS) auf einem Server in Deutschland (netcup GmbH) in einer PostgreSQL-Datenbank gespeichert. Verschlüsselte Backups liegen bei der Hetzner Online GmbH (Deutschland). Für anonymisierte Nutzungsstatistiken wird Umami Analytics eingesetzt — selbst gehostet auf demselben Server in Deutschland, ohne Cookies, ohne personenbezogenes Tracking, vollständig DSGVO/DSG-EKD-konform. Eine Weitergabe an Dritte zu Werbe- oder Analysezwecken findet nicht statt. Einziger externer Drittdienst ist Firebase Cloud Messaging (Google Ireland Ltd.) für Push-Benachrichtigungen.
+Zweck: Organisation der Konfirmandenarbeit, Dokumentation der Teilnahme, Kommunikation innerhalb der Gruppe, Versand von Push-Benachrichtigungen, Motivation durch spielerische Elemente.
+
+Hosting und Sicherheit: Alle Daten werden verschlüsselt (HTTPS/TLS) auf einem Server in Deutschland (netcup GmbH) in einer PostgreSQL-Datenbank gespeichert. Verschlüsselte Backups liegen bei der Hetzner Online GmbH (Deutschland). Eine anonymisierte Reichweitenmessung (Umami Analytics — selbst gehostet in Deutschland, ohne Cookies, ohne personenbezogenes Tracking) erfolgt ausschließlich auf unserer Website, nicht in der App. Eine Weitergabe an Dritte zu Werbe- oder Analysezwecken findet nicht statt. Einziger externer Drittdienst der App ist Firebase Cloud Messaging (Google Ireland Ltd.) für Push-Benachrichtigungen.
 
 Speicherdauer: Die Daten werden für die Dauer der Konfirmandenzeit gespeichert und nach Abschluss gelöscht. Bei Löschung des Accounts werden alle zugehörigen Daten automatisch entfernt.
 
