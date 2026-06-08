@@ -506,7 +506,12 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                                 <div className="app-list-item__content">
                                   <div
                                     className="app-list-item__title"
-                                    style={{ paddingRight: '90px' }}
+                                    style={{
+                                      paddingRight: '40px',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap'
+                                    }}
                                   >
                                     {getDisplayRoomName(room)}
                                   </div>
