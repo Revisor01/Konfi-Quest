@@ -934,8 +934,11 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
     try {
       const hash = hashToken(refresh_token);
+      // Beim Logout zusaetzlich expires_at auf jetzt setzen, damit das Token NICHT
+      // ins Refresh-Grace-Window faellt (das verlangt expires_at > NOW()). Sonst
+      // koennte ein gerade ausgeloggter User binnen 30s noch ein Token bekommen.
       await db.query(
-        'UPDATE refresh_tokens SET revoked_at = NOW() WHERE token_hash = $1 AND revoked_at IS NULL',
+        'UPDATE refresh_tokens SET revoked_at = NOW(), expires_at = NOW() WHERE token_hash = $1 AND revoked_at IS NULL',
         [hash]
       );
       res.json({ message: 'Logout erfolgreich' });

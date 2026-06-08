@@ -104,24 +104,28 @@ describe('Auth Routes', () => {
       expect(res.body.refresh_token).not.toBe(oldRefreshToken);
     });
 
-    it('Refresh mit bereits verwendetem Token gibt 401 (Rotation)', async () => {
+    it('Refresh mit gerade rotiertem Token gibt 200 (Grace-Window gegen Race)', async () => {
+      // Ein in den letzten 30s rotiertes Token wird bewusst akzeptiert, damit
+      // parallele Requests (Dashboard + langsames Netz) nicht zum Logout fuehren.
       const loginRes = await request(app)
         .post('/api/auth/login')
         .send({ username: USERS.konfi1.username, password: PASSWORD });
 
       const oldRefreshToken = loginRes.body.refresh_token;
 
-      // Erster Refresh - verbraucht den alten Token
+      // Erster Refresh - rotiert den Token
       await request(app)
         .post('/api/auth/refresh')
         .send({ refresh_token: oldRefreshToken });
 
-      // Zweiter Refresh mit dem alten (jetzt revoked) Token
+      // Zweiter Refresh mit dem gerade rotierten Token -> Grace-Window -> 200
       const res = await request(app)
         .post('/api/auth/refresh')
         .send({ refresh_token: oldRefreshToken });
 
-      expect(res.status).toBe(401);
+      expect(res.status).toBe(200);
+      expect(res.body.token).toBeDefined();
+      expect(res.body.refresh_token).toBeDefined();
     });
 
     it('Refresh ohne Token gibt 400', async () => {
