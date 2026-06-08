@@ -1,170 +1,148 @@
 # Coding Conventions
 
-**Analysis Date:** 2026-03-24
+**Analysis Date:** 2026-06-09
+
+These conventions are MANDATORY. The hard rules in the first section are enforced project-wide and defined in `CLAUDE.md`. Violating them breaks the build philosophy and produces inconsistent UI.
+
+## Hard Rules (Non-Negotiable)
+
+Source: `/Users/simonluthe/Documents/Konfipoints/CLAUDE.md`.
+
+**1. NO Unicode emojis — anywhere:**
+- FORBIDDEN: every Unicode emoji (smileys, symbols, pictographs) in `.tsx`, `.ts`, `.js`, `.jsx`, comments, strings, UI text, push messages — everywhere.
+- ALLOWED: IonIcons from `ionicons/icons` (including `-outline` variants), line icons, icon fonts.
+- Example: use `<IonIcon icon={checkmarkCircle} />`, never a checkmark emoji.
+
+**2. ALWAYS real umlauts — never ASCII transliteration:**
+- RIGHT: `für`, `Glückwunsch`, `bestätigt`, `Größe`, `ä ö ü ß`
+- WRONG: `fuer`, `Glueckwunsch`, `bestaetigt`, `Groesse`, `ae oe ue ss`
+- Applies especially to push notifications, UI texts, validation messages. Backend validation already follows this (e.g. `Punkte müssen eine Ganzzahl >= 0 sein` in `backend/routes/activities.js`).
+
+**3. Gendering in user-facing text:**
+- Use `Teamer:innen`, `Teilnehmer:innen`, etc. with the colon form.
+- EXCEPTION: `Konfis` is already plural — do NOT gender it.
+
+**4. German is the development language:**
+- UI texts, validation messages, code comments, commit messages — all German.
+- Identifiers may be German or English (both appear); follow the surrounding file.
 
 ## Naming Patterns
 
-**Files (Frontend):**
-- React-Komponenten: PascalCase, Dateiendung `.tsx` (z.B. `KonfiEventsPage.tsx`, `ActivityModal.tsx`)
-- Hooks: camelCase mit `use`-Prefix, Dateiendung `.ts` (z.B. `useOfflineQuery.ts`, `useActionGuard.ts`)
-- Services: camelCase, Dateiendung `.ts` (z.B. `tokenStore.ts`, `writeQueue.ts`, `networkMonitor.ts`)
-- Utility-Funktionen: camelCase, Dateiendung `.ts` (z.B. `helpers.ts`, `dateUtils.ts`)
-- Typen/Interfaces: camelCase Dateinamen, PascalCase Typnamen (`user.ts`, `event.ts`)
+**Files:**
+- Frontend components: PascalCase `.tsx` (`EventsView.tsx`, `SectionHeader.tsx`, `CertificateAssignModal.tsx`).
+- Frontend hooks: camelCase with `use` prefix `.ts` (`useOfflineQuery.ts`, `useActionGuard.ts`, `useCountUp.ts`).
+- Frontend services: camelCase `.ts` (`tokenStore.ts`, `writeQueue.ts`, `networkMonitor.ts`).
+- Backend routes: lowercase, one file per domain (`activities.js`, `konfi-management.js`, `chat.js`) in `backend/routes/`.
+- Backend middleware/utils/services: camelCase (`rbac.js`, `pushService.js`, `pointTypeGuard.js`).
 
-**Files (Backend):**
-- Routes: kebab-case, Dateiendung `.js` (z.B. `konfi-management.js`, `activities.js`)
-- Middleware: camelCase, Dateiendung `.js` (z.B. `validation.js`, `rbac.js`)
-- Utils: camelCase, Dateiendung `.js` (z.B. `liveUpdate.js`, `passwordUtils.js`)
+**Functions/Variables:** camelCase throughout (`getTestApp`, `checkAndAwardBadges`, `generateToken`).
 
-**Verzeichnisse (Frontend):**
-- Feature-Gruppen: Singular ohne Bindestrich (`admin/`, `konfi/`, `teamer/`, `wrapped/`)
-- Interne Unterteilung: `pages/`, `views/`, `modals/` je Feature-Gruppe
-- Querschnitts-Code: `common/`, `shared/`
+**Types:** PascalCase, defined in `frontend/src/types/` (`user.ts`, `event.ts`, `chat.ts`, `dashboard.ts`, `wrapped.ts`, `ionic.d.ts`).
 
-**Funktionen:**
-- Frontend: camelCase, beschreibend (z.B. `filterBySearchTerm`, `calculateBadgeProgress`)
-- Backend: camelCase (z.B. `getCachedUser`, `handleValidationErrors`, `invalidateUserCache`)
+## Component Organization (by Role)
 
-**Variablen:**
-- camelCase durchgehend
-- Private Module-Variablen in Services: Unterstrich-Prefix (z.B. `_token`, `_items`, `_flushing`)
-- Konstanten: SCREAMING_SNAKE_CASE (z.B. `DEFAULT_TTL`, `USER_CACHE_MAX`, `QUEUE_KEY`)
+Components are grouped by RBAC role under `frontend/src/components/`:
 
-**TypeScript Typen/Interfaces:**
-- Interfaces: PascalCase mit beschreibendem Namen (z.B. `BaseUser`, `QueueItem`, `LiveUpdateEvent`)
-- Props-Interfaces: `<KomponentenName>Props` (z.B. `EventsViewProps`, `ActivityModalProps`)
-- Union-Typen in Interfaces für eingeschränkte Strings (z.B. `type: 'admin' | 'konfi' | 'teamer'`)
+| Directory | Purpose |
+|-----------|---------|
+| `components/konfi/` | Konfi-facing components (`views/`, `pages/`, `modals/`) |
+| `components/teamer/` | Teamer-facing components |
+| `components/admin/` | Admin / org-admin components |
+| `components/shared/` | Reusable cross-role components (e.g. `StatusBadge`) |
+| `components/common/` | Generic UI primitives |
+| `components/auth/` | Login / auth screens |
+| `components/chat/` | Chat (ChatOverview, ChatRoom) |
+| `components/layout/` | App shell / tab layout |
+| `components/wrapped/` | Year-in-review "Wrapped" slides |
 
-## Code Style
+**Reference views (copy 1:1, do not invent layout):**
+- View: `frontend/src/components/konfi/views/EventsView.tsx`
+- Detail: `frontend/src/components/konfi/views/EventDetailView.tsx`
 
-**Sprache:**
-- Deutsche Kommentare und UI-Texte durchgehend
-- Echte Umlaute (ä, ö, ü, ß) — niemals ae/oe/ue/ss
-- Keine Unicode-Emojis; Icons ausschließlich über `ionicons/icons`
-- Logging/Fehlermeldungen auf Deutsch (z.B. `'Unbekannter Fehler'`, `'Ungültige ID'`)
+## Design System
 
-**Formatierung:**
-- Kein dediziertes Prettier-Config (kein `.prettierrc` vorhanden)
-- ESLint mit TypeScript-ESLint + React Hooks + React Refresh Plugins
-- Config: `frontend/eslint.config.js`
-- `no-console`/`no-debugger` nur in Production als Warning, in Development erlaubt
+CSS variables and global classes live in `frontend/src/theme/variables.css`. Use existing classes — no ad-hoc inline styles for list/card layouts.
 
-**Linting-Regeln:**
-- `@typescript-eslint` recommended Rules aktiv
-- `eslint-plugin-react-hooks` recommended Rules aktiv
-- `react-refresh/only-export-components` als Warning (mit `allowConstantExport`)
+**Core layout classes:**
+- `app-card` — card container
+- `app-list-item__row` — list row (inner `div` INSIDE the `IonItem`, NOT directly on the `IonItem` — wrong nesting breaks the border)
+- `app-section-icon--<color>` / `app-icon-circle` / `app-icon-circle--lg` — colored section/list icons
+- `app-corner-badges` — flex container for corner badges (Queue/Error/Team/Pflicht/Konfirmation). Shared: `components/shared/StatusBadge`
+- `app-toggle--<color>` — 8 global toggle color classes for iOS26 theme
 
-## Import-Organisation
+**Global text classes:** `app-text-main` (1rem bold), `app-text-sub` (0.85rem grey), `app-description-text` (1rem body); CSS var `--app-description-font-size`.
 
-**Reihenfolge (Frontend-Konvention beobachtet):**
-1. React-Core (`import React, { useState, useEffect } from 'react'`)
-2. Ionic-Komponenten (`from '@ionic/react'`)
-3. Ionicons (`from 'ionicons/icons'`)
-4. Externe Bibliotheken (axios, socket.io-client, swiper etc.)
-5. Interne Contexts (`from '../../../contexts/AppContext'`)
-6. Interne Hooks (`from '../../../hooks/useOfflineQuery'`)
-7. Interne Services (`from '../../../services/api'`)
-8. Interne Komponenten (relativ, Views und Shared-Components)
-9. Typen (`from '../../../types/event'`)
+**Header style:** always compact (icon + title inline + stats row), NEVER a large overlay text header.
 
-**Barrel Files:**
-- `src/components/shared/index.ts` exportiert `SectionHeader`, `EmptyState`, `ListSection`
-- Kein App-weites Barrel; alle anderen Module werden direkt importiert
+**Theme:** `@rdlabo/ionic-theme-ios26` + `@rdlabo/ionic-theme-md3`, Ionicons 8, Ionic React 8, React 19.
 
-**Backend:**
-- CommonJS (`require`) durchgehend im Backend
-- Keine Barrel-Files; direkte Requires mit relativem Pfad
+**LESSON (MEMORY):** for lists/UI always open a working reference view (e.g. `KonfisView`) and copy it exactly. Do not build "by feel" — wrong nesting produces broken frames.
 
-## Fehlerbehandlung
+## Modal Pattern
 
-**Frontend:**
-- API-Fehler: `try/catch` mit `err instanceof Error ? err.message : 'Unbekannter Fehler'`
-- Axios-Fehler: Zentraler Response-Interceptor in `src/services/api.ts` — behandelt 401 (Token-Refresh), 429 (Rate-Limit), dispatched Custom Events (`auth:relogin-required`, `rate-limit`)
-- Komponenten-Fehler: `ErrorBoundary`-Komponente in `src/components/common/ErrorBoundary.tsx`
-- Form-Submission: `useActionGuard` Hook verhindert Doppel-Submits und liefert `isSubmitting`-State
-- Offline-Fehler: `useOfflineQuery` behält gecachte Daten bei Netzwerkfehlern; markiert als stale statt Error anzuzeigen
-
-**Backend:**
-- Routes: `try/catch` pro Endpoint, `res.status(500).json({ error: '...' })`
-- Validierung: `express-validator` + zentrale `handleValidationErrors`-Middleware → 400 mit strukturierten `details`
-- SQL-Injection: Parameterized Queries durchgehend (`$1`, `$2` etc. mit pg-Treiber)
-- SQL-Spalten-Injektion: Whitelist-Resolver `getPointField()` in `middleware/validation.js`
-
-```javascript
-// Beispiel: Backend Fehlerbehandlung in Route
-try {
-  const { rows } = await db.query(query, params);
-  res.json(rows);
-} catch (err) {
-  console.error('Fehler beim Laden:', err);
-  res.status(500).json({ error: 'Interner Serverfehler' });
-}
-```
-
-## Logging
-
-**Frontend:**
-- `console.warn()` für non-kritische Zustände (z.B. Offline-Token, übersprungene Aktionen)
-- `console.error()` für Fehler mit Kontext-String (z.B. `'Fehler beim Senden des FCM-Tokens:', err`)
-- Kein strukturiertes Logging-Framework
-
-**Backend:**
-- `console.warn()` für Auth-Fehler, Engine-Errors
-- `console.error()` für Server-Fehler mit Kontext
-- `console.log()` für Server-Start, wichtige Initialisierungen
-- Kein strukturiertes Logging-Framework (kein Winston/Pino)
-
-## Kommentare
-
-**Wann kommentieren:**
-- Nicht-offensichtliche Business-Logik (z.B. Race-Condition-Schutz, Anti-Spam-Logik)
-- Architektur-Entscheidungen (z.B. `// FCM Token wird über Window Events empfangen`)
-- Rollen-Hierarchie-Erklärungen in `rbac.js`
-- SQL-Queries mit mehreren JOINs
-
-**Stil:**
-- Inline-Kommentare auf Deutsch
-- Sections durch `// ====` Trennlinien mit Titel in Backend-Dateien (z.B. `// ===== ROUTES =====`)
-- Keine JSDoc/TSDoc außer bei komplexen Utility-Funktionen
-
-## Funktionsdesign
-
-**Größe:** Kein striktes Limit; große Komponenten existieren (bis ~1181 Zeilen in `KonfiDetailSections.tsx`), aber Views sind zunehmend als separate Datei ausgelagert
-
-**Parameter:**
-- React-Komponenten: Props-Interface immer explizit definiert (`interface XxxProps`)
-- Hooks: Optionaler `options`-Parameter mit Interface (z.B. `UseOfflineQueryOptions<T>`)
-- Generics für wiederverwendbare Utility-Funktionen (z.B. `filterByJahrgang<T>`, `sortByDate<T>`)
-
-**Return-Werte:**
-- Hooks geben strukturiertes Result-Objekt zurück (z.B. `{ data, loading, error, isStale, isOffline, refresh }`)
-- Services exportieren einzelne Funktionen, kein Klassen-Pattern (Frontend)
-- Backend-Routes geben immer JSON zurück
-
-## Modul-Design
-
-**Frontend-Muster:**
-- Services als Singleton-Module mit exportierten Funktionen (kein `class`): `tokenStore.ts`, `writeQueue.ts`, `offlineCache.ts`
-- Contexts: React-Context + Provider + Custom-Hook-Pattern (`useApp()`, `useLiveRefresh()`)
-- Modals ausschließlich über `useIonModal`-Hook; niemals `<IonModal isOpen={state}>`
+ALWAYS use the `useIonModal` hook. NEVER use `<IonModal isOpen={state}>`.
 
 ```typescript
-// Korrektes Modal-Muster
 const [presentModal, dismissModal] = useIonModal(MyModal, {
   onClose: () => dismissModal(),
-  onSuccess: () => { dismissModal(); refresh(); }
+  onSuccess: () => {
+    dismissModal();
+    loadData(); // reload after success
+  }
 });
-presentModal({ presentingElement });
+
+presentModal({ presentingElement: presentingElement });
 ```
 
-**Backend-Muster:**
-- Routes als Factory-Funktion exportiert: `module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, ...) => { ... }`
-- Validierungsregeln als Arrays am Anfang jeder Route-Factory definiert
+## Frontend Patterns
 
-**Exports:**
-- Frontend: Named Exports für Utilities/Types; Default Exports für React-Komponenten
-- Barrel: Nur `src/components/shared/index.ts` vorhanden
+- **Data fetching:** `useOfflineQuery` (SWR, offline-first) on all pages — `frontend/src/hooks/useOfflineQuery.ts`, backed by `services/offlineCache.ts`.
+- **Navigation:** `useIonRouter` for programmatic navigation (NOT `history.push` / `window.location`).
+- **Native guards:** wrap platform-specific calls in `Capacitor.isNativePlatform()`.
+- **Offline writes:** queued via `services/writeQueue.ts` (FIFO persistent queue).
+- **Token storage:** `services/tokenStore.ts` — sync in-memory getter + async Capacitor Preferences setter. Access 15min, refresh 90d rotating with soft-revoke.
+- **Action guards:** `useActionGuard` prevents duplicate/invalid actions.
+- **State:** single React Context `AppContext` (`frontend/src/contexts/`).
+- **HTTP:** `axios` + `axios-retry` via `services/api.ts`.
+- **Realtime:** `socket.io-client` via `services/websocket.ts` (org-isolated).
+- **Icon gotcha:** the `document` icon MUST be imported as `documentIcon` (shadows `window.document`).
+- **Bonus points:** accumulated in `konfi_profiles` AND stored in `bonus_points`; when displaying, do NOT add twice.
+
+## Backend Patterns
+
+Routes export a factory injecting dependencies (DB pool, RBAC verifier, role guards, badge checker):
+
+```javascript
+module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwardBadges) => {
+  const router = express.Router();
+  // ... express-validator rules, then routes
+  return router;
+};
+```
+
+- **Auth:** JWT via `verifyTokenRBAC` middleware (`backend/middleware/rbac.js`) with LRU cache. RBAC is ROLE-based (`requireSuperAdmin` / `requireOrgAdmin` / `requireAdmin` / `requireTeamer` + `checkJahrgangAccess` + `requireSameOrganization`), NOT permission-granular.
+- **Org isolation:** always scope queries by `organization_id`; cross-org access must be blocked via `requireSameOrganization`. Root cause of past audit findings — never skip it.
+- **Validation:** `express-validator` (`body`, `param`) + `handleValidationErrors` + shared `commonValidations` from `backend/middleware/validation.js`. German `withMessage` text.
+- **DB:** PostgreSQL via `pg` pool (`backend/database.js`). ALWAYS parameterized queries (`$1, $2`). With an explicit client, ALWAYS `client.release()` in a `finally` block. Pool config env-overridable (`PG_POOL_MAX`, `PG_IDLE_TIMEOUT`, `PG_CONN_TIMEOUT`).
+- **App assembly:** `backend/createApp.js` builds the Express app, accepting injected `db`, `uploadsDir`, `transporter`, `io`, `rateLimiters` (Dummies in tests).
+- **Uploads:** validated by magic-bytes (`file-type`) in `backend/middleware/uploadValidation.js`.
+- **Async/cron:** bcrypt async; scheduled jobs via `node-cron`.
+
+## RBAC Structure (Mandatory)
+
+Use the RBAC schema. The old `admins` / `konfis` tables and `points.gottesdienst` structure are DEPRECATED.
+
+Core tables: `users` (all users, with `role_id`, `organization_id`, `is_super_admin`), `konfi_profiles`, `konfi_activities`, `bonus_points`, `konfi_badges` / `user_badges` / `custom_badges`, `event_bookings`, chat tables. Full rights matrix: `.planning/FEATURE-MATRIX.md`.
+
+## Error Handling
+
+- Backend: validation → structured German messages via `handleValidationErrors`; RBAC violation → 403; cross-org / not-found → 403/404.
+- Frontend: `components/ErrorBoundary`, offline SWR fallbacks, write retries via `writeQueue`.
+
+## Comments
+
+German comments describing intent, often referencing design decisions (`Per D-09:`, `Per Pitfall 6:`). Comment WHY, not WHAT.
 
 ---
 
-*Convention-Analyse: 2026-03-24*
+*Convention analysis: 2026-06-09*

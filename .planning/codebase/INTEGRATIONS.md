@@ -1,148 +1,145 @@
 # External Integrations
 
-**Analysis Date:** 2026-03-24
+**Analysis Date:** 2026-06-09
+
+> Verified against current source (`backend/server.js`, `backend/createApp.js`,
+> `backend/push/firebase.js`, `backend/services/*`, `frontend/src/main.tsx`).
 
 ## APIs & External Services
 
-**Push-Benachrichtigungen:**
-- Firebase Cloud Messaging (FCM) - Push-Nachrichten für iOS (APNS) und Android
-  - SDK/Client: `firebase-admin` 13.7.0 (Backend), `@capacitor/push-notifications` 7.0.6 (Frontend)
-  - Auth: `FIREBASE_SERVICE_ACCOUNT` (JSON-String) oder Datei `backend/push/firebase-service-account.json`
-  - Implementierung: `backend/push/firebase.js`
-  - Funktionen: `sendFirebasePushNotification` (sichtbar), `sendFirebaseSilentPush` (Badge-Update)
-  - Push-Service-Wrapper: `backend/services/pushService.js`
+**Push Notifications:**
+- Firebase Cloud Messaging (FCM) via `firebase-admin ^13.10.0`
+  - Implementation: `backend/push/firebase.js` (`initializeFirebase`, `sendFirebasePushNotification`, `sendFirebaseSilentPush`)
+  - Higher-level orchestration: `backend/services/pushService.js`, badge silent-push in `backgroundService.js`
+  - Credentials: `backend/push/firebase-service-account.json` file (preferred) OR `FIREBASE_SERVICE_ACCOUNT` env (JSON string)
+  - Covers iOS (APNs via FCM, `apns-push-type` alert/background) + Android (priority `high`, default channel)
+  - Client side: `@capacitor/push-notifications` registers device tokens (stored in `push_tokens` table)
 
-**Tageslosung:**
-- Losungen API (`https://losung.konfi-quest.de/api/`) - Tägliche Bibelverse (Herrnhuter Losungen)
-  - Auth: `LOSUNG_API_KEY` (Query-Parameter)
-  - Implementierung: `backend/services/losungService.js`
-  - Caching: DB-Cache in `daily_verses`-Tabelle (7 Tage TTL)
-  - Genutzt in: `backend/routes/konfi.js`, `backend/routes/teamer.js`, `backend/routes/settings.js`
-  - Frontend-Cache: `offlineCache` mit 24h TTL (`CACHE_TTL.TAGESLOSUNG`)
+**Daily Bible Verse (Tageslosung):**
+- Losungen API at `https://losung.konfi-quest.de/api/`
+  - Implementation: `backend/services/losungService.js` (dynamic `node-fetch`, 5s timeout, DB-cached in `daily_verses`)
+  - Auth: `LOSUNG_API_KEY` env var (query param `api_key`)
+  - User-Agent: `Konfi-Quest-App/1.0`
+
+**Web Fonts:**
+- Google Fonts (Bebas Neue) - preconnect + stylesheet in `frontend/index.html`
 
 ## Data Storage
 
 **Databases:**
-- PostgreSQL 15-alpine
-  - Connection: `DATABASE_URL` (Connection String), Fallback: `PGHOST`, `PGUSER`, `PGDATABASE`, `PGPASSWORD`, `PGPORT`
-  - Client: `pg` 8.16.3 mit Connection Pool (`backend/database.js`)
-  - Pool-Config: max 20 Connections, 30s Idle-Timeout, 5s Connection-Timeout
-  - Migrations: `backend/migrations/*.sql` (automatisch beim Startup via `runMigrations()`)
-  - Migration-Tracking: `schema_migrations`-Tabelle (idempotent)
-  - Docker-Volume: `/opt/Konfi-Quest/postgres`
-  - Kern-Tabellen: `users`, `konfi_profiles`, `konfi_activities`, `bonus_points`, `konfi_badges`, `event_bookings`, `chat_rooms`, `chat_messages`, `chat_participants`, `push_tokens`, `daily_verses`, `wrapped_snapshots`
+- PostgreSQL (prod: `postgres:15-alpine`; CI/test: `postgres:16-alpine`)
+  - Container in prod: `konfi_quest-postgres-1` (DB `konfi_db`, user `konfi_user`)
+  - Connection: `DATABASE_URL` + `PGHOST/PGUSER/PGDATABASE/PGPASSWORD/PGPORT`
+  - Client: `pg ^8.16.3` connection pool — `backend/database.js`
+  - Pool tunables: `PG_POOL_MAX` (20), `PG_IDLE_TIMEOUT` (30s), `PG_CONN_TIMEOUT` (5s)
+  - Migrations: file-based runner in `database.js` (`schema_migrations` table, sorted `backend/migrations/*.sql`)
+  - Timezone: `Europe/Berlin` (TZ/PGTZ)
 
 **File Storage:**
-- Lokales Dateisystem (Docker-Volume: `/opt/Konfi-Quest/uploads` → `/app/uploads`)
-  - `backend/uploads/requests/` - Aktivitäts-Antragsfotos (5MB Limit, nur Bilder)
-  - `backend/uploads/chat/` - Chat-Dateien (5MB Limit, Bilder/PDF/Video/Audio/Office)
-  - `backend/uploads/material/` - Lernmaterial (20MB Limit, Bilder/PDF/Video/Audio/Office/ODF)
-  - Dateinamen: SHA256-Hash aus Timestamp + Originalname + Random (keine öffentliche Static-Route)
-  - Alle Dateien werden über geschützte Endpunkte ausgeliefert (kein direkter Static-Zugriff)
+- Local filesystem via `multer ^2.1.1` — `backend/createApp.js`
+  - Mounted volume `/opt/Konfi-Quest/uploads` -> `/app/uploads`
+  - Three upload pipelines: `uploads/chat` (5MB), `uploads/material` (20MB), `uploads/requests` (images only, 5MB)
+  - Filenames hashed (SHA-256 of timestamp+name+random) — original names not on disk
+  - Magic-byte validation via `file-type ^22.0.1` (beyond declared MIME allowlist)
 
 **Caching:**
-- Keine externe Cache-Lösung (kein Redis, kein Memcached)
-- DB-Cache: PostgreSQL-Tabelle `daily_verses` für Tageslosung
-- Frontend-Offline-Cache: `@capacitor/preferences` (SQLite-basiert auf Native, localStorage im Browser)
-  - Implementierung: `frontend/src/services/offlineCache.ts`
-  - SWR-Pattern auf allen ~30 Pages via `useOfflineQuery`-Hook (`frontend/src/hooks/useOfflineQuery.ts`)
+- No external cache (no Redis/Memcached). In-DB cache for Losungen (`daily_verses`); LRU token-verify cache in RBAC middleware.
 
 ## Authentication & Identity
 
 **Auth Provider:**
-- Custom JWT (kein externer Auth-Provider)
-  - Access Token: 15 Minuten Laufzeit
-  - Refresh Token: 90 Tage, rotierend, Soft-Revoke bei Logout
-  - Storage (Frontend): In-Memory-Cache + `@capacitor/preferences` (`frontend/src/services/tokenStore.ts`)
-  - Middleware (Backend): `verifyTokenRBAC` in `backend/middleware/rbac.js`
-  - Token-Refresh: Automatisch in `frontend/src/services/api.ts` (Interceptor, verhindert parallele Refresh-Requests)
-  - Passwort-Hashing: bcrypt 5.1.1 (`backend/utils/passwordUtils.js`)
+- Custom JWT (`jsonwebtoken ^9.0.2`), `JWT_SECRET` env (server exits if missing)
+- HTTP auth: `verifyToken` + RBAC `verifyTokenRBAC(db)` — `backend/createApp.js`, `backend/middleware/rbac.js`
+- Socket.IO auth: JWT in `socket.handshake.auth.token` — `backend/server.js`
+- Roles: super_admin / org_admin / admin / teamer / konfi (role helpers `requireSuperAdmin/OrgAdmin/Admin/Teamer`)
+- Passwords: `bcrypt ^6.0.0`. Token model: access 15min + refresh 90d rotating (per project notes)
 
-**RBAC-System:**
-- Rollen: `superadmin`, `admin`, `teamer`, `konfi`
-- Organisation-Isolation: Alle Daten sind `organization_id`-scoped
-- Middleware-Helfer: `requireSuperAdmin`, `requireOrgAdmin`, `requireAdmin`, `requireTeamer`
-- Jahrgangs-Filter: `filterByJahrgangAccess` für teilweise Admin-Zugriffe
+## Realtime
+
+**Socket.IO `^4.7.2`** (server `backend/server.js`, client `socket.io-client`):
+- JWT-authenticated; org-isolated rooms (`room_{id}`, `user_{type}_{id}`)
+- Events: `joinRoom`, `leaveRoom`, `typing`, `stopTyping` (each validates `organization_id`)
+- CORS origins from `CORS_ORIGINS` (default `https://konfi-quest.de,https://www.konfi-quest.de`)
+- DI wiring via `backend/utils/liveUpdate.js` (`liveUpdate.init(io)`)
 
 ## Monitoring & Observability
 
+**Web Analytics:**
+- Umami — script `https://t.godsapp.de/script.js`, website-id `dfd37276-5ad4-474d-8306-bf3ed9a3a5d3`
+  - Loaded ONLY on web, never in native app: `frontend/src/main.tsx` (`Capacitor.isNativePlatform()` guard)
+  - Deliberate: native app collects no analytics (store data-collection + minor protection)
+- Uptime Kuma (`uptime.godsapp.de`) - external uptime monitoring (infra, per project notes)
+
 **Error Tracking:**
-- Kein externes Tool (kein Sentry, kein Datadog)
+- None (no Sentry/Rollbar). Errors via `console.error` + central Express error handler (`createApp.js`)
 
 **Logs:**
-- `console.log/error/warn` direkt im Code
-- Docker-Container-Logs via Portainer
+- stdout/stderr to Docker; startup banner in `server.js` reports SMTP/Firebase/Background status
 
-**Uptime:**
-- Uptime Kuma: `https://uptime.godsapp.de` (externer Monitoring-Service, nicht im Codebase integriert)
-- Backend Health-Check: `GET /api/health` → `{ status: 'OK' }`
-- Docker Health-Check: `backend/healthcheck.js` (alle 30s)
+## Email (SMTP)
+
+- `nodemailer ^8.0.10` — config + verify in `backend/server.js`, templates in `backend/services/emailService.js`
+- Host `server.godsapp.de`, port `465` secure, user `team@konfi-quest.de` (env `SMTP_HOST/PORT/USER/PASS/SECURE`)
+- `tls.rejectUnauthorized: false`
+- Uses: password reset, invites, license-expiry reminder (`sendLicenseExpiryReminderEmail`, cron-driven)
+
+## Scheduled Jobs (Cron / Intervals)
+
+`backend/services/backgroundService.js` (`node-cron ^4.2.1` + setInterval, started in `server.js`):
+- Badge updates — every 5 min (silent badge push + badge awarding)
+- Event reminders — every 15 min (1-day & 1-hour before, dedup via `event_reminders`)
+- Pending-events admin reminder — every 4 h
+- Push-token cleanup — every 6 h (error_count>=10, >30d inactive, orphaned)
+- Wrapped generation — `0 6 1 * *` (1st of month, Europe/Berlin)
+- Auto-deletion (DSG-EKD) — `0 2 * * *` (soft @60d, hard cascade @120d)
+- Trial-expiry + license reminders — `0 3 * * *`
 
 ## CI/CD & Deployment
 
+**Source / Registry:**
+- GitHub Actions `.github/workflows/ci.yml` (also `frontend.yml`)
+  - Jobs: backend-test (Node 22 + postgres:16 service), frontend-test, build-and-push (matrix)
+  - `npm audit --audit-level=critical` gate (backend hard, frontend non-blocking)
+  - Builds & pushes `ghcr.io/<owner>/konfi-quest-{backend,frontend}:latest` + sha tag (buildx, gha cache)
+  - Triggers Portainer webhook on backend image (`secrets.PORTAINER_WEBHOOK`)
+
 **Hosting:**
-- Hetzner Server (`server.godsapp.de`, IP: 213.109.162.132)
-- Docker via Portainer (Stack: `/opt/stacks/`)
-- Container-Images: GitHub Container Registry (`ghcr.io/revisor01/konfi-quest-*`)
+- `server.godsapp.de` (Netcup), Docker. Stack `konfi_quest` (Portainer id 249) — NOT git-bound, no Watchtower
+- Reverse proxy chain: Apache (KeyHelp, SSL/HSTS/CORS) -> Traefik (`8888`) -> containers
+- Production deploy: GitHub Actions builds image -> pull image -> Portainer `update_stack` (manual pull required)
 
-**CI Pipeline:**
-- Kein CI/CD im Repository konfiguriert (kein `.github/workflows/`)
-- Deployment-Trigger: `git push` → Portainer Webhook → Automatisches Image-Pull und -Restart
+## Store Automation
 
-**Web-Infrastruktur:**
-- Apache (KeyHelp) → Traefik (intern Port 8888) → Docker-Container
-- Frontend: Port 8624 (Nginx)
-- Backend: Port 8623 (Node.js)
-- WebSocket: Apache leitet WebSocket-Upgrades weiter an Traefik
+- App Store Connect API (JWT signing via `asc-jwt.sh` toolkit) - iOS upload + listing/text updates
+  - Apple App ID `6748016619`, bundle `de.godsapp.konfiquest`
+- Google Play Developer API - AAB upload + listing (Python `:commit` workaround)
+- Store assets / listings: `store-assets/` (`marketing-copy.md`, `STORE-LISTINGS.md`, screenshots, raw frames)
+
+## Environment Configuration
+
+**Required env vars (backend):**
+- `JWT_SECRET` (mandatory), `DATABASE_URL` (+ `PGHOST/PGUSER/PGDATABASE/PGPASSWORD/PGPORT`)
+- `SMTP_HOST/PORT/USER/PASS` (+ optional `SMTP_SECURE`), `LOSUNG_API_KEY`
+- `FIREBASE_SERVICE_ACCOUNT` (or service-account JSON file), `CORS_ORIGINS`, `PORT`
+
+**Frontend:**
+- `VITE_API_URL` (build-time, embedded by Vite)
+
+**Secrets location:**
+- Prod: injected via Portainer stack env / docker-compose
+- Firebase: `backend/push/firebase-service-account.json` (gitignored)
+- Android keystore: external (`~/Nextcloud/...`, `KONFI_*` env from secrets store)
 
 ## Webhooks & Callbacks
 
 **Incoming:**
-- Kein externer Webhook-Empfang konfiguriert
+- Portainer redeploy webhook (called by GitHub Actions after backend build)
 
 **Outgoing:**
-- Kein ausgehender Webhook konfiguriert
-
-## WebSocket (Real-Time)
-
-**Socket.IO:**
-- Server: `backend/server.js` (io-Instanz, an HTTP-Server gebunden)
-- Client: `frontend/src/services/websocket.ts`
-- Auth: JWT-Token im Handshake (`socket.handshake.auth.token`)
-- Organisation-Isolation: `joinRoom` prüft `organization_id` vor Raum-Beitritt
-- Features: Chat-Nachrichten, Typing-Indikatoren, Live-Aktivitäts-Updates
-- Reconnect-Logik: WriteQueue flushen → Cache invalidieren → Badge-Refresh bei Wiederverbindung
-
-## E-Mail
-
-**SMTP:**
-- Provider: Eigener Mail-Server (`server.godsapp.de`, Port 465)
-- Client: `nodemailer` 8.0.2
-- Konfiguration: `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`
-- Genutzt für: Passwort-Reset, Einladungs-E-Mails
-- TLS: `rejectUnauthorized: false` (Zertifikat auf Hostname, Docker nutzt IP)
-
-## Background Services
-
-**Alle Services in `backend/services/backgroundService.js`:**
-
-| Service | Intervall | Zweck |
-|---------|-----------|-------|
-| Badge Update | alle 5 Min | App-Icon-Badge-Count via Silent Push |
-| Event Reminder | alle 15 Min | Push-Erinnerungen (1 Tag + 1 Stunde vor Event) |
-| Pending Events | alle 4 Std | Admin-Erinnerung für offene Event-Teilnahme-Verbuchungen |
-| Token Cleanup | alle 6 Std | Veraltete/fehlerhafte Push-Tokens bereinigen |
-| Wrapped Cron | 1. jeden Monats 06:00 | Auto-Generierung von Konfi/Teamer-Wrapped (node-cron) |
-
-## Offline-Funktionalität
-
-**WriteQueue:**
-- Persistente FIFO-Queue für offline ausgelöste Aktionen
-- Storage: `@capacitor/preferences` (Key: `queue:items`)
-- Implementierung: `frontend/src/services/writeQueue.ts`
-- Auto-Flush bei Reconnect (Socket.IO + Network-Monitor)
-- Unterstützt: Chat, Aktivitäts-Anträge, Opt-Out, Admin-Aktionen, Teamer-Aktionen
+- Push to FCM (Google) / APNs (Apple via FCM)
+- Losungen API fetch (`losung.konfi-quest.de`)
+- SMTP delivery (`server.godsapp.de:465`)
 
 ---
 
-*Integrations-Analyse: 2026-03-24*
+*Integration audit: 2026-06-09*

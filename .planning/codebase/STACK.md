@@ -1,141 +1,174 @@
 # Technology Stack
 
-**Analysis Date:** 2026-03-24
+**Analysis Date:** 2026-06-09
+
+> Stack was major-modernized on 2026-06-08. Versions below are read directly from
+> `frontend/package.json`, `backend/package.json`, Dockerfiles and build configs —
+> not from older map documents.
 
 ## Languages
 
 **Primary:**
-- TypeScript 5.1.6 - Frontend (alle `.ts`/`.tsx` Dateien in `frontend/src/`)
-- JavaScript (CommonJS) - Backend (`backend/server.js`, `backend/routes/`, `backend/services/`)
+- TypeScript `^6.0.3` - Entire frontend (`frontend/src/**/*.tsx`, `*.ts`)
+- JavaScript (CommonJS, Node) - Entire backend (`backend/**/*.js`)
 
 **Secondary:**
-- SQL - Datenbankmigrationen in `backend/migrations/*.sql`
-- HTML/CSS - `frontend/index.html`, `frontend/src/theme/variables.css`
+- SQL (PostgreSQL dialect) - Migrations in `backend/migrations/*.sql`, init in `init-scripts/`
+- Gradle (Groovy) - Android build (`frontend/android/`)
+- Swift/Obj-C project config - iOS shell (`frontend/ios/App/`)
 
 ## Runtime
 
-**Environment:**
-- Node.js 18 (Dockerfile: `node:18-alpine` / `node:18-bullseye`)
-- Engine-Anforderung im Backend: `>=16.0.0` (laut `backend/package.json`)
+**Backend Environment:**
+- Node.js `>=20.0.0` (`backend/package.json` engines)
+- Docker base image: `node:20-bookworm` (`backend/Dockerfile`)
+- CI test runner: Node `22` (`.github/workflows/ci.yml`)
+- Module system: CommonJS (`require`/`module.exports`)
+
+**Frontend Environment:**
+- Browser / Capacitor WebView (iOS + Android)
+- ESM (`"type": "module"` in `frontend/package.json`)
+- Build image: `node:20-alpine` (multi-stage), served via `nginx:alpine` (`frontend/Dockerfile`)
 
 **Package Manager:**
-- npm (Frontend + Backend)
-- Lockfiles: `frontend/package-lock.json`, `backend/package-lock.json` — beide vorhanden
+- npm (lockfiles: `frontend/package-lock.json`, `backend/package-lock.json`)
+- Frontend installs require `--legacy-peer-deps` (React 19 peer ranges; see `frontend/Dockerfile`, CI)
+- Lockfile: present for both
 
 ## Frameworks
 
-**Core Frontend:**
-- React 19.0.0 - UI-Framework
-- Ionic React 8.5.0 (`@ionic/react`) - Mobile UI Component Library
-- Ionic React Router 8.5.0 (`@ionic/react-router`) - Navigation
-- React Router 5.3.4 - Routing-Engine
-- Ionicons 8.0.13 - Icon-System (kein Emoji, nur IonIcons erlaubt)
+### Frontend
 
-**Theming:**
-- `@rdlabo/ionic-theme-ios26` 2.2.0 - iOS 26 Theme
-- `@rdlabo/ionic-theme-md3` 1.0.2 - Material Design 3 Theme
+**Core:**
+- Ionic React `@ionic/react ^8.5.0` - UI component framework (iOS26/MD3 styling)
+- `@ionic/react-router ^8.5.0` - Ionic router bindings
+- React `^19.2.7` + React DOM `^19.2.7` - View layer
+- React Router `react-router ^5.3.4` + `react-router-dom ^5.3.4` (v5, NOT v6)
+- Ionicons `^8.0.13` - Icon set (Unicode emojis forbidden by project rule)
+- Theming: `@rdlabo/ionic-theme-ios26 ^2.3.2`, `@rdlabo/ionic-theme-md3 ^1.1.0`
 
-**Core Backend:**
-- Express 4.18.2 - HTTP Server Framework
+**State / Data:**
+- React Context (`AppContext`) - no external state lib
+- axios `^1.10.0` + `axios-retry ^4.5.0` - HTTP client with retry
+- `socket.io-client ^4.8.1` - realtime chat
 
-**Mobile:**
-- Capacitor 7.6.0 (`@capacitor/core`, `@capacitor/ios`, `@capacitor/android`) - Native App Bridge
-- App-ID: `de.godsapp.konfiquest`
+**UI utilities:**
+- `swiper ^12.1.2` - Wrapped slides / carousels
+- `qrcode ^1.5.4` + `qr-scanner ^1.4.2` - QR generation & scanning
+- `html-to-image ^1.11.13` - share-image rendering (Wrapped)
 
-**Real-Time:**
-- Socket.IO 4.8.1 (Client: `socket.io-client`) - WebSocket-basiertes Chat-System
-- Socket.IO 4.7.2 (Server: `socket.io`) - Server-seitige WebSocket-Verarbeitung
+### Backend
 
-**Testing:**
-- Vitest 4.1.0 - Unit-Test-Runner
-- Cypress 13.5.0 - E2E-Test-Framework
-- `@testing-library/react` 16.2.0 - React-Testutilities
+**Core:**
+- Express `^5.2.1` (Express 5 — empty body is `undefined`, defaulted to `{}` in `backend/createApp.js`)
+- PostgreSQL via `pg ^8.16.3` (connection pool in `backend/database.js`)
+- `socket.io ^4.7.2` - WebSocket server (`backend/server.js`)
 
-**Build/Dev:**
-- Vite 6.4.1 - Frontend Build-Tool und Dev-Server (Port 5173)
-- `@vitejs/plugin-react` - React-Unterstützung in Vite
-- Terser 5.4.0 - JS-Minifier
-- `rollup-plugin-visualizer` - Bundle-Analyse (`frontend/stats.html`)
-- nodemon 3.0.2 - Backend Dev-Autorestart
+**Security / Middleware:**
+- `helmet ^8.1.0` - security headers (CSP disabled, HSTS handled by Apache)
+- `jsonwebtoken ^9.0.2` - JWT auth (RBAC via `backend/middleware/rbac.js`)
+- `bcrypt ^6.0.0` - password hashing
+- `express-rate-limit ^8.3.1` - per-user/IP rate limiting (7 limiters in `server.js`)
+- `express-validator ^7.3.1` - input validation
+- `cors ^2.8.5` (present; in prod CORS is set by the Apache vHost, not middleware)
 
-## Key Dependencies
+**Files / Integrations:**
+- `multer ^2.1.1` - multipart upload (chat/material/request configs in `createApp.js`)
+- `file-type ^22.0.1` - magic-byte file validation
+- `nodemailer ^8.0.10` - SMTP mail
+- `firebase-admin ^13.10.0` - FCM push (`backend/push/firebase.js`)
+- `node-cron ^4.2.1` - scheduled jobs (`backend/services/backgroundService.js`)
+- `node-fetch` (dynamic import) - Losungen API call (`backend/services/losungService.js`)
+- Override: `protobufjs ^7.5.5` (transitive pin for firebase-admin)
 
-**Critical Frontend:**
-- `axios` 1.10.0 - HTTP-Client für API-Requests (`frontend/src/services/api.ts`)
-- `axios-retry` 4.5.0 - Automatischer Retry mit exponential backoff für 5xx/429
-- `swiper` 12.1.2 - Wrapped-Slideshow (Konfi/Teamer Wrapped Feature)
-- `html-to-image` 1.11.13 - Screenshot-Generierung für Share-Feature
-- `qrcode` 1.5.4 + `qr-scanner` 1.4.2 - QR-Code Generierung und Scannen
+## Native (Capacitor)
 
-**Critical Backend:**
-- `pg` 8.16.3 - PostgreSQL-Client (Connection Pool via `database.js`)
-- `jsonwebtoken` 9.0.2 - JWT Access Tokens (15 Min) + Refresh Tokens (90 Tage)
-- `bcrypt` 5.1.1 - Passwort-Hashing
-- `firebase-admin` 13.7.0 - Firebase Cloud Messaging für Push-Nachrichten
-- `node-cron` 3.0.3 - Cron-Jobs (Wrapped-Generierung am 1. jeden Monats 06:00)
-- `multer` 2.1.1 - Datei-Upload-Handling (Chat, Material, Aktivitäts-Anträge)
-- `nodemailer` 8.0.2 - E-Mail-Versand (SMTP)
-- `helmet` 8.1.0 - HTTP Security Headers
-- `express-rate-limit` 8.3.1 - Rate Limiting (Auth, Chat, Events, Uploads, Orgs)
-- `express-validator` 7.3.1 - Request-Validierung
-- `file-type` 19.6.0 - MIME-Typ-Validierung für Uploads
+**Capacitor `^8.4.0`** (core/cli/ios/android all `8.x`). Config: `frontend/capacitor.config.ts`
+- App ID: `de.godsapp.konfiquest`, App name: `Konfi Quest`, webDir `dist`
+- `androidScheme: 'https'` (avoids Android mixed-content blocking of API calls)
 
-**Capacitor Plugins:**
-- `@capacitor/push-notifications` 7.0.6 - Native Push-Benachrichtigungen (FCM/APNS)
-- `@capacitor/preferences` 8.0.1 - Persistenter Schlüssel-Wert-Speicher (Token-Cache, Offline-Queue)
-- `@capacitor/filesystem` 7.1.8 - Dateisystem-Zugriff (Offline-Foto-Uploads)
-- `@capacitor/network` 8.0.1 - Netzwerkstatus-Überwachung (`networkMonitor.ts`)
-- `@capacitor/camera` 7.0.5 - Kamera-Zugriff
-- `@capacitor/share` 7.0.4 - Native Share-Sheet (Wrapped-Feature)
-- `@capacitor/device` 7.0.4 - Device-ID für Push-Token-Tracking
-- `@capacitor/haptics` 7.0.1 - Haptisches Feedback
-- `@capawesome/capacitor-badge` 7.0.1 - App-Icon-Badge (ungelesene Nachrichten)
-- `@capawesome/capacitor-background-task` 8.0.2 - Background-Task-Ausführung
+**Capacitor plugins (all `8.x` unless noted):**
+- `@capacitor/app`, `@capacitor/camera`, `@capacitor/device`, `@capacitor/filesystem`
+- `@capacitor/haptics`, `@capacitor/keyboard`, `@capacitor/network`, `@capacitor/preferences`
+- `@capacitor/push-notifications ^8.1.1`, `@capacitor/share`, `@capacitor/status-bar`
+- `@capacitor/file-viewer ^2.0.1`, `@capacitor-community/file-opener ^8.0.1`
+- `@capawesome/capacitor-background-task ^8.0.2`, `@capawesome/capacitor-badge ^8.0.2`
+
+**iOS:**
+- Min deployment target: iOS `15.0` (`ios/App/App.xcodeproj/project.pbxproj`)
+- Build tool: Xcode (manual archive/upload via App Store Connect API)
+- Requires JDK 21 for Capacitor tooling (per project notes)
+
+**Android:**
+- `minSdkVersion = 24`, `compileSdkVersion = 36`, `targetSdkVersion = 36` (`android/variables.gradle`)
+- `applicationId de.godsapp.konfiquest`, current `versionCode 32`, `versionName 1.0.1` (`android/app/build.gradle`)
+- Build: Gradle `bundleRelease` (AAB), signed via `KONFI_*` keystore env
+- NOTE: `frontend/android/` is gitignored — bump versionCode manually before each AAB build
+
+## Build Tooling
+
+**Frontend:**
+- Vite `^8.0.16` - dev server + bundler (`frontend/vite.config.ts`); build = `tsc && vite build`
+- `@vitejs/plugin-react ^6.0.2`
+- `terser ^5.4.0` - minification
+- `rollup-plugin-visualizer ^7.0.1` - bundle analysis
+- Dev server port `3000` (Vite config); project docs also reference `5173`
+
+**TypeScript config** (`frontend/tsconfig.json`):
+- `target: ESNext`, `module: ESNext`, `moduleResolution: bundler`
+- `strict: true`, `jsx: react-jsx`, `noEmit: true`, `allowJs: false`
+- Tests excluded from typecheck; `tsconfig.node.json` referenced
+
+**Linting:**
+- ESLint `^9.39.4` (flat config) + `typescript-eslint ^8.24.0`
+- `eslint-plugin-react`, `eslint-plugin-react-hooks ^5.2.0`, `eslint-plugin-react-refresh`
+
+**Backend:**
+- No bundler — runs `node server.js` directly
+- `nodemon ^3.0.2` for dev (`npm run dev`)
+- DB build deps in image: `python3`, `make`, `g++`, `postgresql-client` (native `bcrypt`/`pg`)
+
+## Test Stack
+
+**Frontend:**
+- Vitest `^4.1.8` (jsdom env, `src/setupTests.ts`) - unit/component tests
+- Testing Library: `@testing-library/react ^16.2.0`, `/jest-dom`, `/user-event`, `/dom`
+- `jsdom ^29.0.0`
+- Cypress `^15.16.0` - component/e2e (`npm run test.e2e`)
+
+**Backend:**
+- Vitest `^4.1.8` (`backend/tests/vitest.config.ts`): pool `forks`, `maxWorkers 1`, globalSetup
+- `supertest ^7.2.2` - HTTP integration tests against `createApp(testDb)`
+- Real PostgreSQL via `docker compose -f docker-compose.test.yml` (test DB port 5433)
+
+**E2E (root):**
+- Playwright (`playwright.config.ts`) - specs in `e2e/` (login, chat, event-buchung, punkte-vergabe)
+- Sequential (`workers: 1`), chromium only, baseURL `http://localhost:5556`
+- Orchestrated via `docker-compose.e2e.yml`
 
 ## Configuration
 
-**Environment (Backend):**
-- `JWT_SECRET` - Pflichtfeld, Server startet nicht ohne (geprüft in `backend/server.js` Z.26-29)
-- `DATABASE_URL` - PostgreSQL Connection String
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` - E-Mail-Konfiguration
-- `LOSUNG_API_KEY` - API-Key für Tageslosung-Service
-- `FIREBASE_SERVICE_ACCOUNT` - Firebase Credentials (alternativ `backend/push/firebase-service-account.json`)
-- `CORS_ORIGINS` - Erlaubte Origins (Standard: `https://konfi-quest.de,https://www.konfi-quest.de`)
-- `PORT` - Server-Port (Standard: 5000, Docker: 8623)
-- `PG_POOL_MAX` - PostgreSQL Connection Pool Max (Standard: 20)
-- `NODE_ENV` - Umgebung (production/development)
+**Environment (build-time, frontend):**
+- `VITE_API_URL` - API base, injected as Vite build-arg (`frontend/Dockerfile`)
 
-**Environment (Frontend):**
-- `VITE_API_URL` - API-Base-URL (Standard: `https://konfi-quest.de/api`)
-
-**Build:**
-- `frontend/vite.config.ts` - Vite Build-Konfiguration
-- `frontend/tsconfig.json` - TypeScript Konfiguration (strict mode, ESNext target)
-- `frontend/capacitor.config.ts` - Capacitor-Konfiguration
-- `frontend/ionic.config.json` - Ionic-Konfiguration (type: `react-vite`)
-- `frontend/eslint.config.js` - ESLint mit TypeScript-ESLint und React Hooks Plugin
-- `frontend/nginx.conf` - Nginx-Konfiguration für Docker-Container
+**Environment (runtime, backend)** — set via Portainer stack / compose:
+- `JWT_SECRET` (required, server exits if missing), `DATABASE_URL` + `PG*` vars
+- `PG_POOL_MAX` (def 20), `PG_IDLE_TIMEOUT` (def 30s), `PG_CONN_TIMEOUT` (def 5s)
+- `SMTP_HOST/PORT/USER/PASS/SECURE`, `LOSUNG_API_KEY`, `CORS_ORIGINS`
+- `FIREBASE_SERVICE_ACCOUNT` (fallback to `backend/push/firebase-service-account.json` file)
 
 ## Platform Requirements
 
 **Development:**
-- Node.js 18+
-- npm
-- Backend: `cd backend && npm start` (Port 5000)
-- Frontend: `cd frontend && npm run dev` (Port 5173)
+- Node 20+, npm, Docker (for test/e2e PostgreSQL)
+- iOS builds: macOS + Xcode + JDK 21; Android: JDK 21 + Android SDK 36
 
 **Production:**
-- Docker (3 Container: postgres, backend, frontend)
-- Stack-Datei: `portainer-stack.yml`
-- Images: `ghcr.io/revisor01/konfi-quest-backend:latest`, `ghcr.io/revisor01/konfi-quest-frontend:latest`
-- PostgreSQL 15-alpine
-- Frontend: nginx:alpine (Port 8624 → 80)
-- Backend: node:18-bullseye (Port 8623 → 5000)
-- Reverse Proxy: Apache (KeyHelp) → Traefik (8888) → Docker-Container
-- Deployment: `git push` → Portainer Webhook (NIEMALS manuell `docker-compose up/build`)
-- iOS: Capacitor native App (`frontend/ios/`)
-- Android: Capacitor native App (`frontend/android/`)
+- Docker on `server.godsapp.de` (Netcup); 3 services (postgres, backend, frontend)
+- Images on `ghcr.io/revisor01/konfi-quest-{backend,frontend}:latest`
+- Backend container port `127.0.0.1:8623:5000`, frontend `8624:80`, postgres `5432`
+- Fronting: Apache (KeyHelp) -> Traefik -> containers; `app.set('trust proxy', 1)`
 
 ---
 
-*Stack-Analyse: 2026-03-24*
+*Stack analysis: 2026-06-09*

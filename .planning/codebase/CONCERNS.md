@@ -1,218 +1,163 @@
 # Codebase Concerns
 
-**Analysis Date:** 2026-03-24
+**Analysis Date:** 2026-06-09
+
+This is a **production app** (Apple App Store v1.0 live, iOS 1.0.1 in review, Google Play closed testing). This document distinguishes **real risks** that need attention from **accepted tradeoffs** that are documented decisions. Items are grouped by category and prioritized by severity within each.
 
 ---
 
-## Sicherheit (Kritisch)
+## Security Considerations
 
-### APNs Private Keys in Git-History
+### Secrets committed in stack config (HIGH)
 
-- Risk: Apple Push Notification Service (APNs) private Schlüsseldateien sind ins Git-Repository committed
-- Files: `docs/AuthKey_7AQA623H3T.p8`, `docs/AuthKey_A29U7SN796.p8`
-- Current mitigation: Keine — Dateien sind im Git-Index (`git ls-files docs/` bestätigt)
-- Recommendations: Sofort aus Git-History entfernen (`git filter-branch` oder `git-filter-repo`), Schlüssel bei Apple Developer Portal widerrufen und neu erstellen, `docs/*.p8` in `.gitignore` aufnehmen
+- **Risk:** Production `JWT_SECRET` and PostgreSQL password are hardcoded in committed compose files.
+- **Files:**
+  - `portainer-stack.yml:11` — `POSTGRES_PASSWORD: konfi_secure_password_2025`
+  - `portainer-stack.yml:41` — `JWT_SECRET: konfi-secret-super-secure-2025`
+- **Current mitigation:** None at file level. Repo is private. The live stack on the server (`konfi_quest` id 249) carries the real values in its Portainer-managed compose, also plaintext.
+- **Recommendations:**
+  - Move both to environment variables / Docker secrets resolved at deploy time, not literals in the YAML.
+  - Rotate `JWT_SECRET` and the DB password (they have been committed to git history, so they are effectively burned). Rotating `JWT_SECRET` invalidates existing access/refresh tokens — schedule during low traffic.
+  - The e2e file `docker-compose.e2e.yml` (`JWT_SECRET: e2e-test-secret-key-min-32-chars!!`, `POSTGRES_PASSWORD: postgres`) is **fine** — those are throwaway test values, not a concern.
 
-### Produktions-Secrets in portainer-stack.yml (Git-tracked)
+### Auth / RBAC surface (accepted, well-covered)
 
-- Risk: Alle Produktions-Credentials liegen in einer versionierten Datei
-- Files: `portainer-stack.yml`
-- Betroffene Werte: `JWT_SECRET: konfi-secret-super-secure-2025`, `POSTGRES_PASSWORD: konfi_secure_password_2025`, `SMTP_PASS: "NkqFQuTx877Sia6Pp"`, `LOSUNG_API_KEY: ksadh8324oijcff45rfdsvcvhoids44`
-- Aktueller Zustand: Datei ist in `.gitignore` gelistet, aber bereits getrackt (Git ignoriert gitignorierte Dateien nur für neue Dateien, nicht für bereits getrackten Content)
-- Impact: Jeder mit Lesezugriff auf das Repo kann alle Produktions-Secrets einsehen
-- Fix approach: `git rm --cached portainer-stack.yml`, alle aufgeführten Secrets rotieren, Portainer-Stack über Portainer-Umgebungsvariablen oder Docker Secrets verwalten
-
-### TLS-Zertifikatvalidierung deaktiviert
-
-- Risk: SMTP-Verbindungen ignorieren Zertifikatsfehler
-- Files: `backend/server.js:177`, `backend/services/emailService.js:39`
-- Code: `rejectUnauthorized: false` in beiden SMTP-Konfigurationen
-- Current mitigation: Verbindung läuft nur im internen Docker-Netzwerk (127.0.0.1)
-- Recommendations: Eigentlichen Hostnamen im Docker-Container korrekt auflösen oder selbst-signiertes Zertifikat des Mailservers explizit vertrauen statt TLS-Validierung komplett zu deaktivieren
-
-### Passwort-Policy-Bypass in Admin-User-Verwaltung
-
-- Risk: Admin-Benutzer können mit schwachen Passwörtern erstellt werden
-- Files: `backend/routes/users.js:37` (Reset: min. 6 Zeichen), `backend/routes/users.js:18` (`commonValidations.password`)
-- Problem: `validatePassword` (min. 8 Zeichen + Komplexität aus `utils/passwordUtils.js`) wird in `users.js` NICHT aufgerufen. Nur `auth.js` verwendet `validatePassword`. Admin-erstellte Nutzer und Passwort-Resets durch Admins unterliegen damit nur dem 6-Zeichen-Minimum.
-- Fix approach: `validatePassword` auch in `users.js`-Validierungsregeln für `validateCreateUser` und `validateResetPassword` einbinden
-
-### Fehlende JSON-Body-Größenbegrenzung
-
-- Risk: DoS durch große JSON-Requests
-- Files: `backend/server.js:282`
-- Code: `app.use(express.json())` ohne `limit`-Option — Standard-Limit ist 100kb, was für die meisten Endpoints ausreicht, aber kein explizites Limit gesetzt
-- Recommendations: `app.use(express.json({ limit: '1mb' }))` explizit setzen für klare Dokumentation und Schutz
+- RBAC is **role-based, not permission-granular** (see Deprecated Tables below). Enforced via `requireSuperAdmin/OrgAdmin/Admin/Teamer` + `checkJahrgangAccess` + `requireSameOrganization`. Source of truth: `.planning/FEATURE-MATRIX.md`.
+- The big org-isolation audit (01.06.2026) found and fixed 16 chat org-leak findings + a `users.js` delete-FK bug. 458 backend integration tests now exercise all routes against real PostgreSQL. This area is **healthy**, not a concern — noted here only because it is the highest-blast-radius surface if a future change regresses isolation.
 
 ---
 
-## Tech Debt
+## Dependency / Upgrade Debt
 
-### Legacy `user_type`-Feld im Chat-System
+### react-router locked at 5.3.4 (HIGH — locked, not fixable)
 
-- Issue: Das Chat-System verwendet ein separates `user_type`-Feld (`'admin'`, `'konfi'`, `'teamer'`) in `chat_participants` und `chat_read_status`, das parallel zur RBAC-Rollen-Struktur existiert
-- Files: `backend/routes/chat.js` (96 Vorkommen von `user_type`), `backend/middleware/rbac.js:156` (erzeugt `type` als Backward-Compatibility-Feld)
-- Impact: Teamer-Nutzer werden im Chat als `'admin'` behandelt (der Backward-Compat-Wert aus `rbac.js` mappt `teamer` → `admin`). Die Chat-Logik prüft nur `'admin'` und `'konfi'` als valide `target_user_type` Werte (Zeile 234). Eine echte Teamer-Unterscheidung im Chat ist nicht vorhanden.
-- Fix approach: `user_type` auf RBAC-`role_name` umstellen oder die Chat-Tabellen mit einem FK auf `users.id` ohne redundantes `user_type`-Feld refaktorieren
+- **Issue:** `react-router` / `react-router-dom` pinned to `^5.3.4`. RR6/RR7 are **blocked** because `@ionic/react-router` peer-depends on `react-router ^5`.
+- **Files:** `frontend/package.json:48-49`; v5 API in use across routing (`Switch` / `Route component=` / `Redirect`), plus `useIonRouter` used **52×** in `frontend/src` (verified 2026-06-09).
+- **Impact:** Cannot adopt modern react-router data APIs, loaders, or RR7 typing. Locked until **Ionic v9** ships (no release date as of 2026-06-08).
+- **Fix approach:** None available now. Re-evaluate when Ionic v9 lands. This is a **documented external constraint**, not a bug. The v5 API works correctly.
 
-### `setImmediate` mit sofort ausgeführter Funktion (Bug)
+### eslint pinned at 9.x (MEDIUM — accepted)
 
-- Issue: `initializeChatRooms(db)` wird beim Aufruf sofort ausgeführt und gibt ein Promise zurück — `setImmediate` erhält dieses Promise, nicht die Funktion
-- Files: `backend/server.js:527`
-- Code: `setImmediate(initializeChatRooms(db));`
-- Korrekte Verwendung wäre: `setImmediate(() => initializeChatRooms(db)());`
-- Impact: Die Chat-Room-Initialisierung läuft synchron im Start-Up-Code (nicht nach dem nächsten Tick) und Fehler sind nicht vollständig abgefangen
-- Fix approach: `initializeChatRooms(db)()` direkt aufrufen oder `setImmediate(() => initializeChatRooms(db)())` verwenden
+- **Issue:** `eslint ^9.39.4` cannot move to 10 because `typescript-eslint 8` is not yet eslint-10 compatible.
+- **Files:** `frontend/package.json:55,64,73`.
+- **Impact:** Linter major behind latest. No functional impact; tooling-only.
+- **Fix approach:** Bump when `typescript-eslint` ships eslint-10 support. Documented decision (see `memory/upgrade_vite8_ts6_cap8.md`).
 
-### Legacy `data`-Verzeichnis wird noch erstellt
+### eslint-plugin-react-hooks pinned at 5.x (MEDIUM — accepted)
 
-- Issue: Das `data/`-Verzeichnis (war für SQLite-DB) wird bei jedem Server-Start noch angelegt, auch wenn es nicht mehr gebraucht wird
-- Files: `backend/server.js:424-429`
-- Impact: Kein Funktionsproblem, aber toter Code der Verwirrung stiftet
-- Fix approach: Zeilen 424-429 in `server.js` entfernen
+- **Issue:** `eslint-plugin-react-hooks ^5.2.0`; v7 ships the React-Compiler ruleset which is too aggressive against the existing codebase — produced **145 ref findings** plus immutability/purity violations on working code.
+- **Files:** `frontend/package.json:66`.
+- **Impact:** Cannot adopt the React-Compiler lint ruleset without a large refactor.
+- **Fix approach:** Defer. Revisit only if/when the team commits to a React-Compiler migration pass. Documented decision.
 
-### `checkAndAwardBadges` als Property am Router-Objekt
+### Lint baseline ~645 pre-existing findings (LOW — tolerated)
 
-- Issue: `checkAndAwardBadges` wird als Property auf dem Express-Router-Objekt exportiert (`badgesRouter.checkAndAwardBadges`), was ein ungewöhnliches und fragiles Muster ist
-- Files: `backend/routes/badges.js:818`, `backend/server.js:477`
-- Impact: Schwierig zu testen, unklar ob Property nach Hot-Reload erhalten bleibt; wird auch als `module.exports.checkAndAwardBadges` exportiert (zwei Export-Wege)
-- Fix approach: Als eigene Service-Funktion in `backend/services/badgeService.js` auslagern
-
-### Kein User-Cache-Invalidation bei Rollenänderungen
-
-- Issue: Der In-Memory-User-Cache in `rbac.js` (30s TTL) wird bei Rollenänderungen nicht explizit invalidiert
-- Files: `backend/middleware/rbac.js:35-41`, `backend/routes/users.js:260-273`
-- `invalidateUserCache` ist exportiert, wird aber in keiner Route aufgerufen
-- Impact: Nach einer Rollenänderung kann ein Nutzer bis zu 30 Sekunden lang mit der alten Rolle handeln (socket.io-Disconnect als Workaround ist vorhanden, aber HTTP-Requests laufen weiter)
-- Fix approach: `invalidateUserCache(id)` in `users.js` nach erfolgreicher Rollenänderung aufrufen
-
-### Viele große Dateien ohne Aufteilung
-
-- Issue: Mehrere Komponenten und Routes sind sehr groß und enthalten mehrere unabhängige Verantwortlichkeiten
-- Files:
-  - `frontend/src/components/admin/views/KonfiDetailSections.tsx` (1181 Zeilen)
-  - `frontend/src/components/admin/modals/BadgeManagementModal.tsx` (1124 Zeilen)
-  - `frontend/src/components/chat/ChatRoom.tsx` (1058 Zeilen)
-  - `backend/routes/events.js` (2042 Zeilen)
-  - `backend/routes/konfi.js` (2023 Zeilen)
-  - `backend/routes/chat.js` (1878 Zeilen)
-- Impact: Schwierige Wartbarkeit, hohe kognitive Last, Merge-Konflikte wahrscheinlicher
-- Fix approach: Schrittweise in kleinere Komponenten/Module aufteilen; Backend-Routes nach REST-Ressourcen trennen
+- **Issue:** Roughly **645 pre-existing lint findings** (mostly `no-unused-vars`, `@typescript-eslint/no-explicit-any`).
+- **Impact:** Lint is **not the build gate** — `tsc` is (`build: "tsc && vite build"`, `frontend/package.json:8`). Findings are noise, not failures.
+- **Fix approach:** Opportunistic cleanup; do not gate CI on lint. When touching a file, prefer removing its `any`/unused-var findings rather than a big-bang sweep. Note: there are **0 TODO/FIXME/HACK markers** in either backend (`routes`/`services`/`utils`) or `frontend/src` — debt lives in lint findings, not inline markers.
 
 ---
 
-## Performance-Engpässe
+## Build / Bundle
 
-### Badge-Update-Hintergrunddienst läuft für alle User sequenziell
+### Large index chunk ~2.5MB+ (MEDIUM)
 
-- Problem: `BackgroundService.updateAllUserBadges` iteriert alle User mit Push-Tokens in einer Schleife und prüft/vergibt Badges einzeln
-- Files: `backend/services/backgroundService.js:94-130`
-- Cause: `checkAndAwardBadges` wird pro User aufgerufen, macht mehrere DB-Queries je User
-- Bei EKD-Skalierung (4000+ User): Service-Zyklus (alle 5 Min.) dauert möglicherweise länger als 5 Minuten
-- Improvement path: Batch-Verarbeitung mit `Promise.all` (begrenzte Concurrency), Badge-Check nur bei tatsächlichen Punkt-Änderungen triggern statt Polling
-
-### Sequential Waitlist-Promotion in Event-Update
-
-- Problem: Wartelisten-Beförderung iteriert Einträge sequenziell mit einzelnen UPDATE-Queries
-- Files: `backend/routes/events.js:950-953`, `backend/routes/events.js:968-971`
-- Cause: `for (const entry of waitlistEntries) { await client.query(UPDATE ...) }`
-- Improvement path: Bulk-UPDATE mit `WHERE id = ANY($1::int[])` statt N einzelne Queries
-
-### Chat: Unbegrenztes `after`-Polling ohne Backpressure
-
-- Problem: Der `after`-Parameter in der Chat-Nachrichten-API ist auf 200 Nachrichten begrenzt, aber kein Throttling bei Reconnects
-- Files: `backend/routes/chat.js:584-590`
-- Bei Offline-Reconnect mit langem Rückstand werden alle verpassten Nachrichten auf einmal geladen
+- **Problem:** The main `index` chunk is ~2.5MB+, triggering Vite's single-large-chunk warning. **Not** solved by the Vite 8 upgrade (faster build ≠ smaller bundle).
+- **Files:** `frontend/vite.config.ts` — **no `manualChunks` configured** (verified); `stats.html` is the visualizer output for inspection.
+- **Cause:** Everything bundled into one chunk; no route-level code-splitting.
+- **Improvement path:** Add `build.rollupOptions.output.manualChunks` to split vendor libs (Ionic, Swiper, axios, socket.io, qrcode), and/or `React.lazy` + `Suspense` on heavy routes (Wrapped/Swiper slides, file viewers, QR scanner). Measurable win on cold-load on real devices.
 
 ---
 
-## Fragile Bereiche
+## Platform / Native
 
-### Event-Buchungs-Transaktion: Viele separate `client.release()`-Aufrufe
+### Capacitor 8 emulator renders black (LOW — not an app bug)
 
-- Files: `backend/routes/events.js` (9 `getClient()`-Aufrufe, ~55 `client.release()`-Aufrufe)
-- Why fragile: Das Early-Return-Pattern (`ROLLBACK; client.release(); return res.status(...)`) ist fehleranfällig — jede neue early-return-Bedingung erfordert manuelles `client.release()`. Ein vergessenes Release verursacht Connection-Pool-Erschöpfung.
-- Safe modification: Try-finally-Block verwenden (`finally { client.release(); }`) statt manueller Release-Aufrufe in jedem Branch
-- Test coverage: Keine automatisierten Tests für Transaktions-Rollback-Szenarien
+- **Problem:** On the Android emulator, the Capacitor WebView surface renders **black in screenshots** (GPU/surface capture issue), affecting the screenshot workflow only.
+- **Cause:** Emulator GPU surface, not application code.
+- **Workaround:** Use `fromSurface:false` in the CDP screenshot call. App renders correctly on **real devices** (verified in Pixel_9 emulator runtime: Konfi dashboard runs, no crashes — only screenshot capture is affected).
+- **Action:** None on the app. Keep the CDP workaround documented for the screenshot toolkit.
 
-### Chat-Dateizugriff prüft Membership ohne `user_type`
+### `frontend/android` is gitignored → versionCode not versioned (MEDIUM — process risk)
 
-- Files: `backend/routes/chat.js:1084-1088`
-- Problem: Die Membership-Check-Query für Dateizugriff (`chat_participants`) prüft `user_id` aber nicht `user_type`. Da Nutzer mehrere `user_type`-Einträge haben könnten (nach Rollenänderung), kann dies zu unerwarteten Zugriffen führen.
-- Safe modification: `AND cp.user_id = $2 AND cp.user_type = $3` mit dem korrekten `user_type` des anfragenden Users
+- **Problem:** `frontend/android/` is gitignored, so `android/app/build.gradle` `versionCode` is **not tracked in git**. It must be **manually bumped before every AAB build**.
+- **Impact:** Easy to forget; Google Play rejects duplicate `versionCode`. History is only in memory notes (21 → 26 → 27 → 28 → 29 over recent builds).
+- **Fix approach:** Either (a) un-ignore the minimal signing-relevant gradle files, or (b) add a pre-build script that auto-increments and records `versionCode` in a tracked file. At minimum, keep a single authoritative log of the last-used code.
 
-### `ensureAdminJahrgangChatMembership` kennt keine Teamer-Rolle
+### bird.png borrowed from GuckMal app (LOW — branding/licensing)
 
-- Files: `backend/routes/chat.js:40-100`
-- Why fragile: Die Funktion verwaltet Chat-Mitgliedschaft nur für `user_type = 'admin'`. Teamer-Nutzer werden nicht eigenständig verwaltet — sie "erben" den `admin`-user_type via Backward-Compat. Wenn das RBAC-Mapping geändert wird, bricht Chat-Membership für Teamer.
-- Test coverage: Keine Tests
-
-### Portainer-Stack SMTP-Config doppelt (postgres + backend)
-
-- Files: `portainer-stack.yml:15-18` (postgres service), `portainer-stack.yml:48-51` (backend service)
-- Why fragile: SMTP-Konfiguration ist im postgres-Service eingetragen, obwohl postgres keine E-Mails sendet. Bei Änderung der SMTP-Credentials muss der postgres-Service unnötig neugestartet werden.
-- Fix approach: SMTP-Envs aus dem postgres-Service entfernen
+- **Issue:** `frontend/public/assets/branding/bird.png` (and built copies) is a branding asset **borrowed from the GuckMal app**.
+- **Impact:** Asset-provenance / brand-consistency concern. Low risk if both apps are owned by the same author, but it is not a purpose-made Konfi Quest asset.
+- **Fix approach:** Replace with a dedicated Konfi Quest asset before broad public marketing, or confirm reuse is intentional and licensed.
 
 ---
 
-## Test-Coverage-Lücken
+## Deployment / Operations
 
-### Nahezu keine automatisierten Tests
+### Manual deploy via Portainer API (MEDIUM — operational)
 
-- What's not tested: Alle Backend-Routes, alle Frontend-Komponenten, Transaktions-Logik, Badge-Vergabe-Logik, RBAC-Middleware
-- Files: `frontend/src/App.test.tsx` (einzige Testdatei — prüft nur ob App rendert), keine Backend-Tests gefunden
-- Risk: Regressions beim Refactoring oder bei neuen Features können nicht automatisch erkannt werden
-- Priority: Hoch — besonders kritisch für Auth-, RBAC- und Transaktions-Code
+- **Problem:** No auto-deploy. The `konfi_quest` stack is **not git-bound** (`git_config: null`) and has **no Watchtower**. `git push` only triggers GitHub Actions to build `:latest` to ghcr.io — the server does **not** pull automatically.
+- **Process (from MEMORY.md):** push → wait for CI green → Portainer `manage_image` pull (backend+frontend) → `update_stack` id 249 env 1 `pull_image:true` **with full compose_content** → verify containers + `curl` live.
+- **Impact:** Multi-step, error-prone, requires the full compose payload each time (omitting it → "Invalid request payload"). Easy to deploy a stale image if the pull step is skipped.
+- **Mitigation in place:** Rollback anchors (previous image SHAs) are recorded per deploy in `memory/upgrade_vite8_ts6_cap8.md`. CI is the deploy gate.
+- **Fix approach:** Consider git-binding the stack or adding controlled auto-pull. Until then, treat the documented runbook as mandatory and keep rollback SHAs per deploy.
 
-### Keine Integration-Tests für RBAC-Grenzen
+### Express 5 empty-body regression (RESOLVED — note for future)
 
-- What's not tested: Dass Konfis keine Admin-Endpoints aufrufen können, Organisations-Isolation, Jahrgangs-Zugriffs-Checks
-- Risk: Sicherheitslücken durch fehlerhafte Middleware-Komposition könnten unbemerkt eingeführt werden
-- Priority: Hoch
-
----
-
-## Fehlende Kritische Features
-
-### Kein Datei-Cleanup bei verwaisten Uploads
-
-- Problem: Wenn Chat-Nachrichten mit Anhängen gelöscht werden oder Nutzer gelöscht werden, werden Dateien im Dateisystem nicht systematisch bereinigt
-- Files: `backend/routes/chat.js:1598-1639` (löscht Dateien beim Raum-Löschen), kein allgemeiner Cleanup-Cron
-- Blocks: Langfristig wächst `backend/uploads/` unkontrolliert
-- Priority: Mittel — kein sofortiges Problem, aber auf Produktionsserver relevant
-
-### Keine Backup-Strategie dokumentiert
-
-- Problem: Kein automatisiertes DB-Backup oder Upload-Backup im Portainer-Stack sichtbar
-- Files: `portainer-stack.yml` (kein Backup-Service)
-- Blocks: Wiederherstellung nach Datenverlust
-- Priority: Hoch für Produktion
+- Express 5 makes `req.body` `undefined` (not `{}`) on empty/missing body, which previously crashed ~71 `const {x} = req.body` sites. Fixed centrally with one middleware in `backend/createApp.js` (`if(req.body===undefined) req.body={}`). **Not a current concern** — documented so a future refactor does not remove that middleware.
 
 ---
 
-## Abhängigkeiten mit Risiko
+## Database / Scaling
 
-### React Router v5 bei React 19
+### Single Postgres container, 256M, no HA (LOW — accepted for size)
 
-- Risk: React Router v5 (`^5.3.4`) ist nicht offiziell für React 19 getestet. React Router v6+ ist der aktuelle Stand.
-- Files: `frontend/package.json`
-- Impact: Potenzielle Inkompatibilitäten bei React-Updates; fehlende moderne Router-Features (Loader, Actions)
-- Migration plan: Upgrade auf React Router v6 + `@ionic/react-router` v6-Kompatibilität prüfen
+- **Current capacity:** DB ~14MB, Postgres 15.18, single container, 256M memory, ~6 connections. Indices are already strong (composite indexes on all hot tables per audit 064).
+- **Limit / scaling levers (documented, not needed now):** Bump Postgres container memory 256M → 512M/1G and raise `PG_POOL_MAX` (default 20) moderately — **caution:** `pool × backend instances` must not exceed Postgres `max_connections` (100). Pool config is env-overridable in `backend/database.js`.
+- **Mitigation:** Restore plan exists — nightly consistent `pg_dump` 02:30 (`/opt/Konfi-Quest/backups/pg_backup.sh`, gzip, 14-day rotation) + restic to Hetzner storage box. HA/replication is **over-engineering at 14MB**; restore plan beats HA here.
+- **Action:** None now. Re-evaluate at the EKD-scale (4000+ users) growth target. Levers are documented.
 
-### Express v4 (nicht v5)
+### Deprecated / unused tables (LOW — cleanup)
 
-- Risk: Express 5 (stable seit 2024) bringt besseres async Error-Handling. Mit Express 4 müssen unbehandelte async-Errors manuell gefangen werden.
-- Files: `backend/package.json` (`"express": "^4.18.2"`)
-- Impact: Unbehandelte Promise-Rejections in Route-Handlern werden nicht automatisch als 500-Fehler weitergegeben
-- Migration plan: Upgrade auf Express 5 ist schrittweise möglich, da v5 weitgehend kompatibel ist
-
-### `@rdlabo/ionic-theme-ios26` (Drittanbieter-Theme)
-
-- Risk: Nicht-offizielles Community-Package ohne Ionic-Support-Garantie
-- Files: `frontend/package.json`
-- Known issue: `registerTabBarEffect` funktioniert bei 6 Tabs nicht vollständig (aus MEMORY.md)
-- Migration plan: Langfristig auf offizielle Ionic-Theming-APIs wechseln wenn verfügbar
+- **`badges` table:** 0 rows, no FK points to it, no code references it (the active path is `custom_badges`; `user_badges.badge_id → custom_badges`). **Droppable** via a migration (`DROP TABLE badges`) — never by hand on prod.
+- **`permissions` + `role_permissions`:** both 0 rows, intentionally unused (RBAC is role-based, not permission-granular). Harmless; can stay.
+- **Token hygiene (optional):** `refresh_tokens` ~145/213 revoked-or-expired (~232KB), `password_resets` 7 expired (harmless). Optional cleanup cron.
+- **Fix approach:** Bundle a single cleanup migration (DROP `badges` + an expired-token cron) into the next deploy. Low priority, non-blocking.
 
 ---
 
-*Concerns-Audit: 2026-03-24*
+## Test Coverage Gaps / Test Infra
+
+### Sporadic deadlock in `truncateAll` on parallel vitest runs (MEDIUM — flaky CI)
+
+- **What's wrong:** Running the multi-suite backend test set in parallel sporadically throws `deadlock detected` in `truncateAll`. Run **individually**, every suite passes green.
+- **Cause:** Not feature code — vitest `maxWorkers` / truncate ordering across suites contending on the shared test DB.
+- **Risk:** Flaky CI can mask real failures or block a deploy on a non-issue, eroding trust in the gate.
+- **Fix approach:** Pin truncate ordering (consistent table order to avoid lock cycles), or serialize the truncate step / lower `maxWorkers` for the suites that truncate. Until fixed, a CI failure here should be re-run before being treated as real.
+
+### Pre-existing test-schema gap (LOW)
+
+- A pre-existing globalSetup gap (`events.cancelled_at`, `event_unregistrations`) surfaced during Phase 114 work — **not** caused by feature code. Align the test schema bootstrap with the latest migrations.
+
+---
+
+## Severity Summary
+
+| Severity | Item | Type |
+|----------|------|------|
+| HIGH | Secrets in committed `portainer-stack.yml` (rotate + externalize) | Real risk |
+| HIGH | react-router locked at v5 (Ionic v9 dependency) | Accepted (external lock) |
+| MEDIUM | Large ~2.5MB index chunk (no manualChunks) | Real opportunity |
+| MEDIUM | `frontend/android` gitignored → versionCode not versioned | Process risk |
+| MEDIUM | Manual Portainer deploy, no auto-deploy/Watchtower | Operational risk |
+| MEDIUM | Flaky parallel-vitest `truncateAll` deadlock | Test infra |
+| MEDIUM | eslint 9 / react-hooks 5 pins | Accepted decision |
+| LOW | Capacitor 8 emulator black-screenshot (GPU) | Not an app bug |
+| LOW | bird.png borrowed from GuckMal | Branding/provenance |
+| LOW | ~645 lint findings baseline | Tolerated (tsc is gate) |
+| LOW | Single Postgres / no HA | Accepted for size |
+| LOW | `badges` / `permissions` / `role_permissions` unused tables | Cleanup |
+
+---
+
+*Concerns audit: 2026-06-09*
