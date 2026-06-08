@@ -84,7 +84,7 @@ const UnregisterModal: React.FC<UnregisterModalProps> = ({
         {/* Event Info */}
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className="app-section-icon app-section-icon--events">
               <IonIcon icon={calendarOutline} />
             </div>
             <IonLabel>Abmeldung von</IonLabel>
@@ -101,7 +101,7 @@ const UnregisterModal: React.FC<UnregisterModalProps> = ({
         {/* Grund Sektion */}
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className="app-section-icon app-section-icon--events">
               <IonIcon icon={chatbubbleOutline} />
             </div>
             <IonLabel>Grund für die Abmeldung</IonLabel>

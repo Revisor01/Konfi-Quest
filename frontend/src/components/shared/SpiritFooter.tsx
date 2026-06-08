@@ -30,7 +30,7 @@ const SpiritFooter: React.FC = () => {
           color: 'var(--ion-color-medium, #8e8e93)',
           fontSize: '0.8rem',
           lineHeight: 1.5,
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.06)'
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)'
         }}
       >
         {version && (

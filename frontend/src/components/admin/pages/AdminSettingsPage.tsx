@@ -36,6 +36,7 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { logout } from '../../../services/auth';
 import { clearAuth } from '../../../services/tokenStore';
+import SpiritFooter from '../../shared/SpiritFooter';
 import { useIonRouter } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 
@@ -340,6 +341,8 @@ console.error('Logout error:', error);
           </IonList>
         )}
 
+
+        <SpiritFooter />
 
         <div className="app-segment-wrapper">
           <IonButton
