@@ -1382,6 +1382,18 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         // Delete the booking
         await client.query("DELETE FROM event_bookings WHERE event_id = $1 AND user_id = $2 AND organization_id = $3", [eventId, userId, req.user.organization_id]);
 
+        // Wer sich vom Event abmeldet, fliegt auch aus dem zugehoerigen Event-Chat
+        // (chat_rooms.event_id = dieses Event). Sonst bleibt man im Chat, obwohl
+        // man nicht mehr teilnimmt.
+        await client.query(
+          `DELETE FROM chat_participants
+           WHERE user_id = $1
+             AND room_id IN (
+               SELECT id FROM chat_rooms WHERE event_id = $2 AND organization_id = $3
+             )`,
+          [userId, eventId, req.user.organization_id]
+        );
+
         // If a confirmed Konfi-spot was opened, auto-promote from waitlist (nur für Konfis relevant)
         if (booking.status === 'confirmed' && isKonfi) {
           const { rows: [eventCapInfo] } = await client.query(

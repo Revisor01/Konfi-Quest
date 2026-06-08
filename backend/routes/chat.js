@@ -1034,7 +1034,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       const userType = req.user.type;
       const organizationId = req.user.organization_id;
 
-      const { rows: [room] } = await db.query("SELECT type FROM chat_rooms WHERE id = $1 AND organization_id = $2", [roomId, organizationId]);
+      const { rows: [room] } = await db.query("SELECT type, event_id FROM chat_rooms WHERE id = $1 AND organization_id = $2", [roomId, organizationId]);
       if (!room) {
         return res.status(404).json({ error: 'Raum nicht gefunden' });
       }
@@ -1047,6 +1047,13 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       // Jahrgang und Direct sind generell nicht verlassbar
       if (room.type === 'jahrgang' || room.type === 'direct') {
         return res.status(400).json({ error: 'Dieser Chat kann nicht verlassen werden' });
+      }
+
+      // Event-Chats sind an die Event-Teilnahme gekoppelt: Konfis verlassen sie
+      // NICHT manuell, sondern ausschliesslich durch Abmelden vom Event. Sonst
+      // waere man am Event angemeldet, aber nicht im Chat.
+      if (userType === 'konfi' && room.event_id) {
+        return res.status(400).json({ error: 'Event-Chats werden über die Event-Abmeldung verlassen, nicht direkt.' });
       }
 
       const { rowCount } = await db.query(

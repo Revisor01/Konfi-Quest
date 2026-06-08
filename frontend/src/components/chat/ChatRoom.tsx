@@ -951,6 +951,9 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     if (!room) return false;
     // Admins duerfen NIEMALS einen Chat verlassen
     if (user?.type === 'admin') return false;
+    // Event-Chats sind an die Event-Teilnahme gekoppelt: Konfis verlassen sie
+    // nur ueber die Event-Abmeldung, nicht direkt im Chat.
+    if (user?.type === 'konfi' && room.event_id) return false;
     // Teamer:innen duerfen group und admin-Chats verlassen
     if (room.type === 'group') return true;
     if (room.type === 'admin') return true;
