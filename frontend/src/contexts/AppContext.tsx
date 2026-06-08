@@ -288,14 +288,11 @@ useEffect(() => {
   // falls er schon da ist (z.B. bei App-Start mit eingeloggtem User).
   // Deine AppDelegate-Logik sendet ihn bei App-Aktivierung ohnehin,
   // aber dies ist eine zusätzliche Sicherheit.
-  if (Capacitor.isNativePlatform()) {
-    // Dies simuliert, dass die App aktiv wird und triggert den Token-Send in Swift
-    try {
-      (App as any).fireRestoredResult({ methodName: 'getLaunchUrl', data: {} });
-    } catch (e) {
-      // Ignore — nicht auf allen Plattformen verfügbar
-    }
-  }
+  // Hinweis: Das fruehere (App as any).fireRestoredResult()-Workaround zum
+  // Antriggern des Token-Sends ist in Capacitor 8 entfernt und warf eine
+  // unhandled Promise-Rejection ("not implemented on android"). Der Token-Send
+  // erfolgt ohnehin ueber das AppDelegate bei App-Aktivierung sowie ueber den
+  // 'fcmToken'-Listener oben — der Workaround ist damit ersatzlos entfallen.
 
 
   return () => {
