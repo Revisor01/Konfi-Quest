@@ -230,8 +230,13 @@ const uploadLimiter = rateLimit({
 });
 
 const orgLimiter = rateLimit({
+  // Deckt ALLE /api/organizations-Routen ab (auch Lese-Requests: Liste, Detail,
+  // Admins). 20/15min war viel zu eng — schon wenige Klicks (Liste -> Org oeffnen
+  // -> Admins laden -> zurueck) erschoepften es. 200/15min laesst fluessiges
+  // Arbeiten zu und bleibt ein Missbrauchs-Deckel. GET-Requests zaehlen nicht mit.
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 200,
+  skip: (req) => req.method === 'GET',
   message: { error: 'Zu viele Anfragen an die Organisationsverwaltung. Bitte versuche es spaeter erneut.' },
   standardHeaders: true,
   legacyHeaders: false
