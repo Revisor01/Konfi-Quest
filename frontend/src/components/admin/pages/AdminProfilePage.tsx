@@ -319,6 +319,8 @@ const AdminProfilePage: React.FC = () => {
           </IonCard>
         </IonList>
 
+        <SpiritFooter />
+
         <div style={{ padding: '0 16px', marginTop: '16px' }}>
           <IonButton
             expand="block"
@@ -334,8 +336,6 @@ const AdminProfilePage: React.FC = () => {
             Account löschen
           </IonButton>
         </div>
-
-        <SpiritFooter />
 
         <div style={{ height: '32px' }} />
       </IonContent>
