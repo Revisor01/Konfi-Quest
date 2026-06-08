@@ -92,7 +92,10 @@ jobs:
 
   build-and-push:
     needs: [backend-test, frontend-test]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && always()
+    # KEIN always() — Build+Deploy laufen NUR wenn backend-test UND frontend-test
+    # gruen sind (Default-needs-Verhalten). Das ist das eigentliche Test-Gate:
+    # Tests rot -> kein Build -> kein Webhook -> kein Deploy.
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     runs-on: ubuntu-latest
     permissions:
