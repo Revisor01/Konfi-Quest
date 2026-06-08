@@ -336,9 +336,9 @@ describe('Chat Routes', () => {
     });
 
     it('Nachricht nur mit Datei (ohne content) -> 200', async () => {
-      // Echte PNG Magic-Bytes: 89 50 4E 47 0D 0A 1A 0A
-      const pngHeader = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
-      const pngBuffer = Buffer.concat([pngHeader, Buffer.alloc(100)]);
+      // Echte gueltige 1x1-PNG (IHDR/IDAT/IEND) — file-type@22 verlangt eine
+      // valide Struktur, nicht nur die Magic-Bytes (strenger als file-type@19).
+      const pngBuffer = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
 
       const res = await request(app)
         .post(`/api/chat/rooms/${CHAT_ROOMS.jahrgang.id}/messages`)
