@@ -1,38 +1,39 @@
 PODS:
-  - Capacitor (7.6.0):
+  - Capacitor (8.4.0):
     - CapacitorCordova
-  - CapacitorApp (7.0.1):
+  - CapacitorApp (8.1.0):
     - Capacitor
-  - CapacitorCamera (7.0.5):
+  - CapacitorCamera (8.2.0):
     - Capacitor
-  - CapacitorCommunityFileOpener (7.0.1):
+    - IONCameraLib (~> 1.0.4)
+  - CapacitorCommunityFileOpener (8.0.1):
     - Capacitor
-  - CapacitorCordova (7.6.0)
-  - CapacitorDevice (7.0.4):
+  - CapacitorCordova (8.4.0)
+  - CapacitorDevice (8.0.2):
     - Capacitor
-  - CapacitorFilesystem (7.1.8):
+  - CapacitorFilesystem (8.1.2):
     - Capacitor
     - IONFilesystemLib (~> 1.1.1)
-  - CapacitorFileViewer (1.0.7):
+  - CapacitorFileViewer (2.0.1):
     - Capacitor
     - IONFileViewerLib (~> 1.0.3)
-  - CapacitorHaptics (7.0.1):
+  - CapacitorHaptics (8.0.2):
     - Capacitor
-  - CapacitorKeyboard (7.0.5):
+  - CapacitorKeyboard (8.0.3):
     - Capacitor
   - CapacitorNetwork (8.0.1):
     - Capacitor
   - CapacitorPreferences (8.0.1):
     - Capacitor
-  - CapacitorPushNotifications (7.0.6):
+  - CapacitorPushNotifications (8.1.1):
     - Capacitor
-  - CapacitorShare (7.0.4):
+  - CapacitorShare (8.0.1):
     - Capacitor
-  - CapacitorStatusBar (7.0.1):
+  - CapacitorStatusBar (8.0.2):
     - Capacitor
   - CapawesomeCapacitorBackgroundTask (8.0.2):
     - Capacitor
-  - CapawesomeCapacitorBadge (7.0.1):
+  - CapawesomeCapacitorBadge (8.0.2):
     - Capacitor
   - FirebaseCore (12.11.0):
     - FirebaseCoreInternal (~> 12.11.0)
@@ -81,6 +82,7 @@ PODS:
   - GoogleUtilities/UserDefaults (8.1.0):
     - GoogleUtilities/Logger
     - GoogleUtilities/Privacy
+  - IONCameraLib (1.0.4)
   - IONFilesystemLib (1.1.2)
   - IONFileViewerLib (1.0.3)
   - nanopb (3.30910.0):
@@ -120,6 +122,7 @@ SPEC REPOS:
     - FirebaseMessaging
     - GoogleDataTransport
     - GoogleUtilities
+    - IONCameraLib
     - IONFilesystemLib
     - IONFileViewerLib
     - nanopb
@@ -162,29 +165,30 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capawesome/capacitor-badge"
 
 SPEC CHECKSUMS:
-  Capacitor: 9251cf0e689bfcc0f8ddc9bae2267108019d9de0
-  CapacitorApp: d63334c052278caf5d81585d80b21905c6f93f39
-  CapacitorCamera: fdbf24f93bc44ca13c4209866368a1972349d3d2
-  CapacitorCommunityFileOpener: 9611c9d1595de7b50571717d443bb718a304b5eb
-  CapacitorCordova: f163aa2e84b79efc54d6a75b305bc7e05fb80c5d
-  CapacitorDevice: 7389e5651a6aaf2a0c0faa3fd7d19ecfbcdcd7cc
-  CapacitorFilesystem: f54cd6b76be06fa7ceb219cf313d32e0d626ea87
-  CapacitorFileViewer: 4592e4094e702b9e3c1062a43e845bd38467fb0c
-  CapacitorHaptics: 70e47470fa1a6bd6338cd102552e3846b7f9a1b3
-  CapacitorKeyboard: fc8fe4ae5dfcbac649cc0de9ee20db4e88ee26c5
+  Capacitor: 8273022511838f32d2b245105fdee086195b1304
+  CapacitorApp: a4d8d936cc4390859a3766f141048abe55d4076f
+  CapacitorCamera: a9b5f1a5d09e61b7a979e3510b87cdda99265d2f
+  CapacitorCommunityFileOpener: 6ab0411743ab81b72a4eac9b78a24d6207b12dcf
+  CapacitorCordova: 71d81f350e6c30bf2a846593b5c480fbd68e9bac
+  CapacitorDevice: b50f119138a2b69a1e9213f4468d1e75e4239cca
+  CapacitorFilesystem: 7d3e3df84be4f0d999a5d6baa23aeb30c2de6450
+  CapacitorFileViewer: 8d015593b2c11124b260f5c94c982abf8e7c169d
+  CapacitorHaptics: 4e1e84c2b74fb5918e403fb8f0e73a07d05937df
+  CapacitorKeyboard: ad22f33de28070c8e16ecb119084af06915724e2
   CapacitorNetwork: 7afc28ed4d9abe1d9801264fa485db32e4420546
   CapacitorPreferences: 0fa33b3affebf12d96358b491ed7c2b39bec3270
-  CapacitorPushNotifications: c6158ba6f3777f281a675aa43e4011e9723e822b
-  CapacitorShare: 14b5d7f0a2c6de86dcad8995da80fb707ee32f62
-  CapacitorStatusBar: 275cbf2f4dfc00388f519ef80c7ec22edda342c9
+  CapacitorPushNotifications: 7fa75d28307b23b314b19ec7cfe88611e9659352
+  CapacitorShare: 8a565649d321a05a1ae8b525b2a9b4f2d92c70ce
+  CapacitorStatusBar: b692a4cf12b3fe3a7b7ece86da62106065d78fdc
   CapawesomeCapacitorBackgroundTask: 56ca2729d46b7e3d4e2f92240c95bd7511b341b6
-  CapawesomeCapacitorBadge: 48e5431c8b9909568ac5e5bf24163d92e1d9ed18
+  CapawesomeCapacitorBadge: f2acd9e0b25f4a4c2ca6b5cc946d99747c1ffcdd
   FirebaseCore: 1b39aa6e67b4b4d5771045abf9c9a57a585ff1e7
   FirebaseCoreInternal: 26601b1134d192ef73e80c0c0110fb96477db687
   FirebaseInstallations: 3b65e8f4faed02bad1abf5de40e8286c5b13073d
   FirebaseMessaging: ff23938c6c1a1d0f5e22e915131d6e14c6a74b99
   GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
+  IONCameraLib: f2349804460bd9e3f892e42109b8d996ab3fa19d
   IONFilesystemLib: 21a63377696b2d8fab5632ecfb7d2ac67bddb68a
   IONFileViewerLib: 574758ebcaa4b1543669b1c9708f1970e1172b29
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
