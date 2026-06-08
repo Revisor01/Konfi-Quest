@@ -23,13 +23,14 @@ const SpiritFooter: React.FC = () => {
     <div style={{ padding: '8px 16px 0' }}>
       <div
         style={{
-          background: 'rgba(120, 120, 128, 0.08)',
+          background: '#ffffff',
           borderRadius: '14px',
           padding: '16px 12px',
           textAlign: 'center',
           color: 'var(--ion-color-medium, #8e8e93)',
           fontSize: '0.8rem',
-          lineHeight: 1.5
+          lineHeight: 1.5,
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.06)'
         }}
       >
         {version && (
