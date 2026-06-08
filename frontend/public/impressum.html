@@ -17,9 +17,11 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
+            overflow-wrap: break-word;
         }
         .container {
             max-width: 800px;
+            width: 100%;
             margin: 0 auto;
             background: white;
             border-radius: 16px;
@@ -32,22 +34,33 @@
             font-size: 2rem;
             border-bottom: 3px solid #667eea;
             padding-bottom: 15px;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            hyphens: auto;
         }
         h2 {
             color: #333;
             margin-top: 30px;
             margin-bottom: 15px;
             font-size: 1.3rem;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            hyphens: auto;
         }
         h3 {
             color: #555;
             margin-top: 20px;
             margin-bottom: 10px;
             font-size: 1.1rem;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            hyphens: auto;
         }
         p, li {
             margin-bottom: 12px;
             color: #555;
+            overflow-wrap: break-word;
+            hyphens: auto;
         }
         ul {
             margin-left: 20px;
@@ -73,6 +86,7 @@
         a {
             color: #667eea;
             text-decoration: none;
+            overflow-wrap: anywhere;
         }
         a:hover {
             text-decoration: underline;
@@ -82,6 +96,28 @@
             margin-top: 30px;
             color: #667eea;
             font-weight: 600;
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 12px;
+            }
+            .container {
+                padding: 24px 18px;
+                border-radius: 12px;
+            }
+            h1 {
+                font-size: 1.6rem;
+                margin-bottom: 20px;
+            }
+            h2 {
+                font-size: 1.15rem;
+            }
+            h3 {
+                font-size: 1.05rem;
+            }
+            .contact-box {
+                padding: 12px 15px;
+            }
         }
     </style>
 </head>
