@@ -248,7 +248,7 @@ function createApp(db, options = {}) {
 
   // Health-Endpoint
   app.get('/api/health', (req, res) => {
-    res.json({ status: 'OK', message: 'Konfi Points API is running' });
+    res.json({ status: 'OK', message: 'Konfi Points API is running', deployCheck: '2026-06-09' });
   });
 
   // Auth Routes
