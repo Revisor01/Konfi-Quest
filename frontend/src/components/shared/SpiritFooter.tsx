@@ -1,41 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import { App } from '@capacitor/app';
-import { Capacitor } from '@capacitor/core';
+import React from 'react';
+import { IonCard, IonCardContent } from '@ionic/react';
 
 /**
  * Einheitlicher Branding-Footer fuer alle Apps ("Made with Spirit in Hennstedt").
  * Die Taube symbolisiert den Heiligen Geist, "Friede. Schalom. Salam." ist der
- * Friedensgruss in drei Sprachen. Abgesetzt in einer dezenten Card, am Ende der
- * Profil-Seiten. Vogel als PNG (wie bei den anderen Apps), nicht als Inline-SVG.
+ * Friedensgruss in drei Sprachen. Nutzt dieselbe app-card wie die Listen darueber,
+ * damit Rahmen/Schatten exakt konsistent sind. Vogel als PNG (wie die anderen Apps).
  */
 const SpiritFooter: React.FC = () => {
-  const [version, setVersion] = useState<string>('');
-
-  useEffect(() => {
-    if (Capacitor.isNativePlatform()) {
-      App.getInfo()
-        .then((info) => setVersion(info.version))
-        .catch(() => setVersion(''));
-    }
-  }, []);
-
   return (
-    <div style={{ padding: '8px 16px 0' }}>
-      <div
+    <IonCard className="app-card" style={{ margin: '16px' }}>
+      <IonCardContent
         style={{
-          background: '#ffffff',
-          borderRadius: '14px',
-          padding: '16px 12px',
           textAlign: 'center',
           color: 'var(--ion-color-medium, #8e8e93)',
           fontSize: '0.8rem',
           lineHeight: 1.5,
-          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)'
+          padding: '16px 12px'
         }}
       >
-        {version && (
-          <div style={{ marginBottom: '4px' }}>Konfi Quest v{version}</div>
-        )}
         <div
           style={{
             display: 'inline-flex',
@@ -56,8 +39,8 @@ const SpiritFooter: React.FC = () => {
         <div style={{ marginTop: '3px', fontStyle: 'italic', opacity: 0.8 }}>
           Friede. Schalom. Salam.
         </div>
-      </div>
-    </div>
+      </IonCardContent>
+    </IonCard>
   );
 };
 

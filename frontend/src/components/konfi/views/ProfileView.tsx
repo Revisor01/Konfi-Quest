@@ -763,8 +763,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         </IonCard>
       </IonList>
 
-      <SpiritFooter />
-
       {/* Logout */}
       <div style={{ padding: '0 16px', marginTop: '16px' }}>
         <IonButton
@@ -784,12 +782,13 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
 
         <IonButton
           expand="block"
-          fill="clear"
+          fill="outline"
           color="danger"
           onClick={() => presentDeleteAccount({ presentingElement: pageRef?.current || presentingElement || undefined })}
           style={{
             height: '48px',
             marginTop: '8px',
+            borderRadius: '12px',
             fontWeight: '600'
           }}
         >
@@ -797,6 +796,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
           Account löschen
         </IonButton>
       </div>
+
+      <SpiritFooter />
 
       <div style={{ height: '32px' }}></div>
     </div>

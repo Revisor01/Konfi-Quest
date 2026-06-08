@@ -470,8 +470,6 @@ const TeamerProfilePage: React.FC = () => {
           </IonList>
         )}
 
-        <SpiritFooter />
-
         {/* D. Logout-Button */}
         <div style={{ padding: '0 16px', marginTop: '16px' }}>
           <IonButton
@@ -491,12 +489,13 @@ const TeamerProfilePage: React.FC = () => {
 
           <IonButton
             expand="block"
-            fill="clear"
+            fill="outline"
             color="danger"
             onClick={() => presentDeleteAccount({ presentingElement: pageRef.current ?? undefined })}
             style={{
               height: '48px',
               marginTop: '8px',
+              borderRadius: '12px',
               fontWeight: '600'
             }}
           >
@@ -504,6 +503,8 @@ const TeamerProfilePage: React.FC = () => {
             Account löschen
           </IonButton>
         </div>
+
+        <SpiritFooter />
 
         <div style={{ height: '32px' }} />
       </IonContent>

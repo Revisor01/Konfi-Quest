@@ -321,11 +321,12 @@ const AdminProfilePage: React.FC = () => {
         <div style={{ padding: '0 16px', marginTop: '16px' }}>
           <IonButton
             expand="block"
-            fill="clear"
+            fill="outline"
             color="danger"
             onClick={handleOpenDeleteAccount}
             style={{
               height: '48px',
+              borderRadius: '12px',
               fontWeight: '600'
             }}
           >
