@@ -906,7 +906,8 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       // Angeklickte Datei als Blob laden
       const response = await api.get(`/chat/files/${filePath}`, { responseType: 'blob' });
       const blob = response.data;
-      const mime = response.headers?.['content-type'] || mimeType;
+      const contentType = response.headers?.['content-type'];
+      const mime: string = typeof contentType === 'string' ? contentType : mimeType;
 
       // Nativ oeffnen versuchen (per D-12)
       const openedNatively = await openFileNatively(blob, fileName, mime);

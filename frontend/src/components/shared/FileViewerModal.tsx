@@ -18,7 +18,8 @@ const resolveUrl = async (url: string): Promise<string> => {
   // Relativer API-Pfad → per axios (mit Auth-Header) laden
   const cleanPath = url.startsWith('/api/') ? url.substring(4) : url.startsWith('api/') ? '/' + url.substring(4) : url;
   const response = await api.get(cleanPath, { responseType: 'blob' });
-  const mime = response.headers?.['content-type'] || 'application/octet-stream';
+  const contentType = response.headers?.['content-type'];
+  const mime: string = typeof contentType === 'string' ? contentType : 'application/octet-stream';
   return URL.createObjectURL(new Blob([response.data], { type: mime }));
 };
 

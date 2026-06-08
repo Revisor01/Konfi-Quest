@@ -122,7 +122,8 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
       await Haptics.impact({ style: ImpactStyle.Medium });
       const response = await api.get(`/material/files/${file.stored_name}`, { responseType: 'blob' });
       const blob = response.data;
-      const mime = response.headers?.['content-type'] || file.mime_type;
+      const contentType = response.headers?.['content-type'];
+      const mime: string = typeof contentType === 'string' ? contentType : file.mime_type;
 
       // Nativ oeffnen versuchen (per D-13)
       const openedNatively = await openFileNatively(blob, file.original_name, mime);
