@@ -342,8 +342,6 @@ console.error('Logout error:', error);
         )}
 
 
-        <SpiritFooter />
-
         <div className="app-segment-wrapper">
           <IonButton
             expand="block"
@@ -356,6 +354,8 @@ console.error('Logout error:', error);
             Abmelden
           </IonButton>
         </div>
+
+        <SpiritFooter />
 
         <div className="ion-padding-bottom"></div>
       </IonContent>
