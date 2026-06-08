@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   IonPage,
   IonContent,
@@ -27,6 +27,19 @@ const LoginView: React.FC = () => {
   const [shakeError, setShakeError] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isNetworkError, setIsNetworkError] = useState(false);
+
+  // Hinweis "Sitzung abgelaufen" anzeigen, wenn der User wegen abgelaufenem
+  // Refresh-Token hierher umgeleitet wurde (Flag aus App.tsx).
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem('session_expired') === '1') {
+        sessionStorage.removeItem('session_expired');
+        setLoginError('Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.');
+      }
+    } catch {
+      // sessionStorage nicht verfuegbar -> kein Hinweis
+    }
+  }, []);
 
   const triggerShake = () => {
     setShakeError(true);

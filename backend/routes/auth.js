@@ -834,75 +834,94 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       );
 
       if (!existing) {
-        return res.status(401).json({ error: 'Ungültiger oder abgelaufener Refresh-Token' });
+        // GRACE-WINDOW gegen Rotation-Race: Bei vielen parallelen Requests (Dashboard
+        // laedt viele Endpoints) + langsamem Netz kann ein zweiter Request mit dem
+        // GERADE rotierten Token ankommen. Statt den User rauszuwerfen, akzeptieren
+        // wir ein Token, das in den letzten 30s revoked wurde (es war nachweislich
+        // gueltig) und stellen ein frisches Paar aus. Verhindert "Sitzung abgelaufen"
+        // bei Konfis auf langsamen Handys. Aelter als 30s -> echtes 401.
+        const { rows: [recent] } = await db.query(
+          `SELECT id, user_id, expires_at FROM refresh_tokens
+           WHERE token_hash = $1 AND revoked_at IS NOT NULL
+             AND revoked_at > NOW() - INTERVAL '30 seconds'
+             AND expires_at > NOW()`,
+          [tokenHash]
+        );
+        if (!recent) {
+          return res.status(401).json({ error: 'Ungültiger oder abgelaufener Refresh-Token' });
+        }
+        // Im Grace-Fenster: weiter wie mit einem gueltigen Token (kein erneutes Revoke noetig)
+        return await issueRefreshedTokens(db, res, recent.user_id);
       }
 
       // Altes Token sofort revoken (Rotation)
       await db.query('UPDATE refresh_tokens SET revoked_at = NOW() WHERE id = $1', [existing.id]);
 
-      // User-Daten laden (gleiche Query wie Login, inkl. Org-Status)
-      const { rows: [user] } = await db.query(`
-        SELECT u.id, u.username, u.display_name, u.organization_id, u.email, u.role_id,
-               u.is_super_admin, u.is_active as user_active,
-               COALESCE(o.is_active, true) as organization_active, o.trial_ends_at,
-               r.name as role_name,
-               kp.jahrgang_id, j.name as jahrgang_name,
-               kp.gottesdienst_points, kp.gemeinde_points
-        FROM users u
-        LEFT JOIN organizations o ON u.organization_id = o.id
-        LEFT JOIN roles r ON u.role_id = r.id
-        LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
-        LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
-        WHERE u.id = $1
-      `, [existing.user_id]);
-
-      if (!user) {
-        return res.status(401).json({ error: 'Benutzer nicht gefunden' });
-      }
-
-      // Zugriffs-Sperre beim Refresh — altes Token ist bereits revoked, also fliegt
-      // der User bei Sperre sauber raus (kein neues Tokenpaar). super_admin ausgenommen.
-      const isSuperAdmin = user.is_super_admin === true || user.role_name === 'super_admin';
-      if (!isSuperAdmin) {
-        const trialExpired = user.trial_ends_at && new Date(user.trial_ends_at) < new Date();
-        if (user.user_active === false || user.organization_active === false || trialExpired) {
-          return res.status(403).json({
-            error: trialExpired
-              ? 'Die Testphase dieser Organisation ist abgelaufen.'
-              : 'Zugang gesperrt.',
-            error_code: trialExpired ? 'org_trial_expired' : (user.user_active === false ? 'user_inactive' : 'org_inactive')
-          });
-        }
-      }
-
-      const userType = user.role_name === 'konfi' ? 'konfi' : user.role_name === 'teamer' ? 'teamer' : 'admin';
-
-      // Neuer Access-Token (15min)
-      const newAccessToken = jwt.sign({
-        id: user.id,
-        type: userType,
-        display_name: user.display_name,
-        email: user.email,
-        organization_id: user.organization_id,
-        role_name: user.role_name,
-        is_super_admin: user.is_super_admin || false
-      }, JWT_SECRET, { expiresIn: '15m' });
-
-      // Neuer Refresh-Token (Rotation)
-      const newRefreshToken = generateRefreshToken();
-      const newRefreshHash = hashToken(newRefreshToken);
-      const newRefreshExpiry = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
-      await db.query(
-        'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)',
-        [user.id, newRefreshHash, newRefreshExpiry]
-      );
-
-      res.json({ token: newAccessToken, refresh_token: newRefreshToken });
+      return await issueRefreshedTokens(db, res, existing.user_id);
     } catch (err) {
       console.error('Database error in POST /api/auth/refresh:', err);
       res.status(500).json({ error: 'Fehler beim Token-Refresh' });
     }
   });
+
+  // Helper: laedt User (inkl. Org-Status), prueft die Zugriffs-Sperre und stellt
+  // ein neues Token-Paar aus. Genutzt vom normalen Refresh UND vom Grace-Window.
+  async function issueRefreshedTokens(db, res, userId) {
+    const { rows: [user] } = await db.query(`
+      SELECT u.id, u.username, u.display_name, u.organization_id, u.email, u.role_id,
+             u.is_super_admin, u.is_active as user_active,
+             COALESCE(o.is_active, true) as organization_active, o.trial_ends_at,
+             r.name as role_name,
+             kp.jahrgang_id, j.name as jahrgang_name,
+             kp.gottesdienst_points, kp.gemeinde_points
+      FROM users u
+      LEFT JOIN organizations o ON u.organization_id = o.id
+      LEFT JOIN roles r ON u.role_id = r.id
+      LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
+      LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
+      WHERE u.id = $1
+    `, [userId]);
+
+    if (!user) {
+      return res.status(401).json({ error: 'Benutzer nicht gefunden' });
+    }
+
+    // Zugriffs-Sperre beim Refresh — super_admin ausgenommen.
+    const isSuperAdmin = user.is_super_admin === true || user.role_name === 'super_admin';
+    if (!isSuperAdmin) {
+      const trialExpired = user.trial_ends_at && new Date(user.trial_ends_at) < new Date();
+      if (user.user_active === false || user.organization_active === false || trialExpired) {
+        return res.status(403).json({
+          error: trialExpired
+            ? 'Die Testphase dieser Organisation ist abgelaufen.'
+            : 'Zugang gesperrt.',
+          error_code: trialExpired ? 'org_trial_expired' : (user.user_active === false ? 'user_inactive' : 'org_inactive')
+        });
+      }
+    }
+
+    const userType = user.role_name === 'konfi' ? 'konfi' : user.role_name === 'teamer' ? 'teamer' : 'admin';
+
+    const newAccessToken = jwt.sign({
+      id: user.id,
+      type: userType,
+      display_name: user.display_name,
+      email: user.email,
+      organization_id: user.organization_id,
+      role_name: user.role_name,
+      is_super_admin: user.is_super_admin || false
+    }, JWT_SECRET, { expiresIn: '15m' });
+
+    const newRefreshToken = generateRefreshToken();
+    const newRefreshHash = hashToken(newRefreshToken);
+    const newRefreshExpiry = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+    await db.query(
+      'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)',
+      [user.id, newRefreshHash, newRefreshExpiry]
+    );
+
+    return res.json({ token: newAccessToken, refresh_token: newRefreshToken });
+  }
 
   // POST /api/auth/logout — Revokiert das aktive Refresh Token
   router.post('/logout', rbacVerifier, async (req, res) => {

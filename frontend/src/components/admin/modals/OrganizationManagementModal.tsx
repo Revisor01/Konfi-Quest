@@ -745,7 +745,33 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     <h3 style={{ fontWeight: '500', margin: '0 0 4px 0' }}>Organisation aktiv</h3>
                     <p style={{ color: '#666', margin: 0, fontSize: '0.85rem' }}>Benutzer können sich anmelden</p>
                   </IonLabel>
-                  <IonToggle slot="end" className="app-toggle--users" checked={formData.is_active} onIonChange={(e) => setFormData({ ...formData, is_active: e.detail.checked })} disabled={isSubmitting} />
+                  <IonToggle slot="end" className="app-toggle--users" checked={formData.is_active} onIonChange={(e) => {
+                    const checked = e.detail.checked;
+                    // Beim Deaktivieren einer bestehenden Org warnen: alle Nutzer werden ausgesperrt.
+                    if (!checked && isEditMode) {
+                      presentAlert({
+                        header: 'Organisation deaktivieren?',
+                        message: 'Alle Konfis, Teamer:innen und Admins dieser Organisation können sich dann nicht mehr anmelden und werden aus laufenden Sitzungen abgemeldet. Fortfahren?',
+                        buttons: [
+                          {
+                            text: 'Abbrechen',
+                            role: 'cancel',
+                            handler: () => {
+                              // Toggle visuell zuruecksetzen
+                              setFormData({ ...formData, is_active: true });
+                            }
+                          },
+                          {
+                            text: 'Deaktivieren',
+                            role: 'destructive',
+                            handler: () => setFormData({ ...formData, is_active: false })
+                          }
+                        ]
+                      });
+                    } else {
+                      setFormData({ ...formData, is_active: checked });
+                    }
+                  }} disabled={isSubmitting} />
                 </IonItem>
                 {!formData.is_active && (
                   <IonItem lines="none" style={{ '--background': 'rgba(239, 68, 68, 0.08)', borderRadius: '10px', marginTop: '8px' }}>

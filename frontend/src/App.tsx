@@ -112,21 +112,17 @@ const AppContent: React.FC = () => {
     };
   }, [handleRateLimit]);
 
-  // Re-Login-Dialog bei abgelaufenem Refresh-Token
+  // Bei abgelaufenem Refresh-Token direkt zum Login (ohne Zwischendialog).
+  // Der Hinweis "Sitzung abgelaufen" wird per sessionStorage an die LoginView
+  // uebergeben und dort als Fehlermeldung angezeigt.
   useEffect(() => {
     const handler = () => {
-      const alert = document.createElement('ion-alert');
-      alert.header = 'Sitzung abgelaufen';
-      alert.message = 'Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.';
-      alert.buttons = [{
-        text: 'Anmelden',
-        handler: () => {
-          window.location.href = '/';
-        }
-      }];
-      alert.backdropDismiss = false;
-      document.body.appendChild(alert);
-      (alert as HTMLIonAlertElement).present();
+      try {
+        sessionStorage.setItem('session_expired', '1');
+      } catch {
+        // sessionStorage nicht verfuegbar -> Hinweis entfaellt, Login kommt trotzdem
+      }
+      window.location.href = '/';
     };
     window.addEventListener('auth:relogin-required', handler);
     return () => window.removeEventListener('auth:relogin-required', handler);
