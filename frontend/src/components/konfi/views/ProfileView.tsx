@@ -45,6 +45,7 @@ import { SectionHeader } from '../../shared';
 import ChangePasswordModal from '../modals/ChangePasswordModal';
 import ChangeEmailModal from '../modals/ChangeEmailModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
+import SpiritFooter from '../../shared/SpiritFooter';
 import PointsHistoryModal from '../modals/PointsHistoryModal';
 import WrappedModal from '../../wrapped/WrappedModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
@@ -794,6 +795,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
           Account löschen
         </IonButton>
       </div>
+
+      <SpiritFooter />
 
       <div style={{ height: '32px' }}></div>
     </div>

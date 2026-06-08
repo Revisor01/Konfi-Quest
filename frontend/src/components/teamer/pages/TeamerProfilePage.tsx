@@ -47,6 +47,7 @@ import ChangeEmailModal from '../../konfi/modals/ChangeEmailModal';
 import ChangePasswordModal from '../../konfi/modals/ChangePasswordModal';
 import ChangeRoleTitleModal from '../../admin/modals/ChangeRoleTitleModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
+import SpiritFooter from '../../shared/SpiritFooter';
 import WrappedModal from '../../wrapped/WrappedModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -502,6 +503,7 @@ const TeamerProfilePage: React.FC = () => {
           </IonButton>
         </div>
 
+        <SpiritFooter />
 
         <div style={{ height: '32px' }} />
       </IonContent>

@@ -39,6 +39,7 @@ import ChangeEmailModal from '../modals/ChangeEmailModal';
 import ChangePasswordModal from '../modals/ChangePasswordModal';
 import ChangeRoleTitleModal from '../modals/ChangeRoleTitleModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
+import SpiritFooter from '../../shared/SpiritFooter';
 
 const AdminProfilePage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-profile');
@@ -333,6 +334,8 @@ const AdminProfilePage: React.FC = () => {
             Account löschen
           </IonButton>
         </div>
+
+        <SpiritFooter />
 
         <div style={{ height: '32px' }} />
       </IonContent>
