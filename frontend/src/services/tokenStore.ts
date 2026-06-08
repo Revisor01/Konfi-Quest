@@ -7,10 +7,18 @@ let _user: BaseUser | null = null;
 let _deviceId: string | null = null;
 let _pushTokenTimestamp: number = 0;
 let _refreshToken: string | null = null;
+// Markiert einen BEWUSSTEN Logout. Solange true, darf ein 401 (z.B. vom
+// Push-Token-Cleanup nach clearAuth) NICHT als "Sitzung abgelaufen" gemeldet
+// werden. Liegt hier statt in auth.ts, um Circular-Import mit api.ts zu vermeiden.
+let _loggingOut: boolean = false;
 
 // --- Synchrone Getter (lesen nur aus Memory) ---
 
 export const getToken = (): string | null => _token;
+
+export const isLoggingOut = (): boolean => _loggingOut;
+
+export const setLoggingOut = (value: boolean): void => { _loggingOut = value; };
 
 export const getUser = (): BaseUser | null => _user;
 

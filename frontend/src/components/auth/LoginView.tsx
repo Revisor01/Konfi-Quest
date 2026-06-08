@@ -80,12 +80,14 @@ const LoginView: React.FC = () => {
       const errorCode: string = err?.response?.data?.error_code || '';
       let displayError: string;
 
-      // Netzwerkfehler erkennen
-      if (!err.response || err.code === 'ERR_NETWORK') {
+      // Rate-Limit (429) ZUERST pruefen — ein 429 ist KEINE fehlende Verbindung.
+      // Sonst zeigt die App bei "zu viele Versuche" faelschlich "Keine Verbindung".
+      if (err.response?.status === 429 || err.rateLimitMessage) {
+        displayError = err.rateLimitMessage || err?.response?.data?.error || 'Zu viele Login-Versuche. Bitte warte einen Moment.';
+      } else if (!err.response || err.code === 'ERR_NETWORK') {
+        // Netzwerkfehler erkennen
         displayError = 'Keine Verbindung zum Server. Bitte prüfe deine Internetverbindung.';
         setIsNetworkError(true);
-      } else if (err.rateLimitMessage) {
-        displayError = err.rateLimitMessage;
       } else if (errorCode === 'org_trial_expired' || errorCode === 'org_inactive' || errorCode === 'user_inactive') {
         // Zugangs-Sperre (Testphase abgelaufen / Org gesperrt / User deaktiviert):
         // klare Server-Meldung direkt anzeigen.

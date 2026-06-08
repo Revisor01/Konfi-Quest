@@ -1,6 +1,6 @@
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
-import { getToken, getRefreshToken, setToken, setRefreshToken, clearAuth } from './tokenStore';
+import { getToken, getRefreshToken, setToken, setRefreshToken, clearAuth, isLoggingOut } from './tokenStore';
 import { networkMonitor } from './networkMonitor';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://konfi-quest.de/api';
@@ -75,6 +75,10 @@ api.interceptors.response.use(
 
       const refreshToken = getRefreshToken();
       if (!refreshToken) {
+        // Bewusster Logout laeuft → kein "Sitzung abgelaufen", einfach durchreichen.
+        if (isLoggingOut()) {
+          return Promise.reject(error);
+        }
         // Kein Refresh-Token → direkt Re-Login
         await clearAuth();
         window.dispatchEvent(new CustomEvent('auth:relogin-required'));
@@ -113,6 +117,11 @@ api.interceptors.response.use(
         isRefreshing = false;
         refreshSubscribers = [];
 
+        // Bewusster Logout laeuft → kein "Sitzung abgelaufen"-Dialog.
+        if (isLoggingOut()) {
+          await clearAuth();
+          return Promise.reject(refreshError);
+        }
         // Refresh fehlgeschlagen → Re-Login-Dialog
         await clearAuth();
         window.dispatchEvent(new CustomEvent('auth:relogin-required'));

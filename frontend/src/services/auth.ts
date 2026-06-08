@@ -1,7 +1,7 @@
 import api from './api';
 import { Device } from '@capacitor/device';
 import { Capacitor } from '@capacitor/core';
-import { getUser, setToken, setUser, setRefreshToken, getRefreshToken, clearAuth, getDeviceId, setDeviceId } from './tokenStore';
+import { getUser, setToken, setUser, setRefreshToken, getRefreshToken, clearAuth, getDeviceId, setDeviceId, setLoggingOut } from './tokenStore';
 import { offlineCache } from './offlineCache';
 import { writeQueue } from './writeQueue';
 import { networkMonitor } from './networkMonitor';
@@ -40,6 +40,11 @@ export const loginWithAutoDetection = async (username: string, password: string)
 // ANTI-SPAM: Verhindere mehrfache Logout-Calls
 let logoutInProgress = false;
 
+// Erlaubt anderen Modulen (api.ts 401-Interceptor) zu erkennen, dass gerade ein
+// BEWUSSTER Logout laeuft — dann darf ein 401 NICHT als "Sitzung abgelaufen"
+// gemeldet werden (der User loggt sich ja absichtlich aus).
+export const isLoggingOut = (): boolean => logoutInProgress;
+
 export const logout = async (): Promise<void> => {
   if (logoutInProgress) {
  console.warn('Logout bereits in Bearbeitung, wird übersprungen');
@@ -47,6 +52,10 @@ export const logout = async (): Promise<void> => {
   }
   
   logoutInProgress = true;
+  // 401-Interceptor (api.ts) soll waehrend des bewussten Logouts NICHT
+  // "Sitzung abgelaufen" melden — der Push-Cleanup-Call nach clearAuth() laeuft
+  // ohne Token und liefert sonst einen 401.
+  setLoggingOut(true);
 
   // WICHTIG: Der LOKALE Logout (Token-Revoke + clearAuth) laeuft ZUERST und
   // darf NIEMALS an haengenden Netzwerk-Calls scheitern. Frueher konnte ein
@@ -118,6 +127,9 @@ export const logout = async (): Promise<void> => {
 
   // Device ID NICHT loeschen - bleibt fuer das Geraet persistent
   logoutInProgress = false;
+  // Kurz verzoegert zuruecksetzen, damit auch ein knapp nachlaufender 401 vom
+  // Push-Cleanup noch unterdrueckt wird, dann wieder normales Verhalten.
+  setTimeout(() => setLoggingOut(false), 2000);
 };
 
 export const checkAuth = (): BaseUser | null => {

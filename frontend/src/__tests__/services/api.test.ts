@@ -7,6 +7,7 @@ vi.mock('../../services/tokenStore', () => ({
   setToken: vi.fn(),
   setRefreshToken: vi.fn(),
   clearAuth: vi.fn(),
+  isLoggingOut: vi.fn(() => false),
 }));
 
 // Mock networkMonitor
