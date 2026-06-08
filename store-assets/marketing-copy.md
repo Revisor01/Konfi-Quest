@@ -14,7 +14,7 @@ Quelle: verifiziertes Feature-Inventar. Markenwelt: Lila → Cyan Verlauf, logo-
 > Konfi Quest bringt eure Konfi-Arbeit in die Lebenswelt der Jugendlichen — als App, die sie wirklich öffnen. Gamification, Community und geistliche Impulse in einem. Modern. Durchdacht. Für die Gemeinde gemacht.
 
 **Sub-Headline:**
-Die Konfizeit als Abenteuer: Punkte sammeln, Events buchen, Badges freischalten. Pädagogisch gedacht, nicht aufgesetzt.
+Die Konfi-Zeit als Abenteuer: Punkte sammeln, Events buchen, Badges freischalten. Pädagogisch gedacht, nicht aufgesetzt.
 
 **Call-to-Action (Buttons):**
 - `Kostenlos testen` — 30 Tage, ohne Risiko
@@ -37,7 +37,7 @@ Punkte für echtes Engagement statt Anwesenheitspflicht. Badges und Level statt 
 
 > Drei Perspektiven, eine App. Jede:r sieht genau das, was er oder sie braucht.
 
-### Für Konfis — die Konfizeit wird zum Spiel
+### Für Konfis — die Konfi-Zeit wird zum Spiel
 
 - **Punkte sammeln** in zwei Kategorien — Gottesdienst und Gemeinde — mit Aktivitätsringen wie bei einer Fitness-App
 - **Aktivitäten einreichen** (z. B. Gottesdienstbesuch) per Foto-Beleg, ihr genehmigt mit einem Tipp
@@ -48,7 +48,7 @@ Punkte für echtes Engagement statt Anwesenheitspflicht. Badges und Level statt 
 - **Chat** mit Jahrgang, zu Events, direkt mit Teamer:innen und Leitung
 - **Tageslosung** — geistlicher Impuls jeden Tag, Bibelübersetzung wählbar
 - **QR-Check-in** bei Events — schnell, fälschungssicher
-- **Konfi Wrapped** — der persönliche Jahresrückblick am Ende der Konfizeit
+- **Konfi Wrapped** — der persönliche Jahresrückblick am Ende der Konfi-Zeit
 - **Vom Konfi zum Teamer** — der nahtlose Übergang ins Team
 
 ### Für Teamer:innen — Engagement, das gesehen wird
@@ -127,7 +127,7 @@ Entwickelt von jemandem, der selbst in der Gemeinde steht — nicht von einer Ag
 
 > **Bereit für modernen Konfi-Unterricht?**
 >
-> Probiert Konfi Quest mit eurem nächsten Jahrgang aus. Einrichtung in Minuten, Einladung per Link, los geht's. Ihr werdet sehen, wie anders Konfis reagieren, wenn ihre Konfizeit sich anfühlt wie etwas, das ihnen gehört.
+> Probiert Konfi Quest mit eurem nächsten Jahrgang aus. Einrichtung in Minuten, Einladung per Link, los geht's. Ihr werdet sehen, wie anders Konfis reagieren, wenn ihre Konfi-Zeit sich anfühlt wie etwas, das ihnen gehört.
 
 **CTA:** `Kostenlos starten` · `Demo anfragen`
 
@@ -147,14 +147,14 @@ Entwickelt von jemandem, der selbst in der Gemeinde steht — nicht von einer Ag
 Konfi Quest
 
 **Untertitel (max. 30 Zeichen):**
-Die Konfizeit als Abenteuer
+Die Konfi-Zeit als Abenteuer
 
 **Werbetext (Promotional Text, max. 170 Zeichen):**
-Sammle Punkte, schalte Badges frei, buche Events mit deinem Jahrgang. Konfi Quest macht aus deiner Konfizeit ein echtes Abenteuer — bis zu deinem eigenen Wrapped.
+Sammle Punkte, schalte Badges frei, buche Events mit deinem Jahrgang. Konfi Quest macht aus deiner Konfi-Zeit ein echtes Abenteuer — bis zu deinem eigenen Wrapped.
 
 **Beschreibung:**
 
-Deine Konfizeit. Dein Abenteuer.
+Deine Konfi-Zeit. Dein Abenteuer.
 
 Konfi Quest macht aus der Konfirmandenzeit etwas, auf das du dich freust. Sammle Punkte für jeden Gottesdienst und alles, was du in der Gemeinde machst. Schalte Badges und Level frei — manche sind sogar geheim. Und sieh im Jahrgangsranking, wo du stehst.
 
@@ -167,7 +167,7 @@ Das steckt drin:
 • Chatte mit deinem Jahrgang, deinem Team und der Gemeinde
 • Die Tageslosung — ein guter Gedanke für jeden Tag
 • Schnell einchecken per QR-Code bei Events
-• Dein Konfi Wrapped — der persönliche Rückblick auf deine Konfizeit
+• Dein Konfi Wrapped — der persönliche Rückblick auf deine Konfi-Zeit
 • Und wenn du Lust hast: werde selbst Teamer:in und bleib nach der Konfirmation dabei
 
 **Für Eltern**
@@ -186,11 +186,11 @@ Konfirmation,Konfi,Kirche,Gemeinde,Jugend,Punkte,Events,Badges,evangelisch,Losun
 Konfi Quest
 
 **Kurzbeschreibung (max. 80 Zeichen):**
-Die Konfizeit als Abenteuer: Punkte sammeln, Badges freischalten, Events buchen.
+Die Konfi-Zeit als Abenteuer: Punkte sammeln, Badges freischalten, Events buchen.
 
 **Vollständige Beschreibung (max. 4000 Zeichen):**
 
-Deine Konfizeit. Dein Abenteuer.
+Deine Konfi-Zeit. Dein Abenteuer.
 
 Konfi Quest macht aus der Konfirmandenzeit etwas, auf das du dich freust. Statt Hefter und Anwesenheitsliste bekommst du eine App, die sich anfühlt wie die Apps, die du sowieso nutzt — mit Punkten, Badges, Streaks und deinem eigenen Jahresrückblick.
 
@@ -205,7 +205,7 @@ Sammle Punkte für jeden Gottesdienst und für alles, was du in der Gemeinde mac
 • Chat mit deinem Jahrgang, deinem Team und der Gemeinde
 • Die Tageslosung — ein guter Gedanke für jeden Tag
 • Schneller QR-Check-in bei Events
-• Konfi Wrapped — dein persönlicher Rückblick auf die Konfizeit
+• Konfi Wrapped — dein persönlicher Rückblick auf die Konfi-Zeit
 • Werde selbst Teamer:in und bleib nach der Konfirmation dabei
 
 ▸ FÜR ELTERN
@@ -222,7 +222,7 @@ Made with Spirit in Hennstedt. Friede. Schalom. Salam.
 
 ## Was ist neu (Release Notes — Template v3.0)
 
-Willkommen bei Konfi Quest! Sammle Punkte, schalte Badges frei und buche Events mit deinem Jahrgang. Deine Konfizeit wird zum Abenteuer — bis zu deinem eigenen Konfi Wrapped am Ende.
+Willkommen bei Konfi Quest! Sammle Punkte, schalte Badges frei und buche Events mit deinem Jahrgang. Deine Konfi-Zeit wird zum Abenteuer — bis zu deinem eigenen Konfi Wrapped am Ende.
 
 ---
 
