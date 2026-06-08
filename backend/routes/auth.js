@@ -216,7 +216,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     }
     
     try {
-      const { rows: [user] } = await db.query(`SELECT id, display_name, username, password_hash, role_id, organization_id, profile_image FROM users WHERE id = $1`, [userId]);
+      const { rows: [user] } = await db.query(`SELECT id, password_hash FROM users WHERE id = $1`, [userId]);
       if (!user) {
         return res.status(404).json({ error: 'Benutzer nicht gefunden' });
       }

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { Device } from '@capacitor/device';
 import api from '../services/api';
-import { getUser, getDeviceId, setDeviceId, getPushTokenTimestamp, setPushTokenTimestamp } from '../services/tokenStore';
+import { getUser, setUser as persistUser, getDeviceId, setDeviceId, getPushTokenTimestamp, setPushTokenTimestamp } from '../services/tokenStore';
 import { networkMonitor } from '../services/networkMonitor';
 import { App } from '@capacitor/app';
 import { PushNotifications } from '@capacitor/push-notifications';
@@ -124,6 +124,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     })();
   }, [user]);
+
+  // User-Daten beim App-Start frisch von /me ziehen (Trial-Status, Rolle etc.).
+  // Loest u.a. den Trial-Banner-Bug: aendert/entfernt der super_admin den Trial,
+  // verschwindet der Banner beim naechsten App-Start ohne manuellen Logout.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const cached = getUser();
+      if (!cached) return; // nicht eingeloggt
+      try {
+        const res = await api.get('/auth/me');
+        if (cancelled || !res?.data) return;
+        // Frische Felder ueber den gecachten User mergen (type/organization bleiben erhalten)
+        const merged = {
+          ...cached,
+          ...res.data,
+          trial_ends_at: res.data.trial_ends_at ?? null,
+          is_trial: res.data.is_trial === true
+        };
+        await persistUser(merged);   // tokenStore-Cache aktualisieren
+        if (!cancelled) setUser(merged); // React-State aktualisieren
+      } catch {
+        // Offline / Token abgelaufen: gecachten User behalten, kein Hard-Fail
+      }
+    })();
+    return () => { cancelled = true; };
+    // Nur einmal beim Mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Push notifications functions
   const requestPushPermissions = useCallback(async () => {
