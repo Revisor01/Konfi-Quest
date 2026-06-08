@@ -684,15 +684,15 @@ ion-tab-bar.ios:not(.ios26-disabled) {
 }
 
 /* Android (MD): Tab-Bar muss die System-Gesten-/Navigationsleiste respektieren.
-   Ohne padding-bottom sitzt die Bar zu tief, die Gesten-Bar ueberlagert die
-   Buttons und schneidet die aeusseren Labels (Start/Aktivitaeten) ab.
-   Ohne Edge-to-Edge-Plugin liefert env(safe-area-inset-bottom) auf Android 0,
-   daher max(env, 24px): die Gesten-Bar ist ~24-48px hoch. Auf Geraeten mit
-   echtem Inset gewinnt env(), sonst der feste Mindestabstand.
+   Ab Capacitor 8 ist Edge-to-Edge aktiv und env(safe-area-inset-bottom) liefert
+   den ECHTEN Inset der Gesten-/Navigationsleiste (z.B. 63px). Der frueher noetige
+   Mindest-Fallback max(env, 24px) wuerde nun zum echten Inset NOCH den alten
+   Mindestwert verrechnen und doppelten Abstand erzeugen — daher nur noch der
+   reine env-Wert (mit 0px-Fallback fuer Geraete ganz ohne Gesten-Bar).
    !important gegen das global geladene iOS26-Theme-CSS. */
 ion-tab-bar.md {
-  padding-bottom: max(env(safe-area-inset-bottom), 24px) !important;
-  height: calc(56px + max(env(safe-area-inset-bottom), 24px)) !important;
+  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  height: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
   box-sizing: content-box !important;
 }
 
