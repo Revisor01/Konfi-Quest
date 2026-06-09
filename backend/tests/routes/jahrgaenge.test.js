@@ -499,6 +499,12 @@ describe('Jahrgaenge Routes', () => {
         `INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
         [EVENTS.gottesdienstEvent.id, JAHRGAENGE.jahrgang1.id]
       );
+      // Konfi1 zum Konfirmations-Event buchen (confirmed) -> sein Termin (pro Konfi, nicht Jahrgang-weit)
+      await db.query(
+        `INSERT INTO event_bookings (event_id, user_id, status, organization_id)
+         VALUES ($1, $2, 'confirmed', $3) ON CONFLICT DO NOTHING`,
+        [EVENTS.gottesdienstEvent.id, USERS.konfi1.id, USERS.konfi1.org_id]
+      );
     });
 
     it('type=anwesenheit -> 200 + E-Mail-Versand', async () => {

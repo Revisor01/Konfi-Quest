@@ -56,16 +56,18 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         JOIN roles r ON u.role_id = r.id
         LEFT JOIN levels l ON kp.current_level_id = l.id
         LEFT JOIN (
-          -- Konfirmationstermin/-ort je Jahrgang aus dem is_konfirmation-Event
-          -- (frueheste nicht-cancelled Konfirmation, org-gescopt).
-          SELECT DISTINCT ON (eja.jahrgang_id) eja.jahrgang_id, e.location, e.event_date
-          FROM events e
-          JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
-          WHERE e.is_konfirmation = true
+          -- Konfirmationstermin/-ort PRO KONFI: das is_konfirmation-Event, zu dem der
+          -- Konfi mit status='confirmed' gebucht ist (es kann mehrere Konfirmations-
+          -- Termine je Jahrgang geben; jeder Konfi bucht genau einen). Keine Buchung
+          -- -> kein Termin (NULL).
+          SELECT eb.user_id, e.location, e.event_date
+          FROM event_bookings eb
+          JOIN events e ON e.id = eb.event_id
+          WHERE eb.status = 'confirmed'
+            AND e.is_konfirmation = true
             AND e.organization_id = $2
             AND (e.cancelled IS NULL OR e.cancelled = false)
-          ORDER BY eja.jahrgang_id, e.event_date ASC
-        ) ce ON ce.jahrgang_id = kp.jahrgang_id
+        ) ce ON ce.user_id = u.id
         WHERE u.id = $1 AND r.name = 'konfi' AND u.deleted_at IS NULL
       `;
       const { rows: [konfi] } = await db.query(konfiQuery, [konfiId, req.user.organization_id]);

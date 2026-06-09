@@ -81,19 +81,10 @@ interface SpruchRow {
   user_id: number;
   display_name: string;
   konfspruch: Konfspruch | null;
+  konfirmation_date?: string | null;
 }
 
 type ViewMode = 'anwesenheit' | 'sprueche';
-
-// Stellt einen gewaehlten Konfispruch als Text dar (oder einen Platzhalter).
-const formatSpruch = (konfspruch: Konfspruch | null): string => {
-  if (!konfspruch) return 'noch keiner';
-  if (konfspruch.source === 'liste') {
-    const text = konfspruch.text && konfspruch.text.trim().length > 0 ? konfspruch.text : '';
-    return text ? `${konfspruch.reference} - ${text}` : (konfspruch.reference || 'noch keiner');
-  }
-  return konfspruch.reference ? `${konfspruch.text} (${konfspruch.reference})` : konfspruch.text;
-};
 
 interface AttendanceMatrixModalProps {
   jahrgaenge: Jahrgang[];
@@ -325,16 +316,40 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
                   {filteredSprueche.length} Konfi{filteredSprueche.length === 1 ? '' : 's'}
                 </IonLabel>
               </IonListHeader>
-              {filteredSprueche.map(s => (
-                <IonItem key={s.user_id}>
-                  <IonLabel className="ion-text-wrap">
-                    <div className="app-text-main">{s.display_name}</div>
-                    <div className="app-text-sub" style={s.konfspruch ? undefined : { fontStyle: 'italic' }}>
-                      {formatSpruch(s.konfspruch)}
-                    </div>
-                  </IonLabel>
-                </IonItem>
-              ))}
+              <IonCard className="app-card">
+                <IonCardContent style={{ padding: '0', overflowX: 'auto' }}>
+                  <table className="attendance-matrix">
+                    <thead>
+                      <tr>
+                        <th className="attendance-matrix__th-konfi">Konfi</th>
+                        <th className="attendance-matrix__th-event">Konfirmation</th>
+                        <th className="attendance-matrix__th-event">Buch / Stelle</th>
+                        <th className="attendance-matrix__th-event">Konfispruch</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredSprueche.map(s => (
+                        <tr key={s.user_id}>
+                          <td className="attendance-matrix__td-konfi">{s.display_name}</td>
+                          <td className="attendance-matrix__td-cell" style={{ textAlign: 'left', whiteSpace: 'nowrap' }}>
+                            {s.konfirmation_date
+                              ? `${new Date(s.konfirmation_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}, ${new Date(s.konfirmation_date).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr`
+                              : <span style={{ color: '#999', fontStyle: 'italic' }}>nicht gebucht</span>}
+                          </td>
+                          <td className="attendance-matrix__td-cell" style={{ textAlign: 'left' }}>
+                            {s.konfspruch?.reference || <span style={{ color: '#999' }}>—</span>}
+                          </td>
+                          <td className="attendance-matrix__td-cell" style={{ textAlign: 'left' }}>
+                            {s.konfspruch?.text
+                              ? s.konfspruch.text
+                              : <span style={{ color: '#999', fontStyle: 'italic' }}>{s.konfspruch ? '(Übersetzung fehlt)' : 'noch keiner'}</span>}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </IonCardContent>
+              </IonCard>
             </IonList>
           )
         ) : loading ? (

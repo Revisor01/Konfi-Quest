@@ -264,7 +264,11 @@ const escapeHtml = (value) => String(value == null ? '' : value)
 // Formatiert ein Datum (oder null) als deutsches Datum bzw. einen Platzhalter.
 const formatKonfirmationDate = (value) => {
   if (!value) return 'noch kein Termin';
-  return new Date(value).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  // Datum UND Uhrzeit (falls zwei Konfirmationen am selben Tag -> Uhrzeit unterscheidet sie).
+  const d = new Date(value);
+  const datum = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const zeit = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Berlin' });
+  return `${datum}, ${zeit} Uhr`;
 };
 
 // Baut die Textdarstellung eines gewaehlten Konfispruchs (oder Platzhalter).

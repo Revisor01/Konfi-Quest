@@ -329,10 +329,21 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
     const { rows: konfis } = await db.query(`
       SELECT u.id AS user_id, u.display_name,
              kp.konfspruch_id, kp.konfspruch_freitext, kp.konfspruch_freitext_referenz,
-             kp.konfspruch_translation
+             kp.konfspruch_translation,
+             ce.event_date AS konfirmation_date
       FROM users u
       JOIN konfi_profiles kp ON kp.user_id = u.id
       JOIN roles r ON u.role_id = r.id
+      LEFT JOIN (
+        -- Konfirmationstermin PRO KONFI aus dem confirmed-gebuchten is_konfirmation-Event.
+        SELECT eb.user_id, e.event_date
+        FROM event_bookings eb
+        JOIN events e ON e.id = eb.event_id
+        WHERE eb.status = 'confirmed'
+          AND e.is_konfirmation = true
+          AND e.organization_id = $2
+          AND (e.cancelled IS NULL OR e.cancelled = false)
+      ) ce ON ce.user_id = u.id
       WHERE kp.jahrgang_id = $1
         AND u.organization_id = $2
         AND r.name = 'konfi'
@@ -375,29 +386,15 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       result.push({
         user_id: konfi.user_id,
         display_name: konfi.display_name,
-        konfspruch
+        konfspruch,
+        // Termin PRO KONFI (sein gebuchter is_konfirmation-Event), nicht Jahrgang-weit.
+        konfirmation_date: konfi.konfirmation_date || null
       });
     }
     return result;
   };
 
-  // Ermittelt den Konfirmationstermin eines Jahrgangs aus dem is_konfirmation-Event
-  // (D-05/D-09). Alle Konfis eines Jahrgangs teilen denselben Termin. NULL falls kein
-  // (nicht abgesagtes) Konfirmations-Event zugeordnet ist.
-  const getKonfirmationDate = async (jahrgangId, organizationId) => {
-    const { rows: [row] } = await db.query(`
-      SELECT MIN(e.event_date) AS konfirmation_date
-      FROM events e
-      JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
-      WHERE eja.jahrgang_id = $1
-        AND e.is_konfirmation = true
-        AND e.organization_id = $2
-        AND (e.cancelled IS NULL OR e.cancelled = false)
-    `, [jahrgangId, organizationId]);
-    return row ? row.konfirmation_date : null;
-  };
-
-  // GET sprueche-Liste je Jahrgang: Array { user_id, display_name, konfspruch }
+  // GET sprueche-Liste je Jahrgang: Array { user_id, display_name, konfspruch, konfirmation_date }
   router.get('/:id/sprueche', rbacVerifier, requireAdmin, validateJahrgangId, async (req, res) => {
     const jahrgangId = parseInt(req.params.id, 10);
     try {
@@ -445,10 +442,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       let rows;
       if (type === 'sprueche') {
         const sprueche = await buildSpruecheList(jahrgangId, req.user.organization_id);
-        const konfirmationDate = await getKonfirmationDate(jahrgangId, req.user.organization_id);
         rows = sprueche.map(s => ({
           display_name: s.display_name,
-          konfirmation_date: konfirmationDate,
+          konfirmation_date: s.konfirmation_date, // pro Konfi (gebuchter Termin)
           konfspruch: s.konfspruch
         }));
       } else {
@@ -495,14 +491,19 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
         });
       }
 
-      await emailService.sendKonfiMatrixEmail(
+      console.log(`[matrix-email] Versand angefordert: Jahrgang ${jahrgangId} "${jahrgang.name}", type=${type}, an=${adminRow.email}, rows=${rows.length}`);
+      const mailResult = await emailService.sendKonfiMatrixEmail(
         adminRow.email,
         adminRow.display_name,
         jahrgang.name,
         type,
         rows
       );
+      console.log(`[matrix-email] Versand-Ergebnis:`, JSON.stringify(mailResult));
 
+      if (mailResult && mailResult.success === false) {
+        return res.status(502).json({ error: 'E-Mail konnte nicht versendet werden (SMTP-Fehler)' });
+      }
       res.json({ success: true });
     } catch (err) {
       console.error(`Database error in POST /api/admin/jahrgaenge/${jahrgangId}/matrix-email:`, err);
