@@ -28,9 +28,9 @@ Kuratierte Spruch-Liste in der DB (Vers + 4 Uebersetzungen, seed-/db-erweiterbar
 
 **Abhaengigkeiten:** keine harte. Eigenstaendig nutzbar.
 
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 - [x] 118-01-PLAN.md — Migration 093 (konfsprueche + konfspruch_uebersetzungen + konfi_profiles-Spalten + Referenz-Seed) + Backend GET /konfsprueche, GET/PATCH /profile + truncateAll + Integrationstests
-- [ ] 118-02-PLAN.md — Frontend: Dashboard-Card "Dein Konfispruch" + KonfispruchSelectModal (4 Uebersetzungs-Tabs + Freitext mit Pflicht-Referenz) + CSS + Human-Verify
+- [x] 118-02-PLAN.md — Frontend: Dashboard-Card "Dein Konfispruch" + KonfispruchSelectModal (4 Uebersetzungs-Tabs + Freitext mit Pflicht-Referenz) + CSS + Human-Verify
 
 ### Phase 119 — Konfispruch: Pro-Jahrgang-Freischaltung + Admin-Integration
 
