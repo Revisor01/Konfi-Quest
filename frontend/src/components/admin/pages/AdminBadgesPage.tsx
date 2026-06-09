@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -62,9 +62,14 @@ const AdminBadgesPage: React.FC = () => {
   const [presentAlert] = useIonAlert();
 
   // Modal mit useIonModal Hook
+  // Haelt den "ungespeicherte Aenderungen"-Stand des Badge-Modals, damit canDismiss
+  // auch Swipe-/Backdrop-Schliessen abfangen und nachfragen kann (nicht nur der X-Button).
+  const badgeModalDirtyRef = useRef(false);
+
   const [presentBadgeModalHook, dismissBadgeModalHook] = useIonModal(BadgeManagementModal, {
     badgeId: modalBadgeId,
     targetRole: selectedRole,
+    onDirtyChange: (dirty: boolean) => { badgeModalDirtyRef.current = dirty; },
     onClose: () => {
       dismissBadgeModalHook();
       setSelectedBadge(null);
@@ -77,6 +82,27 @@ const AdminBadgesPage: React.FC = () => {
       refreshBadges();
     }
   });
+
+  // Faengt JEDEN Schliess-Weg ab (Swipe, Backdrop): bei ungespeicherten
+  // Aenderungen erst nachfragen, sonst direkt schliessen lassen.
+  const badgeModalCanDismiss = async (): Promise<boolean> => {
+    if (!badgeModalDirtyRef.current) return true;
+    return new Promise<boolean>((resolve) => {
+      let decided = false;
+      const decide = (v: boolean) => { decided = true; resolve(v); };
+      presentAlert({
+        header: 'Ungespeicherte Änderungen',
+        message: 'Möchtest du die Änderungen verwerfen?',
+        backdropDismiss: false,
+        buttons: [
+          { text: 'Abbrechen', role: 'cancel', handler: () => decide(false) },
+          { text: 'Verwerfen', role: 'destructive', handler: () => decide(true) }
+        ],
+        // Fallback: schliesst der Alert ohne Button, Promise nie haengen lassen.
+        onDidDismiss: () => { if (!decided) resolve(false); }
+      });
+    });
+  };
 
   // Subscribe to live updates for badges
   useLiveRefresh('badges', refreshBadges);
@@ -113,7 +139,9 @@ const AdminBadgesPage: React.FC = () => {
     setSelectedBadge(badge);
     setModalBadgeId(badge.id);
     presentBadgeModalHook({
-      presentingElement: presentingElement
+      presentingElement: presentingElement,
+      canDismiss: badgeModalCanDismiss,
+      backdropDismiss: false
     });
   };
 
@@ -121,7 +149,9 @@ const AdminBadgesPage: React.FC = () => {
     setSelectedBadge(null);
     setModalBadgeId(null);
     presentBadgeModalHook({
-      presentingElement: presentingElement
+      presentingElement: presentingElement,
+      canDismiss: badgeModalCanDismiss,
+      backdropDismiss: false
     });
   };
 

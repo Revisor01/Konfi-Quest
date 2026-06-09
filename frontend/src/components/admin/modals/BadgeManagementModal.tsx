@@ -30,8 +30,7 @@ import {
   IonListHeader,
   IonAccordion,
   IonAccordionGroup,
-  IonRange,
-  useIonAlert
+  IonRange
 } from '@ionic/react';
 import {
   checkmarkOutline,
@@ -198,6 +197,9 @@ interface BadgeManagementModalProps {
   targetRole?: 'konfi' | 'teamer';
   onClose: () => void;
   onSuccess: () => void;
+  // Meldet den "ungespeicherte Aenderungen"-Stand nach aussen, damit die
+  // praesentierende Seite ueber canDismiss auch Swipe/Backdrop-Schliessen abfangen kann.
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 // Standardfarben pro Badge-Kategorie (criteria_type)
@@ -225,31 +227,24 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   badgeId,
   targetRole = 'konfi',
   onClose,
-  onSuccess
+  onSuccess,
+  onDirtyChange
 }) => {
   const { setSuccess, setError, isOnline } = useApp();
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
-  const [presentAlert] = useIonAlert();
   const initializedRef = useRef(false);
 
   const doClose = () => onClose();
 
-  const handleClose = () => {
-    if (isDirty) {
-      presentAlert({
-        header: 'Ungespeicherte Änderungen',
-        message: 'Möchtest du die Änderungen verwerfen?',
-        buttons: [
-          { text: 'Abbrechen', role: 'cancel' },
-          { text: 'Verwerfen', role: 'destructive', handler: () => doClose() }
-        ]
-      });
-    } else {
-      doClose();
-    }
-  };
+  // Schliessen anstossen. Die "ungespeicherte Aenderungen"-Nachfrage laeuft zentral
+  // ueber canDismiss der praesentierenden Seite (faengt X-Button, Swipe UND Backdrop
+  // einheitlich ab) -> hier keine zweite Abfrage.
+  const handleClose = () => { doClose(); };
+
+  // isDirty-Stand nach aussen melden (fuer canDismiss der praesentierenden Seite).
+  useEffect(() => { onDirtyChange?.(isDirty); }, [isDirty, onDirtyChange]);
 
   // Punkte-basierte Kriterien - bei Teamer ausblenden
   const POINTS_CRITERIA_TYPES = ['total_points', 'gottesdienst_points', 'gemeinde_points', 'both_categories', 'bonus_points'];
