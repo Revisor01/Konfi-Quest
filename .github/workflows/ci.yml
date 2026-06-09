@@ -194,6 +194,14 @@ jobs:
             BACKEND_CHANGED=0; echo "Kein Backend-Change -> nur Health-Verify"
           fi
 
+          # Image-Tag: docker/metadata-action (type=sha,prefix=) pusht den KURZEN
+          # 7-stelligen SHA-Tag (z.B. cb0331c) — NICHT den vollen github.sha. Der
+          # Tag-Rewrite muss daher den kurzen nehmen, sonst -> manifest unknown / HTTP 500.
+          # GIT_SHA (voll) bleibt fuer den Commit-Verify (/api/status liefert den vollen,
+          # da Build-Arg GIT_SHA=github.sha).
+          IMG_TAG="${GIT_SHA:0:7}"
+          echo "Image-Tag (kurz): $IMG_TAG"
+
           # compose-Content vom Stack holen (einmal, fuer alle Redeploy-Runden)
           curl -sf -H "X-API-Key: $P_KEY" "$P_URL/api/stacks/$STACK_ID/file" \
             | python3 -c "import sys,json;open('compose.yml','w').write(json.load(sys.stdin)['StackFileContent'])"
@@ -211,10 +219,10 @@ jobs:
           # der ghcr-Image-Pfad aber lowercase 'revisor01' -> ein Pattern mit dem Owner
           # wuerde NIE matchen. Stattdessen am eindeutigen 'konfi-quest-(backend|frontend)'
           # ankern. GIT_SHA via -s an perl uebergeben (keine Shell-Interpolation von $1).
-          GIT_SHA="$GIT_SHA" perl -i -pe 's#(konfi-quest-(?:backend|frontend)):[A-Za-z0-9._-]+#$1:$ENV{GIT_SHA}#g' compose.yml
+          IMG_TAG="$IMG_TAG" perl -i -pe 's#(konfi-quest-(?:backend|frontend)):[A-Za-z0-9._-]+#$1:$ENV{IMG_TAG}#g' compose.yml
           echo "compose images nach Tag-Rewrite:"; grep -E "image:.*konfi-quest" compose.yml
-          grep -q "konfi-quest-backend:${GIT_SHA}" compose.yml || { echo "::error::Tag-Rewrite backend fehlgeschlagen"; exit 1; }
-          grep -q "konfi-quest-frontend:${GIT_SHA}" compose.yml || { echo "::error::Tag-Rewrite frontend fehlgeschlagen"; exit 1; }
+          grep -q "konfi-quest-backend:${IMG_TAG}" compose.yml || { echo "::error::Tag-Rewrite backend fehlgeschlagen"; exit 1; }
+          grep -q "konfi-quest-frontend:${IMG_TAG}" compose.yml || { echo "::error::Tag-Rewrite frontend fehlgeschlagen"; exit 1; }
 
           redeploy() {
             python3 <<'PY'
