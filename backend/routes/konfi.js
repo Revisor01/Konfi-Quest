@@ -342,8 +342,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       const konfiId = req.user.id;
       
       const query = `
-        SELECT u.id, u.display_name, u.email, u.username, u.created_at, kp.gottesdienst_points, kp.gemeinde_points, 
-               kp.jahrgang_id, kp.bible_translation, j.name as jahrgang_name, j.confirmation_date,
+        SELECT u.id, u.display_name, u.email, u.username, u.created_at, kp.gottesdienst_points, kp.gemeinde_points,
+               kp.jahrgang_id, kp.bible_translation,
+               kp.konfspruch_id, kp.konfspruch_freitext, kp.konfspruch_freitext_referenz,
+               j.name as jahrgang_name, j.confirmation_date,
                j.gottesdienst_enabled, j.gemeinde_enabled
         FROM users u
         JOIN konfi_profiles kp ON u.id = kp.user_id
@@ -468,8 +470,39 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         }
       };
 
+      // Gewaehlten Konfispruch aufloesen (genau EINE Quelle aktiv: Listen-Wahl ODER Freitext)
+      let konfspruch = null;
+      if (konfi.konfspruch_id) {
+        // Listen-Wahl: gewaehlte Uebersetzung (bible_translation) nachladen
+        const spruchQuery = `
+          SELECT ks.id, ks.reference, ks.book, ks.chapter, ks.verse, ku.text
+          FROM konfsprueche ks
+          LEFT JOIN konfspruch_uebersetzungen ku
+            ON ku.spruch_id = ks.id AND ku.translation = $2
+          WHERE ks.id = $1
+        `;
+        const { rows: [spruch] } = await db.query(spruchQuery, [konfi.konfspruch_id, konfi.bible_translation]);
+        if (spruch) {
+          konfspruch = {
+            source: 'liste',
+            id: spruch.id,
+            reference: spruch.reference,
+            text: spruch.text || '',
+            translation: konfi.bible_translation || null
+          };
+        }
+      } else if (konfi.konfspruch_freitext) {
+        // Freitext-Spruch mit Pflicht-Referenz
+        konfspruch = {
+          source: 'freitext',
+          text: konfi.konfspruch_freitext,
+          reference: konfi.konfspruch_freitext_referenz
+        };
+      }
+
       res.json({
         ...konfi,
+        konfspruch,
         total_points: totalPoints,
         gottesdienst_points: gottesdienstPoints,
         gemeinde_points: gemeindePoints,
@@ -2035,6 +2068,144 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       
     } catch (err) {
  console.error('Database error in PUT /bible-translation:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // Gueltige Translation-Keys fuer den Konfispruch (deskriptiv, NICHT die Kuerzel
+  // aus PUT /bible-translation). bible_translation ist ein freies VARCHAR ohne
+  // DB-Constraint, daher koennen beide Stil-Welten koexistieren.
+  const KONFSPRUCH_TRANSLATIONS = ['luther2017', 'bigs', 'gute_nachricht', 'elberfelder'];
+
+  // Kuratierte Konfsprueche fuer das Auswahl-Modal (org-gefiltert)
+  router.get('/konfsprueche', verifyTokenRBAC, async (req, res) => {
+    if (req.user.type !== 'konfi') {
+      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
+    }
+
+    try {
+      const orgId = req.user.organization_id;
+      const query = `
+        SELECT ks.id, ks.reference, ks.book, ks.chapter, ks.verse,
+               COALESCE(
+                 json_object_agg(ku.translation, ku.text) FILTER (WHERE ku.translation IS NOT NULL),
+                 '{}'::json
+               ) AS uebersetzungen
+        FROM konfsprueche ks
+        LEFT JOIN konfspruch_uebersetzungen ku ON ku.spruch_id = ks.id
+        WHERE ks.is_active = true
+          AND (ks.organization_id IS NULL OR ks.organization_id = $1)
+        GROUP BY ks.id, ks.reference, ks.book, ks.chapter, ks.verse, ks.sort_order
+        ORDER BY ks.sort_order, ks.id
+      `;
+      const { rows } = await db.query(query, [orgId]);
+
+      // Sicherstellen, dass alle 4 Keys vorhanden sind (fehlende -> leerer Platzhalter)
+      const sprueche = rows.map((row) => {
+        const uebersetzungen = {};
+        for (const key of KONFSPRUCH_TRANSLATIONS) {
+          uebersetzungen[key] = (row.uebersetzungen && row.uebersetzungen[key]) || '';
+        }
+        return {
+          id: row.id,
+          reference: row.reference,
+          book: row.book,
+          chapter: row.chapter,
+          verse: row.verse,
+          uebersetzungen
+        };
+      });
+
+      res.json(sprueche);
+    } catch (err) {
+      console.error('Database error in GET /konfsprueche:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // Konfispruch setzen: Listen-Wahl ODER Freitext (genau EINE Quelle aktiv).
+  // RBAC: nur Konfi, nur eigenes Profil (WHERE user_id = req.user.id).
+  router.patch('/profile', verifyTokenRBAC, async (req, res) => {
+    if (req.user.type !== 'konfi') {
+      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
+    }
+
+    try {
+      const konfiId = req.user.id;
+      const orgId = req.user.organization_id;
+      const { konfspruch_id, translation, konfspruch_freitext, konfspruch_freitext_referenz } = req.body;
+
+      // Modus 1: Listen-Wahl
+      if (konfspruch_id !== undefined && konfspruch_id !== null) {
+        const spruchId = parseInt(konfspruch_id, 10);
+        if (Number.isNaN(spruchId)) {
+          return res.status(400).json({ error: 'Ungültige Spruch-ID' });
+        }
+        if (!KONFSPRUCH_TRANSLATIONS.includes(translation)) {
+          return res.status(400).json({
+            error: 'Ungültige Bibelübersetzung',
+            valid_translations: KONFSPRUCH_TRANSLATIONS
+          });
+        }
+        // Spruch muss existieren und fuer die Org sichtbar sein
+        const { rows: [spruch] } = await db.query(
+          `SELECT id FROM konfsprueche
+           WHERE id = $1 AND is_active = true
+             AND (organization_id IS NULL OR organization_id = $2)`,
+          [spruchId, orgId]
+        );
+        if (!spruch) {
+          return res.status(404).json({ error: 'Konfispruch nicht gefunden' });
+        }
+        // Listen-Wahl setzen, Freitext loeschen (Exklusivitaet)
+        await db.query(
+          `UPDATE konfi_profiles
+           SET konfspruch_id = $1, bible_translation = $2,
+               konfspruch_freitext = NULL, konfspruch_freitext_referenz = NULL
+           WHERE user_id = $3`,
+          [spruchId, translation, konfiId]
+        );
+        return res.json({
+          success: true,
+          konfspruch: { source: 'liste', id: spruchId, translation }
+        });
+      }
+
+      // Modus 2: Freitext
+      if (konfspruch_freitext !== undefined && konfspruch_freitext !== null) {
+        const freitext = String(konfspruch_freitext).trim();
+        const referenz = konfspruch_freitext_referenz != null
+          ? String(konfspruch_freitext_referenz).trim()
+          : '';
+        if (!freitext) {
+          return res.status(400).json({ error: 'Der Spruchtext darf nicht leer sein' });
+        }
+        if (!referenz) {
+          return res.status(400).json({
+            error: 'Bei einem eigenen Spruch ist die Stellenangabe (Referenz) verpflichtend'
+          });
+        }
+        // Freitext setzen, Listen-Wahl loeschen (Exklusivitaet).
+        // bible_translation bleibt unveraendert (Freitext hat keine Uebersetzungs-Tabs).
+        await db.query(
+          `UPDATE konfi_profiles
+           SET konfspruch_freitext = $1, konfspruch_freitext_referenz = $2,
+               konfspruch_id = NULL
+           WHERE user_id = $3`,
+          [freitext, referenz, konfiId]
+        );
+        return res.json({
+          success: true,
+          konfspruch: { source: 'freitext', text: freitext, reference: referenz }
+        });
+      }
+
+      // Weder gueltige Listen-Wahl noch Freitext
+      return res.status(400).json({
+        error: 'Bitte entweder einen Spruch aus der Liste (konfspruch_id + translation) oder einen eigenen Spruch (konfspruch_freitext + konfspruch_freitext_referenz) angeben'
+      });
+    } catch (err) {
+      console.error('Database error in PATCH /profile:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
