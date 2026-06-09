@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.11
-milestone_name: Admin/Teamer Design-Angleichung + Launch-Haertung
-status: complete
-last_updated: "2026-06-01T09:12:00.000Z"
+milestone: v2.12
+milestone_name: Konfirmation + Konfispruch
+status: planning
+last_updated: "2026-06-09T00:00:00.000Z"
 progress:
-  total_phases: 15
-  completed_phases: 15
-  total_plans: 34
-  completed_plans: 34
-  percent: 100
+  total_phases: 3
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -19,7 +19,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v2.11 ABGESCHLOSSEN (archiviert, getaggt). Voll-Audit der App durchgefuehrt, 42 Funde behoben. Offen vor Launch: Deploy (114/115/116 + Audit-Fixes, Migrationen 082+083 via Portainer), Rollen-Feature-Matrix, Screens, Store. Siehe MEMORY.md + audit_v3_todos.md.
+**Current focus:** v2.12 Konfirmation + Konfispruch (Planung). Phase 117 = Konfirmations-Event-Flag (is_konfirmation analog mandatory, zuerst). Phase 118 = Konfispruch-Datenmodell + Konfi-Auswahl (kuratierte DB-Liste, 4 Uebersetzungen, Dashboard-Card). Phase 119 = pro-Jahrgang-Freischaltung + Admin-Integration (Matrix-Umschaltung/Versand, FAQ). Requirements: REQUIREMENTS.md (KONF-01..08, SPRUCH-01..11). Naechster Schritt: /gsd:plan-phase 117.
 
 ## Current Position
 
