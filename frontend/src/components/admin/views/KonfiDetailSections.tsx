@@ -40,7 +40,8 @@ import {
   giftOutline,
   cloudOfflineOutline,
   chevronDown,
-  chevronUp
+  chevronUp,
+  bookOutline
 } from 'ionicons/icons';
 import ActivityRings from './ActivityRings';
 
@@ -71,6 +72,13 @@ export interface Konfi {
   role_name?: string;
   user_type?: string;
   teamer_since?: string;
+  konfspruch?: {
+    source: 'liste' | 'freitext';
+    id?: number;
+    reference?: string;
+    text?: string;
+    translation?: string;
+  } | null;
 }
 
 export interface Activity {
@@ -387,6 +395,52 @@ export const BonusSection = React.memo<BonusSectionProps>(({
             Bonuspunkte hinzufügen
           </IonButton>
         </div>
+      </IonCardContent>
+    </IonCard>
+  </IonList>
+));
+
+// ---- KonfispruchSection (read-only) ----
+
+interface KonfispruchSectionProps {
+  konfspruch: Konfi['konfspruch'];
+}
+
+export const KonfispruchSection = React.memo<KonfispruchSectionProps>(({ konfspruch }) => (
+  <IonList className="app-section-inset" inset={true}>
+    <IonListHeader>
+      <div className="app-section-icon app-section-icon--activities">
+        <IonIcon icon={bookOutline} />
+      </div>
+      <IonLabel>Konfispruch</IonLabel>
+    </IonListHeader>
+    <IonCard className="app-card">
+      <IonCardContent style={{ padding: '16px' }}>
+        {!konfspruch ? (
+          <div className="app-empty-state">
+            <p className="app-empty-state__text">Noch kein Konfispruch gewählt</p>
+          </div>
+        ) : konfspruch.source === 'liste' ? (
+          <div>
+            {konfspruch.reference && (
+              <div className="app-text-main" style={{ marginBottom: '6px' }}>
+                {konfspruch.reference}
+              </div>
+            )}
+            {konfspruch.text ? (
+              <p className="app-description-text" style={{ margin: 0 }}>{konfspruch.text}</p>
+            ) : (
+              <p className="app-text-sub" style={{ margin: 0 }}>Übersetzung noch nicht hinterlegt</p>
+            )}
+          </div>
+        ) : (
+          <div>
+            <p className="app-description-text" style={{ margin: '0 0 6px 0' }}>{konfspruch.text}</p>
+            {konfspruch.reference && (
+              <div className="app-text-sub">{konfspruch.reference}</div>
+            )}
+          </div>
+        )}
       </IonCardContent>
     </IonCard>
   </IonList>

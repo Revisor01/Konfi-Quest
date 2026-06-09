@@ -177,6 +177,78 @@ describe('Konfi-Management Routes', () => {
   });
 
   // ================================================================
+  // GET /api/admin/konfis/:id — Konfispruch (SPRUCH-08)
+  // ================================================================
+  describe('GET /api/admin/konfis/:id — Konfispruch', () => {
+    it('Listen-Wahl: liefert konfspruch mit source=liste, Referenz, Text und Translation', async () => {
+      // Globalen Spruch + Uebersetzungstext aus der Migration nutzen
+      const { rows: [spruch] } = await db.query(
+        `SELECT id, reference FROM konfsprueche WHERE organization_id IS NULL ORDER BY sort_order LIMIT 1`
+      );
+      await db.query(
+        `UPDATE konfspruch_uebersetzungen SET text = $1 WHERE spruch_id = $2 AND translation = 'luther2017'`,
+        ['Der Herr ist mein Hirte, mir wird nichts mangeln.', spruch.id]
+      );
+      await db.query(
+        `UPDATE konfi_profiles
+         SET konfspruch_id = $1, konfspruch_translation = 'luther2017',
+             konfspruch_freitext = NULL, konfspruch_freitext_referenz = NULL
+         WHERE user_id = $2`,
+        [spruch.id, USERS.konfi1.id]
+      );
+
+      const res = await request(app)
+        .get(`/api/admin/konfis/${USERS.konfi1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.konfspruch).toBeTruthy();
+      expect(res.body.konfspruch.source).toBe('liste');
+      expect(res.body.konfspruch.id).toBe(spruch.id);
+      expect(res.body.konfspruch.reference).toBe(spruch.reference);
+      expect(res.body.konfspruch.text).toBe('Der Herr ist mein Hirte, mir wird nichts mangeln.');
+      expect(res.body.konfspruch.translation).toBe('luther2017');
+    });
+
+    it('Freitext: liefert konfspruch mit source=freitext, Text und Referenz', async () => {
+      await db.query(
+        `UPDATE konfi_profiles
+         SET konfspruch_id = NULL, konfspruch_translation = NULL,
+             konfspruch_freitext = $1, konfspruch_freitext_referenz = $2
+         WHERE user_id = $3`,
+        ['Vertraue auf den Herrn von ganzem Herzen.', 'Sprüche 3,5', USERS.konfi1.id]
+      );
+
+      const res = await request(app)
+        .get(`/api/admin/konfis/${USERS.konfi1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.konfspruch).toBeTruthy();
+      expect(res.body.konfspruch.source).toBe('freitext');
+      expect(res.body.konfspruch.text).toBe('Vertraue auf den Herrn von ganzem Herzen.');
+      expect(res.body.konfspruch.reference).toBe('Sprüche 3,5');
+    });
+
+    it('Kein Spruch gewaehlt: konfspruch ist null', async () => {
+      await db.query(
+        `UPDATE konfi_profiles
+         SET konfspruch_id = NULL, konfspruch_translation = NULL,
+             konfspruch_freitext = NULL, konfspruch_freitext_referenz = NULL
+         WHERE user_id = $1`,
+        [USERS.konfi1.id]
+      );
+
+      const res = await request(app)
+        .get(`/api/admin/konfis/${USERS.konfi1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.konfspruch).toBeNull();
+    });
+  });
+
+  // ================================================================
   // Soft-Delete-Filter (deleted_at IS NULL)
   // ================================================================
   describe('Soft-Delete-Filter (deleted_at)', () => {
