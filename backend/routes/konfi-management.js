@@ -444,6 +444,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         try {
             const konfiQuery = `
                 SELECT u.*, u.teamer_since, kp.gottesdienst_points, kp.gemeinde_points,
+                       kp.konfspruch_id, kp.konfspruch_freitext, kp.konfspruch_freitext_referenz,
+                       kp.konfspruch_translation,
                        j.name as jahrgang_name, j.id as jahrgang_id,
                        j.gottesdienst_enabled, j.gemeinde_enabled,
                        j.target_gottesdienst, j.target_gemeinde,
@@ -560,8 +562,45 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 };
             }
 
+            // Gewaehlten Konfispruch aufloesen (read-only Admin-Einsicht, SPRUCH-08)
+            // Builder uebernommen aus konfi.js:486-518. Genau EINE Quelle aktiv:
+            // Listen-Wahl ODER Freitext. Translation-Quelle ist die DEDIZIERTE Spalte
+            // kp.konfspruch_translation (NICHT die Tageslosungs-Praeferenz bible_translation).
+            let konfspruch = null;
+            if (konfi.role_name === 'konfi') {
+                if (konfi.konfspruch_id) {
+                    const spruchTranslation = konfi.konfspruch_translation || 'luther2017';
+                    const spruchQuery = `
+                        SELECT ks.id, ks.reference, ks.book, ks.chapter, ks.verse, ku.text
+                        FROM konfsprueche ks
+                        LEFT JOIN konfspruch_uebersetzungen ku
+                          ON ku.spruch_id = ks.id AND ku.translation = $2
+                        WHERE ks.id = $1
+                          AND ks.is_active = true
+                          AND (ks.organization_id IS NULL OR ks.organization_id = $3)
+                    `;
+                    const { rows: [spruch] } = await db.query(spruchQuery, [konfi.konfspruch_id, spruchTranslation, req.user.organization_id]);
+                    if (spruch) {
+                        konfspruch = {
+                            source: 'liste',
+                            id: spruch.id,
+                            reference: spruch.reference,
+                            text: spruch.text || '',
+                            translation: konfi.konfspruch_translation || null
+                        };
+                    }
+                } else if (konfi.konfspruch_freitext) {
+                    konfspruch = {
+                        source: 'freitext',
+                        text: konfi.konfspruch_freitext,
+                        reference: konfi.konfspruch_freitext_referenz
+                    };
+                }
+            }
+
             res.json({
                 ...konfi,
+                konfspruch,
                 activities: activities || [],
                 bonusPoints: bonusPoints || [],
                 badgeCount: badgeResult ? badgeResult.badgeCount : 0,
