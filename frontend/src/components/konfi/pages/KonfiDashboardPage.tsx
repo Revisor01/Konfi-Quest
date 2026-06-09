@@ -65,6 +65,7 @@ interface DashboardData {
   point_config?: PointConfig;
   dashboard_config?: DashboardConfig;
   has_wrapped?: boolean;
+  konfspruch_visible?: boolean;
   konfspruch?: {
     source: 'liste' | 'freitext';
     id?: number;
