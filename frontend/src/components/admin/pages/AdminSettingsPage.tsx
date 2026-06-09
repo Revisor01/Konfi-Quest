@@ -280,7 +280,7 @@ console.error('Logout error:', error);
                   </div>
                   <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Jahrgänge</h2>
-                    <p className="app-settings-item__subtitle">Konfirmand:innen verwalten</p>
+                    <p className="app-settings-item__subtitle">Jahrgänge anlegen, Punkteziele (Gottesdienst &amp; Gemeinde), Konfispruch-Freischaltung und Wrapped-Freigabe verwalten</p>
                   </div>
                 </div>
 

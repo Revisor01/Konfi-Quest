@@ -514,6 +514,15 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           activities={activities}
         />
 
+        {/* Konfirmation (Termin + Spruch, read-only) - nur für Konfis, direkt vor Anwesenheit */}
+        {!isTeamer && currentKonfi?.role_name === 'konfi' && (
+          <KonfispruchSection
+            konfspruch={currentKonfi.konfspruch}
+            confirmationDate={currentKonfi.confirmation_date}
+            confirmationLocation={currentKonfi.confirmation_location}
+          />
+        )}
+
         {/* Anwesenheit - Pflicht-Events - nur für Konfis (wichtigste Info vorn) */}
         {!isTeamer && attendanceStats && attendanceStats.total_mandatory > 0 && (
           <AttendanceSection attendanceStats={attendanceStats} />
@@ -540,14 +549,6 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           />
         )}
 
-        {/* Konfispruch (read-only) - nur für Konfis */}
-        {!isTeamer && currentKonfi?.role_name === 'konfi' && (
-          <KonfispruchSection
-            konfspruch={currentKonfi.konfspruch}
-            confirmationDate={currentKonfi.confirmation_date}
-            confirmationLocation={currentKonfi.confirmation_location}
-          />
-        )}
 
         {/* Teamer Events */}
         {isTeamer && teamerEvents.length > 0 && (

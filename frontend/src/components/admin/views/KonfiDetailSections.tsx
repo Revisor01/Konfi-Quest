@@ -42,7 +42,9 @@ import {
   chevronDown,
   chevronUp,
   bookOutline,
-  locationOutline
+  locationOutline,
+  book,
+  documentText
 } from 'ionicons/icons';
 import ActivityRings from './ActivityRings';
 
@@ -412,69 +414,79 @@ interface KonfispruchSectionProps {
   confirmationLocation?: string | null;
 }
 
-export const KonfispruchSection = React.memo<KonfispruchSectionProps>(({ konfspruch, confirmationDate, confirmationLocation }) => (
+export const KonfispruchSection = React.memo<KonfispruchSectionProps>(({ konfspruch, confirmationDate, confirmationLocation }) => {
+  // Spruch-Anzeige: Referenz (Buch/Stelle) + Text, unabhaengig von der Quelle.
+  const spruchReference = konfspruch?.reference || null;
+  const spruchText = konfspruch?.text || null;
+  return (
   <IonList className="app-section-inset" inset={true}>
     <IonListHeader>
-      <div className="app-section-icon app-section-icon--activities">
-        <IonIcon icon={bookOutline} />
+      <div className="app-section-icon app-section-icon--konfis">
+        <IonIcon icon={book} />
       </div>
       <IonLabel>Konfirmation</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
-      <IonCardContent style={{ padding: '16px' }}>
-        {/* Konfirmationstermin (read-only) aus dem is_konfirmation-Event des Jahrgangs */}
-        <div style={{ marginBottom: '14px' }}>
-          {confirmationDate ? (
-            <div className="app-dashboard-meta" style={{ flexWrap: 'wrap', gap: '6px 14px' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                <IonIcon icon={calendarOutline} className="app-icon-color--events" />
-                {new Date(confirmationDate).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
-              </span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                <IonIcon icon={timeOutline} className="app-icon-color--events" />
-                {new Date(confirmationDate).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
-              </span>
-              {confirmationLocation && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  <IonIcon icon={locationOutline} className="app-icon-color--events" />
-                  {confirmationLocation}
-                </span>
+      <IonCardContent style={{ padding: '8px' }}>
+        {/* Row 1: Konfirmationstermin (read-only, aus is_konfirmation-Event) */}
+        <div className="app-list-item__row">
+          <div className="app-list-item__main">
+            <div className="app-icon-circle app-icon-circle--purple">
+              <IonIcon icon={calendar} />
+            </div>
+            <div className="app-list-item__content">
+              <div className="app-list-item__title">Konfirmationstermin</div>
+              {confirmationDate ? (
+                <div className="app-list-item__meta">
+                  <span className="app-list-item__meta-item">
+                    {new Date(confirmationDate).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+                  </span>
+                  <span className="app-list-item__meta-item">
+                    <IonIcon icon={time} className="app-icon-color--konfis" />
+                    {new Date(confirmationDate).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
+                  </span>
+                  {confirmationLocation && (
+                    <span className="app-list-item__meta-item">{confirmationLocation}</span>
+                  )}
+                </div>
+              ) : (
+                <div className="app-list-item__meta">
+                  <span className="app-list-item__meta-item app-text-sub">Noch kein Termin festgelegt</span>
+                </div>
               )}
             </div>
-          ) : (
-            <p className="app-text-sub" style={{ margin: 0 }}>Noch kein Konfirmationstermin festgelegt</p>
-          )}
+          </div>
         </div>
-        <div className="app-text-sub" style={{ fontWeight: 600, marginBottom: '8px' }}>Konfispruch</div>
-        {!konfspruch ? (
-          <div className="app-empty-state">
-            <p className="app-empty-state__text">Noch kein Konfispruch gewählt</p>
-          </div>
-        ) : konfspruch.source === 'liste' ? (
-          <div>
-            {konfspruch.reference && (
-              <div className="app-text-main" style={{ marginBottom: '6px' }}>
-                {konfspruch.reference}
+
+        {/* Row 2: Konfispruch (read-only) */}
+        <div className="app-list-item__row">
+          <div className="app-list-item__main">
+            <div className="app-icon-circle app-icon-circle--purple">
+              <IonIcon icon={documentText} />
+            </div>
+            <div className="app-list-item__content">
+              <div className="app-list-item__title">
+                {spruchReference || 'Konfispruch'}
               </div>
-            )}
-            {konfspruch.text ? (
-              <p className="app-description-text" style={{ margin: 0 }}>{konfspruch.text}</p>
-            ) : (
-              <p className="app-text-sub" style={{ margin: 0 }}>Übersetzung noch nicht hinterlegt</p>
-            )}
+              {spruchText ? (
+                <div className="app-list-item__meta">
+                  <span className="app-list-item__meta-item app-description-text">{spruchText}</span>
+                </div>
+              ) : (
+                <div className="app-list-item__meta">
+                  <span className="app-list-item__meta-item app-text-sub">
+                    {konfspruch ? 'Übersetzung noch nicht hinterlegt' : 'Noch kein Spruch gewählt'}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
-        ) : (
-          <div>
-            <p className="app-description-text" style={{ margin: '0 0 6px 0' }}>{konfspruch.text}</p>
-            {konfspruch.reference && (
-              <div className="app-text-sub">{konfspruch.reference}</div>
-            )}
-          </div>
-        )}
+        </div>
       </IonCardContent>
     </IonCard>
   </IonList>
-));
+  );
+});
 
 // ---- EventPointsSection ----
 

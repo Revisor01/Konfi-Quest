@@ -39,7 +39,8 @@ import {
   checkmarkCircle,
   closeCircle,
   trophy,
-  flag
+  home,
+  people
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -194,7 +195,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
     if (!jahrgang) return;
     setWrappedLoading(true);
     try {
-      await api.post(`/admin/wrapped/generate/${jahrgang.id}`);
+      await api.post(`/wrapped/generate/${jahrgang.id}`);
       setWrappedReleasedAt(new Date().toISOString());
       setSuccess('Wrapped wurde freigegeben und die Konfis wurden benachrichtigt');
       onRefresh?.();
@@ -209,7 +210,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
     if (!jahrgang) return;
     setWrappedLoading(true);
     try {
-      await api.delete(`/admin/wrapped/${jahrgang.id}`);
+      await api.delete(`/wrapped/${jahrgang.id}`);
       setWrappedReleasedAt(null);
       setSuccess('Wrapped-Rückblick wurde gelöscht');
       onRefresh?.();
@@ -648,13 +649,13 @@ const AdminJahrgaengeePage: React.FC = () => {
                                 <div className="app-list-item__meta">
                                   {jahrgang.gottesdienst_enabled !== false && (
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={flag} style={{ color: '#007aff' }} />
+                                      <IonIcon icon={home} className="app-icon-color--gottesdienst" />
                                       {`GD-Ziel ${jahrgang.target_gottesdienst ?? 10}`}
                                     </span>
                                   )}
                                   {jahrgang.gemeinde_enabled !== false && (
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={flag} style={{ color: '#34c759' }} />
+                                      <IonIcon icon={people} className="app-icon-color--gemeinde" />
                                       {`Gem-Ziel ${jahrgang.target_gemeinde ?? 10}`}
                                     </span>
                                   )}
