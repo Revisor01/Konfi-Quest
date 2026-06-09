@@ -92,3 +92,9 @@ Keine.
 ## Threat Flags
 
 Keine neuen Trust-Boundary-Flaechen. Die Auto-Loeschung (DSG-EKD) bleibt funktional und sicherer im Default (kein Termin -> keine Loeschung statt versehentlicher Loeschung).
+
+## Self-Check: PASSED
+
+- Alle 6 Code/Test-Dateien + SUMMARY.md vorhanden.
+- Alle 5 Commits (750815b, 930a9f5, 095ea9c, d3a808e, 1eef0b9) im Git-Log.
+- Working tree sauber.
