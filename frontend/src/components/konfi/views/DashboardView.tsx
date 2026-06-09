@@ -411,7 +411,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                         Dein Konfispruch
                       </div>
                       <div style={{ fontSize: '0.95rem' }}>
-                        Tippe, um deinen Konfirmationsspruch zu waehlen
+                        Tippe, um deinen Konfirmationsspruch zu wählen
                       </div>
                     </div>
                   )}
