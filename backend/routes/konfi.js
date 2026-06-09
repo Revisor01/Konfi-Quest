@@ -355,7 +355,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       
       const query = `
         SELECT u.id, u.display_name, u.email, u.username, u.created_at, kp.gottesdienst_points, kp.gemeinde_points,
-               kp.jahrgang_id, kp.bible_translation,
+               kp.jahrgang_id, kp.bible_translation, kp.konfspruch_translation,
                kp.konfspruch_id, kp.konfspruch_freitext, kp.konfspruch_freitext_referenz,
                j.name as jahrgang_name, j.confirmation_date,
                j.gottesdienst_enabled, j.gemeinde_enabled
@@ -485,22 +485,27 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       // Gewaehlten Konfispruch aufloesen (genau EINE Quelle aktiv: Listen-Wahl ODER Freitext)
       let konfspruch = null;
       if (konfi.konfspruch_id) {
-        // Listen-Wahl: gewaehlte Uebersetzung (bible_translation) nachladen
+        // Listen-Wahl: gewaehlte Konfispruch-Uebersetzung (konfspruch_translation) nachladen.
+        // Org-gescopt + is_active wie in der Listen- und PATCH-Route. Bei NULL-Translation
+        // greift ein Default (luther2017), damit der Text nicht leer bleibt.
+        const spruchTranslation = konfi.konfspruch_translation || 'luther2017';
         const spruchQuery = `
           SELECT ks.id, ks.reference, ks.book, ks.chapter, ks.verse, ku.text
           FROM konfsprueche ks
           LEFT JOIN konfspruch_uebersetzungen ku
             ON ku.spruch_id = ks.id AND ku.translation = $2
           WHERE ks.id = $1
+            AND ks.is_active = true
+            AND (ks.organization_id IS NULL OR ks.organization_id = $3)
         `;
-        const { rows: [spruch] } = await db.query(spruchQuery, [konfi.konfspruch_id, konfi.bible_translation]);
+        const { rows: [spruch] } = await db.query(spruchQuery, [konfi.konfspruch_id, spruchTranslation, req.user.organization_id]);
         if (spruch) {
           konfspruch = {
             source: 'liste',
             id: spruch.id,
             reference: spruch.reference,
             text: spruch.text || '',
-            translation: konfi.bible_translation || null
+            translation: konfi.konfspruch_translation || null
           };
         }
       } else if (konfi.konfspruch_freitext) {
@@ -2085,8 +2090,9 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
   });
 
   // Gueltige Translation-Keys fuer den Konfispruch (deskriptiv, NICHT die Kuerzel
-  // aus PUT /bible-translation). bible_translation ist ein freies VARCHAR ohne
-  // DB-Constraint, daher koennen beide Stil-Welten koexistieren.
+  // aus PUT /bible-translation). Diese Werte landen in der DEDIZIERTEN Spalte
+  // konfspruch_translation - getrennt von der Tageslosungs-Praeferenz bible_translation,
+  // damit sich die beiden Features nicht gegenseitig ueberschreiben.
   const KONFSPRUCH_TRANSLATIONS = ['luther2017', 'bigs', 'gute_nachricht', 'elberfelder'];
 
   // Kuratierte Konfsprueche fuer das Auswahl-Modal (org-gefiltert)
@@ -2169,10 +2175,12 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         if (!spruch) {
           return res.status(404).json({ error: 'Konfispruch nicht gefunden' });
         }
-        // Listen-Wahl setzen, Freitext loeschen (Exklusivitaet)
+        // Listen-Wahl setzen, Freitext loeschen (Exklusivitaet).
+        // konfspruch_translation ist die DEDIZIERTE Spalte - bible_translation (Tageslosung)
+        // wird hier bewusst NICHT angefasst.
         await db.query(
           `UPDATE konfi_profiles
-           SET konfspruch_id = $1, bible_translation = $2,
+           SET konfspruch_id = $1, konfspruch_translation = $2,
                konfspruch_freitext = NULL, konfspruch_freitext_referenz = NULL
            WHERE user_id = $3`,
           [spruchId, translation, konfiId]
@@ -2197,8 +2205,16 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
             error: 'Bei einem eigenen Spruch ist die Stellenangabe (Referenz) verpflichtend'
           });
         }
+        // Laengen-Validierung (referenz -> VARCHAR(100), freitext -> sinnvolles Limit),
+        // damit ein zu langer Wert einen sauberen 400 statt eines Postgres-22001/500 liefert.
+        if (referenz.length > 100) {
+          return res.status(400).json({ error: 'Die Stellenangabe darf höchstens 100 Zeichen lang sein' });
+        }
+        if (freitext.length > 1000) {
+          return res.status(400).json({ error: 'Der Spruchtext ist zu lang' });
+        }
         // Freitext setzen, Listen-Wahl loeschen (Exklusivitaet).
-        // bible_translation bleibt unveraendert (Freitext hat keine Uebersetzungs-Tabs).
+        // konfspruch_translation bleibt unveraendert (Freitext hat keine Uebersetzungs-Tabs).
         await db.query(
           `UPDATE konfi_profiles
            SET konfspruch_freitext = $1, konfspruch_freitext_referenz = $2,

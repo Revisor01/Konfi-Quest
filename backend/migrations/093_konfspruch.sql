@@ -5,9 +5,12 @@
 --   * konfsprueche               - kuratierte Vers-REFERENZEN (organization_id NULL = global)
 --   * konfspruch_uebersetzungen  - je 4 Uebersetzungen pro Vers (UNIQUE(spruch_id, translation))
 -- und erweitert konfi_profiles um die Spalten konfspruch_id (Listen-Wahl),
--- konfspruch_freitext und konfspruch_freitext_referenz (eigener Spruch + Pflicht-Stellenangabe).
--- Die bereits vorhandene Spalte fuer die gewaehlte Bibeluebersetzung wird
--- WIEDERVERWENDET und hier NICHT neu angelegt.
+-- konfspruch_freitext und konfspruch_freitext_referenz (eigener Spruch + Pflicht-Stellenangabe)
+-- sowie um eine DEDIZIERTE Spalte konfspruch_translation fuer die gewaehlte
+-- Konfispruch-Uebersetzung (eigene Wertewelt: luther2017/bigs/gute_nachricht/elberfelder).
+-- Die Tageslosungs-Uebersetzungs-Spalte (Kuerzel-Wertewelt LUT/ELB/...) wird
+-- BEWUSST NICHT wiederverwendet, damit sich die beiden Features nicht gegenseitig
+-- ueberschreiben.
 --
 -- LIZENZ-HINWEIS (wichtig):
 -- Es werden AUSSCHLIESSLICH Vers-Referenzen geseedet. Die Uebersetzungs-TEXTE
@@ -44,12 +47,14 @@ CREATE TABLE IF NOT EXISTS konfspruch_uebersetzungen (
 CREATE INDEX IF NOT EXISTS idx_konfspruch_uebersetzungen_spruch ON konfspruch_uebersetzungen(spruch_id);
 
 -- Schritt 3: konfi_profiles erweitern (idempotent)
--- Die Uebersetzungs-Praeferenz-Spalte wird NICHT angelegt (existiert bereits, wird wiederverwendet).
+-- konfspruch_translation ist eine EIGENE Spalte (NICHT die Tageslosungs-Uebersetzungs-Spalte),
+-- damit sich Konfispruch-Uebersetzung und Tageslosungs-Praeferenz nicht ueberschreiben.
 -- Keine DB-CHECK-Constraint fuer die Exklusivitaet Listen-Wahl vs. Freitext -
 -- diese wird in der PATCH-Route erzwungen (Setzen einer Quelle NULLt die andere).
 ALTER TABLE konfi_profiles ADD COLUMN IF NOT EXISTS konfspruch_id INTEGER NULL REFERENCES konfsprueche(id) ON DELETE SET NULL;
 ALTER TABLE konfi_profiles ADD COLUMN IF NOT EXISTS konfspruch_freitext TEXT NULL;
 ALTER TABLE konfi_profiles ADD COLUMN IF NOT EXISTS konfspruch_freitext_referenz VARCHAR(100) NULL;
+ALTER TABLE konfi_profiles ADD COLUMN IF NOT EXISTS konfspruch_translation VARCHAR(30) NULL;
 
 -- Schritt 4: Seed der globalen Referenzen (organization_id NULL).
 -- Idempotenz: vorab die globalen Sprueche loeschen (CASCADE entfernt auch deren
