@@ -156,7 +156,10 @@ jobs:
       - name: Checkout (fuer Backend-Diff-Erkennung)
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          # Volle Historie: Backend-Diff geht ueber den gesamten Push-Bereich
+          # (github.event.before..HEAD), nicht nur HEAD~1. Bei fetch-depth:2 waere
+          # der before-Commit eines Multi-Commit-Pushes nicht im Clone (Bug 09.06.2026).
+          fetch-depth: 0
 
       - name: Redeploy via Portainer-API (pullImage) + Commit-Verify
         env:
@@ -174,7 +177,18 @@ jobs:
           # Hat dieser Push das Backend geaendert? Dann MUSS /api/status danach den
           # neuen Commit melden (GIT_SHA ist ins Backend-Image gebaut). Sonst reicht
           # db:ok (Frontend-only-Commit -> Backend-Image + Commit bleiben unveraendert).
-          if git diff --name-only HEAD~1 HEAD | grep -q '^backend/'; then
+          # WICHTIG: ueber den GESAMTEN gepushten Commit-Bereich diffen, nicht nur
+          # HEAD~1..HEAD — sonst wird ein Backend-Change uebersehen, wenn der LETZTE
+          # Commit des Pushes nur Doku/.planning aendert (Bug 09.06.2026: Migration 093
+          # wurde nicht deployt, weil der letzte Push-Commit ein docs-Commit war).
+          BEFORE="${{ github.event.before }}"
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            DIFF_RANGE="HEAD~1 HEAD"   # Fallback (erster Push / before unbekannt)
+          else
+            DIFF_RANGE="$BEFORE HEAD"
+          fi
+          echo "Backend-Diff-Range: $DIFF_RANGE"
+          if git diff --name-only $DIFF_RANGE | grep -q '^backend/'; then
             BACKEND_CHANGED=1; echo "Backend geaendert -> Commit-Verify gegen ${GIT_SHA:0:12}"
           else
             BACKEND_CHANGED=0; echo "Kein Backend-Change -> nur Health-Verify"
