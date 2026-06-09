@@ -260,13 +260,25 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           dashboardMap[row.key] = row.value === 'true' || row.value === '1';
         }
       });
+      // Bereits gespeicherte Reihenfolgen kennen 'konfispruch' noch nicht (Phase 118).
+      // Fehlt der Eintrag, fuegen wir ihn direkt nach 'konfirmation' ein (oder ans Ende,
+      // falls 'konfirmation' fehlt), damit auch Orgs mit gespeicherter Order die Card sehen.
+      // Kein DB-Write - nur die ausgelieferte Order wird ergaenzt.
+      if (Array.isArray(sectionOrder) && !sectionOrder.includes('konfispruch')) {
+        const konfIndex = sectionOrder.indexOf('konfirmation');
+        if (konfIndex >= 0) {
+          sectionOrder.splice(konfIndex + 1, 0, 'konfispruch');
+        } else {
+          sectionOrder.push('konfispruch');
+        }
+      }
       const dashboard_config = {
         show_konfirmation: dashboardMap.dashboard_show_konfirmation !== undefined ? dashboardMap.dashboard_show_konfirmation : true,
         show_events: dashboardMap.dashboard_show_events !== undefined ? dashboardMap.dashboard_show_events : true,
         show_losung: dashboardMap.dashboard_show_losung !== undefined ? dashboardMap.dashboard_show_losung : true,
         show_badges: dashboardMap.dashboard_show_badges !== undefined ? dashboardMap.dashboard_show_badges : true,
         show_ranking: dashboardMap.dashboard_show_ranking !== undefined ? dashboardMap.dashboard_show_ranking : true,
-        section_order: sectionOrder || ['konfirmation', 'events', 'losung', 'badges', 'ranking']
+        section_order: sectionOrder || ['konfirmation', 'konfispruch', 'events', 'losung', 'badges', 'ranking']
       };
 
       // Wrapped-Verfuegbarkeit pruefen (ueber wrapped_released_at auf Jahrgang)

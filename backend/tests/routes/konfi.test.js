@@ -61,6 +61,17 @@ describe('Konfi Routes', () => {
       expect(res.body.dashboard_config).toBeDefined();
     });
 
+    it('Default-section_order enthaelt konfispruch (Phase 118 Card sichtbar)', async () => {
+      const res = await request(app)
+        .get('/api/konfi/dashboard')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.dashboard_config).toBeDefined();
+      expect(Array.isArray(res.body.dashboard_config.section_order)).toBe(true);
+      expect(res.body.dashboard_config.section_order).toContain('konfispruch');
+    });
+
     it('Admin bekommt 403 (type !== konfi)', async () => {
       const res = await request(app)
         .get('/api/konfi/dashboard')
