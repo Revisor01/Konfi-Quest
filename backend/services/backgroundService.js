@@ -393,21 +393,21 @@ class BackgroundService {
   // ====================================================================
 
   /**
-   * Startet den Wrapped-Cron Service (taeglich, prueft am 1. des Monats)
-   * - Konfi-Wrapped: Am 1. des Konfirmationsmonats automatisch generieren
-   * - Teamer-Wrapped: Am 1. Dezember fuer alle Organisationen generieren
+   * Startet den Wrapped-Cron Service (jaehrlich am 6. Januar um 06:00 Uhr)
+   * - Teamer-Wrapped: Jaehrlich am 6.1. fuer alle Organisationen generieren
+   * - Konfi-Wrapped wird NICHT mehr per Cron getriggert (Toggle pro Jahrgang, 119)
    */
   static startWrappedCron(db) {
     if (this.wrappedCronTask) {
       return;
     }
 
-    console.log('Wrapped-Cron: Starte node-cron (0 6 1 * * -- jeden 1. des Monats um 06:00 Uhr)');
+    console.log('Wrapped-Cron: Starte node-cron (0 6 6 1 * -- jaehrlich am 6.1. um 06:00 Uhr)');
 
-    // '0 6 1 * *' = Am 1. jeden Monats um 06:00 Uhr
+    // '0 6 6 1 *' = Jaehrlich am 6. Januar um 06:00 Uhr
     // node-cron berechnet nach Neustart den naechsten Trigger korrekt
-    this.wrappedCronTask = cron.schedule('0 6 1 * *', async () => {
-      console.log('Wrapped-Cron: Ausfuehrung gestartet (1. des Monats)');
+    this.wrappedCronTask = cron.schedule('0 6 6 1 *', async () => {
+      console.log('Wrapped-Cron: Ausfuehrung gestartet (jaehrlich am 6.1.)');
       try {
         await this.checkWrappedTriggers(db);
       } catch (error) {
@@ -430,59 +430,37 @@ class BackgroundService {
 
   /**
    * Prueft ob Wrapped-Snapshots automatisch generiert werden muessen.
-   * Laeuft nur am 1. eines Monats.
+   * Laeuft jaehrlich am 6.1. (Teamer-Wrapped fuer alle Organisationen).
+   * Konfi-Wrapped wird NICHT mehr automatisch getriggert (Toggle pro Jahrgang, 119).
    */
   static async checkWrappedTriggers(db) {
     try {
       const today = new Date();
 
-      let konfiJahrgaengeGenerated = 0;
       let teamerOrgsGenerated = 0;
 
-      // 1. Konfi-Wrapped: Jahrgaenge deren confirmation_date im aktuellen Monat+Jahr liegt
-      const { rows: jahrgaenge } = await db.query(`
-        SELECT j.id, j.organization_id
-        FROM jahrgaenge j
-        WHERE EXTRACT(MONTH FROM j.confirmation_date) = $1
-          AND EXTRACT(YEAR FROM j.confirmation_date) = $2
-          AND j.wrapped_released_at IS NULL
-      `, [today.getMonth() + 1, today.getFullYear()]);
+      // Teamer-Wrapped: Jaehrlich (Cron feuert nur am 6.1.) fuer alle Organisationen
+      const { rows: orgs } = await db.query('SELECT id FROM organizations');
 
-      for (const jg of jahrgaenge) {
+      for (const org of orgs) {
         try {
-          if (this.wrappedRouter && this.wrappedRouter.generateAllKonfiWrapped) {
-            await this.wrappedRouter.generateAllKonfiWrapped(db, jg.id, jg.organization_id, today.getFullYear());
-            konfiJahrgaengeGenerated++;
+          // Pruefen ob schon generiert (Idempotenz)
+          const { rows: existing } = await db.query(
+            `SELECT 1 FROM wrapped_snapshots WHERE organization_id = $1 AND wrapped_type = 'teamer' AND year = $2 LIMIT 1`,
+            [org.id, today.getFullYear()]
+          );
+
+          if (existing.length === 0 && this.wrappedRouter && this.wrappedRouter.generateAllTeamerWrapped) {
+            await this.wrappedRouter.generateAllTeamerWrapped(db, org.id, today.getFullYear());
+            teamerOrgsGenerated++;
           }
         } catch (err) {
-          console.error(`Wrapped-Cron: Jahrgang ${jg.id} Fehler:`, err.message);
+          console.error(`Wrapped-Cron: Teamer-Org ${org.id} Fehler:`, err.message);
         }
       }
 
-      // 2. Teamer-Wrapped: Am 1. Dezember fuer alle Organisationen
-      if (today.getMonth() === 11) {
-        const { rows: orgs } = await db.query('SELECT id FROM organizations');
-
-        for (const org of orgs) {
-          try {
-            // Pruefen ob schon generiert (Idempotenz)
-            const { rows: existing } = await db.query(
-              `SELECT 1 FROM wrapped_snapshots WHERE organization_id = $1 AND wrapped_type = 'teamer' AND year = $2 LIMIT 1`,
-              [org.id, today.getFullYear()]
-            );
-
-            if (existing.length === 0 && this.wrappedRouter && this.wrappedRouter.generateAllTeamerWrapped) {
-              await this.wrappedRouter.generateAllTeamerWrapped(db, org.id, today.getFullYear());
-              teamerOrgsGenerated++;
-            }
-          } catch (err) {
-            console.error(`Wrapped-Cron: Teamer-Org ${org.id} Fehler:`, err.message);
-          }
-        }
-      }
-
-      if (konfiJahrgaengeGenerated > 0 || teamerOrgsGenerated > 0) {
-        console.log(`Wrapped-Cron: ${konfiJahrgaengeGenerated} Konfi-Jahrgaenge generiert, ${teamerOrgsGenerated} Teamer-Orgs generiert`);
+      if (teamerOrgsGenerated > 0) {
+        console.log(`Wrapped-Cron: ${teamerOrgsGenerated} Teamer-Orgs generiert`);
       }
     } catch (error) {
       console.error('Error in checkWrappedTriggers:', error);
