@@ -18,7 +18,9 @@ import {
   IonSpinner,
   IonItemGroup,
   IonItem,
-  IonInput
+  IonInput,
+  IonSegment,
+  IonSegmentButton
 } from '@ionic/react';
 import {
   closeOutline,
@@ -28,7 +30,9 @@ import {
   peopleOutline,
   calendarOutline,
   filterOutline,
-  search
+  search,
+  mailOutline,
+  bookOutline
 } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
@@ -65,6 +69,32 @@ interface MatrixResponse {
   bookings: Booking[];
 }
 
+interface Konfspruch {
+  source: 'liste' | 'freitext';
+  id?: number;
+  reference?: string | null;
+  text: string;
+  translation?: string | null;
+}
+
+interface SpruchRow {
+  user_id: number;
+  display_name: string;
+  konfspruch: Konfspruch | null;
+}
+
+type ViewMode = 'anwesenheit' | 'sprueche';
+
+// Stellt einen gewaehlten Konfispruch als Text dar (oder einen Platzhalter).
+const formatSpruch = (konfspruch: Konfspruch | null): string => {
+  if (!konfspruch) return 'noch keiner';
+  if (konfspruch.source === 'liste') {
+    const text = konfspruch.text && konfspruch.text.trim().length > 0 ? konfspruch.text : '';
+    return text ? `${konfspruch.reference} - ${text}` : (konfspruch.reference || 'noch keiner');
+  }
+  return konfspruch.reference ? `${konfspruch.text} (${konfspruch.reference})` : konfspruch.text;
+};
+
 interface AttendanceMatrixModalProps {
   jahrgaenge: Jahrgang[];
   initialJahrgangId?: number;
@@ -85,13 +115,17 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
   initialJahrgangId,
   onClose
 }) => {
-  const { setError } = useApp();
+  const { setError, setSuccess } = useApp();
   const [jahrgangId, setJahrgangId] = useState<number | null>(
     initialJahrgangId ?? (jahrgaenge.length > 0 ? jahrgaenge[0].id : null)
   );
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<MatrixResponse | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<ViewMode>('anwesenheit');
+  const [sprueche, setSprueche] = useState<SpruchRow[] | null>(null);
+  const [spruecheLoading, setSpruecheLoading] = useState(false);
+  const [sending, setSending] = useState(false);
 
   const loadMatrix = async (id: number) => {
     setLoading(true);
@@ -106,9 +140,48 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
     }
   };
 
+  const loadSprueche = async (id: number) => {
+    setSpruecheLoading(true);
+    try {
+      const res = await api.get(`/admin/jahrgaenge/${id}/sprueche`);
+      setSprueche(res.data);
+    } catch (err: any) {
+      setError(err?.response?.data?.error || 'Fehler beim Laden der Konfisprüche');
+      setSprueche(null);
+    } finally {
+      setSpruecheLoading(false);
+    }
+  };
+
   React.useEffect(() => {
     if (jahrgangId) loadMatrix(jahrgangId);
   }, [jahrgangId]);
+
+  React.useEffect(() => {
+    if (jahrgangId && viewMode === 'sprueche') loadSprueche(jahrgangId);
+  }, [jahrgangId, viewMode]);
+
+  // Schickt die aktuelle Ansicht (Anwesenheit oder Sprüche) per E-Mail an die eigene Adresse.
+  const handleSendEmail = async () => {
+    if (!jahrgangId) return;
+    setSending(true);
+    try {
+      await api.post(`/admin/jahrgaenge/${jahrgangId}/matrix-email`, { type: viewMode });
+      setSuccess('E-Mail an deine Adresse gesendet');
+    } catch (err: any) {
+      setError(err?.response?.data?.error || 'Fehler beim Senden der E-Mail');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  // Sprüche-Liste nach Suchbegriff filtern (gleiches Suchfeld wie die Matrix).
+  const filteredSprueche = useMemo(() => {
+    if (!sprueche) return [];
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return sprueche;
+    return sprueche.filter(s => s.display_name.toLowerCase().includes(term));
+  }, [sprueche, searchTerm]);
 
   // Schneller Lookup: bookings nach (user, event) gruppieren
   const bookingMap = useMemo(() => {
@@ -162,7 +235,18 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
               <IonIcon icon={closeOutline} slot="icon-only" />
             </IonButton>
           </IonButtons>
-          <IonTitle>Anwesenheit</IonTitle>
+          <IonTitle>{viewMode === 'sprueche' ? 'Konfisprüche' : 'Anwesenheit'}</IonTitle>
+          <IonButtons slot="end">
+            <IonButton
+              onClick={handleSendEmail}
+              disabled={sending || !jahrgangId}
+              title="Per E-Mail an dich senden"
+            >
+              {sending
+                ? <IonSpinner name="crescent" />
+                : <IonIcon icon={mailOutline} slot="icon-only" />}
+            </IonButton>
+          </IonButtons>
         </IonToolbar>
       </IonHeader>
 
@@ -203,8 +287,56 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
           </IonItemGroup>
         </IonList>
 
-        {/* Matrix */}
-        {loading ? (
+        {/* Umschaltung Anwesenheit / Konfispruch */}
+        <div className="app-segment-wrapper">
+          <IonSegment
+            value={viewMode}
+            onIonChange={(e) => setViewMode(e.detail.value as ViewMode)}
+          >
+            <IonSegmentButton value="anwesenheit">
+              <IonLabel>Anwesenheit</IonLabel>
+            </IonSegmentButton>
+            <IonSegmentButton value="sprueche">
+              <IonLabel>Konfispruch</IonLabel>
+            </IonSegmentButton>
+          </IonSegment>
+        </div>
+
+        {/* Konfispruch-Ansicht: Liste Konfi -> gewaehlter Spruch */}
+        {viewMode === 'sprueche' ? (
+          spruecheLoading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '32px' }}>
+              <IonSpinner name="crescent" />
+            </div>
+          ) : !sprueche || filteredSprueche.length === 0 ? (
+            <EmptyState
+              icon={bookOutline}
+              title="Keine Konfisprüche"
+              message="Für diesen Jahrgang gibt es noch keine Konfis oder keine Treffer."
+            />
+          ) : (
+            <IonList inset={true} className="app-segment-wrapper">
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--events">
+                  <IonIcon icon={bookOutline} />
+                </div>
+                <IonLabel>
+                  {filteredSprueche.length} Konfi{filteredSprueche.length === 1 ? '' : 's'}
+                </IonLabel>
+              </IonListHeader>
+              {filteredSprueche.map(s => (
+                <IonItem key={s.user_id}>
+                  <IonLabel className="ion-text-wrap">
+                    <div className="app-text-main">{s.display_name}</div>
+                    <div className="app-text-sub" style={s.konfspruch ? undefined : { fontStyle: 'italic' }}>
+                      {formatSpruch(s.konfspruch)}
+                    </div>
+                  </IonLabel>
+                </IonItem>
+              ))}
+            </IonList>
+          )
+        ) : loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '32px' }}>
             <IonSpinner name="crescent" />
           </div>
@@ -287,7 +419,7 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
         )}
 
         {/* Legende */}
-        {data && data.events.length > 0 && data.konfis.length > 0 && (
+        {viewMode === 'anwesenheit' && data && data.events.length > 0 && data.konfis.length > 0 && (
           <IonList inset={true} className="app-segment-wrapper">
             <IonCard className="app-card">
               <IonCardContent>
