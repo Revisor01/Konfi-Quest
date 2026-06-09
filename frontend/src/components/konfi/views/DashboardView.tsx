@@ -55,6 +55,13 @@ interface DashboardData {
   confirmation_date?: string;
   rank_in_jahrgang?: number;
   total_in_jahrgang?: number;
+  konfspruch?: {
+    source: 'liste' | 'freitext';
+    id?: number;
+    reference?: string;
+    text?: string;
+    translation?: string;
+  } | null;
   level_info?: {
     current_level?: {
       id: number;
@@ -120,7 +127,7 @@ interface DashboardConfig {
   show_ranking: boolean;
 }
 
-const DEFAULT_KONFI_ORDER = ['konfirmation', 'events', 'losung', 'badges', 'ranking'];
+const DEFAULT_KONFI_ORDER = ['konfirmation', 'konfispruch', 'events', 'losung', 'badges', 'ranking'];
 
 interface DashboardViewProps {
   dashboardData: DashboardData;
@@ -133,6 +140,7 @@ interface DashboardViewProps {
   gottesdienstEnabled?: boolean;
   gemeindeEnabled?: boolean;
   onOpenPointsHistory?: () => void;
+  onOpenKonfispruch?: () => void;
   dashboardConfig?: DashboardConfig;
   sectionOrder?: string[];
 }
@@ -148,6 +156,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   gottesdienstEnabled = true,
   gemeindeEnabled = true,
   onOpenPointsHistory,
+  onOpenKonfispruch,
   dashboardConfig,
   sectionOrder
 }) => {
@@ -371,6 +380,45 @@ const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
             ) : null
           ),
+          konfispruch: () => {
+            const spruch = dashboardData.konfspruch;
+            const spruchText = spruch?.text?.trim();
+            const spruchReference = spruch?.reference?.trim();
+            return (
+              <div
+                className="app-dashboard-section app-dashboard-section--konfispruch"
+                key="konfispruch"
+                onClick={onOpenKonfispruch}
+                style={{ cursor: onOpenKonfispruch ? 'pointer' : 'default' }}
+              >
+                <div className="app-dashboard-section__bg-text">
+                  <h2 className="app-dashboard-section__bg-label">DEIN</h2>
+                  <h2 className="app-dashboard-section__bg-label">KONFISPRUCH</h2>
+                </div>
+                <div className="app-dashboard-section__content">
+                  {spruchReference || spruchText ? (
+                    <>
+                      {spruchText && (
+                        <p className="app-dashboard-quote">{spruchText}</p>
+                      )}
+                      {spruchReference && (
+                        <span className="app-dashboard-cite">{spruchReference}</span>
+                      )}
+                    </>
+                  ) : (
+                    <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                      <div className="app-headline" style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white', marginBottom: '8px' }}>
+                        Dein Konfispruch
+                      </div>
+                      <div style={{ fontSize: '0.95rem' }}>
+                        Tippe, um deinen Konfirmationsspruch zu waehlen
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          },
           events: () => (
             dashboardConfig?.show_events !== false ? (
               <div className="app-dashboard-section app-dashboard-section--events" key="events">
