@@ -26,8 +26,7 @@ ion-list-header ion-label,
 .app-dashboard-glass-card h2,
 .app-dashboard-glass-card h3,
 .app-text-main,
-.app-headline,
-.app-dashboard-quote {
+.app-headline {
   font-family: 'Bricolage Grotesque', system-ui, sans-serif;
 }
 .app-header-banner__title {
