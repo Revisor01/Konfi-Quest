@@ -1,37 +1,3 @@
-# Roadmap
-
-## Abgeschlossene Milestones
-
-- **v2.11** Admin/Teamer Design-Angleichung + Launch-Haertung (Shipped 2026-06-01) — Konfi-UI-Polish, DSGVO-Loeschung, Konfi-Limits, Badge-Erweiterung, Voll-Audit (42 Fixes). Archiv: [milestones/v2.11-ROADMAP.md](milestones/v2.11-ROADMAP.md)
-
-## Aktueller Milestone: v2.12 Konfirmation + Konfispruch
-
-**Ziel:** Konfirmation als sauberes Event-Flag etablieren und den Konfis ihren Konfirmationsspruch in der App zugaenglich machen (Auswahl/Eintrag, Dashboard, Admin-Einsicht und -Versand), pro Jahrgang freischaltbar.
-
-### Phase 117 — Konfirmations-Event-Flag
-
-**Liefert:** KONF-01..08
-
-Echtes `is_konfirmation`-Boolean-Flag auf Events, strikt analog zum bestehenden `mandatory`-Flag. Ersetzt die fragile String-basierte Kategorie-Erkennung. Migration 091 inkl. Datenueberfuehrung bestehender Konfirmations-Events. Toggle im Event-Formular, automatische lila Faerbung + zweites Corner-Badge "Konfirmation". Entfernt die waehlbare/anlegbare Konfirmation-Kategorie.
-
-**Abhaengigkeiten:** keine. In sich geschlossen, klein. Referenz-Implementierung ist `mandatory`.
-
-**Plans:** 2 plans (2 Wellen)
-- [ ] 117-01-PLAN.md — Migration 091 (Spalte + Datenueberfuehrung + Kategorie-Bereinigung) + Backend is_konfirmation analog mandatory + Integrationstests
-- [ ] 117-02-PLAN.md — Frontend: Toggle, lila Faerbung + zweites Corner-Badge, String-Filter auf Flag umgestellt + Human-Verify
-
-### Phase 118 — Konfispruch: Datenmodell + Konfi-Auswahl
-
-**Liefert:** SPRUCH-01..06
-
-Kuratierte Spruch-Liste in der DB (Vers + 4 Uebersetzungen, seed-/db-erweiterbar). Speicherung des gewaehlten Spruchs am Konfi-Profil (Listen-Referenz ODER Freitext + gewaehlte Uebersetzung). Auswahl-Modal mit Uebersetzungs-Tableiste (Luther 2017 / Bibel in gerechter Sprache / Gute Nachricht / Elberfelder). Dashboard-Card "Dein Konfispruch" -> useIonModal.
-
-**Abhaengigkeiten:** keine harte. Eigenstaendig nutzbar.
-
-**Plans:** 2/2 plans complete
-- [x] 118-01-PLAN.md — Migration 093 (konfsprueche + konfspruch_uebersetzungen + konfi_profiles-Spalten + Referenz-Seed) + Backend GET /konfsprueche, GET/PATCH /profile + truncateAll + Integrationstests
-- [x] 118-02-PLAN.md — Frontend: Dashboard-Card "Dein Konfispruch" + KonfispruchSelectModal (4 Uebersetzungs-Tabs + Freitext mit Pflicht-Referenz) + CSS + Human-Verify
-
 ### Phase 119 — Konfispruch-Integration + Jahrgang-Steuerzentrale
 
 **Liefert:** SPRUCH-07..11
@@ -46,6 +12,14 @@ Scope in Discuss (2026-06-09) bewusst erweitert zur **Jahrgang-Steuerzentrale**.
 - **FAQ (SPRUCH-11):** NUR auf der Website (statisches HTML in frontend/public/), NICHT in der App. Eigener kleiner Plan.
 
 **Abhaengigkeiten:** Phase 118 (Spruch-Datenmodell), Phase 117 (Konfirmation-Event-Flag = Termin-Quelle nach confirmation_date-Wegfall). Siehe 119-CONTEXT.md.
+
+**Plans:** 6 plans (3 Waves)
+- [ ] 119-01-PLAN.md — Migration 094 (jahrgaenge.konfspruch_enabled) + jahrgaenge.js POST/PUT akzeptiert Flag, confirmation_date als Pflicht entkoppelt [Wave 1]
+- [ ] 119-02-PLAN.md — confirmation_date-Umzug Backend: Wrapped-Cron auf 6.1. + Konfi-Cron raus, Auto-Loesch-Service + Konfi-Dashboard/Profile auf is_konfirmation-Event, konfspruch_visible-Flag [Wave 2]
+- [ ] 119-03-PLAN.md — Frontend Jahrgang-Steuerzentrale (Modal: konfspruch_enabled + Wrapped-Toggle, kein Konfirmationsdatum; Liste erweitert) + Konfispruch-Card-Gate [Wave 3]
+- [ ] 119-04-PLAN.md — Admin-Einsicht (SPRUCH-08): Konfispruch in konfi-management GET /:id + read-only KonfispruchSection [Wave 1]
+- [ ] 119-05-PLAN.md — Anwesenheitsmatrix (SPRUCH-09/10): Backend Sprueche-Liste + E-Mail-Versand (emailService) + Frontend IonSegment Anwesenheit/Spruch + Mail-Button [Wave 2]
+- [ ] 119-06-PLAN.md — FAQ (SPRUCH-11): Konfispruch-Eintrag + Konfirmations-Eintrag-Korrektur in landing.html [Wave 1]
 
 ## Naechster Milestone
 
