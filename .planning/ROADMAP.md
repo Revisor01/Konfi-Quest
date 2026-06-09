@@ -16,6 +16,10 @@ Echtes `is_konfirmation`-Boolean-Flag auf Events, strikt analog zum bestehenden 
 
 **Abhaengigkeiten:** keine. In sich geschlossen, klein. Referenz-Implementierung ist `mandatory`.
 
+**Plans:** 2 plans (2 Wellen)
+- [ ] 117-01-PLAN.md — Migration 091 (Spalte + Datenueberfuehrung + Kategorie-Bereinigung) + Backend is_konfirmation analog mandatory + Integrationstests
+- [ ] 117-02-PLAN.md — Frontend: Toggle, lila Faerbung + zweites Corner-Badge, String-Filter auf Flag umgestellt + Human-Verify
+
 ### Phase 118 — Konfispruch: Datenmodell + Konfi-Auswahl
 
 **Liefert:** SPRUCH-01..06
