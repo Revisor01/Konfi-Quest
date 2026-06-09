@@ -199,6 +199,19 @@ jobs:
             | python3 -c "import sys,json;open('compose.yml','w').write(json.load(sys.stdin)['StackFileContent'])"
           test -s compose.yml || { echo "::error::compose leer"; exit 1; }
 
+          # IMMUTABLE TAGS: die konfi-quest-Images im compose auf den konkreten
+          # Commit-SHA-Tag dieses Builds umschreiben (docker/metadata-action pusht den
+          # per type=sha,prefix= ohnehin). Portainers pullImage:true zieht ein :latest
+          # unzuverlaessig (Docker behaelt das lokale :latest, meldet aber "pull
+          # successful" -> alter Container; Portainer #13173/#6289). Ein eindeutiger Tag
+          # ZWINGT den korrekten Pull. github.sha ist der volle 40-stellige SHA.
+          # WICHTIG: JEDEN bestehenden Tag ersetzen (:latest ODER ein frueherer :sha aus
+          # dem letzten Deploy), nicht nur :latest -> sonst greift der 2. Deploy nicht.
+          perl -i -pe "s#(ghcr\.io/${{ github.repository_owner }}/konfi-quest-(backend|frontend)):[A-Za-z0-9._-]+#\${1}:${GIT_SHA}#g" compose.yml
+          echo "compose images nach Tag-Rewrite:"; grep -E "image:.*konfi-quest" compose.yml
+          grep -q "konfi-quest-backend:${GIT_SHA}" compose.yml || { echo "::error::Tag-Rewrite backend fehlgeschlagen"; exit 1; }
+          grep -q "konfi-quest-frontend:${GIT_SHA}" compose.yml || { echo "::error::Tag-Rewrite frontend fehlgeschlagen"; exit 1; }
+
           redeploy() {
             python3 <<'PY'
           import json,os,urllib.request,urllib.error
