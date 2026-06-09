@@ -32,13 +32,20 @@ Kuratierte Spruch-Liste in der DB (Vers + 4 Uebersetzungen, seed-/db-erweiterbar
 - [x] 118-01-PLAN.md — Migration 093 (konfsprueche + konfspruch_uebersetzungen + konfi_profiles-Spalten + Referenz-Seed) + Backend GET /konfsprueche, GET/PATCH /profile + truncateAll + Integrationstests
 - [x] 118-02-PLAN.md — Frontend: Dashboard-Card "Dein Konfispruch" + KonfispruchSelectModal (4 Uebersetzungs-Tabs + Freitext mit Pflicht-Referenz) + CSS + Human-Verify
 
-### Phase 119 — Konfispruch: Pro-Jahrgang-Freischaltung + Admin-Integration
+### Phase 119 — Konfispruch-Integration + Jahrgang-Steuerzentrale
 
 **Liefert:** SPRUCH-07..11
 
-Dashboard-Sichtbarkeit pro Jahrgang (neu, analog Punktelogik) als Gate fuer die Spruch-Auswahl. Admin sieht Sprueche in Konfi-Details. Anwesenheitsmatrix: Umschalten Anwesenheit/Spruch + Versand per Nachricht. FAQ-Eintrag (inkl. Konfirmations-Termin-Hinweis).
+Scope in Discuss (2026-06-09) bewusst erweitert zur **Jahrgang-Steuerzentrale**. Mehrere Plans:
+- **Jahrgang-Steuerzentrale** (Modal + Liste umbauen): pro Jahrgang Punkteziele, Konfispruch-Freischaltung (Toggle konfspruch_enabled), Wrapped-Freigabe (Toggle); Liste zeigt Punkteziele + Wrapped-Status (ob/wann) + Spruch-Freigabe. Erklaertext erweitert.
+- **Konfispruch-Gate (SPRUCH-07):** Card erscheint nur bei konfspruch_enabled=true, sonst komplett weg.
+- **Wrapped-Toggle-Logik:** Konfi-Wrapped per Jahrgang-Toggle getriggert (An=generieren mit Warnhinweis, Aus=loeschen, gefahrlos testbar) statt Cron. Teamer-Wrapped automatisch am 6.1. jedes Jahres (Cron umstellen).
+- **Konfirmations-Termin-Umzug (Datenmodell):** jahrgaenge.confirmation_date faellt GANZ weg (nirgends mehr beruecksichtigt, auch nicht im Konfi-Dashboard/Wrapped-Cron); Termin lebt nur noch als Konfi-Event (is_konfirmation, Phase 117).
+- **Admin-Einsicht (SPRUCH-08):** gewaehlter Spruch in Konfi-Details (read-only Section).
+- **Anwesenheitsmatrix (SPRUCH-09/10):** Umschaltung Anwesenheit/Spruch (Spruch = Liste Konfi->Spruch); Admin laesst sich Anwesenheit ODER Sprueche-Liste (mit Name + Konfirmationstermin) **per E-Mail an sich selbst** schicken (fuers Buero).
+- **FAQ (SPRUCH-11):** NUR auf der Website (statisches HTML in frontend/public/), NICHT in der App. Eigener kleiner Plan.
 
-**Abhaengigkeiten:** Phase 118 (Spruch-Datenmodell). Nutzt Phase 117 (Konfirmation-Flag) thematisch im FAQ.
+**Abhaengigkeiten:** Phase 118 (Spruch-Datenmodell), Phase 117 (Konfirmation-Event-Flag = Termin-Quelle nach confirmation_date-Wegfall). Siehe 119-CONTEXT.md.
 
 ## Naechster Milestone
 
