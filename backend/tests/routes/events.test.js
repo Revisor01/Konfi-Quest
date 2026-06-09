@@ -363,6 +363,178 @@ describe('Events Routes', () => {
   });
 
   // ================================================================
+  // Konfirmations-Flag (is_konfirmation) — analog mandatory, ohne Buchungslogik
+  // ================================================================
+  describe('Konfirmations-Flag (is_konfirmation)', () => {
+    const futureDate = () => {
+      const d = new Date();
+      d.setDate(d.getDate() + 14);
+      return d.toISOString();
+    };
+
+    it('POST mit is_konfirmation=true legt Event an; GET /:id liefert true', async () => {
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Konfirmation 2026',
+          event_date: futureDate(),
+          max_participants: 30,
+          is_konfirmation: true,
+        });
+
+      expect(createRes.status).toBe(201);
+      const eventId = createRes.body.id;
+
+      const detailRes = await request(app)
+        .get(`/api/events/${eventId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(detailRes.status).toBe(200);
+      expect(detailRes.body.is_konfirmation).toBe(true);
+    });
+
+    it('POST ohne is_konfirmation -> Default false', async () => {
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Normales Event',
+          event_date: futureDate(),
+          max_participants: 20,
+        });
+
+      expect(createRes.status).toBe(201);
+      const eventId = createRes.body.id;
+
+      const detailRes = await request(app)
+        .get(`/api/events/${eventId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(detailRes.status).toBe(200);
+      expect(detailRes.body.is_konfirmation).toBe(false);
+    });
+
+    it('PUT setzt is_konfirmation von false auf true und zurueck (Toggle beidseitig)', async () => {
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Toggle-Event',
+          event_date: futureDate(),
+          max_participants: 15,
+        });
+
+      expect(createRes.status).toBe(201);
+      const eventId = createRes.body.id;
+
+      // false -> true
+      const putTrue = await request(app)
+        .put(`/api/events/${eventId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Toggle-Event',
+          event_date: futureDate(),
+          max_participants: 15,
+          is_konfirmation: true,
+        });
+      expect(putTrue.status).toBe(200);
+
+      let detailRes = await request(app)
+        .get(`/api/events/${eventId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(detailRes.body.is_konfirmation).toBe(true);
+
+      // true -> false
+      const putFalse = await request(app)
+        .put(`/api/events/${eventId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Toggle-Event',
+          event_date: futureDate(),
+          max_participants: 15,
+          is_konfirmation: false,
+        });
+      expect(putFalse.status).toBe(200);
+
+      detailRes = await request(app)
+        .get(`/api/events/${eventId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(detailRes.body.is_konfirmation).toBe(false);
+    });
+
+    it('POST mit is_konfirmation als Nicht-Boolean -> 400 (Validierung greift)', async () => {
+      const res = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Ungueltig-Konfirmation',
+          event_date: futureDate(),
+          max_participants: 10,
+          is_konfirmation: 'kein-boolean',
+        });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('Mehrere Events gleichzeitig is_konfirmation=true (kein Unique-Constraint)', async () => {
+      const create1 = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Konfirmation Gruppe A',
+          event_date: futureDate(),
+          max_participants: 25,
+          is_konfirmation: true,
+        });
+      const create2 = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Konfirmation Gruppe B',
+          event_date: futureDate(),
+          max_participants: 25,
+          is_konfirmation: true,
+        });
+
+      expect(create1.status).toBe(201);
+      expect(create2.status).toBe(201);
+
+      const listRes = await request(app)
+        .get('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(listRes.status).toBe(200);
+      const a = listRes.body.find(e => e.id === create1.body.id);
+      const b = listRes.body.find(e => e.id === create2.body.id);
+      expect(a.is_konfirmation).toBe(true);
+      expect(b.is_konfirmation).toBe(true);
+    });
+
+    it('GET /api/events schleift is_konfirmation pro Event durch (via e.*)', async () => {
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Durchschleif-Event',
+          event_date: futureDate(),
+          max_participants: 12,
+          is_konfirmation: true,
+        });
+      expect(createRes.status).toBe(201);
+
+      const listRes = await request(app)
+        .get('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(listRes.status).toBe(200);
+      const evt = listRes.body.find(e => e.id === createRes.body.id);
+      expect(evt).toBeDefined();
+      expect(evt.is_konfirmation).toBe(true);
+    });
+  });
+
+  // ================================================================
   // Event-Kapazitaet (ausgebucht)
   // ================================================================
   describe('Kapazitaetsgrenze', () => {

@@ -24,6 +24,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       .isLength({ max: 200 }).withMessage('Name darf maximal 200 Zeichen lang sein'),
     body('event_date').notEmpty().isISO8601().withMessage('Gültiges Datum erforderlich'),
     body('mandatory').optional().isBoolean().withMessage('mandatory muss ein Boolean sein'),
+    body('is_konfirmation').optional().isBoolean().withMessage('is_konfirmation muss ein Boolean sein'),
     body('bring_items').optional({ nullable: true }).isString().withMessage('bring_items muss ein String sein'),
     handleValidationErrors
   ];
@@ -32,6 +33,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
     body('name').trim().notEmpty().withMessage('Name ist erforderlich'),
     body('mandatory').optional().isBoolean().withMessage('mandatory muss ein Boolean sein'),
+    body('is_konfirmation').optional().isBoolean().withMessage('is_konfirmation muss ein Boolean sein'),
     body('bring_items').optional({ nullable: true }).isString().withMessage('bring_items muss ein String sein'),
     handleValidationErrors
   ];
@@ -522,7 +524,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     const eventId = req.params.id;
     try {
       // Get event details
-      const { rows: [event] } = await db.query("SELECT id, name, description, event_date, event_end_time, location, location_maps_url, points, point_type, type, max_participants, registration_opens_at, registration_closes_at, has_timeslots, waitlist_enabled, max_waitlist_size, is_series, series_id, mandatory, bring_items, checkin_window, teamer_needed, teamer_only, cancelled, cancelled_at, qr_token, created_by, organization_id, created_at FROM events WHERE id = $1 AND organization_id = $2", [eventId, req.user.organization_id]);
+      const { rows: [event] } = await db.query("SELECT id, name, description, event_date, event_end_time, location, location_maps_url, points, point_type, type, max_participants, registration_opens_at, registration_closes_at, has_timeslots, waitlist_enabled, max_waitlist_size, is_series, series_id, mandatory, is_konfirmation, bring_items, checkin_window, teamer_needed, teamer_only, cancelled, cancelled_at, qr_token, created_by, organization_id, created_at FROM events WHERE id = $1 AND organization_id = $2", [eventId, req.user.organization_id]);
 
       if (!event) {
         return res.status(404).json({ error: 'Event nicht gefunden' });
@@ -659,7 +661,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       points, point_type, category_ids, jahrgang_ids, type, max_participants,
       registration_opens_at, registration_closes_at, has_timeslots,
       waitlist_enabled, max_waitlist_size, timeslots, is_series, series_id,
-      mandatory, bring_items, checkin_window, teamer_needed, teamer_only
+      mandatory, is_konfirmation, bring_items, checkin_window, teamer_needed, teamer_only
     } = req.body;
 
     // Teamer-Felder validieren: gegenseitiger Ausschluss
@@ -694,9 +696,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           name, description, event_date, event_end_time, location, location_maps_url,
           points, point_type, type, max_participants, registration_opens_at,
           registration_closes_at, has_timeslots, waitlist_enabled, max_waitlist_size,
-          is_series, series_id, mandatory, bring_items, checkin_window,
+          is_series, series_id, mandatory, is_konfirmation, bring_items, checkin_window,
           teamer_needed, teamer_only, created_by, organization_id
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
         RETURNING id
       `;
       const { rows: [newEvent] } = await db.query(insertEventQuery, [
@@ -704,7 +706,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         effectivePoints, point_type || 'gemeinde', type || 'event', effectiveMaxParticipants,
         registration_opens_at, registration_closes_at, has_timeslots || false,
         effectiveWaitlist, max_waitlist_size || 10,
-        is_series || false, series_id, mandatory || false, bring_items || null,
+        is_series || false, series_id, mandatory || false, is_konfirmation || false, bring_items || null,
         effectiveCheckinWindow, teamer_needed || false, teamer_only || false,
         req.user.id, req.user.organization_id
       ]);
@@ -803,7 +805,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       points, point_type, category_ids, jahrgang_ids, type, max_participants,
       registration_opens_at, registration_closes_at, has_timeslots,
       waitlist_enabled, max_waitlist_size, timeslots,
-      mandatory, bring_items, checkin_window, teamer_needed, teamer_only
+      mandatory, is_konfirmation, bring_items, checkin_window, teamer_needed, teamer_only
     } = req.body;
 
     // Teamer-Felder validieren: gegenseitiger Ausschluss
@@ -832,16 +834,16 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           location_maps_url = $6, points = $7, point_type = $8, type = $9,
           max_participants = $10, registration_opens_at = $11, registration_closes_at = $12,
           has_timeslots = $13, waitlist_enabled = $14, max_waitlist_size = $15,
-          mandatory = $16, bring_items = $17, checkin_window = $18,
-          teamer_needed = $19, teamer_only = $20
-        WHERE id = $21 AND organization_id = $22
+          mandatory = $16, is_konfirmation = $17, bring_items = $18, checkin_window = $19,
+          teamer_needed = $20, teamer_only = $21
+        WHERE id = $22 AND organization_id = $23
       `;
       const { rowCount } = await client.query(updateQuery, [
         name, description, event_date, event_end_time, location, location_maps_url,
         effectivePoints, point_type, type, effectiveMaxParticipants, registration_opens_at,
         registration_closes_at, has_timeslots || false,
         effectiveWaitlist, max_waitlist_size || 10,
-        mandatory || false, bring_items || null,
+        mandatory || false, is_konfirmation || false, bring_items || null,
         effectiveCheckinWindow, teamer_needed || false, teamer_only || false,
         id, req.user.organization_id
       ]);
