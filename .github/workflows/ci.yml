@@ -142,8 +142,27 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # GIT_SHA ins Backend-Image fuer /api/status (frontend ignoriert das ARG)
+          build-args: |
+            GIT_SHA=${{ github.sha }}
 
-      - name: Trigger Portainer Webhook
-        if: matrix.context == './backend'
+  deploy:
+    # Eigener Job NACH build-and-push: wartet bis BEIDE Images (backend+frontend)
+    # gepusht sind, dann ein einziger Webhook-Trigger. Vermeidet das Timing-Problem
+    # (Webhook feuerte frueher im backend-Matrixzweig, bevor das frontend-Image
+    # fertig auf ghcr lag -> frontend deployte mit altem Image).
+    needs: [build-and-push]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Portainer Webhook (pull + redeploy)
         run: |
-          curl -X POST "${{ secrets.PORTAINER_WEBHOOK }}" || true
+          # ?pullimage=true ist ZWINGEND: ohne den Param re-deployt der Stack nur
+          # mit dem lokal vorhandenen :latest und zieht das frisch gebaute Image
+          # NICHT -> der Server lief sonst dauerhaft auf altem Code.
+          code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${{ secrets.PORTAINER_WEBHOOK }}?pullimage=true")
+          echo "Webhook HTTP $code"
+          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+            echo "::error::Portainer-Webhook fehlgeschlagen (HTTP $code)"
+            exit 1
+          fi

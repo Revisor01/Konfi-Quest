@@ -19,6 +19,10 @@ RUN npm install --omit=dev && npm install pg
 # Copy application files
 COPY . .
 
+# Git-Commit-SHA fuer /api/status (vom CI via --build-arg gesetzt)
+ARG GIT_SHA=unknown
+ENV GIT_SHA=$GIT_SHA
+
 # Create uploads directory
 RUN mkdir -p /app/uploads
 
