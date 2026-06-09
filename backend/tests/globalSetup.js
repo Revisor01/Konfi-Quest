@@ -151,6 +151,8 @@ module.exports = async function globalSetup() {
     ALTER TABLE jahrgaenge ADD COLUMN IF NOT EXISTS gemeinde_enabled BOOLEAN DEFAULT true;
     ALTER TABLE jahrgaenge ADD COLUMN IF NOT EXISTS target_gottesdienst INTEGER DEFAULT 10;
     ALTER TABLE jahrgaenge ADD COLUMN IF NOT EXISTS target_gemeinde INTEGER DEFAULT 10;
+    -- Migration 094: Konfispruch-Sichtbarkeit pro Jahrgang (D-01)
+    ALTER TABLE jahrgaenge ADD COLUMN IF NOT EXISTS konfspruch_enabled BOOLEAN NOT NULL DEFAULT true;
 
     -- konfi_profiles braucht bible_translation + invite_code_id
     ALTER TABLE konfi_profiles ADD COLUMN IF NOT EXISTS bible_translation VARCHAR(100);

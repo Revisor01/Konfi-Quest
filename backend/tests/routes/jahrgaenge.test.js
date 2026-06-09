@@ -46,6 +46,8 @@ describe('Jahrgaenge Routes', () => {
       expect(res.body[0].name).toBe(JAHRGAENGE.jahrgang1.name);
       // Aggregierte Felder pruefen
       expect(res.body[0].konfi_count).toBeDefined();
+      // konfspruch_enabled wird pro Jahrgang geliefert (D-01)
+      expect(res.body[0].konfspruch_enabled).toBe(true);
     });
 
     it('Teamer bekommt 200 (requireTeamer erlaubt Teamer)', async () => {
@@ -116,22 +118,17 @@ describe('Jahrgaenge Routes', () => {
       expect(res.status).toBe(400);
     });
 
-    it('Fehlendes confirmation_date gibt 400 (D-06 Pflichtfeld)', async () => {
+    it('Fehlendes confirmation_date ist erlaubt -> 201 (D-04: kein Pflichtfeld mehr)', async () => {
+      // confirmation_date wird in Phase 119 entkoppelt. POST ohne das Feld muss
+      // auch im Prod-Schema funktionieren (Migration 094 droppt den NOT-NULL-Constraint).
       const res = await request(app)
         .post('/api/admin/jahrgaenge')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ name: '2026/2027' });
 
-      expect(res.status).toBe(400);
-    });
-
-    it('Leeres confirmation_date gibt 400', async () => {
-      const res = await request(app)
-        .post('/api/admin/jahrgaenge')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ name: '2026/2027', confirmation_date: '' });
-
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(201);
+      expect(res.body.id).toBeDefined();
+      expect(res.body.name).toBe('2026/2027');
     });
 
     it('Jahrgang mit optionalen Feldern erstellen', async () => {
@@ -140,7 +137,6 @@ describe('Jahrgaenge Routes', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: '2026/2027',
-          confirmation_date: '2027-05-01',
           gottesdienst_enabled: true,
           gemeinde_enabled: false,
           target_gottesdienst: 15,
@@ -150,6 +146,35 @@ describe('Jahrgaenge Routes', () => {
       expect(res.status).toBe(201);
       expect(res.body.gottesdienst_enabled).toBe(true);
       expect(res.body.gemeinde_enabled).toBe(false);
+    });
+
+    it('Ohne konfspruch_enabled -> 201, defaultet auf true (D-03)', async () => {
+      const res = await request(app)
+        .post('/api/admin/jahrgaenge')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: '2026/2027' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.konfspruch_enabled).toBe(true);
+    });
+
+    it('Mit konfspruch_enabled=false -> 201, persistiert false (D-01)', async () => {
+      const res = await request(app)
+        .post('/api/admin/jahrgaenge')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: '2026/2027', konfspruch_enabled: false });
+
+      expect(res.status).toBe(201);
+      expect(res.body.konfspruch_enabled).toBe(false);
+    });
+
+    it('konfspruch_enabled als Nicht-Boolean -> 400', async () => {
+      const res = await request(app)
+        .post('/api/admin/jahrgaenge')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: '2026/2027', konfspruch_enabled: 'ja' });
+
+      expect(res.status).toBe(400);
     });
   });
 
@@ -161,35 +186,63 @@ describe('Jahrgaenge Routes', () => {
       const res = await request(app)
         .put(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ name: 'Umbenannt 2025/2026', confirmation_date: '2026-05-01' });
+        .send({ name: 'Umbenannt 2025/2026' });
 
       expect(res.status).toBe(200);
       expect(res.body.message).toContain('aktualisiert');
     });
 
-    it('Fehlendes confirmation_date gibt 400 (D-06 Pflichtfeld)', async () => {
+    it('Fehlendes confirmation_date ist erlaubt -> 200 (D-04: kein Pflichtfeld mehr)', async () => {
       const res = await request(app)
         .put(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ name: 'Umbenannt 2025/2026' });
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(200);
     });
 
-    it('Leeres confirmation_date gibt 400', async () => {
-      const res = await request(app)
+    it('PUT mit konfspruch_enabled=false -> 200, GET zeigt false (D-01)', async () => {
+      const putRes = await request(app)
         .put(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ name: 'Umbenannt 2025/2026', confirmation_date: '' });
+        .send({ name: '2025/2026', konfspruch_enabled: false });
 
-      expect(res.status).toBe(400);
+      expect(putRes.status).toBe(200);
+
+      const getRes = await request(app)
+        .get('/api/admin/jahrgaenge')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      const jg = getRes.body.find(j => j.id === JAHRGAENGE.jahrgang1.id);
+      expect(jg.konfspruch_enabled).toBe(false);
+    });
+
+    it('PUT ohne konfspruch_enabled laesst bestehenden Wert unveraendert (COALESCE)', async () => {
+      // Zuerst auf false setzen
+      await request(app)
+        .put(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: '2025/2026', konfspruch_enabled: false });
+
+      // Dann ohne das Feld erneut aktualisieren
+      await request(app)
+        .put(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Neuer Name' });
+
+      const getRes = await request(app)
+        .get('/api/admin/jahrgaenge')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      const jg = getRes.body.find(j => j.id === JAHRGAENGE.jahrgang1.id);
+      expect(jg.konfspruch_enabled).toBe(false);
     });
 
     it('Nicht-existierende ID gibt 404', async () => {
       const res = await request(app)
         .put('/api/admin/jahrgaenge/99999')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ name: 'Test', confirmation_date: '2026-05-01' });
+        .send({ name: 'Test' });
 
       expect(res.status).toBe(404);
     });
@@ -198,7 +251,7 @@ describe('Jahrgaenge Routes', () => {
       const res = await request(app)
         .put(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}`)
         .set('Authorization', `Bearer ${admin2Token}`)
-        .send({ name: 'Versuch', confirmation_date: '2026-05-01' });
+        .send({ name: 'Versuch' });
 
       expect(res.status).toBe(404);
     });
