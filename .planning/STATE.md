@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v2.12
 milestone_name: Konfirmation + Konfispruch
 status: milestone_complete
-last_updated: "2026-06-09T10:55:46.928Z"
+last_updated: "2026-06-09T12:05:05.040Z"
 progress:
   total_phases: 18
   completed_phases: 16
-  total_plans: 38
+  total_plans: 44
   completed_plans: 40
   percent: 89
 ---
@@ -19,18 +19,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Milestone complete
+**Current focus:** Phase 119 — konfispruch-jahrgang-steuerzentrale
 
 - **Phase 117 (Konfirmations-Flag): FERTIG + LIVE auf Prod** (commit 30e0c45, Migration 091+092 angewandt, is_konfirmation-Spalte da, Konfirmation-Kategorie bereinigt). OFFEN: nur visueller Human-Verify im App-Build (Toggle/lila/Corner-Badge) + ROADMAP-Plans abhaken.
 - **Phase 118 (Konfispruch-Datenmodell + Auswahl): GEPLANT, NICHT gebaut** (Plans 118-01/118-02 committet 842ad1c). Naechster Schritt frische Session: /gsd:execute-phase 118. Vers-Referenzen liegen in .planning/phases/118-spruch-referenzen.md (~32, NUR Stellenangaben — Uebersetzungstexte traegt User lizenziert nach, NICHT erfinden).
-- **Phase 119 (pro-Jahrgang-Gate + Admin-Integration): noch nicht geplant.**
+- **Phase 119 (Konfispruch-Integration + Jahrgang-Steuerzentrale): GEPLANT (6 Plans, verifiziert PASS, commit d065cdd), NICHT gebaut.** Naechster Schritt: /gsd:execute-phase 119.
 
 Requirements: REQUIREMENTS.md (KONF-01..08 erfuellt, SPRUCH-01..11 offen).
 
 ## Current Position
 
-Phase: 118
-Plan: Not started
+Phase: 119 (konfispruch-jahrgang-steuerzentrale) — EXECUTING
+Plan: 1 of 6
 Milestone: v2.11 — COMPLETE (Shipped 2026-06-01)
 Naechster Milestone: v3.0 Launch (via /gsd:new-milestone)
 
