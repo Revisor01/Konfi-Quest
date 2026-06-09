@@ -9,6 +9,9 @@
 <meta property="og:description" content="Schluss mit Zetteln. Moderne Konfi-Arbeit für Konfis, Teamer:innen und die ganze Gemeinde.">
 <meta property="og:type" content="website">
 <link rel="icon" type="image/png" href="/favicon.png">
+<!-- Hero-Mock: erste sichtbare Screenshots vorladen (kein Flackern beim Slide-Wechsel) -->
+<link rel="preload" as="image" href="/hero-ios-1.png">
+<link rel="preload" as="image" href="/hero-and-1.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -81,16 +84,26 @@ h1.hh{font-family:var(--display);font-weight:800;font-size:clamp(2.7rem,5.6vw,4.
 .htrust span{display:inline-flex;align-items:center;gap:.45rem}
 .hero-art{position:relative;display:flex;justify-content:center;align-items:center;perspective:1600px}
 .device{position:relative;width:252px;height:520px;background:linear-gradient(160deg,#1e293b,#0f172a);border-radius:44px;padding:11px;box-shadow:0 44px 90px -22px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.06) inset;transition:transform .6s}
-.screen{position:relative;width:100%;height:100%;border-radius:33px;overflow:hidden;background:#0f172a}
-/* Beide Mocks: KEIN CSS-Notch/Punch-Hole — die Screenshots haben Statusbar
-   (Dynamic Island bzw. Punch-Hole) bereits eingebrannt. */
-/* Beide Mocks gleich gross. Hover: leicht aufrichten + zoomen + nach vorne. */
-.device--android{transform:translateX(-74px) translateY(8px) rotateY(20deg) rotate(-4deg);z-index:1;opacity:.97}
-.device--ios{transform:translateX(74px) translateY(8px) rotateY(-16deg) rotate(2deg);z-index:2}
-.device--android:hover{transform:translateX(-74px) translateY(-4px) rotateY(8deg) rotate(-2deg) scale(1.06);z-index:3;opacity:1}
-.device--ios:hover{transform:translateX(74px) translateY(-4px) rotateY(-6deg) rotate(1deg) scale(1.06);z-index:3}
-.screen img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;opacity:0;transition:opacity .6s}
-.screen img.on{opacity:1}
+.screen{position:relative;width:100%;height:100%;border-radius:33px;overflow:hidden;background:transparent}
+/* EIN einzelner zentrierter Mock. Frame UND Screen rotieren synchron: iOS-Frame
+   zeigt iOS-Screen, Android-Frame zeigt Android-Screen. KEIN CSS-Notch — die
+   Screenshots haben Statusbar (Dynamic Island bzw. Punch-Hole) eingebrannt. */
+.device{transform:translateY(8px) rotate(-1deg)}
+.device:hover{transform:translateY(-4px) rotate(0deg) scale(1.04)}
+/* Frame-Radius pro OS getrennt, abgestimmt auf die im Screenshot eingebrannte
+   Ecke: iOS ist randlos. Android (Pixel 9) hat eine schwarze Ecke mit ~12.6%
+   Radius eingebrannt (gemessen: ~136px bei 1080px Bildbreite) -> Screen-Radius
+   muss exakt darauf liegen, sonst bleibt schwarzer Rest. Frame = Screen + 11px. */
+.device--ios{border-radius:44px}
+.device--ios .screen{border-radius:33px}
+.device--android{border-radius:41px}
+.device--android .screen{border-radius:30px}
+/* Carousel-Swipe: inaktive Bilder sind nach rechts geparkt, das aktive sitzt
+   mittig. Beim Wechsel gleitet das alte nach links raus (.out), das neue von
+   rechts rein (.on). Slide + sanftes Fade. */
+.screen img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;border-radius:inherit;opacity:0;transform:translateX(100%);transition:transform .6s cubic-bezier(.45,.05,.3,1),opacity .6s}
+.screen img.on{opacity:1;transform:translateX(0)}
+.screen img.out{opacity:0;transform:translateX(-100%);transition:transform .6s cubic-bezier(.45,.05,.3,1),opacity .6s}
 .fbadge{position:absolute;background:rgba(255,255,255,.97);color:var(--ink);border-radius:16px;padding:.7rem .9rem;box-shadow:0 18px 40px rgba(0,0,0,.24);display:flex;align-items:center;gap:.6rem;font-size:.82rem;font-weight:600;z-index:4}
 .fbadge .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:#fff;flex-shrink:0}
 .fb1{top:13%;left:-10%;animation:bob 4s ease-in-out infinite}
@@ -238,7 +251,7 @@ footer a:hover{color:#fff}
 .foot-note{color:rgba(255,255,255,.6);font-size:.95rem}
 .foot-bottom{border-top:1px solid rgba(255,255,255,.1);padding-top:1.6rem;text-align:center;color:rgba(255,255,255,.5);font-size:.88rem}
 .spirit{margin-top:.4rem;font-style:italic;color:rgba(255,255,255,.4);font-size:.84rem;display:inline-flex;align-items:center;gap:.25rem;justify-content:center;flex-wrap:wrap}
-.spirit .bird{vertical-align:middle;transform:translateY(1px)}
+.spirit .bird{vertical-align:middle;transform:translateY(0);object-fit:contain}
 
 @media(max-width:980px){
  /* minmax(0,1fr) statt 1fr: erlaubt der Spalte, schmaler als ihr Inhalt zu
@@ -249,7 +262,9 @@ footer a:hover{color:#fff}
  .hero-watermark{top:-8%;right:-30%;width:90%;opacity:.09}
  /* Reihenfolge: Headline ZUERST, Phone darunter */
  .hero-copy{order:0}.hero-art{order:1;margin-top:.5rem}
- .fbadge{display:none}.device{transform:none;width:240px;height:496px}
+ /* Nur noch EIN zentrierter Mock -> darf auf Mobil groesser sein, kein Quetschen mehr.
+    Leichter Schwebe-Effekt (bob) auch auf Mobil statt komplett statisch. */
+ .fbadge{display:none}.device{width:270px;height:556px;animation:bob 5s ease-in-out infinite}
  .split{grid-template-columns:1fr}.fgrid,.why-grid{grid-template-columns:1fr}.be-grid{grid-template-columns:1fr 1fr}
  .price-grid{grid-template-columns:repeat(2,1fr)}.steps{grid-template-columns:repeat(2,1fr)}
  .rose-in{grid-template-columns:1fr;text-align:center;gap:2rem}.rose-art{order:-1}.rose-p{margin-left:auto;margin-right:auto}.rose-ring{width:220px;height:220px}.rose-logo{width:160px;height:160px}
@@ -307,11 +322,15 @@ footer a:hover{color:#fff}
    </div>
   </div>
   <div class="hero-art">
-   <div class="device device--android"><div class="screen">
-    <img src="/hero-and-1.png" class="on" alt="Konfi Quest auf Android"><img src="/hero-and-2.png" alt=""><img src="/hero-and-3.png" alt=""><img src="/hero-and-4.png" alt="">
-   </div></div>
-   <div class="device device--ios"><div class="screen">
-    <img src="/hero-ios-1.png" class="on" alt="Konfi Quest auf iPhone"><img src="/hero-ios-2.png" alt=""><img src="/hero-ios-3.png" alt=""><img src="/hero-ios-4.png" alt="">
+   <div class="device device--ios" id="heroDevice"><div class="screen">
+    <img src="/hero-ios-1.png" class="on" data-os="ios" alt="Konfi Quest auf dem Smartphone">
+    <img src="/hero-and-1.png" data-os="android" alt="">
+    <img src="/hero-ios-2.png" data-os="ios" alt="">
+    <img src="/hero-and-2.png" data-os="android" alt="">
+    <img src="/hero-ios-3.png" data-os="ios" alt="">
+    <img src="/hero-and-3.png" data-os="android" alt="">
+    <img src="/hero-ios-4.png" data-os="ios" alt="">
+    <img src="/hero-and-4.png" data-os="android" alt="">
    </div></div>
   </div>
  </div>
@@ -644,7 +663,7 @@ footer a:hover{color:#fff}
   </div>
   <div class="foot-bottom">
    <p>&copy; 2026 Konfi Quest</p>
-   <p class="spirit">Made with <svg class="bird" width="17" height="17" viewBox="0 0 512 512" fill="#ef4444" aria-label="Friedenstaube" role="img"><path d="M192 96c-53 0-96 43-96 96 0 8 1 16 3 24-30 8-67 30-83 78-3 9 6 17 14 12 28-17 56-22 76-22-21 36-58 60-58 60s44 6 88-18c-4 22-18 44-40 60 0 0 70 8 116-44 8 30 4 64-12 92 0 0 80-32 96-128 4-26-2-50-14-70 18-6 38-18 54-40 5-7-2-16-10-13-18 6-34 8-46 7 14-16 24-38 24-66 0-6-7-10-12-6-22 16-40 34-50 51-14-20-30-37-50-50z"/><circle cx="148" cy="180" r="11" fill="#0b1220"/></svg> in Hennstedt · Friede. Schalom. Salam.</p>
+   <p class="spirit">Made with <img class="bird" src="/assets/branding/bird.png" width="14" height="14" alt="" aria-hidden="true"> in Hennstedt · Friede. Schalom. Salam.</p>
   </div>
  </div>
 </footer>
@@ -653,14 +672,32 @@ footer a:hover{color:#fff}
 // Wort-Rotator
 const words=['Abenteuer','Erlebnis','Gemeinschaft','Quest'];let wi=0;const rot=document.getElementById('rot');
 setInterval(()=>{wi=(wi+1)%words.length;rot.style.opacity='0';setTimeout(()=>{rot.textContent=words[wi];rot.style.opacity='1';},250);},2600);
-// Screenshot-Carousel
-// Jede .screen rotiert unabhaengig durch ihre eigenen Screenshots (iOS bzw. Android getrennt).
-document.querySelectorAll('.screen').forEach((sc,idx)=>{
-  const imgs=sc.querySelectorAll('img');if(imgs.length<2)return;
-  // Versetzter Start je Mock, damit iOS und Android nicht denselben Screen zeigen.
-  let i=idx%imgs.length;imgs[0].classList.remove('on');imgs[i].classList.add('on');
-  setInterval(()=>{imgs[i].classList.remove('on');i=(i+1)%imgs.length;imgs[i].classList.add('on');},2800);
-});
+// Screenshot-Carousel: EIN Mock, Frame + Screen rotieren synchron.
+// Bilder wechseln iOS/Android ab (data-os) -> der Geraeterahmen passt sich mit an.
+(function(){
+  const dev=document.getElementById('heroDevice');if(!dev)return;
+  const imgs=dev.querySelectorAll('.screen img');if(imgs.length<2)return;
+  // Alle Screenshots vorab in den Cache laden -> kein Flackern beim Wechsel.
+  imgs.forEach(im=>{const p=new Image();p.src=im.src;});
+  let i=0;
+  setInterval(()=>{
+    const prev=imgs[i];
+    prev.classList.remove('on');
+    prev.classList.add('out');           // altes Bild gleitet nach links raus
+    i=(i+1)%imgs.length;
+    const cur=imgs[i];
+    cur.classList.remove('out');         // sicherstellen: startet rechts (translateX 100%)
+    // Reflow erzwingen, damit der Slide-Start-Zustand greift bevor .on kommt
+    void cur.offsetWidth;
+    cur.classList.add('on');             // neues Bild gleitet von rechts rein
+    // nach der Transition die .out-Klasse vom Vorgaenger entfernen (zurueck nach rechts parken)
+    setTimeout(()=>prev.classList.remove('out'),650);
+    // Geraeterahmen an das aktuelle Bild anpassen (iOS oder Android).
+    const os=cur.dataset.os;
+    dev.classList.toggle('device--ios',os==='ios');
+    dev.classList.toggle('device--android',os==='android');
+  },4500);
+})();
 // Nav-Schatten
 const navEl=document.querySelector('nav');addEventListener('scroll',()=>{navEl.style.boxShadow=scrollY>10?'0 4px 24px rgba(15,23,42,.07)':'none';});
 // Scroll-Reveal (Progressive Enhancement: erst JS schaltet Animation scharf)
