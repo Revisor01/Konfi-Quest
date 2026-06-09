@@ -211,7 +211,7 @@ export const PointsParticipantsSection = React.memo<PointsParticipantsSectionPro
       <div className="app-section-icon app-section-icon--events">
         <IonIcon icon={people} />
       </div>
-      <IonLabel>Punkte{!formData.has_timeslots ? ' & Teilnehmer:innen' : ''}</IonLabel>
+      <IonLabel>{formData.is_konfirmation ? 'Teilnehmer:innen' : `Punkte${!formData.has_timeslots ? ' & Teilnehmer:innen' : ''}`}</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
     <IonCardContent>
@@ -249,46 +249,50 @@ export const PointsParticipantsSection = React.memo<PointsParticipantsSectionPro
           </>
         )}
 
-        {/* Punkte */}
-        <IonItem lines="none">
-          <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Punkte</IonLabel>
-          <div className="app-range-row">
-            <span className="app-range-row__min">1</span>
-            <IonRange
-              className="app-range app-range--events"
-              min={1} max={5} step={1}
-              pin={true} pinFormatter={(value: number) => `${value}`}
-              value={formData.points}
-              onIonChange={(e) => setFormData({ ...formData, points: e.detail.value as number })}
-              disabled={loading}
-            />
-            <span className="app-range-row__value">{formData.points}</span>
-          </div>
-        </IonItem>
+        {/* Punkte + Typ: bei Konfirmation ausgeblendet (Konfirmations-Events geben keine Punkte) */}
+        {!formData.is_konfirmation && (
+          <>
+            <IonItem lines="none">
+              <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Punkte</IonLabel>
+              <div className="app-range-row">
+                <span className="app-range-row__min">1</span>
+                <IonRange
+                  className="app-range app-range--events"
+                  min={1} max={5} step={1}
+                  pin={true} pinFormatter={(value: number) => `${value}`}
+                  value={formData.points}
+                  onIonChange={(e) => setFormData({ ...formData, points: e.detail.value as number })}
+                  disabled={loading}
+                />
+                <span className="app-range-row__value">{formData.points}</span>
+              </div>
+            </IonItem>
 
-        <IonItem lines="none" style={{ '--background': 'transparent', paddingBottom: '8px', paddingTop: '16px' }}>
-          <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>Typ *</IonLabel>
-        </IonItem>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div
-            className={`app-list-item app-list-item--gemeinde${formData.point_type === 'gemeinde' ? ' app-list-item--selected' : ''}`}
-            onClick={() => !loading && setFormData({ ...formData, point_type: 'gemeinde' })}
-            style={{
-              cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.6 : 1,
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0'
-            }}>
-            <span style={{ fontWeight: '500', color: '#333' }}>Gemeinde</span>
-          </div>
-          <div
-            className={`app-list-item app-list-item--gottesdienst${formData.point_type === 'gottesdienst' ? ' app-list-item--selected' : ''}`}
-            onClick={() => !loading && setFormData({ ...formData, point_type: 'gottesdienst' })}
-            style={{
-              cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.6 : 1,
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0'
-            }}>
-            <span style={{ fontWeight: '500', color: '#333' }}>Gottesdienst</span>
-          </div>
-        </div>
+            <IonItem lines="none" style={{ '--background': 'transparent', paddingBottom: '8px', paddingTop: '16px' }}>
+              <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>Typ *</IonLabel>
+            </IonItem>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div
+                className={`app-list-item app-list-item--gemeinde${formData.point_type === 'gemeinde' ? ' app-list-item--selected' : ''}`}
+                onClick={() => !loading && setFormData({ ...formData, point_type: 'gemeinde' })}
+                style={{
+                  cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.6 : 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0'
+                }}>
+                <span style={{ fontWeight: '500', color: '#333' }}>Gemeinde</span>
+              </div>
+              <div
+                className={`app-list-item app-list-item--gottesdienst${formData.point_type === 'gottesdienst' ? ' app-list-item--selected' : ''}`}
+                onClick={() => !loading && setFormData({ ...formData, point_type: 'gottesdienst' })}
+                style={{
+                  cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.6 : 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0'
+                }}>
+                <span style={{ fontWeight: '500', color: '#333' }}>Gottesdienst</span>
+              </div>
+            </div>
+          </>
+        )}
       </IonList>
     </IonCardContent>
     </IonCard>

@@ -682,7 +682,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     }
 
     // Guards für Pflicht-Events
-    const effectivePoints = mandatory ? 0 : (points || 0);
+    // Pflicht- UND Konfirmations-Events geben keine Punkte (serverseitig erzwungen).
+    const effectivePoints = (mandatory || is_konfirmation) ? 0 : (points || 0);
     const effectiveMaxParticipants = mandatory ? 0 : max_participants;
     const effectiveWaitlist = mandatory ? false : (waitlist_enabled !== undefined ? waitlist_enabled : true);
 
@@ -817,7 +818,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     const effectiveCheckinWindow = Math.max(5, Math.min(120, parseInt(checkin_window) || 30));
 
     // Guards für Pflicht-Events
-    const effectivePoints = mandatory ? 0 : points;
+    // Pflicht- UND Konfirmations-Events geben keine Punkte (serverseitig erzwungen).
+    const effectivePoints = (mandatory || is_konfirmation) ? 0 : points;
     const effectiveMaxParticipants = mandatory ? 0 : max_participants;
     const effectiveWaitlist = mandatory ? false : (waitlist_enabled !== undefined ? waitlist_enabled : true);
 
