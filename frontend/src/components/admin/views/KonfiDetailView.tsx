@@ -27,7 +27,7 @@ import { useLiveUpdate } from '../../../contexts/LiveUpdateContext';
 import {
   KonfiHeaderCard, BonusSection, EventPointsSection, AttendanceSection,
   TeamerEventsSection, ActivitiesSection, CertificatesSection,
-  TeamerSinceSection, KonfiHistorySection, PromoteSection
+  TeamerSinceSection, KonfiHistorySection, PromoteSection, KonfispruchSection
 } from './KonfiDetailSections';
 import type { Konfi, Activity } from './KonfiDetailSections';
 import { triggerPullHaptic } from '../../../utils/haptics';
@@ -538,6 +538,11 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
             eventPoints={eventPoints}
             currentKonfi={currentKonfi}
           />
+        )}
+
+        {/* Konfispruch (read-only) - nur für Konfis */}
+        {!isTeamer && currentKonfi?.role_name === 'konfi' && (
+          <KonfispruchSection konfspruch={currentKonfi.konfspruch} />
         )}
 
         {/* Teamer Events */}
