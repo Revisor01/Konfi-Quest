@@ -45,23 +45,26 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       // Get konfi basic info with level information and confirmation location
       const konfiQuery = `
         SELECT u.id, u.display_name, kp.gottesdienst_points, kp.gemeinde_points,
-               kp.jahrgang_id, j.name as jahrgang_name, j.confirmation_date,
+               kp.jahrgang_id, j.name as jahrgang_name, j.konfspruch_enabled,
                j.gottesdienst_enabled, j.gemeinde_enabled, j.target_gottesdienst, j.target_gemeinde,
                kp.current_level_id, l.name as current_level_name, l.title as current_level_title,
                l.icon as current_level_icon, l.color as current_level_color, l.points_required as current_level_points,
-               ce.location as confirmation_location
+               ce.location as confirmation_location, ce.event_date as confirmation_event_date
         FROM users u
         JOIN konfi_profiles kp ON u.id = kp.user_id
         JOIN jahrgaenge j ON kp.jahrgang_id = j.id
         JOIN roles r ON u.role_id = r.id
         LEFT JOIN levels l ON kp.current_level_id = l.id
         LEFT JOIN (
-          SELECT DISTINCT eja.jahrgang_id, e.location
+          -- Konfirmationstermin/-ort je Jahrgang aus dem is_konfirmation-Event
+          -- (frueheste nicht-cancelled Konfirmation, org-gescopt).
+          SELECT DISTINCT ON (eja.jahrgang_id) eja.jahrgang_id, e.location, e.event_date
           FROM events e
-          JOIN event_categories ec ON e.id = ec.event_id
-          JOIN categories c ON ec.category_id = c.id
           JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
-          WHERE c.name = 'Konfirmation' AND e.organization_id = $2
+          WHERE e.is_konfirmation = true
+            AND e.organization_id = $2
+            AND (e.cancelled IS NULL OR e.cancelled = false)
+          ORDER BY eja.jahrgang_id, e.event_date ASC
         ) ce ON ce.jahrgang_id = kp.jahrgang_id
         WHERE u.id = $1 AND r.name = 'konfi' AND u.deleted_at IS NULL
       `;
@@ -176,10 +179,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       `;
       const { rows: recentEvents } = await db.query(eventsQuery, [konfiId]);
 
-      // Calculate days to confirmation
+      // Calculate days to confirmation (Termin stammt aus dem is_konfirmation-Event)
       let daysToConfirmation = null;
-      if (konfi.confirmation_date) {
-        const confirmationDate = new Date(konfi.confirmation_date);
+      if (konfi.confirmation_event_date) {
+        const confirmationDate = new Date(konfi.confirmation_event_date);
         const now = new Date();
         const diffTime = confirmationDate.getTime() - now.getTime();
         daysToConfirmation = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -294,6 +297,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       );
       const has_wrapped = wrappedResult?.has_wrapped || false;
 
+      // Konfispruch-Sichtbarkeit (Backend-Gate, SPRUCH-07): Flag aus
+      // jahrgaenge.konfspruch_enabled. Frontend rendert die Card nur bei true.
+      const konfspruch_visible = konfi.konfspruch_enabled === true;
+
       // Return dashboard data
       res.json({
         konfi: {
@@ -311,8 +318,9 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         rank_in_jahrgang: userRanking ? userRanking.rank_in_jahrgang : null,
         total_in_jahrgang: userRanking ? userRanking.total_in_jahrgang : null,
         days_to_confirmation: daysToConfirmation > 0 ? daysToConfirmation : null,
-        confirmation_date: konfi.confirmation_date,
+        confirmation_date: konfi.confirmation_event_date || null,
         has_wrapped,
+        konfspruch_visible,
         level_info: {
           current_level: currentLevel ? {
             id: currentLevel.id,
@@ -357,7 +365,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         SELECT u.id, u.display_name, u.email, u.username, u.created_at, kp.gottesdienst_points, kp.gemeinde_points,
                kp.jahrgang_id, kp.bible_translation, kp.konfspruch_translation,
                kp.konfspruch_id, kp.konfspruch_freitext, kp.konfspruch_freitext_referenz,
-               j.name as jahrgang_name, j.confirmation_date,
+               j.name as jahrgang_name,
                j.gottesdienst_enabled, j.gemeinde_enabled
         FROM users u
         JOIN konfi_profiles kp ON u.id = kp.user_id
@@ -413,19 +421,17 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       `;
       const { rows: [stats] } = await db.query(statsQuery, [konfiId, req.user.organization_id]);
       
-      // Get confirmation event date and location if booked (look for events with "Konfirmation" category)
+      // Konfirmations-Termin und -Ort aus dem is_konfirmation-Event der gebuchten Events.
       let confirmationEventDate = null;
       let confirmationLocation = null;
       try {
         const confirmationQuery = `
           SELECT e.event_date, e.location
           FROM events e
-          JOIN event_categories ec ON e.id = ec.event_id
-          JOIN categories c ON ec.category_id = c.id
           JOIN event_bookings eb ON e.id = eb.event_id
-          WHERE eb.user_id = $1 
+          WHERE eb.user_id = $1
             AND eb.status = 'confirmed'
-            AND LOWER(c.name) LIKE '%konfirmation%'
+            AND e.is_konfirmation = true
             AND e.organization_id = $2
           ORDER BY e.event_date ASC
           LIMIT 1
@@ -436,8 +442,8 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           confirmationLocation = confirmationEvent.location;
         }
       } catch (err) {
- console.warn('Could not fetch confirmation event date:', err);
-        // Fall back to jahrgang confirmation_date if no event found
+        console.warn('Could not fetch confirmation event date:', err);
+        // Kein Fallback mehr: ohne is_konfirmation-Event bleibt der Termin null.
       }
 
       // Get ranking position (nur aktive Punkte-Typen)
@@ -530,8 +536,8 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         pending_requests: stats.pending_requests || 0,
         rank_in_jahrgang: ranking ? ranking.rank_in_jahrgang : null,
         total_in_jahrgang: ranking ? ranking.total_in_jahrgang : null,
-        // Use individual confirmation event date if available, otherwise fall back to jahrgang date
-        confirmation_date: confirmationEventDate || konfi.confirmation_date,
+        // Konfirmationstermin ausschliesslich aus dem is_konfirmation-Event (kein Jahrgang-Fallback mehr)
+        confirmation_date: confirmationEventDate,
         confirmation_location: confirmationLocation,
         recent_activities: [], // Could be enhanced
         progress_overview: progressOverview
