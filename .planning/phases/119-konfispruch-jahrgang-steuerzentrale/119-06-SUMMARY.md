@@ -67,3 +67,10 @@ Keine.
 | Task | Name | Commit | Files |
 | ---- | ---- | ------ | ----- |
 | 1 | Konfispruch-FAQ ergaenzen + Konfirmations-FAQ korrigieren | dc89af5 | frontend/public/landing.html |
+
+## Self-Check: PASSED
+
+- frontend/public/landing.html vorhanden
+- 119-06-SUMMARY.md vorhanden
+- Commit dc89af5 vorhanden (Task 1)
+- Commit 9ed897e vorhanden (SUMMARY)
