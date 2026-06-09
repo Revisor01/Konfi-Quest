@@ -42,6 +42,7 @@ export interface EventFormData {
   series_count: number;
   series_interval: string;
   mandatory: boolean;
+  is_konfirmation: boolean;
   bring_items: string;
   checkin_window: number;
 }
@@ -116,6 +117,16 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
             className="app-toggle--events"
             checked={formData.mandatory}
             onIonChange={(e) => setFormData({ ...formData, mandatory: e.detail.checked })}
+            disabled={loading}
+          />
+        </IonItem>
+        <IonItem lines="inset">
+          <IonLabel position="stacked">Konfirmation</IonLabel>
+          <IonToggle
+            slot="end"
+            className="app-toggle--konfis"
+            checked={formData.is_konfirmation}
+            onIonChange={(e) => setFormData({ ...formData, is_konfirmation: e.detail.checked })}
             disabled={loading}
           />
         </IonItem>

@@ -66,6 +66,7 @@ export interface Event {
   booked_timeslot_end?: string;
   // Pflicht/Optionen
   mandatory?: boolean;
+  is_konfirmation?: boolean;
   bring_items?: string;
   checkin_window?: number;
   // Teamer

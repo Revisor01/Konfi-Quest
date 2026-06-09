@@ -57,7 +57,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
     type: 'event', max_participants: 5, registration_opens_at: '', registration_closes_at: '',
     has_timeslots: false, waitlist_enabled: true, max_waitlist_size: 3,
     is_series: false, series_count: 1, series_interval: 'week',
-    mandatory: false, bring_items: '', checkin_window: 30
+    mandatory: false, is_konfirmation: false, bring_items: '', checkin_window: 30
   });
 
   const [timeslots, setTimeslots] = useState<Timeslot[]>([]);
@@ -101,6 +101,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         max_waitlist_size: event.max_waitlist_size || 3,
         is_series: event.is_series || false, series_count: 1, series_interval: 'week',
         mandatory: event.mandatory || false,
+        is_konfirmation: event.is_konfirmation || false,
         bring_items: event.bring_items || '',
         checkin_window: event.checkin_window || 30
       });
@@ -136,7 +137,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         max_participants: 5, registration_opens_at: toIonDatetimeISO(regOpens),
         registration_closes_at: toIonDatetimeISO(regCloses), has_timeslots: false,
         waitlist_enabled: true, max_waitlist_size: 3, is_series: false,
-        series_count: 1, series_interval: 'week', mandatory: false, bring_items: '',
+        series_count: 1, series_interval: 'week', mandatory: false, is_konfirmation: false, bring_items: '',
         checkin_window: 30
       });
       setTimeslots([]);
@@ -217,7 +218,8 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         is_series: formData.is_series,
         series_count: formData.is_series ? formData.series_count : undefined,
         series_interval: formData.is_series ? formData.series_interval : undefined,
-        mandatory: formData.mandatory, bring_items: formData.bring_items.trim() || null,
+        mandatory: formData.mandatory, is_konfirmation: formData.is_konfirmation,
+        bring_items: formData.bring_items.trim() || null,
         checkin_window: formData.checkin_window,
         teamer_needed: teamerAccess === 'teamer_needed', teamer_only: teamerAccess === 'teamer_only'
       };
