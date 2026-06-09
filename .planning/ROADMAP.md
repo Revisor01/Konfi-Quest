@@ -13,10 +13,10 @@ Scope in Discuss (2026-06-09) bewusst erweitert zur **Jahrgang-Steuerzentrale**.
 
 **Abhaengigkeiten:** Phase 118 (Spruch-Datenmodell), Phase 117 (Konfirmation-Event-Flag = Termin-Quelle nach confirmation_date-Wegfall). Siehe 119-CONTEXT.md.
 
-**Plans:** 5/6 plans executed
+**Plans:** 6/6 plans complete
 - [x] 119-01-PLAN.md — Migration 094 (jahrgaenge.konfspruch_enabled) + jahrgaenge.js POST/PUT akzeptiert Flag, confirmation_date als Pflicht entkoppelt [Wave 1]
 - [x] 119-02-PLAN.md — confirmation_date-Umzug Backend: Wrapped-Cron auf 6.1. + Konfi-Cron raus, Auto-Loesch-Service + Konfi-Dashboard/Profile auf is_konfirmation-Event, konfspruch_visible-Flag [Wave 2]
-- [ ] 119-03-PLAN.md — Frontend Jahrgang-Steuerzentrale (Modal: konfspruch_enabled + Wrapped-Toggle, kein Konfirmationsdatum; Liste erweitert) + Konfispruch-Card-Gate [Wave 3]
+- [x] 119-03-PLAN.md — Frontend Jahrgang-Steuerzentrale (Modal: konfspruch_enabled + Wrapped-Toggle, kein Konfirmationsdatum; Liste erweitert) + Konfispruch-Card-Gate [Wave 3]
 - [x] 119-04-PLAN.md — Admin-Einsicht (SPRUCH-08): Konfispruch in konfi-management GET /:id + read-only KonfispruchSection [Wave 1]
 - [x] 119-05-PLAN.md — Anwesenheitsmatrix (SPRUCH-09/10): Backend Sprueche-Liste + E-Mail-Versand (emailService) + Frontend IonSegment Anwesenheit/Spruch + Mail-Button [Wave 2]
 - [x] 119-06-PLAN.md — FAQ (SPRUCH-11): Konfispruch-Eintrag + Konfirmations-Eintrag-Korrektur in landing.html [Wave 1]
