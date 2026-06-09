@@ -22,6 +22,7 @@ import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import DashboardView from '../views/DashboardView';
 import PointsHistoryModal from '../modals/PointsHistoryModal';
+import KonfispruchSelectModal from '../modals/KonfispruchSelectModal';
 import WrappedModal from '../../wrapped/WrappedModal';
 import { Event } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
@@ -64,6 +65,23 @@ interface DashboardData {
   point_config?: PointConfig;
   dashboard_config?: DashboardConfig;
   has_wrapped?: boolean;
+  konfspruch?: {
+    source: 'liste' | 'freitext';
+    id?: number;
+    reference?: string;
+    text?: string;
+    translation?: string;
+  } | null;
+}
+
+interface KonfiProfile {
+  konfspruch?: {
+    source: 'liste' | 'freitext';
+    id?: number;
+    reference?: string;
+    text?: string;
+    translation?: string;
+  } | null;
 }
 
 // Event-Typ importiert aus types/event
@@ -102,6 +120,13 @@ const KonfiDashboardPage: React.FC = () => {
     'konfi:dashboard:' + user?.id,
     () => api.get('/konfi/dashboard').then(r => r.data),
     { ttl: CACHE_TTL.DASHBOARD }
+  );
+
+  // --- useOfflineQuery: Profil (fuer gewaehlten Konfispruch) ---
+  const { data: konfiProfile, refresh: refreshProfile } = useOfflineQuery<KonfiProfile>(
+    'konfi:profile:' + user?.id,
+    () => api.get('/konfi/profile').then(r => r.data),
+    { ttl: CACHE_TTL.PROFILE }
   );
 
   // --- useOfflineQuery: Tageslosung ---
@@ -210,6 +235,23 @@ const KonfiDashboardPage: React.FC = () => {
     presentWrappedModal({ cssClass: 'wrapped-modal-fullscreen' });
   };
 
+  // Konfispruch Modal
+  const [presentKonfispruchModal, dismissKonfispruchModal] = useIonModal(KonfispruchSelectModal, {
+    onClose: () => dismissKonfispruchModal(),
+    onSuccess: () => {
+      dismissKonfispruchModal();
+      refreshProfile();
+      refreshDashboard();
+    },
+    current: konfiProfile?.konfspruch ?? null
+  });
+
+  const openKonfispruch = () => {
+    presentKonfispruchModal({
+      presentingElement: pageRef.current || undefined
+    });
+  };
+
   // Memoized refresh function for live updates
   const refreshAllData = useCallback(() => {
     refreshDashboard();
@@ -260,7 +302,14 @@ const KonfiDashboardPage: React.FC = () => {
     show_ranking: dashboardData.dashboard_config?.show_ranking !== false,
   };
 
-  const sectionOrder: string[] = dashboardData.dashboard_config?.section_order || ['konfirmation', 'events', 'losung', 'badges', 'ranking'];
+  const sectionOrder: string[] = dashboardData.dashboard_config?.section_order || ['konfirmation', 'konfispruch', 'events', 'losung', 'badges', 'ranking'];
+
+  // Gewaehlten Konfispruch (aus Profil-Query) in die Dashboard-Daten mergen,
+  // damit die Card den Spruch anzeigt. Dashboard-Endpoint traegt ihn nicht.
+  const dashboardDataWithKonfspruch: DashboardData = {
+    ...dashboardData,
+    konfspruch: konfiProfile?.konfspruch ?? null
+  };
 
   return (
     <IonPage ref={pageRef}>
@@ -318,7 +367,7 @@ const KonfiDashboardPage: React.FC = () => {
         )}
 
         <DashboardView
-          dashboardData={dashboardData}
+          dashboardData={dashboardDataWithKonfspruch}
           dailyVerse={dailyVerse}
           badgeStats={badgeStats}
           allBadges={allBadges}
@@ -328,6 +377,7 @@ const KonfiDashboardPage: React.FC = () => {
           gottesdienstEnabled={gottesdienstEnabled}
           gemeindeEnabled={gemeindeEnabled}
           onOpenPointsHistory={openPointsHistory}
+          onOpenKonfispruch={openKonfispruch}
           dashboardConfig={dashboardConfig}
           sectionOrder={sectionOrder}
         />
