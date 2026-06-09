@@ -92,13 +92,19 @@ const AdminEventsPage: React.FC = () => {
   const eventModalCanDismiss = async (): Promise<boolean> => {
     if (!eventModalDirtyRef.current) return true;
     return new Promise<boolean>((resolve) => {
+      let decided = false;
+      const decide = (v: boolean) => { decided = true; resolve(v); };
       presentAlert({
         header: 'Ungespeicherte Änderungen',
         message: 'Möchtest du die Änderungen verwerfen?',
+        backdropDismiss: false,
         buttons: [
-          { text: 'Abbrechen', role: 'cancel', handler: () => resolve(false) },
-          { text: 'Verwerfen', role: 'destructive', handler: () => resolve(true) }
-        ]
+          { text: 'Abbrechen', role: 'cancel', handler: () => decide(false) },
+          { text: 'Verwerfen', role: 'destructive', handler: () => decide(true) }
+        ],
+        // Fallback: schliesst der Alert ohne Button (z.B. Hardware-Back),
+        // niemals das canDismiss-Promise haengen lassen -> als "nicht verwerfen".
+        onDidDismiss: () => { if (!decided) resolve(false); }
       });
     });
   };

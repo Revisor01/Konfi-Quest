@@ -226,12 +226,19 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     .sort((a, b) => new Date(a.event_date || a.date || '').getTime() - new Date(b.event_date || b.date || '').getTime()),
   [upcomingEvents]);
 
+  // Konfirmations-Termin primaer ueber das is_konfirmation-Flag (Phase 117),
+  // Titel-Match nur noch als Fallback fuer Events ohne gesetztes Flag.
+  const isKonfirmation = (e: typeof myRegisteredEvents[number]) =>
+    e.is_konfirmation === true
+    || e.title?.toLowerCase().includes('konfirmation')
+    || e.name?.toLowerCase().includes('konfirmation');
+
   const confirmationEvents = useMemo(() => myRegisteredEvents
-    .filter(e => e.title?.toLowerCase().includes('konfirmation') || e.name?.toLowerCase().includes('konfirmation')),
+    .filter(e => isKonfirmation(e)),
   [myRegisteredEvents]);
 
   const regularEvents = useMemo(() => myRegisteredEvents
-    .filter(e => !e.title?.toLowerCase().includes('konfirmation') && !e.name?.toLowerCase().includes('konfirmation'))
+    .filter(e => !isKonfirmation(e))
     .slice(0, 3),
   [myRegisteredEvents]);
 

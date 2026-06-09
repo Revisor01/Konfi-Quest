@@ -141,6 +141,7 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
   };
 
   const loadSprueche = async (id: number) => {
+    setSprueche(null); // alte Sprueche sofort verwerfen (kein kurzes Aufblitzen beim Jahrgang-Wechsel)
     setSpruecheLoading(true);
     try {
       const res = await api.get(`/admin/jahrgaenge/${id}/sprueche`);

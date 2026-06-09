@@ -35,7 +35,7 @@ import {
   trash,
   schoolOutline,
   settingsOutline,
-  sparkles,
+  sparklesOutline,
   checkmarkCircle,
   closeCircle,
   trophy,
@@ -388,7 +388,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--jahrgang">
-              <IonIcon icon={sparkles} />
+              <IonIcon icon={sparklesOutline} />
             </div>
             <IonLabel>Konfispruch & Wrapped</IonLabel>
           </IonListHeader>
