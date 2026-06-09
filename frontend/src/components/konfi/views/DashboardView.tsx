@@ -55,6 +55,7 @@ interface DashboardData {
   confirmation_date?: string;
   rank_in_jahrgang?: number;
   total_in_jahrgang?: number;
+  konfspruch_visible?: boolean;
   konfspruch?: {
     source: 'liste' | 'freitext';
     id?: number;
@@ -381,6 +382,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             ) : null
           ),
           konfispruch: () => {
+            // Card-Gate: nur sichtbar, wenn der Jahrgang die Konfispruch-Auswahl
+            // freigegeben hat (konfspruch_visible aus dem Dashboard-Endpoint).
+            if (dashboardData.konfspruch_visible !== true) {
+              return null;
+            }
             const spruch = dashboardData.konfspruch;
             const spruchText = spruch?.text?.trim();
             const spruchReference = spruch?.reference?.trim();
