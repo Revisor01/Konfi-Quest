@@ -207,7 +207,11 @@ jobs:
           # ZWINGT den korrekten Pull. github.sha ist der volle 40-stellige SHA.
           # WICHTIG: JEDEN bestehenden Tag ersetzen (:latest ODER ein frueherer :sha aus
           # dem letzten Deploy), nicht nur :latest -> sonst greift der 2. Deploy nicht.
-          perl -i -pe "s#(ghcr\.io/${{ github.repository_owner }}/konfi-quest-(backend|frontend)):[A-Za-z0-9._-]+#\${1}:${GIT_SHA}#g" compose.yml
+          # Owner-agnostisch matchen: github.repository_owner ist 'Revisor01' (mixed case),
+          # der ghcr-Image-Pfad aber lowercase 'revisor01' -> ein Pattern mit dem Owner
+          # wuerde NIE matchen. Stattdessen am eindeutigen 'konfi-quest-(backend|frontend)'
+          # ankern. GIT_SHA via -s an perl uebergeben (keine Shell-Interpolation von $1).
+          GIT_SHA="$GIT_SHA" perl -i -pe 's#(konfi-quest-(?:backend|frontend)):[A-Za-z0-9._-]+#$1:$ENV{GIT_SHA}#g' compose.yml
           echo "compose images nach Tag-Rewrite:"; grep -E "image:.*konfi-quest" compose.yml
           grep -q "konfi-quest-backend:${GIT_SHA}" compose.yml || { echo "::error::Tag-Rewrite backend fehlgeschlagen"; exit 1; }
           grep -q "konfi-quest-frontend:${GIT_SHA}" compose.yml || { echo "::error::Tag-Rewrite frontend fehlgeschlagen"; exit 1; }
