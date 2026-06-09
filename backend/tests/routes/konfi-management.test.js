@@ -181,12 +181,16 @@ describe('Konfi-Management Routes', () => {
   // ================================================================
   describe('GET /api/admin/konfis/:id — Konfispruch', () => {
     it('Listen-Wahl: liefert konfspruch mit source=liste, Referenz, Text und Translation', async () => {
-      // Globalen Spruch + Uebersetzungstext aus der Migration nutzen
+      // truncateAll leert konfsprueche nach jedem Test (der Migration-Seed ist dann weg).
+      // Daher den globalen Spruch + Uebersetzung pro Test frisch anlegen (analog konfi.test.js).
       const { rows: [spruch] } = await db.query(
-        `SELECT id, reference FROM konfsprueche WHERE organization_id IS NULL ORDER BY sort_order LIMIT 1`
+        `INSERT INTO konfsprueche (reference, book, chapter, verse, organization_id, sort_order)
+         VALUES ('Psalm 23,1', 'Psalm', 23, 1, NULL, 1)
+         RETURNING id, reference`
       );
       await db.query(
-        `UPDATE konfspruch_uebersetzungen SET text = $1 WHERE spruch_id = $2 AND translation = 'luther2017'`,
+        `INSERT INTO konfspruch_uebersetzungen (spruch_id, translation, text)
+         VALUES ($2, 'luther2017', $1)`,
         ['Der Herr ist mein Hirte, mir wird nichts mangeln.', spruch.id]
       );
       await db.query(

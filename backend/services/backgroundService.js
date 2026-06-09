@@ -708,6 +708,10 @@ class BackgroundService {
         // --- HARD-DELETE (>= 120 Tage) ---
         // Nur aktive Konfis (r.name='konfi'); promotete Teamer (role gewechselt,
         // teamer_since gesetzt) werden durch den Rollen-Filter NIE erfasst (D-10).
+        // Bewusst KEIN deleted_at-Guard: ab Tag 120 wird hart geloescht, auch wenn
+        // der Soft-Delete-Lauf (Tag 60-120) nie stattfand (z.B. Cron-Ausfall) —
+        // sonst bliebe der Datensatz ueber die Aufbewahrungsfrist hinaus erhalten.
+        // deleteKonfiCascade entfernt den User physisch -> kein wiederholter Lauf.
         const { rows: hardKandidaten } = await db.query(
           `SELECT u.id
              FROM users u
@@ -716,7 +720,6 @@ class BackgroundService {
             WHERE kp.jahrgang_id = $1
               AND u.organization_id = $3
               AND r.name = 'konfi'
-              AND u.deleted_at IS NOT NULL
               AND (CURRENT_DATE - $2::date) >= 120`,
           [jg.id, stichtag, jg.organization_id]
         );
