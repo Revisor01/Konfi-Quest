@@ -254,6 +254,125 @@ Dein Konfi Quest Team
   return sendEmail({ to: email, subject, text, html });
 };
 
+// HTML-Escaping fuer Nutzereingaben (Konfi-Namen, Freitext-Sprueche) im Mail-HTML.
+const escapeHtml = (value) => String(value == null ? '' : value)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;');
+
+// Formatiert ein Datum (oder null) als deutsches Datum bzw. einen Platzhalter.
+const formatKonfirmationDate = (value) => {
+  if (!value) return 'noch kein Termin';
+  return new Date(value).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
+
+// Baut die Textdarstellung eines gewaehlten Konfispruchs (oder Platzhalter).
+const formatSpruchText = (konfspruch) => {
+  if (!konfspruch) return 'noch keiner';
+  if (konfspruch.source === 'liste') {
+    const text = konfspruch.text && konfspruch.text.trim().length > 0 ? konfspruch.text : '';
+    return text ? `${konfspruch.reference} - ${text}` : konfspruch.reference;
+  }
+  // Freitext: Text + Referenz
+  return konfspruch.reference ? `${konfspruch.text} (${konfspruch.reference})` : konfspruch.text;
+};
+
+/**
+ * Schickt der Admin:in die Anwesenheitsmatrix oder die Konfispruch-Liste eines
+ * Jahrgangs an die eigene Adresse (fuers Buero, D-08/D-09).
+ * @param {string} email - eigene E-Mail-Adresse der Admin:in
+ * @param {string} adminName - Anzeigename der Admin:in
+ * @param {string} jahrgangName - Name des Jahrgangs
+ * @param {'anwesenheit'|'sprueche'} type - gewuenschte Ansicht
+ * @param {Array} rows - bei 'anwesenheit': { display_name, present_count, total_count };
+ *                       bei 'sprueche':   { display_name, konfirmation_date, konfspruch }
+ */
+const sendKonfiMatrixEmail = async (email, adminName, jahrgangName, type, rows = []) => {
+  const isSprueche = type === 'sprueche';
+  const titel = isSprueche ? 'Konfisprüche' : 'Anwesenheit';
+  const subject = `${titel} - Jahrgang ${jahrgangName} - Konfi Quest`;
+
+  let textBody;
+  let tableHtml;
+
+  if (isSprueche) {
+    // Liste: Name + Konfirmationstermin + Spruch
+    const textLines = rows.map(r => {
+      const termin = formatKonfirmationDate(r.konfirmation_date);
+      const spruch = formatSpruchText(r.konfspruch);
+      return `${r.display_name} | Konfirmation: ${termin} | Spruch: ${spruch}`;
+    });
+    textBody = textLines.length > 0 ? textLines.join('\n') : 'Keine Konfis in diesem Jahrgang.';
+
+    const rowsHtml = rows.length > 0
+      ? rows.map(r => `
+        <tr>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb;">${escapeHtml(r.display_name)}</td>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb;">${escapeHtml(formatKonfirmationDate(r.konfirmation_date))}</td>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb;">${escapeHtml(formatSpruchText(r.konfspruch))}</td>
+        </tr>`).join('')
+      : `<tr><td colspan="3" style="padding:8px;">Keine Konfis in diesem Jahrgang.</td></tr>`;
+
+    tableHtml = `
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px;border-bottom:2px solid #667eea;">Konfi</th>
+            <th style="text-align:left;padding:8px;border-bottom:2px solid #667eea;">Konfirmation</th>
+            <th style="text-align:left;padding:8px;border-bottom:2px solid #667eea;">Konfispruch</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>`;
+  } else {
+    // Anwesenheit: Name + besuchte/gesamte Pflicht-Events
+    const textLines = rows.map(r => `${r.display_name} | Anwesenheit: ${r.present_count} von ${r.total_count} Pflicht-Terminen`);
+    textBody = textLines.length > 0 ? textLines.join('\n') : 'Keine Konfis in diesem Jahrgang.';
+
+    const rowsHtml = rows.length > 0
+      ? rows.map(r => `
+        <tr>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb;">${escapeHtml(r.display_name)}</td>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb;">${escapeHtml(`${r.present_count} von ${r.total_count}`)}</td>
+        </tr>`).join('')
+      : `<tr><td colspan="2" style="padding:8px;">Keine Konfis in diesem Jahrgang.</td></tr>`;
+
+    tableHtml = `
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px;border-bottom:2px solid #667eea;">Konfi</th>
+            <th style="text-align:left;padding:8px;border-bottom:2px solid #667eea;">Anwesenheit (Pflicht-Termine)</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>`;
+  }
+
+  const text = `
+Hallo ${adminName},
+
+hier ist die ${titel}-Übersicht für den Jahrgang "${jahrgangName}":
+
+${textBody}
+
+Diese E-Mail hast du dir selbst aus der App geschickt.
+
+Viele Grüße,
+Dein Konfi Quest Team
+  `.trim();
+
+  const html = wrapHtml(`
+      <h2>Hallo ${escapeHtml(adminName)}!</h2>
+      <p>hier ist die <strong>${escapeHtml(titel)}</strong>-Übersicht für den Jahrgang <strong>${escapeHtml(jahrgangName)}</strong>:</p>
+      ${tableHtml}
+      <p style="color:#666;font-size:14px;margin-top:20px;">Diese E-Mail hast du dir selbst aus der App geschickt.</p>
+  `);
+
+  return sendEmail({ to: email, subject, text, html });
+};
+
 /**
  * Testet die E-Mail-Konfiguration
  */
@@ -278,5 +397,6 @@ module.exports = {
   sendPasswordResetEmail,
   sendPasswordChangedEmail,
   sendLicenseExpiryReminderEmail,
+  sendKonfiMatrixEmail,
   testEmailConnection
 };

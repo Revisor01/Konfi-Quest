@@ -4,6 +4,15 @@ const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, JAHRGAENGE, EVENTS } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 
+// emailService mocken: in der Testumgebung gibt es keinen SMTP-Server. Die
+// matrix-email-Route ruft sendKonfiMatrixEmail auf -> hier durch No-Op ersetzen,
+// damit der Endpoint deterministisch testbar bleibt (kein realer Versand).
+const emailService = require('../../services/emailService');
+vi.mock('../../services/emailService', () => ({
+  default: {},
+  sendKonfiMatrixEmail: vi.fn().mockResolvedValue({ success: true, messageId: 'test' }),
+}));
+
 describe('Jahrgaenge Routes', () => {
   let app;
   let db;
@@ -379,6 +388,175 @@ describe('Jahrgaenge Routes', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(404);
+    });
+  });
+
+  // ================================================================
+  // GET /api/admin/jahrgaenge/:id/sprueche
+  // ================================================================
+  describe('GET /api/admin/jahrgaenge/:id/sprueche', () => {
+    let spruchId;
+
+    beforeEach(async () => {
+      // Einen global geseedeten Konfispruch + Uebersetzungstext bereitstellen
+      const { rows: [spruch] } = await db.query(
+        `SELECT id FROM konfsprueche WHERE organization_id IS NULL ORDER BY id ASC LIMIT 1`
+      );
+      spruchId = spruch.id;
+      await db.query(
+        `UPDATE konfspruch_uebersetzungen SET text = 'Der Herr ist mein Hirte.'
+         WHERE spruch_id = $1 AND translation = 'luther2017'`,
+        [spruchId]
+      );
+      // konfi1: Listen-Wahl (Spruch aus der Liste), konfi2: kein Spruch
+      await db.query(
+        `UPDATE konfi_profiles
+         SET konfspruch_id = $1, konfspruch_translation = 'luther2017',
+             konfspruch_freitext = NULL, konfspruch_freitext_referenz = NULL
+         WHERE user_id = $2`,
+        [spruchId, USERS.konfi1.id]
+      );
+    });
+
+    it('Admin bekommt Liste Konfi -> Spruch (mit und ohne Spruch)', async () => {
+      const res = await request(app)
+        .get(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}/sprueche`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+
+      const konfi1Entry = res.body.find(r => r.user_id === USERS.konfi1.id);
+      const konfi2Entry = res.body.find(r => r.user_id === USERS.konfi2.id);
+      expect(konfi1Entry).toBeDefined();
+      expect(konfi1Entry.konfspruch).not.toBeNull();
+      expect(konfi1Entry.konfspruch.source).toBe('liste');
+      expect(konfi1Entry.konfspruch.text).toBe('Der Herr ist mein Hirte.');
+      // konfi2 hat keinen Spruch gewaehlt
+      expect(konfi2Entry).toBeDefined();
+      expect(konfi2Entry.konfspruch).toBeNull();
+    });
+
+    it('Freitext-Spruch wird mit Referenz geliefert', async () => {
+      await db.query(
+        `UPDATE konfi_profiles
+         SET konfspruch_id = NULL, konfspruch_freitext = 'Mein eigener Spruch',
+             konfspruch_freitext_referenz = 'Johannes 3,16'
+         WHERE user_id = $1`,
+        [USERS.konfi2.id]
+      );
+
+      const res = await request(app)
+        .get(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}/sprueche`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      const konfi2Entry = res.body.find(r => r.user_id === USERS.konfi2.id);
+      expect(konfi2Entry.konfspruch.source).toBe('freitext');
+      expect(konfi2Entry.konfspruch.text).toBe('Mein eigener Spruch');
+      expect(konfi2Entry.konfspruch.reference).toBe('Johannes 3,16');
+    });
+
+    it('Teamer bekommt 403 (requireAdmin)', async () => {
+      const res = await request(app)
+        .get(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}/sprueche`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Admin aus anderer Org bekommt 404', async () => {
+      const res = await request(app)
+        .get(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}/sprueche`)
+        .set('Authorization', `Bearer ${admin2Token}`);
+
+      expect(res.status).toBe(404);
+    });
+  });
+
+  // ================================================================
+  // POST /api/admin/jahrgaenge/:id/matrix-email
+  // ================================================================
+  describe('POST /api/admin/jahrgaenge/:id/matrix-email', () => {
+    beforeEach(async () => {
+      emailService.sendKonfiMatrixEmail.mockClear();
+      // Admin1 eine E-Mail-Adresse geben (Seed setzt keine)
+      await db.query(`UPDATE users SET email = 'admin1@example.com' WHERE id = $1`, [USERS.admin1.id]);
+      // Konfirmations-Event fuer Jahrgang1 anlegen + zuordnen (is_konfirmation)
+      await db.query(
+        `UPDATE events SET is_konfirmation = true WHERE id = $1`,
+        [EVENTS.gottesdienstEvent.id]
+      );
+      await db.query(
+        `INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+        [EVENTS.gottesdienstEvent.id, JAHRGAENGE.jahrgang1.id]
+      );
+    });
+
+    it('type=anwesenheit -> 200 + E-Mail-Versand', async () => {
+      const res = await request(app)
+        .post(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}/matrix-email`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ type: 'anwesenheit' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(emailService.sendKonfiMatrixEmail).toHaveBeenCalledTimes(1);
+      const args = emailService.sendKonfiMatrixEmail.mock.calls[0];
+      expect(args[0]).toBe('admin1@example.com');
+      expect(args[3]).toBe('anwesenheit');
+    });
+
+    it('type=sprueche -> 200 + Zeilen enthalten Name, Termin und Spruch', async () => {
+      const res = await request(app)
+        .post(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}/matrix-email`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ type: 'sprueche' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(emailService.sendKonfiMatrixEmail).toHaveBeenCalledTimes(1);
+      const args = emailService.sendKonfiMatrixEmail.mock.calls[0];
+      expect(args[3]).toBe('sprueche');
+      const rows = args[4];
+      expect(Array.isArray(rows)).toBe(true);
+      expect(rows.length).toBeGreaterThan(0);
+      // jede Zeile traegt Name, Konfirmationstermin und Spruch-Feld
+      expect(rows[0]).toHaveProperty('display_name');
+      expect(rows[0]).toHaveProperty('konfirmation_date');
+      expect(rows[0]).toHaveProperty('konfspruch');
+      // Konfirmationstermin aus is_konfirmation-Event ist gesetzt
+      expect(rows[0].konfirmation_date).not.toBeNull();
+    });
+
+    it('Admin ohne E-Mail-Adresse -> 400', async () => {
+      await db.query(`UPDATE users SET email = NULL WHERE id = $1`, [USERS.admin1.id]);
+      const res = await request(app)
+        .post(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}/matrix-email`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ type: 'anwesenheit' });
+
+      expect(res.status).toBe(400);
+      expect(emailService.sendKonfiMatrixEmail).not.toHaveBeenCalled();
+    });
+
+    it('Fremder Jahrgang (andere Org) -> 404', async () => {
+      await db.query(`UPDATE users SET email = 'admin2@example.com' WHERE id = $1`, [USERS.admin2.id]);
+      const res = await request(app)
+        .post(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}/matrix-email`)
+        .set('Authorization', `Bearer ${admin2Token}`)
+        .send({ type: 'anwesenheit' });
+
+      expect(res.status).toBe(404);
+    });
+
+    it('Ungueltiger type -> 400', async () => {
+      const res = await request(app)
+        .post(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}/matrix-email`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ type: 'quatsch' });
+
+      expect(res.status).toBe(400);
     });
   });
 });

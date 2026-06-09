@@ -3,6 +3,7 @@ const router = express.Router();
 const { body, param } = require('express-validator');
 const { handleValidationErrors, commonValidations } = require('../middleware/validation');
 const liveUpdate = require('../utils/liveUpdate');
+const emailService = require('../services/emailService');
 
 // Jahrgänge: Teamer darf ansehen, Admin darf bearbeiten
 module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
@@ -311,6 +312,201 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
     } catch (err) {
       console.error(`Database error in GET /api/admin/jahrgaenge/${jahrgangId}/attendance-matrix:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // ------------------------------------------------------------------
+  // Hilfsfunktionen fuer die Konfispruch-Liste + den Konfirmationstermin
+  // ------------------------------------------------------------------
+
+  // Loest fuer jeden Konfi eines Jahrgangs den gewaehlten Konfispruch auf
+  // (Listen-Wahl ODER Freitext, genau wie der Builder in konfi.js:486-522).
+  // WICHTIG (W1): Die Uebersetzung kommt aus der DEDIZIERTEN Spalte
+  // kp.konfspruch_translation (NICHT kp.bible_translation -- das ist die
+  // separate Tageslosungs-Praeferenz).
+  // Rueckgabe: Array { user_id, display_name, konfspruch } (konfspruch ggf. null).
+  const buildSpruecheList = async (jahrgangId, organizationId) => {
+    const { rows: konfis } = await db.query(`
+      SELECT u.id AS user_id, u.display_name,
+             kp.konfspruch_id, kp.konfspruch_freitext, kp.konfspruch_freitext_referenz,
+             kp.konfspruch_translation
+      FROM users u
+      JOIN konfi_profiles kp ON kp.user_id = u.id
+      JOIN roles r ON u.role_id = r.id
+      WHERE kp.jahrgang_id = $1
+        AND u.organization_id = $2
+        AND r.name = 'konfi'
+        AND u.deleted_at IS NULL
+      ORDER BY u.display_name ASC
+    `, [jahrgangId, organizationId]);
+
+    const result = [];
+    for (const konfi of konfis) {
+      let konfspruch = null;
+      if (konfi.konfspruch_id) {
+        // Listen-Wahl: gewaehlte Konfispruch-Uebersetzung nachladen (org-gescopt, is_active).
+        const spruchTranslation = konfi.konfspruch_translation || 'luther2017';
+        const { rows: [spruch] } = await db.query(`
+          SELECT ks.id, ks.reference, ku.text
+          FROM konfsprueche ks
+          LEFT JOIN konfspruch_uebersetzungen ku
+            ON ku.spruch_id = ks.id AND ku.translation = $2
+          WHERE ks.id = $1
+            AND ks.is_active = true
+            AND (ks.organization_id IS NULL OR ks.organization_id = $3)
+        `, [konfi.konfspruch_id, spruchTranslation, organizationId]);
+        if (spruch) {
+          konfspruch = {
+            source: 'liste',
+            id: spruch.id,
+            reference: spruch.reference,
+            text: spruch.text || '',
+            translation: konfi.konfspruch_translation || null
+          };
+        }
+      } else if (konfi.konfspruch_freitext) {
+        // Freitext-Spruch mit Pflicht-Referenz
+        konfspruch = {
+          source: 'freitext',
+          text: konfi.konfspruch_freitext,
+          reference: konfi.konfspruch_freitext_referenz
+        };
+      }
+      result.push({
+        user_id: konfi.user_id,
+        display_name: konfi.display_name,
+        konfspruch
+      });
+    }
+    return result;
+  };
+
+  // Ermittelt den Konfirmationstermin eines Jahrgangs aus dem is_konfirmation-Event
+  // (D-05/D-09). Alle Konfis eines Jahrgangs teilen denselben Termin. NULL falls kein
+  // (nicht abgesagtes) Konfirmations-Event zugeordnet ist.
+  const getKonfirmationDate = async (jahrgangId, organizationId) => {
+    const { rows: [row] } = await db.query(`
+      SELECT MIN(e.event_date) AS konfirmation_date
+      FROM events e
+      JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
+      WHERE eja.jahrgang_id = $1
+        AND e.is_konfirmation = true
+        AND e.organization_id = $2
+        AND (e.cancelled IS NULL OR e.cancelled = false)
+    `, [jahrgangId, organizationId]);
+    return row ? row.konfirmation_date : null;
+  };
+
+  // GET sprueche-Liste je Jahrgang: Array { user_id, display_name, konfspruch }
+  router.get('/:id/sprueche', rbacVerifier, requireAdmin, validateJahrgangId, async (req, res) => {
+    const jahrgangId = parseInt(req.params.id, 10);
+    try {
+      const { rows: [jahrgang] } = await db.query(
+        'SELECT id, name FROM jahrgaenge WHERE id = $1 AND organization_id = $2',
+        [jahrgangId, req.user.organization_id]
+      );
+      if (!jahrgang) return res.status(404).json({ error: 'Jahrgang nicht gefunden' });
+
+      const sprueche = await buildSpruecheList(jahrgangId, req.user.organization_id);
+      res.json(sprueche);
+    } catch (err) {
+      console.error(`Database error in GET /api/admin/jahrgaenge/${jahrgangId}/sprueche:`, err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // POST matrix-email: schickt die Anwesenheitsmatrix ODER die Sprueche-Liste
+  // per E-Mail an die eigene Adresse der Admin:in (D-08). Body { type }.
+  const validateMatrixEmail = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    body('type').isIn(['anwesenheit', 'sprueche']).withMessage("type muss 'anwesenheit' oder 'sprueche' sein"),
+    handleValidationErrors
+  ];
+
+  router.post('/:id/matrix-email', rbacVerifier, requireAdmin, validateMatrixEmail, async (req, res) => {
+    const jahrgangId = parseInt(req.params.id, 10);
+    const { type } = req.body;
+    try {
+      const { rows: [jahrgang] } = await db.query(
+        'SELECT id, name FROM jahrgaenge WHERE id = $1 AND organization_id = $2',
+        [jahrgangId, req.user.organization_id]
+      );
+      if (!jahrgang) return res.status(404).json({ error: 'Jahrgang nicht gefunden' });
+
+      // E-Mail-Adresse der Admin:in laden (req.user enthaelt KEINE email -> aus users-Tabelle).
+      const { rows: [adminRow] } = await db.query(
+        'SELECT display_name, email FROM users WHERE id = $1',
+        [req.user.id]
+      );
+      if (!adminRow || !adminRow.email) {
+        return res.status(400).json({ error: 'Keine E-Mail-Adresse hinterlegt' });
+      }
+
+      let rows;
+      if (type === 'sprueche') {
+        const sprueche = await buildSpruecheList(jahrgangId, req.user.organization_id);
+        const konfirmationDate = await getKonfirmationDate(jahrgangId, req.user.organization_id);
+        rows = sprueche.map(s => ({
+          display_name: s.display_name,
+          konfirmation_date: konfirmationDate,
+          konfspruch: s.konfspruch
+        }));
+      } else {
+        // type === 'anwesenheit': Pflicht-Events + Anwesenheits-Zusammenfassung je Konfi
+        const { rows: konfis } = await db.query(`
+          SELECT u.id AS user_id, u.display_name
+          FROM users u
+          JOIN konfi_profiles kp ON kp.user_id = u.id
+          JOIN roles r ON u.role_id = r.id
+          WHERE kp.jahrgang_id = $1
+            AND u.organization_id = $2
+            AND r.name = 'konfi'
+            AND u.deleted_at IS NULL
+          ORDER BY u.display_name ASC
+        `, [jahrgangId, req.user.organization_id]);
+
+        const { rows: events } = await db.query(`
+          SELECT DISTINCT e.id
+          FROM events e
+          JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
+          WHERE eja.jahrgang_id = $1
+            AND e.mandatory = true
+            AND e.organization_id = $2
+            AND (e.cancelled IS NULL OR e.cancelled = false)
+        `, [jahrgangId, req.user.organization_id]);
+        const eventIds = events.map(e => e.id);
+
+        const { rows: bookings } = eventIds.length > 0 ? await db.query(`
+          SELECT eb.user_id, eb.attendance_status
+          FROM event_bookings eb
+          WHERE eb.event_id = ANY($1::int[])
+            AND eb.user_id = ANY($2::int[])
+        `, [eventIds, konfis.map(k => k.user_id)]) : { rows: [] };
+
+        const totalEvents = eventIds.length;
+        rows = konfis.map(k => {
+          const own = bookings.filter(b => b.user_id === k.user_id);
+          const present = own.filter(b => b.attendance_status === 'present').length;
+          return {
+            display_name: k.display_name,
+            present_count: present,
+            total_count: totalEvents
+          };
+        });
+      }
+
+      await emailService.sendKonfiMatrixEmail(
+        adminRow.email,
+        adminRow.display_name,
+        jahrgang.name,
+        type,
+        rows
+      );
+
+      res.json({ success: true });
+    } catch (err) {
+      console.error(`Database error in POST /api/admin/jahrgaenge/${jahrgangId}/matrix-email:`, err);
+      res.status(500).json({ error: 'Fehler beim Senden der E-Mail' });
     }
   });
 
