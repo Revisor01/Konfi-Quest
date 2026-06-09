@@ -19,7 +19,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v2.12 Konfirmation + Konfispruch (Planung). Phase 117 = Konfirmations-Event-Flag (is_konfirmation analog mandatory, zuerst). Phase 118 = Konfispruch-Datenmodell + Konfi-Auswahl (kuratierte DB-Liste, 4 Uebersetzungen, Dashboard-Card). Phase 119 = pro-Jahrgang-Freischaltung + Admin-Integration (Matrix-Umschaltung/Versand, FAQ). Requirements: REQUIREMENTS.md (KONF-01..08, SPRUCH-01..11). Naechster Schritt: /gsd:plan-phase 117.
+**Current focus:** v2.12 Konfirmation + Konfispruch.
+- **Phase 117 (Konfirmations-Flag): FERTIG + LIVE auf Prod** (commit 30e0c45, Migration 091+092 angewandt, is_konfirmation-Spalte da, Konfirmation-Kategorie bereinigt). OFFEN: nur visueller Human-Verify im App-Build (Toggle/lila/Corner-Badge) + ROADMAP-Plans abhaken.
+- **Phase 118 (Konfispruch-Datenmodell + Auswahl): GEPLANT, NICHT gebaut** (Plans 118-01/118-02 committet 842ad1c). Naechster Schritt frische Session: /gsd:execute-phase 118. Vers-Referenzen liegen in .planning/phases/118-spruch-referenzen.md (~32, NUR Stellenangaben — Uebersetzungstexte traegt User lizenziert nach, NICHT erfinden).
+- **Phase 119 (pro-Jahrgang-Gate + Admin-Integration): noch nicht geplant.**
+Requirements: REQUIREMENTS.md (KONF-01..08 erfuellt, SPRUCH-01..11 offen).
 
 ## Current Position
 
