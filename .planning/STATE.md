@@ -3,14 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.12
 milestone_name: Konfirmation + Konfispruch
 status: milestone_complete
-last_updated: 2026-06-09T09:50:01.952Z
+last_updated: "2026-06-09T10:55:46.928Z"
 progress:
-  total_phases: 17
-  completed_phases: 15
+  total_phases: 18
+  completed_phases: 16
   total_plans: 38
   completed_plans: 40
-  percent: 88
-stopped_at: Milestone complete (Phase 118 was final phase)
+  percent: 89
 ---
 
 # Project State
