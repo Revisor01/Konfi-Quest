@@ -130,6 +130,152 @@ describe('Konfi Routes', () => {
   });
 
   // ================================================================
+  // Konfispruch (GET /konfsprueche, GET /profile.konfspruch, PATCH /profile)
+  // ================================================================
+  describe('Konfispruch', () => {
+    // truncateAll leert konfsprueche nach jedem Test (der Migration-Seed ist dann weg).
+    // Daher pro Test einen globalen Spruch + seine 4 Uebersetzungen frisch anlegen.
+    async function seedSpruch() {
+      const { rows: [spruch] } = await db.query(
+        `INSERT INTO konfsprueche (reference, book, chapter, verse, organization_id, sort_order)
+         VALUES ('Josua 1,9', 'Josua', 1, 9, NULL, 1)
+         RETURNING id`
+      );
+      const texte = {
+        luther2017: 'Sei getrost und unverzagt.',
+        bigs: 'Sei mutig und entschlossen.',
+        gute_nachricht: 'Sei stark und entschlossen.',
+        elberfelder: 'Sei stark und mutig.'
+      };
+      for (const [translation, text] of Object.entries(texte)) {
+        await db.query(
+          `INSERT INTO konfspruch_uebersetzungen (spruch_id, translation, text)
+           VALUES ($1, $2, $3)`,
+          [spruch.id, translation, text]
+        );
+      }
+      return spruch.id;
+    }
+
+    it('GET /konfsprueche liefert 200 + Array mit Referenz und 4 Uebersetzungs-Keys', async () => {
+      await seedSpruch();
+      const res = await request(app)
+        .get('/api/konfi/konfsprueche')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBeGreaterThan(0);
+      const eintrag = res.body.find((s) => s.reference === 'Josua 1,9');
+      expect(eintrag).toBeDefined();
+      expect(eintrag.uebersetzungen).toBeDefined();
+      expect(Object.keys(eintrag.uebersetzungen).sort()).toEqual(
+        ['bigs', 'elberfelder', 'gute_nachricht', 'luther2017']
+      );
+      expect(eintrag.uebersetzungen.luther2017).toBe('Sei getrost und unverzagt.');
+    });
+
+    it('GET /konfsprueche als Admin gibt 403', async () => {
+      const res = await request(app)
+        .get('/api/konfi/konfsprueche')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('PATCH /profile Listen-Wahl setzt Spruch; GET /profile liefert source=liste', async () => {
+      const spruchId = await seedSpruch();
+      const patch = await request(app)
+        .patch('/api/konfi/profile')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ konfspruch_id: spruchId, translation: 'luther2017' });
+
+      expect(patch.status).toBe(200);
+      expect(patch.body.success).toBe(true);
+
+      const prof = await request(app)
+        .get('/api/konfi/profile')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(prof.status).toBe(200);
+      expect(prof.body.konfspruch).toBeDefined();
+      expect(prof.body.konfspruch.source).toBe('liste');
+      expect(prof.body.konfspruch.id).toBe(spruchId);
+      expect(prof.body.konfspruch.translation).toBe('luther2017');
+      expect(prof.body.konfspruch.text).toBe('Sei getrost und unverzagt.');
+    });
+
+    it('PATCH /profile Freitext setzt eigenen Spruch; GET /profile liefert source=freitext', async () => {
+      const patch = await request(app)
+        .patch('/api/konfi/profile')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ konfspruch_freitext: 'Mein Spruch', konfspruch_freitext_referenz: 'Joh 3,16' });
+
+      expect(patch.status).toBe(200);
+      expect(patch.body.success).toBe(true);
+
+      const prof = await request(app)
+        .get('/api/konfi/profile')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(prof.status).toBe(200);
+      expect(prof.body.konfspruch.source).toBe('freitext');
+      expect(prof.body.konfspruch.text).toBe('Mein Spruch');
+      expect(prof.body.konfspruch.reference).toBe('Joh 3,16');
+    });
+
+    it('PATCH /profile Freitext OHNE Referenz gibt 400 (Pflicht-Referenz)', async () => {
+      const res = await request(app)
+        .patch('/api/konfi/profile')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ konfspruch_freitext: 'Mein Spruch ohne Stelle' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBeDefined();
+    });
+
+    it('PATCH Listen-Wahl nach Freitext loescht den Freitext (Exklusivitaet)', async () => {
+      const spruchId = await seedSpruch();
+      // Erst Freitext setzen
+      await request(app)
+        .patch('/api/konfi/profile')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ konfspruch_freitext: 'Alter Freitext', konfspruch_freitext_referenz: 'Ps 23,1' });
+      // Dann Listen-Wahl setzen
+      const patch = await request(app)
+        .patch('/api/konfi/profile')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ konfspruch_id: spruchId, translation: 'elberfelder' });
+      expect(patch.status).toBe(200);
+
+      const prof = await request(app)
+        .get('/api/konfi/profile')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(prof.body.konfspruch.source).toBe('liste');
+      // Freitext-Felder sind nicht mehr aktiv
+      expect(prof.body.konfspruch_freitext).toBeNull();
+    });
+
+    it('PATCH /profile mit ungueltiger translation gibt 400', async () => {
+      const spruchId = await seedSpruch();
+      const res = await request(app)
+        .patch('/api/konfi/profile')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ konfspruch_id: spruchId, translation: 'klingonisch' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBeDefined();
+    });
+
+    it('PATCH /profile als Admin gibt 403 (RBAC)', async () => {
+      const res = await request(app)
+        .patch('/api/konfi/profile')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ konfspruch_freitext: 'X', konfspruch_freitext_referenz: 'Ps 1,1' });
+
+      expect(res.status).toBe(403);
+    });
+  });
+
+  // ================================================================
   // GET /api/konfi/points-history
   // ================================================================
   describe('GET /api/konfi/points-history', () => {

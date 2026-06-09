@@ -48,6 +48,8 @@ async function truncateAll(db) {
     event_unregistrations, event_jahrgang_assignments, event_categories,
     user_activities, activity_requests, activity_categories,
     konfi_activities, konfi_badges, user_badges, bonus_points,
+    konfspruch_uebersetzungen,
+    konfsprueche,
     konfi_profiles, user_jahrgang_assignments,
     material_file_tags, material_files, material_jahrgaenge, material_events, materials, material_tags,
     user_certificates, certificate_types,
