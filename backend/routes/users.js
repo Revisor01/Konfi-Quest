@@ -597,7 +597,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
 
     const query = `
       SELECT uja.jahrgang_id, uja.can_view, uja.can_edit, uja.assigned_at,
-             j.name as jahrgang_name, j.confirmation_date
+             j.name as jahrgang_name
       FROM user_jahrgang_assignments uja
       JOIN jahrgaenge j ON uja.jahrgang_id = j.id
       WHERE uja.user_id = $1 AND j.organization_id = $2

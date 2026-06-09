@@ -112,6 +112,50 @@ describe('Konfi Routes', () => {
       expect(rankingIds).not.toContain(USERS.konfi2.id);
       expect(rankingIds).toContain(USERS.konfi1.id);
     });
+
+    it('konfspruch_visible ist true wenn jahrgaenge.konfspruch_enabled=true', async () => {
+      await db.query('UPDATE jahrgaenge SET konfspruch_enabled = true WHERE id = $1', [JAHRGAENGE.jahrgang1.id]);
+
+      const res = await request(app)
+        .get('/api/konfi/dashboard')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.konfspruch_visible).toBe(true);
+    });
+
+    it('konfspruch_visible ist false wenn jahrgaenge.konfspruch_enabled=false', async () => {
+      await db.query('UPDATE jahrgaenge SET konfspruch_enabled = false WHERE id = $1', [JAHRGAENGE.jahrgang1.id]);
+
+      const res = await request(app)
+        .get('/api/konfi/dashboard')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.konfspruch_visible).toBe(false);
+    });
+
+    it('confirmation_date stammt aus dem is_konfirmation-Event des Jahrgangs', async () => {
+      // is_konfirmation-Event anlegen und jahrgang1 zuordnen.
+      await db.query(
+        `INSERT INTO events (id, name, event_date, organization_id, is_konfirmation, cancelled, location, mandatory, has_timeslots)
+         VALUES (9101, 'Konfirmation', '2026-05-10 10:00:00', $1, true, false, 'St. Martin', false, false)`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES (9101, $1)`,
+        [JAHRGAENGE.jahrgang1.id]
+      );
+
+      const res = await request(app)
+        .get('/api/konfi/dashboard')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.confirmation_date).not.toBeNull();
+      expect(new Date(res.body.confirmation_date).getUTCFullYear()).toBe(2026);
+      expect(res.body.konfi.confirmation_location).toBe('St. Martin');
+    });
   });
 
   // ================================================================
@@ -137,6 +181,38 @@ describe('Konfi Routes', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(403);
+    });
+
+    it('confirmation_date stammt aus gebuchtem is_konfirmation-Event (kein Jahrgang-Fallback)', async () => {
+      // is_konfirmation-Event anlegen und konfi1 bestaetigt buchen.
+      await db.query(
+        `INSERT INTO events (id, name, event_date, organization_id, is_konfirmation, cancelled, location, mandatory, has_timeslots, max_participants)
+         VALUES (9201, 'Konfirmation', '2026-05-10 10:00:00', $1, true, false, 'St. Martin', false, false, 100)`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO event_bookings (user_id, event_id, status, organization_id)
+         VALUES ($1, 9201, 'confirmed', $2)`,
+        [USERS.konfi1.id, ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .get('/api/konfi/profile')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.confirmation_date).not.toBeNull();
+      expect(new Date(res.body.confirmation_date).getUTCFullYear()).toBe(2026);
+      expect(res.body.confirmation_location).toBe('St. Martin');
+    });
+
+    it('confirmation_date ist null wenn kein is_konfirmation-Event gebucht', async () => {
+      const res = await request(app)
+        .get('/api/konfi/profile')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.confirmation_date == null).toBe(true);
     });
   });
 

@@ -184,11 +184,25 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
     // Endspurt: Vergleich mit Zielwerten aus jahrgaenge
     const { rows: [jahrgang] } = await client.query(
-      `SELECT target_gottesdienst, target_gemeinde, gottesdienst_enabled, gemeinde_enabled,
-              confirmation_date
+      `SELECT target_gottesdienst, target_gemeinde, gottesdienst_enabled, gemeinde_enabled
        FROM jahrgaenge WHERE id = $1`,
       [jahrgangId]
     );
+
+    // Konfirmationstermin je Jahrgang aus dem is_konfirmation-Event ableiten
+    // (frueheste nicht-cancelled Konfirmation, org-gescopt) -- ersetzt die alte
+    // Jahrgang-Stichtag-Spalte (D-04/D-05).
+    const { rows: [konfirmationRow] } = await client.query(
+      `SELECT MIN(e.event_date) AS termin
+         FROM events e
+         JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
+        WHERE eja.jahrgang_id = $1
+          AND e.is_konfirmation = true
+          AND e.organization_id = $2
+          AND (e.cancelled IS NULL OR e.cancelled = false)`,
+      [jahrgangId, orgId]
+    );
+    const konfirmationTermin = konfirmationRow && konfirmationRow.termin ? konfirmationRow.termin : null;
 
     let zielTotal = 0;
     let aktuellTotal = gottesdienst + gemeinde;
@@ -223,12 +237,13 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     // Deterministischer Formulierung-Seed
     const formulierungSeed = (userId * 31 + year * 17) % 97;
 
-    // Zeitraum
-    const zeitraumStart = jahrgang && jahrgang.confirmation_date
-      ? new Date(new Date(jahrgang.confirmation_date).getFullYear() - 1, 8, 1).toISOString().split('T')[0]
+    // Zeitraum: aus dem Konfirmationstermin (is_konfirmation-Event) ableiten.
+    // Kein Termin -> Kalenderjahr-Fallback (year-1-09-01 .. year-07-31).
+    const zeitraumStart = konfirmationTermin
+      ? new Date(new Date(konfirmationTermin).getFullYear() - 1, 8, 1).toISOString().split('T')[0]
       : `${year - 1}-09-01`;
-    const zeitraumEnde = jahrgang && jahrgang.confirmation_date
-      ? new Date(jahrgang.confirmation_date).toISOString().split('T')[0]
+    const zeitraumEnde = konfirmationTermin
+      ? new Date(konfirmationTermin).toISOString().split('T')[0]
       : `${year}-07-31`;
 
     return {
@@ -459,7 +474,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
         // Jahrgang validieren: gehoert zur Org des Admins
         const { rows: [jahrgang] } = await client.query(
-          `SELECT id, name, confirmation_date FROM jahrgaenge WHERE id = $1 AND organization_id = $2`,
+          `SELECT id, name FROM jahrgaenge WHERE id = $1 AND organization_id = $2`,
           [jahrgangId, req.user.organization_id]
         );
         if (!jahrgang) {
