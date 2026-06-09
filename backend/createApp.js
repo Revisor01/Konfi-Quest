@@ -246,9 +246,36 @@ function createApp(db, options = {}) {
   // ROUTE MOUNTING
   // ====================================================================
 
-  // Health-Endpoint
+  // Health-Endpoint — BEWUSST minimal (Liveness fuer Docker-Healthcheck +
+  // Traefik). NICHT mit DB-Checks aufblaehen: ein haengender DB-Check wuerde
+  // sonst den gesunden Container vom Healthcheck killen lassen.
   app.get('/api/health', (req, res) => {
-    res.json({ status: 'OK', message: 'Konfi Points API is running', deployCheck: '2026-06-09' });
+    res.json({ status: 'OK', message: 'Konfi Points API is running' });
+  });
+
+  // Status-Endpoint — Detail-Readiness fuer Status-Page / Uptime Kuma.
+  // Getrennt von /health, weil er echte Abhaengigkeiten prueft (DB) und damit
+  // langsamer/haengbar ist. Gibt 200 bei gesunder DB, sonst 503.
+  app.get('/api/status', async (req, res) => {
+    const startedAt = Date.now();
+    let dbOk = false;
+    try {
+      await db.query('SELECT 1');
+      dbOk = true;
+    } catch (e) {
+      dbOk = false;
+    }
+    const body = {
+      status: dbOk ? 'OK' : 'DEGRADED',
+      version: process.env.npm_package_version || require('./package.json').version,
+      commit: process.env.GIT_SHA || 'unknown',
+      uptimeSeconds: Math.round(process.uptime()),
+      checks: {
+        database: dbOk ? 'ok' : 'error',
+      },
+      responseTimeMs: Date.now() - startedAt,
+    };
+    res.status(dbOk ? 200 : 503).json(body);
   });
 
   // Auth Routes
