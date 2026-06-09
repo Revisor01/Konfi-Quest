@@ -474,8 +474,8 @@ class BackgroundService {
 
   /**
    * Startet den Auto-Loesch-Cron (taeglich 02:00 Uhr Europe/Berlin).
-   * Prueft je Jahrgang ab confirmation_date: Tag 60 -> Soft-Loeschung,
-   * Tag 120 -> kaskadierende Hard-Loeschung.
+   * Prueft je Jahrgang ab dem Stichtag (is_konfirmation-Event): Tag 60 ->
+   * Soft-Loeschung, Tag 120 -> kaskadierende Hard-Loeschung.
    */
   static startAutoDeletionCron(db) {
     if (this.autoDeletionCronTask) {
@@ -652,8 +652,14 @@ class BackgroundService {
   /**
    * Fuehrt die Auto-Loeschung durch (D-13/14/15).
    *
+   * Der Stichtag wird je Jahrgang aus dem is_konfirmation-Event abgeleitet
+   * (frueheste, nicht-cancelled Konfirmation, org-gescopt). Hat ein Jahrgang
+   * KEIN is_konfirmation-Event, gibt es keinen Stichtag -> keine Aufbewahrungs-
+   * frist -> KEINE Auto-Loeschung (sicherer Default, kein versehentlicher
+   * Datenverlust).
+   *
    * Pro Jahrgang (Fehler-Isolation, D-15):
-   *  - HARD-DELETE (>= 120 Tage seit confirmation_date): aktive Konfis dieses
+   *  - HARD-DELETE (>= 120 Tage seit Stichtag): aktive Konfis dieses
    *    Jahrgangs (nur r.name='konfi' -> Teamer-Ausnahme D-10) werden kaskadierend
    *    via deleteKonfiCascade geloescht (je Konfi eigene Transaktion).
    *  - SOFT-DELETE (>= 60 und < 120 Tage, deleted_at IS NULL): aktive Konfis
@@ -669,7 +675,7 @@ class BackgroundService {
     let jahrgaenge;
     try {
       const res = await db.query(
-        'SELECT id, organization_id, confirmation_date FROM jahrgaenge'
+        'SELECT id, organization_id FROM jahrgaenge'
       );
       jahrgaenge = res.rows;
     } catch (error) {
@@ -679,6 +685,26 @@ class BackgroundService {
 
     for (const jg of jahrgaenge) {
       try {
+        // Stichtag je Jahrgang aus dem is_konfirmation-Event ableiten
+        // (frueheste, nicht-cancelled Konfirmation, org-gescopt).
+        const { rows: stichtagRows } = await db.query(
+          `SELECT MIN(e.event_date) AS stichtag
+             FROM events e
+             JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
+            WHERE eja.jahrgang_id = $1
+              AND e.is_konfirmation = true
+              AND e.organization_id = $2
+              AND (e.cancelled IS NULL OR e.cancelled = false)`,
+          [jg.id, jg.organization_id]
+        );
+        const stichtag = stichtagRows[0] && stichtagRows[0].stichtag;
+
+        // Kein Konfirmationstermin -> keine Aufbewahrungsfrist -> keine Loeschung
+        // (sicherer Default, verhindert versehentlichen Datenverlust).
+        if (!stichtag) {
+          continue;
+        }
+
         // --- HARD-DELETE (>= 120 Tage) ---
         // Nur aktive Konfis (r.name='konfi'); promotete Teamer (role gewechselt,
         // teamer_since gesetzt) werden durch den Rollen-Filter NIE erfasst (D-10).
@@ -690,7 +716,7 @@ class BackgroundService {
             WHERE kp.jahrgang_id = $1
               AND r.name = 'konfi'
               AND (CURRENT_DATE - $2::date) >= 120`,
-          [jg.id, jg.confirmation_date]
+          [jg.id, stichtag]
         );
 
         for (const konfi of hardKandidaten) {
@@ -729,7 +755,7 @@ class BackgroundService {
               AND (CURRENT_DATE - $2::date) >= 60
               AND (CURRENT_DATE - $2::date) < 120
             RETURNING u.id`,
-          [jg.id, jg.confirmation_date]
+          [jg.id, stichtag]
         );
         totalSoft += softUpdated.length;
       } catch (jgErr) {
