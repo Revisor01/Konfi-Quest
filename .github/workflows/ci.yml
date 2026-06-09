@@ -155,14 +155,40 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Portainer Webhook (pull + redeploy)
+      - name: Deploy + verify (Webhook pull, dann /api/status == github.sha)
         run: |
-          # ?pullimage=true ist ZWINGEND: ohne den Param re-deployt der Stack nur
-          # mit dem lokal vorhandenen :latest und zieht das frisch gebaute Image
-          # NICHT -> der Server lief sonst dauerhaft auf altem Code.
-          code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${{ secrets.PORTAINER_WEBHOOK }}?pullimage=true")
-          echo "Webhook HTTP $code"
-          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
-            echo "::error::Portainer-Webhook fehlgeschlagen (HTTP $code)"
+          # Selbst-verifizierender Deploy: Webhook ausloesen (?pullimage=true ist
+          # ZWINGEND, sonst zieht der Stack das neue Image NICHT), dann pollen ob
+          # /api/status den erwarteten Commit meldet. Faengt das ghcr-Propagations-
+          # Race ab (Webhook feuert evtl. Sek. bevor :latest verfuegbar ist ->
+          # zieht altes Image). Bis zu 3 Webhook-Runden, sonst Job ROT.
+          SHA="${{ github.sha }}"
+          STATUS_URL="https://konfi-quest.de/api/status"
+          WEBHOOK="${{ secrets.PORTAINER_WEBHOOK }}?pullimage=true"
+
+          deployed=false
+          for round in 1 2 3; do
+            echo "== Deploy-Runde $round =="
+            code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$WEBHOOK")
+            echo "Webhook HTTP $code"
+            if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+              echo "::warning::Webhook HTTP $code in Runde $round"
+            fi
+            # bis zu ~2 Min auf den richtigen Commit warten
+            for i in $(seq 1 12); do
+              sleep 10
+              live=$(curl -s "$STATUS_URL" | python3 -c "import sys,json;print(json.load(sys.stdin).get('commit',''))" 2>/dev/null || echo "")
+              if [ "$live" = "$SHA" ]; then
+                echo "OK: live commit == $SHA"
+                deployed=true
+                break
+              fi
+              echo "  warte... live='${live:0:12}' erwartet='${SHA:0:12}'"
+            done
+            [ "$deployed" = true ] && break
+          done
+
+          if [ "$deployed" != true ]; then
+            echo "::error::Deploy nicht verifiziert — /api/status meldet nicht $SHA"
             exit 1
           fi
