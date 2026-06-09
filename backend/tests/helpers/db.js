@@ -45,7 +45,7 @@ async function truncateAll(db) {
     chat_poll_votes, chat_polls, chat_read_status,
     chat_messages, chat_participants, chat_rooms,
     event_points, event_bookings, event_timeslots,
-    event_jahrgang_assignments, event_categories,
+    event_unregistrations, event_jahrgang_assignments, event_categories,
     user_activities, activity_requests, activity_categories,
     konfi_activities, konfi_badges, user_badges, bonus_points,
     konfi_profiles, user_jahrgang_assignments,
