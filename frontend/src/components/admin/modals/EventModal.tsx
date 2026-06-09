@@ -460,28 +460,28 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
             setFormData({ ...formData, event_date: selectedDate, event_end_time: toIonDatetimeISO(endDate),
               registration_opens_at: toIonDatetimeISO(regOpens), registration_closes_at: toIonDatetimeISO(regCloses) });
           }}
-          presentation="date-time" preferWheel={true} minuteValues="0,15,30,45"
+          presentation="date-time" minuteValues="0,15,30,45"
           style={{ '--background': '#f8f9fa', '--border-radius': '12px', '--box-shadow': '0 4px 16px rgba(0,0,0,0.1)' }} />
       </IonModal>
       <IonModal keepContentsMounted={true}>
         <IonDatetime id="end-time-picker" value={formData.event_end_time || formData.event_date}
           max={datePickerMax}
           onIonChange={(e) => setFormData({ ...formData, event_end_time: e.detail.value as string })}
-          presentation="date-time" preferWheel={true} minuteValues="0,15,30,45"
+          presentation="date-time" minuteValues="0,15,30,45"
           style={{ '--background': '#f8f9fa', '--border-radius': '12px', '--box-shadow': '0 4px 16px rgba(0,0,0,0.1)' }} />
       </IonModal>
       <IonModal keepContentsMounted={true}>
         <IonDatetime id="registration-opens-picker" value={formData.registration_opens_at}
           max={datePickerMax}
           onIonChange={(e) => setFormData({ ...formData, registration_opens_at: e.detail.value as string })}
-          presentation="date-time" preferWheel={true} minuteValues="0,15,30,45"
+          presentation="date-time" minuteValues="0,15,30,45"
           style={{ '--background': '#f8f9fa', '--border-radius': '12px', '--box-shadow': '0 4px 16px rgba(0,0,0,0.1)' }} />
       </IonModal>
       <IonModal keepContentsMounted={true}>
         <IonDatetime id="registration-closes-picker" value={formData.registration_closes_at}
           max={datePickerMax}
           onIonChange={(e) => setFormData({ ...formData, registration_closes_at: e.detail.value as string })}
-          presentation="date-time" preferWheel={true} minuteValues="0,15,30,45"
+          presentation="date-time" minuteValues="0,15,30,45"
           style={{ '--background': '#f8f9fa', '--border-radius': '12px', '--box-shadow': '0 4px 16px rgba(0,0,0,0.1)' }} />
       </IonModal>
     </IonPage>
