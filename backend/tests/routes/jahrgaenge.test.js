@@ -7,11 +7,12 @@ const { generateToken } = require('../helpers/auth');
 // emailService mocken: in der Testumgebung gibt es keinen SMTP-Server. Die
 // matrix-email-Route ruft sendKonfiMatrixEmail auf -> hier durch No-Op ersetzen,
 // damit der Endpoint deterministisch testbar bleibt (kein realer Versand).
-const emailService = require('../../services/emailService');
+// vi.mock wird gehoisted; die Mock-Referenz holen wir NACH dem Mock per require,
+// damit Test-Code und Route dieselbe (gemockte) Instanz sehen (CJS-Interop).
 vi.mock('../../services/emailService', () => ({
-  default: {},
   sendKonfiMatrixEmail: vi.fn().mockResolvedValue({ success: true, messageId: 'test' }),
 }));
+const emailService = require('../../services/emailService');
 
 describe('Jahrgaenge Routes', () => {
   let app;
@@ -398,14 +399,17 @@ describe('Jahrgaenge Routes', () => {
     let spruchId;
 
     beforeEach(async () => {
-      // Einen global geseedeten Konfispruch + Uebersetzungstext bereitstellen
+      // truncateAll leert konfsprueche vor jedem Test (Migration-Seed weg) ->
+      // den globalen Spruch + Uebersetzung hier frisch anlegen (analog konfi.test.js).
       const { rows: [spruch] } = await db.query(
-        `SELECT id FROM konfsprueche WHERE organization_id IS NULL ORDER BY id ASC LIMIT 1`
+        `INSERT INTO konfsprueche (reference, book, chapter, verse, organization_id, sort_order)
+         VALUES ('Psalm 23,1', 'Psalm', 23, 1, NULL, 1)
+         RETURNING id`
       );
       spruchId = spruch.id;
       await db.query(
-        `UPDATE konfspruch_uebersetzungen SET text = 'Der Herr ist mein Hirte.'
-         WHERE spruch_id = $1 AND translation = 'luther2017'`,
+        `INSERT INTO konfspruch_uebersetzungen (spruch_id, translation, text)
+         VALUES ($1, 'luther2017', 'Der Herr ist mein Hirte.')`,
         [spruchId]
       );
       // konfi1: Listen-Wahl (Spruch aus der Liste), konfi2: kein Spruch
