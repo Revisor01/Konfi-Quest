@@ -67,11 +67,11 @@ const EventsView: React.FC<EventsViewProps> = ({
   };
 
   const konfirmationEvents = useMemo(() =>
-    events.filter(e => e.category_names?.toLowerCase().includes('konfirmation')),
+    events.filter(e => e.is_konfirmation),
   [events]);
 
   const nonKonfirmationEvents = useMemo(() =>
-    events.filter(e => !e.category_names?.toLowerCase().includes('konfirmation')),
+    events.filter(e => !e.is_konfirmation),
   [events]);
 
   const eventCounts = useMemo(() => ({
@@ -124,7 +124,7 @@ const EventsView: React.FC<EventsViewProps> = ({
     // Warteliste: booking_status kann 'waitlist' oder 'pending' sein (Backend sendet beides)
     const isOnWaitlist = event.booking_status === 'waitlist' || event.booking_status === 'pending';
     const isCancelled = event.cancelled;
-    const isKonfirmationEvent = event.category_names?.toLowerCase().includes('konfirmation');
+    const isKonfirmationEvent = event.is_konfirmation;
     // Ausstehend: vergangen, angemeldet (confirmed), aber noch keine attendance
     const isAusstehend = isPastEvent && event.is_registered && !isOnWaitlist && !attendanceStatus;
 
@@ -139,7 +139,8 @@ const EventsView: React.FC<EventsViewProps> = ({
       danger: 'var(--app-color-danger)',     // rot
       events: 'var(--app-color-events)',     // rot (Pflicht-Abgemeldet)
       success: 'var(--app-color-success)',   // gruen (Anwesend/Offen/Verbucht)
-      info: 'var(--app-color-info)',         // blau (Pflicht angemeldet, Konfirmation, Angemeldet)
+      info: 'var(--app-color-info)',         // blau (Pflicht angemeldet, Angemeldet)
+      konfis: 'var(--app-color-konfis)',     // lila (Konfirmation)
       past: '#6c757d',                       // grau (vergangen) — kein Token
     };
     let statusColor = C.bonus;
@@ -149,7 +150,7 @@ const EventsView: React.FC<EventsViewProps> = ({
     else if (isMandatory && isPastEvent && attendanceStatus === 'absent') statusColor = C.danger;
     else if (isMandatory && isPastEvent) statusColor = C.bonus;
     else if (isMandatory) statusColor = C.info;
-    else if (isKonfirmationEvent && !isPastEvent) statusColor = C.info; // Konfirmation = blau (analog Admin-Detail)
+    else if (isKonfirmationEvent && !isPastEvent) statusColor = C.konfis; // Konfirmation = lila (analog Admin-Detail)
     else if (isParticipated && attendanceStatus === 'present') statusColor = C.success;
     else if (isParticipated && attendanceStatus === 'absent') statusColor = C.danger;
     else if (isAusstehend) statusColor = C.bonus;

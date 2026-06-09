@@ -57,6 +57,7 @@ interface Event {
   timeslots?: Timeslot[];
   has_timeslots?: boolean;
   mandatory?: boolean;
+  is_konfirmation?: boolean;
   bring_items?: string;
   teamer_needed?: boolean;
   teamer_only?: boolean;
@@ -230,7 +231,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     // Aenderung der Domain-Farbe im CSS wirkt hier automatisch.
     const events = { primary: 'var(--app-color-events)', secondary: 'var(--app-color-events)' };
     const danger = { primary: 'var(--app-color-danger)', secondary: 'var(--app-color-danger)' };
-    const konfirm = { primary: 'var(--app-color-info)', secondary: 'var(--app-color-info)' }; // Konfirmation = blau
+    const konfirm = { primary: 'var(--app-color-konfis)', secondary: 'var(--app-color-konfis)' }; // Konfirmation = lila
     const info = { primary: 'var(--app-color-info)', secondary: 'var(--app-color-info)' };
     const past = { primary: '#6c757d', secondary: '#6c757d' };
     const waitlist = { primary: 'var(--app-color-bonus)', secondary: 'var(--app-color-bonus)' };
@@ -239,7 +240,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
     if (!eventData) return events;
     const isPastEvent = new Date(eventData.event_date) < new Date();
-    const isKonfirmationEvent = eventData.categories?.some(cat => cat.name.toLowerCase().includes('konfirmation'));
+    const isKonfirmationEvent = eventData.is_konfirmation;
     const isCancelledStatus = eventData.registration_status === 'cancelled' as string;
     const hasUnprocessedBookings = isPastEvent && eventData.registered_count > 0 &&
       participants.some(p => p.status === 'confirmed' && !p.attendance_status);
@@ -260,7 +261,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const getStatusText = () => {
     if (!eventData) return 'Event';
     const isPastEvent = new Date(eventData.event_date) < new Date();
-    const isKonfirmationEvent = eventData.categories?.some(cat => cat.name.toLowerCase().includes('konfirmation'));
+    const isKonfirmationEvent = eventData.is_konfirmation;
     const isCancelledStatus = eventData.registration_status === 'cancelled' as string;
     const hasUnprocessedBookings = isPastEvent && eventData.registered_count > 0 &&
       participants.some(p => p.status === 'confirmed' && !p.attendance_status);
