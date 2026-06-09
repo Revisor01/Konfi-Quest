@@ -3,7 +3,7 @@ import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton,
   IonItem, IonLabel, IonInput, IonDatetime, IonIcon, IonSpinner,
   IonList, IonListHeader, IonToggle, IonCard, IonCardContent, IonModal,
-  IonDatetimeButton, useIonAlert, IonRange
+  IonDatetimeButton, IonRange
 } from '@ionic/react';
 import { checkmarkOutline, closeOutline, add, trash, time, calendar } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -25,31 +25,33 @@ interface EventModalProps {
   onClose: () => void;
   onSuccess: () => void;
   dismiss?: () => void;
+  // Meldet den "ungespeicherte Aenderungen"-Stand nach aussen, damit die
+  // praesentierende Seite ueber canDismiss auch Swipe/Backdrop-Schliessen abfangen kann.
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
-const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dismiss }) => {
+const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dismiss, onDirtyChange }) => {
   const { setSuccess, setError, isOnline } = useApp();
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
   const [isDirty, setIsDirty] = useState(false);
-  const [presentAlert] = useIonAlert();
 
   const doClose = () => { if (dismiss) dismiss(); else onClose(); };
 
-  const handleClose = () => {
-    if (isDirty) {
-      presentAlert({
-        header: 'Ungespeicherte Änderungen',
-        message: 'Möchtest du die Änderungen verwerfen?',
-        buttons: [
-          { text: 'Abbrechen', role: 'cancel' },
-          { text: 'Verwerfen', role: 'destructive', handler: () => doClose() }
-        ]
-      });
-    } else { doClose(); }
-  };
+  // Datumspicker-Obergrenze: 2 Jahre in der Zukunft, damit Termine weit im
+  // Voraus (z.B. Konfis 12 Monate vorher eintragen) waehlbar sind. Ohne max
+  // zeigt das IonDatetime-Wheel nur einen schmalen Bereich des laufenden Jahres.
+  const datePickerMax = `${new Date().getFullYear() + 2}-12-31T23:59:59`;
+
+  // Schliessen anstossen. Die "ungespeicherte Aenderungen"-Nachfrage laeuft
+  // zentral ueber canDismiss der praesentierenden Seite (faengt X-Button, Swipe
+  // UND Backdrop einheitlich ab) — daher hier keine zweite Abfrage.
+  const handleClose = () => { doClose(); };
+
+  // isDirty-Stand nach aussen melden (fuer canDismiss der praesentierenden Seite).
+  useEffect(() => { onDirtyChange?.(isDirty); }, [isDirty, onDirtyChange]);
 
   const [formData, setFormData] = useState<EventFormData>({
     name: '', description: '', event_date: new Date().toISOString(), event_end_time: '',
@@ -444,6 +446,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
       {/* DateTime Modals */}
       <IonModal keepContentsMounted={true}>
         <IonDatetime id="event-date-picker" value={formData.event_date}
+          max={datePickerMax}
           onIonChange={(e) => {
             const selectedDate = e.detail.value as string;
             const eventDate = new Date(selectedDate);
@@ -462,18 +465,21 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
       </IonModal>
       <IonModal keepContentsMounted={true}>
         <IonDatetime id="end-time-picker" value={formData.event_end_time || formData.event_date}
+          max={datePickerMax}
           onIonChange={(e) => setFormData({ ...formData, event_end_time: e.detail.value as string })}
           presentation="date-time" preferWheel={true} minuteValues="0,15,30,45"
           style={{ '--background': '#f8f9fa', '--border-radius': '12px', '--box-shadow': '0 4px 16px rgba(0,0,0,0.1)' }} />
       </IonModal>
       <IonModal keepContentsMounted={true}>
         <IonDatetime id="registration-opens-picker" value={formData.registration_opens_at}
+          max={datePickerMax}
           onIonChange={(e) => setFormData({ ...formData, registration_opens_at: e.detail.value as string })}
           presentation="date-time" preferWheel={true} minuteValues="0,15,30,45"
           style={{ '--background': '#f8f9fa', '--border-radius': '12px', '--box-shadow': '0 4px 16px rgba(0,0,0,0.1)' }} />
       </IonModal>
       <IonModal keepContentsMounted={true}>
         <IonDatetime id="registration-closes-picker" value={formData.registration_closes_at}
+          max={datePickerMax}
           onIonChange={(e) => setFormData({ ...formData, registration_closes_at: e.detail.value as string })}
           presentation="date-time" preferWheel={true} minuteValues="0,15,30,45"
           style={{ '--background': '#f8f9fa', '--border-radius': '12px', '--box-shadow': '0 4px 16px rgba(0,0,0,0.1)' }} />

@@ -111,8 +111,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   });
 
   // Event Modal mit useIonModal Hook
+  // Haelt den "ungespeicherte Aenderungen"-Stand des EventModals fuer canDismiss.
+  const eventModalDirtyRef = useRef(false);
+
   const [presentEventModalHook, dismissEventModalHook] = useIonModal(EventModal, {
     event: eventData,
+    onDirtyChange: (dirty: boolean) => { eventModalDirtyRef.current = dirty; },
     onClose: () => dismissEventModalHook(),
     onSuccess: () => {
       dismissEventModalHook();
@@ -120,6 +124,22 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     },
     dismiss: () => dismissEventModalHook()
   });
+
+  // Faengt JEDEN Schliess-Weg ab (Swipe, Backdrop): bei ungespeicherten
+  // Aenderungen erst nachfragen, sonst direkt schliessen lassen.
+  const eventModalCanDismiss = async (): Promise<boolean> => {
+    if (!eventModalDirtyRef.current) return true;
+    return new Promise<boolean>((resolve) => {
+      presentAlert({
+        header: 'Ungespeicherte Änderungen',
+        message: 'Möchtest du die Änderungen verwerfen?',
+        buttons: [
+          { text: 'Abbrechen', role: 'cancel', handler: () => resolve(false) },
+          { text: 'Verwerfen', role: 'destructive', handler: () => resolve(true) }
+        ]
+      });
+    });
+  };
 
   // QR Display Modal
   const [presentQRDisplayModal, dismissQRDisplayModal] = useIonModal(QRDisplayModal, {
@@ -544,7 +564,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             <IonButton onClick={() => presentQRDisplayModal({ presentingElement: presentingElement || undefined })}>
               <IonIcon icon={qrCodeOutline} />
             </IonButton>
-            <IonButton onClick={() => presentEventModalHook({ presentingElement: presentingElement || undefined })}>
+            <IonButton onClick={() => presentEventModalHook({ presentingElement: presentingElement || undefined, canDismiss: eventModalCanDismiss, backdropDismiss: false })}>
               <IonIcon icon={createOutline} />
             </IonButton>
           </IonButtons>

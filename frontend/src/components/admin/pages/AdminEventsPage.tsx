@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -68,8 +68,13 @@ const AdminEventsPage: React.FC = () => {
   const [editEvent, setEditEvent] = useState<Event | null>(null);
 
   // Modal mit useIonModal Hook - löst Tab-Navigation Problem
+  // Haelt den "ungespeicherte Aenderungen"-Stand des EventModals, damit canDismiss
+  // auch Swipe-/Backdrop-Schliessen abfangen und nachfragen kann (nicht nur der X-Button).
+  const eventModalDirtyRef = useRef(false);
+
   const [presentEventModalHook, dismissEventModalHook] = useIonModal(EventModal, {
     event: editEvent,
+    onDirtyChange: (dirty: boolean) => { eventModalDirtyRef.current = dirty; },
     onClose: () => {
       dismissEventModalHook();
       setEditEvent(null);
@@ -81,6 +86,22 @@ const AdminEventsPage: React.FC = () => {
       refreshCancelled();
     }
   });
+
+  // Faengt JEDEN Schliess-Weg ab (Swipe, Backdrop, programmatisch): bei
+  // ungespeicherten Aenderungen erst nachfragen, sonst direkt schliessen lassen.
+  const eventModalCanDismiss = async (): Promise<boolean> => {
+    if (!eventModalDirtyRef.current) return true;
+    return new Promise<boolean>((resolve) => {
+      presentAlert({
+        header: 'Ungespeicherte Änderungen',
+        message: 'Möchtest du die Änderungen verwerfen?',
+        buttons: [
+          { text: 'Abbrechen', role: 'cancel', handler: () => resolve(false) },
+          { text: 'Verwerfen', role: 'destructive', handler: () => resolve(true) }
+        ]
+      });
+    });
+  };
 
   // Memoized refresh function for live updates
   const refreshAllEvents = useCallback(() => {
@@ -257,7 +278,9 @@ const AdminEventsPage: React.FC = () => {
     
     setEditEvent(eventCopy as Event);
     presentEventModalHook({
-      presentingElement: presentingElement
+      presentingElement: presentingElement,
+      canDismiss: eventModalCanDismiss,
+      backdropDismiss: false
     });
   };
 
@@ -316,7 +339,9 @@ const AdminEventsPage: React.FC = () => {
       setEditEvent(null);
     }
     presentEventModalHook({
-      presentingElement: presentingElement
+      presentingElement: presentingElement,
+      canDismiss: eventModalCanDismiss,
+      backdropDismiss: false
     });
   };
 
