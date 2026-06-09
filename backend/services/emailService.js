@@ -291,7 +291,10 @@ const formatSpruchText = (konfspruch) => {
 const sendKonfiMatrixEmail = async (email, adminName, jahrgangName, type, rows = []) => {
   const isSprueche = type === 'sprueche';
   const titel = isSprueche ? 'Konfisprüche' : 'Anwesenheit';
-  const subject = `${titel} - Jahrgang ${jahrgangName} - Konfi Quest`;
+  // CR/LF aus dem Subject entfernen (Header-Injection-Schutz): jahrgangName ist
+  // admin-kontrolliert, darf den SMTP-Header aber nicht aufbrechen koennen.
+  const safeJahrgangName = String(jahrgangName).replace(/[\r\n]+/g, ' ').trim();
+  const subject = `${titel} - Jahrgang ${safeJahrgangName} - Konfi Quest`;
 
   let textBody;
   let tableHtml;

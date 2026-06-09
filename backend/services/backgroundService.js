@@ -714,9 +714,11 @@ class BackgroundService {
              JOIN konfi_profiles kp ON kp.user_id = u.id
              JOIN roles r ON u.role_id = r.id
             WHERE kp.jahrgang_id = $1
+              AND u.organization_id = $3
               AND r.name = 'konfi'
+              AND u.deleted_at IS NOT NULL
               AND (CURRENT_DATE - $2::date) >= 120`,
-          [jg.id, stichtag]
+          [jg.id, stichtag, jg.organization_id]
         );
 
         for (const konfi of hardKandidaten) {
@@ -750,12 +752,13 @@ class BackgroundService {
             WHERE u.id = kp.user_id
               AND u.role_id = r.id
               AND kp.jahrgang_id = $1
+              AND u.organization_id = $3
               AND r.name = 'konfi'
               AND u.deleted_at IS NULL
               AND (CURRENT_DATE - $2::date) >= 60
               AND (CURRENT_DATE - $2::date) < 120
             RETURNING u.id`,
-          [jg.id, stichtag]
+          [jg.id, stichtag, jg.organization_id]
         );
         totalSoft += softUpdated.length;
       } catch (jgErr) {
