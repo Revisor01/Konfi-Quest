@@ -41,7 +41,8 @@ import {
   cloudOfflineOutline,
   chevronDown,
   chevronUp,
-  bookOutline
+  bookOutline,
+  locationOutline
 } from 'ionicons/icons';
 import ActivityRings from './ActivityRings';
 
@@ -79,6 +80,9 @@ export interface Konfi {
     text?: string;
     translation?: string;
   } | null;
+  // Konfirmationstermin/-ort aus dem is_konfirmation-Event des Jahrgangs (read-only).
+  confirmation_date?: string | null;
+  confirmation_location?: string | null;
 }
 
 export interface Activity {
@@ -404,18 +408,44 @@ export const BonusSection = React.memo<BonusSectionProps>(({
 
 interface KonfispruchSectionProps {
   konfspruch: Konfi['konfspruch'];
+  confirmationDate?: string | null;
+  confirmationLocation?: string | null;
 }
 
-export const KonfispruchSection = React.memo<KonfispruchSectionProps>(({ konfspruch }) => (
+export const KonfispruchSection = React.memo<KonfispruchSectionProps>(({ konfspruch, confirmationDate, confirmationLocation }) => (
   <IonList className="app-section-inset" inset={true}>
     <IonListHeader>
       <div className="app-section-icon app-section-icon--activities">
         <IonIcon icon={bookOutline} />
       </div>
-      <IonLabel>Konfispruch</IonLabel>
+      <IonLabel>Konfirmation</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
       <IonCardContent style={{ padding: '16px' }}>
+        {/* Konfirmationstermin (read-only) aus dem is_konfirmation-Event des Jahrgangs */}
+        <div style={{ marginBottom: '14px' }}>
+          {confirmationDate ? (
+            <div className="app-dashboard-meta" style={{ flexWrap: 'wrap', gap: '6px 14px' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <IonIcon icon={calendarOutline} className="app-icon-color--events" />
+                {new Date(confirmationDate).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+              </span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <IonIcon icon={timeOutline} className="app-icon-color--events" />
+                {new Date(confirmationDate).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
+              </span>
+              {confirmationLocation && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <IonIcon icon={locationOutline} className="app-icon-color--events" />
+                  {confirmationLocation}
+                </span>
+              )}
+            </div>
+          ) : (
+            <p className="app-text-sub" style={{ margin: 0 }}>Noch kein Konfirmationstermin festgelegt</p>
+          )}
+        </div>
+        <div className="app-text-sub" style={{ fontWeight: 600, marginBottom: '8px' }}>Konfispruch</div>
         {!konfspruch ? (
           <div className="app-empty-state">
             <p className="app-empty-state__text">Noch kein Konfispruch gewählt</p>

@@ -449,11 +449,23 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                        j.name as jahrgang_name, j.id as jahrgang_id,
                        j.gottesdienst_enabled, j.gemeinde_enabled,
                        j.target_gottesdienst, j.target_gemeinde,
+                       ce.event_date as confirmation_date, ce.location as confirmation_location,
                        r.name as role_name
                 FROM users u
                 JOIN roles r ON u.role_id = r.id
                 LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
                 LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
+                LEFT JOIN (
+                  -- Konfirmationstermin/-ort je Jahrgang aus dem is_konfirmation-Event
+                  -- (frueheste nicht-cancelled Konfirmation, org-gescopt) - analog konfi.js GET /dashboard.
+                  SELECT DISTINCT ON (eja.jahrgang_id) eja.jahrgang_id, e.location, e.event_date
+                  FROM events e
+                  JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
+                  WHERE e.is_konfirmation = true
+                    AND e.organization_id = $2
+                    AND (e.cancelled IS NULL OR e.cancelled = false)
+                  ORDER BY eja.jahrgang_id, e.event_date ASC
+                ) ce ON ce.jahrgang_id = kp.jahrgang_id
                 WHERE u.id = $1 AND r.name IN ('konfi', 'teamer') AND u.organization_id = $2 AND u.deleted_at IS NULL
             `;
             const { rows: [konfi] } = await db.query(konfiQuery, [konfiId, req.user.organization_id]);

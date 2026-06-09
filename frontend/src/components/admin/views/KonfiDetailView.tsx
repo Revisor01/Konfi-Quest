@@ -542,7 +542,11 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
 
         {/* Konfispruch (read-only) - nur für Konfis */}
         {!isTeamer && currentKonfi?.role_name === 'konfi' && (
-          <KonfispruchSection konfspruch={currentKonfi.konfspruch} />
+          <KonfispruchSection
+            konfspruch={currentKonfi.konfspruch}
+            confirmationDate={currentKonfi.confirmation_date}
+            confirmationLocation={currentKonfi.confirmation_location}
+          />
         )}
 
         {/* Teamer Events */}
