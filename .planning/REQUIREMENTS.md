@@ -24,12 +24,12 @@ Strikt analog zum bestehenden `mandatory`/Pflicht-Flag. Ersetzt die bisherige fr
 
 Konfis waehlen oder hinterlegen ihren Konfirmationsspruch. Sichtbarkeit pro Jahrgang steuerbar.
 
-- [ ] **SPRUCH-01**: Es gibt eine kuratierte Spruch-Liste in der DB (Vers-Referenz + Text je Uebersetzung), leicht per DB/Seed erweiterbar, ohne externe API.
-- [ ] **SPRUCH-02**: Pro Vers sind 4 Uebersetzungen hinterlegt: Luther 2017, Bibel in gerechter Sprache, Gute Nachricht, Elberfelder.
-- [ ] **SPRUCH-03**: konfi_profiles (oder verknuepfte Tabelle) speichert den gewaehlten Spruch eines Konfis (Referenz auf Liste ODER frei eingetragener Text + gewaehlte Uebersetzung).
-- [ ] **SPRUCH-04**: Konfi kann einen Spruch aus der Liste waehlen ODER einen eigenen frei eintragen.
-- [ ] **SPRUCH-05**: Im Auswahl-Modal wechselt eine Tableiste zwischen den 4 Uebersetzungen.
-- [ ] **SPRUCH-06**: Dashboard-Card "Dein Konfispruch" — Klick oeffnet das Auswahl-Modal (useIonModal).
+- [x] **SPRUCH-01**: Es gibt eine kuratierte Spruch-Liste in der DB (Vers-Referenz + Text je Uebersetzung), leicht per DB/Seed erweiterbar, ohne externe API.
+- [x] **SPRUCH-02**: Pro Vers sind 4 Uebersetzungen hinterlegt: Luther 2017, Bibel in gerechter Sprache, Gute Nachricht, Elberfelder.
+- [x] **SPRUCH-03**: konfi_profiles (oder verknuepfte Tabelle) speichert den gewaehlten Spruch eines Konfis (Referenz auf Liste ODER frei eingetragener Text + gewaehlte Uebersetzung).
+- [x] **SPRUCH-04**: Konfi kann einen Spruch aus der Liste waehlen ODER einen eigenen frei eintragen.
+- [x] **SPRUCH-05**: Im Auswahl-Modal wechselt eine Tableiste zwischen den 4 Uebersetzungen.
+- [x] **SPRUCH-06**: Dashboard-Card "Dein Konfispruch" — Klick oeffnet das Auswahl-Modal (useIonModal).
 - [ ] **SPRUCH-07**: Dashboard-Sichtbarkeit ist pro Jahrgang steuerbar (neu einzufuehren, analog Punktelogik). Solange ein Admin die Spruch-Auswahl fuer einen Jahrgang verborgen haelt, koennen dessen Konfis nicht waehlen und sehen die Card nicht (bzw. nur als deaktiviert).
 - [ ] **SPRUCH-08**: Admin sieht den gewaehlten Spruch eines Konfis in den Konfi-Details.
 - [ ] **SPRUCH-09**: In der Anwesenheitsmatrix kann der Admin zwischen Ansicht "Anwesenheit" und "Spruch" umschalten.
