@@ -4,14 +4,10 @@ const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, JAHRGAENGE, EVENTS } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 
-// emailService mocken: in der Testumgebung gibt es keinen SMTP-Server. Die
-// matrix-email-Route ruft sendKonfiMatrixEmail auf -> hier durch No-Op ersetzen,
-// damit der Endpoint deterministisch testbar bleibt (kein realer Versand).
-// vi.mock wird gehoisted; die Mock-Referenz holen wir NACH dem Mock per require,
-// damit Test-Code und Route dieselbe (gemockte) Instanz sehen (CJS-Interop).
-vi.mock('../../services/emailService', () => ({
-  sendKonfiMatrixEmail: vi.fn().mockResolvedValue({ success: true, messageId: 'test' }),
-}));
+// emailService: in der Testumgebung gibt es keinen SMTP-Server. Die matrix-email-
+// Route ruft emailService.sendKonfiMatrixEmail auf. Statt vi.mock (greift bei diesem
+// CJS-Setup nicht zuverlaessig) wird die Methode pro Test per vi.spyOn auf der real
+// geladenen Modul-Instanz ersetzt -> Route und Test teilen dieselbe Instanz.
 const emailService = require('../../services/emailService');
 
 describe('Jahrgaenge Routes', () => {
@@ -482,8 +478,16 @@ describe('Jahrgaenge Routes', () => {
   // POST /api/admin/jahrgaenge/:id/matrix-email
   // ================================================================
   describe('POST /api/admin/jahrgaenge/:id/matrix-email', () => {
+    let sendMailSpy;
+
+    afterEach(() => {
+      if (sendMailSpy) sendMailSpy.mockRestore();
+    });
+
     beforeEach(async () => {
-      emailService.sendKonfiMatrixEmail.mockClear();
+      // No-Op-Spy auf der real geladenen emailService-Instanz (CJS-sicher).
+      sendMailSpy = vi.spyOn(emailService, 'sendKonfiMatrixEmail')
+        .mockResolvedValue({ success: true, messageId: 'test' });
       // Admin1 eine E-Mail-Adresse geben (Seed setzt keine)
       await db.query(`UPDATE users SET email = 'admin1@example.com' WHERE id = $1`, [USERS.admin1.id]);
       // Konfirmations-Event fuer Jahrgang1 anlegen + zuordnen (is_konfirmation)
