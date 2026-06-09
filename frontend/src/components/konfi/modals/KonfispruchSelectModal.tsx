@@ -80,6 +80,7 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
     current?.source === 'freitext' ? 'freitext' : 'liste'
   );
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [sprueche, setSprueche] = useState<Konfspruch[]>([]);
   const [translation, setTranslation] = useState<Translation>(
     isTranslation(current?.translation) ? current!.translation as Translation : 'luther2017'
@@ -98,14 +99,31 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
     const loadSprueche = async () => {
       try {
         const response = await api.get('/konfi/konfsprueche');
-        setSprueche(Array.isArray(response.data) ? response.data : []);
+        const liste = Array.isArray(response.data) ? response.data : [];
+        setSprueche(liste);
+        setLoadError(false);
+        // WR-05: Falls die zuvor gewaehlte ID nicht mehr in der Liste ist
+        // (deaktiviert/entfernt/Org gewechselt), Auswahl zuruecksetzen.
+        setSelectedSpruchId((prev) =>
+          prev != null && liste.some((s: Konfspruch) => s.id === prev) ? prev : null
+        );
       } catch (err) {
+        // WR-04: Ladefehler sichtbar machen, damit ein Netzwerkfehler nicht
+        // wie "keine Sprueche vorhanden" aussieht.
         console.error('Fehler beim Laden der Konfsprueche:', err);
+        setLoadError(true);
+        presentToast({
+          message: 'Die Spruchliste konnte nicht geladen werden. Bitte versuche es später erneut.',
+          duration: 3000,
+          color: 'danger',
+          position: 'top'
+        });
       } finally {
         setLoading(false);
       }
     };
     loadSprueche();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const showError = (message: string) => {
@@ -115,7 +133,7 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
   const handleSave = async () => {
     if (mode === 'liste') {
       if (!selectedSpruchId) {
-        showError('Bitte waehle einen Spruch aus der Liste aus');
+        showError('Bitte wähle einen Spruch aus der Liste aus');
         return;
       }
       await guard(async () => {
@@ -127,7 +145,13 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
           presentToast({ message: 'Dein Konfispruch wurde gespeichert', duration: 2000, color: 'success', position: 'top' });
           onSuccess();
         } catch (err: any) {
-          showError(err.response?.data?.error || 'Der Konfispruch konnte nicht gespeichert werden');
+          // WR-05: 404 = der gewaehlte Spruch ist nicht mehr verfuegbar -> klare Meldung
+          if (err.response?.status === 404) {
+            setSelectedSpruchId(null);
+            showError('Der gewählte Spruch ist nicht mehr verfügbar. Bitte wähle einen anderen.');
+          } else {
+            showError(err.response?.data?.error || 'Der Konfispruch konnte nicht gespeichert werden');
+          }
         }
       });
     } else {
@@ -221,7 +245,7 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
                 <div className="app-section-icon app-section-icon--purple">
                   <IonIcon icon={bookOutline} />
                 </div>
-                <IonLabel>Spruch waehlen</IonLabel>
+                <IonLabel>Spruch wählen</IonLabel>
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent style={{ padding: loading || sprueche.length === 0 ? '16px' : '8px' }}>
@@ -229,9 +253,15 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
                     <div style={{ display: 'flex', justifyContent: 'center', padding: '24px' }}>
                       <IonSpinner name="crescent" />
                     </div>
+                  ) : loadError ? (
+                    <div className="app-info-box app-info-box--neutral" style={{ textAlign: 'center' }}>
+                      <IonText color="danger">
+                        Die Spruchliste konnte nicht geladen werden. Bitte versuche es später erneut.
+                      </IonText>
+                    </div>
                   ) : sprueche.length === 0 ? (
                     <div className="app-info-box app-info-box--neutral" style={{ textAlign: 'center' }}>
-                      Es sind noch keine Sprueche hinterlegt
+                      Es sind noch keine Sprüche hinterlegt
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -252,7 +282,7 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
                                   <div className="app-description-text" style={{ marginTop: '4px' }}>
                                     {text
                                       ? text
-                                      : <IonText color="medium"><em>Text wird noch ergaenzt</em></IonText>}
+                                      : <IonText color="medium"><em>Text wird noch ergänzt</em></IonText>}
                                   </div>
                                 </div>
                                 {isSelected && (
