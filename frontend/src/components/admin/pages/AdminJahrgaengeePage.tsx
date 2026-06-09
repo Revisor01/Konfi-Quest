@@ -23,9 +23,6 @@ import {
   IonItemOption,
   IonInput,
   IonSpinner,
-  IonDatetime,
-  IonDatetimeButton,
-  IonModal,
   IonToggle,
   IonRange
 } from '@ionic/react';
@@ -35,10 +32,14 @@ import {
   checkmarkOutline,
   closeOutline,
   arrowBack,
-  calendar,
   trash,
   schoolOutline,
-  settingsOutline
+  settingsOutline,
+  sparkles,
+  checkmarkCircle,
+  closeCircle,
+  trophy,
+  flag
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -56,12 +57,13 @@ import { safeUUID } from '../../../utils/uuid';
 interface Jahrgang {
   id: number;
   name: string;
-  confirmation_date?: string;
   created_at: string;
   gottesdienst_enabled?: boolean;
   gemeinde_enabled?: boolean;
   target_gottesdienst?: number;
   target_gemeinde?: number;
+  konfspruch_enabled?: boolean;
+  wrapped_released_at?: string | null;
   konfi_count?: number;
   gottesdienst_points_total?: number;
   gemeinde_points_total?: number;
@@ -71,6 +73,7 @@ interface JahrgangModalProps {
   jahrgang?: Jahrgang | null;
   onClose: () => void;
   onSuccess: () => void;
+  onRefresh?: () => void;
   dismiss?: () => void;
 }
 
@@ -78,6 +81,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
   jahrgang,
   onClose,
   onSuccess,
+  onRefresh,
   dismiss
 }) => {
   const handleClose = () => {
@@ -89,35 +93,44 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
   };
   const { setSuccess, setError } = useApp();
   const [loading, setLoading] = useState(false);
-  
+  const [wrappedLoading, setWrappedLoading] = useState(false);
+  const [presentAlert] = useIonAlert();
+  // Lokaler Zustand des Wrapped-Releases, damit der Toggle nach generate/delete
+  // sofort den neuen Stand zeigt (das Modal bleibt offen).
+  const [wrappedReleasedAt, setWrappedReleasedAt] = useState<string | null>(
+    jahrgang?.wrapped_released_at ?? null
+  );
+
   const [formData, setFormData] = useState({
     name: '',
-    confirmation_date: '',
     gottesdienst_enabled: true,
     gemeinde_enabled: true,
     target_gottesdienst: 10,
-    target_gemeinde: 10
+    target_gemeinde: 10,
+    konfspruch_enabled: true
   });
 
   useEffect(() => {
     if (jahrgang) {
       setFormData({
         name: jahrgang.name,
-        confirmation_date: jahrgang.confirmation_date || '',
         gottesdienst_enabled: jahrgang.gottesdienst_enabled ?? true,
         gemeinde_enabled: jahrgang.gemeinde_enabled ?? true,
         target_gottesdienst: jahrgang.target_gottesdienst ?? 10,
-        target_gemeinde: jahrgang.target_gemeinde ?? 10
+        target_gemeinde: jahrgang.target_gemeinde ?? 10,
+        konfspruch_enabled: jahrgang.konfspruch_enabled ?? true
       });
+      setWrappedReleasedAt(jahrgang.wrapped_released_at ?? null);
     } else {
       setFormData({
         name: '',
-        confirmation_date: '',
         gottesdienst_enabled: true,
         gemeinde_enabled: true,
         target_gottesdienst: 10,
-        target_gemeinde: 10
+        target_gemeinde: 10,
+        konfspruch_enabled: true
       });
+      setWrappedReleasedAt(null);
     }
   }, [jahrgang]);
 
@@ -127,18 +140,13 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
       return;
     }
 
-    if (!formData.confirmation_date.trim()) {
-      setError('Bitte ein Konfirmationsdatum wählen');
-      return;
-    }
-
     const payload = {
       name: formData.name.trim(),
-      confirmation_date: formData.confirmation_date.trim(),
       gottesdienst_enabled: formData.gottesdienst_enabled,
       gemeinde_enabled: formData.gemeinde_enabled,
       target_gottesdienst: formData.target_gottesdienst,
-      target_gemeinde: formData.target_gemeinde
+      target_gemeinde: formData.target_gemeinde,
+      konfspruch_enabled: formData.konfspruch_enabled
     };
 
     if (networkMonitor.isOnline) {
@@ -182,6 +190,63 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
     }
   };
 
+  const generateWrapped = async () => {
+    if (!jahrgang) return;
+    setWrappedLoading(true);
+    try {
+      await api.post(`/admin/wrapped/generate/${jahrgang.id}`);
+      setWrappedReleasedAt(new Date().toISOString());
+      setSuccess('Wrapped wurde freigegeben und die Konfis wurden benachrichtigt');
+      onRefresh?.();
+    } catch (error: any) {
+      setError(error.response?.data?.error || 'Fehler beim Freigeben von Wrapped');
+    } finally {
+      setWrappedLoading(false);
+    }
+  };
+
+  const deleteWrapped = async () => {
+    if (!jahrgang) return;
+    setWrappedLoading(true);
+    try {
+      await api.delete(`/admin/wrapped/${jahrgang.id}`);
+      setWrappedReleasedAt(null);
+      setSuccess('Wrapped-Rückblick wurde gelöscht');
+      onRefresh?.();
+    } catch (error: any) {
+      setError(error.response?.data?.error || 'Fehler beim Löschen von Wrapped');
+    } finally {
+      setWrappedLoading(false);
+    }
+  };
+
+  const handleWrappedToggle = (checked: boolean) => {
+    if (!jahrgang) return;
+    // Nur reagieren, wenn sich der Zustand tatsächlich ändert.
+    const isReleased = !!wrappedReleasedAt;
+    if (checked === isReleased) return;
+
+    if (checked) {
+      presentAlert({
+        header: 'Wrapped freigeben',
+        message: 'Wrapped wird für alle Konfis dieses Jahrgangs generiert und sie erhalten eine Push-Benachrichtigung. Fortfahren?',
+        buttons: [
+          { text: 'Abbrechen', role: 'cancel' },
+          { text: 'Freigeben', handler: () => generateWrapped() }
+        ]
+      });
+    } else {
+      presentAlert({
+        header: 'Wrapped löschen',
+        message: 'Wrapped-Rückblick für diesen Jahrgang löschen? Die Konfis sehen den Rückblick dann nicht mehr.',
+        buttons: [
+          { text: 'Abbrechen', role: 'cancel' },
+          { text: 'Löschen', role: 'destructive', handler: () => deleteWrapped() }
+        ]
+      });
+    }
+  };
+
   return (
     <IonPage>
       <IonHeader>
@@ -197,7 +262,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
           <IonButtons slot="end">
             <IonButton
               onClick={handleSubmit}
-              disabled={!formData.name.trim() || !formData.confirmation_date.trim() || loading}
+              disabled={!formData.name.trim() || loading}
             >
               {loading ? (
                 <IonSpinner name="crescent" />
@@ -231,11 +296,10 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                     clearInput={true}
                   />
                 </IonItem>
-                <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '8px' }}>
-                  <IonLabel position="stacked">Konfirmationsdatum *</IonLabel>
-                  <IonDatetimeButton datetime="confirmation-date" disabled={loading} />
-                </IonItem>
               </IonList>
+              <p style={{ fontSize: '0.8rem', color: 'var(--app-text-sub-color, #8e8e93)', margin: '8px 4px 0', lineHeight: 1.4 }}>
+                Hier steuerst du diesen Jahrgang zentral: Punkteziele, die Freischaltung der Konfispruch-Auswahl und die Freigabe des Wrapped-Rückblicks.
+              </p>
             </IonCardContent>
           </IonCard>
         </IonList>
@@ -320,22 +384,59 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
           </IonCard>
         </IonList>
 
-        <IonModal keepContentsMounted={true}>
-          <IonDatetime
-            id="confirmation-date"
-            presentation="date"
-            locale="de-DE"
-            max="2035-12-31"
-            value={formData.confirmation_date || undefined}
-            onIonChange={(e) => {
-              const value = e.detail.value;
-              if (typeof value === 'string') {
-                setFormData({ ...formData, confirmation_date: value.split('T')[0] });
-              }
-            }}
-            disabled={loading}
-          />
-        </IonModal>
+        {/* Konfispruch & Wrapped */}
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--jahrgang">
+              <IonIcon icon={sparkles} />
+            </div>
+            <IonLabel>Konfispruch & Wrapped</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent>
+              <IonList style={{ background: 'transparent', padding: '0' }}>
+                <IonItem lines={jahrgang ? 'full' : 'none'} style={{ '--background': 'transparent' }}>
+                  <IonLabel>
+                    <h3 style={{ margin: 0 }}>Konfispruch-Auswahl</h3>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--app-text-sub-color, #8e8e93)', whiteSpace: 'normal' }}>
+                      Konfis dieses Jahrgangs können ihren Konfispruch wählen.
+                    </p>
+                  </IonLabel>
+                  <IonToggle
+                    slot="end"
+                    className="app-toggle--jahrgang"
+                    checked={formData.konfspruch_enabled}
+                    onIonChange={(e) => setFormData({ ...formData, konfspruch_enabled: e.detail.checked })}
+                    disabled={loading}
+                  />
+                </IonItem>
+                {jahrgang && (
+                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                    <IonLabel>
+                      <h3 style={{ margin: 0 }}>Wrapped freigeben</h3>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--app-text-sub-color, #8e8e93)', whiteSpace: 'normal' }}>
+                        {wrappedReleasedAt
+                          ? `Freigegeben am ${new Date(wrappedReleasedAt).toLocaleDateString('de-DE')}`
+                          : 'Generiert den Rückblick und benachrichtigt die Konfis.'}
+                      </p>
+                    </IonLabel>
+                    {wrappedLoading ? (
+                      <IonSpinner slot="end" name="crescent" />
+                    ) : (
+                      <IonToggle
+                        slot="end"
+                        className="app-toggle--jahrgang"
+                        checked={!!wrappedReleasedAt}
+                        onIonChange={(e) => handleWrappedToggle(e.detail.checked)}
+                        disabled={loading}
+                      />
+                    )}
+                  </IonItem>
+                )}
+              </IonList>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
       </IonContent>
     </IonPage>
   );
@@ -365,7 +466,9 @@ const AdminJahrgaengeePage: React.FC = () => {
     onSuccess: () => {
       dismissJahrgangModalHook();
       refreshJahrgaenge();
-    }
+    },
+    // Wrapped-Toggle aktualisiert die Liste, ohne das Modal zu schliessen.
+    onRefresh: () => refreshJahrgaenge()
   });
 
   // Subscribe to live updates for jahrgaenge
@@ -542,14 +645,36 @@ const AdminJahrgaengeePage: React.FC = () => {
                                 <div className="app-list-item__title">
                                   {jahrgang.name}
                                 </div>
-                                {jahrgang.confirmation_date && (
-                                  <div className="app-list-item__meta">
+                                <div className="app-list-item__meta">
+                                  {jahrgang.gottesdienst_enabled !== false && (
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={calendar} style={{ color: '#007aff' }} />
-                                      {new Date(jahrgang.confirmation_date).toLocaleDateString('de-DE')}
+                                      <IonIcon icon={flag} style={{ color: '#007aff' }} />
+                                      {`GD-Ziel ${jahrgang.target_gottesdienst ?? 10}`}
                                     </span>
-                                  </div>
-                                )}
+                                  )}
+                                  {jahrgang.gemeinde_enabled !== false && (
+                                    <span className="app-list-item__meta-item">
+                                      <IonIcon icon={flag} style={{ color: '#34c759' }} />
+                                      {`Gem-Ziel ${jahrgang.target_gemeinde ?? 10}`}
+                                    </span>
+                                  )}
+                                  <span className="app-list-item__meta-item">
+                                    <IonIcon
+                                      icon={jahrgang.konfspruch_enabled !== false ? checkmarkCircle : closeCircle}
+                                      style={{ color: jahrgang.konfspruch_enabled !== false ? '#34c759' : '#8e8e93' }}
+                                    />
+                                    {jahrgang.konfspruch_enabled !== false ? 'Spruch frei' : 'Spruch gesperrt'}
+                                  </span>
+                                  <span className="app-list-item__meta-item">
+                                    <IonIcon
+                                      icon={trophy}
+                                      style={{ color: jahrgang.wrapped_released_at ? '#ff9500' : '#8e8e93' }}
+                                    />
+                                    {jahrgang.wrapped_released_at
+                                      ? `Wrapped gestartet am ${new Date(jahrgang.wrapped_released_at).toLocaleDateString('de-DE')}`
+                                      : 'Wrapped nicht freigegeben'}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </div>
