@@ -40,6 +40,7 @@ import ResetPasswordPage from './components/auth/ResetPasswordPage';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import MainTabs from './components/layout/MainTabs';
 import ErrorBoundary from './components/common/ErrorBoundary';
+import GlobalToasts from './components/common/GlobalToasts';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -170,6 +171,7 @@ const AppContent: React.FC = () => {
           <Route path="/" component={MainTabs} />
         </IonRouterOutlet>
       </IonReactRouter>
+      <GlobalToasts />
     </IonApp>
   );
 };
