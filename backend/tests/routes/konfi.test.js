@@ -146,6 +146,12 @@ describe('Konfi Routes', () => {
         `INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES (9101, $1)`,
         [JAHRGAENGE.jahrgang1.id]
       );
+      // Termin kommt jetzt PRO KONFI aus dem confirmed-gebuchten is_konfirmation-Event.
+      await db.query(
+        `INSERT INTO event_bookings (event_id, user_id, status, organization_id)
+         VALUES (9101, $1, 'confirmed', $2)`,
+        [USERS.konfi1.id, ORGS.testGemeinde.id]
+      );
 
       const res = await request(app)
         .get('/api/konfi/dashboard')
