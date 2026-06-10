@@ -119,7 +119,7 @@ const AdminBadgesPage: React.FC = () => {
           role: 'destructive',
           handler: async () => {
             try {
-              await api.delete(`/badges/${badge.id}`);
+              await api.delete(`/admin/badges/${badge.id}`);
               setSuccess(`Badge "${badge.name}" gelöscht`);
               await refreshBadges();
             } catch (err: any) {

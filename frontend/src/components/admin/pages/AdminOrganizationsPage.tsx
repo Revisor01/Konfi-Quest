@@ -123,7 +123,7 @@ const AdminOrganizationsPage: React.FC = () => {
           role: 'destructive',
           handler: async () => {
             try {
-              await api.delete(`/admin/organizations/${organization.id}`);
+              await api.delete(`/organizations/${organization.id}`);
               setSuccess(`Organisation "${organization.display_name}" gelöscht`);
               await loadOrganizations();
             } catch (err: any) {

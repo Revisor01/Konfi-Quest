@@ -466,6 +466,11 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       }
 
       setIsDirty(false);
+      // WICHTIG: Dirty-Stand SYNCHRON nach aussen melden, bevor onSuccess() das Modal
+      // ueber dismiss()/canDismiss schliesst. Sonst sieht canDismiss noch isDirty=true,
+      // blockiert das programmatische Schliessen -> Modal bleibt offen, erneutes
+      // Speichern legt das Badge mehrfach an.
+      onDirtyChange?.(false);
       onSuccess();
     } catch (err: any) {
       setError(err.response?.data?.error || 'Fehler beim Speichern des Badges');

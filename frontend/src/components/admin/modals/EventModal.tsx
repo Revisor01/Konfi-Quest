@@ -253,7 +253,9 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
           setSuccess('Event wird erstellt sobald du wieder online bist');
         }
       }
-      setIsDirty(false); onSuccess(); doClose();
+      // Dirty-Stand SYNCHRON nach aussen melden, bevor onSuccess/doClose ueber
+      // canDismiss schliesst (sonst blockiert canDismiss -> Modal bleibt offen).
+      setIsDirty(false); onDirtyChange?.(false); onSuccess(); doClose();
     } catch (error: any) {
       if (error.response?.data?.error) setError(error.response.data.error);
       else setError('Fehler beim Speichern des Events');

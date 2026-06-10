@@ -121,33 +121,6 @@ const AdminActivityRequestsPage: React.FC = () => {
     });
   };
 
-  const handleDeleteRequest = async (request: ActivityRequest) => {
-    if (!isOnline) return;
-    presentAlert({
-      header: 'Antrag löschen',
-      message: `Antrag von "${request.konfi_name}" für "${request.activity_name}" wirklich löschen?`,
-      buttons: [
-        { text: 'Abbrechen', role: 'cancel' },
-        {
-          text: 'Löschen',
-          role: 'destructive',
-          handler: async () => {
-            try {
-              await api.delete(`/activity-requests/${request.id}`);
-              setSuccess(`Antrag von "${request.konfi_name}" gelöscht`);
-              await refreshRequests();
-            } catch (err: any) {
-              if (err.response?.data?.error) {
-                setError(err.response.data.error);
-              } else {
-                setError('Fehler beim Löschen des Antrags');
-              }
-            }
-          }
-        }
-      ]
-    });
-  };
 
   const handleSelectRequest = (request: ActivityRequest) => {
     setSelectedRequest(request);
@@ -185,7 +158,6 @@ const AdminActivityRequestsPage: React.FC = () => {
             requests={requests || []}
             onUpdate={refreshRequests}
             onSelectRequest={handleSelectRequest}
-            onDeleteRequest={handleDeleteRequest}
             onResetRequest={handleResetRequest}
           />
         )}

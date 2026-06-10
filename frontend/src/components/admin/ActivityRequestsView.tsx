@@ -12,7 +12,6 @@ import {
 import {
   checkmarkCircle,
   closeCircle,
-  trash,
   hourglass,
   documentOutline,
   calendar,
@@ -48,7 +47,6 @@ interface ActivityRequestsViewProps {
   requests: ActivityRequest[];
   onUpdate: () => void;
   onSelectRequest: (request: ActivityRequest) => void;
-  onDeleteRequest: (request: ActivityRequest) => void;
   onResetRequest: (request: ActivityRequest) => void;
 }
 
@@ -56,7 +54,6 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
   requests: requestsRaw,
   onUpdate,
   onSelectRequest,
-  onDeleteRequest,
   onResetRequest
 }) => {
   // Defensive: bei kaputten/gecachten Responses (Object statt Array) auf [] fallen
@@ -255,10 +252,11 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                         </div>
                       </IonItem>
 
-                      {/* Swipe Actions */}
-                      <IonItemOptions side="end" className="app-swipe-actions">
-                        {/* Reset-Button für approved/rejected */}
-                        {!isPending && (
+                      {/* Swipe Actions: Admins loeschen Antraege NICHT (nur ablehnen ueber
+                          die Detail-Ansicht). Loeschen duerfen nur Konfi/Teamer ihre eigenen. */}
+                      {!isPending && (
+                        <IonItemOptions side="end" className="app-swipe-actions">
+                          {/* Reset-Button für approved/rejected */}
                           <IonItemOption
                             onClick={() => onResetRequest(request)}
                             className="app-swipe-action"
@@ -267,18 +265,8 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                               <IonIcon icon={returnUpBack} />
                             </div>
                           </IonItemOption>
-                        )}
-
-                        {/* Löschen-Button für alle */}
-                        <IonItemOption
-                          onClick={() => onDeleteRequest(request)}
-                          className="app-swipe-action"
-                        >
-                          <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-                            <IonIcon icon={trash} />
-                          </div>
-                        </IonItemOption>
-                      </IonItemOptions>
+                        </IonItemOptions>
+                      )}
                     </IonItemSliding>
                   );
                 })}
