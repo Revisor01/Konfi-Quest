@@ -23,9 +23,10 @@ import { useApp } from '../../../contexts/AppContext';
 import ActivityModal from '../modals/ActivityModal';
 import BonusModal from '../modals/BonusModal';
 import CertificateAssignModal from '../modals/CertificateAssignModal';
+import AttendanceMatrixModal from '../modals/AttendanceMatrixModal';
 import { useLiveUpdate } from '../../../contexts/LiveUpdateContext';
 import {
-  KonfiHeaderCard, BonusSection, EventPointsSection, AttendanceSection,
+  KonfiHeaderCard, BonusSection, EventPointsSection,
   TeamerEventsSection, ActivitiesSection, CertificatesSection,
   TeamerSinceSection, KonfiHistorySection, PromoteSection, KonfispruchSection
 } from './KonfiDetailSections';
@@ -174,6 +175,16 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
       dismissCertModal();
       loadKonfiData();
     }
+  });
+
+  // Anwesenheitsmatrix-Modal (geoeffnet aus der Konfirmations-Karte, auf den Jahrgang des Konfis vorausgewaehlt)
+  const konfiJahrgang = currentKonfi?.jahrgang_id
+    ? [{ id: currentKonfi.jahrgang_id, name: currentKonfi.jahrgang_name || 'Jahrgang' }]
+    : [];
+  const [presentMatrixModal, dismissMatrixModal] = useIonModal(AttendanceMatrixModal, {
+    jahrgaenge: konfiJahrgang,
+    initialJahrgangId: currentKonfi?.jahrgang_id,
+    onClose: () => dismissMatrixModal()
   });
 
   useEffect(() => {
@@ -514,18 +525,15 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           activities={activities}
         />
 
-        {/* Konfirmation (Termin + Spruch, read-only) - nur für Konfis, direkt vor Anwesenheit */}
+        {/* Konfirmation (Termin + Spruch + Pflicht-Events, read-only) - nur für Konfis */}
         {!isTeamer && currentKonfi?.role_name === 'konfi' && (
           <KonfispruchSection
             konfspruch={currentKonfi.konfspruch}
             confirmationDate={currentKonfi.confirmation_date}
             confirmationLocation={currentKonfi.confirmation_location}
+            attendance={attendanceStats}
+            onOpenMatrix={currentKonfi.jahrgang_id ? () => presentMatrixModal({ presentingElement: presentingElement ?? undefined }) : undefined}
           />
-        )}
-
-        {/* Anwesenheit - Pflicht-Events - nur für Konfis (wichtigste Info vorn) */}
-        {!isTeamer && attendanceStats && attendanceStats.total_mandatory > 0 && (
-          <AttendanceSection attendanceStats={attendanceStats} />
         )}
 
         {/* Bonuspunkte - nur für Konfis */}

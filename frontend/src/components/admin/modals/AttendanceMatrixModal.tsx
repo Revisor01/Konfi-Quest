@@ -318,28 +318,28 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent style={{ padding: '0', overflowX: 'auto' }}>
-                  <table className="attendance-matrix">
+                  <table className="attendance-matrix attendance-matrix--sprueche">
                     <thead>
                       <tr>
                         <th className="attendance-matrix__th-konfi">Konfi</th>
-                        <th className="attendance-matrix__th-event">Konfirmation</th>
-                        <th className="attendance-matrix__th-event">Buch / Stelle</th>
-                        <th className="attendance-matrix__th-event">Konfispruch</th>
+                        <th className="attendance-matrix__th-cell">Konfirmation</th>
+                        <th className="attendance-matrix__th-cell">Buch / Stelle</th>
+                        <th className="attendance-matrix__th-cell">Konfispruch</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredSprueche.map(s => (
                         <tr key={s.user_id}>
                           <td className="attendance-matrix__td-konfi">{s.display_name}</td>
-                          <td className="attendance-matrix__td-cell" style={{ textAlign: 'left', whiteSpace: 'nowrap' }}>
+                          <td className="attendance-matrix__td-cell">
                             {s.konfirmation_date
                               ? `${new Date(s.konfirmation_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}, ${new Date(s.konfirmation_date).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr`
                               : <span style={{ color: '#999', fontStyle: 'italic' }}>nicht gebucht</span>}
                           </td>
-                          <td className="attendance-matrix__td-cell" style={{ textAlign: 'left' }}>
+                          <td className="attendance-matrix__td-cell">
                             {s.konfspruch?.reference || <span style={{ color: '#999' }}>—</span>}
                           </td>
-                          <td className="attendance-matrix__td-cell" style={{ textAlign: 'left' }}>
+                          <td className="attendance-matrix__td-cell">
                             {s.konfspruch?.text
                               ? s.konfspruch.text
                               : <span style={{ color: '#999', fontStyle: 'italic' }}>{s.konfspruch ? '(Übersetzung fehlt)' : 'noch keiner'}</span>}

@@ -12,7 +12,6 @@ import {
   IonIcon,
   IonButton,
   IonInput,
-  IonProgressBar,
   IonDatetimeButton,
   IonDatetime,
   IonModal
@@ -29,8 +28,6 @@ import {
   image,
   podium,
   personOutline,
-  closeCircle,
-  eyeOff,
   ribbon,
   documentOutline,
   calendarOutline,
@@ -44,7 +41,9 @@ import {
   bookOutline,
   locationOutline,
   book,
-  documentText
+  documentText,
+  chevronForward,
+  checkmarkCircle
 } from 'ionicons/icons';
 import ActivityRings from './ActivityRings';
 
@@ -57,6 +56,7 @@ export interface Konfi {
   username?: string;
   jahrgang?: string;
   jahrgang_name?: string;
+  jahrgang_id?: number;
   gottesdienst_points?: number;
   gemeinde_points?: number;
   gottesdienst_enabled?: boolean;
@@ -412,12 +412,20 @@ interface KonfispruchSectionProps {
   konfspruch: Konfi['konfspruch'];
   confirmationDate?: string | null;
   confirmationLocation?: string | null;
+  attendance?: { total_mandatory: number; attended: number; percentage: number } | null;
+  onOpenMatrix?: () => void;
 }
 
-export const KonfispruchSection = React.memo<KonfispruchSectionProps>(({ konfspruch, confirmationDate, confirmationLocation }) => {
+export const KonfispruchSection = React.memo<KonfispruchSectionProps>(({ konfspruch, confirmationDate, confirmationLocation, attendance, onOpenMatrix }) => {
   // Spruch-Anzeige: Referenz (Buch/Stelle) + Text, unabhaengig von der Quelle.
   const spruchReference = konfspruch?.reference || null;
   const spruchText = konfspruch?.text || null;
+  // Anwesenheits-Zeile: Quote farbcodiert wie in der frueheren AttendanceSection.
+  const hasAttendance = !!attendance && attendance.total_mandatory > 0;
+  const pct = attendance?.percentage ?? 0;
+  const quoteColor = pct >= 80 ? 'var(--app-color-activities)'
+    : pct >= 50 ? 'var(--app-color-warning)'
+    : 'var(--app-color-danger)';
   return (
   <IonList className="app-section-inset" inset={true}>
     <IonListHeader>
@@ -482,6 +490,36 @@ export const KonfispruchSection = React.memo<KonfispruchSectionProps>(({ konfspr
             </div>
           </div>
         </div>
+
+        {/* Row 3: Pflicht-Events / Anwesenheit (klickbar -> Anwesenheitsmatrix) */}
+        {hasAttendance && (
+          <div
+            className="app-list-item__row"
+            onClick={onOpenMatrix}
+            style={onOpenMatrix ? { cursor: 'pointer' } : undefined}
+            role={onOpenMatrix ? 'button' : undefined}
+          >
+            <div className="app-list-item__main">
+              <div className="app-icon-circle app-icon-circle--purple">
+                <IonIcon icon={checkmarkCircle} />
+              </div>
+              <div className="app-list-item__content">
+                <div className="app-list-item__title">Pflicht-Events</div>
+                <div className="app-list-item__meta">
+                  <span className="app-list-item__meta-item" style={{ color: quoteColor, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                    {attendance!.attended} von {attendance!.total_mandatory} besucht
+                  </span>
+                  <span className="app-list-item__meta-item" style={{ color: quoteColor, fontWeight: 700 }}>
+                    {pct}%
+                  </span>
+                </div>
+              </div>
+            </div>
+            {onOpenMatrix && (
+              <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.1rem', flexShrink: 0 }} />
+            )}
+          </div>
+        )}
       </IonCardContent>
     </IonCard>
   </IonList>
@@ -572,152 +610,6 @@ export const EventPointsSection = React.memo<EventPointsSectionProps>(({
     </IonCard>
   </IonList>
 ));
-
-// ---- AttendanceSection ----
-
-interface AttendanceSectionProps {
-  attendanceStats: {
-    total_mandatory: number;
-    attended: number;
-    percentage: number;
-    missed_events: Array<{
-      event_id: number;
-      event_name: string;
-      event_date: string;
-      location: string;
-      status: 'opted_out' | 'absent';
-      opt_out_reason: string | null;
-    }>;
-  };
-}
-
-export const AttendanceSection = React.memo<AttendanceSectionProps>(({
-  attendanceStats
-}) => {
-  const pct = attendanceStats.percentage;
-  const quoteColor = pct >= 80 ? 'var(--app-color-activities)'
-    : pct >= 50 ? 'var(--app-color-warning)'
-    : 'var(--app-color-danger)';
-  const quoteColorRgb = pct >= 80 ? 'var(--app-color-activities-rgb)'
-    : pct >= 50 ? 'var(--app-color-warning-rgb)'
-    : 'var(--app-color-danger-rgb)';
-  return (
-  <IonList className="app-section-inset" inset={true}>
-    <IonListHeader>
-      <div className="app-section-icon app-section-icon--konfis">
-        <IonIcon icon={calendar} />
-      </div>
-      <IonLabel>Anwesenheit</IonLabel>
-    </IonListHeader>
-    <IonCard className="app-card">
-      <IonCardContent style={{ padding: '16px' }}>
-        {/* Hero-Quote: grosse Prozent + Stat */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '16px',
-          padding: '12px 14px',
-          marginBottom: attendanceStats.missed_events.length > 0 ? '16px' : '0',
-          background: `rgba(${quoteColorRgb}, 0.08)`,
-          border: `1px solid rgba(${quoteColorRgb}, 0.18)`,
-          borderRadius: '12px'
-        }}>
-          <div style={{ flex: '0 0 auto' }}>
-            <div style={{ fontSize: '2.2rem', fontWeight: 800, lineHeight: 1, color: quoteColor, fontVariantNumeric: 'tabular-nums' }}>
-              {pct}<span style={{ fontSize: '1.2rem', fontWeight: 700 }}>%</span>
-            </div>
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#111827', marginBottom: '4px' }}>
-              {attendanceStats.attended} von {attendanceStats.total_mandatory} Pflicht-Events
-            </div>
-            <IonProgressBar
-              value={pct / 100}
-              style={{
-                borderRadius: '999px',
-                height: '6px',
-                '--background': `rgba(${quoteColorRgb}, 0.18)`,
-                '--progress-background': quoteColor,
-              } as any}
-            />
-          </div>
-        </div>
-
-        {/* Verpasste Events Liste */}
-        {attendanceStats.missed_events.length > 0 && (
-          <>
-            <div style={{
-              fontSize: '0.7rem',
-              fontWeight: 700,
-              color: '#9ca3af',
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              marginBottom: '10px'
-            }}>
-              Verpasst ({attendanceStats.missed_events.length})
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {attendanceStats.missed_events.map((event, index) => (
-                <div
-                  key={event.event_id}
-                  className="app-list-item"
-                  style={{
-                    marginBottom: index < attendanceStats.missed_events.length - 1 ? '8px' : '0',
-                    borderLeftColor: event.status === 'opted_out' ? 'var(--app-color-warning)' : 'var(--app-color-danger)'
-                  }}
-                >
-                  <div className="app-corner-badges">
-                    <div
-                      className="app-corner-badge"
-                      style={{
-                        backgroundColor: event.status === 'opted_out' ? 'var(--app-color-warning)' : 'var(--app-color-danger)'
-                      }}
-                    >
-                      {event.status === 'opted_out' ? 'Opt-out' : 'Fehlend'}
-                    </div>
-                  </div>
-                  <div className="app-list-item__row">
-                    <div className="app-list-item__main">
-                      <div
-                        className="app-icon-circle"
-                        style={{
-                          backgroundColor: event.status === 'opted_out' ? 'var(--app-color-warning)' : 'var(--app-color-danger)'
-                        }}
-                      >
-                        <IonIcon icon={event.status === 'opted_out' ? eyeOff : closeCircle} />
-                      </div>
-                      <div className="app-list-item__content">
-                        <div className="app-list-item__title app-list-item__title--badge-space">
-                          {event.event_name}
-                        </div>
-                        <div className="app-list-item__meta">
-                          <span className="app-list-item__meta-item">
-                            <IonIcon icon={calendar} className="app-icon-color--events" />
-                            {new Date(event.event_date).toLocaleDateString('de-DE', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric'
-                            })}
-                          </span>
-                          {event.status === 'opted_out' && event.opt_out_reason && (
-                            <span className="app-list-item__meta-item" style={{ color: '#6b7280' }}>
-                              {event.opt_out_reason}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-      </IonCardContent>
-    </IonCard>
-  </IonList>
-  );
-});
 
 // ---- TeamerEventsSection ----
 

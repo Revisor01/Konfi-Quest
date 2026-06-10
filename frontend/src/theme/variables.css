@@ -2473,7 +2473,9 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 
 /* === Anwesenheits-Matrix (AttendanceMatrixModal) === */
 .attendance-matrix {
-  width: 100%;
+  /* Nicht stauchen: Tabelle waechst mit dem Inhalt, Container scrollt horizontal */
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   font-size: 0.85rem;
 }
@@ -2501,11 +2503,10 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   background: #fff;
   z-index: 2;
   min-width: 120px;
-  max-width: 160px;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   padding-left: 12px;
+  /* fixierte Konfi-Spalte: rechte Trennkante beim horizontalen Scrollen */
+  box-shadow: 1px 0 0 #eee;
 }
 .attendance-matrix thead .attendance-matrix__th-konfi {
   background: #fafafa;
@@ -2514,6 +2515,14 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 .attendance-matrix__th-event {
   min-width: 56px;
   max-width: 80px;
+}
+/* Konfispruch-Liste: jede Zelle in einer Zeile, nicht stauchen/umbrechen
+   (nur die Sprueche-Tabelle; in der Anwesenheitsmatrix bleiben die Status-Dots zentriert) */
+.attendance-matrix--sprueche .attendance-matrix__th-cell,
+.attendance-matrix--sprueche .attendance-matrix__td-cell {
+  text-align: left;
+  white-space: nowrap;
+  padding-right: 16px;
 }
 .attendance-matrix__event-label {
   display: flex;
