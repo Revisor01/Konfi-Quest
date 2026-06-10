@@ -245,13 +245,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     return now < twoDaysBeforeEvent;
   };
 
-  // Konfirmations-Event primaer ueber das is_konfirmation-Flag (Phase 117), Kategorie
-  // nur als Fallback fuer Altdaten ohne gesetztes Flag.
+  // Konfirmations-Event ueber das is_konfirmation-Flag (Phase 117, Migration 091).
   const isKonfirmationEvent = (event: Event) => {
-    return event.is_konfirmation === true ||
-           event.categories?.some(cat => cat.name.toLowerCase().includes('konfirmation')) ||
-           event.category_names?.toLowerCase().includes('konfirmation') ||
-           false;
+    return event.is_konfirmation === true;
   };
 
   const checkExistingKonfirmation = async () => {

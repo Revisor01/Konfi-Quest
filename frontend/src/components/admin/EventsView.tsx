@@ -262,8 +262,8 @@ const EventsView: React.FC<EventsViewProps> = ({
         {filteredAndSortedEvents.map((event, index) => {
               const isPastEvent = new Date(event.event_date) < new Date();
               const isCancelled = event.registration_status === 'cancelled';
-              // Primaer ueber das is_konfirmation-Flag (Phase 117/119), Kategorie-Name nur als Fallback fuer Altdaten.
-              const isKonfirmationEvent = event.is_konfirmation === true || event.category_names?.toLowerCase().includes('konfirmation');
+              // Konfirmations-Event ueber das is_konfirmation-Flag (Phase 117, Migration 091).
+              const isKonfirmationEvent = event.is_konfirmation === true;
               const hasUnprocessedBookings = isPastEvent && event.registered_count > 0 && event.pending_bookings_count && event.pending_bookings_count > 0;
               const isFullyProcessed = isPastEvent && event.registered_count > 0 && (!event.pending_bookings_count || event.pending_bookings_count === 0);
               const shouldGrayOut = isPastEvent && !hasUnprocessedBookings;
