@@ -435,84 +435,53 @@ export const KonfispruchSection = React.memo<KonfispruchSectionProps>(({ konfspr
       <IonLabel>Konfirmation</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
-      <IonCardContent style={{ padding: '8px' }}>
-        {/* Row 1: Konfirmationstermin (read-only, aus is_konfirmation-Event) */}
-        <div className="app-list-item__row">
-          <div className="app-list-item__main">
-            <div className="app-icon-circle app-icon-circle--purple">
-              <IonIcon icon={calendar} />
-            </div>
-            <div className="app-list-item__content">
-              <div className="app-list-item__title">Konfirmationstermin</div>
-              {confirmationDate ? (
-                <div className="app-list-item__meta">
-                  <span className="app-list-item__meta-item">
-                    {new Date(confirmationDate).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
-                  </span>
-                  <span className="app-list-item__meta-item">
-                    <IonIcon icon={time} className="app-icon-color--konfis" />
-                    {new Date(confirmationDate).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
-                  </span>
-                  {confirmationLocation && (
-                    <span className="app-list-item__meta-item">{confirmationLocation}</span>
-                  )}
-                </div>
-              ) : (
-                <div className="app-list-item__meta">
-                  <span className="app-list-item__meta-item app-text-sub">Noch kein Termin festgelegt</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Row 2: Konfispruch (read-only) */}
-        <div className="app-list-item__row">
-          <div className="app-list-item__main">
-            <div className="app-icon-circle app-icon-circle--purple">
-              <IonIcon icon={documentText} />
-            </div>
-            <div className="app-list-item__content">
-              <div className="app-list-item__title">
-                {spruchReference || 'Konfispruch'}
+      <IonCardContent className="app-card-content">
+        {/* Konfirmationstermin (read-only, aus is_konfirmation-Event) */}
+        <div className="app-info-row">
+          <IonIcon icon={calendar} className="app-info-row__icon app-icon-color--konfis" />
+          <div>
+            <div className="app-info-row__label">Konfirmationstermin</div>
+            {confirmationDate ? (
+              <div className="app-info-row__value">
+                {new Date(confirmationDate).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+                {' · '}
+                {new Date(confirmationDate).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
+                {confirmationLocation && ` · ${confirmationLocation}`}
               </div>
-              {spruchText ? (
-                <div className="app-list-item__meta">
-                  <span className="app-list-item__meta-item app-description-text">{spruchText}</span>
-                </div>
-              ) : (
-                <div className="app-list-item__meta">
-                  <span className="app-list-item__meta-item app-text-sub">
-                    {konfspruch ? 'Übersetzung noch nicht hinterlegt' : 'Noch kein Spruch gewählt'}
-                  </span>
-                </div>
-              )}
-            </div>
+            ) : (
+              <div className="app-info-row__value app-text-sub">Noch kein Termin festgelegt</div>
+            )}
           </div>
         </div>
 
-        {/* Row 3: Pflicht-Events / Anwesenheit (klickbar -> Anwesenheitsmatrix) */}
+        {/* Konfispruch (read-only) */}
+        <div className="app-info-row app-info-row--top">
+          <IonIcon icon={documentText} className="app-info-row__icon app-icon-color--konfis app-event-detail__icon--align-top" />
+          <div>
+            <div className="app-info-row__label">{spruchReference || 'Konfispruch'}</div>
+            {spruchText ? (
+              <div className="app-info-row__value">{spruchText}</div>
+            ) : (
+              <div className="app-info-row__value app-text-sub">
+                {konfspruch ? 'Übersetzung noch nicht hinterlegt' : 'Noch kein Spruch gewählt'}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Pflicht-Events / Anwesenheit (klickbar -> Anwesenheitsmatrix) */}
         {hasAttendance && (
           <div
-            className="app-list-item__row"
+            className="app-info-row"
             onClick={onOpenMatrix}
             style={onOpenMatrix ? { cursor: 'pointer' } : undefined}
             role={onOpenMatrix ? 'button' : undefined}
           >
-            <div className="app-list-item__main">
-              <div className="app-icon-circle app-icon-circle--purple">
-                <IonIcon icon={checkmarkCircle} />
-              </div>
-              <div className="app-list-item__content">
-                <div className="app-list-item__title">Pflicht-Events</div>
-                <div className="app-list-item__meta">
-                  <span className="app-list-item__meta-item" style={{ color: quoteColor, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
-                    {attendance!.attended} von {attendance!.total_mandatory} besucht
-                  </span>
-                  <span className="app-list-item__meta-item" style={{ color: quoteColor, fontWeight: 700 }}>
-                    {pct}%
-                  </span>
-                </div>
+            <IonIcon icon={checkmarkCircle} className="app-info-row__icon app-icon-color--konfis" />
+            <div style={{ flex: 1 }}>
+              <div className="app-info-row__label">Pflicht-Events</div>
+              <div className="app-info-row__value" style={{ color: quoteColor, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                {attendance!.attended} von {attendance!.total_mandatory} besucht · {pct}%
               </div>
             </div>
             {onOpenMatrix && (
