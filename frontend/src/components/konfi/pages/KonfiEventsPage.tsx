@@ -78,12 +78,12 @@ const KonfiEventsPage: React.FC = () => {
         // NUR zukünftige Events (keine vergangenen), keine Konfirmation
         filteredEvents = allEvents.filter(event =>
           new Date(event.event_date) >= now &&
-          !event.category_names?.toLowerCase().includes('konfirmation')
+          !event.is_konfirmation
         );
         break;
       case 'konfirmation':
         filteredEvents = allEvents.filter(event =>
-          event.category_names?.toLowerCase().includes('konfirmation')
+          event.is_konfirmation
         );
         break;
       default:

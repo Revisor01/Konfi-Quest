@@ -1660,12 +1660,11 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       }
 
       // Check if this is a Konfirmation event and if user already has one
+      // (flag-basiert seit Phase 117 — Migration 091 hat die "Konfirmation"-Kategorie entfernt)
       const isKonfirmationQuery = `
         SELECT e.id
         FROM events e
-        JOIN event_categories ec ON e.id = ec.event_id
-        JOIN categories c ON ec.category_id = c.id
-        WHERE e.id = $1 AND LOWER(c.name) LIKE '%konfirmation%'
+        WHERE e.id = $1 AND e.is_konfirmation = true
       `;
       const { rows: [isKonfirmation] } = await client.query(isKonfirmationQuery, [eventId]);
 
@@ -1675,11 +1674,9 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           SELECT eb.id
           FROM event_bookings eb
           JOIN events e ON eb.event_id = e.id
-          JOIN event_categories ec ON e.id = ec.event_id
-          JOIN categories c ON ec.category_id = c.id
           WHERE eb.user_id = $1
             AND eb.status = 'confirmed'
-            AND LOWER(c.name) LIKE '%konfirmation%'
+            AND e.is_konfirmation = true
             AND e.organization_id = $2
         `;
         const { rows: [existingKonfirmation] } = await client.query(existingKonfirmationQuery, [konfiId, req.user.organization_id]);
