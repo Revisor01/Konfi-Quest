@@ -293,6 +293,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
     'time_based': 'Zeitbasiert',
     'activity_count': 'Aktivitätsanzahl',
     'event_count': 'Event-Teilnahmen',
+    'mandatory_event_count': 'Pflicht-Anwesenheit',
     'bonus_points': 'Bonuspunkte',
     'streak': 'Serie',
     'unique_activities': 'Einzigartige Aktivitäten',

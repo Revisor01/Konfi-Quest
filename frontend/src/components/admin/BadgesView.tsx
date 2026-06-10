@@ -190,6 +190,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       case 'time_based': return 'Zeitbasiert';
       case 'activity_count': return 'Aktivitätsanzahl';
       case 'event_count': return 'Event-Teilnahmen';
+      case 'mandatory_event_count': return 'Pflicht-Anwesenheit';
       case 'bonus_points': return 'Bonuspunkte';
       case 'streak': return 'Serie';
       case 'unique_activities': return 'Einzigartige Aktivitäten';
@@ -210,6 +211,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       case 'time_based': return time;
       case 'activity_count': return checkmarkCircle;
       case 'event_count': return calendar;
+      case 'mandatory_event_count': return shield;
       case 'bonus_points': return star;
       case 'streak': return flame;
       case 'unique_activities': return sparkles;
