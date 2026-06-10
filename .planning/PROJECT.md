@@ -56,6 +56,14 @@ Auth-Routes auf RBAC migriert (gesperrte User sofort blockiert), Magic-Bytes Upl
 
 Globale CSS-Patterns (Beschreibungstext-Variable, Listen-Pattern, Corner-Badge-Fix), IonRange Wert-Anzeige auf allen 12 Instanzen, BadgesView mit Suchleiste + Grid-Fix + Popover-Zentrierung, ListSection global auf flex-div, alle Konfi-Views einheitlich. 5 Phasen, 6 Plans, 23 Requirements.
 
+## Shipped: v2.11 Admin/Teamer Design-Angleichung + Launch-Haertung (2026-06-01)
+
+Admin/Teamer-Views an Konfi-Referenz angeglichen, DSGVO/DSG-EKD-Loeschung (In-App + Auto-Cron), Konfi-Limits pro Org (max_konfis, 3-Stufen-Grace), Badge-Erweiterung (mandatory_event_count), App-Voll-Audit mit 42 behobenen Funden. 15 Phasen, 34 Plans.
+
+## Shipped: v2.12 Konfirmation + Konfispruch (2026-06-10)
+
+Konfirmations-Event-Flag (events.is_konfirmation ersetzt fragile Kategorie-Erkennung) und Konfispruch-Feature (kuratierte DB-Spruchliste mit 4 Uebersetzungen, Konfi-Auswahl per Modal, Jahrgang-Steuerzentrale mit pro-Jahrgang-Freischaltung). Konfirmationstermin lebt nur noch als is_konfirmation-Event (confirmation_date entfernt); Admin-Einsicht, Anwesenheitsmatrix-Umschaltung Spruch/Anwesenheit + E-Mail-Versand, Website-FAQ. 3 Phasen (117-119), 10 Plans, 13 Requirements. Audit passed, deployt + live.
+
 ## Geplant: v3.0 Onboarding + Landing
 
 **Goal:** Onboarding-Flow, Landing Website mit Erklaerung, Github Readme, Wiki — letzter Schritt vor oeffentlichem Launch.
@@ -156,9 +164,15 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 - Wrapped-Cron Date-Guard entfernt (node-cron Schedule reicht) -- v2.5
 - useOfflineQuery Stale-Closure via dataRef beseitigt -- v2.5
 
+- Konfirmations-Event-Flag (events.is_konfirmation) statt String-/Kategorie-Erkennung, lila Faerbung + Corner-Badge -- v2.12
+- Konfispruch: kuratierte DB-Liste (4 Uebersetzungen, ohne externe API), Konfi-Auswahl per Modal ODER Freitext, Dashboard-Card -- v2.12
+- Jahrgang-Steuerzentrale: Punkteziele + Konfispruch-Freischaltung + Wrapped-Freigabe pro Jahrgang in einem Modal -- v2.12
+- Konfirmationstermin als is_konfirmation-Event (jahrgaenge.confirmation_date entfernt), Auto-Loeschung + Wrapped-Cron keyen darauf -- v2.12
+- Admin-Konfispruch-Einsicht + Anwesenheitsmatrix-Umschaltung Spruch/Anwesenheit mit E-Mail-Versand + Website-FAQ -- v2.12
+
 ### Active
 
-(Definiert in REQUIREMENTS.md fuer v2.8 Design-Polish)
+(Definiert pro Milestone in REQUIREMENTS.md — naechster Milestone v3.0 via /gsd:new-milestone)
 
 ### Out of Scope
 
@@ -272,4 +286,10 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | file-type Magic-Bytes Upload | Client-MIME-Header allein nicht vertrauenswuerdig | Bestaetigt v2.7 |
 
 ---
-*Last updated: 2026-04-05 after v2.10 milestone complete*
+| is_konfirmation Boolean-Flag statt Kategorie-String | Echtes Flag analog mandatory ist robuster als fragile String-Erkennung | Bestaetigt v2.12 |
+| Kuratierte Konfispruch-DB statt externe Bibel-API | Stabilitaet vor Live-Daten; 4 Uebersetzungen ausreichend, Schema spaeter erweiterbar | Bestaetigt v2.12 |
+| confirmation_date faellt weg, Termin = is_konfirmation-Event | Eine Quelle der Wahrheit statt redundanter Jahrgang-Spalte | Bestaetigt v2.12 |
+| Konfispruch-Sichtbarkeit pro Jahrgang (konfspruch_enabled) | Analog Punktelogik; Admin steuert wann Konfis waehlen koennen | Bestaetigt v2.12 |
+
+---
+*Last updated: 2026-06-10 after v2.12 milestone complete*

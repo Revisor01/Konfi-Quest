@@ -1,5 +1,24 @@
 # Milestones
 
+## v2.12 Konfirmation + Konfispruch (Shipped: 2026-06-10)
+
+**Phases completed:** 3 phases (117-119), 10 plans
+
+**Range:** v2.11..HEAD — 175 Commits (inkl. v1.0.1-Launch-Arbeit), 256 Dateien (2026-06-01 bis 2026-06-10)
+
+**Key accomplishments:**
+
+- Konfirmations-Event-Flag (Phase 117): neue Spalte events.is_konfirmation (Migration 091) analog mandatory, POST/PUT-Validierung, Formular-Toggle "Konfirmation" neben "Pflicht-Event", lila Faerbung + Corner-Badge; fragile String-/Kategorie-Erkennung komplett durch Boolean-Flag ersetzt, Alt-Events per Datenmigration ueberfuehrt
+- Konfispruch-Datenmodell + Auswahl (Phase 118): kuratierte DB-Tabellen konfsprueche + konfspruch_uebersetzungen (4 Uebersetzungen/Vers, ohne externe API), konfi_profiles-Spalten fuer Listen-Wahl ODER Freitext, KonfispruchSelectModal (useIonModal, Uebersetzungs-Tabs + Freitext), Dashboard-Card "Dein Konfispruch" (Migration 093)
+- Jahrgang-Steuerzentrale (Phase 119): pro Jahrgang Punkteziele + Konfispruch-Freischaltung (konfspruch_enabled) + Wrapped-Freigabe in einem Modal, Card-Gate nur bei Freischaltung (Migration 094)
+- Konfirmationstermin-Umzug ins Datenmodell: jahrgaenge.confirmation_date faellt ganz weg; Termin lebt nur noch als is_konfirmation-Event — Auto-Loeschung, Wrapped-Cron (jetzt jaehrlich 6.1.) und Konfi-Dashboard keyen alle auf das Event
+- Admin-Funktionen Konfispruch: read-only Einsicht des gewaehlten Spruchs in Konfi-Details, Anwesenheitsmatrix mit Umschaltung Anwesenheit/Spruch + E-Mail-Versand der Liste ans eigene Buero, FAQ-Eintrag auf der Website
+- Audit (2026-06-10): 2 kritische Cross-Phase-Blocker aus Migration-091-Effekt gefunden + behoben (Konfi-Buchungssperre + Events-Tab lasen geloeschte Kategorie statt Flag), tote Fallbacks entfernt, Dependabot #122 (uuid CVE-2026-41907) geschlossen — 13/13 Requirements satisfied, deployt + live
+
+**Known deferred items at close:** 18 (alle nicht-blockierend — siehe STATE.md Deferred Items: 2 UAT-Sichtchecks, 5 Verification-Gaps davon 3 fremder Scope, 11 separate UI-Quick-Tasks)
+
+---
+
 ## v2.11 Admin/Teamer Design-Angleichung + Launch-Haertung (Shipped: 2026-06-01)
 
 **Phases completed:** 15 phases, 34 plans

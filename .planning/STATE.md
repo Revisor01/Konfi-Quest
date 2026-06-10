@@ -2,16 +2,41 @@
 gsd_state_version: 1.0
 milestone: v2.12
 milestone_name: Konfirmation + Konfispruch
-status: milestone_complete
-last_updated: 2026-06-09T20:44:10.846Z
+status: Awaiting next milestone
+last_updated: "2026-06-10T09:30:58.854Z"
+last_activity: 2026-06-10 — Milestone v2.12 completed and archived
 progress:
   total_phases: 18
-  completed_phases: 16
+  completed_phases: 17
   total_plans: 44
   completed_plans: 46
-  percent: 89
-stopped_at: Milestone complete (Phase 119 was final phase)
+  percent: 94
 ---
+
+## Deferred Items
+
+Items acknowledged and deferred at milestone close on 2026-06-10 (alle vom v2.12-Milestone-Audit als nicht-blockierend eingestuft):
+
+| Category | Item | Status |
+|----------|------|--------|
+| uat_gap | 118-HUMAN-UAT | partial (0 pending) |
+| uat_gap | 119-HUMAN-UAT (7 Xcode-Sichtchecks) | partial |
+| verification_gap | 118-VERIFICATION | human_needed |
+| verification_gap | 119-VERIFICATION | human_needed |
+| verification_gap | 103-VERIFICATION (fremder Scope, nicht v2.12) | human_needed |
+| verification_gap | 105-VERIFICATION (fremder Scope, nicht v2.12) | gaps_found |
+| verification_gap | 107-VERIFICATION (fremder Scope, nicht v2.12) | human_needed |
+| quick_task | 1-ui-fixes-checkboxen-umrandungen-farben-u | missing |
+| quick_task | 2-konfieventspage-tsx-typescript-interface | missing |
+| quick_task | 260324-k6j-github-readme-aktualisieren | missing |
+| quick_task | 260324-lt3-6-sicherheits-und-cleanup-fixes | missing |
+| quick_task | 260324-o5r-super-admin-useofflinequery-collapsible | missing |
+| quick_task | 260325-t3v-konfi-dashboard-events-card-wie-teamer | missing |
+| quick_task | 260326-ak9-punkte-uebersicht-stat-bubbles-wie-badge | missing |
+| quick_task | 3-ui-fixes-levelmanagementmodal-backdrop-p | missing |
+| quick_task | 4-material-ui-fixes-admin-teamer-events-ch | missing |
+| quick_task | 5-chat-dateien-bilder-in-app-fileviewer-st | missing |
+| quick_task | 6-teamer-material-ui-korrekturen-corner-ba | missing |
 
 # Project State
 
@@ -30,10 +55,10 @@ Requirements: REQUIREMENTS.md (KONF-01..08 erfuellt, SPRUCH-01..11 offen).
 
 ## Current Position
 
-Phase: 119
-Plan: Not started
-Milestone: v2.11 — COMPLETE (Shipped 2026-06-01)
-Naechster Milestone: v3.0 Launch (via /gsd:new-milestone)
+Phase: Milestone v2.12 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-06-10 — Milestone v2.12 completed and archived
 
 ## Performance Metrics
 
@@ -96,3 +121,7 @@ Alle v1.0-v2.7 Entscheidungen in PROJECT.md und milestones/ archiviert.
 |---|-------------|------|--------|-----------|
 | 260324-k6j | GitHub README mit allen 17 Milestones | 2026-03-24 | 38fede8 | [260324-k6j](./quick/260324-k6j-github-readme-aktualisieren-mit-allen-17/) |
 | 260324-lt3 | 6 Sicherheits- und Cleanup-Fixes | 2026-03-24 | 86104ae | [260324-lt3](./quick/260324-lt3-6-sicherheits-und-cleanup-fixes/) |
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
