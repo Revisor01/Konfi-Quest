@@ -245,8 +245,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     return now < twoDaysBeforeEvent;
   };
 
+  // Konfirmations-Event primaer ueber das is_konfirmation-Flag (Phase 117), Kategorie
+  // nur als Fallback fuer Altdaten ohne gesetztes Flag.
   const isKonfirmationEvent = (event: Event) => {
-    return event.categories?.some(cat => cat.name.toLowerCase().includes('konfirmation')) ||
+    return event.is_konfirmation === true ||
+           event.categories?.some(cat => cat.name.toLowerCase().includes('konfirmation')) ||
            event.category_names?.toLowerCase().includes('konfirmation') ||
            false;
   };
@@ -254,11 +257,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const checkExistingKonfirmation = async () => {
     try {
       const response = await api.get('/konfi/events');
-      const myEvents = response.data.filter((e: Event) => e.is_registered);
-      return myEvents.some((e: Event) =>
-        e.category_names?.toLowerCase().includes('konfirmation') ||
-        isKonfirmationEvent(e)
-      );
+      // Andere, bereits gebuchte Konfirmation (nicht dieses Event selbst).
+      const myEvents = response.data.filter((e: Event) => e.is_registered && e.id !== eventData?.id);
+      return myEvents.some((e: Event) => isKonfirmationEvent(e));
     } catch (err) {
       return false;
     }

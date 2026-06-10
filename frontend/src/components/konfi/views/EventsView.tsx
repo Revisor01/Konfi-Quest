@@ -74,6 +74,12 @@ const EventsView: React.FC<EventsViewProps> = ({
     events.filter(e => !e.is_konfirmation),
   [events]);
 
+  // Hat der Konfi bereits einen Konfirmationstermin gebucht? Dann sind die ANDEREN
+  // Konfirmations-Events gesperrt (man kann nur einen buchen) -> ausgegraut.
+  const hasKonfirmationBooked = useMemo(() =>
+    konfirmationEvents.some(e => e.is_registered),
+  [konfirmationEvents]);
+
   const eventCounts = useMemo(() => ({
     all: events.length,
     meine: events.filter(e => e.is_registered || e.booking_status === 'opted_out').length,
@@ -294,10 +300,16 @@ const EventsView: React.FC<EventsViewProps> = ({
         emptyIconColor="#dc2626"
       >
         {filteredEvents.map((event, index) => {
-          const { statusColor, statusText, statusIcon, isPastEvent, shouldGrayOut, isParticipated, isKonfirmationEvent } = getEventStatusInfo(event);
+          const statusInfo = getEventStatusInfo(event);
+          const { statusColor, statusIcon, isPastEvent, shouldGrayOut, isParticipated, isKonfirmationEvent } = statusInfo;
+          let statusText = statusInfo.statusText;
           const isCancelled = event.cancelled;
           const isOptedOut = event.is_opted_out || event.booking_status === 'opted_out';
-          const showBadge = !isPastEvent || isParticipated || isCancelled || isOptedOut;
+          // Konfirmations-Sperre: anderer Konfirmationstermin schon gebucht -> dieses
+          // (nicht gebuchte, zukuenftige) Konfirmations-Event ist gesperrt/ausgegraut.
+          const isKonfirmationLocked = isKonfirmationEvent && hasKonfirmationBooked && !event.is_registered && !isPastEvent;
+          if (isKonfirmationLocked) statusText = 'Anderer Termin';
+          const showBadge = !isPastEvent || isParticipated || isCancelled || isOptedOut || isKonfirmationLocked;
 
           return (
             <IonItemSliding key={event.id}>
@@ -321,7 +333,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                   style={{
                     width: '100%',
                     borderLeftColor: statusColor,
-                    opacity: shouldGrayOut ? 0.6 : 1,
+                    opacity: (shouldGrayOut || isKonfirmationLocked) ? 0.6 : 1,
                     position: 'relative',
                     overflow: 'hidden'
                   }}

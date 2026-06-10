@@ -1179,7 +1179,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
       // 1. Check if event exists (FOR UPDATE sperrt die Zeile)
       const { rows: [event] } = await client.query(
-        "SELECT id, name, description, event_date, event_end_time, location, points, point_type, type, max_participants, registration_opens_at, registration_closes_at, has_timeslots, waitlist_enabled, max_waitlist_size, is_series, series_id, mandatory, bring_items, checkin_window, teamer_needed, teamer_only, cancelled, qr_token, created_by, organization_id FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE",
+        "SELECT id, name, description, event_date, event_end_time, location, points, point_type, type, max_participants, registration_opens_at, registration_closes_at, has_timeslots, waitlist_enabled, max_waitlist_size, is_series, series_id, mandatory, is_konfirmation, bring_items, checkin_window, teamer_needed, teamer_only, cancelled, qr_token, created_by, organization_id FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE",
         [eventId, req.user.organization_id]
       );
       if (!event) {
@@ -1255,6 +1255,34 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         await client.query('ROLLBACK');
         client.release();
         return res.status(409).json({ error: 'Du bist bereits für dieses Event angemeldet' });
+      }
+
+      // 2b. Konfirmations-Sperre: ein Konfi darf nur EINEN Konfirmations-Termin buchen.
+      // Bucht er ein is_konfirmation-Event, obwohl er bereits an einer anderen (nicht
+      // abgesagten) Konfirmation angemeldet ist -> 409. Er muss die bestehende erst
+      // verlassen. Die anderen Termine werden im Frontend ausgegraut.
+      if (event.is_konfirmation) {
+        const { rows: [otherKonfirmation] } = await client.query(
+          `SELECT e.id, e.name, e.event_date
+             FROM event_bookings eb
+             JOIN events e ON e.id = eb.event_id
+            WHERE eb.user_id = $1
+              AND eb.event_id <> $2
+              AND eb.status = 'confirmed'
+              AND e.is_konfirmation = true
+              AND e.organization_id = $3
+              AND (e.cancelled IS NULL OR e.cancelled = false)
+            LIMIT 1`,
+          [userId, eventId, req.user.organization_id]
+        );
+        if (otherKonfirmation) {
+          await client.query('ROLLBACK');
+          client.release();
+          return res.status(409).json({
+            error: `Du bist bereits zu einem Konfirmationstermin angemeldet ("${otherKonfirmation.name}"). Melde dich dort zuerst ab, um einen anderen Termin zu wählen.`,
+            error_code: 'konfirmation_already_booked'
+          });
+        }
       }
 
       // 3. Check available spots and waitlist (Kapazität gilt nur für Konfis)
