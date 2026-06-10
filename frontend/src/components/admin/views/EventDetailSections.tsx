@@ -26,7 +26,6 @@ import {
   pricetag,
   closeCircle,
   checkmarkCircle,
-  chatbubbles,
   ban,
   returnUpBack,
   trash,
@@ -35,6 +34,7 @@ import {
   cloudOfflineOutline,
   lockOpenOutline
 } from 'ionicons/icons';
+import { getStatusIcon } from '../../shared/StatusBadge';
 
 // ---- Shared Types (re-export from main file's interfaces) ----
 
@@ -530,52 +530,19 @@ interface EventActionsSectionProps {
   eventData: EventData;
   isCancelled: boolean;
   isOnline: boolean;
-  handleNavigateToChat: () => void;
-  handleCreateEventChat: () => void;
   handleCancelEvent: () => void;
 }
 
+// Chat-Zugriff läuft über den Button im Header (EventDetailView), hier nur noch Absage
 export const EventActionsSection = React.memo<EventActionsSectionProps>(({
   eventData,
   isCancelled,
   isOnline,
-  handleNavigateToChat,
-  handleCreateEventChat,
   handleCancelEvent
 }) => {
   if (!eventData || isCancelled) return null;
   return (
     <>
-      {/* Event-Chat */}
-      <IonList className="app-section-inset" inset={true}>
-        <IonCard className="app-card">
-          <IonCardContent className="app-card-content">
-            <div className="app-event-detail__add-button-wrapper">
-              {eventData.chat_room_id ? (
-                <IonButton
-                  expand="block"
-                  fill="outline"
-                  onClick={handleNavigateToChat}
-                >
-                  <IonIcon icon={chatbubbles} className="app-event-detail__icon-gap" />
-                  Zum Chat
-                </IonButton>
-              ) : (
-                <IonButton
-                  expand="block"
-                  fill="outline"
-                  disabled={!isOnline}
-                  onClick={handleCreateEventChat}
-                >
-                  <IonIcon icon={chatbubbles} className="app-event-detail__icon-gap" />
-                  {!isOnline ? <><IonIcon icon={cloudOfflineOutline} style={{ marginRight: 4 }} /> Du bist offline</> : 'Chat erstellen'}
-                </IonButton>
-              )}
-            </div>
-          </IonCardContent>
-        </IonCard>
-      </IonList>
-
       {/* Event absagen */}
       <IonList className="app-section-inset" inset={true}>
         <IonCard className="app-card">
@@ -681,7 +648,13 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
                           onClick={() => showAttendanceActionSheet(participant)}>
                           <div className="app-list-item app-list-item--booked app-event-detail__list-item-flush">
                             <div className="app-corner-badges">
-                              <div className={`app-corner-badge ${cornerBadgeClass}`}>{statusText}</div>
+                              <div
+                                className={`app-corner-badge ${cornerBadgeClass}`}
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+                                title={statusText}
+                              >
+                                <IonIcon icon={getStatusIcon(statusText) || people} style={{ color: '#fff', fontSize: '0.85rem' }} />
+                              </div>
                             </div>
                             <div className="app-list-item__row">
                               <div className="app-list-item__main">

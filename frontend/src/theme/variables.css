@@ -281,28 +281,25 @@ ion-item-sliding:last-child {
 
 /* === Reason Boxes === */
 /* App Reason Box - fuer Abmeldungen, Ablehnungen, etc. */
+/* Kein eigener linker Farbbalken: Reason-Boxen sitzen in app-list-item,
+   das bereits einen farbigen border-left hat (sonst Doppelung) */
 .app-reason-box {
   margin-top: 8px;
   padding: 8px 12px;
   border-radius: 8px;
-  border-left-width: 3px;
-  border-left-style: solid;
   font-size: 0.85rem;
   line-height: 1.4;
 }
 .app-reason-box--danger {
   background-color: rgba(220, 53, 69, 0.08);
-  border-left-color: #dc3545;
   color: #666;
 }
 .app-reason-box--warning {
   background-color: rgba(255, 149, 0, 0.08);
-  border-left-color: #ff9500;
   color: #666;
 }
 .app-reason-box--info {
   background-color: rgba(0, 122, 255, 0.08);
-  border-left-color: #007aff;
   color: #666;
 }
 .app-reason-box__label {
@@ -2486,6 +2483,11 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   border-bottom: 1px solid #eee;
   vertical-align: middle;
 }
+/* Einheitliche Zeilenhöhe in beiden Ansichten (Anwesenheit + Sprüche) */
+.attendance-matrix tbody td {
+  height: 40px;
+  box-sizing: border-box;
+}
 .attendance-matrix thead th {
   position: sticky;
   top: 0;
@@ -2515,6 +2517,7 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 .attendance-matrix__th-event {
   min-width: 56px;
   max-width: 80px;
+  cursor: pointer;
 }
 /* Konfispruch-Liste: jede Zelle in einer Zeile, nicht stauchen/umbrechen
    (nur die Sprueche-Tabelle; in der Anwesenheitsmatrix bleiben die Status-Dots zentriert) */
@@ -2524,25 +2527,11 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   white-space: nowrap;
   padding-right: 16px;
 }
-.attendance-matrix__event-label {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  line-height: 1.1;
-}
 .attendance-matrix__event-date {
   font-size: 0.75rem;
   font-weight: 600;
   color: #333;
-}
-.attendance-matrix__event-name {
-  font-size: 0.65rem;
-  color: #888;
-  max-width: 70px;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .attendance-matrix__th-summary,
 .attendance-matrix__td-summary {

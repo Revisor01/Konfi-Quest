@@ -20,7 +20,8 @@ import {
   IonItem,
   IonInput,
   IonSegment,
-  IonSegmentButton
+  IonSegmentButton,
+  IonPopover
 } from '@ionic/react';
 import {
   closeOutline,
@@ -117,6 +118,8 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
   const [sprueche, setSprueche] = useState<SpruchRow[] | null>(null);
   const [spruecheLoading, setSpruecheLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  // Popover: Tipp auf ein Datum im Tabellenkopf zeigt den Event-Titel
+  const [eventPopover, setEventPopover] = useState<{ anchor: Event; event: EventCol } | null>(null);
 
   const loadMatrix = async (id: number) => {
     setLoading(true);
@@ -391,11 +394,13 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
                     <tr>
                       <th className="attendance-matrix__th-konfi">Konfi</th>
                       {data.events.map(e => (
-                        <th key={e.id} className="attendance-matrix__th-event" title={e.name}>
-                          <div className="attendance-matrix__event-label">
-                            <div className="attendance-matrix__event-date">{formatShortDate(e.event_date)}</div>
-                            <div className="attendance-matrix__event-name">{e.name}</div>
-                          </div>
+                        <th
+                          key={e.id}
+                          className="attendance-matrix__th-event"
+                          title={e.name}
+                          onClick={(ev) => setEventPopover({ anchor: ev.nativeEvent, event: e })}
+                        >
+                          <div className="attendance-matrix__event-date">{formatShortDate(e.event_date)}</div>
                         </th>
                       ))}
                       <th className="attendance-matrix__th-summary">Σ</th>
@@ -463,6 +468,21 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
             </IonCard>
           </IonList>
         )}
+
+        <IonPopover
+          isOpen={eventPopover !== null}
+          event={eventPopover?.anchor}
+          onDidDismiss={() => setEventPopover(null)}
+        >
+          <div style={{ padding: '10px 14px' }}>
+            <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{eventPopover?.event.name}</div>
+            <div style={{ color: '#666', fontSize: '0.8rem', marginTop: '2px' }}>
+              {eventPopover
+                ? new Date(eventPopover.event.event_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                : ''}
+            </div>
+          </div>
+        </IonPopover>
 
         <div className="ion-padding-bottom" />
       </IonContent>

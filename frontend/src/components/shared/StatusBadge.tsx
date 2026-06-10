@@ -33,7 +33,9 @@ const STATUS_ICON_MAP: Record<string, string> = {
   'Vergangen': timeOutline,
   // Konfi-Event Status
   'Angemeldet': checkmark,
+  'Gebucht': checkmark,
   'Anwesend': checkmarkDone,
+  'Abwesend': closeCircle,
   'Gefehlt': closeCircle,
   'Abgemeldet': closeCircle,
   'Verpasst': closeCircle,

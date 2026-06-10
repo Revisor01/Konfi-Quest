@@ -16,6 +16,7 @@ import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { parseLocalTime, getLocalNow } from '../../../utils/dateUtils';
 import { SectionHeader } from '../../shared';
+import { getStatusIcon } from '../../shared/StatusBadge';
 import EventModal from '../modals/EventModal';
 import ParticipantManagementModal from '../modals/ParticipantManagementModal';
 import QRDisplayModal from '../modals/QRDisplayModal';
@@ -507,7 +508,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         >
           <div className={`app-list-item ${listItemClass} app-event-detail__list-item-flush`}>
             <div className="app-corner-badges">
-              <div className={`app-corner-badge ${cornerBadgeClass}`}>{statusText}</div>
+              <div
+                className={`app-corner-badge ${cornerBadgeClass}`}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+                title={statusText}
+              >
+                <IonIcon icon={getStatusIcon(statusText) || people} style={{ color: '#fff', fontSize: '0.85rem' }} />
+              </div>
             </div>
             <div className="app-list-item__row">
               <div className="app-list-item__main">
@@ -774,14 +781,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           />
         )}
 
-        {/* Event-Chat + Event absagen */}
+        {/* Event absagen */}
         {eventData && (
           <EventActionsSection
             eventData={eventData as any}
             isCancelled={!!isCancelled}
             isOnline={isOnline}
-            handleNavigateToChat={handleNavigateToChat}
-            handleCreateEventChat={handleCreateEventChat}
             handleCancelEvent={handleCancelEvent}
           />
         )}
