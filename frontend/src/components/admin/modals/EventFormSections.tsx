@@ -476,7 +476,25 @@ interface SeriesSectionProps {
 
 export const SeriesSection = React.memo<SeriesSectionProps>(({
   formData, setFormData, loading
-}) => (
+}) => {
+  // Serien-Limit: max. 12 Monate Spannweite (Backend prüft identisch).
+  // Monatliches Intervall -> max. 12 Termine, alle anderen -> max. 26.
+  const maxCount = formData.series_interval === 'month' ? 12 : 26;
+
+  // Letzten Termin der Serie berechnen (gleiche Datums-Logik wie das Backend)
+  const lastDate = React.useMemo(() => {
+    if (!formData.is_series || !formData.event_date) return null;
+    const d = new Date(formData.event_date);
+    if (isNaN(d.getTime())) return null;
+    const steps = (formData.series_count || 2) - 1;
+    if (formData.series_interval === 'day') d.setDate(d.getDate() + steps);
+    else if (formData.series_interval === '2weeks') d.setDate(d.getDate() + steps * 14);
+    else if (formData.series_interval === 'month') d.setMonth(d.getMonth() + steps);
+    else d.setDate(d.getDate() + steps * 7);
+    return d;
+  }, [formData.is_series, formData.event_date, formData.series_count, formData.series_interval]);
+
+  return (
   <IonList inset={true} className="app-modal-section">
     <IonListHeader>
       <div className="app-section-icon app-section-icon--events">
@@ -505,9 +523,9 @@ export const SeriesSection = React.memo<SeriesSectionProps>(({
                   <span className="app-range-row__min">2</span>
                   <IonRange
                     className="app-range app-range--events"
-                    min={2} max={26} step={1}
+                    min={2} max={maxCount} step={1}
                     pin={true} pinFormatter={(value: number) => `${value}`}
-                    value={formData.series_count}
+                    value={Math.min(formData.series_count, maxCount)}
                     onIonChange={(e) => setFormData({ ...formData, series_count: e.detail.value as number })}
                     disabled={loading}
                   />
@@ -518,7 +536,16 @@ export const SeriesSection = React.memo<SeriesSectionProps>(({
                 <IonLabel position="stacked">Intervall</IonLabel>
                 <IonSelect
                   value={formData.series_interval}
-                  onIonChange={(e) => setFormData({ ...formData, series_interval: e.detail.value })}
+                  onIonChange={(e) => {
+                    const interval = e.detail.value;
+                    // Beim Wechsel auf monatlich Anzahl auf das 12-Monats-Limit kappen
+                    const cap = interval === 'month' ? 12 : 26;
+                    setFormData({
+                      ...formData,
+                      series_interval: interval,
+                      series_count: Math.min(formData.series_count, cap)
+                    });
+                  }}
                   placeholder="Intervall wählen"
                   disabled={loading}
                   interface="popover"
@@ -530,6 +557,13 @@ export const SeriesSection = React.memo<SeriesSectionProps>(({
                   <IonSelectOption value="month">Monatlich</IonSelectOption>
                 </IonSelect>
               </IonItem>
+              {lastDate && (
+                <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonLabel color="medium">
+                    <p>Letzter Termin: {lastDate.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+                  </IonLabel>
+                </IonItem>
+              )}
             </>
           )}
           {!formData.is_series && (
@@ -541,4 +575,5 @@ export const SeriesSection = React.memo<SeriesSectionProps>(({
       </IonCardContent>
     </IonCard>
   </IonList>
-));
+  );
+});

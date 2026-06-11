@@ -178,27 +178,46 @@ const AdminEventsPage: React.FC = () => {
       );
       
       if (seriesEvents.length > 0) {
+        // Dieser Termin + alle späteren der Serie (für "ab hier löschen", z.B. falsch
+        // angelegte Serie oder Reihe, die früher endet)
+        const followingEvents = [...seriesEvents, event].filter(e =>
+          new Date(e.event_date).getTime() >= new Date(event.event_date).getTime()
+        );
+
         // Show action sheet for series deletion
+        const buttons: any[] = [
+          {
+            text: 'Nur diesen Termin löschen',
+            icon: 'trash-outline',
+            handler: () => deleteSingleEvent(event)
+          }
+        ];
+        // Nur anbieten, wenn es nach diesem Termin noch weitere gibt und nicht
+        // ohnehin die ganze Serie gemeint ist
+        if (followingEvents.length > 1 && followingEvents.length < seriesEvents.length + 1) {
+          buttons.push({
+            text: `Diesen + alle folgenden löschen (${followingEvents.length} Termine)`,
+            icon: 'trash-outline',
+            role: 'destructive',
+            handler: () => deleteSeriesEvents(followingEvents, 'Diesen und alle folgenden Termine')
+          });
+        }
+        buttons.push(
+          {
+            text: `Ganze Serie löschen (${seriesEvents.length + 1} Termine)`,
+            icon: 'warning-outline',
+            role: 'destructive',
+            handler: () => deleteSeriesEvents([...seriesEvents, event], 'die ganze Serie')
+          },
+          {
+            text: 'Abbrechen',
+            role: 'cancel'
+          }
+        );
         presentActionSheet({
           header: `Serie-Event löschen`,
           subHeader: `"${event.name}" ist Teil einer Serie mit ${seriesEvents.length + 1} Terminen.`,
-          buttons: [
-            {
-              text: 'Nur diesen Termin löschen',
-              icon: 'trash-outline',
-              handler: () => deleteSingleEvent(event)
-            },
-            {
-              text: `Ganze Serie löschen (${seriesEvents.length + 1} Termine)`,
-              icon: 'warning-outline', 
-              role: 'destructive',
-              handler: () => deleteWholeSeries(event.series_id!, [...seriesEvents, event])
-            },
-            {
-              text: 'Abbrechen',
-              role: 'cancel'
-            }
-          ]
+          buttons
         });
         return;
       }
@@ -224,7 +243,6 @@ const AdminEventsPage: React.FC = () => {
           handler: async () => {
             try {
               await api.delete(`/events/${event.id}`);
-              setSuccess(`Event "${event.name}" gelöscht`);
               await refreshEvents();
               await refreshCancelled();
             } catch (error: any) {
@@ -236,28 +254,31 @@ const AdminEventsPage: React.FC = () => {
     });
   };
   
-  const deleteWholeSeries = async (seriesId: number, seriesEvents: Event[]) => {
+  // Löscht mehrere Serien-Termine (ganze Serie oder "diesen + alle folgenden").
+  // Einzelne Termine mit Anmeldungen/Verbuchung blockieren mit 409 — der Rest
+  // wird trotzdem gelöscht (Promise.allSettled), Fehler werden gesammelt gemeldet.
+  const deleteSeriesEvents = async (seriesEvents: Event[], label: string) => {
     presentAlert({
       header: 'Serie löschen',
-      message: `Wirklich die ganze Serie mit ${seriesEvents.length} Terminen löschen?`,
+      message: `Wirklich ${label} mit ${seriesEvents.length} Terminen löschen?`,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
           text: 'Löschen',
           role: 'destructive',
           handler: async () => {
-            try {
-              const deletePromises = seriesEvents.map(event => api.delete(`/events/${event.id}`));
-              await Promise.all(deletePromises);
-              setSuccess(`Serie mit ${seriesEvents.length} Terminen gelöscht`);
-              await refreshEvents();
-              await refreshCancelled();
-            } catch (error: any) {
-              if (error.response?.data?.error) {
-                setError(error.response.data.error);
-              } else {
-                setError('Fehler beim Löschen der Serie');
-              }
+            const results = await Promise.allSettled(
+              seriesEvents.map(event => api.delete(`/events/${event.id}`))
+            );
+            await refreshEvents();
+            await refreshCancelled();
+            const failed = results.filter(r => r.status === 'rejected');
+            if (failed.length > 0) {
+              const firstError = (failed[0] as PromiseRejectedResult).reason?.response?.data?.error;
+              setError(
+                `${failed.length} von ${seriesEvents.length} Terminen konnten nicht gelöscht werden` +
+                (firstError ? `: ${firstError}` : '')
+              );
             }
           }
         }

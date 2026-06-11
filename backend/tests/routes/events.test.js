@@ -649,4 +649,126 @@ describe('Events Routes', () => {
       expect(bookedIds).toContain(USERS.konfi2.id);
     });
   });
+
+  // ================================================================
+  // POST /api/events/series — Serien-Limits (max 26 Termine, max 12 Monate)
+  // ================================================================
+  describe('POST /api/events/series', () => {
+    const futureDate = () => {
+      const d = new Date();
+      d.setDate(d.getDate() + 7);
+      return d.toISOString();
+    };
+
+    it('Gueltige Serie (4x woechentlich) -> 201 + 4 Events', async () => {
+      const res = await request(app)
+        .post('/api/events/series')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Wochenandacht',
+          event_date: futureDate(),
+          series_count: 4,
+          series_interval: 'week',
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.events_created).toBe(4);
+
+      const { rows } = await db.query(
+        "SELECT id, series_id FROM events WHERE name LIKE 'Wochenandacht%' AND organization_id = $1",
+        [ORGS.org1.id]
+      );
+      expect(rows.length).toBe(4);
+      // Alle Events haengen an derselben series_id
+      expect(new Set(rows.map(r => String(r.series_id))).size).toBe(1);
+    });
+
+    it('Mehr als 26 Termine -> 400', async () => {
+      const res = await request(app)
+        .post('/api/events/series')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Riesen-Serie',
+          event_date: futureDate(),
+          series_count: 27,
+          series_interval: 'week',
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('26');
+    });
+
+    it('Nicht-ganzzahlige Anzahl -> 400', async () => {
+      const res = await request(app)
+        .post('/api/events/series')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Krumme Serie',
+          event_date: futureDate(),
+          series_count: 5.5,
+          series_interval: 'week',
+        });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('Ungueltiges Intervall -> 400 (kein stiller Fallback)', async () => {
+      const res = await request(app)
+        .post('/api/events/series')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Komische Serie',
+          event_date: futureDate(),
+          series_count: 4,
+          series_interval: 'year',
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('Intervall');
+    });
+
+    it('Monatlich x 13 ueberschreitet 12-Monats-Spannweite -> 400', async () => {
+      const res = await request(app)
+        .post('/api/events/series')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Zu lange Serie',
+          event_date: futureDate(),
+          series_count: 13,
+          series_interval: 'month',
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('12 Monate');
+    });
+
+    it('Monatlich x 12 bleibt innerhalb der Spannweite -> 201', async () => {
+      const res = await request(app)
+        .post('/api/events/series')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Jahres-Serie',
+          event_date: futureDate(),
+          series_count: 12,
+          series_interval: 'month',
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.events_created).toBe(12);
+    });
+
+    it('Konfi darf keine Serie erstellen -> 403', async () => {
+      const res = await request(app)
+        .post('/api/events/series')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({
+          name: 'Konfi-Serie',
+          event_date: futureDate(),
+          series_count: 3,
+          series_interval: 'week',
+        });
+
+      expect(res.status).toBe(403);
+    });
+  });
 });

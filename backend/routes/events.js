@@ -792,7 +792,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
  console.error('Database error in POST /events:', err);
       // '23505' is the PostgreSQL code for unique_violation
       if (err.code === '23505') {
-        return res.status(409).json({ error: 'A similar event might already exist.' });
+        return res.status(409).json({ error: 'Ein ähnliches Event existiert möglicherweise bereits.' });
       }
       res.status(500).json({ error: 'Datenbankfehler' });
     }
@@ -1588,8 +1588,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       client.release();
 
       const responseMessage = timeslot
-      ? `Participant added to timeslot ${new Date(timeslot.start_time).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})} - ${new Date(timeslot.end_time).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})} ${finalStatus === 'waitlist' ? '(waitlist)' : 'successfully'}`
-      : `Participant added ${finalStatus === 'waitlist' ? 'to waitlist' : 'successfully'}`;
+      ? `Teilnehmer:in zum Zeitslot ${new Date(timeslot.start_time).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})} - ${new Date(timeslot.end_time).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})} ${finalStatus === 'waitlist' ? 'auf Warteliste gesetzt' : 'hinzugefügt'}`
+      : `Teilnehmer:in ${finalStatus === 'waitlist' ? 'auf Warteliste gesetzt' : 'hinzugefügt'}`;
 
       res.status(201).json({
         id: newBooking.id,
@@ -1713,26 +1713,50 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     if (!name || !event_date || !series_count || series_count < 2) {
       return res.status(400).json({ error: 'Name, Datum und Serienanzahl (min. 2) sind erforderlich' });
     }
-    
+
+    // Serien-Limits: max. 26 Termine, gültiges Intervall, max. 12 Monate Spannweite.
+    // Verhindert versehentliche oder missbräuchliche Riesen-Serien (Aufräumen wäre teuer).
+    const SERIES_MAX_COUNT = 26;
+    const SERIES_MAX_SPAN_MONTHS = 12;
+    const SERIES_INTERVALS = ['day', 'week', '2weeks', 'month'];
+
+    if (!Number.isInteger(series_count) || series_count > SERIES_MAX_COUNT) {
+      return res.status(400).json({ error: `Eine Serie darf höchstens ${SERIES_MAX_COUNT} Termine haben` });
+    }
+    if (series_interval !== undefined && !SERIES_INTERVALS.includes(series_interval)) {
+      return res.status(400).json({ error: 'Ungültiges Serien-Intervall. Erlaubt: day, week, 2weeks, month' });
+    }
+
+    const generateSeriesDates = (startDate, count, interval) => {
+      const dates = [];
+      let currentDate = new Date(startDate);
+      for (let i = 0; i < count; i++) {
+        dates.push(new Date(currentDate));
+        if (interval === 'day') currentDate.setDate(currentDate.getDate() + 1);
+        else if (interval === '2weeks') currentDate.setDate(currentDate.getDate() + 14);
+        else if (interval === 'month') currentDate.setMonth(currentDate.getMonth() + 1);
+        else currentDate.setDate(currentDate.getDate() + 7); // 'week' und default: wöchentlich
+      }
+      return dates;
+    };
+
+    const seriesDates = generateSeriesDates(event_date, series_count, series_interval);
+
+    // Spannweite prüfen: letzter Termin muss VOR first + 12 Monate liegen.
+    // (>= statt >: monatlich x 13 endet exakt +12 Monate und soll abgelehnt
+    // werden — das Frontend erlaubt bei monatlich max. 12 Termine.)
+    const spanLimit = new Date(seriesDates[0]);
+    spanLimit.setMonth(spanLimit.getMonth() + SERIES_MAX_SPAN_MONTHS);
+    const lastDate = seriesDates[seriesDates.length - 1];
+    if (lastDate >= spanLimit) {
+      return res.status(400).json({
+        error: `Eine Serie darf höchstens ${SERIES_MAX_SPAN_MONTHS} Monate umfassen (letzter Termin wäre ${lastDate.toLocaleDateString('de-DE')})`
+      });
+    }
+
     const client = await db.getClient();
     try {
       await client.query('BEGIN');
-
-      const generateSeriesDates = (startDate, count, interval) => {
-        const dates = [];
-        let currentDate = new Date(startDate);
-        for (let i = 0; i < count; i++) {
-          dates.push(new Date(currentDate));
-          if (interval === 'day') currentDate.setDate(currentDate.getDate() + 1);
-          else if (interval === 'week') currentDate.setDate(currentDate.getDate() + 7);
-          else if (interval === '2weeks') currentDate.setDate(currentDate.getDate() + 14);
-          else if (interval === 'month') currentDate.setMonth(currentDate.getMonth() + 1);
-          else currentDate.setDate(currentDate.getDate() + 7); // default: weekly
-        }
-        return dates;
-      };
-
-      const seriesDates = generateSeriesDates(event_date, series_count, series_interval);
       let seriesId = null; // Will be set to the first event's ID
 
 
@@ -1889,7 +1913,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       const { rows: [booking] } = await db.query("SELECT eb.status, eb.attendance_status, eb.user_id, e.organization_id FROM event_bookings eb JOIN events e ON eb.event_id = e.id WHERE eb.id = $1 AND eb.event_id = $2", [participantId, eventId]);
       if (!booking) return res.status(404).json({ error: 'Buchung nicht gefunden' });
       if (booking.organization_id !== req.user.organization_id) return res.status(403).json({ error: 'Zugriff verweigert' });
-      if (booking.status === status) return res.status(400).json({ error: `Participant already ${status}` });
+      if (booking.status === status) return res.status(400).json({ error: `Teilnehmer:in ist bereits ${status === 'confirmed' ? 'bestätigt' : 'auf der Warteliste'}` });
 
       if (status === 'waitlist') {
         // Auf Warteliste: attendance_status löschen und Event-Punkte zurücknehmen
@@ -1908,8 +1932,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         await db.query("UPDATE event_bookings SET status = $1 WHERE id = $2", [status, participantId]);
       }
 
-      const action = status === 'confirmed' ? 'promoted from waitlist' : 'moved to waitlist';
-      res.json({ message: `Participant ${action}`, status });
+      const action = status === 'confirmed' ? 'Teilnehmer:in von Warteliste bestätigt' : 'Teilnehmer:in auf Warteliste gesetzt';
+      res.json({ message: action, status });
       
     } catch (err) {
  console.error(`Database error in PUT /events/${eventId}/participants/${participantId}/status:`, err);
