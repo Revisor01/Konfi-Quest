@@ -195,7 +195,7 @@ const BibleTranslationModal: React.FC<{
 };
 
 const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presentingElement, pageRef }) => {
-  const { user, setSuccess, setError } = useApp();
+  const { user, setError } = useApp();
   const [presentAlert] = useIonAlert();
 
   const [selectedTranslation, setSelectedTranslation] = useState<string>(profile.bible_translation || 'LUT');
@@ -249,7 +249,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     // Offline: Optimistic UI + Queue-Fallback (fire-and-forget)
     if (!networkMonitor.isOnline) {
       setSelectedTranslation(translation);
-      setSuccess(`Bibelübersetzung auf ${getTranslationName(translation)} geändert`);
       writeQueue.enqueue({
         method: 'PUT',
         url: '/konfi/bible-translation',
@@ -264,7 +263,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     try {
       await api.put('/konfi/bible-translation', { translation });
       setSelectedTranslation(translation);
-      setSuccess(`Bibelübersetzung auf ${getTranslationName(translation)} geändert`);
       // Update profile to reflect the change
       await onReload();
     } catch (err: any) {

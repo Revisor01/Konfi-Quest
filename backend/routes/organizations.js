@@ -68,6 +68,44 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
     }
   });
 
+  // Get current organization details (muss VOR /:id stehen, sonst wird "current" als ID gefangen)
+  router.get('/current', rbacVerifier, async (req, res) => {
+    try {
+      const organizationId = req.user.organization_id;
+
+      const query = `
+        SELECT o.*,
+               COUNT(DISTINCT CASE WHEN r.name != 'konfi' THEN u.id END) as user_count,
+               COUNT(DISTINCT kp.user_id) as konfi_count,
+               COUNT(DISTINCT j.id) as jahrgang_count,
+               COUNT(DISTINCT a.id) as activity_count,
+               COUNT(DISTINCT e.id) as event_count,
+               COUNT(DISTINCT cb.id) as badge_count
+        FROM organizations o
+        LEFT JOIN users u ON o.id = u.organization_id AND u.is_active = true
+        LEFT JOIN roles r ON u.role_id = r.id
+        LEFT JOIN konfi_profiles kp ON o.id = kp.organization_id
+        LEFT JOIN jahrgaenge j ON o.id = j.organization_id
+        LEFT JOIN activities a ON o.id = a.organization_id
+        LEFT JOIN events e ON o.id = e.organization_id
+        LEFT JOIN custom_badges cb ON o.id = cb.organization_id
+        WHERE o.id = $1
+        GROUP BY o.id
+      `;
+
+      const { rows: [organization] } = await db.query(query, [organizationId]);
+
+      if (!organization) {
+        return res.status(404).json({ error: 'Organisation nicht gefunden' });
+      }
+
+      res.json(organization);
+    } catch (err) {
+ console.error('Database error in GET /organizations/current:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
   // Get single organization by ID
   // super_admin: alle, org_admin: nur eigene
   // OPTIMIERT: Parallele Queries statt JOIN-Monster
@@ -125,44 +163,6 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       res.json(organization);
     } catch (err) {
  console.error('Database error in GET /organizations/:id:', err);
-      res.status(500).json({ error: 'Datenbankfehler' });
-    }
-  });
-
-  // Get current organization details
-  router.get('/current', rbacVerifier, async (req, res) => {
-    try {
-      const organizationId = req.user.organization_id;
-      
-      const query = `
-        SELECT o.*,
-               COUNT(DISTINCT CASE WHEN r.name != 'konfi' THEN u.id END) as user_count,
-               COUNT(DISTINCT kp.user_id) as konfi_count,
-               COUNT(DISTINCT j.id) as jahrgang_count,
-               COUNT(DISTINCT a.id) as activity_count,
-               COUNT(DISTINCT e.id) as event_count,
-               COUNT(DISTINCT cb.id) as badge_count
-        FROM organizations o
-        LEFT JOIN users u ON o.id = u.organization_id AND u.is_active = true
-        LEFT JOIN roles r ON u.role_id = r.id
-        LEFT JOIN konfi_profiles kp ON o.id = kp.organization_id
-        LEFT JOIN jahrgaenge j ON o.id = j.organization_id
-        LEFT JOIN activities a ON o.id = a.organization_id
-        LEFT JOIN events e ON o.id = e.organization_id
-        LEFT JOIN custom_badges cb ON o.id = cb.organization_id
-        WHERE o.id = $1
-        GROUP BY o.id
-      `;
-      
-      const { rows: [organization] } = await db.query(query, [organizationId]);
-      
-      if (!organization) {
-        return res.status(404).json({ error: 'Organisation nicht gefunden' });
-      }
-      
-      res.json(organization);
-    } catch (err) {
- console.error('Database error in GET /organizations/current:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -304,7 +304,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
         admin_user_id: newAdmin.id,
         default_badges_created: defaultBadges.length,
         default_certificates_created: defaultCertificates.length,
-        message: `Organization created successfully with default roles, admin user, ${defaultBadges.length} badges, and ${defaultCertificates.length} certificates`
+        message: `Organisation erfolgreich erstellt (Standard-Rollen, Admin, ${defaultBadges.length} Badges, ${defaultCertificates.length} Zertifikate)`
       });
 
     } catch (err) {

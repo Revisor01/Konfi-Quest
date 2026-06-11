@@ -322,7 +322,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         }
         const { rows: [existing] } = await db.query("SELECT id FROM chat_rooms WHERE type = 'jahrgang' AND jahrgang_id = $1 AND organization_id = $2", [jahrgang_id, organizationId]);
         if (existing) {
-          return res.status(400).json({ error: 'Jahrgangs-Chat existiert bereits' });
+          return res.status(409).json({ error: 'Jahrgangs-Chat existiert bereits' });
         }
       }
       
@@ -889,7 +889,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       
     } catch (err) {
  console.error(`Database error in POST /rooms/${req.params.roomId}/mark-read:`, err);
-      res.status(500).json({ error: 'Database error: ' + err.message });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -961,7 +961,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.status(403).json({ error: 'Nur Admins können Teilnehmer hinzufügen' });
       }
       if (!user_id || !user_type) {
-        return res.status(400).json({ error: 'user_id and user_type are required' });
+        return res.status(400).json({ error: 'user_id und user_type sind erforderlich' });
       }
       if (!['admin', 'konfi'].includes(user_type)) {
         return res.status(400).json({ error: 'Ungültiger Benutzertyp' });
@@ -1189,7 +1189,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
  console.error('Push badge update failed:', error);
         res.status(502).json({ 
           success: false, 
-          error: 'Push notification failed' 
+          error: 'Push-Benachrichtigung fehlgeschlagen'
         });
       } else {
  console.error('Badge update endpoint error:', error);

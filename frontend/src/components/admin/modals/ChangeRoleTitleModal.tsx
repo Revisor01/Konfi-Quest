@@ -73,7 +73,6 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
         await api.post('/auth/update-role-title', {
           role_title: roleTitle.trim()
         });
-        setSuccess('Funktionsbeschreibung erfolgreich aktualisiert');
         onSuccess();
       } catch (err: any) {
         setError(err.response?.data?.error || 'Fehler beim Aktualisieren der Funktionsbeschreibung');

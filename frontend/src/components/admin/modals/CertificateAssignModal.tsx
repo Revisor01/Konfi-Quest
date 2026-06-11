@@ -152,7 +152,7 @@ const CertificateAssignModal: React.FC<CertificateAssignModalProps> = ({
   onClose,
   onSuccess
 }) => {
-  const { setSuccess, setError } = useApp();
+  const { setError } = useApp();
   const { isSubmitting, guard } = useActionGuard();
 
   const [selectedTypeId, setSelectedTypeId] = useState<number | null>(
@@ -187,7 +187,6 @@ const CertificateAssignModal: React.FC<CertificateAssignModalProps> = ({
           issued_date: issuedDate,
           expiry_date: expiryDate
         });
-        setSuccess('Zertifikat zugewiesen');
         onSuccess();
       } catch (err: any) {
         setError(err.response?.data?.error || 'Fehler beim Zuweisen');

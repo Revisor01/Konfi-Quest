@@ -276,11 +276,11 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         client.release();
       }
 
-      res.json({ message: 'Account erfolgreich geloescht' });
+      res.json({ message: 'Account erfolgreich gelöscht' });
 
     } catch (err) {
  console.error('Database error in POST /api/auth/delete-account:', err);
-      res.status(500).json({ error: 'Fehler beim Loeschen des Accounts' });
+      res.status(500).json({ error: 'Fehler beim Löschen des Accounts' });
     }
   });
 
@@ -541,7 +541,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       res.json({ message: 'Einladungscode gelöscht' });
     } catch (err) {
       console.error('Error deleting invite code:', err);
-      res.status(500).json({ error: 'Fehler beim Löschen' });
+      res.status(500).json({ error: 'Fehler beim Löschen des Einladungscodes' });
     }
   });
 
@@ -682,7 +682,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         if (stufe === 'hard_block') {
           await client.query('ROLLBACK');
           return res.status(403).json({
-            error: 'Die Anzahl der Konfis ist erreicht. Bitte wende dich an deine Leitung — ein Tarif-Upgrade ist noetig.',
+            error: 'Die Anzahl der Konfis ist erreicht. Bitte wende dich an deine Leitung — ein Tarif-Upgrade ist nötig.',
             error_code: 'limit_exceeded'
           });
         }
@@ -894,7 +894,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         return res.status(403).json({
           error: trialExpired
             ? 'Die Testphase dieser Organisation ist abgelaufen.'
-            : 'Zugang gesperrt.',
+            : 'Diese Organisation ist derzeit gesperrt. Bitte wende dich an deine Gemeinde.',
           error_code: trialExpired ? 'org_trial_expired' : (user.user_active === false ? 'user_inactive' : 'org_inactive')
         });
       }

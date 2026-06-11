@@ -127,7 +127,6 @@ const AdminPasswordResetModal: React.FC<AdminPasswordResetModalProps> = ({ admin
       return;
     }
     if (!passwordsMatch) {
-      setError('Die Passwörter stimmen nicht überein');
       return;
     }
 

@@ -942,7 +942,6 @@ interface TeamerSinceSectionProps {
   konfiId: number;
   api: any;
   setCurrentKonfi: (fn: (prev: Konfi | null) => Konfi | null) => void;
-  setSuccess: (msg: string) => void;
   setError: (msg: string) => void;
 }
 
@@ -951,7 +950,6 @@ export const TeamerSinceSection = React.memo<TeamerSinceSectionProps>(({
   konfiId,
   api: apiInstance,
   setCurrentKonfi,
-  setSuccess,
   setError
 }) => (
   <IonList className="app-section-inset" inset={true} style={{ marginBottom: '32px' }}>
@@ -982,7 +980,6 @@ export const TeamerSinceSection = React.memo<TeamerSinceSectionProps>(({
           try {
             await apiInstance.put(`/admin/konfis/${konfiId}/teamer-since`, { teamer_since: newDate });
             setCurrentKonfi(prev => prev ? { ...prev, teamer_since: newDate } : prev);
-            setSuccess('Aktiv-seit-Datum aktualisiert');
           } catch {
             setError('Fehler beim Aktualisieren');
           }

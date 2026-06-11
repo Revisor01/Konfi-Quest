@@ -13,6 +13,7 @@ import {
   IonItemOptions,
   IonItemOption,
   useIonModal,
+  useIonAlert,
   IonRefresher,
   IonRefresherContent
 } from '@ionic/react';
@@ -117,7 +118,8 @@ interface Level {
 
 const AdminLevelsPage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-levels');
-  const { user, setSuccess, setError, isOnline } = useApp();
+  const { user, setError, isOnline } = useApp();
+  const [presentAlert] = useIonAlert();
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
   const [editLevel, setEditLevel] = useState<Level | undefined>(undefined);
 
@@ -147,23 +149,31 @@ const AdminLevelsPage: React.FC = () => {
     presentLevelModal({ presentingElement });
   };
 
-  const handleDelete = async (level: Level) => {
+  const handleDelete = (level: Level) => {
     if (!isOnline) return;
-    if (!confirm(`Level "${level.title}" wirklich löschen?`)) return;
-
-    const slidingElement = slidingRefs.current.get(level.id);
-
-    try {
-      await api.delete(`/levels/${level.id}`);
-      setSuccess('Level gelöscht');
-      await refreshLevels();
-    } catch (error: any) {
-      if (slidingElement) {
-        await slidingElement.close();
-      }
-      const errorMessage = error.response?.data?.error || 'Fehler beim Löschen des Levels';
-      alert(errorMessage);
-    }
+    presentAlert({
+      header: 'Level löschen',
+      message: `Level "${level.title}" wirklich löschen?`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Löschen',
+          role: 'destructive',
+          handler: async () => {
+            const slidingElement = slidingRefs.current.get(level.id);
+            try {
+              await api.delete(`/levels/${level.id}`);
+              await refreshLevels();
+            } catch (error: any) {
+              if (slidingElement) {
+                await slidingElement.close();
+              }
+              setError(error.response?.data?.error || 'Fehler beim Löschen des Levels');
+            }
+          }
+        }
+      ]
+    });
   };
 
   const handleRefresh = async (event: CustomEvent) => {

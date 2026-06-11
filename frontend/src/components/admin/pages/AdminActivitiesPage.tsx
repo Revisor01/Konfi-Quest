@@ -36,7 +36,7 @@ interface Activity {
 }
 
 const AdminActivitiesPage: React.FC = () => {
-  const { user, setSuccess, setError, isOnline } = useApp();
+  const { user, setError, isOnline } = useApp();
   const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-activities');
   
   // State
@@ -83,7 +83,6 @@ const AdminActivitiesPage: React.FC = () => {
           handler: async () => {
             try {
               await api.delete(`/admin/activities/${activity.id}`);
-              setSuccess(`Aktivität "${activity.name}" gelöscht`);
               await refreshActivities();
             } catch (err: any) {
               const errorMessage = err.response?.data?.error || 'Fehler beim Löschen der Aktivität';

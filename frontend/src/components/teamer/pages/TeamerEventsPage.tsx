@@ -289,7 +289,6 @@ const TeamerEventsPage: React.FC = () => {
     try {
       if (networkMonitor.isOnline) {
         await api.post(`/events/${event.id}/book`);
-        setSuccess('Du bist dabei!');
         await refresh();
         // Update selectedEvent
         const updated = (await api.get('/events')).data.find((e: Event) => e.id === event.id);
@@ -321,7 +320,6 @@ const TeamerEventsPage: React.FC = () => {
     try {
       if (networkMonitor.isOnline) {
         await api.delete(`/events/${event.id}/book`);
-        setSuccess('Du bist nicht mehr dabei');
         await refresh();
         const updated = (await api.get('/events')).data.find((e: Event) => e.id === event.id);
         if (updated) setSelectedEvent(updated);

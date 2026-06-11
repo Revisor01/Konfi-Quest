@@ -89,7 +89,7 @@ router.post('/', verifyTokenRBAC, validateCreateLevel, async (req, res) => {
   } catch (error) {
  console.error('Fehler beim Erstellen des Levels:', error);
     if (error.code === '23505') { // Unique constraint violation
-      res.status(400).json({ error: 'Ein Level mit diesem Namen existiert bereits' });
+      res.status(400).json({ error: 'Ein Level mit dieser Punktzahl existiert bereits' });
     } else {
       res.status(500).json({ error: 'Fehler beim Erstellen des Levels' });
     }
@@ -153,7 +153,7 @@ router.put('/:id', verifyTokenRBAC, validateUpdateLevel, async (req, res) => {
   } catch (error) {
  console.error('Fehler beim Bearbeiten des Levels:', error);
     if (error.code === '23505') { // Unique constraint violation
-      res.status(400).json({ error: 'Ein Level mit diesem Namen existiert bereits' });
+      res.status(400).json({ error: 'Ein Level mit dieser Punktzahl existiert bereits' });
     } else {
       res.status(500).json({ error: 'Fehler beim Bearbeiten des Levels' });
     }
@@ -189,7 +189,7 @@ router.delete('/:id', verifyTokenRBAC, validateLevelId, async (req, res) => {
     `, [organizationId, levelId]);
 
     if (parseInt(levelUsage.rows[0].count) > 0) {
-      return res.status(400).json({ 
+      return res.status(409).json({
         error: 'Level kann nicht gelöscht werden, da es von Konfis verwendet wird',
         usage_count: parseInt(levelUsage.rows[0].count)
       });

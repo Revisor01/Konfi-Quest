@@ -140,7 +140,6 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
       if (networkMonitor.isOnline) {
         try {
           await api.put(`/admin/activities/requests/${request.id}`, body);
-          setSuccess(`Antrag von "${request.konfi_name}" ${selectedAction === 'approve' ? 'genehmigt' : 'abgelehnt'}`);
           // Parent-Page refresht via onSuccess + useLiveRefresh
           onSuccess();
           onClose();

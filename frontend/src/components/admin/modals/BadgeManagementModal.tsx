@@ -435,10 +435,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         // Online-Pfad: direkt senden
         if (isEditMode) {
           await api.put(`/admin/badges/${badgeId}`, badgeData);
-          setSuccess('Badge erfolgreich aktualisiert');
         } else {
           await api.post('/admin/badges', badgeData);
-          setSuccess('Badge erfolgreich erstellt');
         }
       } else {
         // Offline-Pfad: Queue-Fallback

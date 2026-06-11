@@ -48,7 +48,7 @@ interface Organization {
 }
 
 const AdminOrganizationsPage: React.FC = () => {
-  const { setSuccess, setError, isOnline, refreshUser } = useApp();
+  const { setError, isOnline, refreshUser } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-organizations');
   
   // SWR-Cache für Organisationen
@@ -124,7 +124,6 @@ const AdminOrganizationsPage: React.FC = () => {
           handler: async () => {
             try {
               await api.delete(`/organizations/${organization.id}`);
-              setSuccess(`Organisation "${organization.display_name}" gelöscht`);
               await loadOrganizations();
             } catch (err: any) {
               if (err.response?.data?.error) {

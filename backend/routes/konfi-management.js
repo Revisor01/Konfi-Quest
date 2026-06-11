@@ -172,7 +172,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 // Harte Grenze (count >= limit + 5): kein Override, auch nicht mit confirm.
                 await client.query('ROLLBACK');
                 return res.status(403).json({
-                    error: `Tarif-Grenze erreicht (${count} von ${limit} Konfis). Ein Tarif-Upgrade ist noetig, um weitere Konfis anzulegen.`,
+                    error: `Tarif-Grenze erreicht (${count} von ${limit} Konfis). Ein Tarif-Upgrade ist nötig, um weitere Konfis anzulegen.`,
                     error_code: 'limit_exceeded',
                     count,
                     limit,
@@ -184,7 +184,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 // Grace-Bereich ohne Bestaetigung: 409, Frontend zeigt Dialog (D-05.2).
                 await client.query('ROLLBACK');
                 return res.status(409).json({
-                    error: `Tarif ausgeschoepft (${count} von ${limit} Konfis). Du kannst bis zu 5 weitere anlegen — danach ist ein Upgrade noetig.`,
+                    error: `Tarif ausgeschöpft (${count} von ${limit} Konfis). Du kannst bis zu 5 weitere anlegen — danach ist ein Upgrade nötig.`,
                     error_code: 'limit_grace',
                     count,
                     limit,

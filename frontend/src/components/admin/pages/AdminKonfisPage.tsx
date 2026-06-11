@@ -128,7 +128,6 @@ const AdminKonfisPage: React.FC = () => {
           handler: async () => {
             try {
               await api.delete(`/admin/konfis/${konfi.id}`);
-              setSuccess(`Konfi "${konfi.name}" gelöscht`);
               await refreshKonfis();
             } catch (err) {
               setError('Fehler beim Löschen');
@@ -174,8 +173,6 @@ const AdminKonfisPage: React.FC = () => {
           { text: 'Fertig', role: 'cancel' }
         ]
       });
-    } else {
-      setSuccess(`Konfi "${response.data.name}" erfolgreich hinzugefügt`);
     }
 
     // Sofortige Aktualisierung
@@ -236,7 +233,7 @@ const AdminKonfisPage: React.FC = () => {
         });
       } else if (err.response?.status === 409) {
         // Username-Kollision (unverändert)
-        setError('Ein Konfi mit diesem Namen existiert bereits. Bitte wählen Sie einen anderen Namen.');
+        setError('Ein Konfi mit diesem Namen existiert bereits.');
       } else {
         setError(err.response?.data?.error || 'Fehler beim Hinzufügen des Konfis');
       }

@@ -27,7 +27,7 @@ import { AdminUser } from '../../../types/user';
 import { triggerPullHaptic } from '../../../utils/haptics';
 
 const AdminUsersPage: React.FC = () => {
-  const { setSuccess, setError, user, isOnline } = useApp();
+  const { setError, user, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-users');
   
   // Offline-Query: Users
@@ -76,7 +76,6 @@ const AdminUsersPage: React.FC = () => {
           handler: async () => {
             try {
               await api.delete(`/users/${userToDelete.id}`);
-              setSuccess(`Benutzer "${userToDelete.display_name}" gelöscht`);
               await refreshUsers();
             } catch (err: any) {
               if (err.response?.data?.error) {

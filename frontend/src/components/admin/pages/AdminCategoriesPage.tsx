@@ -113,10 +113,8 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
       try {
         if (category) {
           await api.put(`/admin/categories/${category.id}`, payload);
-          setSuccess('Kategorie aktualisiert');
         } else {
           await api.post('/admin/categories', payload);
-          setSuccess('Kategorie erstellt');
         }
 
         onSuccess();
@@ -266,7 +264,6 @@ const AdminCategoriesPage: React.FC = () => {
             const slidingElement = slidingRefs.current.get(category.id);
             try {
               await api.delete(`/admin/categories/${category.id}`);
-              setSuccess(`Kategorie "${category.name}" gelöscht`);
               refreshCategories();
             } catch (error: any) {
               if (slidingElement) {

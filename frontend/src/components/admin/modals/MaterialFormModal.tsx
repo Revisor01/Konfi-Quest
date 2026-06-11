@@ -237,7 +237,6 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
             try {
               await api.delete(`/material/files/${file.id}`);
               setExistingFiles(prev => prev.filter(f => f.id !== file.id));
-              setSuccess('Datei gelöscht');
             } catch {
               setError('Fehler beim Löschen der Datei');
             }
@@ -284,7 +283,6 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
             });
           }
 
-          setSuccess(material ? 'Material aktualisiert' : 'Material erstellt');
         } else {
           // Offline-Pfad: Nur Metadaten queuen (Dateien nur online)
           await writeQueue.enqueue({

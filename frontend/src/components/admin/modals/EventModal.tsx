@@ -230,14 +230,12 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         if (event && event.id && event.id > 0) {
           const { is_series, series_count, series_interval, ...updatePayload } = payload;
           await api.put(`/events/${event.id}`, updatePayload);
-          setSuccess('Event aktualisiert');
         } else {
           if (formData.is_series) {
             await api.post('/events/series', payload);
             setSuccess(`Event-Serie mit ${formData.series_count} Events erstellt`);
           } else {
             await api.post('/events', payload);
-            setSuccess('Event erstellt');
           }
         }
       } else {

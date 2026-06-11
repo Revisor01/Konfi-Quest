@@ -64,7 +64,7 @@ interface Material {
 const AdminMaterialPage: React.FC = () => {
   const pageRef = useRef<HTMLElement>(null);
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
-  const { user, setError, setSuccess, isOnline } = useApp();
+  const { user, setError, isOnline } = useApp();
   const [presentAlert] = useIonAlert();
 
   const [search, setSearch] = useState('');
@@ -112,7 +112,6 @@ const AdminMaterialPage: React.FC = () => {
           handler: async () => {
             try {
               await api.delete(`/material/${material.id}`);
-              setSuccess('Material gelöscht');
               refreshMaterial();
             } catch (err: any) {
               setError(err.response?.data?.error || 'Fehler beim Löschen');

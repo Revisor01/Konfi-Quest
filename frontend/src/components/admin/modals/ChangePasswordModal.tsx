@@ -103,7 +103,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
 
   const handleSave = async () => {
     if (!passwordData.current_password) {
-      setError('Bitte geben Sie Ihr aktuelles Passwort ein');
+      setError('Bitte gib dein aktuelles Passwort ein');
       return;
     }
 

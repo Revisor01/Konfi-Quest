@@ -314,13 +314,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       const response = await api.put(`/events/${eventId}/participants/${participant.id}/attendance`, {
         attendance_status: status
       });
-      if (response.data.points_awarded) {
-        setSuccess(`Anwesenheit bestätigt und ${response.data.points} ${response.data.point_type} Punkte vergeben`);
-      } else if (response.data.points_removed) {
-        setSuccess(`Anwesenheit als abwesend markiert und ${response.data.points} ${response.data.point_type} Punkte entfernt`);
-      } else {
-        setSuccess(`Anwesenheit ${status === 'present' ? 'bestätigt' : 'als abwesend markiert'}`);
-      }
       triggerRefresh('events');
     } catch (error) {
       setParticipants(prev => prev.map(p =>
@@ -359,7 +352,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const handlePromoteParticipant = async (participant: Participant) => {
     try {
       await api.put(`/events/${eventId}/participants/${participant.id}/status`, { status: 'confirmed' });
-      setSuccess(`${participant.participant_name} von Warteliste bestätigt`);
       await loadEventData();
       triggerRefresh('events');
     } catch (error) {
@@ -371,7 +363,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const handleDemoteParticipant = async (participant: Participant) => {
     try {
       await api.put(`/events/${eventId}/participants/${participant.id}/status`, { status: 'waitlist' });
-      setSuccess(`${participant.participant_name} auf Warteliste gesetzt`);
       const slidingItem = slidingRefs.current.get(participant.id);
       if (slidingItem) await slidingItem.close();
       await loadEventData();
@@ -386,7 +377,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     if (!isOnline) return;
     try {
       await api.delete(`/events/${eventId}/bookings/${participant.id}`);
-      setSuccess('Teilnehmer:in entfernt');
       await loadEventData();
       triggerRefresh('events');
     } catch (error) {

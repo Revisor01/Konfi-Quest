@@ -216,10 +216,8 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
       try {
         if (certificateType) {
           await api.put(`/teamer/certificate-types/${certificateType.id}`, payload);
-          setSuccess('Zertifikat aktualisiert');
         } else {
           await api.post('/teamer/certificate-types', payload);
-          setSuccess('Zertifikat erstellt');
         }
 
         onSuccess();
@@ -374,7 +372,7 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
 
 const AdminCertificatesPage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-certificates');
-  const { user, setSuccess, setError, isOnline } = useApp();
+  const { user, setError, isOnline } = useApp();
 
   // Offline-Query: Certificate Types
   const { data: certificateTypes, loading, refresh: refreshCertificateTypes } = useOfflineQuery<CertificateType[]>(
@@ -416,7 +414,6 @@ const AdminCertificatesPage: React.FC = () => {
             const slidingElement = slidingRefs.current.get(certType.id);
             try {
               await api.delete(`/teamer/certificate-types/${certType.id}`);
-              setSuccess(`"${certType.name}" gelöscht`);
               refreshCertificateTypes();
             } catch (error: any) {
               if (slidingElement) {

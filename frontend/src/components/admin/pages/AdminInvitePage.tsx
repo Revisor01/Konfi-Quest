@@ -153,7 +153,6 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
       });
       setQrCodeDataUrl(qrDataUrl);
 
-      setSuccess('Einladungscode generiert');
       await refreshInvites(); // Reload to show in existing invites
     } catch (error: any) {
       setError(error.response?.data?.error || 'Fehler beim Generieren des Codes');
@@ -167,7 +166,6 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
     try {
       setExtendingInvite(inviteId);
       await api.post(`/auth/invite-codes/${inviteId}/extend`);
-      setSuccess('Einladungscode um 7 Tage verlängert');
       await refreshInvites();
     } catch (error: any) {
       setError(error.response?.data?.error || 'Fehler beim Verlängern des Codes');
@@ -189,7 +187,6 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
           handler: async () => {
             try {
               await api.delete(`/auth/invite-codes/${invite.id}`);
-              setSuccess('Einladungscode gelöscht');
               if (inviteCode === invite.invite_code) {
                 setInviteCode(null);
                 setQrCodeDataUrl(null);

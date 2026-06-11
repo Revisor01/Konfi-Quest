@@ -113,7 +113,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   onClose,
   onSuccess
 }) => {
-  const { setSuccess, setError, isOnline, user } = useApp();
+  const { setError, isOnline, user } = useApp();
   // Super-Admin ist das Flag is_super_admin (org_admins koennen es zusaetzlich haben),
   // NICHT role_name==='super_admin' — sonst sieht ein org_admin mit Flag die Limit-Sektion nie.
   const isSuperAdmin = user?.is_super_admin === true || user?.role_name === 'super_admin';
@@ -387,10 +387,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
             await api.patch(`/organizations/${organizationId}/limit`, { max_konfis: limitValue });
           }
 
-          setSuccess('Organisation erfolgreich aktualisiert');
         } else {
           await api.post('/organizations', orgData);
-          setSuccess('Organisation und Administrator erfolgreich erstellt');
         }
 
         setIsDirty(false);
@@ -430,7 +428,6 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
       setOrgAdmins([...orgAdmins, response.data]);
       setNewAdminData({ display_name: '', username: '', password: '' });
       setShowAddAdmin(false);
-      setSuccess('Neuer Administrator erfolgreich hinzugefügt');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Fehler beim Hinzufügen des Administrators');
     } finally {

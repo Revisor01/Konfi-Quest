@@ -48,7 +48,7 @@ interface ActivityRequest {
 }
 
 const KonfiRequestsPage: React.FC = () => {
-  const { user, setSuccess, setError, isOnline } = useApp();
+  const { user, setError, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('konfi-requests');
   const [presentAlert] = useIonAlert();
 
@@ -187,7 +187,6 @@ const KonfiRequestsPage: React.FC = () => {
           handler: async () => {
             try {
               await api.delete(`/konfi/requests/${request.id}`);
-              setSuccess('Antrag erfolgreich gelöscht');
               refresh();
             } catch (error: any) {
               setError(error.response?.data?.error || 'Fehler beim Löschen des Antrags');

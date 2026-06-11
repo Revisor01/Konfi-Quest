@@ -531,7 +531,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
       if (parseInt(usage.count) > 0) {
         return res.status(409).json({
-          error: 'Zertifikat-Typ kann nicht gelöscht werden, da er bereits zugewiesen ist. Deaktivieren Sie ihn stattdessen.'
+          error: 'Zertifikat-Typ kann nicht gelöscht werden: bereits an Teamer:innen vergeben.'
         });
       }
 
@@ -907,11 +907,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       );
       if (!existing) return res.status(404).json({ error: 'Antrag nicht gefunden' });
       if (existing.status !== 'pending') {
-        return res.status(400).json({ error: 'Nur ausstehende Antraege koennen geloescht werden' });
+        return res.status(400).json({ error: 'Nur ausstehende Anträge können gelöscht werden' });
       }
 
       await db.query('DELETE FROM activity_requests WHERE id = $1', [requestId]);
-      res.json({ message: 'Antrag geloescht' });
+      res.json({ message: 'Antrag gelöscht' });
     } catch (err) {
       console.error('Database error in DELETE /teamer/requests/:id:', err);
       res.status(500).json({ error: 'Datenbankfehler' });

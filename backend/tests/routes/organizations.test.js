@@ -137,30 +137,25 @@ describe('Organizations Routes', () => {
   });
 
   // ================================================================
-  // GET /api/organizations/current (wird von /:id gefangen - Route-Reihenfolge)
-  // In Produktion funktioniert /current nur fuer OrgAdmin (eigene Org) und SuperAdmin.
+  // GET /api/organizations/current
+  // /current steht jetzt VOR /:id, wird korrekt aufgeloest.
   // ================================================================
   describe('GET /api/organizations/current', () => {
-    it('OrgAdmin bekommt eigene Org ueber /current -> greift /:id Route', async () => {
-      // /current wird von /:id Route gefangen, parseInt("current") = NaN
-      // OrgAdmin bekommt 403 weil isOwnOrg = false (NaN !== org_id)
-      // Daher: /current ist in der Route-Definition nicht erreichbar
+    it('OrgAdmin bekommt eigene Org ueber /current -> 200', async () => {
       const res = await request(app)
         .get('/api/organizations/current')
         .set('Authorization', `Bearer ${orgAdminToken}`);
 
-      // Route /:id faengt "current" -> parseInt("current") = NaN -> isOwnOrg = false
-      // SuperAdmin-Check false -> 403
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(200);
+      expect(res.body.id).toBeDefined();
     });
 
-    it('SuperAdmin bekommt 500 weil "current" kein gueltiger Integer ist', async () => {
+    it('SuperAdmin bekommt eigene Org ueber /current -> 200', async () => {
       const res = await request(app)
         .get('/api/organizations/current')
         .set('Authorization', `Bearer ${superAdminToken}`);
 
-      // SuperAdmin passiert die Zugangspruefung, aber DB-Query mit id="current" schlaegt fehl
-      expect(res.status).toBe(500);
+      expect(res.status).toBe(200);
     });
   });
 

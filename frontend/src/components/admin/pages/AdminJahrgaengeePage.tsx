@@ -155,10 +155,8 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
       try {
         if (jahrgang) {
           await api.put(`/admin/jahrgaenge/${jahrgang.id}`, payload);
-          setSuccess('Jahrgang aktualisiert');
         } else {
           await api.post('/admin/jahrgaenge', payload);
-          setSuccess('Jahrgang erstellt');
         }
 
         onSuccess();
@@ -212,7 +210,6 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
     try {
       await api.delete(`/wrapped/${jahrgang.id}`);
       setWrappedReleasedAt(null);
-      setSuccess('Wrapped-Rückblick wurde gelöscht');
       onRefresh?.();
     } catch (error: any) {
       setError(error.response?.data?.error || 'Fehler beim Löschen von Wrapped');
@@ -445,7 +442,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
 
 const AdminJahrgaengeePage: React.FC = () => {
   const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-jahrgaenge');
-  const { user, setSuccess, setError, isOnline } = useApp();
+  const { user, setError, isOnline } = useApp();
 
   // Offline-Query: Jahrgaenge
   const { data: jahrgaenge, loading, refresh: refreshJahrgaenge } = useOfflineQuery<Jahrgang[]>(
@@ -487,7 +484,6 @@ const AdminJahrgaengeePage: React.FC = () => {
       try {
         const url = forceDelete ? `/admin/jahrgaenge/${jahrgang.id}?force=true` : `/admin/jahrgaenge/${jahrgang.id}`;
         await api.delete(url);
-        setSuccess(`Jahrgang "${jahrgang.name}" gelöscht`);
         refreshJahrgaenge();
       } catch (error: any) {
         if (slidingElement) {

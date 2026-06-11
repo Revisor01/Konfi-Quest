@@ -237,10 +237,8 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
         // Online-Pfad: direkt senden
         if (level?.id) {
           await api.put(`/levels/${level.id}`, payload);
-          setSuccess('Level aktualisiert');
         } else {
           await api.post('/levels', payload);
-          setSuccess('Level erstellt');
         }
       } else {
         // Offline-Pfad: Queue-Fallback

@@ -76,7 +76,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
   dismiss,
   filterRole
 }) => {
-  const { setSuccess, setError, isOnline } = useApp();
+  const { setError, isOnline } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [availableKonfis, setAvailableKonfis] = useState<Konfi[]>([]);
   const [selectedKonfis, setSelectedKonfis] = useState<number[]>([]);
@@ -227,7 +227,6 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
           await api.post(`/events/${eventId}/participants`, requestData);
         }
 
-        setSuccess(`${selectedKonfis.length} Teilnehmer:innen hinzugefügt`);
         setSelectedKonfis([]);
         // Participants und verfügbare Konfis neu laden
         const eventResponse = await api.get(`/events/${eventId}`);
@@ -247,7 +246,6 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
     if (!isOnline) return;
     try {
       await api.delete(`/events/${eventId}/bookings/${participantId}`);
-      setSuccess('Teilnehmer:in entfernt');
       // Participants und verfügbare Konfis neu laden
       const eventResponse = await api.get(`/events/${eventId}`);
       const updatedParticipants: Participant[] = eventResponse.data.participants || [];

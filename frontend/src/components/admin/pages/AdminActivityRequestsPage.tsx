@@ -91,7 +91,6 @@ const AdminActivityRequestsPage: React.FC = () => {
             if (networkMonitor.isOnline) {
               try {
                 await api.put(`/admin/activities/requests/${request.id}/reset`);
-                setSuccess(`Antrag wurde auf "Offen" zurückgesetzt`);
                 await refreshRequests();
               } catch (err: any) {
                 if (err.response?.data?.error) {

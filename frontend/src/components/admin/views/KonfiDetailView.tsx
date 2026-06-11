@@ -103,7 +103,6 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
     onClose: () => dismissActivityModalHook(),
     onSave: async () => {
       await loadKonfiData();
-      setSuccess('Aktivität hinzugefügt');
       triggerRefresh('konfis');
       dismissActivityModalHook();
     }
@@ -115,7 +114,6 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
     onClose: () => dismissBonusModalHook(),
     onSave: async () => {
       await loadKonfiData();
-      setSuccess('Bonuspunkte hinzugefügt');
       triggerRefresh('konfis');
       dismissBonusModalHook();
     }
@@ -338,7 +336,6 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           handler: async () => {
             try {
               await api.delete(`/admin/konfis/${konfiId}/activities/${activity.id}`);
-              setSuccess(`Aktivität "${activity.name}" gelöscht`);
               await loadKonfiData();
               triggerRefresh('konfis');
             } catch (err) {
@@ -363,7 +360,6 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           handler: async () => {
             try {
               await api.delete(`/admin/konfis/${konfiId}/bonus-points/${bonus.id}`);
-              setSuccess(`Bonuspunkte "${bonus.description}" gelöscht`);
               await loadKonfiData();
               triggerRefresh('konfis');
             } catch (err) {
@@ -442,7 +438,6 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           handler: async () => {
             try {
               await api.delete(`/teamer/${konfiId}/certificates/${cert.id}`);
-              setSuccess('Zertifikat entfernt');
               await loadKonfiData();
             } catch (err: any) {
               setError(err.response?.data?.error || 'Fehler beim Entfernen');
@@ -598,7 +593,6 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
             konfiId={konfiId}
             api={api}
             setCurrentKonfi={setCurrentKonfi}
-            setSuccess={setSuccess}
             setError={setError}
           />
         )}

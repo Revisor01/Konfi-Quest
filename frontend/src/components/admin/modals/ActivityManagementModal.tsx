@@ -216,10 +216,8 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
         // Online-Pfad: direkt senden
         if (currentActivity) {
           await api.put(`/admin/activities/${currentActivity.id}`, payload);
-          setSuccess('Aktivität aktualisiert');
         } else {
           await api.post('/admin/activities', payload);
-          setSuccess('Aktivität erstellt');
         }
       } else {
         // Offline-Pfad: Queue-Fallback

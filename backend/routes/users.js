@@ -396,7 +396,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
     const { jahrgang_assignments } = req.body; // [{ jahrgang_id, can_view, can_edit }]
 
     if (!Array.isArray(jahrgang_assignments)) {
-      return res.status(400).json({ error: 'jahrgang_assignments must be an array' });
+      return res.status(400).json({ error: 'jahrgang_assignments muss ein Array sein' });
     }
 
     try {
@@ -522,7 +522,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
         client.release();
 
         res.json({
-            message: jahrgang_assignments.length > 0 ? 'Jahrgang assignments updated successfully' : 'All jahrgang assignments removed successfully',
+            message: jahrgang_assignments.length > 0 ? 'Jahrgangs-Zuweisungen aktualisiert' : 'Alle Jahrgangs-Zuweisungen entfernt',
             assignments_count: jahrgang_assignments.length
         });
 
@@ -589,29 +589,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
 
   // ENTFERNT: /users/:id/permissions Route
   // Permissions sind jetzt rollen-basiert (hardcoded), keine DB-Abfrage mehr noetig
-
-  // Get current user's assigned jahrgaenge
-  router.get('/me/jahrgaenge', rbacVerifier, async (req, res) => {
-    const userId = req.user.id;
-    const organizationId = req.user.organization_id;
-
-    const query = `
-      SELECT uja.jahrgang_id, uja.can_view, uja.can_edit, uja.assigned_at,
-             j.name as jahrgang_name
-      FROM user_jahrgang_assignments uja
-      JOIN jahrgaenge j ON uja.jahrgang_id = j.id
-      WHERE uja.user_id = $1 AND j.organization_id = $2
-      ORDER BY j.name DESC
-    `;
-
-    try {
-      const { rows } = await db.query(query, [userId, organizationId]);
-      res.json(rows);
-    } catch (err) {
- console.error('Database error in GET /me/jahrgaenge:', err);
-      res.status(500).json({ error: 'Datenbankfehler' });
-    }
-  });
+  // ENTFERNT: zweite /me/jahrgaenge Route (Duplikat, lieferte andere Spaltenaliase)
 
   // Reset password for a user (super_admin or org_admin of same org)
   router.put('/:id/reset-password', rbacVerifier, validateResetPassword, async (req, res) => {

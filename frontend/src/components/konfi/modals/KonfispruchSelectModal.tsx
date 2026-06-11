@@ -112,12 +112,6 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
         // wie "keine Sprueche vorhanden" aussieht.
         console.error('Fehler beim Laden der Konfsprueche:', err);
         setLoadError(true);
-        presentToast({
-          message: 'Die Spruchliste konnte nicht geladen werden. Bitte versuche es später erneut.',
-          duration: 3000,
-          color: 'danger',
-          position: 'top'
-        });
       } finally {
         setLoading(false);
       }

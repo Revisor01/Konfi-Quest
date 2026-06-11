@@ -59,7 +59,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   onClose,
   onSuccess
 }) => {
-  const { setSuccess, setError, user: currentUser, isOnline } = useApp();
+  const { setError, user: currentUser, isOnline } = useApp();
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
@@ -217,11 +217,9 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         let userIdForAssignments = userId;
         if (isEditMode) {
           await api.put(`/users/${userId}`, userData);
-          setSuccess('Benutzer erfolgreich aktualisiert');
         } else {
           const response = await api.post('/users', userData);
           userIdForAssignments = response.data.id;
-          setSuccess('Benutzer erfolgreich erstellt');
         }
 
         // Update jahrgang assignments

@@ -41,7 +41,7 @@ interface Badge {
 }
 
 const AdminBadgesPage: React.FC = () => {
-  const { user, setSuccess, setError, isOnline } = useApp();
+  const { user, setError, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-badges');
 
   // State
@@ -120,7 +120,6 @@ const AdminBadgesPage: React.FC = () => {
           handler: async () => {
             try {
               await api.delete(`/admin/badges/${badge.id}`);
-              setSuccess(`Badge "${badge.name}" gelöscht`);
               await refreshBadges();
             } catch (err: any) {
               if (err.response?.data?.error) {
