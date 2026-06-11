@@ -220,10 +220,13 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       const organizationId = newOrg.id;
         
       // 2. Create default roles for the organization
+      // WICHTIG: inkl. 'konfi' — konfi-management sucht die Rolle org-gescopt;
+      // ohne sie kann die neue Organisation keine Konfis anlegen.
       const defaultRoles = [
         { name: 'org_admin', display_name: 'Organisations-Admin', description: 'Vollzugriff auf alle Jahrgänge der Organisation', is_system_role: true },
         { name: 'admin', display_name: 'Hauptamt', description: 'Vollzugriff mit Jahrgangs-Beschränkungen', is_system_role: true },
-        { name: 'teamer', display_name: 'Teamer:in', description: 'Kann Anträge bearbeiten und zugewiesene Jahrgänge verwalten', is_system_role: true }
+        { name: 'teamer', display_name: 'Teamer:in', description: 'Kann Anträge bearbeiten und zugewiesene Jahrgänge verwalten', is_system_role: true },
+        { name: 'konfi', display_name: 'Konfirmand:in', description: 'Konfirmand:innen haben Zugriff auf eigene Daten und können Aktivitäten beantragen', is_system_role: true }
       ];
       
       let orgAdminRoleId = null;
@@ -270,7 +273,14 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
         { name: "Aktiv dabei", icon: "fitness-outline", description: "Du hast schon 3 verschiedene Aktivitäten gemacht!", criteria_type: "activity_count", criteria_value: 3 },
         { name: "Vielfalts-Fan", icon: "color-palette-outline", description: "5 Aktivitäten absolviert - du probierst gerne Neues!", criteria_type: "activity_count", criteria_value: 5 },
         { name: "Aktivitäts-Sammler", icon: "stats-chart-outline", description: "10 Aktivitäten geschafft - beeindruckend!", criteria_type: "activity_count", criteria_value: 10 },
-        { name: "Bonuspunkte-Gewinner", icon: "gift-outline", description: "Du hast Bonuspunkte erhalten - weiter so!", criteria_type: "bonus_points", criteria_value: 1 }
+        { name: "Bonuspunkte-Gewinner", icon: "gift-outline", description: "Du hast Bonuspunkte erhalten - weiter so!", criteria_type: "bonus_points", criteria_value: 1 },
+        { name: "Event-Entdecker", icon: "calendar-outline", description: "Du warst bei 3 Events dabei!", criteria_type: "event_count", criteria_value: 3 },
+        { name: "Event-Stammgast", icon: "calendar-number-outline", description: "7 Events besucht - du bist richtig dabei!", criteria_type: "event_count", criteria_value: 7 },
+        { name: "Zuverlässig", icon: "checkmark-done-outline", description: "Bei 5 Pflichtterminen anwesend - darauf ist Verlass!", criteria_type: "mandatory_event_count", criteria_value: 5 },
+        { name: "Neugierig", icon: "compass-outline", description: "3 verschiedene Aktivitäten ausprobiert!", criteria_type: "unique_activities", criteria_value: 3 },
+        { name: "Vielseitig", icon: "telescope-outline", description: "6 verschiedene Aktivitäten ausprobiert - stark!", criteria_type: "unique_activities", criteria_value: 6 },
+        { name: "Dranbleiber", icon: "flame-outline", description: "3 Wochen in Folge aktiv gewesen!", criteria_type: "streak", criteria_value: 3 },
+        { name: "Durchstarter", icon: "flash-outline", description: "6 Wochen am Stück aktiv - was für eine Serie!", criteria_type: "streak", criteria_value: 6 }
       ];
 
       const badgeQuery = `INSERT INTO custom_badges (
@@ -299,12 +309,31 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
         await db.query(certQuery, [cert.name, cert.icon, organizationId]);
       }
 
+      // 6. Create default levels (Startpunkt zum Anpassen — Werte wie Referenz-Org)
+      const defaultLevels = [
+        { name: 'novize', title: 'Novize', points_required: 2, icon: 'pin', color: '#f5b981' },
+        { name: 'lehrling', title: 'Lehrling', points_required: 5, icon: 'hammer', color: '#3b82f6' },
+        { name: 'gehilfe', title: 'Gehilfe', points_required: 10, icon: 'personAdd', color: '#8b5cf6' },
+        { name: 'experte', title: 'Experte', points_required: 15, icon: 'school', color: '#f59e0b' },
+        { name: 'meister', title: 'Meister', points_required: 20, icon: 'construct', color: '#ef4444' },
+        { name: 'legende', title: 'Legende', points_required: 30, icon: 'medal', color: '#7c3aed' }
+      ];
+
+      const levelQuery = `INSERT INTO levels (organization_id, name, title, points_required, icon, color, is_active, created_by)
+                          VALUES ($1, $2, $3, $4, $5, $6, true, $7)`;
+      for (const level of defaultLevels) {
+        await db.query(levelQuery, [
+          organizationId, level.name, level.title, level.points_required, level.icon, level.color, newAdmin.id
+        ]);
+      }
+
       res.status(201).json({
         id: organizationId,
         admin_user_id: newAdmin.id,
         default_badges_created: defaultBadges.length,
         default_certificates_created: defaultCertificates.length,
-        message: `Organisation erfolgreich erstellt (Standard-Rollen, Admin, ${defaultBadges.length} Badges, ${defaultCertificates.length} Zertifikate)`
+        default_levels_created: defaultLevels.length,
+        message: `Organisation erfolgreich erstellt (Standard-Rollen, Admin, ${defaultBadges.length} Badges, ${defaultCertificates.length} Zertifikate, ${defaultLevels.length} Levels)`
       });
 
     } catch (err) {

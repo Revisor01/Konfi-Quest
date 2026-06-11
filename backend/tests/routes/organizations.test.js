@@ -180,6 +180,59 @@ describe('Organizations Routes', () => {
       expect(res.body.id).toBeDefined();
       expect(res.body.admin_user_id).toBeDefined();
       expect(res.body.default_badges_created).toBeGreaterThan(0);
+      expect(res.body.default_levels_created).toBeGreaterThan(0);
+
+      // Alle 4 System-Rollen muessen existieren — insbesondere 'konfi',
+      // sonst kann die neue Org keine Konfis anlegen (Bug bis 06/2026).
+      const { rows: roles } = await db.query(
+        'SELECT name FROM roles WHERE organization_id = $1 ORDER BY name',
+        [res.body.id]
+      );
+      expect(roles.map(r => r.name)).toEqual(['admin', 'konfi', 'org_admin', 'teamer']);
+
+      // Default-Levels angelegt
+      const { rows: levels } = await db.query(
+        'SELECT COUNT(*)::int AS c FROM levels WHERE organization_id = $1',
+        [res.body.id]
+      );
+      expect(levels[0].c).toBe(6);
+    });
+
+    it('Neue Org kann sofort Konfis anlegen (konfi-Rolle vorhanden)', async () => {
+      // Org anlegen
+      const orgRes = await request(app)
+        .post('/api/organizations')
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          name: 'Konfi-Test-Gemeinde',
+          slug: 'konfi-test-gemeinde',
+          display_name: 'Konfi-Test-Gemeinde',
+          admin_username: 'kt_admin',
+          admin_password: 'Sicher!Passwort1',
+          admin_display_name: 'KT Admin'
+        });
+      expect(orgRes.status).toBe(201);
+
+      // Als neuer Org-Admin einloggen
+      const loginRes = await request(app)
+        .post('/api/auth/login')
+        .send({ username: 'kt_admin', password: 'Sicher!Passwort1' });
+      expect(loginRes.status).toBe(200);
+      const newAdminToken = loginRes.body.token;
+
+      // Jahrgang anlegen
+      const jgRes = await request(app)
+        .post('/api/jahrgaenge')
+        .set('Authorization', `Bearer ${newAdminToken}`)
+        .send({ name: '2027/28' });
+      expect(jgRes.status).toBe(201);
+
+      // Konfi anlegen — scheiterte vor dem Fix mit 500 "Konfi-Rolle nicht gefunden"
+      const konfiRes = await request(app)
+        .post('/api/admin/konfis')
+        .set('Authorization', `Bearer ${newAdminToken}`)
+        .send({ name: 'Erster Konfi', jahrgang_id: jgRes.body.id });
+      expect(konfiRes.status).toBe(201);
     });
 
     it('OrgAdmin bekommt 403', async () => {

@@ -660,8 +660,12 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         return res.status(409).json({ error: 'Benutzername bereits vergeben' });
       }
 
-      // Get konfi role id
-      const { rows: [konfiRole] } = await db.query("SELECT id FROM roles WHERE name = 'konfi'");
+      // Get konfi role id — org-gescopt: Rollen sind pro Organisation, sonst
+      // bekäme ein Konfi die konfi-Rolle einer FREMDEN Organisation zugewiesen.
+      const { rows: [konfiRole] } = await db.query(
+        "SELECT id FROM roles WHERE name = 'konfi' AND organization_id = $1",
+        [invite.organization_id]
+      );
       if (!konfiRole) {
         return res.status(500).json({ error: 'Konfi-Rolle nicht gefunden' });
       }
