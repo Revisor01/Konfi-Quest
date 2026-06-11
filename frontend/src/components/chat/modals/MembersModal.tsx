@@ -69,7 +69,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
   roomId,
   roomType
 }) => {
-  const { user, setError, setSuccess, isOnline } = useApp();
+  const { user, setError, isOnline } = useApp();
   const [presentRemoveAlert] = useIonAlert();
   const pageRef = useRef<HTMLElement>(null);
 
@@ -206,7 +206,6 @@ const MembersModal: React.FC<MembersModalProps> = ({
 
       await Promise.all(promises);
 
-      setSuccess(`${selectedUsers.size} Mitglied${selectedUsers.size > 1 ? 'er' : ''} hinzugefügt`);
       setSelectedUsers(new Set());
       setShowAddMode(false);
       await loadParticipants();
@@ -232,7 +231,6 @@ const MembersModal: React.FC<MembersModalProps> = ({
           handler: async () => {
             try {
               await api.delete(`/chat/rooms/${roomId}/participants/${participant.user_id}/${participant.user_type}`);
-              setSuccess(`${participant.name} wurde entfernt`);
               await loadParticipants();
               onSuccess();
             } catch (err) {

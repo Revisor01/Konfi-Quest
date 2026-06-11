@@ -18,7 +18,7 @@ import { useApp } from '../../contexts/AppContext';
 import { loginWithAutoDetection } from '../../services/auth';
 
 const LoginView: React.FC = () => {
-  const { setSuccess, setUser } = useApp();
+  const { setUser } = useApp();
   const router = useIonRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -59,7 +59,6 @@ const LoginView: React.FC = () => {
     setLoading(true);
     try {
       const user = await loginWithAutoDetection(username, password);
-      setSuccess('Erfolgreich angemeldet');
       setUser(user);
 
       // Explicit navigation based on user type

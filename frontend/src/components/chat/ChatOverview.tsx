@@ -64,7 +64,7 @@ interface ChatOverviewRef {
 }
 
 const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onSelectRoom }, ref) => {
-  const { user, setError, setSuccess, isOnline } = useApp();
+  const { user, setError, isOnline } = useApp();
   const [presentAlert] = useIonAlert();
   const { chatUnreadByRoom, refreshAllCounts } = useBadge();
   const [searchText, setSearchText] = useState('');
@@ -187,7 +187,6 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
             // Direkt löschen
             api.delete(`/chat/rooms/${room.id}`)
               .then(() => {
-                setSuccess(`Chat "${room.name}" gelöscht`);
                 refresh();
               })
               .catch((error: any) => {
@@ -205,7 +204,6 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                           handler: () => {
                             api.delete(`/chat/rooms/${room.id}?force=true`)
                               .then(() => {
-                                setSuccess(`Chat "${room.name}" gelöscht`);
                                 refresh();
                               })
                               .catch(() => setError('Fehler beim Löschen'));

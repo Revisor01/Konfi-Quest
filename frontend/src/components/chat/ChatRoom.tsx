@@ -43,7 +43,7 @@ import { triggerPullHaptic } from '../../utils/haptics';
 
 
 const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingElement }) => {
-  const { user, setError, setSuccess, isOnline } = useApp();
+  const { user, setError, isOnline } = useApp();
   const { markRoomAsRead: badgeMarkRoomAsRead, refreshAllCounts } = useBadge();
 
   // --- useOfflineQuery: Initial messages load mit Cache ---
@@ -578,7 +578,6 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
             api.delete(`/chat/messages/${messageId}`)
               .then(() => {
                 loadMessages();
-                setSuccess('Nachricht gelöscht');
               })
               .catch((err) => {
                 setError('Fehler beim Löschen der Nachricht');

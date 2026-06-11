@@ -53,7 +53,7 @@ interface Settings {
 }
 
 const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, onSuccess, dismiss }) => {
-  const { user, setError, setSuccess, isOnline } = useApp();
+  const { user, setError, isOnline } = useApp();
   const { refreshFromAPI } = useBadge();
   const [presentDuplicateAlert] = useIonAlert();
   const [presentUnsavedAlert] = useIonAlert();
@@ -288,7 +288,6 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           target_user_type: targetUser.type
         });
 
-        setSuccess(`Direktnachricht mit ${targetUser.name || targetUser.display_name} erstellt`);
         await refreshFromAPI(); // Update badge context
         handleModalClose();
         onSuccess();
@@ -301,7 +300,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
 
   const createGroupChat = async () => {
     if (!groupName.trim()) {
-      setError('Bitte geben Sie einen Gruppennamen ein');
+      setError('Bitte gib einen Gruppennamen ein');
       return;
     }
 
@@ -329,7 +328,6 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
 
         await api.post('/chat/rooms', groupData);
 
-        setSuccess(`Gruppenchat "${groupName}" erstellt`);
         await refreshFromAPI(); // Update badge context
         handleModalClose();
         onSuccess();

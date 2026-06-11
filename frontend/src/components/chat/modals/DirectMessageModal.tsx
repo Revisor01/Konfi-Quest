@@ -30,7 +30,7 @@ interface DirectMessageModalProps {
 }
 
 const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSuccess, dismiss }) => {
-  const { user, setError, setSuccess, isOnline } = useApp();
+  const { user, setError, isOnline } = useApp();
   const pageRef = useRef<HTMLElement>(null);
   const [users, setUsers] = useState<ChatUser[]>([]);
   const [searchText, setSearchText] = useState('');
@@ -78,7 +78,6 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSucc
           target_user_type: targetUser.type
         });
 
-        setSuccess(`Direktnachricht mit ${targetUser.name || targetUser.display_name} erstellt`);
         onSuccess();
         handleClose();
       } catch (err) {

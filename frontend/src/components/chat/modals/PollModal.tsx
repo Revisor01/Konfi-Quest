@@ -50,7 +50,7 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
       onClose();
     }
   };
-  const { setError, setSuccess, isOnline } = useApp();
+  const { setError, isOnline } = useApp();
   const pageRef = useRef<HTMLElement>(null);
 
   const [question, setQuestion] = useState('');
@@ -111,7 +111,6 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
 
         await api.post(`/chat/rooms/${roomId}/polls`, pollData);
 
-        setSuccess('Umfrage erstellt');
         resetForm();
         onSuccess();
         handleClose();
