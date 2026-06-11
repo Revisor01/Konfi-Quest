@@ -310,7 +310,8 @@ CREATE TABLE events (
     waitlist_enabled BOOLEAN DEFAULT true,
     max_waitlist_size INTEGER DEFAULT 10 CHECK (max_waitlist_size >= 0),
     is_series BOOLEAN DEFAULT false,
-    series_id UUID,
+    -- series_id = ID des ersten Events der Serie (Prod ist BIGINT, NICHT UUID)
+    series_id BIGINT,
     created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
     organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
