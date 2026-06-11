@@ -2483,11 +2483,14 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   border-bottom: 1px solid #eee;
   vertical-align: middle;
 }
-/* Einheitliche Zeilenhöhe in beiden Ansichten (Anwesenheit + Sprüche) */
+/* Einheitliche Zeilenhöhe in beiden Ansichten (Anwesenheit + Sprüche):
+   feste Höhe, damit langer Spruch-Text die Zeile nicht aufbläht -> kein Springen beim Umschalten */
 .attendance-matrix tbody td {
   height: 40px;
   box-sizing: border-box;
 }
+/* Einheitliche Header-Höhe in beiden Ansichten: der Event-Header (mit __event-date)
+   und der Sprüche-Header sollen exakt gleich hoch sein -> Kopfzeile springt nicht */
 .attendance-matrix thead th {
   position: sticky;
   top: 0;
@@ -2496,7 +2499,11 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   color: #555;
   border-bottom: 2px solid #ddd;
   z-index: 1;
+  height: 44px;
+  box-sizing: border-box;
 }
+/* Feste Breite der Konfi-Spalte (statt nur min-width), damit die fixierte linke
+   Spalte beim Umschalten Anwesenheit <-> Sprüche exakt gleich breit bleibt */
 .attendance-matrix__th-konfi,
 .attendance-matrix__td-konfi {
   text-align: left;
@@ -2504,8 +2511,12 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   left: 0;
   background: #fff;
   z-index: 2;
-  min-width: 120px;
+  width: 140px;
+  min-width: 140px;
+  max-width: 140px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   padding-left: 12px;
   /* fixierte Konfi-Spalte: rechte Trennkante beim horizontalen Scrollen */
   box-shadow: 1px 0 0 #eee;
