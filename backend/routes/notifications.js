@@ -65,13 +65,16 @@ module.exports = (db, verifyTokenRBAC) => {
       // Device ID generieren falls nicht vorhanden
       const finalDeviceId = device_id || `${platform}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-      // FCM Token kann nur EINEM User gehören - bei Gerätewechsel alten Token entfernen
-      const { rowCount: deletedOtherUsers } = await db.query(
-        'DELETE FROM push_tokens WHERE token = $1 AND user_id != $2',
-        [token, userId]
+      // Ein FCM-Token darf nur GENAU EINMAL existieren: weder bei einem anderen
+      // User (Account-Wechsel) noch beim selben User unter anderer device_id
+      // (z.B. neue identifierForVendor nach App-Neuinstallation) — sonst wird
+      // derselbe Push mehrfach an dasselbe Geraet gesendet.
+      await db.query(
+        `DELETE FROM push_tokens
+         WHERE token = $1
+           AND NOT (user_id = $2 AND platform = $3 AND device_id = $4)`,
+        [token, userId, platform, finalDeviceId]
       );
-      if (deletedOtherUsers > 0) {
-      }
 
       // Upsert: Token speichern oder aktualisieren
       await db.query(`

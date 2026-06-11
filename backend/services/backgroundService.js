@@ -9,7 +9,7 @@ const LICENSE_REMINDER_DAYS = 14;
 class BackgroundService {
   static badgeUpdateInterval = null;
   static eventReminderInterval = null;
-  static pendingEventsInterval = null;
+  static pendingEventsCronTask = null;
   static tokenCleanupInterval = null;
   static wrappedCronTask = null;
   static autoDeletionCronTask = null;
@@ -257,30 +257,37 @@ class BackgroundService {
   // ====================================================================
 
   /**
-   * Startet den Service für Admin-Erinnerungen (alle 4 Stunden)
+   * Startet den Service für Admin-Erinnerungen (täglich 09:00 Europe/Berlin).
+   * Vorher alle 4 Stunden via setInterval (Boot-verankert) — das führte zu bis zu
+   * 6 identischen Pushes pro Tag, auch nachts. Jetzt genau eine Erinnerung pro Tag,
+   * solange Events unverbucht sind.
    */
   static startPendingEventsService(db) {
-    if (this.pendingEventsInterval) {
+    if (this.pendingEventsCronTask) {
       return;
     }
 
-    const FOUR_HOURS = 4 * 60 * 60 * 1000;
-    this.pendingEventsInterval = setInterval(async () => {
+    console.log('Pending-Events-Cron: Starte node-cron 0 9 * * * Europe/Berlin');
+
+    // '0 9 * * *' = taeglich um 09:00 Uhr
+    this.pendingEventsCronTask = cron.schedule('0 9 * * *', async () => {
       try {
         await this.checkPendingEvents(db);
       } catch (error) {
         console.error('Pending events check failed:', error);
       }
-    }, FOUR_HOURS);
+    }, {
+      timezone: 'Europe/Berlin'
+    });
   }
 
   /**
    * Stoppt den Pending Events Service
    */
   static stopPendingEventsService() {
-    if (this.pendingEventsInterval) {
-      clearInterval(this.pendingEventsInterval);
-      this.pendingEventsInterval = null;
+    if (this.pendingEventsCronTask) {
+      this.pendingEventsCronTask.stop();
+      this.pendingEventsCronTask = null;
     }
   }
 

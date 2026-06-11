@@ -42,8 +42,10 @@ class PushService {
   static async getTokensForUser(db, userId) {
     // Master-Schalter: Hat der User Push global deaktiviert, gar keine Tokens
     // zurueckgeben -> es wird nichts gesendet (gilt fuer alle Push-Typen).
+    // DISTINCT ON (token): derselbe FCM-Token darf nie mehrfach beliefert werden,
+    // auch wenn er (noch) unter mehreren device_ids gespeichert ist (Alt-Daten).
     const query = `
-      SELECT pt.* FROM push_tokens pt
+      SELECT DISTINCT ON (pt.token) pt.* FROM push_tokens pt
       JOIN users u ON pt.user_id = u.id
       WHERE pt.user_id = $1
         AND u.push_enabled = true
@@ -53,6 +55,7 @@ class PushService {
           WHERE user_id = $1
           GROUP BY device_id, platform
         )
+      ORDER BY pt.token, pt.id DESC
     `;
     const { rows: tokens } = await db.query(query, [userId]);
     return tokens || [];
@@ -145,8 +148,10 @@ class PushService {
       // Neuestes Token pro Device verwenden
       // UND Sender-Tokens ausschließen (für den Fall dass gleicher Token bei verschiedenen Accounts)
       // UND Master-Schalter pruefen (u.push_enabled): bei false keine Tokens.
+      // DISTINCT ON (token): nie denselben FCM-Token doppelt beliefern (Alt-Daten
+      // mit gleichem Token unter mehreren device_ids).
       let query = `
-        SELECT pt.* FROM push_tokens pt
+        SELECT DISTINCT ON (pt.token) pt.* FROM push_tokens pt
         JOIN users u ON pt.user_id = u.id
         WHERE pt.user_id = $1
           AND u.push_enabled = true
@@ -162,6 +167,7 @@ class PushService {
       if (senderTokenList.length > 0) {
         query += ` AND pt.token NOT IN (${senderTokenList.map((_, i) => `$${i + 3}`).join(', ')})`;
       }
+      query += ` ORDER BY pt.token, pt.id DESC`;
 
       const queryParams = [userId, userId, ...senderTokenList];
       const { rows: tokens } = await db.query(query, queryParams);

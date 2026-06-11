@@ -74,6 +74,47 @@ describe('Notifications Routes', () => {
       expect(res.status).toBe(400);
     });
 
+    it('Gleicher FCM-Token unter neuer device_id ersetzt die alte Zeile (kein Doppel-Push)', async () => {
+      // Erstregistrierung (z.B. vor App-Neuinstallation)
+      await request(app)
+        .post('/api/notifications/device-token')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ token: 'fcm-same-token', platform: 'ios', device_id: 'vendor-id-alt' });
+
+      // Neuinstallation: identifierForVendor hat sich geaendert, FCM-Token blieb gleich
+      const res = await request(app)
+        .post('/api/notifications/device-token')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ token: 'fcm-same-token', platform: 'ios', device_id: 'vendor-id-neu' });
+
+      expect(res.status).toBe(200);
+
+      // Es darf nur EINE Zeile mit diesem Token existieren (sonst Doppel-Push)
+      const { rows } = await db.query('SELECT * FROM push_tokens WHERE token = $1', ['fcm-same-token']);
+      expect(rows.length).toBe(1);
+      expect(rows[0].device_id).toBe('vendor-id-neu');
+    });
+
+    it('Gleicher FCM-Token bei anderem User wird umgehaengt (Account-Wechsel auf demselben Geraet)', async () => {
+      // Konfi registriert Token
+      await request(app)
+        .post('/api/notifications/device-token')
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ token: 'fcm-shared-device', platform: 'ios', device_id: 'device-shared' });
+
+      // Admin meldet sich auf demselben Geraet an -> gleicher Token
+      const res = await request(app)
+        .post('/api/notifications/device-token')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ token: 'fcm-shared-device', platform: 'ios', device_id: 'device-shared' });
+
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query('SELECT * FROM push_tokens WHERE token = $1', ['fcm-shared-device']);
+      expect(rows.length).toBe(1);
+      expect(Number(rows[0].user_id)).toBe(USERS.admin1.id);
+    });
+
     it('Upsert: gleicher Token wird aktualisiert statt dupliziert', async () => {
       // Erster Token speichern
       await request(app)
