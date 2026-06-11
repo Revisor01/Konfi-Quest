@@ -667,6 +667,7 @@ describe('Events Routes', () => {
         .send({
           name: 'Wochenandacht',
           event_date: futureDate(),
+          max_participants: 20,
           series_count: 4,
           series_interval: 'week',
         });
@@ -690,6 +691,7 @@ describe('Events Routes', () => {
         .send({
           name: 'Riesen-Serie',
           event_date: futureDate(),
+          max_participants: 20,
           series_count: 27,
           series_interval: 'week',
         });
@@ -705,6 +707,7 @@ describe('Events Routes', () => {
         .send({
           name: 'Krumme Serie',
           event_date: futureDate(),
+          max_participants: 20,
           series_count: 5.5,
           series_interval: 'week',
         });
@@ -719,6 +722,7 @@ describe('Events Routes', () => {
         .send({
           name: 'Komische Serie',
           event_date: futureDate(),
+          max_participants: 20,
           series_count: 4,
           series_interval: 'year',
         });
@@ -734,6 +738,7 @@ describe('Events Routes', () => {
         .send({
           name: 'Zu lange Serie',
           event_date: futureDate(),
+          max_participants: 20,
           series_count: 13,
           series_interval: 'month',
         });
@@ -749,6 +754,7 @@ describe('Events Routes', () => {
         .send({
           name: 'Jahres-Serie',
           event_date: futureDate(),
+          max_participants: 20,
           series_count: 12,
           series_interval: 'month',
         });
@@ -764,6 +770,7 @@ describe('Events Routes', () => {
         .send({
           name: 'Konfi-Serie',
           event_date: futureDate(),
+          max_participants: 20,
           series_count: 3,
           series_interval: 'week',
         });
