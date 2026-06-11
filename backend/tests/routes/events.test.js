@@ -677,7 +677,7 @@ describe('Events Routes', () => {
 
       const { rows } = await db.query(
         "SELECT id, series_id FROM events WHERE name LIKE 'Wochenandacht%' AND organization_id = $1",
-        [ORGS.org1.id]
+        [ORGS.testGemeinde.id]
       );
       expect(rows.length).toBe(4);
       // Alle Events haengen an derselben series_id
