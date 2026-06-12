@@ -222,7 +222,7 @@ describe('Organizations Routes', () => {
 
       // Jahrgang anlegen
       const jgRes = await request(app)
-        .post('/api/jahrgaenge')
+        .post('/api/admin/jahrgaenge')
         .set('Authorization', `Bearer ${newAdminToken}`)
         .send({ name: '2027/28' });
       expect(jgRes.status).toBe(201);
