@@ -166,18 +166,19 @@ const BibleTranslationModal: React.FC<{
                     >
                       {isSelected && (
                         <div className="app-corner-badges">
-                          <div className="app-corner-badge" style={{ backgroundColor: '#5b21b6' }}>
-                            Aktiv
+                          <div
+                            className="app-corner-badge"
+                            style={{ backgroundColor: '#5b21b6', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+                            title="Ausgewählt"
+                          >
+                            <IonIcon icon={checkmark} style={{ color: '#fff', fontSize: '0.85rem' }} />
                           </div>
                         </div>
                       )}
                       <div className="app-list-item__row">
                         <div className="app-list-item__main">
-                          <div className="app-icon-circle app-icon-circle--purple">
-                            <IonIcon icon={bookOutline} />
-                          </div>
                           <div className="app-list-item__content">
-                            <div className="app-list-item__title" style={{ paddingRight: isSelected ? '70px' : '0' }}>{t.name}</div>
+                            <div className="app-list-item__title" style={{ paddingRight: isSelected ? '40px' : '0' }}>{t.name}</div>
                             <div className="app-list-item__subtitle" style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t.description}</div>
                           </div>
                         </div>

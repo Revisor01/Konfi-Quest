@@ -25,7 +25,7 @@ import {
 import {
   closeOutline,
   checkmarkOutline,
-  checkmarkCircle,
+  checkmark,
   bookOutline,
   createOutline,
   cloudOfflineOutline
@@ -203,15 +203,13 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
       </IonHeader>
 
       <IonContent className="app-gradient-background">
-        {/* Modus-Umschaltung: Aus Liste / Eigener Spruch */}
+        {/* Modus-Umschaltung: Aus Liste / Eigener Spruch (ohne Icons -> einzeilig) */}
         <div className="app-segment-wrapper">
           <IonSegment value={mode} onIonChange={(e) => setMode(e.detail.value as 'liste' | 'freitext')}>
             <IonSegmentButton value="liste">
-              <IonIcon icon={bookOutline} />
               <IonLabel>Aus Liste</IonLabel>
             </IonSegmentButton>
             <IonSegmentButton value="freitext">
-              <IonIcon icon={createOutline} />
               <IonLabel>Eigener Spruch</IonLabel>
             </IonSegmentButton>
           </IonSegment>
@@ -234,7 +232,10 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
               </IonSegment>
             </div>
 
-            <IonList inset={true} className="app-segment-wrapper">
+            {/* Spruchliste — gleiches Muster wie die Bibelübersetzungs-Liste:
+                Auswahl = lila Strich links + matt-lila Hintergrund + Häkchen-Corner-Badge,
+                kein Icon pro Listenelement, kein Inline-Häkchen. */}
+            <IonList inset={true} style={{ margin: '16px' }}>
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--purple">
                   <IonIcon icon={bookOutline} />
@@ -242,7 +243,7 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
                 <IonLabel>Spruch wählen</IonLabel>
               </IonListHeader>
               <IonCard className="app-card">
-                <IonCardContent style={{ padding: loading || sprueche.length === 0 ? '16px' : '8px' }}>
+                <IonCardContent style={{ padding: loading || loadError || sprueche.length === 0 ? '16px' : '12px' }}>
                   {loading ? (
                     <div style={{ display: 'flex', justifyContent: 'center', padding: '24px' }}>
                       <IonSpinner name="crescent" />
@@ -265,26 +266,36 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
                         return (
                           <div
                             key={spruch.id}
-                            className={`app-list-item ${isSelected ? 'app-list-item--info' : ''}`}
-                            style={{ cursor: 'pointer', position: 'relative' }}
+                            className={`app-list-item app-list-item--purple ${isSelected ? 'app-list-item--selected' : ''}`}
                             onClick={() => setSelectedSpruchId(spruch.id)}
+                            style={{
+                              cursor: 'pointer',
+                              position: 'relative',
+                              overflow: 'hidden',
+                              background: isSelected ? 'rgba(91, 33, 182, 0.08)' : undefined
+                            }}
                           >
+                            {isSelected && (
+                              <div className="app-corner-badges">
+                                <div
+                                  className="app-corner-badge"
+                                  style={{ backgroundColor: '#5b21b6', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+                                  title="Ausgewählt"
+                                >
+                                  <IonIcon icon={checkmark} style={{ color: '#fff', fontSize: '0.85rem' }} />
+                                </div>
+                              </div>
+                            )}
                             <div className="app-list-item__row">
                               <div className="app-list-item__main">
                                 <div className="app-list-item__content">
-                                  <div className="app-list-item__title">{spruch.reference}</div>
-                                  <div className="app-description-text" style={{ marginTop: '4px' }}>
+                                  <div className="app-list-item__title" style={{ paddingRight: isSelected ? '40px' : '0' }}>{spruch.reference}</div>
+                                  <div className="app-list-item__subtitle" style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>
                                     {text
                                       ? text
                                       : <IonText color="medium"><em>Text wird noch ergänzt</em></IonText>}
                                   </div>
                                 </div>
-                                {isSelected && (
-                                  <IonIcon
-                                    icon={checkmarkCircle}
-                                    style={{ color: 'var(--app-color-konfis)', fontSize: '1.5rem', flexShrink: 0 }}
-                                  />
-                                )}
                               </div>
                             </div>
                           </div>
@@ -297,7 +308,7 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
             </IonList>
           </>
         ) : (
-          <IonList inset={true} className="app-segment-wrapper">
+          <IonList inset={true} style={{ margin: '16px' }}>
             <IonListHeader>
               <div className="app-section-icon app-section-icon--purple">
                 <IonIcon icon={createOutline} />
