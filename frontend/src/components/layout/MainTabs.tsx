@@ -26,6 +26,7 @@ import {
 } from 'ionicons/icons';
 import { useIonRouter, isPlatform } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
+import { Capacitor } from '@capacitor/core';
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
 import api from '../../services/api';
@@ -94,8 +95,35 @@ const KonfiChatRoomRoute: React.FC<RouteComponentProps<{ roomId: string }>> = ({
   return <ChatRoomView roomId={parseInt(match.params.roomId)} onBack={() => router.goBack()} />;
 };
 
+// Desktop-Web-Erkennung: nur im Browser (nicht in der nativen App) und ab 992px
+// Breite. Dann wandert die Tab-Bar als Sticky-Navigation nach oben und der
+// Seiteninhalt wird per body.web-desktop auf Lesebreite zentriert (variables.css).
+const useDesktopWeb = (): boolean => {
+  const [isDesktopWeb, setIsDesktopWeb] = useState(
+    () => !Capacitor.isNativePlatform() && window.matchMedia('(min-width: 992px)').matches
+  );
+
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) return;
+    const mq = window.matchMedia('(min-width: 992px)');
+    const onChange = (e: MediaQueryListEvent) => setIsDesktopWeb(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  useEffect(() => {
+    document.body.classList.toggle('web-desktop', isDesktopWeb);
+    return () => document.body.classList.remove('web-desktop');
+  }, [isDesktopWeb]);
+
+  return isDesktopWeb;
+};
+
 const MainTabs: React.FC = () => {
   const { user } = useApp();
+  const isDesktopWeb = useDesktopWeb();
+  const tabBarSlot = isDesktopWeb ? 'top' : 'bottom';
+  const tabBarClass = isDesktopWeb ? 'app-web-topnav' : undefined;
   const { chatUnreadTotal, pendingRequestsCount, pendingEventsCount } = useBadge();
   // super_admin bekommt eine eigene, reduzierte Navigation
   const isSuperAdmin = user?.role_name === 'super_admin';
@@ -232,7 +260,7 @@ const MainTabs: React.FC = () => {
 
         {/* Die IonTabBar wird bedingt gerendert (nur in Chat-Räumen versteckt) */}
         {!isTabBarHidden(location.pathname) && (
-          <IonTabBar slot="bottom">
+          <IonTabBar slot={tabBarSlot} className={tabBarClass}>
             <IonTabButton tab="admin-konfis" href="/admin/konfis">
               <IonIcon icon={people} />
               <IonLabel>Konfis</IonLabel>
@@ -294,7 +322,7 @@ const MainTabs: React.FC = () => {
           <Route exact path="/" render={() => <Redirect to="/teamer/dashboard" />} />
         </IonRouterOutlet>
         {!isTabBarHidden(location.pathname) && (
-          <IonTabBar slot="bottom">
+          <IonTabBar slot={tabBarSlot} className={tabBarClass}>
             <IonTabButton tab="teamer-dashboard" href="/teamer/dashboard">
               <IonIcon icon={home} />
               <IonLabel>Start</IonLabel>
@@ -347,7 +375,7 @@ const MainTabs: React.FC = () => {
 
         {/* Die IonTabBar wird bedingt gerendert */}
         {!isTabBarHidden(location.pathname) && (
-          <IonTabBar slot="bottom">
+          <IonTabBar slot={tabBarSlot} className={tabBarClass}>
             <IonTabButton tab="dashboard" href="/konfi/dashboard">
               <IonIcon icon={home} />
               <IonLabel>Start</IonLabel>

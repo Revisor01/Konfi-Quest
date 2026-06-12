@@ -2589,6 +2589,74 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   color: #555;
 }
 
+/* ============================================================
+   Desktop-Web-Navigation (nur Browser >= 992px, siehe MainTabs.tsx)
+   Tab-Bar wandert als Sticky-Navi nach oben, Inhalt auf Lesebreite.
+   Native Apps und Handy-Browser bleiben bei der Bottom-Tab-Bar.
+   ============================================================ */
+.app-web-topnav {
+  justify-content: center;
+  gap: 10px;
+  height: 58px;
+  --background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: none;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+.app-web-topnav ion-tab-button {
+  flex: 0 0 auto;
+  position: relative;
+  padding: 0 16px;
+  --color: #6b7280;
+  --color-selected: var(--ion-color-primary);
+}
+/* Icon + Label nebeneinander statt untereinander */
+.app-web-topnav ion-tab-button::part(native) {
+  flex-direction: row;
+  gap: 7px;
+}
+.app-web-topnav ion-tab-button ion-icon {
+  font-size: 1.15rem;
+  margin: 0;
+}
+.app-web-topnav ion-tab-button ion-label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin: 0;
+}
+.app-web-topnav ion-tab-button.tab-selected ion-label {
+  font-weight: 600;
+}
+/* Aktiver Tab: Unterstreichung statt Tab-Highlight */
+.app-web-topnav ion-tab-button.tab-selected::after {
+  content: '';
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 7px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--ion-color-primary);
+}
+/* Unread-Badges inline neben dem Label statt absolut über dem Icon */
+.app-web-topnav ion-badge {
+  position: static;
+  margin-left: 2px;
+  font-size: 0.7rem;
+}
+
+/* Seiteninhalt auf Desktop-Web zentriert auf Lesebreite (~1080px).
+   ion-content/--padding wirkt auf den Scroll-Inhalt, Header ziehen mit. */
+body.web-desktop ion-content {
+  --padding-start: max(0px, calc((100% - 1080px) / 2));
+  --padding-end: max(0px, calc((100% - 1080px) / 2));
+}
+body.web-desktop ion-header ion-toolbar {
+  --padding-start: max(16px, calc((100% - 1080px) / 2));
+  --padding-end: max(16px, calc((100% - 1080px) / 2));
+}
+
 /* Dark Mode Support - DISABLED
 @media (prefers-color-scheme: dark) {
   body {
