@@ -53,6 +53,14 @@ nav{position:fixed;inset:0 0 auto 0;z-index:100;background:rgba(255,255,255,.8);
 .nav-links a:hover{color:var(--purple)}
 .nav-cta{background:var(--grad);color:#fff!important;padding:.6rem 1.3rem;border-radius:999px;font-weight:600;transition:transform .2s,box-shadow .2s;background-size:160% 160%}
 .nav-cta:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(91,33,182,.32)}
+/* Oben rechts: Store-Icons + Web-App — bleiben auch mobil sichtbar */
+.nav-right{display:flex;align-items:center;gap:1.6rem}
+.nav-actions{display:flex;align-items:center;gap:.55rem}
+.nav-store{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:11px;border:1px solid rgba(15,23,42,.12);color:var(--ink-soft);transition:color .2s,border-color .2s,transform .2s}
+.nav-store:hover{color:var(--purple);border-color:var(--purple);transform:translateY(-1px)}
+.nav-app{display:flex;align-items:center;gap:.45rem;border:1.5px solid var(--purple);color:var(--purple)!important;padding:.5rem 1.05rem;border-radius:999px;font-weight:600;transition:background .2s,color .2s,transform .2s}
+.nav-app:hover{background:var(--purple);color:#fff!important;transform:translateY(-1px)}
+@media(max-width:480px){.nav-app span{display:none}.nav-app{width:36px;height:36px;padding:0;justify-content:center;border-radius:11px}}
 
 /* HERO */
 .hero{position:relative;background:radial-gradient(125% 125% at 78% -5%,#7c3aed,#5b21b6 38%,#3b1382 68%,#1c0a48 100%);color:#fff;overflow:hidden;padding:8.5rem 0 8rem}
@@ -294,9 +302,23 @@ footer a:hover{color:#fff}
 <nav>
  <div class="nav-in">
   <a href="#top" class="brand"><img src="/assets/icon/logo-mark.png" alt="">Konfi&nbsp;Quest</a>
-  <div class="nav-links">
-   <a href="#problem">Warum</a><a href="#features">Funktionen</a><a href="#sicherheit">Sicherheit</a><a href="#faq">FAQ</a><a href="#preise">Preise</a>
-   <a href="#kontakt" class="nav-cta">Kostenlos testen</a>
+  <div class="nav-right">
+   <div class="nav-links">
+    <a href="#problem">Warum</a><a href="#features">Funktionen</a><a href="#sicherheit">Sicherheit</a><a href="#faq">FAQ</a><a href="#preise">Preise</a>
+    <a href="#kontakt" class="nav-cta">Kostenlos testen</a>
+   </div>
+   <div class="nav-actions">
+    <a href="https://apps.apple.com/de/app/id6748016619" target="_blank" rel="noopener" class="nav-store" title="Im App Store laden" aria-label="Im App Store laden">
+     <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M18.71,19.5C17.88,20.74 17,21.95 15.66,21.97C14.32,22 13.89,21.18 12.37,21.18C10.84,21.18 10.37,21.95 9.1,22C7.79,22.05 6.8,20.68 5.96,19.47C4.25,17 2.94,12.45 4.7,9.39C5.57,7.87 7.13,6.91 8.82,6.88C10.1,6.86 11.32,7.75 12.11,7.75C12.89,7.75 14.37,6.68 15.92,6.84C16.57,6.87 18.39,7.1 19.56,8.82C19.47,8.88 17.39,10.1 17.41,12.63C17.44,15.65 20.06,16.66 20.09,16.67C20.06,16.74 19.67,18.11 18.71,19.5M13,3.5C13.73,2.67 14.94,2.04 15.94,2C16.07,3.17 15.6,4.35 14.9,5.19C14.21,6.04 13.07,6.7 11.95,6.61C11.8,5.46 12.36,4.26 13,3.5Z"/></svg>
+    </a>
+    <a href="https://play.google.com/store/apps/details?id=de.godsapp.konfiquest" target="_blank" rel="noopener" class="nav-store" title="Bei Google Play laden" aria-label="Bei Google Play laden">
+     <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.6 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.53,12.9 20.18,13.18L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z"/></svg>
+    </a>
+    <a href="/login" class="nav-app" title="Konfi Quest im Browser öffnen">
+     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+     <span>App öffnen</span>
+    </a>
+   </div>
   </div>
  </div>
 </nav>
