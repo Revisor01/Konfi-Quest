@@ -77,7 +77,8 @@ import {
   handLeft,
   checkmark,
   search,
-  filterOutline
+  filterOutline,
+  eyeOff
 } from 'ionicons/icons';
 
 // Badge Icon Mapping
@@ -632,11 +633,14 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                                 className="app-corner-badge"
                                 style={{
                                   background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-                                  fontSize: '0.5rem',
-                                  padding: '3px 8px'
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  padding: '4px 8px'
                                 }}
+                                title="Geheimes Badge"
                               >
-                                GEHEIM
+                                <IonIcon icon={eyeOff} style={{ color: '#fff', fontSize: '0.85rem' }} />
                               </div>
                             </div>
                           )}

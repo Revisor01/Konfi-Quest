@@ -70,7 +70,8 @@ import {
   gridOutline,
   prismOutline,
   cubeOutline,
-  handLeft
+  handLeft,
+  eyeOff
 } from 'ionicons/icons';
 import { SectionHeader, EmptyState } from '../../shared';
 import api from '../../../services/api';
@@ -510,11 +511,14 @@ const TeamerBadgesView: React.FC = () => {
                                 className="app-corner-badge"
                                 style={{
                                   background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-                                  fontSize: '0.5rem',
-                                  padding: '3px 8px'
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  padding: '4px 8px'
                                 }}
+                                title="Geheimes Badge"
                               >
-                                GEHEIM
+                                <IonIcon icon={eyeOff} style={{ color: '#fff', fontSize: '0.85rem' }} />
                               </div>
                             </div>
                           )}

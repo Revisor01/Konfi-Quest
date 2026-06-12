@@ -14,7 +14,9 @@ import {
   checkmark,
   checkmarkDone,
   timeOutline,
-  lockClosed
+  lockClosed,
+  eye,
+  eyeOff
 } from 'ionicons/icons';
 
 // Mapping: Status-Text -> Icon
@@ -42,7 +44,12 @@ const STATUS_ICON_MAP: Record<string, string> = {
   'Ausstehend': hourglass,
   // Anträge
   'Genehmigt': checkmarkCircle,
-  'Abgelehnt': closeCircle
+  'Abgelehnt': closeCircle,
+  // Badges / generische Zustände (keine Text-Corner-Badges mehr)
+  'Geheim': eyeOff,
+  'Sichtbar': eye,
+  'Aktiv': checkmark,
+  'Inaktiv': close
 };
 
 export const getStatusIcon = (statusText: string): string | null => {
