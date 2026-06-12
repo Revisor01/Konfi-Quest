@@ -10,10 +10,10 @@ http://ionicframework.com/docs/theming/ */
 @import '@rdlabo/ionic-theme-md3/dist/css/default-variables.css';
 @import '@rdlabo/ionic-theme-md3/dist/css/ionic-theme-md3.css';
 
-/* Headline-Schrift: Bricolage Grotesque */
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap');
+/* Headline-Schrift: Plus Jakarta Sans (wie Landing-Page) */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 
-/* Globale Headline-Typografie (Bricolage Grotesque) */
+/* Globale Headline-Typografie (Plus Jakarta Sans) */
 .app-header-banner__title,
 .app-header-banner__subtitle,
 ion-list-header ion-label,
@@ -27,7 +27,7 @@ ion-list-header ion-label,
 .app-dashboard-glass-card h3,
 .app-text-main,
 .app-headline {
-  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
 }
 .app-header-banner__title {
   font-weight: 800;
@@ -2230,7 +2230,7 @@ ion-button.app-modal-submit-btn--bonus {
 }
 
 .app-dashboard-section__bg-label {
-  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-size: 2.9rem;
   font-weight: 800;
   color: rgba(255, 255, 255, 0.08);
@@ -2350,7 +2350,7 @@ ion-button.app-modal-submit-btn--bonus {
   color: white;
   font-weight: 500;
   margin: 0 0 16px 0;
-  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   padding-left: 16px;
   border-left: 3px solid rgba(255, 255, 255, 0.5);
 }
