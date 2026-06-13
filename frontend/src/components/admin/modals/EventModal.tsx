@@ -211,10 +211,10 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         max_participants: (formData.mandatory || isTeamerOnly) ? 0 : formData.max_participants,
         registration_opens_at: formData.mandatory ? null : toBackendTimestamp(formData.registration_opens_at),
         registration_closes_at: formData.mandatory ? null : toBackendTimestamp(formData.registration_closes_at),
-        has_timeslots: formData.mandatory ? false : formData.has_timeslots,
+        has_timeslots: (formData.mandatory || formData.is_konfirmation) ? false : formData.has_timeslots,
         waitlist_enabled: (formData.mandatory || isTeamerOnly) ? false : formData.waitlist_enabled,
         max_waitlist_size: (formData.mandatory || isTeamerOnly) ? 0 : formData.max_waitlist_size,
-        timeslots: !formData.mandatory && formData.has_timeslots ? timeslots.map(ts => ({
+        timeslots: (!formData.mandatory && !formData.is_konfirmation && formData.has_timeslots) ? timeslots.map(ts => ({
           ...ts, start_time: toBackendTimestamp(ts.start_time), end_time: toBackendTimestamp(ts.end_time)
         })) : [],
         is_series: formData.is_series,
@@ -324,8 +324,9 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
           </IonCard>
         </IonList>
 
-        {/* ZEITFENSTER */}
-        {!formData.mandatory && teamerAccess !== 'teamer_only' && (<>
+        {/* ZEITFENSTER — nicht bei Pflicht-Events und nicht bei Konfirmationen
+            (beide haben feste Termine fuer den ganzen Jahrgang) */}
+        {!formData.mandatory && !formData.is_konfirmation && teamerAccess !== 'teamer_only' && (<>
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--events"><IonIcon icon={time} /></div>

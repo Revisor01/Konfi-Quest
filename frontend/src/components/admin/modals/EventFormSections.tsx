@@ -116,7 +116,11 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
             slot="end"
             className="app-toggle--events"
             checked={formData.mandatory}
-            onIonChange={(e) => setFormData({ ...formData, mandatory: e.detail.checked })}
+            onIonChange={(e) => {
+              const mandatory = e.detail.checked;
+              // Pflicht-Event schliesst Timeslots aus -> beim Aktivieren abschalten
+              setFormData({ ...formData, mandatory, ...(mandatory ? { has_timeslots: false } : {}) });
+            }}
             disabled={loading}
           />
         </IonItem>
@@ -126,7 +130,11 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
             slot="end"
             className="app-toggle--konfis"
             checked={formData.is_konfirmation}
-            onIonChange={(e) => setFormData({ ...formData, is_konfirmation: e.detail.checked })}
+            onIonChange={(e) => {
+              const is_konfirmation = e.detail.checked;
+              // Konfirmation schliesst Timeslots aus (feste Termine) -> beim Aktivieren abschalten
+              setFormData({ ...formData, is_konfirmation, ...(is_konfirmation ? { has_timeslots: false } : {}) });
+            }}
             disabled={loading}
           />
         </IonItem>
