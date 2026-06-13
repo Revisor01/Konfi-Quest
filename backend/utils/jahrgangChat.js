@@ -96,7 +96,7 @@ async function syncJahrgangChat(db, jahrgangId, organizationId, createdBy = null
     await db.query(
       `INSERT INTO chat_participants (room_id, user_id, user_type, joined_at)
        VALUES ${values.join(', ')}
-       ON CONFLICT DO NOTHING`,
+       ON CONFLICT (room_id, user_id) DO NOTHING`,
       params
     );
   }

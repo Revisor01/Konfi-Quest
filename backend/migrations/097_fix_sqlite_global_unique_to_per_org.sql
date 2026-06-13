@@ -18,5 +18,8 @@ DROP INDEX IF EXISTS idx_24991_sqlite_autoindex_categories_1;
 CREATE UNIQUE INDEX IF NOT EXISTS uq_categories_name_org ON categories (name, organization_id);
 
 -- settings: global (key) -> pro Org (organization_id, key)
+-- ACHTUNG: idx_24935_sqlite_autoindex_settings_1 ist ein CONSTRAINT (nicht nur
+-- ein Index) -> per DROP CONSTRAINT entfernen, DROP INDEX scheitert mit 2BP01.
+ALTER TABLE settings DROP CONSTRAINT IF EXISTS idx_24935_sqlite_autoindex_settings_1;
 DROP INDEX IF EXISTS idx_24935_sqlite_autoindex_settings_1;
 CREATE UNIQUE INDEX IF NOT EXISTS uq_settings_org_key ON settings (organization_id, key);
