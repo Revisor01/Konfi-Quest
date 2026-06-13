@@ -211,19 +211,24 @@ const generalLimiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 30,
   message: { error: 'Zu viele Login-Versuche. Bitte warte 15 Minuten.' },
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true
 });
 
+// Registrierung: Beim Onboarding einer Konfi-Gruppe registrieren sich viele
+// hintereinander aus DEMSELBEN Gemeinde-WLAN (gleiche IP). 5/Stunde war viel
+// zu eng. Erfolgreiche Registrierungen zaehlen nicht mit, damit nur echte
+// Missbrauchs-Schleifen (Fehlversuche) gebremst werden.
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 5,
+  max: 60,
   message: { error: 'Zu viele Registrierungen. Bitte warte eine Stunde.' },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skipSuccessfulRequests: true
 });
 
 const chatMessageLimiter = rateLimit({
