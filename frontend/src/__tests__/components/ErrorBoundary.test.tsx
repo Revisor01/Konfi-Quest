@@ -29,14 +29,13 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText('Normaler Inhalt')).toBeInTheDocument();
   });
 
-  it('zeigt Default-Fehlertext wenn Kind-Komponente wirft', () => {
+  it('zeigt die Login-Look-Fehlerseite wenn Kind-Komponente wirft', () => {
     render(
       <ErrorBoundary>
         <ThrowingComponent />
       </ErrorBoundary>
     );
-    expect(screen.getByText('Etwas ist schiefgelaufen')).toBeInTheDocument();
-    expect(screen.getByText('Ein unerwarteter Fehler ist aufgetreten.')).toBeInTheDocument();
+    expect(screen.getByText('Bitte melde dich erneut an')).toBeInTheDocument();
   });
 
   it('zeigt custom fallback wenn fallback-Prop gesetzt', () => {
@@ -49,13 +48,12 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText('Eigene Fehleranzeige')).toBeInTheDocument();
   });
 
-  it('zeigt Buttons "Seite neu laden" und "Zur Startseite" im Default-Fallback', () => {
+  it('zeigt den "Zur Anmeldung"-Button im Default-Fallback', () => {
     render(
       <ErrorBoundary>
         <ThrowingComponent />
       </ErrorBoundary>
     );
-    expect(screen.getByText('Seite neu laden')).toBeInTheDocument();
-    expect(screen.getByText('Zur Startseite')).toBeInTheDocument();
+    expect(screen.getByText('Zur Anmeldung')).toBeInTheDocument();
   });
 });

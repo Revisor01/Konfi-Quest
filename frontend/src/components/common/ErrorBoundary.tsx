@@ -2,10 +2,8 @@ import React from 'react';
 import {
   IonPage,
   IonContent,
-  IonButton,
-  IonIcon
+  IonButton
 } from '@ionic/react';
-import { alertCircleOutline } from 'ionicons/icons';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -31,46 +29,58 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     console.error('ErrorBoundary hat einen Fehler gefangen:', error, errorInfo);
   }
 
+  // Setzt den Boundary zurueck und schickt die App auf den Login. Wir leeren NICHT
+  // die Auth (das macht der API-Interceptor bei echtem 401) — ein Render-Fehler
+  // bedeutet nicht zwingend, dass die Session kaputt ist. Der naechste API-Call
+  // refresht ggf. selbst; ist die Session wirklich tot, landet man ohnehin im Login.
+  private handleBackToLogin = () => {
+    this.setState({ hasError: false, error: null });
+    window.location.href = '/';
+  };
+
   render() {
     if (this.state.hasError) {
       if (this.props.fallback) {
         return this.props.fallback;
       }
 
+      // Fehlerseite im Login-Look (gleiche Auth-Optik wie LoginView),
+      // damit ein Crash nicht wie ein technischer Totalausfall wirkt.
       return (
         <IonPage>
-          <IonContent className="ion-padding">
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-              textAlign: 'center',
-              gap: '16px'
-            }}>
-              <IonIcon
-                icon={alertCircleOutline}
-                style={{ fontSize: '64px', color: 'var(--ion-color-danger)' }}
-              />
-              <h2 style={{ margin: '0', fontSize: '1.4rem' }}>
-                Etwas ist schiefgelaufen
-              </h2>
-              <p style={{ margin: '0', color: 'var(--ion-color-medium)', fontSize: '0.95rem' }}>
-                Ein unerwarteter Fehler ist aufgetreten.
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
-                <IonButton onClick={() => window.location.reload()}>
-                  Seite neu laden
-                </IonButton>
+          <IonContent className="app-auth-background">
+            <img
+              src="/assets/icon/logo-mark.png"
+              alt=""
+              className="app-auth-ghost-icon"
+              aria-hidden="true"
+            />
+            <div className="app-auth-bubble" style={{ top: '70px', left: '-55px', width: '150px', height: '150px' }} />
+            <div className="app-auth-bubble" style={{ bottom: '-50px', left: '-30px', width: '180px', height: '180px' }} />
+            <div className="app-auth-bubble" style={{ bottom: '-25px', right: '-55px', width: '130px', height: '130px' }} />
+            <div className="app-auth-star app-auth-star--cyan" style={{ top: '200px', right: '20px', width: '70px', height: '70px' }} />
+            <div className="app-auth-star app-auth-star--pink" style={{ bottom: '100px', left: '50px', width: '80px', height: '80px' }} />
+
+            <div className="app-auth-container">
+              <div className="app-auth-hero" style={{ marginTop: '90px' }}>
+                <h1 className="app-auth-hero__title app-auth-hero__title--cosmic">
+                  KONFI<br />QUEST
+                </h1>
+                <div className="app-auth-hero__divider">
+                  <span className="app-auth-hero__divider-icon" />
+                </div>
+                <p className="app-auth-hero__subtitle app-auth-hero__subtitle--cosmic">
+                  Bitte melde dich erneut an
+                </p>
+              </div>
+
+              <div style={{ padding: '0 32px', marginTop: '32px' }}>
                 <IonButton
-                  fill="outline"
-                  onClick={() => {
-                    this.setState({ hasError: false, error: null });
-                    window.location.href = '/';
-                  }}
+                  expand="block"
+                  className="app-auth-button"
+                  onClick={this.handleBackToLogin}
                 >
-                  Zur Startseite
+                  Zur Anmeldung
                 </IonButton>
               </div>
             </div>
