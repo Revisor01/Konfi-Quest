@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useCallback, useRef, ReactNode } from 'react';
-import { initializeWebSocket, getSocket } from '../services/websocket';
+import { initializeWebSocket, getSocket, reconnectWithToken } from '../services/websocket';
 import { getToken } from '../services/tokenStore';
+import api from '../services/api';
 
 // Live Update Event Types
 export type LiveUpdateType =
@@ -38,6 +39,36 @@ const LiveUpdateContext = createContext<LiveUpdateContextType | undefined>(undef
 
 export const LiveUpdateProvider = ({ children }: { children: ReactNode }) => {
   const listenersRef = useRef<Map<LiveUpdateType, Set<(event: LiveUpdateEvent) => void>>>(new Map());
+  const authRecoveringRef = useRef(false);
+  // Erhoeht sich nach einem Socket-Reconnect mit frischem Token -> der
+  // Listener-Effekt unten bindet die Event-Handler dann am NEUEN Socket neu.
+  const [socketEpoch, setSocketEpoch] = React.useState(0);
+
+  // Socket-Auth-Fehler (abgelaufenes Token) sauber auffangen, statt den Chat-Tab
+  // haengen/crashen zu lassen. Ein leichter authentifizierter Call laesst den
+  // api.ts-Interceptor den Token-Refresh erledigen; klappt das, verbinden wir den
+  // Socket mit dem frischen Token neu. Schlaegt der Refresh fehl, feuert der
+  // Interceptor selbst 'auth:relogin-required' -> sauberer Weg zum Login.
+  useEffect(() => {
+    const onAuthError = async () => {
+      if (authRecoveringRef.current) return;
+      authRecoveringRef.current = true;
+      try {
+        await api.get('/auth/me'); // 401 hierauf -> Interceptor refresht (oder Relogin)
+        const fresh = getToken();
+        if (fresh) {
+          reconnectWithToken(fresh);
+          setSocketEpoch((e) => e + 1); // Listener am neuen Socket neu binden
+        }
+      } catch {
+        // Refresh endgueltig fehlgeschlagen -> Interceptor hat Relogin ausgeloest.
+      } finally {
+        authRecoveringRef.current = false;
+      }
+    };
+    window.addEventListener('socket:auth-error', onAuthError);
+    return () => window.removeEventListener('socket:auth-error', onAuthError);
+  }, []);
 
   // Setup WebSocket listener
   useEffect(() => {
@@ -98,7 +129,10 @@ export const LiveUpdateProvider = ({ children }: { children: ReactNode }) => {
       socket.off('usersUpdate');
       socket.off('organizationsUpdate');
     };
-  }, []);
+    // socketEpoch in den Deps: nach Reconnect-mit-neuem-Token werden die
+    // Listener am frischen Socket neu gebunden.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socketEpoch]);
 
   // Subscribe function
   const subscribe = useCallback((type: LiveUpdateType, callback: (event: LiveUpdateEvent) => void) => {
