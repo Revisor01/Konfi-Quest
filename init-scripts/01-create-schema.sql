@@ -468,7 +468,7 @@ CREATE TABLE chat_participants (
     id SERIAL PRIMARY KEY,
     room_id INTEGER NOT NULL REFERENCES chat_rooms(id) ON DELETE CASCADE,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    user_type VARCHAR(20) NOT NULL CHECK (user_type IN ('admin', 'konfi')),
+    user_type VARCHAR(20) NOT NULL CHECK (user_type IN ('admin', 'teamer', 'konfi')),
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -483,7 +483,7 @@ CREATE TABLE chat_messages (
     id SERIAL PRIMARY KEY,
     room_id INTEGER NOT NULL REFERENCES chat_rooms(id) ON DELETE CASCADE,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    user_type VARCHAR(20) NOT NULL CHECK (user_type IN ('admin', 'konfi')),
+    user_type VARCHAR(20) NOT NULL CHECK (user_type IN ('admin', 'teamer', 'konfi')),
     content TEXT NOT NULL,
     file_path VARCHAR(500),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
