@@ -31,15 +31,21 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 
   // Raus aus der Fehlerseite — MUSS auch im nativen Capacitor-WebView funktionieren.
   // window.location.href = '/' laedt dort capacitor://localhost neu und kann
-  // haengenbleiben (404/weisse Seite). Stattdessen: Auth leeren, dann location.reload()
-  // — das laedt die SPA an Ort und Stelle neu, und ohne Token rendert die App
-  // garantiert die Login-Route. clearAuth ist async; wir reloaden im finally,
-  // damit es auch bei einem Fehler im clearAuth nicht haengt.
+  // haengenbleiben (404/weisse Seite). Stattdessen: Auth UND offlineCache leeren,
+  // dann location.reload() — das laedt die SPA an Ort und Stelle neu, und ohne
+  // Token rendert die App garantiert die Login-Route.
+  //
+  // WICHTIG (Incident 13.06.2026): Der offlineCache MUSS mit geleert werden.
+  // Ein kaputter/riesiger gecachter Response (z.B. Chat-rooms mit 2520 Teilnehmern)
+  // ueberlebt sonst im persistenten Capacitor-Preferences-Cache, crasht beim
+  // naechsten Render sofort wieder — und nur eine Neuinstallation half. clearAll()
+  // raeumt das Gift mit raus. Beide Aufrufe sind async; wir reloaden im finally,
+  // damit es auch bei einem Fehler darin nicht haengt.
   private handleBackToLogin = () => {
-    import('../../services/tokenStore')
-      .then((m) => m.clearAuth())
-      .catch(() => { /* egal — Hauptsache reload */ })
-      .finally(() => { window.location.reload(); });
+    Promise.allSettled([
+      import('../../services/tokenStore').then((m) => m.clearAuth()),
+      import('../../services/offlineCache').then((m) => m.offlineCache.clearAll()),
+    ]).finally(() => { window.location.reload(); });
   };
 
   render() {

@@ -1,6 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ErrorBoundary from '../../components/common/ErrorBoundary';
+
+// Mock der beiden Services, die der "Zur Anmeldung"-Button aufruft.
+// Wichtig (Incident 13.06.2026): der Button MUSS clearAuth UND offlineCache.clearAll
+// aufrufen, sonst ueberlebt ein gegifteter Cache-Eintrag und crasht sofort wieder.
+const clearAuthMock = vi.fn().mockResolvedValue(undefined);
+const clearAllMock = vi.fn().mockResolvedValue(undefined);
+vi.mock('../../services/tokenStore', () => ({
+  clearAuth: () => clearAuthMock(),
+}));
+vi.mock('../../services/offlineCache', () => ({
+  offlineCache: { clearAll: () => clearAllMock() },
+}));
 
 // Komponente die einen Fehler wirft
 const ThrowingComponent = () => {
@@ -55,5 +67,30 @@ describe('ErrorBoundary', () => {
       </ErrorBoundary>
     );
     expect(screen.getByText('Zur Anmeldung')).toBeInTheDocument();
+  });
+
+  it('leert beim "Zur Anmeldung"-Klick sowohl Auth als auch den offlineCache', async () => {
+    // reload mocken, damit jsdom nicht meckert
+    const reloadMock = vi.fn();
+    const original = window.location;
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { ...original, reload: reloadMock },
+    });
+
+    render(
+      <ErrorBoundary>
+        <ThrowingComponent />
+      </ErrorBoundary>
+    );
+
+    fireEvent.click(screen.getByText('Zur Anmeldung'));
+
+    // Beide Aufrufe sind dynamische Imports + Promises -> auf den finally-reload warten
+    await waitFor(() => expect(reloadMock).toHaveBeenCalled());
+    expect(clearAuthMock).toHaveBeenCalled();
+    expect(clearAllMock).toHaveBeenCalled();
+
+    Object.defineProperty(window, 'location', { configurable: true, value: original });
   });
 });
