@@ -6,6 +6,7 @@ const { handleValidationErrors, commonValidations } = require('../middleware/val
 const { checkUserHierarchy, filterUsersByHierarchy } = require('../utils/roleHierarchy');
 const { validatePassword } = require('../utils/passwordUtils');
 const { invalidateUserCache } = require('../middleware/rbac');
+const { syncJahrgangChat } = require('../utils/jahrgangChat');
 
 // User management routes
 // WICHTIGER HINWEIS: Das übergebene 'db'-Objekt ist eine PostgreSQL Pool-Instanz.
@@ -418,27 +419,10 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
         const currentJahrgangIds = currentAssignments.map(a => a.jahrgang_id);
         const newJahrgangIds = jahrgang_assignments.map(a => a.jahrgang_id);
 
-        // Find jahrgänge that are being removed
-        const removedJahrgangIds = currentJahrgangIds.filter(id => !newJahrgangIds.includes(id));
-
-        // Find jahrgänge that are being added
-        const addedJahrgangIds = newJahrgangIds.filter(id => !currentJahrgangIds.includes(id));
-
-        // Remove from chat rooms for removed jahrgänge BEFORE deleting assignments
-        for (const jahrgangId of removedJahrgangIds) {
-            const chatRoomQuery = `
-                SELECT id FROM chat_rooms
-                WHERE type = 'jahrgang' AND jahrgang_id = $1 AND organization_id = $2
-            `;
-            const { rows: [chatRoom] } = await client.query(chatRoomQuery, [jahrgangId, organizationId]);
-
-            if (chatRoom) {
-                await client.query(
-                    "DELETE FROM chat_participants WHERE room_id = $1 AND user_id = $2",
-                    [chatRoom.id, userId]
-                );
-            }
-        }
+        // Alle betroffenen Jahrgaenge (alt + neu) — fuer diese wird nach dem
+        // Setzen der Zuweisungen der Chat synchronisiert (Beitritt bei neuer
+        // Zuweisung, Entfernung bei Entzug — Org-Admins bleiben immer drin).
+        const affectedJahrgangIds = Array.from(new Set([...currentJahrgangIds, ...newJahrgangIds]));
 
         // Delete existing assignments for this user
         await client.query("DELETE FROM user_jahrgang_assignments WHERE user_id = $1", [userId]);
@@ -465,57 +449,15 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
                 `;
                 await client.query(insertQuery, [userId, jahrgang_id, can_view, can_edit, req.user.id]);
             }
+        }
 
-            // Add to chat rooms for new jahrgänge AFTER creating assignments
-            for (const jahrgangId of addedJahrgangIds) {
-                // First ensure chat room exists
-                let { rows: [chatRoom] } = await client.query(
-                    "SELECT id FROM chat_rooms WHERE type = 'jahrgang' AND jahrgang_id = $1 AND organization_id = $2",
-                    [jahrgangId, organizationId]
-                );
-
-                // Create chat room if it doesn't exist
-                if (!chatRoom) {
-                    const { rows: [jahrgang] } = await client.query("SELECT name FROM jahrgaenge WHERE id = $1", [jahrgangId]);
-                    if (jahrgang) {
-                        const createChatQuery = `
-                            INSERT INTO chat_rooms (name, type, jahrgang_id, organization_id, created_by, created_at)
-                            VALUES ($1, 'jahrgang', $2, $3, $4, NOW())
-                            RETURNING id
-                        `;
-                        const { rows: [newChatRoom] } = await client.query(createChatQuery, [
-                            `Jahrgang ${jahrgang.name}`,
-                            jahrgangId,
-                            organizationId,
-                            req.user.id
-                        ]);
-                        chatRoom = newChatRoom;
-                    }
-                }
-
-                // Add user to chat room
-                if (chatRoom) {
-                    // Check if not already a participant
-                    const { rows: [existingParticipant] } = await client.query(
-                        "SELECT id FROM chat_participants WHERE room_id = $1 AND user_id = $2",
-                        [chatRoom.id, userId]
-                    );
-
-                    if (!existingParticipant) {
-                        // Get user type
-                        const { rows: [userInfo] } = await client.query(
-                            "SELECT r.name as role_name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = $1",
-                            [userId]
-                        );
-                        const userType = userInfo?.role_name === 'konfi' ? 'konfi' : 'admin';
-
-                        await client.query(
-                            "INSERT INTO chat_participants (room_id, user_id, user_type, joined_at) VALUES ($1, $2, $3, NOW())",
-                            [chatRoom.id, userId, userType]
-                        );
-                    }
-                }
-            }
+        // Chat-Mitgliedschaft fuer ALLE betroffenen Jahrgaenge (alt + neu)
+        // zentral synchronisieren: zugewiesene Admins/Teamer treten bei,
+        // entzogene fliegen raus, Org-Admins bleiben immer drin, Chat wird bei
+        // Bedarf angelegt. Ersetzt die frueheren manuellen Add/Remove-Schleifen
+        // (die Teamer faelschlich als 'admin' eintrugen und Org-Admins ignorierten).
+        for (const jahrgangId of affectedJahrgangIds) {
+            await syncJahrgangChat(client, jahrgangId, organizationId, req.user.id);
         }
 
         await client.query('COMMIT');

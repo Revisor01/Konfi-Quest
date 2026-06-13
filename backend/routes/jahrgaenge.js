@@ -4,6 +4,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors, commonValidations } = require('../middleware/validation');
 const liveUpdate = require('../utils/liveUpdate');
 const emailService = require('../services/emailService');
+const { syncJahrgangChat } = require('../utils/jahrgangChat');
 
 // Jahrgänge: Teamer darf ansehen, Admin darf bearbeiten
 module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
@@ -77,6 +78,16 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
         target_gemeinde !== undefined ? target_gemeinde : 10
       ];
       const { rows: [newJahrgang] } = await db.query(query, params);
+
+      // Jahrgangs-Chat sofort anlegen + Mitglieder synchronisieren (Org-Admins,
+      // zugewiesene Admins/Teamer, Konfis). Frueher entstand der Chat erst lazy
+      // beim ersten Chat-Tab-Aufruf eines Konfis — neue Orgs/Jahrgaenge hatten
+      // dadurch gar keinen Chat. Fehler hier darf die Anlage nicht scheitern lassen.
+      try {
+        await syncJahrgangChat(db, newJahrgang.id, req.user.organization_id, req.user.id);
+      } catch (chatErr) {
+        console.error('Jahrgangs-Chat konnte nicht angelegt werden:', chatErr.message);
+      }
 
       res.status(201).json(newJahrgang);
 

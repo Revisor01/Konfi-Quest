@@ -8,6 +8,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const PushService = require('../services/pushService');
 const { validateMagicBytes } = require('../middleware/uploadValidation');
+const { syncJahrgangChat } = require('../utils/jahrgangChat');
 
 module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   const { verifyTokenRBAC } = rbacMiddleware;
@@ -36,168 +37,6 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   
   // === UTILITY FUNCTIONS ===
   
-  // Ensure admin is in all their assigned jahrgang chats (and remove from unassigned ones)
-  const ensureAdminJahrgangChatMembership = async (db, adminId) => {
-    try {
-      // Get admin's jahrgang assignments
-      const assignmentsQuery = `
-        SELECT uja.jahrgang_id, j.name as jahrgang_name
-        FROM user_jahrgang_assignments uja
-        JOIN jahrgaenge j ON uja.jahrgang_id = j.id
-        WHERE uja.user_id = $1 AND uja.can_view = true
-      `;
-      const { rows: assignments } = await db.query(assignmentsQuery, [adminId]);
-      const assignedJahrgangIds = assignments ? assignments.map(a => a.jahrgang_id) : [];
-      
-      // First: Remove admin from jahrgang chats they're no longer assigned to
-      if (assignedJahrgangIds.length > 0) {
-        const removeQuery = `
-          DELETE FROM chat_participants 
-          WHERE user_id = $1 AND user_type = 'admin' AND room_id IN (
-            SELECT cr.id FROM chat_rooms cr 
-            WHERE cr.type = 'jahrgang' 
-            AND cr.jahrgang_id NOT IN (${assignedJahrgangIds.map((_, i) => `$${i + 2}`).join(',')})
-          )
-        `;
-        const removeParams = [adminId, ...assignedJahrgangIds];
-        const { rowCount } = await db.query(removeQuery, removeParams);
-        if (rowCount > 0) {
-        }
-      }
-      
-      // Second: Add admin to assigned jahrgang chats
-      for (const assignment of assignments) {
-        const chatExistsQuery = `
-          SELECT id FROM chat_rooms 
-          WHERE type = 'jahrgang' AND jahrgang_id = $1
-        `;
-        const { rows: [chatRoom] } = await db.query(chatExistsQuery, [assignment.jahrgang_id]);
-        if (!chatRoom) continue;
-        
-        const participantExistsQuery = `
-          SELECT id FROM chat_participants 
-          WHERE room_id = $1 AND user_id = $2 AND user_type = 'admin'
-        `;
-        const { rows: [participant] } = await db.query(participantExistsQuery, [chatRoom.id, adminId]);
-        if (participant) continue;
-        
-        const insertQuery = `
-          INSERT INTO chat_participants (room_id, user_id, user_type, joined_at)
-          VALUES ($1, $2, 'admin', NOW())
-        `;
-        await db.query(insertQuery, [chatRoom.id, adminId]);
-      }
-    } catch (err) {
- console.error('Error ensuring admin chat membership:', err);
-    }
-  };
-  
-  // Ensure konfi is in their jahrgang chat (and remove from others)
-  const ensureKonfiJahrgangChatMembership = async (db, konfiId) => {
-    try {
-      const jahrgangQuery = `
-        SELECT kp.jahrgang_id, j.name as jahrgang_name, j.organization_id
-        FROM konfi_profiles kp
-        JOIN jahrgaenge j ON kp.jahrgang_id = j.id
-        WHERE kp.user_id = $1 AND kp.jahrgang_id IS NOT NULL
-      `;
-      const { rows: [jahrgang] } = await db.query(jahrgangQuery, [konfiId]);
-      
-      // First: Remove konfi from wrong or all jahrgang chats
-      if (jahrgang) {
-        const removeQuery = `
-          DELETE FROM chat_participants 
-          WHERE user_id = $1 AND user_type = 'konfi' AND room_id IN (
-            SELECT cr.id FROM chat_rooms cr 
-            WHERE cr.type = 'jahrgang' AND cr.jahrgang_id != $2
-          )
-        `;
-        const { rowCount } = await db.query(removeQuery, [konfiId, jahrgang.jahrgang_id]);
-        if (rowCount > 0) {
-        }
-      } else {
-        const removeAllQuery = `
-          DELETE FROM chat_participants 
-          WHERE user_id = $1 AND user_type = 'konfi' AND room_id IN (
-            SELECT cr.id FROM chat_rooms cr WHERE cr.type = 'jahrgang'
-          )
-        `;
-        const { rowCount } = await db.query(removeAllQuery, [konfiId]);
-        if (rowCount > 0) {
-        }
-        return;
-      }
-      
-      // Check if jahrgang chat exists (org-gescopt)
-      let chatRoom;
-      const chatExistsQuery = `SELECT id FROM chat_rooms WHERE type = 'jahrgang' AND jahrgang_id = $1 AND organization_id = $2`;
-      const { rows: [existingChatRoom] } = await db.query(chatExistsQuery, [jahrgang.jahrgang_id, jahrgang.organization_id]);
-      chatRoom = existingChatRoom;
-
-      if (!chatRoom) {
-        const createChatQuery = `
-          INSERT INTO chat_rooms (name, type, jahrgang_id, created_by, organization_id)
-          VALUES ($1, 'jahrgang', $2, $3, $4) RETURNING id
-        `;
-        const chatName = `Jahrgang ${jahrgang.jahrgang_name}`;
-        const { rows: [newChatRoom] } = await db.query(createChatQuery, [chatName, jahrgang.jahrgang_id, konfiId, jahrgang.organization_id]);
-        
-        chatRoom = newChatRoom;
-        
-        // Add this konfi and all other konfis from the jahrgang to the new chat
-        await addKonfiToChat(db, chatRoom.id, konfiId, jahrgang.jahrgang_name);
-        await addAllJahrgangKonfisToChat(db, chatRoom.id, jahrgang.jahrgang_id);
-        return;
-      }
-      
-      const participantExistsQuery = `
-        SELECT id FROM chat_participants 
-        WHERE room_id = $1 AND user_id = $2 AND user_type = 'konfi'
-      `;
-      const { rows: [participant] } = await db.query(participantExistsQuery, [chatRoom.id, konfiId]);
-      if (participant) return;
-      
-      await addKonfiToChat(db, chatRoom.id, konfiId, jahrgang.jahrgang_name);
-      
-    } catch (err) {
- console.error('Error ensuring konfi chat membership:', err);
-    }
-  };
-  
-  const addKonfiToChat = async (db, roomId, konfiId, jahrgangName) => {
-    try {
-      const insertQuery = `
-        INSERT INTO chat_participants (room_id, user_id, user_type, joined_at)
-        VALUES ($1, $2, 'konfi', NOW())
-      `;
-      await db.query(insertQuery, [roomId, konfiId]);
-    } catch (err) {
-      // Ignore unique constraint violation if a race condition occurs
-      if (err.code !== '23505') {
- console.error(`Error adding konfi ${konfiId} to chat ${roomId}:`, err);
-      }
-    }
-  };
-  
-  const addAllJahrgangKonfisToChat = async (db, roomId, jahrgangId) => {
-    try {
-      // Ein einziges Set-basiertes INSERT statt N+1 Schleife.
-      // NOT EXISTS ueberspringt bereits vorhandene Teilnehmer (constraint-unabhaengig).
-      const insertQuery = `
-        INSERT INTO chat_participants (room_id, user_id, user_type, joined_at)
-        SELECT $1, kp.user_id, 'konfi', NOW()
-        FROM konfi_profiles kp
-        WHERE kp.jahrgang_id = $2
-          AND NOT EXISTS (
-            SELECT 1 FROM chat_participants cp
-            WHERE cp.room_id = $1 AND cp.user_id = kp.user_id AND cp.user_type = 'konfi'
-          )
-      `;
-      await db.query(insertQuery, [roomId, jahrgangId]);
-    } catch (err) {
- console.error(`Error adding all konfis to chat ${roomId}:`, err);
-    }
-  };
   
   
   // === CHAT API ENDPOINTS ===
@@ -371,11 +210,37 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       const userType = req.user.type;
       const organizationId = req.user.organization_id;
       
-      // Ensure user is in their jahrgang chats (these functions are already async)
-      if (userType === 'admin') {
-        await ensureAdminJahrgangChatMembership(db, userId);
-      } else if (userType === 'konfi') {
-        await ensureKonfiJahrgangChatMembership(db, userId);
+      // Jahrgangs-Chat-Mitgliedschaft synchronisieren (zentral, user_type-konsistent).
+      // - konfi: genau sein Jahrgang
+      // - teamer/admin: alle zugewiesenen Jahrgaenge
+      // - org_admin: alle Jahrgaenge der Org (immer drin)
+      try {
+        let jahrgangIds = [];
+        if (userType === 'konfi') {
+          const { rows } = await db.query(
+            'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1 AND jahrgang_id IS NOT NULL',
+            [userId]
+          );
+          jahrgangIds = rows.map(r => r.jahrgang_id);
+        } else if (req.user.role_name === 'org_admin') {
+          const { rows } = await db.query(
+            'SELECT id FROM jahrgaenge WHERE organization_id = $1',
+            [organizationId]
+          );
+          jahrgangIds = rows.map(r => r.id);
+        } else {
+          // admin / teamer -> zugewiesene Jahrgaenge
+          const { rows } = await db.query(
+            'SELECT jahrgang_id FROM user_jahrgang_assignments WHERE user_id = $1 AND can_view = true',
+            [userId]
+          );
+          jahrgangIds = rows.map(r => r.jahrgang_id);
+        }
+        for (const jid of jahrgangIds) {
+          await syncJahrgangChat(db, jid, organizationId, userId);
+        }
+      } catch (syncErr) {
+        console.error('Jahrgangs-Chat-Sync beim Laden der Raeume fehlgeschlagen:', syncErr.message);
       }
       
       // Admins and Konfis use the same optimized query now.

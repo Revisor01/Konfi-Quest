@@ -6,6 +6,7 @@ const { checkPointTypeEnabled } = require('../utils/pointTypeGuard');
 const { generateBiblicalPassword } = require('../utils/passwordUtils');
 const { deleteKonfiCascade } = require('../utils/konfiDeletion');
 const { checkKonfiLimit, nextTier } = require('../utils/konfiLimit');
+const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const router = express.Router();
@@ -205,29 +206,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 VALUES ($1, $2, $3, 0, 0)`;
             await client.query(profileQuery, [userId, jahrgang_id, req.user.organization_id]);
 
-            // Add konfi to jahrgang chat room if it exists
-            const jahrgangChatQuery = `
-                SELECT id FROM chat_rooms
-                WHERE type = 'jahrgang' AND jahrgang_id = $1 AND organization_id = $2
-            `;
-            const { rows: [jahrgangChat] } = await client.query(jahrgangChatQuery, [jahrgang_id, req.user.organization_id]);
-
-            if (jahrgangChat) {
-                // Check if konfi is not already a participant (shouldn't happen, but safety first)
-                const existingParticipantQuery = `
-                    SELECT id FROM chat_participants
-                    WHERE room_id = $1 AND user_id = $2 AND user_type = 'konfi'
-                `;
-                const { rows: [existingParticipant] } = await client.query(existingParticipantQuery, [jahrgangChat.id, userId]);
-
-                if (!existingParticipant) {
-                    const addParticipantQuery = `
-                        INSERT INTO chat_participants (room_id, user_id, user_type, joined_at)
-                        VALUES ($1, $2, 'konfi', NOW())
-                    `;
-                    await client.query(addParticipantQuery, [jahrgangChat.id, userId]);
-                }
-            }
+            // Jahrgangs-Chat synchronisieren: legt den Chat bei Bedarf an und
+            // fuegt den neuen Konfi (sowie weiterhin alle Soll-Mitglieder) hinzu.
+            await syncJahrgangChat(client, jahrgang_id, req.user.organization_id, req.user.id);
 
             await client.query('COMMIT');
 
@@ -294,46 +275,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             const profileQuery = `UPDATE konfi_profiles SET jahrgang_id = $1 WHERE user_id = $2`;
             await client.query(profileQuery, [jahrgang_id, req.params.id]);
 
-            // Handle jahrgang chat membership changes
+            // Jahrgang-Wechsel: alten + neuen Jahrgangs-Chat synchronisieren.
+            // syncJahrgangChat entfernt den Konfi aus dem alten (nicht mehr Soll)
+            // und fuegt ihn dem neuen hinzu — user_type-konsistent.
             if (currentProfile && currentProfile.jahrgang_id !== parseInt(jahrgang_id)) {
-                // Remove from old jahrgang chat
                 if (currentProfile.jahrgang_id) {
-                    const oldJahrgangChatQuery = `
-                        SELECT id FROM chat_rooms
-                        WHERE type = 'jahrgang' AND jahrgang_id = $1 AND organization_id = $2
-                    `;
-                    const { rows: [oldJahrgangChat] } = await client.query(oldJahrgangChatQuery, [currentProfile.jahrgang_id, req.user.organization_id]);
-
-                    if (oldJahrgangChat) {
-                        await client.query(`
-                            DELETE FROM chat_participants
-                            WHERE room_id = $1 AND user_id = $2 AND user_type = 'konfi'
-                        `, [oldJahrgangChat.id, req.params.id]);
-                    }
+                    await syncJahrgangChat(client, currentProfile.jahrgang_id, req.user.organization_id, req.user.id);
                 }
-
-                // Add to new jahrgang chat
-                const newJahrgangChatQuery = `
-                    SELECT id FROM chat_rooms
-                    WHERE type = 'jahrgang' AND jahrgang_id = $1 AND organization_id = $2
-                `;
-                const { rows: [newJahrgangChat] } = await client.query(newJahrgangChatQuery, [jahrgang_id, req.user.organization_id]);
-
-                if (newJahrgangChat) {
-                    // Check if not already a participant
-                    const existingParticipantQuery = `
-                        SELECT id FROM chat_participants
-                        WHERE room_id = $1 AND user_id = $2 AND user_type = 'konfi'
-                    `;
-                    const { rows: [existingParticipant] } = await client.query(existingParticipantQuery, [newJahrgangChat.id, req.params.id]);
-
-                    if (!existingParticipant) {
-                        await client.query(`
-                            INSERT INTO chat_participants (room_id, user_id, user_type, joined_at)
-                            VALUES ($1, $2, 'konfi', NOW())
-                        `, [newJahrgangChat.id, req.params.id]);
-                    }
-                }
+                await syncJahrgangChat(client, jahrgang_id, req.user.organization_id, req.user.id);
             }
 
             await client.query('COMMIT');
