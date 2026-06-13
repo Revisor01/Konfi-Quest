@@ -359,6 +359,56 @@ describe('Organizations Routes', () => {
 
       expect(res.status).toBe(404);
     });
+
+    it('loescht ALLE Org-Daten restlos (keine Waisen in abhaengigen Tabellen)', async () => {
+      // Org 2 hat im Seed User, Chat, Events, Badges etc.
+      const res = await request(app)
+        .delete(`/api/organizations/2`)
+        .set('Authorization', `Bearer ${superAdminToken}`);
+      expect(res.status).toBe(200);
+
+      // Stichprobe ueber org-isolierte + user-abhaengige Tabellen: 0 Reste
+      const checks = [
+        ['users', 'SELECT count(*)::int c FROM users WHERE organization_id=2'],
+        ['roles', 'SELECT count(*)::int c FROM roles WHERE organization_id=2'],
+        ['jahrgaenge', 'SELECT count(*)::int c FROM jahrgaenge WHERE organization_id=2'],
+        ['events', 'SELECT count(*)::int c FROM events WHERE organization_id=2'],
+        ['activities', 'SELECT count(*)::int c FROM activities WHERE organization_id=2'],
+        ['categories', 'SELECT count(*)::int c FROM categories WHERE organization_id=2'],
+        ['custom_badges', 'SELECT count(*)::int c FROM custom_badges WHERE organization_id=2'],
+        ['levels', 'SELECT count(*)::int c FROM levels WHERE organization_id=2'],
+        ['chat_rooms', 'SELECT count(*)::int c FROM chat_rooms WHERE organization_id=2'],
+        ['user_organizations', 'SELECT count(*)::int c FROM user_organizations WHERE organization_id=2'],
+        // Chat-Nachrichten der Org-2-Rooms (room_id-Join)
+        ['chat_messages', 'SELECT count(*)::int c FROM chat_messages WHERE room_id IN (SELECT id FROM chat_rooms WHERE organization_id=2)']
+      ];
+      for (const [label, sql] of checks) {
+        const { rows: [row] } = await db.query(sql);
+        expect(`${label}=${row.c}`).toBe(`${label}=0`);
+      }
+    });
+
+    it('Multi-Org: Gast-User aus anderer Org bleibt erhalten, nur Mitgliedschaft weg', async () => {
+      // admin1 (Org 1) als Gast in Org 2 aufnehmen
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      await db.query(`INSERT INTO user_organizations (user_id, organization_id, role_id)
+        VALUES (4, 2, 7) ON CONFLICT DO NOTHING`);
+      invalidateUserCache(4);
+
+      const res = await request(app)
+        .delete(`/api/organizations/2`)
+        .set('Authorization', `Bearer ${superAdminToken}`);
+      expect(res.status).toBe(200);
+
+      // admin1 existiert noch (gehoert Org 1)
+      const { rows: [user] } = await db.query('SELECT id FROM users WHERE id=4');
+      expect(user).toBeDefined();
+      // Aber seine Gast-Mitgliedschaft in Org 2 ist weg
+      const { rows: membership } = await db.query(
+        'SELECT 1 FROM user_organizations WHERE user_id=4 AND organization_id=2'
+      );
+      expect(membership.length).toBe(0);
+    });
   });
 
   // ================================================================

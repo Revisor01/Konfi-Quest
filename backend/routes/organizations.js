@@ -356,13 +356,57 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
         ]);
       }
 
+      // 7. Create default categories (Startpunkt zum Anpassen). type:
+      // 'activity' | 'event' | 'both'. key dient nur der Verknuepfung unten.
+      const defaultCategories = [
+        { key: 'gottesdienst', name: 'Gottesdienst', description: '', type: 'both' },
+        { key: 'gemeinde', name: 'Gemeinde', description: '', type: 'both' },
+        { key: 'unterricht', name: 'Unterricht', description: '', type: 'both' },
+        { key: 'kasualien', name: 'Kasualien', description: 'Taufe, Hochzeit, Beerdigung', type: 'activity' },
+        { key: 'freizeit', name: 'Freizeit', description: '', type: 'both' }
+      ];
+
+      const categoryIdByKey = {};
+      const categoryQuery = `INSERT INTO categories (name, description, type, organization_id)
+                             VALUES ($1, $2, $3, $4) RETURNING id`;
+      for (const cat of defaultCategories) {
+        const { rows: [newCat] } = await db.query(categoryQuery, [cat.name, cat.description, cat.type, organizationId]);
+        categoryIdByKey[cat.key] = newCat.id;
+      }
+
+      // 8. Create default activities (Startpunkt zum Anpassen) + Kategorie-Verknuepfung.
+      // type: 'gottesdienst' | 'gemeinde'. categoryKey verweist auf defaultCategories.
+      const defaultActivities = [
+        { name: 'Gottesdienstbesuch', points: 1, type: 'gottesdienst', categoryKey: 'gottesdienst' },
+        { name: 'Taufe', points: 1, type: 'gottesdienst', categoryKey: 'kasualien' },
+        { name: 'Hochzeit', points: 1, type: 'gottesdienst', categoryKey: 'kasualien' },
+        { name: 'Beerdigung', points: 2, type: 'gottesdienst', categoryKey: 'kasualien' },
+        { name: 'Gemeindefest helfen', points: 2, type: 'gemeinde', categoryKey: 'gemeinde' },
+        { name: 'Seniorennachmittag', points: 1, type: 'gemeinde', categoryKey: 'gemeinde' },
+        { name: 'Gemeindebrief verteilen', points: 1, type: 'gemeinde', categoryKey: 'gemeinde' }
+      ];
+
+      const activityQuery = `INSERT INTO activities (name, points, type, organization_id)
+                             VALUES ($1, $2, $3, $4) RETURNING id`;
+      const activityCategoryQuery = `INSERT INTO activity_categories (activity_id, category_id)
+                                     VALUES ($1, $2)`;
+      for (const act of defaultActivities) {
+        const { rows: [newAct] } = await db.query(activityQuery, [act.name, act.points, act.type, organizationId]);
+        const catId = categoryIdByKey[act.categoryKey];
+        if (catId) {
+          await db.query(activityCategoryQuery, [newAct.id, catId]);
+        }
+      }
+
       res.status(201).json({
         id: organizationId,
         admin_user_id: newAdmin.id,
         default_badges_created: defaultBadges.length,
         default_certificates_created: defaultCertificates.length,
         default_levels_created: defaultLevels.length,
-        message: `Organisation erfolgreich erstellt (Standard-Rollen, Admin, ${defaultBadges.length} Badges, ${defaultCertificates.length} Zertifikate, ${defaultLevels.length} Levels)`
+        default_categories_created: defaultCategories.length,
+        default_activities_created: defaultActivities.length,
+        message: `Organisation erfolgreich erstellt (Standard-Rollen, Admin, ${defaultBadges.length} Badges, ${defaultCertificates.length} Zertifikate, ${defaultLevels.length} Levels, ${defaultCategories.length} Kategorien, ${defaultActivities.length} Aktivitäten)`
       });
 
     } catch (err) {
@@ -451,62 +495,100 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
         return res.status(404).json({ error: 'Organisation nicht gefunden' });
       }
 
-      // Alle abhängigen Daten in korrekter Reihenfolge löschen
-      // 1. Chat-System (hängt von users ab)
-      await client.query('DELETE FROM chat_poll_votes WHERE poll_id IN (SELECT id FROM chat_polls WHERE room_id IN (SELECT id FROM chat_rooms WHERE organization_id = $1))', [id]);
-      await client.query('DELETE FROM chat_polls WHERE room_id IN (SELECT id FROM chat_rooms WHERE organization_id = $1)', [id]);
+      // VOLLSTAENDIGE LOESCHUNG aller Org-Daten in abhaengigkeitssicherer
+      // Reihenfolge (Blaetter -> Wurzel). Reihenfolge ist bewusst explizit statt
+      // sich auf FK-CASCADE zu verlassen, da viele FKs NO ACTION sind (created_by,
+      // admin_id, *.organization_id auf chat_rooms/materials/settings/...). Eine
+      // einzige nicht abgeraeumte NO-ACTION-Referenz wuerde sonst die ganze
+      // Loeschung blockieren (Rollback). Alles laeuft in EINER Transaktion.
+      //
+      // Hinweis Multi-Org: Gast-Mitgliedschaften FREMDER User in dieser Org
+      // (user_organizations.organization_id = id) werden hier geloescht; die
+      // Gast-User selbst bleiben (gehoeren ihrer eigenen Org). Die org-eigenen
+      // User werden geloescht, ihre Gast-Mitgliedschaften in ANDEREN Orgs
+      // kaskadieren ueber den users-FK (user_organizations.user_id CASCADE).
+
+      // 1. Chat-System (Blaetter zuerst). chat_polls haengt an message_id (NICHT
+      // room_id) -> ueber chat_messages der Org-Rooms aufloesen.
+      await client.query('DELETE FROM chat_poll_votes WHERE poll_id IN (SELECT id FROM chat_polls WHERE message_id IN (SELECT id FROM chat_messages WHERE room_id IN (SELECT id FROM chat_rooms WHERE organization_id = $1)))', [id]);
+      await client.query('DELETE FROM chat_polls WHERE message_id IN (SELECT id FROM chat_messages WHERE room_id IN (SELECT id FROM chat_rooms WHERE organization_id = $1))', [id]);
+      await client.query('DELETE FROM chat_message_reactions WHERE message_id IN (SELECT id FROM chat_messages WHERE room_id IN (SELECT id FROM chat_rooms WHERE organization_id = $1))', [id]);
       await client.query('DELETE FROM chat_read_status WHERE room_id IN (SELECT id FROM chat_rooms WHERE organization_id = $1)', [id]);
       await client.query('DELETE FROM chat_messages WHERE room_id IN (SELECT id FROM chat_rooms WHERE organization_id = $1)', [id]);
       await client.query('DELETE FROM chat_participants WHERE room_id IN (SELECT id FROM chat_rooms WHERE organization_id = $1)', [id]);
       await client.query('DELETE FROM chat_rooms WHERE organization_id = $1', [id]);
 
-      // 2. Event-Daten
+      // 2. Material-System (haengt an events/jahrgaenge/users der Org)
+      await client.query('DELETE FROM material_file_tags WHERE material_id IN (SELECT id FROM materials WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM material_files WHERE material_id IN (SELECT id FROM materials WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM material_events WHERE material_id IN (SELECT id FROM materials WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM material_jahrgaenge WHERE material_id IN (SELECT id FROM materials WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM materials WHERE organization_id = $1', [id]);
+      await client.query('DELETE FROM material_tags WHERE organization_id = $1', [id]);
+
+      // 3. Event-Daten
       await client.query('DELETE FROM event_points WHERE organization_id = $1', [id]);
+      await client.query('DELETE FROM event_reminders WHERE event_id IN (SELECT id FROM events WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM event_unregistrations WHERE organization_id = $1', [id]);
       await client.query('DELETE FROM event_bookings WHERE organization_id = $1', [id]);
-      await client.query('DELETE FROM event_timeslots WHERE event_id IN (SELECT id FROM events WHERE organization_id = $1)', [id]);
-      await client.query('DELETE FROM event_category_assignments WHERE event_id IN (SELECT id FROM events WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM event_categories WHERE event_id IN (SELECT id FROM events WHERE organization_id = $1)', [id]);
       await client.query('DELETE FROM event_jahrgang_assignments WHERE event_id IN (SELECT id FROM events WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM event_timeslots WHERE event_id IN (SELECT id FROM events WHERE organization_id = $1)', [id]);
+      // Serien-Selbstreferenz (events.series_id NO ACTION) entkoppeln, dann loeschen
+      await client.query('UPDATE events SET series_id = NULL WHERE organization_id = $1', [id]);
       await client.query('DELETE FROM events WHERE organization_id = $1', [id]);
 
-      // 3. Konfi-Daten
+      // 4. Konfi-/Aktivitaets-Daten
       await client.query('DELETE FROM user_activities WHERE organization_id = $1', [id]);
       await client.query('DELETE FROM bonus_points WHERE organization_id = $1', [id]);
-      await client.query('DELETE FROM user_badges WHERE user_id IN (SELECT user_id FROM konfi_profiles WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM user_badges WHERE organization_id = $1', [id]);
       await client.query('DELETE FROM activity_requests WHERE organization_id = $1', [id]);
+      await client.query('DELETE FROM wrapped_snapshots WHERE organization_id = $1', [id]);
 
-      // 4. Notifications und Push-Tokens
+      // 5. Zertifikate (user_certificates -> certificate_types)
+      await client.query('DELETE FROM user_certificates WHERE organization_id = $1', [id]);
+      await client.query('DELETE FROM certificate_types WHERE organization_id = $1', [id]);
+
+      // 6. Notifications, Tokens, Resets (haengen an org-Usern)
       await client.query('DELETE FROM notifications WHERE user_id IN (SELECT id FROM users WHERE organization_id = $1)', [id]);
       await client.query('DELETE FROM push_tokens WHERE user_id IN (SELECT id FROM users WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM refresh_tokens WHERE user_id IN (SELECT id FROM users WHERE organization_id = $1)', [id]);
       await client.query('DELETE FROM password_resets WHERE user_id IN (SELECT id FROM users WHERE organization_id = $1)', [id]);
 
-      // 5. User-Zuweisungen
+      // 7. User-Zuweisungen + Multi-Org-Mitgliedschaften
       await client.query('DELETE FROM user_jahrgang_assignments WHERE user_id IN (SELECT id FROM users WHERE organization_id = $1)', [id]);
+      // ALLE Mitgliedschaften in dieser Org (auch Gast-User fremder Orgs)
+      await client.query('DELETE FROM user_organizations WHERE organization_id = $1', [id]);
 
-      // 6. Konfi-Profile
-      await client.query('DELETE FROM konfi_profiles WHERE organization_id = $1', [id]);
+      // 8. Konfsprueche (org-gescopt; konfi_profiles.konfspruch_id ist SET NULL)
+      await client.query('DELETE FROM konfspruch_uebersetzungen WHERE spruch_id IN (SELECT id FROM konfsprueche WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM konfsprueche WHERE organization_id = $1', [id]);
 
-      // 7. Users
-      await client.query('DELETE FROM users WHERE organization_id = $1', [id]);
-
-      // 8. Aktivitäten und Kategorien
-      await client.query('DELETE FROM activity_category_assignments WHERE activity_id IN (SELECT id FROM activities WHERE organization_id = $1)', [id]);
+      // 9. Stammdaten, die per created_by/admin_id (NO ACTION) auf users zeigen,
+      // MUESSEN vor DELETE FROM users weg, sonst blockiert der FK das Loeschen.
+      await client.query('DELETE FROM activity_categories WHERE activity_id IN (SELECT id FROM activities WHERE organization_id = $1)', [id]);
       await client.query('DELETE FROM activities WHERE organization_id = $1', [id]);
       await client.query('DELETE FROM categories WHERE organization_id = $1', [id]);
-
-      // 9. Badges, Levels, Settings
+      await client.query('DELETE FROM user_badges WHERE organization_id = $1', [id]); // vor custom_badges (badge_id NO ACTION)
       await client.query('DELETE FROM custom_badges WHERE organization_id = $1', [id]);
       await client.query('DELETE FROM levels WHERE organization_id = $1', [id]);
+      await client.query('DELETE FROM invite_codes WHERE organization_id = $1', [id]);
       await client.query('DELETE FROM settings WHERE organization_id = $1', [id]);
 
-      // 10. Invite-Codes und Jahrgänge
-      await client.query('DELETE FROM invite_codes WHERE organization_id = $1', [id]);
+      // 10. Konfi-Profile + Users der Org. Gast-Mitgliedschaften dieser User in
+      // ANDEREN Orgs kaskadieren ueber den users-FK.
+      await client.query('DELETE FROM konfi_profiles WHERE organization_id = $1', [id]);
+      await client.query('DELETE FROM users WHERE organization_id = $1', [id]);
+
+      // 11. Jahrgaenge (nach users; user_jahrgang_assignments ist weg)
       await client.query('DELETE FROM jahrgaenge WHERE organization_id = $1', [id]);
 
-      // 11. Rollen (role_permissions werden explizit gelöscht)
+      // 12. Rollen (role_permissions + user_organizations.role_id RESTRICT sind
+      // bereits oben abgeraeumt)
       await client.query('DELETE FROM role_permissions WHERE role_id IN (SELECT id FROM roles WHERE organization_id = $1)', [id]);
       await client.query('DELETE FROM roles WHERE organization_id = $1', [id]);
 
-      // 12. Organisation selbst
+      // 13. Organisation selbst
       const { rowCount } = await client.query('DELETE FROM organizations WHERE id = $1', [id]);
       if (rowCount === 0) {
         await client.query('ROLLBACK');
