@@ -29,13 +29,17 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     console.error('ErrorBoundary hat einen Fehler gefangen:', error, errorInfo);
   }
 
-  // Setzt den Boundary zurueck und schickt die App auf den Login. Wir leeren NICHT
-  // die Auth (das macht der API-Interceptor bei echtem 401) — ein Render-Fehler
-  // bedeutet nicht zwingend, dass die Session kaputt ist. Der naechste API-Call
-  // refresht ggf. selbst; ist die Session wirklich tot, landet man ohnehin im Login.
+  // Raus aus der Fehlerseite — MUSS auch im nativen Capacitor-WebView funktionieren.
+  // window.location.href = '/' laedt dort capacitor://localhost neu und kann
+  // haengenbleiben (404/weisse Seite). Stattdessen: Auth leeren, dann location.reload()
+  // — das laedt die SPA an Ort und Stelle neu, und ohne Token rendert die App
+  // garantiert die Login-Route. clearAuth ist async; wir reloaden im finally,
+  // damit es auch bei einem Fehler im clearAuth nicht haengt.
   private handleBackToLogin = () => {
-    this.setState({ hasError: false, error: null });
-    window.location.href = '/';
+    import('../../services/tokenStore')
+      .then((m) => m.clearAuth())
+      .catch(() => { /* egal — Hauptsache reload */ })
+      .finally(() => { window.location.reload(); });
   };
 
   render() {
