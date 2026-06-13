@@ -86,7 +86,7 @@ setupIonicReact({
 
 
 const AppContent: React.FC = () => {
-  const { user, loading } = useApp();
+  const { user, loading, setUser } = useApp();
 
   // HINWEIS: Push-Listener (Empfang, Tap-Navigation, Counts-Refresh) liegen
   // zentral in AppContext. Frueher rief AppContent hier removeAllListeners()
@@ -113,9 +113,12 @@ const AppContent: React.FC = () => {
     };
   }, [handleRateLimit]);
 
-  // Bei abgelaufenem Refresh-Token direkt zum Login (ohne Zwischendialog).
-  // Der Hinweis "Sitzung abgelaufen" wird per sessionStorage an die LoginView
-  // uebergeben und dort als Fehlermeldung angezeigt.
+  // Bei abgelaufenem Refresh-Token zurueck zum Login — OHNE harten Reload.
+  // Frueher: window.location.href = '/' — im nativen Capacitor-WebView laedt das
+  // die App komplett neu (capacitor://localhost) und konnte beim Wiederaufbau
+  // crashen. Jetzt setzen wir nur den User auf null -> React rendert sofort die
+  // Login-Route (AppContent unten). Der Hinweis "Sitzung abgelaufen" geht per
+  // sessionStorage an die LoginView.
   useEffect(() => {
     const handler = () => {
       try {
@@ -123,11 +126,11 @@ const AppContent: React.FC = () => {
       } catch {
         // sessionStorage nicht verfuegbar -> Hinweis entfaellt, Login kommt trotzdem
       }
-      window.location.href = '/';
+      setUser(null);
     };
     window.addEventListener('auth:relogin-required', handler);
     return () => window.removeEventListener('auth:relogin-required', handler);
-  }, []);
+  }, [setUser]);
 
   // Auto-refresh every 30 seconds - DISABLED wegen Spam
   // useEffect(() => {
