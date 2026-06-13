@@ -637,4 +637,131 @@ describe('Organizations Routes', () => {
       expect(res.body).toHaveProperty('max_konfis', null);
     });
   });
+
+  // ================================================================
+  // MULTI-ORG: Mitgliedschaften + Switcher
+  // ================================================================
+  describe('Multi-Org Mitgliedschaften', () => {
+    // admin1 (id 4, Primaer-Org 1) wird Org 2 zugewiesen. teamer-Rolle in Org 2 = role_id 7.
+    describe('POST /api/organizations/:id/members', () => {
+      it('SuperAdmin weist bestehenden Admin einer zweiten Org zu -> 201', async () => {
+        const res = await request(app)
+          .post(`/api/organizations/2/members`)
+          .set('Authorization', `Bearer ${superAdminToken}`)
+          .send({ user_id: 4, role_name: 'teamer' });
+
+        expect(res.status).toBe(201);
+
+        const { rows } = await db.query(
+          'SELECT role_id FROM user_organizations WHERE user_id = 4 AND organization_id = 2'
+        );
+        expect(rows.length).toBe(1);
+        expect(rows[0].role_id).toBe(7); // teamer-Rolle der Org 2
+      });
+
+      it('Upsert: erneutes Zuweisen aktualisiert die Rolle', async () => {
+        await request(app).post(`/api/organizations/2/members`)
+          .set('Authorization', `Bearer ${superAdminToken}`)
+          .send({ user_id: 4, role_name: 'teamer' });
+        const res = await request(app).post(`/api/organizations/2/members`)
+          .set('Authorization', `Bearer ${superAdminToken}`)
+          .send({ user_id: 4, role_name: 'admin' });
+
+        expect(res.status).toBe(201);
+        const { rows } = await db.query(
+          'SELECT role_id FROM user_organizations WHERE user_id = 4 AND organization_id = 2'
+        );
+        expect(rows.length).toBe(1);
+        expect(rows[0].role_id).toBe(8); // admin-Rolle der Org 2
+      });
+
+      it('Konfi kann NICHT zugewiesen werden -> 400', async () => {
+        const res = await request(app)
+          .post(`/api/organizations/2/members`)
+          .set('Authorization', `Bearer ${superAdminToken}`)
+          .send({ user_id: 1, role_name: 'teamer' }); // user 1 = konfi
+        expect(res.status).toBe(400);
+      });
+
+      it('Rolle konfi als role_name -> 400', async () => {
+        const res = await request(app)
+          .post(`/api/organizations/2/members`)
+          .set('Authorization', `Bearer ${superAdminToken}`)
+          .send({ user_id: 4, role_name: 'konfi' });
+        expect(res.status).toBe(400);
+      });
+
+      it('OrgAdmin (kein super_admin) bekommt 403', async () => {
+        const res = await request(app)
+          .post(`/api/organizations/2/members`)
+          .set('Authorization', `Bearer ${orgAdminToken}`)
+          .send({ user_id: 4, role_name: 'teamer' });
+        expect(res.status).toBe(403);
+      });
+    });
+
+    describe('GET /api/organizations/:id/members', () => {
+      it('listet zugewiesene Mitglieder (inkl. Primaer-Mitglieder aus Migration)', async () => {
+        await request(app).post(`/api/organizations/2/members`)
+          .set('Authorization', `Bearer ${superAdminToken}`)
+          .send({ user_id: 4, role_name: 'teamer' });
+
+        const res = await request(app)
+          .get(`/api/organizations/2/members`)
+          .set('Authorization', `Bearer ${superAdminToken}`);
+
+        expect(res.status).toBe(200);
+        const ids = res.body.map(m => m.id);
+        expect(ids).toContain(4);
+      });
+    });
+
+    describe('DELETE /api/organizations/:id/members/:userId', () => {
+      it('entfernt eine zusaetzliche Mitgliedschaft -> 200', async () => {
+        await request(app).post(`/api/organizations/2/members`)
+          .set('Authorization', `Bearer ${superAdminToken}`)
+          .send({ user_id: 4, role_name: 'teamer' });
+
+        const res = await request(app)
+          .delete(`/api/organizations/2/members/4`)
+          .set('Authorization', `Bearer ${superAdminToken}`);
+        expect(res.status).toBe(200);
+
+        const { rows } = await db.query(
+          'SELECT 1 FROM user_organizations WHERE user_id = 4 AND organization_id = 2'
+        );
+        expect(rows.length).toBe(0);
+      });
+
+      it('Primaer-Org kann NICHT entfernt werden -> 400', async () => {
+        // admin1 Primaer-Org = 1, durch Migration in user_organizations vorhanden
+        await db.query(`INSERT INTO user_organizations (user_id, organization_id, role_id)
+          VALUES (4, 1, 3) ON CONFLICT DO NOTHING`);
+        const res = await request(app)
+          .delete(`/api/organizations/1/members/4`)
+          .set('Authorization', `Bearer ${superAdminToken}`);
+        expect(res.status).toBe(400);
+      });
+    });
+
+    describe('GET /api/organizations/search-users', () => {
+      it('findet bestehende Admins, keine Konfis', async () => {
+        const res = await request(app)
+          .get(`/api/organizations/search-users?q=admin`)
+          .set('Authorization', `Bearer ${superAdminToken}`);
+        expect(res.status).toBe(200);
+        expect(Array.isArray(res.body)).toBe(true);
+        // Kein Eintrag mit Konfi-Rolle
+        expect(res.body.every(u => u.primary_role_name !== 'konfi')).toBe(true);
+      });
+
+      it('zu kurze Query -> leeres Array', async () => {
+        const res = await request(app)
+          .get(`/api/organizations/search-users?q=a`)
+          .set('Authorization', `Bearer ${superAdminToken}`);
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual([]);
+      });
+    });
+  });
 });

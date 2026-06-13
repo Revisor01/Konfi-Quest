@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { Device } from '@capacitor/device';
 import api from '../services/api';
-import { getUser, setUser as persistUser, getDeviceId, setDeviceId, getPushTokenTimestamp, setPushTokenTimestamp } from '../services/tokenStore';
+import { getUser, setUser as persistUser, getDeviceId, setDeviceId, getPushTokenTimestamp, setPushTokenTimestamp, getActiveOrgId, setActiveOrgId, setToken } from '../services/tokenStore';
 import { networkMonitor } from '../services/networkMonitor';
 import { App } from '@capacitor/app';
 import { PushNotifications } from '@capacitor/push-notifications';
@@ -68,6 +68,16 @@ const sendTokenToServer = async (token: string, retryCount = 0) => {
   }
 };
 
+// Eine Organisation, in der der eingeloggte User Mitglied ist (Org-Switcher).
+export interface UserOrganization {
+  id: number;
+  name: string;
+  slug?: string;
+  role_name: string;
+  role_display_name?: string;
+  is_active?: boolean;
+}
+
 interface AppContextType {
   user: BaseUser | null;
   loading: boolean;
@@ -75,6 +85,10 @@ interface AppContextType {
   success: string;
   isOnline: boolean;
   pushNotificationsPermission: string;
+  // Multi-Org Switcher
+  organizations: UserOrganization[];
+  activeOrgId: number | null;
+  switchOrg: (orgId: number) => Promise<void>;
   setUser: (user: BaseUser | null) => void;
   refreshUser: () => Promise<void>;
   setError: (error: string) => void;
@@ -95,6 +109,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Push notifications state
   const [pushNotificationsPermission, setPushNotificationsPermission] = useState<string>('prompt');
+
+  // Multi-Org Switcher state
+  const [organizations, setOrganizations] = useState<UserOrganization[]>([]);
+  const [activeOrgId, setActiveOrgIdState] = useState<number | null>(getActiveOrgId());
 
   // Badge sync through state updates only (no custom events)
 
@@ -154,6 +172,70 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     refreshUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Multi-Org: Liste der Orgs des Users laden. Der Switcher erscheint nur, wenn
+  // mehr als eine Org zurueckkommt. Konfis bekommen ohnehin keine -> kein Switcher.
+  const loadOrganizations = useCallback(async () => {
+    const cached = getUser();
+    if (!cached) return;
+    try {
+      const res = await api.get('/auth/my-organizations');
+      if (Array.isArray(res?.data)) {
+        setOrganizations(res.data);
+        // Falls die aktuell aktive Org nicht mehr in der Liste ist (z.B. entzogen),
+        // auf Primaer-Org zuruecksetzen.
+        const current = getActiveOrgId();
+        if (current && !res.data.some((o: UserOrganization) => o.id === current)) {
+          await setActiveOrgId(null);
+          setActiveOrgIdState(null);
+        }
+      }
+    } catch {
+      // Offline/Fehler: kein Hard-Fail, Switcher bleibt einfach leer
+    }
+  }, []);
+
+  useEffect(() => {
+    loadOrganizations();
+  }, [loadOrganizations, user?.id]);
+
+  // Org wechseln: neues Token holen, aktive Org persistieren, alle Caches leeren
+  // und frische Daten laden. Bei Wechsel zur Primaer-Org wird der aktive Kontext
+  // entfernt (Server faellt auf users.organization_id zurueck).
+  const switchOrg = useCallback(async (orgId: number) => {
+    const target = organizations.find(o => o.id === orgId);
+    try {
+      const res = await api.post('/auth/switch-org', { organization_id: orgId });
+      if (res?.data?.token) {
+        await setToken(res.data.token);
+      }
+      // Bei Wechsel zur Primaer-Org den aktiven Kontext ENTFERNEN (kein Header
+      // mehr senden), sonst die Ziel-Org als aktive Org persistieren.
+      const isPrimary = res?.data?.is_primary === true;
+      const nextActive = isPrimary ? null : orgId;
+      await setActiveOrgId(nextActive);
+      setActiveOrgIdState(nextActive);
+
+      // Alle Offline-Caches invalidieren + Schreib-Queue leeren, damit keine Daten
+      // der alten Org haengen bleiben.
+      await offlineCache.invalidateAll();
+      window.dispatchEvent(new CustomEvent('sync:reconnect'));
+
+      // User-Objekt (Org-Name, Rolle) aktualisieren
+      if (target) {
+        const cached = getUser();
+        if (cached) {
+          const merged = { ...cached, organization: target.name, organization_id: target.id, role_name: target.role_name };
+          await persistUser(merged);
+          setUser(merged);
+        }
+      }
+      await refreshUser();
+    } catch (err) {
+      console.error('Org-Wechsel fehlgeschlagen:', err);
+      setError('Organisation konnte nicht gewechselt werden');
+    }
+  }, [organizations, refreshUser]);
 
   // Push notifications functions
   const requestPushPermissions = useCallback(async () => {
@@ -504,6 +586,9 @@ useEffect(() => {
     success,
     isOnline,
     pushNotificationsPermission,
+    organizations,
+    activeOrgId,
+    switchOrg,
     setUser,
     refreshUser,
     setError,

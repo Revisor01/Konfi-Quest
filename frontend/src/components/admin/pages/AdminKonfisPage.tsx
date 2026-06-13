@@ -27,6 +27,7 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import KonfiModal from '../modals/KonfiModal';
 import AttendanceMatrixModal from '../modals/AttendanceMatrixModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { OrgSwitcherButton } from '../../shared';
 
 interface Konfi {
   id: number;
@@ -263,6 +264,7 @@ const AdminKonfisPage: React.FC = () => {
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
+          <OrgSwitcherButton />
           <IonTitle>Konfirmand:innen</IonTitle>
           <IonButtons slot="end">
             {['org_admin', 'admin'].includes(user?.role_name || '') && (

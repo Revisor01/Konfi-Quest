@@ -12,29 +12,40 @@ const USER_CACHE_TTL = 30 * 1000; // 30 Sekunden
 const USER_CACHE_MAX = 500;
 const userCache = new Map();
 
-const getCachedUser = (userId) => {
-  const entry = userCache.get(userId);
+// Cache-Key haelt die AKTIVE Org mit rein: ein User kann (Multi-Org) je nach
+// aktivem Org-Kontext ein voellig anderes req.user-Objekt haben (andere Org,
+// andere Rolle, andere Jahrgaenge). Ohne Org im Key wuerde der 30s-Cache nach
+// einem Org-Switch die alte Org ausliefern.
+const cacheKey = (userId, activeOrgId) => `${userId}:${activeOrgId || 'default'}`;
+
+const getCachedUser = (key) => {
+  const entry = userCache.get(key);
   if (!entry) return null;
   if (Date.now() - entry.timestamp > USER_CACHE_TTL) {
-    userCache.delete(userId);
+    userCache.delete(key);
     return null;
   }
   return entry.data;
 };
 
-const setCachedUser = (userId, data) => {
+const setCachedUser = (key, data) => {
   // Evict aelteste Eintraege wenn Max erreicht
   if (userCache.size >= USER_CACHE_MAX) {
     const firstKey = userCache.keys().next().value;
     userCache.delete(firstKey);
   }
-  userCache.set(userId, { data, timestamp: Date.now() });
+  userCache.set(key, { data, timestamp: Date.now() });
 };
 
-// Cache invalidieren bei User-Aenderungen (Export fuer andere Module)
+// Cache invalidieren bei User-Aenderungen (Export fuer andere Module).
+// Loescht ALLE Org-Varianten eines Users (Praefix-Match), da der Key
+// "userId:orgId" lautet. Ohne userId: kompletter Cache-Clear.
 const invalidateUserCache = (userId) => {
   if (userId) {
-    userCache.delete(userId);
+    const prefix = `${userId}:`;
+    for (const key of userCache.keys()) {
+      if (key.startsWith(prefix)) userCache.delete(key);
+    }
   } else {
     userCache.clear();
   }
@@ -76,8 +87,18 @@ const verifyTokenRBAC = (db) => {
     }
 
     try {
-      // Cache-Check VOR DB-Query
-      const cached = getCachedUser(decoded.id);
+      // AKTIVE Organisation bestimmen (Multi-Org): Client sendet die gewuenschte
+      // Org per Header X-Active-Organization (oder als Claim im Access-Token, der
+      // beim Switch neu ausgestellt wird). Validierung (Mitgliedschaft) erfolgt
+      // unten gegen user_organizations. Ohne Angabe -> Primaer-Org aus users.
+      const headerOrg = parseInt(req.headers['x-active-organization']);
+      const tokenOrg = decoded.active_organization_id ? parseInt(decoded.active_organization_id) : null;
+      const requestedActiveOrg = Number.isInteger(headerOrg) ? headerOrg
+        : (Number.isInteger(tokenOrg) ? tokenOrg : null);
+
+      // Cache-Check VOR DB-Query (Key inkl. aktiver Org)
+      const ckey = cacheKey(decoded.id, requestedActiveOrg);
+      const cached = getCachedUser(ckey);
       if (cached) {
         // Soft-Revoke Check auch mit cached Data
         if (cached.token_invalidated_at) {
@@ -122,21 +143,52 @@ const verifyTokenRBAC = (db) => {
         }
       }
 
+      // AKTIVE Org anwenden: ist eine andere als die Primaer-Org gewuenscht UND
+      // ist der User dort Mitglied (user_organizations)? Dann Org + Rolle auf die
+      // aktive Org umschreiben. Alle nachgelagerten Org-isolierten Queries lesen
+      // danach req.user.organization_id und arbeiten transparent in der aktiven Org.
+      if (requestedActiveOrg && requestedActiveOrg !== user.organization_id) {
+        const { rows: [membership] } = await db.query(`
+          SELECT uo.organization_id,
+                 r.id as role_id, r.name as role_name, r.display_name as role_display_name,
+                 o.name as organization_name, o.slug as organization_slug,
+                 COALESCE(o.is_active, true) as organization_active
+          FROM user_organizations uo
+          JOIN roles r ON uo.role_id = r.id
+          JOIN organizations o ON uo.organization_id = o.id
+          WHERE uo.user_id = $1 AND uo.organization_id = $2
+        `, [decoded.id, requestedActiveOrg]);
+
+        if (!membership) {
+          // Nicht Mitglied der angeforderten Org -> Zugriff verweigern (kein
+          // stilles Zurueckfallen auf die Primaer-Org, das waere verwirrend).
+          return res.status(403).json({ error: 'Kein Zugriff auf diese Organisation' });
+        }
+
+        user.organization_id = membership.organization_id;
+        user.role_name = membership.role_name;
+        user.role_display_name = membership.role_display_name;
+        user.organization_name = membership.organization_name;
+        user.organization_slug = membership.organization_slug;
+        user.organization_active = membership.organization_active;
+      }
+
       // Super-Admin hat keine Organization - Skip org check
       if (user.role_name !== 'super_admin' && !user.organization_active) {
         return res.status(401).json({ error: 'Organization is inactive' });
       }
 
-      // Jahrgänge laden (nur für nicht-super_admin)
+      // Jahrgänge laden (nur für nicht-super_admin) — fuer die AKTIVE Org gescopt,
+      // damit Teamer-Zuweisungen aus der falschen Org nicht durchschlagen.
       let assignedJahrgaenge = [];
       if (user.organization_id) {
         const jahrgaengeQuery = `
           SELECT j.id, j.name, uja.can_view, uja.can_edit
           FROM user_jahrgang_assignments uja
           JOIN jahrgaenge j ON uja.jahrgang_id = j.id
-          WHERE uja.user_id = $1
+          WHERE uja.user_id = $1 AND j.organization_id = $2
         `;
-        const { rows } = await db.query(jahrgaengeQuery, [decoded.id]);
+        const { rows } = await db.query(jahrgaengeQuery, [decoded.id, user.organization_id]);
         assignedJahrgaenge = rows;
       }
 
@@ -159,8 +211,8 @@ const verifyTokenRBAC = (db) => {
         is_org_admin: user.role_name === 'org_admin'
       };
 
-      // User-Objekt cachen (30s TTL)
-      setCachedUser(decoded.id, {
+      // User-Objekt cachen (30s TTL, Key inkl. aktiver Org)
+      setCachedUser(ckey, {
         token_invalidated_at: user.token_invalidated_at,
         userObj: req.user
       });

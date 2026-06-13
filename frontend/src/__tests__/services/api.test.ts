@@ -4,6 +4,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 vi.mock('../../services/tokenStore', () => ({
   getToken: vi.fn(() => null),
   getRefreshToken: vi.fn(() => null),
+  getActiveOrgId: vi.fn(() => null),
   setToken: vi.fn(),
   setRefreshToken: vi.fn(),
   clearAuth: vi.fn(),

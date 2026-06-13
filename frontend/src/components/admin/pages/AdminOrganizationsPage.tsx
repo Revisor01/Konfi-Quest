@@ -28,6 +28,7 @@ import { logout } from '../../../services/auth';
 import OrganizationView from '../OrganizationView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import OrganizationManagementModal from '../modals/OrganizationManagementModal';
+import OrgMembersModal from '../modals/OrgMembersModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
 
 interface Organization {
@@ -65,6 +66,8 @@ const AdminOrganizationsPage: React.FC = () => {
   // Modal state
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
   const [modalOrganizationId, setModalOrganizationId] = useState<number | null>(null);
+  // Mitglieder-Modal (Multi-Org-Zuweisung)
+  const [membersOrg, setMembersOrg] = useState<Organization | null>(null);
 
   // Alert Hook für Bestätigungsdialoge
   const [presentAlert] = useIonAlert();
@@ -107,6 +110,29 @@ const AdminOrganizationsPage: React.FC = () => {
       loadOrganizations();
     }
   });
+
+  // Mitglieder-Modal (Multi-Org-Zuweisung)
+  const [presentMembersModal, dismissMembersModal] = useIonModal(OrgMembersModal, {
+    organizationId: membersOrg?.id ?? 0,
+    organizationName: membersOrg?.display_name ?? '',
+    onClose: () => {
+      dismissMembersModal();
+      setMembersOrg(null);
+    }
+  });
+
+  const handleManageMembers = (organization: Organization) => {
+    setMembersOrg(organization);
+  };
+
+  // Modal oeffnen, sobald die Ziel-Org gesetzt ist (useIonModal liest die Props
+  // beim Praesentieren).
+  React.useEffect(() => {
+    if (membersOrg) {
+      presentMembersModal({ presentingElement });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [membersOrg]);
 
   // Subscribe to live updates for organizations
   useLiveRefresh('organizations', loadOrganizations);
@@ -194,6 +220,7 @@ const AdminOrganizationsPage: React.FC = () => {
               onAddOrganizationClick={presentOrganizationModal}
               onSelectOrganization={handleSelectOrganization}
               onDeleteOrganization={handleDeleteOrganization}
+              onManageMembers={handleManageMembers}
             />
 
             <div style={{ height: '32px' }} />

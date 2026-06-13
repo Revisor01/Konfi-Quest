@@ -1,6 +1,6 @@
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
-import { getToken, getRefreshToken, setToken, setRefreshToken, clearAuth, isLoggingOut } from './tokenStore';
+import { getToken, getRefreshToken, setToken, setRefreshToken, clearAuth, isLoggingOut, getActiveOrgId } from './tokenStore';
 import { networkMonitor } from './networkMonitor';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://konfi-quest.de/api';
@@ -35,6 +35,12 @@ api.interceptors.request.use((config) => {
   const token = getToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  // Aktive Multi-Org mitsenden (Org-Switcher). Ohne aktive Org bleibt der Server
+  // bei der Primaer-Org.
+  const activeOrgId = getActiveOrgId();
+  if (activeOrgId) {
+    config.headers['X-Active-Organization'] = String(activeOrgId);
   }
   return config;
 });
@@ -98,10 +104,12 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // Refresh-Versuch mit direktem axios (nicht api, um Interceptor-Loop zu vermeiden)
+        // Refresh-Versuch mit direktem axios (nicht api, um Interceptor-Loop zu vermeiden).
+        // Aktive Org mitsenden, damit das neue Token den Org-Claim behaelt.
+        const activeOrgId = getActiveOrgId();
         const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
           refresh_token: refreshToken
-        });
+        }, activeOrgId ? { headers: { 'X-Active-Organization': String(activeOrgId) } } : undefined);
 
         const { token: newToken, refresh_token: newRefreshToken } = response.data;
         await setToken(newToken);

@@ -56,6 +56,7 @@ async function truncateAll(db) {
     wrapped_snapshots,
     push_tokens, event_reminders, password_resets,
     invite_codes, refresh_tokens, notifications,
+    user_organizations,
     users, activities, custom_badges, events,
     jahrgaenge, categories, levels,
     role_permissions, permissions, roles,

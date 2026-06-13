@@ -482,4 +482,89 @@ describe('Auth Routes', () => {
       expect(res.status).toBe(401);
     });
   });
+
+  // ================================================================
+  // MULTI-ORG: my-organizations + switch-org + X-Active-Organization
+  // ================================================================
+  describe('Multi-Org Switcher', () => {
+    // admin1 (id 4) hat Primaer-Org 1. Fuer die Tests wird er zusaetzlich Org 2
+    // (teamer-Rolle id 7) zugewiesen. user_organizations ist nach truncate+seed
+    // leer, daher beide Mitgliedschaften hier explizit anlegen.
+    async function makeMultiOrgAdmin() {
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      await db.query(`INSERT INTO user_organizations (user_id, organization_id, role_id)
+        VALUES (4, 1, 3) ON CONFLICT DO NOTHING`);
+      await db.query(`INSERT INTO user_organizations (user_id, organization_id, role_id)
+        VALUES (4, 2, 7) ON CONFLICT DO NOTHING`);
+      invalidateUserCache(4);
+    }
+
+    it('GET /my-organizations listet beide Orgs', async () => {
+      await makeMultiOrgAdmin();
+      const token = generateToken('admin1');
+      const res = await request(app)
+        .get('/api/auth/my-organizations')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      const ids = res.body.map(o => o.id).sort();
+      expect(ids).toEqual([1, 2]);
+    });
+
+    it('POST /switch-org liefert Token mit aktivem Org-Claim', async () => {
+      await makeMultiOrgAdmin();
+      const token = generateToken('admin1');
+      const res = await request(app)
+        .post('/api/auth/switch-org')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ organization_id: 2 });
+
+      expect(res.status).toBe(200);
+      expect(res.body.active_organization_id).toBe(2);
+      expect(res.body.organization.id).toBe(2);
+      expect(typeof res.body.token).toBe('string');
+    });
+
+    it('switch-org zu einer Org ohne Mitgliedschaft -> 403', async () => {
+      await makeMultiOrgAdmin();
+      const token = generateToken('admin1');
+      const res = await request(app)
+        .post('/api/auth/switch-org')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ organization_id: 999 });
+      expect(res.status).toBe(403);
+    });
+
+    it('X-Active-Organization schaltet org-isolierte Daten auf die aktive Org', async () => {
+      await makeMultiOrgAdmin();
+      const token = generateToken('admin1');
+
+      // Ohne Header -> Primaer-Org 1
+      const primary = await request(app)
+        .get('/api/organizations/current')
+        .set('Authorization', `Bearer ${token}`);
+      expect(primary.status).toBe(200);
+      expect(primary.body.id).toBe(1);
+
+      // Mit Header -> aktive Org 2
+      const active = await request(app)
+        .get('/api/organizations/current')
+        .set('Authorization', `Bearer ${token}`)
+        .set('X-Active-Organization', '2');
+      expect(active.status).toBe(200);
+      expect(active.body.id).toBe(2);
+    });
+
+    it('X-Active-Organization auf eine Nicht-Mitglieds-Org -> 403', async () => {
+      // admin1 OHNE Multi-Org-Zuweisung darf nicht in Org 2 wechseln
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      invalidateUserCache(4);
+      const token = generateToken('admin1');
+      const res = await request(app)
+        .get('/api/organizations/current')
+        .set('Authorization', `Bearer ${token}`)
+        .set('X-Active-Organization', '2');
+      expect(res.status).toBe(403);
+    });
+  });
 });

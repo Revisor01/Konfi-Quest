@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
+const { invalidateUserCache } = require('../middleware/rbac');
 
 // Organizations routes
 // ============================================
@@ -64,6 +65,34 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       res.json(organizations);
     } catch (err) {
  console.error('Database error in GET /organizations:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // GET /search-users?q= — bestehende User systemweit suchen (fuer Multi-Org-
+  // Zuweisung). Konfis ausgenommen. MUSS vor /:id stehen, sonst faengt /:id den Pfad.
+  router.get('/search-users', rbacVerifier, requireSuperAdmin, async (req, res) => {
+    try {
+      const q = (req.query.q || '').toString().trim();
+      if (q.length < 2) {
+        return res.json([]);
+      }
+      const { rows } = await db.query(`
+        SELECT u.id, u.username, u.display_name, u.email,
+               o.name as primary_organization_name,
+               r.name as primary_role_name
+        FROM users u
+        LEFT JOIN organizations o ON u.organization_id = o.id
+        LEFT JOIN roles r ON u.role_id = r.id
+        WHERE (r.name IS NULL OR r.name != 'konfi')
+          AND u.is_active = true
+          AND (u.username ILIKE $1 OR u.display_name ILIKE $1)
+        ORDER BY u.display_name ASC
+        LIMIT 20
+      `, [`%${q}%`]);
+      res.json(rows);
+    } catch (err) {
+      console.error('Database error in GET /organizations/search-users:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -656,6 +685,130 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
         return res.status(409).json({ error: 'Benutzername oder E-Mail existiert bereits' });
       }
  console.error('Error creating org admin:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // ============================================
+  // MULTI-ORG MITGLIEDSCHAFTEN (nur super_admin)
+  // ============================================
+  // Weist BESTEHENDE User (Admin/Teamer/Org-Admin) zusaetzlichen Organisationen
+  // zu, sodass sie per Org-Switcher zwischen ihnen wechseln koennen. Konfis sind
+  // ausgenommen (Switcher ist ein Verwaltungs-Feature).
+
+  const validateAddMember = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige Organisations-ID'),
+    body('user_id').isInt({ min: 1 }).withMessage('Ungültige Benutzer-ID'),
+    body('role_name').trim().notEmpty().withMessage('Rolle ist erforderlich'),
+    handleValidationErrors
+  ];
+
+  // GET /:id/members — alle Multi-Org-Mitglieder dieser Organisation
+  router.get('/:id/members', rbacVerifier, requireSuperAdmin, validateOrgId, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { rows } = await db.query(`
+        SELECT u.id, u.username, u.display_name, u.email,
+               r.name as role_name, r.display_name as role_display_name,
+               (u.organization_id = uo.organization_id) as is_primary,
+               uo.created_at
+        FROM user_organizations uo
+        JOIN users u ON uo.user_id = u.id
+        JOIN roles r ON uo.role_id = r.id
+        WHERE uo.organization_id = $1 AND r.name != 'konfi'
+        ORDER BY u.display_name ASC
+      `, [id]);
+      res.json(rows);
+    } catch (err) {
+      console.error('Database error in GET /organizations/:id/members:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // POST /:id/members — bestehenden User dieser Organisation zuweisen.
+  // role_name (org_admin | admin | teamer) wird in der ZIEL-Org aufgeloest.
+  router.post('/:id/members', rbacVerifier, requireSuperAdmin, validateAddMember, async (req, res) => {
+    const { id } = req.params;
+    const { user_id, role_name } = req.body;
+    const orgId = parseInt(id);
+
+    if (role_name === 'konfi' || role_name === 'super_admin') {
+      return res.status(400).json({ error: 'Nur org_admin, admin oder teamer sind als Mitglieds-Rolle erlaubt' });
+    }
+
+    try {
+      // User existiert + ist kein Konfi?
+      const { rows: [user] } = await db.query(`
+        SELECT u.id, u.organization_id, r.name as role_name
+        FROM users u LEFT JOIN roles r ON u.role_id = r.id
+        WHERE u.id = $1
+      `, [user_id]);
+      if (!user) {
+        return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+      }
+      if (user.role_name === 'konfi') {
+        return res.status(400).json({ error: 'Konfis können nicht mehreren Organisationen zugewiesen werden' });
+      }
+
+      // Organisation existiert?
+      const { rows: [org] } = await db.query('SELECT id FROM organizations WHERE id = $1', [orgId]);
+      if (!org) {
+        return res.status(404).json({ error: 'Organisation nicht gefunden' });
+      }
+
+      // Rolle in der ZIEL-Org aufloesen
+      const { rows: [role] } = await db.query(
+        'SELECT id FROM roles WHERE organization_id = $1 AND name = $2',
+        [orgId, role_name]
+      );
+      if (!role) {
+        return res.status(400).json({ error: `Rolle '${role_name}' existiert in dieser Organisation nicht` });
+      }
+
+      // Upsert: vorhandene Mitgliedschaft aktualisiert die Rolle
+      await db.query(`
+        INSERT INTO user_organizations (user_id, organization_id, role_id)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (user_id, organization_id)
+        DO UPDATE SET role_id = EXCLUDED.role_id
+      `, [user_id, orgId, role.id]);
+
+      invalidateUserCache(parseInt(user_id));
+      res.status(201).json({ message: 'Mitgliedschaft gespeichert' });
+    } catch (err) {
+      console.error('Database error in POST /organizations/:id/members:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // DELETE /:id/members/:userId — Mitgliedschaft entfernen.
+  // Die PRIMAER-Org eines Users kann nicht entfernt werden (das waere ein User-
+  // Loeschen, nicht ein Multi-Org-Entzug) -> dafuer die User-Verwaltung nutzen.
+  router.delete('/:id/members/:userId', rbacVerifier, requireSuperAdmin, async (req, res) => {
+    const orgId = parseInt(req.params.id);
+    const userId = parseInt(req.params.userId);
+    if (!Number.isInteger(orgId) || !Number.isInteger(userId)) {
+      return res.status(400).json({ error: 'Ungültige ID' });
+    }
+    try {
+      const { rows: [user] } = await db.query('SELECT organization_id FROM users WHERE id = $1', [userId]);
+      if (!user) {
+        return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+      }
+      if (user.organization_id === orgId) {
+        return res.status(400).json({ error: 'Die Primär-Organisation kann hier nicht entfernt werden' });
+      }
+      const { rowCount } = await db.query(
+        'DELETE FROM user_organizations WHERE user_id = $1 AND organization_id = $2',
+        [userId, orgId]
+      );
+      if (rowCount === 0) {
+        return res.status(404).json({ error: 'Mitgliedschaft nicht gefunden' });
+      }
+      invalidateUserCache(userId);
+      res.json({ message: 'Mitgliedschaft entfernt' });
+    } catch (err) {
+      console.error('Database error in DELETE /organizations/:id/members/:userId:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });

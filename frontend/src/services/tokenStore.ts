@@ -7,6 +7,9 @@ let _user: BaseUser | null = null;
 let _deviceId: string | null = null;
 let _pushTokenTimestamp: number = 0;
 let _refreshToken: string | null = null;
+// Aktive Multi-Org (Org-Switcher). null = Primaer-Org. Wird als Header
+// X-Active-Organization bei jedem Request mitgesendet (api.ts).
+let _activeOrgId: number | null = null;
 // Markiert einen BEWUSSTEN Logout. Solange true, darf ein 401 (z.B. vom
 // Push-Token-Cleanup nach clearAuth) NICHT als "Sitzung abgelaufen" gemeldet
 // werden. Liegt hier statt in auth.ts, um Circular-Import mit api.ts zu vermeiden.
@@ -27,6 +30,8 @@ export const getDeviceId = (): string | null => _deviceId;
 export const getPushTokenTimestamp = (): number => _pushTokenTimestamp;
 
 export const getRefreshToken = (): string | null => _refreshToken;
+
+export const getActiveOrgId = (): number | null => _activeOrgId;
 
 // --- Async Setter (schreiben in Memory + Preferences) ---
 
@@ -55,15 +60,28 @@ export const setRefreshToken = async (token: string): Promise<void> => {
   await Preferences.set({ key: 'konfi_refresh_token', value: token });
 };
 
+// Aktive Org setzen (null = zurueck zur Primaer-Org). Synchroner Memory-Write
+// fuer den Request-Interceptor + async Persistenz.
+export const setActiveOrgId = async (orgId: number | null): Promise<void> => {
+  _activeOrgId = orgId;
+  if (orgId === null) {
+    await Preferences.remove({ key: 'konfi_active_org' });
+  } else {
+    await Preferences.set({ key: 'konfi_active_org', value: String(orgId) });
+  }
+};
+
 // --- Auth löschen (Device-ID bleibt erhalten) ---
 
 export const clearAuth = async (): Promise<void> => {
   _token = null;
   _user = null;
   _refreshToken = null;
+  _activeOrgId = null;
   await Preferences.remove({ key: 'konfi_token' });
   await Preferences.remove({ key: 'konfi_user' });
   await Preferences.remove({ key: 'konfi_refresh_token' });
+  await Preferences.remove({ key: 'konfi_active_org' });
 };
 
 // --- Initialisierung: Preferences -> Memory laden ---
@@ -91,4 +109,7 @@ export const initTokenStore = async (): Promise<void> => {
 
   const refreshResult = await Preferences.get({ key: 'konfi_refresh_token' });
   _refreshToken = refreshResult.value;
+
+  const activeOrgResult = await Preferences.get({ key: 'konfi_active_org' });
+  _activeOrgId = activeOrgResult.value ? parseInt(activeOrgResult.value, 10) || null : null;
 };

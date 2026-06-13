@@ -367,6 +367,90 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     }
   });
 
+  // ===== MULTI-ORG SWITCHER =====
+
+  // GET /api/auth/my-organizations — alle Organisationen, in denen der User
+  // Mitglied ist (inkl. Primaer-Org), mit der jeweiligen Rolle. Frontend zeigt
+  // den Org-Switcher nur, wenn hier mehr als ein Eintrag zurueckkommt.
+  router.get('/my-organizations', rbacVerifier, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { rows } = await db.query(`
+        SELECT o.id, o.name, o.slug, r.name as role_name, r.display_name as role_display_name,
+               COALESCE(o.is_active, true) as is_active
+        FROM user_organizations uo
+        JOIN organizations o ON uo.organization_id = o.id
+        JOIN roles r ON uo.role_id = r.id
+        WHERE uo.user_id = $1 AND COALESCE(o.is_active, true) = true
+        ORDER BY o.name ASC
+      `, [userId]);
+      res.json(rows);
+    } catch (err) {
+      console.error('Database error in GET /api/auth/my-organizations:', err);
+      res.status(500).json({ error: 'Fehler beim Laden der Organisationen' });
+    }
+  });
+
+  // POST /api/auth/switch-org — wechselt die aktive Organisation. Prueft die
+  // Mitgliedschaft und stellt ein neues Access-Token mit active_organization_id
+  // als Claim aus (damit der Kontext den 15min-Refresh ueberlebt). Das Refresh-
+  // Token bleibt gueltig; der Client sendet ab jetzt X-Active-Organization mit.
+  router.post('/switch-org', rbacVerifier, async (req, res) => {
+    const targetOrgId = parseInt(req.body.organization_id);
+    if (!Number.isInteger(targetOrgId)) {
+      return res.status(400).json({ error: 'organization_id ist erforderlich' });
+    }
+    try {
+      const userId = req.user.id;
+      const { rows: [membership] } = await db.query(`
+        SELECT o.id, o.name, o.slug, r.name as role_name,
+               COALESCE(o.is_active, true) as is_active,
+               u.display_name, u.email, u.organization_id as primary_org_id, u.is_super_admin
+        FROM user_organizations uo
+        JOIN organizations o ON uo.organization_id = o.id
+        JOIN roles r ON uo.role_id = r.id
+        JOIN users u ON uo.user_id = u.id
+        WHERE uo.user_id = $1 AND uo.organization_id = $2
+      `, [userId, targetOrgId]);
+
+      if (!membership) {
+        return res.status(403).json({ error: 'Du bist kein Mitglied dieser Organisation' });
+      }
+      if (membership.is_active === false) {
+        return res.status(403).json({ error: 'Diese Organisation ist derzeit gesperrt' });
+      }
+
+      const userType = membership.role_name === 'konfi' ? 'konfi'
+        : membership.role_name === 'teamer' ? 'teamer' : 'admin';
+
+      // Bei Wechsel zur Primaer-Org KEINEN active-Claim setzen (Default-Verhalten).
+      const isPrimary = targetOrgId === membership.primary_org_id;
+
+      const token = jwt.sign({
+        id: userId,
+        type: userType,
+        display_name: membership.display_name,
+        email: membership.email,
+        organization_id: membership.primary_org_id,
+        role_name: membership.role_name,
+        is_super_admin: membership.is_super_admin || false,
+        ...(isPrimary ? {} : { active_organization_id: targetOrgId })
+      }, JWT_SECRET, { expiresIn: '15m' });
+
+      res.json({
+        token,
+        active_organization_id: targetOrgId,
+        is_primary: isPrimary,
+        organization: { id: membership.id, name: membership.name, slug: membership.slug },
+        role_name: membership.role_name,
+        type: userType
+      });
+    } catch (err) {
+      console.error('Database error in POST /api/auth/switch-org:', err);
+      res.status(500).json({ error: 'Fehler beim Wechsel der Organisation' });
+    }
+  });
+
   // Request password reset (mit eigenem Rate-Limiter, getrennt vom Login-Limiter)
   router.post('/request-password-reset', passwordResetLimiter, validateRequestPasswordReset, async (req, res) => {
     const { email } = req.body;
@@ -828,6 +912,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       return res.status(400).json({ error: 'Refresh-Token ist erforderlich' });
     }
 
+    // Aktive Multi-Org aus Header durchreichen, damit der Org-Kontext erhalten bleibt.
+    const headerOrg = parseInt(req.headers['x-active-organization']);
+    const activeOrgId = Number.isInteger(headerOrg) ? headerOrg : null;
+
     const tokenHash = hashToken(refresh_token);
 
     try {
@@ -855,13 +943,13 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
           return res.status(401).json({ error: 'Ungültiger oder abgelaufener Refresh-Token' });
         }
         // Im Grace-Fenster: weiter wie mit einem gueltigen Token (kein erneutes Revoke noetig)
-        return await issueRefreshedTokens(db, res, recent.user_id);
+        return await issueRefreshedTokens(db, res, recent.user_id, activeOrgId);
       }
 
       // Altes Token sofort revoken (Rotation)
       await db.query('UPDATE refresh_tokens SET revoked_at = NOW() WHERE id = $1', [existing.id]);
 
-      return await issueRefreshedTokens(db, res, existing.user_id);
+      return await issueRefreshedTokens(db, res, existing.user_id, activeOrgId);
     } catch (err) {
       console.error('Database error in POST /api/auth/refresh:', err);
       res.status(500).json({ error: 'Fehler beim Token-Refresh' });
@@ -870,7 +958,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
   // Helper: laedt User (inkl. Org-Status), prueft die Zugriffs-Sperre und stellt
   // ein neues Token-Paar aus. Genutzt vom normalen Refresh UND vom Grace-Window.
-  async function issueRefreshedTokens(db, res, userId) {
+  // activeOrgId (optional): aktive Multi-Org, kommt beim Refresh aus dem Header
+  // X-Active-Organization. Sie wird (nach Mitgliedschafts-Pruefung) als Claim ins
+  // neue Access-Token geschrieben, damit der Org-Kontext den Refresh ueberlebt.
+  async function issueRefreshedTokens(db, res, userId, activeOrgId = null) {
     const { rows: [user] } = await db.query(`
       SELECT u.id, u.username, u.display_name, u.organization_id, u.email, u.role_id,
              u.is_super_admin, u.is_active as user_active,
@@ -904,6 +995,17 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       }
     }
 
+    // Aktive Org nur uebernehmen, wenn sie von der Primaer-Org abweicht UND der
+    // User dort Mitglied ist. Sonst (auch bei ungueltiger Org) Primaer-Org.
+    let activeOrgClaim = null;
+    if (activeOrgId && Number.isInteger(activeOrgId) && activeOrgId !== user.organization_id) {
+      const { rows: [m] } = await db.query(
+        'SELECT 1 FROM user_organizations WHERE user_id = $1 AND organization_id = $2',
+        [userId, activeOrgId]
+      );
+      if (m) activeOrgClaim = activeOrgId;
+    }
+
     const userType = user.role_name === 'konfi' ? 'konfi' : user.role_name === 'teamer' ? 'teamer' : 'admin';
 
     const newAccessToken = jwt.sign({
@@ -913,7 +1015,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       email: user.email,
       organization_id: user.organization_id,
       role_name: user.role_name,
-      is_super_admin: user.is_super_admin || false
+      is_super_admin: user.is_super_admin || false,
+      ...(activeOrgClaim ? { active_organization_id: activeOrgClaim } : {})
     }, JWT_SECRET, { expiresIn: '15m' });
 
     const newRefreshToken = generateRefreshToken();
