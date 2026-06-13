@@ -2484,9 +2484,20 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   vertical-align: middle;
 }
 /* Einheitliche Zeilenhöhe in beiden Ansichten (Anwesenheit + Sprüche):
-   feste Höhe, damit langer Spruch-Text die Zeile nicht aufbläht -> kein Springen beim Umschalten */
+   EXAKT gleiche Höhe erzwingen, damit beim Umschalten kein Sprung entsteht.
+   Ursache der Differenz war NICHT der Dot, sondern der line-box-Overhang des
+   Zellinhalts, der die Zelle über die height-Vorgabe wachsen liess (height auf
+   td wirkt nur als Minimum). Lösung: height + max-height fixieren die Zelle hart
+   auf 40px (max-height deckelt den Overhang), vertikales Padding raus, Inhalt
+   wird über line-height/vertical-align mittig gehalten. Beide Tabellen teilen
+   diese Regel -> identische Zeilenhöhe. Einzige erlaubte Abweichung: die
+   Spaltenbreiten rechts vom Sticky-Namen. */
 .attendance-matrix tbody td {
   height: 40px;
+  max-height: 40px;
+  line-height: 24px;
+  padding-top: 0;
+  padding-bottom: 0;
   box-sizing: border-box;
 }
 /* Einheitliche Header-Höhe in beiden Ansichten: der Event-Header (mit __event-date)
@@ -2562,6 +2573,10 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   height: 24px;
   border-radius: 50%;
   font-size: 1.25rem;
+  /* vertical-align middle verhindert die Baseline-Lücke, die ein inline-flex
+     in der Tabellenzelle sonst erzeugt (sonst ist die Anwesenheits-Zeile ein
+     paar px höher als die reine Text-Zeile der Sprüche). */
+  vertical-align: middle;
 }
 .attendance-matrix__dot ion-icon {
   font-size: 1.25rem;
