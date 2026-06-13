@@ -109,10 +109,34 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   const { pageRef, presentingElement } = useModalPage(tabId);
 
   // --- useOfflineQuery: Chat Rooms ---
+  // Defensiver select-Transform (Incident 13.06.2026): gecachte rooms-Responses
+  // koennen kaputt/unplausibel sein (z.B. nach der Teilnehmer-Explosion oder bei
+  // einem korrupten Cache-Eintrag). Statt beim Rendern zu crashen normalisieren
+  // wir hier: kein Array -> [], jeder Eintrag bekommt garantiert name/type/
+  // participant_count in sinnvoller Form. So kann kein einzelner Datensatz die
+  // ganze Chat-Liste (und damit per ErrorBoundary die ganze App) lahmlegen.
+  const sanitizeRooms = (raw: ChatRoomOverview[]): ChatRoomOverview[] => {
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .filter(room => room && typeof room === 'object' && room.id != null)
+      .map(room => ({
+        ...room,
+        name: typeof room.name === 'string' ? room.name : '',
+        // participant_count defensiv: nur plausible Zahlen, sonst 0.
+        // Verhindert dass eine absurd grosse Zahl (Explosion) durchschlaegt.
+        participant_count:
+          typeof room.participant_count === 'number' && room.participant_count >= 0
+            ? room.participant_count
+            : 0,
+        // participants-Array bleibt nur wenn es wirklich ein Array ist
+        participants: Array.isArray(room.participants) ? room.participants : [],
+      }));
+  };
+
   const { data: rooms, loading, refresh } = useOfflineQuery<ChatRoomOverview[]>(
     'chat:rooms:' + user?.id,
     () => api.get('/chat/rooms').then(r => r.data),
-    { ttl: CACHE_TTL.CHAT_ROOMS }
+    { ttl: CACHE_TTL.CHAT_ROOMS, select: sanitizeRooms }
   );
 
   // Live-Update der Chat-Räume wenn Badge Count sich ändert
@@ -224,8 +248,8 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
 
   const filteredRooms = (rooms || [])
     .filter(room => {
-      // Suchfilter
-      const matchesSearch = room.name.toLowerCase().includes(searchText.toLowerCase());
+      // Suchfilter (room.name ist durch sanitizeRooms garantiert ein String)
+      const matchesSearch = (room.name || '').toLowerCase().includes(searchText.toLowerCase());
       if (!matchesSearch) return false;
 
       // Typ-Filter
