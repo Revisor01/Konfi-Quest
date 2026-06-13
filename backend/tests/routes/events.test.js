@@ -535,6 +535,108 @@ describe('Events Routes', () => {
   });
 
   // ================================================================
+  // Timeslot-Sperre bei Pflicht-Events und Konfirmationen
+  // (fachliche Regel: beide haben feste Termine fuer den ganzen Jahrgang,
+  //  daher KEINE Zeitfenster — serverseitig erzwungen, nicht nur im Frontend)
+  // ================================================================
+  describe('Timeslots bei mandatory/is_konfirmation gesperrt', () => {
+    const futureDate = () => {
+      const d = new Date();
+      d.setDate(d.getDate() + 21);
+      return d.toISOString();
+    };
+    const slot = () => {
+      const s = new Date(); s.setDate(s.getDate() + 21);
+      const e = new Date(s); e.setHours(e.getHours() + 1);
+      return { start_time: s.toISOString(), end_time: e.toISOString(), max_participants: 5 };
+    };
+
+    it('POST mandatory=true mit has_timeslots -> Server erzwingt has_timeslots=false, keine Timeslots angelegt', async () => {
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Pflicht ohne Slots',
+          event_date: futureDate(),
+          mandatory: true,
+          jahrgang_ids: [JAHRGAENGE.jahrgang1.id],
+          has_timeslots: true,
+          timeslots: [slot(), slot()],
+        });
+      expect(createRes.status).toBe(201);
+
+      const detailRes = await request(app)
+        .get(`/api/events/${createRes.body.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(detailRes.status).toBe(200);
+      expect(detailRes.body.has_timeslots).toBe(false);
+
+      const slotsRes = await request(app)
+        .get(`/api/events/${createRes.body.id}/timeslots`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      // keine Timeslots angelegt
+      expect(Array.isArray(slotsRes.body) ? slotsRes.body.length : 0).toBe(0);
+    });
+
+    it('POST is_konfirmation=true mit has_timeslots -> Server erzwingt has_timeslots=false', async () => {
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Konfirmation ohne Slots',
+          event_date: futureDate(),
+          is_konfirmation: true,
+          max_participants: 30,
+          has_timeslots: true,
+          timeslots: [slot()],
+        });
+      expect(createRes.status).toBe(201);
+
+      const detailRes = await request(app)
+        .get(`/api/events/${createRes.body.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(detailRes.status).toBe(200);
+      expect(detailRes.body.has_timeslots).toBe(false);
+    });
+
+    it('PUT: normales Event mit Timeslots -> zu Konfirmation -> has_timeslots wird false', async () => {
+      // 1. normales Event mit Timeslots
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Erst Slots dann Konfirmation',
+          event_date: futureDate(),
+          max_participants: 10,
+          has_timeslots: true,
+          timeslots: [slot()],
+        });
+      expect(createRes.status).toBe(201);
+      const eventId = createRes.body.id;
+
+      // 2. zu Konfirmation umwandeln
+      const putRes = await request(app)
+        .put(`/api/events/${eventId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Erst Slots dann Konfirmation',
+          event_date: futureDate(),
+          max_participants: 10,
+          is_konfirmation: true,
+          has_timeslots: true,
+          timeslots: [slot()],
+        });
+      expect(putRes.status).toBe(200);
+
+      const detailRes = await request(app)
+        .get(`/api/events/${eventId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(detailRes.body.has_timeslots).toBe(false);
+      expect(detailRes.body.is_konfirmation).toBe(true);
+    });
+  });
+
+  // ================================================================
   // Event-Kapazitaet (ausgebucht)
   // ================================================================
   describe('Kapazitaetsgrenze', () => {

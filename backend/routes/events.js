@@ -686,6 +686,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     const effectivePoints = (mandatory || is_konfirmation) ? 0 : (points || 0);
     const effectiveMaxParticipants = mandatory ? 0 : max_participants;
     const effectiveWaitlist = mandatory ? false : (waitlist_enabled !== undefined ? waitlist_enabled : true);
+    // Timeslots sind bei Pflicht-Events UND Konfirmationen NICHT erlaubt (fachliche
+    // Regel): Pflicht betrifft den ganzen Jahrgang, Konfirmation hat feste Termine.
+    // Serverseitig erzwungen, damit es nicht per direktem API-Call/Offline-Queue
+    // umgangen werden kann (Frontend disabled das Toggle zusaetzlich).
+    const effectiveHasTimeslots = (mandatory || is_konfirmation) ? false : (has_timeslots || false);
 
     // NOTE: For transactions with pg-pool, a client must be checked out.
     // As per the instructions, we use db.query for everything. This is safe
@@ -705,7 +710,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       const { rows: [newEvent] } = await db.query(insertEventQuery, [
         name, description, event_date, event_end_time, location, location_maps_url,
         effectivePoints, point_type || 'gemeinde', type || 'event', effectiveMaxParticipants,
-        registration_opens_at, registration_closes_at, has_timeslots || false,
+        registration_opens_at, registration_closes_at, effectiveHasTimeslots,
         effectiveWaitlist, max_waitlist_size || 10,
         is_series || false, series_id, mandatory || false, is_konfirmation || false, bring_items || null,
         effectiveCheckinWindow, teamer_needed || false, teamer_only || false,
@@ -727,8 +732,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         promises.push(db.query(jahrgangQuery, [eventId, jahrgang_ids]));
       }
       
-      // If has timeslots, create them
-      if (has_timeslots && timeslots && timeslots.length > 0) {
+      // If has timeslots, create them (effectiveHasTimeslots ist bei mandatory/
+      // is_konfirmation bereits false -> dann werden keine Timeslots angelegt)
+      if (effectiveHasTimeslots && timeslots && timeslots.length > 0) {
         const timeslotQuery = "INSERT INTO event_timeslots (event_id, start_time, end_time, max_participants, organization_id) VALUES ($1, $2, $3, $4, $5)";
         timeslots.forEach(slot => {
           promises.push(db.query(timeslotQuery, [eventId, slot.start_time, slot.end_time, slot.max_participants, req.user.organization_id]));
@@ -822,6 +828,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     const effectivePoints = (mandatory || is_konfirmation) ? 0 : points;
     const effectiveMaxParticipants = mandatory ? 0 : max_participants;
     const effectiveWaitlist = mandatory ? false : (waitlist_enabled !== undefined ? waitlist_enabled : true);
+    // Timeslots bei Pflicht-Events UND Konfirmationen nicht erlaubt (siehe POST).
+    // Wird ein Event nachträglich zu mandatory/is_konfirmation, fällt es unten in
+    // den !effectiveHasTimeslots-Zweig und vorhandene Timeslots ohne Buchungen
+    // werden entfernt.
+    const effectiveHasTimeslots = (mandatory || is_konfirmation) ? false : (has_timeslots || false);
 
     const client = await db.getClient();
     try {
@@ -843,7 +854,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       const { rowCount } = await client.query(updateQuery, [
         name, description, event_date, event_end_time, location, location_maps_url,
         effectivePoints, point_type, type, effectiveMaxParticipants, registration_opens_at,
-        registration_closes_at, has_timeslots || false,
+        registration_closes_at, effectiveHasTimeslots,
         effectiveWaitlist, max_waitlist_size || 10,
         mandatory || false, is_konfirmation || false, bring_items || null,
         effectiveCheckinWindow, teamer_needed || false, teamer_only || false,
@@ -887,8 +898,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         await client.query(enrollQuery, [id, jahrgang_ids, req.user.organization_id]);
       }
 
-      // Handle timeslots - intelligent update to preserve booking references
-      if (has_timeslots && timeslots && Array.isArray(timeslots) && timeslots.length > 0) {
+      // Handle timeslots - intelligent update to preserve booking references.
+      // effectiveHasTimeslots ist bei mandatory/is_konfirmation false -> dann greift
+      // unten der else-Zweig und entfernt vorhandene Timeslots (sofern unbenutzt).
+      if (effectiveHasTimeslots && timeslots && Array.isArray(timeslots) && timeslots.length > 0) {
         // Get existing timeslot IDs
         const { rows: existingSlots } = await client.query(
           "SELECT id FROM event_timeslots WHERE event_id = $1", [id]
@@ -930,7 +943,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             );
           }
         }
-      } else if (!has_timeslots) {
+      } else if (!effectiveHasTimeslots) {
         // Only delete timeslots if event no longer has timeslots AND no bookings reference them
         const { rows: [bookingCheck] } = await client.query(
           "SELECT COUNT(*)::int as count FROM event_bookings eb JOIN event_timeslots et ON eb.timeslot_id = et.id WHERE et.event_id = $1", [id]
