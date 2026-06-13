@@ -34,32 +34,61 @@ async function runMigrations(pool) {
   const appliedSet = new Set(applied.map(r => r.name));
 
   let newCount = 0;
+  const failed = [];
   for (const file of files) {
     if (appliedSet.has(file)) {
       continue; // Bereits ausgefuehrt, ueberspringen
     }
     const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
+
+    // Jede Migration laeuft in EINER Transaktion auf EINER dedizierten Connection
+    // (pool.query() kann sonst verschiedene Connections nutzen -> Multi-Statement-SQL
+    // waere nicht transaktional). Schlaegt eine Migration mittendrin fehl, wird sie
+    // KOMPLETT zurueckgerollt — kein Halb-Zustand mehr (Lehre aus Incident 13.06.2026:
+    // 097/098/099 wurden ausgefuehrt aber nicht sauber als applied vermerkt).
+    // Migration + schema_migrations-INSERT liegen in DERSELBEN Transaktion, damit
+    // beides atomar gemeinsam committed oder gemeinsam verworfen wird.
+    const client = await pool.connect();
     try {
-      await pool.query(sql);
-      await pool.query('INSERT INTO schema_migrations (name) VALUES ($1)', [file]);
+      await client.query('BEGIN');
+      await client.query(sql);
+      await client.query('INSERT INTO schema_migrations (name) VALUES ($1)', [file]);
+      await client.query('COMMIT');
       newCount++;
+      console.log(`Migration applied: ${file}`);
     } catch (err) {
-      console.error(`Migration failed: ${file}`, err.message);
-      throw err;
+      try { await client.query('ROLLBACK'); } catch (_) { /* Connection evtl. tot */ }
+      // NICHT-BLOCKIEREND (User-Forderung, Incident 13.06.2026): eine fehlerhafte
+      // Migration darf NIE den Serverstart killen und damit alle Logins blockieren.
+      // Wir loggen laut, merken sie als fehlgeschlagen vor und machen mit den
+      // naechsten Migrationen weiter. Der Server kommt hoch, App bleibt erreichbar.
+      // Fehlgeschlagene Migration wird NICHT als applied vermerkt -> wird beim
+      // naechsten Start (nach Fix) erneut versucht.
+      console.error(`Migration FAILED (uebersprungen, Server startet trotzdem): ${file}`, err.message);
+      failed.push({ file, message: err.message });
+    } finally {
+      client.release();
     }
   }
   if (newCount > 0) {
     console.log(`Migrations applied: ${newCount} new (${files.length} total)`);
   } else {
-    console.log(`Migrations: alle ${files.length} bereits ausgefuehrt`);
+    console.log(`Migrations: keine neuen (${files.length} total)`);
+  }
+  if (failed.length > 0) {
+    console.error(`ACHTUNG: ${failed.length} Migration(en) fehlgeschlagen und uebersprungen:`);
+    failed.forEach(f => console.error(`  - ${f.file}: ${f.message}`));
+    console.error('Server laeuft weiter. Bitte fehlgeschlagene Migration(en) pruefen und fixen.');
   }
 }
 
 // Einmaliger Test beim Starten der Anwendung, um sicherzustellen, dass die DB erreichbar ist.
+// Migrationsfehler killen den Start NICHT mehr (siehe runMigrations) — nur eine
+// voellig unerreichbare DB ist noch ein harter Startup-Fehler.
 pool.query('SELECT NOW()')
   .then(() => runMigrations(pool))
   .catch(err => {
-    console.error('Database startup failed:', err);
+    console.error('Database startup failed (DB nicht erreichbar):', err);
     process.exit(1);
   });
 
