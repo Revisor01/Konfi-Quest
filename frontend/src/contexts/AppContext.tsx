@@ -72,6 +72,7 @@ const sendTokenToServer = async (token: string, retryCount = 0) => {
 export interface UserOrganization {
   id: number;
   name: string;
+  display_name?: string;
   slug?: string;
   role_name: string;
   role_display_name?: string;
@@ -199,43 +200,49 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loadOrganizations();
   }, [loadOrganizations, user?.id]);
 
-  // Org wechseln: neues Token holen, aktive Org persistieren, alle Caches leeren
-  // und frische Daten laden. Bei Wechsel zur Primaer-Org wird der aktive Kontext
-  // entfernt (Server faellt auf users.organization_id zurueck).
+  // Org wechseln. Strategie: neues Token + aktive Org persistieren, ALLE Caches
+  // leeren, dann die App HART neu laden. Der Org-Wechsel aendert den kompletten
+  // Datenkontext (Konfis, Events, Chat, Rollen) — ein Soft-Update wuerde gemischte
+  // Caches und nicht-revalidierende Views hinterlassen (Symptom "nach Wechsel alles
+  // leer"). Ein Reload mountet alle Hooks frisch mit dem neuen aktiven-Org-Header.
   const switchOrg = useCallback(async (orgId: number) => {
-    const target = organizations.find(o => o.id === orgId);
     try {
       const res = await api.post('/auth/switch-org', { organization_id: orgId });
-      if (res?.data?.token) {
-        await setToken(res.data.token);
+      if (!res?.data?.token) {
+        throw new Error('Kein Token in switch-org Response');
       }
-      // Bei Wechsel zur Primaer-Org den aktiven Kontext ENTFERNEN (kein Header
-      // mehr senden), sonst die Ziel-Org als aktive Org persistieren.
-      const isPrimary = res?.data?.is_primary === true;
-      const nextActive = isPrimary ? null : orgId;
-      await setActiveOrgId(nextActive);
-      setActiveOrgIdState(nextActive);
+      // 1. Neues Access-Token (traegt active_organization_id als Claim)
+      await setToken(res.data.token);
 
-      // Alle Offline-Caches invalidieren + Schreib-Queue leeren, damit keine Daten
-      // der alten Org haengen bleiben.
-      await offlineCache.invalidateAll();
-      window.dispatchEvent(new CustomEvent('sync:reconnect'));
+      // 2. Aktive Org persistieren (oder entfernen, wenn es die Primaer-Org ist)
+      const isPrimary = res.data.is_primary === true;
+      await setActiveOrgId(isPrimary ? null : orgId);
 
-      // User-Objekt (Org-Name, Rolle) aktualisieren
-      if (target) {
-        const cached = getUser();
-        if (cached) {
-          const merged = { ...cached, organization: target.name, organization_id: target.id, role_name: target.role_name };
-          await persistUser(merged);
-          setUser(merged);
-        }
+      // 3. User-Objekt im Cache auf die neue Org/Rolle umschreiben, damit nach dem
+      // Reload sofort der richtige Kontext da ist (Rolle steuert das Routing!).
+      const target = organizations.find(o => o.id === orgId);
+      const cached = getUser();
+      if (target && cached) {
+        await persistUser({
+          ...cached,
+          organization: target.display_name || target.name,
+          organization_id: target.id,
+          role_name: target.role_name
+        });
       }
-      await refreshUser();
+
+      // 4. ALLE Offline-Caches + Schreib-Queue leeren (keine Org-1-Daten behalten)
+      await offlineCache.clearAll();
+      await writeQueue.clear();
+
+      // 5. Hart neu laden auf die Startseite. location.reload reicht nicht, weil
+      // die aktuelle Route zur alten Org/Rolle gehoeren kann.
+      window.location.href = '/';
     } catch (err) {
       console.error('Org-Wechsel fehlgeschlagen:', err);
       setError('Organisation konnte nicht gewechselt werden');
     }
-  }, [organizations, refreshUser]);
+  }, [organizations]);
 
   // Push notifications functions
   const requestPushPermissions = useCallback(async () => {

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
-import { getToken, getRefreshToken, setToken, setRefreshToken, clearAuth, isLoggingOut, getActiveOrgId } from './tokenStore';
+import { getToken, getRefreshToken, setToken, setRefreshToken, clearAuth, isLoggingOut, getActiveOrgId, setActiveOrgId } from './tokenStore';
 import { networkMonitor } from './networkMonitor';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://konfi-quest.de/api';
@@ -63,6 +63,20 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    // SICHERHEITSNETZ Multi-Org: Wenn ein Request mit aktivem Org-Header ein
+    // 403 "Kein Zugriff auf diese Organisation" bekommt (z.B. Mitgliedschaft
+    // entzogen, oder Token-Claim nach Refresh verloren), faellt die App auf die
+    // Primaer-Org zurueck und laedt neu — statt dauerhaft alles leer zu zeigen.
+    if (
+      error.response?.status === 403 &&
+      error.response?.data?.error === 'Kein Zugriff auf diese Organisation' &&
+      getActiveOrgId()
+    ) {
+      await setActiveOrgId(null);
+      window.location.href = '/';
+      return Promise.reject(error);
+    }
 
     if (error.response?.status === 401) {
       const isLoginRequest = originalRequest?.url?.includes('/login');

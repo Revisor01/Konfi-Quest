@@ -376,13 +376,13 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     try {
       const userId = req.user.id;
       const { rows } = await db.query(`
-        SELECT o.id, o.name, o.slug, r.name as role_name, r.display_name as role_display_name,
+        SELECT o.id, o.name, o.slug, o.display_name, r.name as role_name, r.display_name as role_display_name,
                COALESCE(o.is_active, true) as is_active
         FROM user_organizations uo
         JOIN organizations o ON uo.organization_id = o.id
         JOIN roles r ON uo.role_id = r.id
         WHERE uo.user_id = $1 AND COALESCE(o.is_active, true) = true
-        ORDER BY o.name ASC
+        ORDER BY o.display_name ASC
       `, [userId]);
       res.json(rows);
     } catch (err) {

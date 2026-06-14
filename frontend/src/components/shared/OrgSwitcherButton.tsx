@@ -1,55 +1,89 @@
-import React from 'react';
-import { IonButtons, IonButton, IonIcon, useIonActionSheet } from '@ionic/react';
-import { swapHorizontalOutline } from 'ionicons/icons';
+import React, { useState } from 'react';
+import {
+  IonButtons,
+  IonButton,
+  IonIcon,
+  IonPopover,
+  IonContent,
+  IonList,
+  IonListHeader,
+  IonItem,
+  IonLabel
+} from '@ionic/react';
+import { swapHorizontalOutline, checkmark } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 
 /**
  * Org-Switcher oben links im Header. Erscheint NUR, wenn der eingeloggte User in
- * mehreren Organisationen Mitglied ist (Multi-Org). Oeffnet ein Action-Sheet mit
- * allen Orgs; die aktive ist markiert. Bei Auswahl wird ueber den AppContext
- * gewechselt (neues Token, Cache-Invalidierung, Reload).
+ * mehreren Organisationen Mitglied ist (Multi-Org). Oeffnet ein Popover mit allen
+ * Orgs; die aktive ist mit Haekchen markiert. Bei Auswahl wird ueber den
+ * AppContext gewechselt (neues Token, Cache-Reset, Hard-Reload).
+ *
+ * Der Button hat bewusst KEINEN Groessen-Override, damit er exakt so gross ist
+ * wie die Action-Buttons rechts im selben Header.
  */
 const OrgSwitcherButton: React.FC = () => {
   const { organizations, activeOrgId, user, switchOrg } = useApp();
-  const [presentActionSheet] = useIonActionSheet();
+  const [popoverEvent, setPopoverEvent] = useState<MouseEvent | undefined>(undefined);
+  const [isOpen, setIsOpen] = useState(false);
 
   // Nur bei echtem Multi-Org-User anzeigen
   if (!organizations || organizations.length <= 1) {
     return null;
   }
 
-  // Die aktuell aktive Org: explizit gesetzte aktive Org, sonst Primaer-Org
-  // (= organization_id des Users).
+  // Aktuell aktive Org: explizit gesetzte aktive Org, sonst Primaer-Org.
   const currentId = activeOrgId ?? user?.organization_id ?? null;
 
-  const openSwitcher = () => {
-    presentActionSheet({
-      header: 'Organisation wechseln',
-      buttons: [
-        ...organizations.map((org) => ({
-          text: org.id === currentId ? `${org.name}  •` : org.name,
-          handler: () => {
-            if (org.id !== currentId) {
-              switchOrg(org.id);
-            }
-          }
-        })),
-        { text: 'Abbrechen', role: 'cancel' }
-      ]
-    });
+  const open = (e: React.MouseEvent) => {
+    setPopoverEvent(e.nativeEvent);
+    setIsOpen(true);
+  };
+
+  const handleSelect = (orgId: number) => {
+    setIsOpen(false);
+    if (orgId !== currentId) {
+      switchOrg(orgId);
+    }
   };
 
   return (
-    <IonButtons slot="start">
-      <IonButton onClick={openSwitcher}>
-        <IonIcon
-          slot="icon-only"
-          icon={swapHorizontalOutline}
-          className="app-icon-color--users"
-          style={{ fontSize: '1.6rem' }}
-        />
-      </IonButton>
-    </IonButtons>
+    <>
+      <IonButtons slot="start">
+        <IonButton onClick={open}>
+          <IonIcon slot="icon-only" icon={swapHorizontalOutline} className="app-icon-color--users" />
+        </IonButton>
+      </IonButtons>
+
+      <IonPopover
+        isOpen={isOpen}
+        event={popoverEvent}
+        onDidDismiss={() => setIsOpen(false)}
+        side="bottom"
+        alignment="start"
+      >
+        <IonContent>
+          <IonList>
+            <IonListHeader>
+              <IonLabel>Organisation wechseln</IonLabel>
+            </IonListHeader>
+            {organizations.map((org) => (
+              <IonItem
+                key={org.id}
+                button
+                detail={false}
+                onClick={() => handleSelect(org.id)}
+              >
+                <IonLabel>{org.display_name || org.name}</IonLabel>
+                {org.id === currentId && (
+                  <IonIcon slot="end" icon={checkmark} className="app-icon-color--users" />
+                )}
+              </IonItem>
+            ))}
+          </IonList>
+        </IonContent>
+      </IonPopover>
+    </>
   );
 };
 
