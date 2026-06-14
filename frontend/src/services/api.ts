@@ -73,8 +73,10 @@ api.interceptors.response.use(
       error.response?.data?.error === 'Kein Zugriff auf diese Organisation' &&
       getActiveOrgId()
     ) {
+      // Aktive Org zuruecksetzen und den AppContext per Event zum Remount bringen
+      // (KEIN window.location-Reload -> der zerschiesst den nativen WebView).
       await setActiveOrgId(null);
-      window.location.href = '/';
+      window.dispatchEvent(new CustomEvent('auth:org-fallback'));
       return Promise.reject(error);
     }
 

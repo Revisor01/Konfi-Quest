@@ -89,6 +89,7 @@ interface AppContextType {
   // Multi-Org Switcher
   organizations: UserOrganization[];
   activeOrgId: number | null;
+  orgVersion: number;
   switchOrg: (orgId: number) => Promise<void>;
   setUser: (user: BaseUser | null) => void;
   refreshUser: () => Promise<void>;
@@ -114,6 +115,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Multi-Org Switcher state
   const [organizations, setOrganizations] = useState<UserOrganization[]>([]);
   const [activeOrgId, setActiveOrgIdState] = useState<number | null>(getActiveOrgId());
+  // Wird bei jedem Org-Wechsel erhoeht. Dient als React-key am Router (App.tsx),
+  // damit ALLE Views nach einem Wechsel frisch remounten und mit dem neuen
+  // aktiven-Org-Header neu laden — OHNE window.location-Reload (der zerschiesst
+  // im nativen Capacitor-WebView die App, siehe App.tsx-Kommentar).
+  const [orgVersion, setOrgVersion] = useState(0);
 
   // Badge sync through state updates only (no custom events)
 
@@ -200,11 +206,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loadOrganizations();
   }, [loadOrganizations, user?.id]);
 
-  // Org wechseln. Strategie: neues Token + aktive Org persistieren, ALLE Caches
-  // leeren, dann die App HART neu laden. Der Org-Wechsel aendert den kompletten
-  // Datenkontext (Konfis, Events, Chat, Rollen) — ein Soft-Update wuerde gemischte
-  // Caches und nicht-revalidierende Views hinterlassen (Symptom "nach Wechsel alles
-  // leer"). Ein Reload mountet alle Hooks frisch mit dem neuen aktiven-Org-Header.
+  // Sicherheitsnetz: Wenn ein Request mit aktiver Org ein 403 "Kein Zugriff"
+  // bekommt (api.ts setzt dann die aktive Org auf null), hier die App auf die
+  // Primaer-Org zuruecksetzen und alle Views remounten.
+  useEffect(() => {
+    const handler = async () => {
+      setActiveOrgIdState(null);
+      try { await offlineCache.clearAll(); } catch { /* best-effort */ }
+      setOrgVersion(v => v + 1);
+    };
+    window.addEventListener('auth:org-fallback', handler);
+    return () => window.removeEventListener('auth:org-fallback', handler);
+  }, []);
+
+  // Org wechseln. Strategie: neues Token + aktive Org + User-State setzen, ALLE
+  // Caches leeren, dann per orgVersion-Bump alle Views REMOUNTEN (React-key am
+  // Router) — KEIN window.location-Reload (der zerschiesst im nativen Capacitor-
+  // WebView die App: Token/aktive Org sind async in Preferences und der Reload
+  // schneidet den Write ab -> "alles 0 + Switcher weg", siehe App.tsx-Kommentar).
   const switchOrg = useCallback(async (orgId: number) => {
     try {
       const res = await api.post('/auth/switch-org', { organization_id: orgId });
@@ -217,27 +236,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // 2. Aktive Org persistieren (oder entfernen, wenn es die Primaer-Org ist)
       const isPrimary = res.data.is_primary === true;
       await setActiveOrgId(isPrimary ? null : orgId);
+      setActiveOrgIdState(isPrimary ? null : orgId);
 
-      // 3. User-Objekt im Cache auf die neue Org/Rolle umschreiben, damit nach dem
-      // Reload sofort der richtige Kontext da ist (Rolle steuert das Routing!).
+      // 3. User-State auf die neue Org/Rolle umschreiben (Rolle steuert Routing!).
       const target = organizations.find(o => o.id === orgId);
       const cached = getUser();
       if (target && cached) {
-        await persistUser({
+        const merged = {
           ...cached,
           organization: target.display_name || target.name,
           organization_id: target.id,
           role_name: target.role_name
-        });
+        };
+        await persistUser(merged);
+        setUser(merged);
       }
 
-      // 4. ALLE Offline-Caches + Schreib-Queue leeren (keine Org-1-Daten behalten)
+      // 4. ALLE Offline-Caches + Schreib-Queue leeren (keine Daten der alten Org)
       await offlineCache.clearAll();
       await writeQueue.clear();
 
-      // 5. Hart neu laden auf die Startseite. location.reload reicht nicht, weil
-      // die aktuelle Route zur alten Org/Rolle gehoeren kann.
-      window.location.href = '/';
+      // 5. orgVersion bumpen -> Router-key aendert sich -> alle Views remounten
+      // frisch und laden mit dem neuen aktiven-Org-Header neu. Kein Reload noetig.
+      setOrgVersion(v => v + 1);
     } catch (err) {
       console.error('Org-Wechsel fehlgeschlagen:', err);
       setError('Organisation konnte nicht gewechselt werden');
@@ -595,6 +616,7 @@ useEffect(() => {
     pushNotificationsPermission,
     organizations,
     activeOrgId,
+    orgVersion,
     switchOrg,
     setUser,
     refreshUser,

@@ -86,7 +86,7 @@ setupIonicReact({
 
 
 const AppContent: React.FC = () => {
-  const { user, loading, setUser } = useApp();
+  const { user, loading, setUser, orgVersion } = useApp();
 
   // HINWEIS: Push-Listener (Empfang, Tap-Navigation, Counts-Refresh) liegen
   // zentral in AppContext. Frueher rief AppContent hier removeAllListeners()
@@ -166,9 +166,12 @@ const AppContent: React.FC = () => {
   }
 
   // Die Render-Logik wird jetzt super einfach:
+  // key={orgVersion}: Bei einem Org-Wechsel (Multi-Org-Switcher) wird orgVersion
+  // erhoeht -> der gesamte Router-Subtree remountet frisch und alle Views laden
+  // mit dem neuen aktiven-Org-Header neu. Ersetzt den fragilen location-Reload.
   return (
     <IonApp>
-      <IonReactRouter>
+      <IonReactRouter key={orgVersion}>
         <IonRouterOutlet>
           {/* Anstatt die Tabs hier inline zu rendern, rendern wir nur noch eine Route auf MainTabs */}
           <Route path="/" component={MainTabs} />
