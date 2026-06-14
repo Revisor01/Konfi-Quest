@@ -39,8 +39,6 @@ import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
-import { logout } from '../../../services/auth';
-import { clearAuth } from '../../../services/tokenStore';
 import { SectionHeader } from '../../shared';
 import ChangePasswordModal from '../modals/ChangePasswordModal';
 import ChangeEmailModal from '../modals/ChangeEmailModal';
@@ -196,7 +194,7 @@ const BibleTranslationModal: React.FC<{
 };
 
 const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presentingElement, pageRef }) => {
-  const { user, setError } = useApp();
+  const { user, setError, signOut } = useApp();
   const [presentAlert] = useIonAlert();
 
   const [selectedTranslation, setSelectedTranslation] = useState<string>(profile.bible_translation || 'LUT');
@@ -294,15 +292,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
           text: 'Abmelden',
           role: 'destructive',
           handler: async () => {
-            try {
-              await logout();
-              window.location.href = '/';
-            } catch (error) {
- console.error('Logout error:', error);
-              // Fallback: direct logout even if token removal fails
-              await clearAuth();
-              window.location.href = '/';
-            }
+            // signOut() ist failsafe (kein throw, erzwingt intern clearAuth +
+            // setUser(null) -> Login-Route). Kein window.location-Reload noetig.
+            await signOut();
           }
         }
       ]

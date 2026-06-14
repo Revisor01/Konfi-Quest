@@ -24,7 +24,6 @@ import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
-import { logout } from '../../../services/auth';
 import OrganizationView from '../OrganizationView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import OrganizationManagementModal from '../modals/OrganizationManagementModal';
@@ -49,7 +48,7 @@ interface Organization {
 }
 
 const AdminOrganizationsPage: React.FC = () => {
-  const { setError, isOnline, refreshUser } = useApp();
+  const { setError, isOnline, refreshUser, signOut } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-organizations');
   
   // SWR-Cache für Organisationen
@@ -82,8 +81,7 @@ const AdminOrganizationsPage: React.FC = () => {
           text: 'Abmelden',
           role: 'destructive',
           handler: async () => {
-            await logout();
-            window.location.href = '/';
+            await signOut();
           }
         }
       ]

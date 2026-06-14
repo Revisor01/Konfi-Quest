@@ -41,8 +41,7 @@ import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
-import { logout } from '../../../services/auth';
-import { setUser as setTokenStoreUser, clearAuth } from '../../../services/tokenStore';
+import { setUser as setTokenStoreUser } from '../../../services/tokenStore';
 import ChangeEmailModal from '../../konfi/modals/ChangeEmailModal';
 import ChangePasswordModal from '../../konfi/modals/ChangePasswordModal';
 import ChangeRoleTitleModal from '../../admin/modals/ChangeRoleTitleModal';
@@ -78,7 +77,7 @@ interface TeamerProfile {
 
 const TeamerProfilePage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('profile');
-  const { user, setUser, setError } = useApp();
+  const { user, setUser, setError, signOut } = useApp();
   const [presentAlert] = useIonAlert();
   const router = useIonRouter();
 
@@ -171,14 +170,8 @@ const TeamerProfilePage: React.FC = () => {
           text: 'Abmelden',
           role: 'destructive',
           handler: async () => {
-            try {
-              await logout();
-              window.location.href = '/';
-            } catch (error) {
-              console.error('Logout error:', error);
-              await clearAuth();
-              window.location.href = '/';
-            }
+            // signOut() ist failsafe -> garantiert zurueck zur Login-Route.
+            await signOut();
           }
         }
       ]

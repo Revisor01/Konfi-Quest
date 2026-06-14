@@ -8,6 +8,8 @@ import { App } from '@capacitor/app';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { writeQueue } from '../services/writeQueue';
 import { offlineCache } from '../services/offlineCache';
+import { logout as performLogout } from '../services/auth';
+import { clearAuth } from '../services/tokenStore';
 import { BackgroundTask } from '@capawesome/capacitor-background-task';
 import { BaseUser } from '../types/user';
 
@@ -91,6 +93,7 @@ interface AppContextType {
   activeOrgId: number | null;
   orgVersion: number;
   switchOrg: (orgId: number) => Promise<void>;
+  signOut: () => Promise<void>;
   setUser: (user: BaseUser | null) => void;
   refreshUser: () => Promise<void>;
   setError: (error: string) => void;
@@ -264,6 +267,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setError('Organisation konnte nicht gewechselt werden');
     }
   }, [organizations]);
+
+  // Sauberes Abmelden — GARANTIERT zurueck zum Login, egal wie verkorkst der
+  // Zustand ist. Kein window.location-Reload (zerschiesst den nativen WebView).
+  // Reihenfolge: aktive Org weg, logout() (best-effort, raeumt Token+Cache),
+  // dann IMMER setUser(null) -> AppContent rendert sofort die Login-Route.
+  // Selbst wenn logout() wirft, kommt der User raus (clearAuth im catch).
+  const signOut = useCallback(async () => {
+    try {
+      await setActiveOrgId(null);
+      setActiveOrgIdState(null);
+    } catch { /* best-effort */ }
+    try {
+      await performLogout();
+    } catch (err) {
+      console.error('Logout-Fehler (lokaler Logout wird erzwungen):', err);
+      try { await clearAuth(); } catch { /* ignore */ }
+      try { await offlineCache.clearAll(); } catch { /* ignore */ }
+    }
+    // Garantierter Schritt: React-State leeren -> Login-Route. Nie ausgelassen.
+    setOrganizations([]);
+    setUser(null);
+  }, []);
 
   // Push notifications functions
   const requestPushPermissions = useCallback(async () => {
@@ -618,6 +643,7 @@ useEffect(() => {
     activeOrgId,
     orgVersion,
     switchOrg,
+    signOut,
     setUser,
     refreshUser,
     setError,

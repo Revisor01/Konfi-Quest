@@ -30,8 +30,6 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import api from '../../services/api';
-import { logout } from '../../services/auth';
-import { clearAuth } from '../../services/tokenStore';
 
 interface DeleteAccountModalProps {
   onClose: () => void;
@@ -39,7 +37,7 @@ interface DeleteAccountModalProps {
 }
 
 const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ onClose, onDeleted }) => {
-  const { setError, isOnline } = useApp();
+  const { setError, isOnline, signOut } = useApp();
   const { isSubmitting, guard } = useActionGuard();
 
   const [password, setPassword] = useState('');
@@ -56,17 +54,10 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ onClose, onDele
       try {
         await api.post('/auth/delete-account', { password });
 
-        // Account gelöscht: Client ausloggen und zum Login umleiten.
-        try {
-          await logout();
-        } catch (logoutErr) {
-          // Best-effort: Token notfalls direkt entfernen.
-          await clearAuth();
-        }
-
+        // Account geloescht: sauber ausloggen (raeumt Token/Cache + State -> Login).
         onDeleted?.();
         onClose();
-        window.location.href = '/';
+        await signOut();
       } catch (err: any) {
         if (err.response?.status === 400) {
           setInlineError('Passwort ist falsch');
