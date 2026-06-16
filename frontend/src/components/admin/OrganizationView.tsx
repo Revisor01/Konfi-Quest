@@ -62,7 +62,6 @@ interface OrganizationViewProps {
   onAddOrganizationClick: () => void;
   onSelectOrganization: (organization: Organization) => void;
   onDeleteOrganization: (organization: Organization) => void;
-  onManageMembers?: (organization: Organization) => void;
 }
 
 const OrganizationView: React.FC<OrganizationViewProps> = ({
@@ -70,8 +69,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
   onUpdate,
   onAddOrganizationClick,
   onSelectOrganization,
-  onDeleteOrganization,
-  onManageMembers
+  onDeleteOrganization
 }) => {
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
   const [searchTerm, setSearchTerm] = useState('');
@@ -296,19 +294,6 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                       <IonIcon icon={createOutline} />
                     </div>
                   </IonItemOption>
-                  {onManageMembers && (
-                    <IonItemOption
-                      onClick={() => {
-                        closeAllSlidingItems();
-                        onManageMembers(organization);
-                      }}
-                      className="app-swipe-action"
-                    >
-                      <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
-                        <IonIcon icon={people} />
-                      </div>
-                    </IonItemOption>
-                  )}
                   <IonItemOption
                     onClick={() => {
                       closeAllSlidingItems();

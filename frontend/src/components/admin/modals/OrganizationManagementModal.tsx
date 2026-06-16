@@ -23,6 +23,10 @@ import {
   IonDatetime,
   IonDatetimeButton,
   IonModal,
+  IonNote,
+  IonItemSliding,
+  IonItemOptions,
+  IonItemOption,
   useIonAlert,
   useIonModal
 } from '@ionic/react';
@@ -43,7 +47,12 @@ import {
   add,
   timeOutline,
   calendarOutline,
-  cloudOfflineOutline
+  cloudOfflineOutline,
+  searchOutline,
+  personAddOutline,
+  peopleOutline,
+  addCircleOutline,
+  trash
 } from 'ionicons/icons';
 import { SectionHeader } from '../../shared';
 import { useApp } from '../../../contexts/AppContext';
@@ -83,6 +92,32 @@ interface OrgAdmin {
   email?: string;
   is_active: boolean;
 }
+
+// Multi-Org-Mitglieder (bestehende User, die dieser Org zugewiesen sind)
+interface OrgMember {
+  id: number;
+  username: string;
+  display_name: string;
+  email?: string;
+  role_name: string;
+  role_display_name?: string;
+  is_primary: boolean;
+}
+
+interface MemberSearchResult {
+  id: number;
+  username: string;
+  display_name: string;
+  email?: string;
+  primary_organization_name?: string;
+  primary_role_name?: string;
+}
+
+const MEMBER_ROLE_OPTIONS = [
+  { value: 'org_admin', label: 'Org-Admin' },
+  { value: 'admin', label: 'Admin' },
+  { value: 'teamer', label: 'Teamer:in' }
+];
 
 interface OrganizationManagementModalProps {
   organizationId?: number | null;
@@ -196,6 +231,15 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   // Welcher Admin wird im Passwort-Modal bearbeitet
   const [passwordAdmin, setPasswordAdmin] = useState<OrgAdmin | null>(null);
 
+  // Multi-Org-Mitglieder (nur super_admin): bestehende User dieser Org zuweisen/entziehen
+  const [members, setMembers] = useState<OrgMember[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [memberSearch, setMemberSearch] = useState('');
+  const [memberSearchResults, setMemberSearchResults] = useState<MemberSearchResult[]>([]);
+  const [memberSearching, setMemberSearching] = useState(false);
+  const [memberRole, setMemberRole] = useState<string>('teamer');
+  const [memberAddingId, setMemberAddingId] = useState<number | null>(null);
+
   const isEditMode = !!organizationId;
 
   // View/Edit-Modus: bestehende Org startet als read-only Uebersicht ('view'),
@@ -295,6 +339,11 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         }
       } catch (err) {
  console.warn('Org-Admins konnten nicht geladen werden:', err);
+      }
+
+      // Multi-Org-Mitglieder laden (nur super_admin sieht/braucht die Sektion)
+      if (isSuperAdmin) {
+        loadMembers();
       }
     } catch (err) {
       setError('Fehler beim Laden der Organisation');
@@ -434,6 +483,75 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
       setAddingAdmin(false);
     }
   };
+
+  // ===== Multi-Org-Mitglieder =====
+  const loadMembers = async () => {
+    if (!organizationId) return;
+    setMembersLoading(true);
+    try {
+      const res = await api.get(`/organizations/${organizationId}/members`);
+      setMembers(Array.isArray(res.data) ? res.data : []);
+    } catch {
+      // still: Sektion zeigt dann "keine Mitglieder"; kein Stoer-Toast noetig
+      setMembers([]);
+    } finally {
+      setMembersLoading(false);
+    }
+  };
+
+  // Suche (debounced) — ab 2 Zeichen
+  useEffect(() => {
+    if (!isSuperAdmin || !isEditMode) return;
+    const q = memberSearch.trim();
+    if (q.length < 2) {
+      setMemberSearchResults([]);
+      return;
+    }
+    setMemberSearching(true);
+    const handle = setTimeout(async () => {
+      try {
+        const res = await api.get(`/organizations/search-users`, { params: { q } });
+        setMemberSearchResults(Array.isArray(res.data) ? res.data : []);
+      } catch {
+        setMemberSearchResults([]);
+      } finally {
+        setMemberSearching(false);
+      }
+    }, 350);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memberSearch]);
+
+  const handleAddMember = async (userId: number) => {
+    if (!organizationId) return;
+    setMemberAddingId(userId);
+    try {
+      await api.post(`/organizations/${organizationId}/members`, {
+        user_id: userId,
+        role_name: memberRole
+      });
+      setMemberSearch('');
+      setMemberSearchResults([]);
+      await loadMembers();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Mitglied konnte nicht hinzugefügt werden');
+    } finally {
+      setMemberAddingId(null);
+    }
+  };
+
+  const handleRemoveMember = async (member: OrgMember) => {
+    if (!organizationId) return;
+    try {
+      await api.delete(`/organizations/${organizationId}/members/${member.id}`);
+      await loadMembers();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Mitglied konnte nicht entfernt werden');
+    }
+  };
+
+  // Schon-Mitglieder in der Suche ausblenden
+  const memberIds = new Set(members.map(m => m.id));
 
   const isValid = formData.display_name.trim() &&
     (isEditMode || (formData.admin_name.trim() && formData.admin_username.trim() && formData.admin_password.trim()));
@@ -964,6 +1082,120 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                       Administrator hinzufügen
                     </IonButton>
                   </div>
+                )}
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
+
+        {/* SEKTION: Mitglieder & Zuweisungen (nur super_admin, nur Edit bestehender Org) */}
+        {isSuperAdmin && isEditMode && viewMode === 'edit' && (
+          <IonList inset={true} className="app-modal-section">
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--users">
+                <IonIcon icon={peopleOutline} />
+              </div>
+              <IonLabel>Mitglieder & Zuweisungen</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent style={{ padding: '16px' }}>
+                <p style={{ margin: '0 0 12px 0', fontSize: '0.85rem', color: '#666' }}>
+                  Bestehende Admins oder Teamer:innen anderer Organisationen dieser
+                  Organisation zuweisen — sie können dann per Org-Wechsler hierher
+                  springen. Konfis sind ausgenommen.
+                </p>
+
+                {/* Hinzufügen: Suche + Rolle */}
+                <IonList style={{ background: 'transparent' }}>
+                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                    <IonIcon icon={searchOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+                    <IonInput
+                      value={memberSearch}
+                      onIonInput={(e) => setMemberSearch(e.detail.value || '')}
+                      placeholder="Name oder Benutzername suchen..."
+                      clearInput
+                    />
+                  </IonItem>
+                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                    <IonIcon icon={personAddOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+                    <IonLabel>Rolle</IonLabel>
+                    <IonSelect
+                      value={memberRole}
+                      onIonChange={(e) => setMemberRole(e.detail.value)}
+                      interface="popover"
+                      slot="end"
+                    >
+                      {MEMBER_ROLE_OPTIONS.map(r => (
+                        <IonSelectOption key={r.value} value={r.value}>{r.label}</IonSelectOption>
+                      ))}
+                    </IonSelect>
+                  </IonItem>
+                </IonList>
+
+                {/* Suchergebnisse */}
+                {memberSearching && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 4px', color: '#666' }}>
+                    <IonSpinner name="dots" /> Suche…
+                  </div>
+                )}
+                {!memberSearching && memberSearch.trim().length >= 2 && memberSearchResults.filter(u => !memberIds.has(u.id)).length === 0 && (
+                  <div style={{ padding: '8px 4px', color: '#666', fontSize: '0.9rem' }}>Keine passenden Benutzer:innen</div>
+                )}
+                {memberSearchResults.filter(u => !memberIds.has(u.id)).length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+                    {memberSearchResults.filter(u => !memberIds.has(u.id)).map(u => (
+                      <IonItem
+                        key={u.id}
+                        button
+                        detail={false}
+                        lines="none"
+                        onClick={() => memberAddingId === null && handleAddMember(u.id)}
+                        style={{ '--background': 'rgba(102, 126, 234, 0.05)', '--border-radius': '10px' }}
+                      >
+                        <IonLabel>
+                          <h3 style={{ margin: 0 }}>{u.display_name}</h3>
+                          <p style={{ margin: 0 }}>@{u.username}{u.primary_organization_name ? ` · ${u.primary_organization_name}` : ''}</p>
+                        </IonLabel>
+                        {memberAddingId === u.id
+                          ? <IonSpinner name="dots" slot="end" />
+                          : <IonIcon icon={addCircleOutline} slot="end" className="app-icon-color--users" style={{ fontSize: '1.5rem' }} />}
+                      </IonItem>
+                    ))}
+                  </div>
+                )}
+
+                {/* Aktuelle Mitglieder */}
+                <div style={{ marginTop: '16px', marginBottom: '8px', fontSize: '0.9rem', fontWeight: 600, color: '#333' }}>
+                  Aktuelle Mitglieder
+                </div>
+                {membersLoading ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 4px', color: '#666' }}>
+                    <IonSpinner name="dots" /> Wird geladen…
+                  </div>
+                ) : members.length === 0 ? (
+                  <div style={{ padding: '8px 4px', color: '#666', fontSize: '0.9rem' }}>Noch keine Mitglieder</div>
+                ) : (
+                  members.map(m => (
+                    <IonItemSliding key={m.id} style={{ marginBottom: '8px' }}>
+                      <IonItem lines="none" style={{ '--background': 'transparent', '--padding-start': '0', '--inner-padding-end': '0' }}>
+                        <IonLabel>
+                          <h3 style={{ margin: 0 }}>{m.display_name}</h3>
+                          <p style={{ margin: 0 }}>@{m.username} · {m.role_display_name || m.role_name}</p>
+                        </IonLabel>
+                        {m.is_primary && <IonNote slot="end">Primär</IonNote>}
+                      </IonItem>
+                      {/* Primaer-Org kann hier nicht entfernt werden (Server blockt ebenfalls) */}
+                      {!m.is_primary && (
+                        <IonItemOptions side="end" className="app-swipe-actions">
+                          <IonItemOption onClick={() => handleRemoveMember(m)} className="app-swipe-action">
+                            <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                              <IonIcon icon={trash} />
+                            </div>
+                          </IonItemOption>
+                        </IonItemOptions>
+                      )}
+                    </IonItemSliding>
+                  ))
                 )}
               </IonCardContent>
             </IonCard>

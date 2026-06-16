@@ -94,6 +94,37 @@ describe('Organizations Routes', () => {
       const res = await request(app).get('/api/organizations');
       expect(res.status).toBe(401);
     });
+
+    it('user_count zaehlt Multi-Org-Mitglieder mit (nicht nur Primaer-User)', async () => {
+      // Org 2 hat 3 Primaer-Team-User (teamer2, admin2, orgAdmin2).
+      const before = await request(app).get('/api/organizations')
+        .set('Authorization', `Bearer ${superAdminToken}`);
+      const org2Before = before.body.find(o => o.id === 2).user_count;
+
+      // admin1 (Primaer Org 1) zusaetzlich Org 2 zuweisen -> user_count +1
+      await db.query(`INSERT INTO user_organizations (user_id, organization_id, role_id)
+        VALUES (4, 2, 8) ON CONFLICT DO NOTHING`);
+
+      const after = await request(app).get('/api/organizations')
+        .set('Authorization', `Bearer ${superAdminToken}`);
+      const org2After = after.body.find(o => o.id === 2).user_count;
+      expect(Number(org2After)).toBe(Number(org2Before) + 1);
+    });
+
+    it('user_count zaehlt Primaer+Mapping desselben Users nicht doppelt', async () => {
+      const before = await request(app).get('/api/organizations')
+        .set('Authorization', `Bearer ${superAdminToken}`);
+      const org2Before = before.body.find(o => o.id === 2).user_count;
+
+      // admin2 ist bereits Primaer in Org 2; zusaetzliches Mapping darf NICHT zaehlen
+      await db.query(`INSERT INTO user_organizations (user_id, organization_id, role_id)
+        VALUES (8, 2, 8) ON CONFLICT DO NOTHING`);
+
+      const after = await request(app).get('/api/organizations')
+        .set('Authorization', `Bearer ${superAdminToken}`);
+      const org2After = after.body.find(o => o.id === 2).user_count;
+      expect(Number(org2After)).toBe(Number(org2Before));
+    });
   });
 
   // ================================================================
@@ -763,6 +794,35 @@ describe('Organizations Routes', () => {
         expect(res.status).toBe(200);
         const ids = res.body.map(m => m.id);
         expect(ids).toContain(4);
+      });
+
+      it('listet Primaer-Admins der Org auch OHNE user_organizations-Mapping', async () => {
+        // Org 2 hat als Primaer-User teamer2(7), admin2(8), orgAdmin2(9) — keiner
+        // hat einen user_organizations-Eintrag. Sie muessen trotzdem erscheinen.
+        const res = await request(app)
+          .get(`/api/organizations/2/members`)
+          .set('Authorization', `Bearer ${superAdminToken}`);
+        expect(res.status).toBe(200);
+        const ids = res.body.map(m => m.id);
+        expect(ids).toEqual(expect.arrayContaining([7, 8, 9]));
+        // Konfi der Org (id 6) ist ausgenommen
+        expect(ids).not.toContain(6);
+        // Primaer-User sind als is_primary markiert
+        const admin2 = res.body.find(m => m.id === 8);
+        expect(admin2.is_primary).toBe(true);
+      });
+
+      it('dedupliziert: Primaer-User mit zusaetzlichem Mapping erscheint nur einmal', async () => {
+        // admin2 (Primaer Org 2) zusaetzlich als Mapping in Org 2 -> nur 1 Eintrag
+        await db.query(`INSERT INTO user_organizations (user_id, organization_id, role_id)
+          VALUES (8, 2, 8) ON CONFLICT DO NOTHING`);
+        const res = await request(app)
+          .get(`/api/organizations/2/members`)
+          .set('Authorization', `Bearer ${superAdminToken}`);
+        expect(res.status).toBe(200);
+        const occurrences = res.body.filter(m => m.id === 8).length;
+        expect(occurrences).toBe(1);
+        expect(res.body.find(m => m.id === 8).is_primary).toBe(true);
       });
     });
 

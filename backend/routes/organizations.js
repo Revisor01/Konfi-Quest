@@ -47,14 +47,29 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
   // Get all organizations - NUR super_admin
   router.get('/', rbacVerifier, requireSuperAdmin, async (req, res) => {
     try {
+      // user_count (Team) zaehlt BEIDE Quellen: Primaer-User (users.organization_id)
+      // UND Multi-Org-Mitglieder (user_organizations), jeweils ohne Konfis und
+      // ueber DISTINCT dedupliziert (ein User, der primaer + Mapping in derselben
+      // Org haengt, zaehlt nur einmal). Als Sub-Query, damit der konfi_count-JOIN
+      // die Zaehlung nicht verzerrt.
       const query = `
         SELECT o.*,
-               COUNT(DISTINCT CASE WHEN r.name != 'konfi' THEN u.id END) as user_count,
+               (
+                 SELECT COUNT(*) FROM (
+                   SELECT u.id
+                   FROM users u JOIN roles r ON u.role_id = r.id
+                   WHERE u.organization_id = o.id AND u.is_active = true AND r.name != 'konfi'
+                   UNION
+                   SELECT u.id
+                   FROM user_organizations uo
+                   JOIN users u ON uo.user_id = u.id AND u.is_active = true
+                   JOIN roles r ON uo.role_id = r.id
+                   WHERE uo.organization_id = o.id AND r.name != 'konfi'
+                 ) team
+               ) as user_count,
                COUNT(DISTINCT kp.user_id) as konfi_count,
                COUNT(DISTINCT e.id) as event_count
         FROM organizations o
-        LEFT JOIN users u ON o.id = u.organization_id AND u.is_active = true
-        LEFT JOIN roles r ON u.role_id = r.id
         LEFT JOIN konfi_profiles kp ON o.id = kp.organization_id
         LEFT JOIN events e ON o.id = e.organization_id
         GROUP BY o.id
@@ -104,15 +119,23 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
 
       const query = `
         SELECT o.*,
-               COUNT(DISTINCT CASE WHEN r.name != 'konfi' THEN u.id END) as user_count,
+               (
+                 SELECT COUNT(*) FROM (
+                   SELECT u.id FROM users u JOIN roles r ON u.role_id = r.id
+                   WHERE u.organization_id = o.id AND u.is_active = true AND r.name != 'konfi'
+                   UNION
+                   SELECT u.id FROM user_organizations uo
+                   JOIN users u ON uo.user_id = u.id AND u.is_active = true
+                   JOIN roles r ON uo.role_id = r.id
+                   WHERE uo.organization_id = o.id AND r.name != 'konfi'
+                 ) team
+               ) as user_count,
                COUNT(DISTINCT kp.user_id) as konfi_count,
                COUNT(DISTINCT j.id) as jahrgang_count,
                COUNT(DISTINCT a.id) as activity_count,
                COUNT(DISTINCT e.id) as event_count,
                COUNT(DISTINCT cb.id) as badge_count
         FROM organizations o
-        LEFT JOIN users u ON o.id = u.organization_id AND u.is_active = true
-        LEFT JOIN roles r ON u.role_id = r.id
         LEFT JOIN konfi_profiles kp ON o.id = kp.organization_id
         LEFT JOIN jahrgaenge j ON o.id = j.organization_id
         LEFT JOIN activities a ON o.id = a.organization_id
@@ -154,16 +177,38 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       const orgQuery = "SELECT * FROM organizations WHERE id = $1";
 
       // Statistiken parallel laden (viel schneller als JOINs)
+      // Team-Zaehler beziehen BEIDE Quellen ein: Primaer-User (users.organization_id)
+      // UND Multi-Org-Mitglieder (user_organizations), dedupliziert per UNION/DISTINCT.
+      // Sonst zeigen Orgs mit ausschliesslich zugewiesenen (nicht primaeren) Admins
+      // faelschlich "0 Team".
       const countQueries = {
-        user_count: `SELECT COUNT(*)::int as count FROM users u
-                     JOIN roles r ON u.role_id = r.id
-                     WHERE u.organization_id = $1 AND u.is_active = true AND r.name != 'konfi'`,
-        teamer_count: `SELECT COUNT(*)::int as count FROM users u
-                       JOIN roles r ON u.role_id = r.id
-                       WHERE u.organization_id = $1 AND u.is_active = true AND r.name = 'teamer'`,
-        admin_count: `SELECT COUNT(*)::int as count FROM users u
-                      JOIN roles r ON u.role_id = r.id
-                      WHERE u.organization_id = $1 AND u.is_active = true AND r.name IN ('admin', 'org_admin')`,
+        user_count: `SELECT COUNT(*)::int as count FROM (
+                       SELECT u.id FROM users u JOIN roles r ON u.role_id = r.id
+                       WHERE u.organization_id = $1 AND u.is_active = true AND r.name != 'konfi'
+                       UNION
+                       SELECT u.id FROM user_organizations uo
+                       JOIN users u ON uo.user_id = u.id AND u.is_active = true
+                       JOIN roles r ON uo.role_id = r.id
+                       WHERE uo.organization_id = $1 AND r.name != 'konfi'
+                     ) team`,
+        teamer_count: `SELECT COUNT(*)::int as count FROM (
+                       SELECT u.id FROM users u JOIN roles r ON u.role_id = r.id
+                       WHERE u.organization_id = $1 AND u.is_active = true AND r.name = 'teamer'
+                       UNION
+                       SELECT u.id FROM user_organizations uo
+                       JOIN users u ON uo.user_id = u.id AND u.is_active = true
+                       JOIN roles r ON uo.role_id = r.id
+                       WHERE uo.organization_id = $1 AND r.name = 'teamer'
+                     ) t`,
+        admin_count: `SELECT COUNT(*)::int as count FROM (
+                       SELECT u.id FROM users u JOIN roles r ON u.role_id = r.id
+                       WHERE u.organization_id = $1 AND u.is_active = true AND r.name IN ('admin', 'org_admin')
+                       UNION
+                       SELECT u.id FROM user_organizations uo
+                       JOIN users u ON uo.user_id = u.id AND u.is_active = true
+                       JOIN roles r ON uo.role_id = r.id
+                       WHERE uo.organization_id = $1 AND r.name IN ('admin', 'org_admin')
+                     ) a`,
         konfi_count: "SELECT COUNT(*)::int as count FROM konfi_profiles WHERE organization_id = $1",
         jahrgang_count: "SELECT COUNT(*)::int as count FROM jahrgaenge WHERE organization_id = $1",
         activity_count: "SELECT COUNT(*)::int as count FROM activities WHERE organization_id = $1",
@@ -789,17 +834,38 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
   router.get('/:id/members', rbacVerifier, requireSuperAdmin, validateOrgId, async (req, res) => {
     try {
       const { id } = req.params;
+      // Beide Quellen vereinen und pro User EINMAL ausgeben:
+      //  1) Primaer-User der Org (users.organization_id) — haben i.d.R. KEINEN
+      //     user_organizations-Eintrag, wuerden sonst hier fehlen (z.B. der
+      //     Org-eigene Admin).
+      //  2) Multi-Org-Mitglieder (user_organizations-Mapping).
+      // is_primary kennzeichnet die Primaer-Org (kann hier nicht entfernt werden).
+      // Bei Doppelung (User primaer UND Mapping) gewinnt der Primaer-Eintrag
+      // (is_primary=true) per DISTINCT ON + ORDER.
       const { rows } = await db.query(`
-        SELECT u.id, u.username, u.display_name, u.email,
-               r.name as role_name, r.display_name as role_display_name,
-               (u.organization_id = uo.organization_id) as is_primary,
-               uo.created_at
-        FROM user_organizations uo
-        JOIN users u ON uo.user_id = u.id
-        JOIN roles r ON uo.role_id = r.id
-        WHERE uo.organization_id = $1 AND r.name != 'konfi'
-        ORDER BY u.display_name ASC
+        SELECT DISTINCT ON (m.id)
+               m.id, m.username, m.display_name, m.email,
+               m.role_name, m.role_display_name, m.is_primary, m.created_at
+        FROM (
+          SELECT u.id, u.username, u.display_name, u.email,
+                 r.name as role_name, r.display_name as role_display_name,
+                 true as is_primary, u.created_at
+          FROM users u
+          JOIN roles r ON u.role_id = r.id
+          WHERE u.organization_id = $1 AND u.is_active = true AND r.name != 'konfi'
+          UNION ALL
+          SELECT u.id, u.username, u.display_name, u.email,
+                 r.name as role_name, r.display_name as role_display_name,
+                 (u.organization_id = uo.organization_id) as is_primary, uo.created_at
+          FROM user_organizations uo
+          JOIN users u ON uo.user_id = u.id AND u.is_active = true
+          JOIN roles r ON uo.role_id = r.id
+          WHERE uo.organization_id = $1 AND r.name != 'konfi'
+        ) m
+        ORDER BY m.id, m.is_primary DESC
       `, [id]);
+      // Sekundaer nach Anzeigename sortieren (DISTINCT ON erzwingt Sortierung nach m.id)
+      rows.sort((a, b) => (a.display_name || '').localeCompare(b.display_name || '', 'de'));
       res.json(rows);
     } catch (err) {
       console.error('Database error in GET /organizations/:id/members:', err);
