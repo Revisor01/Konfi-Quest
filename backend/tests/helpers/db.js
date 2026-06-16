@@ -36,12 +36,7 @@ const TRUNCATE_LOCK_ID = 4711;
  * vitest-Suites serialisieren so ihr TRUNCATE und koennen nicht mehr in einen
  * "deadlock detected" laufen. Der Lock wird beim COMMIT/ROLLBACK autom. frei.
  */
-async function truncateAll(db) {
-  const client = await db.getClient();
-  try {
-    await client.query('BEGIN');
-    await client.query('SELECT pg_advisory_xact_lock($1)', [TRUNCATE_LOCK_ID]);
-    await client.query(`TRUNCATE
+const TRUNCATE_SQL = `TRUNCATE
     chat_poll_votes, chat_polls, chat_read_status,
     chat_messages, chat_participants, chat_rooms,
     event_points, event_bookings, event_timeslots,
@@ -61,13 +56,35 @@ async function truncateAll(db) {
     jahrgaenge, categories, levels,
     role_permissions, permissions, roles,
     organizations
-    RESTART IDENTITY CASCADE`);
-    await client.query('COMMIT');
-  } catch (err) {
-    await client.query('ROLLBACK').catch(() => {});
-    throw err;
-  } finally {
-    client.release();
+    RESTART IDENTITY CASCADE`;
+
+async function truncateAll(db) {
+  // Der Advisory-Lock serialisiert TRUNCATE zwischen parallelen Suites — er
+  // schuetzt aber NICHT gegen Deadlocks mit fire-and-forget-Queries DESSELBEN
+  // Tests (z.B. die nicht-awaited Push-Notification in chat.js:654, die noch
+  // einen Share-Lock auf push_tokens/chat_messages haelt, waehrend TRUNCATE den
+  // Exclusive-Lock will). Deshalb: kurzer lock_timeout + Retry bei
+  // Deadlock (40P01) / Lock-Timeout (55P03). So wartet TRUNCATE den Background-
+  // Query ab, statt die Suite mit "deadlock detected" rot zu faerben.
+  const MAX_ATTEMPTS = 5;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const client = await db.getClient();
+    try {
+      await client.query('BEGIN');
+      await client.query('SELECT pg_advisory_xact_lock($1)', [TRUNCATE_LOCK_ID]);
+      await client.query("SET LOCAL lock_timeout = '4s'");
+      await client.query(TRUNCATE_SQL);
+      await client.query('COMMIT');
+      return;
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
+      const retryable = err.code === '40P01' || err.code === '55P03'; // deadlock / lock_timeout
+      if (!retryable || attempt === MAX_ATTEMPTS) throw err;
+      // kurzer Backoff, damit der Background-Query fertig wird
+      await new Promise((r) => setTimeout(r, 100 * attempt));
+    } finally {
+      client.release();
+    }
   }
 }
 
