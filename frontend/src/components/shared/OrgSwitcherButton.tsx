@@ -11,18 +11,19 @@ import {
   IonLabel
 } from '@ionic/react';
 import { useIonRouter } from '@ionic/react';
-import { swapHorizontalOutline, checkmark } from 'ionicons/icons';
+import { swapHorizontalOutline, checkmark, businessOutline } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 
 /**
  * Org-Switcher oben links im Header. Erscheint NUR, wenn der eingeloggte User in
- * mehreren Organisationen Mitglied ist (Multi-Org). Oeffnet ein Popover mit allen
- * Orgs; die aktive ist mit Haekchen markiert. Bei Auswahl wird ueber den
- * AppContext gewechselt (neues Token, Cache-Reset, org:switched-Event +
- * Root-Navigation -> alle Views laden frisch in der neuen Org).
+ * mehreren Organisationen Mitglied ist (Multi-Org). Der Button zeigt das Wechsel-
+ * Symbol UND den Namen der aktuell aktiven Org (so weiss man immer, wo man ist).
+ * Tippen oeffnet ein Popover mit allen Orgs; die aktive ist mit Haekchen markiert.
+ * Bei Auswahl wird ueber den AppContext gewechselt (neues Token, Cache-Reset,
+ * org:switched-Event + Root-Navigation -> alle Views laden frisch in der neuen Org).
  *
- * Der Button hat bewusst KEINEN Groessen-Override, damit er exakt so gross ist
- * wie die Action-Buttons rechts im selben Header.
+ * Das Icon hat KEINE Farbklasse -> Standard-Toolbar-Farbe, genau wie die
+ * Action-Buttons rechts im selben Header.
  */
 const OrgSwitcherButton: React.FC = () => {
   const { organizations, activeOrgId, user, switchOrg } = useApp();
@@ -37,6 +38,8 @@ const OrgSwitcherButton: React.FC = () => {
 
   // Aktuell aktive Org: explizit gesetzte aktive Org, sonst Primaer-Org.
   const currentId = activeOrgId ?? user?.organization_id ?? null;
+  const currentOrg = organizations.find(o => o.id === currentId);
+  const currentName = currentOrg?.display_name || currentOrg?.name || '';
 
   const open = (e: React.MouseEvent) => {
     setPopoverEvent(e.nativeEvent);
@@ -63,8 +66,11 @@ const OrgSwitcherButton: React.FC = () => {
   return (
     <>
       <IonButtons slot="start">
-        <IonButton onClick={open}>
-          <IonIcon slot="icon-only" icon={swapHorizontalOutline} className="app-icon-color--users" />
+        {/* Icon + aktiver Org-Name -> man sieht immer, in welcher Org man ist.
+            Kein Groessen-/Farb-Override: Standard-Toolbar-Look wie die Buttons rechts. */}
+        <IonButton onClick={open} className="app-org-switcher-btn">
+          <IonIcon slot="start" icon={swapHorizontalOutline} />
+          <span className="app-org-switcher-btn__name">{currentName}</span>
         </IonButton>
       </IonButtons>
 
@@ -74,6 +80,8 @@ const OrgSwitcherButton: React.FC = () => {
         onDidDismiss={() => setIsOpen(false)}
         side="bottom"
         alignment="start"
+        // Mehr Hoehe + komfortable Breite fuer die Org-Liste
+        style={{ '--width': '280px', '--max-height': '70vh' } as React.CSSProperties}
       >
         <IonContent>
           <IonList>
@@ -87,9 +95,10 @@ const OrgSwitcherButton: React.FC = () => {
                 detail={false}
                 onClick={() => handleSelect(org.id)}
               >
+                <IonIcon slot="start" icon={businessOutline} />
                 <IonLabel>{org.display_name || org.name}</IonLabel>
                 {org.id === currentId && (
-                  <IonIcon slot="end" icon={checkmark} className="app-icon-color--users" />
+                  <IonIcon slot="end" icon={checkmark} color="success" />
                 )}
               </IonItem>
             ))}

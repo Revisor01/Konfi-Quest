@@ -2615,3 +2615,26 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   }
 }
 */
+
+/* ============================================
+   Org-Switcher Button (Multi-Org, oben links im Header)
+   Icon + aktiver Org-Name. Standard-Toolbar-Farbe (kein Override),
+   Name kompakt + bei Bedarf abgeschnitten, damit der Seitentitel Platz behaelt.
+   ============================================ */
+.app-org-switcher-btn {
+  --padding-start: 6px;
+  --padding-end: 6px;
+  max-width: 42vw;
+}
+.app-org-switcher-btn::part(native) {
+  text-transform: none;
+}
+.app-org-switcher-btn .app-org-switcher-btn__name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-left: 4px;
+  max-width: 32vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
