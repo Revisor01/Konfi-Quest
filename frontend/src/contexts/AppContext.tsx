@@ -118,10 +118,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Multi-Org Switcher state
   const [organizations, setOrganizations] = useState<UserOrganization[]>([]);
   const [activeOrgId, setActiveOrgIdState] = useState<number | null>(getActiveOrgId());
-  // Wird bei jedem Org-Wechsel erhoeht. Dient als React-key am Router (App.tsx),
-  // damit ALLE Views nach einem Wechsel frisch remounten und mit dem neuen
-  // aktiven-Org-Header neu laden — OHNE window.location-Reload (der zerschiesst
-  // im nativen Capacitor-WebView die App, siehe App.tsx-Kommentar).
+  // Zusaetzliche Absicherung: bei Org-Wechsel/Fallback erhoeht, dient als React-key
+  // am Router (App.tsx) -> Remount. Der PRIMAERE Reload-Mechanismus ist aber das
+  // 'org:switched'-Event (greift auch nativ bei gecachten Pages); orgVersion ist
+  // nur Web-Zusatz. KEIN window.location-Reload (zerschiesst nativen WebView).
   const [orgVersion, setOrgVersion] = useState(0);
 
   // Badge sync through state updates only (no custom events)
@@ -236,7 +236,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // 1. Neues Access-Token (traegt active_organization_id als Claim)
       await setToken(res.data.token);
 
-      // 2. Aktive Org persistieren (oder entfernen, wenn es die Primaer-Org ist)
+      // 2. Aktive Org persistieren (oder entfernen, wenn es die Primaer-Org ist).
+      // Wird als Header X-Active-Organization bei jedem Request mitgesendet.
       const isPrimary = res.data.is_primary === true;
       await setActiveOrgId(isPrimary ? null : orgId);
       setActiveOrgIdState(isPrimary ? null : orgId);
@@ -259,16 +260,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await offlineCache.clearAll();
       await writeQueue.clear();
 
-      // 5. PRIMAERER Reload-Mechanismus (web UND nativ): window-Event, auf das
-      // jede useOfflineQuery + MainTabs/Badges hoeren und frisch revalidieren.
-      // Greift auch bei im IonRouterOutlet-Stack gecachten Pages (nativer WebView),
-      // wo der Router-key-Remount (unten) NICHT zuverlaessig durchgreift.
+      // 5. window-Event 'org:switched' -> jede useOfflineQuery revalidiert frisch
+      // mit dem neuen aktiven-Org-Header. Greift web UND nativ (auch bei im
+      // IonRouterOutlet-Stack gecachten Pages, wo ein Router-Remount nicht zieht).
       window.dispatchEvent(new CustomEvent('org:switched'));
 
       // 6. Switcher-Liste fuer die neue Org neu laden (Rollen/Namen koennen sich
-      // unterscheiden) + orgVersion-Bump (Router-Remount, hilft im Web zusaetzlich).
+      // unterscheiden). Die Root-Navigation auf die Startseite uebernimmt der
+      // OrgSwitcherButton (leert den Page-Stack der alten Org).
       await loadOrganizations();
-      setOrgVersion(v => v + 1);
     } catch (err) {
       console.error('Org-Wechsel fehlgeschlagen:', err);
       setError('Organisation konnte nicht gewechselt werden');
