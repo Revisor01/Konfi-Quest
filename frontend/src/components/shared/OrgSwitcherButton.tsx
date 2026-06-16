@@ -13,6 +13,27 @@ import {
 import { useIonRouter } from '@ionic/react';
 import { swapHorizontalOutline, checkmark, businessOutline } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
+import { UserOrganization } from '../../contexts/AppContext';
+
+// Kurzname fuer die Header-Anzeige (Platz neben dem Seitentitel ist knapp).
+// Explizites Mapping fuer die bekannten Orgs; Fallback fuer kuenftige Orgs ist
+// das letzte Slug-Segment, kapitalisiert (z.B. 'kirchengemeinde-heide' -> 'Heide').
+const ORG_SHORT_NAMES: Record<string, string> = {
+  'kirchspiel-west': 'West',
+  'kirchengemeinde-hennstedt': 'Hennstedt',
+  'kirchengemeinde-heide': 'Heide',
+  'test-demo': 'Test'
+};
+
+const shortOrgName = (org?: UserOrganization): string => {
+  if (!org) return '';
+  const slug = org.slug || '';
+  if (ORG_SHORT_NAMES[slug]) return ORG_SHORT_NAMES[slug];
+  // Fallback: letztes Slug-Segment kapitalisieren, sonst display_name/name.
+  const last = slug.split('-').filter(Boolean).pop();
+  if (last) return last.charAt(0).toUpperCase() + last.slice(1);
+  return org.display_name || org.name || '';
+};
 
 /**
  * Org-Switcher oben links im Header. Erscheint NUR, wenn der eingeloggte User in
@@ -39,7 +60,7 @@ const OrgSwitcherButton: React.FC = () => {
   // Aktuell aktive Org: explizit gesetzte aktive Org, sonst Primaer-Org.
   const currentId = activeOrgId ?? user?.organization_id ?? null;
   const currentOrg = organizations.find(o => o.id === currentId);
-  const currentName = currentOrg?.display_name || currentOrg?.name || '';
+  const currentShort = shortOrgName(currentOrg);
 
   const open = (e: React.MouseEvent) => {
     setPopoverEvent(e.nativeEvent);
@@ -70,7 +91,7 @@ const OrgSwitcherButton: React.FC = () => {
             Kein Groessen-/Farb-Override: Standard-Toolbar-Look wie die Buttons rechts. */}
         <IonButton onClick={open} className="app-org-switcher-btn">
           <IonIcon slot="start" icon={swapHorizontalOutline} />
-          <span className="app-org-switcher-btn__name">{currentName}</span>
+          <span className="app-org-switcher-btn__name">{currentShort}</span>
         </IonButton>
       </IonButtons>
 

@@ -2624,7 +2624,6 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 .app-org-switcher-btn {
   --padding-start: 6px;
   --padding-end: 6px;
-  max-width: 42vw;
 }
 .app-org-switcher-btn::part(native) {
   text-transform: none;
@@ -2633,8 +2632,5 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   font-size: 0.85rem;
   font-weight: 600;
   margin-left: 4px;
-  max-width: 32vw;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
