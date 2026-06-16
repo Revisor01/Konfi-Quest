@@ -10,6 +10,7 @@ import {
   IonItem,
   IonLabel
 } from '@ionic/react';
+import { useIonRouter } from '@ionic/react';
 import { swapHorizontalOutline, checkmark } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 
@@ -17,13 +18,15 @@ import { useApp } from '../../contexts/AppContext';
  * Org-Switcher oben links im Header. Erscheint NUR, wenn der eingeloggte User in
  * mehreren Organisationen Mitglied ist (Multi-Org). Oeffnet ein Popover mit allen
  * Orgs; die aktive ist mit Haekchen markiert. Bei Auswahl wird ueber den
- * AppContext gewechselt (neues Token, Cache-Reset, Hard-Reload).
+ * AppContext gewechselt (neues Token, Cache-Reset, org:switched-Event +
+ * Root-Navigation -> alle Views laden frisch in der neuen Org).
  *
  * Der Button hat bewusst KEINEN Groessen-Override, damit er exakt so gross ist
  * wie die Action-Buttons rechts im selben Header.
  */
 const OrgSwitcherButton: React.FC = () => {
   const { organizations, activeOrgId, user, switchOrg } = useApp();
+  const router = useIonRouter();
   const [popoverEvent, setPopoverEvent] = useState<MouseEvent | undefined>(undefined);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -40,11 +43,21 @@ const OrgSwitcherButton: React.FC = () => {
     setIsOpen(true);
   };
 
-  const handleSelect = (orgId: number) => {
+  const handleSelect = async (orgId: number) => {
     setIsOpen(false);
-    if (orgId !== currentId) {
-      switchOrg(orgId);
-    }
+    if (orgId === currentId) return;
+
+    const target = organizations.find(o => o.id === orgId);
+    await switchOrg(orgId);
+
+    // Auf die Startseite der (neuen) Rolle navigieren und dabei den Page-Stack
+    // der alten Org leeren (Ionic: direction 'root'). Das stellt sicher, dass im
+    // nativen WebView nicht eine gecachte Page der alten Org sichtbar bleibt.
+    const role = target?.role_name;
+    const home = role === 'konfi' ? '/konfi/dashboard'
+      : role === 'teamer' ? '/teamer/dashboard'
+      : '/admin/konfis';
+    router.push(home, 'root', 'replace');
   };
 
   return (

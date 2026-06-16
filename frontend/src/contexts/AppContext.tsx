@@ -259,14 +259,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await offlineCache.clearAll();
       await writeQueue.clear();
 
-      // 5. orgVersion bumpen -> Router-key aendert sich -> alle Views remounten
-      // frisch und laden mit dem neuen aktiven-Org-Header neu. Kein Reload noetig.
+      // 5. PRIMAERER Reload-Mechanismus (web UND nativ): window-Event, auf das
+      // jede useOfflineQuery + MainTabs/Badges hoeren und frisch revalidieren.
+      // Greift auch bei im IonRouterOutlet-Stack gecachten Pages (nativer WebView),
+      // wo der Router-key-Remount (unten) NICHT zuverlaessig durchgreift.
+      window.dispatchEvent(new CustomEvent('org:switched'));
+
+      // 6. Switcher-Liste fuer die neue Org neu laden (Rollen/Namen koennen sich
+      // unterscheiden) + orgVersion-Bump (Router-Remount, hilft im Web zusaetzlich).
+      await loadOrganizations();
       setOrgVersion(v => v + 1);
     } catch (err) {
       console.error('Org-Wechsel fehlgeschlagen:', err);
       setError('Organisation konnte nicht gewechselt werden');
     }
-  }, [organizations]);
+  }, [organizations, loadOrganizations]);
 
   // Sauberes Abmelden — GARANTIERT zurueck zum Login, egal wie verkorkst der
   // Zustand ist. Kein window.location-Reload (zerschiesst den nativen WebView).

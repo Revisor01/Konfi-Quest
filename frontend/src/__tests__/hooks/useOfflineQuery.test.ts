@@ -202,4 +202,17 @@ describe('useOfflineQuery', () => {
       expect(result.current.data).toEqual(freshData);
     });
   });
+
+  it('org:switched-Event loest erneuten Fetch aus (Multi-Org-Switcher)', async () => {
+    const fetcher = vi.fn().mockResolvedValue({ org: 1 });
+    renderHook(() => useOfflineQuery('org-switch-key', fetcher));
+
+    // Initialer Fetch
+    await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1));
+
+    // Org-Wechsel feuert das Event -> Hook muss erneut laden
+    window.dispatchEvent(new CustomEvent('org:switched'));
+
+    await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(2));
+  });
 });

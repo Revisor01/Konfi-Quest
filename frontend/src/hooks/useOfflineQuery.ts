@@ -154,6 +154,20 @@ export function useOfflineQuery<T>(
     return unsubscribe;
   }, [isStale, revalidate]);
 
+  // Org-Wechsel (Multi-Org-Switcher): ALLE Queries frisch neu laden — auch wenn
+  // die Page im IonRouterOutlet-Stack gecacht ist (nativer WebView) und daher
+  // kein Remount/useEffect feuert. Das window-Event ist plattformunabhaengig und
+  // greift unabhaengig vom Ionic-Page-Lifecycle. switchOrg (AppContext) feuert es.
+  useEffect(() => {
+    const handler = () => {
+      if (mountedRef.current && networkMonitor.isOnline) {
+        revalidate();
+      }
+    };
+    window.addEventListener('org:switched', handler);
+    return () => window.removeEventListener('org:switched', handler);
+  }, [revalidate]);
+
   // Cleanup bei Unmount
   useEffect(() => {
     mountedRef.current = true;
