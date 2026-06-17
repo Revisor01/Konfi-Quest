@@ -511,6 +511,37 @@ describe('Auth Routes', () => {
       expect(ids).toEqual([1, 2]);
     });
 
+    it('GET /my-organizations enthaelt die PRIMAER-Org auch ohne user_organizations-Eintrag', async () => {
+      // admin2 (id 8) hat Primaer-Org 2, aber KEINEN Mapping-Eintrag. Zusaetzlich
+      // Org 1 zuweisen. Erwartung: beide Orgs in der Liste (Primaer-Org 2 darf
+      // nicht fehlen, sonst zeigt der Switcher beim ersten Login keinen Namen).
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      await db.query(`INSERT INTO user_organizations (user_id, organization_id, role_id)
+        VALUES (8, 1, 3) ON CONFLICT DO NOTHING`);
+      invalidateUserCache(8);
+      const token = generateToken('admin2');
+      const res = await request(app)
+        .get('/api/auth/my-organizations')
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      const ids = res.body.map(o => o.id).sort();
+      expect(ids).toEqual([1, 2]);
+    });
+
+    it('GET /my-organizations dedupliziert Primaer-Org mit eigenem Mapping', async () => {
+      // admin2 Primaer Org 2 + zusaetzliches Mapping in Org 2 -> nur EIN Eintrag
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      await db.query(`INSERT INTO user_organizations (user_id, organization_id, role_id)
+        VALUES (8, 2, 8) ON CONFLICT DO NOTHING`);
+      invalidateUserCache(8);
+      const token = generateToken('admin2');
+      const res = await request(app)
+        .get('/api/auth/my-organizations')
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      expect(res.body.filter(o => o.id === 2).length).toBe(1);
+    });
+
     it('POST /switch-org liefert Token mit aktivem Org-Claim', async () => {
       await makeMultiOrgAdmin();
       const token = generateToken('admin1');

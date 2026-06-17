@@ -158,7 +158,11 @@ const AppContent: React.FC = () => {
             <Route path="/register" component={KonfiRegisterPage} exact />
             <Route path="/forgot-password" component={ForgotPasswordPage} exact />
             <Route path="/reset-password" component={ResetPasswordPage} exact />
-            <Redirect exact from="/" to="/login" />
+            {/* Catch-all: nach dem Logout steht die URL noch auf einer Admin-/
+                Konfi-Route (z.B. /admin/organizations). Ohne diesen Redirect
+                matched im Login-Outlet KEINE Route -> weisse Seite. Deshalb jede
+                nicht-oeffentliche URL auf /login umleiten (nicht nur exact "/"). */}
+            <Redirect to="/login" />
           </IonRouterOutlet>
         </IonReactRouter>
       </IonApp>

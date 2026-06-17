@@ -375,15 +375,40 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
   router.get('/my-organizations', rbacVerifier, async (req, res) => {
     try {
       const userId = req.user.id;
+      // BEIDE Quellen vereinen: die PRIMAER-Org (users.organization_id, die oft
+      // KEINEN user_organizations-Eintrag hat) UND alle Multi-Org-Mappings.
+      // Sonst fehlt beim ersten Login die aktive Primaer-Org in der Switcher-Liste
+      // -> der Button findet currentOrg nicht und zeigt keinen Namen. Pro Org EIN
+      // Eintrag (DISTINCT ON); bei Doppelung gewinnt die Rolle aus dem Mapping
+      // nicht zwingend — fuer die Primaer-Org ist die users.role_id maßgeblich,
+      // daher Primaer-Zeile zuerst (is_primary DESC).
       const { rows } = await db.query(`
-        SELECT o.id, o.name, o.slug, o.display_name, r.name as role_name, r.display_name as role_display_name,
-               COALESCE(o.is_active, true) as is_active
-        FROM user_organizations uo
-        JOIN organizations o ON uo.organization_id = o.id
-        JOIN roles r ON uo.role_id = r.id
-        WHERE uo.user_id = $1 AND COALESCE(o.is_active, true) = true
-        ORDER BY o.display_name ASC
+        SELECT DISTINCT ON (m.id)
+               m.id, m.name, m.slug, m.display_name,
+               m.role_name, m.role_display_name, m.is_active
+        FROM (
+          SELECT o.id, o.name, o.slug, o.display_name,
+                 r.name as role_name, r.display_name as role_display_name,
+                 COALESCE(o.is_active, true) as is_active,
+                 true as is_primary
+          FROM users u
+          JOIN organizations o ON u.organization_id = o.id
+          JOIN roles r ON u.role_id = r.id
+          WHERE u.id = $1 AND COALESCE(o.is_active, true) = true
+          UNION ALL
+          SELECT o.id, o.name, o.slug, o.display_name,
+                 r.name as role_name, r.display_name as role_display_name,
+                 COALESCE(o.is_active, true) as is_active,
+                 false as is_primary
+          FROM user_organizations uo
+          JOIN organizations o ON uo.organization_id = o.id
+          JOIN roles r ON uo.role_id = r.id
+          WHERE uo.user_id = $1 AND COALESCE(o.is_active, true) = true
+        ) m
+        ORDER BY m.id, m.is_primary DESC
       `, [userId]);
+      // Sekundaer nach Anzeigename sortieren (DISTINCT ON erzwingt Sortierung nach m.id)
+      rows.sort((a, b) => (a.display_name || '').localeCompare(b.display_name || '', 'de'));
       res.json(rows);
     } catch (err) {
       console.error('Database error in GET /api/auth/my-organizations:', err);
