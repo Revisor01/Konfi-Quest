@@ -260,18 +260,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await offlineCache.clearAll();
       await writeQueue.clear();
 
-      // 5. window-Event 'org:switched' -> jede useOfflineQuery revalidiert frisch
-      // mit dem neuen aktiven-Org-Header. Greift web UND nativ (auch bei im
-      // IonRouterOutlet-Stack gecachten Pages, wo ein Router-Remount nicht zieht).
-      window.dispatchEvent(new CustomEvent('org:switched'));
-
-      // 6. Switcher-Liste fuer die neue Org neu laden (Rollen/Namen koennen sich
-      // unterscheiden). Die Root-Navigation auf die Startseite uebernimmt der
-      // OrgSwitcherButton (leert den Page-Stack der alten Org).
-      await loadOrganizations();
+      // AB HIER ist der Wechsel ERFOLGREICH abgeschlossen (Token + aktive Org +
+      // User-State stehen). Die folgenden Schritte sind nur noch Revalidierung
+      // und duerfen NICHT mehr den Fehler-Toast ausloesen: durch das gleich
+      // gefeuerte 'org:switched' starten viele parallele Requests, von denen
+      // einer kurz in ein Token-Refresh-Race laufen kann. Frueher lag
+      // loadOrganizations() im try-Block -> ein solcher transienter 401 warf
+      // faelschlich "Organisation konnte nicht gewechselt werden", obwohl der
+      // Wechsel laengst geklappt hatte. Deshalb best-effort + eigenes catch.
     } catch (err) {
       console.error('Org-Wechsel fehlgeschlagen:', err);
       setError('Organisation konnte nicht gewechselt werden');
+      return;
+    }
+
+    // 5. window-Event 'org:switched' -> jede useOfflineQuery revalidiert frisch
+    // mit dem neuen aktiven-Org-Header. Greift web UND nativ (auch bei im
+    // IonRouterOutlet-Stack gecachten Pages, wo ein Router-Remount nicht zieht).
+    window.dispatchEvent(new CustomEvent('org:switched'));
+
+    // 6. Switcher-Liste fuer die neue Org neu laden (Rollen/Namen koennen sich
+    // unterscheiden) — best-effort, Fehler hier sind unkritisch und duerfen den
+    // bereits erfolgreichen Wechsel nicht als Fehlschlag melden.
+    try {
+      await loadOrganizations();
+    } catch (err) {
+      console.warn('Org-Liste nach Wechsel nicht neu geladen (unkritisch):', err);
     }
   }, [organizations, loadOrganizations]);
 
