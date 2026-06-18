@@ -188,3 +188,63 @@ describe('runAutoDeletion (Auto-Loeschung)', () => {
     expect(rows[0].archived_at).toBeNull();
   });
 });
+
+describe('runJahrgangDeletionReminders ("Letzte Chance"-Warnung)', () => {
+  let db;
+  let remEventId = 9501;
+
+  beforeAll(() => { db = getTestPool(); });
+  beforeEach(async () => { await truncateAll(db); await seed(db); });
+  afterAll(async () => { await closePool(); });
+
+  async function setKonfirmationDaysAgo(jahrgangId, days, orgId) {
+    const eventId = remEventId++;
+    await db.query(
+      `INSERT INTO events (id, name, event_date, organization_id, is_konfirmation, cancelled, mandatory, has_timeslots)
+       VALUES ($1, 'Konfirmation', CURRENT_DATE - ($3 || ' days')::interval, $2, true, false, false, false)`,
+      [eventId, orgId, String(days)]
+    );
+    await db.query('INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)', [eventId, jahrgangId]);
+  }
+
+  it('Tag 53 (7 Tage vor Loeschung): Reminder feuert + Marker wird gesetzt', async () => {
+    await setKonfirmationDaysAgo(JAHRGAENGE.jahrgang1.id, 53, 1);
+    const res = await BackgroundService.runJahrgangDeletionReminders(db);
+    expect(res.sent).toBeGreaterThanOrEqual(0); // Mailversand best-effort (SMTP im Test ggf. aus)
+    const { rows } = await db.query('SELECT deletion_reminder_sent_at FROM jahrgaenge WHERE id = $1', [JAHRGAENGE.jahrgang1.id]);
+    expect(rows[0].deletion_reminder_sent_at).not.toBeNull();
+  });
+
+  it('Tag 30 (zu frueh): KEIN Reminder, Marker bleibt NULL', async () => {
+    await setKonfirmationDaysAgo(JAHRGAENGE.jahrgang1.id, 30, 1);
+    await BackgroundService.runJahrgangDeletionReminders(db);
+    const { rows } = await db.query('SELECT deletion_reminder_sent_at FROM jahrgaenge WHERE id = $1', [JAHRGAENGE.jahrgang1.id]);
+    expect(rows[0].deletion_reminder_sent_at).toBeNull();
+  });
+
+  it('Idempotenz: zweiter Lauf am selben Tag setzt Marker nicht erneut', async () => {
+    await setKonfirmationDaysAgo(JAHRGAENGE.jahrgang1.id, 55, 1);
+    await BackgroundService.runJahrgangDeletionReminders(db);
+    const { rows: first } = await db.query('SELECT deletion_reminder_sent_at FROM jahrgaenge WHERE id = $1', [JAHRGAENGE.jahrgang1.id]);
+    const firstTs = first[0].deletion_reminder_sent_at;
+    expect(firstTs).not.toBeNull();
+    await BackgroundService.runJahrgangDeletionReminders(db);
+    const { rows: second } = await db.query('SELECT deletion_reminder_sent_at FROM jahrgaenge WHERE id = $1', [JAHRGAENGE.jahrgang1.id]);
+    expect(second[0].deletion_reminder_sent_at.getTime()).toBe(firstTs.getTime());
+  });
+
+  it('Jahrgang OHNE aktive Konfis (nur befoerderte/keine): kein Reminder', async () => {
+    // jahrgang1 im Warn-Fenster, aber alle Konfis daraus entfernen (nur teamer/admin)
+    await setKonfirmationDaysAgo(JAHRGAENGE.jahrgang1.id, 54, 1);
+    await db.query('DELETE FROM konfi_profiles WHERE jahrgang_id = $1', [JAHRGAENGE.jahrgang1.id]);
+    await BackgroundService.runJahrgangDeletionReminders(db);
+    const { rows } = await db.query('SELECT deletion_reminder_sent_at FROM jahrgaenge WHERE id = $1', [JAHRGAENGE.jahrgang1.id]);
+    expect(rows[0].deletion_reminder_sent_at).toBeNull();
+  });
+
+  it('Jahrgang OHNE Konfirmations-Event: kein Reminder (sicherer Default)', async () => {
+    await BackgroundService.runJahrgangDeletionReminders(db);
+    const { rows } = await db.query('SELECT deletion_reminder_sent_at FROM jahrgaenge WHERE id = $1', [JAHRGAENGE.jahrgang1.id]);
+    expect(rows[0].deletion_reminder_sent_at).toBeNull();
+  });
+});

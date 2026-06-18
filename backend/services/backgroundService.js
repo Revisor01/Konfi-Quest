@@ -493,6 +493,13 @@ class BackgroundService {
 
     // '0 2 * * *' = taeglich um 02:00 Uhr
     this.autoDeletionCronTask = cron.schedule('0 2 * * *', async () => {
+      // ERST warnen (7 Tage vor Loeschung), DANN loeschen — beides im selben
+      // 02:00-Lauf, aber getrennt fehler-isoliert.
+      try {
+        await this.runJahrgangDeletionReminders(db);
+      } catch (e) {
+        console.error('Jahrgang-Loesch-Reminder-Cron failed:', e);
+      }
       try {
         await this.runAutoDeletion(db);
       } catch (e) {
@@ -675,6 +682,125 @@ class BackgroundService {
    * Die 120er-Schwelle hat Vorrang; die 60er-Query grenzt mit `< 120` ab, damit
    * ein Konfi nie gleichzeitig in beiden Buckets landet (T-114-17).
    */
+  /**
+   * "Letzte Chance"-Reminder: 7 Tage VOR der automatischen Loeschung (Tag 60
+   * nach Konfirmation = Soft-Delete) bekommen die Org-Admins eine Mail + Push,
+   * dass der Jahrgang geloescht wird und sie jetzt noch Konfis befoerdern
+   * koennen. Idempotent pro Jahrgang via deletion_reminder_sent_at.
+   *
+   * Stichtag-Logik identisch zu runAutoDeletion (frueheste, nicht-cancelled
+   * is_konfirmation, org-gescopt). Fenster: Tag 53..59 (>= 60-WARN, < 60),
+   * damit ein verpasster Tag (Cron-Ausfall) bis zur Soft-Delete-Grenze noch
+   * nachgeholt wird. Kein Konfirmationstermin = keine Loeschung = kein Reminder.
+   */
+  static async runJahrgangDeletionReminders(db) {
+    const SOFT_DELETE_DAY = 60;   // ab diesem Tag greift die Loeschung (runAutoDeletion)
+    const WARN_LEAD_DAYS = 7;     // so viele Tage vorher warnen
+    let sent = 0;
+    try {
+      const { rows: jahrgaenge } = await db.query('SELECT id, name, organization_id FROM jahrgaenge');
+
+      for (const jg of jahrgaenge) {
+        try {
+          // Stichtag (Konfirmationstermin) ableiten
+          const { rows: stichtagRows } = await db.query(
+            `SELECT MIN(e.event_date) AS stichtag
+               FROM events e
+               JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
+              WHERE eja.jahrgang_id = $1
+                AND e.is_konfirmation = true
+                AND e.organization_id = $2
+                AND (e.cancelled IS NULL OR e.cancelled = false)`,
+            [jg.id, jg.organization_id]
+          );
+          const stichtag = stichtagRows[0] && stichtagRows[0].stichtag;
+          if (!stichtag) continue; // keine Frist -> keine Loeschung -> kein Reminder
+
+          // Im Warn-Fenster? (Tag 53..59) und noch nicht erinnert?
+          const { rows: [windowRow] } = await db.query(
+            `SELECT (CURRENT_DATE - $1::date) AS age,
+                    (SELECT deletion_reminder_sent_at FROM jahrgaenge WHERE id = $2) AS sent_at`,
+            [stichtag, jg.id]
+          );
+          const age = Number(windowRow.age);
+          const alreadySent = windowRow.sent_at !== null;
+          if (alreadySent) continue;
+          if (age < (SOFT_DELETE_DAY - WARN_LEAD_DAYS) || age >= SOFT_DELETE_DAY) continue;
+
+          // Gibt es ueberhaupt noch AKTIVE Konfis, die geloescht wuerden?
+          // Sonst ist die Warnung sinnlos (nur befoerderte/keine).
+          const { rows: [{ count: konfiCount }] } = await db.query(
+            `SELECT COUNT(*)::int AS count
+               FROM users u
+               JOIN konfi_profiles kp ON kp.user_id = u.id
+               JOIN roles r ON u.role_id = r.id
+              WHERE kp.jahrgang_id = $1 AND u.organization_id = $2
+                AND r.name = 'konfi' AND u.deleted_at IS NULL`,
+            [jg.id, jg.organization_id]
+          );
+          if (konfiCount === 0) continue;
+
+          const daysLeft = SOFT_DELETE_DAY - age; // Tage bis zur Loeschung
+
+          // Org-Admins mit E-Mail laden
+          const { rows: admins } = await db.query(
+            `SELECT u.display_name, u.email
+               FROM users u JOIN roles r ON u.role_id = r.id
+              WHERE u.organization_id = $1 AND u.is_active = true
+                AND r.name IN ('admin', 'org_admin')
+                AND u.email IS NOT NULL AND u.email <> ''`,
+            [jg.organization_id]
+          );
+
+          const { rows: [org] } = await db.query('SELECT display_name FROM organizations WHERE id = $1', [jg.organization_id]);
+          const orgName = (org && org.display_name) || '';
+
+          let anySent = false;
+          for (const admin of admins) {
+            try {
+              await emailService.sendJahrgangDeletionWarningEmail(
+                admin.email, admin.display_name, orgName, jg.name, daysLeft
+              );
+              anySent = true;
+              sent++;
+            } catch (mailErr) {
+              console.error(`Jahrgang-Loesch-Reminder: Mail an ${admin.email} fehlgeschlagen:`, mailErr.message);
+            }
+          }
+
+          // Push an alle Org-Admins (zuverlaessiger Kanal, kein externer SMTP).
+          let pushSent = false;
+          try {
+            const pushRes = await PushService.sendJahrgangDeletionWarningToAdmins(db, jg.organization_id, jg.name, daysLeft);
+            // sendToMultipleUsers liefert kein einheitliches Erfolgsflag; wir
+            // werten "kein Fehler geworfen" als zugestellt-versucht. Ein echtes
+            // false (z.B. keine Admins) liefert {success:false}.
+            pushSent = !(pushRes && pushRes.success === false);
+          } catch (pushErr) {
+            console.error(`Jahrgang-Loesch-Reminder: Push fuer Org ${jg.organization_id} fehlgeschlagen:`, pushErr.message);
+          }
+
+          // Marker setzen, wenn die Warnung ueber MINDESTENS einen Kanal raus ist
+          // (Mail ODER Push) -- sonst (beides fehlgeschlagen) naechster Lauf erneut.
+          // Push ist der robuste Kanal; bei reinem SMTP-Ausfall reicht der Push.
+          if (anySent || pushSent || admins.length === 0) {
+            await db.query('UPDATE jahrgaenge SET deletion_reminder_sent_at = NOW() WHERE id = $1', [jg.id]);
+          }
+        } catch (jgErr) {
+          console.error(`Jahrgang-Loesch-Reminder: Jahrgang ${jg.id} fehlgeschlagen:`, jgErr.message);
+        }
+      }
+
+      if (sent > 0) {
+        console.log(`Jahrgang-Loesch-Reminder: ${sent} Mail(s) verschickt.`);
+      }
+      return { sent };
+    } catch (error) {
+      console.error('Jahrgang-Loesch-Reminder fehlgeschlagen:', error.message);
+      return { sent: 0 };
+    }
+  }
+
   static async runAutoDeletion(db) {
     let totalSoft = 0;
     let totalHard = 0;

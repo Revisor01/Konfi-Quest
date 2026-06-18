@@ -852,6 +852,42 @@ class PushService {
   }
 
   /**
+   * "Letzte Chance"-Warnung an Org-Admins: ein Jahrgang wird in wenigen Tagen
+   * automatisch geloescht. Wir nennen es bewusst "geloescht" (das interne Archiv
+   * bleibt unerwaehnt). Hinweis aufs Befoerdern der Konfis zu Teamer:innen.
+   */
+  static async sendJahrgangDeletionWarningToAdmins(db, organizationId, jahrgangName, daysLeft) {
+    try {
+      const { rows: admins } = await db.query(
+        `SELECT u.id FROM users u
+         JOIN roles r ON u.role_id = r.id
+         WHERE r.name IN ('admin', 'org_admin') AND u.organization_id = $1 AND u.is_active = true`,
+        [organizationId]
+      );
+
+      if (admins.length === 0) {
+        return { success: false, message: 'No admins found' };
+      }
+
+      const adminIds = admins.map(a => a.id);
+      const notification = {
+        title: 'Jahrgang wird bald gelöscht',
+        body: `Der Jahrgang "${jahrgangName}" wird in ${daysLeft} Tag${daysLeft === 1 ? '' : 'en'} gelöscht. Letzte Chance, Konfis zu Teamer:innen zu befördern.`,
+        data: {
+          type: 'jahrgang_deletion_warning',
+          jahrgang_name: jahrgangName,
+          days_left: String(daysLeft)
+        }
+      };
+
+      return await this.sendToMultipleUsers(db, adminIds, notification);
+    } catch (error) {
+      console.error('sendJahrgangDeletionWarningToAdmins error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
    * Neue Konfi-Registrierung - Push an Jahrgangs-Admins (Fallback: alle Org-Admins)
    */
   static async sendNewKonfiRegistrationToAdmins(db, organizationId, jahrgangId, konfiName, jahrgangName) {

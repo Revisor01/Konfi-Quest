@@ -254,6 +254,39 @@ Dein Konfi Quest Team
   return sendEmail({ to: email, subject, text, html });
 };
 
+/**
+ * "Letzte Chance"-Warnung an Admins, bevor ein Jahrgang automatisch geloescht
+ * wird. Bewusst "geloescht" (NICHT "archiviert") -- das interne Backup/Archiv
+ * wird nach aussen nicht kommuniziert. Mit Hinweis aufs Befoerdern.
+ */
+const sendJahrgangDeletionWarningEmail = async (email, name, orgName, jahrgangName, daysLeft) => {
+  const subject = `Jahrgang "${jahrgangName}" wird in ${daysLeft} Tagen gelöscht - Konfi Quest`;
+
+  const text = `
+Hallo ${name},
+
+der Jahrgang "${jahrgangName}" in eurer Organisation "${orgName}" wird in ${daysLeft} Tag${daysLeft === 1 ? '' : 'en'} automatisch gelöscht.
+
+Das ist die letzte Gelegenheit, Konfis dieses Jahrgangs noch zu Teamer:innen zu befördern. Beförderte Teamer:innen behalten ihre Punkte und Abzeichen und bleiben euch erhalten - alle anderen Konfis dieses Jahrgangs werden mit der Löschung entfernt.
+
+Wenn ihr nichts unternehmt, geschieht die Löschung automatisch.
+
+Viele Grüße,
+Dein Konfi Quest Team
+  `.trim();
+
+  const html = wrapHtml(`
+      <h2>Hallo ${name}!</h2>
+      <p>der Jahrgang <strong>${jahrgangName}</strong> in eurer Organisation <strong>${orgName}</strong> wird bald gelöscht:</p>
+      <div class="date">Löschung in ${daysLeft} Tag${daysLeft === 1 ? '' : 'en'}</div>
+      <div class="warning">
+        <strong>Letzte Chance:</strong> Befördert jetzt noch Konfis dieses Jahrgangs zu Teamer:innen, wenn sie euch erhalten bleiben sollen. Beförderte Teamer:innen behalten ihre Punkte und Abzeichen. Alle anderen Konfis dieses Jahrgangs werden mit der Löschung entfernt. Geschieht nichts, wird der Jahrgang automatisch gelöscht.
+      </div>
+  `);
+
+  return sendEmail({ to: email, subject, text, html });
+};
+
 // HTML-Escaping fuer Nutzereingaben (Konfi-Namen, Freitext-Sprueche) im Mail-HTML.
 const escapeHtml = (value) => String(value == null ? '' : value)
   .replace(/&/g, '&amp;')
@@ -404,6 +437,7 @@ module.exports = {
   sendPasswordResetEmail,
   sendPasswordChangedEmail,
   sendLicenseExpiryReminderEmail,
+  sendJahrgangDeletionWarningEmail,
   sendKonfiMatrixEmail,
   testEmailConnection
 };
