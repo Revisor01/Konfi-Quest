@@ -310,7 +310,7 @@ describe('Jahrgaenge Routes', () => {
       const newId = createRes.body.id;
 
       // teamer1 (id 3, Rolle teamer) bekommt ein konfi_profiles an diesem Jahrgang
-      // — simuliert einen beförderten Konfi, dessen Profil bestehen blieb.
+      // — simuliert einen beförderten Konfi mit erhaltenen WERTEN (Punkte etc.).
       await db.query(
         `INSERT INTO konfi_profiles (user_id, jahrgang_id, gottesdienst_points, gemeinde_points, organization_id)
          VALUES (3, $1, 5, 3, 1)`,
@@ -323,9 +323,15 @@ describe('Jahrgaenge Routes', () => {
         .set('Authorization', `Bearer ${adminToken}`);
       expect(res.status).toBe(200);
 
-      // Verwaistes Profil ist weg, der User (teamer1) bleibt erhalten.
-      const { rows: profiles } = await db.query('SELECT 1 FROM konfi_profiles WHERE user_id = 3 AND jahrgang_id = $1', [newId]);
-      expect(profiles.length).toBe(0);
+      // WICHTIG: Profil bleibt ERHALTEN (Werte einsehbar), nur Jahrgang-Bindung
+      // geloest (jahrgang_id = NULL). Punkte unveraendert. User bleibt.
+      const { rows: profiles } = await db.query(
+        'SELECT jahrgang_id, gottesdienst_points, gemeinde_points FROM konfi_profiles WHERE user_id = 3'
+      );
+      expect(profiles.length).toBe(1);
+      expect(profiles[0].jahrgang_id).toBeNull();
+      expect(Number(profiles[0].gottesdienst_points)).toBe(5);
+      expect(Number(profiles[0].gemeinde_points)).toBe(3);
       const { rows: users } = await db.query('SELECT 1 FROM users WHERE id = 3');
       expect(users.length).toBe(1);
     });

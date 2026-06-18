@@ -268,13 +268,17 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
         }
       }
 
-      // konfi_profiles beförderter Ex-Konfis (Rolle != konfi) loesen sich vom
-      // Jahrgang. Das alte Profil mit Jahrgang-Bindung wuerde sonst den
-      // NO-ACTION-FK konfi_profiles.jahrgang_id beim Jahrgang-Delete blockieren.
-      // Der User selbst, seine Badges und die Punkte-Historie bleiben unberuehrt.
+      // konfi_profiles beförderter Ex-Konfis (Rolle != konfi) werden vom Jahrgang
+      // GELOEST (jahrgang_id = NULL), NICHT geloescht. Sonst blockiert der
+      // NO-ACTION-FK konfi_profiles.jahrgang_id den Jahrgang-Delete. WICHTIG:
+      // Die WERTE des beförderten Konfis (gottesdienst_points/gemeinde_points,
+      // current_level_id, konfspruch_*) stehen IN konfi_profiles -> das Profil
+      // MUSS erhalten bleiben, damit er seine Werte spaeter noch einsehen kann.
+      // Nur die Bindung an den geloeschten Jahrgang faellt weg.
       await db.query(`
-        DELETE FROM konfi_profiles kp
-        USING users u, roles r
+        UPDATE konfi_profiles kp
+        SET jahrgang_id = NULL
+        FROM users u, roles r
         WHERE kp.user_id = u.id AND u.role_id = r.id
           AND kp.jahrgang_id = $1 AND r.name != 'konfi'
       `, [jahrgangId]);
