@@ -94,6 +94,12 @@ async function showFailedToast(label: string): Promise<void> {
 
 function handleFlushResult(result: FlushResult): void {
   for (const item of result.failed) {
+    // 'fire-and-forget' sind stille Hintergrund-Cleanups (z.B. Push-Token beim
+    // Logout entfernen). Sie scheitern nach dem Logout zwangslaeufig (kein
+    // Auth-Token mehr) und gehen den User nichts an -> KEIN Fehler-Toast.
+    // Sonst erscheint "Push-Token entfernen konnte nicht gesendet werden" aus
+    // dem Nichts auf der Login-Seite.
+    if (item.metadata.type === 'fire-and-forget') continue;
     const label = item.metadata.label || 'Aktion';
     showFailedToast(label);
   }
