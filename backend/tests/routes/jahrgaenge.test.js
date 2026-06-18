@@ -301,6 +301,51 @@ describe('Jahrgaenge Routes', () => {
       expect(res.status).toBe(404);
     });
 
+    it('Befoerderter Ex-Konfi (Rolle teamer) blockiert die Loeschung NICHT', async () => {
+      // Neuer leerer Jahrgang
+      const createRes = await request(app)
+        .post('/api/admin/jahrgaenge')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Befoerderungs-Jahrgang', confirmation_date: '2027-05-01' });
+      const newId = createRes.body.id;
+
+      // teamer1 (id 3, Rolle teamer) bekommt ein konfi_profiles an diesem Jahrgang
+      // — simuliert einen beförderten Konfi, dessen Profil bestehen blieb.
+      await db.query(
+        `INSERT INTO konfi_profiles (user_id, jahrgang_id, gottesdienst_points, gemeinde_points, organization_id)
+         VALUES (3, $1, 5, 3, 1)`,
+        [newId]
+      );
+
+      // Loeschung muss durchgehen (kein 409), trotz vorhandenem konfi_profiles.
+      const res = await request(app)
+        .delete(`/api/admin/jahrgaenge/${newId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(res.status).toBe(200);
+
+      // Verwaistes Profil ist weg, der User (teamer1) bleibt erhalten.
+      const { rows: profiles } = await db.query('SELECT 1 FROM konfi_profiles WHERE user_id = 3 AND jahrgang_id = $1', [newId]);
+      expect(profiles.length).toBe(0);
+      const { rows: users } = await db.query('SELECT 1 FROM users WHERE id = 3');
+      expect(users.length).toBe(1);
+    });
+
+    it('AKTIVER Konfi blockiert die Loeschung weiterhin (409)', async () => {
+      const createRes = await request(app)
+        .post('/api/admin/jahrgaenge')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Aktiv-Konfi-Jahrgang', confirmation_date: '2027-05-01' });
+      const newId = createRes.body.id;
+
+      // konfi1 (id 1, Rolle konfi) an den Jahrgang -> muss blockieren
+      await db.query('UPDATE konfi_profiles SET jahrgang_id = $1 WHERE user_id = 1', [newId]);
+
+      const res = await request(app)
+        .delete(`/api/admin/jahrgaenge/${newId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(res.status).toBe(409);
+    });
+
     it('Admin aus Org 2 kann Jahrgang aus Org 1 NICHT loeschen', async () => {
       // Neuen leeren Jahrgang in Org 1 erstellen
       const createRes = await request(app)

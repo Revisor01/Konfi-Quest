@@ -188,8 +188,18 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
     const forceDelete = req.query.force === 'true';
 
     try {
-      // Check if jahrgang is in use by konfis
-      const checkKonfisQuery = "SELECT COUNT(*)::int as count FROM konfi_profiles WHERE jahrgang_id = $1";
+      // Blockieren NUR AKTIVE Konfis (Rolle = konfi). Beförderte Ex-Konfis
+      // (jetzt teamer/admin) behalten beim Befördern bewusst ihr konfi_profiles
+      // (Punkte-Historie), sind aber keine aktiven Konfis mehr und duerfen die
+      // Loeschung NICHT blockieren. Ihre (verwaisten) Profile werden unten vor
+      // dem Jahrgang-Delete entfernt (User + Badges + Historie bleiben).
+      const checkKonfisQuery = `
+        SELECT COUNT(*)::int as count
+        FROM konfi_profiles kp
+        JOIN users u ON kp.user_id = u.id
+        JOIN roles r ON u.role_id = r.id
+        WHERE kp.jahrgang_id = $1 AND r.name = 'konfi'
+      `;
       const { rows: [konfiUsage] } = await db.query(checkKonfisQuery, [jahrgangId]);
 
       if (konfiUsage.count > 0) {
@@ -257,6 +267,17 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
           }
         }
       }
+
+      // konfi_profiles beförderter Ex-Konfis (Rolle != konfi) loesen sich vom
+      // Jahrgang. Das alte Profil mit Jahrgang-Bindung wuerde sonst den
+      // NO-ACTION-FK konfi_profiles.jahrgang_id beim Jahrgang-Delete blockieren.
+      // Der User selbst, seine Badges und die Punkte-Historie bleiben unberuehrt.
+      await db.query(`
+        DELETE FROM konfi_profiles kp
+        USING users u, roles r
+        WHERE kp.user_id = u.id AND u.role_id = r.id
+          AND kp.jahrgang_id = $1 AND r.name != 'konfi'
+      `, [jahrgangId]);
 
       const deleteJahrgangQuery = "DELETE FROM jahrgaenge WHERE id = $1 AND organization_id = $2";
       const { rowCount } = await db.query(deleteJahrgangQuery, [jahrgangId, req.user.organization_id]);
