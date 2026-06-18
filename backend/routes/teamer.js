@@ -67,9 +67,12 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       `;
       const { rows: [konfiProfile] } = await db.query(profileQuery, [userId]);
 
-      // Nur fuer beförderte Teamer (mit konfi_profiles + jahrgang) Konfi-Badges laden.
-      // Reine Teamer ohne Konfi-Vergangenheit bekommen konfi_data=null.
-      const isPromotedKonfi = !!(konfiProfile && konfiProfile.jahrgang_name);
+      // Beförderter Teamer = hat ueberhaupt ein konfi_profiles (Konfi-Vergangenheit).
+      // NICHT am jahrgang_name festmachen: wird der alte Jahrgang geloescht, ist
+      // jahrgang_id=NULL -> jahrgang_name=NULL, aber die WERTE (Punkte/Badges)
+      // bleiben und muessen weiter sichtbar sein. Reine Teamer ohne Konfi-
+      // Vergangenheit haben kein konfi_profiles -> konfi_data=null.
+      const isPromotedKonfi = !!konfiProfile;
       let badges = [];
       if (isPromotedKonfi) {
         const badgesQuery = `

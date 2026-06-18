@@ -51,6 +51,24 @@ describe('Teamer Routes', () => {
       expect(res.body.konfi_data).toBeDefined();
     });
 
+    it('Befoerderter Konfi sieht seine Werte AUCH ohne Jahrgang (jahrgang_id NULL)', async () => {
+      // teamer1 (id 3) bekommt ein konfi_profiles mit Werten, aber OHNE Jahrgang
+      // (simuliert: alter Jahrgang wurde geloescht -> jahrgang_id = NULL).
+      await db.query(
+        `INSERT INTO konfi_profiles (user_id, jahrgang_id, gottesdienst_points, gemeinde_points, organization_id)
+         VALUES (3, NULL, 7, 4, 1)`
+      );
+      const res = await request(app)
+        .get('/api/teamer/profile')
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(res.status).toBe(200);
+      // Werte MUESSEN sichtbar bleiben, obwohl kein Jahrgang mehr da ist.
+      expect(res.body.konfi_data).not.toBeNull();
+      expect(Number(res.body.konfi_data.gottesdienst_points)).toBe(7);
+      expect(Number(res.body.konfi_data.gemeinde_points)).toBe(4);
+      expect(res.body.konfi_data.jahrgang_name).toBe('');
+    });
+
     it('Konfi bekommt 403', async () => {
       const res = await request(app)
         .get('/api/teamer/profile')
