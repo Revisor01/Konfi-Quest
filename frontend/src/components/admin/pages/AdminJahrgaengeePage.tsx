@@ -516,7 +516,7 @@ const AdminJahrgaengeePage: React.FC = () => {
     } else {
       presentAlert({
         header: 'Jahrgang löschen',
-        message: `Jahrgang "${jahrgang.name}" wirklich löschen?`,
+        message: `Jahrgang "${jahrgang.name}" wirklich löschen?\n\nDer Jahrgang und sein Chatverlauf werden unwiderruflich entfernt. Solange dem Jahrgang noch aktive Konfis zugeordnet sind, ist das Löschen nicht möglich. Zu Teamer:innen beförderte Konfis bleiben mit ihren Punkten und Abzeichen erhalten.`,
         buttons: [
           { text: 'Abbrechen', role: 'cancel' },
           {
