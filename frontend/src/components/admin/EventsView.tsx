@@ -124,9 +124,9 @@ const EventsView: React.FC<EventsViewProps> = ({
     });
   };
 
-  const calculateRegistrationStatus = (event: Event): 'upcoming' | 'open' | 'closed' | 'cancelled' => {
+  const calculateRegistrationStatus = (event: Event): 'upcoming' | 'open' | 'closed' | 'cancelled' | 'mandatory' => {
     // Use the backend-calculated status directly
-    return event.registration_status;
+    return event.registration_status as 'upcoming' | 'open' | 'closed' | 'cancelled' | 'mandatory';
   };
 
   const getRegistrationStatusColor = (event: Event) => {
@@ -281,10 +281,15 @@ const EventsView: React.FC<EventsViewProps> = ({
                 if (isFullyProcessed) return '#6c757d';
                 if (hasUnprocessedBookings) return '#007aff'; // Blau für Verbuchen
                 if (isPastEvent) return '#6c757d';
-                if (calculateRegistrationStatus(event) === 'open' && event.max_participants > 0 && event.registered_count >= event.max_participants && event.waitlist_enabled) return '#fd7e14'; // Orange - Warteliste
-                if (calculateRegistrationStatus(event) === 'open' && event.max_participants > 0 && event.registered_count >= event.max_participants) return '#dc3545'; // Rot - Ausgebucht
-                if (calculateRegistrationStatus(event) === 'open') return '#34c759';
-                if (calculateRegistrationStatus(event) === 'upcoming') return '#fd7e14'; // Orange für Bald
+                // Pflicht-Events haben registration_status='mandatory' (Backend) — sie
+                // werden wie 'open' nach Kapazitaet gefaerbt (sonst fielen sie unten
+                // auf Rot durch). Anmeldbar = open ODER mandatory.
+                const regStatus = calculateRegistrationStatus(event);
+                const isAnmeldbar = regStatus === 'open' || regStatus === 'mandatory';
+                if (isAnmeldbar && event.max_participants > 0 && event.registered_count >= event.max_participants && event.waitlist_enabled) return '#fd7e14'; // Orange - Warteliste
+                if (isAnmeldbar && event.max_participants > 0 && event.registered_count >= event.max_participants) return '#dc3545'; // Rot - Ausgebucht
+                if (isAnmeldbar) return '#34c759'; // Grün - offen/anmeldbar
+                if (regStatus === 'upcoming') return '#fd7e14'; // Orange für Bald
                 return '#dc3545';
               })();
 
