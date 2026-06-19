@@ -130,3 +130,4 @@ docs/AuthKey_*.p8
 *.p8
 .claude/worktrees/
 .playwright-mcp/
+frontend/ios/App/build_sim/

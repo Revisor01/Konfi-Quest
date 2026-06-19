@@ -187,6 +187,15 @@ const { ipKeyGenerator } = require('express-rate-limit');
 // WLAN-IP dasselbe Kontingent -> ein volles WLAN sperrt alle aus ("Zu viele
 // Anfragen", scheinbar zufaellig). Unauthentifizierte Requests (Login/Register)
 // fallen auf die IP zurueck (IPv6-sicher via ipKeyGenerator).
+// Echte Client-IP: Apache (KeyHelp) setzt X-Real-IP = %{REMOTE_ADDR}, ABER kein
+// trust-proxy-konformes X-Forwarded-For -> req.ip war fuer ALLE die Proxy-IP
+// (gleicher Key) -> der Limiter zaehlte GLOBAL ueber alle Nutzer -> eine Gruppe
+// flog gleichzeitig mit 429. Daher X-Real-IP bevorzugen, dann erst req.ip.
+const clientIp = (req) => {
+  const real = req.headers['x-real-ip'];
+  if (real && typeof real === 'string' && real.trim()) return real.trim();
+  return req.ip;
+};
 const userOrIpKey = (req) => {
   const auth = req.headers.authorization;
   if (auth && auth.startsWith('Bearer ')) {
@@ -197,7 +206,7 @@ const userOrIpKey = (req) => {
       // ungueltiges/abgelaufenes Token -> IP-Fallback
     }
   }
-  return ipKeyGenerator(req.ip);
+  return ipKeyGenerator(clientIp(req));
 };
 
 const generalLimiter = rateLimit({
@@ -209,9 +218,16 @@ const generalLimiter = rateLimit({
   legacyHeaders: false
 });
 
+// ACHTUNG: Hinter dem Reverse-Proxy (Apache->Traefik) wird die echte Client-IP
+// derzeit nicht zuverlaessig unterschieden -> der Limiter zaehlt faktisch GLOBAL
+// ueber alle Nutzer. Bei einer Konfi-Gruppe (viele Logins/Token-Refreshes
+// gleichzeitig) war max:30 viel zu niedrig -> ALLE flogen gleichzeitig mit 429.
+// Hoch auf 300 Fehlversuche/15min (skipSuccessfulRequests: Erfolge zaehlen NICHT)
+// -> Gruppen-Onboarding laeuft, echter Brute-Force wird weiter gebremst.
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30,
+  max: 300,
+  keyGenerator: (req) => ipKeyGenerator(clientIp(req)), // echte Client-IP (X-Real-IP), NICHT Proxy-IP
   message: { error: 'Zu viele Login-Versuche. Bitte warte 15 Minuten.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -224,7 +240,8 @@ const authLimiter = rateLimit({
 // Missbrauchs-Schleifen (Fehlversuche) gebremst werden.
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 60,
+  max: 200,
+  keyGenerator: (req) => ipKeyGenerator(clientIp(req)), // echte Client-IP (X-Real-IP)
   message: { error: 'Zu viele Registrierungen. Bitte warte eine Stunde.' },
   standardHeaders: true,
   legacyHeaders: false,
