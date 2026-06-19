@@ -1340,6 +1340,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                         <IonDatetime
                           id="trial-date-picker"
                           presentation="date"
+                          firstDayOfWeek={1}
                           value={trialEndsAt || undefined}
                           onIonChange={(e) => {
                             const v = e.detail.value as string;

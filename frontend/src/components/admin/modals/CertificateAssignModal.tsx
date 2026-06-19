@@ -282,6 +282,7 @@ const CertificateAssignModal: React.FC<CertificateAssignModalProps> = ({
                 <IonDatetime
                   id="cert-start-date"
                   presentation="date"
+                  firstDayOfWeek={1}
                   value={issuedDate}
                   onIonChange={(e) => {
                     const val = e.detail.value;

@@ -74,6 +74,7 @@ interface KonfisViewProps {
   onAddKonfiClick: () => void;
   onSelectKonfi: (konfi: Konfi) => void;
   onDeleteKonfi: (konfi: Konfi) => void;
+  onDeleteTeamer: (teamer: any) => void;
 }
 
 const KonfisView: React.FC<KonfisViewProps> = ({
@@ -83,7 +84,8 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   onUpdate,
   onAddKonfiClick,
   onSelectKonfi,
-  onDeleteKonfi
+  onDeleteKonfi,
+  onDeleteTeamer
 }) => {
   const { user } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
@@ -300,7 +302,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           emptyIcon={ribbon}
           emptyTitle="Keine Teamer:innen gefunden"
           emptyMessage={searchTerm ? 'Versuche andere Suchbegriffe' : 'Noch keine Teamer:innen vorhanden'}
-          emptyIconColor="#ec4899"
+          emptyIconColor="var(--app-color-teamer)"
         >
           {filterBySearchTerm(teamers, searchTerm, ['name', 'display_name', 'username']).map((teamer: any, index: number, arr: any[]) => (
             <IonItemSliding key={teamer.id} style={{ marginBottom: index < arr.length - 1 ? '8px' : '0' }}>
@@ -364,6 +366,22 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                   </div>
                 </div>
               </IonItem>
+
+              {/* Teamer:innen loeschen darf nur org_admin (Backend: requireOrgAdmin
+                  auf DELETE /users/:id). Normalen Admins die Aktion gar nicht
+                  erst anbieten -> kein 403-Wisch. */}
+              {(user?.role_name === 'org_admin' || user?.is_super_admin === true) && (
+                <IonItemOptions side="end" className="app-swipe-actions">
+                  <IonItemOption
+                    onClick={() => onDeleteTeamer(teamer)}
+                    className="app-swipe-action"
+                  >
+                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                      <IonIcon icon={trash} />
+                    </div>
+                  </IonItemOption>
+                </IonItemOptions>
+              )}
             </IonItemSliding>
           ))}
         </ListSection>

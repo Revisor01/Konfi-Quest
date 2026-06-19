@@ -139,6 +139,29 @@ const AdminKonfisPage: React.FC = () => {
     });
   };
 
+  const handleDeleteTeamer = async (teamer: any) => {
+    if (!isOnline) return;
+    presentAlert({
+      header: 'Teamer:in löschen',
+      message: `Teamer:in "${teamer.display_name || teamer.name}" wirklich löschen?\n\nDas Konto wird mit allen zugehörigen Daten entfernt. Punkte und Abzeichen aus einer früheren Konfi-Zeit gehen dabei verloren.`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Löschen',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await api.delete(`/users/${teamer.id}`);
+              await refreshKonfis();
+            } catch (err: any) {
+              setError(err.response?.data?.error || 'Fehler beim Löschen');
+            }
+          }
+        }
+      ]
+    });
+  };
+
   const handleSelectKonfi = (konfi: Konfi) => {
     router.push(`/admin/konfis/${konfi.id}`);
   };
@@ -305,6 +328,7 @@ const AdminKonfisPage: React.FC = () => {
             onAddKonfiClick={presentKonfiModal}
             onSelectKonfi={handleSelectKonfi}
             onDeleteKonfi={handleDeleteKonfi}
+            onDeleteTeamer={handleDeleteTeamer}
           />
         )}
       </IonContent>

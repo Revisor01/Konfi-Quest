@@ -971,6 +971,7 @@ export const TeamerSinceSection = React.memo<TeamerSinceSectionProps>(({
       <IonDatetime
         id="teamer-since-date"
         presentation="date"
+        firstDayOfWeek={1}
         locale="de-DE"
         value={currentKonfi?.teamer_since ? new Date(currentKonfi.teamer_since).toISOString().split('T')[0] : undefined}
         onIonChange={async (e) => {

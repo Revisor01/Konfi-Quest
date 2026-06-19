@@ -30,7 +30,8 @@ interface Activity {
   name: string;
   description?: string;
   points: number;
-  type: 'gottesdienst' | 'gemeinde';
+  type: 'gottesdienst' | 'gemeinde' | null;
+  target_role?: 'konfi' | 'teamer';
   category?: string;
   created_at: string;
 }

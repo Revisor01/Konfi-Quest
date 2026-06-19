@@ -19,6 +19,7 @@ import {
   calendar,
   home,
   people,
+  ribbon,
   flash,
   pricetag,
   flashOutline,
@@ -33,7 +34,8 @@ interface Activity {
   name: string;
   description?: string;
   points: number;
-  type: 'gottesdienst' | 'gemeinde';
+  type: 'gottesdienst' | 'gemeinde' | null;
+  target_role?: 'konfi' | 'teamer';
   categories?: {id: number, name: string}[];
   created_at: string;
 }
@@ -88,7 +90,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
   };
 
 
-  const getTypeColor = (type: string) => {
+  const getTypeColor = (type: string | null) => {
     switch (type) {
       case 'gottesdienst': return 'primary';
       case 'gemeinde': return 'primary';
@@ -96,7 +98,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
     }
   };
 
-  const getTypeIcon = (type: string) => {
+  const getTypeIcon = (type: string | null) => {
     switch (type) {
       case 'gottesdienst': return home;
       case 'gemeinde': return people;
@@ -104,7 +106,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
     }
   };
 
-  const getTypeText = (type: string) => {
+  const getTypeText = (type: string | null) => {
     switch (type) {
       case 'gottesdienst': return 'Gottesdienst';
       case 'gemeinde': return 'Gemeinde';
@@ -216,7 +218,12 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
         emptyIconColor="#059669"
       >
         {filteredAndSortedActivities.map((activity, index) => {
-              const typeColor = activity.type === 'gottesdienst' ? '#007aff' : '#059669';
+              // Teamer:innen-Aktivitaeten haben keine Kategorie/keinen Typ und
+              // keine Punkte -> einheitlich Teamer-Farbe (nicht Gemeinde-Gruen).
+              const isTeamerActivity = activity.target_role === 'teamer';
+              const typeColor = isTeamerActivity
+                ? 'var(--app-color-teamer)'
+                : (activity.type === 'gottesdienst' ? '#007aff' : '#059669');
 
               return (
               <IonItemSliding
@@ -256,15 +263,18 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                       overflow: 'hidden'
                     }}
                   >
-                    {/* Eselsohr-Style Corner Badge */}
-                    <div className="app-corner-badges">
-                      <div
-                        className="app-corner-badge"
-                        style={{ backgroundColor: typeColor }}
-                      >
-                        +{activity.points}P
+                    {/* Eselsohr-Style Corner Badge — nur bei Konfi-Aktivitaeten
+                        (Teamer:innen-Aktivitaeten haben keine Punkte) */}
+                    {!isTeamerActivity && (
+                      <div className="app-corner-badges">
+                        <div
+                          className="app-corner-badge"
+                          style={{ backgroundColor: typeColor }}
+                        >
+                          +{activity.points}P
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
@@ -273,7 +283,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                           className="app-icon-circle app-icon-circle--lg"
                           style={{ backgroundColor: typeColor }}
                         >
-                          <IonIcon icon={getTypeIcon(activity.type)} />
+                          <IonIcon icon={isTeamerActivity ? ribbon : getTypeIcon(activity.type)} />
                         </div>
 
                         {/* Content */}

@@ -143,6 +143,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                 <IonDatetime
                   id="bonus-date"
                   presentation="date"
+                  firstDayOfWeek={1}
                   value={selectedDate}
                   onIonChange={(e) => {
                     const val = e.detail.value;

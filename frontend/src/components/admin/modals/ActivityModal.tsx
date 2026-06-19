@@ -186,6 +186,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
                 <IonDatetime
                   id="activity-date"
                   presentation="date"
+                  firstDayOfWeek={1}
                   value={selectedDate}
                   onIonChange={(e) => {
                     const val = e.detail.value;
