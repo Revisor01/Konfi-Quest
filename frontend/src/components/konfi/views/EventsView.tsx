@@ -155,7 +155,9 @@ const EventsView: React.FC<EventsViewProps> = ({
     else if (isMandatory && isPastEvent && attendanceStatus === 'present') statusColor = C.success;
     else if (isMandatory && isPastEvent && attendanceStatus === 'absent') statusColor = C.danger;
     else if (isMandatory && isPastEvent) statusColor = C.bonus;
-    else if (isMandatory) statusColor = C.info;
+    // KEINE eigene Pflicht-Farbe mehr: Pflicht ist ein separates Badge. Ein offenes
+    // Pflicht-Event soll wie jedes offene Event nach Anmeldestatus gefaerbt werden
+    // (offen=gruen, nur-Warteliste=orange, ausgebucht=rot) — faellt unten durch.
     else if (isKonfirmationEvent && !isPastEvent) statusColor = C.konfis; // Konfirmation = lila (analog Admin-Detail)
     else if (isParticipated && attendanceStatus === 'present') statusColor = C.success;
     else if (isParticipated && attendanceStatus === 'absent') statusColor = C.danger;

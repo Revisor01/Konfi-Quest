@@ -273,7 +273,10 @@ const EventsView: React.FC<EventsViewProps> = ({
                 if (isCancelled) return '#dc3545';
                 if (event.mandatory && isPastEvent && hasUnprocessedBookings) return '#007aff';
                 if (event.mandatory && isPastEvent) return '#6c757d';
-                if (event.mandatory) return '#dc2626'; // Rot - Pflicht
+                // KEIN pauschales Rot fuer Pflicht-Events: Pflicht ist ein eigenes
+                // Badge. Die Farbe richtet sich nach dem Anmeldestatus (offen=gruen,
+                // nur-Warteliste=orange, ausgebucht-ohne-Warteliste=rot) — wie im
+                // Detail. Sonst war jedes offene Pflicht-Event faelschlich rot.
                 if (isKonfirmationEvent && !isPastEvent) return '#5b21b6'; // Lila für Konfirmation
                 if (isFullyProcessed) return '#6c757d';
                 if (hasUnprocessedBookings) return '#007aff'; // Blau für Verbuchen
