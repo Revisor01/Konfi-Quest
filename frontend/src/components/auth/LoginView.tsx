@@ -180,6 +180,9 @@ const LoginView: React.FC = () => {
                   onIonInput={(e) => setUsername(e.detail.value!)}
                   placeholder="Dein Nutzername"
                   className="app-auth-input__value"
+                  autocapitalize="none"
+                  autocorrect="off"
+                  spellcheck={false}
                 />
               </IonItem>
 
@@ -194,6 +197,9 @@ const LoginView: React.FC = () => {
                   onIonInput={(e) => setPassword(e.detail.value!)}
                   placeholder="Dein Passwort"
                   className="app-auth-input__value"
+                  autocapitalize="none"
+                  autocorrect="off"
+                  spellcheck={false}
                 />
                 <IonIcon
                   icon={showPassword ? eyeOff : eye}

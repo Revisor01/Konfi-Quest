@@ -26,6 +26,12 @@ const validatePassword = (password) => {
   if (password.length < 8) {
     return 'Passwort muss mindestens 8 Zeichen lang sein';
   }
+  // Leerzeichen (inkl. Tab/Umbruch) sind nicht erlaubt: iOS-Tastaturen fuegen
+  // beim Tippen sichtbarer Passwoerter gerne Leerzeichen/Smart-Punctuation ein
+  // (z.B. "Offenbarung23,8" -> "Offenbarung 23.8"), was den spaeteren Login bricht.
+  if (/\s/.test(password)) {
+    return 'Passwort darf keine Leerzeichen enthalten';
+  }
   if (!/[A-Z]/.test(password)) {
     return 'Passwort muss mindestens einen Großbuchstaben enthalten';
   }

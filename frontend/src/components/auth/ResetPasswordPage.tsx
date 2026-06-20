@@ -242,6 +242,9 @@ const ResetPasswordPage: React.FC = () => {
                       onIonInput={(e) => setPassword(e.detail.value!)}
                       placeholder="Neues Passwort"
                       className="app-auth-input__value"
+                      autocapitalize="none"
+                      autocorrect="off"
+                      spellcheck={false}
                     />
                     <IonIcon
                       icon={showPassword ? eyeOff : eye}
@@ -275,6 +278,9 @@ const ResetPasswordPage: React.FC = () => {
                       onIonInput={(e) => setConfirmPassword(e.detail.value!)}
                       placeholder="Passwort wiederholen"
                       className="app-auth-input__value"
+                      autocapitalize="none"
+                      autocorrect="off"
+                      spellcheck={false}
                     />
                     <IonIcon
                       icon={showConfirmPassword ? eyeOff : eye}

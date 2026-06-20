@@ -93,7 +93,12 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
   // Unified RBAC login - works for both admins and konfis
   router.post('/login', ...loginMiddleware, validateLogin, async (req, res) => {
-    const { username, password } = req.body;
+    // Usernames werden beim Anlegen klein gespeichert (name.toLowerCase()...).
+    // Eingabe daher case-insensitiv machen: trim + lowercase, sonst scheitert
+    // der Login wenn jemand z.B. "Anna.Schmidt" statt "anna.schmidt" tippt
+    // (iOS schreibt das erste Zeichen automatisch gross).
+    const username = (req.body.username || '').trim().toLowerCase();
+    const { password } = req.body;
  console.warn(`Login-Versuch: ${username}`);
 
     try {
