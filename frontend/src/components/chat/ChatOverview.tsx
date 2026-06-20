@@ -72,32 +72,27 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
 
   const isAdmin = user?.type === 'admin';
 
-  const getRoomColor = (room: ChatRoomOverview): string => {
-    if (room.event_id) return 'var(--app-color-events)';    // Rot - Event-Chat
-    if (room.type === 'jahrgang') return 'var(--app-color-chat)';  // Tuerkis - Jahrgangs-Chat
-    if (room.type === 'group') return 'var(--app-color-group)';     // Orange - Gruppen-Chat
-    if (room.type === 'admin') return 'var(--app-color-teamer)';    // Pink - Team-Gruppe
-    if (room.type === 'direct') {
-      // Partner robust per user_id ermitteln (eindeutig), NICHT per user_type:
-      // der eigene user.type kann 'teamer' sein, participants kennen aber nur
-      // 'admin'|'konfi' -> man filterte sich selbst nicht raus und bekam faelschlich
-      // die Team-Farbe. Per ID passt sich die Farbe auch automatisch an, wenn ein
-      // Konfi zum Teamer wird.
-      const otherParticipant = room.participants?.find((p: { user_id: number; user_type: 'admin' | 'konfi'; name: string; display_name?: string }) =>
-        p.user_id !== user?.id
-      );
-      if (otherParticipant?.user_type === 'admin') return 'var(--app-color-teamer)'; // Pink - DM zum Team
-      return 'var(--app-color-konfis)';  // Lila - DM zu Konfi
-    }
-    return 'var(--app-color-konfis)';    // Fallback
+  // Zentrale Logik: Ist das ein Team-Chat (= pink, gehoert in den Team-Tab)?
+  // - Direktchat: Partner ist Teamer:in (partner_user_type='admin')
+  // - type='admin': ausdrueckliche Team-Gruppe
+  // - type='group': reiner Team-Gruppenchat (alle Teilnehmer Teamer:innen)
+  // Konfi-Direktchats + gemischte/Konfi-Gruppen sind KEINE Team-Chats.
+  const isTeamChat = (room: ChatRoomOverview): boolean => {
+    if (room.event_id) return false;
+    if (room.type === 'admin') return true;
+    if (room.type === 'direct') return room.partner_user_type === 'admin';
+    if (room.type === 'group') return room.is_team_only === true;
+    return false;
   };
 
   const getRoomColorClass = (room: ChatRoomOverview): string => {
     if (room.event_id) return 'events';
+    if (room.type === 'jahrgang') return 'chat-jahrgang';
+    // Team-Chats (Team-Gruppe / Team-DM / reine Team-group) -> pink
+    if (isTeamChat(room)) return 'team';
     switch (room.type) {
-      case 'admin': return 'team';
-      case 'jahrgang': return 'chat-jahrgang';
-      case 'group': return 'group';
+      case 'group': return 'group';     // gemischte/Konfi-Gruppe -> orange
+      case 'direct': return 'konfi';    // Konfi-DM -> lila
       default: return 'konfi';
     }
   };
@@ -255,8 +250,10 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
       // Typ-Filter
       if (filterType === 'alle') return true;
       if (filterType === 'direkt') return room.type === 'direct';
-      if (filterType === 'konfis') return room.type === 'jahrgang' || room.type === 'group';
-      if (filterType === 'team') return room.type === 'admin';
+      // Konfis-Tab: Jahrgangs-/Gruppenchats mit Konfis, KEINE reinen Team-Gruppen.
+      if (filterType === 'konfis') return (room.type === 'jahrgang' || room.type === 'group') && !isTeamChat(room);
+      // Team-Tab: Team-Gruppen + reine Team-group + Direktchats mit Teamer:innen.
+      if (filterType === 'team') return isTeamChat(room);
       return true;
     })
     .sort((a, b) => {

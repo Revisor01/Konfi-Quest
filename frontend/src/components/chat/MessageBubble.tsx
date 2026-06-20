@@ -441,7 +441,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         ) : message.file_path ? (
           <div>
             {message.content && (
-              <div style={{ marginBottom: '8px' }}>{message.content}</div>
+              <div style={{ marginBottom: '8px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{message.content}</div>
             )}
             {message.file_name?.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
               <div style={{ marginBottom: '8px' }}>
@@ -507,7 +507,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             )}
           </div>
         ) : (
-          <div>{message.content}</div>
+          <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{message.content}</div>
         )}
 
         <div style={{

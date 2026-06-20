@@ -75,6 +75,10 @@ export interface ChatRoomOverview extends ChatRoomBase {
   };
   unread_count: number;
   jahrgang_name?: string;
+  // Rolle des Direktchat-Partners (nur bei type='direct'): admin=Teamer:in, konfi=Konfi.
+  partner_user_type?: 'admin' | 'konfi';
+  // Reiner Team-Gruppenchat: alle Teilnehmer sind Teamer:innen (nur bei type='group' relevant).
+  is_team_only?: boolean;
 }
 
 export interface ChatRoomProps {

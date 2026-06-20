@@ -256,6 +256,14 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
               FROM chat_participants cp
               WHERE cp.room_id = r.id
           ) as participant_count,
+          -- Rolle des Direktchat-Partners (admin=Team, konfi=Konfi) fuer Chat-Farbe/Filter.
+          dm.partner_user_type,
+          -- Reiner Team-Gruppenchat: alle Teilnehmer sind admin (= Teamer:innen). Nur fuer Gruppen relevant.
+          (
+              SELECT COUNT(*) FILTER (WHERE cp.user_type <> 'admin') = 0 AND COUNT(*) > 0
+              FROM chat_participants cp
+              WHERE cp.room_id = r.id
+          ) as is_team_only,
           (
               SELECT COUNT(*)
               FROM chat_messages m
@@ -283,7 +291,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       LEFT JOIN jahrgaenge j ON r.jahrgang_id = j.id
       LEFT JOIN chat_read_status crs ON r.id = crs.room_id AND crs.user_id = $1 AND crs.user_type = $2
       LEFT JOIN LATERAL (
-          SELECT u.display_name as direct_name
+          SELECT u.display_name as direct_name, dp.user_type as partner_user_type
           FROM chat_participants dp
           JOIN users u ON dp.user_id = u.id
           WHERE dp.room_id = r.id
@@ -299,7 +307,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       ) lm ON true
       WHERE r.organization_id = $3
       GROUP BY r.id, r.type, r.organization_id, r.jahrgang_id, r.created_by, r.created_at, r.event_id, r.name,
-               j.name, crs.last_read_at, dm.direct_name, lm.last_message_at
+               j.name, crs.last_read_at, dm.direct_name, dm.partner_user_type, lm.last_message_at
       ORDER BY lm.last_message_at DESC NULLS LAST
     `;
       const params = [userId, userType, organizationId];

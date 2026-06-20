@@ -23,6 +23,7 @@ import {
 import { Message } from '../../types/chat';
 import { formatFileSize } from '../../utils/helpers';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Capacitor } from '@capacitor/core';
 
 // Validiert URLs für img src, erlaubt nur sichere Protokolle (blob: und data:)
 export const getSafePreviewUrl = (url: string | null | undefined): string | null => {
@@ -324,6 +325,9 @@ export const MessageInput = React.memo<MessageInputProps>(({
             autoGrow
             rows={1}
             autocapitalize="sentences"
+            spellcheck={true}
+            enterkeyhint="enter"
+            inputmode="text"
             style={{
               '--background': 'transparent',
               '--border-radius': '0',
@@ -338,6 +342,10 @@ export const MessageInput = React.memo<MessageInputProps>(({
               minHeight: '38px'
             }}
             onKeyDown={(e) => {
+              // Auf nativen Apps (iOS/Android, Touch-Tastatur) erzeugt Enter IMMER
+              // einen Zeilenumbruch — gesendet wird nur ueber den Senden-Button.
+              // Sonst (Browser/Hardware-Tastatur) sendet Enter, Shift+Enter = Umbruch.
+              if (Capacitor.isNativePlatform()) return;
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 onSend();
@@ -417,17 +425,27 @@ export const selectFromGallery = async (): Promise<CameraResult | null> => {
   return { file, previewUrl: photo.dataUrl };
 };
 
-// Auto-capitalize function for text input
+// Auto-capitalize fuer das Eingabefeld: schreibt den ersten Buchstaben sowie den
+// ersten Buchstaben nach einem Satzende (. ! ?) oder Zeilenumbruch gross. Greift nur
+// am Ende der Eingabe (= das gerade getippte Zeichen), damit der Cursor nicht springt
+// und bereits getippter Text nicht nachtraeglich umgeschrieben wird.
 export const autoCapitalize = (value: string): string => {
   if (!value) return '';
-  if (value.length === 1) return value.toUpperCase();
 
-  const lastTwoChars = value.slice(-3, -1);
-  if ((lastTwoChars.endsWith('. ') || lastTwoChars.endsWith('? ') || lastTwoChars.endsWith('! '))) {
-    const newChar = value.slice(-1);
-    if (newChar !== newChar.toUpperCase() && /[a-z\u00e4\u00f6\u00fc]/.test(newChar)) {
-      return value.slice(0, -1) + newChar.toUpperCase();
-    }
+  const newChar = value.slice(-1);
+  // Nur Kleinbuchstaben (inkl. Umlaute) hochstellen, alles andere unveraendert lassen.
+  if (newChar === newChar.toUpperCase() || !/[a-z\u00e4\u00f6\u00fc]/.test(newChar)) {
+    return value;
+  }
+
+  // Am Satzanfang? = erstes Zeichen ueberhaupt ODER vor dem letzten Zeichen steht
+  // (ggf. mit einem Space) ein Satzende-Zeichen bzw. ein Zeilenumbruch.
+  const before = value.slice(0, -1);
+  const atStart = before.length === 0;
+  const afterSentenceEnd = /([.!?]\s|\n)\s*$/.test(before);
+
+  if (atStart || afterSentenceEnd) {
+    return before + newChar.toUpperCase();
   }
 
   return value;
