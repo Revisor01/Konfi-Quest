@@ -2634,3 +2634,11 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   margin-left: 4px;
   white-space: nowrap;
 }
+
+/* Chat-Eingabefeld: max. ~5 Zeilen, danach scrollt der Inhalt im Feld (statt
+   unbegrenzt zu wachsen und den Senden-Button zu verdecken). Trifft das innere
+   native <textarea> im Shadow-DOM. */
+.chat-message-textarea::part(native) {
+  max-height: 120px;
+  overflow-y: auto;
+}

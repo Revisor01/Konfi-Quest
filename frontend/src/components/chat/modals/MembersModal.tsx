@@ -29,7 +29,6 @@ import {
   person,
   personAddOutline,
   checkmarkOutline,
-  checkmarkCircle,
   search,
   people,
   peopleOutline,
@@ -357,20 +356,9 @@ const MembersModal: React.FC<MembersModalProps> = ({
               )}
             </div>
           </div>
-
-          {/* Auswahl-Markierung im Add-Modus: Haekchen wie in anderen Auswahllisten
-              (keine Checkbox). Selektion ist zusaetzlich am Hintergrund erkennbar. */}
-          {isSelectable && isSelected && (
-            <IonIcon
-              icon={checkmarkCircle}
-              style={{
-                fontSize: '1.5rem',
-                flexShrink: 0,
-                marginLeft: '8px',
-                color: isTeam ? 'var(--app-color-teamer)' : 'var(--app-color-konfis)'
-              }}
-            />
-          )}
+          {/* Keine Checkbox / kein Haekchen: die Auswahl wird allein ueber die
+              Hintergrundfaerbung des Listen-Elements (app-list-item--selected)
+              markiert — konsistent mit allen anderen Auswahllisten der App. */}
         </div>
       </div>
     );

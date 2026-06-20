@@ -706,14 +706,18 @@ export const ActivitiesSection = React.memo<ActivitiesSectionProps>(({
               const isActivityTypeDisabled = !activity.isPending
                 && ((activity.type === 'gottesdienst' && currentKonfi?.gottesdienst_enabled === false)
                 || (activity.type === 'gemeinde' && currentKonfi?.gemeinde_enabled === false));
-              // Border + Icon-Kreis: immer Activities-Gruen (pending = Warning-Orange)
-              const activityColor = activity.isPending ? 'var(--app-color-warning)' : 'var(--app-color-activities)';
-              // Corner-Badge: nach Punkt-Typ (Konfi)
-              const badgeColor = activity.isPending
+              // Einheitliche Typ-Farbe fuer BEIDE vorderen Elemente (Eselsohr-Badge
+              // UND Icon-Kreis/Border): Gottesdienst=blau, Gemeinde=gruen, Teamer=pink.
+              // Pending = Warning-Orange.
+              const typeColor = activity.isPending
                 ? 'var(--app-color-warning)'
+                : isTeamer
+                ? 'var(--app-color-teamer)'
                 : activity.type === 'gottesdienst'
                 ? 'var(--app-color-gottesdienst)'
                 : 'var(--app-color-gemeinde)';
+              const activityColor = typeColor;
+              const badgeColor = typeColor;
               return (
               <IonItemSliding key={activity.id} style={{ marginBottom: index < Math.min(activities.length, 10) - 1 ? '8px' : '0' }}>
                 <IonItem

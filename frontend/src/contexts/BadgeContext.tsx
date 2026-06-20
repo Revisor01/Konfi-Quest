@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo } from 'react';
 import { Badge } from '@capawesome/capacitor-badge';
+import { Capacitor } from '@capacitor/core';
 import api from '../services/api';
 import { writeQueue } from '../services/writeQueue';
 import { networkMonitor } from '../services/networkMonitor';
@@ -121,17 +122,18 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     });
   }, [chatUnreadByRoom]);
 
-  // Sync Device Badge bei Änderung von totalBadgeCount
+  // Sync Device Badge bei Änderung von totalBadgeCount.
+  // Nur auf nativen Plattformen: im Desktop-Browser existiert navigator.setAppBadge/
+  // clearAppBadge nicht (z.B. Firefox) -> der Web-Fallback des Plugins wirft eine
+  // unhandled rejection. Promises zusaetzlich mit .catch absichern.
   useEffect(() => {
-    try {
-      if (totalBadgeCount > 0) {
-        Badge.set({ count: totalBadgeCount });
-      } else {
-        Badge.clear();
-      }
-    } catch (error) {
+    if (!Capacitor.isNativePlatform()) return;
+    const p = totalBadgeCount > 0
+      ? Badge.set({ count: totalBadgeCount })
+      : Badge.clear();
+    Promise.resolve(p).catch((error) => {
       console.warn('BadgeContext: Badge nicht verfügbar:', error);
-    }
+    });
   }, [totalBadgeCount]);
 
   // WebSocket: Live-Update bei neuen Nachrichten
