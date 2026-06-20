@@ -2,6 +2,7 @@ const PushService = require('./pushService');
 const cron = require('node-cron');
 const { deleteKonfiCascade } = require('../utils/konfiDeletion');
 const emailService = require('./emailService');
+const apm = require('../utils/apm');
 
 // Vorlauf fuer die Lizenz-Ablauf-Erinnerung (Tage vor trial_ends_at)
 const LICENSE_REMINDER_DAYS = 14;
@@ -14,6 +15,7 @@ class BackgroundService {
   static wrappedCronTask = null;
   static autoDeletionCronTask = null;
   static trialExpiryCronTask = null;
+  static apmSnapshotInterval = null;
   static wrappedRouter = null;
 
   /**
@@ -917,6 +919,37 @@ class BackgroundService {
   /**
    * Startet alle Background Services
    */
+  /**
+   * Schreibt alle 5 Minuten einen APM-Snapshot in apm_snapshots (persistente
+   * Historie ueber Deploys hinweg) und raeumt Snapshots aelter als 30 Tage auf.
+   */
+  static startApmSnapshotService(db) {
+    if (this.apmSnapshotInterval) return;
+    const FIVE_MINUTES = 5 * 60 * 1000;
+    const write = async () => {
+      try {
+        const s = apm.persistSummary();
+        await db.query(
+          `INSERT INTO apm_snapshots (total_requests, total_errors, max_in_flight, worst_p95_ms, worst_route)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [s.totalRequests, s.totalErrors, s.maxInFlight, s.worstP95Ms, s.worstRoute]
+        );
+        // Aufraeumen: nur die letzten 30 Tage behalten.
+        await db.query("DELETE FROM apm_snapshots WHERE captured_at < NOW() - INTERVAL '30 days'");
+      } catch (error) {
+        console.error('APM-Snapshot fehlgeschlagen:', error.message);
+      }
+    };
+    this.apmSnapshotInterval = setInterval(write, FIVE_MINUTES);
+  }
+
+  static stopApmSnapshotService() {
+    if (this.apmSnapshotInterval) {
+      clearInterval(this.apmSnapshotInterval);
+      this.apmSnapshotInterval = null;
+    }
+  }
+
   static startAllServices(db, options = {}) {
     if (options.wrappedRouter) {
       this.wrappedRouter = options.wrappedRouter;
@@ -928,6 +961,7 @@ class BackgroundService {
     this.startWrappedCron(db);
     this.startAutoDeletionCron(db);
     this.startTrialExpiryCron(db);
+    this.startApmSnapshotService(db);
   }
 
   /**
@@ -941,6 +975,7 @@ class BackgroundService {
     this.stopWrappedCron();
     this.stopAutoDeletionCron();
     this.stopTrialExpiryCron();
+    this.stopApmSnapshotService();
   }
 }
 

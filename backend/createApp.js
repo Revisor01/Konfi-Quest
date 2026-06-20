@@ -283,13 +283,36 @@ function createApp(db, options = {}) {
     res.status(dbOk ? 200 : 503).json(body);
   });
 
-  // Metrics-Endpoint — APM-Aggregate (langsamste/fehlerhafteste Routen). Nur
-  // super_admin, da es interne Performance-Daten preisgibt.
+  // Metrics-Endpoint — APM-Aggregate (langsamste/meistgenutzte Routen, parallele
+  // Requests, Live-Verlauf, letzte Fehler). Nur super_admin, da es interne
+  // Performance-Daten preisgibt.
   app.get('/api/metrics', rbacVerifier, (req, res) => {
     if (!req.user?.is_super_admin) {
       return res.status(403).json({ error: 'Zugriff verweigert' });
     }
     res.json(apmSnapshot());
+  });
+
+  // Persistente APM-Historie (ueber Deploys hinweg). Liefert die gespeicherten
+  // Snapshots der letzten N Tage; das Dashboard bildet daraus Deltas pro Intervall.
+  app.get('/api/metrics/history', rbacVerifier, async (req, res) => {
+    if (!req.user?.is_super_admin) {
+      return res.status(403).json({ error: 'Zugriff verweigert' });
+    }
+    const days = Math.min(30, Math.max(1, parseInt(req.query.days, 10) || 7));
+    try {
+      const { rows } = await db.query(
+        `SELECT captured_at, total_requests, total_errors, max_in_flight, worst_p95_ms, worst_route
+         FROM apm_snapshots
+         WHERE captured_at > NOW() - ($1 || ' days')::interval
+         ORDER BY captured_at ASC`,
+        [String(days)]
+      );
+      res.json({ days, snapshots: rows });
+    } catch (err) {
+      console.error('Database error in GET /api/metrics/history:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
   });
 
   // Auth Routes

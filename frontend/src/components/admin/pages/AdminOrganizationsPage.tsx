@@ -11,12 +11,14 @@ import {
   IonButton,
   IonIcon,
   useIonModal,
-  useIonAlert
+  useIonAlert,
+  useIonRouter
 } from '@ionic/react';
 import {
   logOutOutline,
   add,
-  arrowBack
+  arrowBack,
+  pulseOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -67,6 +69,7 @@ const AdminOrganizationsPage: React.FC = () => {
 
   // Alert Hook für Bestätigungsdialoge
   const [presentAlert] = useIonAlert();
+  const router = useIonRouter();
 
   const handleLogout = () => {
     presentAlert({
@@ -163,6 +166,9 @@ const AdminOrganizationsPage: React.FC = () => {
           </IonButtons>
           <IonTitle>Organisationen</IonTitle>
           <IonButtons slot="end">
+            <IonButton onClick={() => router.push('/admin/metrics')} title="Performance / Metrics">
+              <IonIcon icon={pulseOutline} />
+            </IonButton>
             <IonButton onClick={presentOrganizationModal}>
               <IonIcon icon={add} />
             </IonButton>

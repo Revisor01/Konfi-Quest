@@ -40,6 +40,7 @@ import AdminActivityRequestsPage from '../admin/pages/AdminActivityRequestsPage'
 import AdminUsersPage from '../admin/pages/AdminUsersPage';
 // AdminRolesPage entfernt - Rollen sind jetzt hardcoded
 import AdminOrganizationsPage from '../admin/pages/AdminOrganizationsPage';
+import AdminMetricsPage from '../admin/pages/AdminMetricsPage';
 import AdminProfilePage from '../admin/pages/AdminProfilePage';
 import AdminSettingsPage from '../admin/pages/AdminSettingsPage';
 import AdminMaterialPage from '../admin/pages/AdminMaterialPage';
@@ -192,6 +193,7 @@ const MainTabs: React.FC = () => {
       <IonRouterOutlet>
         <Route exact path="/admin" render={() => <Redirect to="/admin/organizations" />} />
         <Route exact path="/admin/organizations" component={AdminOrganizationsPage} />
+        <Route exact path="/admin/metrics" component={AdminMetricsPage} />
         <Route exact path="/login" render={() => <Redirect to="/admin/organizations" />} />
         <Route exact path="/" render={() => <Redirect to="/admin/organizations" />} />
       </IonRouterOutlet>
