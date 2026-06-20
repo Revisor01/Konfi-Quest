@@ -90,6 +90,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
           name: row.name,
           points: row.points,
           type: row.type,
+          // target_role MUSS mit raus: das Frontend faerbt/markiert Teamer-
+          // Aktivitaeten darueber (pink, ohne Punkte). Fehlte es, wurden Teamer-
+          // Aktivitaeten faelschlich wie Konfi-Aktivitaeten (blau/gruen + Punkte) gezeigt.
+          target_role: row.target_role,
           categories: categories,
           created_at: row.created_at
         };
