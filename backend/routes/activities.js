@@ -11,10 +11,13 @@ const liveUpdate = require('../utils/liveUpdate');
 module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwardBadges) => {
 
   // Validierungsregeln
+  // Hinweis: type ist bei Teamer-Aktivitaeten bewusst null (kein Punkt-Typ).
+  // optional({ values: 'null' }) ueberspringt die Pruefung auch bei explizitem
+  // null (nicht nur bei undefined) -> sonst 400 "Validierungsfehler" beim Speichern.
   const validateCreateActivity = [
     commonValidations.name,
     body('points').optional().isInt({ min: 0 }).withMessage('Punkte müssen eine Ganzzahl >= 0 sein'),
-    body('type').optional().isIn(['gottesdienst', 'gemeinde']).withMessage('Typ muss "gottesdienst" oder "gemeinde" sein'),
+    body('type').optional({ values: 'null' }).isIn(['gottesdienst', 'gemeinde']).withMessage('Typ muss "gottesdienst" oder "gemeinde" sein'),
     body('target_role').optional().isIn(['konfi', 'teamer']).withMessage('Zielgruppe muss "konfi" oder "teamer" sein'),
     body('category_ids').optional().isArray().withMessage('Kategorie-IDs müssen ein Array sein'),
     handleValidationErrors
@@ -24,7 +27,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
     commonValidations.name,
     body('points').optional().isInt({ min: 0 }).withMessage('Punkte müssen eine Ganzzahl >= 0 sein'),
-    body('type').optional().isIn(['gottesdienst', 'gemeinde']).withMessage('Typ muss "gottesdienst" oder "gemeinde" sein'),
+    body('type').optional({ values: 'null' }).isIn(['gottesdienst', 'gemeinde']).withMessage('Typ muss "gottesdienst" oder "gemeinde" sein'),
     body('target_role').optional().isIn(['konfi', 'teamer']).withMessage('Zielgruppe muss "konfi" oder "teamer" sein'),
     handleValidationErrors
   ];

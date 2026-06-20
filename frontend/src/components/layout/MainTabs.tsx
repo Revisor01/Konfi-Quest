@@ -228,6 +228,10 @@ const MainTabs: React.FC = () => {
           <Route exact path="/admin/settings/dashboard" component={AdminDashboardSettingsPage} />
           <Route exact path="/admin/settings" component={AdminSettingsPage} />
           <Route exact path="/admin/profile" component={AdminProfilePage} />
+          {/* Performance/Metrics — auch im normalen Admin-Outlet, da super_admins
+              meist role_name=org_admin haben (is_super_admin=true). Die Seite selbst
+              prueft die Berechtigung serverseitig (403 fuer nicht-super-admins). */}
+          <Route exact path="/admin/metrics" component={AdminMetricsPage} />
           <Route exact path="/login" render={() => <Redirect to="/admin/konfis" />} />
           <Route exact path="/" render={() => <Redirect to="/admin/konfis" />} />
         </IonRouterOutlet>

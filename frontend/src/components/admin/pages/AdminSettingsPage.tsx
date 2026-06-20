@@ -30,6 +30,7 @@ import {
   notifications,
   qrCode,
   appsOutline,
+  pulseOutline,
   document as documentIcon
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -217,6 +218,18 @@ const AdminSettingsPage: React.FC = () => {
                   <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Organisationen</h2>
                     <p className="app-settings-item__subtitle">Gemeinden und Organisationen verwalten</p>
+                  </div>
+                </div>
+                <div
+                  className="app-list-item app-list-item--chat app-settings-item"
+                  onClick={() => router.push('/admin/metrics')}
+                >
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--chat">
+                    <IonIcon icon={pulseOutline} />
+                  </div>
+                  <div className="app-flex-fill">
+                    <h2 className="app-settings-item__title">Performance</h2>
+                    <p className="app-settings-item__subtitle">Requests, Auslastung, langsame Routen, Fehler</p>
                   </div>
                 </div>
                 </div>
