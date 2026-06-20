@@ -63,6 +63,11 @@ function createApp(db, options = {}) {
     app.use(rateLimiters.general);
   }
 
+  // APM: misst Request-Dauer/Fehlerrate pro Route (in-memory) und loggt langsame
+  // Requests. Frueh registriert, damit alle Routen erfasst werden.
+  const { apmMiddleware, snapshot: apmSnapshot } = require('./utils/apm');
+  app.use(apmMiddleware);
+
   app.use(express.json());
 
   // Express 5: req.body ist bei fehlendem/leerem Body undefined (in Express 4
@@ -276,6 +281,15 @@ function createApp(db, options = {}) {
       responseTimeMs: Date.now() - startedAt,
     };
     res.status(dbOk ? 200 : 503).json(body);
+  });
+
+  // Metrics-Endpoint — APM-Aggregate (langsamste/fehlerhafteste Routen). Nur
+  // super_admin, da es interne Performance-Daten preisgibt.
+  app.get('/api/metrics', rbacVerifier, (req, res) => {
+    if (!req.user?.is_super_admin) {
+      return res.status(403).json({ error: 'Zugriff verweigert' });
+    }
+    res.json(apmSnapshot());
   });
 
   // Auth Routes
