@@ -38,6 +38,37 @@ const getMimeFromFileName = (fileName: string): string => {
   return mimeMap[ext] || 'application/octet-stream';
 };
 
+// Wandelt URLs (http/https und www.) in klickbare Links um. Gibt ein Array aus
+// Text-Fragmenten und <a>-Elementen zurueck, das direkt in JSX gerendert werden kann.
+// Links oeffnen extern (window.open _blank) und stoppen die Klick-Propagation,
+// damit nicht gleichzeitig die Nachricht selektiert/das Reaktionsmenue getriggert wird.
+const URL_REGEX = /((?:https?:\/\/|www\.)[^\s<]+[^\s<.,;:!?)\]}'"])/gi;
+
+const linkifyText = (text: string): React.ReactNode => {
+  if (!text) return text;
+  const parts = text.split(URL_REGEX);
+  return parts.map((part, i) => {
+    if (i % 2 === 1) {
+      const href = part.startsWith('www.') ? `https://${part}` : part;
+      return (
+        <a
+          key={i}
+          href={href}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            window.open(href, '_blank');
+          }}
+          style={{ color: 'inherit', textDecoration: 'underline', wordBreak: 'break-all' }}
+        >
+          {part}
+        </a>
+      );
+    }
+    return <React.Fragment key={i}>{part}</React.Fragment>;
+  });
+};
+
 interface MessageBubbleUser {
   id: number;
   type: 'admin' | 'konfi' | 'teamer' | 'user';
@@ -441,7 +472,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         ) : message.file_path ? (
           <div>
             {message.content && (
-              <div style={{ marginBottom: '8px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{message.content}</div>
+              <div style={{ marginBottom: '8px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{linkifyText(message.content)}</div>
             )}
             {message.file_name?.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
               <div style={{ marginBottom: '8px' }}>
@@ -507,7 +538,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             )}
           </div>
         ) : (
-          <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{message.content}</div>
+          <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{linkifyText(message.content)}</div>
         )}
 
         <div style={{

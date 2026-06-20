@@ -44,6 +44,11 @@ async function deleteKonfiCascade(client, userId, organizationId) {
   await client.query("DELETE FROM chat_poll_votes WHERE user_id = $1", [userId]);
   await client.query("DELETE FROM push_tokens WHERE user_id = $1", [userId]);
   await client.query("DELETE FROM konfi_profiles WHERE user_id = $1", [userId]);
+  // Von diesem Konfi ERSTELLTE Chat-Raeume (z.B. ein selbst gestarteter Direktchat):
+  // created_by -> NULL setzen, sonst blockt der FK chat_rooms_created_by_fkey das
+  // Loeschen des Users (500). Der Chat bleibt fuer die anderen Teilnehmer erhalten;
+  // der Konfi selbst wurde oben schon aus chat_participants entfernt.
+  await client.query("UPDATE chat_rooms SET created_by = NULL WHERE created_by = $1", [userId]);
   await client.query("DELETE FROM users WHERE id = $1", [userId]);
 }
 

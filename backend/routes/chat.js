@@ -9,6 +9,7 @@ const { handleValidationErrors } = require('../middleware/validation');
 const PushService = require('../services/pushService');
 const { validateMagicBytes } = require('../middleware/uploadValidation');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
+const { syncTeamChat } = require('../utils/teamChat');
 
 module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   const { verifyTokenRBAC } = rbacMiddleware;
@@ -241,6 +242,16 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         }
       } catch (syncErr) {
         console.error('Jahrgangs-Chat-Sync beim Laden der Raeume fehlgeschlagen:', syncErr.message);
+      }
+
+      // Team-Chat-Mitgliedschaft synchronisieren (nur fuer Team-Mitglieder, nie Konfis).
+      // Stellt sicher, dass der "Team"-Chat existiert und alle Admins/Teamer drin sind.
+      if (userType !== 'konfi') {
+        try {
+          await syncTeamChat(db, organizationId, userId);
+        } catch (teamSyncErr) {
+          console.error('Team-Chat-Sync beim Laden der Raeume fehlgeschlagen:', teamSyncErr.message);
+        }
       }
       
       // Admins and Konfis use the same optimized query now.
@@ -795,14 +806,16 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         cp.joined_at,
         u.display_name as name,
         u.role_title,
+        r.name as role_name,
         r.display_name as role_display_name,
+        -- Jahrgang nur fuer echte Konfis; Team-Mitglieder (admin/teamer) haben keinen.
         CASE
-          WHEN cp.user_type = 'admin' THEN NULL
-          ELSE kp.jahrgang_id
+          WHEN cp.user_type = 'konfi' THEN kp.jahrgang_id
+          ELSE NULL
         END as jahrgang_id,
         CASE
-          WHEN cp.user_type = 'admin' THEN NULL
-          ELSE j.name
+          WHEN cp.user_type = 'konfi' THEN j.name
+          ELSE NULL
         END as jahrgang_name
       FROM chat_participants cp
       LEFT JOIN users u ON cp.user_id = u.id

@@ -12,7 +12,6 @@ import {
   IonList,
   IonItemGroup,
   IonListHeader,
-  IonCheckbox,
   IonSpinner,
   IonRefresher,
   IonRefresherContent,
@@ -30,6 +29,7 @@ import {
   person,
   personAddOutline,
   checkmarkOutline,
+  checkmarkCircle,
   search,
   people,
   peopleOutline,
@@ -46,14 +46,22 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 
 interface Participant {
   user_id: number;
-  user_type: 'admin' | 'konfi';
+  user_type: 'admin' | 'konfi' | 'teamer';
   name: string;
+  role_name?: string;
   role_title?: string;
   role_display_name?: string;
   jahrgang_id?: number;
   jahrgang_name?: string;
   joined_at: string;
 }
+
+// Team-Mitglied = Admin/Org-Admin ODER Teamer:in (NICHT Konfi). Teamer wurden bisher
+// faelschlich wie Konfis dargestellt (lila, ohne Funktion), weil nur auf 'admin'
+// geprueft wurde. Diese Helfer behandeln 'teamer' konsistent als Team.
+const isTeamType = (t?: string) => t === 'admin' || t === 'teamer';
+const isTeamUser = (u: { user_type?: string; type?: string }) =>
+  isTeamType('user_type' in u ? u.user_type : u.type);
 
 interface MembersModalProps {
   onClose: () => void;
@@ -152,15 +160,15 @@ const MembersModal: React.FC<MembersModalProps> = ({
     );
   };
 
-  // Sortierung: Admins zuerst, dann alphabetisch nach Name
+  // Sortierung: Team-Mitglieder (Admins + Teamer) zuerst, dann alphabetisch nach Name
   const sortUsers = <T extends { name?: string; display_name?: string; type?: string; user_type?: string }>(users: T[]): T[] => {
     return [...users].sort((a, b) => {
-      const aIsAdmin = ('user_type' in a ? a.user_type : a.type) === 'admin';
-      const bIsAdmin = ('user_type' in b ? b.user_type : b.type) === 'admin';
+      const aIsTeam = isTeamUser(a);
+      const bIsTeam = isTeamUser(b);
 
-      // Admins zuerst
-      if (aIsAdmin && !bIsAdmin) return -1;
-      if (!aIsAdmin && bIsAdmin) return 1;
+      // Team-Mitglieder zuerst
+      if (aIsTeam && !bIsTeam) return -1;
+      if (!aIsTeam && bIsTeam) return 1;
 
       // Dann alphabetisch nach Name
       const aName = (a.name || a.display_name || '').toLowerCase();
@@ -262,11 +270,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
 
   // Rolle/Funktion ermitteln (für Eselsohr)
   const getRoleText = (targetUser: ChatUser | Participant) => {
-    const isAdmin = 'user_type' in targetUser
-      ? targetUser.user_type === 'admin'
-      : targetUser.type === 'admin';
-
-    if (isAdmin) {
+    if (isTeamUser(targetUser)) {
       if ('role_title' in targetUser && targetUser.role_title) {
         return targetUser.role_title;
       }
@@ -276,7 +280,9 @@ const MembersModal: React.FC<MembersModalProps> = ({
       if ('role_description' in targetUser && targetUser.role_description) {
         return targetUser.role_description;
       }
-      return 'Admin';
+      // Fallback nach echter Rolle (Teamer vs. Admin), wenn kein Titel hinterlegt ist.
+      const roleName = 'role_name' in targetUser ? targetUser.role_name : undefined;
+      return roleName === 'teamer' ? 'Teamer:in' : 'Admin';
     }
 
     return 'Konfi';
@@ -300,19 +306,17 @@ const MembersModal: React.FC<MembersModalProps> = ({
     isSelected: boolean,
     onToggle?: () => void
   ) => {
-    const isAdmin = 'user_type' in targetUser
-      ? targetUser.user_type === 'admin'
-      : targetUser.type === 'admin';
+    const isTeam = isTeamUser(targetUser);
     const name = getUserDisplayName(targetUser);
-    const participantId = `${isAdmin ? 'admin' : 'konfi'}-${'user_id' in targetUser ? targetUser.user_id : targetUser.id}`;
+    const participantId = `${isTeam ? 'admin' : 'konfi'}-${'user_id' in targetUser ? targetUser.user_id : targetUser.id}`;
     const roleText = getRoleText(targetUser);
     const jahrgang = getJahrgang(targetUser);
-    const badgeColor = isAdmin ? 'var(--app-color-teamer)' : 'var(--app-color-konfis)';
+    const badgeColor = isTeam ? 'var(--app-color-teamer)' : 'var(--app-color-konfis)';
 
     return (
       <div
         key={participantId}
-        className={`app-list-item ${isAdmin ? 'app-list-item--team' : 'app-list-item--konfi'} ${isSelected ? 'app-list-item--selected' : ''}`}
+        className={`app-list-item ${isTeam ? 'app-list-item--team' : 'app-list-item--konfi'} ${isSelected ? 'app-list-item--selected' : ''}`}
         onClick={isSelectable ? onToggle : undefined}
         style={{ cursor: isSelectable ? 'pointer' : 'default', position: 'relative', overflow: 'hidden', width: '100%' }}
       >
@@ -323,19 +327,19 @@ const MembersModal: React.FC<MembersModalProps> = ({
             style={{ backgroundColor: badgeColor, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
             title={roleText}
           >
-            <IonIcon icon={isAdmin ? people : person} style={{ color: '#fff', fontSize: '0.85rem' }} />
+            <IonIcon icon={isTeam ? people : person} style={{ color: '#fff', fontSize: '0.85rem' }} />
           </div>
         </div>
 
         <div className="app-list-item__row">
           <div className="app-list-item__main">
-            <div className={`app-icon-circle app-icon-circle--lg ${isAdmin ? 'app-icon-circle--team' : 'app-icon-circle--konfi'}`}>
+            <div className={`app-icon-circle app-icon-circle--lg ${isTeam ? 'app-icon-circle--team' : 'app-icon-circle--konfi'}`}>
               <IonIcon icon={person} />
             </div>
             <div className="app-list-item__content">
               <div className="app-list-item__title" style={{ paddingRight: '70px' }}>{name}</div>
-              {/* Meta-Zeile: Jahrgang fuer Konfi, Rolle fuer Admin */}
-              {isAdmin && roleText && roleText !== 'Admin' && (
+              {/* Meta-Zeile: Jahrgang fuer Konfi, Rolle/Funktion fuer Team (Admin/Teamer) */}
+              {isTeam && roleText && (
                 <div className="app-list-item__meta">
                   <span className="app-list-item__meta-item">
                     <IonIcon icon={peopleOutline} style={{ color: 'var(--app-color-teamer)' }} />
@@ -343,7 +347,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
                   </span>
                 </div>
               )}
-              {!isAdmin && jahrgang && (
+              {!isTeam && jahrgang && (
                 <div className="app-list-item__meta">
                   <span className="app-list-item__meta-item">
                     <IonIcon icon={calendar} style={{ color: 'var(--app-color-jahrgang)' }} />
@@ -354,14 +358,16 @@ const MembersModal: React.FC<MembersModalProps> = ({
             </div>
           </div>
 
-          {/* Checkbox für Add-Modus */}
-          {isSelectable && (
-            <IonCheckbox
-              checked={isSelected}
+          {/* Auswahl-Markierung im Add-Modus: Haekchen wie in anderen Auswahllisten
+              (keine Checkbox). Selektion ist zusaetzlich am Hintergrund erkennbar. */}
+          {isSelectable && isSelected && (
+            <IonIcon
+              icon={checkmarkCircle}
               style={{
-                '--checkbox-background-checked': isAdmin ? 'var(--app-color-teamer)' : 'var(--app-color-konfis)',
-                '--border-color-checked': isAdmin ? 'var(--app-color-teamer)' : 'var(--app-color-konfis)',
-                '--checkmark-color': 'white'
+                fontSize: '1.5rem',
+                flexShrink: 0,
+                marginLeft: '8px',
+                color: isTeam ? 'var(--app-color-teamer)' : 'var(--app-color-konfis)'
               }}
             />
           )}
