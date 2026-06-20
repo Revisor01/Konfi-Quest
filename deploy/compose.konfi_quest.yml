@@ -1,13 +1,17 @@
 version: '3.8'
 # Konfi-Quest Stack (Portainer Stack 249) — Referenzkopie im Repo.
-# QUELLE DER WAHRHEIT bleibt der Portainer-Stack; diese Datei dokumentiert die
-# Struktur und dient als Vorlage fuer das Zero-Downtime-Setup.
+# QUELLE DER WAHRHEIT bleibt der Portainer-Stack; diese Datei dokumentiert die Struktur.
 #
-# ZERO-DOWNTIME: Das Backend laeuft als ZWEI Replicas (backend + backend2) hinter
-# Traefik mit demselben Service-Namen (konfi-api). Traefik load-balanced ueber beide
-# und nimmt dank loadbalancer.healthcheck nur GESUNDE Container ins Routing. Beim
-# Deploy werden die beiden NACHEINANDER neu gestartet (CI-Skript) -> immer mindestens
-# einer gesund -> keine Ausfallzeit, kein Konfi fliegt raus.
+# STAND 21.06.2026: Das Backend laeuft als ZWEI Replicas (backend + backend2) hinter
+# Traefik (gemeinsamer Service konfi-api + loadbalancer.healthcheck -> nur gesunde
+# Replicas bekommen Traffic). Cron-Leader: nur backend (backend2 RUN_BACKGROUND_JOBS=false).
+# Lastverteilung verifiziert ~50/50. Der Stack laeuft auf FESTEM Commit-SHA-Tag
+# (das CI schreibt den Tag beim Deploy um); :latest ist auf ghcr unzuverlaessig.
+#
+# Der LUECKENLOSE (rollende) Deploy ist NOCH NICHT scharf — siehe deploy/rolling-deploy.sh
+# (2 offene Punkte: Traefik-Drain-Timing + fester-SHA-statt-latest). Bis dahin deployt
+# das CI weiter per update_stack (kurze Luecke; nachts unkritisch).
+# <TAG> wird beim Deploy durch den aktuellen Commit-SHA ersetzt.
 services:
   postgres:
     image: postgres:15-alpine
@@ -44,7 +48,7 @@ services:
 
   # --- Backend-Replica 1 ---
   backend:
-    image: ghcr.io/revisor01/konfi-quest-backend:latest
+    image: ghcr.io/revisor01/konfi-quest-backend:<TAG>
     environment: &backend_env
       NODE_ENV: production
       JWT_SECRET: "YFDRvxxiAty8H7BDSZ6Pt982mOfcQcsRkwUMvb3dTNMPBK94rn70xprRqhE4P"
@@ -111,7 +115,7 @@ services:
   # WICHTIG: RUN_BACKGROUND_JOBS=false -> nur Replica 1 (backend) ist Cron-Leader,
   # sonst liefen Auto-Deletion/Reminder/APM-Snapshots doppelt.
   backend2:
-    image: ghcr.io/revisor01/konfi-quest-backend:latest
+    image: ghcr.io/revisor01/konfi-quest-backend:<TAG>
     environment:
       <<: *backend_env
       RUN_BACKGROUND_JOBS: "false"
@@ -149,7 +153,7 @@ services:
       - internal
 
   frontend:
-    image: ghcr.io/revisor01/konfi-quest-frontend:latest
+    image: ghcr.io/revisor01/konfi-quest-frontend:<TAG>
     restart: unless-stopped
     depends_on:
       - backend
