@@ -12,6 +12,7 @@ import {
   IonList,
   IonListHeader,
   IonButton,
+  IonButtons,
   useIonAlert,
   useIonModal
 } from '@ionic/react';
@@ -73,6 +74,16 @@ const AdminSettingsPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonTitle>Mehr</IonTitle>
+          {user?.is_super_admin && (
+            <IonButtons slot="end">
+              <IonButton onClick={() => router.push('/admin/organizations')} title="Organisationen">
+                <IonIcon slot="icon-only" icon={business} />
+              </IonButton>
+              <IonButton onClick={() => router.push('/admin/metrics')} title="Performance">
+                <IonIcon slot="icon-only" icon={pulseOutline} />
+              </IonButton>
+            </IonButtons>
+          )}
         </IonToolbar>
       </IonHeader>
       <IonContent className="app-gradient-background" fullscreen>
@@ -196,47 +207,9 @@ const AdminSettingsPage: React.FC = () => {
           </IonList>
         )}
 
-        {/* System-Administration - super_admin ODER org_admin mit is_super_admin-Flag */}
-        {user?.is_super_admin && (
-          <IonList inset={true} className="app-segment-wrapper">
-            <IonListHeader>
-              <div className="app-section-icon app-section-icon--users">
-                <IonIcon icon={business} />
-              </div>
-              <IonLabel>System-Administration</IonLabel>
-            </IonListHeader>
-            <IonCard className="app-card">
-              <IonCardContent style={{ padding: '12px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <div
-                  className="app-list-item app-list-item--organizations app-settings-item"
-                  onClick={() => router.push('/admin/organizations')}
-                >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--organizations">
-                    <IonIcon icon={business} />
-                  </div>
-                  <div className="app-flex-fill">
-                    <h2 className="app-settings-item__title">Organisationen</h2>
-                    <p className="app-settings-item__subtitle">Gemeinden und Organisationen verwalten</p>
-                  </div>
-                </div>
-                <div
-                  className="app-list-item app-list-item--chat app-settings-item"
-                  onClick={() => router.push('/admin/metrics')}
-                >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--chat">
-                    <IonIcon icon={pulseOutline} />
-                  </div>
-                  <div className="app-flex-fill">
-                    <h2 className="app-settings-item__title">Performance</h2>
-                    <p className="app-settings-item__subtitle">Requests, Auslastung, langsame Routen, Fehler</p>
-                  </div>
-                </div>
-                </div>
-              </IonCardContent>
-            </IonCard>
-          </IonList>
-        )}
+        {/* System-Administration (Organisationen + Performance) liegt fuer
+            super_admins jetzt als Buttons oben rechts im Header — nicht mehr als
+            Listen-Eintrag. */}
 
         {/* BLOCK 2: Inhalt -- nur für org_admin/teamer, NICHT für super_admin */}
         {user?.role_name !== 'super_admin' && (
