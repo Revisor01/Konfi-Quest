@@ -83,6 +83,16 @@ export const initializeWebSocket = (token: string): Socket => {
 
 export const getSocket = (): Socket | null => socket;
 
+// Erzwingt einen Reconnect-Versuch, wenn der Socket existiert aber getrennt ist.
+// Wird beim Wiedererlangen der Netzwerkverbindung (online-Event) aufgerufen:
+// nach einem Netzwerkwechsel haengt socket.io manchmal im getrennten Zustand,
+// ohne von selbst neu zu verbinden. connect() stoesst das aktiv an.
+export const ensureSocketConnected = (): void => {
+  if (socket && !socket.connected) {
+    socket.connect();
+  }
+};
+
 export const disconnectWebSocket = () => {
   if (socket) {
     socket.disconnect();

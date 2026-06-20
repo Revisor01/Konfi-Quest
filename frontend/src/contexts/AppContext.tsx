@@ -4,6 +4,7 @@ import { Device } from '@capacitor/device';
 import api from '../services/api';
 import { getUser, setUser as persistUser, getDeviceId, setDeviceId, getPushTokenTimestamp, setPushTokenTimestamp, getActiveOrgId, setActiveOrgId, setToken } from '../services/tokenStore';
 import { networkMonitor } from '../services/networkMonitor';
+import { ensureSocketConnected } from '../services/websocket';
 import { App } from '@capacitor/app';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { writeQueue } from '../services/writeQueue';
@@ -407,6 +408,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     networkMonitor.init();
     const unsubscribe = networkMonitor.subscribe((online) => {
       setIsOnline(online);
+      // Beim Wiedererlangen der Verbindung (z.B. nach Netzwerkwechsel WLAN<->LTE)
+      // den WebSocket aktiv anstossen — er haengt sonst manchmal getrennt fest.
+      if (online) {
+        ensureSocketConnected();
+      }
     });
     // Initialen Status setzen
     setIsOnline(networkMonitor.isOnline);

@@ -7,6 +7,11 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://konfi-quest.de/api
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  // Timeout, damit ein Request bei totem Netz / Netzwerkwechsel (WLAN<->LTE) nicht
+  // ewig haengt: die alte TCP-Verbindung bricht beim Wechsel, ohne Timeout wuerde
+  // axios das nicht bemerken und die App "haengen". Mit Timeout wirft axios
+  // ECONNABORTED -> axios-retry greift (s.u.) und wiederholt auf der neuen Verbindung.
+  timeout: 20000,
 });
 
 // Automatischer Retry für transiente Fehler (5xx, 408) — NICHT für 429.
@@ -22,6 +27,8 @@ axiosRetry(api, {
   retryCondition: (error) => {
     const status = error.response?.status;
     if (status === 429) return false;
+    // Timeout (ECONNABORTED/ETIMEDOUT) durch Netzwerkwechsel ebenfalls wiederholen.
+    if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') return true;
     return axiosRetry.isNetworkOrIdempotentRequestError(error) || (status !== undefined && status >= 500);
   },
   onRetry: () => {}
