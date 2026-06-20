@@ -257,14 +257,9 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
       return true;
     })
     .sort((a, b) => {
-      // Im Tab "Alle" zuerst nach Bereich gruppieren: Team-Chats oben, dann Konfi-Chats.
-      // In den gefilterten Tabs (direkt/konfis/team) ist alles homogen -> nur Zeit-Sort.
-      if (filterType === 'alle') {
-        const aTeam = isTeamChat(a) ? 0 : 1;
-        const bTeam = isTeamChat(b) ? 0 : 1;
-        if (aTeam !== bTeam) return aTeam - bTeam;
-      }
-      // Innerhalb der Gruppe nach letzter Nachricht (neueste zuerst).
+      // Immer der aktuellste Chat oben (nach letzter Nachricht), dynamisch nach
+      // unten durchgereicht — KEINE Gruppierung nach Team/Konfis. Die Team/Konfi-
+      // Filter-Tabs uebernehmen die Trennung, wenn man sie braucht.
       const aTime = a.last_message?.created_at ? new Date(a.last_message.created_at).getTime() : 0;
       const bTime = b.last_message?.created_at ? new Date(b.last_message.created_at).getTime() : 0;
       return bTime - aTime; // Newest first
