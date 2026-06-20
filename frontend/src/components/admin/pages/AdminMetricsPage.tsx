@@ -16,7 +16,7 @@ import {
   IonSpinner,
   IonToggle
 } from '@ionic/react';
-import { arrowBack, pulseOutline, refreshOutline, warningOutline, flashOutline, timeOutline, alertCircleOutline, speedometerOutline } from 'ionicons/icons';
+import { arrowBack, pulseOutline, refreshOutline, warningOutline, flashOutline, timeOutline, alertCircleOutline, speedometerOutline, gitNetworkOutline } from 'ionicons/icons';
 import api from '../../../services/api';
 import { triggerPullHaptic } from '../../../utils/haptics';
 
@@ -43,6 +43,7 @@ interface Snapshot {
   routesBusiest: RouteRow[];
   recentErrors: ErrorRow[];
   timeline: TimelinePoint[];
+  replicas?: { replica: string; requests: number; inFlight: number; share: number }[];
 }
 interface HistorySnap {
   captured_at: string;
@@ -219,6 +220,32 @@ const AdminMetricsPage: React.FC = () => {
               <Kpi icon={speedometerOutline} label="Req/Sek" value={String(snap.rps)} color="#0891b2" sub="Ø letzte 10s" />
               <Kpi icon={alertCircleOutline} label="Fehlerrate" value={`${(snap.errorRate * 100).toFixed(1)}%`} color={snap.totalErrors ? '#dc3545' : '#28a745'} sub={`${snap.totalErrors} Fehler (5xx)`} />
             </div>
+
+            {/* Lastverteilung ueber die Backend-Replicas (nur bei >1 Replica) */}
+            {snap.replicas && snap.replicas.length > 1 && (
+              <div style={{ background: '#fff', borderRadius: '14px', padding: '12px', marginBottom: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#666', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <IonIcon icon={gitNetworkOutline} style={{ color: '#7c3aed' }} /> Lastverteilung ({snap.replicas.length} Replicas)
+                </div>
+                {snap.replicas.map((r, i) => (
+                  <div key={r.replica} style={{ marginBottom: i < snap.replicas!.length - 1 ? '8px' : 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '3px' }}>
+                      <span style={{ fontFamily: 'ui-monospace, monospace', color: '#444' }}>{r.replica.slice(0, 12)}</span>
+                      <span style={{ color: '#666' }}>{r.requests} req · {(r.share * 100).toFixed(0)}% · {r.inFlight} aktiv</span>
+                    </div>
+                    <div style={{ height: '8px', background: '#eee', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: `${r.share * 100}%`, height: '100%', background: i === 0 ? '#06b6d4' : '#7c3aed', borderRadius: '4px' }} />
+                    </div>
+                  </div>
+                ))}
+                {/* Hinweis auf Schieflast, wenn eine Replica >70% traegt */}
+                {snap.replicas.some(r => r.share > 0.7) && (
+                  <div style={{ fontSize: '0.72rem', color: '#fd7e14', marginTop: '6px' }}>
+                    Hinweis: Last ungleich verteilt — eine Replica trägt den Großteil.
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Verlauf */}
             <div style={{ background: '#fff', borderRadius: '14px', padding: '12px', marginBottom: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>

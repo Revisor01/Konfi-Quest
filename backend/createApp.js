@@ -65,7 +65,7 @@ function createApp(db, options = {}) {
 
   // APM: misst Request-Dauer/Fehlerrate pro Route (in-memory) und loggt langsame
   // Requests. Frueh registriert, damit alle Routen erfasst werden.
-  const { apmMiddleware, snapshot: apmSnapshot } = require('./utils/apm');
+  const { apmMiddleware, snapshot: apmSnapshot, mergeSnapshots: apmMerge, REPLICA_ID: apmReplicaId } = require('./utils/apm');
   app.use(apmMiddleware);
 
   app.use(express.json());
@@ -283,14 +283,54 @@ function createApp(db, options = {}) {
     res.status(dbOk ? 200 : 503).json(body);
   });
 
-  // Metrics-Endpoint — APM-Aggregate (langsamste/meistgenutzte Routen, parallele
-  // Requests, Live-Verlauf, letzte Fehler). Nur super_admin, da es interne
-  // Performance-Daten preisgibt.
-  app.get('/api/metrics', rbacVerifier, (req, res) => {
+  // Roh-Snapshot NUR dieser Replica (fuer die Peer-Aggregation; auch direkt nutzbar).
+  app.get('/api/metrics/local', rbacVerifier, (req, res) => {
     if (!req.user?.is_super_admin) {
       return res.status(403).json({ error: 'Zugriff verweigert' });
     }
     res.json(apmSnapshot());
+  });
+
+  // Metrics-Endpoint — APM-Aggregate (langsamste/meistgenutzte Routen, parallele
+  // Requests, Live-Verlauf, letzte Fehler). Nur super_admin, da es interne
+  // Performance-Daten preisgibt.
+  //
+  // Mehrere Replicas: jede Replica haelt nur ihre eigenen In-Memory-Daten. Ist
+  // METRICS_PEERS gesetzt (z.B. "http://backend:5000,http://backend2:5000"), fragt
+  // dieser Endpoint ALLE Peers (/api/metrics/local) ab und mergt sie zu einem
+  // Gesamtbild inkl. Lastverteilung pro Replica. Ohne METRICS_PEERS -> nur lokal.
+  app.get('/api/metrics', rbacVerifier, async (req, res) => {
+    if (!req.user?.is_super_admin) {
+      return res.status(403).json({ error: 'Zugriff verweigert' });
+    }
+    const peers = (process.env.METRICS_PEERS || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (peers.length === 0) {
+      // Single-Replica: lokaler Snapshot, einheitliches Format (mit replicas-Feld).
+      return res.json(apmMerge([apmSnapshot()]));
+    }
+    const auth = req.headers.authorization || '';
+    const fetchPeer = async (base) => {
+      try {
+        const ctrl = new AbortController();
+        const to = setTimeout(() => ctrl.abort(), 4000);
+        const r = await fetch(`${base}/api/metrics/local`, {
+          headers: { Authorization: auth },
+          signal: ctrl.signal,
+        });
+        clearTimeout(to);
+        if (!r.ok) return null;
+        return await r.json();
+      } catch (e) {
+        return null;
+      }
+    };
+    const snaps = await Promise.all(peers.map(fetchPeer));
+    const merged = apmMerge(snaps.filter(Boolean));
+    if (!merged) {
+      // Alle Peers nicht erreichbar -> wenigstens lokale Sicht liefern.
+      return res.json(apmMerge([apmSnapshot()]));
+    }
+    res.json(merged);
   });
 
   // Persistente APM-Historie (ueber Deploys hinweg). Liefert die gespeicherten

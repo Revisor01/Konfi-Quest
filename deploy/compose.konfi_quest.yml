@@ -60,6 +60,9 @@ services:
       SMTP_PORT: 465
       SMTP_USER: noreply@konfi-quest.de
       SMTP_PASS: "RxoJpF4qMCKTFx8pBPUI4uFh"
+      # Metrics-Aggregation: /api/metrics fragt BEIDE Replicas (interne Compose-
+      # Servicenamen im internal-Netz) ab und mergt sie zu einem Gesamtbild.
+      METRICS_PEERS: "http://backend:5000,http://backend2:5000"
     volumes:
       - /opt/Konfi-Quest/uploads:/app/uploads
       - /opt/Konfi-Quest/backend/push/firebase-service-account.json:/app/push/firebase-service-account.json:ro

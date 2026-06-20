@@ -164,13 +164,19 @@ function currentRps(windowSec = 10) {
   return +(sum / windowSec).toFixed(2);
 }
 
-// Vollstaendiges Aggregat fuer den /metrics-Endpoint.
+// Kennung dieser Replica (Container-Hostname) — zur Lastverteilungs-Anzeige bei
+// mehreren Backend-Replicas. HOSTNAME setzt Docker pro Container.
+const REPLICA_ID = process.env.HOSTNAME || 'single';
+
+// Vollstaendiges Aggregat DIESER Replica (in-memory). Bei mehreren Replicas mergen
+// mergeSnapshots() die Einzel-Snapshots zu einem Gesamtbild.
 function snapshot() {
   const routes = routeRows().sort((a, b) => b.p95Ms - a.p95Ms);
   let totalCount = 0;
   let totalErrors = 0;
   for (const r of routes) { totalCount += r.count; totalErrors += r.errors; }
   return {
+    replica: REPLICA_ID,
     uptimeSeconds: Math.round((Date.now() - startedAt) / 1000),
     totalRequests: totalCount,
     totalErrors,
@@ -182,6 +188,80 @@ function snapshot() {
     routesBusiest: [...routes].sort((a, b) => b.count - a.count).slice(0, 20),
     recentErrors: [...recentErrors].reverse(),
     timeline: timeline(30),
+  };
+}
+
+// Mergt mehrere Replica-Snapshots zu EINEM Gesamtbild + Lastverteilung pro Replica.
+// Counts/Errors/inFlight werden summiert, p95/avg/max pro Route ueber die Replicas
+// zusammengefasst (max p95, gewichteter avg), Timelines pro Minute addiert.
+function mergeSnapshots(snaps) {
+  const valid = snaps.filter(Boolean);
+  if (valid.length === 0) return null;
+  if (valid.length === 1) {
+    return { ...valid[0], replicas: [{ replica: valid[0].replica, requests: valid[0].totalRequests, inFlight: valid[0].inFlight, share: 1 }] };
+  }
+
+  // Routen ueber Replicas zusammenfassen (Key = route).
+  const routeMap = new Map();
+  const addRoutes = (rows) => {
+    for (const r of rows) {
+      const e = routeMap.get(r.route) || { route: r.route, count: 0, errors: 0, sumAvg: 0, p95Ms: 0, maxMs: 0 };
+      e.count += r.count;
+      e.errors += r.errors;
+      e.sumAvg += r.avgMs * r.count;      // gewichteter Mittelwert ueber count
+      e.p95Ms = Math.max(e.p95Ms, r.p95Ms);
+      e.maxMs = Math.max(e.maxMs, r.maxMs);
+      routeMap.set(r.route, e);
+    }
+  };
+  valid.forEach(s => { addRoutes(s.routesSlowest || []); addRoutes(s.routesBusiest || []); });
+  const routes = [...routeMap.values()].map(e => ({
+    route: e.route,
+    count: e.count,
+    errors: e.errors,
+    errorRate: e.count ? +(e.errors / e.count).toFixed(4) : 0,
+    avgMs: e.count ? Math.round(e.sumAvg / e.count) : 0,
+    p95Ms: e.p95Ms,
+    maxMs: e.maxMs,
+  }));
+
+  // Timeline pro Minute (ISO-Zeit) addieren.
+  const tlMap = new Map();
+  valid.forEach(s => (s.timeline || []).forEach(p => {
+    const e = tlMap.get(p.t) || { t: p.t, requests: 0, errors: 0, sumAvg: 0 };
+    e.requests += p.requests;
+    e.errors += p.errors;
+    e.sumAvg += p.avgMs * p.requests;
+    tlMap.set(p.t, e);
+  }));
+  const timelineMerged = [...tlMap.values()]
+    .sort((a, b) => new Date(a.t) - new Date(b.t))
+    .map(e => ({ t: e.t, requests: e.requests, errors: e.errors, avgMs: e.requests ? Math.round(e.sumAvg / e.requests) : 0 }));
+
+  const totalRequests = valid.reduce((s, x) => s + x.totalRequests, 0);
+  const totalErrors = valid.reduce((s, x) => s + x.totalErrors, 0);
+  const recentErrors = valid.flatMap(x => x.recentErrors || [])
+    .sort((a, b) => new Date(b.at) - new Date(a.at)).slice(0, 50);
+
+  return {
+    uptimeSeconds: Math.max(...valid.map(x => x.uptimeSeconds)),
+    totalRequests,
+    totalErrors,
+    errorRate: totalRequests ? +(totalErrors / totalRequests).toFixed(4) : 0,
+    inFlight: valid.reduce((s, x) => s + x.inFlight, 0),
+    maxInFlight: valid.reduce((s, x) => s + x.maxInFlight, 0),
+    rps: +valid.reduce((s, x) => s + x.rps, 0).toFixed(2),
+    routesSlowest: [...routes].sort((a, b) => b.p95Ms - a.p95Ms).slice(0, 20),
+    routesBusiest: [...routes].sort((a, b) => b.count - a.count).slice(0, 20),
+    recentErrors,
+    timeline: timelineMerged,
+    // Lastverteilung: Anteil der Requests pro Replica.
+    replicas: valid.map(x => ({
+      replica: x.replica,
+      requests: x.totalRequests,
+      inFlight: x.inFlight,
+      share: totalRequests ? +(x.totalRequests / totalRequests).toFixed(3) : 0,
+    })),
   };
 }
 
@@ -206,4 +286,4 @@ function persistSummary() {
   };
 }
 
-module.exports = { apmMiddleware, snapshot, persistSummary };
+module.exports = { apmMiddleware, snapshot, mergeSnapshots, persistSummary, REPLICA_ID };
