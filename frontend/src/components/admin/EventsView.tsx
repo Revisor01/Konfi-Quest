@@ -91,14 +91,17 @@ const EventsView: React.FC<EventsViewProps> = ({
   // Events werden bereits von der Page sortiert übergeben
   const filteredAndSortedEvents = events;
 
+  // Mehrtaegige Events gelten erst nach ihrem ENDE (event_end_time) als vergangen.
+  const eventEndDate = (event: Event) => new Date(event.event_end_time || event.event_date);
+
   const getUpcomingEvents = () => {
     const now = new Date();
-    return events.filter(event => new Date(event.event_date) > now);
+    return events.filter(event => eventEndDate(event) > now);
   };
 
   const getPastEvents = () => {
     const now = new Date();
-    return events.filter(event => new Date(event.event_date) <= now);
+    return events.filter(event => eventEndDate(event) <= now);
   };
 
   const getOpenEvents = () => {
@@ -156,9 +159,13 @@ const EventsView: React.FC<EventsViewProps> = ({
   };
 
   const getAverageParticipation = () => {
-    if (events.length === 0) return 0;
-    const total = events.reduce((sum, event) => sum + (event.registered_count / event.max_participants), 0);
-    return Math.round((total / events.length) * 100);
+    // Nur Events mit echter Kapazitaet (max_participants > 0) zaehlen in die
+    // Auslastungs-Statistik. Unbegrenzte Events (max_participants = 0) wuerden
+    // sonst eine Division durch 0 (-> NaN) verursachen.
+    const capped = events.filter(event => (event.max_participants || 0) > 0);
+    if (capped.length === 0) return 0;
+    const total = capped.reduce((sum, event) => sum + (event.registered_count / event.max_participants), 0);
+    return Math.round((total / capped.length) * 100);
   };
 
   return (

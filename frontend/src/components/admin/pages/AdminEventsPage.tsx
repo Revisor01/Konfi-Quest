@@ -135,34 +135,37 @@ const AdminEventsPage: React.FC = () => {
     return uniqueEvents.sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
   };
 
+  // Massgeblicher Zeitpunkt fuer "vergangen?": bei mehrtaegigen Events das ENDE
+  // (event_end_time), sonst der Start. So rutscht ein Event erst NACH dem letzten
+  // Tag aus "Aktuell" und ins "Verbuchen"/"Vergangen" — nicht schon nach dem Start.
+  const eventEndDate = (event: Event) =>
+    new Date(event.event_end_time || event.event_date);
+
   // Tab "Aktuell": zukuenftige/laufende Events (nicht abgesagt).
   const getAktuellEvents = () => {
     const now = new Date();
     const list = events.filter(event => {
-      const eventDate = new Date(event.event_date);
-      return eventDate >= now && event.registration_status !== 'cancelled';
+      return eventEndDate(event) >= now && event.registration_status !== 'cancelled';
     });
     return list.sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
   };
 
-  // Tab "Verbuchen": vergangene Events mit offenen (unverbuchten) Buchungen.
+  // Tab "Verbuchen": beendete Events mit offenen (unverbuchten) Buchungen.
   const getVerbuchenEvents = () => {
     const now = new Date();
     const list = events.filter(event => {
-      const eventDate = new Date(event.event_date);
       const hasPendingBookings = !!event.pending_bookings_count && event.pending_bookings_count > 0;
-      return eventDate < now && hasPendingBookings && event.registration_status !== 'cancelled';
+      return eventEndDate(event) < now && hasPendingBookings && event.registration_status !== 'cancelled';
     });
     return list.sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime());
   };
 
-  // Tab "Vergangen": vergangene Events ohne offene Buchungen (fertig verbucht).
+  // Tab "Vergangen": beendete Events ohne offene Buchungen (fertig verbucht).
   const getVergangenEvents = () => {
     const now = new Date();
     const list = events.filter(event => {
-      const eventDate = new Date(event.event_date);
       const hasPendingBookings = !!event.pending_bookings_count && event.pending_bookings_count > 0;
-      return eventDate < now && !hasPendingBookings;
+      return eventEndDate(event) < now && !hasPendingBookings;
     });
     return list.sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime());
   };

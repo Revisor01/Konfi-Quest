@@ -369,6 +369,20 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                 <IonIcon icon={personAdd} />
               </div>
               <IonLabel>Personen ({filteredKonfis.length})</IonLabel>
+              {filteredKonfis.length > 0 && (
+                <IonButton
+                  fill="clear"
+                  size="small"
+                  onClick={() => {
+                    // Alle sichtbaren (gefilterten) Personen aus-/abwaehlen.
+                    const allIds = filteredKonfis.map(k => k.id);
+                    const allSelected = allIds.every(id => selectedKonfis.includes(id));
+                    setSelectedKonfis(allSelected ? [] : allIds);
+                  }}
+                >
+                  {filteredKonfis.every(k => selectedKonfis.includes(k.id)) ? 'Keine' : 'Alle'}
+                </IonButton>
+              )}
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent>

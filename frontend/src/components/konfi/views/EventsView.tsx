@@ -124,7 +124,8 @@ const EventsView: React.FC<EventsViewProps> = ({
 
   // Berechne Status-Infos für ein Event
   const getEventStatusInfo = (event: Event) => {
-    const isPastEvent = new Date(event.event_date) < new Date();
+    // Mehrtaegige Events sind erst nach ihrem Ende (event_end_time) vorbei.
+    const isPastEvent = new Date(event.event_end_time || event.event_date) < new Date();
     const isParticipated = isPastEvent && event.is_registered;
     const attendanceStatus = event.attendance_status;
     // Warteliste: booking_status kann 'waitlist' oder 'pending' sein (Backend sendet beides)

@@ -360,6 +360,32 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     }
   };
 
+  // Alle Wartelisten-Teilnehmer auf einmal bestaetigen (Bulk-Route).
+  const handleConfirmAllWaitlist = async () => {
+    if (!isOnline) return;
+    presentAlert({
+      header: 'Alle bestätigen?',
+      message: 'Alle Teilnehmer:innen auf der Warteliste werden bestätigt. Die Kapazität wird dabei bewusst übersteuert.',
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Alle bestätigen',
+          handler: async () => {
+            try {
+              const res = await api.put(`/events/${eventId}/participants/confirm-all`);
+              await loadEventData();
+              triggerRefresh('events');
+              setSuccess(res.data?.message || 'Warteliste bestätigt');
+            } catch (error) {
+              console.error('Confirm-all error:', error);
+              setError('Fehler beim Bestätigen der Warteliste');
+            }
+          }
+        }
+      ]
+    });
+  };
+
   const handleDemoteParticipant = async (participant: Participant) => {
     try {
       await api.put(`/events/${eventId}/participants/${participant.id}/status`, { status: 'waitlist' });
@@ -702,6 +728,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   <IonListHeader>
                     <div className="app-section-icon app-section-icon--events"><IonIcon icon={people} /></div>
                     <IonLabel>{konfiHeaderText}</IonLabel>
+                    {waitlistParticipants.length > 0 && (
+                      <IonButton fill="clear" size="small" disabled={!isOnline} onClick={handleConfirmAllWaitlist}>
+                        <IonIcon icon={checkmark} slot="start" />
+                        Alle bestätigen
+                      </IonButton>
+                    )}
                   </IonListHeader>
                   <IonCard className="app-card">
                     <IonCardContent style={{ padding: displayParticipants.length === 0 ? '16px' : '12px' }}>

@@ -1947,13 +1947,40 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
       const action = status === 'confirmed' ? 'Teilnehmer:in von Warteliste bestätigt' : 'Teilnehmer:in auf Warteliste gesetzt';
       res.json({ message: action, status });
-      
+
     } catch (err) {
  console.error(`Database error in PUT /events/${eventId}/participants/${participantId}/status:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
-  
+
+  // Bulk: ALLE Wartelisten-Teilnehmer eines Events bestaetigen (Admin-Komfort).
+  // Hebt die Kapazitaet auf (Admin uebersteuert bewusst), genau wie das manuelle
+  // Einzel-Bestaetigen oben.
+  router.put('/:id/participants/confirm-all', rbacVerifier, requireTeamer, async (req, res) => {
+    const { id: eventId } = req.params;
+    const client = await db.getClient();
+    try {
+      const { rows: [event] } = await client.query("SELECT organization_id FROM events WHERE id = $1", [eventId]);
+      if (!event) { client.release(); return res.status(404).json({ error: 'Event nicht gefunden' }); }
+      if (event.organization_id !== req.user.organization_id) { client.release(); return res.status(403).json({ error: 'Zugriff verweigert' }); }
+
+      await client.query('BEGIN');
+      const { rowCount } = await client.query(
+        "UPDATE event_bookings SET status = 'confirmed' WHERE event_id = $1 AND status = 'waitlist'",
+        [eventId]
+      );
+      await client.query('COMMIT');
+      res.json({ message: `${rowCount} Teilnehmer:in(nen) von der Warteliste bestätigt`, confirmed: rowCount });
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
+      console.error(`Database error in PUT /events/${eventId}/participants/confirm-all:`, err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    } finally {
+      client.release();
+    }
+  });
+
   // Update participant attendance and award event points
   router.put('/:id/participants/:participantId/attendance', rbacVerifier, requireTeamer, async (req, res) => {
     const { id: eventId, participantId } = req.params;

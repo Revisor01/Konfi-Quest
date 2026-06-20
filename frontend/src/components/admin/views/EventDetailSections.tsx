@@ -385,7 +385,9 @@ export const SeriesEventsSection = React.memo<SeriesEventsSectionProps>(({
       <IonCardContent style={{ padding: '12px' }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
         {seriesEvents.map((seriesEvent) => {
-          const isFull = (seriesEvent.registered_count || 0) >= seriesEvent.max_participants;
+          // max_participants = 0 bedeutet unbegrenzt -> nie "voll".
+          const seriesUnlimited = (seriesEvent.max_participants || 0) === 0;
+          const isFull = !seriesUnlimited && (seriesEvent.registered_count || 0) >= seriesEvent.max_participants;
           return (
             <div
               key={seriesEvent.id}
@@ -407,7 +409,7 @@ export const SeriesEventsSection = React.memo<SeriesEventsSectionProps>(({
                       {seriesEvent.name}
                     </div>
                     <div className="app-list-item__subtitle">
-                      {formatDate(seriesEvent.event_date)} {formatTime(seriesEvent.event_date)} | {seriesEvent.registered_count || 0}/{seriesEvent.max_participants} TN
+                      {formatDate(seriesEvent.event_date)} {formatTime(seriesEvent.event_date)} | {seriesEvent.registered_count || 0}/{seriesUnlimited ? '∞' : seriesEvent.max_participants} TN
                     </div>
                   </div>
                 </div>

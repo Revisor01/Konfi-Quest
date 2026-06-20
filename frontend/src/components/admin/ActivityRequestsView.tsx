@@ -232,19 +232,30 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                                     <IonIcon icon={calendar} style={{ color: (isApproved || isRejected) ? '#999' : '#059669' }} />
                                     {formatDate(request.requested_date)}
                                   </span>
-                                  {request.activity_points && (
+                                  {/* Teamer-Antraege sind reiner Nachweis -> KEINE Punkte und KEIN
+                                      Punkte-Typ (GD/Gem.) anzeigen; stattdessen "Team"-Kennzeichnung. */}
+                                  {request.activity_target_role === 'teamer' ? (
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={trophy} style={{ color: (isApproved || isRejected) ? '#999' : '#ff9500' }} />
-                                      {request.activity_points}P
+                                      <IonIcon icon={people} style={{ color: (isApproved || isRejected) ? '#999' : 'var(--app-color-teamer)' }} />
+                                      Team
                                     </span>
+                                  ) : (
+                                    <>
+                                      {request.activity_points && (
+                                        <span className="app-list-item__meta-item">
+                                          <IonIcon icon={trophy} style={{ color: (isApproved || isRejected) ? '#999' : '#ff9500' }} />
+                                          {request.activity_points}P
+                                        </span>
+                                      )}
+                                      <span className="app-list-item__meta-item">
+                                        <IonIcon
+                                          icon={getTypeIcon(request.activity_type || 'gemeinde')}
+                                          style={{ color: (isApproved || isRejected) ? '#999' : getTypeColor(request.activity_type || 'gemeinde') }}
+                                        />
+                                        {request.activity_type === 'gottesdienst' ? 'GD' : 'Gem.'}
+                                      </span>
+                                    </>
                                   )}
-                                  <span className="app-list-item__meta-item">
-                                    <IonIcon
-                                      icon={getTypeIcon(request.activity_type || 'gemeinde')}
-                                      style={{ color: (isApproved || isRejected) ? '#999' : getTypeColor(request.activity_type || 'gemeinde') }}
-                                    />
-                                    {request.activity_type === 'gottesdienst' ? 'GD' : 'Gem.'}
-                                  </span>
                                 </div>
                               </div>
                             </div>

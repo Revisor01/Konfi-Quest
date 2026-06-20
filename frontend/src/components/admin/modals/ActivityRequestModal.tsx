@@ -48,6 +48,7 @@ interface ActivityRequest {
   activity_name: string;
   activity_type?: string;
   activity_points?: number;
+  activity_target_role?: 'konfi' | 'teamer';
   requested_date: string;
   comment?: string;
   photo_filename?: string;
@@ -259,17 +260,19 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                   </IonLabel>
                 </IonItem>
 
-                {/* Aktivität */}
+                {/* Aktivität — bei Teamer-Antraegen kein Punkte-Typ (reiner Nachweis) */}
                 <IonItem lines="inset">
                   <IonIcon icon={documentTextOutline} slot="start" style={{ color: '#047857', fontSize: '1.2rem' }} />
                   <IonLabel>
-                    <p>Aktivität ({request.activity_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'})</p>
+                    <p>{request.activity_target_role === 'teamer'
+                      ? 'Aktivität (Team)'
+                      : `Aktivität (${request.activity_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'})`}</p>
                     <h2>{request.activity_name}</h2>
                   </IonLabel>
                 </IonItem>
 
-                {/* Punkte */}
-                {request.activity_points && (
+                {/* Punkte — nur fuer Konfi-Antraege; Teamer-Aktivitaeten geben keine Punkte */}
+                {request.activity_target_role !== 'teamer' && request.activity_points && (
                   <IonItem lines="inset">
                     <IonIcon icon={trophyOutline} slot="start" style={{ color: 'var(--app-color-badges)', fontSize: '1.2rem' }} />
                     <IonLabel>
