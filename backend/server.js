@@ -323,8 +323,18 @@ setImmediate(() => initializeChatRooms(db));
 // BACKGROUND SERVICES INITIALIZATION
 // ====================================================================
 
+// Hintergrund-Jobs (Cron: Auto-Deletion, Reminder, APM-Snapshots, Token-Cleanup,
+// Wrapped) duerfen bei MEHREREN Backend-Replicas (Zero-Downtime-Setup) nur EINMAL
+// laufen, sonst gibt es Doppel-Pushes/-Loeschungen/-Snapshots. Nur die Replica mit
+// RUN_BACKGROUND_JOBS!=='false' startet sie. Default = an (Single-Replica/lokal
+// unveraendert); im 2-Replica-Stack setzt nur backend2 RUN_BACKGROUND_JOBS=false.
 const BackgroundService = require('./services/backgroundService');
-BackgroundService.startAllServices(db, { wrappedRouter: app.wrappedRouter });
+if (process.env.RUN_BACKGROUND_JOBS !== 'false') {
+  BackgroundService.startAllServices(db, { wrappedRouter: app.wrappedRouter });
+  console.warn('Hintergrund-Jobs gestartet (diese Replica ist der Cron-Leader).');
+} else {
+  console.warn('Hintergrund-Jobs DEAKTIVIERT (RUN_BACKGROUND_JOBS=false) — andere Replica ist Cron-Leader.');
+}
 
 // ====================================================================
 // SERVER STARTUP

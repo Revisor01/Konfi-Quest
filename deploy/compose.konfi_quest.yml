@@ -1,0 +1,182 @@
+version: '3.8'
+# Konfi-Quest Stack (Portainer Stack 249) — Referenzkopie im Repo.
+# QUELLE DER WAHRHEIT bleibt der Portainer-Stack; diese Datei dokumentiert die
+# Struktur und dient als Vorlage fuer das Zero-Downtime-Setup.
+#
+# ZERO-DOWNTIME: Das Backend laeuft als ZWEI Replicas (backend + backend2) hinter
+# Traefik mit demselben Service-Namen (konfi-api). Traefik load-balanced ueber beide
+# und nimmt dank loadbalancer.healthcheck nur GESUNDE Container ins Routing. Beim
+# Deploy werden die beiden NACHEINANDER neu gestartet (CI-Skript) -> immer mindestens
+# einer gesund -> keine Ausfallzeit, kein Konfi fliegt raus.
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: konfi_db
+      POSTGRES_USER: konfi_user
+      POSTGRES_PASSWORD: BOpxzCFau7JhGn2v0vvQCEtqV7KG4JHI
+      PGDATA: /var/lib/postgresql/data/pgdata
+      TZ: Europe/Berlin
+      PGTZ: Europe/Berlin
+    volumes:
+      - /opt/Konfi-Quest/postgres:/var/lib/postgresql/data
+      - /opt/Konfi-Quest/init-scripts:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U konfi_user -d konfi_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.3'
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - internal
+
+  # --- Backend-Replica 1 ---
+  backend:
+    image: ghcr.io/revisor01/konfi-quest-backend:latest
+    environment: &backend_env
+      NODE_ENV: production
+      JWT_SECRET: "YFDRvxxiAty8H7BDSZ6Pt982mOfcQcsRkwUMvb3dTNMPBK94rn70xprRqhE4P"
+      QR_SECRET: "19KtT1Cj7qZNp9IuNGlUSHKEK9PB7udwWIeRdpvi3yW2xABZfpA2dQ0Oma7Va"
+      LOSUNG_API_KEY: ksadh8324oijcff45rfdsvcvhoids44
+      DATABASE_URL: postgresql://konfi_user:BOpxzCFau7JhGn2v0vvQCEtqV7KG4JHI@postgres:5432/konfi_db
+      PGHOST: postgres
+      PGUSER: konfi_user
+      PGDATABASE: konfi_db
+      PGPASSWORD: BOpxzCFau7JhGn2v0vvQCEtqV7KG4JHI
+      PGPORT: 5432
+      SMTP_HOST: 213.109.162.132
+      SMTP_PORT: 465
+      SMTP_USER: noreply@konfi-quest.de
+      SMTP_PASS: "RxoJpF4qMCKTFx8pBPUI4uFh"
+    volumes:
+      - /opt/Konfi-Quest/uploads:/app/uploads
+      - /opt/Konfi-Quest/backend/push/firebase-service-account.json:/app/push/firebase-service-account.json:ro
+    extra_hosts:
+      - "server.godsapp.de:213.109.162.132"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    # Graceful Shutdown (server.js faengt SIGTERM, beendet laufende Requests) bekommt
+    # bis zu 30s Zeit, bevor Docker hart killt.
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels: &backend_labels
+      - "traefik.enable=true"
+      - "traefik.http.routers.konfi-api.rule=Host(`konfi-quest.de`) && (PathPrefix(`/api`) || PathPrefix(`/socket.io`))"
+      - "traefik.http.routers.konfi-api.priority=10"
+      - "traefik.http.services.konfi-api.loadbalancer.server.port=5000"
+      # Traefik prueft selbst die Gesundheit JEDER Replica und routet nur zu gesunden.
+      # So faengt ein gerade neu startender/sterbender Container keine Requests.
+      - "traefik.http.services.konfi-api.loadbalancer.healthcheck.path=/api/health"
+      - "traefik.http.services.konfi-api.loadbalancer.healthcheck.interval=5s"
+      - "traefik.http.services.konfi-api.loadbalancer.healthcheck.timeout=3s"
+    networks:
+      - traefik
+      - internal
+
+  # --- Backend-Replica 2 (identisch, anderer Service/Containername) ---
+  # WICHTIG: RUN_BACKGROUND_JOBS=false -> nur Replica 1 (backend) ist Cron-Leader,
+  # sonst liefen Auto-Deletion/Reminder/APM-Snapshots doppelt.
+  backend2:
+    image: ghcr.io/revisor01/konfi-quest-backend:latest
+    environment:
+      <<: *backend_env
+      RUN_BACKGROUND_JOBS: "false"
+    volumes:
+      - /opt/Konfi-Quest/uploads:/app/uploads
+      - /opt/Konfi-Quest/backend/push/firebase-service-account.json:/app/push/firebase-service-account.json:ro
+    extra_hosts:
+      - "server.godsapp.de:213.109.162.132"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels: *backend_labels
+    networks:
+      - traefik
+      - internal
+
+  frontend:
+    image: ghcr.io/revisor01/konfi-quest-frontend:latest
+    restart: unless-stopped
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "--spider", "http://127.0.0.1:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.3'
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.konfi-frontend.rule=Host(`konfi-quest.de`)"
+      - "traefik.http.routers.konfi-frontend.priority=1"
+      - "traefik.http.services.konfi-frontend.loadbalancer.server.port=80"
+    networks:
+      - traefik
+networks:
+  traefik:
+    external: true
+  internal:
+    driver: bridge
