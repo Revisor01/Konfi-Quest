@@ -19,22 +19,30 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.2.2</string>
 	<key>CFBundleVersion</key>
-	<string>47</string>
+	<string>48</string>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Diese App benötigt Zugriff auf die Kamera, um Fotos für Chat-Nachrichten aufzunehmen.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Diese App benötigt Zugriff auf die Fotobibliothek, um Bilder für Chat-Nachrichten auszuwählen.</string>
 	<key>NSDocumentsFolderUsageDescription</key>
 	<string>Diese App benötigt Zugriff auf Dokumente, um Dateien für Chat-Nachrichten auszuwählen und zu teilen.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Diese App benötigt Zugriff auf das Mikrofon, um Videos mit Ton für Chat-Nachrichten aufzunehmen.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Diese App benötigt Zugriff auf die Fotobibliothek, um Bilder für Chat-Nachrichten auszuwählen.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
 		<string>fetch</string>
 	</array>
+	<key>UIFileSharingEnabled</key>
+	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -47,17 +55,9 @@
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
-	<key>UIViewControllerBasedStatusBarAppearance</key>
-	<true/>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
-	<key>LSSupportsOpeningDocumentsInPlace</key>
-	<true/>
-	<key>UIFileSharingEnabled</key>
-	<true/>
 	<key>UISupportsDocumentBrowser</key>
 	<true/>
-	<key>FirebaseAppDelegateProxyEnabled</key>
-	<false/>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<true/>
 </dict>
 </plist>
