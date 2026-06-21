@@ -27,6 +27,7 @@ import {
 } from 'ionicons/icons';
 import api from '../../../services/api';
 import { SectionHeader } from '../../shared';
+import EmptyState from '../../shared/EmptyState';
 
 interface PointsHistoryModalProps {
   onClose: () => void;
@@ -223,11 +224,14 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
                 <IonLabel>Verlauf ({filteredHistory.length} {filteredHistory.length === 1 ? 'Eintrag' : 'Einträge'})</IonLabel>
               </IonListHeader>
               <IonCard className="app-card">
-                <IonCardContent style={{ padding: filteredHistory.length === 0 ? '16px' : '12px' }}>
+                <IonCardContent style={{ padding: filteredHistory.length === 0 ? '8px' : '12px' }}>
                   {filteredHistory.length === 0 ? (
-                    <div className="app-info-box app-info-box--neutral" style={{ textAlign: 'center' }}>
-                      Noch keine Einträge vorhanden
-                    </div>
+                    <EmptyState
+                      icon={timeOutline}
+                      title="Noch keine Einträge"
+                      message="Hier erscheinen deine Punkte, sobald du welche erhalten hast."
+                      iconColor="var(--app-color-konfis)"
+                    />
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       {filteredHistory.map((entry) => {

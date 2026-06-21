@@ -87,6 +87,9 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [reactionTargetMessage, setReactionTargetMessage] = useState<Message | null>(null);
+  // Schwebender Tages-Chip oben (WhatsApp-Style): zeigt den Tag der obersten
+  // sichtbaren Nachricht. Genau EIN Chip -> kein Ueberlagern mehrerer Sticky-Trenner.
+  const [floatingDay, setFloatingDay] = useState<string>('');
   const contentRef = useRef<HTMLIonContentElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLIonTextareaElement>(null);
@@ -369,6 +372,8 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
               contentRef.current?.scrollToBottom(0);
             }
             setIsInitialLoad(false);
+            // Schwebenden Tages-Chip initial befuellen.
+            handleScroll();
           });
         });
       } else if (shouldAutoScroll && !parkedAtDividerRef.current && messages.length > prevMessageCountRef.current) {
@@ -381,11 +386,30 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
 
   // Sobald der Nutzer selbst bis ans (nahe) Listenende scrollt, "entparken" -> ab
   // dann folgen neue Nachrichten wieder automatisch nach unten (WhatsApp-Verhalten).
+  // Zusaetzlich: schwebenden Tages-Chip aktualisieren (oberster sichtbarer Tag).
   const handleScroll = async () => {
-    if (!parkedAtDividerRef.current || !contentRef.current) return;
+    if (!contentRef.current) return;
     const scrollEl = await contentRef.current.getScrollElement();
-    const nearBottom = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight < 80;
-    if (nearBottom) parkedAtDividerRef.current = false;
+
+    if (parkedAtDividerRef.current) {
+      const nearBottom = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight < 80;
+      if (nearBottom) parkedAtDividerRef.current = false;
+    }
+
+    // Obersten Tages-Trenner finden, der gerade noch oberhalb der Sichtgrenze
+    // liegt -> dessen Tag im schwebenden Chip anzeigen.
+    const markers = scrollEl.querySelectorAll<HTMLElement>('[data-day-divider]');
+    const containerTop = scrollEl.getBoundingClientRect().top;
+    let current = '';
+    for (const m of Array.from(markers)) {
+      const top = m.getBoundingClientRect().top - containerTop;
+      // 40px Toleranz = ungefaehre Hoehe des schwebenden Chips.
+      if (top <= 40) current = m.getAttribute('data-day-divider') || '';
+      else break;
+    }
+    // Fallback: vor dem ersten Trenner -> Tag des ersten Trenners zeigen.
+    if (!current && markers.length > 0) current = markers[0].getAttribute('data-day-divider') || '';
+    setFloatingDay(prev => (prev === current ? prev : current));
   };
 
   const loadMessages = async () => {
@@ -459,6 +483,13 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     const content = messageText.trim();
     const file = selectedFile;
     const currentReplyTo = replyToMessage;
+    // Antwort auf eine noch NICHT serverseitig gespeicherte Nachricht (optimistisch:
+    // negative ID bzw. noch in der Queue)? Dann reply_to weglassen — die echte ID
+    // existiert serverseitig nicht, der FK-Constraint wuerde sonst greifen. Die
+    // Nachricht geht ohne Antwort-Bezug raus (besser als ein Fehler).
+    const replyToId = currentReplyTo && currentReplyTo.id > 0 && !currentReplyTo.queueStatus
+      ? currentReplyTo.id
+      : null;
 
     // Optimistic UI: Nachricht sofort in messages-State einfuegen
     const optimisticMsg: Message = {
@@ -491,7 +522,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         const formData = new FormData();
         if (content) formData.append('content', content);
         if (file) formData.append('file', file);
-        if (currentReplyTo) formData.append('reply_to', currentReplyTo.id.toString());
+        if (replyToId) formData.append('reply_to', replyToId.toString());
         formData.append('client_id', clientId);
 
         await api.post(`/chat/rooms/${room.id}/messages`, formData, {
@@ -547,7 +578,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         }
       }
 
-      if (currentReplyTo) queueBody.reply_to = currentReplyTo.id.toString();
+      if (replyToId) queueBody.reply_to = replyToId.toString();
 
       await writeQueue.enqueue({
         method: 'POST',
@@ -1074,6 +1105,23 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 
+        {/* Schwebender Tages-Chip oben (genau einer) — verdraengt das alte
+            Sticky-Verhalten, bei dem sich mehrere Tages-Trenner ueberlagerten. */}
+        {floatingDay && messages.length > 0 && (
+          <div slot="fixed" style={{
+            position: 'absolute', top: '6px', left: 0, right: 0,
+            display: 'flex', justifyContent: 'center', zIndex: 5, pointerEvents: 'none'
+          }}>
+            <span style={{
+              fontSize: '0.72rem', fontWeight: 600, color: '#555',
+              background: 'rgba(245,245,247,0.95)', backdropFilter: 'blur(4px)',
+              padding: '4px 14px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
+            }}>
+              {floatingDay}
+            </span>
+          </div>
+        )}
+
         {user?.type === 'admin' && room && (room.type === 'group' || room.type === 'admin') && (
           <div style={{
             margin: '8px 16px 0',
@@ -1106,15 +1154,18 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
               return (
                 <React.Fragment key={message.id}>
                   {showDayDivider && (
-                    <div style={{
-                      display: 'flex', justifyContent: 'center', margin: '12px 0 8px',
-                      // Sticky wie bei WhatsApp: der oberste sichtbare Tages-Trenner
-                      // klebt oben und wird vom naechsten weggeschoben.
-                      position: 'sticky', top: '6px', zIndex: 5, pointerEvents: 'none'
-                    }}>
+                    <div
+                      data-day-divider={formatDayDivider(created!)}
+                      style={{
+                        display: 'flex', justifyContent: 'center', margin: '12px 0 8px',
+                        // Trenner scrollen normal mit. Der oben SCHWEBENDE Chip
+                        // (ein einziger) zeigt den aktuellen Tag -> kein Ueberlagern.
+                        pointerEvents: 'none'
+                      }}
+                    >
                       <span style={{
                         fontSize: '0.72rem', fontWeight: 600, color: '#555',
-                        background: 'rgba(245,245,247,0.95)', backdropFilter: 'blur(4px)',
+                        background: 'rgba(245,245,247,0.95)',
                         padding: '4px 14px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
                       }}>
                         {formatDayDivider(created!)}

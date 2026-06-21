@@ -110,7 +110,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           reason: reason.trim(),
           client_id: clientId,
         });
-        setSuccess(`Von "${eventData.name}" abgemeldet`);
+        // Kein Erfolgs-Toast: der Server schickt bereits einen Push.
         await refreshEvents();
         triggerRefresh('events');
       } catch (err: any) {
@@ -138,7 +138,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
     try {
       await api.post(`/konfi/events/${eventData.id}/opt-in`);
-      setSuccess(`Wieder für "${eventData.name}" angemeldet`);
+      // Kein Erfolgs-Toast: der Server schickt bereits einen Push.
       await refreshEvents();
       triggerRefresh('events');
     } catch (err: any) {
@@ -157,7 +157,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         data: { reason: reason.trim() }
       });
 
-      setSuccess(`Von "${eventData.name}" abgemeldet`);
+      // Kein Erfolgs-Toast: der Server schickt bereits einen Push.
       await refreshEvents();
       triggerRefresh('events');
     } catch (err: any) {
@@ -270,7 +270,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         payload.timeslot_id = timeslotId;
       }
       await api.post(`/konfi/events/${eventData.id}/register`, payload);
-      setSuccess(`Erfolgreich für "${eventData.name}" angemeldet!`);
+      // Kein Erfolgs-Toast: der Server schickt bereits einen Push.
       await refreshEvents();
       triggerRefresh('events');
     } catch (err: any) {

@@ -314,7 +314,10 @@ export const MessageInput = React.memo<MessageInputProps>(({
           overflow: 'hidden',
           boxShadow: '0 1px 4px rgba(6, 182, 212, 0.1)',
           display: 'flex',
-          alignItems: 'center'
+          alignItems: 'center',
+          // Deckel fuer ~5 Zeilen — danach scrollt der Inhalt INNERHALB des Feldes,
+          // statt dass das Eingabefeld weiter waechst und den Screen verdeckt.
+          maxHeight: '120px'
         }}>
           <IonTextarea
             ref={textareaRef}
@@ -340,10 +343,11 @@ export const MessageInput = React.memo<MessageInputProps>(({
               margin: '0',
               '--color': '#1a1a1a',
               '--placeholder-color': '#8e8e93',
-              minHeight: '38px'
-              // Hoehenbegrenzung + Scroll laufen ueber .chat-message-textarea::part(native)
-              // (CSS) — NICHT hier am Host, sonst wird das Feld gedeckelt statt der
-              // Inhalt im Feld scrollbar zu sein.
+              minHeight: '38px',
+              // Host deckeln: Ionic autoGrow setzt die Hoehe inline am Host —
+              // ohne maxHeight HIER waechst das Feld unbegrenzt und verdeckt den
+              // Screen. Der Inhalt scrollt dann via ::part(native) overflow-y.
+              maxHeight: '120px'
             }}
             onKeyDown={(e) => {
               // Auf nativen Apps (iOS/Android, Touch-Tastatur) erzeugt Enter IMMER
