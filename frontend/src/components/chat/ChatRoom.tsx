@@ -42,9 +42,22 @@ import { triggerPullHaptic } from '../../utils/haptics';
 
 
 
+// Tages-Trenner-Label (wie WhatsApp): Heute / Gestern / TT.MM.JJJJ.
+const formatDayDivider = (d: Date): string => {
+  const today = new Date();
+  const yest = new Date(); yest.setDate(today.getDate() - 1);
+  if (d.toDateString() === today.toDateString()) return 'Heute';
+  if (d.toDateString() === yest.toDateString()) return 'Gestern';
+  return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
+
 const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingElement }) => {
   const { user, setError, isOnline } = useApp();
-  const { markRoomAsRead: badgeMarkRoomAsRead, refreshAllCounts } = useBadge();
+  const { markRoomAsRead: badgeMarkRoomAsRead, refreshAllCounts, chatUnreadByRoom } = useBadge();
+  // Anzahl ungelesener Nachrichten beim Oeffnen EINMAL einfrieren (bevor
+  // markRoomAsRead sie auf 0 setzt) -> Position des "Neu"-Trenners + Scrollziel.
+  const initialUnreadRef = useRef<number | null>(null);
+  const newDividerRef = useRef<HTMLDivElement | null>(null);
 
   // --- useOfflineQuery: Initial messages load mit Cache ---
   const { data: initialMessages, refresh: refreshMessagesCache } = useOfflineQuery<Message[]>(
@@ -215,6 +228,10 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   // Setup WebSocket for real-time updates (initial load via useOfflineQuery)
   useEffect(() => {
     if (!room?.id) return;
+    // Ungelesen-Anzahl einfrieren, BEVOR markRoomAsRead sie auf 0 setzt.
+    if (initialUnreadRef.current === null) {
+      initialUnreadRef.current = chatUnreadByRoom[room.id] ?? 0;
+    }
     markRoomAsRead();
 
     // WebSocket: Join room and listen for new messages
@@ -326,10 +343,16 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     // Always scroll to bottom on initial load or new messages
     if (contentRef.current && messages.length > 0) {
       if (isInitialLoad) {
-        // Initial load - scroll immediately without animation
+        // Initial load: wenn ungelesene Nachrichten existieren, zur ERSTEN neuen
+        // scrollen (so kann man von dort nach unten lesen). Sonst ganz nach unten.
         setTimeout(() => {
-          contentRef.current?.scrollToBottom(0);
-        }, 50);
+          const unread = initialUnreadRef.current ?? 0;
+          if (unread > 0 && newDividerRef.current) {
+            newDividerRef.current.scrollIntoView({ block: 'center' });
+          } else {
+            contentRef.current?.scrollToBottom(0);
+          }
+        }, 60);
         setIsInitialLoad(false);
       } else if (shouldAutoScroll && messages.length > prevMessageCountRef.current) {
         // New message - smooth scroll
@@ -1036,30 +1059,64 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         )}
 
         <div style={{ paddingBottom: '120px' }}>
-          {messages.map((message) => (
-            <MessageBubble
-              key={message.id}
-              message={message}
-              room={room}
-              user={user}
-              selectedMessage={selectedMessage}
-              showReactionPicker={showReactionPicker}
-              reactionTargetMessage={reactionTargetMessage}
-              onLongPress={handleLongPress}
-              onReply={setReplyToMessage}
-              onShare={handleShareMessage}
-              onDelete={deleteMessage}
-              onToggleReaction={toggleReaction}
-              onOpenReactionPicker={openReactionPicker}
-              onVoteInPoll={voteInPoll}
-              onFileClick={handleFileClick}
-              onError={setError}
-              onDeselectMessage={() => setSelectedMessage(null)}
-              textareaRef={textareaRef}
-              onRetry={handleRetryMessage}
-              onDeleteQueued={handleDeleteQueuedMessage}
-            />
-          ))}
+          {(() => {
+            // Index der ersten ungelesenen Nachricht (= letzte N Nachrichten, N =
+            // beim Oeffnen eingefrorene Ungelesen-Anzahl). -1 = keine ungelesenen.
+            const unread = initialUnreadRef.current ?? 0;
+            const firstUnreadIndex = unread > 0 && unread <= messages.length
+              ? messages.length - unread
+              : -1;
+            let lastDayKey = '';
+            return messages.map((message, index) => {
+              const created = message.created_at ? new Date(message.created_at) : null;
+              const dayKey = created && !isNaN(created.getTime()) ? created.toDateString() : '';
+              const showDayDivider = dayKey && dayKey !== lastDayKey;
+              if (showDayDivider) lastDayKey = dayKey;
+              const showNewDivider = index === firstUnreadIndex;
+              return (
+                <React.Fragment key={message.id}>
+                  {showDayDivider && (
+                    <div style={{ display: 'flex', justifyContent: 'center', margin: '12px 0 8px' }}>
+                      <span style={{
+                        fontSize: '0.72rem', fontWeight: 600, color: '#666',
+                        background: 'rgba(0,0,0,0.06)', padding: '3px 12px', borderRadius: '12px'
+                      }}>
+                        {formatDayDivider(created!)}
+                      </span>
+                    </div>
+                  )}
+                  {showNewDivider && (
+                    <div ref={newDividerRef} style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '10px 12px' }}>
+                      <div style={{ flex: 1, height: '1px', background: 'var(--app-color-events)' }} />
+                      <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--app-color-events)' }}>Neue Nachrichten</span>
+                      <div style={{ flex: 1, height: '1px', background: 'var(--app-color-events)' }} />
+                    </div>
+                  )}
+                  <MessageBubble
+                    message={message}
+                    room={room}
+                    user={user}
+                    selectedMessage={selectedMessage}
+                    showReactionPicker={showReactionPicker}
+                    reactionTargetMessage={reactionTargetMessage}
+                    onLongPress={handleLongPress}
+                    onReply={setReplyToMessage}
+                    onShare={handleShareMessage}
+                    onDelete={deleteMessage}
+                    onToggleReaction={toggleReaction}
+                    onOpenReactionPicker={openReactionPicker}
+                    onVoteInPoll={voteInPoll}
+                    onFileClick={handleFileClick}
+                    onError={setError}
+                    onDeselectMessage={() => setSelectedMessage(null)}
+                    textareaRef={textareaRef}
+                    onRetry={handleRetryMessage}
+                    onDeleteQueued={handleDeleteQueuedMessage}
+                  />
+                </React.Fragment>
+              );
+            });
+          })()}
         </div>
       </IonContent>
 
