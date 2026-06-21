@@ -229,8 +229,11 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   useEffect(() => {
     if (!room?.id) return;
     // Ungelesen-Anzahl einfrieren, BEVOR markRoomAsRead sie auf 0 setzt.
+    // Fallback auf room.unread_count (vom Server am room-Objekt), falls der
+    // Badge-Context beim Oeffnen noch nicht aktualisiert hat -> sonst waere die
+    // Zahl 0 und der "Neu"-Trenner + Scrollziel wuerden fehlen.
     if (initialUnreadRef.current === null) {
-      initialUnreadRef.current = chatUnreadByRoom[room.id] ?? 0;
+      initialUnreadRef.current = chatUnreadByRoom[room.id] ?? (room as any).unread_count ?? 0;
     }
     markRoomAsRead();
 
@@ -338,6 +341,11 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
 
   // Track previous message count to only scroll on NEW messages
   const prevMessageCountRef = useRef(0);
+  // Beim Initial-Load am "Neu"-Trenner geparkt? Dann KEIN Auto-Scroll nach unten,
+  // bis der Nutzer selbst nach unten scrollt. Verhindert, dass die API-
+  // Revalidierung (2. messages-Update nach Cache-Treffer) die Divider-Position
+  // mit einem Sprung ans Listenende ueberschreibt.
+  const parkedAtDividerRef = useRef(false);
 
   useEffect(() => {
     // Always scroll to bottom on initial load or new messages
@@ -345,22 +353,40 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       if (isInitialLoad) {
         // Initial load: wenn ungelesene Nachrichten existieren, zur ERSTEN neuen
         // scrollen (so kann man von dort nach unten lesen). Sonst ganz nach unten.
-        setTimeout(() => {
-          const unread = initialUnreadRef.current ?? 0;
-          if (unread > 0 && newDividerRef.current) {
-            newDividerRef.current.scrollIntoView({ block: 'center' });
-          } else {
-            contentRef.current?.scrollToBottom(0);
-          }
-        }, 60);
-        setIsInitialLoad(false);
-      } else if (shouldAutoScroll && messages.length > prevMessageCountRef.current) {
+        // WICHTIG: isInitialLoad erst NACH erfolgreichem Scroll abschalten, sonst
+        // ueberschreibt die API-Revalidierung (2. messages-Update) die Position
+        // mit einem Auto-Scroll nach unten.
+        const unread = initialUnreadRef.current ?? 0;
+        const targetDivider = unread > 0 && unread <= messages.length;
+        // requestAnimationFrame: warten bis der Divider wirklich im DOM gerendert ist.
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (targetDivider && newDividerRef.current) {
+              newDividerRef.current.scrollIntoView({ block: 'center' });
+              // Geparkt am Trenner: nachfolgende Updates duerfen nicht nach unten springen.
+              parkedAtDividerRef.current = true;
+            } else {
+              contentRef.current?.scrollToBottom(0);
+            }
+            setIsInitialLoad(false);
+          });
+        });
+      } else if (shouldAutoScroll && !parkedAtDividerRef.current && messages.length > prevMessageCountRef.current) {
         // New message - smooth scroll
         contentRef.current.scrollToBottom(300);
       }
     }
     prevMessageCountRef.current = messages.length;
   }, [messages, shouldAutoScroll, isInitialLoad]);
+
+  // Sobald der Nutzer selbst bis ans (nahe) Listenende scrollt, "entparken" -> ab
+  // dann folgen neue Nachrichten wieder automatisch nach unten (WhatsApp-Verhalten).
+  const handleScroll = async () => {
+    if (!parkedAtDividerRef.current || !contentRef.current) return;
+    const scrollEl = await contentRef.current.getScrollElement();
+    const nearBottom = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight < 80;
+    if (nearBottom) parkedAtDividerRef.current = false;
+  };
 
   const loadMessages = async () => {
     // Kein eigener Loading State - ChatRoomView handled das Loading
@@ -454,6 +480,8 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     setReplyToMessage(null);
     clearSelectedFile();
     setShouldAutoScroll(true);
+    // Eigene Nachricht: am Divider-Park loesen, sonst bleibt der Scroll oben haengen.
+    parkedAtDividerRef.current = false;
     setTimeout(() => contentRef.current?.scrollToBottom(300), 100);
 
     if (networkMonitor.isOnline) {
@@ -1029,6 +1057,8 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         ref={contentRef}
         className="app-gradient-background"
         fullscreen
+        scrollEvents
+        onIonScroll={handleScroll}
         onClick={() => {
           if (selectedMessage || showReactionPicker) {
             setSelectedMessage(null);
