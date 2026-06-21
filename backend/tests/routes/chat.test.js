@@ -212,6 +212,35 @@ describe('Chat Routes', () => {
 
       expect(res.status).toBe(403);
     });
+
+    it('reply_to auf nicht-existente Nachricht -> 200 ohne FK-Crash, reply_to wird ignoriert', async () => {
+      // Reproduziert den Offline-Reply-Bug: Antwort auf eine (lokale/optimistische)
+      // Nachricht, die serverseitig nie existiert hat. Frueher: 500 (FK-Constraint).
+      const res = await request(app)
+        .post(`/api/chat/rooms/${CHAT_ROOMS.jahrgang.id}/messages`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({ content: 'Antwort auf Geist', reply_to: 999999999 });
+
+      expect(res.status).toBe(200);
+      expect(res.body.content).toBe('Antwort auf Geist');
+      expect(res.body.reply_to_id == null).toBe(true);
+    });
+
+    it('reply_to auf echte Nachricht -> Reply-Bezug bleibt erhalten', async () => {
+      const first = await request(app)
+        .post(`/api/chat/rooms/${CHAT_ROOMS.jahrgang.id}/messages`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({ content: 'Ursprung' });
+      expect(first.status).toBe(200);
+
+      const reply = await request(app)
+        .post(`/api/chat/rooms/${CHAT_ROOMS.jahrgang.id}/messages`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({ content: 'Echte Antwort', reply_to: first.body.id });
+
+      expect(reply.status).toBe(200);
+      expect(reply.body.reply_to_id).toBe(first.body.id);
+    });
   });
 
   // ================================================================

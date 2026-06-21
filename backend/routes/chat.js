@@ -608,13 +608,26 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         }
       }
       
+      // reply_to validieren: Verweist die Antwort auf eine existierende Nachricht
+      // IM SELBEN Raum? Wenn nicht (geloeschte Nachricht oder lokale optimistische
+      // ID, die nie persistiert wurde), reply_to auf null -> Nachricht geht trotzdem
+      // raus, statt mit FK-Constraint-Verletzung (chat_messages_reply_to_fkey) 500 zu werfen.
+      let safeReplyTo = null;
+      if (reply_to) {
+        const { rows: [replyRow] } = await db.query(
+          'SELECT id FROM chat_messages WHERE id = $1 AND room_id = $2',
+          [reply_to, roomId]
+        );
+        if (replyRow) safeReplyTo = reply_to;
+      }
+
       // Insert message and get its ID back
       const insertQuery = `
       INSERT INTO chat_messages (room_id, user_id, user_type, message_type, content, file_path, file_name, file_size, reply_to, client_id)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING id
     `;
-      const { rows: [newMessage] } = await db.query(insertQuery, [roomId, userId, userType, actualMessageType, content, filePath, fileName, fileSize, reply_to, client_id || null]);
+      const { rows: [newMessage] } = await db.query(insertQuery, [roomId, userId, userType, actualMessageType, content, filePath, fileName, fileSize, safeReplyTo, client_id || null]);
       const messageId = newMessage.id;
       
       // Fetch the complete message object to send back and for push notifications
