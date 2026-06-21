@@ -33,7 +33,8 @@ import {
   locationOutline,
   mailOutline,
   timeOutline,
-  closeOutline
+  closeOutline,
+  compassOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -46,6 +47,7 @@ import DeleteAccountModal from '../../shared/DeleteAccountModal';
 import SpiritFooter from '../../shared/SpiritFooter';
 import PointsHistoryModal from '../modals/PointsHistoryModal';
 import WrappedModal from '../../wrapped/WrappedModal';
+import KonfiOnboardingModal from '../modals/KonfiOnboardingModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import { safeUUID } from '../../../utils/uuid';
 
@@ -322,6 +324,12 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
   // Modal with useIonModal Hook for Account Deletion (D-01)
   const [presentDeleteAccount, dismissDeleteAccount] = useIonModal(DeleteAccountModal, {
     onClose: () => dismissDeleteAccount()
+  });
+
+  // App-Tour (Onboarding) erneut ansehen
+  const [presentOnboarding, dismissOnboarding] = useIonModal(KonfiOnboardingModal, {
+    onClose: () => dismissOnboarding(),
+    displayName: (user?.display_name || profile.display_name || '').split(' ')[0],
   });
 
   // Modal with useIonModal Hook for Bible Translation
@@ -667,6 +675,31 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                       <div className="app-list-item__title">Punkte-Übersicht</div>
                       <div className="app-list-item__meta">
                         <span className="app-list-item__meta-item">{profile.total_points || 0} Punkte gesamt</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* App-Tour erneut ansehen */}
+              <div
+                className="app-list-item app-list-item--purple"
+                style={{ width: '100%', cursor: 'pointer' }}
+                onClick={() => {
+                  presentOnboarding({
+                    presentingElement: pageRef?.current || presentingElement || undefined
+                  });
+                }}
+              >
+                <div className="app-list-item__row">
+                  <div className="app-list-item__main">
+                    <div className="app-icon-circle app-icon-circle--purple">
+                      <IonIcon icon={compassOutline} />
+                    </div>
+                    <div className="app-list-item__content">
+                      <div className="app-list-item__title">App-Tour ansehen</div>
+                      <div className="app-list-item__meta">
+                        <span className="app-list-item__meta-item">Kurze Einführung durch die App</span>
                       </div>
                     </div>
                   </div>

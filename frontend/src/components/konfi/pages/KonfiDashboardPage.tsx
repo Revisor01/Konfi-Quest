@@ -11,9 +11,12 @@ import {
   IonButtons,
   IonButton,
   useIonModal,
-  useIonRouter
+  useIonRouter,
+  useIonViewDidEnter
 } from '@ionic/react';
+import { Preferences } from '@capacitor/preferences';
 import { sparkles, chevronForward, personCircleOutline } from 'ionicons/icons';
+import KonfiOnboardingModal from '../modals/KonfiOnboardingModal';
 import { useApp } from '../../../contexts/AppContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
@@ -252,6 +255,30 @@ const KonfiDashboardPage: React.FC = () => {
       presentingElement: pageRef.current || undefined
     });
   };
+
+  // --- Onboarding-Walkthrough (Tab-Tour) — beim ersten Login einmal zeigen ---
+  const [presentOnboarding, dismissOnboarding] = useIonModal(KonfiOnboardingModal, {
+    onClose: () => dismissOnboarding(),
+    displayName: (user?.display_name || '').split(' ')[0],
+  });
+
+  const onboardingKey = `konfi_onboarding_seen_${user?.id ?? 'x'}`;
+
+  const openOnboarding = useCallback(() => {
+    presentOnboarding({ presentingElement: pageRef.current || undefined });
+  }, [presentOnboarding]);
+
+  // Beim ersten Betreten des Dashboards (pro Konfi-Account) die Tour zeigen.
+  useIonViewDidEnter(() => {
+    if (!user?.id) return;
+    Preferences.get({ key: onboardingKey }).then(({ value }) => {
+      if (!value) {
+        Preferences.set({ key: onboardingKey, value: '1' });
+        // kurz warten, bis die View/das presentingElement sicher steht
+        setTimeout(() => openOnboarding(), 400);
+      }
+    }).catch(() => { /* Preferences nicht verfuegbar -> Tour einfach ueberspringen */ });
+  });
 
   // Memoized refresh function for live updates
   const refreshAllData = useCallback(() => {
