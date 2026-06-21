@@ -88,9 +88,20 @@ function percentile(sortedAsc, p) {
   return sortedAsc[idx];
 }
 
+// Infrastruktur-Endpoints, die NICHT in die Nutzungsstatistik gehoeren:
+// - /api/health: Docker- + Traefik-Loadbalancer-Healthchecks (bei 2 Replicas ~30/min,
+//   sinnvoll fuers Zero-Downtime-Routing, aber keine echten Nutzeranfragen).
+// - /api/status: Uptime-Kuma/Readiness-Polling.
+// - /api/metrics*: das Dashboard selbst (Auto-Refresh alle 5s) wuerde sich sonst
+//   in die eigene Statistik schreiben.
+const IGNORED_PATHS = /^\/api\/(health|status|metrics)\b/;
+
 // Express-Middleware: misst jede Request-Dauer, zaehlt parallele Requests,
-// loggt langsame Requests.
+// loggt langsame Requests. Infrastruktur-Pings (s.o.) werden uebersprungen.
 function apmMiddleware(req, res, next) {
+  if (IGNORED_PATHS.test((req.originalUrl || req.url || '').split('?')[0])) {
+    return next();
+  }
   const start = process.hrtime.bigint();
   inFlight += 1;
   if (inFlight > maxInFlight) maxInFlight = inFlight;
