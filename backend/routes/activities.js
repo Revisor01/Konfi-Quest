@@ -8,7 +8,7 @@ const liveUpdate = require('../utils/liveUpdate');
 
 // Aktivitäten: Teamer darf ansehen und Punkte vergeben, Admin darf bearbeiten
 // Requests: NUR Admin (Datenschutz!)
-module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwardBadges) => {
+module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwardBadges, io) => {
 
   // Validierungsregeln
   // Hinweis: type ist bei Teamer-Aktivitaeten bewusst null (kein Punkt-Typ).
@@ -469,6 +469,16 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       } catch (notifErr) {
  console.error('Error sending notification:', notifErr);
         // Don't fail the request if notification fails
+      }
+
+      // Live-Update an ALLE Admins broadcasten: Konfi-Punkte + Antragsliste
+      // aendern sich -> jeder sieht es sofort, ohne manuelles Refresh, und es
+      // verhindert Doppel-Genehmigungen durch parallele Admins.
+      try {
+        io.emit('konfisUpdate', { organization_id: req.user.organization_id });
+        io.emit('requestsUpdate', { organization_id: req.user.organization_id });
+      } catch (emitErr) {
+        console.error('Socket-Emit nach Genehmigung fehlgeschlagen:', emitErr.message);
       }
 
       res.json({ message: 'Antragsstatus aktualisiert', newBadges });

@@ -245,7 +245,7 @@ function createApp(db, options = {}) {
   // ====================================================================
 
   const badgesRouter = require('./routes/badges')(db, rbacVerifier, roleHelpers);
-  const activitiesRouter = require('./routes/activities')(db, rbacVerifier, roleHelpers, badgesRouter.checkAndAwardBadges);
+  const activitiesRouter = require('./routes/activities')(db, rbacVerifier, roleHelpers, badgesRouter.checkAndAwardBadges, ioOrDummy);
 
   // ====================================================================
   // ROUTE MOUNTING

@@ -12,7 +12,7 @@ import {
 } from '@ionic/react';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
-import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
+import { useLiveRefresh, useLiveUpdate } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
@@ -44,6 +44,7 @@ interface ActivityRequest {
 const AdminActivityRequestsPage: React.FC = () => {
   const { user, setSuccess, setError, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-requests');
+  const { triggerRefresh } = useLiveUpdate();
 
   // Offline-Query: Requests
   const { data: requests, loading, refresh: refreshRequests } = useOfflineQuery<ActivityRequest[]>(
@@ -72,6 +73,9 @@ const AdminActivityRequestsPage: React.FC = () => {
       setSelectedRequest(null);
       setModalRequestId(null);
       refreshRequests();
+      // Genehmigen/Ablehnen aendert Konfi-Punkte -> Admin-Konfi-Liste live
+      // aktualisieren, damit man nicht manuell refreshen muss.
+      triggerRefresh('konfis');
     }
   });
 
