@@ -340,11 +340,10 @@ export const MessageInput = React.memo<MessageInputProps>(({
               margin: '0',
               '--color': '#1a1a1a',
               '--placeholder-color': '#8e8e93',
-              minHeight: '38px',
-              // Bei viel Text NICHT unbegrenzt wachsen (sonst verdeckt das Feld den
-              // Senden-Button und man kann nicht mehr senden): max ~5 Zeilen, danach
-              // scrollt der Inhalt im Feld.
-              maxHeight: '120px'
+              minHeight: '38px'
+              // Hoehenbegrenzung + Scroll laufen ueber .chat-message-textarea::part(native)
+              // (CSS) — NICHT hier am Host, sonst wird das Feld gedeckelt statt der
+              // Inhalt im Feld scrollbar zu sein.
             }}
             onKeyDown={(e) => {
               // Auf nativen Apps (iOS/Android, Touch-Tastatur) erzeugt Enter IMMER

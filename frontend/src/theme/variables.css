@@ -2635,10 +2635,12 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   white-space: nowrap;
 }
 
-/* Chat-Eingabefeld: max. ~5 Zeilen, danach scrollt der Inhalt im Feld (statt
-   unbegrenzt zu wachsen und den Senden-Button zu verdecken). Trifft das innere
-   native <textarea> im Shadow-DOM. */
+/* Chat-Eingabefeld: max. ~5 Zeilen, danach scrollt der Inhalt IM Feld. Bei
+   autoGrow setzt Ionic die Hoehe des inneren <textarea> per inline-style auf
+   scrollHeight -> das !important deckelt das und macht es scrollbar (sonst kommt
+   man nicht mehr an bereits geschriebenen Text oberhalb heran). */
 .chat-message-textarea::part(native) {
-  max-height: 120px;
-  overflow-y: auto;
+  max-height: 120px !important;
+  overflow-y: auto !important;
+  touch-action: pan-y;
 }

@@ -1076,10 +1076,16 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
               return (
                 <React.Fragment key={message.id}>
                   {showDayDivider && (
-                    <div style={{ display: 'flex', justifyContent: 'center', margin: '12px 0 8px' }}>
+                    <div style={{
+                      display: 'flex', justifyContent: 'center', margin: '12px 0 8px',
+                      // Sticky wie bei WhatsApp: der oberste sichtbare Tages-Trenner
+                      // klebt oben und wird vom naechsten weggeschoben.
+                      position: 'sticky', top: '6px', zIndex: 5, pointerEvents: 'none'
+                    }}>
                       <span style={{
-                        fontSize: '0.72rem', fontWeight: 600, color: '#666',
-                        background: 'rgba(0,0,0,0.06)', padding: '3px 12px', borderRadius: '12px'
+                        fontSize: '0.72rem', fontWeight: 600, color: '#555',
+                        background: 'rgba(245,245,247,0.95)', backdropFilter: 'blur(4px)',
+                        padding: '4px 14px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
                       }}>
                         {formatDayDivider(created!)}
                       </span>
