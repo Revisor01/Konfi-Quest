@@ -259,7 +259,28 @@ export const MessageInput = React.memo<MessageInputProps>(({
   onFileSelect,
   onClearFile,
   onClearReply
-}) => (
+}) => {
+  // Manuelles Auto-Resize des Eingabefeldes (statt Ionic autoGrow, das echtes
+  // Hochscrollen verhindert). Hoehe = Inhalt, gedeckelt auf MAX_H (~5 Zeilen);
+  // darueber wird das native Element scrollbar -> man kommt an alten Text.
+  const MAX_H = 110;
+  const resizeTextarea = React.useCallback(async () => {
+    const ionTa = textareaRef.current;
+    if (!ionTa || !ionTa.getInputElement) return;
+    const native = await ionTa.getInputElement();
+    if (!native) return;
+    native.style.height = 'auto';
+    const next = Math.min(native.scrollHeight, MAX_H);
+    native.style.height = next + 'px';
+    native.style.overflowY = native.scrollHeight > MAX_H ? 'auto' : 'hidden';
+  }, [textareaRef]);
+
+  // Nach Senden/Leeren (messageText wird leer) Hoehe zuruecksetzen.
+  React.useEffect(() => {
+    if (!messageText) resizeTextarea();
+  }, [messageText, resizeTextarea]);
+
+  return (
   <IonFooter style={{ backgroundColor: 'rgba(248, 249, 250, 0.95)', backdropFilter: 'blur(10px)' }}>
     {/* Reply Preview */}
     {replyToMessage && (
@@ -314,18 +335,14 @@ export const MessageInput = React.memo<MessageInputProps>(({
           overflow: 'hidden',
           boxShadow: '0 1px 4px rgba(6, 182, 212, 0.1)',
           display: 'flex',
-          alignItems: 'center',
-          // Deckel fuer ~5 Zeilen — danach scrollt der Inhalt INNERHALB des Feldes,
-          // statt dass das Eingabefeld weiter waechst und den Screen verdeckt.
-          maxHeight: '120px'
+          alignItems: 'center'
         }}>
           <IonTextarea
             ref={textareaRef}
             value={messageText}
-            onIonInput={(e) => onTextChange(e.detail.value || '')}
+            onIonInput={(e) => { onTextChange(e.detail.value || ''); resizeTextarea(); }}
             onIonFocus={onFocus}
             placeholder="Nachricht schreiben..."
-            autoGrow
             rows={1}
             autocapitalize="sentences"
             spellcheck={true}
@@ -343,11 +360,10 @@ export const MessageInput = React.memo<MessageInputProps>(({
               margin: '0',
               '--color': '#1a1a1a',
               '--placeholder-color': '#8e8e93',
-              minHeight: '38px',
-              // Host deckeln: Ionic autoGrow setzt die Hoehe inline am Host —
-              // ohne maxHeight HIER waechst das Feld unbegrenzt und verdeckt den
-              // Screen. Der Inhalt scrollt dann via ::part(native) overflow-y.
-              maxHeight: '120px'
+              minHeight: '38px'
+              // Hoehe wird manuell in resizeTextarea() gesetzt (KEIN autoGrow —
+              // dessen Grid-Replikation verhindert echtes Hochscrollen). Ab ~5
+              // Zeilen wird das native Element scrollbar (overflow-y via CSS).
             }}
             onKeyDown={(e) => {
               // Auf nativen Apps (iOS/Android, Touch-Tastatur) erzeugt Enter IMMER
@@ -396,7 +412,8 @@ export const MessageInput = React.memo<MessageInputProps>(({
       </div>
     </IonToolbar>
   </IonFooter>
-));
+  );
+});
 
 // --- Camera/Gallery Helpers ---
 

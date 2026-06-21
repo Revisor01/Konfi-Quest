@@ -302,16 +302,36 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
               <IonAccordionGroup ref={accordionGroupRef}>
                 <IonAccordion value="activity-picker" toggleIcon={chevronDownOutline} toggleIconSlot="end">
                   <IonItem slot="header" lines="none" style={{ '--padding-start': '16px' }}>
-                    <IonLabel>
-                      <h3 className="app-settings-item__subtitle" style={{ margin: '0 0 4px 0' }}>
-                        Aktivität auswählen
-                      </h3>
-                      {selectedActivity && (
-                        <p className="app-settings-item__title" style={{ margin: '0' }}>
-                          {selectedActivity.name}
-                        </p>
-                      )}
-                    </IonLabel>
+                    {selectedActivity ? (
+                      // Gewaehlt: dasselbe Listen-Element wie in der Liste zeigen
+                      // -> eindeutig, was ausgewaehlt wurde (statt nur kleinem Text).
+                      <div className="app-list-item app-list-item--teamer" style={{ position: 'relative', width: '100%', margin: 0, pointerEvents: 'none' }}>
+                        <div className="app-list-item__row">
+                          <div className="app-list-item__main">
+                            <div className="app-icon-circle app-icon-circle--teamer">
+                              <IonIcon icon={briefcaseOutline} />
+                            </div>
+                            <div className="app-list-item__content">
+                              <div className="app-list-item__title">{selectedActivity.name}</div>
+                              {selectedActivity.category_names && (
+                                <div className="app-list-item__meta">
+                                  <span className="app-list-item__meta-item">
+                                    <IonIcon icon={pricetag} className="app-icon-color--category" />
+                                    {selectedActivity.category_names}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <IonLabel>
+                        <h3 className="app-settings-item__subtitle" style={{ margin: '0' }}>
+                          Aktivität auswählen
+                        </h3>
+                      </IonLabel>
+                    )}
                   </IonItem>
                   <div slot="content" style={{ padding: '0 12px 12px' }}>
                     {/* Aktivitäten Liste */}

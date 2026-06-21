@@ -22,7 +22,7 @@ const SLIDES: { icon: string; color: string; title: string; text: string }[] = [
     icon: sparklesOutline,
     color: 'var(--app-color-konfis)',
     title: 'Willkommen bei Konfi Quest!',
-    text: 'Hier sammelst du Punkte, meldest dich zu Events an und bleibst mit deinem Jahrgang in Kontakt. Wir zeigen dir kurz, was die Tabs unten machen.',
+    text: 'Dein Abenteuer in der Gemeinde — moderne Konfi-Zeit für dich. Hier sammelst du Punkte, meldest dich zu Events an und bleibst mit deinem Jahrgang in Kontakt. Wir zeigen dir kurz, was dir Konfi Quest alles bietet.',
   },
   {
     icon: homeOutline,
@@ -52,7 +52,7 @@ const SLIDES: { icon: string; color: string; title: string; text: string }[] = [
     icon: documentTextOutline,
     color: 'var(--app-color-activities)',
     title: 'Aktivitäten',
-    text: 'Warst du im Gottesdienst, bei einer Taufe oder Hochzeit? Reiche deine Aktivitäten hier ein. Deine Teamer:innen bestätigen sie und du bekommst deine Punkte.',
+    text: 'Warst du im Gottesdienst, bei einer Taufe oder Hochzeit? Reiche deine Aktivitäten hier ein. Deine Gruppenleiterinnen bestätigen sie und du bekommst deine Punkte.',
   },
 ];
 
@@ -91,32 +91,36 @@ const KonfiOnboardingModal: React.FC<KonfiOnboardingModalProps> = ({ onClose, di
                 position: 'relative', overflow: 'hidden',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 textAlign: 'center', height: '100%', padding: '24px 32px 56px', boxSizing: 'border-box',
-                // Sanfter Farb-Wash: heller Hauch der Bereichsfarbe von oben nach unten.
-                background: `linear-gradient(180deg, ${slide.color}26 0%, ${slide.color}0d 38%, transparent 70%)`
+                // Volle Bereichsfarbe, nur abgeschwaecht: kraeftiger Verlauf von der
+                // Farbe oben zu einem hellen Ton unten -> Text bleibt lesbar.
+                background: `linear-gradient(165deg, ${slide.color} 0%, ${slide.color}d9 30%, ${slide.color}80 62%, ${slide.color}1f 100%)`
               }}>
-                {/* Lutherrose dezent im Hintergrund (wie auf den Auth-Seiten) */}
+                {/* Lutherrose im Hintergrund (weiss, transparent ueber der Farbflaeche) */}
                 <img
-                  src="/assets/icon/logo-mark.png"
+                  src="/assets/icon/logo-mark-white.png"
                   alt=""
                   aria-hidden="true"
                   style={{
-                    position: 'absolute', top: '-8vh', right: '-20vw', width: '85vw', height: '85vw',
-                    objectFit: 'contain', opacity: 0.07, transform: 'rotate(-10deg)',
+                    position: 'absolute', top: '-8vh', right: '-20vw', width: '90vw', height: '90vw',
+                    objectFit: 'contain', opacity: 0.14, transform: 'rotate(-10deg)',
                     pointerEvents: 'none', zIndex: 0
                   }}
                 />
                 <div style={{
                   position: 'relative', zIndex: 1,
                   width: '110px', height: '110px', borderRadius: '28px',
-                  background: slide.color, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  marginBottom: '28px', boxShadow: `0 10px 28px ${slide.color}55`
+                  // Helle Kachel auf farbigem Grund, damit das Icon abhebt.
+                  background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(6px)',
+                  border: '1px solid rgba(255,255,255,0.35)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  marginBottom: '28px', boxShadow: '0 10px 28px rgba(0,0,0,0.18)'
                 }}>
                   <IonIcon icon={slide.icon} style={{ fontSize: '3.2rem', color: '#fff' }} />
                 </div>
-                <h1 style={{ position: 'relative', zIndex: 1, fontSize: '1.6rem', fontWeight: 800, color: '#1a1a1a', margin: '0 0 12px' }}>
+                <h1 style={{ position: 'relative', zIndex: 1, fontSize: '1.6rem', fontWeight: 800, color: '#fff', margin: '0 0 12px', textShadow: '0 1px 6px rgba(0,0,0,0.18)' }}>
                   {i === 0 && displayName ? `Hallo ${displayName}!` : slide.title}
                 </h1>
-                <p style={{ position: 'relative', zIndex: 1, fontSize: '1.02rem', lineHeight: 1.5, color: '#555', margin: 0, maxWidth: '340px' }}>
+                <p style={{ position: 'relative', zIndex: 1, fontSize: '1.02rem', lineHeight: 1.5, color: 'rgba(255,255,255,0.95)', margin: 0, maxWidth: '340px', textShadow: '0 1px 4px rgba(0,0,0,0.15)' }}>
                   {slide.text}
                 </p>
               </div>
@@ -124,9 +128,25 @@ const KonfiOnboardingModal: React.FC<KonfiOnboardingModalProps> = ({ onClose, di
           ))}
         </Swiper>
 
-        {/* Aktions-Button unten — nimmt die Farbe der aktuellen Slide auf */}
+        {/* Aktions-Button unten — weiss auf farbigem Grund, Schrift in Slide-Farbe.
+            Alle Zustaende (activated/focused/hover) explizit gesetzt, sonst blitzt
+            beim Antippen das Ionic-Default-Blau auf. */}
         <div style={{ padding: '8px 24px 28px' }}>
-          <IonButton expand="block" onClick={next} style={{ '--background': SLIDES[index].color, '--border-radius': '14px', height: '52px', fontWeight: 700 }}>
+          <IonButton
+            expand="block"
+            onClick={next}
+            style={{
+              '--background': '#ffffff',
+              '--background-activated': 'rgba(255,255,255,0.85)',
+              '--background-focused': 'rgba(255,255,255,0.9)',
+              '--background-hover': '#ffffff',
+              '--color': SLIDES[index].color,
+              '--ripple-color': SLIDES[index].color,
+              '--box-shadow': '0 6px 18px rgba(0,0,0,0.18)',
+              '--border-radius': '14px',
+              height: '52px', fontWeight: 700
+            }}
+          >
             {isLast ? 'Los geht’s!' : 'Weiter'}
             <IonIcon slot="end" icon={isLast ? checkmarkCircle : arrowForward} />
           </IonButton>

@@ -2640,9 +2640,7 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
    scrollHeight -> das !important deckelt das und macht es scrollbar (sonst kommt
    man nicht mehr an bereits geschriebenen Text oberhalb heran). */
 .chat-message-textarea::part(native) {
-  /* Host ist auf 120px gedeckelt (inkl. 2x10px Padding) -> native ~100px,
-     damit der Text INNERHALB scrollt statt den Host zu sprengen. */
-  max-height: 100px !important;
-  overflow-y: auto !important;
+  /* Hoehe + overflow steuert resizeTextarea() (MessageInput) manuell.
+     Hier nur Touch-Scrolling im Feld erlauben. */
   touch-action: pan-y;
 }
