@@ -398,7 +398,10 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
 
     // Obersten Tages-Trenner finden, der gerade noch oberhalb der Sichtgrenze
     // liegt -> dessen Tag im schwebenden Chip anzeigen.
-    const markers = scrollEl.querySelectorAll<HTMLElement>('[data-day-divider]');
+    // WICHTIG: Marker liegen im LIGHT DOM (geslotteter ion-content-Inhalt), NICHT
+    // im scrollEl (.inner-scroll im Shadow DOM) -> ueber contentRef suchen, sonst
+    // findet querySelectorAll nichts und floatingDay bleibt leer.
+    const markers = contentRef.current.querySelectorAll<HTMLElement>('[data-day-divider]');
     const containerTop = scrollEl.getBoundingClientRect().top;
     let current = '';
     for (const m of Array.from(markers)) {
@@ -1105,6 +1108,24 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 
+        {/* Schwebender Tages-Chip (WhatsApp-Style): slot="fixed" -> bleibt
+            ausserhalb des Scroll-Containers immer oben sichtbar; der Text wird
+            beim Scrollen aus der obersten sichtbaren Nachricht aktualisiert. */}
+        {floatingDay && messages.length > 0 && (
+          <div slot="fixed" style={{
+            position: 'absolute', top: '6px', left: 0, right: 0,
+            display: 'flex', justifyContent: 'center', zIndex: 10, pointerEvents: 'none'
+          }}>
+            <span style={{
+              fontSize: '0.72rem', fontWeight: 600, color: '#555',
+              background: 'rgba(245,245,247,0.95)', backdropFilter: 'blur(4px)',
+              padding: '4px 14px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
+            }}>
+              {floatingDay}
+            </span>
+          </div>
+        )}
+
         {user?.type === 'admin' && room && (room.type === 'group' || room.type === 'admin') && (
           <div style={{
             margin: '8px 16px 0',
@@ -1119,25 +1140,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           </div>
         )}
 
-        <div style={{ paddingBottom: '16px', position: 'relative' }}>
-          {/* EIN einziger sticky Tages-Chip ganz oben — klebt bei top:6px und
-              zeigt immer den Tag der obersten sichtbaren Nachricht. Da es nur
-              EINEN gibt, ueberlagern sich keine Trenner mehr. */}
-          {floatingDay && messages.length > 0 && (
-            <div style={{
-              position: 'sticky', top: '6px', zIndex: 6,
-              display: 'flex', justifyContent: 'center',
-              height: 0, overflow: 'visible', pointerEvents: 'none'
-            }}>
-              <span style={{
-                fontSize: '0.72rem', fontWeight: 600, color: '#555',
-                background: 'rgba(245,245,247,0.95)', backdropFilter: 'blur(4px)',
-                padding: '4px 14px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
-              }}>
-                {floatingDay}
-              </span>
-            </div>
-          )}
+        <div style={{ paddingBottom: '4px', position: 'relative' }}>
           {(() => {
             // Index der ersten ungelesenen Nachricht (= letzte N Nachrichten, N =
             // beim Oeffnen eingefrorene Ungelesen-Anzahl). -1 = keine ungelesenen.

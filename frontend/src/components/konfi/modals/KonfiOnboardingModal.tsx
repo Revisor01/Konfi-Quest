@@ -17,40 +17,49 @@ interface KonfiOnboardingModalProps {
 
 // Inhalt der Tab-Tour. Reihenfolge folgt den Konfi-Tabs:
 // Start (Dashboard) · Chat · Events · Badges · Aktivitaeten.
-const SLIDES: { icon: string; color: string; title: string; text: string }[] = [
+// rgb = Name der -rgb-CSS-Variable (z.B. "konfis" -> --app-color-konfis-rgb),
+// noetig fuer rgba()-Alphastufen im Gradient. `${color}d9` (Hex anhaengen)
+// funktioniert NICHT mit var() -> ungueltiges CSS -> kein Hintergrund.
+const SLIDES: { icon: string; color: string; rgb: string; title: string; text: string }[] = [
   {
     icon: sparklesOutline,
     color: 'var(--app-color-konfis)',
+    rgb: '--app-color-konfis-rgb',
     title: 'Willkommen bei Konfi Quest!',
     text: 'Dein Abenteuer in der Gemeinde — moderne Konfi-Zeit für dich. Hier sammelst du Punkte, meldest dich zu Events an und bleibst mit deinem Jahrgang in Kontakt. Wir zeigen dir kurz, was dir Konfi Quest alles bietet.',
   },
   {
     icon: homeOutline,
     color: 'var(--app-color-konfis)',
+    rgb: '--app-color-konfis-rgb',
     title: 'Start',
     text: 'Dein Überblick: deine Punkte, dein aktuelles Level und was als Nächstes ansteht. Hier landest du immer als Erstes.',
   },
   {
     icon: chatbubblesOutline,
     color: 'var(--app-color-chat)',
+    rgb: '--app-color-chat-rgb',
     title: 'Chat',
     text: 'Schreib mit deinem Jahrgang und deinen Teamer:innen. Hier kommen auch wichtige Infos und Ankündigungen rein.',
   },
   {
     icon: calendarOutline,
     color: 'var(--app-color-events)',
+    rgb: '--app-color-events-rgb',
     title: 'Events',
     text: 'Hier siehst du alle Termine und kannst dich direkt anmelden — bis hin zu deiner Konfirmation. Bei manchen Events gibt es Plätze oder Zeitfenster, einfach tippen und buchen.',
   },
   {
     icon: starOutline,
     color: 'var(--app-color-badges)',
+    rgb: '--app-color-badges-rgb',
     title: 'Badges',
     text: 'Für deine Aktivitäten bekommst du Abzeichen. Sammle Badges und steig im Level auf — je mehr du machst, desto mehr schaltest du frei.',
   },
   {
     icon: documentTextOutline,
     color: 'var(--app-color-activities)',
+    rgb: '--app-color-activities-rgb',
     title: 'Aktivitäten',
     text: 'Warst du im Gottesdienst, bei einer Taufe oder Hochzeit? Reiche deine Aktivitäten hier ein. Deine Gruppenleiterinnen bestätigen sie und du bekommst deine Punkte.',
   },
@@ -66,11 +75,21 @@ const KonfiOnboardingModal: React.FC<KonfiOnboardingModalProps> = ({ onClose, di
     swiperRef.current?.slideNext();
   }, [isLast, onClose]);
 
+  // Farbe der AKTUELLEN Slide -> als Modal-Hintergrund (IonContent). Robust
+  // gegen die Swiper-Hoehenkette im Modal: der IonContent fuellt das Modal immer.
+  // Alphastufen ueber rgba(var(--...-rgb), a) — NICHT ${color}d9 (Hex an var()
+  // anhaengen ist ungueltiges CSS und liefert keinen Hintergrund -> weiss).
+  const rgb = SLIDES[index].rgb;
+  const activeGradient =
+    `linear-gradient(165deg, rgb(var(${rgb})) 0%, rgba(var(${rgb}),0.85) 30%, rgba(var(${rgb}),0.5) 62%, rgba(var(${rgb}),0.12) 100%)`;
   return (
-    <IonContent className="app-gradient-background konfi-onboarding-content">
-      {/* Hoehenkette fuer Swiper im Modal absichern: ohne das setzt Swiper-CSS
-          .swiper-slide auf height:auto -> Slide kollabiert -> farbiger
-          Hintergrund hat keine Flaeche und wirkt weiss. */}
+    <IonContent
+      className="konfi-onboarding-content"
+      style={{
+        '--background': activeGradient,
+        transition: 'none'
+      } as React.CSSProperties}
+    >
       <style>{`
         .konfi-onboarding-content .swiper,
         .konfi-onboarding-content .swiper-wrapper { height: 100%; }
@@ -98,10 +117,10 @@ const KonfiOnboardingModal: React.FC<KonfiOnboardingModalProps> = ({ onClose, di
             <SwiperSlide
               key={i}
               style={{
-                // Hoehe + Farbe am Slide SELBST: im Modal kollabiert sonst die
-                // height:100%-Kette und der farbige Hintergrund wirkt weiss.
+                // Transparent: die Farbe kommt vom IonContent-Hintergrund (robust
+                // gegen kollabierende Slide-Hoehe). Slide traegt nur den Inhalt.
                 height: '100%', minHeight: '100%', alignSelf: 'stretch',
-                background: `linear-gradient(165deg, ${slide.color} 0%, ${slide.color}d9 30%, ${slide.color}80 62%, ${slide.color}1f 100%)`
+                background: 'transparent'
               }}
             >
               <div style={{
@@ -109,14 +128,20 @@ const KonfiOnboardingModal: React.FC<KonfiOnboardingModalProps> = ({ onClose, di
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 textAlign: 'center', height: '100%', minHeight: '100%', padding: '24px 32px 56px', boxSizing: 'border-box'
               }}>
-                {/* Lutherrose im Hintergrund (weiss, transparent ueber der Farbflaeche) */}
+                {/* Lutherrose im Hintergrund — wechselnd oben links/rechts (je
+                    Slide). Komplett INNERHALB des Modals (nicht ueber den oberen
+                    Rand, sonst beschneidet ihn der Modal-Header/Radius). */}
                 <img
                   src="/assets/icon/logo-mark-white.png"
                   alt=""
                   aria-hidden="true"
                   style={{
-                    position: 'absolute', top: '-8vh', right: '-20vw', width: '90vw', height: '90vw',
-                    objectFit: 'contain', opacity: 0.14, transform: 'rotate(-10deg)',
+                    position: 'absolute',
+                    top: '4%',
+                    ...(i % 2 === 0 ? { right: '4%' } : { left: '4%' }),
+                    width: '48vw', maxWidth: '230px', height: 'auto',
+                    objectFit: 'contain', opacity: 0.2,
+                    transform: i % 2 === 0 ? 'rotate(-8deg)' : 'rotate(8deg)',
                     pointerEvents: 'none', zIndex: 0
                   }}
                 />

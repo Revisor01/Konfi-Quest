@@ -145,9 +145,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         justifyContent: 'center',
         margin: '8px 16px'
       }}>
-        <IonText color="medium" style={{ fontSize: '0.8rem', fontStyle: 'italic' }}>
+        <span style={{ fontSize: '1.05rem', fontStyle: 'italic', whiteSpace: 'nowrap', color: '#8e8e93' }}>
           Diese Nachricht wurde gelöscht
-        </IonText>
+        </span>
       </div>
     );
   }
@@ -296,6 +296,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           <div style={{
             fontStyle: 'italic',
             opacity: 0.6,
+            fontSize: '0.90rem',
+            whiteSpace: 'nowrap',
             color: isOwnMessage ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)'
           }}>
             {message.content}

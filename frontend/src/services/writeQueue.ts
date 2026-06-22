@@ -100,6 +100,11 @@ function handleFlushResult(result: FlushResult): void {
     // Sonst erscheint "Push-Token entfernen konnte nicht gesendet werden" aus
     // dem Nichts auf der Login-Seite.
     if (item.metadata.type === 'fire-and-forget') continue;
+    // 'chat': fehlgeschlagene Nachrichten werden bereits IN der Bubble mit
+    // Retry-Button angezeigt (queueStatus 'error'). Ein zusaetzlicher globaler
+    // Toast erscheint sonst "aus dem Nichts", wenn ein Hintergrund-Flush
+    // (Reconnect/Online) eine alte Queue-Nachricht erneut nicht senden kann.
+    if (item.metadata.type === 'chat') continue;
     const label = item.metadata.label || 'Aktion';
     showFailedToast(label);
   }
