@@ -301,28 +301,23 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
             <IonCardContent style={{ padding: '0' }}>
               <IonAccordionGroup ref={accordionGroupRef}>
                 <IonAccordion value="activity-picker" toggleIcon={chevronDownOutline} toggleIconSlot="end">
-                  <IonItem slot="header" lines="none" style={{ '--padding-start': '16px' }}>
+                  <IonItem slot="header" lines="none" style={{ '--padding-start': '16px', '--inner-padding-end': '12px' }}>
                     {selectedActivity ? (
-                      // Gewaehlt: dasselbe Listen-Element wie in der Liste zeigen
-                      // -> eindeutig, was ausgewaehlt wurde (statt nur kleinem Text).
-                      <div className="app-list-item app-list-item--teamer" style={{ position: 'relative', width: '100%', margin: 0, pointerEvents: 'none' }}>
-                        <div className="app-list-item__row">
-                          <div className="app-list-item__main">
-                            <div className="app-icon-circle app-icon-circle--teamer">
-                              <IonIcon icon={briefcaseOutline} />
-                            </div>
-                            <div className="app-list-item__content">
-                              <div className="app-list-item__title">{selectedActivity.name}</div>
-                              {selectedActivity.category_names && (
-                                <div className="app-list-item__meta">
-                                  <span className="app-list-item__meta-item">
-                                    <IonIcon icon={pricetag} className="app-icon-color--category" />
-                                    {selectedActivity.category_names}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
+                      // Gewaehlt: schlichte Header-Zeile (Icon + Name + Kategorie)
+                      // — keine Card-im-Header-Optik (sah gequetscht aus).
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', pointerEvents: 'none' }}>
+                        <div className="app-icon-circle app-icon-circle--teamer" style={{ flexShrink: 0 }}>
+                          <IonIcon icon={briefcaseOutline} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '1rem', fontWeight: 600, color: '#1a1a1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {selectedActivity.name}
                           </div>
+                          {selectedActivity.category_names && (
+                            <div style={{ fontSize: '0.78rem', color: '#8e8e93', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {selectedActivity.category_names}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ) : (

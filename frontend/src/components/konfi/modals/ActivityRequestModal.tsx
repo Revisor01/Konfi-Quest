@@ -302,39 +302,39 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             <IonCardContent style={{ padding: '0' }}>
               <IonAccordionGroup ref={accordionGroupRef}>
                 <IonAccordion value="activity-picker" toggleIcon={chevronDownOutline} toggleIconSlot="end">
-                  <IonItem slot="header" lines="none" style={{ '--padding-start': '16px' }}>
+                  <IonItem slot="header" lines="none" style={{ '--padding-start': '16px', '--inner-padding-end': '12px' }}>
                     {selectedActivity ? (
-                      // Gewaehlt: dasselbe Listen-Element wie in der Liste zeigen
-                      // (Icon, Name, Punkte) -> eindeutig, was ausgewaehlt wurde.
+                      // Gewaehlt: schlichte Header-Zeile (Icon + Name + Kategorie,
+                      // Punkte dezent als Chip) — KEINE Card-im-Header-Optik, die
+                      // sah gequetscht aus (Eselsohr kollidierte mit dem Chevron).
                       (() => {
-                        const variant = selectedActivity.type === 'gottesdienst' ? 'gottesdienst' : 'gemeinde';
+                        const isGodi = selectedActivity.type === 'gottesdienst';
+                        const accent = isGodi ? 'var(--app-color-gottesdienst)' : 'var(--app-color-gemeinde)';
                         return (
-                          <div className={`app-list-item app-list-item--${variant}`} style={{ position: 'relative', width: '100%', margin: 0, pointerEvents: 'none' }}>
-                            <div className="app-corner-badges">
-                              <div className={`app-corner-badge app-corner-badge--${variant}`} style={{ whiteSpace: 'nowrap' }}>
-                                +{selectedActivity.points}P
-                              </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', pointerEvents: 'none' }}>
+                            <div
+                              className={`app-icon-circle app-icon-circle--${isGodi ? 'info' : 'activities'}`}
+                              style={{ flexShrink: 0 }}
+                            >
+                              <IonIcon icon={isGodi ? homeOutline : peopleOutline} />
                             </div>
-                            <div className="app-list-item__row">
-                              <div className="app-list-item__main">
-                                <div className={`app-icon-circle app-icon-circle--${selectedActivity.type === 'gottesdienst' ? 'info' : 'activities'}`}>
-                                  <IonIcon icon={selectedActivity.type === 'gottesdienst' ? homeOutline : peopleOutline} />
-                                </div>
-                                <div className="app-list-item__content">
-                                  <div className="app-list-item__title" style={{ paddingRight: '50px' }}>
-                                    {selectedActivity.name}
-                                  </div>
-                                  {selectedActivity.category_names && (
-                                    <div className="app-list-item__meta">
-                                      <span className="app-list-item__meta-item">
-                                        <IonIcon icon={pricetag} className="app-icon-color--category" />
-                                        {selectedActivity.category_names}
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: '1rem', fontWeight: 600, color: '#1a1a1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {selectedActivity.name}
                               </div>
+                              {selectedActivity.category_names && (
+                                <div style={{ fontSize: '0.78rem', color: '#8e8e93', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {selectedActivity.category_names}
+                                </div>
+                              )}
                             </div>
+                            <span style={{
+                              flexShrink: 0, fontSize: '0.8rem', fontWeight: 700, color: accent,
+                              background: isGodi ? 'rgba(59,130,246,0.12)' : 'rgba(4,120,87,0.12)',
+                              padding: '3px 10px', borderRadius: '10px', whiteSpace: 'nowrap'
+                            }}>
+                              +{selectedActivity.points}P
+                            </span>
                           </div>
                         );
                       })()
