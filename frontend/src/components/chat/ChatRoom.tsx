@@ -1119,7 +1119,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           </div>
         )}
 
-        <div style={{ paddingBottom: '120px', position: 'relative' }}>
+        <div style={{ paddingBottom: '16px', position: 'relative' }}>
           {/* EIN einziger sticky Tages-Chip ganz oben — klebt bei top:6px und
               zeigt immer den Tag der obersten sichtbaren Nachricht. Da es nur
               EINEN gibt, ueberlagern sich keine Trenner mehr. */}

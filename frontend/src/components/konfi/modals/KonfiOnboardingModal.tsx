@@ -67,7 +67,15 @@ const KonfiOnboardingModal: React.FC<KonfiOnboardingModalProps> = ({ onClose, di
   }, [isLast, onClose]);
 
   return (
-    <IonContent className="app-gradient-background">
+    <IonContent className="app-gradient-background konfi-onboarding-content">
+      {/* Hoehenkette fuer Swiper im Modal absichern: ohne das setzt Swiper-CSS
+          .swiper-slide auf height:auto -> Slide kollabiert -> farbiger
+          Hintergrund hat keine Flaeche und wirkt weiss. */}
+      <style>{`
+        .konfi-onboarding-content .swiper,
+        .konfi-onboarding-content .swiper-wrapper { height: 100%; }
+        .konfi-onboarding-content .swiper-slide { height: 100%; display: flex; }
+      `}</style>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '0' }}>
         {/* Skip oben rechts (nicht auf der letzten Slide) */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 16px 0' }}>
@@ -81,19 +89,25 @@ const KonfiOnboardingModal: React.FC<KonfiOnboardingModalProps> = ({ onClose, di
         <Swiper
           modules={[Pagination]}
           pagination={{ clickable: true }}
+          autoHeight={false}
           onSwiper={(s) => { swiperRef.current = s; }}
           onSlideChange={(s) => setIndex(s.activeIndex)}
-          style={{ flex: 1, width: '100%' }}
+          style={{ flex: 1, width: '100%', height: '100%', minHeight: 0 }}
         >
           {SLIDES.map((slide, i) => (
-            <SwiperSlide key={i}>
-              <div style={{
-                position: 'relative', overflow: 'hidden',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                textAlign: 'center', height: '100%', padding: '24px 32px 56px', boxSizing: 'border-box',
-                // Volle Bereichsfarbe, nur abgeschwaecht: kraeftiger Verlauf von der
-                // Farbe oben zu einem hellen Ton unten -> Text bleibt lesbar.
+            <SwiperSlide
+              key={i}
+              style={{
+                // Hoehe + Farbe am Slide SELBST: im Modal kollabiert sonst die
+                // height:100%-Kette und der farbige Hintergrund wirkt weiss.
+                height: '100%', minHeight: '100%', alignSelf: 'stretch',
                 background: `linear-gradient(165deg, ${slide.color} 0%, ${slide.color}d9 30%, ${slide.color}80 62%, ${slide.color}1f 100%)`
+              }}
+            >
+              <div style={{
+                position: 'relative', overflow: 'hidden', flex: 1, width: '100%',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                textAlign: 'center', height: '100%', minHeight: '100%', padding: '24px 32px 56px', boxSizing: 'border-box'
               }}>
                 {/* Lutherrose im Hintergrund (weiss, transparent ueber der Farbflaeche) */}
                 <img
