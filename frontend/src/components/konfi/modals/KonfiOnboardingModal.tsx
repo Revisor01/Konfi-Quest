@@ -1,5 +1,6 @@
 import React, { useRef, useState, useCallback } from 'react';
-import { IonContent, IonButton, IonIcon } from '@ionic/react';
+import { createPortal } from 'react-dom';
+import { IonButton, IonIcon } from '@ionic/react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
@@ -76,6 +77,36 @@ const ROSE_POSITIONS: React.CSSProperties[] = [
   { top: '-10vh', left: '-18vw', transform: 'rotate(-6deg)' },
 ];
 
+// Bubble-Sets je Slide — mehrere Kreise, hauptsaechlich auf der GEGENSEITE der
+// Rose + ein paar dezente auf der Rose-Seite (aber VERSETZT, nicht unter der
+// Rose). Reihenfolge passend zu ROSE_POSITIONS.
+const BUBBLE_SETS: React.CSSProperties[][] = [
+  // Rose oben-rechts
+  [ { bottom: '9%', left: '-38px', width: '140px', height: '140px' }, { bottom: '26%', left: '44px', width: '46px', height: '46px' },
+    { top: '20%', left: '20px', width: '64px', height: '64px' }, { bottom: '6%', right: '26%', width: '34px', height: '34px' },
+    { bottom: '30%', right: '-20px', width: '72px', height: '72px' } ],
+  // Rose oben-links
+  [ { bottom: '8%', right: '-36px', width: '150px', height: '150px' }, { bottom: '24%', right: '40px', width: '46px', height: '46px' },
+    { top: '20%', right: '20px', width: '60px', height: '60px' }, { bottom: '7%', left: '24%', width: '34px', height: '34px' },
+    { bottom: '30%', left: '-20px', width: '70px', height: '70px' } ],
+  // Rose mitte-rechts
+  [ { bottom: '8%', left: '-34px', width: '140px', height: '140px' }, { top: '12%', left: '28px', width: '48px', height: '48px' },
+    { bottom: '26%', left: '46px', width: '40px', height: '40px' }, { top: '14%', right: '18%', width: '34px', height: '34px' },
+    { bottom: '6%', right: '12%', width: '56px', height: '56px' } ],
+  // Rose unten-links
+  [ { top: '8%', right: '-34px', width: '150px', height: '150px' }, { top: '26%', right: '38px', width: '46px', height: '46px' },
+    { bottom: '20%', right: '24px', width: '60px', height: '60px' }, { top: '7%', left: '24%', width: '34px', height: '34px' },
+    { top: '32%', left: '-18px', width: '68px', height: '68px' } ],
+  // Rose unten-rechts
+  [ { top: '8%', left: '-34px', width: '150px', height: '150px' }, { top: '26%', left: '38px', width: '46px', height: '46px' },
+    { bottom: '20%', left: '24px', width: '60px', height: '60px' }, { top: '7%', right: '24%', width: '34px', height: '34px' },
+    { top: '32%', right: '-18px', width: '68px', height: '68px' } ],
+  // Rose oben-links
+  [ { bottom: '9%', right: '-36px', width: '140px', height: '140px' }, { bottom: '26%', right: '42px', width: '44px', height: '44px' },
+    { top: '20%', right: '22px', width: '62px', height: '62px' }, { bottom: '7%', left: '24%', width: '34px', height: '34px' },
+    { bottom: '30%', left: '-18px', width: '70px', height: '70px' } ],
+];
+
 const KonfiOnboardingModal: React.FC<KonfiOnboardingModalProps> = ({ onClose, displayName }) => {
   const swiperRef = useRef<SwiperType | null>(null);
   const [index, setIndex] = useState(0);
@@ -95,7 +126,9 @@ const KonfiOnboardingModal: React.FC<KonfiOnboardingModalProps> = ({ onClose, di
   const rgb = SLIDES[index].rgb;
   const activeGradient =
     `linear-gradient(165deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.18) 70%, rgba(0,0,0,0.5) 100%), rgb(var(${rgb}))`;
-  return (
+  // Per Portal an document.body: so liegt das Overlay AUSSERHALB des Tab-Outlets
+  // und damit garantiert ueber der Ionic-Tab-Bar (die sonst durchscheint).
+  return createPortal(
     // Vollbild-Overlay (KEIN Modal): randlos bis an den Bildschirmrand. zIndex
     // sehr hoch, damit es AUCH ueber der Tab-Bar liegt (die hat einen hohen
     // z-index). Safe-Area-Padding sitzt am INNEREN Container.
@@ -112,7 +145,33 @@ const KonfiOnboardingModal: React.FC<KonfiOnboardingModalProps> = ({ onClose, di
         .konfi-onboarding-content .swiper-wrapper { height: 100%; }
         .konfi-onboarding-content .swiper-slide { height: 100%; display: flex; }
       `}</style>
+
+      {/* Deko im AEUSSEREN Overlay (ohne safe-area-Padding) -> Rose darf bis an
+          den echten Bildschirmrand / in die Safe-Area oben reichen, ohne
+          abgeschnitten zu werden. Position wechselt je Slide (index). */}
+      <img
+        src="/assets/icon/logo-mark-white.png"
+        alt=""
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          ...ROSE_POSITIONS[index % ROSE_POSITIONS.length],
+          width: '95vw', maxWidth: '460px', height: 'auto',
+          objectFit: 'contain', opacity: 0.16,
+          pointerEvents: 'none', zIndex: 0
+        }}
+      />
+      {/* Bubbles auf der Rose-Gegenseite (je Slide) */}
+      {BUBBLE_SETS[index % BUBBLE_SETS.length].map((pos, bi) => (
+        <div
+          key={bi}
+          className={bi === 0 ? 'app-auth-bubble' : 'app-auth-bubble app-auth-bubble--soft'}
+          style={{ position: 'absolute', ...pos, zIndex: 0 }}
+        />
+      ))}
+
       <div style={{
+        position: 'relative', zIndex: 1,
         display: 'flex', flexDirection: 'column', height: '100%',
         paddingTop: 'env(safe-area-inset-top, 0px)',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)'
@@ -149,22 +208,9 @@ const KonfiOnboardingModal: React.FC<KonfiOnboardingModalProps> = ({ onClose, di
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 textAlign: 'center', height: '100%', minHeight: '100%', padding: '24px 32px 56px', boxSizing: 'border-box'
               }}>
-                {/* Grosses Ghost-Logo wie auf der Login-Seite — pro Slide an einer
-                    ANDEREN Position (wechselt durch alle 6 Slides, nicht nur 2). */}
-                <img
-                  src="/assets/icon/logo-mark-white.png"
-                  alt=""
-                  aria-hidden="true"
-                  style={{
-                    position: 'absolute',
-                    ...ROSE_POSITIONS[i % ROSE_POSITIONS.length],
-                    width: '95vw', maxWidth: '460px', height: 'auto',
-                    objectFit: 'contain', opacity: 0.16,
-                    pointerEvents: 'none', zIndex: 0
-                  }}
-                />
-                {/* KEINE Bubbles — die grosse Rose ist die alleinige Deko (wie auf
-                    der Login-Seite). So liegt die Rose NIE auf/in den Kreisen. */}
+                {/* Rose + Bubbles liegen NICHT mehr hier (im safe-area-Container),
+                    sondern im aeusseren Overlay -> Rose darf bis in die Safe-Area
+                    oben durchziehen, ohne abgeschnitten zu werden. */}
                 <div style={{
                   position: 'relative', zIndex: 1,
                   width: '110px', height: '110px', borderRadius: '28px',
@@ -211,7 +257,8 @@ const KonfiOnboardingModal: React.FC<KonfiOnboardingModalProps> = ({ onClose, di
           </IonButton>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
