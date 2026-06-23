@@ -326,11 +326,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     onClose: () => dismissDeleteAccount()
   });
 
-  // App-Tour (Onboarding) erneut ansehen
-  const [presentOnboarding, dismissOnboarding] = useIonModal(KonfiOnboardingModal, {
-    onClose: () => dismissOnboarding(),
-    displayName: (user?.display_name || profile.display_name || '').split(' ')[0],
-  });
+  // App-Tour (Onboarding) erneut ansehen — Vollbild-Overlay (kein Modal)
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Modal with useIonModal Hook for Bible Translation
   const [presentBibleModal, dismissBibleModal] = useIonModal(BibleTranslationModal, {
@@ -685,11 +682,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
               <div
                 className="app-list-item app-list-item--purple"
                 style={{ width: '100%', cursor: 'pointer' }}
-                onClick={() => {
-                  presentOnboarding({
-                    presentingElement: pageRef?.current || presentingElement || undefined
-                  });
-                }}
+                onClick={() => setShowOnboarding(true)}
               >
                 <div className="app-list-item__row">
                   <div className="app-list-item__main">
@@ -824,6 +817,14 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
       <SpiritFooter />
 
       <div style={{ height: '32px' }}></div>
+
+      {/* App-Tour als Vollbild-Overlay (kein Modal) */}
+      {showOnboarding && (
+        <KonfiOnboardingModal
+          onClose={() => setShowOnboarding(false)}
+          displayName={(user?.display_name || profile.display_name || '').split(' ')[0]}
+        />
+      )}
     </div>
   );
 };

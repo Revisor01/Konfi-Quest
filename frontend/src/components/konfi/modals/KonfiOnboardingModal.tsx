@@ -25,42 +25,42 @@ const SLIDES: { icon: string; color: string; rgb: string; title: string; text: s
     icon: sparklesOutline,
     color: 'var(--app-color-konfis)',
     rgb: '--app-color-konfis-rgb',
-    title: 'Willkommen bei Konfi Quest!',
-    text: 'Dein Abenteuer in der Gemeinde — moderne Konfi-Zeit für dich. Hier sammelst du Punkte, meldest dich zu Events an und bleibst mit deinem Jahrgang in Kontakt. Wir zeigen dir kurz, was dir Konfi Quest alles bietet.',
+    title: 'Konfi Quest',
+    text: 'Herzlich willkommen bei deiner Konfi-Zeit! Dein Abenteuer in der Gemeinde beginnt jetzt. Hier sammelst du Punkte, meldest dich zu Events an und bleibst mit deinem Jahrgang in Kontakt. Komm mit, wir zeigen dir alles.',
   },
   {
     icon: homeOutline,
     color: 'var(--app-color-konfis)',
     rgb: '--app-color-konfis-rgb',
-    title: 'Start',
-    text: 'Dein Überblick: deine Punkte, dein aktuelles Level und was als Nächstes ansteht. Hier landest du immer als Erstes.',
+    title: 'Dein Start',
+    text: 'Hier landest du immer als Erstes. Du siehst auf einen Blick deine Punkte, dein aktuelles Level und was als Nächstes für dich ansteht.',
   },
   {
     icon: chatbubblesOutline,
     color: 'var(--app-color-chat)',
     rgb: '--app-color-chat-rgb',
-    title: 'Chat',
-    text: 'Schreib mit deinem Jahrgang und deinen Teamer:innen. Hier kommen auch wichtige Infos und Ankündigungen rein.',
+    title: 'Dein Chat',
+    text: 'Schreib mit deinem Jahrgang und deinen Teamer:innen. Hier bekommst du auch wichtige Infos und Ankündigungen direkt mit.',
   },
   {
     icon: calendarOutline,
     color: 'var(--app-color-events)',
     rgb: '--app-color-events-rgb',
-    title: 'Events',
-    text: 'Hier siehst du alle Termine und kannst dich direkt anmelden — bis hin zu deiner Konfirmation. Bei manchen Events gibt es Plätze oder Zeitfenster, einfach tippen und buchen.',
+    title: 'Deine Events',
+    text: 'Hier findest du alle Termine und meldest dich direkt an — bis hin zu deiner Konfirmation. Bei manchen Events wählst du einen Platz oder ein Zeitfenster: einfach tippen und buchen.',
   },
   {
     icon: starOutline,
     color: 'var(--app-color-badges)',
     rgb: '--app-color-badges-rgb',
-    title: 'Badges',
+    title: 'Deine Badges',
     text: 'Für deine Aktivitäten bekommst du Abzeichen. Sammle Badges und steig im Level auf — je mehr du machst, desto mehr schaltest du frei.',
   },
   {
     icon: documentTextOutline,
     color: 'var(--app-color-activities)',
     rgb: '--app-color-activities-rgb',
-    title: 'Aktivitäten',
+    title: 'Deine Aktivitäten',
     text: 'Warst du im Gottesdienst, bei einer Taufe oder Hochzeit? Reiche deine Aktivitäten hier ein. Deine Gruppenleiterinnen bestätigen sie und du bekommst deine Punkte.',
   },
 ];
@@ -86,27 +86,37 @@ const KonfiOnboardingModal: React.FC<KonfiOnboardingModalProps> = ({ onClose, di
     swiperRef.current?.slideNext();
   }, [isLast, onClose]);
 
-  // Farbe der AKTUELLEN Slide -> als Modal-Hintergrund (IonContent). Robust
-  // gegen die Swiper-Hoehenkette im Modal: der IonContent fuellt das Modal immer.
-  // Alphastufen ueber rgba(var(--...-rgb), a) — NICHT ${color}d9 (Hex an var()
-  // anhaengen ist ungueltiges CSS und liefert keinen Hintergrund -> weiss).
+  // Farbe der AKTUELLEN Slide als Vollbild-Hintergrund. VOLL DECKEND (kein Alpha
+  // < 1, sonst schimmert die App durch) und nach unten abgedunkelt, damit die
+  // weisse Schrift ueberall lesbar bleibt: volle Farbe oben, dann ein dunkler
+  // Schwarz-Layer DARUEBER (color-mix waere ideal, aber wir bleiben bei zwei
+  // Layern fuer maximale Browser-Kompatibilitaet). 1. Layer = dunkler Verlauf
+  // (transparent->schwarz), 2. Layer = DECKENDE Bereichsfarbe als Basis.
   const rgb = SLIDES[index].rgb;
   const activeGradient =
-    `linear-gradient(165deg, rgb(var(${rgb})) 0%, rgba(var(${rgb}),0.85) 30%, rgba(var(${rgb}),0.5) 62%, rgba(var(${rgb}),0.12) 100%)`;
+    `linear-gradient(165deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.18) 70%, rgba(0,0,0,0.5) 100%), rgb(var(${rgb}))`;
   return (
-    <IonContent
+    // Vollbild-Overlay (KEIN Modal): randlos bis an den Bildschirmrand. zIndex
+    // sehr hoch, damit es AUCH ueber der Tab-Bar liegt (die hat einen hohen
+    // z-index). Safe-Area-Padding sitzt am INNEREN Container.
+    <div
       className="konfi-onboarding-content"
       style={{
-        '--background': activeGradient,
-        transition: 'none'
-      } as React.CSSProperties}
+        position: 'fixed', inset: 0, zIndex: 100000,
+        background: activeGradient,
+        overflow: 'hidden'
+      }}
     >
       <style>{`
         .konfi-onboarding-content .swiper,
         .konfi-onboarding-content .swiper-wrapper { height: 100%; }
         .konfi-onboarding-content .swiper-slide { height: 100%; display: flex; }
       `}</style>
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '0' }}>
+      <div style={{
+        display: 'flex', flexDirection: 'column', height: '100%',
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)'
+      }}>
         {/* Skip oben rechts (nicht auf der letzten Slide) */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 16px 0' }}>
           {!isLast && (
@@ -153,11 +163,8 @@ const KonfiOnboardingModal: React.FC<KonfiOnboardingModalProps> = ({ onClose, di
                     pointerEvents: 'none', zIndex: 0
                   }}
                 />
-                {/* Dekorative Bubbles (wie Login) — luftig, asymmetrisch */}
-                <div className="app-auth-bubble" style={{ top: '12%', left: '-40px', width: '130px', height: '130px' }} />
-                <div className="app-auth-bubble app-auth-bubble--soft" style={{ top: '26%', left: '40px', width: '42px', height: '42px' }} />
-                <div className="app-auth-bubble" style={{ bottom: '8%', right: '-36px', width: '150px', height: '150px' }} />
-                <div className="app-auth-bubble app-auth-bubble--soft" style={{ bottom: '20%', left: '30px', width: '54px', height: '54px' }} />
+                {/* KEINE Bubbles — die grosse Rose ist die alleinige Deko (wie auf
+                    der Login-Seite). So liegt die Rose NIE auf/in den Kreisen. */}
                 <div style={{
                   position: 'relative', zIndex: 1,
                   width: '110px', height: '110px', borderRadius: '28px',
@@ -170,10 +177,10 @@ const KonfiOnboardingModal: React.FC<KonfiOnboardingModalProps> = ({ onClose, di
                   <IonIcon icon={slide.icon} style={{ fontSize: '3.2rem', color: '#fff' }} />
                 </div>
                 <h1 style={{ position: 'relative', zIndex: 1, fontSize: '1.6rem', fontWeight: 800, color: '#fff', margin: '0 0 12px', textShadow: '0 1px 6px rgba(0,0,0,0.18)' }}>
-                  {i === 0 && displayName ? `Hallo ${displayName}!` : slide.title}
+                  {slide.title}
                 </h1>
                 <p style={{ position: 'relative', zIndex: 1, fontSize: '1.02rem', lineHeight: 1.5, color: 'rgba(255,255,255,0.95)', margin: 0, maxWidth: '340px', textShadow: '0 1px 4px rgba(0,0,0,0.15)' }}>
-                  {slide.text}
+                  {i === 0 && displayName ? `Hallo ${displayName}! ${slide.text}` : slide.text}
                 </p>
               </div>
             </SwiperSlide>
@@ -204,7 +211,7 @@ const KonfiOnboardingModal: React.FC<KonfiOnboardingModalProps> = ({ onClose, di
           </IonButton>
         </div>
       </div>
-    </IonContent>
+    </div>
   );
 };
 
