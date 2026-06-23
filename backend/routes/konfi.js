@@ -918,6 +918,20 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
     }
     
     try {
+      // Jahrgang-Config des Konfis: nur AKTIVIERTE Punkt-Typen anbieten, sonst
+      // koennte der Konfi eine Aktivitaet einreichen, die der Admin nie genehmigen
+      // kann (Punkt-Typ im Jahrgang deaktiviert -> 400 beim Genehmigen).
+      const { rows: [cfg] } = await db.query(
+        `SELECT COALESCE(j.gottesdienst_enabled, true) AS gottesdienst_enabled,
+                COALESCE(j.gemeinde_enabled, true) AS gemeinde_enabled
+         FROM konfi_profiles kp
+         LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
+         WHERE kp.user_id = $1`,
+        [req.user.id]
+      );
+      const gottesdienstEnabled = cfg ? cfg.gottesdienst_enabled : true;
+      const gemeindeEnabled = cfg ? cfg.gemeinde_enabled : true;
+
       const query = `
         SELECT a.id, a.name, a.points, a.type,
                STRING_AGG(c.name, ', ') as category_names
@@ -926,10 +940,11 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         LEFT JOIN categories c ON ac.category_id = c.id
         WHERE a.organization_id = $1
           AND (a.target_role IS NULL OR a.target_role = 'konfi')
+          AND (a.type = 'gottesdienst' AND $2::boolean OR a.type = 'gemeinde' AND $3::boolean)
         GROUP BY a.id, a.name, a.points, a.type
         ORDER BY a.type, a.name
       `;
-      const { rows: activities } = await db.query(query, [req.user.organization_id]);
+      const { rows: activities } = await db.query(query, [req.user.organization_id, gottesdienstEnabled, gemeindeEnabled]);
       res.json(activities);
     } catch (err) {
  console.error('Database error in GET /activities:', err);
@@ -979,8 +994,23 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       const gdPoints = gdEnabled ? (pointsRow?.gottesdienst_points || 0) : 0;
       const gmPoints = gmEnabled ? (pointsRow?.gemeinde_points || 0) : 0;
 
+      // Badges, deren Punkt-Kategorie im Jahrgang deaktiviert ist, sind fuer
+      // diesen Konfi NICHT erreichbar -> markieren, damit das Frontend sie
+      // ausblenden/ausgrauen kann (kein irrefuehrender Fortschritt).
+      const isUnreachable = (badge) => {
+        switch (badge.criteria_type) {
+          case 'gottesdienst_points': return !gdEnabled;
+          case 'gemeinde_points': return !gmEnabled;
+          case 'both_categories': return !gdEnabled || !gmEnabled;
+          case 'total_points': return !gdEnabled && !gmEnabled;
+          default: return false;
+        }
+      };
+
       // Calculate progress for each badge
       for (let badge of badges) {
+        badge.unreachable = !badge.earned && isUnreachable(badge);
+
         if (badge.earned) {
           badge.progress = { current: badge.criteria_value, target: badge.criteria_value, percentage: 100 };
           continue;
@@ -1200,8 +1230,11 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       
       // Separate earned and available badges correctly
       const earned = badges.filter(badge => badge.earned);
-      // Available = not earned AND not hidden (unless earned)
-      const available = badges.filter(badge => !badge.earned && !badge.is_hidden);
+      // Available = not earned AND not hidden AND erreichbar. Badges, deren
+      // Punkt-Kategorie im Jahrgang deaktiviert ist (unreachable), tauchen NICHT
+      // als erreichbare Badges auf — der Konfi koennte sie nie bekommen, ein
+      // Fortschrittsbalken waere irrefuehrend.
+      const available = badges.filter(badge => !badge.earned && !badge.is_hidden && !badge.unreachable);
       
       // Get total counts for dashboard stats
       const { rows: [totalStats] } = await db.query(`

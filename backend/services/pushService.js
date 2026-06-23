@@ -585,14 +585,25 @@ class PushService {
    */
   static async checkAndSendLevelUp(db, konfiId, organizationId) {
     try {
-      // 1. Aktuelle Punkte und gespeichertes Level holen
+      // 1. Aktuelle Punkte, gespeichertes Level UND Jahrgang-Config holen.
+      // WICHTIG: nur AKTIVIERTE Punkt-Kategorien zaehlen (gemeinde_enabled /
+      // gottesdienst_enabled des Jahrgangs) — sonst wuerde ein Single-Kategorie-
+      // Jahrgang anhand zu hoher Punkte ins falsche Level eingestuft (+ falsche
+      // Level-Up-Pushes). Identische Logik wie der Dashboard-Endpoint.
       const { rows: [profile] } = await db.query(
-        'SELECT gottesdienst_points, gemeinde_points, current_level_id FROM konfi_profiles WHERE user_id = $1',
+        `SELECT kp.gottesdienst_points, kp.gemeinde_points, kp.current_level_id,
+                COALESCE(j.gottesdienst_enabled, true) AS gottesdienst_enabled,
+                COALESCE(j.gemeinde_enabled, true) AS gemeinde_enabled
+         FROM konfi_profiles kp
+         LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
+         WHERE kp.user_id = $1`,
         [konfiId]
       );
       if (!profile) return;
 
-      const totalPoints = (profile.gottesdienst_points || 0) + (profile.gemeinde_points || 0);
+      const totalPoints =
+        (profile.gottesdienst_enabled ? (profile.gottesdienst_points || 0) : 0) +
+        (profile.gemeinde_enabled ? (profile.gemeinde_points || 0) : 0);
 
       // 2. Alle aktiven Levels der Organisation holen (aufsteigend nach Punkten)
       const { rows: levels } = await db.query(

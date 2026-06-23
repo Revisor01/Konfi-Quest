@@ -216,14 +216,20 @@ router.get('/konfi/:userId', verifyTokenRBAC, async (req, res) => {
     const userId = parseInt(req.params.userId);
     const organizationId = req.user.organization_id;
 
-    // Hole Konfi-Infos mit aktuellen Punkten
+    // Hole Konfi-Infos mit aktuellen Punkten.
+    // total_points zaehlt nur AKTIVIERTE Punkt-Kategorien des Jahrgangs
+    // (gottesdienst_enabled/gemeinde_enabled) — sonst falsches Level bei
+    // Single-Kategorie-Jahrgaengen. Identisch zur Dashboard-/pushService-Logik.
     const konfiResult = await db.query(`
-      SELECT 
-        u.id, 
+      SELECT
+        u.id,
         u.display_name,
         kp.gottesdienst_points,
         kp.gemeinde_points,
-        (kp.gottesdienst_points + kp.gemeinde_points) as total_points,
+        (
+          (CASE WHEN COALESCE(j.gottesdienst_enabled, true) THEN kp.gottesdienst_points ELSE 0 END)
+          + (CASE WHEN COALESCE(j.gemeinde_enabled, true) THEN kp.gemeinde_points ELSE 0 END)
+        ) as total_points,
         kp.current_level_id,
         cl.name as current_level_name,
         cl.title as current_level_title,
@@ -231,6 +237,7 @@ router.get('/konfi/:userId', verifyTokenRBAC, async (req, res) => {
         cl.color as current_level_color
       FROM users u
       JOIN konfi_profiles kp ON u.id = kp.user_id
+      LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
       LEFT JOIN levels cl ON kp.current_level_id = cl.id
       WHERE u.id = $1 AND u.organization_id = $2 AND u.deleted_at IS NULL
     `, [userId, organizationId]);
