@@ -32,6 +32,7 @@ import FileViewerModal, { FileItem } from '../shared/FileViewerModal';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Keyboard } from '@capacitor/keyboard';
 // Native FileViewer ueber openFileNatively, FileViewerModal als Web-Fallback
 import { openFileNatively } from '../../utils/nativeFileViewer';
 import { writeQueue } from '../../services/writeQueue';
@@ -802,26 +803,32 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     };
   }, [selectedFilePreview]);
 
-  // Handle textarea focus to preserve scroll position on Android
+  // Tastatur oeffnet sich (Eingabefeld fokussiert): ans LISTENENDE scrollen, damit
+  // die letzte Nachricht ueber der Tastatur sichtbar bleibt (WhatsApp-Verhalten).
+  // Sonst verdeckt die Tastatur das Chat-Ende. Mehrere Scroll-Versuche, weil die
+  // Tastatur-/Viewport-Animation je nach Plattform ~150-350ms dauert.
   const handleTextareaFocus = async () => {
-    // Save current scroll position before keyboard opens
-    if (contentRef.current) {
-      const scrollElement = await contentRef.current.getScrollElement();
-      scrollPositionRef.current = scrollElement.scrollTop;
-
-      // After keyboard animation completes, restore scroll position
-      // Android keyboard animation takes ~300ms
-      setTimeout(async () => {
-        if (contentRef.current && scrollPositionRef.current > 0) {
-          const scrollEl = await contentRef.current.getScrollElement();
-          // Only restore if we were scrolled down and now we're at top
-          if (scrollEl.scrollTop < scrollPositionRef.current * 0.5) {
-            scrollEl.scrollTop = scrollPositionRef.current;
-          }
-        }
-      }, 350);
-    }
+    if (!contentRef.current) return;
+    // Beim Tippen wollen wir immer am Ende sein -> entparken + Auto-Scroll erlauben.
+    parkedAtDividerRef.current = false;
+    const scrollEnd = () => contentRef.current?.scrollToBottom(250);
+    // Direkt + nach der Keyboard-Animation nochmal (Viewport hat sich dann verkleinert).
+    scrollEnd();
+    setTimeout(scrollEnd, 150);
+    setTimeout(scrollEnd, 350);
   };
+
+  // Robuster Trigger: wenn die Tastatur WIRKLICH offen ist (nativ), ans Ende
+  // scrollen. Faengt Faelle ab, in denen onFocus zu frueh feuert (Viewport noch
+  // nicht verkleinert) -> sonst verdeckt die Tastatur die letzte Nachricht.
+  useEffect(() => {
+    let handle: any;
+    Keyboard.addListener('keyboardDidShow', () => {
+      parkedAtDividerRef.current = false;
+      contentRef.current?.scrollToBottom(250);
+    }).then(h => { handle = h; }).catch(() => { /* Web/kein nativer Keyboard -> egal */ });
+    return () => { handle?.remove?.(); };
+  }, []);
 
   const handleTextInputChange = (value: string) => {
     setMessageText(autoCapitalize(value));
