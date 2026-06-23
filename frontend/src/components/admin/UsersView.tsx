@@ -145,7 +145,7 @@ const UsersView: React.FC<UsersViewProps> = ({
         stats={[
           { value: users.length, label: 'Gesamt' },
           { value: getAdminUsers().length, label: 'Admins' },
-          { value: getTeamerUsers().length, label: 'Team' }
+          { value: getTeamerUsers().length, label: 'Teamer:in' }
         ]}
       />
 
@@ -235,7 +235,7 @@ const UsersView: React.FC<UsersViewProps> = ({
                         className="app-corner-badge"
                         style={{ backgroundColor: roleColor }}
                       >
-                        {user.role_name === 'org_admin' ? 'Admin' : user.role_name === 'admin' ? 'Hauptamt' : 'Team'}
+                        {user.role_name === 'org_admin' ? 'Org-Admin' : user.role_name === 'admin' ? 'Admin' : 'Teamer:in'}
                       </div>
                     </div>
 

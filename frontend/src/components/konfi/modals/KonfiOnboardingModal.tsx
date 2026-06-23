@@ -65,6 +65,17 @@ const SLIDES: { icon: string; color: string; rgb: string; title: string; text: s
   },
 ];
 
+// Wechselnde Positionen fuer das grosse Ghost-Logo — eine je Slide, damit es
+// ueber die Tour wandert (oben rechts, oben links, mittig, unten ...).
+const ROSE_POSITIONS: React.CSSProperties[] = [
+  { top: '-14vh', right: '-26vw', transform: 'rotate(-10deg)' },
+  { top: '-16vh', left: '-28vw', transform: 'rotate(12deg)' },
+  { top: '8vh', right: '-34vw', transform: 'rotate(6deg)' },
+  { bottom: '-12vh', left: '-26vw', transform: 'rotate(-14deg)' },
+  { bottom: '-10vh', right: '-28vw', transform: 'rotate(10deg)' },
+  { top: '-10vh', left: '-18vw', transform: 'rotate(-6deg)' },
+];
+
 const KonfiOnboardingModal: React.FC<KonfiOnboardingModalProps> = ({ onClose, displayName }) => {
   const swiperRef = useRef<SwiperType | null>(null);
   const [index, setIndex] = useState(0);
@@ -128,23 +139,25 @@ const KonfiOnboardingModal: React.FC<KonfiOnboardingModalProps> = ({ onClose, di
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 textAlign: 'center', height: '100%', minHeight: '100%', padding: '24px 32px 56px', boxSizing: 'border-box'
               }}>
-                {/* Lutherrose im Hintergrund — wechselnd oben links/rechts (je
-                    Slide). Komplett INNERHALB des Modals (nicht ueber den oberen
-                    Rand, sonst beschneidet ihn der Modal-Header/Radius). */}
+                {/* Grosses Ghost-Logo wie auf der Login-Seite — pro Slide an einer
+                    ANDEREN Position (wechselt durch alle 6 Slides, nicht nur 2). */}
                 <img
                   src="/assets/icon/logo-mark-white.png"
                   alt=""
                   aria-hidden="true"
                   style={{
                     position: 'absolute',
-                    top: '4%',
-                    ...(i % 2 === 0 ? { right: '4%' } : { left: '4%' }),
-                    width: '48vw', maxWidth: '230px', height: 'auto',
-                    objectFit: 'contain', opacity: 0.2,
-                    transform: i % 2 === 0 ? 'rotate(-8deg)' : 'rotate(8deg)',
+                    ...ROSE_POSITIONS[i % ROSE_POSITIONS.length],
+                    width: '95vw', maxWidth: '460px', height: 'auto',
+                    objectFit: 'contain', opacity: 0.16,
                     pointerEvents: 'none', zIndex: 0
                   }}
                 />
+                {/* Dekorative Bubbles (wie Login) — luftig, asymmetrisch */}
+                <div className="app-auth-bubble" style={{ top: '12%', left: '-40px', width: '130px', height: '130px' }} />
+                <div className="app-auth-bubble app-auth-bubble--soft" style={{ top: '26%', left: '40px', width: '42px', height: '42px' }} />
+                <div className="app-auth-bubble" style={{ bottom: '8%', right: '-36px', width: '150px', height: '150px' }} />
+                <div className="app-auth-bubble app-auth-bubble--soft" style={{ bottom: '20%', left: '30px', width: '54px', height: '54px' }} />
                 <div style={{
                   position: 'relative', zIndex: 1,
                   width: '110px', height: '110px', borderRadius: '28px',

@@ -271,10 +271,20 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
   const getRoleDisplayName = (roleName: string) => {
     switch (roleName) {
-      case 'org_admin': return 'Admin';
-      case 'admin': return 'Hauptamt';
-      case 'teamer': return 'Team';
+      case 'org_admin': return 'Org-Admin';
+      case 'admin': return 'Admin';
+      case 'teamer': return 'Teamer:in';
       default: return roleName;
+    }
+  };
+
+  // Klare Beschreibung je Rolle (unabhaengig vom technischen DB-Text).
+  const getRoleDescription = (roleName: string) => {
+    switch (roleName) {
+      case 'org_admin': return 'Voller Zugriff auf Konfis, Anträge, Aktivitäten, Badges und Events – über alle Jahrgänge. Verwaltet zusätzlich die Benutzer:innen und deren Jahrgangs-Zuordnung.';
+      case 'admin': return 'Voller Zugriff auf Konfis, Anträge, Aktivitäten, Badges und Events – nur für die zugewiesenen Jahrgänge.';
+      case 'teamer': return 'Eigenes Dashboard mit eigenen Badges, Team-Material und Team-Chat. Kann sich zu Events anmelden, bei denen Teamer:innen gebraucht werden. Vergibt keine Punkte und genehmigt keine Anträge.';
+      default: return '';
     }
   };
 
@@ -437,9 +447,9 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                             <span style={{ fontWeight: '500', color: '#333', display: 'block' }}>
                               {getRoleDisplayName(role.name)}
                             </span>
-                            {role.description && (
-                              <span style={{ fontSize: '0.75rem', color: '#8e8e93' }}>
-                                {role.description}
+                            {getRoleDescription(role.name) && (
+                              <span style={{ fontSize: '0.75rem', color: '#8e8e93', display: 'block', marginTop: '2px', lineHeight: 1.35 }}>
+                                {getRoleDescription(role.name)}
                               </span>
                             )}
                           </div>
