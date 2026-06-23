@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
-import api from '../../services/api';
+import { getMediaBlob } from '../../services/mediaCache';
 import { Message } from '../../types/chat';
 import { formatFileSize } from '../../utils/helpers';
 
@@ -73,11 +73,8 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ message, onError }) => {
         setLoading(true);
         setHasError(false);
 
-        const response = await api.get(`/chat/files/${message.file_path}`, {
-          responseType: 'blob'
-        });
-
-        const blob = response.data;
+        // Aus lokalem Cache laden (oder einmalig vom Server + cachen).
+        const blob = await getMediaBlob(message.file_path!);
         const fileName = message.file_name?.toLowerCase() || '';
         let mimeType = blob.type;
 

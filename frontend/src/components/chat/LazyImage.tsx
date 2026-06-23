@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import api from '../../services/api';
+import { getMediaObjectUrl } from '../../services/mediaCache';
 
 interface LazyImageProps {
   filePath: string;
@@ -11,25 +11,32 @@ interface LazyImageProps {
 const LazyImage: React.FC<LazyImageProps> = ({ filePath, fileName, onError, onClick }) => {
   const [imageSrc, setImageSrc] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
-  const imgRef = useRef<HTMLImageElement>(null);
+  const imgRef = useRef<HTMLDivElement>(null);
+  // Aktuell vergebene Object-URL, damit wir sie beim Unmount/Wechsel freigeben
+  // koennen (sonst Memory-Leak — das war der alte Bug).
+  const objectUrlRef = useRef<string>('');
 
   useEffect(() => {
+    let cancelled = false;
+
     const observer = new IntersectionObserver(
       async (entries) => {
-        if (entries[0].isIntersecting && !imageSrc) {
+        if (entries[0].isIntersecting && !objectUrlRef.current) {
           setIsLoading(true);
           try {
-            const response = await api.get(`/chat/files/${filePath}`, {
-              responseType: 'blob'
-            });
-            const blob = response.data;
-            const imageUrl = URL.createObjectURL(blob);
-            setImageSrc(imageUrl);
+            // Aus lokalem Cache laden (oder einmalig vom Server + cachen).
+            const url = await getMediaObjectUrl(filePath);
+            if (cancelled) {
+              URL.revokeObjectURL(url);
+              return;
+            }
+            objectUrlRef.current = url;
+            setImageSrc(url);
           } catch (error) {
             console.error('Error loading lazy image:', error);
-            onError();
+            if (!cancelled) onError();
           } finally {
-            setIsLoading(false);
+            if (!cancelled) setIsLoading(false);
           }
         }
       },
@@ -40,8 +47,16 @@ const LazyImage: React.FC<LazyImageProps> = ({ filePath, fileName, onError, onCl
       observer.observe(imgRef.current);
     }
 
-    return () => observer.disconnect();
-  }, [filePath, imageSrc, onError]);
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+      // Object-URL freigeben (Leak-Fix).
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = '';
+      }
+    };
+  }, [filePath, onError]);
 
   return (
     <div

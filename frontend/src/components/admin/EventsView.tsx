@@ -176,15 +176,18 @@ const EventsView: React.FC<EventsViewProps> = ({
         icon={calendar}
         preset="events"
         stats={[
-          { value: getUpcomingEvents().length, label: 'Anstehend' },
+          // Stats GLOBAL ueber alle Events zaehlen (eventCounts von der Page),
+          // NICHT nur ueber die Events des aktiven Tabs (`events`) — sonst waren
+          // zwei der drei Werte je nach Tab faelschlich 0.
+          { value: eventCounts?.aktuell ?? getUpcomingEvents().length, label: 'Anstehend' },
           {
-            value: events.filter(e =>
+            value: eventCounts?.verbuchen ?? events.filter(e =>
               new Date(e.event_date) < new Date() &&
               (e.pending_bookings_count ?? 0) > 0
             ).length,
             label: 'Verbuchen'
           },
-          { value: getPastEvents().length, label: 'Vergangen' }
+          { value: eventCounts?.vergangen ?? getPastEvents().length, label: 'Vergangen' }
         ]}
       />
 

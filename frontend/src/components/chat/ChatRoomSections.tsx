@@ -24,6 +24,7 @@ import { Message } from '../../types/chat';
 import { formatFileSize } from '../../utils/helpers';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
+import { compressImage } from '../../services/mediaCompression';
 
 // Validiert URLs für img src, erlaubt nur sichere Protokolle (blob: und data:)
 export const getSafePreviewUrl = (url: string | null | undefined): string | null => {
@@ -431,9 +432,11 @@ export const takePicture = async (): Promise<CameraResult | null> => {
   if (!photo.dataUrl) return null;
   const response = await fetch(photo.dataUrl);
   const blob = await response.blob();
-  const file = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
+  const rawFile = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
+  // Vor Upload auf max. 1920px lange Kante resizen + komprimieren.
+  const { file, previewUrl } = await compressImage(rawFile);
   if (file.size > 10 * 1024 * 1024) return null;
-  return { file, previewUrl: photo.dataUrl };
+  return { file, previewUrl };
 };
 
 export const selectFromGallery = async (): Promise<CameraResult | null> => {
@@ -445,9 +448,11 @@ export const selectFromGallery = async (): Promise<CameraResult | null> => {
   if (!photo.dataUrl) return null;
   const response = await fetch(photo.dataUrl);
   const blob = await response.blob();
-  const file = new File([blob], 'gallery-photo.jpg', { type: 'image/jpeg' });
+  const rawFile = new File([blob], 'gallery-photo.jpg', { type: 'image/jpeg' });
+  // Vor Upload auf max. 1920px lange Kante resizen + komprimieren.
+  const { file, previewUrl } = await compressImage(rawFile);
   if (file.size > 10 * 1024 * 1024) return null;
-  return { file, previewUrl: photo.dataUrl };
+  return { file, previewUrl };
 };
 
 // Auto-capitalize fuer das Eingabefeld: schreibt den ersten Buchstaben sowie den

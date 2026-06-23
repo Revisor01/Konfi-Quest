@@ -26,7 +26,8 @@ import {
   briefcaseOutline,
   settingsOutline,
   calendarOutline,
-  trashOutline
+  trashOutline,
+  imagesOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -39,10 +40,12 @@ import ChangeEmailModal from '../modals/ChangeEmailModal';
 import ChangePasswordModal from '../modals/ChangePasswordModal';
 import ChangeRoleTitleModal from '../modals/ChangeRoleTitleModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
+import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
 
 const AdminProfilePage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-profile');
   const { user, setUser, setSuccess, setError } = useApp();
+  const { cacheLabel, clearMediaCache: handleClearMediaCache } = useMediaCacheControl();
 
   // Offline-Query: Profile (user-spezifisch)
   const { data: profileData, refresh: refreshProfile } = useOfflineQuery<{ role_title?: string; email?: string; created_at?: string }>(
@@ -307,6 +310,42 @@ const AdminProfilePage: React.FC = () => {
                           <div className="app-list-item__title">Passwort ändern</div>
                           <div className="app-list-item__meta">
                             <span className="app-list-item__meta-item">Sicherheitseinstellungen</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </IonItem>
+
+                {/* Medien-Cache leeren */}
+                <IonItem
+                  button
+                  onClick={handleClearMediaCache}
+                  detail={false}
+                  lines="none"
+                  style={{
+                    '--background': 'transparent',
+                    '--padding-start': '0',
+                    '--padding-end': '0',
+                    '--inner-padding-end': '0',
+                    '--inner-border-width': '0',
+                    '--border-style': 'none',
+                    '--min-height': 'auto'
+                  }}
+                >
+                  <div
+                    className="app-list-item app-list-item--users"
+                    style={{ width: '100%' }}
+                  >
+                    <div className="app-list-item__row">
+                      <div className="app-list-item__main">
+                        <div className="app-icon-circle app-icon-circle--users">
+                          <IonIcon icon={imagesOutline} />
+                        </div>
+                        <div className="app-list-item__content">
+                          <div className="app-list-item__title">Medien-Cache leeren</div>
+                          <div className="app-list-item__meta">
+                            <span className="app-list-item__meta-item">{cacheLabel}</span>
                           </div>
                         </div>
                       </div>

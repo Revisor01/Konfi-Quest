@@ -38,6 +38,7 @@ import { openFileNatively } from '../../utils/nativeFileViewer';
 import { writeQueue } from '../../services/writeQueue';
 import { safeUUID } from '../../utils/uuid';
 import { networkMonitor } from '../../services/networkMonitor';
+import { compressImage } from '../../services/mediaCompression';
 import { ChatHeader, MessageInput, autoCapitalize, MIME_EXT_MAP, takePicture as takePictureHelper, selectFromGallery as selectFromGalleryHelper } from './ChatRoomSections';
 import { triggerPullHaptic } from '../../utils/haptics';
 
@@ -775,23 +776,35 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     setShowReactionPicker(true);
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
-        setError('Datei ist zu groß (max. 10MB)');
-        return;
-      }
-      setSelectedFile(file);
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = event.target.files?.[0];
+    // Input zuruecksetzen, damit dieselbe Datei erneut waehlbar ist.
+    event.target.value = '';
+    if (!picked) return;
 
-      // Create preview URL for images
-      if (file.type.startsWith('image/')) {
-        const previewUrl = URL.createObjectURL(file);
-        setSelectedFilePreview(previewUrl);
-      } else {
-        setSelectedFilePreview(null);
+    // Bilder vor Upload resizen + komprimieren (max 1920px lange Kante). Andere
+    // Dateien (Videos, PDFs) bleiben unveraendert.
+    let file = picked;
+    let previewUrl: string | null = null;
+    if (picked.type.startsWith('image/')) {
+      try {
+        const result = await compressImage(picked);
+        file = result.file;
+        previewUrl = result.previewUrl;
+      } catch {
+        file = picked;
+        previewUrl = URL.createObjectURL(picked);
       }
     }
+
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit (nach Kompression)
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      setError('Datei ist zu groß (max. 10MB)');
+      return;
+    }
+
+    setSelectedFile(file);
+    setSelectedFilePreview(previewUrl);
   };
 
   // Cleanup preview URL on unmount or file change

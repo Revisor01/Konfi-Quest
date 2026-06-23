@@ -34,13 +34,15 @@ import {
   mailOutline,
   timeOutline,
   closeOutline,
-  compassOutline
+  compassOutline,
+  imagesOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { SectionHeader } from '../../shared';
+import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
 import ChangePasswordModal from '../modals/ChangePasswordModal';
 import ChangeEmailModal from '../modals/ChangeEmailModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
@@ -201,6 +203,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
 
   const [selectedTranslation, setSelectedTranslation] = useState<string>(profile.bible_translation || 'LUT');
   const [earnedBadgesCount, setEarnedBadgesCount] = useState<number>(0);
+  const { cacheLabel, clearMediaCache: handleClearMediaCache } = useMediaCacheControl();
   const [wrappedHistory, setWrappedHistory] = useState<WrappedHistoryEntry[]>([]);
   // Wrapped-Historie laden
   React.useEffect(() => {
@@ -770,6 +773,27 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                       <div className="app-list-item__title">Bibelübersetzung</div>
                       <div className="app-list-item__meta">
                         <span className="app-list-item__meta-item">{getTranslationName(selectedTranslation)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Medien-Cache leeren */}
+              <div
+                className="app-list-item app-list-item--purple"
+                style={{ width: '100%', cursor: 'pointer' }}
+                onClick={handleClearMediaCache}
+              >
+                <div className="app-list-item__row">
+                  <div className="app-list-item__main">
+                    <div className="app-icon-circle app-icon-circle--purple">
+                      <IonIcon icon={imagesOutline} />
+                    </div>
+                    <div className="app-list-item__content">
+                      <div className="app-list-item__title">Medien-Cache leeren</div>
+                      <div className="app-list-item__meta">
+                        <span className="app-list-item__meta-item">{cacheLabel}</span>
                       </div>
                     </div>
                   </div>

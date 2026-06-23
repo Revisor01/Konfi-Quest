@@ -34,6 +34,7 @@ import {
   schoolOutline,
   timeOutline,
   arrowBack,
+  imagesOutline,
   document as documentIcon
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -51,6 +52,7 @@ import WrappedModal from '../../wrapped/WrappedModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
 
 interface TeamerProfile {
   user: {
@@ -79,6 +81,7 @@ const TeamerProfilePage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('profile');
   const { user, setUser, setError, signOut } = useApp();
   const [presentAlert] = useIonAlert();
+  const { cacheLabel, clearMediaCache: handleClearMediaCache } = useMediaCacheControl();
   const router = useIonRouter();
 
   // Offline-Query: Profil
@@ -355,7 +358,7 @@ const TeamerProfilePage: React.FC = () => {
                   onClick={() => presentPasswordModal({ presentingElement: pageRef.current ?? undefined })}
                   detail={false}
                   lines="none"
-                  style={itemStyle as any}
+                  style={{ ...itemStyle, marginBottom: '8px' } as any}
                 >
                   <div className="app-list-item" style={{ width: '100%', borderLeftColor: 'var(--app-color-teamer)' }}>
                     <div className="app-list-item__row">
@@ -367,6 +370,31 @@ const TeamerProfilePage: React.FC = () => {
                           <div className="app-list-item__title">Passwort ändern</div>
                           <div className="app-list-item__meta">
                             <span className="app-list-item__meta-item">Sicherheitseinstellungen</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </IonItem>
+
+                {/* Medien-Cache leeren */}
+                <IonItem
+                  button
+                  onClick={handleClearMediaCache}
+                  detail={false}
+                  lines="none"
+                  style={itemStyle as any}
+                >
+                  <div className="app-list-item" style={{ width: '100%', borderLeftColor: 'var(--app-color-teamer)' }}>
+                    <div className="app-list-item__row">
+                      <div className="app-list-item__main">
+                        <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-teamer)' }}>
+                          <IonIcon icon={imagesOutline} />
+                        </div>
+                        <div className="app-list-item__content">
+                          <div className="app-list-item__title">Medien-Cache leeren</div>
+                          <div className="app-list-item__meta">
+                            <span className="app-list-item__meta-item">{cacheLabel}</span>
                           </div>
                         </div>
                       </div>
