@@ -35,6 +35,7 @@ import {
   timeOutline,
   arrowBack,
   imagesOutline,
+  bookOutline,
   document as documentIcon
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -53,6 +54,8 @@ import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
+import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
+import { networkMonitor } from '../../../services/networkMonitor';
 
 interface TeamerProfile {
   user: {
@@ -62,6 +65,7 @@ interface TeamerProfile {
     role_title: string;
     teamer_since: string | null;
     organization_name: string;
+    bible_translation?: string;
   };
   konfi_data: {
     gottesdienst_points: number;
@@ -90,6 +94,32 @@ const TeamerProfilePage: React.FC = () => {
     async () => { const res = await api.get('/teamer/profile'); return res.data; },
     { ttl: CACHE_TTL.PROFILE }
   );
+
+  // Bibeluebersetzung (Tageslosung) — Auswahl + Speichern
+  const [selectedTranslation, setSelectedTranslation] = useState<string>('LUT');
+  React.useEffect(() => {
+    if (profile?.user?.bible_translation) setSelectedTranslation(profile.user.bible_translation);
+  }, [profile?.user?.bible_translation]);
+
+  const handleTranslationChange = async (translation: string) => {
+    setSelectedTranslation(translation); // optimistisch
+    if (!networkMonitor.isOnline) return;
+    try {
+      await api.put('/teamer/bible-translation', { translation });
+      refresh();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Fehler beim Ändern der Bibelübersetzung');
+    }
+  };
+
+  const [presentBibleModal, dismissBibleModal] = useIonModal(BibleTranslationModal, {
+    onClose: () => dismissBibleModal(),
+    currentTranslation: selectedTranslation,
+    accentColor: '#06b6d4',
+    itemVariant: 'teamer',
+    sectionIconVariant: 'teamer',
+    onSelect: (code: string) => { handleTranslationChange(code); dismissBibleModal(); },
+  });
 
   // Modals
   const [presentEmailModal, dismissEmailModal] = useIonModal(ChangeEmailModal, {
@@ -370,6 +400,31 @@ const TeamerProfilePage: React.FC = () => {
                           <div className="app-list-item__title">Passwort ändern</div>
                           <div className="app-list-item__meta">
                             <span className="app-list-item__meta-item">Sicherheitseinstellungen</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </IonItem>
+
+                {/* Bibelübersetzung (Tageslosung) */}
+                <IonItem
+                  button
+                  onClick={() => presentBibleModal({ presentingElement: pageRef.current ?? undefined })}
+                  detail={false}
+                  lines="none"
+                  style={{ ...itemStyle, marginBottom: '8px' } as any}
+                >
+                  <div className="app-list-item" style={{ width: '100%', borderLeftColor: 'var(--app-color-teamer)' }}>
+                    <div className="app-list-item__row">
+                      <div className="app-list-item__main">
+                        <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-teamer)' }}>
+                          <IonIcon icon={bookOutline} />
+                        </div>
+                        <div className="app-list-item__content">
+                          <div className="app-list-item__title">Bibelübersetzung</div>
+                          <div className="app-list-item__meta">
+                            <span className="app-list-item__meta-item">{getTranslationName(selectedTranslation)}</span>
                           </div>
                         </div>
                       </div>

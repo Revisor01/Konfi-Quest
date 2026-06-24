@@ -50,6 +50,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       // User-Daten aus DB laden (inkl. email, role_title, teamer_since)
       const userQuery = `
         SELECT u.display_name, u.username, u.email, u.role_title, u.teamer_since,
+               u.bible_translation,
                o.name as organization_name
         FROM users u
         LEFT JOIN organizations o ON u.organization_id = o.id
@@ -95,7 +96,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           email: userData?.email || '',
           role_title: userData?.role_title || '',
           teamer_since: userData?.teamer_since || null,
-          organization_name: userData?.organization_name || ''
+          organization_name: userData?.organization_name || '',
+          bible_translation: userData?.bible_translation || 'LUT'
         },
         konfi_data: isPromotedKonfi ? {
           gottesdienst_points: konfiProfile?.gottesdienst_points || 0,
@@ -778,11 +780,30 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // ====================================================================
   router.get('/tageslosung', rbacVerifier, requireTeamer, async (req, res) => {
     try {
-      const result = await fetchTageslosung(db, 'LUT');
+      // Bevorzugte Uebersetzung des Teamers (users.bible_translation, Default LUT).
+      const { rows: [u] } = await db.query('SELECT bible_translation FROM users WHERE id = $1', [req.user.id]);
+      const translation = u?.bible_translation || 'LUT';
+      const result = await fetchTageslosung(db, translation);
       res.json({ success: true, ...result });
     } catch (err) {
       console.error('Tageslosung error:', err.message);
       res.status(500).json({ success: false, error: 'Tageslosung konnte nicht geladen werden' });
+    }
+  });
+
+  // PUT /teamer/bible-translation — Bibeluebersetzung (Tageslosung) des Teamers setzen.
+  router.put('/bible-translation', rbacVerifier, requireTeamer, async (req, res) => {
+    try {
+      const { translation } = req.body;
+      const validTranslations = ['LUT', 'ELB', 'GNB', 'BIGS', 'NIV', 'LSG', 'RVR60'];
+      if (!validTranslations.includes(translation)) {
+        return res.status(400).json({ error: 'Ungültige Bibelübersetzung', valid_translations: validTranslations });
+      }
+      await db.query('UPDATE users SET bible_translation = $1 WHERE id = $2', [translation, req.user.id]);
+      res.json({ success: true, message: 'Bibelübersetzung erfolgreich aktualisiert', translation });
+    } catch (err) {
+      console.error('Database error in PUT /teamer/bible-translation:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
