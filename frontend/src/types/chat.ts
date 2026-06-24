@@ -33,6 +33,8 @@ export interface Message {
   options?: string[];
   votes?: PollVote[];
   multiple_choice?: boolean;
+  anonymous?: boolean;
+  exclusive_options?: boolean;
   expires_at?: string;
   poll_id?: number;
   // Reply-Daten

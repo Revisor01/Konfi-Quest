@@ -56,6 +56,8 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState(['', '']);
   const [multipleChoice, setMultipleChoice] = useState(false);
+  const [anonymous, setAnonymous] = useState(true);
+  const [exclusiveOptions, setExclusiveOptions] = useState(false);
   const [hasExpiration, setHasExpiration] = useState(false);
   const [expirationHours, setExpirationHours] = useState(24);
   const { isSubmitting: creating, guard } = useActionGuard();
@@ -64,6 +66,8 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
     setQuestion('');
     setOptions(['', '']);
     setMultipleChoice(false);
+    setAnonymous(true);
+    setExclusiveOptions(false);
     setHasExpiration(false);
     setExpirationHours(24);
   };
@@ -105,7 +109,10 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
         const pollData = {
           question: trimmedQuestion,
           options: validOptions,
-          multiple_choice: multipleChoice,
+          // Exklusive Optionen erzwingen Einzelauswahl (Backend setzt das auch durch).
+          multiple_choice: exclusiveOptions ? false : multipleChoice,
+          anonymous,
+          exclusive_options: exclusiveOptions,
           expires_in_hours: hasExpiration ? expirationHours : null
         };
 
@@ -228,12 +235,46 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
                 <IonToggle
                   className="app-toggle--chat"
                   checked={multipleChoice}
+                  disabled={exclusiveOptions}
                   onIonChange={(e) => setMultipleChoice(e.detail.checked)}
                 >
                   <IonLabel>
                     <h3>Mehrfachauswahl</h3>
                     <p className="app-settings-item__subtitle">
-                      Mehrere Antworten erlauben
+                      {exclusiveOptions ? 'Bei exklusiven Optionen nicht möglich' : 'Mehrere Antworten erlauben'}
+                    </p>
+                  </IonLabel>
+                </IonToggle>
+              </IonItem>
+
+              <IonItem>
+                <IonToggle
+                  className="app-toggle--chat"
+                  checked={!anonymous}
+                  onIonChange={(e) => setAnonymous(!e.detail.checked)}
+                >
+                  <IonLabel>
+                    <h3>Namen anzeigen</h3>
+                    <p className="app-settings-item__subtitle">
+                      Sichtbar machen, wer welche Antwort gewählt hat
+                    </p>
+                  </IonLabel>
+                </IonToggle>
+              </IonItem>
+
+              <IonItem>
+                <IonToggle
+                  className="app-toggle--chat"
+                  checked={exclusiveOptions}
+                  onIonChange={(e) => {
+                    setExclusiveOptions(e.detail.checked);
+                    if (e.detail.checked) setMultipleChoice(false);
+                  }}
+                >
+                  <IonLabel>
+                    <h3>Exklusive Optionen</h3>
+                    <p className="app-settings-item__subtitle">
+                      Jede Option nur einmal wählbar (z.B. Aufgaben-Verteilung)
                     </p>
                   </IonLabel>
                 </IonToggle>

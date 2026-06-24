@@ -377,34 +377,44 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               const userVoted = message.votes?.some(vote =>
                 vote.user_id === user?.id && vote.user_type === user?.type && vote.option_index === index
               );
+              const isExclusive = !!message.exclusive_options;
+              const showNames = message.anonymous === false;
+              // Exklusiv: Option ist vergeben, wenn jemand sie gewaehlt hat — und
+              // fuer alle ausser dem Waehler selbst gesperrt.
+              const takenByOther = isExclusive && optionVotes.length > 0 && !userVoted;
+              // Namen der Waehlenden (nur wenn nicht-anonym + Namen vorhanden).
+              const voterNames = optionVotes.map(v => v.user_name).filter(Boolean) as string[];
 
               return (
                 <div
                   key={index}
-                  onClick={() => onVoteInPoll(message.id, index)}
+                  onClick={() => { if (!takenByOther) onVoteInPoll(message.id, index); }}
                   style={{
-                    background: userVoted ? 'rgba(6, 182, 212, 0.12)' : 'white',
+                    background: userVoted ? 'rgba(6, 182, 212, 0.12)' : takenByOther ? 'rgba(0,0,0,0.04)' : 'white',
                     border: userVoted ? '2px solid #06b6d4' : '1px solid rgba(0,0,0,0.08)',
                     borderRadius: '10px',
                     padding: '12px',
                     marginBottom: '8px',
-                    cursor: 'pointer',
+                    cursor: takenByOther ? 'not-allowed' : 'pointer',
+                    opacity: takenByOther ? 0.7 : 1,
                     position: 'relative',
                     overflow: 'hidden',
                     transition: 'all 0.2s ease'
                   }}
                 >
-                  {/* Fortschrittsbalken */}
-                  <div style={{
-                    position: 'absolute',
-                    left: 0,
-                    top: 0,
-                    height: '100%',
-                    width: `${percentage}%`,
-                    background: userVoted ? 'rgba(6, 182, 212, 0.12)' : 'rgba(6, 182, 212, 0.06)',
-                    transition: 'width 0.4s ease',
-                    borderRadius: '8px'
-                  }} />
+                  {/* Fortschrittsbalken (nur bei nicht-exklusiven Umfragen sinnvoll) */}
+                  {!isExclusive && (
+                    <div style={{
+                      position: 'absolute',
+                      left: 0,
+                      top: 0,
+                      height: '100%',
+                      width: `${percentage}%`,
+                      background: userVoted ? 'rgba(6, 182, 212, 0.12)' : 'rgba(6, 182, 212, 0.06)',
+                      transition: 'width 0.4s ease',
+                      borderRadius: '8px'
+                    }} />
+                  )}
 
                   <div style={{
                     position: 'relative',
@@ -413,7 +423,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     justifyContent: 'space-between',
                     alignItems: 'center'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                       {userVoted && (
                         <div style={{
                           width: '18px',
@@ -422,7 +432,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                           backgroundColor: '#06b6d4',
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'center'
+                          justifyContent: 'center',
+                          flexShrink: 0
                         }}>
                           <IonIcon icon={checkmark} style={{ color: 'white', fontSize: '0.75rem' }} />
                         </div>
@@ -439,15 +450,37 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     <div style={{
                       fontSize: '0.8rem',
                       fontWeight: '600',
-                      color: '#06b6d4',
+                      color: takenByOther ? '#8e8e93' : '#06b6d4',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '4px'
+                      gap: '4px',
+                      flexShrink: 0
                     }}>
-                      <span>{optionVotes.length}</span>
-                      <span style={{ opacity: 0.7 }}>({percentage.toFixed(0)}%)</span>
+                      {isExclusive ? (
+                        // Exklusiv: Status statt Prozent
+                        <span>{optionVotes.length > 0 ? (userVoted ? 'Deine Wahl' : 'Vergeben') : 'Frei'}</span>
+                      ) : (
+                        <>
+                          <span>{optionVotes.length}</span>
+                          <span style={{ opacity: 0.7 }}>({percentage.toFixed(0)}%)</span>
+                        </>
+                      )}
                     </div>
                   </div>
+
+                  {/* Namen der Waehlenden (nicht-anonyme Umfrage) */}
+                  {showNames && voterNames.length > 0 && (
+                    <div style={{
+                      position: 'relative',
+                      zIndex: 1,
+                      marginTop: '6px',
+                      fontSize: '0.75rem',
+                      color: '#6b7280',
+                      lineHeight: 1.4
+                    }}>
+                      {voterNames.join(', ')}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -463,7 +496,12 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <IonIcon icon={message.multiple_choice ? checkmark : chatbubbles} style={{ fontSize: '0.8rem' }} />
-                <span>{message.multiple_choice ? 'Mehrfachauswahl' : 'Einzelauswahl'}</span>
+                <span>
+                  {message.exclusive_options
+                    ? 'Exklusiv-Wahl'
+                    : message.multiple_choice ? 'Mehrfachauswahl' : 'Einzelauswahl'}
+                  {message.anonymous === false ? ' · mit Namen' : ''}
+                </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <IonIcon icon={people} style={{ fontSize: '0.8rem' }} />

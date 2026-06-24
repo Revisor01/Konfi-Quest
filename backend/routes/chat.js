@@ -441,6 +441,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
               ro.display_name as sender_role_display_name,
               u.username as sender_username,
               p.question, p.options, p.expires_at, p.multiple_choice,
+              p.anonymous, p.exclusive_options,
               p.id as poll_id,
               CASE
                 WHEN m.deleted_at IS NOT NULL THEN 'Diese Nachricht wurde gelöscht'
@@ -535,8 +536,19 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
               console.error('Failed to parse poll options:', msg.options, e);
               msg.options = [];
             }
-            msg.votes = votesMap[msg.poll_id] || [];
             msg.multiple_choice = Boolean(msg.multiple_choice);
+            msg.anonymous = Boolean(msg.anonymous);
+            msg.exclusive_options = Boolean(msg.exclusive_options);
+            // Votes anreichern: voter_name -> user_name. Bei anonymen Umfragen die
+            // Namen NICHT ausliefern (nur Zaehlung), damit niemand sehen kann, wer
+            // was gewaehlt hat.
+            const rawVotes = votesMap[msg.poll_id] || [];
+            msg.votes = rawVotes.map(v => ({
+              user_id: v.user_id,
+              user_type: v.user_type,
+              option_index: v.option_index,
+              user_name: msg.anonymous ? undefined : v.voter_name,
+            }));
           }
           return msg;
         });
@@ -1100,11 +1112,14 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   // Create poll for a room
   router.post('/rooms/:roomId/polls', verifyTokenRBAC, validateCreatePoll, async (req, res) => {
     const roomId = req.params.roomId;
-    const { question, options, multiple_choice = false, expires_in_hours } = req.body;
+    const { question, options, multiple_choice = false, expires_in_hours, anonymous = true, exclusive_options = false } = req.body;
     const userId = req.user.id;
     const userType = req.user.type;
-    
-    
+    // Exklusive Optionen (jede Option max 1 Person) sind immer Einzelauswahl —
+    // Mehrfachauswahl ergibt dabei keinen Sinn.
+    const isMultipleChoice = exclusive_options ? false : Boolean(multiple_choice);
+
+
     // Only admins can create polls
     if (userType !== 'admin') {
       return res.status(403).json({ error: 'Nur Admins können Umfragen erstellen' });
@@ -1153,16 +1168,18 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
 
       // Then create the poll
       const pollQuery = `
-        INSERT INTO chat_polls (message_id, question, options, multiple_choice, expires_at, created_at)
-        VALUES ($1, $2, $3, $4, $5, NOW())
+        INSERT INTO chat_polls (message_id, question, options, multiple_choice, expires_at, anonymous, exclusive_options, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
         RETURNING id
       `;
       const { rows: [newPoll] } = await client.query(pollQuery, [
         messageId,
         question,
         JSON.stringify(validOptions),
-        multiple_choice,
-        expiresAt
+        isMultipleChoice,
+        expiresAt,
+        Boolean(anonymous),
+        Boolean(exclusive_options)
       ]);
 
       await client.query('COMMIT');
@@ -1174,7 +1191,9 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         message_id: messageId,
         question: question,
         options: validOptions,
-        multiple_choice: multiple_choice,
+        multiple_choice: isMultipleChoice,
+        anonymous: Boolean(anonymous),
+        exclusive_options: Boolean(exclusive_options),
         expires_at: expiresAt,
         votes: []
       });
@@ -1264,6 +1283,14 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       // Use the actual poll.id from database, not the request pollId (which might be message_id)
       const actualPollId = poll.id;
 
+      // Bei exklusiven Umfragen die Poll-Zeile sperren (FOR UPDATE), damit zwei
+      // gleichzeitige Votes auf dieselbe Option serialisiert werden -> kein Race,
+      // bei dem beide dieselbe Option ergattern.
+      const isExclusive = Boolean(poll.exclusive_options);
+      if (isExclusive) {
+        await client.query("SELECT 1 FROM chat_polls WHERE id = $1 FOR UPDATE", [actualPollId]);
+      }
+
       // Check if user already voted for this specific option
       const { rows: [existingVote] } = await client.query(
         "SELECT 1 FROM chat_poll_votes WHERE poll_id = $1 AND user_id = $2 AND user_type = $3 AND option_index = $4",
@@ -1271,7 +1298,8 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       );
 
       if (existingVote) {
-        // If already voted for this option, remove the vote (toggle off)
+        // If already voted for this option, remove the vote (toggle off).
+        // Gilt auch fuer exklusive Umfragen: die eigene Wahl wieder freigeben.
         await client.query(
           "DELETE FROM chat_poll_votes WHERE poll_id = $1 AND user_id = $2 AND user_type = $3 AND option_index = $4",
           [actualPollId, userId, userType, option_index]
@@ -1287,7 +1315,23 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         });
       }
 
-      // For single choice polls, remove any existing votes before adding new one
+      // Exklusive Umfrage: ist diese Option schon von JEMAND ANDEREM belegt?
+      // Dann ist sie vergeben -> 409, kein Doppel-Eintrag.
+      if (isExclusive) {
+        const { rows: [taken] } = await client.query(
+          "SELECT 1 FROM chat_poll_votes WHERE poll_id = $1 AND option_index = $2 LIMIT 1",
+          [actualPollId, option_index]
+        );
+        if (taken) {
+          await client.query('ROLLBACK');
+          client.release();
+          return res.status(409).json({ error: 'Diese Option ist bereits vergeben', action: 'taken' });
+        }
+      }
+
+      // Einzelauswahl (auch exklusiv): vorhandene Stimme(n) des Nutzers entfernen,
+      // bevor die neue gesetzt wird. So wechselt man bei exklusiven Umfragen die
+      // Option und gibt die alte automatisch wieder frei.
       if (!poll.multiple_choice) {
         await client.query(
           "DELETE FROM chat_poll_votes WHERE poll_id = $1 AND user_id = $2 AND user_type = $3",

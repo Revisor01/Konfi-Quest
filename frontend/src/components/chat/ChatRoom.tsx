@@ -644,9 +644,15 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       await loadMessages();
       // Re-enable auto-scroll after a short delay
       setTimeout(() => setShouldAutoScroll(true), 1000);
-    } catch (err) {
-      setError('Fehler beim Abstimmen');
- console.error('Error voting in poll:', err);
+    } catch (err: any) {
+      // Exklusive Umfrage: Option wurde inzwischen von jemand anderem belegt (409).
+      if (err?.response?.status === 409) {
+        setError('Diese Option ist bereits vergeben');
+        await loadMessages(); // aktuellen Stand (Belegung) nachziehen
+      } else {
+        setError('Fehler beim Abstimmen');
+        console.error('Error voting in poll:', err);
+      }
       setShouldAutoScroll(true); // Re-enable on error
     }
   };
