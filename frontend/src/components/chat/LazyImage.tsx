@@ -12,9 +12,11 @@ const LazyImage: React.FC<LazyImageProps> = ({ filePath, fileName, onError, onCl
   const [imageSrc, setImageSrc] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const imgRef = useRef<HTMLDivElement>(null);
-  // Aktuell vergebene Object-URL, damit wir sie beim Unmount/filePath-Wechsel
-  // freigeben koennen (sonst Memory-Leak).
-  const objectUrlRef = useRef<string>('');
+  // Merker, ob bereits geladen wurde (verhindert doppeltes Triggern). Die
+  // Object-URL selbst gehoert dem geteilten In-Memory-Cache (mediaCache) und wird
+  // hier NICHT revoked — so ueberlebt sie das Unmount und das Bild ist beim
+  // erneuten Oeffnen des Chats sofort da.
+  const loadedRef = useRef(false);
   // onError als Ref halten: MessageBubble uebergibt einen Inline-Arrow, der bei
   // JEDEM Render neu entsteht. Laege er in der useEffect-Dependency-Liste, wuerde
   // der Effekt staendig neu laufen, die Object-URL revoken und das Bild neu laden
@@ -29,18 +31,17 @@ const LazyImage: React.FC<LazyImageProps> = ({ filePath, fileName, onError, onCl
     const loadOnce = async () => {
       // Schon geladen? Nichts tun (z.B. wenn das Bild raus- und wieder
       // reinscrollt — es ist bereits da, kein erneuter Cache-/Netz-Zugriff).
-      if (objectUrlRef.current) return;
+      if (loadedRef.current) return;
+      loadedRef.current = true;
       setIsLoading(true);
       try {
+        // Liefert die geteilte, persistente Object-URL (sofort bei Cache-Treffer).
         const url = await getMediaObjectUrl(filePath);
-        if (cancelled) {
-          URL.revokeObjectURL(url);
-          return;
-        }
-        objectUrlRef.current = url;
+        if (cancelled) return;
         setImageSrc(url);
       } catch (error) {
         console.error('Error loading lazy image:', error);
+        loadedRef.current = false; // bei Fehler erneuter Versuch erlauben
         if (!cancelled) onErrorRef.current();
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -49,14 +50,17 @@ const LazyImage: React.FC<LazyImageProps> = ({ filePath, fileName, onError, onCl
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !objectUrlRef.current) {
-          // Einmal sichtbar -> laden, danach nicht mehr beobachten. So gibt es
-          // kein wiederholtes Re-Triggern beim Scrollen.
+        if (entries[0].isIntersecting && !loadedRef.current) {
+          // Einmal (vor-)sichtbar -> laden, danach nicht mehr beobachten. So gibt
+          // es kein wiederholtes Re-Triggern beim Scrollen.
           observer.disconnect();
           loadOnce();
         }
       },
-      { threshold: 0.1 }
+      // rootMargin grosszuegig: Bilder laden schon ~600px BEVOR sie in den
+      // Viewport scrollen. Beim Hochscrollen ist das (gecachte) Bild dann meist
+      // fertig -> kein sichtbarer Spinner->Bild-Sprung mehr.
+      { threshold: 0.01, rootMargin: '600px 0px' }
     );
 
     if (imgRef.current) {
@@ -68,16 +72,7 @@ const LazyImage: React.FC<LazyImageProps> = ({ filePath, fileName, onError, onCl
       observer.disconnect();
     };
     // NUR filePath — onError/onClick bewusst ausgeklammert (siehe onErrorRef).
-  }, [filePath]);
-
-  // Object-URL erst beim echten Unmount (oder filePath-Wechsel) freigeben.
-  useEffect(() => {
-    return () => {
-      if (objectUrlRef.current) {
-        URL.revokeObjectURL(objectUrlRef.current);
-        objectUrlRef.current = '';
-      }
-    };
+    // Object-URL wird NICHT revoked (gehoert dem geteilten Cache).
   }, [filePath]);
 
   return (

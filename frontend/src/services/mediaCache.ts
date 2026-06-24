@@ -22,6 +22,13 @@ const CACHE_DIR = 'media-cache';
 // filePath (z.B. wenn dasselbe Bild mehrfach im Viewport erscheint).
 const inflight = new Map<string, Promise<Blob>>();
 
+// Persistenter In-Memory-Object-URL-Cache: haelt fertige blob:-URLs ueber
+// Mount/Unmount der Chat-Komponenten hinweg. So ist ein Bild beim erneuten
+// Oeffnen des Chats SOFORT da (kein Re-Download aus dem Filesystem, kein
+// Spinner, kein Layout-Sprung). Die URLs werden NICHT pro-Komponente revoked
+// (das wuerde den geteilten Cache zerstoeren) — nur clearMediaCache() raeumt auf.
+const objectUrlCache = new Map<string, string>();
+
 // Stabiler, dateisystemsicherer Schluessel aus dem filePath (djb2-Hash).
 const cacheKey = (filePath: string): string => {
   let hash = 5381;
@@ -127,12 +134,21 @@ export async function getMediaBlob(filePath: string): Promise<Blob> {
 }
 
 /**
- * Bequemer Helper: liefert eine blob:-Object-URL fuer das Medium. Der AUFRUFER
- * muss die URL beim Unmount per URL.revokeObjectURL() freigeben.
+ * Liefert eine persistente blob:-Object-URL fuer das Medium. Die URL wird im
+ * In-Memory-Cache gehalten und ueber Mount/Unmount hinweg wiederverwendet — der
+ * AUFRUFER darf sie NICHT selbst revoken (nur clearMediaCache() raeumt auf).
  */
 export async function getMediaObjectUrl(filePath: string): Promise<string> {
+  const cached = objectUrlCache.get(filePath);
+  if (cached) return cached;
   const blob = await getMediaBlob(filePath);
-  return URL.createObjectURL(blob);
+  // Doppelpruefung: ein paralleler Aufruf koennte die URL inzwischen gesetzt
+  // haben -> dann die eigene verwerfen und die geteilte nehmen.
+  const existing = objectUrlCache.get(filePath);
+  if (existing) return existing;
+  const url = URL.createObjectURL(blob);
+  objectUrlCache.set(filePath, url);
+  return url;
 }
 
 /** Gesamtgroesse des Medien-Caches in Bytes. */
@@ -160,9 +176,14 @@ export async function getMediaCacheSize(): Promise<number> {
   }
 }
 
-/** Loescht den kompletten Medien-Cache. */
+/** Loescht den kompletten Medien-Cache (Filesystem + In-Memory-Object-URLs). */
 export async function clearMediaCache(): Promise<void> {
   inflight.clear();
+  // In-Memory-Object-URLs freigeben (sonst Memory-Leak) und Cache leeren.
+  for (const url of objectUrlCache.values()) {
+    URL.revokeObjectURL(url);
+  }
+  objectUrlCache.clear();
   try {
     await Filesystem.rmdir({ path: CACHE_DIR, directory: Directory.Cache, recursive: true });
   } catch {

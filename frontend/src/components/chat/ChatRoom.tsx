@@ -1185,7 +1185,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           </div>
         )}
 
-        <div style={{ paddingBottom: '4px', position: 'relative' }}>
+        <div style={{ paddingBottom: '0px', position: 'relative' }}>
           {(() => {
             // Index der ersten ungelesenen Nachricht (= letzte N Nachrichten, N =
             // beim Oeffnen eingefrorene Ungelesen-Anzahl). -1 = keine ungelesenen.
