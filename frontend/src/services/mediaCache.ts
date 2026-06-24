@@ -134,6 +134,16 @@ export async function getMediaBlob(filePath: string): Promise<Blob> {
 }
 
 /**
+ * Synchron: liefert die bereits im In-Memory-Cache liegende Object-URL — oder
+ * null, wenn das Medium (noch) nicht geladen wurde. Erlaubt es, gecachte Bilder
+ * SOFORT beim Render anzuzeigen (ohne Lazy-Load/Ruckeln), und nur ungecachte
+ * Bilder lazy nachzuladen.
+ */
+export function getCachedObjectUrl(filePath: string): string | null {
+  return objectUrlCache.get(filePath) ?? null;
+}
+
+/**
  * Liefert eine persistente blob:-Object-URL fuer das Medium. Die URL wird im
  * In-Memory-Cache gehalten und ueber Mount/Unmount hinweg wiederverwendet — der
  * AUFRUFER darf sie NICHT selbst revoken (nur clearMediaCache() raeumt auf).

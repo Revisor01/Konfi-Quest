@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getMediaObjectUrl } from '../../services/mediaCache';
+import { getMediaObjectUrl, getCachedObjectUrl } from '../../services/mediaCache';
 
 interface LazyImageProps {
   filePath: string;
@@ -9,14 +9,19 @@ interface LazyImageProps {
 }
 
 const LazyImage: React.FC<LazyImageProps> = ({ filePath, fileName, onError, onClick }) => {
-  const [imageSrc, setImageSrc] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(true);
+  // Synchron pruefen, ob das Bild bereits im In-Memory-Cache liegt. Wenn ja, ist
+  // imageSrc schon beim ERSTEN Render gesetzt -> das Bild erscheint sofort, ohne
+  // Lazy-Load-Zwischenzustand und ohne Ruckeln beim Hochscrollen. Nur ungecachte
+  // Bilder werden lazy nachgeladen (spart Bandbreite beim allerersten Oeffnen).
+  const cachedUrl = getCachedObjectUrl(filePath);
+  const [imageSrc, setImageSrc] = useState<string>(cachedUrl || '');
+  const [isLoading, setIsLoading] = useState(!cachedUrl);
   const imgRef = useRef<HTMLDivElement>(null);
   // Merker, ob bereits geladen wurde (verhindert doppeltes Triggern). Die
   // Object-URL selbst gehoert dem geteilten In-Memory-Cache (mediaCache) und wird
   // hier NICHT revoked — so ueberlebt sie das Unmount und das Bild ist beim
   // erneuten Oeffnen des Chats sofort da.
-  const loadedRef = useRef(false);
+  const loadedRef = useRef(!!cachedUrl);
   // onError als Ref halten: MessageBubble uebergibt einen Inline-Arrow, der bei
   // JEDEM Render neu entsteht. Laege er in der useEffect-Dependency-Liste, wuerde
   // der Effekt staendig neu laufen, die Object-URL revoken und das Bild neu laden
@@ -26,6 +31,9 @@ const LazyImage: React.FC<LazyImageProps> = ({ filePath, fileName, onError, onCl
   onErrorRef.current = onError;
 
   useEffect(() => {
+    // Cache-Treffer beim Mount -> schon angezeigt, kein Observer/Laden noetig.
+    if (loadedRef.current) return;
+
     let cancelled = false;
 
     const loadOnce = async () => {
@@ -82,12 +90,15 @@ const LazyImage: React.FC<LazyImageProps> = ({ filePath, fileName, onError, onCl
         maxWidth: '100%',
         maxHeight: '300px',
         borderRadius: '8px',
-        backgroundColor: '#f0f0f0',
+        // Hintergrund/feste minHeight NUR im Lade-/Fehlerzustand. Sobald das Bild
+        // da ist, bestimmt es selbst die Hoehe -> KEIN Sprung von der 100px-
+        // Platzhalter-Box auf die echte Bildhoehe (das war das Ruckeln).
+        backgroundColor: imageSrc ? 'transparent' : '#f0f0f0',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         cursor: imageSrc ? 'pointer' : 'default',
-        minHeight: '100px'
+        minHeight: imageSrc ? undefined : '100px'
       }}
       onClick={imageSrc ? onClick : undefined}
     >
@@ -95,11 +106,15 @@ const LazyImage: React.FC<LazyImageProps> = ({ filePath, fileName, onError, onCl
         <img
           src={imageSrc}
           alt={fileName}
+          // Cache-Treffer beim Mount: synchron dekodieren -> Bild ist sofort im
+          // ersten Frame da (kein nachtraegliches Reinpoppen/Ruckeln).
+          decoding={cachedUrl ? 'sync' : 'async'}
           style={{
             maxWidth: '100%',
             maxHeight: '300px',
             borderRadius: '8px',
-            objectFit: 'cover'
+            objectFit: 'cover',
+            display: 'block'
           }}
         />
       ) : isLoading ? (
