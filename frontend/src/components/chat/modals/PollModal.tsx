@@ -274,7 +274,7 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
                   <IonLabel>
                     <h3>Exklusive Optionen</h3>
                     <p className="app-settings-item__subtitle">
-                      Jede Option nur einmal wählbar (z.B. Aufgaben-Verteilung)
+                      Jede Option kann nur von einer Person gewählt werden
                     </p>
                   </IonLabel>
                 </IonToggle>

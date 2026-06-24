@@ -34,7 +34,7 @@ const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-chat)',
     rgb: '--app-color-chat-rgb',
     title: 'Chat',
-    text: 'Es gibt automatisch einen Jahrgangs-Chat und einen Team-Chat. Zu jedem Event kannst du zusätzlich einen Chat erstellen — die angemeldeten Konfis kommen automatisch hinein. Du kannst Bilder teilen und Umfragen erstellen, auch mit fester Verteilung für Touren oder Aufgaben.',
+    text: 'Es gibt automatisch einen Jahrgangs-Chat und einen Team-Chat. Du kannst außerdem Direktchats und eigene Gruppenchats anlegen, und zu jedem Event einen Chat erstellen — die angemeldeten Konfis kommen automatisch hinein. Bilder teilen und Umfragen erstellen geht natürlich auch.',
   },
   {
     icon: calendarOutline,
