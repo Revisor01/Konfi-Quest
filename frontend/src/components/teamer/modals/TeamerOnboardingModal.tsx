@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   sparklesOutline, homeOutline, chatbubblesOutline, calendarOutline,
-  ribbonOutline, documentTextOutline,
+  ribbonOutline, documentTextOutline, folderOpenOutline,
 } from 'ionicons/icons';
 import OnboardingTour, { OnboardingSlide } from '../../shared/OnboardingTour';
 
@@ -25,7 +25,7 @@ const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-teamer)',
     rgb: '--app-color-teamer-rgb',
     title: 'Dein Start',
-    text: 'Auf der Startseite siehst du deine wichtigsten Infos auf einen Blick: anstehende Termine, deine Badges und alles, was für dich gerade ansteht.',
+    text: 'Auf der Startseite siehst du deine wichtigsten Infos auf einen Blick: anstehende Termine, deine Badges, deine Zertifikate und alles, was für dich gerade ansteht.',
   },
   {
     icon: chatbubblesOutline,
@@ -54,6 +54,13 @@ const SLIDES: OnboardingSlide[] = [
     rgb: '--app-color-activities-rgb',
     title: 'Deine Aktivitäten',
     text: 'Warst du bei einer Aktion dabei? Reiche deine Aktivitäten hier ein. So bleibt dein Einsatz dokumentiert und fließt in deine Badges ein.',
+  },
+  {
+    icon: folderOpenOutline,
+    color: 'var(--app-color-material)',
+    rgb: '--app-color-material-rgb',
+    title: 'Material',
+    text: 'Im Material-Bereich findest du alle Unterlagen fürs Team — allgemein oder direkt einem Event zugeordnet. Diese Materialien sind nur für euch im Team sichtbar, nicht für die Konfis.',
   },
 ];
 

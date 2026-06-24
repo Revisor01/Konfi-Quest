@@ -2,7 +2,7 @@ import React from 'react';
 import {
   sparklesOutline, peopleOutline, chatbubblesOutline, calendarOutline,
   checkmarkDoneOutline, settingsOutline, schoolOutline, documentTextOutline,
-  ribbonOutline, statsChartOutline,
+  ribbonOutline, statsChartOutline, folderOpenOutline,
 } from 'ionicons/icons';
 import OnboardingTour, { OnboardingSlide } from '../../shared/OnboardingTour';
 
@@ -84,6 +84,13 @@ const SLIDES: OnboardingSlide[] = [
     rgb: '--app-color-level-rgb',
     title: 'Level & Wrapped',
     text: 'Über Level machst du den Fortschritt sichtbar und vergibst Belohnungen. Am Jahrgangsende gibt es das Wrapped: ein persönlicher Rückblick für jeden Konfi, den du pro Jahrgang freigibst.',
+  },
+  {
+    icon: folderOpenOutline,
+    color: 'var(--app-color-material)',
+    rgb: '--app-color-material-rgb',
+    title: 'Material',
+    text: 'Lege Unterlagen fürs Team ab — allgemein oder direkt einem Event zugeordnet. Dieses Material ist nur fürs Team sichtbar, nicht für die Konfis. So haben alle Teamer:innen die wichtigen Dokumente parat.',
   },
 ];
 
