@@ -72,16 +72,81 @@ const AdminSettingsPage: React.FC = () => {
     setTimeout(() => presentInfoModal({ presentingElement: presentingElement || undefined }), 0);
   };
 
-  const JAHRGANG_INFO = {
-    title: 'Jahrgänge',
-    icon: schoolOutline,
-    color: 'var(--app-color-jahrgang)',
-    paragraphs: [
-      'Jeder Konfi gehört zu einem Jahrgang. Hier legst du neue Jahrgänge an und verwaltest die bestehenden.',
-      'Pro Jahrgang legst du die Punkteziele für Gottesdienst und Gemeinde fest — also wie viele Punkte deine Konfis in jedem Bereich erreichen sollen.',
-      'Außerdem gibst du hier frei, ab wann die Konfis ihren Konfispruch selbst auswählen dürfen.',
-      'Am Jahrgangsende kannst du das Wrapped freigeben: einen persönlichen Jahresrückblick für jeden Konfi.',
-    ],
+  // Erklaerungen je Bereich der "Mehr"-Seite. Fokus: WOFUER braucht man das +
+  // wie haengt es mit anderen Bereichen zusammen.
+  const INFOS: Record<string, { title: string; icon: string; color: string; paragraphs: string[] }> = {
+    users: {
+      title: 'Benutzer:innen', icon: people, color: 'var(--app-color-users)',
+      paragraphs: [
+        'Hier verwaltest du alle Personen in deiner Organisation: Admins, Teamer:innen und ihre Rollen.',
+        'Die Rolle entscheidet, was jemand darf — z.B. ob jemand Punkte vergeben, Events anlegen oder die ganze Verwaltung sehen kann.',
+        'Teamer:innen ordnest du außerdem Jahrgänge zu, damit sie genau ihre Gruppen sehen.',
+      ],
+    },
+    dashboard: {
+      title: 'Dashboard', icon: appsOutline, color: 'var(--app-color-organizations)',
+      paragraphs: [
+        'Lege fest, welche Bereiche auf den Startseiten von Konfis und Teamer:innen angezeigt werden.',
+        'So blendest du z.B. die Tageslosung, die Bestenliste oder einzelne Karten ein oder aus — passend zu deiner Gemeinde.',
+      ],
+    },
+    activities: {
+      title: 'Aktivitäten', icon: flash, color: 'var(--app-color-activities)',
+      paragraphs: [
+        'Aktivitäten sind die wiederkehrenden Dinge, für die es Punkte gibt — z.B. Gottesdienstbesuch oder eine Gemeinde-Aktion.',
+        'Anders als Events stellen Konfis für eine Aktivität selbst einen Antrag auf Punkte. Du bestätigst den Antrag, dann werden die Punkte gutgeschrieben.',
+        'Jede Aktivität hat eine Kategorie und einen Punktwert. Über die Kategorie steuerst du, ob die Punkte zu Gottesdienst oder Gemeinde zählen.',
+      ],
+    },
+    badges: {
+      title: 'Badges', icon: ribbon, color: 'var(--app-color-badges)',
+      paragraphs: [
+        'Badges sind Auszeichnungen, die deine Konfis automatisch erhalten, wenn sie ein Ziel erreichen.',
+        'Du wählst die Logik selbst: nach Gesamtpunkten, nach der Anzahl bestimmter Aktivitäten, nach besuchten (Pflicht-)Events oder als Kombination mehrerer Bedingungen.',
+        'So setzt du Anreize und machst Fortschritt sichtbar — Badges werden vergeben, sobald die Bedingung erfüllt ist.',
+      ],
+    },
+    jahrgaenge: {
+      title: 'Jahrgänge', icon: schoolOutline, color: 'var(--app-color-jahrgang)',
+      paragraphs: [
+        'Jeder Konfi gehört zu einem Jahrgang. Hier legst du neue Jahrgänge an und verwaltest die bestehenden.',
+        'Pro Jahrgang legst du die Punkteziele für Gottesdienst und Gemeinde fest — also wie viele Punkte deine Konfis in jedem Bereich erreichen sollen.',
+        'Außerdem gibst du hier frei, ab wann die Konfis ihren Konfispruch selbst auswählen dürfen.',
+        'Am Jahrgangsende kannst du das Wrapped freigeben: einen persönlichen Jahresrückblick für jeden Konfi.',
+      ],
+    },
+    categories: {
+      title: 'Kategorien', icon: pricetag, color: 'var(--app-color-categories)',
+      paragraphs: [
+        'Kategorien ordnen Aktivitäten und Events thematisch ein und sind ein wichtiges Bindeglied im System.',
+        'Bei Aktivitäten bestimmt die Kategorie, ob Punkte zu Gottesdienst oder Gemeinde zählen. Bei Events helfen Kategorien beim Sortieren und Filtern.',
+        'Auch Badges können sich auf Kategorien beziehen. Lege deine Kategorien also sorgfältig an — sie wirken an vielen Stellen mit.',
+      ],
+    },
+    levels: {
+      title: 'Level', icon: trophy, color: 'var(--app-color-level)',
+      paragraphs: [
+        'Level machen den Fortschritt deiner Konfis sichtbar: Mit steigender Punktzahl erreichen sie das nächste Level.',
+        'Du legst die Punkteschwellen und Namen der Level selbst fest und kannst Belohnungen daran knüpfen.',
+        'So entsteht ein motivierender roter Faden über die ganze Konfi-Zeit.',
+      ],
+    },
+    material: {
+      title: 'Material', icon: documentIcon, color: 'var(--app-color-material)',
+      paragraphs: [
+        'Im Material-Bereich legst du Unterlagen und Dokumente fürs Team ab.',
+        'Material kann allgemein sein oder direkt einem Event zugeordnet werden — so finden alle die passenden Dokumente zum richtigen Termin.',
+        'Wichtig: Material ist nur für das Team sichtbar, nicht für die Konfis.',
+      ],
+    },
+    certificates: {
+      title: 'Zertifikate', icon: ribbon, color: 'var(--app-color-teamer)',
+      paragraphs: [
+        'Hier verwaltest du Zertifikate für deine Teamer:innen — etwa Schulungen oder Qualifikationen.',
+        'Zertifikate können ein Ausstell- und ein Ablaufdatum haben. Deine Teamer:innen sehen ihre Zertifikate auf ihrer Startseite.',
+        'So behältst du im Blick, wer welche Qualifikation hat und wann etwas erneuert werden muss.',
+      ],
+    },
   };
 
   const handleLogout = () => {
@@ -204,6 +269,9 @@ const AdminSettingsPage: React.FC = () => {
                     <h2 className="app-settings-item__title">Benutzer:innen</h2>
                     <p className="app-settings-item__subtitle">Admins, Teamer:innen und Rollen verwalten</p>
                   </div>
+                  <IonButton fill="clear" aria-label="Info zu Benutzer:innen" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.users); }} style={{ '--color': 'var(--app-color-users)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
+                  </IonButton>
                 </div>
 
                 {user?.role_name === 'org_admin' && (
@@ -218,6 +286,9 @@ const AdminSettingsPage: React.FC = () => {
                       <h2 className="app-settings-item__title">Dashboard</h2>
                       <p className="app-settings-item__subtitle">Sichtbare Bereiche für Konfis und Teamer:innen</p>
                     </div>
+                    <IonButton fill="clear" aria-label="Info zum Dashboard" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.dashboard); }} style={{ '--color': 'var(--app-color-organizations)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                      <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
+                    </IonButton>
                   </div>
                 )}
 
@@ -266,6 +337,9 @@ const AdminSettingsPage: React.FC = () => {
                     <h2 className="app-settings-item__title">Aktivitäten</h2>
                     <p className="app-settings-item__subtitle">Aktivitäten und Punkte verwalten</p>
                   </div>
+                  <IonButton fill="clear" aria-label="Info zu Aktivitäten" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.activities); }} style={{ '--color': 'var(--app-color-activities)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
+                  </IonButton>
                 </div>
 
                 <div
@@ -279,6 +353,9 @@ const AdminSettingsPage: React.FC = () => {
                     <h2 className="app-settings-item__title">Badges</h2>
                     <p className="app-settings-item__subtitle">Auszeichnungen und Erfolge verwalten</p>
                   </div>
+                  <IonButton fill="clear" aria-label="Info zu Badges" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.badges); }} style={{ '--color': 'var(--app-color-badges)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
+                  </IonButton>
                 </div>
 
                 <div
@@ -294,7 +371,7 @@ const AdminSettingsPage: React.FC = () => {
                   </div>
                   <IonButton
                     fill="clear"
-                    onClick={(e) => { e.stopPropagation(); openInfo(JAHRGANG_INFO); }}
+                    onClick={(e) => { e.stopPropagation(); openInfo(INFOS.jahrgaenge); }}
                     style={{ '--color': 'var(--app-color-jahrgang)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}
                     aria-label="Info zu Jahrgängen"
                   >
@@ -313,6 +390,9 @@ const AdminSettingsPage: React.FC = () => {
                     <h2 className="app-settings-item__title">Kategorien</h2>
                     <p className="app-settings-item__subtitle">Kategorien für Aktivitäten und Events</p>
                   </div>
+                  <IonButton fill="clear" aria-label="Info zu Kategorien" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.categories); }} style={{ '--color': 'var(--app-color-categories)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
+                  </IonButton>
                 </div>
 
                 <div
@@ -326,6 +406,9 @@ const AdminSettingsPage: React.FC = () => {
                     <h2 className="app-settings-item__title">Level</h2>
                     <p className="app-settings-item__subtitle">Punkte-Level und Belohnungen</p>
                   </div>
+                  <IonButton fill="clear" aria-label="Info zu Level" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.levels); }} style={{ '--color': 'var(--app-color-level)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
+                  </IonButton>
                 </div>
 
                 <div
@@ -339,6 +422,9 @@ const AdminSettingsPage: React.FC = () => {
                     <h2 className="app-settings-item__title">Material</h2>
                     <p className="app-settings-item__subtitle">Materialien und Dokumente verwalten</p>
                   </div>
+                  <IonButton fill="clear" aria-label="Info zu Material" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.material); }} style={{ '--color': 'var(--app-color-material)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
+                  </IonButton>
                 </div>
 
                 <div
@@ -352,6 +438,9 @@ const AdminSettingsPage: React.FC = () => {
                     <h2 className="app-settings-item__title">Zertifikate</h2>
                     <p className="app-settings-item__subtitle">Teamer:innen-Zertifikate verwalten</p>
                   </div>
+                  <IonButton fill="clear" aria-label="Info zu Zertifikaten" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.certificates); }} style={{ '--color': 'var(--app-color-teamer)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
+                  </IonButton>
                 </div>
                 </div>
               </IonCardContent>
