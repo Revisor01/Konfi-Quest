@@ -557,7 +557,11 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
       }
 
       // Berechtigungsprüfung
-      const isSuperAdmin = req.user.role_name === 'super_admin';
+      // is_super_admin nutzen (Rolle 'super_admin' ODER gesetztes DB-Flag), NICHT
+      // nur role_name === 'super_admin' — sonst kann ein org_admin mit
+      // is_super_admin-Flag (Simons Account) org-uebergreifend KEIN Passwort
+      // zuruecksetzen, obwohl er Super-Admin-Rechte hat.
+      const isSuperAdmin = req.user.is_super_admin === true;
       const isOrgAdmin = req.user.role_name === 'org_admin';
       const isSameOrg = req.user.organization_id === targetUser.organization_id;
 

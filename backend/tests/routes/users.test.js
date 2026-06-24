@@ -317,6 +317,18 @@ describe('Users Routes', () => {
       expect(res.status).toBe(200);
     });
 
+    it('org_admin MIT is_super_admin-Flag setzt Passwort eines Users aus ANDERER Org zurueck -> 200', async () => {
+      // Regression: zuvor pruefte die Route role_name === 'super_admin' und
+      // ignorierte das is_super_admin-Flag -> org_admin+Flag bekam faelschlich 403
+      // bei org-uebergreifendem Reset. admin2 ist in Org 2, orgAdminSuper in Org 1.
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.admin2.id}/reset-password`)
+        .set('Authorization', `Bearer ${generateToken('orgAdminSuper')}`)
+        .send({ password: 'Neues!Pw999' });
+
+      expect(res.status).toBe(200);
+    });
+
     it('Admin bekommt 403 (nur org_admin/super_admin)', async () => {
       const res = await request(app)
         .put(`/api/admin/users/${USERS.teamer1.id}/reset-password`)

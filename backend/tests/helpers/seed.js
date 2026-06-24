@@ -46,6 +46,9 @@ const USERS = {
   orgAdmin2: { id: 9,  username: 'orgadmin2', display_name: 'Test Org-Admin 2', role_id: 9, org_id: 2, type: 'admin' },
   // Super-Admin (org-uebergreifend, is_super_admin=true)
   superAdmin: { id: 10, username: 'superadmin', display_name: 'Test Super-Admin', role_id: 5, org_id: 1, type: 'admin', is_super_admin: true },
+  // org_admin-Rolle MIT is_super_admin-Flag (= Simons reale Konstellation):
+  // soll org-uebergreifend agieren duerfen, obwohl role_name != 'super_admin'.
+  orgAdminSuper: { id: 11, username: 'orgadminsuper', display_name: 'Test Org-Admin Super', role_id: 4, org_id: 1, type: 'admin', is_super_admin: true },
 };
 
 // ====================================================================
