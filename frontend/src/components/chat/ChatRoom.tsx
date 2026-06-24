@@ -1135,7 +1135,6 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       <IonContent
         ref={contentRef}
         className="app-gradient-background"
-        fullscreen
         scrollEvents
         onIonScroll={handleScroll}
         onClick={() => {
