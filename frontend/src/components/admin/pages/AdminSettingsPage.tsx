@@ -83,6 +83,14 @@ const AdminSettingsPage: React.FC = () => {
         'Teamer:innen ordnest du außerdem Jahrgänge zu, damit sie genau ihre Gruppen sehen.',
       ],
     },
+    invite: {
+      title: 'Konfis einladen', icon: qrCode, color: 'var(--app-color-users)',
+      paragraphs: [
+        'Hier erzeugst du einen QR-Code, mit dem sich neue Konfis selbst registrieren können.',
+        'Die Konfis scannen den Code, wählen ihren Jahrgang und legen ihren Zugang an — du musst sie nicht einzeln von Hand anlegen.',
+        'Der Code gehört zu deiner Organisation. So landen die neuen Konfis automatisch am richtigen Ort.',
+      ],
+    },
     dashboard: {
       title: 'Dashboard', icon: appsOutline, color: 'var(--app-color-organizations)',
       paragraphs: [
@@ -303,6 +311,9 @@ const AdminSettingsPage: React.FC = () => {
                     <h2 className="app-settings-item__title">Konfis einladen</h2>
                     <p className="app-settings-item__subtitle">QR-Code für Selbstregistrierung</p>
                   </div>
+                  <IonButton fill="clear" aria-label="Info zu Konfis einladen" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.invite); }} style={{ '--color': 'var(--app-color-users)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
+                  </IonButton>
                 </div>
                 </div>
               </IonCardContent>
