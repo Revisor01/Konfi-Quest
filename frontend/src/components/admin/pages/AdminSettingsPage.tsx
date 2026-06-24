@@ -32,8 +32,11 @@ import {
   qrCode,
   appsOutline,
   pulseOutline,
+  informationCircleOutline,
+  schoolOutline,
   document as documentIcon
 } from 'ionicons/icons';
+import InfoModal from '../../shared/InfoModal';
 import { useApp } from '../../../contexts/AppContext';
 // logout/clearAuth werden jetzt zentral ueber useApp().signOut() abgewickelt
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -51,6 +54,35 @@ const AdminSettingsPage: React.FC = () => {
     onClose: () => dismissInviteModal(),
     dismiss: () => dismissInviteModal()
   });
+
+  // Info-Modal (Erklaerung) — exemplarisch fuer Jahrgaenge. Inhalt wird per State
+  // gesetzt, damit derselbe Hook spaeter fuer weitere Bereiche genutzt werden kann.
+  const [infoContent, setInfoContent] = React.useState<{ title: string; icon: string; color: string; paragraphs: string[] } | null>(null);
+  const [presentInfoModal, dismissInfoModal] = useIonModal(InfoModal, {
+    onClose: () => dismissInfoModal(),
+    title: infoContent?.title ?? '',
+    icon: infoContent?.icon ?? informationCircleOutline,
+    color: infoContent?.color,
+    paragraphs: infoContent?.paragraphs ?? [],
+  });
+
+  const openInfo = (content: { title: string; icon: string; color: string; paragraphs: string[] }) => {
+    setInfoContent(content);
+    // im naechsten Tick praesentieren, damit der State sicher gesetzt ist
+    setTimeout(() => presentInfoModal({ presentingElement: presentingElement || undefined }), 0);
+  };
+
+  const JAHRGANG_INFO = {
+    title: 'Jahrgänge',
+    icon: schoolOutline,
+    color: 'var(--app-color-jahrgang)',
+    paragraphs: [
+      'Jeder Konfi gehört zu einem Jahrgang. Hier legst du neue Jahrgänge an und verwaltest die bestehenden.',
+      'Pro Jahrgang legst du die Punkteziele für Gottesdienst und Gemeinde fest — also wie viele Punkte deine Konfis in jedem Bereich erreichen sollen.',
+      'Außerdem gibst du hier frei, ab wann die Konfis ihren Konfispruch selbst auswählen dürfen.',
+      'Am Jahrgangsende kannst du das Wrapped freigeben: einen persönlichen Jahresrückblick für jeden Konfi.',
+    ],
+  };
 
   const handleLogout = () => {
     presentAlert({
@@ -260,6 +292,14 @@ const AdminSettingsPage: React.FC = () => {
                     <h2 className="app-settings-item__title">Jahrgänge</h2>
                     <p className="app-settings-item__subtitle">Jahrgänge anlegen, Punkteziele (Gottesdienst &amp; Gemeinde), Konfispruch-Freischaltung und Wrapped-Freigabe verwalten</p>
                   </div>
+                  <IonButton
+                    fill="clear"
+                    onClick={(e) => { e.stopPropagation(); openInfo(JAHRGANG_INFO); }}
+                    style={{ '--color': 'var(--app-color-jahrgang)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}
+                    aria-label="Info zu Jahrgängen"
+                  >
+                    <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
+                  </IonButton>
                 </div>
 
                 <div

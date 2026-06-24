@@ -619,8 +619,26 @@ const TeamerDashboardPage: React.FC = () => {
 
               <div className="app-dashboard-section__content app-dashboard-section__content--compact">
                 {dashboardData.events.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '20px', color: 'rgba(255,255,255,0.7)' }}>
-                    Keine anstehenden Events
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div
+                      className="app-dashboard-glass-card"
+                      onClick={() => router.push('/teamer/events')}
+                      style={{ cursor: 'pointer', textAlign: 'center', padding: '20px 16px' }}
+                    >
+                      <div style={{ fontSize: '1rem', fontWeight: '600', color: 'white', marginBottom: '4px' }}>
+                        Noch kein Event gebucht
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                        Tippe hier um verfügbare Events zu sehen
+                      </div>
+                    </div>
+                    <div
+                      className="app-dashboard-glass-chip"
+                      onClick={() => router.push('/teamer/events')}
+                      style={{ alignSelf: 'center', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      Alle Events anzeigen <IonIcon icon={chevronForward} />
+                    </div>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
