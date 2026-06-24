@@ -86,9 +86,9 @@ const AdminSettingsPage: React.FC = () => {
     invite: {
       title: 'Konfis einladen', icon: qrCode, color: 'var(--app-color-users)',
       paragraphs: [
-        'Hier erzeugst du einen QR-Code, mit dem sich neue Konfis selbst registrieren können.',
-        'Die Konfis scannen den Code, wählen ihren Jahrgang und legen ihren Zugang an — du musst sie nicht einzeln von Hand anlegen.',
-        'Der Code gehört zu deiner Organisation. So landen die neuen Konfis automatisch am richtigen Ort.',
+        'Hier erzeugst du einen QR-Code bzw. Einladungslink, mit dem sich neue Konfis selbst registrieren können.',
+        'Du legst fest, für welchen Jahrgang die Einladung gilt. Die Konfis scannen den Code und legen nur noch ihren Zugang an — sie landen automatisch im richtigen Jahrgang.',
+        'So musst du niemanden einzeln von Hand anlegen.',
       ],
     },
     dashboard: {
