@@ -18,6 +18,12 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ message, onError }) => {
   const [showControls, setShowControls] = useState(false);
   const [duration, setDuration] = useState<string>('');
   const videoRef = useRef<HTMLVideoElement>(null);
+  // onError als Ref (MessageBubble liefert einen Inline-Arrow, der bei jedem
+  // Render neu entsteht). In der useEffect-Dependency-Liste wuerde das den
+  // Lade-Effekt staendig neu ausloesen -> Video-Reload-Loop. Ueber die Ref
+  // bleibt der Effekt an `message.file_path` gebunden und laeuft pro Video EINMAL.
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
 
   // Canvas-basierte Thumbnail-Generierung (kein sichtbares play/pause)
   const generateThumbnail = useCallback((blobUrl: string) => {
@@ -104,7 +110,7 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ message, onError }) => {
         console.error('Fehler beim Laden des Video-Blobs:', error);
         setHasError(true);
         setLoading(false);
-        onError('Fehler beim Laden des Videos');
+        onErrorRef.current('Fehler beim Laden des Videos');
       }
     };
 
@@ -117,7 +123,10 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ message, onError }) => {
         URL.revokeObjectURL(blobUrl);
       }
     };
-  }, [message.file_path, message.file_name, generateThumbnail, onError]);
+    // NUR an file_path gebunden — file_name/generateThumbnail/onError bewusst
+    // ausgeklammert, sonst Reload-Loop (s. onErrorRef).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [message.file_path]);
 
   const handleVideoClick = async () => {
     try {

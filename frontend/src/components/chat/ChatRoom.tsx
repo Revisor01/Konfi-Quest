@@ -831,16 +831,35 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     setTimeout(scrollEnd, 350);
   };
 
-  // Robuster Trigger: wenn die Tastatur WIRKLICH offen ist (nativ), ans Ende
-  // scrollen. Faengt Faelle ab, in denen onFocus zu frueh feuert (Viewport noch
-  // nicht verkleinert) -> sonst verdeckt die Tastatur die letzte Nachricht.
+  // Robuster Trigger: wenn die Tastatur auf-/zugeht (nativ), ans Listenende
+  // scrollen, damit die letzte Nachricht NICHT von der Tastatur verdeckt wird.
+  // Bei resize:'ionic' passt Ionic die ion-content-Hoehe an — aber teils ERST
+  // nach keyboardDidShow. Ein einzelnes scrollToBottom landet dann noch am alten
+  // Ende (hinter der Tastatur). Darum: mehrfach ueber rAF + kurze Timeouts ans
+  // Ende scrollen, sodass nach dem Layout-Reflow nachgezogen wird.
   useEffect(() => {
-    let handle: any;
-    Keyboard.addListener('keyboardDidShow', () => {
+    const handles: any[] = [];
+
+    const scrollToEndRepeated = () => {
       parkedAtDividerRef.current = false;
-      contentRef.current?.scrollToBottom(250);
-    }).then(h => { handle = h; }).catch(() => { /* Web/kein nativer Keyboard -> egal */ });
-    return () => { handle?.remove?.(); };
+      const el = contentRef.current;
+      if (!el) return;
+      const go = () => el.scrollToBottom(150);
+      // Sofort, im naechsten Frame (nach Reflow) und nochmal verzoegert, weil die
+      // Keyboard-/Resize-Animation je nach Geraet ~150-400ms dauert.
+      go();
+      requestAnimationFrame(() => { go(); requestAnimationFrame(go); });
+      setTimeout(go, 120);
+      setTimeout(go, 300);
+      setTimeout(go, 500);
+    };
+
+    Keyboard.addListener('keyboardWillShow', scrollToEndRepeated)
+      .then(h => handles.push(h)).catch(() => { /* Web/kein nativer Keyboard */ });
+    Keyboard.addListener('keyboardDidShow', scrollToEndRepeated)
+      .then(h => handles.push(h)).catch(() => { /* Web/kein nativer Keyboard */ });
+
+    return () => { handles.forEach(h => h?.remove?.()); };
   }, []);
 
   const handleTextInputChange = (value: string) => {

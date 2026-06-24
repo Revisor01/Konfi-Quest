@@ -12,32 +12,48 @@ const LazyImage: React.FC<LazyImageProps> = ({ filePath, fileName, onError, onCl
   const [imageSrc, setImageSrc] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const imgRef = useRef<HTMLDivElement>(null);
-  // Aktuell vergebene Object-URL, damit wir sie beim Unmount/Wechsel freigeben
-  // koennen (sonst Memory-Leak — das war der alte Bug).
+  // Aktuell vergebene Object-URL, damit wir sie beim Unmount/filePath-Wechsel
+  // freigeben koennen (sonst Memory-Leak).
   const objectUrlRef = useRef<string>('');
+  // onError als Ref halten: MessageBubble uebergibt einen Inline-Arrow, der bei
+  // JEDEM Render neu entsteht. Laege er in der useEffect-Dependency-Liste, wuerde
+  // der Effekt staendig neu laufen, die Object-URL revoken und das Bild neu laden
+  // -> Reload-Loop + Springen beim Scrollen. Ueber die Ref bleibt der Effekt an
+  // `filePath` gebunden und laeuft pro Bild nur EINMAL.
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
 
   useEffect(() => {
     let cancelled = false;
 
+    const loadOnce = async () => {
+      // Schon geladen? Nichts tun (z.B. wenn das Bild raus- und wieder
+      // reinscrollt — es ist bereits da, kein erneuter Cache-/Netz-Zugriff).
+      if (objectUrlRef.current) return;
+      setIsLoading(true);
+      try {
+        const url = await getMediaObjectUrl(filePath);
+        if (cancelled) {
+          URL.revokeObjectURL(url);
+          return;
+        }
+        objectUrlRef.current = url;
+        setImageSrc(url);
+      } catch (error) {
+        console.error('Error loading lazy image:', error);
+        if (!cancelled) onErrorRef.current();
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
     const observer = new IntersectionObserver(
-      async (entries) => {
+      (entries) => {
         if (entries[0].isIntersecting && !objectUrlRef.current) {
-          setIsLoading(true);
-          try {
-            // Aus lokalem Cache laden (oder einmalig vom Server + cachen).
-            const url = await getMediaObjectUrl(filePath);
-            if (cancelled) {
-              URL.revokeObjectURL(url);
-              return;
-            }
-            objectUrlRef.current = url;
-            setImageSrc(url);
-          } catch (error) {
-            console.error('Error loading lazy image:', error);
-            if (!cancelled) onError();
-          } finally {
-            if (!cancelled) setIsLoading(false);
-          }
+          // Einmal sichtbar -> laden, danach nicht mehr beobachten. So gibt es
+          // kein wiederholtes Re-Triggern beim Scrollen.
+          observer.disconnect();
+          loadOnce();
         }
       },
       { threshold: 0.1 }
@@ -50,13 +66,19 @@ const LazyImage: React.FC<LazyImageProps> = ({ filePath, fileName, onError, onCl
     return () => {
       cancelled = true;
       observer.disconnect();
-      // Object-URL freigeben (Leak-Fix).
+    };
+    // NUR filePath — onError/onClick bewusst ausgeklammert (siehe onErrorRef).
+  }, [filePath]);
+
+  // Object-URL erst beim echten Unmount (oder filePath-Wechsel) freigeben.
+  useEffect(() => {
+    return () => {
       if (objectUrlRef.current) {
         URL.revokeObjectURL(objectUrlRef.current);
         objectUrlRef.current = '';
       }
     };
-  }, [filePath, onError]);
+  }, [filePath]);
 
   return (
     <div
@@ -74,11 +96,7 @@ const LazyImage: React.FC<LazyImageProps> = ({ filePath, fileName, onError, onCl
       }}
       onClick={imageSrc ? onClick : undefined}
     >
-      {isLoading ? (
-        <div style={{ color: '#666', fontSize: '0.9rem' }}>
-          Bild wird geladen...
-        </div>
-      ) : imageSrc ? (
+      {imageSrc ? (
         <img
           src={imageSrc}
           alt={fileName}
@@ -89,6 +107,10 @@ const LazyImage: React.FC<LazyImageProps> = ({ filePath, fileName, onError, onCl
             objectFit: 'cover'
           }}
         />
+      ) : isLoading ? (
+        <div style={{ color: '#666', fontSize: '0.9rem' }}>
+          Bild wird geladen...
+        </div>
       ) : (
         <div style={{ color: '#999', fontSize: '0.8rem' }}>
           Bild konnte nicht geladen werden

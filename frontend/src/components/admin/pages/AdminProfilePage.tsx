@@ -294,7 +294,8 @@ const AdminProfilePage: React.FC = () => {
                     '--inner-padding-end': '0',
                     '--inner-border-width': '0',
                     '--border-style': 'none',
-                    '--min-height': 'auto'
+                    '--min-height': 'auto',
+                    marginBottom: '8px'
                   }}
                 >
                   <div
