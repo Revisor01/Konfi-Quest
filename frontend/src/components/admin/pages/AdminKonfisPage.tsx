@@ -28,6 +28,8 @@ import KonfiModal from '../modals/KonfiModal';
 import AttendanceMatrixModal from '../modals/AttendanceMatrixModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { OrgSwitcherButton } from '../../shared';
+import AdminOnboardingModal from '../modals/AdminOnboardingModal';
+import { useOnboardingOnce } from '../../../hooks/useOnboardingOnce';
 
 interface Konfi {
   id: number;
@@ -62,6 +64,9 @@ const AdminKonfisPage: React.FC = () => {
   const { setSuccess, setError, user, isOnline } = useApp();
   const router = useIonRouter();
   const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-konfis');
+  // Onboarding-Tour einmal pro Admin-Account (beim ersten Betreten der Konfis-Seite,
+  // der Landing-Page fuer Admins/Org-Admins).
+  const [showOnboarding, closeOnboarding] = useOnboardingOnce('admin_onboarding_seen', user?.id);
   
   // Offline-Query: Konfis
   const { data: konfis, loading: konfisLoading, refresh: refreshKonfis } = useOfflineQuery<Konfi[]>(
@@ -332,6 +337,13 @@ const AdminKonfisPage: React.FC = () => {
           />
         )}
       </IonContent>
+
+      {showOnboarding && (
+        <AdminOnboardingModal
+          onClose={closeOnboarding}
+          displayName={(user?.display_name || '').split(' ')[0]}
+        />
+      )}
     </IonPage>
   );
 };

@@ -80,6 +80,8 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import WrappedModal from '../../wrapped/WrappedModal';
 import { ProfileHeaderButton, TrialBanner } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import TeamerOnboardingModal from '../modals/TeamerOnboardingModal';
+import { useOnboardingOnce } from '../../../hooks/useOnboardingOnce';
 
 // Badge/Certificate Icon Mapping (shared with DashboardView)
 const ICON_MAP: Record<string, string> = {
@@ -256,6 +258,8 @@ const TeamerDashboardPage: React.FC = () => {
   const router = useIonRouter();
   const { user } = useApp();
   const [showLosung] = useState(() => Math.random() > 0.5);
+  // Onboarding-Tour einmal pro Teamer-Account (beim ersten Betreten der Startseite).
+  const [showOnboarding, closeOnboarding] = useOnboardingOnce('teamer_onboarding_seen', user?.id);
 
   // Certificate Popover
   const certPopoverRef = React.useRef<Certificate | null>(null);
@@ -903,6 +907,13 @@ const TeamerDashboardPage: React.FC = () => {
 
         <div className="ion-padding-bottom" />
       </IonContent>
+
+      {showOnboarding && (
+        <TeamerOnboardingModal
+          onClose={closeOnboarding}
+          displayName={(user?.display_name || '').split(' ')[0]}
+        />
+      )}
     </IonPage>
   );
 };
