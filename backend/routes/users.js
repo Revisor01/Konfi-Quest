@@ -158,9 +158,10 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
         return res.status(400).json({ error: 'Ungültige Rolle für diese Organisation' });
       }
 
-      // Prüfen ob Benutzername bereits existiert (GLOBAL eindeutig!)
+      // Prüfen ob Benutzername bereits existiert (GLOBAL eindeutig, case-insensitiv —
+      // sonst koennten "Anna"/"anna" parallel existieren und der Login waere mehrdeutig).
       const { rows: [existingUser] } = await db.query(
-        "SELECT id FROM users WHERE username = $1",
+        "SELECT id FROM users WHERE LOWER(username) = LOWER($1)",
         [username]
       );
 

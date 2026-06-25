@@ -790,7 +790,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
 
       // Prüfen ob Benutzername bereits existiert (GLOBAL eindeutig!)
       const { rows: [existingUser] } = await db.query(
-        "SELECT id, organization_id FROM users WHERE username = $1",
+        "SELECT id, organization_id FROM users WHERE LOWER(username) = LOWER($1)",
         [username]
       );
 
