@@ -13,6 +13,12 @@ einem iOS-Build enthalten. Für eine vollständige 1.3.0-App ist ein neuer Build
 (B61) nötig.
 
 ### 🐛 Fehlerbehebungen
+- Badge-Regel präzisiert: Bei **Konfis** zählen Pflicht-Events und Konfirmationen
+  NICHT mehr für Badges — nur freiwillig besuchte, bestätigte Events plus
+  eingereichte Aktivitäten. Bei **Teamer:innen** zählen weiterhin alle bestätigten
+  Events (sie arbeiten bei Pflicht/Konfirmation mit). Gilt einheitlich für
+  Event-Anzahl, Aktivitäts-Anzahl, Kategorie-, Serien- und Zeitraum-Badges
+  (Wertung und Fortschritt). Badge „Turbo-Woche" entfernt.
 - Selbst gebuchte Event-Anmeldungen von Konfis wurden ohne Organisation
   gespeichert (`organization_id` fehlte beim Insert) — dadurch zählten sie NICHT
   in Badge-Kriterien (Event-Anzahl, Aktivitäts-Anzahl, Kategorie, Pflicht-Events).

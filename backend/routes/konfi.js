@@ -10,6 +10,8 @@ const { fetchTageslosung } = require('../services/losungService');
 const { validateMagicBytes } = require('../middleware/uploadValidation');
 const { checkExistingBooking, getEventWithCounts, validateRegistrationWindow, determineBookingStatus, promoteFromWaitlist } = require('../utils/bookingUtils');
 const { computeCurrentStreak } = require('../utils/streakCalculation');
+// Single Source of Truth: welche Events zaehlen fuer Konfi-Badges (kein Pflicht/Konfirmation).
+const { KONFI_BADGE_EVENT_CONDITION } = require('../utils/badgeEventRule');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -1047,7 +1049,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
                 [konfiId, req.user.organization_id]
               );
               const { rows: [acEventCountResult] } = await db.query(
-                "SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2",
+                `SELECT COUNT(*) as count FROM event_bookings eb JOIN events e ON eb.event_id = e.id WHERE eb.user_id = $1 AND ${KONFI_BADGE_EVENT_CONDITION} AND eb.organization_id = $2`,
                 [konfiId, req.user.organization_id]
               );
               progress.current = parseInt(activityCountResult?.count || 0) + parseInt(acEventCountResult?.count || 0);
@@ -1055,9 +1057,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
             }
 
             case 'event_count': {
-              // Anzahl besuchter Events (Vorbild Wertung badges.js:165).
+              // Anzahl besuchter Events — nur freiwillige (kein Pflicht/Konfirmation),
+              // identisch zur Wertung (badges.js KONFI_BADGE_EVENT_CONDITION).
               const { rows: [eventCountResult] } = await db.query(
-                "SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2",
+                `SELECT COUNT(*) as count FROM event_bookings eb JOIN events e ON eb.event_id = e.id WHERE eb.user_id = $1 AND ${KONFI_BADGE_EVENT_CONDITION} AND eb.organization_id = $2`,
                 [konfiId, req.user.organization_id]
               );
               progress.current = parseInt(eventCountResult?.count || 0);
@@ -1136,9 +1139,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
                      WHERE ka.user_id = $1 AND c.name = $2 AND a.organization_id = $3 AND c.organization_id = $3
                      UNION ALL
                      SELECT eb.id FROM event_bookings eb
+                     JOIN events e ON eb.event_id = e.id
                      JOIN event_categories ec ON eb.event_id = ec.event_id
                      JOIN categories c ON ec.category_id = c.id
-                     WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND c.name = $2 AND c.organization_id = $3 AND eb.organization_id = $3
+                     WHERE eb.user_id = $1 AND ${KONFI_BADGE_EVENT_CONDITION} AND c.name = $2 AND c.organization_id = $3 AND eb.organization_id = $3
                    ) as combined`,
                   [konfiId, requiredCategory, req.user.organization_id]
                 );
@@ -1190,7 +1194,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
                 UNION ALL
                 SELECT e.event_date as date FROM event_bookings eb
                 JOIN events e ON eb.event_id = e.id
-                WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2
+                WHERE eb.user_id = $1 AND ${KONFI_BADGE_EVENT_CONDITION} AND eb.organization_id = $2
                 ORDER BY date DESC
               `;
               const { rows: streakResults } = await db.query(streakQuery, [konfiId, req.user.organization_id]);
@@ -1216,7 +1220,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
                   UNION ALL
                   SELECT e.event_date as date FROM event_bookings eb
                   JOIN events e ON eb.event_id = e.id
-                  WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2
+                  WHERE eb.user_id = $1 AND ${KONFI_BADGE_EVENT_CONDITION} AND eb.organization_id = $2
                   ORDER BY date DESC
                 `;
                 const { rows: tbResults } = await db.query(tbQuery, [konfiId, req.user.organization_id]);
