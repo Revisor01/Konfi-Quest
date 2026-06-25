@@ -128,10 +128,24 @@ function validateRegistrationWindow(event) {
   return { valid: true };
 }
 
+/**
+ * Ist das Event JETZT fuer Konfis anmeldbar? Grundlage fuer den
+ * "Anmeldung moeglich"-Push. Anmeldbar = Anmeldefenster offen UND nicht abgesagt
+ * UND nicht reines Teamer-Event (Konfis koennen sich da nicht anmelden).
+ * @param {object} event - Event mit registration_opens_at/closes_at, cancelled, teamer_only
+ * @returns {boolean}
+ */
+function isRegistrationOpenForKonfis(event) {
+  if (event.cancelled) return false;
+  if (event.teamer_only) return false;
+  return validateRegistrationWindow(event).valid;
+}
+
 module.exports = {
   checkExistingBooking,
   getEventWithCounts,
   determineBookingStatus,
   promoteFromWaitlist,
-  validateRegistrationWindow
+  validateRegistrationWindow,
+  isRegistrationOpenForKonfis
 };

@@ -155,6 +155,66 @@ class BackgroundService {
   }
 
   /**
+   * Startet den "Anmeldung moeglich"-Push-Service.
+   * Sendet fuer Events, deren Anmeldezeitraum geoeffnet hat (z.B. registration_opens_at
+   * in der Zukunft beim Anlegen, jetzt erreicht), den "Neues Event"-Push an die
+   * Org-Konfis. Flanke ueber events.registration_open_notified (Erstellen/Aendern
+   * setzen/reset das Flag synchron, dieser Cron faengt die zeitgesteuerten Faelle).
+   */
+  static startRegistrationOpenService(db) {
+    if (this.registrationOpenInterval) return;
+    // Sofort einmal, dann alle 5 Minuten (feinkoernig, da Anmeldestart sekundengenau wirkt).
+    this.sendRegistrationOpenPushes(db);
+    const FIVE_MINUTES = 5 * 60 * 1000;
+    this.registrationOpenInterval = setInterval(async () => {
+      try {
+        await this.sendRegistrationOpenPushes(db);
+      } catch (error) {
+        console.error('Registration-open push service failed:', error);
+      }
+    }, FIVE_MINUTES);
+  }
+
+  static stopRegistrationOpenService() {
+    if (this.registrationOpenInterval) {
+      clearInterval(this.registrationOpenInterval);
+      this.registrationOpenInterval = null;
+    }
+  }
+
+  /**
+   * Findet Events, die JETZT fuer Konfis anmeldbar sind, aber noch nicht
+   * benachrichtigt wurden, und sendet den "Anmeldung moeglich"-Push.
+   */
+  static async sendRegistrationOpenPushes(db) {
+    try {
+      // Anmeldbar = Fenster offen, nicht abgesagt, kein reines Teamer-Event,
+      // kein Pflicht-Event (eigener Push), keine Konfirmation. Flag noch false.
+      const { rows: events } = await db.query(`
+        SELECT id, name, event_date, organization_id
+        FROM events
+        WHERE registration_open_notified = false
+          AND cancelled = false
+          AND (teamer_only IS NULL OR teamer_only = false)
+          AND (mandatory IS NULL OR mandatory = false)
+          AND (registration_opens_at IS NULL OR registration_opens_at <= NOW())
+          AND (registration_closes_at IS NULL OR registration_closes_at >= NOW())
+      `);
+
+      for (const ev of events) {
+        try {
+          await PushService.sendNewEventToOrgKonfis(db, ev.organization_id, ev.name, ev.event_date, ev.id);
+          await db.query('UPDATE events SET registration_open_notified = true WHERE id = $1', [ev.id]);
+        } catch (err) {
+          console.error(`Registration-open push failed for event ${ev.id}:`, err.message);
+        }
+      }
+    } catch (error) {
+      console.error('sendRegistrationOpenPushes error:', error);
+    }
+  }
+
+  /**
    * Sendet Event-Erinnerungen (1 Tag und 1 Stunde vorher)
    */
   static async sendEventReminders(db) {
@@ -956,6 +1016,7 @@ class BackgroundService {
     }
     this.startBadgeUpdateService(db);
     this.startEventReminderService(db);
+    this.startRegistrationOpenService(db);
     this.startPendingEventsService(db);
     this.startTokenCleanupService(db);
     this.startWrappedCron(db);
@@ -970,6 +1031,7 @@ class BackgroundService {
   static stopAllServices() {
     this.stopBadgeUpdateService();
     this.stopEventReminderService();
+    this.stopRegistrationOpenService();
     this.stopPendingEventsService();
     this.stopTokenCleanupService();
     this.stopWrappedCron();

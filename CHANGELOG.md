@@ -54,6 +54,12 @@ einem iOS-Build enthalten. Für eine vollständige 1.3.0-App ist ein neuer Build
   (`c33d27c`)
 
 ### ✨ Neue Funktionen
+- „Anmeldung möglich"-Push für Events ist jetzt an die tatsächliche Anmeldbarkeit
+  gekoppelt: Konfis bekommen den Push genau dann, wenn die Anmeldung offen ist —
+  sofort beim Erstellen (falls schon offen), beim Ändern (sobald es anmeldbar
+  wird) oder pünktlich zum Anmeldestart (über einen Hintergrund-Dienst, alle
+  5 Min). Wird ein Event wieder „zu" gestellt und später erneut geöffnet, feuert
+  der Push erneut. Push enthält Titel + Datum; Tippen öffnet direkt das Event.
 - Dashboard-Tageslosung (Konfi): zeigt jetzt die gewählte Bibelübersetzung klein
   unter dem Vers an; Tippen auf die Losung öffnet die Übersetzungs-Auswahl. Die
   Auswahl wird gespeichert und die Losung sofort neu geladen.

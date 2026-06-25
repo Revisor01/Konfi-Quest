@@ -6,7 +6,7 @@ const { checkPointTypeEnabled } = require('../utils/pointTypeGuard');
 const jwt = require('jsonwebtoken');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
-const { checkExistingBooking, validateRegistrationWindow, determineBookingStatus, promoteFromWaitlist } = require('../utils/bookingUtils');
+const { checkExistingBooking, validateRegistrationWindow, determineBookingStatus, promoteFromWaitlist, isRegistrationOpenForKonfis } = require('../utils/bookingUtils');
 
 const QR_SECRET = process.env.QR_SECRET;
 if (!QR_SECRET) {
@@ -788,7 +788,17 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             });
           }
         } else {
-          await PushService.sendNewEventToOrgKonfis(db, req.user.organization_id, name, event_date);
+          // Freiwilliges Event: "Anmeldung moeglich"-Push nur senden, wenn die
+          // Anmeldung JETZT offen ist. Oeffnet sie erst spaeter, uebernimmt der
+          // Cron (backgroundService) den Push zum Anmeldestart.
+          const openNow = isRegistrationOpenForKonfis({
+            registration_opens_at, registration_closes_at,
+            cancelled: false, teamer_only
+          });
+          if (openNow) {
+            await PushService.sendNewEventToOrgKonfis(db, req.user.organization_id, name, event_date, eventId);
+            await db.query('UPDATE events SET registration_open_notified = true WHERE id = $1', [eventId]);
+          }
         }
       } catch (pushErr) {
         console.error('Push notification failed for new event:', pushErr);
@@ -839,7 +849,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       await client.query('BEGIN');
 
       // Alten mandatory-Wert lesen für bedingte Auto-Enrollment-Logik
-      const { rows: [oldEvent] } = await client.query('SELECT mandatory FROM events WHERE id = $1', [id]);
+      const { rows: [oldEvent] } = await client.query('SELECT mandatory, registration_open_notified FROM events WHERE id = $1', [id]);
 
       const updateQuery = `
         UPDATE events SET
@@ -1017,6 +1027,29 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
       // Live Update: Notify all konfis and admins about the event update
       liveUpdate.sendToOrg(req.user.organization_id, 'events', 'update', { eventId: id });
+
+      // "Anmeldung moeglich"-Push beim AENDERN (Flankenerkennung):
+      // - wird das Event durch die Aenderung anmeldbar UND war es vorher nicht
+      //   benachrichtigt -> Push + Flag setzen.
+      // - wird es nicht-anmeldbar (Anmeldung in Zukunft/zu/abgesagt) -> Flag
+      //   zuruecksetzen, damit beim naechsten Oeffnen erneut gepusht wird.
+      // Pflicht-Events haben einen eigenen Erstellungs-Push -> hier ausgenommen.
+      if (!mandatory) {
+        try {
+          const openNow = isRegistrationOpenForKonfis({
+            registration_opens_at, registration_closes_at,
+            cancelled: false, teamer_only
+          });
+          if (openNow && !oldEvent?.registration_open_notified) {
+            await PushService.sendNewEventToOrgKonfis(db, req.user.organization_id, name, event_date, id);
+            await db.query('UPDATE events SET registration_open_notified = true WHERE id = $1', [id]);
+          } else if (!openNow && oldEvent?.registration_open_notified) {
+            await db.query('UPDATE events SET registration_open_notified = false WHERE id = $1', [id]);
+          }
+        } catch (pushErr) {
+          console.error('Push notification failed for event update (registration open):', pushErr);
+        }
+      }
 
     } catch (err) {
       try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }

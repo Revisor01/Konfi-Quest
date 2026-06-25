@@ -594,10 +594,21 @@ useEffect(() => {
                 targetUrl = userType === 'admin' ? '/admin/badges' : userType === 'teamer' ? '/teamer/profile' : '/konfi/badges';
                 break;
 
+              case 'new_event': {
+                // "Anmeldung moeglich"-Push: direkt zum Event-Detail, wenn die ID
+                // mitkommt (Konfi hat eine Detail-Route). Sonst zur Events-Liste.
+                const evId = action.notification.data?.event_id || action.notification.data?.eventId;
+                if (evId && userType === 'konfi') {
+                  targetUrl = `/konfi/events/${evId}`;
+                } else {
+                  targetUrl = `${routePrefix}/events`;
+                }
+                break;
+              }
+
               case 'event_registered':
               case 'event_unregistered':
               case 'waitlist_promotion':
-              case 'new_event':
               case 'event_attendance':
               case 'event_reminder':
               case 'event_cancelled':
