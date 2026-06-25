@@ -35,12 +35,14 @@ einem iOS-Build enthalten. Für eine vollständige 1.3.0-App ist ein neuer Build
   „Ausgebucht" = Schloss, „Verbuchen" = offener Kreis. (`8be6466`, `c33d27c`)
 
 ### 🔍 Analyse (kein Code-Change)
-- Teamer-Badges geprüft: Die Logik (`checkAndAwardTeamerBadges`, Typ
-  `category_activities`) ist korrekt. „Freizeithopper" bekam keinen Progress,
-  weil (a) die Teamer-Anwesenheit wegen des 400-Bugs nie auf „present" stand und
-  (b) das Test-Event „Volkslauf" die Kategorien Urlauberseelsorge/
-  Öffentlichkeitsarbeit hat — nicht „Freizeit". Nach dem Anwesenheit-Fix zählt
-  ein Freizeit-Event mit bestätigter Anwesenheit korrekt (Badge braucht 10).
+- Teamer-Badges geprüft (Logik + Prod-Daten): `checkAndAwardTeamerBadges`, Typ
+  `category_activities` ist **korrekt** und zählt Aktivitäten UND anwesende
+  Event-Teilnahmen der passenden Kategorie. „Freizeithopper" (Kategorie
+  „Freizeit", Ziel 10) hat real bereits Progress 1/10 über das Freizeit-Event
+  „Kirchenübernachtung". Die zum Test eingereichte Aktivität „Konfi-Freizeit
+  begleitet" zählte NICHT, weil ihr die Kategorien „Kinder"/„Kreativ"
+  zugeordnet sind — nicht „Freizeit". Lösung: der Aktivität die Kategorie
+  „Freizeit" zuordnen (Datenpflege, kein Code-Fix).
 
 ---
 
