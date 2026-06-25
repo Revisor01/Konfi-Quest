@@ -10,19 +10,23 @@ import {
   flame,
   hourglass,
   peopleCircle,
-  calendar,
   checkmark,
-  checkmarkDone,
   timeOutline,
   lockClosed,
   eye,
-  eyeOff
+  eyeOff,
+  informationCircle,
+  personAdd,
+  checkmarkDoneCircle
 } from 'ionicons/icons';
 
 // Mapping: Status-Text -> Icon
+// SINGLE SOURCE OF TRUTH fuer Event-Status-Icons: dieselbe Map wird sowohl fuer
+// das Corner-Badge als auch (ueber getStatusIcon) fuer das grosse Kreis-Icon
+// vorne genutzt -> Kreis und Badge zeigen IMMER dasselbe Icon pro Zustand.
 const STATUS_ICON_MAP: Record<string, string> = {
   // Events
-  'Offen': time,
+  'Offen': personAdd,        // anmeldbar = "Person mit Plus" (eindeutig "anmelden")
   'Verbuchen': flash,
   'Verbucht': checkmarkCircle,
   'Pflicht': shieldCheckmark,
@@ -30,13 +34,15 @@ const STATUS_ICON_MAP: Record<string, string> = {
   'Konfirmation': flame,
   'Warteliste': hourglass,
   'Ausgebucht': peopleCircle,
-  'Bald': calendar,
+  'Bald': time,              // "Bald" = zeitnah -> Uhr
   'Geschlossen': lockClosed,
+  'Nur Info': informationCircle,
   'Vergangen': timeOutline,
-  // Konfi-Event Status
-  'Angemeldet': checkmark,
-  'Gebucht': checkmark,
-  'Anwesend': checkmarkDone,
+  // Konfi-/Teamer-Event Status
+  'Angemeldet': checkmarkCircle,
+  'Dabei': checkmarkCircle,  // Teamer "Dabei" = angemeldet
+  'Gebucht': checkmarkCircle,
+  'Anwesend': checkmarkDoneCircle,  // Doppelhaken IM Kreis -> passt zur Kreis-Haken-Familie (Angemeldet/Dabei)
   'Abwesend': closeCircle,
   'Gefehlt': closeCircle,
   'Abgemeldet': closeCircle,

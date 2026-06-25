@@ -33,6 +33,7 @@ import {
   infinite
 } from 'ionicons/icons';
 import { SectionHeader, ListSection, StatusBadge, EventLegendModal } from '../../shared';
+import { getStatusIcon } from '../../shared/StatusBadge';
 import { Event } from '../../../types/event';
 
 interface EventsViewProps {
@@ -204,20 +205,8 @@ const EventsView: React.FC<EventsViewProps> = ({
     else if (isPastEvent) statusText = 'Vergangen';
     else statusText = 'Geschlossen';
 
-    // Bestimme Icon
-    let statusIcon = calendar;
-    if (isCancelled) statusIcon = close;
-    else if (isMandatory && isOptedOut) statusIcon = closeCircle;
-    else if (isMandatory) statusIcon = shieldCheckmark;
-    else if (isParticipated && attendanceStatus === 'present') statusIcon = checkmarkCircle;
-    else if (isParticipated && attendanceStatus === 'absent') statusIcon = close;
-    else if (isAusstehend) statusIcon = hourglass;
-    else if (isOnWaitlist) statusIcon = hourglass;
-    else if (event.is_registered) statusIcon = checkmarkCircle;
-    else if (isPastEvent) statusIcon = hourglass;
-    else if (event.registration_status === 'open' && event.max_participants > 0 && event.registered_count >= event.max_participants) statusIcon = event.waitlist_enabled ? hourglass : close;
-    else if (event.registration_status === 'open') statusIcon = lockOpenOutline;
-    else statusIcon = time;
+    // Icon zentral aus der StatusBadge-Map -> Kreis-Icon == Corner-Badge-Icon.
+    const statusIcon = getStatusIcon(statusText) || calendar;
 
     const shouldGrayOut = isPastEvent && !isParticipated && !isAusstehend;
 

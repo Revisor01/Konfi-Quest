@@ -51,6 +51,7 @@ import {
   search,
   filterOutline,
   lockOpenOutline,
+  personAdd,
   infinite
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -62,6 +63,7 @@ import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { SectionHeader, ListSection, StatusBadge, EventLegendModal } from '../../shared';
+import { getStatusIcon } from '../../shared/StatusBadge';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import QRScannerModal from '../../konfi/modals/QRScannerModal';
@@ -241,7 +243,8 @@ const TeamerEventsPage: React.FC = () => {
   // Status-Infos für Event-Karten
   const getEventStatusInfo = (event: Event) => {
     const isPastEvent = new Date(event.event_date) < new Date();
-    const isTeamerEvent = event.teamer_needed || event.teamer_only;
+    // Darf sich der Teamer hier ueberhaupt anmelden? Nur bei teamer_needed/teamer_only.
+    const canRegister = !!(event.teamer_needed || event.teamer_only);
 
     // Globale Tokens
     const C = {
@@ -249,41 +252,44 @@ const TeamerEventsPage: React.FC = () => {
       danger: 'var(--app-color-danger)',
       bonus: 'var(--app-color-bonus)',
       info: 'var(--app-color-info)',
-      konfis: 'var(--app-color-konfis)',
+      teamer: 'var(--app-color-teamer)',
       past: '#6c757d',
+      neutral: '#9ca3af',
     };
-    let statusColor = C.success;
-    let statusText = 'Offen';
-    let statusIcon = lockOpenOutline;
+    // Default: reines Konfi-Event, zu dem der Teamer sich NICHT anmelden kann.
+    // Das ist NICHT gruen, sondern neutral ("Nur Info"), damit keine Anmeldung
+    // suggeriert wird.
+    let statusColor = C.neutral;
+    let statusText = 'Nur Info';
 
-    if (isPastEvent && event.is_registered) {
+    if (event.registration_status === 'cancelled') {
+      statusColor = C.danger;
+      statusText = 'Abgesagt';
+    } else if (isPastEvent && event.is_registered) {
       if (event.attendance_status === 'present') {
         statusColor = C.success;
         statusText = 'Anwesend';
-        statusIcon = checkmarkCircle;
       } else if (event.attendance_status === 'absent') {
         statusColor = C.danger;
         statusText = 'Abwesend';
-        statusIcon = closeCircle;
       } else {
         statusColor = C.bonus;
         statusText = 'Ausstehend';
-        statusIcon = hourglass;
       }
     } else if (event.is_registered && !isPastEvent) {
       statusColor = C.info;
       statusText = 'Dabei';
-      statusIcon = checkmarkCircle;
     } else if (isPastEvent) {
       statusColor = C.past;
       statusText = 'Vergangen';
-      statusIcon = hourglass;
-    } else if (isTeamerEvent) {
-      statusColor = C.konfis;
+    } else if (canRegister) {
+      // Anmeldbares Team-Event = rosa (Teamer-Farbe), nicht gruen/lila.
+      statusColor = C.teamer;
       statusText = 'Offen';
-      statusIcon = calendar;
     }
 
+    // Icon zentral aus der StatusBadge-Map -> Kreis-Icon == Corner-Badge-Icon.
+    const statusIcon = getStatusIcon(statusText) || informationCircle;
     const shouldGrayOut = isPastEvent && !event.is_registered;
 
     return { statusColor, statusText, statusIcon, isPastEvent, shouldGrayOut };
@@ -362,7 +368,7 @@ const TeamerEventsPage: React.FC = () => {
     const success = { primary: 'var(--app-color-success)', secondary: 'var(--app-color-success)' };
     const bonus = { primary: 'var(--app-color-bonus)', secondary: 'var(--app-color-bonus)' };
     const info = { primary: 'var(--app-color-info)', secondary: 'var(--app-color-info)' };
-    const events = { primary: 'var(--app-color-events)', secondary: 'var(--app-color-events)' };
+    const teamer = { primary: 'var(--app-color-teamer)', secondary: 'var(--app-color-teamer)' };
     const past = { primary: '#6c757d', secondary: '#6c757d' };
     const neutral = { primary: '#9ca3af', secondary: '#9ca3af' };
 
@@ -380,7 +386,8 @@ const TeamerEventsPage: React.FC = () => {
     if (event.is_registered && !isPastEvent) return info; // angemeldet = blau
     if (isPastEvent) return past;
     if (event.registration_status === 'open') {
-      return teamerCanRegister(event) ? success : neutral;
+      // Anmeldbares Team-Event = rosa (Teamer-Farbe), nicht gruen.
+      return teamerCanRegister(event) ? teamer : neutral;
     }
     return neutral;
   };
@@ -711,7 +718,7 @@ const TeamerEventsPage: React.FC = () => {
                   <IonIcon icon={closeCircle} slot="start" />
                   {bookingLoading ? 'Wird verarbeitet...' : 'Nicht mehr dabei'}
                 </IonButton>
-              ) : (
+              ) : teamerCanRegister(selectedEvent) ? (
                 <IonButton
                   className="app-action-button"
                   expand="block"
@@ -722,6 +729,19 @@ const TeamerEventsPage: React.FC = () => {
                   <IonIcon icon={checkmarkCircle} slot="start" />
                   {bookingLoading ? 'Wird verarbeitet...' : 'Ich bin dabei'}
                 </IonButton>
+              ) : (
+                // Reines Konfi-Event: Teamer kann sich NICHT anmelden -> nur Hinweis.
+                <div
+                  className="app-status-box"
+                  style={{
+                    backgroundColor: 'rgba(156, 163, 175, 0.12)',
+                    color: '#6b7280',
+                    borderColor: 'rgba(156, 163, 175, 0.35)'
+                  }}
+                >
+                  <IonIcon icon={informationCircle} />
+                  Nur zur Info - keine Anmeldung
+                </div>
               )
             )}
           </div>

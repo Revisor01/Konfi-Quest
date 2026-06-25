@@ -19,22 +19,17 @@ import {
   useIonModal
 } from '@ionic/react';
 import {
-  flash,
   people,
   peopleOutline,
   calendar,
   time,
   location,
-  hourglass,
   copy,
   ban,
   trash,
-  checkmarkCircle,
-  close,
   trophy,
   listOutline,
   calendarOutline,
-  lockOpenOutline,
   shieldCheckmark,
   bagHandle,
   attachOutline,
@@ -46,6 +41,7 @@ import { useApp } from '../../contexts/AppContext';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { parseLocalTime, getLocalNow } from '../../utils/dateUtils';
 import { SectionHeader, ListSection, StatusBadge, EventLegendModal } from '../shared';
+import { getStatusIcon } from '../shared/StatusBadge';
 import { Event } from '../../types/event';
 
 interface EventsViewProps {
@@ -323,17 +319,8 @@ const EventsView: React.FC<EventsViewProps> = ({
                 return 'Geschlossen';
               })();
 
-              // Icon basierend auf Status
-              const statusIcon = (() => {
-                if (isCancelled) return close;
-                if (event.mandatory && !isPastEvent) return shieldCheckmark;
-                if (isFullyProcessed) return checkmarkCircle;
-                if (hasUnprocessedBookings) return flash; // Blitz-Icon für "Verbuchen"
-                if (isPastEvent) return checkmarkCircle;
-                if (calculateRegistrationStatus(event) === 'open' && event.max_participants > 0 && event.registered_count >= event.max_participants) return event.waitlist_enabled ? hourglass : close;
-                if (calculateRegistrationStatus(event) === 'open') return lockOpenOutline; // Offen = Schloss offen
-                return time; // "Bald" = Uhr-Icon
-              })();
+              // Icon zentral aus der StatusBadge-Map -> Kreis-Icon == Corner-Badge-Icon.
+              const statusIcon = getStatusIcon(statusText) || calendar;
 
               return (
               <IonItemSliding key={event.id} style={{ marginBottom: index < filteredAndSortedEvents.length - 1 ? '8px' : '0' }}>
