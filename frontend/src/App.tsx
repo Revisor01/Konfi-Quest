@@ -190,13 +190,17 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => (
   <AppProvider>
-    <BadgeProvider>
-      <LiveUpdateProvider>
+    {/* LiveUpdateProvider MUSS aussen liegen: BadgeProvider abonniert via
+        useLiveRefresh die 'events'/'requests'-Updates. Lag BadgeProvider aussen,
+        bekam er die No-op-Fallback-Instanz von useLiveUpdate -> Tab-Badge (z.B.
+        "Verbuchen") aktualisierte sich erst beim 30s-Poll statt sofort. */}
+    <LiveUpdateProvider>
+      <BadgeProvider>
         <ErrorBoundary>
           <AppContent />
         </ErrorBoundary>
-      </LiveUpdateProvider>
-    </BadgeProvider>
+      </BadgeProvider>
+    </LiveUpdateProvider>
   </AppProvider>
 );
 

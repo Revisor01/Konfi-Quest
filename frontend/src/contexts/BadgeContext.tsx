@@ -7,7 +7,10 @@ import { networkMonitor } from '../services/networkMonitor';
 import { initializeWebSocket, getSocket } from '../services/websocket';
 import { getToken } from '../services/tokenStore';
 import { useApp } from './AppContext';
-import { useLiveRefresh } from './LiveUpdateContext';
+import { useLiveRefresh, LiveUpdateType } from './LiveUpdateContext';
+
+// Stabiles Array (Modul-Ebene) -> useLiveRefresh re-subscribt nicht bei jedem Render.
+const BADGE_LIVE_TYPES: LiveUpdateType[] = ['requests', 'events'];
 
 // Badge Context Interface
 interface BadgeContextType {
@@ -154,8 +157,9 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [refreshAllCounts, user]);
 
-  // LiveUpdateContext-basierte Subscriptions für Daten-Events
-  useLiveRefresh(['requests', 'events'], refreshAllCounts);
+  // LiveUpdateContext-basierte Subscriptions für Daten-Events.
+  // Stabiles Array (Modul-Konstante BADGE_LIVE_TYPES) -> kein Re-Subscribe pro Render.
+  useLiveRefresh(BADGE_LIVE_TYPES, refreshAllCounts);
 
   // Sync: Reconnect + Resume Badge-Refresh
   useEffect(() => {
