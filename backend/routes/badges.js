@@ -158,7 +158,9 @@ const checkAndAwardBadges = async (db, userId) => {
     ] = await Promise.all([
       db.query("SELECT COUNT(*) as count FROM user_activities WHERE user_id = $1 AND organization_id = $2", [userId, konfi.organization_id]),
       db.query("SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2", [userId, konfi.organization_id]),
-      db.query("SELECT COUNT(*) as count FROM bonus_points WHERE konfi_id = $1 AND organization_id = $2", [userId, konfi.organization_id]),
+      // bonus_points-Badge meint die SUMME der Bonuspunkte (Frontend-Label "Punkte"),
+      // nicht die Anzahl der Eintraege -> SUM(points), konsistent zum Progress (konfi.js).
+      db.query("SELECT COALESCE(SUM(points), 0) as count FROM bonus_points WHERE konfi_id = $1 AND organization_id = $2", [userId, konfi.organization_id]),
       db.query("SELECT DISTINCT a.name FROM user_activities ua JOIN activities a ON ua.activity_id = a.id WHERE ua.user_id = $1 AND a.organization_id = $2", [userId, konfi.organization_id]),
       db.query("SELECT DISTINCT activity_id FROM user_activities WHERE user_id = $1 AND organization_id = $2", [userId, konfi.organization_id])
     ]);

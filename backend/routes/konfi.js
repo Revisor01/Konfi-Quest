@@ -1125,14 +1125,22 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
               }
               
               if (requiredCategory) {
+                // KONSISTENZ-VERTRAG: byte-identisch zur Wertung (badges.js:222-242).
+                // Zaehlt Aktivitaeten UND anwesende Events der Kategorie (UNION) +org.
                 const { rows: [categoryResult] } = await db.query(
-                  `SELECT COUNT(*) as count 
-                   FROM user_activities ka 
-                   JOIN activities a ON ka.activity_id = a.id 
-                   JOIN activity_categories ac ON a.id = ac.activity_id 
-                   JOIN categories c ON ac.category_id = c.id 
-                   WHERE ka.user_id = $1 AND c.name = $2`,
-                  [konfiId, requiredCategory]
+                  `SELECT COUNT(*) as count FROM (
+                     SELECT ka.id FROM user_activities ka
+                     JOIN activities a ON ka.activity_id = a.id
+                     JOIN activity_categories ac ON a.id = ac.activity_id
+                     JOIN categories c ON ac.category_id = c.id
+                     WHERE ka.user_id = $1 AND c.name = $2 AND a.organization_id = $3 AND c.organization_id = $3
+                     UNION ALL
+                     SELECT eb.id FROM event_bookings eb
+                     JOIN event_categories ec ON eb.event_id = ec.event_id
+                     JOIN categories c ON ec.category_id = c.id
+                     WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND c.name = $2 AND c.organization_id = $3 AND eb.organization_id = $3
+                   ) as combined`,
+                  [konfiId, requiredCategory, req.user.organization_id]
                 );
                 progress.current = parseInt(categoryResult?.count || 0);
               } else {

@@ -13,6 +13,17 @@ einem iOS-Build enthalten. Für eine vollständige 1.3.0-App ist ein neuer Build
 (B61) nötig.
 
 ### 🐛 Fehlerbehebungen
+- Badge-Fortschritt vollständig auditiert (Wertung vs. Anzeige für alle
+  Kriterien-Typen, Konfi + Teamer). Behobene Abweichungen:
+  - Teamer-Badges vom Typ „Kategorie-Aktivitäten" (z. B. Freizeithopper) zeigten
+    immer 0 % Fortschritt, obwohl Aktivitäten/Events real zählten — jetzt
+    korrekter Fortschritt.
+  - Teamer-Fortschritt für „Spezifische Aktivität", „Kombination", „Serie" und
+    „Zeitraum" war fest auf 0 — jetzt echte Werte.
+  - Konfi-Badge „Kategorie-Aktivitäten": Fortschritt zählte nur Aktivitäten,
+    nicht die anwesenden Events (die Wertung tat es) — jetzt deckungsgleich.
+  - Konfi-Badge „Bonuspunkte" wurde bei der Wertung nach Anzahl der Einträge statt
+    nach Punktesumme bewertet — jetzt nach Summe (wie Anzeige/Beschriftung).
 - Teamer-Anwesenheit bestätigen warf einen 400-Fehler („Konfi-Profil nicht
   gefunden"), weil die Konfi-Punkte-Logik mitlief. Punkte gibt es jetzt nur noch
   für Konfis; Teamer-Anwesenheit wird ohne Punkte gesetzt. (`9140a23`, deployt)

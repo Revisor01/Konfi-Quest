@@ -3,6 +3,7 @@ const router = express.Router();
 const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { fetchTageslosung } = require('../services/losungService');
+const { computeCurrentStreak } = require('../utils/streakCalculation');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireTeamer, requireOrgAdmin, requireAdmin } = roleHelpers;
@@ -280,7 +281,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       const { rows: badges } = await db.query(badgesQuery, [userId, orgId]);
 
       // Hauptmetriken einmalig abfragen für Fortschrittsberechnung
-      const [actCountRes, evCountRes, uniqueActRes, activeYearsRes, teamerSinceRes] = await Promise.all([
+      const [actCountRes, evCountRes, uniqueActRes, activeYearsRes, teamerSinceRes, categoryCountsRes, actNamesRes, eventTitlesRes, allDatesRes] = await Promise.all([
         // Teamer-Aktivitäten + Events
         db.query(
           `SELECT (
@@ -320,12 +321,70 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         db.query(
           "SELECT teamer_since FROM users WHERE id = $1",
           [userId]
+        ),
+        // Pro Kategorie: Anzahl Teamer-Aktivitaeten + anwesende Events (fuer
+        // category_activities-Progress). Identische Logik wie die Wertung in
+        // badges.js (checkAndAwardTeamerBadges, case 'category_activities').
+        db.query(
+          `SELECT c.name AS category, COUNT(*) AS count FROM (
+            SELECT ac.category_id, ua.id FROM user_activities ua
+            JOIN activities a ON ua.activity_id = a.id
+            JOIN activity_categories ac ON a.id = ac.activity_id
+            WHERE ua.user_id = $1 AND a.organization_id = $2 AND a.target_role = 'teamer'
+            UNION ALL
+            SELECT ec.category_id, eb.id FROM event_bookings eb
+            JOIN event_categories ec ON eb.event_id = ec.event_id
+            WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2
+          ) src
+          JOIN categories c ON src.category_id = c.id AND c.organization_id = $2
+          GROUP BY c.name`,
+          [userId, orgId]
+        ),
+        // Teamer-Aktivitaets-Namen + Anzahl (fuer specific_activity / activity_combination).
+        db.query(
+          `SELECT a.name, COUNT(*) AS count FROM user_activities ua
+           JOIN activities a ON ua.activity_id = a.id
+           WHERE ua.user_id = $1 AND a.organization_id = $2 AND a.target_role = 'teamer'
+           GROUP BY a.name`,
+          [userId, orgId]
+        ),
+        // Besuchte Event-Titel (fuer activity_combination required_events).
+        db.query(
+          `SELECT DISTINCT e.title FROM event_bookings eb
+           JOIN events e ON eb.event_id = e.id
+           WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2`,
+          [userId, orgId]
+        ),
+        // Alle Aktivitaets-/Event-Daten (fuer streak / time_based).
+        db.query(
+          `SELECT ua.completed_date AS date FROM user_activities ua
+           JOIN activities a ON ua.activity_id = a.id
+           WHERE ua.user_id = $1 AND ua.organization_id = $2 AND a.target_role = 'teamer'
+           UNION ALL
+           SELECT e.event_date AS date FROM event_bookings eb
+           JOIN events e ON eb.event_id = e.id
+           WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2`,
+          [userId, orgId]
         )
       ]);
 
       const activityCount = parseInt(actCountRes.rows[0].count);
       const eventCount = parseInt(evCountRes.rows[0].count);
       const uniqueActivities = parseInt(uniqueActRes.rows[0].count);
+      // Map Kategorie-Name -> Anzahl (fuer category_activities-Progress).
+      const categoryCounts = {};
+      for (const row of categoryCountsRes.rows) {
+        categoryCounts[row.category] = parseInt(row.count);
+      }
+      // Map Aktivitaets-Name -> Anzahl (specific_activity / activity_combination).
+      const activityNameCounts = {};
+      for (const row of actNamesRes.rows) {
+        activityNameCounts[row.name] = parseInt(row.count);
+      }
+      const completedActivityNames = actNamesRes.rows.map(r => r.name);
+      const attendedEventTitles = eventTitlesRes.rows.map(r => r.title);
+      // Datums-Liste (Strings/Dates) fuer streak / time_based.
+      const allDates = allDatesRes.rows.map(r => r.date).filter(Boolean);
       // Array der aktiven Jahre (INTEGER) — fuer Startjahr-Filter im teamer_year-Case.
       const activeYearValues = activeYearsRes.rows.map(r => r.year);
 
@@ -370,14 +429,58 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
                 ? 0
                 : activeYearValues.filter(y => y >= teamerStartYear).length;
               break;
-            case 'specific_activity':
-            case 'category_activities':
+            case 'category_activities': {
+              // Echter Progress: Anzahl Teamer-Aktivitaeten + anwesende Events der
+              // geforderten Kategorie (deckungsgleich mit der Wertung in badges.js).
+              const extra = typeof badge.criteria_extra === 'object' && badge.criteria_extra !== null
+                ? badge.criteria_extra
+                : JSON.parse(badge.criteria_extra || '{}');
+              progressPoints = extra.required_category
+                ? (categoryCounts[extra.required_category] || 0)
+                : 0;
+              break;
+            }
+            case 'specific_activity': {
+              // Anzahl der geforderten Teamer-Aktivitaet (Name), wie Wertung badges.js:476.
+              const extra = typeof badge.criteria_extra === 'object' && badge.criteria_extra !== null
+                ? badge.criteria_extra : JSON.parse(badge.criteria_extra || '{}');
+              progressPoints = extra.required_activity_name
+                ? (activityNameCounts[extra.required_activity_name] || 0)
+                : 0;
+              break;
+            }
+            case 'activity_combination': {
+              // Anzahl erfuellter Teilbedingungen (Aktivitaeten + Events), wie Wertung
+              // badges.js:391. Ziel ist die Gesamtanzahl der geforderten Eintraege.
+              const extra = typeof badge.criteria_extra === 'object' && badge.criteria_extra !== null
+                ? badge.criteria_extra : JSON.parse(badge.criteria_extra || '{}');
+              const reqActs = extra.required_activities || [];
+              const reqEvents = extra.required_events || [];
+              const actMatch = reqActs.filter(n => completedActivityNames.includes(n)).length;
+              const evMatch = reqEvents.filter(t => attendedEventTitles.includes(t)).length;
+              progressPoints = actMatch + evMatch;
+              break;
+            }
             case 'streak':
-            case 'activity_combination':
-            case 'time_based':
+              // Aktueller Wochen-Streak (gleiche Util wie Wertung badges.js checkStreakCriteria).
+              progressPoints = computeCurrentStreak(allDates);
+              break;
+            case 'time_based': {
+              // Anzahl Aktivitaeten/Events im Zeitfenster, wie Wertung badges.js:522.
+              const extra = typeof badge.criteria_extra === 'object' && badge.criteria_extra !== null
+                ? badge.criteria_extra : JSON.parse(badge.criteria_extra || '{}');
+              const days = extra.days || (extra.weeks ? extra.weeks * 7 : null);
+              if (days) {
+                const cutoff = Date.now() - (days * 24 * 60 * 60 * 1000);
+                progressPoints = allDates.filter(d => new Date(d).getTime() >= cutoff).length;
+              } else {
+                progressPoints = 0;
+              }
+              break;
+            }
             case 'collection':
             case 'yearly':
-              // Komplexere Berechnung - 0 als Fallback (exakte Werte in Badge-Check)
+              // Noch nicht in der Wertung implementiert -> 0.
               progressPoints = 0;
               break;
             default:
