@@ -163,8 +163,13 @@ class BackgroundService {
    */
   static startRegistrationOpenService(db) {
     if (this.registrationOpenInterval) return;
-    // Sofort einmal, dann alle 5 Minuten (feinkoernig, da Anmeldestart sekundengenau wirkt).
-    this.sendRegistrationOpenPushes(db);
+    // Erstlauf verzoegert (30s), damit beim Boot zuerst die Migrations durch sind
+    // (sonst Race: Spalte registration_open_notified evtl. noch nicht vorhanden).
+    // Danach alle 5 Minuten (feinkoernig, da Anmeldestart sekundengenau wirkt).
+    setTimeout(() => {
+      this.sendRegistrationOpenPushes(db).catch(err =>
+        console.error('Registration-open push (initial) failed:', err));
+    }, 30 * 1000);
     const FIVE_MINUTES = 5 * 60 * 1000;
     this.registrationOpenInterval = setInterval(async () => {
       try {
