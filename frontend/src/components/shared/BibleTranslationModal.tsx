@@ -12,7 +12,6 @@ export const BIBLE_TRANSLATIONS = [
   { code: 'BIGS', name: 'Bibel in gerechter Sprache', description: 'Übersetzung mit Fokus auf Gerechtigkeit, Inklusion und die Vielfalt biblischer Gottesbilder. Gendersensibel und theologisch reflektiert.' },
   { code: 'NIV', name: 'New International Version', description: 'Die meistgelesene englische Bibelübersetzung. Gute Balance zwischen Wörtlichkeit und Verständlichkeit. Für alle die Englisch bevorzugen.' },
   { code: 'LSG', name: 'Louis Segond 1910', description: 'Französische Standardübersetzung, vergleichbar mit der Lutherbibel im deutschen Sprachraum. Klassisch und weit verbreitet.' },
-  { code: 'RVR60', name: 'Reina-Valera 1960', description: 'Spanische Standardübersetzung mit großer Treue zum Grundtext. Die am häufigsten verwendete spanische Bibel.' },
 ];
 
 export const getTranslationName = (code: string): string =>
