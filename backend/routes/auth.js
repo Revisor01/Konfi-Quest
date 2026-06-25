@@ -612,7 +612,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
     try {
       const { rows: [invite] } = await db.query(`
-        SELECT id, code, role_id, jahrgang_id, organization_id, expires_at, created_at FROM invite_codes WHERE id = $1 AND organization_id = $2
+        SELECT id, code, jahrgang_id, organization_id, expires_at, created_at FROM invite_codes WHERE id = $1 AND organization_id = $2
       `, [id, organizationId]);
 
       if (!invite) {

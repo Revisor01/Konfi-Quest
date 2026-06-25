@@ -13,6 +13,8 @@ einem iOS-Build enthalten. Für eine vollständige 1.3.0-App ist ein neuer Build
 (B61) nötig.
 
 ### 🐛 Fehlerbehebungen
+- Einladungscode verlängern warf „Fehler beim Verlängern" — die Route fragte eine
+  nicht existierende Spalte `role_id` ab. Abfrage korrigiert.
 - Badge-Regel präzisiert: Bei **Konfis** zählen Pflicht-Events und Konfirmationen
   NICHT mehr für Badges — nur freiwillig besuchte, bestätigte Events plus
   eingereichte Aktivitäten. Bei **Teamer:innen** zählen weiterhin alle bestätigten
