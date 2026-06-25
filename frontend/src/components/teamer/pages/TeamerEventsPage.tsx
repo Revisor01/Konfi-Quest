@@ -346,6 +346,11 @@ const TeamerEventsPage: React.FC = () => {
   };
 
   // Status-Farben fuer SectionHeader — globale Tokens
+  // Darf sich ein Teamer zu diesem Event ueberhaupt anmelden? Nur bei
+  // teamer_needed/teamer_only. Reine Konfi-Events sieht der Teamer zwar (zur
+  // Info), aber er kann sich NICHT anmelden -> nicht "offen" faerben.
+  const teamerCanRegister = (event: Event): boolean => !!(event.teamer_needed || event.teamer_only);
+
   const getStatusColors = (event: Event): { primary: string; secondary: string } => {
     const danger = { primary: 'var(--app-color-danger)', secondary: 'var(--app-color-danger)' };
     const success = { primary: 'var(--app-color-success)', secondary: 'var(--app-color-success)' };
@@ -353,22 +358,28 @@ const TeamerEventsPage: React.FC = () => {
     const info = { primary: 'var(--app-color-info)', secondary: 'var(--app-color-info)' };
     const events = { primary: 'var(--app-color-events)', secondary: 'var(--app-color-events)' };
     const past = { primary: '#6c757d', secondary: '#6c757d' };
+    const neutral = { primary: '#9ca3af', secondary: '#9ca3af' };
 
     const isPastEvent = new Date(event.event_date) < new Date();
     const isOnWaitlist = event.booking_status === 'waitlist' || event.booking_status === 'pending';
 
+    // Logik 1:1 wie Konfi (EventDetailView) — EINZIGER Unterschied: ein "offenes"
+    // Event, zu dem sich der Teamer NICHT anmelden kann, wird NICHT gruen, sondern
+    // neutral ("Nur Info"), damit keine Anmeldung suggeriert wird.
     if (event.registration_status === 'cancelled') return danger;
     if (isPastEvent && event.attendance_status === 'present') return success;
     if (isPastEvent && event.attendance_status === 'absent') return danger;
     if (isPastEvent && event.is_registered && !event.attendance_status) return bonus;
     if (isOnWaitlist) return bonus;
-    if (event.is_registered && !isPastEvent) return info;
+    if (event.is_registered && !isPastEvent) return info; // angemeldet = blau
     if (isPastEvent) return past;
-    if (event.registration_status === 'open') return success;
-    return events;
+    if (event.registration_status === 'open') {
+      return teamerCanRegister(event) ? success : neutral;
+    }
+    return neutral;
   };
 
-  // Status-Text für Header (1:1 wie Konfi EventDetailView)
+  // Status-Text für Header (1:1 wie Konfi EventDetailView, plus Teamer-Sonderfall)
   const getStatusText = (event: Event): string => {
     const isPastEvent = new Date(event.event_date) < new Date();
     const isOnWaitlist = event.booking_status === 'waitlist' || event.booking_status === 'pending';
@@ -380,7 +391,9 @@ const TeamerEventsPage: React.FC = () => {
     if (isOnWaitlist) return 'Warteliste';
     if (event.is_registered && !isPastEvent) return 'Dabei';
     if (isPastEvent) return 'Vergangen';
-    if (event.registration_status === 'open') return 'Offen';
+    if (event.registration_status === 'open') {
+      return teamerCanRegister(event) ? 'Offen' : 'Nur Info';
+    }
     return 'Geschlossen';
   };
 
