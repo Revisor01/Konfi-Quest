@@ -13,6 +13,14 @@ einem iOS-Build enthalten. Für eine vollständige 1.3.0-App ist ein neuer Build
 (B61) nötig.
 
 ### 🐛 Fehlerbehebungen
+- Selbst gebuchte Event-Anmeldungen von Konfis wurden ohne Organisation
+  gespeichert (`organization_id` fehlte beim Insert) — dadurch zählten sie NICHT
+  in Badge-Kriterien (Event-Anzahl, Aktivitäts-Anzahl, Kategorie, Pflicht-Events).
+  Insert korrigiert; 23 betroffene Alt-Buchungen nachträglich der richtigen
+  Organisation zugeordnet; Badge-Check für alle Konfis/Teamer neu ausgeführt
+  (22 rückwirkend verdiente Badges vergeben).
+- Event-Erklärung (Info-Button) öffnete als Vollbild statt als Karten-Dialog —
+  jetzt korrektes Card-Modal (Konfi & Admin; Teamer war bereits korrekt).
 - Badge-Fortschritt vollständig auditiert (Wertung vs. Anzeige für alle
   Kriterien-Typen, Konfi + Teamer). Behobene Abweichungen:
   - Teamer-Badges vom Typ „Kategorie-Aktivitäten" (z. B. Freizeithopper) zeigten

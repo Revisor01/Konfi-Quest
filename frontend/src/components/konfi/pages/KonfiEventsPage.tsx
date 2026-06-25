@@ -162,6 +162,7 @@ const KonfiEventsPage: React.FC = () => {
             onTabChange={setActiveTab}
             onSelectEvent={handleSelectEvent}
             onUpdate={refresh}
+            presentingElement={presentingElement}
           />
         )}
       </IonContent>

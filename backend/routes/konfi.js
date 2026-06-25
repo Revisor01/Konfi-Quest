@@ -1798,13 +1798,15 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       }
       const status = statusResult;
 
-      // Register for event (with optional timeslot_id)
+      // Register for event (with optional timeslot_id).
+      // organization_id MUSS gesetzt sein, sonst zaehlen Badge-Queries (event_count,
+      // activity_count, ...) die Buchung nicht (sie filtern auf organization_id).
       const insertQuery = `
-        INSERT INTO event_bookings (user_id, event_id, timeslot_id, status, booking_date)
-        VALUES ($1, $2, $3, $4, NOW())
+        INSERT INTO event_bookings (user_id, event_id, timeslot_id, status, booking_date, organization_id)
+        VALUES ($1, $2, $3, $4, NOW(), $5)
         RETURNING id
       `;
-      const { rows: [newBooking] } = await client.query(insertQuery, [konfiId, eventId, timeslot_id || null, status]);
+      const { rows: [newBooking] } = await client.query(insertQuery, [konfiId, eventId, timeslot_id || null, status, req.user.organization_id]);
 
       // Transaktion abschliessen
       await client.query('COMMIT');

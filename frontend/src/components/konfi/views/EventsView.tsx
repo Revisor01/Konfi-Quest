@@ -42,6 +42,8 @@ interface EventsViewProps {
   onTabChange: (tab: 'meine' | 'alle' | 'konfirmation') => void;
   onSelectEvent: (event: Event) => void;
   onUpdate: () => void;
+  // Fuer Card-Modal-Optik (Sheet ueber der Seite statt Vollbild).
+  presentingElement?: HTMLElement | null;
 }
 
 const EventsView: React.FC<EventsViewProps> = ({
@@ -49,7 +51,8 @@ const EventsView: React.FC<EventsViewProps> = ({
   activeTab,
   onTabChange,
   onSelectEvent,
-  onUpdate
+  onUpdate,
+  presentingElement
 }) => {
   const [searchText, setSearchText] = useState('');
 
@@ -243,7 +246,7 @@ const EventsView: React.FC<EventsViewProps> = ({
         icon={calendar}
         preset="events"
         stats={statsData.map(s => ({ value: s.count, label: s.label }))}
-        onInfo={() => presentLegend()}
+        onInfo={() => presentLegend({ presentingElement: presentingElement || undefined })}
       />
 
       {/* Suche & Filter — wie Chat-Pattern */}

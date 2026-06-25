@@ -456,6 +456,7 @@ const AdminEventsPage: React.FC = () => {
             onJahrgangChange={setSelectedJahrgang}
             searchText={searchText}
             onSearchChange={setSearchText}
+            presentingElement={presentingElement}
           />
         )}
       </IonContent>

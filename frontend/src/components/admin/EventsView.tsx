@@ -64,6 +64,8 @@ interface EventsViewProps {
   onJahrgangChange?: (jahrgangId: number | null) => void;
   searchText?: string;
   onSearchChange?: (text: string) => void;
+  // Fuer Card-Modal-Optik (Sheet ueber der Seite statt Vollbild).
+  presentingElement?: HTMLElement | null;
 }
 
 const EventsView: React.FC<EventsViewProps> = ({
@@ -81,7 +83,8 @@ const EventsView: React.FC<EventsViewProps> = ({
   selectedJahrgang,
   onJahrgangChange,
   searchText,
-  onSearchChange
+  onSearchChange,
+  presentingElement
 }) => {
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
 
@@ -177,7 +180,7 @@ const EventsView: React.FC<EventsViewProps> = ({
         subtitle="Termine und Veranstaltungen"
         icon={calendar}
         preset="events"
-        onInfo={() => presentLegend()}
+        onInfo={() => presentLegend({ presentingElement: presentingElement || undefined })}
         stats={[
           // Stats GLOBAL ueber alle Events zaehlen (eventCounts von der Page),
           // NICHT nur ueber die Events des aktiven Tabs (`events`) — sonst waren
