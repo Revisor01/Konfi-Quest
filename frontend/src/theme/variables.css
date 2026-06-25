@@ -2391,6 +2391,15 @@ ion-button.app-modal-submit-btn--bonus {
   padding-left: 16px;
 }
 
+/* Kleiner Hinweis auf die gewaehlte Bibeluebersetzung (klickbar -> Auswahl) */
+.app-dashboard-translation-hint {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+  margin-top: 10px;
+  padding-left: 16px;
+}
+
 /* Meta-Info Zeile (Datum, Ort, Zeit) */
 .app-dashboard-meta {
   display: flex;

@@ -3,6 +3,7 @@ import {
   IonIcon,
   useIonAlert,
   useIonPopover,
+  useIonModal,
   useIonRouter
 } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
@@ -34,6 +35,7 @@ import {
   LevelProgress
 } from './DashboardSections';
 import api from '../../../services/api';
+import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
 
 interface DashboardData {
   konfi: {
@@ -165,6 +167,44 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   const [presentAlert] = useIonAlert();
   const [actualDailyVerse, setActualDailyVerse] = useState<DailyVerse | null>(null);
   const [loadingVerse, setLoadingVerse] = useState(true);
+  const [selectedTranslation, setSelectedTranslation] = useState<string>('LUT');
+
+  // Tageslosung in der gewaehlten Bibeluebersetzung neu laden (nach Wechsel).
+  const reloadTageslosung = async () => {
+    try {
+      const response = await api.get('/konfi/tageslosung');
+      if (response.data?.success) {
+        const { losung, lehrtext } = response.data.data;
+        const translation = response.data.translation;
+        setActualDailyVerse({
+          losungstext: losung?.text,
+          losungsvers: losung?.reference,
+          lehrtext: lehrtext?.text,
+          lehrtextvers: lehrtext?.reference,
+          translation
+        });
+        if (translation) setSelectedTranslation(translation);
+      }
+    } catch (err) {
+      console.error('Tageslosung-Reload fehlgeschlagen:', err);
+    }
+  };
+
+  const handleTranslationChange = async (code: string) => {
+    try {
+      await api.put('/konfi/bible-translation', { translation: code });
+      setSelectedTranslation(code);
+      await reloadTageslosung();
+    } catch (err) {
+      console.error('Bibeluebersetzung speichern fehlgeschlagen:', err);
+    }
+  };
+
+  const [presentBibleModal, dismissBibleModal] = useIonModal(BibleTranslationModal, {
+    currentTranslation: selectedTranslation,
+    onClose: () => dismissBibleModal(),
+    onSelect: (code: string) => { handleTranslationChange(code); dismissBibleModal(); },
+  });
   const [showLosung, setShowLosung] = useState(true);
 
   // Level Popover via useIonPopover
@@ -195,12 +235,15 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         const response = await api.get('/konfi/tageslosung');
         if (response.data && response.data.success) {
           const { losung, lehrtext } = response.data.data;
+          const translation = response.data.translation;
           setActualDailyVerse({
             losungstext: losung?.text,
             losungsvers: losung?.reference,
             lehrtext: lehrtext?.text,
-            lehrtextvers: lehrtext?.reference
+            lehrtextvers: lehrtext?.reference,
+            translation
           });
+          if (translation) setSelectedTranslation(translation);
         } else {
  console.error('Invalid response from backend:', response.data);
           setActualDailyVerse(null);
@@ -513,9 +556,15 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                       reference = hasLosung ? actualDailyVerse.losungsvers : actualDailyVerse.lehrtextvers || actualDailyVerse.reference;
                     }
                     return (
-                      <div>
+                      <div
+                        onClick={() => presentBibleModal()}
+                        style={{ cursor: 'pointer' }}
+                      >
                         <blockquote className="app-dashboard-quote">"{text}"</blockquote>
                         <cite className="app-dashboard-cite">{reference}</cite>
+                        <div className="app-dashboard-translation-hint">
+                          {getTranslationName(selectedTranslation)} · zum Ändern tippen
+                        </div>
                       </div>
                     );
                   })()}

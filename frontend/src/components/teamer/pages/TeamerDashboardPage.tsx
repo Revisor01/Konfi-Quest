@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -74,6 +74,7 @@ import {
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -213,6 +214,7 @@ interface DailyVerse {
   losungsvers: string;
   lehrtext: string;
   lehrtextvers: string;
+  translation?: string;
 }
 
 // Certificate Popover Content
@@ -300,13 +302,39 @@ const TeamerDashboardPage: React.FC = () => {
           losungstext: losung?.text,
           losungsvers: losung?.reference,
           lehrtext: lehrtext?.text,
-          lehrtextvers: lehrtext?.reference
+          lehrtextvers: lehrtext?.reference,
+          translation: response.data.translation
         };
       }
       return null;
     },
     { ttl: CACHE_TTL.TAGESLOSUNG }
   );
+
+  // Bibeluebersetzung (Tageslosung) — Anzeige + Auswahl
+  const [selectedTranslation, setSelectedTranslation] = useState<string>('LUT');
+  useEffect(() => {
+    if (dailyVerse?.translation) setSelectedTranslation(dailyVerse.translation);
+  }, [dailyVerse?.translation]);
+
+  const handleTranslationChange = async (code: string) => {
+    try {
+      await api.put('/teamer/bible-translation', { translation: code });
+      setSelectedTranslation(code);
+      await refreshVerse();
+    } catch (err) {
+      console.error('Bibeluebersetzung speichern fehlgeschlagen:', err);
+    }
+  };
+
+  const [presentBibleModal, dismissBibleModal] = useIonModal(BibleTranslationModal, {
+    currentTranslation: selectedTranslation,
+    accentColor: '#be185d',
+    itemVariant: 'teamer',
+    sectionIconVariant: 'teamer',
+    onClose: () => dismissBibleModal(),
+    onSelect: (code: string) => { handleTranslationChange(code); dismissBibleModal(); },
+  });
 
   // Wrapped Modal
   const [presentWrappedModal, dismissWrappedModal] = useIonModal(WrappedModal, {
@@ -766,13 +794,16 @@ const TeamerDashboardPage: React.FC = () => {
                   }
 
                   return (
-                    <div>
+                    <div onClick={() => presentBibleModal()} style={{ cursor: 'pointer' }}>
                       <blockquote className="app-dashboard-quote">
                         "{text}"
                       </blockquote>
                       <cite className="app-dashboard-cite">
                         {reference}
                       </cite>
+                      <div className="app-dashboard-translation-hint">
+                        {getTranslationName(selectedTranslation)} · zum Ändern tippen
+                      </div>
                     </div>
                   );
                 })()}

@@ -54,6 +54,9 @@ einem iOS-Build enthalten. Für eine vollständige 1.3.0-App ist ein neuer Build
   (`c33d27c`)
 
 ### ✨ Neue Funktionen
+- Dashboard-Tageslosung (Konfi): zeigt jetzt die gewählte Bibelübersetzung klein
+  unter dem Vers an; Tippen auf die Losung öffnet die Übersetzungs-Auswahl. Die
+  Auswahl wird gespeichert und die Losung sofort neu geladen.
 - Zeit-/Serien-Badges erklären sich beim Antippen: Hinweis, ab wann bzw. in
   welchem Zeitraum der Fortschritt zählt (z. B. „Zählt die letzten 7 Tage (seit
   18. Juni)") und dass ältere Aktivitäten wieder herausfallen. So ist der
