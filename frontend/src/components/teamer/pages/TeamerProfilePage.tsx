@@ -115,7 +115,7 @@ const TeamerProfilePage: React.FC = () => {
   const [presentBibleModal, dismissBibleModal] = useIonModal(BibleTranslationModal, {
     onClose: () => dismissBibleModal(),
     currentTranslation: selectedTranslation,
-    accentColor: '#06b6d4',
+    accentColor: 'var(--app-color-teamer)',
     itemVariant: 'teamer',
     sectionIconVariant: 'teamer',
     onSelect: (code: string) => { handleTranslationChange(code); dismissBibleModal(); },

@@ -55,6 +55,9 @@ interface RequestsViewProps {
   getStatusText: (status: string) => string;
   getTypeIcon: (type: string) => string;
   getTypeText: (type: string) => string;
+  // Teamer-Aktivitaeten haben keine Gottesdienst/Gemeinde-Punkte-Logik —
+  // im Teamer-Modus wird stattdessen "Team" gezeigt und die Punktzahl ausgeblendet.
+  teamerMode?: boolean;
 }
 
 const RequestsView: React.FC<RequestsViewProps> = ({
@@ -67,7 +70,8 @@ const RequestsView: React.FC<RequestsViewProps> = ({
   getStatusColor,
   getStatusText,
   getTypeIcon,
-  getTypeText
+  getTypeText,
+  teamerMode = false
 }) => {
   const [searchText, setSearchText] = useState('');
 
@@ -224,16 +228,28 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                             <IonIcon icon={calendar} className="app-icon-color--gemeinde" />
                             {formatDate(request.requested_date)}
                           </span>
+                          {/* Punkte nur fuer Konfis — Teamer-Aktivitaeten geben keine Punkte. */}
+                          {!teamerMode && (
+                            <span className="app-list-item__meta-item">
+                              <IonIcon icon={trophy} className="app-icon-color--points" />
+                              {request.activity_points}P
+                            </span>
+                          )}
                           <span className="app-list-item__meta-item">
-                            <IonIcon icon={trophy} className="app-icon-color--points" />
-                            {request.activity_points}P
-                          </span>
-                          <span className="app-list-item__meta-item">
-                            <IonIcon
-                              icon={request.activity_type === 'gottesdienst' ? home : people}
-                              className={request.activity_type === 'gottesdienst' ? 'app-icon-color--gottesdienst' : 'app-icon-color--gemeinde'}
-                            />
-                            {request.activity_type === 'gottesdienst' ? 'GD' : 'Gem.'}
+                            {teamerMode ? (
+                              <>
+                                <IonIcon icon={people} className="app-icon-color--teamer" />
+                                Team
+                              </>
+                            ) : (
+                              <>
+                                <IonIcon
+                                  icon={request.activity_type === 'gottesdienst' ? home : people}
+                                  className={request.activity_type === 'gottesdienst' ? 'app-icon-color--gottesdienst' : 'app-icon-color--gemeinde'}
+                                />
+                                {request.activity_type === 'gottesdienst' ? 'GD' : 'Gem.'}
+                              </>
+                            )}
                           </span>
                           {request.photo_filename && (
                             <span className="app-list-item__meta-item">

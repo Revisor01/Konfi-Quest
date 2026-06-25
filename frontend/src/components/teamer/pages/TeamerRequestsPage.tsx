@@ -276,6 +276,7 @@ const TeamerRequestsPage: React.FC = () => {
             getStatusText={getStatusText}
             getTypeIcon={getTypeIcon}
             getTypeText={getTypeText}
+            teamerMode={true}
           />
         )}
       </IonContent>

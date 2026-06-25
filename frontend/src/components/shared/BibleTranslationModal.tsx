@@ -65,7 +65,8 @@ const BibleTranslationModal: React.FC<BibleTranslationModalProps> = ({
                     onClick={() => onSelect(t.code)}
                     style={{
                       cursor: 'pointer', position: 'relative', overflow: 'hidden',
-                      background: isSelected ? 'rgba(0,0,0,0.04)' : undefined,
+                      // Hintergrund kommt aus der CSS-Klasse app-list-item--<variant>--selected
+                      // (rollenrichtige Farbe) — KEIN inline-Background, der das ueberschreiben wuerde.
                     }}
                   >
                     {isSelected && (
