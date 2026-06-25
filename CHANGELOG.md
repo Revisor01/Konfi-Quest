@@ -16,6 +16,9 @@ einem iOS-Build enthalten. Für eine vollständige 1.3.0-App ist ein neuer Build
 - Teamer-Anwesenheit bestätigen warf einen 400-Fehler („Konfi-Profil nicht
   gefunden"), weil die Konfi-Punkte-Logik mitlief. Punkte gibt es jetzt nur noch
   für Konfis; Teamer-Anwesenheit wird ohne Punkte gesetzt. (`9140a23`, deployt)
+- Anträge-Tab-Zähler verschwindet sofort nach Genehmigen/Ablehnen (und zählt
+  beim Zurücksetzen sofort hoch) statt erst nach ~30 s — die Antrags-Aktionen
+  feuern jetzt `triggerRefresh('requests')` für den BadgeContext.
 - Events-Tab-Zähler verschwindet sofort nach vollständigem Verbuchen statt erst
   nach ~30 s (Provider-Reihenfolge LiveUpdate/Badge). (`6f9712e`)
 - Teamer:innen sehen reine Konfi-Events korrekt als „Nur zur Info" (kein

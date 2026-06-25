@@ -73,6 +73,10 @@ const AdminActivityRequestsPage: React.FC = () => {
       setSelectedRequest(null);
       setModalRequestId(null);
       refreshRequests();
+      // Genehmigen/Ablehnen aendert die Anzahl offener Antraege -> 'requests'
+      // triggern, damit das Antraege-Tab-Badge (BadgeContext) sofort aktualisiert
+      // statt erst beim 30s-Poll.
+      triggerRefresh('requests');
       // Genehmigen/Ablehnen aendert Konfi-Punkte -> Admin-Konfi-Liste live
       // aktualisieren, damit man nicht manuell refreshen muss.
       triggerRefresh('konfis');
@@ -96,6 +100,10 @@ const AdminActivityRequestsPage: React.FC = () => {
               try {
                 await api.put(`/admin/activities/requests/${request.id}/reset`);
                 await refreshRequests();
+                // Zuruecksetzen macht den Antrag wieder offen -> Badge muss
+                // hochzaehlen; Punkte werden zurueckgenommen -> Konfi-Liste.
+                triggerRefresh('requests');
+                triggerRefresh('konfis');
               } catch (err: any) {
                 if (err.response?.data?.error) {
                   setError(err.response.data.error);
