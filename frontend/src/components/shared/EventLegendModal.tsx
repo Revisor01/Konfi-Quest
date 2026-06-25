@@ -5,8 +5,8 @@ import {
 } from '@ionic/react';
 import {
   closeOutline, calendar, people, flame, shieldCheckmark,
-  personAdd, checkmarkCircle, checkmarkDoneCircle, closeCircle,
-  hourglass, flash, informationCircle, timeOutline, peopleCircle,
+  addCircle, checkmarkCircle, checkmarkDoneCircle, closeCircle,
+  hourglassOutline, ellipseOutline, informationCircle, timeOutline, lockClosed,
 } from 'ionicons/icons';
 
 export type EventLegendVariant = 'konfi' | 'teamer' | 'admin';
@@ -33,14 +33,14 @@ const ENTRIES: LegendEntry[] = [
   // --- Status-Farben (Balken + grosses Icon) ---
   {
     color: 'var(--app-color-success)',
-    icon: personAdd,
+    icon: addCircle,
     label: 'Anmeldung möglich',
     description: 'Du kannst dich für dieses Event anmelden.',
     variants: ['konfi', 'admin'],
   },
   {
     color: 'var(--app-color-teamer)',
-    icon: personAdd,
+    icon: addCircle,
     label: 'Anmeldung möglich (Team)',
     description: 'Dieses Event sucht Teamer:innen. Du kannst dich anmelden.',
     variants: ['teamer'],
@@ -68,21 +68,21 @@ const ENTRIES: LegendEntry[] = [
   },
   {
     color: 'var(--app-color-bonus)',
-    icon: hourglass,
+    icon: hourglassOutline,
     label: 'Warteliste',
     description: 'Das Event ist voll, du stehst auf der Warteliste.',
     variants: ['konfi', 'admin'],
   },
   {
     color: 'var(--app-color-bonus)',
-    icon: hourglass,
+    icon: hourglassOutline,
     label: 'Ausstehend',
     description: 'Das Event ist vorbei, die Anwesenheit wird noch geprüft.',
     variants: ['konfi', 'teamer'],
   },
   {
     color: 'var(--app-color-info)',
-    icon: flash,
+    icon: ellipseOutline,
     label: 'Verbuchen',
     description: 'Das Event ist vorbei und muss noch verbucht werden.',
     variants: ['admin'],
@@ -96,7 +96,7 @@ const ENTRIES: LegendEntry[] = [
   },
   {
     color: 'var(--app-color-danger)',
-    icon: peopleCircle,
+    icon: lockClosed,
     label: 'Ausgebucht',
     description: 'Das Event ist voll, eine Anmeldung ist nicht mehr möglich.',
     variants: ['konfi', 'admin'],
@@ -117,7 +117,8 @@ const MARKERS: LegendEntry[] = [
     icon: people,
     label: 'Team',
     description: 'Für dieses Event werden Teamer:innen gesucht (oder es ist nur für das Team).',
-    variants: ['konfi', 'teamer', 'admin'],
+    // Konfis geht das nichts an -> nur Teamer/Admin.
+    variants: ['teamer', 'admin'],
   },
   {
     color: 'var(--app-color-konfis)',

@@ -1,22 +1,20 @@
 import React from 'react';
 import { IonIcon } from '@ionic/react';
 import {
-  time,
-  flash,
+  ellipseOutline,
   checkmarkCircle,
   closeCircle,
   close,
   shieldCheckmark,
   flame,
-  hourglass,
-  peopleCircle,
+  hourglassOutline,
   checkmark,
   timeOutline,
   lockClosed,
   eye,
   eyeOff,
   informationCircle,
-  personAdd,
+  addCircle,
   checkmarkDoneCircle
 } from 'ionicons/icons';
 
@@ -24,17 +22,18 @@ import {
 // SINGLE SOURCE OF TRUTH fuer Event-Status-Icons: dieselbe Map wird sowohl fuer
 // das Corner-Badge als auch (ueber getStatusIcon) fuer das grosse Kreis-Icon
 // vorne genutzt -> Kreis und Badge zeigen IMMER dasselbe Icon pro Zustand.
+// Durchgehend "Kreis"-Icons fuer Event-Status (einheitliche runde Symbole).
 const STATUS_ICON_MAP: Record<string, string> = {
   // Events
-  'Offen': personAdd,        // anmeldbar = "Person mit Plus" (eindeutig "anmelden")
-  'Verbuchen': flash,
+  'Offen': addCircle,        // Plus im Kreis = "anmelden/hinzufuegen"
+  'Verbuchen': ellipseOutline,  // leerer Kreis = "noch offen, muss verbucht werden"
   'Verbucht': checkmarkCircle,
   'Pflicht': shieldCheckmark,
-  'Abgesagt': close,
+  'Abgesagt': closeCircle,
   'Konfirmation': flame,
-  'Warteliste': hourglass,
-  'Ausgebucht': peopleCircle,
-  'Bald': time,              // "Bald" = zeitnah -> Uhr
+  'Warteliste': hourglassOutline,
+  'Ausgebucht': lockClosed,  // geschlossenes Schloss = eindeutig "zu / keine Anmeldung"
+  'Bald': timeOutline,
   'Geschlossen': lockClosed,
   'Nur Info': informationCircle,
   'Vergangen': timeOutline,
@@ -47,7 +46,7 @@ const STATUS_ICON_MAP: Record<string, string> = {
   'Gefehlt': closeCircle,
   'Abgemeldet': closeCircle,
   'Verpasst': closeCircle,
-  'Ausstehend': hourglass,
+  'Ausstehend': hourglassOutline,
   // Anträge
   'Genehmigt': checkmarkCircle,
   'Abgelehnt': closeCircle,

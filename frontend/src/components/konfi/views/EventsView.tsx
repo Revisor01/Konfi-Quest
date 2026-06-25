@@ -341,21 +341,10 @@ const EventsView: React.FC<EventsViewProps> = ({
                     overflow: 'hidden'
                   }}
                 >
-                  {/* Eselsohr-Style Corner Badges - Team links innen, Konfirmation/Pflicht, Status in der Ecke */}
-                  {(showBadge || event.teamer_only || event.teamer_needed || event.mandatory || isKonfirmationEvent) && (
+                  {/* Eselsohr-Style Corner Badges - Konfirmation/Pflicht, Status in der Ecke.
+                      KEIN Team-Badge: Konfis geht "Teamer gesucht" nichts an. */}
+                  {(showBadge || event.mandatory || isKonfirmationEvent) && (
                     <div className="app-corner-badges" style={{ opacity: shouldGrayOut ? 0.5 : 1 }}>
-                      {(event.teamer_only || event.teamer_needed) && (
-                        <>
-                          <div
-                            className="app-corner-badge"
-                            style={{ backgroundColor: 'var(--app-color-teamer)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
-                            title={event.teamer_only ? 'Nur Team' : 'Team gesucht'}
-                          >
-                            <IonIcon icon={people} style={{ color: '#fff', fontSize: '0.85rem' }} />
-                          </div>
-                          {(isKonfirmationEvent || event.mandatory || showBadge) && <div className="app-corner-badges__separator" />}
-                        </>
-                      )}
                       {isKonfirmationEvent && (
                         <>
                           <div
