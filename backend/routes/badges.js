@@ -399,10 +399,11 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
           if (actMatch < criteria.required_activities.length) allMet = false;
         }
 
-        // Event-Namen prüfen (falls vorhanden)
+        // Event-Namen prüfen (falls vorhanden). events-Spalte heisst 'name'
+        // (nicht 'title') -> als title aliasen.
         if (allMet && criteria.required_events && criteria.required_events.length > 0) {
           const { rows: attendedEvents } = await db.query(
-            `SELECT DISTINCT e.title FROM event_bookings eb
+            `SELECT DISTINCT e.name AS title FROM event_bookings eb
              JOIN events e ON eb.event_id = e.id
              WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2`,
             [userId, organizationId]

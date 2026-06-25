@@ -348,9 +348,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
            GROUP BY a.name`,
           [userId, orgId]
         ),
-        // Besuchte Event-Titel (fuer activity_combination required_events).
+        // Besuchte Event-Namen (fuer activity_combination required_events).
+        // events-Spalte heisst 'name' (nicht 'title') -> als title aliasen.
         db.query(
-          `SELECT DISTINCT e.title FROM event_bookings eb
+          `SELECT DISTINCT e.name AS title FROM event_bookings eb
            JOIN events e ON eb.event_id = e.id
            WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2`,
           [userId, orgId]
