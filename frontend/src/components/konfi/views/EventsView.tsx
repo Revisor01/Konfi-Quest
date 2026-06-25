@@ -9,7 +9,8 @@ import {
   IonItemSliding,
   IonListHeader,
   IonItemGroup,
-  IonInput
+  IonInput,
+  useIonModal
 } from '@ionic/react';
 import {
   calendar,
@@ -31,7 +32,7 @@ import {
   filterOutline,
   infinite
 } from 'ionicons/icons';
-import { SectionHeader, ListSection, StatusBadge } from '../../shared';
+import { SectionHeader, ListSection, StatusBadge, EventLegendModal } from '../../shared';
 import { Event } from '../../../types/event';
 
 interface EventsViewProps {
@@ -50,6 +51,11 @@ const EventsView: React.FC<EventsViewProps> = ({
   onUpdate
 }) => {
   const [searchText, setSearchText] = useState('');
+
+  const [presentLegend, dismissLegend] = useIonModal(EventLegendModal, {
+    variant: 'konfi',
+    onClose: () => dismissLegend(),
+  });
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('de-DE', {
@@ -248,6 +254,7 @@ const EventsView: React.FC<EventsViewProps> = ({
         icon={calendar}
         preset="events"
         stats={statsData.map(s => ({ value: s.count, label: s.label }))}
+        onInfo={() => presentLegend()}
       />
 
       {/* Suche & Filter — wie Chat-Pattern */}

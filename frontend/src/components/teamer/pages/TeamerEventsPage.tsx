@@ -61,7 +61,7 @@ import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
-import { SectionHeader, ListSection, StatusBadge } from '../../shared';
+import { SectionHeader, ListSection, StatusBadge, EventLegendModal } from '../../shared';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import QRScannerModal from '../../konfi/modals/QRScannerModal';
@@ -95,6 +95,12 @@ const TeamerEventsPage: React.FC = () => {
   const [presentMaterialModal, dismissMaterialModal] = useIonModal(TeamerMaterialDetailPage, {
     get materialId() { return materialIdRef.current; },
     onClose: () => dismissMaterialModal()
+  });
+
+  // Farbcode-Legende
+  const [presentLegend, dismissLegend] = useIonModal(EventLegendModal, {
+    variant: 'teamer',
+    onClose: () => dismissLegend(),
   });
 
   // QR Scanner Modal
@@ -758,6 +764,7 @@ const TeamerEventsPage: React.FC = () => {
               icon={calendar}
               preset="events"
               stats={statsData}
+              onInfo={() => presentLegend({ presentingElement: presentingElement || pageRef.current || undefined })}
             />
 
             {/* Suche & Filter — gleiches Pattern wie Konfi/Admin */}

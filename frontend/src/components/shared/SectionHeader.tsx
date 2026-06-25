@@ -1,5 +1,6 @@
 import React from 'react';
 import { IonIcon } from '@ionic/react';
+import { informationCircleOutline } from 'ionicons/icons';
 
 interface SectionHeaderProps {
   title: string;
@@ -8,6 +9,8 @@ interface SectionHeaderProps {
   preset?: 'events' | 'activities' | 'konfis' | 'teamer' | 'users' | 'organizations' | 'badges' | 'requests' | 'jahrgang' | 'konfi-requests' | 'categories' | 'level';
   colors?: { primary: string; secondary: string };
   stats: Array<{ value: number; label: string }>;
+  // Optionaler Info-(i)-Button oben rechts im Banner (z.B. für eine Farbcode-Legende).
+  onInfo?: () => void;
 }
 
 // Liest --app-color-XYZ aus :root, mit Hex-Fallback fuer SSR/Initial-Render
@@ -47,6 +50,7 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
   preset,
   colors,
   stats,
+  onInfo,
 }) => {
   const resolvedColors = preset ? PRESET_COLORS[preset] : colors;
   const primary = resolvedColors?.primary || '#667eea';
@@ -63,6 +67,18 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
       {/* Dekorative Kreise */}
       <div className="app-header-banner__circle-top" />
       <div className="app-header-banner__circle-bottom" />
+
+      {/* Info-(i)-Button oben rechts (optional) */}
+      {onInfo && (
+        <button
+          type="button"
+          className="app-header-banner__info-btn"
+          onClick={onInfo}
+          aria-label="Erklärung anzeigen"
+        >
+          <IonIcon icon={informationCircleOutline} />
+        </button>
+      )}
 
       {/* Header mit Icon und Titel */}
       <div className="app-header-banner__header">

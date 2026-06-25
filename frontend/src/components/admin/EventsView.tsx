@@ -15,7 +15,8 @@ import {
   IonList,
   IonListHeader,
   IonCard,
-  IonCardContent
+  IonCardContent,
+  useIonModal
 } from '@ionic/react';
 import {
   flash,
@@ -44,7 +45,7 @@ import {
 import { useApp } from '../../contexts/AppContext';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { parseLocalTime, getLocalNow } from '../../utils/dateUtils';
-import { SectionHeader, ListSection, StatusBadge } from '../shared';
+import { SectionHeader, ListSection, StatusBadge, EventLegendModal } from '../shared';
 import { Event } from '../../types/event';
 
 interface EventsViewProps {
@@ -87,6 +88,11 @@ const EventsView: React.FC<EventsViewProps> = ({
   onSearchChange
 }) => {
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
+
+  const [presentLegend, dismissLegend] = useIonModal(EventLegendModal, {
+    variant: 'admin',
+    onClose: () => dismissLegend(),
+  });
 
   // Events werden bereits von der Page sortiert übergeben
   const filteredAndSortedEvents = events;
@@ -175,6 +181,7 @@ const EventsView: React.FC<EventsViewProps> = ({
         subtitle="Termine und Veranstaltungen"
         icon={calendar}
         preset="events"
+        onInfo={() => presentLegend()}
         stats={[
           // Stats GLOBAL ueber alle Events zaehlen (eventCounts von der Page),
           // NICHT nur ueber die Events des aktiven Tabs (`events`) — sonst waren
