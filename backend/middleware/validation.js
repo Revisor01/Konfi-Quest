@@ -52,11 +52,17 @@ const commonValidations = {
   points: body('points').isInt({ min: 1 }).withMessage('Punkte müssen eine positive Ganzzahl sein'),
   type: body('type').isIn(['gottesdienst', 'gemeinde']).withMessage('Typ muss "gottesdienst" oder "gemeinde" sein'),
   email: body('email').trim().isEmail().withMessage('Gültige E-Mail-Adresse erforderlich'),
-  username: body('username').trim()
+  // KEIN trim(): Leerzeichen sollen NICHT still entfernt werden, sondern eine
+  // klare Fehlermeldung ausloesen (Regex unten verbietet sie).
+  // Erlaubt sind nur Buchstaben, Zahlen, Punkt und Bindestrich (KEIN Unterstrich,
+  // KEINE Leerzeichen). Gross-/Kleinschreibung bleibt erhalten — der Login ist
+  // case-insensitiv (LOWER-Vergleich), gespeichert wird die Original-Schreibweise.
+  username: body('username')
     .isLength({ min: 3, max: 50 }).withMessage('Benutzername muss zwischen 3 und 50 Zeichen lang sein')
-    .matches(/^[a-zA-Z0-9._-]+$/).withMessage('Benutzername darf nur Buchstaben, Zahlen, Punkte, Bindestriche und Unterstriche enthalten'),
+    .matches(/^[a-zA-Z0-9.-]+$/).withMessage('Benutzername darf nur Buchstaben, Zahlen, Punkt (.) und Bindestrich (-) enthalten — keine Leerzeichen oder anderen Sonderzeichen'),
   password: body('password')
-    .isLength({ min: 8 }).withMessage('Passwort muss mindestens 8 Zeichen lang sein'),
+    .isLength({ min: 8 }).withMessage('Passwort muss mindestens 8 Zeichen lang sein')
+    .matches(/^\S+$/).withMessage('Passwort darf keine Leerzeichen enthalten'),
   date: body('completed_date').optional().isISO8601().withMessage('Ungültiges Datumsformat'),
 };
 

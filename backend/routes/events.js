@@ -1439,7 +1439,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
         // Get booking details before deleting (need timeslot_id and status for waitlist promotion)
         const { rows: [booking] } = await client.query(
-          "SELECT status, timeslot_id FROM event_bookings WHERE event_id = $1 AND user_id = $2 AND organization_id = $3 FOR UPDATE",
+          "SELECT status, timeslot_id, attendance_status FROM event_bookings WHERE event_id = $1 AND user_id = $2 AND organization_id = $3 FOR UPDATE",
           [eventId, userId, req.user.organization_id]
         );
 
@@ -1447,6 +1447,21 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           await client.query('ROLLBACK');
           // KEIN client.release() hier — das finally unten released (sonst Doppel-Release)
           return res.status(404).json({ error: 'Buchung nicht gefunden' });
+        }
+
+        // War der Konfi als anwesend verbucht: Event-Punkte zuruecknehmen.
+        if (booking.attendance_status === 'present') {
+          const { rows: [pts] } = await client.query(
+            "SELECT id, points, point_type FROM event_points WHERE konfi_id = $1 AND event_id = $2",
+            [userId, eventId]
+          );
+          if (pts) {
+            await client.query("DELETE FROM event_points WHERE id = $1", [pts.id]);
+            const profileUpd = pts.point_type === 'gottesdienst'
+              ? "UPDATE konfi_profiles SET gottesdienst_points = GREATEST(0, gottesdienst_points - $1) WHERE user_id = $2"
+              : "UPDATE konfi_profiles SET gemeinde_points = GREATEST(0, gemeinde_points - $1) WHERE user_id = $2";
+            await client.query(profileUpd, [pts.points, userId]);
+          }
         }
 
         // Delete the booking
@@ -1670,9 +1685,28 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         return res.status(403).json({ error: 'Zugriff verweigert' });
       }
       
+      // Falls der Konfi als ANWESEND verbucht war, beim Loeschen die vergebenen
+      // Event-Punkte zuruecknehmen (sonst behaelt er Punkte fuer ein Event, an dem
+      // er nicht mehr als Teilnehmer gefuehrt wird). Nur fuer Konfis relevant.
+      if (booking.attendance_status === 'present') {
+        const { rows: [pts] } = await db.query(
+          "SELECT id, points, point_type FROM event_points WHERE konfi_id = $1 AND event_id = $2",
+          [booking.user_id, eventId]
+        );
+        if (pts) {
+          await db.query("DELETE FROM event_points WHERE id = $1", [pts.id]);
+          const profileUpd = pts.point_type === 'gottesdienst'
+            ? "UPDATE konfi_profiles SET gottesdienst_points = GREATEST(0, gottesdienst_points - $1) WHERE user_id = $2"
+            : "UPDATE konfi_profiles SET gemeinde_points = GREATEST(0, gemeinde_points - $1) WHERE user_id = $2";
+          await db.query(profileUpd, [pts.points, booking.user_id]);
+          // Dashboard/Punkte live aktualisieren.
+          liveUpdate.sendToUser('konfi', booking.user_id, 'dashboard', 'update', { points: -pts.points });
+        }
+      }
+
       // Delete the booking
       await db.query("DELETE FROM event_bookings WHERE id = $1", [bookingId]);
-      
+
       // Auto-promote from waitlist if the deleted booking was confirmed
       if (booking.status === 'confirmed') {
         // For timeslot events, only promote from the same timeslot's waitlist

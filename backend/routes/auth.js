@@ -96,8 +96,9 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     // Usernames werden beim Anlegen klein gespeichert (name.toLowerCase()...).
     // Eingabe daher case-insensitiv machen: trim + lowercase, sonst scheitert
     // der Login wenn jemand z.B. "Anna.Schmidt" statt "anna.schmidt" tippt
-    // (iOS schreibt das erste Zeichen automatisch gross).
-    const username = (req.body.username || '').trim().toLowerCase();
+    // (iOS schreibt das erste Zeichen automatisch gross). Der Username wird NICHT
+    // mehr veraendert gespeichert -> Login case-insensitiv per LOWER-Vergleich.
+    const username = (req.body.username || '').trim();
     const { password } = req.body;
  console.warn(`Login-Versuch: ${username}`);
 
@@ -115,9 +116,9 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         LEFT JOIN roles r ON u.role_id = r.id
         LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
         LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
-        WHERE u.username = $1
+        WHERE LOWER(u.username) = LOWER($1)
       `;
-      
+
       const { rows: [user] } = await db.query(userQuery, [username]);
 
       if (!user) {
@@ -662,18 +663,19 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
   // Check username availability (public endpoint)
   router.get('/check-username/:username', async (req, res) => {
     const { username } = req.params;
-    const trimmed = username.trim().toLowerCase();
+    const trimmed = username.trim();
 
-    // Validation: mindestens 3 Zeichen, nur alphanumerisch + Unterstrich
+    // Validation: mindestens 3 Zeichen, nur Buchstaben/Zahlen/Punkt/Bindestrich.
     if (trimmed.length < 3) {
       return res.status(400).json({ available: false, message: 'Benutzername muss mindestens 3 Zeichen lang sein' });
     }
-    if (!/^[a-z0-9_]+$/.test(trimmed)) {
-      return res.status(400).json({ available: false, message: 'Benutzername darf nur Buchstaben, Zahlen und Unterstriche enthalten' });
+    if (!/^[a-zA-Z0-9.-]+$/.test(trimmed)) {
+      return res.status(400).json({ available: false, message: 'Benutzername darf nur Buchstaben, Zahlen, Punkt (.) und Bindestrich (-) enthalten' });
     }
 
     try {
-      const { rows } = await db.query('SELECT id FROM users WHERE username = $1', [trimmed]);
+      // case-insensitiv pruefen (LOWER), damit "Anna"/"anna" nicht doppelt geht.
+      const { rows } = await db.query('SELECT id FROM users WHERE LOWER(username) = LOWER($1)', [trimmed]);
 
       if (rows.length > 0) {
         return res.json({ available: false, message: 'Benutzername bereits vergeben' });
@@ -764,10 +766,11 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         return res.status(410).json({ error: 'Dieser Einladungscode ist abgelaufen. Bitte frage deinen Konfi-Leiter nach einem neuen Code.', error_code: 'expired' });
       }
 
-      // Check if username already exists
+      // Check if username already exists (case-insensitiv, damit nicht "Anna" und
+      // "anna" parallel existieren koennen).
       const { rows: existingUsers } = await db.query(
-        'SELECT id FROM users WHERE username = $1',
-        [username.toLowerCase()]
+        'SELECT id FROM users WHERE LOWER(username) = LOWER($1)',
+        [username]
       );
 
       if (existingUsers.length > 0) {
@@ -810,7 +813,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
           INSERT INTO users (username, display_name, password_hash, role_id, organization_id, email)
           VALUES ($1, $2, $3, $4, $5, $6)
           RETURNING id
-        `, [username.toLowerCase(), display_name, passwordHash, konfiRole.id, invite.organization_id, email?.trim() || null]);
+        `, [username, display_name, passwordHash, konfiRole.id, invite.organization_id, email?.trim() || null]);
 
         // Create konfi profile mit invite_code_id und organization_id
         await client.query(`
