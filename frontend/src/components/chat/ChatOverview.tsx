@@ -175,9 +175,21 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   // Modal mit useIonModal Hook
   const [presentChatModalHook, dismissChatModalHook] = useIonModal(SimpleCreateChatModal, {
     onClose: () => dismissChatModalHook(),
-    onSuccess: () => {
+    onSuccess: async (roomId?: number) => {
       dismissChatModalHook();
-      refresh(); // Chatliste neu laden
+      await refresh(); // Chatliste neu laden
+      // Direkt in den neu erstellten/gefundenen Chat springen statt auf der Liste
+      // zu bleiben. Raum frisch von der API holen (refresh-State ist evtl. noch
+      // nicht durchgereicht).
+      if (roomId) {
+        try {
+          const freshRooms: ChatRoomOverview[] = (await api.get('/chat/rooms')).data;
+          const target = freshRooms.find(r => r.id === roomId);
+          if (target) onSelectRoom(target);
+        } catch (err) {
+          console.error('Konnte neuen Chat nicht oeffnen:', err);
+        }
+      }
     }
   });
 

@@ -44,7 +44,9 @@ import { ChatUser } from '../../../types/user';
 
 interface SimpleCreateChatModalProps {
   onClose: () => void;
-  onSuccess: () => void;
+  // roomId der neu erstellten/gefundenen Unterhaltung -> Aufrufer kann direkt
+  // in den Chat navigieren statt auf der Liste zu landen.
+  onSuccess: (roomId?: number) => void;
   dismiss?: () => void;
 }
 
@@ -283,14 +285,14 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
 
     await guard(async () => {
       try {
-        await api.post('/chat/direct', {
+        const directRes = await api.post('/chat/direct', {
           target_user_id: targetUser.id,
           target_user_type: targetUser.type
         });
 
         await refreshFromAPI(); // Update badge context
         handleModalClose();
-        onSuccess();
+        onSuccess(directRes.data?.room_id);
       } catch (err) {
         setError('Fehler beim Erstellen der Direktnachricht');
         console.error('Error creating direct message:', err);
@@ -326,11 +328,11 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           participants: participants
         };
 
-        await api.post('/chat/rooms', groupData);
+        const groupRes = await api.post('/chat/rooms', groupData);
 
         await refreshFromAPI(); // Update badge context
         handleModalClose();
-        onSuccess();
+        onSuccess(groupRes.data?.room_id);
       } catch (err: any) {
         console.error('Error creating group chat:', err);
         setError(`Fehler beim Erstellen des Gruppenchats: ${err.response?.data?.error || err.message}`);
