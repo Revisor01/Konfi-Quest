@@ -115,6 +115,26 @@ interface TeamerBadge {
 }
 
 // Popover für Badge-Details
+// Zeitfenster-Hinweis fuer zeitbasierte Badges (time_based) und Serien (streak).
+const getTimeWindowHint = (badge: TeamerBadge): string | null => {
+  const fmt = (d: Date) => d.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' });
+  if (badge.criteria_type === 'time_based') {
+    let days: number | null = null;
+    try {
+      const extra = typeof badge.criteria_extra === 'string'
+        ? JSON.parse(badge.criteria_extra || '{}') : (badge.criteria_extra || {});
+      days = extra.days || (extra.weeks ? extra.weeks * 7 : null);
+    } catch { /* ignore */ }
+    if (!days) return null;
+    const start = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    return `Zählt die letzten ${days} Tage (seit ${fmt(start)}). Ältere Aktivitäten fallen wieder heraus.`;
+  }
+  if (badge.criteria_type === 'streak') {
+    return 'Zählt aufeinanderfolgende Wochen mit mindestens einer Aktivität. Eine Woche ohne Aktivität setzt die Serie zurück.';
+  }
+  return null;
+};
+
 const BadgePopoverContent: React.FC<{
   badgeRef: React.RefObject<{ badge: TeamerBadge | null; getBadgeColor: (badge: TeamerBadge) => string }>;
 }> = ({ badgeRef }) => {
@@ -122,6 +142,7 @@ const BadgePopoverContent: React.FC<{
   if (!data || !data.badge) return null;
   const badge = data.badge;
   const badgeColor = data.getBadgeColor(badge);
+  const timeWindowHint = getTimeWindowHint(badge);
 
   return (
     <div style={{ padding: '12px', background: 'white' }}>
@@ -214,6 +235,22 @@ const BadgePopoverContent: React.FC<{
           </div>
         )}
       </div>
+      {timeWindowHint && (
+        <div style={{
+          marginTop: '8px',
+          paddingTop: '8px',
+          borderTop: '1px solid #eee',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '6px',
+          fontSize: '0.72rem',
+          color: '#888',
+          lineHeight: '1.35'
+        }}>
+          <IonIcon icon={time} style={{ fontSize: '0.85rem', marginTop: '1px', flexShrink: 0 }} />
+          <span>{timeWindowHint}</span>
+        </div>
+      )}
     </div>
   );
 };

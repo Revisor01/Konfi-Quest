@@ -46,6 +46,10 @@ einem iOS-Build enthalten. Für eine vollständige 1.3.0-App ist ein neuer Build
   (`c33d27c`)
 
 ### ✨ Neue Funktionen
+- Zeit-/Serien-Badges erklären sich beim Antippen: Hinweis, ab wann bzw. in
+  welchem Zeitraum der Fortschritt zählt (z. B. „Zählt die letzten 7 Tage (seit
+  18. Juni)") und dass ältere Aktivitäten wieder herausfallen. So ist der
+  schwankende Fortschritt verständlich. (Konfi + Teamer)
 - Events: Info-(i)-Button mit kompletter Farb- und Symbol-Legende (rollenabhängig
   Konfi/Teamer/Admin). (`fdf4bc8`, `8be6466`, `c33d27c`)
 - Chat: Neuer Chat öffnet sich nach dem Erstellen direkt (statt zurück zur
