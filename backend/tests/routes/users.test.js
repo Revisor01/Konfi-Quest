@@ -115,7 +115,7 @@ describe('Users Routes', () => {
         .post('/api/admin/users')
         .set('Authorization', `Bearer ${orgAdminToken}`)
         .send({
-          username: 'neuer_teamer',
+          username: 'neuer.teamer',
           display_name: 'Neuer Teamer',
           password: 'Sicher!123',
           role_id: ROLES.teamer.id
@@ -123,7 +123,7 @@ describe('Users Routes', () => {
 
       expect(res.status).toBe(201);
       expect(res.body.id).toBeDefined();
-      expect(res.body.username).toBe('neuer_teamer');
+      expect(res.body.username).toBe('neuer.teamer');
     });
 
     it('Fehlender username -> 400 Validierungsfehler', async () => {
@@ -158,7 +158,7 @@ describe('Users Routes', () => {
         .post('/api/admin/users')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          username: 'admin_erstellt',
+          username: 'admin.erstellt',
           display_name: 'Von Admin',
           password: 'Sicher!123',
           role_id: ROLES.teamer.id
