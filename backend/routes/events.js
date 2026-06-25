@@ -787,19 +787,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
               data: { type: 'mandatory_event_created', eventId: String(eventId) }
             });
           }
-        } else {
-          // Freiwilliges Event: "Anmeldung moeglich"-Push nur senden, wenn die
-          // Anmeldung JETZT offen ist. Oeffnet sie erst spaeter, uebernimmt der
-          // Cron (backgroundService) den Push zum Anmeldestart.
-          const openNow = isRegistrationOpenForKonfis({
-            registration_opens_at, registration_closes_at,
-            cancelled: false, teamer_only
-          });
-          if (openNow) {
-            await PushService.sendNewEventToOrgKonfis(db, req.user.organization_id, name, event_date, eventId);
-            await db.query('UPDATE events SET registration_open_notified = true WHERE id = $1', [eventId]);
-          }
         }
+        // Freiwillige Events: KEIN direkter "Anmeldung moeglich"-Push hier.
+        // Das Flag registration_open_notified bleibt false (Default) -> der Cron
+        // (backgroundService, atomar, alle 1 Min) sendet GENAU EINEN Push, sobald
+        // das Event anmeldbar ist. Verhindert Doppel-Pushes (POST + Cron).
       } catch (pushErr) {
         console.error('Push notification failed for new event:', pushErr);
       }
@@ -1028,11 +1020,14 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // Live Update: Notify all konfis and admins about the event update
       liveUpdate.sendToOrg(req.user.organization_id, 'events', 'update', { eventId: id });
 
-      // "Anmeldung moeglich"-Push beim AENDERN (Flankenerkennung):
-      // - wird das Event durch die Aenderung anmeldbar UND war es vorher nicht
-      //   benachrichtigt -> Push + Flag setzen.
-      // - wird es nicht-anmeldbar (Anmeldung in Zukunft/zu/abgesagt) -> Flag
-      //   zuruecksetzen, damit beim naechsten Oeffnen erneut gepusht wird.
+      // "Anmeldung moeglich"-Push beim AENDERN — KEIN direkter Push hier, nur Flag
+      // pflegen (Flankenerkennung). Den Push sendet allein der Cron (atomar) ->
+      // keine Doppel-Pushes.
+      // - Wird das Event NICHT-anmeldbar (Anmeldung in Zukunft/zu/abgesagt) ->
+      //   Flag auf false zuruecksetzen, damit beim naechsten Oeffnen erneut
+      //   gepusht wird.
+      // - Wird es anmeldbar, ist das Flag aber noch false (z.B. neu geoeffnet),
+      //   greift der Cron automatisch.
       // Pflicht-Events haben einen eigenen Erstellungs-Push -> hier ausgenommen.
       if (!mandatory) {
         try {
@@ -1040,14 +1035,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             registration_opens_at, registration_closes_at,
             cancelled: false, teamer_only
           });
-          if (openNow && !oldEvent?.registration_open_notified) {
-            await PushService.sendNewEventToOrgKonfis(db, req.user.organization_id, name, event_date, id);
-            await db.query('UPDATE events SET registration_open_notified = true WHERE id = $1', [id]);
-          } else if (!openNow && oldEvent?.registration_open_notified) {
+          if (!openNow && oldEvent?.registration_open_notified) {
             await db.query('UPDATE events SET registration_open_notified = false WHERE id = $1', [id]);
           }
         } catch (pushErr) {
-          console.error('Push notification failed for event update (registration open):', pushErr);
+          console.error('Flag-Reset for event update (registration open) failed:', pushErr);
         }
       }
 

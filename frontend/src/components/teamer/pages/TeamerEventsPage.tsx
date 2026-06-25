@@ -913,7 +913,7 @@ const TeamerEventsPage: React.FC = () => {
                             <div className="app-list-item__content">
                               {/* Titel */}
                               <div
-                                className="app-list-item__title"
+                                className="app-list-item__title app-list-item__title--events"
                                 style={{
                                   color: shouldGrayOut ? '#999' : undefined,
                                   paddingRight: showBadge ? '70px' : '0',

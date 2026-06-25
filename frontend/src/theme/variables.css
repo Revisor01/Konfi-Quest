@@ -606,6 +606,17 @@ ion-list[inset] ion-list-header {
   text-overflow: ellipsis;
   padding-top: 4px;
 }
+/* Event-Titel duerfen bis ans Zeilenende laufen und bei Bedarf auf 2 Zeilen
+   umbrechen (statt frueh mit "..." gekuerzt zu werden, v.a. auf iOS wegen des
+   Badge-padding-right). */
+.app-list-item__title--events {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .app-list-item__subtitle {
   font-size: 0.8rem;
   color: #666;

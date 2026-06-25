@@ -390,7 +390,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                       <div className="app-list-item__content">
                         {/* Zeile 1: Titel */}
                         <div
-                          className="app-list-item__title"
+                          className="app-list-item__title app-list-item__title--events"
                           style={{
                             color: isCancelled || shouldGrayOut ? '#999' : undefined,
                             textDecoration: isCancelled ? 'line-through' : 'none',

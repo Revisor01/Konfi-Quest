@@ -13,6 +13,14 @@ einem iOS-Build enthalten. Für eine vollständige 1.3.0-App ist ein neuer Build
 (B61) nötig.
 
 ### 🐛 Fehlerbehebungen
+- „Anmeldung möglich"-Push wurde teils doppelt gesendet. Jetzt sendet
+  ausschließlich der Hintergrund-Dienst (atomar, alle 1 Min) — Erstellen/Ändern
+  setzen nur noch das Flag. Genau ein Push pro Öffnung.
+- Event-Liste (Konfi & Teamer): lange Titel werden nicht mehr zu früh mit „…"
+  abgeschnitten, sondern laufen bis ans Zeilenende und brechen bei Bedarf auf
+  zwei Zeilen um (v. a. auf iOS).
+- Info-Legende (Events): Eintrag „Anmeldung bald" (orange, Uhr) ergänzt — erklärt
+  Events, deren Anmeldung noch nicht geöffnet ist. (Konfi & Teamer & Admin)
 - Einladungscode verlängern warf „Fehler beim Verlängern" — die Route fragte eine
   nicht existierende Spalte `role_id` ab. Abfrage korrigiert.
 - Badge-Regel präzisiert: Bei **Konfis** zählen Pflicht-Events und Konfirmationen

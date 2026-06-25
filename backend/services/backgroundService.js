@@ -170,14 +170,14 @@ class BackgroundService {
       this.sendRegistrationOpenPushes(db).catch(err =>
         console.error('Registration-open push (initial) failed:', err));
     }, 30 * 1000);
-    const FIVE_MINUTES = 5 * 60 * 1000;
+    const ONE_MINUTE = 60 * 1000;
     this.registrationOpenInterval = setInterval(async () => {
       try {
         await this.sendRegistrationOpenPushes(db);
       } catch (error) {
         console.error('Registration-open push service failed:', error);
       }
-    }, FIVE_MINUTES);
+    }, ONE_MINUTE);
   }
 
   static stopRegistrationOpenService() {
@@ -193,23 +193,27 @@ class BackgroundService {
    */
   static async sendRegistrationOpenPushes(db) {
     try {
+      // ATOMAR: Flag in DERSELBEN Query auf true flippen und nur die geflippten
+      // Zeilen zurueckgeben (RETURNING). So kann KEIN Event doppelt gepusht werden
+      // (auch nicht bei parallelen Laeufen / Race mit POST/PUT) — wer die Zeile von
+      // false->true setzt, ist allein fuer den Push zustaendig.
       // Anmeldbar = Fenster offen, nicht abgesagt, kein reines Teamer-Event,
-      // kein Pflicht-Event (eigener Push), keine Konfirmation. Flag noch false.
+      // kein Pflicht-Event (eigener Erstellungs-Push).
       const { rows: events } = await db.query(`
-        SELECT id, name, event_date, organization_id
-        FROM events
+        UPDATE events
+        SET registration_open_notified = true
         WHERE registration_open_notified = false
           AND cancelled = false
           AND (teamer_only IS NULL OR teamer_only = false)
           AND (mandatory IS NULL OR mandatory = false)
           AND (registration_opens_at IS NULL OR registration_opens_at <= NOW())
           AND (registration_closes_at IS NULL OR registration_closes_at >= NOW())
+        RETURNING id, name, event_date, organization_id
       `);
 
       for (const ev of events) {
         try {
           await PushService.sendNewEventToOrgKonfis(db, ev.organization_id, ev.name, ev.event_date, ev.id);
-          await db.query('UPDATE events SET registration_open_notified = true WHERE id = $1', [ev.id]);
         } catch (err) {
           console.error(`Registration-open push failed for event ${ev.id}:`, err.message);
         }

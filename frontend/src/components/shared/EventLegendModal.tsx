@@ -68,6 +68,13 @@ const ENTRIES: LegendEntry[] = [
   },
   {
     color: 'var(--app-color-bonus)',
+    icon: timeOutline,
+    label: 'Anmeldung bald',
+    description: 'Die Anmeldung für dieses Event ist noch nicht geöffnet.',
+    variants: ['konfi', 'teamer', 'admin'],
+  },
+  {
+    color: 'var(--app-color-bonus)',
     icon: hourglassOutline,
     label: 'Warteliste',
     description: 'Das Event ist voll, du stehst auf der Warteliste.',
