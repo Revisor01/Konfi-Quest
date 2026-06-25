@@ -1996,10 +1996,14 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     try {
       await client.query('BEGIN');
 
+      // Teilnehmer-Typ ueber roles.name (event_bookings.user_type wird beim Insert
+      // NICHT gesetzt und ist unzuverlaessig).
       const eventDataQuery = `
-        SELECT e.name, e.points, e.point_type, e.mandatory, eb.user_id
+        SELECT e.name, e.points, e.point_type, e.mandatory, eb.user_id, r.name AS participant_role
         FROM events e
         JOIN event_bookings eb ON e.id = eb.event_id
+        JOIN users u ON eb.user_id = u.id
+        LEFT JOIN roles r ON u.role_id = r.id
         WHERE e.id = $1 AND eb.id = $2 AND e.organization_id = $3
       `;
       const { rows: [eventData] } = await client.query(eventDataQuery, [eventId, participantId, req.user.organization_id]);
@@ -2009,6 +2013,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         return res.status(404).json({ error: 'Event oder Teilnehmer nicht gefunden, oder Zugriff verweigert' });
       }
 
+      // Punkte gibt es NUR fuer Konfis. Teamer:innen nehmen zwar teil (Anwesenheit
+      // wird gesetzt), bekommen aber keine Punkte -> Punkte-Logik (inkl.
+      // checkPointTypeEnabled, das ein konfi_profile voraussetzt) ueberspringen.
+      const isKonfiParticipant = eventData.participant_role === 'konfi';
+
       await client.query("UPDATE event_bookings SET attendance_status = $1 WHERE id = $2", [attendance_status, participantId]);
 
       let responseData = { message: 'Anwesenheit aktualisiert', points_awarded: false, points_removed: false };
@@ -2016,7 +2025,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       let pointsRemoved = false;
       let removedPointsAmount = 0;
 
-      if (attendance_status === 'present' && eventData.points > 0 && !eventData.mandatory) {
+      if (isKonfiParticipant && attendance_status === 'present' && eventData.points > 0 && !eventData.mandatory) {
         const pointType = eventData.point_type || 'gemeinde';
         const { enabled: ptEnabled, error: ptError } = await checkPointTypeEnabled(client, eventData.user_id, pointType);
         if (!ptEnabled) {
@@ -2054,7 +2063,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           responseData = { message: 'Anwesenheit aktualisiert (Punkte bereits vergeben)', points_awarded: false };
         }
 
-      } else if (attendance_status === 'absent') {
+      } else if (isKonfiParticipant && attendance_status === 'absent') {
         const { rows: [existingPoints] } = await client.query("SELECT id, points, point_type FROM event_points WHERE konfi_id = $1 AND event_id = $2", [eventData.user_id, eventId]);
 
         if (existingPoints) {
@@ -2081,21 +2090,25 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         }
       }
 
-      // Push und LiveUpdate NACH COMMIT und client.release() - nutzt pool (db) statt client
+      // Push und LiveUpdate NACH COMMIT und client.release() - nutzt pool (db) statt client.
+      // Konfi-spezifische Pushes/Dashboard-Updates nur fuer Konfis; das Admin-
+      // LiveUpdate (Liste/Badge) feuert immer.
       try {
         if (attendance_status === 'present') {
-          if (pointsAwarded) {
+          if (isKonfiParticipant && pointsAwarded) {
             try { await PushService.checkAndSendLevelUp(db, eventData.user_id, req.user.organization_id); } catch (e) { console.error('Level-up check failed:', e); }
             try { await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'present', eventData.points); } catch (e) { console.error('Push notification failed:', e); }
             liveUpdate.sendToUser('konfi', eventData.user_id, 'dashboard', 'update', { points: eventData.points });
-          } else {
+          } else if (isKonfiParticipant) {
             try { await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'present', 0); } catch (e) { console.error('Push notification failed:', e); }
           }
           liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
         } else if (attendance_status === 'absent') {
-          try { await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'absent', 0); } catch (e) { console.error('Push notification failed:', e); }
-          if (pointsRemoved) {
-            liveUpdate.sendToUser('konfi', eventData.user_id, 'dashboard', 'update', { points: -removedPointsAmount });
+          if (isKonfiParticipant) {
+            try { await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'absent', 0); } catch (e) { console.error('Push notification failed:', e); }
+            if (pointsRemoved) {
+              liveUpdate.sendToUser('konfi', eventData.user_id, 'dashboard', 'update', { points: -removedPointsAmount });
+            }
           }
           liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
         }
