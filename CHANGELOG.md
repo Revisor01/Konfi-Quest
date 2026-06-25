@@ -2,6 +2,45 @@
 
 Alle nennenswerten Änderungen an Konfi Quest. Format lose angelehnt an
 [Keep a Changelog](https://keepachangelog.com/de/). Neueste Version oben.
+Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetragen.
+
+---
+
+## [Unreleased] — nach iOS-Build 60 (noch in keinem Build)
+
+Diese Änderungen sind committet/deployt (Backend live), aber noch **nicht** in
+einem iOS-Build enthalten. Für eine vollständige 1.3.0-App ist ein neuer Build
+(B61) nötig.
+
+### 🐛 Fehlerbehebungen
+- Teamer-Anwesenheit bestätigen warf einen 400-Fehler („Konfi-Profil nicht
+  gefunden"), weil die Konfi-Punkte-Logik mitlief. Punkte gibt es jetzt nur noch
+  für Konfis; Teamer-Anwesenheit wird ohne Punkte gesetzt. (`9140a23`, deployt)
+- Events-Tab-Zähler verschwindet sofort nach vollständigem Verbuchen statt erst
+  nach ~30 s (Provider-Reihenfolge LiveUpdate/Badge). (`6f9712e`)
+- Teamer:innen sehen reine Konfi-Events korrekt als „Nur zur Info" (kein
+  Anmelde-Button, keine grüne Anmelde-Farbe). (`8be6466`)
+- Konfis sehen keine reinen Team-Events und keinen „Teamer gesucht"-Hinweis mehr.
+  (`c33d27c`)
+
+### ✨ Neue Funktionen
+- Events: Info-(i)-Button mit kompletter Farb- und Symbol-Legende (rollenabhängig
+  Konfi/Teamer/Admin). (`fdf4bc8`, `8be6466`, `c33d27c`)
+- Chat: Neuer Chat öffnet sich nach dem Erstellen direkt (statt zurück zur
+  Liste). (`1927a29`)
+
+### 🎨 Verbesserungen
+- Einheitliches Event-Status-System: Kreis-Icon vorne = Eck-Badge hinten,
+  durchgängige Kreis-Symbole. „Anmeldung möglich" = Plus-Kreis,
+  „Ausgebucht" = Schloss, „Verbuchen" = offener Kreis. (`8be6466`, `c33d27c`)
+
+### 🔍 Analyse (kein Code-Change)
+- Teamer-Badges geprüft: Die Logik (`checkAndAwardTeamerBadges`, Typ
+  `category_activities`) ist korrekt. „Freizeithopper" bekam keinen Progress,
+  weil (a) die Teamer-Anwesenheit wegen des 400-Bugs nie auf „present" stand und
+  (b) das Test-Event „Volkslauf" die Kategorien Urlauberseelsorge/
+  Öffentlichkeitsarbeit hat — nicht „Freizeit". Nach dem Anwesenheit-Fix zählt
+  ein Freizeit-Event mit bestätigter Anwesenheit korrekt (Badge braucht 10).
 
 ---
 
