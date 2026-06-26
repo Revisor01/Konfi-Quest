@@ -2691,3 +2691,45 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
      Hier nur Touch-Scrolling im Feld erlauben. */
   touch-action: pan-y;
 }
+
+/* ============================================
+   iPad / Tablet-Layout (min-width: 768px)
+   1) Safe-Area oben: Der Inhalt sitzt im fullscreen-IonContent unter der
+      Statusbar. Auf dem iPad reicht der margin-top: 16px des Banners nicht,
+      die Karte klebt an der Statusbar -> safe-area-inset-top draufrechnen.
+   2) Tab-Bar als schwebende, zentrierte iOS-26-Pill statt voller Breite mit
+      links klebenden Tabs.
+   ============================================ */
+@media (min-width: 768px) {
+  /* 1) Safe-Area oben fuer den Header-Banner */
+  .app-header-banner {
+    margin-top: calc(16px + env(safe-area-inset-top, 0px));
+  }
+
+  /* 2) Tab-Bar zentrierte Pill: schmal, mittig, schwebend.
+     position: absolute loest die Bar aus dem vollbreiten Footer-Flow,
+     left/right/margin zentrieren sie, max-width macht die Pill kompakt. */
+  ion-tabs ion-tab-bar[slot="bottom"] {
+    /* width:100% + max-width + margin:auto -> kompakte, zentrierte Pill.
+       Ohne explizite width kollabiert die flex-Bar auf 0 (margin:auto
+       braucht eine definierte Breite zum Verteilen). */
+    width: 100%;
+    max-width: 500px;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    left: 0;
+    right: 0;
+    border-radius: 24px;
+    margin-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+    overflow: hidden;
+  }
+
+  /* Android (MD): die env-Hoehenrechnung aus ion-tab-bar.md wuerde der Pill
+     unten zusaetzlichen Inset geben (margin-bottom uebernimmt den Abstand
+     schon) -> Hoehe auf reine Bar-Hoehe zuruecksetzen. */
+  ion-tabs ion-tab-bar.md[slot="bottom"] {
+    height: 56px !important;
+    padding-bottom: 0 !important;
+  }
+}
