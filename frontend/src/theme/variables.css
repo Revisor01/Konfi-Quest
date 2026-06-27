@@ -2706,6 +2706,16 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
     margin-top: calc(16px + env(safe-area-inset-top, 0px));
   }
 
+  /* 1b) Toolbar-Buttons kleben auf dem iPad an der Statusleiste: in der
+     regular Size-Class setzt Ionic den safe-area-inset-top NICHT automatisch
+     auf die Toolbar (auf dem iPhone schon). Daher hier explizit nachziehen.
+     Die collapse="condense"-Toolbar (app-condense-toolbar) liegt UNTER der
+     ersten Toolbar und ist ausgenommen, sonst entstuende doppelter Abstand. */
+  ion-header ion-toolbar:not(.app-condense-toolbar) {
+    --padding-top: env(safe-area-inset-top, 0px);
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
   /* 2) Tab-Bar zentrierte Pill: schmal, mittig, schwebend.
      position: absolute loest die Bar aus dem vollbreiten Footer-Flow,
      left/right/margin zentrieren sie, max-width macht die Pill kompakt. */
