@@ -24,7 +24,8 @@ import {
   IonInput,
   IonButtons,
   IonBackButton,
-  useIonModal
+  useIonModal,
+  useIonViewWillEnter
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
 // useLocation bleibt fuer Query-Parameter Auswertung (React Router v5 API)
@@ -62,6 +63,7 @@ import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
+import { removeDeliveredForEvents } from '../../../services/notifications';
 import { SectionHeader, ListSection, StatusBadge, EventLegendModal } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import EmptyState from '../../shared/EmptyState';
@@ -92,6 +94,12 @@ const TeamerEventsPage: React.FC = () => {
     async () => { const res = await api.get('/events'); return res.data; },
     { ttl: CACHE_TTL.EVENTS }
   );
+
+  // Beim Oeffnen der Events-Seite die zugestellten Event-Notifications aus dem
+  // Mitteilungszentrum entfernen (Bereich wurde geoeffnet/gesehen).
+  useIonViewWillEnter(() => {
+    removeDeliveredForEvents();
+  });
 
   // Material Detail Modal (useRef für dynamische materialId)
   const [presentMaterialModal, dismissMaterialModal] = useIonModal(TeamerMaterialDetailPage, {

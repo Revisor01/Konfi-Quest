@@ -17,7 +17,8 @@ import {
   IonCard,
   IonCardContent,
   useIonModal,
-  useIonRouter
+  useIonRouter,
+  useIonViewWillEnter
 } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { qrCodeOutline, searchOutline } from 'ionicons/icons';
@@ -26,6 +27,7 @@ import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
+import { removeDeliveredForEvents } from '../../../services/notifications';
 import api from '../../../services/api';
 import EventsView from '../views/EventsView';
 import QRScannerModal from '../modals/QRScannerModal';
@@ -44,6 +46,12 @@ const KonfiEventsPage: React.FC = () => {
     () => api.get('/konfi/events').then(r => r.data),
     { ttl: CACHE_TTL.EVENTS }
   );
+
+  // Beim Oeffnen der Events-Seite die zugestellten Event-Notifications aus dem
+  // Mitteilungszentrum entfernen (Bereich wurde geoeffnet/gesehen).
+  useIonViewWillEnter(() => {
+    removeDeliveredForEvents();
+  });
 
   const [presentScannerModal, dismissScannerModal] = useIonModal(QRScannerModal, {
     onClose: () => dismissScannerModal(),
