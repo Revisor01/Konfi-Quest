@@ -51,6 +51,20 @@ sondern korrekt: jede Rolle sieht ein Event anders).
   sauber will: `renderDetail` nach `teamer/views/TeamerEventDetailView.tsx`
   extrahieren. KEIN Verhalten aendert sich — reine Struktur. Niedrige Prioritaet.
 
+### Weitere Teamer-Duplikate (Analyse 28.06.2026) — Quick-Wins, nicht dringend
+- **Badge-Icon-Map 3x dupliziert**: TeamerDashboardPage (~Z.88-102),
+  TeamerKonfiStatsPage (~Z.59-117), TeamerBadgesView (~Z.83-93). → eine zentrale
+  `utils/badgeIcons.ts` + Import. Groesster Quick-Win.
+- **Badge-Detail-Popover 2x dupliziert**: TeamerKonfiStatsPage (~Z.136-206) +
+  TeamerBadgesView (~Z.138-256). → shared `BadgeDetailPopover`. ~150 Z. weg.
+- **formatDate/Time inline** in TeamerDashboardPage (~Z.367-402),
+  TeamerMaterialPage (~Z.167-181, falls noch da), TeamerRequestsPage (~Z.116).
+  → shared `eventFormatting` nutzen.
+- **TeamerDashboardPage** hat KEINEN Split-View (reine Anzeige-Seite) — fraglich
+  ob noetig; vermutlich nicht.
+- TeamerRequestsPage Queue-Item-Badge (~Z.234) koennte EventCornerBadges-Stil
+  nutzen (gering).
+
 ---
 
 ## SONSTIGES / HYGIENE
