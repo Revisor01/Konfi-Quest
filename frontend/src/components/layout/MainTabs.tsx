@@ -49,7 +49,7 @@ import AdminCertificatesPage from '../admin/pages/AdminCertificatesPage';
 import AdminDashboardSettingsPage from '../admin/pages/AdminDashboardSettingsPage';
 import AdminLevelsPage from '../admin/pages/AdminLevelsPage';
 import AdminInvitePage from '../admin/pages/AdminInvitePage';
-import ChatOverviewPage from '../chat/pages/ChatOverviewPage'; // Diese bleibt!
+import ChatSplitView from '../chat/pages/ChatSplitView';
 import ChatRoomView from '../chat/views/ChatRoomView'; // Diese bleibt!
 import PushNotificationSettings from '../common/PushNotificationSettings';
 import ChatPermissionsSettings from '../admin/settings/ChatPermissionsSettings';
@@ -209,7 +209,7 @@ const MainTabs: React.FC = () => {
           <Route path="/admin/konfis/:id" component={KonfiDetailRoute} />
 
           {/* CHAT ROUTEN - Nach Konfis-Pattern */}
-          <Route exact path="/admin/chat" component={ChatOverviewPage} />
+          <Route exact path="/admin/chat" component={ChatSplitView} />
           <Route path="/admin/chat/room/:roomId" component={AdminChatRoomRoute} />
 
           <Route exact path="/admin/activities" component={AdminActivitiesPage} />
@@ -286,7 +286,7 @@ const MainTabs: React.FC = () => {
         <IonRouterOutlet>
           <Route exact path="/teamer" render={() => <Redirect to="/teamer/dashboard" />} />
           <Route exact path="/teamer/dashboard" component={TeamerDashboardPage} />
-          <Route exact path="/teamer/chat" component={ChatOverviewPage} />
+          <Route exact path="/teamer/chat" component={ChatSplitView} />
           <Route path="/teamer/chat/room/:roomId" component={TeamerChatRoomRoute} />
           <Route exact path="/teamer/events" component={TeamerEventsPage} />
           <Route exact path="/teamer/material" component={TeamerMaterialPage} />
@@ -343,7 +343,7 @@ const MainTabs: React.FC = () => {
           <Route exact path="/konfi/badges" component={KonfiBadgesPage} />
 
           {/* CHAT ROUTEN - Nach Konfis-Pattern */}
-          <Route exact path="/konfi/chat" component={ChatOverviewPage} />
+          <Route exact path="/konfi/chat" component={ChatSplitView} />
           <Route path="/konfi/chat/room/:roomId" component={KonfiChatRoomRoute} />
 
           <Route exact path="/konfi/requests" component={KonfiRequestsPage} />
