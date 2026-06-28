@@ -88,6 +88,29 @@ const TeamerEventsPage: React.FC = () => {
   const [eventMaterials, setEventMaterials] = useState<any[]>([]);
   const materialIdRef = useRef<number | null>(null);
 
+  // iPad-Split-View: ab >=992px Liste + Detail nebeneinander.
+  const [isWide, setIsWide] = useState(
+    typeof window !== 'undefined' ? window.innerWidth >= 992 : false
+  );
+  const masterRef = useRef<HTMLDivElement>(null);
+  const detailRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 992px)');
+    const handler = (e: MediaQueryListEvent) => setIsWide(e.matches);
+    setIsWide(mq.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  // Verschachtelte IonPages (Liste/Detail) von 'ion-page-invisible' befreien
+  // (sie werden im Split-Layout nicht vom RouterOutlet verwaltet).
+  useEffect(() => {
+    [masterRef.current, detailRef.current].forEach((host) => {
+      host?.querySelectorAll('.ion-page-invisible').forEach((el) => {
+        el.classList.remove('ion-page-invisible');
+      });
+    });
+  });
+
   // Offline-Query: Events
   const { data: events, loading, refresh } = useOfflineQuery<Event[]>(
     'teamer:events:' + user?.id,
@@ -439,7 +462,11 @@ const TeamerEventsPage: React.FC = () => {
   };
 
   // Event Detail Ansicht - 1:1 wie Konfi EventDetailView
-  if (selectedEvent) {
+  // Detail-Ansicht als render-Funktion (statt frueher early-return), damit sie
+  // im iPad-Split-View NEBEN der Liste gerendert werden kann.
+  // hideBackButton blendet den Zurueck-Button im Split-View aus (Liste sichtbar).
+  const renderDetail = (hideBackButton?: boolean) => {
+    if (!selectedEvent) return null;
     const isPast = new Date(selectedEvent.event_date) < new Date();
     const isTeamerEvent = selectedEvent.teamer_needed || selectedEvent.teamer_only;
 
@@ -447,11 +474,13 @@ const TeamerEventsPage: React.FC = () => {
       <IonPage ref={pageRef}>
         <IonHeader translucent={true}>
           <IonToolbar>
-            <IonButtons slot="start">
-              <IonButton onClick={() => setSelectedEvent(null)}>
-                <IonIcon icon={arrowBack} slot="icon-only" />
-              </IonButton>
-            </IonButtons>
+            {!hideBackButton && (
+              <IonButtons slot="start">
+                <IonButton onClick={() => setSelectedEvent(null)}>
+                  <IonIcon icon={arrowBack} slot="icon-only" />
+                </IonButton>
+              </IonButtons>
+            )}
             <IonTitle>{selectedEvent.name}</IonTitle>
           </IonToolbar>
         </IonHeader>
@@ -756,10 +785,10 @@ const TeamerEventsPage: React.FC = () => {
         </IonContent>
       </IonPage>
     );
-  }
+  };
 
-  // Events-Liste
-  return (
+  // Events-Liste als render-Funktion (frueher early-return).
+  const renderList = () => (
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
@@ -1017,6 +1046,57 @@ const TeamerEventsPage: React.FC = () => {
       </IonContent>
     </IonPage>
   );
+
+  // iPad-Split-View: ab >=992px Liste links + Detail rechts. Darunter wie
+  // bisher (Detail ersetzt die Liste in-place via selectedEvent).
+  if (isWide) {
+    return (
+      <div style={{ display: 'flex', width: '100%', height: '100%' }}>
+        <div
+          ref={masterRef}
+          style={{
+            width: 380,
+            flexShrink: 0,
+            position: 'relative',
+            borderRight: '1px solid var(--app-hairline, #e5e5ea)',
+          }}
+        >
+          {renderList()}
+        </div>
+        <div ref={detailRef} style={{ flex: 1, minWidth: 0, position: 'relative' }}>
+          {selectedEvent ? (
+            renderDetail(true)
+          ) : (
+            <IonPage>
+              <IonContent className="app-gradient-background">
+                <div
+                  style={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '12px',
+                    color: 'var(--ion-color-medium, #8e8e93)',
+                    padding: '24px',
+                    textAlign: 'center',
+                  }}
+                >
+                  <IonIcon icon={calendarOutline} style={{ fontSize: '3rem', opacity: 0.4 }} />
+                  <p style={{ margin: 0, fontSize: '0.95rem' }}>
+                    Wähle links ein Event aus, um die Details zu sehen.
+                  </p>
+                </div>
+              </IonContent>
+            </IonPage>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Schmal: Detail ersetzt die Liste (bisheriges Verhalten).
+  return selectedEvent ? renderDetail() : renderList();
 };
 
 export default TeamerEventsPage;
