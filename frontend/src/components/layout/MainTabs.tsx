@@ -31,6 +31,7 @@ import { useBadge } from '../../contexts/BadgeContext';
 import api from '../../services/api';
 import { ModalProvider } from '../../contexts/ModalContext'; // Behalten
 import AdminKonfisPage from '../admin/pages/AdminKonfisPage';
+import AdminKonfisSplitView from '../admin/pages/AdminKonfisSplitView';
 import AdminActivitiesPage from '../admin/pages/AdminActivitiesPage';
 import AdminEventsPage from '../admin/pages/AdminEventsPage';
 import AdminCategoriesPage from '../admin/pages/AdminCategoriesPage';
@@ -204,7 +205,7 @@ const MainTabs: React.FC = () => {
       <IonTabs>
         <IonRouterOutlet>
           <Route exact path="/admin" render={() => <Redirect to="/admin/konfis" />} />
-          <Route exact path="/admin/konfis" component={AdminKonfisPage} />
+          <Route exact path="/admin/konfis" component={AdminKonfisSplitView} />
           <Route path="/admin/konfis/:id" component={KonfiDetailRoute} />
 
           {/* CHAT ROUTEN - Nach Konfis-Pattern */}

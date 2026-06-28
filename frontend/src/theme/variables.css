@@ -2693,6 +2693,24 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 }
 
 /* ============================================
+   iPad-Split-View (Admin-Konfis)
+   ============================================ */
+/* Master-Spalte (Konfis-Liste) auf eine angenehme Breite begrenzen, damit das
+   Detail rechts genug Platz bekommt. Ionic setzt die Breite per --side-width. */
+ion-split-pane {
+  --side-min-width: 320px;
+  --side-max-width: 400px;
+  --side-width: 380px;
+}
+
+/* Ausgewaehlter Eintrag im Split-View: nur dezente Hintergrund-Toenung,
+   KEINE Rahmenlinie (konsistent mit den uebrigen Listen). Die farbige
+   Status-Borderleiste links bleibt erhalten. */
+.app-list-item--selected {
+  background: rgba(var(--app-color-konfis-rgb), 0.08) !important;
+}
+
+/* ============================================
    iPad / Tablet-Layout (min-width: 768px)
    1) Safe-Area oben: Der Inhalt sitzt im fullscreen-IonContent unter der
       Statusbar. Auf dem iPad reicht der margin-top: 16px des Banners nicht,
