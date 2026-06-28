@@ -64,7 +64,7 @@ import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { removeDeliveredForEvents } from '../../../services/notifications';
-import { SectionHeader, ListSection, StatusBadge, EventLegendModal } from '../../shared';
+import { SectionHeader, ListSection, StatusBadge, EventLegendModal, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -171,21 +171,6 @@ const TeamerEventsPage: React.FC = () => {
   }, [loading, events, queryEventId, initialEventHandled]);
 
   // Formatierung
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
-
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('de-DE', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   // Sortierung: naechstes Event zuerst, vergangene am Ende
   const sortEvents = (eventsList: Event[]) => {
     const now = new Date();
@@ -442,15 +427,6 @@ const TeamerEventsPage: React.FC = () => {
   };
 
   // Formatierung lang (wie Konfi EventDetailView)
-  const formatDateLong = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      weekday: 'long',
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric'
-    });
-  };
-
   // Leere-Segment Texte
   const getEmptyMessage = () => {
     switch (activeTab) {

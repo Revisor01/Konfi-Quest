@@ -49,7 +49,7 @@ import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import LoadingSpinner from '../../common/LoadingSpinner';
-import { SectionHeader } from '../../shared';
+import { SectionHeader, formatEventDateLong as formatDate, formatEventTime as formatTime } from '../../shared';
 import UnregisterModal from '../modals/UnregisterModal';
 import QRScannerModal from '../modals/QRScannerModal';
 import { Event, Category } from '../../../types/event';
@@ -223,22 +223,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     };
     loadDetails();
   }, [eventData?.id]);
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      weekday: 'long',
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric'
-    });
-  };
-
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('de-DE', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   const canUnregister = (event: Event) => {
     if (!event.is_registered) return false;

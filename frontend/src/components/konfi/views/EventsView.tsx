@@ -32,7 +32,7 @@ import {
   filterOutline,
   infinite
 } from 'ionicons/icons';
-import { SectionHeader, ListSection, StatusBadge, EventLegendModal } from '../../shared';
+import { SectionHeader, ListSection, StatusBadge, EventLegendModal, formatEventDate as formatDate, formatEventTime as formatTime } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import { Event } from '../../../types/event';
 
@@ -63,21 +63,6 @@ const EventsView: React.FC<EventsViewProps> = ({
     variant: 'konfi',
     onClose: () => dismissLegend(),
   });
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
-
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('de-DE', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   const konfirmationEvents = useMemo(() =>
     events.filter(e => e.is_konfirmation),

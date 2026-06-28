@@ -40,7 +40,7 @@ import {
 import { useApp } from '../../contexts/AppContext';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { parseLocalTime, getLocalNow } from '../../utils/dateUtils';
-import { SectionHeader, ListSection, StatusBadge, EventLegendModal } from '../shared';
+import { SectionHeader, ListSection, StatusBadge, EventLegendModal, formatEventDate as formatDate, formatEventTime as formatTime } from '../shared';
 import { getStatusIcon } from '../shared/StatusBadge';
 import { Event } from '../../types/event';
 
@@ -118,21 +118,6 @@ const EventsView: React.FC<EventsViewProps> = ({
 
   const getTotalPoints = () => {
     return events.reduce((sum, event) => sum + event.points, 0);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
-
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('de-DE', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
   };
 
   const calculateRegistrationStatus = (event: Event): 'upcoming' | 'open' | 'closed' | 'cancelled' | 'mandatory' => {
