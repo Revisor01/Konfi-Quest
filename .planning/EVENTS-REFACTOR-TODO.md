@@ -9,64 +9,22 @@ sondern korrekt: jede Rolle sieht ein Event anders).
 
 ---
 
-## ✅ ERLEDIGT
+## ✅ ERLEDIGT (alles durchgezogen)
 
 1. **shared/SplitViewShell.tsx** + `useIsWideScreen`-Hook
-   - Die 4 Split-View-Wrapper (AdminKonfis, Chat, AdminEvents, KonfiEvents)
-     nutzen sie bereits.
+   - Alle Split-Views nutzen sie (AdminKonfis, Chat, AdminEvents, KonfiEvents,
+     TeamerEvents, TeamerMaterial).
 2. **shared/eventFormatting.ts** — `formatEventDate/Time/DateLong`
-   - In allen 5 Views/DetailViews + Teamer per Alias-Import eingebunden.
-   - `formatEventTime` mit Guards (leer/ungültig → '') vereinheitlicht.
-   - Unit-Tests: `__tests__/components/shared/eventFormatting.test.ts`.
+   - In allen Views/DetailViews + Teamer per Alias-Import. `formatEventTime` mit
+     Guards (leer/ungültig → ''). Unit-Tests vorhanden.
 3. **shared/EventCornerBadges.tsx** — Team/Konfirmation/Pflicht/Status-Badges
-   - **Admin-EventsView bereits umgestellt.**
-
----
-
-## OFFEN — Card-Bausteine angleichen
-
-### A) Konfi-EventsView auf EventCornerBadges umstellen
-- Datei: `src/components/konfi/views/EventsView.tsx`
-- Stelle: Badge-Block ab **Z.338** (`<div className="app-corner-badges" ...>`).
-- ACHTUNG Konfi-Sonderfall: Konfi blendet den Status-Badge teils aus
-  (`showBadge`-Bedingung). → `EventCornerBadges` mit `showStatus={showBadge}`
-  aufrufen. Konfirmations-/Pflicht-Badge bleiben über die event-Flags.
-- Import `EventCornerBadges` aus `'../../shared'` ergänzen.
-- Danach prüfen, ob `people`/`flame`/`shieldCheckmark`/`StatusBadge` noch
-  anderweitig genutzt werden (sonst Import entfernen).
-
-### B) Teamer-EventsView auf EventCornerBadges umstellen
-- Datei: `src/components/teamer/pages/TeamerEventsPage.tsx`
-- Stelle: Badge-Block ab **Z.886**.
-- Gleiches Vorgehen wie Konfi (showStatus über die dortige showBadge-Logik).
-
----
-
-## OFFEN — Teamer-Eigenheiten angleichen (das "völlig andere" Teamer-Muster)
-
-### C) Teamer-Events: eigenes useIsWide → Shell-Hook
-- Datei: `src/components/teamer/pages/TeamerEventsPage.tsx`, **Z.91-103**.
-- Teamer hat seine EIGENE matchMedia-Logik + ion-page-invisible-Cleanup
-  inline. Stattdessen `useIsWideScreen` aus `'../../shared'` nutzen und das
-  Split-Layout (Z.1026 ff.) auf `SplitViewShell` umstellen (wie die anderen
-  Wrapper). Spart die duplizierte isWide/Cleanup-Logik.
-- HINWEIS: Teamer-Events ist die EINZIGE Rolle mit In-Page-State-Detail
-  (selectedEvent) statt Route+Detail-Page. Mittelfristig angleichen: Detail in
-  eine eigene `TeamerEventDetailView` (eventId+onBack) ziehen wie Konfi/Admin,
-  dann den normalen SplitView-Wrapper bauen. Das ist der größere Brocken.
-
-### D) Teamer-Material: gleiches Muster wie Teamer-Events anwenden  ← USER-WUNSCH
-- Datei: `src/components/teamer/pages/TeamerMaterialPage.tsx` (561 Z.)
-- Auch hier In-Page-State-Detail: `selectedMaterial` (Z.96), Detail-Block ab
-  **Z.214** (`if (selectedMaterial) { ... }`), Liste danach.
-- TODO:
-  1. Detail-Block + Liste in `renderDetail()`/`renderList()` kapseln (wie bei
-     TeamerEventsPage in Commit 009b721 vorgemacht).
-  2. SplitViewShell + useIsWideScreen einführen (Material-Liste links,
-     Datei-Detail rechts).
-  3. Detail-Zurück-Button im Split-Modus ausblenden (hideBackButton-Muster).
-- Admin-Material (`AdminMaterialPage`) bleibt Modal-basiert (CRUD) → KEIN
-  Split-View dort (anderes Pattern, wie Anträge).
+   - **In ALLEN drei EventsViews** (Admin/Konfi/Teamer). `hideTeam`-Flag für
+     Konfi (kein Team-Badge).
+4. **Teamer-Events**: Inline-useIsWide/Cleanup/Split-Layout → shared
+   `useIsWideScreen` + `SplitViewShell`.
+5. **Teamer-Material**: gleiches Muster angewendet (renderDetail/renderList +
+   SplitViewShell + useIsWideScreen + hideBackButton). Split-View eingeführt.
+   - Admin-Material bleibt bewusst Modal-basiert (CRUD), wie Anträge.
 
 ---
 
@@ -81,6 +39,17 @@ sondern korrekt: jede Rolle sieht ein Event anders).
   Teilnehmer-Verwaltung. LASSEN.
 - **Tab-Filter**: Konfi (meine/alle/konfirmation), Admin (aktuell/verbuchen/
   vergangen), Teamer (alle/meine/team) — verschiedene Semantik. LASSEN.
+
+---
+
+## OPTIONAL (nur Kosmetik, nicht funktional noetig)
+
+- **Teamer-Event-Detail in eigene View ziehen**: Teamer-Events nutzt weiterhin
+  ein In-Page `renderDetail()` (State `selectedEvent`), waehrend Konfi/Admin
+  eine separate `EventDetailView` (eventId+onBack) + Route haben. Funktioniert
+  identisch (Split-View laeuft), ist aber strukturell uneinheitlich. Wer es ganz
+  sauber will: `renderDetail` nach `teamer/views/TeamerEventDetailView.tsx`
+  extrahieren. KEIN Verhalten aendert sich — reine Struktur. Niedrige Prioritaet.
 
 ---
 
