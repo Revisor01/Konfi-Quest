@@ -48,7 +48,7 @@ import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
-import { SectionHeader, SplitViewShell, useIsWideScreen } from '../../shared';
+import { SectionHeader } from '../../shared';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import FileViewerModal from '../../shared/FileViewerModal';
@@ -95,9 +95,6 @@ const TeamerMaterialPage: React.FC = () => {
   const [activeJahrgangId, setActiveJahrgangId] = useState<number | undefined>();
   const [selectedMaterial, setSelectedMaterial] = useState<MaterialDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
-
-  // iPad-Split-View: ab >=992px Liste + Detail nebeneinander (shared Hook+Shell).
-  const isWide = useIsWideScreen();
 
   // Offline-Query: Jahrgaenge
   const { data: jahrgaengeData, refresh: refreshJahrgaenge } = useOfflineQuery<{ id: number; name: string }[]>(
@@ -565,19 +562,7 @@ const TeamerMaterialPage: React.FC = () => {
     </IonPage>
   );
 
-  // iPad-Split-View: ab >=992px Material-Liste links + Datei-Detail rechts.
-  if (isWide) {
-    return (
-      <SplitViewShell
-        emptyIcon={documentOutline}
-        emptyText="Wähle links ein Material aus, um die Details zu sehen."
-        master={renderList()}
-        detail={selectedMaterial ? renderDetail(true) : null}
-      />
-    );
-  }
-
-  // Schmal: Detail ersetzt die Liste (bisheriges Verhalten).
+  // Detail ersetzt die Liste (selectedMaterial-State steuert die Ansicht).
   return selectedMaterial ? renderDetail() : renderList();
 };
 

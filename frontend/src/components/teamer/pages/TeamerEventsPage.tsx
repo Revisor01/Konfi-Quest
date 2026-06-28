@@ -64,7 +64,7 @@ import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { removeDeliveredForEvents } from '../../../services/notifications';
-import { SectionHeader, ListSection, StatusBadge, EventLegendModal, EventCornerBadges, SplitViewShell, useIsWideScreen, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong } from '../../shared';
+import { SectionHeader, ListSection, StatusBadge, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -87,9 +87,6 @@ const TeamerEventsPage: React.FC = () => {
   const [initialEventHandled, setInitialEventHandled] = useState(false);
   const [eventMaterials, setEventMaterials] = useState<any[]>([]);
   const materialIdRef = useRef<number | null>(null);
-
-  // iPad-Split-View: ab >=992px Liste + Detail nebeneinander (shared Hook+Shell).
-  const isWide = useIsWideScreen();
 
   // Offline-Query: Events
   const { data: events, loading, refresh } = useOfflineQuery<Event[]>(
@@ -981,19 +978,7 @@ const TeamerEventsPage: React.FC = () => {
     </IonPage>
   );
 
-  // iPad-Split-View: ab >=992px Liste links + Detail rechts (shared Shell).
-  if (isWide) {
-    return (
-      <SplitViewShell
-        emptyIcon={calendarOutline}
-        emptyText="Wähle links ein Event aus, um die Details zu sehen."
-        master={renderList()}
-        detail={selectedEvent ? renderDetail(true) : null}
-      />
-    );
-  }
-
-  // Schmal: Detail ersetzt die Liste (bisheriges Verhalten).
+  // Detail ersetzt die Liste (selectedEvent-State steuert die Ansicht).
   return selectedEvent ? renderDetail() : renderList();
 };
 

@@ -31,9 +31,8 @@ import { useBadge } from '../../contexts/BadgeContext';
 import api from '../../services/api';
 import { ModalProvider } from '../../contexts/ModalContext'; // Behalten
 import AdminKonfisPage from '../admin/pages/AdminKonfisPage';
-import AdminKonfisSplitView from '../admin/pages/AdminKonfisSplitView';
 import AdminActivitiesPage from '../admin/pages/AdminActivitiesPage';
-import AdminEventsSplitView from '../admin/pages/AdminEventsSplitView';
+import AdminEventsPage from '../admin/pages/AdminEventsPage';
 import AdminCategoriesPage from '../admin/pages/AdminCategoriesPage';
 import AdminJahrgaengeePage from '../admin/pages/AdminJahrgaengeePage';
 import AdminBadgesPage from '../admin/pages/AdminBadgesPage';
@@ -49,14 +48,14 @@ import AdminCertificatesPage from '../admin/pages/AdminCertificatesPage';
 import AdminDashboardSettingsPage from '../admin/pages/AdminDashboardSettingsPage';
 import AdminLevelsPage from '../admin/pages/AdminLevelsPage';
 import AdminInvitePage from '../admin/pages/AdminInvitePage';
-import ChatSplitView from '../chat/pages/ChatSplitView';
+import ChatOverviewPage from '../chat/pages/ChatOverviewPage';
 import ChatRoomView from '../chat/views/ChatRoomView'; // Diese bleibt!
 import PushNotificationSettings from '../common/PushNotificationSettings';
 import ChatPermissionsSettings from '../admin/settings/ChatPermissionsSettings';
 import KonfiDetailView from '../admin/views/KonfiDetailView';
 import EventDetailView from '../admin/views/EventDetailView';
 import KonfiDashboardPage from '../konfi/pages/KonfiDashboardPage';
-import KonfiEventsSplitView from '../konfi/pages/KonfiEventsSplitView';
+import KonfiEventsPage from '../konfi/pages/KonfiEventsPage';
 import KonfiEventDetailPage from '../konfi/pages/KonfiEventDetailPage';
 import KonfiBadgesPage from '../konfi/pages/KonfiBadgesPage';
 import KonfiRequestsPage from '../konfi/pages/KonfiRequestsPage';
@@ -205,16 +204,16 @@ const MainTabs: React.FC = () => {
       <IonTabs>
         <IonRouterOutlet>
           <Route exact path="/admin" render={() => <Redirect to="/admin/konfis" />} />
-          <Route exact path="/admin/konfis" component={AdminKonfisSplitView} />
+          <Route exact path="/admin/konfis" component={AdminKonfisPage} />
           <Route path="/admin/konfis/:id" component={KonfiDetailRoute} />
 
           {/* CHAT ROUTEN - Nach Konfis-Pattern */}
-          <Route exact path="/admin/chat" component={ChatSplitView} />
+          <Route exact path="/admin/chat" component={ChatOverviewPage} />
           <Route path="/admin/chat/room/:roomId" component={AdminChatRoomRoute} />
 
           <Route exact path="/admin/activities" component={AdminActivitiesPage} />
           <Route path="/admin/events/:id" component={AdminEventDetailRoute} />
-          <Route exact path="/admin/events" component={AdminEventsSplitView} />
+          <Route exact path="/admin/events" component={AdminEventsPage} />
           <Route exact path="/admin/settings/categories" component={AdminCategoriesPage} />
           <Route exact path="/admin/settings/jahrgaenge" component={AdminJahrgaengeePage} />
           <Route exact path="/admin/settings/levels" component={AdminLevelsPage} />
@@ -286,7 +285,7 @@ const MainTabs: React.FC = () => {
         <IonRouterOutlet>
           <Route exact path="/teamer" render={() => <Redirect to="/teamer/dashboard" />} />
           <Route exact path="/teamer/dashboard" component={TeamerDashboardPage} />
-          <Route exact path="/teamer/chat" component={ChatSplitView} />
+          <Route exact path="/teamer/chat" component={ChatOverviewPage} />
           <Route path="/teamer/chat/room/:roomId" component={TeamerChatRoomRoute} />
           <Route exact path="/teamer/events" component={TeamerEventsPage} />
           <Route exact path="/teamer/material" component={TeamerMaterialPage} />
@@ -338,12 +337,12 @@ const MainTabs: React.FC = () => {
         <IonRouterOutlet>
           <Route exact path="/konfi" render={() => <Redirect to="/konfi/dashboard" />} />
           <Route exact path="/konfi/dashboard" component={KonfiDashboardPage} />
-          <Route exact path="/konfi/events" component={KonfiEventsSplitView} />
+          <Route exact path="/konfi/events" component={KonfiEventsPage} />
           <Route exact path="/konfi/events/:id" component={KonfiEventDetailPage} />
           <Route exact path="/konfi/badges" component={KonfiBadgesPage} />
 
           {/* CHAT ROUTEN - Nach Konfis-Pattern */}
-          <Route exact path="/konfi/chat" component={ChatSplitView} />
+          <Route exact path="/konfi/chat" component={ChatOverviewPage} />
           <Route path="/konfi/chat/room/:roomId" component={KonfiChatRoomRoute} />
 
           <Route exact path="/konfi/requests" component={KonfiRequestsPage} />
