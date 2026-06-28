@@ -66,6 +66,8 @@ interface EventsViewProps {
   onSearchChange?: (text: string) => void;
   // Fuer Card-Modal-Optik (Sheet ueber der Seite statt Vollbild).
   presentingElement?: HTMLElement | null;
+  // Im iPad-Split-View aktuell rechts geoeffnetes Event (fuer Highlighting).
+  selectedEventId?: number | null;
 }
 
 const EventsView: React.FC<EventsViewProps> = ({
@@ -84,7 +86,8 @@ const EventsView: React.FC<EventsViewProps> = ({
   onJahrgangChange,
   searchText,
   onSearchChange,
-  presentingElement
+  presentingElement,
+  selectedEventId
 }) => {
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
 
@@ -343,7 +346,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                   }}
                 >
                   <div
-                    className="app-list-item app-list-item--events"
+                    className={`app-list-item app-list-item--events${selectedEventId === event.id ? ' app-list-item--selected' : ''}`}
                     style={{
                       width: '100%',
                       borderLeftColor: statusColor,

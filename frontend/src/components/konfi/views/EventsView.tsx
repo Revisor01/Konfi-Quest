@@ -44,6 +44,8 @@ interface EventsViewProps {
   onUpdate: () => void;
   // Fuer Card-Modal-Optik (Sheet ueber der Seite statt Vollbild).
   presentingElement?: HTMLElement | null;
+  // Im iPad-Split-View aktuell rechts geoeffnetes Event (fuer Highlighting).
+  selectedEventId?: number | null;
 }
 
 const EventsView: React.FC<EventsViewProps> = ({
@@ -52,7 +54,8 @@ const EventsView: React.FC<EventsViewProps> = ({
   onTabChange,
   onSelectEvent,
   onUpdate,
-  presentingElement
+  presentingElement,
+  selectedEventId
 }) => {
   const [searchText, setSearchText] = useState('');
 
@@ -335,7 +338,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                 }}
               >
                 <div
-                  className="app-list-item app-list-item--events"
+                  className={`app-list-item app-list-item--events${selectedEventId === event.id ? ' app-list-item--selected' : ''}`}
                   style={{
                     width: '100%',
                     borderLeftColor: statusColor,

@@ -60,6 +60,9 @@ import { safeUUID } from '../../../utils/uuid';
 interface EventDetailViewProps {
   eventId: number;
   onBack: () => void;
+  // Im iPad-Split-View ist die Liste links dauerhaft sichtbar -> kein
+  // Zurueck-Button noetig.
+  hideBackButton?: boolean;
 }
 
 // Timeslot importiert aus types/event, lokaler Alias mit registered_count
@@ -76,7 +79,7 @@ interface Participant {
   display_name: string;
 }
 
-const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) => {
+const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hideBackButton }) => {
   const pageRef = useRef<HTMLElement>(null);
   const { setSuccess, setError, isOnline } = useApp();
   const { triggerRefresh } = useLiveUpdate();
@@ -393,11 +396,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       <IonPage ref={pageRef}>
         <IonHeader translucent>
           <IonToolbar>
-            <IonButtons slot="start">
-              <IonButton onClick={onBack}>
-                <IonIcon icon={arrowBack} />
-              </IonButton>
-            </IonButtons>
+            {!hideBackButton && (
+              <IonButtons slot="start">
+                <IonButton onClick={onBack}>
+                  <IonIcon icon={arrowBack} />
+                </IonButton>
+              </IonButtons>
+            )}
             <IonTitle>Event Details</IonTitle>
           </IonToolbar>
         </IonHeader>
@@ -413,11 +418,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       <IonPage ref={pageRef}>
         <IonHeader translucent>
           <IonToolbar>
-            <IonButtons slot="start">
-              <IonButton onClick={onBack}>
-                <IonIcon icon={arrowBack} />
-              </IonButton>
-            </IonButtons>
+            {!hideBackButton && (
+              <IonButtons slot="start">
+                <IonButton onClick={onBack}>
+                  <IonIcon icon={arrowBack} />
+                </IonButton>
+              </IonButtons>
+            )}
             <IonTitle>Event nicht gefunden</IonTitle>
           </IonToolbar>
         </IonHeader>
@@ -432,11 +439,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     <IonPage ref={pageRef}>
       <IonHeader translucent>
         <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton onClick={onBack}>
-              <IonIcon icon={arrowBack} />
-            </IonButton>
-          </IonButtons>
+          {!hideBackButton && (
+            <IonButtons slot="start">
+              <IonButton onClick={onBack}>
+                <IonIcon icon={arrowBack} />
+              </IonButton>
+            </IonButtons>
+          )}
           <IonTitle>{eventData.name}</IonTitle>
         </IonToolbar>
       </IonHeader>

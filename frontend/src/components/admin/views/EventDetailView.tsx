@@ -86,9 +86,12 @@ interface Timeslot {
 interface EventDetailViewProps {
   eventId: number;
   onBack: () => void;
+  // Im iPad-Split-View ist die Liste links dauerhaft sichtbar -> kein
+  // Zurueck-Button noetig.
+  hideBackButton?: boolean;
 }
 
-const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) => {
+const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hideBackButton }) => {
   const pageRef = useRef<HTMLElement>(null);
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
   const { setSuccess, setError, isOnline } = useApp();
@@ -581,9 +584,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton onClick={onBack}><IonIcon icon={arrowBack} /></IonButton>
-          </IonButtons>
+          {!hideBackButton && (
+            <IonButtons slot="start">
+              <IonButton onClick={onBack}><IonIcon icon={arrowBack} /></IonButton>
+            </IonButtons>
+          )}
           <IonTitle>{eventData?.name || 'Event Details'}</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={handleChatButtonClick}>
