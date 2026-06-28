@@ -24,6 +24,8 @@ interface EventCornerBadgesProps {
   showStatus?: boolean;
   // Optisches Ausgrauen (z.B. gesperrte Konfirmations-Events).
   grayOut?: boolean;
+  // Team-Badge ausblenden (Konfis geht "Teamer gesucht" nichts an).
+  hideTeam?: boolean;
 }
 
 const badgeStyle = (bg: string): React.CSSProperties => ({
@@ -44,8 +46,9 @@ const EventCornerBadges: React.FC<EventCornerBadgesProps> = ({
   statusColor,
   showStatus = true,
   grayOut = false,
+  hideTeam = false,
 }) => {
-  const isTeam = event.teamer_only || event.teamer_needed;
+  const isTeam = !hideTeam && (event.teamer_only || event.teamer_needed);
   const isKonfirmation = event.is_konfirmation === true;
   const isMandatory = event.mandatory === true;
 

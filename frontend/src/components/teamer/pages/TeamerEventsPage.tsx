@@ -64,7 +64,7 @@ import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { removeDeliveredForEvents } from '../../../services/notifications';
-import { SectionHeader, ListSection, StatusBadge, EventLegendModal, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong } from '../../shared';
+import { SectionHeader, ListSection, StatusBadge, EventLegendModal, EventCornerBadges, SplitViewShell, useIsWideScreen, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -88,28 +88,8 @@ const TeamerEventsPage: React.FC = () => {
   const [eventMaterials, setEventMaterials] = useState<any[]>([]);
   const materialIdRef = useRef<number | null>(null);
 
-  // iPad-Split-View: ab >=992px Liste + Detail nebeneinander.
-  const [isWide, setIsWide] = useState(
-    typeof window !== 'undefined' ? window.innerWidth >= 992 : false
-  );
-  const masterRef = useRef<HTMLDivElement>(null);
-  const detailRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const mq = window.matchMedia('(min-width: 992px)');
-    const handler = (e: MediaQueryListEvent) => setIsWide(e.matches);
-    setIsWide(mq.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-  // Verschachtelte IonPages (Liste/Detail) von 'ion-page-invisible' befreien
-  // (sie werden im Split-Layout nicht vom RouterOutlet verwaltet).
-  useEffect(() => {
-    [masterRef.current, detailRef.current].forEach((host) => {
-      host?.querySelectorAll('.ion-page-invisible').forEach((el) => {
-        el.classList.remove('ion-page-invisible');
-      });
-    });
-  });
+  // iPad-Split-View: ab >=992px Liste + Detail nebeneinander (shared Hook+Shell).
+  const isWide = useIsWideScreen();
 
   // Offline-Query: Events
   const { data: events, loading, refresh } = useOfflineQuery<Event[]>(
@@ -881,36 +861,14 @@ const TeamerEventsPage: React.FC = () => {
                           overflow: 'hidden'
                         }}
                       >
-                        {/* Corner Badges - Team links innen, Pflicht, Status in der Ecke */}
-                        {(showBadge || event.teamer_only || event.teamer_needed || event.mandatory) && (
-                          <div className="app-corner-badges" style={{ opacity: shouldGrayOut ? 0.5 : 1 }}>
-                            {(event.teamer_only || event.teamer_needed) && (
-                              <>
-                                <div
-                                  className="app-corner-badge"
-                                  style={{ backgroundColor: 'var(--app-color-teamer)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
-                                  title={event.teamer_only ? 'Nur Team' : 'Team gesucht'}
-                                >
-                                  <IonIcon icon={people} style={{ color: '#fff', fontSize: '0.85rem' }} />
-                                </div>
-                                {(event.mandatory || showBadge) && <div className="app-corner-badges__separator" />}
-                              </>
-                            )}
-                            {event.mandatory && (
-                              <>
-                                <div
-                                  className="app-corner-badge"
-                                  style={{ backgroundColor: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
-                                  title="Pflichtveranstaltung"
-                                >
-                                  <IonIcon icon={shieldCheckmark} style={{ color: '#fff', fontSize: '0.85rem' }} />
-                                </div>
-                                {showBadge && <div className="app-corner-badges__separator" />}
-                              </>
-                            )}
-                            {showBadge && <StatusBadge statusText={statusText} statusColor={statusColor} />}
-                          </div>
-                        )}
+                        {/* Corner Badges (shared) - Team, Pflicht, Status */}
+                        <EventCornerBadges
+                          event={event}
+                          statusText={statusText}
+                          statusColor={statusColor}
+                          showStatus={showBadge}
+                          grayOut={shouldGrayOut}
+                        />
 
                         <div className="app-list-item__row">
                           <div className="app-list-item__main">
@@ -1023,51 +981,15 @@ const TeamerEventsPage: React.FC = () => {
     </IonPage>
   );
 
-  // iPad-Split-View: ab >=992px Liste links + Detail rechts. Darunter wie
-  // bisher (Detail ersetzt die Liste in-place via selectedEvent).
+  // iPad-Split-View: ab >=992px Liste links + Detail rechts (shared Shell).
   if (isWide) {
     return (
-      <div style={{ display: 'flex', width: '100%', height: '100%' }}>
-        <div
-          ref={masterRef}
-          style={{
-            width: 380,
-            flexShrink: 0,
-            position: 'relative',
-            borderRight: '1px solid var(--app-hairline, #e5e5ea)',
-          }}
-        >
-          {renderList()}
-        </div>
-        <div ref={detailRef} style={{ flex: 1, minWidth: 0, position: 'relative' }}>
-          {selectedEvent ? (
-            renderDetail(true)
-          ) : (
-            <IonPage>
-              <IonContent className="app-gradient-background">
-                <div
-                  style={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '12px',
-                    color: 'var(--ion-color-medium, #8e8e93)',
-                    padding: '24px',
-                    textAlign: 'center',
-                  }}
-                >
-                  <IonIcon icon={calendarOutline} style={{ fontSize: '3rem', opacity: 0.4 }} />
-                  <p style={{ margin: 0, fontSize: '0.95rem' }}>
-                    Wähle links ein Event aus, um die Details zu sehen.
-                  </p>
-                </div>
-              </IonContent>
-            </IonPage>
-          )}
-        </div>
-      </div>
+      <SplitViewShell
+        emptyIcon={calendarOutline}
+        emptyText="Wähle links ein Event aus, um die Details zu sehen."
+        master={renderList()}
+        detail={selectedEvent ? renderDetail(true) : null}
+      />
     );
   }
 
