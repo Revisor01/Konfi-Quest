@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, ReactNode } from 'react';
-import { IonPage, IonContent, IonIcon } from '@ionic/react';
+import React, { useState, useEffect, ReactNode } from 'react';
+import { IonPage, IonContent, IonIcon, useIonViewWillEnter, useIonViewDidLeave } from '@ionic/react';
 
 // Generische Split-View-Shell fuer iPad-Landscape Master-Detail-Layouts.
 //
@@ -48,34 +48,38 @@ const SplitViewShell: React.FC<SplitViewShellProps> = ({
   emptyText,
   sideWidth = SIDE_WIDTH,
 }) => {
-  const masterRef = useRef<HTMLDivElement>(null);
-  const detailRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    [masterRef.current, detailRef.current].forEach((host) => {
-      host?.querySelectorAll('.ion-page-invisible').forEach((el) => {
-        el.classList.remove('ion-page-invisible');
-      });
-    });
-  });
+  // WICHTIG: Die aeussere Huelle ist eine IonPage. Trotzdem versteckt der
+  // IonRouterOutlet die inaktive Split-Shell beim Tab-Wechsel NICHT zuverlaessig
+  // (verschachtelte IonPages im Inneren stoeren Ionics ion-page-invisible-
+  // Mechanik) -> mehrere Split-Seiten bleiben sichtbar gestapelt und die zuletzt
+  // besuchte ueberlagert die aktive (Bug: nach Chat bleibt rechts der Chat-
+  // Empty-State, obwohl Konfis aktiv ist).
+  // Loesung: Wir steuern die Sichtbarkeit selbst ueber die Ionic-Lifecycle-
+  // Hooks — nur die AKTIVE View wird gerendert/angezeigt, inaktive ausgeblendet.
+  const [isActive, setIsActive] = useState(true);
+  useIonViewWillEnter(() => setIsActive(true));
+  useIonViewDidLeave(() => setIsActive(false));
 
   return (
-    <div style={{ display: 'flex', width: '100%', height: '100%' }}>
+    <IonPage className="split-view-shell">
       <div
-        ref={masterRef}
-        style={{
-          width: sideWidth,
-          flexShrink: 0,
-          position: 'relative',
-          borderRight: '1px solid var(--app-hairline, #e5e5ea)',
-        }}
+        className="split-view-shell__row"
+        style={{ display: isActive ? 'flex' : 'none', width: '100%', height: '100%' }}
       >
-        {master}
-      </div>
+        <div
+          className="split-view-shell__master"
+          style={{
+            width: sideWidth,
+            flexShrink: 0,
+            position: 'relative',
+            borderRight: '1px solid var(--app-hairline, #e5e5ea)',
+          }}
+        >
+          {master}
+        </div>
 
-      <div ref={detailRef} style={{ flex: 1, minWidth: 0, position: 'relative' }}>
-        {detail ?? (
-          <IonPage>
+        <div className="split-view-shell__detail" style={{ flex: 1, minWidth: 0, position: 'relative' }}>
+          {detail ?? (
             <IonContent className="app-gradient-background">
               <div
                 style={{
@@ -94,10 +98,10 @@ const SplitViewShell: React.FC<SplitViewShellProps> = ({
                 <p style={{ margin: 0, fontSize: '0.95rem' }}>{emptyText}</p>
               </div>
             </IonContent>
-          </IonPage>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+    </IonPage>
   );
 };
 

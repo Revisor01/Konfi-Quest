@@ -2710,6 +2710,20 @@ ion-split-pane {
   background: rgba(var(--app-color-konfis-rgb), 0.08) !important;
 }
 
+/* Split-View-Shell: die verschachtelten Master/Detail-IonPages werden NICHT
+   vom RouterOutlet verwaltet und starten daher mit 'ion-page-invisible'
+   (opacity:0, pointer-events:none). Wir entfernen die Klasse NICHT per JS
+   (das bricht das Transition-Management des Outlets beim Wechsel zwischen
+   mehreren Split-View-Seiten). Stattdessen ueberschreiben wir die Sichtbarkeit
+   NUR innerhalb der Shell — Ionics globale Klasse bleibt fuer die echten
+   Outlet-Seiten unberuehrt. */
+.split-view-shell:not(.ion-page-invisible) .split-view-shell__master > .ion-page.ion-page-invisible,
+.split-view-shell:not(.ion-page-invisible) .split-view-shell__detail > .ion-page.ion-page-invisible {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  z-index: auto !important;
+}
+
 /* ============================================
    iPad / Tablet-Layout (min-width: 768px)
    1) Safe-Area oben: Der Inhalt sitzt im fullscreen-IonContent unter der
