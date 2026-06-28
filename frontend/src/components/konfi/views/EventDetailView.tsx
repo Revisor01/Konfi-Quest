@@ -471,6 +471,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           <div style={{ padding: '0 16px', marginBottom: '8px' }}>
             <IonButton
               expand="block"
+              fill="outline"
               color="primary"
               onClick={() => presentScannerModal({
                 presentingElement: pageRef.current || undefined
@@ -734,6 +735,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                     <IonButton
                       className="app-action-button"
                       expand="block"
+                      fill="outline"
                       color="success"
                       onClick={handleOptIn}
                     >
@@ -819,6 +821,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             <IonButton
               className="app-action-button"
               expand="block"
+              fill="outline"
               color="success"
               disabled={!isOnline}
               onClick={handleRegister}
@@ -830,6 +833,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             <IonButton
               className="app-action-button"
               expand="block"
+              fill="outline"
               color="warning"
               disabled={!isOnline}
               onClick={handleRegister}
