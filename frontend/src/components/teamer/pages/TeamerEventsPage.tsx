@@ -64,7 +64,7 @@ import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { removeDeliveredForEvents } from '../../../services/notifications';
-import { SectionHeader, ListSection, StatusBadge, EventLegendModal } from '../../shared';
+import { SectionHeader, ListSection, StatusBadge, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime, formatEventDateLong as formatDateLong } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -148,21 +148,6 @@ const TeamerEventsPage: React.FC = () => {
   }, [loading, events, queryEventId, initialEventHandled]);
 
   // Formatierung
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
-
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('de-DE', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   // Sortierung: naechstes Event zuerst, vergangene am Ende
   const sortEvents = (eventsList: Event[]) => {
     const now = new Date();
@@ -419,15 +404,6 @@ const TeamerEventsPage: React.FC = () => {
   };
 
   // Formatierung lang (wie Konfi EventDetailView)
-  const formatDateLong = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      weekday: 'long',
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric'
-    });
-  };
-
   // Leere-Segment Texte
   const getEmptyMessage = () => {
     switch (activeTab) {
@@ -439,7 +415,11 @@ const TeamerEventsPage: React.FC = () => {
   };
 
   // Event Detail Ansicht - 1:1 wie Konfi EventDetailView
-  if (selectedEvent) {
+  // Detail-Ansicht als render-Funktion (statt frueher early-return), damit sie
+  // im iPad-Split-View NEBEN der Liste gerendert werden kann.
+  // hideBackButton blendet den Zurueck-Button im Split-View aus (Liste sichtbar).
+  const renderDetail = (hideBackButton?: boolean) => {
+    if (!selectedEvent) return null;
     const isPast = new Date(selectedEvent.event_date) < new Date();
     const isTeamerEvent = selectedEvent.teamer_needed || selectedEvent.teamer_only;
 
@@ -447,11 +427,13 @@ const TeamerEventsPage: React.FC = () => {
       <IonPage ref={pageRef}>
         <IonHeader translucent={true}>
           <IonToolbar>
-            <IonButtons slot="start">
-              <IonButton onClick={() => setSelectedEvent(null)}>
-                <IonIcon icon={arrowBack} slot="icon-only" />
-              </IonButton>
-            </IonButtons>
+            {!hideBackButton && (
+              <IonButtons slot="start">
+                <IonButton onClick={() => setSelectedEvent(null)}>
+                  <IonIcon icon={arrowBack} slot="icon-only" />
+                </IonButton>
+              </IonButtons>
+            )}
             <IonTitle>{selectedEvent.name}</IonTitle>
           </IonToolbar>
         </IonHeader>
@@ -756,10 +738,10 @@ const TeamerEventsPage: React.FC = () => {
         </IonContent>
       </IonPage>
     );
-  }
+  };
 
-  // Events-Liste
-  return (
+  // Events-Liste als render-Funktion (frueher early-return).
+  const renderList = () => (
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
@@ -876,36 +858,14 @@ const TeamerEventsPage: React.FC = () => {
                           overflow: 'hidden'
                         }}
                       >
-                        {/* Corner Badges - Team links innen, Pflicht, Status in der Ecke */}
-                        {(showBadge || event.teamer_only || event.teamer_needed || event.mandatory) && (
-                          <div className="app-corner-badges" style={{ opacity: shouldGrayOut ? 0.5 : 1 }}>
-                            {(event.teamer_only || event.teamer_needed) && (
-                              <>
-                                <div
-                                  className="app-corner-badge"
-                                  style={{ backgroundColor: 'var(--app-color-teamer)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
-                                  title={event.teamer_only ? 'Nur Team' : 'Team gesucht'}
-                                >
-                                  <IonIcon icon={people} style={{ color: '#fff', fontSize: '0.85rem' }} />
-                                </div>
-                                {(event.mandatory || showBadge) && <div className="app-corner-badges__separator" />}
-                              </>
-                            )}
-                            {event.mandatory && (
-                              <>
-                                <div
-                                  className="app-corner-badge"
-                                  style={{ backgroundColor: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
-                                  title="Pflichtveranstaltung"
-                                >
-                                  <IonIcon icon={shieldCheckmark} style={{ color: '#fff', fontSize: '0.85rem' }} />
-                                </div>
-                                {showBadge && <div className="app-corner-badges__separator" />}
-                              </>
-                            )}
-                            {showBadge && <StatusBadge statusText={statusText} statusColor={statusColor} />}
-                          </div>
-                        )}
+                        {/* Corner Badges (shared) - Team, Pflicht, Status */}
+                        <EventCornerBadges
+                          event={event}
+                          statusText={statusText}
+                          statusColor={statusColor}
+                          showStatus={showBadge}
+                          grayOut={shouldGrayOut}
+                        />
 
                         <div className="app-list-item__row">
                           <div className="app-list-item__main">
@@ -1017,6 +977,9 @@ const TeamerEventsPage: React.FC = () => {
       </IonContent>
     </IonPage>
   );
+
+  // Detail ersetzt die Liste (selectedEvent-State steuert die Ansicht).
+  return selectedEvent ? renderDetail() : renderList();
 };
 
 export default TeamerEventsPage;

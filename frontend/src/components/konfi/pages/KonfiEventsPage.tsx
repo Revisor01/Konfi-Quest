@@ -35,7 +35,15 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import { Event } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
 
-const KonfiEventsPage: React.FC = () => {
+interface KonfiEventsPageProps {
+  // Im iPad-Split-View setzt der Master die Auswahl als State statt zu
+  // navigieren. Fehlt der Callback (iPhone/Portrait), wird wie bisher per
+  // Route auf die Event-Detail-Seite navigiert.
+  onSelectEvent?: (eventId: number) => void;
+  selectedEventId?: number | null;
+}
+
+const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, selectedEventId }) => {
   const { user, setSuccess, setError } = useApp();
   const { pageRef, presentingElement } = useModalPage('konfi-events');
   const router = useIonRouter();
@@ -129,8 +137,13 @@ const KonfiEventsPage: React.FC = () => {
   };
 
   const handleSelectEvent = (event: Event) => {
-    // Navigate to event detail page using React Router
-    router.push(`/konfi/events/${event.id}`);
+    // Split-View (iPad): Auswahl an den Wrapper melden, KEINE Navigation.
+    // Sonst (iPhone/Portrait): wie bisher zur Detail-Route navigieren.
+    if (onSelectEvent) {
+      onSelectEvent(event.id);
+    } else {
+      router.push(`/konfi/events/${event.id}`);
+    }
   };
 
   return (
@@ -169,6 +182,7 @@ const KonfiEventsPage: React.FC = () => {
             activeTab={activeTab}
             onTabChange={setActiveTab}
             onSelectEvent={handleSelectEvent}
+            selectedEventId={selectedEventId}
             onUpdate={refresh}
             presentingElement={presentingElement}
           />

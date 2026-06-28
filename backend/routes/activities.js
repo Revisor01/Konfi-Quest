@@ -388,10 +388,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             );
           }
 
-          // Foto-Referenz in DB entfernen (innerhalb Transaktion)
-          if (request.photo_filename) {
-            await client.query("UPDATE activity_requests SET photo_filename = NULL WHERE id = $1", [requestId]);
-          }
+          // VORUEBERGEHEND DEAKTIVIERT (28.06.2026): Foto-Referenz NICHT entfernen.
+          // Grund: Admins muessen genehmigte Antrags-Fotos weiter sehen koennen,
+          // sonst reichen Konfis dasselbe Foto doppelt ein (festgestellt in der
+          // Praxis). Datensparsamkeit bleibt das Ziel — Loeschung erfolgt spaeter
+          // (z.B. zeitversetzt per Cron), aber NICHT sofort bei Genehmigung.
+          // if (request.photo_filename) {
+          //   await client.query("UPDATE activity_requests SET photo_filename = NULL WHERE id = $1", [requestId]);
+          // }
         }
 
         await client.query('COMMIT');
@@ -413,18 +417,22 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
           console.error('Level-up check failed:', levelErr);
         }
 
-        // Datenschutz: Foto-Datei löschen nach Genehmigung (nicht-kritisch, nach COMMIT)
-        if (request.photo_filename) {
-          const fs = require('fs');
-          const path = require('path');
-          const photoPath = path.join(__dirname, '../uploads/requests', request.photo_filename);
-
-          fs.unlink(photoPath, (err) => {
-            if (err) {
- console.error('Error deleting photo:', err);
-            }
-          });
-        }
+        // VORUEBERGEHEND DEAKTIVIERT (28.06.2026): Foto-Datei NICHT sofort loeschen.
+        // Grund: Admins muessen genehmigte Antrags-Fotos weiter sehen koennen,
+        // sonst reichen Konfis dasselbe Foto doppelt ein. Datensparsamkeit bleibt
+        // das Ziel — physische Loeschung erfolgt spaeter (z.B. zeitversetzt per
+        // Cron), aber NICHT sofort bei Genehmigung.
+        // if (request.photo_filename) {
+        //   const fs = require('fs');
+        //   const path = require('path');
+        //   const photoPath = path.join(__dirname, '../uploads/requests', request.photo_filename);
+        //
+        //   fs.unlink(photoPath, (err) => {
+        //     if (err) {
+        //       console.error('Error deleting photo:', err);
+        //     }
+        //   });
+        // }
       }
 
       // Send push notification to konfi
