@@ -8,3 +8,4 @@ export { default as EventLegendModal } from './EventLegendModal';
 export { default as TrialBanner } from './TrialBanner';
 export { default as SplitViewShell, useIsWideScreen } from './SplitViewShell';
 export { formatEventDate, formatEventTime, formatEventDateLong } from './eventFormatting';
+export { default as EventCornerBadges } from './EventCornerBadges';
