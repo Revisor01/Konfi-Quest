@@ -1,8 +1,12 @@
 const request = require('supertest');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, CHAT_ROOMS, ORGS } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
+const { isEncrypted } = require('../../utils/photoCrypto');
 
 describe('Chat Routes', () => {
   let app;
@@ -380,6 +384,51 @@ describe('Chat Routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.id).toBeDefined();
       expect(res.body.file_name).toBe('bild.png');
+    });
+
+    it('Hochgeladene Datei liegt VERSCHLUESSELT auf der Platte', async () => {
+      const pngBuffer = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+
+      const res = await request(app)
+        .post(`/api/chat/rooms/${CHAT_ROOMS.jahrgang.id}/messages`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .attach('file', pngBuffer, { filename: 'bild.png', contentType: 'image/png' });
+
+      expect(res.status).toBe(200);
+      const storedName = res.body.file_path;
+      expect(storedName).toMatch(/^[a-f0-9]{64}$/);
+
+      // Datei auf der Platte muss den AES-Magic-Header tragen (NICHT Klartext-PNG)
+      const onDisk = fs.readFileSync(path.join(os.tmpdir(), 'konfi-test-uploads', 'chat', storedName));
+      expect(isEncrypted(onDisk)).toBe(true);
+      expect(onDisk.subarray(0, 8).equals(pngBuffer.subarray(0, 8))).toBe(false);
+    });
+
+    it('Abruf via /files entschluesselt zum Originalinhalt (Roundtrip)', async () => {
+      const pngBuffer = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+
+      const up = await request(app)
+        .post(`/api/chat/rooms/${CHAT_ROOMS.jahrgang.id}/messages`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .attach('file', pngBuffer, { filename: 'bild.png', contentType: 'image/png' });
+
+      expect(up.status).toBe(200);
+      const storedName = up.body.file_path;
+
+      const down = await request(app)
+        .get(`/api/chat/files/${storedName}`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .buffer(true)
+        .parse((res, cb) => {
+          const chunks = [];
+          res.on('data', (c) => chunks.push(c));
+          res.on('end', () => cb(null, Buffer.concat(chunks)));
+        });
+
+      expect(down.status).toBe(200);
+      // Entschluesselter Download == Original-Upload
+      expect(Buffer.isBuffer(down.body)).toBe(true);
+      expect(down.body.equals(pngBuffer)).toBe(true);
     });
   });
 });

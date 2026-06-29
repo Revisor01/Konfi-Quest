@@ -6,11 +6,57 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ---
 
-## [Unreleased] — nach iOS-Build 60 (noch in keinem Build)
+## [Unreleased] — iOS-Build 72 (1.4.0)
 
-Diese Änderungen sind committet/deployt (Backend live), aber noch **nicht** in
-einem iOS-Build enthalten. Für eine vollständige 1.3.0-App ist ein neuer Build
-(B61) nötig.
+### 🔒 Sicherheit
+- **Hochgeladene Medien werden jetzt verschlüsselt gespeichert (AES-256-GCM).**
+  Betrifft alle drei Upload-Arten: Antrags-Nachweisfotos, Chat-Medien (Bilder,
+  PDFs, Videos, Audio, Office-Dateien) und Team-Material. Die Dateien liegen
+  nicht mehr im Klartext auf dem Server, sondern werden erst beim Abruf
+  entschlüsselt ausgeliefert. Bestehende Alt-Dateien bleiben lesbar und werden
+  per Migration nachverschlüsselt (abwärtskompatibel, keine Ausfallzeit).
+- **Nachweisfotos sind nach der Bearbeitung nur noch für Admins sichtbar.**
+  Sobald ein Antrag verbucht oder abgelehnt ist, kann der Konfi das Foto nicht
+  mehr abrufen (serverseitig erzwungen, nicht nur in der Oberfläche). Admins
+  sehen das Foto weiterhin in jedem Status.
+
+### 🐛 Fehlerbehebungen
+- **Chat-Detailseiten zeigten im Geräte-Dark-Mode einen schwarzen Header.**
+  Ursache: Die App hat kein eigenes Dark-Theme, Ionic färbte die Kopfzeile aber
+  trotzdem dunkel ein. Kopfzeilen sind jetzt app-weit einheitlich hell mit
+  dunkler Schrift (betraf potenziell alle Detailseiten, im Chat am auffälligsten).
+- **Nachweisfoto „kam zurück", nachdem ein Antrag zurückgesetzt/neu gestellt
+  wurde.** Ursache: Fotos wurden serverseitig nie wirklich entfernt und der
+  Abruf prüfte den Status nicht. Behoben durch das neue Status-Gate und eine
+  saubere Lösch-Logik.
+
+### ✨ Neu / Verbessert
+- **Admins können das Nachweisfoto eines Antrags jetzt manuell löschen**
+  (Button im Antrags-Detail). Datei wird vom Server entfernt, Antrag bleibt
+  erhalten.
+- **Antrags-Fotos werden zuverlässig aufgeräumt:** Beim Zurückziehen eines
+  offenen Antrags durch den Konfi und beim Löschen eines Kontos werden die
+  zugehörigen Fotodateien mitgelöscht (vorher blieben sie als Dateileichen
+  liegen). Wartungsskripte für Nach-Verschlüsselung und Verwaisten-Aufräumung
+  ergänzt.
+- **Symbole in den Antrags- und Event-Detailansichten vereinheitlicht:** In den
+  Antrags-Detail-Dialogen wurden die uneinheitlichen grauen/farbigen Zeilen-
+  Symbole entfernt (Konfi & Admin). Das Schloss-Symbol bei „Anmeldung" ist jetzt
+  wie alle anderen ein gefülltes Symbol. Antrags-Status heißt admin-seitig
+  einheitlich „Verbucht".
+
+### 🛠️ Intern
+- Behoben: Material-Datei-Download lehnte gültige Dateinamen ab (Längen-Prüfung
+  korrigiert).
+- Backend-Tests können jetzt lokal gegen ein Homebrew-PostgreSQL laufen (vorher
+  nur in der CI). Neue Tests für Medien-Verschlüsselung, Foto-Status-Gate und
+  Lösch-Logik (Roundtrip- und Integrationstests).
+
+---
+
+## [Älter] — nach iOS-Build 60
+
+Diese Änderungen sind committet/deployt (Backend live).
 
 ### 🐛 Fehlerbehebungen
 - „Anmeldung möglich"-Push wurde teils doppelt gesendet. Jetzt sendet

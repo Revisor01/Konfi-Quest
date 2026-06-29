@@ -1283,7 +1283,27 @@ ion-card-content.app-card-content {
   padding-right: 120px;
 }
 
-/* === Condense-Toolbar (transparenter Large-Title Header) === */
+/* === Header-/Toolbar-Grundfarbe (App ist durchgehend hell) ===
+   Die App hat KEIN echtes Dark-Theme (alle Dark-Palettes sind in App.tsx
+   auskommentiert). Ohne diese Regel faerbt Ionic die Toolbar im System-Dark-
+   Mode (prefers-color-scheme: dark) trotzdem dunkel ein -> schwarzer Header
+   ueber hellem Inhalt (z.B. Chat-Detailseiten). Wir erzwingen daher app-weit
+   einen hellen Header mit dunklem Text/Icons, passend zum restlichen Design. */
+ion-header ion-toolbar,
+ion-toolbar {
+  --background: #ffffff;
+  --color: #000000;
+}
+ion-toolbar ion-title {
+  color: #000000;
+}
+/* Navigations-Buttons (zurueck, Menue) erben Schwarz. Icons mit eigener
+   Farbklasse (app-icon-color--*) oder inline color bleiben unberuehrt, da
+   spezifischer. */
+ion-toolbar ion-buttons ion-button {
+  --color: #000000;
+}
+/* Condense-Toolbar bleibt transparent (Large-Title scrollt ueber Inhalt) */
 ion-toolbar.app-condense-toolbar {
   --background: transparent;
   --color: black;

@@ -429,8 +429,9 @@ describe('Material Routes', () => {
     });
 
     it('Gueltige Hex-Datei die nicht existiert gibt 404', async () => {
+      // Dateinamen sind 64 Hex-Zeichen (randomBytes(32).toString('hex'))
       const res = await request(app)
-        .get('/api/material/files/a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6')
+        .get('/api/material/files/a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6')
         .set('Authorization', `Bearer ${teamerToken}`);
 
       expect(res.status).toBe(404);
