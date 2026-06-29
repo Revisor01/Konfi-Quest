@@ -1285,14 +1285,33 @@ ion-card-content.app-card-content {
 
 /* === Header-/Toolbar-Grundfarbe (App ist durchgehend hell) ===
    Die App hat KEIN echtes Dark-Theme (alle Dark-Palettes sind in App.tsx
-   auskommentiert). Ohne diese Regel faerbt Ionic die Toolbar im System-Dark-
+   auskommentiert). Ohne diese Regeln faerbt Ionic die Toolbar im System-Dark-
    Mode (prefers-color-scheme: dark) trotzdem dunkel ein -> schwarzer Header
    ueber hellem Inhalt (z.B. Chat-Detailseiten). Wir erzwingen daher app-weit
-   einen hellen Header mit dunklem Text/Icons, passend zum restlichen Design. */
+   einen hellen Header mit dunklem Text/Icons, passend zum restlichen Design.
+
+   WICHTIG (iOS): Die Header nutzen translucent={true}. Auf iOS rendert Ionic
+   dabei einen Blur-Backdrop, dessen Farbe aus --ion-toolbar-background bzw.
+   --ion-background-color abgeleitet wird (nicht aus --background). Im Dark-Mode
+   ist diese Basis dunkel -> schwarzer Blur. Wir setzen daher BEIDE: --background
+   (md/normal) UND die ion-background-Variablen + den ::part(background) (iOS-
+   translucent). */
+:root {
+  --ion-toolbar-background: #ffffff;
+  --ion-toolbar-color: #000000;
+}
+ion-header,
 ion-header ion-toolbar,
 ion-toolbar {
   --background: #ffffff;
   --color: #000000;
+  --ion-toolbar-background: #ffffff;
+  --ion-background-color: #ffffff;
+}
+/* iOS translucent: der Blur-Backdrop wird als Shadow-Part gerendert.
+   Explizit hell + Blur erhalten, damit der Dark-Mode nicht durchscheint. */
+ion-toolbar::part(background) {
+  background: #ffffff;
 }
 ion-toolbar ion-title {
   color: #000000;
