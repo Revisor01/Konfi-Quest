@@ -17,6 +17,8 @@ export default defineConfig({
     env: {
       JWT_SECRET: 'test-secret-key-for-vitest',
       QR_SECRET: 'test-qr-secret-for-vitest',
+      // 64 Hex-Zeichen (32 Byte) — fester Testschluessel fuer Medien-Verschluesselung
+      ACTIVITY_PHOTO_ENCRYPTION_KEY: '0000000000000000000000000000000000000000000000000000000000000000',
       NODE_ENV: 'test',
       TEST_DATABASE_URL: process.env.TEST_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5433/postgres',
     },
