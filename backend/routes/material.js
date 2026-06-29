@@ -565,6 +565,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
 
       const crypto = require('crypto');
       const materialDir = path.join(__dirname, '..', 'uploads', 'material');
+      await fs.promises.mkdir(materialDir, { recursive: true });
 
       const insertedFiles = [];
       for (const file of req.files) {

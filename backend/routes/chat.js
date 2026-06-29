@@ -631,7 +631,9 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         const crypto = require('crypto');
         // Zufaelliger Hex-Dateiname (die Abruf-Route akzeptiert nur [a-f0-9]+)
         const filename = crypto.randomBytes(32).toString('hex');
-        const chatFilePath = path.join(uploadsDir, 'chat', filename);
+        const chatDir = path.join(uploadsDir, 'chat');
+        const chatFilePath = path.join(chatDir, filename);
+        await fs.promises.mkdir(chatDir, { recursive: true });
         const encrypted = encryptBuffer(req.file.buffer);
         await fs.promises.writeFile(chatFilePath, encrypted);
 

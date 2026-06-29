@@ -835,9 +835,11 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
       // Zufaelliger, nicht erratbarer Dateiname (keine Inhaltsableitung)
       const filename = crypto.randomBytes(32).toString('hex');
-      const photoPath = path.join(__dirname, '../uploads/requests', filename);
+      const requestsDir = path.join(__dirname, '../uploads/requests');
+      const photoPath = path.join(requestsDir, filename);
 
-      // Verschluesselt schreiben
+      // Verschluesselt schreiben (Zielverzeichnis bei Bedarf anlegen)
+      await fs.promises.mkdir(requestsDir, { recursive: true });
       const encrypted = encryptBuffer(req.file.buffer);
       await fs.promises.writeFile(photoPath, encrypted);
 
