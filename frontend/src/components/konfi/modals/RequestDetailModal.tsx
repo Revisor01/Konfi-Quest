@@ -20,15 +20,14 @@ import {
   closeOutline,
   calendar,
   documentTextOutline,
-  imageOutline,
-  chatbubbleEllipsesOutline,
+  camera,
   timeOutline,
   home,
   people,
   checkmarkCircle,
   closeCircle,
   hourglass,
-  trophyOutline,
+  trophy,
   trashOutline,
   alertCircleOutline
 } from 'ionicons/icons';
@@ -175,7 +174,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
 
                 {/* Punkte */}
                 <IonItem lines="inset">
-                  <IonIcon icon={trophyOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+                  <IonIcon icon={trophy} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
                   <IonLabel>
                     <p>Punkte</p>
                     <h2>{request.activity_points} {request.activity_points === 1 ? 'Punkt' : 'Punkte'}</h2>
@@ -203,7 +202,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                 {/* Kommentar */}
                 {request.comment && (
                   <IonItem lines="none">
-                    <IonIcon icon={chatbubbleEllipsesOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+                    <IonIcon icon={documentTextOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
                     <IonLabel className="ion-text-wrap">
                       <p>Deine Anmerkung</p>
                       <h2 style={{ whiteSpace: 'pre-wrap' }}>{request.comment}</h2>
@@ -220,7 +219,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
           <IonList inset={true} className="app-modal-section">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--requests">
-                <IonIcon icon={imageOutline} />
+                <IonIcon icon={camera} />
               </div>
               <IonLabel>Nachweis-Foto</IonLabel>
             </IonListHeader>
@@ -257,7 +256,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                     textAlign: 'center'
                   }}>
                     <IonIcon
-                      icon={imageOutline}
+                      icon={camera}
                       style={{ fontSize: '2.5rem', color: '#999', marginBottom: '12px', display: 'block' }}
                     />
                     <p style={{ margin: '0', fontSize: '0.9rem', color: '#666' }}>

@@ -40,7 +40,7 @@ import {
   bagHandle,
   qrCodeOutline,
   cloudOfflineOutline,
-  lockOpenOutline,
+  lockOpen,
   infinite
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -532,7 +532,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
               {/* Anmeldezeitraum — wie Zeitfenster aufgebaut, nicht bei Pflicht-Events */}
               {!eventData.mandatory && (
                 <div className="app-info-row app-info-row--top">
-                  <IonIcon icon={lockOpenOutline} className="app-info-row__icon app-icon-color--events app-event-detail__icon--align-top" />
+                  <IonIcon icon={lockOpen} className="app-info-row__icon app-icon-color--events app-event-detail__icon--align-top" />
                   <div>
                     <div className="app-info-row__label">Anmeldung</div>
                     {eventData.registration_opens_at ? (
