@@ -6,7 +6,7 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ---
 
-## [Unreleased] — iOS-Build 72 (1.4.0)
+## [Unreleased] — iOS-Build 73 (1.4.0)
 
 ### 🔒 Sicherheit
 - **Hochgeladene Medien werden jetzt verschlüsselt gespeichert (AES-256-GCM).**
@@ -18,7 +18,11 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 - **Nachweisfotos sind nach der Bearbeitung nur noch für Admins sichtbar.**
   Sobald ein Antrag verbucht oder abgelehnt ist, kann der Konfi das Foto nicht
   mehr abrufen (serverseitig erzwungen, nicht nur in der Oberfläche). Admins
-  sehen das Foto weiterhin in jedem Status.
+  sehen das Foto weiterhin in jedem Status — auch bei verbuchten und abgelehnten
+  Anträgen.
+  Hinweis: Bei bereits zuvor genehmigten Anträgen wurde das Foto durch die alte
+  Logik beim Verbuchen entfernt; für diese Alt-Anträge ist kein Foto mehr
+  vorhanden. Ab jetzt bleibt es erhalten.
 
 ### 🐛 Fehlerbehebungen
 - **Chat-Detailseiten zeigten im Geräte-Dark-Mode einen schwarzen Header.**
