@@ -59,7 +59,10 @@ export const ChatHeader = React.memo<ChatHeaderProps>(({
   onLeaveChat
 }) => {
   return (
-    <IonHeader translucent={true}>
+    // translucent bewusst AUS: Der Chat-Content ist nicht fullscreen (Footer mit
+    // Eingabefeld), daher wuerde ein translucent-Header die Safe-Area oben falsch
+    // behandeln -> Header sitzt unter Notch/Statusbar. Opaker Header sitzt korrekt.
+    <IonHeader>
       <IonToolbar>
         <IonButtons slot="start">
           <IonButton onClick={onBack}>

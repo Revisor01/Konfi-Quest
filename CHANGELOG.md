@@ -25,13 +25,13 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
   vorhanden. Ab jetzt bleibt es erhalten.
 
 ### 🐛 Fehlerbehebungen
-- **Chat-Detailseiten zeigten im Geräte-Dark-Mode einen schwarzen Header.**
-  Ursache: Die App hat kein eigenes Dark-Theme, Ionic färbte die Kopfzeile aber
-  trotzdem dunkel ein. Auf iOS kam erschwerend der durchscheinende (translucent)
-  Header-Hintergrund hinzu, der seine Farbe aus einer anderen Variable bezieht.
-  Kopfzeilen sind jetzt app-weit einheitlich hell mit dunkler Schrift — auch der
-  iOS-Blur-Hintergrund (betraf potenziell alle Detailseiten, im Chat am
-  auffälligsten).
+- **Chat-Detailseiten: schwarzer Header im Geräte-Dark-Mode + falsche Safe-Area
+  oben.** Ursachen: (1) Der Chat-Header war als „durchscheinend" (translucent)
+  konfiguriert, obwohl der Chat-Inhalt nicht darunter scrollt — dadurch saß die
+  Kopfzeile im Bereich der Statusleiste/Notch falsch. Jetzt opaker Header mit
+  korrektem Safe-Area-Abstand. (2) Die App hat kein eigenes Dark-Theme; Ionic
+  färbte die Kopfzeile im System-Dark-Mode dennoch dunkel. Jetzt ist die
+  Toolbar-Grundfarbe app-weit auf das helle Standard-Grau festgelegt.
 - **Nachweisfoto „kam zurück", nachdem ein Antrag zurückgesetzt/neu gestellt
   wurde.** Ursache: Fotos wurden serverseitig nie wirklich entfernt und der
   Abruf prüfte den Status nicht. Behoben durch das neue Status-Gate und eine

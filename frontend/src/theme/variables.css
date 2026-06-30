@@ -1283,46 +1283,19 @@ ion-card-content.app-card-content {
   padding-right: 120px;
 }
 
-/* === Header-/Toolbar-Grundfarbe (App ist durchgehend hell) ===
-   Die App hat KEIN echtes Dark-Theme (alle Dark-Palettes sind in App.tsx
-   auskommentiert). Ohne diese Regeln faerbt Ionic die Toolbar im System-Dark-
-   Mode (prefers-color-scheme: dark) trotzdem dunkel ein -> schwarzer Header
-   ueber hellem Inhalt (z.B. Chat-Detailseiten). Wir erzwingen daher app-weit
-   einen hellen Header mit dunklem Text/Icons, passend zum restlichen Design.
-
-   WICHTIG (iOS): Die Header nutzen translucent={true}. Auf iOS rendert Ionic
-   dabei einen Blur-Backdrop, dessen Farbe aus --ion-toolbar-background bzw.
-   --ion-background-color abgeleitet wird (nicht aus --background). Im Dark-Mode
-   ist diese Basis dunkel -> schwarzer Blur. Wir setzen daher BEIDE: --background
-   (md/normal) UND die ion-background-Variablen + den ::part(background) (iOS-
-   translucent). */
+/* === Toolbar-Grundfarbe gegen System-Dark-Mode festnageln ===
+   Die App hat KEIN eigenes Dark-Theme (Ionic-Dark-Palettes in App.tsx alle
+   auskommentiert). Im System-Dark-Mode setzt Ionic --ion-toolbar-background aber
+   trotzdem dunkel -> dunkler/schwarzer Header. Wir nageln NUR diese eine
+   Variable auf die hellen iOS-Standardwerte (#f7f7f7) fest. Bewusst MINIMAL:
+   kein --background-Override, kein ::part, damit Safe-Area + Standardverhalten
+   der Toolbar unangetastet bleiben. */
 :root {
-  --ion-toolbar-background: #ffffff;
+  --ion-toolbar-background: #f7f7f7;
   --ion-toolbar-color: #000000;
 }
-ion-header,
-ion-header ion-toolbar,
-ion-toolbar {
-  --background: #ffffff;
-  --color: #000000;
-  --ion-toolbar-background: #ffffff;
-  --ion-background-color: #ffffff;
-}
-/* iOS translucent: der Blur-Backdrop wird als Shadow-Part gerendert.
-   Explizit hell + Blur erhalten, damit der Dark-Mode nicht durchscheint. */
-ion-toolbar::part(background) {
-  background: #ffffff;
-}
-ion-toolbar ion-title {
-  color: #000000;
-}
-/* Navigations-Buttons (zurueck, Menue) erben Schwarz. Icons mit eigener
-   Farbklasse (app-icon-color--*) oder inline color bleiben unberuehrt, da
-   spezifischer. */
-ion-toolbar ion-buttons ion-button {
-  --color: #000000;
-}
-/* Condense-Toolbar bleibt transparent (Large-Title scrollt ueber Inhalt) */
+
+/* === Condense-Toolbar (transparenter Large-Title Header) === */
 ion-toolbar.app-condense-toolbar {
   --background: transparent;
   --color: black;
