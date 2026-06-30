@@ -6,7 +6,11 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ---
 
-## [Unreleased] — iOS-Build 73 (1.4.0)
+## 1.4.0 (Juni 2026) — Production
+
+App-Store-Release. iOS-Builds 64–74, Android versionCode 66. Schwerpunkte:
+Medien-Verschlüsselung, Foto-Sichtbarkeit/-Aufräumung, Chat-Darstellungsfixes
+und Android-Login-Härtung.
 
 ### 🔒 Sicherheit
 - **Hochgeladene Medien werden jetzt verschlüsselt gespeichert (AES-256-GCM).**
@@ -36,6 +40,11 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
   wurde.** Ursache: Fotos wurden serverseitig nie wirklich entfernt und der
   Abruf prüfte den Status nicht. Behoben durch das neue Status-Gate und eine
   saubere Lösch-Logik.
+- **Android: Login schlug in seltenen Fällen mit „Keine Verbindung" fehl,
+  obwohl Netz vorhanden war.** Manche Umgebungen (Emulatoren, Review-Systeme)
+  melden den Netzwerkstatus als „none/unknown", obwohl Anfragen funktionieren.
+  Die App bleibt in diesen Fällen jetzt optimistisch online und versucht den
+  Login, statt ihn vorab zu blockieren.
 
 ### ✨ Neu / Verbessert
 - **Admins können das Nachweisfoto eines Antrags jetzt manuell löschen**
