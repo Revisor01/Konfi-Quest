@@ -9,6 +9,14 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 ## [Unreleased]
 
 ### ⚡ Performance
+- **60-Sekunden-Polling des Konfi-Badge-Zaehlers entfernt.** Die Tab-Leiste
+  fragte fuer jeden Konfi 1×/Minute `/konfi/badges` ab, nur um den „neue Badges"-
+  Punkt zu aktualisieren. Der Server sendet jetzt beim tatsaechlichen Vergeben
+  eines Badges ein LiveUpdate an den Konfi (`checkAndAwardBadges` →
+  `insertBadgesAndNotify` → `sendToKonfi('badges','earned')`), das an allen
+  Punktevergabe-Stellen (Aktivitaet, Bonuspunkte, Event-Anwesenheit) ausgeloest
+  wird. Die App laedt den Zaehler nur noch initial + auf dieses Event
+  (`frontend/src/components/layout/MainTabs.tsx`, `backend/routes/badges.js`).
 - **30-Sekunden-Polling der Admin-Badges entfernt.** Der `BadgeContext` fragte
   fuer Admins alle 30s `/chat/rooms` (+ `/admin/activities/requests` + `/events`)
   ab — eine offene Admin-App erzeugte so ~120 unnoetige Requests/Stunde und war

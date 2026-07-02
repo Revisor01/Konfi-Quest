@@ -621,6 +621,11 @@ async function insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds,
     for (const badge of earnedBadgeDetails) {
       await PushService.sendBadgeEarnedToKonfi(db, userId, badge.name, badge.icon, badge.description);
     }
+
+    // Live-Update an den Konfi selbst: Badge-Zaehler sofort aktualisieren, ohne
+    // dass die App dafuer alle 60s /konfi/badges pollen muss. earnedBadgeDetails
+    // ist hier immer nicht-leer (Aufrufer prueft das). Fire-and-forget.
+    liveUpdate.sendToKonfi(userId, 'badges', 'earned', { count: earnedBadgeDetails.length });
   } catch (notifErr) {
     console.error('Error sending badge notifications:', notifErr);
   }
