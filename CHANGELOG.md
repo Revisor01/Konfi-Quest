@@ -11,8 +11,17 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 ### 🎨 Landing-Page (konfi-quest.de)
 - **USP „Von einem Pastor für die Konfi-Arbeit entwickelt" prominent gemacht.**
   Hero-Eyebrow von „Moderne Konfi-Arbeit, die ankommt" auf diesen USP geändert
-  und eine neue Story-Sektion („Aus der Praxis, nicht vom Reißbrett") mit
+  und eine neue Story-Sektion („Aus der eigenen Konfi-Arbeit entstanden") mit
   persönlicher Gründungsgeschichte und Signatur ergänzt (`frontend/public/landing.html`).
+
+### 🧪 Tests
+- **networkMonitor-Tests an das neue Verhalten angepasst.** Der Android-Fix
+  (connectionType `none`/`unknown` = optimistisch online, damit der Login nicht
+  faelschlich blockt) hatte die zugehoerigen Tests nicht mitgezogen — dadurch
+  war das CI-Deploy-Gate seit dem 30.06. rot und blockierte alle Deploys.
+  Test „none → offline" auf das gewollte „none → online" korrigiert und die
+  Web-Fallback-Isolation eines Subscribe-Tests robust gemacht (explizites
+  `isNativePlatform=false` statt Verlass auf die Test-Reihenfolge).
 
 ### 🐛 Fehlerbehebungen
 - **Genehmigen/Ablehnen-Buttons (Admin → Antrag) liefen auf schmalen Android-

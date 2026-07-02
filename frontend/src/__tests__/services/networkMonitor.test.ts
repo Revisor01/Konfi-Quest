@@ -81,7 +81,13 @@ describe('networkMonitor', () => {
     (Capacitor.isNativePlatform as any).mockReturnValue(false);
   });
 
-  it('connectionType "none" bei connected=false wird als offline gewertet', async () => {
+  it('connectionType "none" wird als online gewertet (optimistischer Login-Schutz)', async () => {
+    // Bewusstes Verhalten (evaluateOnline): Bei connectionType 'none' ODER
+    // 'unknown' optimistisch online bleiben. Manche Plattformen (Android-
+    // Emulator, Google-Play-Review-Umgebung) melden connected=false, obwohl
+    // Netz da ist — ein faelschliches Offline blockt sonst den Login vor dem
+    // ersten Request und fuehrte zu Play-Rejections. Ein echter Fehler faellt
+    // ohnehin in den Request-Fehler-Handler.
     const { Capacitor } = await import('@capacitor/core');
     (Capacitor.isNativePlatform as any).mockReturnValue(true);
     mockGetStatus.mockResolvedValueOnce({ connected: false, connectionType: 'none' });
@@ -89,11 +95,16 @@ describe('networkMonitor', () => {
     const { networkMonitor } = await import('../../services/networkMonitor');
     await networkMonitor.init();
 
-    expect(networkMonitor.isOnline).toBe(false);
+    expect(networkMonitor.isOnline).toBe(true);
     (Capacitor.isNativePlatform as any).mockReturnValue(false);
   });
 
   it('subscribe liefert Status-Updates nach init und Event', async () => {
+    // Web-Fallback-Pfad explizit erzwingen (nicht auf Reset-Reihenfolge
+    // vorheriger Tests verlassen) -> registriert die window online/offline-Handler.
+    const { Capacitor } = await import('@capacitor/core');
+    (Capacitor.isNativePlatform as any).mockReturnValue(false);
+
     vi.useFakeTimers();
     const { networkMonitor } = await import('../../services/networkMonitor');
     await networkMonitor.init();
