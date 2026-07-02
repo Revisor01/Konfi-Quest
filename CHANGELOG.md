@@ -8,6 +8,8 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ## [Unreleased]
 
+## [1.4.1] – 2026-07-02 (iOS Build 75, TestFlight)
+
 ### 🎨 Landing-Page (konfi-quest.de)
 - **USP „Von einem Pastor für die Konfi-Arbeit entwickelt" prominent gemacht.**
   Hero-Eyebrow von „Moderne Konfi-Arbeit, die ankommt" auf diesen USP geändert
