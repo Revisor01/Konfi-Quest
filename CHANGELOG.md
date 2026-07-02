@@ -8,6 +8,16 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ## [Unreleased]
 
+### ⚡ Performance
+- **30-Sekunden-Polling der Admin-Badges entfernt.** Der `BadgeContext` fragte
+  fuer Admins alle 30s `/chat/rooms` (+ `/admin/activities/requests` + `/events`)
+  ab — eine offene Admin-App erzeugte so ~120 unnoetige Requests/Stunde und war
+  mit Abstand der groesste Traffic-Verursacher (`/api/chat/rooms` = ~38% aller
+  Requests). Das Polling war redundant: Chat-Unread laeuft ueber den WebSocket
+  (`newMessage`), Antraege/Events ueber LiveUpdate (`requests`/`events`), und nach
+  Verbindungsabriss/Push feuern `sync:reconnect`/`push:received` einen Refresh.
+  Nur noch der initiale Load bleibt (`frontend/src/contexts/BadgeContext.tsx`).
+
 ### 🐛 Fehlerbehebungen
 - **Benutzer mit Konfi-History liessen sich nicht loeschen ("Datenbankfehler").**
   Wurde ein User geloescht, der noch Antraege, Badges, Aktivitaeten oder

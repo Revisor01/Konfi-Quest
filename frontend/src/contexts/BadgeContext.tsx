@@ -185,19 +185,16 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [user, refreshAllCounts]);
 
-  // Initialer Load + Polling für Admin-Counts (30s)
+  // Initialer Load der Counts. KEIN Dauer-Polling mehr:
+  // - Chat-Unread aktualisiert der WebSocket ('newMessage')
+  // - Anträge/Events aktualisiert LiveUpdate ('requests'/'events', s. useLiveRefresh oben)
+  // - Nach Verbindungsabriss/Push feuert sync:reconnect bzw. push:received einen Refresh
+  // Das frühere 30s-Intervall war durch diese Live-Kanäle redundant und erzeugte den
+  // Großteil des /chat/rooms-Traffics (Admin-App offen = 120 Requests/h ohne Nutzen).
   useEffect(() => {
     if (!user) return;
-
-    // Initialer Load
     refreshAllCounts();
-
-    // Polling nur für Admin (requests + events ändern sich nicht per WebSocket)
-    if (isAdmin) {
-      const interval = setInterval(refreshAllCounts, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [user, isAdmin, refreshAllCounts]);
+  }, [user, refreshAllCounts]);
 
   // Reset bei Logout
   useEffect(() => {
