@@ -6,6 +6,31 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ---
 
+## [Unreleased]
+
+### 🎨 Landing-Page (konfi-quest.de)
+- **USP „Von einem Pastor für die Konfi-Arbeit entwickelt" prominent gemacht.**
+  Hero-Eyebrow von „Moderne Konfi-Arbeit, die ankommt" auf diesen USP geändert
+  und eine neue Story-Sektion („Aus der Praxis, nicht vom Reißbrett") mit
+  persönlicher Gründungsgeschichte und Signatur ergänzt (`frontend/public/landing.html`).
+
+### 🐛 Fehlerbehebungen
+- **Genehmigen/Ablehnen-Buttons (Admin → Antrag) liefen auf schmalen Android-
+  Geräten rechts aus dem Bild.** Die beiden nebeneinanderstehenden Buttons hatten
+  gleichzeitig `expand="block"` und `flex: 1` gesetzt, was sich mit dem
+  Flex-Layout biss; ohne `min-width: 0` konnten sie nicht unter ihre Inhaltsbreite
+  schrumpfen. Jetzt teilen sie sich die Breite sauber 50/50 und passen auch auf
+  kleinen Displays ins Bild.
+
+### 🎨 Darstellung
+- **Konfi-Event-Detail: Anmelde- und Wartelisten-Buttons wieder als gefüllte
+  Vollfarb-Buttons.** Die in 1.4.0 testweise auf `fill="outline"` umgestellten
+  Buttons („Anmelden", „Wieder anmelden", „Warteliste offen") sind wieder
+  vollflächig eingefärbt (grün bzw. gelb), da die dezente Outline-Variante optisch
+  nicht überzeugte.
+
+---
+
 ## 1.4.0 (Juni 2026) — Production
 
 App-Store-Release. iOS-Builds 64–74, Android versionCode 66. Schwerpunkte:
