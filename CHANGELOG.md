@@ -8,6 +8,21 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ## [Unreleased]
 
+### 🐛 Fehlerbehebungen
+- **Benutzer mit Konfi-History liessen sich nicht loeschen ("Datenbankfehler").**
+  Wurde ein User geloescht, der noch Antraege, Badges, Aktivitaeten oder
+  Bonuspunkte hatte (typisch: ein zum Teamer befoerderter Ex-Konfi), brach der
+  Delete mit HTTP 500 ab. Ursache: Die vier History-Tabellen (`activity_requests`,
+  `bonus_points`, `user_activities`, `user_badges`) tragen aus der SQLite-Altlast
+  je einen zweiten Foreign-Key mit `NO ACTION` neben dem `CASCADE`-FK — beim
+  User-Delete gewann `NO ACTION` und blockierte. Der Delete-Handler raeumt diese
+  History jetzt explizit vor dem User-Delete ab (`backend/routes/users.js`).
+  Nachweisfoto-Cleanup vorgezogen, damit keine Dateileichen zurueckbleiben.
+  Das gewuenschte Verhalten bleibt erhalten: Beim **Jahrgang**-Loeschen behalten
+  befoerderte Ex-Konfis ihre History (nur die Jahrgang-Bindung faellt weg); erst
+  beim Loeschen des **Users selbst** geht dessen History mit weg. Regressionstest
+  ergaenzt (`backend/tests/routes/users.test.js`).
+
 ## [1.4.1] – 2026-07-02 (iOS Build 75, TestFlight)
 
 ### 🎨 Landing-Page (konfi-quest.de)

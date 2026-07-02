@@ -219,6 +219,40 @@ describe('Users Routes', () => {
       expect(res.status).toBe(400);
       expect(res.body.error).toContain('eigenes Konto');
     });
+
+    it('User MIT Konfi-History (Badge/Aktivitaet/Bonus/Antrag) loeschen -> 200, History mit weg', async () => {
+      // Regression: Diese 4 Tabellen tragen aus der SQLite-Altlast einen zweiten
+      // NO-ACTION-FK auf users(id). Ohne explizites Aufraeumen im Delete-Handler
+      // blockierte der FK das Loeschen mit 500 "Datenbankfehler" (z.B. Ex-Konfi,
+      // der zum Teamer befoerdert wurde und noch Antraege/Badges hatte).
+      const konfiId = USERS.konfi1.id;
+      await db.query(
+        "INSERT INTO user_badges (user_id, badge_id, awarded_date, organization_id) VALUES ($1, 1, CURRENT_DATE, 1)",
+        [konfiId]
+      );
+      await db.query(
+        "INSERT INTO user_activities (user_id, activity_id, admin_id, organization_id) VALUES ($1, 1, $2, 1)",
+        [konfiId, USERS.admin1.id]
+      );
+      await db.query(
+        "INSERT INTO activity_requests (user_id, activity_id, organization_id) VALUES ($1, 1, 1)",
+        [konfiId]
+      );
+      // bonus_points fuer Konfis legt bereits der Seed an.
+
+      const res = await request(app)
+        .delete(`/api/admin/users/${konfiId}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+
+      // History des geloeschten Users muss ebenfalls entfernt sein.
+      for (const tbl of ['user_badges', 'user_activities', 'activity_requests', 'bonus_points']) {
+        const col = tbl === 'bonus_points' ? 'konfi_id' : 'user_id';
+        const { rows } = await db.query(`SELECT COUNT(*)::int AS c FROM ${tbl} WHERE ${col} = $1`, [konfiId]);
+        expect(rows[0].c).toBe(0);
+      }
+    });
   });
 
   // ================================================================

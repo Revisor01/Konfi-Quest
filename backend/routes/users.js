@@ -371,9 +371,9 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
       await client.query("DELETE FROM push_tokens WHERE user_id = $1", [id]);
       await client.query("DELETE FROM password_resets WHERE user_id = $1", [id]);
 
-      // Nachweisfotos der Antraege dieses Users vor dem Delete einsammeln,
-      // damit die Dateien nach erfolgreichem COMMIT entfernt werden koennen
-      // (greift, falls ein Konfi ueber die Benutzerverwaltung geloescht wird).
+      // Nachweisfotos der Antraege dieses Users einsammeln, BEVOR activity_requests
+      // im Purge unten geloescht wird — sonst blieben die Dateien als Leichen liegen.
+      // Entfernt werden sie erst nach erfolgreichem COMMIT.
       let photoFilenames = [];
       try {
         const { rows } = await client.query(
@@ -384,6 +384,33 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
       } catch (photoErr) {
         // activity_requests evtl. nicht vorhanden (Schema-Varianz) — nicht kippen
         if (photoErr.code !== '42703' && photoErr.code !== '42P01') throw photoErr;
+      }
+
+      // Konfi-History DIESES Users mitloeschen. Wichtig: Diese Tabellen tragen
+      // (aus der SQLite-Altlast) einen zweiten NO-ACTION-FK auf users(id) neben
+      // dem CASCADE-FK — NO ACTION gewinnt und wuerde den User-Delete sonst mit
+      // "violates foreign key constraint" (500) blocken. Der NO-ACTION-Schutz ist
+      // gewollt fuer den JAHRGANG-Delete (dort bleibt der User bestehen und behaelt
+      // seine History). Wird der USER selbst geloescht, gehoert seine History mit weg.
+      // Fehlertolerant (Schema-Varianz je Migrationsstand), analog zu nullifyRefs.
+      const purgeHistory = [
+        "DELETE FROM activity_requests WHERE user_id = $1",
+        "DELETE FROM bonus_points WHERE konfi_id = $1",
+        "DELETE FROM user_activities WHERE user_id = $1",
+        "DELETE FROM user_badges WHERE user_id = $1",
+        "DELETE FROM event_points WHERE konfi_id = $1",
+        "DELETE FROM event_bookings WHERE user_id = $1",
+        "DELETE FROM konfi_profiles WHERE user_id = $1",
+      ];
+      for (const sql of purgeHistory) {
+        await client.query('SAVEPOINT hist_purge');
+        try {
+          await client.query(sql, [id]);
+          await client.query('RELEASE SAVEPOINT hist_purge');
+        } catch (histErr) {
+          await client.query('ROLLBACK TO SAVEPOINT hist_purge');
+          if (histErr.code !== '42703' && histErr.code !== '42P01') throw histErr;
+        }
       }
 
       // Delete user
