@@ -359,61 +359,28 @@ describe('Events Routes', () => {
   });
 
   // ================================================================
-  // PUT /:id/participants/confirm-all
+  // PUT /:id/participants/attendance-all (Bulk-Verbuchung der Angemeldeten)
+  // Ersetzt die frueheren Warteliste-Bulk-Endpoints (confirm-all/fill-capacity):
+  // "Alle bestaetigen" verbucht fachlich die ANGEMELDETEN als anwesend,
+  // die Warteliste bleibt unberuehrt (Betreiber-Entscheid 03.07.2026).
   // ================================================================
-  describe('PUT /api/events/:id/participants/confirm-all', () => {
-    it('Admin bestaetigt alle Wartelisten-Teilnehmer -> 200 (Push-Loop kippt nicht)', async () => {
+  describe('PUT /api/events/:id/participants/attendance-all', () => {
+    // Event mit Kapazitaet 1 + Punkten: konfi1 angemeldet (confirmed),
+    // konfi2 auf der Warteliste.
+    async function setupEventWithWaitlist() {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 14);
-
       const createRes = await request(app)
         .post('/api/events')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          name: 'Confirm-All-Event',
+          name: 'Attendance-All-Event',
           event_date: futureDate.toISOString(),
           max_participants: 1,
           waitlist_enabled: true,
           max_waitlist_size: 5,
-        });
-      const eventId = createRes.body.id;
-
-      await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${konfiToken}`);
-      await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${konfi2Token}`);
-
-      const res = await request(app)
-        .put(`/api/events/${eventId}/participants/confirm-all`)
-        .set('Authorization', `Bearer ${adminToken}`);
-
-      expect(res.status).toBe(200);
-      expect(res.body.confirmed).toBeGreaterThanOrEqual(1);
-
-      const { rows } = await db.query(
-        "SELECT COUNT(*)::int AS cnt FROM event_bookings WHERE event_id = $1 AND status = 'waitlist'",
-        [eventId]
-      );
-      expect(rows[0].cnt).toBe(0);
-    });
-  });
-
-  // ================================================================
-  // PUT /:id/participants/fill-capacity (Warteliste bis Kapazitaet auffuellen)
-  // ================================================================
-  describe('PUT /api/events/:id/participants/fill-capacity', () => {
-    // Hilfsfunktion: Event mit Kapazitaet 1 anlegen, konfi1 bestaetigt (voll),
-    // konfi2 auf der Warteliste.
-    async function setupFullEvent(maxParticipants) {
-      const futureDate = new Date();
-      futureDate.setDate(futureDate.getDate() + 14);
-      const createRes = await request(app)
-        .post('/api/events')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          name: 'Fill-Capacity-Event',
-          event_date: futureDate.toISOString(),
-          max_participants: maxParticipants,
-          waitlist_enabled: true,
-          max_waitlist_size: 5,
+          points: 2,
+          point_type: 'gemeinde',
         });
       const eventId = createRes.body.id;
       await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${konfiToken}`);
@@ -421,48 +388,65 @@ describe('Events Routes', () => {
       return eventId;
     }
 
-    it('Kapazitaet voll -> niemand rueckt nach (im Gegensatz zu confirm-all)', async () => {
-      const eventId = await setupFullEvent(1); // konfi1 confirmed, konfi2 waitlist
+    it('verbucht Angemeldete als anwesend + vergibt Punkte, Warteliste bleibt unberuehrt', async () => {
+      const eventId = await setupEventWithWaitlist();
 
       const res = await request(app)
-        .put(`/api/events/${eventId}/participants/fill-capacity`)
+        .put(`/api/events/${eventId}/participants/attendance-all`)
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.confirmed).toBe(0);
+      expect(res.body.confirmed).toBe(1);       // nur konfi1 (angemeldet)
+      expect(res.body.points_awarded).toBe(1);
 
       const { rows } = await db.query(
-        "SELECT COUNT(*)::int AS cnt FROM event_bookings WHERE event_id = $1 AND status = 'waitlist'",
+        "SELECT status, attendance_status FROM event_bookings WHERE event_id = $1 ORDER BY created_at ASC",
         [eventId]
       );
-      expect(rows[0].cnt).toBe(1); // konfi2 bleibt auf der Warteliste
+      expect(rows[0].status).toBe('confirmed');
+      expect(rows[0].attendance_status).toBe('present');
+      // Wartelisten-Person: Status UND Anwesenheit unberuehrt
+      expect(rows[1].status).toBe('waitlist');
+      expect(rows[1].attendance_status).toBeNull();
+
+      // Punkte in event_points + konfi_profiles angekommen
+      const { rows: pts } = await db.query(
+        "SELECT points FROM event_points WHERE event_id = $1 AND konfi_id = $2",
+        [eventId, USERS.konfi1.id]
+      );
+      expect(pts.length).toBe(1);
+      expect(pts[0].points).toBe(2);
     });
 
-    it('Freier Platz -> genau bis Kapazitaet aufgefuellt (FIFO)', async () => {
-      const eventId = await setupFullEvent(1);
-      // Kapazitaet auf 2 erhoehen — direkt in der DB, damit nicht die
-      // PUT-Event-Nachrueck-Logik schon vorher befoerdert.
-      await db.query('UPDATE events SET max_participants = 2 WHERE id = $1', [eventId]);
+    it('bereits Verbuchte (absent) werden NICHT angefasst', async () => {
+      const eventId = await setupEventWithWaitlist();
+      // konfi1 vorab als abwesend verbuchen
+      const { rows: [booking] } = await db.query(
+        "SELECT id FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'",
+        [eventId]
+      );
+      await request(app)
+        .put(`/api/events/${eventId}/participants/${booking.id}/attendance`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ attendance_status: 'absent' });
 
       const res = await request(app)
-        .put(`/api/events/${eventId}/participants/fill-capacity`)
+        .put(`/api/events/${eventId}/participants/attendance-all`)
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.confirmed).toBe(1);
+      expect(res.body.confirmed).toBe(0); // niemand unverbucht -> nichts passiert
 
       const { rows } = await db.query(
-        "SELECT status, COUNT(*)::int AS cnt FROM event_bookings WHERE event_id = $1 GROUP BY status",
-        [eventId]
+        "SELECT attendance_status FROM event_bookings WHERE id = $1",
+        [booking.id]
       );
-      const byStatus = Object.fromEntries(rows.map(r => [r.status, r.cnt]));
-      expect(byStatus.confirmed).toBe(2);
-      expect(byStatus.waitlist).toBeUndefined();
+      expect(rows[0].attendance_status).toBe('absent');
     });
 
-    it('Nicht-existentes Event -> 404 (Early-Return crasht nicht, Double-Release-Fix)', async () => {
+    it('Nicht-existentes Event -> 404 (Early-Return ohne Double-Release)', async () => {
       const res = await request(app)
-        .put('/api/events/999999/participants/fill-capacity')
+        .put('/api/events/999999/participants/attendance-all')
         .set('Authorization', `Bearer ${adminToken}`);
       expect(res.status).toBe(404);
     });

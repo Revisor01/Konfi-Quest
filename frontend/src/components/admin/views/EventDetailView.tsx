@@ -350,56 +350,35 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     }
   };
 
-  // Wartelisten-Aktionen: "Freie Plaetze auffuellen" (FIFO bis Kapazitaet,
-  // Timeslot-aware im Backend) ODER "Alle bestaetigen" (bewusste Ueberbuchung).
-  // Ein Dialog mit beiden Optionen inkl. konkreter Zahlen — der alte
-  // Nur-alle-bestaetigen-Button war als Holzhammer unpraktisch.
-  const handleWaitlistActions = async (waitlistCount: number, confirmedCount: number) => {
+  // "Alle bestätigen" = Bulk-VERBUCHUNG: alle angemeldeten (bestätigten) Konfis
+  // ohne Anwesenheits-Status werden als anwesend verbucht (inkl. Punkte/Badges,
+  // identisch zum Einzel-Verbuchen). Die Warteliste bleibt bewusst unberührt —
+  // Nachrücken läuft automatisch (FIFO bei Absagen) bzw. einzeln per Swipe.
+  const handleConfirmAllAttendance = async (unprocessedCount: number, waitlistCount: number) => {
     if (!isOnline) return;
-
-    const runAction = async (endpoint: string, fallbackMsg: string) => {
-      try {
-        const res = await api.put(`/events/${eventId}/participants/${endpoint}`);
-        await loadEventData();
-        triggerRefresh('events');
-        setSuccess(res.data?.message || fallbackMsg);
-      } catch (error) {
-        console.error(`Waitlist action (${endpoint}) error:`, error);
-        setError('Fehler beim Bestätigen der Warteliste');
-      }
-    };
-
-    // Freie Plaetze clientseitig nur als VORSCHAU (Server rechnet autoritativ,
-    // bei Timeslot-Events pro Slot). max_participants 0/null = unbegrenzt.
-    const maxP = Number(eventData?.max_participants) || 0;
-    const hasTimeslots = !!eventData?.has_timeslots;
-    const free = !hasTimeslots && maxP > 0 ? Math.max(0, maxP - confirmedCount) : null;
-    const fillPreview = free !== null ? Math.min(free, waitlistCount) : null;
-    const overbook = free !== null ? Math.max(0, waitlistCount - free) : 0;
-
-    const buttons: any[] = [{ text: 'Abbrechen', role: 'cancel' }];
-    // Auffuellen nur anbieten, wenn (vermutlich) Plaetze frei sind oder wir es
-    // nicht wissen (Timeslots/unbegrenzt) — bei sicher 0 freien Plaetzen waere
-    // der Button ein No-op.
-    if (fillPreview === null || fillPreview > 0) {
-      buttons.push({
-        text: fillPreview !== null ? `Freie Plätze auffüllen (${fillPreview})` : 'Freie Plätze auffüllen',
-        handler: () => runAction('fill-capacity', 'Warteliste aufgefüllt')
-      });
-    }
-    buttons.push({
-      text: overbook > 0 ? `Alle bestätigen (überbucht um ${overbook})` : 'Alle bestätigen',
-      role: overbook > 0 ? 'destructive' : undefined,
-      handler: () => runAction('confirm-all', 'Warteliste bestätigt')
-    });
-
-    const freeText = free !== null
-      ? `${free} freie(r) Platz/Plätze.`
-      : (hasTimeslots ? 'Freie Plätze werden pro Zeitfenster berechnet.' : 'Kapazität unbegrenzt.');
+    const waitlistHint = waitlistCount > 0
+      ? ` Die Warteliste (${waitlistCount}) bleibt unberührt.`
+      : '';
     presentAlert({
-      header: 'Warteliste bestätigen',
-      message: `${waitlistCount} Person(en) auf der Warteliste. ${freeText}`,
-      buttons
+      header: 'Alle bestätigen?',
+      message: `${unprocessedCount} angemeldete Teilnehmer:in(nen) werden als anwesend verbucht (inkl. Punktevergabe). Bereits Verbuchte bleiben unverändert.${waitlistHint}`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Alle bestätigen',
+          handler: async () => {
+            try {
+              const res = await api.put(`/events/${eventId}/participants/attendance-all`);
+              await loadEventData();
+              triggerRefresh('events');
+              setSuccess(res.data?.message || 'Teilnahmen verbucht');
+            } catch (error) {
+              console.error('Attendance-all error:', error);
+              setError('Fehler beim Verbuchen der Teilnahmen');
+            }
+          }
+        }
+      ]
     });
   };
 
@@ -747,13 +726,19 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                   <IonListHeader>
                     <div className="app-section-icon app-section-icon--events"><IonIcon icon={people} /></div>
                     <IonLabel>{konfiHeaderText}</IonLabel>
-                    {waitlistParticipants.length > 0 && (
-                      <IonButton fill="clear" size="small" disabled={!isOnline}
-                        onClick={() => handleWaitlistActions(waitlistParticipants.length, confirmedParticipants.length)}>
-                        <IonIcon icon={checkmark} slot="start" />
-                        Warteliste ({waitlistParticipants.length})
-                      </IonButton>
-                    )}
+                    {(() => {
+                      // Button nur, wenn es unverbuchte Angemeldete gibt (Konfis mit
+                      // Status bestätigt, aber ohne Anwesenheits-Status).
+                      const unprocessed = confirmedParticipants.filter(p => !p.attendance_status).length;
+                      if (unprocessed === 0) return null;
+                      return (
+                        <IonButton fill="clear" size="small" disabled={!isOnline}
+                          onClick={() => handleConfirmAllAttendance(unprocessed, waitlistParticipants.length)}>
+                          <IonIcon icon={checkmark} slot="start" />
+                          Alle bestätigen ({unprocessed})
+                        </IonButton>
+                      );
+                    })()}
                   </IonListHeader>
                   <IonCard className="app-card">
                     <IonCardContent style={{ padding: displayParticipants.length === 0 ? '16px' : '12px' }}>

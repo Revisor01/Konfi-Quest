@@ -79,17 +79,18 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
   Nur noch der initiale Load bleibt (`frontend/src/contexts/BadgeContext.tsx`).
 
 ### ✨ Verbesserungen
-- **Warteliste: „Freie Plätze auffüllen" statt nur Alles-oder-nichts.** Der
-  bisherige „Alle bestätigen"-Button bestätigte die komplette Warteliste und
-  übersteuerte dabei stillschweigend die Kapazität. Der Button heißt jetzt
-  „Warteliste (N)" und öffnet einen Dialog mit beiden Optionen samt konkreter
-  Zahlen: „Freie Plätze auffüllen (N)" bestätigt FIFO nur so viele Wartende wie
-  Plätze frei sind (bei Timeslot-Events pro Zeitfenster, neuer Endpoint
-  `PUT /events/:id/participants/fill-capacity`), „Alle bestätigen (überbucht
-  um X)" bleibt als bewusste Überbuchung erhalten. Nachgerückte bekommen wie
-  beim automatischen Nachrücken Push + Live-Update
+- **„Alle bestätigen" verbucht jetzt die Angemeldeten — nicht die Warteliste.**
+  Der Button beförderte bisher die komplette Warteliste (und übersteuerte dabei
+  die Kapazität) — fachlich gemeint war aber immer die Bulk-Verbuchung: alle
+  angemeldeten Konfis ohne Anwesenheits-Status auf einen Schlag als anwesend
+  verbuchen, inklusive Punktevergabe und Badge-Prüfung wie beim Einzel-Verbuchen
+  (neuer Endpoint `PUT /events/:id/participants/attendance-all`). Bereits
+  Verbuchte (anwesend/abwesend) und die Warteliste bleiben unberührt — Nachrücken
+  läuft weiterhin automatisch (FIFO bei Absagen) bzw. einzeln. Die beiden
+  Warteliste-Bulk-Endpoints (confirm-all, fill-capacity) wurden entfernt.
+  Verbuchte bekommen Push + Live-Update (Dashboard bei Punkten)
   (`backend/routes/events.js`, `frontend/.../EventDetailView.tsx`).
-  Nebenbei: Double-Release des DB-Clients im confirm-all-Handler behoben
+  Nebenbei: Double-Release des DB-Clients im alten confirm-all-Handler behoben
   (Early-Returns releasten zusätzlich zum finally — Altlast, warf bei 404/403).
 
 ### 🗄️ Datenbank-Härtung (Audit Achse 1, Migrationen 110-116)
