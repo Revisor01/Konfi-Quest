@@ -2414,7 +2414,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       const { rows: [newChat] } = await client.query("INSERT INTO chat_rooms (name, type, event_id, created_by, organization_id) VALUES ($1, 'group', $2, $3, $4) RETURNING id", [chatName, eventId, req.user.id, req.user.organization_id]);
       const chatRoomId = newChat.id;
 
-      await client.query("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, 'admin')", [chatRoomId, req.user.id]);
+      // user_type des Erstellers aus dem Token — hartes 'admin' machte den Raum
+      // fuer Teamer:innen (duerfen Event-Chats erstellen) unsichtbar.
+      await client.query("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, $3)", [chatRoomId, req.user.id, req.user.type]);
 
       const { rows: participants } = await client.query(`
         SELECT DISTINCT eb.user_id, r.name as role_name
@@ -2427,7 +2429,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       if (participants.length > 0) {
         for (const p of participants) {
           if (p.user_id === req.user.id) continue; // Creator already added
-          const userType = p.role_name === 'teamer' ? 'teamer' : 'konfi';
+          // konfi->konfi, teamer->teamer, admin/org_admin->admin (gebuchte
+          // Admins wurden vorher faelschlich als 'konfi' eingetragen)
+          const userType = p.role_name === 'konfi' ? 'konfi' : p.role_name === 'teamer' ? 'teamer' : 'admin';
           await client.query(
             "INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
             [chatRoomId, p.user_id, userType]

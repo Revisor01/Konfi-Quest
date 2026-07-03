@@ -8,7 +8,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const PushService = require('../services/pushService');
 const { encryptBuffer, decryptBuffer } = require('../utils/photoCrypto');
-const { syncJahrgangChat } = require('../utils/jahrgangChat');
+const { syncJahrgangChat, roleToParticipantType } = require('../utils/jahrgangChat');
 const { syncTeamChat } = require('../utils/teamChat');
 const chatSyncCache = require('../utils/chatSyncCache');
 
@@ -138,29 +138,36 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   // Create or get direct chat room
   router.post('/direct', verifyTokenRBAC, async (req, res) => {
     try {
-      const { target_user_id, target_user_type } = req.body;
+      const { target_user_id } = req.body;
       const organizationId = req.user.organization_id;
-      
-      if (!target_user_id || !target_user_type) {
+
+      if (!target_user_id) {
         return res.status(400).json({ error: 'Ziel-Benutzer erforderlich' });
       }
-      if (!['admin', 'konfi'].includes(target_user_type)) {
-        return res.status(400).json({ error: 'Ungültiger Benutzertyp' });
-      }
 
-      // DATENSCHUTZ: Konfis dürfen NUR Admins anschreiben
-      if (req.user.type === 'konfi' && target_user_type !== 'admin') {
-        return res.status(403).json({ error: 'Konfirmanden dürfen nur Admins anschreiben' });
-      }
-
-      const { rows: [validUser] } = await db.query("SELECT id FROM users WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL", [target_user_id, organizationId]);
+      // user_type des Ziels IMMER serverseitig aus der echten Rolle ableiten —
+      // NIE vom Client uebernehmen. Der Client schickte fuer Teamer:innen
+      // 'admin' (die API kannte nur admin|konfi), der Raum wurde dann mit
+      // user_type='admin' gespeichert und war fuer den Teamer (liest als
+      // 'teamer') unsichtbar. Gleiche Fehlerklasse wie Migration 098.
+      const { rows: [validUser] } = await db.query(
+        `SELECT u.id, u.display_name, r.name AS role_name
+           FROM users u JOIN roles r ON u.role_id = r.id
+          WHERE u.id = $1 AND u.organization_id = $2 AND u.deleted_at IS NULL`,
+        [target_user_id, organizationId]
+      );
       if (!validUser) {
         return res.status(403).json({ error: 'Benutzer nicht in deiner Organisation gefunden' });
       }
-      
+
+      // DATENSCHUTZ: Konfis dürfen keine anderen Konfis anschreiben
+      if (req.user.type === 'konfi' && validUser.role_name === 'konfi') {
+        return res.status(403).json({ error: 'Konfirmanden dürfen nur Admins anschreiben' });
+      }
+
       const user1_type = req.user.type;
       const user1_id = req.user.id;
-      const user2_type = target_user_type;
+      const user2_type = roleToParticipantType(validUser.role_name);
       const user2_id = target_user_id;
       
       const existingRoomQuery = `
@@ -174,15 +181,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.json({ room_id: existingRoom.id, created: false });
       }
       
-      const targetQuery = target_user_type === 'admin' ?
-      "SELECT u.display_name as name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = $1 AND r.name IN ('admin', 'org_admin', 'teamer')" :
-      "SELECT u.display_name as name FROM users u JOIN roles r ON u.role_id = r.id JOIN konfi_profiles kp ON u.id = kp.user_id WHERE u.id = $1 AND r.name = 'konfi'";
-      const { rows: [targetUser] } = await db.query(targetQuery, [target_user_id]);
-      if (!targetUser) {
-        return res.status(404).json({ error: 'Benutzer nicht gefunden' });
-      }
-      
-      const roomName = targetUser.name;
+      const roomName = validUser.display_name;
       const insertRoomQuery = "INSERT INTO chat_rooms (name, type, created_by, organization_id) VALUES ($1, 'direct', $2, $3) RETURNING id";
       const { rows: [newRoom] } = await db.query(insertRoomQuery, [roomName, req.user.id, organizationId]);
       const roomId = newRoom.id;
@@ -255,13 +254,27 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       await db.query("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, $3)", [roomId, createdBy, req.user.type]);
       
       if (participants && participants.length > 0) {
-        const participantPromises = participants.map(participant => {
-          const userId = typeof participant === 'object' ? participant.user_id : participant;
-          const userType = typeof participant === 'object' ? participant.user_type : 'konfi';
-          if (userId === createdBy && userType === req.user.type) return null;
- return db.query("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, $3)", [roomId, userId, userType]).catch(err => console.error(`Error adding participant ${userId}:`, err));
-        }).filter(p => p !== null);
-        await Promise.all(participantPromises);
+        // user_type IMMER serverseitig aus der echten Rolle ableiten — NIE vom
+        // Client uebernehmen (Teamer:innen kamen sonst als 'admin' rein und
+        // fanden den Raum nicht; gleiche Fehlerklasse wie Migration 098).
+        const participantIds = participants
+          .map(p => parseInt(typeof p === 'object' ? p.user_id : p))
+          .filter(uid => Number.isInteger(uid) && uid !== createdBy);
+        if (participantIds.length > 0) {
+          const { rows: partUsers } = await db.query(
+            `SELECT u.id, r.name AS role_name
+               FROM users u JOIN roles r ON u.role_id = r.id
+              WHERE u.id = ANY($1::int[]) AND u.organization_id = $2 AND u.deleted_at IS NULL`,
+            [participantIds, organizationId]
+          );
+          const participantPromises = partUsers.map(pu =>
+            db.query(
+              "INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+              [roomId, pu.id, roleToParticipantType(pu.role_name)]
+            ).catch(err => console.error(`Error adding participant ${pu.id}:`, err))
+          );
+          await Promise.all(participantPromises);
+        }
       } else if (type === 'jahrgang') {
         const konfisQuery = `SELECT u.id FROM users u
                               JOIN roles r ON u.role_id = r.id
@@ -1006,18 +1019,15 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   router.post('/rooms/:roomId/participants', verifyTokenRBAC, async (req, res) => {
     try {
       const roomId = req.params.roomId;
-      const { user_id, user_type } = req.body;
+      const { user_id } = req.body;
       const requesterType = req.user.type;
       const organizationId = req.user.organization_id;
 
       if (requesterType !== 'admin') {
         return res.status(403).json({ error: 'Nur Admins können Teilnehmer hinzufügen' });
       }
-      if (!user_id || !user_type) {
-        return res.status(400).json({ error: 'user_id und user_type sind erforderlich' });
-      }
-      if (!['admin', 'konfi'].includes(user_type)) {
-        return res.status(400).json({ error: 'Ungültiger Benutzertyp' });
+      if (!user_id) {
+        return res.status(400).json({ error: 'user_id ist erforderlich' });
       }
 
       const { rows: [room] } = await db.query("SELECT type FROM chat_rooms WHERE id = $1 AND organization_id = $2", [roomId, organizationId]);
@@ -1027,12 +1037,26 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       if (room.type !== 'group') {
         return res.status(400).json({ error: 'Teilnehmer können nur zu Gruppenchats hinzugefügt werden' });
       }
-      
-      const { rows: [existing] } = await db.query("SELECT 1 FROM chat_participants WHERE room_id = $1 AND user_id = $2 AND user_type = $3", [roomId, user_id, user_type]);
+
+      // user_type IMMER serverseitig aus der echten Rolle ableiten — NIE vom
+      // Client uebernehmen (siehe /direct: Teamer:innen kamen als 'admin' rein
+      // und fanden den Raum nicht).
+      const { rows: [targetUser] } = await db.query(
+        `SELECT u.id, r.name AS role_name
+           FROM users u JOIN roles r ON u.role_id = r.id
+          WHERE u.id = $1 AND u.organization_id = $2 AND u.deleted_at IS NULL`,
+        [user_id, organizationId]
+      );
+      if (!targetUser) {
+        return res.status(404).json({ error: 'Benutzer nicht in deiner Organisation gefunden' });
+      }
+      const user_type = roleToParticipantType(targetUser.role_name);
+
+      const { rows: [existing] } = await db.query("SELECT 1 FROM chat_participants WHERE room_id = $1 AND user_id = $2", [roomId, user_id]);
       if (existing) {
         return res.status(409).json({ error: 'Benutzer ist bereits Teilnehmer' });
       }
-      
+
       await db.query("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, $3)", [roomId, user_id, user_type]);
       res.status(201).json({ message: 'Teilnehmer erfolgreich hinzugefügt' });
 

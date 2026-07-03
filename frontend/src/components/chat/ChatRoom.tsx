@@ -97,6 +97,9 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   const textareaRef = useRef<HTMLIonTextareaElement>(null);
   const scrollPositionRef = useRef<number>(0);
   const viewerRef = useRef<{ files: FileItem[]; initialIndex: number }>({ files: [], initialIndex: 0 });
+  // client_ids eigener Sendungen, deren Server-Kopie noch nicht per Socket
+  // angekommen ist — Fallback-Reload nur wenn der Socket nicht liefert.
+  const pendingSendsRef = useRef<Set<string>>(new Set());
 
 
   // Hooks müssen vor conditional returns stehen!
@@ -261,9 +264,23 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       // Listen for new messages
       socket.on('newMessage', (data: { roomId: number; message: any }) => {
         if (data.roomId === room.id) {
+          if (data.message?.client_id) {
+            pendingSendsRef.current.delete(data.message.client_id);
+          }
           setMessages(prev => {
             // Avoid duplicates
             if (prev.some(m => m.id === data.message.id)) return prev;
+            // Eigene Nachricht: die optimistische Kopie in-place ersetzen
+            // (Match ueber client_id) statt zusaetzlich anzuhaengen — sonst
+            // erscheint die Nachricht kurz doppelt, bis der Reload aufraeumt.
+            if (data.message.client_id) {
+              const optIdx = prev.findIndex(m => m.clientId === data.message.client_id);
+              if (optIdx !== -1) {
+                const next = [...prev];
+                next[optIdx] = data.message;
+                return next;
+              }
+            }
             return [...prev, data.message];
           });
         }
@@ -578,6 +595,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       file_name: file?.name,
       queueStatus: 'pending',
       localId,
+      clientId,
     };
 
     // UI sofort aktualisieren
@@ -593,6 +611,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     if (networkMonitor.isOnline) {
       // Online: Normal senden
       setUploading(true);
+      pendingSendsRef.current.add(clientId);
       try {
         const formData = new FormData();
         if (content) formData.append('content', content);
@@ -604,15 +623,22 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           headers: { 'Content-Type': 'multipart/form-data' }
         });
 
-        // Optimistic msg wird durch WebSocket newMessage Event ersetzt
+        // Die Server-Kopie kommt per newMessage-Socket-Event und ersetzt die
+        // optimistische Nachricht IN-PLACE (client_id-Match im Handler) —
+        // kein Voll-Reload pro Senden mehr; der liess die eigene Nachricht
+        // kurz doppelt erscheinen. Fallback: liefert der Socket nicht binnen
+        // 2,5s (z.B. still tot), einmal komplett nachladen.
         setTimeout(() => {
-          setMessages(prev => prev.filter(m => m.localId !== localId));
-        }, 2000);
+          if (pendingSendsRef.current.has(clientId)) {
+            pendingSendsRef.current.delete(clientId);
+            loadMessages();
+          }
+        }, 2500);
 
         if (room) markRoomAsRead();
         setShouldAutoScroll(true);
-        await loadMessages();
       } catch (err) {
+        pendingSendsRef.current.delete(clientId);
         // Bei Fehler: optimistic msg als error markieren
         setMessages(prev => prev.map(m =>
           m.localId === localId ? { ...m, queueStatus: 'error' as const } : m

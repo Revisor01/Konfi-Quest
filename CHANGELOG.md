@@ -8,6 +8,24 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ## [Unreleased]
 
+### 🐛 Chat: Direktchat mit Teamer:innen unsichtbar + Doppel-Blitzen beim Senden
+- **Direktchat für Teamer:innen unsichtbar (Migration 117).** `POST /chat/direct`
+  kannte als `target_user_type` nur `admin|konfi` — Teamer:innen wurden als
+  `'admin'` in `chat_participants` eingetragen, lesen ihre Räume aber als
+  `'teamer'`: Der Chat kam als Push an, tauchte aber nie in der Raumliste auf
+  (gleiche Fehlerklasse wie Migration 098). Der Server leitet den `user_type`
+  jetzt IMMER selbst aus der echten Rolle ab (Direktchats UND Gruppen-Teilnehmer
+  in `POST /rooms`, nie mehr vom Client übernommen); Migration 117 repariert
+  die Bestandsdaten (`backend/routes/chat.js`,
+  `backend/migrations/117_fix_chat_participant_user_types.sql`).
+- **Eigene Nachricht blitzte kurz doppelt auf.** Nach dem Senden hängte der
+  `newMessage`-Socket-Handler die Server-Kopie ZUSÄTZLICH unter die noch
+  sichtbare optimistische Nachricht; erst der Voll-Reload danach räumte auf
+  (<1s Doppelanzeige). Der Handler ersetzt die optimistische Nachricht jetzt
+  in-place (Match über `client_id`), der Voll-Reload pro Senden entfällt —
+  Fallback-Reload nur noch, wenn der Socket binnen 2,5s nicht liefert
+  (`frontend/src/components/chat/ChatRoom.tsx`, `frontend/src/types/chat.ts`).
+
 ### 🐛 Chat-Sync kennt Multi-Org-Mitgliedschaften (Org-Switcher)
 - **Eingewechselte Mitglieder flogen aus den Chats.** Die Soll-Mitglieder-Queries
   in `syncJahrgangChat`/`syncTeamChat` kannten nur die Primär-Org

@@ -155,6 +155,31 @@ describe('Chat Routes', () => {
 
       expect(res.status).toBe(400);
     });
+
+    it('Direct-Chat mit Teamerin: user_type wird serverseitig als teamer gespeichert, Raum fuer Teamerin sichtbar', async () => {
+      // Client schickt (wie frueher) target_user_type 'admin' — der Server MUSS
+      // die echte Rolle nehmen, sonst findet die Teamerin den Raum nicht.
+      const res = await request(app)
+        .post('/api/chat/direct')
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ target_user_id: USERS.teamer1.id, target_user_type: 'admin' });
+
+      expect(res.status).toBe(200);
+      const roomId = res.body.room_id;
+
+      const { rows } = await db.query(
+        'SELECT user_id, user_type FROM chat_participants WHERE room_id = $1 ORDER BY user_id',
+        [roomId]
+      );
+      expect(rows).toContainEqual({ user_id: USERS.teamer1.id, user_type: 'teamer' });
+
+      // Und die Teamerin sieht den Raum in ihrer Liste
+      const roomsRes = await request(app)
+        .get('/api/chat/rooms')
+        .set('Authorization', `Bearer ${teamer1Token}`);
+      expect(roomsRes.status).toBe(200);
+      expect(roomsRes.body.map((r) => r.id)).toContain(roomId);
+    });
   });
 
   // ================================================================
