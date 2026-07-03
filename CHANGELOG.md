@@ -78,6 +78,20 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
   Verbindungsabriss/Push feuern `sync:reconnect`/`push:received` einen Refresh.
   Nur noch der initiale Load bleibt (`frontend/src/contexts/BadgeContext.tsx`).
 
+### ✨ Verbesserungen
+- **Warteliste: „Freie Plätze auffüllen" statt nur Alles-oder-nichts.** Der
+  bisherige „Alle bestätigen"-Button bestätigte die komplette Warteliste und
+  übersteuerte dabei stillschweigend die Kapazität. Der Button heißt jetzt
+  „Warteliste (N)" und öffnet einen Dialog mit beiden Optionen samt konkreter
+  Zahlen: „Freie Plätze auffüllen (N)" bestätigt FIFO nur so viele Wartende wie
+  Plätze frei sind (bei Timeslot-Events pro Zeitfenster, neuer Endpoint
+  `PUT /events/:id/participants/fill-capacity`), „Alle bestätigen (überbucht
+  um X)" bleibt als bewusste Überbuchung erhalten. Nachgerückte bekommen wie
+  beim automatischen Nachrücken Push + Live-Update
+  (`backend/routes/events.js`, `frontend/.../EventDetailView.tsx`).
+  Nebenbei: Double-Release des DB-Clients im confirm-all-Handler behoben
+  (Early-Returns releasten zusätzlich zum finally — Altlast, warf bei 404/403).
+
 ### 🗄️ Datenbank-Härtung (Audit Achse 1, Migrationen 110-116)
 - **Verwaiste Daten bereinigt + fehlende Foreign Keys nachgezogen.**
   `activity_categories` hatte keinen FK auf activities (12 verwaiste Zeilen —

@@ -397,6 +397,78 @@ describe('Events Routes', () => {
   });
 
   // ================================================================
+  // PUT /:id/participants/fill-capacity (Warteliste bis Kapazitaet auffuellen)
+  // ================================================================
+  describe('PUT /api/events/:id/participants/fill-capacity', () => {
+    // Hilfsfunktion: Event mit Kapazitaet 1 anlegen, konfi1 bestaetigt (voll),
+    // konfi2 auf der Warteliste.
+    async function setupFullEvent(maxParticipants) {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 14);
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Fill-Capacity-Event',
+          event_date: futureDate.toISOString(),
+          max_participants: maxParticipants,
+          waitlist_enabled: true,
+          max_waitlist_size: 5,
+        });
+      const eventId = createRes.body.id;
+      await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${konfiToken}`);
+      await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${konfi2Token}`);
+      return eventId;
+    }
+
+    it('Kapazitaet voll -> niemand rueckt nach (im Gegensatz zu confirm-all)', async () => {
+      const eventId = await setupFullEvent(1); // konfi1 confirmed, konfi2 waitlist
+
+      const res = await request(app)
+        .put(`/api/events/${eventId}/participants/fill-capacity`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.confirmed).toBe(0);
+
+      const { rows } = await db.query(
+        "SELECT COUNT(*)::int AS cnt FROM event_bookings WHERE event_id = $1 AND status = 'waitlist'",
+        [eventId]
+      );
+      expect(rows[0].cnt).toBe(1); // konfi2 bleibt auf der Warteliste
+    });
+
+    it('Freier Platz -> genau bis Kapazitaet aufgefuellt (FIFO)', async () => {
+      const eventId = await setupFullEvent(1);
+      // Kapazitaet auf 2 erhoehen — direkt in der DB, damit nicht die
+      // PUT-Event-Nachrueck-Logik schon vorher befoerdert.
+      await db.query('UPDATE events SET max_participants = 2 WHERE id = $1', [eventId]);
+
+      const res = await request(app)
+        .put(`/api/events/${eventId}/participants/fill-capacity`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.confirmed).toBe(1);
+
+      const { rows } = await db.query(
+        "SELECT status, COUNT(*)::int AS cnt FROM event_bookings WHERE event_id = $1 GROUP BY status",
+        [eventId]
+      );
+      const byStatus = Object.fromEntries(rows.map(r => [r.status, r.cnt]));
+      expect(byStatus.confirmed).toBe(2);
+      expect(byStatus.waitlist).toBeUndefined();
+    });
+
+    it('Nicht-existentes Event -> 404 (Early-Return crasht nicht, Double-Release-Fix)', async () => {
+      const res = await request(app)
+        .put('/api/events/999999/participants/fill-capacity')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(res.status).toBe(404);
+    });
+  });
+
+  // ================================================================
   // DELETE /api/events/:id/book (Stornierung)
   // ================================================================
   describe('DELETE /api/events/:id/book', () => {

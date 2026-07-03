@@ -2046,13 +2046,115 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
   // Bulk: ALLE Wartelisten-Teilnehmer eines Events bestaetigen (Admin-Komfort).
   // Hebt die Kapazitaet auf (Admin uebersteuert bewusst), genau wie das manuelle
   // Einzel-Bestaetigen oben.
+  // Warteliste FIFO auffuellen, aber NUR bis zur Kapazitaetsgrenze (Timeslot-
+  // aware). Ergaenzt confirm-all (= bewusste Ueberbuchung ohne Grenze).
+  // Reihenfolge wie beim automatischen Nachruecken: created_at ASC.
+  router.put('/:id/participants/fill-capacity', rbacVerifier, requireTeamer, async (req, res) => {
+    const { id: eventId } = req.params;
+    const client = await db.getClient();
+    try {
+      const { rows: [event] } = await client.query(
+        "SELECT organization_id, name AS event_name, event_date, has_timeslots, max_participants FROM events WHERE id = $1",
+        [eventId]
+      );
+      if (!event) { return res.status(404).json({ error: 'Event nicht gefunden' }); }
+      if (event.organization_id !== req.user.organization_id) { return res.status(403).json({ error: 'Zugriff verweigert' }); }
+
+      await client.query('BEGIN');
+      const promoted = [];
+
+      if (event.has_timeslots) {
+        // Pro Timeslot: freie Plaetze = Slot-Kapazitaet - bestaetigte Buchungen
+        const { rows: slots } = await client.query(
+          "SELECT id, max_participants FROM event_timeslots WHERE event_id = $1",
+          [eventId]
+        );
+        for (const slot of slots) {
+          const { rows: [c] } = await client.query(
+            "SELECT COUNT(*)::int AS confirmed FROM event_bookings WHERE timeslot_id = $1 AND status = 'confirmed'",
+            [slot.id]
+          );
+          const free = (slot.max_participants || 0) - c.confirmed;
+          if (free <= 0) continue;
+          const { rows } = await client.query(
+            `UPDATE event_bookings SET status = 'confirmed'
+             WHERE id IN (
+               SELECT id FROM event_bookings
+               WHERE event_id = $1 AND timeslot_id = $2 AND status = 'waitlist'
+               ORDER BY created_at ASC LIMIT $3
+             ) RETURNING user_id`,
+            [eventId, slot.id, free]
+          );
+          promoted.push(...rows);
+        }
+      } else if (event.max_participants > 0) {
+        const { rows: [c] } = await client.query(
+          "SELECT COUNT(*)::int AS confirmed FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'",
+          [eventId]
+        );
+        const free = event.max_participants - c.confirmed;
+        if (free > 0) {
+          const { rows } = await client.query(
+            `UPDATE event_bookings SET status = 'confirmed'
+             WHERE id IN (
+               SELECT id FROM event_bookings
+               WHERE event_id = $1 AND status = 'waitlist'
+               ORDER BY created_at ASC LIMIT $2
+             ) RETURNING user_id`,
+            [eventId, free]
+          );
+          promoted.push(...rows);
+        }
+      } else {
+        // max_participants = 0 -> unbegrenzt: alle Wartenden bestaetigen
+        // (Warteliste kann bestehen, wenn die Kapazitaet nachtraeglich auf
+        // unbegrenzt gestellt wurde).
+        const { rows } = await client.query(
+          "UPDATE event_bookings SET status = 'confirmed' WHERE event_id = $1 AND status = 'waitlist' RETURNING user_id",
+          [eventId]
+        );
+        promoted.push(...rows);
+      }
+
+      await client.query('COMMIT');
+      res.json({
+        message: promoted.length > 0
+          ? `${promoted.length} Teilnehmer:in(nen) nachgerückt`
+          : 'Keine freien Plätze — niemand nachgerückt',
+        confirmed: promoted.length
+      });
+
+      // Seiteneffekte NACH res (Muster confirm-all): Push je Person fehlertolerant,
+      // Live-Updates an Betroffene + Org-Admins/Teamer:innen.
+      for (const p of promoted) {
+        try {
+          await PushService.sendWaitlistPromotionToKonfi(db, p.user_id, event.event_name, event.event_date, eventId);
+        } catch (pushErr) {
+          console.error('Error sending waitlist promotion push (fill-capacity):', pushErr);
+        }
+        liveUpdate.sendToUserByRole(p.user_id, 'events', 'update', { eventId });
+      }
+      if (promoted.length > 0) {
+        liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId });
+      }
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
+      console.error(`Database error in PUT /events/${eventId}/participants/fill-capacity:`, err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    } finally {
+      client.release();
+    }
+  });
+
   router.put('/:id/participants/confirm-all', rbacVerifier, requireTeamer, async (req, res) => {
     const { id: eventId } = req.params;
     const client = await db.getClient();
     try {
       const { rows: [event] } = await client.query("SELECT organization_id, name AS event_name, event_date FROM events WHERE id = $1", [eventId]);
-      if (!event) { client.release(); return res.status(404).json({ error: 'Event nicht gefunden' }); }
-      if (event.organization_id !== req.user.organization_id) { client.release(); return res.status(403).json({ error: 'Zugriff verweigert' }); }
+      // KEIN client.release() in den Early-Returns — das finally released bereits;
+      // doppeltes release() wirft in pg (unhandled rejection). Altlast-Fix.
+      if (!event) { return res.status(404).json({ error: 'Event nicht gefunden' }); }
+      if (event.organization_id !== req.user.organization_id) { return res.status(403).json({ error: 'Zugriff verweigert' }); }
 
       await client.query('BEGIN');
       // RETURNING user_id: liefert die betroffenen (befoerderten) Personen fuer
