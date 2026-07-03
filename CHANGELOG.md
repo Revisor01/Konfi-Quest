@@ -27,6 +27,23 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
   Nur noch der initiale Load bleibt (`frontend/src/contexts/BadgeContext.tsx`).
 
 ### 🐛 Fehlerbehebungen
+- **Fehlende Push- und Live-Update-Benachrichtigungen an mehreren Stellen
+  nachgezogen (Audit Achse 2/3).** Betroffen waren: (1) Teamer-Antraege
+  (`POST/DELETE /teamer/requests`) — Admins bekamen weder Push noch Live-Update
+  ueber neue/entfernte Antraege; jetzt `sendNewActivityRequestToAdmins` +
+  `sendToOrgAdmins('requests', …)`. (2) Zertifikat-Zuweisung an Teamer:innen
+  (`POST /teamer/:userId/certificates`) — Empfaenger:in erhielt keine
+  Benachrichtigung; jetzt Push (`sendToUser`) + `sendToUserByRole('badges')`.
+  (3) Wartelisten-Statuswechsel (`PUT /events/:id/participants/:pid/status` und
+  `…/confirm-all`) — von der Warteliste bestaetigte Personen erhielten keine
+  Push-/Live-Update-Benachrichtigung, bei Degradierung fehlte das
+  Dashboard-Update; jetzt `sendWaitlistPromotionToKonfi` +
+  `sendToUserByRole('events'/'dashboard')` + `sendToOrgAdmins('events')`.
+  (4) Antrag-Reset (`PUT /activities/requests/:id/reset`) — kein Live-Update an
+  Antragsliste/Antragsteller:in/Punkte; analog zum Genehmigungs-Handler ergaenzt.
+  (5) Serien-Events (`POST /events/series`) — kein Live-Update nach dem Anlegen;
+  jetzt `sendToOrg('events', 'create')` (`backend/routes/teamer.js`,
+  `backend/routes/events.js`, `backend/routes/activities.js`).
 - **Live-Updates und Chat-Events gingen zwischen den beiden Server-Instanzen
   verloren.** Die App laeuft auf zwei Backend-Replikas hinter einem Load-Balancer.
   Socket.IO hatte keinen Adapter — jede Replika emittete nur an ihre EIGENEN

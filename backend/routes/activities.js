@@ -330,6 +330,17 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
       res.json({ message: 'Antrag auf ausstehend zurückgesetzt', oldStatus });
 
+      // Live-Updates analog zum Genehmigungs-Handler (Z.492ff). Antragsliste an
+      // Admins/Org-Admins/Teamer:innen der Org; Antragsteller:in (Konfi ODER
+      // Teamer:in) ueber den korrekten Socket-Raum per Rolle.
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'update');
+      liveUpdate.sendToUserByRole(request.user_id, 'requests', 'update');
+      // Wurde ein genehmigter Antrag zurueckgesetzt, wurden Punkte entzogen
+      // (nur bei Konfi-Activities) -> Punkte-/Dashboard-Ansicht aktualisieren.
+      if (oldStatus === 'approved' && !isTeamerActivity) {
+        liveUpdate.sendToUserByRole(request.user_id, 'points', 'update');
+      }
+
     } catch (err) {
  console.error(`Database error in PUT /api/activities/requests/${requestId}/reset:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });

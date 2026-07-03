@@ -1963,6 +1963,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         events_created: seriesDates.length
       });
 
+      // Live-Update an die ganze Org (analog Einzel-Create events.js:766): neue
+      // Serien-Events erschienen -> Konfis + Admins/Teamer:innen aktualisieren.
+      liveUpdate.sendToOrg(req.user.organization_id, 'events', 'create', { seriesId, count: seriesDates.length });
+
     } catch (err) {
       try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
       client.release();
@@ -1982,10 +1986,16 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       }
       
       
-      const { rows: [booking] } = await db.query("SELECT eb.status, eb.attendance_status, eb.user_id, e.organization_id FROM event_bookings eb JOIN events e ON eb.event_id = e.id WHERE eb.id = $1 AND eb.event_id = $2", [participantId, eventId]);
+      const { rows: [booking] } = await db.query("SELECT eb.status, eb.attendance_status, eb.user_id, e.organization_id, e.name AS event_name, e.event_date FROM event_bookings eb JOIN events e ON eb.event_id = e.id WHERE eb.id = $1 AND eb.event_id = $2", [participantId, eventId]);
       if (!booking) return res.status(404).json({ error: 'Buchung nicht gefunden' });
       if (booking.organization_id !== req.user.organization_id) return res.status(403).json({ error: 'Zugriff verweigert' });
       if (booking.status === status) return res.status(400).json({ error: `Teilnehmer:in ist bereits ${status === 'confirmed' ? 'bestätigt' : 'auf der Warteliste'}` });
+
+      // Vorheriger Status: bei Wechsel von 'waitlist' -> 'confirmed' ist es eine
+      // Wartelisten-Befoerderung (Push an die betroffene Person). Bei 'confirmed'
+      // -> 'waitlist' werden ggf. Punkte entzogen (Dashboard-Refresh noetig).
+      const wasWaitlist = booking.status === 'waitlist';
+      let pointsRemoved = false;
 
       if (status === 'waitlist') {
         // Auf Warteliste: attendance_status löschen und Event-Punkte zurücknehmen
@@ -1999,6 +2009,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             ? "UPDATE konfi_profiles SET gottesdienst_points = GREATEST(0, gottesdienst_points - $1) WHERE user_id = $2"
             : "UPDATE konfi_profiles SET gemeinde_points = GREATEST(0, gemeinde_points - $1) WHERE user_id = $2";
           await db.query(updateProfileQuery, [existingPoints.points, booking.user_id]);
+          pointsRemoved = true;
         }
       } else {
         await db.query("UPDATE event_bookings SET status = $1 WHERE id = $2", [status, participantId]);
@@ -2006,6 +2017,25 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
       const action = status === 'confirmed' ? 'Teilnehmer:in von Warteliste bestätigt' : 'Teilnehmer:in auf Warteliste gesetzt';
       res.json({ message: action, status });
+
+      // Push bei Befoerderung von der Warteliste (analog events.js:1010/1513/1731).
+      // Seiteneffekt NACH res, in try/catch — Push-Fehler darf nichts kippen.
+      if (status === 'confirmed' && wasWaitlist) {
+        try {
+          await PushService.sendWaitlistPromotionToKonfi(db, booking.user_id, booking.event_name, booking.event_date, eventId);
+        } catch (pushErr) {
+          console.error('Error sending waitlist promotion push:', pushErr);
+        }
+      }
+
+      // Live-Update an die betroffene Person (korrekter Socket-Raum per Rolle).
+      liveUpdate.sendToUserByRole(booking.user_id, 'events', 'update', { eventId });
+      // Bei Punktentzug (Degradierung) zusaetzlich das Dashboard aktualisieren.
+      if (pointsRemoved) {
+        liveUpdate.sendToUserByRole(booking.user_id, 'dashboard', 'update');
+      }
+      // Live-Update an Admins/Org-Admins/Teamer:innen der Org.
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId });
 
     } catch (err) {
  console.error(`Database error in PUT /events/${eventId}/participants/${participantId}/status:`, err);
@@ -2020,17 +2050,33 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     const { id: eventId } = req.params;
     const client = await db.getClient();
     try {
-      const { rows: [event] } = await client.query("SELECT organization_id FROM events WHERE id = $1", [eventId]);
+      const { rows: [event] } = await client.query("SELECT organization_id, name AS event_name, event_date FROM events WHERE id = $1", [eventId]);
       if (!event) { client.release(); return res.status(404).json({ error: 'Event nicht gefunden' }); }
       if (event.organization_id !== req.user.organization_id) { client.release(); return res.status(403).json({ error: 'Zugriff verweigert' }); }
 
       await client.query('BEGIN');
-      const { rowCount } = await client.query(
-        "UPDATE event_bookings SET status = 'confirmed' WHERE event_id = $1 AND status = 'waitlist'",
+      // RETURNING user_id: liefert die betroffenen (befoerderten) Personen fuer
+      // die anschliessenden Push-/Live-Update-Seiteneffekte.
+      const { rows: promoted } = await client.query(
+        "UPDATE event_bookings SET status = 'confirmed' WHERE event_id = $1 AND status = 'waitlist' RETURNING user_id",
         [eventId]
       );
       await client.query('COMMIT');
+      const rowCount = promoted.length;
       res.json({ message: `${rowCount} Teilnehmer:in(nen) von der Warteliste bestätigt`, confirmed: rowCount });
+
+      // Seiteneffekte NACH res. Push pro Person in eigenem try/catch, damit ein
+      // Fehlschlag die anderen nicht stoppt (analog Push-Loop-Muster im Codebase).
+      for (const p of promoted) {
+        try {
+          await PushService.sendWaitlistPromotionToKonfi(db, p.user_id, event.event_name, event.event_date, eventId);
+        } catch (pushErr) {
+          console.error('Error sending waitlist promotion push (confirm-all):', pushErr);
+        }
+        liveUpdate.sendToUserByRole(p.user_id, 'events', 'update', { eventId });
+      }
+      // Einmal am Ende an Admins/Org-Admins/Teamer:innen der Org.
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId });
     } catch (err) {
       await client.query('ROLLBACK').catch(() => {});
       console.error(`Database error in PUT /events/${eventId}/participants/confirm-all:`, err);

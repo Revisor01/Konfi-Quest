@@ -287,6 +287,116 @@ describe('Events Routes', () => {
   });
 
   // ================================================================
+  // PUT /:id/participants/:participantId/status (Warteliste <-> bestaetigt)
+  // ================================================================
+  describe('PUT /api/events/:id/participants/:participantId/status', () => {
+    let miniEventId;
+    let waitlistBookingId;
+
+    beforeEach(async () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 14);
+
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Status-Event',
+          event_date: futureDate.toISOString(),
+          max_participants: 1,
+          waitlist_enabled: true,
+          max_waitlist_size: 5,
+        });
+      miniEventId = createRes.body.id;
+
+      // Konfi1 -> confirmed, Konfi2 -> waitlist
+      await request(app)
+        .post(`/api/events/${miniEventId}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+      await request(app)
+        .post(`/api/events/${miniEventId}/book`)
+        .set('Authorization', `Bearer ${konfi2Token}`);
+
+      const { rows } = await db.query(
+        "SELECT id FROM event_bookings WHERE event_id = $1 AND user_id = $2",
+        [miniEventId, USERS.konfi2.id]
+      );
+      waitlistBookingId = rows[0].id;
+    });
+
+    it('Admin bestaetigt von Warteliste -> 200 + DB-Status confirmed (Push/Live-Update kippen nicht)', async () => {
+      const res = await request(app)
+        .put(`/api/events/${miniEventId}/participants/${waitlistBookingId}/status`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ status: 'confirmed' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('confirmed');
+
+      const { rows } = await db.query(
+        "SELECT status FROM event_bookings WHERE id = $1", [waitlistBookingId]
+      );
+      expect(rows[0].status).toBe('confirmed');
+    });
+
+    it('Ungueltiger Status gibt 400', async () => {
+      const res = await request(app)
+        .put(`/api/events/${miniEventId}/participants/${waitlistBookingId}/status`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ status: 'bogus' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('Bereits vorhandener Status gibt 400', async () => {
+      const res = await request(app)
+        .put(`/api/events/${miniEventId}/participants/${waitlistBookingId}/status`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ status: 'waitlist' });
+
+      expect(res.status).toBe(400);
+    });
+  });
+
+  // ================================================================
+  // PUT /:id/participants/confirm-all
+  // ================================================================
+  describe('PUT /api/events/:id/participants/confirm-all', () => {
+    it('Admin bestaetigt alle Wartelisten-Teilnehmer -> 200 (Push-Loop kippt nicht)', async () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 14);
+
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Confirm-All-Event',
+          event_date: futureDate.toISOString(),
+          max_participants: 1,
+          waitlist_enabled: true,
+          max_waitlist_size: 5,
+        });
+      const eventId = createRes.body.id;
+
+      await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${konfiToken}`);
+      await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${konfi2Token}`);
+
+      const res = await request(app)
+        .put(`/api/events/${eventId}/participants/confirm-all`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.confirmed).toBeGreaterThanOrEqual(1);
+
+      const { rows } = await db.query(
+        "SELECT COUNT(*)::int AS cnt FROM event_bookings WHERE event_id = $1 AND status = 'waitlist'",
+        [eventId]
+      );
+      expect(rows[0].cnt).toBe(0);
+    });
+  });
+
+  // ================================================================
   // DELETE /api/events/:id/book (Stornierung)
   // ================================================================
   describe('DELETE /api/events/:id/book', () => {

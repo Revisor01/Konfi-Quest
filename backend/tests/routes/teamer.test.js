@@ -566,6 +566,85 @@ describe('Teamer Routes', () => {
   });
 
   // ================================================================
+  // TEAMER ANTRAEGE (POST/DELETE /requests)
+  // ================================================================
+  describe('POST /api/teamer/requests', () => {
+    let teamerActivityId;
+
+    beforeEach(async () => {
+      // Teamer-Aktivitaet (target_role='teamer') in Org 1 anlegen — nur solche
+      // duerfen Teamer:innen beantragen.
+      const { rows: [act] } = await db.query(
+        `INSERT INTO activities (name, gottesdienst_points, gemeinde_points, points, type, target_role, organization_id)
+         VALUES ('Teamer-Schulung', 0, 0, 0, 'gemeinde', 'teamer', 1) RETURNING id`
+      );
+      teamerActivityId = act.id;
+    });
+
+    it('Teamer stellt Antrag -> 201 (Push/Live-Update kippen den Request nicht)', async () => {
+      const res = await request(app)
+        .post('/api/teamer/requests')
+        .set('Authorization', `Bearer ${teamerToken}`)
+        .send({
+          activity_id: teamerActivityId,
+          requested_date: '2026-02-01',
+          description: 'Teilnahme an Schulung'
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.id).toBeDefined();
+
+      // Antrag ist wirklich in der DB
+      const { rows } = await db.query(
+        "SELECT status FROM activity_requests WHERE id = $1", [res.body.id]
+      );
+      expect(rows).toHaveLength(1);
+      expect(rows[0].status).toBe('pending');
+    });
+
+    it('Konfi-Aktivitaet (target_role!=teamer) gibt 404', async () => {
+      const res = await request(app)
+        .post('/api/teamer/requests')
+        .set('Authorization', `Bearer ${teamerToken}`)
+        .send({ activity_id: 1, requested_date: '2026-02-01' });
+
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe('DELETE /api/teamer/requests/:id', () => {
+    let teamerActivityId;
+    let requestId;
+
+    beforeEach(async () => {
+      const { rows: [act] } = await db.query(
+        `INSERT INTO activities (name, gottesdienst_points, gemeinde_points, points, type, target_role, organization_id)
+         VALUES ('Teamer-Schulung', 0, 0, 0, 'gemeinde', 'teamer', 1) RETURNING id`
+      );
+      teamerActivityId = act.id;
+
+      const createRes = await request(app)
+        .post('/api/teamer/requests')
+        .set('Authorization', `Bearer ${teamerToken}`)
+        .send({ activity_id: teamerActivityId, requested_date: '2026-02-01' });
+      requestId = createRes.body.id;
+    });
+
+    it('Teamer loescht eigenen pending Antrag -> 200 (Live-Update kippt nicht)', async () => {
+      const res = await request(app)
+        .delete(`/api/teamer/requests/${requestId}`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query(
+        "SELECT id FROM activity_requests WHERE id = $1", [requestId]
+      );
+      expect(rows).toHaveLength(0);
+    });
+  });
+
+  // ================================================================
   // TEAMER DASHBOARD
   // ================================================================
   describe('GET /api/teamer/dashboard', () => {
