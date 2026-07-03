@@ -8,7 +8,7 @@ import { initializeWebSocket, getSocket } from '../services/websocket';
 import { getToken } from '../services/tokenStore';
 import { removeDeliveredForChatRoom } from '../services/notifications';
 import { useApp } from './AppContext';
-import { useLiveRefresh, LiveUpdateType } from './LiveUpdateContext';
+import { useLiveRefresh, useLiveUpdate, LiveUpdateType } from './LiveUpdateContext';
 
 // Stabiles Array (Modul-Ebene) -> useLiveRefresh re-subscribt nicht bei jedem Render.
 const BADGE_LIVE_TYPES: LiveUpdateType[] = ['requests', 'events'];
@@ -37,6 +37,11 @@ const BadgeContext = createContext<BadgeContextType | undefined>(undefined);
 // Badge Provider Component
 export const BadgeProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useApp();
+  // Erhoeht sich nach Socket-Reconnect-mit-neuem-Token (LiveUpdateContext). Als
+  // Dependency des newMessage-Effekts unten noetig, damit der Listener nach
+  // reconnectWithToken am NEUEN Socket-Objekt neu gebunden wird (der alte Socket
+  // wurde verworfen -> ohne Neubindung kaeme kein 'newMessage' mehr an).
+  const { socketEpoch } = useLiveUpdate();
 
   const [chatUnreadByRoom, setChatUnreadByRoom] = useState<Record<number, number>>({});
   const [chatUnreadTotal, setChatUnreadTotal] = useState(0);
@@ -160,7 +165,9 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       socket.off('newMessage', handleNewMessage);
     };
-  }, [refreshAllCounts, user]);
+    // socketEpoch in den Deps: nach Reconnect-mit-neuem-Token (reconnectWithToken)
+    // ist getSocket() ein anderes Objekt -> Listener am frischen Socket neu binden.
+  }, [refreshAllCounts, user, socketEpoch]);
 
   // LiveUpdateContext-basierte Subscriptions für Daten-Events.
   // Stabiles Array (Modul-Konstante BADGE_LIVE_TYPES) -> kein Re-Subscribe pro Render.

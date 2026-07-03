@@ -33,6 +33,12 @@ interface LiveUpdateContextType {
   subscribe: (type: LiveUpdateType, callback: (event: LiveUpdateEvent) => void) => () => void;
   // Manually trigger a refresh (for testing/debugging)
   triggerRefresh: (type: LiveUpdateType) => void;
+  // Zaehler, der sich nach jedem Socket-Reconnect-mit-neuem-Token erhoeht.
+  // Konsumenten, die eigene socket.on(...)-Listener binden (z.B. BadgeContext),
+  // muessen socketEpoch als Effect-Dependency nutzen, damit sie ihre Handler nach
+  // reconnectWithToken am NEUEN Socket-Objekt neu binden — sonst haengen sie am
+  // verworfenen alten Socket und empfangen keine Events mehr.
+  socketEpoch: number;
 }
 
 const LiveUpdateContext = createContext<LiveUpdateContextType | undefined>(undefined);
@@ -158,7 +164,7 @@ export const LiveUpdateProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <LiveUpdateContext.Provider value={{ subscribe, triggerRefresh }}>
+    <LiveUpdateContext.Provider value={{ subscribe, triggerRefresh, socketEpoch }}>
       {children}
     </LiveUpdateContext.Provider>
   );
@@ -173,6 +179,7 @@ export const useLiveUpdate = () => {
     return {
       subscribe: () => () => {},
       triggerRefresh: () => {},
+      socketEpoch: 0,
     } as LiveUpdateContextType;
   }
   return context;

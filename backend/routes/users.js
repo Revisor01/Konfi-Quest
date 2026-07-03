@@ -8,6 +8,7 @@ const { validatePassword } = require('../utils/passwordUtils');
 const { invalidateUserCache } = require('../middleware/rbac');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const { deletePhotoFile } = require('../utils/photoStorage');
+const liveUpdate = require('../utils/liveUpdate');
 
 // User management routes
 // WICHTIGER HINWEIS: Das übergebene 'db'-Objekt ist eine PostgreSQL Pool-Instanz.
@@ -271,6 +272,13 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
         invalidateUserCache(parseInt(id));
       }
 
+      // Deaktivierung (is_active=false): Aktive Sockets trennen, damit ein noch
+      // verbundener Client mit deaktiviertem Konto nicht weiter Live-Updates
+      // mitliest. Deckt alle drei Raum-Typen ab (konfi/teamer/admin).
+      if (is_active === false) {
+        liveUpdate.disconnectUserSockets(parseInt(id));
+      }
+
       // Bei Rollenänderung: Socket.io-Verbindungen des Users trennen
       // damit der Client sich mit neuem Token (neue Rolle) neu verbindet
       if (role_id !== undefined && io) {
@@ -424,6 +432,11 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
 
       await client.query('COMMIT');
       client.release();
+
+      // Aktive Socket-Verbindungen des geloeschten Users sofort trennen — sonst
+      // liest ein noch verbundener Client mit toter Session weiter Live-Updates
+      // mit, bis er von selbst neu verbindet. Nach dem COMMIT (User ist weg).
+      liveUpdate.disconnectUserSockets(parseInt(id));
 
       // Foto-Dateien nach COMMIT vom Dateisystem entfernen (nicht blockierend)
       for (const filename of photoFilenames) {
@@ -626,6 +639,11 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
       const hashedPassword = await bcrypt.hash(password, 10);
       // org-gescopt: id ist eindeutig, organization_id als defensiver Zusatzfilter (matcht den oben geladenen targetUser)
       await db.query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2 AND organization_id = $3', [hashedPassword, id, targetUser.organization_id]);
+
+      // Bestehende Socket-Verbindungen des Users trennen: Nach einem Passwort-
+      // Reset soll die alte Session nicht ueber einen offenen Socket weiterlaufen.
+      // Der Client verbindet sich nach dem naechsten (Re-)Login mit frischem Token.
+      liveUpdate.disconnectUserSockets(parseInt(id));
 
       res.json({ message: 'Passwort erfolgreich zurückgesetzt' });
 

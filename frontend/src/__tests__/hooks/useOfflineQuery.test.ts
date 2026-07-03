@@ -215,4 +215,32 @@ describe('useOfflineQuery', () => {
 
     await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(2));
   });
+
+  it('sync:reconnect-Event loest erneuten Fetch aus (Socket-Reconnect)', async () => {
+    const fetcher = vi.fn().mockResolvedValue({ v: 1 });
+    renderHook(() => useOfflineQuery('reconnect-key', fetcher));
+
+    // Initialer Fetch
+    await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1));
+
+    // Socket-Reconnect feuert das Event -> sichtbare View muss frisch laden
+    window.dispatchEvent(new CustomEvent('sync:reconnect'));
+
+    await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(2));
+  });
+
+  it('sync:reconnect revalidiert NICHT wenn offline', async () => {
+    const fetcher = vi.fn().mockResolvedValue({ v: 1 });
+    renderHook(() => useOfflineQuery('reconnect-offline-key', fetcher));
+
+    await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1));
+
+    // Offline: der Reconnect-Handler darf keinen Fetch ausloesen
+    mockIsOnline = false;
+    window.dispatchEvent(new CustomEvent('sync:reconnect'));
+
+    // Kurz warten und sicherstellen, dass kein zweiter Fetch kam
+    await new Promise((r) => setTimeout(r, 50));
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
 });

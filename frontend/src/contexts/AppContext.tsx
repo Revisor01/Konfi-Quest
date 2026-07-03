@@ -505,6 +505,13 @@ useEffect(() => {
     const setupListener = async () => {
       stateChangeListener = await App.addListener('appStateChange', async ({ isActive }) => {
         if (isActive) {
+          // Beim Wechsel in den Vordergrund zuerst den Socket aktiv anstossen:
+          // Nach laengerem Hintergrund (oder Deploy-Downtime) haengt er oft im
+          // getrennten Zustand fest, ohne von selbst neu zu verbinden. Der
+          // anschliessende Reconnect loest die 'sync:reconnect'-Sequenz (flush ->
+          // invalidate -> Badge/View-Refresh) ohnehin aus.
+          ensureSocketConnected();
+
           handleAppActive();
 
           // Admins bekommen ohnehin laufend Erinnerungen -> beim Aktiv-werden

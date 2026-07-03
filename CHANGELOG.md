@@ -27,6 +27,39 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
   Nur noch der initiale Load bleibt (`frontend/src/contexts/BadgeContext.tsx`).
 
 ### 🐛 Fehlerbehebungen
+- **WebSocket-Reconnect nach Deploy/Verbindungsabriss robuster (Audit Achse 3B,
+  B1/B2/B6).** (1) Der Socket versucht jetzt **unbegrenzt** neu zu verbinden
+  (vorher 10 Versuche gedeckelt): Ein Deploy-Downtime-Fenster (~20–40s) verbrannte
+  die 10 Versuche endgueltig, danach blieb der Socket bis zum App-Neustart tot.
+  Der exponentielle Backoff deckelt bei 30s (`reconnectionDelayMax`), sodass ohne
+  Haemmern dauerhaft neu verbunden wird (`frontend/src/services/websocket.ts`).
+  (2) Beim App-Resume (Vordergrund) wird der Socket jetzt zuerst aktiv angestossen
+  (`ensureSocketConnected()`), bevor die Resume-Sequenz laeuft — nach laengerem
+  Hintergrund hing er oft getrennt fest (`frontend/src/contexts/AppContext.tsx`).
+  (3) Die gerade sichtbare View laedt nach einem Reconnect frische Daten: Der
+  `useOfflineQuery`-Hook hoert jetzt zusaetzlich auf `sync:reconnect` (analog zum
+  bestehenden `org:switched`), da Ionic Pages im Router-Outlet cacht und ohne
+  Remount sonst keine Revalidierung ausloest (`frontend/src/hooks/useOfflineQuery.ts`).
+- **Chat-Badge blieb nach Token-Reconnect stumm (Audit Achse 3B, B4).** Der
+  `newMessage`-Listener im `BadgeContext` hing nach `reconnectWithToken` (z.B.
+  nach abgelaufenem Token) am verworfenen alten Socket-Objekt und empfing keine
+  Nachrichten-Events mehr. Der `LiveUpdateContext` exportiert nun seinen
+  `socketEpoch`; der Effekt bindet den Listener bei jeder Epoch-Erhoehung am
+  frischen Socket neu (`frontend/src/contexts/LiveUpdateContext.tsx`,
+  `frontend/src/contexts/BadgeContext.tsx`).
+
+### 🔒 Sicherheit
+- **Aktive Socket-Verbindungen bei Konto-Loeschung, Passwort-Reset und
+  Deaktivierung sofort trennen (Audit Achse 3B, B5).** Bisher blieb ein bereits
+  verbundener Socket bestehen und empfing weiter Live-Updates, bis der Client von
+  selbst neu verband — ein geloeschter/gesperrter User konnte so mit toter Session
+  weiter mitlesen. Neuer Helper `disconnectUserSockets(userId)` trennt alle drei
+  Raum-Typen (`user_konfi_`/`user_teamer_`/`user_admin_`) via
+  `disconnectSockets(true)` (replika-uebergreifend ueber den Postgres-Adapter).
+  Aufgerufen im `DELETE /users/:id` (nach COMMIT), `PUT /users/:id/reset-password`
+  und bei Deaktivierung (`PUT /users/:id` mit `is_active=false`)
+  (`backend/utils/liveUpdate.js`, `backend/routes/users.js`).
+
 - **Fehlende Push- und Live-Update-Benachrichtigungen an mehreren Stellen
   nachgezogen (Audit Achse 2/3).** Betroffen waren: (1) Teamer-Antraege
   (`POST/DELETE /teamer/requests`) — Admins bekamen weder Push noch Live-Update

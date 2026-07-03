@@ -236,9 +236,44 @@ async function sendToUserByRole(userId, updateType, action = 'refresh', data = n
   }
 }
 
+/**
+ * Trennt ALLE aktiven Socket.io-Verbindungen eines Users sofort. Notwendig bei
+ * User-Loeschung, Passwort-Reset und Deaktivierung: Ohne aktives Trennen bleibt
+ * ein bereits verbundener Socket bestehen und empfaengt weiter Live-Updates, bis
+ * der Client von selbst neu verbindet (oder nie). Der User kann so mit einer
+ * toten/entzogenen Session weiter mitlesen.
+ *
+ * Trennt die drei moeglichen Raeume (user_konfi_/user_teamer_/user_admin_<id>),
+ * weil der Raum-Typ vom Login-Typ im JWT abhaengt und hier nicht sicher bekannt
+ * ist. disconnectSockets(true) schliesst auch den zugrundeliegenden Transport
+ * (close=true). Ueber den @socket.io/postgres-adapter wirkt das replika-
+ * uebergreifend (auch Sockets an der anderen Backend-Instanz werden getrennt).
+ * Still bei fehlendem _io; Fehler werden gefangen (darf einen Request nie kippen).
+ *
+ * @param {number} userId - User ID
+ */
+function disconnectUserSockets(userId) {
+  if (!_io) {
+    return;
+  }
+  try {
+    const rooms = [
+      `user_konfi_${userId}`,
+      `user_teamer_${userId}`,
+      `user_admin_${userId}`,
+    ];
+    for (const room of rooms) {
+      _io.in(room).disconnectSockets(true);
+    }
+  } catch (error) {
+    console.error('LiveUpdate: Error disconnecting user sockets:', error);
+  }
+}
+
 module.exports = {
   init,
   sendToUser,
+  disconnectUserSockets,
   sendToKonfi,
   sendToAdmin,
   sendToUserByRole,

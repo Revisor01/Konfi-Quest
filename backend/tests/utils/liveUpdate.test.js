@@ -20,8 +20,11 @@ const liveUpdate = require('../../utils/liveUpdate');
 const ORG_ID = 1;
 
 // Fake-io: sammelt alle to(room).emit(event, payload)-Aufrufe fuer Assertions.
+// Zusaetzlich in(room).disconnectSockets(close) fuer disconnectUserSockets-Tests:
+// sammelt jeden getrennten Raum inkl. close-Flag.
 function createFakeIo() {
   const emits = []; // { room, event, payload }
+  const disconnects = []; // { room, close }
   const io = {
     to(room) {
       return {
@@ -29,9 +32,16 @@ function createFakeIo() {
           emits.push({ room, event, payload });
         }
       };
+    },
+    in(room) {
+      return {
+        disconnectSockets(close) {
+          disconnects.push({ room, close });
+        }
+      };
     }
   };
-  return { io, emits };
+  return { io, emits, disconnects };
 }
 
 // Hilfsfunktion: liefert alle Raeume, an die 'liveUpdate' emittiert wurde.
@@ -149,6 +159,31 @@ describe('liveUpdate: Socket-Raum-Adressierung', () => {
       ).resolves.toBeUndefined();
 
       expect(emits.length).toBe(0);
+    });
+  });
+
+  describe('disconnectUserSockets', () => {
+    it('trennt alle drei Raum-Typen (konfi/teamer/admin) mit close=true', () => {
+      const { io, disconnects } = createFakeIo();
+      liveUpdate.init(io);
+
+      liveUpdate.disconnectUserSockets(42);
+
+      const rooms = disconnects.map(d => d.room);
+      expect(rooms).toContain('user_konfi_42');
+      expect(rooms).toContain('user_teamer_42');
+      expect(rooms).toContain('user_admin_42');
+      expect(disconnects.length).toBe(3);
+      // close=true schliesst auch den zugrundeliegenden Transport
+      for (const d of disconnects) {
+        expect(d.close).toBe(true);
+      }
+    });
+
+    it('macht nichts (kein Throw) wenn io nicht initialisiert ist', () => {
+      // io auf null zuruecksetzen, um !_io-Zweig zu testen
+      liveUpdate.init(null);
+      expect(() => liveUpdate.disconnectUserSockets(1)).not.toThrow();
     });
   });
 });
