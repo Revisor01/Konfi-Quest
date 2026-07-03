@@ -27,6 +27,17 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
   Nur noch der initiale Load bleibt (`frontend/src/contexts/BadgeContext.tsx`).
 
 ### 🐛 Fehlerbehebungen
+- **Live-Updates und Chat-Events gingen zwischen den beiden Server-Instanzen
+  verloren.** Die App laeuft auf zwei Backend-Replikas hinter einem Load-Balancer.
+  Socket.IO hatte keinen Adapter — jede Replika emittete nur an ihre EIGENEN
+  verbundenen Clients. Ein Live-Update (oder eine Chat-Nachricht), das die
+  jeweils andere Replika verarbeitet hat, kam daher systematisch nie an
+  (empirisch verifiziert: bei wiederholten Testlaeufen ging konsistent eines
+  von zwei Events verloren; der 30s-Fallback-Poll im Chat hat das bisher
+  kaschiert). Jetzt verteilt der offizielle `@socket.io/postgres-adapter` alle
+  Emits ueber die vorhandene PostgreSQL (NOTIFY/LISTEN) an beide Replikas —
+  keine neue Infrastruktur noetig (`backend/server.js`, Migration
+  `109_socketio_pg_adapter.sql`).
 - **Teamer:innen bekamen nie Live-Updates.** Alle Echtzeit-Aktualisierungen an
   „Admins der Organisation" (neue/geaenderte Antraege, Events, Zaehler) gingen
   ausschliesslich in den Admin-Socket-Raum, obwohl Teamer:innen in einem eigenen
