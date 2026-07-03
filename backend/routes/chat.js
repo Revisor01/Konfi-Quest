@@ -160,9 +160,10 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.status(403).json({ error: 'Benutzer nicht in deiner Organisation gefunden' });
       }
 
-      // DATENSCHUTZ: Konfis dürfen keine anderen Konfis anschreiben
+      // DATENSCHUTZ: Konfi-zu-Konfi-Chats gibt es nicht. Alle anderen
+      // Kombinationen (konfi/teamer/admin untereinander) sind erlaubt.
       if (req.user.type === 'konfi' && validUser.role_name === 'konfi') {
-        return res.status(403).json({ error: 'Konfirmanden dürfen nur Admins anschreiben' });
+        return res.status(403).json({ error: 'Konfis können keine anderen Konfis anschreiben' });
       }
 
       const user1_type = req.user.type;
