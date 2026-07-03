@@ -126,6 +126,39 @@ describe('Users Routes', () => {
       expect(res.body.username).toBe('neuer.teamer');
     });
 
+    it('Neu erstellte Teamerin steht SOFORT im Team-Chat (Inline-Sync statt TTL)', async () => {
+      const res = await request(app)
+        .post('/api/admin/users')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({
+          username: 'sofort.im.chat',
+          display_name: 'Sofort Im Chat',
+          password: 'Sicher!123',
+          role_id: ROLES.teamer.id
+        });
+      expect(res.status).toBe(201);
+      const newUserId = res.body.id;
+
+      // Der Sync laeuft im Handler NACH res.json (fire-and-forget) -> kurz pollen.
+      const findParticipant = async () => {
+        const { rows } = await db.query(
+          `SELECT cp.user_type FROM chat_participants cp
+           JOIN chat_rooms cr ON cp.room_id = cr.id
+           WHERE cr.is_team_chat = true AND cr.organization_id = $1 AND cp.user_id = $2`,
+          [ORGS.testGemeinde.id, newUserId]
+        );
+        return rows[0];
+      };
+      let participant;
+      const start = Date.now();
+      while (!participant && Date.now() - start < 1500) {
+        participant = await findParticipant();
+        if (!participant) await new Promise(r => setTimeout(r, 25));
+      }
+      expect(participant).toBeDefined();
+      expect(participant.user_type).toBe('teamer');
+    });
+
     it('Fehlender username -> 400 Validierungsfehler', async () => {
       const res = await request(app)
         .post('/api/admin/users')

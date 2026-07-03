@@ -5,6 +5,9 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { invalidateUserCache } = require('../middleware/rbac');
 const liveUpdate = require('../utils/liveUpdate');
+const { syncTeamChat } = require('../utils/teamChat');
+const { syncJahrgangChat } = require('../utils/jahrgangChat');
+const chatSyncCache = require('../utils/chatSyncCache');
 
 // Organizations routes
 // ============================================
@@ -940,6 +943,24 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
 
       invalidateUserCache(parseInt(user_id));
       res.status(201).json({ message: 'Mitgliedschaft gespeichert' });
+
+      // Chat-Mitgliedschaft der Ziel-Org INLINE pflegen (TTL-Cache verlaesst
+      // sich darauf): neues Mitglied sofort in Team-Chat, Org-Admins zusaetzlich
+      // in alle Jahrgangs-Chats der Ziel-Org.
+      try {
+        chatSyncCache.invalidate(orgId, parseInt(user_id));
+        await syncTeamChat(db, orgId, req.user.id);
+        if (role_name === 'org_admin') {
+          const { rows: jgs } = await db.query(
+            'SELECT id FROM jahrgaenge WHERE organization_id = $1', [orgId]
+          );
+          for (const jg of jgs) {
+            await syncJahrgangChat(db, jg.id, orgId, req.user.id);
+          }
+        }
+      } catch (syncErr) {
+        console.error('Chat-Sync nach Mitgliedschafts-Zuweisung fehlgeschlagen:', syncErr.message);
+      }
     } catch (err) {
       console.error('Database error in POST /organizations/:id/members:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
@@ -972,6 +993,21 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       }
       invalidateUserCache(userId);
       res.json({ message: 'Mitgliedschaft entfernt' });
+
+      // Chat-Mitgliedschaft der Org INLINE aufraeumen: Ex-Mitglied fliegt aus
+      // Team-Chat und allen Jahrgangs-Chats der Org (Sync entfernt Nicht-Soll).
+      try {
+        chatSyncCache.invalidate(orgId, userId);
+        await syncTeamChat(db, orgId, req.user.id);
+        const { rows: jgs } = await db.query(
+          'SELECT id FROM jahrgaenge WHERE organization_id = $1', [orgId]
+        );
+        for (const jg of jgs) {
+          await syncJahrgangChat(db, jg.id, orgId, req.user.id);
+        }
+      } catch (syncErr) {
+        console.error('Chat-Sync nach Mitgliedschafts-Entzug fehlgeschlagen:', syncErr.message);
+      }
     } catch (err) {
       console.error('Database error in DELETE /organizations/:id/members/:userId:', err);
       res.status(500).json({ error: 'Datenbankfehler' });

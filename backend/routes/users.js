@@ -7,6 +7,8 @@ const { checkUserHierarchy, filterUsersByHierarchy } = require('../utils/roleHie
 const { validatePassword } = require('../utils/passwordUtils');
 const { invalidateUserCache } = require('../middleware/rbac');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
+const { syncTeamChat } = require('../utils/teamChat');
+const chatSyncCache = require('../utils/chatSyncCache');
 const { deletePhotoFile } = require('../utils/photoStorage');
 const liveUpdate = require('../utils/liveUpdate');
 
@@ -152,8 +154,8 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
     }
 
     try {
-      // Verify role exists in organization
-      const roleCheckQuery = "SELECT id FROM roles WHERE id = $1 AND organization_id = $2";
+      // Verify role exists in organization (name wird unten fuer den Chat-Sync gebraucht)
+      const roleCheckQuery = "SELECT id, name FROM roles WHERE id = $1 AND organization_id = $2";
       const { rows: [role] } = await db.query(roleCheckQuery, [role_id, organizationId]);
 
       if (!role) {
@@ -197,6 +199,26 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
 
       // Live-Update NACH der Response: neuer Benutzer in der Benutzer-Liste.
       liveUpdate.sendToOrgAdmins(organizationId, 'users', 'create', { userId: newUser.id });
+
+      // Chat-Mitgliedschaft INLINE pflegen (der TTL-Sync-Cache verlaesst sich
+      // darauf, dass Mutations-Handler das tun — sonst erscheinen neue
+      // Teamer:innen/Admins erst nach bis zu 10 Minuten im Team-Chat).
+      if (['org_admin', 'admin', 'teamer'].includes(role.name)) {
+        try {
+          await syncTeamChat(db, organizationId, req.user.id);
+          // Org-Admins sind ausserdem in ALLEN Jahrgangs-Chats der Org.
+          if (role.name === 'org_admin') {
+            const { rows: jgs } = await db.query(
+              'SELECT id FROM jahrgaenge WHERE organization_id = $1', [organizationId]
+            );
+            for (const jg of jgs) {
+              await syncJahrgangChat(db, jg.id, organizationId, req.user.id);
+            }
+          }
+        } catch (syncErr) {
+          console.error('Chat-Sync nach Benutzer-Anlage fehlgeschlagen:', syncErr.message);
+        }
+      }
 
     } catch (err) {
       // '23505' is the code for unique_violation in PostgreSQL
@@ -276,6 +298,25 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
       // Cache invalidieren damit neues Token sofort wirkt
       if (role_id !== undefined) {
         invalidateUserCache(parseInt(id));
+      }
+
+      // Rollen- oder Aktiv-Status-Wechsel aendert die Soll-Mitgliedschaft in
+      // Team-/Jahrgangs-Chats -> INLINE syncen (TTL-Cache verlaesst sich darauf)
+      // und den Sync-Cache des Users invalidieren.
+      if (role_id !== undefined || is_active !== undefined) {
+        try {
+          chatSyncCache.invalidate(organizationId, parseInt(id));
+          await syncTeamChat(db, organizationId, req.user.id);
+          const { rows: assigned } = await db.query(
+            'SELECT jahrgang_id FROM user_jahrgang_assignments WHERE user_id = $1',
+            [id]
+          );
+          for (const a of assigned) {
+            await syncJahrgangChat(db, a.jahrgang_id, organizationId, req.user.id);
+          }
+        } catch (syncErr) {
+          console.error('Chat-Sync nach Benutzer-Aenderung fehlgeschlagen:', syncErr.message);
+        }
       }
 
       // Deaktivierung (is_active=false): Aktive Sockets trennen, damit ein noch

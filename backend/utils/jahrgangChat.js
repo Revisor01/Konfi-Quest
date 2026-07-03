@@ -56,15 +56,27 @@ async function syncJahrgangChat(db, jahrgangId, organizationId, createdBy = null
   // 3. SOLL-Mitglieder bestimmen.
   //    a) Org-Admins der Org (immer), b) Admin/Teamer mit can_view-Zuweisung,
   //    c) alle Konfis des Jahrgangs. Ergebnis: (user_id, user_type).
+  //    WICHTIG Multi-Org (Migration 101): Mitgliedschaft kann aus der Primaer-Org
+  //    (users.organization_id + users.role_id) ODER aus user_organizations
+  //    (Org-Switcher) kommen — beide Quellen zaehlen, sonst entfernt der Sync
+  //    eingewechselte Mitglieder aus den Raeumen.
   const { rows: sollMembers } = await db.query(
     `
-    -- Org-Admins: immer drin
+    -- Org-Admins: immer drin (Primaer-Org)
     SELECT u.id AS user_id, 'admin'::text AS user_type
       FROM users u JOIN roles r ON u.role_id = r.id
      WHERE u.organization_id = $2 AND r.name = 'org_admin' AND u.is_active = true
        AND u.deleted_at IS NULL
     UNION
-    -- Admins + Teamer mit Zuweisung auf diesen Jahrgang
+    -- Org-Admins: immer drin (Zusatz-Mitgliedschaft via user_organizations)
+    SELECT u.id AS user_id, 'admin'::text AS user_type
+      FROM user_organizations uo
+      JOIN users u ON uo.user_id = u.id
+      JOIN roles r ON uo.role_id = r.id
+     WHERE uo.organization_id = $2 AND r.name = 'org_admin'
+       AND u.is_active = true AND u.deleted_at IS NULL
+    UNION
+    -- Admins + Teamer mit Zuweisung auf diesen Jahrgang (Primaer-Org-Rolle)
     SELECT u.id AS user_id,
            CASE WHEN r.name = 'teamer' THEN 'teamer' ELSE 'admin' END AS user_type
       FROM user_jahrgang_assignments uja
@@ -72,6 +84,17 @@ async function syncJahrgangChat(db, jahrgangId, organizationId, createdBy = null
       JOIN roles r ON u.role_id = r.id
      WHERE uja.jahrgang_id = $1 AND uja.can_view = true
        AND u.organization_id = $2 AND r.name IN ('admin', 'teamer')
+       AND u.is_active = true AND u.deleted_at IS NULL
+    UNION
+    -- Admins + Teamer mit Zuweisung (Rolle aus user_organizations dieser Org)
+    SELECT u.id AS user_id,
+           CASE WHEN r.name = 'teamer' THEN 'teamer' ELSE 'admin' END AS user_type
+      FROM user_jahrgang_assignments uja
+      JOIN user_organizations uo ON uo.user_id = uja.user_id AND uo.organization_id = $2
+      JOIN users u ON uja.user_id = u.id
+      JOIN roles r ON uo.role_id = r.id
+     WHERE uja.jahrgang_id = $1 AND uja.can_view = true
+       AND r.name IN ('admin', 'teamer')
        AND u.is_active = true AND u.deleted_at IS NULL
     UNION
     -- Alle Konfis des Jahrgangs
@@ -112,9 +135,15 @@ async function syncJahrgangChat(db, jahrgangId, organizationId, createdBy = null
   // Org-Admin-Schutz als EINE Set-Query statt einer Query pro Teilnehmer
   // (Audit Achse 4, Fund 1: die Pro-Teilnehmer-Schleife war ein wesentlicher
   // Kostentreiber, da der Sync frueher bei jedem GET /chat/rooms lief).
+  // Schutz gilt fuer Primaer-Org-Org-Admins UND via user_organizations
+  // eingewechselte Org-Admins (Multi-Org).
   const { rows: orgAdminRows } = await db.query(
     `SELECT u.id FROM users u JOIN roles r ON u.role_id = r.id
-      WHERE u.organization_id = $1 AND r.name = 'org_admin'`,
+      WHERE u.organization_id = $1 AND r.name = 'org_admin'
+     UNION
+     SELECT uo.user_id AS id FROM user_organizations uo
+      JOIN roles r ON uo.role_id = r.id
+      WHERE uo.organization_id = $1 AND r.name = 'org_admin'`,
     [organizationId]
   );
   const orgAdminIds = new Set(orgAdminRows.map((r) => r.id));

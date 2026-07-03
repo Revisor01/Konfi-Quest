@@ -8,6 +8,29 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ## [Unreleased]
 
+### 🐛 Chat-Sync kennt Multi-Org-Mitgliedschaften (Org-Switcher)
+- **Eingewechselte Mitglieder flogen aus den Chats.** Die Soll-Mitglieder-Queries
+  in `syncJahrgangChat`/`syncTeamChat` kannten nur die Primär-Org
+  (`users.organization_id` + `users.role_id`) — wer über den Org-Switcher
+  (`user_organizations`, Migration 101) in einer zweiten Org Org-Admin/Admin/
+  Teamer:in ist, war für den Sync unsichtbar und wurde beim nächsten Lauf aus
+  Jahrgangs- und Team-Chats der Zweit-Org **entfernt** (so verschwand der
+  Hennstedt-Jahrgangschat beim eingewechselten Org-Admin). Beide Queries und der
+  Org-Admin-Schutz berücksichtigen jetzt zusätzlich `user_organizations`
+  (`backend/utils/jahrgangChat.js`, `backend/utils/teamChat.js`).
+- **Neue Teamer:innen/Admins sofort im Team-Chat.** `POST /api/admin/users` rief
+  keinen Chat-Sync auf — seit dem Sync-TTL (Phase D2) erschienen neue
+  Teammitglieder erst nach bis zu 10 Minuten im Team-Chat. Die User-Anlage synct
+  jetzt inline (Org-Admins zusätzlich in alle Jahrgangs-Chats), Rollen-/
+  Aktiv-Änderungen im PUT syncen ebenfalls inline und invalidieren den
+  Sync-Cache (`backend/routes/users.js`).
+- **Switcher-Members-Endpoints syncen mit.** `POST/DELETE /organizations/:id/members`
+  pflegen die Chat-Mitgliedschaft der Ziel-Org jetzt direkt (Aufnahme bzw.
+  Rauswurf ohne TTL-Wartezeit) (`backend/routes/organizations.js`).
+- Tests: `tests/utils/chatMembershipSync.test.js` (uo-Org-Admin bleibt drin,
+  uo-Teamerin mit Zuweisung kommt rein, Nicht-Mitglieder fliegen weiter raus,
+  Primär-Org-Regression) + users-Test "sofort im Team-Chat".
+
 ### Events-Umbau + Änderungs-Push (Audit Phase H)
 - **Events-Listen-Queries restrukturiert (Audit Achse 4, Fund 9).** `GET /events`
   (Admin/Teamer/Konfi) und `GET /konfi/events` bauten eine Join-Explosion
