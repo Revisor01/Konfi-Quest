@@ -7,6 +7,7 @@ const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, CHAT_ROOMS, ORGS } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 const { isEncrypted } = require('../../utils/photoCrypto');
+const chatSyncCache = require('../../utils/chatSyncCache');
 
 describe('Chat Routes', () => {
   let app;
@@ -24,6 +25,10 @@ describe('Chat Routes', () => {
   beforeEach(async () => {
     await truncateAll(db);
     await seed(db);
+    // Der Chat-Sync-TTL-Cache ist Modul-State und ueberlebt das truncate —
+    // ohne clear() wuerde GET /rooms den Mitgliedschafts-Sync gegen die frisch
+    // geseedete DB faelschlich ueberspringen.
+    chatSyncCache.clear();
     konfi1Token = generateToken('konfi1');
     konfi3Token = generateToken('konfi3');
     admin1Token = generateToken('admin1');

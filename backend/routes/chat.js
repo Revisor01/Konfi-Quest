@@ -10,6 +10,7 @@ const PushService = require('../services/pushService');
 const { encryptBuffer, decryptBuffer } = require('../utils/photoCrypto');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const { syncTeamChat } = require('../utils/teamChat');
+const chatSyncCache = require('../utils/chatSyncCache');
 
 module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   const { verifyTokenRBAC } = rbacMiddleware;
@@ -211,46 +212,64 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       const userType = req.user.type;
       const organizationId = req.user.organization_id;
       
-      // Jahrgangs-Chat-Mitgliedschaft synchronisieren (zentral, user_type-konsistent).
-      // - konfi: genau sein Jahrgang
-      // - teamer/admin: alle zugewiesenen Jahrgaenge
-      // - org_admin: alle Jahrgaenge der Org (immer drin)
-      try {
-        let jahrgangIds = [];
-        if (userType === 'konfi') {
-          const { rows } = await db.query(
-            'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1 AND jahrgang_id IS NOT NULL',
-            [userId]
-          );
-          jahrgangIds = rows.map(r => r.jahrgang_id);
-        } else if (req.user.role_name === 'org_admin') {
-          const { rows } = await db.query(
-            'SELECT id FROM jahrgaenge WHERE organization_id = $1',
-            [organizationId]
-          );
-          jahrgangIds = rows.map(r => r.id);
-        } else {
-          // admin / teamer -> zugewiesene Jahrgaenge
-          const { rows } = await db.query(
-            'SELECT jahrgang_id FROM user_jahrgang_assignments WHERE user_id = $1 AND can_view = true',
-            [userId]
-          );
-          jahrgangIds = rows.map(r => r.jahrgang_id);
-        }
-        for (const jid of jahrgangIds) {
-          await syncJahrgangChat(db, jid, organizationId, userId);
-        }
-      } catch (syncErr) {
-        console.error('Jahrgangs-Chat-Sync beim Laden der Raeume fehlgeschlagen:', syncErr.message);
-      }
+      // Mitgliedschafts-Sync (Jahrgangs- + Team-Chat) NICHT mehr bei jedem Aufruf:
+      // Das war Schreibarbeit auf dem meistgerufenen Lesepfad (25-35 Queries bei
+      // einem Org-Admin mit 5 Jahrgaengen, Hauptursache p95 ~919ms). Jetzt laeuft
+      // der Sync pro User hoechstens 1x je TTL (10 Min) — neuer User ohne
+      // Cache-Eintrag synct beim ERSTEN Aufruf sofort; Jahrgang-/Rollenwechsel
+      // korrigieren die Mitgliedschaft ohnehin INLINE in ihren Handlern
+      // (Details: utils/chatSyncCache.js).
+      if (chatSyncCache.needsSync(organizationId, userId)) {
+        let syncOk = true;
 
-      // Team-Chat-Mitgliedschaft synchronisieren (nur fuer Team-Mitglieder, nie Konfis).
-      // Stellt sicher, dass der "Team"-Chat existiert und alle Admins/Teamer drin sind.
-      if (userType !== 'konfi') {
+        // Jahrgangs-Chat-Mitgliedschaft synchronisieren (zentral, user_type-konsistent).
+        // - konfi: genau sein Jahrgang
+        // - teamer/admin: alle zugewiesenen Jahrgaenge
+        // - org_admin: alle Jahrgaenge der Org (immer drin)
         try {
-          await syncTeamChat(db, organizationId, userId);
-        } catch (teamSyncErr) {
-          console.error('Team-Chat-Sync beim Laden der Raeume fehlgeschlagen:', teamSyncErr.message);
+          let jahrgangIds = [];
+          if (userType === 'konfi') {
+            const { rows } = await db.query(
+              'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1 AND jahrgang_id IS NOT NULL',
+              [userId]
+            );
+            jahrgangIds = rows.map(r => r.jahrgang_id);
+          } else if (req.user.role_name === 'org_admin') {
+            const { rows } = await db.query(
+              'SELECT id FROM jahrgaenge WHERE organization_id = $1',
+              [organizationId]
+            );
+            jahrgangIds = rows.map(r => r.id);
+          } else {
+            // admin / teamer -> zugewiesene Jahrgaenge
+            const { rows } = await db.query(
+              'SELECT jahrgang_id FROM user_jahrgang_assignments WHERE user_id = $1 AND can_view = true',
+              [userId]
+            );
+            jahrgangIds = rows.map(r => r.jahrgang_id);
+          }
+          for (const jid of jahrgangIds) {
+            await syncJahrgangChat(db, jid, organizationId, userId);
+          }
+        } catch (syncErr) {
+          syncOk = false;
+          console.error('Jahrgangs-Chat-Sync beim Laden der Raeume fehlgeschlagen:', syncErr.message);
+        }
+
+        // Team-Chat-Mitgliedschaft synchronisieren (nur fuer Team-Mitglieder, nie Konfis).
+        // Stellt sicher, dass der "Team"-Chat existiert und alle Admins/Teamer drin sind.
+        if (userType !== 'konfi') {
+          try {
+            await syncTeamChat(db, organizationId, userId);
+          } catch (teamSyncErr) {
+            syncOk = false;
+            console.error('Team-Chat-Sync beim Laden der Raeume fehlgeschlagen:', teamSyncErr.message);
+          }
+        }
+
+        // Nur bei fehlerfreiem Sync merken — sonst beim naechsten Aufruf erneut versuchen.
+        if (syncOk) {
+          chatSyncCache.markSynced(organizationId, userId);
         }
       }
       

@@ -109,15 +109,19 @@ async function syncJahrgangChat(db, jahrgangId, organizationId, createdBy = null
     'SELECT user_id, user_type FROM chat_participants WHERE room_id = $1',
     [roomId]
   );
+  // Org-Admin-Schutz als EINE Set-Query statt einer Query pro Teilnehmer
+  // (Audit Achse 4, Fund 1: die Pro-Teilnehmer-Schleife war ein wesentlicher
+  // Kostentreiber, da der Sync frueher bei jedem GET /chat/rooms lief).
+  const { rows: orgAdminRows } = await db.query(
+    `SELECT u.id FROM users u JOIN roles r ON u.role_id = r.id
+      WHERE u.organization_id = $1 AND r.name = 'org_admin'`,
+    [organizationId]
+  );
+  const orgAdminIds = new Set(orgAdminRows.map((r) => r.id));
   for (const c of current) {
     if (sollKeys.has(`${c.user_id}:${c.user_type}`)) continue;
     // Org-Admin-Schutz: nie entfernen, selbst wenn (theoretisch) nicht in Soll.
-    const { rows: [isOrgAdmin] } = await db.query(
-      `SELECT 1 FROM users u JOIN roles r ON u.role_id = r.id
-        WHERE u.id = $1 AND r.name = 'org_admin'`,
-      [c.user_id]
-    );
-    if (isOrgAdmin) continue;
+    if (orgAdminIds.has(c.user_id)) continue;
     await db.query(
       'DELETE FROM chat_participants WHERE room_id = $1 AND user_id = $2 AND user_type = $3',
       [roomId, c.user_id, c.user_type]

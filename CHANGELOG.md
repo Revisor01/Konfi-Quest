@@ -9,6 +9,23 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 ## [Unreleased]
 
 ### ⚡ Performance
+- **Chat-Mitgliedschafts-Sync vom Lesepfad entkoppelt.** `GET /chat/rooms`
+  fuehrte bei JEDEM Aufruf den Jahrgangs- und Team-Chat-Sync aus (25-35 Queries
+  Schreibarbeit bei einem Org-Admin mit 5 Jahrgaengen — Hauptursache der hohen
+  Latenz des meistgerufenen Endpoints, p95 ~919ms). Der Sync laeuft jetzt pro
+  User hoechstens einmal je 10 Minuten (In-Memory-TTL). Sicher, weil neue User
+  beim ersten Aufruf sofort syncen und alle Mutations-Handler (Jahrgang-
+  Zuweisung/-Wechsel, Befoerderung) die Mitgliedschaften ohnehin inline
+  korrigieren. Zusaetzlich im Sync die Org-Admin-Schutzpruefung von einer Query
+  pro Teilnehmer auf eine Set-Query reduziert (`backend/routes/chat.js`,
+  `backend/utils/chatSyncCache.js`, `backend/utils/jahrgangChat.js`).
+- **Badge-Zaehler laden keine Volllisten mehr.** Der `BadgeContext` holte fuer
+  die Tab-Leisten-Zaehler die komplette Raumliste, alle Antraege und alle Events
+  (drei teure Endpoints bei jedem Refresh — u.a. nach jeder Chat-Nachricht).
+  Neuer leichtgewichtiger Endpoint `GET /notifications/badge-counts` liefert
+  nur die Zahlen (unread pro Raum, pending-Antraege, unverarbeitete vergangene
+  Events) mit exakt der Semantik der Listen-Ansichten
+  (`backend/routes/notifications.js`, `frontend/src/contexts/BadgeContext.tsx`).
 - **ChatOverview-Doppelhandler entfernt (Audit Achse 4, Fund 2).** Die
   Chat-Uebersicht hatte einen eigenen `socket.on('newMessage')`-Handler, der
   `refresh()` (`/chat/rooms`) rief — zusaetzlich zum Effect auf

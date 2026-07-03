@@ -294,4 +294,107 @@ describe('Notifications Routes', () => {
       expect(res.status).toBe(400);
     });
   });
+
+  // ================================================================
+  // GET /api/notifications/badge-counts (Audit Achse 4, Fund 3)
+  // Leichtgewichtiger Zaehler-Endpoint, ersetzt die frueheren Voll-Fetches
+  // im BadgeContext. Semantik muss den Listen-Ansichten entsprechen.
+  // ================================================================
+  describe('GET /api/notifications/badge-counts', () => {
+    it('Konfi bekommt unread pro Raum + Gesamt (Seed: konfi1 in Raum 1 und 2)', async () => {
+      // 2 Nachrichten von admin1 in Raum 1, 1 Nachricht in Raum 2 — kein
+      // read_status fuer konfi1 -> alles ungelesen.
+      await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, user_type, content) VALUES
+         (1, $1, 'admin', 'Nachricht 1'), (1, $1, 'admin', 'Nachricht 2'), (2, $1, 'admin', 'Nachricht 3')`,
+        [USERS.admin1.id]
+      );
+
+      const res = await request(app)
+        .get('/api/notifications/badge-counts')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.chat.total).toBe(3);
+      expect(res.body.chat.byRoom['1']).toBe(2);
+      expect(res.body.chat.byRoom['2']).toBe(1);
+      // Konfi bekommt keine Admin-Zaehler
+      expect(res.body.pendingRequests).toBe(0);
+      expect(res.body.pendingEvents).toBe(0);
+    });
+
+    it('read_status wird respektiert (gelesener Raum zaehlt 0)', async () => {
+      await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, user_type, content) VALUES (1, $1, 'admin', 'Alte Nachricht')`,
+        [USERS.admin1.id]
+      );
+      // konfi1 hat Raum 1 NACH der Nachricht gelesen
+      await db.query(
+        `INSERT INTO chat_read_status (room_id, user_id, user_type, last_read_at) VALUES (1, $1, 'konfi', NOW() + interval '1 minute')`,
+        [USERS.konfi1.id]
+      );
+
+      const res = await request(app)
+        .get('/api/notifications/badge-counts')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.chat.byRoom['1']).toBe(0);
+      expect(res.body.chat.total).toBe(0);
+    });
+
+    it('Admin bekommt pending-Antraege und unverarbeitete vergangene Events', async () => {
+      // Pending-Antrag von konfi1 auf Aktivitaet 1 (Org 1)
+      await db.query(
+        `INSERT INTO activity_requests (user_id, activity_id, status, organization_id, requested_date)
+         VALUES ($1, 1, 'pending', 1, CURRENT_DATE)`,
+        [USERS.konfi1.id]
+      );
+      // Vergangenes Event mit bestaetigter Buchung ohne attendance_status
+      await db.query(
+        `UPDATE events SET event_date = NOW() - interval '2 days' WHERE id = 1`
+      );
+      await db.query(
+        `INSERT INTO event_bookings (user_id, event_id, status, organization_id)
+         VALUES ($1, 1, 'confirmed', 1)`,
+        [USERS.konfi1.id]
+      );
+
+      const res = await request(app)
+        .get('/api/notifications/badge-counts')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.pendingRequests).toBe(1);
+      expect(res.body.pendingEvents).toBe(1);
+    });
+
+    it('Abgeschlossene Antraege und kuenftige Events zaehlen NICHT', async () => {
+      await db.query(
+        `INSERT INTO activity_requests (user_id, activity_id, status, organization_id, requested_date)
+         VALUES ($1, 1, 'approved', 1, CURRENT_DATE)`,
+        [USERS.konfi1.id]
+      );
+      // Seed-Events liegen alle in der Zukunft; Buchung ohne attendance zaehlt
+      // trotzdem nicht, weil event_date > NOW().
+      await db.query(
+        `INSERT INTO event_bookings (user_id, event_id, status, organization_id)
+         VALUES ($1, 1, 'confirmed', 1)`,
+        [USERS.konfi1.id]
+      );
+
+      const res = await request(app)
+        .get('/api/notifications/badge-counts')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.pendingRequests).toBe(0);
+      expect(res.body.pendingEvents).toBe(0);
+    });
+
+    it('Ohne Token -> 401', async () => {
+      const res = await request(app).get('/api/notifications/badge-counts');
+      expect(res.status).toBe(401);
+    });
+  });
 });

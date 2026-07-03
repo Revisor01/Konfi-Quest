@@ -58,45 +58,33 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     return chatUnreadTotal;
   }, [chatUnreadTotal, pendingRequestsCount, pendingEventsCount, isAdmin]);
 
-  // Zentraler Refresh aller Counts
+  // Zentraler Refresh aller Counts. Nutzt den leichtgewichtigen Zaehler-Endpoint
+  // (Audit Achse 4, Fund 3) statt der frueheren drei Voll-Fetches (/chat/rooms +
+  // /admin/activities/requests + /events), die nur fuer Zahlen geladen wurden.
+  // Die Semantik der Zaehler repliziert der Server exakt aus den Listen-Queries
+  // (unread pro Raum, pending-Antraege, unverarbeitete vergangene Events).
   const refreshAllCounts = useCallback(async () => {
     if (!user) return;
 
     try {
-      // Chat-Rooms immer laden
-      const promises: Promise<any>[] = [api.get('/chat/rooms')];
+      const { data } = await api.get('/notifications/badge-counts');
 
-      // Admin-only: Requests + Events
-      if (isAdmin) {
-        promises.push(api.get('/admin/activities/requests'));
-        promises.push(api.get('/events'));
-      }
-
-      const results = await Promise.all(promises);
-
-      // Chat-Rooms verarbeiten
-      const rooms = results[0].data;
+      // chatUnreadByRoom-Struktur (Record<number, number>) beibehalten —
+      // ChatRoom (initialUnreadRef) und ChatOverview (Effect-Trigger) haengen dran.
+      const byRoomRaw: Record<string, number> = data?.chat?.byRoom || {};
       const unreadByRoom: Record<number, number> = {};
       let totalUnread = 0;
-      rooms.forEach((room: any) => {
-        const unreadCount = room.unread_count || 0;
-        unreadByRoom[room.id] = unreadCount;
-        totalUnread += unreadCount;
+      Object.entries(byRoomRaw).forEach(([roomId, count]) => {
+        const unread = Number(count) || 0;
+        unreadByRoom[Number(roomId)] = unread;
+        totalUnread += unread;
       });
       setChatUnreadByRoom(unreadByRoom);
       setChatUnreadTotal(totalUnread);
 
-      // Admin-Counts verarbeiten
-      if (isAdmin && results.length >= 3) {
-        const requests = results[1].data;
-        const pendingCount = requests.filter((req: any) => req.status === 'pending').length;
-        setPendingRequestsCount(pendingCount);
-
-        const events = results[2].data;
-        const pendingEvents = events.filter((event: any) =>
-          event.unprocessed_count > 0 && new Date(event.event_date) < new Date()
-        ).length;
-        setPendingEventsCount(pendingEvents);
+      if (isAdmin) {
+        setPendingRequestsCount(Number(data?.pendingRequests) || 0);
+        setPendingEventsCount(Number(data?.pendingEvents) || 0);
       }
     } catch (error) {
       console.error('BadgeContext: refreshAllCounts fehlgeschlagen:', error);
