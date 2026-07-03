@@ -749,6 +749,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
 
       // Live-Update an alle Admins senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'badges', 'create');
+      // Konfis sehen den Badge-Katalog (KonfiBadgesPage abonniert 'badges').
+      liveUpdate.sendToOrgKonfis(req.user.organization_id, 'badges', 'create');
     } catch (err) {
  console.error('Database error in POST /api/badges:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
@@ -777,6 +779,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
 
       // Live-Update an alle Admins senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'badges', 'update');
+      // Konfis sehen den Badge-Katalog (KonfiBadgesPage abonniert 'badges').
+      liveUpdate.sendToOrgKonfis(req.user.organization_id, 'badges', 'update');
     } catch (err) {
  console.error(`Database error in PUT /api/badges/${req.params.id}:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
@@ -805,6 +809,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
 
       // Live-Update an alle Admins senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'badges', 'delete');
+      // Konfis sehen den Badge-Katalog (KonfiBadgesPage abonniert 'badges').
+      liveUpdate.sendToOrgKonfis(req.user.organization_id, 'badges', 'delete');
     } catch (err) {
       try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
       client.release();

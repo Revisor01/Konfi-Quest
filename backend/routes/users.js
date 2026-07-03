@@ -195,6 +195,9 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
         display_name
       });
 
+      // Live-Update NACH der Response: neuer Benutzer in der Benutzer-Liste.
+      liveUpdate.sendToOrgAdmins(organizationId, 'users', 'create', { userId: newUser.id });
+
     } catch (err) {
       // '23505' is the code for unique_violation in PostgreSQL
       if (err.code === '23505') {
@@ -266,6 +269,9 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
       }
 
       res.json({ message: 'Benutzer erfolgreich aktualisiert' });
+
+      // Live-Update NACH der Response: geaenderter Benutzer in der Benutzer-Liste.
+      liveUpdate.sendToOrgAdmins(organizationId, 'users', 'update', { userId: parseInt(id) });
 
       // Cache invalidieren damit neues Token sofort wirkt
       if (role_id !== undefined) {
@@ -454,6 +460,9 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
 
       res.json({ message: 'Benutzer erfolgreich gelöscht' });
 
+      // Live-Update NACH der Response: geloeschter Benutzer aus der Benutzer-Liste.
+      liveUpdate.sendToOrgAdmins(organizationId, 'users', 'delete', { userId: parseInt(id) });
+
     } catch (err) {
       try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
       client.release();
@@ -539,6 +548,10 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
             message: jahrgang_assignments.length > 0 ? 'Jahrgangs-Zuweisungen aktualisiert' : 'Alle Jahrgangs-Zuweisungen entfernt',
             assignments_count: jahrgang_assignments.length
         });
+
+        // Live-Update NACH der Response: geaenderte Jahrgangs-Zuweisung wirkt auf
+        // die Benutzer-Liste (Zugehoerigkeit/Anzeige).
+        liveUpdate.sendToOrgAdmins(organizationId, 'users', 'update', { userId: parseInt(userId) });
 
         } catch (err) {
           try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }

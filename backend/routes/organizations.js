@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { invalidateUserCache } = require('../middleware/rbac');
+const liveUpdate = require('../utils/liveUpdate');
 
 // Organizations routes
 // ============================================
@@ -454,6 +455,12 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
         message: `Organisation erfolgreich erstellt (Standard-Rollen, Admin, ${defaultBadges.length} Badges, ${defaultCertificates.length} Zertifikate, ${defaultLevels.length} Levels, ${defaultCategories.length} Kategorien, ${defaultActivities.length} Aktivitäten)`
       });
 
+      // Live-Update NACH der Response: nur an den ausfuehrenden Super-Admin selbst
+      // (Multi-Device-Sync seiner eigenen Sitzung). Die Organisations-Verwaltung ist
+      // super-admin-only und org-uebergreifend; ein Org-Broadcast passt hier nicht.
+      // Andere Super-Admins sind selten und aktualisieren beim naechsten Seitenaufruf.
+      liveUpdate.sendToUserByRole(req.user.id, 'organizations', 'create');
+
     } catch (err) {
       if (err.code === '23505') { // unique_violation
         return res.status(409).json({ error: 'Organisations-Slug existiert bereits' });
@@ -517,6 +524,10 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       }
         
       res.json({ message: 'Organisation erfolgreich aktualisiert' });
+
+      // Live-Update NACH der Response an den Ausfuehrenden selbst (Multi-Device).
+      // Passt fuer super_admin (org-uebergreifende Verwaltung) und org_admin (eigene Org).
+      liveUpdate.sendToUserByRole(req.user.id, 'organizations', 'update');
     } catch (err) {
       if (err.code === '23505') { // unique_violation
         return res.status(409).json({ error: 'Organisations-Slug existiert bereits' });
@@ -643,6 +654,9 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       await client.query('COMMIT');
       res.json({ message: 'Organisation und alle zugehörigen Daten erfolgreich gelöscht' });
 
+      // Live-Update NACH der Response an den ausfuehrenden Super-Admin selbst (Multi-Device).
+      liveUpdate.sendToUserByRole(req.user.id, 'organizations', 'delete');
+
     } catch (err) {
       await client.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
       console.error('Error deleting organization:', err);
@@ -680,6 +694,9 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       }
 
       res.json({ message: 'Konfi-Limit erfolgreich aktualisiert', max_konfis: value });
+
+      // Live-Update NACH der Response an den ausfuehrenden Super-Admin selbst (Multi-Device).
+      liveUpdate.sendToUserByRole(req.user.id, 'organizations', 'update');
     } catch (err) {
       console.error('Error setting organization limit:', err);
       res.status(500).json({ error: 'Datenbankfehler' });

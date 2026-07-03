@@ -122,6 +122,41 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
   `socketEpoch`; der Effekt bindet den Listener bei jeder Epoch-Erhoehung am
   frischen Socket neu (`frontend/src/contexts/LiveUpdateContext.tsx`,
   `frontend/src/contexts/BadgeContext.tsx`).
+- **Fehlende Live-Updates in der Verwaltung nachgeruestet (Audit Achse 2,
+  Luecken 5/8/11/12/13/15).** Mehrere schreibende Endpoints sendeten nach
+  erfolgreicher Aenderung kein Live-Update, sodass Listen auf anderen Geraeten/
+  Sitzungen bis zum manuellen Refresh veralteten:
+  - **Konfis** (`backend/routes/konfi-management.js`): Anlegen, Aendern, Loeschen
+    und Befoerderung zum Teamer senden jetzt `konfis`-Updates an alle Admins/
+    Teamer:innen der Org; die Befoerderung zusaetzlich ein `users`-Update (der
+    Konfi taucht nun als Teamer:in in der Benutzer-Liste auf).
+  - **Selbstregistrierung** (`backend/routes/auth.js`): `register-konfi` sendet
+    nach erfolgreicher Anmeldung ein `konfis`-Update an die Admins der Org
+    (Org-ID aus dem Einladungscode, da unauthentifiziert).
+  - **Benutzer** (`backend/routes/users.js`): Anlegen, Aendern, Loeschen und
+    Jahrgangs-Zuweisung senden `users`-Updates. Die `AdminUsersPage` abonnierte
+    den Typ bereits, er wurde nur nie gesendet (stilles Abo).
+  - **Einstellungen** (`backend/routes/settings.js`): Speichern sendet ein
+    `dashboard`-Update an die gesamte Org (Dashboard-Widget- und Punkt-Typ-
+    Toggles wirken direkt auf Konfi-/Teamer-Dashboards).
+  - **Badges** (`backend/routes/badges.js`): Anlegen/Aendern/Loeschen sendet
+    zusaetzlich zum bestehenden Admin-Update jetzt auch ein `badges`-Update an
+    die Konfis (der Badge-Katalog der `KonfiBadgesPage` bleibt aktuell).
+  - **Organisationen** (`backend/routes/organizations.js`): Anlegen/Aendern/
+    Loeschen und Limit-Aenderung senden ein `organizations`-Update an den
+    ausfuehrenden (Super-)Admin selbst (Multi-Device-Sync).
+- **AdminLevelsPage abonniert Live-Updates (toter Sender).** Der Server sendete
+  bei Level-Aenderungen bereits ein `levels`-Event, aber keine View hoerte darauf.
+  Die Level-Verwaltung revalidiert jetzt via `useLiveRefresh('levels', ...)`
+  (`frontend/src/components/admin/pages/AdminLevelsPage.tsx`).
+- **Tote Kompatibilitaets-Listener entfernt.** Die 13 `*Update`-Socket-Listener
+  im `LiveUpdateContext` (dashboardUpdate, eventsUpdate, badgesUpdate,
+  requestsUpdate, konfisUpdate, pointsUpdate, bookingUpdate, activitiesUpdate,
+  categoriesUpdate, jahrgaengeUpdate, levelsUpdate, usersUpdate,
+  organizationsUpdate) waren tot: Seit dem Entfernen des globalen `io.emit()` im
+  Backend emittiert kein Server-Code mehr diese Events (alle laufen ueber das
+  einheitliche `liveUpdate`-Event). Ersatzlos entfernt
+  (`frontend/src/contexts/LiveUpdateContext.tsx`).
 
 ### 🔒 Sicherheit
 - **Aktive Socket-Verbindungen bei Konto-Loeschung, Passwort-Reset und
