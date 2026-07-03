@@ -622,10 +622,13 @@ async function insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds,
       await PushService.sendBadgeEarnedToKonfi(db, userId, badge.name, badge.icon, badge.description);
     }
 
-    // Live-Update an den Konfi selbst: Badge-Zaehler sofort aktualisieren, ohne
-    // dass die App dafuer alle 60s /konfi/badges pollen muss. earnedBadgeDetails
-    // ist hier immer nicht-leer (Aufrufer prueft das). Fire-and-forget.
-    liveUpdate.sendToKonfi(userId, 'badges', 'earned', { count: earnedBadgeDetails.length });
+    // Live-Update an den Empfaenger selbst: Badge-Zaehler sofort aktualisieren,
+    // ohne dass die App dafuer alle 60s /konfi/badges pollen muss.
+    // earnedBadgeDetails ist hier immer nicht-leer (Aufrufer prueft das).
+    // sendToUserByRole (statt sendToKonfi), weil Badges auch an Teamer:innen
+    // vergeben werden koennen und deren Socket im Raum user_teamer_ sitzt.
+    // Fire-and-forget.
+    liveUpdate.sendToUserByRole(userId, 'badges', 'earned', { count: earnedBadgeDetails.length });
   } catch (notifErr) {
     console.error('Error sending badge notifications:', notifErr);
   }

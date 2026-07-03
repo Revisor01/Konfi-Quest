@@ -27,6 +27,25 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
   Nur noch der initiale Load bleibt (`frontend/src/contexts/BadgeContext.tsx`).
 
 ### 🐛 Fehlerbehebungen
+- **Teamer:innen bekamen nie Live-Updates.** Alle Echtzeit-Aktualisierungen an
+  „Admins der Organisation" (neue/geaenderte Antraege, Events, Zaehler) gingen
+  ausschliesslich in den Admin-Socket-Raum, obwohl Teamer:innen in einem eigenen
+  Raum (`user_teamer_<id>`) sitzen — sie waren dadurch faktisch vom gesamten
+  LiveUpdate-System abgeschnitten (Teamer-Antragsliste, Teamer-Events,
+  Teamer-Badge-Zaehler aktualisierten sich nie automatisch). `sendToOrgAdmins`
+  adressiert Teamer:innen jetzt im korrekten Raum. Zusaetzlich landet ein an
+  Teamer:innen vergebenes Badge bzw. der Status eines Teamer-Antrags nicht mehr
+  im leeren Konfi-Raum: Ein neuer Helper `sendToUserByRole` schlaegt die Rolle
+  des Empfaengers nach und trifft den richtigen Socket-Raum
+  (`backend/utils/liveUpdate.js`, `backend/routes/badges.js`,
+  `backend/routes/activities.js`). Nebenbei filtern die Org-/Jahrgangs-Sendungen
+  jetzt geloeschte User (`deleted_at IS NULL`) heraus.
+- **Antrags-Genehmigung sendete einen organisationsuebergreifenden Broadcast.**
+  Beim Genehmigen/Ablehnen eines Antrags ging ein globales `io.emit` an ALLE
+  Organisationen (Isolation-Verletzung, zudem redundant zu den org-gezielten
+  LiveUpdates direkt daneben). Dieser Legacy-Broadcast wurde ersatzlos entfernt;
+  die betroffenen Clients erhalten dieselbe Aktualisierung nun ueber das
+  regulaere org-gezielte `liveUpdate`-Event (`backend/routes/activities.js`).
 - **Benutzer mit Konfi-History liessen sich nicht loeschen ("Datenbankfehler").**
   Wurde ein User geloescht, der noch Antraege, Badges, Aktivitaeten oder
   Bonuspunkte hatte (typisch: ein zum Teamer befoerderter Ex-Konfi), brach der

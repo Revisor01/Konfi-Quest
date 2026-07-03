@@ -481,22 +481,20 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         // Don't fail the request if notification fails
       }
 
-      // Live-Update an ALLE Admins broadcasten: Konfi-Punkte + Antragsliste
-      // aendern sich -> jeder sieht es sofort, ohne manuelles Refresh, und es
-      // verhindert Doppel-Genehmigungen durch parallele Admins.
-      try {
-        io.emit('konfisUpdate', { organization_id: req.user.organization_id });
-        io.emit('requestsUpdate', { organization_id: req.user.organization_id });
-      } catch (emitErr) {
-        console.error('Socket-Emit nach Genehmigung fehlgeschlagen:', emitErr.message);
-      }
-
       res.json({ message: 'Antragsstatus aktualisiert', newBadges });
 
-      // Live-Update für Anträge und Konfi-Punkte senden
+      // Live-Update fuer Antragsliste an alle Admins/Org-Admins/Teamer:innen der
+      // Org (sendToOrgAdmins adressiert seit dem Raum-Fix auch Teamer:innen). Der
+      // frueher hier stehende globale io.emit('konfisUpdate'/'requestsUpdate') war
+      // ein Broadcast an ALLE Orgs (Isolation-Verletzung) und ist redundant: die
+      // Legacy-Listener in LiveUpdateContext bekommen dieselbe Aktualisierung nun
+      // ueber das reguläre 'liveUpdate'-Event (type 'requests') dieser Sendung.
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'update');
-      liveUpdate.sendToKonfi(request.user_id, 'points', 'update');
-      liveUpdate.sendToKonfi(request.user_id, 'requests', 'update');
+      // Antragsteller:in kann Konfi ODER Teamer:in sein (target_role='teamer'):
+      // sendToUserByRole trifft den korrekten Socket-Raum, sendToKonfi wuerde bei
+      // Teamer-Antraegen in den leeren Konfi-Raum senden.
+      liveUpdate.sendToUserByRole(request.user_id, 'points', 'update');
+      liveUpdate.sendToUserByRole(request.user_id, 'requests', 'update');
     } catch (err) {
  console.error(`Database error in PUT /api/activities/requests/${requestId}:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
