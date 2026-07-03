@@ -18,6 +18,11 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
   in `POST /rooms`, nie mehr vom Client übernommen); Migration 117 repariert
   die Bestandsdaten (`backend/routes/chat.js`,
   `backend/migrations/117_fix_chat_participant_user_types.sql`).
+- **"Neue Nachrichten"-Trenner sprang über eigene Nachrichten.** Der Trenner
+  wurde per Index (`länge − ungelesen`) aus der aktuellen Listenlänge berechnet —
+  jede neu angehängte (auch eigene) Nachricht schob ihn nach unten. Er wird
+  jetzt einmalig per Message-ID an der ersten ungelesenen Nachricht verankert
+  und bleibt dort stehen (`frontend/src/components/chat/ChatRoom.tsx`).
 - **Eigene Nachricht blitzte kurz doppelt auf.** Nach dem Senden hängte der
   `newMessage`-Socket-Handler die Server-Kopie ZUSÄTZLICH unter die noch
   sichtbare optimistische Nachricht; erst der Voll-Reload danach räumte auf

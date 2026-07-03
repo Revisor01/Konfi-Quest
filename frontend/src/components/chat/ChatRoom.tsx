@@ -60,6 +60,10 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   // markRoomAsRead sie auf 0 setzt) -> Position des "Neu"-Trenners + Scrollziel.
   const initialUnreadRef = useRef<number | null>(null);
   const newDividerRef = useRef<HTMLDivElement | null>(null);
+  // Message-ID, VOR der der "Neue Nachrichten"-Trenner steht — EINMAL beim
+  // ersten vollstaendigen Laden eingefroren. Ein Index (laenge - unread) wuerde
+  // bei jeder neu angehaengten (auch eigenen) Nachricht nach unten wandern.
+  const newDividerAnchorRef = useRef<number | null>(null);
 
   // --- useOfflineQuery: Initial messages load mit Cache ---
   const { data: initialMessages, refresh: refreshMessagesCache } = useOfflineQuery<Message[]>(
@@ -1282,19 +1286,25 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
 
         <div style={{ paddingBottom: '0px', position: 'relative' }}>
           {(() => {
-            // Index der ersten ungelesenen Nachricht (= letzte N Nachrichten, N =
-            // beim Oeffnen eingefrorene Ungelesen-Anzahl). -1 = keine ungelesenen.
+            // Erste ungelesene Nachricht (= letzte N Nachrichten, N = beim
+            // Oeffnen eingefrorene Ungelesen-Anzahl) EINMAL per Message-ID
+            // verankern. Danach bleibt der Trenner an dieser Nachricht kleben —
+            // neu ankommende/eigene Nachrichten verschieben ihn nicht mehr.
             const unread = initialUnreadRef.current ?? 0;
-            const firstUnreadIndex = unread > 0 && unread <= messages.length
-              ? messages.length - unread
-              : -1;
+            if (newDividerAnchorRef.current === null && unread > 0 && unread <= messages.length) {
+              const anchor = messages[messages.length - unread];
+              // Nur echte Server-Nachrichten ankern (optimistische haben id < 0)
+              if (anchor && anchor.id > 0) {
+                newDividerAnchorRef.current = anchor.id;
+              }
+            }
             let lastDayKey = '';
             return messages.map((message, index) => {
               const created = message.created_at ? new Date(message.created_at) : null;
               const dayKey = created && !isNaN(created.getTime()) ? created.toDateString() : '';
               const showDayDivider = dayKey && dayKey !== lastDayKey;
               if (showDayDivider) lastDayKey = dayKey;
-              const showNewDivider = index === firstUnreadIndex;
+              const showNewDivider = newDividerAnchorRef.current !== null && message.id === newDividerAnchorRef.current;
               return (
                 <React.Fragment key={message.id}>
                   {showDayDivider && (
