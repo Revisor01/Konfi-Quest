@@ -8,6 +8,34 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ## [Unreleased]
 
+### Events-Umbau + Änderungs-Push (Audit Phase H)
+- **Events-Listen-Queries restrukturiert (Audit Achse 4, Fund 9).** `GET /events`
+  (Admin/Teamer/Konfi) und `GET /konfi/events` bauten eine Join-Explosion
+  (events × bookings × users × roles × categories × jahrgang_assignments vor
+  GROUP BY) mit korrelierten Subqueries pro Zeile (material_count,
+  waitlist_position). Beide Queries arbeiten jetzt mit LATERAL-Aggregaten pro
+  Anliegen (Buchungs-Zähler via `COUNT(*) FILTER`, Kategorien/Jahrgänge als
+  Sub-Selects, eigene Buchung mit `LIMIT 1`, Wartelisten-Position als eigenes
+  LATERAL) — kein GROUP BY über die ganze Breite mehr. Die JSON-Response ist
+  feldgenau identisch (`backend/routes/events.js`, `backend/routes/konfi.js`).
+- **Datumsfenster für Events-Listen.** Beide Endpoints liefern standardmäßig nur
+  noch Events des letzten Jahres (plus alle zukünftigen) — die Listen wachsen
+  damit nicht mehr unbegrenzt mit den Jahrgängen. `?all=true` liefert weiterhin
+  die gesamte Historie (aktuell von keiner View benötigt, Escape-Hatch für
+  spätere Statistik-Ansichten).
+- **Push bei Terminverschiebung (Audit Achse 3).** `PUT /events/:id` sendete bei
+  Änderungen nur ein LiveUpdate — gebuchte Teilnehmer mit App im Hintergrund
+  erfuhren von Datum-/Uhrzeit-/Ortsänderungen nichts. Jetzt geht nach dem COMMIT
+  ein Push an alle gebuchten Teilnehmer (confirmed + Warteliste, rollenneutral
+  inkl. Teamer:innen) mit dem konkret geänderten Wert ("Neuer Termin: …" /
+  "Neuer Ort: …"). Alt/Neu-Vergleich normalisiert Datumswerte, damit der Push
+  nur bei echten Änderungen feuert; nur für zukünftige, nicht abgesagte Events.
+  Neuer Typ `event_changed` via `sendEventChangedToKonfis`
+  (`backend/routes/events.js`, `backend/services/pushService.js`).
+- Tests: Datumsfenster + Response-Shape für beide Listen-Endpoints,
+  Änderungs-Push positiv/negativ (`backend/tests/routes/events.test.js`,
+  `backend/tests/routes/konfi.test.js`).
+
 ### Chat-Feinschliff (Audit Phase G)
 - **Umfragen erscheinen live (Audit Achse 2, Luecke 10a).** `POST /chat/rooms/:id/polls`
   legte die Umfrage-Nachricht an, sendete aber kein Socket-Event — Teilnehmer

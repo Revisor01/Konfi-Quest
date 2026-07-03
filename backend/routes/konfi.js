@@ -1393,28 +1393,38 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
       const jahrgangId = konfiProfile.jahrgang_id;
 
-      // Get all events with konfi-specific data, filtered by jahrgang
+      // Datumsfenster: standardmaessig nur Events des letzten Jahres (plus alle
+      // zukuenftigen). Mit ?all=true wird die gesamte Historie geliefert.
+      const includeAll = req.query.all === 'true';
+      const dateWindowClause = includeAll
+        ? ''
+        : "AND e.event_date >= NOW() - INTERVAL '1 year'";
+
+      // Restrukturierte Query (Audit Achse 4, Fund 9):
+      // Keine Join-Explosion mehr ueber bookings/users/roles/categories.
+      // Buchungs-Statistik und Wartelisten-Position als LATERAL-Aggregate,
+      // eigene Buchung als LEFT JOIN LATERAL mit LIMIT 1 — kein GROUP BY noetig.
       const query = `
         SELECT e.*,
-               COUNT(DISTINCT CASE WHEN eb_all.status = 'confirmed' THEN eb_all.id END) as registered_count,
-               COUNT(DISTINCT CASE WHEN eb_all.status = 'waitlist' THEN eb_all.id END) as waitlist_count,
-               COUNT(DISTINCT CASE WHEN eb_all.status = 'confirmed' AND r_book.name = 'teamer' THEN eb_all.id END) as teamer_count,
-               CASE 
+               bstats.registered_count,
+               bstats.waitlist_count,
+               bstats.teamer_count,
+               CASE
                  WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
                  ELSE e.max_participants
                END as max_participants,
-               STRING_AGG(DISTINCT c.id::text, ',') as category_ids,
-               STRING_AGG(DISTINCT c.name, ', ') as category_names,
-               CASE 
+               cats.category_ids,
+               cats.category_names,
+               CASE
                  WHEN e.cancelled = true THEN 'cancelled'
                  WHEN NOW() < e.registration_opens_at THEN 'upcoming'
                  WHEN NOW() > e.registration_closes_at THEN 'closed'
-                 WHEN COUNT(DISTINCT CASE WHEN eb_all.status = 'confirmed' THEN eb_all.id END) >= 
-                   CASE 
+                 WHEN bstats.registered_count >=
+                   CASE
                      WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
                      ELSE e.max_participants
-                   END AND 
-                      (NOT e.waitlist_enabled OR COUNT(DISTINCT CASE WHEN eb_all.status = 'waitlist' THEN eb_all.id END) >= COALESCE(e.max_waitlist_size, 0)) THEN 'closed'
+                   END AND
+                      (NOT e.waitlist_enabled OR bstats.waitlist_count >= COALESCE(e.max_waitlist_size, 0)) THEN 'closed'
                  ELSE 'open'
                END as registration_status,
                -- Konfi-specific data
@@ -1425,40 +1435,61 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
                et_booked.end_time as booked_timeslot_end,
                CASE WHEN eb_konfi.status = 'confirmed' THEN true ELSE false END as is_registered,
                CASE WHEN eb_konfi.status = 'opted_out' THEN true ELSE false END as is_opted_out,
-               CASE 
+               CASE
                  WHEN e.cancelled = true THEN false
                  WHEN eb_konfi.id IS NOT NULL THEN false
                  WHEN NOW() < e.registration_opens_at OR NOW() > e.registration_closes_at THEN false
                  ELSE true
                END as can_register,
                -- Wartelisten-Position berechnen
-               CASE 
-                 WHEN eb_konfi.status = 'waitlist' THEN
-                   (SELECT COUNT(*) + 1 FROM event_bookings eb2 
-                    WHERE eb2.event_id = e.id 
-                    AND eb2.status = 'waitlist' 
-                    AND eb2.created_at < eb_konfi.created_at)
+               CASE
+                 WHEN eb_konfi.status = 'waitlist' THEN wpos.waitlist_position
                  ELSE NULL
                END as waitlist_position
         FROM events e
         INNER JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
-        LEFT JOIN event_bookings eb_all ON e.id = eb_all.event_id
-        LEFT JOIN users u_book ON eb_all.user_id = u_book.id
-        LEFT JOIN roles r_book ON u_book.role_id = r_book.id
-        LEFT JOIN event_bookings eb_konfi ON e.id = eb_konfi.event_id AND eb_konfi.user_id = $2
+        LEFT JOIN LATERAL (
+          SELECT
+            COUNT(*) FILTER (WHERE eb_all.status = 'confirmed') as registered_count,
+            COUNT(*) FILTER (WHERE eb_all.status = 'waitlist') as waitlist_count,
+            COUNT(*) FILTER (WHERE eb_all.status = 'confirmed' AND r_book.name = 'teamer') as teamer_count
+          FROM event_bookings eb_all
+          LEFT JOIN users u_book ON eb_all.user_id = u_book.id
+          LEFT JOIN roles r_book ON u_book.role_id = r_book.id
+          WHERE eb_all.event_id = e.id
+        ) bstats ON true
+        LEFT JOIN LATERAL (
+          SELECT STRING_AGG(DISTINCT c.id::text, ',') as category_ids,
+                 STRING_AGG(DISTINCT c.name, ', ') as category_names
+          FROM event_categories ec
+          JOIN categories c ON ec.category_id = c.id
+          WHERE ec.event_id = e.id
+        ) cats ON true
+        LEFT JOIN LATERAL (
+          SELECT eb_konfi_i.id, eb_konfi_i.status, eb_konfi_i.attendance_status,
+                 eb_konfi_i.timeslot_id, eb_konfi_i.created_at
+          FROM event_bookings eb_konfi_i
+          WHERE eb_konfi_i.event_id = e.id AND eb_konfi_i.user_id = $2
+          LIMIT 1
+        ) eb_konfi ON true
         LEFT JOIN event_timeslots et_booked ON eb_konfi.timeslot_id = et_booked.id
-        LEFT JOIN event_categories ec ON e.id = ec.event_id
-        LEFT JOIN categories c ON ec.category_id = c.id
-        LEFT JOIN (
-          SELECT event_id, SUM(max_participants) as total_capacity
+        LEFT JOIN LATERAL (
+          SELECT COUNT(*) + 1 as waitlist_position
+          FROM event_bookings eb2
+          WHERE eb2.event_id = e.id
+            AND eb2.status = 'waitlist'
+            AND eb2.created_at < eb_konfi.created_at
+        ) wpos ON true
+        LEFT JOIN LATERAL (
+          SELECT SUM(max_participants) as total_capacity
           FROM event_timeslots
-          GROUP BY event_id
-        ) timeslot_capacity ON e.id = timeslot_capacity.event_id
+          WHERE event_id = e.id
+        ) timeslot_capacity ON true
         WHERE e.organization_id = $1
           AND eja.jahrgang_id = $3
           AND e.teamer_only IS NOT TRUE
           AND (e.cancelled IS NOT TRUE OR eb_konfi.id IS NOT NULL)
-        GROUP BY e.id, timeslot_capacity.total_capacity, eb_konfi.id, eb_konfi.status, eb_konfi.attendance_status, eb_konfi.created_at, eb_konfi.timeslot_id, et_booked.start_time, et_booked.end_time
+          ${dateWindowClause}
         ORDER BY e.event_date ASC
       `;
 

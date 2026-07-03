@@ -702,5 +702,69 @@ describe('Konfi Routes', () => {
       const eventNames = res.body.map(e => e.name);
       expect(eventNames).not.toContain(EVENTS.gottesdienstEvent.name);
     });
+
+    // Legt ein Event an, das aelter als 1 Jahr ist, und weist es Jahrgang 1 zu.
+    async function seedAltesKonfiEvent() {
+      const { rows } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants, point_type, points, has_timeslots)
+         VALUES ('Uralt-Konfi-Event', NOW() - interval '2 years', $1, false, 20, 'gemeinde', 1, false)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      const eventId = rows[0].id;
+      await db.query(
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        [eventId, JAHRGAENGE.jahrgang1.id]
+      );
+      return eventId;
+    }
+
+    it('Event aelter als 1 Jahr fehlt ohne all=true', async () => {
+      const altId = await seedAltesKonfiEvent();
+
+      const res = await request(app)
+        .get('/api/konfi/events')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      const ids = res.body.map(e => e.id);
+      expect(ids).not.toContain(altId);
+    });
+
+    it('Event aelter als 1 Jahr ist mit all=true enthalten', async () => {
+      const altId = await seedAltesKonfiEvent();
+
+      const res = await request(app)
+        .get('/api/konfi/events?all=true')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      const ids = res.body.map(e => e.id);
+      expect(ids).toContain(altId);
+    });
+
+    it('Response-Shape: Kernfelder + Konfi-spezifische Felder stabil (Query-Restrukturierung)', async () => {
+      await db.query(
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        [EVENTS.gottesdienstEvent.id, JAHRGAENGE.jahrgang1.id]
+      );
+
+      const res = await request(app)
+        .get('/api/konfi/events')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      const evt = res.body.find(e => e.id === EVENTS.gottesdienstEvent.id);
+      expect(evt).toBeDefined();
+      expect(evt.name).toBe(EVENTS.gottesdienstEvent.name);
+      expect(evt.registration_status).toBeDefined();
+      expect(evt.registered_count).toBeDefined();
+      expect(evt.waitlist_count).toBe(0);
+      expect(evt.teamer_count).toBe(0);
+      expect(evt.is_registered).toBe(false);
+      expect(evt.can_register).toBeDefined();
+      expect(evt.waitlist_position).toBeNull();
+      expect(Array.isArray(evt.categories)).toBe(true);
+    });
   });
 });

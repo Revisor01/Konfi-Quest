@@ -3,6 +3,7 @@ const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, EVENTS, ORGS, JAHRGAENGE } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
+const PushService = require('../../services/pushService');
 
 describe('Events Routes', () => {
   let app;
@@ -81,6 +82,69 @@ describe('Events Routes', () => {
       expect(evt.registration_status).toBeDefined();
       expect(evt.categories).toBeDefined();
       expect(evt.jahrgaenge).toBeDefined();
+    });
+
+    it('Response-Shape: Kernfelder + Zaehler-Typen bleiben stabil (Query-Restrukturierung)', async () => {
+      const res = await request(app)
+        .get('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      const evt = res.body.find(e => e.id === EVENTS.gottesdienstEvent.id);
+      expect(evt).toBeDefined();
+      // Kernfelder aus e.*
+      expect(evt.name).toBe(EVENTS.gottesdienstEvent.name);
+      expect(evt.max_participants).toBeDefined();
+      expect(evt.point_type).toBeDefined();
+      // Abgeleitete Buchungs-Zaehler
+      expect(evt.registered_count).toBeDefined();
+      expect(evt.waitlist_count).toBe(0);
+      expect(evt.teamer_count).toBe(0);
+      expect(evt.material_count).toBe(0);
+      // Abgeleitete Konfi-/User-Felder
+      expect(evt.is_registered).toBe(false);
+      expect(Array.isArray(evt.categories)).toBe(true);
+      expect(Array.isArray(evt.jahrgaenge)).toBe(true);
+    });
+  });
+
+  // ================================================================
+  // Datumsfenster (Audit Achse 4, Fund 9): Default 1 Jahr, ?all=true = alles
+  // ================================================================
+  describe('GET /api/events Datumsfenster', () => {
+    // Legt ein Event an, das aelter als 1 Jahr ist (ausserhalb des Standardfensters)
+    async function seedAltesEvent() {
+      const { rows } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants, point_type, points, has_timeslots)
+         VALUES ('Uralt-Event', NOW() - interval '2 years', $1, false, 20, 'gemeinde', 1, false)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      return rows[0].id;
+    }
+
+    it('Event aelter als 1 Jahr fehlt ohne all=true', async () => {
+      const altId = await seedAltesEvent();
+
+      const res = await request(app)
+        .get('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      const ids = res.body.map(e => e.id);
+      expect(ids).not.toContain(altId);
+    });
+
+    it('Event aelter als 1 Jahr ist mit all=true enthalten', async () => {
+      const altId = await seedAltesEvent();
+
+      const res = await request(app)
+        .get('/api/events?all=true')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      const ids = res.body.map(e => e.id);
+      expect(ids).toContain(altId);
     });
   });
 
@@ -1044,6 +1108,182 @@ describe('Events Routes', () => {
         });
 
       expect(res.status).toBe(403);
+    });
+  });
+
+  // ================================================================
+  // PUT /api/events/:id - Aenderungs-Push bei Termin/Ort-Verschiebung
+  // ================================================================
+  describe('PUT /api/events/:id - Aenderungs-Push', () => {
+    const futureDate = () => {
+      const d = new Date();
+      d.setDate(d.getDate() + 14);
+      return d.toISOString();
+    };
+
+    // Der Push-Aufruf laeuft im Handler NACH res.json() weiter (fire-and-forget).
+    // supertest bekommt die Response bereits, bevor der Handler den Push-Block
+    // fertig ausgefuehrt hat -> kurz pollen statt fest zu warten.
+    const waitForCall = async (spy, timeoutMs = 1000) => {
+      const start = Date.now();
+      while (spy.mock.calls.length === 0 && Date.now() - start < timeoutMs) {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+    };
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('PUT mit geaendertem Datum -> sendEventChangedToKonfis wird fuer gebuchte Teilnehmer aufgerufen', async () => {
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Verschiebe-Event',
+          event_date: futureDate(),
+          location: 'Gemeindehaus',
+          max_participants: 15,
+        });
+      expect(createRes.status).toBe(201);
+      const eventId = createRes.body.id;
+
+      // Konfi bucht das Event
+      const bookRes = await request(app)
+        .post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(bookRes.status).toBe(201);
+
+      const spy = jest.spyOn(PushService, 'sendEventChangedToKonfis').mockResolvedValue({ success: true });
+
+      const newDate = new Date();
+      newDate.setDate(newDate.getDate() + 20);
+
+      const putRes = await request(app)
+        .put(`/api/events/${eventId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Verschiebe-Event',
+          event_date: newDate.toISOString(),
+          location: 'Gemeindehaus',
+          max_participants: 15,
+        });
+      expect(putRes.status).toBe(200);
+
+      await waitForCall(spy);
+
+      expect(spy).toHaveBeenCalledTimes(1);
+      const [, userIds, eventName] = spy.mock.calls[0];
+      expect(userIds).toContain(USERS.konfi1.id);
+      expect(eventName).toBe('Verschiebe-Event');
+    });
+
+    it('PUT mit geaendertem Ort -> sendEventChangedToKonfis wird aufgerufen', async () => {
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Ortswechsel-Event',
+          event_date: futureDate(),
+          location: 'Altes Gemeindehaus',
+          max_participants: 15,
+        });
+      expect(createRes.status).toBe(201);
+      const eventId = createRes.body.id;
+
+      await request(app)
+        .post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      const spy = jest.spyOn(PushService, 'sendEventChangedToKonfis').mockResolvedValue({ success: true });
+
+      const putRes = await request(app)
+        .put(`/api/events/${eventId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Ortswechsel-Event',
+          event_date: futureDate(),
+          location: 'Neues Gemeindehaus',
+          max_participants: 15,
+        });
+      expect(putRes.status).toBe(200);
+
+      await waitForCall(spy);
+
+      expect(spy).toHaveBeenCalledTimes(1);
+    });
+
+    it('PUT ohne Datums-/Ortsaenderung -> sendEventChangedToKonfis wird NICHT aufgerufen', async () => {
+      const eventDate = futureDate();
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Unveraendert-Event',
+          event_date: eventDate,
+          location: 'Gemeindehaus',
+          max_participants: 15,
+        });
+      expect(createRes.status).toBe(201);
+      const eventId = createRes.body.id;
+
+      await request(app)
+        .post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      const spy = jest.spyOn(PushService, 'sendEventChangedToKonfis').mockResolvedValue({ success: true });
+
+      const putRes = await request(app)
+        .put(`/api/events/${eventId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Unveraendert-Event',
+          description: 'Neue Beschreibung, aber kein Termin-/Ort-Wechsel',
+          event_date: eventDate,
+          location: 'Gemeindehaus',
+          max_participants: 15,
+        });
+      expect(putRes.status).toBe(200);
+
+      // Kein Aufruf erwartet -> kurze feste Wartezeit statt Polling bis Timeout
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    it('PUT mit geaendertem Datum aber OHNE Buchungen -> sendEventChangedToKonfis wird NICHT aufgerufen', async () => {
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Unbebuchtes-Event',
+          event_date: futureDate(),
+          location: 'Gemeindehaus',
+          max_participants: 15,
+        });
+      expect(createRes.status).toBe(201);
+      const eventId = createRes.body.id;
+
+      const spy = jest.spyOn(PushService, 'sendEventChangedToKonfis').mockResolvedValue({ success: true });
+
+      const newDate = new Date();
+      newDate.setDate(newDate.getDate() + 20);
+
+      const putRes = await request(app)
+        .put(`/api/events/${eventId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Unbebuchtes-Event',
+          event_date: newDate.toISOString(),
+          location: 'Gemeindehaus',
+          max_participants: 15,
+        });
+      expect(putRes.status).toBe(200);
+
+      // Kein Aufruf erwartet -> kurze feste Wartezeit statt Polling bis Timeout
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      expect(spy).not.toHaveBeenCalled();
     });
   });
 });

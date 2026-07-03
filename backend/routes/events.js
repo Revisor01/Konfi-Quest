@@ -46,13 +46,24 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
   // Get all events (read-only, accessible to all authenticated users)
   router.get('/', rbacVerifier, async (req, res) => {
     try {
+      // Datumsfenster: standardmaessig nur Events des letzten Jahres (plus alle
+      // zukuenftigen). Mit ?all=true wird die gesamte Historie geliefert.
+      const includeAll = req.query.all === 'true';
+      const dateWindowClause = includeAll
+        ? ''
+        : "AND e.event_date >= NOW() - INTERVAL '1 year'";
+
+      // Restrukturierte Query (Audit Achse 4, Fund 9):
+      // Keine Join-Explosion mehr ueber bookings/users/roles/categories/jahrgaenge.
+      // Stattdessen pro Anliegen ein LATERAL-Aggregat bzw. Sub-Select — kein
+      // GROUP BY ueber die ganze Breite noetig.
       const query = `
         SELECT e.*,
-                COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' THEN eb.id END) as registered_count,
-                COUNT(DISTINCT CASE WHEN eb.status = 'waitlist' THEN eb.id END) as waitlist_count,
-                COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' AND eb.attendance_status IS NULL THEN eb.id END) as unprocessed_count,
-                COUNT(DISTINCT eb.id) as total_participants,
-                COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' AND r_book.name = 'teamer' THEN eb.id END) as teamer_count,
+                bstats.registered_count,
+                bstats.waitlist_count,
+                bstats.unprocessed_count,
+                bstats.total_participants,
+                bstats.teamer_count,
                 CASE
                   WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
                   ELSE e.max_participants
@@ -60,41 +71,70 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
                 e.registration_opens_at,
                 e.registration_closes_at,
                 e.point_type,
-                STRING_AGG(DISTINCT c.id::text, ',') as category_ids,
-                STRING_AGG(DISTINCT c.name, ', ') as category_names,
-                STRING_AGG(DISTINCT j.id::text, ',') as jahrgang_ids,
-                STRING_AGG(DISTINCT j.name, ', ') as jahrgang_names,
+                cats.category_ids,
+                cats.category_names,
+                jgs.jahrgang_ids,
+                jgs.jahrgang_names,
                 CASE
                   WHEN e.mandatory THEN 'mandatory'
                   WHEN NOW() < e.registration_opens_at THEN 'upcoming'
                   WHEN NOW() > e.registration_closes_at THEN 'closed'
                   WHEN (
                     CASE WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants) ELSE e.max_participants END
-                  ) > 0 AND COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' THEN eb.id END) >= (
+                  ) > 0 AND bstats.registered_count >= (
                     CASE WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants) ELSE e.max_participants END
-                  ) AND (NOT e.waitlist_enabled OR COUNT(DISTINCT CASE WHEN eb.status = 'waitlist' THEN eb.id END) >= COALESCE(e.max_waitlist_size, 0)) THEN 'closed'
+                  ) AND (NOT e.waitlist_enabled OR bstats.waitlist_count >= COALESCE(e.max_waitlist_size, 0)) THEN 'closed'
                   ELSE 'open'
                 END as registration_status,
                 CASE WHEN eb_user.status = 'confirmed' THEN true ELSE false END as is_registered,
                 eb_user.status as booking_status,
                 eb_user.attendance_status,
-                (SELECT COUNT(*) FROM material_events me WHERE me.event_id = e.id) as material_count
+                mat.material_count
         FROM events e
-        LEFT JOIN event_bookings eb ON e.id = eb.event_id
-        LEFT JOIN users u_book ON eb.user_id = u_book.id
-        LEFT JOIN roles r_book ON u_book.role_id = r_book.id
-        LEFT JOIN event_bookings eb_user ON e.id = eb_user.event_id AND eb_user.user_id = $2
-        LEFT JOIN event_categories ec ON e.id = ec.event_id
-        LEFT JOIN categories c ON ec.category_id = c.id
-        LEFT JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
-        LEFT JOIN jahrgaenge j ON eja.jahrgang_id = j.id
-        LEFT JOIN (
-          SELECT event_id, SUM(max_participants) as total_capacity
+        LEFT JOIN LATERAL (
+          SELECT
+            COUNT(*) FILTER (WHERE eb.status = 'confirmed') as registered_count,
+            COUNT(*) FILTER (WHERE eb.status = 'waitlist') as waitlist_count,
+            COUNT(*) FILTER (WHERE eb.status = 'confirmed' AND eb.attendance_status IS NULL) as unprocessed_count,
+            COUNT(*) as total_participants,
+            COUNT(*) FILTER (WHERE eb.status = 'confirmed' AND r_book.name = 'teamer') as teamer_count
+          FROM event_bookings eb
+          LEFT JOIN users u_book ON eb.user_id = u_book.id
+          LEFT JOIN roles r_book ON u_book.role_id = r_book.id
+          WHERE eb.event_id = e.id
+        ) bstats ON true
+        LEFT JOIN LATERAL (
+          SELECT STRING_AGG(DISTINCT c.id::text, ',') as category_ids,
+                 STRING_AGG(DISTINCT c.name, ', ') as category_names
+          FROM event_categories ec
+          JOIN categories c ON ec.category_id = c.id
+          WHERE ec.event_id = e.id
+        ) cats ON true
+        LEFT JOIN LATERAL (
+          SELECT STRING_AGG(DISTINCT j.id::text, ',') as jahrgang_ids,
+                 STRING_AGG(DISTINCT j.name, ', ') as jahrgang_names
+          FROM event_jahrgang_assignments eja
+          JOIN jahrgaenge j ON eja.jahrgang_id = j.id
+          WHERE eja.event_id = e.id
+        ) jgs ON true
+        LEFT JOIN LATERAL (
+          SELECT COUNT(*) as material_count
+          FROM material_events me
+          WHERE me.event_id = e.id
+        ) mat ON true
+        LEFT JOIN LATERAL (
+          SELECT eb2.status, eb2.attendance_status
+          FROM event_bookings eb2
+          WHERE eb2.event_id = e.id AND eb2.user_id = $2
+          LIMIT 1
+        ) eb_user ON true
+        LEFT JOIN LATERAL (
+          SELECT SUM(max_participants) as total_capacity
           FROM event_timeslots
-          GROUP BY event_id
-        ) timeslot_capacity ON e.id = timeslot_capacity.event_id
+          WHERE event_id = e.id
+        ) timeslot_capacity ON true
         WHERE e.organization_id = $1
-        GROUP BY e.id, timeslot_capacity.total_capacity, eb_user.status, eb_user.attendance_status
+          ${dateWindowClause}
         ORDER BY e.event_date ASC
       `;
 
@@ -840,8 +880,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     try {
       await client.query('BEGIN');
 
-      // Alten mandatory-Wert lesen für bedingte Auto-Enrollment-Logik
-      const { rows: [oldEvent] } = await client.query('SELECT mandatory, registration_open_notified FROM events WHERE id = $1', [id]);
+      // Alte Werte lesen: mandatory/registration_open_notified fuer Auto-Enrollment-Logik,
+      // name/event_date/event_end_time/location/cancelled fuer den Aenderungs-Push-Vergleich unten
+      const { rows: [oldEvent] } = await client.query(
+        'SELECT mandatory, registration_open_notified, name, event_date, event_end_time, location, cancelled FROM events WHERE id = $1',
+        [id]
+      );
 
       const updateQuery = `
         UPDATE events SET
@@ -1041,6 +1085,49 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         } catch (pushErr) {
           console.error('Flag-Reset for event update (registration open) failed:', pushErr);
         }
+      }
+
+      // Push an gebuchte Teilnehmer bei relevanter Aenderung (Termin/Uhrzeit/Ort).
+      // Normalisierung noetig: DB liefert Date-Objekte (event_date/event_end_time),
+      // der Request liefert Strings -> ohne Normalisierung wuerde der Vergleich bei
+      // JEDEM Speichern (auch ohne inhaltliche Aenderung) als "geaendert" durchgehen.
+      try {
+        const normalizeDate = (value) => {
+          if (!value) return null;
+          const d = new Date(value);
+          return Number.isNaN(d.getTime()) ? null : d.getTime();
+        };
+        const normalizeLocation = (value) => (value === undefined || value === null || value === '') ? null : String(value);
+
+        const dateChanged = normalizeDate(oldEvent?.event_date) !== normalizeDate(event_date);
+        const endTimeChanged = normalizeDate(oldEvent?.event_end_time) !== normalizeDate(event_end_time);
+        const locationChanged = normalizeLocation(oldEvent?.location) !== normalizeLocation(location);
+
+        const isFuture = normalizeDate(event_date) !== null && normalizeDate(event_date) > Date.now();
+
+        if (oldEvent && !oldEvent.cancelled && isFuture && (dateChanged || endTimeChanged || locationChanged)) {
+          const { rows: bookedParticipants } = await db.query(
+            `SELECT eb.user_id FROM event_bookings eb
+             JOIN users u ON eb.user_id = u.id
+             WHERE eb.event_id = $1 AND eb.status IN ('confirmed', 'waitlist') AND u.deleted_at IS NULL`,
+            [id]
+          );
+          const bookedUserIds = bookedParticipants.map(p => p.user_id);
+
+          if (bookedUserIds.length > 0) {
+            const changes = {};
+            if (dateChanged || endTimeChanged) {
+              changes.newDate = event_date;
+              changes.newEndTime = event_end_time;
+            }
+            if (locationChanged) {
+              changes.newLocation = location;
+            }
+            await PushService.sendEventChangedToKonfis(db, bookedUserIds, name, changes, id);
+          }
+        }
+      } catch (pushErr) {
+        console.error('Push notification failed for event change:', pushErr);
       }
 
     } catch (err) {
