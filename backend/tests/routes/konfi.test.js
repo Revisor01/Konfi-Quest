@@ -61,6 +61,42 @@ describe('Konfi Routes', () => {
       expect(res.body.dashboard_config).toBeDefined();
     });
 
+    it('Struktur-Kontrakt: alle Kern-Felder der (parallelisierten) Response vorhanden', async () => {
+      // Absicherung fuer die Query-Parallelisierung (Audit Achse 4, Fund 8):
+      // Nach dem Umbau auf Promise.all muss die Response-Struktur byte-identisch
+      // bleiben. Dieser Test prueft, dass JEDES Feld aus den parallelisierten
+      // Queries weiterhin an derselben Stelle steht.
+      const res = await request(app)
+        .get('/api/konfi/dashboard')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      // Aus badgeCount/badges-Query
+      expect(res.body).toHaveProperty('badge_count');
+      expect(res.body).toHaveProperty('recent_badges');
+      expect(Array.isArray(res.body.recent_badges)).toBe(true);
+      // Aus ranking-Query
+      expect(res.body).toHaveProperty('ranking');
+      expect(Array.isArray(res.body.ranking)).toBe(true);
+      // Aus userRanking-Query
+      expect(res.body).toHaveProperty('rank_in_jahrgang');
+      expect(res.body).toHaveProperty('total_in_jahrgang');
+      // Aus eventCount/recentEvents-Query
+      expect(res.body).toHaveProperty('event_count');
+      expect(res.body).toHaveProperty('recent_events');
+      expect(Array.isArray(res.body.recent_events)).toBe(true);
+      // Aus allLevels-Query (in level_info verpackt)
+      expect(res.body.level_info).toHaveProperty('all_levels');
+      expect(res.body.level_info).toHaveProperty('total_levels');
+      expect(res.body.level_info).toHaveProperty('level_index');
+      // Aus wrapped-Query
+      expect(res.body).toHaveProperty('has_wrapped');
+      expect(typeof res.body.has_wrapped).toBe('boolean');
+      // Aus dashboardSettings-Query
+      expect(res.body.dashboard_config).toHaveProperty('section_order');
+      expect(res.body).toHaveProperty('konfspruch_visible');
+    });
+
     it('Default-section_order enthaelt konfispruch (Phase 118 Card sichtbar)', async () => {
       const res = await request(app)
         .get('/api/konfi/dashboard')

@@ -48,8 +48,7 @@ import { useModalPage } from '../../contexts/ModalContext';
 import { useOfflineQuery } from '../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../services/offlineCache';
 import api from '../../services/api';
-import { initializeWebSocket, getSocket, onReconnect } from '../../services/websocket';
-import { getToken } from '../../services/tokenStore';
+import { onReconnect } from '../../services/websocket';
 import LoadingSpinner from '../common/LoadingSpinner';
 import SimpleCreateChatModal from './modals/SimpleCreateChatModal';
 import { ChatRoomOverview } from '../../types/chat';
@@ -136,30 +135,19 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     { ttl: CACHE_TTL.CHAT_ROOMS, select: sanitizeRooms }
   );
 
-  // Live-Update der Chat-Räume wenn Badge Count sich ändert
+  // Live-Update der Chat-Räume wenn Badge Count sich ändert.
+  // Das ist der EINZIGE newMessage-getriebene Refresh-Trigger der Overview:
+  // BadgeContext haelt einen eigenen (socketEpoch-rebindenden) 'newMessage'-
+  // Listener, der refreshAllCounts() ruft -> chatUnreadByRoom aendert sich ->
+  // dieser Effect feuert refresh(). Ein zusaetzlicher eigener socket.on(
+  // 'newMessage')-Handler waere redundant (3x /chat/rooms pro Nachricht) und
+  // haette zudem KEIN socketEpoch-Rebind nach Reconnect -- deshalb bewusst
+  // entfernt (Audit Achse 4, Fund 2).
   useEffect(() => {
     if (rooms && rooms.length > 0) { // Nur wenn bereits Räume geladen sind
       refresh(); // Silent reload via useOfflineQuery
     }
   }, [chatUnreadByRoom]);
-
-  // WebSocket: Live-Update wenn neue Nachrichten ankommen
-  useEffect(() => {
-    const token = getToken();
-    if (!token) return;
-
-    const socket = initializeWebSocket(token);
-
-    const handleNewMessage = () => {
-      refresh(); // Silent reload via useOfflineQuery
-    };
-
-    socket.on('newMessage', handleNewMessage);
-
-    return () => {
-      socket.off('newMessage', handleNewMessage);
-    };
-  }, [refresh]);
 
   // Bei Socket-Reconnect Raumliste neu laden
   useEffect(() => {

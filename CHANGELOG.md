@@ -9,6 +9,41 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 ## [Unreleased]
 
 ### ⚡ Performance
+- **ChatOverview-Doppelhandler entfernt (Audit Achse 4, Fund 2).** Die
+  Chat-Uebersicht hatte einen eigenen `socket.on('newMessage')`-Handler, der
+  `refresh()` (`/chat/rooms`) rief — zusaetzlich zum Effect auf
+  `chatUnreadByRoom`, das der `BadgeContext` bei jeder eingehenden Nachricht
+  ohnehin aendert. Zusammen mit dem eigenen `/chat/rooms`-Fetch des BadgeContext
+  waren das bis zu 3× `/chat/rooms` pro Nachricht. Der redundante Socket-Handler
+  ist entfernt; der `chatUnreadByRoom`-Effect bleibt der einzige newMessage-
+  Trigger (Kette: BadgeContext `newMessage` → `refreshAllCounts` →
+  `chatUnreadByRoom` aendert sich → Effect → `refresh`). Der BadgeContext-Handler
+  bindet ausserdem nach Reconnect korrekt neu (`socketEpoch`), was dem entfernten
+  ChatOverview-Handler fehlte (`frontend/src/components/chat/ChatOverview.tsx`).
+- **device-token-Sendefenster von 10s auf 12h (Audit Achse 4, Fund 5).** Das
+  native AppDelegate feuert das `fcmToken`-Event bei JEDER App-Aktivierung; die
+  bisherige 10-Sekunden-Anti-Spam-Sperre liess dadurch ~58 `POST /device-token`
+  pro 90 Min org-weit durch. Jetzt wird ein UNVERAENDERTER Token nur noch gesendet,
+  wenn der letzte erfolgreiche Send > 12h her ist (persistierter Timestamp aus
+  `getPushTokenTimestamp`, ueberlebt App-Neustarts). Ein GEAENDERTER Token wird
+  weiterhin sofort gesendet; die 10s-In-Memory-Sperre bleibt als Zusatzschutz
+  (`frontend/src/contexts/AppContext.tsx`).
+- **Push-Listener-Cleanup ergaenzt (Audit Achse 4, Fund 5).** Der Push-Setup-
+  Effect (Dep `[user]`) registrierte vier `PushNotifications`-Listener ohne
+  Cleanup — bei jedem User-Wechsel akkumulierten sie. Der Effect raeumt jetzt via
+  `PushNotifications.removeAllListeners()` auf (gefahrlos, da dies die einzige
+  Stelle im Frontend ist, die solche Listener registriert)
+  (`frontend/src/contexts/AppContext.tsx`).
+- **Konfi-Dashboard-Queries parallelisiert (Audit Achse 4, Fund 8).** Der Handler
+  `GET /konfi/dashboard` fuehrte ~9 voneinander unabhaengige Queries sequentiell
+  aus (p95 ~1010ms ≈ Summe der Roundtrips). Sie haengen alle nur vom initialen
+  `konfi`-Query (bzw. dem daraus berechneten `totalPoints`) ab und laufen jetzt
+  gebuendelt in EINEM `Promise.all` — Latenz ≈ langsamste Einzel-Query statt Summe.
+  Der konditionale Level-Drift-`UPDATE` bleibt danach. Nebenbei: der
+  `to_regclass`-Legacy-Check auf `custom_badges` entfernt (Tabelle seit Migration
+  076/090 dauerhafter aktiver Badge-Pfad) und die ungenutzte bonus_points-Summe
+  gestrichen (floss nie in die Response) → ein Roundtrip weniger. Response-Struktur
+  byte-identisch (`backend/routes/konfi.js`).
 - **60-Sekunden-Polling des Konfi-Badge-Zaehlers entfernt.** Die Tab-Leiste
   fragte fuer jeden Konfi 1×/Minute `/konfi/badges` ab, nur um den „neue Badges"-
   Punkt zu aktualisieren. Der Server sendet jetzt beim tatsaechlichen Vergeben

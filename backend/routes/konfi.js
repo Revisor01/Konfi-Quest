@@ -79,22 +79,26 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         return res.status(404).json({ error: 'Konfi nicht gefunden' });
       }
 
-      // Check if badges table exists and get badges for this konfi
-      let badges = [];
-      let badgeCount = 0;
-      const checkBadgesTableQuery = "SELECT to_regclass('public.custom_badges')";
-      const { rows: [tableExistsResult] } = await db.query(checkBadgesTableQuery);
+      // Total points: nur aktive Punkte-Typen summieren. Wird VOR dem Promise.all
+      // gebraucht, weil die userRanking-Query totalPoints als Parameter nutzt.
+      // Bonus ist bereits in konfi_profiles enthalten, daher NICHT nochmal addieren.
+      const totalPoints = (konfi.gottesdienst_enabled ? (konfi.gottesdienst_points || 0) : 0)
+                        + (konfi.gemeinde_enabled ? (konfi.gemeinde_points || 0) : 0);
 
-      if (tableExistsResult && tableExistsResult.to_regclass) {
-        // Get total badge count for this organization
-        const { rows: [badgeCountResult] } = await db.query(
-          'SELECT COUNT(*) as count FROM user_badges kb JOIN users u ON kb.user_id = u.id WHERE kb.user_id = $1 AND kb.organization_id = $2',
-          [konfiId, req.user.organization_id]
-        );
-        badgeCount = parseInt(badgeCountResult.count, 10) || 0;
+      // Performance (Audit Achse 4, Fund 8): Die folgenden Queries haengen alle NUR
+      // vom bereits geladenen konfi-Objekt (bzw. dem daraus berechneten totalPoints)
+      // ab, NICHT voneinander. Frueher liefen sie sequentiell (~9 Roundtrips in
+      // Reihe, p95 ~1010ms). Jetzt gebuendelt in EIN Promise.all -> Latenz ~=
+      // langsamste Einzel-Query statt Summe.
+      // Der to_regclass-Legacy-Check auf custom_badges wurde entfernt: die Tabelle
+      // ist seit Migration 076/090 (verifiziert 09.06.2026) der aktive Badge-Pfad
+      // und existiert dauerhaft. Die ungenutzte bonus_points-Summe (bonusPointsTotal
+      // floss nie in die Response) wurde ersatzlos gestrichen -> ein Roundtrip weniger.
 
-        // Get recent badges for display
-        const badgesQuery = `
+      // SQL-Konstanten fuer die parallelen Queries
+      const badgeCountSql =
+        'SELECT COUNT(*) as count FROM user_badges kb JOIN users u ON kb.user_id = u.id WHERE kb.user_id = $1 AND kb.organization_id = $2';
+      const badgesSql = `
           SELECT cb.id, cb.name, cb.description, cb.icon, cb.criteria_type, cb.criteria_value,
                  kb.awarded_date AS earned_at
           FROM custom_badges cb
@@ -103,12 +107,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           ORDER BY kb.awarded_date DESC
           LIMIT 3
         `;
-        const { rows: badgeResults } = await db.query(badgesQuery, [konfiId, req.user.organization_id]);
-        badges = badgeResults;
-      }
-
-      // Get ranking for jahrgang (nur aktive Punkte-Typen)
-      const rankingQuery = `
+      const rankingSql = `
         SELECT u.id, u.display_name,
                (CASE WHEN j.gottesdienst_enabled THEN kp.gottesdienst_points ELSE 0 END
                + CASE WHEN j.gemeinde_enabled THEN kp.gemeinde_points ELSE 0 END) as points
@@ -120,26 +119,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         ORDER BY points DESC
         LIMIT 3
       `;
-      const { rows: ranking } = await db.query(rankingQuery, [konfi.jahrgang_id]);
-
-      // Add initials to ranking
-      const rankingWithInitials = ranking.map(r => ({
-        ...r,
-        initials: r.display_name ? r.display_name.split(' ').map(word => word.charAt(0)).join('').toUpperCase().substring(0, 2) : '??'
-      }));
-
-      // Get bonus points total for this konfi
-      const { rows: [bonusPointsResult] } = await db.query(
-        'SELECT COALESCE(SUM(points), 0) as bonus_total FROM bonus_points WHERE konfi_id = $1 AND organization_id = $2',
-        [konfiId, req.user.organization_id]
-      );
-      const bonusPointsTotal = parseInt(bonusPointsResult.bonus_total, 10) || 0;
-
-      // Total points: nur aktive Punkte-Typen summieren
-      // Bonus ist bereits in konfi_profiles enthalten, daher NICHT nochmal addieren
-      const totalPoints = (konfi.gottesdienst_enabled ? (konfi.gottesdienst_points || 0) : 0)
-                        + (konfi.gemeinde_enabled ? (konfi.gemeinde_points || 0) : 0);
-      const userRankingQuery = `
+      const userRankingSql = `
         WITH MyRank AS (
           SELECT
             (CASE WHEN j.gottesdienst_enabled THEN kp.gottesdienst_points ELSE 0 END
@@ -164,17 +144,9 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         WHERE r.total_points = $2
         LIMIT 1;
       `;
-      const { rows: [userRanking] } = await db.query(userRankingQuery, [konfi.jahrgang_id, totalPoints]);
-
-      // Get registered events count
-      const { rows: [eventCountResult] } = await db.query(
-        'SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1 AND organization_id = $2',
-        [konfiId, req.user.organization_id]
-      );
-      const eventCount = parseInt(eventCountResult.count, 10) || 0;
-
-      // Get recent registered events
-      const eventsQuery = `
+      const eventCountSql =
+        'SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1 AND organization_id = $2';
+      const recentEventsSql = `
         SELECT e.name as title, e.event_date, eb.booking_date
         FROM events e
         JOIN event_bookings eb ON e.id = eb.event_id
@@ -182,7 +154,58 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         ORDER BY eb.booking_date DESC
         LIMIT 3
       `;
-      const { rows: recentEvents } = await db.query(eventsQuery, [konfiId]);
+      const allLevelsSql = `
+        SELECT id, name, title, icon, color, points_required, sort_order
+        FROM levels
+        WHERE organization_id = $1 AND is_active = true
+        ORDER BY points_required ASC
+      `;
+      const dashboardSettingsSql =
+        "SELECT key, value FROM settings WHERE organization_id = $1 AND (key LIKE 'dashboard_show_%' OR key = 'dashboard_section_order')";
+      const wrappedSql = `SELECT EXISTS(
+          SELECT 1 FROM jahrgaenge j
+          JOIN konfi_profiles kp ON kp.jahrgang_id = j.id
+          WHERE kp.user_id = $1
+            AND j.wrapped_released_at IS NOT NULL
+            AND j.wrapped_released_at <= NOW()
+        ) as has_wrapped`;
+
+      const [
+        badgeCountRes,
+        badgesRes,
+        rankingRes,
+        userRankingRes,
+        eventCountRes,
+        recentEventsRes,
+        allLevelsRes,
+        dashboardSettingsRes,
+        wrappedRes
+      ] = await Promise.all([
+        db.query(badgeCountSql, [konfiId, req.user.organization_id]),
+        db.query(badgesSql, [konfiId, req.user.organization_id]),
+        db.query(rankingSql, [konfi.jahrgang_id]),
+        db.query(userRankingSql, [konfi.jahrgang_id, totalPoints]),
+        db.query(eventCountSql, [konfiId, req.user.organization_id]),
+        db.query(recentEventsSql, [konfiId]),
+        db.query(allLevelsSql, [req.user.organization_id]),
+        db.query(dashboardSettingsSql, [req.user.organization_id]),
+        db.query(wrappedSql, [konfiId])
+      ]);
+
+      // Badges
+      const badgeCount = parseInt(badgeCountRes.rows[0]?.count, 10) || 0;
+      const badges = badgesRes.rows;
+
+      // Ranking mit Initialen
+      const rankingWithInitials = rankingRes.rows.map(r => ({
+        ...r,
+        initials: r.display_name ? r.display_name.split(' ').map(word => word.charAt(0)).join('').toUpperCase().substring(0, 2) : '??'
+      }));
+
+      const userRanking = userRankingRes.rows[0];
+      const eventCount = parseInt(eventCountRes.rows[0]?.count, 10) || 0;
+      const recentEvents = recentEventsRes.rows;
+      const allLevels = allLevelsRes.rows;
 
       // Calculate days to confirmation (Termin stammt aus dem is_konfirmation-Event)
       let daysToConfirmation = null;
@@ -192,15 +215,6 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         const diffTime = confirmationDate.getTime() - now.getTime();
         daysToConfirmation = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       }
-
-      // Get ALL levels for this organization to calculate correct level dynamically
-      const allLevelsQuery = `
-        SELECT id, name, title, icon, color, points_required, sort_order
-        FROM levels
-        WHERE organization_id = $1 AND is_active = true
-        ORDER BY points_required ASC
-      `;
-      const { rows: allLevels } = await db.query(allLevelsQuery, [req.user.organization_id]);
 
       // Calculate correct current level based on total points (NOT from DB!)
       let currentLevel = null;
@@ -254,11 +268,9 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         target_gemeinde: konfi.target_gemeinde || 10
       };
 
-      // Dashboard config aus Settings laden (show_* + section_order)
-      const { rows: dashboardSettings } = await db.query(
-        "SELECT key, value FROM settings WHERE organization_id = $1 AND (key LIKE 'dashboard_show_%' OR key = 'dashboard_section_order')",
-        [req.user.organization_id]
-      );
+      // Dashboard config aus Settings (show_* + section_order) — bereits im
+      // Promise.all oben geladen.
+      const dashboardSettings = dashboardSettingsRes.rows;
       const dashboardMap = {};
       let sectionOrder = null;
       dashboardSettings.forEach(row => {
@@ -289,18 +301,9 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         section_order: sectionOrder || ['konfirmation', 'konfispruch', 'events', 'losung', 'badges', 'ranking']
       };
 
-      // Wrapped-Verfuegbarkeit pruefen (ueber wrapped_released_at auf Jahrgang)
-      const { rows: [wrappedResult] } = await db.query(
-        `SELECT EXISTS(
-          SELECT 1 FROM jahrgaenge j
-          JOIN konfi_profiles kp ON kp.jahrgang_id = j.id
-          WHERE kp.user_id = $1
-            AND j.wrapped_released_at IS NOT NULL
-            AND j.wrapped_released_at <= NOW()
-        ) as has_wrapped`,
-        [konfiId]
-      );
-      const has_wrapped = wrappedResult?.has_wrapped || false;
+      // Wrapped-Verfuegbarkeit (ueber wrapped_released_at auf Jahrgang) — bereits
+      // im Promise.all oben geladen.
+      const has_wrapped = wrappedRes.rows[0]?.has_wrapped || false;
 
       // Konfispruch-Sichtbarkeit (Backend-Gate, SPRUCH-07): Flag aus
       // jahrgaenge.konfspruch_enabled. Frontend rendert die Card nur bei true.

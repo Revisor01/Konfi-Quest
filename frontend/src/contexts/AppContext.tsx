@@ -34,12 +34,32 @@ let fcmTokenSent: string | null = null;
 let fcmTokenLastSent: number = 0;
 let pendingFcmToken: string | null = null;
 
+// 12 Stunden — Sendefenster fuer einen UNVERAENDERTEN Token.
+const TOKEN_RESEND_WINDOW_MS = 12 * 60 * 60 * 1000;
+
 // Funktion, um Duplikate zu vermeiden
 const sendTokenToServer = async (token: string, retryCount = 0) => {
-  // ANTI-SPAM: Prüfe ob Token in letzten 10 Sekunden bereits gesendet wurde
   const now = Date.now();
+
+  // ANTI-SPAM (In-Memory-Zusatzschutz): gleicher Token in den letzten 10s -> raus.
+  // Faengt schnelle Doppel-Feuerungen innerhalb einer Session ab.
   if (fcmTokenSent === token && (now - fcmTokenLastSent) < 10000) {
     return;
+  }
+
+  // Sendefenster (Audit Achse 4, Fund 5): AppDelegate feuert das fcmToken-Event
+  // bei JEDER App-Aktivierung. Ist der Token UNVERAENDERT und der letzte
+  // erfolgreiche Send weniger als 12h her, NICHT erneut senden (spart org-weit
+  // dutzende POSTs/90min). Der persistierte Timestamp (getPushTokenTimestamp)
+  // ueberlebt App-Neustarts, sodass das Fenster auch nach Kaltstart greift,
+  // sobald bekannt ist, dass sich der Token nicht geaendert hat.
+  // Bei GEAENDERTEM Token (fcmTokenSent !== token) faellt diese Sperre weg ->
+  // sofort senden.
+  if (fcmTokenSent === token) {
+    const lastPersistedSend = getPushTokenTimestamp();
+    if (lastPersistedSend > 0 && (now - lastPersistedSend) < TOKEN_RESEND_WINDOW_MS) {
+      return;
+    }
   }
 
   // Gespeicherte Device ID nutzen (wird bei App-Start einmalig persistiert)
@@ -685,6 +705,18 @@ useEffect(() => {
     };
 
     setupPushNotifications();
+
+    // Cleanup (Audit Achse 4, Fund 5): Ohne Cleanup akkumulieren die vier
+    // addListener-Registrierungen bei jedem User-Wechsel (Effect-Dep ist [user]).
+    // removeAllListeners ist hier gefahrlos: Dieser Effect ist die EINZIGE Stelle
+    // im gesamten Frontend, die PushNotifications-Listener registriert (per grep
+    // verifiziert) -- es werden also nur die hier gesetzten vier Listener
+    // entfernt, kein fremder Listener wird mitgerissen.
+    return () => {
+      if (Capacitor.isNativePlatform()) {
+        PushNotifications.removeAllListeners();
+      }
+    };
   }, [user]); // Abhängigkeit ist korrekt
 
   // hasPermission entfernt - Berechtigung jetzt über user.role_name prüfen
