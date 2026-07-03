@@ -1132,7 +1132,7 @@ describe('Events Routes', () => {
     };
 
     afterEach(() => {
-      jest.restoreAllMocks();
+      vi.restoreAllMocks();
     });
 
     it('PUT mit geaendertem Datum -> sendEventChangedToKonfis wird fuer gebuchte Teilnehmer aufgerufen', async () => {
@@ -1154,7 +1154,7 @@ describe('Events Routes', () => {
         .set('Authorization', `Bearer ${konfiToken}`);
       expect(bookRes.status).toBe(201);
 
-      const spy = jest.spyOn(PushService, 'sendEventChangedToKonfis').mockResolvedValue({ success: true });
+      const spy = vi.spyOn(PushService, 'sendEventChangedToKonfis').mockResolvedValue({ success: true });
 
       const newDate = new Date();
       newDate.setDate(newDate.getDate() + 20);
@@ -1195,7 +1195,7 @@ describe('Events Routes', () => {
         .post(`/api/events/${eventId}/book`)
         .set('Authorization', `Bearer ${konfiToken}`);
 
-      const spy = jest.spyOn(PushService, 'sendEventChangedToKonfis').mockResolvedValue({ success: true });
+      const spy = vi.spyOn(PushService, 'sendEventChangedToKonfis').mockResolvedValue({ success: true });
 
       const putRes = await request(app)
         .put(`/api/events/${eventId}`)
@@ -1231,7 +1231,7 @@ describe('Events Routes', () => {
         .post(`/api/events/${eventId}/book`)
         .set('Authorization', `Bearer ${konfiToken}`);
 
-      const spy = jest.spyOn(PushService, 'sendEventChangedToKonfis').mockResolvedValue({ success: true });
+      const spy = vi.spyOn(PushService, 'sendEventChangedToKonfis').mockResolvedValue({ success: true });
 
       const putRes = await request(app)
         .put(`/api/events/${eventId}`)
@@ -1264,7 +1264,7 @@ describe('Events Routes', () => {
       expect(createRes.status).toBe(201);
       const eventId = createRes.body.id;
 
-      const spy = jest.spyOn(PushService, 'sendEventChangedToKonfis').mockResolvedValue({ success: true });
+      const spy = vi.spyOn(PushService, 'sendEventChangedToKonfis').mockResolvedValue({ success: true });
 
       const newDate = new Date();
       newDate.setDate(newDate.getDate() + 20);

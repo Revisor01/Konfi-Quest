@@ -759,8 +759,9 @@ describe('Konfi Routes', () => {
       expect(evt.name).toBe(EVENTS.gottesdienstEvent.name);
       expect(evt.registration_status).toBeDefined();
       expect(evt.registered_count).toBeDefined();
-      expect(evt.waitlist_count).toBe(0);
-      expect(evt.teamer_count).toBe(0);
+      // COUNT() liefert bigint -> pg gibt Strings zurueck (Shape unveraendert zur alten Query)
+      expect(Number(evt.waitlist_count)).toBe(0);
+      expect(Number(evt.teamer_count)).toBe(0);
       expect(evt.is_registered).toBe(false);
       expect(evt.can_register).toBeDefined();
       expect(evt.waitlist_position).toBeNull();
