@@ -375,6 +375,15 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
       await client.query("DELETE FROM chat_participants WHERE user_id = $1", [id]);
       await client.query("DELETE FROM chat_read_status WHERE user_id = $1", [id]);
       await client.query("DELETE FROM chat_messages WHERE user_id = $1", [id]);
+      // Verwaiste Direct-Raeume (kein Teilnehmer mehr uebrig) mitloeschen —
+      // sonst bleiben Raum-Leichen zurueck (Audit Achse 1, F3: Raeume 50/51).
+      // Die Cascade-Kette aus Migration 102 nimmt Nachrichten der Partner:in,
+      // Polls und Read-Status automatisch mit.
+      await client.query(`
+        DELETE FROM chat_rooms r
+        WHERE r.type = 'direct'
+        AND NOT EXISTS (SELECT 1 FROM chat_participants p WHERE p.room_id = r.id)
+      `);
       await client.query("DELETE FROM notifications WHERE user_id = $1", [id]);
       await client.query("DELETE FROM push_tokens WHERE user_id = $1", [id]);
       await client.query("DELETE FROM password_resets WHERE user_id = $1", [id]);

@@ -207,15 +207,24 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         return res.status(409).json({ error: `Aktivität kann nicht gelöscht werden: ${usage.count} Zuordnung(en) zu Konfis vorhanden.` });
       }
 
-      // Pending Anträge prüfen
-      const { rows: [pendingCheck] } = await db.query(
-        `SELECT COUNT(*)::int as count FROM activity_requests ar
-         WHERE ar.activity_id = $1 AND ar.status = 'pending' AND ar.organization_id = $2`,
+      // ALLE Anträge prüfen, nicht nur pending (Audit Achse 1, F4): Der
+      // NO-ACTION-FK activity_requests.activity_id blockt das Löschen auch bei
+      // abgelehnten/historischen Anträgen — ohne diesen Check gab es dann statt
+      // einer verständlichen Meldung einen 500 "Datenbankfehler" (gleiche
+      // Fehlerklasse wie der Teamer-Lösch-Bug vom 02.07.).
+      const { rows: [requestCheck] } = await db.query(
+        `SELECT COUNT(*)::int as count,
+                COUNT(*) FILTER (WHERE ar.status = 'pending')::int as pending
+         FROM activity_requests ar
+         WHERE ar.activity_id = $1 AND ar.organization_id = $2`,
         [activityId, req.user.organization_id]
       );
-      if (pendingCheck.count > 0) {
+      if (requestCheck.count > 0) {
+        const detail = requestCheck.pending > 0
+          ? `${requestCheck.pending} offene(r) Antrag/Anträge`
+          : `${requestCheck.count} abgeschlossene(r) Antrag/Anträge (Antragshistorie)`;
         return res.status(409).json({
-          error: `Aktivität kann nicht gelöscht werden: ${pendingCheck.count} offene Anträge vorhanden.`
+          error: `Aktivität kann nicht gelöscht werden: ${detail} vorhanden.`
         });
       }
 

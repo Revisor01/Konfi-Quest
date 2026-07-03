@@ -78,6 +78,29 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
   Verbindungsabriss/Push feuern `sync:reconnect`/`push:received` einen Refresh.
   Nur noch der initiale Load bleibt (`frontend/src/contexts/BadgeContext.tsx`).
 
+### 🗄️ Datenbank-Härtung (Audit Achse 1, Migrationen 110-116)
+- **Verwaiste Daten bereinigt + fehlende Foreign Keys nachgezogen.**
+  `activity_categories` hatte keinen FK auf activities (12 verwaiste Zeilen —
+  entfernt, FK+Unique ergänzt, Migration 110); Chat-Raum-Leichen aus
+  geloeschten Direktchats bereinigt (111, nur Raeume ohne Teilnehmer); sieben
+  Kerntabellen ohne `organization_id`-FK abgesichert (112); funktionslose
+  FK-Duplikate aus der SQLite-Altlast entfernt (113 — die vier gewollten
+  History-Schutz-Paare auf users bleiben); fehlende Chat-FKs mit CASCADE
+  nachgezogen (114); NOT-NULL-Härtung auf Kernspalten + Unique-Guard gegen
+  doppelte Badge-Vergabe (115); redundante Indizes entfernt (116).
+- **Migrationslauf mit Advisory-Lock serialisiert.** Beide Backend-Replikas
+  starten beim Deploy parallel und rasten bisher um neue Migrationen
+  (beobachtet bei Migration 109: duplicate-key auf einer Replika). Der Lauf ist
+  jetzt per `pg_advisory_lock` serialisiert; die zweite Replika sieht die
+  Eintraege der ersten und ueberspringt sauber (`backend/database.js`).
+- **User-Löschung räumt leere Direktchat-Räume mit auf** — bisher blieben
+  Raum-Leichen zurueck (`backend/routes/users.js`).
+- **Aktivität mit abgeschlossenen Anträgen löschen gab „Datenbankfehler".**
+  Der Delete-Check prüfte nur offene Anträge; der Foreign Key blockte aber auch
+  bei abgelehnten/historischen — statt einer verständlichen Meldung kam ein
+  500er (gleiche Fehlerklasse wie der behobene Teamer-Lösch-Bug). Jetzt sauberer
+  409 mit Hinweis auf die Antragshistorie (`backend/routes/activities.js`).
+
 ### 🐛 Fehlerbehebungen
 - **WebSocket-Reconnect nach Deploy/Verbindungsabriss robuster (Audit Achse 3B,
   B1/B2/B6).** (1) Der Socket versucht jetzt **unbegrenzt** neu zu verbinden
