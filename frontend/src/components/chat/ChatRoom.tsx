@@ -312,11 +312,57 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           }));
         }
       });
+
+      // Listen for poll updates (live votes). Der Server liefert den kompletten,
+      // aktuellen Poll-Stand -> Server gewinnt immer. Das ist die sichere
+      // Variante: stammt das Event vom eigenen Vote, ist die eigene Stimme
+      // serverseitig ohnehin schon enthalten. Wir ersetzen nur den Poll-Teil der
+      // betroffenen Nachricht, nicht die ganze Nachricht (Audit Achse 2, 10b).
+      socket.on('pollUpdated', (data: { roomId: number; messageId: number; poll: any }) => {
+        if (data.roomId !== room.id || !data.poll) return;
+        setMessages(prev => prev.map(m => {
+          if (m.id !== data.messageId) return m;
+          return {
+            ...m,
+            question: data.poll.question ?? m.question,
+            options: data.poll.options ?? m.options,
+            multiple_choice: data.poll.multiple_choice ?? m.multiple_choice,
+            anonymous: data.poll.anonymous ?? m.anonymous,
+            exclusive_options: data.poll.exclusive_options ?? m.exclusive_options,
+            expires_at: data.poll.expires_at ?? m.expires_at,
+            poll_id: data.poll.poll_id ?? m.poll_id,
+            votes: data.poll.votes ?? m.votes,
+          };
+        }));
+      });
     }
 
-    // Fallback: 30-second polling als Backup (falls WebSocket ausfaellt)
+    // Fallback: 30s-Poll als Backup fuer den Fall, dass der Socket still
+    // gestorben ist (bewusster Anker, NICHT entfernen). Zwei Optimierungen
+    // (Audit Achse 4, Fund 4):
+    // 1. Inkrementell via loadMissedMessages(lastId) statt jedes Mal die vollen
+    //    100 Nachrichten neu zu laden.
+    // 2. Nur pollen, wenn die Seite sichtbar ist (Web-Tab im Hintergrund pollt
+    //    nicht). Auf Native ist visibilityState 'visible', solange die App im
+    //    Vordergrund ist; im Hintergrund pausiert das OS den Timer ohnehin.
+    // Hinweis: Deletes aelterer Nachrichten kommen ueber das 'messageDeleted'-
+    // Socket-Event. Mit after= gehen sie im Poll verloren -- das ist ok, der
+    // Poll ist nur der Fallback fuer NEUE Nachrichten bei totem Socket.
     const interval = setInterval(async () => {
-      await loadMessages();
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+      const currentMessages = messagesRef.current;
+      if (currentMessages.length > 0) {
+        const lastId = currentMessages[currentMessages.length - 1].id;
+        // Nur echte (serverseitige) IDs als Marker verwenden. Optimistische
+        // Nachrichten haben negative IDs -> dann lieber den vollen Load.
+        if (lastId > 0) {
+          await loadMissedMessages(lastId);
+        } else {
+          await loadMessages();
+        }
+      } else {
+        await loadMessages();
+      }
     }, 30000);
 
     return () => {
@@ -332,15 +378,39 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         socket.off('userTyping');
         socket.off('reactionAdded');
         socket.off('reactionRemoved');
+        socket.off('pollUpdated');
       }
     };
   }, [room?.id]);
 
-  // Mark as read only when new messages arrive (not every 5 seconds)
+  // Mark-Read drosseln (Audit Achse 4, Fund 13): Ohne Debounce feuerte dieser
+  // Effekt pro empfangener Nachricht einen POST /mark-read. Wichtig: Der lokale
+  // Badge geht trotzdem SOFORT weg -- badgeMarkRoomAsRead() im BadgeContext
+  // macht ein optimistisches Update. Gedrosselt wird NUR der Server-POST.
+  // Verhalten: erster Aufruf (Chat-Oeffnen) laeuft sofort (leading), damit der
+  // Badge zuegig verschwindet; Folgenachrichten werden mit 1.5s gebuendelt
+  // (letzter Aufruf gewinnt).
+  const markReadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const markReadLeadingDoneRef = useRef(false);
   useEffect(() => {
-    if (messages.length > 0) {
+    if (messages.length === 0) return;
+
+    if (!markReadLeadingDoneRef.current) {
+      // Erster Trigger nach Mount: sofort ausfuehren (Badge zuegig weg).
+      markReadLeadingDoneRef.current = true;
       markRoomAsRead();
+      return;
     }
+
+    // Folgenachrichten: debounced, letzter Aufruf gewinnt.
+    if (markReadTimerRef.current) clearTimeout(markReadTimerRef.current);
+    markReadTimerRef.current = setTimeout(() => {
+      markRoomAsRead();
+    }, 1500);
+
+    return () => {
+      if (markReadTimerRef.current) clearTimeout(markReadTimerRef.current);
+    };
   }, [messages.length]);
 
 

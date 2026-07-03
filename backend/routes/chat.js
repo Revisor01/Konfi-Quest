@@ -42,7 +42,81 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   
   
   // === CHAT API ENDPOINTS ===
-  
+
+  // Hilfsfunktion: Nach einem Vote den aktuellen Poll-Stand einsammeln und per
+  // 'pollUpdated' an den Raum senden, damit alle offenen Chats die neuen Votes
+  // live sehen (Audit Achse 2, Luecke 10b). Die Poll-/Votes-Struktur ist
+  // identisch zu GET /messages: options als Array, anonymitaets-bewusste Votes
+  // (bei anonymen Umfragen ohne user_name). messageId ist die message_id der
+  // Poll-Nachricht, damit der Client die richtige Nachricht im State findet.
+  const emitPollUpdate = async (pollDbId, roomId) => {
+    if (!io) return; // io-defensiv: in Tests kein Socket -> No-op
+    try {
+      const { rows: [poll] } = await db.query(
+        `SELECT p.id, p.message_id, p.question, p.options, p.multiple_choice,
+                p.anonymous, p.exclusive_options, p.expires_at
+         FROM chat_polls p WHERE p.id = $1`,
+        [pollDbId]
+      );
+      if (!poll) return;
+
+      const { rows: rawVotes } = await db.query(
+        `SELECT v.user_id, v.user_type, v.option_index, u.display_name as voter_name
+         FROM chat_poll_votes v
+         LEFT JOIN users u ON v.user_id = u.id
+         WHERE v.poll_id = $1`,
+        [pollDbId]
+      );
+
+      let parsedOptions = [];
+      try { parsedOptions = JSON.parse(poll.options); } catch (e) { parsedOptions = []; }
+      const isAnonymous = Boolean(poll.anonymous);
+
+      const pollPayload = {
+        poll_id: poll.id,
+        message_id: poll.message_id,
+        question: poll.question,
+        options: parsedOptions,
+        multiple_choice: Boolean(poll.multiple_choice),
+        anonymous: isAnonymous,
+        exclusive_options: Boolean(poll.exclusive_options),
+        expires_at: poll.expires_at,
+        votes: rawVotes.map(v => ({
+          user_id: v.user_id,
+          user_type: v.user_type,
+          option_index: v.option_index,
+          user_name: isAnonymous ? undefined : v.voter_name,
+        })),
+      };
+
+      io.to(`room_${roomId}`).emit('pollUpdated', {
+        roomId: parseInt(roomId),
+        messageId: poll.message_id,
+        poll: pollPayload,
+      });
+    } catch (emitErr) {
+      console.error('Failed to emit pollUpdated:', emitErr);
+    }
+  };
+
+  // Hilfsfunktion: 'roomsChanged' an die persoenlichen User-Raeume der
+  // betroffenen Nutzer senden, damit deren ChatOverview die Raumliste neu laedt
+  // (Audit Achse 2, Luecke 14). Nur die einfachen Faelle (Raum erstellt/
+  // geloescht, Teilnehmer hinzugefuegt/entfernt/verlassen). targets ist eine
+  // Liste von { user_id, user_type }.
+  const emitRoomsChanged = (targets) => {
+    if (!io || !Array.isArray(targets)) return; // io-defensiv: in Tests No-op
+    // Duplikate zusammenfassen (z.B. bei Direktchat kann derselbe User doppelt vorkommen).
+    const seen = new Set();
+    for (const t of targets) {
+      if (!t || t.user_id == null || !t.user_type) continue;
+      const key = `${t.user_type}_${t.user_id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      io.to(`user_${t.user_type}_${t.user_id}`).emit('roomsChanged');
+    }
+  };
+
   // Get admins for direct contact (konfis only)
   router.get('/admins', verifyTokenRBAC, async (req, res) => {
     try {
@@ -119,9 +193,15 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         db.query(insertParticipant1Query, [roomId, user1_id, user1_type]),
         db.query(insertParticipant2Query, [roomId, user2_id, user2_type])
       ]);
-      
+
       res.json({ room_id: roomId, created: true });
-      
+
+      // Beide Teilnehmer sollen den neuen Direktchat sofort in ihrer Liste sehen.
+      emitRoomsChanged([
+        { user_id: user1_id, user_type: user1_type },
+        { user_id: user2_id, user_type: user2_type },
+      ]);
+
     } catch (err) {
  console.error('Database error in POST /direct:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
@@ -199,6 +279,19 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       }
       
       res.json({ room_id: roomId, created: true });
+
+      // Alle finalen Teilnehmer sollen den neuen Raum sofort in ihrer Liste
+      // sehen. Nach den (evtl. mehreren) Insert-Zweigen den tatsaechlichen
+      // Teilnehmerstand einsammeln und benachrichtigen.
+      try {
+        const { rows: finalParticipants } = await db.query(
+          'SELECT user_id, user_type FROM chat_participants WHERE room_id = $1',
+          [roomId]
+        );
+        emitRoomsChanged(finalParticipants);
+      } catch (notifyErr) {
+        console.error('Failed to emit roomsChanged (POST /rooms):', notifyErr);
+      }
     } catch (err) {
  console.error('Database error in POST /rooms:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
@@ -942,7 +1035,19 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       
       await db.query("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, $3)", [roomId, user_id, user_type]);
       res.status(201).json({ message: 'Teilnehmer erfolgreich hinzugefügt' });
-      
+
+      // Alle Teilnehmer (inkl. dem neu hinzugefuegten) sollen die aktualisierte
+      // Raumliste sehen.
+      try {
+        const { rows: currentParticipants } = await db.query(
+          'SELECT user_id, user_type FROM chat_participants WHERE room_id = $1',
+          [roomId]
+        );
+        emitRoomsChanged(currentParticipants);
+      } catch (notifyErr) {
+        console.error('Failed to emit roomsChanged (add participant):', notifyErr);
+      }
+
     } catch (err) {
       // Handle unique constraint violation in case of a race condition
       if (err.code === '23505') {
@@ -978,8 +1083,20 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       if (rowCount === 0) {
         return res.status(404).json({ error: 'Teilnehmer nicht gefunden' });
       }
-      
+
       res.json({ message: 'Teilnehmer erfolgreich entfernt' });
+
+      // Der entfernte Nutzer soll den Raum aus seiner Liste verlieren, die
+      // verbleibenden Teilnehmer den aktualisierten Stand sehen.
+      try {
+        const { rows: remaining } = await db.query(
+          'SELECT user_id, user_type FROM chat_participants WHERE room_id = $1',
+          [roomId]
+        );
+        emitRoomsChanged([...remaining, { user_id: userId, user_type: userType }]);
+      } catch (notifyErr) {
+        console.error('Failed to emit roomsChanged (remove participant):', notifyErr);
+      }
     } catch (err) {
  console.error(`Database error in DELETE /rooms/${req.params.roomId}/participants/...:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
@@ -1026,6 +1143,18 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       }
 
       res.json({ message: 'Chat erfolgreich verlassen' });
+
+      // Der verlassende Nutzer verliert den Raum, die verbleibenden Teilnehmer
+      // sehen den aktualisierten Stand.
+      try {
+        const { rows: remaining } = await db.query(
+          'SELECT user_id, user_type FROM chat_participants WHERE room_id = $1',
+          [roomId]
+        );
+        emitRoomsChanged([...remaining, { user_id: userId, user_type: userType }]);
+      } catch (notifyErr) {
+        console.error('Failed to emit roomsChanged (leave):', notifyErr);
+      }
     } catch (err) {
       console.error(`Database error in DELETE /rooms/${req.params.roomId}/leave:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
@@ -1258,6 +1387,115 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         votes: []
       });
 
+      // WebSocket + Push: Umfrage wie eine normale Nachricht live verteilen.
+      // Ohne dies sehen Teilnehmer die Umfrage erst nach Reload/Fallback-Poll
+      // (Audit Achse 2, Luecke 10a). Wir bauen ein message-Objekt in derselben
+      // Struktur, die GET /messages fuer Poll-Nachrichten liefert (message_type
+      // 'poll', options als Array, Poll-Metadaten, leere votes), damit der
+      // ChatRoom-newMessage-Handler die Umfrage sofort rendern kann.
+      if (io) {
+        try {
+          const { rows: [sender] } = await db.query(
+            'SELECT display_name, username FROM users WHERE id = $1',
+            [userId]
+          );
+          const pollMessage = {
+            id: messageId,
+            room_id: parseInt(roomId),
+            user_id: userId,
+            user_type: userType,
+            sender_id: userId,
+            sender_type: userType,
+            sender_name: sender?.display_name || 'Unbekannt',
+            sender_username: sender?.username || null,
+            message_type: 'poll',
+            content: question,
+            created_at: new Date().toISOString(),
+            // Poll-Daten wie in GET /messages
+            poll_id: newPoll.id,
+            question: question,
+            options: validOptions,
+            multiple_choice: isMultipleChoice,
+            anonymous: Boolean(anonymous),
+            exclusive_options: Boolean(exclusive_options),
+            expires_at: expiresAt,
+            votes: [],
+            reactions: []
+          };
+
+          // An den Raum (offene Chats) UND an alle Teilnehmer-User-Raeume
+          // (Badge/Overview), exakt nach dem Muster des Nachrichten-Handlers.
+          io.to(`room_${roomId}`).emit('newMessage', {
+            roomId: parseInt(roomId),
+            message: pollMessage
+          });
+          const { rows: allParticipants } = await db.query(
+            'SELECT user_id, user_type FROM chat_participants WHERE room_id = $1',
+            [roomId]
+          );
+          for (const p of allParticipants) {
+            io.to(`user_${p.user_type}_${p.user_id}`).emit('newMessage', {
+              roomId: parseInt(roomId),
+              message: pollMessage
+            });
+          }
+        } catch (emitErr) {
+          console.error('Failed to emit poll newMessage:', emitErr);
+        }
+      }
+
+      // Push-Benachrichtigung analog zum Nachrichten-Handler: Umfrage ist eine
+      // wichtige Nachricht. Asynchron, blockiert die Antwort nicht.
+      (async () => {
+        try {
+          const { rows: participants } = await db.query(
+            `SELECT user_id, user_type FROM chat_participants
+             WHERE room_id = $1 AND NOT (user_id = $2 AND user_type = $3)`,
+            [roomId, userId, userType]
+          );
+          if (!participants || participants.length === 0) return;
+
+          const { rows: [room2] } = await db.query('SELECT name, type FROM chat_rooms WHERE id = $1', [roomId]);
+          const roomName = room2?.name || 'Chat';
+          const { rows: [sender] } = await db.query('SELECT display_name FROM users WHERE id = $1', [userId]);
+          const senderName = sender?.display_name || 'Unbekannt';
+          const pushTitle = roomName;
+          const pushBody = `${senderName}: [Umfrage] ${question}`;
+
+          for (const p of participants) {
+            const badgeQuery = `
+              SELECT COUNT(DISTINCT cm.id) as total_unread
+              FROM chat_messages cm
+              JOIN chat_participants cp ON cm.room_id = cp.room_id
+              LEFT JOIN chat_read_status crs ON cm.room_id = crs.room_id AND crs.user_id = $1 AND crs.user_type = $2
+              WHERE cp.user_id = $1
+              AND cp.user_type = $2
+              AND cm.created_at > COALESCE(crs.last_read_at, '1970-01-01')
+              AND cm.deleted_at IS NULL
+              AND NOT (cm.user_id = $1 AND cm.user_type = $2)
+            `;
+            const { rows: [badgeResult] } = await db.query(badgeQuery, [p.user_id, p.user_type]);
+            const badgeCount = parseInt(badgeResult?.total_unread || '0', 10);
+
+            await PushService.sendChatNotification(db, p.user_id, {
+              title: pushTitle,
+              body: pushBody,
+              badge: badgeCount,
+              roomId: roomId,
+              messageId: messageId,
+              data: {
+                sender_id: userId,
+                sender_name: senderName,
+                room_name: roomName,
+                room_type: room2?.type || 'unknown'
+              }
+            });
+          }
+        } catch (pushError) {
+          console.error('Failed to send poll push notification:', pushError);
+        }
+      })();
+
       } catch (err) {
         try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
         client.release();
@@ -1366,6 +1604,8 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         );
         await client.query('COMMIT');
         client.release();
+        // Live-Update: aktualisierten Poll-Stand an den Raum senden.
+        await emitPollUpdate(actualPollId, poll.room_id);
         return res.json({
           message: 'Stimme erfolgreich entfernt',
           poll_id: actualPollId,
@@ -1407,6 +1647,9 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
 
       await client.query('COMMIT');
       client.release();
+
+      // Live-Update: aktualisierten Poll-Stand an den Raum senden.
+      await emitPollUpdate(actualPollId, poll.room_id);
 
       res.json({
         message: 'Stimme erfolgreich abgegeben',
@@ -1564,6 +1807,9 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       await client.query('COMMIT');
       client.release();
 
+      // Live-Update: aktualisierten Poll-Stand an den Raum senden.
+      await emitPollUpdate(poll.id, poll.room_id);
+
       res.json({
         message: 'Stimme erfolgreich abgegeben',
         poll_id: poll.id,
@@ -1621,7 +1867,15 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       }
       
       // Direct chats can be deleted by admins (no restrictions)
-      
+
+      // Teilnehmer VOR dem Loeschen einsammeln, damit wir sie danach ueber die
+      // entfernte Raumliste informieren koennen (nach dem Delete sind die
+      // Teilnehmerzeilen weg).
+      const { rows: participantsBeforeDelete } = await db.query(
+        'SELECT user_id, user_type FROM chat_participants WHERE room_id = $1',
+        [roomId]
+      );
+
       const client = await db.getClient();
       try {
       await client.query('BEGIN');
@@ -1679,6 +1933,10 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       client.release();
 
       res.json({ message: 'Chat-Raum erfolgreich gelöscht' });
+
+      // Alle ehemaligen Teilnehmer sollen den geloeschten Raum aus ihrer Liste
+      // verlieren.
+      emitRoomsChanged(participantsBeforeDelete);
 
       } catch (err) {
         try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }

@@ -48,7 +48,9 @@ import { useModalPage } from '../../contexts/ModalContext';
 import { useOfflineQuery } from '../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../services/offlineCache';
 import api from '../../services/api';
-import { onReconnect } from '../../services/websocket';
+import { onReconnect, initializeWebSocket } from '../../services/websocket';
+import { getToken } from '../../services/tokenStore';
+import { useLiveUpdate } from '../../contexts/LiveUpdateContext';
 import LoadingSpinner from '../common/LoadingSpinner';
 import SimpleCreateChatModal from './modals/SimpleCreateChatModal';
 import { ChatRoomOverview } from '../../types/chat';
@@ -68,6 +70,10 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   const { user, setError, isOnline } = useApp();
   const [presentAlert] = useIonAlert();
   const { chatUnreadByRoom, refreshAllCounts } = useBadge();
+  // socketEpoch: nach Reconnect-mit-neuem-Token ist getSocket() ein anderes
+  // Objekt -> Listener am frischen Socket neu binden (gleiches Muster wie im
+  // BadgeContext).
+  const { socketEpoch } = useLiveUpdate();
   const [searchText, setSearchText] = useState('');
   const [filterType, setFilterType] = useState<string>('alle');
 
@@ -156,6 +162,26 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     });
     return () => { unsubReconnect(); };
   }, [refresh]);
+
+  // Live-Update der Raumliste bei Raum-Aenderungen (Raum erstellt/geloescht,
+  // Teilnehmer hinzugefuegt/entfernt/verlassen). Der Server sendet 'roomsChanged'
+  // an die persoenlichen User-Raeume der betroffenen Nutzer (Audit Achse 2,
+  // Luecke 14). socketEpoch in den Deps -> Rebind am frischen Socket nach
+  // Reconnect-mit-neuem-Token (gleiche Disziplin wie der BadgeContext-Listener).
+  useEffect(() => {
+    const token = getToken();
+    if (!token || !user) return;
+
+    const socket = initializeWebSocket(token);
+    const handleRoomsChanged = () => {
+      refresh();
+    };
+    socket.on('roomsChanged', handleRoomsChanged);
+
+    return () => {
+      socket.off('roomsChanged', handleRoomsChanged);
+    };
+  }, [refresh, user, socketEpoch]);
 
   // Bei Rückkehr zur View (z.B. nach ChatRoom) Raumliste aktualisieren
   useIonViewWillEnter(() => {

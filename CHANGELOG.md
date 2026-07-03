@@ -8,7 +8,48 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ## [Unreleased]
 
+### Chat-Feinschliff (Audit Phase G)
+- **Umfragen erscheinen live (Audit Achse 2, Luecke 10a).** `POST /chat/rooms/:id/polls`
+  legte die Umfrage-Nachricht an, sendete aber kein Socket-Event — Teilnehmer
+  sahen die Umfrage erst nach Reload/Fallback-Poll. Der Handler emittet jetzt
+  `newMessage` (an den Raum UND die persoenlichen User-Raeume aller Teilnehmer,
+  exakt nach dem Muster des Nachrichten-Handlers) mit einem vollstaendigen
+  Poll-Message-Objekt (message_type `poll`, options als Array, Poll-Metadaten,
+  leere votes) und verschickt analog zur normalen Nachricht eine
+  Push-Benachrichtigung (`backend/routes/chat.js`).
+- **Umfrage-Votes aktualisieren sich live (Audit Achse 2, Luecke 10b).** Beide
+  Vote-Endpoints (`POST /chat/polls/:id/vote`, `POST /chat/messages/:id/vote`)
+  senden nach erfolgreichem Vote ein neues `pollUpdated`-Event an den Raum mit
+  dem kompletten aktuellen Poll-Stand (anonymitaets-bewusste Votes, identische
+  Struktur wie `GET /messages`). Das Frontend hoert `pollUpdated` und ersetzt
+  nur den Poll-Teil der betroffenen Nachricht; Server-Daten gewinnen immer (der
+  eigene Vote ist serverseitig ohnehin schon enthalten)
+  (`backend/routes/chat.js`, `frontend/src/components/chat/ChatRoom.tsx`).
+- **Raum-Aenderungen erscheinen live (Audit Achse 2, Luecke 14).** Direktchat-/
+  Gruppen-Erstellung, Raum-Loeschung sowie Teilnehmer hinzufuegen/entfernen/
+  verlassen senden jetzt ein `roomsChanged`-Event an die persoenlichen
+  User-Raeume der betroffenen Nutzer (bei Raum-Loeschung an alle Teilnehmer, die
+  VOR dem Delete eingesammelt werden). Die Chat-Uebersicht bindet einen
+  `roomsChanged`-Listener mit `socketEpoch`-Rebind (gleiche Disziplin wie der
+  BadgeContext) und laedt die Raumliste neu
+  (`backend/routes/chat.js`, `frontend/src/components/chat/ChatOverview.tsx`).
+
 ### ⚡ Performance
+- **Mark-Read gedrosselt (Audit Achse 4, Fund 13).** Der Effekt in `ChatRoom`
+  feuerte pro empfangener Nachricht einen `POST` an den mark-read-Endpoint. Jetzt
+  laeuft der erste Aufruf beim Chat-Oeffnen sofort (Badge verschwindet zuegig),
+  Folgenachrichten werden mit 1,5s gebuendelt (letzter Aufruf gewinnt). Der
+  lokale Badge geht weiterhin SOFORT weg — `badgeMarkRoomAsRead` im BadgeContext
+  ist optimistisch; gedrosselt wird nur der Server-POST
+  (`frontend/src/components/chat/ChatRoom.tsx`).
+- **Chat-Fallback-Poll inkrementell + sichtbarkeitsabhaengig (Audit Achse 4, Fund 4).**
+  Der 30s-Fallback-Poll in `ChatRoom` lud bislang immer die vollen 100
+  Nachrichten. Er nutzt jetzt den inkrementellen Pfad `loadMissedMessages(lastId)`
+  und pollt nur, wenn `document.visibilityState === 'visible'` (Web-Tab im
+  Hintergrund pollt nicht; auf Native pausiert das OS den Timer ohnehin). Der
+  Poll bleibt als bewusster Anker gegen stillen Socket-Tod erhalten. Deletes
+  aelterer Nachrichten kommen ueber das `messageDeleted`-Socket-Event und gehen
+  im `after=`-Poll bewusst verloren (`frontend/src/components/chat/ChatRoom.tsx`).
 - **Chat-Mitgliedschafts-Sync vom Lesepfad entkoppelt.** `GET /chat/rooms`
   fuehrte bei JEDEM Aufruf den Jahrgangs- und Team-Chat-Sync aus (25-35 Queries
   Schreibarbeit bei einem Org-Admin mit 5 Jahrgaengen — Hauptursache der hohen

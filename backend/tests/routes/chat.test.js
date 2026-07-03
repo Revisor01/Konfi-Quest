@@ -436,4 +436,41 @@ describe('Chat Routes', () => {
       expect(down.body.equals(pngBuffer)).toBe(true);
     });
   });
+
+  // ================================================================
+  // POST /api/chat/rooms/:roomId/polls
+  // ================================================================
+  describe('POST /api/chat/rooms/:roomId/polls', () => {
+    it('Admin erstellt Umfrage -> 201 (Socket-Emit kippt ohne io nicht)', async () => {
+      // Regression fuer Audit Achse 2, Luecke 10a: Der Poll-Handler emittet nun
+      // 'newMessage' + Push. In Tests ist io=null -> alle Emits sind No-ops und
+      // duerfen den 201-Pfad nicht stoeren.
+      const res = await request(app)
+        .post(`/api/chat/rooms/${CHAT_ROOMS.jahrgang.id}/polls`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({
+          question: 'Wann treffen wir uns?',
+          options: ['Montag', 'Dienstag'],
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.id).toBeDefined();
+      expect(res.body.message_id).toBeDefined();
+      expect(res.body.question).toBe('Wann treffen wir uns?');
+      expect(res.body.options).toEqual(['Montag', 'Dienstag']);
+      expect(res.body.votes).toEqual([]);
+    });
+
+    it('Konfi darf keine Umfrage erstellen -> 403', async () => {
+      const res = await request(app)
+        .post(`/api/chat/rooms/${CHAT_ROOMS.jahrgang.id}/polls`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({
+          question: 'Frage?',
+          options: ['A', 'B'],
+        });
+
+      expect(res.status).toBe(403);
+    });
+  });
 });
