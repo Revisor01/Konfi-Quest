@@ -8,6 +8,20 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ## [Unreleased]
 
+—
+
+## [1.4.1] – 2026-07-04 — an Apple + Google in Review
+
+**iOS Build 78 (App Store, eingereicht) + Android versionCode 67 (Google Play
+internal/alpha/production, automatisch in Review).** Sichtbare Highlights der
+Store-Release-Notes: Chat-Nachrichten erscheinen sofort und flüssig, Tastatur
+bleibt beim Senden offen, Umfragen/Votes live, Chat-Push öffnet direkt den
+Raum, "Neue Nachrichten"-Marker als einmaliger Einstiegs-Indikator, kein Push
+mehr vom vorherigen Konto, Push bei Termin-/Ortsänderung gebuchter Events,
+Warteliste auffüllen + "Alle bestätigen", Direktchats mit Teamer:innen wieder
+sichtbar. Alles Weitere (Audit-Phasen F–H, Multi-Org-Chat-Sync, DB/Query-Umbau)
+lief als "Verbesserungen unter der Haube".
+
 ### 🐛 Chat: Direktchat mit Teamer:innen unsichtbar + Doppel-Blitzen beim Senden
 - **Direktchat für Teamer:innen unsichtbar (Migration 117).** `POST /chat/direct`
   kannte als `target_user_type` nur `admin|konfi` — Teamer:innen wurden als
@@ -394,7 +408,7 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
   beim Loeschen des **Users selbst** geht dessen History mit weg. Regressionstest
   ergaenzt (`backend/tests/routes/users.test.js`).
 
-## [1.4.1] – 2026-07-02 (iOS Build 75, TestFlight)
+### Vorab enthalten seit iOS Build 75 (02.07., TestFlight)
 
 ### 🎨 Landing-Page (konfi-quest.de)
 - **USP „Von einem Pastor für die Konfi-Arbeit entwickelt" prominent gemacht.**
