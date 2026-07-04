@@ -23,6 +23,12 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
   jede neu angehängte (auch eigene) Nachricht schob ihn nach unten. Er wird
   jetzt einmalig per Message-ID an der ersten ungelesenen Nachricht verankert
   und bleibt dort stehen (`frontend/src/components/chat/ChatRoom.tsx`).
+- **Neue Nachrichten erscheinen jetzt zackig statt ruckelig.** (1) React-Key der
+  Bubbles bevorzugt `client_id` — beim Bestätigen der eigenen Nachricht
+  (optimistisch → Server) wird die Bubble nicht mehr neu gemountet, nichts
+  blitzt. (2) Auto-Scroll bei neuen Nachrichten springt sofort (0ms) statt 300ms
+  zu animieren; eigener Sende-Scroll per Doppel-rAF direkt nach dem Rendern
+  statt setTimeout+Animation (`frontend/src/components/chat/ChatRoom.tsx`).
 - **Eigene Nachricht blitzte kurz doppelt auf.** Nach dem Senden hängte der
   `newMessage`-Socket-Handler die Server-Kopie ZUSÄTZLICH unter die noch
   sichtbare optimistische Nachricht; erst der Voll-Reload danach räumte auf

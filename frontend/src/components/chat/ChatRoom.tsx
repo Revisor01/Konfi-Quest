@@ -470,8 +470,10 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           });
         });
       } else if (shouldAutoScroll && !parkedAtDividerRef.current && messages.length > prevMessageCountRef.current) {
-        // New message - smooth scroll
-        contentRef.current.scrollToBottom(300);
+        // Neue Nachricht: SOFORT ans Ende springen (0ms). Die 300ms-Animation
+        // wirkte in Kombination mit dem Rendern der neuen Bubble ruckelig —
+        // lieber zackig einmalig da sein.
+        contentRef.current.scrollToBottom(0);
       }
     }
     prevMessageCountRef.current = messages.length;
@@ -610,7 +612,9 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     setShouldAutoScroll(true);
     // Eigene Nachricht: am Divider-Park loesen, sonst bleibt der Scroll oben haengen.
     parkedAtDividerRef.current = false;
-    setTimeout(() => contentRef.current?.scrollToBottom(300), 100);
+    // Doppel-rAF statt setTimeout(100): direkt nach dem Rendern der optimistischen
+    // Bubble instant ans Ende springen — kein animiertes Nachziehen.
+    requestAnimationFrame(() => requestAnimationFrame(() => contentRef.current?.scrollToBottom(0)));
 
     if (networkMonitor.isOnline) {
       // Online: Normal senden
@@ -1306,7 +1310,10 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
               if (showDayDivider) lastDayKey = dayKey;
               const showNewDivider = newDividerAnchorRef.current !== null && message.id === newDividerAnchorRef.current;
               return (
-                <React.Fragment key={message.id}>
+                // Key bevorzugt client_id: bleibt beim Tausch optimistische ->
+                // Server-Nachricht identisch, die Bubble wird NICHT neu gemountet
+                // (kein Aufblitzen/Ruckeln beim Bestaetigen der eigenen Nachricht).
+                <React.Fragment key={message.client_id ?? message.clientId ?? message.id}>
                   {showDayDivider && (
                     <div
                       data-day-divider={formatDayDivider(created!)}
