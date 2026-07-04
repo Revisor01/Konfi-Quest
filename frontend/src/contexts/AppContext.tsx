@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { Device } from '@capacitor/device';
 import api from '../services/api';
@@ -136,6 +136,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Push notifications state
   const [pushNotificationsPermission, setPushNotificationsPermission] = useState<string>('prompt');
+
+  // Account-Wechsel-Erkennung fuer den FCM-Token: Nach Logout+Login mit einem
+  // ANDEREN Account haengt der Token serverseitig noch am alten User (das
+  // 12h-Sendefenster verhindert den erneuten POST). Bei einem Wechsel innerhalb
+  // der Session das Fenster aufheben und den bekannten Token sofort fuer den
+  // neuen User registrieren — der Server haengt ihn dabei um (DELETE fremder
+  // Bindungen in POST /device-token).
+  const prevPushUserIdRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!user?.id) return; // Logout: vorherige ID absichtlich behalten
+    const prev = prevPushUserIdRef.current;
+    prevPushUserIdRef.current = user.id;
+    if (prev !== null && prev !== user.id && fcmTokenSent) {
+      const t = fcmTokenSent;
+      fcmTokenSent = null; // In-Memory-Sperre aufheben
+      setPushTokenTimestamp(0).finally(() => sendTokenToServer(t));
+    }
+  }, [user?.id]);
 
   // Multi-Org Switcher state
   const [organizations, setOrganizations] = useState<UserOrganization[]>([]);
@@ -616,9 +634,13 @@ useEffect(() => {
 
             switch (notificationType) {
               case 'chat':
-                // Navigate to specific chat room
+                // Direkt in den Raum: Die Route ist /chat/room/:roomId — der
+                // fruehere Query-Parameter (?room=) wurde von keiner Seite
+                // konsumiert, der Tap landete nur auf der Chat-Uebersicht.
                 if (action.notification.data?.roomId) {
-                  targetUrl = `${routePrefix}/chat?room=${action.notification.data.roomId}`;
+                  targetUrl = `${routePrefix}/chat/room/${action.notification.data.roomId}`;
+                } else {
+                  targetUrl = `${routePrefix}/chat`;
                 }
                 break;
 

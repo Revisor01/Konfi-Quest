@@ -53,6 +53,13 @@ const formatDayDivider = (d: Date): string => {
   return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
+// Pro Raum: Message-ID, an der der "Neue Nachrichten"-Trenner bereits gezeigt
+// wurde (Modul-Scope, ueberlebt Re-Mounts). Der Trenner ist ein EINMALIGER
+// Einstiegs-Indikator: Nach Verlassen+Wiederbetreten darf derselbe (evtl. aus
+// stale unread_count rekonstruierte) Anker nicht erneut erscheinen — nur ein
+// NEUER Anker (= wirklich neue Nachrichten seit dem letzten Besuch) zaehlt.
+const shownMarkerAnchors = new Map<number, number>();
+
 const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingElement }) => {
   const { user, setError, isOnline } = useApp();
   const { markRoomAsRead: badgeMarkRoomAsRead, refreshAllCounts, chatUnreadByRoom } = useBadge();
@@ -388,6 +395,12 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
 
     return () => {
       clearInterval(interval);
+      // Marker-Zustand zuruecksetzen: Der "Neue Nachrichten"-Trenner ist ein
+      // einmaliger Einstiegs-Indikator — beim Verlassen des Raums (oder
+      // Raumwechsel) wird er verworfen und beim naechsten Betreten nur bei
+      // wirklich neuen Nachrichten neu berechnet (shownMarkerAnchors).
+      initialUnreadRef.current = null;
+      newDividerAnchorRef.current = null;
       if (room?.id) {
         leaveRoom(room.id);
       }
@@ -603,6 +616,12 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       localId,
       clientId,
     };
+
+    // Eigene Nachricht geschrieben -> der "Neue Nachrichten"-Trenner hat seinen
+    // Zweck erfuellt (Einstiegs-Indikator) und verschwindet.
+    newDividerAnchorRef.current = null;
+    initialUnreadRef.current = 0;
+    parkedAtDividerRef.current = false;
 
     // UI sofort aktualisieren
     setMessages(prev => [...prev, optimisticMsg]);
@@ -1297,9 +1316,17 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
             const unread = initialUnreadRef.current ?? 0;
             if (newDividerAnchorRef.current === null && unread > 0 && unread <= messages.length) {
               const anchor = messages[messages.length - unread];
-              // Nur echte Server-Nachrichten ankern (optimistische haben id < 0)
+              // Nur echte Server-Nachrichten ankern (optimistische haben id < 0).
+              // Und: derselbe Anker wird pro Raum nur EINMAL gezeigt — nach
+              // Verlassen+Wiederbetreten erscheint der Trenner nur, wenn seither
+              // wirklich neue Nachrichten dazugekommen sind (neuer Anker).
               if (anchor && anchor.id > 0) {
-                newDividerAnchorRef.current = anchor.id;
+                if (room?.id && shownMarkerAnchors.get(room.id) === anchor.id) {
+                  initialUnreadRef.current = 0; // bereits gezeigt -> unterdruecken
+                } else {
+                  newDividerAnchorRef.current = anchor.id;
+                  if (room?.id) shownMarkerAnchors.set(room.id, anchor.id);
+                }
               }
             }
             let lastDayKey = '';

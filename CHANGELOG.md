@@ -23,6 +23,25 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
   jede neu angehängte (auch eigene) Nachricht schob ihn nach unten. Er wird
   jetzt einmalig per Message-ID an der ersten ungelesenen Nachricht verankert
   und bleibt dort stehen (`frontend/src/components/chat/ChatRoom.tsx`).
+- **Kein Push mehr vom alten Account nach Logout+Login.** Der Push-Token-DELETE
+  lief beim Logout NACH `clearAuth()` — der Endpoint verlangt Auth, der Call
+  bekam still einen 401, der Token blieb beim alten User registriert. Dazu
+  blockte das 12h-Sendefenster die Neu-Registrierung für den neuen Account.
+  Dreifach-Fix: DELETE läuft jetzt VOR clearAuth (noch authentifiziert, mit
+  Timeout), clearAuth setzt das Sendefenster zurück, und bei Account-Wechsel
+  innerhalb der Session wird der bekannte FCM-Token sofort für den neuen User
+  registriert (Server hängt ihn um) (`frontend/src/services/auth.ts`,
+  `tokenStore.ts`, `contexts/AppContext.tsx`).
+- **Chat-Push öffnet jetzt direkt den richtigen Raum.** Der Notification-Tap
+  navigierte zu `/chat?room=<id>` — den Query-Parameter konsumierte keine
+  Seite, man landete auf der Übersicht. Jetzt direkt `/chat/room/:roomId`
+  (`frontend/src/contexts/AppContext.tsx`).
+- **"Neue Nachrichten"-Trenner ist ein einmaliger Einstiegs-Indikator.**
+  Verschwindet, sobald man selbst etwas schreibt; beim Verlassen des Raums wird
+  er verworfen und erscheint beim Wiederbetreten nur, wenn seither wirklich
+  neue Nachrichten kamen (derselbe Anker wird pro Raum nie zweimal gezeigt —
+  auch nicht bei veraltetem unread_count aus dem Cache)
+  (`frontend/src/components/chat/ChatRoom.tsx`).
 - **Tastatur bleibt beim Senden offen (iOS/Android).** Nach dem Senden wird der
   Senden-Button disabled (Text leer) — der Browser warf den Fokus auf BODY,
   iOS schloss die Tastatur (im Web verifiziert: `activeElement` = BODY nach
