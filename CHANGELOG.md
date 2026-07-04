@@ -23,6 +23,15 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
   jede neu angehängte (auch eigene) Nachricht schob ihn nach unten. Er wird
   jetzt einmalig per Message-ID an der ersten ungelesenen Nachricht verankert
   und bleibt dort stehen (`frontend/src/components/chat/ChatRoom.tsx`).
+- **Tastatur bleibt beim Senden offen (iOS/Android).** Der Senden-Button stahl
+  dem Textfeld per Tap den Fokus — nach jeder Nachricht klappte die Tastatur zu.
+  `preventDefault` auf pointerdown lässt den Fokus im Feld
+  (`frontend/src/components/chat/ChatRoomSections.tsx`).
+- **Eingabeleiste flackert nicht mehr beim Tastatur-Öffnen.** Keyboard-Resize-
+  Modus von `ionic` auf `native`: Der WebView-Frame wird synchron zur
+  Tastatur-Animation verkleinert, statt den Footer erst nach `keyboardDidShow`
+  hochzuschieben (`frontend/capacitor.config.ts`). iOS Build 76 (1.4.1) zu
+  TestFlight hochgeladen.
 - **Neue Nachrichten erscheinen jetzt zackig statt ruckelig.** (1) React-Key der
   Bubbles bevorzugt `client_id` — beim Bestätigen der eigenen Nachricht
   (optimistisch → Server) wird die Bubble nicht mehr neu gemountet, nichts

@@ -372,6 +372,9 @@ export const MessageInput = React.memo<MessageInputProps>(({
           shape="round"
           size="small"
           disabled={(!messageText.trim() && !selectedFile) || uploading}
+          // preventDefault auf pointerdown: Der Button darf dem Textfeld NICHT
+          // den Fokus stehlen — sonst klappt die Tastatur nach jedem Senden zu.
+          onPointerDown={(e) => e.preventDefault()}
           onClick={onSend}
           style={{
             '--background': '#06b6d4',
