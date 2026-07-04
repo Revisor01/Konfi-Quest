@@ -13,11 +13,11 @@ const config: CapacitorConfig = {
   },
   plugins: {
     Keyboard: {
-      // 'native': WebView-Frame wird SYNCHRON zur Tastatur-Animation verkleinert.
-      // Mit 'ionic' wurde der Footer erst nach keyboardDidShow hochgeschoben —
-      // die Eingabeleiste verschwand kurz hinter der Tastatur und ploppte dann
-      // wieder auf (wirkte hakelig).
-      resize: 'native'
+      // 'ionic' (Ionic passt Padding an). 'native' wurde am 04.07. probiert
+      // (Build 76) und sah SCHLECHTER aus (WebView-Frame springt unanimiert).
+      // Das eigentliche Problem "Tastatur klappt nach Senden zu" war ein
+      // Fokus-Verlust im Send-Flow, nicht der Resize-Modus.
+      resize: 'ionic'
     },
     Badge: {
       persist: true,
