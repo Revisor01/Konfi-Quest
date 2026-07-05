@@ -450,6 +450,128 @@ describe('Events Routes', () => {
   });
 
   // ================================================================
+  // Timeslot-Warteliste (Fund 05.07.2026): voller Slot -> Warteliste PRO SLOT,
+  // frueher setzte die event-weite Gesamtkapazitaet die Warteliste ausser Kraft
+  // (voller Slot wurde als "noch Platz" gewertet -> hartes "ausgebucht" ohne
+  // Wartelisten-Option).
+  // ================================================================
+  describe('Timeslot-Warteliste (pro Slot)', () => {
+    // Timeslot-Event mit einem Slot der Kapazitaet 1 + Warteliste anlegen.
+    // Direkt in der DB, weil der Slot-Kapazitaet=1 gezielt gesetzt wird.
+    async function createTimeslotEventWithCapacity1() {
+      const { rows: [ev] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants,
+                             point_type, points, has_timeslots, waitlist_enabled, max_waitlist_size)
+         VALUES ('Slot-Warteliste-Event', NOW() + interval '7 days', $1, false, 0,
+                 'gemeinde', 0, true, true, 5)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      const { rows: [slot] } = await db.query(
+        `INSERT INTO event_timeslots (event_id, start_time, end_time, max_participants, organization_id)
+         VALUES ($1, NOW() + interval '7 days', NOW() + interval '7 days' + interval '2 hours', 1, $2)
+         RETURNING id`,
+        [ev.id, ORGS.testGemeinde.id]
+      );
+      // Jahrgang zuordnen, damit die Konfis das Event sehen/buchen duerfen
+      await db.query(
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        [ev.id, JAHRGAENGE.jahrgang1.id]
+      );
+      return { eventId: ev.id, slotId: slot.id };
+    }
+
+    it('Voller Slot: zweiter Konfi kommt auf die Warteliste (nicht 400)', async () => {
+      const { eventId, slotId } = await createTimeslotEventWithCapacity1();
+
+      const book1 = await request(app)
+        .post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({ timeslot_id: slotId });
+      expect(book1.status).toBe(201);
+      expect(book1.body.status).toBe('confirmed');
+
+      const book2 = await request(app)
+        .post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${konfi2Token}`)
+        .send({ timeslot_id: slotId });
+      expect(book2.status).toBe(201);
+      expect(book2.body.status).toBe('waitlist');
+    });
+
+    it('Storniert der bestätigte Konfi, rückt der Wartelisten-Konfi im selben Slot nach', async () => {
+      const { eventId, slotId } = await createTimeslotEventWithCapacity1();
+
+      await request(app).post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`).send({ timeslot_id: slotId });
+      await request(app).post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${konfi2Token}`).send({ timeslot_id: slotId });
+
+      const cancelRes = await request(app)
+        .delete(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(cancelRes.status).toBe(200);
+
+      const { rows } = await db.query(
+        'SELECT status FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [eventId, USERS.konfi2.id]
+      );
+      expect(rows.length).toBe(1);
+      expect(rows[0].status).toBe('confirmed');
+    });
+
+    it('Voller Slot ohne Warteliste gibt 400', async () => {
+      const { rows: [ev] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants,
+                             point_type, points, has_timeslots, waitlist_enabled)
+         VALUES ('Slot-ohne-Warteliste', NOW() + interval '7 days', $1, false, 0,
+                 'gemeinde', 0, true, false)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      const { rows: [slot] } = await db.query(
+        `INSERT INTO event_timeslots (event_id, start_time, end_time, max_participants, organization_id)
+         VALUES ($1, NOW() + interval '7 days', NOW() + interval '7 days' + interval '2 hours', 1, $2)
+         RETURNING id`,
+        [ev.id, ORGS.testGemeinde.id]
+      );
+      await db.query('INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        [ev.id, JAHRGAENGE.jahrgang1.id]);
+
+      await request(app).post(`/api/events/${ev.id}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`).send({ timeslot_id: slot.id });
+
+      const book2 = await request(app)
+        .post(`/api/events/${ev.id}/book`)
+        .set('Authorization', `Bearer ${konfi2Token}`)
+        .send({ timeslot_id: slot.id });
+      expect(book2.status).toBe(400);
+    });
+
+    it('Zweiter Slot bleibt frei buchbar, während der erste voll ist', async () => {
+      const { eventId, slotId } = await createTimeslotEventWithCapacity1();
+      // zweiten Slot (Kapazitaet 1) am selben Event anlegen
+      const { rows: [slot2] } = await db.query(
+        `INSERT INTO event_timeslots (event_id, start_time, end_time, max_participants, organization_id)
+         VALUES ($1, NOW() + interval '7 days' + interval '3 hours', NOW() + interval '7 days' + interval '5 hours', 1, $2)
+         RETURNING id`,
+        [eventId, ORGS.testGemeinde.id]
+      );
+
+      await request(app).post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`).send({ timeslot_id: slotId });
+
+      // Slot 1 ist voll, Slot 2 muss trotzdem confirmed gehen
+      const book2 = await request(app)
+        .post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${konfi2Token}`)
+        .send({ timeslot_id: slot2.id });
+      expect(book2.status).toBe(201);
+      expect(book2.body.status).toBe('confirmed');
+    });
+  });
+
+  // ================================================================
   // PUT /:id/participants/:participantId/status (Warteliste <-> bestaetigt)
   // ================================================================
   describe('PUT /api/events/:id/participants/:participantId/status', () => {
