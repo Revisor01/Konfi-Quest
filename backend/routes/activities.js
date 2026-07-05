@@ -7,6 +7,7 @@ const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { decryptBuffer } = require('../utils/photoCrypto');
 const { deletePhotoFile } = require('../utils/photoStorage');
+const { allIdsBelongToOrg } = require('../utils/orgOwnership');
 
 // Aktivitäten: Teamer darf ansehen und Punkte vergeben, Admin darf bearbeiten
 // Requests: NUR Admin (Datenschutz!)
@@ -126,6 +127,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     }
 
     try {
+      // Org-Isolation: fremde category_ids abweisen (Cross-Org-Referenzen)
+      if (!(await allIdsBelongToOrg(db, 'categories', category_ids, req.user.organization_id))) {
+        return res.status(400).json({ error: 'Mindestens eine Kategorie gehört nicht zu deiner Organisation' });
+      }
+
       const actPoints = activityTargetRole === 'teamer' ? (points || 0) : points;
       const actType = activityTargetRole === 'teamer' ? (type || null) : type;
       const insertActivityQuery = "INSERT INTO activities (name, points, type, organization_id, target_role) VALUES ($1, $2, $3, $4, $5) RETURNING id";
@@ -165,6 +171,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     }
 
     try {
+      // Org-Isolation: fremde category_ids abweisen (Cross-Org-Referenzen)
+      if (!(await allIdsBelongToOrg(db, 'categories', category_ids, req.user.organization_id))) {
+        return res.status(400).json({ error: 'Mindestens eine Kategorie gehört nicht zu deiner Organisation' });
+      }
+
       const actPoints = activityTargetRole === 'teamer' ? (points || 0) : points;
       const actType = activityTargetRole === 'teamer' ? (type || null) : type;
       const updateQuery = "UPDATE activities SET name = $1, points = $2, type = $3, target_role = $4 WHERE id = $5 AND organization_id = $6";

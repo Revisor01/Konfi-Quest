@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { checkExistingBooking, validateRegistrationWindow, determineBookingStatus, promoteFromWaitlist, isRegistrationOpenForKonfis } = require('../utils/bookingUtils');
+const { allIdsBelongToOrg } = require('../utils/orgOwnership');
 
 const QR_SECRET = process.env.QR_SECRET;
 if (!QR_SECRET) {
@@ -721,6 +722,19 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       return res.status(400).json({ error: 'Pflicht-Events benötigen mindestens einen Jahrgang' });
     }
 
+    // Org-Isolation: fremde jahrgang_ids/category_ids abweisen (Cross-Org-Referenzen)
+    try {
+      if (!(await allIdsBelongToOrg(db, 'jahrgaenge', jahrgang_ids, req.user.organization_id))) {
+        return res.status(400).json({ error: 'Mindestens ein Jahrgang gehört nicht zu deiner Organisation' });
+      }
+      if (!(await allIdsBelongToOrg(db, 'categories', category_ids, req.user.organization_id))) {
+        return res.status(400).json({ error: 'Mindestens eine Kategorie gehört nicht zu deiner Organisation' });
+      }
+    } catch (err) {
+      console.error('Org-Ownership-Check fehlgeschlagen:', err);
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    }
+
     // Guards für Pflicht-Events
     // Pflicht- UND Konfirmations-Events geben keine Punkte (serverseitig erzwungen).
     const effectivePoints = (mandatory || is_konfirmation) ? 0 : (points || 0);
@@ -868,6 +882,19 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     // Guards für Pflicht-Events
     // Pflicht- UND Konfirmations-Events geben keine Punkte (serverseitig erzwungen).
     const effectivePoints = (mandatory || is_konfirmation) ? 0 : points;
+
+    // Org-Isolation: fremde jahrgang_ids/category_ids abweisen (Cross-Org-Referenzen)
+    try {
+      if (!(await allIdsBelongToOrg(db, 'jahrgaenge', jahrgang_ids, req.user.organization_id))) {
+        return res.status(400).json({ error: 'Mindestens ein Jahrgang gehört nicht zu deiner Organisation' });
+      }
+      if (!(await allIdsBelongToOrg(db, 'categories', category_ids, req.user.organization_id))) {
+        return res.status(400).json({ error: 'Mindestens eine Kategorie gehört nicht zu deiner Organisation' });
+      }
+    } catch (err) {
+      console.error('Org-Ownership-Check fehlgeschlagen:', err);
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    }
     const effectiveMaxParticipants = mandatory ? 0 : max_participants;
     const effectiveWaitlist = mandatory ? false : (waitlist_enabled !== undefined ? waitlist_enabled : true);
     // Timeslots bei Pflicht-Events UND Konfirmationen nicht erlaubt (siehe POST).
@@ -1884,6 +1911,19 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     }
     if (series_interval !== undefined && !SERIES_INTERVALS.includes(series_interval)) {
       return res.status(400).json({ error: 'Ungültiges Serien-Intervall. Erlaubt: day, week, 2weeks, month' });
+    }
+
+    // Org-Isolation: fremde jahrgang_ids/category_ids abweisen (Cross-Org-Referenzen)
+    try {
+      if (!(await allIdsBelongToOrg(db, 'jahrgaenge', jahrgang_ids, req.user.organization_id))) {
+        return res.status(400).json({ error: 'Mindestens ein Jahrgang gehört nicht zu deiner Organisation' });
+      }
+      if (!(await allIdsBelongToOrg(db, 'categories', category_ids, req.user.organization_id))) {
+        return res.status(400).json({ error: 'Mindestens eine Kategorie gehört nicht zu deiner Organisation' });
+      }
+    } catch (err) {
+      console.error('Org-Ownership-Check fehlgeschlagen:', err);
+      return res.status(500).json({ error: 'Datenbankfehler' });
     }
 
     const generateSeriesDates = (startDate, count, interval) => {

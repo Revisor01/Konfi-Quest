@@ -8,6 +8,16 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ## [Unreleased]
 
+### 🔒 Org-Isolation: fremde IDs in Request-Bodies werden abgewiesen (Backend)
+Fund vom 05.07.: Ein Admin aus Org A konnte Events mit Jahrgängen aus Org B
+anlegen — die ID-Arrays aus Request-Bodies wurden nie gegen die Organisation
+geprüft. Neuer zentraler Guard `allIdsBelongToOrg` (utils/orgOwnership.js),
+eingezogen in ALLE Schreibpfade der Klasse: Events (Create, Update, Serien:
+jahrgang_ids + category_ids), Aktivitäten (Create, Update: category_ids),
+Material (Create, Update: event_ids, jahrgang_ids, tag_ids). Fremde IDs
+geben jetzt 400 mit klarer Meldung. 4 neue Tests (Cross-Org-Jahrgang,
+Cross-Org-Kategorie, PUT-Unterschieben, Eigener-Jahrgang bleibt erlaubt).
+
 ### ⚡ Badge-Endpoint: ~60 sequenzielle Queries → 11 parallele (Backend)
 `GET /konfi/badges` berechnete den Fortschritt pro Badge mit eigenen, sequenziell
 ausgeführten Queries — bei ~130 aktiven Badges bis zu ~60 DB-Roundtrips und

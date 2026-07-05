@@ -212,6 +212,105 @@ describe('Events Routes', () => {
 
       expect(res.status).toBe(400);
     });
+
+    // ================================================================
+    // Org-Isolation: fremde jahrgang_ids/category_ids (Fund 05.07.2026 —
+    // Admin aus Org 4 konnte Event mit Jahrgang aus Org 1 anlegen)
+    // ================================================================
+
+    it('Org-Isolation: jahrgang_ids aus fremder Org geben 400 und legen NICHTS an', async () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 14);
+
+      // admin2 (Org 2) versucht, Jahrgang 1 (Org 1) zuzuordnen
+      const res = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${admin2Token}`)
+        .send({
+          name: 'Cross-Org-Event',
+          event_date: futureDate.toISOString(),
+          mandatory: true,
+          jahrgang_ids: [JAHRGAENGE.jahrgang1.id],
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('Organisation');
+
+      const { rows } = await db.query(
+        "SELECT COUNT(*)::int AS n FROM events WHERE name = 'Cross-Org-Event'"
+      );
+      expect(rows[0].n).toBe(0);
+    });
+
+    it('Org-Isolation: category_ids aus fremder Org geben 400', async () => {
+      // Kategorie in Org 1 anlegen, admin2 (Org 2) versucht sie zu nutzen
+      const { rows: [cat] } = await db.query(
+        'INSERT INTO categories (name, organization_id) VALUES ($1, $2) RETURNING id',
+        ['Org1-Kategorie', ORGS.testGemeinde.id]
+      );
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 14);
+
+      const res = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${admin2Token}`)
+        .send({
+          name: 'Cross-Org-Kategorie-Event',
+          event_date: futureDate.toISOString(),
+          max_participants: 10,
+          category_ids: [cat.id],
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('Organisation');
+    });
+
+    it('Org-Isolation: eigener Jahrgang bleibt erlaubt (201, Auto-Enrollment)', async () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 14);
+
+      const res = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Eigener-Jahrgang-Event',
+          event_date: futureDate.toISOString(),
+          mandatory: true,
+          jahrgang_ids: [JAHRGAENGE.jahrgang1.id],
+        });
+
+      expect(res.status).toBe(201);
+    });
+
+    it('Org-Isolation: PUT mit fremden jahrgang_ids gibt 400', async () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 14);
+
+      // Eigenes Event in Org 2 anlegen ...
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${admin2Token}`)
+        .send({
+          name: 'Org2-Event',
+          event_date: futureDate.toISOString(),
+          max_participants: 10,
+        });
+      expect(createRes.status).toBe(201);
+
+      // ... und per Update einen Org-1-Jahrgang unterschieben
+      const res = await request(app)
+        .put(`/api/events/${createRes.body.id}`)
+        .set('Authorization', `Bearer ${admin2Token}`)
+        .send({
+          name: 'Org2-Event',
+          event_date: futureDate.toISOString(),
+          max_participants: 10,
+          jahrgang_ids: [JAHRGAENGE.jahrgang1.id],
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('Organisation');
+    });
   });
 
   // ================================================================
