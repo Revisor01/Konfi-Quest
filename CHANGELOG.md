@@ -8,7 +8,40 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ## [Unreleased]
 
-—
+### 🐛 Auth: App-Öffnen-Hänger + Socket-Reconnect-Fehler durch abgelaufene Tokens
+Traefik-Access-Logs (neu, s.u.) zeigten die Ursache der sporadischen "App hängt
+kurz"-Momente: Beim App-Öffnen nach >15 Min war der Access-Token abgelaufen —
+der Request-Burst lief erst in 401s und wartete dann gesammelt ~1s auf die
+Token-Rotation; parallel lehnte der Server jeden Socket.io-Reconnect mit
+"jwt expired" ab (166 WebSocket-500er an einem Vormittag), sodass Chat/Live-
+Updates am Notfallpfad (Auth-Error → kompletter Socket-Neuaufbau) hingen.
+- **Proaktiver Token-Refresh (`ensureFreshToken` in api.ts):** Der Request-
+  Interceptor prüft das `exp`-Claim clientseitig und refresht VOR dem Senden —
+  einmal pro Ablauf statt 401-Umweg pro Request. Parallele Aufrufer teilen sich
+  den Refresh; bei transienten Fehlern bleibt die Session unangetastet (das
+  entscheidet weiterhin allein der 401-Interceptor).
+- **Socket-Token pro Handshake frisch (websocket.ts):** `auth` ist jetzt ein
+  Callback, der sich vor jedem (Re-)Connect via `ensureFreshToken` den
+  aktuellen Token besorgt — statt des beim Erstellen eingefrorenen Objekts.
+- **Latenter Bug behoben:** Requests, die auf einen laufenden Refresh warteten,
+  blieben bei dessen Scheitern als nie-auflösende Promises hängen — Subscriber
+  haben jetzt einen Fehlerpfad und werden sauber rejected.
+- Tests: `ensureFreshToken` (gültig/abgelaufen/parallel/Fehlerfall) in
+  api.test.ts; Request-Interceptor-Tests auf async umgestellt.
+
+### 🔧 Infra: Traefik-Ausbau, ntfy-Monitoring statt Uptime Kuma, CPU-Limits persistent
+- **Traefik (Stack 245):** File-Provider (`/opt/stacks/traefik/dynamic`, watch)
+  mit Middlewares `retry-deploy` (3 Versuche — überbrückt CI-Deploy-Fenster),
+  `ratelimit-default`/`ratelimit-auth` (per X-Real-IP, da hinter Apache) und
+  `compress-default`; Access-Log JSON gefiltert (nur 5xx + Requests >800ms);
+  Prometheus-Metrics auf 127.0.0.1:8899. `retry-deploy` hängt an den
+  konfi-api-/konfi-frontend-Routern.
+- **Monitoring:** `/opt/scripts/healthcheck-ntfy.sh` (Cron: critical 3 Min,
+  full 10 Min, Zertifikate täglich) alarmiert via ntfy auf die bestehenden
+  Kuma-Topics `uptime`/`uptime-critical` — ersetzt Uptime Kuma (Dauer-SQLite-
+  Schreiblast entfällt).
+- **Nextcloud-AiO-CPU-Limits persistent:** `/opt/scripts/enforce-cpu-limits.sh`
+  stündlich per Cron (AiO-Updates erstellen Container sonst ohne Limits neu).
 
 ## [1.4.1] – 2026-07-04 — an Apple + Google in Review
 
