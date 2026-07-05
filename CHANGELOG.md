@@ -8,6 +8,20 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ## [Unreleased]
 
+—
+
+## [1.4.3] – 2026-07-06 — Zeitslot-Events & Warteliste
+
+**iOS Build 82 (TestFlight).** Fix rund um Zeitslot-Events: Die Warteliste gilt
+jetzt pro Zeitslot (voller Slot → Warteliste statt "ausgebucht"), in allen
+Ansichten (Konfi/Admin/Teamer:in) sichtbar; Wartelisten-Einträge im Admin jetzt
+orange (statt blau) und die Slot-Badges "Voll/Frei" mit Icons.
+
+### 🎨 Admin: Slot-Warteliste orange + Voll/Frei-Badges mit Icon
+- Wartelisten-Teilnehmer unter einem Zeitslot hatten fälschlich den blauen
+  "gebucht"-Streifen — jetzt orange (Warnfarbe), konsistent zur globalen Liste.
+- Die "Voll"/"Frei"-Eckbadges am Slot haben jetzt ein Icon (Häkchen/Kreuz).
+
 ### 🐛 Timeslot-Warteliste: Frontend für alle Rollen (Konfi/Admin/Teamer:in)
 Nach dem Backend-Fix (Warteliste pro Slot) wurde die Anzeige in allen drei
 Ansichten nachgezogen:

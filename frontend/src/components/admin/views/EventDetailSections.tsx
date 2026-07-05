@@ -623,7 +623,9 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
             <div key={timeslot.id} className="app-event-detail__slot-group">
               <div className={`app-list-item ${isFull ? 'app-list-item--danger' : 'app-list-item--success'}`}>
                 <div className="app-corner-badges">
-                  <div className={`app-corner-badge ${isFull ? 'app-corner-badge--danger' : 'app-corner-badge--success'}`}>
+                  <div className={`app-corner-badge ${isFull ? 'app-corner-badge--danger' : 'app-corner-badge--success'}`}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <IonIcon icon={isFull ? closeCircle : checkmarkCircle} style={{ fontSize: '0.85rem' }} />
                     {isFull ? 'Voll' : 'Frei'}
                   </div>
                 </div>
@@ -709,7 +711,7 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
                   {slotWaitlist.map((participant) => (
                     <IonItem key={participant.id} className="app-item-transparent" button={!!showWaitlistActionSheet} detail={false} lines="none"
                       onClick={() => showWaitlistActionSheet && showWaitlistActionSheet(participant)}>
-                      <div className="app-list-item app-list-item--booked app-event-detail__list-item-flush">
+                      <div className="app-list-item app-list-item--warning app-event-detail__list-item-flush">
                         <div className="app-corner-badges">
                           <div className="app-corner-badge app-corner-badge--warning"
                             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
