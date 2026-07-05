@@ -10,11 +10,29 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 —
 
-## [1.4.2] – 2026-07-05 — Stabilitäts-Release (Auth/Token)
+## [1.4.2] – 2026-07-05 — Stabilitäts-Release (Auth/Token + Foto-Upload)
 
-**iOS Build 79 + Android versionCode 68.** Store-Notes: App startet nach
-längerer Pause spürbar schneller, Chat und Live-Updates verbinden zuverlässiger
-neu. Reines Frontend-Release (kein Backend-/DB-Change).
+**iOS Build 80 + Android versionCode 69** (Build 79/vc68 waren Zwischenstände,
+Submission zurückgezogen und mit Foto-Fix neu eingereicht). Store-Notes: App
+startet nach längerer Pause spürbar schneller, Chat und Live-Updates verbinden
+zuverlässiger neu, Fotos bei Aktivitätsanträgen laden jetzt auch mit schlechter
+Verbindung zuverlässig hoch.
+
+### 🐛 Aktivitätsfotos: Live-Fotos zu groß, Uploads brechen ab
+Konfis fotografieren Nachweise live — Handykameras liefern 8–16 MB. Die
+Antrags-Modals luden das **Original** hoch (Kompression gab es nur im Chat)
+und wiesen Kamerafotos >5 MB schon clientseitig mit "Foto ist zu groß" ab;
+dazu killte der globale 20s-axios-Timeout langsame Uploads auf Mobilfunk, und
+der Auto-Retry lud das volle Bild erneut.
+- **`compressForUpload` (mediaCompression.ts):** komprimiert erst (1920px/JPEG
+  q0.8 wie im Chat, Preview-URL wird freigegeben), prüft DANN gegen 5 MB —
+  in beiden ActivityRequestModals (Konfi + Teamer:in) eingebaut; der
+  Offline-Queue-Pfad übernimmt automatisch das komprimierte Foto.
+- **Upload-Timeouts 60s** statt global 20s: Antrags-Modals, Chat-Upload (nur
+  mit Datei), writeQueue-Replays (Foto + FormData-Medien).
+- **Backend:** Multer `LIMIT_FILE_SIZE` antwortet jetzt 413 mit klarer
+  deutscher Meldung statt generischem 500.
+- Tests: compressForUpload-Suite (Durchreichen, Limit-Fehler, URL-Freigabe).
 
 ### 🐛 Auth: App-Öffnen-Hänger + Socket-Reconnect-Fehler durch abgelaufene Tokens
 Traefik-Access-Logs (neu, s.u.) zeigten die Ursache der sporadischen "App hängt
