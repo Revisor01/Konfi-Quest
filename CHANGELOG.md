@@ -8,6 +8,25 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ## [Unreleased]
 
+### 🐛 Timeslot-Warteliste: Frontend für alle Rollen (Konfi/Admin/Teamer:in)
+Nach dem Backend-Fix (Warteliste pro Slot) wurde die Anzeige in allen drei
+Ansichten nachgezogen:
+- **Konfi (Kernbug):** Ein voller Slot wurde client-seitig hart blockiert
+  ("Dieser Zeitslot ist leider voll") — der Konfi kam nie auf die Slot-
+  Warteliste, obwohl das Backend sie anbot. Jetzt: voller Slot + aktive
+  Warteliste → Button "voll — auf Warteliste", Buchung setzt auf die Warteliste
+  und zeigt eine Bestätigung; voller Slot ohne Warteliste bleibt gesperrt.
+  Belegung pro Slot zeigt "· N Warteliste", der eigene Warteliste-Status wird
+  pro Slot angezeigt.
+- **Admin:** Wartelisten-Teilnehmer erscheinen jetzt unter ihrem Slot (statt
+  nur global), Slot-Belegung zeigt die Wartelisten-Zahl, Bestätigen aus der
+  Warteliste rückt slot-korrekt nach (die timeslot_id der Buchung bleibt beim
+  Statuswechsel erhalten).
+- **Teamer:in:** Die (eigenständige) Event-Detailansicht zeigt jetzt die
+  Zeitslots mit Belegung und Warteliste pro Slot.
+- Backend: alle drei Timeslot-Endpoints (events.js `/:id/timeslots`, konfi.js
+  `/konfi/events/:id/timeslots`, Event-Detail) liefern `waitlist_count` je Slot.
+
 ### 🐛 Timeslot-Events: Warteliste gilt jetzt pro Zeitslot
 Bei Events mit Zeitslots entschied die event-weite Gesamtkapazität über
 Anmeldung/Warteliste — ein voller Einzelslot wurde als "noch Platz" gewertet,

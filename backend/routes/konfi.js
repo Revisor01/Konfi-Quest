@@ -1762,11 +1762,13 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         return res.json([]);
       }
 
-      // Get timeslots with registration counts
+      // Get timeslots with registration counts + Warteliste pro Slot
       const timeslotsQuery = `
-        SELECT et.*, COUNT(eb.id) as registered_count
+        SELECT et.*,
+               COUNT(eb.id) FILTER (WHERE eb.status = 'confirmed') as registered_count,
+               COUNT(eb.id) FILTER (WHERE eb.status = 'waitlist') as waitlist_count
         FROM event_timeslots et
-        LEFT JOIN event_bookings eb ON et.id = eb.timeslot_id AND eb.status = 'confirmed'
+        LEFT JOIN event_bookings eb ON et.id = eb.timeslot_id
         WHERE et.event_id = $1 AND et.organization_id = $2
         GROUP BY et.id
         ORDER BY et.start_time ASC
