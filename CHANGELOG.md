@@ -8,6 +8,22 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ## [Unreleased]
 
+### 🐛 Timeslot-Events: Warteliste gilt jetzt pro Zeitslot
+Bei Events mit Zeitslots entschied die event-weite Gesamtkapazität über
+Anmeldung/Warteliste — ein voller Einzelslot wurde als "noch Platz" gewertet,
+die Warteliste griff nie, und die nachgelagerte Slot-Prüfung warf nur ein
+hartes "Dieser Zeitslot ist bereits ausgebucht" ohne Wartelisten-Option.
+- **Buchung entscheidet jetzt pro Slot:** voller Slot + Warteliste aktiv →
+  Warteliste für DIESEN Slot; voller Slot ohne/volle Warteliste → 400. Der
+  Slot wird beim Buchen gesperrt (FOR UPDATE) gegen Doppelbuchung des letzten
+  Platzes. Andere Slots bleiben unabhängig buchbar.
+- **Nachrücken beim Stornieren** rechnet ebenfalls slot-bezogen (vorher
+  event-weit → bei mehreren Slots rückte niemand oder der Falsche nach).
+- **Admin-Sicht:** Timeslots liefern jetzt `waitlist_count` pro Slot
+  zusätzlich zu `registered_count`.
+- Tests: voller Slot → Warteliste, Nachrücken im selben Slot, voller Slot ohne
+  Warteliste → 400, zweiter Slot bleibt frei buchbar.
+
 ### 🔒 Org-Isolation: fremde IDs in Request-Bodies werden abgewiesen (Backend)
 Fund vom 05.07.: Ein Admin aus Org A konnte Events mit Jahrgängen aus Org B
 anlegen — die ID-Arrays aus Request-Bodies wurden nie gegen die Organisation
