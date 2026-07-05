@@ -8,7 +8,25 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ## [Unreleased]
 
-—
+### ⚡ Badge-Endpoint: ~60 sequenzielle Queries → 11 parallele (Backend)
+`GET /konfi/badges` berechnete den Fortschritt pro Badge mit eigenen, sequenziell
+ausgeführten Queries — bei ~130 aktiven Badges bis zu ~60 DB-Roundtrips und
+~1s Antwortzeit (der Endpoint war damit der langsamste des App-Öffnens-Bursts,
+sogar 304-Antworten kosteten ~1s). Jetzt werden alle badge-unabhängigen
+Aggregate EINMAL parallel vorab geladen (Blaupause: teamer.js GET /badges),
+die Schleife rechnet rein in-memory. Zählsemantik pro criteria_type unverändert
+und adversarial gegen die Vergabe (badges.js) verifiziert.
+- **Zwei Org-Filter-Drifts dabei gefixt:** `unique_activities` und `bonus_points`
+  zählten im Fortschritt org-übergreifend, die Vergabe aber org-gefiltert —
+  Multi-Org-Konfis konnten 10/10 sehen, ohne dass der Badge je kam. Progress
+  zählt jetzt wie die Wertung (badges.js:166/168).
+- Lookup-Maps als `Map` statt Plain Object (Kategorie-/Aktivitätsnamen wie
+  "constructor" hätten sonst den Prototype getroffen).
+- `activity_combination`: Duplikate in `required_activities` zählen jetzt wie
+  in der Vergabe (bewusste Angleichung, vorher COUNT DISTINCT).
+- Tests: 6 neue Progress-Tests (unique_activities inkl. Fremd-Org,
+  bonus_points inkl. Fremd-Org, category_activities über Aktivität+Event,
+  time_based-Zeitfenster, streak).
 
 ## [1.4.2] – 2026-07-05 — Stabilitäts-Release (Auth/Token + Foto-Upload)
 
