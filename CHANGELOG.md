@@ -8,6 +8,14 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ## [Unreleased]
 
+—
+
+## [1.4.2] – 2026-07-05 — Stabilitäts-Release (Auth/Token)
+
+**iOS Build 79 + Android versionCode 68.** Store-Notes: App startet nach
+längerer Pause spürbar schneller, Chat und Live-Updates verbinden zuverlässiger
+neu. Reines Frontend-Release (kein Backend-/DB-Change).
+
 ### 🐛 Auth: App-Öffnen-Hänger + Socket-Reconnect-Fehler durch abgelaufene Tokens
 Traefik-Access-Logs (neu, s.u.) zeigten die Ursache der sporadischen "App hängt
 kurz"-Momente: Beim App-Öffnen nach >15 Min war der Access-Token abgelaufen —
