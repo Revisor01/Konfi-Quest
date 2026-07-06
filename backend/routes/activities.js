@@ -610,8 +610,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
  console.error('Error sending activity assigned push:', pushErr);
       }
 
-      // Live-Update an Konfi senden
-      liveUpdate.sendToKonfi(konfiId, 'points', 'update');
+      // Live-Update an Ziel senden — sendToUserByRole (statt sendToKonfi), weil
+      // Aktivitaeten auch an Teamer:innen vergeben werden koennen (isTeamerActivity)
+      liveUpdate.sendToUserByRole(konfiId, 'points', 'update');
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update');
     } catch (err) {
  console.error('Database error in POST /api/activities/assign-activity:', err);

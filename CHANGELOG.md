@@ -8,6 +8,35 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ## [Unreleased]
 
+### 🔒 Sicherheits-Updates & Abhängigkeiten (Code-Durchsicht 07.07.)
+Abhängigkeiten aktualisiert und npm-audit-Lücken geschlossen. Frontend jetzt
+0 Vulnerabilities (vorher 3 high, u.a. ws-DoS), Backend von 7 auf 1 reduziert
+(form-data CRLF, multer DoS, ws-DoS, protobufjs behoben). Ionic 8.8.13,
+Capacitor 8.4.1, axios/vite auf aktuellen Patch-Stand. Offen bleibt nodemailer
+(Fix nur via Breaking-Major 8→9, im Backlog). iOS26/MD3-Themes und iOS-Deploy-
+Target (15.0) bestätigt aktuell.
+
+### 🐛 Weitere pg-String-Bugs bei Punkte-Summen (gleiche Klasse wie Badge-Fix)
+In der Punkte-Historie von Konfi (`GET /points-history`, konfi.js) und in der
+Teamer-Ansicht einer Konfi-Historie (teamer.js) wurde der Gesamtwert per
+`gottesdienst_points + gemeinde_points` berechnet — beide aus pg als String,
+also `"5" + "3" = "53"` statt `8`. Fix: parseInt auf beide Summanden.
+
+### 🐛 Live-Update bei Teamer-Aktivitäten ging ins Leere
+`assign-activity` unterstützt Teamer-Aktivitäten, sendete das Live-Update aber
+hart an den Konfi-Socket-Raum (`sendToKonfi`). Teamer:innen bekamen ihre
+Punkte-/Badge-Aktualisierung nicht live. Fix: `sendToUserByRole`.
+
+### 🐛 Rollen-Zuweisung: is_super_admin-Flag beachtet
+`GET /roles/list/assignable` verzweigte über `role_name === 'super_admin'` und
+übersah damit org_admins mit `is_super_admin`-Flag (bekamen org_admin nicht als
+zuweisbare Rolle). Fix: Flag zusätzlich prüfen (Projekt-Regel).
+
+### 🐛 Blob-URL-Leaks im Datei-Viewer behoben
+FileViewerModal gab gecachte Blob-URLs beim Schließen nie frei (Leak bei
+Multi-Datei-Ansicht); KonfiDetailView überschrieb die Foto-Blob-URL ohne die
+vorherige zu revoken. Beide geben Blob-URLs jetzt korrekt frei.
+
 ### 🐛 Badge-Vergabe: Punkte-Badges wurden falsch bewertet (String-Bug)
 Schwerwiegender Fehler in der Badge-Wertung: PostgreSQL liefert Punkte-Spalten
 als String. Dadurch machte `total += gottesdienst_points` eine String-

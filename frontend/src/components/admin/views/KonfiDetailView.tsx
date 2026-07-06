@@ -407,7 +407,13 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
           responseType: 'blob'
         });
         const photoUrl = URL.createObjectURL(response.data);
-        setSelectedPhoto(photoUrl);
+        // Vorherige Blob-URL freigeben, falls direkt ein weiteres Foto geoeffnet wird
+        setSelectedPhoto((prev) => {
+          if (prev && prev.startsWith('blob:')) {
+            try { URL.revokeObjectURL(prev); } catch {}
+          }
+          return photoUrl;
+        });
         presentPhotoModalHook({
           presentingElement: presentingElement || undefined
         });
