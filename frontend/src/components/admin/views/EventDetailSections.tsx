@@ -624,9 +624,9 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
               <div className={`app-list-item ${isFull ? 'app-list-item--danger' : 'app-list-item--success'}`}>
                 <div className="app-corner-badges">
                   <div className={`app-corner-badge ${isFull ? 'app-corner-badge--danger' : 'app-corner-badge--success'}`}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                    <IonIcon icon={isFull ? closeCircle : checkmarkCircle} style={{ fontSize: '0.85rem' }} />
-                    {isFull ? 'Voll' : 'Frei'}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+                    title={isFull ? 'Voll' : 'Frei'}>
+                    <IonIcon icon={isFull ? closeCircle : checkmarkCircle} style={{ color: '#fff', fontSize: '0.85rem' }} />
                   </div>
                 </div>
                 <div className="app-list-item__row">
