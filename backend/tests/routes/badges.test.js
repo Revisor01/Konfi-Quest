@@ -411,6 +411,38 @@ describe('Badges Routes', () => {
       expect(awarded.length).toBe(1);
     });
 
+    it('total_points summiert beide Kategorien korrekt (String-Konkat-Bug)', async () => {
+      // REGRESSION: pg liefert Punkte als String -> total += "3" + "5" ergab "035"
+      // und der Vergleich "035" >= "5" (criteria_value auch String) war lexikografisch
+      // FALSE. Ein Konfi mit 3+5=8 Punkten bekam das 5-Punkte-Badge nicht.
+      const { rows: [badge5] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ('Summe5', 'total_points', 5, 'star', '#00ff00', $1, 'konfi', true) RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      const { rows: [badge10] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ('Summe10', 'total_points', 10, 'star', '#00ff00', $1, 'konfi', true) RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      // 3 Gottesdienst + 5 Gemeinde = 8 Punkte
+      await db.query(
+        'UPDATE konfi_profiles SET gottesdienst_points = 3, gemeinde_points = 5 WHERE user_id = $1',
+        [USERS.konfi1.id]
+      );
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.konfi1.id);
+
+      // 8 >= 5 -> vergeben; 8 >= 10 -> NICHT vergeben
+      const { rows: got5 } = await db.query(
+        'SELECT 1 FROM user_badges WHERE user_id = $1 AND badge_id = $2', [USERS.konfi1.id, badge5.id]);
+      const { rows: got10 } = await db.query(
+        'SELECT 1 FROM user_badges WHERE user_id = $1 AND badge_id = $2', [USERS.konfi1.id, badge10.id]);
+      expect(got5.length).toBe(1);
+      expect(got10.length).toBe(0);
+    });
+
     it('Badge wird NICHT doppelt vergeben', async () => {
       // Erstelle total_points Badge
       const { rows: [newBadge] } = await db.query(

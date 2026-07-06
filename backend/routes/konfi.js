@@ -1141,8 +1141,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       const pointsRow = pointsRes.rows[0];
       const gdEnabled = !!pointsRow?.gottesdienst_enabled;
       const gmEnabled = !!pointsRow?.gemeinde_enabled;
-      const gdPoints = gdEnabled ? (pointsRow?.gottesdienst_points || 0) : 0;
-      const gmPoints = gmEnabled ? (pointsRow?.gemeinde_points || 0) : 0;
+      // parseInt: pg liefert die Punkte als String -> sonst macht gdPoints+gmPoints
+      // (total_points-Progress) String-Konkatenation statt Addition.
+      const gdPoints = gdEnabled ? (parseInt(pointsRow?.gottesdienst_points, 10) || 0) : 0;
+      const gmPoints = gmEnabled ? (parseInt(pointsRow?.gemeinde_points, 10) || 0) : 0;
 
       const activityCount = parseInt(activityCountRes.rows[0]?.count || 0);
       const eventCount = parseInt(eventCountRes.rows[0]?.count || 0);

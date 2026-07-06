@@ -8,6 +8,18 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ## [Unreleased]
 
+### 🐛 Badge-Vergabe: Punkte-Badges wurden falsch bewertet (String-Bug)
+Schwerwiegender Fehler in der Badge-Wertung: PostgreSQL liefert Punkte-Spalten
+als String. Dadurch machte `total += gottesdienst_points` eine String-
+Verkettung ("0"+"3"+"5" = "035") statt Addition, und der Vergleich gegen den
+ebenfalls als String geladenen `criteria_value` war lexikografisch
+("035" >= "5" → false). Folge: `total_points`/`gottesdienst_points`/
+`gemeinde_points`/`both_categories`-Badges wurden je nach Ziffernfolge mal gar
+nicht, mal fälschlich vergeben. Fix: Punkte per parseInt, `criteria_value`
+per `::int`-Cast in beiden Badge-Queries (Wertung badges.js + Progress
+konfi.js). Regressionstest über zwei Kategorien ergänzt (3+5=8 ≥ 5, < 10).
+
+
 —
 
 ## [1.4.3] – 2026-07-06 — Zeitslot-Events & Warteliste
