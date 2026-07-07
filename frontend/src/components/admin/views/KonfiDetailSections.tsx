@@ -317,6 +317,7 @@ export const BonusSection = React.memo<BonusSectionProps>(({
       <IonCardContent style={{ padding: bonusEntries.length === 0 ? '16px' : '12px' }}>
         {bonusEntries.length === 0 ? (
           <div className="app-empty-state">
+            <IonIcon icon={giftOutline} className="app-empty-state__icon" style={{ color: 'var(--app-color-bonus)' }} />
             <p className="app-empty-state__text">Noch keine Bonuspunkte erhalten</p>
           </div>
         ) : (
@@ -517,6 +518,7 @@ export const EventPointsSection = React.memo<EventPointsSectionProps>(({
       <IonCardContent style={{ padding: eventPoints.length === 0 ? '16px' : '12px' }}>
         {eventPoints.length === 0 ? (
           <div className="app-empty-state">
+            <IonIcon icon={calendarOutline} className="app-empty-state__icon" style={{ color: 'var(--app-color-events)' }} />
             <p className="app-empty-state__text">Noch keine Event-Punkte erhalten</p>
           </div>
         ) : (
@@ -698,6 +700,7 @@ export const ActivitiesSection = React.memo<ActivitiesSectionProps>(({
       <IonCardContent style={{ padding: activities.length === 0 ? '16px' : '12px' }}>
         {activities.length === 0 ? (
           <div className="app-empty-state">
+            <IonIcon icon={flashOutline} className="app-empty-state__icon" style={{ color: 'var(--app-color-activities)' }} />
             <p className="app-empty-state__text">Noch keine Aktivitäten vorhanden</p>
           </div>
         ) : (
@@ -856,6 +859,7 @@ export const CertificatesSection = React.memo<CertificatesSectionProps>(({
       <IonCardContent style={{ padding: certificates.length === 0 ? '16px' : '12px' }}>
         {certificates.length === 0 ? (
           <div className="app-empty-state">
+            <IonIcon icon={documentOutline} className="app-empty-state__icon" style={{ color: 'var(--app-color-teamer)' }} />
             <p className="app-empty-state__text">Noch keine Zertifikate zugewiesen</p>
           </div>
         ) : (
@@ -1123,6 +1127,7 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
           </div>
         ) : (
           <div className="app-empty-state">
+            <IonIcon icon={timeOutline} className="app-empty-state__icon" style={{ color: 'var(--app-color-purple)' }} />
             <p className="app-empty-state__text">Keine Konfi-Punkte vorhanden</p>
           </div>
         )}

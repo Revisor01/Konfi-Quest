@@ -31,6 +31,7 @@ import {
   TeamerSinceSection, KonfiHistorySection, PromoteSection, KonfispruchSection
 } from './KonfiDetailSections';
 import type { Konfi, Activity } from './KonfiDetailSections';
+import KonfiBadgesSection from './KonfiBadgesSection';
 import { triggerPullHaptic } from '../../../utils/haptics';
 
 interface KonfiDetailViewProps {
@@ -561,6 +562,11 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
             eventPoints={eventPoints}
             currentKonfi={currentKonfi}
           />
+        )}
+
+        {/* Badges - nur für Konfis (gleiche Wertung wie Konfi-Ansicht) */}
+        {!isTeamer && currentKonfi?.role_name === 'konfi' && (
+          <KonfiBadgesSection konfiId={konfiId} />
         )}
 
 

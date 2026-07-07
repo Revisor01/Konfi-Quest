@@ -8,6 +8,15 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ## [Unreleased]
 
+### ✨ Badges des Konfis in der Admin-Detailansicht
+In der Konfi-Detailansicht (Admin/Teamer) sehen Verwaltende jetzt die erreichten
+Badges des Konfis — als klickbare Kreis-Symbole wie in der Konfi-App. Ein Tippen
+auf ein Badge öffnet ein Detail-Popover mit Name, Beschreibung und Datum. Die
+Wertung stammt aus einer gemeinsamen Quelle (`utils/konfiBadgeProgress.js`), die
+sowohl `GET /konfi/badges` (Konfi-Ansicht) als auch der neue Admin-Endpoint
+`GET /admin/konfis/:id/badges` nutzen — Admin und Konfi sehen damit garantiert
+denselben Stand. Nur für Konfis sichtbar (Teamer:innen haben eigene Badges).
+
 ### 🔒 Sicherheits-Updates & Abhängigkeiten (Code-Durchsicht 07.07.)
 Abhängigkeiten aktualisiert und npm-audit-Lücken geschlossen. Frontend jetzt
 0 Vulnerabilities (vorher 3 high, u.a. ws-DoS), Backend von 7 auf 1 reduziert

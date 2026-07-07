@@ -1,7 +1,7 @@
 const request = require('supertest');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, USERS, JAHRGAENGE, ACTIVITIES } = require('../helpers/seed');
+const { seed, USERS, JAHRGAENGE, ACTIVITIES, BADGES } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 
 describe('Konfi-Management Routes', () => {
@@ -750,6 +750,64 @@ describe('Konfi-Management Routes', () => {
         .set('Authorization', `Bearer ${konfiToken}`);
 
       expect(res.status).toBe(403);
+    });
+  });
+
+  // ================================================================
+  // GET /api/admin/konfis/:id/badges
+  // ================================================================
+  describe('GET /api/admin/konfis/:id/badges', () => {
+    it('Teamer bekommt Badge-Uebersicht -> 200 mit available/earned/stats', async () => {
+      const res = await request(app)
+        .get(`/api/admin/konfis/${USERS.konfi1.id}/badges`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body.available)).toBe(true);
+      expect(Array.isArray(res.body.earned)).toBe(true);
+      expect(res.body.stats).toBeDefined();
+    });
+
+    it('Erreichtes Badge erscheint in earned', async () => {
+      // konfi1 hat Badge 1 (streak) erreicht
+      await db.query(
+        `INSERT INTO user_badges (user_id, badge_id, organization_id, awarded_date)
+         VALUES ($1, $2, $3, NOW())`,
+        [USERS.konfi1.id, BADGES.streak.id, USERS.konfi1.org_id]
+      );
+
+      const res = await request(app)
+        .get(`/api/admin/konfis/${USERS.konfi1.id}/badges`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      const earnedIds = res.body.earned.map((b) => b.id);
+      expect(earnedIds).toContain(BADGES.streak.id);
+    });
+
+    it('Konfi bekommt 403', async () => {
+      const res = await request(app)
+        .get(`/api/admin/konfis/${USERS.konfi1.id}/badges`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Konfi aus fremder Org gibt 404 (Org-Isolation)', async () => {
+      // konfi3 liegt in Org 2, adminToken ist Org 1
+      const res = await request(app)
+        .get(`/api/admin/konfis/${USERS.konfi3.id}/badges`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(404);
+    });
+
+    it('Nicht-existierender Konfi gibt 404', async () => {
+      const res = await request(app)
+        .get('/api/admin/konfis/99999/badges')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(404);
     });
   });
 
