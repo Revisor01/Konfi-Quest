@@ -8,6 +8,23 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ## [Unreleased]
 
+### 🐛 Datenkorrektur: fälschlich vergebene Punkte-Badges entfernt (Org 1)
+Als Folge des pg-String-Konkatenations-Bugs (siehe 5db43292) waren am 06.07. in
+Kirchspiel West 68 Punkte-Badges (gottesdienst_points/gemeinde_points/
+both_categories, Stufen 10 und 15) an Konfis vergeben worden, die die Punkte gar
+nicht hatten. Die Vergabe-Logik war zwar noch am selben Tag gefixt, die bereits
+persistierten Fehl-Vergaben in `user_badges` blieben aber bestehen. Diese 68
+Einträge wurden per verifizierter SQL-Bereinigung entfernt (nur Einträge, bei
+denen die echten Punkte unter dem criteria_value liegen; legitime Badges inkl.
+korrekter total_points-10/15 blieben unangetastet). Danach 0 inkonsistente
+Punkte-Badges.
+
+### 💅 Einheitliche Empty-States in der Konfi-Detailansicht
+Alle Leer-Zustände der Konfi-Detailansicht (Bonus, Events, Aktivitäten,
+Zertifikate, Konfi-Historie, Badges) nutzen jetzt die gemeinsame
+`EmptyState`-Komponente mit Platzhalter-Icon, Titel und Text — statt eines
+uneinheitlichen Nur-Text-Hinweises.
+
 ### ✨ Badges des Konfis in der Admin-Detailansicht
 In der Konfi-Detailansicht (Admin/Teamer) sehen Verwaltende jetzt die erreichten
 Badges des Konfis — als klickbare Kreis-Symbole wie in der Konfi-App. Ein Tippen

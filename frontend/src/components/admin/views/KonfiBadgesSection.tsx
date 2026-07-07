@@ -67,6 +67,7 @@ import {
   checkmark
 } from 'ionicons/icons';
 import api from '../../../services/api';
+import { EmptyState } from '../../shared';
 
 // Badge Icon Mapping — identisch zur Konfi-BadgesView, damit dieselben Icons erscheinen.
 const BADGE_ICONS: Record<string, string> = {
@@ -238,10 +239,12 @@ const KonfiBadgesSection: React.FC<KonfiBadgesSectionProps> = ({ konfiId }) => {
       <IonCard className="app-card">
         <IonCardContent style={{ padding: earnedBadges.length === 0 ? '16px' : '12px' }}>
           {earnedBadges.length === 0 ? (
-            <div className="app-empty-state">
-              <IonIcon icon={trophyOutline} className="app-empty-state__icon" style={{ color: '#f59e0b' }} />
-              <p className="app-empty-state__text">Noch keine Badges erreicht</p>
-            </div>
+            <EmptyState
+              icon={trophyOutline}
+              title="Keine Badges"
+              message="Noch keine Badges erreicht"
+              iconColor="#f59e0b"
+            />
           ) : (
             <div style={{
               display: 'grid',
