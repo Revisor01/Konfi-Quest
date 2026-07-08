@@ -8,6 +8,16 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ## [Unreleased]
 
+## [1.5.0] – 2026-07-08 — Konfi-Badges in der Verwaltung, einheitliche Empty-States
+
+**iOS Build 85 (App Store, in Review) + Android versionCode 72 (Google Play
+Production, in Review, 100 %).** Der Play-Production-Track stand noch auf 1.4.2 —
+die 1.4.3-Highlights (Zeitslot-Warteliste pro Slot u. a.) sind daher in den
+Play-Release-Notes von 1.5.0 mit enthalten. Sichtbare Highlights: Verwaltung
+sieht erreichte Konfi-Badges direkt in der Detailansicht, einheitliche
+Leer-Ansichten, korrekte Punkte-Summen/Badge-Vergabe, Live-Updates für
+Teamer:innen.
+
 ### 🐛 Datenkorrektur: fälschlich vergebene Punkte-Badges entfernt (Org 1)
 Als Folge des pg-String-Konkatenations-Bugs (siehe 5db43292) waren am 06.07. in
 Kirchspiel West 68 Punkte-Badges (gottesdienst_points/gemeinde_points/
@@ -74,8 +84,7 @@ nicht, mal fälschlich vergeben. Fix: Punkte per parseInt, `criteria_value`
 per `::int`-Cast in beiden Badge-Queries (Wertung badges.js + Progress
 konfi.js). Regressionstest über zwei Kategorien ergänzt (3+5=8 ≥ 5, < 10).
 
-
-—
+---
 
 ## [1.4.3] – 2026-07-06 — Zeitslot-Events & Warteliste
 
