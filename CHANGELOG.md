@@ -8,6 +8,41 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ## [Unreleased]
 
+## [1.5.1] – 2026-07-18 — Android Push- und Chat-Totalausfall behoben
+
+**Android versionCode 73 (Google Play Production).** Reiner Bugfix-Release für
+den Android-Push-/Chat-Ausfall seit 1.5.0. Backend-Fix (Refresh-Grace-Window)
+via CI deployt.
+
+### 🐛 Android: Push- und Chat-Totalausfall behoben (ab 1.5.0)
+Seit dem 1.5.0-Android-Rollout (09.07.) kamen auf **allen** Android-Geräten keine
+Push-Nachrichten mehr an, und beim Öffnen eines Chats wurden keine neuen
+Nachrichten geladen (nur veralteter Cache). iOS war nicht betroffen — nicht
+plattformbedingt, sondern weil die iOS-1.5.0 noch in Review war und die
+iOS-Nutzer:innen weiter auf 1.4.x liefen. Diagnose (DB-Beleg): seit dem 09.07.
+registrierte kein Android-Gerät mehr einen Push-Token, während iOS bis heute
+laufend welche erneuerte.
+
+Zwei sich ergänzende Ursachen abgesichert:
+
+- **Session-Race beim Token-Refresh (Client + Server).** Der Server rotiert bei
+  jedem Refresh und revoked den alten Refresh-Token sofort. Der Client
+  persistierte den neuen Access-Token *vor* dem neuen Refresh-Token — starb der
+  (auf Android aggressiv gekillte) Prozess dazwischen, ging der langlebige
+  Refresh-Token verloren und die Session war nach 30 s tot: kein Push-Token-Send,
+  Chat lud nur Stale-Cache, Socket meldete „jwt expired". Fix: Refresh-Token wird
+  jetzt **zuerst** persistiert; das serverseitige Grace-Window für gerade
+  rotierte Tokens wurde von 30 s auf **5 Minuten** erhöht (deckt App-Neustart
+  nach Prozess-Kill ab).
+- **Build-Absicherung gegen fehlende Firebase-Config.** `android/` ist gitignored
+  und wird bei `prebuild --clean` neu erzeugt; fehlt dabei `google-services.json`,
+  wird das google-services-Gradle-Plugin **still** nicht angewendet — der Build
+  läuft durch, aber die App bekommt keinen FCM-Token. Neu: versionierte
+  Master-Kopie unter `frontend/config/` + Pflicht-Skript
+  `frontend/scripts/prepare-android.sh`, das die Config vor dem Build
+  wiederherstellt, Firebase-Projekt/Package verifiziert und sonst **hart
+  abbricht**.
+
 ## [1.5.0] – 2026-07-08 — Konfi-Badges in der Verwaltung, einheitliche Empty-States
 
 **iOS Build 85 (App Store, in Review) + Android versionCode 72 (Google Play
