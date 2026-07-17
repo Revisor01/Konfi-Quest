@@ -244,6 +244,31 @@ describe('ensureFreshToken', () => {
     expect(tokenStore.setRefreshToken).toHaveBeenCalledWith('refresh-2');
   });
 
+  it('persistiert den Refresh-Token VOR dem Access-Token (Android-Session-Race)', async () => {
+    // Der Server revoked den alten Refresh-Token bei Rotation sofort. Stirbt der
+    // Android-Prozess zwischen den beiden Preferences-Writes, darf NICHT der
+    // langlebige Refresh-Token verloren gehen — sonst ist die Session tot. Also
+    // muss setRefreshToken VOR setToken laufen.
+    const axios = (await import('axios')).default;
+    const tokenStore = await import('../../services/tokenStore');
+    const expiredToken = makeJwt(-60);
+    const newToken = makeJwt(900);
+    vi.mocked(tokenStore.getToken).mockReturnValue(expiredToken);
+    vi.mocked(tokenStore.getRefreshToken).mockReturnValue('refresh-1');
+    vi.spyOn(axios, 'post').mockResolvedValue({
+      data: { token: newToken, refresh_token: 'refresh-2' },
+    });
+
+    const order: string[] = [];
+    vi.mocked(tokenStore.setRefreshToken).mockImplementation(async () => { order.push('refresh'); });
+    vi.mocked(tokenStore.setToken).mockImplementation(async () => { order.push('access'); });
+
+    const { ensureFreshToken } = await import('../../services/api');
+    await ensureFreshToken();
+
+    expect(order).toEqual(['refresh', 'access']);
+  });
+
   it('parallele Aufrufe teilen sich EINEN Refresh-Request', async () => {
     const axios = (await import('axios')).default;
     const tokenStore = await import('../../services/tokenStore');

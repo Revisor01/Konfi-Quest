@@ -105,8 +105,10 @@ describe('Auth Routes', () => {
     });
 
     it('Refresh mit gerade rotiertem Token gibt 200 (Grace-Window gegen Race)', async () => {
-      // Ein in den letzten 30s rotiertes Token wird bewusst akzeptiert, damit
-      // parallele Requests (Dashboard + langsames Netz) nicht zum Logout fuehren.
+      // Ein in den letzten 5 Min rotiertes Token wird bewusst akzeptiert, damit
+      // weder parallele Requests (Dashboard + langsames Netz) NOCH ein Android-
+      // Prozess-Kill zwischen Rotation und Persistenz des neuen Tokens zum Logout
+      // fuehren (Ursache Android-Push-/Chat-Totalausfall ab 1.5.0).
       const loginRes = await request(app)
         .post('/api/auth/login')
         .send({ username: USERS.konfi1.username, password: PASSWORD });
