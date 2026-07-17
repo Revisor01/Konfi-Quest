@@ -8,6 +8,12 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ## [Unreleased]
 
+## [1.5.1] – 2026-07-18 — Android Push- und Chat-Totalausfall behoben
+
+**Android versionCode 73 (Google Play Production).** Reiner Bugfix-Release für
+den Android-Push-/Chat-Ausfall seit 1.5.0. Backend-Fix (Refresh-Grace-Window)
+via CI deployt.
+
 ### 🐛 Android: Push- und Chat-Totalausfall behoben (ab 1.5.0)
 Seit dem 1.5.0-Android-Rollout (09.07.) kamen auf **allen** Android-Geräten keine
 Push-Nachrichten mehr an, und beim Öffnen eines Chats wurden keine neuen
