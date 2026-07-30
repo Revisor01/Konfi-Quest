@@ -441,10 +441,12 @@ describe('Konfi-Management Routes', () => {
       expect(res.body.error_code).toBe('limit_exceeded');
     });
 
-    it('Username-Kollision bleibt 409 OHNE error_code limit_grace', async () => {
+    it('Username-Kollision bekommt Suffix statt 409 (anna.musterfrau2-Schema)', async () => {
       await setLimit(10); // under_limit, damit der Limit-Check nicht zuerst greift
-      // Gleicher Name erzeugt gleichen abgeleiteten Username -> 23505 unique_violation.
-      await request(app)
+      // Gleicher Name -> generateUniqueUsername zaehlt hoch statt am
+      // UNIQUE-Index (23505) zu scheitern. Der 23505->409-Fallback in der
+      // Route bleibt nur als Race-Absicherung bestehen.
+      const first = await request(app)
         .post('/api/admin/konfis')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ name: 'Kollision Konfi', jahrgang_id: JAHRGAENGE.jahrgang1.id });
@@ -453,7 +455,10 @@ describe('Konfi-Management Routes', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ name: 'Kollision Konfi', jahrgang_id: JAHRGAENGE.jahrgang1.id });
 
-      expect(res.status).toBe(409);
+      expect(first.status).toBe(201);
+      expect(first.body.username).toBe('kollision.konfi');
+      expect(res.status).toBe(201);
+      expect(res.body.username).toBe('kollision.konfi2');
       expect(res.body.error_code).not.toBe('limit_grace');
     });
   });
