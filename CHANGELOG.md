@@ -8,6 +8,14 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ## [Unreleased]
 
+### 🔒 Dependency-Sicherheits-Bumps (nur Lockfiles)
+Transitive Sicherheits-Updates ohne Verhaltensänderung: Backend npm audit auf 0
+(u.a. body-parser, brace-expansion, postcss), Frontend js-yaml/tar/postcss
+gefixt. Verbleibende 6 High-Findings im Frontend stecken alle in der
+ESLint-Dev-Toolchain (brace-expansion via eslint) und sind nur mit dem
+ESLint-10-Major-Sprung lösbar — betrifft weder Build-Artefakt noch Laufzeit,
+eingeplant für den Challenges-Milestone.
+
 ### 🐛 Konfi-Bearbeitung überschrieb selbstgewählte Benutzernamen
 Beim Bearbeiten eines Konfis (Name/Jahrgang) generierte das Backend den
 Benutzernamen bei jedem Speichern neu aus dem Anzeigenamen — selbstgewählte
