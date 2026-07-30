@@ -2,6 +2,18 @@
 
 Ideen und aufgeschobene Features fuer zukuenftige Milestones.
 
+## Challenges mit einmaligen Unikat-Badges (Feature-Idee 30.07.)
+
+Zeitlich begrenzte, ausgerufene Herausforderungen ("3 Gottesdienste an 3
+Sonntagen in Folge", "4 Veranstaltungen in 4 Wochen", "2 Taufen in einem
+Monat") — Belohnung ist ein einmaliges Unikat-Badge, nach Ablauf nie wieder
+erringbar. KEIN Duell-Modus (bewusst ausgeschlossen). Kern-Ansatz: bestehende
+Badge-Kriterien + festes Zeitfenster + Kategorie-/Aktivitäts-Filter.
+
+**Volle Konzept-Skizze: `.planning/sketches/challenges-konzept.md`**
+(Kriterien-Teilmenge, Datenmodell, Wertung, UI, offene Entscheidungen).
+Dabei mitnehmen: kleine Dependency-Updates (Ionic 8.8.16, Capacitor 8.4.2).
+
 ## BUG-BEOBACHTUNG: Android Tab-Bar Safe-Area unten (3-Button-Nav)
 
 Status: diagnostiziert, NICHT gefixt, NICHT in 1.4.0. Wir warten ab, ob es auf
@@ -63,12 +75,6 @@ events.js GET / und GET /:id/timeslots liefern registered_count / max_participan
 registered_count >= max_participants sind dann lexikografisch ("9" >= "40" = true).
 Konsequent im SQL ::int casten oder in der Response parseInt. (Die arithmetischen
 Backend-Bugs total=String wurden 07.07. direkt gefixt in konfi.js/teamer.js.)
-
-## nodemailer 8 -> 9 (Security, Breaking Change)
-
-Backend nodemailer hat eine High-Vulnerability (raw-Option umgeht disableFileAccess).
-Fix nur via Major-Update 8->9 (Breaking). Restliche npm-audit-Lücken (form-data,
-multer, ws, protobufjs) wurden 07.07. bereits geschlossen.
 
 ## 999.1 Design-Angleich
 
