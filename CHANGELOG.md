@@ -8,6 +8,32 @@ Dieser Changelog wächst fortlaufend mit — jede Änderung wird hier eingetrage
 
 ## [Unreleased]
 
+### 🐛 Konfi-Bearbeitung überschrieb selbstgewählte Benutzernamen
+Beim Bearbeiten eines Konfis (Name/Jahrgang) generierte das Backend den
+Benutzernamen bei jedem Speichern neu aus dem Anzeigenamen — selbstgewählte
+Usernamen aus der Registrierung (z.B. `anna.musterfrau`) wurden dabei still
+überschrieben (z.B. zu `anna`), und der Login schlug scheinbar grundlos fehl.
+Der Username bleibt beim Bearbeiten jetzt unangetastet.
+
+### ✨ Admin-Anlage: Username-Generierung an Registrierungs-Regeln angeglichen
+Beim Anlegen von Konfis durch Admins wird der Benutzername jetzt nach denselben
+Regeln generiert wie bei der Selbstregistrierung: Umlaute werden transliteriert
+(`Jürgen Müller` → `juergen.mueller` statt `jürgen.müller`), Zahlen und
+Bindestriche bleiben erhalten (vorher wurden Zahlen entfernt). Bei
+Namens-Kollisionen wird automatisch hochgezählt (`anna.musterfrau2`) statt mit
+einem Datenbankfehler abzubrechen. Beim Benutzer-Update durch Org-Admins gelten
+jetzt ebenfalls die vollen Zeichenregeln (vorher nur Mindestlänge).
+
+### ✨ Registrierung: Benutzername-Regeln live im Formular sichtbar
+Das Registrierungsformular zeigt jetzt — analog zur Passwort-Checkliste — sofort
+an, wenn der gewünschte Benutzername unzulässige Zeichen enthält (erlaubt sind
+nur Buchstaben, Zahlen, Punkt und Bindestrich). Bisher schluckte die
+Verfügbarkeitsprüfung den Fehler still und beim Absenden kam nur ein
+nichtssagendes „Validierungsfehler". Zusätzlich zeigt die Fehlermeldung beim
+Absenden jetzt die konkrete Backend-Validierungsmeldung an, und der
+Registrieren-Button ist bei ungültigem Benutzernamen deaktiviert. Serverseitige
+Regeln (seit 25.06. live) sind unverändert.
+
 ## [1.5.1] – 2026-07-18 — Android Push- und Chat-Totalausfall behoben
 
 **Android versionCode 73 (Google Play Production).** Reiner Bugfix-Release für
