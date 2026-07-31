@@ -1,9 +1,9 @@
 ---
 gsd_state_version: 1.0
 milestone: v2.12
-milestone_name: Konfirmation + Konfispruch
+milestone_name: milestone
 status: Awaiting next milestone
-last_updated: "2026-06-10T09:30:58.854Z"
+last_updated: "2026-06-26T12:33:54.903Z"
 last_activity: 2026-06-10 — Milestone v2.12 completed and archived
 progress:
   total_phases: 18

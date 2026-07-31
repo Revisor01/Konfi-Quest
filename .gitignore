@@ -137,3 +137,8 @@ docs/AuthKey_*.p8
 .claude/worktrees/
 .playwright-mcp/
 frontend/ios/App/build_sim/
+
+# Lokale Build-Artefakte (iOS-Archive/-Exports, Ad-hoc-Builds)
+build_ios/
+frontend/ios/App/build_archive/
+frontend/ios/App/build_export*/
