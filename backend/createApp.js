@@ -36,10 +36,24 @@ function createApp(db, options = {}) {
   // SECURITY HEADERS
   // ====================================================================
 
-  // CSP bleibt deaktiviert, da Ionic/React inline Styles und Scripts benoetigt.
+  // Das Backend liefert nur JSON und (entschluesselte) Upload-Dateien aus,
+  // kein HTML — die SPA kommt aus einem eigenen Container und ist von dieser
+  // CSP unberuehrt. Die strikte Policy greift nur, wenn eine Response direkt
+  // als Dokument geoeffnet wird, und verhindert dort Script-Ausfuehrung
+  // (z.B. ueber eine hochgeladene SVG-/HTML-Datei).
   // HSTS wird von Apache/KeyHelp gesetzt, daher hier nicht doppelt konfigurieren.
   app.use(helmet({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: {
+      useDefaults: false,
+      directives: {
+        'default-src': ["'self'"],
+        'script-src': ["'none'"],
+        'object-src': ["'none'"],
+        'base-uri': ["'none'"],
+        'form-action': ["'none'"],
+        'frame-ancestors': ["'none'"],
+      },
+    },
     strictTransportSecurity: false,
     crossOriginEmbedderPolicy: false,
     xContentTypeOptions: true,

@@ -14,6 +14,12 @@ on:
       - main
   workflow_dispatch:
 
+# Default fuer alle Jobs ohne eigenen permissions-Block (backend-test,
+# frontend-test, deploy brauchen nur Checkout). build-and-push uebersteuert
+# job-lokal mit packages: write.
+permissions:
+  contents: read
+
 env:
   REGISTRY: ghcr.io
   BACKEND_IMAGE: ${{ github.repository_owner }}/konfi-quest-backend

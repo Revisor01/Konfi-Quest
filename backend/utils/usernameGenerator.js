@@ -8,13 +8,19 @@ const UMLAUT_MAP = {
 };
 
 function generateUsernameFromName(name) {
-  return String(name)
+  const s = String(name)
     .toLowerCase()
     .replace(/[äöüß]/g, (c) => UMLAUT_MAP[c])
     .replace(/\s+/g, '.')
     .replace(/[^a-z0-9.-]/g, '')
-    .replace(/\.{2,}/g, '.')
-    .replace(/^[.-]+|[.-]+$/g, '');
+    .replace(/\.{2,}/g, '.');
+  // Punkte/Bindestriche an den Raendern ohne Regex trimmen — das frühere
+  // /^[.-]+|[.-]+$/ backtrackt bei langen Punkt-Ketten quadratisch (ReDoS)
+  let start = 0;
+  let end = s.length;
+  while (start < end && (s[start] === '.' || s[start] === '-')) start++;
+  while (end > start && (s[end - 1] === '.' || s[end - 1] === '-')) end--;
+  return s.slice(start, end);
 }
 
 // Findet einen global freien Benutzernamen (case-insensitiv, wie der
