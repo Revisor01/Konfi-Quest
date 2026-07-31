@@ -22,7 +22,7 @@
 - **Database**: PostgreSQL mit RBAC-Struktur (Docker Container) -- Alle 15 Routes vollständig auf PostgreSQL migriert
 - **Authentication**: JWT mit `verifyTokenRBAC` middleware
 - **Port**: 5000 (Docker: 8623)
-- **API Base**: https://konfi-points.de/api
+- **API Base**: https://konfi-quest.de/api
 - **Routes Directory**: backend/routes/
 
 ### Frontend: React 19 + Ionic 8 + TypeScript

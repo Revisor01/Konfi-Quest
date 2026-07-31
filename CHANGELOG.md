@@ -7,7 +7,10 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
-## [Unreleased]
+## [1.5.2] - 2026-07-31
+
+iOS Build 86 + Android versionCode 74. Bugfix-Release rund um Benutzernamen
+plus Sicherheits-Härtung (CodeQL-Durchsicht).
 
 ### Hinzugefügt
 
@@ -66,12 +69,14 @@ Android-Push-/Chat-Ausfall seit 1.5.0; Backend-Fix via CI deployt.
 
 - Android: Push- und Chat-Totalausfall seit dem 1.5.0-Rollout (09.07.) — auf
   allen Android-Geräten kamen keine Push-Nachrichten mehr an, Chats luden nur
-  veralteten Cache (iOS lief noch auf 1.4.x). Ursache war ein Session-Race beim
-  Token-Refresh: Der Client persistierte den neuen Access-Token vor dem neuen
-  Refresh-Token; wurde der Prozess dazwischen gekillt (auf Android häufig), war
-  die Session nach 30 s tot. Der Refresh-Token wird jetzt zuerst persistiert,
-  das serverseitige Grace-Window für rotierte Tokens wurde von 30 s auf
-  5 Minuten erhöht.
+  veralteten Cache (iOS lief noch auf 1.4.x). Tatsächliche Ursache (nachträglich
+  korrigiert): ein falscher/fehlender Header in der Proxy-Konfiguration, der die
+  Requests von Capacitor auf Android nicht durchließ — Capacitor nutzt für iOS
+  und Android unterschiedliche URL-Endpoints/Origins. Die zunächst vermutete
+  Ursache (Session-Race beim Token-Refresh) war es nicht; die dabei gebauten
+  Härtungen bleiben aber drin: Der Refresh-Token wird jetzt vor dem Access-Token
+  persistiert, das serverseitige Grace-Window für rotierte Tokens wurde von 30 s
+  auf 5 Minuten erhöht.
 
 ### Hinzugefügt
 
