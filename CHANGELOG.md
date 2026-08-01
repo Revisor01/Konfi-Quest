@@ -7,6 +7,29 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
+## [1.6.0] - 2026-08-01
+
+iOS Build 89 + Android versionCode 76. Erste Tablet-Unterstützung: Die App
+läuft jetzt nativ auf iPad und Android-Tablets, der Chat nutzt die Breite für
+eine geteilte Ansicht.
+
+### Hinzugefügt
+
+- Chat im geteilten Bildschirm auf Tablets: Raumliste links, geöffneter Raum
+  rechts. Der Wechsel zwischen Räumen bleibt in der Ansicht, die Liste hebt den
+  offenen Raum hervor. Gilt für Konfis, Teamer und Leitung gleichermaßen.
+- Tablet-Unterstützung nativ freigeschaltet: iPad wird als Zielgerät gebaut
+  (vorher lief die App nur im iPhone-Kompatibilitätsmodus), Android-Tablets
+  dürfen die Fenstergröße frei ändern.
+- Querformat auf Tablets. Telefone bleiben bewusst im Hochformat.
+
+### Geändert
+
+- Die Chat-Übersicht ist nicht mehr direkt an die Route gehängt, sondern
+  entscheidet anhand der Fensterbreite (ab 768 px) zwischen geteilter und
+  einspaltiger Ansicht. Unterhalb der Schwelle — auch im iPadOS-Multitasking
+  mit halber Breite — bleibt die bisherige Navigation unverändert.
+
 ## [1.5.3] - 2026-08-01
 
 iOS Build 88 + Android versionCode 75.
