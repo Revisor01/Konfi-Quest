@@ -2722,16 +2722,35 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
      Wert — die Tab-Bar liegt als position:absolute ausserhalb dieser
      Struktur und kann sich nur ueber diese Variable darauf beziehen. */
   --app-split-master-width: 360px;
+  /* Trennlinie zwischen den Split-Spalten: dezent abgesetzt, nicht schwarz. */
+  --app-split-divider: rgba(120, 120, 128, 0.18);
 }
 
-/* Bedingung identisch zu useIsTablet (Split-View): nur wenn links tatsaechlich
-   eine Master-Spalte steht, darf die Tab-Bar auf deren Breite schrumpfen.
-   Im Hochformat gibt es keinen Split — dort wuerde eine schmale, links
-   verankerte Pille nur in der Ecke kleben. */
-@media (min-width: 900px) and (orientation: landscape) {
+/* GRUNDREGEL ab Tablet-Breite: Die Pille des iOS26-Themes ist mit left:16px
+   links verankert und auf max-width 546px begrenzt. Auf dem iPhone fuellt das
+   die Breite aus, auf dem iPad klebt sie sonst in der Ecke -> zentrieren.
+   Gilt in BEIDEN Ausrichtungen und auf allen Seiten. */
+@media (min-width: 768px) {
   /* Selektor bewusst so spezifisch wie die Theme-Regel (:not(.ios26-disabled)),
      sonst gewinnt deren left:16px und die Pille sitzt versetzt. */
   ion-tab-bar.ios:not(.ios26-disabled)[slot="bottom"] {
+    left: 0 !important;
+    right: 0 !important;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* AUSNAHME nur auf der Split-Seite (Chat im Querformat): Dort steht links eine
+   Master-Spalte — die Bar wird auf deren Breite begrenzt und darin verankert,
+   damit sie den Detail-Bereich (Chat-Eingabefeld) nicht ueberlagert.
+   Die Klasse setzt ChatSplitPage; frueher hing diese Regel an einer reinen
+   Media-Query und griff dadurch auch auf Seiten OHNE Split (Events, Konfis …),
+   wo die Bar dann ohne Spalte links in der Ecke klebte.
+   :has() waehlt die Tab-Bar ueber das Geschwister-Outlet der aktiven Seite. */
+@media (min-width: 900px) and (orientation: landscape) {
+  ion-tabs:has(.app-split-page:not(.ion-page-hidden))
+    ion-tab-bar.ios:not(.ios26-disabled)[slot="bottom"] {
     left: 0 !important;
     right: auto !important;
     width: calc(var(--app-split-master-width) - 32px) !important;
@@ -2745,15 +2764,11 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
      Texte ueberlappen dann und lange Labels brechen ab. */
 }
 
-/* Breit, aber ohne Split (Hochformat auf dem Tablet): Die Pille wuerde sonst
-   mit ihrer max-width von 546px linksbuendig in der Ecke kleben. Mittig
-   ausrichten, Groesse unangetastet lassen. */
-@media (min-width: 768px) and (orientation: portrait) {
-  ion-tab-bar.ios:not(.ios26-disabled)[slot="bottom"] {
-    left: 0 !important;
-    right: 0 !important;
-    margin-left: auto;
-    margin-right: auto;
+/* Dark Mode: Trennlinie etwas heller, damit sie auf dunklem Grund sichtbar
+   bleibt, ohne als harte Kante zu wirken. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --app-split-divider: rgba(255, 255, 255, 0.14);
   }
 }
 

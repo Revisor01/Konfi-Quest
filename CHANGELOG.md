@@ -9,7 +9,7 @@ Versionsüberschrift.
 
 ## [1.6.0] - 2026-08-01
 
-iOS Build 92 + Android versionCode 77. Erste Tablet-Unterstützung: Die App
+iOS Build 93 + Android versionCode 77. Erste Tablet-Unterstützung: Die App
 läuft jetzt nativ auf iPad und Android-Tablets, der Chat nutzt die Breite für
 eine geteilte Ansicht.
 
