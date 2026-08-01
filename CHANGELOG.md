@@ -7,35 +7,19 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
-## [1.6.1] - 2026-08-01
-
-iOS Build 90 + Android versionCode 77. Nachbesserungen am Tablet-Layout aus 1.6.0.
-
-### Geändert
-
-- Der geteilte Chat-Bildschirm erscheint jetzt nur noch im Querformat. Im
-  Hochformat zeigt das Tablet wieder die gewohnte einspaltige Ansicht mit der
-  normalen Auswahl.
-
-### Behoben
-
-- Die Navigationsleiste klebte auf Tablets am linken Rand, statt mittig zu
-  sitzen. Ursache war die schwebende Leiste des iOS-26-Designs, die auf
-  Tablet-Breite nicht mehr die volle Breite ausfüllt.
-- Die Navigationsleiste verdeckte im geteilten Chat-Bildschirm das
-  Eingabefeld. Der Chat hält dort jetzt Platz für sie frei.
-
 ## [1.6.0] - 2026-08-01
 
-iOS Build 89 + Android versionCode 76. Erste Tablet-Unterstützung: Die App
+iOS Build 91 + Android versionCode 77. Erste Tablet-Unterstützung: Die App
 läuft jetzt nativ auf iPad und Android-Tablets, der Chat nutzt die Breite für
 eine geteilte Ansicht.
 
 ### Hinzugefügt
 
-- Chat im geteilten Bildschirm auf Tablets: Raumliste links, geöffneter Raum
-  rechts. Der Wechsel zwischen Räumen bleibt in der Ansicht, die Liste hebt den
-  offenen Raum hervor. Gilt für Konfis, Teamer und Leitung gleichermaßen.
+- Chat im geteilten Bildschirm auf Tablets im Querformat: Raumliste links,
+  geöffneter Raum rechts. Der Wechsel zwischen Räumen bleibt in der Ansicht,
+  die Liste hebt den offenen Raum hervor. Gilt für Konfis, Teamer und Leitung
+  gleichermaßen. Im Hochformat bleibt es bei der gewohnten einspaltigen
+  Ansicht mit der normalen Auswahl.
 - Tablet-Unterstützung nativ freigeschaltet: iPad wird als Zielgerät gebaut
   (vorher lief die App nur im iPhone-Kompatibilitätsmodus), Android-Tablets
   dürfen die Fenstergröße frei ändern.
@@ -44,9 +28,11 @@ eine geteilte Ansicht.
 ### Geändert
 
 - Die Chat-Übersicht ist nicht mehr direkt an die Route gehängt, sondern
-  entscheidet anhand der Fensterbreite (ab 768 px) zwischen geteilter und
+  entscheidet anhand von Fensterbreite und Ausrichtung zwischen geteilter und
   einspaltiger Ansicht. Unterhalb der Schwelle — auch im iPadOS-Multitasking
   mit halber Breite — bleibt die bisherige Navigation unverändert.
+- Die Navigationsleiste sitzt auf Tablets mittig statt am linken Rand und
+  verdeckt im geteilten Chat-Bildschirm nicht mehr das Eingabefeld.
 
 ## [1.5.3] - 2026-08-01
 
