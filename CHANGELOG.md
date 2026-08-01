@@ -7,53 +7,15 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
-## [1.6.0] - 2026-08-01
-
-iOS Build 93 + Android versionCode 77. Erste Tablet-Unterstützung: Die App
-läuft jetzt nativ auf iPad und Android-Tablets, der Chat nutzt die Breite für
-eine geteilte Ansicht.
+## [1.5.3] - 2026-08-01
 
 ### Hinzugefügt
 
-- Chat im geteilten Bildschirm auf Tablets im Querformat: Raumliste links,
-  geöffneter Raum rechts. Der Wechsel zwischen Räumen bleibt in der Ansicht,
-  die Liste hebt den offenen Raum hervor. Gilt für Konfis, Teamer und Leitung
-  gleichermaßen. Im Hochformat bleibt es bei der gewohnten einspaltigen
-  Ansicht mit der normalen Auswahl.
-- Tablet-Unterstützung nativ freigeschaltet: iPad wird als Zielgerät gebaut
-  (vorher lief die App nur im iPhone-Kompatibilitätsmodus), Android-Tablets
-  dürfen die Fenstergröße frei ändern.
-- Querformat auf Tablets. Telefone bleiben bewusst im Hochformat.
-
-### Geändert
-
-- Die Chat-Übersicht ist nicht mehr direkt an die Route gehängt, sondern
-  entscheidet anhand von Fensterbreite und Ausrichtung zwischen geteilter und
-  einspaltiger Ansicht. Unterhalb der Schwelle — auch im iPadOS-Multitasking
-  mit halber Breite — bleibt die bisherige Navigation unverändert.
-- Die Navigationsleiste sitzt im geteilten Chat-Bildschirm in der linken
-  Spalte und verdeckt dadurch nicht mehr das Eingabefeld. Im Hochformat sitzt
-  sie mittig statt am linken Rand.
+- Chat: Button zum Springen ans Ende der Nachrichtenliste.
 
 ### Behoben
 
-- Organisation wechseln zeigte weiterhin die Daten der alten Organisation. Zwei
-  unabhängige Ursachen: Die App löste beim Wechsel keinen vollständigen Neuaufbau
-  der Ansichten aus, sodass Bereiche mit eigenem Zustand stehenblieben; und der
-  Webserver ließ den Header `X-Active-Organization` nicht durch, woran im Browser
-  sämtliche Anfragen nach dem Wechsel scheiterten (serverseitig behoben, wirkt
-  ohne App-Update).
-
-## [1.5.3] - 2026-08-01
-
-iOS Build 88 + Android versionCode 75.
-
-### Hinzugefügt
-
-- Chat: Button zum Springen ans Ende der Nachrichtenliste. Er erscheint nur,
-  wenn man weiter oben liest (ab 300 px Abstand zum Listenende), und blendet
-  sich nahe am Ende wieder aus. Ein Klick scrollt ans Ende und aktiviert das
-  automatische Nachscrollen bei neuen Nachrichten wieder.
+- Organisation wechseln zeigte weiterhin die Daten der alten Organisation.
 
 ## [1.5.2] - 2026-07-31
 

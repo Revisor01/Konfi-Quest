@@ -31,13 +31,9 @@ interface ChatRoomData {
 interface ChatRoomViewProps {
   roomId: number;
   onBack: () => void;
-  // Split-View: Raumliste steht daneben -> kein Zurueck-Pfeil im Header, und
-  // eigene tabId fuer die Modal-Registrierung (sonst ueberschreiben sich
-  // Uebersicht und Raum gegenseitig als presentingElement).
-  hideBackButton?: boolean;
 }
 
-const ChatRoomView: React.FC<ChatRoomViewProps> = ({ roomId, onBack, hideBackButton }) => {
+const ChatRoomView: React.FC<ChatRoomViewProps> = ({ roomId, onBack }) => {
   // Raum-Metadaten per Offline-Cache laden: offline (oder bei Reconnect) zeigt
   // der Cache sofort den Raum, sodass ChatRoom mit seinem Nachrichten-Cache
   // gerendert wird. Vorher war das ein ungecachter api.get -> offline blieb der
@@ -50,25 +46,8 @@ const ChatRoomView: React.FC<ChatRoomViewProps> = ({ roomId, onBack, hideBackBut
 
   // 2. Den useModalPage-Hook HIER aufrufen
   const location = useLocation();
-  const baseTabId = location.pathname.startsWith('/admin')
-    ? 'admin-chat'
-    : location.pathname.startsWith('/teamer')
-      ? 'teamer-chat'
-      : 'chat';
-  // Im Split-View liegt gleichzeitig die Uebersicht auf derselben Route und
-  // registriert bereits baseTabId -> eigener Schluessel fuer den Detail-Bereich.
-  const tabId = hideBackButton ? `${baseTabId}-detail` : baseTabId;
+  const tabId = location.pathname.startsWith('/admin') ? 'admin-chat' : 'chat';
   const { pageRef, presentingElement } = useModalPage(tabId);
-  // Im Split-View liefert der Context zur aktuellen Route die Uebersichts-Page
-  // (den Master) — Modals aus dem Raum sollen aber ueber dem Raum aufgehen.
-  // Deshalb dort die eigene IonPage als presentingElement verwenden. pageRef ist
-  // im ersten Render noch leer, daher nach dem Mount einmal in den State ziehen.
-  const [ownPage, setOwnPage] = useState<HTMLElement | undefined>(undefined);
-  useEffect(() => {
-    if (hideBackButton) setOwnPage(pageRef.current ?? undefined);
-  }, [hideBackButton, roomId, loading]);
-
-  const effectivePresentingElement = hideBackButton ? ownPage : presentingElement;
 
   // Fehler nur dann zeigen, wenn weder Cache noch Netz einen Raum liefern konnten.
   const showError = !loading && !room;
@@ -115,8 +94,7 @@ const ChatRoomView: React.FC<ChatRoomViewProps> = ({ roomId, onBack, hideBackBut
       <ChatRoom
         room={room}
         onBack={onBack}
-        presentingElement={effectivePresentingElement} // <-- HIER wird es durchgereicht
-        hideBackButton={hideBackButton}
+        presentingElement={presentingElement} // <-- HIER wird es durchgereicht
       />
     </IonPage>
   );

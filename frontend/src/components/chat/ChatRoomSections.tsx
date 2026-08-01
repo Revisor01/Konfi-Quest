@@ -46,8 +46,6 @@ interface ChatHeaderProps {
   onLeaveChat: () => void;
   eventId?: number | null;
   partnerType?: 'admin' | 'konfi' | null;
-  // Im Split-View liegt die Raumliste daneben -> kein Zurueck-Pfeil noetig.
-  hideBackButton?: boolean;
 }
 
 export const ChatHeader = React.memo<ChatHeaderProps>(({
@@ -58,8 +56,7 @@ export const ChatHeader = React.memo<ChatHeaderProps>(({
   onBack,
   onOpenMembers,
   onOpenPoll,
-  onLeaveChat,
-  hideBackButton
+  onLeaveChat
 }) => {
   return (
     // translucent bewusst AUS: Der Chat-Content ist nicht fullscreen (Footer mit
@@ -67,13 +64,11 @@ export const ChatHeader = React.memo<ChatHeaderProps>(({
     // behandeln -> Header sitzt unter Notch/Statusbar. Opaker Header sitzt korrekt.
     <IonHeader>
       <IonToolbar>
-        {!hideBackButton && (
-          <IonButtons slot="start">
-            <IonButton onClick={onBack}>
-              <IonIcon icon={arrowBack} />
-            </IonButton>
-          </IonButtons>
-        )}
+        <IonButtons slot="start">
+          <IonButton onClick={onBack}>
+            <IonIcon icon={arrowBack} />
+          </IonButton>
+        </IonButtons>
         <IonTitle>{roomName}</IonTitle>
         <IonButtons slot="end">
           {isAdmin && (

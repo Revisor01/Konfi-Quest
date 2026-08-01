@@ -64,7 +64,7 @@ const shownMarkerAnchors = new Map<number, number>();
 // Ab welchem Abstand zum Listenende (in px) der "Nach unten"-Button erscheint.
 const SCROLL_DOWN_THRESHOLD = 300;
 
-const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingElement, hideBackButton }) => {
+const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingElement }) => {
   const { user, setError, isOnline } = useApp();
   const { markRoomAsRead: badgeMarkRoomAsRead, refreshAllCounts, chatUnreadByRoom } = useBadge();
   // Anzahl ungelesener Nachrichten beim Oeffnen EINMAL einfrieren (bevor
@@ -1281,7 +1281,6 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         onOpenMembers={openMembersModal}
         onOpenPoll={openPollModal}
         onLeaveChat={handleLeaveChat}
-        hideBackButton={hideBackButton}
         eventId={room?.event_id ?? null}
         partnerType={
           room?.type === 'direct'

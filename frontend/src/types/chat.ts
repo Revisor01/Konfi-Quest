@@ -91,9 +91,6 @@ export interface ChatRoomProps {
   room: ChatRoomBase | null;
   onBack: () => void;
   presentingElement: HTMLElement | undefined | null;
-  // Im Split-View steht die Raumliste bereits daneben — dort waere ein
-  // Zurueck-Pfeil im Header sinnlos.
-  hideBackButton?: boolean;
 }
 
 export interface ReactionEmojiData {
