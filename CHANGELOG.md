@@ -7,6 +7,17 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
+## [1.5.3] - 2026-08-01
+
+iOS Build 88 + Android versionCode 75.
+
+### Hinzugefügt
+
+- Chat: Button zum Springen ans Ende der Nachrichtenliste. Er erscheint nur,
+  wenn man weiter oben liest (ab 300 px Abstand zum Listenende), und blendet
+  sich nahe am Ende wieder aus. Ein Klick scrollt ans Ende und aktiviert das
+  automatische Nachscrollen bei neuen Nachrichten wieder.
+
 ## [1.5.2] - 2026-07-31
 
 iOS Build 86 + Android versionCode 74. Bugfix-Release rund um Benutzernamen
