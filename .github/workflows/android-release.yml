@@ -1,0 +1,77 @@
+name: Android Release Build
+
+# Baut das signierte AAB und laedt es per Google-Play-API in die Tracks
+# (internal, alpha, production — Google startet die Review automatisch).
+#
+# Version/versionCode kommen aus frontend/version.json (Quelle der Wahrheit,
+# build.gradle liest sie direkt). Vor dem Dispatch: versionCode bumpen,
+# frontend/release-notes-de.txt aktualisieren, committen.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tracks:
+        description: "Ziel-Tracks (kommagetrennt)"
+        default: "internal,alpha,production"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: JDK 21 einrichten
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Web-Build + Capacitor-Sync + Firebase-Config
+        working-directory: frontend
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+          npx cap sync android
+          ./scripts/prepare-android.sh
+
+      - name: Keystore ablegen
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: echo "$KEYSTORE_BASE64" | base64 --decode > /tmp/release.jks
+
+      - name: Signiertes AAB bauen
+        working-directory: frontend/android
+        env:
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          ./gradlew bundleRelease \
+            "-PKONFI_KEYSTORE_PATH=/tmp/release.jks" \
+            "-PKONFI_KEYSTORE_PASSWORD=$KS_PASS" \
+            "-PKONFI_KEY_ALIAS=$KEY_ALIAS" \
+            "-PKONFI_KEY_PASSWORD=$KEY_PASS"
+          ls -la app/build/outputs/bundle/release/app-release.aab
+
+      - name: Zu Google Play hochladen
+        env:
+          GPLAY_SA_JSON_BASE64: ${{ secrets.GPLAY_SA_JSON_BASE64 }}
+        run: |
+          echo "$GPLAY_SA_JSON_BASE64" | base64 --decode > /tmp/gplay-sa.json
+          python3 .github/scripts/upload-play.py /tmp/gplay-sa.json \
+            frontend/android/app/build/outputs/bundle/release/app-release.aab \
+            frontend/release-notes-de.txt \
+            "${{ inputs.tracks }}"

@@ -1,0 +1,4 @@
+• Registrierung: Der gewünschte Benutzername wird direkt im Formular geprüft — ungültige Zeichen werden sofort angezeigt
+• Behoben: Beim Bearbeiten durch die Verwaltung wurde der selbst gewählte Benutzername überschrieben und der Login schlug fehl
+• Benutzernamen aus der Verwaltung folgen jetzt denselben Regeln wie bei der Registrierung
+• Sicherheitsverbesserungen unter der Haube
