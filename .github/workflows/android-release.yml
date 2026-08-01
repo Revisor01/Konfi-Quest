@@ -14,6 +14,10 @@ on:
         description: "Ziel-Tracks (kommagetrennt)"
         default: "internal,alpha,production"
         required: true
+      dry_run:
+        description: "Dry-Run: kompletter Durchlauf, aber Play-Edit wird verworfen (kein Release)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -38,6 +42,14 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+
+      - name: "Dry-Run: versionCode temporaer anheben"
+        if: ${{ inputs.dry_run }}
+        working-directory: frontend
+        run: |
+          # +10000, damit der Upload nicht am bereits releasten Code scheitert.
+          # Die Edit wird am Ende verworfen — der Code wird NICHT verbraucht.
+          node -e "const fs=require('fs');const v=JSON.parse(fs.readFileSync('version.json'));v.androidVersionCode+=10000;fs.writeFileSync('version.json',JSON.stringify(v,null,2)+'\n');console.log('Dry-Run versionCode:',v.androidVersionCode)"
 
       - name: Web-Build + Capacitor-Sync + Firebase-Config
         working-directory: frontend
@@ -74,4 +86,5 @@ jobs:
           python3 .github/scripts/upload-play.py /tmp/gplay-sa.json \
             frontend/android/app/build/outputs/bundle/release/app-release.aab \
             frontend/release-notes-de.txt \
-            "${{ inputs.tracks }}"
+            "${{ inputs.tracks }}" \
+            "${{ inputs.dry_run && 'validate' || 'commit' }}"

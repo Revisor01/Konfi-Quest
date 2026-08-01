@@ -3,7 +3,10 @@
 # angegebenen Tracks (ein Edit, ein Commit). Reine Stdlib + openssl-Subprozess,
 # keine Python-Abhaengigkeiten.
 #
-# Aufruf: upload-play.py <service-account.json> <app.aab> <notes.txt> <track1,track2,...>
+# Aufruf: upload-play.py <service-account.json> <app.aab> <notes.txt> <track1,track2,...> [commit|validate]
+# validate: kompletter Durchlauf inkl. Upload + Track-Zuweisung + :validate,
+# aber die Edit wird VERWORFEN statt committet (kein Release, versionCode
+# bleibt unverbraucht) — fuer Workflow-Tests.
 import base64
 import json
 import subprocess
@@ -14,6 +17,7 @@ import urllib.parse
 import urllib.request
 
 SA_JSON, AAB, NOTES_FILE, TRACKS = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+MODE = sys.argv[5] if len(sys.argv) > 5 else "commit"
 PKG = "de.godsapp.konfiquest"
 API = f"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{PKG}"
 UP = f"https://androidpublisher.googleapis.com/upload/androidpublisher/v3/applications/{PKG}"
@@ -87,8 +91,13 @@ try:
         call("PUT", f"{API}/edits/{edit}/tracks/{track}", json.dumps(release).encode())
         print(f"Track {track}: gesetzt")
 
-    call("POST", f"{API}/edits/{edit}:commit", b"")
-    print("Commit OK — Release eingereicht")
+    if MODE == "validate":
+        call("POST", f"{API}/edits/{edit}:validate", b"")
+        print("Validate OK — Edit wird verworfen (Dry-Run, kein Release)")
+        call("DELETE", f"{API}/edits/{edit}")
+    else:
+        call("POST", f"{API}/edits/{edit}:commit", b"")
+        print("Commit OK — Release eingereicht")
 except Exception:
     try:
         call("DELETE", f"{API}/edits/{edit}")
