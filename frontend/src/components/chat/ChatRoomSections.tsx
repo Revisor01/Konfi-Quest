@@ -237,6 +237,9 @@ interface MessageInputProps {
   onFileSelect: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onClearFile: () => void;
   onClearReply: () => void;
+  // Split-View: Die schwebende Tab-Bar bleibt sichtbar und liegt ueber dem
+  // Footer -> zusaetzlicher Abstand nach unten.
+  reserveTabBarSpace?: boolean;
 }
 
 export const MessageInput = React.memo<MessageInputProps>(({
@@ -252,7 +255,8 @@ export const MessageInput = React.memo<MessageInputProps>(({
   onSend,
   onFileSelect,
   onClearFile,
-  onClearReply
+  onClearReply,
+  reserveTabBarSpace
 }) => {
   // Manuelles Auto-Resize des Eingabefeldes (statt Ionic autoGrow, das echtes
   // Hochscrollen verhindert). Hoehe = Inhalt, gedeckelt auf MAX_H (~5 Zeilen);
@@ -275,7 +279,10 @@ export const MessageInput = React.memo<MessageInputProps>(({
   }, [messageText, resizeTextarea]);
 
   return (
-  <IonFooter style={{ backgroundColor: 'rgba(248, 249, 250, 0.95)', backdropFilter: 'blur(10px)' }}>
+  <IonFooter
+    className={reserveTabBarSpace ? 'chat-input-footer--with-tabbar' : undefined}
+    style={{ backgroundColor: 'rgba(248, 249, 250, 0.95)', backdropFilter: 'blur(10px)' }}
+  >
     {/* Reply Preview */}
     {replyToMessage && (
       <ReplyPreview replyToMessage={replyToMessage} onClear={onClearReply} />

@@ -7,6 +7,24 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
+## [1.6.1] - 2026-08-01
+
+iOS Build 90 + Android versionCode 77. Nachbesserungen am Tablet-Layout aus 1.6.0.
+
+### Geändert
+
+- Der geteilte Chat-Bildschirm erscheint jetzt nur noch im Querformat. Im
+  Hochformat zeigt das Tablet wieder die gewohnte einspaltige Ansicht mit der
+  normalen Auswahl.
+
+### Behoben
+
+- Die Navigationsleiste klebte auf Tablets am linken Rand, statt mittig zu
+  sitzen. Ursache war die schwebende Leiste des iOS-26-Designs, die auf
+  Tablet-Breite nicht mehr die volle Breite ausfüllt.
+- Die Navigationsleiste verdeckte im geteilten Chat-Bildschirm das
+  Eingabefeld. Der Chat hält dort jetzt Platz für sie frei.
+
 ## [1.6.0] - 2026-08-01
 
 iOS Build 89 + Android versionCode 76. Erste Tablet-Unterstützung: Die App

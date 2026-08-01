@@ -1,16 +1,20 @@
 import { useEffect, useState } from 'react';
 
-// Ab dieser Viewport-Breite gilt das Geraet als "breit genug" fuer einen
-// Split-View (Liste + Detail nebeneinander). 768px entspricht dem iPad im
-// Hochformat und der sw600dp-Grenze auf Android (600dp bei typischer
-// Tablet-Dichte). Darunter bleibt die App bei der bisherigen
-// Ein-Spalten-Navigation.
-export const TABLET_MIN_WIDTH = 768;
+// Ab dieser Viewport-Breite ist Platz fuer einen Split-View (Liste + Detail
+// nebeneinander). 900px liegt ueber der iPad-Hochformat-Breite (768px) und
+// unter der Landscape-Breite des kleinsten iPads (1024px).
+export const TABLET_MIN_WIDTH = 900;
 
-const QUERY = `(min-width: ${TABLET_MIN_WIDTH}px)`;
+// Zusaetzlich Querformat verlangt: Im Hochformat wird der Split ausdruecklich
+// NICHT gewuenscht — dort bleibt die gewohnte einspaltige Ansicht mit der
+// normalen Auswahl. Die Breiten-Bedingung allein wuerde iPad-Portrait
+// (768px) zwar schon ausschliessen, das Orientierungs-Kriterium haelt das
+// Verhalten aber auch auf groesseren Tablets eindeutig.
+const QUERY = `(min-width: ${TABLET_MIN_WIDTH}px) and (orientation: landscape)`;
 
 /**
- * True, wenn der Viewport breit genug fuer einen Split-View ist.
+ * True, wenn der Viewport breit genug UND im Querformat ist — nur dann wird
+ * der Split-View gezeigt.
  *
  * Reagiert live auf Drehen des Geraets und auf Groessenaenderungen im
  * iPadOS-Multitasking (Slide Over / Split View halbieren die App-Breite —

@@ -2704,3 +2704,36 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   touch-action: pan-y;
 }
 
+/* ---------------------------------------------------------------------------
+   Tab-Bar auf breiten Bildschirmen (Tablet)
+   ---------------------------------------------------------------------------
+   Das iOS26-Theme rendert die Tab-Bar als schwebende Pille: position:absolute,
+   links verankert (left: 16px) und auf max-width 546px begrenzt. Auf dem
+   iPhone fuellt das die Breite aus — auf dem iPad bleibt die Pille dagegen
+   linksbuendig in der Ecke kleben.
+
+   Fix: ab Tablet-Breite mittig ausrichten statt links verankern. left/right
+   auf 0 und margin:auto zentriert die Pille innerhalb ihrer max-width, ohne
+   deren Groesse anzutasten (das Glass-Design bleibt also unveraendert). */
+@media (min-width: 768px) {
+  /* Selektor bewusst so spezifisch wie die Theme-Regel (:not(.ios26-disabled)),
+     sonst gewinnt deren left:16px und die Pille sitzt um 16px versetzt. */
+  ion-tab-bar.ios:not(.ios26-disabled)[slot="bottom"] {
+    left: 0 !important;
+    right: 0 !important;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* Chat: Platz fuer die schwebende Tab-Bar unter dem Eingabefeld.
+   Die Pille liegt als position:absolute UEBER dem Inhalt, belegt also keinen
+   Platz im Layout — ohne diesen Abstand verdeckt sie das Eingabefeld. Greift
+   nur dort, wo Tab-Bar und Chat-Footer gleichzeitig sichtbar sind (im
+   Vollbild-Chatraum blendet MainTabs die Tab-Bar ohnehin aus). */
+.chat-input-footer--with-tabbar {
+  padding-bottom: calc(
+    var(--ios26-floating-safe-area-bottom, 10px) + 56px + 12px
+  );
+}
+
