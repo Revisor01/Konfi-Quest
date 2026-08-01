@@ -33,11 +33,14 @@ const ChatSplitPage: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', width: '100%', height: '100%' }}>
-      {/* Master: feste Spaltenbreite, damit die Liste beim Drehen nicht springt. */}
+      {/* Master: feste Spaltenbreite, damit die Liste beim Drehen nicht springt.
+          Breite kommt aus --app-split-master-width, weil die Tab-Bar (die als
+          position:absolute ausserhalb dieser Struktur liegt) sich auf denselben
+          Wert beziehen muss, um in der Spalte zu sitzen. */}
       <div
         style={{
-          width: '360px',
-          flex: '0 0 360px',
+          width: 'var(--app-split-master-width)',
+          flex: '0 0 var(--app-split-master-width)',
           height: '100%',
           position: 'relative',
           borderRight: '1px solid rgba(0,0,0,0.12)'

@@ -1484,7 +1484,6 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         onFileSelect={handleFileSelect}
         onClearFile={clearSelectedFile}
         onClearReply={() => setReplyToMessage(null)}
-        reserveTabBarSpace={hideBackButton}
       />
 
     </>

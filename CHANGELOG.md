@@ -9,7 +9,7 @@ Versionsüberschrift.
 
 ## [1.6.0] - 2026-08-01
 
-iOS Build 91 + Android versionCode 77. Erste Tablet-Unterstützung: Die App
+iOS Build 92 + Android versionCode 77. Erste Tablet-Unterstützung: Die App
 läuft jetzt nativ auf iPad und Android-Tablets, der Chat nutzt die Breite für
 eine geteilte Ansicht.
 
@@ -31,8 +31,9 @@ eine geteilte Ansicht.
   entscheidet anhand von Fensterbreite und Ausrichtung zwischen geteilter und
   einspaltiger Ansicht. Unterhalb der Schwelle — auch im iPadOS-Multitasking
   mit halber Breite — bleibt die bisherige Navigation unverändert.
-- Die Navigationsleiste sitzt auf Tablets mittig statt am linken Rand und
-  verdeckt im geteilten Chat-Bildschirm nicht mehr das Eingabefeld.
+- Die Navigationsleiste sitzt im geteilten Chat-Bildschirm in der linken
+  Spalte und verdeckt dadurch nicht mehr das Eingabefeld. Im Hochformat sitzt
+  sie mittig statt am linken Rand.
 
 ## [1.5.3] - 2026-08-01
 
