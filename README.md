@@ -61,6 +61,19 @@ Die App läuft produktiv auf Docker (server.godsapp.de) und wird über Portainer
 - Nachrichtenlimit: 4.000 Zeichen
 - Fullscreen FileViewerModal mit Pinch-to-Zoom, Multi-Datei-Swipe
 - LATERAL Joins eliminieren N+1-Queries bei DM-Namen
+- Button springt ans Ende der Nachrichtenliste (ab 300 px Abstand sichtbar)
+- Geteilter Bildschirm auf Tablets im Querformat: Raumliste links, Raum rechts
+  (`useIsTablet` = min-width 900 px + landscape). Im Hochformat und auf
+  Telefonen bleibt es einspaltig mit Routen-Navigation.
+
+### Tablets (seit 1.6.0)
+
+- iPad als natives Zielgerät (`TARGETED_DEVICE_FAMILY = "1,2"`), Querformat
+  erlaubt; Telefone bleiben Portrait-only (Android per
+  `smallestScreenWidthDp`-Check in `MainActivity`)
+- Die schwebende iOS-26-Tab-Bar wird im Split-View auf die Breite der linken
+  Spalte begrenzt (`--app-split-master-width`), damit sie den Chat-Footer nicht
+  überlagert; im Hochformat wird sie zentriert
 
 ### Push-Notifications
 
@@ -310,6 +323,11 @@ ssh root@server.godsapp.de "docker exec -it konfi-quest-db-1 psql -U konfi_user 
 | v2.7 | 2026-03-24 | Backend-Hardening: verifyTokenRBAC LRU-Cache, bookingUtils, fetcherRef-Stabilisierung | 2 | 3 |
 
 **Gesamt: 93 Phasen, 146 Plans, 17 Milestones (v1.0–v2.7)**
+
+Diese Tabelle bildet die interne Entwicklungs-Historie bis März 2026 ab. Die
+seither an die Stores ausgelieferten Versionen (1.3.0 ff.) sind in
+[CHANGELOG.md](CHANGELOG.md) dokumentiert — das ist ab dort die maßgebliche
+Quelle für den Release-Stand.
 
 ---
 

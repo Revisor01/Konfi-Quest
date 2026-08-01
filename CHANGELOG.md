@@ -35,6 +35,15 @@ eine geteilte Ansicht.
   Spalte und verdeckt dadurch nicht mehr das Eingabefeld. Im Hochformat sitzt
   sie mittig statt am linken Rand.
 
+### Behoben
+
+- Organisation wechseln zeigte weiterhin die Daten der alten Organisation. Zwei
+  unabhängige Ursachen: Die App löste beim Wechsel keinen vollständigen Neuaufbau
+  der Ansichten aus, sodass Bereiche mit eigenem Zustand stehenblieben; und der
+  Webserver ließ den Header `X-Active-Organization` nicht durch, woran im Browser
+  sämtliche Anfragen nach dem Wechsel scheiterten (serverseitig behoben, wirkt
+  ohne App-Update).
+
 ## [1.5.3] - 2026-08-01
 
 iOS Build 88 + Android versionCode 75.
