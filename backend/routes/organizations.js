@@ -430,9 +430,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
         { name: 'Taufe', points: 1, type: 'gottesdienst', categoryKey: 'kasualien' },
         { name: 'Hochzeit', points: 1, type: 'gottesdienst', categoryKey: 'kasualien' },
         { name: 'Beerdigung', points: 2, type: 'gottesdienst', categoryKey: 'kasualien' },
-        { name: 'Gemeindefest helfen', points: 2, type: 'gemeinde', categoryKey: 'gemeinde' },
-        { name: 'Seniorennachmittag', points: 1, type: 'gemeinde', categoryKey: 'gemeinde' },
-        { name: 'Gemeindebrief verteilen', points: 1, type: 'gemeinde', categoryKey: 'gemeinde' }
+        { name: 'Küsterdienst', points: 1, type: 'gemeinde', categoryKey: 'gemeinde' }
       ];
 
       const activityQuery = `INSERT INTO activities (name, points, type, organization_id)
