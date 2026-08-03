@@ -47,16 +47,61 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Trigger Portainer Webhook
+      - name: Deploy to Portainer
+        env:
+          PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
+          PORTAINER_API_KEY: ${{ secrets.PORTAINER_API_KEY }}
+          STACK_ID: "249"
         run: |
-          # --fail laesst curl bei 4xx/5xx mit Exit != 0 abbrechen, damit ein
-          # fehlgeschlagener Rollout den Job rot macht. Vorher stand hier
-          # "|| true": der Webhook lief monatelang gegen eine tote Stack-ID
-          # ("Unable to find the stack by webhook ID") und der Job meldete
-          # trotzdem success — das Image lag in der Registry, ausgerollt
-          # wurde es nie.
-          if [ -z "${{ secrets.PORTAINER_WEBHOOK }}" ]; then
-            echo "::error::PORTAINER_WEBHOOK ist nicht gesetzt — kein Rollout."
-            exit 1
-          fi
-          curl --fail --silent --show-error -X POST "${{ secrets.PORTAINER_WEBHOOK }}"
+          # Die Images im Stack sind bewusst auf Commit-SHAs gepinnt, nicht auf
+          # :latest — so bleibt nachvollziehbar, welcher Stand laeuft, und ein
+          # Rollback ist ein Klick auf die vorige Portainer-Version.
+          #
+          # Ein blosser Webhook-Aufruf reicht deshalb NICHT: Portainer wuerde
+          # nur die bestehende Definition neu ausrollen, die weiter auf den
+          # alten SHA zeigt. Wir schreiben den neuen Tag also in die Definition
+          # und lassen Portainer diese deployen.
+          set -euo pipefail
+          SHA_TAG="${GITHUB_SHA::7}"
+          echo "Rollout auf Tag: $SHA_TAG"
+
+          for v in PORTAINER_URL PORTAINER_API_KEY; do
+            if [ -z "${!v}" ]; then
+              echo "::error::$v ist nicht gesetzt — kein Rollout."
+              exit 1
+            fi
+          done
+
+          AUTH="X-API-Key: $PORTAINER_API_KEY"
+          API="$PORTAINER_URL/api/stacks/$STACK_ID"
+
+          curl --fail --silent --show-error -H "$AUTH" "$API/file" -o stack.json
+
+          # Nur den Frontend-Tag ersetzen. Das Backend bleibt bewusst auf
+          # seinem Stand — sonst wuerde ein Frontend-Deploy ungefragt auch
+          # Backend und Datenbankmigrationen mitziehen.
+          python3 - "$SHA_TAG" <<'PY'
+          import json, re, sys
+          tag = sys.argv[1]
+          content = json.load(open("stack.json"))["StackFileContent"]
+          new, n = re.subn(
+              r"(ghcr\.io/[^/]+/konfi-quest-frontend:)\S+",
+              rf"\g<1>{tag}",
+              content,
+          )
+          if n != 1:
+              sys.exit(f"Erwartete genau 1 Frontend-Image-Zeile, {n} gefunden — Abbruch.")
+          json.dump({"stackFileContent": new, "env": [], "prune": False, "pullImage": True},
+                    open("payload.json", "w"))
+          print(f"Frontend-Tag auf {tag} gesetzt.")
+          PY
+
+          curl --fail --silent --show-error -X PUT -H "$AUTH" \
+            -H "Content-Type: application/json" \
+            --data @payload.json "$API?endpointId=1" -o result.json
+
+          python3 -c "
+          import json
+          d = json.load(open('result.json'))
+          print('Stack', d.get('Name'), 'aktualisiert.')
+          "
