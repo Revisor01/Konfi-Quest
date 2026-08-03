@@ -49,4 +49,14 @@ jobs:
 
       - name: Trigger Portainer Webhook
         run: |
-          curl -X POST "${{ secrets.PORTAINER_WEBHOOK }}" || true
+          # --fail laesst curl bei 4xx/5xx mit Exit != 0 abbrechen, damit ein
+          # fehlgeschlagener Rollout den Job rot macht. Vorher stand hier
+          # "|| true": der Webhook lief monatelang gegen eine tote Stack-ID
+          # ("Unable to find the stack by webhook ID") und der Job meldete
+          # trotzdem success — das Image lag in der Registry, ausgerollt
+          # wurde es nie.
+          if [ -z "${{ secrets.PORTAINER_WEBHOOK }}" ]; then
+            echo "::error::PORTAINER_WEBHOOK ist nicht gesetzt — kein Rollout."
+            exit 1
+          fi
+          curl --fail --silent --show-error -X POST "${{ secrets.PORTAINER_WEBHOOK }}"
