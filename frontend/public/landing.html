@@ -3,18 +3,179 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Konfi Quest – Die Konfi-Zeit als Abenteuer</title>
-<meta name="description" content="Schluss mit Zetteln und Unterschriften. Konfi Quest macht moderne Konfi-Arbeit, die bei Jugendlichen ankommt: Punkte, Badges, Events, Chat – pädagogisch durchdacht, kirchlich sicher.">
-<meta property="og:title" content="Konfi Quest – Die Konfi-Zeit als Abenteuer">
-<meta property="og:description" content="Schluss mit Zetteln. Moderne Konfi-Arbeit für Konfis, Teamer:innen und die ganze Gemeinde.">
+<title>Konfi Quest – App für moderne Konfi-Arbeit | Konfirmandenarbeit digital</title>
+<meta name="description" content="Konfi Quest ist die App für moderne Konfirmandenarbeit: Punkte statt Laufzettel, Badges, Events, QR-Anwesenheit und Chat. Von einem Pastor entwickelt, Datenschutz nach DSG-EKD. 30 Tage kostenlos testen.">
+<meta name="author" content="Simon Luthe">
+<link rel="canonical" href="https://konfi-quest.de/">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+
+<!-- Open Graph -->
+<meta property="og:site_name" content="Konfi Quest">
+<meta property="og:locale" content="de_DE">
+<meta property="og:title" content="Konfi Quest – App für moderne Konfi-Arbeit">
+<meta property="og:description" content="Punkte statt Laufzettel: Konfi Quest zeigt, wie innovative Konfi-Arbeit aussehen kann – mit Badges, Events, QR-Anwesenheit und Chat. Datenschutz nach DSG-EKD.">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://konfi-quest.de/">
+<meta property="og:image" content="https://konfi-quest.de/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Konfi Quest – die App für moderne Konfirmandenarbeit">
+
+<!-- Twitter/X -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Konfi Quest – App für moderne Konfi-Arbeit">
+<meta name="twitter:description" content="Punkte statt Laufzettel: So kann innovative Konfi-Arbeit aussehen. Von einem Pastor entwickelt, DSG-EKD-konform.">
+<meta name="twitter:image" content="https://konfi-quest.de/og-image.png">
+
+<meta name="theme-color" content="#5b21b6">
 <link rel="icon" type="image/png" href="/favicon.png">
-<!-- Hero-Mock: erste sichtbare Screenshots vorladen (kein Flackern beim Slide-Wechsel) -->
-<link rel="preload" as="image" href="/hero-ios-1.png">
-<link rel="preload" as="image" href="/hero-and-1.png">
+<!-- Hero-Mock: erste sichtbare Screenshots vorladen (kein Flackern beim Slide-Wechsel).
+     WebP statt PNG: ~97% kleiner (12 MB -> 0,4 MB) bei gleicher Darstellungsqualitaet,
+     da der Mock ohnehin nur ~270px breit gezeigt wird. -->
+<link rel="preload" as="image" href="/hero-ios-1.webp" fetchpriority="high">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Strukturierte Daten: App, Autor, Organisation, FAQ.
+     @id-Verknuepfungen machen Google klar, dass Konfi Quest und Simon Luthe
+     zusammengehoeren (Entitaeten-Verknuepfung ueber sameAs auf simonluthe.de). -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://konfi-quest.de/#app",
+      "name": "Konfi Quest",
+      "alternateName": "Konfi-Quest",
+      "url": "https://konfi-quest.de/",
+      "applicationCategory": "EducationalApplication",
+      "applicationSubCategory": "Konfirmandenarbeit",
+      "operatingSystem": "iOS, Android, Web",
+      "inLanguage": "de",
+      "description": "Konfi Quest ist eine App für moderne Konfirmandenarbeit in evangelischen Kirchengemeinden: Punkte statt Laufzettel, Badges und Level, Event-Verwaltung mit QR-Anwesenheit, geschützter Chat und Teamer-Verwaltung. Datenschutz nach DSG-EKD.",
+      "author": { "@id": "https://simonluthe.de/#person" },
+      "creator": { "@id": "https://simonluthe.de/#person" },
+      "publisher": { "@id": "https://konfi-quest.de/#organization" },
+      "screenshot": "https://konfi-quest.de/hero-ios-1.webp",
+      "featureList": [
+        "Punktesystem für Gottesdienst- und Gemeindepunkte",
+        "Badges und Level als Gamification",
+        "Event-Verwaltung mit Warteliste und Terminserien",
+        "Anwesenheitskontrolle per QR-Code",
+        "Geschützter Chat für Jahrgänge und Teams",
+        "Teamer-Verwaltung mit Juleica-Zertifikaten",
+        "Konfirmationsspruch und Jahresrückblick",
+        "Offline nutzbar"
+      ],
+      "offers": [
+        { "@type": "Offer", "name": "Klein – bis 15 Konfis", "price": "49", "priceCurrency": "EUR" },
+        { "@type": "Offer", "name": "Standard – bis 50 Konfis", "price": "99", "priceCurrency": "EUR" },
+        { "@type": "Offer", "name": "Plus – bis 75 Konfis", "price": "139", "priceCurrency": "EUR" },
+        { "@type": "Offer", "name": "Groß – bis 100 Konfis", "price": "179", "priceCurrency": "EUR" },
+        { "@type": "Offer", "name": "Organisation – bis 4 Gemeinden", "price": "390", "priceCurrency": "EUR" }
+      ],
+      "installUrl": [
+        "https://apps.apple.com/de/app/id6748016619",
+        "https://play.google.com/store/apps/details?id=de.godsapp.konfiquest"
+      ],
+      "audience": {
+        "@type": "Audience",
+        "audienceType": "Evangelische Kirchengemeinden, Pastorinnen und Pastoren, Konfirmandenarbeit, Jugendarbeit"
+      }
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://konfi-quest.de/#organization",
+      "name": "Konfi Quest",
+      "url": "https://konfi-quest.de/",
+      "logo": "https://konfi-quest.de/assets/icon/logo-mark.png",
+      "email": "team@konfi-quest.de",
+      "founder": { "@id": "https://simonluthe.de/#person" },
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Marktstraße 2",
+        "postalCode": "25764",
+        "addressLocality": "Wesselburen",
+        "addressRegion": "Schleswig-Holstein",
+        "addressCountry": "DE"
+      },
+      "sameAs": ["https://simonluthe.de/"]
+    },
+    {
+      "@type": "Person",
+      "@id": "https://simonluthe.de/#person",
+      "name": "Simon Luthe",
+      "givenName": "Simon",
+      "familyName": "Luthe",
+      "url": "https://simonluthe.de/",
+      "jobTitle": "Pastor",
+      "description": "Simon Luthe ist Pastor in Wesselburen und Neuenkirchen (Dithmarschen) und Entwickler von Konfi Quest, einer App für moderne Konfirmandenarbeit.",
+      "worksFor": {
+        "@type": "Organization",
+        "name": "Evangelisch-Lutherische Kirchengemeinden Wesselburen und Neuenkirchen"
+      },
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Wesselburen",
+        "addressRegion": "Schleswig-Holstein",
+        "addressCountry": "DE"
+      },
+      "sameAs": ["https://simonluthe.de/"]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://konfi-quest.de/#website",
+      "url": "https://konfi-quest.de/",
+      "name": "Konfi Quest",
+      "inLanguage": "de",
+      "publisher": { "@id": "https://konfi-quest.de/#organization" }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://konfi-quest.de/#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Wie funktioniert das Punktesystem?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Konfi Quest führt zwei getrennte Punktekonten: Gottesdienst-Punkte und Gemeinde-Punkte. Jede Aktivität und jedes Event zahlt auf genau eine der beiden Kategorien ein. Beide werden getrennt angezeigt und ausgewertet – mit eigenen Zielwerten." }
+        },
+        {
+          "@type": "Question",
+          "name": "Können wir eine der beiden Punktekategorien weglassen?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Ja. Pro Jahrgang lässt sich jede Kategorie einzeln ein- oder ausschalten und mit einem eigenen Zielwert versehen. Wenn ihr nur mit Gottesdienst-Punkten oder nur mit Gemeinde-Punkten arbeiten wollt, ist das problemlos möglich." }
+        },
+        {
+          "@type": "Question",
+          "name": "Können wir mehrere Jahrgänge verwalten?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Ja, beliebig viele. Jeder Jahrgang hat einen eigenen Namen und eigene Punkte-Einstellungen. Jahrgänge lassen sich anlegen, bearbeiten und – wenn keine Konfis mehr zugeordnet sind – wieder löschen." }
+        },
+        {
+          "@type": "Question",
+          "name": "Können Konfis untereinander chatten?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Private Einzelchats zwischen zwei Konfis sind nicht möglich – Konfis können von sich aus nur Admins und Teamer:innen direkt anschreiben. Untereinander schreiben Konfis ausschließlich im gemeinsamen Jahrgangs-Gruppenchat, der von der Gemeinde moderiert werden kann." }
+        },
+        {
+          "@type": "Question",
+          "name": "Können wir eigene Badges erstellen?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Ja. Jede Gemeinde kann eigene Auszeichnungen frei anlegen – mit Name, Symbol, Farbe und Beschreibung. Zur Auswahl stehen viele Bedingungen, etwa Gesamtpunkte, Punkte einer Kategorie, Anzahl besuchter Events oder Aktivitäten, Pflicht-Anwesenheit oder Serien." }
+        },
+        {
+          "@type": "Question",
+          "name": "Was kostet Konfi Quest?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Konfi Quest kostet als Jahreslizenz zwischen 49 Euro (bis 15 Konfis) und 179 Euro (bis 100 Konfis). Für bis zu vier Gemeinden gibt es die Organisationslizenz für 390 Euro pro Jahr. Vorab könnt ihr 30 Tage kostenlos mit 5 Konfis testen." }
+        },
+        {
+          "@type": "Question",
+          "name": "Wie steht es um den Datenschutz?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Konfi Quest ist nach dem Datenschutzgesetz der EKD (DSG-EKD) entwickelt. Die Server stehen in Deutschland, jede Gemeinde ist streng getrennt. Es gibt keine Werbung, kein Tracking und keinen Datenverkauf. Der Beitritt erfolgt ausschließlich über den Einladungslink der Gemeinde." }
+        }
+      ]
+    }
+  ]
+}
+</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -155,8 +316,8 @@ section.block{padding:6rem 0}
 .rose-logo{position:relative;width:220px;height:220px;
  /* weisses logo-mark in Verlauffarbe einfaerben via mask */
  background:linear-gradient(135deg,#a78bfa,#22d3ee);
- -webkit-mask:url(/assets/icon/logo-mark.png) center/contain no-repeat;
- mask:url(/assets/icon/logo-mark.png) center/contain no-repeat;
+ -webkit-mask:url(/assets/icon/logo-mark-512.png) center/contain no-repeat;
+ mask:url(/assets/icon/logo-mark-512.png) center/contain no-repeat;
  filter:drop-shadow(0 16px 40px rgba(34,211,238,.35));animation:floaty 7s ease-in-out infinite}
 .rose-kicker{font-weight:700;font-size:.8rem;letter-spacing:.09em;text-transform:uppercase;background:linear-gradient(90deg,#a78bfa,#22d3ee);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.7rem}
 .rose-h{font-family:var(--display);font-weight:800;font-size:clamp(1.7rem,3.2vw,2.5rem);letter-spacing:-.02em;line-height:1.15;margin-bottom:1rem}
@@ -307,7 +468,7 @@ footer a:hover{color:#fff}
 <body>
 <nav>
  <div class="nav-in">
-  <a href="#top" class="brand"><img src="/assets/icon/logo-mark.png" alt="">Konfi&nbsp;Quest</a>
+  <a href="#top" class="brand"><img src="/assets/icon/logo-mark-512.png" width="34" height="34" alt="Konfi Quest Logo">Konfi&nbsp;Quest</a>
   <div class="nav-right">
    <div class="nav-links">
     <a href="#problem">Warum</a><a href="#features">Funktionen</a><a href="#sicherheit">Sicherheit</a><a href="#faq">FAQ</a><a href="#preise">Preise</a>
@@ -332,7 +493,7 @@ footer a:hover{color:#fff}
 <!-- HERO -->
 <header class="hero" id="top">
  <div class="glow a"></div><div class="glow b"></div><div class="glow c"></div><div class="grid-bg"></div>
- <img src="/assets/icon/logo-mark.png" alt="" class="hero-watermark">
+ <img src="/assets/icon/logo-mark-512.png" alt="" aria-hidden="true" class="hero-watermark">
  <div class="wrap hero-in">
   <div>
    <span class="eyebrow"><span class="pip"></span>Von einem Pastor für die Konfi-Arbeit entwickelt</span>
@@ -351,14 +512,14 @@ footer a:hover{color:#fff}
   </div>
   <div class="hero-art">
    <div class="device device--ios" id="heroDevice"><div class="screen">
-    <img src="/hero-ios-1.png" class="on" data-os="ios" alt="Konfi Quest auf dem Smartphone">
-    <img src="/hero-and-1.png" data-os="android" alt="">
-    <img src="/hero-ios-2.png" data-os="ios" alt="">
-    <img src="/hero-and-2.png" data-os="android" alt="">
-    <img src="/hero-ios-3.png" data-os="ios" alt="">
-    <img src="/hero-and-3.png" data-os="android" alt="">
-    <img src="/hero-ios-4.png" data-os="ios" alt="">
-    <img src="/hero-and-4.png" data-os="android" alt="">
+    <img src="/hero-ios-1.webp" class="on" data-os="ios" width="810" height="1753" fetchpriority="high" alt="Konfi Quest App auf dem iPhone: Dashboard eines Konfis mit Punktestand, Level und Badges">
+    <img src="/hero-and-1.webp" data-os="android" width="810" height="1753" loading="lazy" decoding="async" alt="Konfi Quest auf Android: Übersicht der gesammelten Gottesdienst- und Gemeindepunkte">
+    <img src="/hero-ios-2.webp" data-os="ios" width="810" height="1753" loading="lazy" decoding="async" alt="Event-Übersicht in Konfi Quest mit Anmeldung und Terminen der Gemeinde">
+    <img src="/hero-and-2.webp" data-os="android" width="810" height="1753" loading="lazy" decoding="async" alt="Konfi Quest Event-Anmeldung mit Warteliste auf Android">
+    <img src="/hero-ios-3.webp" data-os="ios" width="810" height="1753" loading="lazy" decoding="async" alt="Badges und Auszeichnungen, die Konfis in Konfi Quest freischalten">
+    <img src="/hero-and-3.webp" data-os="android" width="810" height="1753" loading="lazy" decoding="async" alt="Level-Fortschritt eines Konfis in der Konfi Quest App">
+    <img src="/hero-ios-4.webp" data-os="ios" width="810" height="1753" loading="lazy" decoding="async" alt="Aktivität mit Foto-Beleg in Konfi Quest einreichen statt Laufzettel abzeichnen">
+    <img src="/hero-and-4.webp" data-os="android" width="810" height="1753" loading="lazy" decoding="async" alt="Geschützter Jahrgangs-Chat in Konfi Quest">
    </div></div>
   </div>
  </div>
@@ -405,7 +566,7 @@ footer a:hover{color:#fff}
  <div class="wrap rose-in">
   <div class="rose-art">
    <span class="rose-ring"></span>
-   <img src="/assets/icon/logo-mark.png" alt="Konfi Quest – Lutherrose mit Herz" class="rose-logo">
+   <img src="/assets/icon/logo-mark-512.png" width="220" height="220" loading="lazy" decoding="async" alt="Das Konfi Quest Logo: eine Lutherrose mit einem Herz in der Mitte" class="rose-logo">
   </div>
   <div class="rose-copy">
    <p class="rose-kicker">Das Zeichen dahinter</p>
@@ -551,9 +712,10 @@ footer a:hover{color:#fff}
    <div>
     <p class="kicker">Kein Software-Konzern. Ein Pastor.</p>
     <h2 class="story-h">Aus der eigenen Konfi-Arbeit entstanden</h2>
-    <p class="story-p">Ich bin Gemeindepastor und habe Konfi Quest in meiner Freizeit entwickelt – für meine eigene Konfi-Arbeit. Angefangen hat das, weil mir die bestehenden Lösungen nicht weit genug gingen und nicht mehr zeitgemäß waren, gerade mit Blick auf die Teamer:innen. Die Idee dahinter ist eine moderne Konfi-Zeit: etwas, das die Jugendlichen motiviert, das ihnen Spaß macht, das die Organisation für die Leitenden einfach macht und dabei wirklich datensicher ist.</p>
+    <p class="story-p">Ich bin <b>Simon Luthe</b>, Pastor in Wesselburen und Neuenkirchen in Dithmarschen, und habe Konfi Quest in meiner Freizeit entwickelt – für meine eigene Konfi-Arbeit. Angefangen hat das, weil mir die bestehenden Lösungen nicht weit genug gingen und nicht mehr zeitgemäß waren, gerade mit Blick auf die Teamer:innen.</p>
+    <p class="story-p">Dahinter steht eine Überzeugung: <b>Digital ist ein Ort.</b> Apps und digitale Formate sind kein Ersatz für Gemeinde, sondern eine Erweiterung – sie schaffen frische Zugänge zu Glauben und Gemeinschaft. Nicht Konfi-Unterricht, sondern eine Konfi-Zeit, die den Jugendlichen gehört: ihr Glaube, ihr Weg, ihre Konfirmation. Die App gehört dazu und zeigt, wie <b>innovative Konfi-Arbeit</b> aussehen kann.</p>
     <p class="story-p">Jede Funktion ist aus der eigenen Praxis heraus entstanden und in echten Gruppen erprobt. Das heißt für eure Gemeinde: Ihr redet mit jemandem, der eure Arbeit kennt – kurze Wege, echtes Verständnis für Kirche, und eine App, die weiterwächst, weil sie täglich selbst im Einsatz ist.</p>
-    <p class="story-sign">– Simon Luthe, Pastor in Wesselburen</p>
+    <p class="story-sign">– Simon Luthe, Pastor in Wesselburen · <a href="https://simonluthe.de" rel="me" style="color:var(--purple);font-weight:600">simonluthe.de</a></p>
    </div>
   </div>
  </div>
@@ -705,16 +867,17 @@ footer a:hover{color:#fff}
  <div class="wrap">
   <div class="foot-grid">
    <div>
-    <div class="foot-brand"><img src="/assets/icon/logo-mark.png" alt="">Konfi&nbsp;Quest</div>
+    <div class="foot-brand"><img src="/assets/icon/logo-mark-512.png" width="30" height="30" loading="lazy" alt="">Konfi&nbsp;Quest</div>
     <p class="foot-note">Moderne Konfi-Arbeit, die bei den Jugendlichen ankommt – für Konfis, Teamer:innen und die ganze Gemeinde.</p>
    </div>
    <div><h4>Produkt</h4><a href="#problem">Warum</a><a href="#features">Funktionen</a><a href="#sicherheit">Sicherheit</a><a href="#preise">Preise</a><a href="/login">Zur App</a></div>
-   <div><h4>Kontakt</h4><p class="foot-note">Pastor Simon Luthe<br>Marktstraße 2<br>25764 Wesselburen<br><a href="mailto:team@konfi-quest.de" style="display:inline">team@konfi-quest.de</a></p></div>
+   <div><h4>Kontakt</h4><p class="foot-note">Pastor Simon Luthe<br>Marktstraße 2<br>25764 Wesselburen<br><a href="mailto:team@konfi-quest.de" style="display:inline">team@konfi-quest.de</a></p>
+    <p class="foot-note" style="margin-top:.7rem">Entwickelt von <a href="https://simonluthe.de" rel="me" style="display:inline">Simon Luthe</a></p></div>
    <div><h4>Rechtliches</h4><a href="/impressum">Impressum</a><a href="/datenschutz">Datenschutz</a><a href="/konto-loeschen">Konto löschen</a></div>
   </div>
   <div class="foot-bottom">
    <p>&copy; 2026 Konfi Quest</p>
-   <p class="spirit">Made with <img class="bird" src="/assets/branding/bird.png" width="14" height="14" alt="" aria-hidden="true"> in Hennstedt · Friede. Schalom. Salam.</p>
+   <p class="spirit">Made with <img class="bird" src="/assets/branding/bird-56.png" width="14" height="14" loading="lazy" alt="" aria-hidden="true"> in Hennstedt · Friede. Schalom. Salam.</p>
   </div>
  </div>
 </footer>
@@ -728,8 +891,9 @@ setInterval(()=>{wi=(wi+1)%words.length;rot.style.opacity='0';setTimeout(()=>{ro
 (function(){
   const dev=document.getElementById('heroDevice');if(!dev)return;
   const imgs=dev.querySelectorAll('.screen img');if(imgs.length<2)return;
-  // Alle Screenshots vorab in den Cache laden -> kein Flackern beim Wechsel.
-  imgs.forEach(im=>{const p=new Image();p.src=im.src;});
+  // Screenshots erst nach dem Load vorwaermen -> blockiert den ersten Seitenaufbau
+  // nicht (LCP), verhindert aber trotzdem Flackern beim Slide-Wechsel.
+  addEventListener('load',()=>{imgs.forEach(im=>{const p=new Image();p.src=im.src;});});
   let i=0;
   setInterval(()=>{
     const prev=imgs[i];

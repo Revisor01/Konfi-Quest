@@ -1,0 +1,21 @@
+# Konfi Quest — robots.txt
+# Landing-Page und Rechtstexte sind oeffentlich, die App-Routen nicht.
+
+User-agent: *
+Allow: /$
+Allow: /impressum
+Allow: /datenschutz
+Allow: /konto-loeschen
+Allow: /account-deletion
+
+# App-Bereich: kein Mehrwert im Index, teilweise nur eingeloggt erreichbar
+Disallow: /login
+Disallow: /admin
+Disallow: /konfi
+Disallow: /chat
+Disallow: /events
+Disallow: /profile
+Disallow: /settings
+Disallow: /api/
+
+Sitemap: https://konfi-quest.de/sitemap.xml
