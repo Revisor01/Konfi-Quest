@@ -10,6 +10,14 @@ import { play, pause } from 'ionicons/icons';
 // MediaRecorder-Output ohne Duration-Header). Deshalb wird die Dauer NICHT aus
 // "loadedmetadata" uebernommen, wenn sie nicht endlich ist, sondern erst aus
 // "durationchange", sobald ein brauchbarer Wert reinkommt. Bis dahin "-:--".
+//
+// Seekbar-Styling: Die native "accent-color" des range-inputs (Safari/iOS)
+// faerbt Track UND Thumb in der uebergebenen Akzentfarbe ein — bei
+// var(--app-color-challenges) (Pink/Magenta) wirkt das auf iOS wie ein
+// grelles Rot. Deshalb wird die Seekbar komplett selbst gestylt: neutraler
+// Grau-Track per WebKit-Pseudo-Elementen plus einem Gradient-Overlay als
+// Fortschrittsanzeige in einem dezenten Blau-Grau (an var(--ion-color-primary)
+// angelehnt) statt der App-Akzentfarbe.
 
 const formatTime = (seconds: number): string => {
   if (!Number.isFinite(seconds) || seconds < 0) return '-:--';
@@ -20,9 +28,14 @@ const formatTime = (seconds: number): string => {
 
 interface AudioPlayerProps {
   src: string;
-  /** Akzentfarbe fuer Button und Fortschrittsbalken. */
+  /** Akzentfarbe fuer den Play/Pause-Button. */
   color?: string;
 }
+
+// Neutrale Fortschrittsfarbe der Seekbar — bewusst NICHT die App-Akzentfarbe,
+// sondern die App-weit fuer Fortschritt/Slider genutzte, dezente Blau-Grau-Ton.
+const SEEK_PROGRESS_COLOR = 'var(--ion-color-primary, #5b6b82)';
+const SEEK_TRACK_COLOR = 'rgba(0, 0, 0, 0.12)';
 
 const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, color = 'var(--app-color-challenges)' }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -102,12 +115,14 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, color = 'var(--app-color
   };
 
   const seekMax = duration && Number.isFinite(duration) ? duration : 0;
+  const seekValue = Math.min(currentTime, seekMax);
+  const seekPercent = seekMax > 0 ? (seekValue / seekMax) * 100 : 0;
 
   return (
     <div
       style={{
         display: 'flex', alignItems: 'center', gap: '10px',
-        marginTop: '8px', padding: '8px 10px', borderRadius: '10px',
+        width: '100%', marginTop: '8px', padding: '8px 10px', borderRadius: '10px',
         background: 'rgba(0,0,0,0.03)'
       }}
     >
@@ -140,14 +155,17 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, color = 'var(--app-color
 
       <input
         type="range"
+        className="app-audio-seekbar"
         min={0}
         max={seekMax}
         step={0.1}
-        value={Math.min(currentTime, seekMax)}
+        value={seekValue}
         onChange={handleSeek}
         disabled={!seekMax}
         style={{
-          flex: 1, minWidth: 0, accentColor: color, height: '4px', cursor: seekMax ? 'pointer' : 'default'
+          flex: '1 1 auto', minWidth: 0, width: '100%', height: '4px',
+          cursor: seekMax ? 'pointer' : 'default',
+          background: `linear-gradient(to right, ${SEEK_PROGRESS_COLOR} ${seekPercent}%, ${SEEK_TRACK_COLOR} ${seekPercent}%)`
         }}
       />
 

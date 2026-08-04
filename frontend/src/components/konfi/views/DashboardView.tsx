@@ -501,9 +501,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({
               const diff = new Date(endsAt).getTime() - Date.now();
               if (isNaN(diff) || diff <= 0) return 'Zeit abgelaufen';
               const days = Math.floor(diff / 86400000);
-              if (days >= 1) return days === 1 ? 'noch 1 Tag' : `noch ${days} Tage`;
+              if (days >= 1) return days === 1 ? '1 Tag' : `${days} Tage`;
               const hours = Math.floor(diff / 3600000);
-              if (hours >= 1) return hours === 1 ? 'noch 1 Stunde' : `noch ${hours} Stunden`;
+              if (hours >= 1) return hours === 1 ? '1 Stunde' : `${hours} Stunden`;
               return 'endet heute';
             };
             // Bis zu 3 laufende Challenges als eigene Karten, exakt nach dem

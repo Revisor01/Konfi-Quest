@@ -123,9 +123,9 @@ export const formatRemaining = (endsAt: string): string => {
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
 
-  if (days >= 1) return days === 1 ? 'noch 1 Tag' : `noch ${days} Tage`;
-  if (hours >= 1) return hours === 1 ? 'noch 1 Stunde' : `noch ${hours} Stunden`;
-  if (minutes >= 1) return minutes === 1 ? 'noch 1 Minute' : `noch ${minutes} Minuten`;
+  if (days >= 1) return days === 1 ? '1 Tag' : `${days} Tage`;
+  if (hours >= 1) return hours === 1 ? '1 Stunde' : `${hours} Stunden`;
+  if (minutes >= 1) return minutes === 1 ? '1 Minute' : `${minutes} Minuten`;
   return 'endet gleich';
 };
 
@@ -370,12 +370,15 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 {sortedArchive.map((challenge) => {
+                  // Ohne eigenen Beitrag dezent ausgrauen — weiterhin lesbar
+                  // und tappbar, aber sichtbar von "erledigt" unterschieden.
+                  const participated = !!challenge.has_submission;
                   return (
                     <div
                       key={challenge.id}
                       className="app-list-item app-list-item--challenges"
                       onClick={() => onSelectChallenge(challenge)}
-                      style={{ cursor: 'pointer', position: 'relative' }}
+                      style={{ cursor: 'pointer', position: 'relative', opacity: participated ? 1 : 0.55 }}
                     >
                       {challenge.has_submission && (
                         <div className="app-corner-badges">

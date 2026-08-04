@@ -2741,3 +2741,58 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   touch-action: pan-y;
 }
 
+/* === Audio-Player Seekbar (AudioPlayer.tsx) ===
+   Eigenes Styling statt "accent-color": Safari/iOS faerbt damit Track UND
+   Thumb in der uebergebenen Farbe ein, was bei der Challenges-Akzentfarbe
+   (Pink/Magenta) auf iOS rot/rosa wirkt. Der Fortschritt kommt stattdessen
+   ueber einen per Inline-Style gesetzten linear-gradient (siehe AudioPlayer),
+   hier wird nur der native Track transparent gemacht und der Thumb neutral
+   gestylt. */
+.app-audio-seekbar {
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 2px;
+  outline: none;
+}
+.app-audio-seekbar::-webkit-slider-runnable-track {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: transparent;
+}
+.app-audio-seekbar::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ion-color-primary, #5b6b82);
+  border: 2px solid #fff;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.25);
+  margin-top: 0;
+  cursor: pointer;
+}
+.app-audio-seekbar::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: transparent;
+}
+.app-audio-seekbar::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ion-color-primary, #5b6b82);
+  border: 2px solid #fff;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+.app-audio-seekbar:disabled::-webkit-slider-thumb {
+  background: #c7c7cc;
+  cursor: default;
+}
+.app-audio-seekbar:disabled::-moz-range-thumb {
+  background: #c7c7cc;
+  cursor: default;
+}
+

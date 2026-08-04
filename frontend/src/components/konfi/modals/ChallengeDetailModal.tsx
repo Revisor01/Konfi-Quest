@@ -439,22 +439,26 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
         </IonList>
 
         {/* Sichtbarkeits-/Moderationshinweis — Standard-Infokasten-Pattern
-            (siehe ChangeEmailModal "Hinweis"-Sektion), in Challenge-Farbe. */}
-        <IonList inset={true} className="app-segment-wrapper">
-          <IonListHeader>
-            <div className="app-section-icon app-section-icon--challenges">
-              <IonIcon icon={informationCircleOutline} />
-            </div>
-            <IonLabel>Hinweis</IonLabel>
-          </IonListHeader>
-          <IonCard className="app-card app-info-box--challenges">
-            <IonCardContent className="app-info-box">
-              <p style={{ margin: 0 }}>
-                {visibilityHint}
-              </p>
-            </IonCardContent>
-          </IonCard>
-        </IonList>
+            (siehe ActivityRequestModal, graue Hinweis-Box), nur solange die
+            Challenge noch laeuft: bei beendeten Challenges ist die Zusage,
+            wer den Beitrag sieht, ohnehin nicht mehr aenderbar/relevant. */}
+        {isActive && (
+          <IonList inset={true} className="app-segment-wrapper">
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--challenges">
+                <IonIcon icon={informationCircleOutline} />
+              </div>
+              <IonLabel>Hinweis</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card app-info-box--neutral">
+              <IonCardContent className="app-info-box">
+                <p style={{ margin: 0 }}>
+                  {visibilityHint}
+                </p>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
 
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '32px' }}>

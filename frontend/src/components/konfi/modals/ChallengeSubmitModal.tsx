@@ -38,7 +38,6 @@ import {
   informationCircleOutline,
   mic
 } from 'ionicons/icons';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
@@ -81,7 +80,7 @@ const getVisibilityInfo = (challenge: KonfiChallenge): string => {
   if (challenge.visibility === 'public') {
     return challenge.moderated
       ? 'Dein Beitrag wird nach Freigabe durch das Leitungsteam für deine Gruppe veröffentlicht.'
-      : 'Dein Beitrag ist für deine Gruppe sichtbar — mit deinem Namen.';
+      : 'Beiträge sind für deine Gruppe sofort sichtbar.';
   }
   return challenge.moderated
     ? 'Du entscheidest unten, wer deinen Beitrag sieht. Veröffentlichung erst nach Freigabe durch das Leitungsteam.'
@@ -216,24 +215,29 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
     setMediaType(value);
   };
 
-  // --- Foto: natives Sheet (Kamera / Fotomediathek) wie bei Antraegen ---
+  // --- Foto: verstecktes <input type="file"> statt Capacitor Camera.getPhoto.
+  // Camera.getPhoto mit CameraSource.Prompt schlug in TestFlight beim Antippen
+  // sofort mit "Foto konnte nicht ausgewaehlt werden" fehl. Die Antraege
+  // (ActivityRequestModal) nutzen erwiesenermassen zuverlaessig dieses
+  // input-file-Muster — iOS zeigt damit nativ Fotomediathek/Kamera/Datei an. ---
   const pickPhoto = async () => {
     setPickingMedia(true);
     try {
-      const photo = await Camera.getPhoto({
-        resultType: CameraResultType.DataUrl,
-        source: CameraSource.Prompt,
-        promptLabelHeader: 'Foto auswählen',
-        promptLabelPhoto: 'Fotomediathek',
-        promptLabelPicture: 'Kamera',
-        promptLabelCancel: 'Abbrechen',
-        quality: 90
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      const selected = await new Promise<File | null>((resolve) => {
+        input.onchange = (event: Event) => {
+          const target = event.target as HTMLInputElement;
+          resolve(target.files?.[0] || null);
+        };
+        // Manche WebViews feuern kein 'cancel'-Event — ohne Zeitlimit wuerde
+        // pickingMedia sonst bei Abbruch haengen bleiben.
+        window.addEventListener('focus', () => setTimeout(() => resolve(null), 1000), { once: true });
+        input.click();
       });
-      if (!photo.dataUrl) return;
-      const response = await fetch(photo.dataUrl);
-      const blob = await response.blob();
-      const rawFile = new File([blob], 'challenge-foto.jpg', { type: 'image/jpeg' });
-      const { file: compressed, previewUrl } = await compressImage(rawFile);
+      if (!selected) return;
+      const { file: compressed, previewUrl } = await compressImage(selected);
       if (compressed.size > MAX_UPLOAD_BYTES) {
         URL.revokeObjectURL(previewUrl);
         setError('Datei ist zu groß (max. 50 MB).');
@@ -242,11 +246,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
       if (mediaPreview) URL.revokeObjectURL(mediaPreview);
       setFile(compressed);
       setMediaPreview(previewUrl);
-    } catch (err: any) {
-      // Abgebrochener Kamera-/Galerie-Dialog ist kein Fehler (Capacitor wirft
-      // dabei "User cancelled photos app" bzw. eine leere Meldung).
-      const message = String(err?.message || '');
-      if (!message || /cancel/i.test(message)) return;
+    } catch {
       setError('Foto konnte nicht ausgewählt werden');
     } finally {
       setPickingMedia(false);
@@ -457,7 +457,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
             </div>
             <IonLabel>Hinweis</IonLabel>
           </IonListHeader>
-          <IonCard className="app-card app-info-box--challenges">
+          <IonCard className="app-card app-info-box--neutral">
             <IonCardContent className="app-info-box">
               <p style={{ margin: 0 }}>{visibilityInfo}</p>
             </IonCardContent>

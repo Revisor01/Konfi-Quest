@@ -231,6 +231,11 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
       ends_at: row.ends_at,
       status: deriveStatus(row, now),
       has_badge: row.has_badge === true || row.has_badge === 't',
+      // has_submission ist der Frontend-Vertrag (types/challenges.ts, KonfiChallenge)
+      // fuer das Corner-Badge "bereits eingereicht" in Liste/Archiv/Dashboard —
+      // deckungsgleich mit has_badge (dieselbe EXISTS-Bedingung), aber unter dem
+      // Namen, den das Frontend tatsaechlich liest.
+      has_submission: row.has_badge === true || row.has_badge === 't',
       own_submission_count: parseInt(row.own_submission_count, 10) || 0
     };
   }
