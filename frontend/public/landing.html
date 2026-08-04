@@ -458,6 +458,12 @@ footer a:hover{color:#fff}
 }
 @media(max-width:520px){.price-grid,.steps,.foot-grid{grid-template-columns:1fr}section.block{padding:4rem 0}}
 </style>
+
+<!-- Umami-Reichweitenmessung (self-hosted auf t.godsapp.de).
+     Cookiefrei und ohne personenbezogene Daten -> keine Einwilligung noetig,
+     deshalb darf das Script direkt laden. Das Event-Tracking selbst steht
+     gebuendelt am Seitenende. -->
+<script defer src="https://t.godsapp.de/script.js" data-website-id="dfd37276-5ad4-474d-8306-bf3ed9a3a5d3"></script>
 </head>
 <body>
 <nav>
@@ -928,6 +934,325 @@ document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 // Count-up
 const cio=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){const el=e.target,to=+el.dataset.count;let n=0;const t=setInterval(()=>{n++;el.textContent=n;if(n>=to)clearInterval(t);},180);cio.unobserve(el);}});},{threshold:.5});
 document.querySelectorAll('[data-count]').forEach(el=>cio.observe(el));
+</script>
+
+<!-- ===================================================================
+     Umami Event-Tracking
+     -------------------------------------------------------------------
+     Erfasst wird ausschliesslich anonymes Interaktionsverhalten:
+     welche Buttons geklickt werden, wie weit gescrollt wird, welche
+     Abschnitte gelesen werden. KEINE personenbezogenen Daten, keine
+     Cookies, keine Eingaben aus Formularen — damit bleibt die Messung
+     einwilligungsfrei und DSG-EKD-konform.
+
+     Jedes Event feuert pro Seitenaufruf nur EINMAL (Set-basierte
+     Deduplizierung), sonst produziert ein einzelner Besuch hunderte
+     Zeilen und die Auswertung wird unbrauchbar.
+     =================================================================== -->
+<script>
+(function(){
+  'use strict';
+
+  // Umami laedt async. Bis window.umami existiert, werden Events gepuffert
+  // und danach nachgereicht — sonst gehen fruehe Klicks (z.B. auf den
+  // Hero-CTA) verloren, gerade bei schnellen Nutzern auf langsamer Leitung.
+  var warteschlange = [];
+  var bereit = false;
+
+  function flush(){
+    if(!window.umami || typeof window.umami.track !== 'function') return;
+    bereit = true;
+    while(warteschlange.length){
+      var e = warteschlange.shift();
+      try { window.umami.track(e[0], e[1]); } catch(_){}
+    }
+  }
+
+  function track(name, daten){
+    if(bereit && window.umami && typeof window.umami.track === 'function'){
+      try { window.umami.track(name, daten || {}); } catch(_){}
+    } else {
+      // Puffer begrenzen, damit ein nie ladendes Umami keinen Speicher frisst
+      if(warteschlange.length < 60) warteschlange.push([name, daten || {}]);
+    }
+  }
+
+  // Auf das Laden von Umami warten (max. 15s, dann aufgeben)
+  var versuche = 0;
+  var warteTimer = setInterval(function(){
+    if(window.umami && typeof window.umami.track === 'function'){
+      clearInterval(warteTimer);
+      flush();
+    } else if(++versuche > 150){
+      clearInterval(warteTimer);
+      warteschlange.length = 0;
+    }
+  }, 100);
+
+  // Geraeteklasse einmal pro Aufruf mitschicken — erlaubt spaeter die Frage
+  // "klicken Mobilnutzer den CTA seltener?" ohne zweites Analyse-Tool.
+  function geraet(){
+    var b = innerWidth;
+    return b < 640 ? 'mobil' : (b < 1024 ? 'tablet' : 'desktop');
+  }
+
+  var einmalig = new Set();
+  function einmal(schluessel, name, daten){
+    if(einmalig.has(schluessel)) return;
+    einmalig.add(schluessel);
+    track(name, daten);
+  }
+
+  // Text eines Elements auf eine kurze, stabile Bezeichnung eindampfen.
+  // Umami-Event-Namen sind auf 50 Zeichen begrenzt, Property-Werte ebenso
+  // knapp zu halten macht die Auswertung lesbar.
+  function label(el){
+    var t = (el.getAttribute('aria-label') || el.getAttribute('title') || el.textContent || '')
+      .replace(/\s+/g,' ').trim();
+    return t.length > 60 ? t.slice(0,57) + '...' : (t || 'ohne-text');
+  }
+
+  // In welchem Seitenabschnitt sitzt das geklickte Element? Das ist die
+  // eigentlich interessante Frage: derselbe CTA-Text steht mehrfach auf
+  // der Seite, und wir wollen wissen, WELCHER davon zieht.
+  function abschnitt(el){
+    var s = el.closest('section[id], header[id], nav, footer');
+    if(!s) return 'sonstige';
+    if(s.id) return s.id;
+    var tag = s.tagName.toLowerCase();
+    return tag === 'nav' ? 'navigation' : (tag === 'footer' ? 'footer' : 'sonstige');
+  }
+
+  /* ---------- 1. Klick-Tracking -------------------------------------
+     Ein einziger delegierter Listener auf dem Dokument statt N einzelner
+     Listener: funktioniert auch fuer spaeter eingefuegte Elemente und
+     kostet nur einen Handler. */
+  document.addEventListener('click', function(ev){
+    var a = ev.target.closest('a, button');
+    if(!a) return;
+
+    var href = a.getAttribute('href') || '';
+    var basis = {
+      bereich: abschnitt(a),
+      text: label(a),
+      geraet: geraet()
+    };
+
+    // App-Store-Badges
+    if(href.indexOf('apps.apple.com') > -1){
+      track('store-klick', Object.assign(basis, { store: 'app-store' }));
+      return;
+    }
+    if(href.indexOf('play.google.com') > -1){
+      track('store-klick', Object.assign(basis, { store: 'google-play' }));
+      return;
+    }
+
+    // Mail-Kontakt — das ist die wichtigste Konversion der Seite,
+    // weil es keinen Registrierungs-Flow auf der Landingpage gibt.
+    if(href.indexOf('mailto:') === 0){
+      track('kontakt-mail', basis);
+      return;
+    }
+
+    // Weg in die App (Login/Web-App)
+    if(href === '/login' || href.indexOf('/login') === 0){
+      track('app-oeffnen', basis);
+      return;
+    }
+
+    // Rechtstexte
+    if(href === '/impressum' || href === '/datenschutz' || href === '/konto-loeschen'){
+      track('rechtstext-klick', Object.assign(basis, { ziel: href.replace('/','') }));
+      return;
+    }
+
+    // Sprungmarken innerhalb der Seite (Navigation + CTA-Buttons)
+    if(href.indexOf('#') === 0){
+      var istCta = a.classList.contains('btn') || a.classList.contains('nav-cta');
+      track(istCta ? 'cta-klick' : 'anker-klick', Object.assign(basis, { ziel: href.slice(1) }));
+      return;
+    }
+
+    // Externe Links (z.B. simonluthe.de)
+    if(/^https?:\/\//.test(href) && href.indexOf(location.hostname) === -1){
+      var ziel = 'extern';
+      try { ziel = new URL(href).hostname.replace(/^www\./,''); } catch(_){}
+      track('extern-klick', Object.assign(basis, { ziel: ziel }));
+      return;
+    }
+  }, { passive: true });
+
+  /* ---------- 2. Scroll-Tiefe ---------------------------------------
+     Gemessen wird der tiefste erreichte Punkt in Prozent der scrollbaren
+     Strecke. Jede Schwelle feuert genau einmal. Das beantwortet:
+     "Wie weit lesen die Leute ueberhaupt?" */
+  var schwellen = [25, 50, 75, 90, 100];
+  var maxTiefe = 0;
+
+  function scrollTiefe(){
+    var doc = document.documentElement;
+    var scrollbar = doc.scrollHeight - innerHeight;
+    if(scrollbar <= 0) return 100; // Seite passt komplett ins Fenster
+    return Math.min(100, Math.round((scrollY / scrollbar) * 100));
+  }
+
+  function pruefeScroll(){
+    var tiefe = scrollTiefe();
+    if(tiefe > maxTiefe) maxTiefe = tiefe;
+    for(var i = 0; i < schwellen.length; i++){
+      var s = schwellen[i];
+      if(tiefe >= s){
+        einmal('scroll-' + s, 'scroll-tiefe', { tiefe: s + '%', geraet: geraet() });
+        // Eigener Event-Name fuer die 75%-Marke, damit sich darauf ein
+        // Umami-Goal setzen laesst (Goals matchen nur den Event-Namen,
+        // nicht die Property "tiefe").
+        if(s === 75){
+          einmal('ziel-gelesen', 'seite-gelesen', { geraet: geraet() });
+        }
+      }
+    }
+  }
+
+  // Scroll-Events per requestAnimationFrame drosseln — ungedrosselt feuert
+  // das hunderte Male pro Sekunde und ruckelt auf schwachen Geraeten.
+  var scrollWartet = false;
+  addEventListener('scroll', function(){
+    if(scrollWartet) return;
+    scrollWartet = true;
+    requestAnimationFrame(function(){
+      scrollWartet = false;
+      pruefeScroll();
+    });
+  }, { passive: true });
+
+  /* ---------- 3. Sektions-Sichtbarkeit ------------------------------
+     Welche Abschnitte werden tatsaechlich angesehen? Ein Abschnitt zaehlt
+     als gesehen, wenn er insgesamt mind. 1s nennenswert im Bild stand —
+     schnelles Durchrauschen faellt damit raus.
+
+     Bewusst KEIN IntersectionObserver-Timer. Zwei Fallen, beide gemessen:
+     1. Ein fixer Prozent-Threshold (z.B. 0.35) loest fuer hohe Abschnitte
+        NIE aus: #features ist ~2100px hoch, 35% davon passen nicht in ein
+        ~900px-Fenster. Ausgerechnet die inhaltsreichsten Abschnitte waeren
+        damit unsichtbar fuer die Messung.
+     2. Der Observer feuert pro Abschnitt 5-17 mal (jede Threshold-Stufe).
+        Ein setTimeout, das bei jedem Callback geloescht und neu gesetzt
+        wird, laeuft beim Scrollen nie bis zum Ablauf durch.
+
+     Stattdessen ein einziger Ticker, der zweimal pro Sekunde nachsieht,
+     welche Abschnitte gerade im Bild stehen, und deren Sichtzeit
+     aufaddiert. Robust und unabhaengig vom Scrolltempo. */
+  var sektionen = document.querySelectorAll('section[id], header[id]');
+  if(sektionen.length){
+    var SCHWELLE_MS = 1000;  // gemessen: echtes Lese-Scrollen = ~0,8-2,1s pro Abschnitt
+    var TAKT_MS = 500;
+    var sichtzeit = new Map();
+
+    var ticker = setInterval(function(){
+      // Im Hintergrund-Tab nicht mitzaehlen — sonst sammelt eine offen
+      // liegengelassene Seite Sichtzeit fuer den zuletzt sichtbaren Abschnitt.
+      if(document.visibilityState !== 'visible') return;
+
+      var offen = 0;
+      sektionen.forEach(function(s){
+        if(einmalig.has('sektion-' + s.id)) return;
+        offen++;
+        var r = s.getBoundingClientRect();
+        var sichtbar = Math.min(r.bottom, innerHeight) - Math.max(r.top, 0);
+        if(sichtbar <= 0) return;
+        // "Fuellt der Abschnitt mind. ein Drittel des Bildschirms — oder,
+        // falls er kleiner ist als das, ist er vollstaendig zu sehen?"
+        if(sichtbar < Math.min(r.height, innerHeight * 0.33)) return;
+
+        var neu = (sichtzeit.get(s.id) || 0) + TAKT_MS;
+        sichtzeit.set(s.id, neu);
+        if(neu >= SCHWELLE_MS){
+          einmal('sektion-' + s.id, 'sektion-gesehen', { sektion: s.id, geraet: geraet() });
+          // Der Preis-Abschnitt bekommt zusaetzlich ein eigenes Event.
+          // Grund: Umami-Goals matchen ausschliesslich auf den Event-NAMEN,
+          // nicht auf Properties — ein Goal auf "sektion-gesehen" wuerde
+          // also jeden beliebigen Abschnitt zaehlen. Fuer das wichtigste
+          // Kaufsignal braucht es daher einen eigenen Namen.
+          if(s.id === 'preise'){
+            einmal('ziel-preise', 'preise-angesehen', { geraet: geraet() });
+          }
+        }
+      });
+      // Alle Abschnitte erfasst -> Ticker abschalten
+      if(offen === 0) clearInterval(ticker);
+    }, TAKT_MS);
+  }
+
+  /* ---------- 4. FAQ-Interaktion ------------------------------------
+     Welche Fragen interessieren wirklich? Nur das Oeffnen zaehlt. */
+  document.querySelectorAll('#faq details').forEach(function(d, idx){
+    d.addEventListener('toggle', function(){
+      if(!d.open) return;
+      var frage = d.querySelector('summary');
+      einmal('faq-' + idx, 'faq-geoeffnet', {
+        frage: frage ? label(frage) : ('frage-' + (idx + 1)),
+        geraet: geraet()
+      });
+    });
+  });
+
+  /* ---------- 5. Verweildauer + Ausstiegstiefe ----------------------
+     Beim Verlassen einmal buendeln: wie lange war der Besuch aktiv und
+     wie weit ist er gekommen. In Stufen statt Sekundenwerten, damit die
+     Auswertung gruppierbar bleibt.
+
+     Gemessen wird AKTIVE Zeit: Phasen im Hintergrund-Tab zaehlen nicht mit.
+     Sonst meldet eine seit dem Fruehstueck offene Seite "ueber 10 Minuten"
+     und die Kennzahl wird wertlos.
+
+     visibilitychange statt unload: unload wird auf iOS/Safari haeufig nicht
+     mehr ausgeloest, visibilitychange dagegen zuverlaessig. */
+  var aktivSeit = Date.now();
+  var aktivSumme = 0;
+  var abgeschickt = false;
+
+  function dauerStufe(sek){
+    if(sek < 10) return '0-10s';
+    if(sek < 30) return '10-30s';
+    if(sek < 60) return '30-60s';
+    if(sek < 180) return '1-3min';
+    if(sek < 600) return '3-10min';
+    return 'ueber-10min';
+  }
+
+  function aktiveSekunden(){
+    var summe = aktivSumme;
+    if(aktivSeit) summe += Date.now() - aktivSeit;
+    return Math.round(summe / 1000);
+  }
+
+  function besuchsEnde(){
+    if(abgeschickt) return;
+    abgeschickt = true;
+    track('besuch-ende', {
+      dauer: dauerStufe(aktiveSekunden()),
+      tiefe: maxTiefe + '%',
+      geraet: geraet()
+    });
+  }
+
+  addEventListener('visibilitychange', function(){
+    if(document.visibilityState === 'hidden'){
+      // Zeit bis hierher sichern und Uhr anhalten
+      if(aktivSeit){ aktivSumme += Date.now() - aktivSeit; aktivSeit = 0; }
+      besuchsEnde();
+    } else {
+      // Rueckkehr in den Tab: Uhr wieder starten
+      if(!aktivSeit) aktivSeit = Date.now();
+    }
+  });
+  addEventListener('pagehide', besuchsEnde);
+
+  // Startwerte direkt setzen (Seite kann bereits gescrollt geladen werden,
+  // etwa bei einem Deep-Link auf #preise)
+  pruefeScroll();
+})();
 </script>
 </body>
 </html>
