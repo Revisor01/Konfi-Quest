@@ -330,4 +330,14 @@ Quelle für den Release-Stand.
 
 ## Lizenz und Kontakt
 
-_Lizenz und Kontaktinformationen folgen vor dem v3.0 Launch._
+Konfi Quest steht unter der [PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0), ergänzt um eine Zusatzbedingung zur Veröffentlichung von Änderungen. Der vollständige Text steht in [LICENSE](LICENSE).
+
+**Was das bedeutet:**
+
+- **Erlaubt:** Kirchengemeinden, Kirchenkreise und andere gemeinnützige Einrichtungen dürfen Konfi Quest nutzen, selbst hosten, anpassen und weitergeben. Ebenso erlaubt sind private Nutzung, Forschung und Lehre.
+- **Nicht erlaubt:** jede kommerzielle Nutzung, insbesondere der Weiterverkauf oder der entgeltliche Betrieb als Dienstleistung.
+- **Pflicht bei Änderungen:** Wer den Code verändert und die veränderte Fassung Dritten bereitstellt — auch als gehosteten Dienst —, muss den Quelltext der Änderungen öffentlich und unentgeltlich zugänglich machen, unter denselben Lizenzbedingungen.
+
+Für kommerzielle Nutzung oder abweichende Vereinbarungen: einfach anfragen.
+
+**Kontakt:** Pastor Simon Luthe · [moin@konfi-quest.de](mailto:moin@konfi-quest.de) · [konfi-quest.de](https://konfi-quest.de)

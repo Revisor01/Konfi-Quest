@@ -3,6 +3,7 @@
   "version": "2.9.0",
   "description": "Konfirmandenpunkte-App fuer Kirchengemeinden",
   "private": true,
+  "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "test:e2e": "npx playwright test"
   },
