@@ -7,15 +7,34 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
-## [1.5.3] - 2026-08-01
+## [1.5.3] - 2026-08-04
 
 ### Hinzugefügt
 
 - Chat: Button zum Springen ans Ende der Nachrichtenliste.
 
+### Geändert
+
+- Tageslosung lädt schneller.
+- Neue Organisationen starten mit "Küsterdienst" als Beispielaktivität.
+
 ### Behoben
 
-- Organisation wechseln zeigte weiterhin die Daten der alten Organisation.
+- Admin: Organisationswechsel funktioniert wieder — bisher blieben die Daten der
+  alten Organisation stehen.
+- Veranstaltungen: Bei Teilnehmenden eines Zeitfensters wird die Anwesenheit
+  jetzt richtig angezeigt.
+
+### Sonstiges
+
+Betrifft nicht die App, gehört nicht in die Store-Release-Notes.
+
+- Startseite: anonyme, cookiefreie Reichweitenmessung um Klicks, Scrolltiefe und
+  gelesene Abschnitte erweitert.
+- Startseite: Sitemap war für Google nicht abrufbar, die Adresse mit "www" wird
+  jetzt weitergeleitet.
+- Quelltext unter Lizenz gestellt: nicht-kommerzielle Nutzung erlaubt,
+  Änderungen müssen öffentlich gemacht werden.
 
 ## [1.5.2] - 2026-07-31
 
