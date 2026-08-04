@@ -949,6 +949,8 @@ ion-item {
   font-weight: 600;
   letter-spacing: 0.3px;
   text-transform: uppercase;
+  /* Lange Labels (z.B. CHALLENGES) duerfen nie zweizeilig werden */
+  white-space: nowrap;
 }
 
 /* === Empty States === */

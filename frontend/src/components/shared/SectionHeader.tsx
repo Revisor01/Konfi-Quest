@@ -6,7 +6,7 @@ interface SectionHeaderProps {
   title: string;
   subtitle: string;
   icon: string;
-  preset?: 'events' | 'activities' | 'konfis' | 'teamer' | 'users' | 'organizations' | 'badges' | 'requests' | 'jahrgang' | 'konfi-requests' | 'categories' | 'level';
+  preset?: 'events' | 'activities' | 'konfis' | 'teamer' | 'users' | 'organizations' | 'badges' | 'requests' | 'jahrgang' | 'konfi-requests' | 'categories' | 'level' | 'challenges';
   colors?: { primary: string; secondary: string };
   stats: Array<{ value: number; label: string }>;
   // Optionaler Info-(i)-Button oben rechts im Banner (z.B. für eine Farbcode-Legende).
@@ -34,6 +34,7 @@ const PRESET_COLORS: Record<string, { primary: string; secondary: string }> = {
   jahrgang: { primary: cssColor('jahrgang', '#007aff'), secondary: '#0066d6' },
   categories: { primary: cssColor('categories', '#0ea5e9'), secondary: '#0284c7' },
   level: { primary: cssColor('level', '#ec4899'), secondary: '#db2777' },
+  challenges: { primary: cssColor('challenges', '#be185d'), secondary: '#831843' },
 };
 
 // Hilfsfunktion: HEX zu RGB-String für rgba()

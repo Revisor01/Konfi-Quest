@@ -36,7 +36,9 @@ import {
   eyeOffOutline,
   lockClosedOutline,
   personCircleOutline,
-  informationCircleOutline
+  informationCircleOutline,
+  shieldCheckmarkOutline,
+  timeOutline
 } from 'ionicons/icons';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { useApp } from '../../../contexts/AppContext';
@@ -86,6 +88,44 @@ const CONSENT_OPTIONS: { value: ChallengeConsent; label: string; hint: string; i
     icon: lockClosedOutline
   }
 ];
+
+// Erklaerender Satz je Consent-Wahl (visibility='konfi_choice'). Der
+// Moderations-Zusatz wird separat angehaengt, wenn moderated=true.
+const CONSENT_EXPLANATION: Record<ChallengeConsent, string> = {
+  publish: 'Dein Beitrag erscheint mit deinem Namen in der Galerie deiner Gruppe.',
+  anonymous: 'Dein Beitrag erscheint ohne deinen Namen in der Galerie.',
+  private: 'Nur das Leitungsteam sieht deinen Beitrag.'
+};
+
+const MODERATION_ADDENDUM = 'Veröffentlichung erst nach Freigabe durch das Leitungsteam.';
+
+/** Kompakter Erklaertext, was mit dem Beitrag passiert (visibility + moderated). */
+const getTreatmentInfo = (challenge: KonfiChallenge): string => {
+  if (challenge.visibility === 'private') {
+    return 'Dein Beitrag ist nur für das Leitungsteam sichtbar.';
+  }
+  if (challenge.visibility === 'public') {
+    return challenge.moderated
+      ? 'Dein Beitrag wird nach Freigabe durch das Leitungsteam für deine Gruppe veröffentlicht.'
+      : 'Dein Beitrag ist sofort für deine Gruppe sichtbar.';
+  }
+  // konfi_choice: hier entscheidet die eigene Auswahl unten (Consent-Picker).
+  return 'Du entscheidest unten, wer deinen Beitrag sehen darf.';
+};
+
+/** Erfolgsmeldung nach dem Absenden — spiegelt den tatsaechlichen Behandlungsweg. */
+const getSuccessMessage = (challenge: KonfiChallenge, consent: ChallengeConsent): string => {
+  const willBePublic =
+    challenge.visibility === 'public' ||
+    (challenge.visibility === 'konfi_choice' && consent !== 'private');
+  if (challenge.moderated && willBePublic) {
+    return 'Eingereicht — dein Beitrag wartet auf Freigabe.';
+  }
+  if (willBePublic) {
+    return 'Veröffentlicht!';
+  }
+  return 'Eingereicht — dein Beitrag ist nur für die Leitung sichtbar.';
+};
 
 const ACCEPT_BY_MEDIA: Record<string, string> = {
   audio: 'audio/*',
@@ -268,7 +308,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
           });
         }
 
-        setSuccess('Dein Beitrag ist eingereicht!');
+        setSuccess(getSuccessMessage(challenge, isChoice ? consent : 'publish'));
         if (photoPreview) URL.revokeObjectURL(photoPreview);
         onSuccess();
       } catch (err: any) {
@@ -320,12 +360,28 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
             </div>
             <div>
               <h2 className="app-header-banner__title">{challenge.title}</h2>
-              <p className="app-header-banner__subtitle">
-                {challenge.moderated
-                  ? 'Dein Beitrag wird von der Leitung angeschaut'
-                  : 'Dein Beitrag ist sofort da'}
-              </p>
             </div>
+          </div>
+        </div>
+
+        {/* Info: was passiert mit dem Beitrag? Gut sichtbar direkt unter dem
+            Kopf, damit der Konfi VOR dem Ausfuellen weiss, woran er ist. */}
+        <div style={{ margin: '16px 16px 0 16px' }}>
+          <div
+            className="app-info-box app-info-box--challenges"
+            style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}
+          >
+            <IonIcon
+              icon={
+                challenge.visibility === 'private'
+                  ? lockClosedOutline
+                  : challenge.moderated
+                    ? shieldCheckmarkOutline
+                    : eyeOutline
+              }
+              style={{ fontSize: '1.15rem', flexShrink: 0, marginTop: '1px' }}
+            />
+            <span>{getTreatmentInfo(challenge)}</span>
           </div>
         </div>
 
@@ -597,7 +653,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                             </div>
                             <div className="app-list-item__content">
                               <div className="app-list-item__title">{option.label}</div>
-                              <div className="app-list-item__subtitle">{option.hint}</div>
+                              <div className="app-list-item__subtitle">{CONSENT_EXPLANATION[option.value]}</div>
                             </div>
                             {isSelected && (
                               <IonIcon
@@ -611,15 +667,24 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                       </div>
                     );
                   })}
+                  {/* Moderations-Zusatz nur relevant, wenn der Beitrag ueberhaupt
+                      veroeffentlicht werden soll (nicht bei 'private'). */}
+                  {challenge.moderated && consent !== 'private' && (
+                    <div
+                      className="app-info-box app-info-box--challenges"
+                      style={{ marginTop: '8px', display: 'flex', alignItems: 'flex-start', gap: '8px' }}
+                    >
+                      <IonIcon icon={timeOutline} style={{ fontSize: '1.05rem', flexShrink: 0, marginTop: '1px' }} />
+                      <span>{MODERATION_ADDENDUM}</span>
+                    </div>
+                  )}
                   <div className="app-info-box app-info-box--challenges" style={{ marginTop: '8px' }}>
                     Du kannst deinen Beitrag jederzeit wieder zurückziehen.
                   </div>
                 </div>
               ) : (
                 <div className="app-info-box app-info-box--challenges">
-                  {challenge.visibility === 'public'
-                    ? 'Dein Beitrag wird für deine Gruppe sichtbar.'
-                    : 'Dein Beitrag ist nur für die Leitung sichtbar.'}
+                  Du kannst deinen Beitrag jederzeit wieder zurückziehen.
                 </div>
               )}
             </IonCardContent>

@@ -46,6 +46,9 @@ interface EventsViewProps {
   presentingElement?: HTMLElement | null;
   // Im iPad-Split-View aktuell rechts geoeffnetes Event (fuer Highlighting).
   selectedEventId?: number | null;
+  // Haupt-Segment der Page (Events | Antraege) - wird direkt unter dem
+  // Grafik-Header gerendert, damit die Seitenstruktur zu den anderen Tabs passt.
+  headerSlot?: React.ReactNode;
 }
 
 const EventsView: React.FC<EventsViewProps> = ({
@@ -55,7 +58,8 @@ const EventsView: React.FC<EventsViewProps> = ({
   onSelectEvent,
   onUpdate,
   presentingElement,
-  selectedEventId
+  selectedEventId,
+  headerSlot
 }) => {
   const [searchText, setSearchText] = useState('');
 
@@ -236,6 +240,8 @@ const EventsView: React.FC<EventsViewProps> = ({
         stats={statsData.map(s => ({ value: s.count, label: s.label }))}
         onInfo={() => presentLegend({ presentingElement: presentingElement || undefined })}
       />
+
+      {headerSlot}
 
       {/* Suche & Filter — wie Chat-Pattern */}
       <IonList inset={true} style={{ margin: '16px' }}>

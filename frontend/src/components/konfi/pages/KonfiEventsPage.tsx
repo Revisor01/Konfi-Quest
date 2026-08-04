@@ -366,6 +366,62 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
   // Welcher Bereich gerade offen ist, sagt das Segment direkt unter dem Header.
   const pageTitle = 'Events';
 
+  // Oberste Segment-Ebene (Events | Anträge) + einmaliger Umzugs-Hinweis. Wird
+  // als headerSlot an die jeweils aktive View gereicht und dort DIREKT UNTER
+  // dem Grafik-/Stats-Header gerendert (Reihenfolge wie bei Badges/Challenges:
+  // Header, dann Segment, dann Inhalt) - kein eigener Header auf Page-Ebene,
+  // damit der Grafik-Header beim Umschalten nicht springt.
+  const mainSegmentSlot = (
+    <>
+      <div className="app-segment-wrapper">
+        <IonSegment
+          value={mainSegment}
+          onIonChange={(e) => setMainSegment(e.detail.value as 'events' | 'antraege')}
+        >
+          <IonSegmentButton value="events">
+            <IonLabel>Events</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="antraege">
+            <IonLabel>Anträge</IonLabel>
+          </IonSegmentButton>
+        </IonSegment>
+      </div>
+
+      {/* Einmaliger Hinweis auf den Umzug der Anträge in diesen Tab */}
+      {showUmzugHinweis && (
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonCard className="app-card">
+            <IonCardContent>
+              <div className="app-list-item app-list-item--activities" style={{ position: 'relative' }}>
+                <IonButton
+                  fill="clear"
+                  size="small"
+                  onClick={dismissUmzugHinweis}
+                  aria-label="Hinweis ausblenden"
+                  style={{ position: 'absolute', top: '0', right: '0', margin: 0, zIndex: 2 }}
+                >
+                  <IonIcon icon={closeOutline} slot="icon-only" />
+                </IonButton>
+                <div className="app-list-item__row">
+                  <div className="app-list-item__main">
+                    <div className="app-icon-circle app-icon-circle--activities">
+                      <IonIcon icon={informationCircleOutline} />
+                    </div>
+                    <div className="app-list-item__content">
+                      <div className="app-list-item__title" style={{ paddingRight: '44px' }}>
+                        Neu: Deine Anträge findest du jetzt hier im Events-Tab.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
+      )}
+    </>
+  );
+
   return (
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
@@ -404,114 +460,73 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 
-        {/* Oberste Segment-Ebene: Events | Anträge */}
-        <div className="app-segment-wrapper">
-          <IonSegment
-            value={mainSegment}
-            onIonChange={(e) => setMainSegment(e.detail.value as 'events' | 'antraege')}
-          >
-            <IonSegmentButton value="events">
-              <IonLabel>Events</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="antraege">
-              <IonLabel>Anträge</IonLabel>
-            </IonSegmentButton>
-          </IonSegment>
-        </div>
-
-        {/* Einmaliger Hinweis auf den Umzug der Anträge in diesen Tab */}
-        {showUmzugHinweis && (
-          <IonList inset={true} style={{ margin: '16px' }}>
-            <IonCard className="app-card">
-              <IonCardContent>
-                <div className="app-list-item app-list-item--activities" style={{ position: 'relative' }}>
-                  <IonButton
-                    fill="clear"
-                    size="small"
-                    onClick={dismissUmzugHinweis}
-                    aria-label="Hinweis ausblenden"
-                    style={{ position: 'absolute', top: '0', right: '0', margin: 0, zIndex: 2 }}
-                  >
-                    <IonIcon icon={closeOutline} slot="icon-only" />
-                  </IonButton>
-                  <div className="app-list-item__row">
-                    <div className="app-list-item__main">
-                      <div className="app-icon-circle app-icon-circle--activities">
-                        <IonIcon icon={informationCircleOutline} />
-                      </div>
-                      <div className="app-list-item__content">
-                        <div className="app-list-item__title" style={{ paddingRight: '44px' }}>
-                          Neu: Deine Anträge findest du jetzt hier im Events-Tab.
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </IonCardContent>
-            </IonCard>
-          </IonList>
-        )}
-
+        {/* Oberste Segment-Ebene (Events | Anträge) + Umzugs-Hinweis werden als
+            headerSlot an die jeweilige View gereicht und dort DIREKT UNTER dem
+            Grafik-/Stats-Header gerendert - passend zur Seitenstruktur der
+            anderen Tabs (Badges, Challenges: Header, dann Segment, dann Inhalt). */}
         {isAntraege ? (
-          <>
-            {/* Pending Queue-Anträge (Offline-Warteschlange) */}
-            {pendingQueueItems.length > 0 && (
-              <IonList inset={true} className="app-segment-wrapper">
-                <IonListHeader>
-                  <div className="app-section-icon app-section-icon--warning">
-                    <IonIcon icon={timeOutline} />
-                  </div>
-                  <IonLabel>Wird gesendet...</IonLabel>
-                </IonListHeader>
-                <IonCard className="app-card">
-                  <IonCardContent>
-                    {pendingQueueItems.map(qi => (
-                      <div key={qi.id} className="app-list-item app-list-item--warning">
-                        <div className="app-corner-badges">
-                          <div className="app-corner-badge" style={{ background: '#ff9500' }}>
-                            <IonIcon icon={timeOutline} style={{ fontSize: '0.7rem', marginRight: '2px' }} />
-                            Wartend
-                          </div>
-                        </div>
-                        <div className="app-list-item__row">
-                          <div className="app-list-item__main">
-                            <div className="app-icon-circle app-icon-circle--warning">
-                              <IonIcon icon={timeOutline} />
-                            </div>
-                            <div className="app-list-item__content">
-                              <div className="app-list-item__title" style={{ paddingRight: '60px' }}>
-                                {qi.metadata.label || 'Antrag'}
-                              </div>
-                              <div className="app-list-item__subtitle">
-                                {qi.body?.description || 'Wird gesendet sobald du online bist'}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </IonCardContent>
-                </IonCard>
-              </IonList>
-            )}
+          requestsLoading ? (
+            <LoadingSpinner message="Anträge werden geladen..." />
+          ) : (
+            <RequestsView
+              requests={getFilteredRequests()}
+              onDeleteRequest={handleDeleteRequest}
+              onSelectRequest={handleSelectRequest}
+              activeTab={requestsTab}
+              onTabChange={setRequestsTab}
+              formatDate={formatDate}
+              getStatusColor={getStatusColor}
+              getStatusText={getStatusText}
+              getTypeIcon={getTypeIcon}
+              getTypeText={getTypeText}
+              headerSlot={
+                <>
+                  {mainSegmentSlot}
 
-            {requestsLoading ? (
-              <LoadingSpinner message="Anträge werden geladen..." />
-            ) : (
-              <RequestsView
-                requests={getFilteredRequests()}
-                onDeleteRequest={handleDeleteRequest}
-                onSelectRequest={handleSelectRequest}
-                activeTab={requestsTab}
-                onTabChange={setRequestsTab}
-                formatDate={formatDate}
-                getStatusColor={getStatusColor}
-                getStatusText={getStatusText}
-                getTypeIcon={getTypeIcon}
-                getTypeText={getTypeText}
-              />
-            )}
-          </>
+                  {/* Pending Queue-Anträge (Offline-Warteschlange) */}
+                  {pendingQueueItems.length > 0 && (
+                    <IonList inset={true} className="app-segment-wrapper">
+                      <IonListHeader>
+                        <div className="app-section-icon app-section-icon--warning">
+                          <IonIcon icon={timeOutline} />
+                        </div>
+                        <IonLabel>Wird gesendet...</IonLabel>
+                      </IonListHeader>
+                      <IonCard className="app-card">
+                        <IonCardContent>
+                          {pendingQueueItems.map(qi => (
+                            <div key={qi.id} className="app-list-item app-list-item--warning">
+                              <div className="app-corner-badges">
+                                <div className="app-corner-badge" style={{ background: '#ff9500' }}>
+                                  <IonIcon icon={timeOutline} style={{ fontSize: '0.7rem', marginRight: '2px' }} />
+                                  Wartend
+                                </div>
+                              </div>
+                              <div className="app-list-item__row">
+                                <div className="app-list-item__main">
+                                  <div className="app-icon-circle app-icon-circle--warning">
+                                    <IonIcon icon={timeOutline} />
+                                  </div>
+                                  <div className="app-list-item__content">
+                                    <div className="app-list-item__title" style={{ paddingRight: '60px' }}>
+                                      {qi.metadata.label || 'Antrag'}
+                                    </div>
+                                    <div className="app-list-item__subtitle">
+                                      {qi.body?.description || 'Wird gesendet sobald du online bist'}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </IonCardContent>
+                      </IonCard>
+                    </IonList>
+                  )}
+                </>
+              }
+            />
+          )
         ) : loading ? (
           <LoadingSpinner message="Events werden geladen..." />
         ) : (
@@ -523,6 +538,7 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
             selectedEventId={selectedEventId}
             onUpdate={refresh}
             presentingElement={presentingElement}
+            headerSlot={mainSegmentSlot}
           />
         )}
       </IonContent>

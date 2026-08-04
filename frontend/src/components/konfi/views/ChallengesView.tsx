@@ -68,7 +68,7 @@ import {
   alertCircle,
   hammer
 } from 'ionicons/icons';
-import { EmptyState } from '../../shared';
+import { EmptyState, SectionHeader } from '../../shared';
 import type { KonfiChallenge, ChallengeMark } from '../../../types/challenges';
 
 // Icon-Vorrat der Challenge-Abzeichen. Bewusst als eigene, schlanke Map hier —
@@ -169,6 +169,18 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
 
   return (
     <div style={{ paddingBottom: '24px' }}>
+
+      <SectionHeader
+        title="Challenges"
+        subtitle="Mach mit und sammle Abzeichen!"
+        icon={flagOutline}
+        preset="challenges"
+        stats={[
+          { value: active.length, label: 'AKTIV' },
+          { value: marks.length, label: 'ABZEICHEN' },
+          { value: archive.length, label: 'ARCHIV' }
+        ]}
+      />
 
       {/* --- 1. Aktive Challenges --- */}
       <IonList inset={true} style={{ margin: '16px' }}>

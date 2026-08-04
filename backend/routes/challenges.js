@@ -552,21 +552,42 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
 
         res.status(201).json(created);
 
-        // Push an die Leitung nur bei moderierten Challenges (dort ist eine
-        // Handlung noetig). Fire-and-forget NACH der Antwort.
+        // Fire-and-forget NACH der Antwort: Push an die Leitung (immer, auch
+        // wenn der Beitrag sofort oeffentlich ist) und — bei der ERSTEN eigenen
+        // Submission zu dieser Challenge — der "Abzeichen erhalten"-Push an den
+        // Konfi. Das Abzeichen ist abgeleitet (EXISTS eigene Submission, s.o.),
+        // erscheint im UI also schon jetzt, unabhaengig vom Moderationsstatus.
         (async () => {
           try {
-            if (challenge.moderated) {
-              await PushService.sendChallengeSubmissionToLeadership(
-                db,
-                req.user.organization_id,
-                challengeId,
-                challenge.title,
-                req.user.display_name
-              );
-            }
+            await PushService.sendChallengeSubmissionToLeadership(
+              db,
+              req.user.organization_id,
+              challengeId,
+              challenge.title,
+              req.user.display_name,
+              challenge.moderated
+            );
           } catch (pushErr) {
             console.error('Push für Challenge-Beitrag fehlgeschlagen:', pushErr.message);
+          }
+
+          try {
+            const { rows: [{ count: ownCount }] } = await db.query(
+              `SELECT COUNT(*)::int AS count FROM challenge_submissions
+               WHERE challenge_id = $1 AND user_id = $2`,
+              [challengeId, req.user.id]
+            );
+            // Genau 1 => die soeben erstellte Submission ist die erste ueberhaupt.
+            if (ownCount === 1) {
+              await PushService.sendChallengeBadgeEarnedToKonfi(
+                db,
+                req.user.id,
+                challengeId,
+                challenge.title
+              );
+            }
+          } catch (badgeErr) {
+            console.error('Abzeichen-Push für Challenge-Beitrag fehlgeschlagen:', badgeErr.message);
           }
         })();
 

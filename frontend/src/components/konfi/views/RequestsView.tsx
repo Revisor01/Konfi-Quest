@@ -58,6 +58,9 @@ interface RequestsViewProps {
   // Teamer-Aktivitaeten haben keine Gottesdienst/Gemeinde-Punkte-Logik —
   // im Teamer-Modus wird stattdessen "Team" gezeigt und die Punktzahl ausgeblendet.
   teamerMode?: boolean;
+  // Haupt-Segment der Page (Events | Antraege) - wird direkt unter dem
+  // Grafik-Header gerendert, damit die Seitenstruktur zu den anderen Tabs passt.
+  headerSlot?: React.ReactNode;
 }
 
 const RequestsView: React.FC<RequestsViewProps> = ({
@@ -71,7 +74,8 @@ const RequestsView: React.FC<RequestsViewProps> = ({
   getStatusText,
   getTypeIcon,
   getTypeText,
-  teamerMode = false
+  teamerMode = false,
+  headerSlot
 }) => {
   const [searchText, setSearchText] = useState('');
 
@@ -115,6 +119,8 @@ const RequestsView: React.FC<RequestsViewProps> = ({
           { value: rejectedRequests.length, label: 'Abgelehnt' }
         ]}
       />
+
+      {headerSlot}
 
       {/* Suche & Filter — wie Chat-Pattern */}
       <IonList inset={true} style={{ margin: '16px' }}>

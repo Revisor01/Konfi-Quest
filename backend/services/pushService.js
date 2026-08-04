@@ -31,6 +31,7 @@ const { sendFirebasePushNotification, sendFirebaseSilentPush } = require('../pus
  * event_opt_in                | sendEventOptInToAdmins               | Org-Admins      | ja
  * challenge_started           | sendChallengeStartedToJahrgaenge     | Jahrgangs-Konfis| ja
  * challenge_submission        | sendChallengeSubmissionToLeadership  | Leitung         | ja
+ * challenge_badge_earned      | sendChallengeBadgeEarnedToKonfi      | Konfi           | ja
  *
  * Helper-Methoden (nicht direkt als Push-Type):
  * - getTokensForUser(db, userId)
@@ -881,8 +882,8 @@ class PushService {
       }
 
       const notification = {
-        title: 'Neue Challenge!',
-        body: `${challengeTitle} — mach mit!`,
+        title: 'Neue Challenge',
+        body: `"${challengeTitle}" ist gestartet — schau rein und mach mit!`,
         data: {
           type: 'challenge_started',
           challengeId: challengeId.toString()
@@ -897,21 +898,56 @@ class PushService {
   }
 
   /**
+   * Abzeichen einer Challenge erhalten - Push an den Konfi. Das Abzeichen ist
+   * abgeleitet (EXISTS eigene Submission, siehe challenges.js), zaehlt also
+   * bereits bei der ERSTEN Submission unabhaengig vom Moderationsstatus — der
+   * Push feuert deshalb ebenfalls bei der ersten eigenen Submission, weil das
+   * Abzeichen im UI ab genau diesem Zeitpunkt erscheint.
+   *
+   * @param {object} db - DB-Pool
+   * @param {number} konfiId - Konfi User-ID
+   * @param {number} challengeId - Challenge ID
+   * @param {string} challengeTitle - Titel der Challenge
+   */
+  static async sendChallengeBadgeEarnedToKonfi(db, konfiId, challengeId, challengeTitle) {
+    try {
+      const notification = {
+        title: 'Abzeichen erhalten',
+        body: `Du hast das Abzeichen für "${challengeTitle}" bekommen!`,
+        data: {
+          type: 'challenge_badge_earned',
+          challengeId: challengeId.toString()
+        }
+      };
+
+      return await this.sendToUser(db, konfiId, notification);
+    } catch (error) {
+      console.error('sendChallengeBadgeEarnedToKonfi error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
    * Neuer Challenge-Beitrag - Push an die Leitung (Org-Admins + die Teamer der
-   * zugewiesenen Jahrgaenge). Wird nur bei moderierten Challenges gesendet, weil
-   * nur dort eine Handlung noetig ist.
+   * zugewiesenen Jahrgaenge). Wird bei JEDER Challenge gesendet (auch wenn der
+   * Beitrag sofort oeffentlich ist) — bei moderierten Challenges mit Zusatz-
+   * Hinweis, dass eine Freigabe noch aussteht.
    *
    * @param {object} db - DB-Pool
    * @param {number} organizationId - Organisation ID
    * @param {number} challengeId - Challenge ID
    * @param {string} challengeTitle - Titel der Challenge
-   * @param {string} konfiName - Anzeigename des einreichenden Konfis
+   * @param {string} konfiName - Anzeigename des einreichenden Konfis (die
+   *   Leitung sieht IMMER den echten Namen — Anonymitaet gilt nur fuer die Galerie)
+   * @param {boolean} moderated - Ob die Challenge moderiert ist (Freigabe noetig)
    */
-  static async sendChallengeSubmissionToLeadership(db, organizationId, challengeId, challengeTitle, konfiName) {
+  static async sendChallengeSubmissionToLeadership(db, organizationId, challengeId, challengeTitle, konfiName, moderated = false) {
     try {
       const notification = {
         title: 'Neuer Challenge-Beitrag',
-        body: `${konfiName} hat einen Beitrag zu "${challengeTitle}" eingereicht.`,
+        body: moderated
+          ? `${konfiName} hat bei "${challengeTitle}" etwas eingereicht. Wartet auf Freigabe.`
+          : `${konfiName} hat bei "${challengeTitle}" etwas eingereicht.`,
         data: {
           type: 'challenge_submission',
           challengeId: challengeId.toString()

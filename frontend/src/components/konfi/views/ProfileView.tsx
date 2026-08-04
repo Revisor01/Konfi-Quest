@@ -261,7 +261,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
       })
       .catch(() => { /* optionale Kachel — stiller Fehler */ });
   }, []);
-  
+
   const handleTranslationChange = async (translation: string) => {
     // Offline: Optimistic UI + Queue-Fallback (fire-and-forget)
     if (!networkMonitor.isOnline) {

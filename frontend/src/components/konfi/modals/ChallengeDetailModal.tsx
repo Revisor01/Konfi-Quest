@@ -313,7 +313,15 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
   const loadDetail = useCallback(async () => {
     try {
       const res = await api.get(`/challenges/konfi/${challenge.id}`);
-      setDetail(res.data || null);
+      // Backend liefert { challenge, gallery, own_submissions } — Challenge-Felder
+      // muessen auf die oberste Ebene, sonst ist starts_at/ends_at undefined und
+      // die Challenge erscheint faelschlich als beendet.
+      const data = res.data;
+      setDetail(
+        data?.challenge
+          ? { ...data.challenge, gallery: data.gallery || [], own_submissions: data.own_submissions || [] }
+          : null
+      );
     } catch (err: any) {
       setError(err.response?.data?.error || 'Fehler beim Laden der Challenge');
     } finally {
