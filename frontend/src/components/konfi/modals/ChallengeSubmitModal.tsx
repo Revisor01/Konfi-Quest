@@ -27,7 +27,7 @@ import {
   micOutline,
   videocamOutline,
   linkOutline,
-  cameraOutline,
+  camera,
   imagesOutline,
   trash,
   checkmarkCircle,
@@ -36,8 +36,7 @@ import {
   lockClosedOutline,
   personCircleOutline,
   shieldCheckmarkOutline,
-  mic,
-  stopOutline
+  mic
 } from 'ionicons/icons';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { useApp } from '../../../contexts/AppContext';
@@ -214,23 +213,23 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
     setMediaType(value);
   };
 
-  // --- Foto: Kamera / Galerie ---
-  const pickPhoto = async (source: CameraSource) => {
+  // --- Foto: natives Sheet (Kamera / Fotomediathek) wie bei Antraegen ---
+  const pickPhoto = async () => {
     setPickingMedia(true);
     try {
       const photo = await Camera.getPhoto({
         resultType: CameraResultType.DataUrl,
-        source,
+        source: CameraSource.Prompt,
+        promptLabelHeader: 'Foto auswählen',
+        promptLabelPhoto: 'Fotomediathek',
+        promptLabelPicture: 'Kamera',
+        promptLabelCancel: 'Abbrechen',
         quality: 90
       });
       if (!photo.dataUrl) return;
       const response = await fetch(photo.dataUrl);
       const blob = await response.blob();
-      const rawFile = new File(
-        [blob],
-        source === CameraSource.Camera ? 'challenge-foto.jpg' : 'challenge-galerie.jpg',
-        { type: 'image/jpeg' }
-      );
+      const rawFile = new File([blob], 'challenge-foto.jpg', { type: 'image/jpeg' });
       const { file: compressed, previewUrl } = await compressImage(rawFile);
       if (compressed.size > MAX_UPLOAD_BYTES) {
         URL.revokeObjectURL(previewUrl);
@@ -251,16 +250,14 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
     }
   };
 
-  // --- Video: Aufnahme / Galerie ueber das native Video-Picker-Sheet ---
-  const pickVideo = async (source: 'camera' | 'gallery') => {
+  // --- Video: natives Picker-Sheet (kein capture-Attribut, damit iOS die
+  // volle Auswahl "Fotomediathek / Kamera aufnehmen / Datei waehlen" zeigt) ---
+  const pickVideo = async () => {
     setPickingMedia(true);
     try {
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = 'video/*';
-      if (source === 'camera') {
-        input.capture = 'environment';
-      }
       const selected = await new Promise<File | null>((resolve) => {
         input.onchange = (event: Event) => {
           const target = event.target as HTMLInputElement;
@@ -557,62 +554,56 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
 
               {mediaType === 'photo' && (
                 <>
-                  {mediaPreview ? (
-                    <div style={{ position: 'relative' }}>
-                      <img
-                        src={mediaPreview}
-                        alt="Dein Foto"
-                        style={{
-                          width: '100%', maxHeight: '280px', objectFit: 'cover',
-                          borderRadius: '10px', display: 'block'
-                        }}
-                      />
-                      <IonButton
-                        fill="solid"
-                        color="danger"
-                        size="small"
-                        onClick={removeFile}
-                        style={{ position: 'absolute', top: '8px', right: '8px', '--border-radius': '8px' }}
-                      >
-                        <IonIcon icon={trash} slot="icon-only" />
-                      </IonButton>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <IonButton
-                        expand="block"
-                        style={{
-                          flex: 1, margin: 0,
-                          '--background': 'var(--app-color-challenges)',
-                          '--border-radius': '10px'
-                        }}
-                        onClick={() => pickPhoto(CameraSource.Camera)}
-                        disabled={pickingMedia}
-                      >
-                        {pickingMedia ? <IonSpinner name="dots" /> : (
+                  <div
+                    onClick={() => !pickingMedia && !mediaPreview && pickPhoto()}
+                    style={{
+                      padding: mediaPreview ? '0' : '16px',
+                      backgroundColor: mediaPreview ? 'transparent' : 'rgba(var(--app-color-challenges-rgb), 0.06)',
+                      borderRadius: '10px',
+                      border: mediaPreview ? 'none' : '1px dashed #c7c7cc',
+                      cursor: mediaPreview ? 'default' : 'pointer',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    {mediaPreview ? (
+                      <div style={{ position: 'relative' }}>
+                        <img
+                          src={mediaPreview}
+                          alt="Dein Foto"
+                          style={{
+                            width: '100%', maxHeight: '280px', objectFit: 'cover',
+                            borderRadius: '10px', display: 'block'
+                          }}
+                        />
+                        <IonButton
+                          fill="solid"
+                          color="danger"
+                          size="small"
+                          onClick={(e) => { e.stopPropagation(); removeFile(); }}
+                          style={{ position: 'absolute', top: '8px', right: '8px', '--border-radius': '8px' }}
+                        >
+                          <IonIcon icon={trash} slot="icon-only" />
+                        </IonButton>
+                      </div>
+                    ) : (
+                      <div className="app-settings-item" style={{ justifyContent: 'center' }}>
+                        {pickingMedia ? (
+                          <IonSpinner name="dots" />
+                        ) : (
                           <>
-                            <IonIcon icon={cameraOutline} slot="start" />
-                            Aufnehmen
+                            <IonIcon
+                              icon={camera}
+                              className="app-icon-color--challenges"
+                              style={{ fontSize: '1.2rem' }}
+                            />
+                            <span style={{ fontWeight: '500', color: '#666' }}>
+                              Foto hinzufügen
+                            </span>
                           </>
                         )}
-                      </IonButton>
-                      <IonButton
-                        expand="block"
-                        fill="outline"
-                        style={{
-                          flex: 1, margin: 0,
-                          '--color': 'var(--app-color-challenges)',
-                          '--border-color': 'var(--app-color-challenges)',
-                          '--border-radius': '10px'
-                        }}
-                        onClick={() => pickPhoto(CameraSource.Photos)}
-                        disabled={pickingMedia}
-                      >
-                        <IonIcon icon={imagesOutline} slot="start" />
-                        Galerie
-                      </IonButton>
-                    </div>
-                  )}
+                      </div>
+                    )}
+                  </div>
                   <IonItem lines="none" style={{ '--background': 'transparent', marginTop: '8px' }}>
                     <IonTextarea
                       value={textContent}
@@ -627,62 +618,56 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
 
               {mediaType === 'video' && (
                 <>
-                  {mediaPreview ? (
-                    <div style={{ position: 'relative' }}>
-                      <video
-                        src={mediaPreview}
-                        controls
-                        style={{
-                          width: '100%', maxHeight: '280px',
-                          borderRadius: '10px', display: 'block', background: '#000'
-                        }}
-                      />
-                      <IonButton
-                        fill="solid"
-                        color="danger"
-                        size="small"
-                        onClick={removeFile}
-                        style={{ position: 'absolute', top: '8px', right: '8px', '--border-radius': '8px' }}
-                      >
-                        <IonIcon icon={trash} slot="icon-only" />
-                      </IonButton>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <IonButton
-                        expand="block"
-                        style={{
-                          flex: 1, margin: 0,
-                          '--background': 'var(--app-color-challenges)',
-                          '--border-radius': '10px'
-                        }}
-                        onClick={() => pickVideo('camera')}
-                        disabled={pickingMedia}
-                      >
-                        {pickingMedia ? <IonSpinner name="dots" /> : (
+                  <div
+                    onClick={() => !pickingMedia && !mediaPreview && pickVideo()}
+                    style={{
+                      padding: mediaPreview ? '0' : '16px',
+                      backgroundColor: mediaPreview ? 'transparent' : 'rgba(var(--app-color-challenges-rgb), 0.06)',
+                      borderRadius: '10px',
+                      border: mediaPreview ? 'none' : '1px dashed #c7c7cc',
+                      cursor: mediaPreview ? 'default' : 'pointer',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    {mediaPreview ? (
+                      <div style={{ position: 'relative' }}>
+                        <video
+                          src={mediaPreview}
+                          controls
+                          style={{
+                            width: '100%', maxHeight: '280px',
+                            borderRadius: '10px', display: 'block', background: '#000'
+                          }}
+                        />
+                        <IonButton
+                          fill="solid"
+                          color="danger"
+                          size="small"
+                          onClick={(e) => { e.stopPropagation(); removeFile(); }}
+                          style={{ position: 'absolute', top: '8px', right: '8px', '--border-radius': '8px' }}
+                        >
+                          <IonIcon icon={trash} slot="icon-only" />
+                        </IonButton>
+                      </div>
+                    ) : (
+                      <div className="app-settings-item" style={{ justifyContent: 'center' }}>
+                        {pickingMedia ? (
+                          <IonSpinner name="dots" />
+                        ) : (
                           <>
-                            <IonIcon icon={videocamOutline} slot="start" />
-                            Aufnehmen
+                            <IonIcon
+                              icon={videocamOutline}
+                              className="app-icon-color--challenges"
+                              style={{ fontSize: '1.2rem' }}
+                            />
+                            <span style={{ fontWeight: '500', color: '#666' }}>
+                              Video hinzufügen
+                            </span>
                           </>
                         )}
-                      </IonButton>
-                      <IonButton
-                        expand="block"
-                        fill="outline"
-                        style={{
-                          flex: 1, margin: 0,
-                          '--color': 'var(--app-color-challenges)',
-                          '--border-color': 'var(--app-color-challenges)',
-                          '--border-radius': '10px'
-                        }}
-                        onClick={() => pickVideo('gallery')}
-                        disabled={pickingMedia}
-                      >
-                        <IonIcon icon={imagesOutline} slot="start" />
-                        Galerie
-                      </IonButton>
-                    </div>
-                  )}
+                      </div>
+                    )}
+                  </div>
                   <IonItem lines="none" style={{ '--background': 'transparent', marginTop: '8px' }}>
                     <IonTextarea
                       value={textContent}
@@ -697,60 +682,65 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
 
               {mediaType === 'audio' && (
                 <>
-                  {mediaPreview ? (
-                    <div
-                      style={{
-                        padding: '10px 12px', borderRadius: '10px',
-                        background: 'rgba(var(--app-color-challenges-rgb), 0.08)'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontWeight: 600, color: 'var(--app-color-challenges)', flex: 1, fontSize: '0.88rem' }}>
-                          Aufnahme bereit
+                  <div
+                    onClick={() => {
+                      if (mediaPreview) return;
+                      if (isRecording) stopRecording();
+                      else startRecording();
+                    }}
+                    style={{
+                      padding: mediaPreview ? '10px 12px' : '16px',
+                      backgroundColor: mediaPreview
+                        ? 'rgba(var(--app-color-challenges-rgb), 0.08)'
+                        : isRecording
+                          ? 'rgba(220, 53, 69, 0.08)'
+                          : 'rgba(var(--app-color-challenges-rgb), 0.06)',
+                      borderRadius: '10px',
+                      border: mediaPreview || isRecording ? 'none' : '1px dashed #c7c7cc',
+                      cursor: mediaPreview ? 'default' : 'pointer'
+                    }}
+                  >
+                    {mediaPreview ? (
+                      <>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontWeight: 600, color: 'var(--app-color-challenges)', flex: 1, fontSize: '0.88rem' }}>
+                            Aufnahme bereit
+                          </span>
+                          <IonButton fill="clear" color="danger" size="small" onClick={(e) => { e.stopPropagation(); removeFile(); }}>
+                            <IonIcon icon={trash} slot="icon-only" />
+                          </IonButton>
+                        </div>
+                        <AudioPlayer src={mediaPreview} />
+                      </>
+                    ) : isRecording ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center' }}>
+                        <span
+                          style={{
+                            width: '10px', height: '10px', borderRadius: '50%',
+                            background: '#dc3545', flexShrink: 0
+                          }}
+                          className="app-recording-dot"
+                        />
+                        <span style={{ fontWeight: 600, color: '#dc3545' }}>
+                          {formatDuration(recordSeconds)}
                         </span>
-                        <IonButton fill="clear" color="danger" size="small" onClick={removeFile}>
-                          <IonIcon icon={trash} slot="icon-only" />
-                        </IonButton>
+                        <span style={{ fontSize: '0.82rem', color: '#dc3545' }}>
+                          Antippen zum Stoppen
+                        </span>
                       </div>
-                      <AudioPlayer src={mediaPreview} />
-                    </div>
-                  ) : isRecording ? (
-                    <div
-                      style={{
-                        padding: '18px', borderRadius: '10px',
-                        background: 'rgba(220, 53, 69, 0.08)',
-                        display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center'
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: '10px', height: '10px', borderRadius: '50%',
-                          background: '#dc3545', flexShrink: 0
-                        }}
-                        className="app-recording-dot"
-                      />
-                      <span style={{ fontWeight: 600, color: '#dc3545' }}>
-                        {formatDuration(recordSeconds)}
-                      </span>
-                      <IonButton fill="solid" color="danger" size="small" onClick={stopRecording}>
-                        <IonIcon icon={stopOutline} slot="start" />
-                        Stopp
-                      </IonButton>
-                    </div>
-                  ) : (
-                    <IonButton
-                      expand="block"
-                      style={{
-                        margin: 0,
-                        '--background': 'var(--app-color-challenges)',
-                        '--border-radius': '10px'
-                      }}
-                      onClick={startRecording}
-                    >
-                      <IonIcon icon={mic} slot="start" />
-                      Aufnehmen
-                    </IonButton>
-                  )}
+                    ) : (
+                      <div className="app-settings-item" style={{ justifyContent: 'center' }}>
+                        <IonIcon
+                          icon={mic}
+                          className="app-icon-color--challenges"
+                          style={{ fontSize: '1.2rem' }}
+                        />
+                        <span style={{ fontWeight: '500', color: '#666' }}>
+                          Tippen zum Aufnehmen
+                        </span>
+                      </div>
+                    )}
+                  </div>
                   <IonItem lines="none" style={{ '--background': 'transparent', marginTop: '8px' }}>
                     <IonTextarea
                       value={textContent}
