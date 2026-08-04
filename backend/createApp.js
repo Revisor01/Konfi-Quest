@@ -203,8 +203,8 @@ function createApp(db, options = {}) {
     limits: { fileSize: CHALLENGE_UPLOAD_LIMIT },
     fileFilter: (req, file, cb) => {
       const allowedMimes = [
-        'video/mp4', 'video/quicktime', 'video/webm',
-        'audio/mpeg', 'audio/mp4', 'audio/m4a', 'audio/x-m4a', 'audio/ogg', 'audio/wav', 'audio/aac'
+        'video/mp4', 'video/quicktime', 'video/webm', 'video/x-m4v',
+        'audio/mpeg', 'audio/mp4', 'audio/m4a', 'audio/x-m4a', 'audio/ogg', 'audio/webm', 'audio/wav', 'audio/aac'
       ];
       const isAllowed = file.mimetype.startsWith('image/') || allowedMimes.includes(file.mimetype);
       if (isAllowed) {

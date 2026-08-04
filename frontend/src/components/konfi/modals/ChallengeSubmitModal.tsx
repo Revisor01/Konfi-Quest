@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -29,16 +29,17 @@ import {
   linkOutline,
   cameraOutline,
   imagesOutline,
-  cloudUploadOutline,
   trash,
   checkmarkCircle,
   eyeOutline,
   eyeOffOutline,
   lockClosedOutline,
   personCircleOutline,
-  informationCircleOutline,
   shieldCheckmarkOutline,
-  timeOutline
+  mic,
+  stopOutline,
+  playOutline,
+  pauseOutline
 } from 'ionicons/icons';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { useApp } from '../../../contexts/AppContext';
@@ -55,62 +56,35 @@ import type {
 // Medienarten (allowed_media). Bei visibility='konfi_choice' entscheidet der
 // Konfi selbst ueber die Sichtbarkeit — Voreinstellung ist "Mit meinem Namen
 // veroeffentlichen". Bei 'public'/'private' gibt es keine Wahl, sondern einen
-// klaren Hinweistext.
+// kompakten Hinweis-Chip im Kopf.
 
 const MEDIA_OPTIONS: { value: ChallengeMediaType; label: string; icon: string; hint: string }[] = [
   { value: 'text', label: 'Text', icon: documentTextOutline, hint: 'Schreib deine Gedanken auf' },
   { value: 'photo', label: 'Foto', icon: imageOutline, hint: 'Aufnehmen oder aus der Galerie' },
-  { value: 'audio', label: 'Audio', icon: micOutline, hint: 'Eine Audiodatei auswählen' },
-  { value: 'video', label: 'Video', icon: videocamOutline, hint: 'Eine Videodatei auswählen' },
+  { value: 'audio', label: 'Audio', icon: micOutline, hint: 'Direkt aufnehmen' },
+  { value: 'video', label: 'Video', icon: videocamOutline, hint: 'Aufnehmen oder aus der Galerie' },
   { value: 'link', label: 'Link', icon: linkOutline, hint: 'Ein Lied, ein Video, eine Seite' }
 ];
 
-// Reihenfolge und Voreinstellung bewusst so: die Veroeffentlichung mit Namen
-// steht vorne und ist vorausgewaehlt, "Nur fuer die Leitung" bleibt jederzeit
-// als bewusste Entscheidung verfuegbar.
+// Kurze Labels + kurzer Untertitel statt langer Erklaersaetze.
 const CONSENT_OPTIONS: { value: ChallengeConsent; label: string; hint: string; icon: string }[] = [
-  {
-    value: 'publish',
-    label: 'Mit meinem Namen veröffentlichen',
-    hint: 'Deine Gruppe sieht deinen Beitrag zusammen mit deinem Namen.',
-    icon: personCircleOutline
-  },
-  {
-    value: 'anonymous',
-    label: 'Anonym veröffentlichen',
-    hint: 'Deine Gruppe sieht deinen Beitrag, aber ohne deinen Namen.',
-    icon: eyeOffOutline
-  },
-  {
-    value: 'private',
-    label: 'Nur für die Leitung',
-    hint: 'Nur die Leitung und du selbst sehen deinen Beitrag.',
-    icon: lockClosedOutline
-  }
+  { value: 'publish', label: 'Öffentlich', hint: 'mit deinem Namen', icon: personCircleOutline },
+  { value: 'anonymous', label: 'Anonym', hint: 'ohne Namen', icon: eyeOffOutline },
+  { value: 'private', label: 'Nur Leitung', hint: 'nicht in der Galerie', icon: lockClosedOutline }
 ];
 
-// Erklaerender Satz je Consent-Wahl (visibility='konfi_choice'). Der
-// Moderations-Zusatz wird separat angehaengt, wenn moderated=true.
-const CONSENT_EXPLANATION: Record<ChallengeConsent, string> = {
-  publish: 'Dein Beitrag erscheint mit deinem Namen in der Galerie deiner Gruppe.',
-  anonymous: 'Dein Beitrag erscheint ohne deinen Namen in der Galerie.',
-  private: 'Nur das Leitungsteam sieht deinen Beitrag.'
-};
-
-const MODERATION_ADDENDUM = 'Veröffentlichung erst nach Freigabe durch das Leitungsteam.';
-
-/** Kompakter Erklaertext, was mit dem Beitrag passiert (visibility + moderated). */
-const getTreatmentInfo = (challenge: KonfiChallenge): string => {
+/** Kompakter Kopf-Chip: Icon + 2-4 Worte. Bei konfi_choice bewusst kein Chip
+ *  (die Wahl steht unten im Consent-Picker). */
+const getHeaderChip = (challenge: KonfiChallenge): { icon: string; label: string } | null => {
   if (challenge.visibility === 'private') {
-    return 'Dein Beitrag ist nur für das Leitungsteam sichtbar.';
+    return { icon: lockClosedOutline, label: 'Nur Leitung' };
   }
   if (challenge.visibility === 'public') {
     return challenge.moderated
-      ? 'Dein Beitrag wird nach Freigabe durch das Leitungsteam für deine Gruppe veröffentlicht.'
-      : 'Dein Beitrag ist sofort für deine Gruppe sichtbar.';
+      ? { icon: shieldCheckmarkOutline, label: 'Öffentlich mit Moderation' }
+      : { icon: eyeOutline, label: 'Öffentlich mit Name' };
   }
-  // konfi_choice: hier entscheidet die eigene Auswahl unten (Consent-Picker).
-  return 'Du entscheidest unten, wer deinen Beitrag sehen darf.';
+  return null;
 };
 
 /** Erfolgsmeldung nach dem Absenden — spiegelt den tatsaechlichen Behandlungsweg. */
@@ -127,13 +101,23 @@ const getSuccessMessage = (challenge: KonfiChallenge, consent: ChallengeConsent)
   return 'Eingereicht — dein Beitrag ist nur für die Leitung sichtbar.';
 };
 
-const ACCEPT_BY_MEDIA: Record<string, string> = {
-  audio: 'audio/*',
-  video: 'video/*'
-};
-
 // Serverlimit laut Spec: 50 MB pro Datei.
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+
+// Bevorzugter MIME-Type fuer die Audioaufnahme: audio/mp4 laeuft auf iOS-WebView
+// zuverlaessig (AVFoundation-Unterbau), audio/webm ist der Chromium/Android-Fallback.
+const AUDIO_MIME_CANDIDATES = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'];
+
+const pickSupportedAudioMime = (): string | null => {
+  if (typeof MediaRecorder === 'undefined' || !MediaRecorder.isTypeSupported) return null;
+  return AUDIO_MIME_CANDIDATES.find((mime) => MediaRecorder.isTypeSupported(mime)) || null;
+};
+
+const formatDuration = (seconds: number): string => {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+};
 
 interface ChallengeSubmitModalProps {
   // Kann im ersten Render-Frame null sein: useIonModal reicht die Props des
@@ -175,30 +159,67 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
   const [textContent, setTextContent] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
   const [file, setFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [pickingPhoto, setPickingPhoto] = useState(false);
+  const [pickingMedia, setPickingMedia] = useState(false);
   const [consent, setConsent] = useState<ChallengeConsent>('publish');
 
+  // --- Audio-Aufnahme (MediaRecorder) ---
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+  const recordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const audioStreamRef = useRef<MediaStream | null>(null);
+  const audioPreviewRef = useRef<HTMLAudioElement | null>(null);
+
   const isChoice = challenge.visibility === 'konfi_choice';
+  const headerChip = getHeaderChip(challenge);
 
   const resetMedia = () => {
-    if (photoPreview) URL.revokeObjectURL(photoPreview);
-    setPhotoPreview(null);
+    if (mediaPreview) URL.revokeObjectURL(mediaPreview);
+    setMediaPreview(null);
     setFile(null);
     setLinkUrl('');
     setUploadProgress(0);
   };
 
+  const stopRecordingTimer = () => {
+    if (recordTimerRef.current) {
+      clearInterval(recordTimerRef.current);
+      recordTimerRef.current = null;
+    }
+  };
+
+  const stopAudioStream = () => {
+    audioStreamRef.current?.getTracks().forEach((track) => track.stop());
+    audioStreamRef.current = null;
+  };
+
+  // Aufraeumen beim Unmount (Modal geschlossen waehrend Aufnahme laeuft).
+  useEffect(() => {
+    return () => {
+      stopRecordingTimer();
+      stopAudioStream();
+    };
+  }, []);
+
   const handleMediaTypeChange = (value: ChallengeMediaType) => {
     if (value === mediaType) return;
+    if (isRecording) {
+      mediaRecorderRef.current?.stop();
+      stopAudioStream();
+      stopRecordingTimer();
+      setIsRecording(false);
+    }
     resetMedia();
     setMediaType(value);
   };
 
-  // --- Foto: Kamera / Galerie (Camera-Plugin wie im Chat) ---
+  // --- Foto: Kamera / Galerie ---
   const pickPhoto = async (source: CameraSource) => {
-    setPickingPhoto(true);
+    setPickingMedia(true);
     try {
       const photo = await Camera.getPhoto({
         resultType: CameraResultType.DataUrl,
@@ -219,9 +240,9 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
         setError('Datei ist zu groß (max. 50 MB).');
         return;
       }
-      if (photoPreview) URL.revokeObjectURL(photoPreview);
+      if (mediaPreview) URL.revokeObjectURL(mediaPreview);
       setFile(compressed);
-      setPhotoPreview(previewUrl);
+      setMediaPreview(previewUrl);
     } catch (err: any) {
       // Abgebrochener Kamera-/Galerie-Dialog ist kein Fehler (Capacitor wirft
       // dabei "User cancelled photos app" bzw. eine leere Meldung).
@@ -229,33 +250,109 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
       if (!message || /cancel/i.test(message)) return;
       setError('Foto konnte nicht ausgewählt werden');
     } finally {
-      setPickingPhoto(false);
+      setPickingMedia(false);
     }
   };
 
-  // --- Audio/Video: klassische Dateiauswahl (keine In-App-Aufnahme) ---
-  const pickFile = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = ACCEPT_BY_MEDIA[mediaType] || '*/*';
-    input.multiple = false;
-    input.onchange = (event: Event) => {
-      const target = event.target as HTMLInputElement;
-      const selected = target.files?.[0];
+  // --- Video: Aufnahme / Galerie ueber das native Video-Picker-Sheet ---
+  const pickVideo = async (source: 'camera' | 'gallery') => {
+    setPickingMedia(true);
+    try {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'video/*';
+      if (source === 'camera') {
+        input.capture = 'environment';
+      }
+      const selected = await new Promise<File | null>((resolve) => {
+        input.onchange = (event: Event) => {
+          const target = event.target as HTMLInputElement;
+          resolve(target.files?.[0] || null);
+        };
+        // Manche WebViews feuern kein 'cancel'-Event — ohne Zeitlimit wuerde
+        // pickingMedia sonst bei Abbruch haengen bleiben.
+        window.addEventListener('focus', () => setTimeout(() => resolve(null), 1000), { once: true });
+        input.click();
+      });
       if (!selected) return;
       if (selected.size > MAX_UPLOAD_BYTES) {
         setError('Datei ist zu groß (max. 50 MB).');
         return;
       }
+      if (mediaPreview) URL.revokeObjectURL(mediaPreview);
       setFile(selected);
-    };
-    input.click();
+      setMediaPreview(URL.createObjectURL(selected));
+    } catch {
+      setError('Video konnte nicht ausgewählt werden');
+    } finally {
+      setPickingMedia(false);
+    }
+  };
+
+  // --- Audio: Direktaufnahme ---
+  const startRecording = async () => {
+    try {
+      const mimeType = pickSupportedAudioMime();
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioStreamRef.current = stream;
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
+      recordedChunksRef.current = [];
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) recordedChunksRef.current.push(event.data);
+      };
+      recorder.onstop = () => {
+        stopAudioStream();
+        const usedMime = recorder.mimeType || mimeType || 'audio/mp4';
+        const extension = usedMime.includes('webm') ? 'webm' : 'm4a';
+        const blob = new Blob(recordedChunksRef.current, { type: usedMime });
+        const audioFile = new File([blob], `challenge-audio.${extension}`, { type: usedMime });
+        if (mediaPreview) URL.revokeObjectURL(mediaPreview);
+        setFile(audioFile);
+        setMediaPreview(URL.createObjectURL(audioFile));
+      };
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setIsRecording(true);
+      setRecordSeconds(0);
+      stopRecordingTimer();
+      recordTimerRef.current = setInterval(() => {
+        setRecordSeconds((s) => s + 1);
+      }, 1000);
+    } catch (err: any) {
+      const message = String(err?.message || '');
+      if (/permission|denied/i.test(message)) {
+        setError('Zugriff aufs Mikrofon wurde nicht erlaubt.');
+      } else {
+        setError('Aufnahme konnte nicht gestartet werden');
+      }
+    }
+  };
+
+  const stopRecording = () => {
+    stopRecordingTimer();
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+  };
+
+  const toggleAudioPreview = () => {
+    const audioEl = audioPreviewRef.current;
+    if (!audioEl) return;
+    if (isPlayingPreview) {
+      audioEl.pause();
+    } else {
+      audioEl.play().catch(() => undefined);
+    }
   };
 
   const removeFile = () => {
-    if (photoPreview) URL.revokeObjectURL(photoPreview);
-    setPhotoPreview(null);
+    if (mediaPreview) URL.revokeObjectURL(mediaPreview);
+    setMediaPreview(null);
     setFile(null);
+    setRecordSeconds(0);
   };
 
   const isValid = (): boolean => {
@@ -309,7 +406,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
         }
 
         setSuccess(getSuccessMessage(challenge, isChoice ? consent : 'publish'));
-        if (photoPreview) URL.revokeObjectURL(photoPreview);
+        if (mediaPreview) URL.revokeObjectURL(mediaPreview);
         onSuccess();
       } catch (err: any) {
         setError(err.response?.data?.error || err.message || 'Fehler beim Einreichen');
@@ -350,7 +447,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
 
       <IonContent className="app-gradient-background">
 
-        {/* Challenge-Kopf */}
+        {/* Challenge-Kopf mit kompaktem Sichtbarkeits-Chip */}
         <div className="app-header-banner app-header-banner--challenges">
           <div className="app-header-banner__circle-top" />
           <div className="app-header-banner__circle-bottom" />
@@ -360,28 +457,13 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
             </div>
             <div>
               <h2 className="app-header-banner__title">{challenge.title}</h2>
+              {headerChip && (
+                <span className="app-chip app-chip--challenges" style={{ marginTop: '6px' }}>
+                  <IonIcon icon={headerChip.icon} />
+                  {headerChip.label}
+                </span>
+              )}
             </div>
-          </div>
-        </div>
-
-        {/* Info: was passiert mit dem Beitrag? Gut sichtbar direkt unter dem
-            Kopf, damit der Konfi VOR dem Ausfuellen weiss, woran er ist. */}
-        <div style={{ margin: '16px 16px 0 16px' }}>
-          <div
-            className="app-info-box app-info-box--challenges"
-            style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}
-          >
-            <IonIcon
-              icon={
-                challenge.visibility === 'private'
-                  ? lockClosedOutline
-                  : challenge.moderated
-                    ? shieldCheckmarkOutline
-                    : eyeOutline
-              }
-              style={{ fontSize: '1.15rem', flexShrink: 0, marginTop: '1px' }}
-            />
-            <span>{getTreatmentInfo(challenge)}</span>
           </div>
         </div>
 
@@ -443,7 +525,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
               {mediaType === 'text' ? 'Dein Text'
                 : mediaType === 'link' ? 'Dein Link'
                 : mediaType === 'photo' ? 'Dein Foto'
-                : mediaType === 'audio' ? 'Deine Audiodatei'
+                : mediaType === 'audio' ? 'Deine Aufnahme'
                 : 'Dein Video'}
             </IonLabel>
           </IonListHeader>
@@ -488,10 +570,10 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
 
               {mediaType === 'photo' && (
                 <>
-                  {photoPreview ? (
+                  {mediaPreview ? (
                     <div style={{ position: 'relative' }}>
                       <img
-                        src={photoPreview}
+                        src={mediaPreview}
                         alt="Dein Foto"
                         style={{
                           width: '100%', maxHeight: '280px', objectFit: 'cover',
@@ -518,9 +600,9 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                           '--border-radius': '10px'
                         }}
                         onClick={() => pickPhoto(CameraSource.Camera)}
-                        disabled={pickingPhoto}
+                        disabled={pickingMedia}
                       >
-                        {pickingPhoto ? <IonSpinner name="dots" /> : (
+                        {pickingMedia ? <IonSpinner name="dots" /> : (
                           <>
                             <IonIcon icon={cameraOutline} slot="start" />
                             Aufnehmen
@@ -537,7 +619,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                           '--border-radius': '10px'
                         }}
                         onClick={() => pickPhoto(CameraSource.Photos)}
-                        disabled={pickingPhoto}
+                        disabled={pickingMedia}
                       >
                         <IonIcon icon={imagesOutline} slot="start" />
                         Galerie
@@ -556,59 +638,146 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                 </>
               )}
 
-              {(mediaType === 'audio' || mediaType === 'video') && (
+              {mediaType === 'video' && (
                 <>
-                  <div
-                    onClick={file ? undefined : pickFile}
-                    style={{
-                      padding: '18px',
-                      borderRadius: '10px',
-                      border: file
-                        ? '1px solid rgba(var(--app-color-challenges-rgb), 0.25)'
-                        : '1px dashed #c7c7cc',
-                      background: file ? 'rgba(var(--app-color-challenges-rgb), 0.08)' : 'transparent',
-                      cursor: file ? 'default' : 'pointer',
-                      display: 'flex', alignItems: 'center', gap: '10px',
-                      justifyContent: file ? 'space-between' : 'center'
-                    }}
-                  >
-                    {file ? (
-                      <>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                          <IonIcon
-                            icon={checkmarkCircle}
-                            className="app-icon-color--challenges"
-                            style={{ fontSize: '1.2rem', flexShrink: 0 }}
-                          />
-                          <span
-                            style={{
-                              fontWeight: 600, color: 'var(--app-color-challenges)',
-                              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-                            }}
-                          >
-                            {file.name}
-                          </span>
-                        </div>
-                        <IonButton fill="clear" color="danger" size="small" onClick={removeFile}>
-                          <IonIcon icon={trash} slot="icon-only" />
-                        </IonButton>
-                      </>
-                    ) : (
-                      <>
-                        <IonIcon
-                          icon={cloudUploadOutline}
-                          className="app-icon-color--challenges"
-                          style={{ fontSize: '1.3rem' }}
-                        />
-                        <span style={{ fontWeight: 500, color: '#666' }}>
-                          {mediaType === 'audio' ? 'Audiodatei auswählen' : 'Videodatei auswählen'}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                  <div className="app-info-box app-info-box--challenges" style={{ marginTop: '10px' }}>
-                    Du kannst eine fertige Datei von deinem Gerät hochladen (max. 50 MB).
-                  </div>
+                  {mediaPreview ? (
+                    <div style={{ position: 'relative' }}>
+                      <video
+                        src={mediaPreview}
+                        controls
+                        style={{
+                          width: '100%', maxHeight: '280px',
+                          borderRadius: '10px', display: 'block', background: '#000'
+                        }}
+                      />
+                      <IonButton
+                        fill="solid"
+                        color="danger"
+                        size="small"
+                        onClick={removeFile}
+                        style={{ position: 'absolute', top: '8px', right: '8px', '--border-radius': '8px' }}
+                      >
+                        <IonIcon icon={trash} slot="icon-only" />
+                      </IonButton>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <IonButton
+                        expand="block"
+                        style={{
+                          flex: 1, margin: 0,
+                          '--background': 'var(--app-color-challenges)',
+                          '--border-radius': '10px'
+                        }}
+                        onClick={() => pickVideo('camera')}
+                        disabled={pickingMedia}
+                      >
+                        {pickingMedia ? <IonSpinner name="dots" /> : (
+                          <>
+                            <IonIcon icon={videocamOutline} slot="start" />
+                            Aufnehmen
+                          </>
+                        )}
+                      </IonButton>
+                      <IonButton
+                        expand="block"
+                        fill="outline"
+                        style={{
+                          flex: 1, margin: 0,
+                          '--color': 'var(--app-color-challenges)',
+                          '--border-color': 'var(--app-color-challenges)',
+                          '--border-radius': '10px'
+                        }}
+                        onClick={() => pickVideo('gallery')}
+                        disabled={pickingMedia}
+                      >
+                        <IonIcon icon={imagesOutline} slot="start" />
+                        Galerie
+                      </IonButton>
+                    </div>
+                  )}
+                  <IonItem lines="none" style={{ '--background': 'transparent', marginTop: '8px' }}>
+                    <IonTextarea
+                      value={textContent}
+                      onIonInput={(e) => setTextContent(e.detail.value || '')}
+                      placeholder="Etwas dazu sagen? (optional)"
+                      autoGrow={true}
+                      rows={2}
+                    />
+                  </IonItem>
+                </>
+              )}
+
+              {mediaType === 'audio' && (
+                <>
+                  {mediaPreview ? (
+                    <div
+                      style={{
+                        padding: '14px', borderRadius: '10px',
+                        background: 'rgba(var(--app-color-challenges-rgb), 0.08)',
+                        display: 'flex', alignItems: 'center', gap: '10px'
+                      }}
+                    >
+                      <IonButton
+                        fill="solid"
+                        shape="round"
+                        style={{ '--background': 'var(--app-color-challenges)', margin: 0 }}
+                        onClick={toggleAudioPreview}
+                      >
+                        <IonIcon icon={isPlayingPreview ? pauseOutline : playOutline} slot="icon-only" />
+                      </IonButton>
+                      <span style={{ fontWeight: 600, color: 'var(--app-color-challenges)', flex: 1 }}>
+                        Aufnahme bereit
+                      </span>
+                      <audio
+                        ref={audioPreviewRef}
+                        src={mediaPreview}
+                        onPlay={() => setIsPlayingPreview(true)}
+                        onPause={() => setIsPlayingPreview(false)}
+                        onEnded={() => setIsPlayingPreview(false)}
+                        style={{ display: 'none' }}
+                      />
+                      <IonButton fill="clear" color="danger" size="small" onClick={removeFile}>
+                        <IonIcon icon={trash} slot="icon-only" />
+                      </IonButton>
+                    </div>
+                  ) : isRecording ? (
+                    <div
+                      style={{
+                        padding: '18px', borderRadius: '10px',
+                        background: 'rgba(220, 53, 69, 0.08)',
+                        display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center'
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: '10px', height: '10px', borderRadius: '50%',
+                          background: '#dc3545', flexShrink: 0
+                        }}
+                        className="app-recording-dot"
+                      />
+                      <span style={{ fontWeight: 600, color: '#dc3545' }}>
+                        {formatDuration(recordSeconds)}
+                      </span>
+                      <IonButton fill="solid" color="danger" size="small" onClick={stopRecording}>
+                        <IonIcon icon={stopOutline} slot="start" />
+                        Stopp
+                      </IonButton>
+                    </div>
+                  ) : (
+                    <IonButton
+                      expand="block"
+                      style={{
+                        margin: 0,
+                        '--background': 'var(--app-color-challenges)',
+                        '--border-radius': '10px'
+                      }}
+                      onClick={startRecording}
+                    >
+                      <IonIcon icon={mic} slot="start" />
+                      Aufnehmen
+                    </IonButton>
+                  )}
                   <IonItem lines="none" style={{ '--background': 'transparent', marginTop: '8px' }}>
                     <IonTextarea
                       value={textContent}
@@ -626,16 +795,16 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
         </IonList>
 
         {/* Sichtbarkeit */}
-        <IonList inset={true} className="app-segment-wrapper">
-          <IonListHeader>
-            <div className="app-section-icon app-section-icon--challenges">
-              <IonIcon icon={isChoice ? eyeOutline : informationCircleOutline} />
-            </div>
-            <IonLabel>Wer sieht deinen Beitrag?</IonLabel>
-          </IonListHeader>
-          <IonCard className="app-card">
-            <IonCardContent style={{ padding: '12px' }}>
-              {isChoice ? (
+        {isChoice && (
+          <IonList inset={true} className="app-segment-wrapper">
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--challenges">
+                <IonIcon icon={eyeOutline} />
+              </div>
+              <IonLabel>Wer sieht deinen Beitrag?</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent style={{ padding: '12px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   {CONSENT_OPTIONS.map((option) => {
                     const isSelected = option.value === consent;
@@ -653,7 +822,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                             </div>
                             <div className="app-list-item__content">
                               <div className="app-list-item__title">{option.label}</div>
-                              <div className="app-list-item__subtitle">{CONSENT_EXPLANATION[option.value]}</div>
+                              <div className="app-list-item__subtitle">{option.hint}</div>
                             </div>
                             {isSelected && (
                               <IonIcon
@@ -670,26 +839,16 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                   {/* Moderations-Zusatz nur relevant, wenn der Beitrag ueberhaupt
                       veroeffentlicht werden soll (nicht bei 'private'). */}
                   {challenge.moderated && consent !== 'private' && (
-                    <div
-                      className="app-info-box app-info-box--challenges"
-                      style={{ marginTop: '8px', display: 'flex', alignItems: 'flex-start', gap: '8px' }}
-                    >
-                      <IonIcon icon={timeOutline} style={{ fontSize: '1.05rem', flexShrink: 0, marginTop: '1px' }} />
-                      <span>{MODERATION_ADDENDUM}</span>
-                    </div>
+                    <span className="app-chip app-chip--challenges" style={{ marginTop: '8px', alignSelf: 'flex-start' }}>
+                      <IonIcon icon={shieldCheckmarkOutline} />
+                      Mit Moderation
+                    </span>
                   )}
-                  <div className="app-info-box app-info-box--challenges" style={{ marginTop: '8px' }}>
-                    Du kannst deinen Beitrag jederzeit wieder zurückziehen.
-                  </div>
                 </div>
-              ) : (
-                <div className="app-info-box app-info-box--challenges">
-                  Du kannst deinen Beitrag jederzeit wieder zurückziehen.
-                </div>
-              )}
-            </IonCardContent>
-          </IonCard>
-        </IonList>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
 
       </IonContent>
     </IonPage>

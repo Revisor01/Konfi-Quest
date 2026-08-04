@@ -477,21 +477,25 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             ) : null
           ),
           challenges: () => {
-            // Bewusst ohne Zaehler/Fortschritt: nur die laufende Challenge und
+            // Bewusst ohne Zaehler/Fortschritt: nur die laufenden Challenges und
             // der Weg hinein. Ohne aktive Challenge verschwindet die Karte ganz.
             if (dashboardConfig?.show_challenges === false || activeChallenges.length === 0) {
               return null;
             }
-            const next = activeChallenges[0];
-            const remaining = (() => {
-              const diff = new Date(next.ends_at).getTime() - Date.now();
+            const remainingFor = (endsAt: string) => {
+              const diff = new Date(endsAt).getTime() - Date.now();
               if (isNaN(diff) || diff <= 0) return 'Zeit abgelaufen';
               const days = Math.floor(diff / 86400000);
               if (days >= 1) return days === 1 ? 'noch 1 Tag' : `noch ${days} Tage`;
               const hours = Math.floor(diff / 3600000);
               if (hours >= 1) return hours === 1 ? 'noch 1 Stunde' : `noch ${hours} Stunden`;
               return 'endet heute';
-            })();
+            };
+            // Bis zu 3 laufende Challenges als kompakte Zeilen auf der Karte,
+            // alles Weitere nur noch als "+X weitere"-Hinweis. Tap auf die
+            // gesamte Karte fuehrt direkt in den Challenges-Tab (kein Modal).
+            const visibleChallenges = activeChallenges.slice(0, 3);
+            const moreCount = activeChallenges.length - visibleChallenges.length;
 
             return (
               // Farbverlauf kommt aus der gemeinsamen Klasse — jede
@@ -503,44 +507,60 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                   <h2 className="app-dashboard-section__bg-label">CHALLENGE</h2>
                 </div>
                 <div className="app-dashboard-section__content app-dashboard-section__content--compact">
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div
                     className="app-dashboard-glass-card"
                     onClick={() => router.push('/konfi/challenges')}
-                    style={{ cursor: 'pointer', padding: '16px' }}
+                    style={{ cursor: 'pointer', padding: '14px 16px' }}
                   >
-                    <div className="app-headline" style={{ fontSize: '1.15rem', fontWeight: 800, color: 'white', marginBottom: '6px', lineHeight: 1.25 }}>
-                      {next.title}
-                    </div>
-                    <div className="app-dashboard-meta" style={{ fontSize: '0.85rem', flexWrap: 'wrap' }}>
-                      <IonIcon icon={timeOutline} style={{ fontSize: '0.85rem' }} />
-                      <span>{remaining}</span>
-                      {next.has_submission && (
-                        <>
-                          <span className="app-dashboard-dot" />
-                          <IonIcon icon={checkmarkCircle} style={{ fontSize: '0.85rem' }} />
-                          <span>Du bist dabei</span>
-                        </>
-                      )}
-                      {activeChallenges.length > 1 && (
-                        <>
-                          <span className="app-dashboard-dot" />
-                          <span>+{activeChallenges.length - 1} weitere</span>
-                        </>
-                      )}
-                    </div>
+                    {visibleChallenges.map((challenge, index) => (
+                      <div
+                        key={challenge.id}
+                        style={{
+                          display: 'flex', flexDirection: 'column', gap: '2px',
+                          paddingTop: index === 0 ? 0 : '10px',
+                          marginTop: index === 0 ? 0 : '10px',
+                          borderTop: index === 0 ? 'none' : '1px solid rgba(255, 255, 255, 0.15)'
+                        }}
+                      >
+                        <div
+                          className="app-headline"
+                          style={{
+                            fontSize: index === 0 ? '1.05rem' : '0.95rem',
+                            fontWeight: index === 0 ? 800 : 700,
+                            color: 'white', lineHeight: 1.25
+                          }}
+                        >
+                          {challenge.title}
+                        </div>
+                        <div className="app-dashboard-meta" style={{ fontSize: '0.8rem', flexWrap: 'wrap' }}>
+                          <IonIcon icon={timeOutline} style={{ fontSize: '0.8rem' }} />
+                          <span>{remainingFor(challenge.ends_at)}</span>
+                          {challenge.has_submission && (
+                            <>
+                              <span className="app-dashboard-dot" />
+                              <IonIcon icon={checkmarkCircle} style={{ fontSize: '0.8rem' }} />
+                              <span>Du bist dabei</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {moreCount > 0 && (
+                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.85)', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.15)' }}>
+                        +{moreCount} weitere
+                      </div>
+                    )}
                   </div>
                   <div
                     className="app-dashboard-glass-chip"
                     onClick={() => router.push('/konfi/challenges')}
                     style={{
                       alignSelf: 'center', cursor: 'pointer', display: 'flex',
-                      alignItems: 'center', gap: '4px'
+                      alignItems: 'center', gap: '4px', marginTop: '12px'
                     }}
                   >
-                    {next.has_submission ? 'Zur Challenge' : 'Mitmachen'}
+                    Zu den Challenges
                     <IonIcon icon={chevronForward} />
-                  </div>
                   </div>
                 </div>
               </div>

@@ -212,6 +212,7 @@ describe('Organizations Routes', () => {
       expect(res.body.admin_user_id).toBeDefined();
       expect(res.body.default_badges_created).toBeGreaterThan(0);
       expect(res.body.default_levels_created).toBeGreaterThan(0);
+      expect(res.body.default_challenges_created).toBe(3);
 
       // Alle 4 System-Rollen muessen existieren — insbesondere 'konfi',
       // sonst kann die neue Org keine Konfis anlegen (Bug bis 06/2026).
@@ -227,6 +228,24 @@ describe('Organizations Routes', () => {
         [res.body.id]
       );
       expect(levels[0].c).toBe(6);
+
+      // Drei Beispiel-Challenges als Entwuerfe, ohne Jahrgangs-Zuweisung
+      // (neue Org hat noch keine Jahrgaenge).
+      const { rows: challenges } = await db.query(
+        `SELECT title, challenge_type, is_draft FROM challenges
+         WHERE organization_id = $1 ORDER BY id`,
+        [res.body.id]
+      );
+      expect(challenges.length).toBe(3);
+      expect(challenges.every(c => c.is_draft === true)).toBe(true);
+      expect(challenges.map(c => c.challenge_type).sort()).toEqual(['beitrag', 'praxis', 'wahrnehmung']);
+
+      const { rows: assignments } = await db.query(
+        `SELECT COUNT(*)::int AS c FROM challenge_jahrgang_assignments
+         WHERE challenge_id IN (SELECT id FROM challenges WHERE organization_id = $1)`,
+        [res.body.id]
+      );
+      expect(assignments[0].c).toBe(0);
     });
 
     it('Neue Org kann sofort Konfis anlegen (konfi-Rolle vorhanden)', async () => {

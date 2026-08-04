@@ -35,7 +35,7 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
-import { EmptyState } from '../../shared';
+import { EmptyState, formatEventDateLong as formatDate, formatEventTime as formatTime } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { getChallengeBadgeIcon, getAuthorLabel, formatRemaining } from '../views/ChallengesView';
 import type {
@@ -456,28 +456,49 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
               <div style={{ fontSize: '0.93rem', lineHeight: 1.5, color: '#3c3c43', whiteSpace: 'pre-wrap' }}>
                 {current.description}
               </div>
-              <div
-                style={{
-                  display: 'flex', flexWrap: 'wrap', gap: '8px 14px',
-                  marginTop: '12px', fontSize: '0.8rem', color: '#8e8e93'
-                }}
-              >
-                {isActive ? (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <IonIcon icon={timeOutline} className="app-icon-color--challenges" />
-                    {formatRemaining(current.ends_at)}
-                  </span>
-                ) : (
-                  // Ein einziger, dezenter Hinweis auf das Ende — als Chip bei
-                  // den Meta-Infos statt als eigene Textzeile weiter oben.
-                  <span className="app-chip app-chip--challenges">
-                    Beendet
-                  </span>
-                )}
-                <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <IonIcon icon={ribbonOutline} className="app-icon-color--challenges" />
-                  Abzeichen: {current.badge_name}
-                </span>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
+
+        {/* Details — Laufzeit und Abzeichen im selben Stil wie die Event-Details */}
+        <IonList className="app-section-inset" inset={true}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--challenges">
+              <IonIcon icon={timeOutline} />
+            </div>
+            <IonLabel>Details</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent className="app-card-content">
+              {/* Laufzeit */}
+              <div className="app-info-row">
+                <IonIcon icon={timeOutline} className="app-info-row__icon app-icon-color--challenges" />
+                <div>
+                  <div className="app-info-row__label">Laufzeit</div>
+                  <div className="app-info-row__value">
+                    {formatDate(current.starts_at)}
+                    {' · '}
+                    {formatTime(current.starts_at)}
+                    {' – '}
+                    {formatDate(current.ends_at)}
+                    {' · '}
+                    {formatTime(current.ends_at)}
+                  </div>
+                  {isActive ? (
+                    <div className="app-info-row__value">{formatRemaining(current.ends_at)}</div>
+                  ) : (
+                    <div className="app-info-row__value">Beendet</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Abzeichen */}
+              <div className="app-info-row">
+                <IonIcon icon={ribbonOutline} className="app-info-row__icon app-icon-color--challenges" />
+                <div>
+                  <div className="app-info-row__label">Abzeichen</div>
+                  <div className="app-info-row__value">{current.badge_name}</div>
+                </div>
               </div>
             </IonCardContent>
           </IonCard>
