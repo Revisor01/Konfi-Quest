@@ -16,7 +16,7 @@
   - Client side: `@capacitor/push-notifications` registers device tokens (stored in `push_tokens` table)
 
 **Daily Bible Verse (Tageslosung):**
-- Losungen API at `https://losung.konfi-quest.de/api/`
+- Losungen API (ketiv.de) — intern `http://ketiv-api/api/`, Fallback `https://ketiv.de/api/`
   - Implementation: `backend/services/losungService.js` (dynamic `node-fetch`, 5s timeout, DB-cached in `daily_verses`)
   - Auth: `LOSUNG_API_KEY` env var (query param `api_key`)
   - User-Agent: `Konfi-Quest-App/1.0`
@@ -137,7 +137,7 @@
 
 **Outgoing:**
 - Push to FCM (Google) / APNs (Apple via FCM)
-- Losungen API fetch (`losung.konfi-quest.de`)
+- Losungen API fetch (`ketiv-api` containerintern, Fallback `ketiv.de`)
 - SMTP delivery (`server.godsapp.de:465`)
 
 ---
