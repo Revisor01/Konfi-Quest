@@ -35,7 +35,7 @@ import {
   eyeOffOutline,
   lockClosedOutline,
   personCircleOutline,
-  shieldCheckmarkOutline,
+  informationCircleOutline,
   mic
 } from 'ionicons/icons';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
@@ -71,18 +71,21 @@ const CONSENT_OPTIONS: { value: ChallengeConsent; label: string; hint: string; i
   { value: 'private', label: 'Nur Leitung', hint: 'nicht in der Galerie', icon: lockClosedOutline }
 ];
 
-/** Kompakter Kopf-Chip: Icon + 2-4 Worte. Bei konfi_choice bewusst kein Chip
- *  (die Wahl steht unten im Consent-Picker). */
-const getHeaderChip = (challenge: KonfiChallenge): { icon: string; label: string } | null => {
+/** Behandlungs-Info als Satz fuer den Standard-Infokasten. Erscheint IMMER —
+ *  auch wenn der Konfi nichts einstellen kann, muss die geltende Einstellung
+ *  benannt werden (User-Vorgabe). */
+const getVisibilityInfo = (challenge: KonfiChallenge): string => {
   if (challenge.visibility === 'private') {
-    return { icon: lockClosedOutline, label: 'Nur Leitung' };
+    return 'Deinen Beitrag sieht nur das Leitungsteam.';
   }
   if (challenge.visibility === 'public') {
     return challenge.moderated
-      ? { icon: shieldCheckmarkOutline, label: 'Öffentlich mit Moderation' }
-      : { icon: eyeOutline, label: 'Öffentlich mit Name' };
+      ? 'Dein Beitrag wird nach Freigabe durch das Leitungsteam für deine Gruppe veröffentlicht.'
+      : 'Dein Beitrag ist für deine Gruppe sichtbar — mit deinem Namen.';
   }
-  return null;
+  return challenge.moderated
+    ? 'Du entscheidest unten, wer deinen Beitrag sieht. Veröffentlichung erst nach Freigabe durch das Leitungsteam.'
+    : 'Du entscheidest unten, wer deinen Beitrag sieht.';
 };
 
 /** Erfolgsmeldung nach dem Absenden — spiegelt den tatsaechlichen Behandlungsweg. */
@@ -171,7 +174,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
   const audioStreamRef = useRef<MediaStream | null>(null);
 
   const isChoice = challenge.visibility === 'konfi_choice';
-  const headerChip = getHeaderChip(challenge);
+  const visibilityInfo = getVisibilityInfo(challenge);
 
   const resetMedia = () => {
     if (mediaPreview) URL.revokeObjectURL(mediaPreview);
@@ -431,7 +434,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
 
       <IonContent className="app-gradient-background">
 
-        {/* Challenge-Kopf mit kompaktem Sichtbarkeits-Chip */}
+        {/* Challenge-Kopf */}
         <div className="app-header-banner app-header-banner--challenges">
           <div className="app-header-banner__circle-top" />
           <div className="app-header-banner__circle-bottom" />
@@ -441,15 +444,25 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
             </div>
             <div>
               <h2 className="app-header-banner__title">{challenge.title}</h2>
-              {headerChip && (
-                <span className="app-chip app-chip--challenges" style={{ marginTop: '6px' }}>
-                  <IonIcon icon={headerChip.icon} />
-                  {headerChip.label}
-                </span>
-              )}
             </div>
           </div>
         </div>
+
+        {/* Behandlungs-Hinweis im Standard-Infokasten (Muster: ChangeEmailModal),
+            erscheint in JEDER Sichtbarkeits-Konstellation. */}
+        <IonList inset={true} className="app-segment-wrapper">
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--challenges">
+              <IonIcon icon={informationCircleOutline} />
+            </div>
+            <IonLabel>Hinweis</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card app-info-box--challenges">
+            <IonCardContent className="app-info-box">
+              <p style={{ margin: 0 }}>{visibilityInfo}</p>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
 
         {/* Medienart */}
         {availableOptions.length > 1 && (
@@ -799,14 +812,6 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                       </div>
                     );
                   })}
-                  {/* Moderations-Zusatz nur relevant, wenn der Beitrag ueberhaupt
-                      veroeffentlicht werden soll (nicht bei 'private'). */}
-                  {challenge.moderated && consent !== 'private' && (
-                    <span className="app-chip app-chip--challenges" style={{ marginTop: '8px', alignSelf: 'flex-start' }}>
-                      <IonIcon icon={shieldCheckmarkOutline} />
-                      Mit Moderation
-                    </span>
-                  )}
                 </div>
               </IonCardContent>
             </IonCard>

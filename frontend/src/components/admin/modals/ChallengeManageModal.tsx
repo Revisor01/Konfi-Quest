@@ -215,6 +215,14 @@ interface OrgUser {
   role_name?: string;
 }
 
+// Lesbare Rollen-Kennzeichnung im Urheber-Picker (auch Konfis sind waehlbar).
+const ROLE_LABELS: Record<string, string> = {
+  org_admin: 'Admin',
+  admin: 'Admin',
+  teamer: 'Teamer',
+  konfi: 'Konfi'
+};
+
 interface ChallengeManageModalProps {
   challenge?: AdminChallenge | null;
   onClose: () => void;
@@ -326,9 +334,12 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
 
   const loadInitialData = async () => {
     try {
+      // /challenges/admin/authors statt /admin/users: liefert (anders als die
+      // reine User-Verwaltung) auch Konfis der Org als moegliche Urheber und
+      // ist fuer Teamer freigegeben, nicht nur org_admin.
       const [jahrgaengeRes, usersRes] = await Promise.all([
         api.get('/admin/jahrgaenge').catch(() => ({ data: [] })),
-        api.get('/admin/users').catch(() => ({ data: [] }))
+        api.get('/challenges/admin/authors').catch(() => ({ data: [] }))
       ]);
       setJahrgaenge(Array.isArray(jahrgaengeRes.data) ? jahrgaengeRes.data : []);
       setUsers(Array.isArray(usersRes.data) ? usersRes.data : []);
@@ -831,6 +842,11 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                                     style={{ cursor: loading ? 'default' : 'pointer', marginBottom: '0' }}
                                   >
                                     <span style={{ fontWeight: '500', color: '#333' }}>{orgUser.display_name}</span>
+                                    {orgUser.role_name && (
+                                      <span style={{ marginLeft: '8px', fontSize: '0.75rem', color: '#999' }}>
+                                        ({ROLE_LABELS[orgUser.role_name] || orgUser.role_name})
+                                      </span>
+                                    )}
                                   </div>
                                 );
                               })}

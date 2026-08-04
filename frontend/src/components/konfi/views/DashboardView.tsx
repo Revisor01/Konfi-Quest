@@ -15,7 +15,11 @@ import {
   helpCircle,
   chevronForward,
   time,
-  timeOutline
+  timeOutline,
+  eyeOutline,
+  megaphoneOutline,
+  constructOutline,
+  flagOutline
 } from 'ionicons/icons';
 import { Badge, DashboardEvent, RankingEntry } from '../../../types/dashboard';
 import {
@@ -118,6 +122,7 @@ interface ChallengeTeaser {
   title: string;
   ends_at: string;
   has_submission: boolean;
+  challenge_type?: string;
 }
 
 interface BadgeStats {
@@ -142,6 +147,16 @@ interface DashboardConfig {
 }
 
 const DEFAULT_KONFI_ORDER = DEFAULT_KONFI_SECTION_ORDER;
+
+/** Icon je Challenge-Typ fuer die Dashboard-Karte (Schluessel: challenge_type). */
+const CHALLENGE_TYPE_ICON: Record<string, string> = {
+  wahrnehmung: eyeOutline,
+  beitrag: megaphoneOutline,
+  praxis: constructOutline,
+  frei: flagOutline
+};
+const getChallengeTypeIcon = (type?: string): string =>
+  CHALLENGE_TYPE_ICON[type || ''] || flagOutline;
 
 interface DashboardViewProps {
   dashboardData: DashboardData;
@@ -241,7 +256,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
               id: c.id,
               title: c.title,
               ends_at: c.ends_at,
-              has_submission: markedIds.has(c.id)
+              has_submission: markedIds.has(c.id),
+              challenge_type: c.challenge_type
             }))
             .sort((a: ChallengeTeaser, b: ChallengeTeaser) =>
               new Date(a.ends_at).getTime() - new Date(b.ends_at).getTime())
@@ -490,11 +506,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({
               if (hours >= 1) return hours === 1 ? 'noch 1 Stunde' : `noch ${hours} Stunden`;
               return 'endet heute';
             };
-            // Bis zu 3 laufende Challenges als kompakte Zeilen auf der Karte,
-            // alles Weitere nur noch als "+X weitere"-Hinweis. Tap auf die
-            // gesamte Karte fuehrt direkt in den Challenges-Tab (kein Modal).
+            // Bis zu 3 laufende Challenges als eigene Karten, exakt nach dem
+            // Muster der Events-Sektion (eine Karte je Eintrag, Button darunter
+            // nur textbreit). Weitere Challenges gibt es nur noch im Tab selbst,
+            // kein "+X weitere"-Hinweis mehr — Events verhalten sich genauso.
             const visibleChallenges = activeChallenges.slice(0, 3);
-            const moreCount = activeChallenges.length - visibleChallenges.length;
 
             return (
               // Farbverlauf kommt aus der gemeinsamen Klasse — jede
@@ -506,53 +522,49 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                   <h2 className="app-dashboard-section__bg-label">CHALLENGE</h2>
                 </div>
                 <div className="app-dashboard-section__content app-dashboard-section__content--compact">
-                  <div
-                    className="app-dashboard-glass-card"
-                    onClick={() => router.push('/konfi/challenges')}
-                    style={{ cursor: 'pointer', padding: '14px 16px' }}
-                  >
-                    {visibleChallenges.map((challenge, index) => (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {visibleChallenges.map((challenge) => (
                       <div
                         key={challenge.id}
-                        style={{
-                          display: 'flex', flexDirection: 'column', gap: '2px',
-                          paddingTop: index === 0 ? 0 : '10px',
-                          marginTop: index === 0 ? 0 : '10px',
-                          borderTop: index === 0 ? 'none' : '1px solid rgba(255, 255, 255, 0.15)'
-                        }}
+                        className="app-dashboard-glass-card"
+                        onClick={() => router.push('/konfi/challenges')}
+                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
                       >
-                        <div
-                          className="app-headline"
-                          style={{
-                            fontSize: index === 0 ? '1.05rem' : '0.95rem',
-                            fontWeight: index === 0 ? 800 : 700,
-                            color: 'white', lineHeight: 1.25
-                          }}
-                        >
-                          {challenge.title}
+                        <div style={{
+                          width: '40px', height: '40px', borderRadius: '50%',
+                          background: 'rgba(255, 255, 255, 0.2)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          flexShrink: 0
+                        }}>
+                          <IonIcon icon={getChallengeTypeIcon(challenge.challenge_type)} style={{ fontSize: '1.2rem', color: 'white' }} />
                         </div>
-                        <div className="app-dashboard-meta" style={{ fontSize: '0.8rem', flexWrap: 'wrap' }}>
-                          <IonIcon icon={timeOutline} style={{ fontSize: '0.8rem' }} />
-                          <span>{remainingFor(challenge.ends_at)}</span>
+                        <div style={{ minWidth: 0 }}>
+                          <div className="app-headline" style={{
+                            fontSize: '1rem', fontWeight: '700', color: 'white',
+                            marginBottom: '4px', lineHeight: 1.25
+                          }}>
+                            {challenge.title}
+                          </div>
+                          <div className="app-dashboard-meta">
+                            <IonIcon icon={timeOutline} style={{ fontSize: '0.9rem' }} />
+                            <span>{remainingFor(challenge.ends_at)}</span>
+                          </div>
                         </div>
                       </div>
                     ))}
-                    {moreCount > 0 && (
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.85)', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.15)' }}>
-                        +{moreCount} weitere
-                      </div>
-                    )}
-                  </div>
-                  <div
-                    className="app-dashboard-glass-chip"
-                    onClick={() => router.push('/konfi/challenges')}
-                    style={{
-                      alignSelf: 'center', cursor: 'pointer', display: 'flex',
-                      alignItems: 'center', gap: '4px', marginTop: '12px'
-                    }}
-                  >
-                    Zu den Challenges
-                    <IonIcon icon={chevronForward} />
+                    <div
+                      className="app-dashboard-glass-chip"
+                      onClick={() => router.push('/konfi/challenges')}
+                      style={{
+                        alignSelf: 'center',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      Alle Challenges anzeigen <IonIcon icon={chevronForward} />
+                    </div>
                   </div>
                 </div>
               </div>

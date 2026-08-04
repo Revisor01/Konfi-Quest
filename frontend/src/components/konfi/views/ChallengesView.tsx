@@ -15,6 +15,7 @@ import {
   ribbonOutline,
   archiveOutline,
   checkmarkCircle,
+  paperPlaneOutline,
   sparkles,
   compass,
   rocket,
@@ -135,6 +136,27 @@ const formatDate = (value?: string | null): string => {
   return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
+/**
+ * Laufzeitraum einer beendeten Challenge: "14.07. – 21.07.2026". Liegt der
+ * Start im selben Jahr wie das Ende, faellt das Jahr beim Start weg — nur
+ * das Enddatum traegt es dann. Bei fehlendem/ungueltigem Start faellt die
+ * Funktion auf das reine Enddatum zurueck.
+ */
+const formatDateRange = (startValue?: string | null, endValue?: string | null): string => {
+  const end = formatDate(endValue);
+  if (!startValue) return end;
+  const start = new Date(startValue);
+  const endDate = endValue ? new Date(endValue) : null;
+  if (isNaN(start.getTime()) || !endDate || isNaN(endDate.getTime())) return end;
+
+  const sameYear = start.getFullYear() === endDate.getFullYear();
+  const startFormatted = start.toLocaleDateString(
+    'de-DE',
+    sameYear ? { day: '2-digit', month: '2-digit' } : { day: '2-digit', month: '2-digit', year: 'numeric' }
+  );
+  return `${startFormatted} – ${end}`;
+};
+
 const ChallengesView: React.FC<ChallengesViewProps> = ({
   active,
   archive,
@@ -207,13 +229,24 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
                     onClick={() => onSelectChallenge(challenge)}
                     style={{ cursor: 'pointer', position: 'relative' }}
                   >
+                    {challenge.has_submission && (
+                      <div className="app-corner-badges">
+                        <div
+                          className="app-corner-badge app-corner-badge--queue"
+                          style={{ backgroundColor: 'var(--app-color-challenges)' }}
+                          title="Du hast bereits eingereicht"
+                        >
+                          <IonIcon icon={paperPlaneOutline} />
+                        </div>
+                      </div>
+                    )}
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
                         <div className="app-icon-circle app-icon-circle--challenges">
                           <IonIcon icon={getChallengeBadgeIcon(challenge.badge_icon)} />
                         </div>
                         <div className="app-list-item__content">
-                          <div className="app-list-item__title">
+                          <div className="app-list-item__title" style={{ paddingRight: challenge.has_submission ? '36px' : '0' }}>
                             {challenge.title}
                           </div>
                           <div className="app-list-item__meta">
@@ -344,19 +377,30 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
                       onClick={() => onSelectChallenge(challenge)}
                       style={{ cursor: 'pointer', position: 'relative' }}
                     >
+                      {challenge.has_submission && (
+                        <div className="app-corner-badges">
+                          <div
+                            className="app-corner-badge app-corner-badge--queue"
+                            style={{ backgroundColor: 'var(--app-color-challenges)' }}
+                            title="Du hast bereits eingereicht"
+                          >
+                            <IonIcon icon={paperPlaneOutline} />
+                          </div>
+                        </div>
+                      )}
                       <div className="app-list-item__row">
                         <div className="app-list-item__main">
                           <div className="app-icon-circle app-icon-circle--challenges">
                             <IonIcon icon={getChallengeBadgeIcon(challenge.badge_icon)} />
                           </div>
                           <div className="app-list-item__content">
-                            <div className="app-list-item__title">
+                            <div className="app-list-item__title" style={{ paddingRight: challenge.has_submission ? '36px' : '0' }}>
                               {challenge.title}
                             </div>
                             <div className="app-list-item__meta">
                               <span className="app-list-item__meta-item">
                                 <IonIcon icon={timeOutline} className="app-icon-color--challenges" />
-                                bis {formatDate(challenge.ends_at)}
+                                {formatDateRange(challenge.starts_at, challenge.ends_at)}
                               </span>
                             </div>
                           </div>

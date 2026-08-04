@@ -881,10 +881,15 @@ describe('Challenges Routes', () => {
   });
 
   // ================================================================
-  // 8. DELETE /konfi/submissions/:id + Abzeichen (marks)
+  // 8. DELETE /konfi/submissions/:id (gesperrt) + Abzeichen (marks)
   // ================================================================
-  describe('DELETE /konfi/submissions/:id und Abzeichen', () => {
-    it('Konfi kann eigene Submission loeschen -> 200', async () => {
+  // Design-Entscheidung: Konfis duerfen eingereichte Beitraege NICHT mehr
+  // zurueckziehen. Der Endpoint existiert als Route weiter, antwortet aber
+  // immer mit 403 — unabhaengig von Eigentuemerschaft. Die alte
+  // Existenz-Leak-Schutz-Frage (eigene vs. fremde Submission -> 404) stellt
+  // sich damit nicht mehr: es wird gar nicht mehr bis zum Lookup vorgedrungen.
+  describe('DELETE /konfi/submissions/:id ist gesperrt', () => {
+    it('Konfi kann eigene Submission NICHT loeschen -> 403', async () => {
       const challenge = await createChallenge();
       await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
       const submission = await createSubmission({ challenge_id: challenge.id, user_id: USERS.konfi1.id });
@@ -892,26 +897,38 @@ describe('Challenges Routes', () => {
       const res = await request(app)
         .delete(`/api/challenges/konfi/submissions/${submission.id}`)
         .set('Authorization', `Bearer ${konfi1Token}`);
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(403);
 
       const { rows } = await db.query('SELECT 1 FROM challenge_submissions WHERE id = $1', [submission.id]);
-      expect(rows.length).toBe(0);
+      expect(rows.length).toBe(1);
     });
 
-    it('Konfi kann NICHT die Submission eines anderen Konfis loeschen -> 404 (kein Existenz-Leak)', async () => {
+    it('Konfi kann auch die Submission eines anderen Konfis NICHT loeschen -> 403', async () => {
       const challenge = await createChallenge();
       await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
       const submission = await createSubmission({ challenge_id: challenge.id, user_id: USERS.konfi2.id });
 
-      // Die Route scopet auf den eigenen User: fremde Submissions sind "nicht vorhanden"
-      // statt "verboten" — bewusst 404, damit ihre Existenz nicht erratbar ist.
+      // Die Sperre greift bereits vor jedem Eigentuems-Check: Ergebnis ist
+      // fuer eigene und fremde Submissions identisch (403), es gibt keinen
+      // Unterschied mehr zu verraten.
       const res = await request(app)
         .delete(`/api/challenges/konfi/submissions/${submission.id}`)
         .set('Authorization', `Bearer ${konfi1Token}`);
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(403);
 
       const { rows } = await db.query('SELECT 1 FROM challenge_submissions WHERE id = $1', [submission.id]);
       expect(rows.length).toBe(1);
+    });
+
+    it('Nicht-Konfi (z.B. Teamer) bekommt ebenfalls 403', async () => {
+      const challenge = await createChallenge();
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      const submission = await createSubmission({ challenge_id: challenge.id, user_id: USERS.konfi1.id });
+
+      const res = await request(app)
+        .delete(`/api/challenges/konfi/submissions/${submission.id}`)
+        .set('Authorization', `Bearer ${teamer1Token}`);
+      expect(res.status).toBe(403);
     });
 
     it('Abzeichen (marks) erscheint nach erster Submission', async () => {
@@ -929,7 +946,7 @@ describe('Challenges Routes', () => {
       expect(mark.badge_name).toBe(challenge.badge_name);
     });
 
-    it('Abzeichen (marks) verschwindet, wenn alle eigenen Submissions geloescht wurden', async () => {
+    it('Abzeichen bleibt bestehen, weil die Submission nicht mehr geloescht werden kann', async () => {
       const challenge = await createChallenge();
       await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
       const submission = await createSubmission({ challenge_id: challenge.id, user_id: USERS.konfi1.id });
@@ -940,30 +957,14 @@ describe('Challenges Routes', () => {
         .set('Authorization', `Bearer ${konfi1Token}`);
       expect(res.body.marks.some(m => m.challenge_id === challenge.id)).toBe(true);
 
-      // Einzige Submission loeschen
+      // Loeschversuch wird abgelehnt
       const del = await request(app)
         .delete(`/api/challenges/konfi/submissions/${submission.id}`)
         .set('Authorization', `Bearer ${konfi1Token}`);
-      expect(del.status).toBe(200);
+      expect(del.status).toBe(403);
 
-      // Nachher: Abzeichen weg
+      // Nachher: Abzeichen weiterhin da
       res = await request(app)
-        .get('/api/challenges/konfi')
-        .set('Authorization', `Bearer ${konfi1Token}`);
-      expect(res.body.marks.some(m => m.challenge_id === challenge.id)).toBe(false);
-    });
-
-    it('Abzeichen bleibt, solange noch mindestens eine eigene Submission existiert', async () => {
-      const challenge = await createChallenge({ allow_multiple: true });
-      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
-      const s1 = await createSubmission({ challenge_id: challenge.id, user_id: USERS.konfi1.id });
-      await createSubmission({ challenge_id: challenge.id, user_id: USERS.konfi1.id, text_content: 'Zweiter Beitrag' });
-
-      await request(app)
-        .delete(`/api/challenges/konfi/submissions/${s1.id}`)
-        .set('Authorization', `Bearer ${konfi1Token}`);
-
-      const res = await request(app)
         .get('/api/challenges/konfi')
         .set('Authorization', `Bearer ${konfi1Token}`);
       expect(res.body.marks.some(m => m.challenge_id === challenge.id)).toBe(true);

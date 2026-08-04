@@ -15,8 +15,7 @@ import {
   IonLabel,
   IonRefresher,
   IonRefresherContent,
-  IonSpinner,
-  useIonAlert
+  IonSpinner
 } from '@ionic/react';
 import {
   close,
@@ -28,10 +27,14 @@ import {
   videocamOutline,
   linkOutline,
   peopleOutline,
-  trashOutline,
   addOutline,
   openOutline,
-  ribbonOutline
+  ribbonOutline,
+  checkmarkOutline,
+  eyeOffOutline,
+  lockClosedOutline,
+  removeCircleOutline,
+  informationCircleOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -47,8 +50,7 @@ import type {
 
 // Detailansicht einer Challenge fuer Konfis: Beschreibung, oeffentliche Galerie
 // (anonyme Beitraege OHNE Namen — das Backend liefert dort gar keinen Namen mit)
-// und die eigenen Beitraege mit Status. Beitraege koennen jederzeit
-// zurueckgezogen werden.
+// und die eigenen Beitraege mit Status.
 
 const MEDIA_ICON: Record<ChallengeMediaType, string> = {
   text: documentTextOutline,
@@ -59,36 +61,37 @@ const MEDIA_ICON: Record<ChallengeMediaType, string> = {
 };
 
 /**
- * Status als Corner-Badge fuer eigene Beitraege. Ausgeblendet schlaegt alles;
- * danach entscheidet die Sichtbarkeit der Challenge bzw. die eigene
- * Einwilligung. Labels sind bewusst kurz gehalten (Corner-Badge-Laenge),
- * Farben nutzen bestehende Badge-Farbvarianten aus variables.css.
+ * Status als Icon-Corner-Badge fuer eigene Beitraege (Muster wie das
+ * Warteliste-Badge bei Events: kompaktes, farbiges Icon-only-Badge statt
+ * Text). Ausgeblendet schlaegt alles; danach entscheidet die Sichtbarkeit
+ * der Challenge bzw. die eigene Einwilligung. Label dient nur als Titel
+ * (Tooltip/Barrierefreiheit), nicht als sichtbarer Text.
  */
 const getOwnStatus = (
   submission: ChallengeSubmission,
   challenge: KonfiChallenge
-): { label: string; color: string } => {
+): { label: string; icon: string; color: string } => {
   if (submission.moderation_status === 'hidden') {
-    return { label: 'Ausgeblendet', color: 'var(--app-color-danger)' };
+    return { label: 'Ausgeblendet', icon: removeCircleOutline, color: 'var(--app-color-danger)' };
   }
   if (submission.moderation_status === 'pending') {
-    return { label: 'Wartet auf Freigabe', color: 'var(--app-color-warning)' };
+    return { label: 'Wartet auf Freigabe', icon: timeOutline, color: 'var(--app-color-warning)' };
   }
   // approved
   if (challenge.visibility === 'private') {
-    return { label: 'Nur Leitung', color: '#6b7280' };
+    return { label: 'Nur Leitung', icon: lockClosedOutline, color: '#6b7280' };
   }
   if (challenge.visibility === 'public') {
-    return { label: 'Veröffentlicht', color: 'var(--app-color-success)' };
+    return { label: 'Veröffentlicht', icon: checkmarkOutline, color: 'var(--app-color-success)' };
   }
   // konfi_choice -> eigene Entscheidung entscheidet
   if (submission.konfi_consent === 'anonymous') {
-    return { label: 'Anonym', color: '#7c3aed' };
+    return { label: 'Anonym', icon: eyeOffOutline, color: '#7c3aed' };
   }
   if (submission.konfi_consent === 'publish') {
-    return { label: 'Veröffentlicht', color: 'var(--app-color-success)' };
+    return { label: 'Veröffentlicht', icon: checkmarkOutline, color: 'var(--app-color-success)' };
   }
-  return { label: 'Nur Leitung', color: '#6b7280' };
+  return { label: 'Nur Leitung', icon: lockClosedOutline, color: '#6b7280' };
 };
 
 const formatDateTime = (value?: string): string => {
@@ -187,26 +190,29 @@ const ChallengeMedia: React.FC<{
 const SubmissionCard: React.FC<{
   submission: ChallengeSubmission;
   authorLabel: string;
-  statusBadge?: { label: string; color: string };
-  onDelete?: () => void;
-}> = ({ submission, authorLabel, statusBadge, onDelete }) => (
+  statusBadge?: { label: string; icon: string; color: string };
+}> = ({ submission, authorLabel, statusBadge }) => (
   <div
     className="app-list-item app-list-item--challenges"
-    style={{ position: 'relative', overflow: 'hidden' }}
+    style={{ position: 'relative', overflow: 'hidden', width: '100%' }}
   >
     {statusBadge && (
       <div className="app-corner-badges">
-        <div className="app-corner-badge" style={{ backgroundColor: statusBadge.color }}>
-          {statusBadge.label}
+        <div
+          className="app-corner-badge"
+          style={{ backgroundColor: statusBadge.color, padding: '4px 6px' }}
+          title={statusBadge.label}
+        >
+          <IonIcon icon={statusBadge.icon} style={{ color: '#fff', fontSize: '0.85rem', display: 'block' }} />
         </div>
       </div>
     )}
     <div className="app-list-item__row">
-      <div className="app-list-item__main" style={{ alignItems: 'flex-start' }}>
+      <div className="app-list-item__main" style={{ alignItems: 'flex-start', width: '100%' }}>
         <div className="app-icon-circle app-icon-circle--challenges" style={{ flexShrink: 0 }}>
           <IonIcon icon={MEDIA_ICON[submission.media_type] || documentTextOutline} />
         </div>
-        <div className="app-list-item__content" style={{ minWidth: 0, paddingRight: statusBadge ? '84px' : 0 }}>
+        <div className="app-list-item__content" style={{ minWidth: 0, flex: 1, paddingRight: statusBadge ? '34px' : 0 }}>
           <span className="app-list-item__title" style={{ margin: 0, display: 'block' }}>{authorLabel}</span>
           <div className="app-list-item__subtitle" style={{ marginBottom: '4px' }}>
             {formatDateTime(submission.created_at)}
@@ -246,21 +252,6 @@ const SubmissionCard: React.FC<{
               mediaType={submission.media_type}
             />
           )}
-
-          {onDelete && (
-            <div style={{ marginTop: '8px' }}>
-              <IonButton
-                fill="clear"
-                color="danger"
-                size="small"
-                style={{ margin: 0, '--padding-start': '4px', '--padding-end': '8px' }}
-                onClick={onDelete}
-              >
-                <IonIcon icon={trashOutline} slot="start" />
-                Zurückziehen
-              </IonButton>
-            </div>
-          )}
         </div>
       </div>
     </div>
@@ -274,7 +265,7 @@ interface ChallengeDetailModalProps {
   onClose: () => void;
   /** Oeffnet das Einreich-Modal (wird von der Seite gesteuert). */
   onSubmit?: (challenge: KonfiChallenge) => void;
-  /** Wird gerufen, wenn sich etwas geaendert hat (Beitrag geloescht). */
+  /** Wird gerufen, wenn sich etwas geaendert hat. */
   onChanged?: () => void;
 }
 
@@ -291,8 +282,7 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
   onSubmit,
   onChanged
 }) => {
-  const { setError, setSuccess, isOnline } = useApp();
-  const [presentAlert] = useIonAlert();
+  const { setError } = useApp();
   const [detail, setDetail] = useState<KonfiChallengeDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -335,35 +325,27 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
 
   const canSubmitMore = isActive && (current.allow_multiple || ownSubmissions.length === 0);
 
-  const handleDelete = (submission: ChallengeSubmission) => {
-    if (!isOnline) {
-      setError('Zurückziehen nicht möglich — du bist offline');
-      return;
+  // Beendete Challenge ohne eigene Beitraege: der Abschnitt "Deine Beitraege"
+  // faellt komplett weg, direkt die Gruppen-Galerie folgt auf die Beschreibung.
+  const showOwnSection = isActive || ownSubmissions.length > 0;
+
+  // Sichtbarkeits-/Moderationshinweis als Standard-Infokasten-Text (Muster:
+  // ChangeEmailModal "Hinweis"-Box). Je nach Sichtbarkeitsmodus und Moderation
+  // ein kurzer, konkreter Satz.
+  const visibilityHint = useMemo(() => {
+    if (current.visibility === 'private') {
+      return 'Beiträge sieht nur das Leitungsteam.';
     }
-    presentAlert({
-      header: 'Beitrag zurückziehen',
-      message: 'Dein Beitrag wird gelöscht. Das lässt sich nicht rückgängig machen.',
-      buttons: [
-        { text: 'Abbrechen', role: 'cancel' },
-        {
-          text: 'Zurückziehen',
-          role: 'destructive',
-          handler: () => {
-            (async () => {
-              try {
-                await api.delete(`/challenges/konfi/submissions/${submission.id}`);
-                setSuccess('Dein Beitrag wurde zurückgezogen');
-                await loadDetail();
-                onChanged?.();
-              } catch (err: any) {
-                setError(err.response?.data?.error || 'Fehler beim Zurückziehen');
-              }
-            })();
-          }
-        }
-      ]
-    });
-  };
+    if (current.visibility === 'public') {
+      return current.moderated
+        ? 'Beiträge werden nach Freigabe für die Gruppe veröffentlicht.'
+        : 'Beiträge sind für deine Gruppe sichtbar.';
+    }
+    // konfi_choice
+    return current.moderated
+      ? 'Du wählst beim Einreichen, wer deinen Beitrag sieht. Veröffentlichung erst nach Freigabe.'
+      : 'Du wählst beim Einreichen, wer deinen Beitrag sieht.';
+  }, [current.visibility, current.moderated]);
 
   return (
     <IonPage>
@@ -404,7 +386,7 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
             </div>
             <div>
               <h2 className="app-header-banner__title">{current.title}</h2>
-              {/* Bei beendeten Challenges steht der Hinweis NUR noch als Chip in
+              {/* Bei beendeten Challenges steht der Hinweis NUR noch dezent in
                   der Meta-Zeile unten — vorher stapelten sich "Diese Challenge
                   ist vorbei", "Worum geht es?" und "Beendet" untereinander. */}
               {isActive && (
@@ -414,18 +396,6 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
               )}
             </div>
           </div>
-          {author && (
-            <div
-              style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                marginTop: '10px', fontSize: '0.82rem', color: 'rgba(255,255,255,0.9)',
-                position: 'relative', zIndex: 1
-              }}
-            >
-              <IonIcon icon={personOutline} />
-              Gestellt von {author}
-            </div>
-          )}
         </div>
 
         {/* Beschreibung */}
@@ -448,23 +418,40 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
                   marginTop: '12px', fontSize: '0.8rem', color: '#8e8e93'
                 }}
               >
-                {isActive ? (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <IonIcon icon={timeOutline} className="app-icon-color--challenges" />
-                    {formatRemaining(current.ends_at)}
-                  </span>
-                ) : (
-                  // Ein einziger, dezenter Hinweis auf das Ende — als Chip bei
-                  // den Meta-Infos statt als eigene Textzeile weiter oben.
-                  <span className="app-chip app-chip--challenges">
-                    Beendet
-                  </span>
-                )}
+                <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <IonIcon icon={timeOutline} className="app-icon-color--challenges" />
+                  {isActive ? formatRemaining(current.ends_at) : 'Beendet'}
+                </span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                   <IonIcon icon={ribbonOutline} className="app-icon-color--challenges" />
                   Abzeichen: {current.badge_name}
                 </span>
+                {/* Urheber deutlich sichtbar in derselben unauffaelligen Meta-Zeile. */}
+                {author && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <IonIcon icon={personOutline} className="app-icon-color--challenges" />
+                    Gestellt von {author}
+                  </span>
+                )}
               </div>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
+
+        {/* Sichtbarkeits-/Moderationshinweis — Standard-Infokasten-Pattern
+            (siehe ChangeEmailModal "Hinweis"-Sektion), in Challenge-Farbe. */}
+        <IonList inset={true} className="app-segment-wrapper">
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--challenges">
+              <IonIcon icon={informationCircleOutline} />
+            </div>
+            <IonLabel>Hinweis</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card app-info-box--challenges">
+            <IonCardContent className="app-info-box">
+              <p style={{ margin: 0 }}>
+                {visibilityHint}
+              </p>
             </IonCardContent>
           </IonCard>
         </IonList>
@@ -475,41 +462,41 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
           </div>
         ) : (
           <>
-            {/* Eigene Beitraege */}
-            <IonList inset={true} className="app-segment-wrapper">
-              <IonListHeader>
-                <div className="app-section-icon app-section-icon--challenges">
-                  <IonIcon icon={personOutline} />
-                </div>
-                <IonLabel>Deine Beiträge</IonLabel>
-              </IonListHeader>
-              <IonCard className="app-card">
-                <IonCardContent style={{ padding: ownSubmissions.length === 0 ? '16px' : '12px' }}>
-                  {ownSubmissions.length === 0 ? (
-                    <EmptyState
-                      icon={documentTextOutline}
-                      title="Noch kein Beitrag von dir"
-                      message={isActive
-                        ? 'Tippe oben auf das Plus, um etwas einzureichen.'
-                        : 'Bei dieser Challenge hast du nichts eingereicht.'}
-                      iconColor="var(--app-color-challenges)"
-                    />
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      {ownSubmissions.map((submission) => (
-                        <SubmissionCard
-                          key={submission.id}
-                          submission={submission}
-                          authorLabel="Dein Beitrag"
-                          statusBadge={getOwnStatus(submission, current)}
-                          onDelete={() => handleDelete(submission)}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </IonCardContent>
-              </IonCard>
-            </IonList>
+            {/* Eigene Beitraege — bei beendeter Challenge ohne eigene Beitraege
+                komplett ausgeblendet, dann folgt direkt die Gruppen-Galerie. */}
+            {showOwnSection && (
+              <IonList inset={true} className="app-segment-wrapper">
+                <IonListHeader>
+                  <div className="app-section-icon app-section-icon--challenges">
+                    <IonIcon icon={personOutline} />
+                  </div>
+                  <IonLabel>Deine Beiträge</IonLabel>
+                </IonListHeader>
+                <IonCard className="app-card">
+                  <IonCardContent style={{ padding: ownSubmissions.length === 0 ? '16px' : '12px' }}>
+                    {ownSubmissions.length === 0 ? (
+                      <EmptyState
+                        icon={documentTextOutline}
+                        title="Noch kein Beitrag von dir"
+                        message="Tippe oben auf das Plus, um etwas einzureichen."
+                        iconColor="var(--app-color-challenges)"
+                      />
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        {ownSubmissions.map((submission) => (
+                          <SubmissionCard
+                            key={submission.id}
+                            submission={submission}
+                            authorLabel="Dein Beitrag"
+                            statusBadge={getOwnStatus(submission, current)}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </IonCardContent>
+                </IonCard>
+              </IonList>
+            )}
 
             {/* Galerie — nur wenn die Challenge ueberhaupt oeffentlich sein kann */}
             {current.visibility !== 'private' && (

@@ -174,10 +174,15 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   }
 
   // Challenge inkl. Org-Scoping laden.
+  // author_name: gecoalescter Anzeige-String (Export-Text "Gestellt von: X").
+  // author_user_display_name: NUR der aufgeloeste Benutzername (ohne Freitext-
+  // Fallback) — wird von mapChallengeForKonfi gebraucht, um author_freetext
+  // und author_display_name getrennt an den Konfi-Client auszuliefern.
   async function loadChallenge(id, organizationId) {
     const { rows: [row] } = await db.query(
       `SELECT c.*,
-              COALESCE(au.display_name, c.author_freetext) AS author_name
+              COALESCE(au.display_name, c.author_freetext) AS author_name,
+              au.display_name AS author_user_display_name
        FROM challenges c
        LEFT JOIN users au ON c.author_user_id = au.id
        WHERE c.id = $1 AND c.organization_id = $2`,
@@ -196,6 +201,11 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   }
 
   // Einheitliche Aufbereitung einer Challenge fuer die Konfi-Sicht.
+  // author_freetext und author_display_name werden GETRENNT ausgeliefert
+  // (statt bereits serverseitig zu einem Namen gecoalesct) — das entspricht
+  // dem Vertrag in frontend/src/types/challenges.ts (ChallengeBase) und dem,
+  // was getAuthorLabel() im Konfi-Frontend tatsaechlich liest: Freitext hat
+  // dort Vorrang, sonst der aufgeloeste Benutzername.
   function mapChallengeForKonfi(row, now = new Date()) {
     return {
       id: row.id,
@@ -208,7 +218,15 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
       allow_multiple: row.allow_multiple,
       badge_icon: row.badge_icon,
       badge_name: row.badge_name,
-      author_name: row.author_name || null,
+      author_user_id: row.author_user_id || null,
+      author_freetext: row.author_freetext || null,
+      // author_user_display_name kommt aus loadChallenge (Detail-Aufruf, roher
+      // Benutzername ohne Freitext-Fallback). Die Konfi-Listen-Query liefert
+      // dieses Feld nicht, dort ist author_name bereits der rohe display_name
+      // (siehe GET /konfi) — deshalb greift der Fallback dort korrekt.
+      author_display_name: row.author_user_display_name !== undefined
+        ? (row.author_user_display_name || null)
+        : (row.author_name || null),
       starts_at: row.starts_at,
       ends_at: row.ends_at,
       status: deriveStatus(row, now),
@@ -306,7 +324,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
 
       const { rows } = await db.query(
         `SELECT c.*,
-                COALESCE(au.display_name, c.author_freetext) AS author_name,
+                au.display_name AS author_name,
                 EXISTS (
                   SELECT 1 FROM challenge_submissions s
                   WHERE s.challenge_id = c.id AND s.user_id = $3
@@ -602,38 +620,24 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     }
   );
 
-  // DELETE /konfi/submissions/:id — nur eigene Beitraege, Datei wird mitgeloescht.
+  // DELETE /konfi/submissions/:id — bewusst gesperrt (Design-Entscheidung):
+  // Konfis duerfen eingereichte Beitraege NICHT mehr eigenstaendig zurueckziehen.
+  // Ein einmal eingereichter Beitrag ist verbindlich; das Ausblenden bleibt
+  // Sache der Leitung (PUT /admin/submissions/:id/moderate). Der Endpoint
+  // bleibt als Route bestehen (stabile URL, klarer Fehlercode statt 404 fuer
+  // alle Aufrufer), antwortet aber immer mit 403 — unabhaengig davon, ob die
+  // Submission existiert oder wem sie gehoert.
   router.delete('/konfi/submissions/:id',
     rbacVerifier,
     param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
     handleValidationErrors,
     async (req, res) => {
-      try {
-        if (req.user.role_name !== 'konfi') {
-          return res.status(403).json({ error: 'Nur für Konfis' });
-        }
-        const submissionId = parseInt(req.params.id, 10);
-        const { rows: [submission] } = await db.query(
-          `SELECT id, challenge_id, file_path
-           FROM challenge_submissions
-           WHERE id = $1 AND user_id = $2 AND organization_id = $3`,
-          [submissionId, req.user.id, req.user.organization_id]
-        );
-        if (!submission) {
-          return res.status(404).json({ error: 'Beitrag nicht gefunden' });
-        }
-
-        await db.query('DELETE FROM challenge_submissions WHERE id = $1', [submissionId]);
-        if (submission.file_path) {
-          await deleteChallengeFile(submission.file_path);
-        }
-
-        res.json({ message: 'Beitrag gelöscht' });
-        notifyJahrgaenge(submission.challenge_id, 'submission_update', { challengeId: submission.challenge_id });
-      } catch (err) {
-        console.error('Database error in DELETE /challenges/konfi/submissions/:id:', err);
-        res.status(500).json({ error: 'Datenbankfehler' });
+      if (req.user.role_name !== 'konfi') {
+        return res.status(403).json({ error: 'Nur für Konfis' });
       }
+      return res.status(403).json({
+        error: 'Eingereichte Beiträge lassen sich nicht mehr zurückziehen. Wende dich an deine Leitung, falls ein Beitrag entfernt werden soll.'
+      });
     }
   );
 
@@ -743,6 +747,47 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   // LEITUNGS-ENDPUNKTE (org_admin / admin / teamer)
   // ====================================================================
 
+  // GET /admin/authors — Personen der Org, die als Urheber:in einer Challenge
+  // ausgewaehlt werden koennen. Bewusst ALLE Rollen (auch Konfis) — eine
+  // Challenge kann ausdruecklich von einem Konfi stammen (anders als
+  // GET /admin/users, das Konfis kategorisch ausschliesst und org_admin
+  // vorbehalten ist). Teamer sehen dabei nur Konfis ihrer zugewiesenen
+  // Jahrgaenge (gleiche Sichtbarkeitsgrenze wie sonst in dieser Datei),
+  // org_admin/admin sehen alle Konfis der Organisation.
+  router.get('/admin/authors', rbacVerifier, requireTeamer, async (req, res) => {
+    try {
+      const viewable = viewableJahrgangIds(req);
+      const params = [req.user.organization_id];
+      let konfiJahrgangFilter = '';
+      if (viewable !== null) {
+        if (viewable.length === 0) {
+          konfiJahrgangFilter = "AND r.name <> 'konfi'";
+        } else {
+          params.push(viewable);
+          konfiJahrgangFilter = `AND (r.name <> 'konfi' OR kp.jahrgang_id = ANY($2::int[]))`;
+        }
+      }
+
+      const { rows } = await db.query(
+        `SELECT u.id, u.display_name, r.name AS role_name
+         FROM users u
+         JOIN roles r ON u.role_id = r.id
+         LEFT JOIN konfi_profiles kp ON kp.user_id = u.id
+         WHERE u.organization_id = $1
+           AND u.deleted_at IS NULL
+           AND r.name IN ('org_admin', 'admin', 'teamer', 'konfi')
+           ${konfiJahrgangFilter}
+         ORDER BY (r.name = 'konfi'), u.display_name`,
+        params
+      );
+
+      res.json(rows);
+    } catch (err) {
+      console.error('Database error in GET /challenges/admin/authors:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
   // GET /admin — alle Challenges der Org (inkl. Entwuerfe) mit Zaehlern.
   // Teamer sehen nur Challenges ihrer zugewiesenen Jahrgaenge.
   router.get('/admin', rbacVerifier, requireTeamer, async (req, res) => {
@@ -764,6 +809,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
       const { rows } = await db.query(
         `SELECT c.*,
                 COALESCE(au.display_name, c.author_freetext) AS author_name,
+                au.display_name AS author_display_name,
                 (SELECT COUNT(*) FROM challenge_submissions s WHERE s.challenge_id = c.id) AS submission_count,
                 (SELECT COUNT(*) FROM challenge_submissions s WHERE s.challenge_id = c.id AND s.moderation_status = 'pending') AS pending_count,
                 COALESCE(
