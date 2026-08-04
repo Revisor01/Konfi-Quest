@@ -898,15 +898,17 @@ describe('Challenges Routes', () => {
       expect(rows.length).toBe(0);
     });
 
-    it('Konfi kann NICHT die Submission eines anderen Konfis loeschen -> 403', async () => {
+    it('Konfi kann NICHT die Submission eines anderen Konfis loeschen -> 404 (kein Existenz-Leak)', async () => {
       const challenge = await createChallenge();
       await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
       const submission = await createSubmission({ challenge_id: challenge.id, user_id: USERS.konfi2.id });
 
+      // Die Route scopet auf den eigenen User: fremde Submissions sind "nicht vorhanden"
+      // statt "verboten" — bewusst 404, damit ihre Existenz nicht erratbar ist.
       const res = await request(app)
         .delete(`/api/challenges/konfi/submissions/${submission.id}`)
         .set('Authorization', `Bearer ${konfi1Token}`);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
 
       const { rows } = await db.query('SELECT 1 FROM challenge_submissions WHERE id = $1', [submission.id]);
       expect(rows.length).toBe(1);
