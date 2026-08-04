@@ -1,0 +1,204 @@
+import React, { useState, useRef } from 'react';
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonRefresher,
+  IonRefresherContent,
+  IonButtons,
+  IonButton,
+  IonIcon,
+  useIonModal,
+  useIonAlert
+} from '@ionic/react';
+import { add, arrowBack } from 'ionicons/icons';
+import { useApp } from '../../../contexts/AppContext';
+import { useModalPage } from '../../../contexts/ModalContext';
+import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
+import api from '../../../services/api';
+import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { CACHE_TTL } from '../../../services/offlineCache';
+import LoadingSpinner from '../../common/LoadingSpinner';
+import ChallengesManageView, { getChallengeStatus } from '../views/ChallengesManageView';
+import ChallengeManageModal from '../modals/ChallengeManageModal';
+import ChallengeModerationModal from '../modals/ChallengeModerationModal';
+import { triggerPullHaptic } from '../../../utils/haptics';
+import type { AdminChallenge } from '../../../types/challenges';
+
+const AdminChallengesPage: React.FC = () => {
+  const { user, setError, setSuccess } = useApp();
+  const { pageRef, presentingElement } = useModalPage('admin-challenges');
+
+  const { data: challenges, loading, refresh: refreshChallenges } = useOfflineQuery<AdminChallenge[]>(
+    'admin:challenges:' + user?.organization_id,
+    async () => { const res = await api.get('/challenges/admin'); return res.data; },
+    { ttl: CACHE_TTL.REQUESTS }
+  );
+
+  const [presentAlert] = useIonAlert();
+
+  // Aktuell im Modal bearbeitete/moderierte Challenge
+  const [editChallenge, setEditChallenge] = useState<AdminChallenge | null>(null);
+  const [moderationChallenge, setModerationChallenge] = useState<AdminChallenge | null>(null);
+
+  // "Ungespeicherte Aenderungen"-Stand des Formular-Modals, damit canDismiss
+  // auch Swipe-/Backdrop-Schliessen abfangen kann.
+  const manageDirtyRef = useRef(false);
+
+  const [presentManageModal, dismissManageModal] = useIonModal(ChallengeManageModal, {
+    challenge: editChallenge,
+    onDirtyChange: (dirty: boolean) => { manageDirtyRef.current = dirty; },
+    onClose: () => {
+      dismissManageModal();
+      setEditChallenge(null);
+    },
+    onSuccess: () => {
+      dismissManageModal();
+      setEditChallenge(null);
+      refreshChallenges();
+    }
+  });
+
+  const [presentModerationModal, dismissModerationModal] = useIonModal(ChallengeModerationModal, {
+    challenge: moderationChallenge,
+    onClose: () => {
+      dismissModerationModal();
+      setModerationChallenge(null);
+    },
+    onChanged: () => { refreshChallenges(); }
+  });
+
+  const manageCanDismiss = async (): Promise<boolean> => {
+    if (!manageDirtyRef.current) return true;
+    return new Promise<boolean>((resolve) => {
+      let decided = false;
+      const decide = (v: boolean) => { decided = true; resolve(v); };
+      presentAlert({
+        header: 'Ungespeicherte Änderungen',
+        message: 'Möchtest du die Änderungen verwerfen?',
+        backdropDismiss: false,
+        buttons: [
+          { text: 'Abbrechen', role: 'cancel', handler: () => decide(false) },
+          { text: 'Verwerfen', role: 'destructive', handler: () => decide(true) }
+        ],
+        onDidDismiss: () => { if (!decided) resolve(false); }
+      });
+    });
+  };
+
+  useLiveRefresh('challenges', refreshChallenges);
+
+  const openCreate = () => {
+    setEditChallenge(null);
+    presentManageModal({
+      presentingElement: presentingElement,
+      canDismiss: manageCanDismiss,
+      backdropDismiss: false
+    });
+  };
+
+  const openEdit = (challenge: AdminChallenge) => {
+    setEditChallenge(challenge);
+    presentManageModal({
+      presentingElement: presentingElement,
+      canDismiss: manageCanDismiss,
+      backdropDismiss: false
+    });
+  };
+
+  const openModeration = (challenge: AdminChallenge) => {
+    setModerationChallenge(challenge);
+    presentModerationModal({ presentingElement: presentingElement });
+  };
+
+  const doDelete = async (challenge: AdminChallenge, force: boolean) => {
+    try {
+      await api.delete(`/challenges/admin/${challenge.id}${force ? '?force=true' : ''}`);
+      await refreshChallenges();
+      setSuccess('Challenge gelöscht');
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Fehler beim Löschen der Challenge');
+    }
+  };
+
+  const handleDelete = (challenge: AdminChallenge) => {
+    const status = getChallengeStatus(challenge);
+    // Entwuerfe koennen ohne Weiteres weg. Alles, was schon laeuft oder lief,
+    // haengt an echten Beitraegen von Konfis -> destruktive Nachfrage.
+    if (status === 'draft') {
+      presentAlert({
+        header: 'Entwurf löschen',
+        message: `Entwurf "${challenge.title}" wirklich löschen?`,
+        buttons: [
+          { text: 'Abbrechen', role: 'cancel' },
+          { text: 'Löschen', role: 'destructive', handler: () => { doDelete(challenge, false); } }
+        ]
+      });
+      return;
+    }
+
+    const count = challenge.submission_count || 0;
+    presentAlert({
+      header: 'Challenge unwiderruflich löschen',
+      message: `"${challenge.title}" wurde bereits gestartet. Beim Löschen ${count > 0 ? `werden ${count} Beiträge samt hochgeladener Dateien` : 'wird die Challenge'} endgültig entfernt. Das lässt sich nicht rückgängig machen.`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Endgültig löschen',
+          role: 'destructive',
+          handler: () => { doDelete(challenge, true); }
+        }
+      ]
+    });
+  };
+
+  return (
+    <IonPage ref={pageRef}>
+      <IonHeader translucent={true}>
+        <IonToolbar>
+          <IonButtons slot="start">
+            <IonButton onClick={() => window.history.back()}>
+              <IonIcon icon={arrowBack} />
+            </IonButton>
+          </IonButtons>
+          <IonTitle>Challenges</IonTitle>
+          <IonButtons slot="end">
+            <IonButton onClick={openCreate} title="Neue Challenge">
+              <IonIcon icon={add} />
+            </IonButton>
+          </IonButtons>
+        </IonToolbar>
+      </IonHeader>
+      <IonContent className="app-gradient-background" fullscreen>
+        <IonHeader collapse="condense">
+          <IonToolbar className="app-condense-toolbar">
+            <IonTitle size="large">Challenges</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+
+        <IonRefresher
+          slot="fixed"
+          onIonRefresh={(e) => { refreshChallenges(); e.detail.complete(); }}
+          onIonPull={triggerPullHaptic}
+        >
+          <IonRefresherContent />
+        </IonRefresher>
+
+        {loading ? (
+          <LoadingSpinner message="Challenges werden geladen..." />
+        ) : (
+          <ChallengesManageView
+            challenges={challenges || []}
+            onSelectChallenge={openModeration}
+            onEditChallenge={openEdit}
+            onDeleteChallenge={handleDelete}
+          />
+        )}
+      </IonContent>
+    </IonPage>
+  );
+};
+
+export default AdminChallengesPage;

@@ -22,7 +22,7 @@ import {
 } from '@ionic/react';
 import {
   people, chatbubbles, star, ellipsisHorizontal,
-  person, home, flash, document as documentIcon, calendar, business
+  person, home, flash, document as documentIcon, calendar, business, flag
 } from 'ionicons/icons';
 import { useIonRouter, isPlatform } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
@@ -49,6 +49,7 @@ import AdminCertificatesPage from '../admin/pages/AdminCertificatesPage';
 import AdminDashboardSettingsPage from '../admin/pages/AdminDashboardSettingsPage';
 import AdminLevelsPage from '../admin/pages/AdminLevelsPage';
 import AdminInvitePage from '../admin/pages/AdminInvitePage';
+import AdminChallengesPage from '../admin/pages/AdminChallengesPage';
 import ChatOverviewPage from '../chat/pages/ChatOverviewPage';
 import ChatRoomView from '../chat/views/ChatRoomView'; // Diese bleibt!
 import PushNotificationSettings from '../common/PushNotificationSettings';
@@ -59,7 +60,7 @@ import KonfiDashboardPage from '../konfi/pages/KonfiDashboardPage';
 import KonfiEventsPage from '../konfi/pages/KonfiEventsPage';
 import KonfiEventDetailPage from '../konfi/pages/KonfiEventDetailPage';
 import KonfiBadgesPage from '../konfi/pages/KonfiBadgesPage';
-import KonfiRequestsPage from '../konfi/pages/KonfiRequestsPage';
+import KonfiChallengesPage from '../konfi/pages/KonfiChallengesPage';
 import KonfiProfilePage from '../konfi/pages/KonfiProfilePage';
 import TeamerDashboardPage from '../teamer/pages/TeamerDashboardPage';
 import TeamerEventsPage from '../teamer/pages/TeamerEventsPage';
@@ -69,6 +70,7 @@ import TeamerProfilePage from '../teamer/pages/TeamerProfilePage';
 import TeamerRequestsPage from '../teamer/pages/TeamerRequestsPage';
 import TeamerBadgesPage from '../teamer/pages/TeamerBadgesPage';
 import TeamerKonfiStatsPage from '../teamer/pages/TeamerKonfiStatsPage';
+import TeamerChallengesPage from '../teamer/pages/TeamerChallengesPage';
 
 // Wrapper-Komponenten fuer Route render-props (migriert von props.history.goBack())
 const KonfiDetailRoute: React.FC<RouteComponentProps<{ id: string }>> = ({ match }) => {
@@ -221,6 +223,7 @@ const MainTabs: React.FC = () => {
           <Route exact path="/admin/settings/invite" component={AdminInvitePage} />
           <Route exact path="/admin/badges" component={AdminBadgesPage} />
           <Route exact path="/admin/requests" component={AdminActivityRequestsPage} />
+          <Route exact path="/admin/challenges" component={AdminChallengesPage} />
           <Route exact path="/admin/users" component={AdminUsersPage} />
           <Route exact path="/admin/organizations" component={AdminOrganizationsPage} />
           <Route exact path="/admin/material" component={AdminMaterialPage} />
@@ -292,6 +295,7 @@ const MainTabs: React.FC = () => {
           <Route exact path="/teamer/material" component={TeamerMaterialPage} />
           <Route exact path="/teamer/badges" component={TeamerBadgesPage} />
           <Route exact path="/teamer/requests" component={TeamerRequestsPage} />
+          <Route exact path="/teamer/challenges" component={TeamerChallengesPage} />
 
           <Route exact path="/teamer/profile" component={TeamerProfilePage} />
           <Route exact path="/teamer/profile/badges" component={TeamerBadgesPage} />
@@ -341,12 +345,15 @@ const MainTabs: React.FC = () => {
           <Route exact path="/konfi/events" component={KonfiEventsPage} />
           <Route exact path="/konfi/events/:id" component={KonfiEventDetailPage} />
           <Route exact path="/konfi/badges" component={KonfiBadgesPage} />
+          <Route exact path="/konfi/challenges" component={KonfiChallengesPage} />
 
           {/* CHAT ROUTEN - Nach Konfis-Pattern */}
           <Route exact path="/konfi/chat" component={ChatOverviewPage} />
           <Route path="/konfi/chat/room/:roomId" component={KonfiChatRoomRoute} />
 
-          <Route exact path="/konfi/requests" component={KonfiRequestsPage} />
+          {/* Anträge sind jetzt ein Segment im Events-Tab. Die alte Route bleibt
+              wegen bestehender Deep-Links aus Push-Nachrichten erhalten. */}
+          <Route exact path="/konfi/requests" render={() => <Redirect to="/konfi/events?segment=antraege" />} />
           <Route exact path="/konfi/profile" component={KonfiProfilePage} />
           <Route exact path="/login" render={() => <Redirect to="/konfi/dashboard" />} />
           <Route exact path="/" render={() => <Redirect to="/konfi/dashboard" />} />
@@ -368,6 +375,10 @@ const MainTabs: React.FC = () => {
                 </IonBadge>
               )}
             </IonTabButton>
+            <IonTabButton tab="challenges" href="/konfi/challenges">
+              <IonIcon icon={flag} />
+              <IonLabel>Challenges</IonLabel>
+            </IonTabButton>
             <IonTabButton tab="events" href="/konfi/events">
               <IonIcon icon={calendar} />
               <IonLabel>Events</IonLabel>
@@ -380,10 +391,6 @@ const MainTabs: React.FC = () => {
                   {newBadgesCount > 9 ? '9+' : newBadgesCount}
                 </IonBadge>
               )}
-            </IonTabButton>
-            <IonTabButton tab="requests" href="/konfi/requests">
-              <IonIcon icon={documentIcon} />
-              <IonLabel>Aktivitäten</IonLabel>
             </IonTabButton>
           </IonTabBar>
         )}

@@ -1,0 +1,50 @@
+import React from 'react';
+import { flagOutline, swapHorizontalOutline, sparklesOutline } from 'ionicons/icons';
+import OnboardingTour, { OnboardingSlide } from '../../shared/OnboardingTour';
+
+interface KonfiUpdateWalkthroughModalProps {
+  onClose: () => void;
+  displayName?: string;
+}
+
+// Update-Walkthrough 2.0 fuer BESTANDS-Konfis: erklaert einmalig, was sich mit
+// dem Update geaendert hat. Gleicher Stil/Technik wie die normale Tour
+// (OnboardingTour = Vollbild-Overlay, KEIN Modal).
+// Reihenfolge bewusst: erst das Neue (Challenges), dann der wichtigste
+// Umlern-Punkt (Anträge sind umgezogen), zum Schluss kurz das Wrapped.
+const SLIDES: OnboardingSlide[] = [
+  {
+    icon: flagOutline,
+    color: 'var(--app-color-challenges)',
+    rgb: '--app-color-challenges-rgb',
+    title: 'Neu: Challenges',
+    text: 'In der Mitte deiner Tab-Leiste gibt es jetzt die Challenges: Impulse, die dich für ein paar Tage begleiten. Du antwortest darauf mit einem Foto, einem Text, einer Aufnahme oder einem Link — so, wie du es willst.',
+  },
+  {
+    icon: flagOutline,
+    color: 'var(--app-color-challenges)',
+    rgb: '--app-color-challenges-rgb',
+    title: 'Du entscheidest',
+    text: 'Bei jedem Beitrag wählst du selbst, ob er mit deinem Namen, anonym oder nur für die Leitung sichtbar ist. Fürs Mitmachen gibt es ein Abzeichen — und mit Absicht keine Punkte und keine Rangliste. Es geht hier nicht ums Sammeln.',
+  },
+  {
+    icon: swapHorizontalOutline,
+    color: 'var(--app-color-activities)',
+    rgb: '--app-color-activities-rgb',
+    title: 'Anträge sind umgezogen',
+    text: 'Der eigene Anträge-Tab ist weg. Du findest deine Anträge jetzt im Events-Tab: oben auf "Anträge" tippen — dort stellst du wie gewohnt neue Anträge und siehst, was schon bestätigt ist.',
+  },
+  {
+    icon: sparklesOutline,
+    color: 'var(--app-color-konfis)',
+    rgb: '--app-color-konfis-rgb',
+    title: 'Dein Jahresrückblick',
+    text: 'Dein Rückblick erzählt jetzt deinen Weg statt Platzierungen: deine Challenge-Momente, deine Events und wie weit du gekommen bist. Kein Vergleich mit anderen — nur dein Jahr.',
+  },
+];
+
+const KonfiUpdateWalkthroughModal: React.FC<KonfiUpdateWalkthroughModalProps> = ({ onClose, displayName }) => (
+  <OnboardingTour slides={SLIDES} onClose={onClose} displayName={displayName} />
+);
+
+export default KonfiUpdateWalkthroughModal;

@@ -17,6 +17,8 @@ import {
 import { Preferences } from '@capacitor/preferences';
 import { sparkles, chevronForward, personCircleOutline } from 'ionicons/icons';
 import KonfiOnboardingModal from '../modals/KonfiOnboardingModal';
+import KonfiUpdateWalkthroughModal from '../modals/KonfiUpdateWalkthroughModal';
+import { UPDATE_WALKTHROUGH_KEY } from '../../../hooks/useOnboardingOnce';
 import { useApp } from '../../../contexts/AppContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
@@ -261,13 +263,32 @@ const KonfiDashboardPage: React.FC = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const onboardingKey = `konfi_onboarding_seen_${user?.id ?? 'x'}`;
 
+  // --- Update-Walkthrough 2.0 — nur fuer BESTANDS-Konfis, einmalig ---
+  // Frische Accounts sehen die normale Tour (inkl. Challenges-Schritt) und
+  // bekommen den Update-Hinweis NICHT zusaetzlich; das Flag wird fuer sie
+  // direkt als gesehen markiert. Beide Entscheidungen laufen in EINEM Ablauf,
+  // damit der Update-Hinweis nie gleichzeitig mit der Tour aufpoppt.
+  const [showUpdateWalkthrough, setShowUpdateWalkthrough] = useState(false);
+  const updateWalkthroughKey = `${UPDATE_WALKTHROUGH_KEY}_${user?.id ?? 'x'}`;
+
   // Beim ersten Betreten des Dashboards (pro Konfi-Account) die Tour zeigen.
   useIonViewDidEnter(() => {
     if (!user?.id) return;
-    Preferences.get({ key: onboardingKey }).then(({ value }) => {
-      if (!value) {
+    Promise.all([
+      Preferences.get({ key: onboardingKey }),
+      Preferences.get({ key: updateWalkthroughKey })
+    ]).then(([onboarding, updateWalkthrough]) => {
+      if (!onboarding.value) {
+        // Frischer Account: volle Tour zeigen, Update-Hinweis ueberspringen.
         Preferences.set({ key: onboardingKey, value: '1' });
+        Preferences.set({ key: updateWalkthroughKey, value: '1' });
         setTimeout(() => setShowOnboarding(true), 400);
+        return;
+      }
+      // Bestandsnutzer: einmalig den Update-Walkthrough zeigen.
+      if (!updateWalkthrough.value) {
+        Preferences.set({ key: updateWalkthroughKey, value: '1' });
+        setTimeout(() => setShowUpdateWalkthrough(true), 600);
       }
     }).catch(() => { /* Preferences nicht verfuegbar -> Tour einfach ueberspringen */ });
   });
@@ -408,6 +429,14 @@ const KonfiDashboardPage: React.FC = () => {
         <KonfiOnboardingModal
           onClose={() => setShowOnboarding(false)}
           displayName={(user?.display_name || '').split(' ')[0]}
+        />
+      )}
+
+      {/* Update-Walkthrough 2.0 — nur fuer Bestandsnutzer, nie zusammen mit
+          der normalen Tour (siehe Entscheidung in useIonViewDidEnter). */}
+      {showUpdateWalkthrough && (
+        <KonfiUpdateWalkthroughModal
+          onClose={() => setShowUpdateWalkthrough(false)}
         />
       )}
     </IonPage>

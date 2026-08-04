@@ -2,7 +2,7 @@ import React from 'react';
 import {
   sparklesOutline, peopleOutline, chatbubblesOutline, calendarOutline,
   checkmarkDoneOutline, settingsOutline, schoolOutline, documentTextOutline,
-  ribbonOutline, statsChartOutline, folderOpenOutline,
+  ribbonOutline, statsChartOutline, folderOpenOutline, flagOutline,
 } from 'ionicons/icons';
 import OnboardingTour, { OnboardingSlide } from '../../shared/OnboardingTour';
 
@@ -55,7 +55,7 @@ const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-users)',
     rgb: '--app-color-users-rgb',
     title: 'Mehr',
-    text: 'Im Mehr-Tab steckt die ganze Verwaltung: Jahrgänge, Aktivitäten, Badges, Level, Kategorien, Material und Benutzer. Tippe bei jedem Bereich auf das Info-Symbol für eine kurze Erklärung.',
+    text: 'Im Mehr-Tab steckt die ganze Verwaltung: Jahrgänge, Aktivitäten, Challenges, Badges, Level, Kategorien, Material und Benutzer. Tippe bei jedem Bereich auf das Info-Symbol für eine kurze Erklärung.',
   },
   {
     icon: schoolOutline,
@@ -77,6 +77,13 @@ const SLIDES: OnboardingSlide[] = [
     rgb: '--app-color-badges-rgb',
     title: 'Badges',
     text: 'Badges belohnen Erfolge — nach Punkten, Anzahl bestimmter Aktivitäten, besuchten (Pflicht-)Events oder Kombinationen. Du wählst die Logik und Schwelle selbst; Konfis erhalten sie automatisch.',
+  },
+  {
+    icon: flagOutline,
+    color: 'var(--app-color-challenges)',
+    rgb: '--app-color-challenges-rgb',
+    title: 'Challenges',
+    text: 'Challenges sind Aufgaben, auf die deine Konfis mit eigenen Beiträgen antworten: Foto, Text, Aufnahme oder Link. Bewusst ohne Punkte, ohne Zähler und ohne Rangliste — es gibt nur ein Abzeichen fürs Mitmachen. Beim Anlegen legst du Sichtbarkeit und Freigabe fest; nach dem Start bleiben diese Zusagen fest.',
   },
   {
     icon: statsChartOutline,

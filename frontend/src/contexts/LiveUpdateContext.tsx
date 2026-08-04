@@ -18,6 +18,7 @@ export type LiveUpdateType =
   | 'jahrgaenge'     // Jahrgänge-Verwaltung
   | 'levels'         // Level-Verwaltung
   | 'users'          // Benutzer-Verwaltung
+  | 'challenges'     // Challenges (neue Beiträge, Moderations-Änderungen)
   | 'organizations'; // Organisations-Verwaltung
 
 export interface LiveUpdateEvent {

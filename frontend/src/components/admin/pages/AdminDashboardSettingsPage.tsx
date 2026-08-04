@@ -36,6 +36,7 @@ import { safeUUID } from '../../../utils/uuid';
 
 interface DashboardConfig {
   show_konfirmation: boolean;
+  show_challenges: boolean;
   show_events: boolean;
   show_losung: boolean;
   show_badges: boolean;
@@ -51,6 +52,7 @@ interface TeamerDashboardConfig {
 
 const KONFI_LABELS: Record<string, string> = {
   konfirmation: 'Countdown',
+  challenges: 'Challenges',
   events: 'Events',
   losung: 'Tageslosung',
   badges: 'Badges',
@@ -64,7 +66,7 @@ const TEAMER_LABELS: Record<string, string> = {
   losung: 'Tageslosung'
 };
 
-const DEFAULT_KONFI_ORDER = ['konfirmation', 'events', 'losung', 'badges', 'ranking'];
+const DEFAULT_KONFI_ORDER = ['konfirmation', 'challenges', 'events', 'losung', 'badges', 'ranking'];
 const DEFAULT_TEAMER_ORDER = ['zertifikate', 'events', 'badges', 'losung'];
 
 
@@ -74,6 +76,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
 
   const [dashboardConfig, setDashboardConfig] = useState<DashboardConfig>({
     show_konfirmation: true,
+    show_challenges: true,
     show_events: true,
     show_losung: true,
     show_badges: true,
@@ -118,6 +121,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
       onSuccess: (data: any) => {
         setDashboardConfig({
           show_konfirmation: data.dashboard_show_konfirmation ?? true,
+          show_challenges: data.dashboard_show_challenges ?? true,
           show_events: data.dashboard_show_events ?? true,
           show_losung: data.dashboard_show_losung ?? true,
           show_badges: data.dashboard_show_badges ?? true,

@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   sparklesOutline, homeOutline, chatbubblesOutline, calendarOutline,
-  ribbonOutline, documentTextOutline, folderOpenOutline,
+  ribbonOutline, documentTextOutline, folderOpenOutline, flagOutline,
 } from 'ionicons/icons';
 import OnboardingTour, { OnboardingSlide } from '../../shared/OnboardingTour';
 
@@ -54,6 +54,13 @@ const SLIDES: OnboardingSlide[] = [
     rgb: '--app-color-activities-rgb',
     title: 'Deine Aktivitäten',
     text: 'Warst du bei einer Aktion dabei? Reiche deine Aktivitäten hier ein. So bleibt dein Einsatz dokumentiert und fließt in deine Badges ein.',
+  },
+  {
+    icon: flagOutline,
+    color: 'var(--app-color-challenges)',
+    rgb: '--app-color-challenges-rgb',
+    title: 'Challenges',
+    text: 'Challenges sind Impulse für deine Gruppe: Die Konfis antworten mit Foto, Text, Aufnahme oder Link. Bewusst ohne Punkte und ohne Rangliste — es gibt nur ein Abzeichen fürs Mitmachen. Über die Karte auf deiner Startseite legst du Challenges an und gibst die Beiträge frei.',
   },
   {
     icon: folderOpenOutline,

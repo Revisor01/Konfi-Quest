@@ -16,6 +16,7 @@ class BackgroundService {
   static autoDeletionCronTask = null;
   static trialExpiryCronTask = null;
   static apmSnapshotInterval = null;
+  static challengeStartInterval = null;
   static wrappedRouter = null;
 
   /**
@@ -220,6 +221,78 @@ class BackgroundService {
       }
     } catch (error) {
       console.error('sendRegistrationOpenPushes error:', error);
+    }
+  }
+
+  // ====================================================================
+  // CHALLENGE-START-PUSH SERVICE
+  // ====================================================================
+
+  /**
+   * Startet den Challenge-Start-Push-Service (alle 5 Minuten).
+   * Challenges werden geplant (starts_at in der Zukunft) und sollen genau dann
+   * einen Push an die Konfis der zugewiesenen Jahrgaenge ausloesen, wenn sie
+   * tatsaechlich starten. Idempotent ueber challenges.start_push_sent.
+   */
+  static startChallengeStartService(db) {
+    if (this.challengeStartInterval) return;
+
+    // Erstlauf verzoegert (30s), damit beim Boot zuerst die Migrations durch
+    // sind (sonst Race: Tabelle challenges evtl. noch nicht vorhanden).
+    setTimeout(() => {
+      this.sendChallengeStartPushes(db).catch(err =>
+        console.error('Challenge-Start-Push (initial) failed:', err));
+    }, 30 * 1000);
+
+    const FIVE_MINUTES = 5 * 60 * 1000;
+    this.challengeStartInterval = setInterval(async () => {
+      try {
+        await this.sendChallengeStartPushes(db);
+      } catch (error) {
+        console.error('Challenge-Start-Push-Service failed:', error);
+      }
+    }, FIVE_MINUTES);
+  }
+
+  static stopChallengeStartService() {
+    if (this.challengeStartInterval) {
+      clearInterval(this.challengeStartInterval);
+      this.challengeStartInterval = null;
+    }
+  }
+
+  /**
+   * Findet Challenges, die JETZT gestartet sind, aber noch keinen Start-Push
+   * ausgeloest haben, und benachrichtigt die Konfis der zugewiesenen Jahrgaenge.
+   *
+   * ATOMAR: das Flag wird in DERSELBEN Query auf true geflippt und nur die
+   * geflippten Zeilen zurueckgegeben (RETURNING) — so kann KEINE Challenge
+   * doppelt gepusht werden, auch nicht bei parallelen Laeufen.
+   * Beendete Challenges werden uebersprungen (ends_at > NOW()): eine Challenge,
+   * die waehrend eines Ausfalls komplett durchgelaufen ist, soll nicht
+   * nachtraeglich noch "mach mit!" pushen.
+   */
+  static async sendChallengeStartPushes(db) {
+    try {
+      const { rows: challenges } = await db.query(`
+        UPDATE challenges
+        SET start_push_sent = true
+        WHERE start_push_sent = false
+          AND is_draft = false
+          AND starts_at <= NOW()
+          AND ends_at > NOW()
+        RETURNING id, title
+      `);
+
+      for (const challenge of challenges) {
+        try {
+          await PushService.sendChallengeStartedToJahrgaenge(db, challenge.id, challenge.title);
+        } catch (err) {
+          console.error(`Challenge-Start-Push failed for challenge ${challenge.id}:`, err.message);
+        }
+      }
+    } catch (error) {
+      console.error('sendChallengeStartPushes error:', error);
     }
   }
 
@@ -1032,6 +1105,7 @@ class BackgroundService {
     this.startAutoDeletionCron(db);
     this.startTrialExpiryCron(db);
     this.startApmSnapshotService(db);
+    this.startChallengeStartService(db);
   }
 
   /**
@@ -1047,6 +1121,7 @@ class BackgroundService {
     this.stopAutoDeletionCron();
     this.stopTrialExpiryCron();
     this.stopApmSnapshotService();
+    this.stopChallengeStartService();
   }
 }
 

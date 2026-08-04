@@ -708,6 +708,26 @@ useEffect(() => {
                 targetUrl = userType === 'admin' ? '/admin/konfis' : `${routePrefix}/dashboard`;
                 break;
 
+              case 'challenge_started':
+                // Neue Challenge gestartet -> Challenge-Tab des Konfi (Leitung
+                // bekommt diesen Push nicht, faellt aber sauber auf ihre
+                // Challenge-Verwaltung zurueck).
+                targetUrl = `${routePrefix}/challenges`;
+                break;
+
+              case 'challenge_submission':
+                // Neuer Beitrag -> Moderation in der Leitungs-Ansicht.
+                targetUrl = userType === 'konfi'
+                  ? '/konfi/challenges'
+                  : `${routePrefix}/challenges`;
+                break;
+
+              case 'wrapped':
+                // Bestandsluecke: Das Wrapped-Modal liegt auf dem Dashboard —
+                // ohne diesen Fall lief der Tap ins Leere (default-Zweig).
+                targetUrl = `${routePrefix}/dashboard`;
+                break;
+
               default:
                 console.warn('Unbekannter Notification-Typ:', notificationType);
                 break;

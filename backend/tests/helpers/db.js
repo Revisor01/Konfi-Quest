@@ -49,6 +49,7 @@ const TRUNCATE_SQL = `TRUNCATE
     material_file_tags, material_files, material_jahrgaenge, material_events, materials, material_tags,
     user_certificates, certificate_types,
     wrapped_snapshots,
+    challenge_submissions, challenge_jahrgang_assignments, challenges,
     push_tokens, event_reminders, password_resets,
     invite_codes, refresh_tokens, notifications,
     user_organizations,

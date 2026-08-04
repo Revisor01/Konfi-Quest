@@ -6,7 +6,7 @@ import { Pagination } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import {
   sparklesOutline, homeOutline, chatbubblesOutline, calendarOutline,
-  starOutline, documentTextOutline, arrowForward, checkmarkCircle
+  starOutline, documentTextOutline, flagOutline, arrowForward, checkmarkCircle
 } from 'ionicons/icons';
 import 'swiper/css';
 import 'swiper/css/pagination';
@@ -17,7 +17,9 @@ interface KonfiOnboardingModalProps {
 }
 
 // Inhalt der Tab-Tour. Reihenfolge folgt den Konfi-Tabs:
-// Start (Dashboard) · Chat · Events · Badges · Aktivitaeten.
+// Start (Dashboard) · Chat · Challenges · Events · Badges, danach die
+// Antraege (die als Segment IM Events-Tab liegen, seit 2.0 kein eigener Tab
+// mehr).
 // rgb = Name der -rgb-CSS-Variable (z.B. "konfis" -> --app-color-konfis-rgb),
 // noetig fuer rgba()-Alphastufen im Gradient. `${color}d9` (Hex anhaengen)
 // funktioniert NICHT mit var() -> ungueltiges CSS -> kein Hintergrund.
@@ -58,11 +60,18 @@ const SLIDES: { icon: string; color: string; rgb: string; title: string; text: s
     text: 'Für deine Aktivitäten bekommst du Abzeichen. Sammle Badges und steig im Level auf — je mehr du machst, desto mehr schaltest du frei.',
   },
   {
+    icon: flagOutline,
+    color: 'var(--app-color-challenges)',
+    rgb: '--app-color-challenges-rgb',
+    title: 'Deine Challenges',
+    text: 'In der Mitte deiner Tab-Leiste warten die Challenges: Impulse, die dich ein paar Tage begleiten. Du antwortest mit einem Foto, einem Text, einer Aufnahme oder einem Link — und entscheidest selbst, ob dein Beitrag mit Namen, anonym oder nur für die Leitung sichtbar ist. Fürs Mitmachen gibt es ein Abzeichen und mit Absicht keine Punkte.',
+  },
+  {
     icon: documentTextOutline,
     color: 'var(--app-color-activities)',
     rgb: '--app-color-activities-rgb',
-    title: 'Deine Aktivitäten',
-    text: 'Warst du im Gottesdienst, bei einer Taufe oder Hochzeit? Reiche deine Aktivitäten hier ein. Deine Gruppenleiterinnen bestätigen sie und du bekommst deine Punkte.',
+    title: 'Deine Anträge',
+    text: 'Warst du im Gottesdienst, bei einer Taufe oder Hochzeit? Dafür stellst du einen Antrag auf Punkte — im Events-Tab oben auf "Anträge" tippen. Deine Gruppenleiterinnen bestätigen ihn und du bekommst deine Punkte.',
   },
 ];
 

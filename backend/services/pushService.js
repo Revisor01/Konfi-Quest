@@ -29,6 +29,8 @@ const { sendFirebasePushNotification, sendFirebaseSilentPush } = require('../pus
  * new_konfi_registration      | sendNewKonfiRegistrationToAdmins     | Jahrgangs-Admins| ja
  * event_opt_out               | sendEventOptOutToAdmins              | Org-Admins      | ja
  * event_opt_in                | sendEventOptInToAdmins               | Org-Admins      | ja
+ * challenge_started           | sendChallengeStartedToJahrgaenge     | Jahrgangs-Konfis| ja
+ * challenge_submission        | sendChallengeSubmissionToLeadership  | Leitung         | ja
  *
  * Helper-Methoden (nicht direkt als Push-Type):
  * - getTokensForUser(db, userId)
@@ -841,6 +843,105 @@ class PushService {
       return await this.sendToMultipleUsers(db, konfiIds, notification);
     } catch (error) {
  console.error('sendNewEventToOrgKonfis error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ====================================================================
+  // CHALLENGE NOTIFICATIONS
+  // ====================================================================
+
+  /**
+   * Challenge gestartet - Push an alle Konfis der zugewiesenen Jahrgaenge.
+   * Empfaenger kommen ueber challenge_jahrgang_assignments, NICHT ueber die
+   * ganze Organisation: eine Challenge laeuft immer nur fuer bestimmte
+   * Jahrgaenge.
+   *
+   * @param {object} db - DB-Pool
+   * @param {number} challengeId - Challenge ID
+   * @param {string} challengeTitle - Titel der Challenge
+   */
+  static async sendChallengeStartedToJahrgaenge(db, challengeId, challengeTitle) {
+    try {
+      const { rows: konfis } = await db.query(
+        `SELECT DISTINCT kp.user_id
+         FROM konfi_profiles kp
+         JOIN users u ON kp.user_id = u.id
+         JOIN roles r ON u.role_id = r.id
+         JOIN challenge_jahrgang_assignments cja ON cja.jahrgang_id = kp.jahrgang_id
+         WHERE cja.challenge_id = $1
+           AND r.name = 'konfi'
+           AND u.deleted_at IS NULL`,
+        [challengeId]
+      );
+
+      const konfiIds = konfis.map(k => k.user_id);
+      if (konfiIds.length === 0) {
+        return { success: true, sent: 0 };
+      }
+
+      const notification = {
+        title: 'Neue Challenge!',
+        body: `${challengeTitle} — mach mit!`,
+        data: {
+          type: 'challenge_started',
+          challengeId: challengeId.toString()
+        }
+      };
+
+      return await this.sendToMultipleUsers(db, konfiIds, notification);
+    } catch (error) {
+      console.error('sendChallengeStartedToJahrgaenge error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Neuer Challenge-Beitrag - Push an die Leitung (Org-Admins + die Teamer der
+   * zugewiesenen Jahrgaenge). Wird nur bei moderierten Challenges gesendet, weil
+   * nur dort eine Handlung noetig ist.
+   *
+   * @param {object} db - DB-Pool
+   * @param {number} organizationId - Organisation ID
+   * @param {number} challengeId - Challenge ID
+   * @param {string} challengeTitle - Titel der Challenge
+   * @param {string} konfiName - Anzeigename des einreichenden Konfis
+   */
+  static async sendChallengeSubmissionToLeadership(db, organizationId, challengeId, challengeTitle, konfiName) {
+    try {
+      const notification = {
+        title: 'Neuer Challenge-Beitrag',
+        body: `${konfiName} hat einen Beitrag zu "${challengeTitle}" eingereicht.`,
+        data: {
+          type: 'challenge_submission',
+          challengeId: challengeId.toString()
+        }
+      };
+
+      await this.sendToOrgAdmins(db, organizationId, notification);
+
+      // Teamer haengen ueber user_jahrgang_assignments an den Jahrgaengen der
+      // Challenge und werden von sendToOrgAdmins nicht erfasst.
+      const { rows: teamers } = await db.query(
+        `SELECT DISTINCT u.id
+         FROM users u
+         JOIN roles r ON u.role_id = r.id
+         JOIN user_jahrgang_assignments uja ON uja.user_id = u.id
+         JOIN challenge_jahrgang_assignments cja ON cja.jahrgang_id = uja.jahrgang_id
+         WHERE r.name = 'teamer'
+           AND u.organization_id = $1
+           AND u.deleted_at IS NULL
+           AND cja.challenge_id = $2`,
+        [organizationId, challengeId]
+      );
+
+      if (teamers.length > 0) {
+        await this.sendToMultipleUsers(db, teamers.map(t => t.id), notification);
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('sendChallengeSubmissionToLeadership error:', error);
       return { success: false, error: error.message };
     }
   }

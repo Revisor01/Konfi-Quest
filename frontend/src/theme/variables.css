@@ -66,6 +66,8 @@ ion-list-header ion-label {
   --app-color-konfis-rgb: 91, 33, 182;
   --app-color-teamer: #be185d;
   --app-color-teamer-rgb: 190, 24, 93;
+  --app-color-challenges: #be185d;
+  --app-color-challenges-rgb: 190, 24, 93;
   --app-color-users: #667eea;
   --app-color-users-rgb: 102, 126, 234;
   --app-color-badges: #f59e0b;
@@ -240,6 +242,7 @@ ion-item-sliding:last-child {
 .app-list-item--activities, ion-item.app-list-item--activities { border-left-color: var(--app-color-activities); }
 .app-list-item--teamer, ion-item.app-list-item--teamer { border-left-color: var(--app-color-teamer); }
 .app-list-item--team, ion-item.app-list-item--team { border-left-color: var(--app-color-teamer); }
+.app-list-item--challenges, ion-item.app-list-item--challenges { border-left-color: var(--app-color-challenges); }
 .app-list-item--users, ion-item.app-list-item--users { border-left-color: var(--app-color-users); }
 .app-list-item--level, ion-item.app-list-item--level { border-left-color: var(--app-color-level); }
 .app-list-item--organizations, ion-item.app-list-item--organizations { border-left-color: var(--app-color-users); }
@@ -263,6 +266,7 @@ ion-item-sliding:last-child {
 .app-list-item--chat.app-list-item--selected { background: rgba(var(--app-color-chat-rgb), 0.08); }
 .app-list-item--team.app-list-item--selected { background: rgba(var(--app-color-teamer-rgb), 0.08); }
 .app-list-item--teamer.app-list-item--selected { background: rgba(var(--app-color-teamer-rgb), 0.08); }
+.app-list-item--challenges.app-list-item--selected { background: rgba(var(--app-color-challenges-rgb), 0.08); }
 .app-list-item--warning.app-list-item--selected { background: rgba(var(--app-color-warning-rgb), 0.08); }
 .app-list-item--primary.app-list-item--selected { background: rgba(var(--app-color-konfis-rgb), 0.08); }
 .app-list-item--purple.app-list-item--selected { background: rgba(var(--app-color-konfis-rgb), 0.08); }
@@ -398,6 +402,7 @@ ion-item-sliding:last-child {
 /* Chat-Raumtyp-Farben */
 .app-corner-badge--team { background-color: var(--app-color-teamer); }
 .app-corner-badge--teamer { background-color: var(--app-color-teamer); }
+.app-corner-badge--challenges { background-color: var(--app-color-challenges); }
 .app-corner-badge--chat-jahrgang { background-color: var(--app-color-chat); }
 .app-corner-badge--konfi { background-color: var(--app-color-konfis); }
 .app-corner-badge--group { background-color: var(--app-color-group); }
@@ -451,6 +456,7 @@ ion-item-sliding:last-child {
 .app-section-icon--jahrgang { background-color: var(--app-color-jahrgang); }
 .app-section-icon--settings { background-color: var(--app-color-users); }
 .app-section-icon--teamer { background-color: var(--app-color-teamer); }
+.app-section-icon--challenges { background-color: var(--app-color-challenges); }
 .app-section-icon ion-icon {
   color: white;
   font-size: 0.8rem;
@@ -515,6 +521,7 @@ ion-list[inset] ion-list-header {
 .app-icon-circle--activities { background-color: var(--app-color-activities); }
 .app-icon-circle--teamer { background-color: var(--app-color-teamer); }
 .app-icon-circle--team { background-color: var(--app-color-teamer); }
+.app-icon-circle--challenges { background-color: var(--app-color-challenges); }
 .app-icon-circle--users { background-color: var(--app-color-users); }
 .app-icon-circle--level { background-color: var(--app-color-level); }
 .app-icon-circle--organizations { background-color: var(--app-color-users); }
@@ -884,6 +891,11 @@ ion-item {
   background: linear-gradient(135deg, var(--app-color-teamer) 0%, #be123c 100%);
 }
 
+/* === Challenges Domain Color === */
+.app-header-banner--challenges {
+  background: linear-gradient(135deg, var(--app-color-challenges) 0%, #be123c 100%);
+}
+
 /* === Stats Row === */
 .app-stats-row {
   display: flex;
@@ -1040,6 +1052,11 @@ ion-item {
   background: rgba(var(--app-color-teamer-rgb), 0.08);
   border: 1px solid rgba(var(--app-color-teamer-rgb), 0.2);
   color: var(--app-color-teamer);
+}
+.app-info-box--challenges {
+  background: rgba(var(--app-color-challenges-rgb), 0.08);
+  border: 1px solid rgba(var(--app-color-challenges-rgb), 0.2);
+  color: var(--app-color-challenges);
 }
 
 /* === Progress Bars === */
@@ -1416,6 +1433,7 @@ ion-toggle.app-toggle--events {
 .app-icon-color--material { color: var(--app-color-material); }
 .app-icon-color--muted { color: #999; }
 .app-icon-color--teamer { color: var(--app-color-teamer); }
+.app-icon-color--challenges { color: var(--app-color-challenges); }
 .app-icon-color--konfis { color: var(--app-color-konfis); }
 .app-icon-color--system { color: var(--app-text-system); }
 .app-icon-color--text-primary { color: var(--app-text-primary); }
@@ -1657,6 +1675,10 @@ ion-button.app-modal-submit-btn--settings {
 }
 ion-button.app-modal-submit-btn--teamer {
   --background: var(--app-color-teamer);
+  --background-hover: #831843;
+}
+ion-button.app-modal-submit-btn--challenges {
+  --background: var(--app-color-challenges);
   --background-hover: #831843;
 }
 ion-button.app-modal-submit-btn--level {
@@ -2332,6 +2354,11 @@ ion-button.app-modal-submit-btn--bonus {
   box-shadow: 0 8px 32px rgba(var(--app-color-teamer-rgb), 0.25);
 }
 
+.app-dashboard-section--challenges {
+  background: linear-gradient(135deg, var(--app-color-challenges) 0%, #831843 100%);
+  box-shadow: 0 8px 32px rgba(var(--app-color-challenges-rgb), 0.25);
+}
+
 .app-dashboard-section--ranking {
   background: linear-gradient(135deg, #28a745 0%, #155724 100%);
   box-shadow: 0 8px 32px rgba(40, 167, 69, 0.25);
@@ -2521,6 +2548,7 @@ ion-item.app-dashboard-settings-item::part(native) {
 ion-toggle.app-toggle--users { --background-checked: var(--app-color-users) !important; --track-background-checked: var(--app-color-users) !important; --ion-color-base: var(--app-color-users) !important; --handle-background-checked: #fff !important; }
 ion-toggle.app-toggle--konfis { --background-checked: var(--app-color-konfis) !important; --track-background-checked: var(--app-color-konfis) !important; --ion-color-base: var(--app-color-konfis) !important; --handle-background-checked: #fff !important; }
 ion-toggle.app-toggle--teamer { --background-checked: var(--app-color-teamer) !important; --track-background-checked: var(--app-color-teamer) !important; --ion-color-base: var(--app-color-teamer) !important; --handle-background-checked: #fff !important; }
+ion-toggle.app-toggle--challenges { --background-checked: var(--app-color-challenges) !important; --track-background-checked: var(--app-color-challenges) !important; --ion-color-base: var(--app-color-challenges) !important; --handle-background-checked: #fff !important; }
 ion-toggle.app-toggle--events { --background-checked: var(--app-color-events) !important; --track-background-checked: var(--app-color-events) !important; --ion-color-base: var(--app-color-events) !important; --handle-background-checked: #fff !important; }
 ion-toggle.app-toggle--badges { --background-checked: var(--app-color-badges) !important; --track-background-checked: var(--app-color-badges) !important; --ion-color-base: var(--app-color-badges) !important; --handle-background-checked: #fff !important; }
 ion-toggle.app-toggle--chat { --background-checked: var(--app-color-chat) !important; --track-background-checked: var(--app-color-chat) !important; --ion-color-base: var(--app-color-chat) !important; --handle-background-checked: #fff !important; }

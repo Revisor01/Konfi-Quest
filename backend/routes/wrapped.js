@@ -105,31 +105,6 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     );
     const totalBadgesAvailable = parseInt(totalBadgesRow.count, 10) || 0;
 
-    // Badge-Perzentil im Jahrgang
-    const { rows: allKonfisInJahrgang } = await client.query(
-      `SELECT kp.user_id,
-              (SELECT COUNT(*) FROM user_badges ub WHERE ub.user_id = kp.user_id AND ub.organization_id = $2) as badge_count
-       FROM konfi_profiles kp
-       WHERE kp.jahrgang_id = $1`,
-      [jahrgangId, orgId]
-    );
-    const totalKonfisInJahrgang = allKonfisInJahrgang.length;
-    const myBadgeCount = badgeRows.length;
-    const konfisWithFewerBadges = allKonfisInJahrgang.filter(k => k.badge_count < myBadgeCount).length;
-    const badgePercentile = totalKonfisInJahrgang > 1
-      ? Math.round((konfisWithFewerBadges / (totalKonfisInJahrgang - 1)) * 100)
-      : 100;
-
-    // Rang im Jahrgang
-    const { rows: jahrgangRanking } = await client.query(
-      `SELECT kp.user_id, (kp.gottesdienst_points + kp.gemeinde_points) as total
-       FROM konfi_profiles kp
-       WHERE kp.jahrgang_id = $1
-       ORDER BY total DESC`,
-      [jahrgangId]
-    );
-    const rank = jahrgangRanking.findIndex(r => r.user_id === userId) + 1;
-
     // Pflicht-Events
     const { rows: [pflichtRow] } = await client.query(
       `SELECT
@@ -151,15 +126,6 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       [userId]
     );
     const eventAbgesagt = parseInt(cancelRow.count, 10) || 0;
-
-    // Chat-Nachrichten
-    const { rows: [chatCount] } = await client.query(
-      `SELECT COUNT(*) as count FROM chat_messages cm
-       JOIN chat_rooms cr ON cm.room_id = cr.id
-       WHERE cm.user_id = $1 AND cr.organization_id = $2`,
-      [userId, orgId]
-    );
-    const nachrichtenGesendet = parseInt(chatCount.count, 10) || 0;
 
     // Aktivster Monat (Aktivitaeten + Events kombiniert)
     const { rows: monatRows } = await client.query(
@@ -221,7 +187,6 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       const candidates = [
         { type: 'events_held', value: totalAttended },
         { type: 'badge_collector', value: badgeRows.length },
-        { type: 'chat_champion', value: nachrichtenGesendet },
         { type: 'gottesdienst_treue', value: gottesdienstCount },
         { type: 'gemeinde_aktiv', value: gemeinde }
       ];
@@ -246,11 +211,54 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       ? new Date(konfirmationTermin).toISOString().split('T')[0]
       : `${year}-07-31`;
 
+    // Challenge-Momente: eigene Beitraege im Wrapped-Zeitraum (max 12, neueste zuerst).
+    // Defensiv: Auf Alt-Deployments ohne Challenge-Tabellen liefern wir ein leeres Array
+    // statt die gesamte Snapshot-Generierung scheitern zu lassen.
+    let challengeMomente = [];
+    try {
+      const { rows: submissionRows } = await client.query(
+        `SELECT c.title AS challenge_title,
+                c.badge_icon,
+                cs.media_type,
+                cs.file_path,
+                cs.file_name,
+                cs.text_content,
+                cs.link_url,
+                cs.created_at
+           FROM challenge_submissions cs
+           JOIN challenges c ON cs.challenge_id = c.id
+          WHERE cs.user_id = $1
+            AND cs.organization_id = $2
+            AND cs.moderation_status <> 'hidden'
+            AND cs.created_at >= $3::date
+            AND cs.created_at < ($4::date + INTERVAL '1 day')
+          ORDER BY cs.created_at DESC
+          LIMIT 12`,
+        [userId, orgId, zeitraumStart, zeitraumEnde]
+      );
+      challengeMomente = submissionRows.map(s => ({
+        challenge_title: s.challenge_title,
+        badge_icon: s.badge_icon,
+        media_type: s.media_type,
+        file_path: s.file_path,
+        file_name: s.file_name,
+        text_content: s.text_content
+          ? (s.text_content.length > 200 ? `${s.text_content.slice(0, 200)}...` : s.text_content)
+          : null,
+        link_url: s.link_url,
+        created_at: s.created_at
+      }));
+    } catch (challengeErr) {
+      console.warn('Wrapped: Challenge-Momente konnten nicht geladen werden:', challengeErr.message);
+      challengeMomente = [];
+    }
+
     return {
-      version: 1,
+      version: 2,
       highlight_type: highlightType,
       formulierung_seed: formulierungSeed,
       slides: {
+        challenge_momente: challengeMomente,
         punkte: {
           gottesdienst,
           gemeinde,
@@ -266,21 +274,13 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         badges: {
           total_earned: badgeRows.length,
           total_available: totalBadgesAvailable,
-          badges: badgeRows.map(b => ({ name: b.name, icon: b.icon, color: b.color })),
-          percentile: badgePercentile
+          badges: badgeRows.map(b => ({ name: b.name, icon: b.icon, color: b.color }))
         },
         pflicht: {
           besucht: pflichtBesucht,
           gesamt: pflichtGesamt
         },
-        rank: {
-          position: rank,
-          total_in_jahrgang: totalKonfisInJahrgang
-        },
         aktivster_monat: aktivsterMonat,
-        chat: {
-          nachrichten_gesendet: nachrichtenGesendet
-        },
         endspurt: {
           aktiv: endspurtAktiv,
           fehlende_punkte: fehlendePunkte,

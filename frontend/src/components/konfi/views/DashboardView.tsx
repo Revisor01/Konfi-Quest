@@ -14,7 +14,9 @@ import {
   eyeOff,
   helpCircle,
   chevronForward,
-  time
+  time,
+  timeOutline,
+  checkmarkCircle
 } from 'ionicons/icons';
 import { Badge, DashboardEvent, RankingEntry } from '../../../types/dashboard';
 import {
@@ -110,6 +112,14 @@ interface DailyVerse {
   cached?: boolean;
 }
 
+/** Minimaldaten der Dashboard-Karte fuer aktive Challenges. */
+interface ChallengeTeaser {
+  id: number;
+  title: string;
+  ends_at: string;
+  has_submission: boolean;
+}
+
 interface BadgeStats {
   totalAvailable: number;
   totalEarned: number;
@@ -128,9 +138,10 @@ interface DashboardConfig {
   show_losung: boolean;
   show_badges: boolean;
   show_ranking: boolean;
+  show_challenges?: boolean;
 }
 
-const DEFAULT_KONFI_ORDER = ['konfirmation', 'konfispruch', 'events', 'losung', 'badges', 'ranking'];
+const DEFAULT_KONFI_ORDER = ['konfirmation', 'challenges', 'konfispruch', 'events', 'losung', 'badges', 'ranking'];
 
 interface DashboardViewProps {
   dashboardData: DashboardData;
@@ -206,6 +217,42 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     onSelect: (code: string) => { handleTranslationChange(code); dismissBibleModal(); },
   });
   const [showLosung, setShowLosung] = useState(true);
+
+  // Aktive Challenges fuer die Dashboard-Karte. Der Dashboard-Endpoint liefert
+  // sie nicht mit, deshalb ein eigener, schlanker Abruf — nur wenn die Karte
+  // ueberhaupt eingeschaltet ist.
+  const [activeChallenges, setActiveChallenges] = useState<ChallengeTeaser[]>([]);
+  useEffect(() => {
+    if (dashboardConfig?.show_challenges === false) {
+      setActiveChallenges([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await api.get('/challenges/konfi');
+        if (cancelled) return;
+        const active = Array.isArray(res.data?.active) ? res.data.active : [];
+        const marks = Array.isArray(res.data?.marks) ? res.data.marks : [];
+        const markedIds = new Set<number>(marks.map((m: any) => m.challenge_id));
+        setActiveChallenges(
+          active
+            .map((c: any) => ({
+              id: c.id,
+              title: c.title,
+              ends_at: c.ends_at,
+              has_submission: markedIds.has(c.id)
+            }))
+            .sort((a: ChallengeTeaser, b: ChallengeTeaser) =>
+              new Date(a.ends_at).getTime() - new Date(b.ends_at).getTime())
+        );
+      } catch {
+        // Challenges sind eine Zusatzkarte — ein Fehler darf das Dashboard nicht stoeren.
+        if (!cancelled) setActiveChallenges([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [dashboardConfig?.show_challenges]);
 
   // Level Popover via useIonPopover
   const levelPopoverRef = useRef<LevelPopoverData>({ level: null, isReached: false });
@@ -428,6 +475,84 @@ const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
             ) : null
           ),
+          challenges: () => {
+            // Bewusst ohne Zaehler/Fortschritt: nur die laufende Challenge und
+            // der Weg hinein. Ohne aktive Challenge verschwindet die Karte ganz.
+            if (dashboardConfig?.show_challenges === false || activeChallenges.length === 0) {
+              return null;
+            }
+            const next = activeChallenges[0];
+            const remaining = (() => {
+              const diff = new Date(next.ends_at).getTime() - Date.now();
+              if (isNaN(diff) || diff <= 0) return 'Zeit abgelaufen';
+              const days = Math.floor(diff / 86400000);
+              if (days >= 1) return days === 1 ? 'noch 1 Tag' : `noch ${days} Tage`;
+              const hours = Math.floor(diff / 3600000);
+              if (hours >= 1) return hours === 1 ? 'noch 1 Stunde' : `noch ${hours} Stunden`;
+              return 'endet heute';
+            })();
+
+            return (
+              <div
+                className="app-dashboard-section"
+                key="challenges"
+                style={{
+                  background: 'linear-gradient(135deg, var(--app-color-challenges) 0%, #be123c 100%)',
+                  boxShadow: '0 8px 32px rgba(var(--app-color-challenges-rgb), 0.25)'
+                }}
+              >
+                <div className="app-dashboard-section__bg-text">
+                  <h2 className="app-dashboard-section__bg-label">DEINE</h2>
+                  <h2 className="app-dashboard-section__bg-label">CHALLENGE</h2>
+                </div>
+                <div className="app-dashboard-section__content app-dashboard-section__content--compact">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div
+                    className="app-dashboard-glass-card"
+                    onClick={() => router.push('/konfi/challenges')}
+                    style={{ cursor: 'pointer', padding: '16px' }}
+                  >
+                    <div className="app-headline" style={{ fontSize: '1.15rem', fontWeight: 800, color: 'white', marginBottom: '6px', lineHeight: 1.25 }}>
+                      {next.title}
+                    </div>
+                    <div className="app-dashboard-meta" style={{ fontSize: '0.85rem', flexWrap: 'wrap' }}>
+                      <IonIcon icon={timeOutline} style={{ fontSize: '0.85rem' }} />
+                      <span>{remaining}</span>
+                      {next.has_submission && (
+                        <>
+                          <span className="app-dashboard-dot" />
+                          <IonIcon icon={checkmarkCircle} style={{ fontSize: '0.85rem' }} />
+                          <span>Du bist dabei</span>
+                        </>
+                      )}
+                      {activeChallenges.length > 1 && (
+                        <>
+                          <span className="app-dashboard-dot" />
+                          <span>
+                            {activeChallenges.length - 1 === 1
+                              ? 'und noch eine weitere'
+                              : `und ${activeChallenges.length - 1} weitere`}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div
+                    className="app-dashboard-glass-chip"
+                    onClick={() => router.push('/konfi/challenges')}
+                    style={{
+                      alignSelf: 'center', cursor: 'pointer', display: 'flex',
+                      alignItems: 'center', gap: '4px'
+                    }}
+                  >
+                    {next.has_submission ? 'Zur Challenge' : 'Mitmachen'}
+                    <IonIcon icon={chevronForward} />
+                  </div>
+                  </div>
+                </div>
+              </div>
+            );
+          },
           konfispruch: () => {
             // Card-Gate: nur sichtbar, wenn der Jahrgang die Konfispruch-Auswahl
             // freigegeben hat (konfspruch_visible aus dem Dashboard-Endpoint).

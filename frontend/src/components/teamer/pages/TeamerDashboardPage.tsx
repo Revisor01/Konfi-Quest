@@ -82,7 +82,8 @@ import WrappedModal from '../../wrapped/WrappedModal';
 import { ProfileHeaderButton, TrialBanner } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import TeamerOnboardingModal from '../modals/TeamerOnboardingModal';
-import { useOnboardingOnce } from '../../../hooks/useOnboardingOnce';
+import TeamerUpdateWalkthroughModal from '../modals/TeamerUpdateWalkthroughModal';
+import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
 
 // Badge/Certificate Icon Mapping (shared with DashboardView)
 const ICON_MAP: Record<string, string> = {
@@ -260,8 +261,13 @@ const TeamerDashboardPage: React.FC = () => {
   const router = useIonRouter();
   const { user } = useApp();
   const [showLosung] = useState(() => Math.random() > 0.5);
-  // Onboarding-Tour einmal pro Teamer-Account (beim ersten Betreten der Startseite).
-  const [showOnboarding, closeOnboarding] = useOnboardingOnce('teamer_onboarding_seen', user?.id);
+  // Onboarding-Tour einmal pro Teamer-Account (beim ersten Betreten der
+  // Startseite) — bzw. fuer Bestandsnutzer stattdessen einmalig der
+  // Update-Walkthrough 2.0 (Challenges). Nie beides gleichzeitig.
+  const {
+    showOnboarding, closeOnboarding,
+    showUpdateWalkthrough, closeUpdateWalkthrough
+  } = useOnboardingWithUpdateOnce('teamer_onboarding_seen', user?.id);
 
   // Certificate Popover
   const certPopoverRef = React.useRef<Certificate | null>(null);
@@ -510,6 +516,30 @@ const TeamerDashboardPage: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* Einstieg Challenges — Verwaltung/Moderation der Beitraege */}
+          <div
+            onClick={() => router.push('/teamer/challenges')}
+            className="app-list-item app-list-item--challenges"
+            style={{
+              marginBottom: '16px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px'
+            }}
+          >
+            <div className="app-icon-circle app-icon-circle--lg app-icon-circle--challenges">
+              <IonIcon icon={flag} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="app-list-item__title">Challenges</div>
+              <div className="app-list-item__subtitle" style={{ whiteSpace: 'normal' }}>
+                Aufgaben stellen und Beiträge der Konfis begleiten
+              </div>
+            </div>
+            <IonIcon icon={chevronForward} style={{ fontSize: '1.1rem', color: 'var(--app-color-challenges)' }} />
+          </div>
 
           {/* Dynamische Sektionen basierend auf section_order */}
           {(config?.section_order || DEFAULT_TEAMER_ORDER).map(sectionKey => {
@@ -962,6 +992,11 @@ const TeamerDashboardPage: React.FC = () => {
           onClose={closeOnboarding}
           displayName={(user?.display_name || '').split(' ')[0]}
         />
+      )}
+
+      {/* Update-Walkthrough 2.0 — nur fuer Bestandsnutzer */}
+      {showUpdateWalkthrough && (
+        <TeamerUpdateWalkthroughModal onClose={closeUpdateWalkthrough} />
       )}
     </IonPage>
   );
