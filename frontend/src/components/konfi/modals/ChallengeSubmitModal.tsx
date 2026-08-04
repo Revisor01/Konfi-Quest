@@ -37,15 +37,14 @@ import {
   personCircleOutline,
   shieldCheckmarkOutline,
   mic,
-  stopOutline,
-  playOutline,
-  pauseOutline
+  stopOutline
 } from 'ionicons/icons';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import { compressImage } from '../../../services/mediaCompression';
+import { AudioPlayer } from '../../shared';
 import type {
   KonfiChallenge,
   ChallengeMediaType,
@@ -167,12 +166,10 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
   // --- Audio-Aufnahme (MediaRecorder) ---
   const [isRecording, setIsRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
-  const [isPlayingPreview, setIsPlayingPreview] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
   const recordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
-  const audioPreviewRef = useRef<HTMLAudioElement | null>(null);
 
   const isChoice = challenge.visibility === 'konfi_choice';
   const headerChip = getHeaderChip(challenge);
@@ -336,16 +333,6 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
       mediaRecorderRef.current.stop();
     }
     setIsRecording(false);
-  };
-
-  const toggleAudioPreview = () => {
-    const audioEl = audioPreviewRef.current;
-    if (!audioEl) return;
-    if (isPlayingPreview) {
-      audioEl.pause();
-    } else {
-      audioEl.play().catch(() => undefined);
-    }
   };
 
   const removeFile = () => {
@@ -713,33 +700,19 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                   {mediaPreview ? (
                     <div
                       style={{
-                        padding: '14px', borderRadius: '10px',
-                        background: 'rgba(var(--app-color-challenges-rgb), 0.08)',
-                        display: 'flex', alignItems: 'center', gap: '10px'
+                        padding: '10px 12px', borderRadius: '10px',
+                        background: 'rgba(var(--app-color-challenges-rgb), 0.08)'
                       }}
                     >
-                      <IonButton
-                        fill="solid"
-                        shape="round"
-                        style={{ '--background': 'var(--app-color-challenges)', margin: 0 }}
-                        onClick={toggleAudioPreview}
-                      >
-                        <IonIcon icon={isPlayingPreview ? pauseOutline : playOutline} slot="icon-only" />
-                      </IonButton>
-                      <span style={{ fontWeight: 600, color: 'var(--app-color-challenges)', flex: 1 }}>
-                        Aufnahme bereit
-                      </span>
-                      <audio
-                        ref={audioPreviewRef}
-                        src={mediaPreview}
-                        onPlay={() => setIsPlayingPreview(true)}
-                        onPause={() => setIsPlayingPreview(false)}
-                        onEnded={() => setIsPlayingPreview(false)}
-                        style={{ display: 'none' }}
-                      />
-                      <IonButton fill="clear" color="danger" size="small" onClick={removeFile}>
-                        <IonIcon icon={trash} slot="icon-only" />
-                      </IonButton>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontWeight: 600, color: 'var(--app-color-challenges)', flex: 1, fontSize: '0.88rem' }}>
+                          Aufnahme bereit
+                        </span>
+                        <IonButton fill="clear" color="danger" size="small" onClick={removeFile}>
+                          <IonIcon icon={trash} slot="icon-only" />
+                        </IonButton>
+                      </div>
+                      <AudioPlayer src={mediaPreview} />
                     </div>
                   ) : isRecording ? (
                     <div

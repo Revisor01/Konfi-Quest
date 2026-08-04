@@ -15,8 +15,7 @@ import {
   helpCircle,
   chevronForward,
   time,
-  timeOutline,
-  checkmarkCircle
+  timeOutline
 } from 'ionicons/icons';
 import { Badge, DashboardEvent, RankingEntry } from '../../../types/dashboard';
 import {
@@ -535,13 +534,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                         <div className="app-dashboard-meta" style={{ fontSize: '0.8rem', flexWrap: 'wrap' }}>
                           <IonIcon icon={timeOutline} style={{ fontSize: '0.8rem' }} />
                           <span>{remainingFor(challenge.ends_at)}</span>
-                          {challenge.has_submission && (
-                            <>
-                              <span className="app-dashboard-dot" />
-                              <IonIcon icon={checkmarkCircle} style={{ fontSize: '0.8rem' }} />
-                              <span>Du bist dabei</span>
-                            </>
-                          )}
                         </div>
                       </div>
                     ))}

@@ -35,7 +35,7 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
-import { EmptyState, formatEventDateLong as formatDate, formatEventTime as formatTime } from '../../shared';
+import { EmptyState, AudioPlayer } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { getChallengeBadgeIcon, getAuthorLabel, formatRemaining } from '../views/ChallengesView';
 import type {
@@ -59,34 +59,36 @@ const MEDIA_ICON: Record<ChallengeMediaType, string> = {
 };
 
 /**
- * Status-Chip fuer eigene Beitraege. Ausgeblendet schlaegt alles; danach
- * entscheidet die Sichtbarkeit der Challenge bzw. die eigene Einwilligung.
+ * Status als Corner-Badge fuer eigene Beitraege. Ausgeblendet schlaegt alles;
+ * danach entscheidet die Sichtbarkeit der Challenge bzw. die eigene
+ * Einwilligung. Labels sind bewusst kurz gehalten (Corner-Badge-Laenge),
+ * Farben nutzen bestehende Badge-Farbvarianten aus variables.css.
  */
 const getOwnStatus = (
   submission: ChallengeSubmission,
   challenge: KonfiChallenge
 ): { label: string; color: string } => {
   if (submission.moderation_status === 'hidden') {
-    return { label: 'Ausgeblendet', color: '#dc3545' };
+    return { label: 'Ausgeblendet', color: 'var(--app-color-danger)' };
   }
   if (submission.moderation_status === 'pending') {
-    return { label: 'Wartet auf Freigabe', color: '#ff9500' };
+    return { label: 'Wartet auf Freigabe', color: 'var(--app-color-warning)' };
   }
   // approved
   if (challenge.visibility === 'private') {
-    return { label: 'Nur für die Leitung sichtbar', color: '#6b7280' };
+    return { label: 'Nur Leitung', color: '#6b7280' };
   }
   if (challenge.visibility === 'public') {
-    return { label: 'Veröffentlicht', color: '#059669' };
+    return { label: 'Veröffentlicht', color: 'var(--app-color-success)' };
   }
   // konfi_choice -> eigene Entscheidung entscheidet
   if (submission.konfi_consent === 'anonymous') {
-    return { label: 'Anonym veröffentlicht', color: '#7c3aed' };
+    return { label: 'Anonym', color: '#7c3aed' };
   }
   if (submission.konfi_consent === 'publish') {
-    return { label: 'Veröffentlicht', color: '#059669' };
+    return { label: 'Veröffentlicht', color: 'var(--app-color-success)' };
   }
-  return { label: 'Nur für die Leitung sichtbar', color: '#6b7280' };
+  return { label: 'Nur Leitung', color: '#6b7280' };
 };
 
 const formatDateTime = (value?: string): string => {
@@ -175,9 +177,7 @@ const ChallengeMedia: React.FC<{
   }
 
   if (mediaType === 'audio') {
-    return (
-      <audio src={src} controls style={{ width: '100%', marginTop: '8px' }} />
-    );
+    return <AudioPlayer src={src} />;
   }
 
   return null;
@@ -187,41 +187,27 @@ const ChallengeMedia: React.FC<{
 const SubmissionCard: React.FC<{
   submission: ChallengeSubmission;
   authorLabel: string;
-  statusChip?: { label: string; color: string };
+  statusBadge?: { label: string; color: string };
   onDelete?: () => void;
-}> = ({ submission, authorLabel, statusChip, onDelete }) => (
+}> = ({ submission, authorLabel, statusBadge, onDelete }) => (
   <div
     className="app-list-item app-list-item--challenges"
-    style={{ position: 'relative' }}
+    style={{ position: 'relative', overflow: 'hidden' }}
   >
+    {statusBadge && (
+      <div className="app-corner-badges">
+        <div className="app-corner-badge" style={{ backgroundColor: statusBadge.color }}>
+          {statusBadge.label}
+        </div>
+      </div>
+    )}
     <div className="app-list-item__row">
       <div className="app-list-item__main" style={{ alignItems: 'flex-start' }}>
         <div className="app-icon-circle app-icon-circle--challenges" style={{ flexShrink: 0 }}>
           <IonIcon icon={MEDIA_ICON[submission.media_type] || documentTextOutline} />
         </div>
-        <div className="app-list-item__content" style={{ minWidth: 0 }}>
-          <div
-            style={{
-              display: 'flex', alignItems: 'center', gap: '8px',
-              flexWrap: 'wrap', marginBottom: '2px'
-            }}
-          >
-            <span className="app-list-item__title" style={{ margin: 0 }}>{authorLabel}</span>
-            {statusChip && (
-              // Status als getoenter Chip statt als satter Farbblock: die Karte
-              // selbst bleibt neutral, die Farbe traegt nur die Information.
-              <span
-                className="app-chip"
-                style={{
-                  color: statusChip.color,
-                  background: `${statusChip.color}1f`,
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {statusChip.label}
-              </span>
-            )}
-          </div>
+        <div className="app-list-item__content" style={{ minWidth: 0, paddingRight: statusBadge ? '84px' : 0 }}>
+          <span className="app-list-item__title" style={{ margin: 0, display: 'block' }}>{authorLabel}</span>
           <div className="app-list-item__subtitle" style={{ marginBottom: '4px' }}>
             {formatDateTime(submission.created_at)}
           </div>
@@ -456,49 +442,28 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
               <div style={{ fontSize: '0.93rem', lineHeight: 1.5, color: '#3c3c43', whiteSpace: 'pre-wrap' }}>
                 {current.description}
               </div>
-            </IonCardContent>
-          </IonCard>
-        </IonList>
-
-        {/* Details — Laufzeit und Abzeichen im selben Stil wie die Event-Details */}
-        <IonList className="app-section-inset" inset={true}>
-          <IonListHeader>
-            <div className="app-section-icon app-section-icon--challenges">
-              <IonIcon icon={timeOutline} />
-            </div>
-            <IonLabel>Details</IonLabel>
-          </IonListHeader>
-          <IonCard className="app-card">
-            <IonCardContent className="app-card-content">
-              {/* Laufzeit */}
-              <div className="app-info-row">
-                <IonIcon icon={timeOutline} className="app-info-row__icon app-icon-color--challenges" />
-                <div>
-                  <div className="app-info-row__label">Laufzeit</div>
-                  <div className="app-info-row__value">
-                    {formatDate(current.starts_at)}
-                    {' · '}
-                    {formatTime(current.starts_at)}
-                    {' – '}
-                    {formatDate(current.ends_at)}
-                    {' · '}
-                    {formatTime(current.ends_at)}
-                  </div>
-                  {isActive ? (
-                    <div className="app-info-row__value">{formatRemaining(current.ends_at)}</div>
-                  ) : (
-                    <div className="app-info-row__value">Beendet</div>
-                  )}
-                </div>
-              </div>
-
-              {/* Abzeichen */}
-              <div className="app-info-row">
-                <IonIcon icon={ribbonOutline} className="app-info-row__icon app-icon-color--challenges" />
-                <div>
-                  <div className="app-info-row__label">Abzeichen</div>
-                  <div className="app-info-row__value">{current.badge_name}</div>
-                </div>
+              <div
+                style={{
+                  display: 'flex', flexWrap: 'wrap', gap: '8px 14px',
+                  marginTop: '12px', fontSize: '0.8rem', color: '#8e8e93'
+                }}
+              >
+                {isActive ? (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <IonIcon icon={timeOutline} className="app-icon-color--challenges" />
+                    {formatRemaining(current.ends_at)}
+                  </span>
+                ) : (
+                  // Ein einziger, dezenter Hinweis auf das Ende — als Chip bei
+                  // den Meta-Infos statt als eigene Textzeile weiter oben.
+                  <span className="app-chip app-chip--challenges">
+                    Beendet
+                  </span>
+                )}
+                <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <IonIcon icon={ribbonOutline} className="app-icon-color--challenges" />
+                  Abzeichen: {current.badge_name}
+                </span>
               </div>
             </IonCardContent>
           </IonCard>
@@ -536,7 +501,7 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
                           key={submission.id}
                           submission={submission}
                           authorLabel="Dein Beitrag"
-                          statusChip={getOwnStatus(submission, current)}
+                          statusBadge={getOwnStatus(submission, current)}
                           onDelete={() => handleDelete(submission)}
                         />
                       ))}
@@ -584,24 +549,6 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
               </IonList>
             )}
           </>
-        )}
-
-        {/* Einreichen-Button, solange die Challenge laeuft */}
-        {canSubmitMore && onSubmit && (
-          <div style={{ padding: '0 16px 24px 16px' }}>
-            <IonButton
-              expand="block"
-              style={{
-                '--background': 'var(--app-color-challenges)',
-                '--background-activated': '#9d174d',
-                '--border-radius': '12px'
-              }}
-              onClick={() => onSubmit(current)}
-            >
-              <IonIcon icon={addOutline} slot="start" />
-              {ownSubmissions.length > 0 ? 'Noch etwas einreichen' : 'Mitmachen'}
-            </IonButton>
-          </div>
         )}
 
       </IonContent>
