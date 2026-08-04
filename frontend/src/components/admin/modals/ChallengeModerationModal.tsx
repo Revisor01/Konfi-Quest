@@ -425,11 +425,11 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
                             </div>
                           )}
 
-                          {submission.link_url && (
+                          {submission.media_type === 'link' && submission.link_url && /^https?:\/\//i.test(submission.link_url) && (
                             <a
                               href={submission.link_url}
                               target="_blank"
-                              rel="noreferrer"
+                              rel="noopener noreferrer"
                               style={{
                                 display: 'inline-flex', alignItems: 'center', gap: '6px',
                                 marginTop: '6px', fontSize: '0.85rem', color: 'var(--app-color-challenges)',

@@ -409,6 +409,13 @@ function createApp(db, options = {}) {
     app.post('/api/konfi/upload-photo', rateLimiters.uploadLimiter);
   }
 
+  // Challenge-Einreichungen: 50-MB-Uploads laufen durch multer.memoryStorage —
+  // ohne Limiter koennte ein einzelner Konfi per Parallel-Uploads den Heap
+  // fluten (Security-Review 04.08.2026).
+  if (rateLimiters.uploadLimiter) {
+    app.post('/api/challenges/konfi/:id/submissions', rateLimiters.uploadLimiter);
+  }
+
   // Settings
   app.use('/api/settings', require('./routes/settings')(db, rbacVerifier, roleHelpers));
 

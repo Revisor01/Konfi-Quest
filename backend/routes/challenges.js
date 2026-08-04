@@ -620,12 +620,14 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   // DATEI-AUSLIEFERUNG
   // ====================================================================
   //
-  // Auth per Authorization-Header ODER ?token= — letzteres, weil <img>/<audio>/
-  // <video>-Tags keine eigenen Header setzen koennen (Chat-Pattern).
+  // Auth NUR per Authorization-Header. Alle Frontend-Abrufe laden per
+  // axios-Blob mit Header; ein ?token=-Fallback (Chat-Pattern) waere hier
+  // reine Angriffsflaeche — Tokens in Query-Strings landen in Access-Logs
+  // und Referrern (Security-Review 04.08.2026).
   // Zugriff hat: die Leitung der Org, der Eigentuemer, sowie Konfis eines
   // zugewiesenen Jahrgangs, wenn der Beitrag oeffentlich ist.
   router.get('/files/:filename', async (req, res) => {
-    const token = req.headers.authorization?.replace('Bearer ', '') || req.query.token;
+    const token = req.headers.authorization?.replace('Bearer ', '');
     if (!token) {
       return res.status(401).json({ error: 'Kein Token vorhanden' });
     }
@@ -1184,15 +1186,29 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           return res.status(403).json({ error: 'Kein Zugriff auf diese Challenge' });
         }
 
+        // Export verlaesst typischerweise die Leitungssphaere (Liturgie-Blatt,
+        // Playlist, Wand) — deshalb strenger als die Sammelansicht:
+        // - konfi_choice: NUR freigegebene Beitraege mit Veroeffentlichungs-
+        //   Konsens. "Nur fuer die Leitung" (private) ist die staerkste Zusage
+        //   des Konfi und landet NIE im Export (Security-Review 04.08.2026).
+        // - public: nur freigegebene Beitraege (pending bleibt draussen).
+        // - private Challenge: alle nicht-ausgeblendeten — hier IST der Export
+        //   der in der Beschreibung angekuendigte Rueckkanal (z.B. Fuerbitten).
         const { rows } = await db.query(
           `SELECT cs.media_type, cs.text_content, cs.link_url, cs.file_name,
                   cs.konfi_consent, cs.moderation_status, cs.created_at,
                   u.display_name
            FROM challenge_submissions cs
            JOIN users u ON cs.user_id = u.id
-           WHERE cs.challenge_id = $1 AND cs.moderation_status <> 'hidden'
+           WHERE cs.challenge_id = $1
+             AND cs.moderation_status <> 'hidden'
+             AND (
+               $2 = 'private'
+               OR (cs.moderation_status = 'approved'
+                   AND ($2 = 'public' OR cs.konfi_consent IN ('publish', 'anonymous')))
+             )
            ORDER BY cs.created_at ASC`,
-          [challengeId]
+          [challengeId, challenge.visibility]
         );
 
         const lines = [];

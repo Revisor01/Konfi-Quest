@@ -5,6 +5,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { invalidateUserCache } = require('../middleware/rbac');
 const liveUpdate = require('../utils/liveUpdate');
+const { deletePhotoFile, deleteChallengeFile } = require('../utils/photoStorage');
 const { syncTeamChat } = require('../utils/teamChat');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const chatSyncCache = require('../utils/chatSyncCache');
@@ -599,7 +600,18 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       await client.query('DELETE FROM user_activities WHERE organization_id = $1', [id]);
       await client.query('DELETE FROM bonus_points WHERE organization_id = $1', [id]);
       await client.query('DELETE FROM user_badges WHERE organization_id = $1', [id]);
+      // Dateipfade VOR den DB-Deletes einsammeln, damit die verschluesselten
+      // Dateien nach dem COMMIT vom Datenträger entfernt werden koennen
+      // (DSGVO Art. 17 — Security-Review 04.08.2026).
+      const { rows: orgRequestPhotos } = await client.query(
+        'SELECT photo_filename FROM activity_requests WHERE organization_id = $1 AND photo_filename IS NOT NULL', [id]);
+      const { rows: orgChallengeFiles } = await client.query(
+        'SELECT file_path FROM challenge_submissions WHERE organization_id = $1 AND file_path IS NOT NULL', [id]);
       await client.query('DELETE FROM activity_requests WHERE organization_id = $1', [id]);
+      // Challenges explizit (statt CASCADE), passend zum Stil dieser Loeschung
+      await client.query('DELETE FROM challenge_submissions WHERE organization_id = $1', [id]);
+      await client.query('DELETE FROM challenge_jahrgang_assignments WHERE challenge_id IN (SELECT id FROM challenges WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM challenges WHERE organization_id = $1', [id]);
       await client.query('DELETE FROM wrapped_snapshots WHERE organization_id = $1', [id]);
 
       // 5. Zertifikate (user_certificates -> certificate_types)
@@ -654,6 +666,15 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
 
       await client.query('COMMIT');
       res.json({ message: 'Organisation und alle zugehörigen Daten erfolgreich gelöscht' });
+
+      // Dateien nach dem COMMIT entfernen (nicht blockierend — ein fehlendes
+      // File darf die bereits erfolgte Loeschung nicht scheitern lassen).
+      for (const row of orgRequestPhotos) {
+        try { await deletePhotoFile(row.photo_filename); } catch (e) { console.warn('Org-Delete: Antragsfoto nicht entfernbar:', e.message); }
+      }
+      for (const row of orgChallengeFiles) {
+        try { await deleteChallengeFile(row.file_path); } catch (e) { console.warn('Org-Delete: Challenge-Datei nicht entfernbar:', e.message); }
+      }
 
       // Live-Update NACH der Response an den ausfuehrenden Super-Admin selbst (Multi-Device).
       liveUpdate.sendToUserByRole(req.user.id, 'organizations', 'delete');
