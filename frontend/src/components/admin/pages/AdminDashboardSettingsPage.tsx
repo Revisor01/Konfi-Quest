@@ -33,6 +33,11 @@ import { SectionHeader } from '../../shared';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
+import {
+  mergeSectionOrder,
+  DEFAULT_KONFI_SECTION_ORDER,
+  DEFAULT_TEAMER_SECTION_ORDER
+} from '../../../utils/sectionOrder';
 
 interface DashboardConfig {
   show_konfirmation: boolean;
@@ -53,6 +58,7 @@ interface TeamerDashboardConfig {
 const KONFI_LABELS: Record<string, string> = {
   konfirmation: 'Countdown',
   challenges: 'Challenges',
+  konfispruch: 'Konfispruch',
   events: 'Events',
   losung: 'Tageslosung',
   badges: 'Badges',
@@ -66,8 +72,10 @@ const TEAMER_LABELS: Record<string, string> = {
   losung: 'Tageslosung'
 };
 
-const DEFAULT_KONFI_ORDER = ['konfirmation', 'challenges', 'events', 'losung', 'badges', 'ranking'];
-const DEFAULT_TEAMER_ORDER = ['zertifikate', 'events', 'badges', 'losung'];
+// Gemeinsame Default-Reihenfolgen (utils/sectionOrder) — sonst driften die
+// Listen zwischen Einstellungen und Dashboards auseinander.
+const DEFAULT_KONFI_ORDER = DEFAULT_KONFI_SECTION_ORDER;
+const DEFAULT_TEAMER_ORDER = DEFAULT_TEAMER_SECTION_ORDER;
 
 
 const AdminDashboardSettingsPage: React.FC = () => {
@@ -133,8 +141,12 @@ const AdminDashboardSettingsPage: React.FC = () => {
           show_badges: data.teamer_dashboard_show_badges ?? true,
           show_losung: data.teamer_dashboard_show_losung ?? true
         });
-        setKonfiOrder(data.dashboard_section_order || DEFAULT_KONFI_ORDER);
-        setTeamerOrder(data.teamer_dashboard_section_order || DEFAULT_TEAMER_ORDER);
+        // Mergen statt ersetzen: gespeicherte Reihenfolgen aus Bestands-Orgs
+        // kennen neuere Sektionen (z.B. 'challenges') nicht. Ohne Merge fehlten
+        // sie hier in der Liste — und wuerden beim naechsten Speichern dauerhaft
+        // aus der Reihenfolge verschwinden.
+        setKonfiOrder(mergeSectionOrder(data.dashboard_section_order, DEFAULT_KONFI_ORDER));
+        setTeamerOrder(mergeSectionOrder(data.teamer_dashboard_section_order, DEFAULT_TEAMER_ORDER));
       }
     }
   );

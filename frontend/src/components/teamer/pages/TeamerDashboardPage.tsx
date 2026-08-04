@@ -81,6 +81,7 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import WrappedModal from '../../wrapped/WrappedModal';
 import { ProfileHeaderButton, TrialBanner } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { mergeSectionOrder, DEFAULT_TEAMER_SECTION_ORDER } from '../../../utils/sectionOrder';
 import TeamerOnboardingModal from '../modals/TeamerOnboardingModal';
 import TeamerUpdateWalkthroughModal from '../modals/TeamerUpdateWalkthroughModal';
 import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
@@ -199,7 +200,7 @@ interface DashboardConfig {
   section_order?: string[];
 }
 
-const DEFAULT_TEAMER_ORDER = ['zertifikate', 'events', 'badges', 'losung'];
+const DEFAULT_TEAMER_ORDER = DEFAULT_TEAMER_SECTION_ORDER;
 
 interface DashboardData {
   greeting: { display_name: string; hour: number };
@@ -542,7 +543,7 @@ const TeamerDashboardPage: React.FC = () => {
           </div>
 
           {/* Dynamische Sektionen basierend auf section_order */}
-          {(config?.section_order || DEFAULT_TEAMER_ORDER).map(sectionKey => {
+          {mergeSectionOrder(config?.section_order, DEFAULT_TEAMER_ORDER).map(sectionKey => {
             // Zertifikate
             if (sectionKey === 'zertifikate') {
               if (!(config?.show_zertifikate !== false && dashboardData && dashboardData.certificates.length > 0)) return null;

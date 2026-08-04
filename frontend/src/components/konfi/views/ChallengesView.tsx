@@ -191,112 +191,178 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
             </IonCardContent>
           </IonCard>
         ) : (
-          sortedActive.map((challenge) => {
-            const author = getAuthorLabel(challenge);
-            const hasMark = marks.some((m) => m.challenge_id === challenge.id);
-            // Ein weiterer Beitrag ist moeglich, solange die Challenge Mehrfach-
-            // Einreichungen erlaubt oder noch gar nichts eingereicht wurde.
-            const canSubmitMore = challenge.allow_multiple || !hasMark;
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '12px' }}>
+              {sortedActive.map((challenge, index) => {
+                const author = getAuthorLabel(challenge);
+                const hasMark = marks.some((m) => m.challenge_id === challenge.id);
+                // Ein weiterer Beitrag ist moeglich, solange die Challenge
+                // Mehrfach-Einreichungen erlaubt oder noch gar nichts
+                // eingereicht wurde.
+                const canSubmitMore = challenge.allow_multiple || !hasMark;
+                // Nur die naechste Challenge bekommt die grosse Karte mit
+                // Beschreibungs-Anriss und Button. Alles Weitere laeuft als
+                // kompakte Listenzeile — bei drei oder mehr Challenges wirkten
+                // gestapelte Vollflaechen-Karten erdrueckend.
+                const isLead = index === 0;
 
-            return (
-              <IonCard
-                key={challenge.id}
-                className="app-card"
-                style={{ marginBottom: '12px' }}
-              >
-                <IonCardContent style={{ padding: '0' }}>
-                  {/* Kopf im Challenge-Rosa */}
-                  <div
-                    onClick={() => onSelectChallenge(challenge)}
-                    style={{
-                      background: 'linear-gradient(135deg, var(--app-color-challenges) 0%, #be123c 100%)',
-                      padding: '18px 16px',
-                      color: 'white',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                      <div
-                        style={{
-                          width: '38px', height: '38px', borderRadius: '50%',
-                          background: 'rgba(255, 255, 255, 0.2)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          flexShrink: 0
-                        }}
-                      >
-                        <IonIcon icon={getChallengeBadgeIcon(challenge.badge_icon)} style={{ fontSize: '1.2rem', color: 'white' }} />
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em', opacity: 0.85, fontWeight: 700 }}>
-                          {TYPE_LABEL[challenge.challenge_type] || 'Challenge'}
-                        </div>
-                        <div className="app-headline" style={{ fontSize: '1.25rem', fontWeight: 800, color: 'white', lineHeight: 1.2 }}>
-                          {challenge.title}
-                        </div>
-                      </div>
+                if (!isLead) {
+                  return (
+                    <div
+                      key={challenge.id}
+                      className="app-list-item app-list-item--challenges"
+                      onClick={() => onSelectChallenge(challenge)}
+                      style={{ cursor: 'pointer', position: 'relative' }}
+                    >
                       {hasMark && (
-                        <IonIcon
-                          icon={checkmarkCircle}
-                          style={{ fontSize: '1.4rem', color: 'white', flexShrink: 0 }}
-                          title="Du hast schon etwas eingereicht"
-                        />
+                        <div className="app-corner-badges">
+                          <div className="app-corner-badge app-corner-badge--challenges" style={{ whiteSpace: 'nowrap' }}>
+                            <IonIcon icon={checkmarkCircle} style={{ fontSize: '0.7rem', marginRight: '3px' }} />
+                            Dabei
+                          </div>
+                        </div>
                       )}
+                      <div className="app-list-item__row">
+                        <div className="app-list-item__main">
+                          <div className="app-icon-circle app-icon-circle--challenges">
+                            <IonIcon icon={getChallengeBadgeIcon(challenge.badge_icon)} />
+                          </div>
+                          <div className="app-list-item__content">
+                            <div
+                              className="app-list-item__title"
+                              style={{ paddingRight: hasMark ? '70px' : '0' }}
+                            >
+                              {challenge.title}
+                            </div>
+                            <div className="app-list-item__meta">
+                              <span className="app-list-item__meta-item">
+                                <IonIcon icon={timeOutline} className="app-icon-color--challenges" />
+                                {formatRemaining(challenge.ends_at)}
+                              </span>
+                              {author && (
+                                <span className="app-list-item__meta-item">
+                                  <IonIcon icon={personOutline} className="app-icon-color--challenges" />
+                                  {author}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
+                  );
+                }
 
-                    <div style={{ fontSize: '0.92rem', lineHeight: 1.45, opacity: 0.95, whiteSpace: 'pre-wrap' }}>
-                      {challenge.description}
-                    </div>
+                // --- Leitkarte: neutraler Grund, Rosa nur als Akzent ---
+                return (
+                  <div
+                    key={challenge.id}
+                    className="app-list-item app-list-item--challenges"
+                    style={{ position: 'relative', padding: '16px' }}
+                  >
+                    {hasMark && (
+                      <div className="app-corner-badges">
+                        <div className="app-corner-badge app-corner-badge--challenges" style={{ whiteSpace: 'nowrap' }}>
+                          <IonIcon icon={checkmarkCircle} style={{ fontSize: '0.7rem', marginRight: '3px' }} />
+                          Dabei
+                        </div>
+                      </div>
+                    )}
 
                     <div
-                      style={{
-                        display: 'flex', flexWrap: 'wrap', gap: '8px 14px',
-                        marginTop: '14px', fontSize: '0.8rem', opacity: 0.92
-                      }}
+                      onClick={() => onSelectChallenge(challenge)}
+                      style={{ cursor: 'pointer' }}
                     >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <IonIcon icon={timeOutline} />
-                        {formatRemaining(challenge.ends_at)}
-                      </span>
-                      {author && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                          <IonIcon icon={personOutline} />
-                          Gestellt von {author}
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                        <div
+                          className="app-icon-circle app-icon-circle--challenges"
+                          style={{ width: '40px', height: '40px', marginTop: 0 }}
+                        >
+                          <IonIcon
+                            icon={getChallengeBadgeIcon(challenge.badge_icon)}
+                            style={{ fontSize: '1.2rem' }}
+                          />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0, paddingRight: hasMark ? '60px' : '0' }}>
+                          <span className="app-chip app-chip--challenges">
+                            {TYPE_LABEL[challenge.challenge_type] || 'Challenge'}
+                          </span>
+                          <div
+                            className="app-headline"
+                            style={{
+                              fontSize: '1.15rem', fontWeight: 800, color: '#1c1c1e',
+                              lineHeight: 1.25, marginTop: '6px'
+                            }}
+                          >
+                            {challenge.title}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="app-list-item__meta" style={{ marginTop: '10px' }}>
+                        <span className="app-list-item__meta-item">
+                          <IonIcon icon={timeOutline} className="app-icon-color--challenges" />
+                          {formatRemaining(challenge.ends_at)}
                         </span>
+                        {author && (
+                          <span className="app-list-item__meta-item">
+                            <IonIcon icon={personOutline} className="app-icon-color--challenges" />
+                            Gestellt von {author}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Beschreibungs-Anriss: 3 Zeilen, Rest im Detail */}
+                      {challenge.description && (
+                        <div
+                          style={{
+                            fontSize: '0.9rem', lineHeight: 1.45, color: '#3c3c43',
+                            marginTop: '10px', whiteSpace: 'pre-wrap',
+                            display: '-webkit-box', WebkitLineClamp: 3,
+                            WebkitBoxOrient: 'vertical', overflow: 'hidden'
+                          }}
+                        >
+                          {challenge.description}
+                        </div>
                       )}
                     </div>
-                  </div>
 
-                  {/* Aktionen. Wenn nur EIN Beitrag erlaubt ist und der Konfi
-                      bereits eingereicht hat, fuehrt der Hauptbutton bewusst ins
-                      Detail statt ins Einreichen (das Backend wuerde ablehnen). */}
-                  <div style={{ display: 'flex', gap: '8px', padding: '12px 12px' }}>
-                    <IonButton
-                      expand="block"
-                      style={{
-                        flex: 1, margin: 0,
-                        '--background': 'var(--app-color-challenges)',
-                        '--background-activated': '#9d174d',
-                        '--border-radius': '10px'
-                      }}
-                      onClick={() => (canSubmitMore ? onSubmit(challenge) : onSelectChallenge(challenge))}
-                    >
-                      {canSubmitMore
-                        ? (hasMark ? 'Noch etwas einreichen' : 'Mitmachen')
-                        : 'Dein Beitrag'}
-                    </IonButton>
-                    <IonButton
-                      fill="clear"
-                      style={{ margin: 0, '--color': 'var(--app-color-challenges)' }}
-                      onClick={() => onSelectChallenge(challenge)}
-                    >
-                      Details
-                      <IonIcon icon={chevronForward} slot="end" />
-                    </IonButton>
+                    {/* Aktionen. Wenn nur EIN Beitrag erlaubt ist und der Konfi
+                        bereits eingereicht hat, fuehrt der Hauptbutton bewusst
+                        ins Detail statt ins Einreichen (das Backend wuerde
+                        ablehnen). */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px' }}>
+                      <IonButton
+                        size="small"
+                        style={{
+                          margin: 0,
+                          '--background': 'var(--app-color-challenges)',
+                          '--background-activated': '#9d174d',
+                          '--border-radius': '10px',
+                          '--padding-start': '16px',
+                          '--padding-end': '16px'
+                        }}
+                        onClick={() => (canSubmitMore ? onSubmit(challenge) : onSelectChallenge(challenge))}
+                      >
+                        {canSubmitMore
+                          ? (hasMark ? 'Noch etwas einreichen' : 'Mitmachen')
+                          : 'Dein Beitrag'}
+                      </IonButton>
+                      <IonButton
+                        fill="clear"
+                        size="small"
+                        style={{ margin: 0, '--color': 'var(--app-color-challenges)' }}
+                        onClick={() => onSelectChallenge(challenge)}
+                      >
+                        Details
+                        <IonIcon icon={chevronForward} slot="end" />
+                      </IonButton>
+                    </div>
                   </div>
-                </IonCardContent>
-              </IonCard>
-            );
-          })
+                );
+              })}
+            </IonCardContent>
+          </IonCard>
         )}
       </IonList>
 

@@ -31,6 +31,7 @@ import KonfispruchSelectModal from '../modals/KonfispruchSelectModal';
 import WrappedModal from '../../wrapped/WrappedModal';
 import { Event } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { mergeSectionOrder, DEFAULT_KONFI_SECTION_ORDER } from '../../../utils/sectionOrder';
 import { TrialBanner } from '../../shared';
 
 interface PointConfig {
@@ -343,7 +344,15 @@ const KonfiDashboardPage: React.FC = () => {
     show_ranking: dashboardData.dashboard_config?.show_ranking !== false,
   };
 
-  const sectionOrder: string[] = dashboardData.dashboard_config?.section_order || ['konfirmation', 'konfispruch', 'events', 'losung', 'badges', 'ranking'];
+  // Gespeicherte Reihenfolge mit der Default-Reihenfolge MERGEN: Bestands-Orgs
+  // haben eine dashboard_section_order ohne die neueren Keys (z.B. 'challenges')
+  // gespeichert. Wuerde nur die gespeicherte Liste gerendert, faellt jede neu
+  // hinzugekommene Sektion bei ihnen stillschweigend unter den Tisch. Fehlende
+  // Keys werden deshalb an ihrer Default-Position wieder eingefuegt.
+  const sectionOrder: string[] = mergeSectionOrder(
+    dashboardData.dashboard_config?.section_order,
+    DEFAULT_KONFI_SECTION_ORDER
+  );
 
   // Gewaehlten Konfispruch (aus Profil-Query) in die Dashboard-Daten mergen,
   // damit die Card den Spruch anzeigt. Dashboard-Endpoint traegt ihn nicht.

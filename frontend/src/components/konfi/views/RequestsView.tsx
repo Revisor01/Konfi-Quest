@@ -11,8 +11,7 @@ import {
   IonList,
   IonListHeader,
   IonItemGroup,
-  IonInput,
-  IonButton
+  IonInput
 } from '@ionic/react';
 import {
   hourglass,
@@ -26,8 +25,7 @@ import {
   camera,
   documentTextOutline,
   search,
-  filterOutline,
-  add
+  filterOutline
 } from 'ionicons/icons';
 import { SectionHeader, ListSection, StatusBadge } from '../../shared';
 
@@ -60,9 +58,6 @@ interface RequestsViewProps {
   // Teamer-Aktivitaeten haben keine Gottesdienst/Gemeinde-Punkte-Logik —
   // im Teamer-Modus wird stattdessen "Team" gezeigt und die Punktzahl ausgeblendet.
   teamerMode?: boolean;
-  // Im Anträge-Segment des Events-Tabs: prominenter Button fuer einen neuen
-  // Antrag direkt ueber der Liste. Ohne Callback wird er nicht gerendert.
-  onAddRequest?: () => void;
 }
 
 const RequestsView: React.FC<RequestsViewProps> = ({
@@ -76,8 +71,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
   getStatusText,
   getTypeIcon,
   getTypeText,
-  teamerMode = false,
-  onAddRequest
+  teamerMode = false
 }) => {
   const [searchText, setSearchText] = useState('');
 
@@ -160,21 +154,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
         </IonSegment>
       </div>
 
-      {/* Prominenter Einstieg fuer einen neuen Antrag (nur im Konfi-Segment) */}
-      {onAddRequest && (
-        <div style={{ margin: '16px' }}>
-          <IonButton
-            expand="block"
-            onClick={onAddRequest}
-            className="app-modal-submit-btn app-modal-submit-btn--activities"
-          >
-            <IonIcon icon={add} slot="start" />
-            Neuen Antrag stellen
-          </IonButton>
-        </div>
-      )}
-
-      {/* Anträge Liste */}
+      {/* Anträge Liste — neue Anträge laufen ueber den Plus-Button im Header */}
       <ListSection
         icon={documentTextOutline}
         title="Aktivitäten"

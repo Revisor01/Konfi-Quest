@@ -38,6 +38,7 @@ import {
 } from './DashboardSections';
 import api from '../../../services/api';
 import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
+import { DEFAULT_KONFI_SECTION_ORDER } from '../../../utils/sectionOrder';
 
 interface DashboardData {
   konfi: {
@@ -141,7 +142,7 @@ interface DashboardConfig {
   show_challenges?: boolean;
 }
 
-const DEFAULT_KONFI_ORDER = ['konfirmation', 'challenges', 'konfispruch', 'events', 'losung', 'badges', 'ranking'];
+const DEFAULT_KONFI_ORDER = DEFAULT_KONFI_SECTION_ORDER;
 
 interface DashboardViewProps {
   dashboardData: DashboardData;
@@ -493,14 +494,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             })();
 
             return (
-              <div
-                className="app-dashboard-section"
-                key="challenges"
-                style={{
-                  background: 'linear-gradient(135deg, var(--app-color-challenges) 0%, #be123c 100%)',
-                  boxShadow: '0 8px 32px rgba(var(--app-color-challenges-rgb), 0.25)'
-                }}
-              >
+              // Farbverlauf kommt aus der gemeinsamen Klasse — jede
+              // Dashboard-Sektion traegt ihre Bereichsfarbe, dort waere ein
+              // neutraler Sonderweg der Bruch.
+              <div className="app-dashboard-section app-dashboard-section--challenges" key="challenges">
                 <div className="app-dashboard-section__bg-text">
                   <h2 className="app-dashboard-section__bg-label">DEINE</h2>
                   <h2 className="app-dashboard-section__bg-label">CHALLENGE</h2>
@@ -528,11 +525,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                       {activeChallenges.length > 1 && (
                         <>
                           <span className="app-dashboard-dot" />
-                          <span>
-                            {activeChallenges.length - 1 === 1
-                              ? 'und noch eine weitere'
-                              : `und ${activeChallenges.length - 1} weitere`}
-                          </span>
+                          <span>+{activeChallenges.length - 1} weitere</span>
                         </>
                       )}
                     </div>

@@ -360,7 +360,11 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
   };
 
   const isAntraege = mainSegment === 'antraege';
-  const pageTitle = isAntraege ? 'Anträge' : 'Events';
+  // Der Seitentitel bleibt beim Segmentwechsel STABIL ("Events"). Waechselte er
+  // mit, sprang der Large-Title beim Umschalten und der Header sass optisch an
+  // einer anderen Stelle als auf den Nachbar-Tabs (Chat, Badges, Dashboard).
+  // Welcher Bereich gerade offen ist, sagt das Segment direkt unter dem Header.
+  const pageTitle = 'Events';
 
   return (
     <IonPage ref={pageRef}>
@@ -505,7 +509,6 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
                 getStatusText={getStatusText}
                 getTypeIcon={getTypeIcon}
                 getTypeText={getTypeText}
-                onAddRequest={handleAddRequest}
               />
             )}
           </>

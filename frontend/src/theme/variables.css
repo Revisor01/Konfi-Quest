@@ -352,6 +352,13 @@ ion-item-sliding:last-child {
   background-color: rgba(91, 33, 182, 0.15);
   color: #5b21b6;
 }
+/* Challenges: Rosa bewusst nur als Akzent (Chip/Icon), nicht als Vollflaeche */
+.app-chip--challenges {
+  background-color: rgba(var(--app-color-challenges-rgb), 0.12);
+  color: var(--app-color-challenges);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
 
 /* === Corner Badges === */
 /* Flex-Container fuer mehrere Badges nebeneinander (oben rechts) */

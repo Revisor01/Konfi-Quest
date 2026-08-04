@@ -208,10 +208,13 @@ const SubmissionCard: React.FC<{
           >
             <span className="app-list-item__title" style={{ margin: 0 }}>{authorLabel}</span>
             {statusChip && (
+              // Status als getoenter Chip statt als satter Farbblock: die Karte
+              // selbst bleibt neutral, die Farbe traegt nur die Information.
               <span
+                className="app-chip"
                 style={{
-                  fontSize: '0.68rem', fontWeight: 700, color: 'white',
-                  background: statusChip.color, padding: '2px 8px', borderRadius: '8px',
+                  color: statusChip.color,
+                  background: `${statusChip.color}1f`,
                   whiteSpace: 'nowrap'
                 }}
               >
@@ -407,9 +410,14 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
             </div>
             <div>
               <h2 className="app-header-banner__title">{current.title}</h2>
-              <p className="app-header-banner__subtitle">
-                {isActive ? formatRemaining(current.ends_at) : 'Diese Challenge ist vorbei'}
-              </p>
+              {/* Bei beendeten Challenges steht der Hinweis NUR noch als Chip in
+                  der Meta-Zeile unten — vorher stapelten sich "Diese Challenge
+                  ist vorbei", "Worum geht es?" und "Beendet" untereinander. */}
+              {isActive && (
+                <p className="app-header-banner__subtitle">
+                  {formatRemaining(current.ends_at)}
+                </p>
+              )}
             </div>
           </div>
           {author && (
@@ -432,7 +440,8 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
             <div className="app-section-icon app-section-icon--challenges">
               <IonIcon icon={documentTextOutline} />
             </div>
-            <IonLabel>Worum geht es?</IonLabel>
+            {/* Bei beendeten Challenges in der Vergangenheit formulieren. */}
+            <IonLabel>{isActive ? 'Worum geht es?' : 'Worum ging es?'}</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '14px' }}>
@@ -445,10 +454,18 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
                   marginTop: '12px', fontSize: '0.8rem', color: '#8e8e93'
                 }}
               >
-                <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <IonIcon icon={timeOutline} className="app-icon-color--challenges" />
-                  {isActive ? formatRemaining(current.ends_at) : 'beendet'}
-                </span>
+                {isActive ? (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <IonIcon icon={timeOutline} className="app-icon-color--challenges" />
+                    {formatRemaining(current.ends_at)}
+                  </span>
+                ) : (
+                  // Ein einziger, dezenter Hinweis auf das Ende — als Chip bei
+                  // den Meta-Infos statt als eigene Textzeile weiter oben.
+                  <span className="app-chip app-chip--challenges">
+                    Beendet
+                  </span>
+                )}
                 <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                   <IonIcon icon={ribbonOutline} className="app-icon-color--challenges" />
                   Abzeichen: {current.badge_name}
@@ -514,8 +531,10 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
                     {gallery.length === 0 ? (
                       <EmptyState
                         icon={peopleOutline}
-                        title="Noch nichts zu sehen"
-                        message="Sobald jemand aus deiner Gruppe etwas veröffentlicht, findest du es hier."
+                        title="Noch keine geteilten Beiträge"
+                        message={isActive
+                          ? 'Sobald jemand aus deiner Gruppe etwas veröffentlicht, findest du es hier. Vielleicht machst du ja den Anfang.'
+                          : 'Aus dieser Challenge hat niemand aus deiner Gruppe etwas veröffentlicht.'}
                         iconColor="var(--app-color-challenges)"
                       />
                     ) : (
