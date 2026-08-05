@@ -254,10 +254,6 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
                               <IonIcon icon={timeOutline} className="app-icon-color--challenges" />
                               {formatRemaining(challenge.ends_at)}
                             </span>
-                            <span className="app-list-item__meta-item">
-                              <IonIcon icon={ribbonOutline} className="app-icon-color--challenges" />
-                              {challenge.badge_name}
-                            </span>
                             {author && (
                               <span className="app-list-item__meta-item">
                                 <IonIcon icon={personOutline} className="app-icon-color--challenges" />

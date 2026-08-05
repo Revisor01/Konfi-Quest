@@ -457,7 +457,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
             </div>
             <IonLabel>Hinweis</IonLabel>
           </IonListHeader>
-          <IonCard className="app-card app-info-box--neutral">
+          <IonCard className="app-card app-info-box--challenges">
             <IonCardContent className="app-info-box">
               <p style={{ margin: 0 }}>{visibilityInfo}</p>
             </IonCardContent>
@@ -571,7 +571,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                     onClick={() => !pickingMedia && !mediaPreview && pickPhoto()}
                     style={{
                       padding: mediaPreview ? '0' : '16px',
-                      backgroundColor: mediaPreview ? 'transparent' : 'rgba(var(--app-color-challenges-rgb), 0.06)',
+                      backgroundColor: 'transparent',
                       borderRadius: '10px',
                       border: mediaPreview ? 'none' : '1px dashed #c7c7cc',
                       cursor: mediaPreview ? 'default' : 'pointer',
@@ -635,7 +635,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                     onClick={() => !pickingMedia && !mediaPreview && pickVideo()}
                     style={{
                       padding: mediaPreview ? '0' : '16px',
-                      backgroundColor: mediaPreview ? 'transparent' : 'rgba(var(--app-color-challenges-rgb), 0.06)',
+                      backgroundColor: 'transparent',
                       borderRadius: '10px',
                       border: mediaPreview ? 'none' : '1px dashed #c7c7cc',
                       cursor: mediaPreview ? 'default' : 'pointer',
@@ -704,10 +704,10 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                     style={{
                       padding: mediaPreview ? '10px 12px' : '16px',
                       backgroundColor: mediaPreview
-                        ? 'rgba(var(--app-color-challenges-rgb), 0.08)'
+                        ? 'rgba(0, 0, 0, 0.04)'
                         : isRecording
                           ? 'rgba(220, 53, 69, 0.08)'
-                          : 'rgba(var(--app-color-challenges-rgb), 0.06)',
+                          : 'transparent',
                       borderRadius: '10px',
                       border: mediaPreview || isRecording ? 'none' : '1px dashed #c7c7cc',
                       cursor: mediaPreview ? 'default' : 'pointer'
@@ -716,7 +716,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                     {mediaPreview ? (
                       <>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontWeight: 600, color: 'var(--app-color-challenges)', flex: 1, fontSize: '0.88rem' }}>
+                          <span style={{ fontWeight: 600, color: '#3c3c43', flex: 1, fontSize: '0.88rem' }}>
                             Aufnahme bereit
                           </span>
                           <IonButton fill="clear" color="danger" size="small" onClick={(e) => { e.stopPropagation(); removeFile(); }}>

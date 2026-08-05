@@ -12,12 +12,13 @@ import { play, pause } from 'ionicons/icons';
 // "durationchange", sobald ein brauchbarer Wert reinkommt. Bis dahin "-:--".
 //
 // Seekbar-Styling: Die native "accent-color" des range-inputs (Safari/iOS)
-// faerbt Track UND Thumb in der uebergebenen Akzentfarbe ein — bei
-// var(--app-color-challenges) (Pink/Magenta) wirkt das auf iOS wie ein
-// grelles Rot. Deshalb wird die Seekbar komplett selbst gestylt: neutraler
-// Grau-Track per WebKit-Pseudo-Elementen plus einem Gradient-Overlay als
-// Fortschrittsanzeige in einem dezenten Blau-Grau (an var(--ion-color-primary)
-// angelehnt) statt der App-Akzentfarbe.
+// faerbt Track UND Thumb in der uebergebenen Akzentfarbe ein und wirkt dabei
+// auf iOS verfaelscht. Deshalb wird die Seekbar komplett selbst gestylt: der
+// abgespielte Teil bekommt per Gradient-Overlay (Inline-Style) die echte
+// Challenge-Farbe (color-Prop, Default var(--app-color-challenges)), der
+// Rest-Track bleibt neutral grau. Der Thumb wird ueber die CSS-Variable
+// --app-audio-seek-color in derselben Farbe gehalten (siehe .app-audio-seekbar
+// in variables.css).
 
 const formatTime = (seconds: number): string => {
   if (!Number.isFinite(seconds) || seconds < 0) return '-:--';
@@ -32,9 +33,8 @@ interface AudioPlayerProps {
   color?: string;
 }
 
-// Neutrale Fortschrittsfarbe der Seekbar — bewusst NICHT die App-Akzentfarbe,
-// sondern die App-weit fuer Fortschritt/Slider genutzte, dezente Blau-Grau-Ton.
-const SEEK_PROGRESS_COLOR = 'var(--ion-color-primary, #5b6b82)';
+// Neutraler Rest-Track — der abgespielte Teil nutzt die color-Prop (echte
+// Challenge-Farbe), nur der noch nicht abgespielte Teil bleibt neutral grau.
 const SEEK_TRACK_COLOR = 'rgba(0, 0, 0, 0.12)';
 
 const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, color = 'var(--app-color-challenges)' }) => {
@@ -165,7 +165,8 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, color = 'var(--app-color
         style={{
           flex: '1 1 auto', minWidth: 0, width: '100%', height: '4px',
           cursor: seekMax ? 'pointer' : 'default',
-          background: `linear-gradient(to right, ${SEEK_PROGRESS_COLOR} ${seekPercent}%, ${SEEK_TRACK_COLOR} ${seekPercent}%)`
+          background: `linear-gradient(to right, ${color} ${seekPercent}%, ${SEEK_TRACK_COLOR} ${seekPercent}%)`,
+          ['--app-audio-seek-color' as string]: color
         }}
       />
 

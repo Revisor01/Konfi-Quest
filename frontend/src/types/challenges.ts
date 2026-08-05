@@ -54,6 +54,12 @@ export interface AdminChallenge extends ChallengeBase {
   jahrgaenge?: ChallengeJahrgang[];
   submission_count?: number;
   pending_count?: number;
+  /** Nach dem Start gesperrt (Backend-Urteil, hat Vorrang vor lokaler Ableitung). */
+  locked?: boolean;
+  /** Vom Backend aufgeloester Urheber-Name (COALESCE aus display_name/author_freetext). */
+  author_name?: string | null;
+  /** Roh-Status vom Backend, falls mitgeliefert (Ableitung bleibt getChallengeStatus). */
+  status?: string;
 }
 
 /**

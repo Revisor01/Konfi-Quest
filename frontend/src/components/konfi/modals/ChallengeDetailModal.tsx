@@ -29,7 +29,6 @@ import {
   peopleOutline,
   addOutline,
   openOutline,
-  ribbonOutline,
   checkmarkOutline,
   eyeOffOutline,
   lockClosedOutline,
@@ -422,10 +421,6 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
                   <IonIcon icon={timeOutline} className="app-icon-color--challenges" />
                   {isActive ? formatRemaining(current.ends_at) : 'Beendet'}
                 </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <IonIcon icon={ribbonOutline} className="app-icon-color--challenges" />
-                  Abzeichen: {current.badge_name}
-                </span>
                 {/* Urheber deutlich sichtbar in derselben unauffaelligen Meta-Zeile. */}
                 {author && (
                   <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -450,7 +445,7 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
               </div>
               <IonLabel>Hinweis</IonLabel>
             </IonListHeader>
-            <IonCard className="app-card app-info-box--neutral">
+            <IonCard className="app-card app-info-box--challenges">
               <IonCardContent className="app-info-box">
                 <p style={{ margin: 0 }}>
                   {visibilityHint}

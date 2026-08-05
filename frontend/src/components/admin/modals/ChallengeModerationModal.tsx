@@ -32,22 +32,32 @@ import {
   imageOutline,
   micOutline,
   videocamOutline,
-  albumsOutline
+  albumsOutline,
+  timeOutline,
+  checkmarkOutline,
+  lockClosedOutline,
+  removeCircleOutline
 } from 'ionicons/icons';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
-import { EmptyState } from '../../shared';
+import { EmptyState, SectionHeader, AudioPlayer } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import type { AdminChallenge, ChallengeSubmission } from '../../../types/challenges';
 
-// Medienvorschau fuer Challenge-Bilder. Bewusst eine eigene, schlanke Variante
-// statt des Chat-LazyImage: der mediaCache-Service ist fest auf /chat/files/
-// verdrahtet, Challenges liegen unter /challenges/files/. Geladen wird per
-// axios (Auth-Header) in eine Object-URL, freigegeben beim Unmount.
-const ChallengeImage: React.FC<{ filePath: string; fileName?: string }> = ({ filePath, fileName }) => {
+// Medienvorschau fuer Challenge-Beitraege (Foto/Audio/Video). Bewusst eine
+// eigene, schlanke Variante statt des Chat-LazyImage: der mediaCache-Service
+// ist fest auf /chat/files/ verdrahtet, Challenges liegen unter
+// /challenges/files/. Geladen wird per axios (Auth-Header) in eine
+// Object-URL, freigegeben beim Unmount — identisches Prinzip wie ChallengeMedia
+// in ChallengeDetailModal (Konfi-Seite).
+const ChallengeMedia: React.FC<{
+  filePath: string;
+  fileName?: string | null;
+  mediaType: 'photo' | 'audio' | 'video';
+}> = ({ filePath, fileName, mediaType }) => {
   const [src, setSrc] = useState<string>('');
   const [failed, setFailed] = useState(false);
 
@@ -73,35 +83,54 @@ const ChallengeImage: React.FC<{ filePath: string; fileName?: string }> = ({ fil
   if (failed) {
     return (
       <div style={{ padding: '12px', color: '#999', fontSize: '0.8rem' }}>
-        Bild konnte nicht geladen werden
+        Datei konnte nicht geladen werden
       </div>
     );
   }
 
-  return (
-    <div
-      style={{
-        marginTop: '8px',
-        borderRadius: '10px',
-        overflow: 'hidden',
-        background: src ? 'transparent' : '#f0f0f0',
-        minHeight: src ? undefined : '120px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}
-    >
-      {src ? (
+  if (!src) {
+    return (
+      <div
+        style={{
+          marginTop: '8px',
+          borderRadius: '10px',
+          background: '#f0f0f0',
+          minHeight: '80px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <span style={{ color: '#666', fontSize: '0.85rem' }}>Wird geladen...</span>
+      </div>
+    );
+  }
+
+  if (mediaType === 'photo') {
+    return (
+      <div style={{ marginTop: '8px', borderRadius: '10px', overflow: 'hidden' }}>
         <img
           src={src}
           alt={fileName || 'Beitrag'}
           style={{ width: '100%', maxHeight: '260px', objectFit: 'cover', display: 'block' }}
         />
-      ) : (
-        <span style={{ color: '#666', fontSize: '0.85rem' }}>Bild wird geladen...</span>
-      )}
-    </div>
-  );
+      </div>
+    );
+  }
+
+  if (mediaType === 'video') {
+    return (
+      <video
+        src={src}
+        controls
+        playsInline
+        style={{ width: '100%', maxHeight: '260px', marginTop: '8px', borderRadius: '10px', display: 'block' }}
+      />
+    );
+  }
+
+  // audio
+  return <AudioPlayer src={src} />;
 };
 
 const MEDIA_ICON: Record<string, string> = {
@@ -120,16 +149,20 @@ const MEDIA_LABEL: Record<string, string> = {
   link: 'Link'
 };
 
-const CONSENT_CHIP: Record<string, { label: string; color: string }> = {
-  publish: { label: 'Veröffentlichung ok', color: '#059669' },
-  private: { label: 'Nur Leitung', color: '#6b7280' },
-  anonymous: { label: 'Anonym ok', color: '#7c3aed' }
+// Icon/Farb-Zuordnung fuer Corner-Badges — dieselbe Zuordnung wie getOwnStatus
+// in ChallengeDetailModal.tsx (Konfi-Seite), damit Status ueberall gleich
+// aussieht. Hier zusaetzlich die reinen Konsens-Werte (unabhaengig vom Status),
+// weil die Moderation Konsens UND Status gleichzeitig zeigen soll.
+const STATUS_BADGE: Record<string, { label: string; icon: string; color: string }> = {
+  pending: { label: 'Wartet auf Freigabe', icon: timeOutline, color: 'var(--app-color-warning)' },
+  approved: { label: 'Freigegeben', icon: checkmarkOutline, color: 'var(--app-color-success)' },
+  hidden: { label: 'Ausgeblendet', icon: removeCircleOutline, color: 'var(--app-color-danger)' }
 };
 
-const STATUS_CHIP: Record<string, { label: string; color: string }> = {
-  pending: { label: 'Wartet auf Freigabe', color: '#ff9500' },
-  approved: { label: 'Freigegeben', color: '#059669' },
-  hidden: { label: 'Ausgeblendet', color: '#dc3545' }
+const CONSENT_BADGE: Record<string, { label: string; icon: string; color: string }> = {
+  publish: { label: 'Veröffentlichung ok', icon: checkmarkOutline, color: 'var(--app-color-success)' },
+  private: { label: 'Nur Leitung', icon: lockClosedOutline, color: '#6b7280' },
+  anonymous: { label: 'Anonym ok', icon: eyeOffOutline, color: '#7c3aed' }
 };
 
 const formatDateTime = (value?: string) => {
@@ -291,45 +324,18 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
         </IonRefresher>
 
         {/* Kopf: Challenge-Info */}
-        <div
-          className="app-header-banner"
-          style={{
-            background: 'linear-gradient(135deg, #be185d 0%, #831843 100%)',
-            boxShadow: '0 8px 32px rgba(190, 24, 93, 0.25)'
-          }}
-        >
-          <div className="app-header-banner__circle-top" />
-          <div className="app-header-banner__circle-bottom" />
-          <div className="app-header-banner__header">
-            <div className="app-header-banner__icon">
-              <IonIcon icon={flag} />
-            </div>
-            <div>
-              <h2 className="app-header-banner__title">{challenge.title}</h2>
-              <p className="app-header-banner__subtitle">
-                {challenge.moderated ? 'Beiträge brauchen eine Freigabe' : 'Beiträge erscheinen sofort'}
-              </p>
-            </div>
-          </div>
-          <div className="app-stats-row">
-            <div className="app-stats-row__item">
-              <div className="app-stats-row__value">{counts.total}</div>
-              <div className="app-stats-row__label">Gesamt</div>
-            </div>
-            <div className="app-stats-row__item">
-              <div className="app-stats-row__value">{counts.pending}</div>
-              <div className="app-stats-row__label">Offen</div>
-            </div>
-            <div className="app-stats-row__item">
-              <div className="app-stats-row__value">{counts.approved}</div>
-              <div className="app-stats-row__label">Freigegeben</div>
-            </div>
-            <div className="app-stats-row__item">
-              <div className="app-stats-row__value">{counts.hidden}</div>
-              <div className="app-stats-row__label">Ausgeblendet</div>
-            </div>
-          </div>
-        </div>
+        <SectionHeader
+          title={challenge.title}
+          subtitle={challenge.moderated ? 'Beiträge brauchen eine Freigabe' : 'Beiträge erscheinen sofort'}
+          icon={flag}
+          preset="challenges"
+          stats={[
+            { value: counts.total, label: 'Gesamt' },
+            { value: counts.pending, label: 'Offen' },
+            { value: counts.approved, label: 'Freigegeben' },
+            { value: counts.hidden, label: 'Ausgeblendet' }
+          ]}
+        />
 
         <div style={{ margin: '16px 16px 8px 16px' }}>
           <IonSegment value={statusFilter} onIonChange={(e) => setStatusFilter(e.detail.value as StatusFilter)}>
@@ -364,8 +370,8 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {filtered.map((submission) => {
-                      const status = STATUS_CHIP[submission.moderation_status] || STATUS_CHIP.pending;
-                      const consent = submission.konfi_consent ? CONSENT_CHIP[submission.konfi_consent] : null;
+                      const status = STATUS_BADGE[submission.moderation_status] || STATUS_BADGE.pending;
+                      const consent = submission.konfi_consent ? CONSENT_BADGE[submission.konfi_consent] : null;
                       const isBusy = busyId === submission.id;
 
                       return (
@@ -376,11 +382,36 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
                             borderLeftColor: status.color,
                             marginBottom: '0',
                             display: 'block',
+                            position: 'relative',
+                            overflow: 'hidden',
                             opacity: submission.moderation_status === 'hidden' ? 0.75 : 1
                           }}
                         >
+                          {/* Corner-Badges: Konsens + Status (max. 2, wie im Konfi-Detail) */}
+                          <div className="app-corner-badges">
+                            {consent && (
+                              <>
+                                <div
+                                  className="app-corner-badge"
+                                  style={{ backgroundColor: consent.color, padding: '4px 6px' }}
+                                  title={consent.label}
+                                >
+                                  <IonIcon icon={consent.icon} style={{ color: '#fff', fontSize: '0.85rem', display: 'block' }} />
+                                </div>
+                                <div className="app-corner-badges__separator" />
+                              </>
+                            )}
+                            <div
+                              className="app-corner-badge"
+                              style={{ backgroundColor: status.color, padding: '4px 6px' }}
+                              title={status.label}
+                            >
+                              <IonIcon icon={status.icon} style={{ color: '#fff', fontSize: '0.85rem', display: 'block' }} />
+                            </div>
+                          </div>
+
                           {/* Kopfzeile: Konfi + Zeit */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', paddingRight: '60px' }}>
                             <div className="app-icon-circle app-icon-circle--lg" style={{ backgroundColor: status.color }}>
                               <IonIcon icon={MEDIA_ICON[submission.media_type] || documentTextOutline} />
                             </div>
@@ -394,28 +425,6 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
                                 {' · '}{formatDateTime(submission.created_at)}
                               </div>
                             </div>
-                          </div>
-
-                          {/* Chips: Status + Consent */}
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
-                            <span
-                              style={{
-                                fontSize: '0.7rem', fontWeight: 700, color: 'white',
-                                background: status.color, borderRadius: '999px', padding: '3px 10px'
-                              }}
-                            >
-                              {status.label}
-                            </span>
-                            {consent && (
-                              <span
-                                style={{
-                                  fontSize: '0.7rem', fontWeight: 700, color: 'white',
-                                  background: consent.color, borderRadius: '999px', padding: '3px 10px'
-                                }}
-                              >
-                                {consent.label}
-                              </span>
-                            )}
                           </div>
 
                           {/* Inhalt */}
@@ -441,28 +450,23 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
                             </a>
                           )}
 
-                          {submission.media_type === 'photo' && submission.file_path && (
-                            <ChallengeImage filePath={submission.file_path} fileName={submission.file_name ?? undefined} />
+                          {submission.file_path && (submission.media_type === 'photo' || submission.media_type === 'audio' || submission.media_type === 'video') && (
+                            <ChallengeMedia
+                              filePath={submission.file_path}
+                              fileName={submission.file_name}
+                              mediaType={submission.media_type}
+                            />
                           )}
 
-                          {(submission.media_type === 'audio' || submission.media_type === 'video') && submission.file_path && (
-                            <div
-                              className="app-info-box app-info-box--neutral"
-                              style={{ borderRadius: '10px', marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}
-                            >
-                              <IonIcon icon={MEDIA_ICON[submission.media_type]} style={{ fontSize: '1.1rem' }} />
-                              <span>{submission.file_name || 'Mediendatei'}</span>
-                            </div>
-                          )}
-
-                          {/* Aktionen */}
+                          {/* Aktionen — Moderation braucht explizite Buttons (bewusst keine
+                              Swipe-Actions), Farben ueber Tokens statt harter Hex-Werte. */}
                           <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
                             {submission.moderation_status === 'pending' && (
                               <IonButton
                                 size="small"
                                 disabled={isBusy}
                                 onClick={() => moderate(submission, 'approve')}
-                                style={{ '--background': '#059669', '--color': 'white', '--border-radius': '8px' }}
+                                style={{ '--background': 'var(--app-color-success)', '--color': 'white', '--border-radius': '8px', height: '32px' }}
                               >
                                 <IonIcon icon={checkmarkCircleOutline} slot="start" />
                                 Freigeben
@@ -472,9 +476,9 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
                               <IonButton
                                 size="small"
                                 fill="outline"
-                                color="danger"
                                 disabled={isBusy}
                                 onClick={() => confirmHide(submission)}
+                                style={{ '--color': 'var(--app-color-danger)', '--border-color': 'var(--app-color-danger)', '--border-radius': '8px', height: '32px' }}
                               >
                                 <IonIcon icon={eyeOffOutline} slot="start" />
                                 Ausblenden
@@ -485,7 +489,7 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
                                 fill="outline"
                                 disabled={isBusy}
                                 onClick={() => moderate(submission, 'unhide')}
-                                style={{ '--color': 'var(--app-color-challenges)', '--border-color': 'var(--app-color-challenges)' }}
+                                style={{ '--color': 'var(--app-color-challenges)', '--border-color': 'var(--app-color-challenges)', '--border-radius': '8px', height: '32px' }}
                               >
                                 <IonIcon icon={eyeOutline} slot="start" />
                                 Wieder einblenden

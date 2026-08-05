@@ -124,7 +124,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
         title="Challenges"
         subtitle="Aufgaben stellen und Beiträge begleiten"
         icon={flag}
-        colors={{ primary: '#be185d', secondary: '#831843' }}
+        preset="challenges"
         stats={[
           { value: counts.active, label: 'Aktiv' },
           { value: counts.scheduled, label: 'Geplant' },
@@ -174,7 +174,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
           const pending = challenge.pending_count || 0;
           // Backend liefert den aufgeloesten Urheber als author_name
           // (COALESCE aus users.display_name und author_freetext).
-          const authorName = (challenge as any).author_name
+          const authorName = challenge.author_name
             || challenge.author_display_name
             || challenge.author_freetext
             || '';
@@ -279,9 +279,17 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                             {VISIBILITY_LABEL[challenge.visibility] || challenge.visibility}
                           </span>
                           {challenge.jahrgaenge && challenge.jahrgaenge.length > 0 && (
-                            <span className="app-list-item__meta-item">
+                            <span
+                              className="app-list-item__meta-item"
+                              style={{ maxWidth: '100%' }}
+                              title={challenge.jahrgaenge.map((j) => j.name).join(', ')}
+                            >
                               <IonIcon icon={peopleOutline} className="app-icon-color--jahrgang" />
-                              {challenge.jahrgaenge.map((j) => j.name).join(', ')}
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {challenge.jahrgaenge.length > 2
+                                  ? `${challenge.jahrgaenge.length} Jahrgänge`
+                                  : challenge.jahrgaenge.map((j) => j.name).join(', ')}
+                              </span>
                             </span>
                           )}
                         </div>

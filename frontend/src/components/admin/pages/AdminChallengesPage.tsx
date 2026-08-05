@@ -19,16 +19,17 @@ import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
+import { useChallengeDelete } from '../../../hooks/useChallengeDelete';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
-import ChallengesManageView, { getChallengeStatus } from '../views/ChallengesManageView';
+import ChallengesManageView from '../views/ChallengesManageView';
 import ChallengeManageModal from '../modals/ChallengeManageModal';
 import ChallengeModerationModal from '../modals/ChallengeModerationModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import type { AdminChallenge } from '../../../types/challenges';
 
 const AdminChallengesPage: React.FC = () => {
-  const { user, setError, setSuccess } = useApp();
+  const { user } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-challenges');
 
   const { data: challenges, loading, refresh: refreshChallenges } = useOfflineQuery<AdminChallenge[]>(
@@ -113,46 +114,7 @@ const AdminChallengesPage: React.FC = () => {
     presentModerationModal({ presentingElement: presentingElement });
   };
 
-  const doDelete = async (challenge: AdminChallenge, force: boolean) => {
-    try {
-      await api.delete(`/challenges/admin/${challenge.id}${force ? '?force=true' : ''}`);
-      await refreshChallenges();
-      setSuccess('Challenge gelöscht');
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Löschen der Challenge');
-    }
-  };
-
-  const handleDelete = (challenge: AdminChallenge) => {
-    const status = getChallengeStatus(challenge);
-    // Entwuerfe koennen ohne Weiteres weg. Alles, was schon laeuft oder lief,
-    // haengt an echten Beitraegen von Konfis -> destruktive Nachfrage.
-    if (status === 'draft') {
-      presentAlert({
-        header: 'Entwurf löschen',
-        message: `Entwurf "${challenge.title}" wirklich löschen?`,
-        buttons: [
-          { text: 'Abbrechen', role: 'cancel' },
-          { text: 'Löschen', role: 'destructive', handler: () => { doDelete(challenge, false); } }
-        ]
-      });
-      return;
-    }
-
-    const count = challenge.submission_count || 0;
-    presentAlert({
-      header: 'Challenge unwiderruflich löschen',
-      message: `"${challenge.title}" wurde bereits gestartet. Beim Löschen ${count > 0 ? `werden ${count} Beiträge samt hochgeladener Dateien` : 'wird die Challenge'} endgültig entfernt. Das lässt sich nicht rückgängig machen.`,
-      buttons: [
-        { text: 'Abbrechen', role: 'cancel' },
-        {
-          text: 'Endgültig löschen',
-          role: 'destructive',
-          handler: () => { doDelete(challenge, true); }
-        }
-      ]
-    });
-  };
+  const { handleDelete } = useChallengeDelete({ onDeleted: refreshChallenges });
 
   return (
     <IonPage ref={pageRef}>

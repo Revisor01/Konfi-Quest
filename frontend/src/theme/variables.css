@@ -2743,11 +2743,20 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 
 /* === Audio-Player Seekbar (AudioPlayer.tsx) ===
    Eigenes Styling statt "accent-color": Safari/iOS faerbt damit Track UND
-   Thumb in der uebergebenen Farbe ein, was bei der Challenges-Akzentfarbe
-   (Pink/Magenta) auf iOS rot/rosa wirkt. Der Fortschritt kommt stattdessen
-   ueber einen per Inline-Style gesetzten linear-gradient (siehe AudioPlayer),
-   hier wird nur der native Track transparent gemacht und der Thumb neutral
-   gestylt. */
+   Thumb in der uebergebenen Farbe ein, was bei dunklen Akzentfarben auf iOS
+   zu kraeftig/verfaelscht wirkt. Der Fortschritt kommt stattdessen ueber
+   einen per Inline-Style gesetzten linear-gradient in der echten
+   Challenge-Farbe (siehe AudioPlayer, SEEK_PROGRESS_COLOR = color-Prop),
+   hier wird nur der native Track transparent gemacht und der Thumb passend
+   dazu gestylt.
+
+   Thumb-Vertikalausrichtung (WebKit): der Track ist 4px hoch, der Thumb hat
+   width/height 14px + 2px Border rundum, also insgesamt 18px sichtbare
+   Groesse. WebKit zentriert den Thumb NICHT automatisch auf einem custom
+   gestylten Track, daher explizit per margin-top:
+     margin-top = (trackHeight - thumbTotalHeight) / 2 = (4px - 18px) / 2 = -7px
+   Firefox zentriert ueber -moz-range-thumb selbststaendig korrekt und
+   braucht kein margin-top-Aequivalent. */
 .app-audio-seekbar {
   -webkit-appearance: none;
   appearance: none;
@@ -2767,10 +2776,10 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: var(--ion-color-primary, #5b6b82);
+  background: var(--app-audio-seek-color, var(--app-color-challenges));
   border: 2px solid #fff;
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.25);
-  margin-top: 0;
+  margin-top: -7px;
   cursor: pointer;
 }
 .app-audio-seekbar::-moz-range-track {
@@ -2782,7 +2791,7 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: var(--ion-color-primary, #5b6b82);
+  background: var(--app-audio-seek-color, var(--app-color-challenges));
   border: 2px solid #fff;
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.25);
   cursor: pointer;

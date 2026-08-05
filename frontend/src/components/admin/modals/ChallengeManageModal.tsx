@@ -256,8 +256,8 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
   // Das Backend liefert `locked` bereits mit — dessen Urteil hat Vorrang, die
   // lokale Ableitung ist nur der Fallback (z.B. bei Offline-Cache ohne Feld).
   const challengeStatus = challenge ? getChallengeStatus(challenge) : null;
-  const isStarted = typeof (challenge as any)?.locked === 'boolean'
-    ? (challenge as any).locked
+  const isStarted = typeof challenge?.locked === 'boolean'
+    ? challenge.locked
     : (challengeStatus === 'active' || challengeStatus === 'ended');
 
   const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
