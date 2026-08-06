@@ -21,6 +21,8 @@ const { sendFirebasePushNotification, sendFirebaseSilentPush } = require('../pus
  * level_up                    | sendLevelUpToKonfi                   | Konfi           | ja
  * event_reminder              | sendEventReminderToKonfi             | Konfi           | ja
  * waitlist_promotion          | sendWaitlistPromotionToKonfi         | Konfi           | ja
+ * event_registered            | sendEventRegisteredToTeamer          | Teamer:in       | ja
+ * waitlist_promotion          | sendWaitlistPromotionToTeamer        | Teamer:in       | ja
  * event_cancelled             | sendEventCancellationToKonfis        | Konfi (multi)   | ja
  * event_changed               | sendEventChangedToKonfis             | Konfi (multi)   | ja
  * new_event                   | sendNewEventToOrgKonfis              | Org-Konfis      | ja
@@ -522,6 +524,19 @@ class PushService {
   }
 
   /**
+   * Event-Anmeldung bestätigt - Push an Teamer:in
+   *
+   * Teamer:innen haben seit dem Teamer-Kontingent ebenfalls eine Warteliste,
+   * brauchen also dieselbe Rueckmeldung wie Konfis. Die Texte sind identisch
+   * (sendEventRegisteredToKonfi ist rollenagnostisch und sendet nur an eine
+   * User-ID) — daher wird sie hier bewusst wiederverwendet.
+   * @param {string} status - 'confirmed' oder 'waitlist'
+   */
+  static async sendEventRegisteredToTeamer(db, teamerId, eventName, eventDate, status, eventId = null) {
+    return await this.sendEventRegisteredToKonfi(db, teamerId, eventName, eventDate, status, eventId, null);
+  }
+
+  /**
    * Event-Abmeldung bestätigt - Push an Konfi
    */
   static async sendEventUnregisteredToKonfi(db, konfiId, eventName) {
@@ -731,6 +746,17 @@ class PushService {
  console.error('sendWaitlistPromotionToKonfi error:', error);
       return { success: false, error: error.message };
     }
+  }
+
+  /**
+   * Von der Teamer-Warteliste aufgerückt - Push an Teamer:in
+   *
+   * Gleiche Nachricht wie bei Konfis (sendWaitlistPromotionToKonfi ist
+   * rollenagnostisch), eigener Einstiegspunkt fuer die Lesbarkeit der
+   * Aufrufstellen und der Registry oben.
+   */
+  static async sendWaitlistPromotionToTeamer(db, teamerId, eventName, eventDate = null, eventId = null) {
+    return await this.sendWaitlistPromotionToKonfi(db, teamerId, eventName, eventDate, eventId);
   }
 
   /**

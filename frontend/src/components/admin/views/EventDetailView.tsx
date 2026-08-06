@@ -62,6 +62,10 @@ interface Event {
   bring_items?: string;
   teamer_needed?: boolean;
   teamer_only?: boolean;
+  teamer_max_participants?: number;
+  teamer_waitlist_enabled?: boolean;
+  teamer_max_waitlist_size?: number;
+  teamer_waitlist_count?: number;
   is_series?: boolean;
   series_id?: string;
   series_events?: Event[];
@@ -617,6 +621,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           stats={(() => {
             const konfiOnly = participants.filter(p => p.role_name !== 'teamer');
             const teamerOnly = participants.filter(p => p.role_name === 'teamer');
+            const teamerConfirmedCount = teamerOnly.filter(p => p.status === 'confirmed').length;
             const hasTeamer = (eventData?.teamer_needed || eventData?.teamer_only) && teamerOnly.length > 0;
             const presentCount = konfiOnly.filter(p => p.attendance_status === 'present').length;
             const absentCount = konfiOnly.filter(p => p.attendance_status === 'absent' || p.status === 'opted_out').length;
@@ -626,7 +631,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                 { value: presentCount, label: `von ${konfiOnly.length} TN` },
                 { value: absentCount, label: 'Abwesend' },
                 hasTeamer
-                  ? { value: teamerOnly.length, label: 'Team' }
+                  ? { value: teamerConfirmedCount, label: 'Team' }
                   : { value: konfiOnly.filter(p => p.status === 'opted_out').length, label: 'Abgemeldet' }
               ];
             }
@@ -634,7 +639,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             return [
               { value: konfiConfirmed, label: `von ${maxP} TN` },
               hasTeamer
-                ? { value: teamerOnly.length, label: 'Team' }
+                ? { value: teamerConfirmedCount, label: 'Team' }
                 : { value: eventData?.points || 0, label: 'Punkte' },
               { value: konfiOnly.filter(p => p.status === 'waitlist').length, label: 'Warteliste' }
             ];
@@ -726,6 +731,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             konfiHeaderText = `Konfis (${confirmedParticipants.length}${waitlistParticipants.length > 0 ? ` + ${waitlistParticipants.length}` : ''})`;
           }
 
+          const teamerConfirmed = teamerParticipants.filter(p => p.status === 'confirmed');
+          const teamerWaitlist = teamerParticipants.filter(p => p.status === 'waitlist');
+          const teamerHeaderText = `Teamer:innen (${teamerConfirmed.length}${teamerWaitlist.length > 0 ? ` + ${teamerWaitlist.length}` : ''})`;
+
           return (
             <>
               {displayParticipants.length > 0 && (
@@ -767,7 +776,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                 <IonList className="app-section-inset" inset={true}>
                   <IonListHeader>
                     <div className="app-section-icon app-section-icon--events"><IonIcon icon={people} /></div>
-                    <IonLabel>Teamer:innen ({teamerParticipants.length})</IonLabel>
+                    <IonLabel>{teamerHeaderText}</IonLabel>
                   </IonListHeader>
                   <IonCard className="app-card">
                     <IonCardContent style={{ padding: teamerParticipants.length === 0 ? '16px' : '12px' }}>

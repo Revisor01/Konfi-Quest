@@ -74,6 +74,10 @@ export interface EventData {
   bring_items?: string;
   teamer_needed?: boolean;
   teamer_only?: boolean;
+  teamer_max_participants?: number;
+  teamer_waitlist_enabled?: boolean;
+  teamer_max_waitlist_size?: number;
+  teamer_waitlist_count?: number;
   is_series?: boolean;
   series_id?: string;
   series_events?: EventData[];
@@ -189,8 +193,13 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
         {(() => {
           const konfiOnly = participants.filter(p => p.role_name !== 'teamer');
           const teamerOnly = participants.filter(p => p.role_name === 'teamer');
+          const teamerConfirmed = teamerOnly.filter(p => p.status === 'confirmed');
+          const teamerWaitlistCount = eventData.teamer_waitlist_count !== undefined
+            ? eventData.teamer_waitlist_count
+            : teamerOnly.filter(p => p.status === 'waitlist').length;
           const konfiPresent = konfiOnly.filter(p => p.attendance_status === 'present').length;
           const konfiConfirmed = konfiOnly.filter(p => p.status === 'confirmed').length;
+          const teamerMax = eventData.teamer_max_participants || 0;
           return (
             <>
               <div className="app-info-row">
@@ -210,7 +219,20 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
                   <IonIcon icon={people} className="app-info-row__icon app-icon-color--team" />
                   <div>
                     <div className="app-info-row__label">Teamer:innen</div>
-                    <div className="app-info-row__value">{teamerOnly.length}</div>
+                    <div className="app-info-row__value">
+                      {teamerConfirmed.length} / {teamerMax > 0 ? teamerMax : '\u221E'}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {teamerOnly.length > 0 && eventData.teamer_waitlist_enabled && (
+                <div className="app-info-row">
+                  <IonIcon icon={listOutline} className="app-info-row__icon app-icon-color--waitlist" />
+                  <div>
+                    <div className="app-info-row__label">Teamer-Warteliste</div>
+                    <div className="app-info-row__value">
+                      {teamerWaitlistCount} / {eventData.teamer_max_waitlist_size || 10}
+                    </div>
                   </div>
                 </div>
               )}

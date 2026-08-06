@@ -58,7 +58,8 @@ import {
   personAdd,
   infinite,
   add,
-  timeOutline
+  timeOutline,
+  listOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -451,6 +452,7 @@ const TeamerEventsPage: React.FC = () => {
     const isPastEvent = new Date(event.event_date) < new Date();
     // Darf sich der Teamer hier ueberhaupt anmelden? Nur bei teamer_needed/teamer_only.
     const canRegister = !!(event.teamer_needed || event.teamer_only);
+    const isOnWaitlist = event.booking_status === 'waitlist' || event.booking_status === 'pending';
 
     // Globale Tokens
     const C = {
@@ -482,6 +484,9 @@ const TeamerEventsPage: React.FC = () => {
         statusColor = C.bonus;
         statusText = 'Ausstehend';
       }
+    } else if (isOnWaitlist) {
+      statusColor = C.bonus;
+      statusText = 'Warteliste';
     } else if (event.is_registered && !isPastEvent) {
       statusColor = C.info;
       statusText = 'Dabei';
@@ -506,7 +511,12 @@ const TeamerEventsPage: React.FC = () => {
     setBookingLoading(true);
     try {
       if (networkMonitor.isOnline) {
-        await api.post(`/events/${event.id}/book`);
+        const res = await api.post(`/events/${event.id}/book`);
+        // Bei voller Buchung kann der Status confirmed ODER waitlist sein -
+        // fuer die Warteliste braucht der Teamer eine sichtbare Rueckmeldung.
+        if (res.data?.status === 'waitlist') {
+          setSuccess('Du stehst auf der Warteliste. Wird ein Platz frei, rückst du automatisch nach.');
+        }
         await refresh();
         // Update selectedEvent
         const updated = (await api.get('/events')).data.find((e: Event) => e.id === event.id);
@@ -741,7 +751,24 @@ const TeamerEventsPage: React.FC = () => {
                     <IonIcon icon={people} className="app-info-row__icon app-icon-color--team" />
                     <div>
                       <div className="app-info-row__label">Teamer:innen</div>
-                      <div className="app-info-row__value">{selectedEvent.teamer_count}</div>
+                      <div className="app-info-row__value">
+                        {(selectedEvent.teamer_max_participants || 0) > 0
+                          ? `${selectedEvent.teamer_count} / ${selectedEvent.teamer_max_participants}`
+                          : selectedEvent.teamer_count}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Teamer-Warteliste — nur bei begrenztem Kontingent + aktiver Warteliste */}
+                {(selectedEvent.teamer_max_participants || 0) > 0 && selectedEvent.teamer_waitlist_enabled && (
+                  <div className="app-info-row">
+                    <IonIcon icon={listOutline} className="app-info-row__icon app-icon-color--waitlist" />
+                    <div>
+                      <div className="app-info-row__label">Team-Warteliste</div>
+                      <div className="app-info-row__value">
+                        {selectedEvent.teamer_waitlist_count || 0} / {selectedEvent.teamer_max_waitlist_size || 10}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -934,19 +961,70 @@ const TeamerEventsPage: React.FC = () => {
                   disabled={bookingLoading}
                 >
                   <IonIcon icon={closeCircle} slot="start" />
-                  {bookingLoading ? 'Wird verarbeitet...' : 'Nicht mehr dabei'}
+                  {bookingLoading
+                    ? 'Wird verarbeitet...'
+                    : selectedEvent.booking_status === 'waitlist'
+                      ? 'Von der Warteliste austragen'
+                      : 'Nicht mehr dabei'}
                 </IonButton>
               ) : teamerCanRegister(selectedEvent) ? (
-                <IonButton
-                  className="app-action-button"
-                  expand="block"
-                  color="success"
-                  onClick={() => handleBook(selectedEvent)}
-                  disabled={bookingLoading}
-                >
-                  <IonIcon icon={checkmarkCircle} slot="start" />
-                  {bookingLoading ? 'Wird verarbeitet...' : 'Ich bin dabei'}
-                </IonButton>
+                (() => {
+                  const teamerMax = selectedEvent.teamer_max_participants || 0;
+                  const teamerCount = selectedEvent.teamer_count || 0;
+                  const teamerFull = teamerMax > 0 && teamerCount >= teamerMax;
+
+                  if (!teamerFull) {
+                    // Kontingent frei (oder unbegrenzt) -> normaler Buchen-Button.
+                    return (
+                      <IonButton
+                        className="app-action-button"
+                        expand="block"
+                        color="success"
+                        onClick={() => handleBook(selectedEvent)}
+                        disabled={bookingLoading}
+                      >
+                        <IonIcon icon={checkmarkCircle} slot="start" />
+                        {bookingLoading ? 'Wird verarbeitet...' : 'Ich bin dabei'}
+                      </IonButton>
+                    );
+                  }
+
+                  const teamerWaitlistMax = selectedEvent.teamer_max_waitlist_size || 0;
+                  const teamerWaitlistCount = selectedEvent.teamer_waitlist_count || 0;
+                  const waitlistOpen = !!selectedEvent.teamer_waitlist_enabled &&
+                    (teamerWaitlistMax === 0 || teamerWaitlistCount < teamerWaitlistMax);
+
+                  if (waitlistOpen) {
+                    // Kontingent voll, aber Warteliste offen -> Warteliste-Button.
+                    return (
+                      <IonButton
+                        className="app-action-button"
+                        expand="block"
+                        color="warning"
+                        onClick={() => handleBook(selectedEvent)}
+                        disabled={bookingLoading}
+                      >
+                        <IonIcon icon={hourglass} slot="start" />
+                        {bookingLoading
+                          ? 'Wird verarbeitet...'
+                          : `Auf die Warteliste (${teamerWaitlistCount}/${teamerWaitlistMax || '∞'})`}
+                      </IonButton>
+                    );
+                  }
+
+                  // Kontingent voll und Warteliste voll/deaktiviert -> nur Hinweis.
+                  return (
+                    <IonButton
+                      className="app-action-button"
+                      expand="block"
+                      disabled
+                      color="medium"
+                    >
+                      <IonIcon icon={informationCircle} slot="start" />
+                      Kein Platz mehr frei
+                    </IonButton>
+                  );
+                })()
               ) : (
                 // Reines Konfi-Event: Teamer kann sich NICHT anmelden -> nur Hinweis.
                 <div

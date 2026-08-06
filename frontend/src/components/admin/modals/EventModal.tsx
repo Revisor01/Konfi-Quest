@@ -15,7 +15,7 @@ import { Event, Category, Timeslot, Jahrgang } from '../../../types/event';
 import {
   BasicInfoSection, CheckinSection,
   PointsParticipantsSection, CategoriesTargetSection,
-  WaitlistSection, SeriesSection
+  WaitlistSection, TeamerCapacitySection, SeriesSection
 } from './EventFormSections';
 import type { EventFormData } from './EventFormSections';
 import { safeUUID } from '../../../utils/uuid';
@@ -59,7 +59,8 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
     type: 'event', max_participants: 5, registration_opens_at: '', registration_closes_at: '',
     has_timeslots: false, waitlist_enabled: true, max_waitlist_size: 3,
     is_series: false, series_count: 1, series_interval: 'week',
-    mandatory: false, is_konfirmation: false, bring_items: '', checkin_window: 30
+    mandatory: false, is_konfirmation: false, bring_items: '', checkin_window: 30,
+    teamer_max_participants: 0, teamer_waitlist_enabled: true, teamer_max_waitlist_size: 10
   });
 
   const [timeslots, setTimeslots] = useState<Timeslot[]>([]);
@@ -105,7 +106,10 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         mandatory: event.mandatory || false,
         is_konfirmation: event.is_konfirmation || false,
         bring_items: event.bring_items || '',
-        checkin_window: event.checkin_window || 30
+        checkin_window: event.checkin_window || 30,
+        teamer_max_participants: event.teamer_max_participants ?? 0,
+        teamer_waitlist_enabled: event.teamer_waitlist_enabled !== undefined ? event.teamer_waitlist_enabled : true,
+        teamer_max_waitlist_size: event.teamer_max_waitlist_size ?? 10
       });
       if (event.teamer_only) setTeamerAccess('teamer_only');
       else if (event.teamer_needed) setTeamerAccess('teamer_needed');
@@ -140,7 +144,8 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         registration_closes_at: toIonDatetimeISO(regCloses), has_timeslots: false,
         waitlist_enabled: true, max_waitlist_size: 3, is_series: false,
         series_count: 1, series_interval: 'week', mandatory: false, is_konfirmation: false, bring_items: '',
-        checkin_window: 30
+        checkin_window: 30,
+        teamer_max_participants: 0, teamer_waitlist_enabled: true, teamer_max_waitlist_size: 10
       });
       setTimeslots([]);
       setTeamerAccess('normal');
@@ -223,7 +228,10 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         mandatory: formData.mandatory, is_konfirmation: formData.is_konfirmation,
         bring_items: formData.bring_items.trim() || null,
         checkin_window: formData.checkin_window,
-        teamer_needed: teamerAccess === 'teamer_needed', teamer_only: teamerAccess === 'teamer_only'
+        teamer_needed: teamerAccess === 'teamer_needed', teamer_only: teamerAccess === 'teamer_only',
+        teamer_max_participants: teamerAccess === 'normal' ? 0 : formData.teamer_max_participants,
+        teamer_waitlist_enabled: teamerAccess === 'normal' ? true : formData.teamer_waitlist_enabled,
+        teamer_max_waitlist_size: teamerAccess === 'normal' ? 10 : formData.teamer_max_waitlist_size
       };
 
       if (networkMonitor.isOnline) {
@@ -436,6 +444,11 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         {/* WARTELISTE */}
         {!formData.mandatory && teamerAccess !== 'teamer_only' && (
           <WaitlistSection formData={formData} setFormData={setFormData} loading={loading} />
+        )}
+
+        {/* TEAMER-PLAETZE — nur bei "Teamer gesucht" oder "Nur Teamer:innen" */}
+        {teamerAccess !== 'normal' && (
+          <TeamerCapacitySection formData={formData} setFormData={setFormData} loading={loading} />
         )}
 
         {/* SERIEN-EVENT */}

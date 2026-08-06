@@ -61,20 +61,35 @@ async function getEventWithCounts(client, eventId, orgId, options = {}) {
 
 /**
  * Bestimmt den Buchungsstatus basierend auf Kapazitaet und Warteliste
+ *
+ * Rollenagnostisch: ueber `options` laesst sich waehlen, welche Wartelisten-
+ * Felder des Events gelten. Fuer das Teamer-Kontingent sind das
+ * teamer_waitlist_enabled / teamer_max_waitlist_size, fuer Konfis die
+ * unpraefixierten Felder.
+ *
  * @param {object} event - Event-Objekt
  * @param {number} confirmedCount - Anzahl bestaetigter Buchungen
  * @param {number} waitlistCount - Anzahl Wartelisten-Eintraege
- * @param {number} maxCapacity - Maximale Kapazitaet
+ * @param {number} maxCapacity - Maximale Kapazitaet (0 = unbegrenzt)
+ * @param {object} options - { waitlistEnabledField, maxWaitlistSizeField }
  * @returns {string|object} 'confirmed', 'waitlist', oder { error: string, status: number }
  */
-function determineBookingStatus(event, confirmedCount, waitlistCount, maxCapacity) {
+function determineBookingStatus(event, confirmedCount, waitlistCount, maxCapacity, options = {}) {
+  const {
+    waitlistEnabledField = 'waitlist_enabled',
+    maxWaitlistSizeField = 'max_waitlist_size'
+  } = options;
+
+  const waitlistEnabled = event[waitlistEnabledField];
+  const maxWaitlistSize = event[maxWaitlistSizeField] || 10;
+
   // 0 = unbegrenzt
   if (maxCapacity > 0 && confirmedCount >= maxCapacity) {
-    if (event.waitlist_enabled && waitlistCount < (event.max_waitlist_size || 10)) {
+    if (waitlistEnabled && waitlistCount < maxWaitlistSize) {
       return 'waitlist';
     }
     // Kein Platz und keine Warteliste oder Warteliste voll
-    if (!event.waitlist_enabled) {
+    if (!waitlistEnabled) {
       return { error: 'Das Event ist leider bereits ausgebucht', status: 400 };
     }
     return { error: 'Event ist voll und Warteliste ist auch voll', status: 400 };
@@ -83,23 +98,44 @@ function determineBookingStatus(event, confirmedCount, waitlistCount, maxCapacit
 }
 
 /**
- * Rueckt den ersten Wartelisten-Eintrag nach (timeslot-aware)
- * @param {object} db - DB-Pool
+ * Rueckt den ersten Wartelisten-Eintrag nach (timeslot-aware, rollen-gefiltert)
+ *
+ * WICHTIG: roleFilter ist PFLICHT-relevant, seit Events ein eigenes
+ * Teamer-Kontingent haben. Konfi- und Teamer-Warteliste sind strikt getrennt:
+ * ein frei gewordener Konfi-Platz darf NIEMALS von einem Teamer belegt werden
+ * und umgekehrt. Ohne Filter wuerde die FIFO-Reihenfolge beide Wartelisten
+ * vermischen.
+ *
+ * @param {object} db - DB-Pool oder Client (innerhalb Transaktion)
  * @param {number} eventId - Event ID
  * @param {number|null} timeslotId - Timeslot ID (null fuer Events ohne Timeslots)
+ * @param {'teamer'|'not_teamer'} roleFilter - Welche Warteliste nachruecken soll
  * @returns {number|null} User-ID des nachgerueckten Users oder null
  */
-async function promoteFromWaitlist(db, eventId, timeslotId) {
+async function promoteFromWaitlist(db, eventId, timeslotId, roleFilter) {
+  if (roleFilter !== 'teamer' && roleFilter !== 'not_teamer') {
+    throw new Error(`promoteFromWaitlist: roleFilter muss 'teamer' oder 'not_teamer' sein (war: ${roleFilter})`);
+  }
+  // Rollen-Bedingung: Teamer-Warteliste vs. alles-was-kein-Teamer-ist (Konfis).
+  // Geloeschte User (deleted_at) ruecken nie nach.
+  const roleCondition = roleFilter === 'teamer'
+    ? `EXISTS (SELECT 1 FROM users u JOIN roles r ON u.role_id = r.id
+                WHERE u.id = eb.user_id AND r.name = 'teamer' AND u.deleted_at IS NULL)`
+    : `EXISTS (SELECT 1 FROM users u JOIN roles r ON u.role_id = r.id
+                WHERE u.id = eb.user_id AND r.name != 'teamer' AND u.deleted_at IS NULL)`;
+
   // Atomar: SELECT des naechsten Wartelisten-Eintrags und UPDATE in EINEM Statement.
   // FOR UPDATE SKIP LOCKED verhindert, dass zwei gleichzeitige Stornierungen
   // denselben Wartelistenplatz nachruecken (Race -> Doppel-Promotion ueber Kapazitaet).
   const subSelect = timeslotId
-    ? `SELECT id FROM event_bookings
-        WHERE event_id = $1 AND timeslot_id = $2 AND status = 'waitlist'
-        ORDER BY created_at ASC LIMIT 1 FOR UPDATE SKIP LOCKED`
-    : `SELECT id FROM event_bookings
-        WHERE event_id = $1 AND status = 'waitlist'
-        ORDER BY created_at ASC LIMIT 1 FOR UPDATE SKIP LOCKED`;
+    ? `SELECT eb.id FROM event_bookings eb
+        WHERE eb.event_id = $1 AND eb.timeslot_id = $2 AND eb.status = 'waitlist'
+          AND ${roleCondition}
+        ORDER BY eb.created_at ASC LIMIT 1 FOR UPDATE OF eb SKIP LOCKED`
+    : `SELECT eb.id FROM event_bookings eb
+        WHERE eb.event_id = $1 AND eb.status = 'waitlist'
+          AND ${roleCondition}
+        ORDER BY eb.created_at ASC LIMIT 1 FOR UPDATE OF eb SKIP LOCKED`;
   const params = timeslotId ? [eventId, timeslotId] : [eventId];
 
   const { rows: [promoted] } = await db.query(

@@ -15,6 +15,27 @@ if (!QR_SECRET) {
   process.exit(1);
 }
 
+/**
+ * Validiert die Felder des Teamer-Kontingents.
+ * 0 = unbegrenzt (Konvention wie max_participants), negativ ist ungueltig.
+ * @returns {string|null} Fehlermeldung oder null wenn alles in Ordnung ist
+ */
+function validateTeamerQuota(teamerMaxParticipants, teamerMaxWaitlistSize) {
+  if (teamerMaxParticipants !== undefined && teamerMaxParticipants !== null) {
+    const value = parseInt(teamerMaxParticipants, 10);
+    if (Number.isNaN(value) || value < 0) {
+      return 'teamer_max_participants muss eine Zahl >= 0 sein (0 = unbegrenzt)';
+    }
+  }
+  if (teamerMaxWaitlistSize !== undefined && teamerMaxWaitlistSize !== null) {
+    const value = parseInt(teamerMaxWaitlistSize, 10);
+    if (Number.isNaN(value) || value < 0) {
+      return 'teamer_max_waitlist_size muss eine Zahl >= 0 sein';
+    }
+  }
+  return null;
+}
+
 // Events routes
 // Events: Teamer darf alles (view, create, edit, delete, manage_bookings)
 module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
@@ -65,6 +86,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
                 bstats.unprocessed_count,
                 bstats.total_participants,
                 bstats.teamer_count,
+                bstats.teamer_waitlist_count,
                 CASE
                   WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
                   ELSE e.max_participants
@@ -98,7 +120,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             COUNT(*) FILTER (WHERE eb.status = 'waitlist') as waitlist_count,
             COUNT(*) FILTER (WHERE eb.status = 'confirmed' AND eb.attendance_status IS NULL) as unprocessed_count,
             COUNT(*) as total_participants,
-            COUNT(*) FILTER (WHERE eb.status = 'confirmed' AND r_book.name = 'teamer') as teamer_count
+            COUNT(*) FILTER (WHERE eb.status = 'confirmed' AND r_book.name = 'teamer') as teamer_count,
+            COUNT(*) FILTER (WHERE eb.status = 'waitlist' AND r_book.name = 'teamer') as teamer_waitlist_count
           FROM event_bookings eb
           LEFT JOIN users u_book ON eb.user_id = u_book.id
           LEFT JOIN roles r_book ON u_book.role_id = r_book.id
@@ -198,6 +221,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           jahrgaenge: jahrgaenge,
           waitlist_count: parseInt(row.waitlist_count, 10) || 0,
           teamer_count: parseInt(row.teamer_count, 10) || 0,
+          teamer_waitlist_count: parseInt(row.teamer_waitlist_count, 10) || 0,
           material_count: parseInt(row.material_count, 10) || 0,
           pending_bookings_count: unprocessedCount > 0 ? unprocessedCount : undefined
         };
@@ -567,7 +591,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     const eventId = req.params.id;
     try {
       // Get event details
-      const { rows: [event] } = await db.query("SELECT id, name, description, event_date, event_end_time, location, location_maps_url, points, point_type, type, max_participants, registration_opens_at, registration_closes_at, has_timeslots, waitlist_enabled, max_waitlist_size, is_series, series_id, mandatory, is_konfirmation, bring_items, checkin_window, teamer_needed, teamer_only, cancelled, cancelled_at, qr_token, created_by, organization_id, created_at FROM events WHERE id = $1 AND organization_id = $2", [eventId, req.user.organization_id]);
+      const { rows: [event] } = await db.query("SELECT id, name, description, event_date, event_end_time, location, location_maps_url, points, point_type, type, max_participants, registration_opens_at, registration_closes_at, has_timeslots, waitlist_enabled, max_waitlist_size, teamer_max_participants, teamer_waitlist_enabled, teamer_max_waitlist_size, is_series, series_id, mandatory, is_konfirmation, bring_items, checkin_window, teamer_needed, teamer_only, cancelled, cancelled_at, qr_token, created_by, organization_id, created_at FROM events WHERE id = $1 AND organization_id = $2", [eventId, req.user.organization_id]);
 
       if (!event) {
         return res.status(404).json({ error: 'Event nicht gefunden' });
@@ -671,7 +695,15 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // Calculate correct registered_count for timeslot events
       const registeredCount = participants.filter(p => p.status === 'confirmed').length;
       const pendingCount = participants.filter(p => p.status === 'waitlist').length;
-      
+
+      // Teamer-Kontingent: eigene Zaehler, getrennt vom Konfi-Kontingent
+      const teamerCount = participants.filter(p => p.status === 'confirmed' && p.role_name === 'teamer').length;
+      const teamerWaitlistCount = participants.filter(p => p.status === 'waitlist' && p.role_name === 'teamer').length;
+
+      // Buchungsstatus des eingeloggten Users (fuer Konfis UND Teamer:innen —
+      // Teamer koennen seit dem Teamer-Kontingent ebenfalls 'waitlist' haben)
+      const ownBooking = participants.find(p => p.user_id === req.user.id);
+
       // For timeslot events, calculate total capacity and availability
       let totalCapacity = event.max_participants;
       if (event.has_timeslots && timeslots && timeslots.length > 0) {
@@ -688,8 +720,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         unregistrations,
         registered_count: registeredCount,
         pending_count: pendingCount,
+        teamer_count: teamerCount,
+        teamer_waitlist_count: teamerWaitlistCount,
         max_participants: totalCapacity,
         available_spots: totalCapacity - registeredCount,
+        booking_status: ownBooking ? ownBooking.status : null,
+        is_registered: ownBooking ? ownBooking.status === 'confirmed' : false,
         chat_room_id: eventChat?.id || null
       });
       
@@ -706,12 +742,19 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       points, point_type, category_ids, jahrgang_ids, type, max_participants,
       registration_opens_at, registration_closes_at, has_timeslots,
       waitlist_enabled, max_waitlist_size, timeslots, is_series, series_id,
-      mandatory, is_konfirmation, bring_items, checkin_window, teamer_needed, teamer_only
+      mandatory, is_konfirmation, bring_items, checkin_window, teamer_needed, teamer_only,
+      teamer_max_participants, teamer_waitlist_enabled, teamer_max_waitlist_size
     } = req.body;
 
     // Teamer-Felder validieren: gegenseitiger Ausschluss
     if (teamer_needed && teamer_only) {
       return res.status(400).json({ error: 'teamer_needed und teamer_only schließen sich gegenseitig aus' });
+    }
+
+    // Teamer-Kontingent validieren (0 = unbegrenzt, negativ ist ungueltig)
+    const teamerQuotaCheck = validateTeamerQuota(teamer_max_participants, teamer_max_waitlist_size);
+    if (teamerQuotaCheck) {
+      return res.status(400).json({ error: teamerQuotaCheck });
     }
 
     // checkin_window validieren (5-120, Default 30)
@@ -761,8 +804,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           points, point_type, type, max_participants, registration_opens_at,
           registration_closes_at, has_timeslots, waitlist_enabled, max_waitlist_size,
           is_series, series_id, mandatory, is_konfirmation, bring_items, checkin_window,
-          teamer_needed, teamer_only, created_by, organization_id
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
+          teamer_needed, teamer_only,
+          teamer_max_participants, teamer_waitlist_enabled, teamer_max_waitlist_size,
+          created_by, organization_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)
         RETURNING id
       `;
       const { rows: [newEvent] } = await db.query(insertEventQuery, [
@@ -772,6 +817,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         effectiveWaitlist, max_waitlist_size || 10,
         is_series || false, series_id, mandatory || false, is_konfirmation || false, bring_items || null,
         effectiveCheckinWindow, teamer_needed || false, teamer_only || false,
+        // 0 = unbegrenzt, Default wie in der Migration
+        teamer_max_participants !== undefined && teamer_max_participants !== null ? parseInt(teamer_max_participants, 10) : 0,
+        teamer_waitlist_enabled !== undefined && teamer_waitlist_enabled !== null ? !!teamer_waitlist_enabled : true,
+        teamer_max_waitlist_size !== undefined && teamer_max_waitlist_size !== null ? parseInt(teamer_max_waitlist_size, 10) : 10,
         req.user.id, req.user.organization_id
       ]);
       
@@ -872,12 +921,19 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       points, point_type, category_ids, jahrgang_ids, type, max_participants,
       registration_opens_at, registration_closes_at, has_timeslots,
       waitlist_enabled, max_waitlist_size, timeslots,
-      mandatory, is_konfirmation, bring_items, checkin_window, teamer_needed, teamer_only
+      mandatory, is_konfirmation, bring_items, checkin_window, teamer_needed, teamer_only,
+      teamer_max_participants, teamer_waitlist_enabled, teamer_max_waitlist_size
     } = req.body;
 
     // Teamer-Felder validieren: gegenseitiger Ausschluss
     if (teamer_needed && teamer_only) {
       return res.status(400).json({ error: 'teamer_needed und teamer_only schließen sich gegenseitig aus' });
+    }
+
+    // Teamer-Kontingent validieren (0 = unbegrenzt, negativ ist ungueltig)
+    const teamerQuotaCheck = validateTeamerQuota(teamer_max_participants, teamer_max_waitlist_size);
+    if (teamerQuotaCheck) {
+      return res.status(400).json({ error: teamerQuotaCheck });
     }
 
     // checkin_window validieren (5-120, Default 30)
@@ -912,11 +968,24 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       await client.query('BEGIN');
 
       // Alte Werte lesen: mandatory/registration_open_notified fuer Auto-Enrollment-Logik,
-      // name/event_date/event_end_time/location/cancelled fuer den Aenderungs-Push-Vergleich unten
+      // name/event_date/event_end_time/location/cancelled fuer den Aenderungs-Push-Vergleich unten,
+      // teamer_max_participants fuer das Teamer-Nachruecken bei Kapazitaetserhoehung
       const { rows: [oldEvent] } = await client.query(
-        'SELECT mandatory, registration_open_notified, name, event_date, event_end_time, location, cancelled FROM events WHERE id = $1',
+        'SELECT mandatory, registration_open_notified, name, event_date, event_end_time, location, cancelled, teamer_max_participants FROM events WHERE id = $1',
         [id]
       );
+
+      // Teamer-Kontingent: nachtraeglich editierbar. Wird ein Feld nicht mitgeschickt,
+      // bleibt der bisherige Wert erhalten (COALESCE ueber den Parameter).
+      const effectiveTeamerMax = (teamer_max_participants === undefined || teamer_max_participants === null)
+        ? null
+        : parseInt(teamer_max_participants, 10);
+      const effectiveTeamerWaitlist = (teamer_waitlist_enabled === undefined || teamer_waitlist_enabled === null)
+        ? null
+        : !!teamer_waitlist_enabled;
+      const effectiveTeamerMaxWaitlist = (teamer_max_waitlist_size === undefined || teamer_max_waitlist_size === null)
+        ? null
+        : parseInt(teamer_max_waitlist_size, 10);
 
       const updateQuery = `
         UPDATE events SET
@@ -925,8 +994,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           max_participants = $10, registration_opens_at = $11, registration_closes_at = $12,
           has_timeslots = $13, waitlist_enabled = $14, max_waitlist_size = $15,
           mandatory = $16, is_konfirmation = $17, bring_items = $18, checkin_window = $19,
-          teamer_needed = $20, teamer_only = $21
-        WHERE id = $22 AND organization_id = $23
+          teamer_needed = $20, teamer_only = $21,
+          teamer_max_participants = COALESCE($22, teamer_max_participants),
+          teamer_waitlist_enabled = COALESCE($23, teamer_waitlist_enabled),
+          teamer_max_waitlist_size = COALESCE($24, teamer_max_waitlist_size)
+        WHERE id = $25 AND organization_id = $26
       `;
       const { rowCount } = await client.query(updateQuery, [
         name, description, event_date, event_end_time, location, location_maps_url,
@@ -935,6 +1007,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         effectiveWaitlist, max_waitlist_size || 10,
         mandatory || false, is_konfirmation || false, bring_items || null,
         effectiveCheckinWindow, teamer_needed || false, teamer_only || false,
+        effectiveTeamerMax, effectiveTeamerWaitlist, effectiveTeamerMaxWaitlist,
         id, req.user.organization_id
       ]);
 
@@ -1030,23 +1103,32 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         }
       }
 
-      // Nachrück-Logik: Wenn Kapazität erhöht wurde, Wartelisten-Einträge nachrücken lassen
+      // Nachrück-Logik: Wenn Kapazität erhöht wurde, Wartelisten-Einträge nachrücken lassen.
+      // Konfi- und Teamer-Kontingent sind strikt getrennt — die Konfi-Bloecke hier
+      // duerfen NIE einen Teamer nachruecken lassen (r.name != 'teamer').
       const promotedUsers = [];
+      const promotedTeamers = [];
       if (has_timeslots && timeslots && Array.isArray(timeslots) && timeslots.length > 0) {
         // Bei Timeslot-Events: Für jeden Timeslot separat prüfen
         for (const slot of timeslots) {
           if (!slot.id) continue; // Nur bestehende Timeslots prüfen
           const { rows: [tsCapacity] } = await client.query(
-            `SELECT COUNT(*)::int as confirmed_count FROM event_bookings
-             WHERE timeslot_id = $1 AND status = 'confirmed' AND organization_id = $2`,
+            `SELECT COUNT(*)::int as confirmed_count FROM event_bookings eb
+             JOIN users u ON eb.user_id = u.id
+             JOIN roles r ON u.role_id = r.id
+             WHERE eb.timeslot_id = $1 AND eb.status = 'confirmed' AND eb.organization_id = $2
+               AND r.name != 'teamer' AND u.deleted_at IS NULL`,
             [slot.id, req.user.organization_id]
           );
           const freeSlots = slot.max_participants - tsCapacity.confirmed_count;
           if (freeSlots > 0) {
             const { rows: waitlistEntries } = await client.query(
-              `SELECT id, user_id FROM event_bookings
-               WHERE event_id = $1 AND timeslot_id = $2 AND status = 'waitlist' AND organization_id = $4
-               ORDER BY created_at ASC LIMIT $3`,
+              `SELECT eb.id, eb.user_id FROM event_bookings eb
+               JOIN users u ON eb.user_id = u.id
+               JOIN roles r ON u.role_id = r.id
+               WHERE eb.event_id = $1 AND eb.timeslot_id = $2 AND eb.status = 'waitlist' AND eb.organization_id = $4
+                 AND r.name != 'teamer' AND u.deleted_at IS NULL
+               ORDER BY eb.created_at ASC LIMIT $3`,
               [id, slot.id, freeSlots, req.user.organization_id]
             );
             for (const entry of waitlistEntries) {
@@ -1056,20 +1138,67 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           }
         }
       } else if (max_participants > 0) {
-        // Bei normalen Events: Gesamtkapazität prüfen
+        // Bei normalen Events: Gesamtkapazität prüfen (Teamer zaehlen nicht mit)
         const { rows: [currentCounts] } = await client.query(
-          "SELECT COUNT(*)::int as confirmed_count FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'",
+          `SELECT COUNT(*)::int as confirmed_count FROM event_bookings eb
+           JOIN users u ON eb.user_id = u.id
+           JOIN roles r ON u.role_id = r.id
+           WHERE eb.event_id = $1 AND eb.status = 'confirmed'
+             AND r.name != 'teamer' AND u.deleted_at IS NULL`,
           [id]
         );
         const freeSlots = max_participants - currentCounts.confirmed_count;
         if (freeSlots > 0) {
           const { rows: waitlistEntries } = await client.query(
-            "SELECT id, user_id FROM event_bookings WHERE event_id = $1 AND status = 'waitlist' ORDER BY created_at ASC LIMIT $2",
+            `SELECT eb.id, eb.user_id FROM event_bookings eb
+             JOIN users u ON eb.user_id = u.id
+             JOIN roles r ON u.role_id = r.id
+             WHERE eb.event_id = $1 AND eb.status = 'waitlist'
+               AND r.name != 'teamer' AND u.deleted_at IS NULL
+             ORDER BY eb.created_at ASC LIMIT $2`,
             [id, freeSlots]
           );
           for (const entry of waitlistEntries) {
             await client.query("UPDATE event_bookings SET status = 'confirmed' WHERE id = $1", [entry.id]);
             promotedUsers.push(entry.user_id);
+          }
+        }
+      }
+
+      // Teamer-Nachruecken bei Erhoehung von teamer_max_participants.
+      // Bestandsschutz bei Reduktion: bereits bestaetigte Teamer werden NIE
+      // zurueckgestuft (identisch zum Konfi-Verhalten). 0 = unbegrenzt -> alle
+      // Wartenden ruecken nach.
+      const newTeamerMax = effectiveTeamerMax !== null ? effectiveTeamerMax : (oldEvent?.teamer_max_participants ?? 0);
+      const oldTeamerMax = oldEvent?.teamer_max_participants ?? 0;
+      if (newTeamerMax === 0 || newTeamerMax > oldTeamerMax) {
+        const { rows: [teamerCounts] } = await client.query(
+          `SELECT COUNT(*)::int as confirmed_count FROM event_bookings eb
+           JOIN users u ON eb.user_id = u.id
+           JOIN roles r ON u.role_id = r.id
+           WHERE eb.event_id = $1 AND eb.status = 'confirmed'
+             AND r.name = 'teamer' AND u.deleted_at IS NULL`,
+          [id]
+        );
+        // 0 = unbegrenzt -> keine Obergrenze fuer die Anzahl der Nachruecker
+        const freeTeamerSlots = newTeamerMax === 0
+          ? null
+          : newTeamerMax - teamerCounts.confirmed_count;
+        if (freeTeamerSlots === null || freeTeamerSlots > 0) {
+          const limitClause = freeTeamerSlots === null ? '' : 'LIMIT $2';
+          const limitParams = freeTeamerSlots === null ? [id] : [id, freeTeamerSlots];
+          const { rows: teamerWaitlistEntries } = await client.query(
+            `SELECT eb.id, eb.user_id FROM event_bookings eb
+             JOIN users u ON eb.user_id = u.id
+             JOIN roles r ON u.role_id = r.id
+             WHERE eb.event_id = $1 AND eb.status = 'waitlist'
+               AND r.name = 'teamer' AND u.deleted_at IS NULL
+             ORDER BY eb.created_at ASC ${limitClause}`,
+            limitParams
+          );
+          for (const entry of teamerWaitlistEntries) {
+            await client.query("UPDATE event_bookings SET status = 'confirmed' WHERE id = $1", [entry.id]);
+            promotedTeamers.push(entry.user_id);
           }
         }
       }
@@ -1090,7 +1219,24 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         }
       }
 
-      res.json({ message: 'Event erfolgreich aktualisiert', promoted_count: promotedUsers.length });
+      // Push-Notifications und Live-Updates für nachgerückte Teamer:innen (nach COMMIT)
+      if (promotedTeamers.length > 0) {
+        const { rows: [eventInfo] } = await db.query("SELECT name FROM events WHERE id = $1", [id]);
+        for (const userId of promotedTeamers) {
+          try {
+            await PushService.sendWaitlistPromotionToTeamer(db, userId, eventInfo ? eventInfo.name : name);
+          } catch (pushErr) {
+            console.error('Push notification failed for teamer waitlist promotion:', pushErr);
+          }
+          liveUpdate.sendToUser('teamer', userId, 'events', 'update', { eventId: id, action: 'promoted' });
+        }
+      }
+
+      res.json({
+        message: 'Event erfolgreich aktualisiert',
+        promoted_count: promotedUsers.length,
+        promoted_teamer_count: promotedTeamers.length
+      });
 
       // Live Update: Notify all konfis and admins about the event update
       liveUpdate.sendToOrg(req.user.organization_id, 'events', 'update', { eventId: id });
@@ -1335,7 +1481,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
       // 1. Check if event exists (FOR UPDATE sperrt die Zeile)
       const { rows: [event] } = await client.query(
-        "SELECT id, name, description, event_date, event_end_time, location, points, point_type, type, max_participants, registration_opens_at, registration_closes_at, has_timeslots, waitlist_enabled, max_waitlist_size, is_series, series_id, mandatory, is_konfirmation, bring_items, checkin_window, teamer_needed, teamer_only, cancelled, qr_token, created_by, organization_id FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE",
+        "SELECT id, name, description, event_date, event_end_time, location, points, point_type, type, max_participants, registration_opens_at, registration_closes_at, has_timeslots, waitlist_enabled, max_waitlist_size, teamer_max_participants, teamer_waitlist_enabled, teamer_max_waitlist_size, is_series, series_id, mandatory, is_konfirmation, bring_items, checkin_window, teamer_needed, teamer_only, cancelled, qr_token, created_by, organization_id FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE",
         [eventId, req.user.organization_id]
       );
       if (!event) {
@@ -1344,7 +1490,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         return res.status(404).json({ error: 'Event nicht gefunden' });
       }
 
-      // TEAMER-PFAD: Vereinfachtes Booking ohne Timeslot/Warteliste/Zeitfenster
+      // TEAMER-PFAD: eigenes Kontingent mit eigener Warteliste.
+      // Bewusst weiterhin OHNE Timeslot und OHNE Anmeldefenster-Check —
+      // Teamer:innen duerfen sich jederzeit anmelden, das Kontingent begrenzt
+      // nur die Anzahl. Konfi- und Teamer-Plaetze sind strikt getrennt.
       if (isTeamer) {
         if (!event.teamer_needed && !event.teamer_only) {
           await client.query('ROLLBACK');
@@ -1363,27 +1512,63 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           return res.status(409).json({ error: 'Du bist bereits für dieses Event angemeldet' });
         }
 
-        // Direkt confirmed einfügen, KEIN Timeslot, KEINE Warteliste, KEIN Registration-Zeitfenster-Check
-        const insertQuery = "INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id) VALUES ($1, $2, 'confirmed', NOW(), $3) RETURNING id";
-        const { rows: [newBooking] } = await client.query(insertQuery, [eventId, userId, req.user.organization_id]);
+        // Teamer-Kontingent zaehlen: NUR Buchungen von Teamer:innen (Konfis
+        // zaehlen hier nicht, sie haben ihr eigenes Kontingent).
+        const { rows: [teamerCounts] } = await client.query(
+          `SELECT COUNT(*) FILTER (WHERE eb.status = 'confirmed') as confirmed_count,
+                  COUNT(*) FILTER (WHERE eb.status = 'waitlist') as waitlist_count
+           FROM event_bookings eb
+           JOIN users u ON eb.user_id = u.id
+           JOIN roles r ON u.role_id = r.id
+           WHERE eb.event_id = $1 AND r.name = 'teamer' AND u.deleted_at IS NULL`,
+          [eventId]
+        );
+        const teamerConfirmed = parseInt(teamerCounts.confirmed_count, 10);
+        const teamerWaitlist = parseInt(teamerCounts.waitlist_count, 10);
+
+        // teamer_max_participants = 0 -> unbegrenzt (Verhalten der Bestands-Events)
+        const teamerStatusResult = determineBookingStatus(
+          event, teamerConfirmed, teamerWaitlist, event.teamer_max_participants || 0,
+          { waitlistEnabledField: 'teamer_waitlist_enabled', maxWaitlistSizeField: 'teamer_max_waitlist_size' }
+        );
+        if (typeof teamerStatusResult === 'object') {
+          await client.query('ROLLBACK');
+          client.release();
+          return res.status(teamerStatusResult.status).json({ error: teamerStatusResult.error });
+        }
+        const teamerBookingStatus = teamerStatusResult;
+        const teamerMessage = teamerBookingStatus === 'confirmed' ? 'Erfolgreich angemeldet' : 'Auf die Warteliste gesetzt';
+
+        // KEIN Timeslot fuer Teamer-Buchungen
+        const insertQuery = "INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id) VALUES ($1, $2, $3, NOW(), $4) RETURNING id";
+        const { rows: [newBooking] } = await client.query(insertQuery, [eventId, userId, teamerBookingStatus, req.user.organization_id]);
 
         await client.query('COMMIT');
         client.release();
 
-        res.status(201).json({ id: newBooking.id, message: 'Erfolgreich angemeldet', status: 'confirmed' });
+        res.status(201).json({ id: newBooking.id, message: teamerMessage, status: teamerBookingStatus });
 
         // Live Update und Push
-        liveUpdate.sendToUser('teamer', userId, 'events', 'update', { eventId, status: 'confirmed' });
+        liveUpdate.sendToUser('teamer', userId, 'events', 'update', { eventId, status: teamerBookingStatus });
         liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'teamer_booking' });
 
         try {
           await PushService.sendToOrgAdmins(db, req.user.organization_id, {
             title: 'Teamer:in angemeldet',
-            body: `${req.user.display_name} hat sich für '${event.name}' angemeldet`,
+            body: teamerBookingStatus === 'confirmed'
+              ? `${req.user.display_name} hat sich für '${event.name}' angemeldet`
+              : `${req.user.display_name} steht auf der Warteliste für '${event.name}'`,
             data: { type: 'teamer_event_booking', eventId: String(eventId) }
           });
         } catch (pushErr) {
           console.error('Push notification failed for teamer booking:', pushErr);
+        }
+
+        // Bestaetigung an die Teamer:in selbst (analog Konfi-Anmeldung)
+        try {
+          await PushService.sendEventRegisteredToTeamer(db, userId, event.name, event.event_date, teamerBookingStatus, eventId);
+        } catch (pushErr) {
+          console.error('Push notification failed for teamer booking confirmation:', pushErr);
         }
 
         return;
@@ -1635,9 +1820,38 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
           // Nur nachruecken wenn unter Kapazitaet (0 = unbegrenzt, immer nachruecken).
           // promoteFromWaitlist ist timeslot-aware und nimmt den naechsten des Slots.
+          // roleFilter 'not_teamer': ein frei gewordener Konfi-Platz darf NIEMALS
+          // von einem Teamer der Teamer-Warteliste belegt werden.
           if (maxCapacity === 0 || confirmedCount < maxCapacity) {
-            promotedUserId = await promoteFromWaitlist(client, eventId, booking.timeslot_id);
+            promotedUserId = await promoteFromWaitlist(client, eventId, booking.timeslot_id, 'not_teamer');
             if (promotedUserId) promotedEventName = eventCapInfo?.name || null;
+          }
+        }
+
+        // TEAMER-STORNO: eigenes Kontingent, eigene Warteliste. Ein frei
+        // gewordener Teamer-Platz wird ausschliesslich aus der Teamer-Warteliste
+        // nachbesetzt (roleFilter 'teamer'). Teamer-Buchungen haben nie einen
+        // Timeslot -> event-weite Zaehlung.
+        if (booking.status === 'confirmed' && isTeamer) {
+          const { rows: [teamerCapInfo] } = await client.query(
+            "SELECT teamer_max_participants, name FROM events WHERE id = $1 AND organization_id = $2",
+            [eventId, req.user.organization_id]
+          );
+          const { rows: [teamerCountRes] } = await client.query(
+            `SELECT COUNT(*) as confirmed_count
+             FROM event_bookings eb
+             JOIN users u ON eb.user_id = u.id
+             JOIN roles r ON u.role_id = r.id
+             WHERE eb.event_id = $1 AND eb.status = 'confirmed'
+               AND r.name = 'teamer' AND u.deleted_at IS NULL`,
+            [eventId]
+          );
+          const teamerMaxCapacity = teamerCapInfo?.teamer_max_participants || 0;
+          const teamerConfirmedCount = parseInt(teamerCountRes?.confirmed_count || '0', 10);
+
+          if (teamerMaxCapacity === 0 || teamerConfirmedCount < teamerMaxCapacity) {
+            promotedUserId = await promoteFromWaitlist(client, eventId, null, 'teamer');
+            if (promotedUserId) promotedEventName = teamerCapInfo?.name || null;
           }
         }
 
@@ -1649,10 +1863,15 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         client.release();
       }
 
-      // Push-Notification an nachgerückten Konfi NACH COMMIT (Seiteneffekt, darf Storno nicht failen)
+      // Push-Notification an nachgerückten User NACH COMMIT (Seiteneffekt, darf Storno nicht failen).
+      // Bei Teamer-Storno rueckt ein Teamer nach, bei Konfi-Storno ein Konfi.
       if (promotedUserId && promotedEventName) {
         try {
-          await PushService.sendWaitlistPromotionToKonfi(db, promotedUserId, promotedEventName);
+          if (isTeamer) {
+            await PushService.sendWaitlistPromotionToTeamer(db, promotedUserId, promotedEventName);
+          } else {
+            await PushService.sendWaitlistPromotionToKonfi(db, promotedUserId, promotedEventName);
+          }
         } catch (pushErr) {
           console.error('Error sending waitlist promotion push:', pushErr);
         }

@@ -1705,7 +1705,9 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           const confirmedCount = parseInt(countResult?.confirmed_count || '0', 10);
 
           if (maxCapacity === 0 || confirmedCount < maxCapacity) {
-            const promotedUserId = await promoteFromWaitlist(db, eventId, registration.timeslot_id);
+            // roleFilter 'not_teamer': ein frei gewordener Konfi-Platz wird nur
+            // aus der Konfi-Warteliste nachbesetzt, nie aus der Teamer-Warteliste.
+            const promotedUserId = await promoteFromWaitlist(db, eventId, registration.timeslot_id, 'not_teamer');
 
             if (promotedUserId) {
               // Push-Notification an nachgerückten Konfi

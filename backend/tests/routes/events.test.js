@@ -450,6 +450,306 @@ describe('Events Routes', () => {
   });
 
   // ================================================================
+  // Teamer-Kontingent (eigene Kapazitaet + eigene Warteliste)
+  //
+  // Kern-Invariante: Konfi- und Teamer-Kontingent sind strikt getrennt.
+  // Ein frei gewordener Konfi-Platz darf NIE von einem Teamer belegt werden
+  // und umgekehrt. teamer_max_participants = 0 bedeutet unbegrenzt.
+  // ================================================================
+  describe('Teamer-Kontingent', () => {
+    const jwt = require('jsonwebtoken');
+    const JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key-for-vitest';
+
+    // Der Seed hat nur EINE Teamer:in pro Org — fuer Wartelisten-Tests braucht
+    // es mehrere. Zusatz-Teamer bekommen hohe IDs, damit sie nicht mit den
+    // festen Seed-IDs (1..11) kollidieren.
+    const EXTRA_TEAMERS = [
+      { id: 101, username: 'teamer101', display_name: 'Test Teamer 101' },
+      { id: 102, username: 'teamer102', display_name: 'Test Teamer 102' },
+    ];
+
+    function teamerToken2(user) {
+      return jwt.sign({
+        id: user.id,
+        type: 'teamer',
+        display_name: user.display_name,
+        organization_id: ORGS.testGemeinde.id,
+        role_id: 2, // ROLES.teamer (Org 1)
+      }, JWT_SECRET, { expiresIn: '1h' });
+    }
+
+    async function seedExtraTeamers() {
+      for (const t of EXTRA_TEAMERS) {
+        await db.query(
+          `INSERT INTO users (id, username, password_hash, display_name, role_id, organization_id, is_active)
+           VALUES ($1, $2, 'x', $3, 2, $4, true)`,
+          [t.id, t.username, t.display_name, ORGS.testGemeinde.id]
+        );
+      }
+    }
+
+    // Teamer-Event (teamer_needed) mit konfigurierbarem Teamer-Kontingent
+    async function createTeamerEvent({
+      teamerMax = 0,
+      teamerWaitlistEnabled = true,
+      teamerMaxWaitlist = 10,
+      maxParticipants = 50,
+      waitlistEnabled = true,
+    } = {}) {
+      const { rows: [ev] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants,
+                             point_type, points, has_timeslots, waitlist_enabled, max_waitlist_size,
+                             teamer_needed, teamer_max_participants, teamer_waitlist_enabled,
+                             teamer_max_waitlist_size)
+         VALUES ('Teamer-Kontingent-Event', NOW() + interval '7 days', $1, false, $2,
+                 'gemeinde', 0, false, $3, 5, true, $4, $5, $6)
+         RETURNING id`,
+        [ORGS.testGemeinde.id, maxParticipants, waitlistEnabled, teamerMax, teamerWaitlistEnabled, teamerMaxWaitlist]
+      );
+      await db.query(
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        [ev.id, JAHRGAENGE.jahrgang1.id]
+      );
+      return ev.id;
+    }
+
+    beforeEach(async () => {
+      await seedExtraTeamers();
+    });
+
+    it('Teamer bucht bei freiem Kontingent -> confirmed', async () => {
+      const eventId = await createTeamerEvent({ teamerMax: 2 });
+
+      const res = await request(app)
+        .post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(201);
+      expect(res.body.status).toBe('confirmed');
+    });
+
+    it('Teamer bucht bei vollem Kontingent -> waitlist', async () => {
+      const eventId = await createTeamerEvent({ teamerMax: 1 });
+
+      const book1 = await request(app)
+        .post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(book1.status).toBe(201);
+      expect(book1.body.status).toBe('confirmed');
+
+      const book2 = await request(app)
+        .post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${teamerToken2(EXTRA_TEAMERS[0])}`);
+      expect(book2.status).toBe(201);
+      expect(book2.body.status).toBe('waitlist');
+    });
+
+    it('teamer_max_participants = 0 bedeutet unbegrenzt -> immer confirmed', async () => {
+      const eventId = await createTeamerEvent({ teamerMax: 0 });
+
+      for (const token of [teamerToken, teamerToken2(EXTRA_TEAMERS[0]), teamerToken2(EXTRA_TEAMERS[1])]) {
+        const res = await request(app)
+          .post(`/api/events/${eventId}/book`)
+          .set('Authorization', `Bearer ${token}`);
+        expect(res.status).toBe(201);
+        expect(res.body.status).toBe('confirmed');
+      }
+    });
+
+    it('teamer_waitlist_enabled = false + volles Kontingent -> 400', async () => {
+      const eventId = await createTeamerEvent({ teamerMax: 1, teamerWaitlistEnabled: false });
+
+      await request(app).post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      const res = await request(app)
+        .post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${teamerToken2(EXTRA_TEAMERS[0])}`);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('ausgebucht');
+    });
+
+    it('Teamer-Storno: naechste Teamer:in rueckt nach, Konfi-Warteliste bleibt unberuehrt', async () => {
+      // Teamer-Kontingent 1, Konfi-Kontingent 1 -> beide Wartelisten gefuellt
+      const eventId = await createTeamerEvent({ teamerMax: 1, maxParticipants: 1 });
+
+      await request(app).post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+      await request(app).post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${teamerToken2(EXTRA_TEAMERS[0])}`);
+      await request(app).post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+      await request(app).post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${konfi2Token}`);
+
+      // Ausgangslage pruefen
+      const { rows: before } = await db.query(
+        'SELECT user_id, status FROM event_bookings WHERE event_id = $1 ORDER BY user_id',
+        [eventId]
+      );
+      expect(before.find(r => r.user_id === USERS.teamer1.id).status).toBe('confirmed');
+      expect(before.find(r => r.user_id === EXTRA_TEAMERS[0].id).status).toBe('waitlist');
+      expect(before.find(r => r.user_id === USERS.konfi1.id).status).toBe('confirmed');
+      expect(before.find(r => r.user_id === USERS.konfi2.id).status).toBe('waitlist');
+
+      // Teamer1 storniert
+      const cancelRes = await request(app)
+        .delete(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(cancelRes.status).toBe(200);
+
+      const { rows: after } = await db.query(
+        'SELECT user_id, status FROM event_bookings WHERE event_id = $1',
+        [eventId]
+      );
+      // Teamer101 ist nachgerueckt
+      expect(after.find(r => r.user_id === EXTRA_TEAMERS[0].id).status).toBe('confirmed');
+      // Konfi-Warteliste UNVERAENDERT (kein Konfi auf einem Teamer-Platz)
+      expect(after.find(r => r.user_id === USERS.konfi2.id).status).toBe('waitlist');
+      expect(after.find(r => r.user_id === USERS.konfi1.id).status).toBe('confirmed');
+    });
+
+    it('Konfi-Storno: KEIN Teamer rueckt nach (Isolation der Kontingente)', async () => {
+      // Konfi-Kontingent 1 (voll), Teamer-Kontingent 1 (voll) -> Teamer auf Warteliste
+      const eventId = await createTeamerEvent({ teamerMax: 1, maxParticipants: 1 });
+
+      await request(app).post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+      await request(app).post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+      await request(app).post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${teamerToken2(EXTRA_TEAMERS[0])}`);
+
+      // Konfi1 storniert -> Konfi-Platz frei, aber es gibt keinen Konfi auf der Warteliste
+      const cancelRes = await request(app)
+        .delete(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(cancelRes.status).toBe(200);
+
+      // Teamer101 MUSS auf der Warteliste bleiben
+      const { rows } = await db.query(
+        'SELECT status FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [eventId, EXTRA_TEAMERS[0].id]
+      );
+      expect(rows[0].status).toBe('waitlist');
+    });
+
+    it('PUT erhoeht teamer_max_participants -> wartender Teamer rueckt nach', async () => {
+      const eventId = await createTeamerEvent({ teamerMax: 1 });
+
+      await request(app).post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+      const book2 = await request(app).post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${teamerToken2(EXTRA_TEAMERS[0])}`);
+      expect(book2.body.status).toBe('waitlist');
+
+      const putRes = await request(app)
+        .put(`/api/events/${eventId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Teamer-Kontingent-Event',
+          event_date: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
+          max_participants: 50,
+          teamer_needed: true,
+          teamer_max_participants: 2,
+        });
+      expect(putRes.status).toBe(200);
+      expect(putRes.body.promoted_teamer_count).toBe(1);
+
+      const { rows } = await db.query(
+        'SELECT status FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [eventId, EXTRA_TEAMERS[0].id]
+      );
+      expect(rows[0].status).toBe('confirmed');
+    });
+
+    it('PUT reduziert teamer_max_participants -> Bestandsschutz, niemand wird zurueckgestuft', async () => {
+      const eventId = await createTeamerEvent({ teamerMax: 3 });
+
+      await request(app).post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+      await request(app).post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${teamerToken2(EXTRA_TEAMERS[0])}`);
+
+      const putRes = await request(app)
+        .put(`/api/events/${eventId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Teamer-Kontingent-Event',
+          event_date: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
+          max_participants: 50,
+          teamer_needed: true,
+          teamer_max_participants: 1,
+        });
+      expect(putRes.status).toBe(200);
+
+      const { rows } = await db.query(
+        "SELECT COUNT(*)::int as c FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'",
+        [eventId]
+      );
+      expect(rows[0].c).toBe(2);
+    });
+
+    it('POST /events nimmt die Teamer-Kontingent-Felder an, GET liefert sie zurueck', async () => {
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Neues Teamer-Event',
+          event_date: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
+          max_participants: 10,
+          teamer_needed: true,
+          teamer_max_participants: 4,
+          teamer_waitlist_enabled: false,
+          teamer_max_waitlist_size: 3,
+        });
+      expect(createRes.status).toBe(201);
+
+      const detail = await request(app)
+        .get(`/api/events/${createRes.body.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(detail.status).toBe(200);
+      expect(detail.body.teamer_max_participants).toBe(4);
+      expect(detail.body.teamer_waitlist_enabled).toBe(false);
+      expect(detail.body.teamer_max_waitlist_size).toBe(3);
+      expect(detail.body.teamer_waitlist_count).toBe(0);
+    });
+
+    it('POST /events weist negatives teamer_max_participants ab (400)', async () => {
+      const res = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Ungueltiges Teamer-Event',
+          event_date: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
+          max_participants: 10,
+          teamer_max_participants: -1,
+        });
+      expect(res.status).toBe(400);
+    });
+
+    it('GET /events liefert teamer_waitlist_count und booking_status = waitlist fuer den Teamer', async () => {
+      const eventId = await createTeamerEvent({ teamerMax: 1 });
+
+      await request(app).post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+      await request(app).post(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${teamerToken2(EXTRA_TEAMERS[0])}`);
+
+      const listRes = await request(app)
+        .get('/api/events')
+        .set('Authorization', `Bearer ${teamerToken2(EXTRA_TEAMERS[0])}`);
+      expect(listRes.status).toBe(200);
+      const evt = listRes.body.find(e => e.id === eventId);
+      expect(evt).toBeDefined();
+      expect(evt.teamer_count).toBe(1);
+      expect(evt.teamer_waitlist_count).toBe(1);
+      expect(evt.booking_status).toBe('waitlist');
+      expect(evt.teamer_max_participants).toBe(1);
+    });
+  });
+
+  // ================================================================
   // Timeslot-Warteliste (Fund 05.07.2026): voller Slot -> Warteliste PRO SLOT,
   // frueher setzte die event-weite Gesamtkapazitaet die Warteliste ausser Kraft
   // (voller Slot wurde als "noch Platz" gewertet -> hartes "ausgebucht" ohne

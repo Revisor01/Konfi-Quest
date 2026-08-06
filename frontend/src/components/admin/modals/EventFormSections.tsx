@@ -45,6 +45,9 @@ export interface EventFormData {
   is_konfirmation: boolean;
   bring_items: string;
   checkin_window: number;
+  teamer_max_participants: number;
+  teamer_waitlist_enabled: boolean;
+  teamer_max_waitlist_size: number;
 }
 
 // ---- BasicInfoSection (jetzt inkl. Pflicht-Event, Mitbringen, Teamer-Zugang) ----
@@ -465,6 +468,88 @@ export const WaitlistSection = React.memo<WaitlistSectionProps>(({
                 disabled={loading}
               />
               <span className="app-range-row__value">{formData.max_waitlist_size}</span>
+            </div>
+          </IonItem>
+        )}
+      </IonList>
+    </IonCardContent>
+    </IonCard>
+  </IonList>
+));
+
+// ---- TeamerCapacitySection ----
+
+interface TeamerCapacitySectionProps {
+  formData: EventFormData;
+  setFormData: (data: EventFormData) => void;
+  loading: boolean;
+}
+
+export const TeamerCapacitySection = React.memo<TeamerCapacitySectionProps>(({
+  formData, setFormData, loading
+}) => (
+  <IonList inset={true} className="app-modal-section">
+    <IonListHeader>
+      <div className="app-section-icon app-section-icon--events">
+        <IonIcon icon={people} />
+      </div>
+      <IonLabel>Teamer-Plätze</IonLabel>
+    </IonListHeader>
+    <IonCard className="app-card">
+    <IonCardContent>
+      <IonList>
+        <IonItem lines="none">
+          <IonLabel>Unbegrenzte Teamer:innen</IonLabel>
+          <IonToggle
+            slot="end"
+            className="app-toggle--events"
+            checked={formData.teamer_max_participants === 0}
+            onIonChange={(e) => setFormData({ ...formData, teamer_max_participants: e.detail.checked ? 0 : 5 })}
+            disabled={loading}
+          />
+        </IonItem>
+        {formData.teamer_max_participants !== 0 && (
+          <IonItem lines="none">
+            <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Wie viele Teamer:innen werden gesucht?</IonLabel>
+            <div className="app-range-row">
+              <span className="app-range-row__min">1</span>
+              <IonRange
+                className="app-range app-range--events"
+                min={1} max={50} step={1}
+                pin={true} pinFormatter={(value: number) => `${value}`}
+                value={formData.teamer_max_participants}
+                onIonChange={(e) => setFormData({ ...formData, teamer_max_participants: e.detail.value as number })}
+                disabled={loading}
+              />
+              <span className="app-range-row__value">{formData.teamer_max_participants}</span>
+            </div>
+          </IonItem>
+        )}
+
+        <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: formData.teamer_waitlist_enabled ? '12px' : '0', paddingTop: '8px' }}>
+          <IonLabel>Warteliste aktivieren</IonLabel>
+          <IonToggle
+            slot="end"
+            className="app-toggle--events"
+            checked={formData.teamer_waitlist_enabled}
+            onIonChange={(e) => setFormData({ ...formData, teamer_waitlist_enabled: e.detail.checked })}
+            disabled={loading}
+          />
+        </IonItem>
+        {formData.teamer_waitlist_enabled && (
+          <IonItem lines="none">
+            <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Wartelisten-Plätze</IonLabel>
+            <div className="app-range-row">
+              <span className="app-range-row__min">1</span>
+              <IonRange
+                className="app-range app-range--events"
+                min={1} max={10} step={1}
+                pin={true} pinFormatter={(value: number) => `${value}`}
+                value={formData.teamer_max_waitlist_size}
+                onIonChange={(e) => setFormData({ ...formData, teamer_max_waitlist_size: e.detail.value as number })}
+                disabled={loading}
+              />
+              <span className="app-range-row__value">{formData.teamer_max_waitlist_size}</span>
             </div>
           </IonItem>
         )}
