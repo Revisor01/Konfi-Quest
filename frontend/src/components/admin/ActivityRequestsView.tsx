@@ -48,13 +48,17 @@ interface ActivityRequestsViewProps {
   onUpdate: () => void;
   onSelectRequest: (request: ActivityRequest) => void;
   onResetRequest: (request: ActivityRequest) => void;
+  // Zusaetzlicher Inhalt DIREKT UNTER dem SectionHeader (z.B. das Events|Anträge-
+  // Hauptsegment der Page, analog zum Konfi-Pattern in KonfiEventsPage).
+  headerSlot?: React.ReactNode;
 }
 
 const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
   requests: requestsRaw,
   onUpdate,
   onSelectRequest,
-  onResetRequest
+  onResetRequest,
+  headerSlot
 }) => {
   // Defensive: bei kaputten/gecachten Responses (Object statt Array) auf [] fallen
   const requests: ActivityRequest[] = Array.isArray(requestsRaw) ? requestsRaw : [];
@@ -111,6 +115,8 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
           { value: getRejectedCount(), label: 'Abgelehnt' }
         ]}
       />
+
+      {headerSlot}
 
       {/* Tab Filter - wie bei Events */}
       <div style={{ margin: '16px 16px 8px 16px' }}>

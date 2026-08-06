@@ -6,6 +6,7 @@ export { default as OrgSwitcherButton } from './OrgSwitcherButton';
 export { default as StatusBadge } from './StatusBadge';
 export { default as AudioPlayer } from './AudioPlayer';
 export { default as EventLegendModal } from './EventLegendModal';
+export { default as ChallengeLegendModal } from './ChallengeLegendModal';
 export { default as TrialBanner } from './TrialBanner';
 export { formatEventDate, formatEventTime, formatEventDateLong } from './eventFormatting';
 export { default as EventCornerBadges } from './EventCornerBadges';

@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   sparklesOutline, homeOutline, chatbubblesOutline, calendarOutline,
-  ribbonOutline, documentTextOutline, folderOpenOutline, flagOutline,
+  ribbonOutline, folderOpenOutline, flagOutline,
 } from 'ionicons/icons';
 import OnboardingTour, { OnboardingSlide } from '../../shared/OnboardingTour';
 
@@ -10,8 +10,11 @@ interface TeamerOnboardingModalProps {
   displayName?: string;
 }
 
-// Teamer-Tour: folgt den Teamer-Tabs (Start · Chat · Events · Badges · Aktivitaeten).
-// Gleicher Stil wie die Konfi-/Admin-Tour.
+// Teamer-Tour: folgt den Teamer-Tabs (Start · Chat · Events · Challenges ·
+// Badges). Die Aktivitaeten (Antraege) sind seit dem Tab-Umbau ein Segment IM
+// Events-Tab (kein eigener Tab mehr) - werden deshalb direkt im Events-Slide
+// erwaehnt. Challenges stehen als Neuheit direkt danach, gleicher Stil wie
+// die Konfi-/Admin-Tour.
 const SLIDES: OnboardingSlide[] = [
   {
     icon: sparklesOutline,
@@ -39,7 +42,14 @@ const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-events)',
     rgb: '--app-color-events-rgb',
     title: 'Deine Events',
-    text: 'Hier findest du alle Termine und meldest dich dort an, wo Teamer:innen gebraucht werden. So weiß das Team immer, wer wann dabei ist.',
+    text: 'Hier findest du alle Termine und meldest dich dort an, wo Teamer:innen gebraucht werden. Oben im Tab wechselst du zu den Anträgen: Warst du bei einer Aktion dabei, reichst du sie dort ein — so bleibt dein Einsatz dokumentiert und fließt in deine Badges ein.',
+  },
+  {
+    icon: flagOutline,
+    color: 'var(--app-color-challenges)',
+    rgb: '--app-color-challenges-rgb',
+    title: 'Challenges',
+    text: 'Neu in deiner Tab-Leiste: Challenges sind Impulse für deine Gruppe — die Konfis antworten mit Foto, Text, Aufnahme oder Link. Bewusst ohne Punkte und ohne Rangliste — es gibt nur ein Abzeichen fürs Mitmachen. Hier legst du Challenges an und gibst die Beiträge frei.',
   },
   {
     icon: ribbonOutline,
@@ -47,20 +57,6 @@ const SLIDES: OnboardingSlide[] = [
     rgb: '--app-color-badges-rgb',
     title: 'Deine Badges',
     text: 'Auch du sammelst Abzeichen — für dein Engagement im Team. Schau hier, welche Badges du schon hast und welche du als Nächstes erreichen kannst.',
-  },
-  {
-    icon: documentTextOutline,
-    color: 'var(--app-color-activities)',
-    rgb: '--app-color-activities-rgb',
-    title: 'Deine Aktivitäten',
-    text: 'Warst du bei einer Aktion dabei? Reiche deine Aktivitäten hier ein. So bleibt dein Einsatz dokumentiert und fließt in deine Badges ein.',
-  },
-  {
-    icon: flagOutline,
-    color: 'var(--app-color-challenges)',
-    rgb: '--app-color-challenges-rgb',
-    title: 'Challenges',
-    text: 'Challenges sind Impulse für deine Gruppe: Die Konfis antworten mit Foto, Text, Aufnahme oder Link. Bewusst ohne Punkte und ohne Rangliste — es gibt nur ein Abzeichen fürs Mitmachen. Über die Karte auf deiner Startseite legst du Challenges an und gibst die Beiträge frei.',
   },
   {
     icon: folderOpenOutline,

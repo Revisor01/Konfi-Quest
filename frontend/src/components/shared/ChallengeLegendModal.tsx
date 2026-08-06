@@ -1,0 +1,196 @@
+import React from 'react';
+import {
+  IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton,
+  IonButtons, IonIcon,
+} from '@ionic/react';
+import {
+  closeOutline, flag, timeOutline, checkmarkOutline, removeCircleOutline,
+  eyeOffOutline, lockClosedOutline, paperPlaneOutline,
+} from 'ionicons/icons';
+
+export interface ChallengeLegendModalProps {
+  onClose: () => void;
+}
+
+interface LegendEntry {
+  color: string;
+  icon: string;
+  label: string;
+  description: string;
+}
+
+// Status-Legende fuer die Challenge-Verwaltung. Farbe UND Icon muessen mit
+// ChallengesManageView (Listen-Badges) und ChallengeModerationModal
+// (STATUS_BADGE/CONSENT_BADGE) uebereinstimmen.
+
+// Status-Badges in der Challenge-Liste (ChallengesManageView, STATUS_COLOR).
+// Diese Status-Texte haben KEIN Icon in STATUS_ICON_MAP -> reine Text-Badges,
+// hier trotzdem mit einem neutralen Kreis-Icon dargestellt, um Farbe zu zeigen.
+const STATUS_ENTRIES: LegendEntry[] = [
+  {
+    color: '#059669',
+    icon: flag,
+    label: 'Aktiv',
+    description: 'Die Challenge läuft, Konfis können Beiträge einreichen.',
+  },
+  {
+    color: '#007aff',
+    icon: flag,
+    label: 'Geplant',
+    description: 'Die Challenge startet erst noch.',
+  },
+  {
+    color: '#8e8e93',
+    icon: flag,
+    label: 'Entwurf',
+    description: 'Die Challenge ist noch nicht veröffentlicht.',
+  },
+  {
+    color: '#6b7280',
+    icon: flag,
+    label: 'Beendet',
+    description: 'Die Challenge ist abgelaufen (Archiv).',
+  },
+];
+
+// Oranges Zaehler-Badge in der Liste (pending_count).
+const COUNTER_ENTRY: LegendEntry = {
+  color: '#ff9500',
+  icon: timeOutline,
+  label: 'N offen',
+  description: 'So viele Beiträge warten noch auf Freigabe.',
+};
+
+// Moderations-Badges aus ChallengeModerationModal (STATUS_BADGE + CONSENT_BADGE).
+const MODERATION_ENTRIES: LegendEntry[] = [
+  {
+    color: 'var(--app-color-warning)',
+    icon: timeOutline,
+    label: 'Wartet auf Freigabe',
+    description: 'Der Beitrag wurde eingereicht und muss noch geprüft werden.',
+  },
+  {
+    color: 'var(--app-color-success)',
+    icon: checkmarkOutline,
+    label: 'Freigegeben',
+    description: 'Der Beitrag wurde geprüft und freigegeben.',
+  },
+  {
+    color: 'var(--app-color-danger)',
+    icon: removeCircleOutline,
+    label: 'Ausgeblendet',
+    description: 'Der Beitrag wurde ausgeblendet und ist nicht sichtbar.',
+  },
+  {
+    color: '#7c3aed',
+    icon: eyeOffOutline,
+    label: 'Anonym ok',
+    description: 'Der Konfi hat einer anonymen Veröffentlichung zugestimmt.',
+  },
+  {
+    color: '#6b7280',
+    icon: lockClosedOutline,
+    label: 'Nur Leitung',
+    description: 'Der Beitrag darf nur von der Leitung gesehen werden.',
+  },
+];
+
+// Konfi-Sicht: Hinweis-Badge, dass bereits eine Einreichung vorliegt.
+const KONFI_ENTRY: LegendEntry = {
+  color: 'var(--app-color-challenges)',
+  icon: paperPlaneOutline,
+  label: 'Teilgenommen',
+  description: 'So sieht der Konfi, dass er bereits einen Beitrag eingereicht hat.',
+};
+
+const renderRow = (entry: LegendEntry, i: number) => (
+  <div
+    key={i}
+    style={{
+      display: 'flex', alignItems: 'center', gap: '14px',
+      background: 'rgba(255,255,255,0.7)', borderRadius: '14px',
+      padding: '12px 14px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+    }}
+  >
+    <div
+      style={{
+        width: '40px', height: '40px', flexShrink: 0, borderRadius: '50%',
+        background: entry.color, display: 'flex', alignItems: 'center', justifyContent: 'center'
+      }}
+    >
+      <IonIcon icon={entry.icon} style={{ color: '#fff', fontSize: '1.25rem' }} />
+    </div>
+    <div>
+      <div style={{ fontSize: '1rem', fontWeight: 700, color: '#1a1a1a', marginBottom: '2px' }}>
+        {entry.label}
+      </div>
+      <div style={{ fontSize: '0.9rem', lineHeight: 1.45, color: '#4a4a4a' }}>
+        {entry.description}
+      </div>
+    </div>
+  </div>
+);
+
+// Erklaert Farben + Icons der Challenge-Verwaltung. Wird ueber das (i)-Symbol
+// im Challenges-Header geoeffnet (analog EventLegendModal).
+const ChallengeLegendModal: React.FC<ChallengeLegendModalProps> = ({ onClose }) => {
+  return (
+    <IonPage>
+      <IonHeader>
+        <IonToolbar>
+          <IonButtons slot="start">
+            <IonButton className="app-modal-close-btn" onClick={onClose}>
+              <IonIcon icon={closeOutline} slot="icon-only" />
+            </IonButton>
+          </IonButtons>
+          <IonTitle>Farben & Symbole</IonTitle>
+        </IonToolbar>
+      </IonHeader>
+      <IonContent className="app-gradient-background">
+        <div style={{ padding: '24px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div
+            style={{
+              width: '88px', height: '88px', borderRadius: '24px',
+              background: 'var(--app-color-challenges)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: '20px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)'
+            }}
+          >
+            <IonIcon icon={flag} style={{ fontSize: '2.6rem', color: '#fff' }} />
+          </div>
+          <h1 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0 0 8px', textAlign: 'center', color: '#1a1a1a' }}>
+            Farben & Symbole
+          </h1>
+          <p style={{ fontSize: '1rem', lineHeight: 1.6, color: '#3a3a3a', margin: '0 0 20px', textAlign: 'center', maxWidth: '520px' }}>
+            Farbe und Symbol an jeder Challenge zeigen ihren Status:
+          </p>
+          <div style={{ maxWidth: '520px', width: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {STATUS_ENTRIES.map(renderRow)}
+            {renderRow(COUNTER_ENTRY, STATUS_ENTRIES.length)}
+          </div>
+
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '28px 0 6px', textAlign: 'center', color: '#1a1a1a' }}>
+            Beiträge prüfen
+          </h2>
+          <p style={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#3a3a3a', margin: '0 0 16px', textAlign: 'center', maxWidth: '520px' }}>
+            Diese Symbole erscheinen bei den einzelnen Beiträgen in der Moderation:
+          </p>
+          <div style={{ maxWidth: '520px', width: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {MODERATION_ENTRIES.map(renderRow)}
+          </div>
+
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '28px 0 6px', textAlign: 'center', color: '#1a1a1a' }}>
+            Konfi-Sicht
+          </h2>
+          <p style={{ fontSize: '0.95rem', lineHeight: 1.5, color: '#3a3a3a', margin: '0 0 16px', textAlign: 'center', maxWidth: '520px' }}>
+            Dieses Symbol sieht der Konfi bei Challenges, an denen er schon teilgenommen hat:
+          </p>
+          <div style={{ maxWidth: '520px', width: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {renderRow(KONFI_ENTRY, 0)}
+          </div>
+        </div>
+      </IonContent>
+    </IonPage>
+  );
+};
+
+export default ChallengeLegendModal;

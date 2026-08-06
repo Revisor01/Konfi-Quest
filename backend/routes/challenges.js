@@ -654,8 +654,13 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   // axios-Blob mit Header; ein ?token=-Fallback (Chat-Pattern) waere hier
   // reine Angriffsflaeche — Tokens in Query-Strings landen in Access-Logs
   // und Referrern (Security-Review 04.08.2026).
-  // Zugriff hat: die Leitung der Org, der Eigentuemer, sowie Konfis eines
-  // zugewiesenen Jahrgangs, wenn der Beitrag oeffentlich ist.
+  // Zugriff hat: org_admin/admin der (aktiven) Org immer, ein Teamer nur bei
+  // mindestens einem zugewiesenen Jahrgang der Challenge, der Eigentuemer
+  // immer, sowie Konfis eines zugewiesenen Jahrgangs, wenn der Beitrag
+  // oeffentlich ist. Beruecksichtigt X-Active-Organization wie rbacVerifier
+  // (Multi-Org-Fix 06.08.2026 — vorher wurde hier immer die Primaer-Org
+  // geprueft, was Dateien einer aktiven Sekundaer-Org faelschlich als 404
+  // meldete).
   router.get('/files/:filename', async (req, res) => {
     const token = req.headers.authorization?.replace('Bearer ', '');
     if (!token) {
@@ -675,18 +680,58 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         return res.status(400).json({ error: 'Ungültiger Dateiname' });
       }
 
-      // Der JWT traegt nur die Primaer-Org; die aktuelle Rolle und der Jahrgang
-      // kommen frisch aus der DB (der Token koennte veraltet sein).
-      const { rows: [requester] } = await db.query(
+      // AKTIVE Org beruecksichtigen (Multi-Org, Org-Switcher) — derselbe Header
+      // wie rbacVerifier (X-Active-Organization). Ohne das wuerde ein Multi-Org-
+      // Admin, der auf eine Sekundaer-Org umgeschaltet hat, hier weiterhin gegen
+      // seine PRIMAER-Org geprueft und faende jede Datei der aktiven Org nicht
+      // (404), obwohl alle anderen Admin-Endpoints korrekt die aktive Org sehen.
+      // LEFT JOIN auf roles (statt INNER JOIN): konsistent zu verifyTokenRBAC —
+      // ein User ohne (aufloesbare) Rolle soll nicht 401 "Nicht angemeldet"
+      // auslösen, sondern unten sauber an mayAccess=false scheitern (403).
+      const { rows: [requesterRow] } = await db.query(
         `SELECT u.id, u.organization_id, r.name AS role_name, kp.jahrgang_id
          FROM users u
-         JOIN roles r ON u.role_id = r.id
+         LEFT JOIN roles r ON u.role_id = r.id
          LEFT JOIN konfi_profiles kp ON kp.user_id = u.id
          WHERE u.id = $1 AND u.deleted_at IS NULL`,
         [decoded.id]
       );
-      if (!requester) {
+      if (!requesterRow) {
         return res.status(401).json({ error: 'Nicht angemeldet' });
+      }
+
+      const requester = { ...requesterRow, assigned_jahrgaenge: [] };
+      const headerOrg = parseInt(req.headers['x-active-organization']);
+      const tokenOrg = decoded.active_organization_id ? parseInt(decoded.active_organization_id) : null;
+      const requestedActiveOrg = Number.isInteger(headerOrg) ? headerOrg
+        : (Number.isInteger(tokenOrg) ? tokenOrg : null);
+      if (requestedActiveOrg && requestedActiveOrg !== requester.organization_id) {
+        const { rows: [membership] } = await db.query(
+          `SELECT uo.organization_id, r.name AS role_name
+           FROM user_organizations uo
+           JOIN roles r ON uo.role_id = r.id
+           WHERE uo.user_id = $1 AND uo.organization_id = $2`,
+          [decoded.id, requestedActiveOrg]
+        );
+        if (!membership) {
+          return res.status(403).json({ error: 'Kein Zugriff auf diese Organisation' });
+        }
+        requester.organization_id = membership.organization_id;
+        requester.role_name = membership.role_name;
+      }
+
+      // Fuer Teamer die zugewiesenen Jahrgaenge DER AKTIVEN ORG nachladen —
+      // gebraucht, um leadershipMayAccess/viewableJahrgangIds unten identisch
+      // zur rbacVerifier-Logik im Rest der Datei anzuwenden.
+      if (requester.role_name === 'teamer') {
+        const { rows: assigned } = await db.query(
+          `SELECT j.id, uja.can_view
+           FROM user_jahrgang_assignments uja
+           JOIN jahrgaenge j ON uja.jahrgang_id = j.id
+           WHERE uja.user_id = $1 AND j.organization_id = $2`,
+          [decoded.id, requester.organization_id]
+        );
+        requester.assigned_jahrgaenge = assigned;
       }
 
       const { rows: [row] } = await db.query(
@@ -702,8 +747,26 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
       }
 
       const isOwner = row.user_id === requester.id;
-      const isLeadership = ['org_admin', 'admin', 'teamer'].includes(requester.role_name);
-      let mayAccess = isOwner || isLeadership;
+      let mayAccess = isOwner;
+
+      if (!mayAccess && ['org_admin', 'admin'].includes(requester.role_name)) {
+        // org_admin/admin sehen alle Dateien ihrer (aktiven) Org, ohne
+        // Jahrgangs-Einschraenkung — identisch zu leadershipMayAccess().
+        mayAccess = true;
+      } else if (!mayAccess && requester.role_name === 'teamer') {
+        // Teamer nur fuer Submissions aus einem ihrer zugewiesenen Jahrgaenge —
+        // konsistent zu leadershipMayAccess()/viewableJahrgangIds() oben in
+        // dieser Datei (Moderations-Sicht ist sonst weiter als die restlichen
+        // Leitungs-Endpunkte, ueber die der Teamer die Challenge ueberhaupt erst
+        // findet).
+        const viewable = (requester.assigned_jahrgaenge || [])
+          .filter(j => j.can_view)
+          .map(j => j.id);
+        if (viewable.length > 0) {
+          const jahrgangIds = await challengeJahrgangIds(row.challenge_id);
+          mayAccess = jahrgangIds.some(id => viewable.includes(id));
+        }
+      }
 
       if (!mayAccess && requester.role_name === 'konfi') {
         // Konfi darf nur oeffentliche Beitraege aus seinem Jahrgang sehen.

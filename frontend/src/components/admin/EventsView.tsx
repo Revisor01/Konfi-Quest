@@ -68,6 +68,9 @@ interface EventsViewProps {
   presentingElement?: HTMLElement | null;
   // Im iPad-Split-View aktuell rechts geoeffnetes Event (fuer Highlighting).
   selectedEventId?: number | null;
+  // Zusaetzlicher Inhalt DIREKT UNTER dem SectionHeader (z.B. das Events|Anträge-
+  // Hauptsegment der Page, analog zum Konfi-Pattern in KonfiEventsPage).
+  headerSlot?: React.ReactNode;
 }
 
 const EventsView: React.FC<EventsViewProps> = ({
@@ -87,7 +90,8 @@ const EventsView: React.FC<EventsViewProps> = ({
   searchText,
   onSearchChange,
   presentingElement,
-  selectedEventId
+  selectedEventId,
+  headerSlot
 }) => {
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
 
@@ -185,6 +189,7 @@ const EventsView: React.FC<EventsViewProps> = ({
         ]}
       />
 
+      {headerSlot}
 
       {/* Suche & Filter */}
       <IonList inset={true} style={{ margin: '16px' }}>

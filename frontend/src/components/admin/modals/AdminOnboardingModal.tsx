@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   sparklesOutline, peopleOutline, chatbubblesOutline, calendarOutline,
-  checkmarkDoneOutline, settingsOutline, schoolOutline, documentTextOutline,
+  settingsOutline, schoolOutline, documentTextOutline,
   ribbonOutline, statsChartOutline, folderOpenOutline, flagOutline,
 } from 'ionicons/icons';
 import OnboardingTour, { OnboardingSlide } from '../../shared/OnboardingTour';
@@ -11,9 +11,12 @@ interface AdminOnboardingModalProps {
   displayName?: string;
 }
 
-// Admin-Tour: erst die 5 Tabs (Konfis · Chat · Events · Antraege · Mehr), dann
-// die wichtigsten Verwaltungs-Aufgaben (Jahrgang, Aktivitaeten/Punkte, Antraege
-// bestaetigen, Badges, Wrapped). Gleicher Stil wie die Konfi-Tour.
+// Admin-Tour: erst die 5 Tabs (Konfis · Chat · Events · Challenges · Mehr), dann
+// die wichtigsten Verwaltungs-Aufgaben (Jahrgang, Aktivitaeten/Punkte, Badges,
+// Wrapped). Die Antraege sind seit dem Tab-Umbau ein Segment IM Events-Tab
+// (kein eigener Tab mehr) - werden deshalb direkt im Events-Slide erwaehnt.
+// Challenges stehen bewusst als Neuheit am Schluss der Tab-Slides, genau wie
+// bei der Konfi-Tour.
 const SLIDES: OnboardingSlide[] = [
   {
     icon: sparklesOutline,
@@ -41,21 +44,21 @@ const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-events)',
     rgb: '--app-color-events-rgb',
     title: 'Events',
-    text: 'Lege Termine an — einmalig, über mehrere Tage oder als ganze Serie, mit Plätzen, Zeitfenstern und Warteliste. Konfis melden sich direkt an, und du behältst An- und Abwesenheit im Griff.',
+    text: 'Lege Termine an — einmalig, über mehrere Tage oder als ganze Serie, mit Plätzen, Zeitfenstern und Warteliste. Konfis melden sich direkt an, und du behältst An- und Abwesenheit im Griff. Oben im Tab wechselst du zu den Anträgen: Konfis stellen dort Anträge auf Punkte, du prüfst sie und vergibst mit einem Tipp die Punkte.',
   },
   {
-    icon: checkmarkDoneOutline,
-    color: 'var(--app-color-activities)',
-    rgb: '--app-color-activities-rgb',
-    title: 'Anträge',
-    text: 'Konfis stellen für ihre Aktivitäten einen Antrag auf Punkte. Hier prüfst du die Anträge und vergibst mit einem Tipp die Punkte. Offene Anträge siehst du sofort.',
+    icon: flagOutline,
+    color: 'var(--app-color-challenges)',
+    rgb: '--app-color-challenges-rgb',
+    title: 'Challenges',
+    text: 'Neu in deiner Tab-Leiste: Challenges sind Aufgaben, auf die deine Konfis mit eigenen Beiträgen antworten — Foto, Text, Aufnahme oder Link. Bewusst ohne Punkte, ohne Zähler und ohne Rangliste — es gibt nur ein Abzeichen fürs Mitmachen. Beim Anlegen legst du Sichtbarkeit und Freigabe fest; nach dem Start bleiben diese Zusagen fest.',
   },
   {
     icon: settingsOutline,
     color: 'var(--app-color-users)',
     rgb: '--app-color-users-rgb',
     title: 'Mehr',
-    text: 'Im Mehr-Tab steckt die ganze Verwaltung: Jahrgänge, Aktivitäten, Challenges, Badges, Level, Kategorien, Material und Benutzer. Tippe bei jedem Bereich auf das Info-Symbol für eine kurze Erklärung.',
+    text: 'Im Mehr-Tab steckt die ganze Verwaltung: Jahrgänge, Aktivitäten, Badges, Level, Kategorien, Material und Benutzer. Tippe bei jedem Bereich auf das Info-Symbol für eine kurze Erklärung.',
   },
   {
     icon: schoolOutline,
@@ -77,13 +80,6 @@ const SLIDES: OnboardingSlide[] = [
     rgb: '--app-color-badges-rgb',
     title: 'Badges',
     text: 'Badges belohnen Erfolge — nach Punkten, Anzahl bestimmter Aktivitäten, besuchten (Pflicht-)Events oder Kombinationen. Du wählst die Logik und Schwelle selbst; Konfis erhalten sie automatisch.',
-  },
-  {
-    icon: flagOutline,
-    color: 'var(--app-color-challenges)',
-    rgb: '--app-color-challenges-rgb',
-    title: 'Challenges',
-    text: 'Challenges sind Aufgaben, auf die deine Konfis mit eigenen Beiträgen antworten: Foto, Text, Aufnahme oder Link. Bewusst ohne Punkte, ohne Zähler und ohne Rangliste — es gibt nur ein Abzeichen fürs Mitmachen. Beim Anlegen legst du Sichtbarkeit und Freigabe fest; nach dem Start bleiben diese Zusagen fest.',
   },
   {
     icon: statsChartOutline,

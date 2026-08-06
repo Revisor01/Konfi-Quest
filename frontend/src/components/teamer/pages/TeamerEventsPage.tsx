@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -25,6 +25,7 @@ import {
   IonButtons,
   IonBackButton,
   useIonModal,
+  useIonAlert,
   useIonViewWillEnter
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
@@ -44,6 +45,8 @@ import {
   qrCodeOutline,
   navigateOutline,
   informationCircle,
+  informationCircleOutline,
+  closeOutline,
   pricetag,
   shieldCheckmark,
   home,
@@ -53,13 +56,15 @@ import {
   filterOutline,
   lockOpenOutline,
   personAdd,
-  infinite
+  infinite,
+  add,
+  timeOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
-import { writeQueue } from '../../../services/writeQueue';
+import { writeQueue, QueueItem } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
@@ -69,16 +74,42 @@ import { getStatusIcon } from '../../shared/StatusBadge';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import QRScannerModal from '../../konfi/modals/QRScannerModal';
+import RequestsView from '../../konfi/views/RequestsView';
+import TeamerActivityRequestModal from '../modals/TeamerActivityRequestModal';
+import RequestDetailModal from '../../konfi/modals/RequestDetailModal';
 import TeamerMaterialDetailPage from './TeamerMaterialDetailPage';
 import { Event } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
 
+// Einmaliger Hinweis nach dem Tab-Umbau: die Aktivitaeten/Antraege sind aus
+// ihrem eigenen Tab in dieses Segment gewandert (analog zu Admin/Konfi).
+const UMZUG_HINWEIS_KEY = 'teamer_antraege_umzug_hinweis_gesehen';
+
+interface ActivityRequest {
+  id: number;
+  activity_id: number;
+  activity_name: string;
+  activity_points: number;
+  activity_type: 'gottesdienst' | 'gemeinde';
+  requested_date: string;
+  comment?: string;
+  photo_filename?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  admin_comment?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 const TeamerEventsPage: React.FC = () => {
-  const { user, setSuccess, setError } = useApp();
+  const { user, setSuccess, setError, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('teamer-events');
   const routerLocation = useLocation();
   const queryEventId = new URLSearchParams(routerLocation.search).get('eventId');
+  const [presentAlert] = useIonAlert();
+
+  // Oberste Segment-Ebene: Events oder Anträge (Aktivitäten).
+  const [mainSegment, setMainSegment] = useState<'events' | 'antraege'>('events');
 
   const [activeTab, setActiveTab] = useState<'meine' | 'alle' | 'team'>('meine');
   const [searchText, setSearchText] = useState('');
@@ -89,12 +120,182 @@ const TeamerEventsPage: React.FC = () => {
   const [eventTimeslots, setEventTimeslots] = useState<Array<{ id: number; start_time: string; end_time: string; max_participants: number; registered_count: number; waitlist_count?: number }>>([]);
   const materialIdRef = useRef<number | null>(null);
 
+  // Query-Parameter ?segment=antraege auswerten — kommt vom Redirect der alten
+  // Route /teamer/requests und damit aus bestehenden Deep-Links.
+  useEffect(() => {
+    const segment = new URLSearchParams(routerLocation.search).get('segment');
+    if (segment === 'antraege') {
+      setMainSegment('antraege');
+    } else if (segment === 'events') {
+      setMainSegment('events');
+    }
+  }, [routerLocation.search]);
+
+  // Einmaliger Umzugs-Hinweis, bis er weggeklickt wurde.
+  const [showUmzugHinweis, setShowUmzugHinweis] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(UMZUG_HINWEIS_KEY) !== 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const dismissUmzugHinweis = () => {
+    try {
+      localStorage.setItem(UMZUG_HINWEIS_KEY, 'true');
+    } catch {
+      // Speicher nicht verfuegbar — Hinweis erscheint dann beim naechsten Mal erneut.
+    }
+    setShowUmzugHinweis(false);
+  };
+
   // Offline-Query: Events
   const { data: events, loading, refresh } = useOfflineQuery<Event[]>(
     'teamer:events:' + user?.id,
     async () => { const res = await api.get('/events'); return res.data; },
     { ttl: CACHE_TTL.EVENTS }
   );
+
+  // --- Offline-Query: Anträge (aus TeamerRequestsPage uebernommen) ---
+  const { data: requests, loading: requestsLoading, refresh: refreshRequests } = useOfflineQuery<ActivityRequest[]>(
+    'teamer:requests:' + user?.id,
+    () => api.get('/teamer/requests').then(r => r.data),
+    { ttl: CACHE_TTL.REQUESTS }
+  );
+
+  const [requestsTab, setRequestsTab] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [selectedRequest, setSelectedRequest] = useState<ActivityRequest | null>(null);
+  const [pendingQueueItems, setPendingQueueItems] = useState<QueueItem[]>([]);
+
+  const loadPendingFromQueue = useCallback(async () => {
+    const queueItems = await writeQueue.getByMetadata({ type: 'request' });
+    setPendingQueueItems(queueItems);
+  }, []);
+
+  useEffect(() => {
+    loadPendingFromQueue();
+  }, [requests, loadPendingFromQueue]);
+
+  const [presentRequestModal, dismissRequestModal] = useIonModal(
+    TeamerActivityRequestModal,
+    {
+      onClose: () => dismissRequestModal(),
+      onSuccess: () => {
+        dismissRequestModal();
+        refreshRequests();
+      }
+    }
+  );
+
+  const [presentDetailModal, dismissDetailModal] = useIonModal(
+    RequestDetailModal,
+    {
+      request: selectedRequest,
+      onClose: () => {
+        dismissDetailModal();
+        setSelectedRequest(null);
+      },
+      onDelete: (request: ActivityRequest) => {
+        dismissDetailModal();
+        setSelectedRequest(null);
+        handleDeleteRequest(request);
+      }
+    }
+  );
+
+  useLiveRefresh('requests', refreshRequests);
+
+  const handleAddRequest = () => {
+    presentRequestModal({
+      presentingElement: pageRef.current || presentingElement || undefined
+    });
+  };
+
+  const handleSelectRequest = (request: ActivityRequest) => {
+    setSelectedRequest(request);
+    presentDetailModal({
+      presentingElement: pageRef.current || presentingElement || undefined
+    });
+  };
+
+  const formatRequestDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
+  const getRequestStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'warning';
+      case 'approved': return 'success';
+      case 'rejected': return 'danger';
+      default: return 'medium';
+    }
+  };
+
+  const getRequestStatusText = (status: string) => {
+    switch (status) {
+      case 'pending': return 'Offen';
+      case 'approved': return 'Verbucht';
+      case 'rejected': return 'Abgelehnt';
+      default: return 'Unbekannt';
+    }
+  };
+
+  const getRequestTypeIcon = (type: string) => {
+    return type === 'gottesdienst' ? home : people;
+  };
+
+  const getRequestTypeText = (type: string) => {
+    return type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde';
+  };
+
+  const getFilteredRequests = () => {
+    const allRequests = Array.isArray(requests) ? requests : [];
+    switch (requestsTab) {
+      case 'pending':
+        return allRequests.filter(r => r.status === 'pending');
+      case 'approved':
+        return allRequests.filter(r => r.status === 'approved');
+      case 'rejected':
+        return allRequests.filter(r => r.status === 'rejected');
+      default:
+        return allRequests;
+    }
+  };
+
+  const handleDeleteRequest = (request: ActivityRequest) => {
+    if (!isOnline) {
+      setError('Löschen nicht möglich — du bist offline');
+      return;
+    }
+    if (request.status !== 'pending') {
+      setError('Nur wartende Anträge können gelöscht werden');
+      return;
+    }
+
+    presentAlert({
+      header: 'Antrag löschen',
+      message: `Möchtest du deinen Antrag für "${request.activity_name}" wirklich löschen?`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Löschen',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await api.delete(`/teamer/requests/${request.id}`);
+              refreshRequests();
+            } catch (error: any) {
+              setError(error.response?.data?.error || 'Fehler beim Löschen des Antrags');
+            }
+          }
+        }
+      ]
+    });
+  };
 
   // Beim Oeffnen der Events-Seite die zugestellten Event-Notifications aus dem
   // Mitteilungszentrum entfernen (Bereich wurde geoeffnet/gesehen).
@@ -767,30 +968,164 @@ const TeamerEventsPage: React.FC = () => {
     );
   };
 
+  const isAntraege = mainSegment === 'antraege';
+  // Der Seitentitel bleibt beim Segmentwechsel STABIL ("Events") — analog zu
+  // KonfiEventsPage/AdminEventsPage.
+  const pageTitle = 'Events';
+
+  // Oberste Segment-Ebene (Events | Anträge) + einmaliger Umzugs-Hinweis. Wird
+  // DIREKT UNTER dem Grafik-/Stats-Header gerendert (gleiches Muster wie bei
+  // Konfi/Admin).
+  const mainSegmentSlot = (
+    <>
+      <div className="app-segment-wrapper">
+        <IonSegment
+          value={mainSegment}
+          onIonChange={(e) => setMainSegment(e.detail.value as 'events' | 'antraege')}
+        >
+          <IonSegmentButton value="events">
+            <IonLabel>Events</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="antraege">
+            <IonLabel>Anträge</IonLabel>
+          </IonSegmentButton>
+        </IonSegment>
+      </div>
+
+      {/* Einmaliger Hinweis auf den Umzug der Anträge in diesen Tab */}
+      {showUmzugHinweis && (
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonCard className="app-card">
+            <IonCardContent>
+              <div className="app-list-item app-list-item--activities" style={{ position: 'relative' }}>
+                <IonButton
+                  fill="clear"
+                  size="small"
+                  onClick={dismissUmzugHinweis}
+                  aria-label="Hinweis ausblenden"
+                  style={{ position: 'absolute', top: '0', right: '0', margin: 0, zIndex: 2 }}
+                >
+                  <IonIcon icon={closeOutline} slot="icon-only" />
+                </IonButton>
+                <div className="app-list-item__row">
+                  <div className="app-list-item__main">
+                    <div className="app-icon-circle app-icon-circle--activities">
+                      <IonIcon icon={informationCircleOutline} />
+                    </div>
+                    <div className="app-list-item__content">
+                      <div className="app-list-item__title" style={{ paddingRight: '44px' }}>
+                        Neu: Deine Anträge findest du jetzt hier im Events-Tab.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
+      )}
+    </>
+  );
+
   // Events-Liste als render-Funktion (frueher early-return).
   const renderList = () => (
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
-          <IonTitle>Events</IonTitle>
+          <IonTitle>{pageTitle}</IonTitle>
+          <IonButtons slot="end">
+            {isAntraege && (
+              <IonButton onClick={handleAddRequest} aria-label="Neuen Antrag stellen">
+                <IonIcon icon={add} />
+              </IonButton>
+            )}
+          </IonButtons>
         </IonToolbar>
       </IonHeader>
 
       <IonContent className="app-gradient-background" fullscreen>
         <IonHeader collapse="condense">
           <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">Events</IonTitle>
+            <IonTitle size="large">{pageTitle}</IonTitle>
           </IonToolbar>
         </IonHeader>
 
-        <IonRefresher slot="fixed" onIonRefresh={(e) => {
-          refresh();
+        <IonRefresher slot="fixed" onIonRefresh={async (e) => {
+          if (isAntraege) {
+            await Promise.all([refreshRequests(), loadPendingFromQueue()]);
+          } else {
+            await refresh();
+          }
           e.detail.complete();
         }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent />
         </IonRefresher>
 
-        {loading ? (
+        {isAntraege ? (
+          requestsLoading ? (
+            <LoadingSpinner message="Anträge werden geladen..." />
+          ) : (
+            <RequestsView
+              requests={getFilteredRequests()}
+              onDeleteRequest={handleDeleteRequest}
+              onSelectRequest={handleSelectRequest}
+              activeTab={requestsTab}
+              onTabChange={setRequestsTab}
+              formatDate={formatRequestDate}
+              getStatusColor={getRequestStatusColor}
+              getStatusText={getRequestStatusText}
+              getTypeIcon={getRequestTypeIcon}
+              getTypeText={getRequestTypeText}
+              teamerMode={true}
+              headerSlot={
+                <>
+                  {mainSegmentSlot}
+
+                  {/* Pending Queue-Anträge (Offline-Warteschlange) */}
+                  {pendingQueueItems.length > 0 && (
+                    <IonList inset={true} className="app-segment-wrapper">
+                      <IonListHeader>
+                        <div className="app-section-icon app-section-icon--warning">
+                          <IonIcon icon={timeOutline} />
+                        </div>
+                        <IonLabel>Wird gesendet...</IonLabel>
+                      </IonListHeader>
+                      <IonCard className="app-card">
+                        <IonCardContent>
+                          {pendingQueueItems.map(qi => (
+                            <div key={qi.id} className="app-list-item app-list-item--warning">
+                              <div className="app-corner-badges">
+                                <div className="app-corner-badge" style={{ background: '#ff9500' }}>
+                                  <IonIcon icon={timeOutline} style={{ fontSize: '0.7rem', marginRight: '2px' }} />
+                                  Wartend
+                                </div>
+                              </div>
+                              <div className="app-list-item__row">
+                                <div className="app-list-item__main">
+                                  <div className="app-icon-circle app-icon-circle--warning">
+                                    <IonIcon icon={timeOutline} />
+                                  </div>
+                                  <div className="app-list-item__content">
+                                    <div className="app-list-item__title" style={{ paddingRight: '60px' }}>
+                                      {qi.metadata.label || 'Antrag'}
+                                    </div>
+                                    <div className="app-list-item__subtitle">
+                                      {qi.body?.description || 'Wird gesendet sobald du online bist'}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </IonCardContent>
+                      </IonCard>
+                    </IonList>
+                  )}
+                </>
+              }
+            />
+          )
+        ) : loading ? (
           <LoadingSpinner message="Events werden geladen..." />
         ) : (
           <>
@@ -803,6 +1138,8 @@ const TeamerEventsPage: React.FC = () => {
               stats={statsData}
               onInfo={() => presentLegend({ presentingElement: presentingElement || pageRef.current || undefined })}
             />
+
+            {mainSegmentSlot}
 
             {/* Suche & Filter — gleiches Pattern wie Konfi/Admin */}
             <IonList inset={true} style={{ margin: '16px' }}>

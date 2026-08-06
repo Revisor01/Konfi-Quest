@@ -22,7 +22,7 @@ import {
 } from '@ionic/react';
 import {
   people, chatbubbles, star, ellipsisHorizontal,
-  person, home, flash, document as documentIcon, calendar, business, flag
+  person, home, flash, calendar, business, flag
 } from 'ionicons/icons';
 import { useIonRouter, isPlatform } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
@@ -37,7 +37,6 @@ import AdminEventsPage from '../admin/pages/AdminEventsPage';
 import AdminCategoriesPage from '../admin/pages/AdminCategoriesPage';
 import AdminJahrgaengeePage from '../admin/pages/AdminJahrgaengeePage';
 import AdminBadgesPage from '../admin/pages/AdminBadgesPage';
-import AdminActivityRequestsPage from '../admin/pages/AdminActivityRequestsPage';
 import AdminUsersPage from '../admin/pages/AdminUsersPage';
 // AdminRolesPage entfernt - Rollen sind jetzt hardcoded
 import AdminOrganizationsPage from '../admin/pages/AdminOrganizationsPage';
@@ -67,7 +66,6 @@ import TeamerEventsPage from '../teamer/pages/TeamerEventsPage';
 import TeamerMaterialPage from '../teamer/pages/TeamerMaterialPage';
 
 import TeamerProfilePage from '../teamer/pages/TeamerProfilePage';
-import TeamerRequestsPage from '../teamer/pages/TeamerRequestsPage';
 import TeamerBadgesPage from '../teamer/pages/TeamerBadgesPage';
 import TeamerKonfiStatsPage from '../teamer/pages/TeamerKonfiStatsPage';
 import TeamerChallengesPage from '../teamer/pages/TeamerChallengesPage';
@@ -222,7 +220,9 @@ const MainTabs: React.FC = () => {
           <Route exact path="/admin/settings/levels" component={AdminLevelsPage} />
           <Route exact path="/admin/settings/invite" component={AdminInvitePage} />
           <Route exact path="/admin/badges" component={AdminBadgesPage} />
-          <Route exact path="/admin/requests" component={AdminActivityRequestsPage} />
+          {/* Anträge sind jetzt ein Segment im Events-Tab. Die alte Route bleibt
+              wegen bestehender Deep-Links aus Push-Nachrichten erhalten. */}
+          <Route exact path="/admin/requests" render={() => <Redirect to="/admin/events?segment=antraege" />} />
           <Route exact path="/admin/challenges" component={AdminChallengesPage} />
           <Route exact path="/admin/users" component={AdminUsersPage} />
           <Route exact path="/admin/organizations" component={AdminOrganizationsPage} />
@@ -259,20 +259,15 @@ const MainTabs: React.FC = () => {
             <IonTabButton tab="admin-events" href="/admin/events">
               <IonIcon icon={flash} />
               <IonLabel>Events</IonLabel>
-              {pendingEventsCount > 0 && (
+              {(pendingEventsCount + pendingRequestsCount) > 0 && (
                 <IonBadge color="danger">
-                  {pendingEventsCount > 9 ? '9+' : pendingEventsCount}
+                  {(pendingEventsCount + pendingRequestsCount) > 9 ? '9+' : (pendingEventsCount + pendingRequestsCount)}
                 </IonBadge>
               )}
             </IonTabButton>
-            <IonTabButton tab="admin-requests" href="/admin/requests">
-              <IonIcon icon={documentIcon} />
-              <IonLabel>Anträge</IonLabel>
-              {pendingRequestsCount > 0 && (
-                <IonBadge color="danger">
-                  {pendingRequestsCount > 9 ? '9+' : pendingRequestsCount}
-                </IonBadge>
-              )}
+            <IonTabButton tab="admin-challenges" href="/admin/challenges">
+              <IonIcon icon={flag} />
+              <IonLabel>Challenges</IonLabel>
             </IonTabButton>
             <IonTabButton tab="admin-settings" href="/admin/settings">
               <IonIcon icon={ellipsisHorizontal} />
@@ -294,7 +289,9 @@ const MainTabs: React.FC = () => {
           <Route exact path="/teamer/events" component={TeamerEventsPage} />
           <Route exact path="/teamer/material" component={TeamerMaterialPage} />
           <Route exact path="/teamer/badges" component={TeamerBadgesPage} />
-          <Route exact path="/teamer/requests" component={TeamerRequestsPage} />
+          {/* Anträge/Aktivitäten sind jetzt ein Segment im Events-Tab. Die alte
+              Route bleibt wegen bestehender Deep-Links aus Push-Nachrichten erhalten. */}
+          <Route exact path="/teamer/requests" render={() => <Redirect to="/teamer/events?segment=antraege" />} />
           <Route exact path="/teamer/challenges" component={TeamerChallengesPage} />
 
           <Route exact path="/teamer/profile" component={TeamerProfilePage} />
@@ -323,13 +320,13 @@ const MainTabs: React.FC = () => {
               <IonIcon icon={calendar} />
               <IonLabel>Events</IonLabel>
             </IonTabButton>
+            <IonTabButton tab="teamer-challenges" href="/teamer/challenges">
+              <IonIcon icon={flag} />
+              <IonLabel>Challenges</IonLabel>
+            </IonTabButton>
             <IonTabButton tab="teamer-badges" href="/teamer/badges">
               <IonIcon icon={star} />
               <IonLabel>Badges</IonLabel>
-            </IonTabButton>
-            <IonTabButton tab="teamer-requests" href="/teamer/requests">
-              <IonIcon icon={flash} />
-              <IonLabel>Aktivitäten</IonLabel>
             </IonTabButton>
           </IonTabBar>
         )}

@@ -1170,4 +1170,189 @@ describe('Challenges Routes', () => {
       expect(privRow.is_anonymous).toBe(false);
     });
   });
+
+  // ================================================================
+  // Datei-Auslieferung GET /files/:filename — Zugriff der Leitung
+  // ================================================================
+  describe('Datei-Auslieferung (GET /files/:filename)', () => {
+    it('Admin der Org kann eine Submission-Datei laden -> 200', async () => {
+      const challenge = await createChallenge({ visibility: 'konfi_choice', moderated: true });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      const filename = 'a'.repeat(64);
+      await createSubmission({
+        challenge_id: challenge.id,
+        user_id: USERS.konfi1.id,
+        media_type: 'photo',
+        text_content: null,
+        file_path: filename,
+        file_name: 'test.png',
+        moderation_status: 'pending',
+      });
+
+      // Echte (verschluesselte) Datei auf der Platte ablegen, damit der
+      // Endpoint bis zum Ende durchlaeuft (Access-Check UND Datei-Lesen).
+      const { encryptBuffer } = require('../../utils/photoCrypto');
+      const fs = require('fs');
+      const path = require('path');
+      const os = require('os');
+      const dir = path.join(os.tmpdir(), 'konfi-test-uploads', 'challenges');
+      await fs.promises.mkdir(dir, { recursive: true });
+      await fs.promises.writeFile(path.join(dir, filename), encryptBuffer(PNG));
+
+      const res = await request(app)
+        .get(`/api/challenges/files/${filename}`)
+        .set('Authorization', `Bearer ${admin1Token}`);
+      expect(res.status).toBe(200);
+
+      await fs.promises.rm(path.join(dir, filename), { force: true });
+    });
+
+    it('Teamer mit zugewiesenem Jahrgang kann eine Submission-Datei laden -> 200', async () => {
+      const challenge = await createChallenge({ visibility: 'konfi_choice', moderated: true });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      const filename = 'b'.repeat(64);
+      await createSubmission({
+        challenge_id: challenge.id,
+        user_id: USERS.konfi1.id,
+        media_type: 'photo',
+        text_content: null,
+        file_path: filename,
+        file_name: 'test.png',
+        moderation_status: 'pending',
+      });
+
+      const { encryptBuffer } = require('../../utils/photoCrypto');
+      const fs = require('fs');
+      const path = require('path');
+      const os = require('os');
+      const dir = path.join(os.tmpdir(), 'konfi-test-uploads', 'challenges');
+      await fs.promises.mkdir(dir, { recursive: true });
+      await fs.promises.writeFile(path.join(dir, filename), encryptBuffer(PNG));
+
+      const res = await request(app)
+        .get(`/api/challenges/files/${filename}`)
+        .set('Authorization', `Bearer ${teamer1Token}`);
+      expect(res.status).toBe(200);
+
+      await fs.promises.rm(path.join(dir, filename), { force: true });
+    });
+
+    it('Teamer OHNE zugewiesenen Jahrgang der Challenge bekommt 403 (NICHT 401)', async () => {
+      // teamer1 ist laut Seed nur jahrgang1 zugewiesen -> jahrgang2 nutzen
+      const challenge = await createChallenge({ visibility: 'private', moderated: true });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang2.id);
+      const filename = 'e'.repeat(64);
+      await createSubmission({
+        challenge_id: challenge.id,
+        user_id: USERS.konfi2.id,
+        media_type: 'photo',
+        text_content: null,
+        file_path: filename,
+        file_name: 'test.png',
+        moderation_status: 'pending',
+      });
+
+      const res = await request(app)
+        .get(`/api/challenges/files/${filename}`)
+        .set('Authorization', `Bearer ${teamer1Token}`);
+      expect(res.status).toBe(403);
+    });
+
+    it('Konfi-Eigentuemer kann die eigene Datei laden -> 200', async () => {
+      const challenge = await createChallenge({ visibility: 'private', moderated: true });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      const filename = 'c'.repeat(64);
+      await createSubmission({
+        challenge_id: challenge.id,
+        user_id: USERS.konfi1.id,
+        media_type: 'photo',
+        text_content: null,
+        file_path: filename,
+        file_name: 'test.png',
+        moderation_status: 'pending',
+      });
+
+      const { encryptBuffer } = require('../../utils/photoCrypto');
+      const fs = require('fs');
+      const path = require('path');
+      const os = require('os');
+      const dir = path.join(os.tmpdir(), 'konfi-test-uploads', 'challenges');
+      await fs.promises.mkdir(dir, { recursive: true });
+      await fs.promises.writeFile(path.join(dir, filename), encryptBuffer(PNG));
+
+      const res = await request(app)
+        .get(`/api/challenges/files/${filename}`)
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      expect(res.status).toBe(200);
+
+      await fs.promises.rm(path.join(dir, filename), { force: true });
+    });
+
+    it('Fremde Org bekommt 404, NICHT 401 (kein Leak ob die Datei existiert)', async () => {
+      const challenge = await createChallenge({ visibility: 'konfi_choice', moderated: true });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      const filename = 'f'.repeat(64);
+      await createSubmission({
+        challenge_id: challenge.id,
+        user_id: USERS.konfi1.id,
+        media_type: 'photo',
+        text_content: null,
+        file_path: filename,
+        file_name: 'test.png',
+        moderation_status: 'approved',
+      });
+
+      const res = await request(app)
+        .get(`/api/challenges/files/${filename}`)
+        .set('Authorization', `Bearer ${admin2Token}`);
+      expect(res.status).toBe(404);
+    });
+
+    it('Ohne Token -> 401', async () => {
+      const res = await request(app).get('/api/challenges/files/' + 'a'.repeat(64));
+      expect(res.status).toBe(401);
+    });
+
+    it('Multi-Org: Admin aktiv auf Sekundaer-Org umgeschaltet kann eine Datei dieser Org laden -> 200 (vorher faelschlich 404 gegen die Primaer-Org)', async () => {
+      // admin1 zusaetzlich als Mitglied der zweiten Org eintragen (Org-Switcher).
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+        [USERS.admin1.id, ORGS.andereGemeinde.id, USERS.admin2.role_id]
+      );
+
+      const challenge = await createChallenge({
+        organization_id: ORGS.andereGemeinde.id,
+        visibility: 'konfi_choice',
+        moderated: true,
+        created_by: USERS.admin2.id,
+      });
+      const filename = 'd'.repeat(64);
+      await createSubmission({
+        challenge_id: challenge.id,
+        user_id: USERS.konfi3.id,
+        organization_id: ORGS.andereGemeinde.id,
+        media_type: 'photo',
+        text_content: null,
+        file_path: filename,
+        file_name: 'test.png',
+        moderation_status: 'pending',
+      });
+
+      const { encryptBuffer } = require('../../utils/photoCrypto');
+      const fs = require('fs');
+      const path = require('path');
+      const os = require('os');
+      const dir = path.join(os.tmpdir(), 'konfi-test-uploads', 'challenges');
+      await fs.promises.mkdir(dir, { recursive: true });
+      await fs.promises.writeFile(path.join(dir, filename), encryptBuffer(PNG));
+
+      const res = await request(app)
+        .get(`/api/challenges/files/${filename}`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .set('X-Active-Organization', String(ORGS.andereGemeinde.id));
+      expect(res.status).toBe(200);
+
+      await fs.promises.rm(path.join(dir, filename), { force: true });
+    });
+  });
 });

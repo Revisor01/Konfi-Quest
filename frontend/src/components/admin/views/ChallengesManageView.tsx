@@ -7,7 +7,8 @@ import {
   IonItemOption,
   IonSegment,
   IonSegmentButton,
-  IonLabel
+  IonLabel,
+  useIonModal
 } from '@ionic/react';
 import {
   flag,
@@ -20,7 +21,7 @@ import {
   eyeOutline,
   eyeOffOutline
 } from 'ionicons/icons';
-import { SectionHeader, ListSection, StatusBadge } from '../../shared';
+import { SectionHeader, ListSection, StatusBadge, ChallengeLegendModal } from '../../shared';
 import type { AdminChallenge, ChallengeStatus } from '../../../types/challenges';
 
 // Gemeinsame Verwaltungs-Ansicht fuer Admin UND Teamer. Bewusst ohne eigenen
@@ -33,6 +34,8 @@ interface ChallengesManageViewProps {
   onSelectChallenge: (challenge: AdminChallenge) => void;
   onEditChallenge: (challenge: AdminChallenge) => void;
   onDeleteChallenge: (challenge: AdminChallenge) => void;
+  // Fuer Card-Modal-Optik der Legende (Sheet ueber der Seite statt Vollbild).
+  presentingElement?: HTMLElement | null;
 }
 
 // Status wird NICHT gespeichert, sondern aus is_draft/starts_at/ends_at abgeleitet
@@ -87,10 +90,15 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
   challenges: challengesRaw,
   onSelectChallenge,
   onEditChallenge,
-  onDeleteChallenge
+  onDeleteChallenge,
+  presentingElement
 }) => {
   // Defensive: bei kaputten/gecachten Responses (Object statt Array) auf [] fallen
   const challenges: AdminChallenge[] = Array.isArray(challengesRaw) ? challengesRaw : [];
+
+  const [presentLegend, dismissLegend] = useIonModal(ChallengeLegendModal, {
+    onClose: () => dismissLegend(),
+  });
 
   const [statusFilter, setStatusFilter] = useState<FilterValue>('all');
 
@@ -131,6 +139,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
           { value: counts.draft, label: 'Entwürfe' },
           { value: counts.pending, label: 'Zu prüfen' }
         ]}
+        onInfo={() => presentLegend({ presentingElement: presentingElement || undefined })}
       />
 
       <div style={{ margin: '16px 16px 8px 16px' }}>

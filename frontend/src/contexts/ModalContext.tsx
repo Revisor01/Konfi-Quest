@@ -51,7 +51,9 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     else if (currentPath.includes('/admin/activities')) currentTabId = 'admin-activities';
     else if (currentPath.includes('/admin/events')) currentTabId = 'admin-events';
     else if (currentPath.includes('/admin/badges')) currentTabId = 'admin-badges';
-    else if (currentPath.includes('/admin/requests')) currentTabId = 'admin-requests';
+    // Anträge sind seit dem Tab-Umbau ein Segment im Events-Tab — die alte
+    // Route /admin/requests leitet dorthin um, deshalb dasselbe Presenting-Element.
+    else if (currentPath.includes('/admin/requests')) currentTabId = 'admin-events';
     else if (currentPath.includes('/admin/challenges')) currentTabId = 'admin-challenges';
     else if (currentPath.includes('/admin/users')) currentTabId = 'admin-users';
     else if (currentPath.includes('/admin/organizations')) currentTabId = 'admin-organizations';
@@ -76,6 +78,9 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Teamer Routes
     else if (currentPath.includes('/teamer/material')) currentTabId = 'teamer-material';
     else if (currentPath.includes('/teamer/events')) currentTabId = 'teamer-events';
+    // Anträge/Aktivitäten sind seit dem Tab-Umbau ein Segment im Events-Tab —
+    // die alte Route /teamer/requests leitet dorthin um.
+    else if (currentPath.includes('/teamer/requests')) currentTabId = 'teamer-events';
     else if (currentPath.includes('/teamer/dashboard')) currentTabId = 'teamer-dashboard';
     else if (currentPath.includes('/teamer/chat')) currentTabId = 'teamer-chat';
     else if (currentPath.includes('/teamer/badges')) currentTabId = 'teamer-badges';
