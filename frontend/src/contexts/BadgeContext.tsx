@@ -11,7 +11,7 @@ import { useApp } from './AppContext';
 import { useLiveRefresh, useLiveUpdate, LiveUpdateType } from './LiveUpdateContext';
 
 // Stabiles Array (Modul-Ebene) -> useLiveRefresh re-subscribt nicht bei jedem Render.
-const BADGE_LIVE_TYPES: LiveUpdateType[] = ['requests', 'events'];
+const BADGE_LIVE_TYPES: LiveUpdateType[] = ['requests', 'events', 'challenges'];
 
 // Badge Context Interface
 interface BadgeContextType {
@@ -21,6 +21,8 @@ interface BadgeContextType {
   // Admin-only
   pendingRequestsCount: number;
   pendingEventsCount: number;
+  // Leitung (Admin + Teamer): offene Challenge-Freigaben
+  pendingChallengesCount: number;
   // Gesamt (Role-abhaengig)
   totalBadgeCount: number;
   // Actions
@@ -47,16 +49,24 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
   const [chatUnreadTotal, setChatUnreadTotal] = useState(0);
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
   const [pendingEventsCount, setPendingEventsCount] = useState(0);
+  const [pendingChallengesCount, setPendingChallengesCount] = useState(0);
 
   const isAdmin = user?.type === 'admin' && user?.role_name !== 'super_admin';
+  // Challenge-Freigaben betreffen die ganze Leitung — Teamer moderieren ihre
+  // zugewiesenen Jahrgaenge selbst (das Backend zaehlt entsprechend gefiltert).
+  const isLeadership = isAdmin || user?.type === 'teamer';
 
-  // totalBadgeCount: Admin = chat + requests + events, Konfi = nur chat
+  // totalBadgeCount: Admin = chat + requests + events + challenges,
+  // Teamer = chat + challenges, Konfi = nur chat
   const totalBadgeCount = useMemo(() => {
     if (isAdmin) {
-      return chatUnreadTotal + pendingRequestsCount + pendingEventsCount;
+      return chatUnreadTotal + pendingRequestsCount + pendingEventsCount + pendingChallengesCount;
+    }
+    if (isLeadership) {
+      return chatUnreadTotal + pendingChallengesCount;
     }
     return chatUnreadTotal;
-  }, [chatUnreadTotal, pendingRequestsCount, pendingEventsCount, isAdmin]);
+  }, [chatUnreadTotal, pendingRequestsCount, pendingEventsCount, pendingChallengesCount, isAdmin, isLeadership]);
 
   // Zentraler Refresh aller Counts. Nutzt den leichtgewichtigen Zaehler-Endpoint
   // (Audit Achse 4, Fund 3) statt der frueheren drei Voll-Fetches (/chat/rooms +
@@ -86,10 +96,13 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
         setPendingRequestsCount(Number(data?.pendingRequests) || 0);
         setPendingEventsCount(Number(data?.pendingEvents) || 0);
       }
+      if (isLeadership) {
+        setPendingChallengesCount(Number(data?.pendingChallenges) || 0);
+      }
     } catch (error) {
       console.error('BadgeContext: refreshAllCounts fehlgeschlagen:', error);
     }
-  }, [user, isAdmin]);
+  }, [user, isAdmin, isLeadership]);
 
   // markRoomAsRead: Optimistisch + API Call
   const markRoomAsRead = useCallback((roomId: number) => {
@@ -198,6 +211,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       setChatUnreadTotal(0);
       setPendingRequestsCount(0);
       setPendingEventsCount(0);
+      setPendingChallengesCount(0);
     }
   }, [user]);
 
@@ -207,6 +221,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       chatUnreadTotal,
       pendingRequestsCount,
       pendingEventsCount,
+      pendingChallengesCount,
       totalBadgeCount,
       refreshAllCounts,
       markRoomAsRead,

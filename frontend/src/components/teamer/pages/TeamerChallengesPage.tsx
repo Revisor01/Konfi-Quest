@@ -15,6 +15,7 @@ import {
 } from '@ionic/react';
 import { add, arrowBack } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { useBadge } from '../../../contexts/BadgeContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
@@ -32,6 +33,7 @@ import type { AdminChallenge } from '../../../types/challenges';
 
 const TeamerChallengesPage: React.FC = () => {
   const { user } = useApp();
+  const { refreshAllCounts } = useBadge();
   const { pageRef, presentingElement } = useModalPage('teamer-challenges');
 
   const { data: challenges, loading, refresh: refreshChallenges } = useOfflineQuery<AdminChallenge[]>(
@@ -47,27 +49,28 @@ const TeamerChallengesPage: React.FC = () => {
 
   const manageDirtyRef = useRef(false);
 
+  // WICHTIG: Beim Schliessen wird der Challenge-State NICHT auf null gesetzt.
+  // useIonModal rendert das Modal waehrend der Dismiss-Animation weiter — ein
+  // null-Render liefe dort in die ErrorBoundary (clearAuth => "Rauswurf zur
+  // Anmeldung"). Der State wird beim naechsten Oeffnen ohnehin neu gesetzt.
   const [presentManageModal, dismissManageModal] = useIonModal(ChallengeManageModal, {
     challenge: editChallenge,
     onDirtyChange: (dirty: boolean) => { manageDirtyRef.current = dirty; },
-    onClose: () => {
-      dismissManageModal();
-      setEditChallenge(null);
-    },
+    onClose: () => { dismissManageModal(); },
     onSuccess: () => {
       dismissManageModal();
-      setEditChallenge(null);
       refreshChallenges();
     }
   });
 
   const [presentModerationModal, dismissModerationModal] = useIonModal(ChallengeModerationModal, {
     challenge: moderationChallenge,
-    onClose: () => {
-      dismissModerationModal();
-      setModerationChallenge(null);
-    },
-    onChanged: () => { refreshChallenges(); }
+    onClose: () => { dismissModerationModal(); },
+    onChanged: () => {
+      refreshChallenges();
+      // Tab-Badge (offene Freigaben) direkt nachziehen.
+      refreshAllCounts();
+    }
   });
 
   const manageCanDismiss = async (): Promise<boolean> => {

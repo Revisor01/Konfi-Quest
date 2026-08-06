@@ -23,14 +23,12 @@ import {
   IonAccordionGroup,
   IonDatetime,
   IonDatetimeButton,
-  IonModal,
-  IonSearchbar
+  IonModal
 } from '@ionic/react';
 import {
   checkmarkOutline,
   closeOutline,
   flag,
-  informationCircleOutline,
   eyeOutline,
   imagesOutline,
   peopleOutline,
@@ -209,20 +207,6 @@ interface Jahrgang {
   name: string;
 }
 
-interface OrgUser {
-  id: number;
-  display_name: string;
-  role_name?: string;
-}
-
-// Lesbare Rollen-Kennzeichnung im Urheber-Picker (auch Konfis sind waehlbar).
-const ROLE_LABELS: Record<string, string> = {
-  org_admin: 'Admin',
-  admin: 'Admin',
-  teamer: 'Teamer',
-  konfi: 'Konfi'
-};
-
 interface ChallengeManageModalProps {
   challenge?: AdminChallenge | null;
   onClose: () => void;
@@ -261,10 +245,6 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
     : (challengeStatus === 'active' || challengeStatus === 'ended');
 
   const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
-  const [users, setUsers] = useState<OrgUser[]>([]);
-  const [userSearch, setUserSearch] = useState('');
-
-  const [authorMode, setAuthorMode] = useState<'user' | 'freetext'>('user');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -276,16 +256,19 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
     allow_multiple: true,
     badge_icon: 'flag',
     badge_name: '',
-    author_user_id: null as number | null,
+    // Urheber ist ein OPTIONALES Freitextfeld (User-Entscheid 06.08.) — die
+    // fruehere User-Auswahl war zu lang/komplex fuers Modal. author_user_id
+    // wird beim Speichern immer auf null gesetzt, der Name lebt im Freitext.
     author_freetext: '',
     jahrgang_ids: [] as number[],
     starts_at: '',
-    ends_at: ''
+    ends_at: '',
+    is_draft: false
   });
 
   useEffect(() => {
     if (initializedRef.current) setIsDirty(true);
-  }, [formData, authorMode]);
+  }, [formData]);
 
   useEffect(() => { onDirtyChange?.(isDirty); }, [isDirty, onDirtyChange]);
 
@@ -304,13 +287,14 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
           allow_multiple: challenge.allow_multiple !== false,
           badge_icon: challenge.badge_icon || 'flag',
           badge_name: challenge.badge_name || '',
-          author_user_id: challenge.author_user_id ?? null,
-          author_freetext: challenge.author_freetext || '',
+          // Bestehende User-Urheber flieszen als aufgeloester Name (author_name)
+          // in den Freitext ein — es geht beim Umstieg nichts verloren.
+          author_freetext: challenge.author_freetext || challenge.author_name || '',
           jahrgang_ids: (challenge.jahrgaenge || []).map((j) => j.id),
           starts_at: challenge.starts_at ? toIonDatetimeISO(new Date(challenge.starts_at)) : '',
-          ends_at: challenge.ends_at ? toIonDatetimeISO(new Date(challenge.ends_at)) : ''
+          ends_at: challenge.ends_at ? toIonDatetimeISO(new Date(challenge.ends_at)) : '',
+          is_draft: challenge.is_draft === true
         });
-        setAuthorMode(challenge.author_user_id ? 'user' : (challenge.author_freetext ? 'freetext' : 'user'));
       } else {
         // Neue Challenge: Start morgen, Ende in zwei Wochen — bewusst runde Zeiten.
         const start = new Date();
@@ -334,15 +318,8 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
 
   const loadInitialData = async () => {
     try {
-      // /challenges/admin/authors statt /admin/users: liefert (anders als die
-      // reine User-Verwaltung) auch Konfis der Org als moegliche Urheber und
-      // ist fuer Teamer freigegeben, nicht nur org_admin.
-      const [jahrgaengeRes, usersRes] = await Promise.all([
-        api.get('/admin/jahrgaenge').catch(() => ({ data: [] })),
-        api.get('/challenges/admin/authors').catch(() => ({ data: [] }))
-      ]);
+      const jahrgaengeRes = await api.get('/admin/jahrgaenge').catch(() => ({ data: [] }));
       setJahrgaenge(Array.isArray(jahrgaengeRes.data) ? jahrgaengeRes.data : []);
-      setUsers(Array.isArray(usersRes.data) ? usersRes.data : []);
     } catch (err) {
       console.error('Fehler beim Laden der Challenge-Stammdaten:', err);
     }
@@ -377,7 +354,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
     !!formData.starts_at &&
     !!formData.ends_at;
 
-  const buildPayload = (isDraft: boolean) => {
+  const buildPayload = () => {
     const payload: Record<string, any> = {
       title: formData.title.trim(),
       description: formData.description.trim(),
@@ -385,11 +362,13 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
       allow_multiple: formData.allow_multiple,
       badge_icon: formData.badge_icon,
       badge_name: formData.badge_name.trim(),
-      author_user_id: authorMode === 'user' ? formData.author_user_id : null,
-      author_freetext: authorMode === 'freetext' ? formData.author_freetext.trim() : null,
+      // Urheber nur noch als optionaler Freitext (author_user_id entfaellt).
+      author_user_id: null,
+      author_freetext: formData.author_freetext.trim() || null,
       jahrgang_ids: formData.jahrgang_ids,
       ends_at: formData.ends_at,
-      is_draft: isDraft
+      // Nach dem Start ist is_draft fixiert (Backend erzwingt false).
+      is_draft: isStarted ? false : formData.is_draft
     };
 
     // Gesperrte Felder nach dem Start GAR NICHT mitsenden. Das Backend vergleicht
@@ -406,7 +385,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
     return payload;
   };
 
-  const handleSave = async (isDraft: boolean) => {
+  const handleSave = async () => {
     if (!isFormValid) {
       setError('Bitte fülle Titel, Beschreibung, Abzeichen-Name, Medienarten, Jahrgänge und den Zeitraum aus.');
       return;
@@ -419,7 +398,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
     await guard(async () => {
       setLoading(true);
       try {
-        const payload = buildPayload(isDraft);
+        const payload = buildPayload();
         if (isEditMode && challenge) {
           await api.put(`/challenges/admin/${challenge.id}`, payload);
         } else {
@@ -439,11 +418,6 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
     });
   };
 
-  const filteredUsers = users.filter((u) =>
-    !userSearch.trim() || (u.display_name || '').toLowerCase().includes(userSearch.trim().toLowerCase())
-  );
-
-  const selectedUser = users.find((u) => u.id === formData.author_user_id);
   const selectedIconMeta = CHALLENGE_ICONS[formData.badge_icon];
 
   const iconGroups = Object.entries(CHALLENGE_ICONS).reduce<
@@ -467,7 +441,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
           </IonButtons>
           <IonButtons slot="end">
             <IonButton
-              onClick={() => handleSave(false)}
+              onClick={() => handleSave()}
               disabled={loading || isSubmitting || !isFormValid}
               className="app-modal-submit-btn app-modal-submit-btn--challenges"
             >
@@ -562,7 +536,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
               <IonCard className="app-card">
                 <IonCardContent>
                   {isStarted && (
-                    <div className="app-info-box app-info-box--neutral" style={{ borderRadius: '10px', marginBottom: '12px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                    <div className="app-info-box app-info-box--challenges" style={{ borderRadius: '10px', marginBottom: '12px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                       <IonIcon icon={lockClosedOutline} style={{ fontSize: '1.1rem', marginTop: '2px', flexShrink: 0 }} />
                       <span>
                         Sichtbarkeit, Freigabe-Pflicht, Startzeitpunkt und Medienarten sind nach
@@ -606,6 +580,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                     </IonLabel>
                     <IonToggle
                       slot="end"
+                      className="app-toggle--challenges"
                       checked={formData.moderated}
                       disabled={loading || isStarted}
                       onIonChange={(e) => setFormData({ ...formData, moderated: e.detail.checked })}
@@ -623,6 +598,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                     </IonLabel>
                     <IonToggle
                       slot="end"
+                      className="app-toggle--challenges"
                       checked={formData.allow_multiple}
                       disabled={loading}
                       onIonChange={(e) => setFormData({ ...formData, allow_multiple: e.detail.checked })}
@@ -761,7 +737,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                     </IonAccordionGroup>
                   </div>
 
-                  <div className="app-info-box app-info-box--neutral" style={{ borderRadius: '10px', marginTop: '12px' }}>
+                  <div className="app-info-box app-info-box--challenges" style={{ borderRadius: '10px', marginTop: '12px' }}>
                     Das Abzeichen bekommt jeder Konfi, der mindestens einen Beitrag einreicht.
                     Es wird bewusst nicht gezählt und fließt in keine Punkte oder Ranglisten ein.
                   </div>
@@ -779,88 +755,23 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent>
-                  <IonItem lines="none">
-                    <IonLabel>
-                      <h3 style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '600' }}>
-                        {authorMode === 'user' ? 'Aus Benutzerliste' : 'Freitext'}
-                      </h3>
-                      <p style={{ color: '#666', margin: '0', fontSize: '0.85rem', whiteSpace: 'normal' }}>
-                        {authorMode === 'user'
-                          ? 'Eine Person aus deiner Organisation als Urheber:in eintragen.'
-                          : 'Freien Namen eintragen, z.B. eine Gruppe oder eine Gemeinde.'}
-                      </p>
-                    </IonLabel>
-                    <IonToggle
-                      slot="end"
-                      checked={authorMode === 'user'}
-                      disabled={loading}
-                      onIonChange={(e) => setAuthorMode(e.detail.checked ? 'user' : 'freetext')}
-                    />
-                  </IonItem>
-
-                  {authorMode === 'freetext' ? (
+                  <IonList>
                     <IonItem lines="none">
-                      <IonLabel position="stacked">Name</IonLabel>
+                      <IonLabel position="stacked">Gestellt von (optional)</IonLabel>
                       <IonInput
                         value={formData.author_freetext}
                         onIonInput={(e) => setFormData({ ...formData, author_freetext: e.detail.value! })}
-                        placeholder="z.B. Konfi-Team Hennstedt"
+                        placeholder="z.B. Pastor Simon, Konfi-Team Hennstedt"
                         clearInput={true}
                         disabled={loading}
                         maxlength={200}
                       />
                     </IonItem>
-                  ) : (
-                    <div style={{ marginTop: '8px' }}>
-                      <IonAccordionGroup>
-                        <IonAccordion value="user-picker" toggleIcon={chevronDownOutline} toggleIconSlot="end">
-                          <IonItem slot="header" lines="none">
-                            <IonLabel>
-                              <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
-                                Person auswählen
-                              </h3>
-                              <p style={{ fontSize: '0.85rem', color: '#333', margin: '0', fontWeight: '500' }}>
-                                {selectedUser ? selectedUser.display_name : 'Keine Auswahl'}
-                              </p>
-                            </IonLabel>
-                          </IonItem>
-                          <div slot="content" style={{ padding: '8px 0' }}>
-                            <IonSearchbar
-                              value={userSearch}
-                              onIonInput={(e) => setUserSearch(e.detail.value || '')}
-                              placeholder="Name suchen"
-                              style={{ paddingLeft: 0, paddingRight: 0 }}
-                            />
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                              {filteredUsers.map((orgUser) => {
-                                const isSelected = formData.author_user_id === orgUser.id;
-                                return (
-                                  <div
-                                    key={orgUser.id}
-                                    className={`app-list-item app-list-item--challenges${isSelected ? ' app-list-item--selected' : ''}`}
-                                    onClick={() => !loading && setFormData({ ...formData, author_user_id: isSelected ? null : orgUser.id })}
-                                    style={{ cursor: loading ? 'default' : 'pointer', marginBottom: '0' }}
-                                  >
-                                    <span style={{ fontWeight: '500', color: '#333' }}>{orgUser.display_name}</span>
-                                    {orgUser.role_name && (
-                                      <span style={{ marginLeft: '8px', fontSize: '0.75rem', color: '#999' }}>
-                                        ({ROLE_LABELS[orgUser.role_name] || orgUser.role_name})
-                                      </span>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                              {filteredUsers.length === 0 && (
-                                <div style={{ padding: '8px', color: '#999', fontSize: '0.85rem' }}>
-                                  Keine Person gefunden
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </IonAccordion>
-                      </IonAccordionGroup>
-                    </div>
-                  )}
+                  </IonList>
+                  <div className="app-info-box app-info-box--challenges" style={{ borderRadius: '10px', marginTop: '8px' }}>
+                    Wird den Konfis als "Gestellt von ..." angezeigt. Leer lassen, wenn niemand
+                    genannt werden soll.
+                  </div>
                 </IonCardContent>
               </IonCard>
             </IonList>
@@ -936,46 +847,44 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                     </IonItem>
                   </IonList>
                   {isStarted && (
-                    <div className="app-info-box app-info-box--neutral" style={{ borderRadius: '10px', marginTop: '8px' }}>
+                    <div className="app-info-box app-info-box--challenges" style={{ borderRadius: '10px', marginTop: '8px' }}>
                       Der Start liegt bereits in der Vergangenheit und lässt sich nicht mehr
                       verschieben. Das Ende kannst du weiterhin anpassen.
                     </div>
                   )}
+
+                  {/* Entwurf-Haken statt eigener Footer-Buttons: gespeichert wird
+                      ausschliesslich ueber den Bestätigen-Button oben rechts. */}
+                  {!isStarted && (
+                    <>
+                      <IonItem lines="none" style={{ marginTop: '8px' }}>
+                        <IonLabel>
+                          <h3 style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '600' }}>
+                            Als Entwurf speichern
+                          </h3>
+                          <p style={{ color: '#666', margin: '0', fontSize: '0.85rem', whiteSpace: 'normal' }}>
+                            Entwürfe sehen nur du und dein Team.
+                          </p>
+                        </IonLabel>
+                        <IonToggle
+                          slot="end"
+                          className="app-toggle--challenges"
+                          checked={formData.is_draft}
+                          disabled={loading}
+                          onIonChange={(e) => setFormData({ ...formData, is_draft: e.detail.checked })}
+                        />
+                      </IonItem>
+                      {!formData.is_draft && (
+                        <div className="app-info-box app-info-box--challenges" style={{ borderRadius: '10px', marginTop: '8px' }}>
+                          Die Challenge wird geplant und startet automatisch zum eingestellten
+                          Zeitpunkt — dann bekommen die Konfis eine Benachrichtigung.
+                        </div>
+                      )}
+                    </>
+                  )}
                 </IonCardContent>
               </IonCard>
             </IonList>
-
-            {/* Entwurf/Planen */}
-            <div className="app-segment-wrapper" style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '8px' }}>
-              {(!isEditMode || challenge?.is_draft) && (
-                <IonButton
-                  expand="block"
-                  fill="outline"
-                  disabled={loading || isSubmitting || !isFormValid}
-                  onClick={() => handleSave(true)}
-                  className="app-action-button"
-                  style={{ '--color': 'var(--app-color-challenges)', '--border-color': 'var(--app-color-challenges)' }}
-                >
-                  Als Entwurf speichern
-                </IonButton>
-              )}
-              <IonButton
-                expand="block"
-                disabled={loading || isSubmitting || !isFormValid}
-                onClick={() => handleSave(false)}
-                className="app-action-button app-modal-submit-btn app-modal-submit-btn--challenges"
-              >
-                <IonIcon icon={checkmarkOutline} slot="start" />
-                {isEditMode && !challenge?.is_draft ? 'Änderungen speichern' : 'Planen'}
-              </IonButton>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', padding: '0 4px', color: '#666', fontSize: '0.8rem' }}>
-                <IonIcon icon={informationCircleOutline} style={{ fontSize: '1rem', marginTop: '2px', flexShrink: 0 }} />
-                <span>
-                  Entwürfe sehen nur du und dein Team. Geplante Challenges starten automatisch
-                  zum eingestellten Zeitpunkt — dann bekommen die Konfis eine Benachrichtigung.
-                </span>
-              </div>
-            </div>
 
             <div className="ion-padding-bottom" />
           </>

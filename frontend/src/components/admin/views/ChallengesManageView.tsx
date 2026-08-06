@@ -102,14 +102,15 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
 
   const [statusFilter, setStatusFilter] = useState<FilterValue>('all');
 
+  // Offene Freigaben erscheinen NICHT mehr als vierte Kachel — die Anzeige
+  // laeuft ueber das Tab-Badge (BadgeContext, wie Chat) und den orangen
+  // Corner-Badge am jeweiligen Listeneintrag.
   const counts = useMemo(() => {
     const byStatus: Record<ChallengeStatus, number> = { draft: 0, scheduled: 0, active: 0, ended: 0 };
-    let pending = 0;
     challenges.forEach((c) => {
       byStatus[getChallengeStatus(c)] += 1;
-      pending += c.pending_count || 0;
     });
-    return { ...byStatus, pending };
+    return byStatus;
   }, [challenges]);
 
   const filtered = useMemo(() => {
@@ -136,8 +137,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
         stats={[
           { value: counts.active, label: 'Aktiv' },
           { value: counts.scheduled, label: 'Geplant' },
-          { value: counts.draft, label: 'Entwürfe' },
-          { value: counts.pending, label: 'Zu prüfen' }
+          { value: counts.draft, label: 'Entwürfe' }
         ]}
         onInfo={() => presentLegend({ presentingElement: presentingElement || undefined })}
       />

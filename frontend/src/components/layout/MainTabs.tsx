@@ -98,7 +98,7 @@ const KonfiChatRoomRoute: React.FC<RouteComponentProps<{ roomId: string }>> = ({
 
 const MainTabs: React.FC = () => {
   const { user } = useApp();
-  const { chatUnreadTotal, pendingRequestsCount, pendingEventsCount } = useBadge();
+  const { chatUnreadTotal, pendingRequestsCount, pendingEventsCount, pendingChallengesCount } = useBadge();
   // super_admin bekommt eine eigene, reduzierte Navigation
   const isSuperAdmin = user?.role_name === 'super_admin';
   const [newBadgesCount, setNewBadgesCount] = useState(0);
@@ -268,6 +268,11 @@ const MainTabs: React.FC = () => {
             <IonTabButton tab="admin-challenges" href="/admin/challenges">
               <IonIcon icon={flag} />
               <IonLabel>Challenges</IonLabel>
+              {pendingChallengesCount > 0 && (
+                <IonBadge color="danger">
+                  {pendingChallengesCount > 9 ? '9+' : pendingChallengesCount}
+                </IonBadge>
+              )}
             </IonTabButton>
             <IonTabButton tab="admin-settings" href="/admin/settings">
               <IonIcon icon={ellipsisHorizontal} />
@@ -323,6 +328,11 @@ const MainTabs: React.FC = () => {
             <IonTabButton tab="teamer-challenges" href="/teamer/challenges">
               <IonIcon icon={flag} />
               <IonLabel>Challenges</IonLabel>
+              {pendingChallengesCount > 0 && (
+                <IonBadge color="danger">
+                  {pendingChallengesCount > 9 ? '9+' : pendingChallengesCount}
+                </IonBadge>
+              )}
             </IonTabButton>
             <IonTabButton tab="teamer-badges" href="/teamer/badges">
               <IonIcon icon={star} />

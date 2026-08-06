@@ -174,7 +174,12 @@ const formatDateTime = (value?: string) => {
 };
 
 interface ChallengeModerationModalProps {
-  challenge: AdminChallenge;
+  // NULL-SICHER: Die Seite dahinter fuehrt die Challenge als State und rendert
+  // dieses Modal ueber useIonModal auch waehrend der Dismiss-Animation weiter.
+  // Wuerde der State dort auf null gesetzt (oder ein kaputter Cache ein
+  // undefined liefern), darf das hier NICHT werfen — ein Render-Fehler landet
+  // sonst in der ErrorBoundary, die Auth + Cache leert ("Rauswurf zur Anmeldung").
+  challenge?: AdminChallenge | null;
   onClose: () => void;
   // Wird nach jeder Moderations-Aktion gerufen, damit die Liste dahinter
   // (Pending-Zaehler) aktuell bleibt.
@@ -195,9 +200,12 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
   const [busyId, setBusyId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
+  const challengeId = challenge?.id;
+
   const loadSubmissions = useCallback(async () => {
+    if (!challengeId) return;
     try {
-      const res = await api.get(`/challenges/admin/${challenge.id}/submissions`);
+      const res = await api.get(`/challenges/admin/${challengeId}/submissions`);
       // Backend liefert { challenge, submissions } — die Liste daraus ziehen und
       // den Konfi-Namen aus display_name normalisieren.
       const raw = Array.isArray(res.data) ? res.data : (res.data?.submissions || []);
@@ -212,7 +220,7 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [challenge.id, setError]);
+  }, [challengeId, setError]);
 
   useEffect(() => {
     setLoading(true);
@@ -258,6 +266,7 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
   };
 
   const handleExport = async () => {
+    if (!challenge) return;
     try {
       const res = await api.get(`/challenges/admin/${challenge.id}/export`, { responseType: 'text' });
       const text = typeof res.data === 'string' ? res.data : String(res.data ?? '');
@@ -295,6 +304,11 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
       setError(err.response?.data?.error || 'Export fehlgeschlagen');
     }
   };
+
+  // Nach den Hooks (Hook-Reihenfolge!): ohne Challenge nichts rendern statt werfen.
+  if (!challenge) {
+    return null;
+  }
 
   return (
     <IonPage>

@@ -248,10 +248,24 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     try {
       const jahrgangIds = await challengeJahrgangIds(challengeId);
       for (const jahrgangId of jahrgangIds) {
-        await liveUpdate.sendToJahrgang(jahrgangId, 'challenge', action, data);
+        // Typ MUSS 'challenges' heissen — das ist der LiveUpdateType, auf den
+        // das Frontend subscribed (LiveUpdateContext). Mit dem frueheren
+        // 'challenge' (Singular) kam kein einziges Update an.
+        await liveUpdate.sendToJahrgang(jahrgangId, 'challenges', action, data);
       }
     } catch (err) {
       console.error('Live-Update fuer Challenge fehlgeschlagen:', err.message);
+    }
+  }
+
+  // Live-Update an die Leitung (Admins/Org-Admins/Teamer der Org) — haelt die
+  // Verwaltungsliste und den Freigaben-Tab-Badge aktuell, ohne dass jemand
+  // manuell neu laden muss. Fire-and-forget wie notifyJahrgaenge.
+  async function notifyLeadership(organizationId, action, data) {
+    try {
+      await liveUpdate.sendToOrgAdmins(organizationId, 'challenges', action, data);
+    } catch (err) {
+      console.error('Live-Update fuer Challenge-Leitung fehlgeschlagen:', err.message);
     }
   }
 
@@ -618,6 +632,8 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         if (isSubmissionPublic(created, challenge)) {
           notifyJahrgaenge(challengeId, 'submission_update', { challengeId });
         }
+        // Leitung bekommt IMMER ein Update (Liste + Freigaben-Badge).
+        notifyLeadership(req.user.organization_id, 'submission_update', { challengeId });
       } catch (err) {
         console.error('Database error in POST /challenges/konfi/:id/submissions:', err);
         res.status(500).json({ error: 'Datenbankfehler' });
@@ -1295,6 +1311,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
 
         res.json(updated);
         notifyJahrgaenge(submission.challenge_id, 'submission_update', { challengeId: submission.challenge_id });
+        notifyLeadership(req.user.organization_id, 'submission_update', { challengeId: submission.challenge_id });
       } catch (err) {
         console.error('Database error in PUT /challenges/admin/submissions/:id/moderate:', err);
         res.status(500).json({ error: 'Datenbankfehler' });
