@@ -14,7 +14,7 @@ const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-challenges)',
     rgb: '--app-color-challenges-rgb',
     title: 'Neu: Challenges',
-    text: 'Challenges sind Aufgaben, auf die deine Konfis mit eigenen Beiträgen antworten: Foto, Text, Aufnahme oder Link. Bewusst ohne Punkte, ohne Zähler, ohne Rangliste — es gibt nur ein Abzeichen fürs Mitmachen. Du findest sie im Mehr-Tab.',
+    text: 'Challenges sind Aufgaben, auf die deine Konfis mit eigenen Beiträgen antworten: Foto, Text, Aufnahme oder Link. Bewusst ohne Punkte, ohne Zähler, ohne Rangliste — es gibt nur ein Abzeichen fürs Mitmachen. Sie haben einen eigenen Tab in deiner Tab-Leiste.',
   },
   {
     icon: flagOutline,
@@ -27,8 +27,8 @@ const SLIDES: OnboardingSlide[] = [
     icon: swapHorizontalOutline,
     color: 'var(--app-color-activities)',
     rgb: '--app-color-activities-rgb',
-    title: 'Neu für die Konfis',
-    text: 'In der Konfi-Ansicht ist der Anträge-Tab entfallen: Die Anträge liegen jetzt im Events-Tab als eigenes Segment, dafür gibt es den Challenges-Tab. Deine eigenen Tabs bleiben unverändert.',
+    title: 'Auch deine Tabs sind neu',
+    text: 'Deine Tab-Leiste ist jetzt Konfis · Chat · Events · Challenges · Mehr. Die Anträge sind kein eigener Tab mehr, sondern ein Segment oben im Events-Tab. Genauso bei den Konfis: Ihre Anträge liegen jetzt im Events-Tab, dafür haben sie den Challenges-Tab.',
   },
 ];
 

@@ -35,7 +35,8 @@ import {
   timeOutline,
   closeOutline,
   compassOutline,
-  imagesOutline
+  imagesOutline,
+  sparklesOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -50,6 +51,7 @@ import SpiritFooter from '../../shared/SpiritFooter';
 import PointsHistoryModal from '../modals/PointsHistoryModal';
 import WrappedModal from '../../wrapped/WrappedModal';
 import KonfiOnboardingModal from '../modals/KonfiOnboardingModal';
+import KonfiUpdateWalkthroughModal from '../modals/KonfiUpdateWalkthroughModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import { safeUUID } from '../../../utils/uuid';
 
@@ -344,6 +346,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
 
   // App-Tour (Onboarding) erneut ansehen — Vollbild-Overlay (kein Modal)
   const [showOnboarding, setShowOnboarding] = useState(false);
+  // "Was ist neu?" — derselbe Update-Walkthrough, den Bestandsnutzer einmalig
+  // nach dem Update sehen. Hier jederzeit erneut aufrufbar.
+  const [showUpdateWalkthrough, setShowUpdateWalkthrough] = useState(false);
 
   // Modal with useIonModal Hook for Bible Translation
   const [presentBibleModal, dismissBibleModal] = useIonModal(BibleTranslationModal, {
@@ -715,6 +720,27 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                 </div>
               </div>
 
+              {/* Was ist neu — derselbe Walkthrough wie nach dem Update */}
+              <div
+                className="app-list-item app-list-item--challenges"
+                style={{ width: '100%', cursor: 'pointer' }}
+                onClick={() => setShowUpdateWalkthrough(true)}
+              >
+                <div className="app-list-item__row">
+                  <div className="app-list-item__main">
+                    <div className="app-icon-circle app-icon-circle--challenges">
+                      <IonIcon icon={sparklesOutline} />
+                    </div>
+                    <div className="app-list-item__content">
+                      <div className="app-list-item__title">Was ist neu?</div>
+                      <div className="app-list-item__meta">
+                        <span className="app-list-item__meta-item">Die Neuerungen dieser Version</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* E-Mail ändern */}
               <div
                 className="app-list-item app-list-item--purple"
@@ -859,6 +885,14 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
       {showOnboarding && (
         <KonfiOnboardingModal
           onClose={() => setShowOnboarding(false)}
+          displayName={(user?.display_name || profile.display_name || '').split(' ')[0]}
+        />
+      )}
+
+      {/* "Was ist neu?" — derselbe Walkthrough wie nach dem Update */}
+      {showUpdateWalkthrough && (
+        <KonfiUpdateWalkthroughModal
+          onClose={() => setShowUpdateWalkthrough(false)}
           displayName={(user?.display_name || profile.display_name || '').split(' ')[0]}
         />
       )}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -35,9 +35,13 @@ import {
   informationCircleOutline,
   schoolOutline,
   flag,
+  compassOutline,
+  sparklesOutline,
   document as documentIcon
 } from 'ionicons/icons';
 import InfoModal from '../../shared/InfoModal';
+import AdminOnboardingModal from '../modals/AdminOnboardingModal';
+import AdminUpdateWalkthroughModal from '../modals/AdminUpdateWalkthroughModal';
 import { useApp } from '../../../contexts/AppContext';
 // logout/clearAuth werden jetzt zentral ueber useApp().signOut() abgewickelt
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -50,6 +54,11 @@ const AdminSettingsPage: React.FC = () => {
   const { user, pushNotificationsPermission, requestPushPermissions, signOut } = useApp();
   const [presentAlert] = useIonAlert();
   const router = useIonRouter();
+
+  // Tour und Update-Hinweis jederzeit erneut aufrufbar (Vollbild-Overlays,
+  // keine Modals — identisch zum automatischen Ablauf beim ersten Start).
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showUpdateWalkthrough, setShowUpdateWalkthrough] = useState(false);
 
   const [presentInviteModal, dismissInviteModal] = useIonModal(AdminInvitePage, {
     onClose: () => dismissInviteModal(),
@@ -256,6 +265,33 @@ const AdminSettingsPage: React.FC = () => {
                 <div className="app-flex-fill">
                   <h2 className="app-settings-item__title">Benachrichtigungen</h2>
                   <p className="app-settings-item__subtitle">Chat-Nachrichten und Updates</p>
+                </div>
+              </div>
+
+              {/* App-Tour und Neuerungen jederzeit erneut ansehen */}
+              <div
+                className="app-list-item app-list-item--users app-settings-item"
+                onClick={() => setShowOnboarding(true)}
+              >
+                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
+                  <IonIcon icon={compassOutline} />
+                </div>
+                <div className="app-flex-fill">
+                  <h2 className="app-settings-item__title">App-Tour ansehen</h2>
+                  <p className="app-settings-item__subtitle">Kurze Einführung durch die App</p>
+                </div>
+              </div>
+
+              <div
+                className="app-list-item app-list-item--challenges app-settings-item"
+                onClick={() => setShowUpdateWalkthrough(true)}
+              >
+                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--challenges">
+                  <IonIcon icon={sparklesOutline} />
+                </div>
+                <div className="app-flex-fill">
+                  <h2 className="app-settings-item__title">Was ist neu?</h2>
+                  <p className="app-settings-item__subtitle">Die Neuerungen dieser Version</p>
                 </div>
               </div>
                 </div>
@@ -502,6 +538,17 @@ const AdminSettingsPage: React.FC = () => {
 
         <div className="ion-padding-bottom"></div>
       </IonContent>
+
+      {showOnboarding && (
+        <AdminOnboardingModal
+          onClose={() => setShowOnboarding(false)}
+          displayName={(user?.display_name || '').split(' ')[0]}
+        />
+      )}
+
+      {showUpdateWalkthrough && (
+        <AdminUpdateWalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
+      )}
     </IonPage>
   );
 };

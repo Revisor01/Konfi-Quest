@@ -14,7 +14,7 @@ const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-challenges)',
     rgb: '--app-color-challenges-rgb',
     title: 'Neu: Challenges',
-    text: 'Challenges sind Impulse für deine Gruppe: Die Konfis antworten mit Foto, Text, Aufnahme oder Link. Es gibt keine Punkte und keine Rangliste — nur ein Abzeichen fürs Mitmachen. Den Einstieg findest du auf deiner Startseite.',
+    text: 'Challenges sind Impulse für deine Gruppe: Die Konfis antworten mit Foto, Text, Aufnahme oder Link. Es gibt keine Punkte und keine Rangliste — nur ein Abzeichen fürs Mitmachen. Sie haben einen eigenen Tab in deiner Tab-Leiste.',
   },
   {
     icon: flagOutline,
@@ -27,8 +27,8 @@ const SLIDES: OnboardingSlide[] = [
     icon: swapHorizontalOutline,
     color: 'var(--app-color-activities)',
     rgb: '--app-color-activities-rgb',
-    title: 'Neu für die Konfis',
-    text: 'Für die Konfis hat sich die Navigation geändert: Ihre Anträge liegen jetzt im Events-Tab als eigenes Segment, dafür gibt es den Challenges-Tab. Bei deinen eigenen Tabs bleibt alles wie gewohnt.',
+    title: 'Auch deine Tabs sind neu',
+    text: 'Deine Tab-Leiste ist jetzt Start · Chat · Events · Challenges · Badges. Den Aktivitäten-Tab gibt es nicht mehr: Deine Anträge liegen jetzt oben im Events-Tab als eigenes Segment. Bei den Konfis ist es genauso — dafür haben sie den Challenges-Tab.',
   },
 ];
 

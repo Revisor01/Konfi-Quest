@@ -36,6 +36,8 @@ import {
   arrowBack,
   imagesOutline,
   bookOutline,
+  compassOutline,
+  sparklesOutline,
   document as documentIcon
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -49,6 +51,8 @@ import ChangePasswordModal from '../../konfi/modals/ChangePasswordModal';
 import ChangeRoleTitleModal from '../../admin/modals/ChangeRoleTitleModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
 import SpiritFooter from '../../shared/SpiritFooter';
+import TeamerOnboardingModal from '../modals/TeamerOnboardingModal';
+import TeamerUpdateWalkthroughModal from '../modals/TeamerUpdateWalkthroughModal';
 import WrappedModal from '../../wrapped/WrappedModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -169,6 +173,9 @@ const TeamerProfilePage: React.FC = () => {
 
   // Wrapped-Historie
   const [wrappedHistory, setWrappedHistory] = useState<WrappedHistoryEntry[]>([]);
+  // Tour und Update-Hinweis jederzeit erneut aufrufbar (Vollbild-Overlays).
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showUpdateWalkthrough, setShowUpdateWalkthrough] = useState(false);
 
   React.useEffect(() => {
     if (!user?.id) return;
@@ -498,6 +505,33 @@ const TeamerProfilePage: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              {/* App-Tour und Neuerungen jederzeit erneut ansehen */}
+              <div
+                className="app-list-item app-settings-item app-list-item--teamer"
+                onClick={() => setShowOnboarding(true)}
+              >
+                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--teamer">
+                  <IonIcon icon={compassOutline} />
+                </div>
+                <div className="app-flex-fill">
+                  <h2 className="app-settings-item__title">App-Tour ansehen</h2>
+                  <p className="app-settings-item__subtitle">Kurze Einführung durch die App</p>
+                </div>
+              </div>
+
+              <div
+                className="app-list-item app-settings-item app-list-item--challenges"
+                onClick={() => setShowUpdateWalkthrough(true)}
+              >
+                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--challenges">
+                  <IonIcon icon={sparklesOutline} />
+                </div>
+                <div className="app-flex-fill">
+                  <h2 className="app-settings-item__title">Was ist neu?</h2>
+                  <p className="app-settings-item__subtitle">Die Neuerungen dieser Version</p>
+                </div>
+              </div>
             </IonCardContent>
           </IonCard>
         </IonList>
@@ -584,6 +618,17 @@ const TeamerProfilePage: React.FC = () => {
 
         <div style={{ height: '32px' }} />
       </IonContent>
+
+      {showOnboarding && (
+        <TeamerOnboardingModal
+          onClose={() => setShowOnboarding(false)}
+          displayName={(user?.display_name || '').split(' ')[0]}
+        />
+      )}
+
+      {showUpdateWalkthrough && (
+        <TeamerUpdateWalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
+      )}
     </IonPage>
   );
 };
