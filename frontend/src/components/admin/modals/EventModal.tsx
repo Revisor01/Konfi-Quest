@@ -15,7 +15,7 @@ import { Event, Category, Timeslot, Jahrgang } from '../../../types/event';
 import {
   BasicInfoSection, CheckinSection,
   PointsParticipantsSection, CategoriesTargetSection,
-  WaitlistSection, TeamerCapacitySection, SeriesSection
+  WaitlistSection, TeamerSection, SeriesSection
 } from './EventFormSections';
 import type { EventFormData } from './EventFormSections';
 import { safeUUID } from '../../../utils/uuid';
@@ -291,12 +291,13 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
       </IonHeader>
 
       <IonContent className="app-gradient-background">
-        {/* EVENT GRUNDDATEN (inkl. Pflicht-Event, Mitbringen, Teamer-Zugang) */}
-        <BasicInfoSection formData={formData} setFormData={setFormData}
-          teamerAccess={teamerAccess} setTeamerAccess={setTeamerAccess} loading={loading} />
+        {/* Reihenfolge (User-Entscheid 07.08.): Grunddaten -> Datum & Zeit
+            (+ Serie) -> Zeitfenster -> Warteliste -> Punkte & Teilnehmer ->
+            Teamer:innen (Zugang + Kontingent) -> QR-Check-in -> Kategorien &
+            Zielgruppe. */}
 
-        {/* QR CHECK-IN FENSTER */}
-        <CheckinSection formData={formData} setFormData={setFormData} loading={loading} />
+        {/* EVENT GRUNDDATEN (inkl. Pflicht-Event und Mitbringen) */}
+        <BasicInfoSection formData={formData} setFormData={setFormData} loading={loading} />
 
         {/* DATUM & ZEIT */}
         <IonList inset={true} className="app-modal-section">
@@ -331,6 +332,11 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
           </IonCardContent>
           </IonCard>
         </IonList>
+
+        {/* SERIEN-EVENT — direkt bei Datum & Zeit (nur beim Anlegen) */}
+        {!event && (
+          <SeriesSection formData={formData} setFormData={setFormData} loading={loading} />
+        )}
 
         {/* ZEITFENSTER — nicht bei Pflicht-Events und nicht bei Konfirmationen
             (beide haben feste Termine fuer den ganzen Jahrgang) */}
@@ -432,29 +438,26 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         ))}
         </>)}
 
+        {/* WARTELISTE — direkt nach den Zeitfenstern */}
+        {!formData.mandatory && teamerAccess !== 'teamer_only' && (
+          <WaitlistSection formData={formData} setFormData={setFormData} loading={loading} />
+        )}
+
         {/* PUNKTE & TEILNEHMER */}
         {!formData.mandatory && teamerAccess !== 'teamer_only' && (
           <PointsParticipantsSection formData={formData} setFormData={setFormData} loading={loading} />
         )}
 
+        {/* TEAMER:INNEN — Zugang immer, Kontingent/Warteliste bei Zugang != "Nur Konfis" */}
+        <TeamerSection formData={formData} setFormData={setFormData}
+          teamerAccess={teamerAccess} setTeamerAccess={setTeamerAccess} loading={loading} />
+
+        {/* QR CHECK-IN FENSTER */}
+        <CheckinSection formData={formData} setFormData={setFormData} loading={loading} />
+
         {/* KATEGORIEN & ZIELGRUPPE */}
         <CategoriesTargetSection formData={formData} setFormData={setFormData}
           categories={categories} jahrgaenge={jahrgaenge} teamerAccess={teamerAccess} loading={loading} />
-
-        {/* WARTELISTE */}
-        {!formData.mandatory && teamerAccess !== 'teamer_only' && (
-          <WaitlistSection formData={formData} setFormData={setFormData} loading={loading} />
-        )}
-
-        {/* TEAMER-PLAETZE — nur bei "Teamer gesucht" oder "Nur Teamer:innen" */}
-        {teamerAccess !== 'normal' && (
-          <TeamerCapacitySection formData={formData} setFormData={setFormData} loading={loading} />
-        )}
-
-        {/* SERIEN-EVENT */}
-        {!event && (
-          <SeriesSection formData={formData} setFormData={setFormData} loading={loading} />
-        )}
       </IonContent>
 
       {/* DateTime Modals */}
