@@ -337,7 +337,7 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
           <IonRefresherContent />
         </IonRefresher>
 
-        {/* Kopf: Challenge-Info */}
+        {/* Kopf: Challenge-Info — drei Kacheln (Ausgeblendetes zaehlt niemand nach) */}
         <SectionHeader
           title={challenge.title}
           subtitle={challenge.moderated ? 'Beiträge brauchen eine Freigabe' : 'Beiträge erscheinen sofort'}
@@ -346,10 +346,24 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
           stats={[
             { value: counts.total, label: 'Gesamt' },
             { value: counts.pending, label: 'Offen' },
-            { value: counts.approved, label: 'Freigegeben' },
-            { value: counts.hidden, label: 'Ausgeblendet' }
+            { value: counts.approved, label: 'Freigegeben' }
           ]}
         />
+
+        {/* Aufgabentext — die Leitung muss sehen, was den Konfis gestellt wurde */}
+        {challenge.description && (
+          <div
+            className="app-info-box app-info-box--challenges"
+            style={{ borderRadius: '12px', margin: '16px 16px 0 16px' }}
+          >
+            <div style={{ whiteSpace: 'pre-wrap' }}>{challenge.description}</div>
+            {(challenge.author_name || challenge.author_freetext) && (
+              <div style={{ marginTop: '8px', fontWeight: 600 }}>
+                Gestellt von {challenge.author_name || challenge.author_freetext}
+              </div>
+            )}
+          </div>
+        )}
 
         <div style={{ margin: '16px 16px 8px 16px' }}>
           <IonSegment value={statusFilter} onIonChange={(e) => setStatusFilter(e.detail.value as StatusFilter)}>

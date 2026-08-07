@@ -19,9 +19,10 @@ import {
   timeOutline,
   peopleOutline,
   eyeOutline,
-  eyeOffOutline
+  eyeOffOutline,
+  archiveOutline
 } from 'ionicons/icons';
-import { SectionHeader, ListSection, StatusBadge, ChallengeLegendModal } from '../../shared';
+import { SectionHeader, ListSection, ChallengeLegendModal } from '../../shared';
 import type { AdminChallenge, ChallengeStatus } from '../../../types/challenges';
 
 // Gemeinsame Verwaltungs-Ansicht fuer Admin UND Teamer. Bewusst ohne eigenen
@@ -64,17 +65,19 @@ const STATUS_COLOR: Record<ChallengeStatus, string> = {
   ended: '#6b7280'
 };
 
+// Jeder Status hat sein EIGENES Icon (User-Feedback 07.08.: vier Mal Flagge
+// hilft niemandem). Muss mit ChallengeLegendModal uebereinstimmen.
+const STATUS_ICON: Record<ChallengeStatus, string> = {
+  draft: createOutline,
+  scheduled: calendarOutline,
+  active: flag,
+  ended: archiveOutline
+};
+
 const VISIBILITY_LABEL: Record<string, string> = {
   public: 'Öffentlich',
   konfi_choice: 'Konfi entscheidet',
   private: 'Nicht öffentlich'
-};
-
-const TYPE_LABEL: Record<string, string> = {
-  wahrnehmung: 'Wahrnehmung',
-  beitrag: 'Beitrag',
-  praxis: 'Praxis',
-  frei: 'Frei'
 };
 
 const formatDate = (value?: string | null) => {
@@ -181,12 +184,6 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
           const statusColor = STATUS_COLOR[status];
           const isArchived = status === 'ended';
           const pending = challenge.pending_count || 0;
-          // Backend liefert den aufgeloesten Urheber als author_name
-          // (COALESCE aus users.display_name und author_freetext).
-          const authorName = challenge.author_name
-            || challenge.author_display_name
-            || challenge.author_freetext
-            || '';
 
           return (
             <IonItemSliding
@@ -231,7 +228,14 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                         <div className="app-corner-badges__separator" />
                       </>
                     )}
-                    <StatusBadge statusText={STATUS_LABEL[status]} statusColor={statusColor} />
+                    {/* Status als Symbol-Badge (wie in der Moderation), Legende erklaert */}
+                    <div
+                      className="app-corner-badge"
+                      style={{ backgroundColor: statusColor, padding: '4px 6px' }}
+                      title={STATUS_LABEL[status]}
+                    >
+                      <IonIcon icon={STATUS_ICON[status]} style={{ color: '#fff', fontSize: '0.85rem', display: 'block' }} />
+                    </div>
                   </div>
 
                   <div className="app-list-item__row">
@@ -240,7 +244,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                         className="app-icon-circle app-icon-circle--lg"
                         style={{ backgroundColor: statusColor }}
                       >
-                        <IonIcon icon={flag} />
+                        <IonIcon icon={STATUS_ICON[status]} />
                       </div>
 
                       <div className="app-list-item__content">
@@ -263,8 +267,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                             whiteSpace: 'nowrap'
                           }}
                         >
-                          {TYPE_LABEL[challenge.challenge_type] || 'Frei'}
-                          {authorName ? ` · Gestellt von ${authorName}` : ''}
+                          {challenge.description}
                         </div>
 
                         <div className="app-list-item__meta">
@@ -335,4 +338,4 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
 };
 
 export default ChallengesManageView;
-export { STATUS_LABEL, STATUS_COLOR, VISIBILITY_LABEL, TYPE_LABEL };
+export { STATUS_LABEL, STATUS_COLOR, STATUS_ICON, VISIBILITY_LABEL };

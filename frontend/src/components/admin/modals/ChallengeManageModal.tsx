@@ -35,7 +35,6 @@ import {
   calendarOutline,
   chevronDownOutline,
   lockClosedOutline,
-  personOutline,
   ribbonOutline,
   // Icon-Auswahl (identische Auswahl wie im Badge-Modal)
   trophy,
@@ -95,7 +94,6 @@ import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import type {
   AdminChallenge,
-  ChallengeType,
   ChallengeVisibility,
   ChallengeMediaType
 } from '../../../types/challenges';
@@ -169,13 +167,6 @@ const CHALLENGE_ICONS: Record<string, { icon: string; name: string; category: st
 export const getChallengeIcon = (iconName?: string): string =>
   CHALLENGE_ICONS[iconName || '']?.icon || flag;
 
-const CHALLENGE_TYPES: { value: ChallengeType; label: string }[] = [
-  { value: 'wahrnehmung', label: 'Wahrnehmung' },
-  { value: 'beitrag', label: 'Beitrag' },
-  { value: 'praxis', label: 'Praxis' },
-  { value: 'frei', label: 'Frei' }
-];
-
 const VISIBILITY_OPTIONS: { value: ChallengeVisibility; label: string; hint: string }[] = [
   {
     value: 'public',
@@ -246,10 +237,12 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
 
   const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
 
+  // Bewusst OHNE challenge_type: die Typen (Wahrnehmung/Beitrag/Praxis) hatten
+  // nie einen funktionalen Effekt und sind aus dem Formular gestrichen
+  // (User-Entscheid 07.08.). Die Spalte bleibt im Backend bestehen.
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    challenge_type: 'frei' as ChallengeType,
     visibility: 'konfi_choice' as ChallengeVisibility,
     moderated: true,
     allowed_media: ['text', 'photo'] as ChallengeMediaType[],
@@ -280,7 +273,6 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
         setFormData({
           title: challenge.title || '',
           description: challenge.description || '',
-          challenge_type: (challenge.challenge_type as ChallengeType) || 'frei',
           visibility: (challenge.visibility as ChallengeVisibility) || 'konfi_choice',
           moderated: challenge.moderated !== false,
           allowed_media: (challenge.allowed_media as ChallengeMediaType[]) || ['text', 'photo'],
@@ -358,7 +350,6 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
     const payload: Record<string, any> = {
       title: formData.title.trim(),
       description: formData.description.trim(),
-      challenge_type: formData.challenge_type,
       allow_multiple: formData.allow_multiple,
       badge_icon: formData.badge_icon,
       badge_name: formData.badge_name.trim(),
@@ -492,35 +483,70 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                         disabled={loading}
                       />
                     </IonItem>
+                    <IonItem lines="none">
+                      <IonLabel position="stacked">Gestellt von (optional)</IonLabel>
+                      <IonInput
+                        value={formData.author_freetext}
+                        onIonInput={(e) => setFormData({ ...formData, author_freetext: e.detail.value! })}
+                        placeholder="z.B. Pastor Simon, Konfi-Team Hennstedt"
+                        clearInput={true}
+                        disabled={loading}
+                        maxlength={200}
+                      />
+                    </IonItem>
                     <div className="app-info-box app-info-box--challenges" style={{ borderRadius: '10px', marginTop: '8px' }}>
                       Beschreibe auch, was mit den Beiträgen passiert — ob sie im Gottesdienst
                       vorkommen, in der Gruppe gezeigt werden oder nur bei euch bleiben.
                     </div>
+                  </IonList>
+                </IonCardContent>
+              </IonCard>
+            </IonList>
 
-                    <IonItem lines="none" style={{ '--background': 'transparent', paddingTop: '16px' }}>
-                      <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>
-                        Art der Challenge
-                      </IonLabel>
-                    </IonItem>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {CHALLENGE_TYPES.map((type) => (
+            {/* SEKTION: Medienarten */}
+            <IonList inset={true} className="app-modal-section">
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--challenges">
+                  <IonIcon icon={imagesOutline} />
+                </div>
+                <IonLabel>Erlaubte Medienarten</IonLabel>
+              </IonListHeader>
+              <IonCard className="app-card">
+                <IonCardContent>
+                  <IonItem lines="none" style={{ '--background': 'transparent', paddingBottom: '8px' }}>
+                    <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: formData.allowed_media.length === 0 ? '#dc3545' : '#666' }}>
+                      Mehrere möglich *
+                      {formData.allowed_media.length > 0 && (
+                        <span style={{ marginLeft: '8px', fontSize: '0.8rem', color: 'var(--app-color-challenges)', fontWeight: 'normal' }}>
+                          ({formData.allowed_media.length} ausgewählt)
+                        </span>
+                      )}
+                    </IonLabel>
+                  </IonItem>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {MEDIA_OPTIONS.map((option) => {
+                      const isSelected = formData.allowed_media.includes(option.value);
+                      return (
                         <div
-                          key={type.value}
-                          className={`app-list-item app-list-item--challenges${formData.challenge_type === type.value ? ' app-list-item--selected' : ''}`}
-                          onClick={() => !loading && setFormData({ ...formData, challenge_type: type.value })}
+                          key={option.value}
+                          className={`app-list-item app-list-item--challenges${isSelected ? ' app-list-item--selected' : ''}`}
+                          onClick={() => toggleMedia(option.value)}
                           style={{
-                            cursor: loading ? 'default' : 'pointer',
-                            opacity: loading ? 0.6 : 1,
-                            display: 'flex',
-                            alignItems: 'center',
+                            cursor: loading || isStarted ? 'default' : 'pointer',
+                            opacity: isStarted && !isSelected ? 0.4 : loading ? 0.6 : 1,
                             marginBottom: '0'
                           }}
                         >
-                          <span style={{ fontWeight: '500', color: '#333' }}>{type.label}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div className="app-list-item__title">{option.label}</div>
+                            <div className="app-list-item__subtitle" style={{ whiteSpace: 'normal' }}>
+                              {option.hint}
+                            </div>
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </IonList>
+                      );
+                    })}
+                  </div>
                 </IonCardContent>
               </IonCard>
             </IonList>
@@ -604,54 +630,6 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                       onIonChange={(e) => setFormData({ ...formData, allow_multiple: e.detail.checked })}
                     />
                   </IonItem>
-                </IonCardContent>
-              </IonCard>
-            </IonList>
-
-            {/* SEKTION: Medienarten */}
-            <IonList inset={true} className="app-modal-section">
-              <IonListHeader>
-                <div className="app-section-icon app-section-icon--challenges">
-                  <IonIcon icon={imagesOutline} />
-                </div>
-                <IonLabel>Erlaubte Medienarten</IonLabel>
-              </IonListHeader>
-              <IonCard className="app-card">
-                <IonCardContent>
-                  <IonItem lines="none" style={{ '--background': 'transparent', paddingBottom: '8px' }}>
-                    <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: formData.allowed_media.length === 0 ? '#dc3545' : '#666' }}>
-                      Mehrere möglich *
-                      {formData.allowed_media.length > 0 && (
-                        <span style={{ marginLeft: '8px', fontSize: '0.8rem', color: 'var(--app-color-challenges)', fontWeight: 'normal' }}>
-                          ({formData.allowed_media.length} ausgewählt)
-                        </span>
-                      )}
-                    </IonLabel>
-                  </IonItem>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {MEDIA_OPTIONS.map((option) => {
-                      const isSelected = formData.allowed_media.includes(option.value);
-                      return (
-                        <div
-                          key={option.value}
-                          className={`app-list-item app-list-item--challenges${isSelected ? ' app-list-item--selected' : ''}`}
-                          onClick={() => toggleMedia(option.value)}
-                          style={{
-                            cursor: loading || isStarted ? 'default' : 'pointer',
-                            opacity: isStarted && !isSelected ? 0.4 : loading ? 0.6 : 1,
-                            marginBottom: '0'
-                          }}
-                        >
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div className="app-list-item__title">{option.label}</div>
-                            <div className="app-list-item__subtitle" style={{ whiteSpace: 'normal' }}>
-                              {option.hint}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
                 </IonCardContent>
               </IonCard>
             </IonList>
@@ -740,37 +718,6 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                   <div className="app-info-box app-info-box--challenges" style={{ borderRadius: '10px', marginTop: '12px' }}>
                     Das Abzeichen bekommt jeder Konfi, der mindestens einen Beitrag einreicht.
                     Es wird bewusst nicht gezählt und fließt in keine Punkte oder Ranglisten ein.
-                  </div>
-                </IonCardContent>
-              </IonCard>
-            </IonList>
-
-            {/* SEKTION: Urheber */}
-            <IonList inset={true} className="app-modal-section">
-              <IonListHeader>
-                <div className="app-section-icon app-section-icon--challenges">
-                  <IonIcon icon={personOutline} />
-                </div>
-                <IonLabel>Wer stellt die Challenge?</IonLabel>
-              </IonListHeader>
-              <IonCard className="app-card">
-                <IonCardContent>
-                  <IonList>
-                    <IonItem lines="none">
-                      <IonLabel position="stacked">Gestellt von (optional)</IonLabel>
-                      <IonInput
-                        value={formData.author_freetext}
-                        onIonInput={(e) => setFormData({ ...formData, author_freetext: e.detail.value! })}
-                        placeholder="z.B. Pastor Simon, Konfi-Team Hennstedt"
-                        clearInput={true}
-                        disabled={loading}
-                        maxlength={200}
-                      />
-                    </IonItem>
-                  </IonList>
-                  <div className="app-info-box app-info-box--challenges" style={{ borderRadius: '10px', marginTop: '8px' }}>
-                    Wird den Konfis als "Gestellt von ..." angezeigt. Leer lassen, wenn niemand
-                    genannt werden soll.
                   </div>
                 </IonCardContent>
               </IonCard>

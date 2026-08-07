@@ -5,7 +5,8 @@ import {
 } from '@ionic/react';
 import {
   closeOutline, flag, timeOutline, checkmarkOutline, removeCircleOutline,
-  eyeOffOutline, lockClosedOutline, paperPlaneOutline,
+  eyeOffOutline, lockClosedOutline, paperPlaneOutline, calendarOutline,
+  createOutline, archiveOutline,
 } from 'ionicons/icons';
 
 export interface ChallengeLegendModalProps {
@@ -23,9 +24,8 @@ interface LegendEntry {
 // ChallengesManageView (Listen-Badges) und ChallengeModerationModal
 // (STATUS_BADGE/CONSENT_BADGE) uebereinstimmen.
 
-// Status-Badges in der Challenge-Liste (ChallengesManageView, STATUS_COLOR).
-// Diese Status-Texte haben KEIN Icon in STATUS_ICON_MAP -> reine Text-Badges,
-// hier trotzdem mit einem neutralen Kreis-Icon dargestellt, um Farbe zu zeigen.
+// Status-Badges in der Challenge-Liste — Farbe UND Icon identisch zu
+// STATUS_COLOR/STATUS_ICON in ChallengesManageView (jeder Status eigenes Icon).
 const STATUS_ENTRIES: LegendEntry[] = [
   {
     color: '#059669',
@@ -35,19 +35,19 @@ const STATUS_ENTRIES: LegendEntry[] = [
   },
   {
     color: '#007aff',
-    icon: flag,
+    icon: calendarOutline,
     label: 'Geplant',
     description: 'Die Challenge startet erst noch.',
   },
   {
     color: '#8e8e93',
-    icon: flag,
+    icon: createOutline,
     label: 'Entwurf',
     description: 'Die Challenge ist noch nicht veröffentlicht.',
   },
   {
     color: '#6b7280',
-    icon: flag,
+    icon: archiveOutline,
     label: 'Beendet',
     description: 'Die Challenge ist abgelaufen (Archiv).',
   },
