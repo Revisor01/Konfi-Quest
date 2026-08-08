@@ -10,6 +10,9 @@ import {
   IonButtons,
   IonButton,
   IonIcon,
+  IonSegment,
+  IonSegmentButton,
+  IonLabel,
   useIonModal,
   useIonAlert
 } from '@ionic/react';
@@ -28,6 +31,7 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import ChallengesManageView from '../../admin/views/ChallengesManageView';
 import ChallengeManageModal from '../../admin/modals/ChallengeManageModal';
 import ChallengeModerationModal from '../../admin/modals/ChallengeModerationModal';
+import { ChallengeParticipationPanel } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import type { AdminChallenge } from '../../../types/challenges';
 
@@ -43,6 +47,7 @@ const TeamerChallengesPage: React.FC = () => {
   );
 
   const [presentAlert] = useIonAlert();
+  const [segment, setSegment] = useState<'verwalten' | 'mitmachen'>('verwalten');
 
   const [editChallenge, setEditChallenge] = useState<AdminChallenge | null>(null);
   const [moderationChallenge, setModerationChallenge] = useState<AdminChallenge | null>(null);
@@ -129,9 +134,11 @@ const TeamerChallengesPage: React.FC = () => {
           </IonButtons>
           <IonTitle>Challenges</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={openCreate} title="Neue Challenge">
-              <IonIcon icon={add} />
-            </IonButton>
+            {segment === 'verwalten' && (
+              <IonButton onClick={openCreate} title="Neue Challenge">
+                <IonIcon icon={add} />
+              </IonButton>
+            )}
           </IonButtons>
         </IonToolbar>
       </IonHeader>
@@ -150,7 +157,28 @@ const TeamerChallengesPage: React.FC = () => {
           <IonRefresherContent />
         </IonRefresher>
 
-        {loading ? (
+        {/* Verwalten | Mitmachen — Teamer:innen koennen bei Challenges mit
+            Team-Teilnahme selbst Beitraege einreichen (Migration 121). */}
+        <div style={{ margin: '16px 16px 0 16px' }}>
+          <IonSegment
+            value={segment}
+            onIonChange={(e) => setSegment(e.detail.value as 'verwalten' | 'mitmachen')}
+          >
+            <IonSegmentButton value="verwalten">
+              <IonLabel>Verwalten</IonLabel>
+            </IonSegmentButton>
+            <IonSegmentButton value="mitmachen">
+              <IonLabel>Mitmachen</IonLabel>
+            </IonSegmentButton>
+          </IonSegment>
+        </div>
+
+        {segment === 'mitmachen' ? (
+          <ChallengeParticipationPanel
+            presentingElement={pageRef.current || presentingElement}
+            cacheKeyPrefix="teamer:challenges:teilnahme"
+          />
+        ) : loading ? (
           <LoadingSpinner message="Challenges werden geladen..." />
         ) : (
           <ChallengesManageView
@@ -158,6 +186,7 @@ const TeamerChallengesPage: React.FC = () => {
             onSelectChallenge={openModeration}
             onEditChallenge={openEdit}
             onDeleteChallenge={handleDelete}
+            presentingElement={pageRef.current || presentingElement}
           />
         )}
       </IonContent>

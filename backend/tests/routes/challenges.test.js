@@ -53,6 +53,7 @@ describe('Challenges Routes', () => {
       title: 'Testchallenge',
       description: 'Beschreibung der Testchallenge',
       challenge_type: 'frei',
+      audience: 'konfis',
       visibility: 'konfi_choice',
       moderated: true,
       allowed_media: ['text', 'photo', 'audio', 'video', 'link'],
@@ -67,14 +68,14 @@ describe('Challenges Routes', () => {
     };
     const { rows: [row] } = await db.query(
       `INSERT INTO challenges
-         (organization_id, title, description, challenge_type, visibility, moderated,
+         (organization_id, title, description, challenge_type, audience, visibility, moderated,
           allowed_media, allow_multiple, badge_icon, badge_name, created_by,
           starts_at, ends_at, is_draft)
-       VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8,$9,$10,$11,$12,$13,$14)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,$10,$11,$12,$13,$14,$15)
        RETURNING *`,
       [
         opts.organization_id, opts.title, opts.description, opts.challenge_type,
-        opts.visibility, opts.moderated, JSON.stringify(opts.allowed_media),
+        opts.audience, opts.visibility, opts.moderated, JSON.stringify(opts.allowed_media),
         opts.allow_multiple, opts.badge_icon, opts.badge_name, opts.created_by,
         opts.starts_at, opts.ends_at, opts.is_draft,
       ]
@@ -1353,6 +1354,259 @@ describe('Challenges Routes', () => {
       expect(res.status).toBe(200);
 
       await fs.promises.rm(path.join(dir, filename), { force: true });
+    });
+  });
+
+  // ================================================================
+  // Teilnahme-Kreis (audience, Migration 121)
+  //
+  // Kern der Entscheidung vom 08.08.2026: Das Team darf mitmachen, nicht nur
+  // moderieren. audience regelt WER einreicht (visibility bleibt: wer SIEHT).
+  // ================================================================
+  describe('Teilnahme-Kreis (audience)', () => {
+    it("audience='konfis': Teamer darf NICHT einreichen -> 403", async () => {
+      const challenge = await createChallenge({ audience: 'konfis' });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+
+      const res = await request(app)
+        .post(`/api/challenges/konfi/${challenge.id}/submissions`)
+        .set('Authorization', `Bearer ${teamer1Token}`)
+        .send({ media_type: 'text', text_content: 'Teamer-Beitrag' });
+      expect(res.status).toBe(403);
+    });
+
+    it("audience='konfis_und_team': Teamer UND Konfi duerfen einreichen", async () => {
+      const challenge = await createChallenge({ audience: 'konfis_und_team' });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+
+      const teamerRes = await request(app)
+        .post(`/api/challenges/konfi/${challenge.id}/submissions`)
+        .set('Authorization', `Bearer ${teamer1Token}`)
+        .send({ media_type: 'text', text_content: 'Teamer-Beitrag' });
+      expect(teamerRes.status).toBe(201);
+
+      const konfiRes = await request(app)
+        .post(`/api/challenges/konfi/${challenge.id}/submissions`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({ media_type: 'text', text_content: 'Konfi-Beitrag' });
+      expect(konfiRes.status).toBe(201);
+    });
+
+    it("audience='nur_team': Konfi sieht die Challenge NICHT (Detail -> 404, Liste leer)", async () => {
+      const challenge = await createChallenge({ audience: 'nur_team' });
+
+      const detail = await request(app)
+        .get(`/api/challenges/konfi/${challenge.id}`)
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      expect(detail.status).toBe(404);
+
+      const list = await request(app)
+        .get('/api/challenges/konfi')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      expect(list.status).toBe(200);
+      expect(list.body.active.map((c) => c.id)).not.toContain(challenge.id);
+    });
+
+    it("audience='nur_team': Konfi kann NICHT einreichen -> 403", async () => {
+      const challenge = await createChallenge({ audience: 'nur_team' });
+
+      const res = await request(app)
+        .post(`/api/challenges/konfi/${challenge.id}/submissions`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({ media_type: 'text', text_content: 'Konfi will mitmachen' });
+      expect(res.status).toBe(403);
+    });
+
+    it("audience='nur_team' ist ORG-WEIT: Teamer OHNE Jahrgangs-Zuordnung darf einreichen", async () => {
+      // Bewusst KEIN assignJahrgang — 'nur_team' laeuft ueber die Rolle.
+      const challenge = await createChallenge({ audience: 'nur_team' });
+
+      const res = await request(app)
+        .post(`/api/challenges/konfi/${challenge.id}/submissions`)
+        .set('Authorization', `Bearer ${teamer1Token}`)
+        .send({ media_type: 'text', text_content: 'Team-Runde' });
+      expect(res.status).toBe(201);
+
+      const list = await request(app)
+        .get('/api/challenges/konfi')
+        .set('Authorization', `Bearer ${teamer1Token}`);
+      expect(list.body.active.map((c) => c.id)).toContain(challenge.id);
+    });
+
+    it("audience='nur_team': Org-Isolation haelt (Teamer einer FREMDEN Org -> 403)", async () => {
+      const challenge = await createChallenge({ audience: 'nur_team' });
+
+      const res = await request(app)
+        .post(`/api/challenges/konfi/${challenge.id}/submissions`)
+        .set('Authorization', `Bearer ${teamer2Token}`)
+        .send({ media_type: 'text', text_content: 'Fremde Org' });
+      expect([403, 404]).toContain(res.status);
+    });
+
+    it('audience nach Start aendern -> 409 (Konsens-Integritaet wie visibility)', async () => {
+      const challenge = await createChallenge({ audience: 'konfis' });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+
+      const res = await request(app)
+        .put(`/api/challenges/admin/${challenge.id}`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ audience: 'konfis_und_team' });
+      expect(res.status).toBe(409);
+      expect(res.body.error).toMatch(/Teilnahme-Kreis/);
+    });
+
+    it("Wechsel auf 'nur_team' vor dem Start raeumt Jahrgangs-Zuordnungen ab", async () => {
+      const challenge = await createChallenge({
+        audience: 'konfis',
+        is_draft: true,
+        starts_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+
+      const res = await request(app)
+        .put(`/api/challenges/admin/${challenge.id}`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ audience: 'nur_team' });
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query(
+        'SELECT 1 FROM challenge_jahrgang_assignments WHERE challenge_id = $1',
+        [challenge.id]
+      );
+      expect(rows).toHaveLength(0);
+    });
+
+    it('Galerie liefert Rolle und Jahrgang des Verfassers (Herkunft transparent)', async () => {
+      const challenge = await createChallenge({
+        audience: 'konfis_und_team',
+        visibility: 'public',
+        moderated: false,
+      });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      await createSubmission({
+        challenge_id: challenge.id,
+        user_id: USERS.teamer1.id,
+        moderation_status: 'approved',
+      });
+
+      const res = await request(app)
+        .get(`/api/challenges/konfi/${challenge.id}`)
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      expect(res.status).toBe(200);
+      expect(res.body.gallery).toHaveLength(1);
+      expect(res.body.gallery[0].role_name).toBe('teamer');
+      expect(res.body.gallery[0].display_name).toBeTruthy();
+    });
+
+    it('Anonyme Beitraege liefern WEDER Name NOCH Rolle/Jahrgang', async () => {
+      const { challenge } = await setupChallengeWithForeignSubmission(
+        { audience: 'konfis_und_team', visibility: 'konfi_choice' },
+        { konfi_consent: 'anonymous', moderation_status: 'approved' }
+      );
+
+      const res = await request(app)
+        .get(`/api/challenges/konfi/${challenge.id}`)
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      expect(res.body.gallery[0].display_name).toBeNull();
+      expect(res.body.gallery[0].role_name).toBeNull();
+      expect(res.body.gallery[0].jahrgang_name).toBeNull();
+      expect(res.body.gallery[0].is_anonymous).toBe(true);
+    });
+  });
+
+  // ================================================================
+  // Nachtraegliche Anonymisierung durch die Leitung (User-Wunsch 08.08.2026)
+  // ================================================================
+  describe('Moderation: anonymize / deanonymize', () => {
+    it('anonymize setzt konfi_consent auf anonymous -> Galerie zeigt keinen Namen', async () => {
+      const { challenge, submission } = await setupChallengeWithForeignSubmission(
+        { visibility: 'konfi_choice' },
+        { konfi_consent: 'publish', moderation_status: 'approved' }
+      );
+
+      const res = await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ action: 'anonymize' });
+      expect(res.status).toBe(200);
+      expect(res.body.konfi_consent).toBe('anonymous');
+
+      const detail = await request(app)
+        .get(`/api/challenges/konfi/${challenge.id}`)
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      expect(detail.body.gallery[0].display_name).toBeNull();
+    });
+
+    it('deanonymize macht den Namen wieder sichtbar', async () => {
+      const { challenge, submission } = await setupChallengeWithForeignSubmission(
+        { visibility: 'konfi_choice' },
+        { konfi_consent: 'anonymous', moderation_status: 'approved' }
+      );
+
+      const res = await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ action: 'deanonymize' });
+      expect(res.status).toBe(200);
+      expect(res.body.konfi_consent).toBe('publish');
+
+      const detail = await request(app)
+        .get(`/api/challenges/konfi/${challenge.id}`)
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      expect(detail.body.gallery[0].display_name).toBeTruthy();
+    });
+
+    it("consent='private' laesst sich NICHT aufweichen -> 409 (staerkste Zusage des Konfi)", async () => {
+      const { submission } = await setupChallengeWithForeignSubmission(
+        { visibility: 'konfi_choice' },
+        { konfi_consent: 'private', moderation_status: 'approved' }
+      );
+
+      const res = await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ action: 'deanonymize' });
+      expect(res.status).toBe(409);
+    });
+
+    it('anonymize bei visibility=public -> 409 (dort gibt es keinen Konsens)', async () => {
+      const { submission } = await setupChallengeWithForeignSubmission(
+        { visibility: 'public' },
+        { moderation_status: 'approved' }
+      );
+
+      const res = await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ action: 'anonymize' });
+      expect(res.status).toBe(409);
+    });
+
+    it('anonymize aendert den Freigabe-Status NICHT', async () => {
+      const { submission } = await setupChallengeWithForeignSubmission(
+        { visibility: 'konfi_choice' },
+        { konfi_consent: 'publish', moderation_status: 'pending' }
+      );
+
+      const res = await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ action: 'anonymize' });
+      expect(res.status).toBe(200);
+      expect(res.body.moderation_status).toBe('pending');
+    });
+
+    it('Konfi darf nicht anonymisieren -> 403', async () => {
+      const { submission } = await setupChallengeWithForeignSubmission(
+        { visibility: 'konfi_choice' },
+        { konfi_consent: 'publish', moderation_status: 'approved' }
+      );
+
+      const res = await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({ action: 'anonymize' });
+      expect(res.status).toBe(403);
     });
   });
 });

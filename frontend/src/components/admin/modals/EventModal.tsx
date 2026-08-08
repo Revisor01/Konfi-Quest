@@ -15,7 +15,7 @@ import { Event, Category, Timeslot, Jahrgang } from '../../../types/event';
 import {
   BasicInfoSection, CheckinSection,
   PointsParticipantsSection, CategoriesTargetSection,
-  WaitlistSection, TeamerSection, SeriesSection
+  TeamerSection, SeriesSection
 } from './EventFormSections';
 import type { EventFormData } from './EventFormSections';
 import { safeUUID } from '../../../utils/uuid';
@@ -217,8 +217,12 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         registration_opens_at: formData.mandatory ? null : toBackendTimestamp(formData.registration_opens_at),
         registration_closes_at: formData.mandatory ? null : toBackendTimestamp(formData.registration_closes_at),
         has_timeslots: (formData.mandatory || formData.is_konfirmation) ? false : formData.has_timeslots,
-        waitlist_enabled: (formData.mandatory || isTeamerOnly) ? false : formData.waitlist_enabled,
-        max_waitlist_size: (formData.mandatory || isTeamerOnly) ? 0 : formData.max_waitlist_size,
+        // Unbegrenzte Plaetze => keine Warteliste (das Formular zeigt den
+        // Schalter dann gar nicht, der Payload muss dazu passen).
+        waitlist_enabled: (formData.mandatory || isTeamerOnly || formData.max_participants === 0)
+          ? false : formData.waitlist_enabled,
+        max_waitlist_size: (formData.mandatory || isTeamerOnly || formData.max_participants === 0)
+          ? 0 : formData.max_waitlist_size,
         timeslots: (!formData.mandatory && !formData.is_konfirmation && formData.has_timeslots) ? timeslots.map(ts => ({
           ...ts, start_time: toBackendTimestamp(ts.start_time), end_time: toBackendTimestamp(ts.end_time)
         })) : [],
@@ -230,8 +234,11 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         checkin_window: formData.checkin_window,
         teamer_needed: teamerAccess === 'teamer_needed', teamer_only: teamerAccess === 'teamer_only',
         teamer_max_participants: teamerAccess === 'normal' ? 0 : formData.teamer_max_participants,
-        teamer_waitlist_enabled: teamerAccess === 'normal' ? true : formData.teamer_waitlist_enabled,
-        teamer_max_waitlist_size: teamerAccess === 'normal' ? 10 : formData.teamer_max_waitlist_size
+        // Auch hier: unbegrenzte Teamer-Plaetze => keine Warteliste.
+        teamer_waitlist_enabled: (teamerAccess === 'normal' || formData.teamer_max_participants === 0)
+          ? false : formData.teamer_waitlist_enabled,
+        teamer_max_waitlist_size: (teamerAccess === 'normal' || formData.teamer_max_participants === 0)
+          ? 0 : formData.teamer_max_waitlist_size
       };
 
       if (networkMonitor.isOnline) {
@@ -291,13 +298,17 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
       </IonHeader>
 
       <IonContent className="app-gradient-background">
-        {/* Reihenfolge (User-Entscheid 07.08.): Grunddaten -> Datum & Zeit
-            (+ Serie) -> Zeitfenster -> Warteliste -> Punkte & Teilnehmer ->
-            Teamer:innen (Zugang + Kontingent) -> QR-Check-in -> Kategorien &
-            Zielgruppe. */}
+        {/* Reihenfolge (User-Entscheid 08.08.): Grunddaten -> Kategorien &
+            Zielgruppe -> Datum & Zeit (+ Serie) -> Zeitfenster -> Konfis
+            (Plaetze + Warteliste + Punkte) -> Teamer:innen (Zugang +
+            Kontingent) -> QR-Check-in. */}
 
         {/* EVENT GRUNDDATEN (inkl. Pflicht-Event und Mitbringen) */}
         <BasicInfoSection formData={formData} setFormData={setFormData} loading={loading} />
+
+        {/* KATEGORIEN & ZIELGRUPPE */}
+        <CategoriesTargetSection formData={formData} setFormData={setFormData}
+          categories={categories} jahrgaenge={jahrgaenge} teamerAccess={teamerAccess} loading={loading} />
 
         {/* DATUM & ZEIT */}
         <IonList inset={true} className="app-modal-section">
@@ -438,12 +449,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         ))}
         </>)}
 
-        {/* WARTELISTE — direkt nach den Zeitfenstern */}
-        {!formData.mandatory && teamerAccess !== 'teamer_only' && (
-          <WaitlistSection formData={formData} setFormData={setFormData} loading={loading} />
-        )}
-
-        {/* PUNKTE & TEILNEHMER */}
+        {/* KONFIS — Plaetze, Warteliste und Punkte in einer Karte */}
         {!formData.mandatory && teamerAccess !== 'teamer_only' && (
           <PointsParticipantsSection formData={formData} setFormData={setFormData} loading={loading} />
         )}
@@ -454,10 +460,6 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
 
         {/* QR CHECK-IN FENSTER */}
         <CheckinSection formData={formData} setFormData={setFormData} loading={loading} />
-
-        {/* KATEGORIEN & ZIELGRUPPE */}
-        <CategoriesTargetSection formData={formData} setFormData={setFormData}
-          categories={categories} jahrgaenge={jahrgaenge} teamerAccess={teamerAccess} loading={loading} />
       </IonContent>
 
       {/* DateTime Modals */}

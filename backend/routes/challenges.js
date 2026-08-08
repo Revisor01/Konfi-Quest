@@ -35,6 +35,23 @@ const VISIBILITIES = ['public', 'konfi_choice', 'private'];
 const CHALLENGE_TYPES = ['wahrnehmung', 'beitrag', 'praxis', 'frei'];
 const CONSENTS = ['publish', 'private', 'anonymous'];
 
+// Teilnahme-Kreis (Migration 121). NICHT zu verwechseln mit visibility:
+// audience = wer einreichen darf, visibility = wer die Beitraege sieht.
+const AUDIENCES = ['konfis', 'konfis_und_team', 'nur_team'];
+
+// Rollen, die als "Team" gelten (duerfen bei audience != 'konfis' einreichen).
+const TEAM_ROLES = ['org_admin', 'admin', 'teamer'];
+
+// Darf diese Rolle bei dieser Challenge einen eigenen Beitrag einreichen?
+// Konfis nur bei 'konfis'/'konfis_und_team', Team nur bei
+// 'konfis_und_team'/'nur_team'. super_admin nie (org-fremde Rolle).
+function maySubmit(roleName, audience) {
+  const aud = audience || 'konfis';
+  if (roleName === 'konfi') return aud === 'konfis' || aud === 'konfis_und_team';
+  if (TEAM_ROLES.includes(roleName)) return aud === 'konfis_und_team' || aud === 'nur_team';
+  return false;
+}
+
 // Content-Type-Mapping fuer die Datei-Auslieferung (inkl. Audio/Video, weil
 // Challenges anders als Chat-Bilder auch Sprachaufnahmen und Clips tragen).
 const CONTENT_TYPES = {
@@ -155,6 +172,16 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   async function leadershipMayAccess(req, challengeId) {
     const viewable = viewableJahrgangIds(req);
     if (viewable === null) return true;
+
+    // 'nur_team'-Challenges laufen org-weit ueber die Rolle (Migration 121) —
+    // jeder Teamer der Org darf sie sehen und verwalten, auch ohne
+    // Jahrgangs-Zuordnung (die es dort per Definition nicht gibt).
+    const { rows: [teamRow] } = await db.query(
+      `SELECT 1 FROM challenges WHERE id = $1 AND audience = 'nur_team' LIMIT 1`,
+      [challengeId]
+    );
+    if (teamRow) return true;
+
     if (viewable.length === 0) return false;
     const { rows: [row] } = await db.query(
       `SELECT 1 FROM challenge_jahrgang_assignments
@@ -171,6 +198,38 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
       [userId]
     );
     return row ? row.jahrgang_id : null;
+  }
+
+  // Darf dieser Teilnehmer (Konfi ODER Team) die Challenge sehen/bespielen?
+  // Regeln:
+  //   audience 'nur_team'        -> Team der Org, ORG-WEIT (keine Jahrgangspruefung)
+  //   audience 'konfis*'         -> Jahrgangsbindung:
+  //                                 Konfi ueber konfi_profiles.jahrgang_id,
+  //                                 Teamer ueber zugewiesene Jahrgaenge,
+  //                                 org_admin/admin immer (sehen alles ihrer Org)
+  // Gibt { allowed, reason } zurueck, damit die Route 403 vs. 404 unterscheiden kann.
+  async function participantMayAccess(req, challenge) {
+    const role = req.user.role_name;
+    const audience = challenge.audience || 'konfis';
+
+    if (audience === 'nur_team') {
+      return { allowed: TEAM_ROLES.includes(role) };
+    }
+
+    if (role === 'konfi') {
+      const jahrgangId = await konfiJahrgangId(req.user.id);
+      if (!jahrgangId) return { allowed: false };
+      const jahrgangIds = await challengeJahrgangIds(challenge.id);
+      return { allowed: jahrgangIds.includes(jahrgangId) };
+    }
+
+    if (['org_admin', 'admin'].includes(role)) return { allowed: true };
+
+    if (role === 'teamer') {
+      return { allowed: await leadershipMayAccess(req, challenge.id) };
+    }
+
+    return { allowed: false };
   }
 
   // Challenge inkl. Org-Scoping laden.
@@ -212,6 +271,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
       title: row.title,
       description: row.description,
       challenge_type: row.challenge_type,
+      audience: row.audience || 'konfis',
       visibility: row.visibility,
       moderated: row.moderated,
       allowed_media: parseAllowedMedia(row.allowed_media),
@@ -286,6 +346,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     body('title').trim().notEmpty().isLength({ max: 200 }).withMessage('Titel ist erforderlich (max. 200 Zeichen)'),
     body('description').trim().notEmpty().withMessage('Beschreibung ist erforderlich'),
     body('challenge_type').optional().isIn(CHALLENGE_TYPES).withMessage('Ungültiger Challenge-Typ'),
+    body('audience').optional().isIn(AUDIENCES).withMessage('Ungültiger Teilnahme-Kreis'),
     body('visibility').optional().isIn(VISIBILITIES).withMessage('Ungültige Sichtbarkeit'),
     body('moderated').optional().isBoolean().withMessage('Moderation muss ein Boolean sein'),
     body('allowed_media').optional().isArray({ min: 1 }).withMessage('Mindestens eine Medienart ist erforderlich'),
@@ -306,6 +367,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     body('title').optional().trim().notEmpty().isLength({ max: 200 }).withMessage('Titel max. 200 Zeichen'),
     body('description').optional().trim().notEmpty().withMessage('Beschreibung darf nicht leer sein'),
     body('challenge_type').optional().isIn(CHALLENGE_TYPES).withMessage('Ungültiger Challenge-Typ'),
+    body('audience').optional().isIn(AUDIENCES).withMessage('Ungültiger Teilnahme-Kreis'),
     body('visibility').optional().isIn(VISIBILITIES).withMessage('Ungültige Sichtbarkeit'),
     body('moderated').optional().isBoolean().withMessage('Moderation muss ein Boolean sein'),
     body('allowed_media').optional().isArray({ min: 1 }).withMessage('Mindestens eine Medienart ist erforderlich'),
@@ -319,9 +381,14 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     handleValidationErrors
   ];
 
+  // anonymize/deanonymize: die Leitung kann einen Beitrag nachtraeglich anonym
+  // stellen (Ruecksicht auf den Konfi) oder — wenn er ohnehin mit Namen
+  // veroeffentlicht werden durfte — den Namen wieder zeigen. Nur bei
+  // visibility='konfi_choice' sinnvoll, dort lebt konfi_consent.
   const validateModerate = [
     param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
-    body('action').isIn(['approve', 'hide', 'unhide']).withMessage('Ungültige Moderations-Aktion'),
+    body('action').isIn(['approve', 'hide', 'unhide', 'anonymize', 'deanonymize'])
+      .withMessage('Ungültige Moderations-Aktion'),
     handleValidationErrors
   ];
 
@@ -331,14 +398,56 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
 
   // GET /konfi — aktive Challenges, Archiv und eigene Abzeichen.
   // Konfi sieht ausschliesslich Challenges seiner Jahrgaenge, nie Entwuerfe.
+  // Auch fuer Teamer/Admins: sie nehmen bei audience 'konfis_und_team' und
+  // 'nur_team' selbst teil (User-Entscheid 08.08.). Der Pfad heisst weiterhin
+  // /konfi — er ist der TEILNEHMER-Einstieg, nicht der Rollen-Einstieg.
   router.get('/konfi', rbacVerifier, async (req, res) => {
     try {
-      if (req.user.role_name !== 'konfi') {
-        return res.status(403).json({ error: 'Nur für Konfis' });
+      const role = req.user.role_name;
+      const isTeam = TEAM_ROLES.includes(role);
+      if (role !== 'konfi' && !isTeam) {
+        return res.status(403).json({ error: 'Kein Zugriff auf Challenges' });
       }
-      const jahrgangId = await konfiJahrgangId(req.user.id);
-      if (!jahrgangId) {
-        return res.json({ active: [], archive: [], marks: [] });
+
+      // Konfi: genau ein Jahrgang. Teamer: zugewiesene Jahrgaenge.
+      // org_admin/admin: alle Jahrgaenge der Org (viewable === null).
+      let jahrgangIds = null;
+      if (role === 'konfi') {
+        const jahrgangId = await konfiJahrgangId(req.user.id);
+        if (!jahrgangId) {
+          return res.json({ active: [], archive: [], marks: [] });
+        }
+        jahrgangIds = [jahrgangId];
+      } else if (role === 'teamer') {
+        jahrgangIds = viewableJahrgangIds(req) || [];
+      }
+
+      // Sichtbare Challenges: entweder ueber die Jahrgangs-Zuordnung
+      // (audience 'konfis'/'konfis_und_team') oder org-weit fuer das Team
+      // (audience 'nur_team'). Konfis sehen 'nur_team' NIE.
+      const params = [req.user.organization_id, req.user.id];
+      let scopeCondition;
+      if (role === 'konfi') {
+        params.push(jahrgangIds);
+        scopeCondition = `c.audience <> 'nur_team' AND EXISTS (
+          SELECT 1 FROM challenge_jahrgang_assignments cja
+          WHERE cja.challenge_id = c.id AND cja.jahrgang_id = ANY($3::int[])
+        )`;
+      } else if (jahrgangIds === null) {
+        // org_admin/admin: alles der Org, aber nur wo das Team mitmachen darf
+        scopeCondition = `c.audience IN ('konfis_und_team', 'nur_team')`;
+      } else if (jahrgangIds.length === 0) {
+        // Teamer ohne Jahrgaenge: nur die org-weiten Team-Challenges
+        scopeCondition = `c.audience = 'nur_team'`;
+      } else {
+        params.push(jahrgangIds);
+        scopeCondition = `(
+          c.audience = 'nur_team'
+          OR (c.audience = 'konfis_und_team' AND EXISTS (
+            SELECT 1 FROM challenge_jahrgang_assignments cja
+            WHERE cja.challenge_id = c.id AND cja.jahrgang_id = ANY($3::int[])
+          ))
+        )`;
       }
 
       const { rows } = await db.query(
@@ -346,21 +455,20 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
                 au.display_name AS author_name,
                 EXISTS (
                   SELECT 1 FROM challenge_submissions s
-                  WHERE s.challenge_id = c.id AND s.user_id = $3
+                  WHERE s.challenge_id = c.id AND s.user_id = $2
                 ) AS has_badge,
                 (
                   SELECT COUNT(*) FROM challenge_submissions s2
-                  WHERE s2.challenge_id = c.id AND s2.user_id = $3
+                  WHERE s2.challenge_id = c.id AND s2.user_id = $2
                 ) AS own_submission_count
          FROM challenges c
-         JOIN challenge_jahrgang_assignments cja ON cja.challenge_id = c.id
          LEFT JOIN users au ON c.author_user_id = au.id
          WHERE c.organization_id = $1
-           AND cja.jahrgang_id = $2
            AND c.is_draft = false
            AND c.starts_at <= NOW()
+           AND ${scopeCondition}
          ORDER BY c.starts_at DESC`,
-        [req.user.organization_id, jahrgangId, req.user.id]
+        params
       );
 
       const now = new Date();
@@ -400,37 +508,50 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     handleValidationErrors,
     async (req, res) => {
       try {
-        if (req.user.role_name !== 'konfi') {
-          return res.status(403).json({ error: 'Nur für Konfis' });
+        const role = req.user.role_name;
+        if (role !== 'konfi' && !TEAM_ROLES.includes(role)) {
+          return res.status(403).json({ error: 'Kein Zugriff auf Challenges' });
         }
         const challengeId = parseInt(req.params.id, 10);
-        const jahrgangId = await konfiJahrgangId(req.user.id);
-        if (!jahrgangId) {
-          return res.status(404).json({ error: 'Challenge nicht gefunden' });
-        }
 
         const challenge = await loadChallenge(challengeId, req.user.organization_id);
         if (!challenge || challenge.is_draft || new Date(challenge.starts_at) > new Date()) {
           return res.status(404).json({ error: 'Challenge nicht gefunden' });
         }
+        // Konfis sehen 'nur_team'-Challenges gar nicht -> 404 statt 403
+        // (die Existenz soll nicht durchsickern).
+        if (role === 'konfi' && (challenge.audience === 'nur_team')) {
+          return res.status(404).json({ error: 'Challenge nicht gefunden' });
+        }
 
-        const jahrgangIds = await challengeJahrgangIds(challengeId);
-        if (!jahrgangIds.includes(jahrgangId)) {
+        const access = await participantMayAccess(req, challenge);
+        if (!access.allowed) {
           return res.status(403).json({ error: 'Kein Zugriff auf diese Challenge' });
         }
 
         // Galerie: NUR oeffentliche Beitraege (zentrale Logik), fremde
         // Beitraege. Bei 'anonymous' wird der Name in SQL bereits auf NULL
         // gesetzt — display_name verlaesst das Backend gar nicht erst.
+        // role_label/jahrgang_name machen transparent, wer schreibt: bei
+        // mehreren Jahrgaengen sehen die Konfis so, dass ein Beitrag aus einem
+        // anderen Jahrgang kommt, und Team-Beitraege sind als solche erkennbar
+        // (User-Entscheid 08.08.) — bei anonymen Beitraegen bleibt beides NULL.
         const { rows: gallery } = await db.query(
           `SELECT cs.id, cs.media_type, cs.text_content, cs.file_path, cs.file_name,
                   cs.link_url, cs.created_at,
                   CASE WHEN c.visibility = 'konfi_choice' AND cs.konfi_consent = 'anonymous'
                        THEN NULL ELSE u.display_name END AS display_name,
+                  CASE WHEN c.visibility = 'konfi_choice' AND cs.konfi_consent = 'anonymous'
+                       THEN NULL ELSE r.name END AS role_name,
+                  CASE WHEN c.visibility = 'konfi_choice' AND cs.konfi_consent = 'anonymous'
+                       THEN NULL ELSE j.name END AS jahrgang_name,
                   (c.visibility = 'konfi_choice' AND cs.konfi_consent = 'anonymous') AS is_anonymous
            FROM challenge_submissions cs
            JOIN challenges c ON cs.challenge_id = c.id
            JOIN users u ON cs.user_id = u.id
+           LEFT JOIN roles r ON u.role_id = r.id
+           LEFT JOIN konfi_profiles kp ON kp.user_id = u.id
+           LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
            WHERE cs.challenge_id = $1
              AND cs.user_id <> $2
              AND ${PUBLIC_SUBMISSION_SQL}
@@ -472,8 +593,9 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     handleValidationErrors,
     async (req, res) => {
       try {
-        if (req.user.role_name !== 'konfi') {
-          return res.status(403).json({ error: 'Nur für Konfis' });
+        const role = req.user.role_name;
+        if (role !== 'konfi' && !TEAM_ROLES.includes(role)) {
+          return res.status(403).json({ error: 'Kein Zugriff auf Challenges' });
         }
         const challengeId = parseInt(req.params.id, 10);
         const { media_type, text_content, link_url, konfi_consent } = req.body;
@@ -487,10 +609,18 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           return res.status(404).json({ error: 'Challenge nicht gefunden' });
         }
 
-        const jahrgangId = await konfiJahrgangId(req.user.id);
-        const jahrgangIds = await challengeJahrgangIds(challengeId);
-        if (!jahrgangId || !jahrgangIds.includes(jahrgangId)) {
+        // Teilnahme-Kreis pruefen (audience). Erst der Zugriff auf die
+        // Challenge, dann die Frage, ob diese Rolle hier einreichen darf.
+        const access = await participantMayAccess(req, challenge);
+        if (!access.allowed) {
           return res.status(403).json({ error: 'Kein Zugriff auf diese Challenge' });
+        }
+        if (!maySubmit(role, challenge.audience)) {
+          return res.status(403).json({
+            error: challenge.audience === 'nur_team'
+              ? 'Diese Challenge ist nur für das Team.'
+              : 'Bei dieser Challenge reichen nur die Konfis Beiträge ein.'
+          });
         }
 
         if (!isActive(challenge)) {
@@ -653,9 +783,6 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
     handleValidationErrors,
     async (req, res) => {
-      if (req.user.role_name !== 'konfi') {
-        return res.status(403).json({ error: 'Nur für Konfis' });
-      }
       return res.status(403).json({
         error: 'Eingereichte Beiträge lassen sich nicht mehr zurückziehen. Wende dich an deine Leitung, falls ein Beitrag entfernt werden soll.'
       });
@@ -752,7 +879,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
 
       const { rows: [row] } = await db.query(
         `SELECT cs.id, cs.user_id, cs.file_name, cs.moderation_status, cs.konfi_consent,
-                c.id AS challenge_id, c.visibility, c.organization_id
+                c.id AS challenge_id, c.visibility, c.audience, c.organization_id
          FROM challenge_submissions cs
          JOIN challenges c ON cs.challenge_id = c.id
          WHERE cs.file_path = $1 AND cs.organization_id = $2`,
@@ -770,21 +897,28 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         // Jahrgangs-Einschraenkung — identisch zu leadershipMayAccess().
         mayAccess = true;
       } else if (!mayAccess && requester.role_name === 'teamer') {
-        // Teamer nur fuer Submissions aus einem ihrer zugewiesenen Jahrgaenge —
-        // konsistent zu leadershipMayAccess()/viewableJahrgangIds() oben in
-        // dieser Datei (Moderations-Sicht ist sonst weiter als die restlichen
-        // Leitungs-Endpunkte, ueber die der Teamer die Challenge ueberhaupt erst
-        // findet).
-        const viewable = (requester.assigned_jahrgaenge || [])
-          .filter(j => j.can_view)
-          .map(j => j.id);
-        if (viewable.length > 0) {
-          const jahrgangIds = await challengeJahrgangIds(row.challenge_id);
-          mayAccess = jahrgangIds.some(id => viewable.includes(id));
+        // 'nur_team'-Challenges sind org-weit (keine Jahrgangs-Zuordnung) —
+        // dort darf jeder Teamer der Org die Dateien sehen, sonst koennte er
+        // seine eigene Team-Runde nicht anschauen (Migration 121).
+        if (row.audience === 'nur_team') {
+          mayAccess = true;
+        } else {
+          // Sonst nur fuer Submissions aus einem seiner zugewiesenen Jahrgaenge —
+          // konsistent zu leadershipMayAccess()/viewableJahrgangIds() oben in
+          // dieser Datei (Moderations-Sicht ist sonst weiter als die restlichen
+          // Leitungs-Endpunkte, ueber die der Teamer die Challenge erst findet).
+          const viewable = (requester.assigned_jahrgaenge || [])
+            .filter(j => j.can_view)
+            .map(j => j.id);
+          if (viewable.length > 0) {
+            const jahrgangIds = await challengeJahrgangIds(row.challenge_id);
+            mayAccess = jahrgangIds.some(id => viewable.includes(id));
+          }
         }
       }
 
-      if (!mayAccess && requester.role_name === 'konfi') {
+      // 'nur_team' ist fuer Konfis unsichtbar — auch die Dateien (Migration 121).
+      if (!mayAccess && requester.role_name === 'konfi' && row.audience !== 'nur_team') {
         // Konfi darf nur oeffentliche Beitraege aus seinem Jahrgang sehen.
         // row traegt sowohl Submission- als auch Challenge-Felder (ein JOIN),
         // die zentrale Logik bekommt beide Sichten explizit uebergeben.
@@ -884,9 +1018,14 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           return res.json([]);
         }
         params.push(viewable);
-        jahrgangFilter = `AND EXISTS (
-          SELECT 1 FROM challenge_jahrgang_assignments cja2
-          WHERE cja2.challenge_id = c.id AND cja2.jahrgang_id = ANY($2::int[])
+        // 'nur_team' ist org-weit ohne Jahrgangs-Zuordnung -> fuer jeden Teamer
+        // sichtbar, sonst koennte er seine eigene Team-Runde nicht verwalten.
+        jahrgangFilter = `AND (
+          c.audience = 'nur_team'
+          OR EXISTS (
+            SELECT 1 FROM challenge_jahrgang_assignments cja2
+            WHERE cja2.challenge_id = c.id AND cja2.jahrgang_id = ANY($2::int[])
+          )
         )`;
       }
 
@@ -931,7 +1070,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     const client = await db.getClient();
     try {
       const {
-        title, description, challenge_type, visibility, moderated, allowed_media,
+        title, description, challenge_type, audience, visibility, moderated, allowed_media,
         allow_multiple, badge_icon, badge_name, author_user_id, author_freetext,
         starts_at, ends_at, is_draft, jahrgang_ids
       } = req.body;
@@ -939,6 +1078,12 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
       if (new Date(ends_at) <= new Date(starts_at)) {
         return res.status(400).json({ error: 'Das Ende muss nach dem Start liegen.' });
       }
+
+      // 'nur_team' laeuft org-weit ueber die Rolle — Jahrgaenge werden dort
+      // bewusst NICHT gespeichert (sonst wuerde die Zuordnung suggerieren, sie
+      // wuerde den Kreis einschraenken).
+      const newAudience = AUDIENCES.includes(audience) ? audience : 'konfis';
+      const teamOnly = newAudience === 'nur_team';
 
       const media = Array.isArray(allowed_media) && allowed_media.length > 0
         ? allowed_media
@@ -948,7 +1093,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
       }
 
       // Org-Isolation: fremde Jahrgaenge/Urheber abweisen.
-      if (jahrgang_ids && jahrgang_ids.length > 0) {
+      if (!teamOnly && jahrgang_ids && jahrgang_ids.length > 0) {
         if (!(await allIdsBelongToOrg(db, 'jahrgaenge', jahrgang_ids, req.user.organization_id))) {
           return res.status(403).json({ error: 'Ungültige Jahrgänge' });
         }
@@ -972,16 +1117,17 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
 
       const { rows: [created] } = await client.query(
         `INSERT INTO challenges
-           (organization_id, title, description, challenge_type, visibility, moderated,
+           (organization_id, title, description, challenge_type, audience, visibility, moderated,
             allowed_media, allow_multiple, badge_icon, badge_name, author_user_id,
             author_freetext, created_by, starts_at, ends_at, is_draft)
-         VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,$10,$11,$12,$13,$14,$15,$16,$17)
          RETURNING *`,
         [
           req.user.organization_id,
           title,
           description,
           challenge_type || 'frei',
+          newAudience,
           visibility || 'konfi_choice',
           moderated !== undefined ? moderated : true,
           JSON.stringify(media),
@@ -997,7 +1143,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         ]
       );
 
-      if (jahrgang_ids && jahrgang_ids.length > 0) {
+      if (!teamOnly && jahrgang_ids && jahrgang_ids.length > 0) {
         await client.query(
           `INSERT INTO challenge_jahrgang_assignments (challenge_id, jahrgang_id)
            SELECT $1, unnest($2::int[]) ON CONFLICT DO NOTHING`,
@@ -1038,13 +1184,14 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
 
       const started = hasStarted(challenge);
       const {
-        title, description, challenge_type, visibility, moderated, allowed_media,
+        title, description, challenge_type, audience, visibility, moderated, allowed_media,
         allow_multiple, badge_icon, badge_name, author_user_id, author_freetext,
         starts_at, ends_at, is_draft, jahrgang_ids
       } = req.body;
 
       if (started) {
         const lockedChanges = [];
+        if (audience !== undefined && audience !== (challenge.audience || 'konfis')) lockedChanges.push('Teilnahme-Kreis');
         if (visibility !== undefined && visibility !== challenge.visibility) lockedChanges.push('Sichtbarkeit');
         if (moderated !== undefined && moderated !== challenge.moderated) lockedChanges.push('Moderation');
         if (starts_at !== undefined && new Date(starts_at).getTime() !== new Date(challenge.starts_at).getTime()) lockedChanges.push('Startzeitpunkt');
@@ -1065,6 +1212,12 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         return res.status(400).json({ error: 'Das Ende muss nach dem Start liegen.' });
       }
 
+      // audience wie visibility nach dem Start eingefroren (s.o.).
+      const effectiveAudience = started
+        ? (challenge.audience || 'konfis')
+        : (AUDIENCES.includes(audience) ? audience : (challenge.audience || 'konfis'));
+      const teamOnly = effectiveAudience === 'nur_team';
+
       let media = parseAllowedMedia(challenge.allowed_media);
       if (!started && allowed_media !== undefined) {
         if (!Array.isArray(allowed_media) || allowed_media.length === 0 || allowed_media.some(m => !MEDIA_TYPES.includes(m))) {
@@ -1073,7 +1226,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         media = allowed_media;
       }
 
-      if (jahrgang_ids !== undefined && jahrgang_ids.length > 0) {
+      if (!teamOnly && jahrgang_ids !== undefined && jahrgang_ids.length > 0) {
         if (!(await allIdsBelongToOrg(db, 'jahrgaenge', jahrgang_ids, req.user.organization_id))) {
           return res.status(403).json({ error: 'Ungültige Jahrgänge' });
         }
@@ -1099,24 +1252,26 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
            title = $1,
            description = $2,
            challenge_type = $3,
-           visibility = $4,
-           moderated = $5,
-           allowed_media = $6::jsonb,
-           allow_multiple = $7,
-           badge_icon = $8,
-           badge_name = $9,
-           author_user_id = $10,
-           author_freetext = $11,
-           starts_at = $12,
-           ends_at = $13,
-           is_draft = $14,
+           audience = $4,
+           visibility = $5,
+           moderated = $6,
+           allowed_media = $7::jsonb,
+           allow_multiple = $8,
+           badge_icon = $9,
+           badge_name = $10,
+           author_user_id = $11,
+           author_freetext = $12,
+           starts_at = $13,
+           ends_at = $14,
+           is_draft = $15,
            updated_at = NOW()
-         WHERE id = $15 AND organization_id = $16
+         WHERE id = $16 AND organization_id = $17
          RETURNING *`,
         [
           title !== undefined ? title : challenge.title,
           description !== undefined ? description : challenge.description,
           !started && challenge_type !== undefined ? challenge_type : challenge.challenge_type,
+          effectiveAudience,
           started ? challenge.visibility : (visibility !== undefined ? visibility : challenge.visibility),
           started ? challenge.moderated : (moderated !== undefined ? moderated : challenge.moderated),
           JSON.stringify(media),
@@ -1133,7 +1288,11 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         ]
       );
 
-      if (!started && jahrgang_ids !== undefined) {
+      if (!started && teamOnly) {
+        // Wechsel auf 'nur_team': Jahrgangs-Zuordnungen abraeumen, damit keine
+        // verwaiste Zuordnung eine Einschraenkung suggeriert, die nicht greift.
+        await client.query('DELETE FROM challenge_jahrgang_assignments WHERE challenge_id = $1', [challengeId]);
+      } else if (!started && jahrgang_ids !== undefined) {
         await client.query('DELETE FROM challenge_jahrgang_assignments WHERE challenge_id = $1', [challengeId]);
         if (jahrgang_ids.length > 0) {
           await client.query(
@@ -1278,8 +1437,10 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         const { action } = req.body;
 
         const { rows: [submission] } = await db.query(
-          `SELECT cs.id, cs.challenge_id, cs.moderation_status
+          `SELECT cs.id, cs.challenge_id, cs.moderation_status, cs.konfi_consent,
+                  c.visibility
            FROM challenge_submissions cs
+           JOIN challenges c ON cs.challenge_id = c.id
            WHERE cs.id = $1 AND cs.organization_id = $2`,
           [submissionId, req.user.organization_id]
         );
@@ -1288,6 +1449,32 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         }
         if (!(await leadershipMayAccess(req, submission.challenge_id))) {
           return res.status(403).json({ error: 'Kein Zugriff auf diesen Beitrag' });
+        }
+
+        // Anonymisieren betrifft NUR den Konsens, nicht den Freigabe-Status.
+        if (action === 'anonymize' || action === 'deanonymize') {
+          if (submission.visibility !== 'konfi_choice') {
+            return res.status(409).json({
+              error: 'Anonymität lässt sich nur bei Challenges einstellen, bei denen der Konfi selbst entscheidet.'
+            });
+          }
+          // 'private' ist die staerkste Zusage des Konfi ("nur die Leitung") —
+          // die darf die Moderation NICHT zu einer Veroeffentlichung aufweichen.
+          if (submission.konfi_consent === 'private') {
+            return res.status(409).json({
+              error: 'Dieser Beitrag ist nur für die Leitung freigegeben. Diese Zusage lässt sich nicht ändern.'
+            });
+          }
+          const newConsent = action === 'anonymize' ? 'anonymous' : 'publish';
+          const { rows: [row] } = await db.query(
+            `UPDATE challenge_submissions SET konfi_consent = $2
+             WHERE id = $1 RETURNING id, moderation_status, konfi_consent`,
+            [submissionId, newConsent]
+          );
+          res.json(row);
+          notifyJahrgaenge(submission.challenge_id, 'submission_update', { challengeId: submission.challenge_id });
+          notifyLeadership(req.user.organization_id, 'submission_update', { challengeId: submission.challenge_id });
+          return;
         }
 
         let updated;

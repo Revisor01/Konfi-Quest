@@ -5,7 +5,7 @@ import {
 } from '@ionic/react';
 import {
   closeOutline, flag, timeOutline, checkmarkOutline, removeCircleOutline,
-  eyeOffOutline, lockClosedOutline, paperPlaneOutline, calendarOutline,
+  eyeOffOutline, eyeOutline, lockClosedOutline, paperPlaneOutline, calendarOutline,
   createOutline, archiveOutline,
 } from 'ionicons/icons';
 
@@ -82,16 +82,22 @@ const MODERATION_ENTRIES: LegendEntry[] = [
     description: 'Der Beitrag wurde ausgeblendet und ist nicht sichtbar.',
   },
   {
+    color: 'var(--app-color-success)',
+    icon: eyeOutline,
+    label: 'Mit Namen sichtbar',
+    description: 'Der Beitrag erscheint in der Galerie mit dem Namen. Du kannst ihn nachträglich anonym stellen.',
+  },
+  {
     color: '#7c3aed',
     icon: eyeOffOutline,
-    label: 'Anonym ok',
-    description: 'Der Konfi hat einer anonymen Veröffentlichung zugestimmt.',
+    label: 'Anonym sichtbar',
+    description: 'Der Beitrag erscheint ohne Namen — so gewählt vom Konfi oder nachträglich von euch.',
   },
   {
     color: '#6b7280',
     icon: lockClosedOutline,
     label: 'Nur Leitung',
-    description: 'Der Beitrag darf nur von der Leitung gesehen werden.',
+    description: 'Der Beitrag darf nur von der Leitung gesehen werden. Diese Zusage lässt sich nicht ändern.',
   },
 ];
 

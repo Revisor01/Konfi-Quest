@@ -159,10 +159,16 @@ const STATUS_BADGE: Record<string, { label: string; icon: string; color: string 
   hidden: { label: 'Ausgeblendet', icon: removeCircleOutline, color: 'var(--app-color-danger)' }
 };
 
+// Konsens NIE mit einem Haken darstellen (User-Feedback 08.08.: zwei gruene
+// Haken nebeneinander waren nicht unterscheidbar). Der Haken gehoert allein dem
+// Freigabe-STATUS; der Konsens spricht in Augen-Metaphorik:
+//   publish   -> offenes Auge (mit Namen sichtbar)
+//   anonymous -> durchgestrichenes Auge (ohne Namen)
+//   private   -> Schloss (nur die Leitung)
 const CONSENT_BADGE: Record<string, { label: string; icon: string; color: string }> = {
-  publish: { label: 'Veröffentlichung ok', icon: checkmarkOutline, color: 'var(--app-color-success)' },
+  publish: { label: 'Mit Namen sichtbar', icon: eyeOutline, color: 'var(--app-color-success)' },
   private: { label: 'Nur Leitung', icon: lockClosedOutline, color: '#6b7280' },
-  anonymous: { label: 'Anonym ok', icon: eyeOffOutline, color: '#7c3aed' }
+  anonymous: { label: 'Anonym sichtbar', icon: eyeOffOutline, color: '#7c3aed' }
 };
 
 const formatDateTime = (value?: string) => {
@@ -241,7 +247,10 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
     return list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [submissions, statusFilter]);
 
-  const moderate = async (submission: ChallengeSubmission, action: 'approve' | 'hide' | 'unhide') => {
+  const moderate = async (
+    submission: ChallengeSubmission,
+    action: 'approve' | 'hide' | 'unhide' | 'anonymize' | 'deanonymize'
+  ) => {
     setBusyId(submission.id);
     try {
       await api.put(`/challenges/admin/submissions/${submission.id}/moderate`, { action });
@@ -498,6 +507,29 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
                               >
                                 <IonIcon icon={checkmarkCircleOutline} slot="start" />
                                 Freigeben
+                              </IonButton>
+                            )}
+                            {/* Anonymitaet nachtraeglich umstellen — nur wo der
+                                Konfi selbst entscheidet und er die
+                                Veroeffentlichung erlaubt hat ('private' ist die
+                                staerkste Zusage und bleibt unantastbar). */}
+                            {challenge.visibility === 'konfi_choice'
+                              && (submission.konfi_consent === 'publish' || submission.konfi_consent === 'anonymous') && (
+                              <IonButton
+                                size="small"
+                                fill="outline"
+                                disabled={isBusy}
+                                onClick={() => moderate(
+                                  submission,
+                                  submission.konfi_consent === 'anonymous' ? 'deanonymize' : 'anonymize'
+                                )}
+                                style={{ '--color': '#7c3aed', '--border-color': '#7c3aed', '--border-radius': '8px', height: '32px' }}
+                              >
+                                <IonIcon
+                                  icon={submission.konfi_consent === 'anonymous' ? eyeOutline : eyeOffOutline}
+                                  slot="start"
+                                />
+                                {submission.konfi_consent === 'anonymous' ? 'Namen zeigen' : 'Anonym stellen'}
                               </IonButton>
                             )}
                             {submission.moderation_status !== 'hidden' ? (

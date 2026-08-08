@@ -36,6 +36,7 @@ import {
   chevronDownOutline,
   lockClosedOutline,
   ribbonOutline,
+  schoolOutline,
   // Icon-Auswahl (identische Auswahl wie im Badge-Modal)
   trophy,
   medal,
@@ -94,6 +95,7 @@ import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import type {
   AdminChallenge,
+  ChallengeAudience,
   ChallengeVisibility,
   ChallengeMediaType
 } from '../../../types/challenges';
@@ -166,6 +168,27 @@ const CHALLENGE_ICONS: Record<string, { icon: string; name: string; category: st
 
 export const getChallengeIcon = (iconName?: string): string =>
   CHALLENGE_ICONS[iconName || '']?.icon || flag;
+
+// Teilnahme-Kreis (Migration 121): "Mitmachen ist besser als aussen stehen" —
+// Pastor:innen und Teamer:innen koennen selbst beitragen, gleichgewichtet mit
+// den Konfis. Nach dem Start eingefroren (wie Sichtbarkeit/Freigabe).
+const AUDIENCE_OPTIONS: { value: ChallengeAudience; label: string; hint: string }[] = [
+  {
+    value: 'konfis',
+    label: 'Nur Konfis',
+    hint: 'Die Konfis der gewählten Jahrgänge reichen Beiträge ein.'
+  },
+  {
+    value: 'konfis_und_team',
+    label: 'Konfis und Team',
+    hint: 'Auch Pastor:innen und Teamer:innen können eigene Beiträge einreichen — gleichberechtigt mit den Konfis.'
+  },
+  {
+    value: 'nur_team',
+    label: 'Nur das Team',
+    hint: 'Eine Runde für euch im Team. Die Konfis sehen diese Challenge nicht, eine Jahrgangs-Auswahl entfällt.'
+  }
+];
 
 const VISIBILITY_OPTIONS: { value: ChallengeVisibility; label: string; hint: string }[] = [
   {
@@ -243,6 +266,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    audience: 'konfis' as ChallengeAudience,
     visibility: 'konfi_choice' as ChallengeVisibility,
     moderated: true,
     allowed_media: ['text', 'photo'] as ChallengeMediaType[],
@@ -273,6 +297,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
         setFormData({
           title: challenge.title || '',
           description: challenge.description || '',
+          audience: (challenge.audience as ChallengeAudience) || 'konfis',
           visibility: (challenge.visibility as ChallengeVisibility) || 'konfi_choice',
           moderated: challenge.moderated !== false,
           allowed_media: (challenge.allowed_media as ChallengeMediaType[]) || ['text', 'photo'],
@@ -337,12 +362,16 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
     }));
   };
 
+  // Bei 'nur_team' gibt es keine Jahrgangs-Auswahl (org-weit ueber die Rolle),
+  // deshalb ist die Jahrgangs-Pflicht dort aufgehoben.
+  const isTeamOnly = formData.audience === 'nur_team';
+
   const isFormValid =
     formData.title.trim().length > 0 &&
     formData.description.trim().length > 0 &&
     formData.badge_name.trim().length > 0 &&
     formData.allowed_media.length > 0 &&
-    formData.jahrgang_ids.length > 0 &&
+    (isTeamOnly || formData.jahrgang_ids.length > 0) &&
     !!formData.starts_at &&
     !!formData.ends_at;
 
@@ -356,7 +385,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
       // Urheber nur noch als optionaler Freitext (author_user_id entfaellt).
       author_user_id: null,
       author_freetext: formData.author_freetext.trim() || null,
-      jahrgang_ids: formData.jahrgang_ids,
+      jahrgang_ids: isTeamOnly ? [] : formData.jahrgang_ids,
       ends_at: formData.ends_at,
       // Nach dem Start ist is_draft fixiert (Backend erzwingt false).
       is_draft: isStarted ? false : formData.is_draft
@@ -367,6 +396,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
     // IonDatetime-Darstellung (ohne Sekunden/Zeitzone) fuehrt, koennte ein
     // unveraendertes starts_at sonst als Aenderung gelten und faelschlich 409 werfen.
     if (!isStarted) {
+      payload.audience = formData.audience;
       payload.visibility = formData.visibility;
       payload.moderated = formData.moderated;
       payload.allowed_media = formData.allowed_media;
@@ -378,7 +408,9 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
 
   const handleSave = async () => {
     if (!isFormValid) {
-      setError('Bitte fülle Titel, Beschreibung, Abzeichen-Name, Medienarten, Jahrgänge und den Zeitraum aus.');
+      setError(isTeamOnly
+        ? 'Bitte fülle Titel, Beschreibung, Abzeichen-Name, Medienarten und den Zeitraum aus.'
+        : 'Bitte fülle Titel, Beschreibung, Abzeichen-Name, Medienarten, Jahrgänge und den Zeitraum aus.');
       return;
     }
     if (new Date(formData.ends_at).getTime() <= new Date(formData.starts_at).getTime()) {
@@ -499,6 +531,41 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                       vorkommen, in der Gruppe gezeigt werden oder nur bei euch bleiben.
                     </div>
                   </IonList>
+                </IonCardContent>
+              </IonCard>
+            </IonList>
+
+            {/* SEKTION: Wer macht mit? (Teilnahme-Kreis) */}
+            <IonList inset={true} className="app-modal-section">
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--challenges">
+                  <IonIcon icon={peopleOutline} />
+                </div>
+                <IonLabel>Wer macht mit?</IonLabel>
+              </IonListHeader>
+              <IonCard className="app-card">
+                <IonCardContent>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {AUDIENCE_OPTIONS.map((option) => (
+                      <div
+                        key={option.value}
+                        className={`app-list-item app-list-item--challenges${formData.audience === option.value ? ' app-list-item--selected' : ''}`}
+                        onClick={() => !loading && !isStarted && setFormData({ ...formData, audience: option.value })}
+                        style={{
+                          cursor: loading || isStarted ? 'default' : 'pointer',
+                          opacity: isStarted && formData.audience !== option.value ? 0.4 : loading ? 0.6 : 1,
+                          marginBottom: '0'
+                        }}
+                      >
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div className="app-list-item__title">{option.label}</div>
+                          <div className="app-list-item__subtitle" style={{ whiteSpace: 'normal' }}>
+                            {option.hint}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </IonCardContent>
               </IonCard>
             </IonList>
@@ -723,11 +790,12 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
               </IonCard>
             </IonList>
 
-            {/* SEKTION: Jahrgaenge */}
+            {/* SEKTION: Jahrgaenge — bei 'nur_team' entfaellt sie (org-weit) */}
+            {!isTeamOnly && (
             <IonList inset={true} className="app-modal-section">
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--challenges">
-                  <IonIcon icon={peopleOutline} />
+                  <IonIcon icon={schoolOutline} />
                 </div>
                 <IonLabel>Zielgruppe</IonLabel>
               </IonListHeader>
@@ -772,6 +840,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                 </IonCardContent>
               </IonCard>
             </IonList>
+            )}
 
             {/* SEKTION: Zeitraum */}
             <IonList inset={true} className="app-modal-section">

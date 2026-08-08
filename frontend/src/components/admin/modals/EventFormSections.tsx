@@ -12,10 +12,12 @@ import {
   IonToggle,
   IonCard,
   IonCardContent,
-  IonRange
+  IonRange,
+  IonAccordion,
+  IonAccordionGroup
 } from '@ionic/react';
 import {
-  create, people, scanOutline, copy
+  create, people, scanOutline, copy, chevronDownOutline
 } from 'ionicons/icons';
 import { Category, Jahrgang } from '../../../types/event';
 
@@ -199,6 +201,8 @@ interface PointsParticipantsSectionProps {
   loading: boolean;
 }
 
+// Eine Karte "Konfis" — Plätze, Warteliste und Punkte zusammen, damit die
+// Struktur der Teamer-Karte entspricht (einziger Unterschied: die Punkte).
 export const PointsParticipantsSection = React.memo<PointsParticipantsSectionProps>(({
   formData, setFormData, loading
 }) => (
@@ -207,7 +211,7 @@ export const PointsParticipantsSection = React.memo<PointsParticipantsSectionPro
       <div className="app-section-icon app-section-icon--events">
         <IonIcon icon={people} />
       </div>
-      <IonLabel>{formData.is_konfirmation ? 'Teilnehmer:innen' : `Punkte${!formData.has_timeslots ? ' & Teilnehmer:innen' : ''}`}</IonLabel>
+      <IonLabel>Konfis</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
     <IonCardContent>
@@ -241,6 +245,40 @@ export const PointsParticipantsSection = React.memo<PointsParticipantsSectionPro
                   <span className="app-range-row__value">{formData.max_participants}</span>
                 </div>
               </IonItem>
+            )}
+
+            {/* Warteliste NUR bei begrenzter Teilnahme — bei unbegrenzt kann
+                niemand warten, dann waere der Schalter irrefuehrend. */}
+            {formData.max_participants !== 0 && (
+              <>
+                <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: formData.waitlist_enabled ? '12px' : '0', paddingTop: '8px' }}>
+                  <IonLabel>Warteliste aktivieren</IonLabel>
+                  <IonToggle
+                    slot="end"
+                    className="app-toggle--events"
+                    checked={formData.waitlist_enabled}
+                    onIonChange={(e) => setFormData({ ...formData, waitlist_enabled: e.detail.checked })}
+                    disabled={loading}
+                  />
+                </IonItem>
+                {formData.waitlist_enabled && (
+                  <IonItem lines="none">
+                    <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Wartelisten-Plätze</IonLabel>
+                    <div className="app-range-row">
+                      <span className="app-range-row__min">1</span>
+                      <IonRange
+                        className="app-range app-range--events"
+                        min={1} max={10} step={1}
+                        pin={true} pinFormatter={(value: number) => `${value}`}
+                        value={formData.max_waitlist_size}
+                        onIonChange={(e) => setFormData({ ...formData, max_waitlist_size: e.detail.value as number })}
+                        disabled={loading}
+                      />
+                      <span className="app-range-row__value">{formData.max_waitlist_size}</span>
+                    </div>
+                  </IonItem>
+                )}
+              </>
             )}
           </>
         )}
@@ -320,44 +358,55 @@ export const CategoriesTargetSection = React.memo<CategoriesTargetSectionProps>(
     <IonCardContent>
       <IonList>
         {categories.length > 0 ? (
-          <>
-            <IonItem lines="none" style={{ '--background': 'transparent', paddingBottom: '8px' }}>
-              <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>
-                Kategorien (mehrere möglich)
-                {formData.category_ids.length > 0 && (
-                  <span style={{ marginLeft: '8px', fontSize: '0.8rem', color: 'var(--app-color-categories)', fontWeight: 'normal' }}>
-                    ({formData.category_ids.length} ausgewählt)
-                  </span>
-                )}
-              </IonLabel>
-            </IonItem>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {categories.map((category) => {
-                const isSelected = formData.category_ids.includes(category.id);
-                return (
-                  <div
-                    key={category.id}
-                    className={`app-list-item app-list-item--categories${isSelected ? ' app-list-item--selected' : ''}`}
-                    onClick={() => {
-                      if (!loading) {
-                        setFormData(prev => ({
-                          ...prev,
-                          category_ids: prev.category_ids.includes(category.id)
-                            ? prev.category_ids.filter(id => id !== category.id)
-                            : [...prev.category_ids, category.id]
-                        }));
-                      }
-                    }}
-                    style={{
-                      cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.6 : 1,
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0'
-                    }}>
-                    <span style={{ fontWeight: '500', color: '#333' }}>{category.name}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </>
+          // Akkordeon mit Multi-Auswahl (Muster: Icon-Picker im Challenge-Modal) —
+          // die Kategorien-Liste ist sonst der laengste Block im Formular.
+          <IonAccordionGroup>
+            <IonAccordion value="kategorien" toggleIcon={chevronDownOutline} toggleIconSlot="end">
+              <IonItem slot="header" lines="none">
+                <IonLabel>
+                  <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
+                    Kategorien (mehrere möglich)
+                  </h3>
+                  <p style={{ fontSize: '0.85rem', color: '#333', margin: '0', fontWeight: '500' }}>
+                    {formData.category_ids.length === 0
+                      ? 'Keine Auswahl'
+                      : categories
+                          .filter((c) => formData.category_ids.includes(c.id))
+                          .map((c) => c.name)
+                          .join(', ')}
+                  </p>
+                </IonLabel>
+              </IonItem>
+              <div slot="content" style={{ padding: '8px 0' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {categories.map((category) => {
+                    const isSelected = formData.category_ids.includes(category.id);
+                    return (
+                      <div
+                        key={category.id}
+                        className={`app-list-item app-list-item--categories${isSelected ? ' app-list-item--selected' : ''}`}
+                        onClick={() => {
+                          if (!loading) {
+                            setFormData(prev => ({
+                              ...prev,
+                              category_ids: prev.category_ids.includes(category.id)
+                                ? prev.category_ids.filter(id => id !== category.id)
+                                : [...prev.category_ids, category.id]
+                            }));
+                          }
+                        }}
+                        style={{
+                          cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.6 : 1,
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0'
+                        }}>
+                        <span style={{ fontWeight: '500', color: '#333' }}>{category.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </IonAccordion>
+          </IonAccordionGroup>
         ) : (
           <IonItem lines="none">
             <IonLabel color="medium"><p>Keine Kategorien verfügbar</p></IonLabel>
@@ -408,61 +457,10 @@ export const CategoriesTargetSection = React.memo<CategoriesTargetSectionProps>(
   </IonList>
 ));
 
-// ---- WaitlistSection ----
-
-interface WaitlistSectionProps {
-  formData: EventFormData;
-  setFormData: (data: EventFormData) => void;
-  loading: boolean;
-}
-
-export const WaitlistSection = React.memo<WaitlistSectionProps>(({
-  formData, setFormData, loading
-}) => (
-  <IonList inset={true} className="app-modal-section">
-    <IonListHeader>
-      <div className="app-section-icon app-section-icon--events">
-        <IonIcon icon={people} />
-      </div>
-      <IonLabel>Warteliste</IonLabel>
-    </IonListHeader>
-    <IonCard className="app-card">
-    <IonCardContent>
-      <IonList>
-        <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: formData.waitlist_enabled ? '12px' : '0' }}>
-          <IonLabel>Warteliste aktivieren</IonLabel>
-          <IonToggle
-            slot="end"
-            className="app-toggle--events"
-            checked={formData.waitlist_enabled}
-            onIonChange={(e) => setFormData({ ...formData, waitlist_enabled: e.detail.checked })}
-            disabled={loading}
-          />
-        </IonItem>
-        {formData.waitlist_enabled && (
-          <IonItem lines="none">
-            <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Wartelisten-Plätze</IonLabel>
-            <div className="app-range-row">
-              <span className="app-range-row__min">1</span>
-              <IonRange
-                className="app-range app-range--events"
-                min={1} max={10} step={1}
-                pin={true} pinFormatter={(value: number) => `${value}`}
-                value={formData.max_waitlist_size}
-                onIonChange={(e) => setFormData({ ...formData, max_waitlist_size: e.detail.value as number })}
-                disabled={loading}
-              />
-              <span className="app-range-row__value">{formData.max_waitlist_size}</span>
-            </div>
-          </IonItem>
-        )}
-      </IonList>
-    </IonCardContent>
-    </IonCard>
-  </IonList>
-));
-
 // ---- TeamerSection (Teamer-Zugang + Kontingent/Warteliste) ----
+// Die Konfi-Plaetze samt Warteliste liegen in PointsParticipantsSection
+// ("Konfis") — beide Karten haben denselben Aufbau, nur die Punkte gibt es
+// ausschliesslich bei den Konfis.
 // Der Zugang-Select ist immer sichtbar; die Platz- und Wartelisten-Felder
 // erscheinen erst, wenn Teamer:innen ueberhaupt teilnehmen koennen.
 
@@ -519,9 +517,9 @@ export const TeamerSection = React.memo<TeamerSectionProps>(({
               <span className="app-range-row__min">1</span>
               <IonRange
                 className="app-range app-range--events"
-                min={1} max={50} step={1}
+                min={1} max={25} step={1}
                 pin={true} pinFormatter={(value: number) => `${value}`}
-                value={formData.teamer_max_participants}
+                value={Math.min(formData.teamer_max_participants, 25)}
                 onIonChange={(e) => setFormData({ ...formData, teamer_max_participants: e.detail.value as number })}
                 disabled={loading}
               />
@@ -530,33 +528,36 @@ export const TeamerSection = React.memo<TeamerSectionProps>(({
           </IonItem>
         )}
 
-        <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: formData.teamer_waitlist_enabled ? '12px' : '0', paddingTop: '8px' }}>
-          <IonLabel>Warteliste aktivieren</IonLabel>
-          <IonToggle
-            slot="end"
-            className="app-toggle--events"
-            checked={formData.teamer_waitlist_enabled}
-            onIonChange={(e) => setFormData({ ...formData, teamer_waitlist_enabled: e.detail.checked })}
-            disabled={loading}
-          />
-        </IonItem>
-        {formData.teamer_waitlist_enabled && (
-          <IonItem lines="none">
-            <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Wartelisten-Plätze</IonLabel>
-            <div className="app-range-row">
-              <span className="app-range-row__min">1</span>
-              <IonRange
-                className="app-range app-range--events"
-                min={1} max={10} step={1}
-                pin={true} pinFormatter={(value: number) => `${value}`}
-                value={formData.teamer_max_waitlist_size}
-                onIonChange={(e) => setFormData({ ...formData, teamer_max_waitlist_size: e.detail.value as number })}
-                disabled={loading}
-              />
-              <span className="app-range-row__value">{formData.teamer_max_waitlist_size}</span>
-            </div>
+        {/* Warteliste NUR bei begrenzten Teamer-Plaetzen (wie bei den Konfis) */}
+        {formData.teamer_max_participants !== 0 && (<>
+          <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: formData.teamer_waitlist_enabled ? '12px' : '0', paddingTop: '8px' }}>
+            <IonLabel>Warteliste aktivieren</IonLabel>
+            <IonToggle
+              slot="end"
+              className="app-toggle--events"
+              checked={formData.teamer_waitlist_enabled}
+              onIonChange={(e) => setFormData({ ...formData, teamer_waitlist_enabled: e.detail.checked })}
+              disabled={loading}
+            />
           </IonItem>
-        )}
+          {formData.teamer_waitlist_enabled && (
+            <IonItem lines="none">
+              <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Wartelisten-Plätze</IonLabel>
+              <div className="app-range-row">
+                <span className="app-range-row__min">1</span>
+                <IonRange
+                  className="app-range app-range--events"
+                  min={1} max={10} step={1}
+                  pin={true} pinFormatter={(value: number) => `${value}`}
+                  value={formData.teamer_max_waitlist_size}
+                  onIonChange={(e) => setFormData({ ...formData, teamer_max_waitlist_size: e.detail.value as number })}
+                  disabled={loading}
+                />
+                <span className="app-range-row__value">{formData.teamer_max_waitlist_size}</span>
+              </div>
+            </IonItem>
+          )}
+        </>)}
         </>)}
       </IonList>
     </IonCardContent>

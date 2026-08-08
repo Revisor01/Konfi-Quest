@@ -86,6 +86,7 @@ const getOwnStatus = (
   // konfi_choice -> eigene Entscheidung entscheidet
   if (submission.konfi_consent === 'anonymous') {
     return { label: 'Anonym', icon: eyeOffOutline, color: '#7c3aed' };
+
   }
   if (submission.konfi_consent === 'publish') {
     return { label: 'Veröffentlicht', icon: checkmarkOutline, color: 'var(--app-color-success)' };
@@ -99,6 +100,25 @@ const formatDateTime = (value?: string): string => {
   if (isNaN(d.getTime())) return '';
   return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
     + ', ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+};
+
+// Rollen-Kennzeichnung in der Galerie: Beitraege von Pastor:innen/Teamer:innen
+// sollen als solche erkennbar sein, ohne sie hervorzuheben (gleichgewichtet).
+const GALLERY_ROLE_LABEL: Record<string, string> = {
+  org_admin: 'Leitung',
+  admin: 'Leitung',
+  teamer: 'Teamer:in'
+};
+
+// "Name · Teamer:in" bzw. "Name · Jahrgang 2026". Der Jahrgang hilft, wenn eine
+// Challenge mehrere Jahrgaenge umfasst (User-Entscheid 08.08.). Anonyme
+// Beitraege liefert das Backend ohne Name/Rolle/Jahrgang -> nur "Anonym".
+const buildGalleryAuthorLabel = (submission: ChallengeSubmission): string => {
+  const name = submission.konfi_name?.trim();
+  if (!name) return 'Anonym';
+  const roleLabel = submission.role_name ? GALLERY_ROLE_LABEL[submission.role_name] : null;
+  const suffix = roleLabel || submission.jahrgang_name?.trim();
+  return suffix ? `${name} · ${suffix}` : name;
 };
 
 // Medienvorschau fuer Challenge-Dateien. Eigene, schlanke Ladefunktion statt des
@@ -292,9 +312,16 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
       // muessen auf die oberste Ebene, sonst ist starts_at/ends_at undefined und
       // die Challenge erscheint faelschlich als beendet.
       const data = res.data;
+      // Die Galerie-Query liefert den Namen als display_name (bei anonymen
+      // Beitraegen NULL), das UI liest konfi_name -> hier normalisieren, sonst
+      // erscheint JEDER Galerie-Beitrag als "Anonym".
+      const gallery = (data?.gallery || []).map((row: any) => ({
+        ...row,
+        konfi_name: row.konfi_name ?? row.display_name ?? null
+      }));
       setDetail(
         data?.challenge
-          ? { ...data.challenge, gallery: data.gallery || [], own_submissions: data.own_submissions || [] }
+          ? { ...data.challenge, gallery, own_submissions: data.own_submissions || [] }
           : null
       );
     } catch (err: any) {
@@ -525,7 +552,10 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
                             submission={submission}
                             // Anonyme Beitraege liefert das Backend ohne Namen —
                             // fehlt der Name, wird bewusst "Anonym" gezeigt.
-                            authorLabel={submission.konfi_name?.trim() || 'Anonym'}
+                            // Sonst Name + Herkunft: Team-Beitraege als solche
+                            // erkennbar, bei mehreren Jahrgaengen der Jahrgang
+                            // (User-Entscheid 08.08.).
+                            authorLabel={buildGalleryAuthorLabel(submission)}
                           />
                         ))}
                       </div>

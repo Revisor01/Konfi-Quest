@@ -8,6 +8,13 @@ export type ChallengeType = 'wahrnehmung' | 'beitrag' | 'praxis' | 'frei';
 
 export type ChallengeVisibility = 'public' | 'konfi_choice' | 'private';
 
+/**
+ * Teilnahme-Kreis (Migration 121) — WER einreichen darf. Nicht zu verwechseln
+ * mit ChallengeVisibility, die regelt, wer die Beitraege SIEHT.
+ * 'nur_team' laeuft org-weit ueber die Rolle, ohne Jahrgangs-Zuordnung.
+ */
+export type ChallengeAudience = 'konfis' | 'konfis_und_team' | 'nur_team';
+
 export type ChallengeMediaType = 'text' | 'photo' | 'audio' | 'video' | 'link';
 
 /** Nur bei visibility = 'konfi_choice' relevant. */
@@ -29,6 +36,8 @@ export interface ChallengeBase {
   title: string;
   description: string;
   challenge_type: ChallengeType;
+  /** Teilnahme-Kreis; fehlt bei Alt-Daten -> wie 'konfis' behandeln. */
+  audience?: ChallengeAudience;
   visibility: ChallengeVisibility;
   moderated: boolean;
   allowed_media: ChallengeMediaType[];
@@ -81,6 +90,11 @@ export interface ChallengeSubmission {
   /** Nur Leitungs-Sicht bzw. nicht-anonyme Galerie-Beitraege. */
   konfi_name?: string | null;
   jahrgang_name?: string | null;
+  /**
+   * Rolle des Verfassers (Galerie) — macht Team-Beitraege erkennbar.
+   * Bei anonymen Beitraegen liefert das Backend NULL.
+   */
+  role_name?: string | null;
 }
 
 /** Eigenes Challenge-Abzeichen (bewusst ohne Zaehler/Fortschritt). */
