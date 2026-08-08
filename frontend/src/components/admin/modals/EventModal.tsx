@@ -303,8 +303,10 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
             (Plaetze + Warteliste + Punkte) -> Teamer:innen (Zugang +
             Kontingent) -> QR-Check-in. */}
 
-        {/* EVENT GRUNDDATEN (inkl. Pflicht-Event und Mitbringen) */}
-        <BasicInfoSection formData={formData} setFormData={setFormData} loading={loading} />
+        {/* EVENT GRUNDDATEN — inkl. "Fuer wen ist das Event?": diese Auswahl
+            steuert, welche Abschnitte weiter unten erscheinen. */}
+        <BasicInfoSection formData={formData} setFormData={setFormData}
+          teamerAccess={teamerAccess} setTeamerAccess={setTeamerAccess} loading={loading} />
 
         {/* KATEGORIEN & ZIELGRUPPE */}
         <CategoriesTargetSection formData={formData} setFormData={setFormData}
@@ -454,9 +456,10 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
           <PointsParticipantsSection formData={formData} setFormData={setFormData} loading={loading} />
         )}
 
-        {/* TEAMER:INNEN — Zugang immer, Kontingent/Warteliste bei Zugang != "Nur Konfis" */}
-        <TeamerSection formData={formData} setFormData={setFormData}
-          teamerAccess={teamerAccess} setTeamerAccess={setTeamerAccess} loading={loading} />
+        {/* TEAMER:INNEN — Plaetze/Warteliste, nur wenn Teamer:innen teilnehmen */}
+        {teamerAccess !== 'normal' && (
+          <TeamerSection formData={formData} setFormData={setFormData} loading={loading} />
+        )}
 
         {/* QR CHECK-IN FENSTER */}
         <CheckinSection formData={formData} setFormData={setFormData} loading={loading} />

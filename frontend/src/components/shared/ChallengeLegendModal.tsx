@@ -85,13 +85,13 @@ const MODERATION_ENTRIES: LegendEntry[] = [
     color: 'var(--app-color-success)',
     icon: eyeOutline,
     label: 'Mit Namen sichtbar',
-    description: 'Der Beitrag erscheint in der Galerie mit dem Namen. Du kannst ihn nachträglich anonym stellen.',
+    description: 'Der Beitrag erscheint in der Galerie mit dem Namen. Du kannst ihn anonym stellen — das gilt dann dauerhaft.',
   },
   {
     color: '#7c3aed',
     icon: eyeOffOutline,
     label: 'Anonym sichtbar',
-    description: 'Der Beitrag erscheint ohne Namen — so gewählt vom Konfi oder nachträglich von euch.',
+    description: 'Der Beitrag erscheint ohne Namen — so gewählt vom Konfi oder von euch. Ihr seht weiterhin, von wem er stammt.',
   },
   {
     color: '#6b7280',

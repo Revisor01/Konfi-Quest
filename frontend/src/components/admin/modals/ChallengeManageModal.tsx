@@ -170,18 +170,14 @@ export const getChallengeIcon = (iconName?: string): string =>
   CHALLENGE_ICONS[iconName || '']?.icon || flag;
 
 // Teilnahme-Kreis (Migration 121): "Mitmachen ist besser als aussen stehen" —
-// Pastor:innen und Teamer:innen koennen selbst beitragen, gleichgewichtet mit
-// den Konfis. Nach dem Start eingefroren (wie Sichtbarkeit/Freigabe).
+// das Team darf IMMER mitschreiben, deshalb gibt es bewusst KEINE Option
+// "nur Konfis" mehr (User-Entscheid 09.08.2026). Bleibt nach dem Start
+// eingefroren (wie Sichtbarkeit/Freigabe).
 const AUDIENCE_OPTIONS: { value: ChallengeAudience; label: string; hint: string }[] = [
   {
-    value: 'konfis',
-    label: 'Nur Konfis',
-    hint: 'Die Konfis der gewählten Jahrgänge reichen Beiträge ein.'
-  },
-  {
     value: 'konfis_und_team',
-    label: 'Konfis und Team',
-    hint: 'Auch Pastor:innen und Teamer:innen können eigene Beiträge einreichen — gleichberechtigt mit den Konfis.'
+    label: 'Jahrgang und Team',
+    hint: 'Die Konfis der gewählten Jahrgänge und ihr im Team — alle reichen gleichberechtigt ein.'
   },
   {
     value: 'nur_team',
@@ -266,7 +262,8 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    audience: 'konfis' as ChallengeAudience,
+    // Standard: das Team ist immer dabei (User-Entscheid 09.08.).
+    audience: 'konfis_und_team' as ChallengeAudience,
     visibility: 'konfi_choice' as ChallengeVisibility,
     moderated: true,
     allowed_media: ['text', 'photo'] as ChallengeMediaType[],
@@ -297,7 +294,10 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
         setFormData({
           title: challenge.title || '',
           description: challenge.description || '',
-          audience: (challenge.audience as ChallengeAudience) || 'konfis',
+          // Alt-Challenges ohne Team-Teilnahme ('konfis') gibt es noch in der DB;
+          // im Formular werden sie als "Jahrgang und Team" angezeigt und beim
+          // naechsten Speichern (vor Start) auch so uebernommen.
+          audience: challenge.audience === 'nur_team' ? 'nur_team' : 'konfis_und_team',
           visibility: (challenge.visibility as ChallengeVisibility) || 'konfi_choice',
           moderated: challenge.moderated !== false,
           allowed_media: (challenge.allowed_media as ChallengeMediaType[]) || ['text', 'photo'],

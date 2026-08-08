@@ -37,6 +37,10 @@ interface ChallengesManageViewProps {
   onDeleteChallenge: (challenge: AdminChallenge) => void;
   // Fuer Card-Modal-Optik der Legende (Sheet ueber der Seite statt Vollbild).
   presentingElement?: HTMLElement | null;
+  // Zusaetzlicher Inhalt DIREKT UNTER dem SectionHeader (Verwalten|Mitmachen der
+  // Page) — gleiches Muster wie EventsView/RequestsView, damit der Switcher das
+  // Design nicht zerreisst (User-Feedback 09.08.).
+  headerSlot?: React.ReactNode;
 }
 
 // Status wird NICHT gespeichert, sondern aus is_draft/starts_at/ends_at abgeleitet
@@ -101,7 +105,8 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
   onSelectChallenge,
   onEditChallenge,
   onDeleteChallenge,
-  presentingElement
+  presentingElement,
+  headerSlot
 }) => {
   // Defensive: bei kaputten/gecachten Responses (Object statt Array) auf [] fallen
   const challenges: AdminChallenge[] = Array.isArray(challengesRaw) ? challengesRaw : [];
@@ -151,6 +156,8 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
         ]}
         onInfo={() => presentLegend({ presentingElement: presentingElement || undefined })}
       />
+
+      {headerSlot}
 
       <div style={{ margin: '16px 16px 8px 16px' }}>
         <IonSegment

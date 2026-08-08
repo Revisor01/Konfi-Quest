@@ -52,17 +52,23 @@ export interface EventFormData {
   teamer_max_waitlist_size: number;
 }
 
-// ---- BasicInfoSection (inkl. Pflicht-Event und Mitbringen; der Teamer-Zugang
-// lebt in der eigenen TeamerSection weiter unten im Formular) ----
+// ---- BasicInfoSection ----
+// Enthaelt bewusst ALLES, was den weiteren Formularverlauf steuert (User-
+// Entscheid 09.08.): Pflicht-Event, Konfirmation und der Teamer-Zugang. Sobald
+// hier feststeht, FUER WEN das Event ist, blendet sich der Rest des Formulars
+// entsprechend ein oder aus — deshalb darf diese Entscheidung nicht weiter
+// unten stehen.
 
 interface BasicInfoSectionProps {
   formData: EventFormData;
   setFormData: (data: EventFormData) => void;
+  teamerAccess: 'normal' | 'teamer_needed' | 'teamer_only';
+  setTeamerAccess: (value: 'normal' | 'teamer_needed' | 'teamer_only') => void;
   loading: boolean;
 }
 
 export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
-  formData, setFormData, loading
+  formData, setFormData, teamerAccess, setTeamerAccess, loading
 }) => (
   <IonList inset={true} className="app-modal-section">
     <IonListHeader>
@@ -128,7 +134,7 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
             disabled={loading}
           />
         </IonItem>
-        <IonItem lines="none">
+        <IonItem lines="inset">
           <IonLabel position="stacked">Konfirmation</IonLabel>
           <IonToggle
             slot="end"
@@ -141,6 +147,22 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
             }}
             disabled={loading}
           />
+        </IonItem>
+        {/* Steuert, welche Abschnitte weiter unten ueberhaupt erscheinen —
+            gehoert deshalb in die Grunddaten. */}
+        <IonItem lines="none">
+          <IonLabel position="stacked">Für wen ist das Event?</IonLabel>
+          <IonSelect
+            value={teamerAccess}
+            onIonChange={(e) => setTeamerAccess(e.detail.value)}
+            disabled={loading}
+            interface="popover"
+            interfaceOptions={{ cssClass: 'app-select-popover--wide' }}
+          >
+            <IonSelectOption value="normal">Nur Konfis</IonSelectOption>
+            <IonSelectOption value="teamer_needed">Konfis, Teamer:innen gesucht</IonSelectOption>
+            <IonSelectOption value="teamer_only">Nur Teamer:innen</IonSelectOption>
+          </IonSelect>
         </IonItem>
       </IonList>
     </IonCardContent>
@@ -457,23 +479,20 @@ export const CategoriesTargetSection = React.memo<CategoriesTargetSectionProps>(
   </IonList>
 ));
 
-// ---- TeamerSection (Teamer-Zugang + Kontingent/Warteliste) ----
-// Die Konfi-Plaetze samt Warteliste liegen in PointsParticipantsSection
-// ("Konfis") — beide Karten haben denselben Aufbau, nur die Punkte gibt es
-// ausschliesslich bei den Konfis.
-// Der Zugang-Select ist immer sichtbar; die Platz- und Wartelisten-Felder
-// erscheinen erst, wenn Teamer:innen ueberhaupt teilnehmen koennen.
+// ---- TeamerSection (Plaetze + Warteliste fuer Teamer:innen) ----
+// Der Zugang ("Fuer wen ist das Event?") steht in den GRUNDDATEN, weil er den
+// weiteren Formularverlauf steuert (User-Entscheid 09.08.). Diese Karte wird
+// von EventModal nur gerendert, wenn Teamer:innen ueberhaupt teilnehmen —
+// Aufbau identisch zur Konfis-Karte, nur ohne Punkte.
 
 interface TeamerSectionProps {
   formData: EventFormData;
   setFormData: (data: EventFormData) => void;
-  teamerAccess: 'normal' | 'teamer_needed' | 'teamer_only';
-  setTeamerAccess: (value: 'normal' | 'teamer_needed' | 'teamer_only') => void;
   loading: boolean;
 }
 
 export const TeamerSection = React.memo<TeamerSectionProps>(({
-  formData, setFormData, teamerAccess, setTeamerAccess, loading
+  formData, setFormData, loading
 }) => (
   <IonList inset={true} className="app-modal-section">
     <IonListHeader>
@@ -485,21 +504,6 @@ export const TeamerSection = React.memo<TeamerSectionProps>(({
     <IonCard className="app-card">
     <IonCardContent>
       <IonList>
-        <IonItem lines={teamerAccess !== 'normal' ? 'inset' : 'none'}>
-          <IonLabel position="stacked">Teamer-Zugang</IonLabel>
-          <IonSelect
-            value={teamerAccess}
-            onIonChange={(e) => setTeamerAccess(e.detail.value)}
-            disabled={loading}
-            interface="popover"
-            interfaceOptions={{ cssClass: 'app-select-popover--wide' }}
-          >
-            <IonSelectOption value="normal">Nur Konfis</IonSelectOption>
-            <IonSelectOption value="teamer_needed">Teamer:innen gesucht</IonSelectOption>
-            <IonSelectOption value="teamer_only">Nur Teamer:innen</IonSelectOption>
-          </IonSelect>
-        </IonItem>
-        {teamerAccess !== 'normal' && (<>
         <IonItem lines="none">
           <IonLabel>Unbegrenzte Teamer:innen</IonLabel>
           <IonToggle
@@ -557,7 +561,6 @@ export const TeamerSection = React.memo<TeamerSectionProps>(({
               </div>
             </IonItem>
           )}
-        </>)}
         </>)}
       </IonList>
     </IonCardContent>

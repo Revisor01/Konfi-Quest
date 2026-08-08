@@ -28,13 +28,16 @@ interface ChallengeParticipationPanelProps {
   presentingElement?: HTMLElement | null;
   /** Cache-Schluessel-Praefix, damit Rollen sich keinen Cache teilen. */
   cacheKeyPrefix: string;
+  /** Inhalt direkt unter dem SectionHeader (Verwalten|Mitmachen der Page). */
+  headerSlot?: React.ReactNode;
 }
 
 const EMPTY_RESPONSE: KonfiChallengesResponse = { active: [], archive: [], marks: [] };
 
 const ChallengeParticipationPanel: React.FC<ChallengeParticipationPanelProps> = ({
   presentingElement,
-  cacheKeyPrefix
+  cacheKeyPrefix,
+  headerSlot
 }) => {
   const { user } = useApp();
 
@@ -102,6 +105,7 @@ const ChallengeParticipationPanel: React.FC<ChallengeParticipationPanelProps> = 
       marks={marks}
       onSelectChallenge={handleSelectChallenge}
       onSubmit={handleSubmitChallenge}
+      headerSlot={headerSlot}
     />
   );
 };

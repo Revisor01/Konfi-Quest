@@ -124,6 +124,25 @@ const AdminChallengesPage: React.FC = () => {
 
   const { handleDelete } = useChallengeDelete({ onDeleted: refreshChallenges });
 
+  // Verwalten | Mitmachen — wird als headerSlot DIREKT unter den Stats-Header
+  // gereicht (Muster wie Events|Anträge), damit der Switcher nicht ueber dem
+  // Header steht und das Design zerreisst (User-Feedback 09.08.).
+  const segmentSwitcher = (
+    <div className="app-segment-wrapper">
+      <IonSegment
+        value={segment}
+        onIonChange={(e) => setSegment(e.detail.value as 'verwalten' | 'mitmachen')}
+      >
+        <IonSegmentButton value="verwalten">
+          <IonLabel>Verwalten</IonLabel>
+        </IonSegmentButton>
+        <IonSegmentButton value="mitmachen">
+          <IonLabel>Mitmachen</IonLabel>
+        </IonSegmentButton>
+      </IonSegment>
+    </div>
+  );
+
   return (
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
@@ -158,26 +177,11 @@ const AdminChallengesPage: React.FC = () => {
           <IonRefresherContent />
         </IonRefresher>
 
-        {/* Verwalten | Mitmachen — die Leitung kann bei Challenges mit
-            Team-Teilnahme selbst Beitraege einreichen (Migration 121). */}
-        <div style={{ margin: '16px 16px 0 16px' }}>
-          <IonSegment
-            value={segment}
-            onIonChange={(e) => setSegment(e.detail.value as 'verwalten' | 'mitmachen')}
-          >
-            <IonSegmentButton value="verwalten">
-              <IonLabel>Verwalten</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="mitmachen">
-              <IonLabel>Mitmachen</IonLabel>
-            </IonSegmentButton>
-          </IonSegment>
-        </div>
-
         {segment === 'mitmachen' ? (
           <ChallengeParticipationPanel
             presentingElement={pageRef.current || presentingElement}
             cacheKeyPrefix="admin:challenges:teilnahme"
+            headerSlot={segmentSwitcher}
           />
         ) : loading ? (
           <LoadingSpinner message="Challenges werden geladen..." />
@@ -188,6 +192,7 @@ const AdminChallengesPage: React.FC = () => {
             onEditChallenge={openEdit}
             onDeleteChallenge={handleDelete}
             presentingElement={pageRef.current || presentingElement}
+            headerSlot={segmentSwitcher}
           />
         )}
       </IonContent>

@@ -1537,8 +1537,8 @@ describe('Challenges Routes', () => {
       expect(detail.body.gallery[0].display_name).toBeNull();
     });
 
-    it('deanonymize macht den Namen wieder sichtbar', async () => {
-      const { challenge, submission } = await setupChallengeWithForeignSubmission(
+    it('Anonymitaet ist eine EINBAHNSTRASSE: deanonymize gibt es nicht -> 400', async () => {
+      const { submission } = await setupChallengeWithForeignSubmission(
         { visibility: 'konfi_choice' },
         { konfi_consent: 'anonymous', moderation_status: 'approved' }
       );
@@ -1547,13 +1547,26 @@ describe('Challenges Routes', () => {
         .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
         .set('Authorization', `Bearer ${admin1Token}`)
         .send({ action: 'deanonymize' });
-      expect(res.status).toBe(200);
-      expect(res.body.konfi_consent).toBe('publish');
+      expect(res.status).toBe(400);
+    });
 
+    it('Bereits anonymer Beitrag laesst sich nicht erneut umstellen -> 409', async () => {
+      const { challenge, submission } = await setupChallengeWithForeignSubmission(
+        { visibility: 'konfi_choice' },
+        { konfi_consent: 'anonymous', moderation_status: 'approved' }
+      );
+
+      const res = await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ action: 'anonymize' });
+      expect(res.status).toBe(409);
+
+      // Und er bleibt in der Galerie ohne Namen.
       const detail = await request(app)
         .get(`/api/challenges/konfi/${challenge.id}`)
         .set('Authorization', `Bearer ${konfi1Token}`);
-      expect(detail.body.gallery[0].display_name).toBeTruthy();
+      expect(detail.body.gallery[0].display_name).toBeNull();
     });
 
     it("consent='private' laesst sich NICHT aufweichen -> 409 (staerkste Zusage des Konfi)", async () => {
@@ -1565,7 +1578,7 @@ describe('Challenges Routes', () => {
       const res = await request(app)
         .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
         .set('Authorization', `Bearer ${admin1Token}`)
-        .send({ action: 'deanonymize' });
+        .send({ action: 'anonymize' });
       expect(res.status).toBe(409);
     });
 

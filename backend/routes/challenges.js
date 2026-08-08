@@ -46,7 +46,7 @@ const TEAM_ROLES = ['org_admin', 'admin', 'teamer'];
 // Konfis nur bei 'konfis'/'konfis_und_team', Team nur bei
 // 'konfis_und_team'/'nur_team'. super_admin nie (org-fremde Rolle).
 function maySubmit(roleName, audience) {
-  const aud = audience || 'konfis';
+  const aud = audience || 'konfis_und_team';
   if (roleName === 'konfi') return aud === 'konfis' || aud === 'konfis_und_team';
   if (TEAM_ROLES.includes(roleName)) return aud === 'konfis_und_team' || aud === 'nur_team';
   return false;
@@ -381,13 +381,15 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     handleValidationErrors
   ];
 
-  // anonymize/deanonymize: die Leitung kann einen Beitrag nachtraeglich anonym
-  // stellen (Ruecksicht auf den Konfi) oder — wenn er ohnehin mit Namen
-  // veroeffentlicht werden durfte — den Namen wieder zeigen. Nur bei
-  // visibility='konfi_choice' sinnvoll, dort lebt konfi_consent.
+  // anonymize: die Leitung kann einen Beitrag nachtraeglich anonym stellen, um
+  // jemanden zu schuetzen. BEWUSST OHNE Gegenstueck — einmal anonym, immer
+  // anonym (User-Entscheid 09.08.2026): Wer anonym eingereicht hat (oder von der
+  // Leitung anonymisiert wurde), darf NIE nachtraeglich mit Namen erscheinen,
+  // das waere ein Bruch der Zusage. Die Leitung sieht in dieser Ansicht ohnehin
+  // immer den echten Namen — fuer Rueckfragen reicht das, ohne die Gruppe.
   const validateModerate = [
     param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
-    body('action').isIn(['approve', 'hide', 'unhide', 'anonymize', 'deanonymize'])
+    body('action').isIn(['approve', 'hide', 'unhide', 'anonymize'])
       .withMessage('Ungültige Moderations-Aktion'),
     handleValidationErrors
   ];
@@ -1082,7 +1084,8 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
       // 'nur_team' laeuft org-weit ueber die Rolle — Jahrgaenge werden dort
       // bewusst NICHT gespeichert (sonst wuerde die Zuordnung suggerieren, sie
       // wuerde den Kreis einschraenken).
-      const newAudience = AUDIENCES.includes(audience) ? audience : 'konfis';
+      // Default 'konfis_und_team' (Migration 122): das Team ist immer dabei.
+      const newAudience = AUDIENCES.includes(audience) ? audience : 'konfis_und_team';
       const teamOnly = newAudience === 'nur_team';
 
       const media = Array.isArray(allowed_media) && allowed_media.length > 0
@@ -1452,24 +1455,29 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         }
 
         // Anonymisieren betrifft NUR den Konsens, nicht den Freigabe-Status.
-        if (action === 'anonymize' || action === 'deanonymize') {
+        // Einbahnstrasse: publish -> anonymous. Rueckweg gibt es nicht.
+        if (action === 'anonymize') {
           if (submission.visibility !== 'konfi_choice') {
             return res.status(409).json({
               error: 'Anonymität lässt sich nur bei Challenges einstellen, bei denen der Konfi selbst entscheidet.'
             });
           }
           // 'private' ist die staerkste Zusage des Konfi ("nur die Leitung") —
-          // die darf die Moderation NICHT zu einer Veroeffentlichung aufweichen.
+          // die darf die Moderation NICHT aufweichen.
           if (submission.konfi_consent === 'private') {
             return res.status(409).json({
               error: 'Dieser Beitrag ist nur für die Leitung freigegeben. Diese Zusage lässt sich nicht ändern.'
             });
           }
-          const newConsent = action === 'anonymize' ? 'anonymous' : 'publish';
+          if (submission.konfi_consent === 'anonymous') {
+            return res.status(409).json({
+              error: 'Dieser Beitrag ist bereits anonym. Anonymität lässt sich nicht zurücknehmen.'
+            });
+          }
           const { rows: [row] } = await db.query(
-            `UPDATE challenge_submissions SET konfi_consent = $2
+            `UPDATE challenge_submissions SET konfi_consent = 'anonymous'
              WHERE id = $1 RETURNING id, moderation_status, konfi_consent`,
-            [submissionId, newConsent]
+            [submissionId]
           );
           res.json(row);
           notifyJahrgaenge(submission.challenge_id, 'submission_update', { challengeId: submission.challenge_id });

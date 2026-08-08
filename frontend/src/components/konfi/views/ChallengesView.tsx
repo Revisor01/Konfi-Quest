@@ -101,6 +101,9 @@ interface ChallengesViewProps {
   marks: ChallengeMark[];
   onSelectChallenge: (challenge: KonfiChallenge) => void;
   onSubmit: (challenge: KonfiChallenge) => void;
+  // Zusaetzlicher Inhalt DIREKT UNTER dem SectionHeader (Leitungs-Sicht:
+  // Verwalten|Mitmachen). Gleiches Muster wie EventsView/RequestsView.
+  headerSlot?: React.ReactNode;
 }
 
 /** Urheber-Zeile: Freitext hat Vorrang, sonst der aufgeloeste Benutzername. */
@@ -162,7 +165,8 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
   archive,
   marks,
   onSelectChallenge,
-  onSubmit
+  onSubmit,
+  headerSlot
 }) => {
   // Aktive Challenges: die knappste Frist zuerst — was zuerst endet, steht oben.
   const sortedActive = useMemo(
@@ -194,6 +198,8 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
           { value: archive.length, label: 'ARCHIV' }
         ]}
       />
+
+      {headerSlot}
 
       {/* --- 1. Aktive Challenges --- */}
       <IonList inset={true} style={{ margin: '16px' }}>

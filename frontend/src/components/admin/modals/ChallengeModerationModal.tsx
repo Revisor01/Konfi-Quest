@@ -192,7 +192,12 @@ interface ChallengeModerationModalProps {
   onChanged?: () => void;
 }
 
-type StatusFilter = 'all' | 'pending' | 'approved' | 'hidden';
+// Drei Filter reichen (User-Entscheid 09.08.): alles sehen, sehen was noch
+// wartet, sehen was ausgeblendet wurde. "Offen" war doppeldeutig (offen =
+// unerledigt ODER offen = oeffentlich sichtbar) -> "Wartet".
+// Freigegebene Beitraege haben bewusst KEINEN eigenen Filter: sie sind der
+// Normalfall und stehen ohnehin unter "Alle".
+type StatusFilter = 'all' | 'pending' | 'hidden';
 
 const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
   challenge,
@@ -249,7 +254,7 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
 
   const moderate = async (
     submission: ChallengeSubmission,
-    action: 'approve' | 'hide' | 'unhide' | 'anonymize' | 'deanonymize'
+    action: 'approve' | 'hide' | 'unhide' | 'anonymize'
   ) => {
     setBusyId(submission.id);
     try {
@@ -261,6 +266,19 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
     } finally {
       setBusyId(null);
     }
+  };
+
+  // Anonymisieren ist endgueltig -> Rueckfrage, damit das niemand versehentlich
+  // ausloest (das Backend lehnt jede Ruecknahme mit 409 ab).
+  const confirmAnonymize = (submission: ChallengeSubmission) => {
+    presentAlert({
+      header: 'Beitrag anonym stellen',
+      message: `Der Beitrag von ${submission.konfi_name || 'diesem Konfi'} erscheint für die Gruppe dann ohne Namen. Das lässt sich nicht rückgängig machen — ihr in der Leitung seht weiterhin, von wem er stammt.`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        { text: 'Anonym stellen', handler: () => { moderate(submission, 'anonymize'); } }
+      ]
+    });
   };
 
   const confirmHide = (submission: ChallengeSubmission) => {
@@ -354,7 +372,7 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
           preset="challenges"
           stats={[
             { value: counts.total, label: 'Gesamt' },
-            { value: counts.pending, label: 'Offen' },
+            { value: counts.pending, label: 'Wartet' },
             { value: counts.approved, label: 'Freigegeben' }
           ]}
         />
@@ -377,9 +395,8 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
         <div style={{ margin: '16px 16px 8px 16px' }}>
           <IonSegment value={statusFilter} onIonChange={(e) => setStatusFilter(e.detail.value as StatusFilter)}>
             <IonSegmentButton value="all"><IonLabel>Alle</IonLabel></IonSegmentButton>
-            <IonSegmentButton value="pending"><IonLabel>Offen</IonLabel></IonSegmentButton>
-            <IonSegmentButton value="approved"><IonLabel>Frei</IonLabel></IonSegmentButton>
-            <IonSegmentButton value="hidden"><IonLabel>Versteckt</IonLabel></IonSegmentButton>
+            <IonSegmentButton value="pending"><IonLabel>Wartet</IonLabel></IonSegmentButton>
+            <IonSegmentButton value="hidden"><IonLabel>Ausgeblendet</IonLabel></IonSegmentButton>
           </IonSegment>
         </div>
 
@@ -456,10 +473,12 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
                               <div className="app-list-item__title">
                                 {submission.konfi_name || 'Unbekannt'}
                               </div>
+                              {/* Medienart bewusst NICHT als Text (User-Entscheid
+                                  09.08.): sie bricht die Zeile um und sagt nichts
+                                  Nuetzliches — das Icon links zeigt sie ohnehin. */}
                               <div className="app-list-item__subtitle">
-                                {MEDIA_LABEL[submission.media_type] || submission.media_type}
-                                {submission.jahrgang_name ? ` · ${submission.jahrgang_name}` : ''}
-                                {' · '}{formatDateTime(submission.created_at)}
+                                {submission.jahrgang_name ? `${submission.jahrgang_name} · ` : ''}
+                                {formatDateTime(submission.created_at)}
                               </div>
                             </div>
                           </div>
@@ -509,27 +528,22 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
                                 Freigeben
                               </IonButton>
                             )}
-                            {/* Anonymitaet nachtraeglich umstellen — nur wo der
-                                Konfi selbst entscheidet und er die
-                                Veroeffentlichung erlaubt hat ('private' ist die
-                                staerkste Zusage und bleibt unantastbar). */}
+                            {/* Anonym stellen ist eine EINBAHNSTRASSE (User-Entscheid
+                                09.08.): einmal anonym, immer anonym — sonst wuerde
+                                ein anonym gemeinter Beitrag nachtraeglich mit Namen
+                                erscheinen. Deshalb nur bei consent='publish'
+                                sichtbar und mit Rueckfrage. */}
                             {challenge.visibility === 'konfi_choice'
-                              && (submission.konfi_consent === 'publish' || submission.konfi_consent === 'anonymous') && (
+                              && submission.konfi_consent === 'publish' && (
                               <IonButton
                                 size="small"
                                 fill="outline"
                                 disabled={isBusy}
-                                onClick={() => moderate(
-                                  submission,
-                                  submission.konfi_consent === 'anonymous' ? 'deanonymize' : 'anonymize'
-                                )}
+                                onClick={() => confirmAnonymize(submission)}
                                 style={{ '--color': '#7c3aed', '--border-color': '#7c3aed', '--border-radius': '8px', height: '32px' }}
                               >
-                                <IonIcon
-                                  icon={submission.konfi_consent === 'anonymous' ? eyeOutline : eyeOffOutline}
-                                  slot="start"
-                                />
-                                {submission.konfi_consent === 'anonymous' ? 'Namen zeigen' : 'Anonym stellen'}
+                                <IonIcon icon={eyeOffOutline} slot="start" />
+                                Anonym stellen
                               </IonButton>
                             )}
                             {submission.moderation_status !== 'hidden' ? (
