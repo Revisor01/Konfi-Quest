@@ -71,6 +71,7 @@ export interface EventData {
   timeslots?: Array<{ id: number; start_time: string; end_time: string; max_participants: number; registered_count: number }>;
   has_timeslots?: boolean;
   mandatory?: boolean;
+  is_konfirmation?: boolean;
   bring_items?: string;
   teamer_needed?: boolean;
   teamer_only?: boolean;
@@ -266,7 +267,7 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
         {/* Punkte und Typ entfallen bei Pflicht-Events UND bei reinen
             Teamer-Events: dort gibt es keine Konfi-Punkte zu vergeben, die
             Zeilen zeigten nur "0 / Gemeinde" (User-Hinweis 09.08.). */}
-        {!eventData.mandatory && !eventData.teamer_only && (
+        {!eventData.mandatory && !eventData.teamer_only && !eventData.is_konfirmation && (
           <div className="app-info-row">
             <IonIcon icon={trophy} className="app-info-row__icon app-icon-color--points" />
             <div>
@@ -276,7 +277,7 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
           </div>
         )}
 
-        {!eventData.mandatory && !eventData.teamer_only && (
+        {!eventData.mandatory && !eventData.teamer_only && !eventData.is_konfirmation && (
           <div className="app-info-row">
             <IonIcon
               icon={eventData.point_type === 'gottesdienst' ? home : people}

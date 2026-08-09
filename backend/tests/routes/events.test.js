@@ -316,6 +316,51 @@ describe('Events Routes', () => {
   // ================================================================
   // POST /api/events/:id/book (Konfi-Buchung)
   // ================================================================
+  // Regression (Audit 09.08.2026): Konfi- und Teamer-Kontingent sind strikt
+  // getrennt (Migration 120). Angemeldete Teamer duerfen NICHT gegen die
+  // Konfi-Plaetze zaehlen — sonst gilt ein Event fuer Konfis als ausgebucht,
+  // obwohl dort noch Plaetze frei sind.
+  describe('Kontingent-Trennung Konfi/Teamer', () => {
+    it('Teamer-Buchung belegt KEINEN Konfi-Platz (registered_count bleibt konfi-only)', async () => {
+      // Event mit genau 1 Konfi-Platz und Teamer-Bedarf
+      const { rows: [event] } = await db.query(
+        `INSERT INTO events (name, event_date, max_participants, waitlist_enabled,
+                             teamer_needed, teamer_max_participants, point_type,
+                             created_by, organization_id)
+         VALUES ('Kontingent-Test', NOW() + INTERVAL '7 days', 1, false,
+                 true, 5, 'gemeinde', $1, $2)
+         RETURNING id`,
+        [USERS.admin1.id, ORGS.testGemeinde.id]
+      );
+      await db.query(
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        [event.id, JAHRGAENGE.jahrgang1.id]
+      );
+
+      // Teamer meldet sich an -> eigenes Kontingent
+      const teamerRes = await request(app)
+        .post(`/api/events/${event.id}/book`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(teamerRes.status).toBe(201);
+      expect(teamerRes.body.status).toBe('confirmed');
+
+      // Konfi muss den einen Konfi-Platz trotzdem bekommen
+      const konfiRes = await request(app)
+        .post(`/api/events/${event.id}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(konfiRes.status).toBe(201);
+      expect(konfiRes.body.status).toBe('confirmed');
+
+      // Und die Liste meldet den Konfi-Platz als belegt (1), nicht 2
+      const list = await request(app)
+        .get('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`);
+      const listed = list.body.find((e) => e.id === event.id);
+      expect(parseInt(listed.registered_count, 10)).toBe(1);
+      expect(parseInt(listed.teamer_count, 10)).toBe(1);
+    });
+  });
+
   describe('POST /api/events/:id/book', () => {
     it('Konfi bucht freiwilliges Event -> 201 confirmed', async () => {
       const res = await request(app)
@@ -1578,6 +1623,68 @@ describe('Events Routes', () => {
         expect(row.bring_items).toBe('Bibel und Stift');
         expect(row.checkin_window).toBe(45);
       });
+    });
+
+    // Regression (Audit 09.08.2026): Die Serien-Route wendete KEINE der
+    // effective*-Zwangsregeln an — eine Pflicht-Serie bekam Punkte,
+    // Teilnehmerzahl, Warteliste und Timeslots wie gesendet und hatte kein
+    // Auto-Enrollment.
+    it('Pflicht-Serie: Punkte/Plaetze/Warteliste erzwungen + Auto-Enrollment', async () => {
+      const res = await request(app)
+        .post('/api/events/series')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Pflichtreihe',
+          event_date: futureDate(),
+          series_count: 2,
+          series_interval: 'week',
+          mandatory: true,
+          jahrgang_ids: [JAHRGAENGE.jahrgang1.id],
+          points: 5,
+          max_participants: 20,
+          waitlist_enabled: true,
+        });
+
+      expect(res.status).toBe(201);
+
+      const { rows } = await db.query(
+        `SELECT id, points, max_participants, waitlist_enabled, has_timeslots
+         FROM events WHERE name LIKE 'Pflichtreihe%' AND organization_id = $1`,
+        [ORGS.testGemeinde.id]
+      );
+      expect(rows.length).toBe(2);
+      rows.forEach((row) => {
+        expect(row.points).toBe(0);
+        expect(row.max_participants).toBe(0);
+        expect(row.waitlist_enabled).toBe(false);
+        expect(row.has_timeslots).toBe(false);
+      });
+
+      // Auto-Enrollment: JEDER Termin hat die Konfis des Jahrgangs als Teilnehmer
+      for (const row of rows) {
+        const { rows: [count] } = await db.query(
+          "SELECT COUNT(*)::int AS c FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'",
+          [row.id]
+        );
+        expect(count.c).toBeGreaterThan(0);
+      }
+    });
+
+    it('Serie mit mandatory ohne Jahrgang -> 400 (wie Einzel-Event)', async () => {
+      const res = await request(app)
+        .post('/api/events/series')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Pflicht ohne Jahrgang',
+          event_date: futureDate(),
+          series_count: 2,
+          series_interval: 'week',
+          mandatory: true,
+          jahrgang_ids: [],
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('Jahrgang');
     });
 
     it('Serie mit ungueltigem Teamer-Kontingent -> 400 (wie beim Einzel-Event)', async () => {

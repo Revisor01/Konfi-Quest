@@ -8,7 +8,8 @@ interface SectionHeaderProps {
   icon: string;
   preset?: 'events' | 'activities' | 'konfis' | 'teamer' | 'users' | 'organizations' | 'badges' | 'requests' | 'jahrgang' | 'konfi-requests' | 'categories' | 'level' | 'challenges';
   colors?: { primary: string; secondary: string };
-  stats: Array<{ value: number; label: string }>;
+  // string erlaubt, damit Kacheln auch "∞" (unbegrenzte Plaetze) zeigen koennen.
+  stats: Array<{ value: number | string; label: string }>;
   // Optionaler Info-(i)-Button oben rechts im Banner (z.B. für eine Farbcode-Legende).
   onInfo?: () => void;
 }

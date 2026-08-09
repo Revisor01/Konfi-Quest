@@ -719,16 +719,19 @@ const TeamerEventsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Konfis - ohne Teamer */}
-                <div className="app-info-row">
-                  <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
-                  <div>
-                    <div className="app-info-row__label">Teilnehmer:innen</div>
-                    <div className="app-info-row__value">
-                      {selectedEvent.registered_count - (selectedEvent.teamer_count || 0)} / {selectedEvent.max_participants > 0 ? selectedEvent.max_participants : '\u221E'}
+                {/* Konfis \u2014 entfaellt bei reinen Teamer-Events (dort gibt es
+                    keine Konfi-Teilnahme, die Zeile zeigte "0 / \u221E") */}
+                {!selectedEvent.teamer_only && (
+                  <div className="app-info-row">
+                    <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
+                    <div>
+                      <div className="app-info-row__label">Teilnehmer:innen</div>
+                      <div className="app-info-row__value">
+                        {selectedEvent.registered_count - (selectedEvent.teamer_count || 0)} / {selectedEvent.max_participants > 0 ? selectedEvent.max_participants : '\u221E'}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Zeitslots mit Belegung + Warteliste pro Slot */}
                 {selectedEvent.has_timeslots && eventTimeslots.length > 0 && (
@@ -745,16 +748,16 @@ const TeamerEventsPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Team */}
-                {(selectedEvent.teamer_count !== undefined && selectedEvent.teamer_count > 0) && (
+                {/* Team — haengt an der EINSTELLUNG des Events, nicht daran, ob
+                    sich schon jemand angemeldet hat. Sonst fehlt bei einem
+                    frischen "5 gesucht"-Event genau die Zeile "0 / 5". */}
+                {(selectedEvent.teamer_needed || selectedEvent.teamer_only) && (
                   <div className="app-info-row">
                     <IonIcon icon={people} className="app-info-row__icon app-icon-color--team" />
                     <div>
                       <div className="app-info-row__label">Teamer:innen</div>
                       <div className="app-info-row__value">
-                        {(selectedEvent.teamer_max_participants || 0) > 0
-                          ? `${selectedEvent.teamer_count} / ${selectedEvent.teamer_max_participants}`
-                          : selectedEvent.teamer_count}
+                        {(selectedEvent.teamer_count || 0)} / {(selectedEvent.teamer_max_participants || 0) > 0 ? selectedEvent.teamer_max_participants : '∞'}
                       </div>
                     </div>
                   </div>
@@ -773,27 +776,34 @@ const TeamerEventsPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Punkte */}
-                <div className="app-info-row">
-                  <IonIcon icon={trophy} className="app-info-row__icon app-icon-color--points" />
-                  <div>
-                    <div className="app-info-row__label">Punkte</div>
-                    <div className="app-info-row__value">{selectedEvent.points}</div>
-                  </div>
-                </div>
-
-                {/* Typ */}
-                {selectedEvent.type && (
-                  <div className="app-info-row">
-                    <IonIcon
-                      icon={selectedEvent.type === 'gottesdienst' ? home : people}
-                      className={`app-info-row__icon ${selectedEvent.type === 'gottesdienst' ? 'app-icon-color--gottesdienst' : 'app-icon-color--gemeinde'}`}
-                    />
-                    <div>
-                      <div className="app-info-row__label">Typ</div>
-                      <div className="app-info-row__value">{selectedEvent.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}</div>
+                {/* Punkte und Typ: nur wenn es fuer die KONFIS ueberhaupt
+                    Punkte gibt. Teamer:innen bekommen nie Konfi-Punkte — bei
+                    Pflicht-/Konfirmations- und reinen Teamer-Events stand hier
+                    sonst "Punkte 0 / Typ Gemeinde".
+                    Der Typ kommt aus point_type (nicht aus type — das ist die
+                    Event-Art und war der Grund, warum hier immer "Gemeinde"
+                    stand). */}
+                {!selectedEvent.teamer_only && !selectedEvent.mandatory
+                  && !selectedEvent.is_konfirmation && (selectedEvent.points || 0) > 0 && (
+                  <>
+                    <div className="app-info-row">
+                      <IonIcon icon={trophy} className="app-info-row__icon app-icon-color--points" />
+                      <div>
+                        <div className="app-info-row__label">Punkte</div>
+                        <div className="app-info-row__value">{selectedEvent.points}</div>
+                      </div>
                     </div>
-                  </div>
+                    <div className="app-info-row">
+                      <IonIcon
+                        icon={selectedEvent.point_type === 'gottesdienst' ? home : people}
+                        className={`app-info-row__icon ${selectedEvent.point_type === 'gottesdienst' ? 'app-icon-color--gottesdienst' : 'app-icon-color--gemeinde'}`}
+                      />
+                      <div>
+                        <div className="app-info-row__label">Typ</div>
+                        <div className="app-info-row__value">{selectedEvent.point_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}</div>
+                      </div>
+                    </div>
+                  </>
                 )}
 
                 {/* Kategorien */}

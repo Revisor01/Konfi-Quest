@@ -441,7 +441,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     );
   }
 
-  const spotsLeft = eventData.max_participants - eventData.registered_count;
+  // Freie Plaetze aus KONFI-Sicht: Teamer haben ein eigenes Kontingent und
+  // duerfen hier nicht mitzaehlen. max_participants = 0 heisst unbegrenzt —
+  // dort ergab die Rechnung negative Werte und zeigte faelschlich "0 Frei".
+  const konfiRegistered = eventData.registered_count - (eventData.teamer_count || 0);
+  const isUnlimited = (eventData.max_participants || 0) === 0;
+  const spotsLeft = isUnlimited ? null : eventData.max_participants - konfiRegistered;
 
   return (
     <IonPage ref={pageRef}>
@@ -479,9 +484,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           icon={calendar}
           colors={getStatusColors()}
           stats={[
-            { value: spotsLeft > 0 ? spotsLeft : 0, label: 'Frei' },
-            { value: eventData.points, label: 'Punkte' },
-            { value: eventData.registered_count, label: 'Dabei' }
+            // Unbegrenzt -> "∞ Frei" statt einer irrefuehrenden 0.
+            { value: isUnlimited ? '∞' : Math.max(0, spotsLeft ?? 0), label: 'Frei' },
+            // Punkte-Kachel nur, wenn es welche gibt (Pflicht/Konfirmation: 0).
+            ...((eventData.points || 0) > 0 && !eventData.mandatory && !eventData.is_konfirmation
+              ? [{ value: eventData.points, label: 'Punkte' }]
+              : []),
+            { value: konfiRegistered, label: 'Dabei' }
           ]}
         />
 
@@ -607,26 +616,31 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                 </div>
               )}
 
-              {/* Punkte */}
-              <div className="app-info-row">
-                <IonIcon icon={trophy} className="app-info-row__icon app-icon-color--points" />
-                <div>
-                  <div className="app-info-row__label">Punkte</div>
-                  <div className="app-info-row__value">{eventData.points}</div>
-                </div>
-              </div>
-
-              {/* Typ */}
-              <div className="app-info-row">
-                <IonIcon
-                  icon={eventData.point_type === 'gottesdienst' ? home : people}
-                  className={`app-info-row__icon ${eventData.point_type === 'gottesdienst' ? 'app-icon-color--gottesdienst' : 'app-icon-color--gemeinde'}`}
-                />
-                <div>
-                  <div className="app-info-row__label">Typ</div>
-                  <div className="app-info-row__value">{eventData.point_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}</div>
-                </div>
-              </div>
+              {/* Punkte und Typ nur, wenn es welche gibt. Pflicht-Events und
+                  Konfirmationen geben keine Punkte (Backend erzwingt 0) — dort
+                  stand bisher "Punkte 0 / Typ Gemeinde". Die Konfi-LISTE
+                  blendet das schon korrekt aus, das Detail nicht. */}
+              {(eventData.points || 0) > 0 && !eventData.mandatory && !eventData.is_konfirmation && (
+                <>
+                  <div className="app-info-row">
+                    <IonIcon icon={trophy} className="app-info-row__icon app-icon-color--points" />
+                    <div>
+                      <div className="app-info-row__label">Punkte</div>
+                      <div className="app-info-row__value">{eventData.points}</div>
+                    </div>
+                  </div>
+                  <div className="app-info-row">
+                    <IonIcon
+                      icon={eventData.point_type === 'gottesdienst' ? home : people}
+                      className={`app-info-row__icon ${eventData.point_type === 'gottesdienst' ? 'app-icon-color--gottesdienst' : 'app-icon-color--gemeinde'}`}
+                    />
+                    <div>
+                      <div className="app-info-row__label">Typ</div>
+                      <div className="app-info-row__value">{eventData.point_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}</div>
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Kategorien */}
               {eventData.categories && eventData.categories.length > 0 && (

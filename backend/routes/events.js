@@ -116,8 +116,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         FROM events e
         LEFT JOIN LATERAL (
           SELECT
-            COUNT(*) FILTER (WHERE eb.status = 'confirmed') as registered_count,
-            COUNT(*) FILTER (WHERE eb.status = 'waitlist') as waitlist_count,
+            -- registered_count/waitlist_count sind KONFI-Zahlen (Migration 120:
+            -- Teamer haben ein eigenes Kontingent). Ohne den Rollenfilter
+            -- zaehlten angemeldete Teamer gegen die Konfi-Plaetze, und
+            -- registration_status meldete "ausgebucht", obwohl fuer Konfis noch
+            -- Plaetze frei waren.
+            COUNT(*) FILTER (WHERE eb.status = 'confirmed' AND COALESCE(r_book.name, '') <> 'teamer') as registered_count,
+            COUNT(*) FILTER (WHERE eb.status = 'waitlist' AND COALESCE(r_book.name, '') <> 'teamer') as waitlist_count,
             COUNT(*) FILTER (WHERE eb.status = 'confirmed' AND eb.attendance_status IS NULL) as unprocessed_count,
             COUNT(*) as total_participants,
             COUNT(*) FILTER (WHERE eb.status = 'confirmed' AND r_book.name = 'teamer') as teamer_count,
@@ -1915,7 +1920,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       await client.query('BEGIN');
 
       // 1. Get event details (FOR UPDATE sperrt die Zeile)
-      const { rows: [event] } = await client.query("SELECT id, name, description, event_date, event_end_time, location, points, point_type, type, max_participants, registration_opens_at, registration_closes_at, has_timeslots, waitlist_enabled, max_waitlist_size, is_series, series_id, mandatory, bring_items, checkin_window, teamer_needed, teamer_only, cancelled, qr_token, created_by, organization_id FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE", [eventId, req.user.organization_id]);
+      const { rows: [event] } = await client.query("SELECT id, name, description, event_date, event_end_time, location, points, point_type, type, max_participants, registration_opens_at, registration_closes_at, has_timeslots, waitlist_enabled, max_waitlist_size, teamer_max_participants, teamer_waitlist_enabled, teamer_max_waitlist_size, is_series, series_id, mandatory, is_konfirmation, bring_items, checkin_window, teamer_needed, teamer_only, cancelled, qr_token, created_by, organization_id FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE", [eventId, req.user.organization_id]);
       if (!event) {
         await client.query('ROLLBACK');
         client.release();
@@ -1958,26 +1963,68 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // 5. Determine final status
       let finalStatus = status;
       if (status === 'auto') {
-        const isTimeslotBooking = !!timeslot;
+        // Rolle des hinzugefuegten Users bestimmt, GEGEN WELCHES Kontingent
+        // gezaehlt wird. Ohne diese Weiche landete ein per Admin hinzugefuegter
+        // Teamer im Konfi-Kontingent — und stand er auf der Warteliste, fand
+        // ihn promoteFromWaitlist(...,'not_teamer') nie: eine tote Buchung.
+        const { rows: [addedUser] } = await client.query(
+          `SELECT r.name AS role_name FROM users u
+           JOIN roles r ON u.role_id = r.id
+           WHERE u.id = $1 AND u.organization_id = $2`,
+          [user_id, req.user.organization_id]
+        );
+        const addedIsTeamer = addedUser?.role_name === 'teamer';
+
+        if (addedIsTeamer && !event.teamer_needed && !event.teamer_only) {
+          await client.query('ROLLBACK');
+          client.release();
+          return res.status(400).json({ error: 'Dieses Event ist nicht für Teamer:innen vorgesehen' });
+        }
+        if (!addedIsTeamer && event.teamer_only) {
+          await client.query('ROLLBACK');
+          client.release();
+          return res.status(400).json({ error: 'Dieses Event ist nur für Teamer:innen' });
+        }
+
+        // Teamer buchen nie in Timeslots (wie im Selbst-Buchungs-Pfad).
+        const isTimeslotBooking = !!timeslot && !addedIsTeamer;
+        const roleFilterSql = addedIsTeamer
+          ? "AND r.name = 'teamer'"
+          : "AND r.name <> 'teamer'";
         const capacityQuery = isTimeslotBooking
-        ? "SELECT COUNT(*) as confirmed_count FROM event_bookings WHERE timeslot_id = $1 AND status = 'confirmed'"
-        : "SELECT COUNT(*) as confirmed_count FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'";
+        ? `SELECT COUNT(*) as confirmed_count FROM event_bookings eb
+             JOIN users u ON eb.user_id = u.id JOIN roles r ON u.role_id = r.id
+             WHERE eb.timeslot_id = $1 AND eb.status = 'confirmed' ${roleFilterSql} AND u.deleted_at IS NULL`
+        : `SELECT COUNT(*) as confirmed_count FROM event_bookings eb
+             JOIN users u ON eb.user_id = u.id JOIN roles r ON u.role_id = r.id
+             WHERE eb.event_id = $1 AND eb.status = 'confirmed' ${roleFilterSql} AND u.deleted_at IS NULL`;
         const capacityParam = isTimeslotBooking ? timeslot.id : eventId;
-        const maxCapacity = isTimeslotBooking ? timeslot.max_participants : event.max_participants;
+        const maxCapacity = isTimeslotBooking
+          ? timeslot.max_participants
+          : (addedIsTeamer ? (event.teamer_max_participants || 0) : event.max_participants);
 
         const { rows: [capacityResult] } = await client.query(capacityQuery, [capacityParam]);
         const confirmedCount = parseInt(capacityResult.confirmed_count, 10);
 
         // Only check capacity if maxCapacity > 0 (0 means unlimited)
         if (maxCapacity > 0 && confirmedCount >= maxCapacity) {
-          if (event.waitlist_enabled) {
+          // Auch die Warteliste rollenrichtig: Teamer haben eigene Felder.
+          const waitlistEnabled = addedIsTeamer ? event.teamer_waitlist_enabled : event.waitlist_enabled;
+          const maxWaitlistSize = addedIsTeamer
+            ? (event.teamer_max_waitlist_size || 10)
+            : event.max_waitlist_size;
+          if (waitlistEnabled) {
             const waitlistQuery = isTimeslotBooking
-            ? "SELECT COUNT(*) as waitlist_count FROM event_bookings WHERE timeslot_id = $1 AND status = 'waitlist'"
-            : "SELECT COUNT(*) as waitlist_count FROM event_bookings WHERE event_id = $1 AND status = 'waitlist'";
+            ? `SELECT COUNT(*) as waitlist_count FROM event_bookings eb
+                 JOIN users u ON eb.user_id = u.id JOIN roles r ON u.role_id = r.id
+                 WHERE eb.timeslot_id = $1 AND eb.status = 'waitlist' ${roleFilterSql} AND u.deleted_at IS NULL`
+            : `SELECT COUNT(*) as waitlist_count FROM event_bookings eb
+                 JOIN users u ON eb.user_id = u.id JOIN roles r ON u.role_id = r.id
+                 WHERE eb.event_id = $1 AND eb.status = 'waitlist' ${roleFilterSql} AND u.deleted_at IS NULL`;
             const { rows: [waitlistResult] } = await client.query(waitlistQuery, [capacityParam]);
             const waitlistCount = parseInt(waitlistResult.waitlist_count, 10);
 
-            if (waitlistCount >= event.max_waitlist_size) {
+            if (waitlistCount >= maxWaitlistSize) {
               await client.query('ROLLBACK');
               client.release();
               return res.status(409).json({ error: 'Event und Warteliste sind voll' });
@@ -2155,6 +2202,27 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     if (seriesTeamerQuotaCheck) {
       return res.status(400).json({ error: seriesTeamerQuotaCheck });
     }
+
+    // Gegenseitiger Ausschluss wie in POST / und PUT /:id
+    if (teamer_needed && teamer_only) {
+      return res.status(400).json({ error: 'teamer_needed und teamer_only schließen sich gegenseitig aus' });
+    }
+
+    // Pflicht-Events benoetigen mindestens einen Jahrgang (wie POST /)
+    if (mandatory && (!jahrgang_ids || jahrgang_ids.length === 0)) {
+      return res.status(400).json({ error: 'Pflicht-Events benötigen mindestens einen Jahrgang' });
+    }
+
+    // DIESELBEN Zwangsregeln wie POST / — vorher wendete die Serien-Route
+    // KEINE davon an: eine Serie mit mandatory bekam Punkte, Teilnehmerzahl,
+    // Warteliste und Timeslots wie gesendet, eine Konfirmations-Serie ebenso.
+    const seriesPoints = (mandatory || is_konfirmation || teamer_only) ? 0 : (points || 0);
+    const seriesMaxParticipants = mandatory ? 0 : max_participants;
+    const seriesWaitlist = mandatory ? false : (waitlist_enabled !== undefined ? waitlist_enabled : true);
+    const seriesHasTimeslots = (mandatory || is_konfirmation) ? false : (has_timeslots || false);
+    // checkin_window auf 5-120 begrenzen (wie POST /): ein negativer Wert
+    // wuerde das QR-Zeitfenster umdrehen.
+    const seriesCheckinWindow = Math.max(5, Math.min(120, parseInt(checkin_window) || 30));
     
     if (!name || !event_date || !series_count || series_count < 2) {
       return res.status(400).json({ error: 'Name, Datum und Serienanzahl (min. 2) sind erforderlich' });
@@ -2267,11 +2335,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             eventName, description, eventStartDate.toISOString(),
             eventEndDate ? eventEndDate.toISOString() : null,
             location, location_maps_url,
-            points || 0, point_type || 'gemeinde', type || 'event', max_participants,
+            seriesPoints, point_type || 'gemeinde', type || 'event', seriesMaxParticipants,
             regOpens ? regOpens.toISOString() : null,
             regCloses ? regCloses.toISOString() : null,
-            has_timeslots || false,
-            waitlist_enabled !== undefined ? waitlist_enabled : true,
+            seriesHasTimeslots,
+            seriesWaitlist,
             max_waitlist_size || 10,
             teamer_needed || false, teamer_only || false,
             teamer_max_participants !== undefined && teamer_max_participants !== null ? parseInt(teamer_max_participants, 10) : 0,
@@ -2279,7 +2347,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             teamer_max_waitlist_size !== undefined && teamer_max_waitlist_size !== null ? parseInt(teamer_max_waitlist_size, 10) : 10,
             mandatory || false, is_konfirmation || false,
             bring_items || null,
-            checkin_window !== undefined && checkin_window !== null ? parseInt(checkin_window, 10) : 30,
+            seriesCheckinWindow,
             req.user.id, req.user.organization_id
           ]);
           eventId = newEvent.id;
@@ -2306,11 +2374,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             eventName, description, eventStartDate.toISOString(),
             eventEndDate ? eventEndDate.toISOString() : null,
             location, location_maps_url,
-            points || 0, point_type || 'gemeinde', type || 'event', max_participants,
+            seriesPoints, point_type || 'gemeinde', type || 'event', seriesMaxParticipants,
             regOpens ? regOpens.toISOString() : null,
             regCloses ? regCloses.toISOString() : null,
-            has_timeslots || false,
-            waitlist_enabled !== undefined ? waitlist_enabled : true,
+            seriesHasTimeslots,
+            seriesWaitlist,
             max_waitlist_size || 10,
             seriesId,
             teamer_needed || false, teamer_only || false,
@@ -2319,7 +2387,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             teamer_max_waitlist_size !== undefined && teamer_max_waitlist_size !== null ? parseInt(teamer_max_waitlist_size, 10) : 10,
             mandatory || false, is_konfirmation || false,
             bring_items || null,
-            checkin_window !== undefined && checkin_window !== null ? parseInt(checkin_window, 10) : 30,
+            seriesCheckinWindow,
             req.user.id, req.user.organization_id
           ]);
           eventId = newEvent.id;
@@ -2359,6 +2427,25 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         }
         // Wait for all relations of THIS event to be created before moving to next event
         await Promise.all(relationPromises);
+
+        // Auto-Enrollment fuer Pflicht-Events — wie in POST / (dort Z. 858ff).
+        // Fehlte hier komplett: eine Pflicht-SERIE hatte in keinem Termin
+        // Teilnehmer, obwohl Pflicht bedeutet "der ganze Jahrgang ist dabei".
+        if (mandatory && jahrgang_ids && jahrgang_ids.length > 0) {
+          await client.query(
+            `INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
+             SELECT $1, u.id, 'confirmed', NOW(), $3
+             FROM users u
+             JOIN konfi_profiles kp ON u.id = kp.user_id
+             JOIN roles r ON u.role_id = r.id
+             WHERE kp.jahrgang_id = ANY($2::int[])
+               AND u.organization_id = $3
+               AND r.name = 'konfi'
+               AND u.deleted_at IS NULL
+             ON CONFLICT (user_id, event_id) DO NOTHING`,
+            [eventId, jahrgang_ids, req.user.organization_id]
+          );
+        }
       }
 
       await client.query('COMMIT');

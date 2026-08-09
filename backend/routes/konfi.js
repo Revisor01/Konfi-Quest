@@ -1155,12 +1155,12 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         INNER JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
         LEFT JOIN LATERAL (
           SELECT
-            COUNT(*) FILTER (WHERE eb_all.status = 'confirmed') as registered_count,
-            -- Konfi-Sicht: die Warteliste zaehlt NUR Konfis. Teamer haben ein
-            -- eigenes Kontingent mit eigener Warteliste (Migration 120) — die
-            -- mitzuzaehlen liesse die Konfi-Warteliste voll erscheinen, obwohl
-            -- dort noch Plaetze frei sind, und die Anmeldung wuerde faelschlich
-            -- als geschlossen gelten.
+            -- Konfi-Sicht: registered_count UND waitlist_count zaehlen NUR
+            -- Konfis. Teamer haben ein eigenes Kontingent mit eigener
+            -- Warteliste (Migration 120) — sie mitzuzaehlen liesse Plaetze und
+            -- Warteliste voll erscheinen, obwohl fuer Konfis noch frei ist,
+            -- und die Anmeldung galt faelschlich als geschlossen.
+            COUNT(*) FILTER (WHERE eb_all.status = 'confirmed' AND COALESCE(r_book.name, '') <> 'teamer') as registered_count,
             COUNT(*) FILTER (WHERE eb_all.status = 'waitlist' AND COALESCE(r_book.name, '') <> 'teamer') as waitlist_count,
             COUNT(*) FILTER (WHERE eb_all.status = 'confirmed' AND r_book.name = 'teamer') as teamer_count
           FROM event_bookings eb_all
@@ -1515,6 +1515,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
             AND eb.status = 'confirmed'
             AND e.is_konfirmation = true
             AND e.organization_id = $2
+            AND (e.cancelled IS NULL OR e.cancelled = false)
         `;
         const { rows: [existingKonfirmation] } = await client.query(existingKonfirmationQuery, [konfiId, req.user.organization_id]);
 
@@ -1527,8 +1528,12 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         }
       }
 
-      // Get event details and current registration count (FOR UPDATE sperrt die Event-Zeile)
-      const event = await getEventWithCounts(client, eventId, req.user.organization_id);
+      // Get event details and current registration count (FOR UPDATE sperrt die Event-Zeile).
+      // excludeTeamers: Konfi- und Teamer-Plaetze sind strikt getrennt (Migration
+      // 120). Ohne den Filter zaehlten angemeldete Teamer gegen das KONFI-
+      // Kontingent — ein Event mit 5 Konfi-Plaetzen und 3 Teamern haette nur noch
+      // 2 Konfis aufgenommen und danach faelschlich "ausgebucht" gemeldet.
+      const event = await getEventWithCounts(client, eventId, req.user.organization_id, { excludeTeamers: true });
 
       if (!event) {
         await client.query('ROLLBACK');
@@ -1671,9 +1676,13 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         return res.status(400).json({ error: 'Du bist nicht für dieses Event angemeldet' });
       }
       
-      // Check if event exists and get event details
+      // Check if event exists and get event details.
+      // max_participants/has_timeslots werden fuer den Kapazitaetscheck beim
+      // Nachruecken gebraucht — fehlten sie hier, war max_participants
+      // undefined und es wurde IMMER nachgerueckt (auch ueber die Kapazitaet
+      // hinaus).
       const { rows: [event] } = await db.query(
-        'SELECT name, event_date FROM events WHERE id = $1 AND organization_id = $2',
+        'SELECT name, event_date, max_participants, has_timeslots FROM events WHERE id = $1 AND organization_id = $2',
         [eventId, req.user.organization_id]
       );
       
@@ -1701,13 +1710,41 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       // Nachrücken von Warteliste wenn ein bestätigter Platz frei wird
       if (registration.status === 'confirmed') {
         try {
-          // Kapazitaet pruefen: Nur nachruecken wenn confirmedCount < maxCapacity
-          const { rows: [countResult] } = await db.query(
-            "SELECT COUNT(*) as confirmed_count FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'",
-            [eventId]
-          );
-          const maxCapacity = event.max_participants || 0;
-          const confirmedCount = parseInt(countResult?.confirmed_count || '0', 10);
+          // Kapazitaet pruefen: Nur nachruecken wenn confirmedCount < maxCapacity.
+          // Bei Timeslot-Events gilt die SLOT-Kapazitaet (dort wird auch
+          // slot-genau nachgerueckt), sonst die Event-Kapazitaet.
+          // Teamer zaehlen NIE mit: sie haben ein eigenes Kontingent, und
+          // nachgerueckt wird hier ausschliesslich aus der Konfi-Warteliste.
+          let maxCapacity = event.max_participants || 0;
+          let confirmedCount = 0;
+          if (event.has_timeslots && registration.timeslot_id) {
+            const { rows: [slot] } = await db.query(
+              'SELECT max_participants FROM event_timeslots WHERE id = $1',
+              [registration.timeslot_id]
+            );
+            maxCapacity = slot?.max_participants || 0;
+            const { rows: [slotCount] } = await db.query(
+              `SELECT COUNT(*) as confirmed_count
+               FROM event_bookings eb
+               JOIN users u ON eb.user_id = u.id
+               JOIN roles r ON u.role_id = r.id
+               WHERE eb.timeslot_id = $1 AND eb.status = 'confirmed'
+                 AND r.name != 'teamer' AND u.deleted_at IS NULL`,
+              [registration.timeslot_id]
+            );
+            confirmedCount = parseInt(slotCount?.confirmed_count || '0', 10);
+          } else {
+            const { rows: [countResult] } = await db.query(
+              `SELECT COUNT(*) as confirmed_count
+               FROM event_bookings eb
+               JOIN users u ON eb.user_id = u.id
+               JOIN roles r ON u.role_id = r.id
+               WHERE eb.event_id = $1 AND eb.status = 'confirmed'
+                 AND r.name != 'teamer' AND u.deleted_at IS NULL`,
+              [eventId]
+            );
+            confirmedCount = parseInt(countResult?.confirmed_count || '0', 10);
+          }
 
           if (maxCapacity === 0 || confirmedCount < maxCapacity) {
             // roleFilter 'not_teamer': ein frei gewordener Konfi-Platz wird nur

@@ -338,10 +338,44 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
               </IonItem>
               {!formData.mandatory && (
                 <>
-                  <IonItem lines="none">
-                    <IonLabel position="stacked">Anmeldung ab</IonLabel>
-                    <IonDatetimeButton datetime="registration-opens-picker" />
+                  {/* "Ab sofort" = registration_opens_at NULL. Beide Detail-
+                      Ansichten zeigen dafuer "Sofort möglich" — bis jetzt liess
+                      sich dieser Zustand im Formular gar nicht herstellen. */}
+                  <IonItem lines="inset">
+                    <IonLabel>
+                      <h3 style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '600' }}>
+                        Anmeldung ab sofort
+                      </h3>
+                      <p style={{ color: '#666', margin: '0', fontSize: '0.85rem', whiteSpace: 'normal' }}>
+                        Ohne Startzeitpunkt — die Anmeldung ist sofort offen.
+                      </p>
+                    </IonLabel>
+                    <IonToggle
+                      slot="end"
+                      className="app-toggle--events"
+                      checked={!formData.registration_opens_at}
+                      disabled={loading}
+                      onIonChange={(e) => {
+                        if (e.detail.checked) {
+                          setFormData({ ...formData, registration_opens_at: '' });
+                        } else {
+                          // Zurueck auf einen sinnvollen Startwert: jetzt.
+                          const now = new Date();
+                          const pad = (n: number) => n.toString().padStart(2, '0');
+                          setFormData({
+                            ...formData,
+                            registration_opens_at: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:00`
+                          });
+                        }
+                      }}
+                    />
                   </IonItem>
+                  {!!formData.registration_opens_at && (
+                    <IonItem lines="inset">
+                      <IonLabel position="stacked">Anmeldung ab</IonLabel>
+                      <IonDatetimeButton datetime="registration-opens-picker" />
+                    </IonItem>
+                  )}
                   <IonItem lines="none">
                     <IonLabel position="stacked">Anmeldeschluss</IonLabel>
                     <IonDatetimeButton datetime="registration-closes-picker" />
@@ -484,10 +518,17 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
               return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
             };
             const endDate = new Date(eventDate); endDate.setHours(endDate.getHours() + 1);
-            const regOpens = new Date(); regOpens.setHours(9, 0, 0, 0);
             const regCloses = new Date(eventDate); regCloses.setHours(regCloses.getHours() - 24);
-            setFormData({ ...formData, event_date: selectedDate, event_end_time: toIonDatetimeISO(endDate),
-              registration_opens_at: toIonDatetimeISO(regOpens), registration_closes_at: toIonDatetimeISO(regCloses) });
+            // Anmeldezeiten NUR beim Neuanlegen mitziehen. Beim Bearbeiten
+            // wuerde ein Dreh am Datums-Wheel sonst still die vom Admin
+            // gesetzten Anmeldezeiten ueberschreiben (Datenverlust).
+            // "Ab sofort" (leeres registration_opens_at) bleibt immer erhalten.
+            setFormData({
+              ...formData,
+              event_date: selectedDate,
+              event_end_time: toIonDatetimeISO(endDate),
+              ...(event ? {} : { registration_closes_at: toIonDatetimeISO(regCloses) })
+            });
           }}
           presentation="date-time" minuteValues="0,15,30,45" firstDayOfWeek={1}
           style={{ '--background': '#f8f9fa', '--border-radius': '12px', '--box-shadow': '0 4px 16px rgba(0,0,0,0.1)' }} />
