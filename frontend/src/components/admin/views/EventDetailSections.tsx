@@ -200,21 +200,29 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
           const konfiPresent = konfiOnly.filter(p => p.attendance_status === 'present').length;
           const konfiConfirmed = konfiOnly.filter(p => p.status === 'confirmed').length;
           const teamerMax = eventData.teamer_max_participants || 0;
+          // Anzeige haengt an der EINSTELLUNG des Events, nicht daran, ob sich
+          // schon jemand angemeldet hat \u2014 sonst fehlen bei einem frischen Event
+          // genau die Zeilen, die man braucht (Bugreport 09.08.).
+          const teamerErlaubt = !!(eventData.teamer_needed || eventData.teamer_only);
+          const nurTeamer = !!eventData.teamer_only;
           return (
             <>
-              <div className="app-info-row">
-                <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
-                <div>
-                  <div className="app-info-row__label">Teilnehmer:innen</div>
-                  <div className="app-info-row__value">
-                    {eventData.mandatory
-                      ? `${konfiPresent} / ${konfiOnly.length}`
-                      : `${konfiConfirmed} / ${(eventData.max_participants || 0) > 0 ? eventData.max_participants : '\u221E'}`
-                    }
+              {/* Bei "Nur Teamer:innen" gibt es keine Konfi-Teilnahme */}
+              {!nurTeamer && (
+                <div className="app-info-row">
+                  <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
+                  <div>
+                    <div className="app-info-row__label">Teilnehmer:innen</div>
+                    <div className="app-info-row__value">
+                      {eventData.mandatory
+                        ? `${konfiPresent} / ${konfiOnly.length}`
+                        : `${konfiConfirmed} / ${(eventData.max_participants || 0) > 0 ? eventData.max_participants : '\u221E'}`
+                      }
+                    </div>
                   </div>
                 </div>
-              </div>
-              {teamerOnly.length > 0 && (
+              )}
+              {teamerErlaubt && (
                 <div className="app-info-row">
                   <IonIcon icon={people} className="app-info-row__icon app-icon-color--team" />
                   <div>
@@ -225,7 +233,8 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
                   </div>
                 </div>
               )}
-              {teamerOnly.length > 0 && eventData.teamer_waitlist_enabled && (
+              {/* Teamer-Warteliste: nur sinnvoll bei BEGRENZTEN Teamer-Plaetzen */}
+              {teamerErlaubt && eventData.teamer_waitlist_enabled && teamerMax > 0 && (
                 <div className="app-info-row">
                   <IonIcon icon={listOutline} className="app-info-row__icon app-icon-color--waitlist" />
                   <div>
@@ -240,14 +249,15 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
           );
         })()}
 
-        {/* Warteliste */}
-        {(eventData as any)?.waitlist_enabled && (
+        {/* Warteliste (Konfis) \u2014 entfaellt bei "Nur Teamer:innen" und bei
+            unbegrenzten Plaetzen (dann kann niemand warten) */}
+        {(eventData as any)?.waitlist_enabled && !eventData.teamer_only && (eventData.max_participants || 0) > 0 && (
           <div className="app-info-row">
             <IonIcon icon={listOutline} className="app-info-row__icon app-icon-color--waitlist" />
             <div>
               <div className="app-info-row__label">Warteliste</div>
               <div className="app-info-row__value">
-                {participants.filter(p => p.status === 'waitlist').length} / {(eventData as any)?.max_waitlist_size || 10}
+                {participants.filter(p => p.role_name !== 'teamer' && p.status === 'waitlist').length} / {(eventData as any)?.max_waitlist_size || 10}
               </div>
             </div>
           </div>

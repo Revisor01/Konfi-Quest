@@ -622,10 +622,29 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             const konfiOnly = participants.filter(p => p.role_name !== 'teamer');
             const teamerOnly = participants.filter(p => p.role_name === 'teamer');
             const teamerConfirmedCount = teamerOnly.filter(p => p.status === 'confirmed').length;
-            const hasTeamer = (eventData?.teamer_needed || eventData?.teamer_only) && teamerOnly.length > 0;
+            const teamerWaitlistCount = teamerOnly.filter(p => p.status === 'waitlist').length;
+            // Teamer-Kontingent gilt, sobald das Event Teamer zulaesst \u2014 NICHT
+            // erst, wenn sich schon jemand angemeldet hat (sonst zeigt ein
+            // frisches "Nur Teamer"-Event Konfi-Zahlen).
+            const teamerMax = (eventData?.teamer_max_participants || 0) > 0
+              ? eventData?.teamer_max_participants : '\u221E';
             const presentCount = konfiOnly.filter(p => p.attendance_status === 'present').length;
             const absentCount = konfiOnly.filter(p => p.attendance_status === 'absent' || p.status === 'opted_out').length;
             const konfiConfirmed = konfiOnly.filter(p => p.status === 'confirmed').length;
+
+            // "Nur Teamer:innen": es gibt gar keine Konfi-Teilnahme -> die
+            // Kacheln muessen komplett vom Team erzaehlen (vorher stand hier
+            // "0 von 0 TN" und die Teamer tauchten nirgends auf).
+            if (eventData?.teamer_only) {
+              const teamerPresent = teamerOnly.filter(p => p.attendance_status === 'present').length;
+              return [
+                { value: teamerConfirmedCount, label: `von ${teamerMax} Team` },
+                { value: teamerPresent, label: 'Anwesend' },
+                { value: teamerWaitlistCount, label: 'Warteliste' }
+              ];
+            }
+
+            const hasTeamer = !!eventData?.teamer_needed;
             if (eventData?.mandatory) {
               return [
                 { value: presentCount, label: `von ${konfiOnly.length} TN` },
@@ -639,7 +658,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             return [
               { value: konfiConfirmed, label: `von ${maxP} TN` },
               hasTeamer
-                ? { value: teamerConfirmedCount, label: 'Team' }
+                ? { value: teamerConfirmedCount, label: `von ${teamerMax} Team` }
                 : { value: eventData?.points || 0, label: 'Punkte' },
               { value: konfiOnly.filter(p => p.status === 'waitlist').length, label: 'Warteliste' }
             ];
@@ -704,16 +723,30 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           const hasWaitlist = (eventData as any)?.waitlist_enabled && waitlistParticipants.length > 0;
           const hasUnassigned = unassignedParticipants.length > 0;
 
+          // Noch niemand angemeldet: nur die Hinzufuegen-Buttons zeigen — aber
+          // die passenden. Bei "Nur Teamer:innen" gibt es keine Konfi-Teilnahme
+          // (vorher stand hier ausschliesslich "Konfi hinzufügen", und die
+          // Teamer-Sektion darunter wurde durch den Return nie erreicht).
           if (displayParticipants.length === 0 && teamerParticipants.length === 0) {
+            const teamerErlaubt = !!(eventData?.teamer_needed || eventData?.teamer_only);
             return (
               <IonList className="app-section-inset" inset={true}>
                 <IonCard className="app-card">
                   <IonCardContent className="app-card-content">
-                    <IonButton expand="block" fill="outline"
-                      onClick={() => presentKonfiModal({ presentingElement: presentingElement || undefined })}>
-                      <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
-                      Konfi hinzufügen
-                    </IonButton>
+                    {!eventData?.teamer_only && (
+                      <IonButton expand="block" fill="outline"
+                        onClick={() => presentKonfiModal({ presentingElement: presentingElement || undefined })}>
+                        <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
+                        Konfi hinzufügen
+                      </IonButton>
+                    )}
+                    {teamerErlaubt && (
+                      <IonButton expand="block" fill="outline"
+                        onClick={() => presentTeamerModal({ presentingElement: presentingElement || undefined })}>
+                        <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
+                        Teamer:in hinzufügen
+                      </IonButton>
+                    )}
                   </IonCardContent>
                 </IonCard>
               </IonList>
@@ -735,9 +768,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           const teamerWaitlist = teamerParticipants.filter(p => p.status === 'waitlist');
           const teamerHeaderText = `Teamer:innen (${teamerConfirmed.length}${teamerWaitlist.length > 0 ? ` + ${teamerWaitlist.length}` : ''})`;
 
+          // Bei "Nur Teamer:innen" gibt es keine Konfi-Teilnahme — dann darf
+          // weder die Konfi-Liste noch ein "Konfi hinzufügen" erscheinen.
+          const isTeamerOnlyEvent = !!eventData?.teamer_only;
+
           return (
             <>
-              {displayParticipants.length > 0 && (
+              {!isTeamerOnlyEvent && displayParticipants.length > 0 && (
                 <IonList className="app-section-inset" inset={true}>
                   <IonListHeader>
                     <div className="app-section-icon app-section-icon--events"><IonIcon icon={people} /></div>
@@ -794,7 +831,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                   </IonCard>
                 </IonList>
               )}
-              {displayParticipants.length === 0 && teamerParticipants.length > 0 && (
+              {!isTeamerOnlyEvent && displayParticipants.length === 0 && teamerParticipants.length > 0 && (
                 <IonList className="app-section-inset" inset={true}>
                   <IonCard className="app-card">
                     <IonCardContent className="app-card-content">

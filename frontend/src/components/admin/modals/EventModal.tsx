@@ -229,7 +229,11 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         is_series: formData.is_series,
         series_count: formData.is_series ? formData.series_count : undefined,
         series_interval: formData.is_series ? formData.series_interval : undefined,
-        mandatory: formData.mandatory, is_konfirmation: formData.is_konfirmation,
+        // "Nur Teamer:innen" schliesst Pflicht-Event und Konfirmation aus
+        // (beides sind Konfi-Kategorien) — das Formular blendet sie dort aus,
+        // der Payload haelt es konsistent, auch bei umgestellten Bestands-Events.
+        mandatory: isTeamerOnly ? false : formData.mandatory,
+        is_konfirmation: isTeamerOnly ? false : formData.is_konfirmation,
         bring_items: formData.bring_items.trim() || null,
         checkin_window: formData.checkin_window,
         teamer_needed: teamerAccess === 'teamer_needed', teamer_only: teamerAccess === 'teamer_only',

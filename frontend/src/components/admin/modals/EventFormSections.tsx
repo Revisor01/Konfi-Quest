@@ -120,6 +120,33 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
             disabled={loading}
           />
         </IonItem>
+        {/* Steuert, welche Abschnitte weiter unten ueberhaupt erscheinen —
+            gehoert deshalb ganz nach oben in die Grunddaten. */}
+        <IonItem lines={teamerAccess === 'teamer_only' ? 'none' : 'inset'}>
+          <IonLabel position="stacked">Für wen ist das Event?</IonLabel>
+          <IonSelect
+            value={teamerAccess}
+            onIonChange={(e) => {
+              const value = e.detail.value;
+              setTeamerAccess(value);
+              // "Nur Teamer:innen" schliesst Pflicht-Event und Konfirmation aus:
+              // beides sind Konfi-Kategorien (Pflicht fuer den Jahrgang bzw. der
+              // Konfirmationstermin) und ergeben ohne Konfis keinen Sinn.
+              if (value === 'teamer_only') {
+                setFormData({ ...formData, mandatory: false, is_konfirmation: false, has_timeslots: false });
+              }
+            }}
+            disabled={loading}
+            interface="popover"
+            interfaceOptions={{ cssClass: 'app-select-popover--wide' }}
+          >
+            <IonSelectOption value="normal">Nur Konfis</IonSelectOption>
+            <IonSelectOption value="teamer_needed">Konfis, Teamer:innen gesucht</IonSelectOption>
+            <IonSelectOption value="teamer_only">Nur Teamer:innen</IonSelectOption>
+          </IonSelect>
+        </IonItem>
+        {/* Pflicht-Event und Konfirmation nur, wenn Konfis teilnehmen */}
+        {teamerAccess !== 'teamer_only' && (<>
         <IonItem lines="inset">
           <IonLabel position="stacked">Pflicht-Event</IonLabel>
           <IonToggle
@@ -134,7 +161,7 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
             disabled={loading}
           />
         </IonItem>
-        <IonItem lines="inset">
+        <IonItem lines="none">
           <IonLabel position="stacked">Konfirmation</IonLabel>
           <IonToggle
             slot="end"
@@ -148,22 +175,7 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
             disabled={loading}
           />
         </IonItem>
-        {/* Steuert, welche Abschnitte weiter unten ueberhaupt erscheinen —
-            gehoert deshalb in die Grunddaten. */}
-        <IonItem lines="none">
-          <IonLabel position="stacked">Für wen ist das Event?</IonLabel>
-          <IonSelect
-            value={teamerAccess}
-            onIonChange={(e) => setTeamerAccess(e.detail.value)}
-            disabled={loading}
-            interface="popover"
-            interfaceOptions={{ cssClass: 'app-select-popover--wide' }}
-          >
-            <IonSelectOption value="normal">Nur Konfis</IonSelectOption>
-            <IonSelectOption value="teamer_needed">Konfis, Teamer:innen gesucht</IonSelectOption>
-            <IonSelectOption value="teamer_only">Nur Teamer:innen</IonSelectOption>
-          </IonSelect>
-        </IonItem>
+        </>)}
       </IonList>
     </IonCardContent>
     </IonCard>

@@ -2136,12 +2136,25 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
   
   // Create series events
   router.post('/series', rbacVerifier, requireTeamer, async (req, res) => {
+    // WICHTIG: Diese Liste muss mit POST / (Einzel-Event) synchron bleiben.
+    // Fehlende Felder wurden hier frueher stillschweigend auf den Spalten-
+    // Default gesetzt — eine Serie kam damit ohne Teamer-Kontingent, ohne
+    // Pflicht-/Konfirmations-Flag, ohne Mitbringen und ohne Check-in-Fenster
+    // heraus, obwohl das Formular sie mitgeschickt hat (Bugreport 09.08.).
     const {
       name, description, event_date, event_end_time, location, location_maps_url, points, point_type,
       category_ids, jahrgang_ids, type, max_participants, registration_opens_at,
       registration_closes_at, has_timeslots, waitlist_enabled, max_waitlist_size,
-      timeslots, series_count, series_interval, teamer_needed, teamer_only
+      timeslots, series_count, series_interval, teamer_needed, teamer_only,
+      teamer_max_participants, teamer_waitlist_enabled, teamer_max_waitlist_size,
+      mandatory, is_konfirmation, bring_items, checkin_window
     } = req.body;
+
+    // Gleiche Kontingent-Pruefung wie beim Einzel-Event.
+    const seriesTeamerQuotaCheck = validateTeamerQuota(teamer_max_participants, teamer_max_waitlist_size);
+    if (seriesTeamerQuotaCheck) {
+      return res.status(400).json({ error: seriesTeamerQuotaCheck });
+    }
     
     if (!name || !event_date || !series_count || series_count < 2) {
       return res.status(400).json({ error: 'Name, Datum und Serienanzahl (min. 2) sind erforderlich' });
@@ -2242,8 +2255,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
               name, description, event_date, event_end_time, location, location_maps_url, points, point_type,
               type, max_participants, registration_opens_at, registration_closes_at,
               has_timeslots, waitlist_enabled, max_waitlist_size, is_series,
-              teamer_needed, teamer_only, created_by, organization_id
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, true, $16, $17, $18, $19)
+              teamer_needed, teamer_only,
+              teamer_max_participants, teamer_waitlist_enabled, teamer_max_waitlist_size,
+              mandatory, is_konfirmation, bring_items, checkin_window,
+              created_by, organization_id
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, true, $16, $17,
+                      $18, $19, $20, $21, $22, $23, $24, $25, $26)
             RETURNING id
           `;
           const { rows: [newEvent] } = await client.query(eventQuery, [
@@ -2257,6 +2274,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             waitlist_enabled !== undefined ? waitlist_enabled : true,
             max_waitlist_size || 10,
             teamer_needed || false, teamer_only || false,
+            teamer_max_participants !== undefined && teamer_max_participants !== null ? parseInt(teamer_max_participants, 10) : 0,
+            teamer_waitlist_enabled !== undefined && teamer_waitlist_enabled !== null ? !!teamer_waitlist_enabled : true,
+            teamer_max_waitlist_size !== undefined && teamer_max_waitlist_size !== null ? parseInt(teamer_max_waitlist_size, 10) : 10,
+            mandatory || false, is_konfirmation || false,
+            bring_items || null,
+            checkin_window !== undefined && checkin_window !== null ? parseInt(checkin_window, 10) : 30,
             req.user.id, req.user.organization_id
           ]);
           eventId = newEvent.id;
@@ -2271,8 +2294,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
               name, description, event_date, event_end_time, location, location_maps_url, points, point_type,
               type, max_participants, registration_opens_at, registration_closes_at,
               has_timeslots, waitlist_enabled, max_waitlist_size, is_series, series_id,
-              teamer_needed, teamer_only, created_by, organization_id
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, true, $16, $17, $18, $19, $20)
+              teamer_needed, teamer_only,
+              teamer_max_participants, teamer_waitlist_enabled, teamer_max_waitlist_size,
+              mandatory, is_konfirmation, bring_items, checkin_window,
+              created_by, organization_id
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, true, $16, $17, $18,
+                      $19, $20, $21, $22, $23, $24, $25, $26, $27)
             RETURNING id
           `;
           const { rows: [newEvent] } = await client.query(eventQuery, [
@@ -2287,6 +2314,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             max_waitlist_size || 10,
             seriesId,
             teamer_needed || false, teamer_only || false,
+            teamer_max_participants !== undefined && teamer_max_participants !== null ? parseInt(teamer_max_participants, 10) : 0,
+            teamer_waitlist_enabled !== undefined && teamer_waitlist_enabled !== null ? !!teamer_waitlist_enabled : true,
+            teamer_max_waitlist_size !== undefined && teamer_max_waitlist_size !== null ? parseInt(teamer_max_waitlist_size, 10) : 10,
+            mandatory || false, is_konfirmation || false,
+            bring_items || null,
+            checkin_window !== undefined && checkin_window !== null ? parseInt(checkin_window, 10) : 30,
             req.user.id, req.user.organization_id
           ]);
           eventId = newEvent.id;

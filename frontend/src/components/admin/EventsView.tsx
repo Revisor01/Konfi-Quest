@@ -387,19 +387,23 @@ const EventsView: React.FC<EventsViewProps> = ({
                             </div>
                           )}
 
-                          {/* Zeile 2: Buchungen + Teamer + Warteliste + Punkte */}
+                          {/* Zeile 2: Buchungen + Teamer + Warteliste + Punkte.
+                              Bei "Nur Teamer:innen" gibt es keine Konfi-Teilnahme \u2014
+                              dann waere "0/\u221E" irrefuehrend, es zaehlt nur das Team. */}
                           <div className="app-list-item__meta">
-                            <span className="app-list-item__meta-item">
-                              <IonIcon icon={people} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--participants'} />
-                              {event.mandatory
-                                ? `${event.registered_count - (event.teamer_count || 0)} Konfis`
-                                : `${event.registered_count - (event.teamer_count || 0)}/${(event.max_participants || 0) > 0 ? event.max_participants : '\u221E'}`
-                              }
-                            </span>
-                            {(event.teamer_count || 0) > 0 && (
+                            {!event.teamer_only && (
+                              <span className="app-list-item__meta-item">
+                                <IonIcon icon={people} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--participants'} />
+                                {event.mandatory
+                                  ? `${event.registered_count - (event.teamer_count || 0)} Konfis`
+                                  : `${event.registered_count - (event.teamer_count || 0)}/${(event.max_participants || 0) > 0 ? event.max_participants : '\u221E'}`
+                                }
+                              </span>
+                            )}
+                            {(event.teamer_only || event.teamer_needed) && (
                               <span className="app-list-item__meta-item">
                                 <IonIcon icon={people} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--team'} />
-                                {event.teamer_count} Team
+                                {(event.teamer_count || 0)}/{(event.teamer_max_participants || 0) > 0 ? event.teamer_max_participants : '\u221E'} Team
                               </span>
                             )}
                             {event.waitlist_enabled && (event.waitlist_count ?? 0) > 0 && (

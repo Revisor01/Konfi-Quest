@@ -1537,6 +1537,65 @@ describe('Events Routes', () => {
       expect(new Set(rows.map(r => String(r.series_id))).size).toBe(1);
     });
 
+    // Regression (Bugreport 09.08.2026): Die Serien-Route destrukturierte die
+    // Teamer-Kontingent-Felder, mandatory/is_konfirmation, bring_items und
+    // checkin_window gar nicht aus dem Body — jede Serie fiel still auf die
+    // Spalten-Defaults zurueck, obwohl das Formular alles mitschickt.
+    it('Serie uebernimmt Teamer-Kontingent, Flags, Mitbringen und Check-in-Fenster', async () => {
+      const res = await request(app)
+        .post('/api/events/series')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Teamrunde',
+          event_date: futureDate(),
+          max_participants: 0,
+          series_count: 3,
+          series_interval: 'week',
+          teamer_only: true,
+          teamer_max_participants: 8,
+          teamer_waitlist_enabled: true,
+          teamer_max_waitlist_size: 4,
+          bring_items: 'Bibel und Stift',
+          checkin_window: 45,
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.events_created).toBe(3);
+
+      const { rows } = await db.query(
+        `SELECT teamer_only, teamer_max_participants, teamer_waitlist_enabled,
+                teamer_max_waitlist_size, bring_items, checkin_window
+         FROM events WHERE name LIKE 'Teamrunde%' AND organization_id = $1`,
+        [ORGS.testGemeinde.id]
+      );
+      expect(rows.length).toBe(3);
+      // ALLE Termine der Serie — nicht nur der erste — tragen die Einstellungen.
+      rows.forEach((row) => {
+        expect(row.teamer_only).toBe(true);
+        expect(row.teamer_max_participants).toBe(8);
+        expect(row.teamer_waitlist_enabled).toBe(true);
+        expect(row.teamer_max_waitlist_size).toBe(4);
+        expect(row.bring_items).toBe('Bibel und Stift');
+        expect(row.checkin_window).toBe(45);
+      });
+    });
+
+    it('Serie mit ungueltigem Teamer-Kontingent -> 400 (wie beim Einzel-Event)', async () => {
+      const res = await request(app)
+        .post('/api/events/series')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Kaputte Quote',
+          event_date: futureDate(),
+          series_count: 2,
+          series_interval: 'week',
+          teamer_max_participants: -5,
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('teamer_max_participants');
+    });
+
     it('Mehr als 26 Termine -> 400', async () => {
       const res = await request(app)
         .post('/api/events/series')
