@@ -321,6 +321,41 @@ describe('Events Routes', () => {
   // Konfi-Plaetze zaehlen — sonst gilt ein Event fuer Konfis als ausgebucht,
   // obwohl dort noch Plaetze frei sind.
   describe('Kontingent-Trennung Konfi/Teamer', () => {
+    it('Zwei getrennte Wartelisten: Konfi voll -> Teamer bekommt trotzdem einen Platz', async () => {
+      // Konfi-Kontingent 1 (voll + Warteliste), Teamer-Kontingent 2 (frei)
+      const { rows: [event] } = await db.query(
+        `INSERT INTO events (name, event_date, max_participants, waitlist_enabled, max_waitlist_size,
+                             teamer_needed, teamer_max_participants, teamer_waitlist_enabled,
+                             teamer_max_waitlist_size, point_type, created_by, organization_id)
+         VALUES ('Zwei-Wartelisten', NOW() + INTERVAL '7 days', 1, true, 5,
+                 true, 2, true, 3, 'gemeinde', $1, $2)
+         RETURNING id`,
+        [USERS.admin1.id, ORGS.testGemeinde.id]
+      );
+      await db.query(
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        [event.id, JAHRGAENGE.jahrgang1.id]
+      );
+
+      // Konfi 1 nimmt den einzigen Konfi-Platz
+      const k1 = await request(app)
+        .post(`/api/events/${event.id}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(k1.body.status).toBe('confirmed');
+
+      // Konfi 2 landet auf der KONFI-Warteliste
+      const k2 = await request(app)
+        .post(`/api/events/${event.id}/book`)
+        .set('Authorization', `Bearer ${konfi2Token}`);
+      expect(k2.body.status).toBe('waitlist');
+
+      // Teamer bekommt trotzdem einen bestaetigten Platz (eigenes Kontingent)
+      const t1 = await request(app)
+        .post(`/api/events/${event.id}/book`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(t1.body.status).toBe('confirmed');
+    });
+
     it('Teamer-Buchung belegt KEINEN Konfi-Platz (registered_count bleibt konfi-only)', async () => {
       // Event mit genau 1 Konfi-Platz und Teamer-Bedarf
       const { rows: [event] } = await db.query(

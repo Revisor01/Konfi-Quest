@@ -217,8 +217,12 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         jahrgang_ids: isTeamerOnly ? [] : formData.jahrgang_ids,
         type: formData.type,
         max_participants: (formData.mandatory || isTeamerOnly) ? 0 : formData.max_participants,
-        registration_opens_at: formData.mandatory ? null : toBackendTimestamp(formData.registration_opens_at),
-        registration_closes_at: formData.mandatory ? null : toBackendTimestamp(formData.registration_closes_at),
+        // Kein Anmeldefenster bei Pflicht-Events (alle sind gesetzt) und bei
+        // reinen Teamer-Events (dort gilt es nicht) — sonst bliebe an einem
+        // umgestellten Event ein wirkungsloses Fenster stehen, das die
+        // Statusanzeige faelschlich auf "geschlossen" setzt.
+        registration_opens_at: (formData.mandatory || isTeamerOnly) ? null : toBackendTimestamp(formData.registration_opens_at),
+        registration_closes_at: (formData.mandatory || isTeamerOnly) ? null : toBackendTimestamp(formData.registration_closes_at),
         has_timeslots: (formData.mandatory || formData.is_konfirmation) ? false : formData.has_timeslots,
         // Unbegrenzte Plaetze => keine Warteliste (das Formular zeigt den
         // Schalter dann gar nicht, der Payload muss dazu passen).
@@ -336,7 +340,11 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
                 <IonLabel position="stacked">Endzeit (optional)</IonLabel>
                 <IonDatetimeButton datetime="end-time-picker" />
               </IonItem>
-              {!formData.mandatory && (
+              {/* Anmeldefenster gilt NUR fuer Konfis: Teamer:innen duerfen sich
+                  jederzeit anmelden, sie begrenzt allein ihr Kontingent. Bei
+                  reinen Teamer-Events waeren die Felder daher wirkungslos —
+                  sie zu zeigen hat vorgegaukelt, sie wuerden greifen. */}
+              {!formData.mandatory && teamerAccess !== 'teamer_only' && (
                 <>
                   {/* "Ab sofort" = registration_opens_at NULL. Beide Detail-
                       Ansichten zeigen dafuer "Sofort möglich" — bis jetzt liess
