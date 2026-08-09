@@ -263,8 +263,10 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
           </div>
         )}
 
-        {/* Punkte - bei Pflicht-Events ausblenden */}
-        {!eventData.mandatory && (
+        {/* Punkte und Typ entfallen bei Pflicht-Events UND bei reinen
+            Teamer-Events: dort gibt es keine Konfi-Punkte zu vergeben, die
+            Zeilen zeigten nur "0 / Gemeinde" (User-Hinweis 09.08.). */}
+        {!eventData.mandatory && !eventData.teamer_only && (
           <div className="app-info-row">
             <IonIcon icon={trophy} className="app-info-row__icon app-icon-color--points" />
             <div>
@@ -274,8 +276,7 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
           </div>
         )}
 
-        {/* Typ - bei Pflicht-Events ausblenden */}
-        {!eventData.mandatory && (
+        {!eventData.mandatory && !eventData.teamer_only && (
           <div className="app-info-row">
             <IonIcon
               icon={eventData.point_type === 'gottesdienst' ? home : people}

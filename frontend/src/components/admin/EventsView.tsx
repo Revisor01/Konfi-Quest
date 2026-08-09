@@ -412,7 +412,8 @@ const EventsView: React.FC<EventsViewProps> = ({
                                 {event.waitlist_count}/{event.max_waitlist_size || 10}
                               </span>
                             )}
-                            {event.points > 0 && (
+                            {/* Bei reinen Teamer-Events gibt es keine Punkte */}
+                            {event.points > 0 && !event.teamer_only && (
                               <span className="app-list-item__meta-item">
                                 <IonIcon icon={trophy} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--points'} />
                                 {event.points}P

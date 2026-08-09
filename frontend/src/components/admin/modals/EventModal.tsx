@@ -208,7 +208,10 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         event_date: toBackendTimestamp(formData.event_date),
         event_end_time: toBackendTimestamp(formData.event_end_time),
         location: formData.location.trim() || null,
-        points: (formData.mandatory || formData.is_konfirmation) ? 0 : formData.points,
+        // Reine Teamer-Events vergeben keine Konfi-Punkte (das Formular zeigt
+        // die Konfis-Karte dort gar nicht) — sonst bliebe ein alter Punktwert
+        // an einem umgestellten Event haengen.
+        points: (formData.mandatory || formData.is_konfirmation || isTeamerOnly) ? 0 : formData.points,
         point_type: isTeamerOnly ? 'gemeinde' : formData.point_type,
         category_ids: formData.category_ids,
         jahrgang_ids: isTeamerOnly ? [] : formData.jahrgang_ids,

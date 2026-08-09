@@ -1156,7 +1156,12 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         LEFT JOIN LATERAL (
           SELECT
             COUNT(*) FILTER (WHERE eb_all.status = 'confirmed') as registered_count,
-            COUNT(*) FILTER (WHERE eb_all.status = 'waitlist') as waitlist_count,
+            -- Konfi-Sicht: die Warteliste zaehlt NUR Konfis. Teamer haben ein
+            -- eigenes Kontingent mit eigener Warteliste (Migration 120) — die
+            -- mitzuzaehlen liesse die Konfi-Warteliste voll erscheinen, obwohl
+            -- dort noch Plaetze frei sind, und die Anmeldung wuerde faelschlich
+            -- als geschlossen gelten.
+            COUNT(*) FILTER (WHERE eb_all.status = 'waitlist' AND COALESCE(r_book.name, '') <> 'teamer') as waitlist_count,
             COUNT(*) FILTER (WHERE eb_all.status = 'confirmed' AND r_book.name = 'teamer') as teamer_count
           FROM event_bookings eb_all
           LEFT JOIN users u_book ON eb_all.user_id = u_book.id
