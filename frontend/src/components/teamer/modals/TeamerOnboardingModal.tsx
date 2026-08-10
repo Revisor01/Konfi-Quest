@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   sparklesOutline, homeOutline, chatbubblesOutline, calendarOutline,
-  ribbonOutline, folderOpenOutline, flagOutline,
+  ribbonOutline, folderOpenOutline, flagOutline, documentTextOutline,
 } from 'ionicons/icons';
 import OnboardingTour, { OnboardingSlide } from '../../shared/OnboardingTour';
 
@@ -11,10 +11,12 @@ interface TeamerOnboardingModalProps {
 }
 
 // Teamer-Tour: folgt den Teamer-Tabs (Start · Chat · Events · Challenges ·
-// Badges). Die Aktivitaeten (Antraege) sind seit dem Tab-Umbau ein Segment IM
-// Events-Tab (kein eigener Tab mehr) - werden deshalb direkt im Events-Slide
-// erwaehnt. Challenges stehen als Neuheit direkt danach, gleicher Stil wie
-// die Konfi-/Admin-Tour.
+// Badges). Die Aktivitaeten sind seit dem Tab-Umbau ein Segment IM Events-Tab
+// (kein eigener Tab mehr) und bekommen einen EIGENEN Slide direkt hinter den
+// Events (User-Entscheid 10.08.) — im Events-Slide nur nebenbei erwaehnt ging
+// unter, was Aktivitaeten ueberhaupt sind. Die Beispiele stammen aus den
+// echten Teamer-Antraegen (Gottesdienst mitgestalten, Andacht, Schulung) —
+// "Gottesdienstbesuch" waere die Konfi-Welt, nicht die des Teams.
 const SLIDES: OnboardingSlide[] = [
   {
     icon: sparklesOutline,
@@ -42,14 +44,21 @@ const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-events)',
     rgb: '--app-color-events-rgb',
     title: 'Deine Events',
-    text: 'Hier findest du alle Termine und meldest dich dort an, wo Teamer:innen gebraucht werden. Oben im Tab wechselst du zu den Anträgen: Warst du bei einer Aktion dabei, reichst du sie dort ein — so bleibt dein Einsatz dokumentiert und fließt in deine Badges ein.',
+    text: 'Hier findest du alle Termine und meldest dich dort an, wo Teamer:innen gebraucht werden. Manche Termine sind nur fürs Team. Du kannst auch selbst Termine anlegen.',
+  },
+  {
+    icon: documentTextOutline,
+    color: 'var(--app-color-activities)',
+    rgb: '--app-color-activities-rgb',
+    title: 'Aktivitäten',
+    text: 'Aktivitäten findest du oben im Events-Tab. Hast du einen Gottesdienst mitgestaltet, eine Andacht gehalten oder warst bei einer Teamer-Schulung? Dann reichst du das dort ein — so bleibt dein Einsatz dokumentiert und fließt in deine Badges ein.',
   },
   {
     icon: flagOutline,
     color: 'var(--app-color-challenges)',
     rgb: '--app-color-challenges-rgb',
     title: 'Challenges',
-    text: 'Neu in deiner Tab-Leiste: Challenges sind Impulse für deine Gruppe — die Konfis antworten mit Foto, Text, Aufnahme oder Link. Bewusst ohne Punkte und ohne Rangliste — es gibt nur ein Abzeichen fürs Mitmachen. Hier legst du Challenges an und gibst die Beiträge frei.',
+    text: 'Challenges begleiten die Konfis über einen Zeitraum, den du festlegst: Sie antworten mit Foto, Text, Aufnahme oder Link. Ohne Punkte, ohne Zähler, ohne Rangliste — nur ein Abzeichen fürs Mitmachen. Und das Wichtigste: Du machst mit. Teamer:innen und Leitung sind bei Challenges keine Zuschauer, sondern antworten selbst — es gibt sogar Runden nur fürs Team.',
   },
   {
     icon: ribbonOutline,

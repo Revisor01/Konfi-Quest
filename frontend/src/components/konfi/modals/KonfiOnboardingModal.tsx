@@ -57,8 +57,8 @@ const SLIDES: { icon: string; color: string; rgb: string; title: string; text: s
     icon: documentTextOutline,
     color: 'var(--app-color-activities)',
     rgb: '--app-color-activities-rgb',
-    title: 'Deine Anträge',
-    text: 'Warst du im Gottesdienst, bei einer Taufe oder Hochzeit? Dafür stellst du einen Antrag auf Punkte — im Events-Tab oben auf "Anträge" tippen. Deine Gruppenleiterinnen bestätigen ihn und du bekommst deine Punkte.',
+    title: 'Aktivitäten & Anträge',
+    text: 'Neben Events gibt es Aktivitäten: Dinge, die immer wieder gehen und für die es Punkte gibt — im Gottesdienst gewesen, bei einer Andacht, bei einer Taufe oder Hochzeit dabei. Da meldest du dich nicht an, sondern erzählst hinterher davon: im Events-Tab oben auf "Anträge" tippen. Dein Team bestätigt und du bekommst deine Punkte.',
   },
   {
     icon: starOutline,
@@ -72,7 +72,7 @@ const SLIDES: { icon: string; color: string; rgb: string; title: string; text: s
     color: 'var(--app-color-challenges)',
     rgb: '--app-color-challenges-rgb',
     title: 'Deine Challenges',
-    text: 'Zum Schluss das Neueste: In der Mitte deiner Tab-Leiste warten die Challenges — Impulse, die dich ein paar Tage begleiten. Du antwortest mit einem Foto, einem Text, einer Aufnahme oder einem Link und entscheidest selbst, ob dein Beitrag mit Namen, anonym oder nur für die Leitung sichtbar ist. Fürs Mitmachen gibt es ein Abzeichen und mit Absicht keine Punkte.',
+    text: 'Zum Schluss das Neueste: In der Mitte deiner Tab-Leiste warten die Challenges — eine Aufgabe und eine Zeit lang Ruhe, dich damit zu beschäftigen. Du antwortest mit einem Foto, einem Text, einer Aufnahme oder einem Link. Du entscheidest, ob dein Beitrag mit Namen, anonym oder nur für die Leitung sichtbar ist. Fürs Mitmachen gibt es ein Abzeichen und mit Absicht keine Punkte: Hier geht es nicht ums Sammeln, sondern um dich und deinen Glauben. Deine Teamer:innen machen übrigens mit.',
   },
 ];
 

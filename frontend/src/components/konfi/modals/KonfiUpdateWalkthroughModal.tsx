@@ -18,14 +18,14 @@ const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-challenges)',
     rgb: '--app-color-challenges-rgb',
     title: 'Neu: Challenges',
-    text: 'In der Mitte deiner Tab-Leiste gibt es jetzt die Challenges: Impulse, die dich für ein paar Tage begleiten. Du antwortest darauf mit einem Foto, einem Text, einer Aufnahme oder einem Link — so, wie du es willst.',
+    text: 'In der Mitte deiner Tab-Leiste gibt es jetzt die Challenges: eine Aufgabe und eine Zeit lang Ruhe, dich damit zu beschäftigen. Du antwortest darauf mit einem Foto, einem Text, einer Aufnahme oder einem Link — so, wie du es willst.',
   },
   {
     icon: flagOutline,
     color: 'var(--app-color-challenges)',
     rgb: '--app-color-challenges-rgb',
     title: 'Du entscheidest',
-    text: 'Bei jedem Beitrag wählst du selbst, ob er mit deinem Namen, anonym oder nur für die Leitung sichtbar ist. Fürs Mitmachen gibt es ein Abzeichen — und mit Absicht keine Punkte und keine Rangliste. Es geht hier nicht ums Sammeln.',
+    text: 'Bei jedem Beitrag wählst du selbst, ob er mit deinem Namen, anonym oder nur für die Leitung sichtbar ist. Fürs Mitmachen gibt es ein Abzeichen — und mit Absicht keine Punkte und keine Rangliste. Hier geht es nicht ums Sammeln, sondern um dich und deinen Glauben. Deine Teamer:innen machen übrigens mit.',
   },
   {
     icon: swapHorizontalOutline,

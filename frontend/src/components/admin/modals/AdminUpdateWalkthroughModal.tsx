@@ -14,14 +14,14 @@ const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-challenges)',
     rgb: '--app-color-challenges-rgb',
     title: 'Neu: Challenges',
-    text: 'Challenges sind Aufgaben, auf die deine Konfis mit eigenen Beiträgen antworten: Foto, Text, Aufnahme oder Link. Bewusst ohne Punkte, ohne Zähler, ohne Rangliste — es gibt nur ein Abzeichen fürs Mitmachen. Sie haben einen eigenen Tab in deiner Tab-Leiste.',
+    text: 'Challenges begleiten deine Konfis über einen Zeitraum, den du festlegst: Fotos, Texte, Aufnahmen oder Links. Bewusst ohne Punkte, ohne Zähler, ohne Rangliste — es gibt nur ein Abzeichen fürs Mitmachen. Die Idee: Die Konfis beschäftigen sich eine Zeit lang mit einem Thema, mitten in ihrem Alltag. Sie haben einen eigenen Tab in der Tab-Leiste.',
   },
   {
     icon: flagOutline,
     color: 'var(--app-color-challenges)',
     rgb: '--app-color-challenges-rgb',
     title: 'Anlegen und moderieren',
-    text: 'Beim Anlegen legst du Jahrgänge, Zeitraum, erlaubte Medien, Sichtbarkeit und Freigabe fest. Nach dem Start sind Sichtbarkeit und Freigabe gesperrt — die Zusage an die Konfis bleibt gültig. Offene Beiträge zum Freigeben siehst du direkt an der Challenge.',
+    text: 'Beim Anlegen legst du Jahrgänge, Zeitraum, erlaubte Medien, Sichtbarkeit und Freigabe fest. Nach dem Start bleiben Sichtbarkeit und Freigabe gesperrt — die Zusage an die Konfis gilt. Bei den Beiträgen kannst du freigeben, einen Beitrag nachträglich anonymisieren oder ihn ausblenden, wenn etwas nicht passt. Und ihr im Team macht mit: Teamer:innen und Leitung nehmen selbst teil, es gibt sogar Runden nur fürs Team.',
   },
   {
     icon: swapHorizontalOutline,

@@ -12,11 +12,13 @@ interface AdminOnboardingModalProps {
 }
 
 // Admin-Tour: erst die 5 Tabs (Konfis · Chat · Events · Challenges · Mehr), dann
-// die wichtigsten Verwaltungs-Aufgaben (Jahrgang, Aktivitaeten/Punkte, Badges,
-// Wrapped). Die Antraege sind seit dem Tab-Umbau ein Segment IM Events-Tab
-// (kein eigener Tab mehr) - werden deshalb direkt im Events-Slide erwaehnt.
-// Challenges stehen bewusst als Neuheit am Schluss der Tab-Slides, genau wie
-// bei der Konfi-Tour.
+// die wichtigsten Verwaltungs-Aufgaben (Jahrgang, Badges, Wrapped, Material).
+// Die Aktivitaeten haben einen EIGENEN Slide DIREKT hinter den Events
+// (User-Entscheid 10.08.): sie wohnen als Segment im Events-Tab, und nur
+// nebenbei erwaehnt ging unter, was sie von Events unterscheidet (kein
+// Anmelden, sondern Antrag hinterher). Das Anlegen selbst bleibt im Mehr-Tab
+// und wird dort genannt. Beispiele stammen aus echten Aktivitaeten der
+// Produktivdaten.
 const SLIDES: OnboardingSlide[] = [
   {
     icon: sparklesOutline,
@@ -44,14 +46,21 @@ const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-events)',
     rgb: '--app-color-events-rgb',
     title: 'Events',
-    text: 'Lege Termine an — einmalig, über mehrere Tage oder als ganze Serie, mit Plätzen, Zeitfenstern und Warteliste. Konfis melden sich direkt an, und du behältst An- und Abwesenheit im Griff. Oben im Tab wechselst du zu den Anträgen: Konfis stellen dort Anträge auf Punkte, du prüfst sie und vergibst mit einem Tipp die Punkte.',
+    text: 'Lege Termine an — einmalig, über mehrere Tage oder als ganze Serie, mit Plätzen, Zeitfenstern und Warteliste. Konfis melden sich direkt an, und du behältst An- und Abwesenheit im Griff. Du kannst auch festlegen, dass Teamer:innen gesucht werden oder ein Termin nur fürs Team ist.',
+  },
+  {
+    icon: documentTextOutline,
+    color: 'var(--app-color-activities)',
+    rgb: '--app-color-activities-rgb',
+    title: 'Aktivitäten',
+    text: 'Aktivitäten findest du oben im Events-Tab. Es sind wiederkehrende Dinge, für die es Punkte gibt: Gottesdienst, Andacht, Taufe oder Hochzeit, aber auch Gemeindebrief verteilen oder Besuchsdienst. Anders als bei Events melden sich Konfis nicht an — sie stellen hinterher einen Antrag, du prüfst ihn und vergibst mit einem Tipp die Punkte. Auch Teamer:innen reichen hier ihren Einsatz ein.',
   },
   {
     icon: flagOutline,
     color: 'var(--app-color-challenges)',
     rgb: '--app-color-challenges-rgb',
     title: 'Challenges',
-    text: 'Neu in deiner Tab-Leiste: Challenges sind Aufgaben, auf die deine Konfis mit eigenen Beiträgen antworten — Foto, Text, Aufnahme oder Link. Bewusst ohne Punkte, ohne Zähler und ohne Rangliste — es gibt nur ein Abzeichen fürs Mitmachen. Beim Anlegen legst du Sichtbarkeit und Freigabe fest; nach dem Start bleiben diese Zusagen fest.',
+    text: 'Challenges begleiten deine Konfis über einen Zeitraum, den du festlegst: Sie antworten mit Foto, Text, Aufnahme oder Link. Bewusst ohne Punkte, ohne Zähler, ohne Rangliste — es gibt nur ein Abzeichen fürs Mitmachen. Die Idee: sich eine Zeit lang mit einem Thema beschäftigen, mitten im Alltag. Ihr im Team macht mit — und es gibt sogar Runden nur fürs Team.',
   },
   {
     icon: settingsOutline,
@@ -66,13 +75,6 @@ const SLIDES: OnboardingSlide[] = [
     rgb: '--app-color-jahrgang-rgb',
     title: 'Jahrgänge',
     text: 'Alles beginnt mit einem Jahrgang: Hier legst du die Punkteziele für Gottesdienst und Gemeinde fest. Du gibst außerdem frei, ab wann die Konfis ihren Konfispruch auswählen dürfen. Konfis gehören immer zu einem Jahrgang.',
-  },
-  {
-    icon: documentTextOutline,
-    color: 'var(--app-color-activities)',
-    rgb: '--app-color-activities-rgb',
-    title: 'Aktivitäten & Punkte',
-    text: 'Aktivitäten sind wiederkehrende Dinge, für die es Punkte gibt — z.B. Gottesdienstbesuch oder Gemeinde-Aktionen. Anders als Events stellen Konfis dafür selbst einen Antrag auf Punkte. Du legst Kategorie und Punktwert fest.',
   },
   {
     icon: ribbonOutline,
