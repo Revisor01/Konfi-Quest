@@ -29,6 +29,7 @@ import {
 } from './EventDetailSections';
 import type { Participant, Unregistration } from './EventDetailSections';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
 interface Category {
   id: number;
@@ -588,13 +589,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         {(participant.role_name === 'teamer' || !eventData?.mandatory) && (
         <IonItemOptions className="app-swipe-actions" side="end">
           {participant.role_name !== 'teamer' && participant.status === 'confirmed' && (
-            <IonItemOption className="app-swipe-action" onClick={() => handleDemoteParticipant(participant)} aria-label="Auf Warteliste setzen">
+            <IonItemOption className="app-swipe-action" onClick={() => { closeOpenSlidingItems(); handleDemoteParticipant(participant); }} aria-label="Auf Warteliste setzen">
               <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
                 <IonIcon icon={returnUpBack} />
               </div>
             </IonItemOption>
           )}
-          <IonItemOption className="app-swipe-action" onClick={() => handleRemoveParticipant(participant)} aria-label="Teilnahme entfernen">
+          <IonItemOption className="app-swipe-action" onClick={() => { closeOpenSlidingItems(); handleRemoveParticipant(participant); }} aria-label="Teilnahme entfernen">
             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
               <IonIcon icon={trash} />
             </div>

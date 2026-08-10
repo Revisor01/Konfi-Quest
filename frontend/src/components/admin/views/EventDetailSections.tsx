@@ -35,6 +35,7 @@ import {
   lockOpen
 } from 'ionicons/icons';
 import { getStatusIcon } from '../../shared/StatusBadge';
+import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
 // ---- Shared Types (re-export from main file's interfaces) ----
 
@@ -722,12 +723,12 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
                         </IonItem>
                         {!eventMandatory && (
                         <IonItemOptions className="app-swipe-actions" side="end">
-                          <IonItemOption className="app-swipe-action" onClick={() => handleDemoteParticipant(participant)} aria-label="Auf Warteliste setzen">
+                          <IonItemOption className="app-swipe-action" onClick={() => { closeOpenSlidingItems(); handleDemoteParticipant(participant); }} aria-label="Auf Warteliste setzen">
                             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
                               <IonIcon icon={returnUpBack} />
                             </div>
                           </IonItemOption>
-                          <IonItemOption className="app-swipe-action" onClick={() => handleRemoveParticipant(participant)} aria-label="Teilnahme entfernen">
+                          <IonItemOption className="app-swipe-action" onClick={() => { closeOpenSlidingItems(); handleRemoveParticipant(participant); }} aria-label="Teilnahme entfernen">
                             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                               <IonIcon icon={trash} />
                             </div>

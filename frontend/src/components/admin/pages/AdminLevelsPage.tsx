@@ -84,6 +84,7 @@ import LevelManagementModal from '../modals/LevelManagementModal';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader, ListSection } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
 // Icon Mapping (same as in LevelManagementModal)
 const LEVEL_ICONS: Record<string, any> = {
@@ -300,7 +301,7 @@ const AdminLevelsPage: React.FC = () => {
 
                           <IonItemOptions side="end" className="app-swipe-actions">
                             <IonItemOption
-                              onClick={() => handleDelete(level)}
+                              onClick={() => { closeOpenSlidingItems(); handleDelete(level); }}
                               aria-label="Level löschen"
                               className="app-swipe-action"
                             >

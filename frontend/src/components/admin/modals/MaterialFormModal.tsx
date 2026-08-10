@@ -48,6 +48,7 @@ import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import FileViewerModal from '../../shared/FileViewerModal';
 import { safeUUID } from '../../../utils/uuid';
+import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
 interface MaterialFile {
   id: number;
@@ -524,7 +525,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
                       <IonItemOptions className="app-swipe-actions" side="end">
                         <IonItemOption
                           className="app-swipe-action"
-                          onClick={() => handleDeleteExistingFile(file)}
+                          onClick={() => { closeOpenSlidingItems(); handleDeleteExistingFile(file); }}
                           aria-label="Datei löschen"
                         >
                           <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
@@ -584,7 +585,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
                       <IonItemOptions className="app-swipe-actions" side="end">
                         <IonItemOption
                           className="app-swipe-action"
-                          onClick={() => removeNewFile(index)}
+                          onClick={() => { closeOpenSlidingItems(); removeNewFile(index); }}
                           aria-label="Datei entfernen"
                         >
                           <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">

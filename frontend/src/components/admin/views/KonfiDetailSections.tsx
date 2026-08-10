@@ -47,6 +47,7 @@ import {
 } from 'ionicons/icons';
 import ActivityRings from './ActivityRings';
 import { EmptyState } from '../../shared';
+import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
 // ---- Shared Types ----
 
@@ -379,7 +380,7 @@ export const BonusSection = React.memo<BonusSectionProps>(({
                 <IonItemOptions className="app-swipe-actions" side="end">
                   <IonItemOption
                     className="app-swipe-action"
-                    onClick={() => handleDeleteBonus(bonus)}
+                    onClick={() => { closeOpenSlidingItems(); handleDeleteBonus(bonus); }}
                     aria-label="Bonuspunkte löschen"
                   >
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
@@ -799,7 +800,7 @@ export const ActivitiesSection = React.memo<ActivitiesSectionProps>(({
                   <IonItemOptions className="app-swipe-actions" side="end">
                     <IonItemOption
                       className="app-swipe-action"
-                      onClick={() => handleDeleteActivity(activity)}
+                      onClick={() => { closeOpenSlidingItems(); handleDeleteActivity(activity); }}
                       aria-label="Aktivität löschen"
                     >
                       <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
@@ -928,7 +929,7 @@ export const CertificatesSection = React.memo<CertificatesSectionProps>(({
                 <IonItemOptions className="app-swipe-actions" side="end">
                   <IonItemOption
                     className="app-swipe-action"
-                    onClick={() => handleDeleteCertificate(cert)}
+                    onClick={() => { closeOpenSlidingItems(); handleDeleteCertificate(cert); }}
                     aria-label="Zertifikat entfernen"
                   >
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
@@ -1025,20 +1026,26 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
   formatDate
 }) => {
   const [expanded, setExpanded] = React.useState(false);
-  const visibleCount = expanded ? konfiHistory.history.length : 3;
+  // NULL-SICHER: Fehlt history/totals (alter Cache, Teamer ohne Konfi-Zeit,
+  // unvollstaendige Antwort), wirft ein Zugriff hier den ganzen Render — und
+  // die ErrorBoundary leert dann Auth + Cache, was sich als "ploetzlich
+  // ausgeloggt" zeigt (User-Hinweis 11.08.).
+  const history = Array.isArray(konfiHistory?.history) ? konfiHistory.history : [];
+  const totals = konfiHistory?.totals || { gottesdienst: 0, gemeinde: 0, total: 0 };
+  const visibleCount = expanded ? history.length : 3;
   return (
   <IonList className="app-section-inset" inset={true} style={{ marginBottom: '32px' }}>
     <IonListHeader>
       <div className="app-section-icon app-section-icon--purple">
         <IonIcon icon={timeOutline} />
       </div>
-      <IonLabel>Konfi-Historie ({konfiHistory.totals.total} Punkte)</IonLabel>
+      <IonLabel>Konfi-Historie ({totals.total} Punkte)</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
       <IonCardContent style={{ padding: '12px' }}>
         {/* Punkte-Uebersicht */}
         <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-          {konfiHistory.totals.gottesdienst > 0 && (
+          {totals.gottesdienst > 0 && (
             <div style={{
               flex: 1,
               background: 'rgba(59, 130, 246, 0.1)',
@@ -1046,11 +1053,11 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
               padding: '10px',
               textAlign: 'center'
             }}>
-              <div style={{ fontSize: '1.2rem', fontWeight: '700', color: '#3b82f6' }}>{konfiHistory.totals.gottesdienst}</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: '700', color: '#3b82f6' }}>{totals.gottesdienst}</div>
               <div style={{ fontSize: '0.65rem', color: '#6b7280', fontWeight: '600' }}>GOTTESDIENST</div>
             </div>
           )}
-          {konfiHistory.totals.gemeinde > 0 && (
+          {totals.gemeinde > 0 && (
             <div style={{
               flex: 1,
               background: 'rgba(5, 150, 105, 0.1)',
@@ -1058,7 +1065,7 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
               padding: '10px',
               textAlign: 'center'
             }}>
-              <div style={{ fontSize: '1.2rem', fontWeight: '700', color: '#059669' }}>{konfiHistory.totals.gemeinde}</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: '700', color: '#059669' }}>{totals.gemeinde}</div>
               <div style={{ fontSize: '0.65rem', color: '#6b7280', fontWeight: '600' }}>GEMEINDE</div>
             </div>
           )}
@@ -1069,15 +1076,15 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
             padding: '10px',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--app-color-konfis)' }}>{konfiHistory.totals.total}</div>
+            <div style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--app-color-konfis)' }}>{totals.total}</div>
             <div style={{ fontSize: '0.65rem', color: '#6b7280', fontWeight: '600' }}>GESAMT</div>
           </div>
         </div>
 
         {/* Verlauf */}
-        {konfiHistory.history.length > 0 ? (
+        {history.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            {konfiHistory.history.slice(0, visibleCount).map((entry) => {
+            {history.slice(0, visibleCount).map((entry) => {
               const categoryColor = entry.category === 'gottesdienst' ? '#3b82f6' : '#059669';
               const entryIcon = entry.source_type === 'bonus' ? giftOutline
                 : entry.source_type === 'event' ? calendarOutline
@@ -1123,7 +1130,7 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
                 </div>
               );
             })}
-            {konfiHistory.history.length > 3 && (
+            {history.length > 3 && (
               <IonButton
                 expand="block"
                 fill="outline"
@@ -1133,7 +1140,7 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
                 <IonIcon icon={expanded ? chevronUp : chevronDown} slot="start" />
                 {expanded
                   ? 'Weniger anzeigen'
-                  : `${konfiHistory.history.length - 3} weitere anzeigen`}
+                  : `${history.length - 3} weitere anzeigen`}
               </IonButton>
             )}
           </div>

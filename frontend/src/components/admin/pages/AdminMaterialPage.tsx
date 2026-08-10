@@ -47,6 +47,7 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader } from '../../shared';
 import MaterialFormModal from '../modals/MaterialFormModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
 
 interface Material {
@@ -318,7 +319,7 @@ const AdminMaterialPage: React.FC = () => {
                           <IonItemOptions className="app-swipe-actions" side="end">
                             <IonItemOption
                               className="app-swipe-action"
-                              onClick={() => handleDelete(mat)}
+                              onClick={() => { closeOpenSlidingItems(); handleDelete(mat); }}
                               aria-label="Material löschen"
                             >
                               <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">

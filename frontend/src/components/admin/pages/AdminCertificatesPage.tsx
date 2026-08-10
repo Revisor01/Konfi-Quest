@@ -100,6 +100,7 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader, ListSection } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
+import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
 const CERT_ICONS: Record<string, { icon: any; name: string; category: string }> = {
   ribbon: { icon: ribbon, name: 'Band', category: 'Erfolg' },
@@ -557,7 +558,7 @@ const AdminCertificatesPage: React.FC = () => {
               {isAdmin && (
                 <IonItemOptions side="end" className="app-swipe-actions">
                   <IonItemOption
-                    onClick={() => handleDelete(certType)}
+                    onClick={() => { closeOpenSlidingItems(); handleDelete(certType); }}
                     aria-label="Zertifikat löschen"
                     className="app-swipe-action"
                   >

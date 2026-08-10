@@ -13,7 +13,7 @@ import {
   useIonModal,
   useIonAlert
 } from '@ionic/react';
-import { add, arrowBack } from 'ionicons/icons';
+import { add } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useBadge } from '../../../contexts/BadgeContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -81,6 +81,8 @@ const AdminChallengesPage: React.FC = () => {
 
   const [presentModerationModal, dismissModerationModal] = useIonModal(ChallengeLeitungModal, {
     challenge: moderationChallenge,
+    // Fuer die Card-Optik des Einreichen-Modals (schiebt die Seite nach hinten).
+    get presentingElement() { return pageRef.current || presentingElement; },
     onClose: () => { dismissModerationModal(); },
     onChanged: () => {
       refreshChallenges();
@@ -138,11 +140,6 @@ const AdminChallengesPage: React.FC = () => {
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
-              <IonIcon icon={arrowBack} />
-            </IonButton>
-          </IonButtons>
           <IonTitle>Challenges</IonTitle>
           <IonButtons slot="end">
             <IonButton aria-label="Neue Challenge anlegen" onClick={openCreate} title="Neue Challenge">

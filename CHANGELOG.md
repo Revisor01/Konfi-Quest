@@ -73,6 +73,15 @@ Versionsüberschrift.
 - Teamer-Bereich: Schreibfehler "Gueltig" bei Zertifikaten.
 - Konnte ein Foto zu einer Meldung nicht geladen werden, stand dort
   fälschlich "Kein Foto hochgeladen".
+- Beim Hinzufügen einer Aktivität im Profil einer Teamer:in kam es zum
+  Rauswurf aus der App.
+- Wischaktionen in Listen klappen nach dem Antippen wieder zu.
+- Challenges: Die eigenen Abzeichen werden bei Leitung und Teamer:innen auch
+  dann angezeigt, wenn noch keins vergeben ist.
+- Challenges: "Anonym stellen" und "Ausblenden" hatten dasselbe Symbol.
+- Challenges: Der eigene Beitrag öffnet sich jetzt wie die übrigen Fenster.
+- Challenges: Die Aufgabe steht in einer Karte statt im farbigen Hinweiskasten.
+- Challenges: Überflüssiger Zurück-Pfeil auf der Hauptseite entfernt.
 - Beim Abmelden von einem Termin steht jetzt der Grund dabei, wenn es nicht
   mehr geht (bis 2 Tage vorher).
 - Veranstaltungen: Speichern brach in manchen Fällen ohne Meldung ab. Fehlende

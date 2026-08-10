@@ -54,6 +54,7 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader, ListSection } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
+import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
 interface Jahrgang {
   id: number;
@@ -681,7 +682,7 @@ const AdminJahrgaengeePage: React.FC = () => {
                       {canDelete && (
                         <IonItemOptions side="end" className="app-swipe-actions">
                           <IonItemOption
-                            onClick={() => handleDeleteWithSlideClose(jahrgang)}
+                            onClick={() => { closeOpenSlidingItems(); handleDeleteWithSlideClose(jahrgang); }}
                             aria-label="Jahrgang löschen"
                             className="app-swipe-action"
                           >

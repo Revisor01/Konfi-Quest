@@ -28,6 +28,7 @@ import {
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
+import { closeOpenSlidingItems } from '../../utils/slidingItems';
 
 interface Activity {
   id: number;
@@ -314,7 +315,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                 {canDelete && (
                   <IonItemOptions side="end" className="app-swipe-actions">
                     <IonItemOption
-                      onClick={() => handleDeleteWithSlideClose(activity)}
+                      onClick={() => { closeOpenSlidingItems(); handleDeleteWithSlideClose(activity); }}
                       aria-label="Aktivität löschen"
                       className="app-swipe-action"
                     >

@@ -42,6 +42,7 @@ import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { ChatUser } from '../../../types/user';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
 interface Participant {
   user_id: number;
@@ -518,7 +519,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
                               {canManageMembers && (
                                 <IonItemOptions side="end" className="app-swipe-actions">
                                   <IonItemOption
-                                    onClick={() => confirmRemoveUser(p)}
+                                    onClick={() => { closeOpenSlidingItems(); confirmRemoveUser(p); }}
                                     aria-label="Mitglied entfernen"
                                     className="app-swipe-action"
                                   >

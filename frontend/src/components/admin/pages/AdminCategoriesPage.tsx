@@ -47,6 +47,7 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader, ListSection } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
+import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
 interface Category {
   id: number;
@@ -417,7 +418,7 @@ const AdminCategoriesPage: React.FC = () => {
                       {canDelete && (
                         <IonItemOptions side="end" className="app-swipe-actions">
                           <IonItemOption
-                            onClick={() => handleDelete(category)}
+                            onClick={() => { closeOpenSlidingItems(); handleDelete(category); }}
                             aria-label="Kategorie löschen"
                             className="app-swipe-action"
                           >

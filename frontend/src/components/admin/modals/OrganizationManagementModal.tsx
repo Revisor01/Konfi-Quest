@@ -59,6 +59,7 @@ import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import AdminPasswordResetModal from './AdminPasswordResetModal';
+import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
 interface Organization {
   id: number;
@@ -1187,7 +1188,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                       {/* Primaer-Org kann hier nicht entfernt werden (Server blockt ebenfalls) */}
                       {!m.is_primary && (
                         <IonItemOptions side="end" className="app-swipe-actions">
-                          <IonItemOption onClick={() => handleRemoveMember(m)} className="app-swipe-action" aria-label="Mitglied entfernen">
+                          <IonItemOption onClick={() => { closeOpenSlidingItems(); handleRemoveMember(m); }} className="app-swipe-action" aria-label="Mitglied entfernen">
                             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                               <IonIcon icon={trash} />
                             </div>

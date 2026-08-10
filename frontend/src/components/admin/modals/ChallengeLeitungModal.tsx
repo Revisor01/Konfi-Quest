@@ -53,6 +53,7 @@ import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { EmptyState, SectionHeader, AudioPlayer } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import ChallengeSubmitModal from '../../konfi/modals/ChallengeSubmitModal';
 import type {
   AdminChallenge,
@@ -211,6 +212,12 @@ export interface ChallengeLeitungModalProps {
   // Wird nach jeder Moderations-Aktion und nach eigenem Einreichen gerufen,
   // damit die Liste dahinter (Pending-Zaehler) aktuell bleibt.
   onChanged?: () => void;
+  /**
+   * Element fuer die Card-Optik des Einreichen-Modals. Ohne dieses schiebt die
+   * Ansicht darunter nicht nach hinten, das Sheet legt sich hart darueber
+   * (User-Hinweis 11.08.).
+   */
+  presentingElement?: HTMLElement | null;
 }
 
 // Drei Filter reichen: alles sehen, sehen was noch wartet, sehen was
@@ -221,7 +228,8 @@ type StatusFilter = 'all' | 'pending' | 'hidden';
 const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
   challenge,
   onClose,
-  onChanged
+  onChanged,
+  presentingElement
 }) => {
   const { user, setError, setSuccess } = useApp();
   const [presentAlert] = useIonAlert();
@@ -416,7 +424,11 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
     }
     if (submission.moderation_status !== 'hidden') {
       actions.push({
-        key: 'hide', text: 'Ausblenden', icon: eyeOffOutline,
+        // NICHT eyeOffOutline: das gehoert dem Anonymisieren (durchgestrichenes
+        // Auge = "ohne Namen"). Ausblenden nimmt dasselbe Symbol wie sein
+        // Status-Badge, damit Aktion und Zustand zusammenpassen und die beiden
+        // Aktionen im Menue unterscheidbar sind (User-Hinweis 11.08.).
+        key: 'hide', text: 'Ausblenden', icon: removeCircleOutline,
         color: 'var(--app-color-danger)', role: 'destructive',
         run: () => confirmHide(submission)
       });
@@ -506,7 +518,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
             {/* Selbst mitmachen — nur solange die Challenge laeuft */}
             {canSubmitMore && (
               <IonButton
-                onClick={() => presentSubmitModal()}
+                onClick={() => presentSubmitModal({ presentingElement: presentingElement || undefined })}
                 title="Beitrag einreichen"
                 aria-label="Beitrag einreichen"
               >
@@ -538,19 +550,43 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
           stats={headerStats}
         />
 
-        {/* Aufgabentext — die Leitung muss sehen, was den Konfis gestellt wurde */}
+        {/* Aufgabentext als CARD wie in der Konfi-Sicht (User-Entscheid
+            11.08.): der rote Infokasten war fuer den Haupttext zu laut, die
+            Karte mit Meta-Zeile liest sich ruhiger. Aufbau bewusst identisch
+            zu ChallengeDetailModal. */}
         {challenge.description && (
-          <div
-            className="app-info-box app-info-box--challenges"
-            style={{ borderRadius: '12px', margin: '16px 16px 0 16px' }}
-          >
-            <div style={{ whiteSpace: 'pre-wrap' }}>{challenge.description}</div>
-            {(challenge.author_name || challenge.author_freetext) && (
-              <div style={{ marginTop: '8px', fontWeight: 600 }}>
-                Gestellt von {challenge.author_name || challenge.author_freetext}
+          <IonList inset={true} className="app-segment-wrapper">
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--challenges">
+                <IonIcon icon={documentTextOutline} />
               </div>
-            )}
-          </div>
+              <IonLabel>{isActive ? 'Worum geht es?' : 'Worum ging es?'}</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent style={{ padding: '14px' }}>
+                <div style={{ fontSize: '0.93rem', lineHeight: 1.5, color: '#3c3c43', whiteSpace: 'pre-wrap' }}>
+                  {challenge.description}
+                </div>
+                <div
+                  style={{
+                    display: 'flex', flexWrap: 'wrap', gap: '8px 14px',
+                    marginTop: '12px', fontSize: '0.8rem', color: '#8e8e93'
+                  }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <IonIcon icon={timeOutline} className="app-icon-color--challenges" />
+                    {isActive ? 'Läuft gerade' : 'Beendet'}
+                  </span>
+                  {(challenge.author_name || challenge.author_freetext) && (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <IonIcon icon={personOutline} className="app-icon-color--challenges" />
+                      Gestellt von {challenge.author_name || challenge.author_freetext}
+                    </span>
+                  )}
+                </div>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
         )}
 
         {/* Dein Beitrag — eigene Teilnahme, direkt hier statt in einem
@@ -821,7 +857,10 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                             {actions.map((action) => (
                               <IonItemOption
                                 key={action.key}
-                                onClick={() => action.run()}
+                                // Zuerst das aufgewischte Element schliessen,
+                                // sonst bleibt die Zeile offen stehen, waehrend
+                                // die Aktion laeuft (User-Hinweis 11.08.).
+                                onClick={() => { closeOpenSlidingItems(); action.run(); }}
                                 className="app-swipe-action"
                                 aria-label={action.text}
                               >

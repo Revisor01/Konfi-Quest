@@ -84,6 +84,7 @@ import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
 
 import { star } from 'ionicons/icons';
+import { closeOpenSlidingItems } from '../../utils/slidingItems';
 
 // Badge Icon Mapping (shared with BadgeManagementModal)
 const BADGE_ICONS: Record<string, any> = {
@@ -502,7 +503,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
 
                           <IonItemOptions side="end" className="app-swipe-actions">
                             <IonItemOption
-                              onClick={() => onDeleteBadge(badge)}
+                              onClick={() => { closeOpenSlidingItems(); onDeleteBadge(badge); }}
                               aria-label="Badge löschen"
                               className="app-swipe-action"
                             >

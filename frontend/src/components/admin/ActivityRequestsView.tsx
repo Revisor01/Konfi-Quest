@@ -21,6 +21,7 @@ import {
   returnUpBack
 } from 'ionicons/icons';
 import { SectionHeader, ListSection, StatusBadge } from '../shared';
+import { closeOpenSlidingItems } from '../../utils/slidingItems';
 
 interface ActivityRequest {
   id: number;
@@ -275,7 +276,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                         <IonItemOptions side="end" className="app-swipe-actions">
                           {/* Reset-Button für approved/rejected */}
                           <IonItemOption
-                            onClick={() => onResetRequest(request)}
+                            onClick={() => { closeOpenSlidingItems(); onResetRequest(request); }}
                             aria-label="Antrag zurücksetzen"
                             className="app-swipe-action"
                           >

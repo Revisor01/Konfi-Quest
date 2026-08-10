@@ -43,6 +43,7 @@ import { parseLocalTime, getLocalNow } from '../../utils/dateUtils';
 import { SectionHeader, ListSection, StatusBadge, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime } from '../shared';
 import { getStatusIcon } from '../shared/StatusBadge';
 import { Event } from '../../types/event';
+import { closeOpenSlidingItems } from '../../utils/slidingItems';
 
 interface EventsViewProps {
   events: Event[];
@@ -470,7 +471,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                   <IonItemOptions side="end" className="app-swipe-actions">
                     {onCancelEvent && (
                       <IonItemOption
-                        onClick={() => onCancelEvent(event)}
+                        onClick={() => { closeOpenSlidingItems(); onCancelEvent(event); }}
                         aria-label="Event absagen"
                         className="app-swipe-action"
                       >
@@ -481,7 +482,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                     )}
                     {onDeleteEvent && (
                       <IonItemOption
-                        onClick={() => onDeleteEvent(event)}
+                        onClick={() => { closeOpenSlidingItems(); onDeleteEvent(event); }}
                         aria-label="Event löschen"
                         className="app-swipe-action"
                       >

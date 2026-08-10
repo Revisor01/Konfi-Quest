@@ -28,9 +28,10 @@ import {
   ribbonOutline,
   paperPlaneOutline
 } from 'ionicons/icons';
-import { SectionHeader, ListSection, ChallengeLegendModal } from '../../shared';
+import { SectionHeader, ListSection, ChallengeLegendModal, EmptyState } from '../../shared';
 import { getChallengeBadgeIcon } from '../../konfi/views/ChallengesView';
 import type { AdminChallenge, ChallengeStatus, ChallengeMark } from '../../../types/challenges';
+import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
 // Gemeinsame Verwaltungs-Ansicht fuer Admin UND Teamer. Bewusst ohne eigenen
 // Datenzugriff: Laden/Modale liegen in der jeweiligen Seite, hier nur Darstellung
@@ -186,11 +187,11 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
 
       {/* Eigene Abzeichen — dieselbe Reihe wie in der Konfi-Sicht. Seit der
           Zusammenlegung von "Verwalten" und "Mitmachen" (11.08.) ist das Team
-          hier nicht mehr nur Verwaltung, sondern nimmt selbst teil. Nur
-          anzeigen, wenn es etwas zu zeigen gibt — sonst frisst ein leerer
-          Kasten Platz in einer Liste, die primaer der Verwaltung dient. */}
-      {marks.length > 0 && (
-        <IonList inset={true} style={{ margin: '16px' }}>
+          hier nicht mehr nur Verwaltung, sondern nimmt selbst teil.
+          IMMER anzeigen, auch leer: war der Abschnitt bei 0 Abzeichen
+          ausgeblendet, sah man nie, dass es ihn ueberhaupt gibt — und damit
+          auch nicht, dass Mitmachen vorgesehen ist (User-Hinweis 11.08.). */}
+      <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--challenges">
               <IonIcon icon={ribbonOutline} />
@@ -198,7 +199,15 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
             <IonLabel>Deine Abzeichen</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px 12px' }}>
+            <IonCardContent style={{ padding: marks.length === 0 ? '16px' : '16px 12px' }}>
+              {marks.length === 0 ? (
+                <EmptyState
+                  icon={ribbonOutline}
+                  title="Noch keine Abzeichen"
+                  message="Mach selbst bei einer Challenge mit — tippe sie an und reiche oben über das Plus deinen Beitrag ein."
+                  iconColor="var(--app-color-challenges)"
+                />
+              ) : (
               <div
                 style={{
                   display: 'flex', gap: '14px', overflowX: 'auto',
@@ -237,10 +246,10 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                   </div>
                 ))}
               </div>
+              )}
             </IonCardContent>
           </IonCard>
-        </IonList>
-      )}
+      </IonList>
 
       <div style={{ margin: '16px 16px 8px 16px' }}>
         <IonSegment
@@ -434,7 +443,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                   Ueberall sonst gilt: Tippen = bearbeiten, Wischen = loeschen. */}
               <IonItemOptions side="end" className="app-swipe-actions">
                 <IonItemOption
-                  onClick={() => onEditChallenge(challenge)}
+                  onClick={() => { closeOpenSlidingItems(); onEditChallenge(challenge); }}
                   aria-label="Challenge bearbeiten"
                   className="app-swipe-action"
                 >
@@ -443,7 +452,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                   </div>
                 </IonItemOption>
                 <IonItemOption
-                  onClick={() => onDeleteChallenge(challenge)}
+                  onClick={() => { closeOpenSlidingItems(); onDeleteChallenge(challenge); }}
                   aria-label="Challenge löschen"
                   className="app-swipe-action"
                 >

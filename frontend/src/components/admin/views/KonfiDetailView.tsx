@@ -215,11 +215,18 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
       // Rolle setzen für bedingte Anzeige
       setTargetRole(konfiData.role_name || 'konfi');
 
-      // Teamer-Daten aus dem Detail-Response
+      // Teamer-Daten aus dem Detail-Response. IMMER setzen, auch auf leer:
+      // Vorher wurde nur bei vorhandenen Daten geschrieben, nie zurueckgesetzt —
+      // beim Wechsel zwischen zwei Personen blieben die Werte der vorigen
+      // stehen (Teamer ohne Konfi-Zeit erbte die Historie des vorigen).
       if (konfiData.role_name === 'teamer') {
-        if (konfiData.certificates) setCertificates(konfiData.certificates);
-        if (konfiData.teamerEvents) setTeamerEvents(konfiData.teamerEvents);
-        if (konfiData.konfiHistory) setKonfiHistory(konfiData.konfiHistory);
+        setCertificates(konfiData.certificates || []);
+        setTeamerEvents(konfiData.teamerEvents || []);
+        setKonfiHistory(konfiData.konfiHistory || null);
+      } else {
+        setCertificates([]);
+        setTeamerEvents([]);
+        setKonfiHistory(null);
       }
 
       // Zertifikat-Typen laden (für die Zuweisung)

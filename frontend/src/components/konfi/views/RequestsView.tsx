@@ -28,6 +28,7 @@ import {
   filterOutline
 } from 'ionicons/icons';
 import { SectionHeader, ListSection, StatusBadge } from '../../shared';
+import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
 interface ActivityRequest {
   id: number;
@@ -305,7 +306,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
               {isPending && onDeleteRequest && (
                 <IonItemOptions side="end" className="app-swipe-actions">
                   <IonItemOption
-                    onClick={() => onDeleteRequest(request)}
+                    onClick={() => { closeOpenSlidingItems(); onDeleteRequest(request); }}
                     aria-label="Antrag löschen"
                     className="app-swipe-action"
                   >
