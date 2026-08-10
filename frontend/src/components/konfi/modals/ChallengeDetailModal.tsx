@@ -358,6 +358,16 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
   // Sichtbarkeits-/Moderationshinweis als Standard-Infokasten-Text (Muster:
   // ChangeEmailModal "Hinweis"-Box). Je nach Sichtbarkeitsmodus und Moderation
   // ein kurzer, konkreter Satz.
+  // Kurzform der Sichtbarkeit fuer den Kopf: EIN knapper Halbsatz neben der
+  // Laufzeit, damit beim Mitmachen sofort klar ist, wer den Beitrag zu sehen
+  // bekommt (User-Hinweis 10.08.). Der ausfuehrliche Satz steht weiterhin
+  // unten im Hinweis-Kasten.
+  const visibilityShort = useMemo(() => {
+    if (current.visibility === 'private') return 'Nur für euch in der Leitung';
+    if (current.visibility === 'public') return 'Für die Gruppe sichtbar';
+    return 'Du entscheidest je Beitrag';
+  }, [current.visibility]);
+
   const visibilityHint = useMemo(() => {
     if (current.visibility === 'private') {
       return 'Beiträge sieht nur das Leitungsteam.';
@@ -412,14 +422,13 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
             </div>
             <div>
               <h2 className="app-header-banner__title">{current.title}</h2>
-              {/* Bei beendeten Challenges steht der Hinweis NUR noch dezent in
-                  der Meta-Zeile unten — vorher stapelten sich "Diese Challenge
-                  ist vorbei", "Worum geht es?" und "Beendet" untereinander. */}
-              {isActive && (
-                <p className="app-header-banner__subtitle">
-                  {formatRemaining(current.ends_at)}
-                </p>
-              )}
+              {/* Laufzeit UND Sichtbarkeit in einer Zeile: "noch 3 Tage · Nur
+                  für euch in der Leitung". Bei beendeten Challenges faellt die
+                  Laufzeit weg (sie steht dezent in der Meta-Zeile unten), die
+                  Sichtbarkeit bleibt — wer die Beitraege sieht, gilt weiter. */}
+              <p className="app-header-banner__subtitle">
+                {isActive ? `${formatRemaining(current.ends_at)} · ${visibilityShort}` : visibilityShort}
+              </p>
             </div>
           </div>
         </div>

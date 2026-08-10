@@ -18,7 +18,12 @@ import {
   IonSegmentButton,
   IonRefresher,
   IonRefresherContent,
-  useIonAlert
+  IonItem,
+  IonItemSliding,
+  IonItemOptions,
+  IonItemOption,
+  useIonAlert,
+  useIonActionSheet
 } from '@ionic/react';
 import {
   closeOutline,
@@ -222,6 +227,7 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
 }) => {
   const { setError, setSuccess } = useApp();
   const [presentAlert] = useIonAlert();
+  const [presentActionSheet] = useIonActionSheet();
   const [submissions, setSubmissions] = useState<ChallengeSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
@@ -260,6 +266,34 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
     approved: submissions.filter((s) => s.moderation_status === 'approved').length,
     hidden: submissions.filter((s) => s.moderation_status === 'hidden').length
   }), [submissions]);
+
+  // GENAU DREI Kacheln — nie mehr (harte Gestaltungsregel, User 10.08.).
+  // "Freigegeben" steht immer. Die beiden anderen Plaetze gehen an das, was
+  // gerade etwas aussagt:
+  //   - "Wartet" nur bei Freigabe-Pflicht (sonst wartet nie etwas)
+  //   - "Ausgeblendet" nur wenn es ausgeblendete Beitraege gibt
+  // Sind beide relevant, weicht "Gesamt" — die Gesamtzahl steht ohnehin in der
+  // Listenueberschrift ("Beiträge (8)") und ist die schwaechste der Angaben.
+  const headerStats = useMemo(() => {
+    // Labels muessen KURZ sein: die Kachel ist auf 100px gedeckelt und das
+    // Label steht in Grossbuchstaben mit Sperrung und ohne Umbruch
+    // (.app-stats-row__label). "AUSGEBLENDET" und "FREIGEGEBEN" liefen rechts
+    // aus dem Kasten heraus (User-Hinweis 10.08.) -> "Versteckt" / "Frei".
+    const optional: Array<{ value: number; label: string }> = [];
+    if (challenge?.moderated) optional.push({ value: counts.pending, label: 'Wartet' });
+    if (counts.hidden > 0) optional.push({ value: counts.hidden, label: 'Versteckt' });
+
+    const stats = optional.length >= 2
+      ? [...optional.slice(0, 2), { value: counts.approved, label: 'Frei' }]
+      : [{ value: counts.total, label: 'Gesamt' }, ...optional, { value: counts.approved, label: 'Frei' }];
+
+    // Bleiben nur zwei (keine Freigabe-Pflicht, nichts ausgeblendet), fuellt
+    // "Versteckt: 0" auf — drei Kacheln sind gesetzt, zwei saehen luecken-
+    // haft aus.
+    while (stats.length < 3) stats.push({ value: counts.hidden, label: 'Versteckt' });
+
+    return stats.slice(0, 3);
+  }, [challenge?.moderated, counts]);
 
   // Ohne Freigabe-Pflicht gibt es das "Wartet"-Segment nicht — ein von einer
   // anderen Challenge uebernommener Filterstand wuerde sonst eine leere Liste
@@ -311,6 +345,69 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         { text: 'Ausblenden', role: 'destructive', handler: () => { moderate(submission, 'hide'); } }
+      ]
+    });
+  };
+
+  // Welche Aktionen ein Beitrag gerade zulaesst — EINE Quelle fuer Tippen
+  // (ActionSheet) und Wischen (Swipe-Icons), damit beide Wege nie auseinander
+  // laufen. Reihenfolge = Reihenfolge im ActionSheet.
+  const availableActions = (submission: ChallengeSubmission) => {
+    const actions: Array<{
+      key: 'approve' | 'anonymize' | 'hide' | 'unhide';
+      text: string;
+      icon: string;
+      color: string;
+      role?: 'destructive';
+      run: () => void;
+    }> = [];
+
+    if (submission.moderation_status === 'pending') {
+      actions.push({
+        key: 'approve', text: 'Freigeben', icon: checkmarkCircleOutline,
+        color: 'var(--app-color-success)',
+        run: () => moderate(submission, 'approve')
+      });
+    }
+    // Anonym stellen ist eine EINBAHNSTRASSE (User-Entscheid 09.08.): einmal
+    // anonym, immer anonym — deshalb nur bei consent='publish' und mit Rueckfrage.
+    if (challenge?.visibility === 'konfi_choice' && submission.konfi_consent === 'publish') {
+      actions.push({
+        key: 'anonymize', text: 'Anonym stellen', icon: eyeOffOutline,
+        color: '#7c3aed',
+        run: () => confirmAnonymize(submission)
+      });
+    }
+    if (submission.moderation_status !== 'hidden') {
+      actions.push({
+        key: 'hide', text: 'Ausblenden', icon: eyeOffOutline,
+        color: 'var(--app-color-danger)', role: 'destructive',
+        run: () => confirmHide(submission)
+      });
+    } else {
+      actions.push({
+        key: 'unhide', text: 'Wieder einblenden', icon: eyeOutline,
+        color: 'var(--app-color-challenges)',
+        run: () => moderate(submission, 'unhide')
+      });
+    }
+    return actions;
+  };
+
+  // Tippen auf einen Beitrag oeffnet die Aktionen — dasselbe Muster wie in den
+  // uebrigen Listen (Events, Konfis). Vorher standen die Buttons fest in der
+  // Karte und haben sie zerrissen (User-Hinweis 10.08.).
+  const openActions = (submission: ChallengeSubmission) => {
+    const actions = availableActions(submission);
+    presentActionSheet({
+      header: submission.konfi_name || 'Beitrag',
+      buttons: [
+        ...actions.map((a) => ({
+          text: a.text,
+          role: a.role,
+          handler: () => { a.run(); }
+        })),
+        { text: 'Abbrechen', role: 'cancel' }
       ]
     });
   };
@@ -387,7 +484,7 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
           <IonRefresherContent />
         </IonRefresher>
 
-        {/* Kopf: Challenge-Info — drei Kacheln (Ausgeblendetes zaehlt niemand nach) */}
+        {/* Kopf: Challenge-Info — IMMER GENAU DREI Kacheln (harte Regel). */}
         <SectionHeader
           title={challenge.title}
           // Sichtbarkeit ZUERST, dann die Freigabe: "erscheinen sofort" allein
@@ -396,15 +493,7 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
           subtitle={buildVisibilitySubtitle(challenge)}
           icon={flag}
           preset="challenges"
-          stats={[
-            { value: counts.total, label: 'Gesamt' },
-            // Ohne Freigabe-Pflicht gibt es nichts, das wartet -> stattdessen
-            // die ausgeblendeten Beitraege zeigen.
-            ...(challenge.moderated
-              ? [{ value: counts.pending, label: 'Wartet' }]
-              : [{ value: counts.hidden, label: 'Ausgeblendet' }]),
-            { value: counts.approved, label: 'Freigegeben' }
-          ]}
+          stats={headerStats}
         />
 
         {/* Aufgabentext — die Leitung muss sehen, was den Konfis gestellt wurde */}
@@ -463,11 +552,29 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
                       const consent = submission.konfi_consent ? CONSENT_BADGE[submission.konfi_consent] : null;
                       const isBusy = busyId === submission.id;
 
+                      const actions = availableActions(submission);
+
                       return (
+                        <IonItemSliding key={submission.id} disabled={isBusy}>
+                          <IonItem
+                            button
+                            onClick={() => !isBusy && openActions(submission)}
+                            detail={false}
+                            lines="none"
+                            style={{
+                              '--background': 'transparent',
+                              '--padding-start': '0',
+                              '--padding-end': '0',
+                              '--inner-padding-end': '0',
+                              '--inner-border-width': '0',
+                              '--border-style': 'none',
+                              '--min-height': 'auto'
+                            }}
+                          >
                         <div
-                          key={submission.id}
                           className="app-list-item app-list-item--challenges"
                           style={{
+                            width: '100%',
                             borderLeftColor: status.color,
                             marginBottom: '0',
                             display: 'block',
@@ -530,6 +637,10 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
                               href={submission.link_url}
                               target="_blank"
                               rel="noopener noreferrer"
+                              // Der Link gehoert dem Link — sonst faengt das
+                              // umgebende IonItem den Tap ab und oeffnet statt
+                              // der Seite das Aktions-Menue.
+                              onClick={(e) => e.stopPropagation()}
                               style={{
                                 display: 'inline-flex', alignItems: 'center', gap: '6px',
                                 marginTop: '6px', fontSize: '0.85rem', color: 'var(--app-color-challenges)',
@@ -542,71 +653,48 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
                           )}
 
                           {submission.file_path && (submission.media_type === 'photo' || submission.media_type === 'audio' || submission.media_type === 'video') && (
-                            <ChallengeMedia
-                              filePath={submission.file_path}
-                              fileName={submission.file_name}
-                              mediaType={submission.media_type}
-                            />
+                            // Audio-/Video-Steuerung braucht ihre eigenen Klicks
+                            // (Play, Scrubben) — ohne diesen Stopper landet jeder
+                            // Griff zum Player im Aktions-Menue des Items.
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <ChallengeMedia
+                                filePath={submission.file_path}
+                                fileName={submission.file_name}
+                                mediaType={submission.media_type}
+                              />
+                            </div>
                           )}
 
-                          {/* Aktionen — Moderation braucht explizite Buttons (bewusst keine
-                              Swipe-Actions), Farben ueber Tokens statt harter Hex-Werte. */}
-                          <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
-                            {submission.moderation_status === 'pending' && (
-                              <IonButton
-                                size="small"
-                                disabled={isBusy}
-                                onClick={() => moderate(submission, 'approve')}
-                                style={{ '--background': 'var(--app-color-success)', '--color': 'white', '--border-radius': '8px', height: '32px' }}
-                              >
-                                <IonIcon icon={checkmarkCircleOutline} slot="start" />
-                                Freigeben
-                              </IonButton>
-                            )}
-                            {/* Anonym stellen ist eine EINBAHNSTRASSE (User-Entscheid
-                                09.08.): einmal anonym, immer anonym — sonst wuerde
-                                ein anonym gemeinter Beitrag nachtraeglich mit Namen
-                                erscheinen. Deshalb nur bei consent='publish'
-                                sichtbar und mit Rueckfrage. */}
-                            {challenge.visibility === 'konfi_choice'
-                              && submission.konfi_consent === 'publish' && (
-                              <IonButton
-                                size="small"
-                                fill="outline"
-                                disabled={isBusy}
-                                onClick={() => confirmAnonymize(submission)}
-                                style={{ '--color': '#7c3aed', '--border-color': '#7c3aed', '--border-radius': '8px', height: '32px' }}
-                              >
-                                <IonIcon icon={eyeOffOutline} slot="start" />
-                                Anonym stellen
-                              </IonButton>
-                            )}
-                            {submission.moderation_status !== 'hidden' ? (
-                              <IonButton
-                                size="small"
-                                fill="outline"
-                                disabled={isBusy}
-                                onClick={() => confirmHide(submission)}
-                                style={{ '--color': 'var(--app-color-danger)', '--border-color': 'var(--app-color-danger)', '--border-radius': '8px', height: '32px' }}
-                              >
-                                <IonIcon icon={eyeOffOutline} slot="start" />
-                                Ausblenden
-                              </IonButton>
-                            ) : (
-                              <IonButton
-                                size="small"
-                                fill="outline"
-                                disabled={isBusy}
-                                onClick={() => moderate(submission, 'unhide')}
-                                style={{ '--color': 'var(--app-color-challenges)', '--border-color': 'var(--app-color-challenges)', '--border-radius': '8px', height: '32px' }}
-                              >
-                                <IonIcon icon={eyeOutline} slot="start" />
-                                Wieder einblenden
-                              </IonButton>
-                            )}
-                            {isBusy && <IonSpinner name="crescent" style={{ alignSelf: 'center' }} />}
-                          </div>
+                          {/* Aktionen liegen im ActionSheet (Tippen) und in den
+                              Swipe-Optionen — keine Buttons mehr in der Karte:
+                              bei drei Aktionen brachen sie um und zerrissen das
+                              Layout (User-Hinweis 10.08.). */}
+                          {isBusy && (
+                            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
+                              <IonSpinner name="crescent" />
+                            </div>
+                          )}
                         </div>
+                          </IonItem>
+
+                          <IonItemOptions side="end" className="app-swipe-actions">
+                            {actions.map((action) => (
+                              <IonItemOption
+                                key={action.key}
+                                onClick={() => action.run()}
+                                className="app-swipe-action"
+                              >
+                                <div
+                                  className="app-icon-circle app-icon-circle--lg"
+                                  style={{ backgroundColor: action.color }}
+                                  title={action.text}
+                                >
+                                  <IonIcon icon={action.icon} />
+                                </div>
+                              </IonItemOption>
+                            ))}
+                          </IonItemOptions>
+                        </IonItemSliding>
                       );
                     })}
                   </div>

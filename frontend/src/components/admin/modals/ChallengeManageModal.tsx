@@ -199,7 +199,7 @@ const VISIBILITY_OPTIONS: { value: ChallengeVisibility; label: string; hint: str
   },
   {
     value: 'private',
-    label: 'Nicht öffentlich',
+    label: 'Nur für euch in der Leitung',
     hint: 'Beiträge sehen nur die Leitung und der Konfi selbst — es gibt keine Galerie.'
   }
 ];

@@ -81,7 +81,10 @@ const STATUS_ICON: Record<ChallengeStatus, string> = {
 const VISIBILITY_LABEL: Record<string, string> = {
   public: 'Öffentlich',
   konfi_choice: 'Konfi entscheidet',
-  private: 'Nicht öffentlich'
+  // Meta-Zeile der Liste: knapp halten, aber dieselbe Aussage wie in der
+  // Anlage ("Nur für euch in der Leitung") — nicht "nicht öffentlich", das
+  // sagte nur, was es NICHT ist (User-Hinweis 10.08.).
+  private: 'Nur Leitung'
 };
 
 // Teilnahme-Kreis (Migration 121). 'konfis' ist der Normalfall und wird in der

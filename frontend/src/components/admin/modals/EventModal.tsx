@@ -55,12 +55,12 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
 
   const [formData, setFormData] = useState<EventFormData>({
     name: '', description: '', event_date: new Date().toISOString(), event_end_time: '',
-    location: '', points: 0, point_type: 'gemeinde', category_ids: [], jahrgang_ids: [],
+    location: '', points: 1, point_type: 'gemeinde', category_ids: [], jahrgang_ids: [],
     type: 'event', max_participants: 5, registration_opens_at: '', registration_closes_at: '',
     has_timeslots: false, waitlist_enabled: true, max_waitlist_size: 3,
     is_series: false, series_count: 1, series_interval: 'week',
     mandatory: false, is_konfirmation: false, bring_items: '', checkin_window: 30,
-    teamer_max_participants: 0, teamer_waitlist_enabled: true, teamer_max_waitlist_size: 10
+    teamer_max_participants: 0, teamer_waitlist_enabled: true, teamer_max_waitlist_size: 3
   });
 
   const [timeslots, setTimeslots] = useState<Timeslot[]>([]);
@@ -109,7 +109,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         checkin_window: event.checkin_window || 30,
         teamer_max_participants: event.teamer_max_participants ?? 0,
         teamer_waitlist_enabled: event.teamer_waitlist_enabled !== undefined ? event.teamer_waitlist_enabled : true,
-        teamer_max_waitlist_size: event.teamer_max_waitlist_size ?? 10
+        teamer_max_waitlist_size: event.teamer_max_waitlist_size ?? 3
       });
       if (event.teamer_only) setTeamerAccess('teamer_only');
       else if (event.teamer_needed) setTeamerAccess('teamer_needed');
@@ -129,7 +129,6 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
       const roundedEventStart = roundToHalfHour(eventStart);
       const eventEnd = new Date(roundedEventStart);
       eventEnd.setHours(eventEnd.getHours() + 2);
-      const regOpens = roundToHalfHour(new Date());
       const regCloses = new Date(roundedEventStart);
       regCloses.setHours(regCloses.getHours() - 1);
       const toIonDatetimeISO = (date: Date) => {
@@ -138,14 +137,17 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
       };
       setFormData({
         name: '', description: '', event_date: toIonDatetimeISO(roundedEventStart),
-        event_end_time: toIonDatetimeISO(eventEnd), location: '', points: 0,
+        event_end_time: toIonDatetimeISO(eventEnd), location: '', points: 1,
         point_type: 'gemeinde', category_ids: [], jahrgang_ids: [], type: 'event',
-        max_participants: 5, registration_opens_at: toIonDatetimeISO(regOpens),
+        // Anmeldung standardmaessig AB SOFORT (leer = kein Startzeitpunkt) —
+        // der Normalfall ist "Event steht, Anmeldung laeuft"; ein Startdatum in
+        // der Zukunft ist die Ausnahme und lässt sich per Schalter setzen.
+        max_participants: 5, registration_opens_at: '',
         registration_closes_at: toIonDatetimeISO(regCloses), has_timeslots: false,
         waitlist_enabled: true, max_waitlist_size: 3, is_series: false,
         series_count: 1, series_interval: 'week', mandatory: false, is_konfirmation: false, bring_items: '',
         checkin_window: 30,
-        teamer_max_participants: 0, teamer_waitlist_enabled: true, teamer_max_waitlist_size: 10
+        teamer_max_participants: 0, teamer_waitlist_enabled: true, teamer_max_waitlist_size: 3
       });
       setTimeslots([]);
       setTeamerAccess('normal');
@@ -194,8 +196,20 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
   };
 
   const handleSubmit = async () => {
-    if (!formData.name.trim() || !formData.event_date) return;
-    await guard(async () => {
+    // Pflichtfelder pruefen und SAGEN, was fehlt. Vorher brach die Funktion
+    // hier stumm ab (return ohne Meldung) — man tippte auf Speichern und es
+    // passierte sichtbar nichts (User-Hinweis 10.08.).
+    if (!formData.name.trim()) { setError('Bitte gib dem Event einen Namen'); return; }
+    if (!formData.event_date) { setError('Bitte lege Datum und Uhrzeit fest'); return; }
+    if (teamerAccess !== 'teamer_only' && formData.mandatory && formData.jahrgang_ids.length === 0) {
+      setError('Pflicht-Events brauchen mindestens einen Jahrgang');
+      return;
+    }
+    // guard() wirft, wenn schon eine Speicherung laeuft (Doppel-Tap). Dieser
+    // Wurf lag bisher ausserhalb jedes catch -> unbehandelte Rejection, kein
+    // Hinweis an die Nutzerin. Hier abfangen statt durchschlagen lassen.
+    try {
+      await guard(async () => {
     setLoading(true);
     try {
       const toBackendTimestamp = (localTimeString: string) => {
@@ -281,10 +295,22 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
       // canDismiss schliesst (sonst blockiert canDismiss -> Modal bleibt offen).
       setIsDirty(false); onDirtyChange?.(false); onSuccess(); doClose();
     } catch (error: any) {
-      if (error.response?.data?.error) setError(error.response.data.error);
+      // Validierungsfehler des Backends kommen als { error, details: [...] } —
+      // ohne die details liest man nur "Validierungsfehler" und weiss nicht,
+      // welches Feld gemeint ist.
+      const data = error.response?.data;
+      const details = Array.isArray(data?.details)
+        ? data.details.map((d: any) => d.message).filter(Boolean).join(', ')
+        : '';
+      if (details) setError(details);
+      else if (data?.error) setError(data.error);
       else setError('Fehler beim Speichern des Events');
     } finally { setLoading(false); }
-    });
+      });
+    } catch {
+      // guard() hat abgelehnt: es laeuft bereits eine Speicherung. Nichts tun —
+      // der Button ist ohnehin disabled, das ist kein Fehler fuer die Nutzerin.
+    }
   };
 
   const isFormValid = formData.name.trim().length > 0 && formData.event_date && (teamerAccess === 'teamer_only' || !formData.mandatory || formData.jahrgang_ids.length > 0);
@@ -346,41 +372,67 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
                   sie zu zeigen hat vorgegaukelt, sie wuerden greifen. */}
               {!formData.mandatory && teamerAccess !== 'teamer_only' && (
                 <>
-                  {/* "Ab sofort" = registration_opens_at NULL. Beide Detail-
-                      Ansichten zeigen dafuer "Sofort möglich" — bis jetzt liess
-                      sich dieser Zustand im Formular gar nicht herstellen. */}
-                  <IonItem lines="none">
-                    <IonLabel>Anmeldung ab sofort</IonLabel>
-                    <IonToggle
-                      slot="end"
-                      className="app-toggle--events"
-                      checked={!formData.registration_opens_at}
-                      disabled={loading}
-                      onIonChange={(e) => {
-                        if (e.detail.checked) {
-                          setFormData({ ...formData, registration_opens_at: '' });
-                        } else {
-                          // Zurueck auf einen sinnvollen Startwert: jetzt.
-                          const now = new Date();
-                          const pad = (n: number) => n.toString().padStart(2, '0');
-                          setFormData({
-                            ...formData,
-                            registration_opens_at: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:00`
-                          });
-                        }
+                  {/* Eigener, sichtbar abgesetzter Block: die Anmeldung ist eine
+                      andere Sache als der Termin selbst. Vorher stand der
+                      "ab sofort"-Schalter beziehungslos zwischen den
+                      Datums-Buttons (User-Hinweis 10.08.). Trennlinie +
+                      Ueberschrift wie im UserManagementModal. */}
+                  <div
+                    style={{
+                      marginTop: '8px',
+                      paddingTop: '14px',
+                      borderTop: '1px solid rgba(0,0,0,0.06)'
+                    }}
+                  >
+                    <h3
+                      style={{
+                        fontWeight: 600, margin: '0 0 2px 16px',
+                        fontSize: '0.95rem', color: '#3c3c43'
                       }}
-                    />
-                  </IonItem>
-                  {!!formData.registration_opens_at && (
+                    >
+                      Anmeldung
+                    </h3>
+                    <p style={{ color: '#8e8e93', margin: '0 16px 4px 16px', fontSize: '0.8rem', lineHeight: 1.4 }}>
+                      {formData.registration_opens_at
+                        ? 'Konfis können sich ab dem gewählten Zeitpunkt anmelden.'
+                        : 'Konfis können sich sofort anmelden.'}
+                    </p>
+
+                    {/* "Ab sofort" = registration_opens_at NULL. Beide Detail-
+                        Ansichten zeigen dafuer "Sofort möglich". */}
                     <IonItem lines="none">
-                      <IonLabel position="stacked">Anmeldung ab</IonLabel>
-                      <IonDatetimeButton datetime="registration-opens-picker" />
+                      <IonLabel>Anmeldung ab sofort</IonLabel>
+                      <IonToggle
+                        slot="end"
+                        className="app-toggle--events"
+                        checked={!formData.registration_opens_at}
+                        disabled={loading}
+                        onIonChange={(e) => {
+                          if (e.detail.checked) {
+                            setFormData({ ...formData, registration_opens_at: '' });
+                          } else {
+                            // Zurueck auf einen sinnvollen Startwert: jetzt.
+                            const now = new Date();
+                            const pad = (n: number) => n.toString().padStart(2, '0');
+                            setFormData({
+                              ...formData,
+                              registration_opens_at: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:00`
+                            });
+                          }
+                        }}
+                      />
                     </IonItem>
-                  )}
-                  <IonItem lines="none">
-                    <IonLabel position="stacked">Anmeldeschluss</IonLabel>
-                    <IonDatetimeButton datetime="registration-closes-picker" />
-                  </IonItem>
+                    {!!formData.registration_opens_at && (
+                      <IonItem lines="none">
+                        <IonLabel position="stacked">Anmeldung ab</IonLabel>
+                        <IonDatetimeButton datetime="registration-opens-picker" />
+                      </IonItem>
+                    )}
+                    <IonItem lines="none">
+                      <IonLabel position="stacked">Anmeldeschluss</IonLabel>
+                      <IonDatetimeButton datetime="registration-closes-picker" />
+                    </IonItem>
+                  </div>
                 </>
               )}
             </IonList>
