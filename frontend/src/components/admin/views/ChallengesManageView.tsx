@@ -98,7 +98,9 @@ const formatDate = (value?: string | null) => {
   return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
-type FilterValue = 'all' | ChallengeStatus;
+// 'upcoming' fasst 'scheduled' und 'draft' zusammen (User-Entscheid 10.08.:
+// fuenf Segmente waren zu viel) — beides ist "noch nicht gelaufen".
+type FilterValue = 'all' | 'active' | 'upcoming' | 'ended';
 
 const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
   challenges: challengesRaw,
@@ -130,7 +132,12 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
 
   const filtered = useMemo(() => {
     let result = [...challenges];
-    if (statusFilter !== 'all') {
+    if (statusFilter === 'upcoming') {
+      result = result.filter((c) => {
+        const s = getChallengeStatus(c);
+        return s === 'scheduled' || s === 'draft';
+      });
+    } else if (statusFilter !== 'all') {
       result = result.filter((c) => getChallengeStatus(c) === statusFilter);
     }
     // Sortierung: aktive zuerst, dann geplante, Entwuerfe, zuletzt Archiv.
@@ -146,7 +153,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
     <>
       <SectionHeader
         title="Challenges"
-        subtitle="Aufgaben stellen und Beiträge begleiten"
+        subtitle="Aufgaben und Beiträge"
         icon={flag}
         preset="challenges"
         stats={[
@@ -170,11 +177,10 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
           <IonSegmentButton value="active">
             <IonLabel>Aktiv</IonLabel>
           </IonSegmentButton>
-          <IonSegmentButton value="scheduled">
+          {/* Geplant und Entwurf zusammen: beides ist "noch nicht gelaufen",
+              die Unterscheidung zeigt das Status-Badge am Eintrag. */}
+          <IonSegmentButton value="upcoming">
             <IonLabel>Geplant</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="draft">
-            <IonLabel>Entwurf</IonLabel>
           </IonSegmentButton>
           <IonSegmentButton value="ended">
             <IonLabel>Archiv</IonLabel>

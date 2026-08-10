@@ -328,13 +328,15 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     deleteSingleEvent(event);
   };
 
+  // Events mit Anmeldungen sind loeschbar — mit ausdruecklicher Rueckfrage und
+  // Push an alle Angemeldeten (User-Entscheid 10.08.). Fachlich waere "absagen"
+  // sauberer, praktisch ist Loeschen das, was gemeint ist.
   const deleteSingleEvent = async (event: Event) => {
-    const konfiCount = (event.registered_count || 0) - (event.teamer_count || 0);
-    const isCancelled = event.registration_status === 'cancelled';
+    const anmeldungen = (event.registered_count || 0) + (event.waitlist_count || 0);
     presentAlert({
       header: 'Event löschen',
-      message: isCancelled && konfiCount > 0
-        ? `Event "${event.name}" löschen? ${konfiCount} Konfis waren angemeldet und werden per Push benachrichtigt.`
+      message: anmeldungen > 0
+        ? `"${event.name}" hat ${anmeldungen} Anmeldung${anmeldungen === 1 ? '' : 'en'}. Beim Löschen werden alle Angemeldeten benachrichtigt. Das lässt sich nicht rückgängig machen.`
         : `Event "${event.name}" wirklich löschen?`,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
@@ -343,7 +345,8 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
           role: 'destructive',
           handler: async () => {
             try {
-              await api.delete(`/events/${event.id}`);
+              // force=true: der Nutzer hat die Anzahl gesehen und bestaetigt.
+              await api.delete(`/events/${event.id}?force=true`);
               await refreshEvents();
               await refreshCancelled();
             } catch (error: any) {
@@ -369,7 +372,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
           role: 'destructive',
           handler: async () => {
             const results = await Promise.allSettled(
-              seriesEvents.map(event => api.delete(`/events/${event.id}`))
+              seriesEvents.map(event => api.delete(`/events/${event.id}?force=true`))
             );
             await refreshEvents();
             await refreshCancelled();

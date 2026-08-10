@@ -171,6 +171,22 @@ const CONSENT_BADGE: Record<string, { label: string; icon: string; color: string
   anonymous: { label: 'Anonym sichtbar', icon: eyeOffOutline, color: '#7c3aed' }
 };
 
+// Untertitel im Kopf der Moderation: sagt in EINER Zeile, wer die Beiträge
+// sieht und ob sie eine Freigabe brauchen. Vorher stand dort nur die Freigabe —
+// bei "nur für die Leitung" las man "Beiträge erscheinen sofort", was nach
+// Veröffentlichung klang, obwohl niemand ausser der Leitung sie sieht.
+const buildVisibilitySubtitle = (challenge: AdminChallenge): string => {
+  const sichtbarkeit = challenge.visibility === 'public'
+    ? 'Für die Gruppe sichtbar'
+    : challenge.visibility === 'private'
+      ? 'Nur für euch in der Leitung'
+      : 'Konfi entscheidet je Beitrag';
+  // Bei 'private' ist die Freigabe fuer die Gruppe bedeutungslos — dort gibt es
+  // keine Galerie, in der etwas erscheinen koennte.
+  if (challenge.visibility === 'private') return sichtbarkeit;
+  return `${sichtbarkeit} · ${challenge.moderated ? 'nach Freigabe' : 'sofort'}`;
+};
+
 const formatDateTime = (value?: string) => {
   if (!value) return '';
   const d = new Date(value);
@@ -245,12 +261,19 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
     hidden: submissions.filter((s) => s.moderation_status === 'hidden').length
   }), [submissions]);
 
+  // Ohne Freigabe-Pflicht gibt es das "Wartet"-Segment nicht — ein von einer
+  // anderen Challenge uebernommener Filterstand wuerde sonst eine leere Liste
+  // zeigen, ohne dass man den Grund sieht.
+  const effectiveFilter: StatusFilter =
+    statusFilter === 'pending' && !challenge?.moderated ? 'all' : statusFilter;
+
   const filtered = useMemo(() => {
+    const statusFilter = effectiveFilter;
     const list = statusFilter === 'all'
       ? [...submissions]
       : submissions.filter((s) => s.moderation_status === statusFilter);
     return list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  }, [submissions, statusFilter]);
+  }, [submissions, effectiveFilter]);
 
   const moderate = async (
     submission: ChallengeSubmission,
@@ -367,12 +390,19 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
         {/* Kopf: Challenge-Info — drei Kacheln (Ausgeblendetes zaehlt niemand nach) */}
         <SectionHeader
           title={challenge.title}
-          subtitle={challenge.moderated ? 'Beiträge brauchen eine Freigabe' : 'Beiträge erscheinen sofort'}
+          // Sichtbarkeit ZUERST, dann die Freigabe: "erscheinen sofort" allein
+          // war irrefuehrend — bei visibility='private' erscheinen sie nirgends
+          // ausser bei euch in der Leitung (User-Hinweis 10.08.).
+          subtitle={buildVisibilitySubtitle(challenge)}
           icon={flag}
           preset="challenges"
           stats={[
             { value: counts.total, label: 'Gesamt' },
-            { value: counts.pending, label: 'Wartet' },
+            // Ohne Freigabe-Pflicht gibt es nichts, das wartet -> stattdessen
+            // die ausgeblendeten Beitraege zeigen.
+            ...(challenge.moderated
+              ? [{ value: counts.pending, label: 'Wartet' }]
+              : [{ value: counts.hidden, label: 'Ausgeblendet' }]),
             { value: counts.approved, label: 'Freigegeben' }
           ]}
         />
@@ -393,9 +423,14 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
         )}
 
         <div style={{ margin: '16px 16px 8px 16px' }}>
-          <IonSegment value={statusFilter} onIonChange={(e) => setStatusFilter(e.detail.value as StatusFilter)}>
+          <IonSegment value={effectiveFilter} onIonChange={(e) => setStatusFilter(e.detail.value as StatusFilter)}>
             <IonSegmentButton value="all"><IonLabel>Alle</IonLabel></IonSegmentButton>
-            <IonSegmentButton value="pending"><IonLabel>Wartet</IonLabel></IonSegmentButton>
+            {/* "Wartet" nur bei Challenges MIT Freigabe-Pflicht — ohne
+                Moderation ist jeder Beitrag sofort freigegeben, der Filter
+                waere immer leer (User-Hinweis 10.08.). */}
+            {challenge.moderated && (
+              <IonSegmentButton value="pending"><IonLabel>Wartet</IonLabel></IonSegmentButton>
+            )}
             <IonSegmentButton value="hidden"><IonLabel>Ausgeblendet</IonLabel></IonSegmentButton>
           </IonSegment>
         </div>

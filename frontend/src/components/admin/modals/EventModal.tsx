@@ -349,15 +349,8 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
                   {/* "Ab sofort" = registration_opens_at NULL. Beide Detail-
                       Ansichten zeigen dafuer "Sofort möglich" — bis jetzt liess
                       sich dieser Zustand im Formular gar nicht herstellen. */}
-                  <IonItem lines="inset">
-                    <IonLabel>
-                      <h3 style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '600' }}>
-                        Anmeldung ab sofort
-                      </h3>
-                      <p style={{ color: '#666', margin: '0', fontSize: '0.85rem', whiteSpace: 'normal' }}>
-                        Ohne Startzeitpunkt — die Anmeldung ist sofort offen.
-                      </p>
-                    </IonLabel>
+                  <IonItem lines="none">
+                    <IonLabel>Anmeldung ab sofort</IonLabel>
                     <IonToggle
                       slot="end"
                       className="app-toggle--events"
@@ -379,7 +372,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
                     />
                   </IonItem>
                   {!!formData.registration_opens_at && (
-                    <IonItem lines="inset">
+                    <IonItem lines="none">
                       <IonLabel position="stacked">Anmeldung ab</IonLabel>
                       <IonDatetimeButton datetime="registration-opens-picker" />
                     </IonItem>

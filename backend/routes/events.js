@@ -765,7 +765,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     // checkin_window validieren (5-120, Default 30)
     const effectiveCheckinWindow = Math.max(5, Math.min(120, parseInt(checkin_window) || 30));
 
-    if (!name || !event_date || (!mandatory && !max_participants)) {
+    // max_participants ist die KONFI-Teilnehmerzahl. Bei Pflicht-Events (ganzer
+    // Jahrgang) und bei reinen Teamer-Events (keine Konfi-Teilnahme) gibt es
+    // sie nicht — dort darf sie nicht eingefordert werden. Ohne diese Ausnahme
+    // liess sich ein reines Teamer-Event gar nicht anlegen.
+    if (!name || !event_date || (!mandatory && !teamer_only && !max_participants)) {
       return res.status(400).json({ error: 'Name, Datum und maximale Teilnehmerzahl sind erforderlich' });
     }
 
@@ -790,7 +794,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     // Guards für Pflicht-Events
     // Pflicht- UND Konfirmations-Events geben keine Punkte (serverseitig erzwungen).
     const effectivePoints = (mandatory || is_konfirmation) ? 0 : (points || 0);
-    const effectiveMaxParticipants = mandatory ? 0 : max_participants;
+    // Reine Teamer-Events haben keine Konfi-Plaetze -> 0 (= unbegrenzt/irrelevant)
+    const effectiveMaxParticipants = (mandatory || teamer_only) ? 0 : max_participants;
     const effectiveWaitlist = mandatory ? false : (waitlist_enabled !== undefined ? waitlist_enabled : true);
     // Timeslots sind bei Pflicht-Events UND Konfirmationen NICHT erlaubt (fachliche
     // Regel): Pflicht betrifft den ganzen Jahrgang, Konfirmation hat feste Termine.
@@ -960,7 +965,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       console.error('Org-Ownership-Check fehlgeschlagen:', err);
       return res.status(500).json({ error: 'Datenbankfehler' });
     }
-    const effectiveMaxParticipants = mandatory ? 0 : max_participants;
+    // Reine Teamer-Events haben keine Konfi-Plaetze -> 0 (= unbegrenzt/irrelevant)
+    const effectiveMaxParticipants = (mandatory || teamer_only) ? 0 : max_participants;
     const effectiveWaitlist = mandatory ? false : (waitlist_enabled !== undefined ? waitlist_enabled : true);
     // Timeslots bei Pflicht-Events UND Konfirmationen nicht erlaubt (siehe POST).
     // Wird ein Event nachträglich zu mandatory/is_konfirmation, fällt es unten in
@@ -1336,39 +1342,42 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         return res.status(404).json({ error: 'Event nicht gefunden' });
       }
 
-      // Abgesagte Events duerfen trotz Buchungen geloescht werden (Push wird gesendet)
-      if (!event.cancelled) {
-        // Check if there are bookings (confirmed participants)
-        const { rows: [bookingUsage] } = await client.query("SELECT COUNT(*)::int as count FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'", [id]);
+      // Events MIT Anmeldungen duerfen geloescht werden — aber nur ausdruecklich
+      // bestaetigt (?force=true). Fachlich waere "absagen" der saubere Weg,
+      // praktisch ist Loeschen oft das, was gemeint ist (User-Entscheid
+      // 10.08.2026). Ohne force liefert die Route 409 samt Anzahl, damit das
+      // Frontend eine Rueckfrage mit konkreter Zahl stellen kann.
+      // Abgesagte Events waren schon vorher immer loeschbar.
+      const forceDelete = req.query.force === 'true';
+      if (!event.cancelled && !forceDelete) {
+        const { rows: [bookingUsage] } = await client.query(
+          "SELECT COUNT(*)::int as count FROM event_bookings WHERE event_id = $1 AND status IN ('confirmed', 'waitlist')",
+          [id]
+        );
 
         if (bookingUsage.count > 0) {
           await client.query('ROLLBACK');
           client.release();
-          return res.status(409).json({ error: `Event kann nicht gelöscht werden: ${bookingUsage.count} bestätigte Anmeldung(en) vorhanden.` });
-        }
-
-        // Check for pending bookings (waitlist)
-        const { rows: [pendingUsage] } = await client.query("SELECT COUNT(*)::int as count FROM event_bookings WHERE event_id = $1 AND status = 'waitlist'", [id]);
-
-        if (pendingUsage.count > 0) {
-          await client.query('ROLLBACK');
-          client.release();
-          return res.status(409).json({ error: `Event kann nicht gelöscht werden: ${pendingUsage.count} Wartelisten-Anmeldung(en) vorhanden.` });
+          return res.status(409).json({
+            error: `Für dieses Event gibt es ${bookingUsage.count} Anmeldung(en). Beim Löschen werden alle benachrichtigt.`,
+            error_code: 'event_has_bookings',
+            booking_count: bookingUsage.count
+          });
         }
       }
 
       // Push an angemeldete Konfis wenn abgesagtes Event geloescht wird
-      let bookedKonfiUserIds = [];
-      if (event.cancelled) {
-        const { rows: bookedKonfis } = await client.query(
-          `SELECT eb.user_id FROM event_bookings eb
-           JOIN users u ON eb.user_id = u.id
-           JOIN roles r ON u.role_id = r.id
-           WHERE eb.event_id = $1 AND r.name = 'konfi' AND eb.status IN ('confirmed', 'waitlist') AND u.deleted_at IS NULL`,
-          [id]
-        );
-        bookedKonfiUserIds = bookedKonfis.map(b => b.user_id);
-      }
+      // IMMER einsammeln (nicht nur bei abgesagten Events): wer angemeldet war,
+      // muss erfahren, dass der Termin weg ist — egal ob vorher abgesagt oder
+      // direkt geloescht.
+      const { rows: bookedKonfis } = await client.query(
+        `SELECT eb.user_id FROM event_bookings eb
+         JOIN users u ON eb.user_id = u.id
+         JOIN roles r ON u.role_id = r.id
+         WHERE eb.event_id = $1 AND r.name = 'konfi' AND eb.status IN ('confirmed', 'waitlist') AND u.deleted_at IS NULL`,
+        [id]
+      );
+      const bookedKonfiUserIds = bookedKonfis.map(b => b.user_id);
 
       // Check for chat rooms with messages
       const { rows: [chatUsage] } = await client.query(`
@@ -1377,10 +1386,15 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         WHERE cr.event_id = $1
       `, [id]);
 
-      if (chatUsage && chatUsage.message_count > 0) {
+      // Auch der Event-Chat blockt nur ohne ausdrueckliche Bestaetigung.
+      if (chatUsage && chatUsage.message_count > 0 && !forceDelete) {
         await client.query('ROLLBACK');
         client.release();
-        return res.status(409).json({ error: `Event kann nicht gelöscht werden: Event-Chat enthält ${chatUsage.message_count} Nachricht(en).` });
+        return res.status(409).json({
+          error: `Der Event-Chat enthält ${chatUsage.message_count} Nachricht(en). Beim Löschen gehen sie verloren.`,
+          error_code: 'event_has_chat',
+          message_count: chatUsage.message_count
+        });
       }
 
       // Get event chat rooms and their files before deletion
