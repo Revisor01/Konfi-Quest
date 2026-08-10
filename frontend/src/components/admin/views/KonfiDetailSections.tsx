@@ -380,6 +380,7 @@ export const BonusSection = React.memo<BonusSectionProps>(({
                   <IonItemOption
                     className="app-swipe-action"
                     onClick={() => handleDeleteBonus(bonus)}
+                    aria-label="Bonuspunkte löschen"
                   >
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                       <IonIcon icon={trash} />
@@ -799,6 +800,7 @@ export const ActivitiesSection = React.memo<ActivitiesSectionProps>(({
                     <IonItemOption
                       className="app-swipe-action"
                       onClick={() => handleDeleteActivity(activity)}
+                      aria-label="Aktivität löschen"
                     >
                       <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                         <IonIcon icon={trash} />
@@ -927,6 +929,7 @@ export const CertificatesSection = React.memo<CertificatesSectionProps>(({
                   <IonItemOption
                     className="app-swipe-action"
                     onClick={() => handleDeleteCertificate(cert)}
+                    aria-label="Zertifikat entfernen"
                   >
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                       <IonIcon icon={trash} />

@@ -164,13 +164,13 @@ const AdminMaterialPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton onClick={() => window.history.back()}>
+            <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
               <IonIcon icon={arrowBack} />
             </IonButton>
           </IonButtons>
           <IonTitle>Material verwalten</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={openCreateModal}>
+            <IonButton aria-label="Neues Material anlegen" onClick={openCreateModal}>
               <IonIcon icon={add} />
             </IonButton>
           </IonButtons>
@@ -319,6 +319,7 @@ const AdminMaterialPage: React.FC = () => {
                             <IonItemOption
                               className="app-swipe-action"
                               onClick={() => handleDelete(mat)}
+                              aria-label="Material löschen"
                             >
                               <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                                 <IonIcon icon={trash} />

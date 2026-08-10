@@ -68,12 +68,12 @@ const UnregisterModal: React.FC<UnregisterModalProps> = ({
         <IonToolbar>
           <IonTitle>Abmeldung</IonTitle>
           <IonButtons slot="start">
-            <IonButton className="app-modal-close-btn" onClick={handleClose}>
+            <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={handleClose}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSubmit} disabled={!isValid || isSubmitting || !isOnline}>
+            <IonButton aria-label="Abmeldung bestätigen" className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSubmit} disabled={!isValid || isSubmitting || !isOnline}>
               {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>

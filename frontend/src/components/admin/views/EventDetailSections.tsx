@@ -722,12 +722,12 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
                         </IonItem>
                         {!eventMandatory && (
                         <IonItemOptions className="app-swipe-actions" side="end">
-                          <IonItemOption className="app-swipe-action" onClick={() => handleDemoteParticipant(participant)}>
+                          <IonItemOption className="app-swipe-action" onClick={() => handleDemoteParticipant(participant)} aria-label="Auf Warteliste setzen">
                             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
                               <IonIcon icon={returnUpBack} />
                             </div>
                           </IonItemOption>
-                          <IonItemOption className="app-swipe-action" onClick={() => handleRemoveParticipant(participant)}>
+                          <IonItemOption className="app-swipe-action" onClick={() => handleRemoveParticipant(participant)} aria-label="Teilnahme entfernen">
                             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                               <IonIcon icon={trash} />
                             </div>

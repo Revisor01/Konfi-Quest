@@ -471,6 +471,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                     {onCancelEvent && (
                       <IonItemOption
                         onClick={() => onCancelEvent(event)}
+                        aria-label="Event absagen"
                         className="app-swipe-action"
                       >
                         <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
@@ -481,6 +482,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                     {onDeleteEvent && (
                       <IonItemOption
                         onClick={() => onDeleteEvent(event)}
+                        aria-label="Event löschen"
                         className="app-swipe-action"
                       >
                         <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">

@@ -130,7 +130,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         <IonToolbar>
           <IonTitle>Foto</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose}>
+            <IonButton aria-label="Schließen" onClick={onClose}>
               <IonIcon icon={close} />
             </IonButton>
           </IonButtons>
@@ -494,14 +494,14 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         <IonToolbar>
           {!hideBackButton && (
             <IonButtons slot="start">
-              <IonButton onClick={onBack}>
+              <IonButton aria-label="Zurück" onClick={onBack}>
                 <IonIcon icon={arrowBack} />
               </IonButton>
             </IonButtons>
           )}
           <IonTitle>{currentKonfi?.name || (isTeamer ? 'Teamer:in Details' : 'Konfi Details')}</IonTitle>
           <IonButtons slot="end">
-            <IonButton disabled={!isOnline} onClick={handlePasswordAction}>
+            <IonButton aria-label="Passwort zurücksetzen" disabled={!isOnline} onClick={handlePasswordAction}>
               <IonIcon icon={key} />
             </IonButton>
           </IonButtons>

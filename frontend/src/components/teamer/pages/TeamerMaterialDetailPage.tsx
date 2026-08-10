@@ -152,7 +152,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton className="app-modal-close-btn" onClick={onClose}>
+            <IonButton className="app-modal-close-btn" onClick={onClose} aria-label="Schließen">
               <IonIcon icon={closeOutline} slot="icon-only" />
             </IonButton>
           </IonButtons>

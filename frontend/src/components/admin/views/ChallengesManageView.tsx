@@ -340,9 +340,15 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                 </div>
               </IonItem>
 
+              {/* BEWUSSTE AUSNAHME von "Tippen = bearbeiten": Tippen oeffnet
+                  hier die Beitraege (Moderation) — das ist die taegliche
+                  Arbeit an einer Challenge, das Aendern der Stammdaten die
+                  Ausnahme. Deshalb liegt Bearbeiten hier auf dem Wisch.
+                  Ueberall sonst gilt: Tippen = bearbeiten, Wischen = loeschen. */}
               <IonItemOptions side="end" className="app-swipe-actions">
                 <IonItemOption
                   onClick={() => onEditChallenge(challenge)}
+                  aria-label="Challenge bearbeiten"
                   className="app-swipe-action"
                 >
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--challenges">
@@ -351,6 +357,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                 </IonItemOption>
                 <IonItemOption
                   onClick={() => onDeleteChallenge(challenge)}
+                  aria-label="Challenge löschen"
                   className="app-swipe-action"
                 >
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">

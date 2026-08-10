@@ -107,7 +107,7 @@ const KonfiProfilePage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton onClick={() => window.history.back()}>
+            <IonButton onClick={() => window.history.back()} aria-label="Zurück">
               <IonIcon icon={arrowBack} slot="icon-only" />
             </IonButton>
           </IonButtons>

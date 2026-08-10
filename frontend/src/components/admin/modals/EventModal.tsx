@@ -321,12 +321,12 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         <IonToolbar>
           <IonTitle>{event ? 'Event bearbeiten' : 'Neues Event'}</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose} disabled={loading} className="app-modal-close-btn">
+            <IonButton aria-label="Schließen" onClick={handleClose} disabled={loading} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSubmit} disabled={!isFormValid || loading || isSubmitting}
+            <IonButton aria-label="Event speichern" onClick={handleSubmit} disabled={!isFormValid || loading || isSubmitting}
               className="app-modal-submit-btn app-modal-submit-btn--events">
               {loading ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
@@ -490,7 +490,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
                 <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: 'white' }}>{index + 1}</span>
               </div>
               <IonLabel style={{ flex: 1 }}>Zeitfenster {index + 1}</IonLabel>
-              <IonButton fill="clear" color="danger" onClick={() => removeTimeslot(index)} disabled={loading} size="small">
+              <IonButton aria-label="Zeitfenster entfernen" fill="clear" color="danger" onClick={() => removeTimeslot(index)} disabled={loading} size="small">
                 <IonIcon icon={trash} />
               </IonButton>
             </IonListHeader>

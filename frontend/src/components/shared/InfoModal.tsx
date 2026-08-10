@@ -22,7 +22,7 @@ const InfoModal: React.FC<InfoModalProps> = ({ onClose, title, icon, color = 'va
     <IonHeader>
       <IonToolbar>
         <IonButtons slot="start">
-          <IonButton className="app-modal-close-btn" onClick={onClose}>
+          <IonButton className="app-modal-close-btn" onClick={onClose} aria-label="Schließen">
             <IonIcon icon={closeOutline} slot="icon-only" />
           </IonButton>
         </IonButtons>

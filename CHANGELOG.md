@@ -45,6 +45,12 @@ Versionsüberschrift.
 - Veranstaltungs-Formular neu geordnet; Anmeldung ist ein eigener Abschnitt.
 - Challenge-Beiträge werden per Tippen und Wischen bearbeitet, wie in den
   übrigen Listen.
+- Verwaltungslisten folgen jetzt durchgängig einer Regel: Tippen öffnet zum
+  Bearbeiten, Wischen löscht.
+- Konfi-Ansichten sprechen verständlicher: aus "Antragsdetails" wird "Deine
+  Meldung", aus "verbucht" wird "angerechnet", aus "Nachweis-Foto" "Dein Foto".
+- Bildschirmlesegeräte benennen jetzt alle Symbol-Schaltflächen und
+  Wischaktionen mit ihrer Funktion statt nur "Schaltfläche".
 
 ### Behoben
 
@@ -61,6 +67,10 @@ Versionsüberschrift.
 - Challenges: "Nur für euch in der Leitung" erschien auch bei Konfis.
 - Einzelne Beschriftungen liefen aus ihrer Kachel heraus.
 - Teamer-Bereich: Schreibfehler "Gueltig" bei Zertifikaten.
+- Konnte ein Foto zu einer Meldung nicht geladen werden, stand dort
+  fälschlich "Kein Foto hochgeladen".
+- Beim Abmelden von einem Termin steht jetzt der Grund dabei, wenn es nicht
+  mehr geht (bis 2 Tage vorher).
 - Veranstaltungen: Speichern brach in manchen Fällen ohne Meldung ab. Fehlende
   Pflichtangaben werden jetzt benannt.
 - Anträge werden schneller abgeschickt; Benachrichtigungen an die Leitung

@@ -221,7 +221,7 @@ const TeamerMaterialPage: React.FC = () => {
           <IonToolbar>
             {!hideBackButton && (
               <IonButtons slot="start">
-                <IonButton onClick={() => setSelectedMaterial(null)}>
+                <IonButton onClick={() => setSelectedMaterial(null)} aria-label="Zurück zur Material-Liste">
                   <IonIcon icon={arrowBack} slot="icon-only" />
                 </IonButton>
               </IonButtons>
@@ -394,7 +394,7 @@ const TeamerMaterialPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton onClick={() => window.history.back()}>
+            <IonButton onClick={() => window.history.back()} aria-label="Zurück">
               <IonIcon icon={arrowBack} slot="icon-only" />
             </IonButton>
           </IonButtons>

@@ -313,13 +313,13 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton onClick={onClose}>
+            <IonButton onClick={onClose} aria-label="Schließen">
               <IonIcon icon={closeOutline} slot="icon-only" />
             </IonButton>
           </IonButtons>
           <IonTitle>{material ? 'Material bearbeiten' : 'Neues Material'}</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={isSubmitting}>
+            <IonButton onClick={handleSave} disabled={isSubmitting} aria-label="Material speichern">
               {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
             </IonButton>
           </IonButtons>
@@ -525,6 +525,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
                         <IonItemOption
                           className="app-swipe-action"
                           onClick={() => handleDeleteExistingFile(file)}
+                          aria-label="Datei löschen"
                         >
                           <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                             <IonIcon icon={trash} />
@@ -584,6 +585,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
                         <IonItemOption
                           className="app-swipe-action"
                           onClick={() => removeNewFile(index)}
+                          aria-label="Datei entfernen"
                         >
                           <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                             <IonIcon icon={trash} />

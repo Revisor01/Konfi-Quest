@@ -96,7 +96,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
     const isRejected = request.status === 'rejected';
 
     const statusColor = isPending ? '#ff9500' : isApproved ? '#059669' : '#dc3545';
-    const statusText = isPending ? 'Offen' : isApproved ? 'Verbucht' : 'Abgelehnt';
+    const statusText = isPending ? 'Offen' : isApproved ? 'Angerechnet' : 'Abgelehnt';
     const statusIcon = isPending ? hourglass : isApproved ? checkmarkCircle : closeCircle;
 
     return { statusColor, statusText, statusIcon, isPending, isApproved, isRejected };
@@ -110,12 +110,12 @@ const RequestsView: React.FC<RequestsViewProps> = ({
     <div>
       <SectionHeader
         title="Deine Aktivitäten"
-        subtitle="Anträge und Verbuchungen"
+        subtitle="Was du gemeldet hast"
         icon={checkmarkCircle}
         preset="konfi-requests"
         stats={[
           { value: pendingRequests.length, label: 'Offen' },
-          { value: approvedRequests.length, label: 'Verbucht' },
+          { value: approvedRequests.length, label: 'Erledigt' },
           { value: rejectedRequests.length, label: 'Abgelehnt' }
         ]}
       />
@@ -152,7 +152,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
             <IonLabel>Offen</IonLabel>
           </IonSegmentButton>
           <IonSegmentButton value="approved">
-            <IonLabel>Verbucht</IonLabel>
+            <IonLabel>Angerechnet</IonLabel>
           </IonSegmentButton>
           <IonSegmentButton value="rejected">
             <IonLabel>Abgelehnt</IonLabel>
@@ -306,6 +306,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                 <IonItemOptions side="end" className="app-swipe-actions">
                   <IonItemOption
                     onClick={() => onDeleteRequest(request)}
+                    aria-label="Antrag löschen"
                     className="app-swipe-action"
                   >
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">

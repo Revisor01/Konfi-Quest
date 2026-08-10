@@ -369,7 +369,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton className="app-modal-close-btn" onClick={handleClose}>
+            <IonButton className="app-modal-close-btn" onClick={handleClose} aria-label="Schließen">
               <IonIcon icon={closeOutline} slot="icon-only" />
             </IonButton>
           </IonButtons>
@@ -385,11 +385,12 @@ const MembersModal: React.FC<MembersModalProps> = ({
                   className="app-modal-submit-btn app-modal-submit-btn--chat"
                   onClick={addSelectedUsers}
                   disabled={selectedUsers.size === 0 || adding || !isOnline}
+                  aria-label="Ausgewählte Mitglieder hinzufügen"
                 >
                   {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : adding ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
                 </IonButton>
               ) : (
-                <IonButton onClick={() => setShowAddMode(true)}>
+                <IonButton onClick={() => setShowAddMode(true)} aria-label="Mitglieder hinzufügen">
                   <IonIcon icon={personAddOutline} slot="icon-only" />
                 </IonButton>
               )}
@@ -518,6 +519,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
                                 <IonItemOptions side="end" className="app-swipe-actions">
                                   <IonItemOption
                                     onClick={() => confirmRemoveUser(p)}
+                                    aria-label="Mitglied entfernen"
                                     className="app-swipe-action"
                                   >
                                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">

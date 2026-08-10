@@ -315,6 +315,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                   <IonItemOptions side="end" className="app-swipe-actions">
                     <IonItemOption
                       onClick={() => handleDeleteWithSlideClose(activity)}
+                      aria-label="Aktivität löschen"
                       className="app-swipe-action"
                     >
                       <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">

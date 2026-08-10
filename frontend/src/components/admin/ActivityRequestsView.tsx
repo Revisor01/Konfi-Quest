@@ -276,6 +276,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                           {/* Reset-Button für approved/rejected */}
                           <IonItemOption
                             onClick={() => onResetRequest(request)}
+                            aria-label="Antrag zurücksetzen"
                             className="app-swipe-action"
                           >
                             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">

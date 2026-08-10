@@ -458,7 +458,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
         <IonToolbar>
           <IonTitle>{isEditMode ? 'Challenge bearbeiten' : 'Neue Challenge'}</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} disabled={loading} className="app-modal-close-btn">
+            <IonButton aria-label="Schließen" onClick={onClose} disabled={loading} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>

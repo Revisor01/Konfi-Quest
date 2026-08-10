@@ -157,12 +157,12 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
         <IonToolbar>
           <IonTitle>Aktivität hinzufügen</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose} disabled={isSubmitting} className="app-modal-close-btn">
+            <IonButton aria-label="Schließen" onClick={handleClose} disabled={isSubmitting} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={!selectedActivity || isSubmitting} className={`app-modal-submit-btn app-modal-submit-btn--${sectionClass}`}>
+            <IonButton aria-label="Aktivität speichern" onClick={handleSave} disabled={!selectedActivity || isSubmitting} className={`app-modal-submit-btn app-modal-submit-btn--${sectionClass}`}>
               {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>

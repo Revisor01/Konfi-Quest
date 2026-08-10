@@ -384,7 +384,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
         <IonToolbar>
           <IonTitle>Chat</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={handleCreateNewChat}>
+            <IonButton aria-label="Neuen Chat starten" onClick={handleCreateNewChat}>
               <IonIcon icon={add} />
             </IonButton>
           </IonButtons>
@@ -608,6 +608,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                           <IonItemOptions side="end" className="app-swipe-actions">
                             <IonItemOption
                               onClick={() => deleteRoom(room)}
+                              aria-label="Chat löschen"
                               className="app-swipe-action"
                             >
                               <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">

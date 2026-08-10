@@ -444,7 +444,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           <IonToolbar>
             {!hideBackButton && (
               <IonButtons slot="start">
-                <IonButton onClick={onBack}>
+                <IonButton aria-label="Zurück" onClick={onBack}>
                   <IonIcon icon={arrowBack} />
                 </IonButton>
               </IonButtons>
@@ -466,7 +466,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           <IonToolbar>
             {!hideBackButton && (
               <IonButtons slot="start">
-                <IonButton onClick={onBack}>
+                <IonButton aria-label="Zurück" onClick={onBack}>
                   <IonIcon icon={arrowBack} />
                 </IonButton>
               </IonButtons>
@@ -492,7 +492,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         <IonToolbar>
           {!hideBackButton && (
             <IonButtons slot="start">
-              <IonButton onClick={onBack}>
+              <IonButton aria-label="Zurück" onClick={onBack}>
                 <IonIcon icon={arrowBack} />
               </IonButton>
             </IonButtons>
@@ -885,7 +885,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                   disabled
                 >
                   <IonIcon icon={warning} slot="start" />
-                  Abmeldung nicht mehr möglich
+                  {/* Grund nennen statt nur zu sperren: abmelden geht bis
+                      2 Tage vor dem Termin (siehe canUnregister). */}
+                  Abmelden geht nur bis 2 Tage vorher
                 </IonButton>
               )}
             </div>

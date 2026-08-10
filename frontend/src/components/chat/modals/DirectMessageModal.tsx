@@ -112,7 +112,7 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSucc
         <IonToolbar>
           <IonTitle>Direktnachricht</IonTitle>
           <IonButtons slot="start">
-            <IonButton className="app-modal-close-btn" onClick={handleClose}>
+            <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={handleClose}>
               <IonIcon icon={close} />
             </IonButton>
           </IonButtons>

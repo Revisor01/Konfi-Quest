@@ -163,13 +163,13 @@ const AdminBadgesPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton onClick={() => window.history.back()}>
+            <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
               <IonIcon icon={arrowBack} />
             </IonButton>
           </IonButtons>
           <IonTitle>Badges</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={presentBadgeModal}>
+            <IonButton aria-label="Neues Badge anlegen" onClick={presentBadgeModal}>
               <IonIcon icon={add} />
             </IonButton>
           </IonButtons>

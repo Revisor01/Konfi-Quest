@@ -199,10 +199,10 @@ const AdminSettingsPage: React.FC = () => {
           <IonTitle>Mehr</IonTitle>
           {user?.is_super_admin && (
             <IonButtons slot="end">
-              <IonButton onClick={() => router.push('/admin/organizations')} title="Organisationen">
+              <IonButton onClick={() => router.push('/admin/organizations')} title="Organisationen" aria-label="Organisationen verwalten">
                 <IonIcon slot="icon-only" icon={business} />
               </IonButton>
-              <IonButton onClick={() => router.push('/admin/metrics')} title="Performance">
+              <IonButton onClick={() => router.push('/admin/metrics')} title="Performance" aria-label="Performance anzeigen">
                 <IonIcon slot="icon-only" icon={pulseOutline} />
               </IonButton>
             </IonButtons>

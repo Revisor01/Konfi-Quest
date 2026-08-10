@@ -57,6 +57,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
   const { setError } = useApp();
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [loadingPhoto, setLoadingPhoto] = useState(false);
+  const [photoLoadFailed, setPhotoLoadFailed] = useState(false);
 
   useEffect(() => {
     if (request?.photo_filename && request.status === 'pending') {
@@ -71,6 +72,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
 
   const loadPhoto = async (id: number) => {
     setLoadingPhoto(true);
+    setPhotoLoadFailed(false);
     try {
       const response = await api.get(`/konfi/activity-requests/${id}/photo`, {
         responseType: 'blob'
@@ -78,7 +80,11 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
       const url = URL.createObjectURL(response.data);
       setPhotoUrl(url);
     } catch (err) {
- console.error('Error loading photo:', err);
+      // Ladefehler MERKEN: sonst faellt die Anzeige unten in den Leerzustand
+      // und behauptet "Kein Foto hochgeladen", obwohl eines existiert
+      // (Audit 10.08.).
+      console.error('Error loading photo:', err);
+      setPhotoLoadFailed(true);
     } finally {
       setLoadingPhoto(false);
     }
@@ -109,7 +115,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
           <IonToolbar>
             <IonTitle>Antrag laden...</IonTitle>
             <IonButtons slot="start">
-              <IonButton className="app-modal-close-btn" onClick={onClose}>
+              <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={onClose}>
                 <IonIcon icon={closeOutline} />
               </IonButton>
             </IonButtons>
@@ -132,9 +138,9 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Antragsdetails</IonTitle>
+          <IonTitle>Deine Meldung</IonTitle>
           <IonButtons slot="start">
-            <IonButton className="app-modal-close-btn" onClick={onClose}>
+            <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={onClose}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
@@ -142,13 +148,13 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
       </IonHeader>
 
       <IonContent className="app-gradient-background">
-        {/* SEKTION: Antragsdaten */}
+        {/* SEKTION: Worum geht es */}
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--requests">
               <IonIcon icon={documentTextOutline} />
             </div>
-            <IonLabel>Antragsdaten</IonLabel>
+            <IonLabel>Worum geht es</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent>
@@ -169,10 +175,10 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                   </IonLabel>
                 </IonItem>
 
-                {/* Teilnahmedatum */}
+                {/* Wann war das */}
                 <IonItem lines="inset">
                   <IonLabel>
-                    <p>Teilnahmedatum</p>
+                    <p>Wann war das?</p>
                     <h2>{formatDate(request.requested_date)}</h2>
                   </IonLabel>
                 </IonItem>
@@ -206,7 +212,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
               <div className="app-section-icon app-section-icon--requests">
                 <IonIcon icon={camera} />
               </div>
-              <IonLabel>Nachweis-Foto</IonLabel>
+              <IonLabel>Dein Foto</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent>
@@ -245,7 +251,9 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                       style={{ fontSize: '2.5rem', color: '#999', marginBottom: '12px', display: 'block' }}
                     />
                     <p style={{ margin: '0', fontSize: '0.9rem', color: '#666' }}>
-                      Kein Foto hochgeladen
+                      {photoLoadFailed
+                        ? 'Dein Foto konnte nicht geladen werden. Zieh die Seite nach unten, um es erneut zu versuchen.'
+                        : 'Kein Foto hochgeladen'}
                     </p>
                   </div>
                 )}
@@ -272,9 +280,9 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
               <IonList>
                 <IonItem lines="inset">
                   <IonLabel>
-                    <p>Bearbeitungsstatus</p>
+                    <p>Stand</p>
                     <h2 style={{ color: isPending ? '#ff9500' : isApproved ? '#059669' : '#dc3545' }}>
-                      {isPending ? 'Wartend auf Bearbeitung' : isApproved ? 'Genehmigt und verbucht' : 'Abgelehnt'}
+                      {isPending ? 'Dein Team schaut es sich an' : isApproved ? 'Punkte sind da' : 'Abgelehnt'}
                     </h2>
                   </IonLabel>
                 </IonItem>

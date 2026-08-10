@@ -1164,7 +1164,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         <IonHeader>
           <IonToolbar>
             <IonButtons slot="start">
-              <IonButton onClick={onBack}>
+              <IonButton aria-label="Zurück" onClick={onBack}>
                 <IonIcon icon={arrowBack} />
               </IonButton>
             </IonButtons>

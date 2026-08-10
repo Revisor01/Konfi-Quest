@@ -61,7 +61,7 @@ const ChatOptionsModal: React.FC<ChatOptionsModalProps> = ({ onClose, onSelectOp
         <IonToolbar>
           <IonTitle>Neuen Chat erstellen</IonTitle>
           <IonButtons slot="start">
-            <IonButton className="app-modal-close-btn" onClick={handleClose}>
+            <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={handleClose}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>

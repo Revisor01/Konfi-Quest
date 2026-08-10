@@ -155,12 +155,12 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
             {category ? 'Kategorie bearbeiten' : 'Neue Kategorie'}
           </IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose} disabled={loading}>
+            <IonButton aria-label="Schließen" onClick={handleClose} disabled={loading}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton
+            <IonButton aria-label="Kategorie speichern"
               onClick={handleSubmit}
               disabled={!formData.name.trim() || loading}
             >
@@ -314,14 +314,14 @@ const AdminCategoriesPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton onClick={() => window.history.back()}>
+            <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
               <IonIcon icon={arrowBack} />
             </IonButton>
           </IonButtons>
           <IonTitle>Kategorien</IonTitle>
           {canCreate && (
             <IonButtons slot="end">
-              <IonButton onClick={openCreateModal}>
+              <IonButton aria-label="Neue Kategorie anlegen" onClick={openCreateModal}>
                 <IonIcon icon={add} />
               </IonButton>
             </IonButtons>
@@ -418,6 +418,7 @@ const AdminCategoriesPage: React.FC = () => {
                         <IonItemOptions side="end" className="app-swipe-actions">
                           <IonItemOption
                             onClick={() => handleDelete(category)}
+                            aria-label="Kategorie löschen"
                             className="app-swipe-action"
                           >
                             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">

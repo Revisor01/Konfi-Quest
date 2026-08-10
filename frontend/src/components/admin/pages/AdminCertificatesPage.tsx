@@ -251,7 +251,7 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose} disabled={loading}>
+            <IonButton aria-label="Schließen" onClick={handleClose} disabled={loading}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
@@ -259,7 +259,7 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
             {certificateType ? 'Zertifikat bearbeiten' : 'Neues Zertifikat'}
           </IonTitle>
           <IonButtons slot="end">
-            <IonButton
+            <IonButton aria-label="Zertifikat speichern"
               onClick={handleSubmit}
               disabled={!name.trim() || loading}
             >
@@ -459,14 +459,14 @@ const AdminCertificatesPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton onClick={() => window.history.back()}>
+            <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
               <IonIcon icon={arrowBack} />
             </IonButton>
           </IonButtons>
           <IonTitle>Zertifikate</IonTitle>
           {isAdmin && (
             <IonButtons slot="end">
-              <IonButton onClick={openCreateModal}>
+              <IonButton aria-label="Neues Zertifikat anlegen" onClick={openCreateModal}>
                 <IonIcon icon={add} />
               </IonButton>
             </IonButtons>
@@ -558,6 +558,7 @@ const AdminCertificatesPage: React.FC = () => {
                 <IonItemOptions side="end" className="app-swipe-actions">
                   <IonItemOption
                     onClick={() => handleDelete(certType)}
+                    aria-label="Zertifikat löschen"
                     className="app-swipe-action"
                   >
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">

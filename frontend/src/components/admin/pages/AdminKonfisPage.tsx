@@ -324,10 +324,10 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
           <IonButtons slot="end">
             {['org_admin', 'admin'].includes(user?.role_name || '') && (
               <>
-                <IonButton onClick={() => presentMatrixModal({ presentingElement: presentingElement })}>
+                <IonButton aria-label="Anwesenheit und Konfisprüche anzeigen" onClick={() => presentMatrixModal({ presentingElement: presentingElement })}>
                   <IonIcon icon={checkboxOutline} />
                 </IonButton>
-                <IonButton onClick={presentKonfiModal}>
+                <IonButton aria-label="Neuen Konfi anlegen" onClick={presentKonfiModal}>
                   <IonIcon icon={add} />
                 </IonButton>
               </>

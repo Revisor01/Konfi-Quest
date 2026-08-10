@@ -503,6 +503,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                           <IonItemOptions side="end" className="app-swipe-actions">
                             <IonItemOption
                               onClick={() => onDeleteBadge(badge)}
+                              aria-label="Badge löschen"
                               className="app-swipe-action"
                             >
                               <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">

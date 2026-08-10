@@ -408,14 +408,14 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton className="app-modal-close-btn" onClick={handleClose} disabled={creating}>
+            <IonButton className="app-modal-close-btn" onClick={handleClose} disabled={creating} aria-label="Schließen">
               <IonIcon icon={closeOutline} slot="icon-only" />
             </IonButton>
           </IonButtons>
           <IonTitle>{chatType === 'direct' ? 'Neue Direktnachricht' : 'Neuer Gruppenchat'}</IonTitle>
           {chatType === 'group' && (
             <IonButtons slot="end">
-              <IonButton className="app-modal-submit-btn app-modal-submit-btn--chat" onClick={createGroupChat} disabled={!isFormValid || creating || !isOnline}>
+              <IonButton className="app-modal-submit-btn app-modal-submit-btn--chat" onClick={createGroupChat} disabled={!isFormValid || creating || !isOnline} aria-label="Gruppenchat erstellen">
                 {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : creating ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
               </IonButton>
             </IonButtons>

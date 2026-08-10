@@ -148,14 +148,14 @@ const AdminChallengesPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton onClick={() => window.history.back()}>
+            <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
               <IonIcon icon={arrowBack} />
             </IonButton>
           </IonButtons>
           <IonTitle>Challenges</IonTitle>
           <IonButtons slot="end">
             {segment === 'verwalten' && (
-              <IonButton onClick={openCreate} title="Neue Challenge">
+              <IonButton aria-label="Neue Challenge" onClick={openCreate} title="Neue Challenge">
                 <IonIcon icon={add} />
               </IonButton>
             )}

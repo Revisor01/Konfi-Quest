@@ -392,13 +392,13 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
         <IonToolbar>
           <IonTitle>Challenge</IonTitle>
           <IonButtons slot="start">
-            <IonButton className="app-modal-close-btn" onClick={onClose}>
+            <IonButton className="app-modal-close-btn" onClick={onClose} aria-label="Schließen">
               <IonIcon icon={close} />
             </IonButton>
           </IonButtons>
           {canSubmitMore && onSubmit && (
             <IonButtons slot="end">
-              <IonButton onClick={() => onSubmit(current)} title="Beitrag einreichen">
+              <IonButton onClick={() => onSubmit(current)} title="Beitrag einreichen" aria-label="Beitrag einreichen">
                 <IonIcon icon={addOutline} slot="icon-only" />
               </IonButton>
             </IonButtons>
@@ -598,7 +598,7 @@ const ChallengeDetailModal: React.FC<ChallengeDetailModalProps> = ({
           <IonToolbar>
             <IonTitle>Challenge</IonTitle>
             <IonButtons slot="start">
-              <IonButton className="app-modal-close-btn" onClick={onClose}>
+              <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={onClose}>
                 <IonIcon icon={close} />
               </IonButton>
             </IonButtons>

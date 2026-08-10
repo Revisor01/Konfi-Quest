@@ -287,6 +287,8 @@ const TeamerBadgesView: React.FC = () => {
         }
       }
     } catch (err) {
+      // Bewusst ohne Fehler-Toast (Audit 10.08. geprueft): Die Badge-Uebersicht
+      // ist reine Anzeige ohne Handlungsbedarf, und Pull-to-Refresh laedt neu.
       console.error('Error loading teamer badges:', err);
       setBadges([]);
     } finally {

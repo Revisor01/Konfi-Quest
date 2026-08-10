@@ -605,7 +605,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
           <IonTitle>{pageTitle}</IonTitle>
           <IonButtons slot="end">
             {!isAntraege && canCreate && (
-              <IonButton onClick={handleAddEventClick}>
+              <IonButton aria-label="Neues Event anlegen" onClick={handleAddEventClick}>
                 <IonIcon icon={add} />
               </IonButton>
             )}

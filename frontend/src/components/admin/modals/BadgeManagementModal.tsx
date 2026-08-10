@@ -747,12 +747,12 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         <IonToolbar>
           <IonTitle>{isEditMode ? 'Badge bearbeiten' : 'Neues Badge'}</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose} disabled={loading} className="app-modal-close-btn">
+            <IonButton aria-label="Schließen" onClick={handleClose} disabled={loading} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton
+            <IonButton aria-label="Badge speichern"
               onClick={handleSave}
               disabled={loading || isSubmitting || !formData.name.trim()}
               className="app-modal-submit-btn app-modal-submit-btn--badges"

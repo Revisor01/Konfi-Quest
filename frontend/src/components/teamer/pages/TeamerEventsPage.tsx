@@ -651,7 +651,7 @@ const TeamerEventsPage: React.FC = () => {
           <IonToolbar>
             {!hideBackButton && (
               <IonButtons slot="start">
-                <IonButton onClick={() => setSelectedEvent(null)}>
+                <IonButton onClick={() => setSelectedEvent(null)} aria-label="Zurück zur Event-Liste">
                   <IonIcon icon={arrowBack} slot="icon-only" />
                 </IonButton>
               </IonButtons>

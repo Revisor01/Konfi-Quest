@@ -420,12 +420,12 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
         <IonToolbar>
           <IonTitle>Dein Beitrag</IonTitle>
           <IonButtons slot="start">
-            <IonButton className="app-modal-close-btn" onClick={onClose} disabled={isSubmitting}>
+            <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={onClose} disabled={isSubmitting}>
               <IonIcon icon={close} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton
+            <IonButton aria-label="Beitrag einreichen"
               className="app-modal-submit-btn app-modal-submit-btn--challenges"
               onClick={handleSubmit}
               disabled={isSubmitting}
@@ -600,6 +600,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                           color="danger"
                           size="small"
                           onClick={(e) => { e.stopPropagation(); removeFile(); }}
+                          aria-label="Bild entfernen"
                           style={{ position: 'absolute', top: '8px', right: '8px', '--border-radius': '8px' }}
                         >
                           <IonIcon icon={trash} slot="icon-only" />
@@ -664,6 +665,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                           color="danger"
                           size="small"
                           onClick={(e) => { e.stopPropagation(); removeFile(); }}
+                          aria-label="Video entfernen"
                           style={{ position: 'absolute', top: '8px', right: '8px', '--border-radius': '8px' }}
                         >
                           <IonIcon icon={trash} slot="icon-only" />
@@ -726,7 +728,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
                           <span style={{ fontWeight: 600, color: '#3c3c43', flex: 1, fontSize: '0.88rem' }}>
                             Aufnahme bereit
                           </span>
-                          <IonButton fill="clear" color="danger" size="small" onClick={(e) => { e.stopPropagation(); removeFile(); }}>
+                          <IonButton fill="clear" color="danger" size="small" onClick={(e) => { e.stopPropagation(); removeFile(); }} aria-label="Aufnahme entfernen">
                             <IonIcon icon={trash} slot="icon-only" />
                           </IonButton>
                         </div>
@@ -848,7 +850,7 @@ const ChallengeSubmitModal: React.FC<ChallengeSubmitModalProps> = ({
           <IonToolbar>
             <IonTitle>Dein Beitrag</IonTitle>
             <IonButtons slot="start">
-              <IonButton className="app-modal-close-btn" onClick={onClose}>
+              <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={onClose}>
                 <IonIcon icon={close} />
               </IonButton>
             </IonButtons>

@@ -263,13 +263,13 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
         <IonToolbar>
           <IonTitle>{filterRole === 'teamer' ? 'Teamer:in hinzufügen' : filterRole === 'konfi' ? 'Kind hinzufügen' : 'Teilnehmer:innen verwalten'}</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose} disabled={loading} className="app-modal-close-btn">
+            <IonButton onClick={handleClose} disabled={loading} className="app-modal-close-btn" aria-label="Schließen">
               <IonIcon icon={closeOutline} slot="icon-only" />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
             {selectedKonfis.length > 0 && (
-              <IonButton onClick={handleAddParticipants} disabled={loading || isSubmitting || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--events">
+              <IonButton onClick={handleAddParticipants} disabled={loading || isSubmitting || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--events" aria-label="Teilnehmer:innen hinzufügen">
                 {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
               </IonButton>
             )}

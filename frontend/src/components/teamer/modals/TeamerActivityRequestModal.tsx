@@ -277,12 +277,12 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
         <IonToolbar>
           <IonTitle>Neuer Antrag</IonTitle>
           <IonButtons slot="start">
-            <IonButton className="app-modal-close-btn" onClick={onClose} disabled={isSubmitting}>
+            <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={onClose} disabled={isSubmitting}>
               <IonIcon icon={close} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton className="app-modal-submit-btn app-modal-submit-btn--teamer" onClick={handleSubmit} disabled={isSubmitting || loading}>
+            <IonButton aria-label="Antrag absenden" className="app-modal-submit-btn app-modal-submit-btn--teamer" onClick={handleSubmit} disabled={isSubmitting || loading}>
               <IonIcon icon={checkmark} />
             </IonButton>
           </IonButtons>
@@ -467,7 +467,7 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
                         Foto ausgewählt
                       </span>
                     </div>
-                    <IonButton
+                    <IonButton aria-label="Foto entfernen"
                       fill="clear"
                       color="danger"
                       size="small"

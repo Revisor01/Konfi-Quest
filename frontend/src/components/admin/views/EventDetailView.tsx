@@ -588,13 +588,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         {(participant.role_name === 'teamer' || !eventData?.mandatory) && (
         <IonItemOptions className="app-swipe-actions" side="end">
           {participant.role_name !== 'teamer' && participant.status === 'confirmed' && (
-            <IonItemOption className="app-swipe-action" onClick={() => handleDemoteParticipant(participant)}>
+            <IonItemOption className="app-swipe-action" onClick={() => handleDemoteParticipant(participant)} aria-label="Auf Warteliste setzen">
               <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
                 <IonIcon icon={returnUpBack} />
               </div>
             </IonItemOption>
           )}
-          <IonItemOption className="app-swipe-action" onClick={() => handleRemoveParticipant(participant)}>
+          <IonItemOption className="app-swipe-action" onClick={() => handleRemoveParticipant(participant)} aria-label="Teilnahme entfernen">
             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
               <IonIcon icon={trash} />
             </div>
@@ -611,18 +611,18 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         <IonToolbar>
           {!hideBackButton && (
             <IonButtons slot="start">
-              <IonButton onClick={onBack}><IonIcon icon={arrowBack} /></IonButton>
+              <IonButton aria-label="Zurück" onClick={onBack}><IonIcon icon={arrowBack} /></IonButton>
             </IonButtons>
           )}
           <IonTitle>{eventData?.name || 'Event Details'}</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={handleChatButtonClick}>
+            <IonButton aria-label="Event-Chat öffnen" onClick={handleChatButtonClick}>
               <IonIcon icon={chatbubbleOutline} />
             </IonButton>
-            <IonButton onClick={() => presentQRDisplayModal({ presentingElement: presentingElement || undefined })}>
+            <IonButton aria-label="QR-Code anzeigen" onClick={() => presentQRDisplayModal({ presentingElement: presentingElement || undefined })}>
               <IonIcon icon={qrCodeOutline} />
             </IonButton>
-            <IonButton onClick={() => presentEventModalHook({ presentingElement: presentingElement || undefined, canDismiss: eventModalCanDismiss, backdropDismiss: false })}>
+            <IonButton aria-label="Event bearbeiten" onClick={() => presentEventModalHook({ presentingElement: presentingElement || undefined, canDismiss: eventModalCanDismiss, backdropDismiss: false })}>
               <IonIcon icon={createOutline} />
             </IonButton>
           </IonButtons>

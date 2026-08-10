@@ -280,7 +280,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
         <IonToolbar>
           <IonTitle>{level ? 'Level bearbeiten' : 'Neues Level'}</IonTitle>
           <IonButtons slot="start">
-            <IonButton
+            <IonButton aria-label="Schließen"
               onClick={handleClose}
               disabled={loading}
               className="app-modal-close-btn"
@@ -289,7 +289,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton
+            <IonButton aria-label="Level speichern"
               onClick={handleSubmit}
               disabled={!isFormValid || loading || isSubmitting}
               className="app-modal-submit-btn app-modal-submit-btn--level"

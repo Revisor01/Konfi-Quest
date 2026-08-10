@@ -146,12 +146,12 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         <IonToolbar>
           <IonTitle>Passwort ändern</IonTitle>
           <IonButtons slot="start">
-            <IonButton className="app-modal-close-btn" onClick={onClose} disabled={isSubmitting}>
+            <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={onClose} disabled={isSubmitting}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton className={`app-modal-submit-btn ${submitBtnClass}`} onClick={handleSave} disabled={isSubmitting || !isValid || !isOnline}>
+            <IonButton aria-label="Passwort speichern" className={`app-modal-submit-btn ${submitBtnClass}`} onClick={handleSave} disabled={isSubmitting || !isValid || !isOnline}>
               {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
@@ -179,7 +179,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                     placeholder="Aktuelles Passwort eingeben"
                     disabled={isSubmitting}
                   />
-                  <IonButton
+                  <IonButton aria-label="Aktuelles Passwort anzeigen oder verbergen"
                     slot="end"
                     fill="clear"
                     onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
@@ -212,7 +212,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                     placeholder="Neues Passwort eingeben"
                     disabled={isSubmitting}
                   />
-                  <IonButton
+                  <IonButton aria-label="Neues Passwort anzeigen oder verbergen"
                     slot="end"
                     fill="clear"
                     onClick={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}
@@ -230,7 +230,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                     placeholder="Neues Passwort bestätigen"
                     disabled={isSubmitting}
                   />
-                  <IonButton
+                  <IonButton aria-label="Passwortbestätigung anzeigen oder verbergen"
                     slot="end"
                     fill="clear"
                     onClick={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}

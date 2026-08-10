@@ -563,7 +563,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           <IonToolbar>
             <IonTitle>{isEditMode ? 'Organisation bearbeiten' : 'Neue Organisation'}</IonTitle>
             <IonButtons slot="start">
-              <IonButton onClick={handleClose} className="app-modal-close-btn"><IonIcon icon={closeOutline} /></IonButton>
+              <IonButton aria-label="Schließen" onClick={handleClose} className="app-modal-close-btn"><IonIcon icon={closeOutline} /></IonButton>
             </IonButtons>
           </IonToolbar>
         </IonHeader>
@@ -582,15 +582,15 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         <IonToolbar>
           <IonTitle>{!isEditMode ? 'Neue Organisation' : viewMode === 'view' ? 'Organisation' : 'Organisation bearbeiten'}</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} disabled={isSubmitting} className="app-modal-close-btn"><IonIcon icon={closeOutline} /></IonButton>
+            <IonButton aria-label="Schließen" onClick={onClose} disabled={isSubmitting} className="app-modal-close-btn"><IonIcon icon={closeOutline} /></IonButton>
           </IonButtons>
           <IonButtons slot="end">
             {isEditMode && viewMode === 'view' ? (
-              <IonButton onClick={() => setViewMode('edit')} className="app-modal-submit-btn app-modal-submit-btn--settings">
+              <IonButton aria-label="Organisation bearbeiten" onClick={() => setViewMode('edit')} className="app-modal-submit-btn app-modal-submit-btn--settings">
                 <IonIcon icon={createOutline} />
               </IonButton>
             ) : (
-              <IonButton onClick={handleSave} disabled={!isValid || isSubmitting || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--settings">
+              <IonButton aria-label="Organisation speichern" onClick={handleSave} disabled={!isValid || isSubmitting || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--settings">
                 {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
               </IonButton>
             )}
@@ -1187,7 +1187,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                       {/* Primaer-Org kann hier nicht entfernt werden (Server blockt ebenfalls) */}
                       {!m.is_primary && (
                         <IonItemOptions side="end" className="app-swipe-actions">
-                          <IonItemOption onClick={() => handleRemoveMember(m)} className="app-swipe-action">
+                          <IonItemOption onClick={() => handleRemoveMember(m)} className="app-swipe-action" aria-label="Mitglied entfernen">
                             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                               <IonIcon icon={trash} />
                             </div>

@@ -297,7 +297,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
           <IonToolbar>
             <IonTitle>{isEditMode ? 'Benutzer bearbeiten' : 'Neuer Benutzer'}</IonTitle>
             <IonButtons slot="start">
-              <IonButton onClick={handleClose} className="app-modal-close-btn">
+              <IonButton aria-label="Schließen" onClick={handleClose} className="app-modal-close-btn">
                 <IonIcon icon={closeOutline} />
               </IonButton>
             </IonButtons>
@@ -318,12 +318,12 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         <IonToolbar>
           <IonTitle>{isEditMode ? 'Benutzer bearbeiten' : 'Neuer Benutzer'}</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} disabled={isSubmitting} className="app-modal-close-btn">
+            <IonButton aria-label="Schließen" onClick={onClose} disabled={isSubmitting} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={!isValid || isSubmitting || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--settings">
+            <IonButton aria-label="Benutzer:in speichern" onClick={handleSave} disabled={!isValid || isSubmitting || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--settings">
               {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>

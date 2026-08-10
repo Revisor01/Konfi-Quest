@@ -463,12 +463,12 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
         <IonToolbar>
           <IonTitle>Beiträge</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} className="app-modal-close-btn">
+            <IonButton onClick={onClose} className="app-modal-close-btn" aria-label="Schließen">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleExport} title="Beiträge exportieren">
+            <IonButton onClick={handleExport} title="Beiträge exportieren" aria-label="Beiträge exportieren">
               <IonIcon icon={shareOutline} slot="icon-only" />
             </IonButton>
           </IonButtons>
@@ -683,6 +683,7 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
                                 key={action.key}
                                 onClick={() => action.run()}
                                 className="app-swipe-action"
+                                aria-label={action.text}
                               >
                                 <div
                                   className="app-icon-circle app-icon-circle--lg"

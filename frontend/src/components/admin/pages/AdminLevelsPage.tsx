@@ -192,13 +192,13 @@ const AdminLevelsPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton onClick={() => window.history.back()}>
+            <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
               <IonIcon icon={arrowBack} />
             </IonButton>
           </IonButtons>
           <IonTitle>Level</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={handleAdd}>
+            <IonButton aria-label="Neues Level anlegen" onClick={handleAdd}>
               <IonIcon icon={add} />
             </IonButton>
           </IonButtons>
@@ -301,6 +301,7 @@ const AdminLevelsPage: React.FC = () => {
                           <IonItemOptions side="end" className="app-swipe-actions">
                             <IonItemOption
                               onClick={() => handleDelete(level)}
+                              aria-label="Level löschen"
                               className="app-swipe-action"
                             >
                               <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
