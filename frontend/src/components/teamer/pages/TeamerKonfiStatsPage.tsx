@@ -333,7 +333,7 @@ const TeamerKonfiStatsPage: React.FC = () => {
             colors={{ primary: '#5b21b6', secondary: '#4c1d95' }}
             stats={[
               { value: totalPoints, label: 'Gesamt' },
-              { value: konfiData.gottesdienst_points || 0, label: 'Gottesdienst' },
+              { value: konfiData.gottesdienst_points || 0, label: 'GD' },
               { value: konfiData.gemeinde_points || 0, label: 'Gemeinde' }
             ]}
           />

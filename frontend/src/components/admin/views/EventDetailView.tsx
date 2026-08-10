@@ -386,29 +386,57 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     });
   };
 
-  const handleDemoteParticipant = async (participant: Participant) => {
+  const demoteParticipant = async (participant: Participant) => {
     try {
       await api.put(`/events/${eventId}/participants/${participant.id}/status`, { status: 'waitlist' });
       const slidingItem = slidingRefs.current.get(participant.id);
       if (slidingItem) await slidingItem.close();
       await loadEventData();
       triggerRefresh('events');
-    } catch (error) {
- console.error('Demote participant error:', error);
-      setError('Fehler beim Verschieben auf Warteliste');
+    } catch (error: any) {
+      console.error('Demote participant error:', error);
+      setError(error.response?.data?.error || 'Fehler beim Verschieben auf Warteliste');
     }
   };
 
-  const handleRemoveParticipant = async (participant: Participant) => {
-    if (!isOnline) return;
+  // Rueckfrage vor dem Verschieben auf die Warteliste: ausgeloest wird das per
+  // Wisch-Geste, ein Fehlwisch haette sonst still eine Anmeldung zurueckgestuft
+  // (Audit 10.08.). Das Absagen des Events fragt hier laengst nach.
+  const handleDemoteParticipant = (participant: Participant) => {
+    presentAlert({
+      header: 'Auf die Warteliste setzen?',
+      message: `${participant.participant_name || 'Diese Person'} verliert den festen Platz und rückt auf die Warteliste.`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel', handler: () => { slidingRefs.current.get(participant.id)?.close(); } },
+        { text: 'Auf Warteliste', handler: () => { demoteParticipant(participant); } }
+      ]
+    });
+  };
+
+  const removeParticipant = async (participant: Participant) => {
     try {
       await api.delete(`/events/${eventId}/bookings/${participant.id}`);
+      const slidingItem = slidingRefs.current.get(participant.id);
+      if (slidingItem) await slidingItem.close();
       await loadEventData();
       triggerRefresh('events');
-    } catch (error) {
- console.error('Delete participant error:', error);
-      setError('Fehler beim Entfernen des Teilnehmers');
+    } catch (error: any) {
+      console.error('Delete participant error:', error);
+      setError(error.response?.data?.error || 'Fehler beim Entfernen des Teilnehmers');
     }
+  };
+
+  // Ebenfalls per Wisch-Geste erreichbar und nicht umkehrbar -> Rueckfrage.
+  const handleRemoveParticipant = (participant: Participant) => {
+    if (!isOnline) return;
+    presentAlert({
+      header: 'Anmeldung entfernen?',
+      message: `${participant.participant_name || 'Diese Person'} wird von diesem Event abgemeldet. Ein frei werdender Platz geht an die Warteliste.`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel', handler: () => { slidingRefs.current.get(participant.id)?.close(); } },
+        { text: 'Entfernen', role: 'destructive', handler: () => { removeParticipant(participant); } }
+      ]
+    });
   };
 
   const isCancelled = eventData?.cancelled || eventData?.registration_status === ('cancelled' as string);

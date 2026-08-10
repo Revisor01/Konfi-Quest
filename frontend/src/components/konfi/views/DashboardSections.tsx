@@ -532,13 +532,16 @@ export const RankingSection = React.memo<RankingSectionProps>(({
           isCurrentUser: true
         });
       } else {
+        // Nachbarplaetze OHNE Punktzahl: die Punkte der anderen Konfis liefert
+        // das Backend nicht, sie wurden hier frueher aus dem eigenen Stand
+        // hochgerechnet — also frei erfunden. Zusammen mit "??" als Initialen
+        // sah das aus wie ein Ladefehler (Audit 10.08.). Jetzt steht dort nur
+        // der Platz, und der stimmt.
         playersToShow.push({
           id: `neighbor-${rank}`,
           display_name: rank === startRank ? 'Konfi vor dir' : 'Konfi nach dir',
-          points: rank < currentUserRank ?
-            (konfiGottesdienstPoints || 0) + (konfiGemeindePoints || 0) + (currentUserRank - rank) :
-            Math.max(0, (konfiGottesdienstPoints || 0) + (konfiGemeindePoints || 0) - (rank - currentUserRank)),
-          initials: '??',
+          points: null,
+          initials: '',
           actualRank: rank,
           isNeighbor: true
         });
@@ -609,7 +612,7 @@ export const RankingSection = React.memo<RankingSectionProps>(({
               );
             }
 
-            const entry = item as { id?: number | string; display_name?: string; points?: number; initials?: string; actualRank?: number; rank?: number; isCurrentUser?: boolean; isNeighbor?: boolean };
+            const entry = item as { id?: number | string; display_name?: string; points?: number | null; initials?: string; actualRank?: number; rank?: number; isCurrentUser?: boolean; isNeighbor?: boolean };
             const isCurrentUser = entry.isCurrentUser || entry.id === konfiId;
             const rank = entry.actualRank ?? entry.rank ?? 0;
 
@@ -665,7 +668,9 @@ export const RankingSection = React.memo<RankingSectionProps>(({
                   fontSize: '0.9rem',
                   backdropFilter: 'blur(10px)'
                 }}>
-                  {entry.initials}
+                  {entry.isNeighbor
+                    ? <IonIcon icon={people} style={{ fontSize: '1.1rem', opacity: 0.8 }} />
+                    : entry.initials}
                 </div>
 
                 <div style={{ flex: 1 }}>
@@ -677,11 +682,15 @@ export const RankingSection = React.memo<RankingSectionProps>(({
                   }}>
                     {entry.display_name}
                   </div>
+                  {/* Punktzahl nur, wenn sie echt ist — Nachbarplaetze zeigen
+                      stattdessen den Platz (Punkte anderer kennt die App nicht). */}
                   <div style={{
                     fontSize: '0.75rem',
                     color: 'rgba(255, 255, 255, 0.7)'
                   }}>
-                    {entry.points} Punkte
+                    {entry.points === null || entry.points === undefined
+                      ? `Platz ${entry.actualRank}`
+                      : `${entry.points} Punkte`}
                   </div>
                 </div>
               </div>

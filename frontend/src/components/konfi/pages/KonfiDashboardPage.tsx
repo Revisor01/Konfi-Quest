@@ -33,6 +33,7 @@ import { Event } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { mergeSectionOrder, DEFAULT_KONFI_SECTION_ORDER } from '../../../utils/sectionOrder';
 import { TrialBanner } from '../../shared';
+import { track } from '../../../services/analytics';
 
 interface PointConfig {
   gottesdienst_enabled: boolean;
@@ -121,6 +122,24 @@ const KonfiDashboardPage: React.FC = () => {
   const router = useIonRouter();
   const [showLehrtext, setShowLehrtext] = useState(false);
   const pageRef = useRef<HTMLElement>(null);
+
+  // Anonyme Messung der Scroll-Tiefe: Sehen die Konfis die unteren Abschnitte
+  // des Dashboards ueberhaupt? Je Sitzung wird jede Marke NUR EINMAL gemeldet
+  // (Ref statt State, damit das Scrollen kein Rendern ausloest).
+  const scrollMarken = useRef<Set<number>>(new Set());
+  const handleScrollTiefe = useCallback((ev: CustomEvent) => {
+    const el = ev.target as HTMLIonContentElement & { scrollHeight?: number; clientHeight?: number };
+    const detail: any = ev.detail || {};
+    const hoehe = (el?.scrollHeight || 0) - (el?.clientHeight || 0);
+    if (hoehe <= 0) return;
+    const anteil = Math.round(((detail.scrollTop || 0) / hoehe) * 100);
+    for (const marke of [25, 50, 75, 100]) {
+      if (anteil >= marke && !scrollMarken.current.has(marke)) {
+        scrollMarken.current.add(marke);
+        track('dashboard-gescrollt', { tiefe: marke });
+      }
+    }
+  }, []);
 
   // --- useOfflineQuery: Dashboard ---
   const { data: dashboardData, loading: dashLoading, refresh: refreshDashboard } = useOfflineQuery<DashboardData>(
@@ -376,6 +395,8 @@ const KonfiDashboardPage: React.FC = () => {
 
       <IonContent
         fullscreen
+        scrollEvents={true}
+        onIonScroll={handleScrollTiefe}
         style={{
           '--background': '#f8f9fa'
         }}

@@ -20,7 +20,6 @@ import {
   IonFabButton,
   IonItem,
   IonItemGroup,
-  IonItemSliding,
   IonInput,
   IonButtons,
   IonBackButton,
@@ -1283,14 +1282,18 @@ const TeamerEventsPage: React.FC = () => {
                 const { statusColor, statusText, statusIcon, isPastEvent, shouldGrayOut } = getEventStatusInfo(event);
                 const showBadge = !isPastEvent || event.is_registered;
 
+                // Kein IonItemSliding: es gab hier nie IonItemOptions, das Item
+                // liess sich also anwischen und federte wirkungslos zurueck —
+                // das wirkt kaputt (Audit 10.08.).
                 return (
-                  <IonItemSliding key={event.id} style={{ marginBottom: index < filteredEvents.length - 1 ? '8px' : '0' }}>
                     <IonItem
+                      key={event.id}
                       button
                       onClick={() => setSelectedEvent(event)}
                       detail={false}
                       lines="none"
                       style={{
+                        marginBottom: index < filteredEvents.length - 1 ? '8px' : '0',
                         '--background': 'transparent',
                         '--padding-start': '0',
                         '--padding-end': '0',
@@ -1413,7 +1416,6 @@ const TeamerEventsPage: React.FC = () => {
                         </div>
                       </div>
                     </IonItem>
-                  </IonItemSliding>
                 );
               })}
             </ListSection>

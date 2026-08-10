@@ -28,6 +28,9 @@ Versionsüberschrift.
 - Veranstaltungen: Termine nur für Teamer:innen sowie Termine, zu denen
   Teamer:innen gesucht werden.
 - Veranstaltungen: Anmeldung kann ab sofort geöffnet werden, ohne Startdatum.
+- Anonyme Nutzungsstatistik in der App: erfasst wird, welche Bereiche und
+  Funktionen genutzt werden und wo Fehlermeldungen erscheinen — ohne Namen,
+  Kennung, Gemeinde oder Inhalte. Näheres in der Datenschutzerklärung.
 
 ### Geändert
 
@@ -45,8 +48,25 @@ Versionsüberschrift.
 
 ### Behoben
 
+- Veranstaltungen: Bei Zeitfenster-Terminen konnte eine Anmeldung ohne Auswahl
+  eines Zeitfensters zustande kommen, wenn die Zeitfenster nicht geladen werden
+  konnten.
+- Veranstaltungen: Teilnehmende entfernen und auf die Warteliste setzen fragen
+  jetzt nach — beides wird per Wischgeste ausgelöst.
+- Veranstaltungen: In zwei Listen ließen sich Einträge anwischen, ohne dass es
+  eine Aktion dazu gab.
+- Startseite: Neben dem eigenen Platz standen erfundene Punktzahlen der
+  Nachbarplätze. Dort steht jetzt nur noch der Platz.
+- Bibelübersetzung wechseln meldet jetzt, wenn das Speichern fehlschlägt.
+- Challenges: "Nur für euch in der Leitung" erschien auch bei Konfis.
+- Einzelne Beschriftungen liefen aus ihrer Kachel heraus.
+- Teamer-Bereich: Schreibfehler "Gueltig" bei Zertifikaten.
 - Veranstaltungen: Speichern brach in manchen Fällen ohne Meldung ab. Fehlende
   Pflichtangaben werden jetzt benannt.
+- Anträge werden schneller abgeschickt; Benachrichtigungen an die Leitung
+  laufen jetzt im Hintergrund.
+- Tageslosung: Bei gleichzeitigem Abruf durch viele Geräte wird nur noch einmal
+  nachgeladen.
 - Veranstaltungen: Termine nur für Teamer:innen vergaben fälschlich Punkte,
   zeigten ein wirkungsloses Anmeldefenster und eine Konfi-Warteliste.
 - Veranstaltungen: Terminserien übernehmen alle Angaben des ersten Termins.

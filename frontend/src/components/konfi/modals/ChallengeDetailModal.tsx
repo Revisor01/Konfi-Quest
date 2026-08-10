@@ -362,8 +362,11 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
   // Laufzeit, damit beim Mitmachen sofort klar ist, wer den Beitrag zu sehen
   // bekommt (User-Hinweis 10.08.). Der ausfuehrliche Satz steht weiterhin
   // unten im Hinweis-Kasten.
+  // Rollenneutral formulieren: Dieses Modal oeffnen Konfis direkt UND Teamer/
+  // Leitung ueber ChallengeParticipationPanel. "Nur für euch in der Leitung"
+  // stand hier faelschlich auch fuer Konfis (Audit 10.08.).
   const visibilityShort = useMemo(() => {
-    if (current.visibility === 'private') return 'Nur für euch in der Leitung';
+    if (current.visibility === 'private') return 'Nur das Leitungsteam sieht die Beiträge';
     if (current.visibility === 'public') return 'Für die Gruppe sichtbar';
     return 'Du entscheidest je Beitrag';
   }, [current.visibility]);

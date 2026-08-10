@@ -740,7 +740,18 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         // Don't fail the request if notification fails
       }
 
-      // Send notification to all admins about new request
+      res.status(201).json({
+        id: newRequest.id,
+        message: 'Antrag erfolgreich eingereicht'
+      });
+
+      // Admin-Benachrichtigungen NACH der Antwort (Performance-Audit 10.08.):
+      // Der Push-Versand laeuft seriell ueber alle Admins und deren Geraete —
+      // je Token ein FCM-Roundtrip. Lief das vor res.json(), wartete der Konfi
+      // darauf (gemessen ~1,5 s p95 auf dem haeufigsten Antrags-Endpunkt).
+      // Muster wie in routes/chat.js: Block in eine selbst aufgerufene
+      // async-Funktion, Fehler nur loggen — die Antwort ist bereits raus.
+      (async () => {
       try {
         const { rows: admins } = await db.query(
           `SELECT u.id, u.display_name 
@@ -787,14 +798,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           activity.points
         );
       } catch (notifErr) {
- console.error('Error sending admin notifications:', notifErr);
+        console.error('Error sending admin notifications:', notifErr);
         // Don't fail the request if notification fails
       }
-
-      res.status(201).json({
-        id: newRequest.id,
-        message: 'Antrag erfolgreich eingereicht'
-      });
+      })();
 
       // Live-Update an alle Admins über neuen Antrag senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'create');
@@ -1033,13 +1040,9 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
     
     try {
       const konfiId = req.user.id;
-      const checkBadgesTableQuery = "SELECT to_regclass('public.custom_badges')";
-      const { rows: [tableExistsResult] } = await db.query(checkBadgesTableQuery);
-      
-      if (!tableExistsResult || !tableExistsResult.to_regclass) {
-        return res.json({ total_badges: 0, earned_badges: 0 });
-      }
-
+      // to_regclass-Legacy-Check entfernt (Audit 10.08.) — siehe Begruendung
+      // oben beim Dashboard: custom_badges existiert seit Migration 076/090
+      // dauerhaft, der Check war ein reiner Zusatz-Roundtrip.
       const statsQuery = `
         SELECT
           (SELECT COUNT(*) FROM custom_badges WHERE organization_id = $2 AND target_role = 'konfi' AND is_active = TRUE) as total_badges,

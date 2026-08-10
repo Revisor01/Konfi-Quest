@@ -226,7 +226,7 @@ const CertPopoverContent: React.FC<{
   const cert = dataRef.current;
   if (!cert) return null;
 
-  const statusLabel = cert.status === 'valid' ? 'Gueltig' : cert.status === 'expired' ? 'Abgelaufen' : 'Nicht erhalten';
+  const statusLabel = cert.status === 'valid' ? 'Gültig' : cert.status === 'expired' ? 'Abgelaufen' : 'Nicht erhalten';
   const statusColor = cert.status === 'valid' ? '#059669' : cert.status === 'expired' ? '#ef4444' : '#9ca3af';
 
   return (
@@ -260,7 +260,7 @@ const CertPopoverContent: React.FC<{
 
 const TeamerDashboardPage: React.FC = () => {
   const router = useIonRouter();
-  const { user } = useApp();
+  const { user, setError } = useApp();
   const [showLosung] = useState(() => Math.random() > 0.5);
   // Onboarding-Tour einmal pro Teamer-Account (beim ersten Betreten der
   // Startseite) — bzw. fuer Bestandsnutzer stattdessen einmalig der
@@ -329,8 +329,10 @@ const TeamerDashboardPage: React.FC = () => {
       await api.put('/teamer/bible-translation', { translation: code });
       setSelectedTranslation(code);
       await refreshVerse();
-    } catch (err) {
+    } catch (err: any) {
+      // Siehe DashboardView (Konfi): stiller Fehlschlag bei bewusster Auswahl.
       console.error('Bibeluebersetzung speichern fehlgeschlagen:', err);
+      setError(err.response?.data?.error || 'Übersetzung konnte nicht gespeichert werden');
     }
   };
 

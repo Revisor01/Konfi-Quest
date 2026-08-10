@@ -41,6 +41,7 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
+import { track } from '../../../services/analytics';
 import { compressImage } from '../../../services/mediaCompression';
 import { AudioPlayer } from '../../shared';
 import type {
@@ -392,6 +393,12 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
           });
         }
 
+        // Anonyme Messung: WELCHE Medienart wird genutzt und wie entscheiden
+        // sich die Konfis bei der Sichtbarkeit. Kein Inhalt, keine Kennung.
+        track('challenge-beitrag', {
+          medium: mediaType,
+          sichtbarkeit: isChoice ? consent : 'publish'
+        });
         setSuccess(getSuccessMessage(challenge, isChoice ? consent : 'publish'));
         if (mediaPreview) URL.revokeObjectURL(mediaPreview);
         onSuccess();

@@ -79,10 +79,11 @@ class PushService {
         return { success: false, message: 'No tokens found' };
       }
 
-      let successCount = 0;
-      let errorCount = 0;
-
-      for (const token of tokens) {
+      // Tokens PARALLEL abarbeiten (Performance-Audit 10.08.): vorher lief je
+      // Token ein FCM-Roundtrip nacheinander — bei mehreren Geraeten summierte
+      // sich das auf. Die Tokens sind voneinander unabhaengig, ihre DB-Updates
+      // betreffen jeweils nur die eigene Zeile.
+      const results = await Promise.all(tokens.map(async (token) => {
         const result = await sendFirebasePushNotification(token.token, {
           title: notification.title,
           body: notification.body,
@@ -92,7 +93,6 @@ class PushService {
         });
 
         if (result.success) {
-          successCount++;
           // Error-Count zurücksetzen bei Erfolg (nur wenn vorher > 0)
           if (token.error_count > 0) {
             await db.query(
@@ -100,26 +100,30 @@ class PushService {
               [token.id]
             );
           }
-        } else {
-          // Fatale Errors: Token sofort löschen
-          const fatalCodes = [
-            'messaging/registration-token-not-registered',
-            'messaging/invalid-registration-token'
-          ];
-          if (fatalCodes.includes(result.errorCode)) {
-            await db.query('DELETE FROM push_tokens WHERE id = $1', [token.id]);
-            console.warn(`Token ${token.id} gelöscht (${result.errorCode})`);
-          } else {
-            // Sonstige Errors: Counter erhöhen
-            await db.query(
-              'UPDATE push_tokens SET error_count = error_count + 1, last_error_at = NOW() WHERE id = $1',
-              [token.id]
-            );
-            console.error('Push failed for token:', result.error);
-          }
-          errorCount++;
+          return true;
         }
-      }
+
+        // Fatale Errors: Token sofort löschen
+        const fatalCodes = [
+          'messaging/registration-token-not-registered',
+          'messaging/invalid-registration-token'
+        ];
+        if (fatalCodes.includes(result.errorCode)) {
+          await db.query('DELETE FROM push_tokens WHERE id = $1', [token.id]);
+          console.warn(`Token ${token.id} gelöscht (${result.errorCode})`);
+        } else {
+          // Sonstige Errors: Counter erhöhen
+          await db.query(
+            'UPDATE push_tokens SET error_count = error_count + 1, last_error_at = NOW() WHERE id = $1',
+            [token.id]
+          );
+          console.error('Push failed for token:', result.error);
+        }
+        return false;
+      }));
+
+      const successCount = results.filter(Boolean).length;
+      const errorCount = results.length - successCount;
 
       return { success: true, sent: successCount, errors: errorCount, total: tokens.length };
     } catch (error) {
@@ -132,12 +136,15 @@ class PushService {
    * Helper: Sendet Push an mehrere User (z.B. alle Admins)
    */
   static async sendToMultipleUsers(db, userIds, notification) {
-    const results = [];
-    for (const userId of userIds) {
-      const result = await this.sendToUser(db, userId, notification);
-      results.push({ userId, ...result });
-    }
-    return results;
+    // Empfaenger PARALLEL (Performance-Audit 10.08.): vorher wurde jeder User
+    // nacheinander abgearbeitet, und in sendToUser wiederum jedes Geraet — bei
+    // 5 Admins mit je 2 Geraeten also 10 FCM-Roundtrips in Reihe.
+    return Promise.all(
+      userIds.map(async (userId) => {
+        const result = await this.sendToUser(db, userId, notification);
+        return { userId, ...result };
+      })
+    );
   }
 
   /**

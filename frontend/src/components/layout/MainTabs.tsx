@@ -30,6 +30,7 @@ import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
 import { useLiveRefresh } from '../../contexts/LiveUpdateContext';
 import api from '../../services/api';
+import { trackBereich } from '../../services/analytics';
 import { ModalProvider } from '../../contexts/ModalContext'; // Behalten
 import AdminKonfisPage from '../admin/pages/AdminKonfisPage';
 import AdminActivitiesPage from '../admin/pages/AdminActivitiesPage';
@@ -103,6 +104,18 @@ const MainTabs: React.FC = () => {
   const isSuperAdmin = user?.role_name === 'super_admin';
   const [newBadgesCount, setNewBadgesCount] = useState(0);
   const location = useLocation(); // Hook, um den aktuellen Pfad zu erhalten
+
+  // Anonyme Nutzungsmessung: WELCHER Bereich wird geoeffnet. Zentral am
+  // Routenwechsel statt an 15 einzelnen Tab-Buttons — so zaehlt auch
+  // Navigation, die nicht ueber die Tab-Leiste laeuft. Uebertragen wird nur
+  // der Bereichsname (z.B. "challenges") plus die Rolle, NIE die volle Route:
+  // die kann IDs enthalten (/admin/konfis/42).
+  useEffect(() => {
+    if (!user) return;
+    const teile = location.pathname.split('/').filter(Boolean);
+    const bereich = teile[1] || teile[0];
+    if (bereich) trackBereich(bereich);
+  }, [location.pathname, user?.id]);
 
   // iOS26 Tab-Bar Liquid-Glass-Animation (rdlabo registerTabBarEffect)
   useEffect(() => {

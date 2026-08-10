@@ -14,6 +14,7 @@ import { logout as performLogout } from '../services/auth';
 import { clearAuth } from '../services/tokenStore';
 import { BackgroundTask } from '@capawesome/capacitor-background-task';
 import { BaseUser } from '../types/user';
+import { setAnalyticsRole, trackFehler } from '../services/analytics';
 
 // FCM Token wird über Window Events empfangen (siehe AppDelegate.swift)
 
@@ -133,6 +134,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isOnline, setIsOnline] = useState<boolean>(true);
+
+  // Jede Fehlermeldung, die tatsaechlich jemand zu sehen bekommt, fliesst in
+  // die anonyme Messung ein — DAS beantwortet "wo klemmt es". Uebertragen wird
+  // nur eine gekuerzte, entschaerfte Fassung des Textes: keine Namen, keine
+  // IDs, keine Freitexte aus Beitraegen (Zahlen werden ersetzt).
+  const setErrorTracked = useCallback((meldung: string) => {
+    setError(meldung);
+    if (meldung) {
+      const anonym = meldung
+        .replace(/\d+/g, '#')
+        .slice(0, 80);
+      trackFehler(anonym);
+    }
+  }, []);
+
+  // Rolle fuer die anonyme Nutzungsmessung mitfuehren (konfi/teamer/admin) —
+  // die EINZIGE Eigenschaft, die dorthin uebertragen wird. Zentral hier, damit
+  // sie bei Login, Logout und Organisationswechsel automatisch stimmt.
+  useEffect(() => {
+    setAnalyticsRole(user?.role_name);
+  }, [user?.role_name]);
 
   // Push notifications state
   const [pushNotificationsPermission, setPushNotificationsPermission] = useState<string>('prompt');
@@ -790,7 +812,7 @@ useEffect(() => {
     signOut,
     setUser,
     refreshUser,
-    setError,
+    setError: setErrorTracked,
     setSuccess,
     clearMessages,
     requestPushPermissions,

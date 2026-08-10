@@ -40,6 +40,7 @@ import {
   LevelProgress
 } from './DashboardSections';
 import api from '../../../services/api';
+import { useApp } from '../../../contexts/AppContext';
 import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
 import { DEFAULT_KONFI_SECTION_ORDER } from '../../../utils/sectionOrder';
 
@@ -190,6 +191,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   sectionOrder
 }) => {
   const router = useIonRouter();
+  const { setError } = useApp();
   const [presentAlert] = useIonAlert();
   const [actualDailyVerse, setActualDailyVerse] = useState<DailyVerse | null>(null);
   const [loadingVerse, setLoadingVerse] = useState(true);
@@ -221,8 +223,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({
       await api.put('/konfi/bible-translation', { translation: code });
       setSelectedTranslation(code);
       await reloadTageslosung();
-    } catch (err) {
+    } catch (err: any) {
+      // Vorher nur console.error: Das Modal schloss, der Text blieb der alte —
+      // eine bewusste Auswahl blieb sichtbar folgenlos (Audit 10.08.).
       console.error('Bibeluebersetzung speichern fehlgeschlagen:', err);
+      setError(err.response?.data?.error || 'Übersetzung konnte nicht gespeichert werden');
     }
   };
 

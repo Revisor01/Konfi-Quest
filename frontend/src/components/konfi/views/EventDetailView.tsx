@@ -46,6 +46,7 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import api from '../../../services/api';
+import { track } from '../../../services/analytics';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -98,6 +99,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
   const [hasExistingKonfirmation, setHasExistingKonfirmation] = useState(false);
   const [timeslots, setTimeslots] = useState<DetailTimeslot[]>([]);
+  // Konnten die Zeitfenster nicht geladen werden? Dann darf NICHT angemeldet
+  // werden — sonst landet der Konfi ohne Zeitfenster im Event.
+  const [timeslotsLoadFailed, setTimeslotsLoadFailed] = useState(false);
   const [participants, setParticipants] = useState<Participant[]>([]);
 
   const handleOptOut = async (reason: string) => {
@@ -203,10 +207,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     }
   });
 
-  // Timeslots, Participants und Konfirmations-Check separat laden (nicht gecacht)
+  // Timeslots, Participants und Konfirmations-Check separat laden (nicht gecacht).
+  // Ein Fehler beim Laden der ZEITFENSTER wird gemerkt: ohne sie waere
+  // timeslots=[] und die Anmeldung wuerde unten am Zeitfenster-Dialog
+  // vorbeilaufen — der Konfi landete ohne Slot im Event (Audit 10.08.).
   useEffect(() => {
     if (!eventData) return;
     const loadDetails = async () => {
+      setTimeslotsLoadFailed(false);
       try {
         if (eventData.has_timeslots) {
           const tsRes = await api.get(`/konfi/events/${eventId}/timeslots`);
@@ -214,12 +222,23 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         } else {
           setTimeslots([]);
         }
+      } catch (err) {
+        setTimeslots([]);
+        setTimeslotsLoadFailed(true);
+      }
+      // Teilnehmerliste und Konfirmations-Check sind fuer die Anmeldung nicht
+      // kritisch — sie duerfen weiterhin still fehlschlagen.
+      try {
         const partRes = await api.get(`/konfi/events/${eventId}/participants`);
         setParticipants(partRes.data || []);
+      } catch (err) {
+        // Teilnehmerliste ist nur Anzeige
+      }
+      try {
         const hasKonf = await checkExistingKonfirmation();
         setHasExistingKonfirmation(hasKonf);
       } catch (err) {
-        // Timeslot/Participant-Laden darf fehlschlagen ohne Error-State
+        // Konfirmations-Check wird bei der Anmeldung erneut geprueft
       }
     };
     loadDetails();
@@ -258,6 +277,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         payload.timeslot_id = timeslotId;
       }
       const res = await api.post(`/konfi/events/${eventData.id}/register`, payload);
+      // Anonyme Messung: kommen Anmeldungen durch oder landen sie auf der
+      // Warteliste, und werden Zeitfenster genutzt? Kein Event-Name, keine ID.
+      track('event-angemeldet', {
+        status: res.data?.status === 'waitlist' ? 'warteliste' : 'bestaetigt',
+        mit_zeitfenster: !!timeslotId
+      });
       // Bei Warteliste braucht der Konfi eine sichtbare Rueckmeldung (der Server
       // schickt zwar Push, aber die Buchung kann eben confirmed ODER waitlist sein).
       if (res.data?.status === 'waitlist') {
@@ -272,6 +297,19 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
   const handleRegister = async () => {
     if (!eventData) return;
+
+    // Zeitfenster-Event, dessen Zeitfenster nicht geladen werden konnten:
+    // hier abbrechen statt ohne Zeitfenster anzumelden.
+    if (eventData.has_timeslots && timeslots.length === 0) {
+      presentAlert({
+        header: 'Zeitfenster nicht geladen',
+        message: timeslotsLoadFailed
+          ? 'Die Zeitfenster konnten nicht geladen werden. Zieh die Seite nach unten, um es erneut zu versuchen.'
+          : 'Für dieses Event sind noch keine Zeitfenster eingetragen. Melde dich bei deinem Team.',
+        buttons: ['OK']
+      });
+      return;
+    }
 
     if (isKonfirmationEvent(eventData)) {
       const hasExistingKonfirmation = await checkExistingKonfirmation();

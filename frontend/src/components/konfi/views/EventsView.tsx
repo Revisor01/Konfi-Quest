@@ -6,7 +6,6 @@ import {
   IonLabel,
   IonSegment,
   IonSegmentButton,
-  IonItemSliding,
   IonListHeader,
   IonItemGroup,
   IonInput,
@@ -311,9 +310,12 @@ const EventsView: React.FC<EventsViewProps> = ({
           if (isKonfirmationLocked) statusText = 'Anderer Termin';
           const showBadge = !isPastEvent || isParticipated || isCancelled || isOptedOut || isKonfirmationLocked;
 
+          // Kein IonItemSliding: es gab hier nie IonItemOptions, das Item liess
+          // sich also anwischen und federte wirkungslos zurueck — das wirkt
+          // kaputt (Audit 10.08.).
           return (
-            <IonItemSliding key={event.id}>
               <IonItem
+                key={event.id}
                 button
                 onClick={() => onSelectEvent(event)}
                 detail={false}
@@ -430,7 +432,6 @@ const EventsView: React.FC<EventsViewProps> = ({
                   </div>
                 </div>
               </IonItem>
-            </IonItemSliding>
           );
         })}
       </ListSection>
