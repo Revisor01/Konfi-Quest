@@ -21,7 +21,7 @@ interface LegendEntry {
 }
 
 // Status-Legende fuer die Challenge-Verwaltung. Farbe UND Icon muessen mit
-// ChallengesManageView (Listen-Badges) und ChallengeModerationModal
+// ChallengesManageView (Listen-Badges) und ChallengeLeitungModal
 // (STATUS_BADGE/CONSENT_BADGE) uebereinstimmen.
 
 // Status-Badges in der Challenge-Liste — Farbe UND Icon identisch zu
@@ -61,7 +61,7 @@ const COUNTER_ENTRY: LegendEntry = {
   description: 'So viele Beiträge warten noch auf Freigabe.',
 };
 
-// Moderations-Badges aus ChallengeModerationModal (STATUS_BADGE + CONSENT_BADGE).
+// Moderations-Badges aus ChallengeLeitungModal (STATUS_BADGE + CONSENT_BADGE).
 const MODERATION_ENTRIES: LegendEntry[] = [
   {
     color: 'var(--app-color-warning)',

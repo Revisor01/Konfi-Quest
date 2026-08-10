@@ -1013,7 +1013,9 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   router.get('/admin', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       const viewable = viewableJahrgangIds(req);
-      const params = [req.user.organization_id];
+      // $1 = Organisation, $2 = eigene User-ID (fuer die Teilnahme-Felder,
+      // deshalb IMMER belegt), $3 = optionale Jahrgangs-Liste.
+      const params = [req.user.organization_id, req.user.id];
       let jahrgangFilter = '';
       if (viewable !== null) {
         if (viewable.length === 0) {
@@ -1026,7 +1028,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           c.audience = 'nur_team'
           OR EXISTS (
             SELECT 1 FROM challenge_jahrgang_assignments cja2
-            WHERE cja2.challenge_id = c.id AND cja2.jahrgang_id = ANY($2::int[])
+            WHERE cja2.challenge_id = c.id AND cja2.jahrgang_id = ANY($3::int[])
           )
         )`;
       }
@@ -1037,6 +1039,17 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
                 au.display_name AS author_display_name,
                 (SELECT COUNT(*) FROM challenge_submissions s WHERE s.challenge_id = c.id) AS submission_count,
                 (SELECT COUNT(*) FROM challenge_submissions s WHERE s.challenge_id = c.id AND s.moderation_status = 'pending') AS pending_count,
+                -- Eigene Teilnahme: Seit der Zusammenlegung von "Verwalten" und
+                -- "Mitmachen" (11.08.) zeigt EINE Liste beides. Deshalb liefert
+                -- dieser Endpunkt zusaetzlich, was GET /challenges/konfi fuer
+                -- die Teilnehmer-Sicht liefert — sonst muesste das Frontend
+                -- zwei Listen mischen.
+                EXISTS (
+                  SELECT 1 FROM challenge_submissions s
+                  WHERE s.challenge_id = c.id AND s.user_id = $2
+                ) AS has_badge,
+                (SELECT COUNT(*) FROM challenge_submissions s
+                  WHERE s.challenge_id = c.id AND s.user_id = $2) AS own_submission_count,
                 COALESCE(
                   (SELECT json_agg(json_build_object('id', j.id, 'name', j.name) ORDER BY j.name)
                    FROM challenge_jahrgang_assignments cja

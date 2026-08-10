@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -10,9 +10,6 @@ import {
   IonButtons,
   IonButton,
   IonIcon,
-  IonSegment,
-  IonSegmentButton,
-  IonLabel,
   useIonModal,
   useIonAlert
 } from '@ionic/react';
@@ -27,9 +24,8 @@ import { useChallengeDelete } from '../../../hooks/useChallengeDelete';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import ChallengesManageView from '../views/ChallengesManageView';
-import { ChallengeParticipationPanel } from '../../shared';
 import ChallengeManageModal from '../modals/ChallengeManageModal';
-import ChallengeModerationModal from '../modals/ChallengeModerationModal';
+import ChallengeLeitungModal from '../modals/ChallengeLeitungModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import type { AdminChallenge } from '../../../types/challenges';
 
@@ -45,7 +41,21 @@ const AdminChallengesPage: React.FC = () => {
   );
 
   const [presentAlert] = useIonAlert();
-  const [segment, setSegment] = useState<'verwalten' | 'mitmachen'>('verwalten');
+
+  // Eigene Abzeichen aus der EINEN Liste ableiten: has_badge liefert
+  // GET /challenges/admin seit der Zusammenlegung mit (11.08.) — dadurch
+  // braucht es keinen zweiten Endpunkt fuer die Teilnehmer-Sicht.
+  const marks = useMemo(
+    () => (Array.isArray(challenges) ? challenges : [])
+      .filter((c) => c.has_badge)
+      .map((c) => ({
+        challenge_id: c.id,
+        badge_icon: c.badge_icon,
+        badge_name: c.badge_name,
+        title: c.title
+      })),
+    [challenges]
+  );
 
   // Aktuell im Modal bearbeitete/moderierte Challenge
   const [editChallenge, setEditChallenge] = useState<AdminChallenge | null>(null);
@@ -69,7 +79,7 @@ const AdminChallengesPage: React.FC = () => {
     }
   });
 
-  const [presentModerationModal, dismissModerationModal] = useIonModal(ChallengeModerationModal, {
+  const [presentModerationModal, dismissModerationModal] = useIonModal(ChallengeLeitungModal, {
     challenge: moderationChallenge,
     onClose: () => { dismissModerationModal(); },
     onChanged: () => {
@@ -124,25 +134,6 @@ const AdminChallengesPage: React.FC = () => {
 
   const { handleDelete } = useChallengeDelete({ onDeleted: refreshChallenges });
 
-  // Verwalten | Mitmachen — wird als headerSlot DIREKT unter den Stats-Header
-  // gereicht (Muster wie Events|Anträge), damit der Switcher nicht ueber dem
-  // Header steht und das Design zerreisst (User-Feedback 09.08.).
-  const segmentSwitcher = (
-    <div className="app-segment-wrapper">
-      <IonSegment
-        value={segment}
-        onIonChange={(e) => setSegment(e.detail.value as 'verwalten' | 'mitmachen')}
-      >
-        <IonSegmentButton value="verwalten">
-          <IonLabel>Verwalten</IonLabel>
-        </IonSegmentButton>
-        <IonSegmentButton value="mitmachen">
-          <IonLabel>Mitmachen</IonLabel>
-        </IonSegmentButton>
-      </IonSegment>
-    </div>
-  );
-
   return (
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
@@ -154,11 +145,9 @@ const AdminChallengesPage: React.FC = () => {
           </IonButtons>
           <IonTitle>Challenges</IonTitle>
           <IonButtons slot="end">
-            {segment === 'verwalten' && (
-              <IonButton aria-label="Neue Challenge" onClick={openCreate} title="Neue Challenge">
-                <IonIcon icon={add} />
-              </IonButton>
-            )}
+            <IonButton aria-label="Neue Challenge anlegen" onClick={openCreate} title="Neue Challenge">
+              <IonIcon icon={add} />
+            </IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
@@ -177,22 +166,16 @@ const AdminChallengesPage: React.FC = () => {
           <IonRefresherContent />
         </IonRefresher>
 
-        {segment === 'mitmachen' ? (
-          <ChallengeParticipationPanel
-            presentingElement={pageRef.current || presentingElement}
-            cacheKeyPrefix="admin:challenges:teilnahme"
-            headerSlot={segmentSwitcher}
-          />
-        ) : loading ? (
+        {loading ? (
           <LoadingSpinner message="Challenges werden geladen..." />
         ) : (
           <ChallengesManageView
             challenges={challenges || []}
+            marks={marks}
             onSelectChallenge={openModeration}
             onEditChallenge={openEdit}
             onDeleteChallenge={handleDelete}
             presentingElement={pageRef.current || presentingElement}
-            headerSlot={segmentSwitcher}
           />
         )}
       </IonContent>

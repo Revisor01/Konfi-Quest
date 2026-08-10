@@ -45,6 +45,10 @@ Versionsüberschrift.
 - Veranstaltungs-Formular neu geordnet; Anmeldung ist ein eigener Abschnitt.
 - Challenge-Beiträge werden per Tippen und Wischen bearbeitet, wie in den
   übrigen Listen.
+- Challenges bei Leitung und Teamer:innen: "Verwalten" und "Mitmachen" sind
+  zusammengefasst. Eine Liste zeigt alle Challenges samt eigener Abzeichen, und
+  in der geöffneten Challenge stehen der eigene Beitrag und die Beiträge der
+  Gruppe beieinander. Ein Plus oben schreibt den eigenen Beitrag.
 - Verwaltungslisten folgen jetzt durchgängig einer Regel: Tippen öffnet zum
   Bearbeiten, Wischen löscht.
 - Konfi-Ansichten sprechen verständlicher: aus "Antragsdetails" wird "Deine

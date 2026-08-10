@@ -23,12 +23,15 @@ import {
   IonItemOptions,
   IonItemOption,
   useIonAlert,
-  useIonActionSheet
+  useIonActionSheet,
+  useIonModal
 } from '@ionic/react';
 import {
   closeOutline,
   flag,
   shareOutline,
+  addOutline,
+  personOutline,
   checkmarkCircleOutline,
   eyeOffOutline,
   eyeOutline,
@@ -50,14 +53,26 @@ import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { EmptyState, SectionHeader, AudioPlayer } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
-import type { AdminChallenge, ChallengeSubmission } from '../../../types/challenges';
+import ChallengeSubmitModal from '../../konfi/modals/ChallengeSubmitModal';
+import type {
+  AdminChallenge,
+  KonfiChallenge,
+  ChallengeSubmission
+} from '../../../types/challenges';
+
+// VEREINTES Challenge-Detail fuer Leitung und Teamer:innen (11.08.): Verwalten
+// UND Mitmachen in EINEM Modal, statt eines Segments, das die ganze Seite
+// umschaltet. Enthaelt die Moderation aus ChallengeModerationModal und den
+// Abschnitt "Dein Beitrag" aus der Konfi-Detailansicht.
+//
+// Die beiden Ursprungs-Modals bleiben unveraendert bestehen:
+// ChallengeDetailModal wird weiterhin von Konfis genutzt.
 
 // Medienvorschau fuer Challenge-Beitraege (Foto/Audio/Video). Bewusst eine
 // eigene, schlanke Variante statt des Chat-LazyImage: der mediaCache-Service
 // ist fest auf /chat/files/ verdrahtet, Challenges liegen unter
 // /challenges/files/. Geladen wird per axios (Auth-Header) in eine
-// Object-URL, freigegeben beim Unmount — identisches Prinzip wie ChallengeMedia
-// in ChallengeDetailModal (Konfi-Seite).
+// Object-URL, freigegeben beim Unmount.
 const ChallengeMedia: React.FC<{
   filePath: string;
   fileName?: string | null;
@@ -146,40 +161,25 @@ const MEDIA_ICON: Record<string, string> = {
   link: linkOutline
 };
 
-const MEDIA_LABEL: Record<string, string> = {
-  text: 'Text',
-  photo: 'Foto',
-  audio: 'Audio',
-  video: 'Video',
-  link: 'Link'
-};
-
-// Icon/Farb-Zuordnung fuer Corner-Badges — dieselbe Zuordnung wie getOwnStatus
-// in ChallengeDetailModal.tsx (Konfi-Seite), damit Status ueberall gleich
-// aussieht. Hier zusaetzlich die reinen Konsens-Werte (unabhaengig vom Status),
-// weil die Moderation Konsens UND Status gleichzeitig zeigen soll.
+// Icon/Farb-Zuordnung fuer Corner-Badges — dieselbe Zuordnung wie in
+// ChallengeModerationModal und getOwnStatus (Konfi-Seite), damit Status
+// ueberall gleich aussieht.
 const STATUS_BADGE: Record<string, { label: string; icon: string; color: string }> = {
   pending: { label: 'Wartet auf Freigabe', icon: timeOutline, color: 'var(--app-color-warning)' },
   approved: { label: 'Freigegeben', icon: checkmarkOutline, color: 'var(--app-color-success)' },
   hidden: { label: 'Ausgeblendet', icon: removeCircleOutline, color: 'var(--app-color-danger)' }
 };
 
-// Konsens NIE mit einem Haken darstellen (User-Feedback 08.08.: zwei gruene
-// Haken nebeneinander waren nicht unterscheidbar). Der Haken gehoert allein dem
-// Freigabe-STATUS; der Konsens spricht in Augen-Metaphorik:
-//   publish   -> offenes Auge (mit Namen sichtbar)
-//   anonymous -> durchgestrichenes Auge (ohne Namen)
-//   private   -> Schloss (nur die Leitung)
+// Konsens NIE mit einem Haken darstellen: der Haken gehoert allein dem
+// Freigabe-STATUS; der Konsens spricht in Augen-Metaphorik.
 const CONSENT_BADGE: Record<string, { label: string; icon: string; color: string }> = {
   publish: { label: 'Mit Namen sichtbar', icon: eyeOutline, color: 'var(--app-color-success)' },
   private: { label: 'Nur Leitung', icon: lockClosedOutline, color: '#6b7280' },
   anonymous: { label: 'Anonym sichtbar', icon: eyeOffOutline, color: '#7c3aed' }
 };
 
-// Untertitel im Kopf der Moderation: sagt in EINER Zeile, wer die Beiträge
-// sieht und ob sie eine Freigabe brauchen. Vorher stand dort nur die Freigabe —
-// bei "nur für die Leitung" las man "Beiträge erscheinen sofort", was nach
-// Veröffentlichung klang, obwohl niemand ausser der Leitung sie sieht.
+// Untertitel im Kopf: sagt in EINER Zeile, wer die Beiträge sieht und ob sie
+// eine Freigabe brauchen.
 const buildVisibilitySubtitle = (challenge: AdminChallenge): string => {
   const sichtbarkeit = challenge.visibility === 'public'
     ? 'Für die Gruppe sichtbar'
@@ -200,7 +200,7 @@ const formatDateTime = (value?: string) => {
     + ', ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 };
 
-interface ChallengeModerationModalProps {
+export interface ChallengeLeitungModalProps {
   // NULL-SICHER: Die Seite dahinter fuehrt die Challenge als State und rendert
   // dieses Modal ueber useIonModal auch waehrend der Dismiss-Animation weiter.
   // Wuerde der State dort auf null gesetzt (oder ein kaputter Cache ein
@@ -208,24 +208,22 @@ interface ChallengeModerationModalProps {
   // sonst in der ErrorBoundary, die Auth + Cache leert ("Rauswurf zur Anmeldung").
   challenge?: AdminChallenge | null;
   onClose: () => void;
-  // Wird nach jeder Moderations-Aktion gerufen, damit die Liste dahinter
-  // (Pending-Zaehler) aktuell bleibt.
+  // Wird nach jeder Moderations-Aktion und nach eigenem Einreichen gerufen,
+  // damit die Liste dahinter (Pending-Zaehler) aktuell bleibt.
   onChanged?: () => void;
 }
 
-// Drei Filter reichen (User-Entscheid 09.08.): alles sehen, sehen was noch
-// wartet, sehen was ausgeblendet wurde. "Offen" war doppeldeutig (offen =
-// unerledigt ODER offen = oeffentlich sichtbar) -> "Wartet".
-// Freigegebene Beitraege haben bewusst KEINEN eigenen Filter: sie sind der
-// Normalfall und stehen ohnehin unter "Alle".
+// Drei Filter reichen: alles sehen, sehen was noch wartet, sehen was
+// ausgeblendet wurde. Freigegebene Beitraege haben bewusst KEINEN eigenen
+// Filter: sie sind der Normalfall und stehen ohnehin unter "Alle".
 type StatusFilter = 'all' | 'pending' | 'hidden';
 
-const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
+const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
   challenge,
   onClose,
   onChanged
 }) => {
-  const { setError, setSuccess } = useApp();
+  const { user, setError, setSuccess } = useApp();
   const [presentAlert] = useIonAlert();
   const [presentActionSheet] = useIonActionSheet();
   const [submissions, setSubmissions] = useState<ChallengeSubmission[]>([]);
@@ -260,6 +258,22 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
     loadSubmissions();
   }, [loadSubmissions]);
 
+  // Einreich-Modal: erwartet eine KonfiChallenge. Die AdminChallenge erweitert
+  // dieselbe Basis (ChallengeBase) und traegt alle vom Formular gelesenen
+  // Felder (allowed_media, visibility, moderated) — deshalb genuegt die
+  // Zuweisung ohne Nachbau.
+  const submitChallenge: KonfiChallenge | null = challenge ?? null;
+
+  const [presentSubmitModal, dismissSubmitModal] = useIonModal(ChallengeSubmitModal, {
+    challenge: submitChallenge,
+    onClose: () => { dismissSubmitModal(); },
+    onSuccess: () => {
+      dismissSubmitModal();
+      loadSubmissions();
+      onChanged?.();
+    }
+  });
+
   const counts = useMemo(() => ({
     total: submissions.length,
     pending: submissions.filter((s) => s.moderation_status === 'pending').length,
@@ -267,7 +281,7 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
     hidden: submissions.filter((s) => s.moderation_status === 'hidden').length
   }), [submissions]);
 
-  // GENAU DREI Kacheln — nie mehr (harte Gestaltungsregel, User 10.08.).
+  // GENAU DREI Kacheln — nie mehr (harte Gestaltungsregel).
   // "Freigegeben" steht immer. Die beiden anderen Plaetze gehen an das, was
   // gerade etwas aussagt:
   //   - "Wartet" nur bei Freigabe-Pflicht (sonst wartet nie etwas)
@@ -277,8 +291,7 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
   const headerStats = useMemo(() => {
     // Labels muessen KURZ sein: die Kachel ist auf 100px gedeckelt und das
     // Label steht in Grossbuchstaben mit Sperrung und ohne Umbruch
-    // (.app-stats-row__label). "AUSGEBLENDET" und "FREIGEGEBEN" liefen rechts
-    // aus dem Kasten heraus (User-Hinweis 10.08.) -> "Versteckt" / "Frei".
+    // (.app-stats-row__label) -> "Versteckt" / "Frei" statt der langen Woerter.
     const optional: Array<{ value: number; label: string }> = [];
     if (challenge?.moderated) optional.push({ value: counts.pending, label: 'Wartet' });
     if (counts.hidden > 0) optional.push({ value: counts.hidden, label: 'Versteckt' });
@@ -295,6 +308,29 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
     return stats.slice(0, 3);
   }, [challenge?.moderated, counts]);
 
+  // Laeuft die Challenge gerade? Nur dann darf man selbst einreichen.
+  const isActive = useMemo(() => {
+    if (!challenge) return false;
+    const start = new Date(challenge.starts_at).getTime();
+    const end = new Date(challenge.ends_at).getTime();
+    const now = Date.now();
+    return !challenge.is_draft && now >= start && now <= end;
+  }, [challenge]);
+
+  // Eigene Beitraege aus derselben Liste ziehen — das Backend liefert user_id
+  // in GET /challenges/admin/:id/submissions mit.
+  const ownSubmissions = useMemo(() => {
+    if (!user?.id) return [];
+    return submissions
+      .filter((s) => s.user_id === user.id)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }, [submissions, user?.id]);
+
+  const canSubmitMore = isActive && (challenge?.allow_multiple || ownSubmissions.length === 0);
+
+  // Beendete Challenge ohne eigene Beitraege: der Abschnitt faellt komplett weg.
+  const showOwnSection = isActive || ownSubmissions.length > 0;
+
   // Ohne Freigabe-Pflicht gibt es das "Wartet"-Segment nicht — ein von einer
   // anderen Challenge uebernommener Filterstand wuerde sonst eine leere Liste
   // zeigen, ohne dass man den Grund sieht.
@@ -302,10 +338,10 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
     statusFilter === 'pending' && !challenge?.moderated ? 'all' : statusFilter;
 
   const filtered = useMemo(() => {
-    const statusFilter = effectiveFilter;
-    const list = statusFilter === 'all'
+    const active = effectiveFilter;
+    const list = active === 'all'
       ? [...submissions]
-      : submissions.filter((s) => s.moderation_status === statusFilter);
+      : submissions.filter((s) => s.moderation_status === active);
     return list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [submissions, effectiveFilter]);
 
@@ -369,8 +405,8 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
         run: () => moderate(submission, 'approve')
       });
     }
-    // Anonym stellen ist eine EINBAHNSTRASSE (User-Entscheid 09.08.): einmal
-    // anonym, immer anonym — deshalb nur bei consent='publish' und mit Rueckfrage.
+    // Anonym stellen ist eine EINBAHNSTRASSE: einmal anonym, immer anonym —
+    // deshalb nur bei consent='publish' und mit Rueckfrage.
     if (challenge?.visibility === 'konfi_choice' && submission.konfi_consent === 'publish') {
       actions.push({
         key: 'anonymize', text: 'Anonym stellen', icon: eyeOffOutline,
@@ -395,8 +431,7 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
   };
 
   // Tippen auf einen Beitrag oeffnet die Aktionen — dasselbe Muster wie in den
-  // uebrigen Listen (Events, Konfis). Vorher standen die Buttons fest in der
-  // Karte und haben sie zerrissen (User-Hinweis 10.08.).
+  // uebrigen Listen (Events, Konfis).
   const openActions = (submission: ChallengeSubmission) => {
     const actions = availableActions(submission);
     presentActionSheet({
@@ -461,13 +496,23 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Beiträge</IonTitle>
+          <IonTitle>Challenge</IonTitle>
           <IonButtons slot="start">
             <IonButton onClick={onClose} className="app-modal-close-btn" aria-label="Schließen">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
+            {/* Selbst mitmachen — nur solange die Challenge laeuft */}
+            {canSubmitMore && (
+              <IonButton
+                onClick={() => presentSubmitModal()}
+                title="Beitrag einreichen"
+                aria-label="Beitrag einreichen"
+              >
+                <IonIcon icon={addOutline} slot="icon-only" />
+              </IonButton>
+            )}
             <IonButton onClick={handleExport} title="Beiträge exportieren" aria-label="Beiträge exportieren">
               <IonIcon icon={shareOutline} slot="icon-only" />
             </IonButton>
@@ -487,9 +532,6 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
         {/* Kopf: Challenge-Info — IMMER GENAU DREI Kacheln (harte Regel). */}
         <SectionHeader
           title={challenge.title}
-          // Sichtbarkeit ZUERST, dann die Freigabe: "erscheinen sofort" allein
-          // war irrefuehrend — bei visibility='private' erscheinen sie nirgends
-          // ausser bei euch in der Leitung (User-Hinweis 10.08.).
           subtitle={buildVisibilitySubtitle(challenge)}
           icon={flag}
           preset="challenges"
@@ -511,12 +553,117 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
           </div>
         )}
 
+        {/* Dein Beitrag — eigene Teilnahme, direkt hier statt in einem
+            getrennten "Mitmachen"-Bereich (Zusammenlegung 11.08.). */}
+        {showOwnSection && (
+          <IonList inset={true} style={{ margin: '16px 16px 0 16px' }}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--challenges">
+                <IonIcon icon={personOutline} />
+              </div>
+              <IonLabel>Dein Beitrag</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent style={{ padding: ownSubmissions.length === 0 ? '16px' : '12px' }}>
+                {loading ? (
+                  <div style={{ display: 'flex', justifyContent: 'center', padding: '16px' }}>
+                    <IonSpinner name="crescent" />
+                  </div>
+                ) : ownSubmissions.length === 0 ? (
+                  <EmptyState
+                    icon={documentTextOutline}
+                    title="Noch kein Beitrag von dir"
+                    message="Tippe oben auf das Plus, um selbst etwas einzureichen."
+                    iconColor="var(--app-color-challenges)"
+                  />
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {ownSubmissions.map((submission) => {
+                      const status = STATUS_BADGE[submission.moderation_status] || STATUS_BADGE.pending;
+                      return (
+                        <div
+                          key={submission.id}
+                          className="app-list-item app-list-item--challenges"
+                          style={{
+                            width: '100%',
+                            borderLeftColor: status.color,
+                            marginBottom: '0',
+                            display: 'block',
+                            position: 'relative',
+                            overflow: 'hidden'
+                          }}
+                        >
+                          <div className="app-corner-badges">
+                            <div
+                              className="app-corner-badge"
+                              style={{ backgroundColor: status.color, padding: '4px 6px' }}
+                              title={status.label}
+                            >
+                              <IonIcon
+                                icon={status.icon}
+                                style={{ color: '#fff', fontSize: '0.85rem', display: 'block' }}
+                              />
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', paddingRight: '40px' }}>
+                            <div className="app-icon-circle app-icon-circle--lg" style={{ backgroundColor: status.color }}>
+                              <IonIcon icon={MEDIA_ICON[submission.media_type] || documentTextOutline} />
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div className="app-list-item__title">Dein Beitrag</div>
+                              <div className="app-list-item__subtitle">
+                                {formatDateTime(submission.created_at)}
+                              </div>
+                            </div>
+                          </div>
+
+                          {submission.text_content && (
+                            <div style={{ fontSize: '0.9rem', color: '#333', whiteSpace: 'pre-wrap', lineHeight: 1.45 }}>
+                              {submission.text_content}
+                            </div>
+                          )}
+
+                          {submission.media_type === 'link' && submission.link_url && /^https?:\/\//i.test(submission.link_url) && (
+                            <a
+                              href={submission.link_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                marginTop: '6px', fontSize: '0.85rem', color: 'var(--app-color-challenges)',
+                                wordBreak: 'break-all'
+                              }}
+                            >
+                              <IonIcon icon={linkOutline} />
+                              {submission.link_url}
+                            </a>
+                          )}
+
+                          {submission.file_path && (submission.media_type === 'photo' || submission.media_type === 'audio' || submission.media_type === 'video') && (
+                            <ChallengeMedia
+                              filePath={submission.file_path}
+                              fileName={submission.file_name}
+                              mediaType={submission.media_type}
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
+
+        {/* Moderation: Filter + alle Beitraege */}
         <div style={{ margin: '16px 16px 8px 16px' }}>
           <IonSegment value={effectiveFilter} onIonChange={(e) => setStatusFilter(e.detail.value as StatusFilter)}>
             <IonSegmentButton value="all"><IonLabel>Alle</IonLabel></IonSegmentButton>
             {/* "Wartet" nur bei Challenges MIT Freigabe-Pflicht — ohne
                 Moderation ist jeder Beitrag sofort freigegeben, der Filter
-                waere immer leer (User-Hinweis 10.08.). */}
+                waere immer leer. */}
             {challenge.moderated && (
               <IonSegmentButton value="pending"><IonLabel>Wartet</IonLabel></IonSegmentButton>
             )}
@@ -571,110 +718,103 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
                               '--min-height': 'auto'
                             }}
                           >
-                        <div
-                          className="app-list-item app-list-item--challenges"
-                          style={{
-                            width: '100%',
-                            borderLeftColor: status.color,
-                            marginBottom: '0',
-                            display: 'block',
-                            position: 'relative',
-                            overflow: 'hidden',
-                            opacity: submission.moderation_status === 'hidden' ? 0.75 : 1
-                          }}
-                        >
-                          {/* Corner-Badges: Konsens + Status (max. 2, wie im Konfi-Detail) */}
-                          <div className="app-corner-badges">
-                            {consent && (
-                              <>
-                                <div
-                                  className="app-corner-badge"
-                                  style={{ backgroundColor: consent.color, padding: '4px 6px' }}
-                                  title={consent.label}
-                                >
-                                  <IonIcon icon={consent.icon} style={{ color: '#fff', fontSize: '0.85rem', display: 'block' }} />
-                                </div>
-                                <div className="app-corner-badges__separator" />
-                              </>
-                            )}
                             <div
-                              className="app-corner-badge"
-                              style={{ backgroundColor: status.color, padding: '4px 6px' }}
-                              title={status.label}
-                            >
-                              <IonIcon icon={status.icon} style={{ color: '#fff', fontSize: '0.85rem', display: 'block' }} />
-                            </div>
-                          </div>
-
-                          {/* Kopfzeile: Konfi + Zeit */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', paddingRight: '60px' }}>
-                            <div className="app-icon-circle app-icon-circle--lg" style={{ backgroundColor: status.color }}>
-                              <IonIcon icon={MEDIA_ICON[submission.media_type] || documentTextOutline} />
-                            </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div className="app-list-item__title">
-                                {submission.konfi_name || 'Unbekannt'}
-                              </div>
-                              {/* Medienart bewusst NICHT als Text (User-Entscheid
-                                  09.08.): sie bricht die Zeile um und sagt nichts
-                                  Nuetzliches — das Icon links zeigt sie ohnehin. */}
-                              <div className="app-list-item__subtitle">
-                                {submission.jahrgang_name ? `${submission.jahrgang_name} · ` : ''}
-                                {formatDateTime(submission.created_at)}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Inhalt */}
-                          {submission.text_content && (
-                            <div style={{ fontSize: '0.9rem', color: '#333', whiteSpace: 'pre-wrap', lineHeight: 1.45 }}>
-                              {submission.text_content}
-                            </div>
-                          )}
-
-                          {submission.media_type === 'link' && submission.link_url && /^https?:\/\//i.test(submission.link_url) && (
-                            <a
-                              href={submission.link_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              // Der Link gehoert dem Link — sonst faengt das
-                              // umgebende IonItem den Tap ab und oeffnet statt
-                              // der Seite das Aktions-Menue.
-                              onClick={(e) => e.stopPropagation()}
+                              className="app-list-item app-list-item--challenges"
                               style={{
-                                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                marginTop: '6px', fontSize: '0.85rem', color: 'var(--app-color-challenges)',
-                                wordBreak: 'break-all'
+                                width: '100%',
+                                borderLeftColor: status.color,
+                                marginBottom: '0',
+                                display: 'block',
+                                position: 'relative',
+                                overflow: 'hidden',
+                                opacity: submission.moderation_status === 'hidden' ? 0.75 : 1
                               }}
                             >
-                              <IonIcon icon={linkOutline} />
-                              {submission.link_url}
-                            </a>
-                          )}
+                              {/* Corner-Badges: Konsens + Status (max. 2) */}
+                              <div className="app-corner-badges">
+                                {consent && (
+                                  <>
+                                    <div
+                                      className="app-corner-badge"
+                                      style={{ backgroundColor: consent.color, padding: '4px 6px' }}
+                                      title={consent.label}
+                                    >
+                                      <IonIcon icon={consent.icon} style={{ color: '#fff', fontSize: '0.85rem', display: 'block' }} />
+                                    </div>
+                                    <div className="app-corner-badges__separator" />
+                                  </>
+                                )}
+                                <div
+                                  className="app-corner-badge"
+                                  style={{ backgroundColor: status.color, padding: '4px 6px' }}
+                                  title={status.label}
+                                >
+                                  <IonIcon icon={status.icon} style={{ color: '#fff', fontSize: '0.85rem', display: 'block' }} />
+                                </div>
+                              </div>
 
-                          {submission.file_path && (submission.media_type === 'photo' || submission.media_type === 'audio' || submission.media_type === 'video') && (
-                            // Audio-/Video-Steuerung braucht ihre eigenen Klicks
-                            // (Play, Scrubben) — ohne diesen Stopper landet jeder
-                            // Griff zum Player im Aktions-Menue des Items.
-                            <div onClick={(e) => e.stopPropagation()}>
-                              <ChallengeMedia
-                                filePath={submission.file_path}
-                                fileName={submission.file_name}
-                                mediaType={submission.media_type}
-                              />
-                            </div>
-                          )}
+                              {/* Kopfzeile: Konfi + Zeit */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', paddingRight: '60px' }}>
+                                <div className="app-icon-circle app-icon-circle--lg" style={{ backgroundColor: status.color }}>
+                                  <IonIcon icon={MEDIA_ICON[submission.media_type] || documentTextOutline} />
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div className="app-list-item__title">
+                                    {submission.konfi_name || 'Unbekannt'}
+                                  </div>
+                                  <div className="app-list-item__subtitle">
+                                    {submission.jahrgang_name ? `${submission.jahrgang_name} · ` : ''}
+                                    {formatDateTime(submission.created_at)}
+                                  </div>
+                                </div>
+                              </div>
 
-                          {/* Aktionen liegen im ActionSheet (Tippen) und in den
-                              Swipe-Optionen — keine Buttons mehr in der Karte:
-                              bei drei Aktionen brachen sie um und zerrissen das
-                              Layout (User-Hinweis 10.08.). */}
-                          {isBusy && (
-                            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
-                              <IonSpinner name="crescent" />
+                              {/* Inhalt */}
+                              {submission.text_content && (
+                                <div style={{ fontSize: '0.9rem', color: '#333', whiteSpace: 'pre-wrap', lineHeight: 1.45 }}>
+                                  {submission.text_content}
+                                </div>
+                              )}
+
+                              {submission.media_type === 'link' && submission.link_url && /^https?:\/\//i.test(submission.link_url) && (
+                                <a
+                                  href={submission.link_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  // Der Link gehoert dem Link — sonst faengt das
+                                  // umgebende IonItem den Tap ab und oeffnet statt
+                                  // der Seite das Aktions-Menue.
+                                  onClick={(e) => e.stopPropagation()}
+                                  style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                    marginTop: '6px', fontSize: '0.85rem', color: 'var(--app-color-challenges)',
+                                    wordBreak: 'break-all'
+                                  }}
+                                >
+                                  <IonIcon icon={linkOutline} />
+                                  {submission.link_url}
+                                </a>
+                              )}
+
+                              {submission.file_path && (submission.media_type === 'photo' || submission.media_type === 'audio' || submission.media_type === 'video') && (
+                                // Audio-/Video-Steuerung braucht ihre eigenen Klicks
+                                // (Play, Scrubben) — ohne diesen Stopper landet jeder
+                                // Griff zum Player im Aktions-Menue des Items.
+                                <div onClick={(e) => e.stopPropagation()}>
+                                  <ChallengeMedia
+                                    filePath={submission.file_path}
+                                    fileName={submission.file_name}
+                                    mediaType={submission.media_type}
+                                  />
+                                </div>
+                              )}
+
+                              {isBusy && (
+                                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
+                                  <IonSpinner name="crescent" />
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
                           </IonItem>
 
                           <IonItemOptions side="end" className="app-swipe-actions">
@@ -711,4 +851,4 @@ const ChallengeModerationModal: React.FC<ChallengeModerationModalProps> = ({
   );
 };
 
-export default ChallengeModerationModal;
+export default ChallengeLeitungModal;

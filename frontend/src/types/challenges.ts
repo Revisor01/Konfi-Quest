@@ -69,6 +69,13 @@ export interface AdminChallenge extends ChallengeBase {
   author_name?: string | null;
   /** Roh-Status vom Backend, falls mitgeliefert (Ableitung bleibt getChallengeStatus). */
   status?: string;
+  /**
+   * Eigene Teilnahme — seit der Zusammenlegung von "Verwalten" und "Mitmachen"
+   * (11.08.) liefert GET /challenges/admin diese Felder mit, damit EINE Liste
+   * Verwaltung UND eigene Beitraege zeigen kann.
+   */
+  has_badge?: boolean;
+  own_submission_count?: number;
 }
 
 /**

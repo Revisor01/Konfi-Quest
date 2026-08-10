@@ -8,6 +8,10 @@ import {
   IonSegment,
   IonSegmentButton,
   IonLabel,
+  IonList,
+  IonListHeader,
+  IonCard,
+  IonCardContent,
   useIonModal
 } from '@ionic/react';
 import {
@@ -20,10 +24,13 @@ import {
   peopleOutline,
   eyeOutline,
   eyeOffOutline,
-  archiveOutline
+  archiveOutline,
+  ribbonOutline,
+  paperPlaneOutline
 } from 'ionicons/icons';
 import { SectionHeader, ListSection, ChallengeLegendModal } from '../../shared';
-import type { AdminChallenge, ChallengeStatus } from '../../../types/challenges';
+import { getChallengeBadgeIcon } from '../../konfi/views/ChallengesView';
+import type { AdminChallenge, ChallengeStatus, ChallengeMark } from '../../../types/challenges';
 
 // Gemeinsame Verwaltungs-Ansicht fuer Admin UND Teamer. Bewusst ohne eigenen
 // Datenzugriff: Laden/Modale liegen in der jeweiligen Seite, hier nur Darstellung
@@ -41,6 +48,12 @@ interface ChallengesManageViewProps {
   // Page) — gleiches Muster wie EventsView/RequestsView, damit der Switcher das
   // Design nicht zerreisst (User-Feedback 09.08.).
   headerSlot?: React.ReactNode;
+  /**
+   * Eigene Abzeichen der angemeldeten Person. Seit der Zusammenlegung von
+   * "Verwalten" und "Mitmachen" (11.08.) zeigt diese Liste auch die eigene
+   * Teilnahme — Leitung und Team machen selbst mit.
+   */
+  marks?: ChallengeMark[];
 }
 
 // Status wird NICHT gespeichert, sondern aus is_draft/starts_at/ends_at abgeleitet
@@ -111,8 +124,10 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
   onEditChallenge,
   onDeleteChallenge,
   presentingElement,
-  headerSlot
+  headerSlot,
+  marks: marksRaw = []
 }) => {
+  const marks: ChallengeMark[] = Array.isArray(marksRaw) ? marksRaw : [];
   // Defensive: bei kaputten/gecachten Responses (Object statt Array) auf [] fallen
   const challenges: AdminChallenge[] = Array.isArray(challengesRaw) ? challengesRaw : [];
 
@@ -156,7 +171,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
     <>
       <SectionHeader
         title="Challenges"
-        subtitle="Aufgaben und Beiträge"
+        subtitle="Anlegen, begleiten, mitmachen"
         icon={flag}
         preset="challenges"
         stats={[
@@ -168,6 +183,64 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
       />
 
       {headerSlot}
+
+      {/* Eigene Abzeichen — dieselbe Reihe wie in der Konfi-Sicht. Seit der
+          Zusammenlegung von "Verwalten" und "Mitmachen" (11.08.) ist das Team
+          hier nicht mehr nur Verwaltung, sondern nimmt selbst teil. Nur
+          anzeigen, wenn es etwas zu zeigen gibt — sonst frisst ein leerer
+          Kasten Platz in einer Liste, die primaer der Verwaltung dient. */}
+      {marks.length > 0 && (
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--challenges">
+              <IonIcon icon={ribbonOutline} />
+            </div>
+            <IonLabel>Deine Abzeichen</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '16px 12px' }}>
+              <div
+                style={{
+                  display: 'flex', gap: '14px', overflowX: 'auto',
+                  paddingBottom: '4px', WebkitOverflowScrolling: 'touch'
+                }}
+              >
+                {marks.map((mark) => (
+                  <div
+                    key={mark.challenge_id}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center',
+                      gap: '6px', minWidth: '74px', maxWidth: '92px', flexShrink: 0
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '52px', height: '52px', borderRadius: '50%',
+                        background: 'linear-gradient(135deg, var(--app-color-challenges) 0%, #be123c 100%)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: '0 4px 12px rgba(var(--app-color-challenges-rgb), 0.35)'
+                      }}
+                    >
+                      <IonIcon
+                        icon={getChallengeBadgeIcon(mark.badge_icon)}
+                        style={{ fontSize: '1.5rem', color: 'white' }}
+                      />
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '0.72rem', fontWeight: 600, color: '#3c3c43',
+                        textAlign: 'center', lineHeight: 1.2
+                      }}
+                    >
+                      {mark.badge_name}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
+      )}
 
       <div style={{ margin: '16px 16px 8px 16px' }}>
         <IonSegment
@@ -247,6 +320,20 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
                           title="Beiträge warten auf Freigabe"
                         >
                           {pending} offen
+                        </div>
+                        <div className="app-corner-badges__separator" />
+                      </>
+                    )}
+                    {/* Eigener Beitrag vorhanden — dasselbe Papierflieger-Badge
+                        wie in der Konfi-Sicht (11.08.). */}
+                    {challenge.has_badge && (
+                      <>
+                        <div
+                          className="app-corner-badge app-corner-badge--queue"
+                          style={{ backgroundColor: 'var(--app-color-challenges)' }}
+                          title="Du hast bereits eingereicht"
+                        >
+                          <IonIcon icon={paperPlaneOutline} />
                         </div>
                         <div className="app-corner-badges__separator" />
                       </>
