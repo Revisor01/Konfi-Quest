@@ -1163,12 +1163,20 @@ document.querySelectorAll('[data-count]').forEach(el=>cio.observe(el));
       geraet: geraet()
     };
 
+    // Host EINMAL saeuber aufloesen und danach exakt vergleichen.
+    // Eine Teilstring-Suche (href.indexOf('apps.apple.com')) wuerde auch bei
+    // "https://fremde-seite.de/?x=apps.apple.com" anschlagen — der Host kann
+    // ueberall in der URL stehen. Relative Links ergeben hier den eigenen Host.
+    var host = '';
+    try { host = new URL(href, location.href).hostname.replace(/^www\./, '').toLowerCase(); } catch(_){}
+    var istEigenerHost = host === location.hostname.replace(/^www\./, '').toLowerCase();
+
     // App-Store-Badges
-    if(href.indexOf('apps.apple.com') > -1){
+    if(host === 'apps.apple.com'){
       track('store-klick', Object.assign(basis, { store: 'app-store' }));
       return;
     }
-    if(href.indexOf('play.google.com') > -1){
+    if(host === 'play.google.com'){
       track('store-klick', Object.assign(basis, { store: 'google-play' }));
       return;
     }
@@ -1199,11 +1207,10 @@ document.querySelectorAll('[data-count]').forEach(el=>cio.observe(el));
       return;
     }
 
-    // Externe Links (z.B. simonluthe.de)
-    if(/^https?:\/\//.test(href) && href.indexOf(location.hostname) === -1){
-      var ziel = 'extern';
-      try { ziel = new URL(href).hostname.replace(/^www\./,''); } catch(_){}
-      track('extern-klick', Object.assign(basis, { ziel: ziel }));
+    // Externe Links (z.B. simonluthe.de) — Vergleich ueber den geparsten Host
+    // statt einer Teilstring-Suche im href (gleiche Fehlerklasse wie oben).
+    if(/^https?:\/\//i.test(href) && host && !istEigenerHost){
+      track('extern-klick', Object.assign(basis, { ziel: host }));
       return;
     }
   }, { passive: true });
