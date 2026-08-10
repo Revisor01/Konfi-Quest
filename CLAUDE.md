@@ -9,7 +9,18 @@
    - ERLAUBT: IonIcon mit Icons aus ionicons/icons (auch outline Varianten)
    - ERLAUBT: Line Icons und Icon Fonts
    - Das gilt für ALLE Dateien: .tsx, .ts, .js, .jsx, Kommentare, Strings, ÜBERALL!
-4. **ECHTE UMLAUTE VERWENDEN** - Immer ü, ö, ä, ß statt ue, oe, ae, ss!
+4. **CHANGELOG FORTLAUFEND PFLEGEN** - Bei JEDEM Commit, der Nutzer:innen
+   betrifft, im selben Commit einen Eintrag in `CHANGELOG.md` ergänzen.
+   NICHT bis zum Release warten!
+   - Kein passender Versions-Abschnitt da? Dann oben `## [Unreleased] - <Version>`
+     anlegen und dort eintragen.
+   - Keep-a-Changelog-Kategorien: Hinzugefügt / Geändert / Behoben / Sonstiges
+   - Ein knapper Satz pro Punkt, aus Nutzersicht ("Termine mit Anmeldungen
+     lassen sich wieder löschen")
+   - NIEMALS: Build-Nummern, Framework-Namen, Dateinamen, Commit-Hashes,
+     Infrastruktur. Das gehört in die Commit-Message.
+   - Reine Interna (Refactoring, Tests, CI) nur unter "Sonstiges", wenn überhaupt
+5. **ECHTE UMLAUTE VERWENDEN** - Immer ü, ö, ä, ß statt ue, oe, ae, ss!
    - RICHTIG: für, Glückwunsch, bestätigt, Größe
    - FALSCH: fuer, Glueckwunsch, bestaetigt, Groesse
    - Das gilt besonders für Push-Nachrichten, UI-Texte und Meldungen!

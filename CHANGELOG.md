@@ -7,6 +7,59 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
+## [Unreleased] - 2.0.0
+
+### Hinzugefügt
+
+- Challenges: Aufgaben, auf die Konfis über einen frei gewählten Zeitraum mit
+  eigenen Beiträgen antworten — Foto, Text, Aufnahme oder Link. Bewusst ohne
+  Punkte, ohne Zähler und ohne Rangliste; fürs Mitmachen gibt es ein Abzeichen.
+- Challenges: Beim Anlegen werden Jahrgänge, Zeitraum, erlaubte Medienarten,
+  Sichtbarkeit und Freigabe festgelegt. Nach dem Start bleiben Sichtbarkeit und
+  Freigabe unveränderlich — die Zusage an die Konfis gilt.
+- Challenges: Konfis entscheiden je Beitrag, ob er mit Namen, anonym oder nur
+  für die Leitung sichtbar ist.
+- Challenges: Teamer:innen und Leitung nehmen selbst teil; es gibt auch Runden
+  nur fürs Team.
+- Challenges: Die Leitung kann Beiträge freigeben, nachträglich anonymisieren
+  oder ausblenden. Anonymisieren lässt sich nicht zurücknehmen.
+- Veranstaltungen: eigenes Kontingent für Teamer:innen mit eigener Warteliste,
+  getrennt von den Plätzen der Konfis.
+- Veranstaltungen: Termine nur für Teamer:innen sowie Termine, zu denen
+  Teamer:innen gesucht werden.
+- Veranstaltungen: Anmeldung kann ab sofort geöffnet werden, ohne Startdatum.
+
+### Geändert
+
+- Die Tab-Leiste hat einen eigenen Challenges-Tab; die Anträge sind kein
+  eigener Tab mehr, sondern ein Bereich oben im Veranstaltungs-Tab. Gilt für
+  Konfis, Teamer:innen und Leitung.
+- Jahresrückblick: erzählt den eigenen Weg statt Platzierungen — mit den
+  Challenge-Momenten und ohne Vergleich mit anderen.
+- Einführung und "Was ist neu?": Aktivitäten werden direkt nach den
+  Veranstaltungen erklärt, mit Beispielen passend zur jeweiligen Rolle.
+  "Was ist neu?" lässt sich jederzeit erneut aufrufen.
+- Veranstaltungs-Formular neu geordnet; Anmeldung ist ein eigener Abschnitt.
+- Challenge-Beiträge werden per Tippen und Wischen bearbeitet, wie in den
+  übrigen Listen.
+
+### Behoben
+
+- Veranstaltungen: Speichern brach in manchen Fällen ohne Meldung ab. Fehlende
+  Pflichtangaben werden jetzt benannt.
+- Veranstaltungen: Termine nur für Teamer:innen vergaben fälschlich Punkte,
+  zeigten ein wirkungsloses Anmeldefenster und eine Konfi-Warteliste.
+- Veranstaltungen: Terminserien übernehmen alle Angaben des ersten Termins.
+- Veranstaltungen: Termine mit Anmeldungen lassen sich wieder löschen.
+- Challenges: Aufruf einer Challenge konnte zur Abmeldung führen.
+
+### Sonstiges
+
+Betrifft nicht die App, gehört nicht in die Store-Release-Notes.
+
+- Eigene Staging-Umgebung mit getrennter Datenbank für interne Tests.
+- Startseite um einen Abschnitt zu den Challenges erweitert.
+
 ## [1.5.3] - 2026-08-04
 
 ### Hinzugefügt
