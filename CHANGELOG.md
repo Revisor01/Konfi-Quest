@@ -74,7 +74,8 @@ Versionsüberschrift.
 - Konnte ein Foto zu einer Meldung nicht geladen werden, stand dort
   fälschlich "Kein Foto hochgeladen".
 - Beim Hinzufügen einer Aktivität im Profil einer Teamer:in kam es zum
-  Rauswurf aus der App.
+  Rauswurf aus der App — Ursache waren Aktivitäten ohne Punkte-Art
+  ("Konfi-Wochenende", "Konfi-Freizeit begleitet").
 - Wischaktionen in Listen klappen nach dem Antippen wieder zu.
 - Challenges: Die eigenen Abzeichen werden bei Leitung und Teamer:innen auch
   dann angezeigt, wenn noch keins vergeben ist.

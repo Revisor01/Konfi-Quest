@@ -225,12 +225,21 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {activities
+                {[...activities]
                   .sort((a, b) => {
-                    if (a.type !== b.type) {
-                      return a.type.localeCompare(b.type);
+                    // NULL-SICHER: Teamer-Aktivitaeten duerfen type = NULL haben
+                    // ("Konfi-Wochenende", "Konfi-Freizeit begleitet"). Ein
+                    // direktes a.type.localeCompare() warf dort sofort, der
+                    // Render brach ab und die ErrorBoundary loggte aus — das war
+                    // der Rauswurf beim Oeffnen (User-Hinweis 11.08.).
+                    // Ausserdem NICHT mehr in-place sortieren: .sort() mutiert
+                    // sonst das activities-State-Array bei jedem Render.
+                    const typeA = a.type || '';
+                    const typeB = b.type || '';
+                    if (typeA !== typeB) {
+                      return typeA.localeCompare(typeB);
                     }
-                    return a.name.localeCompare(b.name);
+                    return (a.name || '').localeCompare(b.name || '');
                   })
                   .map(activity => {
                     const isSelected = selectedActivity === activity.id;
