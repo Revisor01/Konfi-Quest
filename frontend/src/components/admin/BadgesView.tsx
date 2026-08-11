@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   IonCard,
   IonCardContent,
@@ -80,6 +80,7 @@ import {
   listOutline,
   pricetag
 } from 'ionicons/icons';
+import api from '../../services/api';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
 
@@ -140,6 +141,25 @@ const BadgesView: React.FC<BadgesViewProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('alle');
+
+  // Aktivitaetsnamen zum Aufloesen der IDs aus criteria_extra: ohne sie stand
+  // in der Liste "Aktivität #58", und mehrere solche Badges sahen identisch
+  // aus (User-Hinweis 11.08.). Nur die Aktivitaeten der jeweiligen Zielgruppe.
+  const [activityNames, setActivityNames] = useState<Record<number, string>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    api.get(`/admin/activities?target_role=${targetRole}`)
+      .then((res) => {
+        if (cancelled) return;
+        const list = Array.isArray(res.data) ? res.data : [];
+        const map: Record<number, string> = {};
+        list.forEach((a: { id: number; name: string }) => { map[a.id] = a.name; });
+        setActivityNames(map);
+      })
+      .catch(() => { if (!cancelled) setActivityNames({}); });
+    return () => { cancelled = true; };
+  }, [targetRole]);
 
   const filteredAndSortedBadges = (() => {
     let result = filterBySearchTerm(badges, searchTerm, ['name', 'description']);
@@ -246,10 +266,26 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         return `${badge.criteria_value} Punkte`;
       case 'both_categories':
         return `${badge.criteria_value} Punkte pro Kategorie`;
-      case 'specific_activity':
-        return extra.activity_id ? `${badge.criteria_value}x Aktivität #${extra.activity_id}` : `${badge.criteria_value}x`;
-      case 'activity_combination':
-        return extra.activity_ids?.length ? `${extra.activity_ids.length} Aktivitäten, min. ${badge.criteria_value}x` : null;
+      case 'specific_activity': {
+        // Namen statt ID: "4x Jugendreise" statt "4x Aktivität #58".
+        if (!extra.activity_id) return `${badge.criteria_value}x`;
+        const name = activityNames[extra.activity_id];
+        return name
+          ? `${badge.criteria_value}x ${name}`
+          : `${badge.criteria_value}x Aktivität #${extra.activity_id}`;
+      }
+      case 'activity_combination': {
+        if (!extra.activity_ids?.length) return null;
+        // Bis zu zwei Namen ausschreiben, danach zaehlen — sonst sprengt die
+        // Zeile die Listenbreite.
+        const names = extra.activity_ids
+          .map((id: number) => activityNames[id])
+          .filter(Boolean);
+        if (names.length === extra.activity_ids.length && names.length <= 2) {
+          return `${names.join(' + ')}, min. ${badge.criteria_value}x`;
+        }
+        return `${extra.activity_ids.length} Aktivitäten, min. ${badge.criteria_value}x`;
+      }
       case 'category_activities':
         return extra.required_category ? `${badge.criteria_value}x in "${extra.required_category}"` : `${badge.criteria_value}x`;
       case 'time_based':

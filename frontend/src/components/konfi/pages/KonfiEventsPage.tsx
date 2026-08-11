@@ -497,9 +497,12 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
                           {pendingQueueItems.map(qi => (
                             <div key={qi.id} className="app-list-item app-list-item--warning">
                               <div className="app-corner-badges">
-                                <div className="app-corner-badge" style={{ background: '#ff9500' }}>
-                                  <IonIcon icon={timeOutline} style={{ fontSize: '0.7rem', marginRight: '2px' }} />
-                                  Wartend
+                                <div
+                                  className="app-corner-badge"
+                                  style={{ background: 'var(--app-color-warning)', padding: '4px 6px' }}
+                                  title="Wartend — wird gesendet, sobald du wieder online bist"
+                                >
+                                  <IonIcon icon={timeOutline} style={{ color: '#fff', fontSize: '0.85rem', display: 'block' }} />
                                 </div>
                               </div>
                               <div className="app-list-item__row">

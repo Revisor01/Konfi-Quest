@@ -571,14 +571,19 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
           />
         )}
 
-        {/* Badges - nur für Konfis (gleiche Wertung wie Konfi-Ansicht) */}
+        {/* Badges — je Rolle aus dem eigenen System (gleiche Wertung wie in
+            der jeweiligen eigenen Ansicht). */}
         {!isTeamer && currentKonfi?.role_name === 'konfi' && (
           <KonfiBadgesSection konfiId={konfiId} />
         )}
+        {isTeamer && (
+          <KonfiBadgesSection konfiId={konfiId} role="teamer" />
+        )}
 
 
-        {/* Teamer Events */}
-        {isTeamer && teamerEvents.length > 0 && (
+        {/* Teamer Events — auch leer anzeigen: sonst ist "war bei keinem
+            Termin" nicht von "nicht geladen" zu unterscheiden. */}
+        {isTeamer && (
           <TeamerEventsSection
             teamerEvents={teamerEvents}
             formatDate={formatDate}

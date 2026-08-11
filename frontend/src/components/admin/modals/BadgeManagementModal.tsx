@@ -317,8 +317,10 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
     try {
       setInitialDataLoading(true);
 
-      // Load activities
-      const activitiesResponse = await api.get('/admin/activities');
+      // Aktivitaeten NUR aus der Zielgruppe des Badges: ein Teamer-Badge darf
+      // nicht auf Konfi-Aktivitaeten verweisen (und umgekehrt) — die Wertung in
+      // badges.js zaehlt ohnehin nur die passende target_role.
+      const activitiesResponse = await api.get(`/admin/activities?target_role=${targetRole}`);
       setActivities(Array.isArray(activitiesResponse.data) ? activitiesResponse.data : []);
 
       // Load categories
@@ -478,6 +480,18 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
     });
   };
 
+  // Gottesdienst/Gemeinde gibt es NUR bei Konfis — bei Teamer-Aktivitaeten ist
+  // `type` bedeutungslos und wuerde als Untertitel nur in die Irre fuehren
+  // (User-Hinweis 11.08.). Deshalb dort neutral in der Teamer-Farbe.
+  const isTeamerBadge = targetRole === 'teamer';
+  const activityColor = (activity: Activity) =>
+    isTeamerBadge ? 'var(--app-color-teamer)'
+      : activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f';
+  const activityIcon = (activity: Activity) =>
+    isTeamerBadge ? people : activity.type === 'gottesdienst' ? home : people;
+  const activitySubtitle = (activity: Activity): string | null =>
+    isTeamerBadge ? null : activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde';
+
   const renderCriteriaSpecificFields = () => {
     switch (formData.criteria_type) {
       case 'specific_activity':
@@ -493,7 +507,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                     </h3>
                     {selectedActivity && (
                       <p style={{ fontSize: '0.85rem', color: '#333', margin: '0', fontWeight: '500' }}>
-                        {selectedActivity.name} ({selectedActivity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'})
+                        {selectedActivity.name}
+                        {activitySubtitle(selectedActivity) && ` (${activitySubtitle(selectedActivity)})`}
                       </p>
                     )}
                   </IonLabel>
@@ -513,29 +528,31 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             marginBottom: '0',
-                            borderLeftColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
+                            borderLeftColor: activityColor(activity),
                             backgroundColor: isSelected ? 'rgba(0, 122, 255, 0.08)' : undefined
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
                             <div
                               className="app-icon-circle"
-                              style={{ backgroundColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f' }}
+                              style={{ backgroundColor: activityColor(activity) }}
                             >
-                              <IonIcon icon={activity.type === 'gottesdienst' ? home : people} />
+                              <IonIcon icon={activityIcon(activity)} />
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div className="app-list-item__title">{activity.name}</div>
-                              <div className="app-list-item__subtitle">
-                                {activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
-                              </div>
+                              {activitySubtitle(activity) && (
+                                <div className="app-list-item__subtitle">
+                                  {activitySubtitle(activity)}
+                                </div>
+                              )}
                             </div>
                           </div>
                           <IonCheckbox
                             checked={isSelected}
                             style={{
-                              '--checkbox-background-checked': activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
-                              '--border-color-checked': activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
+                              '--checkbox-background-checked': activityColor(activity),
+                              '--border-color-checked': activityColor(activity),
                               '--checkmark-color': 'white'
                             }}
                           />
@@ -669,29 +686,31 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             marginBottom: '0',
-                            borderLeftColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
+                            borderLeftColor: activityColor(activity),
                             backgroundColor: isSelected ? 'rgba(0, 122, 255, 0.08)' : undefined
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
                             <div
                               className="app-icon-circle"
-                              style={{ backgroundColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f' }}
+                              style={{ backgroundColor: activityColor(activity) }}
                             >
-                              <IonIcon icon={activity.type === 'gottesdienst' ? home : people} />
+                              <IonIcon icon={activityIcon(activity)} />
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div className="app-list-item__title">{activity.name}</div>
-                              <div className="app-list-item__subtitle">
-                                {activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
-                              </div>
+                              {activitySubtitle(activity) && (
+                                <div className="app-list-item__subtitle">
+                                  {activitySubtitle(activity)}
+                                </div>
+                              )}
                             </div>
                           </div>
                           <IonCheckbox
                             checked={isSelected}
                             style={{
-                              '--checkbox-background-checked': activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
-                              '--border-color-checked': activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
+                              '--checkbox-background-checked': activityColor(activity),
+                              '--border-color-checked': activityColor(activity),
                               '--checkmark-color': 'white'
                             }}
                           />

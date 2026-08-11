@@ -184,12 +184,19 @@ const BadgePopoverContent: React.FC<{
 
 interface KonfiBadgesSectionProps {
   konfiId: number;
+  /**
+   * Rolle der angezeigten Person. Teamer:innen haben ein EIGENES Badge-System
+   * (target_role='teamer', eigene Kriterien ohne Punkte) und einen eigenen
+   * Endpunkt — der Konfi-Endpunkt antwortet fuer sie mit 404. Darstellung und
+   * Popover sind identisch, deshalb dieselbe Komponente (User-Wunsch 11.08.).
+   */
+  role?: 'konfi' | 'teamer';
 }
 
-// Zeigt die vom Konfi erreichten Badges als klickbare Kreis-Symbole an —
-// analog zur Konfi-eigenen BadgesView, aber kompakt fuer die Admin-Detailseite.
+// Zeigt die erreichten Badges als klickbare Kreis-Symbole an — analog zur
+// jeweiligen eigenen BadgesView, aber kompakt fuer die Admin-Detailseite.
 // Klick auf ein Badge oeffnet ein Detail-Popover.
-const KonfiBadgesSection: React.FC<KonfiBadgesSectionProps> = ({ konfiId }) => {
+const KonfiBadgesSection: React.FC<KonfiBadgesSectionProps> = ({ konfiId, role = 'konfi' }) => {
   const [earnedBadges, setEarnedBadges] = useState<Badge[]>([]);
   const [loading, setLoading] = useState(true);
   const badgePopoverRef = useRef<Badge | null>(null);
@@ -201,7 +208,10 @@ const KonfiBadgesSection: React.FC<KonfiBadgesSectionProps> = ({ konfiId }) => {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    api.get(`/admin/konfis/${konfiId}/badges`)
+    const url = role === 'teamer'
+      ? `/teamer/${konfiId}/badges`
+      : `/admin/konfis/${konfiId}/badges`;
+    api.get(url)
       .then((res) => {
         if (cancelled) return;
         setEarnedBadges(res.data?.earned || []);
@@ -213,7 +223,7 @@ const KonfiBadgesSection: React.FC<KonfiBadgesSectionProps> = ({ konfiId }) => {
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [konfiId]);
+  }, [konfiId, role]);
 
   const handleBadgeClick = (badge: Badge, e: React.MouseEvent) => {
     badgePopoverRef.current = badge;

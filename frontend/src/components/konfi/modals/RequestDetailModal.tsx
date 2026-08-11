@@ -32,8 +32,12 @@ interface ActivityRequest {
   id: number;
   activity_id: number;
   activity_name: string;
-  activity_points: number;
-  activity_type: 'gottesdienst' | 'gemeinde';
+  // Punkte und Typ gibt es NUR bei Konfi-Aktivitaeten. Bei Teamer-Antraegen
+  // ist points 0 und type NULL — deshalb hier nullable, sonst zeigt die
+  // Ansicht "(Gemeinde)" und "0 Punkte" (User-Hinweis 11.08.).
+  activity_points?: number | null;
+  activity_type?: 'gottesdienst' | 'gemeinde' | null;
+  activity_target_role?: 'konfi' | 'teamer' | null;
   requested_date: string;
   comment?: string;
   photo_filename?: string;
@@ -58,6 +62,11 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [loadingPhoto, setLoadingPhoto] = useState(false);
   const [photoLoadFailed, setPhotoLoadFailed] = useState(false);
+
+  // Dieses Modal wird auch von der Teamer-Seite genutzt (TeamerEventsPage).
+  // Teamer-Antraege haben weder Punkte noch Gottesdienst/Gemeinde — die Rolle
+  // kommt aus den Daten, damit die Aufrufer nichts setzen muessen.
+  const isTeamerRequest = request?.activity_target_role === 'teamer';
 
   useEffect(() => {
     if (request?.photo_filename && request.status === 'pending') {
@@ -159,21 +168,23 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
           <IonCard className="app-card">
             <IonCardContent>
               <IonList>
-                {/* Aktivität */}
+                {/* Aktivität — Gottesdienst/Gemeinde nur bei Konfis */}
                 <IonItem lines="inset">
                   <IonLabel>
-                    <p>Aktivität ({request.activity_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'})</p>
+                    <p>Aktivität{!isTeamerRequest && ` (${request.activity_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'})`}</p>
                     <h2>{request.activity_name}</h2>
                   </IonLabel>
                 </IonItem>
 
-                {/* Punkte */}
-                <IonItem lines="inset">
-                  <IonLabel>
-                    <p>Punkte</p>
-                    <h2>{request.activity_points} {request.activity_points === 1 ? 'Punkt' : 'Punkte'}</h2>
-                  </IonLabel>
-                </IonItem>
+                {/* Punkte — bei Teamer:innen gibt es keine */}
+                {!isTeamerRequest && (
+                  <IonItem lines="inset">
+                    <IonLabel>
+                      <p>Punkte</p>
+                      <h2>{request.activity_points ?? 0} {request.activity_points === 1 ? 'Punkt' : 'Punkte'}</h2>
+                    </IonLabel>
+                  </IonItem>
+                )}
 
                 {/* Wann war das */}
                 <IonItem lines="inset">
@@ -282,7 +293,9 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                   <IonLabel>
                     <p>Stand</p>
                     <h2 style={{ color: isPending ? '#ff9500' : isApproved ? '#059669' : '#dc3545' }}>
-                      {isPending ? 'Dein Team schaut es sich an' : isApproved ? 'Punkte sind da' : 'Abgelehnt'}
+                      {isPending ? 'Dein Team schaut es sich an'
+                        : isApproved ? (isTeamerRequest ? 'Angerechnet' : 'Punkte sind da')
+                        : 'Abgelehnt'}
                     </h2>
                   </IonLabel>
                 </IonItem>

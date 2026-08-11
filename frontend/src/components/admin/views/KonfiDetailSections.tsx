@@ -43,10 +43,13 @@ import {
   book,
   documentText,
   chevronForward,
-  checkmarkCircle
+  checkmarkCircle,
+  closeCircle,
+  alertCircle
 } from 'ionicons/icons';
 import ActivityRings from './ActivityRings';
 import { EmptyState } from '../../shared';
+import { getIconFromString } from '../../konfi/views/DashboardSections';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
 // ---- Shared Types ----
@@ -617,7 +620,15 @@ export const TeamerEventsSection = React.memo<TeamerEventsSectionProps>(({
       <IonLabel>Events ({teamerEvents.length})</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
-      <IonCardContent style={{ padding: '12px' }}>
+      <IonCardContent style={{ padding: teamerEvents.length === 0 ? '16px' : '12px' }}>
+        {teamerEvents.length === 0 ? (
+          <EmptyState
+            icon={calendar}
+            title="Keine Events"
+            message="Noch bei keinem Termin dabei gewesen"
+            iconColor="var(--app-color-events)"
+          />
+        ) : (
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {teamerEvents.slice(0, 10).map((event, index) => {
             return (
@@ -631,18 +642,28 @@ export const TeamerEventsSection = React.memo<TeamerEventsSectionProps>(({
                 <div
                   className="app-list-item app-list-item--events"
                 >
+                  {/* Status als Symbol-Badge statt Text (wie in Challenges und
+                      Zertifikaten) — der Titel darunter bekommt dadurch die
+                      volle Breite. Klartext haengt am title-Attribut. */}
                   <div className="app-corner-badges">
                     <div
                       className="app-corner-badge"
                       style={{
                         backgroundColor: event.booking_status === 'confirmed' ? '#059669'
                           : event.booking_status === 'absent' ? 'var(--app-color-events)'
-                          : 'var(--app-color-badges)'
+                          : 'var(--app-color-badges)',
+                        padding: '4px 6px'
                       }}
-                    >
-                      {event.booking_status === 'confirmed' ? 'Anwesend'
+                      title={event.booking_status === 'confirmed' ? 'Anwesend'
                         : event.booking_status === 'absent' ? 'Abwesend'
                         : 'Ausstehend'}
+                    >
+                      <IonIcon
+                        icon={event.booking_status === 'confirmed' ? checkmarkCircle
+                          : event.booking_status === 'absent' ? closeCircle
+                          : time}
+                        style={{ color: '#fff', fontSize: '0.85rem', display: 'block' }}
+                      />
                     </div>
                   </div>
                   <div className="app-list-item__row">
@@ -667,7 +688,21 @@ export const TeamerEventsSection = React.memo<TeamerEventsSectionProps>(({
               </IonItem>
             );
           })}
+          {/* Die Liste ist auf 10 begrenzt, der Titel zaehlt aber alle —
+              ohne diesen Hinweis sah "Events (23)" mit 10 Zeilen nach einem
+              Fehler aus. */}
+          {teamerEvents.length > 10 && (
+            <div
+              style={{
+                textAlign: 'center', fontSize: '0.8rem', color: '#8e8e93',
+                padding: '8px 0 2px 0'
+              }}
+            >
+              und {teamerEvents.length - 10} weitere
+            </div>
+          )}
         </div>
+        )}
       </IonCardContent>
     </IonCard>
   </IonList>
@@ -764,7 +799,11 @@ export const ActivitiesSection = React.memo<ActivitiesSectionProps>(({
                           className="app-icon-circle"
                           style={{ backgroundColor: activityColor }}
                         >
-                          <IonIcon icon={activity.isPending ? time : activity.type === 'gottesdienst' ? school : flash} />
+                          {/* Teamer-Aktivitaeten haben keinen Typ — ohne den
+                              Zweig bekaemen sie immer das Gemeinde-Icon. */}
+                          <IonIcon icon={activity.isPending ? time
+                            : isTeamer ? ribbon
+                            : activity.type === 'gottesdienst' ? school : flash} />
                         </div>
                         <div className="app-list-item__content">
                           <div
@@ -886,13 +925,22 @@ export const CertificatesSection = React.memo<CertificatesSectionProps>(({
                   <div
                     className="app-list-item"
                     style={{
-                      borderLeftColor: '#db2777'
+                      // Teamer-Token statt eines abweichenden Pink — der
+                      // Sektionskopf nutzt dieselbe Farbe.
+                      borderLeftColor: 'var(--app-color-teamer)'
                     }}
                   >
                     {cert.status === 'expired' && (
                       <div className="app-corner-badges">
-                        <div className="app-corner-badge" style={{ backgroundColor: '#ef4444' }}>
-                          Abgelaufen
+                        <div
+                          className="app-corner-badge"
+                          style={{ backgroundColor: '#ef4444', padding: '4px 6px' }}
+                          title="Abgelaufen"
+                        >
+                          <IonIcon
+                            icon={alertCircle}
+                            style={{ color: '#fff', fontSize: '0.85rem', display: 'block' }}
+                          />
                         </div>
                       </div>
                     )}
@@ -901,10 +949,13 @@ export const CertificatesSection = React.memo<CertificatesSectionProps>(({
                         <div
                           className="app-icon-circle"
                           style={{
-                            backgroundColor: '#db2777'
+                            backgroundColor: 'var(--app-color-teamer)'
                           }}
                         >
-                          <IonIcon icon={ribbon} />
+                          {/* Das gepflegte Zertifikats-Icon zeigen — die
+                              Teamer-Sicht (Dashboard) tut das laengst; hier
+                              sahen bisher alle Zertifikate gleich aus. */}
+                          <IonIcon icon={getIconFromString(cert.icon)} />
                         </div>
                         <div className="app-list-item__content">
                           <div className="app-list-item__title app-list-item__title--badge-space">
@@ -1102,10 +1153,23 @@ export const KonfiHistorySection = React.memo<KonfiHistorySectionProps>(({
                   style={{ borderLeftColor: categoryColor, position: 'relative', overflow: 'hidden' }}
                 >
                   <div className="app-corner-badges">
+                    {/* Herkunft als Symbol (Geschenk = Bonus, Kalender = Event);
+                        Klartext am title. Die Punktzahl daneben bleibt Text —
+                        sie ist die eigentliche Information und laesst sich
+                        nicht als Symbol ausdruecken. Punkte sind hier korrekt:
+                        die Sektion zeigt die KONFI-Zeit einer befoerderten
+                        Teamer:in. */}
                     {typeBadgeColor && typeBadgeLabel && (
                       <>
-                        <div className="app-corner-badge" style={{ backgroundColor: typeBadgeColor }}>
-                          {typeBadgeLabel}
+                        <div
+                          className="app-corner-badge"
+                          style={{ backgroundColor: typeBadgeColor, padding: '4px 6px' }}
+                          title={typeBadgeLabel}
+                        >
+                          <IonIcon
+                            icon={entry.source_type === 'bonus' ? giftOutline : calendarOutline}
+                            style={{ color: '#fff', fontSize: '0.85rem', display: 'block' }}
+                          />
                         </div>
                         <div className="app-corner-badges__separator" />
                       </>

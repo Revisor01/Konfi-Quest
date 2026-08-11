@@ -28,6 +28,8 @@ Versionsüberschrift.
 - Veranstaltungen: Termine nur für Teamer:innen sowie Termine, zu denen
   Teamer:innen gesucht werden.
 - Veranstaltungen: Anmeldung kann ab sofort geöffnet werden, ohne Startdatum.
+- Teamer-Profil: Die Leitung sieht dort jetzt auch die Abzeichen der
+  Teamer:in — bisher gab es die Übersicht nur für Konfis.
 - Anonyme Nutzungsstatistik in der App: erfasst wird, welche Bereiche und
   Funktionen genutzt werden und wo Fehlermeldungen erscheinen — ohne Namen,
   Kennung, Gemeinde oder Inhalte. Näheres in der Datenschutzerklärung.
@@ -61,6 +63,17 @@ Versionsüberschrift.
 
 ### Behoben
 
+- Teamer:innen: Im Profil standen an mehreren Stellen Punkte und die
+  Einteilung in Gottesdienst und Gemeinde, die es dort gar nicht gibt — im
+  Antragsdetail, bei Terminen nur fürs Team und in der Aktivitätenauswahl.
+- Teamer:innen: Beim Anlegen eines Abzeichens mit einer bestimmten Aktivität
+  wurden die Konfi-Aktivitäten zur Auswahl gestellt. Jetzt erscheinen nur die
+  Aktivitäten der jeweiligen Zielgruppe.
+- Abzeichen-Liste: Ein Abzeichen für eine bestimmte Aktivität zeigt nun deren
+  Namen statt einer Nummer — mehrere solche Abzeichen waren nicht
+  unterscheidbar.
+- Teamer-Profil: Zertifikate zeigen wieder ihr eigenes Symbol, und die Liste
+  der Termine erscheint auch, wenn noch keiner dabei war.
 - Veranstaltungen: Bei Zeitfenster-Terminen konnte eine Anmeldung ohne Auswahl
   eines Zeitfensters zustande kommen, wenn die Zeitfenster nicht geladen werden
   konnten.

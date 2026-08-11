@@ -58,7 +58,8 @@ import {
   infinite,
   add,
   timeOutline,
-  listOutline
+  listOutline,
+  ribbon
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -244,13 +245,12 @@ const TeamerEventsPage: React.FC = () => {
     }
   };
 
-  const getRequestTypeIcon = (type: string) => {
-    return type === 'gottesdienst' ? home : people;
-  };
-
-  const getRequestTypeText = (type: string) => {
-    return type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde';
-  };
+  // RequestsView verlangt diese Props, nutzt sie im teamerMode aber NICHT —
+  // Gottesdienst/Gemeinde gibt es bei Teamer-Aktivitaeten nicht. Deshalb
+  // bewusst neutral: wuerde die View sie eines Tages doch auswerten, stuende
+  // hier kein falsches "Gemeinde".
+  const getRequestTypeIcon = (_type: string) => ribbon;
+  const getRequestTypeText = (_type: string) => 'Aktivität';
 
   const getFilteredRequests = () => {
     const allRequests = Array.isArray(requests) ? requests : [];
@@ -679,6 +679,12 @@ const TeamerEventsPage: React.FC = () => {
           {/* SectionHeader mit Status-Farben */}
           {(() => {
             const konfiCount = selectedEvent.registered_count - (selectedEvent.teamer_count || 0);
+            // Punkte-Kachel nur, wenn es ueberhaupt Punkte gibt — dieselbe
+            // Bedingung wie die Punkte-Zeile weiter unten. Bei Terminen nur
+            // fuers Team, Pflichtterminen und Konfirmationen stand hier sonst
+            // "0 Punkte" (User-Hinweis 11.08.).
+            const showPoints = !selectedEvent.teamer_only && !selectedEvent.mandatory
+              && !selectedEvent.is_konfirmation && (selectedEvent.points || 0) > 0;
             return (
               <SectionHeader
                 title={selectedEvent.name}
@@ -688,7 +694,7 @@ const TeamerEventsPage: React.FC = () => {
                 stats={[
                   { value: konfiCount, label: 'Konfis' },
                   { value: selectedEvent.teamer_count || 0, label: 'Team' },
-                  { value: selectedEvent.points, label: 'Punkte' }
+                  ...(showPoints ? [{ value: selectedEvent.points, label: 'Punkte' }] : [])
                 ]}
               />
             );
@@ -1182,9 +1188,12 @@ const TeamerEventsPage: React.FC = () => {
                           {pendingQueueItems.map(qi => (
                             <div key={qi.id} className="app-list-item app-list-item--warning">
                               <div className="app-corner-badges">
-                                <div className="app-corner-badge" style={{ background: '#ff9500' }}>
-                                  <IonIcon icon={timeOutline} style={{ fontSize: '0.7rem', marginRight: '2px' }} />
-                                  Wartend
+                                <div
+                                  className="app-corner-badge"
+                                  style={{ background: 'var(--app-color-warning)', padding: '4px 6px' }}
+                                  title="Wartend — wird gesendet, sobald du wieder online bist"
+                                >
+                                  <IonIcon icon={timeOutline} style={{ color: '#fff', fontSize: '0.85rem', display: 'block' }} />
                                 </div>
                               </div>
                               <div className="app-list-item__row">
