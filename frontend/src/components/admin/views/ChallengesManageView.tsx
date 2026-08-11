@@ -185,72 +185,6 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
 
       {headerSlot}
 
-      {/* Eigene Abzeichen — dieselbe Reihe wie in der Konfi-Sicht. Seit der
-          Zusammenlegung von "Verwalten" und "Mitmachen" (11.08.) ist das Team
-          hier nicht mehr nur Verwaltung, sondern nimmt selbst teil.
-          IMMER anzeigen, auch leer: war der Abschnitt bei 0 Abzeichen
-          ausgeblendet, sah man nie, dass es ihn ueberhaupt gibt — und damit
-          auch nicht, dass Mitmachen vorgesehen ist (User-Hinweis 11.08.). */}
-      <IonList inset={true} style={{ margin: '16px' }}>
-          <IonListHeader>
-            <div className="app-section-icon app-section-icon--challenges">
-              <IonIcon icon={ribbonOutline} />
-            </div>
-            <IonLabel>Deine Abzeichen</IonLabel>
-          </IonListHeader>
-          <IonCard className="app-card">
-            <IonCardContent style={{ padding: marks.length === 0 ? '16px' : '16px 12px' }}>
-              {marks.length === 0 ? (
-                <EmptyState
-                  icon={ribbonOutline}
-                  title="Noch keine Abzeichen"
-                  message="Mach selbst bei einer Challenge mit — tippe sie an und reiche oben über das Plus deinen Beitrag ein."
-                  iconColor="var(--app-color-challenges)"
-                />
-              ) : (
-              <div
-                style={{
-                  display: 'flex', gap: '14px', overflowX: 'auto',
-                  paddingBottom: '4px', WebkitOverflowScrolling: 'touch'
-                }}
-              >
-                {marks.map((mark) => (
-                  <div
-                    key={mark.challenge_id}
-                    style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center',
-                      gap: '6px', minWidth: '74px', maxWidth: '92px', flexShrink: 0
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: '52px', height: '52px', borderRadius: '50%',
-                        background: 'linear-gradient(135deg, var(--app-color-challenges) 0%, #be123c 100%)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        boxShadow: '0 4px 12px rgba(var(--app-color-challenges-rgb), 0.35)'
-                      }}
-                    >
-                      <IonIcon
-                        icon={getChallengeBadgeIcon(mark.badge_icon)}
-                        style={{ fontSize: '1.5rem', color: 'white' }}
-                      />
-                    </div>
-                    <div
-                      style={{
-                        fontSize: '0.72rem', fontWeight: 600, color: '#3c3c43',
-                        textAlign: 'center', lineHeight: 1.2
-                      }}
-                    >
-                      {mark.badge_name}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              )}
-            </IonCardContent>
-          </IonCard>
-      </IonList>
-
       <div style={{ margin: '16px 16px 8px 16px' }}>
         <IonSegment
           value={statusFilter}
@@ -465,6 +399,72 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
           );
         })}
       </ListSection>
+
+      {/* Eigene Abzeichen — dieselbe Reihe wie in der Konfi-Sicht. Seit der
+          Zusammenlegung von "Verwalten" und "Mitmachen" (11.08.) ist das Team
+          hier nicht mehr nur Verwaltung, sondern nimmt selbst teil.
+          IMMER anzeigen, auch leer: war der Abschnitt bei 0 Abzeichen
+          ausgeblendet, sah man nie, dass es ihn ueberhaupt gibt — und damit
+          auch nicht, dass Mitmachen vorgesehen ist (User-Hinweis 11.08.). */}
+      <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--challenges">
+              <IonIcon icon={ribbonOutline} />
+            </div>
+            <IonLabel>Deine Abzeichen</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: marks.length === 0 ? '16px' : '16px 12px' }}>
+              {marks.length === 0 ? (
+                <EmptyState
+                  icon={ribbonOutline}
+                  title="Noch keine Abzeichen"
+                  message="Mach selbst bei einer Challenge mit — tippe sie an und reiche oben über das Plus deinen Beitrag ein."
+                  iconColor="var(--app-color-challenges)"
+                />
+              ) : (
+              <div
+                style={{
+                  display: 'flex', gap: '14px', overflowX: 'auto',
+                  paddingBottom: '4px', WebkitOverflowScrolling: 'touch'
+                }}
+              >
+                {marks.map((mark) => (
+                  <div
+                    key={mark.challenge_id}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center',
+                      gap: '6px', minWidth: '74px', maxWidth: '92px', flexShrink: 0
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '52px', height: '52px', borderRadius: '50%',
+                        background: 'linear-gradient(135deg, var(--app-color-challenges) 0%, #be123c 100%)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: '0 4px 12px rgba(var(--app-color-challenges-rgb), 0.35)'
+                      }}
+                    >
+                      <IonIcon
+                        icon={getChallengeBadgeIcon(mark.badge_icon)}
+                        style={{ fontSize: '1.5rem', color: 'white' }}
+                      />
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '0.72rem', fontWeight: 600, color: '#3c3c43',
+                        textAlign: 'center', lineHeight: 1.2
+                      }}
+                    >
+                      {mark.badge_name}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              )}
+            </IonCardContent>
+          </IonCard>
+      </IonList>
     </>
   );
 };

@@ -77,6 +77,10 @@ Versionsüberschrift.
   Rauswurf aus der App — Ursache waren Aktivitäten ohne Punkte-Art
   ("Konfi-Wochenende", "Konfi-Freizeit begleitet").
 - Wischaktionen in Listen klappen nach dem Antippen wieder zu.
+- Nach dem Öffnen einer Veranstaltung, eines Profils oder eines Chats zeigten
+  andere Tabs teils die falsche Seite an.
+- Challenges: Ein freigegebener Beitrag, den nur die Leitung sieht, trug
+  fälschlich einen grünen Haken.
 - Challenges: Die eigenen Abzeichen werden bei Leitung und Teamer:innen auch
   dann angezeigt, wenn noch keins vergeben ist.
 - Challenges: "Anonym stellen" und "Ausblenden" hatten dasselbe Symbol.

@@ -179,6 +179,32 @@ const CONSENT_BADGE: Record<string, { label: string; icon: string; color: string
   anonymous: { label: 'Anonym sichtbar', icon: eyeOffOutline, color: '#7c3aed' }
 };
 
+/**
+ * Status-Badge unter Beruecksichtigung der Sichtbarkeit.
+ *
+ * "Freigegeben" mit gruenem Haken hiess bisher nur: die Leitung hat den Beitrag
+ * durchgewinkt. Ob ihn danach ueberhaupt jemand ausser der Leitung sieht, stand
+ * allein im zweiten Badge — ein freigegebener Beitrag mit consent='private' trug
+ * also einen gruenen Haken, obwohl er nirgends erscheint (User-Hinweis 11.08.).
+ * Jetzt schlaegt die Sichtbarkeit den Haken: bleibt der Beitrag bei der Leitung,
+ * zeigt das Badge das Schloss.
+ */
+const getStatusBadge = (
+  submission: ChallengeSubmission,
+  challenge: AdminChallenge
+): { label: string; icon: string; color: string } => {
+  const basis = STATUS_BADGE[submission.moderation_status] || STATUS_BADGE.pending;
+  if (submission.moderation_status !== 'approved') return basis;
+  // Freigegeben, aber nicht oeffentlich: Challenge ist 'private' ODER der Konfi
+  // hat sich beim Einreichen gegen die Galerie entschieden.
+  const bleibtBeiDerLeitung =
+    challenge.visibility === 'private' || submission.konfi_consent === 'private';
+  if (bleibtBeiDerLeitung) {
+    return { label: 'Freigegeben, nur Leitung', icon: lockClosedOutline, color: '#6b7280' };
+  }
+  return basis;
+};
+
 // Untertitel im Kopf: sagt in EINER Zeile, wer die Beiträge sieht und ob sie
 // eine Freigabe brauchen.
 const buildVisibilitySubtitle = (challenge: AdminChallenge): string => {
@@ -615,7 +641,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {ownSubmissions.map((submission) => {
-                      const status = STATUS_BADGE[submission.moderation_status] || STATUS_BADGE.pending;
+                      const status = getStatusBadge(submission, challenge);
                       return (
                         <div
                           key={submission.id}
@@ -731,7 +757,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {filtered.map((submission) => {
-                      const status = STATUS_BADGE[submission.moderation_status] || STATUS_BADGE.pending;
+                      const status = getStatusBadge(submission, challenge);
                       const consent = submission.konfi_consent ? CONSENT_BADGE[submission.konfi_consent] : null;
                       const isBusy = busyId === submission.id;
 

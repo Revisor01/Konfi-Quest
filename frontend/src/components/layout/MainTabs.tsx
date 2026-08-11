@@ -219,14 +219,14 @@ const MainTabs: React.FC = () => {
         <IonRouterOutlet>
           <Route exact path="/admin" render={() => <Redirect to="/admin/konfis" />} />
           <Route exact path="/admin/konfis" component={AdminKonfisPage} />
-          <Route path="/admin/konfis/:id" component={KonfiDetailRoute} />
+          <Route exact path="/admin/konfis/:id" component={KonfiDetailRoute} />
 
           {/* CHAT ROUTEN - Nach Konfis-Pattern */}
           <Route exact path="/admin/chat" component={ChatOverviewPage} />
-          <Route path="/admin/chat/room/:roomId" component={AdminChatRoomRoute} />
+          <Route exact path="/admin/chat/room/:roomId" component={AdminChatRoomRoute} />
 
           <Route exact path="/admin/activities" component={AdminActivitiesPage} />
-          <Route path="/admin/events/:id" component={AdminEventDetailRoute} />
+          <Route exact path="/admin/events/:id" component={AdminEventDetailRoute} />
           <Route exact path="/admin/events" component={AdminEventsPage} />
           <Route exact path="/admin/settings/categories" component={AdminCategoriesPage} />
           <Route exact path="/admin/settings/jahrgaenge" component={AdminJahrgaengeePage} />
@@ -303,7 +303,7 @@ const MainTabs: React.FC = () => {
           <Route exact path="/teamer" render={() => <Redirect to="/teamer/dashboard" />} />
           <Route exact path="/teamer/dashboard" component={TeamerDashboardPage} />
           <Route exact path="/teamer/chat" component={ChatOverviewPage} />
-          <Route path="/teamer/chat/room/:roomId" component={TeamerChatRoomRoute} />
+          <Route exact path="/teamer/chat/room/:roomId" component={TeamerChatRoomRoute} />
           <Route exact path="/teamer/events" component={TeamerEventsPage} />
           <Route exact path="/teamer/material" component={TeamerMaterialPage} />
           <Route exact path="/teamer/badges" component={TeamerBadgesPage} />
@@ -369,7 +369,7 @@ const MainTabs: React.FC = () => {
 
           {/* CHAT ROUTEN - Nach Konfis-Pattern */}
           <Route exact path="/konfi/chat" component={ChatOverviewPage} />
-          <Route path="/konfi/chat/room/:roomId" component={KonfiChatRoomRoute} />
+          <Route exact path="/konfi/chat/room/:roomId" component={KonfiChatRoomRoute} />
 
           {/* Anträge sind jetzt ein Segment im Events-Tab. Die alte Route bleibt
               wegen bestehender Deep-Links aus Push-Nachrichten erhalten. */}
