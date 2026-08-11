@@ -571,15 +571,11 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
           />
         )}
 
-        {/* Badges — je Rolle aus dem eigenen System (gleiche Wertung wie in
-            der jeweiligen eigenen Ansicht). */}
+        {/* Badges der Konfis — bei Teamer:innen steht der Abschnitt weiter
+            unten, nach Events und Aktivitaeten (User-Hinweis 11.08.). */}
         {!isTeamer && currentKonfi?.role_name === 'konfi' && (
           <KonfiBadgesSection konfiId={konfiId} />
         )}
-        {isTeamer && (
-          <KonfiBadgesSection konfiId={konfiId} role="teamer" />
-        )}
-
 
         {/* Teamer Events — auch leer anzeigen: sonst ist "war bei keinem
             Termin" nicht von "nicht geladen" zu unterscheiden. */}
@@ -603,6 +599,12 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
           presentActivityModal={presentActivityModalHook}
           presentingElement={presentingElement}
         />
+
+        {/* Badges der Teamer:innen — nach Events und Aktivitaeten, so wie
+            die Konfi-Badges auch unter ihren Listen stehen. */}
+        {isTeamer && (
+          <KonfiBadgesSection konfiId={konfiId} role="teamer" />
+        )}
 
         {/* Zertifikate - nur für Teamer */}
         {isTeamer && (

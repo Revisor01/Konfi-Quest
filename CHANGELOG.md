@@ -77,6 +77,10 @@ Versionsüberschrift.
 - Teamer-Bereich: Kopfbereiche, Listen und Farben folgen jetzt überall
   demselben Muster — im Profil standen bisher drei verschiedene Listenformen
   untereinander.
+- Auswahllisten beim Anlegen von Abzeichen zeigen die Auswahl jetzt wie überall
+  sonst durch farbige Hinterlegung statt durch Ankreuzkästchen.
+- Teamer-Profil: Die Abzeichen stehen jetzt unter den Terminen und
+  Aktivitäten statt ganz oben.
 - Die anonyme Nutzungsstatistik zählte keine Besuche. Die Zahlen im
   Auswertungswerkzeug blieben dadurch leer.
 - Veranstaltungen: Bei Zeitfenster-Terminen konnte eine Anmeldung ohne Auswahl

@@ -24,7 +24,6 @@ import {
   IonCol,
   IonIcon,
   IonText,
-  IonCheckbox,
   IonSpinner,
   IonList,
   IonListHeader,
@@ -380,6 +379,18 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   const activitySubtitle = (activity: Activity): string | null =>
     isTeamerBadge ? null : activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde';
 
+  // Auswahl wird wie ueberall sonst ueber die Bereichsklasse dargestellt
+  // (eingefaerbter Hintergrund), NICHT ueber ein Haekchen — siehe die
+  // Kategorie- und Jahrgangs-Auswahl im Event-Formular (User-Hinweis 11.08.).
+  const activityItemClass = (activity: Activity, isSelected: boolean): string => {
+    const bereich = isTeamerBadge
+      ? 'app-list-item--teamer'
+      : activity.type === 'gottesdienst'
+        ? 'app-list-item--gottesdienst'
+        : 'app-list-item--gemeinde';
+    return `app-list-item ${bereich}${isSelected ? ' app-list-item--selected' : ''}`;
+  };
+
   const renderCriteriaSpecificFields = () => {
     switch (formData.criteria_type) {
       case 'specific_activity':
@@ -408,16 +419,14 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                       return (
                         <div
                           key={activity.id}
-                          className="app-list-item app-list-item--info"
+                          className={activityItemClass(activity, isSelected)}
                           onClick={() => setExtraCriteria({ ...extraCriteria, activity_id: activity.id })}
                           style={{
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            marginBottom: '0',
-                            borderLeftColor: activityColor(activity),
-                            backgroundColor: isSelected ? 'rgba(0, 122, 255, 0.08)' : undefined
+                            marginBottom: '0'
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
@@ -436,14 +445,6 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                               )}
                             </div>
                           </div>
-                          <IonCheckbox
-                            checked={isSelected}
-                            style={{
-                              '--checkbox-background-checked': activityColor(activity),
-                              '--border-color-checked': activityColor(activity),
-                              '--checkmark-color': 'white'
-                            }}
-                          />
                         </div>
                       );
                     })}
@@ -479,15 +480,14 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                       return (
                         <div
                           key={category.id}
-                          className="app-list-item app-list-item--warning"
+                          className={`app-list-item app-list-item--warning${isSelected ? ' app-list-item--selected' : ''}`}
                           onClick={() => setExtraCriteria({ ...extraCriteria, required_category: category.name })}
                           style={{
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            marginBottom: '0',
-                            backgroundColor: isSelected ? 'rgba(255, 149, 0, 0.08)' : undefined
+                            marginBottom: '0'
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
@@ -496,14 +496,6 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                             </div>
                             <div className="app-list-item__title">{category.name}</div>
                           </div>
-                          <IonCheckbox
-                            checked={isSelected}
-                            style={{
-                              '--checkbox-background-checked': '#ff9500',
-                              '--border-color-checked': '#ff9500',
-                              '--checkmark-color': 'white'
-                            }}
-                          />
                         </div>
                       );
                     })}
@@ -560,7 +552,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                       return (
                         <div
                           key={activity.id}
-                          className="app-list-item app-list-item--info"
+                          className={activityItemClass(activity, isSelected)}
                           onClick={() => {
                             const currentIds = extraCriteria.activity_ids || [];
                             const newIds = isSelected
@@ -573,9 +565,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            marginBottom: '0',
-                            borderLeftColor: activityColor(activity),
-                            backgroundColor: isSelected ? 'rgba(0, 122, 255, 0.08)' : undefined
+                            marginBottom: '0'
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
@@ -594,14 +584,6 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                               )}
                             </div>
                           </div>
-                          <IonCheckbox
-                            checked={isSelected}
-                            style={{
-                              '--checkbox-background-checked': activityColor(activity),
-                              '--border-color-checked': activityColor(activity),
-                              '--checkmark-color': 'white'
-                            }}
-                          />
                         </div>
                       );
                     })}
