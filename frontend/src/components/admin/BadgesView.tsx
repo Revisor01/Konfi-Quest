@@ -153,11 +153,16 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       result = result.filter(badge => !badge.is_active);
     }
     
-    // Sort by criteria_type first, then by name
+    // Sort by criteria_type first, then by name.
+    // NULL-SICHER: custom_badges.criteria_type und .name duerfen laut Schema
+    // NULL sein. Aktuell gibt es keinen solchen Datensatz, aber genau dieses
+    // Muster hat bei den Aktivitaeten zum Rauswurf gefuehrt (11.08.):
+    // null.localeCompare() wirft, der Render bricht ab, die ErrorBoundary
+    // leert Auth + Cache.
     result = result.sort((a, b) => {
-      const typeCompare = a.criteria_type.localeCompare(b.criteria_type);
+      const typeCompare = (a.criteria_type || '').localeCompare(b.criteria_type || '');
       if (typeCompare !== 0) return typeCompare;
-      return a.name.localeCompare(b.name);
+      return (a.name || '').localeCompare(b.name || '');
     });
     
     return result;

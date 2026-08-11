@@ -77,7 +77,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
     }
     
     // Sort by name
-    result = result.sort((a, b) => a.name.localeCompare(b.name));
+    result = result.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     
     return result;
   })();

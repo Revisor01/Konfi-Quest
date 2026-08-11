@@ -174,7 +174,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
     if (sortBy === 'points') {
       result = [...result].sort((a, b) => getTotalPoints(b) - getTotalPoints(a));
     } else {
-      result = [...result].sort((a, b) => a.name.localeCompare(b.name));
+      result = [...result].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     }
 
     return result;
