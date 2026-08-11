@@ -78,7 +78,9 @@ Versionsüberschrift.
   demselben Muster — im Profil standen bisher drei verschiedene Listenformen
   untereinander.
 - Auswahllisten beim Anlegen von Abzeichen zeigen die Auswahl jetzt wie überall
-  sonst durch farbige Hinterlegung statt durch Ankreuzkästchen.
+  sonst durch farbige Hinterlegung statt durch Ankreuzkästchen. Kategorien,
+  Zielgruppen und Bedingungen tragen dabei ihre eigene Farbe statt durchgehend
+  Orange, und die Einträge sind gleich aufgebaut wie in den übrigen Listen.
 - Teamer-Profil: Die Abzeichen stehen jetzt unter den Terminen und
   Aktivitäten statt ganz oben.
 - Die anonyme Nutzungsstatistik zählte keine Besuche. Die Zahlen im

@@ -19,9 +19,6 @@ import {
   IonCardContent,
   IonCardHeader,
   IonCardTitle,
-  IonGrid,
-  IonRow,
-  IonCol,
   IonIcon,
   IonText,
   IonSpinner,
@@ -36,11 +33,9 @@ import {
   closeOutline,
   ribbon,
   settings,
-  trophy,
   home,
   people,
-  flag,
-  pin,
+  pricetag,
   peopleOutline,
   chevronDownOutline
 } from 'ionicons/icons';
@@ -50,6 +45,7 @@ import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
 import { ICON_CHOICES as BADGE_ICONS, getIconFromString } from '../../../utils/badgeIcons';
+import { getCriteriaColor as getCategoryColor, getCriteriaIcon, CRITERIA_FALLBACK_COLOR } from '../../../utils/badgeCriteria';
 
 
 
@@ -88,27 +84,6 @@ interface BadgeManagementModalProps {
   // praesentierende Seite ueber canDismiss auch Swipe/Backdrop-Schliessen abfangen kann.
   onDirtyChange?: (dirty: boolean) => void;
 }
-
-// Standardfarben pro Badge-Kategorie (criteria_type)
-const CATEGORY_COLORS: Record<string, string> = {
-  total_points: '#ffd700',
-  gottesdienst_points: '#ff9500',
-  gemeinde_points: '#059669',
-  bonus_points: '#ff6b9d',
-  both_categories: '#5856d6',
-  activity_count: '#3880ff',
-  unique_activities: '#10dc60',
-  activity_combination: '#7044ff',
-  category_activities: '#0cd1e8',
-  specific_activity: '#ffce00',
-  streak: '#eb445a',
-  time_based: '#8e8e93',
-  event_count: '#e63946',
-  mandatory_event_count: '#b91c1c',
-  teamer_year: '#5b21b6'
-};
-
-const getCategoryColor = (criteriaType: string) => CATEGORY_COLORS[criteriaType] || '#667eea';
 
 const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   badgeId,
@@ -168,24 +143,6 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   const [extraCriteria, setExtraCriteria] = useState<any>({});
 
   const isEditMode = !!badgeId;
-
-  const criteriaTypeLabels: Record<string, string> = {
-    'total_points': 'Gesamtpunkte',
-    'gottesdienst_points': 'Gottesdienst-Punkte',
-    'gemeinde_points': 'Gemeinde-Punkte',
-    'specific_activity': 'Spezielle Aktivität',
-    'both_categories': 'Beide Kategorien',
-    'activity_combination': 'Aktivitätskombination',
-    'category_activities': 'Kategorie-Aktivitäten',
-    'time_based': 'Zeitbasiert',
-    'activity_count': 'Aktivitätsanzahl',
-    'event_count': 'Event-Teilnahmen',
-    'mandatory_event_count': 'Pflicht-Anwesenheit',
-    'bonus_points': 'Bonuspunkte',
-    'streak': 'Serie',
-    'unique_activities': 'Einzigartige Aktivitäten',
-    'teamer_year': 'Teamer-Jahre'
-  };
 
   useEffect(() => {
     const init = async () => {
@@ -265,7 +222,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           criteria_extra: badge.criteria_extra || '{}',
           is_active: badge.is_active !== undefined ? badge.is_active : true,
           is_hidden: badge.is_hidden !== undefined ? badge.is_hidden : false,
-          color: badge.color || '#667eea',
+          color: badge.color || 'var(--app-color-users)',
           target_role: badge.target_role || targetRole
         };
 
@@ -371,9 +328,14 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   // `type` bedeutungslos und wuerde als Untertitel nur in die Irre fuehren
   // (User-Hinweis 11.08.). Deshalb dort neutral in der Teamer-Farbe.
   const isTeamerBadge = targetRole === 'teamer';
+  // Dieselben Farben wie der linke Balken der Zeile (app-list-item--gottesdienst
+  // / --gemeinde). Vorher standen hier #007aff (das ist die JAHRGANGS-Farbe) und
+  // #2dd36f — dadurch hatten Balken und Icon-Kreis zwei verschiedene Toene.
   const activityColor = (activity: Activity) =>
     isTeamerBadge ? 'var(--app-color-teamer)'
-      : activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f';
+      : activity.type === 'gottesdienst'
+        ? 'var(--app-color-gottesdienst)'
+        : 'var(--app-color-gemeinde)';
   const activityIcon = (activity: Activity) =>
     isTeamerBadge ? people : activity.type === 'gottesdienst' ? home : people;
   const activitySubtitle = (activity: Activity): string | null =>
@@ -420,29 +382,26 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                         <div
                           key={activity.id}
                           className={activityItemClass(activity, isSelected)}
-                          onClick={() => setExtraCriteria({ ...extraCriteria, activity_id: activity.id })}
+                          onClick={() => !loading && setExtraCriteria({ ...extraCriteria, activity_id: activity.id })}
                           style={{
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
+                            cursor: loading ? 'default' : 'pointer',
+                            opacity: loading ? 0.6 : 1,
                             marginBottom: '0'
                           }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                            <div
-                              className="app-icon-circle"
-                              style={{ backgroundColor: activityColor(activity) }}
-                            >
-                              <IonIcon icon={activityIcon(activity)} />
-                            </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div className="app-list-item__title">{activity.name}</div>
-                              {activitySubtitle(activity) && (
-                                <div className="app-list-item__subtitle">
-                                  {activitySubtitle(activity)}
-                                </div>
-                              )}
+                          <div className="app-list-item__row">
+                            <div className="app-list-item__main">
+                              <div className="app-icon-circle" style={{ backgroundColor: activityColor(activity) }}>
+                                <IonIcon icon={activityIcon(activity)} />
+                              </div>
+                              <div className="app-list-item__content">
+                                <div className="app-list-item__title">{activity.name}</div>
+                                {activitySubtitle(activity) && (
+                                  <div className="app-list-item__subtitle">
+                                    {activitySubtitle(activity)}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -480,21 +439,23 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                       return (
                         <div
                           key={category.id}
-                          className={`app-list-item app-list-item--warning${isSelected ? ' app-list-item--selected' : ''}`}
-                          onClick={() => setExtraCriteria({ ...extraCriteria, required_category: category.name })}
+                          className={`app-list-item app-list-item--categories${isSelected ? ' app-list-item--selected' : ''}`}
+                          onClick={() => !loading && setExtraCriteria({ ...extraCriteria, required_category: category.name })}
                           style={{
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
+                            cursor: loading ? 'default' : 'pointer',
+                            opacity: loading ? 0.6 : 1,
                             marginBottom: '0'
                           }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                            <div className="app-icon-circle app-icon-circle--warning">
-                              <IonIcon icon={flag} />
+                          <div className="app-list-item__row">
+                            <div className="app-list-item__main">
+                              <div className="app-icon-circle app-icon-circle--categories">
+                                <IonIcon icon={pricetag} />
+                              </div>
+                              <div className="app-list-item__content">
+                                <div className="app-list-item__title">{category.name}</div>
+                              </div>
                             </div>
-                            <div className="app-list-item__title">{category.name}</div>
                           </div>
                         </div>
                       );
@@ -511,7 +472,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           <IonItem lines="none" style={{ '--background': 'transparent', marginTop: '16px' }}>
             <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Zeitraum (Wochen)</IonLabel>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-              <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>1</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>1</span>
               <IonRange
                 min={1} max={26} step={1}
                 pin={true} pinFormatter={(value: number) => `${value}`}
@@ -561,27 +522,24 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                             setExtraCriteria({ ...extraCriteria, activity_ids: newIds });
                           }}
                           style={{
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
+                            cursor: loading ? 'default' : 'pointer',
+                            opacity: loading ? 0.6 : 1,
                             marginBottom: '0'
                           }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                            <div
-                              className="app-icon-circle"
-                              style={{ backgroundColor: activityColor(activity) }}
-                            >
-                              <IonIcon icon={activityIcon(activity)} />
-                            </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div className="app-list-item__title">{activity.name}</div>
-                              {activitySubtitle(activity) && (
-                                <div className="app-list-item__subtitle">
-                                  {activitySubtitle(activity)}
-                                </div>
-                              )}
+                          <div className="app-list-item__row">
+                            <div className="app-list-item__main">
+                              <div className="app-icon-circle" style={{ backgroundColor: activityColor(activity) }}>
+                                <IonIcon icon={activityIcon(activity)} />
+                              </div>
+                              <div className="app-list-item__content">
+                                <div className="app-list-item__title">{activity.name}</div>
+                                {activitySubtitle(activity) && (
+                                  <div className="app-list-item__subtitle">
+                                    {activitySubtitle(activity)}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -675,35 +633,45 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           <IonCard className="app-card">
             <IonCardContent>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {/* Jede Zielgruppe in IHRER Farbe (Konfi-Lila, Teamer-Pink)
+                    statt beide in Orange — wie ueberall sonst in der App. */}
                 <div
-                  className="app-list-item"
+                  className={`app-list-item app-list-item--purple${formData.target_role === 'konfi' ? ' app-list-item--selected' : ''}`}
                   onClick={() => !loading && setFormData({ ...formData, target_role: 'konfi', criteria_type: 'total_points', criteria_value: 10, color: getCategoryColor('total_points') })}
                   style={{
                     cursor: loading ? 'default' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: '0',
-                    borderLeftColor: '#f59e0b',
-                    background: formData.target_role === 'konfi' ? 'rgba(245, 158, 11, 0.1)' : undefined
+                    marginBottom: '0'
                   }}
                 >
-                  <span style={{ fontWeight: '500', color: '#333' }}>Konfis</span>
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                      <div className="app-icon-circle app-icon-circle--purple">
+                        <IonIcon icon={people} />
+                      </div>
+                      <div className="app-list-item__content">
+                        <div className="app-list-item__title">Konfis</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <div
-                  className="app-list-item"
+                  className={`app-list-item app-list-item--teamer${formData.target_role === 'teamer' ? ' app-list-item--selected' : ''}`}
                   onClick={() => !loading && setFormData({ ...formData, target_role: 'teamer', criteria_type: 'activity_count', criteria_value: 5, color: getCategoryColor('activity_count') })}
                   style={{
                     cursor: loading ? 'default' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: '0',
-                    borderLeftColor: '#f59e0b',
-                    background: formData.target_role === 'teamer' ? 'rgba(245, 158, 11, 0.1)' : undefined
+                    marginBottom: '0'
                   }}
                 >
-                  <span style={{ fontWeight: '500', color: '#333' }}>Teamer:innen</span>
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                      <div className="app-icon-circle app-icon-circle--teamer">
+                        <IonIcon icon={ribbon} />
+                      </div>
+                      <div className="app-list-item__content">
+                        <div className="app-list-item__title">Teamer:innen</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </IonCardContent>
@@ -789,7 +757,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                                   alignItems: 'center',
                                   justifyContent: 'center',
                                   cursor: 'pointer',
-                                  border: '1px solid #e0e0e0',
+                                  border: '1px solid rgba(0,0,0,0.06)',
                                   boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                                   transition: 'all 0.2s'
                                 }}
@@ -823,7 +791,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                       style={{
                         flex: 1,
                         height: '60px',
-                        border: '2px solid #e0e0e0',
+                        border: '2px solid rgba(0,0,0,0.12)',
                         borderRadius: '12px',
                         cursor: 'pointer'
                       }}
@@ -906,13 +874,14 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                       })
                       .map(([value, type]: [string, any]) => {
                       const isSelected = formData.criteria_type === value;
+                      const typColor = getCategoryColor(value);
                       // Remove emojis from label
                       const labelWithoutEmoji = type.label.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim();
 
                       return (
                         <div
                           key={value}
-                          className="app-list-item app-list-item--warning"
+                          className="app-list-item"
                           onClick={() => {
                             if (!loading) {
                               let defaultValue = 10;
@@ -926,7 +895,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                                 defaultValue = 4;
                               }
                               const currentCategoryColor = getCategoryColor(formData.criteria_type);
-                              const newColor = (formData.color === currentCategoryColor || formData.color === '#667eea')
+                              const newColor = (formData.color === currentCategoryColor || formData.color === CRITERIA_FALLBACK_COLOR)
                                 ? getCategoryColor(value)
                                 : formData.color;
                               setFormData({ ...formData, criteria_type: value, criteria_value: defaultValue, color: newColor });
@@ -937,13 +906,24 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                             cursor: loading ? 'default' : 'pointer',
                             opacity: loading ? 0.6 : 1,
                             marginBottom: '0',
-                            background: isSelected ? 'rgba(245, 158, 11, 0.1)' : undefined
+                            // Jeder Kriterientyp hat seine eigene Farbe (dieselbe,
+                            // die das fertige Badge traegt) — vorher war die
+                            // ganze Liste pauschal orange.
+                            borderLeftColor: typColor,
+                            background: isSelected ? `${typColor}14` : undefined
                           }}
                         >
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div className="app-list-item__title">{labelWithoutEmoji}</div>
-                            <div className="app-list-item__subtitle" style={{ whiteSpace: 'normal' }}>
-                              {type.help}
+                          <div className="app-list-item__row">
+                            <div className="app-list-item__main">
+                              <div className="app-icon-circle" style={{ backgroundColor: typColor }}>
+                                <IonIcon icon={getCriteriaIcon(value)} />
+                              </div>
+                              <div className="app-list-item__content">
+                                <div className="app-list-item__title">{labelWithoutEmoji}</div>
+                                <div className="app-list-item__subtitle" style={{ whiteSpace: 'normal' }}>
+                                  {type.help}
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -958,7 +938,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
               <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px', marginTop: '16px' }}>
                 <IonLabel position="stacked" style={{ marginBottom: '8px' }}>{getValueLabel()}</IonLabel>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-                  <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>1</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>1</span>
                   <IonRange
                     min={1} max={20} step={1}
                     pin={true} pinFormatter={(value: number) => `${value}`}

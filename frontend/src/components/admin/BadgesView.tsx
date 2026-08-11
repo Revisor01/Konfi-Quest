@@ -24,21 +24,8 @@ import {
   close,
   eye,
   eyeOff,
-  flame,
-  flash,
-  shield,
-  sparkles,
-  home,
-  people,
-  checkmarkCircle,
-  calendar,
-  time,
   filterOutline,
-  search,
-  statsChart,
-  grid,
-  listOutline,
-  pricetag
+  search
 } from 'ionicons/icons';
 import api from '../../services/api';
 import { filterBySearchTerm } from '../../utils/helpers';
@@ -47,6 +34,7 @@ import { SectionHeader, ListSection } from '../shared';
 import { star } from 'ionicons/icons';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
 import { getIconFromString } from '../../utils/badgeIcons';
+import { getCriteriaIcon as getCriteriaTypeIcon } from '../../utils/badgeCriteria';
 
 
 
@@ -167,27 +155,6 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       case 'unique_activities': return 'Einzigartige Aktivitäten';
       case 'teamer_year': return 'Teamer-Jahre';
       default: return type;
-    }
-  };
-
-  const getCriteriaTypeIcon = (type: string) => {
-    switch (type) {
-      case 'total_points': return statsChart;
-      case 'gottesdienst_points': return home;
-      case 'gemeinde_points': return people;
-      case 'specific_activity': return flash;
-      case 'both_categories': return grid;
-      case 'activity_combination': return listOutline;
-      case 'category_activities': return pricetag;
-      case 'time_based': return time;
-      case 'activity_count': return checkmarkCircle;
-      case 'event_count': return calendar;
-      case 'mandatory_event_count': return shield;
-      case 'bonus_points': return star;
-      case 'streak': return flame;
-      case 'unique_activities': return sparkles;
-      case 'teamer_year': return calendar;
-      default: return flash;
     }
   };
 
