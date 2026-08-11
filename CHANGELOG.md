@@ -49,6 +49,9 @@ Versionsüberschrift.
   zusammengefasst. Eine Liste zeigt alle Challenges samt eigener Abzeichen, und
   in der geöffneten Challenge stehen der eigene Beitrag und die Beiträge der
   Gruppe beieinander. Ein Plus oben schreibt den eigenen Beitrag.
+- Challenges sind für alle gleich aufgebaut: aktuelle Challenges, eigene
+  Abzeichen, Archiv. Leitung und Teamer:innen sehen im ersten Abschnitt
+  zusätzlich geplante Challenges und Entwürfe.
 - Verwaltungslisten folgen jetzt durchgängig einer Regel: Tippen öffnet zum
   Bearbeiten, Wischen löscht.
 - Konfi-Ansichten sprechen verständlicher: aus "Antragsdetails" wird "Deine

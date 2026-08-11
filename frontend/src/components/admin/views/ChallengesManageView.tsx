@@ -1,12 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import {
   IonIcon,
   IonItem,
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
-  IonSegment,
-  IonSegmentButton,
   IonLabel,
   IonList,
   IonListHeader,
@@ -115,10 +113,6 @@ const formatDate = (value?: string | null) => {
   return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
-// 'upcoming' fasst 'scheduled' und 'draft' zusammen (User-Entscheid 10.08.:
-// fuenf Segmente waren zu viel) — beides ist "noch nicht gelaufen".
-type FilterValue = 'all' | 'active' | 'upcoming' | 'ended';
-
 const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
   challenges: challengesRaw,
   onSelectChallenge,
@@ -136,8 +130,6 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
     onClose: () => dismissLegend(),
   });
 
-  const [statusFilter, setStatusFilter] = useState<FilterValue>('all');
-
   // Offene Freigaben erscheinen NICHT mehr als vierte Kachel — die Anzeige
   // laeuft ueber das Tab-Badge (BadgeContext, wie Chat) und den orangen
   // Corner-Badge am jeweiligen Listeneintrag.
@@ -149,76 +141,34 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
     return byStatus;
   }, [challenges]);
 
-  const filtered = useMemo(() => {
-    let result = [...challenges];
-    if (statusFilter === 'upcoming') {
-      result = result.filter((c) => {
-        const s = getChallengeStatus(c);
-        return s === 'scheduled' || s === 'draft';
-      });
-    } else if (statusFilter !== 'all') {
-      result = result.filter((c) => getChallengeStatus(c) === statusFilter);
-    }
-    // Sortierung: aktive zuerst, dann geplante, Entwuerfe, zuletzt Archiv.
+  // Aufbau 1:1 wie die Konfi-Sicht (User-Entscheid 11.08.): drei feste
+  // Abschnitte statt Segment-Filter — laufend, Abzeichen, Archiv. Aktiv,
+  // geplant und Entwurf stehen dabei in EINER Liste; welcher Status gilt,
+  // sagt das Badge am Eintrag. Konfis sehen dieselben drei Abschnitte, dort
+  // enthaelt der erste nur Aktive (geplant/Entwurf liefert das Backend nicht).
+  const { current, archived } = useMemo(() => {
+    // Sortierung innerhalb der laufenden Liste: aktive zuerst, dann geplante,
+    // zuletzt Entwuerfe; bei gleichem Status das juengste Startdatum oben.
     const order: Record<ChallengeStatus, number> = { active: 0, scheduled: 1, draft: 2, ended: 3 };
-    return result.sort((a, b) => {
+    const byStatusThenStart = (a: AdminChallenge, b: AdminChallenge) => {
       const diff = order[getChallengeStatus(a)] - order[getChallengeStatus(b)];
       if (diff !== 0) return diff;
       return new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime();
-    });
-  }, [challenges, statusFilter]);
+    };
+    return {
+      current: challenges
+        .filter((c) => getChallengeStatus(c) !== 'ended')
+        .sort(byStatusThenStart),
+      // Archiv: zuletzt beendete zuerst — wie in der Konfi-Sicht.
+      archived: challenges
+        .filter((c) => getChallengeStatus(c) === 'ended')
+        .sort((a, b) => new Date(b.ends_at).getTime() - new Date(a.ends_at).getTime())
+    };
+  }, [challenges]);
 
-  return (
-    <>
-      <SectionHeader
-        title="Challenges"
-        subtitle="Anlegen, begleiten, mitmachen"
-        icon={flag}
-        preset="challenges"
-        stats={[
-          { value: counts.active, label: 'Aktiv' },
-          { value: counts.scheduled, label: 'Geplant' },
-          { value: counts.draft, label: 'Entwürfe' }
-        ]}
-        onInfo={() => presentLegend({ presentingElement: presentingElement || undefined })}
-      />
-
-      {headerSlot}
-
-      <div style={{ margin: '16px 16px 8px 16px' }}>
-        <IonSegment
-          value={statusFilter}
-          onIonChange={(e) => setStatusFilter(e.detail.value as FilterValue)}
-        >
-          <IonSegmentButton value="all">
-            <IonLabel>Alle</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="active">
-            <IonLabel>Aktiv</IonLabel>
-          </IonSegmentButton>
-          {/* Geplant und Entwurf zusammen: beides ist "noch nicht gelaufen",
-              die Unterscheidung zeigt das Status-Badge am Eintrag. */}
-          <IonSegmentButton value="upcoming">
-            <IonLabel>Geplant</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="ended">
-            <IonLabel>Archiv</IonLabel>
-          </IonSegmentButton>
-        </IonSegment>
-      </div>
-
-      <ListSection
-        icon={flag}
-        title="Challenges"
-        count={filtered.length}
-        iconColorClass="challenges"
-        isEmpty={filtered.length === 0}
-        emptyIcon={flag}
-        emptyTitle="Keine Challenges vorhanden"
-        emptyMessage="Lege eine Challenge an, damit deine Konfis eigene Beiträge einreichen können"
-        emptyIconColor="#be185d"
-      >
-        {filtered.map((challenge, index) => {
+  // Ein Listeneintrag — identisch in "Aktuelle Challenges" und "Archiv",
+  // deshalb einmal hier statt zweimal im JSX.
+  const renderChallenge = (challenge: AdminChallenge, index: number, total: number) => {
           const status = getChallengeStatus(challenge);
           const statusColor = STATUS_COLOR[status];
           const isArchived = status === 'ended';
@@ -227,7 +177,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
           return (
             <IonItemSliding
               key={challenge.id}
-              style={{ marginBottom: index < filtered.length - 1 ? '8px' : '0' }}
+              style={{ marginBottom: index < total - 1 ? '8px' : '0' }}
             >
               <IonItem
                 button
@@ -397,10 +347,42 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
               </IonItemOptions>
             </IonItemSliding>
           );
-        })}
+  };
+
+  return (
+    <>
+      <SectionHeader
+        title="Challenges"
+        subtitle="Anlegen, begleiten, mitmachen"
+        icon={flag}
+        preset="challenges"
+        stats={[
+          { value: counts.active, label: 'Aktiv' },
+          { value: counts.scheduled, label: 'Geplant' },
+          { value: counts.draft, label: 'Entwürfe' }
+        ]}
+        onInfo={() => presentLegend({ presentingElement: presentingElement || undefined })}
+      />
+
+      {headerSlot}
+
+      {/* --- 1. Aktuelle Challenges: aktiv, geplant und Entwurf in EINER
+              Liste — den Status sagt das Badge am Eintrag. --- */}
+      <ListSection
+        icon={flag}
+        title="Aktuelle Challenges"
+        count={current.length}
+        iconColorClass="challenges"
+        isEmpty={current.length === 0}
+        emptyIcon={flag}
+        emptyTitle="Keine Challenges vorhanden"
+        emptyMessage="Lege eine Challenge an, damit deine Konfis eigene Beiträge einreichen können"
+        emptyIconColor="#be185d"
+      >
+        {current.map((challenge, index) => renderChallenge(challenge, index, current.length))}
       </ListSection>
 
-      {/* Eigene Abzeichen — dieselbe Reihe wie in der Konfi-Sicht. Seit der
+      {/* --- 2. Eigene Abzeichen — dieselbe Reihe wie in der Konfi-Sicht. Seit der
           Zusammenlegung von "Verwalten" und "Mitmachen" (11.08.) ist das Team
           hier nicht mehr nur Verwaltung, sondern nimmt selbst teil.
           IMMER anzeigen, auch leer: war der Abschnitt bei 0 Abzeichen
@@ -465,6 +447,22 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
             </IonCardContent>
           </IonCard>
       </IonList>
+
+      {/* --- 3. Archiv — heisst in der Konfi-Sicht "Vorbei"; hier bleibt es
+              "Archiv", weil die Leitung dort weiter bearbeitet und loescht. --- */}
+      <ListSection
+        icon={archiveOutline}
+        title="Archiv"
+        count={archived.length}
+        iconColorClass="challenges"
+        isEmpty={archived.length === 0}
+        emptyIcon={archiveOutline}
+        emptyTitle="Noch nichts im Archiv"
+        emptyMessage="Beendete Challenges sammeln sich hier — mit allen Beiträgen zum Nachlesen"
+        emptyIconColor="#be185d"
+      >
+        {archived.map((challenge, index) => renderChallenge(challenge, index, archived.length))}
+      </ListSection>
     </>
   );
 };
