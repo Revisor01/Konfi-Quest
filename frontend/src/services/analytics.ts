@@ -50,10 +50,27 @@ export function setAnalyticsRole(roleName?: string | null): void {
  * Ereignis melden. Schlaegt der Versand fehl (offline, Blocker, Server weg),
  * wird das still verworfen — Messung darf die App nie stoeren oder bremsen.
  */
+/**
+ * Gemeinsamer Sendeweg. keepalive: Die Anfrage geht auch dann noch raus,
+ * wenn die App direkt danach in den Hintergrund wechselt.
+ */
+function sende(typ: 'event', nutzlast: Record<string, unknown>): void {
+  try {
+    fetch(UMAMI_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: typ, payload: nutzlast }),
+      keepalive: true
+    }).catch(() => { /* Messung darf nie stoeren */ });
+  } catch {
+    /* Messung darf nie stoeren */
+  }
+}
+
 export function track(ereignis: string, daten?: Record<string, string | number | boolean>): void {
   if (!AKTIV) return;
 
-  const nutzlast = {
+  sende('event', {
     website: WEBSITE_ID,
     name: ereignis,
     data: { ...(daten || {}), ...(aktuelleRolle ? { rolle: aktuelleRolle } : {}) },
@@ -63,20 +80,39 @@ export function track(ereignis: string, daten?: Record<string, string | number |
     url: '/app',
     language: 'de',
     screen: `${window.screen?.width || 0}x${window.screen?.height || 0}`
-  };
+  });
+}
 
-  // keepalive: Das Ereignis geht auch dann noch raus, wenn die App direkt
-  // danach in den Hintergrund wechselt.
-  try {
-    fetch(UMAMI_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'event', payload: nutzlast }),
-      keepalive: true
-    }).catch(() => { /* Messung darf nie stoeren */ });
-  } catch {
-    /* Messung darf nie stoeren */
-  }
+/**
+ * Sitzungsbeginn als Seitenaufruf melden.
+ *
+ * WARUM DAS NOETIG IST: Umami zaehlt Besucher und Sitzungen ausschliesslich
+ * ueber SEITENAUFRUFE. Wir haben anfangs nur benannte Ereignisse gesendet —
+ * die kamen alle an, aber das Dashboard zeigte 0 Besucher und 0 Seitenaufrufe,
+ * weil dort nichts zu zaehlen war (nachgesehen 11.08.: 130 Ereignisse, 0
+ * Seitenaufrufe).
+ *
+ * WIE EIN SEITENAUFRUF GESENDET WIRD: als `type: 'event'` OHNE `name`.
+ * Das ist der Unterschied — mit `name` wird daraus ein benanntes Ereignis
+ * (event_type=2), ohne `name` ein Seitenaufruf (event_type=1). Ein
+ * `type: 'pageview'` lehnt diese Umami-Version mit HTTP 400 ab; erlaubt sind
+ * nur 'event', 'identify' und 'performance' (am Server geprueft 11.08.).
+ *
+ * Ein Aufruf je Sitzung genuegt; die Ereignisse haengen sich ueber die
+ * Session daran. Bewusst dieselbe feste URL wie bei den Ereignissen — echte
+ * Routen koennen Namen oder IDs enthalten.
+ */
+export function trackSitzungsstart(): void {
+  if (!AKTIV) return;
+  sende('event', {
+    website: WEBSITE_ID,
+    // KEIN `name` — genau das macht daraus einen Seitenaufruf.
+    hostname: 'app.konfi-quest.de',
+    url: '/app',
+    language: 'de',
+    screen: `${window.screen?.width || 0}x${window.screen?.height || 0}`,
+    ...(aktuelleRolle ? { data: { rolle: aktuelleRolle } } : {})
+  });
 }
 
 /** Aufruf eines Bereichs (Tab, Hauptansicht). */

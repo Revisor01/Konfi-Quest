@@ -11,80 +11,14 @@ import {
 import {
   trophy,
   trophyOutline,
-  medal,
-  ribbon,
-  star,
   checkmarkCircle,
-  diamond,
-  shield,
-  flame,
-  flash,
-  rocket,
-  sparkles,
-  thumbsUp,
-  heart,
-  people,
-  personAdd,
-  chatbubbles,
-  gift,
-  book,
-  school,
-  construct,
-  brush,
-  colorPalette,
-  sunny,
-  moon,
-  leaf,
-  rose,
-  calendar,
-  calendarOutline,
-  today,
-  time,
-  timer,
-  stopwatch,
-  restaurant,
-  fitness,
-  bicycle,
-  car,
-  airplane,
-  boat,
-  camera,
-  image,
-  musicalNote,
-  balloon,
-  home,
-  business,
-  location,
-  navigate,
-  compass,
-  pin,
-  flag,
-  informationCircle,
-  helpCircle,
-  alertCircle,
-  hammer,
-  lockClosed,
   checkmark
 } from 'ionicons/icons';
 import api from '../../../services/api';
 import { EmptyState } from '../../shared';
+import { getIconFromString } from '../../../utils/badgeIcons';
 
-// Badge Icon Mapping — identisch zur Konfi-BadgesView, damit dieselben Icons erscheinen.
-const BADGE_ICONS: Record<string, string> = {
-  trophy, medal, ribbon, star, checkmarkCircle, diamond, shield,
-  flame, flash, rocket, sparkles, thumbsUp,
-  heart, people, personAdd, chatbubbles, gift,
-  book, school, construct, brush, colorPalette,
-  sunny, moon, leaf, rose,
-  calendar, today, time, timer, stopwatch,
-  restaurant, fitness, bicycle, car, airplane, boat, camera, image, musicalNote, balloon,
-  home, business, location, navigate, compass, pin, flag,
-  informationCircle, helpCircle, alertCircle, hammer
-};
 
-const getIconFromString = (iconName: string): string => {
-  return BADGE_ICONS[iconName] || trophy;
-};
 
 interface Badge {
   id: number;

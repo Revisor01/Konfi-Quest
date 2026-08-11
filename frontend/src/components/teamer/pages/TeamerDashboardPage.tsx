@@ -13,61 +13,13 @@ import {
   useIonRouter
 } from '@ionic/react';
 import {
-  home,
-  ribbon,
   calendar,
-  trophy,
-  medal,
-  star,
-  checkmarkCircle,
-  diamond,
-  shield,
-  flame,
-  flash,
-  rocket,
   sparkles,
-  thumbsUp,
-  heart,
-  people,
-  personAdd,
-  chatbubbles,
-  gift,
-  book,
-  school,
-  construct,
-  brush,
-  colorPalette,
-  sunny,
-  moon,
-  leaf,
-  rose,
-  today,
   time,
-  timer,
-  stopwatch,
-  restaurant,
-  fitness,
-  bicycle,
-  car,
-  airplane,
-  boat,
-  camera,
-  image,
-  musicalNote,
-  balloon,
-  business,
-  navigate,
-  compass,
-  pin,
   flag,
-  informationCircle,
   helpCircle,
-  alertCircle,
-  hammer,
   location,
   chevronForward,
-  medkit,
-  documentOutline,
   bagHandle,
   eyeOff
 } from 'ionicons/icons';
@@ -85,23 +37,9 @@ import { mergeSectionOrder, DEFAULT_TEAMER_SECTION_ORDER } from '../../../utils/
 import TeamerOnboardingModal from '../modals/TeamerOnboardingModal';
 import TeamerUpdateWalkthroughModal from '../modals/TeamerUpdateWalkthroughModal';
 import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
+import { getIconFromString } from '../../../utils/badgeIcons';
 
-// Badge/Certificate Icon Mapping (shared with DashboardView)
-const ICON_MAP: Record<string, string> = {
-  trophy, medal, ribbon, star, checkmarkCircle, diamond, shield,
-  flame, flash, rocket, sparkles, thumbsUp, heart, people, personAdd,
-  chatbubbles, gift, book, school, construct, brush, colorPalette,
-  sunny, moon, leaf, rose, calendar, today, time, timer, stopwatch,
-  restaurant, fitness, bicycle, car, airplane, boat, camera, image,
-  musicalNote, balloon, home, business, location, navigate, compass,
-  pin, flag, informationCircle, helpCircle, alertCircle, hammer,
-  medkit, documentOutline
-};
 
-const getIconFromString = (iconName: string | undefined): string => {
-  if (!iconName) return trophy;
-  return ICON_MAP[iconName] || trophy;
-};
 
 interface TeamerBadgeFull {
   id: number;

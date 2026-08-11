@@ -14,7 +14,7 @@ import { logout as performLogout } from '../services/auth';
 import { clearAuth } from '../services/tokenStore';
 import { BackgroundTask } from '@capawesome/capacitor-background-task';
 import { BaseUser } from '../types/user';
-import { setAnalyticsRole, trackFehler } from '../services/analytics';
+import { setAnalyticsRole, trackFehler, trackSitzungsstart } from '../services/analytics';
 
 // FCM Token wird über Window Events empfangen (siehe AppDelegate.swift)
 
@@ -154,6 +154,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // sie bei Login, Logout und Organisationswechsel automatisch stimmt.
   useEffect(() => {
     setAnalyticsRole(user?.role_name);
+    // Sitzungsbeginn als Seitenaufruf melden — ohne den zaehlt Umami weder
+    // Besucher noch Sitzungen, die Ereignisse allein erscheinen im Dashboard
+    // nicht (11.08.: 130 Ereignisse, aber 0 Besucher). Nur bei vorhandener
+    // Rolle, sonst wuerde der Logout als weiterer Besuch gezaehlt.
+    if (user?.role_name) trackSitzungsstart();
   }, [user?.role_name]);
 
   // Push notifications state

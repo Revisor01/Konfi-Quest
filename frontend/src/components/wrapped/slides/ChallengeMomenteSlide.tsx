@@ -10,7 +10,7 @@ import {
 } from 'ionicons/icons';
 import SlideBase from './SlideBase';
 import api from '../../../services/api';
-import { getIconFromString } from '../../konfi/views/DashboardSections';
+import { getIconFromString } from '../../../utils/badgeIcons';
 import type { SlideProps, KonfiChallengeMoment } from '../../../types/wrapped';
 
 interface ChallengeMomenteSlideProps extends SlideProps {

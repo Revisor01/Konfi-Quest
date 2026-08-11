@@ -24,54 +24,14 @@ import {
   close,
   eye,
   eyeOff,
-  medal,
   flame,
-  heart,
-  thumbsUp,
   flash,
-  diamond,
-  rocket,
   shield,
   sparkles,
-  sunny,
-  moon,
-  leaf,
-  rose,
-  gift,
-  balloon,
-  musicalNote,
-  book,
-  school,
-  restaurant,
-  fitness,
-  bicycle,
-  car,
-  airplane,
-  boat,
   home,
-  business,
-  construct,
-  hammer,
-  brush,
-  colorPalette,
-  camera,
-  image,
-  chatbubbles,
   people,
-  personAdd,
   checkmarkCircle,
-  alertCircle,
-  informationCircle,
-  helpCircle,
-  flag,
-  pin,
-  navigate,
-  location,
-  compass,
-  timer,
-  stopwatch,
   calendar,
-  today,
   time,
   filterOutline,
   search,
@@ -86,24 +46,9 @@ import { SectionHeader, ListSection } from '../shared';
 
 import { star } from 'ionicons/icons';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
+import { getIconFromString } from '../../utils/badgeIcons';
 
-// Badge Icon Mapping (shared with BadgeManagementModal)
-const BADGE_ICONS: Record<string, any> = {
-  trophy, medal, ribbon, star, checkmarkCircle, diamond, shield,
-  flame, flash, rocket, sparkles, thumbsUp,
-  heart, people, personAdd, chatbubbles, gift,
-  book, school, construct, brush, colorPalette,
-  sunny, moon, leaf, rose,
-  calendar, today, time, timer, stopwatch,
-  restaurant, fitness, bicycle, car, airplane, boat, camera, image, musicalNote, balloon,
-  home, business, location, navigate, compass, pin, flag,
-  informationCircle, helpCircle, alertCircle, hammer
-};
 
-// Helper function to get icon from string
-const getIconFromString = (iconName: string) => {
-  return BADGE_ICONS[iconName] || ribbon;
-};
 
 interface Badge {
   id: number;

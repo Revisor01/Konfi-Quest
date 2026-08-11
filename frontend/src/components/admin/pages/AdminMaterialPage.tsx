@@ -200,7 +200,7 @@ const AdminMaterialPage: React.FC = () => {
               title="Material"
               subtitle="Dokumente und Dateien"
               icon={documentIcon}
-              colors={{ primary: '#d97706', secondary: '#b45309' }}
+              colors={{ primary: 'var(--app-color-material)', secondary: '#b45309' }}
               stats={[
                 { value: (materials || []).length, label: 'Material' },
                 { value: (materials || []).reduce((sum, m) => sum + (m.file_count || 0), 0), label: 'Dateien' }
@@ -260,7 +260,7 @@ const AdminMaterialPage: React.FC = () => {
                       icon={documentOutline}
                       title="Keine Materialien"
                       message="Erstelle dein erstes Material mit dem + Button"
-                      iconColor="#d97706"
+                      iconColor="var(--app-color-material)"
                     />
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -275,11 +275,11 @@ const AdminMaterialPage: React.FC = () => {
                           >
                             <div
                               className="app-list-item"
-                              style={{ borderLeftColor: '#d97706' }}
+                              style={{ borderLeftColor: 'var(--app-color-material)' }}
                             >
                               <div className="app-list-item__row">
                                 <div className="app-list-item__main">
-                                  <div className="app-icon-circle" style={{ backgroundColor: '#d97706' }}>
+                                  <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-material)' }}>
                                     <IonIcon icon={documentIcon} />
                                   </div>
                                   <div className="app-list-item__content">
@@ -300,7 +300,7 @@ const AdminMaterialPage: React.FC = () => {
                                     <div className="app-list-item__meta">
                                       {mat.file_count !== undefined && mat.file_count > 0 && (
                                         <span className="app-list-item__meta-item">
-                                          <IonIcon icon={attachOutline} style={{ color: '#d97706' }} />
+                                          <IonIcon icon={attachOutline} style={{ color: 'var(--app-color-material)' }} />
                                           {mat.file_count} {mat.file_count === 1 ? 'Datei' : 'Dateien'}
                                         </span>
                                       )}

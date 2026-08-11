@@ -282,8 +282,8 @@ const TeamerProfilePage: React.FC = () => {
 
         {/* A. Detail-Header mit Bubble-Effekt */}
         <div className="app-detail-header" style={{
-          background: 'linear-gradient(135deg, #ec4899 0%, #be185d 50%, #9d174d 100%)',
-          boxShadow: '0 20px 40px rgba(190, 24, 93, 0.35)',
+          background: 'var(--app-gradient-teamer)',
+          boxShadow: '0 20px 40px rgba(var(--app-color-teamer-rgb), 0.35)',
           position: 'relative',
           overflow: 'hidden'
         }}>
@@ -327,7 +327,7 @@ const TeamerProfilePage: React.FC = () => {
         {/* B. Konto-Einstellungen */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon" style={{ backgroundColor: 'var(--app-color-teamer)' }}>
+            <div className="app-section-icon app-section-icon--teamer">
               <IonIcon icon={settingsOutline} />
             </div>
             <IonLabel>Konto-Einstellungen</IonLabel>
@@ -343,10 +343,10 @@ const TeamerProfilePage: React.FC = () => {
                   lines="none"
                   style={{ ...itemStyle, marginBottom: '8px' } as any}
                 >
-                  <div className="app-list-item" style={{ width: '100%', borderLeftColor: 'var(--app-color-teamer)' }}>
+                  <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
-                        <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-teamer)' }}>
+                        <div className="app-icon-circle app-icon-circle--teamer">
                           <IonIcon icon={briefcaseOutline} />
                         </div>
                         <div className="app-list-item__content">
@@ -370,10 +370,10 @@ const TeamerProfilePage: React.FC = () => {
                   lines="none"
                   style={{ ...itemStyle, marginBottom: '8px' } as any}
                 >
-                  <div className="app-list-item" style={{ width: '100%', borderLeftColor: 'var(--app-color-teamer)' }}>
+                  <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
-                        <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-teamer)' }}>
+                        <div className="app-icon-circle app-icon-circle--teamer">
                           <IonIcon icon={mailOutline} />
                         </div>
                         <div className="app-list-item__content">
@@ -397,10 +397,10 @@ const TeamerProfilePage: React.FC = () => {
                   lines="none"
                   style={{ ...itemStyle, marginBottom: '8px' } as any}
                 >
-                  <div className="app-list-item" style={{ width: '100%', borderLeftColor: 'var(--app-color-teamer)' }}>
+                  <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
-                        <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-teamer)' }}>
+                        <div className="app-icon-circle app-icon-circle--teamer">
                           <IonIcon icon={keyOutline} />
                         </div>
                         <div className="app-list-item__content">
@@ -422,10 +422,10 @@ const TeamerProfilePage: React.FC = () => {
                   lines="none"
                   style={{ ...itemStyle, marginBottom: '8px' } as any}
                 >
-                  <div className="app-list-item" style={{ width: '100%', borderLeftColor: 'var(--app-color-teamer)' }}>
+                  <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
-                        <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-teamer)' }}>
+                        <div className="app-icon-circle app-icon-circle--teamer">
                           <IonIcon icon={bookOutline} />
                         </div>
                         <div className="app-list-item__content">
@@ -447,10 +447,10 @@ const TeamerProfilePage: React.FC = () => {
                   lines="none"
                   style={itemStyle as any}
                 >
-                  <div className="app-list-item" style={{ width: '100%', borderLeftColor: 'var(--app-color-teamer)' }}>
+                  <div className="app-list-item app-list-item--teamer" style={{ width: '100%' }}>
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
-                        <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-teamer)' }}>
+                        <div className="app-icon-circle app-icon-circle--teamer">
                           <IonIcon icon={imagesOutline} />
                         </div>
                         <div className="app-list-item__content">
@@ -471,7 +471,7 @@ const TeamerProfilePage: React.FC = () => {
         {/* C. Inhalt */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon" style={{ backgroundColor: 'var(--app-color-teamer)' }}>
+            <div className="app-section-icon app-section-icon--teamer">
               <IonIcon icon={ribbon} />
             </div>
             <IonLabel>Inhalt</IonLabel>
@@ -479,57 +479,81 @@ const TeamerProfilePage: React.FC = () => {
           <IonCard className="app-card">
             <IonCardContent>
               <div
-                className="app-list-item app-settings-item app-list-item--material"
+                className="app-list-item app-list-item--material"
                 onClick={() => router.push('/teamer/profile/material')}
               >
-                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--material">
-                  <IonIcon icon={documentIcon} />
-                </div>
-                <div className="app-flex-fill">
-                  <h2 className="app-settings-item__title">Material</h2>
-                  <p className="app-settings-item__subtitle">Materialien und Dateien</p>
+                <div className="app-list-item__row">
+                  <div className="app-list-item__main">
+                    <div className="app-icon-circle app-icon-circle--material">
+                      <IonIcon icon={documentIcon} />
+                    </div>
+                    <div className="app-list-item__content">
+                      <div className="app-list-item__title">Material</div>
+                      <div className="app-list-item__meta">
+                        <span className="app-list-item__meta-item">Materialien und Dateien</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {profile.konfi_data?.jahrgang_name && (
                 <div
-                  className="app-list-item app-settings-item app-list-item--konfi"
+                  className="app-list-item app-list-item--konfi"
                   onClick={() => router.push('/teamer/profile/konfi-stats')}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--konfi">
-                    <IonIcon icon={schoolOutline} />
-                  </div>
-                  <div className="app-flex-fill">
-                    <h2 className="app-settings-item__title">Konfi-Historie</h2>
-                    <p className="app-settings-item__subtitle">Konfi-Punkte und Badges</p>
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                      <div className="app-icon-circle app-icon-circle--konfi">
+                        <IonIcon icon={schoolOutline} />
+                      </div>
+                      <div className="app-list-item__content">
+                        <div className="app-list-item__title">Konfi-Historie</div>
+                        <div className="app-list-item__meta">
+                          <span className="app-list-item__meta-item">Konfi-Punkte und Badges</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
 
               {/* App-Tour und Neuerungen jederzeit erneut ansehen */}
               <div
-                className="app-list-item app-settings-item app-list-item--teamer"
+                className="app-list-item app-list-item--teamer"
                 onClick={() => setShowOnboarding(true)}
               >
-                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--teamer">
-                  <IonIcon icon={compassOutline} />
-                </div>
-                <div className="app-flex-fill">
-                  <h2 className="app-settings-item__title">App-Tour ansehen</h2>
-                  <p className="app-settings-item__subtitle">Kurze Einführung durch die App</p>
+                <div className="app-list-item__row">
+                  <div className="app-list-item__main">
+                    <div className="app-icon-circle app-icon-circle--teamer">
+                      <IonIcon icon={compassOutline} />
+                    </div>
+                    <div className="app-list-item__content">
+                      <div className="app-list-item__title">App-Tour ansehen</div>
+                      <div className="app-list-item__meta">
+                        <span className="app-list-item__meta-item">Kurze Einführung durch die App</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <div
-                className="app-list-item app-settings-item app-list-item--challenges"
+                className="app-list-item app-list-item--challenges"
                 onClick={() => setShowUpdateWalkthrough(true)}
               >
-                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--challenges">
-                  <IonIcon icon={sparklesOutline} />
-                </div>
-                <div className="app-flex-fill">
-                  <h2 className="app-settings-item__title">Was ist neu?</h2>
-                  <p className="app-settings-item__subtitle">Die Neuerungen dieser Version</p>
+                <div className="app-list-item__row">
+                  <div className="app-list-item__main">
+                    <div className="app-icon-circle app-icon-circle--challenges">
+                      <IonIcon icon={sparklesOutline} />
+                    </div>
+                    <div className="app-list-item__content">
+                      <div className="app-list-item__title">Was ist neu?</div>
+                      <div className="app-list-item__meta">
+                        <span className="app-list-item__meta-item">Die Neuerungen dieser Version</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </IonCardContent>
@@ -540,7 +564,7 @@ const TeamerProfilePage: React.FC = () => {
         {wrappedHistory.length > 0 && (
           <IonList inset={true} style={{ margin: '16px' }}>
             <IonListHeader>
-              <div className="app-section-icon" style={{ backgroundColor: 'var(--app-color-teamer)' }}>
+              <div className="app-section-icon app-section-icon--teamer">
                 <IonIcon icon={timeOutline} />
               </div>
               <IonLabel>Meine Wrappeds</IonLabel>
@@ -558,7 +582,7 @@ const TeamerProfilePage: React.FC = () => {
                   >
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
-                        <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-teamer)' }}>
+                        <div className="app-icon-circle app-icon-circle--teamer">
                           <IonIcon icon={timeOutline} />
                         </div>
                         <div className="app-list-item__content">

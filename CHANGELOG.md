@@ -74,6 +74,11 @@ Versionsüberschrift.
   unterscheidbar.
 - Teamer-Profil: Zertifikate zeigen wieder ihr eigenes Symbol, und die Liste
   der Termine erscheint auch, wenn noch keiner dabei war.
+- Teamer-Bereich: Kopfbereiche, Listen und Farben folgen jetzt überall
+  demselben Muster — im Profil standen bisher drei verschiedene Listenformen
+  untereinander.
+- Die anonyme Nutzungsstatistik zählte keine Besuche. Die Zahlen im
+  Auswertungswerkzeug blieben dadurch leer.
 - Veranstaltungen: Bei Zeitfenster-Terminen konnte eine Anmeldung ohne Auswahl
   eines Zeitfensters zustande kommen, wenn die Zeitfenster nicht geladen werden
   konnten.

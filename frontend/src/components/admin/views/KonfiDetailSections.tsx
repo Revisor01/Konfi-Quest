@@ -49,7 +49,7 @@ import {
 } from 'ionicons/icons';
 import ActivityRings from './ActivityRings';
 import { EmptyState } from '../../shared';
-import { getIconFromString } from '../../konfi/views/DashboardSections';
+import { getIconFromString } from '../../../utils/badgeIcons';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
 // ---- Shared Types ----
@@ -133,7 +133,7 @@ export const KonfiHeaderCard = React.memo<KonfiHeaderCardProps>(({
   <div
     style={{
       background: isTeamer
-        ? 'linear-gradient(135deg, #e11d48 0%, #be185d 50%, #9f1239 100%)'
+        ? 'var(--app-gradient-teamer)'
         : 'linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%)',
       borderRadius: '24px',
       padding: '24px',
@@ -694,7 +694,7 @@ export const TeamerEventsSection = React.memo<TeamerEventsSectionProps>(({
           {teamerEvents.length > 10 && (
             <div
               style={{
-                textAlign: 'center', fontSize: '0.8rem', color: '#8e8e93',
+                textAlign: 'center', fontSize: '0.8rem', color: 'var(--app-text-system)',
                 padding: '8px 0 2px 0'
               }}
             >
@@ -934,7 +934,7 @@ export const CertificatesSection = React.memo<CertificatesSectionProps>(({
                       <div className="app-corner-badges">
                         <div
                           className="app-corner-badge"
-                          style={{ backgroundColor: '#ef4444', padding: '4px 6px' }}
+                          style={{ backgroundColor: 'var(--app-color-danger)', padding: '4px 6px' }}
                           title="Abgelaufen"
                         >
                           <IonIcon

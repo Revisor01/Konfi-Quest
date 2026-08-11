@@ -86,6 +86,11 @@ ion-list-header ion-label {
   --app-color-level-rgb: 236, 72, 153;
   --app-color-group: #f97316;
   --app-color-group-rgb: 249, 115, 22;
+  /* Verlauf der Teamer-Kopfbereiche. Es gab drei verschiedene "Teamer-Pink"-
+     Verlaeufe an drei Stellen (Profil, Detail-Header, Dashboard-Kachel) —
+     seit 11.08. dieser eine. Mittlerer Stopp ist --app-color-teamer. */
+  --app-gradient-teamer: linear-gradient(135deg, #ec4899 0%, #be185d 50%, #9d174d 100%);
+
   /* Punkte-Typen */
   --app-color-gottesdienst: #3b82f6;
   --app-color-gottesdienst-rgb: 59, 130, 246;

@@ -21,58 +21,7 @@ import {
   add,
   trophy,
   trash,
-  arrowBack,
-  star,
-  medal,
-  ribbon,
-  checkmarkCircle,
-  diamond,
-  shield,
-  flame,
-  flash,
-  rocket,
-  sparkles,
-  thumbsUp,
-  heart,
-  people,
-  personAdd,
-  chatbubbles,
-  gift,
-  book,
-  school,
-  construct,
-  brush,
-  colorPalette,
-  sunny,
-  moon,
-  leaf,
-  rose,
-  calendar,
-  today,
-  time,
-  timer,
-  stopwatch,
-  restaurant,
-  fitness,
-  bicycle,
-  car,
-  airplane,
-  boat,
-  camera,
-  image,
-  musicalNote,
-  balloon,
-  home,
-  business,
-  location,
-  navigate,
-  compass,
-  pin,
-  flag,
-  informationCircle,
-  helpCircle,
-  alertCircle,
-  hammer
+  arrowBack
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -85,23 +34,9 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader, ListSection } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import { getIconFromString } from '../../../utils/badgeIcons';
 
-// Icon Mapping (same as in LevelManagementModal)
-const LEVEL_ICONS: Record<string, any> = {
-  trophy, medal, ribbon, star, checkmarkCircle, diamond, shield,
-  flame, flash, rocket, sparkles, thumbsUp,
-  heart, people, personAdd, chatbubbles, gift,
-  book, school, construct, brush, colorPalette,
-  sunny, moon, leaf, rose,
-  calendar, today, time, timer, stopwatch,
-  restaurant, fitness, bicycle, car, airplane, boat, camera, image, musicalNote, balloon,
-  home, business, location, navigate, compass, pin, flag,
-  informationCircle, helpCircle, alertCircle, hammer
-};
 
-const getIconFromString = (iconName: string) => {
-  return LEVEL_ICONS[iconName] || trophy;
-};
 
 interface Level {
   id: number;

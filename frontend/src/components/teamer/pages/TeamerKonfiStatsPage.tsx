@@ -20,9 +20,7 @@ import {
 } from '@ionic/react';
 import {
   trophy,
-  flashOutline,
   schoolOutline,
-  starOutline,
   checkmark,
   checkmarkCircle,
   arrowBack
@@ -116,21 +114,9 @@ import {
   timeOutline
 } from 'ionicons/icons';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { getIconFromString } from '../../../utils/badgeIcons';
 
-const BADGE_ICONS: Record<string, string> = {
-  trophy, medal, ribbon, star, checkmarkCircle, diamond, shield,
-  flame, flash, rocket, sparkles, thumbsUp, heart, people,
-  personAdd, chatbubbles, gift, book, school, construct, brush,
-  colorPalette, sunny, moon, leaf, rose, calendar, today, time,
-  timer, stopwatch, restaurant, fitness, bicycle, car, airplane,
-  boat, camera, image, musicalNote, balloon, home, business,
-  location, navigate, compass, pin, flag, informationCircle,
-  helpCircle, alertCircle, hammer
-};
 
-const getIconFromString = (iconName: string): string => {
-  return BADGE_ICONS[iconName] || trophy;
-};
 
 // Popover Content für Badge-Details
 const KonfiBadgePopoverContent: React.FC<{
@@ -139,7 +125,7 @@ const KonfiBadgePopoverContent: React.FC<{
   const data = badgeRef.current;
   if (!data || !data.badge) return null;
   const badge = data.badge;
-  const bColor = badge.color || '#f59e0b';
+  const bColor = badge.color || 'var(--app-color-badges)';
 
   return (
     <div style={{ padding: '12px', background: 'white' }}>
@@ -330,7 +316,7 @@ const TeamerKonfiStatsPage: React.FC = () => {
             title={konfiData.jahrgang_name ? `Jahrgang ${konfiData.jahrgang_name}` : 'Konfi-Zeit'}
             subtitle="Konfi-Punkte-Historie"
             icon={schoolOutline}
-            colors={{ primary: '#5b21b6', secondary: '#4c1d95' }}
+            colors={{ primary: 'var(--app-color-konfis)', secondary: '#4c1d95' }}
             stats={[
               { value: totalPoints, label: 'Gesamt' },
               { value: konfiData.gottesdienst_points || 0, label: 'GD' },
@@ -346,14 +332,14 @@ const TeamerKonfiStatsPage: React.FC = () => {
               <IonCardContent style={{ padding: '16px' }}>
                 <div
                   className="app-list-item"
-                  style={{ width: '100%', cursor: 'pointer', borderLeftColor: '#5b21b6' }}
+                  style={{ width: '100%', cursor: 'pointer', borderLeftColor: 'var(--app-color-konfis)' }}
                   onClick={() => {
                     setWrappedModalData(konfiWrapped);
                   }}
                 >
                   <div className="app-list-item__row">
                     <div className="app-list-item__main">
-                      <div className="app-icon-circle" style={{ backgroundColor: '#5b21b6' }}>
+                      <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-konfis)' }}>
                         <IonIcon icon={timeOutline} />
                       </div>
                       <div className="app-list-item__content">
@@ -389,10 +375,10 @@ const TeamerKonfiStatsPage: React.FC = () => {
             { key: 'category_activities', title: 'Kategorie-Meister', icon: cubeOutline, color: '#0cd1e8' },
             { key: 'specific_activity', title: 'Spezialist', icon: handLeft, color: '#ffce00' },
             { key: 'streak', title: 'Serien-Champion', icon: flame, color: '#eb445a' },
-            { key: 'time_based', title: 'Zeitreisender', icon: time, color: '#8e8e93' },
+            { key: 'time_based', title: 'Zeitreisender', icon: time, color: 'var(--app-text-system)' },
             { key: 'event_count', title: 'Event-Champion', icon: calendar, color: '#e63946' },
             { key: 'collection', title: 'Sammler', icon: trophy, color: '#ffd700' },
-            { key: 'yearly', title: 'Jahres-Badges', icon: calendarOutline, color: '#8e8e93' }
+            { key: 'yearly', title: 'Jahres-Badges', icon: calendarOutline, color: 'var(--app-text-system)' }
           ];
 
           const badgesByCategory = KONFI_BADGE_CATEGORIES
@@ -420,7 +406,7 @@ const TeamerKonfiStatsPage: React.FC = () => {
                 key,
                 title: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '),
                 icon: trophy,
-                color: '#f59e0b',
+                color: 'var(--app-color-badges)',
                 badges: badges.sort((a, b) => (a.criteria_value || 0) - (b.criteria_value || 0))
               });
             });
@@ -429,7 +415,7 @@ const TeamerKonfiStatsPage: React.FC = () => {
           return (
             <IonList inset={true} style={{ margin: '16px' }}>
               <IonListHeader>
-                <div className="app-section-icon" style={{ backgroundColor: '#f59e0b' }}>
+                <div className="app-section-icon" style={{ backgroundColor: 'var(--app-color-badges)' }}>
                   <IonIcon icon={trophy} />
                 </div>
                 <IonLabel>Konfi-Badges ({konfiData.badges.length})</IonLabel>
@@ -461,7 +447,7 @@ const TeamerKonfiStatsPage: React.FC = () => {
                       gap: '12px'
                     }}>
                       {category.badges.map((badge) => {
-                        const bColor = badge.color || '#f59e0b';
+                        const bColor = badge.color || 'var(--app-color-badges)';
                         return (
                           <div
                             key={badge.badge_id}
