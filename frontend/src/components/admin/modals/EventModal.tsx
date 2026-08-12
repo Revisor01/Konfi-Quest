@@ -321,7 +321,11 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         <IonToolbar>
           <IonTitle>{event ? 'Event bearbeiten' : 'Neues Event'}</IonTitle>
           <IonButtons slot="start">
-            <IonButton aria-label="Schließen" onClick={handleClose} disabled={loading} className="app-modal-close-btn">
+            {/* NICHT an loading haengen: Bleibt der Ladezustand haengen,
+                waere das Modal sonst nur noch per Swipe zu verlassen.
+                Die Rueckfrage bei ungespeicherten Aenderungen laeuft
+                ueber canDismiss der Seite. */}
+            <IonButton aria-label="Schließen" onClick={handleClose} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>

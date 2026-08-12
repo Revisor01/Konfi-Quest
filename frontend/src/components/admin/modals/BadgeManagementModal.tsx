@@ -222,7 +222,10 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           criteria_extra: badge.criteria_extra || '{}',
           is_active: badge.is_active !== undefined ? badge.is_active : true,
           is_hidden: badge.is_hidden !== undefined ? badge.is_hidden : false,
-          color: badge.color || 'var(--app-color-users)',
+          // MUSS ein Hex-Wert bleiben: der Wert landet in <input type="color">
+          // und wird so in der Datenbank gespeichert. Eine CSS-Variable ist
+          // dort ungueltig (Regression vom 11.08., wieder zurueckgenommen).
+          color: badge.color || CRITERIA_FALLBACK_COLOR,
           target_role: badge.target_role || targetRole
         };
 
@@ -243,7 +246,14 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       return;
     }
 
-    await guard(async () => {
+    // guard() wirft, wenn bereits ein Speichern laeuft ("Aktion laeuft
+    // bereits"). Ohne dieses catch flog der Fehler ungefangen nach oben —
+    // und weil setLoading(true) INNERHALB des Guards steht, blieb loading
+    // dann auf true haengen. Der X-Button ist mit disabled={loading}
+    // verknuepft und liess sich danach nicht mehr druecken, waehrend der
+    // Swipe weiter ging (User-Hinweis 12.08.).
+    try {
+      await guard(async () => {
     setLoading(true);
     try {
       // Prepare criteria_extra based on criteria_type
@@ -321,7 +331,12 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
     } finally {
       setLoading(false);
     }
-    });
+      });
+    } catch {
+      // Doppelklick auf Speichern — der zweite Aufruf wird verworfen.
+      // Nichts anzeigen, aber den Ladezustand sicher zuruecknehmen.
+      setLoading(false);
+    }
   };
 
   // Gottesdienst/Gemeinde gibt es NUR bei Konfis — bei Teamer-Aktivitaeten ist
@@ -594,7 +609,11 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         <IonToolbar>
           <IonTitle>{isEditMode ? 'Badge bearbeiten' : 'Neues Badge'}</IonTitle>
           <IonButtons slot="start">
-            <IonButton aria-label="Schließen" onClick={handleClose} disabled={loading} className="app-modal-close-btn">
+            {/* NICHT an loading haengen: Schliessen muss immer moeglich sein.
+                Bleibt loading haengen, waere das Modal sonst nur noch per
+                Swipe zu verlassen. Die Rueckfrage bei ungespeicherten
+                Aenderungen laeuft ohnehin ueber canDismiss der Seite. */}
+            <IonButton aria-label="Schließen" onClick={handleClose} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>

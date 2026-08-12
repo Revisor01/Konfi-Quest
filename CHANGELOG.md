@@ -83,6 +83,9 @@ Versionsüberschrift.
   Orange, und die Einträge sind gleich aufgebaut wie in den übrigen Listen.
 - Teamer-Profil: Die Abzeichen stehen jetzt unter den Terminen und
   Aktivitäten statt ganz oben.
+- Fenster ließen sich nach einem doppelten Tippen auf Speichern nicht mehr
+  über das X schließen, sondern nur noch durch Wischen. Betraf Abzeichen,
+  Challenges, Veranstaltungen und die Teilnehmerverwaltung.
 - Die anonyme Nutzungsstatistik zählte keine Besuche. Die Zahlen im
   Auswertungswerkzeug blieben dadurch leer.
 - Veranstaltungen: Bei Zeitfenster-Terminen konnte eine Anmeldung ohne Auswahl

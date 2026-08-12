@@ -418,7 +418,11 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
       return;
     }
 
-    await guard(async () => {
+    // guard() wirft bei Doppel-Tap ('Aktion laeuft bereits'). Ungefangen
+    // bliebe loading auf true haengen — dann liess sich das Modal nur
+    // noch per Swipe schliessen (User-Hinweis 12.08.).
+    try {
+      await guard(async () => {
       setLoading(true);
       try {
         const payload = buildPayload();
@@ -438,7 +442,11 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
       } finally {
         setLoading(false);
       }
-    });
+      });
+    } catch {
+      // Zweiter Aufruf verworfen — Ladezustand sicher zuruecknehmen.
+      setLoading(false);
+    }
   };
 
   const selectedIconMeta = CHALLENGE_ICONS[formData.badge_icon];
@@ -458,7 +466,11 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
         <IonToolbar>
           <IonTitle>{isEditMode ? 'Challenge bearbeiten' : 'Neue Challenge'}</IonTitle>
           <IonButtons slot="start">
-            <IonButton aria-label="Schließen" onClick={onClose} disabled={loading} className="app-modal-close-btn">
+            {/* NICHT an loading haengen: Bleibt der Ladezustand haengen,
+                waere das Modal sonst nur noch per Swipe zu verlassen.
+                Die Rueckfrage bei ungespeicherten Aenderungen laeuft
+                ueber canDismiss der Seite. */}
+            <IonButton aria-label="Schließen" onClick={onClose} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
