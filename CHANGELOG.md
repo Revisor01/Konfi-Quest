@@ -9,6 +9,12 @@ Versionsüberschrift.
 
 ## [Unreleased] - 2.0.0
 
+### Geändert
+- Die Absenderadresse für E-Mails aus der App ist jetzt moin@konfi-quest.de.
+
+### Sonstiges
+- Zugangsdaten werden nicht mehr in der Projektdatei hinterlegt, sondern getrennt konfiguriert.
+
 ### Hinzugefügt
 
 - Challenges: Aufgaben, auf die Konfis über einen frei gewählten Zeitraum mit

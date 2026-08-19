@@ -96,7 +96,7 @@ Alle 5 Task-Commits sind in git-History vorhanden und verifiziert:
 
 Alle 5 Sicherheits- und Bug-Fixes sind vollständig implementiert und korrekt verdrahtet:
 
-- **SEC-03:** Der hardkodierte Fallback-Key `ksadh8324oijcff45rfdsvcvhoids44` ist aus beiden Dateien entfernt. Bei fehlendem ENV-Key wird korrekt 503 zurückgegeben.
+- **SEC-03:** Der hardkodierte Fallback-Key `<aus Env>` ist aus beiden Dateien entfernt. Bei fehlendem ENV-Key wird korrekt 503 zurückgegeben.
 - **SEC-04:** Alle 4 Validierungsstellen (validation.js + 3x auth.js) wurden konsistent auf `min: 8` erhöht. `commonValidations.password` wird in `validateRegisterKonfi` eingebunden.
 - **SEC-05:** `validateSendMessage` in chat.js enthält `isLength({ max: 4000 })` — ein 400-Fehler würde bei überlanger Nachricht korrekt zurückgegeben.
 - **SEC-06:** Beide Socket.IO Typing-Handler sind async und führen einen DB-Org-Check durch, bevor das Event weitergeleitet wird — identisch zum bestehenden `joinRoom`-Pattern.

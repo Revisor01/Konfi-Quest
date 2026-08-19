@@ -27,7 +27,7 @@ metrics:
 
 # Phase 82 Plan 01: LOSUNG_API_KEY auslagern Summary
 
-**One-liner:** Hardcodierten Losung-API-Key `ksadh8324oijcff45rfdsvcvhoids44` aus konfi.js und teamer.js in `process.env.LOSUNG_API_KEY` ausgelagert und portainer-stack.yml erganzt.
+**One-liner:** Hardcodierten Losung-API-Key `<aus Env>` aus konfi.js und teamer.js in `process.env.LOSUNG_API_KEY` ausgelagert und portainer-stack.yml erganzt.
 
 ## What Was Built
 
@@ -50,7 +50,7 @@ Keine — Plan exakt wie beschrieben ausgefuehrt.
 
 ## Known Stubs
 
-- `backend/routes/konfi.js` Zeile 1439: Fallback `|| 'ksadh8324oijcff45rfdsvcvhoids44'` — intentional, bis LOSUNG_API_KEY in Portainer-Stack gesetzt ist. TODO-Kommentar vermerkt Entfernung nach Deployment.
+- `backend/routes/konfi.js` Zeile 1439: Fallback `|| '<aus Env>'` — intentional, bis LOSUNG_API_KEY in Portainer-Stack gesetzt ist. TODO-Kommentar vermerkt Entfernung nach Deployment.
 - `backend/routes/teamer.js` Zeile 741: Identischer Fallback — selbe Begruendung.
 
 Diese Stubs verhindern **nicht** das Plan-Ziel (SEC-01): Der Key steht nicht mehr als Literal in der apiUrl-Konstruktion. Die portainer-stack.yml setzt den korrekten Wert, sodass der Fallback im naechsten Deployment nicht mehr greift.

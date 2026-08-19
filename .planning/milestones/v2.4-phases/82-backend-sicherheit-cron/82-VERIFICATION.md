@@ -21,9 +21,9 @@ re_verification: false
 
 | #  | Wahrheit | Status | Evidenz |
 |----|----------|--------|---------|
-| 1  | Der hardcodierte API-Key `ksadh8324oijcff45rfdsvcvhoids44` existiert nicht mehr als direktes Literal in apiUrl-Template-Strings | VERIFIED | konfi.js:1440 + teamer.js:742 nutzen `${losungApiKey}` Variable; Key steht nur noch im Fallback-Ausdruck mit TODO-Kommentar |
+| 1  | Der hardcodierte API-Key `<aus Env>` existiert nicht mehr als direktes Literal in apiUrl-Template-Strings | VERIFIED | konfi.js:1440 + teamer.js:742 nutzen `${losungApiKey}` Variable; Key steht nur noch im Fallback-Ausdruck mit TODO-Kommentar |
 | 2  | konfi.js und teamer.js lesen den Key aus process.env.LOSUNG_API_KEY | VERIFIED | konfi.js:1439 + teamer.js:741: `const losungApiKey = process.env.LOSUNG_API_KEY \|\| '...'` |
-| 3  | portainer-stack.yml deklariert LOSUNG_API_KEY als Umgebungsvariable | VERIFIED | portainer-stack.yml:52: `LOSUNG_API_KEY: ksadh8324oijcff45rfdsvcvhoids44` im backend-environment-Block |
+| 3  | portainer-stack.yml deklariert LOSUNG_API_KEY als Umgebungsvariable | VERIFIED | portainer-stack.yml:52: `LOSUNG_API_KEY: <aus Env>` im backend-environment-Block |
 | 4  | Ein Nutzer aus Org A kann nicht dem Socket.IO-Room einer Org-B-Chatroom beitreten | VERIFIED | joinRoom-Handler prueft organization_id, gibt bei Abweichung mit console.warn zurueck ohne socket.join() auszufuehren |
 | 5  | joinRoom prueft die Organization-Zugehoerigkeit des Rooms in der Datenbank | VERIFIED | server.js:86-88: `db.query('SELECT organization_id FROM chat_rooms WHERE id = $1', [roomId])` |
 | 6  | Ungueltige Room-Joins werden im Serverlog mit Warnung protokolliert | VERIFIED | server.js:100: `console.warn('...Org-Isolation-Verletzung!...')` und server.js:92: `console.warn('...Room nicht gefunden...')` |
