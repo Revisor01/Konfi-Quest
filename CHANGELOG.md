@@ -19,7 +19,7 @@ Versionsüberschrift.
   anschreiben — die Auswahlliste blieb für sie leer.
 - Android: Das Menü beim langen Drücken auf eine Chat-Nachricht blitzte nur kurz
   auf und verschwand sofort wieder. Es bleibt jetzt offen.
-- Android: Der QR-Scanner startet die Kamera wieder; bisher liess sie sich beim
+- Android: Der QR-Scanner startet die Kamera wieder; bisher ließ sie sich beim
   Einchecken gar nicht öffnen.
 - Android 13 und neuer: Push-Nachrichten kommen wieder an. Die App durfte dort
   bisher gar keine Benachrichtigungen anzeigen.
