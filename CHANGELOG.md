@@ -21,6 +21,13 @@ Versionsüberschrift.
   auf und verschwand sofort wieder. Es bleibt jetzt offen.
 - Android: Der QR-Scanner startet die Kamera wieder; bisher liess sie sich beim
   Einchecken gar nicht öffnen.
+- Android 13 und neuer: Push-Nachrichten kommen wieder an. Die App durfte dort
+  bisher gar keine Benachrichtigungen anzeigen.
+
+### Sicherheit
+
+- Android: App-Daten wie Chats und Anmeldedaten werden nicht mehr ins
+  Google-Konto gesichert.
 
 ### Sonstiges
 - Zugangsdaten werden nicht mehr in der Projektdatei hinterlegt, sondern getrennt konfiguriert.
