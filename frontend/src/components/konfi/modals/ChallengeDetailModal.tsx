@@ -39,6 +39,7 @@ import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { EmptyState, AudioPlayer } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { hostAus, istWebLink } from '../../../utils/linkDisplay';
 import { getChallengeBadgeIcon, getAuthorLabel, formatRemaining } from '../views/ChallengesView';
 import type {
   KonfiChallenge,
@@ -248,22 +249,26 @@ const SubmissionCard: React.FC<{
             </div>
           )}
 
-          {/* Nur http/https rendern: die URL stammt aus einer fremden Einreichung,
-              ein praepariertes javascript:-Schema wuerde sonst bei Mitkonfis landen.
-              Gleiche Pruefung wie in der Leitungssicht. */}
-          {submission.media_type === 'link' && submission.link_url && /^https?:\/\//i.test(submission.link_url) && (
+          {/* Nur http/https rendern (istWebLink): die URL stammt aus einer fremden
+              Einreichung, ein praepariertes javascript:-Schema wuerde sonst bei
+              Mitkonfis landen. Beschriftet wird mit der Domain statt der vollen
+              Adresse — die lief sonst ueber mehrere Zeilen. */}
+          {submission.media_type === 'link' && istWebLink(submission.link_url) && (
             <a
-              href={submission.link_url}
+              href={submission.link_url!}
               target="_blank"
               rel="noopener noreferrer"
+              title={submission.link_url!}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: '5px', marginTop: '6px',
                 fontSize: '0.86rem', color: 'var(--app-color-challenges)',
-                fontWeight: 600, wordBreak: 'break-all'
+                fontWeight: 600, maxWidth: '100%'
               }}
             >
               <IonIcon icon={openOutline} style={{ flexShrink: 0 }} />
-              {submission.link_url}
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {hostAus(submission.link_url!)} — Link öffnen
+              </span>
             </a>
           )}
 

@@ -111,9 +111,10 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
         icon={documentOutline}
         preset="activities"
         stats={[
-          { value: getPendingCount(), label: 'Offen' },
-          { value: getApprovedCount(), label: 'Genehmigt' },
-          { value: getRejectedCount(), label: 'Abgelehnt' }
+          // Die Kacheln entsprechen den drei Filter-Reitern und schalten dorthin.
+          { value: getPendingCount(), label: 'Offen', onClick: () => setStatusFilter('pending'), active: statusFilter === 'pending' },
+          { value: getApprovedCount(), label: 'Genehmigt', onClick: () => setStatusFilter('approved'), active: statusFilter === 'approved' },
+          { value: getRejectedCount(), label: 'Abgelehnt', onClick: () => setStatusFilter('rejected'), active: statusFilter === 'rejected' }
         ]}
       />
 

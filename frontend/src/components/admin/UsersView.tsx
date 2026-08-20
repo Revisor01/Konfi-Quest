@@ -143,9 +143,10 @@ const UsersView: React.FC<UsersViewProps> = ({
         icon={people}
         preset="users"
         stats={[
-          { value: users.length, label: 'Gesamt' },
-          { value: getAdminUsers().length, label: 'Admins' },
-          { value: getTeamerUsers().length, label: 'Teamer:in' }
+          // Die Kacheln entsprechen den Reitern; "Aktiv" hat keine Kachel.
+          { value: users.length, label: 'Gesamt', onClick: () => setSelectedFilter('alle'), active: selectedFilter === 'alle' },
+          { value: getAdminUsers().length, label: 'Admins', onClick: () => setSelectedFilter('admin'), active: selectedFilter === 'admin' },
+          { value: getTeamerUsers().length, label: 'Teamer:in', onClick: () => setSelectedFilter('teamer'), active: selectedFilter === 'teamer' }
         ]}
       />
 

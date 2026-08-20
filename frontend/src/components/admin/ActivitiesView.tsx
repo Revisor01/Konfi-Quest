@@ -138,11 +138,13 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
         icon={flash}
         preset="activities"
         stats={targetRole === 'teamer' ? [
+          // Teamer:innen haben keinen Typ-Filter -> Kachel bleibt reine Anzeige.
           { value: activities.length, label: 'Gesamt' }
         ] : [
-          { value: activities.length, label: 'Gesamt' },
-          { value: getGemeindeActivities().length, label: 'Gemeinde' },
-          { value: getGottesdienstActivities().length, label: 'Godi' }
+          // Die Kacheln entsprechen den drei Reitern des Typ-Filters.
+          { value: activities.length, label: 'Gesamt', onClick: () => setSelectedType('alle'), active: selectedType === 'alle' },
+          { value: getGemeindeActivities().length, label: 'Gemeinde', onClick: () => setSelectedType('gemeinde'), active: selectedType === 'gemeinde' },
+          { value: getGottesdienstActivities().length, label: 'Godi', onClick: () => setSelectedType('gottesdienst'), active: selectedType === 'gottesdienst' }
         ]}
       />
 

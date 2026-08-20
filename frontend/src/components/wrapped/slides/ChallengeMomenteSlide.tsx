@@ -11,6 +11,7 @@ import {
 import SlideBase from './SlideBase';
 import api from '../../../services/api';
 import { getIconFromString } from '../../../utils/badgeIcons';
+import { hostAus } from '../../../utils/linkDisplay';
 import type { SlideProps, KonfiChallengeMoment } from '../../../types/wrapped';
 
 interface ChallengeMomenteSlideProps extends SlideProps {
@@ -91,15 +92,6 @@ const ChallengeFoto: React.FC<{ filePath: string; fileName?: string }> = ({ file
 function kuerzen(text: string, max = 140): string {
   if (text.length <= max) return text;
   return text.slice(0, max).trimEnd() + '…';
-}
-
-/** Hostname aus einer URL, als lesbare Link-Beschriftung. */
-function hostAus(url: string): string {
-  try {
-    return new URL(url).hostname.replace(/^www\./, '');
-  } catch {
-    return url;
-  }
 }
 
 const ChallengeMomenteSlide: React.FC<ChallengeMomenteSlideProps> = ({ isActive, momente }) => {

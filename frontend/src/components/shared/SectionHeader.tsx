@@ -9,7 +9,9 @@ interface SectionHeaderProps {
   preset?: 'events' | 'activities' | 'konfis' | 'teamer' | 'users' | 'organizations' | 'badges' | 'requests' | 'jahrgang' | 'konfi-requests' | 'categories' | 'level' | 'challenges';
   colors?: { primary: string; secondary: string };
   // string erlaubt, damit Kacheln auch "∞" (unbegrenzte Plaetze) zeigen koennen.
-  stats: Array<{ value: number | string; label: string }>;
+  // onClick optional: Kacheln, die einem Reiter entsprechen, springen dorthin.
+  // Ohne onClick bleibt die Kachel reine Anzeige (Standard).
+  stats: Array<{ value: number | string; label: string; onClick?: () => void; active?: boolean }>;
   // Optionaler Info-(i)-Button oben rechts im Banner (z.B. für eine Farbcode-Legende).
   onInfo?: () => void;
 }
@@ -93,14 +95,38 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
         </div>
       </div>
 
-      {/* Stats Row */}
+      {/* Stats Row. Kacheln mit onClick werden zu echten Buttons (Tastatur und
+          Screenreader), ohne onClick bleibt es bei der reinen Anzeige. */}
       <div className={`app-stats-row${stats.length > 4 ? ' app-stats-row--grid' : ''}`}>
-        {stats.map((stat, index) => (
-          <div key={index} className="app-stats-row__item">
-            <div className="app-stats-row__value">{stat.value}</div>
-            <div className="app-stats-row__label">{stat.label}</div>
-          </div>
-        ))}
+        {stats.map((stat, index) => {
+          const content = (
+            <>
+              <div className="app-stats-row__value">{stat.value}</div>
+              <div className="app-stats-row__label">{stat.label}</div>
+            </>
+          );
+
+          if (!stat.onClick) {
+            return (
+              <div key={index} className="app-stats-row__item">
+                {content}
+              </div>
+            );
+          }
+
+          return (
+            <button
+              key={index}
+              type="button"
+              className={`app-stats-row__item app-stats-row__item--clickable${stat.active ? ' app-stats-row__item--active' : ''}`}
+              onClick={stat.onClick}
+              aria-label={`${stat.label}: ${stat.value} anzeigen`}
+              aria-current={stat.active ? 'true' : undefined}
+            >
+              {content}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

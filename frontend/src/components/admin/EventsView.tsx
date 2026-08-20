@@ -178,15 +178,29 @@ const EventsView: React.FC<EventsViewProps> = ({
           // Stats GLOBAL ueber alle Events zaehlen (eventCounts von der Page),
           // NICHT nur ueber die Events des aktiven Tabs (`events`) — sonst waren
           // zwei der drei Werte je nach Tab faelschlich 0.
-          { value: eventCounts?.aktuell ?? getUpcomingEvents().length, label: 'Anstehend' },
+          // Die drei Kacheln entsprechen genau den drei Reitern und schalten
+          // beim Antippen dorthin.
+          {
+            value: eventCounts?.aktuell ?? getUpcomingEvents().length,
+            label: 'Anstehend',
+            onClick: onTabChange ? () => onTabChange('aktuell') : undefined,
+            active: activeTab === 'aktuell'
+          },
           {
             value: eventCounts?.verbuchen ?? events.filter(e =>
               new Date(e.event_date) < new Date() &&
               (e.pending_bookings_count ?? 0) > 0
             ).length,
-            label: 'Verbuchen'
+            label: 'Verbuchen',
+            onClick: onTabChange ? () => onTabChange('verbuchen') : undefined,
+            active: activeTab === 'verbuchen'
           },
-          { value: eventCounts?.vergangen ?? getPastEvents().length, label: 'Vergangen' }
+          {
+            value: eventCounts?.vergangen ?? getPastEvents().length,
+            label: 'Vergangen',
+            onClick: onTabChange ? () => onTabChange('vergangen') : undefined,
+            active: activeTab === 'vergangen'
+          }
         ]}
       />
 

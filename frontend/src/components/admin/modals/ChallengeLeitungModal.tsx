@@ -54,6 +54,7 @@ import api from '../../../services/api';
 import { EmptyState, SectionHeader, AudioPlayer } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import { hostAus, istWebLink } from '../../../utils/linkDisplay';
 import ChallengeSubmitModal from '../../konfi/modals/ChallengeSubmitModal';
 import type {
   AdminChallenge,
@@ -339,8 +340,25 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
     // haft aus.
     while (stats.length < 3) stats.push({ value: counts.hidden, label: 'Versteckt' });
 
-    return stats.slice(0, 3);
-  }, [challenge?.moderated, counts]);
+    // Kacheln, die einem Reiter entsprechen, schalten dorthin. "Frei" hat
+    // keinen eigenen Reiter und bleibt reine Anzeige.
+    const filterZuLabel: Record<string, StatusFilter> = {
+      'Gesamt': 'all',
+      'Wartet': 'pending',
+      'Versteckt': 'hidden'
+    };
+
+    // effectiveFilter wird erst weiter unten deklariert — hier dieselbe
+    // Ableitung, damit die aktive Kachel zum tatsaechlich wirksamen Reiter passt.
+    const aktiverFilter: StatusFilter =
+      statusFilter === 'pending' && !challenge?.moderated ? 'all' : statusFilter;
+
+    return stats.slice(0, 3).map((s) => {
+      const ziel = filterZuLabel[s.label];
+      if (!ziel) return s;
+      return { ...s, onClick: () => setStatusFilter(ziel), active: aktiverFilter === ziel };
+    });
+  }, [challenge?.moderated, counts, statusFilter]);
 
   // Laeuft die Challenge gerade? Nur dann darf man selbst einreichen.
   const isActive = useMemo(() => {
@@ -686,19 +704,24 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                             </div>
                           )}
 
-                          {submission.media_type === 'link' && submission.link_url && /^https?:\/\//i.test(submission.link_url) && (
+                          {submission.media_type === 'link' && istWebLink(submission.link_url) && (
                             <a
-                              href={submission.link_url}
+                              href={submission.link_url!}
                               target="_blank"
                               rel="noopener noreferrer"
+                              // Volle Adresse im title: fuer die Freigabe muss
+                              // pruefbar bleiben, wohin der Link fuehrt.
+                              title={submission.link_url!}
                               style={{
                                 display: 'inline-flex', alignItems: 'center', gap: '6px',
                                 marginTop: '6px', fontSize: '0.85rem', color: 'var(--app-color-challenges)',
-                                wordBreak: 'break-all'
+                                maxWidth: '100%'
                               }}
                             >
-                              <IonIcon icon={linkOutline} />
-                              {submission.link_url}
+                              <IonIcon icon={linkOutline} style={{ flexShrink: 0 }} />
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {hostAus(submission.link_url!)}
+                              </span>
                             </a>
                           )}
 
@@ -838,23 +861,28 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                                 </div>
                               )}
 
-                              {submission.media_type === 'link' && submission.link_url && /^https?:\/\//i.test(submission.link_url) && (
+                              {submission.media_type === 'link' && istWebLink(submission.link_url) && (
                                 <a
-                                  href={submission.link_url}
+                                  href={submission.link_url!}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   // Der Link gehoert dem Link — sonst faengt das
                                   // umgebende IonItem den Tap ab und oeffnet statt
                                   // der Seite das Aktions-Menue.
                                   onClick={(e) => e.stopPropagation()}
+                                  // Volle Adresse im title: fuer die Freigabe muss
+                                  // pruefbar bleiben, wohin der Link fuehrt.
+                                  title={submission.link_url!}
                                   style={{
                                     display: 'inline-flex', alignItems: 'center', gap: '6px',
                                     marginTop: '6px', fontSize: '0.85rem', color: 'var(--app-color-challenges)',
-                                    wordBreak: 'break-all'
+                                    maxWidth: '100%'
                                   }}
                                 >
-                                  <IonIcon icon={linkOutline} />
-                                  {submission.link_url}
+                                  <IonIcon icon={linkOutline} style={{ flexShrink: 0 }} />
+                                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {hostAus(submission.link_url!)}
+                                  </span>
                                 </a>
                               )}
 

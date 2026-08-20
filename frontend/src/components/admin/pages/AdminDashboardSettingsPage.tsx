@@ -249,8 +249,9 @@ const AdminDashboardSettingsPage: React.FC = () => {
           icon={appsOutline}
           colors={{ primary: '#667eea', secondary: '#5a67d8' }}
           stats={[
-            { value: Object.values(dashboardConfig).filter(Boolean).length, label: 'Konfi' },
-            { value: Object.values(teamerDashboardConfig).filter(Boolean).length, label: 'Team' }
+            // Die Kacheln entsprechen den beiden Reitern und schalten dorthin.
+            { value: Object.values(dashboardConfig).filter(Boolean).length, label: 'Konfi', onClick: () => setDashboardSegment('konfi'), active: dashboardSegment === 'konfi' },
+            { value: Object.values(teamerDashboardConfig).filter(Boolean).length, label: 'Team', onClick: () => setDashboardSegment('teamer'), active: dashboardSegment === 'teamer' }
           ]}
         />
 

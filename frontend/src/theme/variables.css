@@ -928,6 +928,29 @@ ion-item {
   max-width: 100px;
 }
 
+/* Klickbare Kacheln (springen zum passenden Reiter). Als <button> gerendert,
+   deshalb Browser-Defaults zuruecksetzen und die Optik der <div>-Kachel erben. */
+.app-stats-row__item--clickable {
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: background 0.15s ease, transform 0.1s ease;
+  /* Touch-Ziel: die Kachel ist mit Padding bereits ueber 44px hoch. */
+}
+
+.app-stats-row__item--clickable:active {
+  transform: scale(0.96);
+  background: rgba(255, 255, 255, 0.32);
+}
+
+/* Aktiver Reiter: deutlich hellere Kachel, damit die Auswahl sichtbar bleibt. */
+.app-stats-row__item--active {
+  background: rgba(255, 255, 255, 0.38);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.55);
+}
+
 /* Grid-Variante fuer 5+ Stats (z.B. Profil mit 6 Stats) */
 .app-stats-row--grid {
   display: grid;

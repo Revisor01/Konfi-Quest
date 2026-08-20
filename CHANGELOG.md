@@ -36,6 +36,10 @@ Versionsüberschrift.
 
 ### Geändert
 
+- Die Zahlen oben im Kopfbereich sind antippbar und springen zum passenden
+  Reiter — etwa von "Verbuchen" direkt in die Liste der offenen Verbuchungen.
+- Challenges: Eingereichte Links zeigen nur noch die Seite (etwa
+  "youtube.com") statt der vollen Adresse über mehrere Zeilen.
 - Die Absenderadresse für E-Mails aus der App ist jetzt moin@konfi-quest.de.
 - Im Chat lässt sich der Papierkorb nur noch dort antippen, wo das Löschen auch
   erlaubt ist: Teamer:innen bei eigenen Nachrichten, die Leitung bei allen.

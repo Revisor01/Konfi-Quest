@@ -238,8 +238,10 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         icon={ribbon}
         preset="badges"
         stats={[
-          { value: badges.length, label: 'GESAMT' },
-          { value: getActiveBadges().length, label: 'AKTIV' },
+          { value: badges.length, label: 'GESAMT', onClick: () => setSelectedFilter('alle'), active: selectedFilter === 'alle' },
+          { value: getActiveBadges().length, label: 'AKTIV', onClick: () => setSelectedFilter('aktiv'), active: selectedFilter === 'aktiv' },
+          // "Verliehen" ist eine Summe ueber alle Abzeichen, kein Filterzustand
+          // -> bleibt bewusst reine Anzeige.
           { value: getTotalEarnedCount(), label: 'VERLIEHEN' }
         ]}
       />

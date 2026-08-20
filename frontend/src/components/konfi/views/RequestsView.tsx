@@ -115,9 +115,10 @@ const RequestsView: React.FC<RequestsViewProps> = ({
         icon={checkmarkCircle}
         preset="konfi-requests"
         stats={[
-          { value: pendingRequests.length, label: 'Offen' },
-          { value: approvedRequests.length, label: 'Erledigt' },
-          { value: rejectedRequests.length, label: 'Abgelehnt' }
+          // Die Kacheln entsprechen den drei Reitern und schalten dorthin.
+          { value: pendingRequests.length, label: 'Offen', onClick: () => onTabChange('pending'), active: activeTab === 'pending' },
+          { value: approvedRequests.length, label: 'Erledigt', onClick: () => onTabChange('approved'), active: activeTab === 'approved' },
+          { value: rejectedRequests.length, label: 'Abgelehnt', onClick: () => onTabChange('rejected'), active: activeTab === 'rejected' }
         ]}
       />
 
