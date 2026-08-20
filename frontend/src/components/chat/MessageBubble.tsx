@@ -729,7 +729,15 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             >
               <IonIcon icon={shareOutline} style={{ fontSize: '1rem', color: isOwnMessage ? 'white' : '#666' }} />
             </div>
-            {user?.role_name && ['admin', 'org_admin', 'teamer'].includes(user.role_name) && (
+            {/* Loeschen: Admins duerfen jede Nachricht der Organisation loeschen,
+                Teamer:innen nur ihre EIGENEN. Vorher hing der Button allein an der
+                Rolle — Teamer:innen sahen den Papierkorb auch bei fremden
+                Nachrichten, wo ihn das Backend mit 403 abgelehnt hat.
+                Konfis sehen ihn bewusst weiterhin gar nicht. */}
+            {user?.role_name && (
+              ['admin', 'org_admin'].includes(user.role_name) ||
+              (user.role_name === 'teamer' && isOwnMessage)
+            ) && (
               <div
                 onClick={() => {
                   onDelete(message.id);

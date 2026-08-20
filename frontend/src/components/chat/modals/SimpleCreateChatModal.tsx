@@ -201,25 +201,22 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
             jahrgang_name: konfi.jahrgang_name
           }));
 
-        // Auch andere Admins laden
+        // Auch die anderen Team-Mitglieder (Admins, Org-Admins, Teamer:innen) laden.
+        // Bewusst ueber /chat/team-contacts statt /admin/users: Letztere ist mit
+        // requireOrgAdmin geschuetzt, Teamer:innen liefen dort in einen 403 und
+        // bekamen deshalb gar keine Team-Kontakte angezeigt.
         let adminUsers: ChatUser[] = [];
         try {
-          const usersRes = await api.get('/admin/users');
-          adminUsers = usersRes.data
-            .filter((u: any) => {
-              if (u.role_name === 'konfi' || u.id === user.id) return false;
-              return true;
-            })
-            .map((admin: any) => ({
-              id: admin.id,
-              name: admin.display_name || admin.name,
-              display_name: admin.display_name || admin.name,
-              type: 'admin' as const,
-              // Funktionsbeschreibung (role_title) hat Priorität, dann Rollenname
-              role_description: admin.role_title || admin.role_display_name || admin.role_name
-            }));
+          const usersRes = await api.get('/chat/team-contacts');
+          adminUsers = usersRes.data.map((member: any) => ({
+            id: member.id,
+            name: member.display_name,
+            display_name: member.display_name,
+            type: (member.role_name === 'teamer' ? 'teamer' : 'admin') as 'admin' | 'teamer',
+            role_description: member.role_description
+          }));
         } catch (err) {
- console.warn('Admins für Chat konnten nicht geladen werden:', err);
+ console.warn('Team-Kontakte für Chat konnten nicht geladen werden:', err);
         }
 
         const allUsers = [...konfis, ...adminUsers];

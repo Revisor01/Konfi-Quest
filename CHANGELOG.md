@@ -11,6 +11,12 @@ Versionsüberschrift.
 
 ### Geändert
 - Die Absenderadresse für E-Mails aus der App ist jetzt moin@konfi-quest.de.
+- Im Chat lässt sich der Papierkorb nur noch dort antippen, wo das Löschen auch
+  erlaubt ist: Teamer:innen bei eigenen Nachrichten, die Leitung bei allen.
+
+### Behoben
+- Teamer:innen können im Chat wieder andere Teamer:innen und die Leitung
+  anschreiben — die Auswahlliste blieb für sie leer.
 
 ### Sonstiges
 - Zugangsdaten werden nicht mehr in der Projektdatei hinterlegt, sondern getrennt konfiguriert.
