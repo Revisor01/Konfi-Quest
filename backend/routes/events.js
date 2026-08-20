@@ -1822,15 +1822,26 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
               "SELECT max_participants FROM event_timeslots WHERE id = $1 AND organization_id = $2",
               [booking.timeslot_id, req.user.organization_id]
             );
+            // Teamer:innen zaehlen NICHT gegen das Konfi-Kontingent (eigenes
+            // Kontingent seit Migration 120) — sonst blockiert eine bestaetigte
+            // Teamer-Buchung den Nachrueckplatz eines Konfis.
             const { rows: [slotCountRes] } = await client.query(
-              "SELECT COUNT(*) as confirmed_count FROM event_bookings WHERE timeslot_id = $1 AND status = 'confirmed'",
+              `SELECT COUNT(*) as confirmed_count
+               FROM event_bookings eb
+               LEFT JOIN users u ON eb.user_id = u.id
+               LEFT JOIN roles r ON u.role_id = r.id AND r.name = 'teamer'
+               WHERE eb.timeslot_id = $1 AND eb.status = 'confirmed' AND r.id IS NULL`,
               [booking.timeslot_id]
             );
             maxCapacity = slotInfo?.max_participants || 0;
             confirmedCount = parseInt(slotCountRes?.confirmed_count || '0', 10);
           } else {
             const { rows: [countResult] } = await client.query(
-              "SELECT COUNT(*) as confirmed_count FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'",
+              `SELECT COUNT(*) as confirmed_count
+               FROM event_bookings eb
+               LEFT JOIN users u ON eb.user_id = u.id
+               LEFT JOIN roles r ON u.role_id = r.id AND r.name = 'teamer'
+               WHERE eb.event_id = $1 AND eb.status = 'confirmed' AND r.id IS NULL`,
               [eventId]
             );
             maxCapacity = eventCapInfo?.max_participants || 0;
@@ -2165,8 +2176,15 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
               "SELECT max_participants FROM event_timeslots WHERE id = $1 AND organization_id = $2",
               [booking.timeslot_id, req.user.organization_id]
             );
+            // Teamer:innen zaehlen NICHT gegen das Konfi-Kontingent (sie haben
+            // ihr eigenes) — sonst blockiert eine bestaetigte Teamer-Buchung
+            // den Nachrueckplatz eines Konfis.
             const { rows: [slotCountRes] } = await db.query(
-              "SELECT COUNT(*) as confirmed_count FROM event_bookings WHERE timeslot_id = $1 AND status = 'confirmed'",
+              `SELECT COUNT(*) as confirmed_count
+               FROM event_bookings eb
+               LEFT JOIN users u ON eb.user_id = u.id
+               LEFT JOIN roles r ON u.role_id = r.id AND r.name = 'teamer'
+               WHERE eb.timeslot_id = $1 AND eb.status = 'confirmed' AND r.id IS NULL`,
               [booking.timeslot_id]
             );
             maxCapacity = slotInfo?.max_participants || 0;
@@ -2177,7 +2195,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
               [eventId, req.user.organization_id]
             );
             const { rows: [countResult] } = await db.query(
-              "SELECT COUNT(*) as confirmed_count FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'",
+              `SELECT COUNT(*) as confirmed_count
+               FROM event_bookings eb
+               LEFT JOIN users u ON eb.user_id = u.id
+               LEFT JOIN roles r ON u.role_id = r.id AND r.name = 'teamer'
+               WHERE eb.event_id = $1 AND eb.status = 'confirmed' AND r.id IS NULL`,
               [eventId]
             );
             maxCapacity = eventCapInfo?.max_participants || 0;

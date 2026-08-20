@@ -972,6 +972,24 @@ describe('Events Routes', () => {
       expect(await statusOf(eventId, USERS.konfi2.id)).toBe('waitlist');
     });
 
+    it('Konfi storniert selbst -> bestaetigte Teamer blockieren das Nachruecken nicht', async () => {
+      const eventId = await createMixedEvent();
+
+      // Teamer-Platz belegt: zaehlte frueher gegen max_participants=1 und
+      // verhinderte damit das Nachruecken auf dem Konfi-Platz.
+      await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${teamerToken}`);
+      await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${konfiToken}`);
+      await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${konfi2Token}`);
+      expect(await statusOf(eventId, USERS.konfi2.id)).toBe('waitlist');
+
+      const res = await request(app)
+        .delete(`/api/events/${eventId}/book`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(res.status).toBe(200);
+
+      expect(await statusOf(eventId, USERS.konfi2.id)).toBe('confirmed');
+    });
+
     it('Push geht an den rollenrichtigen Kanal (Teamer-Promotion)', async () => {
       const spyTeamer = vi.spyOn(PushService, 'sendWaitlistPromotionToTeamer').mockResolvedValue(undefined);
       const spyKonfi = vi.spyOn(PushService, 'sendWaitlistPromotionToKonfi').mockResolvedValue(undefined);
