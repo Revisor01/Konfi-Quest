@@ -830,6 +830,170 @@ describe('Events Routes', () => {
   });
 
   // ================================================================
+  // Admin entfernt Teilnehmer -> Nachruecken muss die Kontingent-Trennung
+  // einhalten. Frueher nahm die Route den aeltesten Wartenden OHNE Rollenfilter:
+  // beim Entfernen eines Teamers rueckte ein Konfi auf den Teamer-Platz
+  // (Konfi-Kontingent ueberbucht, Teamer-Platz blieb leer) und der Push ging
+  // ueber den falschen Kanal.
+  // ================================================================
+  describe('DELETE /:id/bookings/:bookingId - rollenrichtiges Nachruecken', () => {
+    const jwt = require('jsonwebtoken');
+    const JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key-for-vitest';
+
+    const EXTRA_TEAMERS = [
+      { id: 111, username: 'teamer111', display_name: 'Test Teamer 111' },
+      { id: 112, username: 'teamer112', display_name: 'Test Teamer 112' },
+    ];
+
+    function teamerToken2(user) {
+      return jwt.sign({
+        id: user.id,
+        type: 'teamer',
+        display_name: user.display_name,
+        organization_id: ORGS.testGemeinde.id,
+        role_id: 2,
+      }, JWT_SECRET, { expiresIn: '1h' });
+    }
+
+    // Event mit je 1 Konfi- und 1 Teamer-Platz, beide Wartelisten offen.
+    async function createMixedEvent() {
+      const { rows: [ev] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants,
+                             point_type, points, has_timeslots, waitlist_enabled, max_waitlist_size,
+                             teamer_needed, teamer_max_participants, teamer_waitlist_enabled,
+                             teamer_max_waitlist_size)
+         VALUES ('Gemischtes Kontingent-Event', NOW() + interval '7 days', $1, false, 1,
+                 'gemeinde', 0, false, true, 5, true, 1, true, 5)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        [ev.id, JAHRGAENGE.jahrgang1.id]
+      );
+      return ev.id;
+    }
+
+    beforeEach(async () => {
+      for (const t of EXTRA_TEAMERS) {
+        await db.query(
+          `INSERT INTO users (id, username, password_hash, display_name, role_id, organization_id, is_active)
+           VALUES ($1, $2, 'x', $3, 2, $4, true)`,
+          [t.id, t.username, t.display_name, ORGS.testGemeinde.id]
+        );
+      }
+    });
+
+    async function bookingIdOf(eventId, userId) {
+      const { rows: [row] } = await db.query(
+        'SELECT id FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [eventId, userId]
+      );
+      return row?.id;
+    }
+
+    async function statusOf(eventId, userId) {
+      const { rows: [row] } = await db.query(
+        'SELECT status FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [eventId, userId]
+      );
+      return row?.status;
+    }
+
+    it('Teamer entfernt -> wartender TEAMER rueckt nach, Konfi-Warteliste bleibt unberuehrt', async () => {
+      const eventId = await createMixedEvent();
+
+      // Konfi-Platz: konfi1 confirmed, konfi2 auf Warteliste
+      await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${konfiToken}`);
+      await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${konfi2Token}`);
+      expect(await statusOf(eventId, USERS.konfi1.id)).toBe('confirmed');
+      expect(await statusOf(eventId, USERS.konfi2.id)).toBe('waitlist');
+
+      // Teamer-Platz: teamer1 confirmed, Teamer 111 auf Warteliste
+      await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${teamerToken}`);
+      await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${teamerToken2(EXTRA_TEAMERS[0])}`);
+      expect(await statusOf(eventId, USERS.teamer1.id)).toBe('confirmed');
+      expect(await statusOf(eventId, EXTRA_TEAMERS[0].id)).toBe('waitlist');
+
+      // Admin entfernt den bestaetigten TEAMER
+      const bId = await bookingIdOf(eventId, USERS.teamer1.id);
+      const res = await request(app)
+        .delete(`/api/events/${eventId}/bookings/${bId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(res.status).toBe(200);
+
+      // Der wartende TEAMER rueckt nach - NICHT der Konfi
+      expect(await statusOf(eventId, EXTRA_TEAMERS[0].id)).toBe('confirmed');
+      expect(await statusOf(eventId, USERS.konfi2.id)).toBe('waitlist');
+
+      // Konfi-Kontingent bleibt bei genau 1 bestaetigtem Konfi
+      const { rows: [cnt] } = await db.query(
+        `SELECT COUNT(*)::int AS c FROM event_bookings eb
+         JOIN users u ON eb.user_id = u.id JOIN roles r ON u.role_id = r.id
+         WHERE eb.event_id = $1 AND eb.status = 'confirmed' AND r.name != 'teamer'`,
+        [eventId]
+      );
+      expect(cnt.c).toBe(1);
+    });
+
+    it('Konfi entfernt -> wartender KONFI rueckt nach, Teamer-Warteliste bleibt unberuehrt', async () => {
+      const eventId = await createMixedEvent();
+
+      await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${konfiToken}`);
+      await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${konfi2Token}`);
+      await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${teamerToken}`);
+      await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${teamerToken2(EXTRA_TEAMERS[0])}`);
+
+      // Admin entfernt den bestaetigten KONFI
+      const bId = await bookingIdOf(eventId, USERS.konfi1.id);
+      const res = await request(app)
+        .delete(`/api/events/${eventId}/bookings/${bId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(res.status).toBe(200);
+
+      // Der wartende KONFI rueckt nach - NICHT der Teamer
+      expect(await statusOf(eventId, USERS.konfi2.id)).toBe('confirmed');
+      expect(await statusOf(eventId, EXTRA_TEAMERS[0].id)).toBe('waitlist');
+    });
+
+    it('Teamer entfernt ohne wartende Teamer -> niemand rueckt nach', async () => {
+      const eventId = await createMixedEvent();
+
+      await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${konfiToken}`);
+      await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${konfi2Token}`);
+      await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${teamerToken}`);
+
+      const bId = await bookingIdOf(eventId, USERS.teamer1.id);
+      await request(app)
+        .delete(`/api/events/${eventId}/bookings/${bId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      // Der wartende Konfi darf NICHT auf den freien Teamer-Platz rutschen
+      expect(await statusOf(eventId, USERS.konfi2.id)).toBe('waitlist');
+    });
+
+    it('Push geht an den rollenrichtigen Kanal (Teamer-Promotion)', async () => {
+      const spyTeamer = vi.spyOn(PushService, 'sendWaitlistPromotionToTeamer').mockResolvedValue(undefined);
+      const spyKonfi = vi.spyOn(PushService, 'sendWaitlistPromotionToKonfi').mockResolvedValue(undefined);
+
+      const eventId = await createMixedEvent();
+      await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${teamerToken}`);
+      await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${teamerToken2(EXTRA_TEAMERS[0])}`);
+
+      const bId = await bookingIdOf(eventId, USERS.teamer1.id);
+      await request(app)
+        .delete(`/api/events/${eventId}/bookings/${bId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(spyTeamer).toHaveBeenCalledWith(expect.anything(), EXTRA_TEAMERS[0].id, expect.any(String));
+      expect(spyKonfi).not.toHaveBeenCalled();
+
+      spyTeamer.mockRestore();
+      spyKonfi.mockRestore();
+    });
+  });
+
+  // ================================================================
   // Timeslot-Warteliste (Fund 05.07.2026): voller Slot -> Warteliste PRO SLOT,
   // frueher setzte die event-weite Gesamtkapazitaet die Warteliste ausser Kraft
   // (voller Slot wurde als "noch Platz" gewertet -> hartes "ausgebucht" ohne

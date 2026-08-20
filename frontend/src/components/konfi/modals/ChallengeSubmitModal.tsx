@@ -216,6 +216,60 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
     setMediaType(value);
   };
 
+  // --- Gemeinsamer Datei-Picker fuer Foto und Video.
+  //
+  // Der Abbruch muss erkannt werden, weil manche WebViews kein 'cancel'-Event
+  // feuern — sonst bliebe der Spinner nach einem Abbruch stehen. Frueher loeste
+  // ein Fokus-Timeout nach 1 s pauschal mit null auf; dauerte die Auswahl laenger
+  // (iOS-HEIC-Konvertierung, grosse Videos), war das Promise bereits erledigt und
+  // die Auswahl wurde still verworfen — ohne Datei, ohne Fehlermeldung.
+  //
+  // Jetzt gewinnt immer die echte Auswahl: das native 'cancel'-Event loest sofort
+  // auf, der Fokus-Fallback wartet grosszuegig (15 s) und prueft davor noch
+  // einmal, ob inzwischen doch eine Datei angekommen ist.
+  const openFilePicker = (accept: string): Promise<File | null> => {
+    return new Promise<File | null>((resolve) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = accept;
+
+      let settled = false;
+      let focusTimer: ReturnType<typeof setTimeout> | undefined;
+
+      const finish = (file: File | null) => {
+        if (settled) return;
+        settled = true;
+        if (focusTimer) clearTimeout(focusTimer);
+        window.removeEventListener('focus', onFocus);
+        resolve(file);
+      };
+
+      const onFocus = () => {
+        // Fokus zurueck in der App: entweder wurde abgebrochen, oder die Auswahl
+        // laeuft noch (Konvertierung/Kopieren). Den Spinner nach kurzer Zeit
+        // beenden, damit die Oberflaeche bei einem Abbruch nicht blockiert —
+        // das Warten auf die Datei laeuft davon unabhaengig weiter.
+        setTimeout(() => { if (!settled) setPickingMedia(false); }, 1200);
+        // Erst nach grosszuegiger Frist als Abbruch werten; 'onchange' darf
+        // jederzeit vorher gewinnen.
+        focusTimer = setTimeout(() => {
+          const late = input.files?.[0];
+          finish(late || null);
+        }, 15000);
+      };
+
+      input.onchange = (event: Event) => {
+        const target = event.target as HTMLInputElement;
+        finish(target.files?.[0] || null);
+      };
+      // Natives Abbruch-Event (moderne WebViews) — sofortige, verlaessliche Antwort.
+      input.oncancel = () => finish(null);
+
+      window.addEventListener('focus', onFocus, { once: true });
+      input.click();
+    });
+  };
+
   // --- Foto: verstecktes <input type="file"> statt Capacitor Camera.getPhoto.
   // Camera.getPhoto mit CameraSource.Prompt schlug in TestFlight beim Antippen
   // sofort mit "Foto konnte nicht ausgewaehlt werden" fehl. Die Antraege
@@ -224,20 +278,11 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
   const pickPhoto = async () => {
     setPickingMedia(true);
     try {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/*';
-      const selected = await new Promise<File | null>((resolve) => {
-        input.onchange = (event: Event) => {
-          const target = event.target as HTMLInputElement;
-          resolve(target.files?.[0] || null);
-        };
-        // Manche WebViews feuern kein 'cancel'-Event — ohne Zeitlimit wuerde
-        // pickingMedia sonst bei Abbruch haengen bleiben.
-        window.addEventListener('focus', () => setTimeout(() => resolve(null), 1000), { once: true });
-        input.click();
-      });
+      const selected = await openFilePicker('image/*');
       if (!selected) return;
+      // Spaet eingetroffene Auswahl: Spinner wieder anzeigen (der Fokus-Fallback
+      // hat ihn ggf. schon beendet), das finally setzt ihn zuverlaessig zurueck.
+      setPickingMedia(true);
       const { file: compressed, previewUrl } = await compressImage(selected);
       if (compressed.size > MAX_UPLOAD_BYTES) {
         URL.revokeObjectURL(previewUrl);
@@ -259,20 +304,9 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
   const pickVideo = async () => {
     setPickingMedia(true);
     try {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'video/*';
-      const selected = await new Promise<File | null>((resolve) => {
-        input.onchange = (event: Event) => {
-          const target = event.target as HTMLInputElement;
-          resolve(target.files?.[0] || null);
-        };
-        // Manche WebViews feuern kein 'cancel'-Event — ohne Zeitlimit wuerde
-        // pickingMedia sonst bei Abbruch haengen bleiben.
-        window.addEventListener('focus', () => setTimeout(() => resolve(null), 1000), { once: true });
-        input.click();
-      });
+      const selected = await openFilePicker('video/*');
       if (!selected) return;
+      setPickingMedia(true);
       if (selected.size > MAX_UPLOAD_BYTES) {
         setError('Datei ist zu groß (max. 50 MB).');
         return;

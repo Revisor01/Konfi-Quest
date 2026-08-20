@@ -230,6 +230,16 @@ const toIonDatetimeISO = (date: Date) => {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
 };
 
+// Fuer den Versand ans Backend: die lokale Wandzeit aus dem Picker in einen
+// echten UTC-Zeitstempel wandeln. Ohne diese Wandlung landet der naive String
+// in einer TIMESTAMPTZ-Spalte und wird in der Server-Zeitzone interpretiert —
+// auf einem Geraet ausserhalb Europe/Berlin verschiebt sich die Challenge
+// dadurch bei jeder Bearbeitung. Gleiches Muster wie im EventModal.
+const toBackendTimestamp = (localTimeString: string) => {
+  if (!localTimeString) return null;
+  return new Date(localTimeString).toISOString();
+};
+
 const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
   challenge,
   onClose,
@@ -386,7 +396,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
       author_user_id: null,
       author_freetext: formData.author_freetext.trim() || null,
       jahrgang_ids: isTeamOnly ? [] : formData.jahrgang_ids,
-      ends_at: formData.ends_at,
+      ends_at: toBackendTimestamp(formData.ends_at),
       // Nach dem Start ist is_draft fixiert (Backend erzwingt false).
       is_draft: isStarted ? false : formData.is_draft
     };
@@ -400,7 +410,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
       payload.visibility = formData.visibility;
       payload.moderated = formData.moderated;
       payload.allowed_media = formData.allowed_media;
-      payload.starts_at = formData.starts_at;
+      payload.starts_at = toBackendTimestamp(formData.starts_at);
     }
 
     return payload;

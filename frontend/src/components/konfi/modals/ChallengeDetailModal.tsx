@@ -248,7 +248,10 @@ const SubmissionCard: React.FC<{
             </div>
           )}
 
-          {submission.media_type === 'link' && submission.link_url && (
+          {/* Nur http/https rendern: die URL stammt aus einer fremden Einreichung,
+              ein praepariertes javascript:-Schema wuerde sonst bei Mitkonfis landen.
+              Gleiche Pruefung wie in der Leitungssicht. */}
+          {submission.media_type === 'link' && submission.link_url && /^https?:\/\//i.test(submission.link_url) && (
             <a
               href={submission.link_url}
               target="_blank"

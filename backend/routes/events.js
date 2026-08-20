@@ -2094,11 +2094,15 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     
     try {
       
-      // Get booking details to verify ownership and status (Event-Org wird mitgeprueft)
+      // Get booking details to verify ownership and status (Event-Org wird mitgeprueft).
+      // Die Rolle des ENTFERNTEN Users wird mitgelesen: sie entscheidet, aus welcher
+      // Warteliste nachgerueckt wird (Konfi- und Teamer-Kontingent sind getrennt).
       const { rows: [booking] } = await db.query(`
-        SELECT eb.*, u.organization_id, e.organization_id as event_org_id
+        SELECT eb.*, u.organization_id, e.organization_id as event_org_id,
+               (r.name = 'teamer') as is_teamer_booking
         FROM event_bookings eb
         JOIN users u ON eb.user_id = u.id
+        JOIN roles r ON u.role_id = r.id
         JOIN events e ON eb.event_id = e.id
         WHERE eb.id = $1 AND eb.event_id = $2`, [bookingId, eventId]);
 
@@ -2129,41 +2133,93 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // Delete the booking
       await db.query("DELETE FROM event_bookings WHERE id = $1", [bookingId]);
 
-      // Auto-promote from waitlist if the deleted booking was confirmed
+      // Auto-promote from waitlist if the deleted booking was confirmed.
+      // Konfi- und Teamer-Kontingent sind strikt getrennt: ein frei gewordener
+      // Konfi-Platz wird nur aus der Konfi-Warteliste nachbesetzt und umgekehrt.
+      // promoteFromWaitlist filtert die Rolle und schliesst geloeschte User aus.
       if (booking.status === 'confirmed') {
-        // For timeslot events, only promote from the same timeslot's waitlist
-        const query = booking.timeslot_id
-          ? "SELECT id FROM event_bookings WHERE event_id = $1 AND timeslot_id = $2 AND status = 'waitlist' ORDER BY created_at ASC LIMIT 1"
-          : "SELECT id FROM event_bookings WHERE event_id = $1 AND status = 'waitlist' ORDER BY created_at ASC LIMIT 1";
-        const params = booking.timeslot_id ? [eventId, booking.timeslot_id] : [eventId];
+        const removedIsTeamer = booking.is_teamer_booking === true;
+        try {
+          let maxCapacity = 0;
+          let confirmedCount = 0;
 
-        const { rows: [nextInLine] } = await db.query(query, params);
-        if (nextInLine) {
-          try {
-            // Get promoted user's ID and event name for push notification
-            const { rows: [promotedBooking] } = await db.query(
-              "SELECT eb.user_id, e.name as event_name FROM event_bookings eb JOIN events e ON eb.event_id = e.id WHERE eb.id = $1",
-              [nextInLine.id]
+          if (removedIsTeamer) {
+            // Teamer-Buchungen haben nie einen Timeslot -> event-weite Zaehlung.
+            const { rows: [teamerCapInfo] } = await db.query(
+              "SELECT teamer_max_participants FROM events WHERE id = $1 AND organization_id = $2",
+              [eventId, req.user.organization_id]
+            );
+            const { rows: [teamerCountRes] } = await db.query(
+              `SELECT COUNT(*) as confirmed_count
+               FROM event_bookings eb
+               JOIN users u ON eb.user_id = u.id
+               JOIN roles r ON u.role_id = r.id
+               WHERE eb.event_id = $1 AND eb.status = 'confirmed'
+                 AND r.name = 'teamer' AND u.deleted_at IS NULL`,
+              [eventId]
+            );
+            maxCapacity = teamerCapInfo?.teamer_max_participants || 0;
+            confirmedCount = parseInt(teamerCountRes?.confirmed_count || '0', 10);
+          } else if (booking.timeslot_id) {
+            const { rows: [slotInfo] } = await db.query(
+              "SELECT max_participants FROM event_timeslots WHERE id = $1 AND organization_id = $2",
+              [booking.timeslot_id, req.user.organization_id]
+            );
+            const { rows: [slotCountRes] } = await db.query(
+              "SELECT COUNT(*) as confirmed_count FROM event_bookings WHERE timeslot_id = $1 AND status = 'confirmed'",
+              [booking.timeslot_id]
+            );
+            maxCapacity = slotInfo?.max_participants || 0;
+            confirmedCount = parseInt(slotCountRes?.confirmed_count || '0', 10);
+          } else {
+            const { rows: [eventCapInfo] } = await db.query(
+              "SELECT max_participants FROM events WHERE id = $1 AND organization_id = $2",
+              [eventId, req.user.organization_id]
+            );
+            const { rows: [countResult] } = await db.query(
+              "SELECT COUNT(*) as confirmed_count FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'",
+              [eventId]
+            );
+            maxCapacity = eventCapInfo?.max_participants || 0;
+            confirmedCount = parseInt(countResult?.confirmed_count || '0', 10);
+          }
+
+          // Nur nachruecken wenn unter Kapazitaet (0 = unbegrenzt, immer nachruecken).
+          if (maxCapacity === 0 || confirmedCount < maxCapacity) {
+            const promotedUserId = await promoteFromWaitlist(
+              db,
+              eventId,
+              removedIsTeamer ? null : booking.timeslot_id,
+              removedIsTeamer ? 'teamer' : 'not_teamer'
             );
 
-            await db.query("UPDATE event_bookings SET status = 'confirmed' WHERE id = $1", [nextInLine.id]);
+            if (promotedUserId) {
+              const { rows: [eventInfo] } = await db.query(
+                "SELECT name FROM events WHERE id = $1", [eventId]
+              );
+              const eventName = eventInfo?.name || null;
+              const promotedType = removedIsTeamer ? 'teamer' : 'konfi';
 
-            // Send push notification to promoted user
-            if (promotedBooking) {
-              await PushService.sendWaitlistPromotionToKonfi(db, promotedBooking.user_id, promotedBooking.event_name);
+              if (eventName) {
+                if (removedIsTeamer) {
+                  await PushService.sendWaitlistPromotionToTeamer(db, promotedUserId, eventName);
+                } else {
+                  await PushService.sendWaitlistPromotionToKonfi(db, promotedUserId, eventName);
+                }
+              }
               // Live Update: Notify promoted user about their status change
-              liveUpdate.sendToUser('konfi', promotedBooking.user_id, 'events', 'update', { eventId, action: 'promoted' });
+              liveUpdate.sendToUser(promotedType, promotedUserId, 'events', 'update', { eventId, action: 'promoted' });
             }
-          } catch (promotionError) {
- console.error('Error promoting from waitlist:', promotionError);
           }
+        } catch (promotionError) {
+          console.error('Error promoting from waitlist:', promotionError);
         }
       }
 
       res.json({ message: 'Teilnehmer erfolgreich entfernt' });
 
-      // Live Update: Notify the removed konfi and admins
-      liveUpdate.sendToUser('konfi', booking.user_id, 'events', 'update', { eventId, action: 'removed' });
+      // Live Update: Notify the removed user (rollenrichtiger Kanal) and admins
+      liveUpdate.sendToUser(booking.is_teamer_booking ? 'teamer' : 'konfi', booking.user_id, 'events', 'update', { eventId, action: 'removed' });
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'booking_removed' });
 
     } catch (err) {

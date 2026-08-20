@@ -9,29 +9,6 @@ Versionsüberschrift.
 
 ## [Unreleased] - 2.0.0
 
-### Geändert
-- Die Absenderadresse für E-Mails aus der App ist jetzt moin@konfi-quest.de.
-- Im Chat lässt sich der Papierkorb nur noch dort antippen, wo das Löschen auch
-  erlaubt ist: Teamer:innen bei eigenen Nachrichten, die Leitung bei allen.
-
-### Behoben
-- Teamer:innen können im Chat wieder andere Teamer:innen und die Leitung
-  anschreiben — die Auswahlliste blieb für sie leer.
-- Android: Das Menü beim langen Drücken auf eine Chat-Nachricht blitzte nur kurz
-  auf und verschwand sofort wieder. Es bleibt jetzt offen.
-- Android: Der QR-Scanner startet die Kamera wieder; bisher ließ sie sich beim
-  Einchecken gar nicht öffnen.
-- Android 13 und neuer: Push-Nachrichten kommen wieder an. Die App durfte dort
-  bisher gar keine Benachrichtigungen anzeigen.
-
-### Sicherheit
-
-- Android: App-Daten wie Chats und Anmeldedaten werden nicht mehr ins
-  Google-Konto gesichert.
-
-### Sonstiges
-- Zugangsdaten werden nicht mehr in der Projektdatei hinterlegt, sondern getrennt konfiguriert.
-
 ### Hinzugefügt
 
 - Challenges: Aufgaben, auf die Konfis über einen frei gewählten Zeitraum mit
@@ -59,6 +36,11 @@ Versionsüberschrift.
 
 ### Geändert
 
+- Die Absenderadresse für E-Mails aus der App ist jetzt moin@konfi-quest.de.
+- Im Chat lässt sich der Papierkorb nur noch dort antippen, wo das Löschen auch
+  erlaubt ist: Teamer:innen bei eigenen Nachrichten, die Leitung bei allen.
+
+
 - Die Tab-Leiste hat einen eigenen Challenges-Tab; die Anträge sind kein
   eigener Tab mehr, sondern ein Bereich oben im Veranstaltungs-Tab. Gilt für
   Konfis, Teamer:innen und Leitung.
@@ -85,6 +67,16 @@ Versionsüberschrift.
   Wischaktionen mit ihrer Funktion statt nur "Schaltfläche".
 
 ### Behoben
+
+- Teamer:innen können im Chat wieder andere Teamer:innen und die Leitung
+  anschreiben — die Auswahlliste blieb für sie leer.
+- Android: Das Menü beim langen Drücken auf eine Chat-Nachricht blitzte nur kurz
+  auf und verschwand sofort wieder. Es bleibt jetzt offen.
+- Android: Der QR-Scanner startet die Kamera wieder; bisher ließ sie sich beim
+  Einchecken gar nicht öffnen.
+- Android 13 und neuer: Push-Nachrichten kommen wieder an. Die App durfte dort
+  bisher gar keine Benachrichtigungen anzeigen.
+
 
 - Teamer:innen: Im Profil standen an mehreren Stellen Punkte und die
   Einteilung in Gottesdienst und Gemeinde, die es dort gar nicht gibt — im
@@ -153,11 +145,27 @@ Versionsüberschrift.
 - Veranstaltungen: Terminserien übernehmen alle Angaben des ersten Termins.
 - Veranstaltungen: Termine mit Anmeldungen lassen sich wieder löschen.
 - Challenges: Aufruf einer Challenge konnte zur Abmeldung führen.
+- Veranstaltungen: Entfernt die Leitung eine Teamer:in, rückt jetzt auch eine
+  Teamer:in von der Warteliste nach — bisher konnte der Platz an eine Konfi
+  gehen und das Teamer-Kontingent blieb leer.
+- Challenges: Fotos und Videos gingen beim Auswählen manchmal verloren, wenn
+  das Handy für die Aufbereitung länger brauchte.
+- Challenges: Der Zeitraum verschob sich, wenn das Gerät in einer anderen
+  Zeitzone stand.
+- Der Hinweis auf den Umzug der Anträge in den Veranstaltungs-Tab wurde
+  abgeschnitten und war dadurch unlesbar.
+
+### Sicherheit
+
+- Android: App-Daten wie Chats und Anmeldedaten werden nicht mehr ins
+  Google-Konto gesichert.
+- Challenges: Links aus Beiträgen öffnen nur noch reguläre Web-Adressen.
 
 ### Sonstiges
 
 Betrifft nicht die App, gehört nicht in die Store-Release-Notes.
 
+- Zugangsdaten werden nicht mehr in der Projektdatei hinterlegt, sondern getrennt konfiguriert.
 - Eigene Staging-Umgebung mit getrennter Datenbank für interne Tests.
 - Startseite um einen Abschnitt zu den Challenges erweitert.
 - Startseite: Klick-Auswertung erkennt die Ziel-Adresse jetzt zuverlässig —

@@ -1106,7 +1106,7 @@ const TeamerEventsPage: React.FC = () => {
                       <IonIcon icon={informationCircleOutline} />
                     </div>
                     <div className="app-list-item__content">
-                      <div className="app-list-item__title" style={{ paddingRight: '44px' }}>
+                      <div className="app-list-item__title" style={{ paddingRight: '44px', whiteSpace: 'normal' }}>
                         Neu: Deine Anträge findest du jetzt hier im Events-Tab.
                       </div>
                     </div>
