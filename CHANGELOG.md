@@ -17,6 +17,10 @@ Versionsüberschrift.
 ### Behoben
 - Teamer:innen können im Chat wieder andere Teamer:innen und die Leitung
   anschreiben — die Auswahlliste blieb für sie leer.
+- Android: Das Menü beim langen Drücken auf eine Chat-Nachricht blitzte nur kurz
+  auf und verschwand sofort wieder. Es bleibt jetzt offen.
+- Android: Der QR-Scanner startet die Kamera wieder; bisher liess sie sich beim
+  Einchecken gar nicht öffnen.
 
 ### Sonstiges
 - Zugangsdaten werden nicht mehr in der Projektdatei hinterlegt, sondern getrennt konfiguriert.

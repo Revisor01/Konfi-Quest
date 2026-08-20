@@ -39,4 +39,14 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Kamera fuer den QR-Scanner (Event-Checkin). Ohne diese Deklaration
+         verweigert Android getUserMedia in der WebView, ohne dass der Nutzer
+         ueberhaupt einen Berechtigungsdialog zu sehen bekommt. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Die Kamera ist kein Muss: Geraete ohne Kamera sollen die App weiterhin
+         aus dem Play Store installieren koennen. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 </manifest>
