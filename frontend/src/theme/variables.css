@@ -918,21 +918,28 @@ ion-item {
   flex-wrap: wrap;
 }
 
+/* Gilt fuer beide Varianten: <div> (reine Anzeige) und <button> (klickbar).
+   box-sizing MUSS hier stehen — ein <button> bringt border-box vom Browser mit,
+   ein <div> erbt content-box. Ohne die Vereinheitlichung zieht der Button das
+   Padding nach innen und wird bei gleichem max-width schmaler als die Nachbarn. */
 .app-stats-row__item {
+  box-sizing: border-box;
   background: rgba(255, 255, 255, 0.2);
+  border: none;
   border-radius: 12px;
   padding: 10px 12px;
   text-align: center;
+  font-family: inherit;
   flex: 1 1 0;
   min-width: 80px;
   max-width: 100px;
+  /* Container-Bezug fuer die cqw-Schriftgroessen der Kinder. */
+  container-type: inline-size;
 }
 
-/* Klickbare Kacheln (springen zum passenden Reiter). Als <button> gerendert,
-   deshalb Browser-Defaults zuruecksetzen und die Optik der <div>-Kachel erben. */
+/* Klickbare Kacheln (springen zum passenden Reiter). Optik kommt komplett aus
+   .app-stats-row__item — hier nur noch das Interaktionsverhalten. */
 .app-stats-row__item--clickable {
-  border: none;
-  font-family: inherit;
   cursor: pointer;
   -webkit-appearance: none;
   appearance: none;
@@ -966,19 +973,34 @@ ion-item {
 }
 
 .app-stats-row__value {
+  /* Skaliert mit, damit auch drei- bis vierstellige Werte (oder "∞") in der
+     schmalsten Kachel einzeilig bleiben. */
   font-size: 1.3rem;
+  font-size: clamp(1rem, 28cqi, 1.3rem);
   font-weight: 800;
   color: white;
+  white-space: nowrap;
 }
 
 .app-stats-row__label {
+  /* Skaliert mit der Kachelbreite (cqi = 1% der Container-Breite), damit auch
+     lange Labels wie "TEAMER:IN" oder "CHALLENGES" einzeilig hineinpassen —
+     frueher stand dort eine feste Groesse und lange Woerter ragten heraus.
+     cqi bezieht sich auf die INHALTSbreite (Kachel minus 24px Padding), nicht
+     auf die volle Kachel. Faktor so gewaehlt, dass "CHALLENGES" (laengstes
+     Label) auch in der schmalsten Kachel mit Reserve einzeilig passt.
+     Die erste Zeile ist der Fallback fuer Engines ohne Container-Queries. */
   font-size: 0.65rem;
+  font-size: clamp(0.48rem, 12cqi, 0.68rem);
   color: rgba(255, 255, 255, 0.85);
   font-weight: 600;
   letter-spacing: 0.3px;
   text-transform: uppercase;
   /* Lange Labels (z.B. CHALLENGES) duerfen nie zweizeilig werden */
   white-space: nowrap;
+  /* Notnagel fuer extreme Faelle: lieber gekuerzt als gesprengt. */
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* === Empty States === */
