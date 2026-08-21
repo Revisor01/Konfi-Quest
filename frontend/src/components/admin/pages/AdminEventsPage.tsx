@@ -239,12 +239,15 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   const eventEndDate = (event: Event) =>
     new Date(event.event_end_time || event.event_date);
 
-  // Tab "Aktuell": zukuenftige/laufende Events (nicht abgesagt).
+  // Tab "Aktuell": zukuenftige/laufende Events, ABGESAGTE EINGESCHLOSSEN.
+  // Sie stehen dort durchgestrichen — verschwinden sie ganz, sieht die Leitung
+  // nicht mehr, dass der Termin existierte und abgesagt wurde (Fund 22.08.2026).
+  // `events` enthaelt sie nicht mehr (Zeile mit dem cancelled-Filter), deshalb
+  // kommen sie aus der separaten Abfrage dazu.
   const getAktuellEvents = () => {
     const now = new Date();
-    const list = events.filter(event => {
-      return eventEndDate(event) >= now && event.registration_status !== 'cancelled';
-    });
+    const abgesagteZukuenftig = (cancelledEvents || []).filter(e => eventEndDate(e) >= now);
+    const list = [...events, ...abgesagteZukuenftig].filter(event => eventEndDate(event) >= now);
     return list.sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
   };
 
@@ -258,10 +261,12 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     return list.sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime());
   };
 
-  // Tab "Vergangen": beendete Events ohne offene Buchungen (fertig verbucht).
+  // Tab "Vergangen": beendete Events ohne offene Buchungen (fertig verbucht),
+  // plus die bereits vergangenen abgesagten Termine.
   const getVergangenEvents = () => {
     const now = new Date();
-    const list = events.filter(event => {
+    const abgesagteVergangen = (cancelledEvents || []).filter(e => eventEndDate(e) < now);
+    const list = [...events, ...abgesagteVergangen].filter(event => {
       const hasPendingBookings = !!event.pending_bookings_count && event.pending_bookings_count > 0;
       return eventEndDate(event) < now && !hasPendingBookings;
     });

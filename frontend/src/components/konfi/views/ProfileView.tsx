@@ -36,7 +36,8 @@ import {
   closeOutline,
   compassOutline,
   imagesOutline,
-  sparklesOutline
+  sparklesOutline,
+  chevronForwardOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -663,6 +664,42 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         </IonCard>
       )}
 
+      {/* "Was ist neu?" steht bewusst als eigener Block VOR den Einstellungen:
+          als Punkt unter den Konto-Optionen ging er unter (Nutzerhinweis
+          22.08.2026). Chevron zeigt, dass sich etwas oeffnet. */}
+      <IonCard
+        className="app-card app-list-item--challenges"
+        style={{ margin: '16px', cursor: 'pointer' }}
+        onClick={() => setShowUpdateWalkthrough(true)}
+        role="button"
+        tabIndex={0}
+        aria-label="Was ist neu? Die Neuerungen dieser Version ansehen"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setShowUpdateWalkthrough(true);
+          }
+        }}
+      >
+        <IonCardContent style={{ padding: '14px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div className="app-icon-circle app-icon-circle--challenges" style={{ flexShrink: 0 }}>
+              <IonIcon icon={sparklesOutline} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="app-list-item__title" style={{ whiteSpace: 'normal' }}>Was ist neu?</div>
+              <div className="app-list-item__meta">
+                <span className="app-list-item__meta-item">Die Neuerungen dieser Version ansehen</span>
+              </div>
+            </div>
+            <IonIcon
+              icon={chevronForwardOutline}
+              style={{ flexShrink: 0, fontSize: '1.1rem', opacity: 0.4 }}
+            />
+          </div>
+        </IonCardContent>
+      </IonCard>
+
       {/* Konto-Einstellungen - iOS26 Pattern wie Admin */}
       <IonList inset={true} style={{ margin: '16px' }}>
         <IonListHeader>
@@ -714,27 +751,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                       <div className="app-list-item__title">App-Tour ansehen</div>
                       <div className="app-list-item__meta">
                         <span className="app-list-item__meta-item">Kurze Einführung durch die App</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Was ist neu — derselbe Walkthrough wie nach dem Update */}
-              <div
-                className="app-list-item app-list-item--challenges"
-                style={{ width: '100%', cursor: 'pointer' }}
-                onClick={() => setShowUpdateWalkthrough(true)}
-              >
-                <div className="app-list-item__row">
-                  <div className="app-list-item__main">
-                    <div className="app-icon-circle app-icon-circle--challenges">
-                      <IonIcon icon={sparklesOutline} />
-                    </div>
-                    <div className="app-list-item__content">
-                      <div className="app-list-item__title">Was ist neu?</div>
-                      <div className="app-list-item__meta">
-                        <span className="app-list-item__meta-item">Die Neuerungen dieser Version</span>
                       </div>
                     </div>
                   </div>

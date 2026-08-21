@@ -99,6 +99,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
                 jgs.jahrgang_ids,
                 jgs.jahrgang_names,
                 CASE
+                  -- Abgesagt schlaegt alles: sonst meldete ein abgesagtes Event
+                  -- weiterhin 'open'/'closed' und wurde in der Leitungssicht
+                  -- nicht als abgesagt erkannt (keine Durchstreichung, Fund
+                  -- 22.08.2026). Die Konfi-Sicht nutzt dafuer e.cancelled direkt.
+                  WHEN e.cancelled THEN 'cancelled'
                   WHEN e.mandatory THEN 'mandatory'
                   WHEN NOW() < e.registration_opens_at THEN 'upcoming'
                   WHEN NOW() > e.registration_closes_at THEN 'closed'

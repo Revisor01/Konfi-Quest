@@ -43,14 +43,15 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   Reiter — etwa von "Verbuchen" direkt in die Liste der offenen Verbuchungen.
 - Aus "Anträgen" werden "Aktivitäten" — überall in der App, vom Reiter bis zu
   den Meldungen. Gemeint ist dasselbe: gemeldet wird, was schon passiert ist.
+- Profil: "Was ist neu?" steht jetzt als eigener Punkt über den Einstellungen
+  statt darin.
 - Challenges: Eingereichte Links zeigen nur noch die Seite (etwa
   "youtube.com") statt der vollen Adresse über mehrere Zeilen.
 - Die Absenderadresse für E-Mails aus der App ist jetzt moin@konfi-quest.de.
 - Im Chat lässt sich der Papierkorb nur noch dort antippen, wo das Löschen auch
   erlaubt ist: Teamer:innen bei eigenen Nachrichten, die Leitung bei allen.
 
-
-- Die Tab-Leiste hat einen eigenen Challenges-Tab; die Anträge sind kein
+- Die Tab-Leiste hat einen eigenen Challenges-Tab; die Aktivitäten sind kein
   eigener Tab mehr, sondern ein Bereich oben im Veranstaltungs-Tab. Gilt für
   Konfis, Teamer:innen und Leitung.
 - Jahresrückblick: erzählt den eigenen Weg statt Platzierungen — mit den
@@ -78,6 +79,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 ### Behoben
 
 - Push-Nachrichten kamen nach der Server-Umstellung nicht mehr an.
+- Abgesagte Termine werden auch der Leitung als abgesagt und durchgestrichen
+  angezeigt — bisher sahen das nur die Konfis.
+- Doppelte Aktivität "Gottesdienst" in Hennstedt mit "Gottesdienstbesuch"
+  zusammengeführt, bereits vergebene Punkte bleiben erhalten.
 - Die antippbaren Zahlen im Kopfbereich waren flacher als die übrigen und
   fielen dadurch aus der Reihe.
 - Konfi-Ansicht: Die Termine in der Liste klebten ohne Abstand aneinander.
@@ -92,10 +97,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Android 13 und neuer: Push-Nachrichten kommen wieder an. Die App durfte dort
   bisher gar keine Benachrichtigungen anzeigen.
 
-
 - Teamer:innen: Im Profil standen an mehreren Stellen Punkte und die
   Einteilung in Gottesdienst und Gemeinde, die es dort gar nicht gibt — im
-  Antragsdetail, bei Terminen nur fürs Team und in der Aktivitätenauswahl.
+  Aktivitätsdetail, bei Terminen nur fürs Team und in der Aktivitätenauswahl.
 - Teamer:innen: Beim Anlegen eines Abzeichens mit einer bestimmten Aktivität
   wurden die Konfi-Aktivitäten zur Auswahl gestellt. Jetzt erscheinen nur die
   Aktivitäten der jeweiligen Zielgruppe.

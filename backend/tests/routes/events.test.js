@@ -1343,6 +1343,34 @@ describe('Events Routes', () => {
       expect(pflicht.registration_status).toBe('mandatory');
     });
 
+    // Abgesagt schlaegt jeden anderen Status — auch 'mandatory'. Vorher kannte
+    // die CASE-Anweisung gar keinen cancelled-Fall, ein abgesagtes Event meldete
+    // weiter 'open'/'mandatory' und wurde in der Leitungssicht nicht als
+    // abgesagt erkannt (Fund 22.08.2026).
+    it('Abgesagtes Pflicht-Event meldet registration_status cancelled', async () => {
+      await db.query('UPDATE events SET cancelled = TRUE WHERE id = $1', [EVENTS.pflichtEvent.id]);
+
+      const res = await request(app)
+        .get('/api/events')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      const pflicht = res.body.find(e => e.id === EVENTS.pflichtEvent.id);
+      expect(pflicht).toBeDefined();
+      expect(pflicht.registration_status).toBe('cancelled');
+    });
+
+    it('Nicht abgesagtes Event meldet weiterhin seinen normalen Status', async () => {
+      const res = await request(app)
+        .get('/api/events')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      const evt = res.body.find(e => e.id === EVENTS.gottesdienstEvent.id);
+      expect(evt).toBeDefined();
+      expect(evt.registration_status).not.toBe('cancelled');
+    });
+
     it('Pflicht-Event erstellen auto-enrolled Konfis im Jahrgang', async () => {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 14);
