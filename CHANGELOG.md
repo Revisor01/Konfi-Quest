@@ -9,6 +9,9 @@ Versionsüberschrift.
 
 ## [Unreleased] - 2.0.0
 
+Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
+älteren Geräten bleibt die zuletzt installierte Version nutzbar.
+
 ### Hinzugefügt
 
 - Challenges: Aufgaben, auf die Konfis über einen frei gewählten Zeitraum mit
