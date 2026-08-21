@@ -745,8 +745,13 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
                   <div className="app-list-item__subtitle" style={{ padding: '4px 8px', opacity: 0.7 }}>
                     Warteliste
                   </div>
-                  {slotWaitlist.map((participant) => (
+                  {slotWaitlist.map((participant, wIndex) => (
+                    // Anders als die bestaetigten Teilnehmer:innen darueber laeuft
+                    // die Slot-Warteliste ohne IonItemSliding — damit fehlte auch
+                    // die Klasse app-event-detail__sliding-item, die den Abstand
+                    // liefert, und die Zeilen klebten aneinander (Fund 22.08.2026).
                     <IonItem key={participant.id} className="app-item-transparent" button={!!showWaitlistActionSheet} detail={false} lines="none"
+                      style={{ display: 'block', marginBottom: wIndex < slotWaitlist.length - 1 ? '8px' : '0' }}
                       onClick={() => showWaitlistActionSheet && showWaitlistActionSheet(participant)}>
                       <div className="app-list-item app-list-item--warning app-event-detail__list-item-flush">
                         <div className="app-corner-badges">

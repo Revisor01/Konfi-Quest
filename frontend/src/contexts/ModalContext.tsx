@@ -51,7 +51,7 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     else if (currentPath.includes('/admin/activities')) currentTabId = 'admin-activities';
     else if (currentPath.includes('/admin/events')) currentTabId = 'admin-events';
     else if (currentPath.includes('/admin/badges')) currentTabId = 'admin-badges';
-    // Anträge sind seit dem Tab-Umbau ein Segment im Events-Tab — die alte
+    // Aktivitäten sind seit dem Tab-Umbau ein Segment im Events-Tab — die alte
     // Route /admin/requests leitet dorthin um, deshalb dasselbe Presenting-Element.
     else if (currentPath.includes('/admin/requests')) currentTabId = 'admin-events';
     else if (currentPath.includes('/admin/challenges')) currentTabId = 'admin-challenges';
@@ -68,7 +68,7 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Konfi Routes
     else if (currentPath.includes('/konfi/dashboard')) currentTabId = 'dashboard';
     else if (currentPath.includes('/konfi/events')) currentTabId = 'events';
-    // Anträge sind seit dem Tab-Umbau ein Segment im Events-Tab — die alte
+    // Aktivitäten sind seit dem Tab-Umbau ein Segment im Events-Tab — die alte
     // Route /konfi/requests leitet dorthin um, deshalb dasselbe Presenting-Element.
     else if (currentPath.includes('/konfi/requests')) currentTabId = 'events';
     else if (currentPath.includes('/konfi/challenges')) currentTabId = 'konfi-challenges';
@@ -78,7 +78,7 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Teamer Routes
     else if (currentPath.includes('/teamer/material')) currentTabId = 'teamer-material';
     else if (currentPath.includes('/teamer/events')) currentTabId = 'teamer-events';
-    // Anträge/Aktivitäten sind seit dem Tab-Umbau ein Segment im Events-Tab —
+    // Aktivitäten sind seit dem Tab-Umbau ein Segment im Events-Tab —
     // die alte Route /teamer/requests leitet dorthin um.
     else if (currentPath.includes('/teamer/requests')) currentTabId = 'teamer-events';
     else if (currentPath.includes('/teamer/dashboard')) currentTabId = 'teamer-dashboard';

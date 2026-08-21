@@ -39,7 +39,7 @@ import ActivityRequestModal from '../modals/ActivityRequestModal';
 import { Event } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
 
-// Einmaliger Hinweis nach dem Tab-Umbau: die Anträge sind aus ihrem eigenen
+// Einmaliger Hinweis nach dem Tab-Umbau: die Aktivitäten sind aus ihrem eigenen
 // Tab in dieses Segment gewandert (analog zum Konfi-Umbau in KonfiEventsPage).
 const UMZUG_HINWEIS_KEY = 'admin_antraege_umzug_hinweis_gesehen';
 
@@ -77,7 +77,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   const [presentActionSheet] = useIonActionSheet();
   const [presentAlert] = useIonAlert();
 
-  // Oberste Segment-Ebene: Events oder Anträge.
+  // Oberste Segment-Ebene: Events oder Aktivitäten.
   const [mainSegment, setMainSegment] = useState<'events' | 'antraege'>('events');
 
   // Query-Parameter ?segment=antraege auswerten — kommt vom Redirect der alten
@@ -131,7 +131,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     { ttl: CACHE_TTL.STAMMDATEN }
   );
 
-  // Offline-Query: Anträge (aus AdminActivityRequestsPage uebernommen)
+  // Offline-Query: Aktivitäten (aus AdminActivityRequestsPage uebernommen)
   const { data: requests, loading: requestsLoading, refresh: refreshRequests } = useOfflineQuery<ActivityRequest[]>(
     'admin:requests:' + user?.organization_id,
     async () => { const res = await api.get('/admin/activities/requests'); return res.data; },
@@ -146,7 +146,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
 
   const [editEvent, setEditEvent] = useState<Event | null>(null);
 
-  // --- Anträge-State ---
+  // --- Aktivitäten-State ---
   const [selectedRequest, setSelectedRequest] = useState<ActivityRequest | null>(null);
   const [modalRequestId, setModalRequestId] = useState<number | null>(null);
 
@@ -496,12 +496,13 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     );
   };
 
-  // --- Anträge-Handler ---
+  // --- Aktivitäten-Handler ---
   const handleResetRequest = async (request: ActivityRequest) => {
-    const statusText = request.status === 'approved' ? 'genehmigten' : 'abgelehnten';
+    // Feminine Endung, seit aus "Antrag" "Aktivität" wurde.
+    const statusText = request.status === 'approved' ? 'Genehmigte' : 'Abgelehnte';
     presentAlert({
-      header: 'Antrag zurücksetzen',
-      message: `${statusText} Antrag von "${request.konfi_name}" zurücksetzen und wieder als offen markieren?`,
+      header: 'Aktivität zurücksetzen',
+      message: `${statusText} Aktivität von "${request.konfi_name}" zurücksetzen und wieder als offen markieren?`,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
@@ -510,12 +511,12 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
             try {
               await api.put(`/admin/activities/requests/${request.id}/reset`);
               await refreshRequests();
-              // Zuruecksetzen macht den Antrag wieder offen -> Badge muss
+              // Zuruecksetzen macht die Aktivität wieder offen -> Badge muss
               // hochzaehlen; Punkte werden zurueckgenommen -> Konfi-Liste.
               triggerRefresh('requests');
               triggerRefresh('konfis');
             } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Zurücksetzen des Antrags');
+              setError(err.response?.data?.error || 'Fehler beim Zurücksetzen der Aktivität');
             }
           }
         }
@@ -544,7 +545,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   // mit, sprang der Large-Title beim Umschalten - siehe KonfiEventsPage.
   const pageTitle = 'Events';
 
-  // Oberste Segment-Ebene (Events | Anträge) + einmaliger Umzugs-Hinweis. Wird
+  // Oberste Segment-Ebene (Events | Aktivitäten) + einmaliger Umzugs-Hinweis. Wird
   // als headerSlot an die jeweils aktive View gereicht und dort DIREKT UNTER
   // dem Grafik-/Stats-Header gerendert (gleiches Muster wie KonfiEventsPage).
   const mainSegmentSlot = (
@@ -558,12 +559,12 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
             <IonLabel>Events</IonLabel>
           </IonSegmentButton>
           <IonSegmentButton value="antraege">
-            <IonLabel>Anträge</IonLabel>
+            <IonLabel>Aktivitäten</IonLabel>
           </IonSegmentButton>
         </IonSegment>
       </div>
 
-      {/* Einmaliger Hinweis auf den Umzug der Anträge in diesen Tab */}
+      {/* Einmaliger Hinweis auf den Umzug der Aktivitäten in diesen Tab */}
       {showUmzugHinweis && (
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonCard className="app-card">
@@ -585,7 +586,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
                     </div>
                     <div className="app-list-item__content">
                       <div className="app-list-item__title" style={{ paddingRight: '44px', whiteSpace: 'normal' }}>
-                        Neu: Die Anträge findest du jetzt hier im Events-Tab.
+                        Neu: Die Anträge heißen jetzt Aktivitäten und stehen hier im Events-Tab.
                       </div>
                     </div>
                   </div>
@@ -632,12 +633,12 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 
-        {/* Oberste Segment-Ebene (Events | Anträge) + Umzugs-Hinweis werden als
+        {/* Oberste Segment-Ebene (Events | Aktivitäten) + Umzugs-Hinweis werden als
             headerSlot an die jeweilige View gereicht und dort DIREKT UNTER dem
             Grafik-/Stats-Header gerendert - passend zur Konfi-Seitenstruktur. */}
         {isAntraege ? (
           requestsLoading ? (
-            <LoadingSpinner message="Anträge werden geladen..." />
+            <LoadingSpinner message="Aktivitäten werden geladen..." />
           ) : (
             <ActivityRequestsView
               requests={requests || []}

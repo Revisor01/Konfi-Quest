@@ -162,7 +162,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
         </IonSegment>
       </div>
 
-      {/* Anträge Liste — neue Anträge laufen ueber den Plus-Button im Header */}
+      {/* Aktivitäten-Liste — neue Aktivitäten laufen ueber den Plus-Button im Header */}
       <ListSection
         icon={documentTextOutline}
         title="Aktivitäten"
@@ -170,8 +170,8 @@ const RequestsView: React.FC<RequestsViewProps> = ({
         iconColorClass="success"
         isEmpty={filteredRequests.length === 0}
         emptyIcon={documentTextOutline}
-        emptyTitle="Keine Anträge gefunden"
-        emptyMessage="Noch keine Anträge gestellt"
+        emptyTitle="Keine Aktivitäten gefunden"
+        emptyMessage="Noch keine Aktivitäten gemeldet"
         emptyIconColor="#059669"
       >
         {filteredRequests.map((request, index) => {
@@ -308,7 +308,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                 <IonItemOptions side="end" className="app-swipe-actions">
                   <IonItemOption
                     onClick={() => { closeOpenSlidingItems(); onDeleteRequest(request); }}
-                    aria-label="Antrag löschen"
+                    aria-label="Aktivität löschen"
                     className="app-swipe-action"
                   >
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">

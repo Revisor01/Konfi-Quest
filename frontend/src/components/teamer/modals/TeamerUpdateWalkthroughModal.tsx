@@ -28,7 +28,7 @@ const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-activities)',
     rgb: '--app-color-activities-rgb',
     title: 'Auch deine Tabs sind neu',
-    text: 'Deine Tab-Leiste ist jetzt Start · Chat · Events · Challenges · Badges. Den Aktivitäten-Tab gibt es nicht mehr: Deine Anträge liegen jetzt oben im Events-Tab als eigenes Segment. Bei den Konfis ist es genauso — dafür haben sie den Challenges-Tab.',
+    text: 'Deine Tab-Leiste ist jetzt Start · Chat · Events · Challenges · Badges. Den eigenen Aktivitäten-Tab gibt es nicht mehr: Deine Aktivitäten liegen jetzt oben im Events-Tab als eigenes Segment. Bei den Konfis ist es genauso — dafür haben sie den Challenges-Tab.',
   },
 ];
 

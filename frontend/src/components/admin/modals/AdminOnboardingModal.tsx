@@ -16,7 +16,7 @@ interface AdminOnboardingModalProps {
 // Die Aktivitaeten haben einen EIGENEN Slide DIREKT hinter den Events
 // (User-Entscheid 10.08.): sie wohnen als Segment im Events-Tab, und nur
 // nebenbei erwaehnt ging unter, was sie von Events unterscheidet (kein
-// Anmelden, sondern Antrag hinterher). Das Anlegen selbst bleibt im Mehr-Tab
+// Anmelden, sondern Meldung hinterher). Das Anlegen selbst bleibt im Mehr-Tab
 // und wird dort genannt. Beispiele stammen aus echten Aktivitaeten der
 // Produktivdaten.
 const SLIDES: OnboardingSlide[] = [
@@ -53,7 +53,7 @@ const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-activities)',
     rgb: '--app-color-activities-rgb',
     title: 'Aktivitäten',
-    text: 'Aktivitäten findest du oben im Events-Tab. Es sind wiederkehrende Dinge, für die es Punkte gibt: Gottesdienst, Andacht, Taufe oder Hochzeit, aber auch Gemeindebrief verteilen oder Besuchsdienst. Anders als bei Events melden sich Konfis nicht an — sie stellen hinterher einen Antrag, du prüfst ihn und vergibst mit einem Tipp die Punkte. Auch Teamer:innen reichen hier ihren Einsatz ein.',
+    text: 'Aktivitäten findest du oben im Events-Tab. Es sind wiederkehrende Dinge, für die es Punkte gibt: Gottesdienst, Andacht, Taufe oder Hochzeit, aber auch Gemeindebrief verteilen oder Besuchsdienst. Anders als bei Events melden sich Konfis nicht an — sie melden die Aktivität hinterher, du prüfst sie und vergibst mit einem Tipp die Punkte. Auch Teamer:innen reichen hier ihren Einsatz ein.',
   },
   {
     icon: flagOutline,

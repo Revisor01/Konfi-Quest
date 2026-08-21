@@ -233,7 +233,7 @@ const MainTabs: React.FC = () => {
           <Route exact path="/admin/settings/levels" component={AdminLevelsPage} />
           <Route exact path="/admin/settings/invite" component={AdminInvitePage} />
           <Route exact path="/admin/badges" component={AdminBadgesPage} />
-          {/* Anträge sind jetzt ein Segment im Events-Tab. Die alte Route bleibt
+          {/* Aktivitäten sind jetzt ein Segment im Events-Tab. Die alte Route bleibt
               wegen bestehender Deep-Links aus Push-Nachrichten erhalten. */}
           <Route exact path="/admin/requests" render={() => <Redirect to="/admin/events?segment=antraege" />} />
           <Route exact path="/admin/challenges" component={AdminChallengesPage} />
@@ -307,7 +307,7 @@ const MainTabs: React.FC = () => {
           <Route exact path="/teamer/events" component={TeamerEventsPage} />
           <Route exact path="/teamer/material" component={TeamerMaterialPage} />
           <Route exact path="/teamer/badges" component={TeamerBadgesPage} />
-          {/* Anträge/Aktivitäten sind jetzt ein Segment im Events-Tab. Die alte
+          {/* Aktivitäten sind jetzt ein Segment im Events-Tab. Die alte
               Route bleibt wegen bestehender Deep-Links aus Push-Nachrichten erhalten. */}
           <Route exact path="/teamer/requests" render={() => <Redirect to="/teamer/events?segment=antraege" />} />
           <Route exact path="/teamer/challenges" component={TeamerChallengesPage} />
@@ -371,7 +371,7 @@ const MainTabs: React.FC = () => {
           <Route exact path="/konfi/chat" component={ChatOverviewPage} />
           <Route exact path="/konfi/chat/room/:roomId" component={KonfiChatRoomRoute} />
 
-          {/* Anträge sind jetzt ein Segment im Events-Tab. Die alte Route bleibt
+          {/* Aktivitäten sind jetzt ein Segment im Events-Tab. Die alte Route bleibt
               wegen bestehender Deep-Links aus Push-Nachrichten erhalten. */}
           <Route exact path="/konfi/requests" render={() => <Redirect to="/konfi/events?segment=antraege" />} />
           <Route exact path="/konfi/profile" component={KonfiProfilePage} />

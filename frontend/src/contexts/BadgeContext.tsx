@@ -195,7 +195,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
 
   // Initialer Load der Counts. KEIN Dauer-Polling mehr:
   // - Chat-Unread aktualisiert der WebSocket ('newMessage')
-  // - Anträge/Events aktualisiert LiveUpdate ('requests'/'events', s. useLiveRefresh oben)
+  // - Aktivitäten/Events aktualisiert LiveUpdate ('requests'/'events', s. useLiveRefresh oben)
   // - Nach Verbindungsabriss/Push feuert sync:reconnect bzw. push:received einen Refresh
   // Das frühere 30s-Intervall war durch diese Live-Kanäle redundant und erzeugte den
   // Großteil des /chat/rooms-Traffics (Admin-App offen = 120 Requests/h ohne Nutzen).

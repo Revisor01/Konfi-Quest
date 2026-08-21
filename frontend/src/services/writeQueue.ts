@@ -238,7 +238,7 @@ async function flush(): Promise<FlushResult> {
     while (items.length > 0) {
       const item = items[0];
       try {
-        // Lokales Foto zuerst hochladen falls vorhanden (Aktivitäts-Anträge)
+        // Lokales Foto zuerst hochladen falls vorhanden (gemeldete Aktivitäten)
         if (item.body?._localPhotoPath) {
           await resolveLocalPhoto(item.body);
           await _save(items); // Body-Update persistieren

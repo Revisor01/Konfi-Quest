@@ -123,6 +123,29 @@ const EventsView: React.FC<EventsViewProps> = ({
 
   const statsData = getStatLabelsAndCounts();
 
+  // Kacheln, die einem Reiter entsprechen, springen dorthin. Die Labels wechseln
+  // je nach Reiter, deshalb wird ueber das Label zugeordnet statt ueber die
+  // Position. "Anstehend" ist streng genommen ein Zeitfilter innerhalb des
+  // Reiters und hat keinen eigenen — es fuehrt zu "Alle", weil das die
+  // vollstaendigste Liste ist.
+  const TAB_ZU_LABEL: Record<string, 'alle' | 'meine' | 'konfirmation'> = {
+    'Gesamt': 'alle',
+    'Anstehend': 'alle',
+    'Gebucht': 'meine'
+  };
+
+  const statsMitSprung = statsData.map((s) => {
+    const ziel = TAB_ZU_LABEL[s.label];
+    // Im jeweils eigenen Reiter fuehrt der Klick ins Leere -> dort nicht verlinken.
+    if (!ziel || ziel === activeTab || !onTabChange) return { value: s.count, label: s.label };
+    return {
+      value: s.count,
+      label: s.label,
+      onClick: () => onTabChange(ziel),
+      active: false
+    };
+  });
+
   // Berechne Status-Infos für ein Event
   const getEventStatusInfo = (event: Event) => {
     // Mehrtaegige Events sind erst nach ihrem Ende (event_end_time) vorbei.
@@ -236,7 +259,7 @@ const EventsView: React.FC<EventsViewProps> = ({
         subtitle="Termine und Veranstaltungen"
         icon={calendar}
         preset="events"
-        stats={statsData.map(s => ({ value: s.count, label: s.label }))}
+        stats={statsMitSprung}
         onInfo={() => presentLegend({ presentingElement: presentingElement || undefined })}
       />
 
@@ -327,7 +350,13 @@ const EventsView: React.FC<EventsViewProps> = ({
                   '--inner-padding-end': '0',
                   '--inner-border-width': '0',
                   '--border-style': 'none',
-                  '--min-height': 'auto'
+                  '--min-height': 'auto',
+                  // Abstand zwischen den Karten. Steht hier statt am Wrapper,
+                  // weil die Konfi-Liste ohne IonItemSliding auskommt — mit dem
+                  // Wrapper war auch dessen marginBottom entfallen und die
+                  // Karten klebten aneinander (Fund 22.08.2026).
+                  display: 'block',
+                  marginBottom: index < filteredEvents.length - 1 ? '8px' : '0'
                 }}
               >
                 <div

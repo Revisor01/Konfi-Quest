@@ -112,7 +112,7 @@ const AdminSettingsPage: React.FC = () => {
       title: 'Aktivitäten', icon: flash, color: 'var(--app-color-activities)',
       paragraphs: [
         'Aktivitäten sind die wiederkehrenden Dinge, für die es Punkte gibt — z.B. Gottesdienstbesuch oder eine Gemeinde-Aktion.',
-        'Anders als Events stellen Konfis für eine Aktivität selbst einen Antrag auf Punkte. Du bestätigst den Antrag, dann werden die Punkte gutgeschrieben.',
+        'Anders als bei Events melden Konfis eine Aktivität selbst, wenn sie sie erledigt haben. Du bestätigst die Meldung, dann werden die Punkte gutgeschrieben.',
         'Jede Aktivität hat eine Kategorie und einen Punktwert. Über die Kategorie steuerst du, ob die Punkte zu Gottesdienst oder Gemeinde zählen.',
       ],
     },

@@ -49,7 +49,7 @@ interface ActivityRequestsViewProps {
   onUpdate: () => void;
   onSelectRequest: (request: ActivityRequest) => void;
   onResetRequest: (request: ActivityRequest) => void;
-  // Zusaetzlicher Inhalt DIREKT UNTER dem SectionHeader (z.B. das Events|Anträge-
+  // Zusaetzlicher Inhalt DIREKT UNTER dem SectionHeader (z.B. das Events|Aktivitäten-
   // Hauptsegment der Page, analog zum Konfi-Pattern in KonfiEventsPage).
   headerSlot?: React.ReactNode;
 }
@@ -106,8 +106,8 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
   return (
     <>
       <SectionHeader
-        title="Anträge"
-        subtitle="Aktivitäts-Anträge verwalten"
+        title="Aktivitäten"
+        subtitle="Gemeldete Aktivitäten verwalten"
         icon={documentOutline}
         preset="activities"
         stats={[
@@ -137,15 +137,15 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
           </IonSegmentButton>
         </IonSegment>
       </div>
-      {/* Anträge Liste */}
+      {/* Aktivitäten-Liste */}
       <ListSection
         icon={documentOutline}
-        title="Anträge"
+        title="Aktivitäten"
         count={filteredAndSortedRequests.length}
         iconColorClass="success"
         isEmpty={filteredAndSortedRequests.length === 0}
         emptyIcon={documentOutline}
-        emptyTitle="Keine Anträge vorhanden"
+        emptyTitle="Keine Aktivitäten vorhanden"
         emptyMessage="Konfirmand:innen können Aktivitäten beantragen"
         emptyIconColor="#059669"
       >
@@ -192,7 +192,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                                 <div
                                   className="app-corner-badge"
                                   style={{ backgroundColor: 'var(--app-color-teamer)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
-                                  title="Team-Antrag"
+                                  title="Team-Aktivität"
                                 >
                                   <IonIcon icon={people} style={{ color: '#fff', fontSize: '0.85rem' }} />
                                 </div>
@@ -278,7 +278,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                           {/* Reset-Button für approved/rejected */}
                           <IonItemOption
                             onClick={() => { closeOpenSlidingItems(); onResetRequest(request); }}
-                            aria-label="Antrag zurücksetzen"
+                            aria-label="Aktivität zurücksetzen"
                             className="app-swipe-action"
                           >
                             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">

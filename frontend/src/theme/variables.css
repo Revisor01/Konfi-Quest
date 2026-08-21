@@ -921,15 +921,22 @@ ion-item {
 /* Gilt fuer beide Varianten: <div> (reine Anzeige) und <button> (klickbar).
    box-sizing MUSS hier stehen — ein <button> bringt border-box vom Browser mit,
    ein <div> erbt content-box. Ohne die Vereinheitlichung zieht der Button das
-   Padding nach innen und wird bei gleichem max-width schmaler als die Nachbarn. */
+   Padding nach innen und wird bei gleichem max-width schmaler als die Nachbarn.
+
+   Die !important sind hier NICHT vorsorglich, sondern noetig: Ionics
+   normalize.css setzt global `button { padding: 0; line-height: 1 }` und wird
+   NACH diesem Stylesheet geladen. Ohne Ueberschreibung verliert die klickbare
+   Kachel ihr Padding und bekommt gestauchte Zeilen — sie war dadurch sichtbar
+   niedriger als die nicht klickbaren Nachbarn (Fund 22.08.2026). */
 .app-stats-row__item {
   box-sizing: border-box;
   background: rgba(255, 255, 255, 0.2);
   border: none;
   border-radius: 12px;
-  padding: 10px 12px;
+  padding: 10px 12px !important;
   text-align: center;
   font-family: inherit;
+  line-height: normal !important;
   flex: 1 1 0;
   min-width: 80px;
   max-width: 100px;

@@ -122,7 +122,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
       <IonPage>
         <IonHeader>
           <IonToolbar>
-            <IonTitle>Antrag laden...</IonTitle>
+            <IonTitle>Aktivität laden...</IonTitle>
             <IonButtons slot="start">
               <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={onClose}>
                 <IonIcon icon={closeOutline} />
@@ -242,7 +242,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                 ) : photoUrl ? (
                   <img
                     src={photoUrl}
-                    alt="Antragsfoto"
+                    alt="Foto zur Aktivität"
                     style={{
                       maxWidth: '100%',
                       borderRadius: '8px',
@@ -331,7 +331,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
               }}
             >
               <IonIcon icon={trashOutline} slot="start" />
-              Antrag löschen
+              Aktivität löschen
             </IonButton>
           </div>
         )}

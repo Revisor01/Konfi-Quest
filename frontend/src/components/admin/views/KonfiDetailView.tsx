@@ -271,7 +271,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         .filter((req: any) => req.konfi_id === konfiId && req.status === 'pending')
         .map((req: any) => ({
           id: `request-${req.id}`,
-          name: `${req.activity_name} (Antrag)`,
+          name: `${req.activity_name} (gemeldet)`,
           points: req.activity_points,
           type: 'pending',
           date: req.requested_date,
@@ -474,7 +474,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         `<strong>Punkte:</strong> ${getGottesdienstPoints()} Gottesdienst, ${getGemeindePoints()} Gemeinde<br>` +
         `<strong>Badges:</strong> ${currentKonfi.badgeCount || 0}<br><br>` +
         `Konfi-Punkte und Badges bleiben als Historie erhalten. ` +
-        `Event-Buchungen und offene Anträge werden gelöscht.<br><br>` +
+        `Event-Buchungen und offene Aktivitäten werden gelöscht.<br><br>` +
         `<strong>Diese Aktion kann nicht rückgängig gemacht werden.</strong>`,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },

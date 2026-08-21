@@ -57,8 +57,8 @@ const SLIDES: { icon: string; color: string; rgb: string; title: string; text: s
     icon: documentTextOutline,
     color: 'var(--app-color-activities)',
     rgb: '--app-color-activities-rgb',
-    title: 'Aktivitäten & Anträge',
-    text: 'Neben Events gibt es Aktivitäten: Dinge, die immer wieder gehen und für die es Punkte gibt — im Gottesdienst gewesen, bei einer Andacht, bei einer Taufe oder Hochzeit dabei. Da meldest du dich nicht an, sondern erzählst hinterher davon: im Events-Tab oben auf "Anträge" tippen. Dein Team bestätigt und du bekommst deine Punkte.',
+    title: 'Deine Aktivitäten',
+    text: 'Neben Events gibt es Aktivitäten: Dinge, die immer wieder gehen und für die es Punkte gibt — im Gottesdienst gewesen, bei einer Andacht, bei einer Taufe oder Hochzeit dabei. Da meldest du dich nicht an, sondern erzählst hinterher davon: im Events-Tab oben auf "Aktivitäten" tippen. Dein Team bestätigt und du bekommst deine Punkte.',
   },
   {
     icon: starOutline,

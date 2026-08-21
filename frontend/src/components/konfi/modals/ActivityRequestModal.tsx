@@ -203,10 +203,10 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
           await api.post('/konfi/requests', requestData);
 
-          setSuccess('Antrag erfolgreich eingereicht!');
+          setSuccess('Aktivität erfolgreich eingereicht!');
           onSuccess();
         } catch (error: any) {
-          setError(error.response?.data?.error || error.message || 'Fehler beim Einreichen des Antrags');
+          setError(error.response?.data?.error || error.message || 'Fehler beim Einreichen der Aktivität');
         } finally {
           setUploadProgress(0);
         }
@@ -253,11 +253,11 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           metadata: {
             type: 'request',
             clientId,
-            label: 'Aktivitäts-Antrag',
+            label: 'Aktivität melden',
           },
         });
 
-        setSuccess('Antrag wird gesendet sobald du wieder online bist');
+        setSuccess('Aktivität wird gesendet sobald du wieder online bist');
         onSuccess();
       }
     });
@@ -276,14 +276,14 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Neuer Antrag</IonTitle>
+          <IonTitle>Neue Aktivität</IonTitle>
           <IonButtons slot="start">
             <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={onClose} disabled={isSubmitting}>
               <IonIcon icon={close} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton aria-label="Antrag absenden" className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSubmit} disabled={isSubmitting || loading}>
+            <IonButton aria-label="Aktivität absenden" className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSubmit} disabled={isSubmitting || loading}>
               <IonIcon icon={checkmark} />
             </IonButton>
           </IonButtons>

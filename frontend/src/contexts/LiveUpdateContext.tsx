@@ -9,7 +9,7 @@ export type LiveUpdateType =
   | 'events'         // Events Liste
   | 'event_booking'  // Einzelne Buchung
   | 'badges'         // Badges
-  | 'requests'       // Aktivitäts-Anträge
+  | 'requests'       // Gemeldete Aktivitäten
   | 'konfis'         // Admin Konfi-Liste
   | 'points'         // Punkte-Änderungen
   | 'chat'           // Chat (bereits via BadgeContext)

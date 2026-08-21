@@ -69,7 +69,7 @@ interface EventsViewProps {
   presentingElement?: HTMLElement | null;
   // Im iPad-Split-View aktuell rechts geoeffnetes Event (fuer Highlighting).
   selectedEventId?: number | null;
-  // Zusaetzlicher Inhalt DIREKT UNTER dem SectionHeader (z.B. das Events|Anträge-
+  // Zusaetzlicher Inhalt DIREKT UNTER dem SectionHeader (z.B. das Events|Aktivitäten-
   // Hauptsegment der Page, analog zum Konfi-Pattern in KonfiEventsPage).
   headerSlot?: React.ReactNode;
 }

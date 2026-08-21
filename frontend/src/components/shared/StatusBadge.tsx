@@ -47,7 +47,7 @@ const STATUS_ICON_MAP: Record<string, string> = {
   'Abgemeldet': closeCircle,
   'Verpasst': closeCircle,
   'Ausstehend': hourglassOutline,
-  // Anträge
+  // Gemeldete Aktivitäten
   'Genehmigt': checkmarkCircle,
   'Abgelehnt': closeCircle,
   // Badges / generische Zustände (keine Text-Corner-Badges mehr)

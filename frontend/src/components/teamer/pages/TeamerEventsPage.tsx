@@ -109,7 +109,7 @@ const TeamerEventsPage: React.FC = () => {
   const queryEventId = new URLSearchParams(routerLocation.search).get('eventId');
   const [presentAlert] = useIonAlert();
 
-  // Oberste Segment-Ebene: Events oder Anträge (Aktivitäten).
+  // Oberste Segment-Ebene: Events oder Aktivitäten.
   const [mainSegment, setMainSegment] = useState<'events' | 'antraege'>('events');
 
   const [activeTab, setActiveTab] = useState<'meine' | 'alle' | 'team'>('meine');
@@ -157,7 +157,7 @@ const TeamerEventsPage: React.FC = () => {
     { ttl: CACHE_TTL.EVENTS }
   );
 
-  // --- Offline-Query: Anträge (aus TeamerRequestsPage uebernommen) ---
+  // --- Offline-Query: Aktivitäten (aus TeamerRequestsPage uebernommen) ---
   const { data: requests, loading: requestsLoading, refresh: refreshRequests } = useOfflineQuery<ActivityRequest[]>(
     'teamer:requests:' + user?.id,
     () => api.get('/teamer/requests').then(r => r.data),
@@ -272,13 +272,13 @@ const TeamerEventsPage: React.FC = () => {
       return;
     }
     if (request.status !== 'pending') {
-      setError('Nur wartende Anträge können gelöscht werden');
+      setError('Nur wartende Aktivitäten können gelöscht werden');
       return;
     }
 
     presentAlert({
-      header: 'Antrag löschen',
-      message: `Möchtest du deinen Antrag für "${request.activity_name}" wirklich löschen?`,
+      header: 'Aktivität löschen',
+      message: `Möchtest du deine Meldung für "${request.activity_name}" wirklich löschen?`,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
@@ -289,7 +289,7 @@ const TeamerEventsPage: React.FC = () => {
               await api.delete(`/teamer/requests/${request.id}`);
               refreshRequests();
             } catch (error: any) {
-              setError(error.response?.data?.error || 'Fehler beim Löschen des Antrags');
+              setError(error.response?.data?.error || 'Fehler beim Löschen der Aktivität');
             }
           }
         }
@@ -1066,7 +1066,7 @@ const TeamerEventsPage: React.FC = () => {
   // KonfiEventsPage/AdminEventsPage.
   const pageTitle = 'Events';
 
-  // Oberste Segment-Ebene (Events | Anträge) + einmaliger Umzugs-Hinweis. Wird
+  // Oberste Segment-Ebene (Events | Aktivitäten) + einmaliger Umzugs-Hinweis. Wird
   // DIREKT UNTER dem Grafik-/Stats-Header gerendert (gleiches Muster wie bei
   // Konfi/Admin).
   const mainSegmentSlot = (
@@ -1080,12 +1080,12 @@ const TeamerEventsPage: React.FC = () => {
             <IonLabel>Events</IonLabel>
           </IonSegmentButton>
           <IonSegmentButton value="antraege">
-            <IonLabel>Anträge</IonLabel>
+            <IonLabel>Aktivitäten</IonLabel>
           </IonSegmentButton>
         </IonSegment>
       </div>
 
-      {/* Einmaliger Hinweis auf den Umzug der Anträge in diesen Tab */}
+      {/* Einmaliger Hinweis auf den Umzug der Aktivitäten in diesen Tab */}
       {showUmzugHinweis && (
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonCard className="app-card">
@@ -1107,7 +1107,7 @@ const TeamerEventsPage: React.FC = () => {
                     </div>
                     <div className="app-list-item__content">
                       <div className="app-list-item__title" style={{ paddingRight: '44px', whiteSpace: 'normal' }}>
-                        Neu: Deine Anträge findest du jetzt hier im Events-Tab.
+                        Neu: Deine Anträge heißen jetzt Aktivitäten und stehen hier im Events-Tab.
                       </div>
                     </div>
                   </div>
@@ -1128,7 +1128,7 @@ const TeamerEventsPage: React.FC = () => {
           <IonTitle>{pageTitle}</IonTitle>
           <IonButtons slot="end">
             {isAntraege && (
-              <IonButton onClick={handleAddRequest} aria-label="Neuen Antrag stellen">
+              <IonButton onClick={handleAddRequest} aria-label="Neue Aktivität melden">
                 <IonIcon icon={add} />
               </IonButton>
             )}
@@ -1156,7 +1156,7 @@ const TeamerEventsPage: React.FC = () => {
 
         {isAntraege ? (
           requestsLoading ? (
-            <LoadingSpinner message="Anträge werden geladen..." />
+            <LoadingSpinner message="Aktivitäten werden geladen..." />
           ) : (
             <RequestsView
               requests={getFilteredRequests()}
@@ -1174,7 +1174,7 @@ const TeamerEventsPage: React.FC = () => {
                 <>
                   {mainSegmentSlot}
 
-                  {/* Pending Queue-Anträge (Offline-Warteschlange) */}
+                  {/* Pending Queue-Aktivitäten (Offline-Warteschlange) */}
                   {pendingQueueItems.length > 0 && (
                     <IonList inset={true} className="app-segment-wrapper">
                       <IonListHeader>
@@ -1203,7 +1203,7 @@ const TeamerEventsPage: React.FC = () => {
                                   </div>
                                   <div className="app-list-item__content">
                                     <div className="app-list-item__title" style={{ paddingRight: '60px' }}>
-                                      {qi.metadata.label || 'Antrag'}
+                                      {qi.metadata.label || 'Aktivität'}
                                     </div>
                                     <div className="app-list-item__subtitle">
                                       {qi.body?.description || 'Wird gesendet sobald du online bist'}

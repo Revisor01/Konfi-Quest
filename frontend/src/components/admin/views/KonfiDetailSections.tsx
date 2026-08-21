@@ -1243,7 +1243,7 @@ export const PromoteSection = React.memo<PromoteSectionProps>(({
     <IonCard className="app-card">
       <IonCardContent style={{ padding: '12px' }}>
         <p style={{ fontSize: '0.8rem', color: 'var(--ion-color-medium)', textAlign: 'center', marginBottom: '12px' }}>
-          Beim Befördern bleiben Konfi-Punkte und Badges als Historie erhalten. Event-Buchungen und offene Anträge werden gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.
+          Beim Befördern bleiben Konfi-Punkte und Badges als Historie erhalten. Event-Buchungen und offene Aktivitäten werden gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.
         </p>
         <div className="app-event-detail__add-button-wrapper">
           <IonButton

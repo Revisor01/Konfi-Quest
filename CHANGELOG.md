@@ -41,6 +41,8 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 - Die Zahlen oben im Kopfbereich sind antippbar und springen zum passenden
   Reiter — etwa von "Verbuchen" direkt in die Liste der offenen Verbuchungen.
+- Aus "Anträgen" werden "Aktivitäten" — überall in der App, vom Reiter bis zu
+  den Meldungen. Gemeint ist dasselbe: gemeldet wird, was schon passiert ist.
 - Challenges: Eingereichte Links zeigen nur noch die Seite (etwa
   "youtube.com") statt der vollen Adresse über mehrere Zeilen.
 - Die Absenderadresse für E-Mails aus der App ist jetzt moin@konfi-quest.de.
@@ -76,6 +78,11 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 ### Behoben
 
 - Push-Nachrichten kamen nach der Server-Umstellung nicht mehr an.
+- Die antippbaren Zahlen im Kopfbereich waren flacher als die übrigen und
+  fielen dadurch aus der Reihe.
+- Konfi-Ansicht: Die Termine in der Liste klebten ohne Abstand aneinander.
+- Veranstaltungen: In den Zeitfenstern klebten die Einträge der Warteliste
+  ohne Abstand aneinander.
 - Teamer:innen können im Chat wieder andere Teamer:innen und die Leitung
   anschreiben — die Auswahlliste blieb für sie leer.
 - Android: Das Menü beim langen Drücken auf eine Chat-Nachricht blitzte nur kurz
