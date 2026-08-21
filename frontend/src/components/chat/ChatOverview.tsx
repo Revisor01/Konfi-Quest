@@ -55,6 +55,7 @@ import LoadingSpinner from '../common/LoadingSpinner';
 import SimpleCreateChatModal from './modals/SimpleCreateChatModal';
 import { ChatRoomOverview } from '../../types/chat';
 import { triggerPullHaptic } from '../../utils/haptics';
+import { closeOpenSlidingItems } from '../../utils/slidingItems';
 
 interface ChatOverviewProps {
   onSelectRoom: (room: ChatRoomOverview) => void;
@@ -384,7 +385,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
         <IonToolbar>
           <IonTitle>Chat</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={handleCreateNewChat}>
+            <IonButton aria-label="Neuen Chat starten" onClick={handleCreateNewChat}>
               <IonIcon icon={add} />
             </IonButton>
           </IonButtons>
@@ -607,7 +608,8 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                         {canDelete && (
                           <IonItemOptions side="end" className="app-swipe-actions">
                             <IonItemOption
-                              onClick={() => deleteRoom(room)}
+                              onClick={() => { closeOpenSlidingItems(); deleteRoom(room); }}
+                              aria-label="Chat löschen"
                               className="app-swipe-action"
                             >
                               <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">

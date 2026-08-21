@@ -138,13 +138,13 @@ const AdminOrganizationsPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton onClick={() => window.history.back()}>
+            <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
               <IonIcon icon={arrowBack} />
             </IonButton>
           </IonButtons>
           <IonTitle>Organisationen</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={presentOrganizationModal}>
+            <IonButton aria-label="Neue Organisation anlegen" onClick={presentOrganizationModal}>
               <IonIcon icon={add} />
             </IonButton>
           </IonButtons>

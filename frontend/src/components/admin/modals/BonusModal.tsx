@@ -100,12 +100,12 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
         <IonToolbar>
           <IonTitle>Bonuspunkte hinzufügen</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose} disabled={isSubmitting} className="app-modal-close-btn">
+            <IonButton aria-label="Schließen" onClick={handleClose} disabled={isSubmitting} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={!isValid || isSubmitting} className="app-modal-submit-btn app-modal-submit-btn--bonus">
+            <IonButton aria-label="Bonuspunkte speichern" onClick={handleSave} disabled={!isValid || isSubmitting} className="app-modal-submit-btn app-modal-submit-btn--bonus">
               {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>

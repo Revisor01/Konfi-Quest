@@ -152,7 +152,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton className="app-modal-close-btn" onClick={onClose}>
+            <IonButton className="app-modal-close-btn" onClick={onClose} aria-label="Schließen">
               <IonIcon icon={closeOutline} slot="icon-only" />
             </IonButton>
           </IonButtons>
@@ -184,7 +184,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
               title={material.title}
               subtitle="Material"
               icon={documentIcon}
-              colors={{ primary: '#d97706', secondary: '#b45309' }}
+              colors={{ primary: 'var(--app-color-material)', secondary: '#b45309' }}
               stats={[{ value: material.files?.length || 0, label: 'Dateien' }]}
             />
 
@@ -270,7 +270,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                       icon={documentOutline}
                       title="Keine Dateien"
                       message="Dieses Material hat keine angehängten Dateien."
-                      iconColor="#d97706"
+                      iconColor="var(--app-color-material)"
                     />
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -279,14 +279,14 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                         key={file.id}
                         className="app-list-item"
                         style={{
-                          borderLeftColor: '#d97706',
+                          borderLeftColor: 'var(--app-color-material)',
                           cursor: 'pointer'
                         }}
                         onClick={() => openFile(file)}
                       >
                         <div className="app-list-item__row">
                           <div className="app-list-item__main">
-                            <div className="app-icon-circle" style={{ backgroundColor: '#d97706' }}>
+                            <div className="app-icon-circle" style={{ backgroundColor: 'var(--app-color-material)' }}>
                               <IonIcon icon={getFileIcon(file.mime_type)} />
                             </div>
                             <div className="app-list-item__content">

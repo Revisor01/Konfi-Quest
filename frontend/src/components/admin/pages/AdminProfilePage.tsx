@@ -124,7 +124,7 @@ const AdminProfilePage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
         <IonButtons slot="start">
-          <IonButton onClick={() => window.history.back()}>
+          <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
             <IonIcon icon={arrowBack} />
           </IonButton>
         </IonButtons>

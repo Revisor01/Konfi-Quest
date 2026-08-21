@@ -18,7 +18,7 @@ Hardcodierte Geheimnisse aus dem Quellcode entfernen, Socket.IO Room-Join mit Or
 Alle Implementierungsentscheidungen liegen bei Claude -- reine Infrastruktur-Phase.
 
 Bekannte Details aus Codebase-Audit:
-- Losung-API-Key (`ksadh8324oijcff45rfdsvcvhoids44`) ist in konfi.js (Zeile 1439) und teamer.js (Zeile 741) hardcodiert
+- Losung-API-Key (`<aus Env>`) ist in konfi.js (Zeile 1439) und teamer.js (Zeile 741) hardcodiert
 - Socket.IO joinRoom (server.js Zeilen 53-68, 71-106) prueft keine Organization-Zugehoerigkeit
 - Wrapped-Cron nutzt setInterval(24h) in backgroundService.js (Zeile 418)
 - node-cron als Dependency fuer echten Cron-Scheduler mit korrekter Zeitberechnung nach Neustart

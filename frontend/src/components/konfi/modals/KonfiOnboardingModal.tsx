@@ -6,7 +6,7 @@ import { Pagination } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import {
   sparklesOutline, homeOutline, chatbubblesOutline, calendarOutline,
-  starOutline, documentTextOutline, arrowForward, checkmarkCircle
+  starOutline, documentTextOutline, flagOutline, arrowForward, checkmarkCircle
 } from 'ionicons/icons';
 import 'swiper/css';
 import 'swiper/css/pagination';
@@ -16,8 +16,11 @@ interface KonfiOnboardingModalProps {
   displayName?: string;
 }
 
-// Inhalt der Tab-Tour. Reihenfolge folgt den Konfi-Tabs:
-// Start (Dashboard) · Chat · Events · Badges · Aktivitaeten.
+// Inhalt der Tab-Tour. Reihenfolge nach Nutzerfeedback:
+// Willkommen · Dein Start (Dashboard) · Deine Chats · Deine Events · Deine
+// Antraege (Segment IM Events-Tab, seit 2.0 kein eigener Tab mehr) · Deine
+// Badges · Deine Challenges. Die Antraege folgen bewusst direkt auf die Events,
+// weil sie dort wohnen; die Challenges stehen als Neuheit am Schluss.
 // rgb = Name der -rgb-CSS-Variable (z.B. "konfis" -> --app-color-konfis-rgb),
 // noetig fuer rgba()-Alphastufen im Gradient. `${color}d9` (Hex anhaengen)
 // funktioniert NICHT mit var() -> ungueltiges CSS -> kein Hintergrund.
@@ -51,6 +54,13 @@ const SLIDES: { icon: string; color: string; rgb: string; title: string; text: s
     text: 'Hier findest du alle Termine und meldest dich direkt an — bis hin zu deiner Konfirmation. Bei manchen Events wählst du einen Platz oder ein Zeitfenster: einfach tippen und buchen.',
   },
   {
+    icon: documentTextOutline,
+    color: 'var(--app-color-activities)',
+    rgb: '--app-color-activities-rgb',
+    title: 'Aktivitäten & Anträge',
+    text: 'Neben Events gibt es Aktivitäten: Dinge, die immer wieder gehen und für die es Punkte gibt — im Gottesdienst gewesen, bei einer Andacht, bei einer Taufe oder Hochzeit dabei. Da meldest du dich nicht an, sondern erzählst hinterher davon: im Events-Tab oben auf "Anträge" tippen. Dein Team bestätigt und du bekommst deine Punkte.',
+  },
+  {
     icon: starOutline,
     color: 'var(--app-color-badges)',
     rgb: '--app-color-badges-rgb',
@@ -58,11 +68,11 @@ const SLIDES: { icon: string; color: string; rgb: string; title: string; text: s
     text: 'Für deine Aktivitäten bekommst du Abzeichen. Sammle Badges und steig im Level auf — je mehr du machst, desto mehr schaltest du frei.',
   },
   {
-    icon: documentTextOutline,
-    color: 'var(--app-color-activities)',
-    rgb: '--app-color-activities-rgb',
-    title: 'Deine Aktivitäten',
-    text: 'Warst du im Gottesdienst, bei einer Taufe oder Hochzeit? Reiche deine Aktivitäten hier ein. Deine Gruppenleiterinnen bestätigen sie und du bekommst deine Punkte.',
+    icon: flagOutline,
+    color: 'var(--app-color-challenges)',
+    rgb: '--app-color-challenges-rgb',
+    title: 'Deine Challenges',
+    text: 'Zum Schluss das Neueste: In der Mitte deiner Tab-Leiste warten die Challenges — eine Aufgabe und eine Zeit lang Ruhe, dich damit zu beschäftigen. Du antwortest mit einem Foto, einem Text, einer Aufnahme oder einem Link. Du entscheidest, ob dein Beitrag mit Namen, anonym oder nur für die Leitung sichtbar ist. Fürs Mitmachen gibt es ein Abzeichen und mit Absicht keine Punkte: Hier geht es nicht ums Sammeln, sondern um dich und deinen Glauben. Deine Teamer:innen machen übrigens mit.',
   },
 ];
 

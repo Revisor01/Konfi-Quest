@@ -41,6 +41,7 @@ import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import QRCode from 'qrcode';
+import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
 interface Jahrgang {
   id: number;
@@ -261,7 +262,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose}>
+            <IonButton onClick={handleClose} aria-label="Schließen">
               <IonIcon icon={closeOutline} slot="icon-only" />
             </IonButton>
           </IonButtons>
@@ -399,7 +400,8 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                           </IonItem>
                           <IonItemOptions side="end" className="app-swipe-actions">
                             <IonItemOption
-                              onClick={() => extendInvite(invite.id)}
+                              onClick={() => { closeOpenSlidingItems(); extendInvite(invite.id); }}
+                              aria-label="Einladung verlängern"
                               className="app-swipe-action"
                             >
                               <div className="app-icon-circle app-icon-circle--lg app-icon-circle--success">
@@ -407,7 +409,8 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                               </div>
                             </IonItemOption>
                             <IonItemOption
-                              onClick={() => deleteInvite(invite)}
+                              onClick={() => { closeOpenSlidingItems(); deleteInvite(invite); }}
+                              aria-label="Einladung löschen"
                               className="app-swipe-action"
                             >
                               <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">

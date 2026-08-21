@@ -43,6 +43,7 @@ import { parseLocalTime, getLocalNow } from '../../utils/dateUtils';
 import { SectionHeader, ListSection, StatusBadge, EventLegendModal, EventCornerBadges, formatEventDate as formatDate, formatEventTime as formatTime } from '../shared';
 import { getStatusIcon } from '../shared/StatusBadge';
 import { Event } from '../../types/event';
+import { closeOpenSlidingItems } from '../../utils/slidingItems';
 
 interface EventsViewProps {
   events: Event[];
@@ -68,6 +69,9 @@ interface EventsViewProps {
   presentingElement?: HTMLElement | null;
   // Im iPad-Split-View aktuell rechts geoeffnetes Event (fuer Highlighting).
   selectedEventId?: number | null;
+  // Zusaetzlicher Inhalt DIREKT UNTER dem SectionHeader (z.B. das Events|Anträge-
+  // Hauptsegment der Page, analog zum Konfi-Pattern in KonfiEventsPage).
+  headerSlot?: React.ReactNode;
 }
 
 const EventsView: React.FC<EventsViewProps> = ({
@@ -87,7 +91,8 @@ const EventsView: React.FC<EventsViewProps> = ({
   searchText,
   onSearchChange,
   presentingElement,
-  selectedEventId
+  selectedEventId,
+  headerSlot
 }) => {
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
 
@@ -173,18 +178,33 @@ const EventsView: React.FC<EventsViewProps> = ({
           // Stats GLOBAL ueber alle Events zaehlen (eventCounts von der Page),
           // NICHT nur ueber die Events des aktiven Tabs (`events`) — sonst waren
           // zwei der drei Werte je nach Tab faelschlich 0.
-          { value: eventCounts?.aktuell ?? getUpcomingEvents().length, label: 'Anstehend' },
+          // Die drei Kacheln entsprechen genau den drei Reitern und schalten
+          // beim Antippen dorthin.
+          {
+            value: eventCounts?.aktuell ?? getUpcomingEvents().length,
+            label: 'Anstehend',
+            onClick: onTabChange ? () => onTabChange('aktuell') : undefined,
+            active: activeTab === 'aktuell'
+          },
           {
             value: eventCounts?.verbuchen ?? events.filter(e =>
               new Date(e.event_date) < new Date() &&
               (e.pending_bookings_count ?? 0) > 0
             ).length,
-            label: 'Verbuchen'
+            label: 'Verbuchen',
+            onClick: onTabChange ? () => onTabChange('verbuchen') : undefined,
+            active: activeTab === 'verbuchen'
           },
-          { value: eventCounts?.vergangen ?? getPastEvents().length, label: 'Vergangen' }
+          {
+            value: eventCounts?.vergangen ?? getPastEvents().length,
+            label: 'Vergangen',
+            onClick: onTabChange ? () => onTabChange('vergangen') : undefined,
+            active: activeTab === 'vergangen'
+          }
         ]}
       />
 
+      {headerSlot}
 
       {/* Suche & Filter */}
       <IonList inset={true} style={{ margin: '16px' }}>
@@ -382,19 +402,23 @@ const EventsView: React.FC<EventsViewProps> = ({
                             </div>
                           )}
 
-                          {/* Zeile 2: Buchungen + Teamer + Warteliste + Punkte */}
+                          {/* Zeile 2: Buchungen + Teamer + Warteliste + Punkte.
+                              Bei "Nur Teamer:innen" gibt es keine Konfi-Teilnahme \u2014
+                              dann waere "0/\u221E" irrefuehrend, es zaehlt nur das Team. */}
                           <div className="app-list-item__meta">
-                            <span className="app-list-item__meta-item">
-                              <IonIcon icon={people} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--participants'} />
-                              {event.mandatory
-                                ? `${event.registered_count - (event.teamer_count || 0)} Konfis`
-                                : `${event.registered_count - (event.teamer_count || 0)}/${(event.max_participants || 0) > 0 ? event.max_participants : '\u221E'}`
-                              }
-                            </span>
-                            {(event.teamer_count || 0) > 0 && (
+                            {!event.teamer_only && (
+                              <span className="app-list-item__meta-item">
+                                <IonIcon icon={people} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--participants'} />
+                                {event.mandatory
+                                  ? `${event.registered_count - (event.teamer_count || 0)} Konfis`
+                                  : `${event.registered_count - (event.teamer_count || 0)}/${(event.max_participants || 0) > 0 ? event.max_participants : '\u221E'}`
+                                }
+                              </span>
+                            )}
+                            {(event.teamer_only || event.teamer_needed) && (
                               <span className="app-list-item__meta-item">
                                 <IonIcon icon={people} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--team'} />
-                                {event.teamer_count} Team
+                                {(event.teamer_count || 0)}/{(event.teamer_max_participants || 0) > 0 ? event.teamer_max_participants : '\u221E'} Team
                               </span>
                             )}
                             {event.waitlist_enabled && (event.waitlist_count ?? 0) > 0 && (
@@ -403,7 +427,8 @@ const EventsView: React.FC<EventsViewProps> = ({
                                 {event.waitlist_count}/{event.max_waitlist_size || 10}
                               </span>
                             )}
-                            {event.points > 0 && (
+                            {/* Bei reinen Teamer-Events gibt es keine Punkte */}
+                            {event.points > 0 && !event.teamer_only && (
                               <span className="app-list-item__meta-item">
                                 <IonIcon icon={trophy} className={shouldGrayOut ? 'app-icon-color--muted' : 'app-icon-color--points'} />
                                 {event.points}P
@@ -460,7 +485,8 @@ const EventsView: React.FC<EventsViewProps> = ({
                   <IonItemOptions side="end" className="app-swipe-actions">
                     {onCancelEvent && (
                       <IonItemOption
-                        onClick={() => onCancelEvent(event)}
+                        onClick={() => { closeOpenSlidingItems(); onCancelEvent(event); }}
+                        aria-label="Event absagen"
                         className="app-swipe-action"
                       >
                         <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
@@ -470,7 +496,8 @@ const EventsView: React.FC<EventsViewProps> = ({
                     )}
                     {onDeleteEvent && (
                       <IonItemOption
-                        onClick={() => onDeleteEvent(event)}
+                        onClick={() => { closeOpenSlidingItems(); onDeleteEvent(event); }}
+                        aria-label="Event löschen"
                         className="app-swipe-action"
                       >
                         <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">

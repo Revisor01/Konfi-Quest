@@ -18,7 +18,7 @@ services:
     environment:
       POSTGRES_DB: konfi_db
       POSTGRES_USER: konfi_user
-      POSTGRES_PASSWORD: BOpxzCFau7JhGn2v0vvQCEtqV7KG4JHI
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD fehlt}
       PGDATA: /var/lib/postgresql/data/pgdata
       TZ: Europe/Berlin
       PGTZ: Europe/Berlin
@@ -51,19 +51,19 @@ services:
     image: ghcr.io/revisor01/konfi-quest-backend:<TAG>
     environment: &backend_env
       NODE_ENV: production
-      JWT_SECRET: "YFDRvxxiAty8H7BDSZ6Pt982mOfcQcsRkwUMvb3dTNMPBK94rn70xprRqhE4P"
-      QR_SECRET: "19KtT1Cj7qZNp9IuNGlUSHKEK9PB7udwWIeRdpvi3yW2xABZfpA2dQ0Oma7Va"
-      LOSUNG_API_KEY: ksadh8324oijcff45rfdsvcvhoids44
-      DATABASE_URL: postgresql://konfi_user:BOpxzCFau7JhGn2v0vvQCEtqV7KG4JHI@postgres:5432/konfi_db
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET fehlt}
+      QR_SECRET: ${QR_SECRET:?QR_SECRET fehlt}
+      LOSUNG_API_KEY: ${LOSUNG_API_KEY:?LOSUNG_API_KEY fehlt}
+      DATABASE_URL: postgresql://konfi_user:${POSTGRES_PASSWORD}@postgres:5432/konfi_db
       PGHOST: postgres
       PGUSER: konfi_user
       PGDATABASE: konfi_db
-      PGPASSWORD: BOpxzCFau7JhGn2v0vvQCEtqV7KG4JHI
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD fehlt}
       PGPORT: 5432
-      SMTP_HOST: 213.109.162.132
+      SMTP_HOST: server.godsapp.de
       SMTP_PORT: 465
-      SMTP_USER: noreply@konfi-quest.de
-      SMTP_PASS: "RxoJpF4qMCKTFx8pBPUI4uFh"
+      SMTP_USER: moin@konfi-quest.de
+      SMTP_PASS: ${SMTP_PASS:?SMTP_PASS fehlt}
       # Metrics-Aggregation: /api/metrics fragt BEIDE Replicas (interne Compose-
       # Servicenamen im internal-Netz) ab und mergt sie zu einem Gesamtbild.
       METRICS_PEERS: "http://backend:5000,http://backend2:5000"

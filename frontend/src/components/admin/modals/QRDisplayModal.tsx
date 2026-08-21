@@ -99,13 +99,13 @@ const QRDisplayModal: React.FC<QRDisplayModalProps> = ({ eventId, eventName, eve
       <IonHeader className="qr-display-header">
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton onClick={onClose}>
+            <IonButton onClick={onClose} aria-label="Schließen">
               <IonIcon icon={closeOutline} slot="icon-only" />
             </IonButton>
           </IonButtons>
           <IonTitle>QR-Code</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={handlePrint} disabled={!qrDataUrl}>
+            <IonButton onClick={handlePrint} disabled={!qrDataUrl} aria-label="QR-Code drucken">
               <IonIcon icon={printOutline} slot="icon-only" />
             </IonButton>
           </IonButtons>

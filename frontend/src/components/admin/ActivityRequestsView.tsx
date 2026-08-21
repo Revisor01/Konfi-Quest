@@ -21,6 +21,7 @@ import {
   returnUpBack
 } from 'ionicons/icons';
 import { SectionHeader, ListSection, StatusBadge } from '../shared';
+import { closeOpenSlidingItems } from '../../utils/slidingItems';
 
 interface ActivityRequest {
   id: number;
@@ -48,13 +49,17 @@ interface ActivityRequestsViewProps {
   onUpdate: () => void;
   onSelectRequest: (request: ActivityRequest) => void;
   onResetRequest: (request: ActivityRequest) => void;
+  // Zusaetzlicher Inhalt DIREKT UNTER dem SectionHeader (z.B. das Events|Anträge-
+  // Hauptsegment der Page, analog zum Konfi-Pattern in KonfiEventsPage).
+  headerSlot?: React.ReactNode;
 }
 
 const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
   requests: requestsRaw,
   onUpdate,
   onSelectRequest,
-  onResetRequest
+  onResetRequest,
+  headerSlot
 }) => {
   // Defensive: bei kaputten/gecachten Responses (Object statt Array) auf [] fallen
   const requests: ActivityRequest[] = Array.isArray(requestsRaw) ? requestsRaw : [];
@@ -106,11 +111,14 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
         icon={documentOutline}
         preset="activities"
         stats={[
-          { value: getPendingCount(), label: 'Offen' },
-          { value: getApprovedCount(), label: 'Genehmigt' },
-          { value: getRejectedCount(), label: 'Abgelehnt' }
+          // Die Kacheln entsprechen den drei Filter-Reitern und schalten dorthin.
+          { value: getPendingCount(), label: 'Offen', onClick: () => setStatusFilter('pending'), active: statusFilter === 'pending' },
+          { value: getApprovedCount(), label: 'Genehmigt', onClick: () => setStatusFilter('approved'), active: statusFilter === 'approved' },
+          { value: getRejectedCount(), label: 'Abgelehnt', onClick: () => setStatusFilter('rejected'), active: statusFilter === 'rejected' }
         ]}
       />
+
+      {headerSlot}
 
       {/* Tab Filter - wie bei Events */}
       <div style={{ margin: '16px 16px 8px 16px' }}>
@@ -269,7 +277,8 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                         <IonItemOptions side="end" className="app-swipe-actions">
                           {/* Reset-Button für approved/rejected */}
                           <IonItemOption
-                            onClick={() => onResetRequest(request)}
+                            onClick={() => { closeOpenSlidingItems(); onResetRequest(request); }}
+                            aria-label="Antrag zurücksetzen"
                             className="app-swipe-action"
                           >
                             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">

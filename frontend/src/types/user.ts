@@ -41,7 +41,9 @@ export interface ChatUser {
   id: number;
   name?: string;
   display_name?: string;
-  type: 'admin' | 'konfi';
+  // 'teamer' ist eigenstaendig: Teamer:innen lesen ihre Raeume mit user_type
+  // 'teamer', ein als 'admin' gefuehrter Teamer waere fuer sich selbst unsichtbar.
+  type: 'admin' | 'konfi' | 'teamer';
   jahrgang?: string;
   jahrgang_name?: string;
   role_name?: string;

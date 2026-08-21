@@ -130,7 +130,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         <IonToolbar>
           <IonTitle>Foto</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose}>
+            <IonButton aria-label="Schließen" onClick={onClose}>
               <IonIcon icon={close} />
             </IonButton>
           </IonButtons>
@@ -215,11 +215,18 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
       // Rolle setzen für bedingte Anzeige
       setTargetRole(konfiData.role_name || 'konfi');
 
-      // Teamer-Daten aus dem Detail-Response
+      // Teamer-Daten aus dem Detail-Response. IMMER setzen, auch auf leer:
+      // Vorher wurde nur bei vorhandenen Daten geschrieben, nie zurueckgesetzt —
+      // beim Wechsel zwischen zwei Personen blieben die Werte der vorigen
+      // stehen (Teamer ohne Konfi-Zeit erbte die Historie des vorigen).
       if (konfiData.role_name === 'teamer') {
-        if (konfiData.certificates) setCertificates(konfiData.certificates);
-        if (konfiData.teamerEvents) setTeamerEvents(konfiData.teamerEvents);
-        if (konfiData.konfiHistory) setKonfiHistory(konfiData.konfiHistory);
+        setCertificates(konfiData.certificates || []);
+        setTeamerEvents(konfiData.teamerEvents || []);
+        setKonfiHistory(konfiData.konfiHistory || null);
+      } else {
+        setCertificates([]);
+        setTeamerEvents([]);
+        setKonfiHistory(null);
       }
 
       // Zertifikat-Typen laden (für die Zuweisung)
@@ -494,14 +501,14 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         <IonToolbar>
           {!hideBackButton && (
             <IonButtons slot="start">
-              <IonButton onClick={onBack}>
+              <IonButton aria-label="Zurück" onClick={onBack}>
                 <IonIcon icon={arrowBack} />
               </IonButton>
             </IonButtons>
           )}
           <IonTitle>{currentKonfi?.name || (isTeamer ? 'Teamer:in Details' : 'Konfi Details')}</IonTitle>
           <IonButtons slot="end">
-            <IonButton disabled={!isOnline} onClick={handlePasswordAction}>
+            <IonButton aria-label="Passwort zurücksetzen" disabled={!isOnline} onClick={handlePasswordAction}>
               <IonIcon icon={key} />
             </IonButton>
           </IonButtons>
@@ -564,14 +571,15 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
           />
         )}
 
-        {/* Badges - nur für Konfis (gleiche Wertung wie Konfi-Ansicht) */}
+        {/* Badges der Konfis — bei Teamer:innen steht der Abschnitt weiter
+            unten, nach Events und Aktivitaeten (User-Hinweis 11.08.). */}
         {!isTeamer && currentKonfi?.role_name === 'konfi' && (
           <KonfiBadgesSection konfiId={konfiId} />
         )}
 
-
-        {/* Teamer Events */}
-        {isTeamer && teamerEvents.length > 0 && (
+        {/* Teamer Events — auch leer anzeigen: sonst ist "war bei keinem
+            Termin" nicht von "nicht geladen" zu unterscheiden. */}
+        {isTeamer && (
           <TeamerEventsSection
             teamerEvents={teamerEvents}
             formatDate={formatDate}
@@ -591,6 +599,12 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
           presentActivityModal={presentActivityModalHook}
           presentingElement={presentingElement}
         />
+
+        {/* Badges der Teamer:innen — nach Events und Aktivitaeten, so wie
+            die Konfi-Badges auch unter ihren Listen stehen. */}
+        {isTeamer && (
+          <KonfiBadgesSection konfiId={konfiId} role="teamer" />
+        )}
 
         {/* Zertifikate - nur für Teamer */}
         {isTeamer && (

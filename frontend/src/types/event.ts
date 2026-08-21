@@ -74,6 +74,10 @@ export interface Event {
   teamer_needed?: boolean;
   teamer_only?: boolean;
   teamer_count?: number;
+  teamer_max_participants?: number;
+  teamer_waitlist_enabled?: boolean;
+  teamer_max_waitlist_size?: number;
+  teamer_waitlist_count?: number;
   // Serien
   is_series?: boolean;
   series_id?: number;

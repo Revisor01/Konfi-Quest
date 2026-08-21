@@ -35,7 +35,8 @@ import {
   timeOutline,
   closeOutline,
   compassOutline,
-  imagesOutline
+  imagesOutline,
+  sparklesOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -50,6 +51,7 @@ import SpiritFooter from '../../shared/SpiritFooter';
 import PointsHistoryModal from '../modals/PointsHistoryModal';
 import WrappedModal from '../../wrapped/WrappedModal';
 import KonfiOnboardingModal from '../modals/KonfiOnboardingModal';
+import KonfiUpdateWalkthroughModal from '../modals/KonfiUpdateWalkthroughModal';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import { safeUUID } from '../../../utils/uuid';
 
@@ -135,7 +137,7 @@ const BibleTranslationModal: React.FC<{
         <IonToolbar>
           <IonTitle>Bibelübersetzung</IonTitle>
           <IonButtons slot="start">
-            <IonButton className="app-modal-close-btn" onClick={onClose}>
+            <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={onClose}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
@@ -203,6 +205,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
 
   const [selectedTranslation, setSelectedTranslation] = useState<string>(profile.bible_translation || 'LUT');
   const [earnedBadgesCount, setEarnedBadgesCount] = useState<number>(0);
+  // Anzahl der eigenen Challenge-Abzeichen (marks). Schlanker Zusatzabruf —
+  // faellt er aus, bleibt die Kachel bei 0 statt das Profil zu stoeren.
+  const [challengeMarksCount, setChallengeMarksCount] = useState<number>(0);
   const { cacheLabel, clearMediaCache: handleClearMediaCache } = useMediaCacheControl();
   const [wrappedHistory, setWrappedHistory] = useState<WrappedHistoryEntry[]>([]);
   // Wrapped-Historie laden
@@ -248,7 +253,17 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     };
     loadBadges();
   }, []);
-  
+
+  // Challenge-Abzeichen zaehlen. Fehler bewusst still: die Kachel zeigt dann 0.
+  React.useEffect(() => {
+    api.get('/challenges/konfi')
+      .then(res => {
+        const marks = Array.isArray(res.data?.marks) ? res.data.marks : [];
+        setChallengeMarksCount(marks.length);
+      })
+      .catch(() => { /* optionale Kachel — stiller Fehler */ });
+  }, []);
+
   const handleTranslationChange = async (translation: string) => {
     // Offline: Optimistic UI + Queue-Fallback (fire-and-forget)
     if (!networkMonitor.isOnline) {
@@ -331,6 +346,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
 
   // App-Tour (Onboarding) erneut ansehen — Vollbild-Overlay (kein Modal)
   const [showOnboarding, setShowOnboarding] = useState(false);
+  // "Was ist neu?" — derselbe Update-Walkthrough, den Bestandsnutzer einmalig
+  // nach dem Update sehen. Hier jederzeit erneut aufrufbar.
+  const [showUpdateWalkthrough, setShowUpdateWalkthrough] = useState(false);
 
   // Modal with useIonModal Hook for Bible Translation
   const [presentBibleModal, dismissBibleModal] = useIonModal(BibleTranslationModal, {
@@ -414,13 +432,13 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         subtitle={`@${profile.username}`}
         icon={personOutline}
         preset="konfis"
+        // Bewusst nur DREI Kacheln: sechs Zahlen nebeneinander waren zu eng und
+        // die Aufteilung (GD/Gemeinde/Bonus) steht ohnehin in der
+        // Punkte-Uebersicht weiter unten. Hier zaehlt der Ueberblick.
         stats={[
           { value: profile.total_points || 0, label: 'PUNKTE' },
-          { value: profile.gottesdienst_points || 0, label: 'GD' },
-          { value: profile.gemeinde_points || 0, label: 'GEMEINDE' },
-          { value: profile.event_count || 0, label: 'EVENTS' },
           { value: earnedBadgesCount, label: 'BADGES' },
-          { value: profile.bonus_points || 0, label: 'BONUS' }
+          { value: challengeMarksCount, label: 'CHALLENGES' }
         ]}
       />
 
@@ -702,6 +720,27 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                 </div>
               </div>
 
+              {/* Was ist neu — derselbe Walkthrough wie nach dem Update */}
+              <div
+                className="app-list-item app-list-item--challenges"
+                style={{ width: '100%', cursor: 'pointer' }}
+                onClick={() => setShowUpdateWalkthrough(true)}
+              >
+                <div className="app-list-item__row">
+                  <div className="app-list-item__main">
+                    <div className="app-icon-circle app-icon-circle--challenges">
+                      <IonIcon icon={sparklesOutline} />
+                    </div>
+                    <div className="app-list-item__content">
+                      <div className="app-list-item__title">Was ist neu?</div>
+                      <div className="app-list-item__meta">
+                        <span className="app-list-item__meta-item">Die Neuerungen dieser Version</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* E-Mail ändern */}
               <div
                 className="app-list-item app-list-item--purple"
@@ -846,6 +885,14 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
       {showOnboarding && (
         <KonfiOnboardingModal
           onClose={() => setShowOnboarding(false)}
+          displayName={(user?.display_name || profile.display_name || '').split(' ')[0]}
+        />
+      )}
+
+      {/* "Was ist neu?" — derselbe Walkthrough wie nach dem Update */}
+      {showUpdateWalkthrough && (
+        <KonfiUpdateWalkthroughModal
+          onClose={() => setShowUpdateWalkthrough(false)}
           displayName={(user?.display_name || profile.display_name || '').split(' ')[0]}
         />
       )}

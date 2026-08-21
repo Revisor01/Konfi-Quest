@@ -143,9 +143,10 @@ const UsersView: React.FC<UsersViewProps> = ({
         icon={people}
         preset="users"
         stats={[
-          { value: users.length, label: 'Gesamt' },
-          { value: getAdminUsers().length, label: 'Admins' },
-          { value: getTeamerUsers().length, label: 'Teamer:in' }
+          // Die Kacheln entsprechen den Reitern; "Aktiv" hat keine Kachel.
+          { value: users.length, label: 'Gesamt', onClick: () => setSelectedFilter('alle'), active: selectedFilter === 'alle' },
+          { value: getAdminUsers().length, label: 'Admins', onClick: () => setSelectedFilter('admin'), active: selectedFilter === 'admin' },
+          { value: getTeamerUsers().length, label: 'Teamer:in', onClick: () => setSelectedFilter('teamer'), active: selectedFilter === 'teamer' }
         ]}
       />
 
@@ -294,25 +295,19 @@ const UsersView: React.FC<UsersViewProps> = ({
                   </div>
                 </IonItem>
 
+                {/* Konvention wie in allen anderen Verwaltungslisten:
+                    Tippen = bearbeiten, Wischen = löschen. Der frühere
+                    Bearbeiten-Wisch rief exakt dieselbe Funktion wie der
+                    Tap auf und war damit reine Doppelung (Audit 10.08.). */}
                 {user.can_edit !== false && (
                   <IonItemOptions side="end" className="app-swipe-actions">
-                    <IonItemOption
-                      onClick={() => {
-                        closeAllSlidingItems();
-                        onSelectUser(user);
-                      }}
-                      className="app-swipe-action"
-                    >
-                      <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
-                        <IonIcon icon={createOutline} />
-                      </div>
-                    </IonItemOption>
                     <IonItemOption
                       onClick={() => {
                         closeAllSlidingItems();
                         onDeleteUser(user);
                       }}
                       className="app-swipe-action"
+                      aria-label="Benutzer:in löschen"
                     >
                       <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                         <IonIcon icon={trash} />

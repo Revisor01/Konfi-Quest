@@ -29,7 +29,8 @@ import AttendanceMatrixModal from '../modals/AttendanceMatrixModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { OrgSwitcherButton } from '../../shared';
 import AdminOnboardingModal from '../modals/AdminOnboardingModal';
-import { useOnboardingOnce } from '../../../hooks/useOnboardingOnce';
+import AdminUpdateWalkthroughModal from '../modals/AdminUpdateWalkthroughModal';
+import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
 
 interface Konfi {
   id: number;
@@ -74,8 +75,12 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   const router = useIonRouter();
   const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-konfis');
   // Onboarding-Tour einmal pro Admin-Account (beim ersten Betreten der Konfis-Seite,
-  // der Landing-Page fuer Admins/Org-Admins).
-  const [showOnboarding, closeOnboarding] = useOnboardingOnce('admin_onboarding_seen', user?.id);
+  // der Landing-Page fuer Admins/Org-Admins) — bzw. fuer Bestandsnutzer
+  // stattdessen einmalig der Update-Walkthrough 2.0 (Challenges).
+  const {
+    showOnboarding, closeOnboarding,
+    showUpdateWalkthrough, closeUpdateWalkthrough
+  } = useOnboardingWithUpdateOnce('admin_onboarding_seen', user?.id);
   
   // Offline-Query: Konfis
   const { data: konfis, loading: konfisLoading, refresh: refreshKonfis } = useOfflineQuery<Konfi[]>(
@@ -319,10 +324,10 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
           <IonButtons slot="end">
             {['org_admin', 'admin'].includes(user?.role_name || '') && (
               <>
-                <IonButton onClick={() => presentMatrixModal({ presentingElement: presentingElement })}>
+                <IonButton aria-label="Anwesenheit und Konfisprüche anzeigen" onClick={() => presentMatrixModal({ presentingElement: presentingElement })}>
                   <IonIcon icon={checkboxOutline} />
                 </IonButton>
-                <IonButton onClick={presentKonfiModal}>
+                <IonButton aria-label="Neuen Konfi anlegen" onClick={presentKonfiModal}>
                   <IonIcon icon={add} />
                 </IonButton>
               </>
@@ -366,6 +371,11 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
           onClose={closeOnboarding}
           displayName={(user?.display_name || '').split(' ')[0]}
         />
+      )}
+
+      {/* Update-Walkthrough 2.0 — nur fuer Bestandsnutzer */}
+      {showUpdateWalkthrough && (
+        <AdminUpdateWalkthroughModal onClose={closeUpdateWalkthrough} />
       )}
     </IonPage>
   );

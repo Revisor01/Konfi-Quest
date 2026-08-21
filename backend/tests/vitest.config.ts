@@ -15,6 +15,11 @@ export default defineConfig({
     globalSetup: ['./tests/globalSetup.js'],
     include: ['tests/**/*.test.{js,ts}'],
     env: {
+      // UTC wie in CI und in den Prod-/Staging-Containern: event_date ist eine
+      // naive TIMESTAMP-Spalte — liest der pg-Treiber sie in einer anderen
+      // Prozess-Zeitzone (z.B. Europe/Berlin lokal), verschiebt sich der Wert
+      // beim Roundtrip und der Aenderungs-Vergleich im Events-PUT schlaegt an.
+      TZ: 'UTC',
       JWT_SECRET: 'test-secret-key-for-vitest',
       QR_SECRET: 'test-qr-secret-for-vitest',
       // 64 Hex-Zeichen (32 Byte) — fester Testschluessel fuer Medien-Verschluesselung

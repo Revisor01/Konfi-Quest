@@ -4,7 +4,7 @@
 // und Auto-Delete (Plan 05) genutzt, damit die Loesch-Pfade nicht
 // auseinanderlaufen.
 
-const { deletePhotoFile } = require('./photoStorage');
+const { deletePhotoFile, deleteChallengeFile } = require('./photoStorage');
 
 /**
  * Loescht einen Konfi und alle 16 abhaengigen Tabellen in der korrekten
@@ -36,6 +36,17 @@ async function deleteKonfiCascade(client, userId, organizationId) {
     [userId, organizationId]
   );
   await client.query("DELETE FROM activity_requests WHERE user_id = $1 AND organization_id = $2", [userId, organizationId]);
+  // Challenge-Einreichungen: Dateipfade VOR dem User-Delete einsammeln — die
+  // DB-Zeilen kaskadieren beim DELETE FROM users, die verschluesselten Dateien
+  // auf der Platte aber nicht (DSGVO Art. 17, Security-Review 04.08.2026).
+  let challengeFileRows = [];
+  const { rows: [chTbl] } = await client.query("SELECT to_regclass('public.challenge_submissions') as t");
+  if (chTbl?.t) {
+    ({ rows: challengeFileRows } = await client.query(
+      "SELECT file_path FROM challenge_submissions WHERE user_id = $1 AND organization_id = $2 AND file_path IS NOT NULL",
+      [userId, organizationId]
+    ));
+  }
   await client.query("DELETE FROM chat_participants WHERE user_id = $1 AND user_type = 'konfi'", [userId]);
   await client.query("DELETE FROM chat_read_status WHERE user_id = $1", [userId]);
   // chat_message_reactions: Reaktionen des Konfis entfernen (kein CASCADE garantiert).
@@ -63,6 +74,9 @@ async function deleteKonfiCascade(client, userId, organizationId) {
   // blockierend — ein fehlendes File darf die Loeschung nicht scheitern lassen).
   for (const row of photoRows) {
     await deletePhotoFile(row.photo_filename);
+  }
+  for (const row of challengeFileRows) {
+    await deleteChallengeFile(row.file_path);
   }
 }
 

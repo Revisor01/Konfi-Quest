@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import SectionHeader from '../../components/shared/SectionHeader';
 
 describe('SectionHeader', () => {
@@ -52,5 +52,34 @@ describe('SectionHeader', () => {
     const { container } = render(<SectionHeader {...defaultProps} />);
     const statItems = container.querySelectorAll('.app-stats-row__item');
     expect(statItems.length).toBe(2);
+  });
+
+  it('rendert Stats ohne onClick als reine Anzeige (kein Button)', () => {
+    const { container } = render(<SectionHeader {...defaultProps} />);
+    expect(container.querySelectorAll('button.app-stats-row__item').length).toBe(0);
+    expect(container.querySelectorAll('.app-stats-row__item--clickable').length).toBe(0);
+  });
+
+  it('macht Stats mit onClick zu Buttons und meldet den Klick', () => {
+    const onGesamt = vi.fn();
+    const { container } = render(
+      <SectionHeader
+        {...defaultProps}
+        stats={[
+          { value: 12, label: 'Gesamt', onClick: onGesamt, active: true },
+          { value: 3, label: 'Aktiv' },
+        ]}
+      />
+    );
+
+    const buttons = container.querySelectorAll('button.app-stats-row__item--clickable');
+    expect(buttons.length).toBe(1);
+
+    // Die aktive Kachel ist als solche markiert (Optik + Screenreader).
+    expect(buttons[0].classList.contains('app-stats-row__item--active')).toBe(true);
+    expect(buttons[0].getAttribute('aria-current')).toBe('true');
+
+    fireEvent.click(screen.getByText('Gesamt'));
+    expect(onGesamt).toHaveBeenCalledTimes(1);
   });
 });

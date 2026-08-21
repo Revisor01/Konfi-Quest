@@ -65,7 +65,7 @@ export const ChatHeader = React.memo<ChatHeaderProps>(({
     <IonHeader>
       <IonToolbar>
         <IonButtons slot="start">
-          <IonButton onClick={onBack}>
+          <IonButton aria-label="Zurück" onClick={onBack}>
             <IonIcon icon={arrowBack} />
           </IonButton>
         </IonButtons>
@@ -73,16 +73,16 @@ export const ChatHeader = React.memo<ChatHeaderProps>(({
         <IonButtons slot="end">
           {isAdmin && (
             <>
-              <IonButton onClick={onOpenMembers}>
+              <IonButton aria-label="Mitglieder anzeigen" onClick={onOpenMembers}>
                 <IonIcon icon={people} />
               </IonButton>
-              <IonButton onClick={onOpenPoll}>
+              <IonButton aria-label="Umfrage erstellen" onClick={onOpenPoll}>
                 <IonIcon icon={barChart} />
               </IonButton>
             </>
           )}
           {canLeave && (
-            <IonButton disabled={!isOnline} onClick={onLeaveChat}>
+            <IonButton aria-label="Weitere Chat-Optionen" disabled={!isOnline} onClick={onLeaveChat}>
               <IonIcon icon={ellipsisVertical} />
             </IonButton>
           )}
@@ -129,7 +129,7 @@ export const ReplyPreview = React.memo<ReplyPreviewProps>(({ replyToMessage, onC
               : (replyToMessage.content || '')}
       </div>
     </div>
-    <IonButton
+    <IonButton aria-label="Antwort verwerfen"
       fill="clear"
       size="small"
       onClick={onClear}
@@ -206,7 +206,7 @@ export const FilePreviewBar = React.memo<FilePreviewBarProps>(({ selectedFile, s
         {formatFileSize(selectedFile.size)}
       </div>
     </div>
-    <IonButton
+    <IonButton aria-label="Datei entfernen"
       fill="clear"
       size="small"
       onClick={onClear}
@@ -300,7 +300,7 @@ export const MessageInput = React.memo<MessageInputProps>(({
         gap: '8px',
         width: '100%'
       }}>
-        <IonButton
+        <IonButton aria-label="Datei anhängen"
           fill="clear"
           size="small"
           onClick={() => fileInputRef.current?.click()}

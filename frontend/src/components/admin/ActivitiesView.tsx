@@ -28,6 +28,7 @@ import {
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
+import { closeOpenSlidingItems } from '../../utils/slidingItems';
 
 interface Activity {
   id: number;
@@ -76,7 +77,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
     }
     
     // Sort by name
-    result = result.sort((a, b) => a.name.localeCompare(b.name));
+    result = result.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     
     return result;
   })();
@@ -137,11 +138,13 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
         icon={flash}
         preset="activities"
         stats={targetRole === 'teamer' ? [
+          // Teamer:innen haben keinen Typ-Filter -> Kachel bleibt reine Anzeige.
           { value: activities.length, label: 'Gesamt' }
         ] : [
-          { value: activities.length, label: 'Gesamt' },
-          { value: getGemeindeActivities().length, label: 'Gemeinde' },
-          { value: getGottesdienstActivities().length, label: 'Godi' }
+          // Die Kacheln entsprechen den drei Reitern des Typ-Filters.
+          { value: activities.length, label: 'Gesamt', onClick: () => setSelectedType('alle'), active: selectedType === 'alle' },
+          { value: getGemeindeActivities().length, label: 'Gemeinde', onClick: () => setSelectedType('gemeinde'), active: selectedType === 'gemeinde' },
+          { value: getGottesdienstActivities().length, label: 'Godi', onClick: () => setSelectedType('gottesdienst'), active: selectedType === 'gottesdienst' }
         ]}
       />
 
@@ -314,7 +317,8 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                 {canDelete && (
                   <IonItemOptions side="end" className="app-swipe-actions">
                     <IonItemOption
-                      onClick={() => handleDeleteWithSlideClose(activity)}
+                      onClick={() => { closeOpenSlidingItems(); handleDeleteWithSlideClose(activity); }}
+                      aria-label="Aktivität löschen"
                       className="app-swipe-action"
                     >
                       <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">

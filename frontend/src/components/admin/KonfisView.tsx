@@ -35,6 +35,7 @@ import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection, TrialBanner } from '../shared';
 import api from '../../services/api';
 import { useApp } from '../../contexts/AppContext';
+import { closeOpenSlidingItems } from '../../utils/slidingItems';
 
 interface Konfi {
   id: number;
@@ -90,7 +91,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   onDeleteTeamer,
   selectedKonfiId
 }) => {
-  const { user } = useApp();
+  const { user, setError } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedJahrgang, setSelectedJahrgang] = useState('alle');
   const [sortBy, setSortBy] = useState('name');
@@ -126,8 +127,11 @@ const KonfisView: React.FC<KonfisViewProps> = ({
       const response = await api.get('/admin/konfis/teamer');
       setTeamers(response.data || []);
     } catch (err) {
+      // Fehler NICHT als Leerzustand ausgeben — eine leere Liste sieht aus,
+      // als gaebe es keine Teamer:innen (Audit 10.08.).
       console.error('Error loading teamers:', err);
       setTeamers([]);
+      setError('Teamer:innen konnten nicht geladen werden');
     } finally {
       setTeamerLoading(false);
     }
@@ -170,7 +174,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
     if (sortBy === 'points') {
       result = [...result].sort((a, b) => getTotalPoints(b) - getTotalPoints(a));
     } else {
-      result = [...result].sort((a, b) => a.name.localeCompare(b.name));
+      result = [...result].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     }
 
     return result;
@@ -378,7 +382,8 @@ const KonfisView: React.FC<KonfisViewProps> = ({
               {(user?.role_name === 'org_admin' || user?.is_super_admin === true) && (
                 <IonItemOptions side="end" className="app-swipe-actions">
                   <IonItemOption
-                    onClick={async () => { await onDeleteTeamer(teamer); await loadTeamers(); }}
+                    onClick={async () => { closeOpenSlidingItems(); await onDeleteTeamer(teamer); await loadTeamers(); }}
+                    aria-label="Teamer:in löschen"
                     className="app-swipe-action"
                   >
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
@@ -555,7 +560,8 @@ const KonfisView: React.FC<KonfisViewProps> = ({
 
                       <IonItemOptions side="end" className="app-swipe-actions">
                         <IonItemOption
-                          onClick={() => onDeleteKonfi(konfi)}
+                          onClick={() => { closeOpenSlidingItems(); onDeleteKonfi(konfi); }}
+                          aria-label="Konfi löschen"
                           className="app-swipe-action"
                         >
                           <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">

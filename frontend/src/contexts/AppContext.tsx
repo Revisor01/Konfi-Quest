@@ -14,6 +14,7 @@ import { logout as performLogout } from '../services/auth';
 import { clearAuth } from '../services/tokenStore';
 import { BackgroundTask } from '@capawesome/capacitor-background-task';
 import { BaseUser } from '../types/user';
+import { setAnalyticsRole, trackFehler, trackSitzungsstart } from '../services/analytics';
 
 // FCM Token wird über Window Events empfangen (siehe AppDelegate.swift)
 
@@ -133,6 +134,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isOnline, setIsOnline] = useState<boolean>(true);
+
+  // Jede Fehlermeldung, die tatsaechlich jemand zu sehen bekommt, fliesst in
+  // die anonyme Messung ein — DAS beantwortet "wo klemmt es". Uebertragen wird
+  // nur eine gekuerzte, entschaerfte Fassung des Textes: keine Namen, keine
+  // IDs, keine Freitexte aus Beitraegen (Zahlen werden ersetzt).
+  const setErrorTracked = useCallback((meldung: string) => {
+    setError(meldung);
+    if (meldung) {
+      const anonym = meldung
+        .replace(/\d+/g, '#')
+        .slice(0, 80);
+      trackFehler(anonym);
+    }
+  }, []);
+
+  // Rolle fuer die anonyme Nutzungsmessung mitfuehren (konfi/teamer/admin) —
+  // die EINZIGE Eigenschaft, die dorthin uebertragen wird. Zentral hier, damit
+  // sie bei Login, Logout und Organisationswechsel automatisch stimmt.
+  useEffect(() => {
+    setAnalyticsRole(user?.role_name);
+    // Sitzungsbeginn als Seitenaufruf melden — ohne den zaehlt Umami weder
+    // Besucher noch Sitzungen, die Ereignisse allein erscheinen im Dashboard
+    // nicht (11.08.: 130 Ereignisse, aber 0 Besucher). Nur bei vorhandener
+    // Rolle, sonst wuerde der Logout als weiterer Besuch gezaehlt.
+    if (user?.role_name) trackSitzungsstart();
+  }, [user?.role_name]);
 
   // Push notifications state
   const [pushNotificationsPermission, setPushNotificationsPermission] = useState<string>('prompt');
@@ -708,6 +735,26 @@ useEffect(() => {
                 targetUrl = userType === 'admin' ? '/admin/konfis' : `${routePrefix}/dashboard`;
                 break;
 
+              case 'challenge_started':
+                // Neue Challenge gestartet -> Challenge-Tab des Konfi (Leitung
+                // bekommt diesen Push nicht, faellt aber sauber auf ihre
+                // Challenge-Verwaltung zurueck).
+                targetUrl = `${routePrefix}/challenges`;
+                break;
+
+              case 'challenge_submission':
+                // Neuer Beitrag -> Moderation in der Leitungs-Ansicht.
+                targetUrl = userType === 'konfi'
+                  ? '/konfi/challenges'
+                  : `${routePrefix}/challenges`;
+                break;
+
+              case 'wrapped':
+                // Bestandsluecke: Das Wrapped-Modal liegt auf dem Dashboard —
+                // ohne diesen Fall lief der Tap ins Leere (default-Zweig).
+                targetUrl = `${routePrefix}/dashboard`;
+                break;
+
               default:
                 console.warn('Unbekannter Notification-Typ:', notificationType);
                 break;
@@ -770,7 +817,7 @@ useEffect(() => {
     signOut,
     setUser,
     refreshUser,
-    setError,
+    setError: setErrorTracked,
     setSuccess,
     clearMessages,
     requestPushPermissions,

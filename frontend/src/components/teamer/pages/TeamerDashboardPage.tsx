@@ -13,61 +13,13 @@ import {
   useIonRouter
 } from '@ionic/react';
 import {
-  home,
-  ribbon,
   calendar,
-  trophy,
-  medal,
-  star,
-  checkmarkCircle,
-  diamond,
-  shield,
-  flame,
-  flash,
-  rocket,
   sparkles,
-  thumbsUp,
-  heart,
-  people,
-  personAdd,
-  chatbubbles,
-  gift,
-  book,
-  school,
-  construct,
-  brush,
-  colorPalette,
-  sunny,
-  moon,
-  leaf,
-  rose,
-  today,
   time,
-  timer,
-  stopwatch,
-  restaurant,
-  fitness,
-  bicycle,
-  car,
-  airplane,
-  boat,
-  camera,
-  image,
-  musicalNote,
-  balloon,
-  business,
-  navigate,
-  compass,
-  pin,
   flag,
-  informationCircle,
   helpCircle,
-  alertCircle,
-  hammer,
   location,
   chevronForward,
-  medkit,
-  documentOutline,
   bagHandle,
   eyeOff
 } from 'ionicons/icons';
@@ -81,25 +33,13 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import WrappedModal from '../../wrapped/WrappedModal';
 import { ProfileHeaderButton, TrialBanner } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { mergeSectionOrder, DEFAULT_TEAMER_SECTION_ORDER } from '../../../utils/sectionOrder';
 import TeamerOnboardingModal from '../modals/TeamerOnboardingModal';
-import { useOnboardingOnce } from '../../../hooks/useOnboardingOnce';
+import TeamerUpdateWalkthroughModal from '../modals/TeamerUpdateWalkthroughModal';
+import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
+import { getIconFromString } from '../../../utils/badgeIcons';
 
-// Badge/Certificate Icon Mapping (shared with DashboardView)
-const ICON_MAP: Record<string, string> = {
-  trophy, medal, ribbon, star, checkmarkCircle, diamond, shield,
-  flame, flash, rocket, sparkles, thumbsUp, heart, people, personAdd,
-  chatbubbles, gift, book, school, construct, brush, colorPalette,
-  sunny, moon, leaf, rose, calendar, today, time, timer, stopwatch,
-  restaurant, fitness, bicycle, car, airplane, boat, camera, image,
-  musicalNote, balloon, home, business, location, navigate, compass,
-  pin, flag, informationCircle, helpCircle, alertCircle, hammer,
-  medkit, documentOutline
-};
 
-const getIconFromString = (iconName: string | undefined): string => {
-  if (!iconName) return trophy;
-  return ICON_MAP[iconName] || trophy;
-};
 
 interface TeamerBadgeFull {
   id: number;
@@ -198,7 +138,7 @@ interface DashboardConfig {
   section_order?: string[];
 }
 
-const DEFAULT_TEAMER_ORDER = ['zertifikate', 'events', 'badges', 'losung'];
+const DEFAULT_TEAMER_ORDER = DEFAULT_TEAMER_SECTION_ORDER;
 
 interface DashboardData {
   greeting: { display_name: string; hour: number };
@@ -224,7 +164,7 @@ const CertPopoverContent: React.FC<{
   const cert = dataRef.current;
   if (!cert) return null;
 
-  const statusLabel = cert.status === 'valid' ? 'Gueltig' : cert.status === 'expired' ? 'Abgelaufen' : 'Nicht erhalten';
+  const statusLabel = cert.status === 'valid' ? 'Gültig' : cert.status === 'expired' ? 'Abgelaufen' : 'Nicht erhalten';
   const statusColor = cert.status === 'valid' ? '#059669' : cert.status === 'expired' ? '#ef4444' : '#9ca3af';
 
   return (
@@ -258,10 +198,15 @@ const CertPopoverContent: React.FC<{
 
 const TeamerDashboardPage: React.FC = () => {
   const router = useIonRouter();
-  const { user } = useApp();
+  const { user, setError } = useApp();
   const [showLosung] = useState(() => Math.random() > 0.5);
-  // Onboarding-Tour einmal pro Teamer-Account (beim ersten Betreten der Startseite).
-  const [showOnboarding, closeOnboarding] = useOnboardingOnce('teamer_onboarding_seen', user?.id);
+  // Onboarding-Tour einmal pro Teamer-Account (beim ersten Betreten der
+  // Startseite) — bzw. fuer Bestandsnutzer stattdessen einmalig der
+  // Update-Walkthrough 2.0 (Challenges). Nie beides gleichzeitig.
+  const {
+    showOnboarding, closeOnboarding,
+    showUpdateWalkthrough, closeUpdateWalkthrough
+  } = useOnboardingWithUpdateOnce('teamer_onboarding_seen', user?.id);
 
   // Certificate Popover
   const certPopoverRef = React.useRef<Certificate | null>(null);
@@ -322,8 +267,10 @@ const TeamerDashboardPage: React.FC = () => {
       await api.put('/teamer/bible-translation', { translation: code });
       setSelectedTranslation(code);
       await refreshVerse();
-    } catch (err) {
+    } catch (err: any) {
+      // Siehe DashboardView (Konfi): stiller Fehlschlag bei bewusster Auswahl.
       console.error('Bibeluebersetzung speichern fehlgeschlagen:', err);
+      setError(err.response?.data?.error || 'Übersetzung konnte nicht gespeichert werden');
     }
   };
 
@@ -511,8 +458,32 @@ const TeamerDashboardPage: React.FC = () => {
             </div>
           )}
 
+          {/* Einstieg Challenges — Verwaltung/Moderation der Beitraege */}
+          <div
+            onClick={() => router.push('/teamer/challenges')}
+            className="app-list-item app-list-item--challenges"
+            style={{
+              marginBottom: '16px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px'
+            }}
+          >
+            <div className="app-icon-circle app-icon-circle--lg app-icon-circle--challenges">
+              <IonIcon icon={flag} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="app-list-item__title">Challenges</div>
+              <div className="app-list-item__subtitle" style={{ whiteSpace: 'normal' }}>
+                Aufgaben stellen und Beiträge der Konfis begleiten
+              </div>
+            </div>
+            <IonIcon icon={chevronForward} style={{ fontSize: '1.1rem', color: 'var(--app-color-challenges)' }} />
+          </div>
+
           {/* Dynamische Sektionen basierend auf section_order */}
-          {(config?.section_order || DEFAULT_TEAMER_ORDER).map(sectionKey => {
+          {mergeSectionOrder(config?.section_order, DEFAULT_TEAMER_ORDER).map(sectionKey => {
             // Zertifikate
             if (sectionKey === 'zertifikate') {
               if (!(config?.show_zertifikate !== false && dashboardData && dashboardData.certificates.length > 0)) return null;
@@ -962,6 +933,11 @@ const TeamerDashboardPage: React.FC = () => {
           onClose={closeOnboarding}
           displayName={(user?.display_name || '').split(' ')[0]}
         />
+      )}
+
+      {/* Update-Walkthrough 2.0 — nur fuer Bestandsnutzer */}
+      {showUpdateWalkthrough && (
+        <TeamerUpdateWalkthroughModal onClose={closeUpdateWalkthrough} />
       )}
     </IonPage>
   );

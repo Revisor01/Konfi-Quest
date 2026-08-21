@@ -6,7 +6,6 @@ import {
   IonLabel,
   IonSegment,
   IonSegmentButton,
-  IonItemSliding,
   IonListHeader,
   IonItemGroup,
   IonInput,
@@ -46,6 +45,9 @@ interface EventsViewProps {
   presentingElement?: HTMLElement | null;
   // Im iPad-Split-View aktuell rechts geoeffnetes Event (fuer Highlighting).
   selectedEventId?: number | null;
+  // Haupt-Segment der Page (Events | Antraege) - wird direkt unter dem
+  // Grafik-Header gerendert, damit die Seitenstruktur zu den anderen Tabs passt.
+  headerSlot?: React.ReactNode;
 }
 
 const EventsView: React.FC<EventsViewProps> = ({
@@ -55,7 +57,8 @@ const EventsView: React.FC<EventsViewProps> = ({
   onSelectEvent,
   onUpdate,
   presentingElement,
-  selectedEventId
+  selectedEventId,
+  headerSlot
 }) => {
   const [searchText, setSearchText] = useState('');
 
@@ -237,6 +240,8 @@ const EventsView: React.FC<EventsViewProps> = ({
         onInfo={() => presentLegend({ presentingElement: presentingElement || undefined })}
       />
 
+      {headerSlot}
+
       {/* Suche & Filter — wie Chat-Pattern */}
       <IonList inset={true} style={{ margin: '16px' }}>
         <IonListHeader>
@@ -305,9 +310,12 @@ const EventsView: React.FC<EventsViewProps> = ({
           if (isKonfirmationLocked) statusText = 'Anderer Termin';
           const showBadge = !isPastEvent || isParticipated || isCancelled || isOptedOut || isKonfirmationLocked;
 
+          // Kein IonItemSliding: es gab hier nie IonItemOptions, das Item liess
+          // sich also anwischen und federte wirkungslos zurueck — das wirkt
+          // kaputt (Audit 10.08.).
           return (
-            <IonItemSliding key={event.id}>
               <IonItem
+                key={event.id}
                 button
                 onClick={() => onSelectEvent(event)}
                 detail={false}
@@ -424,7 +432,6 @@ const EventsView: React.FC<EventsViewProps> = ({
                   </div>
                 </div>
               </IonItem>
-            </IonItemSliding>
           );
         })}
       </ListSection>

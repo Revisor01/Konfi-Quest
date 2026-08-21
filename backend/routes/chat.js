@@ -117,6 +117,47 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
     }
   };
 
+  // Team-Kontaktliste fuer Direktchats: alle Admins, Org-Admins und Teamer:innen
+  // der eigenen Organisation.
+  //
+  // Warum eine eigene Route: Das Chat-Modal hat die Team-Mitglieder bisher ueber
+  // /admin/users geladen — die Route ist aber mit requireOrgAdmin geschuetzt.
+  // Teamer:innen liefen dort in einen 403, den das Frontend still verschluckt hat;
+  // ihre Kontaktliste blieb dadurch leer und sie konnten niemanden aus dem Team
+  // anschreiben. Diese Route gibt bewusst NUR die fuer einen Chat noetigen Felder
+  // heraus (keine E-Mail, keine Login-Zeitpunkte) und ist fuer das ganze Team offen.
+  router.get('/team-contacts', verifyTokenRBAC, async (req, res) => {
+    try {
+      if (!['admin', 'org_admin', 'teamer'].includes(req.user.role_name)) {
+        return res.status(403).json({ error: 'Nur für Teamer:innen und Admins' });
+      }
+
+      const query = `
+        SELECT u.id, u.display_name, r.name AS role_name,
+               COALESCE(NULLIF(u.role_title, ''),
+                 CASE
+                   WHEN r.name = 'teamer' THEN 'Teamer:in'
+                   ELSE 'Admin'
+                 END
+               ) AS role_description
+          FROM users u
+          JOIN roles r ON u.role_id = r.id
+         WHERE u.organization_id = $1
+           AND r.name IN ('admin', 'org_admin', 'teamer')
+           AND u.is_active = true
+           AND u.deleted_at IS NULL
+           AND u.id != $2
+         ORDER BY u.display_name
+      `;
+      const { rows } = await db.query(query, [req.user.organization_id, req.user.id]);
+      res.json(rows);
+
+    } catch (err) {
+      console.error('Database error in GET /chat/team-contacts:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
   // Get admins for direct contact (konfis only)
   router.get('/admins', verifyTokenRBAC, async (req, res) => {
     try {

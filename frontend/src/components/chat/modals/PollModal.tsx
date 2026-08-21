@@ -137,13 +137,13 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton className="app-modal-close-btn" onClick={handleClose} disabled={creating}>
+            <IonButton className="app-modal-close-btn" onClick={handleClose} disabled={creating} aria-label="Schließen">
               <IonIcon icon={closeOutline} slot="icon-only" />
             </IonButton>
           </IonButtons>
           <IonTitle>Neue Umfrage</IonTitle>
           <IonButtons slot="end">
-            <IonButton className="app-modal-submit-btn app-modal-submit-btn--chat" onClick={createPoll} disabled={!canCreate() || creating || !isOnline}>
+            <IonButton className="app-modal-submit-btn app-modal-submit-btn--chat" onClick={createPoll} disabled={!canCreate() || creating || !isOnline} aria-label="Umfrage erstellen">
               {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : creating ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
             </IonButton>
           </IonButtons>
@@ -200,7 +200,7 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
                     autoCorrect="on"
                   />
                   {options.length > 2 && (
-                    <IonButton
+                    <IonButton aria-label="Antwortoption entfernen"
                       fill="clear"
                       slot="end"
                       onClick={() => removeOption(index)}

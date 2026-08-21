@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -34,9 +34,14 @@ import {
   pulseOutline,
   informationCircleOutline,
   schoolOutline,
+  flag,
+  compassOutline,
+  sparklesOutline,
   document as documentIcon
 } from 'ionicons/icons';
 import InfoModal from '../../shared/InfoModal';
+import AdminOnboardingModal from '../modals/AdminOnboardingModal';
+import AdminUpdateWalkthroughModal from '../modals/AdminUpdateWalkthroughModal';
 import { useApp } from '../../../contexts/AppContext';
 // logout/clearAuth werden jetzt zentral ueber useApp().signOut() abgewickelt
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -49,6 +54,11 @@ const AdminSettingsPage: React.FC = () => {
   const { user, pushNotificationsPermission, requestPushPermissions, signOut } = useApp();
   const [presentAlert] = useIonAlert();
   const router = useIonRouter();
+
+  // Tour und Update-Hinweis jederzeit erneut aufrufbar (Vollbild-Overlays,
+  // keine Modals — identisch zum automatischen Ablauf beim ersten Start).
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showUpdateWalkthrough, setShowUpdateWalkthrough] = useState(false);
 
   const [presentInviteModal, dismissInviteModal] = useIonModal(AdminInvitePage, {
     onClose: () => dismissInviteModal(),
@@ -104,6 +114,14 @@ const AdminSettingsPage: React.FC = () => {
         'Aktivitäten sind die wiederkehrenden Dinge, für die es Punkte gibt — z.B. Gottesdienstbesuch oder eine Gemeinde-Aktion.',
         'Anders als Events stellen Konfis für eine Aktivität selbst einen Antrag auf Punkte. Du bestätigst den Antrag, dann werden die Punkte gutgeschrieben.',
         'Jede Aktivität hat eine Kategorie und einen Punktwert. Über die Kategorie steuerst du, ob die Punkte zu Gottesdienst oder Gemeinde zählen.',
+      ],
+    },
+    challenges: {
+      title: 'Challenges', icon: flag, color: 'var(--app-color-challenges)',
+      paragraphs: [
+        'Challenges sind Aufgaben, auf die deine Konfis mit eigenen Beiträgen antworten: mit einem Foto, einem Text, einer Aufnahme oder einem Link.',
+        'Anders als Aktivitäten geht es hier nicht um Punkte. Es gibt keine Zähler und keine Rangliste — nur ein Abzeichen für alle, die mitgemacht haben.',
+        'Du legst fest, wer die Beiträge sehen darf, ob du sie vorher freigibst und welche Medienarten erlaubt sind. Nach dem Start bleiben diese Zusagen fest, damit sich die Konfis darauf verlassen können.',
       ],
     },
     badges: {
@@ -181,10 +199,10 @@ const AdminSettingsPage: React.FC = () => {
           <IonTitle>Mehr</IonTitle>
           {user?.is_super_admin && (
             <IonButtons slot="end">
-              <IonButton onClick={() => router.push('/admin/organizations')} title="Organisationen">
+              <IonButton onClick={() => router.push('/admin/organizations')} title="Organisationen" aria-label="Organisationen verwalten">
                 <IonIcon slot="icon-only" icon={business} />
               </IonButton>
-              <IonButton onClick={() => router.push('/admin/metrics')} title="Performance">
+              <IonButton onClick={() => router.push('/admin/metrics')} title="Performance" aria-label="Performance anzeigen">
                 <IonIcon slot="icon-only" icon={pulseOutline} />
               </IonButton>
             </IonButtons>
@@ -247,6 +265,33 @@ const AdminSettingsPage: React.FC = () => {
                 <div className="app-flex-fill">
                   <h2 className="app-settings-item__title">Benachrichtigungen</h2>
                   <p className="app-settings-item__subtitle">Chat-Nachrichten und Updates</p>
+                </div>
+              </div>
+
+              {/* App-Tour und Neuerungen jederzeit erneut ansehen */}
+              <div
+                className="app-list-item app-list-item--users app-settings-item"
+                onClick={() => setShowOnboarding(true)}
+              >
+                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
+                  <IonIcon icon={compassOutline} />
+                </div>
+                <div className="app-flex-fill">
+                  <h2 className="app-settings-item__title">App-Tour ansehen</h2>
+                  <p className="app-settings-item__subtitle">Kurze Einführung durch die App</p>
+                </div>
+              </div>
+
+              <div
+                className="app-list-item app-list-item--challenges app-settings-item"
+                onClick={() => setShowUpdateWalkthrough(true)}
+              >
+                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--challenges">
+                  <IonIcon icon={sparklesOutline} />
+                </div>
+                <div className="app-flex-fill">
+                  <h2 className="app-settings-item__title">Was ist neu?</h2>
+                  <p className="app-settings-item__subtitle">Die Neuerungen dieser Version</p>
                 </div>
               </div>
                 </div>
@@ -349,6 +394,22 @@ const AdminSettingsPage: React.FC = () => {
                     <p className="app-settings-item__subtitle">Aktivitäten und Punkte verwalten</p>
                   </div>
                   <IonButton fill="clear" aria-label="Info zu Aktivitäten" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.activities); }} style={{ '--color': 'var(--app-color-activities)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
+                    <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
+                  </IonButton>
+                </div>
+
+                <div
+                  className="app-list-item app-list-item--challenges app-settings-item"
+                  onClick={() => router.push('/admin/challenges')}
+                >
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--challenges">
+                    <IonIcon icon={flag} />
+                  </div>
+                  <div className="app-flex-fill">
+                    <h2 className="app-settings-item__title">Challenges</h2>
+                    <p className="app-settings-item__subtitle">Aufgaben stellen und Beiträge der Konfis begleiten</p>
+                  </div>
+                  <IonButton fill="clear" aria-label="Info zu Challenges" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.challenges); }} style={{ '--color': 'var(--app-color-challenges)', '--padding-start': '6px', '--padding-end': '6px', margin: 0 }}>
                     <IonIcon icon={informationCircleOutline} slot="icon-only" style={{ fontSize: '1.4rem' }} />
                   </IonButton>
                 </div>
@@ -477,6 +538,17 @@ const AdminSettingsPage: React.FC = () => {
 
         <div className="ion-padding-bottom"></div>
       </IonContent>
+
+      {showOnboarding && (
+        <AdminOnboardingModal
+          onClose={() => setShowOnboarding(false)}
+          displayName={(user?.display_name || '').split(' ')[0]}
+        />
+      )}
+
+      {showUpdateWalkthrough && (
+        <AdminUpdateWalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
+      )}
     </IonPage>
   );
 };

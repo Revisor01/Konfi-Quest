@@ -5,6 +5,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { invalidateUserCache } = require('../middleware/rbac');
 const liveUpdate = require('../utils/liveUpdate');
+const { deletePhotoFile, deleteChallengeFile } = require('../utils/photoStorage');
 const { syncTeamChat } = require('../utils/teamChat');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const chatSyncCache = require('../utils/chatSyncCache');
@@ -445,6 +446,53 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
         }
       }
 
+      // 9. Beispiel-Challenges (Startpunkt zum Anpassen). Je eine pro
+      // challenge_type, als Entwuerfe (is_draft=true) angelegt, damit nichts
+      // ungewollt live geht — die Leitung passt Inhalte an und veroeffentlicht
+      // selbst. Platzhalter-Zeitraum (7 bis 14 Tage ab jetzt), da eine neue Org
+      // noch keine Jahrgaenge hat und die Challenges daher bewusst OHNE
+      // Jahrgangs-Zuweisung starten (challenge_jahrgang_assignments bleibt leer;
+      // routes/challenges.js zeigt Entwuerfe ohne Zuweisung ueber LEFT JOIN /
+      // COALESCE sauber an).
+      const defaultChallenges = [
+        {
+          title: 'Unbezahlbar — Momente, die man nicht kaufen kann',
+          description: 'Eine Woche lang achtest du auf Momente, die nichts kosten und dir trotzdem wichtig sind — ein Lachen, ein Sonnenuntergang, ein gutes Gespräch. Teile so einen Moment als Foto oder Text.',
+          challenge_type: 'wahrnehmung',
+          visibility: 'konfi_choice',
+          moderated: true,
+          badge_name: 'Unbezahlbar'
+        },
+        {
+          title: 'Dein Song',
+          description: 'Es gibt bestimmt einen Song, der etwas mit dir macht — der dich runterholt, aufbaut oder einfach zu dir passt. Teile ihn als Link und schreib in einem Satz, warum genau dieser Song.',
+          challenge_type: 'beitrag',
+          visibility: 'konfi_choice',
+          moderated: false,
+          badge_name: 'Dein Song'
+        },
+        {
+          title: 'Eine Woche ein guter Vorsatz',
+          description: 'Zieh eine Woche lang etwas Kleines durch, das dir guttut — zum Beispiel morgens an eine Sache denken, für die du dankbar bist, oder jeden Tag einen freundlichen Satz zu jemandem sagen. Schreib am Ende kurz auf, wie es für dich war. Das lesen nur wir.',
+          challenge_type: 'praxis',
+          visibility: 'private',
+          moderated: false,
+          badge_name: 'Guter Vorsatz'
+        }
+      ];
+
+      const challengeQuery = `INSERT INTO challenges (
+        organization_id, title, description, challenge_type, visibility, moderated,
+        badge_name, created_by, starts_at, ends_at, is_draft
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW() + INTERVAL '7 days', NOW() + INTERVAL '14 days', true)`;
+
+      for (const challenge of defaultChallenges) {
+        await db.query(challengeQuery, [
+          organizationId, challenge.title, challenge.description, challenge.challenge_type,
+          challenge.visibility, challenge.moderated, challenge.badge_name, newAdmin.id
+        ]);
+      }
+
       res.status(201).json({
         id: organizationId,
         admin_user_id: newAdmin.id,
@@ -453,7 +501,8 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
         default_levels_created: defaultLevels.length,
         default_categories_created: defaultCategories.length,
         default_activities_created: defaultActivities.length,
-        message: `Organisation erfolgreich erstellt (Standard-Rollen, Admin, ${defaultBadges.length} Badges, ${defaultCertificates.length} Zertifikate, ${defaultLevels.length} Levels, ${defaultCategories.length} Kategorien, ${defaultActivities.length} Aktivitäten)`
+        default_challenges_created: defaultChallenges.length,
+        message: `Organisation erfolgreich erstellt (Standard-Rollen, Admin, ${defaultBadges.length} Badges, ${defaultCertificates.length} Zertifikate, ${defaultLevels.length} Levels, ${defaultCategories.length} Kategorien, ${defaultActivities.length} Aktivitäten, ${defaultChallenges.length} Beispiel-Challenges)`
       });
 
       // Live-Update NACH der Response: nur an den ausfuehrenden Super-Admin selbst
@@ -599,7 +648,18 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       await client.query('DELETE FROM user_activities WHERE organization_id = $1', [id]);
       await client.query('DELETE FROM bonus_points WHERE organization_id = $1', [id]);
       await client.query('DELETE FROM user_badges WHERE organization_id = $1', [id]);
+      // Dateipfade VOR den DB-Deletes einsammeln, damit die verschluesselten
+      // Dateien nach dem COMMIT vom Datenträger entfernt werden koennen
+      // (DSGVO Art. 17 — Security-Review 04.08.2026).
+      const { rows: orgRequestPhotos } = await client.query(
+        'SELECT photo_filename FROM activity_requests WHERE organization_id = $1 AND photo_filename IS NOT NULL', [id]);
+      const { rows: orgChallengeFiles } = await client.query(
+        'SELECT file_path FROM challenge_submissions WHERE organization_id = $1 AND file_path IS NOT NULL', [id]);
       await client.query('DELETE FROM activity_requests WHERE organization_id = $1', [id]);
+      // Challenges explizit (statt CASCADE), passend zum Stil dieser Loeschung
+      await client.query('DELETE FROM challenge_submissions WHERE organization_id = $1', [id]);
+      await client.query('DELETE FROM challenge_jahrgang_assignments WHERE challenge_id IN (SELECT id FROM challenges WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM challenges WHERE organization_id = $1', [id]);
       await client.query('DELETE FROM wrapped_snapshots WHERE organization_id = $1', [id]);
 
       // 5. Zertifikate (user_certificates -> certificate_types)
@@ -654,6 +714,15 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
 
       await client.query('COMMIT');
       res.json({ message: 'Organisation und alle zugehörigen Daten erfolgreich gelöscht' });
+
+      // Dateien nach dem COMMIT entfernen (nicht blockierend — ein fehlendes
+      // File darf die bereits erfolgte Loeschung nicht scheitern lassen).
+      for (const row of orgRequestPhotos) {
+        try { await deletePhotoFile(row.photo_filename); } catch (e) { console.warn('Org-Delete: Antragsfoto nicht entfernbar:', e.message); }
+      }
+      for (const row of orgChallengeFiles) {
+        try { await deleteChallengeFile(row.file_path); } catch (e) { console.warn('Org-Delete: Challenge-Datei nicht entfernbar:', e.message); }
+      }
 
       // Live-Update NACH der Response an den ausfuehrenden Super-Admin selbst (Multi-Device).
       liveUpdate.sendToUserByRole(req.user.id, 'organizations', 'delete');

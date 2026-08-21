@@ -66,6 +66,8 @@ ion-list-header ion-label {
   --app-color-konfis-rgb: 91, 33, 182;
   --app-color-teamer: #be185d;
   --app-color-teamer-rgb: 190, 24, 93;
+  --app-color-challenges: #be185d;
+  --app-color-challenges-rgb: 190, 24, 93;
   --app-color-users: #667eea;
   --app-color-users-rgb: 102, 126, 234;
   --app-color-badges: #f59e0b;
@@ -84,6 +86,11 @@ ion-list-header ion-label {
   --app-color-level-rgb: 236, 72, 153;
   --app-color-group: #f97316;
   --app-color-group-rgb: 249, 115, 22;
+  /* Verlauf der Teamer-Kopfbereiche. Es gab drei verschiedene "Teamer-Pink"-
+     Verlaeufe an drei Stellen (Profil, Detail-Header, Dashboard-Kachel) —
+     seit 11.08. dieser eine. Mittlerer Stopp ist --app-color-teamer. */
+  --app-gradient-teamer: linear-gradient(135deg, #ec4899 0%, #be185d 50%, #9d174d 100%);
+
   /* Punkte-Typen */
   --app-color-gottesdienst: #3b82f6;
   --app-color-gottesdienst-rgb: 59, 130, 246;
@@ -240,6 +247,7 @@ ion-item-sliding:last-child {
 .app-list-item--activities, ion-item.app-list-item--activities { border-left-color: var(--app-color-activities); }
 .app-list-item--teamer, ion-item.app-list-item--teamer { border-left-color: var(--app-color-teamer); }
 .app-list-item--team, ion-item.app-list-item--team { border-left-color: var(--app-color-teamer); }
+.app-list-item--challenges, ion-item.app-list-item--challenges { border-left-color: var(--app-color-challenges); }
 .app-list-item--users, ion-item.app-list-item--users { border-left-color: var(--app-color-users); }
 .app-list-item--level, ion-item.app-list-item--level { border-left-color: var(--app-color-level); }
 .app-list-item--organizations, ion-item.app-list-item--organizations { border-left-color: var(--app-color-users); }
@@ -263,6 +271,7 @@ ion-item-sliding:last-child {
 .app-list-item--chat.app-list-item--selected { background: rgba(var(--app-color-chat-rgb), 0.08); }
 .app-list-item--team.app-list-item--selected { background: rgba(var(--app-color-teamer-rgb), 0.08); }
 .app-list-item--teamer.app-list-item--selected { background: rgba(var(--app-color-teamer-rgb), 0.08); }
+.app-list-item--challenges.app-list-item--selected { background: rgba(var(--app-color-challenges-rgb), 0.08); }
 .app-list-item--warning.app-list-item--selected { background: rgba(var(--app-color-warning-rgb), 0.08); }
 .app-list-item--primary.app-list-item--selected { background: rgba(var(--app-color-konfis-rgb), 0.08); }
 .app-list-item--purple.app-list-item--selected { background: rgba(var(--app-color-konfis-rgb), 0.08); }
@@ -348,6 +357,13 @@ ion-item-sliding:last-child {
   background-color: rgba(91, 33, 182, 0.15);
   color: #5b21b6;
 }
+/* Challenges: Rosa bewusst nur als Akzent (Chip/Icon), nicht als Vollflaeche */
+.app-chip--challenges {
+  background-color: rgba(var(--app-color-challenges-rgb), 0.12);
+  color: var(--app-color-challenges);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
 
 /* === Corner Badges === */
 /* Flex-Container fuer mehrere Badges nebeneinander (oben rechts) */
@@ -398,6 +414,7 @@ ion-item-sliding:last-child {
 /* Chat-Raumtyp-Farben */
 .app-corner-badge--team { background-color: var(--app-color-teamer); }
 .app-corner-badge--teamer { background-color: var(--app-color-teamer); }
+.app-corner-badge--challenges { background-color: var(--app-color-challenges); }
 .app-corner-badge--chat-jahrgang { background-color: var(--app-color-chat); }
 .app-corner-badge--konfi { background-color: var(--app-color-konfis); }
 .app-corner-badge--group { background-color: var(--app-color-group); }
@@ -451,6 +468,7 @@ ion-item-sliding:last-child {
 .app-section-icon--jahrgang { background-color: var(--app-color-jahrgang); }
 .app-section-icon--settings { background-color: var(--app-color-users); }
 .app-section-icon--teamer { background-color: var(--app-color-teamer); }
+.app-section-icon--challenges { background-color: var(--app-color-challenges); }
 .app-section-icon ion-icon {
   color: white;
   font-size: 0.8rem;
@@ -515,6 +533,7 @@ ion-list[inset] ion-list-header {
 .app-icon-circle--activities { background-color: var(--app-color-activities); }
 .app-icon-circle--teamer { background-color: var(--app-color-teamer); }
 .app-icon-circle--team { background-color: var(--app-color-teamer); }
+.app-icon-circle--challenges { background-color: var(--app-color-challenges); }
 .app-icon-circle--users { background-color: var(--app-color-users); }
 .app-icon-circle--level { background-color: var(--app-color-level); }
 .app-icon-circle--organizations { background-color: var(--app-color-users); }
@@ -884,6 +903,11 @@ ion-item {
   background: linear-gradient(135deg, var(--app-color-teamer) 0%, #be123c 100%);
 }
 
+/* === Challenges Domain Color === */
+.app-header-banner--challenges {
+  background: linear-gradient(135deg, var(--app-color-challenges) 0%, #be123c 100%);
+}
+
 /* === Stats Row === */
 .app-stats-row {
   display: flex;
@@ -894,14 +918,44 @@ ion-item {
   flex-wrap: wrap;
 }
 
+/* Gilt fuer beide Varianten: <div> (reine Anzeige) und <button> (klickbar).
+   box-sizing MUSS hier stehen — ein <button> bringt border-box vom Browser mit,
+   ein <div> erbt content-box. Ohne die Vereinheitlichung zieht der Button das
+   Padding nach innen und wird bei gleichem max-width schmaler als die Nachbarn. */
 .app-stats-row__item {
+  box-sizing: border-box;
   background: rgba(255, 255, 255, 0.2);
+  border: none;
   border-radius: 12px;
   padding: 10px 12px;
   text-align: center;
+  font-family: inherit;
   flex: 1 1 0;
   min-width: 80px;
   max-width: 100px;
+  /* Container-Bezug fuer die cqw-Schriftgroessen der Kinder. */
+  container-type: inline-size;
+}
+
+/* Klickbare Kacheln (springen zum passenden Reiter). Optik kommt komplett aus
+   .app-stats-row__item — hier nur noch das Interaktionsverhalten. */
+.app-stats-row__item--clickable {
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: background 0.15s ease, transform 0.1s ease;
+  /* Touch-Ziel: die Kachel ist mit Padding bereits ueber 44px hoch. */
+}
+
+.app-stats-row__item--clickable:active {
+  transform: scale(0.96);
+  background: rgba(255, 255, 255, 0.32);
+}
+
+/* Aktiver Reiter: deutlich hellere Kachel, damit die Auswahl sichtbar bleibt. */
+.app-stats-row__item--active {
+  background: rgba(255, 255, 255, 0.38);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.55);
 }
 
 /* Grid-Variante fuer 5+ Stats (z.B. Profil mit 6 Stats) */
@@ -919,17 +973,34 @@ ion-item {
 }
 
 .app-stats-row__value {
+  /* Skaliert mit, damit auch drei- bis vierstellige Werte (oder "∞") in der
+     schmalsten Kachel einzeilig bleiben. */
   font-size: 1.3rem;
+  font-size: clamp(1rem, 28cqi, 1.3rem);
   font-weight: 800;
   color: white;
+  white-space: nowrap;
 }
 
 .app-stats-row__label {
+  /* Skaliert mit der Kachelbreite (cqi = 1% der Container-Breite), damit auch
+     lange Labels wie "TEAMER:IN" oder "CHALLENGES" einzeilig hineinpassen —
+     frueher stand dort eine feste Groesse und lange Woerter ragten heraus.
+     cqi bezieht sich auf die INHALTSbreite (Kachel minus 24px Padding), nicht
+     auf die volle Kachel. Faktor so gewaehlt, dass "CHALLENGES" (laengstes
+     Label) auch in der schmalsten Kachel mit Reserve einzeilig passt.
+     Die erste Zeile ist der Fallback fuer Engines ohne Container-Queries. */
   font-size: 0.65rem;
+  font-size: clamp(0.48rem, 12cqi, 0.68rem);
   color: rgba(255, 255, 255, 0.85);
   font-weight: 600;
   letter-spacing: 0.3px;
   text-transform: uppercase;
+  /* Lange Labels (z.B. CHALLENGES) duerfen nie zweizeilig werden */
+  white-space: nowrap;
+  /* Notnagel fuer extreme Faelle: lieber gekuerzt als gesprengt. */
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* === Empty States === */
@@ -1040,6 +1111,11 @@ ion-item {
   background: rgba(var(--app-color-teamer-rgb), 0.08);
   border: 1px solid rgba(var(--app-color-teamer-rgb), 0.2);
   color: var(--app-color-teamer);
+}
+.app-info-box--challenges {
+  background: rgba(var(--app-color-challenges-rgb), 0.08);
+  border: 1px solid rgba(var(--app-color-challenges-rgb), 0.2);
+  color: var(--app-color-challenges);
 }
 
 /* === Progress Bars === */
@@ -1416,6 +1492,7 @@ ion-toggle.app-toggle--events {
 .app-icon-color--material { color: var(--app-color-material); }
 .app-icon-color--muted { color: #999; }
 .app-icon-color--teamer { color: var(--app-color-teamer); }
+.app-icon-color--challenges { color: var(--app-color-challenges); }
 .app-icon-color--konfis { color: var(--app-color-konfis); }
 .app-icon-color--system { color: var(--app-text-system); }
 .app-icon-color--text-primary { color: var(--app-text-primary); }
@@ -1657,6 +1734,10 @@ ion-button.app-modal-submit-btn--settings {
 }
 ion-button.app-modal-submit-btn--teamer {
   --background: var(--app-color-teamer);
+  --background-hover: #831843;
+}
+ion-button.app-modal-submit-btn--challenges {
+  --background: var(--app-color-challenges);
   --background-hover: #831843;
 }
 ion-button.app-modal-submit-btn--level {
@@ -2332,6 +2413,11 @@ ion-button.app-modal-submit-btn--bonus {
   box-shadow: 0 8px 32px rgba(var(--app-color-teamer-rgb), 0.25);
 }
 
+.app-dashboard-section--challenges {
+  background: linear-gradient(135deg, var(--app-color-challenges) 0%, #831843 100%);
+  box-shadow: 0 8px 32px rgba(var(--app-color-challenges-rgb), 0.25);
+}
+
 .app-dashboard-section--ranking {
   background: linear-gradient(135deg, #28a745 0%, #155724 100%);
   box-shadow: 0 8px 32px rgba(40, 167, 69, 0.25);
@@ -2521,6 +2607,7 @@ ion-item.app-dashboard-settings-item::part(native) {
 ion-toggle.app-toggle--users { --background-checked: var(--app-color-users) !important; --track-background-checked: var(--app-color-users) !important; --ion-color-base: var(--app-color-users) !important; --handle-background-checked: #fff !important; }
 ion-toggle.app-toggle--konfis { --background-checked: var(--app-color-konfis) !important; --track-background-checked: var(--app-color-konfis) !important; --ion-color-base: var(--app-color-konfis) !important; --handle-background-checked: #fff !important; }
 ion-toggle.app-toggle--teamer { --background-checked: var(--app-color-teamer) !important; --track-background-checked: var(--app-color-teamer) !important; --ion-color-base: var(--app-color-teamer) !important; --handle-background-checked: #fff !important; }
+ion-toggle.app-toggle--challenges { --background-checked: var(--app-color-challenges) !important; --track-background-checked: var(--app-color-challenges) !important; --ion-color-base: var(--app-color-challenges) !important; --handle-background-checked: #fff !important; }
 ion-toggle.app-toggle--events { --background-checked: var(--app-color-events) !important; --track-background-checked: var(--app-color-events) !important; --ion-color-base: var(--app-color-events) !important; --handle-background-checked: #fff !important; }
 ion-toggle.app-toggle--badges { --background-checked: var(--app-color-badges) !important; --track-background-checked: var(--app-color-badges) !important; --ion-color-base: var(--app-color-badges) !important; --handle-background-checked: #fff !important; }
 ion-toggle.app-toggle--chat { --background-checked: var(--app-color-chat) !important; --track-background-checked: var(--app-color-chat) !important; --ion-color-base: var(--app-color-chat) !important; --handle-background-checked: #fff !important; }
@@ -2702,5 +2789,69 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   /* Hoehe + overflow steuert resizeTextarea() (MessageInput) manuell.
      Hier nur Touch-Scrolling im Feld erlauben. */
   touch-action: pan-y;
+}
+
+/* === Audio-Player Seekbar (AudioPlayer.tsx) ===
+   Eigenes Styling statt "accent-color": Safari/iOS faerbt damit Track UND
+   Thumb in der uebergebenen Farbe ein, was bei dunklen Akzentfarben auf iOS
+   zu kraeftig/verfaelscht wirkt. Der Fortschritt kommt stattdessen ueber
+   einen per Inline-Style gesetzten linear-gradient in der echten
+   Challenge-Farbe (siehe AudioPlayer, SEEK_PROGRESS_COLOR = color-Prop),
+   hier wird nur der native Track transparent gemacht und der Thumb passend
+   dazu gestylt.
+
+   Thumb-Vertikalausrichtung (WebKit): der Track ist 4px hoch, der Thumb hat
+   width/height 14px + 2px Border rundum, also insgesamt 18px sichtbare
+   Groesse. WebKit zentriert den Thumb NICHT automatisch auf einem custom
+   gestylten Track, daher explizit per margin-top:
+     margin-top = (trackHeight - thumbTotalHeight) / 2 = (4px - 18px) / 2 = -7px
+   Firefox zentriert ueber -moz-range-thumb selbststaendig korrekt und
+   braucht kein margin-top-Aequivalent. */
+.app-audio-seekbar {
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 2px;
+  outline: none;
+}
+.app-audio-seekbar::-webkit-slider-runnable-track {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: transparent;
+}
+.app-audio-seekbar::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--app-audio-seek-color, var(--app-color-challenges));
+  border: 2px solid #fff;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.25);
+  margin-top: -7px;
+  cursor: pointer;
+}
+.app-audio-seekbar::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: transparent;
+}
+.app-audio-seekbar::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--app-audio-seek-color, var(--app-color-challenges));
+  border: 2px solid #fff;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+.app-audio-seekbar:disabled::-webkit-slider-thumb {
+  background: #c7c7cc;
+  cursor: default;
+}
+.app-audio-seekbar:disabled::-moz-range-thumb {
+  background: #c7c7cc;
+  cursor: default;
 }
 

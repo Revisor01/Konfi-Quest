@@ -111,14 +111,14 @@ const AdminUsersPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
         <IonButtons slot="start">
-          <IonButton onClick={() => window.history.back()}>
+          <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
             <IonIcon icon={arrowBack} />
           </IonButton>
         </IonButtons>
           <IonTitle>Benutzer:innen</IonTitle>
           <IonButtons slot="end">
             {user?.role_name === 'org_admin' && (
-              <IonButton onClick={presentUserModal}>
+              <IonButton aria-label="Neue Benutzer:in anlegen" onClick={presentUserModal}>
                 <IonIcon icon={add} />
               </IonButton>
             )}

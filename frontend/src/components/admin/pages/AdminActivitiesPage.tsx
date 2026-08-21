@@ -126,14 +126,14 @@ const AdminActivitiesPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton onClick={() => window.history.back()}>
+            <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
               <IonIcon icon={arrowBack} />
             </IonButton>
           </IonButtons>
           <IonTitle>Aktivitäten</IonTitle>
           {canCreate && (
             <IonButtons slot="end">
-              <IonButton onClick={presentActivityModal}>
+              <IonButton aria-label="Neue Aktivität anlegen" onClick={presentActivityModal}>
                 <IonIcon icon={add} />
               </IonButton>
             </IonButtons>

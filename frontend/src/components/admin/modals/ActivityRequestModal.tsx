@@ -214,7 +214,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           <IonToolbar>
             <IonTitle>Antrag laden...</IonTitle>
             <IonButtons slot="start">
-              <IonButton onClick={onClose} className="app-modal-close-btn">
+              <IonButton aria-label="Schließen" onClick={onClose} className="app-modal-close-btn">
                 <IonIcon icon={closeOutline} />
               </IonButton>
             </IonButtons>
@@ -235,13 +235,13 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         <IonToolbar>
           <IonTitle>Antrag prüfen</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} disabled={isSubmitting} className="app-modal-close-btn">
+            <IonButton aria-label="Schließen" onClick={onClose} disabled={isSubmitting} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           {isPending && selectedAction && (
             <IonButtons slot="end">
-              <IonButton onClick={handleSubmit} disabled={isSubmitting || (selectedAction === 'reject' && !adminComment.trim())} className="app-modal-submit-btn app-modal-submit-btn--activities">
+              <IonButton aria-label="Entscheidung speichern" onClick={handleSubmit} disabled={isSubmitting || (selectedAction === 'reject' && !adminComment.trim())} className="app-modal-submit-btn app-modal-submit-btn--activities">
                 {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
               </IonButton>
             </IonButtons>

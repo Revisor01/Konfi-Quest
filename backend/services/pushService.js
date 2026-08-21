@@ -21,6 +21,8 @@ const { sendFirebasePushNotification, sendFirebaseSilentPush } = require('../pus
  * level_up                    | sendLevelUpToKonfi                   | Konfi           | ja
  * event_reminder              | sendEventReminderToKonfi             | Konfi           | ja
  * waitlist_promotion          | sendWaitlistPromotionToKonfi         | Konfi           | ja
+ * event_registered            | sendEventRegisteredToTeamer          | Teamer:in       | ja
+ * waitlist_promotion          | sendWaitlistPromotionToTeamer        | Teamer:in       | ja
  * event_cancelled             | sendEventCancellationToKonfis        | Konfi (multi)   | ja
  * event_changed               | sendEventChangedToKonfis             | Konfi (multi)   | ja
  * new_event                   | sendNewEventToOrgKonfis              | Org-Konfis      | ja
@@ -29,6 +31,9 @@ const { sendFirebasePushNotification, sendFirebaseSilentPush } = require('../pus
  * new_konfi_registration      | sendNewKonfiRegistrationToAdmins     | Jahrgangs-Admins| ja
  * event_opt_out               | sendEventOptOutToAdmins              | Org-Admins      | ja
  * event_opt_in                | sendEventOptInToAdmins               | Org-Admins      | ja
+ * challenge_started           | sendChallengeStartedToJahrgaenge     | Jahrgangs-Konfis| ja
+ * challenge_submission        | sendChallengeSubmissionToLeadership  | Leitung         | ja
+ * challenge_badge_earned      | sendChallengeBadgeEarnedToKonfi      | Konfi           | ja
  *
  * Helper-Methoden (nicht direkt als Push-Type):
  * - getTokensForUser(db, userId)
@@ -74,10 +79,11 @@ class PushService {
         return { success: false, message: 'No tokens found' };
       }
 
-      let successCount = 0;
-      let errorCount = 0;
-
-      for (const token of tokens) {
+      // Tokens PARALLEL abarbeiten (Performance-Audit 10.08.): vorher lief je
+      // Token ein FCM-Roundtrip nacheinander — bei mehreren Geraeten summierte
+      // sich das auf. Die Tokens sind voneinander unabhaengig, ihre DB-Updates
+      // betreffen jeweils nur die eigene Zeile.
+      const results = await Promise.all(tokens.map(async (token) => {
         const result = await sendFirebasePushNotification(token.token, {
           title: notification.title,
           body: notification.body,
@@ -87,7 +93,6 @@ class PushService {
         });
 
         if (result.success) {
-          successCount++;
           // Error-Count zurücksetzen bei Erfolg (nur wenn vorher > 0)
           if (token.error_count > 0) {
             await db.query(
@@ -95,26 +100,30 @@ class PushService {
               [token.id]
             );
           }
-        } else {
-          // Fatale Errors: Token sofort löschen
-          const fatalCodes = [
-            'messaging/registration-token-not-registered',
-            'messaging/invalid-registration-token'
-          ];
-          if (fatalCodes.includes(result.errorCode)) {
-            await db.query('DELETE FROM push_tokens WHERE id = $1', [token.id]);
-            console.warn(`Token ${token.id} gelöscht (${result.errorCode})`);
-          } else {
-            // Sonstige Errors: Counter erhöhen
-            await db.query(
-              'UPDATE push_tokens SET error_count = error_count + 1, last_error_at = NOW() WHERE id = $1',
-              [token.id]
-            );
-            console.error('Push failed for token:', result.error);
-          }
-          errorCount++;
+          return true;
         }
-      }
+
+        // Fatale Errors: Token sofort löschen
+        const fatalCodes = [
+          'messaging/registration-token-not-registered',
+          'messaging/invalid-registration-token'
+        ];
+        if (fatalCodes.includes(result.errorCode)) {
+          await db.query('DELETE FROM push_tokens WHERE id = $1', [token.id]);
+          console.warn(`Token ${token.id} gelöscht (${result.errorCode})`);
+        } else {
+          // Sonstige Errors: Counter erhöhen
+          await db.query(
+            'UPDATE push_tokens SET error_count = error_count + 1, last_error_at = NOW() WHERE id = $1',
+            [token.id]
+          );
+          console.error('Push failed for token:', result.error);
+        }
+        return false;
+      }));
+
+      const successCount = results.filter(Boolean).length;
+      const errorCount = results.length - successCount;
 
       return { success: true, sent: successCount, errors: errorCount, total: tokens.length };
     } catch (error) {
@@ -127,12 +136,15 @@ class PushService {
    * Helper: Sendet Push an mehrere User (z.B. alle Admins)
    */
   static async sendToMultipleUsers(db, userIds, notification) {
-    const results = [];
-    for (const userId of userIds) {
-      const result = await this.sendToUser(db, userId, notification);
-      results.push({ userId, ...result });
-    }
-    return results;
+    // Empfaenger PARALLEL (Performance-Audit 10.08.): vorher wurde jeder User
+    // nacheinander abgearbeitet, und in sendToUser wiederum jedes Geraet — bei
+    // 5 Admins mit je 2 Geraeten also 10 FCM-Roundtrips in Reihe.
+    return Promise.all(
+      userIds.map(async (userId) => {
+        const result = await this.sendToUser(db, userId, notification);
+        return { userId, ...result };
+      })
+    );
   }
 
   /**
@@ -519,6 +531,19 @@ class PushService {
   }
 
   /**
+   * Event-Anmeldung bestätigt - Push an Teamer:in
+   *
+   * Teamer:innen haben seit dem Teamer-Kontingent ebenfalls eine Warteliste,
+   * brauchen also dieselbe Rueckmeldung wie Konfis. Die Texte sind identisch
+   * (sendEventRegisteredToKonfi ist rollenagnostisch und sendet nur an eine
+   * User-ID) — daher wird sie hier bewusst wiederverwendet.
+   * @param {string} status - 'confirmed' oder 'waitlist'
+   */
+  static async sendEventRegisteredToTeamer(db, teamerId, eventName, eventDate, status, eventId = null) {
+    return await this.sendEventRegisteredToKonfi(db, teamerId, eventName, eventDate, status, eventId, null);
+  }
+
+  /**
    * Event-Abmeldung bestätigt - Push an Konfi
    */
   static async sendEventUnregisteredToKonfi(db, konfiId, eventName) {
@@ -731,6 +756,17 @@ class PushService {
   }
 
   /**
+   * Von der Teamer-Warteliste aufgerückt - Push an Teamer:in
+   *
+   * Gleiche Nachricht wie bei Konfis (sendWaitlistPromotionToKonfi ist
+   * rollenagnostisch), eigener Einstiegspunkt fuer die Lesbarkeit der
+   * Aufrufstellen und der Registry oben.
+   */
+  static async sendWaitlistPromotionToTeamer(db, teamerId, eventName, eventDate = null, eventId = null) {
+    return await this.sendWaitlistPromotionToKonfi(db, teamerId, eventName, eventDate, eventId);
+  }
+
+  /**
    * Event abgesagt - Push an alle angemeldeten Konfis
    */
   static async sendEventCancellationToKonfis(db, userIds, eventName, eventDate) {
@@ -841,6 +877,140 @@ class PushService {
       return await this.sendToMultipleUsers(db, konfiIds, notification);
     } catch (error) {
  console.error('sendNewEventToOrgKonfis error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ====================================================================
+  // CHALLENGE NOTIFICATIONS
+  // ====================================================================
+
+  /**
+   * Challenge gestartet - Push an alle Konfis der zugewiesenen Jahrgaenge.
+   * Empfaenger kommen ueber challenge_jahrgang_assignments, NICHT ueber die
+   * ganze Organisation: eine Challenge laeuft immer nur fuer bestimmte
+   * Jahrgaenge.
+   *
+   * @param {object} db - DB-Pool
+   * @param {number} challengeId - Challenge ID
+   * @param {string} challengeTitle - Titel der Challenge
+   */
+  static async sendChallengeStartedToJahrgaenge(db, challengeId, challengeTitle) {
+    try {
+      const { rows: konfis } = await db.query(
+        `SELECT DISTINCT kp.user_id
+         FROM konfi_profiles kp
+         JOIN users u ON kp.user_id = u.id
+         JOIN roles r ON u.role_id = r.id
+         JOIN challenge_jahrgang_assignments cja ON cja.jahrgang_id = kp.jahrgang_id
+         WHERE cja.challenge_id = $1
+           AND r.name = 'konfi'
+           AND u.deleted_at IS NULL`,
+        [challengeId]
+      );
+
+      const konfiIds = konfis.map(k => k.user_id);
+      if (konfiIds.length === 0) {
+        return { success: true, sent: 0 };
+      }
+
+      const notification = {
+        title: 'Neue Challenge',
+        body: `"${challengeTitle}" ist gestartet — schau rein und mach mit!`,
+        data: {
+          type: 'challenge_started',
+          challengeId: challengeId.toString()
+        }
+      };
+
+      return await this.sendToMultipleUsers(db, konfiIds, notification);
+    } catch (error) {
+      console.error('sendChallengeStartedToJahrgaenge error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Abzeichen einer Challenge erhalten - Push an den Konfi. Das Abzeichen ist
+   * abgeleitet (EXISTS eigene Submission, siehe challenges.js), zaehlt also
+   * bereits bei der ERSTEN Submission unabhaengig vom Moderationsstatus — der
+   * Push feuert deshalb ebenfalls bei der ersten eigenen Submission, weil das
+   * Abzeichen im UI ab genau diesem Zeitpunkt erscheint.
+   *
+   * @param {object} db - DB-Pool
+   * @param {number} konfiId - Konfi User-ID
+   * @param {number} challengeId - Challenge ID
+   * @param {string} challengeTitle - Titel der Challenge
+   */
+  static async sendChallengeBadgeEarnedToKonfi(db, konfiId, challengeId, challengeTitle) {
+    try {
+      const notification = {
+        title: 'Abzeichen erhalten',
+        body: `Du hast das Abzeichen für "${challengeTitle}" bekommen!`,
+        data: {
+          type: 'challenge_badge_earned',
+          challengeId: challengeId.toString()
+        }
+      };
+
+      return await this.sendToUser(db, konfiId, notification);
+    } catch (error) {
+      console.error('sendChallengeBadgeEarnedToKonfi error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Neuer Challenge-Beitrag - Push an die Leitung (Org-Admins + die Teamer der
+   * zugewiesenen Jahrgaenge). Wird bei JEDER Challenge gesendet (auch wenn der
+   * Beitrag sofort oeffentlich ist) — bei moderierten Challenges mit Zusatz-
+   * Hinweis, dass eine Freigabe noch aussteht.
+   *
+   * @param {object} db - DB-Pool
+   * @param {number} organizationId - Organisation ID
+   * @param {number} challengeId - Challenge ID
+   * @param {string} challengeTitle - Titel der Challenge
+   * @param {string} konfiName - Anzeigename des einreichenden Konfis (die
+   *   Leitung sieht IMMER den echten Namen — Anonymitaet gilt nur fuer die Galerie)
+   * @param {boolean} moderated - Ob die Challenge moderiert ist (Freigabe noetig)
+   */
+  static async sendChallengeSubmissionToLeadership(db, organizationId, challengeId, challengeTitle, konfiName, moderated = false) {
+    try {
+      const notification = {
+        title: 'Neuer Challenge-Beitrag',
+        body: moderated
+          ? `${konfiName} hat bei "${challengeTitle}" etwas eingereicht. Wartet auf Freigabe.`
+          : `${konfiName} hat bei "${challengeTitle}" etwas eingereicht.`,
+        data: {
+          type: 'challenge_submission',
+          challengeId: challengeId.toString()
+        }
+      };
+
+      await this.sendToOrgAdmins(db, organizationId, notification);
+
+      // Teamer haengen ueber user_jahrgang_assignments an den Jahrgaengen der
+      // Challenge und werden von sendToOrgAdmins nicht erfasst.
+      const { rows: teamers } = await db.query(
+        `SELECT DISTINCT u.id
+         FROM users u
+         JOIN roles r ON u.role_id = r.id
+         JOIN user_jahrgang_assignments uja ON uja.user_id = u.id
+         JOIN challenge_jahrgang_assignments cja ON cja.jahrgang_id = uja.jahrgang_id
+         WHERE r.name = 'teamer'
+           AND u.organization_id = $1
+           AND u.deleted_at IS NULL
+           AND cja.challenge_id = $2`,
+        [organizationId, challengeId]
+      );
+
+      if (teamers.length > 0) {
+        await this.sendToMultipleUsers(db, teamers.map(t => t.id), notification);
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('sendChallengeSubmissionToLeadership error:', error);
       return { success: false, error: error.message };
     }
   }

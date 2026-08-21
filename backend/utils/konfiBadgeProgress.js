@@ -18,13 +18,12 @@ const { KONFI_BADGE_EVENT_CONDITION } = require('./badgeEventRule');
 // Erwartet: db (pg Pool), konfiId (users.id), organizationId.
 // Gibt { available, earned, stats } zurueck — dasselbe Shape wie GET /konfi/badges.
 async function getKonfiBadgeProgress(db, konfiId, organizationId) {
-  const checkBadgesTableQuery = "SELECT to_regclass('public.custom_badges')";
-  const { rows: [tableExistsResult] } = await db.query(checkBadgesTableQuery);
-
-  if (!tableExistsResult || !tableExistsResult.to_regclass) {
-    return { available: [], earned: [], stats: { totalVisible: 0, totalSecret: 0 } };
-  }
-
+  // Der to_regclass-Legacy-Check auf custom_badges wurde entfernt (Audit
+  // 10.08.): Die Tabelle ist seit Migration 076/090 der aktive Badge-Pfad und
+  // existiert dauerhaft. Der Check lief VOR dem Promise.all und war damit ein
+  // zusaetzlicher serieller Roundtrip auf GET /konfi/badges — dem meist-
+  // genutzten der langsamen Endpunkte. In routes/konfi.js (Dashboard) wurde er
+  // aus demselben Grund bereits gestrichen.
   const query = `
     SELECT cb.*,
            CASE WHEN kb.user_id IS NOT NULL THEN TRUE ELSE FALSE END as earned,

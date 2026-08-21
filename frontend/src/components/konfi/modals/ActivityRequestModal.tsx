@@ -166,7 +166,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
     if (!formData.photo_file) {
       presentAlert({
         header: 'Kein Foto',
-        message: 'Anträge benötigen normalerweise ein Foto als Nachweis. Möchtest du trotzdem fortfahren?',
+        message: 'Normalerweise gehört ein Foto dazu, damit dein Team sieht, dass du dabei warst. Trotzdem abschicken?',
         buttons: [
           { text: 'Abbrechen', role: 'cancel' },
           { text: 'Ohne Foto fortfahren', handler: () => submitRequest() }
@@ -278,12 +278,12 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         <IonToolbar>
           <IonTitle>Neuer Antrag</IonTitle>
           <IonButtons slot="start">
-            <IonButton className="app-modal-close-btn" onClick={onClose} disabled={isSubmitting}>
+            <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={onClose} disabled={isSubmitting}>
               <IonIcon icon={close} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSubmit} disabled={isSubmitting || loading}>
+            <IonButton aria-label="Antrag absenden" className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSubmit} disabled={isSubmitting || loading}>
               <IonIcon icon={checkmark} />
             </IonButton>
           </IonButtons>
@@ -499,7 +499,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                         Foto ausgewählt
                       </span>
                     </div>
-                    <IonButton
+                    <IonButton aria-label="Foto entfernen"
                       fill="clear"
                       color="danger"
                       size="small"

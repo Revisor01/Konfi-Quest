@@ -138,6 +138,12 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 }) => {
   const isOwnMessage = message.sender_id === user?.id && message.sender_type === user?.type;
 
+  // Merkt sich, ob die aktuelle Long-Press-Geste schon behandelt wurde. Android
+  // loest bei einem langen Druck BEIDE Wege aus (eigener Touch-Timer und danach
+  // das native 'contextmenu'); ohne diese Sperre hob der zweite Aufruf den
+  // ersten sofort wieder auf, weil onLongPress ein Toggle ist.
+  const longPressFiredRef = React.useRef(false);
+
   if (message.deleted) {
     return (
       <div key={message.id} style={{
@@ -203,10 +209,21 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         }}
         onContextMenu={(e) => {
           e.preventDefault();
+          // Android feuert nach dem eigenen 500ms-Timer ZUSAETZLICH 'contextmenu'.
+          // Weil onLongPress ein Toggle ist, ging das Menue dadurch sofort wieder
+          // zu ("blitzt kurz auf"). Hat der Touch-Timer schon ausgeloest, ist die
+          // Geste hier bereits behandelt.
+          if (longPressFiredRef.current) return;
+          longPressFiredRef.current = true;
           onLongPress(message);
         }}
         onTouchStart={(e) => {
+          longPressFiredRef.current = false;
           const timeoutId = setTimeout(() => {
+            // Umgekehrter Fall: hat 'contextmenu' schon zugeschlagen, nicht
+            // noch einmal togglen.
+            if (longPressFiredRef.current) return;
+            longPressFiredRef.current = true;
             onLongPress(message);
           }, 500);
 
@@ -729,7 +746,15 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             >
               <IonIcon icon={shareOutline} style={{ fontSize: '1rem', color: isOwnMessage ? 'white' : '#666' }} />
             </div>
-            {user?.role_name && ['admin', 'org_admin', 'teamer'].includes(user.role_name) && (
+            {/* Loeschen: Admins duerfen jede Nachricht der Organisation loeschen,
+                Teamer:innen nur ihre EIGENEN. Vorher hing der Button allein an der
+                Rolle — Teamer:innen sahen den Papierkorb auch bei fremden
+                Nachrichten, wo ihn das Backend mit 403 abgelehnt hat.
+                Konfis sehen ihn bewusst weiterhin gar nicht. */}
+            {user?.role_name && (
+              ['admin', 'org_admin'].includes(user.role_name) ||
+              (user.role_name === 'teamer' && isOwnMessage)
+            ) && (
               <div
                 onClick={() => {
                   onDelete(message.id);

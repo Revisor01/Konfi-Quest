@@ -54,6 +54,7 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader, ListSection } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
+import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
 interface Jahrgang {
   id: number;
@@ -253,12 +254,12 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
             {jahrgang ? 'Jahrgang bearbeiten' : 'Neuer Jahrgang'}
           </IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose} disabled={loading}>
+            <IonButton aria-label="Schließen" onClick={handleClose} disabled={loading}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton
+            <IonButton aria-label="Jahrgang speichern"
               onClick={handleSubmit}
               disabled={!formData.name.trim() || loading}
             >
@@ -551,14 +552,14 @@ const AdminJahrgaengeePage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton onClick={() => window.history.back()}>
+            <IonButton aria-label="Zurück" onClick={() => window.history.back()}>
               <IonIcon icon={arrowBack} />
             </IonButton>
           </IonButtons>
           <IonTitle>Jahrgänge</IonTitle>
           {canCreate && (
             <IonButtons slot="end">
-              <IonButton onClick={openCreateModal}>
+              <IonButton aria-label="Neuen Jahrgang anlegen" onClick={openCreateModal}>
                 <IonIcon icon={add} />
               </IonButton>
             </IonButtons>
@@ -681,7 +682,8 @@ const AdminJahrgaengeePage: React.FC = () => {
                       {canDelete && (
                         <IonItemOptions side="end" className="app-swipe-actions">
                           <IonItemOption
-                            onClick={() => handleDeleteWithSlideClose(jahrgang)}
+                            onClick={() => { closeOpenSlidingItems(); handleDeleteWithSlideClose(jahrgang); }}
+                            aria-label="Jahrgang löschen"
                             className="app-swipe-action"
                           >
                             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">

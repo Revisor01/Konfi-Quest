@@ -22,7 +22,7 @@ import {
 } from '@ionic/react';
 import {
   people, chatbubbles, star, ellipsisHorizontal,
-  person, home, flash, document as documentIcon, calendar, business
+  person, home, flash, calendar, business, flag
 } from 'ionicons/icons';
 import { useIonRouter, isPlatform } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
@@ -30,6 +30,7 @@ import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
 import { useLiveRefresh } from '../../contexts/LiveUpdateContext';
 import api from '../../services/api';
+import { trackBereich } from '../../services/analytics';
 import { ModalProvider } from '../../contexts/ModalContext'; // Behalten
 import AdminKonfisPage from '../admin/pages/AdminKonfisPage';
 import AdminActivitiesPage from '../admin/pages/AdminActivitiesPage';
@@ -37,7 +38,6 @@ import AdminEventsPage from '../admin/pages/AdminEventsPage';
 import AdminCategoriesPage from '../admin/pages/AdminCategoriesPage';
 import AdminJahrgaengeePage from '../admin/pages/AdminJahrgaengeePage';
 import AdminBadgesPage from '../admin/pages/AdminBadgesPage';
-import AdminActivityRequestsPage from '../admin/pages/AdminActivityRequestsPage';
 import AdminUsersPage from '../admin/pages/AdminUsersPage';
 // AdminRolesPage entfernt - Rollen sind jetzt hardcoded
 import AdminOrganizationsPage from '../admin/pages/AdminOrganizationsPage';
@@ -49,6 +49,7 @@ import AdminCertificatesPage from '../admin/pages/AdminCertificatesPage';
 import AdminDashboardSettingsPage from '../admin/pages/AdminDashboardSettingsPage';
 import AdminLevelsPage from '../admin/pages/AdminLevelsPage';
 import AdminInvitePage from '../admin/pages/AdminInvitePage';
+import AdminChallengesPage from '../admin/pages/AdminChallengesPage';
 import ChatOverviewPage from '../chat/pages/ChatOverviewPage';
 import ChatRoomView from '../chat/views/ChatRoomView'; // Diese bleibt!
 import PushNotificationSettings from '../common/PushNotificationSettings';
@@ -59,16 +60,16 @@ import KonfiDashboardPage from '../konfi/pages/KonfiDashboardPage';
 import KonfiEventsPage from '../konfi/pages/KonfiEventsPage';
 import KonfiEventDetailPage from '../konfi/pages/KonfiEventDetailPage';
 import KonfiBadgesPage from '../konfi/pages/KonfiBadgesPage';
-import KonfiRequestsPage from '../konfi/pages/KonfiRequestsPage';
+import KonfiChallengesPage from '../konfi/pages/KonfiChallengesPage';
 import KonfiProfilePage from '../konfi/pages/KonfiProfilePage';
 import TeamerDashboardPage from '../teamer/pages/TeamerDashboardPage';
 import TeamerEventsPage from '../teamer/pages/TeamerEventsPage';
 import TeamerMaterialPage from '../teamer/pages/TeamerMaterialPage';
 
 import TeamerProfilePage from '../teamer/pages/TeamerProfilePage';
-import TeamerRequestsPage from '../teamer/pages/TeamerRequestsPage';
 import TeamerBadgesPage from '../teamer/pages/TeamerBadgesPage';
 import TeamerKonfiStatsPage from '../teamer/pages/TeamerKonfiStatsPage';
+import TeamerChallengesPage from '../teamer/pages/TeamerChallengesPage';
 
 // Wrapper-Komponenten fuer Route render-props (migriert von props.history.goBack())
 const KonfiDetailRoute: React.FC<RouteComponentProps<{ id: string }>> = ({ match }) => {
@@ -98,11 +99,23 @@ const KonfiChatRoomRoute: React.FC<RouteComponentProps<{ roomId: string }>> = ({
 
 const MainTabs: React.FC = () => {
   const { user } = useApp();
-  const { chatUnreadTotal, pendingRequestsCount, pendingEventsCount } = useBadge();
+  const { chatUnreadTotal, pendingRequestsCount, pendingEventsCount, pendingChallengesCount } = useBadge();
   // super_admin bekommt eine eigene, reduzierte Navigation
   const isSuperAdmin = user?.role_name === 'super_admin';
   const [newBadgesCount, setNewBadgesCount] = useState(0);
   const location = useLocation(); // Hook, um den aktuellen Pfad zu erhalten
+
+  // Anonyme Nutzungsmessung: WELCHER Bereich wird geoeffnet. Zentral am
+  // Routenwechsel statt an 15 einzelnen Tab-Buttons — so zaehlt auch
+  // Navigation, die nicht ueber die Tab-Leiste laeuft. Uebertragen wird nur
+  // der Bereichsname (z.B. "challenges") plus die Rolle, NIE die volle Route:
+  // die kann IDs enthalten (/admin/konfis/42).
+  useEffect(() => {
+    if (!user) return;
+    const teile = location.pathname.split('/').filter(Boolean);
+    const bereich = teile[1] || teile[0];
+    if (bereich) trackBereich(bereich);
+  }, [location.pathname, user?.id]);
 
   // iOS26 Tab-Bar Liquid-Glass-Animation (rdlabo registerTabBarEffect)
   useEffect(() => {
@@ -206,21 +219,24 @@ const MainTabs: React.FC = () => {
         <IonRouterOutlet>
           <Route exact path="/admin" render={() => <Redirect to="/admin/konfis" />} />
           <Route exact path="/admin/konfis" component={AdminKonfisPage} />
-          <Route path="/admin/konfis/:id" component={KonfiDetailRoute} />
+          <Route exact path="/admin/konfis/:id" component={KonfiDetailRoute} />
 
           {/* CHAT ROUTEN - Nach Konfis-Pattern */}
           <Route exact path="/admin/chat" component={ChatOverviewPage} />
-          <Route path="/admin/chat/room/:roomId" component={AdminChatRoomRoute} />
+          <Route exact path="/admin/chat/room/:roomId" component={AdminChatRoomRoute} />
 
           <Route exact path="/admin/activities" component={AdminActivitiesPage} />
-          <Route path="/admin/events/:id" component={AdminEventDetailRoute} />
+          <Route exact path="/admin/events/:id" component={AdminEventDetailRoute} />
           <Route exact path="/admin/events" component={AdminEventsPage} />
           <Route exact path="/admin/settings/categories" component={AdminCategoriesPage} />
           <Route exact path="/admin/settings/jahrgaenge" component={AdminJahrgaengeePage} />
           <Route exact path="/admin/settings/levels" component={AdminLevelsPage} />
           <Route exact path="/admin/settings/invite" component={AdminInvitePage} />
           <Route exact path="/admin/badges" component={AdminBadgesPage} />
-          <Route exact path="/admin/requests" component={AdminActivityRequestsPage} />
+          {/* Anträge sind jetzt ein Segment im Events-Tab. Die alte Route bleibt
+              wegen bestehender Deep-Links aus Push-Nachrichten erhalten. */}
+          <Route exact path="/admin/requests" render={() => <Redirect to="/admin/events?segment=antraege" />} />
+          <Route exact path="/admin/challenges" component={AdminChallengesPage} />
           <Route exact path="/admin/users" component={AdminUsersPage} />
           <Route exact path="/admin/organizations" component={AdminOrganizationsPage} />
           <Route exact path="/admin/material" component={AdminMaterialPage} />
@@ -256,18 +272,18 @@ const MainTabs: React.FC = () => {
             <IonTabButton tab="admin-events" href="/admin/events">
               <IonIcon icon={flash} />
               <IonLabel>Events</IonLabel>
-              {pendingEventsCount > 0 && (
+              {(pendingEventsCount + pendingRequestsCount) > 0 && (
                 <IonBadge color="danger">
-                  {pendingEventsCount > 9 ? '9+' : pendingEventsCount}
+                  {(pendingEventsCount + pendingRequestsCount) > 9 ? '9+' : (pendingEventsCount + pendingRequestsCount)}
                 </IonBadge>
               )}
             </IonTabButton>
-            <IonTabButton tab="admin-requests" href="/admin/requests">
-              <IonIcon icon={documentIcon} />
-              <IonLabel>Anträge</IonLabel>
-              {pendingRequestsCount > 0 && (
+            <IonTabButton tab="admin-challenges" href="/admin/challenges">
+              <IonIcon icon={flag} />
+              <IonLabel>Challenges</IonLabel>
+              {pendingChallengesCount > 0 && (
                 <IonBadge color="danger">
-                  {pendingRequestsCount > 9 ? '9+' : pendingRequestsCount}
+                  {pendingChallengesCount > 9 ? '9+' : pendingChallengesCount}
                 </IonBadge>
               )}
             </IonTabButton>
@@ -287,11 +303,14 @@ const MainTabs: React.FC = () => {
           <Route exact path="/teamer" render={() => <Redirect to="/teamer/dashboard" />} />
           <Route exact path="/teamer/dashboard" component={TeamerDashboardPage} />
           <Route exact path="/teamer/chat" component={ChatOverviewPage} />
-          <Route path="/teamer/chat/room/:roomId" component={TeamerChatRoomRoute} />
+          <Route exact path="/teamer/chat/room/:roomId" component={TeamerChatRoomRoute} />
           <Route exact path="/teamer/events" component={TeamerEventsPage} />
           <Route exact path="/teamer/material" component={TeamerMaterialPage} />
           <Route exact path="/teamer/badges" component={TeamerBadgesPage} />
-          <Route exact path="/teamer/requests" component={TeamerRequestsPage} />
+          {/* Anträge/Aktivitäten sind jetzt ein Segment im Events-Tab. Die alte
+              Route bleibt wegen bestehender Deep-Links aus Push-Nachrichten erhalten. */}
+          <Route exact path="/teamer/requests" render={() => <Redirect to="/teamer/events?segment=antraege" />} />
+          <Route exact path="/teamer/challenges" component={TeamerChallengesPage} />
 
           <Route exact path="/teamer/profile" component={TeamerProfilePage} />
           <Route exact path="/teamer/profile/badges" component={TeamerBadgesPage} />
@@ -319,13 +338,18 @@ const MainTabs: React.FC = () => {
               <IonIcon icon={calendar} />
               <IonLabel>Events</IonLabel>
             </IonTabButton>
+            <IonTabButton tab="teamer-challenges" href="/teamer/challenges">
+              <IonIcon icon={flag} />
+              <IonLabel>Challenges</IonLabel>
+              {pendingChallengesCount > 0 && (
+                <IonBadge color="danger">
+                  {pendingChallengesCount > 9 ? '9+' : pendingChallengesCount}
+                </IonBadge>
+              )}
+            </IonTabButton>
             <IonTabButton tab="teamer-badges" href="/teamer/badges">
               <IonIcon icon={star} />
               <IonLabel>Badges</IonLabel>
-            </IonTabButton>
-            <IonTabButton tab="teamer-requests" href="/teamer/requests">
-              <IonIcon icon={flash} />
-              <IonLabel>Aktivitäten</IonLabel>
             </IonTabButton>
           </IonTabBar>
         )}
@@ -341,12 +365,15 @@ const MainTabs: React.FC = () => {
           <Route exact path="/konfi/events" component={KonfiEventsPage} />
           <Route exact path="/konfi/events/:id" component={KonfiEventDetailPage} />
           <Route exact path="/konfi/badges" component={KonfiBadgesPage} />
+          <Route exact path="/konfi/challenges" component={KonfiChallengesPage} />
 
           {/* CHAT ROUTEN - Nach Konfis-Pattern */}
           <Route exact path="/konfi/chat" component={ChatOverviewPage} />
-          <Route path="/konfi/chat/room/:roomId" component={KonfiChatRoomRoute} />
+          <Route exact path="/konfi/chat/room/:roomId" component={KonfiChatRoomRoute} />
 
-          <Route exact path="/konfi/requests" component={KonfiRequestsPage} />
+          {/* Anträge sind jetzt ein Segment im Events-Tab. Die alte Route bleibt
+              wegen bestehender Deep-Links aus Push-Nachrichten erhalten. */}
+          <Route exact path="/konfi/requests" render={() => <Redirect to="/konfi/events?segment=antraege" />} />
           <Route exact path="/konfi/profile" component={KonfiProfilePage} />
           <Route exact path="/login" render={() => <Redirect to="/konfi/dashboard" />} />
           <Route exact path="/" render={() => <Redirect to="/konfi/dashboard" />} />
@@ -368,6 +395,10 @@ const MainTabs: React.FC = () => {
                 </IonBadge>
               )}
             </IonTabButton>
+            <IonTabButton tab="challenges" href="/konfi/challenges">
+              <IonIcon icon={flag} />
+              <IonLabel>Challenges</IonLabel>
+            </IonTabButton>
             <IonTabButton tab="events" href="/konfi/events">
               <IonIcon icon={calendar} />
               <IonLabel>Events</IonLabel>
@@ -380,10 +411,6 @@ const MainTabs: React.FC = () => {
                   {newBadgesCount > 9 ? '9+' : newBadgesCount}
                 </IonBadge>
               )}
-            </IonTabButton>
-            <IonTabButton tab="requests" href="/konfi/requests">
-              <IonIcon icon={documentIcon} />
-              <IonLabel>Aktivitäten</IonLabel>
             </IonTabButton>
           </IonTabBar>
         )}

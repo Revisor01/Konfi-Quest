@@ -226,7 +226,7 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton className="app-modal-close-btn" onClick={onClose}>
+            <IonButton className="app-modal-close-btn" onClick={onClose} aria-label="Schließen">
               <IonIcon icon={closeOutline} slot="icon-only" />
             </IonButton>
           </IonButtons>
@@ -236,6 +236,7 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
               onClick={handleSendEmail}
               disabled={sending || !jahrgangId}
               title="Per E-Mail an dich senden"
+              aria-label="Per E-Mail an dich senden"
             >
               {sending
                 ? <IonSpinner name="crescent" />

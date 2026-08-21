@@ -265,7 +265,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
             {currentActivity ? 'Aktivität bearbeiten' : 'Neue Aktivität'}
           </IonTitle>
           <IonButtons slot="start">
-            <IonButton
+            <IonButton aria-label="Schließen"
               onClick={handleClose}
               disabled={loading}
               className="app-modal-close-btn"
@@ -274,7 +274,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton
+            <IonButton aria-label="Aktivität speichern"
               onClick={handleSubmit}
               disabled={!isFormValid || loading || isSubmitting}
               className="app-modal-submit-btn app-modal-submit-btn--activities"

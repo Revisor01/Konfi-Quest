@@ -26,8 +26,27 @@ const LOSUNG_ENDPUNKTE = process.env.LOSUNG_API_BASE_URL
 const TIMEOUT_INTERN_MS = 2000;
 const TIMEOUT_OEFFENTLICH_MS = 5000;
 
+// Laufende Abrufe je Datum+Uebersetzung. Ohne dieses Register feuert JEDER
+// Request bei kaltem Cache einen eigenen externen API-Call: morgens oeffnen
+// alle gleichzeitig die App, keiner findet den Cache gefuellt, und die
+// Losungen-API bekommt einen Schwall identischer Anfragen (Cache-Stampede).
+// Mit Register wartet der zweite bis n-te Request auf denselben Promise.
+const laufendeAbrufe = new Map();
+
 async function fetchTageslosung(db, translation) {
   const today = new Date().toISOString().split('T')[0];
+  const schluessel = `${today}:${translation}`;
+
+  const laufend = laufendeAbrufe.get(schluessel);
+  if (laufend) return laufend;
+
+  const abruf = holeTageslosung(db, translation, today)
+    .finally(() => { laufendeAbrufe.delete(schluessel); });
+  laufendeAbrufe.set(schluessel, abruf);
+  return abruf;
+}
+
+async function holeTageslosung(db, translation, today) {
 
   // Cache pruefen
   const { rows: [cachedVerse] } = await db.query(

@@ -7,6 +7,175 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 Store-Builds (iOS-Build / Android versionCode) stehen jeweils unter der
 Versionsüberschrift.
 
+## [Unreleased] - 2.0.0
+
+### Hinzugefügt
+
+- Challenges: Aufgaben, auf die Konfis über einen frei gewählten Zeitraum mit
+  eigenen Beiträgen antworten — Foto, Text, Aufnahme oder Link. Bewusst ohne
+  Punkte, ohne Zähler und ohne Rangliste; fürs Mitmachen gibt es ein Abzeichen.
+- Challenges: Beim Anlegen werden Jahrgänge, Zeitraum, erlaubte Medienarten,
+  Sichtbarkeit und Freigabe festgelegt. Nach dem Start bleiben Sichtbarkeit und
+  Freigabe unveränderlich — die Zusage an die Konfis gilt.
+- Challenges: Konfis entscheiden je Beitrag, ob er mit Namen, anonym oder nur
+  für die Leitung sichtbar ist.
+- Challenges: Teamer:innen und Leitung nehmen selbst teil; es gibt auch Runden
+  nur fürs Team.
+- Challenges: Die Leitung kann Beiträge freigeben, nachträglich anonymisieren
+  oder ausblenden. Anonymisieren lässt sich nicht zurücknehmen.
+- Veranstaltungen: eigenes Kontingent für Teamer:innen mit eigener Warteliste,
+  getrennt von den Plätzen der Konfis.
+- Veranstaltungen: Termine nur für Teamer:innen sowie Termine, zu denen
+  Teamer:innen gesucht werden.
+- Veranstaltungen: Anmeldung kann ab sofort geöffnet werden, ohne Startdatum.
+- Teamer-Profil: Die Leitung sieht dort jetzt auch die Abzeichen der
+  Teamer:in — bisher gab es die Übersicht nur für Konfis.
+- Anonyme Nutzungsstatistik in der App: erfasst wird, welche Bereiche und
+  Funktionen genutzt werden und wo Fehlermeldungen erscheinen — ohne Namen,
+  Kennung, Gemeinde oder Inhalte. Näheres in der Datenschutzerklärung.
+
+### Geändert
+
+- Die Zahlen oben im Kopfbereich sind antippbar und springen zum passenden
+  Reiter — etwa von "Verbuchen" direkt in die Liste der offenen Verbuchungen.
+- Challenges: Eingereichte Links zeigen nur noch die Seite (etwa
+  "youtube.com") statt der vollen Adresse über mehrere Zeilen.
+- Die Absenderadresse für E-Mails aus der App ist jetzt moin@konfi-quest.de.
+- Im Chat lässt sich der Papierkorb nur noch dort antippen, wo das Löschen auch
+  erlaubt ist: Teamer:innen bei eigenen Nachrichten, die Leitung bei allen.
+
+
+- Die Tab-Leiste hat einen eigenen Challenges-Tab; die Anträge sind kein
+  eigener Tab mehr, sondern ein Bereich oben im Veranstaltungs-Tab. Gilt für
+  Konfis, Teamer:innen und Leitung.
+- Jahresrückblick: erzählt den eigenen Weg statt Platzierungen — mit den
+  Challenge-Momenten und ohne Vergleich mit anderen.
+- Einführung und "Was ist neu?": Aktivitäten werden direkt nach den
+  Veranstaltungen erklärt, mit Beispielen passend zur jeweiligen Rolle.
+  "Was ist neu?" lässt sich jederzeit erneut aufrufen.
+- Veranstaltungs-Formular neu geordnet; Anmeldung ist ein eigener Abschnitt.
+- Challenge-Beiträge werden per Tippen und Wischen bearbeitet, wie in den
+  übrigen Listen.
+- Challenges bei Leitung und Teamer:innen: "Verwalten" und "Mitmachen" sind
+  zusammengefasst. Eine Liste zeigt alle Challenges samt eigener Abzeichen, und
+  in der geöffneten Challenge stehen der eigene Beitrag und die Beiträge der
+  Gruppe beieinander. Ein Plus oben schreibt den eigenen Beitrag.
+- Challenges sind für alle gleich aufgebaut: aktuelle Challenges, eigene
+  Abzeichen, Archiv. Leitung und Teamer:innen sehen im ersten Abschnitt
+  zusätzlich geplante Challenges und Entwürfe.
+- Verwaltungslisten folgen jetzt durchgängig einer Regel: Tippen öffnet zum
+  Bearbeiten, Wischen löscht.
+- Konfi-Ansichten sprechen verständlicher: aus "Antragsdetails" wird "Deine
+  Meldung", aus "verbucht" wird "angerechnet", aus "Nachweis-Foto" "Dein Foto".
+- Bildschirmlesegeräte benennen jetzt alle Symbol-Schaltflächen und
+  Wischaktionen mit ihrer Funktion statt nur "Schaltfläche".
+
+### Behoben
+
+- Teamer:innen können im Chat wieder andere Teamer:innen und die Leitung
+  anschreiben — die Auswahlliste blieb für sie leer.
+- Android: Das Menü beim langen Drücken auf eine Chat-Nachricht blitzte nur kurz
+  auf und verschwand sofort wieder. Es bleibt jetzt offen.
+- Android: Der QR-Scanner startet die Kamera wieder; bisher ließ sie sich beim
+  Einchecken gar nicht öffnen.
+- Android 13 und neuer: Push-Nachrichten kommen wieder an. Die App durfte dort
+  bisher gar keine Benachrichtigungen anzeigen.
+
+
+- Teamer:innen: Im Profil standen an mehreren Stellen Punkte und die
+  Einteilung in Gottesdienst und Gemeinde, die es dort gar nicht gibt — im
+  Antragsdetail, bei Terminen nur fürs Team und in der Aktivitätenauswahl.
+- Teamer:innen: Beim Anlegen eines Abzeichens mit einer bestimmten Aktivität
+  wurden die Konfi-Aktivitäten zur Auswahl gestellt. Jetzt erscheinen nur die
+  Aktivitäten der jeweiligen Zielgruppe.
+- Abzeichen-Liste: Ein Abzeichen für eine bestimmte Aktivität zeigt nun deren
+  Namen statt einer Nummer — mehrere solche Abzeichen waren nicht
+  unterscheidbar.
+- Teamer-Profil: Zertifikate zeigen wieder ihr eigenes Symbol, und die Liste
+  der Termine erscheint auch, wenn noch keiner dabei war.
+- Teamer-Bereich: Kopfbereiche, Listen und Farben folgen jetzt überall
+  demselben Muster — im Profil standen bisher drei verschiedene Listenformen
+  untereinander.
+- Auswahllisten beim Anlegen von Abzeichen zeigen die Auswahl jetzt wie überall
+  sonst durch farbige Hinterlegung statt durch Ankreuzkästchen. Kategorien,
+  Zielgruppen und Bedingungen tragen dabei ihre eigene Farbe statt durchgehend
+  Orange, und die Einträge sind gleich aufgebaut wie in den übrigen Listen.
+- Teamer-Profil: Die Abzeichen stehen jetzt unter den Terminen und
+  Aktivitäten statt ganz oben.
+- Fenster ließen sich nach einem doppelten Tippen auf Speichern nicht mehr
+  über das X schließen, sondern nur noch durch Wischen. Betraf Abzeichen,
+  Challenges, Veranstaltungen und die Teilnehmerverwaltung.
+- Die anonyme Nutzungsstatistik zählte keine Besuche. Die Zahlen im
+  Auswertungswerkzeug blieben dadurch leer.
+- Veranstaltungen: Bei Zeitfenster-Terminen konnte eine Anmeldung ohne Auswahl
+  eines Zeitfensters zustande kommen, wenn die Zeitfenster nicht geladen werden
+  konnten.
+- Veranstaltungen: Teilnehmende entfernen und auf die Warteliste setzen fragen
+  jetzt nach — beides wird per Wischgeste ausgelöst.
+- Veranstaltungen: In zwei Listen ließen sich Einträge anwischen, ohne dass es
+  eine Aktion dazu gab.
+- Startseite: Neben dem eigenen Platz standen erfundene Punktzahlen der
+  Nachbarplätze. Dort steht jetzt nur noch der Platz.
+- Bibelübersetzung wechseln meldet jetzt, wenn das Speichern fehlschlägt.
+- Challenges: "Nur für euch in der Leitung" erschien auch bei Konfis.
+- Einzelne Beschriftungen liefen aus ihrer Kachel heraus.
+- Teamer-Bereich: Schreibfehler "Gueltig" bei Zertifikaten.
+- Konnte ein Foto zu einer Meldung nicht geladen werden, stand dort
+  fälschlich "Kein Foto hochgeladen".
+- Beim Hinzufügen einer Aktivität im Profil einer Teamer:in kam es zum
+  Rauswurf aus der App — Ursache waren Aktivitäten ohne Punkte-Art
+  ("Konfi-Wochenende", "Konfi-Freizeit begleitet").
+- Wischaktionen in Listen klappen nach dem Antippen wieder zu.
+- Nach dem Öffnen einer Veranstaltung, eines Profils oder eines Chats zeigten
+  andere Tabs teils die falsche Seite an.
+- Challenges: Ein freigegebener Beitrag, den nur die Leitung sieht, trug
+  fälschlich einen grünen Haken.
+- Challenges: Die eigenen Abzeichen werden bei Leitung und Teamer:innen auch
+  dann angezeigt, wenn noch keins vergeben ist.
+- Challenges: "Anonym stellen" und "Ausblenden" hatten dasselbe Symbol.
+- Challenges: Der eigene Beitrag öffnet sich jetzt wie die übrigen Fenster.
+- Challenges: Die Aufgabe steht in einer Karte statt im farbigen Hinweiskasten.
+- Challenges: Überflüssiger Zurück-Pfeil auf der Hauptseite entfernt.
+- Beim Abmelden von einem Termin steht jetzt der Grund dabei, wenn es nicht
+  mehr geht (bis 2 Tage vorher).
+- Veranstaltungen: Speichern brach in manchen Fällen ohne Meldung ab. Fehlende
+  Pflichtangaben werden jetzt benannt.
+- Anträge werden schneller abgeschickt; Benachrichtigungen an die Leitung
+  laufen jetzt im Hintergrund.
+- Tageslosung: Bei gleichzeitigem Abruf durch viele Geräte wird nur noch einmal
+  nachgeladen.
+- Veranstaltungen: Termine nur für Teamer:innen vergaben fälschlich Punkte,
+  zeigten ein wirkungsloses Anmeldefenster und eine Konfi-Warteliste.
+- Veranstaltungen: Terminserien übernehmen alle Angaben des ersten Termins.
+- Veranstaltungen: Termine mit Anmeldungen lassen sich wieder löschen.
+- Challenges: Aufruf einer Challenge konnte zur Abmeldung führen.
+- Veranstaltungen: Entfernt die Leitung eine Teamer:in, rückt jetzt auch eine
+  Teamer:in von der Warteliste nach — bisher konnte der Platz an eine Konfi
+  gehen und das Teamer-Kontingent blieb leer.
+- Challenges: Fotos und Videos gingen beim Auswählen manchmal verloren, wenn
+  das Handy für die Aufbereitung länger brauchte.
+- Challenges: Der Zeitraum verschob sich, wenn das Gerät in einer anderen
+  Zeitzone stand.
+- Der Hinweis auf den Umzug der Anträge in den Veranstaltungs-Tab wurde
+  abgeschnitten und war dadurch unlesbar.
+
+### Sicherheit
+
+- Android: App-Daten wie Chats und Anmeldedaten werden nicht mehr ins
+  Google-Konto gesichert.
+- Challenges: Links aus Beiträgen öffnen nur noch reguläre Web-Adressen.
+
+### Sonstiges
+
+Betrifft nicht die App, gehört nicht in die Store-Release-Notes.
+
+- Zugangsdaten werden nicht mehr in der Projektdatei hinterlegt, sondern getrennt konfiguriert.
+- Eigene Staging-Umgebung mit getrennter Datenbank für interne Tests.
+- Startseite um einen Abschnitt zu den Challenges erweitert.
+- Startseite: Klick-Auswertung erkennt die Ziel-Adresse jetzt zuverlässig —
+  fremde Adressen konnten sich zuvor als App-Store-Link ausgeben.
+- Sicherheitsaktualisierung veralteter Entwicklungs-Pakete.
+
 ## [1.5.3] - 2026-08-04
 
 ### Hinzugefügt

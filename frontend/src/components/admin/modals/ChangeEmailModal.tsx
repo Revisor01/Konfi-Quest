@@ -95,12 +95,12 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
         <IonToolbar>
           <IonTitle>E-Mail ändern</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} disabled={isSubmitting} className="app-modal-close-btn">
+            <IonButton aria-label="Schließen" onClick={onClose} disabled={isSubmitting} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={isSubmitting || loading || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--settings">
+            <IonButton aria-label="E-Mail-Adresse speichern" onClick={handleSave} disabled={isSubmitting || loading || !isOnline} className="app-modal-submit-btn app-modal-submit-btn--settings">
               {!isOnline ? <><IonIcon icon={cloudOfflineOutline} /> Du bist offline</> : isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>

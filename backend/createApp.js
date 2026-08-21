@@ -9,6 +9,11 @@ const path = require('path');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
 
+// Upload-Limit fuer Challenge-Beitraege (Audio/Video sind deutlich groesser als
+// Chat-Anhaenge). Als Konstante, weil der zentrale Multer-Error-Handler weiter
+// unten die Fehlermeldung anhand der betroffenen Route differenzieren muss.
+const CHALLENGE_UPLOAD_LIMIT = 50 * 1024 * 1024;
+
 /**
  * Erstellt eine Express-App mit allen Routes und Middleware.
  * @param {object} db - Datenbank-Objekt mit query() und getClient()
@@ -100,9 +105,10 @@ function createApp(db, options = {}) {
   const requestsDir = path.join(uploadsDir, 'requests');
   const chatDir = path.join(uploadsDir, 'chat');
   const materialDir = path.join(uploadsDir, 'material');
+  const challengesDir = path.join(uploadsDir, 'challenges');
 
   // Upload-Verzeichnisse erstellen
-  [uploadsDir, requestsDir, chatDir, materialDir].forEach(dir => {
+  [uploadsDir, requestsDir, chatDir, materialDir, challengesDir].forEach(dir => {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
@@ -182,6 +188,29 @@ function createApp(db, options = {}) {
       if (file.mimetype.startsWith('image/')) {
         cb(null, true);
       } else {
+        cb(null, false);
+      }
+    }
+  });
+
+  // Challenge Upload Config (50MB Limit — Konfis reichen auch Sprachaufnahmen
+  // und kurze Videoclips ein, nicht nur Fotos).
+  // memoryStorage: Datei landet als Buffer in req.file.buffer und wird im
+  // Route-Handler (challenges.js) nach der Magic-Bytes-Pruefung verschluesselt
+  // auf die Platte geschrieben.
+  const challengeUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: CHALLENGE_UPLOAD_LIMIT },
+    fileFilter: (req, file, cb) => {
+      const allowedMimes = [
+        'video/mp4', 'video/quicktime', 'video/webm', 'video/x-m4v',
+        'audio/mpeg', 'audio/mp4', 'audio/m4a', 'audio/x-m4a', 'audio/ogg', 'audio/webm', 'audio/wav', 'audio/aac'
+      ];
+      const isAllowed = file.mimetype.startsWith('image/') || allowedMimes.includes(file.mimetype);
+      if (isAllowed) {
+        cb(null, true);
+      } else {
+        console.warn(`Challenge-Datei abgelehnt: ${file.originalname} (${file.mimetype})`);
         cb(null, false);
       }
     }
@@ -380,6 +409,13 @@ function createApp(db, options = {}) {
     app.post('/api/konfi/upload-photo', rateLimiters.uploadLimiter);
   }
 
+  // Challenge-Einreichungen: 50-MB-Uploads laufen durch multer.memoryStorage —
+  // ohne Limiter koennte ein einzelner Konfi per Parallel-Uploads den Heap
+  // fluten (Security-Review 04.08.2026).
+  if (rateLimiters.uploadLimiter) {
+    app.post('/api/challenges/konfi/:id/submissions', rateLimiters.uploadLimiter);
+  }
+
   // Settings
   app.use('/api/settings', require('./routes/settings')(db, rbacVerifier, roleHelpers));
 
@@ -408,6 +444,7 @@ function createApp(db, options = {}) {
   const wrappedRouter = require('./routes/wrapped')(db, rbacVerifier, roleHelpers);
   app.use('/api/wrapped', wrappedRouter);
   app.use('/api/material', require('./routes/material')(db, rbacVerifier, roleHelpers, materialUpload));
+  app.use('/api/challenges', require('./routes/challenges')(db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload));
 
   // ====================================================================
   // ERROR HANDLING
@@ -416,7 +453,17 @@ function createApp(db, options = {}) {
   app.use((err, req, res, next) => {
     // Multer-Limit (zu grosse Datei) als klares 413 statt generischem 500 —
     // das Frontend zeigt err.response.data.error direkt dem User an.
+    // Das Limit ist pro Upload-Config verschieden, deshalb wird die Meldung
+    // anhand der betroffenen Route differenziert (sonst steht bei einem
+    // 40-MB-Video faelschlich "max. 5 MB" und der Konfi versteht nicht, warum
+    // die kleinere Datei ebenfalls scheitert).
     if (err && err.code === 'LIMIT_FILE_SIZE') {
+      if (req.path.startsWith('/api/challenges') || req.originalUrl.startsWith('/api/challenges')) {
+        return res.status(413).json({ error: 'Datei ist zu groß (max. 50 MB).' });
+      }
+      if (req.path.startsWith('/api/material') || req.originalUrl.startsWith('/api/material')) {
+        return res.status(413).json({ error: 'Datei ist zu groß (max. 20 MB).' });
+      }
       return res.status(413).json({ error: 'Datei ist zu groß (max. 5 MB).' });
     }
     console.error(err.stack);

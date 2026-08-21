@@ -180,12 +180,12 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
         <IonToolbar>
           <IonTitle>Dein Konfispruch</IonTitle>
           <IonButtons slot="start">
-            <IonButton className="app-modal-close-btn" onClick={onClose} disabled={isSubmitting}>
+            <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={onClose} disabled={isSubmitting}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton
+            <IonButton aria-label="Konfispruch speichern"
               className="app-modal-submit-btn app-modal-submit-btn--konfi"
               onClick={handleSave}
               disabled={isSubmitting || !isOnline}

@@ -57,7 +57,38 @@ module.exports = (db, verifyTokenRBAC) => {
       const isAdminType = userType === 'admin';
       const zero = Promise.resolve({ rows: [{ c: 0 }] });
 
-      const [chatRes, requestsRes, eventsRes] = await Promise.all([
+      // Offene Challenge-Freigaben: Admin org-weit; Teamer nur fuer Challenges
+      // ihrer zugewiesenen Jahrgaenge (gleiche Grenze wie viewableJahrgangIds
+      // in routes/challenges.js — der Teamer soll nicht auf Freigaben gestupst
+      // werden, deren Challenge er gar nicht oeffnen darf).
+      const teamerJahrgangIds = userType === 'teamer'
+        ? (req.user.assigned_jahrgaenge || []).filter(j => j.can_view).map(j => j.id)
+        : [];
+      let challengesPromise = zero;
+      if (isAdminType) {
+        challengesPromise = db.query(
+          `SELECT COUNT(*)::int AS c
+           FROM challenge_submissions cs
+           JOIN challenges c ON cs.challenge_id = c.id
+           WHERE c.organization_id = $1 AND cs.moderation_status = 'pending'`,
+          [organizationId]
+        );
+      } else if (userType === 'teamer' && teamerJahrgangIds.length > 0) {
+        challengesPromise = db.query(
+          `SELECT COUNT(*)::int AS c
+           FROM challenge_submissions cs
+           JOIN challenges c ON cs.challenge_id = c.id
+           WHERE c.organization_id = $1
+             AND cs.moderation_status = 'pending'
+             AND EXISTS (
+               SELECT 1 FROM challenge_jahrgang_assignments cja
+               WHERE cja.challenge_id = c.id AND cja.jahrgang_id = ANY($2::int[])
+             )`,
+          [organizationId, teamerJahrgangIds]
+        );
+      }
+
+      const [chatRes, requestsRes, eventsRes, challengesRes] = await Promise.all([
         db.query(chatQuery, [userId, userType, organizationId]),
         isAdminType
           ? db.query(
@@ -82,7 +113,8 @@ module.exports = (db, verifyTokenRBAC) => {
                )`,
               [organizationId]
             )
-          : zero
+          : zero,
+        challengesPromise
       ]);
 
       const byRoom = {};
@@ -96,7 +128,8 @@ module.exports = (db, verifyTokenRBAC) => {
       res.json({
         chat: { total, byRoom },
         pendingRequests: requestsRes.rows[0]?.c || 0,
-        pendingEvents: eventsRes.rows[0]?.c || 0
+        pendingEvents: eventsRes.rows[0]?.c || 0,
+        pendingChallenges: challengesRes.rows[0]?.c || 0
       });
     } catch (err) {
       console.error('Database error in GET /notifications/badge-counts:', err);

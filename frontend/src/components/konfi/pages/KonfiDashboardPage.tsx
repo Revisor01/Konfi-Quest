@@ -17,6 +17,8 @@ import {
 import { Preferences } from '@capacitor/preferences';
 import { sparkles, chevronForward, personCircleOutline } from 'ionicons/icons';
 import KonfiOnboardingModal from '../modals/KonfiOnboardingModal';
+import KonfiUpdateWalkthroughModal from '../modals/KonfiUpdateWalkthroughModal';
+import { UPDATE_WALKTHROUGH_KEY } from '../../../hooks/useOnboardingOnce';
 import { useApp } from '../../../contexts/AppContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
@@ -29,7 +31,9 @@ import KonfispruchSelectModal from '../modals/KonfispruchSelectModal';
 import WrappedModal from '../../wrapped/WrappedModal';
 import { Event } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { mergeSectionOrder, DEFAULT_KONFI_SECTION_ORDER } from '../../../utils/sectionOrder';
 import { TrialBanner } from '../../shared';
+import { track } from '../../../services/analytics';
 
 interface PointConfig {
   gottesdienst_enabled: boolean;
@@ -118,6 +122,24 @@ const KonfiDashboardPage: React.FC = () => {
   const router = useIonRouter();
   const [showLehrtext, setShowLehrtext] = useState(false);
   const pageRef = useRef<HTMLElement>(null);
+
+  // Anonyme Messung der Scroll-Tiefe: Sehen die Konfis die unteren Abschnitte
+  // des Dashboards ueberhaupt? Je Sitzung wird jede Marke NUR EINMAL gemeldet
+  // (Ref statt State, damit das Scrollen kein Rendern ausloest).
+  const scrollMarken = useRef<Set<number>>(new Set());
+  const handleScrollTiefe = useCallback((ev: CustomEvent) => {
+    const el = ev.target as HTMLIonContentElement & { scrollHeight?: number; clientHeight?: number };
+    const detail: any = ev.detail || {};
+    const hoehe = (el?.scrollHeight || 0) - (el?.clientHeight || 0);
+    if (hoehe <= 0) return;
+    const anteil = Math.round(((detail.scrollTop || 0) / hoehe) * 100);
+    for (const marke of [25, 50, 75, 100]) {
+      if (anteil >= marke && !scrollMarken.current.has(marke)) {
+        scrollMarken.current.add(marke);
+        track('dashboard-gescrollt', { tiefe: marke });
+      }
+    }
+  }, []);
 
   // --- useOfflineQuery: Dashboard ---
   const { data: dashboardData, loading: dashLoading, refresh: refreshDashboard } = useOfflineQuery<DashboardData>(
@@ -261,13 +283,32 @@ const KonfiDashboardPage: React.FC = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const onboardingKey = `konfi_onboarding_seen_${user?.id ?? 'x'}`;
 
+  // --- Update-Walkthrough 2.0 — nur fuer BESTANDS-Konfis, einmalig ---
+  // Frische Accounts sehen die normale Tour (inkl. Challenges-Schritt) und
+  // bekommen den Update-Hinweis NICHT zusaetzlich; das Flag wird fuer sie
+  // direkt als gesehen markiert. Beide Entscheidungen laufen in EINEM Ablauf,
+  // damit der Update-Hinweis nie gleichzeitig mit der Tour aufpoppt.
+  const [showUpdateWalkthrough, setShowUpdateWalkthrough] = useState(false);
+  const updateWalkthroughKey = `${UPDATE_WALKTHROUGH_KEY}_${user?.id ?? 'x'}`;
+
   // Beim ersten Betreten des Dashboards (pro Konfi-Account) die Tour zeigen.
   useIonViewDidEnter(() => {
     if (!user?.id) return;
-    Preferences.get({ key: onboardingKey }).then(({ value }) => {
-      if (!value) {
+    Promise.all([
+      Preferences.get({ key: onboardingKey }),
+      Preferences.get({ key: updateWalkthroughKey })
+    ]).then(([onboarding, updateWalkthrough]) => {
+      if (!onboarding.value) {
+        // Frischer Account: volle Tour zeigen, Update-Hinweis ueberspringen.
         Preferences.set({ key: onboardingKey, value: '1' });
+        Preferences.set({ key: updateWalkthroughKey, value: '1' });
         setTimeout(() => setShowOnboarding(true), 400);
+        return;
+      }
+      // Bestandsnutzer: einmalig den Update-Walkthrough zeigen.
+      if (!updateWalkthrough.value) {
+        Preferences.set({ key: updateWalkthroughKey, value: '1' });
+        setTimeout(() => setShowUpdateWalkthrough(true), 600);
       }
     }).catch(() => { /* Preferences nicht verfuegbar -> Tour einfach ueberspringen */ });
   });
@@ -301,7 +342,7 @@ const KonfiDashboardPage: React.FC = () => {
         </IonHeader>
         <IonContent>
           <p style={{ textAlign: 'center', marginTop: '50px' }}>
-            Keine Dashboard-Daten verfügbar
+            Deine Startseite konnte nicht geladen werden. Zieh die Seite nach unten, um es erneut zu versuchen.
           </p>
         </IonContent>
       </IonPage>
@@ -322,7 +363,15 @@ const KonfiDashboardPage: React.FC = () => {
     show_ranking: dashboardData.dashboard_config?.show_ranking !== false,
   };
 
-  const sectionOrder: string[] = dashboardData.dashboard_config?.section_order || ['konfirmation', 'konfispruch', 'events', 'losung', 'badges', 'ranking'];
+  // Gespeicherte Reihenfolge mit der Default-Reihenfolge MERGEN: Bestands-Orgs
+  // haben eine dashboard_section_order ohne die neueren Keys (z.B. 'challenges')
+  // gespeichert. Wuerde nur die gespeicherte Liste gerendert, faellt jede neu
+  // hinzugekommene Sektion bei ihnen stillschweigend unter den Tisch. Fehlende
+  // Keys werden deshalb an ihrer Default-Position wieder eingefuegt.
+  const sectionOrder: string[] = mergeSectionOrder(
+    dashboardData.dashboard_config?.section_order,
+    DEFAULT_KONFI_SECTION_ORDER
+  );
 
   // Gewaehlten Konfispruch (aus Profil-Query) in die Dashboard-Daten mergen,
   // damit die Card den Spruch anzeigt. Dashboard-Endpoint traegt ihn nicht.
@@ -337,7 +386,7 @@ const KonfiDashboardPage: React.FC = () => {
         <IonToolbar>
           <IonTitle>Konfi Quest</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={() => router.push('/konfi/profile')}>
+            <IonButton onClick={() => router.push('/konfi/profile')} aria-label="Profil öffnen">
               <IonIcon slot="icon-only" icon={personCircleOutline} style={{ color: '#7c3aed', fontSize: '1.7rem' }} />
             </IonButton>
           </IonButtons>
@@ -346,6 +395,8 @@ const KonfiDashboardPage: React.FC = () => {
 
       <IonContent
         fullscreen
+        scrollEvents={true}
+        onIonScroll={handleScrollTiefe}
         style={{
           '--background': '#f8f9fa'
         }}
@@ -408,6 +459,14 @@ const KonfiDashboardPage: React.FC = () => {
         <KonfiOnboardingModal
           onClose={() => setShowOnboarding(false)}
           displayName={(user?.display_name || '').split(' ')[0]}
+        />
+      )}
+
+      {/* Update-Walkthrough 2.0 — nur fuer Bestandsnutzer, nie zusammen mit
+          der normalen Tour (siehe Entscheidung in useIonViewDidEnter). */}
+      {showUpdateWalkthrough && (
+        <KonfiUpdateWalkthroughModal
+          onClose={() => setShowUpdateWalkthrough(false)}
         />
       )}
     </IonPage>

@@ -540,6 +540,49 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     }
   });
 
+  // GET /teamer/:userId/badges - Erreichte Badges EINER Teamer:in (Leitungs-
+  // Einsicht fuer die Detailseite). Bewusst ohne Fortschritt zu den noch
+  // offenen Badges: die Detailseite zeigt nur, was erreicht wurde — die
+  // Fortschrittsberechnung in GET /teamer/badges ist teuer und waere hier
+  // ungenutzt. Zugriff wie bei den Zertifikaten: requireAdmin.
+  router.get('/:userId/badges', rbacVerifier, requireAdmin, async (req, res) => {
+    try {
+      const { userId } = req.params;
+
+      // Org-Zugehoerigkeit + Teamer-Rolle pruefen (analog zur Konfi-Variante
+      // in konfi-management.js, die auf r.name = 'konfi' filtert).
+      const { rows: [teamer] } = await db.query(
+        `SELECT u.id FROM users u
+         JOIN roles r ON u.role_id = r.id
+         WHERE u.id = $1 AND r.name = 'teamer' AND u.organization_id = $2 AND u.deleted_at IS NULL`,
+        [userId, req.user.organization_id]
+      );
+
+      if (!teamer) {
+        return res.status(404).json({ error: 'Teamer:in nicht gefunden' });
+      }
+
+      const { rows: badges } = await db.query(
+        `SELECT cb.id, cb.name, cb.description, cb.icon, cb.color,
+                cb.criteria_type, cb.criteria_value, cb.is_hidden,
+                -- Feldname wie beim Konfi-Endpunkt, damit die Detailseite
+                -- dieselbe Komponente nutzen kann.
+                ub.awarded_date AS earned_at
+         FROM user_badges ub
+         JOIN custom_badges cb ON ub.badge_id = cb.id
+         WHERE ub.user_id = $1 AND ub.organization_id = $2
+           AND cb.target_role = 'teamer'
+         ORDER BY ub.awarded_date DESC NULLS LAST, cb.name`,
+        [userId, req.user.organization_id]
+      );
+
+      res.json({ earned: badges });
+    } catch (err) {
+      console.error('Database error in GET /teamer/:userId/badges:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
   // ====================================================================
   // ZERTIFIKAT-TYPEN CRUD (Admin-only)
   // ====================================================================
@@ -967,7 +1010,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     try {
       const userId = req.user.id;
       const query = `
-        SELECT ar.*, a.name as activity_name, a.points as activity_points, a.type as activity_type
+        SELECT ar.*, a.name as activity_name, a.points as activity_points, a.type as activity_type,
+               a.target_role as activity_target_role
         FROM activity_requests ar
         JOIN activities a ON ar.activity_id = a.id
         WHERE ar.user_id = $1

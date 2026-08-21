@@ -29,6 +29,7 @@ import {
 } from './EventDetailSections';
 import type { Participant, Unregistration } from './EventDetailSections';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
 interface Category {
   id: number;
@@ -62,6 +63,10 @@ interface Event {
   bring_items?: string;
   teamer_needed?: boolean;
   teamer_only?: boolean;
+  teamer_max_participants?: number;
+  teamer_waitlist_enabled?: boolean;
+  teamer_max_waitlist_size?: number;
+  teamer_waitlist_count?: number;
   is_series?: boolean;
   series_id?: string;
   series_events?: Event[];
@@ -382,29 +387,57 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     });
   };
 
-  const handleDemoteParticipant = async (participant: Participant) => {
+  const demoteParticipant = async (participant: Participant) => {
     try {
       await api.put(`/events/${eventId}/participants/${participant.id}/status`, { status: 'waitlist' });
       const slidingItem = slidingRefs.current.get(participant.id);
       if (slidingItem) await slidingItem.close();
       await loadEventData();
       triggerRefresh('events');
-    } catch (error) {
- console.error('Demote participant error:', error);
-      setError('Fehler beim Verschieben auf Warteliste');
+    } catch (error: any) {
+      console.error('Demote participant error:', error);
+      setError(error.response?.data?.error || 'Fehler beim Verschieben auf Warteliste');
     }
   };
 
-  const handleRemoveParticipant = async (participant: Participant) => {
-    if (!isOnline) return;
+  // Rueckfrage vor dem Verschieben auf die Warteliste: ausgeloest wird das per
+  // Wisch-Geste, ein Fehlwisch haette sonst still eine Anmeldung zurueckgestuft
+  // (Audit 10.08.). Das Absagen des Events fragt hier laengst nach.
+  const handleDemoteParticipant = (participant: Participant) => {
+    presentAlert({
+      header: 'Auf die Warteliste setzen?',
+      message: `${participant.participant_name || 'Diese Person'} verliert den festen Platz und rückt auf die Warteliste.`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel', handler: () => { slidingRefs.current.get(participant.id)?.close(); } },
+        { text: 'Auf Warteliste', handler: () => { demoteParticipant(participant); } }
+      ]
+    });
+  };
+
+  const removeParticipant = async (participant: Participant) => {
     try {
       await api.delete(`/events/${eventId}/bookings/${participant.id}`);
+      const slidingItem = slidingRefs.current.get(participant.id);
+      if (slidingItem) await slidingItem.close();
       await loadEventData();
       triggerRefresh('events');
-    } catch (error) {
- console.error('Delete participant error:', error);
-      setError('Fehler beim Entfernen des Teilnehmers');
+    } catch (error: any) {
+      console.error('Delete participant error:', error);
+      setError(error.response?.data?.error || 'Fehler beim Entfernen des Teilnehmers');
     }
+  };
+
+  // Ebenfalls per Wisch-Geste erreichbar und nicht umkehrbar -> Rueckfrage.
+  const handleRemoveParticipant = (participant: Participant) => {
+    if (!isOnline) return;
+    presentAlert({
+      header: 'Anmeldung entfernen?',
+      message: `${participant.participant_name || 'Diese Person'} wird von diesem Event abgemeldet. Ein frei werdender Platz geht an die Warteliste.`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel', handler: () => { slidingRefs.current.get(participant.id)?.close(); } },
+        { text: 'Entfernen', role: 'destructive', handler: () => { removeParticipant(participant); } }
+      ]
+    });
   };
 
   const isCancelled = eventData?.cancelled || eventData?.registration_status === ('cancelled' as string);
@@ -556,13 +589,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         {(participant.role_name === 'teamer' || !eventData?.mandatory) && (
         <IonItemOptions className="app-swipe-actions" side="end">
           {participant.role_name !== 'teamer' && participant.status === 'confirmed' && (
-            <IonItemOption className="app-swipe-action" onClick={() => handleDemoteParticipant(participant)}>
+            <IonItemOption className="app-swipe-action" onClick={() => { closeOpenSlidingItems(); handleDemoteParticipant(participant); }} aria-label="Auf Warteliste setzen">
               <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
                 <IonIcon icon={returnUpBack} />
               </div>
             </IonItemOption>
           )}
-          <IonItemOption className="app-swipe-action" onClick={() => handleRemoveParticipant(participant)}>
+          <IonItemOption className="app-swipe-action" onClick={() => { closeOpenSlidingItems(); handleRemoveParticipant(participant); }} aria-label="Teilnahme entfernen">
             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
               <IonIcon icon={trash} />
             </div>
@@ -579,18 +612,18 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         <IonToolbar>
           {!hideBackButton && (
             <IonButtons slot="start">
-              <IonButton onClick={onBack}><IonIcon icon={arrowBack} /></IonButton>
+              <IonButton aria-label="Zurück" onClick={onBack}><IonIcon icon={arrowBack} /></IonButton>
             </IonButtons>
           )}
           <IonTitle>{eventData?.name || 'Event Details'}</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={handleChatButtonClick}>
+            <IonButton aria-label="Event-Chat öffnen" onClick={handleChatButtonClick}>
               <IonIcon icon={chatbubbleOutline} />
             </IonButton>
-            <IonButton onClick={() => presentQRDisplayModal({ presentingElement: presentingElement || undefined })}>
+            <IonButton aria-label="QR-Code anzeigen" onClick={() => presentQRDisplayModal({ presentingElement: presentingElement || undefined })}>
               <IonIcon icon={qrCodeOutline} />
             </IonButton>
-            <IonButton onClick={() => presentEventModalHook({ presentingElement: presentingElement || undefined, canDismiss: eventModalCanDismiss, backdropDismiss: false })}>
+            <IonButton aria-label="Event bearbeiten" onClick={() => presentEventModalHook({ presentingElement: presentingElement || undefined, canDismiss: eventModalCanDismiss, backdropDismiss: false })}>
               <IonIcon icon={createOutline} />
             </IonButton>
           </IonButtons>
@@ -617,16 +650,36 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           stats={(() => {
             const konfiOnly = participants.filter(p => p.role_name !== 'teamer');
             const teamerOnly = participants.filter(p => p.role_name === 'teamer');
-            const hasTeamer = (eventData?.teamer_needed || eventData?.teamer_only) && teamerOnly.length > 0;
+            const teamerConfirmedCount = teamerOnly.filter(p => p.status === 'confirmed').length;
+            const teamerWaitlistCount = teamerOnly.filter(p => p.status === 'waitlist').length;
+            // Teamer-Kontingent gilt, sobald das Event Teamer zulaesst \u2014 NICHT
+            // erst, wenn sich schon jemand angemeldet hat (sonst zeigt ein
+            // frisches "Nur Teamer"-Event Konfi-Zahlen).
+            const teamerMax = (eventData?.teamer_max_participants || 0) > 0
+              ? eventData?.teamer_max_participants : '\u221E';
             const presentCount = konfiOnly.filter(p => p.attendance_status === 'present').length;
             const absentCount = konfiOnly.filter(p => p.attendance_status === 'absent' || p.status === 'opted_out').length;
             const konfiConfirmed = konfiOnly.filter(p => p.status === 'confirmed').length;
+
+            // "Nur Teamer:innen": es gibt gar keine Konfi-Teilnahme -> die
+            // Kacheln muessen komplett vom Team erzaehlen (vorher stand hier
+            // "0 von 0 TN" und die Teamer tauchten nirgends auf).
+            if (eventData?.teamer_only) {
+              const teamerPresent = teamerOnly.filter(p => p.attendance_status === 'present').length;
+              return [
+                { value: teamerConfirmedCount, label: `von ${teamerMax} Team` },
+                { value: teamerPresent, label: 'Anwesend' },
+                { value: teamerWaitlistCount, label: 'Warteliste' }
+              ];
+            }
+
+            const hasTeamer = !!eventData?.teamer_needed;
             if (eventData?.mandatory) {
               return [
                 { value: presentCount, label: `von ${konfiOnly.length} TN` },
                 { value: absentCount, label: 'Abwesend' },
                 hasTeamer
-                  ? { value: teamerOnly.length, label: 'Team' }
+                  ? { value: teamerConfirmedCount, label: 'Team' }
                   : { value: konfiOnly.filter(p => p.status === 'opted_out').length, label: 'Abgemeldet' }
               ];
             }
@@ -634,7 +687,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             return [
               { value: konfiConfirmed, label: `von ${maxP} TN` },
               hasTeamer
-                ? { value: teamerOnly.length, label: 'Team' }
+                ? { value: teamerConfirmedCount, label: `von ${teamerMax} Team` }
                 : { value: eventData?.points || 0, label: 'Punkte' },
               { value: konfiOnly.filter(p => p.status === 'waitlist').length, label: 'Warteliste' }
             ];
@@ -699,16 +752,30 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           const hasWaitlist = (eventData as any)?.waitlist_enabled && waitlistParticipants.length > 0;
           const hasUnassigned = unassignedParticipants.length > 0;
 
+          // Noch niemand angemeldet: nur die Hinzufuegen-Buttons zeigen — aber
+          // die passenden. Bei "Nur Teamer:innen" gibt es keine Konfi-Teilnahme
+          // (vorher stand hier ausschliesslich "Konfi hinzufügen", und die
+          // Teamer-Sektion darunter wurde durch den Return nie erreicht).
           if (displayParticipants.length === 0 && teamerParticipants.length === 0) {
+            const teamerErlaubt = !!(eventData?.teamer_needed || eventData?.teamer_only);
             return (
               <IonList className="app-section-inset" inset={true}>
                 <IonCard className="app-card">
                   <IonCardContent className="app-card-content">
-                    <IonButton expand="block" fill="outline"
-                      onClick={() => presentKonfiModal({ presentingElement: presentingElement || undefined })}>
-                      <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
-                      Konfi hinzufügen
-                    </IonButton>
+                    {!eventData?.teamer_only && (
+                      <IonButton expand="block" fill="outline"
+                        onClick={() => presentKonfiModal({ presentingElement: presentingElement || undefined })}>
+                        <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
+                        Konfi hinzufügen
+                      </IonButton>
+                    )}
+                    {teamerErlaubt && (
+                      <IonButton expand="block" fill="outline"
+                        onClick={() => presentTeamerModal({ presentingElement: presentingElement || undefined })}>
+                        <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
+                        Teamer:in hinzufügen
+                      </IonButton>
+                    )}
                   </IonCardContent>
                 </IonCard>
               </IonList>
@@ -726,9 +793,17 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             konfiHeaderText = `Konfis (${confirmedParticipants.length}${waitlistParticipants.length > 0 ? ` + ${waitlistParticipants.length}` : ''})`;
           }
 
+          const teamerConfirmed = teamerParticipants.filter(p => p.status === 'confirmed');
+          const teamerWaitlist = teamerParticipants.filter(p => p.status === 'waitlist');
+          const teamerHeaderText = `Teamer:innen (${teamerConfirmed.length}${teamerWaitlist.length > 0 ? ` + ${teamerWaitlist.length}` : ''})`;
+
+          // Bei "Nur Teamer:innen" gibt es keine Konfi-Teilnahme — dann darf
+          // weder die Konfi-Liste noch ein "Konfi hinzufügen" erscheinen.
+          const isTeamerOnlyEvent = !!eventData?.teamer_only;
+
           return (
             <>
-              {displayParticipants.length > 0 && (
+              {!isTeamerOnlyEvent && displayParticipants.length > 0 && (
                 <IonList className="app-section-inset" inset={true}>
                   <IonListHeader>
                     <div className="app-section-icon app-section-icon--events"><IonIcon icon={people} /></div>
@@ -767,7 +842,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                 <IonList className="app-section-inset" inset={true}>
                   <IonListHeader>
                     <div className="app-section-icon app-section-icon--events"><IonIcon icon={people} /></div>
-                    <IonLabel>Teamer:innen ({teamerParticipants.length})</IonLabel>
+                    <IonLabel>{teamerHeaderText}</IonLabel>
                   </IonListHeader>
                   <IonCard className="app-card">
                     <IonCardContent style={{ padding: teamerParticipants.length === 0 ? '16px' : '12px' }}>
@@ -785,7 +860,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                   </IonCard>
                 </IonList>
               )}
-              {displayParticipants.length === 0 && teamerParticipants.length > 0 && (
+              {!isTeamerOnlyEvent && displayParticipants.length === 0 && teamerParticipants.length > 0 && (
                 <IonList className="app-section-inset" inset={true}>
                   <IonCard className="app-card">
                     <IonCardContent className="app-card-content">

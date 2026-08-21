@@ -50,8 +50,12 @@ interface Activity {
   id: number;
   name: string;
   description?: string;
-  points: number;
-  type: 'gottesdienst' | 'gemeinde';
+  // Teamer-Aktivitaeten haben KEINE Punkte und KEINEN Typ: points ist 0,
+  // type ist in der Datenbank NULL. Die Deklaration als non-nullable war
+  // schlicht falsch — genau dieses Muster (null dort annehmen, wo ein Wert
+  // versprochen wird) hat schon zweimal zum Absturz gefuehrt.
+  points?: number | null;
+  type?: 'gottesdienst' | 'gemeinde' | null;
   category_names?: string;
 }
 
@@ -277,12 +281,12 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
         <IonToolbar>
           <IonTitle>Neuer Antrag</IonTitle>
           <IonButtons slot="start">
-            <IonButton className="app-modal-close-btn" onClick={onClose} disabled={isSubmitting}>
+            <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={onClose} disabled={isSubmitting}>
               <IonIcon icon={close} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton className="app-modal-submit-btn app-modal-submit-btn--teamer" onClick={handleSubmit} disabled={isSubmitting || loading}>
+            <IonButton aria-label="Antrag absenden" className="app-modal-submit-btn app-modal-submit-btn--teamer" onClick={handleSubmit} disabled={isSubmitting || loading}>
               <IonIcon icon={checkmark} />
             </IonButton>
           </IonButtons>
@@ -448,9 +452,9 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
                 onClick={handlePhotoSelect}
                 style={{
                   padding: '16px',
-                  backgroundColor: photoPreview ? 'rgba(var(--app-color-gemeinde-rgb), 0.08)' : 'transparent',
+                  backgroundColor: photoPreview ? 'rgba(var(--app-color-teamer-rgb), 0.08)' : 'transparent',
                   borderRadius: '10px',
-                  border: photoPreview ? '1px solid rgba(var(--app-color-gemeinde-rgb), 0.2)' : '1px dashed #c7c7cc',
+                  border: photoPreview ? '1px solid rgba(var(--app-color-teamer-rgb), 0.2)' : '1px dashed #c7c7cc',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease'
                 }}
@@ -460,14 +464,14 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
                     <div className="app-settings-item" style={{ gap: '8px' }}>
                       <IonIcon
                         icon={checkmarkCircle}
-                        className="app-icon-color--gemeinde"
+                        className="app-icon-color--teamer"
                         style={{ fontSize: '1.2rem' }}
                       />
-                      <span style={{ fontWeight: '600', color: 'var(--app-color-gemeinde)' }}>
+                      <span style={{ fontWeight: '600', color: 'var(--app-color-teamer)' }}>
                         Foto ausgewählt
                       </span>
                     </div>
-                    <IonButton
+                    <IonButton aria-label="Foto entfernen"
                       fill="clear"
                       color="danger"
                       size="small"
@@ -483,7 +487,7 @@ const TeamerActivityRequestModal: React.FC<TeamerActivityRequestModalProps> = ({
                   <div className="app-settings-item" style={{ justifyContent: 'center' }}>
                     <IonIcon
                       icon={camera}
-                      className="app-icon-color--gemeinde"
+                      className="app-icon-color--teamer"
                       style={{ fontSize: '1.2rem' }}
                     />
                     <span style={{ fontWeight: '500', color: '#666' }}>

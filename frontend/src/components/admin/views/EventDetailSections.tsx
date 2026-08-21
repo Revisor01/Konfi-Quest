@@ -35,6 +35,7 @@ import {
   lockOpen
 } from 'ionicons/icons';
 import { getStatusIcon } from '../../shared/StatusBadge';
+import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
 // ---- Shared Types (re-export from main file's interfaces) ----
 
@@ -71,9 +72,14 @@ export interface EventData {
   timeslots?: Array<{ id: number; start_time: string; end_time: string; max_participants: number; registered_count: number }>;
   has_timeslots?: boolean;
   mandatory?: boolean;
+  is_konfirmation?: boolean;
   bring_items?: string;
   teamer_needed?: boolean;
   teamer_only?: boolean;
+  teamer_max_participants?: number;
+  teamer_waitlist_enabled?: boolean;
+  teamer_max_waitlist_size?: number;
+  teamer_waitlist_count?: number;
   is_series?: boolean;
   series_id?: string;
   series_events?: EventData[];
@@ -189,28 +195,55 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
         {(() => {
           const konfiOnly = participants.filter(p => p.role_name !== 'teamer');
           const teamerOnly = participants.filter(p => p.role_name === 'teamer');
+          const teamerConfirmed = teamerOnly.filter(p => p.status === 'confirmed');
+          const teamerWaitlistCount = eventData.teamer_waitlist_count !== undefined
+            ? eventData.teamer_waitlist_count
+            : teamerOnly.filter(p => p.status === 'waitlist').length;
           const konfiPresent = konfiOnly.filter(p => p.attendance_status === 'present').length;
           const konfiConfirmed = konfiOnly.filter(p => p.status === 'confirmed').length;
+          const teamerMax = eventData.teamer_max_participants || 0;
+          // Anzeige haengt an der EINSTELLUNG des Events, nicht daran, ob sich
+          // schon jemand angemeldet hat \u2014 sonst fehlen bei einem frischen Event
+          // genau die Zeilen, die man braucht (Bugreport 09.08.).
+          const teamerErlaubt = !!(eventData.teamer_needed || eventData.teamer_only);
+          const nurTeamer = !!eventData.teamer_only;
           return (
             <>
-              <div className="app-info-row">
-                <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
-                <div>
-                  <div className="app-info-row__label">Teilnehmer:innen</div>
-                  <div className="app-info-row__value">
-                    {eventData.mandatory
-                      ? `${konfiPresent} / ${konfiOnly.length}`
-                      : `${konfiConfirmed} / ${(eventData.max_participants || 0) > 0 ? eventData.max_participants : '\u221E'}`
-                    }
+              {/* Bei "Nur Teamer:innen" gibt es keine Konfi-Teilnahme */}
+              {!nurTeamer && (
+                <div className="app-info-row">
+                  <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
+                  <div>
+                    <div className="app-info-row__label">Teilnehmer:innen</div>
+                    <div className="app-info-row__value">
+                      {eventData.mandatory
+                        ? `${konfiPresent} / ${konfiOnly.length}`
+                        : `${konfiConfirmed} / ${(eventData.max_participants || 0) > 0 ? eventData.max_participants : '\u221E'}`
+                      }
+                    </div>
                   </div>
                 </div>
-              </div>
-              {teamerOnly.length > 0 && (
+              )}
+              {teamerErlaubt && (
                 <div className="app-info-row">
                   <IonIcon icon={people} className="app-info-row__icon app-icon-color--team" />
                   <div>
                     <div className="app-info-row__label">Teamer:innen</div>
-                    <div className="app-info-row__value">{teamerOnly.length}</div>
+                    <div className="app-info-row__value">
+                      {teamerConfirmed.length} / {teamerMax > 0 ? teamerMax : '\u221E'}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {/* Teamer-Warteliste: nur sinnvoll bei BEGRENZTEN Teamer-Plaetzen */}
+              {teamerErlaubt && eventData.teamer_waitlist_enabled && teamerMax > 0 && (
+                <div className="app-info-row">
+                  <IonIcon icon={listOutline} className="app-info-row__icon app-icon-color--waitlist" />
+                  <div>
+                    <div className="app-info-row__label">Teamer-Warteliste</div>
+                    <div className="app-info-row__value">
+                      {teamerWaitlistCount} / {eventData.teamer_max_waitlist_size || 10}
+                    </div>
                   </div>
                 </div>
               )}
@@ -218,21 +251,24 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
           );
         })()}
 
-        {/* Warteliste */}
-        {(eventData as any)?.waitlist_enabled && (
+        {/* Warteliste (Konfis) \u2014 entfaellt bei "Nur Teamer:innen" und bei
+            unbegrenzten Plaetzen (dann kann niemand warten) */}
+        {(eventData as any)?.waitlist_enabled && !eventData.teamer_only && (eventData.max_participants || 0) > 0 && (
           <div className="app-info-row">
             <IonIcon icon={listOutline} className="app-info-row__icon app-icon-color--waitlist" />
             <div>
               <div className="app-info-row__label">Warteliste</div>
               <div className="app-info-row__value">
-                {participants.filter(p => p.status === 'waitlist').length} / {(eventData as any)?.max_waitlist_size || 10}
+                {participants.filter(p => p.role_name !== 'teamer' && p.status === 'waitlist').length} / {(eventData as any)?.max_waitlist_size || 10}
               </div>
             </div>
           </div>
         )}
 
-        {/* Punkte - bei Pflicht-Events ausblenden */}
-        {!eventData.mandatory && (
+        {/* Punkte und Typ entfallen bei Pflicht-Events UND bei reinen
+            Teamer-Events: dort gibt es keine Konfi-Punkte zu vergeben, die
+            Zeilen zeigten nur "0 / Gemeinde" (User-Hinweis 09.08.). */}
+        {!eventData.mandatory && !eventData.teamer_only && !eventData.is_konfirmation && (
           <div className="app-info-row">
             <IonIcon icon={trophy} className="app-info-row__icon app-icon-color--points" />
             <div>
@@ -242,8 +278,7 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
           </div>
         )}
 
-        {/* Typ - bei Pflicht-Events ausblenden */}
-        {!eventData.mandatory && (
+        {!eventData.mandatory && !eventData.teamer_only && !eventData.is_konfirmation && (
           <div className="app-info-row">
             <IonIcon
               icon={eventData.point_type === 'gottesdienst' ? home : people}
@@ -688,12 +723,12 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
                         </IonItem>
                         {!eventMandatory && (
                         <IonItemOptions className="app-swipe-actions" side="end">
-                          <IonItemOption className="app-swipe-action" onClick={() => handleDemoteParticipant(participant)}>
+                          <IonItemOption className="app-swipe-action" onClick={() => { closeOpenSlidingItems(); handleDemoteParticipant(participant); }} aria-label="Auf Warteliste setzen">
                             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
                               <IonIcon icon={returnUpBack} />
                             </div>
                           </IonItemOption>
-                          <IonItemOption className="app-swipe-action" onClick={() => handleRemoveParticipant(participant)}>
+                          <IonItemOption className="app-swipe-action" onClick={() => { closeOpenSlidingItems(); handleRemoveParticipant(participant); }} aria-label="Teilnahme entfernen">
                             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                               <IonIcon icon={trash} />
                             </div>
