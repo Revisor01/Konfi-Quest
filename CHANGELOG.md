@@ -75,6 +75,7 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Push-Nachrichten kamen nach der Server-Umstellung nicht mehr an.
 - Teamer:innen können im Chat wieder andere Teamer:innen und die Leitung
   anschreiben — die Auswahlliste blieb für sie leer.
 - Android: Das Menü beim langen Drücken auf eine Chat-Nachricht blitzte nur kurz
