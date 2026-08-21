@@ -157,8 +157,15 @@ jobs:
   deploy:
     # Eigener Job NACH build-and-push: wartet bis BEIDE Images (backend+frontend)
     # auf ghcr sind, dann EIN Redeploy des Stacks.
+    #
+    # PAUSIERT (21.08.2026): Der Merge von Challenges 2.0 bringt die Migrationen
+    # 118-122 mit. Produktion soll NICHT automatisch nachziehen, solange 2.0.0
+    # noch in TestFlight getestet wird.
+    #
+    # ZUM REAKTIVIEREN: in der if-Zeile unten das "false &&" entfernen.
+    # Danach deployt jeder Push auf main wieder automatisch.
     needs: [build-and-push]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: false && github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout (fuer Backend-Diff-Erkennung)
