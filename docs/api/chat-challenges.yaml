@@ -396,6 +396,10 @@ paths:
         Legt einen 1:1-Direktchat mit target_user_id an (oder liefert den
         bestehenden Raum). user_type des Ziels wird IMMER serverseitig aus
         der echten Rolle abgeleitet. Konfi-zu-Konfi ist verboten.
+        Seit 23.08.2026 gilt zusaetzlich die Jahrgangsgrenze: Teamer:innen
+        erreichen nur Konfis ihrer zugewiesenen Jahrgaenge, org_admin und
+        admin alle Konfis der Organisation. Eine Teamer:in ohne Zuweisung
+        erreicht gar keinen Konfi — Team-Kontakte bleiben unberuehrt.
       requestBody:
         required: true
         content:
@@ -416,13 +420,17 @@ paths:
                   room_id: { type: integer }
                   created: { type: boolean }
         '400': { description: target_user_id fehlt }
-        '403': { description: Ziel nicht in eigener Org ODER Konfi-zu-Konfi-Versuch }
+        '403': { description: "Ziel nicht in eigener Org, Konfi-zu-Konfi-Versuch, ODER Teamer:in schreibt einen Konfi ausserhalb der zugewiesenen Jahrgaenge an" }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Ziel-User muss zur eigenen Org gehoeren (sonst 403); konfi->konfi wird geblockt"
+        objekt-pruefung: >
+          Ziel-User muss zur eigenen Org gehoeren (sonst 403); konfi->konfi
+          wird geblockt; teamer->konfi nur bei passender Jahrgangs-Zuweisung
+          (can_view). Dieselbe Pruefung greift in POST /chat/rooms, sonst
+          waere sie ueber das participants-Feld umgehbar.
         hinweis: "Team -> Konfi ohne Jahrgangspruefung erlaubt (jeder Konfi der Org, auch fremde Jahrgaenge)"
 
   # ==========================================================================

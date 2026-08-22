@@ -85,6 +85,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Teamer:innen können nur noch Konfis aus ihren eigenen Jahrgängen direkt
+  anschreiben. Wer keinem Jahrgang zugeordnet ist, erreicht keine Konfis —
+  das Team bleibt für alle erreichbar. Alle Konfis anschreiben können weiterhin
+  Leitung und Admins.
 - Nach dem Abmelden kommen keine Mitteilungen mehr auf dem Gerät an. Bisher
   konnten sie weiterlaufen, bis man sich dort erneut anmeldete.
 - Wer in mehreren Gemeinden arbeitet, sieht Bilder und Dateien im Chat jetzt

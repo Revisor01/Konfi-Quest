@@ -184,13 +184,18 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           allowedJahrgangIds = userJahrgangRes.data.map((j: any) => j.jahrgang_id ?? j.id);
         }
 
+        // Leitung und Admins erreichen alle Konfis der Gemeinde, Teamer:innen
+        // nur die ihrer zugewiesenen Jahrgänge. Vorher griff der Filter nur bei
+        // vorhandenen Zuweisungen (length > 0) — eine Teamer:in OHNE Jahrgang
+        // sah dadurch alle Konfis (Nutzerhinweis 23.08.2026). Der Server lehnt
+        // solche Chats jetzt ab; ohne diesen Filter liefe man erst in die
+        // Fehlermeldung.
+        const istTeamer = user?.type === 'teamer';
+
         let konfis: ChatUser[] = konfisRes.data
           .filter((konfi: any) => {
-            // Nur Konfis mit erlaubten Jahrgängen zeigen
-            if (allowedJahrgangIds.length > 0) {
-              return konfi.jahrgang_id && allowedJahrgangIds.includes(konfi.jahrgang_id);
-            }
-            return true;
+            if (!istTeamer) return true;
+            return konfi.jahrgang_id && allowedJahrgangIds.includes(konfi.jahrgang_id);
           })
           .map((konfi: any) => ({
             id: konfi.id,

@@ -156,6 +156,107 @@ describe('Chat Routes', () => {
     });
   });
 
+  // Teamer:innen duerfen nur Konfis ihrer zugewiesenen Jahrgaenge direkt
+  // anschreiben — dieselbe Grenze, die checkJahrgangAccess im Rest des Systems
+  // zieht. Der Chat war die einzige Stelle ohne sie (Nutzerhinweis 23.08.2026).
+  // Alle Konfis erreichen nur org_admin und admin.
+  describe('Jahrgangsgrenze fuer Teamer:innen im Direktchat', () => {
+    it('Teamer:in schreibt Konfi des EIGENEN Jahrgangs an -> 200', async () => {
+      const res = await request(app)
+        .post('/api/chat/direct')
+        .set('Authorization', `Bearer ${teamer1Token}`)
+        .send({ target_user_id: USERS.konfi1.id });
+
+      expect(res.status).toBe(200);
+      expect(res.body.room_id).toBeDefined();
+    });
+
+    it('Teamer:in schreibt Konfi eines FREMDEN Jahrgangs an -> 403', async () => {
+      const { invalidateUserCache } = require('../../middleware/rbac');
+
+      // konfi2 in einen Jahrgang verschieben, dem teamer1 NICHT zugewiesen ist.
+      await db.query(
+        'INSERT INTO jahrgaenge (id, name, organization_id) VALUES (99, $1, 1) ON CONFLICT DO NOTHING',
+        ['Fremder Jahrgang']
+      );
+      await db.query('UPDATE konfi_profiles SET jahrgang_id = 99 WHERE user_id = $1', [USERS.konfi2.id]);
+      invalidateUserCache(USERS.teamer1.id);
+
+      const res = await request(app)
+        .post('/api/chat/direct')
+        .set('Authorization', `Bearer ${teamer1Token}`)
+        .send({ target_user_id: USERS.konfi2.id });
+
+      expect(res.status).toBe(403);
+    });
+
+    // Neue Teamer:innen sind bewusst keinem Jahrgang zugewiesen. Sie sollen
+    // deshalb GAR KEINE Konfis direkt anschreiben koennen.
+    it('Teamer:in OHNE Jahrgangs-Zuweisung erreicht keinen Konfi -> 403', async () => {
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.teamer1.id]);
+      invalidateUserCache(USERS.teamer1.id);
+
+      const res = await request(app)
+        .post('/api/chat/direct')
+        .set('Authorization', `Bearer ${teamer1Token}`)
+        .send({ target_user_id: USERS.konfi1.id });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Admin erreicht JEDEN Konfi der Organisation -> 200', async () => {
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      await db.query(
+        'INSERT INTO jahrgaenge (id, name, organization_id) VALUES (99, $1, 1) ON CONFLICT DO NOTHING',
+        ['Fremder Jahrgang']
+      );
+      await db.query('UPDATE konfi_profiles SET jahrgang_id = 99 WHERE user_id = $1', [USERS.konfi2.id]);
+      invalidateUserCache(USERS.admin1.id);
+
+      const res = await request(app)
+        .post('/api/chat/direct')
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ target_user_id: USERS.konfi2.id });
+
+      expect(res.status).toBe(200);
+    });
+
+    it('Teamer:in erreicht das Team weiterhin, unabhaengig vom Jahrgang', async () => {
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.teamer1.id]);
+      invalidateUserCache(USERS.teamer1.id);
+
+      const res = await request(app)
+        .post('/api/chat/direct')
+        .set('Authorization', `Bearer ${teamer1Token}`)
+        .send({ target_user_id: USERS.admin1.id });
+
+      expect(res.status).toBe(200);
+    });
+
+    // Ohne diese Pruefung waere die Regel oben wertlos — derselbe Umgehungsweg
+    // wie beim Konfi-zu-Konfi-Fall (Audit 22.08.2026).
+    it('die Grenze laesst sich nicht ueber POST /rooms umgehen -> 403', async () => {
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.teamer1.id]);
+      invalidateUserCache(USERS.teamer1.id);
+
+      const vorher = await db.query('SELECT COUNT(*)::int AS c FROM chat_rooms');
+
+      const res = await request(app)
+        .post('/api/chat/rooms')
+        .set('Authorization', `Bearer ${teamer1Token}`)
+        .send({ type: 'direct', name: 'Umweg', participants: [USERS.konfi1.id] });
+
+      expect(res.status).toBe(403);
+
+      // Kein verwaister Raum zurueckgeblieben
+      const nachher = await db.query('SELECT COUNT(*)::int AS c FROM chat_rooms');
+      expect(nachher.rows[0].c).toBe(vorher.rows[0].c);
+    });
+  });
+
   describe('POST /api/chat/direct', () => {
     it('Konfi1 erstellt Direct-Chat mit Admin1 -> 200', async () => {
       const res = await request(app)

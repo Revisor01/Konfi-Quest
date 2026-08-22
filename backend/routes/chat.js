@@ -177,6 +177,39 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   });
   
   // Create or get direct chat room
+  // Darf der Anfragende diesen Konfi anschreiben?
+  //
+  // Leitung (org_admin) und Admins erreichen alle Konfis der Organisation.
+  // Teamer:innen NUR die Konfis ihrer zugewiesenen Jahrgaenge — dieselbe
+  // Regel, die checkJahrgangAccess (rbac.js:280) im Rest des Systems
+  // durchsetzt. Der Chat war die einzige Stelle ohne diese Grenze: eine
+  // Teamer:in konnte jeden Konfi der Organisation direkt anschreiben, auch
+  // ohne einen einzigen zugewiesenen Jahrgang (Nutzerhinweis 23.08.2026).
+  //
+  // Gibt null zurueck, wenn erlaubt, sonst eine Fehlermeldung.
+  const konfiAnschreibenVerboten = async (anfragender, zielUserId) => {
+    if (anfragender.role_name !== 'teamer') return null;
+
+    const { rows: [ziel] } = await db.query(
+      'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1',
+      [zielUserId]
+    );
+
+    // Konfi ohne Jahrgang: nur Leitung und Admins erreichen ihn.
+    if (!ziel || !ziel.jahrgang_id) {
+      return 'Diese Konfirmand:in ist keinem deiner Jahrgänge zugeordnet';
+    }
+
+    const zugewiesen = (anfragender.assigned_jahrgaenge || [])
+      .filter(j => j.can_view)
+      .map(j => j.id);
+
+    if (!zugewiesen.includes(ziel.jahrgang_id)) {
+      return 'Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben';
+    }
+    return null;
+  };
+
   router.post('/direct', verifyTokenRBAC, async (req, res) => {
     try {
       const { target_user_id } = req.body;
@@ -201,10 +234,17 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.status(403).json({ error: 'Benutzer nicht in deiner Organisation gefunden' });
       }
 
-      // DATENSCHUTZ: Konfi-zu-Konfi-Chats gibt es nicht. Alle anderen
-      // Kombinationen (konfi/teamer/admin untereinander) sind erlaubt.
+      // DATENSCHUTZ: Konfi-zu-Konfi-Chats gibt es nicht.
       if (req.user.type === 'konfi' && validUser.role_name === 'konfi') {
         return res.status(403).json({ error: 'Konfis können keine anderen Konfis anschreiben' });
+      }
+
+      // Teamer:innen erreichen nur Konfis ihrer zugewiesenen Jahrgaenge.
+      if (validUser.role_name === 'konfi') {
+        const verboten = await konfiAnschreibenVerboten(req.user, target_user_id);
+        if (verboten) {
+          return res.status(403).json({ error: verboten });
+        }
       }
 
       const user1_type = req.user.type;
@@ -320,6 +360,20 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
             return res.status(403).json({
               error: 'Konfirmand:innen können nur das Team anschreiben, nicht einander'
             });
+          }
+
+          // Jahrgangsgrenze fuer Teamer:innen — wie in POST /direct. Ohne diese
+          // Pruefung waere die Regel dort wertlos: ein Raum mit demselben Konfi
+          // liesse sich hier einfach anlegen (gleiche Umgehung wie beim
+          // Konfi-zu-Konfi-Fall oben).
+          if (req.user.role_name === 'teamer') {
+            for (const pu of partUsers.filter(x => x.role_name === 'konfi')) {
+              const verboten = await konfiAnschreibenVerboten(req.user, pu.id);
+              if (verboten) {
+                await db.query('DELETE FROM chat_rooms WHERE id = $1', [roomId]);
+                return res.status(403).json({ error: verboten });
+              }
+            }
           }
 
           const participantPromises = partUsers.map(pu =>
