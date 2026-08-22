@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import { getUser, setToken, setUser, setRefreshToken, getRefreshToken, clearAuth, getDeviceId, setDeviceId, setLoggingOut } from './tokenStore';
 import { offlineCache } from './offlineCache';
 import { writeQueue } from './writeQueue';
+import { disconnectWebSocket } from './websocket';
 import { networkMonitor } from './networkMonitor';
 import { BaseUser } from '../types/user';
 
@@ -109,6 +110,15 @@ export const logout = async (): Promise<void> => {
 
   // GARANTIERT: lokale Auth-Daten loeschen. Ab hier ist der User ausgeloggt.
   await clearAuth();
+
+  // Socket trennen: ohne das ueberlebt die Verbindung den Logout und der
+  // naechste angemeldete Nutzer sitzt weiter in den Raeumen des vorherigen
+  // (Fund Audit 22.08.2026). Der Aufbau erfolgt beim naechsten Login neu.
+  try {
+    disconnectWebSocket();
+  } catch (error) {
+    console.warn('Socket-Trennung beim Logout fehlgeschlagen:', error);
+  }
   try {
     await offlineCache.clearAll();
   } catch (error) {

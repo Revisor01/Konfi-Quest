@@ -1,11 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   IonIcon,
   IonList,
   IonListHeader,
   IonLabel,
   IonCard,
-  IonCardContent
+  IonCardContent,
+  IonSegment,
+  IonSegmentButton
 } from '@ionic/react';
 import {
   flag,
@@ -184,6 +186,9 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
     [archive]
   );
 
+  // Aktuell oder Archiv. Die Abzeichen stehen unter beiden Reitern.
+  const [reiter, setReiter] = useState<'aktuell' | 'archiv'>('aktuell');
+
   return (
     <div style={{ paddingBottom: '24px' }}>
 
@@ -193,14 +198,36 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
         icon={flagOutline}
         preset="challenges"
         stats={[
-          { value: active.length, label: 'AKTIV' },
+          // Aktiv und Archiv springen zum jeweiligen Reiter; Abzeichen haben
+          // keinen eigenen Reiter und bleiben reine Anzeige.
+          { value: active.length, label: 'AKTIV', onClick: () => setReiter('aktuell'), active: reiter === 'aktuell' },
           { value: marks.length, label: 'ABZEICHEN' },
-          { value: archive.length, label: 'ARCHIV' }
+          { value: archive.length, label: 'ARCHIV', onClick: () => setReiter('archiv'), active: reiter === 'archiv' }
         ]}
       />
 
       {headerSlot}
 
+      {/* Reiter statt untereinander gestapelter Abschnitte: spart Platz und
+          folgt dem Muster der uebrigen Listen (Nutzerwunsch 22.08.2026).
+          Die Abzeichen bleiben bewusst darunter stehen — sie gehoeren zu
+          beiden Reitern. */}
+      <div className="app-segment-wrapper">
+        <IonSegment
+          value={reiter}
+          onIonChange={(e) => setReiter(e.detail.value as 'aktuell' | 'archiv')}
+        >
+          <IonSegmentButton value="aktuell">
+            <IonLabel>Aktuell</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="archiv">
+            <IonLabel>Archiv</IonLabel>
+          </IonSegmentButton>
+        </IonSegment>
+      </div>
+
+      {reiter === 'aktuell' && (
+      <>
       {/* --- 1. Aktive Challenges --- */}
       <IonList inset={true} style={{ margin: '16px' }}>
         <IonListHeader>
@@ -291,6 +318,9 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
         )}
       </IonList>
 
+      </>
+      )}
+
       {/* --- 2. Deine Abzeichen (bewusst OHNE Zaehler) --- */}
       <IonList inset={true} style={{ margin: '16px' }}>
         <IonListHeader>
@@ -352,6 +382,8 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
         </IonCard>
       </IonList>
 
+      {reiter === 'archiv' && (
+      <>
       {/* --- 3. Archiv --- */}
       <IonList inset={true} style={{ margin: '16px' }}>
         <IonListHeader>
@@ -419,6 +451,8 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
           </IonCardContent>
         </IonCard>
       </IonList>
+      </>
+      )}
 
     </div>
   );

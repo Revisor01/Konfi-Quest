@@ -1174,6 +1174,15 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         allowed_media: parseAllowedMedia(created.allowed_media),
         status: deriveStatus(created)
       });
+
+      // Live-Update: Das Anlegen meldete bisher GAR NICHTS — obwohl das Formular
+      // standardmaessig direkt veroeffentlicht. Konfis und die uebrige Leitung
+      // sahen die neue Challenge erst nach manuellem Neuladen (Audit 22.08.2026).
+      // Entwuerfe gehen nur an die Leitung, Konfis sehen sie ohnehin nicht.
+      if (!created.is_draft) {
+        notifyJahrgaenge(created.id, 'create', { challengeId: created.id });
+      }
+      notifyLeadership(req.user.organization_id, 'create', { challengeId: created.id });
     } catch (err) {
       await client.query('ROLLBACK').catch(() => {});
       console.error('Database error in POST /challenges/admin:', err);
@@ -1329,6 +1338,10 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
       });
 
       notifyJahrgaenge(challengeId, 'challenge_update', { challengeId });
+      // Auch die Leitung benachrichtigen: sonst sieht die Verwaltungsliste die
+      // Aenderung nicht — und reine Team-Challenges (ohne Jahrgaenge) erreichten
+      // ueberhaupt niemanden (Audit 22.08.2026).
+      notifyLeadership(req.user.organization_id, 'challenge_update', { challengeId });
     } catch (err) {
       await client.query('ROLLBACK').catch(() => {});
       console.error('Database error in PUT /challenges/admin/:id:', err);
@@ -1357,6 +1370,10 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           return res.status(403).json({ error: 'Kein Zugriff auf diese Challenge' });
         }
 
+        // Jahrgaenge VOR dem Loeschen merken: danach sind die Zuordnungen weg
+        // und notifyJahrgaenge findet niemanden mehr.
+        const betroffeneJahrgaenge = await challengeJahrgangIds(challengeId);
+
         const force = req.query.force === 'true';
         if (hasStarted(challenge) && !force) {
           return res.status(409).json({
@@ -1378,6 +1395,14 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         }
 
         res.json({ message: 'Challenge gelöscht' });
+
+        // Ohne diese Meldung blieb die geloeschte Challenge bei Konfis in der
+        // Liste stehen und der Aufruf lief ins Leere (Audit 22.08.2026).
+        for (const jahrgangId of betroffeneJahrgaenge) {
+          liveUpdate.sendToJahrgang(jahrgangId, 'challenges', 'delete', { challengeId })
+            .catch((err) => console.error('Live-Update Challenge-Loeschung:', err.message));
+        }
+        notifyLeadership(req.user.organization_id, 'delete', { challengeId });
       } catch (err) {
         console.error('Database error in DELETE /challenges/admin/:id:', err);
         res.status(500).json({ error: 'Datenbankfehler' });

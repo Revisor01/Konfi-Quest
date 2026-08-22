@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useCallback, useRef, React
 import { initializeWebSocket, getSocket, reconnectWithToken } from '../services/websocket';
 import { getToken } from '../services/tokenStore';
 import api from '../services/api';
+import { useApp } from './AppContext';
 
 // Live Update Event Types
 export type LiveUpdateType =
@@ -45,6 +46,9 @@ interface LiveUpdateContextType {
 const LiveUpdateContext = createContext<LiveUpdateContextType | undefined>(undefined);
 
 export const LiveUpdateProvider = ({ children }: { children: ReactNode }) => {
+  // AppProvider liegt aussen (siehe App.tsx) — der angemeldete Nutzer ist hier
+  // also verfuegbar und dient als Ausloeser fuer das Binden der Handler.
+  const { user } = useApp();
   const listenersRef = useRef<Map<LiveUpdateType, Set<(event: LiveUpdateEvent) => void>>>(new Map());
   const authRecoveringRef = useRef(false);
   // Erhoeht sich nach einem Socket-Reconnect mit frischem Token -> der
@@ -78,9 +82,16 @@ export const LiveUpdateProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   // Setup WebSocket listener
+  //
+  // WICHTIG: Der Effekt haengt am angemeldeten Nutzer, nicht nur an socketEpoch.
+  // Startete die App ausgeloggt, gab es beim ersten Lauf keinen Token — der
+  // Handler wurde nie gebunden und die GANZE Sitzung blieb ohne Live-Updates,
+  // obwohl BadgeContext den Socket spaeter aufbaute (Fund Audit 22.08.2026).
+  // Mit user.id in den Deps bindet der Effekt nach dem Login nach; ein
+  // Nutzerwechsel bindet ihn ausserdem sauber neu.
   useEffect(() => {
     const token = getToken();
-    if (!token) return;
+    if (!token || !user?.id) return;
 
     const socket = initializeWebSocket(token);
 
@@ -115,7 +126,7 @@ export const LiveUpdateProvider = ({ children }: { children: ReactNode }) => {
     // socketEpoch in den Deps: nach Reconnect-mit-neuem-Token werden die
     // Listener am frischen Socket neu gebunden.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [socketEpoch]);
+  }, [socketEpoch, user?.id]);
 
   // Subscribe function
   const subscribe = useCallback((type: LiveUpdateType, callback: (event: LiveUpdateEvent) => void) => {

@@ -321,7 +321,10 @@ const KonfiDashboardPage: React.FC = () => {
   }, [refreshDashboard, refreshEvents, refreshBadges]);
 
   // Subscribe to live updates for dashboard and events
-  useLiveRefresh(['dashboard', 'events', 'badges'], refreshAllData);
+  // 'points' MUSS mit dabei sein: genehmigte Aktivitaeten melden 'points',
+  // nicht 'dashboard' — ohne das blieben Punkte und Level auf der Startseite
+  // stehen, bis man die App neu oeffnete (Audit 22.08.2026).
+  useLiveRefresh(['dashboard', 'points', 'events', 'badges'], refreshAllData);
 
   const handleRefresh = async (event: CustomEvent) => {
     await Promise.all([refreshDashboard(), refreshVerse(), refreshEvents(), refreshBadges()]);
