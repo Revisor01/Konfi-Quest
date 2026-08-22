@@ -1011,15 +1011,18 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     if (newPasswordError) return res.status(400).json({ error: newPasswordError });
     
     try {
-      // Token wird gehasht gespeichert. Der zweite Parameter deckt Eintraege
-      // ab, die vor der Umstellung im Klartext angelegt wurden — sonst liefen
-      // bereits verschickte Reset-Mails ins Leere. Faellt weg, sobald die
-      // letzten Alt-Eintraege abgelaufen sind (max. 24h nach dem Deploy).
+      // Ausschliesslich gegen den HASH vergleichen. Ein zusaetzlicher
+      // Klartext-Zweig (token IN (hash, klartext)) waere naheliegend fuer die
+      // Uebergangszeit, hebt den Schutz aber auf: Der gespeicherte Hash ist
+      // selbst ein gueltiger Klartext-Wert und wuerde damit als Token
+      // funktionieren — wer die DB lesen kann, koennte ihn direkt einsetzen.
+      // Genau das hat der Test aufgedeckt. Alt-Eintraege aus der Zeit vor der
+      // Umstellung werden stattdessen bei der Migration gehasht.
       const { rows: [resetRecord] } = await db.query(
         `SELECT id, user_id, token, expires_at, used_at, created_at
          FROM password_resets
-         WHERE token IN ($1, $2) AND used_at IS NULL AND expires_at > NOW()`,
-        [hashToken(token), token]
+         WHERE token = $1 AND used_at IS NULL AND expires_at > NOW()`,
+        [hashToken(token)]
       );
 
       if (!resetRecord) {

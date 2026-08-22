@@ -85,6 +85,12 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Beim Anlegen einer Teamer:in über die Konfi-Übersicht wird nicht mehr die
+  volle Rollenauswahl gezeigt. Der Dialog legt genau das an, was der Knopf
+  verspricht; Verwaltungskonten entstehen weiterhin unter Nutzende.
+- Namen mit Akzentzeichen ergeben wieder brauchbare Benutzernamen: Aus
+  "Noémi Burau" wird "noemi.burau" statt "noemiburau". Bestehende
+  Benutzernamen bleiben unverändert.
 - Chat: Der Reiter "Direkt" ist jetzt "Ungelesen" — er zeigt die Chats, in
   denen etwas auf dich wartet. Nach Chat-Art zu filtern half beim Wiederfinden
   kaum, dafür gibt es die Suche.

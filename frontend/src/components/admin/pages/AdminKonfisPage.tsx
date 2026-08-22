@@ -133,8 +133,13 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
 
   // Teamer:innen laufen ueber dasselbe Formular wie in der Benutzerverwaltung
   // (Rollenauswahl inklusive) — kein zweites Formular, das auseinanderlaufen kann.
+  // festeRolle: Der Button heisst "Neue Teamer:in anlegen" — dann soll der
+  // Dialog auch genau das tun. Vorher kam die volle Rollenauswahl inklusive
+  // Admin, und ein so angelegter Admin tauchte in der Teamer-Liste nicht auf
+  // (Nutzerhinweis 22.08.2026). Admins legt man in der Nutzerverwaltung an.
   const [presentTeamerModalHook, dismissTeamerModalHook] = useIonModal(UserManagementModal, {
     userId: null,
+    festeRolle: 'teamer',
     onClose: () => dismissTeamerModalHook(),
     onSuccess: () => {
       dismissTeamerModalHook();

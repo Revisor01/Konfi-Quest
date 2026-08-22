@@ -15,6 +15,32 @@ describe('generateUsernameFromName', () => {
     expect(generateUsernameFromName('Aßmann')).toBe('assmann');
   });
 
+  // Vorher wurden nur ä/ö/ü/ß behandelt, jeder andere Akzent fiel ersatzlos
+  // weg: aus "Noémi Burau" wurde "nomi.burau" — in Produktion sogar
+  // "noemiburau", weil mit dem Zeichen auch der trennende Punkt verschwand.
+  // Audit 22.08.2026.
+  it('fuehrt fremdsprachige Akzente auf den Grundbuchstaben zurueck', () => {
+    expect(generateUsernameFromName('Noémi Burau')).toBe('noemi.burau');
+    expect(generateUsernameFromName('Élodie Dupont')).toBe('elodie.dupont');
+    expect(generateUsernameFromName('José Muñoz')).toBe('jose.munoz');
+    expect(generateUsernameFromName('Zoë Çelik')).toBe('zoe.celik');
+  });
+
+  it('behandelt Buchstaben ohne zerlegbares Akzentzeichen', () => {
+    // NFD zerlegt diese nicht — sie brauchen eine eigene Zuordnung, sonst
+    // fielen sie wie bisher ersatzlos weg.
+    expect(generateUsernameFromName('Søren Kierkegaard')).toBe('soren.kierkegaard');
+    expect(generateUsernameFromName('Łukasz Nowak')).toBe('lukasz.nowak');
+  });
+
+  it('schreibt deutsche Umlaute weiterhin AUS statt sie zu reduzieren', () => {
+    // Wichtig: Die Umlaut-Ersetzung muss VOR der Normalisierung laufen.
+    // Sonst wuerde aus "ü" ein blosses "u" statt "ue" — und alle bisher
+    // vergebenen Benutzernamen passten nicht mehr zum Verfahren.
+    expect(generateUsernameFromName('Jürgen Müller')).toBe('juergen.mueller');
+    expect(generateUsernameFromName('Björn Größe')).toBe('bjoern.groesse');
+  });
+
   it('behaelt Zahlen und Bindestriche', () => {
     expect(generateUsernameFromName('Lisa-Marie Meyer 2')).toBe('lisa-marie.meyer.2');
   });

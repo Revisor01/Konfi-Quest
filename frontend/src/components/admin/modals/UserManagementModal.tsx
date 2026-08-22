@@ -50,12 +50,20 @@ interface Jahrgang {
 
 interface UserManagementModalProps {
   userId?: number | null;
+  // Rolle fest vorgeben (Rollenname, z.B. 'teamer'). Dann entfaellt die
+  // Rollenauswahl komplett und der Dialog fuehrt genau eine Sache aus.
+  // Gedacht fuer den Plus-Button in der Konfi-Uebersicht: der heisst dort
+  // "Neue Teamer:in anlegen", zeigte aber die volle Rollenauswahl inklusive
+  // Admin — und ein so angelegter Admin tauchte in der Teamer-Liste gar nicht
+  // auf (Nutzerhinweis 22.08.2026). Ohne diese Prop bleibt alles wie bisher.
+  festeRolle?: string;
   onClose: () => void;
   onSuccess: () => void;
 }
 
 const UserManagementModal: React.FC<UserManagementModalProps> = ({
   userId,
+  festeRolle,
   onClose,
   onSuccess
 }) => {
@@ -146,6 +154,13 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
       ]);
       setRoles(rolesResponse.data);
       setJahrgaenge(jahrgaengeResponse.data);
+
+      // Feste Rolle direkt setzen — der Dialog zeigt dann keine Auswahl mehr,
+      // das Feld muss aber trotzdem befuellt sein (isValid prueft role_id > 0).
+      if (festeRolle && !isEditMode) {
+        const rolle = rolesResponse.data.find((r: Role) => r.name === festeRolle);
+        if (rolle) setFormData(prev => ({ ...prev, role_id: rolle.id }));
+      }
     } catch (err) {
  console.error('Error loading initial data:', err);
       setError('Fehler beim Laden der Daten');
@@ -295,7 +310,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
       <IonPage>
         <IonHeader>
           <IonToolbar>
-            <IonTitle>{isEditMode ? 'Benutzer bearbeiten' : 'Neuer Benutzer'}</IonTitle>
+            <IonTitle>{isEditMode ? 'Benutzer bearbeiten' : (festeRolle === 'teamer' ? 'Neue Teamer:in' : 'Neuer Benutzer')}</IonTitle>
             <IonButtons slot="start">
               <IonButton aria-label="Schließen" onClick={handleClose} className="app-modal-close-btn">
                 <IonIcon icon={closeOutline} />
@@ -316,7 +331,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>{isEditMode ? 'Benutzer bearbeiten' : 'Neuer Benutzer'}</IonTitle>
+          <IonTitle>{isEditMode ? 'Benutzer bearbeiten' : (festeRolle === 'teamer' ? 'Neue Teamer:in' : 'Neuer Benutzer')}</IonTitle>
           <IonButtons slot="start">
             <IonButton aria-label="Schließen" onClick={onClose} disabled={isSubmitting} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
@@ -406,11 +421,14 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
             <div className="app-section-icon app-section-icon--users">
               <IonIcon icon={shieldOutline} />
             </div>
-            <IonLabel>Rolle & Status</IonLabel>
+            <IonLabel>{festeRolle ? 'Status' : 'Rolle & Status'}</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px 16px 8px 16px' }}>
-              {/* Rolle - klickbare Liste */}
+              {/* Rolle - klickbare Liste. Entfaellt, wenn die Rolle von aussen
+                  festgelegt ist (festeRolle): Der Dialog heisst dann bereits
+                  nach der Rolle, eine Auswahl waere widerspruechlich. */}
+              {!festeRolle && (
               <div style={{ marginBottom: '16px' }}>
                 <IonLabel style={{ fontSize: '0.85rem', color: '#666', marginBottom: '8px', display: 'block' }}>
                   Rolle *
@@ -459,6 +477,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   })}
                 </div>
               </div>
+              )}
 
               {/* Konto aktiv Toggle */}
               <div style={{
