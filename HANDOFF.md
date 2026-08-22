@@ -5,7 +5,7 @@ gepusht, CI grün und auf Produktion deployt.
 
 ## Wo wir stehen
 
-- Branch `main`, letzter Stand `b1e46e8` + Build-Bump.
+- Branch `main`, letzter Stand `ae86d79` (auf Produktion deployt, CI gruen).
 - **Produktion läuft auf 2.0.0** (Server `kkd-fahrtenbuch.de`, siehe unten).
 - TestFlight: Build 137 gebaut, gegen die **echte Produktion** (nicht Staging).
 - iOS-Minimum ist seit Build 130 **16.4** (swiper 14 verlangt Safari 16.4+).
@@ -35,17 +35,32 @@ curl -sS http://127.0.0.1:5055/api/status
 Wenn der alte Server zurückkommt: Deploy-Job wieder scharf schalten
 (`false &&` entfernen) und Stack-ID prüfen.
 
-## Zwei Dinge, die kaputt sind
+## Tageslosung — behoben, aber im Notbetrieb
 
-1. **Tageslosung fehlt seit dem 20.08.** `ketiv.de` lief auf dem gesperrten
-   Server. Der Dienst versucht erst `http://ketiv-api` (Container, existiert
-   hier nicht), dann `https://ketiv.de` (nicht erreichbar). Letzter
-   Cache-Eintrag in `daily_verses` ist vom 20.08.
-   Wege: `LOSUNG_API_BASE_URL` setzen, `ketiv-api`-Container mitnehmen, oder
-   direkt gegen losungen.de gehen.
-2. **Losungs-API-Key steht im Klartext im Backend-Log**, weil er als
-   Query-Parameter in der URL steht und die Fehlermeldung die ganze URL
-   ausgibt. Key ist rotiert, aber Logs werden aufbewahrt.
+`ketiv.de` lag auf dem gesperrten Server und ist weiterhin tot. Deshalb laeuft
+die Losungen-API jetzt zusaetzlich hier:
+
+- Stack: `/opt/ketiv/docker-compose.notbetrieb.yml`
+- Container: `ketiv-api`, `ketiv-postgres` (beide `unless-stopped`)
+- Nur API, kein Frontend, kein Redis. Die Losungsdaten 2025/2026 kommen aus
+  den SQL-Dumps im Repo (`sql/losungen_*.sql`), es wird nichts gescraped.
+- Haengt zusaetzlich im Netz `konfi-quest_internal`, damit `kq-backend` den
+  Namen `ketiv-api` aufloesen kann. **Wird dieses Netz neu angelegt, muss der
+  ketiv-Stack neu verbunden werden.**
+- `public/` fehlt im Repo (wird sonst per CI gebaut) und wurde von Hand als
+  Platzhalter angelegt — sonst bricht der Build.
+
+Zusaetzlich abgesichert, damit ein erneuter Ausfall nicht wieder die App bremst:
+
+- **Negativ-Cache** im `losungService`: nach einem Fehlschlag wird der externe
+  Abruf 30 Min uebersprungen. Vorher lief jede Anfrage erneut in beide Timeouts
+  (2s intern + 5s oeffentlich); das Dashboard ruft die Losung bei jedem Oeffnen
+  ab. Gemessen: 7s -> 4,5ms.
+- Die Teamer-Route hat jetzt denselben DB-Fallback wie die Konfi-Route.
+
+Noch offen: **Der Losungs-API-Key steht im Klartext im Backend-Log**, weil er
+als Query-Parameter in der URL steht und die Fehlermeldung die ganze URL ausgibt.
+Key ist rotiert, aber Logs werden aufbewahrt.
 
 ## Offene Punkte aus den Audits
 
@@ -54,11 +69,13 @@ Behoben: tote Sitzung nach Login, Socket überlebt Logout, Challenges
 (Anlegen/Löschen meldeten nichts), Punkte-Signale kreuzten sich, Material
 ohne Updates, drei fehlende Socket-Trennungen.
 
+Ebenfalls behoben (22.08.): **Organisationswechsel**. Die Empfaengerauflösung
+in `liveUpdate.js` geht jetzt per UNION auch über `user_organizations` (mit der
+dort hinterlegten Rolle, die je Gemeinde abweichen kann), und `switchOrg` baut
+den Socket mit dem neuen Token neu auf. Betraf praktisch nur `simonluthe`,
+den einzigen Mehrfach-Nutzer (Orgs 1, 2, 4).
+
 Offen:
-- **Organisationswechsel**: Live-Updates greifen nur für die Haupt-Organisation.
-  Wer per Umschalter in einer Zweit-Org arbeitet, bekommt dort keine.
-  Ursache: Empfängerauflösung geht über `users.organization_id` statt
-  `user_organizations`; zusätzlich baut `switchOrg` den Socket nicht neu auf.
 - **Detailansichten ohne Abo**: Konfi-Event-Detail, Teamer-Abzeichen,
   Teamer-Dashboard, Zertifikate-Seite.
 
@@ -107,3 +124,12 @@ nicht am Umfang scheitern. Ergebnis soll unter `docs/api/` liegen.
   aneinander.
 - **firebase-admin v14**: `admin.credential` und `admin.messaging` gibt es nicht
   mehr. Import über `firebase-admin/app` und `firebase-admin/messaging`.
+- **Das Test-DB-Schema hinkt der Produktion hinterher.** In der CI laufen
+  Fehler wie `column a.category does not exist` (Wrapped) und
+  `relation "daily_verses" does not exist` durch, ohne dass ein Test rot wird —
+  beides existiert in Produktion sehr wohl. Heisst: diese Pfade werden faktisch
+  nicht geprüft. Wer dort etwas ändert, hat kein Netz.
+- **Ein Test kann grün aussehen und trotzdem am Ziel vorbeilaufen.** Die beiden
+  Konfi-zu-Konfi-Tests schickten kein `name`; die Route antwortete mit 400
+  ("Typ und Name sind erforderlich"), also lange vor der Sicherheitsprüfung.
+  Bei Berechtigungstests immer den Statuscode prüfen, nicht nur "nicht 200".
