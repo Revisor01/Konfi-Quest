@@ -137,7 +137,7 @@ describe('Chat Routes', () => {
       const res = await request(app)
         .post('/api/chat/rooms')
         .set('Authorization', `Bearer ${konfi1Token}`)
-        .send({ type: 'direct', participants: [USERS.konfi2.id] });
+        .send({ type: 'direct', name: 'Heimlich', participants: [USERS.konfi2.id] });
 
       expect(res.status).toBe(403);
 
@@ -150,7 +150,7 @@ describe('Chat Routes', () => {
       const res = await request(app)
         .post('/api/chat/rooms')
         .set('Authorization', `Bearer ${konfi1Token}`)
-        .send({ type: 'direct', participants: [USERS.admin1.id] });
+        .send({ type: 'direct', name: 'Frage ans Team', participants: [USERS.admin1.id] });
 
       expect([200, 201]).toContain(res.status);
     });
