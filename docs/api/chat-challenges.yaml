@@ -1,0 +1,1562 @@
+# ============================================================================
+# Konfi Quest API — Block 1: Chat, Challenges, Notifications
+# OpenAPI 3.1 — verifiziert am Code (backend/routes/chat.js, challenges.js,
+# notifications.js), Stand Branch main, 2026-08-22.
+#
+# Mount-Punkte (backend/createApp.js):
+#   /api/chat           -> routes/chat.js           (24 Routen)
+#   /api/challenges     -> routes/challenges.js     (13 Routen)
+#   /api/notifications  -> routes/notifications.js  ( 6 Routen)
+#
+# ROLLEN-MODELL (middleware/rbac.js):
+#   req.user.type = 'konfi'  fuer Rolle konfi
+#                   'teamer' fuer Rolle teamer
+#                   'admin'  fuer Rollen admin, org_admin UND super_admin
+#   Alle "Admin-Bypass"-Pruefungen im Chat (userType === 'admin') gelten also
+#   fuer admin + org_admin (+ super_admin), NIE fuer teamer.
+#   requireTeamer = requireRole('org_admin', 'admin', 'teamer').
+#
+# ============================================================================
+# DIE FUENF CHAT-KERNFRAGEN (am Code verifiziert)
+# ============================================================================
+#
+# 1. WER DARF WEN ANSCHREIBEN?
+#    Kontaktlisten:
+#    - GET /chat/team-contacts: nur admin/org_admin/teamer. Liefert ALLE
+#      aktiven admin/org_admin/teamer der EIGENEN Org (ohne E-Mail/Login-Daten).
+#    - GET /chat/admins: nur Konfis. Liefert alle admin/org_admin/teamer der
+#      eigenen Org — INKLUSIVE username (Login-Name, leicht sensibel).
+#    - GET /chat/available-users: nur Konfis. Wie /admins, aber ohne bereits
+#      bestehende Direktchats; liefert NIE andere Konfis.
+#    Direktchat (POST /chat/direct):
+#    - Ziel muss in derselben Organisation liegen (Org-Grenze hart).
+#    - Konfi -> Konfi: 403 ("Konfis koennen keine anderen Konfis anschreiben").
+#    - Konfi -> teamer/admin/org_admin: erlaubt.
+#    - teamer/admin/org_admin -> Konfi: erlaubt, OHNE Jahrgangspruefung —
+#      d.h. auch ueber Jahrgangsgrenzen hinweg (jeder Konfi der Org).
+#    - teamer <-> teamer/admin: erlaubt.
+#    - Ueber Organisationsgrenzen: nie (Ziel-Lookup ist org-gescopt -> 403).
+#    ABER siehe LUECKE 1: POST /chat/rooms umgeht das Konfi-Konfi-Verbot.
+#
+# 2. WER SIEHT WEN in Mitgliederlisten (GET /chat/rooms/:roomId/participants)?
+#    - Teilnehmer des Raums (konfi/teamer): sehen ALLE Teilnehmer mit Name,
+#      Rolle, role_title und (bei Konfis) Jahrgang.
+#    - admin/org_admin: sehen die Teilnehmerliste JEDES Raums ihrer Org,
+#      auch ohne selbst Teilnehmer zu sein (Admin-Bypass).
+#    - Konfis sehen also in Jahrgangs-/Gruppen-/Event-Chats die anderen
+#      Konfis des Raums namentlich — das ist die einzige Stelle, an der
+#      Konfis andere Konfis "sehen" (anschreiben koennen sie sie nicht).
+#
+# 3. WER DARF WELCHEN RAUM SEHEN / BETRETEN?
+#    - GET /chat/rooms (Liste): strikt teilnahmebasiert — jeder (auch
+#      admin/org_admin) sieht in der LISTE nur Raeume, in denen er selbst
+#      chat_participants-Eintrag hat (org-gescopt). Jahrgangs- und Team-Chat-
+#      Mitgliedschaft wird beim Aufruf per TTL-Sync (10 Min) nachgezogen:
+#      konfi -> eigener Jahrgangs-Chat; teamer/admin -> zugewiesene
+#      Jahrgaenge + Team-Chat; org_admin -> ALLE Jahrgangs-Chats + Team-Chat.
+#    - Betreten/Lesen einzelner Raeume (GET /rooms/:roomId, /messages,
+#      mark-read, POST /messages): Teilnehmer ODER Admin-Bypass —
+#      admin/org_admin koennen JEDEN Raum ihrer Org oeffnen, lesen und darin
+#      schreiben, auch fremde Direktchats zweier anderer Personen.
+#      teamer und konfi ausschliesslich als Teilnehmer.
+#    - Export (GET /rooms/:roomId/export): nur admin/org_admin (explizit
+#      NICHT teamer), kompletter Verlauf jedes Raums der Org.
+#    - Org-Grenze: ueberall hart (jede Query prueft organization_id).
+#
+# 4. WER DARF NACHRICHTEN LOESCHEN (DELETE /chat/messages/:messageId)?
+#    - Eigene Nachrichten: jede Rolle (auch Konfi), Soft-Delete.
+#    - Fremde Nachrichten: nur admin/org_admin, org-weit (jede Nachricht
+#      jedes Raums der eigenen Org). teamer duerfen NUR eigene loeschen.
+#    - Raum loeschen (DELETE /rooms/:roomId): nur admin/org_admin; mit
+#      Nachrichten nur per ?force=true; Jahrgangs-Chats nie direkt.
+#
+# 5. CHALLENGES — WER SIEHT WELCHE BEITRAEGE / ANONYMITAET?
+#    - Zentrale Sichtbarkeitslogik (PUBLIC_SUBMISSION_SQL, eine Stelle):
+#      oeffentlich = moderation_status='approved' UND (visibility='public'
+#      ODER (visibility='konfi_choice' UND konfi_consent IN
+#      ('publish','anonymous'))). visibility='private' ist NIE oeffentlich,
+#      'hidden' schlaegt alles.
+#    - Galerie (GET /konfi/:id): nur fremde OEFFENTLICHE Beitraege; bei
+#      anonymen Beitraegen werden display_name, role_name UND jahrgang_name
+#      bereits im SQL auf NULL gesetzt — der Name verlaesst das Backend nie.
+#    - Eigene Beitraege: immer sichtbar (mit Moderationsstatus).
+#    - Leitung (GET /admin/:id/submissions): sieht IMMER alles inkl. Namen —
+#      Anonymitaet gilt gegenueber der Gruppe, nicht gegenueber der Leitung.
+#      org_admin/admin org-weit; teamer nur Challenges seiner zugewiesenen
+#      Jahrgaenge ('nur_team'-Challenges org-weit fuer jeden Teamer).
+#    - Export (GET /admin/:id/export): strenger als die Sammelansicht —
+#      konfi_consent='private' ("nur fuer die Leitung") landet NIE im Export;
+#      anonyme Beitraege erscheinen als "Anonym".
+#    - Anonymisierung ist Einbahnstrasse (anonymize ohne Gegenstueck);
+#      Konfis koennen Beitraege nicht selbst zurueckziehen (DELETE -> immer 403).
+#    - Dateiabruf (GET /files/:filename): Owner immer; org_admin/admin
+#      org-weit; teamer nur zugewiesene Jahrgaenge bzw. 'nur_team' org-weit;
+#      Konfi nur oeffentliche Beitraege seines Jahrgangs. Auth NUR per
+#      Authorization-Header (bewusst kein ?token= wie im Chat).
+#
+# ============================================================================
+# GEFUNDENE LUECKEN (Details als "# LUECKE:" an den betroffenen Routen)
+# ============================================================================
+# LUECKE 1 (POST /chat/rooms): Konfis koennen das Konfi-zu-Konfi-Verbot
+#   umgehen: type='direct' ist fuer Konfis erlaubt, und die participants-Liste
+#   wird NUR gegen die Org geprueft, nicht gegen Rollen. Ein Konfi kann so
+#   einen "direct"-Raum mit anderen Konfis (auch mehreren) anlegen und mit
+#   ihnen chatten — POST /direct blockiert genau das.
+# LUECKE 2 (anonyme Umfragen): GET /rooms/:roomId/messages und das
+#   pollUpdated-Socket-Event liefern bei anonymous=true zwar keinen user_name,
+#   aber weiterhin user_id und user_type JEDER Stimme. Ueber die
+#   Teilnehmerliste (Frage 2) kann jeder Client die Namen aufloesen —
+#   die Anonymitaet ist nur kosmetisch (anders als bei Challenges, wo der
+#   Name serverseitig nie mitkommt).
+# LUECKE 3 (GET /chat/files/:filename): Token wird auch als ?token=
+#   Query-Parameter akzeptiert (landet in Access-Logs/Referrern). Die
+#   Challenges-Route verzichtet aus genau diesem Grund bewusst darauf.
+#   Ausserdem prueft die Mitgliedschaft hier nur user_id (ohne user_type) und
+#   es gibt KEINEN Admin-Bypass: ein Admin, der Nachrichten eines fremden
+#   Raums lesen darf, kann dessen Dateien nicht abrufen (Inkonsistenz, keine
+#   Rechteausweitung).
+# HINWEIS (kein Bug, aber dokumentationswuerdig): admin/org_admin koennen
+#   JEDEN Raum der Org lesen, beschreiben und exportieren — auch private
+#   Direktchats zweier anderer Nutzer. Teamer koennen ueber POST /chat/rooms
+#   Gruppenraeume mit beliebigen Org-Nutzern (auch Konfis fremder Jahrgaenge)
+#   anlegen und Jahrgangs-Chats fuer JEDEN Jahrgang der Org erstellen
+#   (keine Zuweisungspruefung beim Anlegen).
+# ============================================================================
+
+openapi: 3.1.0
+info:
+  title: Konfi Quest API — Chat, Challenges, Notifications (Block 1)
+  version: "1.0.0"
+  description: >
+    Teildokumentation der Konfi-Quest-API: Chat-System, Challenges 2.0 und
+    Push-/Badge-Notifications. Schwerpunkt: Berechtigungen (x-berechtigung
+    je Route). Rollen: super_admin, org_admin, admin, teamer, konfi.
+servers:
+  - url: https://konfi-quest.de/api
+security:
+  - bearerAuth: []
+tags:
+  - name: Chat
+  - name: Chat-Umfragen
+  - name: Chat-Reaktionen
+  - name: Challenges-Teilnehmer
+  - name: Challenges-Leitung
+  - name: Notifications
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT, geprueft von verifyTokenRBAC (Org-Kontext via X-Active-Organization-Header moeglich).
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+    ChatRoom:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string, description: Bei Direktchats der Name des Gegenuebers }
+        type: { type: string, enum: [direct, group, jahrgang, admin_team] }
+        organization_id: { type: integer }
+        jahrgang_id: { type: [integer, "null"] }
+        jahrgang_name: { type: [string, "null"] }
+        created_by: { type: integer }
+        created_at: { type: string, format: date-time }
+        event_id: { type: [integer, "null"] }
+        participant_count: { type: integer }
+        partner_user_type: { type: [string, "null"], description: Rolle des Direktchat-Partners (admin/teamer/konfi) }
+        is_team_only: { type: boolean }
+        unread_count: { type: integer }
+        last_message:
+          type: [object, "null"]
+          properties:
+            content: { type: [string, "null"] }
+            sender_name: { type: string }
+            created_at: { type: string, format: date-time }
+            file_name: { type: [string, "null"] }
+            message_type: { type: string }
+        last_message_at: { type: [string, "null"], format: date-time }
+    ChatMessage:
+      type: object
+      properties:
+        id: { type: integer }
+        room_id: { type: integer }
+        sender_id: { type: integer }
+        sender_type: { type: string, enum: [admin, teamer, konfi] }
+        sender_name: { type: string }
+        message_type: { type: string, enum: [text, image, video, file, poll] }
+        content: { type: [string, "null"], description: Bei geloeschten Nachrichten der Platzhaltertext }
+        is_deleted: { type: boolean }
+        file_path: { type: [string, "null"] }
+        file_name: { type: [string, "null"] }
+        file_size: { type: [integer, "null"] }
+        reply_to_id: { type: [integer, "null"] }
+        reply_to_content: { type: [string, "null"] }
+        reply_to_sender_name: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+        reactions:
+          type: array
+          items: { $ref: '#/components/schemas/Reaction' }
+        poll_id: { type: [integer, "null"] }
+        question: { type: [string, "null"] }
+        options: { type: [array, "null"], items: { type: string } }
+        multiple_choice: { type: boolean }
+        anonymous: { type: boolean }
+        exclusive_options: { type: boolean }
+        expires_at: { type: [string, "null"], format: date-time }
+        votes:
+          type: array
+          description: >
+            Stimmen der Umfrage. Bei anonymous=true fehlt user_name —
+            user_id/user_type sind aber enthalten (siehe LUECKE 2 im Kopf).
+          items:
+            type: object
+            properties:
+              user_id: { type: integer }
+              user_type: { type: string }
+              option_index: { type: integer }
+              user_name: { type: [string, "null"] }
+    Reaction:
+      type: object
+      properties:
+        id: { type: integer }
+        message_id: { type: integer }
+        user_id: { type: integer }
+        user_type: { type: string }
+        emoji: { type: string, enum: [like, heart, laugh, wow, sad, pray] }
+        user_name: { type: string }
+        created_at: { type: string, format: date-time }
+    TeamContact:
+      type: object
+      properties:
+        id: { type: integer }
+        display_name: { type: string }
+        role_name: { type: string, enum: [admin, org_admin, teamer] }
+        role_description: { type: string, description: role_title oder Fallback ("Teamer:in"/"Admin") }
+    KonfiChallenge:
+      type: object
+      description: Challenge in der Teilnehmer-Sicht (mapChallengeForKonfi).
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        description: { type: string }
+        challenge_type: { type: string, enum: [wahrnehmung, beitrag, praxis, frei] }
+        audience: { type: string, enum: [konfis, konfis_und_team, nur_team] }
+        visibility: { type: string, enum: [public, konfi_choice, private] }
+        moderated: { type: boolean }
+        allowed_media:
+          type: array
+          items: { type: string, enum: [text, photo, audio, video, link] }
+        allow_multiple: { type: boolean }
+        badge_icon: { type: string }
+        badge_name: { type: string }
+        author_user_id: { type: [integer, "null"] }
+        author_freetext: { type: [string, "null"] }
+        author_display_name: { type: [string, "null"] }
+        starts_at: { type: string, format: date-time }
+        ends_at: { type: string, format: date-time }
+        status: { type: string, enum: [draft, scheduled, active, ended], description: "Abgeleitet, nie gespeichert" }
+        has_badge: { type: boolean, description: Abgeleitet aus EXISTS eigener Submission }
+        has_submission: { type: boolean }
+        own_submission_count: { type: integer }
+    Submission:
+      type: object
+      properties:
+        id: { type: integer }
+        media_type: { type: string, enum: [text, photo, audio, video, link] }
+        text_content: { type: [string, "null"] }
+        file_path: { type: [string, "null"], description: "Hex-Dateiname fuer GET /challenges/files/{filename}" }
+        file_name: { type: [string, "null"] }
+        link_url: { type: [string, "null"] }
+        konfi_consent: { type: [string, "null"], enum: [publish, private, anonymous, null], description: Nur bei visibility=konfi_choice gesetzt }
+        moderation_status: { type: string, enum: [pending, approved, hidden] }
+        created_at: { type: string, format: date-time }
+    GallerySubmission:
+      type: object
+      description: Fremder oeffentlicher Beitrag in der Galerie. Bei anonymen Beitraegen sind display_name, role_name und jahrgang_name serverseitig NULL.
+      properties:
+        id: { type: integer }
+        media_type: { type: string }
+        text_content: { type: [string, "null"] }
+        file_path: { type: [string, "null"] }
+        file_name: { type: [string, "null"] }
+        link_url: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+        display_name: { type: [string, "null"] }
+        role_name: { type: [string, "null"] }
+        jahrgang_name: { type: [string, "null"] }
+        is_anonymous: { type: boolean }
+
+paths:
+
+  # ==========================================================================
+  # CHAT — Kontaktlisten und Direktchats
+  # ==========================================================================
+
+  /chat/team-contacts:
+    get:
+      tags: [Chat]
+      summary: Team-Kontaktliste fuer Direktchats
+      description: >
+        Liefert alle aktiven Admins, Org-Admins und Teamer:innen der eigenen
+        Organisation (ohne den Aufrufer selbst) — bewusst nur die fuer einen
+        Chat noetigen Felder, keine E-Mail/Login-Daten.
+      responses:
+        '200':
+          description: Liste der Team-Mitglieder
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/TeamContact' }
+        '403': { description: Aufrufer ist Konfi, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Explizite role_name-Pruefung im Handler (admin/org_admin/teamer), sonst 403"
+        hinweis: "Konfis nutzen stattdessen GET /chat/admins bzw. /chat/available-users"
+
+  /chat/admins:
+    get:
+      tags: [Chat]
+      summary: Anschreibbare Team-Mitglieder (Konfi-Sicht)
+      description: >
+        Nur fuer Konfis: alle admin/org_admin/teamer der eigenen Organisation.
+        Konfis koennen ausschliesslich diese Personen anschreiben.
+      responses:
+        '200':
+          description: Liste (id, display_name, username)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: { type: integer }
+                    display_name: { type: string }
+                    username: { type: string }
+        '403': { description: Aufrufer ist kein Konfi }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "req.user.type muss 'konfi' sein"
+        hinweis: "Liefert den username (Login-Name) der Team-Mitglieder mit — mehr als die Team-Sicht (/team-contacts) preisgibt"
+
+  /chat/available-users:
+    get:
+      tags: [Chat]
+      summary: Noch nicht angeschriebene Chat-Partner (Konfi-Sicht)
+      description: >
+        Nur fuer Konfis: Team-Mitglieder der Org, mit denen noch KEIN
+        Direktchat besteht. Liefert nie andere Konfis
+        (permissions: direct_only_admin).
+      responses:
+        '200':
+          description: Verfuegbare Partner plus Jahrgangsname
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer }
+                        name: { type: string }
+                        type: { type: string, const: admin }
+                        role_name: { type: string }
+                        role_description: { type: string }
+                  jahrgang: { type: string }
+                  permissions: { type: string, const: direct_only_admin }
+        '400': { description: Konfi ist keinem Jahrgang zugewiesen }
+        '403': { description: Aufrufer ist kein Konfi }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "req.user.type muss 'konfi' sein; Jahrgang muss existieren"
+
+  /chat/direct:
+    post:
+      tags: [Chat]
+      summary: Direktchat erstellen oder vorhandenen zurueckgeben
+      description: >
+        Legt einen 1:1-Direktchat mit target_user_id an (oder liefert den
+        bestehenden Raum). user_type des Ziels wird IMMER serverseitig aus
+        der echten Rolle abgeleitet. Konfi-zu-Konfi ist verboten.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [target_user_id]
+              properties:
+                target_user_id: { type: integer }
+      responses:
+        '200':
+          description: Raum-ID (created=false bei bestehendem Raum)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  room_id: { type: integer }
+                  created: { type: boolean }
+        '400': { description: target_user_id fehlt }
+        '403': { description: Ziel nicht in eigener Org ODER Konfi-zu-Konfi-Versuch }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Ziel-User muss zur eigenen Org gehoeren (sonst 403); konfi->konfi wird geblockt"
+        hinweis: "Team -> Konfi ohne Jahrgangspruefung erlaubt (jeder Konfi der Org, auch fremde Jahrgaenge)"
+
+  # ==========================================================================
+  # CHAT — Raeume
+  # ==========================================================================
+
+  /chat/rooms:
+    post:
+      tags: [Chat]
+      summary: Chat-Raum erstellen (group/direct/jahrgang)
+      description: >
+        Erstellt einen Raum. Konfis duerfen nur type='direct'. Bei
+        type='jahrgang' werden alle Konfis des Jahrgangs automatisch
+        hinzugefuegt (409, wenn der Jahrgangs-Chat schon existiert).
+        participants werden org-gescopt validiert, user_type serverseitig
+        aus der Rolle abgeleitet.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, name]
+              properties:
+                type: { type: string, enum: [group, direct, jahrgang], description: "'admin_team' wird vom Validator abgewiesen" }
+                name: { type: string }
+                participants:
+                  type: array
+                  description: User-IDs (oder Objekte mit user_id); nur Org-Mitglieder werden uebernommen
+                  items: { type: [integer, object] }
+                jahrgang_id: { type: integer, description: Pflicht bei type=jahrgang }
+      responses:
+        '200':
+          description: Raum erstellt
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  room_id: { type: integer }
+                  created: { type: boolean, const: true }
+        '400': { description: Typ/Name fehlt, ungueltiger Typ oder jahrgang_id fehlt }
+        '403': { description: Konfi mit type != direct ODER Jahrgang nicht in eigener Org }
+        '409': { description: Jahrgangs-Chat existiert bereits }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC, validateCreateRoom]
+        org-scope: true
+        objekt-pruefung: "Konfis nur type='direct'; jahrgang_id und participants werden gegen die Org geprueft"
+        # LUECKE: Konfis koennen hier mit type='direct' + participants=[andere
+        # Konfi-IDs] das Konfi-zu-Konfi-Verbot aus POST /chat/direct umgehen —
+        # die participants-Liste wird nur gegen die Org geprueft, nicht gegen
+        # Rollen; auch mehr als 2 Teilnehmer in einem "direct"-Raum moeglich.
+        # Ausserdem: teamer koennen Gruppenraeume mit beliebigen Org-Nutzern
+        # und Jahrgangs-Chats fuer JEDEN Jahrgang der Org anlegen (keine
+        # Zuweisungspruefung).
+        hinweis: "Siehe LUECKE-Kommentar; emitRoomsChanged an alle finalen Teilnehmer"
+    get:
+      tags: [Chat]
+      summary: Eigene Chat-Raeume auflisten
+      description: >
+        Liefert alle Raeume, in denen der Nutzer Teilnehmer ist, mit
+        unread_count, letzter Nachricht und Direktchat-Partnername. Beim
+        Aufruf laeuft hoechstens 1x je 10 Min ein Mitgliedschafts-Sync
+        (Jahrgangs-Chats + Team-Chat): konfi -> eigener Jahrgang,
+        teamer/admin -> zugewiesene Jahrgaenge, org_admin -> alle Jahrgaenge
+        der Org; Team-Chat fuer alle Nicht-Konfis.
+      responses:
+        '200':
+          description: Raumliste (nach letzter Nachricht sortiert)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ChatRoom' }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Nur Raeume mit eigenem chat_participants-Eintrag (KEIN Admin-Bypass in der Liste)"
+        hinweis: "Admins sehen fremde Raeume zwar nicht in der Liste, koennen sie aber per ID oeffnen (siehe /rooms/{roomId})"
+
+  /chat/rooms/{roomId}:
+    get:
+      tags: [Chat]
+      summary: Raum-Details inkl. Teilnehmerliste
+      parameters:
+        - { name: roomId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: Raum mit participants-Array
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/ChatRoom' }
+                  - type: object
+                    properties:
+                      participants:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            user_id: { type: integer }
+                            display_name: { type: string }
+                            user_type: { type: string }
+        '403': { description: Kein Teilnehmer und kein Admin der Org }
+        '404': { description: Raum nicht gefunden }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Teilnehmer des Raums ODER Admin-Bypass (type 'admin' = admin/org_admin: jeder Raum der eigenen Org)"
+        hinweis: "Admin-Bypass umfasst auch fremde Direktchats"
+    delete:
+      tags: [Chat]
+      summary: Chat-Raum loeschen (nur Admins)
+      description: >
+        Loescht Raum inkl. Nachrichten, Umfragen, Dateien. Mit vorhandenen
+        Nachrichten nur mit ?force=true. Jahrgangs-Chats sind nie direkt
+        loeschbar (nur ueber das Loeschen des Jahrgangs).
+      parameters:
+        - { name: roomId, in: path, required: true, schema: { type: integer } }
+        - { name: force, in: query, required: false, schema: { type: string, enum: ["true", "false"] } }
+      responses:
+        '200': { description: Geloescht }
+        '403': { description: Aufrufer ist kein Admin-Typ }
+        '404': { description: Raum nicht in eigener Org }
+        '409': { description: Nachrichten vorhanden (ohne force) ODER Jahrgangs-Chat }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "req.user.type muss 'admin' sein; Raum muss zur eigenen Org gehoeren"
+        hinweis: "teamer und konfi nie; auch fremde Direktchats loeschbar"
+
+  # ==========================================================================
+  # CHAT — Nachrichten
+  # ==========================================================================
+
+  /chat/rooms/{roomId}/messages:
+    get:
+      tags: [Chat]
+      summary: Nachrichten eines Raums laden
+      description: >
+        Paginiert (limit/offset, neueste zuerst, Antwort chronologisch) oder
+        inkrementell per ?after=messageId (bis 200 neue Nachrichten).
+        Enthaelt Reactions, Reply-Daten und Poll-Daten inkl. Votes.
+      parameters:
+        - { name: roomId, in: path, required: true, schema: { type: integer } }
+        - { name: limit, in: query, required: false, schema: { type: integer, default: 50 } }
+        - { name: offset, in: query, required: false, schema: { type: integer, default: 0 } }
+        - { name: after, in: query, required: false, schema: { type: integer }, description: Nur Nachrichten mit id > after (Live-Nachladen) }
+      responses:
+        '200':
+          description: Nachrichtenliste
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ChatMessage' }
+        '403': { description: Kein Teilnehmer und kein Admin der Org }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Teilnehmer ODER Admin-Bypass (admin/org_admin lesen jeden Raum der Org)"
+        # LUECKE: Bei anonymen Umfragen (anonymous=true) fehlt in votes zwar
+        # user_name, user_id/user_type jeder Stimme werden aber ausgeliefert —
+        # ueber die Teilnehmerliste namentlich aufloesbar (LUECKE 2 im Kopf).
+        hinweis: "Geloeschte Nachrichten kommen als Platzhalter (is_deleted=true) mit"
+    post:
+      tags: [Chat]
+      summary: Nachricht senden (Text oder Datei)
+      description: >
+        multipart/form-data mit optionalem Feld 'file' (verschluesselte
+        Ablage, Magic-Bytes-Pruefung) oder JSON mit content. client_id (UUID)
+        macht den Aufruf idempotent. reply_to wird gegen den Raum validiert.
+        Verteilt via WebSocket und Push an alle Teilnehmer.
+      parameters:
+        - { name: roomId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                content: { type: string, maxLength: 4000 }
+                message_type: { type: string, default: text }
+                reply_to: { type: integer }
+                client_id: { type: string, format: uuid }
+                file: { type: string, format: binary }
+      responses:
+        '200':
+          description: Gesendete Nachricht (bzw. bestehende bei client_id-Duplikat)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChatMessage' }
+        '400': { description: Weder Inhalt noch Datei / Datei unlesbar / Validierungsfehler }
+        '403': { description: Kein Teilnehmer und kein Admin der Org }
+        '415': { description: Dateityp per Magic Bytes nicht verifizierbar }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC, chatUpload.single, validateSendMessage, rateLimiters.chatMessageLimiter, rateLimiters.uploadLimiter]
+        org-scope: true
+        objekt-pruefung: "Teilnehmer ODER Admin-Bypass — admin/org_admin koennen in JEDEN Raum der Org schreiben (auch fremde Direktchats)"
+
+  /chat/rooms/{roomId}/mark-read:
+    post:
+      tags: [Chat]
+      summary: Raum als gelesen markieren
+      parameters:
+        - { name: roomId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: "Upsert von chat_read_status.last_read_at = NOW()" }
+        '403': { description: Kein Teilnehmer und kein Admin der Org }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Teilnehmer ODER Admin-Bypass"
+
+  /chat/rooms/{roomId}/export:
+    get:
+      tags: [Chat]
+      summary: Kompletten Chat-Verlauf exportieren (nur Leitung)
+      description: >
+        Gesamter Verlauf als Text (default) oder JSON, geloeschte Nachrichten
+        als Platzhalter. Bewusst NUR admin/org_admin (super_admin technisch
+        eingeschlossen) — nicht teamer, nicht konfi.
+      parameters:
+        - { name: roomId, in: path, required: true, schema: { type: integer } }
+        - { name: format, in: query, required: false, schema: { type: string, enum: [txt, json], default: txt } }
+      responses:
+        '200':
+          description: Download (Content-Disposition attachment)
+          content:
+            text/plain: { schema: { type: string } }
+            application/json: { schema: { type: object } }
+        '400': { description: Ungueltige Raum-ID }
+        '403': { description: Aufrufer ist nicht Leitung (admin/org_admin/super_admin) }
+        '404': { description: Raum nicht in eigener Org (bewusst 404 statt 403) }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, super_admin]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "type='admin' UND role_name in (admin, org_admin, super_admin); Raum org-gescopt"
+        hinweis: "Keine Teilnahme noetig — jeder Raum der Org exportierbar, auch fremde Direktchats"
+
+  /chat/messages/{messageId}:
+    delete:
+      tags: [Chat]
+      summary: Nachricht loeschen (Soft-Delete)
+      parameters:
+        - { name: messageId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Geloescht (deleted_at gesetzt); WebSocket-Event messageDeleted }
+        '403': { description: Weder eigene Nachricht noch Admin der Org }
+        '404': { description: Nachricht nicht gefunden }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Eigene Nachricht (user_id+user_type) ODER type='admin' in derselben Org (fremde Nachrichten org-weit)"
+        hinweis: "teamer/konfi nur eigene; admin/org_admin jede Nachricht der Org"
+
+  # ==========================================================================
+  # CHAT — Teilnehmerverwaltung
+  # ==========================================================================
+
+  /chat/rooms/{roomId}/participants:
+    get:
+      tags: [Chat]
+      summary: Teilnehmerliste eines Raums
+      parameters:
+        - { name: roomId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: Teilnehmer mit Name, Rolle, role_title, Jahrgang (nur Konfis)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    user_id: { type: integer }
+                    user_type: { type: string }
+                    joined_at: { type: string, format: date-time }
+                    name: { type: string }
+                    role_title: { type: [string, "null"] }
+                    role_name: { type: string }
+                    role_display_name: { type: string }
+                    jahrgang_id: { type: [integer, "null"] }
+                    jahrgang_name: { type: [string, "null"] }
+        '403': { description: Kein Teilnehmer und kein Admin der Org }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Teilnehmer ODER Admin-Bypass (admin/org_admin: jeder Raum der Org)"
+    post:
+      tags: [Chat]
+      summary: Teilnehmer zu Gruppenchat hinzufuegen (nur Admins)
+      parameters:
+        - { name: roomId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id]
+              properties:
+                user_id: { type: integer }
+      responses:
+        '201': { description: Hinzugefuegt (user_type serverseitig aus Rolle abgeleitet) }
+        '400': { description: user_id fehlt ODER Raum ist kein Gruppenchat }
+        '403': { description: Aufrufer ist kein Admin-Typ }
+        '404': { description: Raum oder Ziel-User nicht in eigener Org }
+        '409': { description: Bereits Teilnehmer }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "type='admin'; nur room.type='group'; Ziel-User org-gescopt"
+        hinweis: "teamer koennen keine Teilnehmer hinzufuegen (wohl aber Raeume mit Teilnehmern ANLEGEN, siehe POST /rooms)"
+
+  /chat/rooms/{roomId}/participants/{userId}/{userType}:
+    delete:
+      tags: [Chat]
+      summary: Teilnehmer aus Gruppenchat entfernen (nur Admins)
+      parameters:
+        - { name: roomId, in: path, required: true, schema: { type: integer } }
+        - { name: userId, in: path, required: true, schema: { type: integer } }
+        - { name: userType, in: path, required: true, schema: { type: string, enum: [admin, teamer, konfi] } }
+      responses:
+        '200': { description: Entfernt }
+        '400': { description: Raum ist kein Gruppenchat }
+        '403': { description: Aufrufer ist kein Admin-Typ }
+        '404': { description: Raum nicht in eigener Org ODER Teilnehmer nicht gefunden }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "type='admin'; nur room.type='group'"
+
+  /chat/rooms/{roomId}/leave:
+    delete:
+      tags: [Chat]
+      summary: Raum selbst verlassen (teamer/konfi)
+      description: >
+        Admins koennen nie verlassen; jahrgang- und direct-Raeume sind
+        generell nicht verlassbar; Event-Chats verlassen Konfis nur ueber
+        die Event-Abmeldung.
+      parameters:
+        - { name: roomId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Verlassen }
+        '400': { description: Raumtyp nicht verlassbar (jahrgang/direct) ODER Event-Chat als Konfi }
+        '403': { description: Admin-Typ darf nicht verlassen }
+        '404': { description: Raum nicht in eigener Org ODER kein Teilnehmer }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [teamer, konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Eigener chat_participants-Eintrag; admin/org_admin explizit 403"
+
+  # ==========================================================================
+  # CHAT — Dateien, Badge, Umfragen, Reaktionen
+  # ==========================================================================
+
+  /chat/files/{filename}:
+    get:
+      tags: [Chat]
+      summary: Chat-Datei abrufen (entschluesselt)
+      description: >
+        Liefert eine im Chat hochgeladene Datei. Auth per
+        Authorization-Header ODER ?token= (fuer Video-Elemente). Nur
+        Hex-Dateinamen; Path-Traversal-Schutz via basename.
+      security: []
+      parameters:
+        - { name: filename, in: path, required: true, schema: { type: string, pattern: "^[a-f0-9]+$" } }
+        - { name: token, in: query, required: false, schema: { type: string }, description: JWT-Fallback fuer Media-Tags }
+      responses:
+        '200': { description: "Dateiinhalt (Content-Type aus Original-Dateiname)", content: { application/octet-stream: { schema: { type: string, format: binary } } } }
+        '400': { description: Ungueltiger Dateiname }
+        '401': { description: Token fehlt oder ungueltig }
+        '403': { description: Kein Teilnehmer des Raums }
+        '404': { description: Datei nicht gefunden (auch bei fremder Org) }
+        '500': { description: Server-/Entschluesselungsfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: ["manuelle JWT-Pruefung (kein verifyTokenRBAC)"]
+        org-scope: true
+        objekt-pruefung: "Nachricht mit file_path muss in eigener Org liegen UND Aufrufer muss chat_participants-Eintrag im Raum haben (nur user_id, ohne user_type)"
+        # LUECKE: Token auch als Query-Parameter akzeptiert (Access-Logs/
+        # Referrer); kein Admin-Bypass (Admins koennen Nachrichten fremder
+        # Raeume lesen, deren Dateien aber nicht abrufen — Inkonsistenz);
+        # Mitgliedschafts-Check ohne user_type (unkritisch, user_id global
+        # eindeutig). Siehe LUECKE 3 im Kopf.
+
+  /chat/badge-update:
+    post:
+      tags: [Chat]
+      summary: Badge-Zahl neu berechnen und als Push senden (Background Refresh)
+      responses:
+        '200':
+          description: Ungelesen-Zaehler
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  badgeCount: { type: integer }
+                  message: { type: string }
+        '502': { description: Push-Dienst fehlgeschlagen }
+        '500': { description: Interner Serverfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: false
+        objekt-pruefung: "Nur eigene Daten (Zaehler ueber eigene chat_participants)"
+
+  /chat/rooms/{roomId}/polls:
+    post:
+      tags: [Chat-Umfragen]
+      summary: Umfrage in einem Raum erstellen (nur Admins)
+      description: >
+        Legt eine Poll-Nachricht an. exclusive_options (jede Option max. 1
+        Person) erzwingt Einzelauswahl. anonymous default true. Verteilung
+        via WebSocket und Push wie normale Nachrichten.
+      parameters:
+        - { name: roomId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question, options]
+              properties:
+                question: { type: string }
+                options: { type: array, minItems: 2, items: { type: string } }
+                multiple_choice: { type: boolean, default: false }
+                expires_in_hours: { type: number }
+                anonymous: { type: boolean, default: true }
+                exclusive_options: { type: boolean, default: false }
+      responses:
+        '201':
+          description: Erstellte Umfrage (id, message_id, options, votes=[])
+        '400': { description: Frage/Optionen fehlen oder ungueltig }
+        '403': { description: Aufrufer ist kein Admin-Typ }
+        '404': { description: Raum nicht in eigener Org }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, validateCreatePoll]
+        org-scope: true
+        objekt-pruefung: "type='admin'; Raum muss zur Org gehoeren (Teilnahme nicht noetig)"
+        hinweis: "teamer koennen keine Umfragen erstellen"
+
+  /chat/polls/{pollId}/vote:
+    post:
+      tags: [Chat-Umfragen]
+      summary: Abstimmen (per Poll-ID oder Message-ID)
+      description: >
+        Toggle-Semantik: erneutes Abstimmen auf dieselbe Option entfernt die
+        Stimme. Einzelauswahl ersetzt vorhandene Stimme. Bei
+        exclusive_options ist eine belegte Option gesperrt (409).
+      parameters:
+        - { name: pollId, in: path, required: true, schema: { type: integer }, description: Poll-ID; Fallback-Lookup per message_id }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [option_index]
+              properties:
+                option_index: { type: integer }
+      responses:
+        '200': { description: "Stimme gesetzt/entfernt (action: added|removed)" }
+        '400': { description: option_index fehlt/ungueltig ODER Umfrage abgelaufen }
+        '403': { description: Kein Teilnehmer des Raums }
+        '404': { description: Umfrage nicht gefunden }
+        '409': { description: Exklusive Option bereits vergeben }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "NUR Teilnehmer des Raums (hier KEIN Admin-Bypass — auch Admins muessen Teilnehmer sein)"
+
+  /chat/messages/{messageId}/vote:
+    post:
+      tags: [Chat-Umfragen]
+      summary: Abstimmen per Message-ID (Frontend-Kompatibilitaet)
+      description: >
+        Wie /polls/{pollId}/vote, aber Lookup nur ueber message_id und OHNE
+        Toggle-off bei Mehrfachauswahl (doppelte Stimme -> 400) und ohne
+        exclusive_options-Sperrlogik.
+      parameters:
+        - { name: messageId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [option_index]
+              properties:
+                option_index: { type: integer }
+      responses:
+        '200': { description: Stimme abgegeben }
+        '400': { description: option_index fehlt/ungueltig, Umfrage abgelaufen ODER bereits fuer Option gestimmt }
+        '403': { description: Kein Teilnehmer des Raums }
+        '404': { description: Keine Umfrage zu dieser Nachricht }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "NUR Teilnehmer des Raums (kein Admin-Bypass)"
+        hinweis: "Aeltere Schwester-Route ohne exclusive_options-Behandlung"
+
+  /chat/messages/{messageId}/reactions:
+    post:
+      tags: [Chat-Reaktionen]
+      summary: Reaktion setzen/entfernen (Toggle)
+      parameters:
+        - { name: messageId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [emoji]
+              properties:
+                emoji: { type: string, enum: [like, heart, laugh, wow, sad, pray] }
+      responses:
+        '200': { description: "action: added|removed" }
+        '400': { description: Emoji fehlt oder nicht in Whitelist }
+        '403': { description: Fremde Org ODER kein Teilnehmer }
+        '404': { description: Nachricht nicht gefunden }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Org-Check der Nachricht + Teilnehmer-Pflicht (kein Admin-Bypass beim SETZEN)"
+    get:
+      tags: [Chat-Reaktionen]
+      summary: Reaktionen einer Nachricht lesen
+      parameters:
+        - { name: messageId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: Reaktionsliste mit user_name
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Reaction' }
+        '403': { description: Fremde Org ODER kein Teilnehmer (Nicht-Admins) }
+        '404': { description: Nachricht nicht gefunden }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Org-Check; Teilnehmer-Pflicht nur fuer Nicht-Admins (admin/org_admin lesen org-weit)"
+
+  # ==========================================================================
+  # CHALLENGES — Teilnehmer-Endpunkte (Konfis UND Team je nach audience)
+  # ==========================================================================
+
+  /challenges/konfi:
+    get:
+      tags: [Challenges-Teilnehmer]
+      summary: Aktive Challenges, Archiv und eigene Abzeichen
+      description: >
+        Teilnehmer-Einstieg (trotz Pfadname auch fuer das Team). Nie
+        Entwuerfe, nie ungestartete. Scope: Konfi -> Challenges seines
+        Jahrgangs (nie 'nur_team'); teamer -> zugewiesene Jahrgaenge
+        ('konfis_und_team') + org-weite 'nur_team'; admin/org_admin -> alle
+        der Org mit Team-Beteiligung ('konfis_und_team', 'nur_team').
+      responses:
+        '200':
+          description: Gruppierte Challenge-Listen
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  active:
+                    type: array
+                    items: { $ref: '#/components/schemas/KonfiChallenge' }
+                  archive:
+                    type: array
+                    items: { $ref: '#/components/schemas/KonfiChallenge' }
+                  marks:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        challenge_id: { type: integer }
+                        badge_icon: { type: string }
+                        badge_name: { type: string }
+                        title: { type: string }
+        '403': { description: Rolle weder konfi noch Team (z.B. super_admin) }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [konfi, teamer, admin, org_admin]
+        middleware: [rbacVerifier]
+        org-scope: true
+        objekt-pruefung: "Jahrgangs-Scoping je Rolle (s. Beschreibung); super_admin explizit ausgeschlossen"
+
+  /challenges/konfi/{id}:
+    get:
+      tags: [Challenges-Teilnehmer]
+      summary: Challenge-Detail mit Galerie und eigenen Beitraegen
+      description: >
+        Galerie enthaelt NUR fremde oeffentliche Beitraege
+        (PUBLIC_SUBMISSION_SQL); bei anonymen Beitraegen sind display_name,
+        role_name, jahrgang_name serverseitig NULL. Eigene Beitraege immer,
+        inkl. Moderationsstatus. 'nur_team'-Challenges liefern fuer Konfis
+        404 (Existenz soll nicht durchsickern), ebenso Entwuerfe und noch
+        nicht gestartete Challenges.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: Detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  challenge: { $ref: '#/components/schemas/KonfiChallenge' }
+                  gallery:
+                    type: array
+                    items: { $ref: '#/components/schemas/GallerySubmission' }
+                  own_submissions:
+                    type: array
+                    items: { $ref: '#/components/schemas/Submission' }
+        '403': { description: Rolle ohne Zugriff ODER Jahrgang/Zuweisung passt nicht }
+        '404': { description: Nicht gefunden / Entwurf / nicht gestartet / nur_team fuer Konfi }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [konfi, teamer, admin, org_admin]
+        middleware: [rbacVerifier]
+        org-scope: true
+        objekt-pruefung: "participantMayAccess: konfi -> eigener Jahrgang zugeordnet; teamer -> zugewiesener Jahrgang oder 'nur_team'; admin/org_admin immer"
+        hinweis: "Anonymitaet wird serverseitig durchgesetzt (Name verlaesst das Backend nicht)"
+
+  /challenges/konfi/{id}/submissions:
+    post:
+      tags: [Challenges-Teilnehmer]
+      summary: Beitrag einreichen
+      description: >
+        multipart (Feld 'file') fuer photo/audio/video, JSON fuer text/link.
+        Nur bei Status 'active'. audience steuert, wer einreichen darf
+        (maySubmit): konfi bei 'konfis'/'konfis_und_team', Team bei
+        'konfis_und_team'/'nur_team'. konfi_consent nur bei
+        visibility='konfi_choice' (Default 'publish'). Ohne Moderation
+        Auto-Approve. Magic-Bytes-Pruefung der Datei; verschluesselte Ablage.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [media_type]
+              properties:
+                media_type: { type: string, enum: [text, photo, audio, video, link] }
+                text_content: { type: string }
+                link_url: { type: string, description: Pflicht bei media_type=link (http/https) }
+                konfi_consent: { type: string, enum: [publish, private, anonymous] }
+                file: { type: string, format: binary }
+      responses:
+        '201':
+          description: Erstellter Beitrag
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Submission' }
+        '400': { description: Ungueltige Medienart / Pflichtfeld fehlt / Consent ungueltig }
+        '403': { description: Kein Zugriff auf die Challenge ODER Rolle darf bei dieser audience nicht einreichen }
+        '404': { description: Challenge nicht gefunden oder Entwurf }
+        '409': { description: Challenge nicht aktiv ODER bereits eingereicht (allow_multiple=false) }
+        '415': { description: Dateityp nicht verifizierbar }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [konfi, teamer, admin, org_admin]
+        middleware: [rbacVerifier, challengeUpload.single, rateLimiters.uploadLimiter]
+        org-scope: true
+        objekt-pruefung: "participantMayAccess + maySubmit(role, audience); Aktivitaets- und Mehrfach-Check"
+        hinweis: "Push an Leitung immer; Abzeichen-Push an Einreicher bei erster Submission"
+
+  /challenges/konfi/submissions/{id}:
+    delete:
+      tags: [Challenges-Teilnehmer]
+      summary: Beitrag zurueckziehen — bewusst gesperrt
+      description: >
+        Antwortet IMMER 403, unabhaengig von Existenz und Eigentum
+        (Design-Entscheidung: eingereichte Beitraege sind verbindlich;
+        Ausblenden ist Sache der Leitung).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '403': { description: Immer — Route ist absichtlich deaktiviert }
+      x-berechtigung:
+        rollen: []
+        middleware: [rbacVerifier]
+        org-scope: false
+        objekt-pruefung: "Keine — pauschale 403 fuer alle"
+
+  /challenges/files/{filename}:
+    get:
+      tags: [Challenges-Teilnehmer]
+      summary: Challenge-Datei abrufen (entschluesselt)
+      description: >
+        Auth NUR per Authorization-Header (bewusst KEIN ?token=-Fallback).
+        Beruecksichtigt X-Active-Organization (Multi-Org) wie rbacVerifier.
+      parameters:
+        - { name: filename, in: path, required: true, schema: { type: string, pattern: "^[a-f0-9]+$" } }
+        - { name: X-Active-Organization, in: header, required: false, schema: { type: integer } }
+      responses:
+        '200': { description: Dateiinhalt, content: { application/octet-stream: { schema: { type: string, format: binary } } } }
+        '400': { description: Ungueltiger Dateiname }
+        '401': { description: Token fehlt/ungueltig oder User geloescht }
+        '403': { description: Zugriff verweigert (Sichtbarkeitsregeln) oder fremde aktive Org ohne Mitgliedschaft }
+        '404': { description: Datei nicht gefunden (auch org-fremd) }
+        '500': { description: Server-/Entschluesselungsfehler }
+      x-berechtigung:
+        rollen: [konfi, teamer, admin, org_admin]
+        middleware: ["manuelle JWT-Pruefung + eigener Org-/Rollen-Lookup (identisch zur rbacVerifier-Logik)"]
+        org-scope: true
+        objekt-pruefung: >-
+          Owner immer; admin/org_admin org-weit; teamer bei 'nur_team' org-weit,
+          sonst nur zugewiesene Jahrgaenge der Challenge; konfi nur oeffentliche
+          Beitraege (isSubmissionPublic) aus seinem Jahrgang und nie 'nur_team'
+
+  # ==========================================================================
+  # CHALLENGES — Leitungs-Endpunkte (org_admin / admin / teamer)
+  # ==========================================================================
+
+  /challenges/admin/authors:
+    get:
+      tags: [Challenges-Leitung]
+      summary: Moegliche Urheber:innen einer Challenge
+      description: >
+        Alle Rollen der Org inkl. Konfis (eine Challenge kann von einem
+        Konfi stammen). Teamer sehen nur Konfis ihrer zugewiesenen
+        Jahrgaenge; Team-Mitglieder sehen sie immer.
+      responses:
+        '200':
+          description: Liste (id, display_name, role_name), Konfis zuletzt
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: { type: integer }
+                    display_name: { type: string }
+                    role_name: { type: string, enum: [org_admin, admin, teamer, konfi] }
+        '403': { description: Rolle nicht org_admin/admin/teamer (requireTeamer) }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [rbacVerifier, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "Konfi-Eintraege auf zugewiesene Jahrgaenge des Teamers gefiltert"
+
+  /challenges/admin:
+    get:
+      tags: [Challenges-Leitung]
+      summary: Alle Challenges der Org (inkl. Entwuerfe) mit Zaehlern
+      description: >
+        Verwaltungsliste inkl. submission_count, pending_count, eigener
+        Teilnahme (has_badge/own_submission_count) und Jahrgangs-Zuordnung.
+        Teamer sehen nur Challenges ihrer zugewiesenen Jahrgaenge plus
+        org-weite 'nur_team'-Challenges; ohne Zuweisungen leere Liste.
+      responses:
+        '200':
+          description: Challenge-Liste mit status (abgeleitet) und locked (nach Start)
+        '403': { description: requireTeamer }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [rbacVerifier, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "Teamer: Jahrgangs-Filter via viewableJahrgangIds; org_admin/admin org-weit"
+    post:
+      tags: [Challenges-Leitung]
+      summary: Challenge anlegen (Entwurf oder geplant)
+      description: >
+        Defaults: audience 'konfis_und_team', visibility 'konfi_choice',
+        moderated true, allow_multiple true, is_draft true, allowed_media
+        [text, photo]. Bei 'nur_team' werden jahrgang_ids ignoriert/nicht
+        gespeichert. Teamer duerfen nur eigene (zugewiesene) Jahrgaenge
+        bespielen; Jahrgaenge und Urheber werden org-gescopt validiert.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, description, badge_name, starts_at, ends_at]
+              properties:
+                title: { type: string, maxLength: 200 }
+                description: { type: string }
+                challenge_type: { type: string, enum: [wahrnehmung, beitrag, praxis, frei], default: frei }
+                audience: { type: string, enum: [konfis, konfis_und_team, nur_team], default: konfis_und_team }
+                visibility: { type: string, enum: [public, konfi_choice, private], default: konfi_choice }
+                moderated: { type: boolean, default: true }
+                allowed_media: { type: array, minItems: 1, items: { type: string, enum: [text, photo, audio, video, link] } }
+                allow_multiple: { type: boolean, default: true }
+                badge_icon: { type: string, maxLength: 50, default: flag }
+                badge_name: { type: string, maxLength: 100 }
+                author_user_id: { type: [integer, "null"] }
+                author_freetext: { type: [string, "null"], maxLength: 200 }
+                starts_at: { type: string, format: date-time }
+                ends_at: { type: string, format: date-time }
+                is_draft: { type: boolean, default: true }
+                jahrgang_ids: { type: array, items: { type: integer } }
+      responses:
+        '201': { description: Erstellte Challenge inkl. abgeleitetem status }
+        '400': { description: Validierungsfehler / Ende vor Start / Urheber nicht gefunden }
+        '403': { description: requireTeamer ODER fremde Jahrgaenge ODER Teamer ohne Zugriff auf gewaehlten Jahrgang }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [rbacVerifier, requireTeamer, validateCreate]
+        org-scope: true
+        objekt-pruefung: "jahrgang_ids muessen zur Org UND (bei Teamern) zu den eigenen Zuweisungen gehoeren; author_user_id org-gescopt"
+
+  /challenges/admin/{id}:
+    put:
+      tags: [Challenges-Leitung]
+      summary: Challenge bearbeiten (Konsens-Felder nach Start eingefroren)
+      description: >
+        Vor Start: alles aenderbar. Nach Start (kein Draft, starts_at
+        erreicht) sind audience, visibility, moderated, starts_at und
+        allowed_media eingefroren (409 mit Klartext); auch challenge_type,
+        allow_multiple und is_draft werden dann nicht mehr uebernommen.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Wie POST /challenges/admin, alle Felder optional
+      responses:
+        '200': { description: Aktualisierte Challenge mit status und locked }
+        '400': { description: Validierungsfehler / Ende vor Start / Urheber nicht gefunden }
+        '403': { description: requireTeamer / leadershipMayAccess / fremde bzw. nicht zugewiesene Jahrgaenge }
+        '404': { description: Challenge nicht in eigener Org }
+        '409': { description: Versuch, nach Start eingefrorene Felder zu aendern }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [rbacVerifier, requireTeamer, validateUpdate]
+        org-scope: true
+        objekt-pruefung: "leadershipMayAccess: org_admin/admin immer; teamer nur zugewiesene Jahrgaenge bzw. 'nur_team' org-weit"
+    delete:
+      tags: [Challenges-Leitung]
+      summary: Challenge loeschen (gestartete nur mit force)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: force, in: query, required: false, schema: { type: string, enum: ["true", "false"] } }
+      responses:
+        '200': { description: Geloescht inkl. aller Beitraege und Dateien }
+        '403': { description: requireTeamer / leadershipMayAccess }
+        '404': { description: Challenge nicht in eigener Org }
+        '409': { description: Bereits gestartet/beendet und force fehlt }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [rbacVerifier, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "leadershipMayAccess (wie PUT)"
+
+  /challenges/admin/{id}/submissions:
+    get:
+      tags: [Challenges-Leitung]
+      summary: Alle Beitraege einer Challenge (Leitungs-Sicht, immer mit Namen)
+      description: >
+        Sammelansicht: ALLE Beitraege inkl. Konsens, Status, hidden_at und
+        Klarnamen — Anonymitaet gilt gegenueber der Gruppe, nicht gegenueber
+        der Leitung. is_public/is_anonymous machen transparent, wie der
+        Beitrag in der Galerie erscheint.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: Challenge + submissions[] (mit user_id, display_name, jahrgang_name, is_public, is_anonymous)
+        '403': { description: requireTeamer / leadershipMayAccess }
+        '404': { description: Challenge nicht in eigener Org }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [rbacVerifier, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "leadershipMayAccess (Teamer nur zugewiesene Jahrgaenge / 'nur_team')"
+
+  /challenges/admin/submissions/{id}/moderate:
+    put:
+      tags: [Challenges-Leitung]
+      summary: Beitrag moderieren (approve/hide/unhide/anonymize)
+      description: >
+        approve und unhide setzen 'approved' und raeumen hidden-Metadaten ab;
+        hide setzt 'hidden' (schlaegt jede Sichtbarkeit). anonymize ist eine
+        Einbahnstrasse publish->anonymous, nur bei visibility='konfi_choice';
+        'private' (staerkste Konfi-Zusage) und bereits anonyme Beitraege
+        liefern 409.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action: { type: string, enum: [approve, hide, unhide, anonymize] }
+      responses:
+        '200': { description: "Neuer Status (id, moderation_status, ggf. konfi_consent)" }
+        '400': { description: Ungueltige Aktion (Validator) }
+        '403': { description: requireTeamer / leadershipMayAccess }
+        '404': { description: Beitrag nicht in eigener Org }
+        '409': { description: anonymize unzulaessig (falsche visibility, private-Zusage, bereits anonym) }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [rbacVerifier, requireTeamer, validateModerate]
+        org-scope: true
+        objekt-pruefung: "Submission org-gescopt + leadershipMayAccess auf die zugehoerige Challenge"
+
+  /challenges/admin/{id}/export:
+    get:
+      tags: [Challenges-Leitung]
+      summary: Beitraege als Text exportieren (Liturgie/Playlist/Wand)
+      description: >
+        text/plain-Download. Strenger als die Sammelansicht, weil der Export
+        die Leitungssphaere verlaesst — konfi_choice: nur approved mit
+        publish/anonymous-Konsens ('private' NIE); public: nur approved;
+        private Challenge: alle nicht-ausgeblendeten (Export ist dort der
+        angekuendigte Rueckkanal). Anonyme Beitraege als "Anonym".
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Text-Datei (Content-Disposition attachment), content: { text/plain: { schema: { type: string } } } }
+        '403': { description: requireTeamer / leadershipMayAccess }
+        '404': { description: Challenge nicht in eigener Org }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [rbacVerifier, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "leadershipMayAccess; hidden-Beitraege und 'private'-Konsens (ausser bei privater Challenge) bleiben draussen"
+
+  # ==========================================================================
+  # NOTIFICATIONS
+  # ==========================================================================
+
+  /notifications/badge-counts:
+    get:
+      tags: [Notifications]
+      summary: Leichtgewichtige Badge-Zaehler fuer die Tab-Leiste
+      description: >
+        Chat-Ungelesen-Zaehler je Raum (Semantik identisch zu GET
+        /chat/rooms) plus Pending-Zaehler: pendingRequests/pendingEvents nur
+        fuer Admin-Typen; pendingChallenges fuer Admins org-weit, fuer
+        Teamer auf zugewiesene Jahrgaenge begrenzt, fuer Konfis 0.
+      responses:
+        '200':
+          description: Zaehler
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  chat:
+                    type: object
+                    properties:
+                      total: { type: integer }
+                      byRoom:
+                        type: object
+                        additionalProperties: { type: integer }
+                  pendingRequests: { type: integer }
+                  pendingEvents: { type: integer }
+                  pendingChallenges: { type: integer }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Nur eigene Raeume (chat_participants); Pending-Zaehler rollenabhaengig gefiltert"
+
+  /notifications/preferences:
+    get:
+      tags: [Notifications]
+      summary: Push-Master-Schalter lesen
+      responses:
+        '200':
+          description: push_enabled (Default true, wenn kein Datensatz)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  push_enabled: { type: boolean }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: false
+        objekt-pruefung: "Nur eigener User-Datensatz"
+    put:
+      tags: [Notifications]
+      summary: Push-Master-Schalter setzen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [push_enabled]
+              properties:
+                push_enabled: { type: boolean }
+      responses:
+        '200': { description: Gespeichert }
+        '400': { description: push_enabled kein Boolean }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: false
+        objekt-pruefung: "Nur eigener User-Datensatz"
+
+  /notifications/device-token:
+    post:
+      tags: [Notifications]
+      summary: Push-Token registrieren/aktualisieren
+      description: >
+        Upsert auf (user_id, platform, device_id). Ein Token existiert
+        global genau einmal: Vorkommen bei anderen Usern/Geraeten werden
+        vorher geloescht (Account-Wechsel, Neuinstallation).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, platform]
+              properties:
+                token: { type: string }
+                platform: { type: string, enum: [ios, android, web] }
+                device_id: { type: string, description: Optional, wird sonst generiert }
+      responses:
+        '200': { description: Gespeichert }
+        '400': { description: Token/Plattform fehlt oder ungueltig }
+        '409': { description: Unique-Konflikt }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC, validateDeviceToken]
+        org-scope: false
+        objekt-pruefung: "Token wird immer dem eigenen User zugeordnet"
+    delete:
+      tags: [Notifications]
+      summary: Push-Token entfernen (Logout)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [device_id, platform]
+              properties:
+                device_id: { type: string }
+                platform: { type: string }
+      responses:
+        '200': { description: Entfernt (changes = Anzahl geloeschter Zeilen) }
+        '400': { description: device_id/platform fehlt }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC, validateDeleteToken]
+        org-scope: true
+        objekt-pruefung: "Nur eigene Tokens der eigenen Org"
+
+  /notifications/test-push:
+    post:
+      tags: [Notifications]
+      summary: Test-Push an alle eigenen Geraete
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message: { type: string, default: Test Push Notification }
+      responses:
+        '200':
+          description: Versandergebnis (sent/errors/total) oder success=false ohne Tokens
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Nur eigene Tokens (user_id + Org-Filter)"

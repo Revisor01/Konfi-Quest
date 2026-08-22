@@ -126,6 +126,36 @@ describe('Chat Routes', () => {
   // ================================================================
   // POST /api/chat/direct
   // ================================================================
+  describe('POST /api/chat/rooms — Konfi-zu-Konfi', () => {
+    // POST /direct lehnt die Kombination korrekt ab; ueber POST /rooms mit
+    // type='direct' und einer Konfi in participants liess sie sich umgehen —
+    // geprueft wurde nur der Raum-Typ, nicht die Rolle der Teilnehmer
+    // (Audit 22.08.2026).
+    it('Konfi kann KEINEN Raum mit einer anderen Konfi anlegen', async () => {
+      const vorher = await db.query('SELECT COUNT(*)::int AS c FROM chat_rooms');
+
+      const res = await request(app)
+        .post('/api/chat/rooms')
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({ type: 'direct', participants: [USERS.konfi2.id] });
+
+      expect(res.status).toBe(403);
+
+      // Kein verwaister Raum zurueckgeblieben
+      const nachher = await db.query('SELECT COUNT(*)::int AS c FROM chat_rooms');
+      expect(nachher.rows[0].c).toBe(vorher.rows[0].c);
+    });
+
+    it('Konfi darf weiterhin einen Raum mit dem Team anlegen', async () => {
+      const res = await request(app)
+        .post('/api/chat/rooms')
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({ type: 'direct', participants: [USERS.admin1.id] });
+
+      expect([200, 201]).toContain(res.status);
+    });
+  });
+
   describe('POST /api/chat/direct', () => {
     it('Konfi1 erstellt Direct-Chat mit Admin1 -> 200', async () => {
       const res = await request(app)

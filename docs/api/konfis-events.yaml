@@ -1,0 +1,1291 @@
+# =====================================================================
+# Konfi Quest API - OpenAPI 3.1 - BLOCK 2 von 3
+# Dokumentierte Dateien (Stand main, 22.08.2026, am Code verifiziert):
+#   backend/routes/konfi.js            -> Prefix /api/konfi            (24 Routen)
+#   backend/routes/events.js           -> Prefix /api/events           (21 Routen)
+#   backend/routes/konfi-management.js -> Prefix /api/admin/konfis     (16 Routen)
+#   backend/routes/activities.js       -> Prefix /api/admin/activities (10 Routen)
+#
+# Rollen: super_admin, org_admin, admin, teamer, konfi
+# Middleware (backend/middleware/rbac.js):
+#   verifyTokenRBAC  = JWT pruefen, User inkl. aktiver Organisation (Header
+#                      X-Active-Organization) und assigned_jahrgaenge laden.
+#                      req.user.type: konfi | teamer | admin (admin = alles andere,
+#                      auch super_admin!)
+#   requireAdmin     = requireRole('org_admin', 'admin')
+#   requireTeamer    = requireRole('org_admin', 'admin', 'teamer')
+#
+# =====================================================================
+# SCHWERPUNKT-ANALYSE (alle Aussagen am Code verifiziert)
+# =====================================================================
+#
+# 1. WELCHE DATEN SIEHT EIN KONFI VON ANDEREN KONFIS?
+#    - GET /api/konfi/dashboard: Top-3-Ranking des eigenen Jahrgangs. Die
+#      Response enthaelt pro Rang id, initials UND den VOLLEN display_name
+#      samt exakter Punktzahl (Spread `...r` uebernimmt display_name).
+#      # LÜCKE (Datenminimierung): Das Frontend zeigt nur Initialen, die API
+#      liefert aber Klarnamen + Punkte der drei Punktbesten an jeden Konfi
+#      des Jahrgangs.
+#    - GET /api/konfi/events/:id/participants: bewusst anonymisiert zu
+#      "Vorname N.", Teamer werden herausgefiltert, Organisation wird geprueft
+#      (Fix 22.08.2026). KEIN Jahrgang-Check: ein Konfi kann die anonymisierte
+#      Teilnehmerliste JEDES Events der eigenen Org abrufen (auch fremder
+#      Jahrgaenge). Nur Hinweis, da anonymisiert.
+#    - GET /api/events/:id: fuer Konfis werden qr_token entfernt sowie
+#      participants und unregistrations geleert (Fix 22.08.2026, dokumentiert).
+#    - GET /api/events (Liste): liefert nur Zaehler (registered_count etc.),
+#      keine Namen anderer Konfis - ABER siehe LÜCKE qr_token unten.
+#    - rank_in_jahrgang / total_in_jahrgang (dashboard, profile): nur Aggregat.
+#    - Alle uebrigen /api/konfi-Routen liefern ausschliesslich eigene Daten
+#      (WHERE user_id = req.user.id).
+#
+# 2. TEAMER-ZUGRIFF (assigned_jahrgaenge)
+#    Jahrgangs-Beschraenkung GREIFT bei:
+#    - GET /api/admin/konfis (Liste): nur can_view-Jahrgaenge; keine Zuweisung
+#      -> leere Liste. ACHTUNG: Der Filter greift fuer ALLE Rollen ausser
+#      org_admin/super_admin, also auch fuer Rolle "admin" - ein admin ohne
+#      Jahrgangs-Zuweisungen sieht hier NICHTS (Abweichung vom sonstigen
+#      Muster, wo admin org-weit sieht).
+#    - POST /api/admin/activities/assign-activity: Teamer nur fuer Konfis in
+#      can_view-Jahrgaengen (403 sonst).
+#    - GET /api/events (Liste): Teamer sieht jahrgangs-gebundene Events nur
+#      fuer zugewiesene Jahrgaenge (+ allgemeine + teamer_only/teamer_needed).
+#      # LÜCKE (klein): Der Filter greift nur bei assigned_jahrgaenge.length > 0.
+#      Ein Teamer OHNE jede Zuweisung sieht die komplette Event-Liste der Org.
+#    Jahrgangs-Beschraenkung GREIFT NICHT (nur Org-Scope) bei:
+#    - # LÜCKE: GET /api/admin/konfis/:id - Teamer erhaelt das VOLLE Detail-
+#      Profil jedes Konfis der Org (Punkte, Aktivitaeten, Bonuspunkte,
+#      Konfispruch, Konfirmationstermin), auch ausserhalb der eigenen
+#      Jahrgaenge. Die Listen-Route filtert, die Detail-Route nicht.
+#    - # LÜCKE: GET /api/admin/konfis/:id/event-points und
+#      GET /api/admin/konfis/:id/badges - gleiche Klasse, kein Jahrgang-Check.
+#    - # LÜCKE: POST /api/admin/konfis/:id/bonus-points - ein Teamer kann
+#      Konfis JEDES Jahrgangs der Org Bonuspunkte geben. Inkonsistent zu
+#      assign-activity, das den Jahrgang prueft.
+#    - GET /api/events/:id (Detail): Teamer sieht Teilnehmerliste (Klarnamen,
+#      Anwesenheit, Opt-out-Gruende) und Abmeldungen ALLER Events der Org,
+#      auch solcher, die die Listen-Route fuer ihn ausblendet. Ebenso alle
+#      Teilnehmer-/Anwesenheits-/Buchungs-Verwaltungsrouten (requireTeamer,
+#      nur Org-Scope).
+#    - GET /api/admin/konfis/teamer: alle Teamer der Org (unkritisch).
+#
+# 3. WER DARF PUNKTE VERGEBEN UND ENTZIEHEN? (vollstaendige Liste)
+#    VERGEBEN:
+#    a) POST /api/admin/activities/assign-activity
+#       org_admin, admin, teamer (Teamer nur eigene can_view-Jahrgaenge).
+#    b) PUT /api/admin/activities/requests/:id mit status=approved
+#       org_admin, admin (Antrag genehmigen -> user_activities + Punkte).
+#    c) POST /api/admin/konfis/:id/activities
+#       org_admin, admin (Aktivitaet direkt zuweisen).
+#    d) POST /api/admin/konfis/:id/bonus-points
+#       org_admin, admin, teamer (OHNE Jahrgang-Check, siehe LÜCKE oben).
+#    e) PUT /api/events/:id/participants/:participantId/attendance
+#       (attendance_status=present) org_admin, admin, teamer -> event_points.
+#    f) PUT /api/events/:id/participants/attendance-all
+#       org_admin, admin, teamer (Bulk-Verbuchung aller Angemeldeten).
+#    g) POST /api/events/qr-checkin - der KONFI SELBST via gueltigem QR-Token
+#       im Check-in-Zeitfenster (einzige Selbst-Vergabe; Teamer erhalten keine
+#       Punkte).
+#    ENTZIEHEN:
+#    h) DELETE /api/admin/konfis/:id/activities/:activityId  org_admin, admin.
+#    i) DELETE /api/admin/konfis/:id/bonus-points/:bonusId   org_admin, admin.
+#    j) PUT /api/admin/activities/requests/:id/reset         org_admin, admin
+#       (Reset eines genehmigten Antrags zieht die Punkte zurueck).
+#    k) PUT .../attendance (attendance_status=absent)        org_admin, admin, teamer.
+#    l) PUT /api/events/:id/participants/:participantId/status (-> waitlist)
+#       org_admin, admin, teamer (Degradierung loescht event_points).
+#    m) DELETE /api/events/:id/bookings/:bookingId           org_admin, admin, teamer
+#       (war der Konfi 'present', werden die Event-Punkte zurueckgenommen).
+#    n) DELETE /api/events/:id/book - Konfi/Teamer selbst; war der Konfi
+#       'present', werden die eigenen Event-Punkte zurueckgenommen.
+#    Loeschen eines Konfis (DELETE /api/admin/konfis/:id, org_admin/admin)
+#    entfernt kaskadiert alle Punkte.
+#
+# 4. FOTOS (Nachweisfotos zu Aktivitaets-Antraegen)
+#    - Upload: POST /api/konfi/upload-photo (konfi ODER teamer). Magic-Bytes-
+#      Pruefung (nur echte Bilder), AES-256-GCM-verschluesselt at-rest,
+#      zufaelliger 64-Hex-Dateiname. uploads/ wird NICHT statisch ausgeliefert
+#      - Abruf ausschliesslich ueber die zwei geschuetzten Routen unten.
+#    - GET /api/konfi/activity-requests/:id/photo: Eigentuemer (konfi/teamer)
+#      sieht das eigene Foto NUR solange der Antrag 'pending' ist; danach 403.
+#      req.user.type==='admin' (org_admin/admin) sieht es immer. Org-Scope
+#      ueber activity_requests.organization_id.
+#    - GET /api/admin/activities/requests/:id/photo: NUR admin/org_admin
+#      (explizite Rollenpruefung, Teamer 403), Org-Scope, statusunabhaengig.
+#      Foto-Referenz bleibt nach Genehmigung bewusst erhalten (Duplikats-
+#      Erkennung), Loeschung manuell per DELETE .../photo.
+#    - DELETE /api/admin/activities/requests/:id/photo: admin/org_admin.
+#    -> Konfis koennen NIE Fotos anderer Konfis abrufen (user_id-Check).
+#       Teamer koennen ausschliesslich ihre EIGENEN Antragsfotos sehen.
+#
+# NEUE LÜCKEN IN DIESEM BLOCK (zusammengefasst):
+#   L1  GET /api/events (Liste) liefert e.* INKLUSIVE qr_token an ALLE Rollen,
+#       auch Konfis. Damit kann sich ein angemeldeter Konfi per
+#       POST /api/events/qr-checkin aus der Ferne als anwesend eintragen und
+#       Punkte gutschreiben - der Fix an GET /events/:id ist damit umgehbar.
+#       (Markierung an der Route unten.)
+#   L2  GET /api/admin/konfis/:id (+ /event-points, /badges): Teamer sieht
+#       Konfis ausserhalb der zugewiesenen Jahrgaenge im Detail.
+#   L3  POST /api/admin/konfis/:id/bonus-points: Teamer ohne Jahrgang-Check.
+#   L4  GET /api/konfi/dashboard: Klarnamen + Punkte der Top 3 an alle Konfis.
+#   L5  GET /api/events: Teamer ohne jede Jahrgangs-Zuweisung sieht alle
+#       Events (Filter greift nur bei vorhandenen Zuweisungen).
+# =====================================================================
+openapi: 3.1.0
+info:
+  title: Konfi Quest API - Konfis & Events (Block 2)
+  version: "1.0.0"
+  description: >
+    Teil 2 der API-Dokumentation: Konfi-Selbstbedienung (/api/konfi),
+    Events (/api/events), Konfi-Verwaltung (/api/admin/konfis) und
+    Aktivitaeten/Antraege (/api/admin/activities). Berechtigungen sind je
+    Route in der Erweiterung x-berechtigung dokumentiert.
+servers:
+  - url: https://konfi-quest.de
+security:
+  - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        JWT im Authorization-Header. Optional Header X-Active-Organization
+        (Multi-Org): schaltet die aktive Organisation um, sofern der User dort
+        Mitglied ist (sonst 403).
+  parameters:
+    pathId:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+    Message:
+      type: object
+      properties:
+        message: { type: string }
+  responses:
+    Unauthorized:
+      description: Kein/ungueltiges/abgelaufenes Token, inaktiver Account oder inaktive Organisation
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Forbidden:
+      description: Rolle nicht erlaubt oder kein Zugriff auf das Objekt
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    NotFound:
+      description: Objekt nicht gefunden (in der aktiven Organisation)
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    ServerError:
+      description: Datenbank-/Serverfehler
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+
+paths:
+  # ===================================================================
+  # backend/routes/konfi.js  (Prefix /api/konfi)
+  # Alle Routen: verifyTokenRBAC + Inline-Check req.user.type === 'konfi'
+  # (Ausnahme upload-photo: konfi ODER teamer). Immer nur EIGENE Daten.
+  # ===================================================================
+  /api/konfi/dashboard:
+    get:
+      summary: Konfi-Dashboard (eigene Punkte, Level, Ranking, Badges, Termine)
+      description: >
+        Liefert das komplette Dashboard des eingeloggten Konfis: Stammdaten,
+        Punkte, Level-Fortschritt, Konfirmationstermin (aus gebuchtem
+        is_konfirmation-Event), Dashboard-Konfiguration der Org, Top-3-Ranking
+        des Jahrgangs, letzte Badges und Events, Wrapped-Verfuegbarkeit.
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "nur eigene Daten (user_id = Token); Ranking aggregiert ueber den eigenen Jahrgang"
+        hinweis: >
+          # LÜCKE L4: ranking[] enthaelt display_name (Klarname) und exakte
+          Punktzahl der drei Punktbesten des Jahrgangs - zusaetzlich zu den
+          im Frontend genutzten Initialen.
+      responses:
+        "200":
+          description: Dashboard-Daten
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  konfi: { type: object, description: "id, display_name, Punkte, Jahrgang, Level-Felder, confirmation_location/-event_date" }
+                  point_config: { type: object, description: "gottesdienst_enabled, gemeinde_enabled, target_*" }
+                  dashboard_config: { type: object, description: "show_*-Flags, section_order" }
+                  recent_badges: { type: array, items: { type: object } }
+                  badge_count: { type: integer }
+                  recent_events: { type: array, items: { type: object } }
+                  event_count: { type: integer }
+                  ranking:
+                    type: array
+                    description: Top 3 des Jahrgangs (id, display_name, points, initials)
+                    items: { type: object }
+                  total_points: { type: integer }
+                  rank_in_jahrgang: { type: [integer, "null"] }
+                  total_in_jahrgang: { type: [integer, "null"] }
+                  days_to_confirmation: { type: [integer, "null"] }
+                  confirmation_date: { type: [string, "null"] }
+                  has_wrapped: { type: boolean }
+                  konfspruch_visible: { type: boolean }
+                  level_info: { type: object, description: "current_level, next_level, progress_percentage, points_to_next_level, all_levels" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/konfi/profile:
+    get:
+      summary: Eigenes Konfi-Profil
+      description: >
+        Profil des eingeloggten Konfis mit Punkten (inkl. Bonus-Summe),
+        Statistiken (Badges, Aktivitaeten, Events, offene Antraege), Rang im
+        Jahrgang, Konfirmationstermin/-ort und aufgeloestem Konfispruch.
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "nur eigene Daten"
+      responses:
+        "200":
+          description: Profil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: integer }
+                  display_name: { type: string }
+                  email: { type: [string, "null"] }
+                  username: { type: string }
+                  jahrgang_name: { type: string }
+                  konfspruch: { type: [object, "null"], description: "source: liste|freitext, text, reference" }
+                  total_points: { type: integer }
+                  gottesdienst_points: { type: integer }
+                  gemeinde_points: { type: integer }
+                  bonus_points: { type: integer }
+                  badge_count: { type: integer }
+                  activity_count: { type: integer }
+                  event_count: { type: integer }
+                  pending_requests: { type: integer }
+                  rank_in_jahrgang: { type: [integer, "null"] }
+                  total_in_jahrgang: { type: [integer, "null"] }
+                  confirmation_date: { type: [string, "null"] }
+                  confirmation_location: { type: [string, "null"] }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+    patch:
+      summary: Eigenen Konfispruch setzen (Listen-Wahl oder Freitext)
+      description: >
+        Setzt den Konfispruch: entweder konfspruch_id + translation
+        (luther2017 | bigs | gute_nachricht | elberfelder) aus der kuratierten
+        Liste ODER konfspruch_freitext + konfspruch_freitext_referenz
+        (Pflicht, max 100 Zeichen; Freitext max 1000). Genau eine Quelle aktiv.
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "nur eigenes Profil (WHERE user_id = req.user.id); Spruch muss org-sichtbar und aktiv sein"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                konfspruch_id: { type: integer }
+                translation: { type: string, enum: [luther2017, bigs, gute_nachricht, elberfelder] }
+                konfspruch_freitext: { type: string, maxLength: 1000 }
+                konfspruch_freitext_referenz: { type: string, maxLength: 100 }
+      responses:
+        "200":
+          description: "success: true, konfspruch (source, id/text, translation/reference)"
+        "400": { description: Ungueltige Kombination, leerer Text, fehlende Referenz oder zu lang }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { description: Konfispruch nicht gefunden (Listen-Wahl) }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/konfi/points-history:
+    get:
+      summary: Eigene Punkte-Historie (Aktivitaeten, Bonus, Events)
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "nur eigene Daten"
+      responses:
+        "200":
+          description: history[] (id, title, points, category, date, comment, source_type activity|bonus|event) + totals {gottesdienst, gemeinde, total}
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/konfi/requests:
+    get:
+      summary: Eigene Aktivitaets-Antraege auflisten
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "nur eigene Antraege (user_id = Token)"
+      responses:
+        "200": { description: "Array von Antraegen (ar.* + activity_name, activity_points, activity_type)" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+    post:
+      summary: Neuen Aktivitaets-Antrag einreichen
+      description: >
+        Legt einen Antrag (status pending) an. Idempotent ueber optionale
+        client_id (UUID): existiert der Antrag bereits, kommt 200 mit dem
+        bestehenden Datensatz. Benachrichtigt Admins (Notification + Push).
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC, validateCreateRequest]
+        org-scope: true
+        objekt-pruefung: "Aktivitaet muss zur eigenen Org gehoeren (404 sonst)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [activity_id, requested_date]
+              properties:
+                activity_id: { type: integer }
+                requested_date: { type: string, format: date }
+                description: { type: string, description: "Kommentar (Spalte comment)" }
+                photo_filename: { type: string, description: "Dateiname aus POST /api/konfi/upload-photo" }
+                client_id: { type: string, format: uuid }
+      responses:
+        "200": { description: Bereits vorhandener Antrag (Idempotenz ueber client_id) }
+        "201": { description: "id + message" }
+        "400": { description: Validierungsfehler }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { description: Aktivitaet nicht gefunden }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/konfi/requests/{id}:
+    delete:
+      summary: Eigenen offenen Antrag loeschen
+      description: Nur Antraege mit status pending; zugehoeriges Nachweisfoto wird mitgeloescht.
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "nur eigener Antrag (id + user_id + organization_id)"
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      responses:
+        "200": { description: Geloescht }
+        "400": { description: Antrag nicht mehr pending }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/konfi/upload-photo:
+    post:
+      summary: Nachweisfoto fuer Antrag hochladen (verschluesselt at-rest)
+      description: >
+        multipart/form-data, Feld "photo". Magic-Bytes-Pruefung (nur echte
+        Bilder, sonst 415), AES-256-GCM-Verschluesselung, zufaelliger
+        64-Hex-Dateiname wird zurueckgegeben (fuer POST /api/konfi/requests).
+      x-berechtigung:
+        rollen: [konfi, teamer]
+        middleware: [verifyTokenRBAC, "multer requestUpload.single('photo')"]
+        org-scope: false
+        objekt-pruefung: "keine (Datei ist noch keinem Antrag zugeordnet)"
+        hinweis: "Einzige /api/konfi-Route, die auch Teamern offensteht (Teamer-Nachweise)."
+      responses:
+        "200": { description: "filename (64 Hex) + message" }
+        "400": { description: Kein Foto im Request }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "415": { description: Datei ist kein Bild (Magic-Bytes) }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/konfi/activity-requests/{id}/photo:
+    get:
+      summary: Nachweisfoto eines Antrags abrufen (Eigentuemer/Admin)
+      description: Liefert das entschluesselte Bild (image/jpeg).
+      x-berechtigung:
+        rollen: [konfi, teamer, admin, org_admin]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: >
+          Konfi/Teamer nur den EIGENEN Antrag (user_id-Vergleich) und nur
+          solange status='pending' (danach 403); req.user.type==='admin'
+          (org_admin/admin) sieht alle Fotos der Org statusunabhaengig.
+        hinweis: "Antrag wird org-gescopt geladen; fremde Org -> 404."
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      responses:
+        "200": { description: Bild (image/jpeg), content: { image/jpeg: {} } }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { description: Fremder Antrag oder Antrag bereits bearbeitet (Nicht-Admin) }
+        "404": { description: Antrag/Foto/Datei nicht gefunden }
+        "500": { description: Entschluesselung fehlgeschlagen / Serverfehler }
+
+  /api/konfi/activities:
+    get:
+      summary: Beantragbare Aktivitaeten auflisten
+      description: >
+        Aktivitaeten der Org mit target_role konfi (oder NULL), gefiltert auf
+        die im Jahrgang aktivierten Punkt-Typen.
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "keine personenbezogenen Daten"
+      responses:
+        "200": { description: "Array (id, name, points, type, category_names)" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/konfi/badges:
+    get:
+      summary: Eigene Badges mit Fortschritt
+      description: Gemeinsame Berechnung mit Admin-Sicht (utils/konfiBadgeProgress.js).
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "nur eigene Daten"
+      responses:
+        "200": { description: Badge-Liste mit earned/progress }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/konfi/badges/stats:
+    get:
+      summary: Eigene Badge-Statistik (total/earned)
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "nur eigene Daten"
+      responses:
+        "200": { description: "total_badges, earned_badges" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/konfi/badges/mark-seen:
+    post:
+      summary: Eigene Badges als gesehen markieren
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "nur eigene user_badges"
+      responses:
+        "200": { description: "success: true" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/konfi/events:
+    get:
+      summary: Events des eigenen Jahrgangs (Konfi-Sicht)
+      description: >
+        Events, die dem Jahrgang des Konfis zugewiesen sind, ohne teamer_only;
+        abgesagte nur, wenn der Konfi gebucht war. Standard-Datumsfenster:
+        letzte 12 Monate + Zukunft (?all=true fuer alles). Enthaelt eigene
+        Buchung (booking_status, attendance_status, Timeslot,
+        waitlist_position) und Konfi-Zaehler (Teamer-Kontingent getrennt).
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "nur Events des eigenen Jahrgangs; Konfi ohne Jahrgang -> leere Liste"
+        hinweis: "Response enthaelt e.* - auch qr_token ist hier enthalten (gleiche Klasse wie LÜCKE L1 in /api/events)."
+      parameters:
+        - name: all
+          in: query
+          required: false
+          schema: { type: string, enum: ["true"] }
+          description: Gesamte Historie statt 12-Monats-Fenster
+      responses:
+        "200": { description: "Array von Events (e.*, registered_count, waitlist_count, teamer_count, registration_status, is_registered, can_register, waitlist_position, categories[])" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/konfi/events/{id}/status:
+    get:
+      summary: Eigener Anmeldestatus fuer ein Event
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Event org-gescopt; Buchungsdaten nur eigene; kein Jahrgang-Check (nur Zaehler)"
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      responses:
+        "200": { description: "is_registered, registration_status, can_register, event_status, confirmed_count, waitlist_count, waitlist_position, max_participants, waitlist_enabled" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/konfi/events/{id}/participants:
+    get:
+      summary: Anonymisierte Teilnehmerliste eines Events (Konfi-Sicht)
+      description: >
+        Bestaetigte Teilnehmer als "Vorname N." (anonymisiert), Teamer werden
+        herausgefiltert. Organisation wird geprueft (Fix 22.08.2026).
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Event muss zur eigenen Org gehoeren; Namen anonymisiert"
+        hinweis: "Kein Jahrgang-Check - anonymisierte Listen beliebiger Org-Events abrufbar (nur Hinweis)."
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      responses:
+        "200": { description: "Array {id, display_name: 'Vorname N.'}" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/konfi/events/{id}/timeslots:
+    get:
+      summary: Zeitslots eines Events (Konfi-Sicht)
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Event org-gescopt; nur Slot-Daten + Zaehler"
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      responses:
+        "200": { description: "Array von Timeslots (et.*, registered_count, waitlist_count); leer wenn has_timeslots=false" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/konfi/events/{id}/register:
+    post:
+      summary: Fuer Event anmelden (primaere Konfi-Buchungsroute)
+      description: >
+        Transaktional (FOR UPDATE). Prueft Doppelbuchung (409),
+        Konfirmations-Sperre (nur EIN Konfirmationstermin, 409),
+        Registrierungsfenster, Timeslot-Pflicht und Kapazitaet (Konfi- und
+        Teamer-Kontingent getrennt). Ergebnis confirmed oder waitlist.
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "bucht nur sich selbst; Event + Timeslot org-gescopt"
+        hinweis: "Kein Jahrgang-Check - Konfi kann sich per API auch fuer Events fremder Jahrgaenge der Org anmelden (nur Hinweis)."
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                timeslot_id: { type: integer, description: Pflicht bei Timeslot-Events }
+      responses:
+        "200": { description: "message, registration_id, status (confirmed|waitlist), timeslot_id" }
+        "400": { description: Anmeldefenster zu, Slot fehlt/voll ohne Warteliste }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { description: Event/Zeitslot nicht gefunden }
+        "409": { description: Bereits angemeldet oder bereits ein Konfirmationstermin gebucht }
+        "500": { $ref: '#/components/responses/ServerError' }
+    delete:
+      summary: Von Event abmelden (bis 2 Tage vorher)
+      description: >
+        Loescht die eigene Buchung (Pflicht-Events nur per Opt-out, 400),
+        protokolliert die Abmeldung (event_unregistrations, optionaler
+        reason), laesst bei freiem bestaetigtem Platz von der
+        Konfi-Warteliste nachruecken und benachrichtigt Admins.
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "nur eigene Buchung"
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string, description: Optionaler Abmeldegrund }
+      responses:
+        "200": { description: Abmeldung erfolgreich }
+        "400": { description: Pflicht-Event, nicht angemeldet oder Frist (2 Tage) verstrichen }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/konfi/events/{id}/opt-out:
+    post:
+      summary: Von Pflicht-Event abmelden (Opt-out mit Begruendung)
+      description: Status confirmed -> opted_out. Begruendung min. 5 Zeichen. Nur zukuenftige Pflicht-Events.
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "nur eigene Buchung; Event org-gescopt"
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, minLength: 5 }
+      responses:
+        "200": { description: Abmeldung erfolgreich }
+        "400": { description: Begruendung zu kurz, kein Pflicht-Event, Event vorbei oder keine aktive Anmeldung }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/konfi/events/{id}/opt-in:
+    post:
+      summary: Opt-out bei Pflicht-Event rueckgaengig machen
+      description: Status opted_out -> confirmed (Begruendung bleibt gespeichert).
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "nur eigene Buchung; Event org-gescopt"
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      responses:
+        "200": { description: Wieder angemeldet }
+        "400": { description: Kein Pflicht-Event, Event vorbei oder kein Opt-out vorhanden }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/konfi/tageslosung:
+    get:
+      summary: Tageslosung in der eigenen Bibeluebersetzung
+      description: Mit DB-Cache und mehrstufigem Fallback (letzte gecachte Losung, statischer Vers).
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: false
+        objekt-pruefung: "liest nur eigene Uebersetzungs-Praeferenz"
+      responses:
+        "200": { description: "success, data (losung, lehrtext, translation), ggf. fallback: true" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+
+  /api/konfi/bible-translation:
+    put:
+      summary: Bibeluebersetzung fuer Tageslosung setzen
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC, validateBibleTranslation]
+        org-scope: false
+        objekt-pruefung: "nur eigenes Profil"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [translation]
+              properties:
+                translation: { type: string, enum: [LUT, ELB, GNB, BIGS, NIV, LSG, RVR60] }
+      responses:
+        "200": { description: "success, translation" }
+        "400": { description: Ungueltige Uebersetzung }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/konfi/konfsprueche:
+    get:
+      summary: Kuratierte Konfsprueche auflisten (org-gefiltert)
+      description: Aktive Sprueche (global oder org-eigen) mit allen 4 Uebersetzungen (fehlende als leerer String).
+      x-berechtigung:
+        rollen: [konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "keine personenbezogenen Daten"
+      responses:
+        "200": { description: "Array (id, reference, book, chapter, verse, uebersetzungen{luther2017,bigs,gute_nachricht,elberfelder})" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  # ===================================================================
+  # backend/routes/events.js  (Prefix /api/events)
+  # Schreibende Verwaltungs-Routen: requireTeamer (org_admin, admin, teamer).
+  # Lese-/Buchungsrouten: nur rbacVerifier (alle Rollen, inkl. Konfi).
+  # ===================================================================
+  /api/events:
+    get:
+      summary: Alle Events der Organisation (rollenabhaengig gefiltert)
+      description: >
+        Liefert Events der aktiven Org mit Zaehlern (Konfi- und Teamer-Kontingent
+        getrennt), Kategorien, Jahrgaengen, registration_status und eigener
+        Buchung (is_registered, booking_status, attendance_status).
+        Datumsfenster: letzte 12 Monate + Zukunft (?all=true fuer alles).
+        Nachgelagerte Filter: Teamer mit Jahrgangs-Zuweisungen sehen
+        jahrgangs-gebundene Events nur fuer can_view-Jahrgaenge (allgemeine,
+        teamer_only- und teamer_needed-Events immer); Konfis sehen keine
+        teamer_only-Events.
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Teamer: Jahrgangs-Filter (nur wenn Zuweisungen vorhanden); Konfi: teamer_only ausgeblendet"
+        hinweis: >
+          # LÜCKE L1: Die Response uebernimmt e.* UNGEFILTERT - inklusive
+          qr_token. Ein Konfi erhaelt damit den Check-in-Token jedes Events
+          und kann sich via POST /api/events/qr-checkin aus der Ferne als
+          anwesend eintragen (Punkte!). Der qr_token-Filter existiert nur in
+          GET /api/events/:id.
+          # LÜCKE L5: Teamer OHNE jede Jahrgangs-Zuweisung wird nicht
+          gefiltert und sieht alle Events der Org.
+      parameters:
+        - name: all
+          in: query
+          required: false
+          schema: { type: string, enum: ["true"] }
+      responses:
+        "200": { description: "Array von Events (e.* inkl. qr_token, Zaehler, categories[], jahrgaenge[], registration_status, is_registered, booking_status, attendance_status, material_count, pending_bookings_count)" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "500": { $ref: '#/components/responses/ServerError' }
+    post:
+      summary: Event erstellen
+      description: >
+        Legt ein Event an inkl. Kategorien, Jahrgaengen und optionalen
+        Timeslots. Serverseitige Zwangsregeln: Pflicht-/Konfirmations-Events
+        ohne Punkte und ohne Timeslots; Pflicht-Events ohne Warteliste und mit
+        Auto-Enrollment aller Konfis der Jahrgaenge; teamer_needed/teamer_only
+        schliessen sich aus; checkin_window 5-120 Minuten. Cross-Org-Referenzen
+        (jahrgang_ids, category_ids) werden abgewiesen.
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer, validateCreateEvent]
+        org-scope: true
+        objekt-pruefung: "jahrgang_ids/category_ids muessen der eigenen Org gehoeren"
+        hinweis: "Teamer duerfen Events fuer ALLE Jahrgaenge der Org anlegen (kein Jahrgang-Check beim Schreiben)."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, event_date]
+              properties:
+                name: { type: string, maxLength: 200 }
+                description: { type: string }
+                event_date: { type: string, format: date-time }
+                event_end_time: { type: string, format: date-time }
+                location: { type: string }
+                location_maps_url: { type: string }
+                points: { type: integer }
+                point_type: { type: string, enum: [gottesdienst, gemeinde], default: gemeinde }
+                type: { type: string, default: event }
+                max_participants: { type: integer, description: "Konfi-Plaetze; Pflicht ausser bei mandatory/teamer_only" }
+                registration_opens_at: { type: string, format: date-time }
+                registration_closes_at: { type: string, format: date-time }
+                has_timeslots: { type: boolean }
+                timeslots: { type: array, items: { type: object, properties: { start_time: { type: string }, end_time: { type: string }, max_participants: { type: integer } } } }
+                waitlist_enabled: { type: boolean, default: true }
+                max_waitlist_size: { type: integer, default: 10 }
+                category_ids: { type: array, items: { type: integer } }
+                jahrgang_ids: { type: array, items: { type: integer } }
+                mandatory: { type: boolean }
+                is_konfirmation: { type: boolean }
+                bring_items: { type: string }
+                checkin_window: { type: integer, minimum: 5, maximum: 120, default: 30 }
+                teamer_needed: { type: boolean }
+                teamer_only: { type: boolean }
+                teamer_max_participants: { type: integer, description: "0 = unbegrenzt" }
+                teamer_waitlist_enabled: { type: boolean, default: true }
+                teamer_max_waitlist_size: { type: integer, default: 10 }
+      responses:
+        "201": { description: "id + message" }
+        "400": { description: Validierungs-/Regel-Fehler (fehlende Felder, fremde IDs, Kontingent ungueltig) }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "409": { description: Unique-Konflikt }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/events/cancelled:
+    get:
+      summary: Abgesagte Events auflisten (Leitungssicht)
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "kein Jahrgang-Filter (alle abgesagten Events der Org)"
+      responses:
+        "200": { description: "Array abgesagter Events (e.*, Zaehler, categories[], jahrgaenge[], registration_status='cancelled')" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/events/qr-checkin:
+    post:
+      summary: Selbst-Check-in per QR-Token (vergibt Event-Punkte)
+      description: >
+        Der eingeloggte User checkt sich mit dem QR-Token des Events ein.
+        Prueft Token-Signatur (QR_SECRET) UND Abgleich mit events.qr_token,
+        Organisation, Zeitfenster (event_date +/- checkin_window Minuten) und
+        bestaetigte Buchung. Setzt attendance_status='present'. Konfis
+        erhalten bei points > 0 und nicht-Pflicht-Event die Event-Punkte
+        (einmalig, ON CONFLICT DO NOTHING) inkl. Badge-/Level-Check; Teamer
+        werden nur als anwesend verbucht.
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "nur eigene Buchung (event_bookings des Token-Users); Event-Org muss der aktiven Org entsprechen"
+        hinweis: "Punkte-Selbstvergabe-Weg g) der Analyse. Sicherheit haengt an der Geheimhaltung des qr_token - siehe LÜCKE L1 in GET /api/events."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string, description: JWT aus dem QR-Code }
+      responses:
+        "200": { description: "message, event_name, event_id, points_awarded (bzw. already_checked_in)" }
+        "400": { description: "error_type: missing_token | invalid_token | too_early | too_late | not_registered | opted_out | not_confirmed" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { description: "error_type: wrong_organization" }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/events/{id}/generate-qr:
+    post:
+      summary: QR-Token fuer Event erzeugen/abrufen
+      description: Gibt vorhandenen qr_token zurueck oder erzeugt einen neuen (HS256, kein Ablauf - Zeitfenster laeuft ueber event_date).
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "Event org-gescopt; kein Jahrgang-Check"
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      responses:
+        "200": { description: "qr_token" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/events/{id}/attendance-count:
+    get:
+      summary: Live-Zaehler eingecheckter Teilnehmer
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "Event org-gescopt; nur Zahlen"
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      responses:
+        "200": { description: "checked_in, total" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/events/{id}/timeslots:
+    get:
+      summary: Zeitslots eines Events (alle Rollen)
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Event org-gescopt; nur Slot-Daten + Zaehler"
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      responses:
+        "200": { description: "Array von Timeslots (et.*, registered_count, waitlist_count); leer wenn keine Timeslots" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/events/{id}:
+    get:
+      summary: Event-Details mit Teilnehmern (rollenabhaengig reduziert)
+      description: >
+        Volle Event-Details inkl. Timeslots, Serien-Events, Jahrgaengen,
+        Kategorien, Zaehlern, eigener Buchung und chat_room_id. Fuer
+        Leitungsrollen zusaetzlich: participants[] (Klarname, Jahrgang,
+        Timeslot, attendance_status, opt_out_reason/-date) und
+        unregistrations[] (Klarname, Grund). Fuer KONFIS werden qr_token
+        entfernt sowie participants und unregistrations geleert
+        (Fix 22.08.2026) - Konfis nutzen die anonymisierte Route
+        /api/konfi/events/:id/participants.
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, konfi]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Event org-gescopt; Konfi-Response ohne qr_token/participants/unregistrations"
+        hinweis: "Teamer: KEIN Jahrgang-Check - Teilnehmer-Klarnamen und Opt-out-Gruende aller Org-Events einsehbar (siehe Analyse Punkt 2)."
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      responses:
+        "200": { description: "Event-Objekt + participants[], timeslots[], series_events[], jahrgaenge[], categories[], unregistrations[], Zaehler, booking_status, is_registered, chat_room_id" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+    put:
+      summary: Event aktualisieren (inkl. Nachrueck-Logik)
+      description: >
+        Aktualisiert alle Event-Felder, Kategorien, Jahrgaenge und Timeslots
+        (buchungserhaltend). Zwangsregeln wie beim Erstellen. Bei
+        Kapazitaetserhoehung ruecken Wartelisten-Eintraege nach (Konfi- und
+        Teamer-Kontingent strikt getrennt); Umwandlung in Pflicht-Event loest
+        Auto-Enrollment aus; relevante Aenderungen (Termin/Ort) pushen an
+        Gebuchte.
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer, validateUpdateEvent]
+        org-scope: true
+        objekt-pruefung: "UPDATE mit organization_id-Bedingung (404 sonst); jahrgang_ids/category_ids org-geprueft"
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, description: "Gleiche Felder wie POST /api/events" }
+      responses:
+        "200": { description: "message, promoted_count, promoted_teamer_count" }
+        "400": { description: Validierungs-/Regel-Fehler }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+    delete:
+      summary: Event loeschen (mit force-Bestaetigung)
+      description: >
+        Loescht Event samt Buchungen, Timeslots, Kategorien, Jahrgangs-
+        Zuweisungen und Event-Chat (inkl. Dateien). Ohne ?force=true blockt
+        die Route mit 409, wenn Anmeldungen (error_code event_has_bookings)
+        oder Chat-Nachrichten (event_has_chat) existieren. Gebuchte Konfis
+        werden per Push informiert.
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer, validateEventId]
+        org-scope: true
+        objekt-pruefung: "Event org-gescopt"
+      parameters:
+        - { $ref: '#/components/parameters/pathId' }
+        - name: force
+          in: query
+          required: false
+          schema: { type: string, enum: ["true"] }
+      responses:
+        "200": { description: Geloescht }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "409": { description: "error_code: event_has_bookings | event_has_chat (ohne force)" }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/events/{id}/book:
+    post:
+      summary: Event selbst buchen (Konfi- oder Teamer-Kontingent)
+      description: >
+        Aeltere Buchungsroute (Admin-Frontend/Teamer). Konfi-Pfad: wie
+        /api/konfi/events/:id/register inkl. Anmeldefenster, Timeslot- und
+        Kapazitaets-/Wartelistenlogik sowie Konfirmations-Sperre. Teamer-Pfad:
+        eigenes Kontingent (teamer_max_participants, eigene Warteliste), ohne
+        Anmeldefenster- und Timeslot-Logik; nur bei teamer_needed/teamer_only.
+      x-berechtigung:
+        rollen: [konfi, teamer]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "bucht nur sich selbst; Event/Timeslot org-gescopt; Konfis nicht bei teamer_only (403)"
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                timeslot_id: { type: integer }
+      responses:
+        "201": { description: "id, message, status (confirmed|waitlist)" }
+        "400": { description: Anmeldefenster/Slot/Kapazitaets-Fehler }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { description: Rolle nicht buchbar bzw. Event nicht fuer diese Rolle }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "409": { description: Bereits gebucht oder Konfirmations-Sperre }
+        "500": { $ref: '#/components/responses/ServerError' }
+    delete:
+      summary: Eigene Buchung stornieren
+      description: >
+        Loescht die eigene Buchung transaktional, entfernt den User aus dem
+        Event-Chat, nimmt bei attendance_status='present' die Event-Punkte
+        zurueck und laesst rollenrichtig aus der passenden Warteliste
+        nachruecken (Konfi-Platz nur an Konfis, Teamer-Platz nur an Teamer).
+      x-berechtigung:
+        rollen: [konfi, teamer]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "nur eigene Buchung (user_id + organization_id)"
+        hinweis: "Punkte-Entzugs-Weg n) der Analyse. Keine 2-Tage-Frist wie bei /api/konfi/events/:id/register (nur Hinweis)."
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      responses:
+        "200": { description: Storniert }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { description: Buchung nicht gefunden }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/events/{id}/participants:
+    post:
+      summary: Teilnehmer manuell hinzufuegen (Leitung)
+      description: >
+        Fuegt einen User der eigenen Org zum Event hinzu. status='auto'
+        entscheidet rollenrichtig (Konfi- vs. Teamer-Kontingent, Timeslot-
+        Kapazitaet, Warteliste); explizites status wird uebernommen.
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "Event UND Ziel-User muessen zur eigenen Org gehoeren; kein Jahrgang-Check"
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id]
+              properties:
+                user_id: { type: integer }
+                status: { type: string, enum: [auto, confirmed, waitlist], default: auto }
+                timeslot_id: { type: [integer, "null"] }
+      responses:
+        "201": { description: "id, status, timeslot_id, message" }
+        "400": { description: Slot fehlt, Event nicht fuer Rolle des Users vorgesehen }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { description: Event/Benutzer/Zeitslot nicht gefunden }
+        "409": { description: Bereits angemeldet oder Event+Warteliste voll }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/events/{id}/bookings/{bookingId}:
+    delete:
+      summary: Buchung eines Teilnehmers entfernen (Leitung)
+      description: >
+        Loescht eine fremde Buchung; war der Konfi als anwesend verbucht,
+        werden die Event-Punkte zurueckgenommen. Danach rollenrichtiges
+        Nachruecken aus der passenden Warteliste.
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "User-Org UND Event-Org muessen der eigenen Org entsprechen (403 sonst); kein Jahrgang-Check"
+        hinweis: "Punkte-Entzugs-Weg m) der Analyse."
+      parameters:
+        - { $ref: '#/components/parameters/pathId' }
+        - name: bookingId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Teilnehmer entfernt }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { description: Buchung nicht gefunden }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/events/user/bookings:
+    get:
+      summary: Eigene Buchungen auflisten (Konfi/Teamer)
+      x-berechtigung:
+        rollen: [konfi, teamer]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "nur eigene Buchungen (confirmed/waitlist)"
+      responses:
+        "200": { description: "Array (eb.*, event_name, event_date, location, mandatory, bring_items)" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/events/series:
+    post:
+      summary: Event-Serie erstellen (2-26 Termine, max 12 Monate)
+      description: >
+        Erzeugt eine Serie ("Name #n") mit Intervall day | week | 2weeks |
+        month. Gleiche Zwangsregeln und Org-Checks wie POST /api/events,
+        inkl. Auto-Enrollment bei Pflicht-Serien.
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "jahrgang_ids/category_ids org-geprueft"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, event_date, series_count]
+              properties:
+                series_count: { type: integer, minimum: 2, maximum: 26 }
+                series_interval: { type: string, enum: [day, week, 2weeks, month], default: week }
+              description: "Zusaetzlich alle Felder von POST /api/events"
+      responses:
+        "201": { description: "message, series_id, events_created" }
+        "400": { description: Serien-Limits/Validierung verletzt }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/events/{id}/participants/{participantId}/status:
+    put:
+      summary: Teilnehmer zwischen bestaetigt und Warteliste verschieben
+      description: >
+        status confirmed <-> waitlist. Degradierung auf waitlist loescht
+        attendance_status und nimmt vergebene Event-Punkte zurueck;
+        Befoerderung von der Warteliste pusht an die betroffene Person.
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "Buchung muss zu Event der eigenen Org gehoeren (403 sonst); kein Jahrgang-Check"
+        hinweis: "Punkte-Entzugs-Weg l) der Analyse."
+      parameters:
+        - { $ref: '#/components/parameters/pathId' }
+        - name: participantId
+          in: path
+          required: true
+          schema: { type: integer, description: "ID der Buchung (event_bookings.id)" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [confirmed, waitlist] }
+      responses:
+        "200": { description: "message, status" }
+        "400": { description: Ungueltiger Status oder Status unveraendert }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { description: Buchung nicht gefunden }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/events/{id}/participants/attendance-all:
+    put:
+      summary: Alle unverbuchten Angemeldeten als anwesend verbuchen (Bulk)
+      description: >
+        Setzt fuer alle bestaetigten Konfis ohne attendance_status 'present'
+        und vergibt (bei points > 0, nicht-Pflicht, aktiviertem Punkt-Typ)
+        die Event-Punkte inkl. Badge-/Level-Check. Warteliste und bereits
+        Verbuchte bleiben unberuehrt.
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "Event-Org muss der eigenen Org entsprechen (403); kein Jahrgang-Check"
+        hinweis: "Punkte-Vergabe-Weg f) der Analyse."
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      responses:
+        "200": { description: "message, confirmed (Anzahl), points_awarded (Anzahl)" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/events/{id}/participants/{participantId}/attendance:
+    put:
+      summary: Anwesenheit eines Teilnehmers setzen (vergibt/entzieht Punkte)
+      description: >
+        attendance_status present | absent. present: Konfis erhalten einmalig
+        die Event-Punkte (nicht bei Pflicht-Events; 400 bei deaktiviertem
+        Punkt-Typ), Teamer nur Anwesenheit. absent: vergebene Event-Punkte
+        werden zurueckgenommen.
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "Event + Buchung org-gescopt (404 sonst); kein Jahrgang-Check"
+        hinweis: "Punkte-Wege e) und k) der Analyse."
+      parameters:
+        - { $ref: '#/components/parameters/pathId' }
+        - name: participantId
+          in: path
+          required: true
+          schema: { type: integer, description: "ID der Buchung (event_bookings.id)" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [attendance_status]
+              properties:
+                attendance_status: { type: string, enum: [present, absent] }
+      responses:
+        "200": { description: "message, points_awarded / points_removed" }
+        "400": { description: Ungueltiger Status oder Punkt-Typ im Jahrgang deaktiviert }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/events/{id}/chat:
+    post:
+      summary: Gruppenchat fuer Event erstellen
+      description: >
+        Legt den Event-Chat an und fuegt Ersteller plus alle bestaetigten
+        Teilnehmer (rollenrichtiger user_type) hinzu. Pro Event nur ein Chat.
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "Event org-gescopt"
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      responses:
+        "201": { description: "chat_room_id, message, participants_added" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "409": { description: Chat existiert bereits }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/events/{id}/cancel:
+    put:
+      summary: Event absagen (mit Teilnehmer-Benachrichtigung)
+      description: Setzt cancelled=true + cancelled_at und pusht an alle Gebuchten (confirmed + waitlist).
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "Event org-gescopt"
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notification_message: { type: string, default: "Das Event wurde abgesagt." }
+      responses:
+        "200": { description: "message, participants_notified, notification_message" }
+        "400": { description: Event bereits abgesagt }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }

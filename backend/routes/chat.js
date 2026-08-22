@@ -309,6 +309,19 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
               WHERE u.id = ANY($1::int[]) AND u.organization_id = $2 AND u.deleted_at IS NULL`,
             [participantIds, organizationId]
           );
+
+          // Konfi-zu-Konfi bleibt verboten — auch hier. Geprueft wurde oben nur
+          // der Raum-TYP ('direct'), nicht WEN eine Konfi eintraegt. Ueber
+          // participants liess sich POST /direct (das die Kombination korrekt
+          // mit 403 ablehnt) damit umgehen und ein Raum mit einer anderen Konfi
+          // anlegen (Audit 22.08.2026). Der Kommentar oben versprach das bereits.
+          if (req.user.type === 'konfi' && partUsers.some(pu => pu.role_name === 'konfi')) {
+            await db.query('DELETE FROM chat_rooms WHERE id = $1', [roomId]);
+            return res.status(403).json({
+              error: 'Konfirmand:innen können nur das Team anschreiben, nicht einander'
+            });
+          }
+
           const participantPromises = partUsers.map(pu =>
             db.query(
               "INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",

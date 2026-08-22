@@ -1,0 +1,993 @@
+# ============================================================================
+# Konfi Quest API — Block 3: Verwaltung & Auth
+# Dokumentiert: auth, teamer, organizations, material, users, jahrgaenge,
+# badges, wrapped, levels, categories, roles, settings (109 Routen)
+# Stand: 2026-08-22, verifiziert am Code (Branch main-Stand des Repos)
+# ============================================================================
+#
+# SCHWERPUNKT-ANALYSE
+#
+# 1. RECHTEVERGABE (Wer darf wen anlegen/aendern/loeschen?)
+#    Rollenhierarchie (utils/roleHierarchy.js, Level 5..1):
+#      super_admin(5) > org_admin(4) > admin(3) > teamer(2) > konfi(1)
+#    - User-Verwaltung (/api/users bzw. /api/admin/users) ist komplett
+#      requireOrgAdmin; zusaetzlich checkUserHierarchy pro Operation:
+#        * super_admin darf alle Rollen ausser super_admin verwalten
+#        * org_admin darf ALLE Rollen der eigenen Org verwalten,
+#          AUCH andere org_admins (explizite Regel im Code)
+#        * admin duerfte teamer/konfi verwalten, teamer nur konfi —
+#          praktisch irrelevant, da die Routen requireOrgAdmin verlangen
+#    - Rollen-Zuweisung: role_id wird gegen roles der eigenen Org geprueft;
+#      bei Update mit Rollenwechsel prueft canCreateRole die Ziel-Rolle.
+#      GET /roles/list/assignable liefert nur zuweisbare Rollen
+#      (org_admin: admin/teamer/konfi; super_admin: +org_admin).
+#    - Rollen selbst sind hardcoded (5 Systemrollen), routes/roles.js ist
+#      read-only; Permissions sind statisch pro Rollenname.
+#    - org_admins anlegen: super_admin (jede Org) ODER org_admin (eigene Org)
+#      via POST /organizations/:id/admins.
+#    - Letzter org_admin einer Org ist gegen Loeschen geschuetzt (409).
+#    - Selbst-Loeschung: ueber POST /auth/delete-account (jede Rolle, mit
+#      Passwort-Bestaetigung); DELETE /users/:id blockt Selbst-Loeschung.
+#    - Multi-Org-Mitgliedschaften (user_organizations) vergibt NUR der
+#      super_admin (POST/DELETE /organizations/:id/members); konfi und
+#      super_admin sind als Mitglieds-Rolle explizit verboten.
+#
+# 2. OFFENE ROUTEN (ohne Auth-Middleware) — alle unter /api/auth:
+#      POST /login                    authLimiter: 300/15min pro Client-IP,
+#                                     skipSuccessfulRequests
+#      POST /register-konfi           registerLimiter: 200/h pro IP; Schutz
+#                                     durch Invite-Code (8 Hex-Zeichen, 7 Tage
+#                                     gueltig, org-/jahrgangsgebunden) +
+#                                     Passwort-Policy + Konfi-Limit-Check
+#      POST /request-password-reset   eigener Limiter: 5/15min; neutrale
+#                                     Antwort (kein E-Mail-Enumeration-Leak)
+#      POST /reset-password           NUR globaler General-Limiter (2000/15min)
+#      POST /refresh                  NUR General-Limiter; Refresh-Token-
+#                                     Rotation mit 5-Minuten-Grace-Window
+#      GET  /check-username/:username NUR General-Limiter
+#      GET  /validate-invite/:code    NUR General-Limiter
+#    # LÜCKE (NEU): check-username, validate-invite, reset-password und
+#    # refresh haben keinen eigenen (strengeren) Rate-Limiter — Username-
+#    # Enumeration und Invite-Code-Bruteforce (nur 8 Hex-Zeichen = 4 Byte
+#    # Entropie) sind mit bis zu 2000 Requests/15min/IP moeglich.
+#
+# 3. SUPER_ADMIN — Sonderbehandlung:
+#    - requireSuperAdmin akzeptiert Rolle 'super_admin' ODER das DB-Flag
+#      users.is_super_admin (org_admin mit Flag = faktischer Super-Admin).
+#    - Nur super_admin: Org-Liste (GET /organizations), Org anlegen/loeschen,
+#      PATCH /organizations/:id/limit (max_konfis / Tarif), trial_ends_at +
+#      is_trial im Org-Update, systemweite User-Suche (/search-users),
+#      Multi-Org-Mitglieder verwalten (/:id/members), Passwort-Reset
+#      org-uebergreifend (PUT /users/:id/reset-password).
+#    - super_admin (Rolle) hat KEINE Organisation und ist von Org-/Trial-
+#      Sperren beim Login/Refresh ausgenommen; checkJahrgangAccess und
+#      filterByJahrgangAccess sperren ihn bewusst von Jahrgangs-Daten aus.
+#    - Fachrouten (badges, levels, material, ...) nutzen requireAdmin/
+#      requireTeamer (Rollennamen-Whitelists) — die Rolle super_admin faellt
+#      dort durch (403), ausser sie agiert via Multi-Org-Switch als org_admin.
+#
+# 4. MATERIAL UND ZERTIFIKATE:
+#    - Material sehen/herunterladen: requireTeamer (org_admin, admin, teamer)
+#      — ALLE Materialien der eigenen Org, KEINE Jahrgangs-Einschraenkung
+#      (Jahrgangs-/Event-Zuordnung ist nur Filter-Metadatum). Konfis haben
+#      keinerlei Material-Zugriff.
+#    - Material/Tags anlegen, aendern, loeschen, Dateien hochladen/loeschen:
+#      requireAdmin (org_admin, admin). Dateien liegen AES-256-GCM-
+#      verschluesselt unter Zufalls-Hex-Namen; Download prueft Hex-Format
+#      (Path-Traversal-Schutz) + Org-Zugehoerigkeit der Datei.
+#    - Zertifikat-Typen: lesen requireAdmin, CRUD requireOrgAdmin.
+#    - Zertifikate VERGIBT/entzieht nur der org_admin
+#      (POST/DELETE /teamer/:userId/certificates); Empfaenger muss Rolle
+#      teamer in derselben Org haben; Typ muss zur Org gehoeren und aktiv
+#      sein. Ansehen der Zertifikate eines Teamers: requireAdmin.
+#      Teamer sehen die eigenen Zertifikate ueber ihr Dashboard.
+#
+# NEUE LUECKEN (zusaetzlich zu den bekannten, Details an den Routen):
+#  N1  PUT /users/:id/reset-password schuetzt Ziel-User mit is_super_admin-
+#      Flag NICHT: org_admin derselben Org kann dessen Passwort setzen und
+#      so Super-Admin-Rechte uebernehmen (Privilege Escalation).
+#  N2  Passwort-Aenderung/-Reset (change-password, reset-password,
+#      users/:id/reset-password) revoziert bestehende Refresh-Tokens (90 Tage)
+#      nicht und setzt kein token_invalidated_at — gekaperte Sessions
+#      ueberleben den Passwortwechsel.
+#  N3  Fehlende Spezial-Rate-Limiter auf 4 offenen Auth-Routen (siehe oben).
+#  N4  GET /levels/konfi/:userId: jeder authentifizierte User der Org (auch
+#      jeder Konfi) kann Punkte/Level JEDES Konfis abrufen — kein Selbst-
+#      oder Rollen-Check.
+#  N5  GET /organizations/:id und /:id/stats: JEDE Rolle der eigenen Org
+#      (auch konfi/teamer) erhaelt SELECT * der Organisation inkl. Kontakt-,
+#      Trial- und Limit-Daten.
+#  N6  POST /organizations/:id/admins: org_admin legt weitere org_admins mit
+#      6-Zeichen-Passwort an — die strenge validatePassword-Policy (8+,
+#      Gross/Klein/Zahl/Sonderzeichen) wird hier NICHT angewandt.
+#  N7  PUT /users/:id: Passwort-Feld ohne jede Policy-Pruefung (weder
+#      validatePassword noch Mindestlaenge) — beliebig schwache Passwoerter.
+#  N8  POST /auth/update-email: keine Besitz-Verifikation der E-Mail; 409 bei
+#      Unique-Kollision erlaubt E-Mail-Enumeration durch eingeloggte User.
+#
+# BEKANNT (dokumentiert, nicht neu): Multi-Org-Claim-Nachwirkung nach
+# Mitgliedschafts-Entzug (Access-Token bis 15 Min + 30s-User-Cache);
+# Passwort-Reset-Token unhashed in password_resets; org_admin darf is_active
+# der eigenen Org setzen (PUT /organizations/:id); Org-Anlage erlaubt
+# 6-Zeichen-Admin-Passwoerter.
+# ============================================================================
+
+openapi: 3.1.0
+info:
+  title: Konfi Quest API — Verwaltung & Auth (Block 3)
+  version: "1.0"
+  description: >
+    Auth/Session, Teamer-Bereich, Organisations-, User-, Jahrgangs-,
+    Badge-, Wrapped-, Level-, Kategorie-, Rollen- und Settings-Verwaltung.
+    Alle Routen (ausser den offenen Auth-Routen) verlangen einen Bearer-JWT
+    (15 Min), der von verifyTokenRBAC geprueft wird; die aktive Organisation
+    kann per Header X-Active-Organization gewechselt werden (Mitgliedschaft
+    wird gegen user_organizations geprueft, 30s-User-Cache).
+servers:
+  - url: https://konfi-quest.de/api
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  responses:
+    Unauthorized: { description: "401 — Kein/ungueltiges/abgelaufenes Token" }
+    Forbidden: { description: "403 — Rolle nicht erlaubt / fremde Org" }
+    NotFound: { description: "404 — Objekt nicht (in dieser Org) gefunden" }
+    ServerError: { description: "500 — Datenbank-/Serverfehler" }
+
+paths:
+  # ==========================================================================
+  # AUTH (backend/routes/auth.js — 19 Routen, Mount /api/auth)
+  # ==========================================================================
+  /auth/login:
+    post:
+      summary: Login fuer alle Rollen (case-insensitiver Username)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string }
+                password: { type: string }
+      responses:
+        "200":
+          description: "JWT (15 Min) + Refresh-Token (90 Tage, SHA-256-gehasht gespeichert) + User-Objekt (bei Konfi inkl. jahrgang und Punkten)"
+        "401": { description: "Ungueltige Anmeldedaten (User unbekannt oder Passwort falsch — gleiche Meldung)" }
+        "403": { description: "User deaktiviert (user_inactive), Org gesperrt (org_inactive) oder Trial abgelaufen (org_trial_expired); super_admin ausgenommen" }
+        "429": { description: "authLimiter: 300 Fehlversuche/15min pro Client-IP" }
+      x-berechtigung:
+        rollen: [oeffentlich]
+        middleware: [authLimiter, validateLogin]
+        org-scope: false
+        objekt-pruefung: "Org-Aktiv- und Trial-Pruefung im Handler; super_admin (Rolle oder Flag) umgeht beide"
+        hinweis: "Offene Route; setzt last_login_at"
+
+  /auth/change-password:
+    post:
+      summary: Eigenes Passwort aendern (mit aktuellem Passwort)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword: { type: string }
+                newPassword: { type: string, description: "Policy: min 8, Gross/Klein/Zahl/Sonderzeichen, keine Leerzeichen" }
+      responses:
+        "200": { description: "Passwort geaendert" }
+        "400": { description: "Aktuelles Passwort falsch / Policy verletzt" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+      x-berechtigung:
+        rollen: [alle authentifizierten]
+        middleware: [verifyTokenRBAC, validateChangePassword]
+        org-scope: false
+        objekt-pruefung: "Nur eigener Account (userId aus Token)"
+        # LÜCKE (N2): revoziert bestehende Refresh-Tokens NICHT und setzt kein
+        # token_invalidated_at — alte Sessions bleiben bis 90 Tage gueltig.
+
+  /auth/delete-account:
+    post:
+      summary: Eigenen Account sofort und kaskadierend loeschen (alle Rollen)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string, description: "Bestaetigung mit aktuellem Passwort" }
+      responses:
+        "200": { description: "Account geloescht (Hard-Delete in einer Transaktion, Sockets getrennt)" }
+        "400": { description: "Passwort fehlt oder falsch" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+      x-berechtigung:
+        rollen: [alle authentifizierten]
+        middleware: [verifyTokenRBAC]
+        org-scope: false
+        objekt-pruefung: "Nur eigener Account; Passwort-Bestaetigung im Handler"
+        hinweis: "Auch org_admin kann sich selbst loeschen — der Letzter-org_admin-Schutz greift nur in DELETE /users/:id, nicht hier"
+
+  /auth/update-email:
+    post:
+      summary: Eigene E-Mail-Adresse setzen/entfernen (optional, ohne Verifikation)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: [string, "null"], format: email }
+      responses:
+        "200": { description: "E-Mail aktualisiert" }
+        "400": { description: "Ungueltige E-Mail" }
+        "409": { description: "E-Mail bereits verwendet" }
+      x-berechtigung:
+        rollen: [alle authentifizierten]
+        middleware: [verifyTokenRBAC, validateUpdateEmail]
+        org-scope: false
+        objekt-pruefung: "Nur eigener Account"
+        # LÜCKE (N8): keine Besitz-Verifikation der E-Mail; 409 verraet
+        # eingeloggten Usern, welche E-Mail-Adressen im System existieren.
+
+  /auth/update-role-title:
+    post:
+      summary: Eigene Funktionsbeschreibung (role_title) setzen
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role_title: { type: [string, "null"] }
+      responses:
+        "200": { description: "Aktualisiert" }
+        "403": { description: "Konfis duerfen keinen Titel setzen" }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer, super_admin]
+        middleware: [verifyTokenRBAC]
+        org-scope: false
+        objekt-pruefung: "Inline-Check: role_name !== 'konfi'"
+
+  /auth/me:
+    get:
+      summary: Eigenes Profil (inkl. is_super_admin-Flag, Trial-Status der Org)
+      responses:
+        "200": { description: "id, username, display_name, email, role_title, role_name, is_super_admin, trial_ends_at, is_trial" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+      x-berechtigung:
+        rollen: [alle authentifizierten]
+        middleware: [verifyTokenRBAC]
+        org-scope: false
+        objekt-pruefung: "Nur eigene Daten"
+
+  /auth/my-organizations:
+    get:
+      summary: Alle Organisationen des Users (Primaer-Org + Multi-Org-Mappings) mit Rolle
+      responses:
+        "200": { description: "Array (id, name, slug, display_name, role_name, is_active); nur aktive Orgs, dedupliziert" }
+      x-berechtigung:
+        rollen: [alle authentifizierten]
+        middleware: [verifyTokenRBAC]
+        org-scope: false
+        objekt-pruefung: "Nur eigene Mitgliedschaften"
+
+  /auth/switch-org:
+    post:
+      summary: Aktive Organisation wechseln — neues Access-Token mit active_organization_id-Claim
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [organization_id]
+              properties:
+                organization_id: { type: integer }
+      responses:
+        "200": { description: "Neues 15-Min-Token, active_organization_id, Rolle in Ziel-Org" }
+        "400": { description: "organization_id fehlt" }
+        "403": { description: "Keine Mitgliedschaft in Ziel-Org oder Ziel-Org gesperrt" }
+      x-berechtigung:
+        rollen: [alle authentifizierten]
+        middleware: [verifyTokenRBAC]
+        org-scope: false
+        objekt-pruefung: "Mitgliedschaft in user_organizations + is_active der Ziel-Org"
+        hinweis: "Trial-Ablauf der Ziel-Org wird hier NICHT geprueft (nur is_active); bekannte Claim-Nachwirkung nach Mitgliedschafts-Entzug bis Token-Ablauf"
+
+  /auth/request-password-reset:
+    post:
+      summary: Passwort-Reset-Mail anfordern (immer neutrale Antwort)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        "200": { description: "Neutral: 'Falls ein Konto existiert, wurde eine E-Mail gesendet'" }
+        "429": { description: "passwordResetLimiter: 5/15min" }
+        "500": { description: "Mail-Versand fehlgeschlagen (nur wenn Konto existiert — schwaecht die Neutralitaet leicht ab)" }
+      x-berechtigung:
+        rollen: [oeffentlich]
+        middleware: [passwordResetLimiter, validateRequestPasswordReset]
+        org-scope: false
+        objekt-pruefung: "Token 32 Byte Hex, 24h gueltig"
+        hinweis: "BEKANNT: Token wird unhashed in password_resets gespeichert"
+
+  /auth/invite-code:
+    post:
+      summary: Einladungscode fuer einen Jahrgang erzeugen (8 Hex-Zeichen, 7 Tage)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [jahrgang_id]
+              properties:
+                jahrgang_id: { type: integer }
+      responses:
+        "201": { description: "invite_code, jahrgang_name, expires_at (Status ist 200)" }
+        "403": { description: "Nur Org-Admins" }
+        "404": { description: "Jahrgang nicht in eigener Org" }
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, validateInviteCode]
+        org-scope: true
+        objekt-pruefung: "Jahrgang muss zur eigenen Org gehoeren"
+        hinweis: "Inline-Check erlaubt auch is_super_admin-Flag (abweichend von den drei anderen Invite-Routen, die strikt role_name==='org_admin' verlangen)"
+
+  /auth/invite-codes:
+    get:
+      summary: Aktive Einladungscodes der eigenen Org (inkl. Nutzungs-Zaehler)
+      responses:
+        "200": { description: "Array mit code, jahrgang, expires_at, used_count" }
+        "403": { description: "Nur org_admin (strikt role_name, OHNE Super-Admin-Flag)" }
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Nur Codes der eigenen Org, nur nicht-abgelaufene"
+
+  /auth/invite-codes/{id}/extend:
+    post:
+      summary: Einladungscode um 7 Tage verlaengern
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "Neues expires_at" }
+        "400": { description: "Abgelaufene Codes nicht verlaengerbar" }
+        "403": { description: "Nur org_admin" }
+        "404": { $ref: "#/components/responses/NotFound" }
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Code muss zur eigenen Org gehoeren"
+
+  /auth/invite-codes/{id}:
+    delete:
+      summary: Einladungscode loeschen
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "Geloescht" }
+        "403": { description: "Nur org_admin" }
+        "404": { $ref: "#/components/responses/NotFound" }
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Code muss zur eigenen Org gehoeren"
+
+  /auth/check-username/{username}:
+    get:
+      summary: Username-Verfuegbarkeit pruefen (oeffentlich, case-insensitiv)
+      parameters:
+        - { name: username, in: path, required: true, schema: { type: string, minLength: 3, pattern: "^[a-zA-Z0-9.-]+$" } }
+      responses:
+        "200": { description: "{ available: bool, message }" }
+        "400": { description: "Zu kurz / ungueltige Zeichen" }
+      x-berechtigung:
+        rollen: [oeffentlich]
+        middleware: []
+        org-scope: false
+        objekt-pruefung: "keine"
+        # LÜCKE (N3): kein eigener Rate-Limiter — systemweite Username-
+        # Enumeration mit bis zu 2000 Requests/15min/IP moeglich.
+
+  /auth/validate-invite/{code}:
+    get:
+      summary: Einladungscode pruefen (oeffentlich) — liefert Jahrgang + Org-Name
+      parameters:
+        - { name: code, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { description: "{ valid: true, jahrgang_name, organization_name }" }
+        "404": { description: "Code existiert nicht (error_code: not_found)" }
+        "410": { description: "Code abgelaufen (error_code: expired)" }
+      x-berechtigung:
+        rollen: [oeffentlich]
+        middleware: []
+        org-scope: false
+        objekt-pruefung: "Nur Existenz + Ablauf"
+        # LÜCKE (N3): kein eigener Rate-Limiter — 8-Hex-Codes (4 Byte) sind
+        # theoretisch bruteforcebar; gueltiger Code leakt Org-/Jahrgangsname.
+
+  /auth/register-konfi:
+    post:
+      summary: Selbst-Registrierung als Konfi mit Einladungscode (inkl. Auto-Login)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [invite_code, display_name, username, password]
+              properties:
+                invite_code: { type: string }
+                display_name: { type: string }
+                username: { type: string, minLength: 3, pattern: "^[a-zA-Z0-9.-]+$" }
+                password: { type: string, description: "volle Passwort-Policy" }
+                email: { type: string, format: email, description: "optional" }
+      responses:
+        "200": { description: "Token + Refresh-Token + Konfi-User; Auto-Enrollment in kuenftige Pflicht-Events des Jahrgangs; Push an Jahrgangs-Admins" }
+        "403": { description: "Konfi-Limit der Org erreicht (limit_exceeded)" }
+        "404": { description: "Code existiert nicht" }
+        "409": { description: "Username vergeben" }
+        "410": { description: "Code abgelaufen" }
+        "429": { description: "registerLimiter: 200/h pro IP" }
+      x-berechtigung:
+        rollen: [oeffentlich]
+        middleware: [registerLimiter, validateRegisterKonfi]
+        org-scope: false
+        objekt-pruefung: "Invite-Code bestimmt Org + Jahrgang; konfi-Rolle wird org-gescopt aufgeloest; Konfi-Limit (max_konfis) hard_block"
+
+  /auth/reset-password:
+    post:
+      summary: Passwort mit Reset-Token setzen (oeffentlich)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, newPassword]
+              properties:
+                token: { type: string }
+                newPassword: { type: string, description: "volle Passwort-Policy" }
+      responses:
+        "200": { description: "Passwort zurueckgesetzt, Token als benutzt markiert (Einmal-Nutzung)" }
+        "400": { description: "Token ungueltig/abgelaufen/benutzt oder Policy verletzt" }
+      x-berechtigung:
+        rollen: [oeffentlich]
+        middleware: [validateResetPassword]
+        org-scope: false
+        objekt-pruefung: "Token-Lookup in password_resets (used_at IS NULL, expires_at > NOW)"
+        # LÜCKE (N2/N3): bestehende Refresh-Tokens des Users werden NICHT
+        # revoziert; kein eigener Rate-Limiter (Token allerdings 32 Byte Hex).
+
+  /auth/refresh:
+    post:
+      summary: Access-Token per Refresh-Token erneuern (Rotation, 5-Min-Grace-Window)
+      parameters:
+        - { name: X-Active-Organization, in: header, required: false, schema: { type: integer }, description: "Aktive Multi-Org — wird nach Mitgliedschafts-Pruefung als Claim uebernommen" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token: { type: string }
+      responses:
+        "200": { description: "Neues Token-Paar; altes Refresh-Token revoziert (bleibt 5 Min im Grace-Window nutzbar)" }
+        "401": { description: "Refresh-Token ungueltig/abgelaufen/zu lange revoziert" }
+        "403": { description: "User deaktiviert / Org gesperrt / Trial abgelaufen (super_admin ausgenommen)" }
+      x-berechtigung:
+        rollen: [oeffentlich]
+        middleware: []
+        org-scope: false
+        objekt-pruefung: "SHA-256-Hash-Lookup in refresh_tokens; Sperr-Checks wie beim Login"
+        hinweis: "token_invalidated_at (Soft-Revoke) wird beim Refresh nicht geprueft — Soft-Revoke wirkt nur auf Access-Tokens, nicht auf die Refresh-Kette"
+
+  /auth/logout:
+    post:
+      summary: Logout — Refresh-Token revozieren (best effort, immer 200)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token: { type: string }
+      responses:
+        "200": { description: "Immer 'Logout erfolgreich'; Token wird zusaetzlich sofort expired (kein Grace-Window)" }
+      x-berechtigung:
+        rollen: [alle authentifizierten]
+        middleware: [verifyTokenRBAC]
+        org-scope: false
+        objekt-pruefung: "Revoziert nur das mitgesendete Token (Hash-Match)"
+
+  # ==========================================================================
+  # ORGANIZATIONS (backend/routes/organizations.js — 15 Routen,
+  # Mount /api/organizations, optional orgLimiter davor)
+  # ==========================================================================
+  /organizations:
+    get:
+      summary: Alle Organisationen mit Team-/Konfi-Zaehlern (nur Super-Admin)
+      responses:
+        "200": { description: "Array aller Orgs inkl. user_count/konfi_count" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "keine (org-uebergreifend)"
+    post:
+      summary: Organisation anlegen inkl. erstem org_admin und Standard-Daten (Rollen, 27 Badges, 4 Zertifikat-Typen, 6 Levels, 5 Kategorien, 5 Aktivitaeten, 3 Beispiel-Challenges)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, slug, display_name, admin_username, admin_password, admin_display_name]
+              properties:
+                name: { type: string }
+                slug: { type: string }
+                display_name: { type: string }
+                description: { type: string }
+                contact_name: { type: string }
+                contact_email: { type: string }
+                contact_phone: { type: string }
+                address: { type: string }
+                website_url: { type: string }
+                kirchenkreis: { type: string }
+                max_konfis: { type: [integer, "null"] }
+                admin_username: { type: string }
+                admin_password: { type: string, minLength: 6, description: "BEKANNT: nur min 6 Zeichen, keine Policy" }
+                admin_display_name: { type: string }
+      responses:
+        "201": { description: "id, admin_user_id, Anzahl angelegter Standard-Objekte" }
+        "409": { description: "Slug existiert bereits" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin, validateCreateOrg]
+        org-scope: false
+        objekt-pruefung: "keine"
+
+  /organizations/search-users:
+    get:
+      summary: Systemweite User-Suche fuer Multi-Org-Zuweisung (ohne Konfis)
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string, minLength: 2 } }
+      responses:
+        "200": { description: "Max. 20 aktive Nicht-Konfi-User (username, display_name, email, Primaer-Org, Rolle)" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "keine (org-uebergreifend, bewusst)"
+
+  /organizations/current:
+    get:
+      summary: Eigene (aktive) Organisation mit Statistiken
+      responses:
+        "200": { description: "SELECT * der Org + user/konfi/jahrgang/activity/event/badge_count" }
+        "404": { $ref: "#/components/responses/NotFound" }
+      x-berechtigung:
+        rollen: [alle authentifizierten]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Immer req.user.organization_id"
+        hinweis: "Auch Konfis/Teamer sehen den vollen Org-Datensatz (Kontakt-/Trial-/Limit-Felder) — siehe N5"
+
+  /organizations/{id}:
+    get:
+      summary: Einzelne Organisation mit Zaehlern
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "SELECT * + user/teamer/admin/konfi/... counts" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+      x-berechtigung:
+        rollen: [super_admin, "jede Rolle der eigenen Org"]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Inline: is_super_admin ODER organization_id === id"
+        # LÜCKE (N5): fuer die eigene Org fehlt ein Rollen-Check — auch konfi
+        # und teamer erhalten SELECT * (Kontakt-, Trial-, max_konfis-Daten).
+    put:
+      summary: Organisation bearbeiten (Stammdaten; trial_ends_at/is_trial nur Super-Admin)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, slug, display_name]
+              properties:
+                name: { type: string }
+                slug: { type: string }
+                display_name: { type: string }
+                description: { type: string }
+                contact_name: { type: string }
+                contact_email: { type: string }
+                contact_phone: { type: string }
+                address: { type: string }
+                website_url: { type: string }
+                kirchenkreis: { type: string }
+                is_active: { type: boolean, description: "BEKANNT: auch org_admin darf die eigene Org (de)aktivieren" }
+                trial_ends_at: { type: [string, "null"], format: date-time, description: "nur super_admin; setzt license_reminder_sent_at zurueck" }
+                is_trial: { type: boolean, description: "nur super_admin" }
+      responses:
+        "200": { description: "Aktualisiert" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { description: "Slug existiert bereits" }
+      x-berechtigung:
+        rollen: [super_admin, org_admin]
+        middleware: [verifyTokenRBAC, validateUpdateOrg]
+        org-scope: true
+        objekt-pruefung: "Inline: is_super_admin ODER (eigene Org UND role_name==='org_admin'); Trial-Felder werden fuer org_admin ignoriert"
+    delete:
+      summary: Organisation vollstaendig loeschen (explizite CASCADE-Kette in einer Transaktion, inkl. Datei-Cleanup nach COMMIT)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "Org und alle zugehoerigen Daten geloescht; Gast-User fremder Orgs bleiben" }
+        "404": { $ref: "#/components/responses/NotFound" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin, validateOrgId]
+        org-scope: false
+        objekt-pruefung: "Existenz der Org"
+
+  /organizations/{id}/limit:
+    patch:
+      summary: Konfi-Limit (max_konfis) setzen — bewusst eigener Super-Admin-Endpunkt, damit org_admin den Tarif nicht aushebeln kann
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                max_konfis: { type: [integer, "null"], minimum: 0, description: "null = unbegrenzt" }
+      responses:
+        "200": { description: "Limit gesetzt" }
+        "400": { description: "max_konfis ungueltig" }
+        "404": { $ref: "#/components/responses/NotFound" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin, validateOrgId]
+        org-scope: false
+        objekt-pruefung: "Existenz der Org"
+
+  /organizations/{id}/users:
+    get:
+      summary: Alle User einer Organisation (inkl. Konfis) mit Rolle und Jahrgangs-Zaehler
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "User-Array" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+      x-berechtigung:
+        rollen: [super_admin, org_admin]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Inline: super_admin ODER (org_admin UND eigene Org)"
+
+  /organizations/{id}/admins:
+    get:
+      summary: org_admins einer Organisation auflisten
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "Admin-Array" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+      x-berechtigung:
+        rollen: [super_admin, org_admin]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Inline: super_admin ODER (org_admin UND eigene Org)"
+    post:
+      summary: Neuen org_admin in einer Organisation anlegen
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, display_name, password]
+              properties:
+                username: { type: string, description: "systemweit eindeutig (case-insensitiv)" }
+                display_name: { type: string }
+                password: { type: string, minLength: 6 }
+                email: { type: string }
+      responses:
+        "201": { description: "Neuer Admin" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "Org nicht gefunden" }
+        "409": { description: "Username/E-Mail existiert bereits" }
+      x-berechtigung:
+        rollen: [super_admin, org_admin]
+        middleware: [verifyTokenRBAC, validateCreateOrgAdmin]
+        org-scope: true
+        objekt-pruefung: "Inline: super_admin (jede Org) ODER org_admin der eigenen Org; org_admin-Rolle wird in der Ziel-Org aufgeloest"
+        # LÜCKE (N6): nur 6-Zeichen-Minimum, validatePassword-Policy wird
+        # nicht angewandt (schwaecher als jede andere User-Anlage).
+
+  /organizations/{id}/members:
+    get:
+      summary: Multi-Org-Mitglieder einer Organisation (Primaer-User + Mappings, dedupliziert)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "Array mit is_primary-Kennzeichnung" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin, validateOrgId]
+        org-scope: false
+        objekt-pruefung: "keine"
+    post:
+      summary: Bestehenden User als Multi-Org-Mitglied zuweisen (Upsert der Rolle)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, role_name]
+              properties:
+                user_id: { type: integer }
+                role_name: { type: string, enum: [org_admin, admin, teamer] }
+      responses:
+        "201": { description: "Mitgliedschaft gespeichert; Chat-Sync (Team-Chat, bei org_admin alle Jahrgangs-Chats); User-Cache invalidiert" }
+        "400": { description: "konfi/super_admin als Rolle verboten; Rolle existiert nicht in Ziel-Org; User ist Konfi" }
+        "404": { description: "User oder Org nicht gefunden" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin, validateAddMember]
+        org-scope: false
+        objekt-pruefung: "Ziel-Rolle wird in der Ziel-Org aufgeloest; Konfis explizit ausgeschlossen"
+
+  /organizations/{id}/members/{userId}:
+    delete:
+      summary: Multi-Org-Mitgliedschaft entziehen (Primaer-Org nicht entfernbar)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: userId, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "Mitgliedschaft entfernt; Chat-Sync raeumt Team-/Jahrgangs-Chats auf; Cache invalidiert" }
+        "400": { description: "Primaer-Org kann hier nicht entfernt werden" }
+        "404": { description: "User oder Mitgliedschaft nicht gefunden" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "users.organization_id !== id (Primaer-Org-Schutz)"
+        hinweis: "BEKANNT: laufende Access-Tokens mit active_organization_id-Claim wirken bis Ablauf nach (max 15 Min + 30s Cache)"
+
+  /organizations/{id}/stats:
+    get:
+      summary: Statistiken einer Organisation (Konfis, Aktivitaeten, Events, Badges, Antraege)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "Zaehler-Objekt" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+      x-berechtigung:
+        rollen: [super_admin, "jede Rolle der eigenen Org"]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Inline: is_super_admin ODER eigene Org"
+        # LÜCKE (N5): kein Rollen-Check fuer die eigene Org — auch Konfis
+        # koennen Org-Statistiken (inkl. pending_requests) abrufen.
+
+  # ==========================================================================
+  # USERS (backend/routes/users.js — 9 Routen, Mount /api/users UND
+  # /api/admin/users; komplette Verwaltung nur org_admin + Rollenhierarchie)
+  # ==========================================================================
+  /users:
+    get:
+      summary: Alle Verwaltungs-User der eigenen Org (ohne Konfis/super_admin), mit can_edit-Flag aus der Hierarchie
+      responses:
+        "200": { description: "User-Array (Rolle, Jahrgangs-Zaehler, can_edit)" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin]
+        org-scope: true
+        objekt-pruefung: "keine weitere"
+    post:
+      summary: Verwaltungs-User anlegen (Rolle aus eigener Org, volle Passwort-Policy)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, display_name, password, role_id]
+              properties:
+                username: { type: string, minLength: 3, maxLength: 50, pattern: "^[a-zA-Z0-9.-]+$" }
+                email: { type: string }
+                display_name: { type: string }
+                role_title: { type: string }
+                password: { type: string, description: "validatePassword-Policy" }
+                role_id: { type: integer }
+      responses:
+        "201": { description: "Neuer User; Chat-Sync (Team-Chat, org_admin zusaetzlich Jahrgangs-Chats)" }
+        "400": { description: "Rolle nicht in eigener Org / Policy verletzt" }
+        "403": { description: "Hierarchie: Ziel-Rolle nicht anlegbar (canCreateRole)" }
+        "409": { description: "Username existiert (systemweit)" }
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin, "checkUserHierarchy('create')", validateCreateUser]
+        org-scope: true
+        objekt-pruefung: "role_id muss zur eigenen Org gehoeren; Hierarchie prueft Ziel-Rolle"
+
+  /users/{id}:
+    get:
+      summary: Einzelnen User mit Jahrgangs-Zuweisungen laden
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "User + assigned_jahrgaenge (can_view/can_edit, assigned_by)" }
+        "403": { description: "Hierarchie: Ziel-Rolle nicht einsehbar" }
+        "404": { $ref: "#/components/responses/NotFound" }
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin, "checkUserHierarchy('view')"]
+        org-scope: true
+        objekt-pruefung: "Ziel-User muss in eigener Org sein; canManageRole(eigene Rolle, Ziel-Rolle)"
+    put:
+      summary: User bearbeiten (Felder optional; Rolle, is_active, Passwort)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username: { type: string, minLength: 3, maxLength: 50, pattern: "^[a-zA-Z0-9.-]+$" }
+                email: { type: string }
+                display_name: { type: string }
+                role_title: { type: string }
+                role_id: { type: integer, description: "Rollenwechsel: Hierarchie prueft neue Rolle; Sockets werden getrennt" }
+                is_active: { type: boolean, description: "false trennt aktive Sockets" }
+                password: { type: string }
+      responses:
+        "200": { description: "Aktualisiert; Chat-Sync bei Rollen-/Aktiv-Wechsel; User-Cache invalidiert" }
+        "400": { description: "Rolle nicht in eigener Org / keine Felder" }
+        "403": { description: "Hierarchie verletzt (Ziel-User oder neue Rolle)" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { description: "Username/E-Mail existiert bereits" }
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin, "checkUserHierarchy('update')", validateUpdateUser]
+        org-scope: true
+        objekt-pruefung: "Ziel-User in eigener Org; canManageRole + canCreateRole fuer neue Rolle"
+        # LÜCKE (N7): das optionale password-Feld wird OHNE Policy-Pruefung
+        # gehasht (weder validatePassword noch Mindestlaenge im Validator).
+    delete:
+      summary: User loeschen (Hard-Delete mit Referenz-Anonymisierung und History-Purge)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "Geloescht; Sockets getrennt; Nachweisfotos nach COMMIT entfernt" }
+        "400": { description: "Selbst-Loeschung verboten" }
+        "403": { description: "Hierarchie verletzt" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { description: "Letzter org_admin der Org nicht loeschbar" }
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin, "checkUserHierarchy('delete')", validateUserId]
+        org-scope: true
+        objekt-pruefung: "Eigene Org; Selbst-Loeschungs-Sperre; Letzter-org_admin-Schutz"
+
+  /users/{id}/jahrgaenge:
+    get:
+      summary: Jahrgangs-Zuweisungen eines Users
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "Array (jahrgang, can_view, can_edit, assigned_by_name)" }
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin]
+        org-scope: true
+        objekt-pruefung: "Jahrgaenge auf eigene Org gefiltert"
+    post:
+      summary: Jahrgangs-Zuweisungen komplett ersetzen (delete + insert, transaktional, Chat-Sync)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [jahrgang_assignments]
+              properties:
+                jahrgang_assignments:
+                  type: array
+                  items:
+                    type: object
+                    required: [jahrgang_id]
+                    properties:
+                      jahrgang_id: { type: integer }
+                      can_view: { type: boolean, default: true }
+                      can_edit: { type: boolean, default: false }
+      responses:
+        "200": { description: "Zuweisungen ersetzt; Jahrgangs-Chats aller betroffenen Jahrgaenge synchronisiert" }
+        "400": { description: "Jahrgang nicht in eigener Org" }
+        "404": { $ref: "#/components/responses/NotFound" }
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin, validateJahrgangAssignments]
+        org-scope: true
+        objekt-pruefung: "User + alle Jahrgang-IDs muessen zur eigenen Org gehoeren"
+        hinweis: "KEIN checkUserHierarchy — org_admin darf ohnehin alle; Route wird aber nicht durch andere Rollen erreichbar"
+
+  /users/me/jahrgaenge:
+    get:
+      summary: Eigene Jahrgangs-Zuweisungen (fuer Teamer-UI)
+      responses:
+        "200": { description: "Array der eigenen Zuweisungen (auf aktive Org gescopt)" }
+      x-berechtigung:
+        rollen: [alle authentifizierten]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Nur eigene Daten"
+
+  /users/{id}/reset-password:
+    put:
+      summary: Passwort eines Users administrativ setzen
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string, description: "volle validatePassword-Policy" }
+      responses:
+        "200": { description: "Passwort gesetzt; aktive Sockets des Users getrennt" }
+        "400": { description: "Policy verletzt" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+      x-berechtigung:
+        rollen: [super_admin, org_admin]
+        middleware: [verifyTokenRBAC, validateResetPassword]
+        org-scope: true
+        objekt-pruefung: "Inline: is_super_admin (org-uebergreifend, auch per Flag) ODER org_admin derselben Org; org_admin darf auch andere org_admins resetten"
+        # LÜCKE (N1): der Ziel-User wird NICHT auf is_super_admin/super_admin
+        # geprueft. Ein org_admin kann so das Passwort eines org_admins MIT
+        # is_super_admin-Flag in seiner Org setzen und dessen Super-Admin-
+        # Rechte uebernehmen (Privilege Escalation). Der Kommentar "nur
+        # super_admin ist geschuetzt" stimmt nur fuer die Rolle (org=NULL),
+        # nicht fuer das Flag.
+        # LÜCKE (N2): bestehende Refresh-Tokens des Ziel-Users bleiben gueltig.
