@@ -952,6 +952,26 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       res.json({ success: true, ...result });
     } catch (err) {
       console.error('Tageslosung error:', err.message);
+
+      // Fallback wie in der Konfi-Route: letzte gecachte Losung ausliefern,
+      // statt die Karte mit einem 500er leer zu lassen.
+      try {
+        const { rows: [fallbackCached] } = await db.query(
+          'SELECT verse_data, translation FROM daily_verses ORDER BY date DESC LIMIT 1'
+        );
+        if (fallbackCached) {
+          return res.json({
+            success: true,
+            data: fallbackCached.verse_data,
+            translation: fallbackCached.translation,
+            fallback: true,
+            error: 'Aktuelle Tageslosung nicht verfügbar - verwende letzte verfügbare Losung'
+          });
+        }
+      } catch (fallbackErr) {
+        console.error('Fallback cache error:', fallbackErr.message);
+      }
+
       res.status(500).json({ success: false, error: 'Tageslosung konnte nicht geladen werden' });
     }
   });

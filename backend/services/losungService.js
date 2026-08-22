@@ -33,6 +33,25 @@ const TIMEOUT_OEFFENTLICH_MS = 5000;
 // Mit Register wartet der zweite bis n-te Request auf denselben Promise.
 const laufendeAbrufe = new Map();
 
+// Negativ-Cache: Datum+Uebersetzung, bei denen der externe Abruf gescheitert ist.
+// Ohne diesen Merker laeuft JEDE Anfrage erneut in beide Timeouts (2s intern +
+// 5s oeffentlich = bis zu 7s), solange die Losungen-API nicht erreichbar ist.
+// Das Dashboard laedt die Losung beim Oeffnen, also traf das jede Nutzerin bei
+// jedem Start. Mit Merker wird der externe Weg fuer eine Sperrfrist uebersprungen
+// und sofort der DB-Fallback der aufrufenden Route gezogen.
+const gescheiterteAbrufe = new Map();
+const NEGATIV_CACHE_MS = 30 * 60 * 1000;
+
+function istGesperrt(schluessel) {
+  const bis = gescheiterteAbrufe.get(schluessel);
+  if (!bis) return false;
+  if (Date.now() >= bis) {
+    gescheiterteAbrufe.delete(schluessel);
+    return false;
+  }
+  return true;
+}
+
 async function fetchTageslosung(db, translation) {
   const today = new Date().toISOString().split('T')[0];
   const schluessel = `${today}:${translation}`;
@@ -56,6 +75,12 @@ async function holeTageslosung(db, translation, today) {
 
   if (cachedVerse) {
     return { data: cachedVerse.verse_data, translation, cached: true };
+  }
+
+  // Steht der externe Abruf unter Sperre, gar nicht erst versuchen — sonst
+  // wartet die Anfrage wieder die vollen Timeouts ab.
+  if (istGesperrt(`${today}:${translation}`)) {
+    throw new Error('Losungen API zuletzt nicht erreichbar (Sperrfrist aktiv)');
   }
 
   // Von API abrufen
@@ -105,6 +130,10 @@ async function holeTageslosung(db, translation, today) {
   }
 
   if (!losungData) {
+    // Sperrfrist setzen, damit die naechsten Anfragen nicht erneut in die
+    // Timeouts laufen. Faellt die API zurueck, greift sie nach Ablauf wieder.
+    gescheiterteAbrufe.set(`${today}:${translation}`, Date.now() + NEGATIV_CACHE_MS);
+    console.warn(`Losungen-API nicht erreichbar, Sperrfrist ${NEGATIV_CACHE_MS / 60000} Min fuer ${today}:${translation}`);
     throw new Error(`Losungen API nicht erreichbar: ${letzterFehler ? letzterFehler.message : 'unbekannter Fehler'}`);
   }
 
@@ -130,7 +159,9 @@ async function holeTageslosung(db, translation, today) {
     console.error('Cleanup error:', cleanupErr.message);
   }
 
+  gescheiterteAbrufe.delete(`${today}:${translation}`);
+
   return { data: losungData.data, translation, cached: false };
 }
 
-module.exports = { fetchTageslosung };
+module.exports = { fetchTageslosung, _resetNegativCache: () => gescheiterteAbrufe.clear() };

@@ -52,10 +52,24 @@ async function sendToOrgAdmins(organizationId, updateType, action = 'refresh', d
     // (user_teamer_<id>) sitzen, waehrend admin/org_admin im Raum
     // user_admin_<id> sitzen (Socket-Join-Typ aus dem JWT, server.js:75f).
     // Nur nicht-geloeschte User (deleted_at IS NULL) sollen Updates bekommen.
+    //
+    // Mehrfach-Zugehoerigkeit: users.organization_id haelt nur die PRIMAER-Org.
+    // Wer per Umschalter in einer Zweit-Organisation arbeitet, steht dort
+    // ausschliesslich in user_organizations — und bekam deshalb in dieser Org
+    // gar keine Live-Updates (Audit 22.08.). Deshalb beide Quellen vereinen.
+    // Die Rolle wird je Quelle getrennt gezogen: user_organizations traegt ein
+    // eigenes role_id, die Rolle kann sich also je Gemeinde unterscheiden.
     const adminsResult = await db.query(`
       SELECT u.id, r.name AS role_name FROM users u
       JOIN roles r ON u.role_id = r.id
       WHERE u.organization_id = $1
+      AND r.name IN ('admin', 'org_admin', 'teamer')
+      AND u.deleted_at IS NULL
+      UNION
+      SELECT u.id, r.name AS role_name FROM users u
+      JOIN user_organizations uo ON uo.user_id = u.id
+      JOIN roles r ON r.id = uo.role_id
+      WHERE uo.organization_id = $1
       AND r.name IN ('admin', 'org_admin', 'teamer')
       AND u.deleted_at IS NULL
     `, [organizationId]);
@@ -95,11 +109,20 @@ async function sendToOrgKonfis(organizationId, updateType, action = 'refresh', d
 
   try {
     const db = require('../database');
-    // Hole alle Konfis dieser Organisation
+    // Hole alle Konfis dieser Organisation. Wie bei sendToOrgAdmins beide
+    // Quellen vereinen: users.organization_id (Primaer-Org) und
+    // user_organizations (Zweit-Organisationen ueber den Umschalter).
     const konfisResult = await db.query(`
       SELECT u.id FROM users u
       JOIN roles r ON u.role_id = r.id
       WHERE u.organization_id = $1
+      AND r.name = 'konfi'
+      AND u.deleted_at IS NULL
+      UNION
+      SELECT u.id FROM users u
+      JOIN user_organizations uo ON uo.user_id = u.id
+      JOIN roles r ON r.id = uo.role_id
+      WHERE uo.organization_id = $1
       AND r.name = 'konfi'
       AND u.deleted_at IS NULL
     `, [organizationId]);

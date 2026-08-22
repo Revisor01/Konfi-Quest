@@ -85,6 +85,15 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Die Tageslosung wird wieder angezeigt. Sie fehlte seit dem 20. August.
+- Startseite und Profil öffnen wieder ohne Verzögerung: War die Tageslosung
+  nicht abrufbar, wartete die App bei jedem Öffnen mehrere Sekunden auf eine
+  Antwort, die nicht kam.
+- Ist die Tageslosung einmal nicht erreichbar, zeigen Teamer:innen jetzt die
+  zuletzt verfügbare Losung statt einer leeren Karte.
+- Wer in mehreren Gemeinden arbeitet, bekommt Live-Aktualisierungen jetzt auch
+  in der zweiten Gemeinde. Bisher blieben Listen dort stehen, bis man die
+  Ansicht neu lud.
 - Chat: Nicht zugestellte Nachrichten konnten verschwinden — beim erneuten
   Laden des Chats oder nach "Erneut senden". Sie bleiben jetzt erhalten und
   lassen sich wirklich noch einmal senden.

@@ -119,6 +119,108 @@ describe('liveUpdate: Socket-Raum-Adressierung', () => {
     });
   });
 
+  // Mehrfach-Zugehoerigkeit: users.organization_id haelt nur die Primaer-Org.
+  // Wer per Umschalter in einer Zweit-Organisation arbeitet, steht dort nur in
+  // user_organizations. Vor dem Fix (22.08.) loesten sendToOrgAdmins/-Konfis
+  // ausschliesslich ueber users.organization_id auf — in der Zweit-Org kam
+  // deshalb kein einziges Live-Update an.
+  describe('Mehrfach-Organisationen (user_organizations)', () => {
+    it('erreicht einen Org-Admin auch in seiner ZWEIT-Organisation', async () => {
+      // orgAdmin1 hat Primaer-Org 1 und bekommt zusaetzlich Zugang zu Org 2.
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+        [USERS.orgAdmin1.id, 2, 9]
+      );
+
+      const { io, emits } = createFakeIo();
+      liveUpdate.init(io);
+
+      await liveUpdate.sendToOrgAdmins(2, 'events', 'update');
+
+      const rooms = roomsFor(emits);
+      expect(rooms).toContain(`user_admin_${USERS.orgAdmin1.id}`);
+    });
+
+    it('erreicht die Empfaenger der Primaer-Organisation unveraendert weiter', async () => {
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+        [USERS.orgAdmin1.id, 2, 9]
+      );
+
+      const { io, emits } = createFakeIo();
+      liveUpdate.init(io);
+
+      await liveUpdate.sendToOrgAdmins(1, 'events', 'update');
+
+      const rooms = roomsFor(emits);
+      expect(rooms).toContain(`user_admin_${USERS.admin1.id}`);
+      expect(rooms).toContain(`user_admin_${USERS.orgAdmin1.id}`);
+      expect(rooms).toContain(`user_teamer_${USERS.teamer1.id}`);
+    });
+
+    it('adressiert jeden Empfaenger nur EINMAL, auch bei doppelter Quelle', async () => {
+      // admin1 steht in Org 1 sowohl per users.organization_id als auch
+      // zusaetzlich in user_organizations -> UNION muss entdoppeln.
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+        [USERS.admin1.id, 1, 3]
+      );
+
+      const { io, emits } = createFakeIo();
+      liveUpdate.init(io);
+
+      await liveUpdate.sendToOrgAdmins(1, 'events', 'update');
+
+      const rooms = roomsFor(emits);
+      const treffer = rooms.filter(r => r === `user_admin_${USERS.admin1.id}`);
+      expect(treffer).toHaveLength(1);
+    });
+
+    it('nutzt die Rolle AUS der Zweit-Organisation fuer die Raumwahl', async () => {
+      // admin1 ist in Org 1 Admin, in Org 2 aber nur Teamer:in -> das Update
+      // fuer Org 2 muss in den Teamer-Raum gehen, nicht in den Admin-Raum.
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+        [USERS.admin1.id, 2, 7]
+      );
+
+      const { io, emits } = createFakeIo();
+      liveUpdate.init(io);
+
+      await liveUpdate.sendToOrgAdmins(2, 'events', 'update');
+
+      const rooms = roomsFor(emits);
+      expect(rooms).toContain(`user_teamer_${USERS.admin1.id}`);
+      expect(rooms).not.toContain(`user_admin_${USERS.admin1.id}`);
+    });
+
+    it('erreicht einen Konfi auch in seiner ZWEIT-Organisation', async () => {
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+        [USERS.konfi1.id, 2, 6]
+      );
+
+      const { io, emits } = createFakeIo();
+      liveUpdate.init(io);
+
+      await liveUpdate.sendToOrgKonfis(2, 'events', 'update');
+
+      const rooms = roomsFor(emits);
+      expect(rooms).toContain(`user_konfi_${USERS.konfi1.id}`);
+    });
+
+    it('zieht ohne Zweit-Zugehoerigkeit keine fremden User in die Organisation', async () => {
+      const { io, emits } = createFakeIo();
+      liveUpdate.init(io);
+
+      await liveUpdate.sendToOrgAdmins(2, 'events', 'update');
+
+      const rooms = roomsFor(emits);
+      expect(rooms).not.toContain(`user_admin_${USERS.admin1.id}`);
+      expect(rooms).not.toContain(`user_teamer_${USERS.teamer1.id}`);
+    });
+  });
+
   describe('sendToUserByRole', () => {
     it('sendet an einen Teamer in den Teamer-Raum', async () => {
       const { io, emits } = createFakeIo();

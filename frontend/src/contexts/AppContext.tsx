@@ -2,9 +2,9 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { Device } from '@capacitor/device';
 import api from '../services/api';
-import { getUser, setUser as persistUser, getDeviceId, setDeviceId, getPushTokenTimestamp, setPushTokenTimestamp, getActiveOrgId, setActiveOrgId, setToken } from '../services/tokenStore';
+import { getUser, setUser as persistUser, getDeviceId, setDeviceId, getPushTokenTimestamp, setPushTokenTimestamp, getActiveOrgId, setActiveOrgId, setToken, getToken } from '../services/tokenStore';
 import { networkMonitor } from '../services/networkMonitor';
-import { ensureSocketConnected } from '../services/websocket';
+import { ensureSocketConnected, reconnectWithToken } from '../services/websocket';
 import { App } from '@capacitor/app';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { removeDeliveredById, removeAllDelivered } from '../services/notifications';
@@ -342,6 +342,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error('Org-Wechsel fehlgeschlagen:', err);
       setError('Organisation konnte nicht gewechselt werden');
       return;
+    }
+
+    // 4b. Socket mit dem NEUEN Token neu aufbauen. Ohne diesen Schritt lief der
+    // Socket mit dem Token der alten Organisation weiter: initializeWebSocket
+    // gibt einen bereits bestehenden Socket unveraendert zurueck, das frische
+    // Token aus switch-org erreichte die Verbindung also nie. Folge: in der
+    // Zweit-Organisation kamen gar keine Live-Updates an (Audit 22.08.).
+    try {
+      const frischesToken = getToken();
+      if (frischesToken) reconnectWithToken(frischesToken);
+    } catch (socketErr) {
+      // Live-Updates sind Komfort — ein Fehler hier darf den bereits
+      // erfolgreichen Org-Wechsel nicht nachtraeglich als gescheitert melden.
+      console.error('Socket-Neuaufbau nach Org-Wechsel fehlgeschlagen:', socketErr);
     }
 
     // 5. window-Event 'org:switched' -> jede useOfflineQuery revalidiert frisch
