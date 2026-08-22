@@ -75,8 +75,8 @@ export const logout = async (): Promise<void> => {
     Promise.race([p, new Promise<undefined>((resolve) => setTimeout(() => resolve(undefined), ms))]);
 
   // Push-Token serverseitig loeschen (best-effort, mit Timeout, NOCH authentifiziert)
+  let deviceId: string | undefined;
   try {
-    let deviceId: string | undefined;
     if (Capacitor.isNativePlatform()) {
       try {
         const deviceInfo = await Device.getId();
@@ -102,7 +102,17 @@ export const logout = async (): Promise<void> => {
   try {
     const refreshToken = getRefreshToken();
     if (refreshToken && networkMonitor.isOnline) {
-      await withTimeout(api.post('/auth/logout', { refresh_token: refreshToken }));
+      // Geraetedaten mitschicken: Die Logout-Route loescht den Push-Token in
+      // derselben Anfrage. Der DELETE oben ist best-effort (Timeout, nur
+      // online, nur mit ermittelter Geraete-ID) — schlaegt er fehl, bekam das
+      // Geraet weiter Pushes fuer das abgemeldete Konto (Bericht einer
+      // Teamer:in auf iOS, 22.08.2026). Zwei Wege auf dasselbe Ziel, ohne
+      // zusaetzlichen Roundtrip.
+      await withTimeout(api.post('/auth/logout', {
+        refresh_token: refreshToken,
+        device_id: deviceId,
+        platform: Capacitor.getPlatform()
+      }));
     }
   } catch (error) {
     console.warn('Serverseitiges Token-Revoke fehlgeschlagen (wird lokal geloescht):', error);

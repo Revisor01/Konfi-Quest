@@ -85,6 +85,8 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Nach dem Abmelden kommen keine Mitteilungen mehr auf dem Gerät an. Bisher
+  konnten sie weiterlaufen, bis man sich dort erneut anmeldete.
 - Wer in mehreren Gemeinden arbeitet, sieht Bilder und Dateien im Chat jetzt
   auch in der zweiten Gemeinde. Bisher blieben sie dort leer.
 - Sicherheit: Wird jemandem der Zugang zu einer Gemeinde entzogen, endet der

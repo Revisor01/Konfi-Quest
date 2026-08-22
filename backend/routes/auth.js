@@ -1186,9 +1186,33 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     return res.json({ token: newAccessToken, refresh_token: newRefreshToken });
   }
 
-  // POST /api/auth/logout — Revokiert das aktive Refresh Token
+  // POST /api/auth/logout — Revokiert das aktive Refresh Token und entfernt
+  // den Push-Token dieses Geraets.
   router.post('/logout', rbacVerifier, async (req, res) => {
-    const { refresh_token } = req.body;
+    const { refresh_token, device_id, platform } = req.body;
+
+    // Push-Token dieses Geraets loeschen (Audit 22.08.2026).
+    //
+    // Der Client ruft dafuer zwar schon DELETE /notifications/device-token,
+    // aber best-effort: mit 4s-Timeout, nur wenn networkMonitor online meldet
+    // und nur wenn die Geraete-ID ermittelbar war. Schlaegt einer dieser
+    // Punkte fehl, bleibt der Token registriert und das Geraet bekommt
+    // weiter Push-Nachrichten fuer das abgemeldete Konto — bis zum naechsten
+    // Login auf demselben Geraet, der ihn umhaengt. Genau das wurde von einer
+    // Teamer:in auf iOS berichtet.
+    //
+    // Hier laeuft es in DERSELBEN Anfrage, die ohnehin gesendet wird. Kein
+    // Zusatz-Roundtrip, und ein Fehler darf den Logout nie aufhalten.
+    if (device_id && platform) {
+      try {
+        await db.query(
+          'DELETE FROM push_tokens WHERE user_id = $1 AND device_id = $2 AND platform = $3',
+          [req.user.id, device_id, platform]
+        );
+      } catch (err) {
+        console.error('Push-Token-Cleanup beim Logout fehlgeschlagen:', err.message);
+      }
+    }
 
     // Best-effort: Logout geht immer durch, auch ohne Token
     if (!refresh_token) {

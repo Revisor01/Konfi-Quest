@@ -175,6 +175,85 @@ describe('Auth Routes', () => {
       expect(refreshRes.status).toBe(401);
     });
 
+    // Eine Teamer:in bekam auf iOS nach dem Abmelden weiter Push-Nachrichten.
+    // Ursache: Der Client ruft zwar DELETE /notifications/device-token, aber
+    // best-effort — mit 4s-Timeout, nur online, nur mit ermittelbarer
+    // Geraete-ID. Schlaegt einer dieser Punkte fehl, blieb der Token
+    // registriert. Die Logout-Route raeumt ihn jetzt selbst ab
+    // (Audit 22.08.2026).
+    it('Logout entfernt den Push-Token dieses Geraets', async () => {
+      await db.query(
+        `INSERT INTO push_tokens (user_id, user_type, token, platform, device_id)
+         VALUES ($1, 'konfi', 'fcm-token-abc', 'ios', 'geraet-1')`,
+        [USERS.konfi1.id]
+      );
+
+      const token = generateToken('konfi1');
+      const res = await request(app)
+        .post('/api/auth/logout')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ device_id: 'geraet-1', platform: 'ios' });
+
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query(
+        'SELECT 1 FROM push_tokens WHERE user_id = $1 AND device_id = $2',
+        [USERS.konfi1.id, 'geraet-1']
+      );
+      expect(rows).toHaveLength(0);
+    });
+
+    it('Logout laesst die Push-Tokens ANDERER Geraete stehen', async () => {
+      await db.query(
+        `INSERT INTO push_tokens (user_id, user_type, token, platform, device_id)
+         VALUES ($1, 'konfi', 'fcm-handy', 'ios', 'handy'),
+                ($1, 'konfi', 'fcm-tablet', 'ios', 'tablet')`,
+        [USERS.konfi1.id]
+      );
+
+      const token = generateToken('konfi1');
+      await request(app)
+        .post('/api/auth/logout')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ device_id: 'handy', platform: 'ios' });
+
+      const { rows } = await db.query(
+        'SELECT device_id FROM push_tokens WHERE user_id = $1',
+        [USERS.konfi1.id]
+      );
+      expect(rows.map(r => r.device_id)).toEqual(['tablet']);
+    });
+
+    it('Logout entfernt KEINE Push-Tokens anderer Nutzer', async () => {
+      await db.query(
+        `INSERT INTO push_tokens (user_id, user_type, token, platform, device_id)
+         VALUES ($1, 'konfi', 'fcm-fremd', 'ios', 'geteiltes-geraet')`,
+        [USERS.konfi2.id]
+      );
+
+      const token = generateToken('konfi1');
+      await request(app)
+        .post('/api/auth/logout')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ device_id: 'geteiltes-geraet', platform: 'ios' });
+
+      const { rows } = await db.query(
+        'SELECT 1 FROM push_tokens WHERE user_id = $1 AND device_id = $2',
+        [USERS.konfi2.id, 'geteiltes-geraet']
+      );
+      expect(rows).toHaveLength(1);
+    });
+
+    it('Logout ohne Geraetedaten funktioniert weiterhin', async () => {
+      const token = generateToken('konfi1');
+      const res = await request(app)
+        .post('/api/auth/logout')
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+
+      expect(res.status).toBe(200);
+    });
+
     it('Logout ohne refresh_token im Body gibt 200 (best-effort)', async () => {
       const token = generateToken('konfi1');
 
