@@ -158,6 +158,29 @@ describe('Organizations Routes', () => {
       expect(res.status).toBe(403);
     });
 
+    // Die Route liefert SELECT * der Organisation: Kontaktdaten der Leitung
+    // (Name, Telefon, Privatadresse), Lizenz- und Trial-Angaben. Geprueft wurde
+    // bisher nur die Org-Zugehoerigkeit, nicht die Rolle — damit bekam auch
+    // jede Konfi diese Daten (Audit 22.08.2026, LÜCKE N5).
+    it('Konfi der eigenen Org bekommt KEINE Org-Stammdaten -> 403', async () => {
+      const res = await request(app)
+        .get(`/api/organizations/${ORGS.testGemeinde.id}`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.contact_phone).toBeUndefined();
+      expect(res.body.address).toBeUndefined();
+    });
+
+    it('Teamer:in der eigenen Org sieht die Org weiterhin -> 200', async () => {
+      const res = await request(app)
+        .get(`/api/organizations/${ORGS.testGemeinde.id}`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.id).toBe(ORGS.testGemeinde.id);
+    });
+
     it('Nicht-existierende Org -> 404', async () => {
       const res = await request(app)
         .get('/api/organizations/9999')
@@ -179,6 +202,17 @@ describe('Organizations Routes', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.id).toBeDefined();
+    });
+
+    // /current liefert denselben Datensatz wie GET /:id. Ohne eigenen Guard
+    // waere der Schutz dort wirkungslos (LÜCKE N5).
+    it('Konfi bekommt ueber /current KEINE Org-Stammdaten -> 403', async () => {
+      const res = await request(app)
+        .get('/api/organizations/current')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.contact_phone).toBeUndefined();
     });
 
     it('SuperAdmin bekommt eigene Org ueber /current -> 200', async () => {

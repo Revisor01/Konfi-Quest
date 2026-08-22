@@ -183,8 +183,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // ODER die keinem Jahrgang zugeordnet sind (allgemeine Events)
       // ODER die teamer_only/teamer_needed sind (immer sichtbar für Teamer)
       let filteredRows = rows;
-      if (req.user.role_name === 'teamer' && req.user.assigned_jahrgaenge && req.user.assigned_jahrgaenge.length > 0) {
-        const viewableJahrgaenge = req.user.assigned_jahrgaenge
+      if (req.user.role_name === 'teamer') {
+        // Ohne jede Zuweisung griff der Filter frueher gar nicht (die Bedingung
+        // verlangte length > 0) — eine Teamer:in ohne Jahrgang sah damit ALLE
+        // Events der Organisation statt keiner jahrgangsgebundenen (Audit
+        // 22.08.2026). Jetzt greift der Filter immer; ohne Zuweisung bleibt die
+        // Liste der sichtbaren Jahrgaenge schlicht leer.
+        const viewableJahrgaenge = (req.user.assigned_jahrgaenge || [])
           .filter(j => j.can_view)
           .map(j => j.id);
         filteredRows = rows.filter(row => {
@@ -230,8 +235,19 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         }
         
         const unprocessedCount = parseInt(row.unprocessed_count, 10) || 0;
+
+        // qr_token gehoert NICHT in die Liste (Audit 22.08.2026): Die Query
+        // holt e.*, damit lag der Check-in-Token jedes Events in der Antwort —
+        // fuer ALLE Rollen, auch Konfis. Ein Konfi konnte sich damit per
+        // POST /events/qr-checkin von zu Hause als anwesend eintragen und
+        // Punkte gutschreiben. GET /events/:id filterte den Token bereits,
+        // ueber die Liste war dieser Schutz umgehbar.
+        // Teamer und Leitung brauchen den Token nur zum Anzeigen des QR-Codes
+        // und holen ihn dort ueber die Detail- bzw. generate-Route.
+        const { qr_token: _qrToken, ...rowOhneToken } = row;
+
         return {
-          ...row,
+          ...rowOhneToken,
           categories: categories,
           jahrgaenge: jahrgaenge,
           waitlist_count: parseInt(row.waitlist_count, 10) || 0,

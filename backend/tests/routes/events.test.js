@@ -61,6 +61,65 @@ describe('Events Routes', () => {
       expect(evt.name).toBeDefined();
     });
 
+    // qr_token in der Liste war der Umgehungsweg um den Filter in
+    // GET /events/:id: Ein Konfi konnte sich mit dem Token per
+    // POST /events/qr-checkin von zu Hause als anwesend eintragen und
+    // Punkte gutschreiben (Audit 22.08.2026, LÜCKE L1).
+    it('Liste enthaelt fuer KONFIS keinen qr_token', async () => {
+      await db.query('UPDATE events SET qr_token = $1 WHERE id = $2',
+        ['test-token-konfi', EVENTS.gottesdienstEvent.id]);
+
+      const res = await request(app)
+        .get('/api/events')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      for (const evt of res.body) {
+        expect(evt.qr_token).toBeUndefined();
+      }
+    });
+
+    it('Liste enthaelt auch fuer ADMINS keinen qr_token (Detail-/generate-Route zustaendig)', async () => {
+      await db.query('UPDATE events SET qr_token = $1 WHERE id = $2',
+        ['test-token-admin', EVENTS.gottesdienstEvent.id]);
+
+      const res = await request(app)
+        .get('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      for (const evt of res.body) {
+        expect(evt.qr_token).toBeUndefined();
+      }
+    });
+
+    // Der Jahrgangs-Filter fuer Teamer:innen griff nur, wenn ueberhaupt
+    // Zuweisungen vorhanden waren (Bedingung length > 0). Ohne jede Zuweisung
+    // fiel der Filter weg und die Teamer:in sah ALLE Events der Organisation
+    // (Audit 22.08.2026, LÜCKE L5).
+    it('Teamer:in OHNE Jahrgangs-Zuweisung sieht keine jahrgangsgebundenen Events', async () => {
+      const { invalidateUserCache } = require('../../middleware/rbac');
+
+      await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1',
+        [USERS.teamer1.id]);
+      invalidateUserCache(USERS.teamer1.id);
+
+      const res = await request(app)
+        .get('/api/events')
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+
+      // Jedes noch sichtbare Event muss einen eigenen Grund haben: allgemein
+      // (ohne Jahrgang) oder teamer_only/teamer_needed. Ein jahrgangsgebundenes
+      // Event ohne Teamer-Bezug darf NICHT dabei sein.
+      for (const evt of res.body) {
+        const istAllgemein = !evt.jahrgaenge || evt.jahrgaenge.length === 0;
+        const istTeamerEvent = evt.teamer_only || evt.teamer_needed;
+        expect(istAllgemein || istTeamerEvent).toBe(true);
+      }
+    });
+
     it('Events einer anderen Org sind NICHT sichtbar', async () => {
       const res = await request(app)
         .get('/api/events')

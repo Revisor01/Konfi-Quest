@@ -15,7 +15,18 @@ const chatSyncCache = require('../utils/chatSyncCache');
 // super_admin: Kann ALLE Orgs sehen, erstellen, löschen
 // org_admin: Kann NUR eigene Org sehen und bearbeiten
 // ============================================
-module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
+module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
+
+  // Verwaltungszugriff auf Organisationsdaten: super_admin (org-uebergreifend
+  // zustaendig) ODER eine Verwaltungsrolle der Organisation. requireTeamer
+  // allein wuerde den super_admin aussperren, dessen Rolle in requireRole
+  // nicht gelistet ist; requireSuperAdmin allein wuerde org_admin/admin/teamer
+  // aussperren. Die Org-Zugehoerigkeit selbst pruefen die Routen weiterhin
+  // inline (is_super_admin ODER eigene Org).
+  const requireOrgVerwaltung = (req, res, next) => {
+    if (req.user && req.user.is_super_admin) return next();
+    return requireTeamer(req, res, next);
+  };
 
   // Validierungsregeln
   const validateCreateOrg = [
@@ -118,7 +129,12 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
   });
 
   // Get current organization details (muss VOR /:id stehen, sonst wird "current" als ID gefangen)
-  router.get('/current', rbacVerifier, async (req, res) => {
+  // requireTeamer wie bei GET /:id: Die Route liefert o.* der eigenen
+  // Organisation und damit dieselben Kontakt-, Lizenz- und Trial-Daten.
+  // Ohne diesen Guard waere der Schutz an GET /:id wirkungslos — derselbe
+  // Datensatz waere hier weiterhin fuer jede Konfi abrufbar gewesen
+  // (Audit 22.08.2026, LÜCKE N5).
+  router.get('/current', rbacVerifier, requireOrgVerwaltung, async (req, res) => {
     try {
       const organizationId = req.user.organization_id;
 
@@ -166,7 +182,11 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
   // Get single organization by ID
   // super_admin: alle, org_admin: nur eigene
   // OPTIMIERT: Parallele Queries statt JOIN-Monster
-  router.get('/:id', rbacVerifier, async (req, res) => {
+  // requireTeamer: Die Route liefert SELECT * der Organisation — Kontaktdaten
+  // (Name, Telefon, Privatadresse der Leitung), Lizenz- und Trial-Angaben.
+  // Geprueft wurde bisher nur die Org-Zugehoerigkeit, nicht die Rolle: damit
+  // bekam auch jede Konfi diese Daten (Audit 22.08.2026, LÜCKE N5).
+  router.get('/:id', rbacVerifier, requireOrgVerwaltung, async (req, res) => {
     try {
       const { id } = req.params;
 
@@ -1082,7 +1102,9 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
   });
 
   // Get organization statistics - nur eigene Org
-  router.get('/:id/stats', rbacVerifier, async (req, res) => {
+  // requireTeamer aus demselben Grund wie bei GET /:id: Die Zaehler (u.a.
+  // pending_requests) sind Verwaltungsdaten und gehen Konfis nichts an.
+  router.get('/:id/stats', rbacVerifier, requireOrgVerwaltung, async (req, res) => {
     try {
       const { id } = req.params;
 

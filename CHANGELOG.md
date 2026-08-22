@@ -85,6 +85,14 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Sicherheit: Der Check-in-Code eines Termins wurde in der Terminliste an alle
+  ausgeliefert. Konfis konnten sich damit selbst als anwesend eintragen und
+  Punkte gutschreiben. Der Code wird jetzt nur noch beim Anzeigen des QR-Codes
+  ausgegeben.
+- Sicherheit: Kontaktdaten, Adresse und Lizenzangaben der Gemeinde waren für
+  Konfis abrufbar. Sie sind jetzt der Leitung und dem Team vorbehalten.
+- Teamer:innen ohne zugewiesenen Jahrgang sahen alle Termine der Gemeinde
+  statt nur der allgemeinen und der Team-Termine.
 - Termine mit unbegrenzter Teilnehmerzahl lassen sich wieder anlegen. Der
   Schalter "Unbegrenzte Teilnehmer:innen" führte bisher zur Meldung, dass eine
   maximale Teilnehmerzahl erforderlich sei.
