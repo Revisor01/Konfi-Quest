@@ -575,8 +575,8 @@ describe('Teamer Routes', () => {
       // Teamer-Aktivitaet (target_role='teamer') in Org 1 anlegen — nur solche
       // duerfen Teamer:innen beantragen.
       const { rows: [act] } = await db.query(
-        `INSERT INTO activities (name, gottesdienst_points, gemeinde_points, points, type, target_role, organization_id)
-         VALUES ('Teamer-Schulung', 0, 0, 0, 'gemeinde', 'teamer', 1) RETURNING id`
+        `INSERT INTO activities (name, points, type, target_role, organization_id)
+         VALUES ('Teamer-Schulung', 0, 'gemeinde', 'teamer', 1) RETURNING id`
       );
       teamerActivityId = act.id;
     });
@@ -618,8 +618,8 @@ describe('Teamer Routes', () => {
 
     beforeEach(async () => {
       const { rows: [act] } = await db.query(
-        `INSERT INTO activities (name, gottesdienst_points, gemeinde_points, points, type, target_role, organization_id)
-         VALUES ('Teamer-Schulung', 0, 0, 0, 'gemeinde', 'teamer', 1) RETURNING id`
+        `INSERT INTO activities (name, points, type, target_role, organization_id)
+         VALUES ('Teamer-Schulung', 0, 'gemeinde', 'teamer', 1) RETURNING id`
       );
       teamerActivityId = act.id;
 

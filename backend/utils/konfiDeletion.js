@@ -63,11 +63,42 @@ async function deleteKonfiCascade(client, userId, organizationId) {
   await client.query("DELETE FROM chat_poll_votes WHERE user_id = $1", [userId]);
   await client.query("DELETE FROM push_tokens WHERE user_id = $1", [userId]);
   await client.query("DELETE FROM konfi_profiles WHERE user_id = $1", [userId]);
-  // Von diesem Konfi ERSTELLTE Chat-Raeume (z.B. ein selbst gestarteter Direktchat):
-  // created_by -> NULL setzen, sonst blockt der FK chat_rooms_created_by_fkey das
-  // Loeschen des Users (500). Der Chat bleibt fuer die anderen Teilnehmer erhalten;
-  // der Konfi selbst wurde oben schon aus chat_participants entfernt.
-  await client.query("UPDATE chat_rooms SET created_by = NULL WHERE created_by = $1", [userId]);
+  // URHEBERSCHAFT anonymisieren statt loeschen.
+  //
+  // Siebzehn Fremdschluessel zeigen auf users(id) — die meisten OHNE
+  // ON DELETE. Bleibt auch nur einer stehen, scheitert das DELETE auf users
+  // mit einem 500er. Betroffen ist nicht nur der geloeschte Konfi selbst:
+  // Diese Funktion loescht auch Teamer- und Admin-Konten (Selbstloeschung
+  // ueber /auth/delete-account, alle Rollen). Wer je Punkte vergeben, ein
+  // Event angelegt oder ein Abzeichen erstellt hat, konnte seinen Account
+  // deshalb GAR NICHT loeschen (Audit 22.08.2026 — vorher unsichtbar, weil
+  // dem Test-Schema diese Constraints fehlten).
+  //
+  // Die Eintraege selbst bleiben erhalten: Vergebene Punkte, angelegte Events
+  // und Materialien gehoeren der Gemeinde, nicht der Person. Nur der Bezug auf
+  // das geloeschte Konto faellt weg — dieselbe Logik wie bei chat_rooms.
+  const urheberFelder = [
+    ['bonus_points', 'admin_id'],
+    ['event_points', 'admin_id'],
+    ['user_activities', 'admin_id'],
+    ['user_certificates', 'admin_id'],
+    ['activity_requests', 'approved_by'],
+    ['chat_rooms', 'created_by'],
+    ['custom_badges', 'created_by'],
+    ['events', 'created_by'],
+    ['levels', 'created_by'],
+    ['materials', 'created_by'],
+    ['user_jahrgang_assignments', 'assigned_by'],
+  ];
+  for (const [tabelle, spalte] of urheberFelder) {
+    await client.query(`UPDATE ${tabelle} SET ${spalte} = NULL WHERE ${spalte} = $1`, [userId]);
+  }
+
+  // invite_codes.created_by ist NOT NULL — hier geht kein Anonymisieren.
+  // Einladungscodes sind kurzlebig und an die einladende Person gebunden;
+  // ohne sie ergeben sie keinen Sinn mehr, also loeschen.
+  await client.query("DELETE FROM invite_codes WHERE created_by = $1", [userId]);
+
   await client.query("DELETE FROM users WHERE id = $1", [userId]);
 
   // Nachweisfotos vom Dateisystem entfernen (nach dem DB-Delete, nicht

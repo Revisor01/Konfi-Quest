@@ -85,6 +85,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Konten lassen sich wieder löschen, auch wenn damit schon Punkte vergeben,
+  Termine angelegt oder Abzeichen erstellt wurden. Diese Einträge bleiben
+  erhalten, nur der Bezug auf das gelöschte Konto entfällt.
 - Beim Anlegen einer Teamer:in über die Konfi-Übersicht wird nicht mehr die
   volle Rollenauswahl gezeigt. Der Dialog legt genau das an, was der Knopf
   verspricht; Verwaltungskonten entstehen weiterhin unter Nutzende.
