@@ -44,7 +44,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Aus "Anträgen" werden "Aktivitäten" — überall in der App, vom Reiter bis zu
   den Meldungen. Gemeint ist dasselbe: gemeldet wird, was schon passiert ist.
 - Profil: "Was ist neu?" steht jetzt als eigener Punkt über den Einstellungen
-  statt darin.
+  statt darin — bei Konfis, Teamer:innen und der Leitung an derselben Stelle.
+- Konfi-Übersicht: Der Plus-Button legt jetzt eine Teamer:in an, wenn die
+  Teamer-Liste geöffnet ist.
 - Challenges: Eingereichte Links zeigen nur noch die Seite (etwa
   "youtube.com") statt der vollen Adresse über mehrere Zeilen.
 - Die Absenderadresse für E-Mails aus der App ist jetzt moin@konfi-quest.de.
@@ -78,6 +80,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Chat: Nicht zugestellte Nachrichten konnten verschwinden — beim erneuten
+  Laden des Chats oder nach "Erneut senden". Sie bleiben jetzt erhalten und
+  lassen sich wirklich noch einmal senden.
 - Push-Nachrichten kamen nach der Server-Umstellung nicht mehr an.
 - Abgesagte Termine werden auch der Leitung als abgesagt und durchgestrichen
   angezeigt — bisher sahen das nur die Konfis.

@@ -78,6 +78,10 @@ interface KonfisViewProps {
   onDeleteTeamer: (teamer: any) => void | Promise<void>;
   // Im iPad-Split-View aktuell rechts geoeffneter Konfi (fuer Highlighting).
   selectedKonfiId?: number | null;
+  // Meldet den Umschalter nach oben: der Plus-Button in der Kopfzeile gehoert
+  // der Seite, muss aber wissen, ob gerade Konfis oder Teamer:innen angezeigt
+  // werden — sonst legt er im Teamer-Modus einen Konfi an (Fund 22.08.2026).
+  onViewModeChange?: (mode: 'konfis' | 'teamer') => void;
 }
 
 const KonfisView: React.FC<KonfisViewProps> = ({
@@ -89,7 +93,8 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   onSelectKonfi,
   onDeleteKonfi,
   onDeleteTeamer,
-  selectedKonfiId
+  selectedKonfiId,
+  onViewModeChange
 }) => {
   const { user, setError } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
@@ -234,7 +239,11 @@ const KonfisView: React.FC<KonfisViewProps> = ({
       {/* Konfis / Teamer:innen Segment */}
       <IonSegment
         value={viewMode}
-        onIonChange={(e) => setViewMode(e.detail.value as 'konfis' | 'teamer')}
+        onIonChange={(e) => {
+          const mode = e.detail.value as 'konfis' | 'teamer';
+          setViewMode(mode);
+          onViewModeChange?.(mode);
+        }}
         style={{ margin: '0 16px 8px', maxWidth: 'calc(100% - 32px)' }}
       >
         <IonSegmentButton value="konfis">

@@ -37,6 +37,7 @@ import {
   flag,
   compassOutline,
   sparklesOutline,
+  chevronForwardOutline,
   document as documentIcon
 } from 'ionicons/icons';
 import InfoModal from '../../shared/InfoModal';
@@ -216,6 +217,38 @@ const AdminSettingsPage: React.FC = () => {
           </IonToolbar>
         </IonHeader>
 
+        {/* "Was ist neu?" als eigener Block VOR den Einstellungen — gleiche
+            Stelle wie im Konfi- und Teamer-Profil (Nutzerhinweis 22.08.2026). */}
+        <IonCard
+          className="app-card app-list-item--challenges"
+          style={{ margin: '16px', cursor: 'pointer' }}
+          onClick={() => setShowUpdateWalkthrough(true)}
+          role="button"
+          tabIndex={0}
+          aria-label="Was ist neu? Die Neuerungen dieser Version ansehen"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setShowUpdateWalkthrough(true);
+            }
+          }}
+        >
+          <IonCardContent style={{ padding: '14px 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div className="app-icon-circle app-icon-circle--challenges" style={{ flexShrink: 0 }}>
+                <IonIcon icon={sparklesOutline} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="app-list-item__title" style={{ whiteSpace: 'normal' }}>Was ist neu?</div>
+                <div className="app-list-item__meta">
+                  <span className="app-list-item__meta-item">Die Neuerungen dieser Version ansehen</span>
+                </div>
+              </div>
+              <IonIcon icon={chevronForwardOutline} style={{ flexShrink: 0, fontSize: '1.1rem', opacity: 0.4 }} />
+            </div>
+          </IonCardContent>
+        </IonCard>
+
         {/* Konto */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
@@ -279,19 +312,6 @@ const AdminSettingsPage: React.FC = () => {
                 <div className="app-flex-fill">
                   <h2 className="app-settings-item__title">App-Tour ansehen</h2>
                   <p className="app-settings-item__subtitle">Kurze Einführung durch die App</p>
-                </div>
-              </div>
-
-              <div
-                className="app-list-item app-list-item--challenges app-settings-item"
-                onClick={() => setShowUpdateWalkthrough(true)}
-              >
-                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--challenges">
-                  <IonIcon icon={sparklesOutline} />
-                </div>
-                <div className="app-flex-fill">
-                  <h2 className="app-settings-item__title">Was ist neu?</h2>
-                  <p className="app-settings-item__subtitle">Die Neuerungen dieser Version</p>
                 </div>
               </div>
                 </div>

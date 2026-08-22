@@ -33,6 +33,26 @@ export interface FlushResult {
   failed: FailedQueueItem[];
 }
 
+// --- Endgueltig fehlgeschlagene Items melden ---
+//
+// Gibt die Queue nach maxRetries auf, verschwindet das Item — die Nachricht
+// blieb in der Chat-Bubble aber auf 'pending' stehen, ohne Hinweis und ohne
+// Moeglichkeit zum echten Neuversand (Fund Hennstedt 22.08.2026). Ueber diese
+// Melder erfaehrt die Ansicht davon und kann die Bubble auf 'error' setzen.
+type FailedListener = (item: FailedQueueItem) => void;
+const failedListeners = new Set<FailedListener>();
+
+export function onItemFailed(listener: FailedListener): () => void {
+  failedListeners.add(listener);
+  return () => { failedListeners.delete(listener); };
+}
+
+function notifyFailed(item: FailedQueueItem): void {
+  failedListeners.forEach((l) => {
+    try { l(item); } catch { /* ein kaputter Melder darf den Flush nicht stoppen */ }
+  });
+}
+
 // --- Persistenz-Layer ---
 
 const QUEUE_KEY = 'queue:items';
@@ -285,6 +305,7 @@ async function flush(): Promise<FlushResult> {
           // 4xx (ausser 408/429): Item entfernen, als failed markieren
           const failedItem: FailedQueueItem = { ...item, error: { status, message } };
           result.failed.push(failedItem);
+          notifyFailed(failedItem);
           items.shift();
           await _save(items);
         } else {
@@ -293,6 +314,7 @@ async function flush(): Promise<FlushResult> {
           if (item.retryCount >= item.maxRetries) {
             const failedItem: FailedQueueItem = { ...item, error: { status, message } };
             result.failed.push(failedItem);
+            notifyFailed(failedItem);
             items.shift();
           } else {
             // Item behalten mit erhöhtem retryCount
@@ -352,6 +374,7 @@ async function flushTextOnly(): Promise<FlushResult> {
         if (status >= 400 && status < 500 && status !== 408 && status !== 429) {
           const failedItem: FailedQueueItem = { ...item, error: { status, message } };
           result.failed.push(failedItem);
+          notifyFailed(failedItem);
           items.splice(i, 1);
           await _save(items);
         } else {
@@ -359,6 +382,7 @@ async function flushTextOnly(): Promise<FlushResult> {
           if (item.retryCount >= item.maxRetries) {
             const failedItem: FailedQueueItem = { ...item, error: { status, message } };
             result.failed.push(failedItem);
+            notifyFailed(failedItem);
             items.splice(i, 1);
           } else {
             i++;

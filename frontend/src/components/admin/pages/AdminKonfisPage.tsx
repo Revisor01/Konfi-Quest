@@ -25,6 +25,7 @@ import { CACHE_TTL } from '../../../services/offlineCache';
 import KonfisView from '../KonfisView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import KonfiModal from '../modals/KonfiModal';
+import UserManagementModal from '../modals/UserManagementModal';
 import AttendanceMatrixModal from '../modals/AttendanceMatrixModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { OrgSwitcherButton } from '../../shared';
@@ -123,6 +124,22 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   const [presentMatrixModal, dismissMatrixModal] = useIonModal(AttendanceMatrixModal, {
     jahrgaenge: jahrgaenge || [],
     onClose: () => dismissMatrixModal()
+  });
+
+  // Welche Liste zeigt die Ansicht gerade? Der Plus-Button in der Kopfzeile
+  // legt danach eine Konfi ODER eine Teamer:in an — vorher oeffnete er im
+  // Teamer-Modus faelschlich das Konfi-Formular (Nutzerhinweis 22.08.2026).
+  const [viewMode, setViewMode] = useState<'konfis' | 'teamer'>('konfis');
+
+  // Teamer:innen laufen ueber dasselbe Formular wie in der Benutzerverwaltung
+  // (Rollenauswahl inklusive) — kein zweites Formular, das auseinanderlaufen kann.
+  const [presentTeamerModalHook, dismissTeamerModalHook] = useIonModal(UserManagementModal, {
+    userId: null,
+    onClose: () => dismissTeamerModalHook(),
+    onSuccess: () => {
+      dismissTeamerModalHook();
+      refreshKonfis();
+    }
   });
 
   // Memoized refresh function for live updates
@@ -327,7 +344,12 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
                 <IonButton aria-label="Anwesenheit und Konfisprüche anzeigen" onClick={() => presentMatrixModal({ presentingElement: presentingElement })}>
                   <IonIcon icon={checkboxOutline} />
                 </IonButton>
-                <IonButton aria-label="Neuen Konfi anlegen" onClick={presentKonfiModal}>
+                <IonButton
+                  aria-label={viewMode === 'teamer' ? 'Neue Teamer:in anlegen' : 'Neuen Konfi anlegen'}
+                  onClick={() => viewMode === 'teamer'
+                    ? presentTeamerModalHook({ presentingElement: presentingElement })
+                    : presentKonfiModal()}
+                >
                   <IonIcon icon={add} />
                 </IonButton>
               </>
@@ -358,6 +380,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
             settings={settings || {}}
             onUpdate={refreshAll}
             onAddKonfiClick={presentKonfiModal}
+            onViewModeChange={setViewMode}
             onSelectKonfi={handleSelectKonfi}
             onDeleteKonfi={handleDeleteKonfi}
             onDeleteTeamer={handleDeleteTeamer}

@@ -36,7 +36,7 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Keyboard } from '@capacitor/keyboard';
 // Native FileViewer ueber openFileNatively, FileViewerModal als Web-Fallback
 import { openFileNatively } from '../../utils/nativeFileViewer';
-import { writeQueue } from '../../services/writeQueue';
+import { writeQueue, onItemFailed } from '../../services/writeQueue';
 import { safeUUID } from '../../utils/uuid';
 import { networkMonitor } from '../../services/networkMonitor';
 import { compressImage } from '../../services/mediaCompression';
@@ -64,6 +64,34 @@ const shownMarkerAnchors = new Map<number, number>();
 // Ab welchem Abstand zum Listenende (in px) der "Nach unten"-Button erscheint.
 const SCROLL_DOWN_THRESHOLD = 300;
 
+/**
+ * Server-Liste mit den noch nicht zugestellten LOKALEN Nachrichten zusammenfuehren.
+ *
+ * setMessages(serverdaten) ersetzte die Liste bisher komplett — eine Nachricht,
+ * die noch in der Queue hing oder fehlgeschlagen war, steht in dieser Antwort
+ * nicht drin und war damit weg. Ausgeloest hat das jeder Reload: Reconnect,
+ * Pull-to-Refresh, erneutes Oeffnen des Chats (Fund Hennstedt 22.08.2026).
+ *
+ * Behalten werden nur Nachrichten mit localId und Status pending/error, deren
+ * Server-Kopie noch nicht angekommen ist (Abgleich ueber client_id/localId).
+ */
+const mergeMitLokalen = (server: Message[], vorher: Message[]): Message[] => {
+  const offen = vorher.filter(m =>
+    m.localId && (m.queueStatus === 'pending' || m.queueStatus === 'error')
+  );
+  if (offen.length === 0) return server;
+
+  // Ist die Server-Kopie inzwischen da, faellt die lokale Fassung weg.
+  const serverClientIds = new Set(
+    server.map(m => (m as any).client_id || m.localId).filter(Boolean)
+  );
+  const nochOffen = offen.filter(m => !serverClientIds.has(m.localId));
+  if (nochOffen.length === 0) return server;
+
+  // Lokale Nachrichten ans Ende: sie sind die juengsten und stehen im Chat unten.
+  return [...server, ...nochOffen];
+};
+
 const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingElement }) => {
   const { user, setError, isOnline } = useApp();
   const { markRoomAsRead: badgeMarkRoomAsRead, refreshAllCounts, chatUnreadByRoom } = useBadge();
@@ -89,9 +117,25 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   // Initiale Nachrichten aus Cache/API in lokalen State kopieren
   useEffect(() => {
     if (initialMessages && initialMessages.length > 0) {
-      setMessages(initialMessages);
+      // Merge statt Ersetzen: sonst loescht der Cache-/API-Stand die noch nicht
+      // zugestellten lokalen Nachrichten aus der Liste.
+      setMessages(prev => mergeMitLokalen(initialMessages, prev));
     }
   }, [initialMessages]);
+
+  // Gibt die Queue eine Nachricht endgueltig auf, blieb die Bubble bisher auf
+  // 'pending' stehen — ohne Hinweis und ohne Weg zum Neuversand. Jetzt wird sie
+  // als fehlgeschlagen markiert und bekommt damit den Retry-Button.
+  useEffect(() => {
+    return onItemFailed((item) => {
+      if (item.metadata.type !== 'chat') return;
+      if (room?.id && item.metadata.roomId !== room.id) return;
+      const clientId = item.metadata.clientId;
+      setMessages(prev => prev.map(m =>
+        m.localId === clientId ? { ...m, queueStatus: 'error' as const } : m
+      ));
+    });
+  }, [room?.id]);
 
   const [messageText, setMessageText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -152,6 +196,39 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
                 hasFileUpload: retryItem.hasFileUpload,
                 metadata: retryItem.metadata,
               });
+            } else if (room && message.localId && message.content && !message.file_path) {
+              // KEIN Queue-Item mehr da: nach Erreichen von maxRetries entfernt die
+              // Queue das Item, die Nachricht bleibt aber als "fehlgeschlagen" in der
+              // Liste stehen. Frueher passierte hier gar nichts — die Nachricht blieb
+              // auf 'pending' haengen und war verloren (Fund Hennstedt 22.08.2026).
+              // Jetzt aus dem Nachrichteninhalt neu einreihen.
+              await writeQueue.enqueue({
+                method: 'POST',
+                url: `/chat/rooms/${room.id}/messages`,
+                body: {
+                  content: message.content,
+                  client_id: message.localId,
+                  ...(message.reply_to ? { reply_to: String(message.reply_to) } : {})
+                },
+                headers: { 'Content-Type': 'application/json' },
+                maxRetries: 5,
+                hasFileUpload: false,
+                metadata: {
+                  type: 'chat',
+                  clientId: message.localId,
+                  roomId: room.id,
+                  label: 'Chat-Nachricht',
+                },
+              });
+            } else {
+              // Datei-Nachricht ohne Queue-Item: die lokale Datei ist mit dem
+              // Queue-Item weg, ein Neuversand ist nicht moeglich. Ehrlich melden
+              // statt still nichts zu tun.
+              setMessages(prev => prev.map(m =>
+                m.localId === message.localId ? { ...m, queueStatus: 'error' as const } : m
+              ));
+              setError('Diese Nachricht lässt sich nicht mehr senden. Bitte neu schreiben.');
+              return;
             }
             // Flush versuchen wenn online
             if (networkMonitor.isOnline) {
@@ -560,7 +637,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     if (!room) return;
     try {
       const response = await api.get(`/chat/rooms/${room.id}/messages?limit=100`);
-      setMessages(response.data);
+      setMessages(prev => mergeMitLokalen(response.data, prev));
 
       // Don't pre-load images anymore - use lazy loading instead for better performance
     } catch (err) {
