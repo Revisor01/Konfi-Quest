@@ -345,11 +345,17 @@ describe('Auth Routes', () => {
   // POST /api/auth/reset-password
   // ================================================================
   describe('POST /api/auth/reset-password', () => {
+    // Die Route speichert und sucht den Token als SHA-256-Hash. Der Helfer
+    // muss das nachbilden — sonst wuerde hier ein Klartext-Eintrag angelegt,
+    // den die Route zu Recht nicht findet.
+    const hashe = (token) =>
+      require('crypto').createHash('sha256').update(token).digest('hex');
+
     const legeResetTokenAn = async (userId, token) => {
       await db.query(
         `INSERT INTO password_resets (user_id, user_type, token, expires_at)
          VALUES ($1, 'konfi', $2, NOW() + INTERVAL '1 hour')`,
-        [userId, token]
+        [userId, hashe(token)]
       );
     };
 
