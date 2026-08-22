@@ -74,6 +74,44 @@ chat_participants: id, room_id, user_id, user_type, joined_at
 
 ---
 
+## DREI Ansichten — der häufigste Stolperstein
+
+Jede Rolle hat einen EIGENEN Komponentenbaum:
+`components/admin/` (Leitung, 17 Seiten) · `components/teamer/` (8) ·
+`components/konfi/` (6). Chat ist die Ausnahme: `components/chat/` gilt für alle.
+
+**Fast jede Funktion existiert deshalb mehrfach.** Wer eine Änderung nur an
+einer Stelle macht, hat sie für zwei Drittel der Nutzer:innen NICHT gemacht:
+
+- Dashboard: admin 1 · teamer 1 · konfi 3 Dateien
+- Challenges: admin 2 · teamer 1 · konfi 2
+- Events, Profil, Abzeichen: je 1–2 pro Rolle
+
+**Vor JEDER UI-Änderung:** in allen drei Bäumen nachsehen, ob es die Stelle
+dort auch gibt — und die Änderung dort mitmachen oder bewusst begründen,
+warum nicht.
+
+Zwei reale Fälle (22.08.2026):
+- Der Reiter-Umbau bei Challenges existierte nur in der Konfi-Ansicht. Die
+  Leitung sah weiter zwei gestapelte Listen und meldete, "der Umbau fehlt".
+- Die Tageslosung wird in `DashboardView.tsx` (prüft den Schalter) UND in
+  `KonfiDashboardPage.tsx` (prüft ihn nicht) geladen — der Schalter griff
+  deshalb nur halb.
+
+Dasselbe gilt im Backend: `routes/konfi.js` und `routes/teamer.js` haben
+eigene Endpunkte für dieselbe Sache (z.B. beide ein `/tageslosung`). Ein Fix
+in einer Datei ist selten der ganze Fix.
+
+## Typografie und Farben aus der App übernehmen
+
+Für alles, was nach Konfi Quest aussehen soll (Doku-Seiten, Screenshots,
+Exporte), gilt `frontend/src/theme/variables.css` als Quelle:
+- **Bebas Neue** für Überschriften und Displays (mit Letterspacing, wie in
+  `.app-auth-hero__title`), **Plus Jakarta Sans** für Fließtext.
+- Bereichsfarben statt frei gewählter: `--app-color-chat` (#06b6d4),
+  `--app-color-events` (#dc2626), `--app-color-konfis` (#5b21b6),
+  `--app-color-teamer` (#be185d), `--app-color-activities` (#047857).
+
 ## Modals korrekt verwenden
 
 ### IMMER so (useIonModal Hook):
