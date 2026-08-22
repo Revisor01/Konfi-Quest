@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { invalidateUserCache } = require('../middleware/rbac');
+const { validatePassword } = require('../utils/passwordUtils');
 const liveUpdate = require('../utils/liveUpdate');
 const { deletePhotoFile, deleteChallengeFile } = require('../utils/photoStorage');
 const { syncTeamChat } = require('../utils/teamChat');
@@ -28,13 +29,26 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
     return requireTeamer(req, res, next);
   };
 
+  // Zentrale Passwort-Policy auch hier anwenden (Audit 22.08.2026, LÜCKE N6):
+  // Diese beiden Routen pruefen bisher nur eine Mindestlaenge von 6 Zeichen —
+  // schwaecher als jede andere Stelle, an der Passwoerter gesetzt werden, und
+  // das ausgerechnet fuer org_admin-Konten. validatePassword verlangt 8 Zeichen,
+  // Gross-/Kleinbuchstaben, Ziffer, Sonderzeichen und keine Leerzeichen.
+  // Die automatisch erzeugten Passwoerter (generateBiblicalPassword, z.B.
+  // "Offenbarung23,8") erfuellen die Policy — gegen 300 Stichproben geprueft.
+  const passwortPolicy = (feld) => body(feld).custom((wert) => {
+    const fehler = validatePassword(wert || '');
+    if (fehler) throw new Error(fehler);
+    return true;
+  });
+
   // Validierungsregeln
   const validateCreateOrg = [
     body('name').trim().notEmpty().withMessage('Name ist erforderlich'),
     body('slug').trim().notEmpty().withMessage('Slug ist erforderlich'),
     body('display_name').trim().notEmpty().withMessage('Anzeigename ist erforderlich'),
     body('admin_username').trim().notEmpty().withMessage('Admin-Benutzername ist erforderlich'),
-    body('admin_password').isLength({ min: 6 }).withMessage('Admin-Passwort muss mindestens 6 Zeichen lang sein'),
+    passwortPolicy('admin_password'),
     body('admin_display_name').trim().notEmpty().withMessage('Admin-Anzeigename ist erforderlich'),
     handleValidationErrors
   ];
@@ -56,7 +70,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
     param('id').isInt({ min: 1 }).withMessage('Ungültige Organisations-ID'),
     body('username').trim().notEmpty().withMessage('Benutzername ist erforderlich'),
     body('display_name').trim().notEmpty().withMessage('Anzeigename ist erforderlich'),
-    body('password').isLength({ min: 6 }).withMessage('Passwort muss mindestens 6 Zeichen lang sein'),
+    passwortPolicy('password'),
     handleValidationErrors
   ];
 
@@ -562,12 +576,23 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       const setClauses = [
         'name = $1', 'slug = $2', 'display_name = $3', 'description = $4',
         'contact_name = $5', 'contact_email = $6', 'contact_phone = $7', 'address = $8',
-        'website_url = $9', 'kirchenkreis = $10', 'is_active = $11', 'updated_at = NOW()'
+        'website_url = $9', 'kirchenkreis = $10', 'updated_at = NOW()'
       ];
       const params = [
         name, slug, display_name, description, contact_name || null, contact_email, contact_phone,
-        address, website_url, kirchenkreis || null, is_active
+        address, website_url, kirchenkreis || null
       ];
+
+      // is_active darf NUR der super_admin setzen (Audit 22.08.2026).
+      // Eine inaktive Organisation fuehrt in rbac.js:177 fuer JEDEN Zugang zu
+      // 401 "Organization is inactive" — ein org_admin konnte damit sich selbst
+      // und die gesamte Gemeinde aussperren, ohne den Schritt zurueckdrehen zu
+      // koennen: dazu braeuchte es wieder einen Zugang, den es dann nicht mehr
+      // gibt. Nur der super_admin kaeme noch heran.
+      if (isSuperAdmin && Object.prototype.hasOwnProperty.call(req.body, 'is_active')) {
+        params.push(is_active);
+        setClauses.push(`is_active = $${params.length}`);
+      }
 
       // trial_ends_at + is_trial darf NUR der super_admin aendern.
       //   trial_ends_at: null = unbegrenzt, Datum = Zugang bis dahin.

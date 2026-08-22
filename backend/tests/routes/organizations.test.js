@@ -412,6 +412,64 @@ describe('Organizations Routes', () => {
   // ================================================================
   // DELETE /api/organizations/:id
   // ================================================================
+  // Eine inaktive Organisation fuehrt in rbac.js fuer JEDEN Zugang zu 401.
+  // Ein org_admin konnte damit sich selbst und die ganze Gemeinde aussperren,
+  // ohne den Schritt zurueckdrehen zu koennen (Audit 22.08.2026).
+  describe('PUT /api/organizations/:id — is_active', () => {
+    const basisDaten = {
+      name: 'Test-Gemeinde',
+      slug: 'test-gemeinde',
+      display_name: 'Test-Gemeinde St. Martin'
+    };
+
+    it('OrgAdmin kann die eigene Organisation NICHT deaktivieren', async () => {
+      const res = await request(app)
+        .put(`/api/organizations/${ORGS.testGemeinde.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ ...basisDaten, is_active: false });
+
+      expect(res.status).toBe(200);
+
+      // Entscheidend ist nicht der Status, sondern dass is_active unveraendert
+      // blieb: Das Feld wird stillschweigend ignoriert statt abgelehnt.
+      const { rows } = await db.query(
+        'SELECT is_active FROM organizations WHERE id = $1',
+        [ORGS.testGemeinde.id]
+      );
+      expect(rows[0].is_active).toBe(true);
+    });
+
+    it('SuperAdmin kann is_active weiterhin setzen', async () => {
+      const res = await request(app)
+        .put(`/api/organizations/${ORGS.testGemeinde.id}`)
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({ ...basisDaten, is_active: false });
+
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query(
+        'SELECT is_active FROM organizations WHERE id = $1',
+        [ORGS.testGemeinde.id]
+      );
+      expect(rows[0].is_active).toBe(false);
+    });
+
+    it('OrgAdmin kann andere Stammdaten weiterhin aendern', async () => {
+      const res = await request(app)
+        .put(`/api/organizations/${ORGS.testGemeinde.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ ...basisDaten, display_name: 'Neuer Anzeigename' });
+
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query(
+        'SELECT display_name FROM organizations WHERE id = $1',
+        [ORGS.testGemeinde.id]
+      );
+      expect(rows[0].display_name).toBe('Neuer Anzeigename');
+    });
+  });
+
   describe('DELETE /api/organizations/:id', () => {
     it('SuperAdmin loescht Org -> 200', async () => {
       const res = await request(app)
@@ -574,6 +632,35 @@ describe('Organizations Routes', () => {
       expect(res.status).toBe(201);
       expect(res.body.id).toBeDefined();
       expect(res.body.username).toBe('neuer_admin');
+    });
+
+    // Diese Route pruefte nur eine Mindestlaenge von 6 Zeichen — schwaecher
+    // als jede andere Stelle, an der Passwoerter gesetzt werden, und das
+    // ausgerechnet fuer org_admin-Konten (Audit 22.08.2026, LÜCKE N6).
+    it('schwaches Passwort wird abgelehnt -> 400', async () => {
+      const res = await request(app)
+        .post(`/api/organizations/${ORGS.testGemeinde.id}/admins`)
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          username: 'schwach_admin',
+          display_name: 'Schwach',
+          password: 'abc123'
+        });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('Passwort ohne Sonderzeichen wird abgelehnt -> 400', async () => {
+      const res = await request(app)
+        .post(`/api/organizations/${ORGS.testGemeinde.id}/admins`)
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          username: 'ohnesonder_admin',
+          display_name: 'Ohne Sonderzeichen',
+          password: 'Langgenug123'
+        });
+
+      expect(res.status).toBe(400);
     });
 
     it('Duplikat-Username -> 409', async () => {

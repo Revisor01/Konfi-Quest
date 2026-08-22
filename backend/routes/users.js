@@ -273,6 +273,14 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
       addUpdate('is_active', is_active);
 
       if (password) {
+        // Policy auch beim Bearbeiten pruefen (Audit 22.08.2026, LÜCKE N7):
+        // Das optionale password-Feld wurde bisher ungeprueft gehasht — weder
+        // ueber den Validator noch inline. Beim Anlegen (Zeile 181) gilt die
+        // Policy laengst; ueber den Bearbeiten-Weg liess sie sich umgehen.
+        const passwortFehler = validatePassword(password);
+        if (passwortFehler) {
+          return res.status(400).json({ error: passwortFehler });
+        }
         updateFields.push(`password_hash = $${updateParams.length + 1}`);
         updateParams.push(await bcrypt.hash(password, 10));
       }

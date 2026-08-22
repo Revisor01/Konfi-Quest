@@ -366,8 +366,21 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         setError('Alle Administrator-Felder sind erforderlich');
         return;
       }
-      if (formData.admin_password.length < 6) {
-        setError('Das Passwort muss mindestens 6 Zeichen lang sein');
+      // Dieselbe Policy wie ueberall sonst (Audit 22.08.2026): Hier galten
+      // bisher nur 6 Zeichen, obwohl der Server inzwischen die volle Policy
+      // erzwingt — ohne diese Pruefung kaeme die Ablehnung erst vom Server.
+      const pw = formData.admin_password;
+      const passwortFehler =
+        pw.length < 8 ? 'Das Passwort muss mindestens 8 Zeichen lang sein'
+        : /\s/.test(pw) ? 'Das Passwort darf keine Leerzeichen enthalten'
+        : !/[A-Z]/.test(pw) ? 'Das Passwort muss einen Großbuchstaben enthalten'
+        : !/[a-z]/.test(pw) ? 'Das Passwort muss einen Kleinbuchstaben enthalten'
+        : !/[0-9]/.test(pw) ? 'Das Passwort muss eine Zahl enthalten'
+        : !/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\/~`]/.test(pw) ? 'Das Passwort muss ein Sonderzeichen enthalten'
+        : null;
+
+      if (passwortFehler) {
+        setError(passwortFehler);
         return;
       }
     }
@@ -923,7 +936,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   </IonItem>
                   <IonItem lines="none" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Passwort *</IonLabel>
-                    <IonInput type="password" value={formData.admin_password} onIonInput={(e) => setFormData({ ...formData, admin_password: e.detail.value! })} placeholder="Mindestens 6 Zeichen" disabled={isSubmitting} />
+                    <IonInput type="password" value={formData.admin_password} onIonInput={(e) => setFormData({ ...formData, admin_password: e.detail.value! })} placeholder="Mind. 8 Zeichen, Groß/Klein, Zahl, Sonderzeichen" disabled={isSubmitting} />
                   </IonItem>
                 </IonList>
 

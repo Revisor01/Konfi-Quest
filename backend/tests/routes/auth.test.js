@@ -412,6 +412,50 @@ describe('Auth Routes', () => {
       expect(rows[0].revoked_at).not.toBeNull();
     });
 
+    // Der Reset-Token lag bisher im Klartext in password_resets. Wer die DB
+    // lesen kann (Backup, Dump), konnte damit fremde Passwoerter zuruecksetzen.
+    // Refresh-Tokens werden laengst gehasht abgelegt (Audit 22.08.2026).
+    it('speichert den Reset-Token nur als Hash und loest ihn per Klartext ein', async () => {
+      // Seed-User haben keine E-Mail — ohne die legt die Route gar keinen
+      // Eintrag an und der Test wuerde nichts pruefen.
+      await db.query('UPDATE users SET email = $1 WHERE id = $2',
+        ['reset-hash@test.de', USERS.konfi1.id]);
+
+      const res = await request(app)
+        .post('/api/auth/request-password-reset')
+        .send({ email: 'reset-hash@test.de' });
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query(
+        'SELECT token FROM password_resets WHERE user_id = $1 ORDER BY id DESC LIMIT 1',
+        [USERS.konfi1.id]
+      );
+      expect(rows).toHaveLength(1);
+
+      const gespeichert = rows[0].token;
+      expect(gespeichert).toMatch(/^[0-9a-f]{64}$/);
+
+      // Kernbeleg, dass wirklich gehasht wurde: Der gespeicherte Wert selbst
+      // darf NICHT als Token funktionieren. Waere er Klartext (auch 64 Hex),
+      // wuerde das Einloesen hiermit klappen.
+      const mitGespeichertem = await request(app)
+        .post('/api/auth/reset-password')
+        .send({ token: gespeichert, newPassword: 'SollNichtGehen123!' });
+      expect(mitGespeichertem.status).toBe(400);
+    });
+
+    // Der Mail-Versand darf die Existenz einer Adresse nicht ueber den Status
+    // verraten: 200 = unbekannt, 500 = vorhanden waere dieselbe Auskunft ueber
+    // die Hintertuer (LÜCKE, Audit 22.08.2026).
+    it('antwortet auch bei unbekannter Adresse neutral mit 200', async () => {
+      const res = await request(app)
+        .post('/api/auth/request-password-reset')
+        .send({ email: 'gibt-es-nicht@test.de' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBeDefined();
+    });
+
     it('verbrauchter Reset-Token funktioniert kein zweites Mal -> 400', async () => {
       await legeResetTokenAn(USERS.konfi1.id, 'reset-token-einmal');
 

@@ -585,16 +585,24 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         const token = generateResetToken();
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
+        // Nur den HASH speichern (Audit 22.08.2026). Der Klartext-Token lag
+        // bisher in der DB — wer sie lesen kann (Backup, Dump, SQL-Injection),
+        // konnte damit fremde Passwoerter zuruecksetzen. Refresh-Tokens werden
+        // hier laengst gehasht abgelegt; Reset-Tokens ziehen nach.
         await db.query('INSERT INTO password_resets (user_id, user_type, token, expires_at) VALUES ($1, $2, $3, $4)',
-          [user.id, userType, token, expiresAt]);
+          [user.id, userType, hashToken(token), expiresAt]);
 
         const resetUrl = `https://konfi-quest.de/reset-password?token=${token}`;
 
         try {
           await emailService.sendPasswordResetEmail(email, user.name, token, resetUrl);
         } catch (emailError) {
+          // BEWUSST kein 500 nach aussen (Audit 22.08.2026): Die Antwort unten
+          // ist absichtlich neutral formuliert, damit sie nicht verraet, ob es
+          // ein Konto gibt. Ein Fehlerstatus genau dann, wenn ein Konto
+          // existiert, haette dieselbe Auskunft ueber die Hintertuer gegeben —
+          // 200 = unbekannte Adresse, 500 = Adresse vorhanden.
           console.error('E-Mail-Versand fehlgeschlagen:', emailError);
-          return res.status(500).json({ error: 'Fehler beim Senden der E-Mail. Bitte versuche es später erneut.' });
         }
       }
 
@@ -1003,9 +1011,15 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     if (newPasswordError) return res.status(400).json({ error: newPasswordError });
     
     try {
+      // Token wird gehasht gespeichert. Der zweite Parameter deckt Eintraege
+      // ab, die vor der Umstellung im Klartext angelegt wurden — sonst liefen
+      // bereits verschickte Reset-Mails ins Leere. Faellt weg, sobald die
+      // letzten Alt-Eintraege abgelaufen sind (max. 24h nach dem Deploy).
       const { rows: [resetRecord] } = await db.query(
-        'SELECT id, user_id, token, expires_at, used_at, created_at FROM password_resets WHERE token = $1 AND used_at IS NULL AND expires_at > NOW()',
-        [token]
+        `SELECT id, user_id, token, expires_at, used_at, created_at
+         FROM password_resets
+         WHERE token IN ($1, $2) AND used_at IS NULL AND expires_at > NOW()`,
+        [hashToken(token), token]
       );
 
       if (!resetRecord) {

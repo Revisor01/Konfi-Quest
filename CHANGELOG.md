@@ -85,6 +85,14 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Sicherheit: Der Link zum Zurücksetzen des Passworts wird nicht mehr im
+  Klartext gespeichert.
+- Sicherheit: Beim Anfordern eines Passwort-Links lässt die Antwort nicht mehr
+  erkennen, ob es zu einer E-Mail-Adresse ein Konto gibt.
+- Für neue Verwaltungskonten und beim Ändern eines Passworts durch die Leitung
+  gelten jetzt dieselben Passwortregeln wie überall sonst.
+- Die eigene Gemeinde lässt sich nicht mehr versehentlich deaktivieren — das
+  hätte alle Mitglieder ausgesperrt.
 - Sicherheit: Beim Ändern oder Zurücksetzen des Passworts werden jetzt alle
   anderen angemeldeten Geräte abgemeldet. Bisher blieben sie monatelang
   angemeldet — wer sein Passwort aus Sorge um den Zugang änderte, sperrte

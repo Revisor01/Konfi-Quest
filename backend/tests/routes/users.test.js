@@ -214,6 +214,36 @@ describe('Users Routes', () => {
       expect(res.status).toBe(200);
     });
 
+    // Das optionale password-Feld wurde ungeprueft gehasht — weder ueber den
+    // Validator noch inline. Beim Anlegen gilt die Policy laengst, ueber den
+    // Bearbeiten-Weg liess sie sich umgehen (Audit 22.08.2026, LÜCKE N7).
+    it('schwaches Passwort beim Bearbeiten wird abgelehnt -> 400', async () => {
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.teamer1.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ password: 'kurz' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('Passwort ohne Sonderzeichen beim Bearbeiten wird abgelehnt -> 400', async () => {
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.teamer1.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ password: 'Langgenug123' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('starkes Passwort beim Bearbeiten wird uebernommen -> 200', async () => {
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.teamer1.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ password: 'Wirklich!Stark123' });
+
+      expect(res.status).toBe(200);
+    });
+
     it('Nicht-existierender User -> 404', async () => {
       const res = await request(app)
         .put('/api/admin/users/9999')
