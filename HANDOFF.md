@@ -5,7 +5,7 @@ gepusht, CI grün und auf Produktion deployt.
 
 ## Wo wir stehen
 
-- Branch `main`, letzter Stand `19ca31d` (auf Produktion deployt, CI gruen).
+- Branch `main`, letzter Stand `cab2435` (auf Produktion deployt, CI gruen).
 - **Produktion läuft auf 2.0.0** (Server `kkd-fahrtenbuch.de`, siehe unten).
 - TestFlight: Build 137 gebaut, gegen die **echte Produktion** (nicht Staging).
 - iOS-Minimum ist seit Build 130 **16.4** (swiper 14 verlangt Safari 16.4+).
@@ -124,41 +124,51 @@ Offen:
 - Abgesagte Termine werden auch der Leitung durchgestrichen angezeigt
 - Doppelte Aktivität "Gottesdienst" in Hennstedt zusammengeführt
 
-## Nächster Schritt: Test-DB-Schema
+## Test-DB-Schema — erledigt (22.08.)
 
-Zweifach unabhängig verifiziert (beide Agenten haben das Test-Schema
-materialisiert und maschinell gegen Produktion gedifft, nicht geschätzt):
+Das Test-Schema kommt jetzt aus einem Produktions-Dump
+(`backend/tests/schema/prod-schema.sql`, 57 Tabellen, nur Struktur), darauf
+laufen nur noch nicht angewandte Migrationen — derselbe Weg wie beim Deploy.
+Aktualisieren mit `bash backend/tests/schema/refresh-schema.sh`.
 
-Das Test-Schema ist ein Patchwork aus vier Schichten — Repo-init-script, ein
-~250-zeiliger handgeschriebener Block in `globalSetup.js`, Einzel-Statements,
-dann Migrationen ab 064. **Die Wurzel ist nicht eine fehlende Spalte, sondern
-dass jeder Fehler verschluckt wird:** fehlgeschlagene Migrationen werden
-trotzdem als "applied" markiert, handgeschriebene Statements tragen
-`.catch(() => {})`.
+`globalSetup.js` schrumpfte von 354 auf 119 Zeilen und **bricht bei einer
+fehlgeschlagenen Migration ab**, statt sie als "applied" zu markieren. Genau
+dieses Verschlucken war die Wurzel, nicht die einzelnen Spalten.
 
-Echte Testlücken:
-- `daily_verses` fehlt → Losung-Cache-Pfad ungetestet (Test akzeptiert "200
-  oder 500")
-- `activities.category` fehlt → die **gesamte** Wrapped-Snapshot-Generierung
-  ist ungetestet, jeder Snapshot scheitert
-- `konfi_profiles.password_plain` fehlt → ein Test patcht die Spalte zur
-  Laufzeit per ALTER TABLE selbst rein
+Was der Umstieg ans Licht gebracht hat — vier Dinge, die vorher unsichtbar
+grün liefen:
 
-Zwei echte Bugs als Beifang, die nicht nur Tests betreffen:
-1. `daily_verses` und `activities.category` haben **nirgends im Repo ein DDL** —
-   sie existieren nur in Produktion, manuell angelegt. Eine Neuinstallation
-   aus dem Repo hätte sie nicht.
-2. Migration 064 braucht `invite_codes`, das erst 079 anlegt. Auf einer
-   frischen DB bricht die Kette, 73 Indexe werden übersprungen.
+1. **Konten liessen sich nicht loeschen.** 17 Fremdschluessel zeigen auf
+   `users(id)`, die meisten ohne `ON DELETE`; `deleteKonfiCascade` behandelte
+   genau einen. Wer je Punkte vergeben, ein Event angelegt oder ein Abzeichen
+   erstellt hatte, bekam bei der Selbstloeschung einen 500er. Betraf alle
+   Rollen. Urheberschaft wird jetzt anonymisiert statt geloescht.
+2. **bigint kam als String.** `database.js:7` registriert fuer die Anwendung
+   einen Type-Parser, der Test-Pool nicht. Das alte Schema nutzte durchgaengig
+   `integer` und verdeckte das; Produktion hat 111 `bigint`-Spalten. Rund 70
+   Fehlschlaege, alle dieselbe Ursache. Die Tests hatten recht — sie pruefen
+   jetzt das echte Verhalten.
+3. **Die TRUNCATE-Liste war in beide Richtungen falsch**: zwei Tabellen, die
+   es nur im alten Test-Schema gab, und fuenf fehlende (u.a. `settings`,
+   `daily_verses`), deren Daten zwischen den Suites stehen blieben.
+4. **`daily_verses` und `activities.category` hatten nirgends ein DDL** —
+   Migration 124 traegt sie nach. Ohne sie haette eine Neuinstallation aus dem
+   Repo beides nicht. Ebenso repariert: Migration 064 legt einen Index auf
+   `invite_codes` an, das erst 079 erzeugt — auf einer frischen Datenbank
+   brach die Kette und alle 73 Indexe der Datei entfielen.
 
-Dazu ~200 Spalten mit Typabweichung (Prod ist SQLite-Erbe: bigint/text/uuid).
-Verhaltensrelevant: `chat_polls.options` ist in Prod `text`, im Test `jsonb` —
-`JSON.parse` in `chat.js:72` verhält sich dadurch unterschiedlich.
+Neu als Waechter: `backend/tests/schema/schemaDrift.test.js` (9 Tests) prueft
+die betroffenen Objekte, das ON-CONFLICT-Verhalten von `daily_verses`, den
+`text`-Typ von `chat_polls.options` (JSON.parse in `chat.js` verhaelt sich bei
+`jsonb` anders), die Vollstaendigkeit der TRUNCATE-Liste in beide Richtungen
+und dass keine Migration uebersprungen wurde.
 
-Empfehlung beider Analysen, identisch: Prod-Schema-Dump als einzige Quelle
-einchecken, darauf nur noch offene Migrationen, und `globalSetup` hart failen
-lassen statt Fehler zu schlucken. Vorsicht: Die weichen Assertions verdecken
-womöglich weitere Fehler — die CI kann dabei erstmal rot werden.
+Postgres im Test von 16 auf 15 angeglichen (Produktion laeuft 15.19).
+
+**Falle fuer spaeter:** `pg_dump` schreibt `set_config('search_path','')` in
+den Kopf und stellt den Pfad nicht wieder her. `refresh-schema.sh` filtert die
+Zeile heraus; ohne das scheitert das erste `CREATE TABLE` danach mit "no
+schema has been selected to create in".
 
 ## Danach
 
