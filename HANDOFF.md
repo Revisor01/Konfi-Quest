@@ -5,7 +5,7 @@ gepusht, CI grün und auf Produktion deployt.
 
 ## Wo wir stehen
 
-- Branch `main`, letzter Stand `cab2435` (auf Produktion deployt, CI gruen).
+- Branch `main`, letzter Stand `53743b8` (auf Produktion deployt, CI gruen).
 - **Produktion läuft auf 2.0.0** (Server `kkd-fahrtenbuch.de`, siehe unten).
 - TestFlight: Build 137 gebaut, gegen die **echte Produktion** (nicht Staging).
 - iOS-Minimum ist seit Build 130 **16.4** (swiper 14 verlangt Safari 16.4+).
@@ -105,9 +105,34 @@ Am 22.08. abgearbeitet (alle gegen Produktion verifiziert, nicht nur im Test):
   Users gar nichts. Jetzt überall `validatePassword`.
 - **Teamer-Filter ohne Jahrgang** — griff nur bei vorhandenen Zuweisungen.
 
+### Multi-Org: der Befund war falsch, zwei andere Stellen waren es nicht
+
+Der Audit-Befund "entzogener Zugang wirkt bis zu 15 Min nach" **stimmte
+nicht**. Der Membership-Check existiert seit dem Multi-Org-Feature
+(`rbac.js:150-166`) und liefert 403; der Entzug über die App leert zusätzlich
+den Cache. Gegen Produktion gemessen: Entzug über die App wirkt **sofort**
+(200 → 401), Entzug direkt in der DB nach ~30 s (Cache-TTL).
+
+**Lehre daraus:** Audit-Befunde vor dem Weitergeben gegen den Code und
+möglichst gegen Produktion prüfen. Ich hatte die 15 Minuten ungeprüft
+übernommen und weitergereicht.
+
+Tatsächlich offen waren zwei andere Stellen, auf die die Beschreibung passte —
+beide am 22.08. behoben:
+- `GET /chat/files/:filename` setzte `req.user = decoded`. Ungeprüfte
+  Token-Angaben für die volle Laufzeit, und `organization_id` immer die
+  Primär-Org: Wer in einer Zweit-Gemeinde arbeitete, bekam seine **eigenen**
+  Chat-Dateien nicht (404).
+- Die Socket-Anmeldung (`server.js`) ebenso — und ein Socket lebt deutlich
+  länger als 15 Minuten. Jetzt eine Query je Verbindungsaufbau, nicht je
+  Nachricht.
+
+Dazu zwei kleine Härtungen: Die Org-Löschung leert den Cache der Gast-User,
+und der Entzug einer Mitgliedschaft setzt `token_invalidated_at`. Niemand wird
+dadurch ausgesperrt — die Refresh-Route prüft die Mitgliedschaft neu und
+stellt ein Token ohne den entzogenen Claim aus.
+
 Offen:
-- Entzogener Multi-Org-Zugang wirkt bis zu 15 Min nach (Claim wird in
-  `verifyTokenRBAC` nicht gegen `user_organizations` gegengeprüft).
 - **Abwägung für Simon:** Die Leitung kann private Zweier-Chats lesen und
   exportieren. Falls nicht gewollt, Direktchats vom Admin-Bypass ausnehmen.
 - **Bewusst nicht geändert:** der 409 bei `update-email`. Dort ist der Nutzer
