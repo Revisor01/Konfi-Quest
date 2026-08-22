@@ -1,6 +1,17 @@
 // backend/tests/helpers/db.js — Test-Pool + TRUNCATE-Helper
 const { Pool } = require('pg');
 
+// bigint (OID 20) als Zahl statt als String liefern — identisch zu
+// backend/database.js:7, das die Produktion konfiguriert.
+//
+// Ohne diese Zeile verhaelt sich der Test-Pool ANDERS als die Anwendung: pg
+// gibt bigint per Default als String zurueck (JavaScript-Zahlen koennen nicht
+// jeden bigint-Wert darstellen). Das alte Test-Schema nutzte durchgaengig
+// integer und verdeckte den Unterschied; das Produktions-Schema hat 111
+// bigint-Spalten, und plötzlich verglichen Tests '1' gegen 1
+// (Audit 22.08.2026).
+require('pg').types.setTypeParser(20, (val) => parseInt(val, 10));
+
 const TEST_DB_NAME = 'konfi_test';
 const ADMIN_URL = process.env.TEST_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5433/postgres';
 const TEST_DB_URL = ADMIN_URL.replace(/\/[^/]+$/, `/${TEST_DB_NAME}`);
