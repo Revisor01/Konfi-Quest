@@ -85,6 +85,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Termine mit unbegrenzter Teilnehmerzahl lassen sich wieder anlegen. Der
+  Schalter "Unbegrenzte Teilnehmer:innen" führte bisher zur Meldung, dass eine
+  maximale Teilnehmerzahl erforderlich sei.
 - Die Tageslosung wird wieder angezeigt. Sie fehlte seit dem 20. August.
 - Startseite und Profil öffnen wieder ohne Verzögerung: War die Tageslosung
   nicht abrufbar, wartete die App bei jedem Öffnen mehrere Sekunden auf eine

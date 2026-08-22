@@ -48,6 +48,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     body('mandatory').optional().isBoolean().withMessage('mandatory muss ein Boolean sein'),
     body('is_konfirmation').optional().isBoolean().withMessage('is_konfirmation muss ein Boolean sein'),
     body('bring_items').optional({ nullable: true }).isString().withMessage('bring_items muss ein String sein'),
+    // 0 = unbegrenzt, darum min: 0 und NICHT notEmpty (das wuerde die 0 verwerfen).
+    body('max_participants').optional({ nullable: true }).isInt({ min: 0 })
+      .withMessage('Maximale Teilnehmerzahl muss 0 (unbegrenzt) oder groesser sein'),
     handleValidationErrors
   ];
 
@@ -57,6 +60,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     body('mandatory').optional().isBoolean().withMessage('mandatory muss ein Boolean sein'),
     body('is_konfirmation').optional().isBoolean().withMessage('is_konfirmation muss ein Boolean sein'),
     body('bring_items').optional({ nullable: true }).isString().withMessage('bring_items muss ein String sein'),
+    body('max_participants').optional({ nullable: true }).isInt({ min: 0 })
+      .withMessage('Maximale Teilnehmerzahl muss 0 (unbegrenzt) oder groesser sein'),
     handleValidationErrors
   ];
 
@@ -785,9 +790,21 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     // Jahrgang) und bei reinen Teamer-Events (keine Konfi-Teilnahme) gibt es
     // sie nicht — dort darf sie nicht eingefordert werden. Ohne diese Ausnahme
     // liess sich ein reines Teamer-Event gar nicht anlegen.
-    if (!name || !event_date || (!mandatory && !teamer_only && !max_participants)) {
+    //
+    // 0 bedeutet UNBEGRENZT (Konvention im ganzen System, siehe Spalten-Default
+    // und den Schalter "Unbegrenzte Teilnehmer:innen" im Formular). Ein
+    // truthy-Check wie !max_participants verwirft die 0 zusammen mit
+    // undefined/null und lehnte damit genau den Fall ab, den die Oberflaeche
+    // anbietet: unbegrenzte Events liessen sich nicht anlegen (22.08.).
+    // Deshalb explizit auf "nicht angegeben" pruefen statt auf falsy.
+    const maxParticipantsFehlt = max_participants === undefined
+      || max_participants === null
+      || max_participants === '';
+
+    if (!name || !event_date || (!mandatory && !teamer_only && maxParticipantsFehlt)) {
       return res.status(400).json({ error: 'Name, Datum und maximale Teilnehmerzahl sind erforderlich' });
     }
+
 
     // Pflicht-Events benoetigen mindestens einen Jahrgang
     if (mandatory && (!jahrgang_ids || jahrgang_ids.length === 0)) {

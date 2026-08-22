@@ -170,6 +170,80 @@ describe('Events Routes', () => {
       expect(res.body.message).toContain('erstellt');
     });
 
+    // 0 = unbegrenzt. Der truthy-Check !max_participants verwarf die 0
+    // zusammen mit undefined/null -> das Formular bietet "Unbegrenzte
+    // Teilnehmer:innen" an, das Anlegen scheiterte aber mit "Name, Datum und
+    // maximale Teilnehmerzahl sind erforderlich" (22.08.2026).
+    it('Admin erstellt Event mit UNBEGRENZTEN Teilnehmer:innen (0) -> 201', async () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 14);
+
+      const res = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Event ohne Begrenzung',
+          event_date: futureDate.toISOString(),
+          max_participants: 0,
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.id).toBeDefined();
+    });
+
+    it('Unbegrenztes Event wird mit max_participants 0 gespeichert', async () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 14);
+
+      const res = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Unbegrenzt gespeichert',
+          event_date: futureDate.toISOString(),
+          max_participants: 0,
+        });
+
+      expect(res.status).toBe(201);
+
+      const { rows: [gespeichert] } = await db.query(
+        'SELECT max_participants FROM events WHERE id = $1',
+        [res.body.id]
+      );
+      expect(Number(gespeichert.max_participants)).toBe(0);
+    });
+
+    it('Fehlende max_participants gibt weiterhin 400', async () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 14);
+
+      const res = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Ohne Angabe',
+          event_date: futureDate.toISOString(),
+        });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('Negative max_participants gibt 400', async () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 14);
+
+      const res = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Negativ',
+          event_date: futureDate.toISOString(),
+          max_participants: -5,
+        });
+
+      expect(res.status).toBe(400);
+    });
+
     it('Leerer name gibt 400', async () => {
       const res = await request(app)
         .post('/api/events')
