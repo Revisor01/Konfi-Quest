@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   IonIcon,
   IonItem,
@@ -10,6 +10,8 @@ import {
   IonListHeader,
   IonCard,
   IonCardContent,
+  IonSegment,
+  IonSegmentButton,
   useIonModal
 } from '@ionic/react';
 import {
@@ -133,6 +135,11 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
   // Offene Freigaben erscheinen NICHT mehr als vierte Kachel — die Anzeige
   // laeuft ueber das Tab-Badge (BadgeContext, wie Chat) und den orangen
   // Corner-Badge am jeweiligen Listeneintrag.
+  // Reiter wie in der Konfi-Sicht (Nutzerwunsch 22.08.2026). Vorher standen
+  // "Aktuelle Challenges" und "Archiv" untereinander — bei vielen beendeten
+  // Challenges scrollte man lange am Archiv vorbei.
+  const [reiter, setReiter] = useState<'aktuell' | 'archiv'>('aktuell');
+
   const counts = useMemo(() => {
     const byStatus: Record<ChallengeStatus, number> = { draft: 0, scheduled: 0, active: 0, ended: 0 };
     challenges.forEach((c) => {
@@ -357,15 +364,33 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
         icon={flag}
         preset="challenges"
         stats={[
-          { value: counts.active, label: 'Aktiv' },
-          { value: counts.scheduled, label: 'Geplant' },
-          { value: counts.draft, label: 'Entwürfe' }
+          // Aktiv/Geplant/Entwürfe beschreiben alle den Reiter "Aktuell" und
+          // springen dorthin; Archiv schaltet auf den zweiten Reiter.
+          { value: counts.active, label: 'Aktiv', onClick: () => setReiter('aktuell'), active: reiter === 'aktuell' },
+          { value: counts.scheduled, label: 'Geplant', onClick: () => setReiter('aktuell'), active: reiter === 'aktuell' },
+          { value: archived.length, label: 'Archiv', onClick: () => setReiter('archiv'), active: reiter === 'archiv' }
         ]}
         onInfo={() => presentLegend({ presentingElement: presentingElement || undefined })}
       />
 
       {headerSlot}
 
+      <div className="app-segment-wrapper">
+        <IonSegment
+          value={reiter}
+          onIonChange={(e) => setReiter(e.detail.value as 'aktuell' | 'archiv')}
+        >
+          <IonSegmentButton value="aktuell">
+            <IonLabel>Aktuell</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="archiv">
+            <IonLabel>Archiv</IonLabel>
+          </IonSegmentButton>
+        </IonSegment>
+      </div>
+
+      {reiter === 'aktuell' && (
+      <>
       {/* --- 1. Aktuelle Challenges: aktiv, geplant und Entwurf in EINER
               Liste — den Status sagt das Badge am Eintrag. --- */}
       <ListSection
@@ -381,6 +406,8 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
       >
         {current.map((challenge, index) => renderChallenge(challenge, index, current.length))}
       </ListSection>
+      </>
+      )}
 
       {/* --- 2. Eigene Abzeichen — dieselbe Reihe wie in der Konfi-Sicht. Seit der
           Zusammenlegung von "Verwalten" und "Mitmachen" (11.08.) ist das Team
@@ -450,6 +477,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
 
       {/* --- 3. Archiv — heisst in der Konfi-Sicht "Vorbei"; hier bleibt es
               "Archiv", weil die Leitung dort weiter bearbeitet und loescht. --- */}
+      {reiter === 'archiv' && (
       <ListSection
         icon={archiveOutline}
         title="Archiv"
@@ -463,6 +491,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
       >
         {archived.map((challenge, index) => renderChallenge(challenge, index, archived.length))}
       </ListSection>
+      )}
     </>
   );
 };

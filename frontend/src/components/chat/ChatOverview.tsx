@@ -278,7 +278,11 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
 
       // Typ-Filter
       if (filterType === 'alle') return true;
-      if (filterType === 'direkt') return room.type === 'direct';
+      // Ungelesen statt Direkt: Nach Chat-ART zu filtern hilft beim Wiederfinden
+      // kaum — man weiss ohnehin, wen man sucht, und dafuer gibt es die Suche.
+      // Die eigentliche Frage beim Oeffnen der Uebersicht ist "wo muss ich
+      // ran?". Genau das beantwortet dieser Filter.
+      if (filterType === 'ungelesen') return (chatUnreadByRoom[room.id] || 0) > 0;
       // Konfis-Tab: Jahrgangs-/Gruppenchats mit Konfis, KEINE reinen Team-Gruppen.
       if (filterType === 'konfis') return (room.type === 'jahrgang' || room.type === 'group') && !isTeamChat(room);
       // Team-Tab: Team-Gruppen + reine Team-group + Direktchats mit Teamer:innen.
@@ -412,8 +416,21 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
           icon={chatbubbles}
           colors={{ primary: '#06b6d4', secondary: '#0891b2' }}
           stats={[
-            { value: (rooms || []).length, label: 'CHATS' },
-            { value: Object.values(chatUnreadByRoom).reduce((sum, c) => sum + c, 0), label: 'UNGELESEN' },
+            // CHATS und UNGELESEN entsprechen je einem Reiter und schalten
+            // dorthin (gleiches Muster wie Challenges/Anfragen/Nutzende).
+            // AKTIV hat keinen Reiter und bleibt reine Anzeige.
+            {
+              value: (rooms || []).length,
+              label: 'CHATS',
+              onClick: () => setFilterType('alle'),
+              active: filterType === 'alle'
+            },
+            {
+              value: Object.values(chatUnreadByRoom).reduce((sum, c) => sum + c, 0),
+              label: 'UNGELESEN',
+              onClick: () => setFilterType('ungelesen'),
+              active: filterType === 'ungelesen'
+            },
             { value: (rooms || []).filter(room => room.last_message && new Date(room.last_message.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length, label: 'AKTIV' }
           ]}
         />
@@ -449,7 +466,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
         <div className="app-segment-wrapper">
           <IonSegment value={filterType} onIonChange={(e) => setFilterType(String(e.detail.value))}>
             <IonSegmentButton value="alle"><IonLabel>Alle</IonLabel></IonSegmentButton>
-            <IonSegmentButton value="direkt"><IonLabel>Direkt</IonLabel></IonSegmentButton>
+            <IonSegmentButton value="ungelesen"><IonLabel>Ungelesen</IonLabel></IonSegmentButton>
             <IonSegmentButton value="konfis"><IonLabel>Konfis</IonLabel></IonSegmentButton>
             {isAdmin && (
               <IonSegmentButton value="team"><IonLabel>Team</IonLabel></IonSegmentButton>

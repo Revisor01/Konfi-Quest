@@ -85,6 +85,14 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Chat: Der Reiter "Direkt" ist jetzt "Ungelesen" — er zeigt die Chats, in
+  denen etwas auf dich wartet. Nach Chat-Art zu filtern half beim Wiederfinden
+  kaum, dafür gibt es die Suche.
+- Chat: Die Zahlen über der Liste ("Chats", "Ungelesen") lassen sich antippen
+  und schalten direkt auf den passenden Reiter.
+- Challenges: Die Leitungsansicht hat jetzt dieselben Reiter wie die
+  Konfi-Ansicht — Aktuell und Archiv statt zweier Listen untereinander. Die
+  Zahlen darüber springen zum jeweiligen Reiter.
 - Sicherheit: Der Link zum Zurücksetzen des Passworts wird nicht mehr im
   Klartext gespeichert.
 - Sicherheit: Beim Anfordern eines Passwort-Links lässt die Antwort nicht mehr
