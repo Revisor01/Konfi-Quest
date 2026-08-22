@@ -18,296 +18,39 @@ module.exports = async function globalSetup() {
   const testUrl = ADMIN_URL.replace(/\/[^/]+$/, `/${TEST_DB_NAME}`);
   const testPool = new Pool({ connectionString: testUrl });
 
-  // 3. Basis-Schema aus repo-root init-scripts (Kern-Tabellen)
-  //    Einzelne Statements ausfuehren um fehlerhafte Partial Indexes zu ueberspringen
-  const repoInitDir = path.join(__dirname, '..', '..', 'init-scripts');
-  if (fs.existsSync(repoInitDir)) {
-    const initFiles = fs.readdirSync(repoInitDir).filter(f => f.endsWith('.sql')).sort();
-    for (const file of initFiles) {
-      let sql = fs.readFileSync(path.join(repoInitDir, file), 'utf8');
-      // Problematische Partial Indexes entfernen (CURRENT_TIMESTAMP ist nicht IMMUTABLE)
-      sql = sql.replace(/CREATE INDEX[^;]*WHERE[^;]*CURRENT_TIMESTAMP[^;]*;/gi, '-- removed non-immutable partial index');
-      try {
-        await testPool.query(sql);
-      } catch (err) {
-        console.warn(`[globalSetup] init-script ${file} Warnung: ${err.message.substring(0, 100)}`);
-      }
-    }
+  // 3. Schema aus dem Produktions-Dump laden.
+  //
+  //    Frueher entstand das Test-Schema aus vier Schichten: repo-root
+  //    init-script, ein ~250-zeiliger handgeschriebener ALTER/CREATE-Block hier,
+  //    weitere Einzel-Statements und dann die Migrationen. Jede Schicht
+  //    verschluckte ihre Fehler. Ergebnis war ein Schema, das der Produktion
+  //    nur ungefaehr entsprach: `daily_verses` fehlte komplett,
+  //    `activities.category` ebenso, dazu ~200 Spalten mit abweichendem Typ
+  //    (Prod ist eine SQLite-Migrationshinterlassenschaft: bigint/text/uuid).
+  //    Fehler liefen dadurch still ins Leere — der Tageslosungs-Cache und die
+  //    gesamte Wrapped-Snapshot-Generierung waren faktisch ungetestet, obwohl
+  //    die Suite gruen war (Audit 22.08.2026).
+  //
+  //    Warum ein Dump und nicht die Migrationen? Das Repo KANN Produktion
+  //    nicht reproduzieren: Die Kette beginnt erst bei 064, und fuer mehrere
+  //    Objekte (daily_verses, activities.category, konfi_profiles.password_plain)
+  //    gibt es nirgends ein DDL. Wer aus den Migrationen baut, testet ein
+  //    Schema, das es so nie gab.
+  //
+  //    Aktualisieren: bash backend/tests/schema/refresh-schema.sh
+  const schemaDatei = path.join(__dirname, 'schema', 'prod-schema.sql');
+  if (!fs.existsSync(schemaDatei)) {
+    throw new Error(
+      `[globalSetup] Schema-Datei fehlt: ${schemaDatei}\n` +
+      'Mit "bash backend/tests/schema/refresh-schema.sh" aus Produktion holen.'
+    );
   }
+  await testPool.query(fs.readFileSync(schemaDatei, 'utf8'));
 
-  // 4. Fehlende Tabellen erstellen die in Produktion existieren aber nicht in init-scripts
-  //    (wurden historisch durch Route-Dateien erstellt, jetzt nur noch via Migrations referenziert)
-  await testPool.query(`
-    -- organizations braucht slug + is_active (in init-script nicht vorhanden)
-    ALTER TABLE organizations ADD COLUMN IF NOT EXISTS slug VARCHAR(255);
-    ALTER TABLE organizations ADD COLUMN IF NOT EXISTS display_name VARCHAR(255);
-    ALTER TABLE organizations ADD COLUMN IF NOT EXISTS description TEXT;
-    ALTER TABLE organizations ADD COLUMN IF NOT EXISTS logo_url TEXT;
-    ALTER TABLE organizations ADD COLUMN IF NOT EXISTS contact_email VARCHAR(255);
-    ALTER TABLE organizations ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
-
-    -- jahrgaenge braucht is_active
-    ALTER TABLE jahrgaenge ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
-
-    -- user_jahrgang_assignments (RBAC)
-    CREATE TABLE IF NOT EXISTS user_jahrgang_assignments (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-      jahrgang_id INTEGER REFERENCES jahrgaenge(id) ON DELETE CASCADE,
-      can_view BOOLEAN DEFAULT true,
-      can_edit BOOLEAN DEFAULT false,
-      assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      assigned_by INTEGER REFERENCES users(id),
-      UNIQUE(user_id, jahrgang_id)
-    );
-
-    -- password_resets
-    CREATE TABLE IF NOT EXISTS password_resets (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-      user_type VARCHAR(20),
-      token VARCHAR(255) NOT NULL,
-      expires_at TIMESTAMP NOT NULL,
-      used_at TIMESTAMP,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    -- activity_requests (Konfi-Antraege)
-    CREATE TABLE IF NOT EXISTS activity_requests (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      konfi_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-      activity_id INTEGER NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
-      requested_date DATE DEFAULT CURRENT_DATE,
-      comment TEXT,
-      photo_filename VARCHAR(500),
-      status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
-      admin_comment TEXT,
-      approved_by INTEGER REFERENCES users(id),
-      organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-      client_id VARCHAR(100),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    -- user_activities (bestaetigte Aktivitaeten pro User)
-    CREATE TABLE IF NOT EXISTS user_activities (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      activity_id INTEGER NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
-      admin_id INTEGER REFERENCES users(id),
-      completed_date DATE DEFAULT CURRENT_DATE,
-      comment TEXT,
-      organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(user_id, activity_id)
-    );
-
-    -- chat_read_status
-    CREATE TABLE IF NOT EXISTS chat_read_status (
-      id SERIAL PRIMARY KEY,
-      room_id INTEGER NOT NULL REFERENCES chat_rooms(id) ON DELETE CASCADE,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      user_type VARCHAR(20) NOT NULL,
-      last_read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(room_id, user_id)
-    );
-
-    -- chat_polls
-    CREATE TABLE IF NOT EXISTS chat_polls (
-      id SERIAL PRIMARY KEY,
-      message_id INTEGER REFERENCES chat_messages(id) ON DELETE CASCADE,
-      question TEXT NOT NULL,
-      options JSONB NOT NULL,
-      multiple_choice BOOLEAN DEFAULT false,
-      expires_at TIMESTAMP,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    -- chat_poll_votes
-    CREATE TABLE IF NOT EXISTS chat_poll_votes (
-      id SERIAL PRIMARY KEY,
-      poll_id INTEGER NOT NULL REFERENCES chat_polls(id) ON DELETE CASCADE,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      user_type VARCHAR(20) NOT NULL,
-      option_index INTEGER NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    -- users braucht zusaetzliche Spalten (historisch hinzugefuegt)
-    ALTER TABLE users ADD COLUMN IF NOT EXISTS teamer_since DATE;
-    ALTER TABLE users ADD COLUMN IF NOT EXISTS is_super_admin BOOLEAN DEFAULT false;
-    ALTER TABLE users ADD COLUMN IF NOT EXISTS role_title VARCHAR(255);
-    ALTER TABLE users ADD COLUMN IF NOT EXISTS token_invalidated_at TIMESTAMP;
-    ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP;
-    ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255);
-    ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image VARCHAR(500);
-    -- organization_id muss NULL erlauben fuer super_admin
-    ALTER TABLE users ALTER COLUMN organization_id DROP NOT NULL;
-
-    -- jahrgaenge braucht Punkte-Konfiguration + Konfirmationsdatum
-    ALTER TABLE jahrgaenge ADD COLUMN IF NOT EXISTS confirmation_date DATE;
-    ALTER TABLE jahrgaenge ADD COLUMN IF NOT EXISTS gottesdienst_enabled BOOLEAN DEFAULT true;
-    ALTER TABLE jahrgaenge ADD COLUMN IF NOT EXISTS gemeinde_enabled BOOLEAN DEFAULT true;
-    ALTER TABLE jahrgaenge ADD COLUMN IF NOT EXISTS target_gottesdienst INTEGER DEFAULT 10;
-    ALTER TABLE jahrgaenge ADD COLUMN IF NOT EXISTS target_gemeinde INTEGER DEFAULT 10;
-    -- Migration 094: Konfispruch-Sichtbarkeit pro Jahrgang (D-01)
-    ALTER TABLE jahrgaenge ADD COLUMN IF NOT EXISTS konfspruch_enabled BOOLEAN NOT NULL DEFAULT true;
-
-    -- konfi_profiles braucht bible_translation + invite_code_id
-    ALTER TABLE konfi_profiles ADD COLUMN IF NOT EXISTS bible_translation VARCHAR(100);
-    ALTER TABLE konfi_profiles ADD COLUMN IF NOT EXISTS invite_code_id INTEGER;
-    ALTER TABLE konfi_profiles ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id);
-
-    -- events braucht has_timeslots (falls nicht in init-script)
-    ALTER TABLE events ADD COLUMN IF NOT EXISTS has_timeslots BOOLEAN DEFAULT false;
-
-    -- refresh_tokens (JWT Refresh Token Store)
-    CREATE TABLE IF NOT EXISTS refresh_tokens (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      token_hash VARCHAR(255) NOT NULL,
-      expires_at TIMESTAMP NOT NULL,
-      revoked_at TIMESTAMP,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    -- push_tokens (Push-Notifications)
-    CREATE TABLE IF NOT EXISTS push_tokens (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      token TEXT NOT NULL,
-      platform VARCHAR(20),
-      device_id VARCHAR(255),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(user_id, token)
-    );
-
-    -- custom_badges (Badge-Definitionen, genutzt von badges.js Route)
-    CREATE TABLE IF NOT EXISTS custom_badges (
-      id SERIAL PRIMARY KEY,
-      name VARCHAR(255) NOT NULL,
-      icon VARCHAR(100),
-      description TEXT,
-      criteria_type VARCHAR(50) NOT NULL,
-      criteria_value INTEGER,
-      criteria_extra JSONB,
-      is_hidden BOOLEAN DEFAULT false,
-      color VARCHAR(7) DEFAULT '#667eea',
-      sort_order INTEGER DEFAULT 0,
-      is_active BOOLEAN DEFAULT true,
-      target_role VARCHAR(10) DEFAULT 'konfi',
-      created_by INTEGER REFERENCES users(id),
-      organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    -- user_badges (Badge-Vergabe pro User, referenziert custom_badges)
-    CREATE TABLE IF NOT EXISTS user_badges (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      badge_id INTEGER NOT NULL REFERENCES custom_badges(id) ON DELETE CASCADE,
-      organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-      awarded_date DATE DEFAULT CURRENT_DATE,
-      awarded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      seen BOOLEAN DEFAULT false,
-      UNIQUE(user_id, badge_id)
-    );
-  `);
-
-  // 5. Backend init-scripts (z.B. 007_levels.sql — braucht organizations + users)
-  const backendInitDir = path.join(__dirname, '..', 'init-scripts');
-  if (fs.existsSync(backendInitDir)) {
-    const initFiles = fs.readdirSync(backendInitDir).filter(f => f.endsWith('.sql')).sort();
-    for (const file of initFiles) {
-      try {
-        await testPool.query(fs.readFileSync(path.join(backendInitDir, file), 'utf8'));
-      } catch (err) {
-        // init-scripts koennen fehlschlagen wenn Tabellen leer (z.B. INSERT mit SELECT FROM organizations)
-        console.log(`[globalSetup] init-script ${file} uebersprungen: ${err.message.substring(0, 80)}`);
-      }
-    }
-  }
-
-  // 5.5 Fehlende Spalten auf Tabellen die erst durch Backend-init-scripts erstellt wurden
-  await testPool.query(`
-    ALTER TABLE levels ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0;
-  `).catch(() => {});
-
-  // 5.6 Fehlende Spalten die in Produktion existieren aber nicht in init-scripts/migrations
-  //     Einzeln ausfuehren damit ein Fehler nicht alle blockiert
-  for (const stmt of [
-    'ALTER TABLE activities ADD COLUMN IF NOT EXISTS type VARCHAR(50)',
-    'ALTER TABLE activities ADD COLUMN IF NOT EXISTS points INTEGER DEFAULT 0',
-    'ALTER TABLE events ADD COLUMN IF NOT EXISTS cancelled BOOLEAN DEFAULT false',
-    'ALTER TABLE bonus_points ADD COLUMN IF NOT EXISTS completed_date DATE DEFAULT CURRENT_DATE',
-    'ALTER TABLE user_badges ADD COLUMN IF NOT EXISTS seen BOOLEAN DEFAULT false',
-    'ALTER TABLE event_points ADD COLUMN IF NOT EXISTS description TEXT',
-    // Chat-Messages: Fehlende Spalten die in Produktion existieren
-    'ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP',
-    'ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS message_type VARCHAR(50) DEFAULT \'text\'',
-    'ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS reply_to INTEGER REFERENCES chat_messages(id)',
-    'ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS file_name VARCHAR(500)',
-    'ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS file_size INTEGER',
-    'ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS client_id VARCHAR(100)',
-    'ALTER TABLE chat_messages ALTER COLUMN content DROP NOT NULL',
-    // Chat-Message-Reactions Tabelle
-    `CREATE TABLE IF NOT EXISTS chat_message_reactions (
-      id SERIAL PRIMARY KEY,
-      message_id INTEGER NOT NULL REFERENCES chat_messages(id) ON DELETE CASCADE,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      user_type VARCHAR(20) NOT NULL,
-      emoji VARCHAR(50) NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(message_id, user_id, user_type, emoji)
-    )`,
-    // chat_polls: fehlende room_id Spalte (fuer Organizations DELETE CASCADE)
-    'ALTER TABLE chat_polls ADD COLUMN IF NOT EXISTS room_id INTEGER REFERENCES chat_rooms(id) ON DELETE CASCADE',
-    // event_category_assignments Tabelle (fuer Organizations DELETE CASCADE)
-    `CREATE TABLE IF NOT EXISTS event_category_assignments (
-      event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
-      category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
-      PRIMARY KEY (event_id, category_id)
-    )`,
-    // activity_category_assignments (Alias-Name in organizations.js DELETE CASCADE)
-    `CREATE TABLE IF NOT EXISTS activity_category_assignments (
-      activity_id INTEGER NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
-      category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
-      PRIMARY KEY (activity_id, category_id)
-    )`,
-    // organizations: fehlende Spalten
-    'ALTER TABLE organizations ADD COLUMN IF NOT EXISTS contact_phone VARCHAR(255)',
-    'ALTER TABLE organizations ADD COLUMN IF NOT EXISTS address TEXT',
-    'ALTER TABLE organizations ADD COLUMN IF NOT EXISTS website_url TEXT',
-    'ALTER TABLE organizations ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
-    `DO $$ BEGIN
-      ALTER TABLE organizations ADD CONSTRAINT organizations_slug_unique UNIQUE (slug);
-    EXCEPTION WHEN duplicate_table THEN NULL; WHEN duplicate_object THEN NULL;
-    END $$`,
-    // roles: fehlende Spalten
-    'ALTER TABLE roles ADD COLUMN IF NOT EXISTS is_system_role BOOLEAN DEFAULT false',
-    'ALTER TABLE roles ADD COLUMN IF NOT EXISTS description TEXT',
-    'ALTER TABLE roles ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true',
-    // push_tokens: user_type Spalte + korrekter UNIQUE constraint fuer Notifications-Route
-    'ALTER TABLE push_tokens ADD COLUMN IF NOT EXISTS user_type VARCHAR(20)',
-    'ALTER TABLE push_tokens DROP CONSTRAINT IF EXISTS push_tokens_user_id_token_key',
-    `DO $$ BEGIN
-      ALTER TABLE push_tokens ADD CONSTRAINT push_tokens_user_platform_device_key UNIQUE (user_id, platform, device_id);
-    EXCEPTION WHEN duplicate_table THEN NULL; WHEN duplicate_object THEN NULL;
-    END $$`,
-    // settings: organization_id Spalte + UNIQUE constraint fuer Settings-Route
-    'ALTER TABLE settings ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id)',
-    'ALTER TABLE settings DROP CONSTRAINT IF EXISTS settings_key_key',
-    `DO $$ BEGIN
-      ALTER TABLE settings ADD CONSTRAINT settings_org_key_unique UNIQUE (organization_id, key);
-    EXCEPTION WHEN duplicate_table THEN NULL; WHEN duplicate_object THEN NULL;
-    END $$`,
-  ]) {
-    await testPool.query(stmt).catch(() => {});
-  }
-
-  // 6. Migrationen ausfuehren (identisch mit database.js runMigrations)
+  // 4. Migrationsstand aus Produktion uebernehmen.
+  //    Der Dump ist bereits das Ergebnis dieser Migrationen — sie duerfen
+  //    nicht erneut laufen. Danach greift derselbe Weg wie beim Deploy: nur
+  //    was noch NICHT angewandt ist, kommt oben drauf.
   await testPool.query(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
       name TEXT PRIMARY KEY,
@@ -315,6 +58,24 @@ module.exports = async function globalSetup() {
     )
   `);
 
+  const standDatei = path.join(__dirname, 'schema', 'prod-migrations.txt');
+  if (fs.existsSync(standDatei)) {
+    const bereitsAngewandt = fs.readFileSync(standDatei, 'utf8')
+      .split('\n').map(z => z.trim()).filter(Boolean);
+    for (const name of bereitsAngewandt) {
+      await testPool.query(
+        'INSERT INTO schema_migrations (name) VALUES ($1) ON CONFLICT DO NOTHING',
+        [name]
+      );
+    }
+  }
+
+  // 5. Offene Migrationen anwenden — identisch zu database.js runMigrations.
+  //
+  //    Fehler brechen hier BEWUSST ab. Frueher wurde eine gescheiterte
+  //    Migration nur geloggt und trotzdem als "applied" markiert; Schema-Drift
+  //    blieb dadurch dauerhaft unsichtbar und die Suite gruen. Wer eine
+  //    Migration kaputt macht, soll das sofort sehen.
   const migrationsDir = path.join(__dirname, '..', 'migrations');
   const migrationFiles = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort();
   const { rows: applied } = await testPool.query('SELECT name FROM schema_migrations');
@@ -329,9 +90,13 @@ module.exports = async function globalSetup() {
       await testPool.query('INSERT INTO schema_migrations (name) VALUES ($1)', [file]);
       migCount++;
     } catch (err) {
-      console.warn(`[globalSetup] Migration ${file} Warnung: ${err.message.substring(0, 100)}`);
-      // Migration als applied markieren um Wiederholungsfehler zu vermeiden
-      await testPool.query('INSERT INTO schema_migrations (name) VALUES ($1) ON CONFLICT DO NOTHING', [file]);
+      await testPool.end();
+      throw new Error(
+        `[globalSetup] Migration ${file} fehlgeschlagen: ${err.message}\n` +
+        'Die Migration laeuft so auch beim Deploy nicht durch. Entweder sie ist ' +
+        'fehlerhaft, oder sie setzt einen Schema-Stand voraus, den ' +
+        'backend/tests/schema/prod-schema.sql noch nicht hat (dann refresh-schema.sh).'
+      );
     }
   }
 

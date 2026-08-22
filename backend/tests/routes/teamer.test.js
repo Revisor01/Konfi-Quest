@@ -683,13 +683,31 @@ describe('Teamer Routes', () => {
   // TAGESLOSUNG
   // ================================================================
   describe('GET /api/teamer/tageslosung', () => {
-    it('Teamer bekommt 200 oder graceful error', async () => {
+    // Frueher "200 oder 500" — damit war der Test blind dafuer, dass
+    // daily_verses im Test-Schema gar nicht existierte und schon der
+    // Cache-Zugriff warf. Die externe API ist im Test nicht erreichbar, der
+    // DB-Fallback muss also greifen: entweder eine gecachte Losung (200) oder
+    // ein sauberer Fehler — aber KEIN Schema-Fehler.
+    it('Teamer bekommt eine Antwort ohne Schema-Fehler', async () => {
+      // Gecachte Losung hinterlegen: Die externe API ist im Test nicht
+      // erreichbar, der DB-Fallback ist der einzige Weg zu einer Antwort.
+      await db.query(
+        `INSERT INTO daily_verses (date, translation, verse_data)
+         VALUES (CURRENT_DATE, 'LUT', $1)
+         ON CONFLICT (date, translation) DO UPDATE SET verse_data = $1`,
+        [JSON.stringify({
+          losung: { text: 'Testlosung', reference: 'Psalm 1,1' },
+          lehrtext: { text: 'Testlehrtext', reference: 'Johannes 1,1' }
+        })]
+      );
+
       const res = await request(app)
         .get('/api/teamer/tageslosung')
         .set('Authorization', `Bearer ${teamerToken}`);
 
-      // losungService kann offline sein — 200 oder 500, aber kein crash
-      expect([200, 500]).toContain(res.status);
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toBeDefined();
     });
 
     it('Konfi bekommt 403', async () => {

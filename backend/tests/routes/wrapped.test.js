@@ -52,25 +52,26 @@ describe('Wrapped Routes', () => {
       expect(res.status).toBe(401);
     });
 
-    it('Nach Generierung bekommt Konfi Wrapped-Daten oder 404 (wenn Snapshot fehlschlaegt)', async () => {
-      // Generierung aufrufen — kann fehlschlagen wenn a.category-Spalte fehlt (bekanntes Schema-Problem)
+    // Frueher stand hier "200 oder 404" mit dem Hinweis "wenn Snapshot
+    // fehlschlaegt". Genau das trat immer ein: activities.category fehlte im
+    // Test-Schema, jeder Snapshot scheiterte still, und die gesamte
+    // Wrapped-Inhaltslogik war ungetestet. Seit das Schema aus Produktion
+    // kommt, muss die Generierung wirklich durchlaufen (Audit 22.08.2026).
+    it('Nach Generierung bekommt Konfi seine Wrapped-Daten', async () => {
       const genRes = await request(app)
         .post(`/api/wrapped/generate/${JAHRGAENGE.jahrgang1.id}`)
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(genRes.status).toBe(200);
-      expect(genRes.body.generated).toBeDefined();
+      expect(genRes.body.generated).toBeGreaterThan(0);
 
       const res = await request(app)
         .get('/api/wrapped/me')
         .set('Authorization', `Bearer ${konfiToken}`);
 
-      // 200 wenn Snapshot generiert, 404 wenn Generierung fehlschlug (z.B. fehlende Spalte)
-      expect([200, 404]).toContain(res.status);
-      if (res.status === 200) {
-        expect(res.body.data).toBeDefined();
-        expect(res.body.wrapped_type).toBe('konfi');
-      }
+      expect(res.status).toBe(200);
+      expect(res.body.data).toBeDefined();
+      expect(res.body.wrapped_type).toBe('konfi');
     });
   });
 
@@ -84,7 +85,9 @@ describe('Wrapped Routes', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.generated).toBeDefined();
+      // Nicht nur "definiert": Bei fehlender Spalte lieferte die Route
+      // generated=0 mit errors>0 und der Test blieb trotzdem gruen.
+      expect(res.body.generated).toBeGreaterThan(0);
       expect(res.body.jahrgang).toBeDefined();
       expect(res.body.year).toBeDefined();
     });

@@ -156,7 +156,8 @@ async function seed(db) {
   // 4. Jahrgaenge (FK: organizations)
   for (const jg of Object.values(JAHRGAENGE)) {
     await db.query(
-      `INSERT INTO jahrgaenge (id, name, organization_id, confirmation_date, is_active) VALUES ($1, $2, $3, $4, true)`,
+      // is_active existiert in Produktion nicht (nur im alten Test-Schema).
+      `INSERT INTO jahrgaenge (id, name, organization_id, confirmation_date) VALUES ($1, $2, $3, $4)`,
       [jg.id, jg.name, jg.org_id, jg.confirmation_date]
     );
   }
@@ -200,10 +201,14 @@ async function seed(db) {
     // type + points (neue Spalten) muessen gesetzt sein, damit assign-activity funktioniert
     const actType = act.gp > 0 ? 'gottesdienst' : 'gemeinde';
     const actPoints = act.gp > 0 ? act.gp : act.gep;
+    // gottesdienst_points/gemeinde_points gab es nur im alten, handgepflegten
+    // Test-Schema — in Produktion tragen points + type die Information
+    // (Audit 22.08.2026). Seit das Schema aus Produktion kommt, wuerde der
+    // Insert damit brechen.
     await db.query(
-      `INSERT INTO activities (id, name, gottesdienst_points, gemeinde_points, points, type, organization_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [act.id, act.name, act.gp, act.gep, actPoints, actType, act.org_id]
+      `INSERT INTO activities (id, name, points, type, organization_id)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [act.id, act.name, actPoints, actType, act.org_id]
     );
   }
 

@@ -713,9 +713,6 @@ describe('Konfi-Management Routes', () => {
   // ================================================================
   describe('POST /api/admin/konfis/:id/regenerate-password', () => {
     it('Admin regeneriert Passwort -> 200', async () => {
-      // password_plain Spalte in Test-Schema ergaenzen (existiert nur in Produktion)
-      await db.query('ALTER TABLE konfi_profiles ADD COLUMN IF NOT EXISTS password_plain TEXT');
-
       const res = await request(app)
         .post(`/api/admin/konfis/${USERS.konfi1.id}/regenerate-password`)
         .set('Authorization', `Bearer ${adminToken}`);
@@ -726,8 +723,6 @@ describe('Konfi-Management Routes', () => {
     });
 
     it('Nicht-existierender Konfi gibt 404', async () => {
-      await db.query('ALTER TABLE konfi_profiles ADD COLUMN IF NOT EXISTS password_plain TEXT');
-
       const res = await request(app)
         .post('/api/admin/konfis/99999/regenerate-password')
         .set('Authorization', `Bearer ${adminToken}`);
