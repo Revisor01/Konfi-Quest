@@ -159,12 +159,29 @@ describe('Users Routes', () => {
       expect(participant.user_type).toBe('teamer');
     });
 
-    it('Fehlender username -> 400 Validierungsfehler', async () => {
+    // Frueher 400: Ein fehlender Benutzername war ein Validierungsfehler.
+    // Seit 23.08.2026 wird er aus dem Anzeigenamen gebildet — wie bei Konfis.
+    // Die Erwartung war damit ueberholt, nicht der Code.
+    it('Fehlender username wird aus dem Anzeigenamen gebildet -> 201', async () => {
       const res = await request(app)
         .post('/api/admin/users')
         .set('Authorization', `Bearer ${orgAdminToken}`)
         .send({
           display_name: 'Ohne Username',
+          password: 'Sicher!123',
+          role_id: ROLES.teamer.id
+        });
+
+      expect(res.status).toBe(201);
+      const { rows } = await db.query('SELECT username FROM users WHERE id = $1', [res.body.id]);
+      expect(rows[0].username).toBe('ohne.username');
+    });
+
+    it('Fehlender Anzeigename -> 400 (daraus liesse sich kein Name bilden)', async () => {
+      const res = await request(app)
+        .post('/api/admin/users')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({
           password: 'Sicher!123',
           role_id: ROLES.teamer.id
         });
