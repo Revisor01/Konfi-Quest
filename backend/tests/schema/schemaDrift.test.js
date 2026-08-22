@@ -97,6 +97,37 @@ describe('Schema-Drift: Test-DB gegen Produktion', () => {
     expect(rows[0].data_type).toBe('text');
   });
 
+  it('die TRUNCATE-Liste deckt alle Tabellen ab', async () => {
+    // Fehlt eine Tabelle, bleiben ihre Daten zwischen den Suites stehen und
+    // erzeugen Abhaengigkeiten von der Testreihenfolge — schwer zu finden.
+    // Steht eine drin, die es nicht gibt, schlaegt jedes truncateAll fehl.
+    // Beides ist beim Umstieg auf das Produktions-Schema aufgetreten:
+    // konfi_activities/konfi_badges existierten nur im alten Test-Schema,
+    // waehrend settings, daily_verses und drei weitere nie geleert wurden.
+    const fs = require('fs');
+    const path = require('path');
+    const dbHelper = fs.readFileSync(
+      path.join(__dirname, '..', 'helpers', 'db.js'), 'utf8'
+    );
+    const block = dbHelper.match(/TRUNCATE_SQL = `TRUNCATE([\s\S]*?)RESTART IDENTITY/);
+    expect(block).not.toBeNull();
+
+    const gelistet = new Set(
+      block[1].replace(/\n/g, ' ').split(',').map(t => t.trim()).filter(Boolean)
+    );
+
+    const { rows } = await db.query(
+      `SELECT tablename FROM pg_tables
+       WHERE schemaname = 'public' AND tablename <> 'schema_migrations'`
+    );
+    const vorhanden = new Set(rows.map(r => r.tablename));
+
+    const fehlen = [...vorhanden].filter(t => !gelistet.has(t)).sort();
+    const ueberzaehlig = [...gelistet].filter(t => !vorhanden.has(t)).sort();
+
+    expect({ fehlen, ueberzaehlig }).toEqual({ fehlen: [], ueberzaehlig: [] });
+  });
+
   it('keine der Migrationen wurde uebersprungen', async () => {
     // Frueher markierte globalSetup fehlgeschlagene Migrationen trotzdem als
     // "applied". Jetzt bricht der Setup ab — dieser Test haelt fest, dass der

@@ -36,13 +36,20 @@ const TRUNCATE_LOCK_ID = 4711;
  * vitest-Suites serialisieren so ihr TRUNCATE und koennen nicht mehr in einen
  * "deadlock detected" laufen. Der Lock wird beim COMMIT/ROLLBACK autom. frei.
  */
+// Die Liste muss ALLE Tabellen der Produktion abdecken (Stand 22.08.2026):
+// Fehlt eine, bleiben ihre Daten zwischen den Suites stehen und erzeugen
+// Abhaengigkeiten von der Testreihenfolge. konfi_activities/konfi_badges sind
+// hier bewusst NICHT mehr aufgefuehrt — die Tabellen gab es nur im alten,
+// handgepflegten Test-Schema; in Produktion heissen sie user_activities /
+// user_badges (nur die alten Sequenz-Namen leben dort als Altlast weiter).
 const TRUNCATE_SQL = `TRUNCATE
     chat_poll_votes, chat_polls, chat_read_status,
+    chat_message_reactions,
     chat_messages, chat_participants, chat_rooms,
     event_points, event_bookings, event_timeslots,
     event_unregistrations, event_jahrgang_assignments, event_categories,
     user_activities, activity_requests, activity_categories,
-    konfi_activities, konfi_badges, user_badges, bonus_points,
+    user_badges, bonus_points,
     konfspruch_uebersetzungen,
     konfsprueche,
     konfi_profiles, user_jahrgang_assignments,
@@ -53,6 +60,7 @@ const TRUNCATE_SQL = `TRUNCATE
     push_tokens, event_reminders, password_resets,
     invite_codes, refresh_tokens, notifications,
     user_organizations,
+    settings, daily_verses, apm_snapshots, socket_io_attachments,
     users, activities, custom_badges, events,
     jahrgaenge, categories, levels,
     role_permissions, permissions, roles,
