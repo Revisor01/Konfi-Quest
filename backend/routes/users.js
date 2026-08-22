@@ -5,6 +5,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors, commonValidations } = require('../middleware/validation');
 const { checkUserHierarchy, filterUsersByHierarchy } = require('../utils/roleHierarchy');
 const { validatePassword } = require('../utils/passwordUtils');
+const { generateUniqueUsername } = require('../utils/usernameGenerator');
 const { invalidateUserCache } = require('../middleware/rbac');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const { syncTeamChat } = require('../utils/teamChat');
@@ -20,7 +21,12 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
 
   // Validierungsregeln
   const validateCreateUser = [
-    commonValidations.username,
+    // username optional: Fehlt er, wird er aus display_name erzeugt — wie bei
+    // Konfis (konfi-management.js:154). Wird einer mitgeschickt, gelten die
+    // gewohnten Zeichenregeln.
+    body('username').optional({ checkFalsy: true })
+      .isLength({ min: 3, max: 50 }).withMessage('Benutzername muss zwischen 3 und 50 Zeichen lang sein')
+      .matches(/^[a-zA-Z0-9.-]+$/).withMessage('Benutzername darf nur Buchstaben, Zahlen, Punkt (.) und Bindestrich (-) enthalten'),
     body('display_name').trim().notEmpty().withMessage('Anzeigename ist erforderlich'),
     commonValidations.password,
     body('role_id').isInt({ min: 1 }).withMessage('Ungültige Rollen-ID'),
@@ -151,13 +157,24 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
   // Create new user
   router.post('/', rbacVerifier, requireOrgAdmin, userHierarchyMiddleware('create'), validateCreateUser, async (req, res) => {
     const organizationId = req.user.organization_id;
-    const { username, email, display_name, role_title, password, role_id } = req.body;
+    const { username: gewuenschterName, email, display_name, role_title, password, role_id } = req.body;
 
-    if (!username || !display_name || !password || !role_id) {
-      return res.status(400).json({ error: 'Benutzername, Name, Passwort und Rolle sind erforderlich' });
+    if (!display_name || !password || !role_id) {
+      return res.status(400).json({ error: 'Name, Passwort und Rolle sind erforderlich' });
     }
 
     try {
+      // Benutzername aus dem Anzeigenamen erzeugen, wenn keiner angegeben ist
+      // (Nutzerwunsch 23.08.2026) — dieselbe Logik wie bei Konfis. Der Helfer
+      // sucht dabei einen global freien Namen und zaehlt bei Kollision hoch.
+      const username = gewuenschterName && gewuenschterName.trim()
+        ? gewuenschterName.trim()
+        : await generateUniqueUsername(db, display_name);
+
+      if (!username) {
+        return res.status(400).json({ error: 'Aus dem Namen liess sich kein Benutzername bilden' });
+      }
+
       // Verify role exists in organization (name wird unten fuer den Chat-Sync gebraucht)
       const roleCheckQuery = "SELECT id, name FROM roles WHERE id = $1 AND organization_id = $2";
       const { rows: [role] } = await db.query(roleCheckQuery, [role_id, organizationId]);

@@ -85,6 +85,12 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Ist die Tageslosung in den Einstellungen abgeschaltet, wird sie auch nicht
+  mehr im Hintergrund abgerufen. Startseiten öffnen dadurch ohne Wartezeit,
+  selbst wenn der Losungs-Dienst gerade nicht erreichbar ist.
+- Beim Anlegen einer Teamer:in wird der Benutzername automatisch aus dem Namen
+  gebildet, wie bei Konfis. Der Dialog zeigt außerdem die Teamer-Farben und
+  fragt nicht mehr nach dem Konto-Status — neue Konten sind immer aktiv.
 - Teamer:innen können nur noch Konfis aus ihren eigenen Jahrgängen direkt
   anschreiben. Wer keinem Jahrgang zugeordnet ist, erreicht keine Konfis —
   das Team bleibt für alle erreichbar. Alle Konfis anschreiben können weiterhin

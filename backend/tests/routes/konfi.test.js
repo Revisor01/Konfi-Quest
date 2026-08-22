@@ -906,4 +906,24 @@ describe('Konfi Routes', () => {
       expect(Array.isArray(evt.categories)).toBe(true);
     });
   });
+
+  // Abgeschaltete Losung wird gar nicht abgerufen (Nutzerwunsch 23.08.2026).
+  describe('GET /api/konfi/tageslosung — Schalter', () => {
+    it('abgeschaltete Losung wird nicht abgerufen -> 204', async () => {
+      await db.query(
+        `INSERT INTO settings (organization_id, key, value) VALUES (1, 'dashboard_show_losung', 'false')
+         ON CONFLICT (organization_id, key) DO UPDATE SET value = 'false'`
+      );
+      try {
+        const res = await request(app)
+          .get('/api/konfi/tageslosung')
+          .set('Authorization', `Bearer ${konfiToken}`);
+
+        expect(res.status).toBe(204);
+      } finally {
+        await db.query("DELETE FROM settings WHERE organization_id = 1 AND key = 'dashboard_show_losung'");
+      }
+    });
+  });
+
 });

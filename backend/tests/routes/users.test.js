@@ -204,6 +204,66 @@ describe('Users Routes', () => {
   // ================================================================
   // PUT /api/admin/users/:id
   // ================================================================
+  // Benutzername aus dem Anzeigenamen erzeugen, wenn keiner mitkommt — wie
+  // bei Konfis. Das Teamer-Anlegen-Modal fragt ihn deshalb nicht mehr ab
+  // (Nutzerwunsch 23.08.2026).
+  describe('POST /api/admin/users — Benutzername automatisch', () => {
+    it('erzeugt den Benutzernamen aus dem Anzeigenamen', async () => {
+      const res = await request(app)
+        .post('/api/admin/users')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({
+          display_name: 'Anna Musterfrau',
+          password: 'Sicher!123',
+          role_id: ROLES.teamer.id
+        });
+
+      expect(res.status).toBe(201);
+
+      const { rows } = await db.query('SELECT username FROM users WHERE id = $1', [res.body.id]);
+      expect(rows[0].username).toBe('anna.musterfrau');
+    });
+
+    it('zaehlt bei belegtem Namen hoch statt zu scheitern', async () => {
+      const daten = {
+        display_name: 'Doppel Name',
+        password: 'Sicher!123',
+        role_id: ROLES.teamer.id
+      };
+
+      const erste = await request(app).post('/api/admin/users')
+        .set('Authorization', `Bearer ${orgAdminToken}`).send(daten);
+      const zweite = await request(app).post('/api/admin/users')
+        .set('Authorization', `Bearer ${orgAdminToken}`).send(daten);
+
+      expect(erste.status).toBe(201);
+      expect(zweite.status).toBe(201);
+
+      const { rows } = await db.query(
+        'SELECT username FROM users WHERE id = ANY($1::int[]) ORDER BY id',
+        [[erste.body.id, zweite.body.id]]
+      );
+      expect(rows[0].username).toBe('doppel.name');
+      expect(rows[1].username).toBe('doppel.name2');
+    });
+
+    it('ein mitgeschickter Benutzername wird weiterhin verwendet', async () => {
+      const res = await request(app)
+        .post('/api/admin/users')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({
+          username: 'eigener.name',
+          display_name: 'Egal Wie',
+          password: 'Sicher!123',
+          role_id: ROLES.teamer.id
+        });
+
+      expect(res.status).toBe(201);
+      const { rows } = await db.query('SELECT username FROM users WHERE id = $1', [res.body.id]);
+      expect(rows[0].username).toBe('eigener.name');
+    });
+  });
+
   describe('PUT /api/admin/users/:id', () => {
     it('OrgAdmin aktualisiert User -> 200', async () => {
       const res = await request(app)

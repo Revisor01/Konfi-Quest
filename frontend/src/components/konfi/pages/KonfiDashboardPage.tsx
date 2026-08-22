@@ -156,6 +156,13 @@ const KonfiDashboardPage: React.FC = () => {
   );
 
   // --- useOfflineQuery: Tageslosung ---
+  // Ist die Losung in den Dashboard-Einstellungen abgeschaltet, wird sie GAR
+  // NICHT abgerufen (Nutzerwunsch 23.08.2026). Vorher lud diese Stelle sie
+  // immer und nur die Anzeige prüfte den Schalter — bei nicht erreichbarer
+  // API hing das Öffnen dadurch trotz "aus" mehrere Sekunden.
+  // Der Server lehnt abgeschaltete Abrufe zusätzlich mit 204 ab.
+  const losungAktiv = dashboardData?.dashboard_config?.show_losung !== false;
+
   const { data: dailyVerse, refresh: refreshVerse } = useOfflineQuery<DailyVerse>(
     'konfi:tageslosung:' + new Date().toISOString().split('T')[0],
     async () => {
@@ -195,7 +202,7 @@ const KonfiDashboardPage: React.FC = () => {
         };
       }
     },
-    { ttl: CACHE_TTL.TAGESLOSUNG }
+    { ttl: CACHE_TTL.TAGESLOSUNG, enabled: losungAktiv }
   );
 
   // --- useOfflineQuery: Events ---

@@ -1391,6 +1391,18 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         [konfiId]
       );
 
+      // Ist die Losung fuer diese Gemeinde abgeschaltet, gar nicht erst
+      // abrufen (Nutzerwunsch 23.08.2026). Vorher haing das allein am
+      // Frontend — und dort prueften nicht alle Aufrufer den Schalter, sodass
+      // trotz "aus" weiterhin die externe API befragt wurde.
+      const { rows: [losungSetting] } = await db.query(
+        "SELECT value FROM settings WHERE organization_id = $1 AND key = 'dashboard_show_losung'",
+        [req.user.organization_id]
+      );
+      if (losungSetting && (losungSetting.value === 'false' || losungSetting.value === '0')) {
+        return res.status(204).end();
+      }
+
       const translation = konfi?.bible_translation || 'LUT';
       const result = await fetchTageslosung(db, translation);
 

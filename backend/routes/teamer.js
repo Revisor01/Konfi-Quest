@@ -946,6 +946,16 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   router.get('/tageslosung', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       // Bevorzugte Uebersetzung des Teamers (users.bible_translation, Default LUT).
+      // Wie in der Konfi-Route: abgeschaltete Losung wird nicht abgerufen.
+      // Hier gilt der Teamer-Schalter aus den Dashboard-Einstellungen.
+      const { rows: [losungSetting] } = await db.query(
+        "SELECT value FROM settings WHERE organization_id = $1 AND key = 'teamer_dashboard_show_losung'",
+        [req.user.organization_id]
+      );
+      if (losungSetting && (losungSetting.value === 'false' || losungSetting.value === '0')) {
+        return res.status(204).end();
+      }
+
       const { rows: [u] } = await db.query('SELECT bible_translation FROM users WHERE id = $1', [req.user.id]);
       const translation = u?.bible_translation || 'LUT';
       const result = await fetchTageslosung(db, translation);

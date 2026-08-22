@@ -710,6 +710,26 @@ describe('Teamer Routes', () => {
       expect(res.body.data).toBeDefined();
     });
 
+    // Ist die Losung abgeschaltet, darf sie GAR NICHT abgerufen werden — nicht
+    // nur ausgeblendet (Nutzerwunsch 23.08.2026). Vorher hing das allein am
+    // Frontend, und nicht jeder Aufrufer prüfte den Schalter: Bei nicht
+    // erreichbarer API wartete die App trotz "aus" mehrere Sekunden.
+    it('abgeschaltete Losung wird nicht abgerufen -> 204', async () => {
+      await db.query(
+        `INSERT INTO settings (organization_id, key, value) VALUES (1, 'teamer_dashboard_show_losung', 'false')
+         ON CONFLICT (organization_id, key) DO UPDATE SET value = 'false'`
+      );
+      try {
+        const res = await request(app)
+          .get('/api/teamer/tageslosung')
+          .set('Authorization', `Bearer ${teamerToken}`);
+
+        expect(res.status).toBe(204);
+      } finally {
+        await db.query("DELETE FROM settings WHERE organization_id = 1 AND key = 'teamer_dashboard_show_losung'");
+      }
+    });
+
     it('Konfi bekommt 403', async () => {
       const res = await request(app)
         .get('/api/teamer/tageslosung')

@@ -237,6 +237,11 @@ const TeamerDashboardPage: React.FC = () => {
   );
 
   // Offline-Query: Tageslosung
+  // Abgeschaltete Losung wird gar nicht erst abgerufen (Nutzerwunsch
+  // 23.08.2026) — vorher lud diese Stelle sie immer und nur die Anzeige
+  // prüfte den Schalter. Der Server lehnt sie zusätzlich mit 204 ab.
+  const losungAktiv = dashboardData?.config?.show_losung !== false;
+
   const { data: dailyVerse, loading: loadingVerse, refresh: refreshVerse } = useOfflineQuery<DailyVerse | null>(
     'teamer:tageslosung:' + new Date().toISOString().split('T')[0],
     async () => {
@@ -253,7 +258,7 @@ const TeamerDashboardPage: React.FC = () => {
       }
       return null;
     },
-    { ttl: CACHE_TTL.TAGESLOSUNG }
+    { ttl: CACHE_TTL.TAGESLOSUNG, enabled: losungAktiv }
   );
 
   // Bibeluebersetzung (Tageslosung) — Anzeige + Auswahl
