@@ -27,6 +27,34 @@ function generateToken(userKey, expiresIn = '1h') {
 }
 
 /**
+ * Wie generateToken, aber mit zurueckdatiertem iat — fuer Tests, die eine
+ * BESTEHENDE Sitzung nachstellen muessen (z.B. Soft-Revoke nach Passwort-
+ * wechsel). Die Pruefung in rbac.js vergleicht iat sekundengenau gegen
+ * users.token_invalidated_at; ein frisch erzeugtes Token laege in derselben
+ * Sekunde wie die Invalidierung und wuerde die Sekundengrenze testen statt
+ * die Sperre.
+ *
+ * @param {string} userKey - Key aus USERS
+ * @param {number} alterSekunden - wie weit iat zurueckliegen soll
+ */
+function generateTokenMitAlter(userKey, alterSekunden = 60) {
+  const user = USERS[userKey];
+  if (!user) throw new Error(`Unbekannter Seed-User: ${userKey}`);
+
+  const iat = Math.floor(Date.now() / 1000) - alterSekunden;
+
+  return jwt.sign({
+    id: user.id,
+    type: user.type,
+    display_name: user.display_name,
+    organization_id: user.org_id,
+    role_id: user.role_id,
+    iat,
+    exp: iat + 3600,
+  }, JWT_SECRET);
+}
+
+/**
  * Generiert Tokens fuer alle Seed-Users.
  * @returns {Object} { konfi1: 'token...', admin1: 'token...', ... }
  */
@@ -38,4 +66,4 @@ function getAllTokens() {
   return tokens;
 }
 
-module.exports = { generateToken, getAllTokens, SEED_USERS: USERS };
+module.exports = { generateToken, generateTokenMitAlter, getAllTokens, SEED_USERS: USERS };

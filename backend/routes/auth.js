@@ -63,6 +63,12 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       const userType = u.role_name === 'konfi' ? 'konfi'
         : u.role_name === 'teamer' ? 'teamer' : 'admin';
 
+      // iat bewusst eine Sekunde in die Zukunft: Die Soft-Revoke-Pruefung in
+      // rbac.js arbeitet auf Sekunden (iat < token_invalidated_at). Ein in
+      // derselben Sekunde wie die Invalidierung ausgestelltes Token laege sonst
+      // auf der Kippe und koennte sich selbst aussperren.
+      const iatVordatiert = Math.floor(Date.now() / 1000) + 1;
+
       const accessToken = jwt.sign({
         id: u.id,
         type: userType,
@@ -70,7 +76,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         email: u.email,
         organization_id: u.organization_id,
         role_name: u.role_name,
-        is_super_admin: u.is_super_admin || false
+        is_super_admin: u.is_super_admin || false,
+        iat: iatVordatiert
       }, JWT_SECRET, { expiresIn: '15m' });
 
       const refreshToken = generateRefreshToken();
@@ -283,16 +290,14 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       // wechsel weiter gueltig — bis zu 90 Tage. Wer sein Passwort aendert,
       // weil jemand Zugriff hat, sperrte den Fremdzugriff damit NICHT aus.
       //
-      // token_invalidated_at wird eine Sekunde zurueckdatiert: Die Pruefung in
-      // rbac.js vergleicht gegen den JWT-Claim iat, der nur Sekunden-
-      // aufloesung hat. Bei taggleicher Sekunde waere tokenIssuedAt <
-      // invalidatedAt sonst zufaellig wahr oder falsch — das frisch
-      // ausgestellte Token unten koennte sich selbst aussperren.
-      const invalidierungsZeitpunkt = new Date(Date.now() - 1000);
-
+      // Die Pruefung in rbac.js vergleicht token_invalidated_at gegen den
+      // JWT-Claim iat, der nur SEKUNDEN-Aufloesung hat (iat < invalidatedAt).
+      // Deshalb wird hier exakt auf NOW() invalidiert und das neue Token unten
+      // um eine Sekunde VORdatiert. Zurueckdatieren waere falsch herum: dann
+      // ueberleben Tokens aus derselben und der vorherigen Sekunde.
       await db.query(
-        `UPDATE users SET password_hash = $1, token_invalidated_at = $2 WHERE id = $3`,
-        [hashedPassword, invalidierungsZeitpunkt, userId]
+        `UPDATE users SET password_hash = $1, token_invalidated_at = NOW() WHERE id = $2`,
+        [hashedPassword, userId]
       );
       await db.query(
         'UPDATE refresh_tokens SET revoked_at = NOW(), expires_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL',

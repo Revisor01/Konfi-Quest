@@ -2,7 +2,7 @@ const request = require('supertest');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, PASSWORD, ORGS, JAHRGAENGE } = require('../helpers/seed');
-const { generateToken } = require('../helpers/auth');
+const { generateToken, generateTokenMitAlter } = require('../helpers/auth');
 
 describe('Auth Routes', () => {
   let app;
@@ -249,7 +249,11 @@ describe('Auth Routes', () => {
     // jemand Zugriff hat, sperrte den Fremdzugriff damit nicht aus
     // (Audit 22.08.2026, LÜCKE N2).
     it('beendet bestehende Sitzungen: altes Token wird abgewiesen', async () => {
-      const altesToken = generateToken('konfi1');
+      // Token bewusst mit aelterem iat: In der Praxis stammt die bestehende
+      // Sitzung immer aus der Vergangenheit. Ohne dies laege das Token in
+      // derselben Sekunde wie die Invalidierung und der Test wuerde die
+      // Sekundengrenze pruefen statt die Sperre selbst.
+      const altesToken = generateTokenMitAlter('konfi1', 60);
 
       // Belegt, dass das Token VORHER funktioniert.
       const vorher = await request(app)
@@ -367,7 +371,7 @@ describe('Auth Routes', () => {
     // Ein Reset erfolgt typischerweise, WEIL der Zugang nicht mehr sicher ist.
     // Bestehende Sitzungen muessen dabei enden (LÜCKE N2).
     it('beendet bestehende Sitzungen des Users', async () => {
-      const altesToken = generateToken('konfi1');
+      const altesToken = generateTokenMitAlter('konfi1', 60);
 
       const vorher = await request(app)
         .get('/api/konfi/profile')
