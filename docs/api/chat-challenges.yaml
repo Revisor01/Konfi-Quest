@@ -817,6 +817,10 @@ paths:
         Liefert eine im Chat hochgeladene Datei. Auth per
         Authorization-Header ODER ?token= (fuer Video-Elemente). Nur
         Hex-Dateinamen; Path-Traversal-Schutz via basename.
+        Seit 22.08.2026 wird der Token gegen die Datenbank geprueft (Konto
+        aktiv, nicht geloescht, kein Soft-Revoke) und die aktive Organisation
+        ueber user_organizations aufgeloest — Multi-Org-Nutzer erreichen ihre
+        Dateien damit auch in der Zweit-Organisation.
       security: []
       parameters:
         - { name: filename, in: path, required: true, schema: { type: string, pattern: "^[a-f0-9]+$" } }
@@ -830,14 +834,20 @@ paths:
         '500': { description: Server-/Entschluesselungsfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
-        middleware: ["manuelle JWT-Pruefung (kein verifyTokenRBAC)"]
+        middleware: ["manuelle JWT-Pruefung mit DB-Abgleich (kein verifyTokenRBAC — Query-Parameter-Auth)"]
         org-scope: true
-        objekt-pruefung: "Nachricht mit file_path muss in eigener Org liegen UND Aufrufer muss chat_participants-Eintrag im Raum haben (nur user_id, ohne user_type)"
-        # LUECKE: Token auch als Query-Parameter akzeptiert (Access-Logs/
-        # Referrer); kein Admin-Bypass (Admins koennen Nachrichten fremder
-        # Raeume lesen, deren Dateien aber nicht abrufen — Inkonsistenz);
-        # Mitgliedschafts-Check ohne user_type (unkritisch, user_id global
-        # eindeutig). Siehe LUECKE 3 im Kopf.
+        objekt-pruefung: "Nachricht mit file_path muss in der AKTIVEN Org liegen UND Aufrufer muss chat_participants-Eintrag im Raum haben (nur user_id, ohne user_type)"
+        # BEHOBEN 22.08.2026: Frueher `req.user = decoded` — Token-Angaben
+        # galten ungeprueft fuer die volle Laufzeit (geloeschte/gesperrte
+        # Konten kamen weiter an Dateien), und organization_id war immer die
+        # PRIMAER-Org, weshalb Multi-Org-Nutzer in der Zweit-Organisation 404
+        # bekamen. Jetzt DB-Abgleich inkl. Soft-Revoke und Aufloesung der
+        # aktiven Org (403 bei fehlender Mitgliedschaft).
+        # LUECKE (offen): Token auch als Query-Parameter akzeptiert
+        # (Access-Logs/Referrer); kein Admin-Bypass (Admins koennen
+        # Nachrichten fremder Raeume lesen, deren Dateien aber nicht abrufen —
+        # Inkonsistenz); Mitgliedschafts-Check ohne user_type (unkritisch,
+        # user_id global eindeutig).
 
   /chat/badge-update:
     post:

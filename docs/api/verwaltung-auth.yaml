@@ -508,7 +508,7 @@ paths:
 
   /auth/logout:
     post:
-      summary: Logout — Refresh-Token revozieren (best effort, immer 200)
+      summary: Logout — Refresh-Token revozieren und Push-Token des Geraets entfernen (best effort, immer 200)
       requestBody:
         content:
           application/json:
@@ -516,13 +516,29 @@ paths:
               type: object
               properties:
                 refresh_token: { type: string }
+                device_id:
+                  type: string
+                  description: >
+                    Geraete-ID. Wird sie zusammen mit platform mitgesendet,
+                    entfernt die Route den Push-Token dieses Geraets fuer den
+                    angemeldeten User. Seit 22.08.2026: Der Client ruft dafuer
+                    zwar auch DELETE /notifications/device-token, aber
+                    best-effort (Timeout, nur online, nur mit ermittelbarer
+                    Geraete-ID) — schlug das fehl, kamen weiter Push-Nachrichten
+                    an das abgemeldete Geraet.
+                platform:
+                  type: string
+                  enum: [ios, android]
       responses:
         "200": { description: "Immer 'Logout erfolgreich'; Token wird zusaetzlich sofort expired (kein Grace-Window)" }
       x-berechtigung:
         rollen: [alle authentifizierten]
         middleware: [verifyTokenRBAC]
         org-scope: false
-        objekt-pruefung: "Revoziert nur das mitgesendete Token (Hash-Match)"
+        objekt-pruefung: >
+          Revoziert nur das mitgesendete Token (Hash-Match). Der
+          Push-Token-Cleanup ist auf user_id des Tokens gescopt — fremde
+          Geraete und andere Nutzer auf demselben Geraet bleiben unberuehrt.
 
   # ==========================================================================
   # ORGANIZATIONS (backend/routes/organizations.js — 15 Routen,
