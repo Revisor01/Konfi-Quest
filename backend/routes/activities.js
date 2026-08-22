@@ -547,6 +547,20 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       const { rows: [activity] } = await db.query("SELECT * FROM activities WHERE id = $1 AND organization_id = $2", [activityId, req.user.organization_id]);
       if (!activity) return res.status(404).json({ error: 'Aktivität nicht gefunden' });
 
+      // Der Ziel-Konfi MUSS zur eigenen Organisation gehoeren. Geprueft wurde
+      // bisher nur die Aktivitaet — ein Admin konnte damit ueber eine fremde
+      // konfiId Punkte und Aktivitaeten bei Konfis ANDERER Gemeinden setzen und
+      // dort Badge-/Level-Berechnung ausloesen (Audit 22.08.2026). Der
+      // Teamer-Zweig darunter war ueber den Jahrgangs-Check zufaellig gedeckt,
+      // admin/org_admin nicht.
+      const { rows: [zielUser] } = await db.query(
+        "SELECT 1 FROM users WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL",
+        [konfiId, req.user.organization_id]
+      );
+      if (!zielUser) {
+        return res.status(404).json({ error: 'Konfi nicht gefunden' });
+      }
+
       // Jahrgang-Zugriff prüfen für Teamer
       if (req.user.role_name === 'teamer') {
         const { rows: [konfiProfile] } = await db.query(

@@ -236,6 +236,43 @@ describe('Activities Routes', () => {
   // POST /api/admin/activities/assign-activity (Punkte-Vergabe)
   // ================================================================
   describe('POST /api/admin/activities/assign-activity', () => {
+    // Mandantentrennung: Geprueft wurde bisher nur die Aktivitaet gegen die
+    // eigene Org, NICHT der Ziel-Konfi. Ein Admin konnte damit ueber eine
+    // fremde konfiId Punkte bei Konfis anderer Gemeinden setzen und dort
+    // Badge-/Level-Berechnung ausloesen (Audit 22.08.2026).
+    it('Admin kann KEINE Punkte an Konfi einer fremden Organisation vergeben', async () => {
+      const vorher = await db.query(
+        'SELECT gottesdienst_points, gemeinde_points FROM konfi_profiles WHERE user_id = $1',
+        [USERS.konfi3.id]
+      );
+
+      const res = await request(app)
+        .post('/api/admin/activities/assign-activity')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          konfiId: USERS.konfi3.id, // gehoert zu Organisation 2
+          activityId: ACTIVITIES.sonntagsgottesdienst.id,
+          completed_date: '2026-03-28',
+        });
+
+      expect(res.status).toBe(404);
+
+      // Punkte des fremden Konfis unveraendert
+      const nachher = await db.query(
+        'SELECT gottesdienst_points, gemeinde_points FROM konfi_profiles WHERE user_id = $1',
+        [USERS.konfi3.id]
+      );
+      expect(nachher.rows[0].gottesdienst_points).toBe(vorher.rows[0].gottesdienst_points);
+      expect(nachher.rows[0].gemeinde_points).toBe(vorher.rows[0].gemeinde_points);
+
+      // Und keine Aktivitaet eingetragen
+      const { rows } = await db.query(
+        'SELECT COUNT(*)::int AS c FROM user_activities WHERE user_id = $1',
+        [USERS.konfi3.id]
+      );
+      expect(rows[0].c).toBe(0);
+    });
+
     it('Teamer weist Activity an Konfi zu und Punkte steigen', async () => {
       // Vorher: gottesdienst_points abfragen
       const before = await db.query(
