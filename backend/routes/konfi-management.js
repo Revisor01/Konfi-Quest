@@ -360,6 +360,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
 
             // Live-Update NACH der Response: geloeschter Konfi aus der Admin-Liste entfernen.
             liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'delete', { konfiId: userId });
+            // Socket trennen: sonst empfaengt das geloeschte Konto weiter
+            // Org-Updates, bis die App neu gestartet wird (Audit 22.08.2026).
+            liveUpdate.disconnectUserSockets(userId);
 
         } catch (err) {
             await client.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
@@ -1072,6 +1075,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             // und taucht als Teamer:in in der Benutzer-Liste auf.
             liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update', { konfiId });
             liveUpdate.sendToOrgAdmins(req.user.organization_id, 'users', 'update', { userId: konfiId });
+            // Rollenwechsel: Socket ZULETZT trennen, sonst bleibt die/der
+            // Befoerderte im Konfi-Raum haengen und bekommt als Teamer:in gar
+            // keine Updates mehr, bis sie/er sich neu anmeldet (Audit 22.08.2026).
+            liveUpdate.disconnectUserSockets(konfiId);
 
         } catch (err) {
             await client.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));

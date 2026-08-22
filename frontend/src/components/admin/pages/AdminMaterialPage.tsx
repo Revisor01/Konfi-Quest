@@ -39,6 +39,7 @@ import {
   search as searchIcon,
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
@@ -97,6 +98,10 @@ const AdminMaterialPage: React.FC = () => {
     },
     { ttl: CACHE_TTL.PROFILE }
   );
+
+  // Material-Liste live halten: neue oder geloeschte Materialien erschienen
+  // vorher erst beim naechsten Oeffnen (Audit 22.08.2026).
+  useLiveRefresh('materials', refreshMaterial);
 
   const filteredMaterials = materials || [];
 

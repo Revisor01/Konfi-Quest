@@ -6,6 +6,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { encryptBuffer, decryptBuffer } = require('../utils/photoCrypto');
 const { allIdsBelongToOrg } = require('../utils/orgOwnership');
+const liveUpdate = require('../utils/liveUpdate');
 
 module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   const { requireTeamer, requireAdmin } = roleHelpers;
@@ -67,6 +68,9 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         [name.trim(), req.user.organization_id]
       );
       res.status(201).json(tag);
+      // Material-Listen bei Leitung und Teamer:innen aktuell halten — vorher gab
+      // es fuer Material ueberhaupt kein Live-Update (Audit 22.08.2026).
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'materials', 'refresh');
     } catch (err) {
       if (err.code === '23505') {
         return res.status(409).json({ error: 'Ein Tag mit diesem Namen existiert bereits' });
@@ -93,6 +97,9 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         return res.status(404).json({ error: 'Tag nicht gefunden' });
       }
       res.json(tag);
+      // Material-Listen bei Leitung und Teamer:innen aktuell halten — vorher gab
+      // es fuer Material ueberhaupt kein Live-Update (Audit 22.08.2026).
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'materials', 'refresh');
     } catch (err) {
       if (err.code === '23505') {
         return res.status(409).json({ error: 'Ein Tag mit diesem Namen existiert bereits' });
@@ -114,6 +121,9 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         return res.status(404).json({ error: 'Tag nicht gefunden' });
       }
       res.json({ message: 'Tag gelöscht' });
+      // Material-Listen bei Leitung und Teamer:innen aktuell halten — vorher gab
+      // es fuer Material ueberhaupt kein Live-Update (Audit 22.08.2026).
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'materials', 'refresh');
     } catch (err) {
       console.error('Fehler beim Löschen des Tags:', err.message);
       res.status(500).json({ error: 'Fehler beim Löschen des Tags' });
@@ -392,6 +402,9 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       }
 
       res.status(201).json(material);
+      // Material-Listen bei Leitung und Teamer:innen aktuell halten — vorher gab
+      // es fuer Material ueberhaupt kein Live-Update (Audit 22.08.2026).
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'materials', 'refresh');
     } catch (err) {
       console.error('Fehler beim Erstellen des Materials:', err.message);
       res.status(500).json({ error: 'Fehler beim Erstellen des Materials' });
@@ -492,6 +505,9 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       }
 
       res.json({ message: 'Material aktualisiert' });
+      // Material-Listen bei Leitung und Teamer:innen aktuell halten — vorher gab
+      // es fuer Material ueberhaupt kein Live-Update (Audit 22.08.2026).
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'materials', 'refresh');
     } catch (err) {
       console.error('Fehler beim Bearbeiten des Materials:', err.message);
       res.status(500).json({ error: 'Fehler beim Bearbeiten des Materials' });
@@ -535,6 +551,9 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       }
 
       res.json({ message: 'Material gelöscht' });
+      // Material-Listen bei Leitung und Teamer:innen aktuell halten — vorher gab
+      // es fuer Material ueberhaupt kein Live-Update (Audit 22.08.2026).
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'materials', 'refresh');
     } catch (err) {
       console.error('Fehler beim Löschen des Materials:', err.message);
       res.status(500).json({ error: 'Fehler beim Löschen des Materials' });
@@ -610,6 +629,9 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       await db.query('UPDATE materials SET updated_at = NOW() WHERE id = $1', [materialId]);
 
       res.status(201).json(insertedFiles);
+      // Material-Listen bei Leitung und Teamer:innen aktuell halten — vorher gab
+      // es fuer Material ueberhaupt kein Live-Update (Audit 22.08.2026).
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'materials', 'refresh');
     } catch (err) {
       console.error('Fehler beim Hochladen der Dateien:', err.message);
       res.status(500).json({ error: 'Fehler beim Hochladen der Dateien' });
@@ -705,6 +727,9 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       await db.query('UPDATE materials SET updated_at = NOW() WHERE id = $1', [fileRecord.material_id]);
 
       res.json({ message: 'Datei gelöscht' });
+      // Material-Listen bei Leitung und Teamer:innen aktuell halten — vorher gab
+      // es fuer Material ueberhaupt kein Live-Update (Audit 22.08.2026).
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'materials', 'refresh');
     } catch (err) {
       console.error('Fehler beim Löschen der Datei:', err.message);
       res.status(500).json({ error: 'Fehler beim Löschen der Datei' });

@@ -44,6 +44,7 @@ import {
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { openFileNatively } from '../../../utils/nativeFileViewer';
 import { useApp } from '../../../contexts/AppContext';
+import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
@@ -110,6 +111,10 @@ const TeamerMaterialPage: React.FC = () => {
     async () => { const res = await api.get('/material'); return res.data; },
     { ttl: CACHE_TTL.PROFILE }
   );
+
+  // Material-Liste live halten: neue oder geloeschte Materialien erschienen
+  // vorher erst beim naechsten Oeffnen (Audit 22.08.2026).
+  useLiveRefresh('materials', refreshMaterial);
 
   // Clientseitiges Filtern nach Suche und Jahrgang
   const materials = useMemo(() => {

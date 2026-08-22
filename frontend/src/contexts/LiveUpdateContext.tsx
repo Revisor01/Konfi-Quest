@@ -20,11 +20,14 @@ export type LiveUpdateType =
   | 'levels'         // Level-Verwaltung
   | 'users'          // Benutzer-Verwaltung
   | 'challenges'     // Challenges (neue Beiträge, Moderations-Änderungen)
+  | 'materials'      // Material-Verwaltung (Leitung und Teamer:innen)
   | 'organizations'; // Organisations-Verwaltung
 
 export interface LiveUpdateEvent {
   type: LiveUpdateType;
-  action: 'refresh' | 'update' | 'delete' | 'create';
+  // 'submission_update'/'challenge_update' sendet challenges.js real mit —
+  // useLiveRefresh wertet die action nicht aus, der Typ soll aber nicht luegen.
+  action: 'refresh' | 'update' | 'delete' | 'create' | 'earned' | 'submission_update' | 'challenge_update';
   targetUserId?: number;      // Fuer welchen User
   targetUserType?: string;    // 'konfi' | 'admin'
   data?: any;                 // Optionale Daten

@@ -94,6 +94,8 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   allen, statt erst nach dem Neuladen.
 - Punkte erscheinen jetzt sofort auf Startseite und im Profil, egal auf
   welchem Weg sie vergeben wurden.
+- Material erscheint jetzt sofort bei Teamer:innen, statt erst beim nächsten
+  Öffnen.
 - Push-Nachrichten kamen nach der Server-Umstellung nicht mehr an.
 - Abgesagte Termine werden auch der Leitung als abgesagt und durchgestrichen
   angezeigt — bisher sahen das nur die Konfis.

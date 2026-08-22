@@ -285,6 +285,12 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
       res.json({ message: 'Account erfolgreich gelöscht' });
 
+      // Admin-Liste aktualisieren und den Socket des geloeschten Kontos trennen —
+      // sonst empfing er weiter Org-Updates und die Liste blieb stehen
+      // (Audit 22.08.2026).
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'delete', { userId });
+      liveUpdate.disconnectUserSockets(userId);
+
     } catch (err) {
  console.error('Database error in POST /api/auth/delete-account:', err);
       res.status(500).json({ error: 'Fehler beim Löschen des Accounts' });
