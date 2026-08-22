@@ -14,6 +14,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Hinzugefügt
 
+- Chat-Verlauf exportieren: Die Leitung kann einen kompletten Chat als
+  Textdatei sichern — etwa um Beiträge für einen Gottesdienst zu sammeln.
+  Zu finden über das Menü oben rechts im Chat.
 - Challenges: Aufgaben, auf die Konfis über einen frei gewählten Zeitraum mit
   eigenen Beiträgen antworten — Foto, Text, Aufnahme oder Link. Bewusst ohne
   Punkte, ohne Zähler und ohne Rangliste; fürs Mitmachen gibt es ein Abzeichen.

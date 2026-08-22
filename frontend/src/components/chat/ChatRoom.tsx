@@ -31,8 +31,9 @@ import MembersModal from './modals/MembersModal';
 import FileViewerModal, { FileItem } from '../shared/FileViewerModal';
 // Camera is now handled via ChatRoomSections helpers
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
-import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Keyboard } from '@capacitor/keyboard';
 // Native FileViewer ueber openFileNatively, FileViewerModal als Web-Fallback
 import { openFileNatively } from '../../utils/nativeFileViewer';
@@ -1323,6 +1324,70 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     return false;
   };
 
+  // Nur admin/org_admin/super_admin duerfen exportieren — der Server prueft
+  // das ebenfalls, hier nur zum Ein-/Ausblenden des Menuepunkts.
+  const istLeitung = user?.type === 'admin'
+    && ['admin', 'org_admin', 'super_admin'].includes(user?.role_name || '');
+
+  // Chat-Export (nur Leitung): laedt den kompletten Verlauf als Textdatei.
+  // Anlass: Inhalte aus Konfi-Chats fuer die Gottesdienst-Vorbereitung
+  // aufbereiten. Auf dem Geraet ueber das Teilen-Blatt, im Web als Download.
+  const handleExportChat = async () => {
+    if (!room || !isOnline) return;
+    try {
+      const res = await api.get(`/chat/rooms/${room.id}/export`, { responseType: 'blob' });
+      const dateiname = `${getDisplayRoomName().replace(/[^a-zA-Z0-9_-]+/g, '_').slice(0, 50) || 'chat'}_${new Date().toISOString().slice(0, 10)}.txt`;
+
+      if (Capacitor.isNativePlatform()) {
+        // Auf dem Geraet: in den Dokumenten ablegen und das Teilen-Blatt oeffnen,
+        // damit die Datei in Mail, Notizen o.ae. weiterwandern kann.
+        const text = await (res.data as Blob).text();
+        await Filesystem.writeFile({
+          path: dateiname,
+          data: text,
+          directory: Directory.Cache,
+          encoding: Encoding.UTF8,
+        });
+        const { uri } = await Filesystem.getUri({ path: dateiname, directory: Directory.Cache });
+        await Share.share({ title: 'Chat-Verlauf', url: uri });
+      } else {
+        const url = URL.createObjectURL(res.data as Blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = dateiname;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (err: any) {
+      if (err?.response?.status === 403) {
+        setError('Nur die Leitung darf Chats exportieren');
+      } else {
+        setError('Export fehlgeschlagen');
+      }
+    }
+  };
+
+  // Sammelt die Optionen hinter dem Menue-Button: Export (Leitung) und
+  // Verlassen (wer darf). Frueher loeste der Button direkt das Verlassen aus.
+  const handleChatOptions = () => {
+    const buttons: any[] = [];
+    if (istLeitung) {
+      buttons.push({
+        text: 'Chat-Verlauf exportieren',
+        handler: () => { handleExportChat(); }
+      });
+    }
+    if (canLeaveChat()) {
+      buttons.push({
+        text: 'Chat verlassen',
+        role: 'destructive',
+        handler: () => { handleLeaveChat(); }
+      });
+    }
+    buttons.push({ text: 'Abbrechen', role: 'cancel' });
+    presentActionSheet({ header: getDisplayRoomName(), buttons });
+  };
+
   const handleLeaveChat = () => {
     if (!isOnline) return;
     presentAlert({
@@ -1352,12 +1417,14 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         roomName={getDisplayRoomName()}
         roomType={room?.type ?? 'group'}
         isAdmin={user?.type === 'admin'}
-        canLeave={canLeaveChat()}
+        // Menue-Button auch fuer die Leitung zeigen, wenn sie den Chat zwar
+        // nicht verlassen darf, aber exportieren kann.
+        canLeave={canLeaveChat() || istLeitung}
         isOnline={isOnline}
         onBack={onBack}
         onOpenMembers={openMembersModal}
         onOpenPoll={openPollModal}
-        onLeaveChat={handleLeaveChat}
+        onLeaveChat={handleChatOptions}
         eventId={room?.event_id ?? null}
         partnerType={
           room?.type === 'direct'

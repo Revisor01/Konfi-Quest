@@ -1000,6 +1000,158 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   });
   
   // Get room participants
+  // ============================================================
+  // Chat-Export (nur Leitung): kompletter Verlauf eines Raums als
+  // lesbarer Text oder JSON. Anlass: Inhalte aus Konfi-Chats fuer die
+  // Gottesdienst-Vorbereitung aufbereiten (Nutzerwunsch 22.08.2026).
+  //
+  // Bewusst NUR fuer admin/org_admin — nicht fuer Teamer:innen und Konfis.
+  // Ein Export nimmt den gesamten Verlauf aus dem Kontext des Chats heraus;
+  // wer ihn ziehen darf, sollte dieselbe Verantwortung tragen wie beim
+  // Loeschen eines Raums.
+  // ============================================================
+  router.get('/rooms/:roomId/export', verifyTokenRBAC, async (req, res) => {
+    try {
+      const roomId = parseInt(req.params.roomId, 10);
+      if (!Number.isInteger(roomId) || roomId < 1) {
+        return res.status(400).json({ error: 'Ungültige Raum-ID' });
+      }
+
+      const userType = req.user.type;
+      const roleName = req.user.role_name;
+      const organizationId = req.user.organization_id;
+
+      // Rollenpruefung: nur Leitung. type ist fuer alles ausser konfi/teamer
+      // 'admin', deshalb zusaetzlich der Rollenname.
+      const istLeitung = userType === 'admin'
+        && ['admin', 'org_admin', 'super_admin'].includes(roleName);
+      if (!istLeitung) {
+        return res.status(403).json({ error: 'Nur die Leitung darf Chats exportieren' });
+      }
+
+      // Raum muss zur eigenen Organisation gehoeren — 404 statt 403, damit der
+      // Export nicht verraet, ob eine fremde Raum-ID existiert.
+      const { rows: [room] } = await db.query(
+        `SELECT cr.id, cr.name, cr.type, cr.created_at, j.name AS jahrgang_name
+         FROM chat_rooms cr
+         LEFT JOIN jahrgaenge j ON cr.jahrgang_id = j.id
+         WHERE cr.id = $1 AND cr.organization_id = $2`,
+        [roomId, organizationId]
+      );
+      if (!room) {
+        return res.status(404).json({ error: 'Chat nicht gefunden' });
+      }
+
+      // Vollstaendiger Verlauf, aelteste zuerst. Geloeschte Nachrichten bleiben
+      // als Platzhalter stehen, damit der Verlauf nachvollziehbar bleibt.
+      const { rows: messages } = await db.query(
+        `SELECT m.id, m.created_at, m.message_type, m.file_name,
+                m.deleted_at IS NOT NULL AS geloescht,
+                CASE WHEN m.deleted_at IS NOT NULL THEN NULL ELSE m.content END AS content,
+                u.display_name AS absender,
+                ro.display_name AS rolle,
+                p.question AS umfrage_frage,
+                p.options  AS umfrage_optionen,
+                reply_user.display_name AS antwort_auf_absender,
+                CASE WHEN reply_msg.deleted_at IS NOT NULL THEN NULL ELSE reply_msg.content END AS antwort_auf_inhalt
+         FROM chat_messages m
+         LEFT JOIN users u ON m.user_id = u.id
+         LEFT JOIN roles ro ON u.role_id = ro.id
+         LEFT JOIN chat_polls p ON m.id = p.message_id
+         LEFT JOIN chat_messages reply_msg ON m.reply_to = reply_msg.id
+         LEFT JOIN users reply_user ON reply_msg.user_id = reply_user.id
+         WHERE m.room_id = $1
+         ORDER BY m.created_at ASC, m.id ASC`,
+        [roomId]
+      );
+
+      const raumName = room.name || room.jahrgang_name || `Chat ${room.id}`;
+      const format = (req.query.format || 'txt').toLowerCase();
+
+      // Dateiname ohne Sonderzeichen — Umlaute werden transliteriert, damit der
+      // Content-Disposition-Header auf allen Systemen sauber ankommt.
+      const dateiBasis = raumName
+        .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+        .replace(/Ä/g, 'Ae').replace(/Ö/g, 'Oe').replace(/Ü/g, 'Ue')
+        .replace(/[^a-zA-Z0-9_-]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .slice(0, 60) || 'chat';
+      const heute = new Date().toISOString().slice(0, 10);
+
+      if (format === 'json') {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${dateiBasis}_${heute}.json"`);
+        return res.send(JSON.stringify({
+          chat: raumName,
+          typ: room.type,
+          erstellt_am: room.created_at,
+          exportiert_am: new Date().toISOString(),
+          anzahl_nachrichten: messages.length,
+          nachrichten: messages
+        }, null, 2));
+      }
+
+      // Textformat: fuer Menschen zum Lesen und Weiterverarbeiten.
+      const zeit = (d) => new Date(d).toLocaleString('de-DE', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+
+      const zeilen = [];
+      zeilen.push(`Chat-Verlauf: ${raumName}`);
+      zeilen.push(`Exportiert am ${zeit(new Date())} — ${messages.length} Nachrichten`);
+      zeilen.push('='.repeat(60));
+      zeilen.push('');
+
+      let letzterTag = '';
+      for (const m of messages) {
+        const tag = new Date(m.created_at).toLocaleDateString('de-DE', {
+          weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric'
+        });
+        if (tag !== letzterTag) {
+          zeilen.push('');
+          zeilen.push(`--- ${tag} ---`);
+          letzterTag = tag;
+        }
+
+        const uhrzeit = new Date(m.created_at).toLocaleTimeString('de-DE', {
+          hour: '2-digit', minute: '2-digit'
+        });
+        const absender = m.absender || 'Unbekannt';
+        const rolle = m.rolle ? ` (${m.rolle})` : '';
+        let text;
+
+        if (m.geloescht) {
+          text = '[gelöscht]';
+        } else if (m.message_type === 'poll' && m.umfrage_frage) {
+          const opts = Array.isArray(m.umfrage_optionen) ? m.umfrage_optionen : [];
+          text = `[Umfrage] ${m.umfrage_frage}` + (opts.length ? `\n    Optionen: ${opts.join(' | ')}` : '');
+        } else if (m.message_type !== 'text' && m.file_name) {
+          text = `[${m.message_type === 'image' ? 'Bild' : m.message_type === 'video' ? 'Video' : 'Datei'}: ${m.file_name}]`
+               + (m.content ? `\n    ${m.content}` : '');
+        } else {
+          text = m.content || '';
+        }
+
+        if (m.antwort_auf_absender) {
+          const zitat = (m.antwort_auf_inhalt || '[gelöscht]').slice(0, 60);
+          zeilen.push(`[${uhrzeit}] ${absender}${rolle} (antwortet ${m.antwort_auf_absender}: "${zitat}")`);
+        } else {
+          zeilen.push(`[${uhrzeit}] ${absender}${rolle}`);
+        }
+        zeilen.push(`    ${text.split('\n').join('\n    ')}`);
+      }
+
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${dateiBasis}_${heute}.txt"`);
+      return res.send(zeilen.join('\n'));
+
+    } catch (err) {
+      console.error('Database error in GET /chat/rooms/:roomId/export:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
   router.get('/rooms/:roomId/participants', verifyTokenRBAC, async (req, res) => {
     try {
       const roomId = req.params.roomId;

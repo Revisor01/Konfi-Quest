@@ -280,6 +280,85 @@ describe('Chat Routes', () => {
   // ================================================================
   // GET /api/chat/rooms/:roomId/participants
   // ================================================================
+  // ================================================================
+  // Chat-Export (nur Leitung)
+  // ================================================================
+  describe('GET /api/chat/rooms/:roomId/export', () => {
+    beforeEach(async () => {
+      await db.query(
+        `INSERT INTO chat_messages (room_id, user_id, user_type, message_type, content, created_at)
+         VALUES ($1, $2, 'konfi', 'text', 'Erste Nachricht', NOW() - interval '2 hours'),
+                ($1, $3, 'admin', 'text', 'Antwort der Leitung', NOW() - interval '1 hour')`,
+        [CHAT_ROOMS.jahrgang.id, USERS.konfi1.id, USERS.admin1.id]
+      );
+    });
+
+    it('Admin exportiert als Text -> 200 mit Verlauf', async () => {
+      const res = await request(app)
+        .get(`/api/chat/rooms/${CHAT_ROOMS.jahrgang.id}/export`)
+        .set('Authorization', `Bearer ${admin1Token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toContain('text/plain');
+      expect(res.headers['content-disposition']).toContain('attachment');
+      expect(res.text).toContain('Erste Nachricht');
+      expect(res.text).toContain('Antwort der Leitung');
+      // Aelteste zuerst
+      expect(res.text.indexOf('Erste Nachricht')).toBeLessThan(res.text.indexOf('Antwort der Leitung'));
+    });
+
+    it('Admin exportiert als JSON -> 200 mit Nachrichten-Array', async () => {
+      const res = await request(app)
+        .get(`/api/chat/rooms/${CHAT_ROOMS.jahrgang.id}/export?format=json`)
+        .set('Authorization', `Bearer ${admin1Token}`);
+
+      expect(res.status).toBe(200);
+      const daten = JSON.parse(res.text);
+      expect(daten.anzahl_nachrichten).toBe(2);
+      expect(daten.nachrichten[0].content).toBe('Erste Nachricht');
+    });
+
+    it('Konfi bekommt 403 — auch im eigenen Chat', async () => {
+      const res = await request(app)
+        .get(`/api/chat/rooms/${CHAT_ROOMS.jahrgang.id}/export`)
+        .set('Authorization', `Bearer ${konfi1Token}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Teamer:in bekommt 403', async () => {
+      const res = await request(app)
+        .get(`/api/chat/rooms/${CHAT_ROOMS.group.id}/export`)
+        .set('Authorization', `Bearer ${teamer1Token}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Chat einer FREMDEN Organisation -> 404 (verraet keine Existenz)', async () => {
+      const res = await request(app)
+        .get(`/api/chat/rooms/${CHAT_ROOMS.jahrgang2.id}/export`)
+        .set('Authorization', `Bearer ${admin1Token}`);
+
+      expect(res.status).toBe(404);
+    });
+
+    it('Geloeschte Nachrichten erscheinen als Platzhalter, nicht im Klartext', async () => {
+      await db.query(
+        `UPDATE chat_messages SET deleted_at = NOW()
+         WHERE room_id = $1 AND content = 'Erste Nachricht'`,
+        [CHAT_ROOMS.jahrgang.id]
+      );
+
+      const res = await request(app)
+        .get(`/api/chat/rooms/${CHAT_ROOMS.jahrgang.id}/export`)
+        .set('Authorization', `Bearer ${admin1Token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.text).not.toContain('Erste Nachricht');
+      expect(res.text).toContain('[gelöscht]');
+    });
+  });
+
   describe('GET /api/chat/rooms/:roomId/participants', () => {
     it('Admin bekommt 200 + Teilnehmer-Liste', async () => {
       const res = await request(app)
