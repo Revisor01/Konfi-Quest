@@ -85,6 +85,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Challenges: Die Leitungsansicht hat jetzt die Reiter Aktuell, Geplant und
+  Archiv; die Zahlen darüber springen zum jeweiligen Reiter.
+- Die Startseite der Konfis lädt die Tageslosung nur noch einmal statt zweimal.
 - Ist die Tageslosung in den Einstellungen abgeschaltet, wird sie auch nicht
   mehr im Hintergrund abgerufen. Startseiten öffnen dadurch ohne Wartezeit,
   selbst wenn der Losungs-Dienst gerade nicht erreichbar ist.

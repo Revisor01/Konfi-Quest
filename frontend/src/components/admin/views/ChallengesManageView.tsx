@@ -138,7 +138,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
   // Reiter wie in der Konfi-Sicht (Nutzerwunsch 22.08.2026). Vorher standen
   // "Aktuelle Challenges" und "Archiv" untereinander — bei vielen beendeten
   // Challenges scrollte man lange am Archiv vorbei.
-  const [reiter, setReiter] = useState<'aktuell' | 'archiv'>('aktuell');
+  const [reiter, setReiter] = useState<'aktuell' | 'geplant' | 'archiv'>('aktuell');
 
   const counts = useMemo(() => {
     const byStatus: Record<ChallengeStatus, number> = { draft: 0, scheduled: 0, active: 0, ended: 0 };
@@ -153,7 +153,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
   // geplant und Entwurf stehen dabei in EINER Liste; welcher Status gilt,
   // sagt das Badge am Eintrag. Konfis sehen dieselben drei Abschnitte, dort
   // enthaelt der erste nur Aktive (geplant/Entwurf liefert das Backend nicht).
-  const { current, archived } = useMemo(() => {
+  const { current, planned, archived } = useMemo(() => {
     // Sortierung innerhalb der laufenden Liste: aktive zuerst, dann geplante,
     // zuletzt Entwuerfe; bei gleichem Status das juengste Startdatum oben.
     const order: Record<ChallengeStatus, number> = { active: 0, scheduled: 1, draft: 2, ended: 3 };
@@ -163,9 +163,17 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
       return new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime();
     };
     return {
+      // Aktuell: laufende Challenges und Entwuerfe — alles, woran gerade
+      // gearbeitet wird. Geplante haben einen eigenen Reiter, weil sie einen
+      // anderen Blick verlangen: nicht "was laeuft", sondern "was kommt"
+      // (Nutzerwunsch 23.08.2026).
       current: challenges
-        .filter((c) => getChallengeStatus(c) !== 'ended')
+        .filter((c) => ['active', 'draft'].includes(getChallengeStatus(c)))
         .sort(byStatusThenStart),
+      // Geplant: das naechste Startdatum oben.
+      planned: challenges
+        .filter((c) => getChallengeStatus(c) === 'scheduled')
+        .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime()),
       // Archiv: zuletzt beendete zuerst — wie in der Konfi-Sicht.
       archived: challenges
         .filter((c) => getChallengeStatus(c) === 'ended')
@@ -366,8 +374,9 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
         stats={[
           // Aktiv/Geplant/Entwürfe beschreiben alle den Reiter "Aktuell" und
           // springen dorthin; Archiv schaltet auf den zweiten Reiter.
-          { value: counts.active, label: 'Aktiv', onClick: () => setReiter('aktuell'), active: reiter === 'aktuell' },
-          { value: counts.scheduled, label: 'Geplant', onClick: () => setReiter('aktuell'), active: reiter === 'aktuell' },
+          // Jede Kachel fuehrt auf ihren eigenen Reiter.
+          { value: current.length, label: 'Aktuell', onClick: () => setReiter('aktuell'), active: reiter === 'aktuell' },
+          { value: planned.length, label: 'Geplant', onClick: () => setReiter('geplant'), active: reiter === 'geplant' },
           { value: archived.length, label: 'Archiv', onClick: () => setReiter('archiv'), active: reiter === 'archiv' }
         ]}
         onInfo={() => presentLegend({ presentingElement: presentingElement || undefined })}
@@ -378,10 +387,13 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
       <div className="app-segment-wrapper">
         <IonSegment
           value={reiter}
-          onIonChange={(e) => setReiter(e.detail.value as 'aktuell' | 'archiv')}
+          onIonChange={(e) => setReiter(e.detail.value as 'aktuell' | 'geplant' | 'archiv')}
         >
           <IonSegmentButton value="aktuell">
             <IonLabel>Aktuell</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="geplant">
+            <IonLabel>Geplant</IonLabel>
           </IonSegmentButton>
           <IonSegmentButton value="archiv">
             <IonLabel>Archiv</IonLabel>
@@ -407,6 +419,22 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
         {current.map((challenge, index) => renderChallenge(challenge, index, current.length))}
       </ListSection>
       </>
+      )}
+
+      {reiter === 'geplant' && (
+      <ListSection
+        icon={flag}
+        title="Geplante Challenges"
+        count={planned.length}
+        iconColorClass="challenges"
+        isEmpty={planned.length === 0}
+        emptyIcon={flag}
+        emptyTitle="Nichts geplant"
+        emptyMessage="Challenges mit einem Startdatum in der Zukunft erscheinen hier"
+        emptyIconColor="#be185d"
+      >
+        {planned.map((challenge, index) => renderChallenge(challenge, index, planned.length))}
+      </ListSection>
       )}
 
       {/* --- 2. Eigene Abzeichen — dieselbe Reihe wie in der Konfi-Sicht. Seit der

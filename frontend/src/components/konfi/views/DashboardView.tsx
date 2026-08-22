@@ -161,7 +161,10 @@ const getChallengeTypeIcon = (type?: string): string =>
 
 interface DashboardViewProps {
   dashboardData: DashboardData;
-  dailyVerse: DailyVerse | null;
+  // Wird von der Page nicht mehr uebergeben — die View laedt selbst
+  // (siehe Kommentar in KonfiDashboardPage). Bleibt optional fuer Aufrufer,
+  // die sie noch setzen.
+  dailyVerse?: DailyVerse | null;
   badgeStats: BadgeStats;
   allBadges: AllBadgesData;
   upcomingEvents: DashboardEvent[];
@@ -324,7 +327,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
       }
     };
     loadTageslosung();
-  }, [dailyVerse, dashboardConfig?.show_losung]);
+  }, [dashboardConfig?.show_losung]);
 
   const gottesdienstPoints = dashboardData.konfi.gottesdienst_points || 0;
   const gemeindePoints = dashboardData.konfi.gemeinde_points || 0;

@@ -155,55 +155,13 @@ const KonfiDashboardPage: React.FC = () => {
     { ttl: CACHE_TTL.PROFILE }
   );
 
-  // --- useOfflineQuery: Tageslosung ---
-  // Ist die Losung in den Dashboard-Einstellungen abgeschaltet, wird sie GAR
-  // NICHT abgerufen (Nutzerwunsch 23.08.2026). Vorher lud diese Stelle sie
-  // immer und nur die Anzeige prüfte den Schalter — bei nicht erreichbarer
-  // API hing das Öffnen dadurch trotz "aus" mehrere Sekunden.
-  // Der Server lehnt abgeschaltete Abrufe zusätzlich mit 204 ab.
-  const losungAktiv = dashboardData?.dashboard_config?.show_losung !== false;
+  // Die Tageslosung wird BEWUSST nicht hier geladen: DashboardView holt sie
+  // selbst (dort sitzt auch der Wechsel der Bibeluebersetzung und die
+  // Fallback-Logik). Vorher lud diese Seite sie zusaetzlich und reichte sie
+  // als Prop durch — die View benutzte die Prop aber nur als useEffect-
+  // Trigger und zeigte immer ihren eigenen Stand. Ergebnis waren ZWEI Abrufe
+  // pro Oeffnen (Aufraeumen 23.08.2026).
 
-  const { data: dailyVerse, refresh: refreshVerse } = useOfflineQuery<DailyVerse>(
-    'konfi:tageslosung:' + new Date().toISOString().split('T')[0],
-    async () => {
-      try {
-        const response = await api.get('/konfi/tageslosung');
-
-        if (response.data.success && response.data.data) {
-          const apiData = response.data.data;
-          const useLosung = Math.random() > 0.5;
-          const cleanText = (text: string) => text?.replace(/\[|\]/g, '') || '';
-
-          setShowLehrtext(useLosung);
-
-          return {
-            losungstext: cleanText(apiData.losung?.text) || "Der HERR ist mein Hirte, mir wird nichts mangeln.",
-            losungsvers: apiData.losung?.reference || "Psalm 23,1",
-            lehrtext: cleanText(apiData.lehrtext?.text) || "Jesus spricht: Ich bin der gute Hirte.",
-            lehrtextvers: apiData.lehrtext?.reference || "Johannes 10,11",
-            date: apiData.date || new Date().toLocaleDateString('de-DE', { weekday: 'long' }),
-            translation: apiData.translation?.name || 'Lutherbibel 2017',
-            fallback: response.data.fallback || false,
-            cached: response.data.cached || false
-          };
-        }
-        throw new Error('Invalid API response');
-      } catch (err) {
-        console.warn('Tageslosung konnte nicht geladen werden, verwende Fallback:', err);
-        setShowLehrtext(Math.random() > 0.5);
-        return {
-          losungstext: "Der HERR ist mein Hirte, mir wird nichts mangeln.",
-          losungsvers: "Psalm 23,1",
-          lehrtext: "Jesus spricht: Ich bin der gute Hirte. Der gute Hirte lässt sein Leben für die Schafe.",
-          lehrtextvers: "Johannes 10,11",
-          date: new Date().toLocaleDateString('de-DE', { weekday: 'long' }),
-          translation: 'Lutherbibel 2017 (Offline)',
-          fallback: true
-        };
-      }
-    },
-    { ttl: CACHE_TTL.TAGESLOSUNG, enabled: losungAktiv }
-  );
 
   // --- useOfflineQuery: Events ---
   const { data: upcomingEvents, refresh: refreshEvents } = useOfflineQuery<Event[]>(
@@ -334,7 +292,7 @@ const KonfiDashboardPage: React.FC = () => {
   useLiveRefresh(['dashboard', 'points', 'events', 'badges'], refreshAllData);
 
   const handleRefresh = async (event: CustomEvent) => {
-    await Promise.all([refreshDashboard(), refreshVerse(), refreshEvents(), refreshBadges()]);
+    await Promise.all([refreshDashboard(), refreshEvents(), refreshBadges()]);
     event.detail.complete();
   };
 
@@ -449,7 +407,6 @@ const KonfiDashboardPage: React.FC = () => {
 
         <DashboardView
           dashboardData={dashboardDataWithKonfspruch}
-          dailyVerse={dailyVerse}
           badgeStats={badgeStats}
           allBadges={allBadges}
           upcomingEvents={upcomingEvents || []}
