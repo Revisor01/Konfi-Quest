@@ -77,20 +77,81 @@ io.engine.on('connection_error', (err) => {
 });
 
 // Socket.io JWT Authentication Middleware
-io.use((socket, next) => {
+//
+// Frueher stand hier `socket.user = decoded` — die Angaben aus dem Token
+// galten damit ungeprueft, und ein Socket lebt deutlich laenger als die
+// 15 Minuten Token-Laufzeit. Ein geloeschtes, deaktiviertes oder per
+// Passwortwechsel gesperrtes Konto behielt seine Live-Verbindung
+// (Audit 22.08.2026). Die Pruefung kostet EINE Query je Verbindungsaufbau,
+// nicht je Nachricht — der Socket verbindet sich einmal und bleibt dann.
+io.use(async (socket, next) => {
   const token = socket.handshake.auth.token;
 
   if (!token) {
     return next(new Error('Authentication required'));
   }
 
+  let decoded;
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    socket.user = decoded;
-    next();
+    decoded = jwt.verify(token, JWT_SECRET);
   } catch (err) {
     console.warn('Socket.io Auth fehlgeschlagen:', err.message);
     return next(new Error('Invalid token'));
+  }
+
+  try {
+    const { rows: [nutzer] } = await db.query(
+      `SELECT u.id, u.organization_id, u.token_invalidated_at, r.name AS role_name
+       FROM users u
+       LEFT JOIN roles r ON u.role_id = r.id
+       WHERE u.id = $1 AND u.deleted_at IS NULL AND u.is_active = true`,
+      [decoded.id]
+    );
+    if (!nutzer) {
+      return next(new Error('Invalid token'));
+    }
+
+    // Soft-Revoke wie in rbac.js: Sperren aus einem Passwortwechsel gelten auch hier.
+    if (nutzer.token_invalidated_at) {
+      const ausgestellt = decoded.iat;
+      const gesperrtAb = Math.floor(new Date(nutzer.token_invalidated_at).getTime() / 1000);
+      if (ausgestellt < gesperrtAb) {
+        return next(new Error('Token invalidated'));
+      }
+    }
+
+    // Aktive Organisation aufloesen (Umschalter). Ohne das arbeitet der Socket
+    // immer in der Primaer-Org — die Raum-Pruefungen unten (joinRoom) haetten
+    // in einer Zweit-Gemeinde die falsche Organisation verglichen.
+    let orgId = nutzer.organization_id;
+    let rolle = nutzer.role_name;
+    const tokenOrg = decoded.active_organization_id ? parseInt(decoded.active_organization_id) : null;
+
+    if (Number.isInteger(tokenOrg) && tokenOrg !== orgId) {
+      const { rows: [mitgliedschaft] } = await db.query(
+        `SELECT uo.organization_id, r.name AS role_name
+         FROM user_organizations uo
+         JOIN roles r ON uo.role_id = r.id
+         WHERE uo.user_id = $1 AND uo.organization_id = $2`,
+        [decoded.id, tokenOrg]
+      );
+      if (!mitgliedschaft) {
+        return next(new Error('Kein Zugriff auf diese Organisation'));
+      }
+      orgId = mitgliedschaft.organization_id;
+      rolle = mitgliedschaft.role_name;
+    }
+
+    socket.user = {
+      id: nutzer.id,
+      organization_id: orgId,
+      role_name: rolle,
+      type: rolle === 'konfi' ? 'konfi' : rolle === 'teamer' ? 'teamer' : 'admin'
+    };
+    next();
+  } catch (err) {
+    console.error('Socket.io Auth: Datenbankfehler:', err.message);
+    return next(new Error('Authentication failed'));
   }
 });
 

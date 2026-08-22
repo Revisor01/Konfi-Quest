@@ -543,6 +543,70 @@ describe('Chat Routes', () => {
       expect(onDisk.subarray(0, 8).equals(pngBuffer.subarray(0, 8))).toBe(false);
     });
 
+    // Die Route prueft den Token von Hand (Video-Elemente koennen keine Header
+    // senden). Frueher hiess das `req.user = decoded`: Angaben ungeprueft fuer
+    // die volle Token-Laufzeit, und organization_id immer die PRIMAER-Org —
+    // in einer Zweit-Gemeinde bekam man die eigenen Dateien nicht
+    // (Audit 22.08.2026).
+    it('deaktiviertes Konto bekommt keine Datei mehr', async () => {
+      const pngBuffer = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+      const up = await request(app)
+        .post(`/api/chat/rooms/${CHAT_ROOMS.jahrgang.id}/messages`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .attach('file', pngBuffer, { filename: 'bild.png', contentType: 'image/png' });
+      expect(up.status).toBe(200);
+
+      await db.query('UPDATE users SET is_active = false WHERE id = $1', [USERS.konfi1.id]);
+      try {
+        const down = await request(app)
+          .get(`/api/chat/files/${up.body.file_path}`)
+          .set('Authorization', `Bearer ${konfi1Token}`);
+        expect(down.status).toBe(401);
+      } finally {
+        await db.query('UPDATE users SET is_active = true WHERE id = $1', [USERS.konfi1.id]);
+      }
+    });
+
+    it('nach einem Passwortwechsel greift der Soft-Revoke auch hier', async () => {
+      const pngBuffer = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+      const up = await request(app)
+        .post(`/api/chat/rooms/${CHAT_ROOMS.jahrgang.id}/messages`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .attach('file', pngBuffer, { filename: 'bild.png', contentType: 'image/png' });
+      expect(up.status).toBe(200);
+
+      // Sperre in die Zukunft datieren, damit sie das bestehende Token
+      // sicher erfasst (iat hat nur Sekundenaufloesung).
+      await db.query(
+        "UPDATE users SET token_invalidated_at = NOW() + INTERVAL '5 seconds' WHERE id = $1",
+        [USERS.konfi1.id]
+      );
+      try {
+        const down = await request(app)
+          .get(`/api/chat/files/${up.body.file_path}`)
+          .set('Authorization', `Bearer ${konfi1Token}`);
+        expect(down.status).toBe(401);
+      } finally {
+        await db.query('UPDATE users SET token_invalidated_at = NULL WHERE id = $1', [USERS.konfi1.id]);
+      }
+    });
+
+    it('Token mit Anspruch auf eine fremde Organisation -> 403', async () => {
+      const pngBuffer = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+      const up = await request(app)
+        .post(`/api/chat/rooms/${CHAT_ROOMS.jahrgang.id}/messages`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .attach('file', pngBuffer, { filename: 'bild.png', contentType: 'image/png' });
+      expect(up.status).toBe(200);
+
+      // konfi1 ist NICHT Mitglied von Org 2 — der Header darf nichts bewirken.
+      const down = await request(app)
+        .get(`/api/chat/files/${up.body.file_path}`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .set('X-Active-Organization', '2');
+      expect(down.status).toBe(403);
+    });
+
     it('Abruf via /files entschluesselt zum Originalinhalt (Roundtrip)', async () => {
       const pngBuffer = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
 

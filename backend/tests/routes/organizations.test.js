@@ -983,6 +983,52 @@ describe('Organizations Routes', () => {
         expect(rows.length).toBe(0);
       });
 
+      // Der Entzug muss SOFORT gelten, nicht erst nach Ablauf des Tokens.
+      // Der Membership-Check in rbac.js greift bei jedem Cache-Miss; zusaetzlich
+      // wird der Cache geleert und ein Soft-Revoke gesetzt (Audit 22.08.2026).
+      it('nach dem Entzug endet der Zugriff auf die Organisation sofort', async () => {
+        const { invalidateUserCache } = require('../../middleware/rbac');
+
+        await request(app).post(`/api/organizations/2/members`)
+          .set('Authorization', `Bearer ${superAdminToken}`)
+          .send({ user_id: 4, role_name: 'teamer' });
+        invalidateUserCache(4);
+
+        // Beleg, dass der Zugriff VORHER funktioniert.
+        const vorher = await request(app)
+          .get('/api/events')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .set('X-Active-Organization', '2');
+        expect(vorher.status).toBe(200);
+
+        const entzug = await request(app)
+          .delete(`/api/organizations/2/members/4`)
+          .set('Authorization', `Bearer ${superAdminToken}`);
+        expect(entzug.status).toBe(200);
+
+        const nachher = await request(app)
+          .get('/api/events')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .set('X-Active-Organization', '2');
+        expect([401, 403]).toContain(nachher.status);
+      });
+
+      it('setzt beim Entzug token_invalidated_at', async () => {
+        await db.query('UPDATE users SET token_invalidated_at = NULL WHERE id = 4');
+        await request(app).post(`/api/organizations/2/members`)
+          .set('Authorization', `Bearer ${superAdminToken}`)
+          .send({ user_id: 4, role_name: 'teamer' });
+
+        await request(app)
+          .delete(`/api/organizations/2/members/4`)
+          .set('Authorization', `Bearer ${superAdminToken}`);
+
+        const { rows } = await db.query(
+          'SELECT token_invalidated_at FROM users WHERE id = 4'
+        );
+        expect(rows[0].token_invalidated_at).not.toBeNull();
+      });
+
       it('Primaer-Org kann NICHT entfernt werden -> 400', async () => {
         // admin1 Primaer-Org = 1, durch Migration in user_organizations vorhanden
         await db.query(`INSERT INTO user_organizations (user_id, organization_id, role_id)

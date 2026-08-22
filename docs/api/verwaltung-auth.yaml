@@ -186,8 +186,10 @@ paths:
         middleware: [verifyTokenRBAC, validateChangePassword]
         org-scope: false
         objekt-pruefung: "Nur eigener Account (userId aus Token)"
-        # LÜCKE (N2): revoziert bestehende Refresh-Tokens NICHT und setzt kein
-        # token_invalidated_at — alte Sessions bleiben bis 90 Tage gueltig.
+        # BEHOBEN 22.08.2026 (war N2): setzt token_invalidated_at und
+        # revoziert alle offenen Refresh-Tokens. Die Antwort enthaelt ein
+        # frisches Token-Paar fuer die aufrufende Sitzung, damit der eigene
+        # Client nicht mitfliegt.
 
   /auth/delete-account:
     post:
@@ -231,8 +233,11 @@ paths:
         middleware: [verifyTokenRBAC, validateUpdateEmail]
         org-scope: false
         objekt-pruefung: "Nur eigener Account"
-        # LÜCKE (N8): keine Besitz-Verifikation der E-Mail; 409 verraet
-        # eingeloggten Usern, welche E-Mail-Adressen im System existieren.
+        # HINWEIS (N8, bewusst so belassen): keine Besitz-Verifikation der
+        # E-Mail. Der 409 verraet eingeloggten Usern, dass eine Adresse
+        # vergeben ist — hier ueberwiegt die Bedienbarkeit: ohne die Meldung
+        # bliebe unklar, warum die Aenderung nicht greift. Anders als bei
+        # request-password-reset, wo der Aufrufer NICHT angemeldet ist.
 
   /auth/update-role-title:
     post:
@@ -471,7 +476,9 @@ paths:
         middleware: [validateResetPassword]
         org-scope: false
         objekt-pruefung: "Token-Lookup in password_resets (used_at IS NULL, expires_at > NOW)"
-        # LÜCKE (N2/N3): bestehende Refresh-Tokens des Users werden NICHT
+        # BEHOBEN 22.08.2026 (war N2): bestehende Refresh-Tokens werden
+        # revoziert und token_invalidated_at gesetzt. Reset-Tokens liegen
+        # ausserdem nur noch gehasht in der DB. HINWEIS (war N3): bestehende Refresh-Tokens des Users werden NICHT
         # revoziert; kein eigener Rate-Limiter (Token allerdings 32 Byte Hex).
 
   /auth/refresh:
@@ -605,8 +612,9 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: "Inline: is_super_admin ODER organization_id === id"
-        # LÜCKE (N5): fuer die eigene Org fehlt ein Rollen-Check — auch konfi
-        # und teamer erhalten SELECT * (Kontakt-, Trial-, max_konfis-Daten).
+        # BEHOBEN 22.08.2026 (war N5): Rollen-Check ergaenzt (super_admin ODER
+        # Verwaltungsrolle). Konfis erhalten 403 statt Kontakt-, Trial- und
+        # Lizenzdaten der Gemeinde.
     put:
       summary: Organisation bearbeiten (Stammdaten; trial_ends_at/is_trial nur Super-Admin)
       parameters:
@@ -731,8 +739,8 @@ paths:
         middleware: [verifyTokenRBAC, validateCreateOrgAdmin]
         org-scope: true
         objekt-pruefung: "Inline: super_admin (jede Org) ODER org_admin der eigenen Org; org_admin-Rolle wird in der Ziel-Org aufgeloest"
-        # LÜCKE (N6): nur 6-Zeichen-Minimum, validatePassword-Policy wird
-        # nicht angewandt (schwaecher als jede andere User-Anlage).
+        # BEHOBEN 22.08.2026 (war N6): die zentrale validatePassword-Policy
+        # gilt jetzt auch hier (8 Zeichen, Gross/Klein, Ziffer, Sonderzeichen).
 
   /organizations/{id}/members:
     get:
@@ -800,8 +808,8 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: "Inline: is_super_admin ODER eigene Org"
-        # LÜCKE (N5): kein Rollen-Check fuer die eigene Org — auch Konfis
-        # koennen Org-Statistiken (inkl. pending_requests) abrufen.
+        # BEHOBEN 22.08.2026 (war N5): Rollen-Check ergaenzt; Konfis
+        # erhalten 403.
 
   # ==========================================================================
   # USERS (backend/routes/users.js — 9 Routen, Mount /api/users UND
@@ -887,8 +895,8 @@ paths:
         middleware: [verifyTokenRBAC, requireOrgAdmin, "checkUserHierarchy('update')", validateUpdateUser]
         org-scope: true
         objekt-pruefung: "Ziel-User in eigener Org; canManageRole + canCreateRole fuer neue Rolle"
-        # LÜCKE (N7): das optionale password-Feld wird OHNE Policy-Pruefung
-        # gehasht (weder validatePassword noch Mindestlaenge im Validator).
+        # BEHOBEN 22.08.2026 (war N7): das optionale password-Feld wird vor
+        # dem Hashen gegen validatePassword geprueft.
     delete:
       summary: User loeschen (Hard-Delete mit Referenz-Anonymisierung und History-Purge)
       parameters:

@@ -119,17 +119,18 @@
 #       Teamer koennen ausschliesslich ihre EIGENEN Antragsfotos sehen.
 #
 # NEUE LÜCKEN IN DIESEM BLOCK (zusammengefasst):
-#   L1  GET /api/events (Liste) liefert e.* INKLUSIVE qr_token an ALLE Rollen,
-#       auch Konfis. Damit kann sich ein angemeldeter Konfi per
-#       POST /api/events/qr-checkin aus der Ferne als anwesend eintragen und
-#       Punkte gutschreiben - der Fix an GET /events/:id ist damit umgehbar.
-#       (Markierung an der Route unten.)
+#   L1  BEHOBEN 22.08.2026. GET /api/events lieferte e.* inklusive qr_token an
+#       ALLE Rollen. Ein Konfi konnte sich damit per POST /api/events/qr-checkin
+#       aus der Ferne als anwesend eintragen und Punkte gutschreiben; der Fix an
+#       GET /events/:id war so umgehbar. Live nachgewiesen (2 Token sichtbar),
+#       jetzt aus allen Listen-Responses entfernt.
 #   L2  GET /api/admin/konfis/:id (+ /event-points, /badges): Teamer sieht
 #       Konfis ausserhalb der zugewiesenen Jahrgaenge im Detail.
 #   L3  POST /api/admin/konfis/:id/bonus-points: Teamer ohne Jahrgang-Check.
 #   L4  GET /api/konfi/dashboard: Klarnamen + Punkte der Top 3 an alle Konfis.
-#   L5  GET /api/events: Teamer ohne jede Jahrgangs-Zuweisung sieht alle
-#       Events (Filter greift nur bei vorhandenen Zuweisungen).
+#   L5  BEHOBEN 22.08.2026. Der Jahrgangs-Filter verlangte length > 0 und
+#       entfiel damit fuer Teamer:innen ohne jede Zuweisung - sie sahen alle
+#       Events der Organisation. Der Filter greift jetzt immer.
 # =====================================================================
 openapi: 3.1.0
 info:
@@ -507,7 +508,7 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: "nur Events des eigenen Jahrgangs; Konfi ohne Jahrgang -> leere Liste"
-        hinweis: "Response enthaelt e.* - auch qr_token ist hier enthalten (gleiche Klasse wie LÜCKE L1 in /api/events)."
+        hinweis: "BEHOBEN 22.08.2026: qr_token wird aus der Response gefiltert (war dieselbe Klasse wie L1 in /api/events)."
       parameters:
         - name: all
           in: query
@@ -750,13 +751,14 @@ paths:
         org-scope: true
         objekt-pruefung: "Teamer: Jahrgangs-Filter (nur wenn Zuweisungen vorhanden); Konfi: teamer_only ausgeblendet"
         hinweis: >
-          # LÜCKE L1: Die Response uebernimmt e.* UNGEFILTERT - inklusive
-          qr_token. Ein Konfi erhaelt damit den Check-in-Token jedes Events
-          und kann sich via POST /api/events/qr-checkin aus der Ferne als
-          anwesend eintragen (Punkte!). Der qr_token-Filter existiert nur in
-          GET /api/events/:id.
-          # LÜCKE L5: Teamer OHNE jede Jahrgangs-Zuweisung wird nicht
-          gefiltert und sieht alle Events der Org.
+          # BEHOBEN 22.08.2026 (war LÜCKE L1): qr_token wird nicht mehr
+          ausgeliefert - weder an Konfis noch an die Leitung. Der Token kommt
+          ausschliesslich ueber POST /api/events/:id/generate-qr, das die
+          QR-Anzeige ohnehin nutzt. Vorher lag er in der Liste und war damit
+          fuer jeden Konfi lesbar (Selbst-Checkin aus der Ferne).
+          # BEHOBEN 22.08.2026 (war LÜCKE L5): Der Jahrgangs-Filter greift
+          jetzt IMMER. Vorher entfiel er ohne jede Zuweisung und die Teamer:in
+          sah alle Events der Organisation.
       parameters:
         - name: all
           in: query
@@ -854,7 +856,7 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: "nur eigene Buchung (event_bookings des Token-Users); Event-Org muss der aktiven Org entsprechen"
-        hinweis: "Punkte-Selbstvergabe-Weg g) der Analyse. Sicherheit haengt an der Geheimhaltung des qr_token - siehe LÜCKE L1 in GET /api/events."
+        hinweis: "Punkte-Selbstvergabe-Weg g) der Analyse. Sicherheit haengt an der Geheimhaltung des qr_token; seit 22.08.2026 wird dieser nur noch ueber generate-qr ausgegeben (siehe BEHOBEN L1 in GET /api/events)."
       requestBody:
         required: true
         content:

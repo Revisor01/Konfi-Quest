@@ -85,6 +85,12 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Wer in mehreren Gemeinden arbeitet, sieht Bilder und Dateien im Chat jetzt
+  auch in der zweiten Gemeinde. Bisher blieben sie dort leer.
+- Sicherheit: Wird jemandem der Zugang zu einer Gemeinde entzogen, endet der
+  Zugriff sofort — auch auf bereits geöffneten Geräten.
+- Sicherheit: Gesperrte oder gelöschte Konten verlieren jetzt sofort ihre
+  Verbindung zum Chat, statt bis zu einer Viertelstunde weiterzulaufen.
 - Konten lassen sich wieder löschen, auch wenn damit schon Punkte vergeben,
   Termine angelegt oder Abzeichen erstellt wurden. Diese Einträge bleiben
   erhalten, nur der Bezug auf das gelöschte Konto entfällt.

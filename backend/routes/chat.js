@@ -1401,12 +1401,80 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       return res.status(401).json({ error: 'Kein Token vorhanden' });
     }
     
-    // Verify token manually since we can't use middleware for query params
+    // Token von Hand pruefen, weil die Middleware den Query-Parameter nicht
+    // unterstuetzt (Video-Elemente koennen keine Header senden).
+    //
+    // Frueher stand hier schlicht `req.user = decoded`. Zwei Folgen
+    // (Audit 22.08.2026):
+    //  1. Die Angaben im Token galten ungeprueft fuer die volle Laufzeit —
+    //     15 Minuten ohne Abgleich mit der Datenbank, auch fuer geloeschte
+    //     oder gesperrte Konten.
+    //  2. organization_id kam aus dem Token und war damit immer die
+    //     PRIMAER-Organisation. Wer per Umschalter in einer Zweit-Gemeinde
+    //     arbeitete, bekam seine eigenen Chat-Dateien nicht zu sehen (404).
+    //     Dieselbe Klasse Fehler wurde in challenges.js am 06.08. behoben.
+    let decoded;
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = decoded;
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
     } catch (error) {
       return res.status(401).json({ error: 'Ungültiger Token' });
+    }
+
+    try {
+      const { rows: [nutzer] } = await db.query(
+        `SELECT u.id, u.organization_id, u.token_invalidated_at, r.name AS role_name
+         FROM users u
+         LEFT JOIN roles r ON u.role_id = r.id
+         WHERE u.id = $1 AND u.deleted_at IS NULL AND u.is_active = true`,
+        [decoded.id]
+      );
+      if (!nutzer) {
+        return res.status(401).json({ error: 'Nicht angemeldet' });
+      }
+
+      // Soft-Revoke wie in rbac.js: nach einem Passwortwechsel ausgestellte
+      // Sperren muessen auch hier greifen.
+      if (nutzer.token_invalidated_at) {
+        const ausgestellt = decoded.iat;
+        const gesperrtAb = Math.floor(new Date(nutzer.token_invalidated_at).getTime() / 1000);
+        if (ausgestellt < gesperrtAb) {
+          return res.status(401).json({ error: 'Token invalidated' });
+        }
+      }
+
+      req.user = {
+        id: nutzer.id,
+        organization_id: nutzer.organization_id,
+        role_name: nutzer.role_name,
+        type: nutzer.role_name === 'konfi' ? 'konfi'
+          : nutzer.role_name === 'teamer' ? 'teamer' : 'admin'
+      };
+
+      // Aktive Organisation aufloesen (Umschalter), identisch zu rbac.js.
+      const headerOrg = parseInt(req.headers['x-active-organization']);
+      const tokenOrg = decoded.active_organization_id ? parseInt(decoded.active_organization_id) : null;
+      const gewuenschteOrg = Number.isInteger(headerOrg) ? headerOrg
+        : (Number.isInteger(tokenOrg) ? tokenOrg : null);
+
+      if (gewuenschteOrg && gewuenschteOrg !== req.user.organization_id) {
+        const { rows: [mitgliedschaft] } = await db.query(
+          `SELECT uo.organization_id, r.name AS role_name
+           FROM user_organizations uo
+           JOIN roles r ON uo.role_id = r.id
+           WHERE uo.user_id = $1 AND uo.organization_id = $2`,
+          [decoded.id, gewuenschteOrg]
+        );
+        if (!mitgliedschaft) {
+          return res.status(403).json({ error: 'Kein Zugriff auf diese Organisation' });
+        }
+        req.user.organization_id = mitgliedschaft.organization_id;
+        req.user.role_name = mitgliedschaft.role_name;
+        req.user.type = mitgliedschaft.role_name === 'konfi' ? 'konfi'
+          : mitgliedschaft.role_name === 'teamer' ? 'teamer' : 'admin';
+      }
+    } catch (err) {
+      console.error('Auth-Fehler in GET /chat/files/:filename:', err);
+      return res.status(500).json({ error: 'Datenbankfehler' });
     }
     try {
       // Path-Traversal-Schutz: nur den Dateinamen ohne Verzeichniskomponenten verwenden

@@ -719,7 +719,14 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
 
       // 7. User-Zuweisungen + Multi-Org-Mitgliedschaften
       await client.query('DELETE FROM user_jahrgang_assignments WHERE user_id IN (SELECT id FROM users WHERE organization_id = $1)', [id]);
-      // ALLE Mitgliedschaften in dieser Org (auch Gast-User fremder Orgs)
+      // ALLE Mitgliedschaften in dieser Org (auch Gast-User fremder Orgs).
+      // Die betroffenen User VORHER einsammeln: Ihr gecachtes req.user traegt
+      // noch die Rolle in dieser Org, und ohne Invalidierung koennten sie bis
+      // zu 30 Sekunden weiterarbeiten (Audit 22.08.2026).
+      const { rows: exMitglieder } = await client.query(
+        'SELECT DISTINCT user_id FROM user_organizations WHERE organization_id = $1',
+        [id]
+      );
       await client.query('DELETE FROM user_organizations WHERE organization_id = $1', [id]);
 
       // 8. Konfsprueche (org-gescopt; konfi_profiles.konfspruch_id ist SET NULL)
@@ -758,6 +765,15 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       }
 
       await client.query('COMMIT');
+
+      // Cache der ehemaligen Mitglieder leeren — erst nach dem COMMIT, damit
+      // ein Rollback keinen unnoetig geleerten Cache hinterlaesst. Ohne das
+      // koennten Gast-User fremder Organisationen bis zu 30 Sekunden mit ihrer
+      // alten Rolle weiterarbeiten (Audit 22.08.2026).
+      for (const m of exMitglieder) {
+        invalidateUserCache(m.user_id);
+      }
+
       res.json({ message: 'Organisation und alle zugehörigen Daten erfolgreich gelöscht' });
 
       // Dateien nach dem COMMIT entfernen (nicht blockierend — ein fehlendes
@@ -1103,6 +1119,19 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       if (rowCount === 0) {
         return res.status(404).json({ error: 'Mitgliedschaft nicht gefunden' });
       }
+
+      // Zusaetzlich zum Cache-Leeren die bestehenden Access-Tokens sperren.
+      // Der Cache-Reset allein genuegt heute, haengt aber daran, dass genau
+      // EIN Backend-Prozess laeuft und dass jeder Verbraucher des
+      // active_organization_id-Claims durch rbacVerifier geht. Der Soft-Revoke
+      // kostet nichts pro Request (die Pruefung existiert in rbac.js) und
+      // macht den Entzug davon unabhaengig.
+      //
+      // Niemand wird dadurch ausgesperrt: Das Refresh-Token bleibt gueltig,
+      // der Client holt still ein neues Access-Token — und dieses traegt den
+      // entzogenen Claim nicht mehr, weil die Refresh-Route die Mitgliedschaft
+      // erneut prueft.
+      await db.query('UPDATE users SET token_invalidated_at = NOW() WHERE id = $1', [userId]);
       invalidateUserCache(userId);
       res.json({ message: 'Mitgliedschaft entfernt' });
 
