@@ -720,14 +720,25 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         totalCapacity = timeslots.reduce((sum, slot) => sum + slot.max_participants, 0);
       }
       
+      // Konfis bekommen diese Route zwar (sie ist nur mit rbacVerifier
+      // geschuetzt), duerfen aber NICHT alles sehen (Audit 22.08.2026):
+      //  - qr_token: damit koennte sich ein Konfi per POST /qr-checkin von zu
+      //    Hause selbst als anwesend eintragen und Punkte gutschreiben.
+      //  - participants/unregistrations: enthalten Klarnamen, Jahrgang,
+      //    Anwesenheitsstatus und opt_out_reason (Entschuldigungsgruende
+      //    Minderjaehriger). Die Konfi-Route /api/konfi/events/:id/participants
+      //    anonymisiert dieselben Daten bewusst zu "Vorname N.".
+      const istKonfi = req.user.type === 'konfi';
+      const { qr_token, ...eventOhneToken } = event;
+
       res.json({
-        ...event,
-        participants,
+        ...(istKonfi ? eventOhneToken : event),
+        participants: istKonfi ? [] : participants,
         timeslots,
         series_events: seriesEvents,
         jahrgaenge,
         categories,
-        unregistrations,
+        unregistrations: istKonfi ? [] : unregistrations,
         registered_count: registeredCount,
         pending_count: pendingCount,
         teamer_count: teamerCount,

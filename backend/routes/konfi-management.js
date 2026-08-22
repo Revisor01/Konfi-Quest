@@ -918,19 +918,34 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         try {
             await client.query('BEGIN');
 
+            // organization_id MUSS mitgeprueft werden: ohne sie fand der SELECT
+            // auch Eintraege fremder Organisationen. Der DELETE darunter ist zwar
+            // org-gescopt und traf dann 0 Zeilen — das UPDATE auf konfi_profiles
+            // lief aber trotzdem und zog dem fremden Konfi Punkte ab
+            // (Audit 22.08.2026, gleiche Fehlerklasse wie assign-activity).
             const getActivityQuery = `
                 SELECT ka.*, a.points, a.type
                 FROM user_activities ka
                 JOIN activities a ON ka.activity_id = a.id
-                WHERE ka.id = $1 AND ka.user_id = $2`;
-            const { rows: [activity] } = await client.query(getActivityQuery, [req.params.activityId, req.params.id]);
+                JOIN users u ON ka.user_id = u.id
+                WHERE ka.id = $1 AND ka.user_id = $2
+                  AND ka.organization_id = $3 AND u.organization_id = $3`;
+            const { rows: [activity] } = await client.query(getActivityQuery, [req.params.activityId, req.params.id, req.user.organization_id]);
 
             if (!activity) {
                 await client.query('ROLLBACK');
                 return res.status(404).json({ error: 'Aktivität nicht gefunden' });
             }
 
-            await client.query('DELETE FROM user_activities WHERE id = $1 AND organization_id = $2', [req.params.activityId, req.user.organization_id]);
+            const { rowCount: geloescht } = await client.query(
+                'DELETE FROM user_activities WHERE id = $1 AND organization_id = $2',
+                [req.params.activityId, req.user.organization_id]
+            );
+            // Nur dekrementieren, wenn wirklich etwas geloescht wurde.
+            if (geloescht === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ error: 'Aktivität nicht gefunden' });
+            }
 
             const updateField = getPointField(activity.type);
             const updateQuery = `

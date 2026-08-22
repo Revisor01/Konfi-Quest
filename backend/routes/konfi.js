@@ -1338,13 +1338,18 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           u.display_name
         FROM event_bookings eb
         JOIN users u ON eb.user_id = u.id
+        JOIN events e ON eb.event_id = e.id
         LEFT JOIN roles r ON u.role_id = r.id
         WHERE eb.event_id = $1
+          AND e.organization_id = $2
           AND eb.status = 'confirmed'
           AND (r.name IS NULL OR r.name <> 'teamer')
         ORDER BY u.display_name ASC
       `;
-      const { rows: participants } = await db.query(participantsQuery, [eventId]);
+      // organization_id MUSS mitgeprueft werden: ohne sie konnte ein Konfi mit
+      // einer geratenen Event-ID die Teilnehmerliste von Terminen FREMDER
+      // Gemeinden abrufen (Audit 22.08.2026).
+      const { rows: participants } = await db.query(participantsQuery, [eventId, req.user.organization_id]);
 
       // Anonymize names: "Vorname N." (first name + first letter of last name with period)
       const anonymizedParticipants = participants.map(p => {
