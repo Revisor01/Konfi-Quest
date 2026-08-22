@@ -85,6 +85,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Sicherheit: Beim Ändern oder Zurücksetzen des Passworts werden jetzt alle
+  anderen angemeldeten Geräte abgemeldet. Bisher blieben sie monatelang
+  angemeldet — wer sein Passwort aus Sorge um den Zugang änderte, sperrte
+  fremde Zugriffe damit nicht aus.
 - Sicherheit: Der Check-in-Code eines Termins wurde in der Terminliste an alle
   ausgeliefert. Konfis konnten sich damit selbst als anwesend eintragen und
   Punkte gutschreiben. Der Code wird jetzt nur noch beim Anzeigen des QR-Codes

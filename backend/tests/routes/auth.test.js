@@ -244,6 +244,76 @@ describe('Auth Routes', () => {
       expect(loginRes.status).toBe(200);
     });
 
+    // Vorher blieben bestehende Access- und Refresh-Tokens nach einem
+    // Passwortwechsel bis zu 90 Tage gueltig. Wer sein Passwort aendert, weil
+    // jemand Zugriff hat, sperrte den Fremdzugriff damit nicht aus
+    // (Audit 22.08.2026, LÜCKE N2).
+    it('beendet bestehende Sitzungen: altes Token wird abgewiesen', async () => {
+      const altesToken = generateToken('konfi1');
+
+      // Belegt, dass das Token VORHER funktioniert.
+      const vorher = await request(app)
+        .get('/api/konfi/profile')
+        .set('Authorization', `Bearer ${altesToken}`);
+      expect(vorher.status).toBe(200);
+
+      const res = await request(app)
+        .post('/api/auth/change-password')
+        .set('Authorization', `Bearer ${altesToken}`)
+        .send({ currentPassword: PASSWORD, newPassword: 'NeuesPasswort123!' });
+      expect(res.status).toBe(200);
+
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      invalidateUserCache(USERS.konfi1.id);
+
+      const nachher = await request(app)
+        .get('/api/konfi/profile')
+        .set('Authorization', `Bearer ${altesToken}`);
+      expect(nachher.status).toBe(401);
+    });
+
+    it('liefert ein frisches Token, das sofort funktioniert', async () => {
+      const altesToken = generateToken('konfi1');
+
+      const res = await request(app)
+        .post('/api/auth/change-password')
+        .set('Authorization', `Bearer ${altesToken}`)
+        .send({ currentPassword: PASSWORD, newPassword: 'NeuesPasswort123!' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.token).toBeDefined();
+      expect(res.body.refresh_token).toBeDefined();
+
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      invalidateUserCache(USERS.konfi1.id);
+
+      // Das neue Token darf sich NICHT selbst aussperren (iat-Sekunden-Falle).
+      const mitNeuem = await request(app)
+        .get('/api/konfi/profile')
+        .set('Authorization', `Bearer ${res.body.token}`);
+      expect(mitNeuem.status).toBe(200);
+    });
+
+    it('revoziert bestehende Refresh-Tokens', async () => {
+      const token = generateToken('konfi1');
+
+      await db.query(
+        'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, NOW() + INTERVAL \'90 days\')',
+        [USERS.konfi1.id, 'hash-aus-alter-sitzung']
+      );
+
+      await request(app)
+        .post('/api/auth/change-password')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ currentPassword: PASSWORD, newPassword: 'NeuesPasswort123!' });
+
+      const { rows } = await db.query(
+        'SELECT revoked_at FROM refresh_tokens WHERE user_id = $1 AND token_hash = $2',
+        [USERS.konfi1.id, 'hash-aus-alter-sitzung']
+      );
+      expect(rows[0].revoked_at).not.toBeNull();
+    });
+
     it('Passwort aendern mit falschem altem Passwort gibt 400', async () => {
       const token = generateToken('konfi1');
 
@@ -264,6 +334,92 @@ describe('Auth Routes', () => {
         .send({ currentPassword: PASSWORD, newPassword: 'kurz' });
 
       expect(res.status).toBe(400);
+    });
+  });
+
+  // ================================================================
+  // POST /api/auth/reset-password
+  // ================================================================
+  describe('POST /api/auth/reset-password', () => {
+    const legeResetTokenAn = async (userId, token) => {
+      await db.query(
+        `INSERT INTO password_resets (user_id, user_type, token, expires_at)
+         VALUES ($1, 'konfi', $2, NOW() + INTERVAL '1 hour')`,
+        [userId, token]
+      );
+    };
+
+    it('setzt das Passwort zurueck -> 200', async () => {
+      await legeResetTokenAn(USERS.konfi1.id, 'reset-token-ok');
+
+      const res = await request(app)
+        .post('/api/auth/reset-password')
+        .send({ token: 'reset-token-ok', newPassword: 'GanzNeu123!' });
+
+      expect(res.status).toBe(200);
+
+      const login = await request(app)
+        .post('/api/auth/login')
+        .send({ username: USERS.konfi1.username, password: 'GanzNeu123!' });
+      expect(login.status).toBe(200);
+    });
+
+    // Ein Reset erfolgt typischerweise, WEIL der Zugang nicht mehr sicher ist.
+    // Bestehende Sitzungen muessen dabei enden (LÜCKE N2).
+    it('beendet bestehende Sitzungen des Users', async () => {
+      const altesToken = generateToken('konfi1');
+
+      const vorher = await request(app)
+        .get('/api/konfi/profile')
+        .set('Authorization', `Bearer ${altesToken}`);
+      expect(vorher.status).toBe(200);
+
+      await legeResetTokenAn(USERS.konfi1.id, 'reset-token-sessions');
+      const res = await request(app)
+        .post('/api/auth/reset-password')
+        .send({ token: 'reset-token-sessions', newPassword: 'GanzNeu123!' });
+      expect(res.status).toBe(200);
+
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      invalidateUserCache(USERS.konfi1.id);
+
+      const nachher = await request(app)
+        .get('/api/konfi/profile')
+        .set('Authorization', `Bearer ${altesToken}`);
+      expect(nachher.status).toBe(401);
+    });
+
+    it('revoziert bestehende Refresh-Tokens', async () => {
+      await db.query(
+        `INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
+         VALUES ($1, $2, NOW() + INTERVAL '90 days')`,
+        [USERS.konfi1.id, 'hash-vor-reset']
+      );
+      await legeResetTokenAn(USERS.konfi1.id, 'reset-token-refresh');
+
+      await request(app)
+        .post('/api/auth/reset-password')
+        .send({ token: 'reset-token-refresh', newPassword: 'GanzNeu123!' });
+
+      const { rows } = await db.query(
+        'SELECT revoked_at FROM refresh_tokens WHERE user_id = $1 AND token_hash = $2',
+        [USERS.konfi1.id, 'hash-vor-reset']
+      );
+      expect(rows[0].revoked_at).not.toBeNull();
+    });
+
+    it('verbrauchter Reset-Token funktioniert kein zweites Mal -> 400', async () => {
+      await legeResetTokenAn(USERS.konfi1.id, 'reset-token-einmal');
+
+      const ersteAnfrage = await request(app)
+        .post('/api/auth/reset-password')
+        .send({ token: 'reset-token-einmal', newPassword: 'GanzNeu123!' });
+      expect(ersteAnfrage.status).toBe(200);
+
+      const zweiteAnfrage = await request(app)
+        .post('/api/auth/reset-password')
+        .send({ token: 'reset-token-einmal', newPassword: 'NochNeuer123!' });
+      expect(zweiteAnfrage.status).toBe(400);
     });
   });
 

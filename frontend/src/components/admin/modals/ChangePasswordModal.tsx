@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useActionGuard } from '../../../hooks/useActionGuard';
+import { setToken, setRefreshToken } from '../../../services/tokenStore';
 import {
   IonPage,
   IonHeader,
@@ -119,10 +120,20 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
 
     await guard(async () => {
       try {
-        await api.post('/auth/change-password', {
+        const res = await api.post('/auth/change-password', {
           currentPassword: passwordData.current_password,
           newPassword: passwordData.new_password
         });
+
+        // Der Passwortwechsel beendet serverseitig ALLE Sitzungen. Die Antwort
+        // liefert dafuer ein frisches Token-Paar fuer diese Sitzung — ohne
+        // Uebernahme wuerde der naechste Request am invalidierten Token
+        // scheitern und sich wie ein grundloser Rauswurf anfuehlen.
+        if (res.data?.token) {
+          await setToken(res.data.token);
+          if (res.data.refresh_token) await setRefreshToken(res.data.refresh_token);
+        }
+
         setSuccess('Passwort erfolgreich geändert');
         onSuccess();
       } catch (err: any) {

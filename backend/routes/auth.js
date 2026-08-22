@@ -11,6 +11,7 @@ const { deleteKonfiCascade } = require('../utils/konfiDeletion');
 const { checkKonfiLimit } = require('../utils/konfiLimit');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
+const { invalidateUserCache } = require('../middleware/rbac');
 const router = express.Router();
 
 // Eigener Rate-Limiter für Passwort-Reset (getrennt vom Login-Limiter)
@@ -42,6 +43,48 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
   // SHA-256 Hash für DB-Speicherung (konsistent mit Phase 66)
   const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
+
+  // Frisches Token-Paar fuer einen User erzeugen. Wird nach dem Passwortwechsel
+  // gebraucht: dort werden alle Sitzungen invalidiert, und ohne neues Paar
+  // wuerde der eigene Client sofort mitfliegen.
+  // Gibt null zurueck, wenn der User nicht (mehr) ladbar ist — der Aufrufer
+  // antwortet dann ohne Token, der Wechsel selbst bleibt gueltig.
+  const erstelleTokenPaarFuerUser = async (dbConn, userId) => {
+    try {
+      const { rows: [u] } = await dbConn.query(
+        `SELECT u.id, u.display_name, u.email, u.organization_id, u.is_super_admin,
+                r.name AS role_name
+         FROM users u JOIN roles r ON u.role_id = r.id
+         WHERE u.id = $1`,
+        [userId]
+      );
+      if (!u) return null;
+
+      const userType = u.role_name === 'konfi' ? 'konfi'
+        : u.role_name === 'teamer' ? 'teamer' : 'admin';
+
+      const accessToken = jwt.sign({
+        id: u.id,
+        type: userType,
+        display_name: u.display_name,
+        email: u.email,
+        organization_id: u.organization_id,
+        role_name: u.role_name,
+        is_super_admin: u.is_super_admin || false
+      }, JWT_SECRET, { expiresIn: '15m' });
+
+      const refreshToken = generateRefreshToken();
+      await dbConn.query(
+        'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)',
+        [u.id, hashToken(refreshToken), new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)]
+      );
+
+      return { token: accessToken, refresh_token: refreshToken };
+    } catch (err) {
+      console.error('Token-Neuausstellung nach Passwortwechsel fehlgeschlagen:', err);
+      return null;
+    }
+  };
 
   // ===== UNIFIED LOGIN ENDPOINTS =====
 
@@ -234,10 +277,39 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       }
       
       const hashedPassword = await bcrypt.hash(newPassword, 10);
-      
-      await db.query(`UPDATE users SET password_hash = $1 WHERE id = $2`, [hashedPassword, userId]);
-      
-      res.json({ message: 'Passwort erfolgreich geändert' });
+
+      // Alle anderen Sitzungen beenden (Audit 22.08.2026, LÜCKE N2). Vorher
+      // blieben bestehende Access- und Refresh-Tokens nach einem Passwort-
+      // wechsel weiter gueltig — bis zu 90 Tage. Wer sein Passwort aendert,
+      // weil jemand Zugriff hat, sperrte den Fremdzugriff damit NICHT aus.
+      //
+      // token_invalidated_at wird eine Sekunde zurueckdatiert: Die Pruefung in
+      // rbac.js vergleicht gegen den JWT-Claim iat, der nur Sekunden-
+      // aufloesung hat. Bei taggleicher Sekunde waere tokenIssuedAt <
+      // invalidatedAt sonst zufaellig wahr oder falsch — das frisch
+      // ausgestellte Token unten koennte sich selbst aussperren.
+      const invalidierungsZeitpunkt = new Date(Date.now() - 1000);
+
+      await db.query(
+        `UPDATE users SET password_hash = $1, token_invalidated_at = $2 WHERE id = $3`,
+        [hashedPassword, invalidierungsZeitpunkt, userId]
+      );
+      await db.query(
+        'UPDATE refresh_tokens SET revoked_at = NOW(), expires_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL',
+        [userId]
+      );
+      invalidateUserCache(userId);
+
+      // Frisches Token-Paar fuer die AKTUELLE Sitzung: Ohne das wuerde der
+      // eigene Client beim naechsten Request am gerade gesetzten
+      // token_invalidated_at scheitern und der Passwortwechsel wuerde sich
+      // wie ein unerwarteter Rauswurf anfuehlen.
+      const neuesPaar = await erstelleTokenPaarFuerUser(db, userId);
+
+      res.json({
+        message: 'Passwort erfolgreich geändert',
+        ...(neuesPaar || {})
+      });
 
     } catch (err) {
  console.error('Database error in POST /api/auth/change-password:', err);
@@ -936,10 +1008,22 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       }
       
       const hashedPassword = await bcrypt.hash(newPassword, 10);
-      
-      await db.query(`UPDATE users SET password_hash = $1 WHERE id = $2`, [hashedPassword, resetRecord.user_id]);
+
+      // Wie bei change-password alle bestehenden Sitzungen beenden (LÜCKE N2).
+      // Hier wiegt es schwerer: Ein Reset erfolgt typischerweise, WEIL der
+      // Zugang nicht mehr sicher ist. Hier wird KEIN neues Token ausgestellt —
+      // nach einem Reset meldet man sich regulaer neu an.
+      await db.query(
+        `UPDATE users SET password_hash = $1, token_invalidated_at = NOW() WHERE id = $2`,
+        [hashedPassword, resetRecord.user_id]
+      );
+      await db.query(
+        'UPDATE refresh_tokens SET revoked_at = NOW(), expires_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL',
+        [resetRecord.user_id]
+      );
       await db.query('UPDATE password_resets SET used_at = NOW() WHERE id = $1', [resetRecord.id]);
-      
+      invalidateUserCache(resetRecord.user_id);
+
       res.json({ message: 'Passwort erfolgreich zurückgesetzt' });
 
     } catch (err) {
