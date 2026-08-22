@@ -12,6 +12,10 @@
 # die in Produktion noch nicht angewandt sind — derselbe Weg wie beim Deploy.
 #
 # Aufruf:  bash backend/tests/schema/refresh-schema.sh
+# Die set_config('search_path','')-Zeile von pg_dump wird herausgefiltert:
+# Im Dump ist jeder Bezeichner voll qualifiziert (public.users), spaetere
+# Statements sind es nicht. Bliebe sie drin, scheiterte das naechste
+# CREATE TABLE mit "no schema has been selected to create in".
 set -euo pipefail
 
 ZIEL="$(dirname "$0")/prod-schema.sql"
@@ -25,6 +29,7 @@ ssh -o StrictHostKeyChecking=no "$SERVER" \
      --schema-only --no-owner --no-privileges --no-comments" \
   | grep -v '^\\restrict' \
   | grep -v '^\\unrestrict' \
+  | grep -v "set_config('search_path'" \
   > "$ZIEL"
 
 ZEILEN=$(wc -l < "$ZIEL")

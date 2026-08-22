@@ -47,6 +47,16 @@ module.exports = async function globalSetup() {
   }
   await testPool.query(fs.readFileSync(schemaDatei, 'utf8'));
 
+  //    Absicherung: pg_dump schreibt normalerweise
+  //    `set_config('search_path', '', false)` in den Kopf und stellt den Pfad
+  //    danach nicht wieder her — im Dump ist jeder Bezeichner voll qualifiziert
+  //    (public.users), spaetere Statements sind es nicht. refresh-schema.sh
+  //    filtert die Zeile bereits heraus; falls doch einmal ein ungefilterter
+  //    Dump eingespielt wird, faengt das hier den Fall ab. Am der DATENBANK
+  //    gesetzt, damit auch die spaeteren Test-Verbindungen den Pfad haben.
+  await testPool.query(`ALTER DATABASE "${TEST_DB_NAME}" SET search_path TO public`);
+  await testPool.query('SET search_path TO public');
+
   // 4. Migrationsstand aus Produktion uebernehmen.
   //    Der Dump ist bereits das Ergebnis dieser Migrationen — sie duerfen
   //    nicht erneut laufen. Danach greift derselbe Weg wie beim Deploy: nur
