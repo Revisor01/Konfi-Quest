@@ -5,7 +5,7 @@ gepusht, CI grün und auf Produktion deployt.
 
 ## Wo wir stehen
 
-- Branch `main`, letzter Stand `ae86d79` (auf Produktion deployt, CI gruen).
+- Branch `main`, letzter Stand `19ca31d` (auf Produktion deployt, CI gruen).
 - **Produktion läuft auf 2.0.0** (Server `kkd-fahrtenbuch.de`, siehe unten).
 - TestFlight: Build 137 gebaut, gegen die **echte Produktion** (nicht Staging).
 - iOS-Minimum ist seit Build 130 **16.4** (swiper 14 verlangt Safari 16.4+).
@@ -83,17 +83,35 @@ Offen:
 Behoben: Punktevergabe und Punkteabzug über Organisationsgrenzen,
 Teilnehmerlisten fremder Gemeinden, `qr_token` + Entschuldigungsgründe an Konfis.
 
+Am 22.08. abgearbeitet (alle gegen Produktion verifiziert, nicht nur im Test):
+- **qr_token in der Terminliste** — ging an ALLE Rollen, auch Konfis. Damit
+  konnte sich ein Konfi per QR-Checkin aus der Ferne als anwesend eintragen
+  und Punkte gutschreiben. Der Filter existierte nur in der Detail-Route, über
+  die Liste war er umgehbar. Live nachgewiesen (2 Token), jetzt 0.
+- **Org-Stammdaten für Konfis** — Kontaktname, Telefon, Privatadresse, Lizenz-
+  und Trial-Daten. Betraf `/organizations/:id`, `/:id/stats` UND `/current`;
+  ohne den Guard auf `/current` wäre der Rest wirkungslos gewesen. Jetzt 403.
+- **Passwortwechsel beendete keine Sitzungen** — Access-Tokens blieben gültig,
+  Refresh-Tokens bis zu 90 Tage. Der Mechanismus (`token_invalidated_at`) war
+  vorhanden, wurde nur nie gesetzt.
+- **Reset-Token im Klartext** — jetzt als Hash, Migration 123 zog den einen
+  offenen Eintrag nach. Achtung: Ein Klartext-Zweig als Übergang ist eine
+  FALLE — der gespeicherte Hash ist selbst ein gültiger Klartext-Wert und
+  funktioniert dann als Token.
+- **E-Mail-Enumeration** — die Antwort war neutral, ein fehlgeschlagener
+  Mail-Versand lieferte aber 500 und verriet damit die Existenz des Kontos.
+- **Selbst-Aussperrung** — `is_active` setzt nur noch der super_admin.
+- **Passwort-Policy** — Org-Anlage prüfte 6 Zeichen, das Bearbeiten eines
+  Users gar nichts. Jetzt überall `validatePassword`.
+- **Teamer-Filter ohne Jahrgang** — griff nur bei vorhandenen Zuweisungen.
+
 Offen:
 - Entzogener Multi-Org-Zugang wirkt bis zu 15 Min nach (Claim wird in
   `verifyTokenRBAC` nicht gegen `user_organizations` gegengeprüft).
-- Passwort-Reset: Fehlercode verrät teilweise, ob eine E-Mail existiert.
-  Reset-Token wird im Klartext gespeichert (Refresh-Tokens sind gehasht).
-- Org-Admin kann `is_active` der eigenen Organisation setzen (Selbst-Aussperrung).
-- Org-Anlage erlaubt 6-Zeichen-Passwörter statt der sonstigen Policy.
 - **Abwägung für Simon:** Die Leitung kann private Zweier-Chats lesen und
   exportieren. Falls nicht gewollt, Direktchats vom Admin-Bypass ausnehmen.
-- **Noch nicht geprüft:** Wer darf wen im Chat anschreiben, wer sieht wen in
-  Kontaktlisten. Läuft als eigener Audit (OpenAPI-Doku, siehe unten).
+- **Bewusst nicht geändert:** der 409 bei `update-email`. Dort ist der Nutzer
+  angemeldet und die Meldung für die Bedienung nötig.
 
 ## Was zuletzt gebaut wurde
 
@@ -106,11 +124,47 @@ Offen:
 - Abgesagte Termine werden auch der Leitung durchgestrichen angezeigt
 - Doppelte Aktivität "Gottesdienst" in Hennstedt zusammengeführt
 
-## Nächster Schritt
+## Nächster Schritt: Test-DB-Schema
 
-Vollständige API-Dokumentation nach **OpenAPI 3.1** über alle 223 Routen,
-mit Berechtigungsmatrix je Route. Läuft in drei Blöcken, damit die Agenten
-nicht am Umfang scheitern. Ergebnis soll unter `docs/api/` liegen.
+Zweifach unabhängig verifiziert (beide Agenten haben das Test-Schema
+materialisiert und maschinell gegen Produktion gedifft, nicht geschätzt):
+
+Das Test-Schema ist ein Patchwork aus vier Schichten — Repo-init-script, ein
+~250-zeiliger handgeschriebener Block in `globalSetup.js`, Einzel-Statements,
+dann Migrationen ab 064. **Die Wurzel ist nicht eine fehlende Spalte, sondern
+dass jeder Fehler verschluckt wird:** fehlgeschlagene Migrationen werden
+trotzdem als "applied" markiert, handgeschriebene Statements tragen
+`.catch(() => {})`.
+
+Echte Testlücken:
+- `daily_verses` fehlt → Losung-Cache-Pfad ungetestet (Test akzeptiert "200
+  oder 500")
+- `activities.category` fehlt → die **gesamte** Wrapped-Snapshot-Generierung
+  ist ungetestet, jeder Snapshot scheitert
+- `konfi_profiles.password_plain` fehlt → ein Test patcht die Spalte zur
+  Laufzeit per ALTER TABLE selbst rein
+
+Zwei echte Bugs als Beifang, die nicht nur Tests betreffen:
+1. `daily_verses` und `activities.category` haben **nirgends im Repo ein DDL** —
+   sie existieren nur in Produktion, manuell angelegt. Eine Neuinstallation
+   aus dem Repo hätte sie nicht.
+2. Migration 064 braucht `invite_codes`, das erst 079 anlegt. Auf einer
+   frischen DB bricht die Kette, 73 Indexe werden übersprungen.
+
+Dazu ~200 Spalten mit Typabweichung (Prod ist SQLite-Erbe: bigint/text/uuid).
+Verhaltensrelevant: `chat_polls.options` ist in Prod `text`, im Test `jsonb` —
+`JSON.parse` in `chat.js:72` verhält sich dadurch unterschiedlich.
+
+Empfehlung beider Analysen, identisch: Prod-Schema-Dump als einzige Quelle
+einchecken, darauf nur noch offene Migrationen, und `globalSetup` hart failen
+lassen statt Fehler zu schlucken. Vorsicht: Die weichen Assertions verdecken
+womöglich weitere Fehler — die CI kann dabei erstmal rot werden.
+
+## Danach
+
+Vollständige API-Dokumentation nach **OpenAPI 3.1** über alle 223 Routen.
+`docs/api/` deckt bisher 106 ab; die 25 LÜCKE-Marker darin waren keine
+Doku-Lücken, sondern Sicherheitsbefunde — die sind jetzt abgearbeitet.
 
 ## Fallen, die schon Zeit gekostet haben
 
