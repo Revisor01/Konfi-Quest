@@ -211,10 +211,23 @@ router.delete('/:id', verifyTokenRBAC, validateLevelId, async (req, res) => {
 });
 
 // GET /api/levels/konfi/:userId - Level-Info für bestimmten Konfi
+// Punktestand und Level einer Konfi.
+//
+// Geprueft wurde bisher NUR die Organisation — jeder Konfi konnte damit Namen,
+// Punktestand und Level jedes anderen Konfis seiner Gemeinde abrufen (gegen
+// Produktion nachgewiesen, 23.08.2026). Das widerspricht der Rangliste, die
+// Nachbarplaetze bewusst OHNE fremde Punktzahlen zeigt.
+//
+// Jetzt: eigene Daten immer, fremde nur fuer Leitung und Teamer:innen. Die
+// Route hat derzeit keinen Aufrufer im Frontend.
 router.get('/konfi/:userId', verifyTokenRBAC, async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
     const organizationId = req.user.organization_id;
+
+    if (req.user.id !== userId && !['org_admin', 'admin', 'teamer'].includes(req.user.role_name)) {
+      return res.status(403).json({ error: 'Du kannst nur deine eigenen Punkte abrufen' });
+    }
 
     // Hole Konfi-Infos mit aktuellen Punkten.
     // total_points zaehlt nur AKTIVIERTE Punkt-Kategorien des Jahrgangs

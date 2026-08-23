@@ -254,6 +254,35 @@ describe('Levels Routes', () => {
       expect(res.status).toBe(404);
     });
 
+    // Befund 23.08.2026: Die Route pruefte nur die Organisation — jeder Konfi
+    // konnte Namen, Punktestand und Level jedes anderen Konfis seiner Gemeinde
+    // abrufen (gegen Produktion nachgewiesen).
+    it('Konfi darf die Daten eines ANDEREN Konfis nicht abrufen -> 403', async () => {
+      const res = await request(app)
+        .get(`/api/levels/konfi/${USERS.konfi2.id}`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Du kannst nur deine eigenen Punkte abrufen');
+    });
+
+    it('Konfi darf die EIGENEN Daten abrufen -> 200', async () => {
+      const res = await request(app)
+        .get(`/api/levels/konfi/${USERS.konfi1.id}`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.konfi_id).toBe(USERS.konfi1.id);
+    });
+
+    it('Teamer:in darf fremde Konfi-Daten abrufen -> 200', async () => {
+      const res = await request(app)
+        .get(`/api/levels/konfi/${USERS.konfi1.id}`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(200);
+    });
+
     it('Soft-geloeschter Konfi gibt 404', async () => {
       await db.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [USERS.konfi1.id]);
 
