@@ -248,8 +248,19 @@ th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand);
 thead th { background:var(--flaeche-2); font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-leise); white-space:nowrap; }
 tbody tr:last-child td { border-bottom:none; }
 @media (max-width:860px) {
+  /* Auf dem Handy nahm das Inhaltsverzeichnis untereinander fast den ganzen
+     ersten Bildschirm ein — man musste scrollen, bevor Inhalt kam. Die Punkte
+     stehen deshalb nebeneinander und umbrechen bei Bedarf. Bewusst kein
+     Ausklapp-Element: <details> ohne open-Attribut versteckt den Inhalt auch
+     auf dem Desktop, und das per CSS zurueckzuholen ist unzuverlaessig. */
   .huelle { grid-template-columns:1fr; }
-  .seitenleiste { position:static; height:auto; border-right:none; border-bottom:1px solid var(--rand); }
+  .seitenleiste { position:static; height:auto; border-right:none; border-bottom:1px solid var(--rand); padding:20px 20px 14px; }
+  .marke-unter { margin-bottom:14px; }
+  .nav-titel { margin-bottom:7px; }
+  .seitenleiste ul { flex-direction:row; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+  .seitenleiste ul a { padding:5px 10px; border:1px solid var(--rand); border-radius:999px; font-size:.82rem; }
+  .seitenleiste .fuss { border-top:none; padding-top:0; display:flex; gap:16px; }
+  .seitenleiste .fuss p { margin:0; }
   .inhalt { padding:28px 20px 72px; }
   .kopf h1 { font-size:2.4rem; }
 }
