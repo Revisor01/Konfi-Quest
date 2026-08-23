@@ -168,6 +168,8 @@ function lesen(datei) {
   for (const pflicht of ['titel', 'untertitel', 'farbe']) {
     if (!kopf[pflicht]) throw new Error(`"${pflicht}" fehlt im Frontmatter von ${datei}`);
   }
+  // "gruppe" ist optional; ohne Angabe steht das Kapitel im Hauptteil.
+  kopf.gruppe = kopf.gruppe || '';
 
   return {
     id: datei.replace(/^\d+-/, '').replace(/\.md$/, ''),
@@ -186,8 +188,22 @@ function main() {
   // ohne dass sich etwas geaendert hat.
   const stand = standAusGit(QUELLE);
 
-  const nav = seiten.map((s) =>
-    `<li><a href="#${s.id}"><span class="nav-punkt" style="background:${e(s.farbe)}"></span>${e(s.titel)}</a></li>`
+  // Navigation nach Gruppen: Kapitel ohne "gruppe" stehen oben, die
+  // Nachschlage-Kapitel darunter unter ihrer Ueberschrift. Bei elf Kapiteln
+  // waere eine flache Liste unuebersichtlich.
+  const eintrag = (s) =>
+    `<li><a href="#${s.id}"><span class="nav-punkt" style="background:${e(s.farbe)}"></span>${e(s.titel)}</a></li>`;
+
+  const gruppen = [];
+  for (const s of seiten) {
+    let g = gruppen.find((x) => x.name === s.gruppe);
+    if (!g) { g = { name: s.gruppe, seiten: [] }; gruppen.push(g); }
+    g.seiten.push(s);
+  }
+
+  const nav = gruppen.map((g) =>
+    (g.name ? `<p class="nav-gruppe">${e(g.name)}</p>` : '')
+    + `<ul>${g.seiten.map(eintrag).join('')}</ul>`
   ).join('');
 
   const abschnitte = seiten.map((s) => `<section id="${s.id}" class="kapitel" style="--kapitel:${e(s.farbe)}">
@@ -225,6 +241,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
 .seitenleiste ul a:hover { background:var(--akzent-weich); }
 .seitenleiste ul a:focus-visible { outline:2px solid var(--akzent); outline-offset:1px; }
 .nav-punkt { width:8px; height:8px; border-radius:50%; flex:none; }
+.nav-gruppe { font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:18px 0 6px; padding-left:9px; }
 .seitenleiste .fuss { border-top:1px solid var(--rand); padding-top:18px; font-size:.75rem; color:var(--text-leise); }
 .seitenleiste .fuss a { color:var(--akzent); }
 .inhalt { padding:40px 44px 96px; min-width:0; }
@@ -257,6 +274,10 @@ tbody tr:last-child td { border-bottom:none; }
   .seitenleiste { position:static; height:auto; border-right:none; border-bottom:1px solid var(--rand); padding:20px 20px 14px; }
   .marke-unter { margin-bottom:14px; }
   .nav-titel { margin-bottom:7px; }
+  /* Gruppen-Ueberschriften kosten mobil zu viel Hoehe — die Chips stehen
+     ohnehin in derselben Reihenfolge beieinander. */
+  .nav-gruppe { display:none; }
+  .seitenleiste ul + ul { margin-top:0; }
   .seitenleiste ul { flex-direction:row; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
   .seitenleiste ul a { padding:5px 10px; border:1px solid var(--rand); border-radius:999px; font-size:.82rem; }
   .seitenleiste .fuss { border-top:none; padding-top:0; display:flex; gap:16px; }
@@ -272,7 +293,7 @@ tbody tr:last-child td { border-bottom:none; }
     <p class="marke">Konfi Quest</p>
     <p class="marke-unter">Handbuch</p>
     <p class="nav-titel">Inhalt</p>
-    <ul>${nav}</ul>
+    ${nav}
     <div class="fuss">
       <p>Stand ${e(stand)}</p>
       <p><a href="/">Zur Startseite</a></p>
