@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "docs:api": "node ../scripts/build-api-docs.mjs",
     "preview": "vite preview",
     "test.e2e": "cypress run",
     "test.unit": "vitest",

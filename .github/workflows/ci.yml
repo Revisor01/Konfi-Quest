@@ -90,6 +90,23 @@ jobs:
         working-directory: frontend
         run: npm ci --legacy-peer-deps
 
+      # Die API-Referenz unter frontend/public/docs/api/ wird eingecheckt, damit
+      # sie im Docker-Build landet (dessen Kontext ist ./frontend — docs/api/
+      # und scripts/ liegen ausserhalb und sind dort nicht erreichbar).
+      # Diese Pruefung schlaegt an, wenn jemand die OpenAPI-Dateien aendert,
+      # ohne die Seite neu zu erzeugen. Neu bauen mit:
+      #   npm --prefix frontend run docs:api
+      - name: API-Referenz aktuell?
+        run: |
+          node scripts/build-api-docs.mjs
+          if ! git diff --quiet -- frontend/public/docs/api/; then
+            echo "::error::Die API-Referenz ist nicht auf dem Stand von docs/api/."
+            echo "Neu erzeugen und mitcommitten:  npm --prefix frontend run docs:api"
+            git diff --stat -- frontend/public/docs/api/
+            exit 1
+          fi
+          echo "API-Referenz ist aktuell."
+
       - name: Security audit
         working-directory: frontend
         run: npm audit --audit-level=critical || true

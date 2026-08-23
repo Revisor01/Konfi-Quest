@@ -39,35 +39,36 @@ Segment-Labels in `AdminEventsPage.tsx:542` und `KonfiEventsPage.tsx:381`).
 
 ### 2. Docs-Bereich unter konfi-quest.de/docs (Wunsch Simon, 23.08.)
 
-Die API-Referenz liegt bisher nur als Artifact vor, das jedes Mal neu erzeugt
-werden muss. Sie soll dauerhaft im Container liegen und erreichbar sein —
-zusammen mit einem allgemeinen Docs-Bereich.
+**Vorarbeit ist erledigt**, es fehlt nur noch die Freischaltung:
 
-**Ausgangslage (geprüft):**
-- Das Frontend wird von **nginx** im Container ausgeliefert
-  (`frontend/Dockerfile`: `COPY --from=builder /app/dist /usr/share/nginx/html`,
-  Konfiguration in `frontend/nginx.conf`).
-- Davor sitzt **Caddy v2.10.2** auf dem Server
-  (`/etc/caddy/Caddyfile`, Block `konfi-quest.de, www.konfi-quest.de`).
-- Caddy bringt `basic_auth` mit, aktuell wird es nirgends genutzt.
+- `scripts/build-api-docs.mjs` erzeugt die HTML-Referenz aus `docs/api/*.yaml`.
+  Aufruf: `npm --prefix frontend run docs:api`.
+- Ergebnis liegt eingecheckt unter `frontend/public/docs/api/index.html`
+  (131 Operationen). Vite kopiert `public/` unverändert nach `dist/`, damit
+  ist die Seite **bereits Teil des Frontend-Containers**.
+- Die CI prüft bei jedem Lauf, ob die Seite zum Stand der YAML-Dateien passt,
+  und schlägt sonst mit einem Hinweis fehl (Schritt "API-Referenz aktuell?").
 
-**Vorschlag:**
-1. Ein Build-Schritt erzeugt die HTML-Referenz aus `docs/api/*.yaml`
-   (das Skript dafür existiert bereits als Einmal-Fassung, siehe unten) und
-   legt sie nach `frontend/public/docs/`. Vite kopiert `public/` unverändert
-   nach `dist/`, damit landet sie ohne weiteres Zutun im Container.
-2. `/docs` bleibt offen (allgemeine Doku), **`/docs/api` schützt Caddy per
-   `basic_auth`** — die Berechtigungsmatrix ist eine Landkarte für jeden, der
-   Lücken sucht, und gehört nicht offen ins Netz.
-3. Die CI baut die Seite bei jedem Push neu, damit sie nicht veraltet
-   (passt zur neuen Dauerregel "API-Doku fortlaufend").
+**Warum eingecheckt und nicht im Build erzeugt:** Der Docker-Kontext ist
+`./frontend` (ci.yml:118) — `scripts/` und `docs/api/` liegen darüber und sind
+im Container nicht erreichbar. Ein Build-Schritt dort würde brechen.
 
-**Wichtig:** Das Erzeugungs-Skript existiert bisher nur als Wegwerf-Fassung im
-Scratchpad dieser Sitzung. Es muss neu geschrieben und ins Repo gelegt werden
-(z.B. `scripts/build-api-docs.mjs`). Zutaten: `docs/api/*.yaml` parsen,
-`x-berechtigung` je Route auslesen, Bebas Neue + Plus Jakarta Sans, Farben aus
-`variables.css`. Die aktuelle Fassung als Vorlage:
-https://claude.ai/code/artifact/4bce32d3-358b-48c6-b052-4c06b94c5038
+**Was noch zu tun ist:**
+1. **Caddy: `/docs/api` schützen.** Die Seite ist derzeit unter
+   `konfi-quest.de/docs/api/` erreichbar, sobald der nächste Frontend-Container
+   deployt ist — **ungeschützt**. Die Berechtigungsmatrix ist eine Landkarte
+   für jeden, der Lücken sucht. Caddy v2.10.2 auf dem Server kann `basic_auth`,
+   genutzt wird es bisher nirgends. Im Block `konfi-quest.de` ergänzen:
+   ```
+   @apidocs path /docs/api /docs/api/*
+   basic_auth @apidocs {
+       simon <bcrypt-hash>
+   }
+   ```
+   Hash erzeugen: `caddy hash-password`. Bis dahin schützt nur `noindex`
+   im HTML-Kopf vor Suchmaschinen, nicht vor direktem Aufruf.
+2. **Allgemeiner Docs-Bereich** unter `/docs` — Inhalte noch offen
+   (Simons Wunsch). Struktur steht, `frontend/public/docs/` existiert.
 
 ### 3. Nach der Entscheidung: Build 140
 
