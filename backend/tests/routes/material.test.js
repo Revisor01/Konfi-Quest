@@ -1,7 +1,7 @@
 const request = require('supertest');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, USERS, EVENTS, JAHRGAENGE } = require('../helpers/seed');
+const { seed, USERS, EVENTS, JAHRGAENGE, ORGS } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 
 describe('Material Routes', () => {
@@ -468,6 +468,120 @@ describe('Material Routes', () => {
         .set('Authorization', `Bearer ${orgAdmin2Token}`);
 
       expect(res.status).toBe(404);
+    });
+  });
+  // Entscheidung Simon, 24.08.2026: Material mit Jahrgang sehen nur die
+  // Teamer:innen dieses Jahrgangs; Material ohne Jahrgang alle. Die Leitung
+  // sieht immer alles. Vorher galt nur die Organisationsgrenze, die
+  // Jahrgangs-Bindung war reine Suchhilfe.
+  describe('Sichtbarkeit nach Jahrgang', () => {
+    let ohneJahrgang;
+    let mitJahrgang1;
+    let mitFremdemJahrgang;
+
+    // Teamer1 ist Jahrgang 1 zugewiesen (Seed), nicht dem zweiten.
+    const material = async (titel, jahrgangId) => {
+      const { rows: [m] } = await db.query(
+        `INSERT INTO materials (title, organization_id, created_by)
+         VALUES ($1, $2, $3) RETURNING id`,
+        [titel, ORGS.testGemeinde.id, USERS.admin1.id]
+      );
+      if (jahrgangId) {
+        await db.query(
+          'INSERT INTO material_jahrgaenge (material_id, jahrgang_id) VALUES ($1, $2)',
+          [m.id, jahrgangId]
+        );
+      }
+      return m.id;
+    };
+
+    let zweiterJahrgang;
+
+    beforeEach(async () => {
+      const { rows: [jg] } = await db.query(
+        `INSERT INTO jahrgaenge (name, organization_id, confirmation_date)
+         VALUES ('2026/2027', $1, '2027-05-01') RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      zweiterJahrgang = jg.id;
+
+      ohneJahrgang = await material('Fuer alle', null);
+      mitJahrgang1 = await material('Nur Jahrgang 1', JAHRGAENGE.jahrgang1.id);
+      mitFremdemJahrgang = await material('Nur zweiter Jahrgang', zweiterJahrgang);
+    });
+
+    const listeFuer = async (token) => {
+      const res = await request(app)
+        .get('/api/material')
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      return res.body.map(m => m.id);
+    };
+
+    it('Teamer:in sieht Material ohne Jahrgang', async () => {
+      expect(await listeFuer(teamerToken)).toContain(ohneJahrgang);
+    });
+
+    it('Teamer:in sieht Material des eigenen Jahrgangs', async () => {
+      expect(await listeFuer(teamerToken)).toContain(mitJahrgang1);
+    });
+
+    it('Teamer:in sieht Material eines fremden Jahrgangs NICHT', async () => {
+      expect(await listeFuer(teamerToken)).not.toContain(mitFremdemJahrgang);
+    });
+
+    it('Die Leitung sieht alles, auch fremde Jahrgaenge', async () => {
+      const ids = await listeFuer(orgAdminToken);
+      expect(ids).toContain(ohneJahrgang);
+      expect(ids).toContain(mitJahrgang1);
+      expect(ids).toContain(mitFremdemJahrgang);
+    });
+
+    it('Das Detail eines fremden Jahrgangs bleibt der Teamer:in verschlossen', async () => {
+      const res = await request(app)
+        .get(`/api/material/${mitFremdemJahrgang}`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(res.status).toBe(404);
+    });
+
+    it('Das Detail des eigenen Jahrgangs ist abrufbar', async () => {
+      const res = await request(app)
+        .get(`/api/material/${mitJahrgang1}`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.id).toBe(mitJahrgang1);
+    });
+
+    it('Ohne can_view zaehlt die Zuweisung nicht', async () => {
+      await db.query(
+        'UPDATE user_jahrgang_assignments SET can_view = false WHERE user_id = $1 AND jahrgang_id = $2',
+        [USERS.teamer1.id, JAHRGAENGE.jahrgang1.id]
+      );
+      const ids = await listeFuer(teamerToken);
+      expect(ids).not.toContain(mitJahrgang1);
+      // Material ohne Jahrgang bleibt davon unberuehrt.
+      expect(ids).toContain(ohneJahrgang);
+    });
+
+    it('Die Datei eines fremden Jahrgangs laesst sich nicht herunterladen', async () => {
+      const stored = 'a'.repeat(64);
+      await db.query(
+        `INSERT INTO material_files (material_id, original_name, stored_name, mime_type, file_size)
+         VALUES ($1, 'geheim.pdf', $2, 'application/pdf', 100)`,
+        [mitFremdemJahrgang, stored]
+      );
+
+      const res = await request(app)
+        .get(`/api/material/files/${stored}`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(res.status).toBe(404);
+
+      // Die Leitung kommt dagegen bis zur Datei-Pruefung durch (404 erst,
+      // weil die Datei auf der Platte fehlt — nicht wegen fehlender Rechte).
+      const resAdmin = await request(app)
+        .get(`/api/material/files/${stored}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(resAdmin.body.error).toBe('Datei nicht auf dem Server gefunden');
     });
   });
 });

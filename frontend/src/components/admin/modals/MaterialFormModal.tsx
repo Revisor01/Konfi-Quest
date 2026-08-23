@@ -438,8 +438,8 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
                       </h3>
                       <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: '0', fontWeight: '400' }}>
                         {jahrgangIds.length > 0
-                          ? `${jahrgangIds.length} ${jahrgangIds.length === 1 ? 'Jahrgang' : 'Jahrgänge'} ausgewählt`
-                          : 'Keine Jahrgänge zugeordnet'}
+                          ? `Nur Teamer:innen dieser ${jahrgangIds.length === 1 ? 'Jahrgang' : 'Jahrgänge'} sehen das Material`
+                          : 'Ohne Zuordnung sehen alle Teamer:innen das Material'}
                       </p>
                     </IonLabel>
                   </IonItem>

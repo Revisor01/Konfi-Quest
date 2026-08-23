@@ -82,7 +82,9 @@ Deine eigenen Abzeichen, gefiltert nach **Alle**, **Offen** und **In Arbeit**.
   „Teamerin" oder „Jugendmitarbeiter". Sie steht neben deinem Namen im Chat.
 - **E-Mail und Passwort ändern**
 - **Bibelübersetzung** für die Tageslosung
-- **Material** — alle Dokumente, die für dich freigegeben sind
+- **Material** — die Dokumente, die für dich freigegeben sind. Hängt ein
+  Dokument an einem Jahrgang, sehen es nur die Teamer:innen dieses Jahrgangs.
+  Dokumente ohne Jahrgang sehen alle.
 - **Konfi-Historie** — wenn du früher selbst Konfi warst: deine damaligen
   Punkte und Abzeichen
 - **Deine Wrappeds** — dein Jahresrückblick als Teamer:in

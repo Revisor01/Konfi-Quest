@@ -118,7 +118,7 @@ Beim Begleiten kannst du Beiträge **freigeben**, **anonymisieren** oder
 | **Jahrgänge** | Punkteziele, Konfispruch-Freigabe, Wrapped-Freigabe |
 | **Kategorien** | Für Aktivitäten und Termine |
 | **Level** | Punkteschwellen und ihre Titel |
-| **Material** | Dokumente für Termine und Jahrgänge |
+| **Material** | Dokumente für Termine und Jahrgänge. Mit Jahrgang: nur dessen Teamer:innen. Ohne: alle |
 | **Zertifikate** | Nachweise für Teamer:innen, mit Gültigkeit |
 
 ### Verwaltung (nur Org-Admin)

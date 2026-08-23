@@ -10715,8 +10715,8 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "nur materials.organization_id; keine weitere Pruefung",
-          "hinweis": "# BEFUND M1: keine Jahrgangsgrenze. Der Filter jahrgang_id ist eine reine Ansichtshilfe - ohne ihn sieht jede Teamer:in auch Material, das ausschliesslich fremden Jahrgaengen zugeordnet ist. Die Filter-Parameter selbst werden nicht auf die Organisation geprueft, was aber folgenlos ist, da die Zuordnungstabellen ohnehin nur org-eigene Materialien treffen.\n"
+          "objekt-pruefung": "materials.organization_id UND Jahrgangs-Schranke fuer Teamer:innen",
+          "hinweis": "# BEFUND M1 BEHOBEN am 24.08.2026: Material mit Jahrgang sehen nur Teamer:innen, die diesem Jahrgang mit can_view zugewiesen sind; Material ohne Jahrgang sehen alle. Leitung (admin, org_admin) sieht weiterhin alles, sonst waere es nicht verwaltbar. Die Bindung an einen Termin (material_events) bleibt bewusst reine Suchhilfe und grenzt nichts ab. Die Filter-Parameter selbst werden nicht auf die Organisation geprueft, was folgenlos ist, da die Zuordnungstabellen ohnehin nur org-eigene Materialien treffen.\n"
         },
         "parameters": [
           {
@@ -10865,7 +10865,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "materials.organization_id; der Termin selbst wird nicht separat geprueft - ein fremder eventId liefert schlicht eine leere Liste",
-          "hinweis": "Keine Jahrgangsgrenze (Befund M1)."
+          "hinweis": "Jahrgangs-Schranke fuer Teamer:innen (Befund M1 behoben am 24.08.2026): Material mit Jahrgang nur fuer dessen Teamer:innen, ohne Jahrgang fuer alle; Leitung sieht alles."
         },
         "parameters": [
           {
@@ -10912,7 +10912,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Material org-gescopt (404 sonst)",
-          "hinweis": "Keine Jahrgangsgrenze (Befund M1)."
+          "hinweis": "Jahrgangs-Schranke fuer Teamer:innen (Befund M1 behoben am 24.08.2026): Material mit Jahrgang nur fuer dessen Teamer:innen, ohne Jahrgang fuer alle; Leitung sieht alles."
         },
         "parameters": [
           {
@@ -11154,7 +11154,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Datei wird ueber JOIN auf materials.organization_id geprueft (404 bei fremder Org); Dateiname muss /^[a-f0-9]{64}$/ erfuellen",
-          "hinweis": "# BEFUND M1: keine Jahrgangsgrenze - jede Teamer:in der Organisation kann jede Material-Datei der Organisation herunterladen. Die stored_name-Werte stehen in GET /api/material/{id}.\n"
+          "hinweis": "# BEFUND M1 BEHOBEN am 24.08.2026: Der Download unterliegt derselben Jahrgangs-Schranke wie die Liste - eine Teamer:in bekommt Dateien eines fremden Jahrgangs mit 404 verweigert, auch bei bekanntem stored_name. Die stored_name-Werte stehen in GET /api/material/{id}.\n"
         },
         "parameters": [
           {

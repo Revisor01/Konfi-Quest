@@ -11,6 +11,34 @@ const liveUpdate = require('../utils/liveUpdate');
 module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   const { requireTeamer, requireAdmin } = roleHelpers;
 
+  // SICHTBARKEIT VON MATERIAL (Entscheidung Simon, 24.08.2026)
+  //
+  //   Material MIT Jahrgang  -> nur Teamer:innen dieser Jahrgaenge
+  //   Material OHNE Jahrgang -> alle Teamer:innen der Gemeinde
+  //   Leitung (admin, org_admin) -> immer alles, sonst waere es nicht verwaltbar
+  //
+  // Vorher war die Jahrgangs-Bindung reine Suchhilfe: Gelesen wurde nur die
+  // Organisation, also sah jede Teamer:in jedes Material. Zum Zeitpunkt der
+  // Umstellung gab es in Produktion noch kein einziges Material — es kann
+  // also niemandem etwas verschwinden.
+  //
+  // Die Bindung an einen Termin (material_events) bleibt bewusst reine
+  // Suchhilfe und grenzt nichts ab.
+  //
+  // Gibt eine SQL-Bedingung auf `m` zurueck, oder null, wenn nicht
+  // eingeschraenkt werden muss.
+  const jahrgangsSchranke = (user, platzhalter) => {
+    if (user.type !== 'teamer') return null;
+    return `(
+      NOT EXISTS (SELECT 1 FROM material_jahrgaenge mj WHERE mj.material_id = m.id)
+      OR EXISTS (
+        SELECT 1 FROM material_jahrgaenge mj
+        JOIN user_jahrgang_assignments uja ON uja.jahrgang_id = mj.jahrgang_id
+        WHERE mj.material_id = m.id AND uja.user_id = ${platzhalter} AND uja.can_view = true
+      )
+    )`;
+  };
+
   // Validierungsregeln
   const validateCreateTag = [
     body('name').notEmpty().trim().isLength({ min: 1, max: 100 }).withMessage('Name erforderlich (1-100 Zeichen)'),
@@ -177,6 +205,13 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         paramIndex++;
       }
 
+      const schranke = jahrgangsSchranke(req.user, `$${paramIndex}`);
+      if (schranke) {
+        query += ` AND ${schranke}`;
+        params.push(req.user.id);
+        paramIndex++;
+      }
+
       query += ' ORDER BY m.created_at DESC';
 
       const { rows: materials } = await db.query(query, params);
@@ -251,6 +286,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
     try {
       const orgId = req.user.organization_id;
       const eventId = req.params.eventId;
+      const schranke = jahrgangsSchranke(req.user, '$3');
 
       const { rows: materials } = await db.query(
         `SELECT m.id, m.title, m.description, m.created_at,
@@ -260,8 +296,9 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
          LEFT JOIN users u ON m.created_by = u.id
          WHERE m.organization_id = $1
            AND EXISTS (SELECT 1 FROM material_events me WHERE me.material_id = m.id AND me.event_id = $2)
+           ${schranke ? `AND ${schranke}` : ''}
          ORDER BY m.created_at DESC`,
-        [orgId, eventId]
+        schranke ? [orgId, eventId, req.user.id] : [orgId, eventId]
       );
 
       for (const material of materials) {
@@ -279,14 +316,16 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   router.get('/:id', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       const orgId = req.user.organization_id;
+      const schranke = jahrgangsSchranke(req.user, '$3');
 
       const { rows: [material] } = await db.query(
         `SELECT m.id, m.title, m.description,
                 m.created_at, u.display_name as created_by_name
          FROM materials m
          LEFT JOIN users u ON m.created_by = u.id
-         WHERE m.id = $1 AND m.organization_id = $2`,
-        [req.params.id, orgId]
+         WHERE m.id = $1 AND m.organization_id = $2
+           ${schranke ? `AND ${schranke}` : ''}`,
+        schranke ? [req.params.id, orgId, req.user.id] : [req.params.id, orgId]
       );
 
       if (!material) {
@@ -649,13 +688,16 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         return res.status(400).json({ error: 'Ungültiger Dateiname' });
       }
 
-      // Prüfen ob Datei existiert und zur gleichen Organisation gehört
+      // Prüfen ob Datei existiert, zur gleichen Organisation gehört und fuer
+      // diese Teamer:in ueberhaupt sichtbar ist (Jahrgangs-Schranke).
+      const schranke = jahrgangsSchranke(req.user, '$3');
       const { rows: [fileRecord] } = await db.query(
         `SELECT mf.id, mf.original_name, mf.mime_type, mf.file_size
          FROM material_files mf
          JOIN materials m ON mf.material_id = m.id
-         WHERE mf.stored_name = $1 AND m.organization_id = $2`,
-        [filename, req.user.organization_id]
+         WHERE mf.stored_name = $1 AND m.organization_id = $2
+           ${schranke ? `AND ${schranke}` : ''}`,
+        schranke ? [filename, req.user.organization_id, req.user.id] : [filename, req.user.organization_id]
       );
 
       if (!fileRecord) {
