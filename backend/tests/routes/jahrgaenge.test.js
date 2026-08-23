@@ -624,4 +624,45 @@ describe('Jahrgaenge Routes', () => {
       expect(res.status).toBe(400);
     });
   });
+
+  // ================================================================
+  // Mindestens eine Punktart muss aktiv bleiben (Befund 24.08.2026)
+  //
+  // Die Sperre existierte nur in der Oberflaeche. Per API liess sich ein
+  // Jahrgang erzeugen, in dem gar keine Punkte mehr vergeben werden koennen.
+  // ================================================================
+  describe('PUT /admin/jahrgaenge/:id — beide Punktarten aus', () => {
+    it('beide zugleich abschalten -> 400', async () => {
+      const res = await request(app)
+        .put(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Test', gottesdienst_enabled: false, gemeinde_enabled: false });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('Mindestens eine Punktart');
+    });
+
+    it('die zweite abschalten, wenn die erste schon aus ist -> 400', async () => {
+      await db.query('UPDATE jahrgaenge SET gottesdienst_enabled = false WHERE id = $1',
+        [JAHRGAENGE.jahrgang1.id]);
+
+      // Nur gemeinde mitschicken: der Endzustand zaehlt, nicht die Eingabe.
+      const res = await request(app)
+        .put(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Test', gemeinde_enabled: false });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('EINE abschalten bleibt erlaubt -> 200', async () => {
+      const res = await request(app)
+        .put(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Test', gottesdienst_enabled: false });
+
+      expect(res.status).toBe(200);
+    });
+  });
+
 });

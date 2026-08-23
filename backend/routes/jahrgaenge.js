@@ -146,6 +146,22 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       // Das Konfirmationsdatum wird ab Phase 119 (D-04) nicht mehr beschrieben/erzwungen.
       // konfspruch_enabled via COALESCE: ein nicht uebergebenes Feld laesst den
       // bestehenden Wert unveraendert.
+      // Mindestens eine Punktart muss aktiv bleiben. Die Oberflaeche sperrt den
+      // jeweils letzten Schalter (AdminJahrgaengeePage.tsx:324/356), der Server
+      // tat es bisher nicht — per API liess sich ein Jahrgang erzeugen, in dem
+      // gar keine Punkte mehr vergeben werden koennen (pointTypeGuard blockt
+      // dann beide Arten). Geprueft wird der ENDZUSTAND, nicht die Eingabe:
+      // nicht mitgeschickte Felder behalten ihren bisherigen Wert.
+      const endzustandGottesdienst = gottesdienst_enabled !== undefined
+        ? gottesdienst_enabled : currentJahrgang.gottesdienst_enabled;
+      const endzustandGemeinde = gemeinde_enabled !== undefined
+        ? gemeinde_enabled : currentJahrgang.gemeinde_enabled;
+      if (!endzustandGottesdienst && !endzustandGemeinde) {
+        return res.status(400).json({
+          error: 'Mindestens eine Punktart muss aktiv bleiben — sonst lassen sich in diesem Jahrgang gar keine Punkte mehr vergeben.'
+        });
+      }
+
       const query = `UPDATE jahrgaenge SET name = $1,
         gottesdienst_enabled = COALESCE($4, gottesdienst_enabled),
         gemeinde_enabled = COALESCE($5, gemeinde_enabled),

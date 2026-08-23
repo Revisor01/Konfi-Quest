@@ -102,6 +102,15 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   stehen dem Löschen jetzt nicht mehr im Weg und werden mit entfernt. Gesperrt
   bleibt nur, was offen ist oder schon Punkte gebracht hat.
 - Abgelehnte Anträge lassen sich einzeln löschen.
+- Beim Ablehnen einer gemeldeten Aktivität ist eine Begründung jetzt
+  verbindlich. Bisher konnte sie unter Umständen entfallen, und die Meldung kam
+  ohne Erklärung zurück.
+- Ein Jahrgang lässt sich nicht mehr so einstellen, dass beide Punktarten
+  abgeschaltet sind — dann wären in diesem Jahrgang gar keine Punkte mehr
+  möglich gewesen.
+- Sicherheit: Chats zwischen zwei Personen bleiben auch beim Mitlesen neuer
+  Nachrichten geschützt. Der Schutz galt bisher nur für den bereits
+  geschriebenen Verlauf.
 - Sicherheit: Konfis konnten den Punktestand und das Level anderer Konfis
   ihrer Gemeinde abrufen. Das geht jetzt nur noch für die eigenen Punkte;
   Leitung und Teamer:innen sehen wie bisher alles.
