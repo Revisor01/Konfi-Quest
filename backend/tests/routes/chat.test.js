@@ -920,6 +920,94 @@ describe('Chat Routes', () => {
   });
 
   // ================================================================
+  // Private Zweiergespraeche: kein Admin-Bypass
+  //
+  // Entscheidung 23.08.2026: Die Leitung darf jeden Raum ihrer Gemeinde
+  // oeffnen — AUSSER fremde Direktchats. Gruppen-, Jahrgangs- und Team-Chats
+  // bleiben offen, ein Zwiegespraech ist privat.
+  // ================================================================
+  describe('Fremde Direktchats sind auch fuer die Leitung zu', () => {
+    // Raum 2 ist ein Direktchat konfi1 <-> admin1. orgAdmin1 steht nicht drin.
+    let orgAdmin1Token;
+
+    beforeEach(() => {
+      orgAdmin1Token = generateToken('orgadmin1');
+    });
+
+    it('Leitung kann einen fremden Direktchat NICHT lesen -> 403', async () => {
+      const res = await request(app)
+        .get(`/api/chat/rooms/${CHAT_ROOMS.direct.id}/messages`)
+        .set('Authorization', `Bearer ${orgAdmin1Token}`);
+      expect(res.status).toBe(403);
+    });
+
+    it('Leitung kann einen fremden Direktchat NICHT oeffnen -> 403', async () => {
+      const res = await request(app)
+        .get(`/api/chat/rooms/${CHAT_ROOMS.direct.id}`)
+        .set('Authorization', `Bearer ${orgAdmin1Token}`);
+      expect(res.status).toBe(403);
+    });
+
+    it('Leitung kann einen fremden Direktchat NICHT exportieren -> 403', async () => {
+      const res = await request(app)
+        .get(`/api/chat/rooms/${CHAT_ROOMS.direct.id}/export`)
+        .set('Authorization', `Bearer ${orgAdmin1Token}`);
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Private Zweiergespräche lassen sich nicht exportieren');
+    });
+
+    it('Leitung kann in einem fremden Direktchat NICHT schreiben -> 403', async () => {
+      const res = await request(app)
+        .post(`/api/chat/rooms/${CHAT_ROOMS.direct.id}/messages`)
+        .set('Authorization', `Bearer ${orgAdmin1Token}`)
+        .send({ content: 'Mitgelesen?' });
+      expect(res.status).toBe(403);
+    });
+
+    it('Leitung kann in einem fremden Direktchat KEINE Umfrage anlegen -> 404', async () => {
+      const res = await request(app)
+        .post(`/api/chat/rooms/${CHAT_ROOMS.direct.id}/polls`)
+        .set('Authorization', `Bearer ${orgAdmin1Token}`)
+        .send({ question: 'Frage?', options: ['A', 'B'] });
+      expect(res.status).toBe(404);
+    });
+
+    it('Am EIGENEN Direktchat aendert sich nichts -> 200', async () => {
+      const res = await request(app)
+        .get(`/api/chat/rooms/${CHAT_ROOMS.direct.id}/messages`)
+        .set('Authorization', `Bearer ${admin1Token}`);
+      expect(res.status).toBe(200);
+    });
+
+    it('Gruppenchats bleiben fuer die Leitung offen -> 200', async () => {
+      const { rows } = await db.query(
+        'SELECT 1 FROM chat_participants WHERE room_id = $1 AND user_id = $2',
+        [CHAT_ROOMS.group.id, USERS.orgAdmin1.id]
+      );
+      expect(rows.length).toBe(0);
+
+      const res = await request(app)
+        .get(`/api/chat/rooms/${CHAT_ROOMS.group.id}/messages`)
+        .set('Authorization', `Bearer ${orgAdmin1Token}`);
+      expect(res.status).toBe(200);
+    });
+
+    it('Jahrgangs-Chats bleiben fuer die Leitung offen -> 200', async () => {
+      const res = await request(app)
+        .get(`/api/chat/rooms/${CHAT_ROOMS.jahrgang.id}/messages`)
+        .set('Authorization', `Bearer ${orgAdmin1Token}`);
+      expect(res.status).toBe(200);
+    });
+
+    it('Teamer:innen kommen weiterhin nicht in fremde Raeume -> 403', async () => {
+      const res = await request(app)
+        .get(`/api/chat/rooms/${CHAT_ROOMS.direct.id}/messages`)
+        .set('Authorization', `Bearer ${teamer1Token}`);
+      expect(res.status).toBe(403);
+    });
+  });
+
+  // ================================================================
   // Exklusive Umfragen ueber BEIDE Abstimm-Routen
   //
   // Befund 23.08.2026: POST /messages/:messageId/vote hatte eine eigene,

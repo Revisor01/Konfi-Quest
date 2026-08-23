@@ -254,6 +254,39 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
     return null;
   };
 
+  // Darf dieser Nutzer den Raum oeffnen (lesen, schreiben, Teilnehmer sehen)?
+  //
+  // Grundregel: Teilnehmerschaft. Leitung und Admins (type 'admin', also
+  // admin/org_admin/super_admin) duerfen zusaetzlich gemeindeweit — sie
+  // verantworten die Gemeinde und muessen im Zweifel eingreifen koennen.
+  //
+  // AUSNAHME Direktchats: Ein Zweiergespraech ist privat. Wer nicht selbst
+  // darin steht, kommt nicht hinein — auch die Leitung nicht (Entscheidung
+  // 23.08.2026). Vorher konnte jede Leitung jedes fremde Zweiergespraech ihrer
+  // Gemeinde lesen und exportieren; betroffen waren vor allem Gespraeche
+  // zwischen Teamer:innen und Konfis, also gerade die vertraulichen.
+  //
+  // Gruppen-, Jahrgangs-, Team- und Termin-Chats bleiben fuer die Leitung
+  // offen: Das sind gemeinschaftliche Raeume, keine Zwiegespraeche.
+  //
+  // Gibt true zurueck, wenn der Zugriff erlaubt ist.
+  const darfRaumOeffnen = async (roomId, user) => {
+    const { rows: [raum] } = await db.query(
+      'SELECT type FROM chat_rooms WHERE id = $1 AND organization_id = $2',
+      [roomId, user.organization_id]
+    );
+    if (!raum) return false;
+
+    const { rows: [teilnehmer] } = await db.query(
+      'SELECT 1 FROM chat_participants WHERE room_id = $1 AND user_id = $2 AND user_type = $3',
+      [roomId, user.id, user.type]
+    );
+    if (teilnehmer) return true;
+
+    // Kein Teilnehmer: nur Leitung/Admins, und nie bei Direktchats.
+    return user.type === 'admin' && raum.type !== 'direct';
+  };
+
   // Gegenrichtung: Darf dieser Konfi dieses Team-Mitglied anschreiben?
   //
   // Symmetrisch zu konfiAnschreibenVerboten: Teamer:innen und Konfis erreichen
@@ -695,25 +728,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       const organizationId = req.user.organization_id;
       
       // 1. Security Check: Does the user have access to this room?
-      let hasAccess = false;
-      const accessQuery = `
-      SELECT 1 FROM chat_participants cp
-      JOIN chat_rooms cr ON cp.room_id = cr.id 
-      WHERE cp.room_id = $1 AND cp.user_id = $2 AND cp.user_type = $3 AND cr.organization_id = $4
-    `;
-      const { rows: [access] } = await db.query(accessQuery, [roomId, userId, userType, organizationId]);
-      
-      if (access) {
-        hasAccess = true;
-      } else if (userType === 'admin') {
-        const adminAccessQuery = "SELECT 1 FROM chat_rooms WHERE id = $1 AND organization_id = $2";
-        const { rows: [adminAccess] } = await db.query(adminAccessQuery, [roomId, organizationId]);
-        if (adminAccess) {
-          hasAccess = true;
-        }
-      }
-      
-      if (!hasAccess) {
+      if (!await darfRaumOeffnen(roomId, req.user)) {
         return res.status(403).json({ error: 'Zugriff verweigert' });
       }
       
@@ -771,15 +786,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       const organizationId = req.user.organization_id;
       
       // Check if user has access to this room (with organization check)
-      const accessQuery = userType === 'admin'
-      ? "SELECT 1 FROM chat_rooms WHERE id = $1 AND organization_id = $2"
-      : `SELECT 1 FROM chat_participants cp 
-          JOIN chat_rooms cr ON cp.room_id = cr.id 
-          WHERE cp.room_id = $1 AND cp.user_id = $2 AND cp.user_type = $3 AND cr.organization_id = $4`;
-      const accessParams = userType === 'admin' ? [roomId, organizationId] : [roomId, userId, userType, organizationId];
-      const { rows: [access] } = await db.query(accessQuery, accessParams);
-      
-      if (!access) {
+      if (!await darfRaumOeffnen(roomId, req.user)) {
         return res.status(403).json({ error: 'Zugriff verweigert' });
       }
       
@@ -940,14 +947,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       }
 
       // Check access (mit Organisations-Pruefung)
-      const accessQuery = userType === 'admin'
-      ? "SELECT 1 FROM chat_rooms WHERE id = $1 AND organization_id = $2"
-      : `SELECT 1 FROM chat_participants cp
-          JOIN chat_rooms cr ON cp.room_id = cr.id
-          WHERE cp.room_id = $1 AND cp.user_id = $2 AND cp.user_type = $3 AND cr.organization_id = $4`;
-      const accessParams = userType === 'admin' ? [roomId, organizationId] : [roomId, userId, userType, organizationId];
-      const { rows: [access] } = await db.query(accessQuery, accessParams);
-      if (!access) {
+      if (!await darfRaumOeffnen(roomId, req.user)) {
         return res.status(403).json({ error: 'Zugriff verweigert' });
       }
       
@@ -1151,14 +1151,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       const organizationId = req.user.organization_id;
 
       // Zugriff pruefen (mit Organisations-Pruefung)
-      const accessQuery = userType === 'admin'
-      ? "SELECT 1 FROM chat_rooms WHERE id = $1 AND organization_id = $2"
-      : `SELECT 1 FROM chat_participants cp
-          JOIN chat_rooms cr ON cp.room_id = cr.id
-          WHERE cp.room_id = $1 AND cp.user_id = $2 AND cp.user_type = $3 AND cr.organization_id = $4`;
-      const accessParams = userType === 'admin' ? [roomId, organizationId] : [roomId, userId, userType, organizationId];
-      const { rows: [access] } = await db.query(accessQuery, accessParams);
-      if (!access) {
+      if (!await darfRaumOeffnen(roomId, req.user)) {
         return res.status(403).json({ error: 'Zugriff verweigert' });
       }
 
@@ -1221,6 +1214,13 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       );
       if (!room) {
         return res.status(404).json({ error: 'Chat nicht gefunden' });
+      }
+
+      // Ein Zweiergespraech laesst sich nur exportieren, wenn man selbst darin
+      // steht — sonst waere der Schutz aus darfRaumOeffnen hier zu umgehen und
+      // der ganze Verlauf als Textdatei abrufbar (Entscheidung 23.08.2026).
+      if (!await darfRaumOeffnen(roomId, req.user)) {
+        return res.status(403).json({ error: 'Private Zweiergespräche lassen sich nicht exportieren' });
       }
 
       // Vollstaendiger Verlauf, aelteste zuerst. Geloeschte Nachrichten bleiben
@@ -1341,15 +1341,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       const organizationId = req.user.organization_id;
 
       // Check if user has access to this room (mit Organisations-Pruefung)
-      const accessQuery = userType === 'admin'
-      ? "SELECT 1 FROM chat_rooms WHERE id = $1 AND organization_id = $2"
-      : `SELECT 1 FROM chat_participants cp
-          JOIN chat_rooms cr ON cp.room_id = cr.id
-          WHERE cp.room_id = $1 AND cp.user_id = $2 AND cp.user_type = $3 AND cr.organization_id = $4`;
-      const accessParams = userType === 'admin' ? [roomId, organizationId] : [roomId, userId, userType, organizationId];
-
-      const { rows: [access] } = await db.query(accessQuery, accessParams);
-      if (!access) {
+      if (!await darfRaumOeffnen(roomId, req.user)) {
         return res.status(403).json({ error: 'Zugriff verweigert' });
       }
 
@@ -1796,10 +1788,12 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
     }
     
     try {
-      // Check if user has access to this room
+      // Zugriff wie beim Lesen: Teilnehmerschaft, Leitung gemeindeweit — aber
+      // nicht in fremden Zweiergespraechen. Vorher genuegte die Organisation,
+      // damit liess sich eine Umfrage in ein fremdes Zweiergespraech stellen.
       const { rows: [room] } = await db.query("SELECT 1 FROM chat_rooms WHERE id = $1 AND organization_id = $2", [roomId, req.user.organization_id]);
-      
-      if (!room) {
+
+      if (!room || !await darfRaumOeffnen(roomId, req.user)) {
         return res.status(404).json({ error: 'Raum nicht gefunden' });
       }
       
@@ -2159,10 +2153,12 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.status(404).json({ error: 'Nachricht nicht gefunden' });
       }
       
-      // Check if user can delete this message (own message or admin in same org)
-      const canDelete = (message.user_id == userId && message.user_type === userType) || 
-                       (userType === 'admin' && message.organization_id == req.user.organization_id);
-      
+      // Eigene Nachricht: immer. Fremde Nachricht: nur Leitung/Admins, und nur
+      // in Raeumen, die sie ueberhaupt oeffnen duerfen — in einem fremden
+      // Zweiergespraech also nicht (Entscheidung 23.08.2026).
+      const eigene = message.user_id == userId && message.user_type === userType;
+      const canDelete = eigene || await darfRaumOeffnen(message.room_id, req.user);
+
       if (!canDelete) {
         return res.status(403).json({ error: 'Du kannst nur eigene Nachrichten löschen' });
       }
@@ -2449,15 +2445,10 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.status(403).json({ error: 'Zugriff verweigert' });
       }
 
-      // Admins duerfen alle Raeume ihrer Org lesen, andere muessen Teilnehmer sein
-      if (userType !== 'admin') {
-        const { rows: [isParticipant] } = await db.query(
-          "SELECT 1 FROM chat_participants WHERE room_id = $1 AND user_id = $2 AND user_type = $3",
-          [message.room_id, userId, userType]
-        );
-        if (!isParticipant) {
-          return res.status(403).json({ error: 'Zugriff verweigert' });
-        }
+      // Dieselbe Regel wie beim Lesen der Nachrichten selbst: Teilnehmerschaft,
+      // Leitung zusaetzlich gemeindeweit — ausser in fremden Zweiergespraechen.
+      if (!await darfRaumOeffnen(message.room_id, req.user)) {
+        return res.status(403).json({ error: 'Zugriff verweigert' });
       }
 
       const query = `

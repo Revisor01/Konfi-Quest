@@ -68,10 +68,16 @@
 #    - Betreten/Lesen einzelner Raeume (GET /rooms/:roomId, /messages,
 #      mark-read, POST /messages): Teilnehmer ODER Admin-Bypass —
 #      admin/org_admin koennen JEDEN Raum ihrer Org oeffnen, lesen und darin
-#      schreiben, auch fremde Direktchats zweier anderer Personen.
+#      schreiben — AUSSER fremde Direktchats (GEAENDERT 2026-08-23: ein
+#      Zwiegespraech ist privat, dort greift der Admin-Bypass nicht mehr).
+#      Gruppen-, Jahrgangs-, Team- und Termin-Chats bleiben offen.
 #      teamer und konfi ausschliesslich als Teilnehmer.
+#      Zentral in darfRaumOeffnen() (chat.js), genutzt von /rooms/:id,
+#      /messages (GET+POST), mark-read, participants, reactions, polls,
+#      DELETE /messages/:id und dem Export.
 #    - Export (GET /rooms/:roomId/export): nur admin/org_admin (explizit
-#      NICHT teamer), kompletter Verlauf jedes Raums der Org.
+#      NICHT teamer), kompletter Verlauf — aber nur fuer Raeume, die man
+#      oeffnen darf (403 bei fremdem Direktchat).
 #    - Org-Grenze: ueberall hart (jede Query prueft organization_id).
 #    - Socket-Raum `room_<id>` (joinRoom/typing/stopTyping, server.js):
 #      dieselbe Regel wie oben — Teilnehmer ODER Admin-Bypass, dazu die
@@ -82,8 +88,9 @@
 #
 # 4. WER DARF NACHRICHTEN LOESCHEN (DELETE /chat/messages/:messageId)?
 #    - Eigene Nachrichten: jede Rolle (auch Konfi), Soft-Delete.
-#    - Fremde Nachrichten: nur admin/org_admin, org-weit (jede Nachricht
-#      jedes Raums der eigenen Org). teamer duerfen NUR eigene loeschen.
+#    - Fremde Nachrichten: nur admin/org_admin, und nur in Raeumen, die sie
+#      oeffnen duerfen — in fremden Direktchats also nicht mehr
+#      (GEAENDERT 2026-08-23). teamer duerfen NUR eigene loeschen.
 #    - Raum loeschen (DELETE /rooms/:roomId): nur admin/org_admin; mit
 #      Nachrichten nur per ?force=true; Jahrgangs-Chats nie direkt.
 #
@@ -141,9 +148,9 @@
 #   es gibt KEINEN Admin-Bypass: ein Admin, der Nachrichten eines fremden
 #   Raums lesen darf, kann dessen Dateien nicht abrufen (Inkonsistenz, keine
 #   Rechteausweitung).
-# HINWEIS (kein Bug, aber dokumentationswuerdig): admin/org_admin koennen
-#   JEDEN Raum der Org lesen, beschreiben und exportieren — auch private
-#   Direktchats zweier anderer Nutzer. Teamer koennen ueber POST /chat/rooms
+# HINWEIS — ERLEDIGT 2026-08-23: admin/org_admin konnten JEDEN Raum der Org
+#   lesen, beschreiben und exportieren, auch private Direktchats zweier
+#   anderer Nutzer. Direktchats sind davon jetzt ausgenommen. Teamer koennen ueber POST /chat/rooms
 #   Gruppenraeume mit beliebigen Org-Nutzern (auch Konfis fremder Jahrgaenge)
 #   anlegen und Jahrgangs-Chats fuer JEDEN Jahrgang der Org erstellen
 #   (keine Zuweisungspruefung beim Anlegen).
