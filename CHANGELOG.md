@@ -103,6 +103,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Chat: Bei Umfragen, in denen jede Option nur einmal vergeben werden kann
   ("wer macht welche Tour?"), konnte dieselbe Option unter Umständen doppelt
   belegt werden.
+- Chat: Teamer:innen sehen jetzt auch den Reiter "Team" in der Chat-Übersicht.
+  Bisher blieb er der Leitung vorbehalten, obwohl Teamer:innen selbst in
+  Team-Chats sind.
 - "Was ist neu?" hebt sich jetzt deutlich vom Rest der Seite ab, statt wie
   eine Einstellung zwischen anderen auszusehen.
 - Der Hinweis auf den Umzug der Aktivitäten unter Termine ist entfallen — die

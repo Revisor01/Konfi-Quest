@@ -79,7 +79,13 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   const [searchText, setSearchText] = useState('');
   const [filterType, setFilterType] = useState<string>('alle');
 
+  // Loeschrecht: nur Leitung/Admins (so prueft es auch das Backend,
+  // DELETE /chat/rooms/:roomId verlangt type === 'admin').
   const isAdmin = user?.type === 'admin';
+  // Reiter "Team": alle, die selbst zum Team gehoeren — also auch Teamer:innen.
+  // Sie sind in Produktion in 4 Team-Chats, sahen den Reiter aber nicht, weil
+  // hier auf 'admin' geprueft wurde (gleiche Verwechslung wie in chatRoles).
+  const gehoertZumTeam = istTeamTyp(user?.type);
 
   // Zentrale Logik: Ist das ein Team-Chat (= pink, gehoert in den Team-Tab)?
   // - Direktchat: Partner gehoert zum Team (partner_user_type 'admin' ODER 'teamer')
@@ -472,7 +478,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
             <IonSegmentButton value="alle"><IonLabel>Alle</IonLabel></IonSegmentButton>
             <IonSegmentButton value="ungelesen"><IonLabel>Ungelesen</IonLabel></IonSegmentButton>
             <IonSegmentButton value="konfis"><IonLabel>Konfis</IonLabel></IonSegmentButton>
-            {isAdmin && (
+            {gehoertZumTeam && (
               <IonSegmentButton value="team"><IonLabel>Team</IonLabel></IonSegmentButton>
             )}
           </IonSegment>
