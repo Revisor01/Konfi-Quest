@@ -24,14 +24,22 @@
 #    Kontaktlisten:
 #    - GET /chat/team-contacts: nur admin/org_admin/teamer. Liefert ALLE
 #      aktiven admin/org_admin/teamer der EIGENEN Org (ohne E-Mail/Login-Daten).
-#    - GET /chat/admins: nur Konfis. Liefert alle admin/org_admin/teamer der
-#      eigenen Org — INKLUSIVE username (Login-Name, leicht sensibel).
+#    - GET /chat/admins: nur Konfis. Liefert admin/org_admin sowie die
+#      Teamer:innen des eigenen Jahrgangs; filtert is_active/deleted_at.
+#      username wird nicht mehr ausgeliefert (2026-08-23). Die Route hat
+#      derzeit keine Aufrufer, das Frontend nutzt /available-users.
 #    - GET /chat/available-users: nur Konfis. Wie /admins, aber ohne bereits
-#      bestehende Direktchats; liefert NIE andere Konfis.
+#      bestehende Direktchats; liefert NIE andere Konfis. type ist dreiwertig
+#      ('admin' | 'teamer' | 'konfi') — vorher kam hart 'admin' zurueck.
 #    Direktchat (POST /chat/direct):
 #    - Ziel muss in derselben Organisation liegen (Org-Grenze hart).
 #    - Konfi -> Konfi: 403 ("Konfis koennen keine anderen Konfis anschreiben").
-#    - Konfi -> teamer/admin/org_admin: erlaubt.
+#    - Konfi -> admin/org_admin: erlaubt, immer.
+#    - Konfi -> teamer: NUR Teamer:innen mit gemeinsamem Jahrgang. Eine
+#      Teamer:in ohne Zuweisung ist fuer Konfis unsichtbar und nicht
+#      erreichbar. Die Grenze gilt in /admins, /available-users, POST /direct
+#      UND POST /rooms (participants). (Neu 2026-08-23, Gegenstueck zur
+#      Teamer-Grenze unten — die Regel gilt jetzt symmetrisch.)
 #    - admin/org_admin -> Konfi: erlaubt, jeder Konfi der Org.
 #    - teamer -> Konfi: NUR Konfis der zugewiesenen Jahrgaenge (can_view).
 #      Konfi ohne Jahrgang ist fuer teamer nicht erreichbar. Dieselbe Grenze

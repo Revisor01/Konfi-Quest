@@ -195,8 +195,23 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       }
       
       const organizationId = req.user.organization_id;
-      const query = "SELECT u.id, u.display_name, u.username FROM users u JOIN roles r ON u.role_id = r.id WHERE r.name IN ('admin', 'org_admin', 'teamer') AND u.organization_id = $1 ORDER BY u.display_name";
-      const { rows: admins } = await db.query(query, [organizationId]);
+      // Teamer:innen nur mit gemeinsamem Jahrgang (KONFI_SIEHT_TEAMMITGLIED),
+      // Leitung und Admins immer. is_active/deleted_at filtern wie in
+      // /team-contacts — die Route tat das bisher als einzige nicht.
+      // username wird nicht mehr ausgeliefert: fuer einen Chat unnoetig, und
+      // es ist der Login-Name.
+      const query = `
+        SELECT u.id, u.display_name
+          FROM users u
+          JOIN roles r ON u.role_id = r.id
+         WHERE r.name IN ('admin', 'org_admin', 'teamer')
+           AND u.organization_id = $2
+           AND u.is_active = true
+           AND u.deleted_at IS NULL
+           AND u.id <> $1
+           AND ${KONFI_SIEHT_TEAMMITGLIED}
+         ORDER BY u.display_name`;
+      const { rows: admins } = await db.query(query, [req.user.id, organizationId]);
       res.json(admins);
       
     } catch (err) {
@@ -239,6 +254,55 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
     return null;
   };
 
+  // Gegenrichtung: Darf dieser Konfi dieses Team-Mitglied anschreiben?
+  //
+  // Symmetrisch zu konfiAnschreibenVerboten: Teamer:innen und Konfis erreichen
+  // einander nur ueber einen gemeinsamen Jahrgang. Leitung (org_admin), Admins
+  // und Super-Admins sind fuer jeden Konfi der Gemeinde erreichbar — sie
+  // verantworten die Gemeinde als Ganzes und haben im uebrigen System ohnehin
+  // Zugriff auf alle Jahrgaenge (rbac.js:331).
+  //
+  // Eine Teamer:in OHNE Jahrgangszuweisung ist fuer Konfis unsichtbar. Das ist
+  // die konsequente Gegenseite: sie erreicht ihrerseits keinen einzigen Konfi.
+  //
+  // Gibt null zurueck, wenn erlaubt, sonst eine Fehlermeldung.
+  const teamAnschreibenVerboten = async (konfiUserId, zielRolle, zielUserId) => {
+    if (zielRolle !== 'teamer') return null;
+
+    const { rows: [ziel] } = await db.query(
+      `SELECT 1
+         FROM konfi_profiles kp
+         JOIN user_jahrgang_assignments uja
+           ON uja.jahrgang_id = kp.jahrgang_id AND uja.can_view
+        WHERE kp.user_id = $1 AND uja.user_id = $2
+        LIMIT 1`,
+      [konfiUserId, zielUserId]
+    );
+
+    if (!ziel) {
+      return 'Diese Teamer:in ist nicht für deinen Jahrgang zuständig';
+    }
+    return null;
+  };
+
+  // SQL-Bedingung fuer Kontaktlisten von Konfis: Team-Mitglied ist erreichbar,
+  // wenn es NICHT teamer ist (Leitung/Admin -> immer) ODER einen gemeinsamen
+  // Jahrgang mit dem Konfi hat. $1 muss die User-ID des Konfis sein.
+  //
+  // Bewusst als geteilter Baustein: Die Regel gilt an drei Stellen (/admins,
+  // /available-users, POST /direct). Stand sie mehrfach im Code, blieb bisher
+  // regelmaessig eine Stelle zurueck.
+  const KONFI_SIEHT_TEAMMITGLIED = `(
+    r.name <> 'teamer'
+    OR EXISTS (
+      SELECT 1
+        FROM konfi_profiles kp
+        JOIN user_jahrgang_assignments uja
+          ON uja.jahrgang_id = kp.jahrgang_id AND uja.can_view
+       WHERE kp.user_id = $1 AND uja.user_id = u.id
+    )
+  )`;
+
   router.post('/direct', verifyTokenRBAC, async (req, res) => {
     try {
       const { target_user_id } = req.body;
@@ -266,6 +330,15 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       // DATENSCHUTZ: Konfi-zu-Konfi-Chats gibt es nicht.
       if (req.user.type === 'konfi' && validUser.role_name === 'konfi') {
         return res.status(403).json({ error: 'Konfis können keine anderen Konfis anschreiben' });
+      }
+
+      // Konfis erreichen Teamer:innen nur ueber einen gemeinsamen Jahrgang.
+      // Leitung, Admins und Super-Admins erreichen sie immer.
+      if (req.user.type === 'konfi') {
+        const verboten = await teamAnschreibenVerboten(req.user.id, validUser.role_name, target_user_id);
+        if (verboten) {
+          return res.status(403).json({ error: verboten });
+        }
       }
 
       // Teamer:innen erreichen nur Konfis ihrer zugewiesenen Jahrgaenge.
@@ -389,6 +462,19 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
             return res.status(403).json({
               error: 'Konfirmand:innen können nur das Team anschreiben, nicht einander'
             });
+          }
+
+          // Gegenrichtung: Ein Konfi darf hier keine fremdjahrgaengige
+          // Teamer:in eintragen — sonst waere die Regel in POST /direct auf
+          // demselben Weg zu umgehen wie beim Konfi-zu-Konfi-Fall oben.
+          if (req.user.type === 'konfi') {
+            for (const pu of partUsers) {
+              const verboten = await teamAnschreibenVerboten(req.user.id, pu.role_name, pu.id);
+              if (verboten) {
+                await db.query('DELETE FROM chat_rooms WHERE id = $1', [roomId]);
+                return res.status(403).json({ error: verboten });
+              }
+            }
           }
 
           // Jahrgangsgrenze fuer Teamer:innen — wie in POST /direct. Ohne diese
@@ -2419,14 +2505,17 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       // DATENSCHUTZ: Konfis dürfen NUR Admins anschreiben (keine Konfi-zu-Konfi Chats)
       // Alle Admins, Org-Admins und Teamer der Organisation
       // role_title ist die selbst gewählte Rollenbezeichnung (z.B. "Pastorin", "Teamerin")
+      // Teamer:innen nur mit gemeinsamem Jahrgang, Leitung/Admins immer
+      // (KONFI_SIEHT_TEAMMITGLIED). type kam bisher hart als 'admin' zurueck —
+      // damit landeten Teamer:innen im Konfi-Modal als Admin, obwohl
+      // chat_participants sie als 'teamer' fuehrt.
       const adminQuery = `
-        SELECT DISTINCT u.id, u.display_name as name, 'admin' as type,
+        SELECT DISTINCT u.id, u.display_name as name,
+          CASE WHEN r.name = 'teamer' THEN 'teamer' ELSE 'admin' END as type,
           r.name as role_name,
           COALESCE(NULLIF(u.role_title, ''),
             CASE
               WHEN r.name = 'teamer' THEN 'Teamer:in'
-              WHEN r.name = 'org_admin' THEN 'Admin'
-              WHEN r.name = 'admin' THEN 'Admin'
               ELSE 'Admin'
             END
           ) as role_description,
@@ -2434,11 +2523,14 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         FROM users u
         JOIN roles r ON u.role_id = r.id
         WHERE r.name IN ('admin', 'org_admin', 'teamer')
-        AND u.organization_id = $1
-        AND u.id != $2
+        AND u.organization_id = $2
+        AND u.id <> $1
+        AND u.is_active = true
+        AND u.deleted_at IS NULL
+        AND ${KONFI_SIEHT_TEAMMITGLIED}
         ORDER BY u.display_name
       `;
-      const { rows: admins } = await db.query(adminQuery, [organizationId, userId]);
+      const { rows: admins } = await db.query(adminQuery, [userId, organizationId]);
       const availableUsers = admins;
 
       // 5. Get existing direct chats to filter out duplicates
@@ -2472,7 +2564,10 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       res.json({
         users: filteredUsers,
         jahrgang: konfiProfile.jahrgang_name,
-        permissions: 'direct_only_admin' // DATENSCHUTZ: Konfis dürfen nur Admins anschreiben
+        // Konfis schreiben ausschliesslich das Team an, und davon nur die
+        // Leitung/Admins sowie Teamer:innen des eigenen Jahrgangs. Der Wert ist
+        // fest — die Einstellung konfi_chat_permissions wird nirgends gelesen.
+        permissions: 'direct_only_admin'
       });
 
     } catch (err) {

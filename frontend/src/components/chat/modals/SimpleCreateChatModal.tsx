@@ -155,7 +155,10 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           id: u.id,
           name: u.name,
           display_name: u.name,
-          type: u.type as 'admin' | 'konfi',
+          // Das Backend liefert 'teamer' als eigenen Wert — vorher war der Typ
+          // hier auf admin|konfi verengt und Teamer:innen wurden in der Liste
+          // wie Konfis dargestellt.
+          type: u.type as ChatUser['type'],
           jahrgang_name: u.jahrgang_name,
           // Funktionsbeschreibung vom Backend (bereits mit Fallback)
           role_description: u.role_description

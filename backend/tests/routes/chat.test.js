@@ -223,6 +223,120 @@ describe('Chat Routes', () => {
 
       expect(res.status).toBe(200);
     });
+  });
+
+  // ================================================================
+  // Gegenrichtung: Konfi -> Team
+  //
+  // Nutzerhinweis 23.08.2026: Konfis sollen Teamer:innen ebenfalls nur ueber
+  // einen gemeinsamen Jahrgang erreichen. Leitung (org_admin), Admins und
+  // Super-Admins bleiben fuer jeden Konfi erreichbar.
+  // ================================================================
+  describe('Jahrgangsgrenze fuer Konfis in Richtung Team', () => {
+    // teamer1 aus dem Jahrgang von konfi1 herausnehmen.
+    const teamerAusJahrgangNehmen = async () => {
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.teamer1.id]);
+      invalidateUserCache(USERS.teamer1.id);
+      invalidateUserCache(USERS.konfi1.id);
+    };
+
+    it('Konfi schreibt Teamer:in des EIGENEN Jahrgangs an -> 200', async () => {
+      const res = await request(app)
+        .post('/api/chat/direct')
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({ target_user_id: USERS.teamer1.id });
+
+      expect(res.status).toBe(200);
+      expect(res.body.room_id).toBeDefined();
+    });
+
+    it('Konfi schreibt Teamer:in OHNE gemeinsamen Jahrgang an -> 403', async () => {
+      await teamerAusJahrgangNehmen();
+
+      const res = await request(app)
+        .post('/api/chat/direct')
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({ target_user_id: USERS.teamer1.id });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Diese Teamer:in ist nicht für deinen Jahrgang zuständig');
+    });
+
+    it('Konfi erreicht die Leitung (org_admin) immer -> 200', async () => {
+      const res = await request(app)
+        .post('/api/chat/direct')
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({ target_user_id: USERS.orgAdmin1.id });
+
+      expect(res.status).toBe(200);
+    });
+
+    it('Konfi erreicht Admins immer -> 200', async () => {
+      const res = await request(app)
+        .post('/api/chat/direct')
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({ target_user_id: USERS.admin1.id });
+
+      expect(res.status).toBe(200);
+    });
+
+    it('gesperrte Teamer:in taucht in /available-users nicht auf', async () => {
+      await teamerAusJahrgangNehmen();
+
+      const res = await request(app)
+        .get('/api/chat/available-users')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+
+      expect(res.status).toBe(200);
+      const ids = res.body.users.map(u => u.id);
+      expect(ids).not.toContain(USERS.teamer1.id);
+      // Leitung und Admin bleiben sichtbar.
+      expect(ids).toContain(USERS.admin1.id);
+      expect(ids).toContain(USERS.orgAdmin1.id);
+    });
+
+    it('zustaendige Teamer:in taucht in /available-users auf und traegt Typ "teamer"', async () => {
+      const res = await request(app)
+        .get('/api/chat/available-users')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+
+      expect(res.status).toBe(200);
+      const treffer = res.body.users.find(u => u.id === USERS.teamer1.id);
+      expect(treffer).toBeDefined();
+      // Frueher kam hier hart 'admin' zurueck.
+      expect(treffer.type).toBe('teamer');
+      expect(treffer.role_description).toBe('Teamer:in');
+    });
+
+    it('gesperrte Teamer:in laesst sich auch nicht ueber POST /rooms eintragen -> 403', async () => {
+      await teamerAusJahrgangNehmen();
+
+      const res = await request(app)
+        .post('/api/chat/rooms')
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({
+          type: 'direct',
+          name: 'Umweg',
+          participants: [USERS.teamer1.id],
+        });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Diese Teamer:in ist nicht für deinen Jahrgang zuständig');
+    });
+
+    it('Konfi ohne Jahrgang erreicht die Leitung weiterhin -> 200', async () => {
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      await db.query('UPDATE konfi_profiles SET jahrgang_id = NULL WHERE user_id = $1', [USERS.konfi1.id]);
+      invalidateUserCache(USERS.konfi1.id);
+
+      const res = await request(app)
+        .post('/api/chat/direct')
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({ target_user_id: USERS.orgAdmin1.id });
+
+      expect(res.status).toBe(200);
+    });
 
     it('Teamer:in erreicht das Team weiterhin, unabhaengig vom Jahrgang', async () => {
       const { invalidateUserCache } = require('../../middleware/rbac');
