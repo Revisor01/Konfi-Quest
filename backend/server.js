@@ -24,6 +24,7 @@ if (!JWT_SECRET) {
 // ====================================================================
 
 const db = require('./database');
+const { darfRaumBetreten } = require('./utils/chatRoomAccess');
 
 // ====================================================================
 // HTTP SERVER (ohne App — App kommt nach Socket.IO Setup)
@@ -162,24 +163,11 @@ io.on('connection', (socket) => {
 
   socket.on('joinRoom', async (roomId) => {
     try {
-      const { rows } = await db.query(
-        'SELECT organization_id FROM chat_rooms WHERE id = $1',
-        [roomId]
-      );
-
-      if (rows.length === 0) {
-        console.warn(`Socket joinRoom: Room ${roomId} nicht gefunden (User ${socket.user.id})`);
+      const erlaubt = await darfRaumBetreten(db, roomId, socket.user);
+      if (!erlaubt.ok) {
+        console.warn(`Socket joinRoom abgelehnt: User ${socket.user.id} -> Room ${roomId} (${erlaubt.grund})`);
         return;
       }
-
-      const roomOrgId = rows[0].organization_id;
-      const userOrgId = socket.user.organization_id;
-
-      if (roomOrgId !== userOrgId) {
-        console.warn(`Socket joinRoom: Org-Isolation-Verletzung! User ${socket.user.id} (Org ${userOrgId}) versucht Room ${roomId} (Org ${roomOrgId}) beizutreten`);
-        return;
-      }
-
       socket.join(`room_${roomId}`);
     } catch (err) {
       console.error('Socket joinRoom Fehler:', err.message);
@@ -190,14 +178,12 @@ io.on('connection', (socket) => {
     socket.leave(`room_${roomId}`);
   });
 
+  // Auch hier Teilnehmerschaft pruefen: Ohne sie liesse sich ueber die
+  // Tipp-Anzeige verraten, wer gerade in einem fremden Raum schreibt.
   socket.on('typing', async (roomId) => {
     try {
-      const { rows } = await db.query(
-        'SELECT organization_id FROM chat_rooms WHERE id = $1',
-        [roomId]
-      );
-      if (rows.length === 0) return;
-      if (rows[0].organization_id !== socket.user.organization_id) return;
+      const erlaubt = await darfRaumBetreten(db, roomId, socket.user);
+      if (!erlaubt.ok) return;
       socket.to(`room_${roomId}`).emit('userTyping', {
         roomId,
         userId: socket.user.id,
@@ -210,12 +196,8 @@ io.on('connection', (socket) => {
 
   socket.on('stopTyping', async (roomId) => {
     try {
-      const { rows } = await db.query(
-        'SELECT organization_id FROM chat_rooms WHERE id = $1',
-        [roomId]
-      );
-      if (rows.length === 0) return;
-      if (rows[0].organization_id !== socket.user.organization_id) return;
+      const erlaubt = await darfRaumBetreten(db, roomId, socket.user);
+      if (!erlaubt.ok) return;
       socket.to(`room_${roomId}`).emit('userStoppedTyping', {
         roomId,
         userId: socket.user.id

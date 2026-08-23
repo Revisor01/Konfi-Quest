@@ -32,8 +32,11 @@
 #    - Ziel muss in derselben Organisation liegen (Org-Grenze hart).
 #    - Konfi -> Konfi: 403 ("Konfis koennen keine anderen Konfis anschreiben").
 #    - Konfi -> teamer/admin/org_admin: erlaubt.
-#    - teamer/admin/org_admin -> Konfi: erlaubt, OHNE Jahrgangspruefung —
-#      d.h. auch ueber Jahrgangsgrenzen hinweg (jeder Konfi der Org).
+#    - admin/org_admin -> Konfi: erlaubt, jeder Konfi der Org.
+#    - teamer -> Konfi: NUR Konfis der zugewiesenen Jahrgaenge (can_view).
+#      Konfi ohne Jahrgang ist fuer teamer nicht erreichbar. Dieselbe Grenze
+#      gilt in POST /chat/rooms fuer Konfis in der participants-Liste.
+#      (BEHOBEN 2026-08-23; vorher erreichte jede Teamer:in jeden Konfi.)
 #    - teamer <-> teamer/admin: erlaubt.
 #    - Ueber Organisationsgrenzen: nie (Ziel-Lookup ist org-gescopt -> 403).
 #    ABER siehe LUECKE 1: POST /chat/rooms umgeht das Konfi-Konfi-Verbot.
@@ -62,6 +65,12 @@
 #    - Export (GET /rooms/:roomId/export): nur admin/org_admin (explizit
 #      NICHT teamer), kompletter Verlauf jedes Raums der Org.
 #    - Org-Grenze: ueberall hart (jede Query prueft organization_id).
+#    - Socket-Raum `room_<id>` (joinRoom/typing/stopTyping, server.js):
+#      dieselbe Regel wie oben — Teilnehmer ODER Admin-Bypass, dazu die
+#      Org-Grenze. (BEHOBEN 2026-08-23; vorher wurde NUR die Organisation
+#      geprueft, jeder Angemeldete derselben Gemeinde konnte damit jedem Raum
+#      beitreten und ueber newMessage/pollUpdated/reactionAdded alle neuen
+#      Nachrichten fremder Chats mitlesen.)
 #
 # 4. WER DARF NACHRICHTEN LOESCHEN (DELETE /chat/messages/:messageId)?
 #    - Eigene Nachrichten: jede Rolle (auch Konfi), Soft-Delete.

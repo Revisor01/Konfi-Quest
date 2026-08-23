@@ -266,14 +266,20 @@ async function seed(db) {
   }
 
   // 16. Chat-Teilnehmer (Jahrgangs-Chat: alle Konfis + Teamer aus Org 1)
+  //
+  // user_type fuehrt DREI Werte, wie in Produktion: 'konfi', 'teamer', 'admin'.
+  // Teamer:innen standen hier frueher als 'admin' — dadurch trat der Unterschied
+  // zwischen den beiden Team-Typen in keinem Test zutage, obwohl Produktion 39
+  // 'teamer'-Eintraege fuehrt (Fehlerbild vom 23.08.2026).
   const chatParticipants = [
     { room_id: 1, user_id: USERS.konfi1.id,  user_type: 'konfi' },
     { room_id: 1, user_id: USERS.konfi2.id,  user_type: 'konfi' },
-    { room_id: 1, user_id: USERS.teamer1.id, user_type: 'admin' },
+    { room_id: 1, user_id: USERS.teamer1.id, user_type: 'teamer' },
     { room_id: 1, user_id: USERS.admin1.id,  user_type: 'admin' },
     { room_id: 2, user_id: USERS.konfi1.id,  user_type: 'konfi' },
     { room_id: 2, user_id: USERS.admin1.id,  user_type: 'admin' },
-    { room_id: 3, user_id: USERS.teamer1.id, user_type: 'admin' },
+    // Raum 3 ist eine reine Team-Gruppe: Teamer:in + Admin, kein Konfi.
+    { room_id: 3, user_id: USERS.teamer1.id, user_type: 'teamer' },
     { room_id: 3, user_id: USERS.admin1.id,  user_type: 'admin' },
   ];
   for (const p of chatParticipants) {

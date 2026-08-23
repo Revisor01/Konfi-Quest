@@ -501,11 +501,15 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
               FROM chat_participants cp
               WHERE cp.room_id = r.id
           ) as participant_count,
-          -- Rolle des Direktchat-Partners (admin=Team, konfi=Konfi) fuer Chat-Farbe/Filter.
+          -- Rolle des Direktchat-Partners fuer Chat-Farbe/Filter. Drei moegliche
+          -- Werte: 'admin' (Leitung/Admin), 'teamer', 'konfi'.
           dm.partner_user_type,
-          -- Reiner Team-Gruppenchat: alle Teilnehmer sind admin (= Teamer:innen). Nur fuer Gruppen relevant.
+          -- Reiner Team-Gruppenchat: KEIN Konfi unter den Teilnehmern. Vorher
+          -- wurde auf user_type <> 'admin' geprueft — eine Gruppe mit
+          -- Teamer:innen galt dadurch nie als Team-Gruppe, obwohl
+          -- chat_participants.user_type 'teamer' als eigenen Wert fuehrt.
           (
-              SELECT COUNT(*) FILTER (WHERE cp.user_type <> 'admin') = 0 AND COUNT(*) > 0
+              SELECT COUNT(*) FILTER (WHERE cp.user_type NOT IN ('admin', 'teamer')) = 0 AND COUNT(*) > 0
               FROM chat_participants cp
               WHERE cp.room_id = r.id
           ) as is_team_only,

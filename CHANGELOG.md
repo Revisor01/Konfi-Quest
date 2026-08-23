@@ -93,6 +93,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   Reiter und erschienen nicht unter "Team".
 - Chat: Stimmte eine Teamer:in offline in einer Umfrage ab, wurde die eigene
   Auswahl nicht als gesetzt angezeigt.
+- Chat: Neue Nachrichten aus einem Chat konnten von Angemeldeten derselben
+  Gemeinde mitgelesen werden, die gar nicht daran beteiligt waren. Der Zugang
+  setzt jetzt voraus, dass man Teil des Chats ist; die Leitung sieht wie bisher
+  die Chats ihrer Gemeinde.
 - "Was ist neu?" hebt sich jetzt deutlich vom Rest der Seite ab, statt wie
   eine Einstellung zwischen anderen auszusehen.
 - Der Hinweis auf den Umzug der Aktivitäten unter Termine ist entfallen — die
