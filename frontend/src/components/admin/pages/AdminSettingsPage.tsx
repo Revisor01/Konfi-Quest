@@ -217,11 +217,11 @@ const AdminSettingsPage: React.FC = () => {
           </IonToolbar>
         </IonHeader>
 
-        {/* "Was ist neu?" als eigener Block VOR den Einstellungen — gleiche
-            Stelle wie im Konfi- und Teamer-Profil (Nutzerhinweis 22.08.2026). */}
-        <IonCard
-          className="app-card app-list-item--challenges"
-          style={{ margin: '16px', cursor: 'pointer' }}
+        {/* "Was ist neu?" — eigener Banner, KEIN Listeneintrag (siehe
+            .app-whatsnew im Theme). Nutzerhinweis 23.08.2026. */}
+        <div
+          className="app-whatsnew"
+          style={{ margin: '16px' }}
           onClick={() => setShowUpdateWalkthrough(true)}
           role="button"
           tabIndex={0}
@@ -233,21 +233,13 @@ const AdminSettingsPage: React.FC = () => {
             }
           }}
         >
-          <IonCardContent style={{ padding: '14px 16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <div className="app-icon-circle app-icon-circle--challenges" style={{ flexShrink: 0 }}>
-                <IonIcon icon={sparklesOutline} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="app-list-item__title" style={{ whiteSpace: 'normal' }}>Was ist neu?</div>
-                <div className="app-list-item__meta">
-                  <span className="app-list-item__meta-item">Die Neuerungen dieser Version ansehen</span>
-                </div>
-              </div>
-              <IonIcon icon={chevronForwardOutline} style={{ flexShrink: 0, fontSize: '1.1rem', opacity: 0.4 }} />
-            </div>
-          </IonCardContent>
-        </IonCard>
+          <IonIcon icon={sparklesOutline} className="app-whatsnew__icon" />
+          <div className="app-whatsnew__text">
+            <span className="app-whatsnew__title">Was ist neu?</span>
+            <span className="app-whatsnew__sub">Die Neuerungen dieser Version ansehen</span>
+          </div>
+          <IonIcon icon={chevronForwardOutline} className="app-whatsnew__chevron" />
+        </div>
 
         {/* Konto */}
         <IonList inset={true} className="app-segment-wrapper">

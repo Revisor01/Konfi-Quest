@@ -85,6 +85,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- "Was ist neu?" hebt sich jetzt deutlich vom Rest der Seite ab, statt wie
+  eine Einstellung zwischen anderen auszusehen.
+- Der Hinweis auf den Umzug der Aktivitäten unter Termine ist entfallen — die
+  Neuerungen stehen bereits in der Einführung.
 - Challenges: Die Leitungsansicht hat jetzt die Reiter Aktuell, Geplant und
   Archiv; die Zahlen darüber springen zum jeweiligen Reiter.
 - Die Startseite der Konfis lädt die Tageslosung nur noch einmal statt zweimal.

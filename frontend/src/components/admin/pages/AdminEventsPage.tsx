@@ -39,10 +39,6 @@ import ActivityRequestModal from '../modals/ActivityRequestModal';
 import { Event } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
 
-// Einmaliger Hinweis nach dem Tab-Umbau: die Aktivitäten sind aus ihrem eigenen
-// Tab in dieses Segment gewandert (analog zum Konfi-Umbau in KonfiEventsPage).
-const UMZUG_HINWEIS_KEY = 'admin_antraege_umzug_hinweis_gesehen';
-
 interface ActivityRequest {
   id: number;
   konfi_id: number;
@@ -91,23 +87,6 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     }
   }, [routerLocation.search]);
 
-  // Einmaliger Umzugs-Hinweis, bis er weggeklickt wurde.
-  const [showUmzugHinweis, setShowUmzugHinweis] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem(UMZUG_HINWEIS_KEY) !== 'true';
-    } catch {
-      return false;
-    }
-  });
-
-  const dismissUmzugHinweis = () => {
-    try {
-      localStorage.setItem(UMZUG_HINWEIS_KEY, 'true');
-    } catch {
-      // Speicher nicht verfuegbar — Hinweis erscheint dann beim naechsten Mal erneut.
-    }
-    setShowUmzugHinweis(false);
-  };
 
   // Offline-Query: Events
   const { data: allEventsRaw, loading: eventsLoading, refresh: refreshEvents } = useOfflineQuery<Event[]>(
@@ -569,38 +548,6 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
         </IonSegment>
       </div>
 
-      {/* Einmaliger Hinweis auf den Umzug der Aktivitäten in diesen Tab */}
-      {showUmzugHinweis && (
-        <IonList inset={true} style={{ margin: '16px' }}>
-          <IonCard className="app-card">
-            <IonCardContent>
-              <div className="app-list-item app-list-item--activities" style={{ position: 'relative' }}>
-                <IonButton
-                  fill="clear"
-                  size="small"
-                  onClick={dismissUmzugHinweis}
-                  aria-label="Hinweis ausblenden"
-                  style={{ position: 'absolute', top: '0', right: '0', margin: 0, zIndex: 2 }}
-                >
-                  <IonIcon icon={closeOutline} slot="icon-only" />
-                </IonButton>
-                <div className="app-list-item__row">
-                  <div className="app-list-item__main">
-                    <div className="app-icon-circle app-icon-circle--activities">
-                      <IonIcon icon={informationCircleOutline} />
-                    </div>
-                    <div className="app-list-item__content">
-                      <div className="app-list-item__title" style={{ paddingRight: '44px', whiteSpace: 'normal' }}>
-                        Neu: Die Anträge heißen jetzt Aktivitäten und stehen hier im Events-Tab.
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </IonCardContent>
-          </IonCard>
-        </IonList>
-      )}
     </>
   );
 

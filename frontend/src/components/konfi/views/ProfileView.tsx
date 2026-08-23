@@ -664,12 +664,14 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         </IonCard>
       )}
 
-      {/* "Was ist neu?" steht bewusst als eigener Block VOR den Einstellungen:
-          als Punkt unter den Konto-Optionen ging er unter (Nutzerhinweis
-          22.08.2026). Chevron zeigt, dass sich etwas oeffnet. */}
-      <IonCard
-        className="app-card app-list-item--challenges"
-        style={{ margin: '16px', cursor: 'pointer' }}
+      {/* "Was ist neu?" — bewusst KEIN Listeneintrag, sondern ein eigener
+          Banner: Es ist keine Einstellung, die man zwischen anderen sucht,
+          sondern ein einmaliger Hinweis (Nutzerhinweis 23.08.2026). Vorher
+          nutzte der Block Listen-Klassen und sah dadurch aus wie eine Option
+          in einer Liste, obwohl er keine ist. */}
+      <div
+        className="app-whatsnew"
+        style={{ margin: '16px' }}
         onClick={() => setShowUpdateWalkthrough(true)}
         role="button"
         tabIndex={0}
@@ -681,24 +683,13 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
           }
         }}
       >
-        <IonCardContent style={{ padding: '14px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <div className="app-icon-circle app-icon-circle--challenges" style={{ flexShrink: 0 }}>
-              <IonIcon icon={sparklesOutline} />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="app-list-item__title" style={{ whiteSpace: 'normal' }}>Was ist neu?</div>
-              <div className="app-list-item__meta">
-                <span className="app-list-item__meta-item">Die Neuerungen dieser Version ansehen</span>
-              </div>
-            </div>
-            <IonIcon
-              icon={chevronForwardOutline}
-              style={{ flexShrink: 0, fontSize: '1.1rem', opacity: 0.4 }}
-            />
-          </div>
-        </IonCardContent>
-      </IonCard>
+        <IonIcon icon={sparklesOutline} className="app-whatsnew__icon" />
+        <div className="app-whatsnew__text">
+          <span className="app-whatsnew__title">Was ist neu?</span>
+          <span className="app-whatsnew__sub">Die Neuerungen dieser Version ansehen</span>
+        </div>
+        <IonIcon icon={chevronForwardOutline} className="app-whatsnew__chevron" />
+      </div>
 
       {/* Konto-Einstellungen - iOS26 Pattern wie Admin */}
       <IonList inset={true} style={{ margin: '16px' }}>

@@ -2862,3 +2862,63 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
   cursor: default;
 }
 
+
+/* ============================================================
+   "Was ist neu?" — eigener Banner, KEIN Listeneintrag.
+   Vorher nutzte der Block app-list-item-Klassen und sah dadurch aus wie eine
+   Einstellung zwischen anderen. Er ist aber keine Option, die man sucht,
+   sondern ein einmaliger Hinweis — und bekommt deshalb eine eigene Form:
+   flaechiger Verlauf in der Challenges-Farbe, heller Text, kein Kartenrahmen.
+   (Nutzerhinweis 23.08.2026)
+   ============================================================ */
+.app-whatsnew {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #ec4899 0%, var(--app-color-challenges) 60%, #9d174d 100%);
+  box-shadow: 0 4px 14px rgba(var(--app-color-challenges-rgb), 0.28);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.app-whatsnew:active {
+  transform: scale(0.985);
+  box-shadow: 0 2px 8px rgba(var(--app-color-challenges-rgb), 0.22);
+}
+.app-whatsnew:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.app-whatsnew__icon {
+  flex-shrink: 0;
+  font-size: 1.5rem;
+  color: #fff;
+}
+.app-whatsnew__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.app-whatsnew__title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #fff;
+  line-height: 1.25;
+}
+.app-whatsnew__sub {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.3;
+}
+.app-whatsnew__chevron {
+  flex-shrink: 0;
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-whatsnew { transition: none; }
+  .app-whatsnew:active { transform: none; }
+}
