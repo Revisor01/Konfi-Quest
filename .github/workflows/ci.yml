@@ -9,6 +9,13 @@ on:
       - 'frontend/**'
       - 'init-scripts/**'
       - '.github/workflows/ci.yml'
+      # Die Doku-Generatoren und ihre Quellen: Der Frischecheck in
+      # frontend-test prueft deren Erzeugnisse, lief bei Aenderungen hier aber
+      # gar nicht an (24.08.2026 aufgefallen — ein Fix an scripts/ loeste
+      # keinen Lauf aus, und damit wurden auch keine Images gebaut).
+      - 'scripts/**'
+      - 'docs/api/**'
+      - 'docs/handbuch/**'
   pull_request:
     branches:
       - main
