@@ -91,6 +91,8 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   der falschen Farbe und ohne ihre Funktionsbezeichnung.
 - Chat: Direktnachrichten mit Teamer:innen lagen in der Übersicht im falschen
   Reiter und erschienen nicht unter "Team".
+- Chat: Stimmte eine Teamer:in offline in einer Umfrage ab, wurde die eigene
+  Auswahl nicht als gesetzt angezeigt.
 - "Was ist neu?" hebt sich jetzt deutlich vom Rest der Seite ab, statt wie
   eine Einstellung zwischen anderen auszusehen.
 - Der Hinweis auf den Umzug der Aktivitäten unter Termine ist entfallen — die

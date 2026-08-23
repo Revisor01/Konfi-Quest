@@ -1,6 +1,14 @@
+/**
+ * Nutzertyp im Chat: DREI Werte, wie sie chat_participants.user_type,
+ * chat_poll_votes.user_type und chat_message_reactions.user_type fuehren.
+ * 'teamer' fehlte in mehreren Typen unten, obwohl die Datenbank ihn speichert —
+ * dadurch fielen Vergleiche wie `=== 'admin'` fuer "gehoert zum Team" nicht auf.
+ */
+export type ChatUserType = 'admin' | 'teamer' | 'konfi';
+
 export interface PollVote {
   user_id: number;
-  user_type: 'admin' | 'konfi';
+  user_type: ChatUserType;
   option_index: number;
   user_name?: string;
 }
@@ -9,7 +17,7 @@ export interface Reaction {
   id: number;
   emoji: string;
   user_id: number;
-  user_type: 'admin' | 'konfi';
+  user_type: ChatUserType;
   user_name: string;
 }
 
@@ -20,7 +28,7 @@ export interface Message {
   sender_name: string;
   sender_role_title?: string;
   sender_role_display_name?: string;
-  sender_type: 'admin' | 'konfi' | 'teamer';
+  sender_type: ChatUserType;
   created_at: string;
   file_path?: string;
   file_name?: string;
@@ -57,7 +65,7 @@ export interface Message {
 
 export interface ChatParticipant {
   user_id: number;
-  user_type: 'admin' | 'konfi';
+  user_type: ChatUserType;
   name: string;
   display_name?: string;
 }
@@ -81,11 +89,8 @@ export interface ChatRoomOverview extends ChatRoomBase {
   };
   unread_count: number;
   jahrgang_name?: string;
-  // Rolle des Direktchat-Partners (nur bei type='direct'). Entspricht
-  // chat_participants.user_type und kennt DREI Werte: 'admin' (Leitung/Admin),
-  // 'teamer' (Teamer:in) und 'konfi'. 'teamer' fehlte hier, obwohl die Datenbank
-  // ihn fuehrt — dadurch fiel die Verwechslung 'admin'=Team im Code nicht auf.
-  partner_user_type?: 'admin' | 'teamer' | 'konfi';
+  // Rolle des Direktchat-Partners (nur bei type='direct').
+  partner_user_type?: ChatUserType;
   // Reiner Team-Gruppenchat: alle Teilnehmer sind Teamer:innen (nur bei type='group' relevant).
   is_team_only?: boolean;
 }

@@ -20,7 +20,7 @@ import {
   closeCircle,
   ellipsisVertical
 } from 'ionicons/icons';
-import { Message } from '../../types/chat';
+import { Message, ChatUserType } from '../../types/chat';
 import { formatFileSize } from '../../utils/helpers';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
@@ -45,7 +45,7 @@ interface ChatHeaderProps {
   onOpenPoll: () => void;
   onLeaveChat: () => void;
   eventId?: number | null;
-  partnerType?: 'admin' | 'konfi' | null;
+  partnerType?: ChatUserType | null;
 }
 
 export const ChatHeader = React.memo<ChatHeaderProps>(({

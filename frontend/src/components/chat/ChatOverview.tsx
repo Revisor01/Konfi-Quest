@@ -328,11 +328,10 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   const getDisplayRoomName = (room: ChatRoomOverview) => {
     // Für Direktchats: Zeige den Namen des Chat-Partners, nicht des eigenen Users
     if (room.type === 'direct') {
-      // Finde den Chat-Partner (nicht der aktuelle User) — robust per user_id,
-      // NICHT per user_type (eigener type kann 'teamer' sein, participants nur 'admin'|'konfi').
-      const otherParticipant = room.participants?.find((p: { user_id: number; user_type: 'admin' | 'konfi'; name: string; display_name?: string }) =>
-        p.user_id !== user?.id
-      );
+      // Finde den Chat-Partner (nicht der aktuelle User) — robust per user_id
+      // statt per user_type. chat_participants.user_type kennt drei Werte
+      // ('admin', 'teamer', 'konfi'); ein Vergleich darauf ginge fehl.
+      const otherParticipant = room.participants?.find(p => p.user_id !== user?.id);
       
       if (otherParticipant) {
         return otherParticipant.display_name || otherParticipant.name || 'Unbekannt';

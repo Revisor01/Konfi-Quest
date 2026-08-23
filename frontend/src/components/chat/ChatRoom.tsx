@@ -850,9 +850,13 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       // Optimistisch den Vote anzeigen
       setMessages(prev => prev.map(m => {
         if (m.id === messageId && m.votes) {
+          // user.type direkt uebernehmen: Der Server speichert 'teamer' als
+          // eigenen Wert. Wurde hier 'admin' angenommen, erkannte die Anzeige
+          // (MessageBubble prueft vote.user_type === user.type) die eigene
+          // Stimme einer Teamer:in offline nicht als gesetzt.
           const newVote: PollVote = {
             user_id: user?.id ?? 0,
-            user_type: (user?.role_name === 'konfi' ? 'konfi' : 'admin') as 'admin' | 'konfi',
+            user_type: (user?.type ?? 'konfi') as PollVote['user_type'],
             option_index: optionIndex,
           };
           return { ...m, votes: [...m.votes, newVote] };
