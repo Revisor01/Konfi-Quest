@@ -385,4 +385,129 @@ describe('Activities Routes', () => {
       expect(resKonfi.body.length).toBeLessThanOrEqual(resAll.body.length);
     });
   });
+
+  // ================================================================
+  // Loeschen: abgelehnte Antraege blockieren nicht mehr
+  //
+  // Nutzerhinweis 23.08.2026: Eine Teamer-Aktivitaet mit ausschliesslich
+  // abgelehnten Antraegen liess sich nicht loeschen. Abgelehnte Antraege haben
+  // nie zu Punkten gefuehrt — sie duerfen kein Dauerhindernis sein.
+  // ================================================================
+  describe('DELETE /admin/activities/:id — Antragshistorie', () => {
+    const antragAnlegen = async (status) => {
+      const { rows: [r] } = await db.query(
+        `INSERT INTO activity_requests (user_id, activity_id, status, organization_id, requested_date)
+         VALUES ($1, $2, $3, $4, CURRENT_DATE) RETURNING id`,
+        [USERS.konfi1.id, ACTIVITIES.kirchenchor.id, status, 1]
+      );
+      return r.id;
+    };
+
+    it('Aktivitaet mit NUR abgelehnten Antraegen laesst sich loeschen -> 200', async () => {
+      await antragAnlegen('rejected');
+
+      const res = await request(app)
+        .delete(`/api/admin/activities/${ACTIVITIES.kirchenchor.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+
+      // Der abgelehnte Antrag ist mitgeloescht, nicht verwaist zurueckgeblieben.
+      const { rows } = await db.query(
+        'SELECT 1 FROM activity_requests WHERE activity_id = $1',
+        [ACTIVITIES.kirchenchor.id]
+      );
+      expect(rows.length).toBe(0);
+    });
+
+    it('Aktivitaet mit OFFENEM Antrag bleibt gesperrt -> 409', async () => {
+      await antragAnlegen('pending');
+
+      const res = await request(app)
+        .delete(`/api/admin/activities/${ACTIVITIES.kirchenchor.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(409);
+      expect(res.body.error).toContain('offene');
+    });
+
+    it('Aktivitaet mit GENEHMIGTEM Antrag bleibt gesperrt -> 409', async () => {
+      await antragAnlegen('approved');
+
+      const res = await request(app)
+        .delete(`/api/admin/activities/${ACTIVITIES.kirchenchor.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(409);
+      expect(res.body.error).toContain('genehmigte');
+    });
+  });
+
+  // ================================================================
+  // Abgelehnte Antraege einzeln loeschen
+  // ================================================================
+  describe('DELETE /admin/activities/requests/:id', () => {
+    const antragAnlegen = async (status) => {
+      const { rows: [r] } = await db.query(
+        `INSERT INTO activity_requests (user_id, activity_id, status, organization_id, requested_date)
+         VALUES ($1, $2, $3, $4, CURRENT_DATE) RETURNING id`,
+        [USERS.konfi1.id, ACTIVITIES.kirchenchor.id, status, 1]
+      );
+      return r.id;
+    };
+
+    it('Admin loescht einen abgelehnten Antrag -> 200', async () => {
+      const id = await antragAnlegen('rejected');
+
+      const res = await request(app)
+        .delete(`/api/admin/activities/requests/${id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query('SELECT 1 FROM activity_requests WHERE id = $1', [id]);
+      expect(rows.length).toBe(0);
+    });
+
+    it('Offener Antrag laesst sich nicht loeschen -> 409', async () => {
+      const id = await antragAnlegen('pending');
+
+      const res = await request(app)
+        .delete(`/api/admin/activities/requests/${id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(409);
+    });
+
+    it('Genehmigter Antrag laesst sich nicht loeschen -> 409', async () => {
+      const id = await antragAnlegen('approved');
+
+      const res = await request(app)
+        .delete(`/api/admin/activities/requests/${id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(409);
+    });
+
+    it('Teamer:in darf keine Antraege loeschen -> 403', async () => {
+      const id = await antragAnlegen('rejected');
+
+      const res = await request(app)
+        .delete(`/api/admin/activities/requests/${id}`)
+        .set('Authorization', `Bearer ${teamerToken}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('Antrag einer FREMDEN Organisation -> 404', async () => {
+      const id = await antragAnlegen('rejected');
+
+      const res = await request(app)
+        .delete(`/api/admin/activities/requests/${id}`)
+        .set('Authorization', `Bearer ${admin2Token}`);
+
+      expect(res.status).toBe(404);
+    });
+  });
+
 });

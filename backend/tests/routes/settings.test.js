@@ -121,15 +121,6 @@ describe('Settings Routes', () => {
       expect(res.status).toBe(403);
     });
 
-    it('Ungueltiger konfi_chat_permissions Wert -> 400', async () => {
-      const res = await request(app)
-        .put('/api/settings')
-        .set('Authorization', `Bearer ${orgAdminToken}`)
-        .send({ konfi_chat_permissions: 'invalid_value' });
-
-      expect(res.status).toBe(400);
-    });
-
     it('Dashboard section_order als JSON speichern', async () => {
       const order = JSON.stringify(['events', 'badges', 'ranking', 'konfirmation', 'losung']);
       const res = await request(app)

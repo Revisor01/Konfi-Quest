@@ -218,32 +218,80 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         return res.status(409).json({ error: `Aktivität kann nicht gelöscht werden: ${usage.count} Zuordnung(en) zu Konfis vorhanden.` });
       }
 
-      // ALLE Anträge prüfen, nicht nur pending (Audit Achse 1, F4): Der
-      // NO-ACTION-FK activity_requests.activity_id blockt das Löschen auch bei
-      // abgelehnten/historischen Anträgen — ohne diesen Check gab es dann statt
-      // einer verständlichen Meldung einen 500 "Datenbankfehler" (gleiche
-      // Fehlerklasse wie der Teamer-Lösch-Bug vom 02.07.).
+      // Antraege pruefen. Der Fremdschluessel activity_requests.activity_id hat
+      // kein ON DELETE, deshalb muss vorher aufgeraeumt werden — sonst gaebe es
+      // statt einer verstaendlichen Meldung einen 500er.
+      //
+      // Unterschieden wird dabei nach dem Gewicht des Antrags:
+      //   - OFFEN oder GENEHMIGT: blockiert. Ein offener Antrag wartet auf eine
+      //     Entscheidung, ein genehmigter ist Teil der Punktegeschichte.
+      //   - ABGELEHNT: blockiert NICHT mehr, wird beim Loeschen mit entfernt.
+      //     Ein abgelehnter Antrag hat nie zu Punkten gefuehrt; ihn als Grund
+      //     zu nehmen, eine ueberfluessige oder doppelt angelegte Aktivitaet
+      //     dauerhaft zu behalten, war unverhaeltnismaessig (Nutzerhinweis
+      //     23.08.2026). In Produktion betraf das 4 Aktivitaeten, darunter drei
+      //     Teamer-Aktivitaeten mit je genau einer Ablehnung.
       const { rows: [requestCheck] } = await db.query(
-        `SELECT COUNT(*)::int as count,
-                COUNT(*) FILTER (WHERE ar.status = 'pending')::int as pending
+        `SELECT COUNT(*) FILTER (WHERE ar.status = 'pending')::int as pending,
+                COUNT(*) FILTER (WHERE ar.status = 'approved')::int as approved,
+                COUNT(*) FILTER (WHERE ar.status = 'rejected')::int as rejected
          FROM activity_requests ar
          WHERE ar.activity_id = $1 AND ar.organization_id = $2`,
         [activityId, req.user.organization_id]
       );
-      if (requestCheck.count > 0) {
-        const detail = requestCheck.pending > 0
-          ? `${requestCheck.pending} offene(r) Antrag/Anträge`
-          : `${requestCheck.count} abgeschlossene(r) Antrag/Anträge (Antragshistorie)`;
+      if (requestCheck.pending > 0 || requestCheck.approved > 0) {
+        const teile = [];
+        if (requestCheck.pending > 0) teile.push(`${requestCheck.pending} offene(r) Antrag/Anträge`);
+        if (requestCheck.approved > 0) teile.push(`${requestCheck.approved} genehmigte(r) Antrag/Anträge`);
         return res.status(409).json({
-          error: `Aktivität kann nicht gelöscht werden: ${detail} vorhanden.`
+          error: `Aktivität kann nicht gelöscht werden: ${teile.join(' und ')} vorhanden.`
         });
       }
 
-      const deleteQuery = "DELETE FROM activities WHERE id = $1 AND organization_id = $2";
-      const { rowCount } = await db.query(deleteQuery, [activityId, req.user.organization_id]);
+      // Abgelehnte Antraege samt ihrer Nachweisfotos entfernen, dann die
+      // Aktivitaet. In einer Transaktion, damit bei einem Fehler nichts
+      // halb Geloeschtes zurueckbleibt.
+      const client = await db.getClient();
+      let rowCount = 0;
+      let fotosZumLoeschen = [];
+      try {
+        await client.query('BEGIN');
+        if (requestCheck.rejected > 0) {
+          const { rows: fotos } = await client.query(
+            `SELECT photo_filename FROM activity_requests
+              WHERE activity_id = $1 AND organization_id = $2
+                AND status = 'rejected' AND photo_filename IS NOT NULL`,
+            [activityId, req.user.organization_id]
+          );
+          fotosZumLoeschen = fotos.map(f => f.photo_filename);
+          await client.query(
+            "DELETE FROM activity_requests WHERE activity_id = $1 AND organization_id = $2 AND status = 'rejected'",
+            [activityId, req.user.organization_id]
+          );
+        }
+        const res2 = await client.query(
+          "DELETE FROM activities WHERE id = $1 AND organization_id = $2",
+          [activityId, req.user.organization_id]
+        );
+        rowCount = res2.rowCount;
+        await client.query('COMMIT');
+      } catch (err) {
+        try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
+        throw err;
+      } finally {
+        client.release();
+      }
 
       if (rowCount === 0) {
         return res.status(404).json({ error: 'Aktivität nicht gefunden' });
+      }
+
+      // Nachweisfotos erst NACH dem Commit vom Datentraeger nehmen: Schlaegt das
+      // fehl, bleibt hoechstens eine verwaiste Datei zurueck — kein halb
+      // geloeschter Datenbestand.
+      for (const datei of fotosZumLoeschen) {
+        await deletePhotoFile(datei).catch(err =>
+          console.error('Foto eines abgelehnten Antrags nicht geloescht:', datei, err.message));
       }
 
       res.json({ message: 'Aktivität erfolgreich gelöscht' });
@@ -288,6 +336,50 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
   // PUT (update) an activity request status - zurück zu pending
   // Pfad: PUT /api/activities/requests/:id/reset
+  // Einen abgelehnten Antrag endgueltig entfernen.
+  //
+  // Abgelehnte Antraege sammeln sich an: Fehleingaben, doppelte Meldungen,
+  // Versehen. Sie haben nie zu Punkten gefuehrt und tragen keine Geschichte —
+  // sie dauerhaft aufzubewahren, hat keinen Wert (Nutzerhinweis 23.08.2026).
+  //
+  // Bewusst NUR abgelehnte: Ein offener Antrag wartet auf eine Entscheidung
+  // (dafuer gibt es Genehmigen/Ablehnen), ein genehmigter ist Teil der
+  // Punktegeschichte (dafuer gibt es Zuruecksetzen).
+  router.delete('/requests/:id', rbacVerifier, requireAdmin,
+    [param('id').isInt({ min: 1 }).withMessage('Ungültige ID'), handleValidationErrors],
+    async (req, res) => {
+      const requestId = req.params.id;
+      try {
+        const { rows: [antrag] } = await db.query(
+          `SELECT ar.id, ar.status, ar.photo_filename
+             FROM activity_requests ar
+             JOIN activities a ON ar.activity_id = a.id
+            WHERE ar.id = $1 AND a.organization_id = $2`,
+          [requestId, req.user.organization_id]
+        );
+        if (!antrag) return res.status(404).json({ error: 'Antrag nicht gefunden' });
+
+        if (antrag.status !== 'rejected') {
+          const grund = antrag.status === 'pending'
+            ? 'Offene Anträge werden genehmigt oder abgelehnt, nicht gelöscht.'
+            : 'Genehmigte Anträge gehören zur Punktegeschichte. Setze den Antrag zuerst zurück.';
+          return res.status(409).json({ error: grund });
+        }
+
+        await db.query('DELETE FROM activity_requests WHERE id = $1', [requestId]);
+
+        if (antrag.photo_filename) {
+          await deletePhotoFile(antrag.photo_filename).catch(err =>
+            console.error('Foto des geloeschten Antrags nicht entfernt:', err.message));
+        }
+
+        res.json({ message: 'Antrag gelöscht' });
+      } catch (err) {
+        console.error('Database error in DELETE /requests/:id:', err);
+        res.status(500).json({ error: 'Datenbankfehler' });
+      }
+    });
+
   router.put('/requests/:id/reset', rbacVerifier, requireAdmin, [param('id').isInt({ min: 1 }).withMessage('Ungültige ID'), handleValidationErrors], async (req, res) => {
     const requestId = req.params.id;
 

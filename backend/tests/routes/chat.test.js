@@ -931,7 +931,7 @@ describe('Chat Routes', () => {
     let orgAdmin1Token;
 
     beforeEach(() => {
-      orgAdmin1Token = generateToken('orgadmin1');
+      orgAdmin1Token = generateToken('orgAdmin1');
     });
 
     it('Leitung kann einen fremden Direktchat NICHT lesen -> 403', async () => {
