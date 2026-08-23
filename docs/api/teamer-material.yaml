@@ -1,0 +1,1237 @@
+# =====================================================================
+# Konfi Quest API - OpenAPI 3.1 - BLOCK 3 von 3
+# Dokumentierte Dateien (Stand main, 23.08.2026, am Code verifiziert):
+#   backend/routes/teamer.js   -> Prefix /api/teamer   (21 Routen)
+#   backend/routes/material.js -> Prefix /api/material (13 Routen)
+#   backend/routes/wrapped.js  -> Prefix /api/wrapped  (5 Routen)
+#
+# Mount-Prefixe geprueft in backend/createApp.js (Zeilen 442-446):
+#   app.use('/api/teamer',   require('./routes/teamer')(...))
+#   app.use('/api/wrapped',  wrappedRouter)          // aus routes/wrapped.js
+#   app.use('/api/material', require('./routes/material')(...))
+#
+# Rollen: super_admin, org_admin, admin, teamer, konfi
+# Middleware (backend/middleware/rbac.js):
+#   verifyTokenRBAC  = JWT pruefen, User inkl. aktiver Organisation (Header
+#                      X-Active-Organization) und assigned_jahrgaenge laden.
+#                      In den Route-Dateien heisst dieselbe Middleware
+#                      "rbacVerifier".
+#   requireOrgAdmin  = requireRole('org_admin')
+#   requireAdmin     = requireRole('org_admin', 'admin')
+#   requireTeamer    = requireRole('org_admin', 'admin', 'teamer')
+#   requireRole prueft ausschliesslich req.user.role_name - super_admin faellt
+#   damit ueberall auf 403, ausser die Route hat gar keinen Rollen-Guard.
+#
+# =====================================================================
+# SCHWERPUNKT-ANALYSE (alle Aussagen am Code verifiziert)
+# =====================================================================
+#
+# 1. ZWEI SORTEN "TEAMER-ROUTEN" IN EINER DATEI
+#    /api/teamer enthaelt zwei voellig verschiedene Gruppen:
+#    a) SELBSTBEDIENUNG der Teamer:in (profile, konfi-history, badges,
+#       badges/unseen, badges/mark-seen, dashboard, tageslosung,
+#       bible-translation, activities, requests). Diese Routen haengen zwar
+#       an requireTeamer (org_admin/admin/teamer), fuenf von ihnen haben aber
+#       zusaetzlich einen Inline-Check `role_name !== 'teamer' -> 403`:
+#       /profile, /konfi-history, /badges, /badges/unseen, /badges/mark-seen,
+#       /dashboard. Fuer org_admin/admin sind diese Routen also faktisch
+#       gesperrt.
+#       # INKONSISTENZ: /teamer/activities, /teamer/requests (GET/POST/DELETE),
+#       /teamer/tageslosung und PUT /teamer/bible-translation haben diesen
+#       Inline-Check NICHT. Ein org_admin/admin kann dort Teamer-Antraege
+#       stellen und loeschen und seine Bibeluebersetzung setzen. Praktisch
+#       harmlos (immer nur eigene Daten), aber das Muster ist uneinheitlich.
+#    b) LEITUNGS-EINSICHT in Teamer:innen (/:userId/badges,
+#       /:userId/certificates, /certificate-types/*). requireAdmin bzw.
+#       requireOrgAdmin, kein Teamer-Zugriff.
+#
+# 2. JAHRGANGSGRENZE (assigned_jahrgaenge)
+#    GREIFT genau EINMAL in diesen drei Dateien:
+#    - GET /api/teamer/konfis: Rolle 'teamer' sieht nur Konfis der
+#      can_view-Jahrgaenge; ohne Zuweisung kommt eine LEERE Liste. Fuer
+#      org_admin/admin entfaellt der Filter (alle Konfis der Org).
+#    GREIFT NIRGENDS SONST. Insbesondere:
+#    - /api/material/* kennt ueberhaupt keine Jahrgangsgrenze. Material kann
+#      zwar Jahrgaengen zugeordnet werden (material_jahrgaenge, Filter
+#      ?jahrgang_id), das ist aber reine Ablage-Struktur: GET /api/material
+#      liefert ohne Query-Filter ALLE Materialien der Organisation an jede
+#      Teamer:in, auch solche, die ausschliesslich fremden Jahrgaengen
+#      zugeordnet sind. Gleiches gilt fuer GET /api/material/{id} und den
+#      Datei-Download GET /api/material/files/{fileRef}.
+#      # HINWEIS M1: Wer Material als "nur fuer Jahrgang X" ablegt, sollte
+#      wissen, dass die Zuordnung nicht als Berechtigung wirkt.
+#    - POST /api/wrapped/generate/{jahrgangId}: requireAdmin, Jahrgang nur
+#      org-geprueft. Ein 'admin' kann fuer JEDEN Jahrgang der Org Wrapped
+#      erzeugen und damit freigeben - passt zum Muster der uebrigen
+#      Admin-Routen, ist aber keine Jahrgangs-Beschraenkung.
+#
+# 3. ORG-SCOPE - WO ER FEHLT ODER ANDERS GREIFT
+#    Fast alle Routen filtern konsequent auf req.user.organization_id.
+#    Abweichungen (am Code belegt):
+#    - # HINWEIS W1: GET /api/wrapped/me liest wrapped_snapshots NUR ueber
+#      user_id + wrapped_type, ohne organization_id. Fuer Multi-Org-User
+#      (Header X-Active-Organization) kommt damit der neueste Snapshot
+#      zurueck, egal aus welcher Organisation er stammt. Es sind immer die
+#      EIGENEN Daten, aber der Org-Kontext wird ignoriert.
+#    - # HINWEIS W2: GET /api/wrapped/history/{userId} prueft die
+#      Org-Zugehoerigkeit der Zielperson gegen users.organization_id, also
+#      gegen die PRIMAER-Organisation, nicht gegen die aktive Org aus dem
+#      Header. Die Snapshot-Query selbst filtert ebenfalls nur auf user_id.
+#      Bei Multi-Org-Setups kann ein Admin damit Snapshots sehen, die in einer
+#      anderen Organisation entstanden sind.
+#    - # HINWEIS W3: DELETE /api/wrapped/{jahrgangId} loescht ueber
+#      `jahrgang_id = $1 AND organization_id = $2`. Teamer-Snapshots haben
+#      kein jahrgang_id (der Teamer-INSERT setzt die Spalte nicht) und werden
+#      deshalb von dieser Route nie geloescht. Es gibt keinen Endpunkt, der
+#      Teamer-Wrapped wieder entfernt.
+#    - # HINWEIS T1: POST /api/teamer/requests prueft die Idempotenz-client_id
+#      per `WHERE client_id = $1` OHNE user_id/organization_id. Existiert die
+#      UUID bereits, wird der fremde Datensatz mit 200 zurueckgegeben (er
+#      enthaelt user_id, comment, photo_filename, status). Da client_id eine
+#      clientseitig erzeugte UUIDv4 ist, ist das praktisch nicht erratbar -
+#      aber die Konfi-Variante in routes/konfi.js hat denselben Schnitt, es
+#      ist also ein durchgaengiges Muster, kein Einzelfall.
+#    - # HINWEIS T2: GET /api/teamer/{userId}/certificates filtert
+#      user_certificates auf user_id + organization_id, prueft aber NICHT,
+#      ob der Ziel-User ueberhaupt die Rolle 'teamer' hat - anders als
+#      GET /api/teamer/{userId}/badges und POST /api/teamer/{userId}/certificates,
+#      die auf r.name = 'teamer' pruefen. Folge ist lediglich, dass ein Admin
+#      fuer beliebige User-IDs der eigenen Org eine (in der Praxis leere)
+#      Zertifikatsliste abrufen kann.
+#    - # HINWEIS T3: DELETE /api/teamer/certificate-types/{id} zaehlt die
+#      Verwendung mit `SELECT COUNT(*) FROM user_certificates WHERE
+#      certificate_type_id = $1` OHNE organization_id. Der Typ selbst wird
+#      org-gescopt geloescht, aber die 409-Sperre kann durch Zertifikate einer
+#      FREMDEN Organisation ausgeloest werden. Auswirkung: ein org-eigener Typ
+#      laesst sich unter Umstaenden nicht loeschen, obwohl er in der eigenen
+#      Org unbenutzt ist. Kein Datenabfluss, aber ein Fehlverhalten.
+#
+# 4. DATEIEN (Material-Uploads)
+#    - Upload: POST /api/material/{id}/files, requireAdmin, multer
+#      memoryStorage, Limit 20 MB, max 10 Dateien pro Request
+#      (createApp.js:149). Zweistufige Pruefung: multer-fileFilter auf die
+#      gemeldete MIME-Liste, danach Magic-Bytes-Pruefung mit file-type auf
+#      dem Buffer (415 bei Nichtuebereinstimmung). text/plain und text/csv
+#      sind von der Magic-Bytes-Pruefung ausgenommen, weil sie keine Signatur
+#      haben.
+#    - Ablage: AES-256-GCM-verschluesselt (utils/photoCrypto), zufaelliger
+#      64-Hex-Dateiname in backend/uploads/material. Das Verzeichnis wird
+#      nicht statisch ausgeliefert.
+#    - Abruf: GET /api/material/files/{fileRef}, requireTeamer. Der Dateiname
+#      wird durch path.basename und einen /^[a-f0-9]{64}$/-Test gefuehrt
+#      (Path-Traversal-Schutz), die Org-Zugehoerigkeit ueber den JOIN auf
+#      materials.organization_id geprueft.
+#    -> Konfis haben auf /api/material KEINEN Zugriff (requireTeamer auf allen
+#       13 Routen).
+#
+# 5. WER DARF WAS SCHREIBEN (Kurzfassung ueber alle drei Dateien)
+#    org_admin allein: Zertifikat-Typen anlegen/aendern/loeschen, Zertifikate
+#      zuweisen/entfernen, Teamer-Wrapped generieren, Wrapped eines Jahrgangs
+#      loeschen.
+#    org_admin + admin: Material und Material-Tags anlegen/aendern/loeschen,
+#      Dateien hoch- und wieder herunterladen bzw. loeschen, Konfi-Wrapped
+#      eines Jahrgangs generieren, Teamer-Badges und -Zertifikate einsehen.
+#    org_admin + admin + teamer: Material und Tags LESEN, Dateien
+#      herunterladen, Teamer-Aktivitaeten sehen und Antraege stellen/loeschen.
+#    Punkte werden in diesen drei Dateien NICHT direkt vergeben. Teamer-Punkte
+#    entstehen erst, wenn ein Antrag aus POST /api/teamer/requests ueber
+#    PUT /api/admin/activities/requests/{id} (Block 2) genehmigt wird.
+#
+# ZUSAMMENFASSUNG DER BEFUNDE IN DIESEM BLOCK:
+#   M1  Material kennt keine Jahrgangsgrenze - jede Teamer:in sieht und laedt
+#       alles Material der Organisation, auch fremden Jahrgaengen zugeordnetes.
+#   W1  GET /api/wrapped/me ohne organization_id-Filter (Multi-Org).
+#   W2  GET /api/wrapped/history/{userId} prueft Primaer-Org statt aktiver Org.
+#   W3  DELETE /api/wrapped/{jahrgangId} erreicht Teamer-Snapshots nicht -
+#       Teamer-Wrapped ist nicht loeschbar.
+#   T1  POST /api/teamer/requests: client_id-Idempotenz ohne user/org-Scope.
+#   T2  GET /api/teamer/{userId}/certificates ohne Rollen-Pruefung.
+#   T3  DELETE /api/teamer/certificate-types/{id}: 409-Sperre zaehlt
+#       organisationsuebergreifend.
+#   T4  Inline-Check "nur Rolle teamer" nur auf 6 von 12 Selbstbedienungs-
+#       Routen - uneinheitlich.
+# =====================================================================
+openapi: 3.1.0
+info:
+  title: Konfi Quest API - Teamer, Material & Wrapped (Block 3)
+  version: "1.0.0"
+  description: >
+    Teil 3 der API-Dokumentation: Teamer-Selbstbedienung und
+    Teamer-Verwaltung (/api/teamer), Materialverwaltung mit Dateien
+    (/api/material) und Jahresrueckblick (/api/wrapped). Berechtigungen sind
+    je Route in der Erweiterung x-berechtigung dokumentiert.
+servers:
+  - url: https://konfi-quest.de
+security:
+  - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        JWT im Authorization-Header. Optional Header X-Active-Organization
+        (Multi-Org): schaltet die aktive Organisation um, sofern der User dort
+        Mitglied ist (sonst 403).
+  parameters:
+    pathId:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+    pathUserId:
+      name: userId
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+    pathJahrgangId:
+      name: jahrgangId
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+    Message:
+      type: object
+      properties:
+        message: { type: string }
+  responses:
+    Unauthorized:
+      description: Kein/ungueltiges/abgelaufenes Token, inaktiver Account oder inaktive Organisation
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Forbidden:
+      description: Rolle nicht erlaubt oder kein Zugriff auf das Objekt
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    NotFound:
+      description: Objekt nicht gefunden (in der aktiven Organisation)
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    ServerError:
+      description: Datenbank-/Serverfehler
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+
+paths:
+  # ===================================================================
+  # backend/routes/teamer.js  (Prefix /api/teamer)
+  # Guards: requireTeamer (org_admin/admin/teamer), requireAdmin
+  # (org_admin/admin), requireOrgAdmin (nur org_admin). Sechs
+  # Selbstbedienungs-Routen haben zusaetzlich einen Inline-Check auf
+  # role_name === 'teamer' (siehe Analyse Punkt 1).
+  # ===================================================================
+  /api/teamer/profile:
+    get:
+      summary: Eigenes Teamer-Profil inkl. eingefrorener Konfi-Vergangenheit
+      description: >
+        Stammdaten der eingeloggten Teamer:in (display_name, username, E-Mail,
+        role_title, teamer_since, Organisation, bible_translation). Existiert
+        ein konfi_profiles-Datensatz aus der Konfi-Zeit, wird er als
+        konfi_data mitgeliefert (eingefrorene Punkte, Jahrgangsname, damals
+        erreichte Badges); sonst ist konfi_data null. Die Erkennung haengt am
+        Vorhandensein des Profils, nicht am Jahrgangsnamen - ein geloeschter
+        Jahrgang setzt nur jahrgang_name auf leer, die Punkte bleiben sichtbar.
+      x-berechtigung:
+        rollen: [teamer]
+        middleware: [verifyTokenRBAC, "Inline-Check role_name === 'teamer'"]
+        org-scope: false
+        objekt-pruefung: "nur eigene Daten (WHERE id/user_id = req.user.id)"
+        hinweis: >
+          Kein requireTeamer, sondern ein eigener Inline-Guard. Die
+          User-Abfrage laeuft ueber WHERE u.id = $1 ohne organization_id -
+          unkritisch, da es die eigene Zeile ist.
+      responses:
+        "200":
+          description: Profil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    properties:
+                      display_name: { type: string }
+                      username: { type: string }
+                      email: { type: string }
+                      role_title: { type: string }
+                      teamer_since: { type: [string, "null"], format: date }
+                      organization_name: { type: string }
+                      bible_translation: { type: string }
+                  konfi_data:
+                    type: [object, "null"]
+                    description: "gottesdienst_points, gemeinde_points, jahrgang_name, badges[] - null bei Teamer:innen ohne Konfi-Vergangenheit"
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { description: "Aufrufer ist kein Teamer (org_admin/admin bekommen hier 403)" }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/teamer/konfis:
+    get:
+      summary: Konfis der zugewiesenen Jahrgaenge (Auswahl fuer Direktnachrichten)
+      description: >
+        Liste der Konfis fuer die Chat-Auswahl. Fuer die Rolle teamer werden
+        nur Konfis der can_view-Jahrgaenge geliefert; ohne jede Zuweisung
+        kommt eine leere Liste. org_admin und admin erhalten alle Konfis der
+        Organisation. Geloeschte Konfis (deleted_at) sind ausgeschlossen.
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "Rolle teamer: Jahrgangsgrenze ueber assigned_jahrgaenge mit can_view; org_admin/admin: kein Jahrgangsfilter"
+        hinweis: >
+          Die einzige Route dieser drei Dateien, in der die Jahrgangsgrenze
+          tatsaechlich greift. Anders als bei GET /api/events greift sie hier
+          auch bei leerer Zuweisung (leere Liste statt Vollzugriff).
+      responses:
+        "200": { description: "Array (id, name, username, jahrgang_name, jahrgang_id)" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/teamer/konfi-history:
+    get:
+      summary: Eigene Punkte-Historie aus der Konfi-Zeit
+      description: >
+        Fuer befoerderte Teamer:innen: alle Aktivitaeten, Bonuspunkte und
+        Event-Punkte aus der Konfi-Zeit, nach Datum absteigend
+        zusammengefuehrt, plus die eingefrorenen Summen aus konfi_profiles.
+      x-berechtigung:
+        rollen: [teamer]
+        middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]
+        org-scope: true
+        objekt-pruefung: "nur eigene Daten (user_id = Token) und nur die eigene Organisation"
+      responses:
+        "200": { description: "history[] (id, title, points, category, date, comment, source_type activity|bonus|event) + totals {gottesdienst, gemeinde, total}" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { description: "Aufrufer ist kein Teamer" }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/teamer/badges:
+    get:
+      summary: Eigene Teamer-Abzeichen mit Fortschritt
+      description: >
+        Alle Abzeichen der Organisation mit target_role='teamer' (aktive plus
+        bereits erreichte inaktive) samt earned-Status und berechnetem
+        Fortschritt. Der Fortschritt wird pro Kriterium bestimmt und ist
+        bewusst deckungsgleich mit der Wertung in routes/badges.js:
+        activity_count, event_count, unique_activities, teamer_year (nur Jahre
+        ab users.teamer_since), category_activities, specific_activity,
+        activity_combination, streak und time_based. Punkte-Kriterien
+        (total_points etc.) sind fuer Teamer irrelevant und liefern 0;
+        collection und yearly sind in der Wertung noch nicht implementiert und
+        liefern ebenfalls 0.
+      x-berechtigung:
+        rollen: [teamer]
+        middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]
+        org-scope: true
+        objekt-pruefung: "nur eigene Daten; alle Teilabfragen mit user_id + organization_id"
+      responses:
+        "200": { description: "Array von Abzeichen (custom_badges.* + earned, awarded_date, progress_points, progress_percentage)" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { description: "Aufrufer ist kein Teamer" }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/teamer/badges/unseen:
+    get:
+      summary: Anzahl der noch nicht gesehenen eigenen Abzeichen
+      x-berechtigung:
+        rollen: [teamer]
+        middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]
+        org-scope: true
+        objekt-pruefung: "nur eigene user_badges (user_id + organization_id)"
+        hinweis: >
+          Zaehlt alle ungesehenen user_badges, ohne auf target_role='teamer'
+          einzuschraenken. Bei befoerderten Konfis koennen darin auch alte
+          Konfi-Abzeichen stecken.
+      responses:
+        "200": { description: "unseen (Anzahl)" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { description: "Aufrufer ist kein Teamer" }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/teamer/badges/mark-seen:
+    put:
+      summary: Eigene Abzeichen als gesehen markieren
+      x-berechtigung:
+        rollen: [teamer]
+        middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]
+        org-scope: true
+        objekt-pruefung: "UPDATE nur auf eigene user_badges (user_id + organization_id)"
+      responses:
+        "200": { description: Abzeichen als gesehen markiert }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { description: "Aufrufer ist kein Teamer" }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/teamer/{userId}/badges:
+    get:
+      summary: Erreichte Abzeichen einer Teamer:in (Leitungs-Einsicht)
+      description: >
+        Fuer die Teamer-Detailseite der Leitung. Liefert bewusst nur die
+        erreichten Abzeichen ohne Fortschrittsberechnung - die teure Berechnung
+        aus GET /api/teamer/badges waere hier ungenutzt. Der Zielbenutzer muss
+        die Rolle teamer haben, zur eigenen Organisation gehoeren und darf
+        nicht geloescht sein.
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin]
+        org-scope: true
+        objekt-pruefung: "Ziel-User muss Rolle 'teamer' haben, zur aktiven Org gehoeren und deleted_at IS NULL (sonst 404); Abzeichen nur target_role='teamer'"
+      parameters: [ { $ref: '#/components/parameters/pathUserId' } ]
+      responses:
+        "200": { description: "earned[] (id, name, description, icon, color, criteria_type, criteria_value, is_hidden, earned_at)" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { description: "Teamer:in nicht gefunden (fremde Org, falsche Rolle oder geloescht)" }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/teamer/certificate-types:
+    get:
+      summary: Aktive Zertifikat-Typen der Organisation auflisten
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin]
+        org-scope: true
+        objekt-pruefung: "nur is_active = true der eigenen Org; keine personenbezogenen Daten"
+        hinweis: >
+          Lesen ist requireAdmin, Schreiben requireOrgAdmin. Teamer:innen sehen
+          ihre Zertifikate ausschliesslich ueber GET /api/teamer/dashboard.
+      responses:
+        "200": { description: "Array (id, name, icon, is_active, created_at)" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+    post:
+      summary: Zertifikat-Typ anlegen
+      description: Icon-Vorgabe 'ribbon', wenn nichts angegeben wird. Der Name ist je Organisation eindeutig.
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin, validateCreateCertificateType]
+        org-scope: true
+        objekt-pruefung: "organization_id wird serverseitig aus dem Token gesetzt"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 100 }
+                icon: { type: string, maxLength: 50, default: ribbon }
+      responses:
+        "201": { description: "id, name, icon, is_active, created_at" }
+        "400": { description: Name fehlt oder ist leer }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "409": { description: Name in dieser Organisation bereits vergeben }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/teamer/certificate-types/{id}:
+    put:
+      summary: Zertifikat-Typ bearbeiten
+      description: Teilaktualisierung von name, icon und is_active. Ohne aenderbares Feld kommt 400.
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin, validateUpdateCertificateType]
+        org-scope: true
+        objekt-pruefung: "UPDATE mit organization_id-Bedingung (404 sonst)"
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, minLength: 1, maxLength: 100 }
+                icon: { type: string, maxLength: 50 }
+                is_active: { type: boolean }
+      responses:
+        "200": { description: Aktualisiert }
+        "400": { description: Leerer Name oder keine Aenderungen angegeben }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "409": { description: Name in dieser Organisation bereits vergeben }
+        "500": { $ref: '#/components/responses/ServerError' }
+    delete:
+      summary: Zertifikat-Typ loeschen (nur wenn nirgends vergeben)
+      description: >
+        Vor dem Loeschen wird geprueft, ob der Typ bereits an Teamer:innen
+        vergeben wurde; in dem Fall kommt 409.
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin]
+        org-scope: true
+        objekt-pruefung: "DELETE mit organization_id-Bedingung (404 sonst)"
+        hinweis: >
+          # BEFUND T3: Die Verwendungspruefung zaehlt user_certificates nur
+          ueber certificate_type_id, ohne organization_id. Zertifikate einer
+          fremden Organisation koennen die 409-Sperre ausloesen, obwohl der Typ
+          in der eigenen Org unbenutzt ist. Kein Datenabfluss, aber der Typ
+          laesst sich dann nicht loeschen.
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      responses:
+        "200": { description: Geloescht }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "409": { description: Typ ist bereits vergeben und kann nicht geloescht werden }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/teamer/{userId}/certificates:
+    get:
+      summary: Zertifikate einer Teamer:in auflisten (Leitungs-Einsicht)
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin]
+        org-scope: true
+        objekt-pruefung: "user_certificates gefiltert auf user_id + organization_id"
+        hinweis: >
+          # BEFUND T2: Anders als die Badge- und die POST-Variante prueft diese
+          Route NICHT, ob der Ziel-User die Rolle 'teamer' hat. Fuer beliebige
+          User-IDs der eigenen Org kommt daher 200 mit (in der Praxis) leerer
+          Liste statt 404.
+      parameters: [ { $ref: '#/components/parameters/pathUserId' } ]
+      responses:
+        "200": { description: "Array (id, issued_date, expiry_date, created_at, certificate_type_id, name, icon)" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+    post:
+      summary: Zertifikat an eine Teamer:in vergeben
+      description: >
+        Prueft, dass der Ziel-User zur eigenen Organisation gehoert und die
+        Rolle teamer hat, und dass der Zertifikat-Typ zur Organisation gehoert
+        und aktiv ist. Nach dem Speichern gehen eine Push-Nachricht und ein
+        Live-Update an die Empfaenger:in; Fehler dabei kippen die Vergabe nicht.
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin, validateCertificate]
+        org-scope: true
+        objekt-pruefung: "Ziel-User: organization_id + Rolle 'teamer' (404 sonst); certificate_type: organization_id + is_active (404 sonst)"
+      parameters: [ { $ref: '#/components/parameters/pathUserId' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [certificate_type_id, issued_date]
+              properties:
+                certificate_type_id: { type: integer, minimum: 1 }
+                issued_date: { type: string, format: date }
+                expiry_date: { type: string, format: date }
+      responses:
+        "201": { description: "message, id, issued_date, expiry_date" }
+        "400": { description: Pflichtfelder fehlen oder Datum ungueltig }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { description: Teamer:in oder Zertifikat-Typ nicht gefunden bzw. Typ inaktiv }
+        "409": { description: Dieses Zertifikat ist der Teamer:in bereits zugewiesen }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/teamer/{userId}/certificates/{certId}:
+    delete:
+      summary: Zertifikat einer Teamer:in entfernen
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin]
+        org-scope: true
+        objekt-pruefung: "DELETE mit id + user_id + organization_id (404 sonst)"
+      parameters:
+        - { $ref: '#/components/parameters/pathUserId' }
+        - name: certId
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "200": { description: Entfernt }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/teamer/dashboard:
+    get:
+      summary: Teamer-Dashboard (Zertifikate, Termine, Abzeichen, Konfiguration)
+      description: >
+        Liefert Begruessung, alle aktiven Zertifikat-Typen der Organisation mit
+        eigenem Status (valid | expired | not_earned), die naechsten bis zu
+        fuenf zukuenftigen, nicht abgesagten Termine, fuer die die Teamer:in
+        selbst gebucht ist, die letzten drei erreichten Teamer-Abzeichen mit
+        Zaehlern sowie die Dashboard-Konfiguration der Organisation
+        (show_zertifikate, show_events, show_badges, show_losung und
+        section_order aus den settings-Schluesseln teamer_dashboard_*). Zuletzt
+        wird geprueft, ob ein Teamer-Wrapped-Snapshot vorliegt.
+      x-berechtigung:
+        rollen: [teamer]
+        middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]
+        org-scope: true
+        objekt-pruefung: "nur eigene Daten; Zertifikate/Abzeichen/Termine mit user_id + organization_id"
+        hinweis: >
+          Die Wrapped-Pruefung fragt wrapped_snapshots nur ueber user_id +
+          wrapped_type ab, ohne organization_id - dieselbe Multi-Org-Unschaerfe
+          wie in GET /api/wrapped/me (Befund W1).
+      responses:
+        "200":
+          description: Dashboard-Daten
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  greeting: { type: object, description: "display_name, hour" }
+                  certificates: { type: array, items: { type: object }, description: "id, name, icon, issued_date, expiry_date, status" }
+                  events: { type: array, items: { type: object }, description: "id, title, event_date, location, teamer_only, teamer_needed, is_registered, booking_status" }
+                  badges: { type: object, description: "recent[], earned_count, total_count" }
+                  config: { type: object, description: "show_zertifikate, show_events, show_badges, show_losung, section_order" }
+                  has_wrapped: { type: boolean }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { description: "Aufrufer ist kein Teamer" }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/teamer/tageslosung:
+    get:
+      summary: Tageslosung in der eigenen Bibeluebersetzung (Teamer-Sicht)
+      description: >
+        Beachtet den Organisations-Schalter teamer_dashboard_show_losung: ist
+        er auf false oder 0 gesetzt, kommt 204 ohne Inhalt. Sonst wird die
+        Losung in der eigenen Uebersetzung geladen (DB-Cache im Service). Bei
+        einem Fehler wird die zuletzt gecachte Losung mit fallback: true
+        ausgeliefert, statt die Karte leer zu lassen.
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "liest den Org-Schalter und die eigene Uebersetzungs-Praeferenz"
+        hinweis: >
+          # BEFUND T4: Kein Inline-Check auf role_name === 'teamer', anders als
+          bei /profile, /dashboard und den Badge-Routen. org_admin und admin
+          koennen diese Route ebenfalls aufrufen. Gegenstueck fuer Konfis ist
+          GET /api/konfi/tageslosung mit eigenem Schalter.
+      responses:
+        "200": { description: "success, data (losung, lehrtext), translation, ggf. fallback: true" }
+        "204": { description: Tageslosung im Teamer-Dashboard der Organisation abgeschaltet }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { description: Losung konnte nicht geladen werden und es lag keine gecachte Losung vor }
+
+  /api/teamer/bible-translation:
+    put:
+      summary: Bibeluebersetzung fuer die Tageslosung setzen (Teamer-Sicht)
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: false
+        objekt-pruefung: "UPDATE users SET bible_translation WHERE id = req.user.id - nur das eigene Profil"
+        hinweis: >
+          # BEFUND T4: kein Inline-Teamer-Check. Die Pruefung der Uebersetzung
+          erfolgt inline im Handler (keine validateBibleTranslation-Middleware
+          wie in der Konfi-Route).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [translation]
+              properties:
+                translation: { type: string, enum: [LUT, ELB, GNB, BIGS, NIV, LSG, RVR60] }
+      responses:
+        "200": { description: "success, message, translation" }
+        "400": { description: "Ungueltige Uebersetzung (Antwort enthaelt valid_translations)" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/teamer/activities:
+    get:
+      summary: Beantragbare Teamer-Aktivitaeten auflisten
+      description: Aktivitaeten der Organisation mit target_role='teamer', mit zusammengefassten Kategorienamen.
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "keine personenbezogenen Daten"
+        hinweis: >
+          Anders als GET /api/konfi/activities wird hier NICHT auf die im
+          Jahrgang aktivierten Punkt-Typen gefiltert - Teamer haengen an keinem
+          Jahrgang.
+      responses:
+        "200": { description: "Array (id, name, points, type, category_names)" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/teamer/requests:
+    get:
+      summary: Eigene Teamer-Antraege auflisten
+      description: Nur Antraege zu Aktivitaeten mit target_role='teamer', neueste zuerst.
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "nur eigene Antraege (user_id = Token, organization_id)"
+      responses:
+        "200": { description: "Array (activity_requests.* + activity_name, activity_points, activity_type, activity_target_role)" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+    post:
+      summary: Neuen Teamer-Antrag einreichen
+      description: >
+        Legt einen Antrag mit status pending an. Idempotent ueber optionale
+        client_id (UUID): existiert der Antrag bereits, kommt 200 mit dem
+        bestehenden Datensatz. Danach werden eine Bestaetigungs-Benachrichtigung
+        an die Antragstellerin, eine Push-Nachricht an alle Admins der
+        Organisation und ein Live-Update ausgeloest; Fehler dabei kippen den
+        Antrag nicht.
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer, validateCreateTeamerRequest]
+        org-scope: true
+        objekt-pruefung: "Aktivitaet muss zur eigenen Org gehoeren UND target_role='teamer' haben (404 sonst); user_id wird aus dem Token gesetzt"
+        hinweis: >
+          # BEFUND T1: Der Idempotenz-Check laeuft ueber
+          `WHERE client_id = $1` ohne user_id/organization_id. Eine bereits
+          vergebene UUID liefert den fremden Datensatz mit 200 zurueck. In der
+          Praxis nicht erratbar (UUIDv4) und identisch zur Konfi-Route
+          POST /api/konfi/requests.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [activity_id, requested_date]
+              properties:
+                activity_id: { type: integer, minimum: 1 }
+                requested_date: { type: string, format: date }
+                description: { type: string, description: "Kommentar (Spalte comment)" }
+                photo_filename: { type: string, description: "Dateiname aus POST /api/konfi/upload-photo (steht auch Teamern offen)" }
+                client_id: { type: string, format: uuid }
+      responses:
+        "200": { description: Bereits vorhandener Antrag (Idempotenz ueber client_id) }
+        "201": { description: "id + message" }
+        "400": { description: Validierungsfehler (activity_id, requested_date, client_id) }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { description: Aktivitaet nicht gefunden oder keine Teamer-Aktivitaet }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/teamer/requests/{id}:
+    delete:
+      summary: Eigenen offenen Teamer-Antrag loeschen
+      description: Nur Antraege mit status pending. Danach Live-Update an die Leitung.
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer, "param('id').isInt", handleValidationErrors]
+        org-scope: true
+        objekt-pruefung: "nur eigener Antrag (id + user_id + organization_id, 404 sonst)"
+        hinweis: >
+          Anders als DELETE /api/konfi/requests/{id} wird hier KEIN
+          zugehoeriges Nachweisfoto mitgeloescht - die Datei bleibt in
+          uploads/ liegen.
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      responses:
+        "200": { description: Geloescht }
+        "400": { description: Antrag ist nicht mehr pending }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  # ===================================================================
+  # backend/routes/material.js  (Prefix /api/material)
+  # Lesen und Herunterladen: requireTeamer (org_admin, admin, teamer).
+  # Alles Schreibende: requireAdmin (org_admin, admin).
+  # Konfis haben auf keine dieser Routen Zugriff.
+  # Keine Route kennt eine Jahrgangsgrenze (Befund M1).
+  # ===================================================================
+  /api/material/tags:
+    get:
+      summary: Material-Tags der Organisation auflisten
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "keine personenbezogenen Daten"
+      responses:
+        "200": { description: "Array (id, name, created_at)" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+    post:
+      summary: Material-Tag anlegen
+      description: Der Name ist je Organisation eindeutig. Danach Live-Update an die Leitung.
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, validateCreateTag]
+        org-scope: true
+        objekt-pruefung: "organization_id wird serverseitig aus dem Token gesetzt"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 100 }
+      responses:
+        "201": { description: "id, name, created_at" }
+        "400": { description: Name fehlt oder ist leer }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "409": { description: Tag mit diesem Namen existiert bereits }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/material/tags/{id}:
+    put:
+      summary: Material-Tag umbenennen
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, validateUpdateTag]
+        org-scope: true
+        objekt-pruefung: "UPDATE mit organization_id-Bedingung (404 sonst)"
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 100 }
+      responses:
+        "200": { description: "id, name" }
+        "400": { description: Name fehlt oder ist leer }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "409": { description: Tag mit diesem Namen existiert bereits }
+        "500": { $ref: '#/components/responses/ServerError' }
+    delete:
+      summary: Material-Tag loeschen
+      description: Die Zuordnungen zu Materialien werden per CASCADE mitgeloescht; die Materialien selbst bleiben erhalten.
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin]
+        org-scope: true
+        objekt-pruefung: "DELETE mit organization_id-Bedingung (404 sonst)"
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      responses:
+        "200": { description: Geloescht }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/material:
+    get:
+      summary: Materialien der Organisation auflisten (mit Filtern)
+      description: >
+        Alle Materialien der aktiven Organisation, neueste zuerst, jeweils mit
+        Zaehlern (Dateien, Termine, Jahrgaenge) sowie den zugeordneten Tags,
+        Terminen und Jahrgaengen. Optionale Filter: tag_id, event_id,
+        jahrgang_id und eine Volltextsuche (search) ueber Titel und
+        Beschreibung.
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "nur materials.organization_id; keine weitere Pruefung"
+        hinweis: >
+          # BEFUND M1: keine Jahrgangsgrenze. Der Filter jahrgang_id ist eine
+          reine Ansichtshilfe - ohne ihn sieht jede Teamer:in auch Material,
+          das ausschliesslich fremden Jahrgaengen zugeordnet ist. Die
+          Filter-Parameter selbst werden nicht auf die Organisation geprueft,
+          was aber folgenlos ist, da die Zuordnungstabellen ohnehin nur
+          org-eigene Materialien treffen.
+      parameters:
+        - name: tag_id
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: search
+          in: query
+          required: false
+          schema: { type: string }
+          description: Teilstring-Suche in Titel und Beschreibung
+        - name: event_id
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: jahrgang_id
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200": { description: "Array (id, title, description, created_at, created_by_name, file_count, event_count, jahrgang_count, tags[], events[], jahrgaenge[])" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+    post:
+      summary: Material anlegen
+      description: >
+        Legt ein Material an und verknuepft es mit Terminen, Jahrgaengen und
+        Tags. Alle uebergebenen IDs werden gegen die eigene Organisation
+        geprueft (utils/orgOwnership.allIdsBelongToOrg); fremde IDs fuehren zu
+        400. Danach Live-Update an die Leitung.
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, validateCreateMaterial]
+        org-scope: true
+        objekt-pruefung: "event_ids, jahrgang_ids und tag_ids muessen der eigenen Org gehoeren (400 sonst); organization_id und created_by aus dem Token"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string, minLength: 1, maxLength: 255 }
+                description: { type: string }
+                event_ids: { type: array, items: { type: integer } }
+                jahrgang_ids: { type: array, items: { type: integer } }
+                tag_ids: { type: array, items: { type: integer } }
+      responses:
+        "201": { description: "id, title, description, created_at" }
+        "400": { description: Titel fehlt oder mindestens eine ID gehoert zu einer fremden Organisation }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/material/by-event/{eventId}:
+    get:
+      summary: Materialien zu einem Termin auflisten
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "materials.organization_id; der Termin selbst wird nicht separat geprueft - ein fremder eventId liefert schlicht eine leere Liste"
+        hinweis: "Keine Jahrgangsgrenze (Befund M1)."
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "200": { description: "Array (id, title, description, created_at, created_by_name, file_count)" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/material/{id}:
+    get:
+      summary: Einzelnes Material mit Dateien, Tags, Terminen und Jahrgaengen
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "Material org-gescopt (404 sonst)"
+        hinweis: "Keine Jahrgangsgrenze (Befund M1)."
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      responses:
+        "200": { description: "id, title, description, created_at, created_by_name, tags[], events[], jahrgaenge[], files[] (id, original_name, stored_name, mime_type, file_size, created_at)" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+    put:
+      summary: Material bearbeiten
+      description: >
+        Teilaktualisierung von Titel und Beschreibung. Werden event_ids,
+        jahrgang_ids oder tag_ids uebergeben, werden die jeweiligen Zuordnungen
+        komplett ersetzt (loeschen und neu setzen); nicht uebergebene Felder
+        bleiben unveraendert. Alle IDs werden gegen die eigene Organisation
+        geprueft.
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, validateUpdateMaterial]
+        org-scope: true
+        objekt-pruefung: "Material muss zur eigenen Org gehoeren (404 sonst); event_ids/jahrgang_ids/tag_ids org-geprueft (400 sonst)"
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string, minLength: 1, maxLength: 255 }
+                description: { type: string }
+                event_ids: { type: array, items: { type: integer } }
+                jahrgang_ids: { type: array, items: { type: integer } }
+                tag_ids: { type: array, items: { type: integer } }
+      responses:
+        "200": { description: Aktualisiert }
+        "400": { description: Mindestens eine ID gehoert zu einer fremden Organisation }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+    delete:
+      summary: Material samt Dateien loeschen
+      description: >
+        Loescht das Material (Zuordnungen und material_files per CASCADE) und
+        entfernt anschliessend die verschluesselten Dateien vom Dateisystem.
+        Ein Fehler beim Loeschen einer Datei wird nur protokolliert.
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin]
+        org-scope: true
+        objekt-pruefung: "DELETE mit organization_id-Bedingung (404 sonst); die Dateiliste wird ueber denselben Org-JOIN ermittelt"
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      responses:
+        "200": { description: Geloescht }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/material/{id}/files:
+    post:
+      summary: Dateien zu einem Material hochladen (verschluesselt at-rest)
+      description: >
+        multipart/form-data, Feld "files", bis zu 10 Dateien pro Request, je
+        max. 20 MB (multer memoryStorage, createApp.js). Zweistufige Pruefung:
+        erst der MIME-Filter von multer (Bilder, PDF, Video, Audio,
+        Office- und OpenDocument-Formate, ZIP, text/plain, text/csv), dann eine
+        Magic-Bytes-Pruefung auf dem Buffer (415 bei Nichtuebereinstimmung;
+        text/plain und text/csv sind ausgenommen, weil sie keine Signatur
+        haben). Gespeichert wird AES-256-GCM-verschluesselt unter einem
+        zufaelligen 64-Hex-Dateinamen.
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, "multer materialUpload.array('files', 10)"]
+        org-scope: true
+        objekt-pruefung: "Material muss zur eigenen Org gehoeren (404 sonst)"
+      parameters: [ { $ref: '#/components/parameters/pathId' } ]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items: { type: string, format: binary }
+                  maxItems: 10
+      responses:
+        "201": { description: "Array der angelegten Dateien (id, original_name, mime_type, file_size, created_at)" }
+        "400": { description: Keine Dateien im Request oder Datei nicht lesbar }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "413": { description: "Datei ueberschreitet 20 MB (globaler Multer-Handler in createApp.js)" }
+        "415": { description: Dateityp nicht verifizierbar (Magic-Bytes) }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/material/files/{fileRef}:
+    get:
+      summary: Material-Datei herunterladen (entschluesselt)
+      description: >
+        Liefert die entschluesselte Datei als Download mit dem urspruenglichen
+        Dateinamen und dem gespeicherten MIME-Typ. Der Pfadparameter wird durch
+        path.basename und einen Test auf genau 64 Hex-Zeichen gefuehrt
+        (Path-Traversal-Schutz).
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "Datei wird ueber JOIN auf materials.organization_id geprueft (404 bei fremder Org); Dateiname muss /^[a-f0-9]{64}$/ erfuellen"
+        hinweis: >
+          # BEFUND M1: keine Jahrgangsgrenze - jede Teamer:in der Organisation
+          kann jede Material-Datei der Organisation herunterladen. Die
+          stored_name-Werte stehen in GET /api/material/{id}.
+      parameters:
+        - name: fileRef
+          in: path
+          required: true
+          description: >
+            Beim GET der 64-stellige stored_name der Datei (aus
+            GET /api/material/{id}), NICHT die numerische id.
+          schema: { type: string, pattern: "^[a-f0-9]{64}$" }
+      responses:
+        "200": { description: Datei als Download (Content-Type aus mime_type, Content-Disposition attachment) }
+        "400": { description: Ungueltiger Dateiname }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { description: Datei nicht gefunden (fremde Org oder auf dem Server nicht vorhanden) }
+        "500": { description: Datei konnte nicht entschluesselt werden / Serverfehler }
+    delete:
+      summary: Einzelne Material-Datei loeschen
+      description: >
+        Loescht den Datenbankeintrag und die Datei vom Dateisystem und setzt
+        updated_at des Materials neu. Ein Fehler beim Loeschen der Datei wird
+        nur protokolliert.
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin]
+        org-scope: true
+        objekt-pruefung: "Datei wird ueber JOIN auf materials.organization_id geprueft (404 sonst)"
+        hinweis: >
+          Achtung, derselbe Pfad wird mit ZWEI verschiedenen Kennungen
+          bedient: der GET erwartet den 64-stelligen stored_name, der DELETE
+          die numerische material_files.id. Im Code sind das zwei getrennte
+          Routen (/files/:filename und /files/:fileId); in OpenAPI muessen sie
+          sich einen Pfad teilen, daher der neutrale Name fileRef.
+      parameters:
+        - name: fileRef
+          in: path
+          required: true
+          description: "Beim DELETE die numerische material_files.id"
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "200": { description: Geloescht }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  # ===================================================================
+  # backend/routes/wrapped.js  (Prefix /api/wrapped)
+  # Der Router exportiert zusaetzlich generateAllKonfiWrapped und
+  # generateAllTeamerWrapped als Funktionen fuer den Cron
+  # (backgroundService) - das sind KEINE HTTP-Routen und daher hier nicht
+  # dokumentiert.
+  # ===================================================================
+  /api/wrapped/me:
+    get:
+      summary: Eigenen Jahresrueckblick abrufen
+      description: >
+        Liefert den neuesten eigenen Wrapped-Snapshot. Die Art richtet sich
+        nach der Rolle: role_name 'teamer' erhaelt wrapped_type 'teamer', alle
+        anderen 'konfi'. Ohne Snapshot kommt 404.
+      x-berechtigung:
+        rollen: ["alle authentifizierten"]
+        middleware: [verifyTokenRBAC]
+        org-scope: false
+        objekt-pruefung: "nur eigene Daten (WHERE user_id = req.user.id)"
+        hinweis: >
+          # BEFUND W1: Die Abfrage filtert NICHT auf organization_id. Bei
+          Multi-Org-Nutzung kommt der neueste Snapshot unabhaengig von der
+          aktiven Organisation zurueck. Es sind immer eigene Daten, aber der
+          Org-Kontext wird ignoriert. Ausserdem gibt es keinen Rollen-Guard:
+          jede authentifizierte Rolle darf die Route aufrufen (fuer
+          org_admin/admin/super_admin ist das Ergebnis in aller Regel 404).
+      responses:
+        "200": { description: "data (Snapshot-JSON), computed_at, year, wrapped_type" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "404": { description: Kein Wrapped-Snapshot vorhanden }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/wrapped/generate/{jahrgangId}:
+    post:
+      summary: Konfi-Jahresrueckblick fuer einen ganzen Jahrgang erzeugen und freigeben
+      description: >
+        Erzeugt (oder ueberschreibt) die Snapshots aller nicht geloeschten
+        Konfis des Jahrgangs parallel, setzt jahrgaenge.wrapped_released_at auf
+        jetzt - damit ist der Rueckblick fuer die Konfis sichtbar - und schickt
+        allen Konfis eine Push-Nachricht. Laeuft in einer Transaktion; ein
+        Fehler bei einzelnen Konfis wird nur gezaehlt (errors), nicht
+        zurueckgerollt.
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, "param('jahrgangId').isInt", handleValidationErrors]
+        org-scope: true
+        objekt-pruefung: "Jahrgang muss zur aktiven Org gehoeren (404 sonst); organization_id der Snapshots kommt aus dem Token"
+        hinweis: >
+          Keine Jahrgangsgrenze: ein 'admin' kann fuer JEDEN Jahrgang der
+          Organisation den Rueckblick erzeugen und freigeben, auch ausserhalb
+          der eigenen Zuweisungen. Teamer:innen haben keinen Zugriff (403).
+      parameters: [ { $ref: '#/components/parameters/pathJahrgangId' } ]
+      responses:
+        "200": { description: "message, generated (Anzahl), errors (Anzahl), jahrgang (Name), year" }
+        "400": { description: Ungueltige jahrgangId }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { description: Jahrgang nicht gefunden (fremde Organisation) }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/wrapped/generate-teamer:
+    post:
+      summary: Teamer-Jahresrueckblick fuer alle Teamer:innen der Organisation erzeugen
+      description: >
+        Erzeugt (oder ueberschreibt) die Snapshots aller Teamer:innen der
+        Organisation nacheinander und schickt ihnen eine Push-Nachricht. Es
+        gibt keine Freigabe-Markierung wie bei den Jahrgaengen - der Rueckblick
+        ist sofort ueber GET /api/wrapped/me abrufbar.
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin]
+        org-scope: true
+        objekt-pruefung: "nur Teamer:innen mit users.organization_id = aktive Org"
+        hinweis: >
+          Die Teamer-Auswahl filtert nicht auf deleted_at (anders als die
+          Konfi-Variante). Geloeschte Teamer:innen bekaemen also weiterhin
+          einen Snapshot, sofern die Zeile noch existiert.
+      responses:
+        "200": { description: "message, generated (Anzahl), errors (Anzahl), year" }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/wrapped/{jahrgangId}:
+    delete:
+      summary: Jahresrueckblick eines Jahrgangs loeschen und Freigabe zuruecknehmen
+      description: >
+        Loescht alle Snapshots des Jahrgangs und setzt
+        jahrgaenge.wrapped_released_at auf NULL, womit der Rueckblick fuer die
+        Konfis wieder verschwindet.
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin, "param('jahrgangId').isInt", handleValidationErrors]
+        org-scope: true
+        objekt-pruefung: "Jahrgang muss zur aktiven Org gehoeren (404 sonst); DELETE mit jahrgang_id + organization_id"
+        hinweis: >
+          # BEFUND W3: Teamer-Snapshots werden ohne jahrgang_id gespeichert und
+          von dieser Route deshalb nie erfasst. Einen Endpunkt zum Loeschen des
+          Teamer-Rueckblicks gibt es nicht.
+      parameters: [ { $ref: '#/components/parameters/pathJahrgangId' } ]
+      responses:
+        "200": { description: "message, deleted (Anzahl geloeschter Snapshots)" }
+        "400": { description: Ungueltige jahrgangId }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { description: Jahrgang nicht gefunden (fremde Organisation) }
+        "500": { $ref: '#/components/responses/ServerError' }
+
+  /api/wrapped/history/{userId}:
+    get:
+      summary: Alle Jahresrueckblicke einer Person auflisten
+      description: >
+        Alle Snapshots (beide Arten, alle Jahre) der angefragten Person, nach
+        Jahr absteigend. Jede Person darf ihre eigene Historie abrufen;
+        daneben duerfen admin und org_admin die Historie von Personen der
+        eigenen Organisation abrufen.
+      x-berechtigung:
+        rollen: ["alle authentifizierten (eigene Daten)", org_admin, admin]
+        middleware: [verifyTokenRBAC, "param('userId').isInt", handleValidationErrors, "Inline-Check Eigentuemer ODER admin/org_admin derselben Org"]
+        org-scope: true
+        objekt-pruefung: >
+          req.user.id === userId erlaubt immer; sonst muss role_name 'admin'
+          oder 'org_admin' sein UND users.organization_id des Ziels der eigenen
+          organization_id entsprechen (403 sonst). Kein requireAdmin-Guard,
+          die Pruefung steht inline im Handler.
+        hinweis: >
+          # BEFUND W2: Die Org-Pruefung nutzt users.organization_id, also die
+          PRIMAER-Organisation der Zielperson, nicht die aktive Org aus dem
+          Header X-Active-Organization. Die Snapshot-Abfrage selbst filtert
+          ausserdem nur auf user_id, ohne organization_id - bei Multi-Org
+          koennen also Snapshots aus einer anderen Organisation mitkommen.
+          Teamer:innen erhalten fuer fremde userIds 403.
+      parameters: [ { $ref: '#/components/parameters/pathUserId' } ]
+      responses:
+        "200": { description: "Array (id, wrapped_type, year, data, computed_at)" }
+        "400": { description: Ungueltige userId }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { description: Weder eigene Daten noch admin/org_admin derselben Organisation }
+        "500": { $ref: '#/components/responses/ServerError' }

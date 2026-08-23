@@ -107,6 +107,17 @@ jobs:
           fi
           echo "API-Referenz ist aktuell."
 
+      - name: OpenAPI aktuell?
+        run: |
+          node scripts/build-openapi.mjs
+          if ! git diff --quiet -- frontend/public/docs/api/openapi.json frontend/public/docs/api/swagger.html; then
+            echo "::error::openapi.json/swagger.html sind nicht auf dem Stand von docs/api/."
+            echo "Neu erzeugen und mitcommitten:  npm --prefix frontend run docs:openapi"
+            git diff --stat -- frontend/public/docs/api/
+            exit 1
+          fi
+          echo "OpenAPI ist aktuell."
+
       - name: Handbuch aktuell?
         run: |
           node scripts/build-handbuch.mjs

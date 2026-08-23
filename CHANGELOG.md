@@ -96,6 +96,14 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Aktivitäten ließen sich nicht mehr löschen, sobald irgendwann ein Antrag
+  darauf gestellt wurde — auch wenn er abgelehnt worden war. Abgelehnte Anträge
+  stehen dem Löschen jetzt nicht mehr im Weg und werden mit entfernt. Gesperrt
+  bleibt nur, was offen ist oder schon Punkte gebracht hat.
+- Abgelehnte Anträge lassen sich einzeln löschen.
+- Sicherheit: Konfis konnten den Punktestand und das Level anderer Konfis
+  ihrer Gemeinde abrufen. Das geht jetzt nur noch für die eigenen Punkte;
+  Leitung und Teamer:innen sehen wie bisher alles.
 - Abzeichen mit den Bedingungen "Spezifische Aktivität" und
   "Aktivitäts-Kombination" wurden nie verliehen: Die im Formular gewählte
   Aktivität kam bei der Prüfung nicht an. Bestehende Abzeichen dieser Art

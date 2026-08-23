@@ -1,0 +1,884 @@
+# ============================================================================
+# Konfi Quest API — Block 4: Stammdaten
+# Dokumentiert: badges, levels, categories, jahrgaenge, settings, roles
+# (27 Routen). organizations.js ist vollstaendig in verwaltung-auth.yaml
+# dokumentiert und wird hier bewusst NICHT wiederholt (Liste am Dateiende).
+# Stand: 2026-08-23, verifiziert am Code (Branch main-Stand des Repos)
+# ============================================================================
+#
+# SCHWERPUNKT-ANALYSE
+#
+# 1. ROLLENHIERARCHIE (utils/roleHierarchy.js, Level 5..1):
+#      super_admin(5) > org_admin(4) > admin(3) > teamer(2) > konfi(1)
+#    Die Rollen-Helper in middleware/rbac.js sind reine Namens-Whitelists:
+#      requireOrgAdmin = requireRole('org_admin')
+#      requireAdmin    = requireRole('org_admin', 'admin')
+#      requireTeamer   = requireRole('org_admin', 'admin', 'teamer')
+#      requireSuperAdmin prueft req.user.is_super_admin (Rolle ODER DB-Flag)
+#    Wichtig: die Rolle super_admin steht in KEINER dieser drei Whitelists.
+#    Sie faellt in badges, categories und jahrgaenge deshalb mit 403 durch,
+#    ausser sie agiert per Multi-Org-Switch als org_admin/admin/teamer.
+#
+# 2. LESE-/SCHREIB-MUSTER DER STAMMDATEN:
+#    - badges, categories, jahrgaenge: lesen requireTeamer, schreiben
+#      requireAdmin. Einheitliches Muster, ueberall zusaetzlich
+#      organization_id im WHERE (kein Cross-Org-Zugriff moeglich).
+#    - levels: KEINE Rollen-Middleware. Lesen darf jede authentifizierte
+#      Rolle der Org (auch konfi), Schreiben prueft der Handler inline gegen
+#      ['org_admin','admin'] — dieselbe Menge wie requireAdmin, nur anders
+#      formuliert. Anders als bei den uebrigen Dateien faellt die Rolle
+#      super_admin hier NICHT durch, weil es keinen requireRole-Guard gibt;
+#      sie erhaelt beim Schreiben aber trotzdem 403 (Inline-Check).
+#    - settings: lesen jede authentifizierte Rolle der Org, schreiben
+#      requireOrgAdmin.
+#    - roles: read-only, Inline-Rollen-Checks statt Middleware
+#      (GET / und GET /:id: super_admin|org_admin; GET /list/assignable
+#      zusaetzlich admin).
+#
+# 3. ORG-SCOPING: Alle 27 Routen dieser Datei filtern auf
+#    req.user.organization_id — es gibt in diesem Block KEINE Route, die
+#    Daten ueber Organisationsgrenzen hinweg liefert. Ausnahme in der
+#    Wirkung, nicht im Scope: DELETE /levels/:id und DELETE
+#    /admin/categories/:id pruefen die Verwendung ueber Zaehl-Queries, die
+#    NICHT auf organization_id filtern (siehe S2/S3 unten).
+#
+# 4. TARGET_ROLE BEI BADGES: custom_badges kennt target_role
+#    ('konfi' | 'teamer'). POST setzt default 'konfi'. Beim PUT wird
+#    target_role NICHT mitgeschrieben — ein bestehender Teamer-Badge kann
+#    per Update also nicht versehentlich zum Konfi-Badge werden, aber auch
+#    nicht umgewidmet werden (siehe S4).
+#
+# BEFUNDE DIESES BLOCKS:
+#  S1  GET /levels/konfi/{userId}: keinerlei Rollen- oder Selbst-Pruefung.
+#      Jede authentifizierte Person der Organisation — auch jeder Konfi —
+#      kann Punktestand, Level und Fortschritt JEDES anderen Konfis derselben
+#      Organisation abrufen. Entspricht Befund N4 aus verwaltung-auth.yaml
+#      und ist weiterhin offen.
+#  S2  DELETE /levels/{id}: die Verwendungs-Pruefung zaehlt ueber
+#      users.organization_id — korrekt org-gescopt. Aber der Zaehler
+#      beruecksichtigt nur konfi_profiles.current_level_id; das Level wird
+#      geloescht, obwohl noch Konfis knapp darunter/darueber liegen. Fachlich
+#      gewollt, hier nur zur Klarstellung dokumentiert.
+#  S3  DELETE /admin/categories/{id}: die Verwendungs-Pruefung
+#      (activity_categories/event_categories) filtert NICHT auf
+#      organization_id. Da category_id systemweit eindeutig ist und die
+#      DELETE-Query selbst org-gescopt ist, entsteht daraus KEIN
+#      Datenabfluss und kein Fremdzugriff — die Pruefung kann aber theoretisch
+#      zu streng sein, wenn dieselbe ID in einer anderen Org verwendet wuerde.
+#      Praktisch nicht erreichbar (IDs sind global vergeben).
+#  S4  PUT /admin/badges/{id}: das Feld target_role fehlt im UPDATE. Ein
+#      versehentlich als 'konfi' angelegter Teamer-Badge laesst sich nur
+#      durch Loeschen und Neuanlegen korrigieren.
+#  S5  PUT /admin/badges/{id}: is_active und is_hidden werden mit `!!wert`
+#      gesetzt. Fehlt das Feld im Body, wird es still auf false gesetzt —
+#      ein Teil-Update deaktiviert den Badge also unbeabsichtigt. Clients
+#      muessen immer das vollstaendige Objekt senden.
+#  S6  GET /settings: liefert alle Settings-Keys der Org an JEDE
+#      authentifizierte Rolle, auch an Konfis. Inhaltlich sind das
+#      Dashboard-Schalter und Wartelisten-Groessen — keine personenbezogenen
+#      Daten; bewusst offen, damit das Konfi-Dashboard seine Widgets kennt.
+#  S7  DELETE /admin/jahrgaenge/{id}?force=true loescht Chat-Raeume samt
+#      Nachrichten unwiderruflich. Der zugehoerige Datei-Cleanup (uploads/chat)
+#      laeuft ohne Entschluesselungs-Pfadpruefung und ignoriert Fehler still.
+#  S8  POST /admin/jahrgaenge/{id}/matrix-email versendet Konfispruch- bzw.
+#      Anwesenheitslisten ausschliesslich an die in users.email hinterlegte
+#      Adresse der aufrufenden Person — kein frei waehlbarer Empfaenger. Das
+#      ist der bewusste Schutz dieser Route.
+# ============================================================================
+
+openapi: 3.1.0
+info:
+  title: Konfi Quest API — Stammdaten (Block 4)
+  version: "1.0"
+  description: >
+    Abzeichen (Badges), Level, Kategorien, Jahrgaenge, Organisations-
+    Einstellungen und Rollen. Alle Routen verlangen einen Bearer-JWT
+    (15 Min), der von verifyTokenRBAC geprueft wird; die aktive Organisation
+    kann per Header X-Active-Organization gewechselt werden. Saemtliche
+    Abfragen sind auf req.user.organization_id gescopt.
+servers:
+  - url: https://konfi-quest.de/api
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  responses:
+    Unauthorized: { description: "401 — Kein/ungueltiges/abgelaufenes Token" }
+    Forbidden: { description: "403 — Rolle nicht erlaubt / fremde Org" }
+    NotFound: { description: "404 — Objekt nicht (in dieser Org) gefunden" }
+    ServerError: { description: "500 — Datenbank-/Serverfehler" }
+
+paths:
+  # ==========================================================================
+  # BADGES (backend/routes/badges.js — 6 Routen, Mount /api/admin/badges)
+  # Muster: lesen requireTeamer, schreiben requireAdmin.
+  # ==========================================================================
+  /admin/badges/criteria-types:
+    get:
+      summary: Katalog der verfuegbaren Badge-Kriterientypen (statisch, keine DB)
+      description: >
+        Liefert das im Code hinterlegte CRITERIA_TYPES-Objekt mit label,
+        description und help je Kriterientyp. Enthaelt punktebasierte
+        (total_points, gottesdienst_points, gemeinde_points, both_categories),
+        aktivitaetsbasierte (activity_count, event_count,
+        mandatory_event_count, unique_activities), spezifische
+        (specific_activity, category_activities, activity_combination,
+        time_based, streak, bonus_points) und den teamer-spezifischen Typ
+        teamer_year. Rein statisch — kein Org-Bezug.
+      responses:
+        "200": { description: "Objekt Kriterientyp -> { label, description, help }" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: false
+        objekt-pruefung: "keine (statische Konstante)"
+        hinweis: "Die Rolle super_admin steht nicht in der requireTeamer-Whitelist und erhaelt 403"
+
+  /admin/badges:
+    get:
+      summary: Alle Abzeichen der eigenen Organisation mit Vergabe-Zaehler
+      parameters:
+        - name: target_role
+          in: query
+          required: false
+          schema: { type: string, enum: [konfi, teamer] }
+          description: >
+            Optionaler Filter auf custom_badges.target_role. Ohne Angabe
+            werden Konfi- UND Teamer-Abzeichen gemeinsam geliefert. Der Wert
+            wird nicht gegen eine Whitelist geprueft, sondern als Parameter
+            in die WHERE-Klausel gegeben (kein SQL-Injection-Risiko); ein
+            unbekannter Wert liefert schlicht ein leeres Array.
+      responses:
+        "200": { description: "Array custom_badges.* + created_by_name + earned_count" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/ServerError" }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "WHERE cb.organization_id = req.user.organization_id"
+        hinweis: "earned_count zaehlt user_badges OHNE Org-Filter — bei systemweit eindeutigen badge_id ist das korrekt, haengt aber an dieser Annahme"
+    post:
+      summary: Neues Abzeichen anlegen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, icon, criteria_type, criteria_value]
+              properties:
+                name: { type: string, minLength: 2, maxLength: 100 }
+                icon: { type: string, description: "IonIcon-Name, z.B. trophy-outline" }
+                description: { type: string }
+                criteria_type: { type: string, description: "Einer der Werte aus GET /admin/badges/criteria-types" }
+                criteria_value: { type: integer, minimum: 0 }
+                criteria_extra: { type: object, description: "Zusatzparameter je Kriterientyp, wird als JSON gespeichert" }
+                is_hidden: { type: boolean, default: false }
+                color: { type: string, default: "#667eea" }
+                target_role: { type: string, enum: [konfi, teamer], default: konfi }
+      responses:
+        "201": { description: "{ id, message }; Live-Update an Org-Admins UND Org-Konfis" }
+        "400": { description: "Pflichtfeld fehlt oder Validierung verletzt (Name 2-100 Zeichen, criteria_value >= 0)" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/ServerError" }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, validateCreateBadge]
+        org-scope: true
+        objekt-pruefung: "organization_id und created_by werden aus dem Token gesetzt, nicht aus dem Body"
+        hinweis: "criteria_type wird NICHT gegen CRITERIA_TYPES validiert — ein Tippfehler legt ein Abzeichen an, das nie vergeben wird"
+
+  /admin/badges/{id}:
+    get:
+      summary: Einzelnes Abzeichen der eigenen Organisation
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "custom_badges.* + created_by_name + earned_count" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "WHERE cb.id = :id AND cb.organization_id = req.user.organization_id — fremde Org liefert 404, nicht 403"
+    put:
+      summary: Abzeichen bearbeiten
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, icon, criteria_type]
+              properties:
+                name: { type: string, minLength: 2, maxLength: 100 }
+                icon: { type: string }
+                description: { type: string }
+                criteria_type: { type: string }
+                criteria_value: { type: integer }
+                criteria_extra: { type: object }
+                is_active: { type: boolean, description: "Fehlt das Feld, wird es auf false gesetzt (siehe S5)" }
+                is_hidden: { type: boolean, description: "Fehlt das Feld, wird es auf false gesetzt (siehe S5)" }
+                color: { type: string, default: "#667eea" }
+      responses:
+        "200": { description: "Aktualisiert; Live-Update an Org-Admins UND Org-Konfis" }
+        "400": { description: "Validierung verletzt" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "Abzeichen nicht in dieser Organisation" }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, validateUpdateBadge]
+        org-scope: true
+        objekt-pruefung: "WHERE id = :id AND organization_id = req.user.organization_id"
+        hinweis: >
+          S4: target_role wird vom UPDATE nicht erfasst und bleibt beim
+          Anlagewert. S5: is_active/is_hidden werden per !!wert gesetzt —
+          ein Teil-Update ohne diese Felder deaktiviert das Abzeichen still.
+          criteria_value wird hier (anders als beim POST) nicht auf >= 0
+          geprueft.
+    delete:
+      summary: Abzeichen loeschen (inklusive aller bereits vergebenen Exemplare)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "Geloescht; Live-Update an Org-Admins UND Org-Konfis" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "Abzeichen nicht in dieser Organisation" }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, validateBadgeId]
+        org-scope: true
+        objekt-pruefung: >
+          Transaktional: erst DELETE FROM user_badges WHERE badge_id = :id
+          (OHNE Org-Filter), dann DELETE FROM custom_badges WHERE id AND
+          organization_id. Greift die zweite Loeschung nicht (fremde Org),
+          wird die Transaktion zurueckgerollt — die vergebenen Exemplare
+          bleiben also erhalten.
+        hinweis: "Bereits verdiente Abzeichen verschwinden bei allen Konfis ohne Rueckfrage; es gibt keine Verwendungs-Sperre wie bei Levels oder Kategorien"
+
+  # ==========================================================================
+  # LEVELS (backend/routes/levels.js — 5 Routen, Mount /api/levels)
+  # Abweichendes Muster: KEINE Rollen-Middleware, Inline-Checks im Handler.
+  # ==========================================================================
+  /levels:
+    get:
+      summary: Alle Level der eigenen Organisation (aufsteigend nach Punktgrenze)
+      responses:
+        "200": { description: "Array levels.* (inkl. inaktiver Level), sortiert nach points_required ASC" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { description: "Fehler beim Laden der Level" }
+      x-berechtigung:
+        rollen: [alle authentifizierten]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "WHERE organization_id = req.user.organization_id"
+        hinweis: "Bewusst offen fuer Konfis — die Level-Leiste ist Teil des Konfi-Dashboards. Anders als GET /admin/badges liefert diese Route auch is_active = false"
+    post:
+      summary: Neues Level anlegen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, title, points_required]
+              properties:
+                name: { type: string }
+                title: { type: string }
+                description: { type: string }
+                points_required: { type: integer, minimum: 0, description: "Muss innerhalb der Organisation eindeutig sein" }
+                icon: { type: string, default: "trophy-outline" }
+                color: { type: string, default: "#3880ff" }
+                reward_type: { type: string }
+                reward_value: { type: string }
+      responses:
+        "201": { description: "Angelegtes Level (vollstaendige Zeile); Live-Update an Org-Admins" }
+        "400": { description: "Pflichtfeld fehlt, points_required negativ, oder bereits ein Level mit dieser Punktzahl (auch als 23505-Unique-Violation)" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { description: "Rolle nicht org_admin oder admin ('Keine Berechtigung zum Verwalten von Leveln')" }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, validateCreateLevel]
+        org-scope: true
+        objekt-pruefung: "Inline: ['org_admin','admin'].includes(req.user.role_name); organization_id und created_by aus dem Token"
+        hinweis: "Der Inline-Check prueft strikt role_name — ein org_admin mit is_super_admin-Flag kommt durch (role_name bleibt org_admin), die Rolle super_admin selbst nicht"
+
+  /levels/{id}:
+    put:
+      summary: Level bearbeiten
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, title, points_required]
+              properties:
+                name: { type: string }
+                title: { type: string }
+                description: { type: string }
+                points_required: { type: integer, minimum: 0 }
+                icon: { type: string }
+                color: { type: string }
+                reward_type: { type: string }
+                reward_value: { type: string }
+                is_active: { type: boolean }
+      responses:
+        "200": { description: "Aktualisiertes Level (vollstaendige Zeile); Live-Update an Org-Admins" }
+        "400": { description: "Pflichtfeld fehlt, points_required negativ, oder ein ANDERES Level hat bereits diese Punktzahl" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { description: "Rolle nicht org_admin oder admin" }
+        "404": { description: "Level nicht in dieser Organisation" }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, validateUpdateLevel]
+        org-scope: true
+        objekt-pruefung: "Inline-Rollen-Check; Existenz-Query und UPDATE beide mit organization_id"
+        hinweis: "icon und color werden ohne Fallback geschrieben — fehlen sie im Body, werden sie auf NULL gesetzt (anders als beim POST, der Defaults setzt)"
+    delete:
+      summary: Level loeschen (nur wenn kein Konfi es aktuell traegt)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "Geloescht; Live-Update an Org-Admins" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { description: "Rolle nicht org_admin oder admin" }
+        "404": { description: "Level nicht in dieser Organisation" }
+        "409": { description: "Level wird verwendet: { error, usage_count }" }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, validateLevelId]
+        org-scope: true
+        objekt-pruefung: >
+          Inline-Rollen-Check; Existenz-Query mit organization_id; die
+          Verwendungs-Pruefung zaehlt konfi_profiles.current_level_id ueber
+          users.organization_id (org-gescopt, deleted_at IS NULL).
+
+  /levels/konfi/{userId}:
+    get:
+      summary: Level-Fortschritt eines Konfis (aktuelles Level, naechstes Level, Prozent)
+      description: >
+        Berechnet total_points aus gottesdienst_points und gemeinde_points,
+        wobei nur die im Jahrgang aktivierten Kategorien
+        (gottesdienst_enabled / gemeinde_enabled) mitzaehlen. Liefert
+        zusaetzlich all_levels (nur is_active = true).
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "{ konfi_id, display_name, total_points, current_level, next_level, progress_percentage, points_to_next_level, all_levels }" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { description: "Konfi nicht in dieser Organisation oder geloescht" }
+      x-berechtigung:
+        rollen: [alle authentifizierten]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "NUR WHERE u.id = :userId AND u.organization_id = req.user.organization_id AND u.deleted_at IS NULL — keine Rollen- und keine Selbst-Pruefung"
+        # LUECKE (S1, identisch mit N4 aus verwaltung-auth.yaml, weiterhin offen):
+        # jede authentifizierte Person der Organisation — auch jeder Konfi —
+        # kann den Punktestand und Level-Fortschritt jedes anderen Konfis
+        # derselben Organisation abrufen. userId ist eine fortlaufende
+        # Ganzzahl, die Enumeration ist also trivial.
+
+  # ==========================================================================
+  # CATEGORIES (backend/routes/categories.js — 4 Routen,
+  # Mount /api/admin/categories)
+  # ==========================================================================
+  /admin/categories:
+    get:
+      summary: Alle Kategorien der eigenen Organisation (alphabetisch)
+      responses:
+        "200": { description: "Array categories.* (id, name, description, type, organization_id)" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/ServerError" }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "WHERE organization_id = req.user.organization_id"
+    post:
+      summary: Neue Kategorie anlegen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 2, maxLength: 100 }
+                description: { type: string, maxLength: 500 }
+                type: { type: string, enum: [gottesdienst, gemeinde, both], default: both }
+      responses:
+        "201": { description: "{ id, message }; Live-Update an Org-Admins" }
+        "400": { description: "Name fehlt / Validierung verletzt" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { description: "Kategoriename existiert bereits (Unique-Violation 23505)" }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, validateCreateCategory]
+        org-scope: true
+        objekt-pruefung: "organization_id aus dem Token"
+
+  /admin/categories/{id}:
+    put:
+      summary: Kategorie bearbeiten
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 2, maxLength: 100 }
+                description: { type: string, maxLength: 500 }
+                type: { type: string, enum: [gottesdienst, gemeinde, both] }
+      responses:
+        "200": { description: "Aktualisiert; Live-Update an Org-Admins" }
+        "400": { description: "Name fehlt / Validierung verletzt" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "Kategorie nicht in dieser Organisation" }
+        "409": { description: "Kategoriename existiert bereits" }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, validateUpdateCategory]
+        org-scope: true
+        objekt-pruefung: "WHERE id = :id AND organization_id = req.user.organization_id"
+        hinweis: "type ist im Body optional, wird aber ohne Fallback geschrieben — fehlt es, wird die Spalte auf NULL gesetzt"
+    delete:
+      summary: Kategorie loeschen (nur wenn keiner Aktivitaet und keinem Event zugeordnet)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "Geloescht; Live-Update an Org-Admins" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "Kategorie nicht in dieser Organisation" }
+        "409": { description: "Kategorie ist X Aktivitaet(en) und/oder Y Event(s) zugeordnet" }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, validateCategoryId]
+        org-scope: true
+        objekt-pruefung: "DELETE mit organization_id im WHERE; die vorgelagerte Verwendungs-Pruefung zaehlt activity_categories und event_categories"
+        hinweis: "S3: die Verwendungs-Pruefung filtert NICHT auf organization_id. Da category_id systemweit vergeben wird, ist das praktisch folgenlos — es entsteht kein Fremdzugriff, weil das DELETE selbst org-gescopt bleibt"
+
+  # ==========================================================================
+  # JAHRGAENGE (backend/routes/jahrgaenge.js — 7 Routen,
+  # Mount /api/admin/jahrgaenge)
+  # ==========================================================================
+  /admin/jahrgaenge:
+    get:
+      summary: Alle Jahrgaenge der eigenen Organisation mit Konfi- und Punkte-Zaehlern
+      responses:
+        "200": { description: "Array jahrgaenge.* + konfi_count, gottesdienst_points_total, gemeinde_points_total; sortiert nach name DESC" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/ServerError" }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "WHERE j.organization_id = req.user.organization_id"
+        hinweis: >
+          KEINE Jahrgangs-Einschraenkung: ein Teamer sieht alle Jahrgaenge
+          der Organisation, nicht nur die ihm zugewiesenen
+          (filterByJahrgangAccess wird hier nicht verwendet). Die
+          Punkte-Summen zaehlen ueber konfi_profiles.jahrgang_id ohne
+          eigenen Org-Filter — bei org-eindeutigen jahrgang_id korrekt.
+    post:
+      summary: Neuen Jahrgang anlegen (legt zugleich den Jahrgangs-Chat an)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 2, maxLength: 100 }
+                gottesdienst_enabled: { type: boolean, default: true }
+                gemeinde_enabled: { type: boolean, default: true }
+                konfspruch_enabled: { type: boolean, default: true }
+                target_gottesdienst: { type: integer, minimum: 0, default: 10 }
+                target_gemeinde: { type: integer, minimum: 0, default: 10 }
+      responses:
+        "201": { description: "Angelegter Jahrgang (vollstaendige Zeile); Live-Update an Org-Admins" }
+        "400": { description: "Name fehlt / Validierung verletzt" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { description: "Jahrgang-Name existiert bereits in dieser Organisation" }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, validateCreateJahrgang]
+        org-scope: true
+        objekt-pruefung: "organization_id aus dem Token; syncJahrgangChat legt den Chat an und synchronisiert Org-Admins, zugewiesene Admins/Teamer und Konfis"
+        hinweis: "Ein Fehler beim Chat-Anlegen wird geloggt, laesst die Jahrgangs-Anlage aber bewusst nicht scheitern — der Jahrgang existiert dann ohne Chat"
+
+  /admin/jahrgaenge/{id}:
+    put:
+      summary: Jahrgang bearbeiten (mit Warnungen bei Deaktivierung belegter Punkt-Kategorien)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 2, maxLength: 100 }
+                gottesdienst_enabled: { type: boolean, description: "Nicht uebergeben = unveraendert (COALESCE)" }
+                gemeinde_enabled: { type: boolean, description: "Nicht uebergeben = unveraendert (COALESCE)" }
+                konfspruch_enabled: { type: boolean, description: "Nicht uebergeben = unveraendert (COALESCE)" }
+                target_gottesdienst: { type: integer, minimum: 0 }
+                target_gemeinde: { type: integer, minimum: 0 }
+      responses:
+        "200":
+          description: >
+            { message } und optional warnings[] — je ein Eintrag
+            { type, affected_count, message }, wenn eine Punkt-Kategorie
+            deaktiviert wird, obwohl Konfis darin bereits Punkte haben. Die
+            Aenderung wird trotzdem durchgefuehrt; die Warnung ist rein
+            informativ.
+        "400": { description: "Name fehlt / Validierung verletzt" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "Jahrgang nicht in dieser Organisation" }
+        "409": { description: "Jahrgang-Name existiert bereits" }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, validateUpdateJahrgang]
+        org-scope: true
+        objekt-pruefung: "Vorab-Lookup und UPDATE beide mit organization_id"
+        hinweis: "Das Konfirmationsdatum wird seit Phase 119 nicht mehr beschrieben; der Termin haengt am gebuchten is_konfirmation-Event des einzelnen Konfis"
+    delete:
+      summary: Jahrgang loeschen (blockiert bei aktiven Konfis, Chat-Nachrichten nur per force)
+      description: >
+        Aktive Konfis (Rolle konfi) blockieren die Loeschung immer.
+        Befoerderte Ex-Konfis (Rolle teamer/admin) blockieren nicht — ihr
+        konfi_profiles-Eintrag bleibt erhalten und wird lediglich vom
+        Jahrgang geloest (jahrgang_id = NULL), damit Punkte-Historie und
+        Konfispruch weiter einsehbar bleiben. Enthaelt der Jahrgangs-Chat
+        Nachrichten, ist force=true noetig; dann werden Chat-Raum,
+        Nachrichten, Umfragen, Lesestatus und die zugehoerigen Dateien
+        entfernt.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - name: force
+          in: query
+          required: false
+          schema: { type: string, enum: ["true"] }
+          description: "force=true loescht den Jahrgangs-Chat samt aller Nachrichten unwiderruflich"
+      responses:
+        "200": { description: "Geloescht; Live-Update an Org-Admins" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "Jahrgang nicht in dieser Organisation" }
+        "409": { description: "Aktive Konfis zugeordnet ODER Chat enthaelt Nachrichten ({ error, canForceDelete: true })" }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, validateJahrgangId]
+        org-scope: true
+        objekt-pruefung: >
+          Das abschliessende DELETE ist mit organization_id gescopt. Die
+          vorgelagerten Pruefungen und Chat-Loeschungen laufen ueber
+          jahrgang_id OHNE eigenen Org-Filter — bei org-eindeutigen
+          Jahrgangs-IDs korrekt, aber eine Reihenfolgen-Abhaengigkeit:
+          faende der Handler den Jahrgang erst am Ende nicht in der eigenen
+          Org, waeren die Chat-Daten bereits geloescht.
+        hinweis: >
+          S7: Die Chat-Loeschung laeuft NICHT in einer Transaktion
+          (Einzel-Queries ohne BEGIN/COMMIT). Bricht sie in der Mitte ab,
+          bleibt ein halb abgeraeumter Chat zurueck. Datei-Loeschfehler
+          werden nur geloggt.
+
+  /admin/jahrgaenge/{id}/attendance-matrix:
+    get:
+      summary: Anwesenheitsmatrix eines Jahrgangs (Pflicht-Events x Konfis)
+      description: >
+        Liefert alle aktiven Konfis des Jahrgangs, alle nicht abgesagten
+        Pflicht-Events mit Jahrgangs-Zuweisung und die dazugehoerigen
+        Buchungen (status, attendance_status) als drei getrennte Arrays; die
+        Matrix baut das Frontend daraus zusammen.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "{ jahrgang: { id, name }, konfis[], events[], bookings[] }" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "Jahrgang nicht in dieser Organisation" }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, validateJahrgangId]
+        org-scope: true
+        objekt-pruefung: "Jahrgang, Konfis und Events werden alle drei mit organization_id geprueft; die Buchungs-Query ist ueber die zuvor org-gefilterten Event- und User-IDs eingegrenzt"
+        hinweis: "teamer erhaelt hier 403 — die Anwesenheitsuebersicht ist bewusst auf org_admin und admin beschraenkt, obwohl GET /admin/jahrgaenge fuer teamer offen ist"
+
+  /admin/jahrgaenge/{id}/sprueche:
+    get:
+      summary: Konfisprueche aller Konfis eines Jahrgangs (Listen-Wahl oder Freitext)
+      description: >
+        Loest je Konfi den gewaehlten Konfispruch auf: bei Listen-Wahl wird
+        die Uebersetzung aus konfspruch_uebersetzungen nachgeladen (Spalte
+        kp.konfspruch_translation, NICHT die Tageslosungs-Praeferenz
+        kp.bible_translation; Standard luther2017), bei Freitext werden Text
+        und Pflicht-Referenz direkt geliefert. konfirmation_date stammt aus
+        dem individuell gebuchten is_konfirmation-Event, nicht aus dem
+        Jahrgang.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "Array { user_id, display_name, konfspruch, konfirmation_date }; konfspruch kann null sein" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "Jahrgang nicht in dieser Organisation" }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, validateJahrgangId]
+        org-scope: true
+        objekt-pruefung: >
+          Jahrgang und Konfis mit organization_id geprueft (u.deleted_at IS
+          NULL, Rolle konfi). Die Konfispruch-Texte kommen aus
+          konfsprueche mit is_active = true UND (organization_id IS NULL
+          ODER organization_id = eigene Org) — der globale Spruch-Katalog
+          ist bewusst org-uebergreifend lesbar, enthaelt aber nur
+          Bibeltexte, keine personenbezogenen Daten.
+        hinweis: "teamer erhaelt 403 — Konfisprueche sind persoenliche Angaben und bleiben auf org_admin/admin beschraenkt"
+
+  /admin/jahrgaenge/{id}/matrix-email:
+    post:
+      summary: Anwesenheits- oder Spruchliste per E-Mail an die eigene Adresse senden
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type]
+              properties:
+                type:
+                  type: string
+                  enum: [anwesenheit, sprueche]
+                  description: >
+                    anwesenheit = je Konfi present_count/total_count ueber
+                    alle nicht abgesagten Pflicht-Events des Jahrgangs;
+                    sprueche = Konfispruch-Liste wie GET /sprueche.
+      responses:
+        "200": { description: "{ success: true }" }
+        "400": { description: "type ungueltig ODER die aufrufende Person hat keine E-Mail-Adresse hinterlegt" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: "Jahrgang nicht in dieser Organisation" }
+        "502": { description: "SMTP-Fehler — E-Mail konnte nicht versendet werden" }
+        "500": { description: "Fehler beim Senden der E-Mail" }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC, requireAdmin, validateMatrixEmail]
+        org-scope: true
+        objekt-pruefung: >
+          S8: Der Empfaenger ist NICHT frei waehlbar — es wird
+          ausschliesslich users.email der aufrufenden Person geladen und
+          angeschrieben. Fehlt sie, bricht die Route mit 400 ab. Damit
+          laesst sich die Route nicht als Versand-Relais missbrauchen.
+        hinweis: "Kein eigener Rate-Limiter; nur der globale General-Limiter (2000/15min). Ein Admin kann sich also viele Mails schicken — Missbrauchspotenzial gegen Dritte besteht wegen S8 nicht"
+
+  # ==========================================================================
+  # SETTINGS (backend/routes/settings.js — 2 Routen, Mount /api/settings)
+  # ==========================================================================
+  /settings:
+    get:
+      summary: Einstellungen der eigenen Organisation (typisiert aufbereitet)
+      description: >
+        Liefert alle settings-Zeilen der Organisation als flaches Objekt.
+        max_waitlist_size wird als Integer geparst, dashboard_section_order
+        und teamer_dashboard_section_order als JSON (mit Fallback auf die
+        Standard-Reihenfolgen), waitlist_enabled und alle Keys mit Praefix
+        dashboard_show_ / teamer_dashboard_show_ als Boolean. Alles Uebrige
+        bleibt String.
+      responses:
+        "200": { description: "Objekt key -> Wert (typisiert)" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/ServerError" }
+      x-berechtigung:
+        rollen: [alle authentifizierten]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "WHERE organization_id = req.user.organization_id — auch super_admin wird auf die aktive Org gescopt, sonst wuerden Keys mehrerer Orgs kollidieren"
+        hinweis: "S6: bewusst fuer alle Rollen offen, weil Konfi- und Teamer-Dashboards ihre Widget-Schalter daraus lesen. Inhalt sind Anzeige-Einstellungen, keine personenbezogenen Daten"
+    put:
+      summary: Einstellungen der eigenen Organisation setzen (Teil-Update)
+      description: >
+        Nur die im Body vorhandenen Felder werden per Upsert geschrieben
+        (ON CONFLICT (organization_id, key)); nicht uebergebene Keys bleiben
+        unveraendert. Anschliessend geht ein Live-Update 'dashboard' an die
+        gesamte Organisation.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                waitlist_enabled: { type: boolean }
+                max_waitlist_size: { type: integer, minimum: 0 }
+                dashboard_show_konfirmation: { type: boolean }
+                dashboard_show_events: { type: boolean }
+                dashboard_show_losung: { type: boolean }
+                dashboard_show_badges: { type: boolean }
+                dashboard_show_ranking: { type: boolean }
+                dashboard_show_challenges: { type: boolean }
+                teamer_dashboard_show_zertifikate: { type: boolean }
+                teamer_dashboard_show_events: { type: boolean }
+                teamer_dashboard_show_badges: { type: boolean }
+                teamer_dashboard_show_losung: { type: boolean }
+                dashboard_section_order: { type: string, description: "JSON-String, Standard: [konfirmation, events, losung, badges, ranking]" }
+                teamer_dashboard_section_order: { type: string, description: "JSON-String, Standard: [zertifikate, events, badges, losung]" }
+      responses:
+        "200": { description: "Einstellungen erfolgreich aktualisiert" }
+        "400": { description: "Validierung verletzt (Boolean/Integer/JSON)" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { description: "Nur org_admin" }
+        "500": { $ref: "#/components/responses/ServerError" }
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin, validateSettings]
+        org-scope: true
+        objekt-pruefung: "orgId ausschliesslich aus dem Token — der Body kann keine fremde Organisation adressieren"
+        hinweis: >
+          waitlist_enabled wird nicht validiert (steht in validateSettings
+          nicht drin) und landet per String(wert) in der Spalte; ein
+          Nicht-Boolean wuerde beim Lesen zu false. Die Schreib-Vorgaenge
+          laufen als Einzel-Queries ohne Transaktion — ein Fehler in der
+          Mitte hinterlaesst ein Teil-Update.
+
+  # ==========================================================================
+  # ROLES (backend/routes/roles.js — 3 Routen, Mount /api/roles)
+  # Read-only: die 5 Systemrollen sind hardcoded, Permissions statisch.
+  # ==========================================================================
+  /roles:
+    get:
+      summary: Alle Rollen der eigenen Organisation mit Nutzer-Zaehler
+      responses:
+        "200": { description: "Array (id, name, display_name, description, is_system_role, is_active, created_at, user_count), sortiert org_admin > admin > teamer > konfi" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { description: "Rolle weder super_admin noch org_admin" }
+        "500": { $ref: "#/components/responses/ServerError" }
+      x-berechtigung:
+        rollen: [super_admin, org_admin]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Inline: ['super_admin','org_admin'].includes(req.user.role_name); WHERE r.organization_id = req.user.organization_id"
+        hinweis: >
+          Der Inline-Check prueft strikt role_name und NICHT das
+          is_super_admin-Flag — abweichend von der Projekt-Regel und von
+          GET /roles/list/assignable, das beides beruecksichtigt. Praktisch
+          folgenlos, weil ein org_admin mit Flag ohnehin ueber role_name
+          durchkommt. Die Rolle super_admin selbst hat keine
+          organization_id, erhaelt hier also ein leeres Array.
+    # Hinweis: Es gibt bewusst KEINE Schreib-Routen. Rollen sind 5 hardcodete
+    # Systemrollen, die beim Anlegen einer Organisation erzeugt werden
+    # (organizations.js POST /); Permissions sind statisch pro Rollenname.
+
+  /roles/{id}:
+    get:
+      summary: Einzelne Rolle mit statischer Berechtigungsliste
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200": { description: "Rolle + permissions[] ({ name, description }) aus der hardcodeten getRolePermissions-Tabelle" }
+        "400": { description: "Ungueltige ID" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { description: "Rolle weder super_admin noch org_admin" }
+        "404": { description: "Rolle nicht in dieser Organisation" }
+      x-berechtigung:
+        rollen: [super_admin, org_admin]
+        middleware: [verifyTokenRBAC, "param('id').isInt", handleValidationErrors]
+        org-scope: true
+        objekt-pruefung: "Inline-Rollen-Check; WHERE r.id = :id AND r.organization_id = req.user.organization_id"
+        hinweis: >
+          permissions kommt NICHT aus der Datenbank, sondern aus einer
+          Konstante im Code (getRolePermissions). Sie beschreibt die
+          Rechtevergabe rein deklarativ fuer die Anzeige; durchgesetzt wird
+          sie an den Routen selbst per requireRole. Die Liste kann daher von
+          der tatsaechlichen Durchsetzung abweichen.
+
+  /roles/list/assignable:
+    get:
+      summary: Rollen, die die aufrufende Person zuweisen darf
+      description: >
+        Whitelist nach eigener Rolle: super_admin (oder is_super_admin-Flag)
+        darf org_admin, admin, teamer, konfi zuweisen; org_admin darf admin,
+        teamer, konfi; admin darf teamer, konfi. Die Namen werden gegen die
+        roles-Tabelle der eigenen Organisation aufgeloest.
+      responses:
+        "200": { description: "Array (id, name, display_name), sortiert admin > teamer > konfi" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { description: "Rolle nicht in [super_admin, org_admin, admin]" }
+        "500": { $ref: "#/components/responses/ServerError" }
+      x-berechtigung:
+        rollen: [super_admin, org_admin, admin]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Inline-Rollen-Check; WHERE r.organization_id = req.user.organization_id AND r.name = ANY(erlaubte)"
+        hinweis: >
+          Einzige Route dieser Datei, die das is_super_admin-Flag korrekt
+          mitprueft (role_name === 'super_admin' || req.user.is_super_admin).
+          Der Rueckgabewert ist nur eine Anzeige-Hilfe fuer die
+          Nutzerverwaltung — die tatsaechliche Durchsetzung der Hierarchie
+          leistet checkUserHierarchy in routes/users.js (siehe
+          verwaltung-auth.yaml).
+
+# ============================================================================
+# NICHT IN DIESER DATEI — bereits in docs/api/verwaltung-auth.yaml dokumentiert
+# ============================================================================
+# Alle 15 Routen aus backend/routes/organizations.js sind dort vollstaendig
+# beschrieben (Abschnitt "ORGANIZATIONS", Mount /api/organizations) und werden
+# hier nicht wiederholt:
+#   GET    /organizations                       (super_admin)
+#   POST   /organizations                       (super_admin)
+#   GET    /organizations/search-users          (super_admin, org-uebergreifend)
+#   GET    /organizations/current               (Verwaltungsrollen der eigenen Org)
+#   GET    /organizations/{id}                  (super_admin oder Verwaltungsrolle der Org)
+#   PUT    /organizations/{id}                  (super_admin oder org_admin der Org)
+#   DELETE /organizations/{id}                  (super_admin)
+#   PATCH  /organizations/{id}/limit            (super_admin)
+#   GET    /organizations/{id}/users            (super_admin oder org_admin der Org)
+#   GET    /organizations/{id}/admins           (super_admin oder org_admin der Org)
+#   POST   /organizations/{id}/admins           (super_admin oder org_admin der Org)
+#   GET    /organizations/{id}/members          (super_admin)
+#   POST   /organizations/{id}/members          (super_admin)
+#   DELETE /organizations/{id}/members/{userId} (super_admin)
+#   GET    /organizations/{id}/stats            (super_admin oder Verwaltungsrolle der Org)
+#
+# Zwei org-uebergreifende Routen sind dabei besonders zu beachten und dort
+# bereits so vermerkt:
+#   - GET /organizations liefert JEDE Organisation samt Kontakt-, Trial- und
+#     Lizenzdaten (nur super_admin).
+#   - GET /organizations/search-users durchsucht ALLE Organisationen nach
+#     Nicht-Konfi-Usern (nur super_admin, bewusst org-uebergreifend fuer die
+#     Multi-Org-Zuweisung).
+# Alle uebrigen organizations-Routen pruefen inline
+# "is_super_admin ODER eigene Organisation".
+#
+# Ebenfalls nicht hier: auth.js und users.js (verwaltung-auth.yaml),
+# teamer.js, material.js und wrapped.js (docs/api/teamer-material.yaml).
+# ============================================================================

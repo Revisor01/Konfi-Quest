@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Konfi Quest API</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="stylesheet" href="./swagger/swagger-ui.css">
+<style>
+  body { margin: 0; background: #fafafa; }
+  .kopf {
+    padding: 18px 22px;
+    background: #1c1a1f;
+    color: #fff;
+    font-family: system-ui, -apple-system, sans-serif;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .kopf b { font-size: 1.05rem; letter-spacing: .02em; }
+  .kopf span { font-size: .82rem; color: #a49cab; }
+  .kopf a { color: #c4a8f5; font-size: .82rem; text-decoration: none; }
+  .kopf a:hover { text-decoration: underline; }
+  .swagger-ui .topbar { display: none; }
+</style>
+</head>
+<body>
+<div class="kopf">
+  <b>Konfi Quest API</b>
+  <span>197 Operationen &middot; Stand 2026-08-23</span>
+  <a href="./index.html">Kompakte Uebersicht</a>
+  <a href="/docs/">Handbuch</a>
+  <a href="./openapi.json">openapi.json</a>
+</div>
+<div id="swagger"></div>
+<script src="./swagger/swagger-ui-bundle.js"></script>
+<script src="./swagger/swagger-ui-standalone-preset.js"></script>
+<script>
+  window.ui = SwaggerUIBundle({
+    url: './openapi.json',
+    dom_id: '#swagger',
+    presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+    layout: 'BaseLayout',
+    docExpansion: 'none',
+    defaultModelsExpandDepth: 0,
+    tagsSorter: 'alpha',
+    operationsSorter: 'alpha',
+    // Ausprobieren gegen die Produktion waere aus der Doku heraus zu
+    // gefaehrlich — es sind echte Daten. Die Beschreibung bleibt lesbar.
+    supportedSubmitMethods: [],
+  });
+</script>
+</body>
+</html>

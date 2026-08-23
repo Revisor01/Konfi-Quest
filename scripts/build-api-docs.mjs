@@ -29,6 +29,8 @@ const BEREICHE = [
   { datei: 'chat-challenges.yaml', titel: 'Chat & Challenges', farbe: '#06b6d4' },
   { datei: 'konfis-events.yaml', titel: 'Konfis & Termine', farbe: '#5b21b6' },
   { datei: 'verwaltung-auth.yaml', titel: 'Verwaltung & Anmeldung', farbe: '#047857' },
+  { datei: 'teamer-material.yaml', titel: 'Teamer:innen, Material & Wrapped', farbe: '#be185d' },
+  { datei: 'stammdaten.yaml', titel: 'Stammdaten', farbe: '#b45309' },
 ];
 
 const METHODEN = {
@@ -249,6 +251,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
   <nav class="seitenleiste">
     <p class="marke">Konfi Quest</p>
     <p class="marke-unter">API-Referenz · Stand ${stand}</p>
+    <p class="marke-unter" style="margin-bottom:20px"><a href="./swagger.html" style="color:var(--akzent)">Swagger-Ansicht</a> · <a href="/docs/" style="color:var(--akzent)">Handbuch</a></p>
     <p class="nav-titel">Bereiche</p>
     <ul>${nav}</ul>
     <div class="legende">
