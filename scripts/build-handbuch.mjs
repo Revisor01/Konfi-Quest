@@ -40,10 +40,10 @@ function standAusGit(pfad) {
       cwd: WURZEL, encoding: 'utf8',
     }).trim();
     if (iso) {
-      return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Berlin' });
     }
   } catch { /* git nicht verfuegbar -> Rueckfall */ }
-  return new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Berlin' });
 }
 
 function e(text) {
