@@ -51,10 +51,6 @@ interface SimpleCreateChatModalProps {
   dismiss?: () => void;
 }
 
-interface Settings {
-  konfi_chat_permissions?: string;
-}
-
 const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, onSuccess, dismiss }) => {
   const { user, setError, isOnline } = useApp();
   const { refreshFromAPI } = useBadge();
@@ -64,7 +60,6 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
   const [isDirty, setIsDirty] = useState(false);
 
   // State
-  const [settings, setSettings] = useState<Settings>({});
   const [chatType, setChatType] = useState<'direct' | 'group'>('direct');
 
   const doClose = () => {
@@ -112,7 +107,6 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
   }, [groupName, selectedParticipants]);
 
   useEffect(() => {
-    loadSettings();
     loadExistingChats();
   }, []);
 
@@ -126,15 +120,6 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
       setChatType('direct'); // Konfis haben nur Direktnachrichten
     }
   }, [user]);
-
-  const loadSettings = async () => {
-    try {
-      const response = await api.get('/settings');
-      setSettings(response.data);
-    } catch (err) {
- console.error('Error loading settings:', err);
-    }
-  };
 
   const loadExistingChats = async () => {
     try {

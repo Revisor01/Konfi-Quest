@@ -53,7 +53,6 @@ import AdminChallengesPage from '../admin/pages/AdminChallengesPage';
 import ChatOverviewPage from '../chat/pages/ChatOverviewPage';
 import ChatRoomView from '../chat/views/ChatRoomView'; // Diese bleibt!
 import PushNotificationSettings from '../common/PushNotificationSettings';
-import ChatPermissionsSettings from '../admin/settings/ChatPermissionsSettings';
 import KonfiDetailView from '../admin/views/KonfiDetailView';
 import EventDetailView from '../admin/views/EventDetailView';
 import KonfiDashboardPage from '../konfi/pages/KonfiDashboardPage';
@@ -271,7 +270,7 @@ const MainTabs: React.FC = () => {
             </IonTabButton>
             <IonTabButton tab="admin-events" href="/admin/events">
               <IonIcon icon={flash} />
-              <IonLabel>Events</IonLabel>
+              <IonLabel>Mitmachen</IonLabel>
               {(pendingEventsCount + pendingRequestsCount) > 0 && (
                 <IonBadge color="danger">
                   {(pendingEventsCount + pendingRequestsCount) > 9 ? '9+' : (pendingEventsCount + pendingRequestsCount)}
@@ -336,7 +335,7 @@ const MainTabs: React.FC = () => {
             </IonTabButton>
             <IonTabButton tab="teamer-events" href="/teamer/events">
               <IonIcon icon={calendar} />
-              <IonLabel>Events</IonLabel>
+              <IonLabel>Mitmachen</IonLabel>
             </IonTabButton>
             <IonTabButton tab="teamer-challenges" href="/teamer/challenges">
               <IonIcon icon={flag} />
@@ -401,7 +400,7 @@ const MainTabs: React.FC = () => {
             </IonTabButton>
             <IonTabButton tab="events" href="/konfi/events">
               <IonIcon icon={calendar} />
-              <IonLabel>Events</IonLabel>
+              <IonLabel>Mitmachen</IonLabel>
             </IonTabButton>
             <IonTabButton tab="badges" href="/konfi/badges">
               <IonIcon icon={star} />

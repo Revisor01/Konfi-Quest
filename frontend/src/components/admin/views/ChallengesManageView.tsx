@@ -423,17 +423,33 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
 
       {reiter === 'geplant' && (
       <ListSection
-        icon={flag}
+        icon={timeOutline}
         title="Geplante Challenges"
         count={planned.length}
         iconColorClass="challenges"
         isEmpty={planned.length === 0}
-        emptyIcon={flag}
+        emptyIcon={timeOutline}
         emptyTitle="Nichts geplant"
         emptyMessage="Challenges mit einem Startdatum in der Zukunft erscheinen hier"
         emptyIconColor="#be185d"
       >
         {planned.map((challenge, index) => renderChallenge(challenge, index, planned.length))}
+      </ListSection>
+      )}
+
+      {reiter === 'archiv' && (
+      <ListSection
+        icon={archiveOutline}
+        title="Archiv"
+        count={archived.length}
+        iconColorClass="challenges"
+        isEmpty={archived.length === 0}
+        emptyIcon={archiveOutline}
+        emptyTitle="Noch nichts im Archiv"
+        emptyMessage="Beendete Challenges sammeln sich hier — mit allen Beiträgen zum Nachlesen"
+        emptyIconColor="#be185d"
+      >
+        {archived.map((challenge, index) => renderChallenge(challenge, index, archived.length))}
       </ListSection>
       )}
 
@@ -505,21 +521,6 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
 
       {/* --- 3. Archiv — heisst in der Konfi-Sicht "Vorbei"; hier bleibt es
               "Archiv", weil die Leitung dort weiter bearbeitet und loescht. --- */}
-      {reiter === 'archiv' && (
-      <ListSection
-        icon={archiveOutline}
-        title="Archiv"
-        count={archived.length}
-        iconColorClass="challenges"
-        isEmpty={archived.length === 0}
-        emptyIcon={archiveOutline}
-        emptyTitle="Noch nichts im Archiv"
-        emptyMessage="Beendete Challenges sammeln sich hier — mit allen Beiträgen zum Nachlesen"
-        emptyIconColor="#be185d"
-      >
-        {archived.map((challenge, index) => renderChallenge(challenge, index, archived.length))}
-      </ListSection>
-      )}
     </>
   );
 };

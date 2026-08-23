@@ -437,7 +437,12 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
           </IonCard>
         </IonList>
 
-        {/* SEKTION: Rolle und Status */}
+        {/* SEKTION: Rolle und Status.
+            Faellt ganz weg, wenn beides entfaellt: Beim Anlegen einer
+            Teamer:in ist die Rolle vorgegeben (festeRolle) UND der
+            Aktiv-Schalter erscheint nur beim Bearbeiten — die Karte war dann
+            leer (Nutzerhinweis 23.08.2026). */}
+        {(!festeRolle || isEditMode) && (
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className={`app-section-icon app-section-icon--${farbe}`}>
@@ -530,6 +535,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
             </IonCardContent>
           </IonCard>
         </IonList>
+        )}
 
         {/* SEKTION: Jahrgang-Zuweisungen */}
         <IonList inset={true} className="app-modal-section">

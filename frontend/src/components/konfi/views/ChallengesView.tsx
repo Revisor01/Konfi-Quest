@@ -321,67 +321,6 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
       </>
       )}
 
-      {/* --- 2. Deine Abzeichen (bewusst OHNE Zaehler) --- */}
-      <IonList inset={true} style={{ margin: '16px' }}>
-        <IonListHeader>
-          <div className="app-section-icon app-section-icon--challenges">
-            <IonIcon icon={ribbonOutline} />
-          </div>
-          <IonLabel>Deine Abzeichen</IonLabel>
-        </IonListHeader>
-        <IonCard className="app-card">
-          <IonCardContent style={{ padding: marks.length === 0 ? '16px' : '16px 12px' }}>
-            {marks.length === 0 ? (
-              <EmptyState
-                icon={ribbonOutline}
-                title="Noch keine Abzeichen"
-                message="Für jede Challenge, bei der du mitmachst, bekommst du ein eigenes Abzeichen."
-                iconColor="var(--app-color-challenges)"
-              />
-            ) : (
-              <div
-                style={{
-                  display: 'flex', gap: '14px', overflowX: 'auto',
-                  paddingBottom: '4px', WebkitOverflowScrolling: 'touch'
-                }}
-              >
-                {marks.map((mark) => (
-                  <div
-                    key={mark.challenge_id}
-                    style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center',
-                      gap: '6px', minWidth: '74px', maxWidth: '92px', flexShrink: 0
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: '52px', height: '52px', borderRadius: '50%',
-                        background: 'linear-gradient(135deg, var(--app-color-challenges) 0%, #be123c 100%)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        boxShadow: '0 4px 12px rgba(var(--app-color-challenges-rgb), 0.35)'
-                      }}
-                    >
-                      <IonIcon
-                        icon={getChallengeBadgeIcon(mark.badge_icon)}
-                        style={{ fontSize: '1.5rem', color: 'white' }}
-                      />
-                    </div>
-                    <div
-                      style={{
-                        fontSize: '0.72rem', fontWeight: 600, color: '#3c3c43',
-                        textAlign: 'center', lineHeight: 1.2
-                      }}
-                    >
-                      {mark.badge_name}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </IonCardContent>
-        </IonCard>
-      </IonList>
-
       {reiter === 'archiv' && (
       <>
       {/* --- 3. Archiv --- */}
@@ -453,6 +392,68 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
       </IonList>
       </>
       )}
+
+      {/* --- 2. Deine Abzeichen (bewusst OHNE Zaehler) --- */}
+      <IonList inset={true} style={{ margin: '16px' }}>
+        <IonListHeader>
+          <div className="app-section-icon app-section-icon--challenges">
+            <IonIcon icon={ribbonOutline} />
+          </div>
+          <IonLabel>Deine Abzeichen</IonLabel>
+        </IonListHeader>
+        <IonCard className="app-card">
+          <IonCardContent style={{ padding: marks.length === 0 ? '16px' : '16px 12px' }}>
+            {marks.length === 0 ? (
+              <EmptyState
+                icon={ribbonOutline}
+                title="Noch keine Abzeichen"
+                message="Für jede Challenge, bei der du mitmachst, bekommst du ein eigenes Abzeichen."
+                iconColor="var(--app-color-challenges)"
+              />
+            ) : (
+              <div
+                style={{
+                  display: 'flex', gap: '14px', overflowX: 'auto',
+                  paddingBottom: '4px', WebkitOverflowScrolling: 'touch'
+                }}
+              >
+                {marks.map((mark) => (
+                  <div
+                    key={mark.challenge_id}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center',
+                      gap: '6px', minWidth: '74px', maxWidth: '92px', flexShrink: 0
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '52px', height: '52px', borderRadius: '50%',
+                        background: 'linear-gradient(135deg, var(--app-color-challenges) 0%, #be123c 100%)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: '0 4px 12px rgba(var(--app-color-challenges-rgb), 0.35)'
+                      }}
+                    >
+                      <IonIcon
+                        icon={getChallengeBadgeIcon(mark.badge_icon)}
+                        style={{ fontSize: '1.5rem', color: 'white' }}
+                      />
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '0.72rem', fontWeight: 600, color: '#3c3c43',
+                        textAlign: 'center', lineHeight: 1.2
+                      }}
+                    >
+                      {mark.badge_name}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </IonCardContent>
+        </IonCard>
+      </IonList>
+
 
     </div>
   );

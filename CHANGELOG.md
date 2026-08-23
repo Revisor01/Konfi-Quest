@@ -45,6 +45,12 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Geändert
 
+- Der Tab "Events" heißt jetzt "Mitmachen" — er trägt Termine und Aktivitäten
+  gemeinsam und hieß bisher wie einer seiner eigenen Bereiche.
+- Chat: Private Zweiergespräche kann nur noch lesen und exportieren, wer selbst
+  daran beteiligt ist. Gruppen-, Jahrgangs- und Team-Chats bleiben für die
+  Leitung wie bisher zugänglich.
+
 - Die Zahlen oben im Kopfbereich sind antippbar und springen zum passenden
   Reiter — etwa von "Verbuchen" direkt in die Liste der offenen Verbuchungen.
 - Aus "Anträgen" werden "Aktivitäten" — überall in der App, vom Reiter bis zu
@@ -58,6 +64,8 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Challenges: Eingereichte Links zeigen nur noch die Seite (etwa
   "youtube.com") statt der vollen Adresse über mehrere Zeilen.
 - Die Absenderadresse für E-Mails aus der App ist jetzt moin@konfi-quest.de.
+- Die Einstellung "Chat-Berechtigungen" ist entfallen. Sie war nicht erreichbar
+  und ohne Wirkung; es gilt unverändert: Konfis schreiben nur das Team an.
 - Im Chat lässt sich der Papierkorb nur noch dort antippen, wo das Löschen auch
   erlaubt ist: Teamer:innen bei eigenen Nachrichten, die Leitung bei allen.
 
@@ -88,6 +96,18 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Abzeichen mit den Bedingungen "Spezifische Aktivität" und
+  "Aktivitäts-Kombination" wurden nie verliehen: Die im Formular gewählte
+  Aktivität kam bei der Prüfung nicht an. Bestehende Abzeichen dieser Art
+  einmal öffnen und neu speichern, dann greifen sie.
+- Beim Anlegen einer Teamer:in erschien ein leerer Abschnitt "Status".
+- Challenges: Im Reiter "Archiv" standen die eigenen Abzeichen über dem
+  Archiv. Sie stehen jetzt in allen Reitern unten.
+- Challenges: Der leere Reiter "Geplant" zeigte eine Flagge; jetzt eine Uhr.
+- Challenges standen doppelt in der Navigation — als eigener Tab und unter
+  "Mehr". Der Eintrag unter "Mehr" ist entfallen.
+- Die Einführung sagte Teamer:innen, sie könnten selbst Termine anlegen. Das
+  stimmt nicht — Termine legt die Leitung an.
 - Chat: Der Filter "Team" beim Anlegen eines Chats zeigte nur Admins. Die
   Teamer:innen fehlten darin, obwohl sie zum Team gehören.
 - Chat: Teamer:innen wurden in der Personenliste wie Konfis dargestellt — in

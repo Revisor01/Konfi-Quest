@@ -106,7 +106,6 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
     try {
       const orgId = req.user.organization_id;
       const {
-        konfi_chat_permissions,
         waitlist_enabled,
         max_waitlist_size,
         dashboard_show_konfirmation,
@@ -157,25 +156,6 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
             [orgId, key, value]
           );
         }
-      }
-
-      if (konfi_chat_permissions !== undefined) {
-        const validPermissions = [
-          'direct_only_admin',
-          'direct_only_all',
-          'group_direct_admin',
-          'group_direct_all'
-        ];
-        if (!validPermissions.includes(konfi_chat_permissions)) {
-          return res.status(400).json({
-            error: 'Ungültiger Chat-Berechtigungswert. Gültige Optionen: ' + validPermissions.join(', ')
-          });
-        }
-        await db.query(
-          `INSERT INTO settings (organization_id, key, value) VALUES ($1, 'konfi_chat_permissions', $2)
-           ON CONFLICT (organization_id, key) DO UPDATE SET value = EXCLUDED.value`,
-          [orgId, konfi_chat_permissions]
-        );
       }
 
       if (waitlist_enabled !== undefined) {

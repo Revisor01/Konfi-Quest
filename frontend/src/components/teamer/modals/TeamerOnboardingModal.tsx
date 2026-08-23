@@ -44,7 +44,7 @@ const SLIDES: OnboardingSlide[] = [
     color: 'var(--app-color-events)',
     rgb: '--app-color-events-rgb',
     title: 'Deine Events',
-    text: 'Hier findest du alle Termine und meldest dich dort an, wo Teamer:innen gebraucht werden. Manche Termine sind nur fürs Team. Du kannst auch selbst Termine anlegen.',
+    text: 'Hier findest du alle Termine und meldest dich dort an, wo Teamer:innen gebraucht werden. Manche Termine sind nur fürs Team. Angelegt werden Termine von der Leitung.',
   },
   {
     icon: documentTextOutline,

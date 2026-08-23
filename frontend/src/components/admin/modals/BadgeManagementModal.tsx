@@ -213,6 +213,22 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           extra.weeks = Math.round(extra.days / 7) || 1;
         }
 
+        // Aktivitaeten: DB speichert NAMEN, die Auswahl arbeitet mit IDs.
+        // Ohne diese Rueckuebersetzung stuende die Auswahl beim Bearbeiten
+        // leer da und ein Speichern wuerde die Angabe loeschen.
+        // activity_id/activity_ids werden weiter gelesen: Badges aus der Zeit
+        // vor dem Fix (23.08.2026) tragen noch die alten Schluessel.
+        if (badge.criteria_type === 'specific_activity' && !extra.activity_id) {
+          const treffer = activities.find(a => a.name === extra.required_activity_name);
+          if (treffer) extra.activity_id = treffer.id;
+        }
+        if (badge.criteria_type === 'activity_combination' && !extra.activity_ids) {
+          const ids = (extra.required_activities || [])
+            .map((name: string) => activities.find(a => a.name === name)?.id)
+            .filter((id: number | undefined): id is number => id !== undefined);
+          if (ids.length > 0) extra.activity_ids = ids;
+        }
+
         const newFormData = {
           name: badge.name || '',
           icon: badge.icon || 'trophy-outline',
@@ -259,12 +275,20 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       // Prepare criteria_extra based on criteria_type
       let criteriaExtra = {};
       
+      // Die Auswahl arbeitet intern mit IDs, gespeichert werden aber NAMEN:
+      // Das Backend wertet `required_activity_name` bzw. `required_activities`
+      // ueber activities.name aus (badges.js:216,227). Vorher schrieb das
+      // Formular activity_id/activity_ids — diese Badges wurden nie vergeben,
+      // weil der Schluessel serverseitig gar nicht gelesen wird
+      // (Befund 23.08.2026, in Produktion nachgewiesen).
       switch (formData.criteria_type) {
-        case 'specific_activity':
-          if (extraCriteria.activity_id) {
-            criteriaExtra = { activity_id: extraCriteria.activity_id };
+        case 'specific_activity': {
+          const gewaehlt = activities.find(a => a.id === extraCriteria.activity_id);
+          if (gewaehlt) {
+            criteriaExtra = { required_activity_name: gewaehlt.name };
           }
           break;
+        }
         case 'category_activities':
           if (extraCriteria.required_category) {
             criteriaExtra = { required_category: extraCriteria.required_category };
@@ -275,11 +299,15 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             criteriaExtra = { days: extraCriteria.weeks * 7 };
           }
           break;
-        case 'activity_combination':
-          if (extraCriteria.activity_ids && extraCriteria.activity_ids.length > 0) {
-            criteriaExtra = { activity_ids: extraCriteria.activity_ids };
+        case 'activity_combination': {
+          const namen = (extraCriteria.activity_ids || [])
+            .map((id: number) => activities.find(a => a.id === id)?.name)
+            .filter(Boolean);
+          if (namen.length > 0) {
+            criteriaExtra = { required_activities: namen };
           }
           break;
+        }
       }
 
       const badgeData = {
