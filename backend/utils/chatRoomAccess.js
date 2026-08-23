@@ -10,7 +10,8 @@
 // Die Regel entspricht der der HTTP-Routen in routes/chat.js:
 //   - Raum muss zur aktiven Organisation des Nutzers gehoeren
 //   - Leitung/Admins (type 'admin', also admin | org_admin | super_admin)
-//     duerfen org-weit, ohne Teilnehmerschaft
+//     duerfen org-weit, ohne Teilnehmerschaft — AUSSER bei Direktchats:
+//     ein Zwiegespraech ist privat (dieselbe Regel wie in routes/chat.js)
 //   - alle anderen muessen Teilnehmer:in des Raums sein
 //
 // user_type ist dabei dreiwertig ('admin' | 'teamer' | 'konfi') und muss exakt
@@ -31,7 +32,7 @@ async function darfRaumBetreten(db, roomId, user) {
   }
 
   const { rows: [raum] } = await db.query(
-    'SELECT organization_id FROM chat_rooms WHERE id = $1',
+    'SELECT organization_id, type FROM chat_rooms WHERE id = $1',
     [roomId]
   );
   if (!raum) return { ok: false, grund: 'nicht gefunden' };
@@ -40,7 +41,12 @@ async function darfRaumBetreten(db, roomId, user) {
     return { ok: false, grund: `Org-Isolation (Raum-Org ${raum.organization_id})` };
   }
 
-  if (user.type === 'admin') return { ok: true };
+  // Leitung/Admins duerfen gemeindeweit — aber NICHT in fremde Direktchats.
+  // Sonst waere der Schutz aus routes/chat.js (darfRaumOeffnen) hier zu
+  // umgehen: Die Historie waere gesperrt, der Live-Kanal aber offen, und ueber
+  // newMessage liessen sich alle neuen Nachrichten mitlesen (Befund 24.08.2026,
+  // beim Schreiben des Handbuch-Kapitels aufgefallen).
+  if (user.type === 'admin' && raum.type !== 'direct') return { ok: true };
 
   const { rows: [teilnehmer] } = await db.query(
     'SELECT 1 FROM chat_participants WHERE room_id = $1 AND user_id = $2 AND user_type = $3',

@@ -79,7 +79,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
     <p class="marke-unter">API-Referenz · Stand 23.08.2026</p>
     <p class="marke-unter" style="margin-bottom:20px"><a href="./swagger.html" style="color:var(--akzent)">Swagger-Ansicht</a> · <a href="/docs/" style="color:var(--akzent)">Handbuch</a></p>
     <p class="nav-titel">Bereiche</p>
-    <ul><li class="nav-gruppe"><a href="#chat-challenges"><span class="nav-punkt" style="background:#06b6d4"></span>Chat &amp; Challenges<span class="nav-zahl">43</span></a></li><li class="nav-gruppe"><a href="#konfis-events"><span class="nav-punkt" style="background:#5b21b6"></span>Konfis &amp; Termine<span class="nav-zahl">45</span></a></li><li class="nav-gruppe"><a href="#verwaltung-auth"><span class="nav-punkt" style="background:#047857"></span>Verwaltung &amp; Anmeldung<span class="nav-zahl">43</span></a></li><li class="nav-gruppe"><a href="#teamer-material"><span class="nav-punkt" style="background:#be185d"></span>Teamer:innen, Material &amp; Wrapped<span class="nav-zahl">39</span></a></li><li class="nav-gruppe"><a href="#stammdaten"><span class="nav-punkt" style="background:#b45309"></span>Stammdaten<span class="nav-zahl">27</span></a></li></ul>
+    <ul><li class="nav-gruppe"><a href="#chat-challenges"><span class="nav-punkt" style="background:#06b6d4"></span>Chat &amp; Challenges<span class="nav-zahl">43</span></a></li><li class="nav-gruppe"><a href="#konfis-events"><span class="nav-punkt" style="background:#5b21b6"></span>Konfis &amp; Termine<span class="nav-zahl">72</span></a></li><li class="nav-gruppe"><a href="#verwaltung-auth"><span class="nav-punkt" style="background:#047857"></span>Verwaltung &amp; Anmeldung<span class="nav-zahl">57</span></a></li><li class="nav-gruppe"><a href="#teamer-material"><span class="nav-punkt" style="background:#be185d"></span>Teamer:innen, Material &amp; Wrapped<span class="nav-zahl">39</span></a></li><li class="nav-gruppe"><a href="#stammdaten"><span class="nav-punkt" style="background:#b45309"></span>Stammdaten<span class="nav-zahl">27</span></a></li></ul>
     <div class="legende">
       <p class="nav-titel">Methoden</p>
       <dl>
@@ -97,7 +97,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       aufrufen dürfen. Wo Hinweise stehen, sind grün markierte Punkte behobene
       Befunde aus dem Berechtigungs-Audit, graue noch offene.</p>
       <div class="kennzahlen">
-        <div class="kennzahl"><b>197</b><span>Operationen</span></div>
+        <div class="kennzahl"><b>238</b><span>Operationen</span></div>
         <div class="kennzahl"><b>5</b><span>Bereiche</span></div>
         <div class="kennzahl"><b>5</b><span>Rollen</span></div>
       </div>
@@ -278,7 +278,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
         <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip r-konfi">Konfi</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Nur eigene Tokens (user_id + Org-Filter)</div>
       </article></div>
     </section><section id="konfis-events" class="service" style="--service:#5b21b6">
-      <header class="service-kopf"><h2>Konfis &amp; Termine</h2><p class="service-meta">45 Operationen</p></header>
+      <header class="service-kopf"><h2>Konfis &amp; Termine</h2><p class="service-meta">72 Operationen</p></header>
       <div class="routen"><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/konfi/dashboard</code></div>
         <p class="summary">Konfi-Dashboard (eigene Punkte, Level, Ranking, Badges, Termine)</p>
@@ -459,9 +459,117 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
         <div class="route-kopf"><span class="verb" style="--verb:#b45309">PUT</span><code class="pfad">/api/events/{id}/cancel</code></div>
         <p class="summary">Event absagen (mit Teilnehmer-Benachrichtigung)</p>
         <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireTeamer</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Event org-gescopt</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/admin/activities</code></div>
+        <p class="summary">Masterliste aller Aktivitaeten der eigenen Organisation</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireTeamer</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>WHERE a.organization_id = req.user.organization_id</div><div class="hinweis">super_admin faellt durch requireTeamer auf 403, ausser er agiert per Multi-Org-Switch als org_admin/admin/teamer.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/admin/activities</code></div>
+        <p class="summary">Neue Aktivitaet anlegen</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code> · <code>validateCreateActivity</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>organization_id wird aus dem Token gesetzt, nicht aus dem Body</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#b45309">PUT</span><code class="pfad">/api/admin/activities/{id}</code></div>
+        <p class="summary">Aktivitaet aendern</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code> · <code>validateUpdateActivity</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Aktivitaet muss zur eigenen Organisation gehoeren</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#b91c1c">DELETE</span><code class="pfad">/api/admin/activities/{id}</code></div>
+        <p class="summary">Aktivitaet loeschen (nur ohne Zuordnungen)</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code> · <code>validateDeleteActivity</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Zuordnungspruefung ueber JOIN activities mit organization_id</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/admin/activities/requests</code></div>
+        <p class="summary">Alle Antraege der Organisation</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>WHERE a.organization_id = req.user.organization_id</div><div class="hinweis">Kein Jahrgangs-Filter: org_admin und admin sehen die Antraege ALLER Jahrgaenge der Organisation. Teamer:innen haben hier keinen Zugriff (dafuer gibt es GET /api/teamer/requests).</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#b45309">PUT</span><code class="pfad">/api/admin/activities/requests/{id}</code></div>
+        <p class="summary">Antrag genehmigen oder ablehnen</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code> · <code>validateRequestUpdate</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Antrag ueber JOIN activities auf die eigene Organisation eingegrenzt; nur status=pending aenderbar</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#b91c1c">DELETE</span><code class="pfad">/api/admin/activities/requests/{id}</code></div>
+        <p class="summary">Abgelehnten Antrag endgueltig loeschen</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code> · <code>param-id-Validierung</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Antrag ueber JOIN activities org-gescopt; nur status=rejected loeschbar</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#b45309">PUT</span><code class="pfad">/api/admin/activities/requests/{id}/reset</code></div>
+        <p class="summary">Entschiedenen Antrag auf ausstehend zuruecksetzen</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code> · <code>param-id-Validierung</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Antrag ueber JOIN activities org-gescopt; bereits ausstehende Antraege ergeben 400</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/admin/activities/requests/{id}/photo</code></div>
+        <p class="summary">Nachweisfoto eines Antrags abrufen</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Inline-Rollencheck role_name in ['admin','org_admin']; danach Vergleich der organization_id des antragstellenden Users mit der eigenen</div><div class="hinweis">Bewusst KEIN requireAdmin, sondern ein Inline-Check — die Wirkung ist dieselbe Rollenmenge. Teamer:innen erhalten 403.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#b91c1c">DELETE</span><code class="pfad">/api/admin/activities/requests/{id}/photo</code></div>
+        <p class="summary">Nachweisfoto eines Antrags loeschen</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Inline-Rollencheck role_name in ['admin','org_admin']; danach Org-Vergleich ueber den antragstellenden User</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/admin/activities/assign-activity</code></div>
+        <p class="summary">Aktivitaet direkt einem Konfi zuweisen</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireTeamer</code> · <code>validateAssignActivity</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Aktivitaet UND Ziel-User muessen zur eigenen Organisation gehoeren (Org-Pruefung des Ziel-Users ergaenzt 22.08.2026). Teamer:innen zusaetzlich: der Jahrgang des Konfis muss in assigned_jahrgaenge mit can_view liegen.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/admin/konfis</code></div>
+        <p class="summary">Liste der Konfis (fuer Teamer:innen auf eigene Jahrgaenge gefiltert)</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireTeamer</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>u.organization_id = Token-Org; zusaetzlich Jahrgangs-Filter fuer alle ausser is_super_admin/org_admin</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/admin/konfis</code></div>
+        <p class="summary">Neuen Konfi anlegen</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code> · <code>validateCreateKonfi</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>jahrgang_id muss zur eigenen Organisation gehoeren; Rolle konfi wird org-spezifisch aufgeloest; Limitpruefung ueber checkKonfiLimit</div><div class="hinweis">Teamer:innen koennen keine Konfis anlegen (requireAdmin).</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/admin/konfis/teamer</code></div>
+        <p class="summary">Liste der Teamer:innen der Organisation</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireTeamer</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>WHERE r.name = 'teamer' AND u.organization_id = Token-Org</div><div class="hinweis">Kein Jahrgangs-Filter: Teamer:innen sehen hier alle Kolleg:innen der Organisation, auch aus fremden Jahrgaengen. Es werden keine Login-Daten ausser dem username ausgeliefert.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/admin/konfis/{id}</code></div>
+        <p class="summary">Einzelner Konfi oder Teamer mit voller Historie</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireTeamer</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>WHERE u.id = :id AND u.organization_id = Token-Org AND r.name IN ('konfi','teamer') AND deleted_at IS NULL</div><div class="hinweis"># HINWEIS: Diese Route hat KEINEN Jahrgangs-Check. Eine Teamer:in kann ueber eine direkt geratene ID das vollstaendige Profil samt Punktehistorie jedes Konfis der Organisation abrufen, auch aus Jahrgaengen ohne Zuweisung. Die Liste GET /api/admin/konfis filtert dagegen korrekt.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#b45309">PUT</span><code class="pfad">/api/admin/konfis/{id}</code></div>
+        <p class="summary">Konfi aendern (Name, Jahrgang)</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code> · <code>validateUpdateKonfi</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>UPDATE ... WHERE id = :id AND organization_id = Token-Org</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#b91c1c">DELETE</span><code class="pfad">/api/admin/konfis/{id}</code></div>
+        <p class="summary">Konfi loeschen (inkl. abhaengiger Daten)</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code> · <code>param-id-Validierung</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Ziel muss Rolle konfi haben, zur eigenen Organisation gehoeren und darf nicht bereits geloescht sein</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/admin/konfis/{id}/regenerate-password</code></div>
+        <p class="summary">Neues Startpasswort fuer einen Konfi erzeugen</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code> · <code>param-id-Validierung</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>UPDATE ... WHERE id = :id AND organization_id = Token-Org</div><div class="hinweis">Kein Rollen-Check auf das Zielobjekt: die Route setzt das Passwort jedes Users der eigenen Organisation zurueck, nicht nur von Konfis. Da nur org_admin/admin zugreifen duerfen, bleibt der Effekt innerhalb der Leitungsrechte.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/admin/konfis/{id}/event-points</code></div>
+        <p class="summary">Event-Punkte eines Konfis</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireTeamer</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>WHERE ep.konfi_id = :id AND ep.organization_id = Token-Org</div><div class="hinweis">Kein Jahrgangs-Check — wie bei GET /api/admin/konfis/{id}.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/admin/konfis/{id}/badges</code></div>
+        <p class="summary">Abzeichen und Fortschritt eines Konfis (Leitungs-Einsicht)</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireTeamer</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Ziel muss Rolle konfi haben, zur eigenen Organisation gehoeren und nicht geloescht sein</div><div class="hinweis">Nur fuer Konfis; Teamer-Abzeichen laufen ueber /api/teamer/badges. Kein Jahrgangs-Check.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/admin/konfis/{id}/attendance-stats</code></div>
+        <p class="summary">Anwesenheitsstatistik bei Pflicht-Events</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Events sind org-gescopt (e.organization_id); der Jahrgang wird ueber konfi_profiles des Ziel-Konfis ermittelt</div><div class="hinweis">Die Vorab-Abfrage auf konfi_profiles prueft NUR die user_id, nicht die Organisation. Fuer eine fremde ID wird der Jahrgang also ermittelt, die eigentliche Auswertung filtert danach aber auf die eigene Organisation und liefert deshalb Nullwerte statt fremder Daten. Teamer:innen haben hier keinen Zugriff.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/admin/konfis/{id}/bonus-points</code></div>
+        <p class="summary">Bonuspunkte vergeben</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireTeamer</code> · <code>validateBonusPoints</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Gutschrift laeuft ueber JOIN users mit organization_id = Token-Org; checkPointTypeEnabled prueft den Punkte-Typ gegen den Jahrgang</div><div class="hinweis">Vergeben duerfen auch Teamer:innen, zuruecknehmen nur org_admin und admin (DELETE unten). Ein Jahrgangs-Check auf die Ziel-ID findet nicht statt.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#b91c1c">DELETE</span><code class="pfad">/api/admin/konfis/{id}/bonus-points/{bonusId}</code></div>
+        <p class="summary">Bonuspunkte zuruecknehmen</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>SELECT ... JOIN users u ON bp.konfi_id = u.id WHERE bp.id = :bonusId AND bp.konfi_id = :id AND u.organization_id = Token-Org</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/admin/konfis/{id}/activities</code></div>
+        <p class="summary">Aktivitaet nachtragen</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code> · <code>validateAddActivity</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Aktivitaet muss zur eigenen Organisation gehoeren; checkPointTypeEnabled bei Konfi-Aktivitaeten</div><div class="hinweis">Anders als POST /api/admin/activities/assign-activity verlangt diese Route requireAdmin — Teamer:innen tragen ueber assign-activity nach.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#b91c1c">DELETE</span><code class="pfad">/api/admin/konfis/{id}/activities/{activityId}</code></div>
+        <p class="summary">Nachgetragene Aktivitaet entfernen</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>SELECT ueber JOIN users mit organization_id — die Org-Bedingung wurde 22.08.2026 ergaenzt. Ohne sie fand der SELECT auch fremde Eintraege und der Punktabzug lief auf einem fremden Konfi.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#b45309">PUT</span><code class="pfad">/api/admin/konfis/{id}/teamer-since</code></div>
+        <p class="summary">Aktiv-seit-Datum einer Teamer:in setzen</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code> · <code>param-id-Validierung</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>UPDATE users ... WHERE id = :id AND organization_id = Token-Org</div><div class="hinweis">Kein Rollen-Check auf das Zielobjekt: das Datum laesst sich auch bei Usern setzen, die keine Teamer:innen sind.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/admin/konfis/{id}/promote-teamer</code></div>
+        <p class="summary">Konfi zur Teamer:in befoerdern</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireAdmin</code> · <code>param-id-Validierung</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Ziel-User muss zur eigenen Organisation gehoeren und aktuell Rolle konfi haben (sonst 400)</div><div class="hinweis">Die Teamer-Rolle wird org-spezifisch gesucht, mit Rueckfall auf die globale Rolle (organization_id IS NULL).</div>
       </article></div>
     </section><section id="verwaltung-auth" class="service" style="--service:#047857">
-      <header class="service-kopf"><h2>Verwaltung &amp; Anmeldung</h2><p class="service-meta">43 Operationen</p></header>
+      <header class="service-kopf"><h2>Verwaltung &amp; Anmeldung</h2><p class="service-meta">57 Operationen</p></header>
       <div class="routen"><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/auth/login</code></div>
         <p class="summary">Login fuer alle Rollen (case-insensitiver Username)</p>
@@ -634,6 +742,62 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
         <div class="route-kopf"><span class="verb" style="--verb:#b45309">PUT</span><code class="pfad">/users/{id}/reset-password</code></div>
         <p class="summary">Passwort eines Users administrativ setzen</p>
         <div class="zugriff"><span class="chip r-super">Super-Admin</span><span class="chip r-leitung">Leitung</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>validateResetPassword</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Inline: is_super_admin (org-uebergreifend, auch per Flag) ODER org_admin derselben Org; org_admin darf auch andere org_admins resetten</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/admin/users</code></div>
+        <p class="summary">Alle Verwaltungs-User der eigenen Org (Alias von GET /users)</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireOrgAdmin</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>wie GET /users</div><div class="hinweis">Alias-Mount, kein eigener Code. super_admin faellt durch requireOrgAdmin auf 403, ausser er agiert per Multi-Org-Switch als org_admin.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/admin/users</code></div>
+        <p class="summary">Verwaltungs-User anlegen (Alias von POST /users)</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireOrgAdmin</code> · <code>userHierarchyMiddleware('create')</code> · <code>validateCreateUser</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>wie POST /users (Rollenhierarchie via canCreateRole)</div><div class="hinweis">Alias-Mount, kein eigener Code.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/admin/users/{id}</code></div>
+        <p class="summary">Einzelnen User laden (Alias von GET /users/{id})</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireOrgAdmin</code> · <code>userHierarchyMiddleware('view')</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>wie GET /users/{id}</div><div class="hinweis">Alias-Mount, kein eigener Code.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#b45309">PUT</span><code class="pfad">/admin/users/{id}</code></div>
+        <p class="summary">User bearbeiten (Alias von PUT /users/{id})</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireOrgAdmin</code> · <code>userHierarchyMiddleware('update')</code> · <code>validateUpdateUser</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>wie PUT /users/{id}</div><div class="hinweis">Alias-Mount, kein eigener Code.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#b91c1c">DELETE</span><code class="pfad">/admin/users/{id}</code></div>
+        <p class="summary">User loeschen (Alias von DELETE /users/{id})</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireOrgAdmin</code> · <code>userHierarchyMiddleware('delete')</code> · <code>validateUserId</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>wie DELETE /users/{id}; Selbst-Loeschung blockiert</div><div class="hinweis">Alias-Mount, kein eigener Code.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/admin/users/{id}/jahrgaenge</code></div>
+        <p class="summary">Jahrgangs-Zuweisungen eines Users (Alias von GET /users/{id}/jahrgaenge)</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireOrgAdmin</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>wie GET /users/{id}/jahrgaenge</div><div class="hinweis">Alias-Mount, kein eigener Code.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/admin/users/{id}/jahrgaenge</code></div>
+        <p class="summary">Jahrgangs-Zuweisungen ersetzen (Alias von POST /users/{id}/jahrgaenge)</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireOrgAdmin</code> · <code>validateJahrgangAssignments</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>wie POST /users/{id}/jahrgaenge</div><div class="hinweis">Alias-Mount, kein eigener Code.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/admin/users/me/jahrgaenge</code></div>
+        <p class="summary">Eigene Jahrgangs-Zuweisungen (Alias von GET /users/me/jahrgaenge)</p>
+        <div class="zugriff"><span class="chip r-alle">alle Angemeldeten</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Nur eigene Daten</div><div class="hinweis">Alias-Mount, kein eigener Code. Kein Rollen-Guard — auch Konfis erreichen diesen Pfad und bekommen ihre eigenen (in der Regel leeren) Zuweisungen.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#b45309">PUT</span><code class="pfad">/admin/users/{id}/reset-password</code></div>
+        <p class="summary">Passwort administrativ setzen (Alias von PUT /users/{id}/reset-password)</p>
+        <div class="zugriff"><span class="chip r-super">Super-Admin</span><span class="chip r-leitung">Leitung</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>validateResetPassword</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>wie PUT /users/{id}/reset-password (Inline-Check statt requireOrgAdmin)</div><div class="hinweis">Alias-Mount, kein eigener Code.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/health</code></div>
+        <p class="summary">Liveness-Check (ohne Anmeldung)</p>
+        <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>keine</div><div class="hinweis">Keine Authentifizierung. Gibt keine Daten preis ausser der Tatsache, dass der Dienst laeuft.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/status</code></div>
+        <p class="summary">Readiness-Check mit Datenbank-Pruefung (ohne Anmeldung)</p>
+        <div class="zugriff"><span class="chip r-offen">öffentlich</span></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>keine</div><div class="hinweis"># HINWEIS: Ohne Anmeldung erreichbar und gibt version und commit (GIT_SHA) preis. Bewusst so fuer die Status-Seite / Uptime Kuma.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/metrics</code></div>
+        <p class="summary">APM-Kennzahlen aller Replicas (nur super_admin)</p>
+        <div class="zugriff"><span class="chip r-super">Super-Admin</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Inline: req.user.is_super_admin, sonst 403</div><div class="hinweis">Bewusst org-uebergreifend — die Daten sind organisationsunabhaengige Betriebskennzahlen. Der Authorization-Header wird an die Peers weitergereicht.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/metrics/local</code></div>
+        <p class="summary">APM-Rohdaten nur dieser Replica (nur super_admin)</p>
+        <div class="zugriff"><span class="chip r-super">Super-Admin</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Inline: req.user.is_super_admin, sonst 403</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/metrics/history</code></div>
+        <p class="summary">Gespeicherte APM-Historie (nur super_admin)</p>
+        <div class="zugriff"><span class="chip r-super">Super-Admin</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Inline: req.user.is_super_admin, sonst 403</div>
       </article></div>
     </section><section id="teamer-material" class="service" style="--service:#be185d">
       <header class="service-kopf"><h2>Teamer:innen, Material &amp; Wrapped</h2><p class="service-meta">39 Operationen</p></header>

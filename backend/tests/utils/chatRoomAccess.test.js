@@ -98,6 +98,15 @@ describe('darfRaumBetreten (Socket-Raum-Zugriff)', () => {
       expect(res.ok).toBe(true);
     });
 
+    it('Admin darf NICHT in einen fremden Direktchat — auch nicht per Socket', async () => {
+      // Befund 24.08.2026: Die HTTP-Historie war gesperrt, der Live-Kanal aber
+      // offen. Ueber newMessage waeren alle neuen Nachrichten mitlesbar
+      // gewesen. orgAdmin1 steht nicht in Raum 2 (konfi1 <-> admin1).
+      const res = await darfRaumBetreten(db, CHAT_ROOMS.direct.id, alsNutzer(USERS.orgAdmin1));
+      expect(res.ok).toBe(false);
+      expect(res.grund).toBe('kein Teilnehmer');
+    });
+
     it('Admin1 darf org-weit auch ohne Teilnehmerschaft (Admin-Bypass wie in den HTTP-Routen)', async () => {
       // Admin1 ist NICHT Teilnehmer dieses Raums — nachweislich:
       const { rows } = await db.query(
@@ -116,8 +125,10 @@ describe('darfRaumBetreten (Socket-Raum-Zugriff)', () => {
       expect(eigen.ok).toBe(true);
     });
 
-    it('Org-Admin1 darf org-weit (type "admin" deckt org_admin mit ab)', async () => {
-      const res = await darfRaumBetreten(db, CHAT_ROOMS.direct.id, alsNutzer(USERS.orgAdmin1));
+    it('Org-Admin1 darf org-weit in Gruppen (type "admin" deckt org_admin mit ab)', async () => {
+      // Bewusst der Gruppenraum, nicht der Direktchat: Dort gilt seit dem
+      // 24.08.2026 die Ausnahme, siehe Test oben.
+      const res = await darfRaumBetreten(db, CHAT_ROOMS.group.id, alsNutzer(USERS.orgAdmin1));
       expect(res.ok).toBe(true);
     });
   });

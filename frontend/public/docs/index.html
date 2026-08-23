@@ -43,6 +43,8 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
 .kapitel li { margin:0; }
 blockquote { margin:0 0 15px; padding:13px 17px; background:var(--flaeche); border:1px solid var(--rand); border-left:3px solid var(--kapitel); border-radius:8px; color:var(--text-leise); font-size:.92rem; max-width:66ch; }
 code { font-family:'JetBrains Mono',monospace; font-size:.85em; background:var(--code-grund); padding:1px 5px; border-radius:4px; }
+pre { background:var(--flaeche); border:1px solid var(--rand); border-radius:10px; padding:14px 16px; overflow-x:auto; margin:0 0 16px; max-width:66ch; }
+pre code { background:none; padding:0; font-size:.82rem; line-height:1.6; white-space:pre; }
 .tabelle-huelle { overflow-x:auto; border:1px solid var(--rand); border-radius:10px; background:var(--flaeche); margin:0 0 18px; }
 table { border-collapse:collapse; width:100%; font-size:.88rem; }
 th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand); vertical-align:top; }
@@ -77,7 +79,7 @@ tbody tr:last-child td { border-bottom:none; }
     <p class="marke">Konfi Quest</p>
     <p class="marke-unter">Handbuch</p>
     <p class="nav-titel">Inhalt</p>
-    <ul><li><a href="#start"><span class="nav-punkt" style="background:#667eea"></span>Überblick</a></li><li><a href="#konfis"><span class="nav-punkt" style="background:#5b21b6"></span>Für Konfis</a></li><li><a href="#teamer"><span class="nav-punkt" style="background:#be185d"></span>Für Teamer:innen</a></li><li><a href="#leitung"><span class="nav-punkt" style="background:#047857"></span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="#passwoerter"><span class="nav-punkt" style="background:#667eea"></span>Passwörter und Zugänge</a></li><li><a href="#badges"><span class="nav-punkt" style="background:#b45309"></span>Abzeichen</a></li></ul>
+    <ul><li><a href="#start"><span class="nav-punkt" style="background:#667eea"></span>Überblick</a></li><li><a href="#konfis"><span class="nav-punkt" style="background:#5b21b6"></span>Für Konfis</a></li><li><a href="#teamer"><span class="nav-punkt" style="background:#be185d"></span>Für Teamer:innen</a></li><li><a href="#leitung"><span class="nav-punkt" style="background:#047857"></span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="#passwoerter"><span class="nav-punkt" style="background:#667eea"></span>Passwörter und Zugänge</a></li><li><a href="#punkte"><span class="nav-punkt" style="background:#047857"></span>Punkte, Level und Ziele</a></li><li><a href="#jahrgaenge"><span class="nav-punkt" style="background:#5b21b6"></span>Jahrgänge und Kategorien</a></li><li><a href="#badges"><span class="nav-punkt" style="background:#b45309"></span>Abzeichen</a></li><li><a href="#termine"><span class="nav-punkt" style="background:#dc2626"></span>Termine</a></li><li><a href="#challenges"><span class="nav-punkt" style="background:#be185d"></span>Challenges</a></li><li><a href="#chat"><span class="nav-punkt" style="background:#06b6d4"></span>Chat</a></li><li><a href="#wrapped"><span class="nav-punkt" style="background:#b45309"></span>Jahresrückblick (Wrapped)</a></li></ul>
     <div class="fuss">
       <p>Stand 23.08.2026</p>
       <p><a href="/">Zur Startseite</a></p>
@@ -286,6 +288,161 @@ tbody tr:last-child td { border-bottom:none; }
       <p>Im Profil unter <strong>„E-Mail-Adresse ändern&quot;</strong>. Zur Bestätigung wird eine Mail an die <strong>neue</strong> Adresse geschickt — erst nach dem Klick darin gilt sie.</p>
       <p>Solange das nicht bestätigt ist, funktioniert „Passwort vergessen&quot; noch mit der alten Adresse.</p>
     </section>
+    <section id="punkte" class="kapitel" style="--kapitel:#047857">
+      <header class="kapitel-kopf">
+        <h2>Punkte, Level und Ziele</h2>
+        <p class="kapitel-meta">Wie Punkte entstehen, zählen und wieder verschwinden</p>
+      </header>
+      <p>Punkte sind das Herz von Konfi Quest. Sie ersetzen den Laufzettel: Statt einer Liste zum Abhaken sammeln Konfis Punkte, aus denen sich Fortschritt, Level und ein Teil der Abzeichen ergeben.</p>
+      <h2>Die zwei Punktarten</h2>
+      <p>Es gibt genau zwei Arten, mehr lassen sich nicht anlegen:</p>
+      <ul><li><strong>Gottesdienst-Punkte</strong> — für alles rund um Gottesdienste</li><li><strong>Gemeinde-Punkte</strong> — für alles andere in der Gemeinde</li></ul>
+      <p>Jeder Konfi hat für beide Arten einen eigenen Zähler. Diese beiden Zähler sind der einzige Ort, an dem der Punktestand steht — alles andere in der App ist eine Ansicht darauf.</p>
+      <p>Jeder <strong>Jahrgang</strong> legt für beide Arten getrennt fest, wie viele Punkte das Ziel sind und ob die Art überhaupt genutzt wird. Das steht im Kapitel <em>Jahrgänge und Kategorien</em>.</p>
+      <p>Welche Art eine Punktevergabe füllt, entscheidest <strong>nicht du im Moment der Vergabe</strong>, sondern es hängt an der Sache selbst:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th>Woher die Punkte kommen</th><th>Wer die Art festlegt</th></tr></thead><tbody><tr><td>Aktivität</td><td>die Aktivität selbst (beim Anlegen eingestellt)</td></tr><tr><td>Termin</td><td>der Termin (ohne Angabe: Gemeinde)</td></tr><tr><td>Bonuspunkte</td><td>du, direkt bei der Vergabe</td></tr></tbody></table></div>
+      <h2>Die drei Wege, auf denen Punkte entstehen</h2>
+      <h3>Weg 1: Aktivitäten</h3>
+      <p>Aktivitäten sind das, was Konfis <strong>selbst melden</strong> — oder was ihr ihnen direkt zuschreibt. Jede Aktivität hat eine feste Punktzahl und eine feste Punktart.</p>
+      <h3>Weg 2: Termine</h3>
+      <p>Wer bei einem Termin als <strong>anwesend</strong> eingetragen wird, bekommt die beim Termin hinterlegten Punkte. Das passiert beim Eintragen der Anwesenheit, nicht beim Buchen.</p>
+      <p>Zwei Einschränkungen, die oft überraschen:</p>
+      <ul><li>Ein Termin mit <strong>0 Punkten</strong> gibt nichts. Nicht jeder Termin muss Punkte geben.</li><li><strong>Pflichttermine und Konfirmationen geben grundsätzlich keine Punkte.</strong> Trägst du beim Anlegen trotzdem eine Punktzahl ein, wird sie auf 0 gesetzt. Der Gedanke: Wozu man ohnehin verpflichtet ist, wird nicht zusätzlich belohnt.</li></ul>
+      <h3>Weg 3: Bonuspunkte</h3>
+      <p>Bonuspunkte vergibst du frei von Hand — für alles, was in kein Raster passt. Du wählst die Punktzahl, die Punktart und schreibst eine <strong>Beschreibung</strong>.</p>
+      <blockquote><strong>Die Beschreibung ist hier Pflicht.</strong> Ohne sie lässt sich der Bonus nicht speichern. Das ist Absicht: Bonuspunkte sind der einzige Weg, bei dem sich später sonst niemand mehr erklären kann, wofür sie waren.</blockquote>
+      <p>Bonuspunkte dürfen <strong>auch Teamer:innen</strong> vergeben, nicht nur die Leitung.</p>
+      <h2>Der Weg einer Aktivitäts-Meldung</h2>
+      <p>Das ist der häufigste Ablauf im Alltag, deshalb hier Schritt für Schritt.</p>
+      <p><strong>1. Der Konfi meldet.</strong> Er wählt eine Aktivität, ein Datum und kann eine Beschreibung sowie ein <strong>Nachweisfoto</strong> anhängen. Der Antrag ist ab jetzt <em>ausstehend</em>.</p>
+      <p>Der Konfi bekommt sofort die Rückmeldung „Antrag eingereicht“ mit dem Hinweis, dass der Antrag geprüft wird. Punkte gibt es noch keine.</p>
+      <p><strong>2. Die Leitung prüft.</strong> Die Anträge stehen in der Antragsliste.</p>
+      <blockquote><strong>Nur die Leitung sieht Anträge.</strong> Teamer:innen haben auf die Antragsliste keinen Zugriff — das ist bewusst so, weil in Beschreibung und Foto Privates stehen kann.</blockquote>
+      <p><strong>3. Die Entscheidung.</strong> Es gibt genau zwei Möglichkeiten: <strong>genehmigen</strong> oder <strong>ablehnen</strong>.</p>
+      <ul><li><strong>Genehmigt:</strong> Die Aktivität wird gutgeschrieben, die Punkte landen auf dem Zähler der Punktart, die an der Aktivität hängt. Es wird sofort geprüft, ob damit neue Abzeichen oder ein neues Level erreicht sind. Der Konfi bekommt „Antrag genehmigt!“ mit der Punktzahl.</li><li><strong>Abgelehnt:</strong> Es gibt keine Punkte. Der Konfi bekommt „Antrag abgelehnt“, und falls du einen Kommentar geschrieben hast, hängt dieser als „Grund: …“ daran.</li></ul>
+      <blockquote><strong>Achtung, hier weicht die Wirklichkeit von der Erwartung ab:</strong> Eine <strong>Begründung ist beim Ablehnen technisch NICHT verpflichtend</strong>. Du kannst ohne Kommentar ablehnen, und der Konfi erhält dann nur „Dein Antrag wurde leider abgelehnt“ ohne jeden Hinweis, warum. Das ist keine gute Erfahrung. Schreib die Begründung, auch wenn die App sie nicht erzwingt.</blockquote>
+      <p>Ein bereits entschiedener Antrag lässt sich nicht noch einmal entscheiden. Der Versuch endet mit „Nur ausstehende Anträge können genehmigt oder abgelehnt werden“.</p>
+      <h3>Zurücksetzen: der Weg zurück</h3>
+      <p>Hast du dich vertan, setzt du den Antrag auf <em>ausstehend</em> zurück. Das ist die einzige Korrekturmöglichkeit für eine Entscheidung.</p>
+      <p>Beim Zurücksetzen passiert dreierlei:</p>
+      <ul><li>War der Antrag genehmigt, werden die <strong>Punkte wieder abgezogen</strong> und die Gutschrift entfernt.</li><li>Dein <strong>Kommentar wird gelöscht</strong> — der Antrag steht wieder da wie neu.</li><li>Der Antrag ist wieder offen und kann neu entschieden werden.</li></ul>
+      <blockquote><strong>Der Konfi wird darüber nicht benachrichtigt.</strong> Beim Zurücksetzen geht keine Mitteilung und kein Push raus. Wer gerade „Antrag genehmigt, +3 Punkte“ gelesen hat, sieht die Punkte danach kommentarlos wieder verschwinden. Sag vorher Bescheid, wenn du so etwas korrigierst.</blockquote>
+      <h3>Anträge löschen</h3>
+      <p>Löschen lassen sich nur <strong>abgelehnte</strong> Anträge. Die anderen sind geschützt:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th>Zustand</th><th>Löschen möglich?</th><th>Meldung</th></tr></thead><tbody><tr><td>Ausstehend</td><td>nein</td><td>„Offene Anträge werden genehmigt oder abgelehnt, nicht gelöscht.“</td></tr><tr><td>Genehmigt</td><td>nein</td><td>„Genehmigte Anträge gehören zur Punktegeschichte. Setze den Antrag zuerst zurück.“</td></tr><tr><td>Abgelehnt</td><td>ja</td><td>—</td></tr></tbody></table></div>
+      <h2>Direktvergabe durch Leitung und Teamer:innen</h2>
+      <p>Nicht alles muss den Antragsweg gehen. Ihr könnt eine Aktivität auch direkt zuschreiben — praktisch, wenn ihr ohnehin dabei wart.</p>
+      <p>Es gibt dafür zwei Stellen in der App, und sie verhalten sich leider unterschiedlich:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th></th><th>Über die Konfi-Verwaltung</th><th>Über die Aktivitäten-Seite</th></tr></thead><tbody><tr><td>Wer darf</td><td>nur Leitung</td><td>Leitung und Teamer:innen</td></tr><tr><td>Kommentar möglich</td><td><strong>ja</strong>, optional</td><td>nein</td></tr><tr><td>Push an den Konfi</td><td><strong>nein</strong></td><td>ja („+X Punkte!“)</td></tr><tr><td>Level sofort neu berechnet</td><td><strong>nein</strong></td><td>ja</td></tr><tr><td>Abzeichen sofort geprüft</td><td>ja</td><td>ja</td></tr></tbody></table></div>
+      <blockquote><strong>Das ist eine echte Unstimmigkeit im System, keine Absicht.</strong> Vergibst du über die Konfi-Verwaltung, merkt der Konfi es nicht sofort — es kommt kein Push, und ein dadurch erreichtes neues Level wird erst beim nächsten Öffnen des Dashboards sichtbar. Wenn dir wichtig ist, dass jemand die Punkte mitbekommt, nimm den Weg über die Aktivitäten-Seite.</blockquote>
+      <h2>Wie Punkte wieder verschwinden</h2>
+      <p><strong>Es gibt keinen „Punkte abziehen“-Knopf.</strong> Du kannst niemandem einfach so drei Punkte wegnehmen, und du kannst auch keine negative Punktzahl eintragen — das System lässt es nicht zu.</p>
+      <p>Punkte verschwinden <strong>ausschließlich</strong>, indem die Buchung zurückgenommen wird, die sie erzeugt hat. Das sind alle Wege:</p>
+      <ul><li>Einen <strong>genehmigten Antrag zurücksetzen</strong></li><li>Eine <strong>direkt vergebene Aktivität löschen</strong></li><li><strong>Bonuspunkte löschen</strong></li><li>Bei einem Termin die <strong>Anwesenheit auf „abwesend“</strong> ändern</li><li>Eine <strong>Buchung stornieren</strong>, obwohl die Person schon als anwesend galt</li><li>Eine Person <strong>aus einem Termin entfernen</strong></li><li>Eine bestätigte Buchung <strong>zurück auf die Warteliste</strong> setzen</li></ul>
+      <blockquote><strong>Der Punktestand fällt nie unter 0.</strong> Jede dieser Rücknahmen ist so gebaut, dass sie bei null aufhört. Nimmst du mehr zurück, als noch da ist — etwa weil anderswo schon korrigiert wurde —, bleibt es bei 0 statt ins Minus zu gehen. Das heißt aber auch: Zieht das System zweimal dieselben 3 Punkte ab, während nur 2 übrig sind, ist die Differenz stillschweigend weg.</blockquote>
+      <p>Zwei Dinge, die <strong>keine</strong> Punkte zurücknehmen:</p>
+      <ul><li>Einen <strong>Konfi in einen anderen Jahrgang verschieben.</strong> Punkte und Level wandern unverändert mit.</li><li>Einen <strong>ganzen Termin löschen.</strong> Wer dafür schon Punkte bekommen hat, behält sie.</li></ul>
+      <h2>Level</h2>
+      <p>Level sind die Stufen, die sich aus dem Punktestand ergeben. Du legst sie einmal für die ganze Gemeinde an — nicht pro Jahrgang.</p>
+      <p>Ein Level besteht aus:</p>
+      <ul><li><strong>Titel</strong> — was angezeigt wird, etwa „Bronze“ oder „Meister“</li><li><strong>Benötigte Punkte</strong> — ab wann es gilt</li><li><strong>Beschreibung, Symbol, Farbe</strong> — wie es aussieht</li></ul>
+      <p>Die benötigten Punkte stellst du über einen Schieberegler von <strong>1 bis 40</strong> ein. Zwei Level dürfen nicht dieselbe Punktzahl haben; der Versuch endet mit „Ein Level mit dieser Punktzahl existiert bereits“.</p>
+      <h3>Es zählen die Gesamtpunkte — aber nur die aktivierten Arten</h3>
+      <p>Für das Level werden <strong>Gottesdienst- und Gemeindepunkte zusammengezählt</strong>.</p>
+      <p>Entscheidend und leicht zu übersehen: Gezählt werden <strong>nur die Punktarten, die im Jahrgang eingeschaltet sind</strong>. Ist im Jahrgang „Gemeinde“ abgeschaltet, zählen für das Level ausschließlich die Gottesdienstpunkte — auch wenn auf dem Gemeinde-Zähler noch alte Punkte stehen.</p>
+      <p><em>Beispiel:</em> Ein Konfi hat 8 Gottesdienst- und 5 Gemeindepunkte. Sind beide Arten aktiv, zählt er mit 13 Punkten. Wird „Gemeinde“ im Jahrgang abgeschaltet, zählt er ab sofort mit 8 — und rutscht damit unter Umständen ein Level zurück.</p>
+      <p>Deaktivierte Level werden bei der Berechnung übersprungen.</p>
+      <h3>Aufstieg und Abstieg</h3>
+      <p><strong>Beim Aufstieg</strong> bekommt der Konfi eine Mitteilung und einen Push: „Level Up! Herzlichen Glückwunsch! Du hast Level ‚…‘ erreicht!“</p>
+      <p><strong>Beim Abstieg passiert nichts hörbar.</strong> Sinken die Punkte unter die Schwelle, wird das Level still nach unten korrigiert — keine Mitteilung, kein Push, kein Hinweis. Das ist bewusst so: Niemand soll eine Nachricht bekommen, dass er etwas verloren hat.</p>
+      <blockquote><strong>Nebeneffekt, den du kennen solltest:</strong> Nach dem Löschen einer Aktivität oder von Bonuspunkten wird das Level <strong>nicht sofort</strong> nachgerechnet. Es bleibt kurzzeitig zu hoch stehen und wird erst korrigiert, wenn der Konfi das nächste Mal sein Dashboard öffnet. Dort passiert es dann ebenfalls still.</blockquote>
+      <h3>Ein belegtes Level lässt sich nicht löschen</h3>
+      <p>Steht auch nur ein Konfi aktuell auf einem Level, wird das Löschen abgelehnt: <strong>„Level kann nicht gelöscht werden, da es von Konfis verwendet wird“</strong>.</p>
+      <p>Die App nennt dir dabei leider <strong>nicht</strong>, wie viele oder welche Konfis das sind. Willst du das Level trotzdem loswerden, gibt es zwei Wege: die Punktzahl so ändern, dass niemand mehr darauf steht, oder das Level deaktivieren statt es zu löschen. Ein deaktiviertes Level zählt für die Berechnung nicht mehr mit.</p>
+      <h2>Wann wird nachgerechnet?</h2>
+      <p>Abzeichen und Level werden sofort geprüft bei:</p>
+      <ul><li>einem genehmigten Antrag</li><li>einer über die Aktivitäten-Seite direkt vergebenen Aktivität</li><li>vergebenen Bonuspunkten</li></ul>
+      <p>Nur die Abzeichen — nicht das Level — werden geprüft bei einer über die Konfi-Verwaltung vergebenen oder gelöschten Aktivität.</p>
+      <p>Zusätzlich laufen die Abzeichen-Prüfungen alle fünf Minuten im Hintergrund, und das Level wird bei jedem Öffnen des Konfi-Dashboards überprüft und gegebenenfalls stillschweigend richtiggestellt.</p>
+    </section>
+    <section id="jahrgaenge" class="kapitel" style="--kapitel:#5b21b6">
+      <header class="kapitel-kopf">
+        <h2>Jahrgänge und Kategorien</h2>
+        <p class="kapitel-meta">Punkteziele, Konfispruch, Zuständigkeiten</p>
+      </header>
+      <p>Der Jahrgang ist die zentrale Schaltstelle. Fast alles, was für eine ganze Gruppe von Konfis gilt, wird hier eingestellt: die Punkteziele, ob es beide Punktarten gibt, ob der Konfispruch gewählt werden darf und ob der Jahresrückblick freigegeben ist.</p>
+      <p>Kategorien sind davon unabhängig — sie gelten für die ganze Gemeinde und sortieren Aktivitäten und Termine.</p>
+      <h2>Punkteziele</h2>
+      <p>Für jede der beiden Punktarten stellst du getrennt ein Ziel ein. Der Schieberegler geht von <strong>1 bis 20</strong>. Voreingestellt sind 10 und 10.</p>
+      <p>Das Ziel ist <strong>keine Grenze</strong> — niemand wird gebremst, wenn er es überschreitet. Es ist der Bezugswert für die Fortschrittsanzeige:</p>
+      <ul><li>Die <strong>Ringe im Dashboard</strong> der Konfis füllen sich im Verhältnis zum Ziel.</li><li>In der <strong>Konfi-Liste der Leitung</strong> ergibt sich daraus die Fortschrittsfarbe.</li><li>Der <strong>Jahresrückblick</strong> rechnet den Zielwert mit ein.</li></ul>
+      <p>Beim Gesamtfortschritt werden nur die Ziele der <strong>aktiven</strong> Punktarten addiert. Ist Gemeinde abgeschaltet, ist das Gesamtziel nur das Gottesdienst-Ziel.</p>
+      <blockquote><strong>Achtung:</strong> Der Bereich 1 bis 20 ist nur die Begrenzung des Schiebereglers in der App. Die Schnittstelle dahinter akzeptiert jeden Wert ab 0 und kennt kein Maximum. Über die App kannst du aber weder 0 noch mehr als 20 einstellen.</blockquote>
+      <h2>Wenn eine Punktart abgeschaltet ist</h2>
+      <p>Für jede Punktart gibt es einen Schalter. Das ist der folgenreichste Schalter im ganzen Jahrgang, deshalb hier ausführlich, was daran hängt.</p>
+      <h3>Neue Punkte werden blockiert</h3>
+      <p>Jeder Versuch, Punkte der abgeschalteten Art zu vergeben, wird abgewiesen — mit der Meldung <strong>„Gottesdienst-Punkte sind für diesen Jahrgang deaktiviert“</strong> (entsprechend für Gemeinde). Das gilt für alle Wege: Anträge genehmigen, Aktivitäten direkt zuweisen, Bonuspunkte vergeben, Anwesenheit eintragen.</p>
+      <p>Eine Ausnahme im Verhalten: Trägst du bei einem Termin über <strong>„alle anwesend“</strong> gesammelt Anwesenheit ein, werden betroffene Personen <strong>stillschweigend übersprungen</strong> statt mit einer Fehlermeldung. Du siehst also keinen Hinweis, dass jemand keine Punkte bekommen hat.</p>
+      <h3>Bestehende Punkte bleiben — zählen aber nicht mehr</h3>
+      <p>Die einmal vergebenen Punkte werden <strong>nicht gelöscht</strong>. Sie stehen weiter in der Datenbank, werden aber überall herausgerechnet:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th></th><th>Verhalten bei abgeschalteter Art</th></tr></thead><tbody><tr><td>Gespeicherter Punktestand</td><td>bleibt unverändert erhalten</td></tr><tr><td>Gesamtpunkte und Rangliste</td><td>die Art wird als 0 gewertet</td></tr><tr><td>Level</td><td>zählt nur noch die aktive Art</td></tr><tr><td>Abzeichen auf diese Punktart</td><td>werden nicht mehr erreicht</td></tr><tr><td>Abzeichen auf Gesamtpunkte</td><td>rechnen nur mit der aktiven Art</td></tr><tr><td>Jahresrückblick</td><td>nur das aktive Ziel fließt ein</td></tr></tbody></table></div>
+      <h3>Was ausgeblendet und was ausgegraut wird</h3>
+      <p><strong>Ausgeblendet</strong> (ganz weg):</p>
+      <ul><li>Der <strong>Ziel-Schieberegler</strong> der Art verschwindet aus dem Bearbeiten-Formular.</li><li>In der Jahrgangsliste fehlt die Zeile „GD-Ziel“ bzw. „Gem-Ziel“.</li><li><strong>Aktivitäten dieser Art verschwinden vollständig aus der Konfi-Ansicht.</strong> Ein Konfi kann sie nicht mehr sehen und nicht mehr melden. Das ist Absicht: Sonst könnte er etwas einreichen, das niemand genehmigen kann.</li></ul>
+      <p><strong>Ausgegraut</strong> (sichtbar, aber blass) in der Konfi-Detailansicht der Leitung: Bonuspunkte, Terminpunkte und Aktivitäten der abgeschalteten Art. Ihr seht also weiter, was einmal vergeben wurde — es ist nur erkennbar außer Kraft.</p>
+      <h3>Beim Wiedereinschalten</h3>
+      <p><strong>Es muss nichts nachgerechnet werden.</strong> Alle Summen, Level und Fortschrittsanzeigen werden bei jedem Aufruf frisch berechnet. In dem Moment, in dem du die Art wieder einschaltest, sind sämtliche alten Punkte wieder da und zählen wieder — vollständig und sofort.</p>
+      <p>Eine Einschränkung: <strong>Abzeichen werden nicht rückwirkend vergeben.</strong> Wer während der Abschaltung eine Abzeichen-Bedingung erfüllt hätte, bekommt es nicht automatisch nachgereicht. Geprüft wird erst wieder bei der nächsten Punktevergabe oder beim Hintergrundlauf.</p>
+      <h3>Mindestens eine Art muss aktiv bleiben</h3>
+      <p>Schaltest du eine Art ab, lässt sich die andere nicht mehr abschalten — der Schalter ist gesperrt, mit dem Hinweis „Mindestens ein Punkt-Typ muss aktiv bleiben.“</p>
+      <blockquote><strong>Achtung:</strong> Diese Regel wird <strong>nur in der Oberfläche</strong> durchgesetzt. Im System dahinter gibt es keine Sperre. Wer die Schnittstelle direkt anspricht, kann beide Arten abschalten — mit der Folge, dass keinerlei Punkte mehr vergeben werden können und alle Konfis auf 0 stehen. Verlass dich also auf die Regel, aber wisse, dass sie nicht unumstößlich ist.</blockquote>
+      <p>Beim Abschalten prüft das System außerdem, wie viele Konfis bereits Punkte dieser Art haben, und meldet das zurück. <strong>Diese Warnung wird in der App derzeit nicht angezeigt</strong> — du bekommst sie also nicht zu sehen.</p>
+      <h2>Konfispruch-Freigabe</h2>
+      <p>Der Schalter <strong>„Konfispruch-Auswahl“</strong> steht im Jahrgang unter „Konfispruch &amp; Wrapped“. Er ist standardmäßig <strong>an</strong>.</p>
+      <p>Ist er an, erscheint im Konfi-Dashboard die Konfispruch-Karte, und der Konfi kann zwischen zwei Wegen wählen:</p>
+      <p><strong>Weg 1 — aus der Liste.</strong> Er wählt einen Vers aus einer vorbereiteten Liste (Psalm 23,1; Jesaja 43,1; Jeremia 29,11; Josua 1,9 und weitere) und dazu eine <strong>Bibelübersetzung</strong>. Zur Auswahl stehen genau vier:</p>
+      <ul><li>Luther 2017</li><li>Bibel in gerechter Sprache</li><li>Gute Nachricht</li><li>Elberfelder</li></ul>
+      <p><strong>Weg 2 — eigener Text.</strong> Er tippt seinen Spruch selbst ein. Dabei ist die <strong>Stellenangabe Pflicht</strong> („Bei einem eigenen Spruch ist die Stellenangabe verpflichtend“). Die Stellenangabe darf höchstens 100 Zeichen lang sein, der Text höchstens 1000.</p>
+      <p>Beides zugleich geht nicht: Wählt der Konfi aus der Liste, wird ein zuvor eingetippter Text gelöscht — und umgekehrt.</p>
+      <blockquote><strong>Wichtig für die Praxis:</strong> Mitgeliefert werden nur die <strong>Vers-Stellen</strong>, nicht die Verstexte. Die Übersetzungstexte sind aus Lizenzgründen leer und müssten von der Gemeinde selbst eingetragen werden. Solange das nicht geschehen ist, zeigt die Liste Stellenangaben ohne Text — der Freitext-Weg ist dann der einzige, der einen vollständigen Spruch liefert.</blockquote>
+      <p>Die gesammelten Sprüche eines Jahrgangs kannst du dir als Übersicht anzeigen und dir per E-Mail zuschicken lassen — praktisch für Urkunden und den Konfirmationsablauf.</p>
+      <h2>Wrapped-Freigabe</h2>
+      <p>Der zweite Schalter im selben Abschnitt gibt den Jahresrückblick frei. Er erscheint erst, wenn du einen bestehenden Jahrgang <strong>bearbeitest</strong>.</p>
+      <p><strong>Beim Einschalten</strong> fragt die App nach: „Wrapped wird für alle Konfis dieses Jahrgangs generiert und sie erhalten eine Push-Benachrichtigung. Fortfahren?“</p>
+      <p>Bestätigst du, passiert beides:</p>
+      <p>1. Für <strong>jeden aktiven Konfi</strong> des Jahrgangs wird der Rückblick berechnet und als feste Momentaufnahme gespeichert. 2. Alle bekommen einen Push: <strong>„Dein Konfi-Jahr ist da!“</strong> mit dem Text „Schau dir jetzt deinen persönlichen Jahresrückblick an!“</p>
+      <p><strong>Beim Ausschalten</strong> — Rückfrage „Wrapped-Rückblick für diesen Jahrgang löschen? Die Konfis sehen den Rückblick dann nicht mehr.“ — werden die gespeicherten Rückblicke <strong>wirklich gelöscht</strong>, nicht nur ausgeblendet.</p>
+      <p>Mehr dazu im Kapitel <em>Jahresrückblick (Wrapped)</em>.</p>
+      <h2>Was die Jahrgangs-Zuweisung von Teamer:innen steuert</h2>
+      <p>Teamer:innen werden einzelnen Jahrgängen zugewiesen. Diese Zuweisung ist die <strong>wichtigste Berechtigungseinstellung im ganzen System</strong> — sie entscheidet in sehr vielen Bereichen mit.</p>
+      <p>Für die <strong>Leitung</strong> gilt das alles nicht: Sie sieht immer die ganze Gemeinde.</p>
+      <div class="tabelle-huelle"><table><thead><tr><th>Bereich</th><th>Ohne passende Zuweisung</th></tr></thead><tbody><tr><td>Konfi-Liste</td><td>die Liste bleibt <strong>komplett leer</strong></td></tr><tr><td>Punkte vergeben</td><td>abgewiesen mit „Kein Zugriff auf diesen Konfi“</td></tr><tr><td>Termine</td><td>jahrgangsgebundene Termine sind unsichtbar</td></tr><tr><td>Chat: Teamer:in schreibt Konfi an</td><td>„Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben“</td></tr><tr><td>Chat: Konfi schreibt Teamer:in an</td><td>„Diese Teamer:in ist nicht für deinen Jahrgang zuständig“</td></tr><tr><td>Chat: Kontaktliste</td><td>die Teamer:in taucht bei den Konfis gar nicht erst auf</td></tr><tr><td>Jahrgangs-Chatraum</td><td>keine Aufnahme in den Raum</td></tr><tr><td>Challenges</td><td>jahrgangsgebundene Challenges sind unsichtbar</td></tr><tr><td>Mitteilungen und Push</td><td>nur für die eigenen Jahrgänge</td></tr></tbody></table></div>
+      <blockquote><strong>Der Chat sperrt in BEIDE Richtungen.</strong> Eine Teamer:in ohne Zuweisung ist für Konfis unsichtbar und erreicht ihrerseits keinen einzigen Konfi. Wenn sich jemand meldet, er sehe „gar keine Konfis“ oder werde von niemandem gefunden, ist fast immer die fehlende Jahrgangs-Zuweisung die Ursache.</blockquote>
+      <p>Termine, die <strong>nur für Teamer:innen</strong> gedacht sind, und Termine ohne Jahrgangsbindung bleiben immer sichtbar — die Sperre greift nur bei jahrgangsgebundenen Terminen.</p>
+      <p>Wird ein Konfi <strong>zur Teamer:in befördert</strong>, übernimmt das System seinen Jahrgang automatisch als Zuweisung, mit Lese- und Bearbeitungsrecht.</p>
+      <h2>Kategorien</h2>
+      <p>Kategorien sortieren Aktivitäten und Termine. Es gibt <strong>eine einzige gemeinsame Liste</strong> für beides — keine getrennten Kategorien für Aktivitäten und Termine.</p>
+      <p>Eine Kategorie hat nur <strong>Name</strong> und <strong>Beschreibung</strong>. Beide gelten für die ganze Gemeinde, nicht pro Jahrgang.</p>
+      <p>Verwendet werden sie an drei Stellen:</p>
+      <ul><li>zum Sortieren und Filtern von <strong>Aktivitäten</strong></li><li>zum Sortieren und Filtern von <strong>Terminen</strong></li><li>als Grundlage für <strong>Kategorie-Abzeichen</strong></li></ul>
+      <h3>Löschen ist blockiert, solange sie benutzt wird</h3>
+      <p>Wird eine Kategorie noch verwendet, lässt sie sich nicht löschen. Die Meldung nennt die genauen Zahlen, etwa: <strong>„Kategorie kann nicht gelöscht werden: 3 Aktivität(en) und 2 Event(s) zugeordnet.“</strong></p>
+      <p>Es wird also nichts stillschweigend entkoppelt — entweder die Kategorie geht ganz weg, oder sie bleibt vollständig.</p>
+      <blockquote>Die Nachfrage vor dem Löschen („Kategorie wirklich löschen?“) <strong>warnt nicht vorab</strong>, dass die Kategorie noch benutzt wird. Das erfährst du erst, nachdem du bestätigt hast — dann als Fehlermeldung.</blockquote>
+      <p>Zwei Kategorien dürfen nicht denselben Namen haben („Kategoriename existiert bereits“).</p>
+      <h3>Die Falle mit den Kategorie-Abzeichen</h3>
+      <blockquote><strong>Achtung, das ist die gefährlichste Stelle in diesem Kapitel:</strong> Ein Kategorie-Abzeichen merkt sich den <strong>Namen</strong> der Kategorie, nicht die Kategorie selbst. Benennst du eine Kategorie um, findet das zugehörige Abzeichen nichts mehr — <strong>stillschweigend, ohne Fehlermeldung</strong>. Niemand bekommt es mehr, und niemand erfährt, warum. Bereits verliehene bleiben erhalten. <strong>Kategorien, auf die Abzeichen zeigen, also nicht umbenennen.</strong></blockquote>
+      <h2>Jahrgang löschen</h2>
+      <p>Das Löschen ist an zwei Stellen abgesichert.</p>
+      <p><strong>Blockiert, solange aktive Konfis zugeordnet sind.</strong> Meldung: „Jahrgang kann nicht gelöscht werden: 12 Konfi(s) zugeordnet.“ Verschiebe die Konfis erst in einen anderen Jahrgang.</p>
+      <p><strong>Blockiert, solange der Chatverlauf Nachrichten enthält.</strong> Meldung: „Jahrgang kann nicht gelöscht werden: Chat-Raum enthält 148 Nachricht(en).“ Hier gibt es allerdings einen Ausweg: Als Organisations-Administration bekommst du die Rückfrage „Chat-Nachrichten vorhanden“ mit dem Knopf <strong>„Dennoch löschen“</strong>. Dann werden <strong>alle Nachrichten, Umfragen und Anhänge unwiderruflich gelöscht</strong>.</p>
+      <h3>Was mit beförderten Teamer:innen passiert</h3>
+      <p>Ehemalige Konfis, die inzwischen Teamer:in sind, <strong>blockieren das Löschen nicht</strong>. Sie verlieren beim Löschen nur ihre Jahrgangs-Bindung.</p>
+      <p><strong>Ihre Daten bleiben vollständig erhalten</strong>: Punktestand, Level, Abzeichen und Konfispruch. Das ist bewusst so gebaut, damit sie ihre eigene Konfizeit später noch nachschauen können.</p>
+      <h2>Das Konfirmationsdatum</h2>
+      <p>Am Jahrgang selbst wird <strong>kein</strong> Konfirmationsdatum mehr gepflegt. Das Feld gibt es technisch noch, wird aber nicht mehr beschrieben.</p>
+      <p>Der Konfirmationstermin ergibt sich stattdessen <strong>pro Konfi</strong> aus dem Termin, der als Konfirmation gekennzeichnet ist und den der Konfi gebucht hat. Bei mehreren Konfirmationsterminen in einem Jahrgang hat also jeder sein eigenes, richtiges Datum.</p>
+    </section>
     <section id="badges" class="kapitel" style="--kapitel:#b45309">
       <header class="kapitel-kopf">
         <h2>Abzeichen</h2>
@@ -353,7 +510,12 @@ tbody tr:last-child td { border-bottom:none; }
       <p>Gezählt wird alles aus einer Kategorie — <strong>Aktivitäten und Termine zusammen</strong>.</p>
       <p><em>Beispiel:</em> Wert 3 + Kategorie „Kasualien&quot; → drei Kasualien, egal ob als Aktivität gemeldet oder als Termin besucht.</p>
       <p>So hängt es zusammen:</p>
-      <p>``<code> Kategorie &quot;Kasualien&quot; anlegen ├─ der Aktivität &quot;Taufe begleiten&quot; zuordnen ├─ der Aktivität &quot;Beerdigung besuchen&quot; zuordnen └─ dem Termin &quot;Trauung Familie Meier&quot; zuordnen ↓ Abzeichen &quot;Kasualien-Kenner&quot;: 3 aus Kategorie &quot;Kasualien&quot; </code>``</p>
+      <pre><code>Kategorie &quot;Kasualien&quot; anlegen
+   ├─ der Aktivität &quot;Taufe begleiten&quot; zuordnen
+   ├─ der Aktivität &quot;Beerdigung besuchen&quot; zuordnen
+   └─ dem Termin &quot;Trauung Familie Meier&quot; zuordnen
+                    ↓
+Abzeichen &quot;Kasualien-Kenner&quot;: 3 aus Kategorie &quot;Kasualien&quot;</code></pre>
       <blockquote><strong>Wichtige Falle:</strong> Das Abzeichen merkt sich den <strong>Namen</strong> der Kategorie, nicht die Kategorie selbst. Benennst du „Kasualien&quot; später in „Kasualien &amp; Begleitung&quot; um, findet das Abzeichen nichts mehr — stillschweigend, ohne Fehlermeldung. Bereits verliehene bleiben. <strong>Kategorien, auf die Abzeichen zeigen, also besser nicht umbenennen.</strong></blockquote>
       <h3>Nach Zeit</h3>
       <h4>Zeitbasiert</h4>
@@ -381,6 +543,628 @@ tbody tr:last-child td { border-bottom:none; }
       <h2>Was beim Verleihen passiert</h2>
       <p>1. Das Abzeichen wird eingetragen 2. Mitteilung in der App: „Neues Badge erhalten!&quot; 3. Push aufs Gerät 4. Der Zähler in der Tab-Leiste aktualisiert sich</p>
       <p>Ein Abzeichen kann nie doppelt vergeben werden.</p>
+    </section>
+    <section id="termine" class="kapitel" style="--kapitel:#dc2626">
+      <header class="kapitel-kopf">
+        <h2>Termine</h2>
+        <p class="kapitel-meta">Anlegen, Anmeldung, Anwesenheit und Punkte</p>
+      </header>
+      <p>Termine (im System „Events&quot;) sind alles, wozu man kommen kann: Gottesdienste, Ausflüge, Konfi-Tage, die Konfirmation selbst. Ein Termin regelt <strong>wer sich anmelden darf</strong>, <strong>wie viele mitkommen können</strong>, <strong>ob es Punkte gibt</strong> und <strong>wie du hinterher die Anwesenheit verbuchst</strong>.</p>
+      <p>Dieses Kapitel geht das Anlege-Formular Abschnitt für Abschnitt durch. Fast jede Einstellung schaltet andere Einstellungen ab — deshalb lohnt es sich, die Reihenfolge einzuhalten: <strong>erst die Zielgruppe, dann alles andere.</strong></p>
+      <h2>Der schnellste Weg zum ersten Termin</h2>
+      <p>1. Name und Datum eintragen 2. „Für wen ist das Event?&quot; auf <strong>Nur Konfis</strong> lassen 3. Plätze festlegen (oder „Unbegrenzte Teilnehmer:innen&quot; einschalten) 4. Punkte festlegen 5. Speichern</p>
+      <p>Alles andere — Warteliste, Zeitfenster, Serie, QR-Check-in — ist optional und hat sinnvolle Voreinstellungen.</p>
+      <p>---</p>
+      <h2>Zielgruppe: „Für wen ist das Event?&quot;</h2>
+      <p><strong>Diese Auswahl steht ganz oben und entscheidet über alles Weitere.</strong> Sie legt fest, welche Abschnitte im Formular überhaupt erscheinen.</p>
+      <div class="tabelle-huelle"><table><thead><tr><th></th><th>Nur Konfis</th><th>Konfis, Teamer:innen gesucht</th><th>Nur Teamer:innen</th></tr></thead><tbody><tr><td>Konfis sehen den Termin</td><td>ja</td><td>ja</td><td><strong>nein</strong></td></tr><tr><td>Konfis können sich anmelden</td><td>ja</td><td>ja</td><td>nein</td></tr><tr><td>Teamer:innen können sich anmelden</td><td><strong>nein</strong></td><td>ja</td><td>ja</td></tr><tr><td>Abschnitt „Konfis&quot; (Plätze, Punkte)</td><td>ja</td><td>ja</td><td><strong>weg</strong></td></tr><tr><td>Abschnitt „Teamer:innen&quot; (Kontingent)</td><td><strong>weg</strong></td><td>ja</td><td>ja</td></tr><tr><td>Pflicht-Event möglich</td><td>ja</td><td>ja</td><td><strong>weg</strong></td></tr><tr><td>Konfirmation möglich</td><td>ja</td><td>ja</td><td><strong>weg</strong></td></tr><tr><td>Anmeldezeitraum möglich</td><td>ja</td><td>ja</td><td><strong>weg</strong></td></tr><tr><td>Zeitfenster möglich</td><td>ja</td><td>ja</td><td><strong>weg</strong></td></tr></tbody></table></div>
+      <h3>Nur Konfis</h3>
+      <p>Der Normalfall. Teamer:innen können sich hier <strong>nicht</strong> anmelden — auch nicht über einen Umweg; der Server lehnt es ab („Dieses Event ist nicht für Teamer:innen buchbar&quot;). Sie sehen den Termin nur, wenn er einem Jahrgang zugeordnet ist, den sie betreuen, oder wenn er gar keinem Jahrgang zugeordnet ist.</p>
+      <h3>Konfis, Teamer:innen gesucht</h3>
+      <p>Beide Gruppen können mitmachen — mit <strong>zwei völlig getrennten Kontingenten</strong>. Zehn Konfi-Plätze und drei Teamer-Plätze sind zehn und drei, nicht dreizehn. Ein freigewordener Konfi-Platz geht nie an eine wartende Teamer:in und umgekehrt.</p>
+      <p>Der Termin ist für <strong>alle</strong> Teamer:innen sichtbar, unabhängig davon, welche Jahrgänge sie betreuen.</p>
+      <h3>Nur Teamer:innen</h3>
+      <p>Zum Beispiel eine Teamer-Schulung oder Vorbereitungsrunde. Konfis sehen den Termin gar nicht — er wird aus ihrer Liste herausgefiltert.</p>
+      <p>Umschalten auf „Nur Teamer:innen&quot; setzt sofort <strong>Pflicht-Event aus, Konfirmation aus und Zeitfenster aus</strong> — alle drei sind Konfi-Angelegenheiten. Beim Speichern werden zusätzlich Punkte, Konfi-Plätze, Jahrgänge und das Anmeldefenster auf null gesetzt.</p>
+      <blockquote><strong>Achtung:</strong> „Konfis, Teamer:innen gesucht&quot; und „Nur Teamer:innen&quot; schließen sich gegenseitig aus — das erzwingt auch die Datenbank. Es gibt kein „irgendwie beides&quot;.</blockquote>
+      <p>---</p>
+      <h2>Pflicht-Event</h2>
+      <p>Ein Pflicht-Event ist ein Termin, zu dem <strong>der ganze Jahrgang automatisch angemeldet ist</strong>. Niemand muss sich anmelden, weil alle schon drin sind.</p>
+      <h3>Was „automatisch angemeldet&quot; konkret heißt</h3>
+      <p>In dem Moment, in dem du speicherst, legt das System für <strong>jeden Konfi der ausgewählten Jahrgänge</strong> eine bestätigte Anmeldung an. Alle bekommen einen Push: „Neues Pflicht-Event&quot;.</p>
+      <p>Deshalb gilt: <strong>Pflicht-Events brauchen mindestens einen Jahrgang.</strong> Ohne Jahrgang wüsste das System nicht, wen es anmelden soll — das Formular verweigert das Speichern mit „Pflicht-Events brauchen mindestens einen Jahrgang&quot;.</p>
+      <h3>Welche Optionen dadurch wegfallen</h3>
+      <p>Sobald du „Pflicht-Event&quot; einschaltest, sind folgende Einstellungen wirkungslos — das System setzt sie beim Speichern hart auf null, egal was im Formular stand:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th>Einstellung</th><th>Was passiert</th></tr></thead><tbody><tr><td><strong>Punkte</strong></td><td>werden auf 0 gesetzt</td></tr><tr><td><strong>Max. Teilnehmer:innen</strong></td><td>auf 0 (= keine Begrenzung)</td></tr><tr><td><strong>Warteliste</strong></td><td>ausgeschaltet</td></tr><tr><td><strong>Zeitfenster</strong></td><td>ausgeschaltet, das Formular blendet den Abschnitt aus</td></tr><tr><td><strong>Anmeldung ab / Anmeldeschluss</strong></td><td>entfallen, der Abschnitt verschwindet</td></tr></tbody></table></div>
+      <p>Der Grund ist bei allen derselbe: Wenn ohnehin der ganze Jahrgang angemeldet ist, gibt es nichts zu begrenzen, keine Reihenfolge zu verwalten und keinen Anmeldezeitraum zu öffnen.</p>
+      <blockquote><strong>Warum keine Punkte?</strong> Für etwas, wozu man verpflichtet ist, gibt es keine Belohnung. Das ist eine bewusste Entscheidung und lässt sich nicht umstellen. Die Anwesenheit wird trotzdem erfasst — sie zählt für das Abzeichen „Pflicht-Anwesenheit&quot; (siehe Kapitel Abzeichen).</blockquote>
+      <h3>Abmelden mit Begründung</h3>
+      <p>Konfis können sich von einem Pflicht-Event abmelden — aber nur <strong>mit Begründung</strong>, und die muss <strong>mindestens 5 Zeichen</strong> lang sein. Ein leeres Feld oder ein „ok&quot; wird abgelehnt.</p>
+      <p><em>Beispiel:</em> „Bin krank&quot; oder „Familienfeier, war lange geplant&quot;.</p>
+      <p>Was dann passiert:</p>
+      <p>1. Die Anmeldung wechselt von „angemeldet&quot; auf „abgemeldet&quot; 2. Die Leitung bekommt einen Push mit Namen, Termin und Begründung 3. Beim Konfi steht „Du hast dich abgemeldet&quot;</p>
+      <p>Abmelden geht <strong>nur, solange der Termin in der Zukunft liegt</strong>. Ist er vorbei, lehnt das System es ab.</p>
+      <h3>Wieder rein kommen</h3>
+      <p>Ein Knopf: <strong>„Wieder anmelden&quot;.</strong> Die Anmeldung wechselt zurück auf „angemeldet&quot;, die Leitung bekommt wieder einen Push. Auch das geht nur, solange der Termin noch nicht vorbei ist.</p>
+      <p>Die ursprüngliche Begründung bleibt gespeichert — sie verschwindet nicht, wenn jemand sich wieder anmeldet.</p>
+      <blockquote><strong>Achtung:</strong> Wer sich abgemeldet hat, kann sich <strong>nicht per QR-Code einchecken</strong>. Der Scanner meldet „Du hast dich von diesem Event abgemeldet&quot;. Wer doch spontan kommt, muss sich vorher in der App wieder anmelden oder von dir von Hand als anwesend verbucht werden.</blockquote>
+      <h3>Nachträglich zum Pflicht-Event machen</h3>
+      <p>Machst du einen bestehenden Termin nachträglich zum Pflicht-Event, wird der ganze Jahrgang <strong>jetzt</strong> angemeldet. Wer sich vorher schon angemeldet hatte, bleibt einfach angemeldet — es entstehen keine Doppelanmeldungen.</p>
+      <p>Vorhandene Zeitfenster werden entfernt, sofern keine Anmeldung daran hängt. Hängen Anmeldungen daran, bleiben die Zeitfenster in der Datenbank stehen, werden aber nicht mehr angezeigt.</p>
+      <p>---</p>
+      <h2>Konfirmation</h2>
+      <p>Das Häkchen „Konfirmation&quot; markiert einen Termin als Konfirmationstermin. Es tut <strong>etwas ganz anderes</strong> als „Pflicht-Event&quot;:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th></th><th>Pflicht-Event</th><th>Konfirmation</th></tr></thead><tbody><tr><td>Alle automatisch angemeldet</td><td><strong>ja</strong></td><td>nein — jede:r meldet sich selbst an</td></tr><tr><td>Jahrgang zwingend nötig</td><td>ja</td><td>nein</td></tr><tr><td>Punkte</td><td>0 (erzwungen)</td><td>0 (erzwungen)</td></tr><tr><td>Zeitfenster möglich</td><td>nein</td><td>nein</td></tr><tr><td>Plätze begrenzbar</td><td>nein</td><td><strong>ja</strong></td></tr><tr><td>Warteliste möglich</td><td>nein</td><td><strong>ja</strong></td></tr><tr><td>Anmeldezeitraum</td><td>entfällt</td><td><strong>möglich</strong></td></tr><tr><td>Abmelden</td><td>nur mit Begründung</td><td>ganz normal</td></tr></tbody></table></div>
+      <p>Die eigentliche Wirkung: <strong>Ein Konfi kann sich nur zu genau einem Konfirmationstermin anmelden.</strong> Versucht jemand, einen zweiten zu buchen, lehnt das System es ab:</p>
+      <blockquote>„Du bist bereits zu einem Konfirmationstermin angemeldet (…). Melde dich dort zuerst ab, um einen anderen Termin zu wählen.&quot;</blockquote>
+      <p>In der App sind die anderen Konfirmationstermine dann ausgegraut.</p>
+      <p><em>Typischer Einsatz:</em> Drei Konfirmationsgottesdienste an zwei Wochenenden, je 15 Plätze. Die Konfis verteilen sich selbst, und niemand landet versehentlich in zweien.</p>
+      <blockquote><strong>Achtung:</strong> Abgesagte Konfirmationstermine zählen nicht mit. Wer zu einem abgesagten Termin angemeldet ist, kann sich ohne Weiteres einen neuen aussuchen.</blockquote>
+      <p>---</p>
+      <h2>Anmeldezeitraum</h2>
+      <p>Der Anmeldezeitraum besteht aus zwei Zeitpunkten: <strong>Anmeldung ab</strong> und <strong>Anmeldeschluss</strong>.</p>
+      <blockquote><strong>Das Wichtigste zuerst:</strong> Das Anmeldefenster gilt <strong>ausschließlich für Konfis</strong>. Teamer:innen können sich jederzeit anmelden — vor Öffnung, nach Schluss, egal. Sie begrenzt allein ihr Kontingent. Deshalb blendet das Formular den Abschnitt bei „Nur Teamer:innen&quot; komplett aus: Die Felder wären dort wirkungslos.</blockquote>
+      <h3>„Anmeldung ab sofort&quot;</h3>
+      <p>Der Schalter steht standardmäßig <strong>an</strong>. Das heißt: Es gibt keinen Startzeitpunkt — sobald der Termin gespeichert ist, kann man sich anmelden. Das ist der Normalfall.</p>
+      <p>Schaltest du ihn aus, erscheint ein Datumsfeld, vorbelegt mit „jetzt&quot;. Setz es auf den gewünschten Zeitpunkt.</p>
+      <p><em>Beispiel:</em> Anmeldung ab 1. September, 18 Uhr → vorher sehen die Konfis den Termin zwar, bekommen aber „Anmeldung noch nicht geöffnet&quot; beim Versuch. In der Liste steht der Termin auf „Bald&quot;.</p>
+      <h3>Anmeldeschluss</h3>
+      <p>Ist beim Anlegen automatisch auf <strong>eine Stunde vor Terminbeginn</strong> vorbelegt. Nach diesem Zeitpunkt gibt es „Anmeldung bereits geschlossen&quot;; in der Liste steht „Geschlossen&quot;.</p>
+      <h3>Voreinstellungen beim Anlegen im Überblick</h3>
+      <div class="tabelle-huelle"><table><thead><tr><th>Feld</th><th>Voreinstellung</th></tr></thead><tbody><tr><td>Termin-Beginn</td><td>die nächste volle Stunde</td></tr><tr><td>Endzeit</td><td>zwei Stunden nach Beginn</td></tr><tr><td>Anmeldung ab</td><td>sofort (kein Startzeitpunkt)</td></tr><tr><td>Anmeldeschluss</td><td>eine Stunde vor Beginn</td></tr><tr><td>Max. Teilnehmer:innen</td><td>5</td></tr><tr><td>Punkte</td><td>1, Typ Gemeinde</td></tr><tr><td>Warteliste</td><td>an, 3 Plätze</td></tr><tr><td>Check-in-Fenster</td><td>30 Minuten</td></tr></tbody></table></div>
+      <h3>Der „Anmeldung möglich&quot;-Push</h3>
+      <p>Sobald ein freiwilliger Termin anmeldbar wird, geht <strong>genau ein</strong> Push an die Konfis. Er wird nicht beim Speichern verschickt, sondern von einem Hintergrundlauf, der jede Minute prüft — so kann er nicht doppelt kommen.</p>
+      <p>Schließt du die Anmeldung wieder (Fenster in die Zukunft verschoben, Termin abgesagt), wird die Merkung zurückgesetzt: Beim nächsten Öffnen kommt wieder ein Push.</p>
+      <p>Pflicht-Events haben ihren eigenen Push beim Anlegen und sind hiervon ausgenommen.</p>
+      <p>---</p>
+      <h2>Plätze und Warteliste</h2>
+      <p>Konfis und Teamer:innen haben <strong>je ein eigenes Kontingent</strong> mit <strong>je eigener Warteliste</strong>. Beide Abschnitte sind gleich aufgebaut.</p>
+      <h3>„Unbegrenzte Teilnehmer:innen&quot; und die Null</h3>
+      <p>Die Zahl <strong>0 bedeutet überall im System: unbegrenzt.</strong> Der Schalter „Unbegrenzte Teilnehmer:innen&quot; setzt genau das.</p>
+      <p>Ist er an, verschwindet der Warteliste-Schalter — bei unbegrenzten Plätzen gibt es nichts zu warten, jede Anmeldung wird sofort bestätigt.</p>
+      <h3>Warteliste</h3>
+      <p>Ist die Warteliste an und alle Plätze belegt, landet die nächste Anmeldung auf der Warteliste statt abgewiesen zu werden. Die Person sieht: „Du bist auf der Warteliste. Wird ein Platz frei, rückst du automatisch nach.&quot;</p>
+      <p><strong>Max. Wartelisten-Plätze</strong> begrenzt auch die Warteliste. Ist sie voll, kommt „Event ist voll und Warteliste ist auch voll&quot;. Ist die Warteliste ganz aus, kommt stattdessen „Das Event ist leider bereits ausgebucht&quot;.</p>
+      <h3>Wann wird nachgerückt?</h3>
+      <p>Das passiert <strong>automatisch, ohne dein Zutun</strong>, in vier Fällen:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th>Auslöser</th><th>Was passiert</th></tr></thead><tbody><tr><td>Jemand meldet sich ab</td><td>die erste wartende Person rückt nach</td></tr><tr><td>Du erhöhst die Teilnehmerzahl</td><td>so viele rücken nach, wie neue Plätze da sind</td></tr><tr><td>Du erhöhst die Plätze eines Zeitfensters</td><td>dasselbe, aber nur in diesem Zeitfenster</td></tr><tr><td>Du erhöhst das Teamer-Kontingent</td><td>die wartenden Teamer:innen rücken nach</td></tr></tbody></table></div>
+      <p>Nachgerückt wird immer <strong>in der Reihenfolge der Anmeldung</strong> (wer zuerst kam, rückt zuerst nach). Die nachgerückte Person bekommt einen Push.</p>
+      <blockquote><strong>Die wichtigste Regel:</strong> Ein frei gewordener <strong>Konfi-Platz geht niemals an eine wartende Teamer:in</strong> — und umgekehrt. Die beiden Wartelisten werden strikt getrennt geführt.</blockquote>
+      <p>Gelöschte Nutzer:innen rücken nie nach.</p>
+      <h3>Wenn du die Plätze reduzierst</h3>
+      <p><strong>Niemand wird zurückgestuft.</strong> Wer schon bestätigt ist, bleibt bestätigt — auch wenn dadurch mehr Leute drin sind, als die neue Zahl erlaubt. Das gilt für Konfis und Teamer:innen gleichermaßen.</p>
+      <p><em>Beispiel:</em> 20 Plätze, 20 Anmeldungen, du reduzierst auf 15 → alle 20 bleiben drin. Erst wenn sich fünf abmelden, greift die neue Grenze.</p>
+      <h3>Teamer-Kontingent</h3>
+      <p>Der Abschnitt „Teamer:innen&quot; erscheint nur bei „Konfis, Teamer:innen gesucht&quot; und „Nur Teamer:innen&quot;. Er hat dieselben drei Einstellungen: unbegrenzt / Zahl, Warteliste an-aus, Wartelisten-Plätze.</p>
+      <p>Meldet sich eine Teamer:in an oder ab, bekommt die Leitung einen Push. Bei Konfi-Anmeldungen ist das nicht so — sonst wäre die Leitung mit Meldungen zugeschüttet.</p>
+      <p>---</p>
+      <h2>Zeitfenster (Timeslots)</h2>
+      <p>Zeitfenster sind für Termine, bei denen die Leute <strong>nacheinander in kleinen Gruppen</strong> kommen: Vorstellungsgespräche, Fototermine, Beichtgespräche.</p>
+      <h3>Wie das aussieht</h3>
+      <p>Du legst mehrere Fenster an, jedes mit eigener Uhrzeit und <strong>eigener Platzzahl</strong>:</p>
+      <pre><code>Fototermin
+  ├─ 14:00 – 14:30   4 Plätze
+  ├─ 14:30 – 15:00   4 Plätze
+  └─ 15:00 – 15:30   4 Plätze</code></pre>
+      <p>Ein neues Fenster schließt zeitlich ans letzte an und übernimmt dessen Platzzahl — du musst also nur die erste Zeile einstellen und dann auf „Zeitfenster hinzufügen&quot; tippen.</p>
+      <h3>Wie das Buchen läuft</h3>
+      <p>Der Konfi <strong>muss</strong> ein Fenster auswählen; ohne kommt „Bitte einen Zeitslot auswählen&quot;. Beim Buchen zählt <strong>die Kapazität des einzelnen Fensters</strong>, nicht die Gesamtzahl.</p>
+      <p>Ist ein Fenster voll und die Warteliste an, steht in der Auswahlliste zum Beispiel: „14:00 - 14:30 (voll — auf Warteliste, 2 warten)&quot;. Man kann sich also gezielt auf die Warteliste <strong>dieses einen Fensters</strong> setzen. Wird dort ein Platz frei, rückt genau von dieser Warteliste jemand nach — nicht von einer anderen.</p>
+      <p>Ist das Fenster voll und die Warteliste aus, kommt „Dieser Zeitslot ist ausgebucht und hat keine Warteliste.&quot;</p>
+      <p>Die in der Übersicht angezeigte Gesamt-Teilnehmerzahl ist bei Zeitfenster-Terminen die <strong>Summe aller Fensterplätze</strong>.</p>
+      <h3>Was beim Bearbeiten passiert</h3>
+      <p>Beim Speichern werden vorhandene Fenster <strong>aktualisiert</strong>, nicht neu angelegt — bestehende Anmeldungen bleiben also an ihrem Fenster hängen.</p>
+      <p>Entfernst du ein Fenster:</p>
+      <ul><li><strong>ohne Anmeldungen</strong> → es wird gelöscht</li><li><strong>mit Anmeldungen</strong> → es bleibt bestehen, verschwindet aber aus der Anzeige</li></ul>
+      <blockquote><strong>Achtung:</strong> Ein Zeitfenster mit Anmeldungen lässt sich nicht wirklich loswerden. Willst du es weg haben, melde erst die Leute ab oder verschiebe sie in ein anderes Fenster.</blockquote>
+      <p>Schaltest du Zeitfenster ganz aus, werden alle Fenster gelöscht — <strong>außer</strong>, es hängt mindestens eine Anmeldung dran. Dann bleiben sie alle stehen.</p>
+      <h3>Warum es bei Pflicht und Konfirmation nicht geht</h3>
+      <p>Das Formular blendet den Abschnitt aus, sobald „Pflicht-Event&quot; oder „Konfirmation&quot; gesetzt ist, und der Server erzwingt es zusätzlich.</p>
+      <p>Der Grund ist inhaltlich: Ein Pflicht-Event gilt für den ganzen Jahrgang zur selben Zeit, eine Konfirmation hat einen festen Termin. In beiden Fällen gibt es nichts zu verteilen.</p>
+      <p>Auch bei „Nur Teamer:innen&quot; gibt es keine Zeitfenster: Teamer-Anmeldungen hängen grundsätzlich an keinem Zeitfenster.</p>
+      <p>---</p>
+      <h2>Punkte</h2>
+      <h3>Wann es Punkte gibt</h3>
+      <p>Punkte werden vergeben, wenn <strong>alle fünf</strong> Bedingungen erfüllt sind:</p>
+      <p>1. Die Person ist als <strong>anwesend</strong> verbucht (per QR-Check-in oder von Hand) 2. Der Termin hat eine <strong>Punktzahl größer 0</strong> 3. Es ist <strong>kein Pflicht-Event</strong> (dort sind die Punkte auf 0 erzwungen) 4. Die Person ist ein <strong>Konfi</strong> — Teamer:innen bekommen für Termine keine Punkte 5. Der gewählte <strong>Punkt-Typ ist im Jahrgang eingeschaltet</strong> (Gottesdienst oder Gemeinde)</p>
+      <p>Fehlt eine davon, wird die Anwesenheit trotzdem gesetzt — nur eben ohne Punkte.</p>
+      <p>Pro Person und Termin gibt es die Punkte <strong>genau einmal</strong>. Doppelt einchecken oder zweimal verbuchen ändert nichts.</p>
+      <p>Nach der Punktevergabe wird geprüft, ob neue Abzeichen fällig sind, und ob jemand ein Level aufgestiegen ist. Beides läuft automatisch.</p>
+      <h3>Punkt-Typ</h3>
+      <p>Jeder Termin gibt entweder <strong>Gottesdienst-</strong> oder <strong>Gemeindepunkte</strong>; Voreinstellung ist Gemeinde. Ist der gewählte Typ im Jahrgang des Konfis abgeschaltet, gibt es keine Punkte.</p>
+      <blockquote><strong>Unterschied, den du kennen solltest:</strong> Verbuchst du eine Person <strong>einzeln</strong> und der Punkt-Typ ist in ihrem Jahrgang abgeschaltet, bricht der Vorgang mit einer Fehlermeldung ab. Beim Sammel-Verbuchen („Alle bestätigen&quot;) wird die Person dagegen als anwesend verbucht und einfach übersprungen — sonst würde ein einziger Sonderfall die ganze Liste blockieren.</blockquote>
+      <h3>Wann Punkte zurückgenommen werden</h3>
+      <p>In zwei Fällen — jeweils vollständig, inklusive Abzug vom Punktestand:</p>
+      <ul><li>Du stellst die Anwesenheit von <strong>anwesend auf fehlend</strong></li><li>Die Person <strong>meldet sich ab</strong>, obwohl sie schon als anwesend verbucht war</li></ul>
+      <p>Der Punktestand fällt dabei nie unter null.</p>
+      <blockquote><strong>Achtung:</strong> Ein Abzeichen, das durch diese Punkte ausgelöst wurde, <strong>bleibt bestehen.</strong> Abzeichen werden nie aberkannt (siehe Kapitel Abzeichen).</blockquote>
+      <p>---</p>
+      <h2>Anwesenheit</h2>
+      <p>Nach dem Termin trägst du ein, wer da war. Es gibt drei Wege.</p>
+      <h3>Einzeln</h3>
+      <p>In der Teilnehmerliste über den jeweiligen Eintrag wischen und <strong>Anwesend</strong> oder <strong>Fehlend</strong> wählen. Punkte werden dabei sofort vergeben oder abgezogen, und die Person bekommt einen Push.</p>
+      <h3>„Verbuchen&quot; — alle auf einmal</h3>
+      <p>Liegt ein Termin in der Vergangenheit und es gibt noch unverbuchte Anmeldungen, zeigt der Termin oben den Status <strong>„Verbuchen&quot;</strong>. Der Knopf „Alle bestätigen&quot; setzt dann in einem Rutsch:</p>
+      <ul><li><strong>alle bestätigt angemeldeten Konfis</strong> ohne Anwesenheitsstatus auf „anwesend&quot;</li><li>inklusive Punkten, Abzeichen-Prüfung, Level-Prüfung und Push</li></ul>
+      <p>Was dabei <strong>nicht</strong> angefasst wird:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th></th><th>wird verbucht</th></tr></thead><tbody><tr><td>Angemeldete Konfis ohne Status</td><td><strong>ja</strong></td></tr><tr><td>Bereits verbuchte (anwesend oder fehlend)</td><td>nein, bleiben wie sie sind</td></tr><tr><td>Wartelisten-Einträge</td><td><strong>nein</strong></td></tr><tr><td>Abgemeldete (Pflicht-Event)</td><td>nein</td></tr><tr><td>Teamer:innen</td><td><strong>nein — die verbuchst du einzeln</strong></td></tr></tbody></table></div>
+      <p>Sind alle verbucht, wechselt der Status auf <strong>„Verbucht&quot;</strong>.</p>
+      <blockquote><strong>Achtung:</strong> „Alle bestätigen&quot; heißt „alle waren da&quot;. Wer gefehlt hat, muss <strong>danach</strong> einzeln auf „Fehlend&quot; gestellt werden — dabei werden die gerade vergebenen Punkte wieder abgezogen. Bei vielen Fehlenden ist einzeln verbuchen der schnellere Weg.</blockquote>
+      <h3>QR-Check-in</h3>
+      <p>Die Leute checken sich selbst ein. Siehe nächster Abschnitt.</p>
+      <p>---</p>
+      <h2>QR-Check-in</h2>
+      <p>Du zeigst einen QR-Code (auf dem Handy, am Beamer, ausgedruckt), die Konfis scannen ihn in der App und sind eingecheckt — inklusive Punkten.</p>
+      <h3>Das Zeitfenster</h3>
+      <p>Beim Anlegen stellst du das <strong>Check-in-Fenster</strong> ein: 5 bis 60 Minuten, Voreinstellung 30.</p>
+      <p><strong>Die Zahl gilt in beide Richtungen — vor und nach dem Terminbeginn.</strong></p>
+      <p><em>Beispiel:</em> Termin um 18:00 Uhr, Fenster 30 Minuten → Check-in ist von <strong>17:30 bis 18:30</strong> möglich. Das sind eine ganze Stunde, nicht dreißig Minuten.</p>
+      <p>Davor: „Check-in ist noch nicht möglich&quot;. Danach: „Der Check-in-Zeitraum ist abgelaufen&quot;. Gerechnet wird immer ab dem <strong>Terminbeginn</strong>, nie ab der Endzeit.</p>
+      <blockquote><strong>Achtung:</strong> Für einen dreistündigen Konfi-Tag ist ein 30-Minuten-Fenster knapp — wer eine Stunde später dazustößt, kommt nicht mehr rein. Plane das Fenster nach der erwarteten Ankunftszeit, nicht nach der Länge des Termins. Über die App sind maximal 60 Minuten einstellbar.</blockquote>
+      <h3>Wer sich einchecken kann</h3>
+      <p>Der Scan funktioniert nur, wenn die Person <strong>bestätigt angemeldet</strong> ist. Andernfalls:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th>Situation</th><th>Meldung</th></tr></thead><tbody><tr><td>gar nicht angemeldet</td><td>„Du bist nicht für dieses Event angemeldet&quot;</td></tr><tr><td>auf der Warteliste</td><td>„Deine Anmeldung ist nicht bestätigt&quot;</td></tr><tr><td>von einem Pflicht-Event abgemeldet</td><td>„Du hast dich von diesem Event abgemeldet&quot;</td></tr><tr><td>schon eingecheckt</td><td>„Du bist bereits eingecheckt&quot; (kein Fehler, keine zweiten Punkte)</td></tr><tr><td>Code einer anderen Gemeinde</td><td>„Kein Zugriff auf dieses Event&quot;</td></tr></tbody></table></div>
+      <p>Teamer:innen können sich ebenfalls einchecken — sie werden als anwesend verbucht, bekommen aber keine Punkte.</p>
+      <h3>Warum Konfis den Code nicht sehen</h3>
+      <p>Der QR-Code ist ein Geheimnis. Würde er in der Konfi-App auftauchen, könnte sich jeder von zu Hause aus als anwesend eintragen und sich die Punkte selbst gutschreiben.</p>
+      <p>Deshalb wird der Code <strong>ausschließlich</strong> an Leitung und Teamer:innen ausgeliefert, und auch dort nur in der Detailansicht des einzelnen Termins — nie in der Terminliste.</p>
+      <p>Der Code wird beim ersten Anzeigen erzeugt und bleibt danach gleich. Er läuft nicht ab; die zeitliche Begrenzung macht allein das Check-in-Fenster.</p>
+      <p>---</p>
+      <h2>Serien</h2>
+      <p>Statt zwölf Konfi-Stunden einzeln anzulegen, legst du eine <strong>Serie</strong> an.</p>
+      <p>Der Abschnitt erscheint nur <strong>beim Anlegen</strong>, nicht beim Bearbeiten.</p>
+      <h3>Einstellungen und Grenzen</h3>
+      <div class="tabelle-huelle"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Anzahl Termine</td><td><strong>2 bis 26</strong> (bei „Monatlich&quot; höchstens 12)</td></tr><tr><td>Intervall</td><td>Täglich · Wöchentlich · Alle 2 Wochen · Monatlich</td></tr><tr><td>Zeitspanne</td><td><strong>höchstens 12 Monate</strong> vom ersten bis zum letzten Termin</td></tr></tbody></table></div>
+      <p>Unter den Einstellungen steht immer das Datum des letzten Termins — so siehst du sofort, worauf du dich einlässt.</p>
+      <p>Reißt du die 12-Monats-Grenze, verweigert das System das Speichern und nennt das Datum, das zu weit läge.</p>
+      <h3>Benennung</h3>
+      <p>Die Termine werden <strong>durchnummeriert</strong>: aus „Konfi-Stunde&quot; wird „Konfi-Stunde #1&quot;, „Konfi-Stunde #2&quot; und so weiter. Das lässt sich nicht abschalten.</p>
+      <h3>Alle Einstellungen gelten für alle Termine</h3>
+      <p>Punkte, Plätze, Warteliste, Kategorien, Jahrgänge, Pflicht-Häkchen, Check-in-Fenster, Teamer-Kontingent — alles wird auf jeden Termin der Serie übertragen, mit denselben Zwangsregeln wie beim Einzeltermin.</p>
+      <h3>Was danach passiert</h3>
+      <p><strong>Es gibt keine Serien-Bearbeitung.</strong> Nach dem Anlegen sind es ganz normale einzelne Termine, die nur eine gemeinsame Kennung teilen:</p>
+      <ul><li>Einen Termin bearbeiten ändert <strong>nur diesen einen</strong></li><li>Einen Termin löschen löscht <strong>nur diesen einen</strong>, die übrigen bleiben</li><li>Einen Termin absagen sagt <strong>nur diesen einen</strong> ab</li></ul>
+      <blockquote><strong>Achtung:</strong> Willst du an einer zwölfteiligen Serie den Ort ändern, sind das zwölf Bearbeitungen. Prüfe die Einstellungen also lieber einmal zu viel, bevor du eine lange Serie speicherst.</blockquote>
+      <p>---</p>
+      <h2>Absagen oder Löschen?</h2>
+      <p>Zwei verschiedene Dinge, die oft verwechselt werden.</p>
+      <div class="tabelle-huelle"><table><thead><tr><th></th><th>Absagen</th><th>Löschen</th></tr></thead><tbody><tr><td>Termin bleibt sichtbar</td><td><strong>ja, durchgestrichen als „Abgesagt&quot;</strong></td><td>nein, weg</td></tr><tr><td>Anmeldungen</td><td>bleiben erhalten</td><td><strong>werden mitgelöscht</strong></td></tr><tr><td>Event-Chat und Nachrichten</td><td>bleiben</td><td><strong>werden mitgelöscht</strong></td></tr><tr><td>Wer wird benachrichtigt</td><td>Angemeldete <strong>und</strong> Wartende</td><td>Angemeldete und Wartende (Konfis)</td></tr><tr><td>Rückgängig</td><td>nein, aber der Termin ist noch da</td><td><strong>nein</strong></td></tr><tr><td>Neue Anmeldungen möglich</td><td>nein</td><td>—</td></tr></tbody></table></div>
+      <h3>Absagen</h3>
+      <p>Der saubere Weg. Der Termin wird als abgesagt markiert, alle Angemeldeten <strong>und alle auf der Warteliste</strong> bekommen einen Push. Der Termin bleibt in der Liste stehen, durchgestrichen, und taucht in der Leitungsansicht unter den abgesagten Terminen auf.</p>
+      <p>Ein bereits abgesagter Termin lässt sich nicht nochmal absagen.</p>
+      <p>Ein abgesagter Konfirmationstermin blockiert niemanden mehr: Die Betroffenen können sich einen anderen aussuchen.</p>
+      <h3>Löschen</h3>
+      <p>Endgültig. Gelöscht werden dabei: der Termin selbst, alle Anmeldungen, alle Zeitfenster, die Zuordnung zu Kategorien und Jahrgängen sowie <strong>der komplette Event-Chat mit allen Nachrichten, Umfragen und hochgeladenen Dateien</strong>.</p>
+      <p>Damit das nicht versehentlich passiert, fragt das System zweimal nach:</p>
+      <ul><li>Gibt es Anmeldungen → „Für dieses Event gibt es 12 Anmeldung(en). Beim Löschen werden alle benachrichtigt.&quot;</li><li>Gibt es Chat-Nachrichten → „Der Event-Chat enthält 34 Nachricht(en). Beim Löschen gehen sie verloren.&quot;</li></ul>
+      <p>Erst nach der Bestätigung wird gelöscht. Angemeldete und wartende Konfis bekommen dann einen Push — auch dann, wenn der Termin vorher schon abgesagt war.</p>
+      <blockquote><strong>Faustregel:</strong> Ein Termin, der stattfinden sollte und ausfällt, wird <strong>abgesagt</strong>. Ein Termin, den es nie hätte geben sollen (Tippfehler, versehentlich angelegt), wird <strong>gelöscht</strong>.</blockquote>
+      <p>---</p>
+      <h2>Automatische Änderungs-Meldungen</h2>
+      <p>Änderst du an einem <strong>zukünftigen, nicht abgesagten</strong> Termin</p>
+      <ul><li>das Datum oder die Uhrzeit,</li><li>die Endzeit oder</li><li>den Ort,</li></ul>
+      <p>bekommen <strong>alle Angemeldeten und alle auf der Warteliste</strong> automatisch einen Push mit der Änderung. Das musst du nicht auslösen — es passiert beim Speichern.</p>
+      <p>Änderst du nur den Namen, die Beschreibung, die Punkte oder die Platzzahl, kommt kein Push. Bei vergangenen Terminen ebenfalls nicht.</p>
+      <p>---</p>
+      <h2>Event-Chat</h2>
+      <p>Zu jedem Termin lässt sich ein Gruppenchat einrichten.</p>
+      <h3>Wann er entsteht</h3>
+      <p><strong>Nicht automatisch.</strong> Jemand aus Leitung oder Teamer-Team muss ihn in der Detailansicht des Termins über den Chat-Knopf anlegen und die Rückfrage bestätigen. Pro Termin gibt es genau einen — ein zweiter Versuch meldet „Chat existiert bereits für dieses Event&quot;.</p>
+      <h3>Wer reinkommt</h3>
+      <p>Beim Anlegen kommen hinein:</p>
+      <ul><li>die Person, die den Chat erstellt</li><li><strong>alle, die zu diesem Zeitpunkt bestätigt angemeldet sind</strong> — Konfis, Teamer:innen und Leitung gleichermaßen</li></ul>
+      <h3>Wer nicht nachkommt</h3>
+      <blockquote><strong>Das ist der wichtigste Punkt:</strong> Wer sich <strong>nach</strong> dem Anlegen des Chats anmeldet, wird <strong>nicht</strong> automatisch hinzugefügt. Auch nicht, wer von der Warteliste nachrückt.  Lege den Chat also möglichst <strong>spät</strong> an — am besten erst, wenn die Anmeldefrist durch ist. Sonst fehlt die Hälfte drin.</blockquote>
+      <p>Ebenfalls nicht dabei: alle, die zum Zeitpunkt des Anlegens auf der Warteliste standen.</p>
+      <h3>Wer rausfliegt</h3>
+      <p>Wer sich vom Termin <strong>abmeldet</strong>, wird gleichzeitig aus dem Event-Chat entfernt. Das passiert automatisch — sonst bliebe man in einem Chat zu einem Termin, an dem man nicht teilnimmt.</p>
+      <h3>Was beim Löschen passiert</h3>
+      <p>Wird der Termin gelöscht, verschwindet der Chat mitsamt allen Nachrichten, Umfragen und Dateien. Beim <strong>Absagen</strong> bleibt er dagegen bestehen.</p>
+      <p>---</p>
+      <h2>Teilnehmende von Hand hinzufügen</h2>
+      <p>In der Detailansicht kannst du Leute selbst eintragen — praktisch für alle, die keine App haben oder die Frist verpasst haben.</p>
+      <p>Dabei gelten dieselben Regeln wie bei der Selbstanmeldung:</p>
+      <ul><li>Eine Teamer:in lässt sich nur eintragen, wenn der Termin „Konfis, Teamer:innen gesucht&quot; oder „Nur Teamer:innen&quot; ist</li><li>Ein Konfi lässt sich nicht in einen reinen Teamer-Termin eintragen</li><li>Bei Zeitfenster-Terminen musst du ein Fenster auswählen</li><li>Doppelte Anmeldungen werden abgewiesen</li></ul>
+      <p>Das <strong>Anmeldefenster gilt hier nicht</strong> — du kannst also auch nach Anmeldeschluss noch jemanden eintragen.</p>
+      <p>---</p>
+      <h2>Häufige Stolpersteine auf einen Blick</h2>
+      <blockquote><strong>„Ich habe Punkte eingetragen, aber es gibt keine.&quot;</strong> Prüfe die fünf Bedingungen oben. Am häufigsten: Es ist ein Pflicht-Event oder eine Konfirmation (dort sind Punkte immer 0), oder der Punkt-Typ ist im Jahrgang abgeschaltet.</blockquote>
+      <blockquote><strong>„Die Teamer:innen sehen den Termin nicht.&quot;</strong> Bei „Nur Konfis&quot; sehen Teamer:innen den Termin nur, wenn er einem ihrer Jahrgänge zugeordnet ist oder gar keinem Jahrgang. Bei „Teamer:innen gesucht&quot; sehen ihn alle.</blockquote>
+      <blockquote><strong>„Der Termin ist ausgebucht, obwohl noch Plätze frei sind.&quot;</strong> Bei Zeitfenster-Terminen zählt das einzelne Fenster, nicht die Summe. Ein volles Fenster ist voll, auch wenn nebenan noch Platz ist.</blockquote>
+      <blockquote><strong>„Ich habe die Teilnehmerzahl reduziert, es sind aber immer noch zu viele drin.&quot;</strong> So ist es gedacht: Bestätigte Anmeldungen werden nie zurückgestuft.</blockquote>
+      <blockquote><strong>„Die Hälfte fehlt im Event-Chat.&quot;</strong> Der Chat nimmt nur mit, wer beim Anlegen schon angemeldet war. Später Angemeldete und Nachrücker kommen nicht dazu.</blockquote>
+      <blockquote><strong>„Der Konfi kann sich nicht abmelden.&quot;</strong> Bei freiwilligen Terminen geht Abmelden nur <strong>bis 2 Tage vor</strong> dem Termin. Danach steht in der App „Abmelden geht nur bis 2 Tage vorher&quot;. Du selbst kannst die Anmeldung in der Detailansicht trotzdem entfernen.</blockquote>
+    </section>
+    <section id="challenges" class="kapitel" style="--kapitel:#be185d">
+      <header class="kapitel-kopf">
+        <h2>Challenges</h2>
+        <p class="kapitel-meta">Aufgaben stellen, Beiträge begleiten, Abzeichen vergeben</p>
+      </header>
+      <p>Eine Challenge ist eine Aufgabe mit einem Zeitfenster, auf die Konfis mit einem eigenen Beitrag antworten: ein Text, ein Foto, eine Sprachaufnahme, ein kurzes Video oder ein Link. Alles, was zurückkommt, sammelt sich an einer Stelle — und du entscheidest vorher, wer es zu sehen bekommt.</p>
+      <h2>Warum es dafür keine Punkte gibt</h2>
+      <p>Challenges sind der einzige Teil der App, der <strong>nichts zählt</strong>. Keine Punkte, keine Rangliste, kein Zähler in der Konfi-Ansicht, keine Auswirkung auf das Ziel des Jahrgangs.</p>
+      <p>Das ist Absicht. Bei Aktivitäten und Terminen geht es um Teilnahme, und Teilnahme lässt sich zählen. Bei einer Challenge geht es um eine eigene Antwort — und ein Foto vom Sonnenaufgang ist nicht „drei Punkte wert&quot;. Sobald Punkte im Spiel wären, würden Beiträge nach Ertrag statt nach Ehrlichkeit entstehen.</p>
+      <p>Was es stattdessen gibt: ein <strong>Abzeichen</strong> für alle, die mitgemacht haben (siehe unten) — für alle dasselbe, ohne Abstufung.</p>
+      <blockquote><strong>Achtung:</strong> Weil nichts gezählt wird, taucht eine Challenge auch in keiner Auswertung, keinem Punktestand und keinem Zertifikat auf. Wer Teilnahme belegen will, braucht dafür eine Aktivität oder einen Termin.</blockquote>
+      <p>---</p>
+      <h2>Eine Challenge anlegen — Feld für Feld</h2>
+      <h3>Titel</h3>
+      <p>Pflichtfeld, höchstens 200 Zeichen. Das ist die Überschrift, die Konfis in der Liste sehen.</p>
+      <p><em>Beispiel:</em> „Wo hast du diese Woche Gott gesehen?&quot;</p>
+      <h3>Beschreibung</h3>
+      <p>Pflichtfeld, keine Längenbegrenzung. Hier steht die eigentliche Aufgabe.</p>
+      <p>Schreib hier auch hinein, <strong>was mit den Beiträgen passiert</strong> — besonders bei Challenges, deren Ergebnis du weiterverwenden willst („Eure Sätze werden zu den Fürbitten im Gottesdienst am 12. Mai&quot;). Die App sagt nur, wer die Beiträge sehen kann, nicht, wozu sie gebraucht werden.</p>
+      <h3>Gestellt von (optional)</h3>
+      <p>Ein freies Textfeld, höchstens 200 Zeichen: wer die Aufgabe stellt.</p>
+      <p><em>Beispiel:</em> „Pastor Simon&quot;, „Konfi-Team Hennstedt&quot;, „Lena aus Jahrgang 2026&quot;.</p>
+      <p>Es ist ausdrücklich ein Freitext und keine Personenauswahl — eine Challenge darf auch von einem Konfi kommen, ohne dass dafür jemand verknüpft wird. Lässt du das Feld leer, erscheint keine Urheber-Zeile.</p>
+      <h3>Zeitraum: Start und Ende</h3>
+      <p>Beides Pflicht, das Ende muss nach dem Start liegen. Einstellbar in Viertelstundenschritten.</p>
+      <ul><li><strong>Vor dem Start</strong> ist die Challenge „geplant&quot; — sie taucht bei Konfis noch nicht auf und startet dann von selbst.</li><li><strong>Zwischen Start und Ende</strong> läuft sie: nur in dieser Zeit lassen sich Beiträge einreichen.</li><li><strong>Nach dem Ende</strong> wandert sie ins Archiv. Die Beiträge bleiben sichtbar, neue kommen nicht mehr dazu.</li></ul>
+      <h3>Als Entwurf speichern</h3>
+      <p>Ist der Schalter an, sehen die Challenge <strong>nur du und dein Team</strong>. Konfis bekommen sie nicht zu Gesicht, auch wenn der Startzeitpunkt längst erreicht ist. Erst wenn du den Haken entfernst und speicherst, wird sie scharf.</p>
+      <blockquote><strong>Achtung:</strong> Ein reiner Leitungs-Entwurf ohne zugeordnete Jahrgänge ist für Teamer:innen unsichtbar — nur die Leitung sieht ihn. Ordne die Jahrgänge also schon im Entwurf zu, wenn Teamer:innen mitplanen sollen.</blockquote>
+      <h3>Zielgruppe (Jahrgänge)</h3>
+      <p>Welche Jahrgänge die Challenge bekommen. Mehrere sind möglich; die Konfis sehen dann auch die Beiträge aus dem jeweils anderen Jahrgang — in der Galerie steht der Jahrgangsname dabei, damit klar ist, woher ein Beitrag kommt.</p>
+      <p>Teamer:innen können nur ihre eigenen zugewiesenen Jahrgänge auswählen.</p>
+      <h3>Mehrere Beiträge erlauben</h3>
+      <p>Ist der Schalter an (Voreinstellung), darf jede Person beliebig oft einreichen. Ist er aus, gibt es genau einen Beitrag pro Person — der zweite Versuch wird mit „Du hast für diese Challenge bereits einen Beitrag abgegeben&quot; abgewiesen.</p>
+      <p>---</p>
+      <h2>Teilnahme-Kreis: wer mitmachen darf</h2>
+      <p>Zwei Möglichkeiten, im Formular unter „Wer macht mit?&quot;:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th></th><th>Jahrgang und Team</th><th>Nur das Team</th></tr></thead><tbody><tr><td>Konfis dürfen einreichen</td><td>ja</td><td>nein</td></tr><tr><td>Team (Leitung, Teamer:innen) darf einreichen</td><td>ja</td><td>ja</td></tr><tr><td>Jahrgänge auswählbar</td><td>ja, Pflicht</td><td>nein, entfällt</td></tr><tr><td>Konfis sehen die Challenge</td><td>ja</td><td><strong>nein, gar nicht</strong></td></tr><tr><td>Wer verwaltet sie</td><td>Leitung und die Teamer:innen der Jahrgänge</td><td>jede:r im Team der Organisation</td></tr></tbody></table></div>
+      <p><strong>Jahrgang und Team</strong> ist die Voreinstellung. Das Team schreibt dabei gleichberechtigt mit — es gibt bewusst keine Einstellung „nur Konfis&quot;. Wer eine Aufgabe stellt, soll sie auch selbst beantworten.</p>
+      <p><strong>Nur das Team</strong> ist eine Runde unter euch: eine Frage an die Teamer:innen, eine Vorbereitung, ein Austausch. Solche Challenges laufen <strong>organisationsweit über die Rolle</strong>, nicht über Jahrgänge — deshalb fällt die Jahrgangs-Auswahl weg, und jede:r im Team kann sie sehen und verwalten.</p>
+      <blockquote><strong>Warum Konfis eine Team-Challenge nicht einmal ahnen:</strong> Sie taucht in ihrer Liste nicht auf. Ruft ein Konfi die Adresse trotzdem direkt auf, antwortet das System „nicht gefunden&quot; statt „kein Zugriff&quot; — auch die bloße Existenz soll nicht durchsickern. Selbst die hochgeladenen Dateien sind für Konfis gesperrt.</blockquote>
+      <blockquote><strong>Achtung:</strong> Wechselst du eine noch nicht gestartete Challenge auf „Nur das Team&quot;, werden die bereits gesetzten Jahrgangs-Zuordnungen gelöscht. Das ist gewollt (eine verwaiste Zuordnung würde eine Einschränkung vortäuschen, die nicht greift) — beim Zurückwechseln musst du sie neu setzen.</blockquote>
+      <p>---</p>
+      <h2>Sichtbarkeit: wer welchen Beitrag sieht</h2>
+      <p>Das ist die wichtigste Entscheidung beim Anlegen. Drei Möglichkeiten:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th></th><th>Öffentlich</th><th>Konfi entscheidet</th><th>Nur für euch in der Leitung</th></tr></thead><tbody><tr><td>Es gibt eine Galerie</td><td>ja</td><td>ja</td><td><strong>nein</strong></td></tr><tr><td>Wer sieht fremde Beiträge</td><td>alle Konfis der Jahrgänge</td><td>alle — soweit der Konfi zustimmt</td><td>nur die Leitung</td></tr><tr><td>Konfi wählt beim Einreichen</td><td>nein</td><td><strong>ja, Pflicht</strong></td><td>nein</td></tr><tr><td>Anonyme Beiträge möglich</td><td>nein</td><td>ja</td><td>entfällt</td></tr><tr><td>Beiträge im Export</td><td>ja (nach Freigabe)</td><td>nur die freigegebenen mit Zustimmung</td><td>ja, alle nicht ausgeblendeten</td></tr></tbody></table></div>
+      <p><strong>Öffentlich</strong> — alles, was freigegeben ist, erscheint mit Namen in der Galerie. Passend für Sammlungen, bei denen der Beitrag ohnehin öffentlich gedacht ist: Fotos von der Freizeit, Lieblingslieder, Bibelvers-Sammlung.</p>
+      <p><strong>Konfi entscheidet</strong> (Voreinstellung) — jede:r wählt beim Einreichen selbst zwischen drei Stufen. Das ist die richtige Wahl, wenn die Frage persönlich werden kann.</p>
+      <p><strong>Nur für euch in der Leitung</strong> — es gibt gar keine Galerie. Die Konfis sehen ausschließlich ihren eigenen Beitrag, alle anderen bleiben bei euch. Passend für Fürbitten, Sorgen, Rückmeldungen, Gebetsanliegen.</p>
+      <p>So entscheidet sich, ob ein einzelner Beitrag in der Galerie landet:</p>
+      <pre><code>Ist der Beitrag freigegeben?
+   nein  → niemand außer der Leitung und dem Konfi selbst sieht ihn
+   ja    ↓
+Sichtbarkeit der Challenge?
+   Öffentlich          → in der Galerie, mit Namen
+   Nur Leitung         → NICHT in der Galerie
+   Konfi entscheidet   ↓
+      Konfi wählte &quot;Öffentlich&quot; → in der Galerie, mit Namen
+      Konfi wählte &quot;Anonym&quot;     → in der Galerie, OHNE Namen
+      Konfi wählte &quot;Nur Leitung&quot;→ NICHT in der Galerie</code></pre>
+      <p>Zwei Dinge gelten dabei immer:</p>
+      <ul><li><strong>Ausgeblendet schlägt alles.</strong> Ein ausgeblendeter Beitrag erscheint nirgends, auch bei „Öffentlich&quot; nicht.</li><li><strong>Die Leitung sieht in ihrer Ansicht immer alles</strong> — auch anonyme Beiträge mit Namen. Anonymität gilt gegenüber der Gruppe, nicht gegenüber euch. Nur so könnt ihr nachfragen, wenn ein Beitrag Sorgen macht.</li></ul>
+      <p>---</p>
+      <h2>Konfi-Entscheidung: die drei Stufen</h2>
+      <p>Nur bei Sichtbarkeit „Konfi entscheidet&quot;. Beim Einreichen erscheint eine Pflichtauswahl:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th>Auswahl</th><th>In der App</th><th>Was passiert</th></tr></thead><tbody><tr><td><strong>Öffentlich</strong></td><td>„mit deinem Namen&quot;</td><td>Nach Freigabe in der Galerie, Name steht dabei</td></tr><tr><td><strong>Anonym</strong></td><td>„ohne Namen&quot;</td><td>Nach Freigabe in der Galerie, <strong>ohne</strong> Name, Rolle und Jahrgang</td></tr><tr><td><strong>Nur Leitung</strong></td><td>„nicht in der Galerie&quot;</td><td>Kommt nie in die Galerie und <strong>nie in den Export</strong></td></tr></tbody></table></div>
+      <p>„Anonym&quot; ist ernst gemeint: Der Name verlässt den Server gar nicht erst. Es ist nicht so, dass die App ihn nur ausblendet — die Anfrage der anderen Konfis bekommt an dieser Stelle schlicht nichts geliefert.</p>
+      <blockquote><strong>Achtung:</strong> „Nur Leitung&quot; ist die stärkste Zusage, die ein Konfi geben kann. Solche Beiträge landen auch dann nicht im Export, wenn ihr sie freigebt. Wer sie im Gottesdienst verwenden will, muss die Person fragen.</blockquote>
+      <p>---</p>
+      <h2>Moderation: Beiträge erst nach Freigabe zeigen</h2>
+      <p>Ein Schalter im Formular. Ist er <strong>an</strong> (Voreinstellung), wartet jeder neue Beitrag auf euer Ja. Ist er <strong>aus</strong>, erscheint jeder Beitrag sofort in der Galerie.</p>
+      <p>Jeder Beitrag hat genau einen von drei Zuständen:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th>Zustand</th><th>Bedeutung</th><th>In der Galerie</th></tr></thead><tbody><tr><td><strong>Wartet auf Freigabe</strong></td><td>Neu eingereicht, Moderation ist an</td><td>nein</td></tr><tr><td><strong>Freigegeben</strong></td><td>Durchgewinkt, oder Moderation war aus</td><td>ja — sofern die Sichtbarkeit es zulässt</td></tr><tr><td><strong>Ausgeblendet</strong></td><td>Von der Leitung zurückgezogen</td><td>nein</td></tr></tbody></table></div>
+      <p>Die Aktionen findest du in der Leitungs-Ansicht der Challenge: Beitrag antippen oder wischen.</p>
+      <ul><li><strong>Freigeben</strong> — nur bei wartenden Beiträgen.</li><li><strong>Ausblenden</strong> — geht <strong>immer</strong>, auch bei „Öffentlich&quot; ohne Moderation und auch bei längst freigegebenen Beiträgen. Der Beitrag verschwindet sofort aus der Galerie und aus dem Export. Gelöscht wird er nicht: Ihr seht ihn weiter, und der Konfi sieht ihn in „Deine Beiträge&quot; mit dem Vermerk „Ausgeblendet&quot;.</li><li><strong>Wieder einblenden</strong> — macht den Beitrag freigegeben, als wäre er nie ausgeblendet gewesen.</li></ul>
+      <blockquote><strong>Achtung:</strong> „Freigegeben&quot; heißt nicht automatisch „sichtbar&quot;. Hat ein Konfi „Nur Leitung&quot; gewählt, zeigt das Abzeichen am Beitrag ein Schloss statt eines Hakens — freigegeben, aber trotzdem nirgends zu sehen. Das ist so richtig.</blockquote>
+      <p>Bei Challenges ohne Freigabe-Pflicht gibt es in der Leitungs-Ansicht kein „Wartet&quot;-Register, weil dort nie etwas wartet.</p>
+      <p>---</p>
+      <h2>Was nach dem Start gesperrt ist</h2>
+      <p>Sobald eine Challenge kein Entwurf mehr ist <strong>und</strong> der Startzeitpunkt erreicht wurde, sind fünf Dinge eingefroren:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th>Feld</th><th>Nach dem Start</th></tr></thead><tbody><tr><td>Teilnahme-Kreis</td><td><strong>gesperrt</strong></td></tr><tr><td>Sichtbarkeit</td><td><strong>gesperrt</strong></td></tr><tr><td>Beiträge erst nach Freigabe zeigen</td><td><strong>gesperrt</strong></td></tr><tr><td>Erlaubte Medienarten</td><td><strong>gesperrt</strong></td></tr><tr><td>Startzeitpunkt</td><td><strong>gesperrt</strong></td></tr><tr><td>Titel, Beschreibung</td><td>änderbar</td></tr><tr><td>Ende</td><td>änderbar</td></tr><tr><td>Name und Symbol des Abzeichens</td><td>änderbar</td></tr><tr><td>Gestellt von</td><td>änderbar</td></tr><tr><td>Jahrgänge</td><td><strong>wirkungslos</strong> — siehe unten</td></tr></tbody></table></div>
+      <p>Der Grund steht in der Fehlermeldung, die du bekommst, wenn du es versuchst: <em>„Die Konfis haben unter diesen Bedingungen eingereicht.&quot;</em></p>
+      <p>Wer einen persönlichen Satz unter der Zusage „nur die Leitung liest das&quot; abgibt, darf nicht am nächsten Tag in einer öffentlichen Galerie stehen. Die Zusage, die beim Einreichen galt, gilt weiter — auch wenn ihr es hinterher anders bräuchtet.</p>
+      <blockquote><strong>Achtung:</strong> Prüfe Sichtbarkeit und Teilnahme-Kreis, <strong>bevor</strong> du eine Challenge startest. Danach hilft nur noch, sie zu löschen und neu anzulegen — und dabei gehen alle bereits eingereichten Beiträge verloren.</blockquote>
+      <blockquote><strong>Achtung, Stolperstein:</strong> Die Jahrgangs-Auswahl bleibt im Formular anklickbar, auch nach dem Start — sie hat dann aber <strong>keine Wirkung mehr</strong>. Du kannst Haken setzen und entfernen, speichern, und danach steht wieder das Alte da. Eine Fehlermeldung gibt es nicht. Verlass dich also nicht darauf, einen Jahrgang nachträglich dazuzunehmen.</blockquote>
+      <p>Ein Sonderfall: Wenn du bei einer bereits gestarteten Challenge speicherst, wird der Entwurfs-Haken automatisch entfernt. Eine laufende Challenge lässt sich nicht nachträglich zum Entwurf machen.</p>
+      <p>---</p>
+      <h2>Medienarten</h2>
+      <p>Beim Anlegen legst du fest, womit geantwortet werden darf — mindestens eine Art muss ausgewählt sein. Voreinstellung ist Text und Foto.</p>
+      <div class="tabelle-huelle"><table><thead><tr><th>Art</th><th>Was Konfis tun</th><th>Grenze</th></tr></thead><tbody><tr><td><strong>Text</strong></td><td>Frei schreiben, keine Längenbegrenzung</td><td>darf nicht leer sein</td></tr><tr><td><strong>Foto</strong></td><td>Aufnehmen oder aus der Galerie wählen</td><td>50 MB</td></tr><tr><td><strong>Audio</strong></td><td>Direkt in der App aufnehmen oder Datei wählen</td><td>50 MB</td></tr><tr><td><strong>Video</strong></td><td>Aufnehmen oder aus der Galerie wählen</td><td>50 MB</td></tr><tr><td><strong>Link</strong></td><td>Adresse eintippen</td><td>muss mit <code>http://</code> oder <code>https://</code> beginnen</td></tr></tbody></table></div>
+      <p>Zu Foto, Audio und Video darf zusätzlich ein Text geschrieben werden — eine Bildunterschrift sozusagen.</p>
+      <h3>Warum eine falsch benannte Datei nicht durchkommt</h3>
+      <p>Beim Hochladen prüft das System <strong>nicht</strong>, wie die Datei heißt oder was das Gerät behauptet, sondern liest die ersten Bytes und stellt fest, was es wirklich ist. Ein umbenanntes PDF, das als <code>foto.jpg</code> hochgeladen wird, fliegt mit „Dateityp konnte nicht verifiziert werden&quot; raus.</p>
+      <p>Eine Ausnahme gibt es: Sprachaufnahmen liegen oft in Containern (m4a, mp4, mov), die technisch als Video gelten, obwohl nur eine Tonspur drin ist. Solche Dateien werden bei „Audio&quot; akzeptiert.</p>
+      <h3>Wo die Dateien liegen</h3>
+      <p>Alle hochgeladenen Dateien liegen <strong>verschlüsselt</strong> auf dem Server und tragen zufällige Namen ohne Bezug zum Inhalt. Sie lassen sich nur über die App abrufen, nie über eine offene Adresse, und nur von Personen, die den Beitrag ohnehin sehen dürfen:</p>
+      <ul><li>die Person, die ihn eingereicht hat — immer</li><li>die Leitung — für alles in ihrer Organisation</li><li>Teamer:innen — nur für die Jahrgänge, die ihnen zugewiesen sind (bei Team-Challenges für alles im Team)</li><li>Konfis — nur für Beiträge, die in ihrer Galerie erscheinen dürfen</li></ul>
+      <p>---</p>
+      <h2>Das Abzeichen</h2>
+      <p>Jede Challenge trägt ein eigenes Abzeichen: ein Name (Pflicht, höchstens 100 Zeichen) und ein Symbol aus einer Auswahl. Voreinstellung ist die Flagge.</p>
+      <p><strong>Es funktioniert grundsätzlich anders als die normalen Abzeichen:</strong></p>
+      <div class="tabelle-huelle"><table><thead><tr><th></th><th>Normale Abzeichen</th><th>Challenge-Abzeichen</th></tr></thead><tbody><tr><td>Wofür</td><td>eine Bedingung erfüllen (Punkte, Anzahl, Serie …)</td><td><strong>einen Beitrag einreichen</strong></td></tr><tr><td>Wann</td><td>bei der nächsten Prüfung</td><td><strong>sofort beim Absenden</strong></td></tr><tr><td>Zählen</td><td>ja, Bedingungen mit Werten</td><td>nein, es gibt nichts zu zählen</td></tr><tr><td>Abstufungen</td><td>ja, verschiedene Abzeichen</td><td>nein, für alle dasselbe</td></tr><tr><td>Wo es steht</td><td>in der Abzeichen-Liste</td><td>bei der Challenge, in der eigenen Sammlung</td></tr></tbody></table></div>
+      <p>Wer einreicht, hat es. Punkt. Es hängt <strong>nicht</strong> davon ab, ob der Beitrag freigegeben wird — ein Beitrag, der noch wartet, bringt das Abzeichen genauso wie ein längst veröffentlichter. Und es hängt nicht an der Anzahl: Wer fünf Beiträge schickt, hat trotzdem genau ein Abzeichen.</p>
+      <p>Beim ersten eigenen Beitrag zu einer Challenge kommt zusätzlich eine Benachrichtigung aufs Gerät.</p>
+      <blockquote><strong>Achtung:</strong> Änderst du Name oder Symbol des Abzeichens nachträglich, ändert sich das auch für alle, die es schon haben — es hängt an der Challenge, nicht an der Person. Das ist der einzige Weg, ein einmal vergebenes Challenge-Abzeichen noch zu beeinflussen; entziehen lässt es sich nicht.</blockquote>
+      <p>---</p>
+      <h2>Anonymisieren: einen Beitrag nachträglich schützen</h2>
+      <p>Manchmal merkt man erst beim Lesen, dass ein Beitrag zwar mit Namen freigegeben wurde, aber besser ohne Namen in der Gruppe stünde. Dafür gibt es in den Aktionen „Anonym stellen&quot;.</p>
+      <p>Was passiert:</p>
+      <ul><li>Der Beitrag bleibt in der Galerie, aber <strong>Name, Rolle und Jahrgang verschwinden</strong> — für alle Konfis steht dort ab sofort nur noch „Anonym&quot;.</li><li>Der Freigabe-Zustand ändert sich <strong>nicht</strong>. Ein wartender Beitrag wartet weiter, ein freigegebener bleibt freigegeben.</li><li><strong>Ihr in der Leitung seht weiterhin den echten Namen.</strong> Für Rückfragen ist das nötig — die Gruppe erfährt ihn nicht mehr.</li></ul>
+      <p><strong>Es gibt keinen Weg zurück.</strong> Wer einmal anonym ist, bleibt anonym. Die App fragt vorher nach, weil das endgültig ist.</p>
+      <p>Der Grund ist derselbe wie bei den gesperrten Feldern: Rückgängig zu machen hieße, jemanden nachträglich mit Namen in die Gruppe zu stellen, der dort gerade nicht mehr stehen sollte. Das darf nicht versehentlich passieren.</p>
+      <p>Drei Fälle, in denen „Anonym stellen&quot; gar nicht erst angeboten wird:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th>Fall</th><th>Meldung</th></tr></thead><tbody><tr><td>Die Challenge ist <strong>nicht</strong> „Konfi entscheidet&quot;</td><td>„Anonymität lässt sich nur bei Challenges einstellen, bei denen der Konfi selbst entscheidet.&quot;</td></tr><tr><td>Der Konfi hat selbst „Nur Leitung&quot; gewählt</td><td>„Dieser Beitrag ist nur für die Leitung freigegeben. Diese Zusage lässt sich nicht ändern.&quot;</td></tr><tr><td>Der Beitrag ist <strong>schon</strong> anonym</td><td>„Dieser Beitrag ist bereits anonym. Anonymität lässt sich nicht zurücknehmen.&quot;</td></tr></tbody></table></div>
+      <p>Der zweite Fall ist wichtig: „Nur Leitung&quot; ist eine stärkere Zusage als „anonym&quot;. Sie zu „anonym&quot; zu machen, würde den Beitrag in die Galerie holen — das wäre eine Verschlechterung, keine Verbesserung, und ist deshalb gesperrt.</p>
+      <p>---</p>
+      <h2>Export: die Beiträge weiterverwenden</h2>
+      <p>In der Leitungs-Ansicht einer Challenge gibt es oben ein Export-Symbol. Es lädt eine <strong>einfache Textdatei</strong> herunter — daraus lässt sich eine Liturgie, ein Liedzettel, eine Playlist oder eine Wand bauen.</p>
+      <p>Drin steht:</p>
+      <pre><code>Wo hast du diese Woche Gott gesehen?
+====================================
+
+Gestellt von: Pastor Simon
+
+&lt;die Beschreibung der Challenge&gt;
+
+Beiträge: 14
+
+--- Lena M. (12.05.2026) ---
+Beim Radfahren am Deich, als die Sonne rauskam.
+
+--- Anonym (12.05.2026) ---
+Als meine Oma im Krankenhaus wieder gelacht hat.
+
+--- Jonas K. (13.05.2026) ---
+https://open.spotify.com/track/...</code></pre>
+      <p>Bei Fotos, Audio und Video steht statt des Inhalts nur eine Zeile mit Art und Dateiname — die Dateien selbst sind <strong>nicht</strong> im Export. Die holst du dir einzeln aus der App.</p>
+      <p>Was <strong>nicht</strong> im Export landet:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th></th><th>Kommt in den Export</th></tr></thead><tbody><tr><td>Beiträge, die auf Freigabe warten</td><td>nein (außer bei „Nur Leitung&quot;-Challenges)</td></tr><tr><td>Ausgeblendete Beiträge</td><td><strong>nie</strong></td></tr><tr><td>Beiträge mit Konfi-Wahl „Nur Leitung&quot;</td><td><strong>nie</strong></td></tr><tr><td>Anonyme Beiträge</td><td>ja, aber als „Anonym&quot; statt mit Namen</td></tr><tr><td>Alles bei einer „Nur Leitung&quot;-Challenge</td><td>ja, alles außer Ausgeblendetem</td></tr></tbody></table></div>
+      <blockquote><strong>Achtung:</strong> Der Export ist strenger als eure eigene Sammelansicht — mit Absicht. Was ihr exportiert, verlässt in aller Regel den Leitungskreis (ein Liturgieblatt liegt in der Kirchenbank). Beiträge, die ein Konfi ausdrücklich nur euch gegeben hat, sind deshalb nicht dabei, auch wenn ihr sie in der App lesen könnt.  Die eine Ausnahme ist die Challenge „Nur für euch in der Leitung&quot;: Dort ist der Export genau der Rückkanal, der in der Beschreibung angekündigt war — z. B. Fürbitten, die anschließend vorgelesen werden. Sag das den Konfis in der Beschreibung.</blockquote>
+      <p>Gibt es nichts zu exportieren, meldet die App „Es gibt noch keine Texte oder Links zum Exportieren.&quot;</p>
+      <p>---</p>
+      <h2>Eine Challenge löschen</h2>
+      <ul><li><strong>Entwürfe und noch nicht gestartete Challenges</strong> lassen sich direkt löschen.</li><li><strong>Laufende und beendete Challenges</strong> brauchen eine ausdrückliche Bestätigung. Die App warnt vorher: <em>„Beim Löschen gehen alle Beiträge der Konfis verloren.&quot;</em></li></ul>
+      <p>Beim Löschen verschwindet alles: die Challenge, sämtliche Beiträge, sämtliche hochgeladenen Dateien vom Server und damit auch das Abzeichen bei allen, die es hatten. Das lässt sich nicht rückgängig machen und es gibt keinen Papierkorb.</p>
+      <blockquote><strong>Achtung:</strong> Wenn du eine Challenge nur aus dem Weg räumen willst, ohne jemandem etwas wegzunehmen: Lass sie einfach auslaufen. Beendete Challenges wandern von selbst ins Archiv und stören dort niemanden.</blockquote>
+      <p>---</p>
+      <h2>Was Konfis können — und was nicht</h2>
+      <p><strong>Können:</strong></p>
+      <ul><li>laufende Challenges ihrer Jahrgänge sehen und einreichen</li><li>ihre eigenen Beiträge jederzeit ansehen, mit Zustand („Wartet auf Freigabe&quot;, „Freigegeben&quot;, „Ausgeblendet&quot;)</li><li>die Galerie ansehen, soweit die Sichtbarkeit es zulässt</li><li>beendete Challenges im Archiv nachlesen</li><li>ihre Abzeichen sammeln</li></ul>
+      <p><strong>Können nicht:</strong></p>
+      <ul><li>einen eingereichten Beitrag <strong>selbst zurückziehen oder löschen</strong></li><li>einen Beitrag nachträglich bearbeiten</li><li>ihre Sichtbarkeits-Wahl nachträglich ändern</li><li>Entwürfe, geplante oder Team-Challenges sehen</li></ul>
+      <p>Das Zurückziehen ist bewusst gesperrt. Ein Konfi, der es versucht, bekommt: <em>„Eingereichte Beiträge lassen sich nicht mehr zurückziehen. Wende dich an deine Leitung, falls ein Beitrag entfernt werden soll.&quot;</em></p>
+      <blockquote><strong>Achtung:</strong> Damit landet diese Bitte bei euch. Rechnet damit, dass jemand nach einem Gruppenabend fragt, ob sein Beitrag wieder weg kann — „Ausblenden&quot; ist dann die richtige Antwort, nicht „geht nicht&quot;.</blockquote>
+      <p>---</p>
+      <h2>Wer bekommt was mit?</h2>
+      <ul><li><strong>Die Konfis der Jahrgänge</strong> bekommen eine Benachrichtigung, sobald eine geplante Challenge tatsächlich startet — nicht schon beim Anlegen.</li><li><strong>Die Leitung</strong> bekommt eine Benachrichtigung bei <strong>jedem</strong> neuen Beitrag — auch wenn er ohne Moderation sofort öffentlich ist.</li><li><strong>Der Konfi</strong> bekommt eine Benachrichtigung beim ersten eigenen Beitrag zu einer Challenge („Abzeichen erhalten&quot;).</li><li><strong>Alle Konfis der Jahrgänge</strong> bekommen mit, wenn eine Challenge startet, sich ändert oder ein Beitrag in der Galerie erscheint — die Listen aktualisieren sich von selbst, ohne Neuladen.</li></ul>
+    </section>
+    <section id="chat" class="kapitel" style="--kapitel:#06b6d4">
+      <header class="kapitel-kopf">
+        <h2>Chat</h2>
+        <p class="kapitel-meta">Wer mit wem, Umfragen, Dateien und Reaktionen</p>
+      </header>
+      <p>Der Chat ist der geschützte Nachrichtenraum der Gemeinde. Er hat keine Verbindung nach außen: Wer nicht in eurer Organisation ist, kommt nicht hinein, und wer drin ist, erreicht nicht automatisch jede andere Person.</p>
+      <p>Diese Grenzen sind der eigentliche Inhalt dieses Kapitels — sie sind der Unterschied zwischen einem Gemeindechat und einer WhatsApp-Gruppe.</p>
+      <p>---</p>
+      <h2>Die fünf Chat-Arten</h2>
+      <div class="tabelle-huelle"><table><thead><tr><th>Art</th><th>Wer ist drin</th><th>Wie er entsteht</th><th>Verlassbar</th></tr></thead><tbody><tr><td><strong>Direktnachricht</strong></td><td>genau zwei Personen</td><td>jemand schreibt jemanden an</td><td><strong>nein</strong></td></tr><tr><td><strong>Gruppe</strong></td><td>frei zusammengestellt</td><td>die Leitung legt sie an</td><td>ja (außer Leitung)</td></tr><tr><td><strong>Jahrgangs-Chat</strong></td><td>alle Konfis des Jahrgangs plus zuständige Begleitung</td><td><strong>automatisch</strong> mit dem Jahrgang</td><td><strong>nein</strong></td></tr><tr><td><strong>Team-Chat</strong></td><td>die ganze Leitung und alle Teamer:innen</td><td><strong>automatisch</strong>, einer pro Gemeinde</td><td>ja (außer Leitung)</td></tr><tr><td><strong>Termin-Chat</strong></td><td>wer zum Termin angemeldet ist</td><td>das Team schaltet ihn beim Termin frei</td><td>nur übers Abmelden</td></tr></tbody></table></div>
+      <h3>Direktnachricht</h3>
+      <p>Ein Zweiergespräch. Es entsteht, sobald jemand jemanden zum ersten Mal anschreibt — es gibt keinen Anlege-Schritt und keine zweite Direktnachricht zwischen denselben zwei Personen: Wer ein bestehendes Gespräch erneut öffnet, landet im alten.</p>
+      <p>Ein Zweiergespräch lässt sich <strong>nicht verlassen</strong>. Die Leitung kann es löschen, aber nicht lesen (siehe unten).</p>
+      <h3>Gruppe</h3>
+      <p>Der einzige frei zusammenstellbare Raum. Nur die Leitung legt Gruppen an, gibt ihnen einen Namen und wählt die Personen aus. Nur hier lassen sich später Mitglieder hinzufügen und entfernen.</p>
+      <h3>Jahrgangs-Chat</h3>
+      <p>Pro Jahrgang gibt es genau einen, und er entsteht <strong>von selbst</strong> — niemand legt ihn an, niemand lädt jemanden ein. Er heißt „Jahrgang 2026&quot; und pflegt seine Mitglieder selbst:</p>
+      <ul><li><strong>Alle Konfis des Jahrgangs</strong> sind drin. Neue Konfis kommen automatisch dazu.</li><li><strong>Die Leitung (Org-Admin)</strong> ist immer in allen Jahrgangs-Chats der Gemeinde.</li><li><strong>Teamer:innen und weitere Admins</strong> sind drin, solange ihnen der Jahrgang zugewiesen ist. Wird die Zuweisung entzogen, fliegen sie wieder heraus.</li></ul>
+      <p>Er lässt sich nicht verlassen: Wer im Jahrgang ist, ist im Chat. Und er lässt sich nicht einzeln löschen — das geht nur über den Jahrgang selbst (<em>„Bitte den Jahrgang löschen&quot;</em>).</p>
+      <h3>Team-Chat</h3>
+      <p>Ein Raum pro Gemeinde, schlicht „Team&quot; genannt, ebenfalls <strong>automatisch</strong>. Drin sind alle aktiven Personen mit Leitungs-, Admin- oder Teamer-Rolle. Konfis sind nie drin und sehen ihn nicht.</p>
+      <p>Wer eine Teamer-Rolle bekommt, ist beim nächsten Öffnen der Chat-Übersicht automatisch dabei; wer die Rolle verliert, ist wieder draußen.</p>
+      <blockquote><strong>Achtung:</strong> Eine Teamer:in kann den Team-Chat zwar verlassen — beim nächsten Abgleich ist sie aber wieder drin, weil sie weiter zum Team gehört. Wer dauerhaft heraus soll, braucht eine Rollenänderung, kein Verlassen.</blockquote>
+      <h3>Termin-Chat</h3>
+      <p>Gehört zu einem Termin und muss vom Team beim Termin einmal freigeschaltet werden — es gibt nicht automatisch zu jedem Termin einen. Danach füllt er sich über die Anmeldungen: Wer eine bestätigte Anmeldung hat, ist im Chat; wer sich abmeldet, fliegt wieder heraus.</p>
+      <blockquote><strong>Achtung:</strong> Konfis können einen Termin-Chat <strong>nicht direkt verlassen</strong>. Die App sagt: <em>„Event-Chats werden über die Event-Abmeldung verlassen, nicht direkt.&quot;</em> Das ist so gewollt — sonst wäre jemand zum Termin angemeldet, bekäme aber die Absprachen dazu nicht mit.</blockquote>
+      <p>---</p>
+      <h2>Wer wen anschreiben darf</h2>
+      <p>Das ist die wichtigste Tabelle des Kapitels. <strong>Stand 23.08.2026:</strong></p>
+      <div class="tabelle-huelle"><table><thead><tr><th>↓ schreibt an →</th><th>Konfi</th><th>Teamer:in</th><th>Leitung / Admin</th></tr></thead><tbody><tr><td><strong>Konfi</strong></td><td><strong>nie</strong></td><td>nur bei <strong>gemeinsamem Jahrgang</strong></td><td>immer</td></tr><tr><td><strong>Teamer:in</strong></td><td>nur bei <strong>gemeinsamem Jahrgang</strong></td><td>ja</td><td>ja</td></tr><tr><td><strong>Leitung / Admin</strong></td><td>immer</td><td>ja</td><td>ja</td></tr></tbody></table></div>
+      <p>Drei Regeln stecken darin:</p>
+      <p><strong>1. Konfis erreichen einander nie.</strong> Konfi-zu-Konfi-Direktnachrichten gibt es nicht, und Konfis können auch keine Gruppen anlegen. Sie können ausschließlich Personen aus dem Team anschreiben. Miteinander reden sie im Jahrgangs-Chat — also dort, wo die Leitung mitliest.</p>
+      <p><strong>2. Teamer:innen und Konfis erreichen einander nur über einen gemeinsamen Jahrgang — in beide Richtungen.</strong> Eine Teamer:in sieht in ihrer Kontaktliste nur die Konfis der Jahrgänge, die ihr zugewiesen sind, und umgekehrt sehen Konfis nur die Teamer:innen, die für ihren Jahrgang zuständig sind.</p>
+      <p>Die Fehlermeldungen, wenn es doch jemand versucht:</p>
+      <ul><li><em>„Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben&quot;</em></li><li><em>„Diese Teamer:in ist nicht für deinen Jahrgang zuständig&quot;</em></li></ul>
+      <p><strong>3. Leitung und Admins erreichen alle und sind für alle erreichbar.</strong> Sie verantworten die Gemeinde als Ganzes und haben ohnehin Zugriff auf alle Jahrgänge.</p>
+      <blockquote><strong>Achtung, häufiger Anruf:</strong> Eine Teamer:in <strong>ohne zugewiesenen Jahrgang</strong> ist für Konfis unsichtbar — und erreicht ihrerseits keinen einzigen Konfi. Wenn jemand meldet „ich sehe meine Konfis nicht im Chat&quot;, ist fast immer die Jahrgangs-Zuweisung die Ursache, nicht der Chat. Prüf sie in der Nutzerverwaltung.</blockquote>
+      <blockquote><strong>Achtung:</strong> Ein Konfi <strong>ohne Jahrgang</strong> ist nur für Leitung und Admins erreichbar. Bis der Jahrgang gesetzt ist, kommt keine Teamer:in an ihn heran.</blockquote>
+      <p>---</p>
+      <h2>Was die Leitung darf — und was seit dem 23.08.2026 nicht mehr</h2>
+      <p>Die Leitung kann jeden <strong>gemeinschaftlichen</strong> Raum ihrer Gemeinde öffnen, auch ohne selbst Mitglied zu sein: Gruppen, Jahrgangs-Chats, Team-Chats und Termin-Chats. Das ist Absicht — für diese Räume trägt sie die Verantwortung und muss im Zweifel eingreifen können.</p>
+      <p><strong>Fremde Zweiergespräche kann sie nicht mehr öffnen.</strong> Wer nicht selbst in einem Direktchat steht, kommt nicht hinein.</p>
+      <div class="tabelle-huelle"><table><thead><tr><th></th><th>Vor dem 23.08.2026</th><th>Jetzt</th></tr></thead><tbody><tr><td>Fremdes Zweiergespräch lesen</td><td>ja</td><td><strong>nein</strong></td></tr><tr><td>Fremdes Zweiergespräch exportieren</td><td>ja</td><td><strong>nein</strong></td></tr><tr><td>Nachricht in einem fremden Zweiergespräch löschen</td><td>ja</td><td><strong>nein</strong></td></tr><tr><td>Umfrage in ein fremdes Zweiergespräch stellen</td><td>ja</td><td><strong>nein</strong></td></tr><tr><td>Gruppen-, Jahrgangs-, Team-, Termin-Chat</td><td>ja</td><td>ja, unverändert</td></tr></tbody></table></div>
+      <p>Der Grund: Betroffen waren vor allem die Gespräche zwischen Teamer:innen und Konfis — also gerade die vertraulichen. Ein Zweiergespräch ist privat, auch in einer Gemeinde.</p>
+      <blockquote><strong>Achtung:</strong> Die Leitung kann einen Direktchat weiterhin <strong>löschen</strong> (siehe unten) — lesen kann sie ihn nicht. Wer als Leitung an einem Zweiergespräch beteiligt ist, sieht es natürlich ganz normal.</blockquote>
+      <p>---</p>
+      <h2>Nachrichten</h2>
+      <h3>Schreiben</h3>
+      <p>Text eintippen und senden, <strong>höchstens 4000 Zeichen</strong>. Alle im Raum sehen die Nachricht sofort, ohne Neuladen, und bekommen eine Benachrichtigung aufs Gerät — bei einem Zweiergespräch mit dem Namen des Absenders als Überschrift, sonst mit dem Namen des Chats.</p>
+      <p>Ohne Netz bleibt die Nachricht in einer Warteschlange und geht los, sobald es wieder geht. Ein kleines Uhr-Symbol heißt „wartet noch&quot;, ein Haken heißt „angekommen&quot;, ein rotes Ausrufezeichen heißt „fehlgeschlagen&quot; — antippen sendet erneut.</p>
+      <blockquote><strong>Achtung:</strong> Der Haken bedeutet <strong>nicht</strong> „gelesen&quot;. Lesebestätigungen gibt es im Konfi Quest Chat nicht, und es gibt auch keine „schreibt gerade…&quot;-Anzeige. Niemand kann sehen, ob du eine Nachricht geöffnet hast.</blockquote>
+      <h3>Antworten (Zitat)</h3>
+      <p>Auf eine Nachricht antworten heißt: Sie wird über der eigenen Antwort als kurzes Zitat mit Namen angezeigt. Das hilft, wenn in einem Jahrgangs-Chat mehrere Fäden nebeneinander laufen.</p>
+      <p>Der Bezug bleibt auch dann erhalten, wenn die zitierte Nachricht später gelöscht wird — dann steht dort das Zitat ohne Inhalt.</p>
+      <h3>Löschen</h3>
+      <div class="tabelle-huelle"><table><thead><tr><th>Wer</th><th>Darf löschen</th></tr></thead><tbody><tr><td><strong>Leitung / Admin</strong></td><td>eigene und <strong>fremde</strong> Nachrichten — aber nur in Räumen, die sie öffnen dürfen, also nicht in fremden Zweiergesprächen</td></tr><tr><td><strong>Teamer:innen</strong></td><td>nur eigene</td></tr><tr><td><strong>Konfis</strong></td><td>nur eigene — sie sehen den Papierkorb gar nicht erst</td></tr></tbody></table></div>
+      <p>Wer es trotzdem versucht, bekommt: <em>„Du kannst nur eigene Nachrichten löschen.&quot;</em></p>
+      <p><strong>Gelöscht heißt nicht weg.</strong> An der Stelle bleibt ein Platzhalter stehen:</p>
+      <blockquote>Diese Nachricht wurde gelöscht</blockquote>
+      <p>Der Inhalt wird nicht mehr ausgeliefert, aber die Lücke im Gespräch bleibt sichtbar. Das ist Absicht: Ein Verlauf, aus dem einzelne Beiträge spurlos verschwinden, lässt sich nicht mehr nachvollziehen — und im Export steht der Platzhalter ebenfalls.</p>
+      <p>---</p>
+      <h2>Reaktionen</h2>
+      <p>Auf jede Nachricht lässt sich reagieren. Es gibt genau <strong>sechs</strong> Möglichkeiten — keine freie Auswahl:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th>Reaktion</th><th>Gemeint als</th></tr></thead><tbody><tr><td><strong>Gefällt mir</strong></td><td>Zustimmung, gelesen und einverstanden</td></tr><tr><td><strong>Liebe</strong></td><td>Zuneigung, „schön&quot;</td></tr><tr><td><strong>Lustig</strong></td><td>Humor</td></tr><tr><td><strong>Wow</strong></td><td>Überraschung</td></tr><tr><td><strong>Traurig</strong></td><td>Anteilnahme</td></tr><tr><td><strong>Beten</strong></td><td>„ich denke an dich&quot;, „ich bete dafür&quot;</td></tr></tbody></table></div>
+      <p>Die Auswahl ist bewusst klein und ohne Ablehnungs-Reaktion: Es gibt kein „Daumen runter&quot; und kein „wütend&quot;. In einem Konfi-Chat soll niemand mit einem Tipp abgewatscht werden können.</p>
+      <p><strong>Umschalten:</strong> Ein Tipp setzt die Reaktion, ein zweiter Tipp auf dieselbe nimmt sie wieder zurück. Man kann mehrere verschiedene Reaktionen auf dieselbe Nachricht setzen. Unter der Nachricht steht, wie oft jede Reaktion gewählt wurde; die eigenen sind hervorgehoben.</p>
+      <p>Alle im Raum dürfen reagieren, auch Konfis.</p>
+      <p>---</p>
+      <h2>Dateien senden</h2>
+      <p>An jede Nachricht lässt sich eine Datei hängen. Ein Text darf dabei stehen, muss aber nicht.</p>
+      <p><strong>Höchstens 5 MB pro Datei.</strong> Das ist bewusst klein gehalten — der Chat ist kein Ablageort. Für größere Dateien gibt es den Material-Bereich.</p>
+      <blockquote><strong>Achtung, bekannter Stolperstein:</strong> Die App warnt erst ab 10 MB, der Server nimmt aber nur 5 MB an. Eine Datei dazwischen scheitert deshalb ohne verständliche Meldung — es sieht aus, als wäre das Senden einfach fehlgeschlagen. Wenn eine Datei sich partout nicht schicken lässt: auf die Größe schauen.</blockquote>
+      <div class="tabelle-huelle"><table><thead><tr><th>Was</th><th>Formate</th></tr></thead><tbody><tr><td><strong>Bilder</strong></td><td>JPG, PNG, GIF, WebP, HEIC/HEIF</td></tr><tr><td><strong>Videos</strong></td><td>MP4, MOV, WebM</td></tr><tr><td><strong>Audio</strong></td><td>MP3, M4A, OGG, WAV</td></tr><tr><td><strong>Dokumente</strong></td><td>PDF, Word, PowerPoint, TXT, CSV</td></tr></tbody></table></div>
+      <p>Bilder und Videos werden direkt im Chat angezeigt; alles andere erscheint als Anhang mit Dateinamen zum Antippen. Bilder werden vor dem Senden automatisch verkleinert, damit sie nicht unnötig groß hochgeladen werden.</p>
+      <blockquote><strong>Achtung:</strong> <strong>Excel-Tabellen gehen nicht</strong> — weder XLS noch XLSX, und auch keine OpenDocument-Dateien. Das ist einer der häufigsten Stolpersteine: Die Datei wird kommentarlos nicht mitgeschickt. Wandle sie in ein PDF um oder leg sie im Material-Bereich ab, der mehr Formate annimmt.</blockquote>
+      <blockquote><strong>Achtung:</strong> Eine Sprachnachricht lässt sich im Chat <strong>nicht aufnehmen</strong>. Eine fertige Audiodatei kannst du zwar schicken, sie erscheint dann aber als normaler Anhang zum Herunterladen, nicht als abspielbare Sprachnachricht. (Aufnehmen geht nur bei Challenges.)</blockquote>
+      <h3>Was mit der Datei passiert</h3>
+      <ul><li>Sie wird beim Hochladen <strong>auf ihren echten Typ geprüft</strong> — nicht am Dateinamen, sondern an den ersten Bytes. Ein umbenanntes Programm, das als <code>bild.jpg</code> hochgeladen wird, kommt nicht durch („Dateityp konnte nicht verifiziert werden&quot;). Nur bei reinen Textdateien (TXT, CSV) geht das nicht, weil sie keine solche Kennung haben.</li><li>Sie liegt danach <strong>verschlüsselt</strong> auf dem Server, unter einem zufälligen Namen ohne Bezug zum Inhalt oder zum Absender.</li><li>Abrufen kann sie nur, wer angemeldet ist und den Chat öffnen darf. Es gibt keine offene Adresse, die man weiterschicken könnte.</li></ul>
+      <blockquote><strong>Achtung:</strong> Weil Dateien verschlüsselt und zufällig benannt gespeichert werden, gibt es keinen Weg, sie außerhalb der App zu durchsuchen oder wiederherzustellen. Was im Chat wichtig ist und bleiben soll, gehört ins Material oder in einen Termin.</blockquote>
+      <p>---</p>
+      <h2>Umfragen</h2>
+      <p>In jedem Chat lässt sich eine Umfrage stellen — praktisch für „Wer kann am Samstag?&quot; oder „Welches Lied nehmen wir?&quot;.</p>
+      <p><strong>Anlegen darf sie nur die Leitung.</strong> Teamer:innen und Konfis können abstimmen, aber keine Umfrage erstellen („Nur Admins können Umfragen erstellen&quot;).</p>
+      <p>Beim Anlegen:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th>Feld</th><th>Regel</th></tr></thead><tbody><tr><td><strong>Frage</strong></td><td>Pflicht, höchstens 500 Zeichen</td></tr><tr><td><strong>Antwortmöglichkeiten</strong></td><td>mindestens 2, höchstens 10, je höchstens 200 Zeichen</td></tr><tr><td><strong>Mehrfachauswahl</strong></td><td>aus / an</td></tr><tr><td><strong>Namen anzeigen</strong></td><td>aus / an</td></tr><tr><td><strong>Exklusive Optionen</strong></td><td>aus / an</td></tr><tr><td><strong>Ablaufdatum</strong></td><td>aus, oder 1 Stunde / 8 Stunden / 1 Tag / 7 Tage</td></tr></tbody></table></div>
+      <h3>Mehrfachauswahl</h3>
+      <p>Ist sie <strong>aus</strong> (Voreinstellung), zählt pro Person eine Stimme — wer eine andere Option wählt, gibt die alte automatisch zurück.</p>
+      <p>Ist sie <strong>an</strong>, darf jede:r beliebig viele Optionen ankreuzen. Jede einzelne lässt sich durch nochmaliges Antippen wieder abwählen.</p>
+      <h3>Ablaufdatum</h3>
+      <p>Solange die Umfrage läuft, steht die Restzeit dabei; danach steht dort in Rot <strong>„Beendet&quot;</strong>. Sie nimmt dann keine Stimmen mehr an („Umfrage ist abgelaufen&quot;). Das Ergebnis bleibt im Chat stehen und lesbar.</p>
+      <p>Ohne Ablaufdatum bleibt die Umfrage dauerhaft offen. Es gibt keinen Weg, eine Umfrage von Hand zu schließen oder zu bearbeiten — wenn das nötig wird, hilft nur, die Nachricht zu löschen und eine neue Umfrage zu stellen.</p>
+      <h3>Namen anzeigen</h3>
+      <p>Der Schalter heißt in der App <strong>„Namen anzeigen&quot;</strong> — „Sichtbar machen, wer welche Antwort gewählt hat&quot;.</p>
+      <p><strong>Er ist standardmäßig AUS.</strong> Eine neue Umfrage ist also von Haus aus anonym; du musst dich aktiv dafür entscheiden, die Namen zu zeigen.</p>
+      <blockquote><strong>Achtung:</strong> Genau umgekehrt, als die meisten es erwarten. Wenn du bei einer Terminabfrage wissen musst, wer kann, schalt „Namen anzeigen&quot; ein — sonst siehst du nur Zahlen und kannst niemanden mehr zuordnen. Nachträglich lässt sich das nicht ändern.</blockquote>
+      <p>---</p>
+      <h2>Anonyme Umfragen: was „anonym&quot; seit dem 23.08.2026 heißt</h2>
+      <p>Bei einer anonymen Umfrage sieht <strong>wirklich niemand</strong>, wer was gewählt hat — auch die Leitung nicht, auch nicht die Person, die die Umfrage gestellt hat.</p>
+      <p>Das war nicht immer so. Vorher wurde zwar der Name weggelassen, aber zu jeder Stimme weiterhin eine Benutzerkennung mitgeschickt. Über die Mitgliederliste des Chats ließ sich daraus zusammensetzen, wer wie abgestimmt hatte — die zugesagte Anonymität war nur kosmetisch.</p>
+      <p>Jetzt verlässt bei einer anonymen Umfrage <strong>nur die eigene Stimme</strong> den Server mit einer Kennung — damit man die eigene Wahl markiert sieht. Alle anderen Stimmen zählen anonym mit, ohne Kennung.</p>
+      <p>Auch im Export einer anonymen Umfrage stehen keine Stimmen — nur die Frage und die Antwortmöglichkeiten.</p>
+      <blockquote><strong>Achtung:</strong> Es gibt trotzdem eine Grenze, die keine Technik aufheben kann: In einer Umfrage mit drei Teilnehmenden ist auch die anonymste Abstimmung nicht wirklich anonym. Bei heiklen Fragen in kleinen Runden hilft nur, sie gar nicht erst als Umfrage zu stellen.</blockquote>
+      <p>---</p>
+      <h2>Exklusive Optionen: jede Antwort nur einmal</h2>
+      <p>„Exklusive Optionen&quot; heißt: <strong>Jede Option kann nur von einer Person gewählt werden.</strong> Damit wird aus der Umfrage eine Aufgabenverteilung.</p>
+      <p><em>Beispiel:</em> „Wer übernimmt welchen Teil?&quot; mit den Optionen Begrüßung, Lesung, Fürbitten, Segen. Wer zuerst tippt, hat den Teil — die Option ist danach für alle anderen belegt.</p>
+      <p>Statt der üblichen Balken steht bei jeder Option eines von drei Worten: <strong>Frei</strong>, <strong>Deine Wahl</strong> oder <strong>Vergeben</strong>. Vergebene Optionen sind ausgegraut und lassen sich nicht antippen.</p>
+      <p>So funktioniert es:</p>
+      <ul><li>Wer eine <strong>schon vergebene</strong> Option antippt, bekommt: <em>„Diese Option ist bereits vergeben.&quot;</em> Es entsteht keine zweite Stimme darauf.</li><li><strong>Die Wahl wechseln</strong> geht jederzeit: Tippst du eine andere freie Option an, wird deine alte automatisch wieder freigegeben.</li><li><strong>Die Wahl ganz zurückgeben</strong> geht, indem du deine eigene Option noch einmal antippst. Sie ist dann sofort wieder für alle frei.</li><li><strong>Mehrfachauswahl ist dabei ausgeschlossen.</strong> Der Schalter wird grau, sobald du „Exklusive Optionen&quot; einschaltest — mehrere Aufgaben gleichzeitig zu belegen ergäbe keinen Sinn.</li></ul>
+      <p>Zwei Personen, die im selben Moment auf dieselbe Option tippen, bekommen nicht beide den Zuschlag: Das System lässt die Anfragen nacheinander durch, die zweite bekommt „bereits vergeben&quot;.</p>
+      <blockquote><strong>Achtung:</strong> Es gibt keine Warteliste. Ist alles vergeben, und jemand kommt zu spät, muss die Absprache im Chat geklärt werden — die Umfrage hilft dabei nicht weiter.</blockquote>
+      <p>---</p>
+      <h2>Mitglieder verwalten</h2>
+      <p><strong>Nur die Leitung, und nur in Gruppen.</strong> In allen anderen Chat-Arten ergibt es sich aus der Sache selbst, wer drin ist: aus dem Jahrgang, aus der Rolle, aus der Terminanmeldung.</p>
+      <p>Wer es anderswo versucht, bekommt: <em>„Teilnehmer können nur zu Gruppenchats hinzugefügt werden&quot;</em> beziehungsweise <em>„… aus Gruppenchats entfernt werden&quot;</em>.</p>
+      <p>Nur Personen aus der eigenen Organisation lassen sich hinzufügen.</p>
+      <blockquote>Die Rolle einer hinzugefügten Person wird immer aus ihrem echten Konto ermittelt, nicht aus der Anfrage. Niemand landet dadurch mit falschen Rechten in einer Gruppe.</blockquote>
+      <blockquote><strong>Achtung:</strong> Beim <strong>nachträglichen</strong> Hinzufügen zu einer Gruppe gelten die Jahrgangsgrenzen aus der Tabelle oben <strong>nicht</strong>. Die Leitung kann also einen Konfi und eine fachfremde Teamer:in in dieselbe Gruppe setzen, obwohl die beiden einander nicht direkt anschreiben könnten. Beim Anlegen einer Gruppe wird das dagegen geprüft. Wer eine Gruppe zusammenstellt, sollte also selbst hinschauen, wer dort zusammentrifft.</blockquote>
+      <p>Die Mitgliederliste öffnet sich über das Personen-Symbol oben im Chat.</p>
+      <blockquote><strong>Achtung:</strong> Dieses Symbol sehen <strong>nur Leitung und Admins</strong>. Teamer:innen und Konfis kommen an die Mitgliederliste nicht heran — sie sehen nur, wer tatsächlich schreibt. Wenn jemand fragt „wer ist eigentlich alles in dieser Gruppe?&quot;, muss die Leitung das beantworten.</blockquote>
+      <p>---</p>
+      <h2>Chat verlassen und Chat löschen</h2>
+      <h3>Verlassen</h3>
+      <div class="tabelle-huelle"><table><thead><tr><th>Art</th><th>Verlassbar</th></tr></thead><tbody><tr><td>Gruppe</td><td>ja</td></tr><tr><td>Team-Chat</td><td>ja</td></tr><tr><td>Termin-Chat</td><td>Konfis nur übers Abmelden vom Termin; Team direkt</td></tr><tr><td>Jahrgangs-Chat</td><td><strong>nein</strong></td></tr><tr><td>Direktnachricht</td><td><strong>nein</strong></td></tr></tbody></table></div>
+      <p><strong>Die Leitung kann gar keinen Chat verlassen</strong> — <em>„Admins können Chats nicht verlassen.&quot;</em> Wer die Verantwortung trägt, bleibt in den Räumen.</p>
+      <h3>Löschen</h3>
+      <p>Einen ganzen Chat löschen darf <strong>nur die Leitung</strong>.</p>
+      <p>Enthält er noch Nachrichten, kommt zuerst eine Rückfrage: <em>„Chat-Raum kann nicht gelöscht werden: 47 Nachricht(en) vorhanden.&quot;</em> Erst mit ausdrücklicher Bestätigung wird gelöscht — dann sind der Raum, alle Nachrichten, alle Umfragen und alle Dateien weg. Es gibt keinen Papierkorb.</p>
+      <p>Jahrgangs-Chats sind davon ausgenommen: Sie verschwinden nur mit ihrem Jahrgang.</p>
+      <p>---</p>
+      <h2>Chat exportieren</h2>
+      <p>Ein ganzer Chatverlauf lässt sich als Datei herunterladen — gedacht dafür, aus einem Gespräch etwas weiterzuarbeiten, etwa eine Gottesdienst-Vorbereitung.</p>
+      <p><strong>Nur die Leitung darf das.</strong> Teamer:innen und Konfis nicht — <em>„Nur die Leitung darf Chats exportieren.&quot;</em> Ein Export nimmt den ganzen Verlauf aus dem Zusammenhang des Chats heraus; wer ihn zieht, soll dieselbe Verantwortung tragen wie beim Löschen.</p>
+      <p><strong>Fremde Zweiergespräche lassen sich nicht exportieren</strong> — <em>„Private Zweiergespräche lassen sich nicht exportieren.&quot;</em> Auch nicht von der Leitung.</p>
+      <p>Im Export steht der vollständige Verlauf, älteste Nachricht zuerst, nach Tagen gegliedert:</p>
+      <pre><code>Chat-Verlauf: Jahrgang 2026
+Exportiert am 23.08.2026, 14:12 — 138 Nachrichten
+============================================================
+
+--- Montag, 12.05.2026 ---
+14:03  Simon Luthe (org_admin): Denkt an die Zettel für Samstag!
+14:07  Lena M. (konfi): Ich hab meinen schon
+14:09  Jonas K. (konfi): [Bild: zettel.jpg]
+14:11  Simon Luthe (org_admin): [Diese Nachricht wurde gelöscht]</code></pre>
+      <p>Mit dabei: Datum und Uhrzeit, Absender mit Rolle, der Text, bei Anhängen der Dateiname, bei Umfragen Frage und Antwortmöglichkeiten und bei Antworten der Bezug auf die zitierte Nachricht. Gelöschte Nachrichten bleiben als Platzhalter stehen, damit der Verlauf nachvollziehbar bleibt.</p>
+      <p>Nicht im Export stehen: die <strong>Dateien selbst</strong> (nur ihre Namen), die <strong>Reaktionen</strong> und die <strong>abgegebenen Stimmen</strong> einer Umfrage — von einer Umfrage kommen nur Frage und Antwortmöglichkeiten mit, keine Ergebnisse.</p>
+      <p>Auf einem Handy landet der Export im Teilen-Menü, am Rechner im Download-Ordner.</p>
+      <p>---</p>
+      <h2>Übersicht, Reiter und Ungelesen-Zähler</h2>
+      <h3>Der Zähler</h3>
+      <p>Neben jedem Chat steht, wie viele Nachrichten du dort noch nicht gesehen hast. Gezählt wird alles, was <strong>seit deinem letzten Besuch in diesem Raum</strong> geschrieben wurde — pro Raum getrennt, für jede Person eigen.</p>
+      <p>Die Summe aller Räume erscheint als Zahl am Chat-Symbol in der unteren Leiste.</p>
+      <p><strong>Zurückgesetzt wird beim Öffnen des Chats.</strong> Es gibt keinen Knopf „alles als gelesen markieren&quot; und kein Wieder-auf-ungelesen-Setzen.</p>
+      <blockquote><strong>Achtung:</strong> Kurz in einen Chat hineinschauen setzt den Zähler zurück, auch wenn du nicht bis nach unten gescrollt hast. Wer eine Nachricht später beantworten will, sollte sie sich anders merken.</blockquote>
+      <blockquote><strong>Achtung, verwirrende Kleinigkeit:</strong> In der Chat-Liste zählen auch <strong>deine eigenen</strong> Nachrichten mit. Wer etwas schreibt und den Chat sofort verlässt, sieht dort eine „1&quot; — obwohl es nichts Neues zu lesen gibt. Einmal öffnen räumt sie weg.</blockquote>
+      <h3>Die Reiter</h3>
+      <p>Oben in der Übersicht:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th>Reiter</th><th>Zeigt</th></tr></thead><tbody><tr><td><strong>Alle</strong></td><td>alle deine Chats</td></tr><tr><td><strong>Ungelesen</strong></td><td>nur Chats mit ungelesenen Nachrichten</td></tr><tr><td><strong>Konfis</strong></td><td>Jahrgangs- und Gruppenchats mit Konfis</td></tr><tr><td><strong>Team</strong></td><td>Team-Gruppen und Direktchats mit Teamer:innen — nur für das Team sichtbar</td></tr></tbody></table></div>
+      <p>Sortiert wird immer nach der letzten Nachricht: Der aktuellste Chat steht oben, unabhängig vom Reiter. Zusätzlich gibt es ein Suchfeld über die Chat-Namen.</p>
+      <p>Über der Liste stehen drei Zahlen: <strong>Chats</strong> (wie viele du hast), <strong>Ungelesen</strong> (die Summe aller Zähler) und <strong>Aktiv</strong> (Chats mit einer Nachricht in den letzten sieben Tagen). Chats und Ungelesen sind anklickbar und schalten auf den passenden Reiter; Aktiv ist nur eine Anzeige.</p>
+    </section>
+    <section id="wrapped" class="kapitel" style="--kapitel:#b45309">
+      <header class="kapitel-kopf">
+        <h2>Jahresrückblick (Wrapped)</h2>
+        <p class="kapitel-meta">Was drin steht und wie er entsteht</p>
+      </header>
+      <p>Der Jahresrückblick — im System „Wrapped“ — ist eine Folge von Bildschirmseiten, durch die man wischt: Punkte, Termine, Abzeichen, der aktivste Monat, ein Blick auf die Konfirmation. Gedacht als Abschluss und als etwas, das man gern weiterschickt.</p>
+      <p>Es gibt ihn in zwei Fassungen: eine für <strong>Konfis</strong> und eine für <strong>Teamer:innen</strong>. Welche jemand sieht, hängt an der Rolle.</p>
+      <h2>Der Rückblick ist eine Momentaufnahme</h2>
+      <p>Das ist das Wichtigste an diesem Kapitel.</p>
+      <p>Wenn du den Rückblick freigibst, werden <strong>alle Zahlen einmal berechnet und festgeschrieben</strong>. Ab dann ändert sich nichts mehr daran. Der Rückblick liest die Daten nicht jedes Mal neu, sondern zeigt den Stand vom Moment der Freigabe.</p>
+      <p><em>Beispiel:</em> Du gibst am 1. Mai frei. Ein Konfi bekommt am 3. Mai noch fünf Bonuspunkte. Sein Rückblick zeigt weiterhin den Stand vom 1. Mai — die fünf Punkte tauchen dort nicht auf.</p>
+      <blockquote><strong>Deshalb gilt:</strong> Erst alles nachtragen, was noch fehlt, dann freigeben. Wer zuerst freigibt und dann noch Punkte einträgt, hat einen Rückblick, der nicht zu den Zahlen in der App passt.</blockquote>
+      <p>Korrigieren lässt sich das, indem du den Rückblick <strong>erneut freigibst</strong> — dann wird er neu berechnet.</p>
+      <h2>Freigabe pro Jahrgang</h2>
+      <p>Der Konfi-Rückblick wird <strong>pro Jahrgang</strong> freigegeben, im Jahrgang unter „Konfispruch &amp; Wrapped“. Er läuft nie automatisch an — du entscheidest, wann.</p>
+      <p><strong>Beim Einschalten</strong> fragt die App: „Wrapped wird für alle Konfis dieses Jahrgangs generiert und sie erhalten eine Push-Benachrichtigung. Fortfahren?“</p>
+      <p>Bestätigst du, passiert zweierlei:</p>
+      <p>1. Für jeden aktiven Konfi des Jahrgangs wird der Rückblick berechnet und gespeichert. Gelöschte Konfis werden übersprungen. 2. Alle bekommen einen Push: <strong>„Dein Konfi-Jahr ist da!“</strong> mit dem Text „Schau dir jetzt deinen persönlichen Jahresrückblick an!“</p>
+      <p>In der Jahrgangsliste steht danach „Wrapped gestartet am …“ statt „Wrapped nicht freigegeben“.</p>
+      <blockquote>Schlägt der Push fehl, bleibt der Rückblick trotzdem bestehen. Er ist dann da, nur hat niemand eine Benachrichtigung bekommen.</blockquote>
+      <h3>Der Teamer-Rückblick läuft anders</h3>
+      <div class="tabelle-huelle"><table><thead><tr><th></th><th>Konfis</th><th>Teamer:innen</th></tr></thead><tbody><tr><td>Freigabe</td><td>pro Jahrgang, von Hand</td><td>für die ganze Gemeinde</td></tr><tr><td>Wer darf</td><td>Leitung</td><td>nur die Organisations-Administration</td></tr><tr><td>Automatisch</td><td>nein</td><td><strong>ja, jedes Jahr am 6. Januar</strong></td></tr><tr><td>Push</td><td>„Dein Konfi-Jahr ist da!“</td><td>„Dein Teamer-Jahr ist da!“</td></tr><tr><td>Wieder löschbar</td><td>ja</td><td><strong>nein</strong></td></tr></tbody></table></div>
+      <p>Der Teamer-Rückblick entsteht also von selbst, einmal im Jahr. Existiert er für das Jahr schon, wird er dabei <strong>nicht</strong> überschrieben.</p>
+      <h2>Erneut freigeben und wieder ausschalten</h2>
+      <p><strong>Erneut freigeben = neu berechnen.</strong> Schaltest du die Freigabe aus und wieder ein, wird der Rückblick vollständig neu gerechnet und überschreibt den alten.</p>
+      <blockquote><strong>Achtung:</strong> Innerhalb desselben Jahres gibt es immer nur <strong>einen</strong> Rückblick pro Person. Der vorherige Stand ist nach dem Neuberechnen unwiderruflich weg — auch aus „Meine Wrappeds“. Über Jahresgrenzen hinweg bleiben die Rückblicke dagegen getrennt erhalten.</blockquote>
+      <p><strong>Ausschalten = löschen.</strong> Die Rückfrage lautet „Wrapped-Rückblick für diesen Jahrgang löschen? Die Konfis sehen den Rückblick dann nicht mehr.“ Die gespeicherten Rückblicke werden dabei <strong>wirklich gelöscht</strong>, nicht nur ausgeblendet. Nur ein erneutes Freigeben stellt sie wieder her — dann mit neu berechneten Zahlen.</p>
+      <p>Teamer-Rückblicke sind davon nicht betroffen; für sie gibt es keine Löschmöglichkeit.</p>
+      <h2>Die Seiten des Konfi-Rückblicks</h2>
+      <p>Je nach Datenlage sind es sieben bis zehn Seiten. Vier davon erscheinen nur unter bestimmten Bedingungen.</p>
+      <p><strong>1. Begrüßung</strong> — „Willkommen zu deinem Konfi-Jahr“, mit Name und Jahrgang. Erscheint immer.</p>
+      <p><strong>2. Deine Momente</strong> — <em>nur, wenn es Challenge-Beiträge gibt.</em> Zeigt bis zu sechs Beiträge aus dem Zeitraum: Challenge-Titel, ein Symbol für die Art des Beitrags und bei Fotos das Bild. Ausgeblendete Beiträge kommen nicht vor.</p>
+      <p><strong>3. Deine Events</strong> — Anzahl der besuchten Termine, dazu „von N verfügbaren“. Erscheint immer. <em>Nur, wenn vorhanden</em>, folgt darunter das zuletzt besuchte Event unter der Überschrift „Dein letztes Event“.</p>
+      <blockquote>Auf dieser Seite steht immer „0 mal abgesagt“ — auch bei tatsächlichen Absagen. Die Zahl ist im Programm fest eingetragen und wird nicht berechnet. Ein bekannter Fehler, keine Aussage über den Konfi.</blockquote>
+      <p><strong>4. Dein Schwerpunkt</strong> — <em>nur, wenn Aktivitäten vorhanden sind.</em> Die häufigste Kategorie groß, darunter ein Balkendiagramm der fünf häufigsten. Grundlage sind die erledigten Aktivitäten, nicht die Termine.</p>
+      <p><strong>5. Dein aktivster Monat</strong> — der Monat mit den meisten Einträgen. Gezählt werden Aktivitäten und besuchte Termine zusammen. Erscheint immer.</p>
+      <blockquote>Hat jemand weder Aktivitäten noch besuchte Termine, bleibt die Monatsüberschrift <strong>leer</strong> und es steht nur „0 Aktivitaeten“. Die Seite wird trotzdem gezeigt.</blockquote>
+      <p><strong>6. Deine Punkte</strong> — Gesamtpunkte groß, darunter getrennt Gottesdienst und Gemeinde. <em>Nur, wenn Bonuspunkte vergeben wurden</em>, zusätzlich „davon N Bonuspunkte“. Erscheint immer.</p>
+      <p><strong>7. Endspurt ODER Über dem Ziel</strong> — eine von beiden, nie beide:</p>
+      <ul><li><strong>Endspurt</strong>, wenn das Ziel noch nicht erreicht ist: „N Punkte fehlen noch“ mit Fortschrittsbalken und „Du schaffst das!“</li><li><strong>Über dem Ziel</strong>, wenn das Ziel erreicht oder überschritten ist: Konfetti und „+N Punkte über dem Ziel!“</li></ul>
+      <p>Beide entfallen, wenn im Jahrgang gar kein Ziel gesetzt ist.</p>
+      <p><strong>8. Deine Badges</strong> — Anzahl verdienter Abzeichen, „von N verdient“, dazu bis zu sechs Abzeichen als Symbole. Erscheint immer.</p>
+      <p><strong>9. Deine Konfirmation</strong> — das Konfirmationsdatum. <em>Nur, wenn ein Konfirmationstermin hinterlegt ist</em> — praktisch also fast immer, weil sonst ein Ersatzdatum greift. Ist die Konfirmation noch nicht gewesen, steht darunter „N Tage noch“.</p>
+      <blockquote>Der Satz „Es ist bald soweit!“ erscheint auf dieser Seite <strong>immer</strong> — auch wenn die Konfirmation längst vorbei ist.</blockquote>
+      <p><strong>10. Auf einen Blick</strong> — Punkte, Termine und Abzeichen nebeneinander, dazu die Einladung „Werde Teamer:in — gestalte die nächste Generation mit“. Immer die letzte Seite.</p>
+      <h3>Woher die Zahlen kommen</h3>
+      <div class="tabelle-huelle"><table><thead><tr><th>Seite</th><th>Datenquelle</th></tr></thead><tbody><tr><td>Punkte</td><td>der gespeicherte Punktestand des Konfis, plus Bonuspunkte-Summe</td></tr><tr><td>Events</td><td>bestätigte Buchungen mit Anwesenheit „anwesend“</td></tr><tr><td>Schwerpunkt</td><td>erledigte Aktivitäten, nach Kategorie gruppiert</td></tr><tr><td>Aktivster Monat</td><td>Aktivitäten und besuchte Termine zusammen</td></tr><tr><td>Badges</td><td>die verliehenen Abzeichen</td></tr><tr><td>Endspurt</td><td>die Punkteziele des Jahrgangs, nur die aktiven Arten</td></tr><tr><td>Konfirmation</td><td>der als Konfirmation gekennzeichnete Termin</td></tr><tr><td>Momente</td><td>Challenge-Beiträge aus dem Zeitraum</td></tr></tbody></table></div>
+      <p>Der <strong>Zeitraum</strong> reicht vom 1. September des Vorjahres bis zur Konfirmation. Fehlt ein Konfirmationstermin, wird der 31. Juli als Ende angenommen.</p>
+      <h2>Die Seiten des Teamer-Rückblicks</h2>
+      <p>Hier sind es <strong>immer genau sieben Seiten</strong>, ohne Bedingungen.</p>
+      <p><strong>1. Begrüßung</strong> — „Willkommen zu deinem Teamer-Jahr“, mit Name. Anders als bei den Konfis ohne Jahrgangsangabe.</p>
+      <p><strong>2. Deine Events</strong> — Anzahl der Termine, an denen die Teamer:in als anwesend eingetragen war, überschrieben mit „Events geleitet“. <em>Nur, wenn vorhanden</em>, darunter das größte Event mit Teilnehmerzahl.</p>
+      <p><strong>3. Deine Konfis</strong> — Anzahl der betreuten Konfis, dazu <em>nur, wenn vorhanden</em> die Namen der zugewiesenen Jahrgänge. Grundlage ist die Jahrgangs-Zuweisung: Wer keinem Jahrgang zugewiesen ist, steht hier bei null.</p>
+      <p><strong>4. Deine Badges</strong> — Anzahl und bis zu sechs Abzeichen. Anders als bei den Konfis <strong>ohne</strong> „von N“, weil die Gesamtzahl hier nicht mitgeliefert wird.</p>
+      <p><strong>5. Deine Zertifikate</strong> — Anzahl und die vollständige Liste mit Datum.</p>
+      <p><strong>6. Dein Engagement</strong> — Jahre als Teamer:in, dazu „Dabei seit …“. Gerechnet wird ab dem Eintrittsdatum.</p>
+      <blockquote><strong>Achtung:</strong> Ist kein Eintrittsdatum hinterlegt, steht dort „0 Jahre als Teamer:in“ und <strong>„Dabei seit 01. Januar 1970“</strong>. Wenn dir das auffällt, fehlt bei der Person das Feld „Teamer:in seit“.</blockquote>
+      <p><strong>7. Auf einen Blick</strong> — Events, Konfis, Badges nebeneinander, dazu „Danke fuer deinen Einsatz!“ und „Du machst den Unterschied“.</p>
+      <h2>Wo man den Rückblick wiederfindet</h2>
+      <p>Solange er freigegeben ist, liegt er als auffällige Karte oben auf dem Dashboard: bei Konfis violett („Dein Wrapped ist da!“), bei Teamer:innen pink („Dein Teamer-Jahr ist da!“).</p>
+      <p>Ältere Rückblicke stehen im <strong>Profil</strong> unter <strong>„Meine Wrappeds“</strong>:</p>
+      <ul><li><strong>Konfis:</strong> Tab <em>Profil</em>, nach unten scrollen.</li><li><strong>Teamer:innen:</strong> <em>Profil</em>, unterhalb von „App-Tour ansehen“.</li></ul>
+      <p>Dort ist pro Eintrag das Jahr genannt, etwa „Konfi-Wrapped 2026“. Ein Tippen öffnet <strong>genau den gespeicherten Stand</strong> von damals.</p>
+      <blockquote>Der Abschnitt „Meine Wrappeds“ erscheint <strong>nur</strong>, wenn es mindestens einen Rückblick gibt. Ist keiner da, fehlt er ganz — das ist kein Fehler.</blockquote>
+      <p>Wer den Rückblick eines Konfis von außen ansehen will, findet ihn in dessen Detailansicht. Das klappt allerdings nur für die <strong>Leitung</strong>: Bei Teamer:innen bleibt die Karte leer, weil die Berechtigung dafür fehlt.</p>
+      <h2>Teilen</h2>
+      <p>Über den Teilen-Knopf oben im Rückblick lässt sich die <strong>gerade sichtbare Seite</strong> weitergeben.</p>
+      <p>Geteilt wird kein Bildschirmfoto, sondern ein eigens dafür erzeugtes <strong>Bild im Hochformat</strong> (1080 × 1920, also Story-Format), unten mit dem Schriftzug „Konfi Quest“. In der App öffnet sich das übliche Teilen-Menü des Geräts, im Browser wird das Bild heruntergeladen.</p>
+      <p>Klappt der Bildexport nicht, wird ersatzweise ein kurzer Text geteilt, etwa „Mein Konfi-Jahr 2026: 24 Punkte gesammelt! #KonfiQuest“.</p>
+      <blockquote><strong>Datenschutz, bewusst so gebaut:</strong> In das Teilen-Bild werden <strong>niemals Fotos, Ton- oder Videoaufnahmen</strong> aus Challenge-Beiträgen übernommen — nur der Challenge-Titel und ein gekürzter Text. Das Bild verlässt die App, deshalb bleiben die Medien der Konfis draußen.</blockquote>
+      <p>Nicht jede Seite lässt sich sinnvoll teilen: Für <strong>Schwerpunkt</strong>, <strong>Über dem Ziel</strong> und <strong>Konfirmation</strong> gibt es keine Teilen-Vorlage. Das erzeugte Bild ist dann leer bis auf den Schriftzug. Weise Konfis darauf hin, dass sie zum Teilen besser eine der anderen Seiten wählen.</p>
     </section>
   </main>
 </div>

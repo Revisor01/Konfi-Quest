@@ -1015,3 +1015,262 @@ paths:
         # super_admin ist geschuetzt" stimmt nur fuer die Rolle (org=NULL),
         # nicht fuer das Flag.
         # LÜCKE (N2): bestehende Refresh-Tokens des Ziel-Users bleiben gueltig.
+
+  # ==========================================================================
+  # ALIAS-MOUNT /api/admin/users (backend/createApp.js)
+  # backend/routes/users.js wird ZWEIMAL eingehaengt: unter /api/users und
+  # unter /api/admin/users. Es ist derselbe Router, dieselben Handler,
+  # dieselben Berechtigungen — kein eigener Code, kein zusaetzlicher Guard.
+  # Die Pfade sind hier vollstaendig aufgefuehrt, damit die Doku alle
+  # erreichbaren Endpunkte abdeckt; die Beschreibungen verweisen jeweils auf
+  # den /users-Eintrag.
+  # ==========================================================================
+  /admin/users:
+    get:
+      summary: Alle Verwaltungs-User der eigenen Org (Alias von GET /users)
+      description: Identischer Handler wie GET /users.
+      responses:
+        "200": { description: "User-Array (Rolle, Jahrgangs-Zaehler, can_edit)" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin]
+        org-scope: true
+        objekt-pruefung: "wie GET /users"
+        hinweis: "Alias-Mount, kein eigener Code. super_admin faellt durch requireOrgAdmin auf 403, ausser er agiert per Multi-Org-Switch als org_admin."
+    post:
+      summary: Verwaltungs-User anlegen (Alias von POST /users)
+      description: Identischer Handler wie POST /users.
+      responses:
+        "201": { description: "Angelegter User" }
+        "400": { description: "Validierung/Passwort-Policy" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin, userHierarchyMiddleware('create'), validateCreateUser]
+        org-scope: true
+        objekt-pruefung: "wie POST /users (Rollenhierarchie via canCreateRole)"
+        hinweis: "Alias-Mount, kein eigener Code."
+
+  /admin/users/{id}:
+    get:
+      summary: Einzelnen User laden (Alias von GET /users/{id})
+      description: Identischer Handler wie GET /users/{id}.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "User inkl. Jahrgangs-Zuweisungen" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin, userHierarchyMiddleware('view')]
+        org-scope: true
+        objekt-pruefung: "wie GET /users/{id}"
+        hinweis: "Alias-Mount, kein eigener Code."
+    put:
+      summary: User bearbeiten (Alias von PUT /users/{id})
+      description: Identischer Handler wie PUT /users/{id}.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "User aktualisiert" }
+        "400": { description: "Validierung/Passwort-Policy" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin, userHierarchyMiddleware('update'), validateUpdateUser]
+        org-scope: true
+        objekt-pruefung: "wie PUT /users/{id}"
+        hinweis: "Alias-Mount, kein eigener Code."
+    delete:
+      summary: User loeschen (Alias von DELETE /users/{id})
+      description: Identischer Handler wie DELETE /users/{id}.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "User geloescht" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin, userHierarchyMiddleware('delete'), validateUserId]
+        org-scope: true
+        objekt-pruefung: "wie DELETE /users/{id}; Selbst-Loeschung blockiert"
+        hinweis: "Alias-Mount, kein eigener Code."
+
+  /admin/users/{id}/jahrgaenge:
+    get:
+      summary: Jahrgangs-Zuweisungen eines Users (Alias von GET /users/{id}/jahrgaenge)
+      description: Identischer Handler wie GET /users/{id}/jahrgaenge.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "Array der Zuweisungen" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin]
+        org-scope: true
+        objekt-pruefung: "wie GET /users/{id}/jahrgaenge"
+        hinweis: "Alias-Mount, kein eigener Code."
+    post:
+      summary: Jahrgangs-Zuweisungen ersetzen (Alias von POST /users/{id}/jahrgaenge)
+      description: Identischer Handler wie POST /users/{id}/jahrgaenge.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "Zuweisungen ersetzt, Chat synchronisiert" }
+        "400": { description: "Validierung" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+      x-berechtigung:
+        rollen: [org_admin]
+        middleware: [verifyTokenRBAC, requireOrgAdmin, validateJahrgangAssignments]
+        org-scope: true
+        objekt-pruefung: "wie POST /users/{id}/jahrgaenge"
+        hinweis: "Alias-Mount, kein eigener Code."
+
+  /admin/users/me/jahrgaenge:
+    get:
+      summary: Eigene Jahrgangs-Zuweisungen (Alias von GET /users/me/jahrgaenge)
+      description: Identischer Handler wie GET /users/me/jahrgaenge.
+      responses:
+        "200": { description: "Array der eigenen Zuweisungen (auf aktive Org gescopt)" }
+      x-berechtigung:
+        rollen: [alle authentifizierten]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Nur eigene Daten"
+        hinweis: "Alias-Mount, kein eigener Code. Kein Rollen-Guard — auch Konfis erreichen diesen Pfad und bekommen ihre eigenen (in der Regel leeren) Zuweisungen."
+
+  /admin/users/{id}/reset-password:
+    put:
+      summary: Passwort administrativ setzen (Alias von PUT /users/{id}/reset-password)
+      description: Identischer Handler wie PUT /users/{id}/reset-password.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string, description: "volle validatePassword-Policy" }
+      responses:
+        "200": { description: "Passwort gesetzt; aktive Sockets des Users getrennt" }
+        "400": { description: "Policy verletzt" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+      x-berechtigung:
+        rollen: [super_admin, org_admin]
+        middleware: [verifyTokenRBAC, validateResetPassword]
+        org-scope: true
+        objekt-pruefung: "wie PUT /users/{id}/reset-password (Inline-Check statt requireOrgAdmin)"
+        hinweis: "Alias-Mount, kein eigener Code."
+
+  # ==========================================================================
+  # BETRIEB / DIAGNOSE (direkt in backend/createApp.js, kein Router)
+  # /health und /status sind bewusst OHNE Authentifizierung (Docker-Healthcheck
+  # und Uptime-Monitoring). Die drei Metrics-Endpunkte verlangen ein Token und
+  # zusaetzlich req.user.is_super_admin.
+  # ==========================================================================
+  /health:
+    get:
+      summary: Liveness-Check (ohne Anmeldung)
+      description: >
+        Minimaler Endpunkt fuer Docker-Healthcheck und Traefik. Bewusst ohne
+        Datenbank-Pruefung: ein haengender DB-Check wuerde einen gesunden
+        Container vom Healthcheck killen lassen.
+      security: []
+      responses:
+        "200": { description: "status: OK, message" }
+      x-berechtigung:
+        rollen: [oeffentlich]
+        middleware: []
+        org-scope: false
+        objekt-pruefung: "keine"
+        hinweis: "Keine Authentifizierung. Gibt keine Daten preis ausser der Tatsache, dass der Dienst laeuft."
+
+  /status:
+    get:
+      summary: Readiness-Check mit Datenbank-Pruefung (ohne Anmeldung)
+      description: >
+        Prueft die Datenbank mit SELECT 1 und liefert 200 bei gesunder DB,
+        sonst 503. Getrennt von /health, weil er echte Abhaengigkeiten prueft.
+      security: []
+      responses:
+        "200": { description: "status, version, commit, uptimeSeconds, checks.database, responseTimeMs" }
+        "503": { description: "DEGRADED — Datenbank nicht erreichbar" }
+      x-berechtigung:
+        rollen: [oeffentlich]
+        middleware: []
+        org-scope: false
+        objekt-pruefung: "keine"
+        hinweis: >
+          # HINWEIS: Ohne Anmeldung erreichbar und gibt version und commit
+          (GIT_SHA) preis. Bewusst so fuer die Status-Seite / Uptime Kuma.
+
+  /metrics:
+    get:
+      summary: APM-Kennzahlen aller Replicas (nur super_admin)
+      description: >
+        Aggregierte Laufzeitdaten: langsamste und meistgenutzte Routen,
+        parallele Requests, Live-Verlauf, letzte Fehler. Ist METRICS_PEERS
+        gesetzt, werden alle Peers ueber /metrics/local abgefragt und zu einem
+        Gesamtbild inklusive Lastverteilung gemergt.
+      responses:
+        "200": { description: "Zusammengefuehrter APM-Snapshot inkl. replicas" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC]
+        org-scope: false
+        objekt-pruefung: "Inline: req.user.is_super_admin, sonst 403"
+        hinweis: >
+          Bewusst org-uebergreifend — die Daten sind organisationsunabhaengige
+          Betriebskennzahlen. Der Authorization-Header wird an die Peers
+          weitergereicht.
+
+  /metrics/local:
+    get:
+      summary: APM-Rohdaten nur dieser Replica (nur super_admin)
+      description: >
+        Unaggregierter In-Memory-Snapshot der antwortenden Replica. Wird von
+        /metrics fuer die Peer-Aggregation genutzt, ist aber auch direkt
+        aufrufbar.
+      responses:
+        "200": { description: "APM-Snapshot dieser Replica" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC]
+        org-scope: false
+        objekt-pruefung: "Inline: req.user.is_super_admin, sonst 403"
+
+  /metrics/history:
+    get:
+      summary: Gespeicherte APM-Historie (nur super_admin)
+      description: >
+        Liefert die persistierten Snapshots aus apm_snapshots der letzten N
+        Tage, damit das Dashboard Deltas ueber Deploys hinweg bilden kann.
+      parameters:
+        - name: days
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 30, default: 7 }
+          description: Auf 1..30 begrenzt; ungueltige Werte fallen auf 7 zurueck.
+      responses:
+        "200": { description: "days und snapshots[] (captured_at, total_requests, total_errors, max_in_flight, worst_p95_ms, worst_route)" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/ServerError" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC]
+        org-scope: false
+        objekt-pruefung: "Inline: req.user.is_super_admin, sonst 403"

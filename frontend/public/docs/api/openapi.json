@@ -3,7 +3,7 @@
   "info": {
     "title": "Konfi Quest API",
     "version": "1.0.0",
-    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\nStand 2026-08-23. 197 Operationen."
+    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\nStand 2026-08-23. 238 Operationen."
   },
   "servers": [
     {
@@ -2129,6 +2129,526 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Inline: is_super_admin (org-uebergreifend, auch per Flag) ODER org_admin derselben Org; org_admin darf auch andere org_admins resetten"
+        },
+        "tags": [
+          "Anmeldung & Verwaltung"
+        ]
+      }
+    },
+    "/admin/users": {
+      "get": {
+        "summary": "Alle Verwaltungs-User der eigenen Org (Alias von GET /users)",
+        "description": "Identischer Handler wie GET /users.",
+        "responses": {
+          "200": {
+            "description": "User-Array (Rolle, Jahrgangs-Zaehler, can_edit)"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireOrgAdmin"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "wie GET /users",
+          "hinweis": "Alias-Mount, kein eigener Code. super_admin faellt durch requireOrgAdmin auf 403, ausser er agiert per Multi-Org-Switch als org_admin."
+        },
+        "tags": [
+          "Anmeldung & Verwaltung"
+        ]
+      },
+      "post": {
+        "summary": "Verwaltungs-User anlegen (Alias von POST /users)",
+        "description": "Identischer Handler wie POST /users.",
+        "responses": {
+          "201": {
+            "description": "Angelegter User"
+          },
+          "400": {
+            "description": "Validierung/Passwort-Policy"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireOrgAdmin",
+            "userHierarchyMiddleware('create')",
+            "validateCreateUser"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "wie POST /users (Rollenhierarchie via canCreateRole)",
+          "hinweis": "Alias-Mount, kein eigener Code."
+        },
+        "tags": [
+          "Anmeldung & Verwaltung"
+        ]
+      }
+    },
+    "/admin/users/{id}": {
+      "get": {
+        "summary": "Einzelnen User laden (Alias von GET /users/{id})",
+        "description": "Identischer Handler wie GET /users/{id}.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User inkl. Jahrgangs-Zuweisungen"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireOrgAdmin",
+            "userHierarchyMiddleware('view')"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "wie GET /users/{id}",
+          "hinweis": "Alias-Mount, kein eigener Code."
+        },
+        "tags": [
+          "Anmeldung & Verwaltung"
+        ]
+      },
+      "put": {
+        "summary": "User bearbeiten (Alias von PUT /users/{id})",
+        "description": "Identischer Handler wie PUT /users/{id}.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User aktualisiert"
+          },
+          "400": {
+            "description": "Validierung/Passwort-Policy"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireOrgAdmin",
+            "userHierarchyMiddleware('update')",
+            "validateUpdateUser"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "wie PUT /users/{id}",
+          "hinweis": "Alias-Mount, kein eigener Code."
+        },
+        "tags": [
+          "Anmeldung & Verwaltung"
+        ]
+      },
+      "delete": {
+        "summary": "User loeschen (Alias von DELETE /users/{id})",
+        "description": "Identischer Handler wie DELETE /users/{id}.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User geloescht"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireOrgAdmin",
+            "userHierarchyMiddleware('delete')",
+            "validateUserId"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "wie DELETE /users/{id}; Selbst-Loeschung blockiert",
+          "hinweis": "Alias-Mount, kein eigener Code."
+        },
+        "tags": [
+          "Anmeldung & Verwaltung"
+        ]
+      }
+    },
+    "/admin/users/{id}/jahrgaenge": {
+      "get": {
+        "summary": "Jahrgangs-Zuweisungen eines Users (Alias von GET /users/{id}/jahrgaenge)",
+        "description": "Identischer Handler wie GET /users/{id}/jahrgaenge.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array der Zuweisungen"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireOrgAdmin"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "wie GET /users/{id}/jahrgaenge",
+          "hinweis": "Alias-Mount, kein eigener Code."
+        },
+        "tags": [
+          "Anmeldung & Verwaltung"
+        ]
+      },
+      "post": {
+        "summary": "Jahrgangs-Zuweisungen ersetzen (Alias von POST /users/{id}/jahrgaenge)",
+        "description": "Identischer Handler wie POST /users/{id}/jahrgaenge.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Zuweisungen ersetzt, Chat synchronisiert"
+          },
+          "400": {
+            "description": "Validierung"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireOrgAdmin",
+            "validateJahrgangAssignments"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "wie POST /users/{id}/jahrgaenge",
+          "hinweis": "Alias-Mount, kein eigener Code."
+        },
+        "tags": [
+          "Anmeldung & Verwaltung"
+        ]
+      }
+    },
+    "/admin/users/me/jahrgaenge": {
+      "get": {
+        "summary": "Eigene Jahrgangs-Zuweisungen (Alias von GET /users/me/jahrgaenge)",
+        "description": "Identischer Handler wie GET /users/me/jahrgaenge.",
+        "responses": {
+          "200": {
+            "description": "Array der eigenen Zuweisungen (auf aktive Org gescopt)"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "alle authentifizierten"
+          ],
+          "middleware": [
+            "verifyTokenRBAC"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "Nur eigene Daten",
+          "hinweis": "Alias-Mount, kein eigener Code. Kein Rollen-Guard — auch Konfis erreichen diesen Pfad und bekommen ihre eigenen (in der Regel leeren) Zuweisungen."
+        },
+        "tags": [
+          "Anmeldung & Verwaltung"
+        ]
+      }
+    },
+    "/admin/users/{id}/reset-password": {
+      "put": {
+        "summary": "Passwort administrativ setzen (Alias von PUT /users/{id}/reset-password)",
+        "description": "Identischer Handler wie PUT /users/{id}/reset-password.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "password"
+                ],
+                "properties": {
+                  "password": {
+                    "type": "string",
+                    "description": "volle validatePassword-Policy"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Passwort gesetzt; aktive Sockets des Users getrennt"
+          },
+          "400": {
+            "description": "Policy verletzt"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin",
+            "org_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "validateResetPassword"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "wie PUT /users/{id}/reset-password (Inline-Check statt requireOrgAdmin)",
+          "hinweis": "Alias-Mount, kein eigener Code."
+        },
+        "tags": [
+          "Anmeldung & Verwaltung"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Liveness-Check (ohne Anmeldung)",
+        "description": "Minimaler Endpunkt fuer Docker-Healthcheck und Traefik. Bewusst ohne Datenbank-Pruefung: ein haengender DB-Check wuerde einen gesunden Container vom Healthcheck killen lassen.\n",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "status: OK, message"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "oeffentlich"
+          ],
+          "middleware": [],
+          "org-scope": false,
+          "objekt-pruefung": "keine",
+          "hinweis": "Keine Authentifizierung. Gibt keine Daten preis ausser der Tatsache, dass der Dienst laeuft."
+        },
+        "tags": [
+          "Anmeldung & Verwaltung"
+        ]
+      }
+    },
+    "/status": {
+      "get": {
+        "summary": "Readiness-Check mit Datenbank-Pruefung (ohne Anmeldung)",
+        "description": "Prueft die Datenbank mit SELECT 1 und liefert 200 bei gesunder DB, sonst 503. Getrennt von /health, weil er echte Abhaengigkeiten prueft.\n",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "status, version, commit, uptimeSeconds, checks.database, responseTimeMs"
+          },
+          "503": {
+            "description": "DEGRADED — Datenbank nicht erreichbar"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "oeffentlich"
+          ],
+          "middleware": [],
+          "org-scope": false,
+          "objekt-pruefung": "keine",
+          "hinweis": "# HINWEIS: Ohne Anmeldung erreichbar und gibt version und commit (GIT_SHA) preis. Bewusst so fuer die Status-Seite / Uptime Kuma.\n"
+        },
+        "tags": [
+          "Anmeldung & Verwaltung"
+        ]
+      }
+    },
+    "/metrics": {
+      "get": {
+        "summary": "APM-Kennzahlen aller Replicas (nur super_admin)",
+        "description": "Aggregierte Laufzeitdaten: langsamste und meistgenutzte Routen, parallele Requests, Live-Verlauf, letzte Fehler. Ist METRICS_PEERS gesetzt, werden alle Peers ueber /metrics/local abgefragt und zu einem Gesamtbild inklusive Lastverteilung gemergt.\n",
+        "responses": {
+          "200": {
+            "description": "Zusammengefuehrter APM-Snapshot inkl. replicas"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "Inline: req.user.is_super_admin, sonst 403",
+          "hinweis": "Bewusst org-uebergreifend — die Daten sind organisationsunabhaengige Betriebskennzahlen. Der Authorization-Header wird an die Peers weitergereicht.\n"
+        },
+        "tags": [
+          "Anmeldung & Verwaltung"
+        ]
+      }
+    },
+    "/metrics/local": {
+      "get": {
+        "summary": "APM-Rohdaten nur dieser Replica (nur super_admin)",
+        "description": "Unaggregierter In-Memory-Snapshot der antwortenden Replica. Wird von /metrics fuer die Peer-Aggregation genutzt, ist aber auch direkt aufrufbar.\n",
+        "responses": {
+          "200": {
+            "description": "APM-Snapshot dieser Replica"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "Inline: req.user.is_super_admin, sonst 403"
+        },
+        "tags": [
+          "Anmeldung & Verwaltung"
+        ]
+      }
+    },
+    "/metrics/history": {
+      "get": {
+        "summary": "Gespeicherte APM-Historie (nur super_admin)",
+        "description": "Liefert die persistierten Snapshots aus apm_snapshots der letzten N Tage, damit das Dashboard Deltas ueber Deploys hinweg bilden kann.\n",
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30,
+              "default": 7
+            },
+            "description": "Auf 1..30 begrenzt; ungueltige Werte fallen auf 7 zurueck."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "days und snapshots[] (captured_at, total_requests, total_errors, max_in_flight, worst_p95_ms, worst_route)"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "Inline: req.user.is_super_admin, sonst 403"
         },
         "tags": [
           "Anmeldung & Verwaltung"
@@ -4625,6 +5145,1461 @@
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      }
+    },
+    "/api/admin/activities": {
+      "get": {
+        "summary": "Masterliste aller Aktivitaeten der eigenen Organisation",
+        "description": "Liefert alle Aktivitaeten der aktiven Organisation samt zugeordneten Kategorien. Optionaler Query-Parameter target_role filtert auf Konfi- bzw. Teamer-Aktivitaeten.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin",
+            "teamer"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireTeamer"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "WHERE a.organization_id = req.user.organization_id",
+          "hinweis": "super_admin faellt durch requireTeamer auf 403, ausser er agiert per Multi-Org-Switch als org_admin/admin/teamer.\n"
+        },
+        "parameters": [
+          {
+            "name": "target_role",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "konfi",
+                "teamer"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array von Aktivitaeten (id, name, points, type, target_role, categories)"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      },
+      "post": {
+        "summary": "Neue Aktivitaet anlegen",
+        "description": "Legt eine Aktivitaet in der aktiven Organisation an. Bei target_role=teamer sind points und type optional, sonst Pflicht. Uebergebene category_ids werden zugeordnet.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireAdmin",
+            "validateCreateActivity"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "organization_id wird aus dem Token gesetzt, nicht aus dem Body"
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "points": {
+                    "type": "integer"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "gottesdienst",
+                      "gemeinde"
+                    ]
+                  },
+                  "target_role": {
+                    "type": "string",
+                    "enum": [
+                      "konfi",
+                      "teamer"
+                    ],
+                    "default": "konfi"
+                  },
+                  "category_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Angelegte Aktivitaet"
+          },
+          "400": {
+            "description": "Pflichtfelder fehlen oder Validierung fehlgeschlagen"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      }
+    },
+    "/api/admin/activities/{id}": {
+      "put": {
+        "summary": "Aktivitaet aendern",
+        "description": "Aendert Name, Punkte, Typ, Zielrolle und Kategorien einer Aktivitaet der eigenen Organisation.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireAdmin",
+            "validateUpdateActivity"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "Aktivitaet muss zur eigenen Organisation gehoeren"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pathId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "points": {
+                    "type": "integer"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "target_role": {
+                    "type": "string",
+                    "enum": [
+                      "konfi",
+                      "teamer"
+                    ]
+                  },
+                  "category_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Aktualisierte Aktivitaet"
+          },
+          "400": {
+            "description": "Pflichtfelder fehlen"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      },
+      "delete": {
+        "summary": "Aktivitaet loeschen (nur ohne Zuordnungen)",
+        "description": "Loescht eine Aktivitaet. Existieren bereits Zuordnungen zu Konfis (user_activities), wird mit 409 abgelehnt. Antraege werden nach Gewicht unterschieden aufgeraeumt bzw. blockieren das Loeschen.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireAdmin",
+            "validateDeleteActivity"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "Zuordnungspruefung ueber JOIN activities mit organization_id"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pathId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Aktivitaet geloescht"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "Aktivitaet ist Konfis zugeordnet oder hat gewichtige Antraege"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      }
+    },
+    "/api/admin/activities/requests": {
+      "get": {
+        "summary": "Alle Antraege der Organisation",
+        "description": "Liefert alle Aktivitaetsantraege der aktiven Organisation samt Konfi-Name, Aktivitaetsdaten und genehmigender Person.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireAdmin"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "WHERE a.organization_id = req.user.organization_id",
+          "hinweis": "Kein Jahrgangs-Filter: org_admin und admin sehen die Antraege ALLER Jahrgaenge der Organisation. Teamer:innen haben hier keinen Zugriff (dafuer gibt es GET /api/teamer/requests).\n"
+        },
+        "responses": {
+          "200": {
+            "description": "Array von Antraegen (ar.* + konfi_name, activity_name, activity_points, activity_type, activity_target_role, approved_by_name)"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      }
+    },
+    "/api/admin/activities/requests/{id}": {
+      "put": {
+        "summary": "Antrag genehmigen oder ablehnen",
+        "description": "Setzt den Status eines ausstehenden Antrags auf approved oder rejected. Bei approved werden die Punkte gutgeschrieben und Badges geprueft. Bereits entschiedene Antraege werden mit 400 abgelehnt.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireAdmin",
+            "validateRequestUpdate"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "Antrag ueber JOIN activities auf die eigene Organisation eingegrenzt; nur status=pending aenderbar"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pathId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "approved",
+                      "rejected"
+                    ]
+                  },
+                  "admin_comment": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Antrag entschieden"
+          },
+          "400": {
+            "description": "Ungueltiger Status oder Antrag nicht mehr ausstehend"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      },
+      "delete": {
+        "summary": "Abgelehnten Antrag endgueltig loeschen",
+        "description": "Entfernt einen abgelehnten Antrag samt Nachweisfoto. Offene Antraege (409) und genehmigte Antraege (409) sind bewusst geschuetzt: offene werden entschieden, genehmigte zuerst zurueckgesetzt.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireAdmin",
+            "param-id-Validierung"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "Antrag ueber JOIN activities org-gescopt; nur status=rejected loeschbar"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pathId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Antrag geloescht"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "Antrag ist offen oder bereits genehmigt"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      }
+    },
+    "/api/admin/activities/requests/{id}/reset": {
+      "put": {
+        "summary": "Entschiedenen Antrag auf ausstehend zuruecksetzen",
+        "description": "Setzt einen genehmigten oder abgelehnten Antrag zurueck auf pending. Bei zuvor genehmigten Antraegen werden die gutgeschriebenen Punkte wieder abgezogen.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireAdmin",
+            "param-id-Validierung"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "Antrag ueber JOIN activities org-gescopt; bereits ausstehende Antraege ergeben 400"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pathId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Antrag zurueckgesetzt, Punkte ggf. abgezogen"
+          },
+          "400": {
+            "description": "Antrag ist bereits ausstehend"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      }
+    },
+    "/api/admin/activities/requests/{id}/photo": {
+      "get": {
+        "summary": "Nachweisfoto eines Antrags abrufen",
+        "description": "Liefert das (verschluesselt gespeicherte) Nachweisfoto entschluesselt als image/jpeg aus, unabhaengig vom Status des Antrags.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "Inline-Rollencheck role_name in ['admin','org_admin']; danach Vergleich der organization_id des antragstellenden Users mit der eigenen",
+          "hinweis": "Bewusst KEIN requireAdmin, sondern ein Inline-Check — die Wirkung ist dieselbe Rollenmenge. Teamer:innen erhalten 403.\n"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pathId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Foto",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "description": "Antrag",
+            "Foto-Eintrag oder Datei nicht gefunden": null
+          },
+          "500": {
+            "description": "Foto konnte nicht entschluesselt werden"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      },
+      "delete": {
+        "summary": "Nachweisfoto eines Antrags loeschen",
+        "description": "Setzt photo_filename auf NULL und entfernt die Datei. Der Antrag selbst bleibt erhalten.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "Inline-Rollencheck role_name in ['admin','org_admin']; danach Org-Vergleich ueber den antragstellenden User"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pathId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Foto geloescht"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "description": "Antrag nicht gefunden oder kein Foto vorhanden"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      }
+    },
+    "/api/admin/activities/assign-activity": {
+      "post": {
+        "summary": "Aktivitaet direkt einem Konfi zuweisen",
+        "description": "Vergibt eine Aktivitaet ohne Antragsweg. Punkte werden gutgeschrieben und die Badge-Pruefung ausgeloest.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin",
+            "teamer"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireTeamer",
+            "validateAssignActivity"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "Aktivitaet UND Ziel-User muessen zur eigenen Organisation gehoeren (Org-Pruefung des Ziel-Users ergaenzt 22.08.2026). Teamer:innen zusaetzlich: der Jahrgang des Konfis muss in assigned_jahrgaenge mit can_view liegen.\n"
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "konfiId",
+                  "activityId"
+                ],
+                "properties": {
+                  "konfiId": {
+                    "type": "integer"
+                  },
+                  "activityId": {
+                    "type": "integer"
+                  },
+                  "completed_date": {
+                    "type": "string",
+                    "format": "date"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Aktivitaet zugewiesen, Punkte gutgeschrieben"
+          },
+          "400": {
+            "description": "Pflichtfelder fehlen"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "description": "Aktivitaet oder Konfi nicht gefunden"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      }
+    },
+    "/api/admin/konfis": {
+      "get": {
+        "summary": "Liste der Konfis (fuer Teamer:innen auf eigene Jahrgaenge gefiltert)",
+        "description": "Liefert die Konfis der aktiven Organisation mit Punkten, Jahrgang und Zaehlern. Fuer alle ausser super_admin und org_admin wird auf die Jahrgaenge aus assigned_jahrgaenge mit can_view eingeschraenkt. Geloeschte Konfis (deleted_at) sind ausgeschlossen.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin",
+            "teamer"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireTeamer"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "u.organization_id = Token-Org; zusaetzlich Jahrgangs-Filter fuer alle ausser is_super_admin/org_admin"
+        },
+        "responses": {
+          "200": {
+            "description": "Array von Konfis (id, name, username, Punkte, Jahrgang, badge_count, activity_count)"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      },
+      "post": {
+        "summary": "Neuen Konfi anlegen",
+        "description": "Legt User + konfi_profiles an, erzeugt Username und Startpasswort, haengt den Konfi an den Jahrgangs-Chat und bucht ihn in kuenftige Pflicht-Events des Jahrgangs ein. Das Konfi-Limit der Organisation wird geprueft.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireAdmin",
+            "validateCreateKonfi"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "jahrgang_id muss zur eigenen Organisation gehoeren; Rolle konfi wird org-spezifisch aufgeloest; Limitpruefung ueber checkKonfiLimit",
+          "hinweis": "Teamer:innen koennen keine Konfis anlegen (requireAdmin).\n"
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "jahrgang_id"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "jahrgang_id": {
+                    "type": "integer"
+                  },
+                  "confirm": {
+                    "type": "boolean",
+                    "description": "Bestaetigung beim Ueberschreiten weicher Grenzen"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Angelegter Konfi inkl. Startpasswort"
+          },
+          "400": {
+            "description": "Validierung fehlgeschlagen"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "description": "Jahrgang oder Rolle nicht gefunden"
+          },
+          "409": {
+            "description": "Konfi-Limit der Organisation erreicht"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      }
+    },
+    "/api/admin/konfis/teamer": {
+      "get": {
+        "summary": "Liste der Teamer:innen der Organisation",
+        "description": "Liefert alle User mit Rolle teamer der aktiven Organisation samt Jahrgangsnamen, Abzeichen- und Zertifikatszaehler.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin",
+            "teamer"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireTeamer"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "WHERE r.name = 'teamer' AND u.organization_id = Token-Org",
+          "hinweis": "Kein Jahrgangs-Filter: Teamer:innen sehen hier alle Kolleg:innen der Organisation, auch aus fremden Jahrgaengen. Es werden keine Login-Daten ausser dem username ausgeliefert.\n"
+        },
+        "responses": {
+          "200": {
+            "description": "Array (id, name, username, teamer_since, jahrgang_name, badge_count, cert_count)"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      }
+    },
+    "/api/admin/konfis/{id}": {
+      "get": {
+        "summary": "Einzelner Konfi oder Teamer mit voller Historie",
+        "description": "Detailansicht: Stammdaten, Punkte, Aktivitaeten, Bonuspunkte, Events, Abzeichen und aufgeloester Konfispruch. Fuer Teamer:innen als Zielobjekt zusaetzlich Zertifikate und Teamer-Historie.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin",
+            "teamer"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireTeamer"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "WHERE u.id = :id AND u.organization_id = Token-Org AND r.name IN ('konfi','teamer') AND deleted_at IS NULL",
+          "hinweis": "# HINWEIS: Diese Route hat KEINEN Jahrgangs-Check. Eine Teamer:in kann ueber eine direkt geratene ID das vollstaendige Profil samt Punktehistorie jedes Konfis der Organisation abrufen, auch aus Jahrgaengen ohne Zuweisung. Die Liste GET /api/admin/konfis filtert dagegen korrekt.\n"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pathId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Konfi-/Teamer-Detaildaten"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      },
+      "put": {
+        "summary": "Konfi aendern (Name, Jahrgang)",
+        "description": "Aendert Anzeigename und/oder Jahrgang. Bei Jahrgangswechsel wird die Chat-Mitgliedschaft synchronisiert und der Konfi in kuenftige Pflicht-Events des neuen Jahrgangs eingebucht.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireAdmin",
+            "validateUpdateKonfi"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "UPDATE ... WHERE id = :id AND organization_id = Token-Org"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pathId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "jahrgang_id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Konfi aktualisiert"
+          },
+          "400": {
+            "description": "Validierung fehlgeschlagen"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      },
+      "delete": {
+        "summary": "Konfi loeschen (inkl. abhaengiger Daten)",
+        "description": "Loescht den Konfi und die daran haengenden Daten ueber deleteKonfiCascade (Aktivitaeten, Bonuspunkte, Buchungen, Antraege, Chat-Mitgliedschaften).\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireAdmin",
+            "param-id-Validierung"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "Ziel muss Rolle konfi haben, zur eigenen Organisation gehoeren und darf nicht bereits geloescht sein"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pathId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Konfi geloescht"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      }
+    },
+    "/api/admin/konfis/{id}/regenerate-password": {
+      "post": {
+        "summary": "Neues Startpasswort fuer einen Konfi erzeugen",
+        "description": "Erzeugt ein neues Passwort, speichert den Hash und gibt das Klartext-Passwort einmalig zurueck.",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireAdmin",
+            "param-id-Validierung"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "UPDATE ... WHERE id = :id AND organization_id = Token-Org",
+          "hinweis": "Kein Rollen-Check auf das Zielobjekt: die Route setzt das Passwort jedes Users der eigenen Organisation zurueck, nicht nur von Konfis. Da nur org_admin/admin zugreifen duerfen, bleibt der Effekt innerhalb der Leitungsrechte.\n"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pathId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Neues Passwort (Klartext, einmalig)"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      }
+    },
+    "/api/admin/konfis/{id}/event-points": {
+      "get": {
+        "summary": "Event-Punkte eines Konfis",
+        "description": "Liefert alle ueber Events vergebenen Punkte samt Event-Name und vergebender Person.",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin",
+            "teamer"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireTeamer"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "WHERE ep.konfi_id = :id AND ep.organization_id = Token-Org",
+          "hinweis": "Kein Jahrgangs-Check — wie bei GET /api/admin/konfis/{id}.\n"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pathId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array von Event-Punkten (leeres Array, wenn keine)"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      }
+    },
+    "/api/admin/konfis/{id}/badges": {
+      "get": {
+        "summary": "Abzeichen und Fortschritt eines Konfis (Leitungs-Einsicht)",
+        "description": "Gleiche Wertung und gleicher Fortschritt wie die Konfi-eigene Ansicht (gemeinsame Quelle utils/konfiBadgeProgress.js).\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin",
+            "teamer"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireTeamer"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "Ziel muss Rolle konfi haben, zur eigenen Organisation gehoeren und nicht geloescht sein",
+          "hinweis": "Nur fuer Konfis; Teamer-Abzeichen laufen ueber /api/teamer/badges. Kein Jahrgangs-Check.\n"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pathId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Abzeichen mit Fortschritt"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      }
+    },
+    "/api/admin/konfis/{id}/attendance-stats": {
+      "get": {
+        "summary": "Anwesenheitsstatistik bei Pflicht-Events",
+        "description": "Zaehlt Pflicht-Events des Jahrgangs, tatsaechliche Teilnahmen, Quote und verpasste Termine.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireAdmin"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "Events sind org-gescopt (e.organization_id); der Jahrgang wird ueber konfi_profiles des Ziel-Konfis ermittelt",
+          "hinweis": "Die Vorab-Abfrage auf konfi_profiles prueft NUR die user_id, nicht die Organisation. Fuer eine fremde ID wird der Jahrgang also ermittelt, die eigentliche Auswertung filtert danach aber auf die eigene Organisation und liefert deshalb Nullwerte statt fremder Daten. Teamer:innen haben hier keinen Zugriff.\n"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pathId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "total_mandatory, attended, percentage, missed_events"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "description": "Konfi ohne Profil"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      }
+    },
+    "/api/admin/konfis/{id}/bonus-points": {
+      "post": {
+        "summary": "Bonuspunkte vergeben",
+        "description": "Traegt Bonuspunkte ein und schreibt sie dem passenden Punktekonto gut. Der Punkte-Typ muss fuer den Jahrgang des Konfis aktiviert sein.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin",
+            "teamer"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireTeamer",
+            "validateBonusPoints"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "Gutschrift laeuft ueber JOIN users mit organization_id = Token-Org; checkPointTypeEnabled prueft den Punkte-Typ gegen den Jahrgang",
+          "hinweis": "Vergeben duerfen auch Teamer:innen, zuruecknehmen nur org_admin und admin (DELETE unten). Ein Jahrgangs-Check auf die Ziel-ID findet nicht statt.\n"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pathId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "points",
+                  "type",
+                  "description"
+                ],
+                "properties": {
+                  "points": {
+                    "type": "integer"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "gottesdienst",
+                      "gemeinde"
+                    ]
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bonuspunkte vergeben"
+          },
+          "400": {
+            "description": "Pflichtfelder fehlen oder Punkte-Typ fuer den Jahrgang deaktiviert"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      }
+    },
+    "/api/admin/konfis/{id}/bonus-points/{bonusId}": {
+      "delete": {
+        "summary": "Bonuspunkte zuruecknehmen",
+        "description": "Loescht den Bonuseintrag und zieht die Punkte wieder ab.",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireAdmin"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "SELECT ... JOIN users u ON bp.konfi_id = u.id WHERE bp.id = :bonusId AND bp.konfi_id = :id AND u.organization_id = Token-Org"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pathId"
+          },
+          {
+            "name": "bonusId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bonuspunkte entfernt"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      }
+    },
+    "/api/admin/konfis/{id}/activities": {
+      "post": {
+        "summary": "Aktivitaet nachtragen",
+        "description": "Traegt eine erledigte Aktivitaet nach, schreibt die Punkte gut und loest die Badge-Pruefung aus. Bei Konfi-Aktivitaeten muss der Punkte-Typ fuer den Jahrgang aktiviert sein.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireAdmin",
+            "validateAddActivity"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "Aktivitaet muss zur eigenen Organisation gehoeren; checkPointTypeEnabled bei Konfi-Aktivitaeten",
+          "hinweis": "Anders als POST /api/admin/activities/assign-activity verlangt diese Route requireAdmin — Teamer:innen tragen ueber assign-activity nach.\n"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pathId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "activity_id",
+                  "completed_date"
+                ],
+                "properties": {
+                  "activity_id": {
+                    "type": "integer"
+                  },
+                  "completed_date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "comment": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Aktivitaet nachgetragen"
+          },
+          "400": {
+            "description": "Pflichtfelder fehlen oder Punkte-Typ deaktiviert"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      }
+    },
+    "/api/admin/konfis/{id}/activities/{activityId}": {
+      "delete": {
+        "summary": "Nachgetragene Aktivitaet entfernen",
+        "description": "Loescht die Zuordnung und zieht die gutgeschriebenen Punkte wieder ab.",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireAdmin"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "SELECT ueber JOIN users mit organization_id — die Org-Bedingung wurde 22.08.2026 ergaenzt. Ohne sie fand der SELECT auch fremde Eintraege und der Punktabzug lief auf einem fremden Konfi.\n"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pathId"
+          },
+          {
+            "name": "activityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Aktivitaet entfernt"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      }
+    },
+    "/api/admin/konfis/{id}/teamer-since": {
+      "put": {
+        "summary": "Aktiv-seit-Datum einer Teamer:in setzen",
+        "description": "Setzt das Feld teamer_since des Ziel-Users.",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireAdmin",
+            "param-id-Validierung"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "UPDATE users ... WHERE id = :id AND organization_id = Token-Org",
+          "hinweis": "Kein Rollen-Check auf das Zielobjekt: das Datum laesst sich auch bei Usern setzen, die keine Teamer:innen sind.\n"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pathId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "teamer_since"
+                ],
+                "properties": {
+                  "teamer_since": {
+                    "type": "string",
+                    "format": "date"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "teamer_since"
+          },
+          "400": {
+            "description": "teamer_since fehlt"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Konfis & Termine"
+        ]
+      }
+    },
+    "/api/admin/konfis/{id}/promote-teamer": {
+      "post": {
+        "summary": "Konfi zur Teamer:in befoerdern",
+        "description": "Setzt die Rolle auf teamer und teamer_since auf heute, loescht Event-Buchungen und offene Antraege und uebertraegt den Jahrgang aus konfi_profiles in user_jahrgang_assignments.\n",
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireAdmin",
+            "param-id-Validierung"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "Ziel-User muss zur eigenen Organisation gehoeren und aktuell Rolle konfi haben (sonst 400)",
+          "hinweis": "Die Teamer-Rolle wird org-spezifisch gesucht, mit Rueckfall auf die globale Rolle (organization_id IS NULL).\n"
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/pathId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Konfi befoerdert"
+          },
+          "400": {
+            "description": "Ziel-User ist kein Konfi"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "description": "Teamer-Rolle nicht gefunden oder Datenbankfehler"
           }
         },
         "tags": [

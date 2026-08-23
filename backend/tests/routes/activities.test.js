@@ -510,4 +510,68 @@ describe('Activities Routes', () => {
     });
   });
 
+
+  // ================================================================
+  // Ablehnen verlangt eine Begruendung (Befund 23.08.2026)
+  // ================================================================
+  describe('PUT /admin/activities/requests/:id — Begruendung beim Ablehnen', () => {
+    const offenenAntragAnlegen = async () => {
+      const { rows: [r] } = await db.query(
+        `INSERT INTO activity_requests (user_id, activity_id, status, organization_id, requested_date)
+         VALUES ($1, $2, 'pending', $3, CURRENT_DATE) RETURNING id`,
+        [USERS.konfi1.id, ACTIVITIES.kirchenchor.id, 1]
+      );
+      return r.id;
+    };
+
+    it('Ablehnen OHNE Begruendung -> 400', async () => {
+      const id = await offenenAntragAnlegen();
+
+      const res = await request(app)
+        .put(`/api/admin/activities/requests/${id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ status: 'rejected' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('Ablehnen mit zu kurzer Begruendung -> 400', async () => {
+      const id = await offenenAntragAnlegen();
+
+      const res = await request(app)
+        .put(`/api/admin/activities/requests/${id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ status: 'rejected', admin_comment: 'x' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('Ablehnen MIT Begruendung -> 200', async () => {
+      const id = await offenenAntragAnlegen();
+
+      const res = await request(app)
+        .put(`/api/admin/activities/requests/${id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ status: 'rejected', admin_comment: 'Foto fehlt' });
+
+      expect(res.status).toBe(200);
+
+      const { rows: [a] } = await db.query(
+        'SELECT status, admin_comment FROM activity_requests WHERE id = $1', [id]);
+      expect(a.status).toBe('rejected');
+      expect(a.admin_comment).toBe('Foto fehlt');
+    });
+
+    it('Genehmigen braucht KEINE Begruendung -> 200', async () => {
+      const id = await offenenAntragAnlegen();
+
+      const res = await request(app)
+        .put(`/api/admin/activities/requests/${id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ status: 'approved' });
+
+      expect(res.status).toBe(200);
+    });
+  });
+
 });

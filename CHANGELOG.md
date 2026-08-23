@@ -337,6 +337,8 @@ Betrifft nicht die App, gehört nicht in die Store-Release-Notes.
 - Startseite: Klick-Auswertung erkennt die Ziel-Adresse jetzt zuverlässig —
   fremde Adressen konnten sich zuvor als App-Store-Link ausgeben.
 - Sicherheitsaktualisierung veralteter Entwicklungs-Pakete.
+- Die Schnittstellen-Referenz beschreibt jetzt alle Endpunkte der App samt der
+  jeweils nötigen Berechtigungen.
 
 ## [1.5.3] - 2026-08-04
 

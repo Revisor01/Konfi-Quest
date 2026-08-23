@@ -50,6 +50,15 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
   const validateRequestUpdate = [
     param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
     body('status').isIn(['approved', 'rejected']).withMessage('Status muss "approved" oder "rejected" sein'),
+    // Beim Ablehnen ist eine Begruendung Pflicht. Die Oberflaeche verlangt sie
+    // laengst (ActivityRequestModal.tsx:148), der Server bisher nicht — ueber
+    // die API liess sich kommentarlos ablehnen, und der Konfi las dann nur
+    // "wurde leider abgelehnt" ohne zu erfahren warum (Befund 23.08.2026).
+    body('admin_comment')
+      .if(body('status').equals('rejected'))
+      .trim()
+      .isLength({ min: 3 })
+      .withMessage('Beim Ablehnen ist eine Begründung erforderlich'),
     handleValidationErrors
   ];
 

@@ -116,6 +116,20 @@ function markdown(quelle) {
       continue;
     }
 
+    // Codeblock (```): fuer Ablauf-Schemata. Ohne diesen Zweig landeten die
+    // Zeilen als Absatz im HTML — mitsamt sichtbarer Backticks.
+    if (z.trim().startsWith('```')) {
+      i++;
+      const zeilenImBlock = [];
+      while (i < zeilen.length && !zeilen[i].trim().startsWith('```')) {
+        zeilenImBlock.push(zeilen[i]);
+        i++;
+      }
+      i++; // schliessende Zeile ueberspringen
+      teile.push(`<pre><code>${e(zeilenImBlock.join('\n'))}</code></pre>`);
+      continue;
+    }
+
     // Zitat / Hinweis
     if (z.startsWith('> ')) {
       const text = [];
@@ -144,7 +158,7 @@ function markdown(quelle) {
 
     // Absatz
     const absatz = [];
-    while (i < zeilen.length && zeilen[i].trim() && !/^([-*]\s|>|#{2,4}\s|\|)/.test(zeilen[i])) {
+    while (i < zeilen.length && zeilen[i].trim() && !/^([-*]\s|>|#{2,4}\s|\||```)/.test(zeilen[i].trim())) {
       absatz.push(zeilen[i].trim());
       i++;
     }
@@ -259,6 +273,8 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
 .kapitel li { margin:0; }
 blockquote { margin:0 0 15px; padding:13px 17px; background:var(--flaeche); border:1px solid var(--rand); border-left:3px solid var(--kapitel); border-radius:8px; color:var(--text-leise); font-size:.92rem; max-width:66ch; }
 code { font-family:'JetBrains Mono',monospace; font-size:.85em; background:var(--code-grund); padding:1px 5px; border-radius:4px; }
+pre { background:var(--flaeche); border:1px solid var(--rand); border-radius:10px; padding:14px 16px; overflow-x:auto; margin:0 0 16px; max-width:66ch; }
+pre code { background:none; padding:0; font-size:.82rem; line-height:1.6; white-space:pre; }
 .tabelle-huelle { overflow-x:auto; border:1px solid var(--rand); border-radius:10px; background:var(--flaeche); margin:0 0 18px; }
 table { border-collapse:collapse; width:100%; font-size:.88rem; }
 th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand); vertical-align:top; }
