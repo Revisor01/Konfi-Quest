@@ -10,7 +10,7 @@ const { invalidateUserCache } = require('../middleware/rbac');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const { syncTeamChat } = require('../utils/teamChat');
 const chatSyncCache = require('../utils/chatSyncCache');
-const { deletePhotoFile } = require('../utils/photoStorage');
+const { deletePhotoFile, deleteChallengeFile } = require('../utils/photoStorage');
 const liveUpdate = require('../utils/liveUpdate');
 
 // User management routes
@@ -432,6 +432,15 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
         "UPDATE materials SET created_by = NULL WHERE created_by = $1",
         "UPDATE chat_rooms SET created_by = NULL WHERE created_by = $1",
         "UPDATE activity_requests SET approved_by = NULL WHERE approved_by = $1",
+        // Diese vier fehlten hier, waehrend konfiDeletion.js sie laengst kennt
+        // (Reparatur vom 22.08.2026, hierher nie uebertragen). Wer als
+        // Teamer:in je einen Termin angelegt oder jemandem einen Jahrgang
+        // zugewiesen hat, liess sich deshalb von der Leitung nicht loeschen —
+        // die Selbstloeschung derselben Person funktionierte dagegen.
+        "UPDATE events SET created_by = NULL WHERE created_by = $1",
+        "UPDATE custom_badges SET created_by = NULL WHERE created_by = $1",
+        "UPDATE levels SET created_by = NULL WHERE created_by = $1",
+        "UPDATE user_jahrgang_assignments SET assigned_by = NULL WHERE assigned_by = $1",
       ];
       for (const sql of nullifyRefs) {
         // SAVEPOINT: bei nicht vorhandener Spalte/Tabelle (42703/42P01) nur dieses
@@ -479,6 +488,21 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
         if (photoErr.code !== '42703' && photoErr.code !== '42P01') throw photoErr;
       }
 
+      // Dasselbe fuer Challenge-Beitraege: Die DB-Zeilen verschwinden per
+      // CASCADE mit dem User, die verschluesselten Dateien auf der Platte aber
+      // nicht. konfiDeletion.js macht das laengst, dieser Pfad nicht — auch
+      // Teamer:innen reichen Beitraege ein (DSGVO Art. 17, Befund 24.08.2026).
+      let challengeFiles = [];
+      try {
+        const { rows } = await client.query(
+          "SELECT file_path FROM challenge_submissions WHERE user_id = $1 AND file_path IS NOT NULL",
+          [id]
+        );
+        challengeFiles = rows.map(r => r.file_path);
+      } catch (chErr) {
+        if (chErr.code !== '42703' && chErr.code !== '42P01') throw chErr;
+      }
+
       // Konfi-History DIESES Users mitloeschen. Wichtig: Diese Tabellen tragen
       // (aus der SQLite-Altlast) einen zweiten NO-ACTION-FK auf users(id) neben
       // dem CASCADE-FK — NO ACTION gewinnt und wuerde den User-Delete sonst mit
@@ -494,6 +518,11 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
         "DELETE FROM event_points WHERE konfi_id = $1",
         "DELETE FROM event_bookings WHERE user_id = $1",
         "DELETE FROM konfi_profiles WHERE user_id = $1",
+        // Empfangene Urkunden. Der Fremdschluessel hat kein ON DELETE und
+        // blockierte jede Loeschung einer ausgezeichneten Person — oben wird
+        // nur admin_id genullt, also die verleihende Seite (Befund 24.08.2026,
+        // gegen Produktion nachgewiesen).
+        "DELETE FROM user_certificates WHERE user_id = $1",
       ];
       for (const sql of purgeHistory) {
         await client.query('SAVEPOINT hist_purge');
@@ -526,6 +555,9 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }, io) => {
       // Foto-Dateien nach COMMIT vom Dateisystem entfernen (nicht blockierend)
       for (const filename of photoFilenames) {
         await deletePhotoFile(filename);
+      }
+      for (const filePath of challengeFiles) {
+        await deleteChallengeFile(filePath);
       }
 
       res.json({ message: 'Benutzer erfolgreich gelöscht' });

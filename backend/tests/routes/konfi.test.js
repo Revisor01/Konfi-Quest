@@ -940,17 +940,17 @@ describe('Konfi Routes', () => {
       const { rows: [event] } = await db.query(
         `INSERT INTO events (name, event_date, organization_id, max_participants, registration_opens_at)
          VALUES ('Termin mit Chat', $1, $2, 20, NOW() - INTERVAL '1 day') RETURNING id`,
-        [zukunft.toISOString(), ORGS.org1.id]
+        [zukunft.toISOString(), ORGS.testGemeinde.id]
       );
       const { rows: [raum] } = await db.query(
         `INSERT INTO chat_rooms (name, type, event_id, created_by, organization_id)
          VALUES ('Termin mit Chat - Chat', 'group', $1, $2, $3) RETURNING id`,
-        [event.id, USERS.admin1.id, ORGS.org1.id]
+        [event.id, USERS.admin1.id, ORGS.testGemeinde.id]
       );
       await db.query(
         `INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
          VALUES ($1, $2, 'confirmed', NOW(), $3)`,
-        [event.id, USERS.konfi1.id, ORGS.org1.id]
+        [event.id, USERS.konfi1.id, ORGS.testGemeinde.id]
       );
       await db.query(
         `INSERT INTO chat_participants (room_id, user_id, user_type)

@@ -63,6 +63,12 @@ async function deleteKonfiCascade(client, userId, organizationId) {
   await client.query("DELETE FROM chat_poll_votes WHERE user_id = $1", [userId]);
   await client.query("DELETE FROM push_tokens WHERE user_id = $1", [userId]);
   await client.query("DELETE FROM konfi_profiles WHERE user_id = $1", [userId]);
+  // Verliehene Urkunden. Der Fremdschluessel auf users(id) hat KEIN ON DELETE
+  // und blockierte damit jede Loeschung einer Person, die je eine Urkunde
+  // bekommen hat — gegen Produktion nachgewiesen (Befund 24.08.2026). Weiter
+  // unten wird nur user_certificates.admin_id genullt, also die verleihende
+  // Seite; die empfangende fehlte.
+  await client.query("DELETE FROM user_certificates WHERE user_id = $1", [userId]);
   // URHEBERSCHAFT anonymisieren statt loeschen.
   //
   // Siebzehn Fremdschluessel zeigen auf users(id) — die meisten OHNE

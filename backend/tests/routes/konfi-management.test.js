@@ -906,7 +906,7 @@ describe('Konfi-Management Routes', () => {
       const { rows: [jg] } = await db.query(
         `INSERT INTO jahrgaenge (name, organization_id, confirmation_date)
          VALUES ('2026/2027', $1, '2027-05-01') RETURNING id`,
-        [ORGS.org1.id]
+        [ORGS.testGemeinde.id]
       );
       zweiterJahrgang = jg.id;
     });
@@ -917,7 +917,7 @@ describe('Konfi-Management Routes', () => {
       const { rows: [event] } = await db.query(
         `INSERT INTO events (name, event_date, organization_id, mandatory)
          VALUES ($1, $2, $3, true) RETURNING id`,
-        [`Pflichttermin JG ${jahrgangId}`, datum.toISOString(), ORGS.org1.id]
+        [`Pflichttermin JG ${jahrgangId}`, datum.toISOString(), ORGS.testGemeinde.id]
       );
       await db.query(
         'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
@@ -945,7 +945,7 @@ describe('Konfi-Management Routes', () => {
       await db.query(
         `INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
          VALUES ($1, $2, 'confirmed', NOW(), $3)`,
-        [alterTermin, USERS.konfi1.id, ORGS.org1.id]
+        [alterTermin, USERS.konfi1.id, ORGS.testGemeinde.id]
       );
 
       const res = await wechsleJahrgang(USERS.konfi1.id, zweiterJahrgang);
@@ -970,7 +970,7 @@ describe('Konfi-Management Routes', () => {
       await db.query(
         `INSERT INTO event_bookings (event_id, user_id, status, attendance_status, booking_date, organization_id)
          VALUES ($1, $2, 'confirmed', 'present', NOW(), $3)`,
-        [alterTermin, USERS.konfi1.id, ORGS.org1.id]
+        [alterTermin, USERS.konfi1.id, ORGS.testGemeinde.id]
       );
 
       const res = await wechsleJahrgang(USERS.konfi1.id, zweiterJahrgang);
@@ -990,7 +990,7 @@ describe('Konfi-Management Routes', () => {
       await db.query(
         `INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
          VALUES ($1, $2, 'confirmed', NOW(), $3)`,
-        [gemeinsam, USERS.konfi1.id, ORGS.org1.id]
+        [gemeinsam, USERS.konfi1.id, ORGS.testGemeinde.id]
       );
 
       const res = await wechsleJahrgang(USERS.konfi1.id, zweiterJahrgang);
@@ -1006,7 +1006,7 @@ describe('Konfi-Management Routes', () => {
       await db.query(
         `INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
          VALUES ($1, $2, 'confirmed', NOW(), $3)`,
-        [vergangen, USERS.konfi1.id, ORGS.org1.id]
+        [vergangen, USERS.konfi1.id, ORGS.testGemeinde.id]
       );
 
       const res = await wechsleJahrgang(USERS.konfi1.id, zweiterJahrgang);

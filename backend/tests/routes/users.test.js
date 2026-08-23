@@ -393,6 +393,98 @@ describe('Users Routes', () => {
         expect(rows[0].c).toBe(0);
       }
     });
+
+    // Befund 24.08.2026, gegen Produktion nachgewiesen: Der Fremdschluessel
+    // user_certificates.user_id hat kein ON DELETE, und aufgeraeumt wurde nur
+    // admin_id — also die verleihende, nicht die empfangende Seite. Wer je eine
+    // Urkunde bekommen hatte, liess sich damit gar nicht mehr loeschen.
+    it('Wer eine Urkunde bekommen hat, laesst sich trotzdem loeschen', async () => {
+      const { rows: [typ] } = await db.query(
+        `INSERT INTO certificate_types (name, organization_id) VALUES ('Konfi-Teamer:in', $1) RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO user_certificates (user_id, certificate_type_id, admin_id, organization_id)
+         VALUES ($1, $2, $3, $4)`,
+        [USERS.teamer1.id, typ.id, USERS.admin1.id, ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .delete(`/api/admin/users/${USERS.teamer1.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query(
+        'SELECT COUNT(*)::int AS c FROM user_certificates WHERE user_id = $1',
+        [USERS.teamer1.id]
+      );
+      expect(rows[0].c).toBe(0);
+    });
+
+    it('Die Urkunden anderer bleiben erhalten, nur die verleihende Person wird anonymisiert', async () => {
+      const { rows: [typ] } = await db.query(
+        `INSERT INTO certificate_types (name, organization_id) VALUES ('Ehrenamt', $1) RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      // teamer1 hat diese Urkunde VERLIEHEN, konfi1 sie bekommen.
+      await db.query(
+        `INSERT INTO user_certificates (user_id, certificate_type_id, admin_id, organization_id)
+         VALUES ($1, $2, $3, $4)`,
+        [USERS.konfi1.id, typ.id, USERS.teamer1.id, ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .delete(`/api/admin/users/${USERS.teamer1.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query(
+        'SELECT admin_id FROM user_certificates WHERE user_id = $1',
+        [USERS.konfi1.id]
+      );
+      expect(rows.length).toBe(1);
+      expect(rows[0].admin_id).toBeNull();
+    });
+
+    // Der Fix vom 22.08.2026 lag nur in konfiDeletion.js (Selbstloeschung) und
+    // war nie in diese Route uebertragen: Wer als Teamer:in einen Termin
+    // angelegt oder jemandem einen Jahrgang zugewiesen hatte, war fuer die
+    // Leitung unloeschbar.
+    it('Wer Termine angelegt und Jahrgaenge zugewiesen hat, laesst sich loeschen', async () => {
+      const zukunft = new Date();
+      zukunft.setDate(zukunft.getDate() + 7);
+      const { rows: [event] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, created_by)
+         VALUES ('Von Teamer1 angelegt', $1, $2, $3) RETURNING id`,
+        [zukunft.toISOString(), ORGS.testGemeinde.id, USERS.teamer1.id]
+      );
+      await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, organization_id, created_by)
+         VALUES ('Von Teamer1', 'total_points', 5, $1, $2)`,
+        [ORGS.testGemeinde.id, USERS.teamer1.id]
+      );
+      await db.query(
+        'UPDATE user_jahrgang_assignments SET assigned_by = $1 WHERE user_id = $2',
+        [USERS.teamer1.id, USERS.konfi1.id]
+      );
+
+      const res = await request(app)
+        .delete(`/api/admin/users/${USERS.teamer1.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+      expect(res.status).toBe(200);
+
+      // Der Termin bleibt bestehen, nur die Urheberschaft ist anonymisiert.
+      const { rows: evRows } = await db.query('SELECT created_by FROM events WHERE id = $1', [event.id]);
+      expect(evRows.length).toBe(1);
+      expect(evRows[0].created_by).toBeNull();
+
+      const { rows: zuwRows } = await db.query(
+        'SELECT assigned_by FROM user_jahrgang_assignments WHERE user_id = $1',
+        [USERS.konfi1.id]
+      );
+      expect(zuwRows.length).toBe(1);
+      expect(zuwRows[0].assigned_by).toBeNull();
+    });
   });
 
   // ================================================================

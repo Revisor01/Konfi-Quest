@@ -1728,7 +1728,10 @@ paths:
       description: >
         Loescht den Konfi und die daran haengenden Daten ueber
         deleteKonfiCascade (Aktivitaeten, Bonuspunkte, Buchungen, Antraege,
-        Chat-Mitgliedschaften).
+        Chat-Mitgliedschaften, seit 24.08.2026 auch erhaltene Urkunden —
+        deren Fremdschluessel blockierte das Loeschen vorher mit 500).
+        Dieselbe Funktion traegt die Selbstloeschung ueber
+        POST /auth/delete-account, dort fuer jede Rolle.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]

@@ -97,6 +97,14 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Personen, die eine Urkunde erhalten haben, ließen sich nicht mehr löschen —
+  der Versuch endete mit einer Fehlermeldung. Die Urkunden werden jetzt
+  mitgelöscht.
+- Teamer:innen, die einen Termin angelegt oder jemandem einen Jahrgang
+  zugewiesen hatten, ließen sich von der Leitung nicht löschen. Termine und
+  Zuweisungen bleiben erhalten, nur der Name der anlegenden Person entfällt.
+- Beim Löschen einer Teamer:in blieben deren Dateien aus Challenge-Beiträgen
+  auf dem Server liegen. Sie werden jetzt mit entfernt.
 - Wer sich von einem Termin abmeldet, verlässt jetzt auch den zugehörigen
   Chat. Bisher galt das nur, wenn Teamer:innen sich selbst abmeldeten — Konfis
   blieben im Chat und lasen dort weiter mit, obwohl sie nicht mehr dabei waren.

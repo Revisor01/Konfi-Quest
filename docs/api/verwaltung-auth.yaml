@@ -915,10 +915,19 @@ paths:
         # dem Hashen gegen validatePassword geprueft.
     delete:
       summary: User loeschen (Hard-Delete mit Referenz-Anonymisierung und History-Purge)
+      description: >
+        Anonymisiert die Urheberschaft (admin_id/created_by/approved_by ->
+        NULL, seit 24.08.2026 auch events.created_by, custom_badges.created_by,
+        levels.created_by und user_jahrgang_assignments.assigned_by — vorher
+        blockierten diese Fremdschluessel das Loeschen mit 500) und raeumt die
+        eigene Historie ab, inkl. user_certificates.user_id (ebenfalls seit
+        24.08.2026, vorher war jede ausgezeichnete Person unloeschbar).
+        Nachweisfotos UND Challenge-Dateien werden nach dem COMMIT von der
+        Platte entfernt.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
-        "200": { description: "Geloescht; Sockets getrennt; Nachweisfotos nach COMMIT entfernt" }
+        "200": { description: "Geloescht; Sockets getrennt; Nachweisfotos und Challenge-Dateien nach COMMIT entfernt" }
         "400": { description: "Selbst-Loeschung verboten" }
         "403": { description: "Hierarchie verletzt" }
         "404": { $ref: "#/components/responses/NotFound" }

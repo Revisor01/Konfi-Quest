@@ -1547,17 +1547,17 @@ describe('Events Routes', () => {
       const { rows: [jg] } = await db.query(
         `INSERT INTO jahrgaenge (name, organization_id, confirmation_date)
          VALUES ('2026/2027', $1, '2027-05-01') RETURNING id`,
-        [ORGS.org1.id]
+        [ORGS.testGemeinde.id]
       );
       const { rows: [neuerKonfi] } = await db.query(
         `INSERT INTO users (username, display_name, password_hash, role_id, organization_id, is_active)
          VALUES ('konfi-jg2', 'Konfi Jahrgang 2', 'x', $1, $2, true) RETURNING id`,
-        [USERS.konfi1.role_id, ORGS.org1.id]
+        [USERS.konfi1.role_id, ORGS.testGemeinde.id]
       );
       await db.query(
         `INSERT INTO konfi_profiles (user_id, jahrgang_id, gottesdienst_points, gemeinde_points, organization_id)
          VALUES ($1, $2, 0, 0, $3)`,
-        [neuerKonfi.id, jg.id, ORGS.org1.id]
+        [neuerKonfi.id, jg.id, ORGS.testGemeinde.id]
       );
 
       const createRes = await request(app)
