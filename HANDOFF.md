@@ -37,7 +37,39 @@ Verabredungen). Vorgeschlagene Alternativen, Entscheidung steht noch aus:
 Betrifft **alle drei Ansichten** (`MainTabs.tsx:274/339/404` plus die
 Segment-Labels in `AdminEventsPage.tsx:542` und `KonfiEventsPage.tsx:381`).
 
-### 2. Nach der Entscheidung: Build 140
+### 2. Docs-Bereich unter konfi-quest.de/docs (Wunsch Simon, 23.08.)
+
+Die API-Referenz liegt bisher nur als Artifact vor, das jedes Mal neu erzeugt
+werden muss. Sie soll dauerhaft im Container liegen und erreichbar sein —
+zusammen mit einem allgemeinen Docs-Bereich.
+
+**Ausgangslage (geprüft):**
+- Das Frontend wird von **nginx** im Container ausgeliefert
+  (`frontend/Dockerfile`: `COPY --from=builder /app/dist /usr/share/nginx/html`,
+  Konfiguration in `frontend/nginx.conf`).
+- Davor sitzt **Caddy v2.10.2** auf dem Server
+  (`/etc/caddy/Caddyfile`, Block `konfi-quest.de, www.konfi-quest.de`).
+- Caddy bringt `basic_auth` mit, aktuell wird es nirgends genutzt.
+
+**Vorschlag:**
+1. Ein Build-Schritt erzeugt die HTML-Referenz aus `docs/api/*.yaml`
+   (das Skript dafür existiert bereits als Einmal-Fassung, siehe unten) und
+   legt sie nach `frontend/public/docs/`. Vite kopiert `public/` unverändert
+   nach `dist/`, damit landet sie ohne weiteres Zutun im Container.
+2. `/docs` bleibt offen (allgemeine Doku), **`/docs/api` schützt Caddy per
+   `basic_auth`** — die Berechtigungsmatrix ist eine Landkarte für jeden, der
+   Lücken sucht, und gehört nicht offen ins Netz.
+3. Die CI baut die Seite bei jedem Push neu, damit sie nicht veraltet
+   (passt zur neuen Dauerregel "API-Doku fortlaufend").
+
+**Wichtig:** Das Erzeugungs-Skript existiert bisher nur als Wegwerf-Fassung im
+Scratchpad dieser Sitzung. Es muss neu geschrieben und ins Repo gelegt werden
+(z.B. `scripts/build-api-docs.mjs`). Zutaten: `docs/api/*.yaml` parsen,
+`x-berechtigung` je Route auslesen, Bebas Neue + Plus Jakarta Sans, Farben aus
+`variables.css`. Die aktuelle Fassung als Vorlage:
+https://claude.ai/code/artifact/4bce32d3-358b-48c6-b052-4c06b94c5038
+
+### 3. Nach der Entscheidung: Build 140
 
 Sammelt die UI-Änderungen ein, die nach Build 139 kamen.
 
