@@ -776,6 +776,119 @@ describe('Chat Routes', () => {
   });
 
   // ================================================================
+  // Exklusive Umfragen ueber BEIDE Abstimm-Routen
+  //
+  // Befund 23.08.2026: POST /messages/:messageId/vote hatte eine eigene,
+  // unvollstaendige Kopie der Abstimmlogik und ignorierte exclusive_options
+  // vollstaendig — ueber sie konnten mehrere Personen dieselbe Option belegen,
+  // waehrend /polls/:pollId/vote das korrekt mit 409 ablehnt.
+  // ================================================================
+  describe('Exklusive Umfragen — beide Abstimm-Routen', () => {
+    const exklusiveUmfrageAnlegen = async () => {
+      const res = await request(app)
+        .post(`/api/chat/rooms/${CHAT_ROOMS.jahrgang.id}/polls`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({
+          question: 'Wer macht welche Tour?',
+          options: ['Tour A', 'Tour B'],
+          exclusive_options: true,
+        });
+      expect(res.status).toBe(201);
+      return res.body;
+    };
+
+    it('ueber /messages/:id/vote ist eine belegte Option gesperrt -> 409 (der Befund)', async () => {
+      const poll = await exklusiveUmfrageAnlegen();
+
+      const erste = await request(app)
+        .post(`/api/chat/messages/${poll.message_id}/vote`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({ option_index: 0 });
+      expect(erste.status).toBe(200);
+
+      const zweite = await request(app)
+        .post(`/api/chat/messages/${poll.message_id}/vote`)
+        .set('Authorization', `Bearer ${konfi2Token}`)
+        .send({ option_index: 0 });
+      expect(zweite.status).toBe(409);
+      expect(zweite.body.error).toBe('Diese Option ist bereits vergeben');
+    });
+
+    it('ueber /polls/:id/vote ebenso -> 409 (war schon vorher richtig)', async () => {
+      const poll = await exklusiveUmfrageAnlegen();
+
+      const erste = await request(app)
+        .post(`/api/chat/polls/${poll.id}/vote`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({ option_index: 0 });
+      expect(erste.status).toBe(200);
+
+      const zweite = await request(app)
+        .post(`/api/chat/polls/${poll.id}/vote`)
+        .set('Authorization', `Bearer ${konfi2Token}`)
+        .send({ option_index: 0 });
+      expect(zweite.status).toBe(409);
+    });
+
+    it('beide Routen mischbar: erst /polls, dann /messages -> 409', async () => {
+      const poll = await exklusiveUmfrageAnlegen();
+
+      const erste = await request(app)
+        .post(`/api/chat/polls/${poll.id}/vote`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({ option_index: 1 });
+      expect(erste.status).toBe(200);
+
+      const zweite = await request(app)
+        .post(`/api/chat/messages/${poll.message_id}/vote`)
+        .set('Authorization', `Bearer ${konfi2Token}`)
+        .send({ option_index: 1 });
+      expect(zweite.status).toBe(409);
+    });
+
+    it('eine FREIE Option bleibt waehlbar — der erlaubte Fall', async () => {
+      const poll = await exklusiveUmfrageAnlegen();
+
+      const erste = await request(app)
+        .post(`/api/chat/messages/${poll.message_id}/vote`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({ option_index: 0 });
+      expect(erste.status).toBe(200);
+
+      const zweite = await request(app)
+        .post(`/api/chat/messages/${poll.message_id}/vote`)
+        .set('Authorization', `Bearer ${konfi2Token}`)
+        .send({ option_index: 1 });
+      expect(zweite.status).toBe(200);
+    });
+
+    it('die eigene Wahl laesst sich ueber /messages wieder freigeben', async () => {
+      const poll = await exklusiveUmfrageAnlegen();
+
+      await request(app)
+        .post(`/api/chat/messages/${poll.message_id}/vote`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({ option_index: 0 })
+        .expect(200);
+
+      // Nochmal dieselbe Option = Toggle off
+      const zurueck = await request(app)
+        .post(`/api/chat/messages/${poll.message_id}/vote`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({ option_index: 0 });
+      expect(zurueck.status).toBe(200);
+      expect(zurueck.body.action).toBe('removed');
+
+      // Jetzt ist sie fuer Konfi2 frei.
+      const andere = await request(app)
+        .post(`/api/chat/messages/${poll.message_id}/vote`)
+        .set('Authorization', `Bearer ${konfi2Token}`)
+        .send({ option_index: 0 });
+      expect(andere.status).toBe(200);
+    });
+  });
+
+  // ================================================================
   // Anonyme Umfragen: Kennungen fremder Stimmen
   //
   // Befund 23.08.2026: Bei anonymous=true fehlte zwar der Name, user_id und

@@ -100,6 +100,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Chat: Bei anonymen Umfragen ließ sich trotzdem herausfinden, wer was gewählt
   hat. Fremde Stimmen zählen jetzt wirklich ohne Zuordnung mit — auch für die
   Leitung.
+- Chat: Bei Umfragen, in denen jede Option nur einmal vergeben werden kann
+  ("wer macht welche Tour?"), konnte dieselbe Option unter Umständen doppelt
+  belegt werden.
 - "Was ist neu?" hebt sich jetzt deutlich vom Rest der Seite ab, statt wie
   eine Einstellung zwischen anderen auszusehen.
 - Der Hinweis auf den Umzug der Aktivitäten unter Termine ist entfallen — die

@@ -119,6 +119,13 @@
 #   die EIGENE Stimme behaelt ihre Kennung, damit der Client sie markieren
 #   kann. Das gilt auch gegenueber der Leitung — anders als bei Challenges,
 #   wo sie bewusst alles sieht.
+# LUECKE 4 (POST /chat/messages/:messageId/vote) — BEHOBEN 2026-08-23: Die
+#   Route hatte eine eigene, unvollstaendige Kopie der Abstimmlogik und
+#   ignorierte exclusive_options komplett (kein FOR-UPDATE-Lock, keine
+#   Belegt-Pruefung). Bei einer exklusiven Umfrage liess sich darueber dieselbe
+#   Option mehrfach belegen, waehrend /polls/:pollId/vote korrekt 409 liefert.
+#   Beide Routen teilen sich jetzt denselben Handler; /polls/:pollId/vote sucht
+#   die Umfrage ohnehin per poll_id UND per message_id.
 # LUECKE 3 (GET /chat/files/:filename): Token wird auch als ?token=
 #   Query-Parameter akzeptiert (landet in Access-Logs/Referrern). Die
 #   Challenges-Route verzichtet aus genau diesem Grund bewusst darauf.

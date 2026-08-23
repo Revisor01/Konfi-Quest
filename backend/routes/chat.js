@@ -1890,7 +1890,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   });
 
   // Vote for a poll (by poll ID)
-  router.post('/polls/:pollId/vote', verifyTokenRBAC, async (req, res) => {
+  const votePoll = async (req, res) => {
     const pollId = req.params.pollId;
     const { option_index } = req.body;
     const userId = req.user.id;
@@ -2050,7 +2050,8 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       console.error('Database error in POST /polls/:pollId/vote:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
-  });
+  };
+  router.post('/polls/:pollId/vote', verifyTokenRBAC, votePoll);
 
   // Delete message (soft delete)
   router.delete('/messages/:messageId', verifyTokenRBAC, async (req, res) => {
@@ -2099,117 +2100,21 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
     }
   });
 
-  // Vote for a poll (by message ID - for frontend compatibility)
-  router.post('/messages/:messageId/vote', verifyTokenRBAC, async (req, res) => {
-    const messageId = req.params.messageId;
-    const { option_index } = req.body;
-    const userId = req.user.id;
-    const userType = req.user.type;
-    
-    
-    if (option_index === undefined || option_index === null) {
-      return res.status(400).json({ error: 'Option-Index ist erforderlich' });
-    }
-    
-    try {
-      // Get the poll by message_id
-      const getPollQuery = `
-        SELECT p.*, m.room_id FROM chat_polls p
-        JOIN chat_messages m ON p.message_id = m.id
-        WHERE p.message_id = $1
-      `;
-      
-      const { rows: [poll] } = await db.query(getPollQuery, [messageId]);
-      
-      if (!poll) {
-        return res.status(404).json({ error: 'Umfrage für diese Nachricht nicht gefunden' });
-      }
-      
-      // Check if poll has expired
-      if (poll.expires_at && new Date(poll.expires_at) < new Date()) {
-        return res.status(400).json({ error: 'Umfrage ist abgelaufen' });
-      }
-      
-      // Parse options and validate option_index
-      let parsedOptions;
-      try {
-        parsedOptions = JSON.parse(poll.options);
-      } catch (e) {
- console.error('Failed to parse poll options:', poll.options);
-        return res.status(500).json({ error: 'Ungültige Umfragedaten' });
-      }
-      
-      if (option_index < 0 || option_index >= parsedOptions.length) {
-        return res.status(400).json({ error: 'Ungültiger Option-Index' });
-      }
-      
-      // Check if user has access to the room
-      const accessQuery = `
-        SELECT 1 FROM chat_participants cp 
-        JOIN chat_rooms cr ON cp.room_id = cr.id 
-        WHERE cp.room_id = $1 AND cp.user_id = $2 AND cp.user_type = $3 AND cr.organization_id = $4
-      `;
-      const { rows: [access] } = await db.query(accessQuery, [poll.room_id, userId, userType, req.user.organization_id]);
-      
-      if (!access) {
-        return res.status(403).json({ error: 'Zugriff auf diesen Raum verweigert' });
-      }
-      
-      const client = await db.getClient();
-      try {
-      await client.query('BEGIN');
-
-      // For single choice polls, remove existing vote
-      if (!poll.multiple_choice) {
-        await client.query(
-          "DELETE FROM chat_poll_votes WHERE poll_id = $1 AND user_id = $2 AND user_type = $3",
-          [poll.id, userId, userType]
-        );
-      } else {
-        // For multiple choice, check if user already voted for this option
-        const { rows: [existingVote] } = await client.query(
-          "SELECT 1 FROM chat_poll_votes WHERE poll_id = $1 AND user_id = $2 AND user_type = $3 AND option_index = $4",
-          [poll.id, userId, userType, option_index]
-        );
-
-        if (existingVote) {
-          await client.query('ROLLBACK');
-          client.release();
-          return res.status(400).json({ error: 'Du hast bereits für diese Option abgestimmt' });
-        }
-      }
-
-      // Add the new vote
-      await client.query(
-        "INSERT INTO chat_poll_votes (poll_id, user_id, user_type, option_index, created_at) VALUES ($1, $2, $3, $4, NOW())",
-        [poll.id, userId, userType, option_index]
-      );
-
-      await client.query('COMMIT');
-      client.release();
-
-      // Live-Update: aktualisierten Poll-Stand an den Raum senden.
-      await emitPollUpdate(poll.id, poll.room_id);
-
-      res.json({
-        message: 'Stimme erfolgreich abgegeben',
-        poll_id: poll.id,
-        message_id: parseInt(messageId),
-        option_index: option_index,
-        user_id: userId
-      });
-
-      } catch (err) {
-        try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
-        client.release();
-        throw err;
-      }
-
-    } catch (err) {
-      console.error('Database error in POST /messages/:messageId/vote:', err);
-      res.status(500).json({ error: 'Datenbankfehler' });
-    }
-  });
+  // Abstimmen ueber die Nachrichten-ID (aeltere Adressform).
+  //
+  // Diese Route hatte eine eigene, unvollstaendige Kopie der Abstimmlogik:
+  // exclusive_options wurde komplett ignoriert, es gab weder den FOR-UPDATE-Lock
+  // noch die Belegt-Pruefung. Bei einer exklusiven Umfrage ("wer macht welche
+  // Tour?") konnten hierueber mehrere Personen dieselbe Option belegen, waehrend
+  // /polls/:pollId/vote das korrekt mit 409 ablehnt (Befund 23.08.2026).
+  //
+  // Statt die Logik zu duplizieren, wird an den einen Handler weitergereicht:
+  // /polls/:pollId/vote sucht die Umfrage ohnehin per poll_id UND per message_id.
+  const voteHandler = (req, res) => {
+    req.params.pollId = req.params.messageId;
+    return votePoll(req, res);
+  };
+  router.post('/messages/:messageId/vote', verifyTokenRBAC, voteHandler);
   
   // DELETE a chat room (Admin only)
   router.delete('/rooms/:roomId', verifyTokenRBAC, async (req, res) => {
