@@ -404,8 +404,8 @@ describe('Users Routes', () => {
         [ORGS.testGemeinde.id]
       );
       await db.query(
-        `INSERT INTO user_certificates (user_id, certificate_type_id, admin_id, organization_id)
-         VALUES ($1, $2, $3, $4)`,
+        `INSERT INTO user_certificates (user_id, certificate_type_id, admin_id, organization_id, issued_date)
+         VALUES ($1, $2, $3, $4, CURRENT_DATE)`,
         [USERS.teamer1.id, typ.id, USERS.admin1.id, ORGS.testGemeinde.id]
       );
 
@@ -428,8 +428,8 @@ describe('Users Routes', () => {
       );
       // teamer1 hat diese Urkunde VERLIEHEN, konfi1 sie bekommen.
       await db.query(
-        `INSERT INTO user_certificates (user_id, certificate_type_id, admin_id, organization_id)
-         VALUES ($1, $2, $3, $4)`,
+        `INSERT INTO user_certificates (user_id, certificate_type_id, admin_id, organization_id, issued_date)
+         VALUES ($1, $2, $3, $4, CURRENT_DATE)`,
         [USERS.konfi1.id, typ.id, USERS.teamer1.id, ORGS.testGemeinde.id]
       );
 
