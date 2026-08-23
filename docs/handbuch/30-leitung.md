@@ -1,0 +1,143 @@
+---
+titel: Für die Leitung
+untertitel: Konfis · Chat · Events · Challenges · Mehr
+farbe: "#047857"
+---
+
+Die Leitung verwaltet die Gemeinde. Zwei Stufen gibt es dabei: **Admins**
+können fast alles, **Org-Admins** zusätzlich die Benutzerverwaltung, die
+Einladungen und die Dashboard-Einstellungen.
+
+## Konfis
+
+Die zentrale Liste, umschaltbar zwischen **Konfis** und **Teamer:innen**. Zu
+jeder Person siehst du Punkte nach **Godi**, **Gemeinde** und **Gesamt**.
+
+Über das Plus legst du an, was gerade geöffnet ist — einen Konfi oder eine
+Teamer:in. Beim Anlegen erzeugt die App ein **Einmalpasswort**, das du direkt
+kopieren kannst.
+
+Oben findest du die **Anwesenheits-Matrix**: eine Tabelle über alle Konfis
+mit Pflicht-Anwesenheit und Konfisprüchen, die du dir auch per E-Mail
+schicken lassen kannst.
+
+### In der Detailansicht einer Person
+
+- **Punkte vergeben** — als Bonuspunkte, frei begründet
+- **Aktivitäten** hinzufügen oder entfernen
+- **Abzeichen** ansehen
+- **Konfirmation** — Termin und Konfispruch
+- **Passwort zurücksetzen** — erzeugt ein neues Einmalpasswort
+- **Zur Teamer:in befördern** — Punkte und Abzeichen bleiben als
+  Konfi-Historie erhalten
+
+Bei Teamer:innen kommen **Zertifikate** dazu (etwa JuLeiCa) und die Angabe,
+seit wann sie dabei sind.
+
+Teamer:innen löschen darf nur ein Org-Admin.
+
+## Chat
+
+Du erreichst **jeden** in deiner Gemeinde — alle Konfis, alle Teamer:innen,
+die ganze Leitung. Die Jahrgangsgrenze, die für Teamer:innen gilt, betrifft
+dich nicht.
+
+Nur die Leitung kann:
+
+- **Mitglieder** zu Gruppen hinzufügen und daraus entfernen
+- **Chats löschen**
+- **fremde Nachrichten löschen**
+- den **Verlauf exportieren** — als Textdatei, etwa um Beiträge für einen
+  Gottesdienst zu sammeln
+- **Umfragen anlegen**
+
+Beim Öffnen eines einzelnen Chats gilt für dich eine Ausnahme: Du kannst
+jeden Chat deiner Gemeinde öffnen und lesen — auch ein privates Gespräch
+zwischen zwei anderen Personen. In deiner eigenen Chatliste erscheinen
+allerdings nur die Chats, in denen du selbst bist.
+
+Eine Grenze gibt es doch: Bei **anonymen Umfragen** siehst auch du nicht, wer
+was gewählt hat.
+
+## Events
+
+Zwei Bereiche oben: **Events** und **Aktivitäten**.
+
+### Events
+
+Drei Reiter: **Aktuell**, **Verbuchen** und **Vergangen**. „Verbuchen" sammelt
+die Termine, bei denen noch Anwesenheiten einzutragen sind.
+
+Beim **Anlegen** eines Termins legst du fest:
+
+- **Für wen** — nur Konfis, Konfis mit gesuchten Teamer:innen, oder nur Team
+- **Datum und Anmeldezeitraum**, wahlweise sofort geöffnet
+- **Zeitfenster**, wenn sich die Gruppe aufteilen soll
+- **Plätze und Warteliste**, getrennt für Konfis und Team
+- **Punkte** und ob sie auf Gottesdienst oder Gemeinde zählen
+- **Pflicht-Event** — dann sind alle automatisch angemeldet
+- **Serie** — täglich, wöchentlich, zweiwöchentlich oder monatlich
+
+In der Detailansicht trägst du **Anwesenheit** ein, bestätigst die
+**Warteliste**, fügst Teilnehmende von Hand hinzu und siehst die
+**Abmeldungen** samt Begründung. Über das QR-Symbol zeigst du den Code zum
+Selbst-Einchecken — auch zum Ausdrucken.
+
+Ein Termin lässt sich **absagen** statt löschen. Dann bekommen alle
+Angemeldeten eine Nachricht mit deinem Text.
+
+### Aktivitäten
+
+Die Meldungen der Konfis und Teamer:innen: **Offen**, **Genehmigt**,
+**Abgelehnt**. Du siehst das Nachweis-Foto und entscheidest. Beim Ablehnen
+musst du einen Grund angeben — den bekommt die Person zu sehen.
+
+## Challenges
+
+Drei Reiter: **Aktuell**, **Geplant**, **Archiv**.
+
+Beim Anlegen legst du fest, **wer mitmacht** (ein Jahrgang mit dem Team oder
+nur das Team), **welche Medienarten** erlaubt sind und **wie sichtbar** die
+Beiträge sind. Dazu das Abzeichen, das es fürs Mitmachen gibt.
+
+Nach dem Start sind **Sichtbarkeit, Freigabepflicht, Startzeitpunkt und
+Medienarten gesperrt**. Das ist Absicht: Was den Konfis zugesagt wurde, gilt.
+
+Beim Begleiten kannst du Beiträge **freigeben**, **anonymisieren** oder
+**ausblenden**. Anonymisieren geht nicht zurück.
+
+## Mehr
+
+### Inhalt
+
+| Bereich | Wofür |
+|---|---|
+| **Aktivitäten** | Der Katalog dessen, was gemeldet werden kann, mit Punkten |
+| **Challenges** | Aufgaben stellen und begleiten |
+| **Badges** | Abzeichen definieren, mit Bedingungen |
+| **Jahrgänge** | Punkteziele, Konfispruch-Freigabe, Wrapped-Freigabe |
+| **Kategorien** | Für Aktivitäten und Termine |
+| **Level** | Punkteschwellen und ihre Titel |
+| **Material** | Dokumente für Termine und Jahrgänge |
+| **Zertifikate** | Nachweise für Teamer:innen, mit Gültigkeit |
+
+### Verwaltung (nur Org-Admin)
+
+- **Benutzer:innen** — Rollen vergeben, Jahrgänge zuweisen. Die Zuweisung
+  entscheidet, welche Konfis eine Teamer:in erreicht und sieht.
+- **Dashboard** — welche Bereiche Konfis und Teamer:innen auf ihrer
+  Startseite sehen, und in welcher Reihenfolge
+- **Konfis einladen** — QR-Code und Einladungscode zur Selbstregistrierung
+
+### Jahrgänge im Detail
+
+Pro Jahrgang stellst du ein:
+
+- **Punkteziele** für Gottesdienst und Gemeinde, jeweils einzeln abschaltbar
+  — mindestens eine Art muss aktiv bleiben
+- **Konfispruch-Auswahl** freigeben
+- **Wrapped freigeben** — erzeugt den Jahresrückblick und benachrichtigt die
+  Konfis
+
+Ein Jahrgang lässt sich nicht löschen, solange ihm aktive Konfis zugeordnet
+sind. Beförderte Teamer:innen bleiben mit Punkten und Abzeichen erhalten.

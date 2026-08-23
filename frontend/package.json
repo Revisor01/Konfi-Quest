@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "docs:api": "node ../scripts/build-api-docs.mjs",
+    "docs:handbuch": "node ../scripts/build-handbuch.mjs",
     "preview": "vite preview",
     "test.e2e": "cypress run",
     "test.unit": "vitest",

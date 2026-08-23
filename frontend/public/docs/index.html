@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Konfi Quest — Handbuch</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Handbuch für Konfi Quest: was Konfis, Teamer:innen und die Leitung in der App tun können.">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Bebas+Neue&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root { --ground:#fbfaf9; --flaeche:#fff; --flaeche-2:#f4f1f6; --rand:#e7e3e8; --text:#1c1a1f; --text-leise:#6b6470; --akzent:#5b21b6; --akzent-weich:#f3eefc; --code-grund:#f5f2f7; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#161419; --flaeche:#1e1b22; --flaeche-2:#241f2a; --rand:#322c38; --text:#ece9ef; --text-leise:#a49cab; --akzent:#c4a8f5; --akzent-weich:#2a1f3d; --code-grund:#241f2a; } }
+:root[data-theme="dark"] { --ground:#161419; --flaeche:#1e1b22; --flaeche-2:#241f2a; --rand:#322c38; --text:#ece9ef; --text-leise:#a49cab; --akzent:#c4a8f5; --akzent-weich:#2a1f3d; --code-grund:#241f2a; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif; font-size:15px; line-height:1.65; -webkit-font-smoothing:antialiased; }
+.huelle { display:grid; grid-template-columns:264px minmax(0,1fr); max-width:1180px; margin:0 auto; }
+.seitenleiste { position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto; padding:32px 24px 40px; border-right:1px solid var(--rand); }
+.marke { font-family:'Bebas Neue',Impact,sans-serif; font-size:1.5rem; letter-spacing:3px; margin:0 0 2px; }
+.marke-unter { font-size:.78rem; color:var(--text-leise); margin:0 0 28px; }
+.nav-titel { font-size:.68rem; text-transform:uppercase; letter-spacing:.09em; color:var(--text-leise); margin:0 0 10px; font-weight:600; }
+.seitenleiste ul { list-style:none; margin:0 0 26px; padding:0; display:flex; flex-direction:column; gap:2px; }
+.seitenleiste ul a { display:flex; align-items:center; gap:9px; padding:7px 9px; border-radius:7px; text-decoration:none; color:var(--text); font-size:.87rem; }
+.seitenleiste ul a:hover { background:var(--akzent-weich); }
+.seitenleiste ul a:focus-visible { outline:2px solid var(--akzent); outline-offset:1px; }
+.nav-punkt { width:8px; height:8px; border-radius:50%; flex:none; }
+.seitenleiste .fuss { border-top:1px solid var(--rand); padding-top:18px; font-size:.75rem; color:var(--text-leise); }
+.seitenleiste .fuss a { color:var(--akzent); }
+.inhalt { padding:40px 44px 96px; min-width:0; }
+.kopf { margin-bottom:40px; padding-bottom:26px; border-bottom:1px solid var(--rand); }
+.kopf h1 { font-family:'Bebas Neue',Impact,sans-serif; font-weight:400; font-size:3.1rem; line-height:1; letter-spacing:4px; margin:0 0 14px; text-wrap:balance; }
+.kopf p { margin:0; color:var(--text-leise); max-width:64ch; }
+.kapitel { margin-bottom:56px; scroll-margin-top:20px; }
+.kapitel-kopf { margin-bottom:20px; padding-left:13px; border-left:3px solid var(--kapitel); }
+.kapitel-kopf h2 { font-family:'Bebas Neue',Impact,sans-serif; font-weight:400; font-size:1.9rem; margin:0; letter-spacing:2.5px; }
+.kapitel-meta { margin:2px 0 0; font-size:.78rem; color:var(--text-leise); }
+.kapitel h3 { font-size:1.06rem; margin:30px 0 10px; letter-spacing:-.01em; }
+.kapitel h4 { font-size:.95rem; margin:22px 0 8px; color:var(--text-leise); }
+.kapitel p { margin:0 0 13px; max-width:66ch; }
+.kapitel ul { margin:0 0 15px; padding-left:20px; max-width:66ch; display:flex; flex-direction:column; gap:6px; }
+.kapitel li { margin:0; }
+blockquote { margin:0 0 15px; padding:13px 17px; background:var(--flaeche); border:1px solid var(--rand); border-left:3px solid var(--kapitel); border-radius:8px; color:var(--text-leise); font-size:.92rem; max-width:66ch; }
+code { font-family:'JetBrains Mono',monospace; font-size:.85em; background:var(--code-grund); padding:1px 5px; border-radius:4px; }
+.tabelle-huelle { overflow-x:auto; border:1px solid var(--rand); border-radius:10px; background:var(--flaeche); margin:0 0 18px; }
+table { border-collapse:collapse; width:100%; font-size:.88rem; }
+th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand); vertical-align:top; }
+thead th { background:var(--flaeche-2); font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-leise); white-space:nowrap; }
+tbody tr:last-child td { border-bottom:none; }
+@media (max-width:860px) {
+  .huelle { grid-template-columns:1fr; }
+  .seitenleiste { position:static; height:auto; border-right:none; border-bottom:1px solid var(--rand); }
+  .inhalt { padding:28px 20px 72px; }
+  .kopf h1 { font-size:2.4rem; }
+}
+</style>
+</head>
+<body>
+<div class="huelle">
+  <nav class="seitenleiste">
+    <p class="marke">Konfi Quest</p>
+    <p class="marke-unter">Handbuch</p>
+    <p class="nav-titel">Inhalt</p>
+    <ul><li><a href="#start"><span class="nav-punkt" style="background:#667eea"></span>Überblick</a></li><li><a href="#konfis"><span class="nav-punkt" style="background:#5b21b6"></span>Für Konfis</a></li><li><a href="#teamer"><span class="nav-punkt" style="background:#be185d"></span>Für Teamer:innen</a></li><li><a href="#leitung"><span class="nav-punkt" style="background:#047857"></span>Für die Leitung</a></li></ul>
+    <div class="fuss">
+      <p>Stand 23.08.2026</p>
+      <p><a href="/">Zur Startseite</a></p>
+    </div>
+  </nav>
+  <main class="inhalt">
+    <header class="kopf">
+      <h1>Handbuch</h1>
+      <p>Was ihr mit Konfi Quest tun könnt — nach Rollen sortiert. Jede Rolle
+      sieht eine eigene Ansicht, deshalb steht hier für jede ein eigener Teil.</p>
+    </header>
+    <section id="start" class="kapitel" style="--kapitel:#667eea">
+      <header class="kapitel-kopf">
+        <h2>Überblick</h2>
+        <p class="kapitel-meta">Wie Konfi Quest funktioniert</p>
+      </header>
+      <p>Konfi Quest begleitet die Konfizeit: Termine, Punkte, Abzeichen, Challenges und ein geschützter Chat. Drei Rollen arbeiten darin, jede sieht ihre eigene Ansicht.</p>
+      <h2>Für wen ist welcher Teil?</h2>
+      <ul><li><strong>Konfis</strong> melden Aktivitäten, buchen Termine, machen bei Challenges mit und sammeln Abzeichen.</li><li><strong>Teamer:innen</strong> begleiten ihre Jahrgänge, melden sich zu Terminen an, stellen Challenges und sehen ihre Zertifikate.</li><li><strong>Die Leitung</strong> verwaltet Konfis, Termine, Punkte, Jahrgänge und alles, was die Gemeinde betrifft.</li></ul>
+      <h2>Die Grundidee: Punkte statt Laufzettel</h2>
+      <p>Es gibt zwei Punktearten: <strong>Gottesdienst</strong> und <strong>Gemeinde</strong>. Jeder Jahrgang hat für beide ein eigenes Ziel, das die Leitung festlegt — eine der beiden Arten kann auch abgeschaltet sein.</p>
+      <p>Punkte entstehen auf drei Wegen:</p>
+      <ul><li><strong>Termine</strong> — wer teilnimmt und als anwesend eingetragen wird, bekommt die hinterlegten Punkte. Nicht jeder Termin gibt welche.</li><li><strong>Aktivitäten</strong> — Konfis melden selbst, was sie getan haben. Die Leitung bestätigt, dann zählt es.</li><li><strong>Bonuspunkte</strong> — vergibt die Leitung von Hand, für alles, was sonst in kein Raster passt.</li></ul>
+      <p>Aus den Punkten ergeben sich <strong>Level</strong> und ein Teil der <strong>Abzeichen</strong>.</p>
+      <h2>Was bewusst keine Punkte gibt</h2>
+      <p><strong>Challenges.</strong> Sie sind Aufgaben über einen Zeitraum, auf die man mit einem Beitrag antwortet — Text, Foto, Aufnahme oder Link. Es gibt keine Zähler und keine Rangliste, nur ein Abzeichen fürs Mitmachen. Das ist Absicht: Hier soll niemand rechnen.</p>
+    </section>
+    <section id="konfis" class="kapitel" style="--kapitel:#5b21b6">
+      <header class="kapitel-kopf">
+        <h2>Für Konfis</h2>
+        <p class="kapitel-meta">Start · Chat · Challenges · Events · Badges</p>
+      </header>
+      <p>Unten in der App stehen fünf Reiter. Alles, was du brauchst, findest du dort.</p>
+      <h2>Start</h2>
+      <p>Deine Übersicht. Ganz oben stehen deine Punkte als drei Ringe: <strong>Gesamt</strong>, <strong>Gottesdienst</strong> und <strong>Gemeinde</strong>. Tippe sie an, dann siehst du, woher jeder einzelne Punkt kommt.</p>
+      <p>Darunter zeigt die Startseite, was gerade ansteht. Welche Bereiche erscheinen, stellt deine Gemeinde ein:</p>
+      <ul><li><strong>Deine Konfirmation</strong> — der Countdown bis zum Tag, mit Datum und Ort</li><li><strong>Deine Challenge</strong> — was gerade läuft und wie lange noch</li><li><strong>Dein Konfispruch</strong> — sobald deine Gemeinde die Auswahl freigegeben hat</li><li><strong>Deine Events</strong> — die nächsten Termine</li><li><strong>Tageslosung</strong> — der Bibelvers des Tages, in deiner Übersetzung</li><li><strong>Deine Badges</strong> — was du schon gesammelt hast</li><li><strong>Dein Ranking</strong> — dein Platz, ohne die Punkte der anderen zu zeigen</li></ul>
+      <p>Oben rechts kommst du zu deinem Profil.</p>
+      <h2>Chat</h2>
+      <p>Hier schreibst du mit deinem Team. Es gibt Gruppen für deinen Jahrgang und für Termine, dazu Einzelgespräche.</p>
+      <p><strong>Wen du anschreiben kannst:</strong> die Leitung deiner Gemeinde immer, und die Teamer:innen, die für deinen Jahrgang zuständig sind. Andere Konfis kannst du nicht anschreiben — auch nicht aus deinem Jahrgang.</p>
+      <p>In Gruppen siehst du, wer sonst noch dabei ist. Du kannst antworten, reagieren, Bilder und Dateien schicken und an Umfragen teilnehmen. Ist eine Umfrage als anonym angelegt, sieht niemand, was du gewählt hast — auch die Leitung nicht.</p>
+      <h2>Challenges</h2>
+      <p>Aufgaben, auf die du über einen Zeitraum antwortest. Zwei Reiter: <strong>Aktuell</strong> und <strong>Archiv</strong>, dazwischen deine gesammelten Abzeichen.</p>
+      <p>Beim Einreichen wählst du, wie du antwortest — je nachdem, was erlaubt ist: Text, Foto, Audio, Video oder ein Link.</p>
+      <p>Bei manchen Challenges entscheidest du selbst, <strong>wer deinen Beitrag sieht</strong>:</p>
+      <ul><li><strong>Öffentlich</strong> — mit deinem Namen für die Gruppe</li><li><strong>Anonym</strong> — für die Gruppe sichtbar, aber ohne deinen Namen</li><li><strong>Nur Leitung</strong> — er erscheint gar nicht in der Galerie</li></ul>
+      <p>Manche Beiträge werden erst nach Freigabe durch das Team sichtbar. Das steht dann bei der Challenge dabei.</p>
+      <h2>Events</h2>
+      <p>Zwei Bereiche oben: <strong>Events</strong> und <strong>Aktivitäten</strong>.</p>
+      <h3>Events</h3>
+      <p>Alle Termine deiner Gemeinde. Tippe einen an, dann siehst du Datum, Ort, was du mitbringen sollst und wie viele Plätze frei sind.</p>
+      <ul><li><strong>Anmelden</strong> — solange Plätze frei sind</li><li><strong>Warteliste</strong> — wenn alles belegt ist und eine Warteliste eingerichtet ist</li><li><strong>Abmelden</strong> — bis zwei Tage vorher; danach ist es gesperrt</li></ul>
+      <p>Bei <strong>Pflicht-Events</strong> bist du automatisch angemeldet. Abmelden geht trotzdem, du wirst dabei nach einem Grund gefragt.</p>
+      <p>Hat ein Termin <strong>Zeitfenster</strong>, wählst du beim Anmelden eines aus.</p>
+      <p>Oben rechts findest du den <strong>QR-Scanner</strong>. Damit trägst du dich vor Ort selbst als anwesend ein — das geht nur im Zeitfenster rund um den Beginn.</p>
+      <h3>Aktivitäten</h3>
+      <p>Was du selbst gemacht hast und angerechnet bekommen möchtest: Du wählst die Aktivität, das Datum und lädst am besten ein Foto als Nachweis hoch. Dann geht die Meldung an dein Team.</p>
+      <p>Drei Reiter zeigen den Stand: <strong>Offen</strong>, <strong>Angerechnet</strong>, <strong>Abgelehnt</strong>. Wird etwas abgelehnt, steht der Grund dabei.</p>
+      <h2>Badges</h2>
+      <p>Deine Abzeichen. Manche bekommst du für Punkte, andere für bestimmte Aktivitäten, Termine oder Serien. <strong>Geheime Badges</strong> siehst du erst, wenn du sie hast — sonst wäre die Überraschung weg.</p>
+      <h2>Dein Profil</h2>
+      <p>Über das Symbol oben rechts auf der Startseite:</p>
+      <ul><li><strong>Punkte-Übersicht</strong> — jeder Punkt einzeln aufgelistet</li><li><strong>Konfispruch wählen</strong> — aus einer Liste oder selbst eingeben, sobald deine Gemeinde das freigegeben hat</li><li><strong>Bibelübersetzung</strong> — welche Übersetzung du bei der Tageslosung siehst</li><li><strong>E-Mail und Passwort ändern</strong></li><li><strong>Deine Wrappeds</strong> — dein Jahresrückblick, sobald er freigegeben ist</li><li><strong>App-Tour</strong> — die Einführung noch einmal ansehen</li></ul>
+      <p>Ganz unten kannst du dich abmelden oder dein Konto löschen.</p>
+    </section>
+    <section id="teamer" class="kapitel" style="--kapitel:#be185d">
+      <header class="kapitel-kopf">
+        <h2>Für Teamer:innen</h2>
+        <p class="kapitel-meta">Start · Chat · Events · Challenges · Badges</p>
+      </header>
+      <p>Als Teamer:in begleitest du die Jahrgänge, die dir zugewiesen sind. Diese Zuweisung entscheidet fast überall, was du siehst und wen du erreichst.</p>
+      <h2>Start</h2>
+      <p>Deine Übersicht mit den Bereichen, die deine Gemeinde freigeschaltet hat: deine <strong>Zertifikate</strong>, deine <strong>Events</strong>, die <strong>Tageslosung</strong> und deine <strong>Badges</strong>. Läuft gerade eine Challenge, steht sie oben.</p>
+      <p>Ist dein Jahresrückblick freigegeben, erscheint hier ein Banner dafür.</p>
+      <h2>Chat</h2>
+      <p>Du erreichst <strong>das ganze Team</strong> deiner Gemeinde — alle Teamer:innen und die gesamte Leitung, unabhängig vom Jahrgang.</p>
+      <p>Bei <strong>Konfis</strong> gilt deine Jahrgangszuweisung: Du kannst nur die anschreiben, für deren Jahrgang du eingetragen bist. Hast du keine Zuweisung, erreichst du keine Konfis — und tauchst umgekehrt in deren Kontaktliste auch nicht auf. Wenn du Konfis erreichen können solltest und es nicht kannst, fehlt dir die Jahrgangszuweisung; die setzt die Leitung.</p>
+      <p>Du kannst Gruppenchats anlegen. Mitglieder nachträglich hinzufügen oder entfernen kann nur die Leitung — auch in Gruppen, die du selbst angelegt hast.</p>
+      <p>Den Chat-Verlauf exportieren kann ebenfalls nur die Leitung.</p>
+      <h2>Events</h2>
+      <p>Zwei Bereiche oben: <strong>Events</strong> und <strong>Aktivitäten</strong>.</p>
+      <h3>Events</h3>
+      <p>Alle Termine, gefiltert über <strong>Alle</strong>, <strong>Meine</strong> und <strong>Team</strong>. Bei Terminen, für die Teamer:innen gesucht werden, meldest du dich mit <strong>„Ich bin dabei&quot;</strong> an. Es gibt ein eigenes Kontingent für das Team, getrennt von den Plätzen der Konfis, und bei Bedarf eine eigene Warteliste.</p>
+      <p>Manche Termine sind reine Konfi-Termine. Die stehen dann nur zur Information da, ohne Anmeldung.</p>
+      <p>Zu jedem Termin siehst du die Details und das hinterlegte <strong>Material</strong>.</p>
+      <blockquote><strong>Hinweis:</strong> Die Einführung in der App sagt, du könntest selbst Termine anlegen. Das stimmt derzeit nicht — in der Teamer-Ansicht gibt es dafür keine Schaltfläche. Termine legt die Leitung an.</blockquote>
+      <h3>Aktivitäten</h3>
+      <p>Auch du meldest eigene Aktivitäten: Aktivität wählen, Datum, gern ein Foto als Nachweis. Die Leitung bestätigt sie, dann zählen sie.</p>
+      <h2>Challenges</h2>
+      <p>Du arbeitest hier genauso wie die Leitung — begrenzt auf deine zugewiesenen Jahrgänge. Du kannst:</p>
+      <ul><li>Challenges <strong>anlegen und bearbeiten</strong></li><li>Beiträge <strong>freigeben</strong>, nachträglich <strong>anonymisieren</strong> oder <strong>ausblenden</strong></li><li><strong>selbst mitmachen</strong> und einen eigenen Beitrag einreichen</li></ul>
+      <p>Anonymisieren lässt sich nicht zurücknehmen. Ihr im Team seht weiterhin, von wem ein Beitrag stammt — die Anonymität gilt gegenüber der Gruppe.</p>
+      <p>Es gibt auch Challenges <strong>nur fürs Team</strong>. Die sehen Konfis gar nicht.</p>
+      <h2>Badges</h2>
+      <p>Deine eigenen Abzeichen, gefiltert nach <strong>Alle</strong>, <strong>Offen</strong> und <strong>In Arbeit</strong>.</p>
+      <h2>Dein Profil</h2>
+      <p>Über den Profil-Bereich erreichst du:</p>
+      <ul><li><strong>Funktionsbeschreibung</strong> — wie du in der App genannt wirst, etwa „Teamerin&quot; oder „Jugendmitarbeiter&quot;. Sie steht neben deinem Namen im Chat.</li><li><strong>E-Mail und Passwort ändern</strong></li><li><strong>Bibelübersetzung</strong> für die Tageslosung</li><li><strong>Material</strong> — alle Dokumente, die für dich freigegeben sind</li><li><strong>Konfi-Historie</strong> — wenn du früher selbst Konfi warst: deine damaligen Punkte und Abzeichen</li><li><strong>Deine Wrappeds</strong> — dein Jahresrückblick als Teamer:in</li></ul>
+    </section>
+    <section id="leitung" class="kapitel" style="--kapitel:#047857">
+      <header class="kapitel-kopf">
+        <h2>Für die Leitung</h2>
+        <p class="kapitel-meta">Konfis · Chat · Events · Challenges · Mehr</p>
+      </header>
+      <p>Die Leitung verwaltet die Gemeinde. Zwei Stufen gibt es dabei: <strong>Admins</strong> können fast alles, <strong>Org-Admins</strong> zusätzlich die Benutzerverwaltung, die Einladungen und die Dashboard-Einstellungen.</p>
+      <h2>Konfis</h2>
+      <p>Die zentrale Liste, umschaltbar zwischen <strong>Konfis</strong> und <strong>Teamer:innen</strong>. Zu jeder Person siehst du Punkte nach <strong>Godi</strong>, <strong>Gemeinde</strong> und <strong>Gesamt</strong>.</p>
+      <p>Über das Plus legst du an, was gerade geöffnet ist — einen Konfi oder eine Teamer:in. Beim Anlegen erzeugt die App ein <strong>Einmalpasswort</strong>, das du direkt kopieren kannst.</p>
+      <p>Oben findest du die <strong>Anwesenheits-Matrix</strong>: eine Tabelle über alle Konfis mit Pflicht-Anwesenheit und Konfisprüchen, die du dir auch per E-Mail schicken lassen kannst.</p>
+      <h3>In der Detailansicht einer Person</h3>
+      <ul><li><strong>Punkte vergeben</strong> — als Bonuspunkte, frei begründet</li><li><strong>Aktivitäten</strong> hinzufügen oder entfernen</li><li><strong>Abzeichen</strong> ansehen</li><li><strong>Konfirmation</strong> — Termin und Konfispruch</li><li><strong>Passwort zurücksetzen</strong> — erzeugt ein neues Einmalpasswort</li><li><strong>Zur Teamer:in befördern</strong> — Punkte und Abzeichen bleiben als Konfi-Historie erhalten</li></ul>
+      <p>Bei Teamer:innen kommen <strong>Zertifikate</strong> dazu (etwa JuLeiCa) und die Angabe, seit wann sie dabei sind.</p>
+      <p>Teamer:innen löschen darf nur ein Org-Admin.</p>
+      <h2>Chat</h2>
+      <p>Du erreichst <strong>jeden</strong> in deiner Gemeinde — alle Konfis, alle Teamer:innen, die ganze Leitung. Die Jahrgangsgrenze, die für Teamer:innen gilt, betrifft dich nicht.</p>
+      <p>Nur die Leitung kann:</p>
+      <ul><li><strong>Mitglieder</strong> zu Gruppen hinzufügen und daraus entfernen</li><li><strong>Chats löschen</strong></li><li><strong>fremde Nachrichten löschen</strong></li><li>den <strong>Verlauf exportieren</strong> — als Textdatei, etwa um Beiträge für einen Gottesdienst zu sammeln</li><li><strong>Umfragen anlegen</strong></li></ul>
+      <p>Beim Öffnen eines einzelnen Chats gilt für dich eine Ausnahme: Du kannst jeden Chat deiner Gemeinde öffnen und lesen — auch ein privates Gespräch zwischen zwei anderen Personen. In deiner eigenen Chatliste erscheinen allerdings nur die Chats, in denen du selbst bist.</p>
+      <p>Eine Grenze gibt es doch: Bei <strong>anonymen Umfragen</strong> siehst auch du nicht, wer was gewählt hat.</p>
+      <h2>Events</h2>
+      <p>Zwei Bereiche oben: <strong>Events</strong> und <strong>Aktivitäten</strong>.</p>
+      <h3>Events</h3>
+      <p>Drei Reiter: <strong>Aktuell</strong>, <strong>Verbuchen</strong> und <strong>Vergangen</strong>. „Verbuchen&quot; sammelt die Termine, bei denen noch Anwesenheiten einzutragen sind.</p>
+      <p>Beim <strong>Anlegen</strong> eines Termins legst du fest:</p>
+      <ul><li><strong>Für wen</strong> — nur Konfis, Konfis mit gesuchten Teamer:innen, oder nur Team</li><li><strong>Datum und Anmeldezeitraum</strong>, wahlweise sofort geöffnet</li><li><strong>Zeitfenster</strong>, wenn sich die Gruppe aufteilen soll</li><li><strong>Plätze und Warteliste</strong>, getrennt für Konfis und Team</li><li><strong>Punkte</strong> und ob sie auf Gottesdienst oder Gemeinde zählen</li><li><strong>Pflicht-Event</strong> — dann sind alle automatisch angemeldet</li><li><strong>Serie</strong> — täglich, wöchentlich, zweiwöchentlich oder monatlich</li></ul>
+      <p>In der Detailansicht trägst du <strong>Anwesenheit</strong> ein, bestätigst die <strong>Warteliste</strong>, fügst Teilnehmende von Hand hinzu und siehst die <strong>Abmeldungen</strong> samt Begründung. Über das QR-Symbol zeigst du den Code zum Selbst-Einchecken — auch zum Ausdrucken.</p>
+      <p>Ein Termin lässt sich <strong>absagen</strong> statt löschen. Dann bekommen alle Angemeldeten eine Nachricht mit deinem Text.</p>
+      <h3>Aktivitäten</h3>
+      <p>Die Meldungen der Konfis und Teamer:innen: <strong>Offen</strong>, <strong>Genehmigt</strong>, <strong>Abgelehnt</strong>. Du siehst das Nachweis-Foto und entscheidest. Beim Ablehnen musst du einen Grund angeben — den bekommt die Person zu sehen.</p>
+      <h2>Challenges</h2>
+      <p>Drei Reiter: <strong>Aktuell</strong>, <strong>Geplant</strong>, <strong>Archiv</strong>.</p>
+      <p>Beim Anlegen legst du fest, <strong>wer mitmacht</strong> (ein Jahrgang mit dem Team oder nur das Team), <strong>welche Medienarten</strong> erlaubt sind und <strong>wie sichtbar</strong> die Beiträge sind. Dazu das Abzeichen, das es fürs Mitmachen gibt.</p>
+      <p>Nach dem Start sind <strong>Sichtbarkeit, Freigabepflicht, Startzeitpunkt und Medienarten gesperrt</strong>. Das ist Absicht: Was den Konfis zugesagt wurde, gilt.</p>
+      <p>Beim Begleiten kannst du Beiträge <strong>freigeben</strong>, <strong>anonymisieren</strong> oder <strong>ausblenden</strong>. Anonymisieren geht nicht zurück.</p>
+      <h2>Mehr</h2>
+      <h3>Inhalt</h3>
+      <div class="tabelle-huelle"><table><thead><tr><th>Bereich</th><th>Wofür</th></tr></thead><tbody><tr><td><strong>Aktivitäten</strong></td><td>Der Katalog dessen, was gemeldet werden kann, mit Punkten</td></tr><tr><td><strong>Challenges</strong></td><td>Aufgaben stellen und begleiten</td></tr><tr><td><strong>Badges</strong></td><td>Abzeichen definieren, mit Bedingungen</td></tr><tr><td><strong>Jahrgänge</strong></td><td>Punkteziele, Konfispruch-Freigabe, Wrapped-Freigabe</td></tr><tr><td><strong>Kategorien</strong></td><td>Für Aktivitäten und Termine</td></tr><tr><td><strong>Level</strong></td><td>Punkteschwellen und ihre Titel</td></tr><tr><td><strong>Material</strong></td><td>Dokumente für Termine und Jahrgänge</td></tr><tr><td><strong>Zertifikate</strong></td><td>Nachweise für Teamer:innen, mit Gültigkeit</td></tr></tbody></table></div>
+      <h3>Verwaltung (nur Org-Admin)</h3>
+      <ul><li><strong>Benutzer:innen</strong> — Rollen vergeben, Jahrgänge zuweisen. Die Zuweisung entscheidet, welche Konfis eine Teamer:in erreicht und sieht.</li><li><strong>Dashboard</strong> — welche Bereiche Konfis und Teamer:innen auf ihrer Startseite sehen, und in welcher Reihenfolge</li><li><strong>Konfis einladen</strong> — QR-Code und Einladungscode zur Selbstregistrierung</li></ul>
+      <h3>Jahrgänge im Detail</h3>
+      <p>Pro Jahrgang stellst du ein:</p>
+      <ul><li><strong>Punkteziele</strong> für Gottesdienst und Gemeinde, jeweils einzeln abschaltbar — mindestens eine Art muss aktiv bleiben</li><li><strong>Konfispruch-Auswahl</strong> freigeben</li><li><strong>Wrapped freigeben</strong> — erzeugt den Jahresrückblick und benachrichtigt die Konfis</li></ul>
+      <p>Ein Jahrgang lässt sich nicht löschen, solange ihm aktive Konfis zugeordnet sind. Beförderte Teamer:innen bleiben mit Punkten und Abzeichen erhalten.</p>
+    </section>
+  </main>
+</div>
+</body>
+</html>

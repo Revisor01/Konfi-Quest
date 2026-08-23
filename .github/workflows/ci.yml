@@ -107,6 +107,17 @@ jobs:
           fi
           echo "API-Referenz ist aktuell."
 
+      - name: Handbuch aktuell?
+        run: |
+          node scripts/build-handbuch.mjs
+          if ! git diff --quiet -- frontend/public/docs/index.html; then
+            echo "::error::Das Handbuch ist nicht auf dem Stand von docs/handbuch/."
+            echo "Neu erzeugen und mitcommitten:  npm --prefix frontend run docs:handbuch"
+            git diff --stat -- frontend/public/docs/index.html
+            exit 1
+          fi
+          echo "Handbuch ist aktuell."
+
       - name: Security audit
         working-directory: frontend
         run: npm audit --audit-level=critical || true

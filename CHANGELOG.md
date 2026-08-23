@@ -14,6 +14,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Hinzugefügt
 
+- Handbuch unter konfi-quest.de/docs: erklärt für Konfis, Teamer:innen und die
+  Leitung getrennt, was sie in der App tun können. Verlinkt im Fußbereich der
+  Startseite.
 - Chat-Verlauf exportieren: Die Leitung kann einen kompletten Chat als
   Textdatei sichern — etwa um Beiträge für einen Gottesdienst zu sammeln.
   Zu finden über das Menü oben rechts im Chat.

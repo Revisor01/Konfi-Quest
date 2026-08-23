@@ -15,6 +15,7 @@
 import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
 
 const WURZEL = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const QUELLE = join(WURZEL, 'docs', 'api');
@@ -45,6 +46,22 @@ const ROLLEN_KLASSE = {
   teamer: 'r-teamer', konfi: 'r-konfi',
   'alle authentifizierten': 'r-alle', oeffentlich: 'r-offen',
 };
+
+/**
+ * Datum der letzten Aenderung eines Verzeichnisses laut git — reproduzierbar,
+ * anders als new Date(). Faellt auf das heutige Datum zurueck, wenn git fehlt.
+ */
+function standAusGit(pfad) {
+  try {
+    const iso = execFileSync('git', ['log', '-1', '--format=%cI', '--', pfad], {
+      cwd: WURZEL, encoding: 'utf8',
+    }).trim();
+    if (iso) {
+      return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+  } catch { /* git nicht verfuegbar -> Rueckfall */ }
+  return new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
 
 function e(text) {
   return String(text ?? '')
@@ -137,7 +154,12 @@ async function main() {
   });
 
   const gesamt = bereiche.reduce((n, b) => n + b.routen.length, 0);
-  const stand = new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  // Datum NICHT aus der Uhr: Die CI erzeugt die Seite neu und vergleicht sie
+  // per git diff mit der eingecheckten. Ein Tageswechsel haette den Vergleich
+  // rot gemacht, ohne dass sich etwas geaendert hat. Quelle ist deshalb der
+  // Zeitpunkt der letzten Aenderung an den Quellen (git), mit der Uhr als
+  // Rueckfall, falls git nicht verfuegbar ist.
+  const stand = standAusGit(join(WURZEL, 'docs', 'api'));
 
   const nav = bereiche.map((b) =>
     `<li class="nav-gruppe"><a href="#${b.id}"><span class="nav-punkt" style="background:${b.farbe}"></span>${e(b.titel)}<span class="nav-zahl">${b.routen.length}</span></a></li>`
