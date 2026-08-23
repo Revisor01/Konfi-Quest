@@ -141,4 +141,29 @@ describe('darfRaumBetreten (Socket-Raum-Zugriff)', () => {
       expect(res.grund).toBe('kein Teilnehmer');
     });
   });
+  describe('Typen aus Token und Datenbank', () => {
+    // Befund 24.08.2026, gegen Produktion gemessen: Der pg-Treiber liefert
+    // bigint als String ("1"), die Socket-Auth setzt organization_id nach
+    // einem Organisationswechsel dagegen als Zahl (parseInt). Ein strikter
+    // Vergleich der beiden sperrte Mehr-Organisations-Leitungen aus JEDEM
+    // Chat ihrer aktiven Zweitgemeinde aus — auch aus ihren eigenen.
+    it('Eine Zahl als organization_id wird wie der String aus der Datenbank behandelt', async () => {
+      const alsZahl = { id: USERS.admin2.id, organization_id: Number(ORG_2), type: 'admin' };
+      const res = await darfRaumBetreten(db, CHAT_ROOMS.jahrgang2.id, alsZahl);
+      expect(res.ok).toBe(true);
+    });
+
+    it('Ein String als organization_id wird ebenso behandelt', async () => {
+      const alsText = { id: USERS.admin2.id, organization_id: String(ORG_2), type: 'admin' };
+      const res = await darfRaumBetreten(db, CHAT_ROOMS.jahrgang2.id, alsText);
+      expect(res.ok).toBe(true);
+    });
+
+    it('Die Organisationsgrenze haelt auch bei gemischten Typen', async () => {
+      const alsText = { id: USERS.admin2.id, organization_id: String(ORG_2), type: 'admin' };
+      const res = await darfRaumBetreten(db, CHAT_ROOMS.jahrgang.id, alsText);
+      expect(res.ok).toBe(false);
+      expect(res.grund).toBe(`Org-Isolation (Raum-Org ${ORG_1})`);
+    });
+  });
 });

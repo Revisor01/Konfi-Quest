@@ -47,7 +47,7 @@ interface ActivityModalProps {
 }
 
 const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave, dismiss, targetRole }) => {
-  const { isOnline } = useApp();
+  const { isOnline, setError } = useApp();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [selectedActivity, setSelectedActivity] = useState<number | null>(null);
   const [comment, setComment] = useState('');
@@ -121,8 +121,13 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
           setIsDirty(false);
           await onSave();
           doClose();
-        } catch (err) {
+        } catch (err: any) {
+          // Ohne diese Meldung blieb das Modal bei einer Ablehnung des Servers
+          // einfach offen stehen — etwa wenn die Punktart im Jahrgang
+          // abgeschaltet ist. Fuer die Leitung sah das so aus, als passiere
+          // nichts (Befund 24.08.2026).
           console.error('Error saving activity:', err);
+          setError(err?.response?.data?.error || 'Aktivität konnte nicht gespeichert werden');
         }
       } else {
         await writeQueue.enqueue({

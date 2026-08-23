@@ -3600,7 +3600,7 @@
       },
       "delete": {
         "summary": "Von Event abmelden (bis 2 Tage vorher)",
-        "description": "Loescht die eigene Buchung (Pflicht-Events nur per Opt-out, 400), protokolliert die Abmeldung (event_unregistrations, optionaler reason), laesst bei freiem bestaetigtem Platz von der Konfi-Warteliste nachruecken und benachrichtigt Admins.\n",
+        "description": "Loescht die eigene Buchung (Pflicht-Events nur per Opt-out, 400), entfernt die Person aus dem Event-Chat (seit 24.08.2026 — vorher blieb sie dort Teilnehmerin), protokolliert die Abmeldung (event_unregistrations, optionaler reason), laesst bei freiem bestaetigtem Platz von der Konfi-Warteliste nachruecken und benachrichtigt Admins.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -4382,7 +4382,7 @@
       },
       "put": {
         "summary": "Event aktualisieren (inkl. Nachrueck-Logik)",
-        "description": "Aktualisiert alle Event-Felder, Kategorien, Jahrgaenge und Timeslots (buchungserhaltend). Zwangsregeln wie beim Erstellen. Bei Kapazitaetserhoehung ruecken Wartelisten-Eintraege nach (Konfi- und Teamer-Kontingent strikt getrennt); Umwandlung in Pflicht-Event loest Auto-Enrollment aus; relevante Aenderungen (Termin/Ort) pushen an Gebuchte.\n",
+        "description": "Aktualisiert alle Event-Felder, Kategorien, Jahrgaenge und Timeslots (buchungserhaltend). Zwangsregeln wie beim Erstellen. Bei Kapazitaetserhoehung ruecken Wartelisten-Eintraege nach (Konfi- und Teamer-Kontingent strikt getrennt). Bei einem Pflicht-Event laeuft das Auto-Enrollment bei JEDEM Speichern (idempotent, ON CONFLICT DO NOTHING): seit 24.08.2026 werden damit auch die Konfis eines nachtraeglich ergaenzten Jahrgangs gebucht — vorher nur bei der Umwandlung freiwillig -> Pflicht. Abgemeldete (opted_out) bleiben abgemeldet. Relevante Aenderungen (Termin/Ort) pushen an Gebuchte.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -4685,7 +4685,7 @@
     "/api/events/{id}/bookings/{bookingId}": {
       "delete": {
         "summary": "Buchung eines Teilnehmers entfernen (Leitung)",
-        "description": "Loescht eine fremde Buchung; war der Konfi als anwesend verbucht, werden die Event-Punkte zurueckgenommen. Danach rollenrichtiges Nachruecken aus der passenden Warteliste.\n",
+        "description": "Loescht eine fremde Buchung; war der Konfi als anwesend verbucht, werden die Event-Punkte zurueckgenommen. Die Person wird zudem aus dem Event-Chat entfernt (seit 24.08.2026). Danach rollenrichtiges Nachruecken aus der passenden Warteliste.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5955,7 +5955,7 @@
       },
       "put": {
         "summary": "Konfi aendern (Name, Jahrgang)",
-        "description": "Aendert Anzeigename und/oder Jahrgang. Bei Jahrgangswechsel wird die Chat-Mitgliedschaft synchronisiert und der Konfi in kuenftige Pflicht-Events des neuen Jahrgangs eingebucht.\n",
+        "description": "Aendert Anzeigename und/oder Jahrgang. Bei Jahrgangswechsel wird die Chat-Mitgliedschaft synchronisiert und der Konfi in kuenftige Pflicht-Events des neuen Jahrgangs eingebucht. Seit 24.08.2026 werden dabei auch die kuenftigen Pflicht-Events des ALTEN Jahrgangs ausgetragen — nur solange keine Anwesenheit erfasst ist und der Termin nicht auch zum neuen Jahrgang gehoert. Vergangene Termine und erfasste Anwesenheiten bleiben unberuehrt.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",

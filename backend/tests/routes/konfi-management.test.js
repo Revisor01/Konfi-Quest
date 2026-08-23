@@ -1,7 +1,7 @@
 const request = require('supertest');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, USERS, JAHRGAENGE, ACTIVITIES, BADGES } = require('../helpers/seed');
+const { seed, USERS, JAHRGAENGE, ACTIVITIES, BADGES, ORGS } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 
 describe('Konfi-Management Routes', () => {
@@ -892,6 +892,127 @@ describe('Konfi-Management Routes', () => {
         .set('Authorization', `Bearer ${admin2Token}`);
 
       expect(res.status).toBe(404);
+    });
+  });
+  // Befund 24.08.2026: Der Wechsel buchte die Pflichttermine des NEUEN
+  // Jahrgangs dazu, raeumte die des alten aber nicht ab. Der Konfi stand
+  // danach in den Pflichtterminen beider Jahrgaenge.
+  describe('PUT /api/admin/konfis/:id — Jahrgangswechsel und Pflicht-Events', () => {
+    let zweiterJahrgang;
+
+    // Der Seed hat je Organisation nur einen Jahrgang; fuer einen Wechsel
+    // innerhalb derselben Organisation braucht es einen zweiten.
+    beforeEach(async () => {
+      const { rows: [jg] } = await db.query(
+        `INSERT INTO jahrgaenge (name, organization_id, confirmation_date)
+         VALUES ('2026/2027', $1, '2027-05-01') RETURNING id`,
+        [ORGS.org1.id]
+      );
+      zweiterJahrgang = jg.id;
+    });
+
+    const pflichtTermin = async (jahrgangId, tageVoraus = 14) => {
+      const datum = new Date();
+      datum.setDate(datum.getDate() + tageVoraus);
+      const { rows: [event] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, mandatory)
+         VALUES ($1, $2, $3, true) RETURNING id`,
+        [`Pflichttermin JG ${jahrgangId}`, datum.toISOString(), ORGS.org1.id]
+      );
+      await db.query(
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        [event.id, jahrgangId]
+      );
+      return event.id;
+    };
+
+    const buchung = async (eventId, userId) => {
+      const { rows } = await db.query(
+        'SELECT status, attendance_status FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [eventId, userId]
+      );
+      return rows[0] || null;
+    };
+
+    const wechsleJahrgang = (konfiId, jahrgangId) =>
+      request(app)
+        .put(`/api/admin/konfis/${konfiId}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ name: USERS.konfi1.display_name, jahrgang_id: jahrgangId });
+
+    it('Die kuenftigen Pflichttermine des alten Jahrgangs fallen weg', async () => {
+      const alterTermin = await pflichtTermin(JAHRGAENGE.jahrgang1.id);
+      await db.query(
+        `INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
+         VALUES ($1, $2, 'confirmed', NOW(), $3)`,
+        [alterTermin, USERS.konfi1.id, ORGS.org1.id]
+      );
+
+      const res = await wechsleJahrgang(USERS.konfi1.id, zweiterJahrgang);
+      expect(res.status).toBe(200);
+
+      expect(await buchung(alterTermin, USERS.konfi1.id)).toBeNull();
+    });
+
+    it('Die Pflichttermine des neuen Jahrgangs kommen dazu', async () => {
+      const neuerTermin = await pflichtTermin(zweiterJahrgang);
+
+      const res = await wechsleJahrgang(USERS.konfi1.id, zweiterJahrgang);
+      expect(res.status).toBe(200);
+
+      const gebucht = await buchung(neuerTermin, USERS.konfi1.id);
+      expect(gebucht).not.toBeNull();
+      expect(gebucht.status).toBe('confirmed');
+    });
+
+    it('Eine bereits erfasste Anwesenheit bleibt erhalten', async () => {
+      const alterTermin = await pflichtTermin(JAHRGAENGE.jahrgang1.id);
+      await db.query(
+        `INSERT INTO event_bookings (event_id, user_id, status, attendance_status, booking_date, organization_id)
+         VALUES ($1, $2, 'confirmed', 'present', NOW(), $3)`,
+        [alterTermin, USERS.konfi1.id, ORGS.org1.id]
+      );
+
+      const res = await wechsleJahrgang(USERS.konfi1.id, zweiterJahrgang);
+      expect(res.status).toBe(200);
+
+      const gebucht = await buchung(alterTermin, USERS.konfi1.id);
+      expect(gebucht).not.toBeNull();
+      expect(gebucht.attendance_status).toBe('present');
+    });
+
+    it('Ein Termin, der zu BEIDEN Jahrgaengen gehoert, bleibt gebucht', async () => {
+      const gemeinsam = await pflichtTermin(JAHRGAENGE.jahrgang1.id);
+      await db.query(
+        'INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES ($1, $2)',
+        [gemeinsam, zweiterJahrgang]
+      );
+      await db.query(
+        `INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
+         VALUES ($1, $2, 'confirmed', NOW(), $3)`,
+        [gemeinsam, USERS.konfi1.id, ORGS.org1.id]
+      );
+
+      const res = await wechsleJahrgang(USERS.konfi1.id, zweiterJahrgang);
+      expect(res.status).toBe(200);
+
+      const gebucht = await buchung(gemeinsam, USERS.konfi1.id);
+      expect(gebucht).not.toBeNull();
+      expect(gebucht.status).toBe('confirmed');
+    });
+
+    it('Ein vergangener Pflichttermin bleibt in der Historie stehen', async () => {
+      const vergangen = await pflichtTermin(JAHRGAENGE.jahrgang1.id, -30);
+      await db.query(
+        `INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
+         VALUES ($1, $2, 'confirmed', NOW(), $3)`,
+        [vergangen, USERS.konfi1.id, ORGS.org1.id]
+      );
+
+      const res = await wechsleJahrgang(USERS.konfi1.id, zweiterJahrgang);
+      expect(res.status).toBe(200);
+
+      expect(await buchung(vergangen, USERS.konfi1.id)).not.toBeNull();
     });
   });
 });

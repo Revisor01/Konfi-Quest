@@ -37,7 +37,13 @@ async function darfRaumBetreten(db, roomId, user) {
   );
   if (!raum) return { ok: false, grund: 'nicht gefunden' };
 
-  if (raum.organization_id !== user.organization_id) {
+  // Numerisch vergleichen, nicht strikt: Der pg-Treiber liefert bigint als
+  // String ("1"), waehrend die Socket-Auth nach einem Organisationswechsel
+  // eine Zahl setzt (parseInt). Ein strikter Vergleich sperrte
+  // Mehr-Organisations-Leitungen aus jedem Chat ihrer aktiven Zweitgemeinde
+  // aus — auch aus ihren eigenen (Befund 24.08.2026, gegen Produktion
+  // gemessen).
+  if (Number(raum.organization_id) !== Number(user.organization_id)) {
     return { ok: false, grund: `Org-Isolation (Raum-Org ${raum.organization_id})` };
   }
 

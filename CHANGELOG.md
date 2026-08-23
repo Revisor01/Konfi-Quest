@@ -97,6 +97,23 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Wer sich von einem Termin abmeldet, verlässt jetzt auch den zugehörigen
+  Chat. Bisher galt das nur, wenn Teamer:innen sich selbst abmeldeten — Konfis
+  blieben im Chat und lasen dort weiter mit, obwohl sie nicht mehr dabei waren.
+  Selbst verlassen konnten sie ihn auch nicht.
+- Trägt die Leitung jemanden aus einem Termin aus, verlässt diese Person
+  ebenfalls den Chat dazu.
+- Kommt zu einem Pflichttermin nachträglich ein weiterer Jahrgang dazu, werden
+  dessen Konfis jetzt angemeldet. Bisher blieben sie ohne Hinweis außen vor.
+- Beim Wechsel in einen anderen Jahrgang fallen die künftigen Pflichttermine des
+  alten Jahrgangs weg. Bisher standen die Konfis in den Pflichtterminen beider
+  Jahrgänge. Bereits erfasste Anwesenheiten und vergangene Termine bleiben
+  unangetastet.
+- Konnte eine Aktivität nicht eingetragen werden, blieb das Fenster wortlos
+  stehen. Jetzt erscheint die Begründung — etwa wenn die Punktart für den
+  Jahrgang abgeschaltet ist.
+- Leitungen, die zu mehreren Gemeinden gehören, kamen nach dem Wechsel in die
+  zweite Gemeinde in keinen ihrer dortigen Chats mehr hinein.
 - Aktivitäten ließen sich nicht mehr löschen, sobald irgendwann ein Antrag
   darauf gestellt wurde — auch wenn er abgelehnt worden war. Abgelehnte Anträge
   stehen dem Löschen jetzt nicht mehr im Weg und werden mit entfernt. Gesperrt

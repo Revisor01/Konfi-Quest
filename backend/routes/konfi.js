@@ -10,6 +10,7 @@ const { fetchTageslosung } = require('../services/losungService');
 const { encryptBuffer, decryptBuffer } = require('../utils/photoCrypto');
 const { deletePhotoFile } = require('../utils/photoStorage');
 const { checkExistingBooking, getEventWithCounts, validateRegistrationWindow, determineBookingStatus, promoteFromWaitlist } = require('../utils/bookingUtils');
+const { removeFromEventChat } = require('../utils/eventChat');
 const { computeCurrentStreak } = require('../utils/streakCalculation');
 const { getKonfiBadgeProgress } = require('../utils/konfiBadgeProgress');
 // Single Source of Truth: welche Events zaehlen fuer Konfi-Badges (kein Pflicht/Konfirmation).
@@ -1726,6 +1727,11 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         'DELETE FROM event_bookings WHERE user_id = $1 AND event_id = $2',
         [konfiId, eventId]
       );
+
+      // Auch aus dem Event-Chat entfernen. Fehlte hier bisher, waehrend die
+      // Teamer-Abmeldung es tat — Konfis blieben nach der Abmeldung im Chat
+      // und konnten ihn nicht einmal manuell verlassen (Befund 24.08.2026).
+      await removeFromEventChat(db, eventId, konfiId, req.user.organization_id);
 
       // Nachrücken von Warteliste wenn ein bestätigter Platz frei wird
       if (registration.status === 'confirmed') {

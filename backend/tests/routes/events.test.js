@@ -1534,6 +1534,121 @@ describe('Events Routes', () => {
       expect(konfi2Booking).toBeDefined();
       expect(konfi2Booking.status).toBe('confirmed');
     });
+
+    // Befund 24.08.2026: Das Nachbuchen haengt an `!oldEvent.mandatory` und
+    // greift damit NUR bei der Umwandlung freiwillig -> Pflicht. Wird zu einem
+    // Termin, der schon Pflicht ist, ein weiterer Jahrgang ergaenzt, blieben
+    // dessen Konfis ungebucht — still, ohne Hinweis in der Leitungsansicht.
+    it('Ein zusaetzlicher Jahrgang an einem bestehenden Pflicht-Event bucht dessen Konfis nach', async () => {
+      const zukunft = new Date();
+      zukunft.setDate(zukunft.getDate() + 14);
+
+      // Zweiter Jahrgang in DERSELBEN Organisation — der Seed hat je Org nur einen.
+      const { rows: [jg] } = await db.query(
+        `INSERT INTO jahrgaenge (name, organization_id, confirmation_date)
+         VALUES ('2026/2027', $1, '2027-05-01') RETURNING id`,
+        [ORGS.org1.id]
+      );
+      const { rows: [neuerKonfi] } = await db.query(
+        `INSERT INTO users (username, display_name, password_hash, role_id, organization_id, is_active)
+         VALUES ('konfi-jg2', 'Konfi Jahrgang 2', 'x', $1, $2, true) RETURNING id`,
+        [USERS.konfi1.role_id, ORGS.org1.id]
+      );
+      await db.query(
+        `INSERT INTO konfi_profiles (user_id, jahrgang_id, gottesdienst_points, gemeinde_points, organization_id)
+         VALUES ($1, $2, 0, 0, $3)`,
+        [neuerKonfi.id, jg.id, ORGS.org1.id]
+      );
+
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Pflichttermin mit spaeterem Jahrgang',
+          event_date: zukunft.toISOString(),
+          mandatory: true,
+          jahrgang_ids: [JAHRGAENGE.jahrgang1.id],
+        });
+      expect(createRes.status).toBe(201);
+      const eventId = createRes.body.id;
+
+      // Der neue Jahrgang haengt noch nicht dran, also darf hier nichts stehen.
+      const { rows: vorher } = await db.query(
+        'SELECT 1 FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [eventId, neuerKonfi.id]
+      );
+      expect(vorher.length).toBe(0);
+
+      // Jetzt den zweiten Jahrgang ergaenzen — mandatory bleibt true.
+      const updateRes = await request(app)
+        .put(`/api/events/${eventId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Pflichttermin mit spaeterem Jahrgang',
+          event_date: zukunft.toISOString(),
+          mandatory: true,
+          jahrgang_ids: [JAHRGAENGE.jahrgang1.id, jg.id],
+        });
+      expect(updateRes.status).toBe(200);
+
+      const { rows: nachher } = await db.query(
+        'SELECT status FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [eventId, neuerKonfi.id]
+      );
+      expect(nachher.length).toBe(1);
+      expect(nachher[0].status).toBe('confirmed');
+
+      // Die Konfis des urspruenglichen Jahrgangs bleiben unangetastet.
+      const { rows: alte } = await db.query(
+        'SELECT 1 FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [eventId, USERS.konfi1.id]
+      );
+      expect(alte.length).toBe(1);
+    });
+
+    // Gegenprobe zum Fix oben: Der Enroll laeuft jetzt bei JEDEM Speichern
+    // eines Pflicht-Termins. Wer sich abgemeldet hat (Status 'opted_out'),
+    // darf dadurch nicht stillschweigend zurueckgeholt werden.
+    it('Ein abgemeldeter Konfi wird beim Speichern nicht zurueckgeholt', async () => {
+      const zukunft = new Date();
+      zukunft.setDate(zukunft.getDate() + 14);
+
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Pflichttermin mit Abmeldung',
+          event_date: zukunft.toISOString(),
+          mandatory: true,
+          jahrgang_ids: [JAHRGAENGE.jahrgang1.id],
+        });
+      expect(createRes.status).toBe(201);
+      const eventId = createRes.body.id;
+
+      await db.query(
+        `UPDATE event_bookings SET status = 'opted_out', opt_out_reason = 'krank', opt_out_date = NOW()
+         WHERE event_id = $1 AND user_id = $2`,
+        [eventId, USERS.konfi1.id]
+      );
+
+      const updateRes = await request(app)
+        .put(`/api/events/${eventId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Pflichttermin mit Abmeldung, umbenannt',
+          event_date: zukunft.toISOString(),
+          mandatory: true,
+          jahrgang_ids: [JAHRGAENGE.jahrgang1.id],
+        });
+      expect(updateRes.status).toBe(200);
+
+      const { rows } = await db.query(
+        'SELECT status FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [eventId, USERS.konfi1.id]
+      );
+      expect(rows.length).toBe(1);
+      expect(rows[0].status).toBe('opted_out');
+    });
   });
 
   // ================================================================

@@ -8,6 +8,7 @@ const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { checkExistingBooking, validateRegistrationWindow, determineBookingStatus, promoteFromWaitlist, isRegistrationOpenForKonfis } = require('../utils/bookingUtils');
 const { allIdsBelongToOrg } = require('../utils/orgOwnership');
+const { removeFromEventChat } = require('../utils/eventChat');
 
 const QR_SECRET = process.env.QR_SECRET;
 if (!QR_SECRET) {
@@ -1091,8 +1092,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         await client.query(jahrgangQuery, [id, jahrgang_ids]);
       }
 
-      // Auto-Enrollment bei Umwandlung zu Pflicht-Event
-      if (mandatory && oldEvent && !oldEvent.mandatory && jahrgang_ids && jahrgang_ids.length > 0) {
+      // Auto-Enrollment fuer Pflicht-Events. Frueher haing das an
+      // `!oldEvent.mandatory` und griff damit nur bei der Umwandlung
+      // freiwillig -> Pflicht. Kam zu einem Termin, der schon Pflicht war, ein
+      // weiterer Jahrgang dazu, blieben dessen Konfis still ungebucht
+      // (Befund 24.08.2026). ON CONFLICT DO NOTHING macht den Lauf idempotent,
+      // bestehende Buchungen bleiben also unangetastet.
+      if (mandatory && jahrgang_ids && jahrgang_ids.length > 0) {
         const enrollQuery = `
           INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
           SELECT $1, u.id, 'confirmed', NOW(), $3
@@ -1843,17 +1849,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         // Delete the booking
         await client.query("DELETE FROM event_bookings WHERE event_id = $1 AND user_id = $2 AND organization_id = $3", [eventId, userId, req.user.organization_id]);
 
-        // Wer sich vom Event abmeldet, fliegt auch aus dem zugehoerigen Event-Chat
-        // (chat_rooms.event_id = dieses Event). Sonst bleibt man im Chat, obwohl
-        // man nicht mehr teilnimmt.
-        await client.query(
-          `DELETE FROM chat_participants
-           WHERE user_id = $1
-             AND room_id IN (
-               SELECT id FROM chat_rooms WHERE event_id = $2 AND organization_id = $3
-             )`,
-          [userId, eventId, req.user.organization_id]
-        );
+        // Wer sich vom Event abmeldet, fliegt auch aus dem zugehoerigen Event-Chat.
+        // Sonst bleibt man im Chat, obwohl man nicht mehr teilnimmt.
+        await removeFromEventChat(client, eventId, userId, req.user.organization_id);
 
         // If a confirmed Konfi-spot was opened, auto-promote from waitlist (nur für Konfis relevant).
         // Kapazitaet wird SLOT-bezogen geprueft, wenn die Buchung an einem Timeslot hing —
@@ -2192,6 +2190,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
       // Delete the booking
       await db.query("DELETE FROM event_bookings WHERE id = $1", [bookingId]);
+
+      // Wer von der Leitung ausgetragen wird, gehoert auch nicht mehr in den
+      // Event-Chat. Bisher tat das nur die Selbstabmeldung der Teamer
+      // (Befund 24.08.2026).
+      await removeFromEventChat(db, eventId, booking.user_id, req.user.organization_id);
 
       // Auto-promote from waitlist if the deleted booking was confirmed.
       // Konfi- und Teamer-Kontingent sind strikt getrennt: ein frei gewordener

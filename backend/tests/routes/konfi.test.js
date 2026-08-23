@@ -926,4 +926,80 @@ describe('Konfi Routes', () => {
     });
   });
 
+  // Befund 24.08.2026: Die Abmeldung entfernte nur bei den Teamern aus dem
+  // Event-Chat. Konfis blieben drin und lasen weiter mit — und konnten den
+  // Chat auch nicht selbst verlassen, weil chat.js genau auf diese Abmeldung
+  // verweist.
+  describe('DELETE /api/konfi/events/:id/register — Event-Chat', () => {
+    // Hilfsfunktion: Termin weit genug in der Zukunft (die Abmeldung ist nur
+    // bis zwei Tage vorher moeglich), dazu ein Chat und eine Buchung.
+    const terminMitChat = async () => {
+      const zukunft = new Date();
+      zukunft.setDate(zukunft.getDate() + 20);
+
+      const { rows: [event] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, max_participants, registration_opens_at)
+         VALUES ('Termin mit Chat', $1, $2, 20, NOW() - INTERVAL '1 day') RETURNING id`,
+        [zukunft.toISOString(), ORGS.org1.id]
+      );
+      const { rows: [raum] } = await db.query(
+        `INSERT INTO chat_rooms (name, type, event_id, created_by, organization_id)
+         VALUES ('Termin mit Chat - Chat', 'group', $1, $2, $3) RETURNING id`,
+        [event.id, USERS.admin1.id, ORGS.org1.id]
+      );
+      await db.query(
+        `INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
+         VALUES ($1, $2, 'confirmed', NOW(), $3)`,
+        [event.id, USERS.konfi1.id, ORGS.org1.id]
+      );
+      await db.query(
+        `INSERT INTO chat_participants (room_id, user_id, user_type)
+         VALUES ($1, $2, 'konfi'), ($1, $3, 'admin')`,
+        [raum.id, USERS.konfi1.id, USERS.admin1.id]
+      );
+      return { eventId: event.id, roomId: raum.id };
+    };
+
+    const imChat = async (roomId, userId) => {
+      const { rows } = await db.query(
+        'SELECT 1 FROM chat_participants WHERE room_id = $1 AND user_id = $2',
+        [roomId, userId]
+      );
+      return rows.length === 1;
+    };
+
+    it('Der abgemeldete Konfi fliegt aus dem Event-Chat', async () => {
+      const { eventId, roomId } = await terminMitChat();
+      expect(await imChat(roomId, USERS.konfi1.id)).toBe(true);
+
+      const res = await request(app)
+        .delete(`/api/konfi/events/${eventId}/register`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(res.status).toBe(200);
+
+      expect(await imChat(roomId, USERS.konfi1.id)).toBe(false);
+    });
+
+    it('Alle anderen bleiben im Event-Chat', async () => {
+      const { eventId, roomId } = await terminMitChat();
+
+      await request(app)
+        .delete(`/api/konfi/events/${eventId}/register`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(await imChat(roomId, USERS.admin1.id)).toBe(true);
+    });
+
+    it('Chats anderer Termine bleiben unberuehrt', async () => {
+      const { eventId } = await terminMitChat();
+      const zweiter = await terminMitChat();
+
+      await request(app)
+        .delete(`/api/konfi/events/${eventId}/register`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(await imChat(zweiter.roomId, USERS.konfi1.id)).toBe(true);
+    });
+  });
+
 });

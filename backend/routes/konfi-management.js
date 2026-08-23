@@ -301,6 +301,37 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
 
             // Auto-Enrollment für zukünftige Pflicht-Events des neuen Jahrgangs
             if (currentProfile && currentProfile.jahrgang_id !== parseInt(jahrgang_id)) {
+              // Zuerst die Pflichttermine des ALTEN Jahrgangs abraeumen. Ohne das
+              // blieb der Konfi dort gebucht und stand anschliessend in den
+              // Pflichtterminen beider Jahrgaenge (Befund 24.08.2026).
+              // Bewusst eng gefasst: nur kuenftige Pflichttermine, nur solange
+              // keine Anwesenheit erfasst ist und der Termin nicht auch zum
+              // neuen Jahrgang gehoert — Historie bleibt damit unberuehrt.
+              if (currentProfile.jahrgang_id) {
+                try {
+                  await db.query(
+                    `DELETE FROM event_bookings eb
+                     USING events e
+                     WHERE eb.event_id = e.id
+                       AND eb.user_id = $1
+                       AND eb.attendance_status IS NULL
+                       AND e.mandatory = true
+                       AND e.event_date > NOW()
+                       AND e.organization_id = $2
+                       AND EXISTS (
+                         SELECT 1 FROM event_jahrgang_assignments eja
+                         WHERE eja.event_id = e.id AND eja.jahrgang_id = $3
+                       )
+                       AND NOT EXISTS (
+                         SELECT 1 FROM event_jahrgang_assignments eja
+                         WHERE eja.event_id = e.id AND eja.jahrgang_id = $4
+                       )`,
+                    [req.params.id, req.user.organization_id, currentProfile.jahrgang_id, jahrgang_id]
+                  );
+                } catch (unenrollErr) {
+                  console.error('Abmelden von Pflicht-Events des alten Jahrgangs fehlgeschlagen:', unenrollErr);
+                }
+              }
               try {
                 const enrollFutureEventsQuery = `
                   INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
