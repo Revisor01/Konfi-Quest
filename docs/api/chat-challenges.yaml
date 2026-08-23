@@ -111,12 +111,14 @@
 #   wird NUR gegen die Org geprueft, nicht gegen Rollen. Ein Konfi kann so
 #   einen "direct"-Raum mit anderen Konfis (auch mehreren) anlegen und mit
 #   ihnen chatten — POST /direct blockiert genau das.
-# LUECKE 2 (anonyme Umfragen): GET /rooms/:roomId/messages und das
-#   pollUpdated-Socket-Event liefern bei anonymous=true zwar keinen user_name,
-#   aber weiterhin user_id und user_type JEDER Stimme. Ueber die
-#   Teilnehmerliste (Frage 2) kann jeder Client die Namen aufloesen —
-#   die Anonymitaet ist nur kosmetisch (anders als bei Challenges, wo der
-#   Name serverseitig nie mitkommt).
+# LUECKE 2 (anonyme Umfragen) — BEHOBEN 2026-08-23: GET /rooms/:roomId/messages
+#   und das pollUpdated-Event lieferten bei anonymous=true zwar keinen
+#   user_name, aber weiterhin user_id und user_type JEDER Stimme. Ueber die
+#   Teilnehmerliste (Frage 2) liess sich daraus aufloesen, wer was gewaehlt
+#   hat. Jetzt kommen fremde Stimmen mit user_id=null und user_type=null; nur
+#   die EIGENE Stimme behaelt ihre Kennung, damit der Client sie markieren
+#   kann. Das gilt auch gegenueber der Leitung — anders als bei Challenges,
+#   wo sie bewusst alles sieht.
 # LUECKE 3 (GET /chat/files/:filename): Token wird auch als ?token=
 #   Query-Parameter akzeptiert (landet in Access-Logs/Referrern). Die
 #   Challenges-Route verzichtet aus genau diesem Grund bewusst darauf.

@@ -49,6 +49,36 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   // identisch zu GET /messages: options als Array, anonymitaets-bewusste Votes
   // (bei anonymen Umfragen ohne user_name). messageId ist die message_id der
   // Poll-Nachricht, damit der Client die richtige Nachricht im State findet.
+  // Stimmen einer Umfrage fuer die Auslieferung aufbereiten.
+  //
+  // Bei anonymen Umfragen wurde bisher nur der Name weggelassen, user_id und
+  // user_type aber weiterhin je Stimme mitgeliefert. Ueber die Teilnehmerliste
+  // (GET /rooms/:id/participants) liess sich daraus aufloesen, wer was gewaehlt
+  // hat — die zugesagte Anonymitaet war nur kosmetisch (Befund 23.08.2026).
+  //
+  // Das Frontend braucht die Kennung ausschliesslich, um die EIGENE Stimme zu
+  // markieren (MessageBubble: vote.user_id === user.id && vote.user_type ===
+  // user.type). Deshalb wird bei anonymen Umfragen nur noch die eigene Stimme
+  // mit Kennung ausgeliefert; fremde zaehlen anonym mit.
+  const stimmenAufbereiten = (rawVotes, anonym, empfaengerId, empfaengerTyp) =>
+    rawVotes.map(v => {
+      const eigene = v.user_id === empfaengerId && v.user_type === empfaengerTyp;
+      if (!anonym) {
+        return {
+          user_id: v.user_id,
+          user_type: v.user_type,
+          option_index: v.option_index,
+          user_name: v.voter_name,
+        };
+      }
+      return {
+        user_id: eigene ? v.user_id : null,
+        user_type: eigene ? v.user_type : null,
+        option_index: v.option_index,
+        user_name: undefined,
+      };
+    });
+
   const emitPollUpdate = async (pollDbId, roomId) => {
     if (!io) return; // io-defensiv: in Tests kein Socket -> No-op
     try {
@@ -81,12 +111,11 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         anonymous: isAnonymous,
         exclusive_options: Boolean(poll.exclusive_options),
         expires_at: poll.expires_at,
-        votes: rawVotes.map(v => ({
-          user_id: v.user_id,
-          user_type: v.user_type,
-          option_index: v.option_index,
-          user_name: isAnonymous ? undefined : v.voter_name,
-        })),
+        // Broadcast an den ganzen Raum: Es gibt keinen einzelnen Empfaenger,
+        // also kann hier keine "eigene" Stimme markiert werden. Bei anonymen
+        // Umfragen fallen alle Kennungen weg; der Client holt seine eigene
+        // Markierung ueber GET /rooms/:id/messages.
+        votes: stimmenAufbereiten(rawVotes, isAnonymous, null, null),
       };
 
       io.to(`room_${roomId}`).emit('pollUpdated', {
@@ -781,12 +810,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
             // Namen NICHT ausliefern (nur Zaehlung), damit niemand sehen kann, wer
             // was gewaehlt hat.
             const rawVotes = votesMap[msg.poll_id] || [];
-            msg.votes = rawVotes.map(v => ({
-              user_id: v.user_id,
-              user_type: v.user_type,
-              option_index: v.option_index,
-              user_name: msg.anonymous ? undefined : v.voter_name,
-            }));
+            msg.votes = stimmenAufbereiten(rawVotes, msg.anonymous, userId, userType);
           }
           return msg;
         });

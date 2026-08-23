@@ -13,6 +13,7 @@ describe('Chat Routes', () => {
   let app;
   let db;
   let konfi1Token;
+  let konfi2Token;
   let konfi3Token;
   let admin1Token;
   let teamer1Token;
@@ -30,6 +31,7 @@ describe('Chat Routes', () => {
     // geseedete DB faelschlich ueberspringen.
     chatSyncCache.clear();
     konfi1Token = generateToken('konfi1');
+    konfi2Token = generateToken('konfi2');
     konfi3Token = generateToken('konfi3');
     admin1Token = generateToken('admin1');
     teamer1Token = generateToken('teamer1');
@@ -770,6 +772,108 @@ describe('Chat Routes', () => {
         });
 
       expect(res.status).toBe(403);
+    });
+  });
+
+  // ================================================================
+  // Anonyme Umfragen: Kennungen fremder Stimmen
+  //
+  // Befund 23.08.2026: Bei anonymous=true fehlte zwar der Name, user_id und
+  // user_type kamen aber je Stimme weiterhin mit. Ueber die Teilnehmerliste
+  // liess sich daraus aufloesen, wer was gewaehlt hat.
+  // ================================================================
+  describe('GET /api/chat/rooms/:roomId/messages — Anonymitaet von Umfragen', () => {
+    const umfrageAnlegen = async (anonymous) => {
+      const res = await request(app)
+        .post(`/api/chat/rooms/${CHAT_ROOMS.jahrgang.id}/polls`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ question: 'Wer kommt mit?', options: ['Ja', 'Nein'], anonymous });
+      expect(res.status).toBe(201);
+      return res.body;
+    };
+
+    const abstimmen = async (token, messageId, optionIndex) => {
+      const res = await request(app)
+        .post(`/api/chat/messages/${messageId}/vote`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ option_index: optionIndex });
+      expect(res.status).toBe(200);
+    };
+
+    const umfrageLesen = async (token, messageId) => {
+      const res = await request(app)
+        .get(`/api/chat/rooms/${CHAT_ROOMS.jahrgang.id}/messages`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      const treffer = res.body.find(m => m.id === messageId);
+      expect(treffer).toBeDefined();
+      return treffer;
+    };
+
+    it('anonym: fremde Stimmen kommen OHNE user_id und user_type', async () => {
+      const poll = await umfrageAnlegen(true);
+      await abstimmen(konfi1Token, poll.message_id, 0);
+
+      // Konfi2 liest: die Stimme von Konfi1 ist fremd.
+      const msg = await umfrageLesen(konfi2Token, poll.message_id);
+      expect(msg.anonymous).toBe(true);
+      expect(msg.votes).toHaveLength(1);
+      expect(msg.votes[0].user_id).toBeNull();
+      expect(msg.votes[0].user_type).toBeNull();
+      expect(msg.votes[0].user_name).toBeUndefined();
+      // Die Zaehlung bleibt erhalten — nur die Zuordnung faellt weg.
+      expect(msg.votes[0].option_index).toBe(0);
+    });
+
+    it('anonym: die EIGENE Stimme behaelt ihre Kennung (sonst nicht markierbar)', async () => {
+      const poll = await umfrageAnlegen(true);
+      await abstimmen(konfi1Token, poll.message_id, 1);
+
+      const msg = await umfrageLesen(konfi1Token, poll.message_id);
+      expect(msg.votes).toHaveLength(1);
+      expect(msg.votes[0].user_id).toBe(USERS.konfi1.id);
+      expect(msg.votes[0].user_type).toBe('konfi');
+      expect(msg.votes[0].option_index).toBe(1);
+    });
+
+    it('anonym mit mehreren Stimmen: nur die eigene traegt eine Kennung', async () => {
+      const poll = await umfrageAnlegen(true);
+      await abstimmen(konfi1Token, poll.message_id, 0);
+      await abstimmen(konfi2Token, poll.message_id, 1);
+
+      const msg = await umfrageLesen(konfi1Token, poll.message_id);
+      expect(msg.votes).toHaveLength(2);
+
+      const eigene = msg.votes.filter(v => v.user_id !== null);
+      const fremde = msg.votes.filter(v => v.user_id === null);
+      expect(eigene).toHaveLength(1);
+      expect(eigene[0].user_id).toBe(USERS.konfi1.id);
+      expect(fremde).toHaveLength(1);
+      expect(fremde[0].user_type).toBeNull();
+    });
+
+    it('nicht anonym: Kennung UND Name kommen mit — der erlaubte Fall', async () => {
+      const poll = await umfrageAnlegen(false);
+      await abstimmen(konfi1Token, poll.message_id, 0);
+
+      const msg = await umfrageLesen(konfi2Token, poll.message_id);
+      expect(msg.anonymous).toBe(false);
+      expect(msg.votes).toHaveLength(1);
+      expect(msg.votes[0].user_id).toBe(USERS.konfi1.id);
+      expect(msg.votes[0].user_type).toBe('konfi');
+      expect(msg.votes[0].user_name).toBe(USERS.konfi1.display_name);
+    });
+
+    it('anonym: auch die Leitung kann fremde Stimmen nicht zuordnen', async () => {
+      // Die Zusage gilt gegenueber der Gruppe UND der Leitung — anders als bei
+      // Challenges, wo die Leitung bewusst alles sieht.
+      const poll = await umfrageAnlegen(true);
+      await abstimmen(konfi1Token, poll.message_id, 0);
+
+      const msg = await umfrageLesen(admin1Token, poll.message_id);
+      expect(msg.votes).toHaveLength(1);
+      expect(msg.votes[0].user_id).toBeNull();
+      expect(msg.votes[0].user_type).toBeNull();
     });
   });
 });

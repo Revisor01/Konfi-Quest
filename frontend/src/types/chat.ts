@@ -7,8 +7,11 @@
 export type ChatUserType = 'admin' | 'teamer' | 'konfi';
 
 export interface PollVote {
-  user_id: number;
-  user_type: ChatUserType;
+  // Bei anonymen Umfragen liefert der Server fuer FREMDE Stimmen null: sonst
+  // liesse sich ueber die Teilnehmerliste aufloesen, wer was gewaehlt hat. Die
+  // eigene Stimme behaelt ihre Kennung, damit sie markiert werden kann.
+  user_id: number | null;
+  user_type: ChatUserType | null;
   option_index: number;
   user_name?: string;
 }
