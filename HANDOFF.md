@@ -1,14 +1,45 @@
-# Handoff — Stand 22.08.2026
+# Handoff — Stand 23.08.2026
 
 Übergabe an die nächste Sitzung. Alles unten Beschriebene ist auf `main`,
 gepusht, CI grün und auf Produktion deployt.
 
 ## Wo wir stehen
 
-- Branch `main`, letzter Stand `53743b8` (auf Produktion deployt, CI gruen).
+- Branch `main`, letzter Stand `c1779d1` (auf Produktion deployt, CI grün).
 - **Produktion läuft auf 2.0.0** (Server `kkd-fahrtenbuch.de`, siehe unten).
-- TestFlight: Build 137 gebaut, gegen die **echte Produktion** (nicht Staging).
+- **TestFlight: Build 139** (VALID, Testinfos gesetzt). Die UI-Änderungen von
+  ganz zuletzt ("Was ist neu"-Banner, Umzugs-Hinweis entfernt) sind darin
+  **nicht** enthalten — die bräuchten Build 140.
 - iOS-Minimum ist seit Build 130 **16.4** (swiper 14 verlangt Safari 16.4+).
+
+## Offen — hier weitermachen
+
+### 1. Entscheidung von Simon: Tab "Events" umbenennen?
+
+Der Tab heißt wie eines seiner eigenen Segmente:
+
+```
+Tab "Events"
+ ├─ Segment "Events"        <- gleicher Name wie der Tab
+ └─ Segment "Aktivitäten"
+```
+
+Simons Idee war "Punkte". Das trifft aber nur die Hälfte: Aktivitäten geben
+Punkte, **Termine meist nicht** (Gottesdienste, Konfitage, Freizeiten sind
+Verabredungen). Vorgeschlagene Alternativen, Entscheidung steht noch aus:
+
+| | Tab | Segmente |
+|---|---|---|
+| A | Termine | Termine · Aktivitäten |
+| B | Mitmachen | Termine · Aktivitäten |
+| C | Punkte | Termine · Aktivitäten |
+
+Betrifft **alle drei Ansichten** (`MainTabs.tsx:274/339/404` plus die
+Segment-Labels in `AdminEventsPage.tsx:542` und `KonfiEventsPage.tsx:381`).
+
+### 2. Nach der Entscheidung: Build 140
+
+Sammelt die UI-Änderungen ein, die nach Build 139 kamen.
 
 ## Server — wichtig, hat sich geändert
 
@@ -138,16 +169,45 @@ Offen:
 - **Bewusst nicht geändert:** der 409 bei `update-email`. Dort ist der Nutzer
   angemeldet und die Meldung für die Bedienung nötig.
 
-## Was zuletzt gebaut wurde
+## Was am 22./23.08. gebaut wurde
 
-- Chat-Export für die Leitung (`GET /chat/rooms/:roomId/export`, Text oder JSON)
-- Chat-Nachrichten verschwanden nicht mehr (zwei Ursachen: Reload ersetzte die
-  Liste, "Erneut senden" lief ins Leere)
-- Teamer:innen über den Plus-Button in der Konfi-Übersicht anlegen
-- "Was ist neu?" als eigener Block über den Einstellungen (alle drei Rollen)
-- Challenges: Reiter Aktuell/Archiv
-- Abgesagte Termine werden auch der Leitung durchgestrichen angezeigt
-- Doppelte Aktivität "Gottesdienst" in Hennstedt zusammengeführt
+**Tageslosung** — wieder da (ketiv als Notbetrieb-Stack, siehe oben) UND
+wirklich abschaltbar: Ist sie in den Einstellungen aus, prüft das jetzt der
+Server (204) *und* alle drei Frontend-Aufrufer. Vorher prüften nur zwei von
+drei, und die Konfi-Startseite lud sie sogar doppelt.
+
+**Sicherheit** (alle gegen Produktion verifiziert, nicht nur im Test):
+- `qr_token` lag in der Terminliste für alle Rollen — ein Konfi konnte sich
+  aus der Ferne als anwesend eintragen. Live nachgewiesen, jetzt weg.
+- Org-Stammdaten (Kontakt, Adresse, Lizenz) waren für Konfis abrufbar.
+  Betraf `/organizations/:id`, `/:id/stats` UND `/current`.
+- Passwortwechsel beendete keine Sitzungen (`token_invalidated_at` existierte,
+  wurde nur nie gesetzt). Reset-Token lag im Klartext.
+- **Chat: Teamer:innen erreichten jeden Konfi der Gemeinde.** Jetzt nur noch
+  die eigenen Jahrgänge; ohne Zuweisung gar keine. Leitung/Admins alle.
+- Push kam nach dem Abmelden weiter an (Client-Cleanup war best-effort mit
+  drei Bedingungen). Die Logout-Route räumt den Token jetzt selbst ab.
+- **Konten ließen sich nicht löschen**, wenn damit je Punkte vergeben wurden —
+  17 Fremdschlüssel ohne `ON DELETE`, nur einer war behandelt.
+
+**Bedienung:**
+- Termine mit unbegrenzter Teilnehmerzahl anlegbar (`0` wurde von einem
+  truthy-Check verworfen)
+- Chat: Reiter "Ungelesen" statt "Direkt", Kacheln sind Sprungziele
+- Challenges (Leitung): Reiter Aktuell / Geplant / Archiv
+- Teamer anlegen: Teamer-Farben, Benutzername automatisch, kein Aktiv-Schalter
+- Benutzernamen mit Akzent: `Noémi Burau` → `noemi.burau` statt `noemiburau`
+- "Was ist neu" als eigener Banner statt Listeneintrag (alle drei Ansichten)
+- Umzugs-Hinweis unter Termine entfernt
+
+**Aufgeräumt:** Sechs tote Dateien entfernt (ExploreContainer, zwei
+Chat-Modals, uploadValidation, dateUtils, database.db). Bei
+`uploadValidation.js` geprüft: Die Magic-Byte-Prüfung liegt inline in den
+Routen und wirkt weiter — kein Sicherheitsverlust.
+
+**Nicht angefasst (bewusst):** ChangeEmail-, ChangePassword- und
+ActivityRequest-Modals gibt es je Rolle mehrfach, sind aber alle aktiv.
+Zusammenlegen wäre Refactoring mit Risiko, kein Aufräumen.
 
 ## Test-DB-Schema — erledigt (22.08.)
 
@@ -201,6 +261,22 @@ Vollständige API-Dokumentation nach **OpenAPI 3.1** über alle 223 Routen.
 `docs/api/` deckt bisher 106 ab; die 25 LÜCKE-Marker darin waren keine
 Doku-Lücken, sondern Sicherheitsbefunde — die sind jetzt abgearbeitet.
 
+## Neue Dauerregeln (seit 23.08. in ~/.claude/CLAUDE.md, ALLE Repos)
+
+- **CHANGELOG und API-Doku fortlaufend** — im selben Commit, nicht nachträglich.
+  Behobene Befunde in der Doku markieren, nicht löschen.
+- **Tests immer**, und weiche Assertions sind ein Fehler. `expect([200, 500])`
+  oder `toBeDefined()` auf einem Zähler verdecken echte Fehler.
+- **Git ohne Claude-Verweis** — kein `Co-Authored-By`, keine Session-Zeile.
+- **Konventionen**: Keep a Changelog, OpenAPI 3.1, Conventional Commits.
+- **Befunde vor dem Weitergeben prüfen** — ein Audit-Befund ist eine
+  Behauptung. (Konkret passiert: "wirkt 15 Min nach" — gemessen Sekunden.)
+- **Erst messen, dann behaupten** — mit Zahl, nicht "deutlich schneller".
+
+In der Projekt-`CLAUDE.md` neu: die **drei Ansichtsbäume** (jede Rolle hat
+einen eigenen, fast jede Funktion existiert mehrfach) und die **App-Typografie**
+(Bebas Neue + Plus Jakarta Sans, Bereichsfarben aus `variables.css`).
+
 ## Fallen, die schon Zeit gekostet haben
 
 - **Backend-Tests laufen lokal nicht** — kein Docker auf dem Mac. Nur über CI.
@@ -222,3 +298,15 @@ Doku-Lücken, sondern Sicherheitsbefunde — die sind jetzt abgearbeitet.
   Konfi-zu-Konfi-Tests schickten kein `name`; die Route antwortete mit 400
   ("Typ und Name sind erforderlich"), also lange vor der Sicherheitsprüfung.
   Bei Berechtigungstests immer den Statuscode prüfen, nicht nur "nicht 200".
+- **Beim Bauen den Commit nennen.** Build 138 wurde gestartet, bevor sieben
+  gewünschte Änderungen entstanden — sie fehlten dann im Build, und das fiel
+  erst dem Nutzer auf.
+- **Apple braucht länger als eine Stunde.** Build 138 tauchte nach 30 Minuten
+  nicht in TestFlight auf; ich hielt ihn für verloren. Er kam später an.
+  `UPLOAD SUCCEEDED` im Log ist das verlässliche Signal, nicht die Build-Liste.
+- **Drei Ansichten heißt drei Stellen.** "Was ist neu" gab es in Konfi-, Teamer-
+  UND Leitungsansicht; die dritte wäre fast durchgerutscht.
+- **`git rm` aus dem Unterverzeichnis greift nicht** wie erwartet — die
+  Löschungen fehlten still im Commit. Immer aus dem Repo-Wurzelverzeichnis.
+- **API-Doku: `whatsNew`, nicht `whatsToTest`** (siehe Memory), und das
+  Refresh-Skript für das Test-Schema filtert die `search_path`-Zeile heraus.
