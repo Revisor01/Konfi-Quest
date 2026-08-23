@@ -56,6 +56,7 @@ import SimpleCreateChatModal from './modals/SimpleCreateChatModal';
 import { ChatRoomOverview } from '../../types/chat';
 import { triggerPullHaptic } from '../../utils/haptics';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
+import { istTeamTyp } from '../../utils/chatRoles';
 
 interface ChatOverviewProps {
   onSelectRoom: (room: ChatRoomOverview) => void;
@@ -81,14 +82,18 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   const isAdmin = user?.type === 'admin';
 
   // Zentrale Logik: Ist das ein Team-Chat (= pink, gehoert in den Team-Tab)?
-  // - Direktchat: Partner ist Teamer:in (partner_user_type='admin')
+  // - Direktchat: Partner gehoert zum Team (partner_user_type 'admin' ODER 'teamer')
   // - type='admin': ausdrueckliche Team-Gruppe
   // - type='group': reiner Team-Gruppenchat (alle Teilnehmer Teamer:innen)
   // Konfi-Direktchats + gemischte/Konfi-Gruppen sind KEINE Team-Chats.
+  //
+  // chat_participants.user_type speichert 'teamer' als eigenen Wert (nicht als
+  // 'admin'). Die Pruefung nur auf 'admin' sortierte Direktchats mit
+  // Teamer:innen deshalb in den falschen Reiter.
   const isTeamChat = (room: ChatRoomOverview): boolean => {
     if (room.event_id) return false;
     if (room.type === 'admin') return true;
-    if (room.type === 'direct') return room.partner_user_type === 'admin';
+    if (room.type === 'direct') return istTeamTyp(room.partner_user_type);
     if (room.type === 'group') return room.is_team_only === true;
     return false;
   };

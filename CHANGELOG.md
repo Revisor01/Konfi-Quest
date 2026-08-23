@@ -85,6 +85,12 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Chat: Der Filter "Team" beim Anlegen eines Chats zeigte nur Admins. Die
+  Teamer:innen fehlten darin, obwohl sie zum Team gehören.
+- Chat: Teamer:innen wurden in der Personenliste wie Konfis dargestellt — in
+  der falschen Farbe und ohne ihre Funktionsbezeichnung.
+- Chat: Direktnachrichten mit Teamer:innen lagen in der Übersicht im falschen
+  Reiter und erschienen nicht unter "Team".
 - "Was ist neu?" hebt sich jetzt deutlich vom Rest der Seite ab, statt wie
   eine Einstellung zwischen anderen auszusehen.
 - Der Hinweis auf den Umzug der Aktivitäten unter Termine ist entfallen — die

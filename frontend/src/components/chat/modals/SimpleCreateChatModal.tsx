@@ -41,6 +41,7 @@ import { useBadge } from '../../../contexts/BadgeContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import { ChatUser } from '../../../types/user';
+import { istTeamTyp } from '../../../utils/chatRoles';
 
 interface SimpleCreateChatModalProps {
   onClose: () => void;
@@ -363,7 +364,9 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
     // Rollenfilter
     if (selectedRole !== 'alle') {
       if (selectedRole === 'konfi' && user.type !== 'konfi') return false;
-      if (selectedRole === 'admin' && user.type !== 'admin') return false;
+      // "Team" meint Admins UND Teamer:innen. Vorher nur 'admin' — der Filter
+      // "Team" zeigte dadurch das Team ohne seine Teamer:innen.
+      if (selectedRole === 'admin' && !istTeamTyp(user.type)) return false;
     }
 
     // Jahrgangsfilter (nur für Konfis)
@@ -565,7 +568,9 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                     {filteredUsers.map((targetUser) => {
                       const participantId = `${targetUser.type}-${targetUser.id}`;
                       const isSelected = selectedParticipants.has(participantId);
-                      const isAdmin = targetUser.type === 'admin';
+                      // Teamer:innen gehoeren zum Team, nicht zu den Konfis —
+                      // sonst Konfi-Farbe und keine Funktionsbezeichnung.
+                      const isAdmin = istTeamTyp(targetUser.type);
 
                       return (
                         <div

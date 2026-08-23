@@ -81,8 +81,11 @@ export interface ChatRoomOverview extends ChatRoomBase {
   };
   unread_count: number;
   jahrgang_name?: string;
-  // Rolle des Direktchat-Partners (nur bei type='direct'): admin=Teamer:in, konfi=Konfi.
-  partner_user_type?: 'admin' | 'konfi';
+  // Rolle des Direktchat-Partners (nur bei type='direct'). Entspricht
+  // chat_participants.user_type und kennt DREI Werte: 'admin' (Leitung/Admin),
+  // 'teamer' (Teamer:in) und 'konfi'. 'teamer' fehlte hier, obwohl die Datenbank
+  // ihn fuehrt — dadurch fiel die Verwechslung 'admin'=Team im Code nicht auf.
+  partner_user_type?: 'admin' | 'teamer' | 'konfi';
   // Reiner Team-Gruppenchat: alle Teilnehmer sind Teamer:innen (nur bei type='group' relevant).
   is_team_only?: boolean;
 }
