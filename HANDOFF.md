@@ -1,345 +1,300 @@
-# Handoff — Stand 23.08.2026
+# Handoff — Stand 24.08.2026
 
-Übergabe an die nächste Sitzung. Alles unten Beschriebene ist auf `main`,
-gepusht, CI grün und auf Produktion deployt.
+Übergabe an die nächste Sitzung. Alles unten Beschriebene ist auf `main` und
+gepusht. **Achtung: noch NICHT deployt** — Produktion läuft auf `d7a5639`,
+`main` steht auf `88aa4ba1`, acht Commits dazwischen.
 
-## Wo wir stehen
+## Sofort zu tun
 
-- Branch `main`, letzter Stand `c1779d1` (auf Produktion deployt, CI grün).
-- **Produktion läuft auf 2.0.0** (Server `kkd-fahrtenbuch.de`, siehe unten).
-- **TestFlight: Build 139** (VALID, Testinfos gesetzt). Die UI-Änderungen von
-  ganz zuletzt ("Was ist neu"-Banner, Umzugs-Hinweis entfernt) sind darin
-  **nicht** enthalten — die bräuchten Build 140.
-- iOS-Minimum ist seit Build 130 **16.4** (swiper 14 verlangt Safari 16.4+).
+### 1. CI prüfen und deployen
 
-## Offen — hier weitermachen
-
-### 1. Entscheidung von Simon: Tab "Events" umbenennen?
-
-Der Tab heißt wie eines seiner eigenen Segmente:
+Der letzte CI-Lauf (`88aa4ba1`) war beim Übergeben noch nicht durch. Erst
+prüfen, dann ausrollen:
 
 ```
-Tab "Events"
- ├─ Segment "Events"        <- gleicher Name wie der Tab
- └─ Segment "Aktivitäten"
-```
-
-Simons Idee war "Punkte". Das trifft aber nur die Hälfte: Aktivitäten geben
-Punkte, **Termine meist nicht** (Gottesdienste, Konfitage, Freizeiten sind
-Verabredungen). Vorgeschlagene Alternativen, Entscheidung steht noch aus:
-
-| | Tab | Segmente |
-|---|---|---|
-| A | Termine | Termine · Aktivitäten |
-| B | Mitmachen | Termine · Aktivitäten |
-| C | Punkte | Termine · Aktivitäten |
-
-Betrifft **alle drei Ansichten** (`MainTabs.tsx:274/339/404` plus die
-Segment-Labels in `AdminEventsPage.tsx:542` und `KonfiEventsPage.tsx:381`).
-
-### 2. Docs-Bereich unter konfi-quest.de/docs (Wunsch Simon, 23.08.)
-
-**Vorarbeit ist erledigt**, es fehlt nur noch die Freischaltung:
-
-- `scripts/build-api-docs.mjs` erzeugt die HTML-Referenz aus `docs/api/*.yaml`.
-  Aufruf: `npm --prefix frontend run docs:api`.
-- Ergebnis liegt eingecheckt unter `frontend/public/docs/api/index.html`
-  (131 Operationen). Vite kopiert `public/` unverändert nach `dist/`, damit
-  ist die Seite **bereits Teil des Frontend-Containers**.
-- Die CI prüft bei jedem Lauf, ob die Seite zum Stand der YAML-Dateien passt,
-  und schlägt sonst mit einem Hinweis fehl (Schritt "API-Referenz aktuell?").
-
-**Warum eingecheckt und nicht im Build erzeugt:** Der Docker-Kontext ist
-`./frontend` (ci.yml:118) — `scripts/` und `docs/api/` liegen darüber und sind
-im Container nicht erreichbar. Ein Build-Schritt dort würde brechen.
-
-**Was noch zu tun ist:**
-1. **Caddy: `/docs/api` schützen.** Die Seite ist derzeit unter
-   `konfi-quest.de/docs/api/` erreichbar, sobald der nächste Frontend-Container
-   deployt ist — **ungeschützt**. Die Berechtigungsmatrix ist eine Landkarte
-   für jeden, der Lücken sucht. Caddy v2.10.2 auf dem Server kann `basic_auth`,
-   genutzt wird es bisher nirgends. Im Block `konfi-quest.de` ergänzen:
-   ```
-   @apidocs path /docs/api /docs/api/*
-   basic_auth @apidocs {
-       simon <bcrypt-hash>
-   }
-   ```
-   Hash erzeugen: `caddy hash-password`. Bis dahin schützt nur `noindex`
-   im HTML-Kopf vor Suchmaschinen, nicht vor direktem Aufruf.
-2. **Allgemeiner Docs-Bereich** unter `/docs` — Inhalte noch offen
-   (Simons Wunsch). Struktur steht, `frontend/public/docs/` existiert.
-
-### 3. Nach der Entscheidung: Build 140
-
-Sammelt die UI-Änderungen ein, die nach Build 139 kamen.
-
-## Server — wichtig, hat sich geändert
-
-Der alte Server `server.godsapp.de` ist wegen einer **Netcup-Abuse-Sperre**
-nicht erreichbar (Folge des abgegriffenen SMTP-Passworts). Konfi Quest läuft
-übergangsweise auf dem Fahrtenbuch-Server:
-
-- SSH: `ssh root@kkd-fahrtenbuch.de` (185.248.143.234)
-- Stack: `/opt/konfi-quest/docker-compose.yml`
-- Container: `kq-backend`, `kq-frontend`, `kq-postgres`
-- Backups: `/opt/konfi-quest/dump/`
-
-**Deploy läuft NICHT über die CI.** Der `deploy`-Job in `.github/workflows/ci.yml`
-ist pausiert (`if: false && ...`), weil er auf den toten Portainer-Stack 249 zeigt.
-Deploy von Hand:
-
-```
+gh run list --limit 1
 cd /opt/konfi-quest
 sed -i 's|konfi-quest-backend:[a-f0-9]\{7\}|konfi-quest-backend:<SHA>|; s|konfi-quest-frontend:[a-f0-9]\{7\}|konfi-quest-frontend:<SHA>|' docker-compose.yml
 docker compose pull backend frontend && docker compose up -d
 curl -sS http://127.0.0.1:5055/api/status
 ```
 
-Wenn der alte Server zurückkommt: Deploy-Job wieder scharf schalten
-(`false &&` entfernen) und Stack-ID prüfen.
+**Zwei Sicherheitsfixes hängen daran** und wirken erst nach dem Deploy:
+- Fremde Zweiergespräche im Chat (auch der Live-Kanal)
+- Punktestand fremder Konfis über `/api/levels/konfi/:id`
 
-## Tageslosung — behoben, aber im Notbetrieb
+### 2. Nach dem Deploy: gegen Produktion prüfen
 
-`ketiv.de` lag auf dem gesperrten Server und ist weiterhin tot. Deshalb laeuft
-die Losungen-API jetzt zusaetzlich hier:
+Nicht nur den Statuscode ansehen — die Regeln selbst messen. Muster aus den
+letzten Sitzungen:
 
-- Stack: `/opt/ketiv/docker-compose.notbetrieb.yml`
-- Container: `ketiv-api`, `ketiv-postgres` (beide `unless-stopped`)
-- Nur API, kein Frontend, kein Redis. Die Losungsdaten 2025/2026 kommen aus
-  den SQL-Dumps im Repo (`sql/losungen_*.sql`), es wird nichts gescraped.
-- Haengt zusaetzlich im Netz `konfi-quest_internal`, damit `kq-backend` den
-  Namen `ketiv-api` aufloesen kann. **Wird dieses Netz neu angelegt, muss der
-  ketiv-Stack neu verbunden werden.**
-- `public/` fehlt im Repo (wird sonst per CI gebaut) und wurde von Hand als
-  Platzhalter angelegt — sonst bricht der Build.
+```
+ssh root@kkd-fahrtenbuch.de 'docker exec kq-backend node -e "
+const jwt=require(\"jsonwebtoken\");const http=require(\"http\");
+const t=jwt.sign({id:85,type:\"konfi\"},process.env.JWT_SECRET,{expiresIn:\"3m\"});
+http.get({host:\"127.0.0.1\",port:5000,path:\"/api/levels/konfi/92\",
+  headers:{Authorization:\"Bearer \"+t}},r=>console.log(r.statusCode));"'
+```
+Erwartet: **403** (vorher 200 mit Namen und Punktzahl).
 
-Zusaetzlich abgesichert, damit ein erneuter Ausfall nicht wieder die App bremst:
+---
 
-- **Negativ-Cache** im `losungService`: nach einem Fehlschlag wird der externe
-  Abruf 30 Min uebersprungen. Vorher lief jede Anfrage erneut in beide Timeouts
-  (2s intern + 5s oeffentlich); das Dashboard ruft die Losung bei jedem Oeffnen
-  ab. Gemessen: 7s -> 4,5ms.
-- Die Teamer-Route hat jetzt denselben DB-Fallback wie die Konfi-Route.
+## Offen — das Wichtigste zuerst
 
-Noch offen: **Der Losungs-API-Key steht im Klartext im Backend-Log**, weil er
-als Query-Parameter in der URL steht und die Fehlermeldung die ganze URL ausgibt.
-Key ist rotiert, aber Logs werden aufbewahrt.
+### A) Punkteziel 0: die Analyse ist NICHT fertig
 
-## Offene Punkte aus den Audits
+**Simons Auftrag: das braucht eine richtig saubere Analyse.** Eine erste
+Untersuchung gab es, sie hat aber nur einen Teil beleuchtet — nämlich die
+Anzeige. Was in den **Modals** passiert, ist offen.
 
-### Live-Updates (Socket) — Hauptbefunde behoben
-Behoben: tote Sitzung nach Login, Socket überlebt Logout, Challenges
-(Anlegen/Löschen meldeten nichts), Punkte-Signale kreuzten sich, Material
-ohne Updates, drei fehlende Socket-Trennungen.
+#### Was bisher belegt ist
 
-Ebenfalls behoben (22.08.): **Organisationswechsel**. Die Empfaengerauflösung
-in `liveUpdate.js` geht jetzt per UNION auch über `user_organizations` (mit der
-dort hinterlegten Rolle, die je Gemeinde abweichen kann), und `switchOrg` baut
-den Socket mit dem neuen Token neu auf. Betraf praktisch nur `simonluthe`,
-den einzigen Mehrfach-Nutzer (Orgs 1, 2, 4).
+Zwei Dinge werden leicht verwechselt und müssen getrennt bleiben:
 
-Offen:
-- **Detailansichten ohne Abo**: Konfi-Event-Detail, Teamer-Abzeichen,
-  Teamer-Dashboard, Zertifikate-Seite.
+| | Feld | Was es tut |
+|---|---|---|
+| **Ziel** | `target_gottesdienst` / `target_gemeinde` | eine Zahl, rein für Ringe und Fortschritt |
+| **Schalter** | `gottesdienst_enabled` / `gemeinde_enabled` | der eigentliche Aus-Knopf |
 
-### Berechtigungen — vier Lücken geschlossen
-Behoben: Punktevergabe und Punkteabzug über Organisationsgrenzen,
-Teilnehmerlisten fremder Gemeinden, `qr_token` + Entschuldigungsgründe an Konfis.
+Zum **Ziel 0** (belegt):
+- Backend nimmt 0 an (`jahrgaenge.js:20-21`, `isInt({min: 0})`)
+- Der Schieberegler beginnt bei 1 — über die App kommt niemand auf 0
+- Fast jede lesende Stelle koerziert mit `|| 10`, und `0 || 10` ergibt 10.
+  Zentral in `konfi.js:268-269` — die Konfi-App bekommt eine 0 gar nicht zu
+  sehen
+- `ActivityRings.tsx:50-52` hat einen expliziten Guard, keine Division durch 0
+- Ausnahme: Die Jahrgänge-Liste nutzt `?? 10` und zeigt ehrlich „Ziel 0"
 
-Am 22.08. abgearbeitet (alle gegen Produktion verifiziert, nicht nur im Test):
-- **qr_token in der Terminliste** — ging an ALLE Rollen, auch Konfis. Damit
-  konnte sich ein Konfi per QR-Checkin aus der Ferne als anwesend eintragen
-  und Punkte gutschreiben. Der Filter existierte nur in der Detail-Route, über
-  die Liste war er umgehbar. Live nachgewiesen (2 Token), jetzt 0.
-- **Org-Stammdaten für Konfis** — Kontaktname, Telefon, Privatadresse, Lizenz-
-  und Trial-Daten. Betraf `/organizations/:id`, `/:id/stats` UND `/current`;
-  ohne den Guard auf `/current` wäre der Rest wirkungslos gewesen. Jetzt 403.
-- **Passwortwechsel beendete keine Sitzungen** — Access-Tokens blieben gültig,
-  Refresh-Tokens bis zu 90 Tage. Der Mechanismus (`token_invalidated_at`) war
-  vorhanden, wurde nur nie gesetzt.
-- **Reset-Token im Klartext** — jetzt als Hash, Migration 123 zog den einen
-  offenen Eintrag nach. Achtung: Ein Klartext-Zweig als Übergang ist eine
-  FALLE — der gespeicherte Hash ist selbst ein gültiger Klartext-Wert und
-  funktioniert dann als Token.
-- **E-Mail-Enumeration** — die Antwort war neutral, ein fehlgeschlagener
-  Mail-Versand lieferte aber 500 und verriet damit die Existenz des Kontos.
-- **Selbst-Aussperrung** — `is_active` setzt nur noch der super_admin.
-- **Passwort-Policy** — Org-Anlage prüfte 6 Zeichen, das Bearbeiten eines
-  Users gar nichts. Jetzt überall `validatePassword`.
-- **Teamer-Filter ohne Jahrgang** — griff nur bei vorhandenen Zuweisungen.
+Zum **Schalter** wurde am 24.08. eine Lücke geschlossen: Beide zugleich
+abzuschalten war per API möglich (jetzt 400). Die Sperre gab es nur in der
+Oberfläche.
 
-### Multi-Org: der Befund war falsch, zwei andere Stellen waren es nicht
+#### Was NICHT untersucht ist — hier weitermachen
 
-Der Audit-Befund "entzogener Zugang wirkt bis zu 15 Min nach" **stimmte
-nicht**. Der Membership-Check existiert seit dem Multi-Org-Feature
-(`rbac.js:150-166`) und liefert 403; der Entzug über die App leert zusätzlich
-den Cache. Gegen Produktion gemessen: Entzug über die App wirkt **sofort**
-(200 → 401), Entzug direkt in der DB nach ~30 s (Cache-TTL).
+**Simons Frage: „Was passiert denn dann in den Modals mit Typ etc.?"**
 
-**Lehre daraus:** Audit-Befunde vor dem Weitergeben gegen den Code und
-möglichst gegen Produktion prüfen. Ich hatte die 15 Minuten ungeprüft
-übernommen und weitergereicht.
+Diese Dateien wurden nicht geprüft:
 
-Tatsächlich offen waren zwei andere Stellen, auf die die Beschreibung passte —
-beide am 22.08. behoben:
-- `GET /chat/files/:filename` setzte `req.user = decoded`. Ungeprüfte
-  Token-Angaben für die volle Laufzeit, und `organization_id` immer die
-  Primär-Org: Wer in einer Zweit-Gemeinde arbeitete, bekam seine **eigenen**
-  Chat-Dateien nicht (404).
-- Die Socket-Anmeldung (`server.js`) ebenso — und ein Socket lebt deutlich
-  länger als 15 Minuten. Jetzt eine Query je Verbindungsaufbau, nicht je
-  Nachricht.
+```
+frontend/src/components/admin/modals/BonusModal.tsx
+frontend/src/components/admin/modals/ActivityManagementModal.tsx
+frontend/src/components/admin/modals/ActivityModal.tsx
+frontend/src/components/admin/modals/ActivityRequestModal.tsx
+frontend/src/components/admin/modals/EventFormSections.tsx
+frontend/src/components/admin/modals/BadgeManagementModal.tsx
+frontend/src/components/konfi/modals/ActivityRequestModal.tsx
+frontend/src/components/konfi/modals/RequestDetailModal.tsx
+frontend/src/components/konfi/modals/PointsHistoryModal.tsx
+```
 
-Dazu zwei kleine Härtungen: Die Org-Löschung leert den Cache der Gast-User,
-und der Entzug einer Mitgliedschaft setzt `token_invalidated_at`. Niemand wird
-dadurch ausgesperrt — die Refresh-Route prüft die Mitgliedschaft neu und
-stellt ein Token ohne den entzogenen Claim aus.
+Konkrete Fragen, die zu beantworten sind:
 
-Offen:
-- **Abwägung für Simon:** Die Leitung kann private Zweier-Chats lesen und
-  exportieren. Falls nicht gewollt, Direktchats vom Admin-Bypass ausnehmen.
-- **Bewusst nicht geändert:** der 409 bei `update-email`. Dort ist der Nutzer
-  angemeldet und die Meldung für die Bedienung nötig.
+1. **Typ-Auswahl in den Modals.** Fast überall gibt es „Gottesdienst" oder
+   „Gemeinde" zur Wahl (Aktivität anlegen, Bonuspunkte, Event-Punkte,
+   Badge-Kriterium). Wird eine **abgeschaltete** Punktart dort noch angeboten?
+   Wenn ja: Man wählt sie, speichert — und der Server lehnt mit
+   `pointTypeGuard` ab. Verständliche Meldung oder stummer Fehler?
+2. **Bonuspunkte** (`BonusModal`): Der Typ ist Pflicht. Was passiert, wenn
+   beide Arten aus wären? (Seit dem 24.08. nicht mehr erreichbar, aber
+   Altbestände könnten existieren — **prüfen**, ob es solche Jahrgänge gibt.)
+3. **Event anlegen** (`EventFormSections`): `point_type` hat Default
+   `gemeinde`. Was, wenn Gemeinde im Zieljahrgang aus ist? Wird beim Anlegen
+   gewarnt, oder fällt es erst beim Verbuchen auf?
+4. **Badge-Kriterien**: „Gesamtpunkte", „Gottesdienst-Punkte" usw. werden bei
+   abgeschalteter Art nie erfüllt. Sieht die Leitung das beim Anlegen?
+5. **Ziel 0 in den Modals**: Taucht das Ziel dort überhaupt auf? Gibt es eine
+   Fortschrittsanzeige, die durch 0 teilt?
+6. **Ein Jahrgang, zwei Zustände**: Was, wenn ein Konfi in einen Jahrgang
+   **wechselt**, in dem eine Punktart aus ist, aber Punkte dieser Art hat?
+   (Der Wechsel nimmt Punkte mit — `konfi-management.js:287`.)
 
-## Was am 22./23.08. gebaut wurde
+**Methode, die sich bewährt hat:** Erst am Code belegen, dann gegen Produktion
+messen. Prüfen, ob es solche Jahrgänge überhaupt gibt:
 
-**Tageslosung** — wieder da (ketiv als Notbetrieb-Stack, siehe oben) UND
-wirklich abschaltbar: Ist sie in den Einstellungen aus, prüft das jetzt der
-Server (204) *und* alle drei Frontend-Aufrufer. Vorher prüften nur zwei von
-drei, und die Konfi-Startseite lud sie sogar doppelt.
+```sql
+SELECT id, name, organization_id, gottesdienst_enabled, gemeinde_enabled,
+       target_gottesdienst, target_gemeinde
+FROM jahrgaenge
+WHERE NOT gottesdienst_enabled OR NOT gemeinde_enabled
+   OR target_gottesdienst = 0 OR target_gemeinde = 0;
+```
 
-**Sicherheit** (alle gegen Produktion verifiziert, nicht nur im Test):
-- `qr_token` lag in der Terminliste für alle Rollen — ein Konfi konnte sich
-  aus der Ferne als anwesend eintragen. Live nachgewiesen, jetzt weg.
-- Org-Stammdaten (Kontakt, Adresse, Lizenz) waren für Konfis abrufbar.
-  Betraf `/organizations/:id`, `/:id/stats` UND `/current`.
-- Passwortwechsel beendete keine Sitzungen (`token_invalidated_at` existierte,
-  wurde nur nie gesetzt). Reset-Token lag im Klartext.
-- **Chat: Teamer:innen erreichten jeden Konfi der Gemeinde.** Jetzt nur noch
-  die eigenen Jahrgänge; ohne Zuweisung gar keine. Leitung/Admins alle.
-- Push kam nach dem Abmelden weiter an (Client-Cleanup war best-effort mit
-  drei Bedingungen). Die Logout-Route räumt den Token jetzt selbst ab.
-- **Konten ließen sich nicht löschen**, wenn damit je Punkte vergeben wurden —
-  17 Fremdschlüssel ohne `ON DELETE`, nur einer war behandelt.
+### B) Screenshots für die Knowledge Base
 
-**Bedienung:**
-- Termine mit unbegrenzter Teilnehmerzahl anlegbar (`0` wurde von einem
-  truthy-Check verworfen)
-- Chat: Reiter "Ungelesen" statt "Direkt", Kacheln sind Sprungziele
-- Challenges (Leitung): Reiter Aktuell / Geplant / Archiv
-- Teamer anlegen: Teamer-Farben, Benutzername automatisch, kein Aktiv-Schalter
-- Benutzernamen mit Akzent: `Noémi Burau` → `noemi.burau` statt `noemiburau`
-- "Was ist neu" als eigener Banner statt Listeneintrag (alle drei Ansichten)
-- Umzugs-Hinweis unter Termine entfernt
+**Simons Wunsch: Bilder in jeder Sektion.** Entschieden ist:
+- Screenshots aus der **Testgemeinde Org 4**, nicht aus Org 1 — dort stehen
+  echte Konfi-Namen, und `/docs` ist öffentlich erreichbar
+- Als **Skript** (`scripts/build-screenshots.mjs`), damit sie nach einem
+  UI-Umbau neu erzeugt werden können statt still zu veralten
 
-**Aufgeräumt:** Sechs tote Dateien entfernt (ExploreContainer, zwei
-Chat-Modals, uploadValidation, dateUtils, database.db). Bei
-`uploadValidation.js` geprüft: Die Magic-Byte-Prüfung liegt inline in den
-Routen und wirkt weiter — kein Sicherheitsverlust.
+**Simons Anweisung wörtlich:** „Lege die Konten an, fülle alles mit Daten, pass
+es so an, dass es echt aussieht."
 
-**Nicht angefasst (bewusst):** ChangeEmail-, ChangePassword- und
-ActivityRequest-Modals gibt es je Rolle mehrfach, sind aber alle aktiv.
-Zusammenlegen wäre Refactoring mit Risiko, kein Aufräumen.
+Also: Org 4 mit glaubwürdigen Testdaten füllen (Konfis, Termine, Aktivitäten,
+Challenges — dort sind aktuell **0**), Passwörter für `review-admin`,
+`review-teamer`, `review-konfi` setzen und dokumentieren.
 
-## Test-DB-Schema — erledigt (22.08.)
+**Was schon funktioniert** (in dieser Sitzung erprobt):
+- Login über Playwright gegen `https://konfi-quest.de/login` klappt
+- `page.goto` braucht `waitUntil: 'domcontentloaded'` — mit `networkidle`
+  läuft es in einen Timeout
+- Der Anmelde-Knopf: `page.locator('ion-button').first()` — `getByText`
+  kollidiert mit der Überschrift
+- **Die Einführung überlagert das Dashboard** und muss weggeklickt werden
+  („ÜBERSPRINGEN"), sonst zeigt jeder Screenshot nur den Onboarding-Dialog
 
-Das Test-Schema kommt jetzt aus einem Produktions-Dump
-(`backend/tests/schema/prod-schema.sql`, 57 Tabellen, nur Struktur), darauf
-laufen nur noch nicht angewandte Migrationen — derselbe Weg wie beim Deploy.
-Aktualisieren mit `bash backend/tests/schema/refresh-schema.sh`.
+Bestehende Konten in Org 4: `review-admin` (org_admin), `review-teamer`,
+`review-konfi`, dazu `google-test-*`.
 
-`globalSetup.js` schrumpfte von 354 auf 119 Zeilen und **bricht bei einer
-fehlgeschlagenen Migration ab**, statt sie als "applied" zu markieren. Genau
-dieses Verschlucken war die Wurzel, nicht die einzelnen Spalten.
+### C) Build 140
 
-Was der Umstieg ans Licht gebracht hat — vier Dinge, die vorher unsichtbar
-grün liefen:
+Sammelt alles seit Build 139 ein — inzwischen **über 20 Commits**. Simons
+Beobachtungen zum „Was ist neu"-Banner kamen daher, dass Build 139 vom Stand
+`bc4168a8` ist.
 
-1. **Konten liessen sich nicht loeschen.** 17 Fremdschluessel zeigen auf
-   `users(id)`, die meisten ohne `ON DELETE`; `deleteKonfiCascade` behandelte
-   genau einen. Wer je Punkte vergeben, ein Event angelegt oder ein Abzeichen
-   erstellt hatte, bekam bei der Selbstloeschung einen 500er. Betraf alle
-   Rollen. Urheberschaft wird jetzt anonymisiert statt geloescht.
-2. **bigint kam als String.** `database.js:7` registriert fuer die Anwendung
-   einen Type-Parser, der Test-Pool nicht. Das alte Schema nutzte durchgaengig
-   `integer` und verdeckte das; Produktion hat 111 `bigint`-Spalten. Rund 70
-   Fehlschlaege, alle dieselbe Ursache. Die Tests hatten recht — sie pruefen
-   jetzt das echte Verhalten.
-3. **Die TRUNCATE-Liste war in beide Richtungen falsch**: zwei Tabellen, die
-   es nur im alten Test-Schema gab, und fuenf fehlende (u.a. `settings`,
-   `daily_verses`), deren Daten zwischen den Suites stehen blieben.
-4. **`daily_verses` und `activities.category` hatten nirgends ein DDL** —
-   Migration 124 traegt sie nach. Ohne sie haette eine Neuinstallation aus dem
-   Repo beides nicht. Ebenso repariert: Migration 064 legt einen Index auf
-   `invite_codes` an, das erst 079 erzeugt — auf einer frischen Datenbank
-   brach die Kette und alle 73 Indexe der Datei entfielen.
+**Regel:** Nur auf Zuruf dispatchen, und beim Bauen den Commit nennen.
 
-Neu als Waechter: `backend/tests/schema/schemaDrift.test.js` (9 Tests) prueft
-die betroffenen Objekte, das ON-CONFLICT-Verhalten von `daily_verses`, den
-`text`-Typ von `chat_polls.options` (JSON.parse in `chat.js` verhaelt sich bei
-`jsonb` anders), die Vollstaendigkeit der TRUNCATE-Liste in beide Richtungen
-und dass keine Migration uebersprungen wurde.
+### D) Kleinere offene Punkte
 
-Postgres im Test von 16 auf 15 angeglichen (Produktion laeuft 15.19).
+- **Handbuch mobil**: Bei 12 Kapiteln sind die Chips in der Navigation grenzwertig
+  viele. Ab etwa 14 braucht es eine andere Lösung (ein Ausklapp-Element ist
+  **nicht** die Antwort — siehe „Fallen" unten).
+- **Doku-Format uneinheitlich**: `konfis-events.yaml` und `teamer-material.yaml`
+  schreiben Pfade **mit** `/api`-Präfix, die anderen drei ohne. In der
+  zusammengeführten `openapi.json` stehen beide Formen nebeneinander.
+- **`/docs/api` ist ungeschützt.** Die Berechtigungsmatrix ist eine Landkarte
+  für jeden, der Lücken sucht. Caddy kann `basic_auth`; im Block
+  `konfi-quest.de` ergänzen:
+  ```
+  @apidocs path /docs/api /docs/api/*
+  basic_auth @apidocs { simon <bcrypt-hash> }
+  ```
+  Hash mit `caddy hash-password`.
 
-**Falle fuer spaeter:** `pg_dump` schreibt `set_config('search_path','')` in
-den Kopf und stellt den Pfad nicht wieder her. `refresh-schema.sh` filtert die
-Zeile heraus; ohne das scheitert das erste `CREATE TABLE` danach mit "no
-schema has been selected to create in".
+---
 
-## Danach
+## Was am 23./24.08. entstanden ist
 
-Vollständige API-Dokumentation nach **OpenAPI 3.1** über alle 223 Routen.
-`docs/api/` deckt bisher 106 ab; die 25 LÜCKE-Marker darin waren keine
-Doku-Lücken, sondern Sicherheitsbefunde — die sind jetzt abgearbeitet.
+### Knowledge Base: 12 Kapitel unter /docs
 
-## Neue Dauerregeln (seit 23.08. in ~/.claude/CLAUDE.md, ALLE Repos)
+Quellen als Markdown in `docs/handbuch/`, `scripts/build-handbuch.mjs` baut
+daraus die Seite. Kapitel: Überblick, Konfis, Teamer:innen, Leitung,
+Passwörter, Punkte/Level, Jahrgänge/Kategorien, Abzeichen, Termine,
+Challenges, Chat, Wrapped.
 
-- **CHANGELOG und API-Doku fortlaufend** — im selben Commit, nicht nachträglich.
-  Behobene Befunde in der Doku markieren, nicht löschen.
-- **Tests immer**, und weiche Assertions sind ein Fehler. `expect([200, 500])`
-  oder `toBeDefined()` auf einem Zähler verdecken echte Fehler.
-- **Git ohne Claude-Verweis** — kein `Co-Authored-By`, keine Session-Zeile.
-- **Konventionen**: Keep a Changelog, OpenAPI 3.1, Conventional Commits.
-- **Befunde vor dem Weitergeben prüfen** — ein Audit-Befund ist eine
-  Behauptung. (Konkret passiert: "wirkt 15 Min nach" — gemessen Sekunden.)
-- **Erst messen, dann behaupten** — mit Zahl, nicht "deutlich schneller".
+Anspruch (Simon): „Für alle Deppen volle Erklärungen, jede Option, welche
+Folge." Entsprechend ist jede Formularoption einzeln beschrieben — was sie
+bewirkt, was dadurch wegfällt, was sich hinterher nicht mehr ändern lässt.
 
-In der Projekt-`CLAUDE.md` neu: die **drei Ansichtsbäume** (jede Rolle hat
-einen eigenen, fast jede Funktion existiert mehrfach) und die **App-Typografie**
-(Bebas Neue + Plus Jakarta Sans, Bereichsfarben aus `variables.css`).
+### API-Doku: 238 Operationen, Lücke null
+
+Von 133 auf 238. Swagger UI unter `/docs/api/swagger.html`, daneben die
+kompakte Übersicht wie bisher. `scripts/build-openapi.mjs` führt die fünf
+YAML-Dateien zusammen und bricht ab, wenn eine Operation doppelt vorkommt.
+
+Swagger liegt **lokal** (`docs/api/swagger/`, 1,8 MB), nicht per CDN. Das
+Ausprobieren gegen Produktion ist abgeschaltet — echte Daten echter Gemeinden.
+
+### Sicherheitsbefunde, alle behoben
+
+1. **Fremde Chats live mitlesbar** (23.08.): Die Socket-Verbindung prüfte nur
+   die Gemeinde. In Org 1 hätten 21 Konfis jedem Chat beitreten können.
+2. **Anonyme Umfragen waren nicht anonym** (23.08.): Der Name fehlte, die
+   Kennung kam mit. Betraf eine laufende Umfrage mit sechs Stimmen.
+3. **Private Zweiergespräche** (23.08.): Die Leitung konnte jedes fremde
+   Zwiegespräch lesen und exportieren.
+4. **Socket-Nachtrag** (24.08.): Fix 3 griff nur für die Historie, der
+   Live-Kanal blieb offen. **Beim Beheben fiel auf: Die Query las den Raumtyp
+   gar nicht mit** — der erste Fix wäre wirkungslos geblieben.
+5. **Punktestand fremder Konfis** (24.08.): Über `/api/levels/konfi/:id` konnte
+   jeder Konfi Namen, Punktzahl und Level jedes anderen abrufen. Gegen
+   Produktion nachgewiesen (Konfi 85 → Konfi 92, Status 200).
+6. **Ablehnung ohne Begründung** (24.08.): Nur im Frontend Pflicht.
+7. **Beide Punktarten abschaltbar** (24.08.): Sperre nur in der Oberfläche.
+
+### Bedienung
+
+- Tab „Events" heißt jetzt **„Mitmachen"** (alle drei Ansichten)
+- Challenges-Doppelung unter „Mehr" entfernt
+- Archiv steht vor den Abzeichen (Leitung **und** Konfi)
+- Uhr statt Flagge bei „Geplant"
+- Leere Karte „Status" beim Teamer-Anlegen ausgeblendet
+- Einstellung „Chat-Berechtigungen" entfernt (war unerreichbar und wirkungslos)
+- **Abgelehnte Anträge blockieren das Löschen einer Aktivität nicht mehr** und
+  lassen sich einzeln löschen (Simons Fall: vier betroffene Aktivitäten)
+- **Abzeichen-Bedingungen „Spezifische Aktivität" und „Aktivitäts-Kombination"
+  waren wirkungslos** — das Formular speicherte die ID, die Auswertung liest
+  den Namen. Sieben Badges in Produktion konnten nie vergeben werden.
+  **Bestehende einmal öffnen und neu speichern, dann greifen sie.**
+
+---
+
+## Server
+
+Konfi Quest läuft weiterhin übergangsweise auf dem Fahrtenbuch-Server:
+
+- SSH: `ssh root@kkd-fahrtenbuch.de` (185.248.143.234)
+- Stack: `/opt/konfi-quest/docker-compose.yml`
+- Container: `kq-backend`, `kq-frontend`, `kq-postgres`
+- Backups: `/opt/konfi-quest/dump/`
+
+**Deploy läuft NICHT über die CI.** Der `deploy`-Job ist pausiert
+(`if: false && ...`), weil er auf den toten Portainer-Stack 249 zeigt.
+
+Vor einem Deploy mit Datenbankbezug sichern:
+```
+docker exec kq-postgres pg_dump -U konfi_user konfi_db | gzip > dump/vor-<sha>-$(date +%Y%m%d-%H%M%S).sql.gz
+```
+
+## Tageslosung — Notbetrieb
+
+`ketiv.de` liegt auf dem gesperrten Server. Die Losungen-API läuft ersatzweise
+unter `/opt/ketiv/docker-compose.notbetrieb.yml` (`ketiv-api`,
+`ketiv-postgres`), zusätzlich im Netz `konfi-quest_internal`. **Wird dieses
+Netz neu angelegt, muss der ketiv-Stack neu verbunden werden.**
+
+Noch offen: Der Losungs-API-Key steht im Klartext im Backend-Log, weil er als
+Query-Parameter in der URL steht.
+
+---
 
 ## Fallen, die schon Zeit gekostet haben
 
 - **Backend-Tests laufen lokal nicht** — kein Docker auf dem Mac. Nur über CI.
-- **CI läuft auf Feature-Branches nicht automatisch**, nur auf `main` oder im PR.
-  Manuell: `gh workflow run ci.yml --ref <branch>`.
-- **Ionic `normalize.css`** setzt global `button { padding: 0; line-height: 1 }`
-  und wird nach dem Theme geladen. Wer einen Button wie ein Div stylt, braucht
-  `!important` — sonst ist er niedriger als die Nachbarn.
-- **Ohne `IonItemSliding`** fehlt auch dessen `marginBottom`. Listen kleben dann
-  aneinander.
-- **firebase-admin v14**: `admin.credential` und `admin.messaging` gibt es nicht
-  mehr. Import über `firebase-admin/app` und `firebase-admin/messaging`.
-- **Das Test-DB-Schema hinkt der Produktion hinterher.** In der CI laufen
-  Fehler wie `column a.category does not exist` (Wrapped) und
-  `relation "daily_verses" does not exist` durch, ohne dass ein Test rot wird —
-  beides existiert in Produktion sehr wohl. Heisst: diese Pfade werden faktisch
-  nicht geprüft. Wer dort etwas ändert, hat kein Netz.
-- **Ein Test kann grün aussehen und trotzdem am Ziel vorbeilaufen.** Die beiden
-  Konfi-zu-Konfi-Tests schickten kein `name`; die Route antwortete mit 400
-  ("Typ und Name sind erforderlich"), also lange vor der Sicherheitsprüfung.
-  Bei Berechtigungstests immer den Statuscode prüfen, nicht nur "nicht 200".
+- **`generateToken()` will den Seed-Schlüssel, nicht den Benutzernamen.**
+  `generateToken('orgAdmin1')`, nicht `'orgadmin1'`. Bei falscher Angabe wirft
+  der Helfer, und **alle** Tests des Blocks scheitern — auch die Positiv-Fälle.
+  Das sah nach einem Code-Fehler aus, war aber der Test.
+- **Ein `200` beweist keine Berechtigung.** `POST /chat/direct` antwortet bei
+  einem schon vorhandenen Raum ebenfalls mit 200. Bei Berechtigungstests
+  zusätzlich `created: true` prüfen oder einen Partner ohne bestehenden Raum
+  wählen.
+- **Doku-Generatoren dürfen kein `new Date()` nutzen.** Der CI-Frischecheck
+  baut neu und vergleicht per `git diff` — bei Tageswechsel wäre er ohne
+  Zutun rot geworden. Datum kommt jetzt aus dem letzten git-Commit der Quellen.
+- **`<details>` ohne `open` versteckt auch auf dem Desktop.** Der Versuch, die
+  mobile Navigation einklappbar zu machen, machte sie auf **beiden** Breiten
+  unsichtbar. Umbrechende Chips waren die Lösung.
+- **nginx leitet Verzeichnisse absolut um** — `/docs` ging auf `http://`.
+  `absolute_redirect off` behebt das.
+- **Agenten-Befunde sind Behauptungen.** In dieser Sitzung meldete ein Agent,
+  die 2-Tage-Abmeldefrist sei nur im Frontend. Sie steht auch serverseitig
+  (`konfi.js:1718`) — er hatte die falsche Route geprüft. Umgekehrt haben
+  Agenten vier meiner eigenen Vorgaben zu Recht zurückgewiesen.
+- **Drei Ansichten heißt drei Stellen.** Gilt unverändert. Die
+  Archiv-Reihenfolge musste in Leitungs- und Konfi-Ansicht getrennt korrigiert
+  werden.
 - **Beim Bauen den Commit nennen.** Build 138 wurde gestartet, bevor sieben
-  gewünschte Änderungen entstanden — sie fehlten dann im Build, und das fiel
-  erst dem Nutzer auf.
-- **Apple braucht länger als eine Stunde.** Build 138 tauchte nach 30 Minuten
-  nicht in TestFlight auf; ich hielt ihn für verloren. Er kam später an.
-  `UPLOAD SUCCEEDED` im Log ist das verlässliche Signal, nicht die Build-Liste.
-- **Drei Ansichten heißt drei Stellen.** "Was ist neu" gab es in Konfi-, Teamer-
-  UND Leitungsansicht; die dritte wäre fast durchgerutscht.
-- **`git rm` aus dem Unterverzeichnis greift nicht** wie erwartet — die
-  Löschungen fehlten still im Commit. Immer aus dem Repo-Wurzelverzeichnis.
-- **API-Doku: `whatsNew`, nicht `whatsToTest`** (siehe Memory), und das
-  Refresh-Skript für das Test-Schema filtert die `search_path`-Zeile heraus.
+  gewünschte Änderungen entstanden.
+- **Apple braucht länger als eine Stunde.** `UPLOAD SUCCEEDED` im Log ist das
+  verlässliche Signal, nicht die Build-Liste.
+
+## Regeln aus dieser Sitzung
+
+- **Vor dem Ändern messen.** Vor der Jahrgangs-Regel wurde gerechnet, ob
+  jemand ausgesperrt würde (Ergebnis: jeder Konfi behält mindestens einen
+  Kontakt). Vor dem Direktchat-Schutz, welche Chats betroffen sind (zwei).
+- **Ein Fix ohne Gegenprobe ist kein Fix.** Beim Socket-Nachtrag las die Query
+  den Raumtyp nicht mit — ohne Nachsehen wäre die Änderung wirkungslos
+  geblieben und hätte falsche Sicherheit vorgetäuscht.
+- **Bei Sicherheitsfixes gegen Produktion messen**, nicht nur gegen Tests.
