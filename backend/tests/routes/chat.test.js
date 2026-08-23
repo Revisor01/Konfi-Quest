@@ -249,6 +249,9 @@ describe('Chat Routes', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.room_id).toBeDefined();
+      // created:true belegt, dass der Raum wirklich neu entstanden ist — bei
+      // einem schon vorhandenen Chat gaebe die Route auch ohne Berechtigung 200.
+      expect(res.body.created).toBe(true);
     });
 
     it('Konfi schreibt Teamer:in OHNE gemeinsamen Jahrgang an -> 403', async () => {
@@ -270,15 +273,30 @@ describe('Chat Routes', () => {
         .send({ target_user_id: USERS.orgAdmin1.id });
 
       expect(res.status).toBe(200);
+      expect(res.body.created).toBe(true);
     });
 
     it('Konfi erreicht Admins immer -> 200', async () => {
+      // Mit admin1 besteht laut Seed schon ein Chat — die Route gaebe dann
+      // auch ohne Berechtigungspruefung den vorhandenen Raum zurueck. Deshalb
+      // hier orgAdminSuper, mit dem noch kein Raum existiert: So beweist der
+      // 200 wirklich die Berechtigung und nicht nur den Dedup-Pfad.
+      const { rows: [vorher] } = await db.query(
+        `SELECT 1 FROM chat_rooms cr
+           JOIN chat_participants a ON a.room_id = cr.id AND a.user_id = $1
+           JOIN chat_participants b ON b.room_id = cr.id AND b.user_id = $2
+          WHERE cr.type = 'direct'`,
+        [USERS.konfi1.id, USERS.orgAdminSuper.id]
+      );
+      expect(vorher).toBeUndefined();
+
       const res = await request(app)
         .post('/api/chat/direct')
         .set('Authorization', `Bearer ${konfi1Token}`)
-        .send({ target_user_id: USERS.admin1.id });
+        .send({ target_user_id: USERS.orgAdminSuper.id });
 
       expect(res.status).toBe(200);
+      expect(res.body.created).toBe(true);
     });
 
     it('gesperrte Teamer:in taucht in /available-users nicht auf', async () => {
@@ -291,9 +309,20 @@ describe('Chat Routes', () => {
       expect(res.status).toBe(200);
       const ids = res.body.users.map(u => u.id);
       expect(ids).not.toContain(USERS.teamer1.id);
-      // Leitung und Admin bleiben sichtbar.
-      expect(ids).toContain(USERS.admin1.id);
+      // Die Leitung bleibt sichtbar. admin1 taucht bewusst NICHT auf: Mit ihm
+      // besteht laut Seed bereits ein Direktchat (Raum 2), und die Route
+      // blendet vorhandene Chats aus. Das belegt der Gegen-Check darunter.
       expect(ids).toContain(USERS.orgAdmin1.id);
+
+      const { rows: [bestehend] } = await db.query(
+        `SELECT 1 FROM chat_rooms cr
+           JOIN chat_participants a ON a.room_id = cr.id AND a.user_id = $1
+           JOIN chat_participants b ON b.room_id = cr.id AND b.user_id = $2
+          WHERE cr.type = 'direct'`,
+        [USERS.konfi1.id, USERS.admin1.id]
+      );
+      expect(bestehend).toBeTruthy();
+      expect(ids).not.toContain(USERS.admin1.id);
     });
 
     it('zustaendige Teamer:in taucht in /available-users auf und traegt Typ "teamer"', async () => {
@@ -336,6 +365,7 @@ describe('Chat Routes', () => {
         .send({ target_user_id: USERS.orgAdmin1.id });
 
       expect(res.status).toBe(200);
+      expect(res.body.created).toBe(true);
     });
 
     it('Teamer:in erreicht das Team weiterhin, unabhaengig vom Jahrgang', async () => {
