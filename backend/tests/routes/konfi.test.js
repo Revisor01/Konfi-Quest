@@ -493,6 +493,56 @@ describe('Konfi Routes', () => {
 
       expect(res.status).toBe(403);
     });
+
+    // Befund 24.08.2026: Die Gesamtzahl zaehlte die Teamer-Abzeichen mit. In
+    // Org 1 standen dadurch 56 statt 50, der Fortschritt wirkte dauerhaft
+    // schlechter als er war.
+    it('Die Gesamtzahl zaehlt nur Konfi-Abzeichen, keine Teamer-Abzeichen', async () => {
+      const vorher = await request(app)
+        .get('/api/konfi/badges')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      const zuvor = vorher.body.stats.totalVisible;
+      expect(typeof zuvor).toBe('number');
+
+      await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ('Nur fuer Teamer', 'teamer_year', 2, 'ribbon', '#5b21b6', $1, 'teamer', true)`,
+        [ORGS.testGemeinde.id]
+      );
+
+      const nachher = await request(app)
+        .get('/api/konfi/badges')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(nachher.body.stats.totalVisible).toBe(zuvor);
+    });
+
+    // Befund 24.08.2026: Zehn aktive Abzeichen in Org 1 hatten eine leere
+    // Bedingung und konnten deshalb nie vergeben werden — sie standen aber
+    // unter "erreichbar" und liessen Konfis raetseln.
+    it('Ein Abzeichen ohne hinterlegte Bedingung gilt nicht als erreichbar', async () => {
+      const { rows: [ohne] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, criteria_extra, icon, color, organization_id, target_role, is_active)
+         VALUES ('Ohne Bedingung', 'specific_activity', 1, '{}', 'checkmark', '#10b981', $1, 'konfi', true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      const { rows: [mit] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, criteria_extra, icon, color, organization_id, target_role, is_active)
+         VALUES ('Mit Bedingung', 'specific_activity', 1, $2, 'checkmark', '#10b981', $1, 'konfi', true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id, JSON.stringify({ required_activity_name: 'Gottesdienst' })]
+      );
+
+      const res = await request(app)
+        .get('/api/konfi/badges')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(res.status).toBe(200);
+
+      const erreichbar = (res.body.available || []).map(b => b.id);
+      expect(erreichbar).not.toContain(ohne.id);
+      // Gegenprobe: Mit Bedingung steht es sehr wohl drin.
+      expect(erreichbar).toContain(mit.id);
+    });
   });
 
   // ================================================================

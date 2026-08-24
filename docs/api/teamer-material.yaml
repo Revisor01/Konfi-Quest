@@ -321,13 +321,28 @@ paths:
         (total_points etc.) sind fuer Teamer irrelevant und liefern 0;
         collection und yearly sind in der Wertung noch nicht implementiert und
         liefern ebenfalls 0.
+        Seit 24.08.2026 werden UNVERDIENTE geheime Abzeichen (is_hidden) nicht
+        mehr ausgeliefert — vorher standen Name, Beschreibung und Fortschritt
+        offen da, waehrend der Konfi-Pfad sie korrekt zurueckhielt. Verdiente
+        geheime Abzeichen kommen weiterhin mit. Die Gesamtzahlen stehen in den
+        Kopfzeilen X-Badges-Secret-Total und X-Badges-Visible-Total, damit die
+        Anzeige "x Geheimnisse zu entdecken" weiter stimmt; der Rumpf bleibt
+        bewusst ein Array, weil zwei Ansichten ihn so lesen.
       x-berechtigung:
         rollen: [teamer]
         middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]
         org-scope: true
         objekt-pruefung: "nur eigene Daten; alle Teilabfragen mit user_id + organization_id"
       responses:
-        "200": { description: "Array von Abzeichen (custom_badges.* + earned, awarded_date, progress_points, progress_percentage)" }
+        "200":
+          description: "Array von Abzeichen (custom_badges.* + earned, awarded_date, progress_points, progress_percentage); ohne unverdiente geheime"
+          headers:
+            X-Badges-Secret-Total:
+              description: Gesamtzahl der geheimen Abzeichen, auch der nicht ausgelieferten
+              schema: { type: integer }
+            X-Badges-Visible-Total:
+              description: Gesamtzahl der offen sichtbaren Abzeichen
+              schema: { type: integer }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "Aufrufer ist kein Teamer" }
         "500": { $ref: '#/components/responses/ServerError' }

@@ -179,7 +179,13 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       case 'both_categories':
         return `${badge.criteria_value} Punkte pro Kategorie`;
       case 'specific_activity': {
-        // Namen statt ID: "4x Jugendreise" statt "4x Aktivität #58".
+        // Seit dem 23.08.2026 speichert das Formular den NAMEN
+        // (required_activity_name) — die Wertung liest ihn so. Diese Liste las
+        // weiter activity_id und zeigte fuer alles neu Gespeicherte gar nichts
+        // an. Beide Formen werden jetzt gelesen, die alte fuer Altbestand.
+        if (extra.required_activity_name) {
+          return `${badge.criteria_value}x ${extra.required_activity_name}`;
+        }
         if (!extra.activity_id) return `${badge.criteria_value}x`;
         const name = activityNames[extra.activity_id];
         return name
@@ -187,6 +193,13 @@ const BadgesView: React.FC<BadgesViewProps> = ({
           : `${badge.criteria_value}x Aktivität #${extra.activity_id}`;
       }
       case 'activity_combination': {
+        // Wie oben: neu gespeichert stehen hier Namen (required_activities).
+        if (extra.required_activities?.length) {
+          const n = extra.required_activities;
+          return n.length <= 2
+            ? `${n.join(' + ')}, min. ${badge.criteria_value}x`
+            : `${n.length} Aktivitäten, min. ${badge.criteria_value}x`;
+        }
         if (!extra.activity_ids?.length) return null;
         // Bis zu zwei Namen ausschreiben, danach zaehlen — sonst sprengt die
         // Zeile die Listenbreite.

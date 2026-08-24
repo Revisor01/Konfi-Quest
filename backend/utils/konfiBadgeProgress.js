@@ -108,11 +108,14 @@ async function getKonfiBadgeProgress(db, konfiId, organizationId) {
       [konfiId, organizationId]
     ),
     db.query(
+      // target_role gehoert dazu: Ohne den Filter zaehlten die Teamer-Abzeichen
+      // in der Konfi-Statistik mit. In Org 1 standen so 56 statt 50, der
+      // Fortschritt wirkte dauerhaft schlechter als er war (Befund 24.08.2026).
       `SELECT
         COUNT(*) FILTER (WHERE is_hidden = false) as total_visible,
         COUNT(*) FILTER (WHERE is_hidden = true) as total_secret
       FROM custom_badges
-      WHERE is_active = TRUE AND organization_id = $1`,
+      WHERE is_active = TRUE AND organization_id = $1 AND target_role = 'konfi'`,
       [organizationId]
     )
   ]);
@@ -136,7 +139,33 @@ async function getKonfiBadgeProgress(db, konfiId, organizationId) {
   const categoryCounts = new Map(categoryCountsRes.rows.map(r => [r.name, parseInt(r.count)]));
   const activityNameCounts = new Map(activityNameCountsRes.rows.map(r => [r.name, parseInt(r.count)]));
 
+  // Ein Abzeichen ohne hinterlegte Bedingung kann niemand erreichen: Die
+  // Wertung prueft required_activity_name bzw. required_activities, und ohne
+  // die passiert schlicht nichts. In Org 1 standen so zehn aktive Abzeichen,
+  // von denen keines je vergeben wurde (Befund 24.08.2026). Sie tauchen jetzt
+  // nicht mehr unter "erreichbar" auf, statt Konfis raetseln zu lassen.
+  const bedingungFehlt = (badge) => {
+    let extra = {};
+    try {
+      extra = typeof badge.criteria_extra === 'string'
+        ? JSON.parse(badge.criteria_extra || '{}')
+        : (badge.criteria_extra || {});
+    } catch { return true; }
+
+    switch (badge.criteria_type) {
+      case 'specific_activity':
+        return !extra.required_activity_name;
+      case 'activity_combination':
+        return !Array.isArray(extra.required_activities) || extra.required_activities.length === 0;
+      case 'category_activities':
+        return !extra.required_category;
+      default:
+        return false;
+    }
+  };
+
   const isUnreachable = (badge) => {
+    if (bedingungFehlt(badge)) return true;
     switch (badge.criteria_type) {
       case 'gottesdienst_points': return !gdEnabled;
       case 'gemeinde_points': return !gmEnabled;

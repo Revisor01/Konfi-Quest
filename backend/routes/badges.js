@@ -86,8 +86,11 @@ const CRITERIA_TYPES = {
   // === SPEZIAL-KRITERIEN (Selten verwendet) ===
   bonus_points: {
     label: "Bonuspunkte",
-    description: "Anzahl erhaltener Bonuspunkte",
-    help: "Badge wird vergeben, wenn die angegebene Anzahl von Bonuspunkt-Vergaben erhalten wurde (es zählt die Anzahl der Vergaben, nicht die Punktesumme). Beispiel: Wert 2 = mindestens 2 Bonuspunkt-Vergaben erhalten."
+    description: "Summe der erhaltenen Bonuspunkte",
+    // Der Hilfetext behauptete das Gegenteil ("Anzahl der Vergaben"), obwohl
+    // die Wertung unten SUM(points) nimmt. Wer sich danach richtete, stellte
+    // die Schwelle falsch ein (Befund 24.08.2026).
+    help: "Badge wird vergeben, wenn die Bonuspunkte zusammengezählt den angegebenen Wert erreichen — nicht die Anzahl der Vergaben. Beispiel: Wert 5 = fünf Bonuspunkte insgesamt, egal ob in einer Vergabe oder in fünf."
   },
 
   // === TEAMER-SPEZIFISCH ===

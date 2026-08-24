@@ -32,6 +32,7 @@ import {
   prismOutline,
   cubeOutline,
   handLeft,
+  shield,
   checkmark,
   search,
   filterOutline,
@@ -276,6 +277,11 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       { key: 'streak', title: 'Serien-Champion', icon: flame, color: '#eb445a', badges: filtered.filter(b => b.criteria_type === 'streak').sort((a, b) => a.criteria_value - b.criteria_value) },
       { key: 'time_based', title: 'Zeitreisender', icon: time, color: '#8e8e93', badges: filtered.filter(b => b.criteria_type === 'time_based').sort((a, b) => a.criteria_value - b.criteria_value) },
       { key: 'event_count', title: 'Event-Champion', icon: calendar, color: '#e63946', badges: filtered.filter(b => b.criteria_type === 'event_count').sort((a, b) => a.criteria_value - b.criteria_value) },
+      // Fehlte hier, obwohl der Typ ueberall sonst gepflegt ist: Das Abzeichen
+      // wurde vergeben und die Meldung kam, aber in der Liste tauchte es nie
+      // auf, weil ohne passende Kategorie nichts angezeigt wird
+      // (Befund 24.08.2026, drei Abzeichen in Produktion betroffen).
+      { key: 'mandatory_event_count', title: 'Immer dabei', icon: shield, color: '#b91c1c', badges: filtered.filter(b => b.criteria_type === 'mandatory_event_count').sort((a, b) => a.criteria_value - b.criteria_value) },
       { key: 'teamer_year', title: 'Erfahrung', icon: ribbon, color: '#5b21b6', badges: filtered.filter(b => b.criteria_type === 'teamer_year').sort((a, b) => a.criteria_value - b.criteria_value) },
       { key: 'collection', title: 'Sammler', icon: trophy, color: '#ffd700', badges: filtered.filter(b => b.criteria_type === 'collection').sort((a, b) => a.criteria_value - b.criteria_value) },
       { key: 'yearly', title: 'Jahres-Badges', icon: calendarOutline, color: '#8e8e93', badges: filtered.filter(b => b.criteria_type === 'yearly').sort((a, b) => a.criteria_value - b.criteria_value) }

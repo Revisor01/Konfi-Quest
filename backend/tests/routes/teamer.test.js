@@ -192,6 +192,67 @@ describe('Teamer Routes', () => {
 
       expect(res.status).toBe(403);
     });
+
+    // Befund 24.08.2026: Die Route lieferte geheime Abzeichen ungefiltert aus.
+    // Die Ansicht verlaesst sich darauf, dass sie gar nicht erst kommen — beim
+    // Konfi tut das Backend das, hier fehlte es. Name, Beschreibung und
+    // Fortschritt standen damit offen da.
+    it('Ein unverdientes geheimes Abzeichen wird nicht ausgeliefert', async () => {
+      const { rows: [geheim] } = await db.query(
+        `INSERT INTO custom_badges (name, description, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active, is_hidden)
+         VALUES ('Streng geheim', 'Verraet die Ueberraschung', 'teamer_year', 99, 'ribbon', '#5b21b6', $1, 'teamer', true, true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .get('/api/teamer/badges')
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(res.status).toBe(200);
+
+      const ids = res.body.map(b => b.id);
+      expect(ids).not.toContain(geheim.id);
+      // Der Name darf auch sonst nirgends in der Antwort auftauchen.
+      expect(JSON.stringify(res.body)).not.toContain('Streng geheim');
+    });
+
+    it('Ein VERDIENTES geheimes Abzeichen wird sehr wohl ausgeliefert', async () => {
+      const { rows: [geheim] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active, is_hidden)
+         VALUES ('Schon entdeckt', 'teamer_year', 1, 'ribbon', '#5b21b6', $1, 'teamer', true, true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO user_badges (user_id, badge_id, awarded_date, organization_id)
+         VALUES ($1, $2, CURRENT_DATE, $3)`,
+        [USERS.teamer1.id, geheim.id, ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .get('/api/teamer/badges')
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.map(b => b.id)).toContain(geheim.id);
+    });
+
+    it('Die Gesamtzahl der Geheimnisse steht in der Kopfzeile', async () => {
+      await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active, is_hidden)
+         VALUES ('Geheim eins', 'teamer_year', 98, 'ribbon', '#5b21b6', $1, 'teamer', true, true),
+                ('Geheim zwei', 'teamer_year', 97, 'ribbon', '#5b21b6', $1, 'teamer', true, true)`,
+        [ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .get('/api/teamer/badges')
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(res.status).toBe(200);
+      // Beide sind unverdient, stehen also nicht in der Liste...
+      expect(res.body.filter(b => b.is_hidden).length).toBe(0);
+      // ...werden aber gezaehlt, damit "x Geheimnisse" stimmt.
+      expect(res.headers['x-badges-secret-total']).toBe('2');
+    });
   });
 
   // ================================================================

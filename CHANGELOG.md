@@ -102,6 +102,21 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Abzeichen für Pflicht-Anwesenheit tauchten in der Liste der Konfis nie auf,
+  obwohl sie vergeben wurden und die Meldung kam. Drei Abzeichen betroffen.
+- Geheime Abzeichen für Teamer:innen wurden mit Namen, Beschreibung und
+  Fortschritt angezeigt, bevor sie verdient waren. Jetzt bleiben sie verdeckt,
+  die Anzahl der noch zu entdeckenden stimmt weiterhin.
+- Die Abzeichen-Übersicht der Konfis zählte die Abzeichen der Teamer:innen mit.
+  Der Fortschritt wirkte dadurch schlechter, als er war.
+- Abzeichen ohne hinterlegte Bedingung werden nicht mehr als erreichbar
+  angezeigt. Sie konnten nie vergeben werden — betroffene Abzeichen einmal
+  öffnen, Bedingung eintragen und neu speichern.
+- In der Abzeichen-Liste der Leitung fehlten bei "Bestimmte Aktivität" und
+  "Aktivitäts-Kombination" die Angaben, sobald das Abzeichen neu gespeichert
+  worden war.
+- Die Hilfe beim Abzeichen "Bonuspunkte" beschrieb die Bedingung falsch: Es
+  zählt die Summe der Punkte, nicht die Anzahl der Vergaben.
 - Personen, die eine Urkunde erhalten haben, ließen sich nicht mehr löschen —
   der Versuch endete mit einer Fehlermeldung. Die Urkunden werden jetzt
   mitgelöscht.

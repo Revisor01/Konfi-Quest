@@ -497,7 +497,23 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         return { ...badge, progress_points: progressPoints, progress_percentage: progressPercentage };
       });
 
-      res.json(enrichedBadges);
+      // Geheime Abzeichen erst zeigen, wenn sie verdient sind. Die Ansicht
+      // verlaesst sich darauf, dass sie gar nicht erst geliefert werden — beim
+      // Konfi tut das Backend das (konfiBadgeProgress.js), hier fehlte es, und
+      // Name, Beschreibung und Fortschritt standen offen da (Befund 24.08.2026).
+      const sichtbareBadges = enrichedBadges.filter(b => !b.is_hidden || b.earned);
+
+      // Die Gesamtzahl der Geheimnisse gehoert MIT in die Antwort: Die Ansicht
+      // zaehlte sie bisher aus der Liste, und die enthaelt jetzt nur noch die
+      // verdienten. Ohne diese Zahl haette der Hinweis "x Geheimnisse zu
+      // entdecken" nach dem Filtern still auf null gestanden.
+      // Bewusst als Kopfzeile und nicht im Rumpf: Die Antwort ist ein Array,
+      // und zwei Ansichten lesen sie so (TeamerBadgesPage, TeamerDashboardPage).
+      // Eine neue Huelle haette beide gebrochen.
+      res.set('X-Badges-Secret-Total', String(enrichedBadges.filter(b => b.is_hidden).length));
+      res.set('X-Badges-Visible-Total', String(enrichedBadges.filter(b => !b.is_hidden).length));
+
+      res.json(sichtbareBadges);
     } catch (err) {
       console.error('Error loading teamer badges:', err);
       res.status(500).json({ error: 'Fehler beim Laden der Teamer-Badges' });

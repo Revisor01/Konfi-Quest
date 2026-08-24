@@ -232,7 +232,16 @@ const TeamerDashboardPage: React.FC = () => {
   // Offline-Query: Alle Teamer-Badges (fuer vollstaendige Badge-Sektion)
   const { data: allTeamerBadges, refresh: refreshBadges } = useOfflineQuery<TeamerBadgeFull[]>(
     'teamer:all-badges:' + user?.id,
-    async () => { const res = await api.get('/teamer/badges'); return res.data || []; },
+    async () => {
+      const res = await api.get('/teamer/badges');
+      const liste: TeamerBadgeFull[] = res.data || [];
+      // Unverdiente geheime Abzeichen kommen nicht mehr mit; ihre Gesamtzahl
+      // steht in der Kopfzeile und wird an die Liste geheftet, damit sie den
+      // Zwischenspeicher uebersteht.
+      const geheim = Number(res.headers?.['x-badges-secret-total']);
+      if (Number.isFinite(geheim)) (liste as any).geheimGesamt = geheim;
+      return liste;
+    },
     { ttl: CACHE_TTL.BADGES }
   );
 
@@ -363,7 +372,9 @@ const TeamerDashboardPage: React.FC = () => {
     ...(allTeamerBadges || []).filter((b) => !b.earned && !b.is_hidden)
   ];
   const secretEarned = earnedBadges.filter((b) => b.is_hidden);
-  const secretTotal = (allTeamerBadges || []).filter((b) => b.is_hidden).length;
+  // Aus der Kopfzeile: Die Liste enthaelt nur noch verdiente Geheimnisse.
+  const secretTotal = (allTeamerBadges as any)?.geheimGesamt
+    ?? (allTeamerBadges || []).filter((b) => b.is_hidden).length;
   const secretNotEarnedCount = secretTotal - secretEarned.length;
   const visibleEarned = earnedBadges.filter((b) => !b.is_hidden).length;
   const visibleTotal = (allTeamerBadges || []).filter((b) => !b.is_hidden).length;
