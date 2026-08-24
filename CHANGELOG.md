@@ -172,6 +172,11 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Der Chat öffnet schneller: Beim Wechsel in den Chat-Bereich wurde die
+  Raumliste bisher zweimal hintereinander geladen — in allen drei Rollen.
+  Jetzt nur noch einmal.
+- Beim ersten Blick auf neue Abzeichen wurde die "Gesehen"-Meldung doppelt
+  an den Server geschickt. Jetzt nur noch einmal.
 - Challenges: Zähler sprechen jetzt in korrekter Einzahl und Mehrzahl —
   "1 Beitrag" statt "1 Beiträge".
 - Chat: Ungesendete Nachrichten sind nach einem App-Neustart nicht mehr

@@ -195,9 +195,17 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     };
   }, [refresh, user, socketEpoch]);
 
-  // Bei Rückkehr zur View (z.B. nach ChatRoom) Raumliste aktualisieren
+  // Bei Rückkehr zur View (z.B. nach ChatRoom) Raumliste aktualisieren.
+  // NICHT beim allerersten Betreten direkt nach dem Mount: Da lädt
+  // useOfflineQuery bereits — ionViewWillEnter feuert bei der Tab-Transition
+  // erst ~450 ms nach dem Mount (gemessen 24.08.2026), also NACH Abschluss
+  // des Mount-Fetches, und löste so in allen drei Rollen einen zweiten,
+  // identischen GET /chat/rooms aus.
+  const mountedAtRef = React.useRef(Date.now());
   useIonViewWillEnter(() => {
-    refresh();
+    if (Date.now() - mountedAtRef.current > 2000) {
+      refresh();
+    }
   });
 
   // Modal mit useIonModal Hook

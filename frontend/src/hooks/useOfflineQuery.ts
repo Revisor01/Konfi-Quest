@@ -45,6 +45,24 @@ export function useOfflineQuery<T>(
   const currentKeyRef = useRef(cacheKey);
   const mountedRef = useRef(true);
 
+  // In-flight-Dedupe: Läuft für diesen Key bereits ein Fetch, wird dessen
+  // Promise wiederverwendet statt ein zweiter identischer Request gestartet.
+  // Ohne das feuerten Mount-Load (loadFromCache -> revalidate) und
+  // useIonViewWillEnter(refresh) beim ersten Öffnen einer Seite parallel —
+  // gemessen am 24.08.2026: GET /chat/rooms lief beim Öffnen des Chat-Tabs
+  // in allen drei Rollen doppelt.
+  const inflightRef = useRef<Promise<void> | null>(null);
+  const inflightKeyRef = useRef<string | null>(null);
+
+  // Zeitpunkt des letzten ERFOLGREICHEN Fetches je Key: Der automatische
+  // Initial-Load (SWR) überspringt seine Revalidierung, wenn gerade eben —
+  // z.B. durch useIonViewWillEnter(refresh) VOR dem Mount-Effekt — frisch
+  // geladen wurde. Gemessen am 24.08.2026: Der zweite GET /chat/rooms startete
+  // ~400 ms nach dem ersten (nach dessen Abschluss), das In-flight-Dedupe
+  // allein griff daher nicht. Explizites refresh() bleibt ungedrosselt.
+  const lastSuccessRef = useRef<{ key: string; t: number } | null>(null);
+  const JUST_FETCHED_MS = 1500;
+
   // Refs für Callbacks (vermeidet Dependency-Probleme)
   const onSuccessRef = useRef(onSuccess);
   const onErrorRef = useRef(onError);
@@ -56,35 +74,53 @@ export function useOfflineQuery<T>(
   fetcherRef.current = fetcher;
 
   const revalidate = useCallback(async () => {
-    try {
-      const freshData = await fetcherRef.current();
-      // Race-Condition: Prüfen ob Key sich geändert hat
-      if (!mountedRef.current || currentKeyRef.current !== cacheKey) return;
-
-      // Raw-Daten in Cache speichern (vor select)
-      await offlineCache.set(cacheKey, freshData, ttl);
-
-      const transformed = selectRef.current ? selectRef.current(freshData) : freshData;
-      setData(transformed);
-      dataRef.current = transformed;
-      setIsStale(false);
-      setError(null);
-      setLoading(false);
-      onSuccessRef.current?.(transformed);
-    } catch (err) {
-      if (!mountedRef.current || currentKeyRef.current !== cacheKey) return;
-
-      const message = err instanceof Error ? err.message : 'Unbekannter Fehler';
-
-      // Wenn Cache vorhanden: Daten behalten, als stale markieren
-      if (dataRef.current !== null) {
-        setIsStale(true);
-      } else {
-        setError(message);
-        setLoading(false);
-      }
-      onErrorRef.current?.(err instanceof Error ? err : new Error(message));
+    // Läuft bereits ein Fetch für DENSELBEN Key, dessen Ergebnis abwarten
+    // statt einen zweiten identischen Request zu starten.
+    if (inflightRef.current && inflightKeyRef.current === cacheKey) {
+      return inflightRef.current;
     }
+
+    const doFetch = async () => {
+      try {
+        const freshData = await fetcherRef.current();
+        // Race-Condition: Prüfen ob Key sich geändert hat
+        if (!mountedRef.current || currentKeyRef.current !== cacheKey) return;
+
+        // Raw-Daten in Cache speichern (vor select)
+        await offlineCache.set(cacheKey, freshData, ttl);
+
+        const transformed = selectRef.current ? selectRef.current(freshData) : freshData;
+        setData(transformed);
+        dataRef.current = transformed;
+        lastSuccessRef.current = { key: cacheKey, t: Date.now() };
+        setIsStale(false);
+        setError(null);
+        setLoading(false);
+        onSuccessRef.current?.(transformed);
+      } catch (err) {
+        if (!mountedRef.current || currentKeyRef.current !== cacheKey) return;
+
+        const message = err instanceof Error ? err.message : 'Unbekannter Fehler';
+
+        // Wenn Cache vorhanden: Daten behalten, als stale markieren
+        if (dataRef.current !== null) {
+          setIsStale(true);
+        } else {
+          setError(message);
+          setLoading(false);
+        }
+        onErrorRef.current?.(err instanceof Error ? err : new Error(message));
+      } finally {
+        if (inflightKeyRef.current === cacheKey) {
+          inflightRef.current = null;
+          inflightKeyRef.current = null;
+        }
+      }
+    };
+
+    inflightKeyRef.current = cacheKey;
+    inflightRef.current = doFetch();
+    return inflightRef.current;
   }, [cacheKey, ttl]);
 
   // Initial Load
@@ -102,6 +138,12 @@ export function useOfflineQuery<T>(
 
       if (cancelled) return;
 
+      // Gerade eben (z.B. durch useIonViewWillEnter -> refresh) erfolgreich
+      // geladen? Dann keinen sofortigen zweiten, identischen Request starten.
+      const justFetched = lastSuccessRef.current !== null
+        && lastSuccessRef.current.key === cacheKey
+        && Date.now() - lastSuccessRef.current.t < JUST_FETCHED_MS;
+
       if (cached) {
         const transformed = selectRef.current ? selectRef.current(cached.data) : cached.data;
         setData(transformed);
@@ -111,19 +153,24 @@ export function useOfflineQuery<T>(
 
         if (offlineCache.isStale(cached)) {
           setIsStale(true);
-          if (networkMonitor.isOnline) {
+          if (networkMonitor.isOnline && !justFetched) {
             revalidate();
           }
         } else {
           setIsStale(false);
           // Auch bei frischem Cache im Hintergrund revalidieren (SWR)
-          if (networkMonitor.isOnline) {
+          if (networkMonitor.isOnline && !justFetched) {
             revalidate();
           }
         }
       } else if (networkMonitor.isOnline) {
-        // Kein Cache, aber online — direkt laden
-        revalidate();
+        // Kein Cache, aber online — direkt laden (justFetched: Daten sind
+        // bereits im State, ein erneuter Fetch braechte nichts Neues)
+        if (!justFetched) {
+          revalidate();
+        } else {
+          setLoading(false);
+        }
       } else {
         // Kein Cache + offline
         setError('Keine Daten verfügbar (offline)');

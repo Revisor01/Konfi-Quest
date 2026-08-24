@@ -89,7 +89,19 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
         unreadByRoom[Number(roomId)] = unread;
         totalUnread += unread;
       });
-      setChatUnreadByRoom(unreadByRoom);
+      // Referenz nur wechseln, wenn sich INHALTLICH etwas geändert hat.
+      // ChatOverview refresht die Raumliste bei jeder neuen Referenz — vorher
+      // erzeugte jeder refreshAllCounts() ein neues Objekt mit identischen
+      // Werten, und beim Öffnen des Chat-Tabs lief GET /chat/rooms dadurch
+      // doppelt (gemessen 24.08.2026, in allen drei Rollen: zweiter Request
+      // ~200 ms nach dem ersten, direkt nach Eintreffen der Zähler).
+      setChatUnreadByRoom(prev => {
+        const prevKeys = Object.keys(prev);
+        const nextKeys = Object.keys(unreadByRoom);
+        const unveraendert = prevKeys.length === nextKeys.length
+          && nextKeys.every(k => prev[Number(k)] === unreadByRoom[Number(k)]);
+        return unveraendert ? prev : unreadByRoom;
+      });
       setChatUnreadTotal(totalUnread);
 
       if (isAdmin) {

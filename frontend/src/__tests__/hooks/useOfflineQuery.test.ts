@@ -243,4 +243,76 @@ describe('useOfflineQuery', () => {
     await new Promise((r) => setTimeout(r, 50));
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
+
+  // In-flight-Dedupe (24.08.2026): Mount-Load und useIonViewWillEnter(refresh)
+  // feuerten beim ersten Öffnen parallel -> GET /chat/rooms lief in allen drei
+  // Rollen doppelt. Verbotener Fall: zweiter identischer Request während der
+  // erste noch läuft. Erlaubter Fall: sequentielles refresh() lädt erneut.
+  it('paralleles refresh() während laufendem Fetch startet KEINEN zweiten Request', async () => {
+    let resolveFetch: (v: any) => void;
+    const fetcher = vi.fn().mockImplementation(
+      () => new Promise((resolve) => { resolveFetch = resolve; })
+    );
+
+    const { result } = renderHook(() => useOfflineQuery('dedupe-key', fetcher));
+
+    // Mount-Load hängt noch im fetcher
+    await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1));
+
+    // Zweiter Aufruf während der erste läuft (entspricht useIonViewWillEnter)
+    const second = result.current.refresh();
+
+    resolveFetch!({ v: 'einmal' });
+    await second;
+
+    await waitFor(() => expect(result.current.data).toEqual({ v: 'einmal' }));
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  // Zweiter Teil des Doppel-Load-Fixes: useIonViewWillEnter(refresh) feuert
+  // VOR dem Mount-Effekt und ist längst fertig, wenn dessen langsames
+  // offlineCache.get zurückkommt (gemessen 24.08.2026: zweiter GET /chat/rooms
+  // ~400 ms nach dem ersten). Der Initial-Load darf dann NICHT sofort erneut
+  // laden — die Daten sind sekundenfrisch.
+  it('Initial-Load ueberspringt Revalidierung, wenn refresh() gerade erst geladen hat', async () => {
+    // cache.get langsam -> refresh() gewinnt das Rennen und ist fertig,
+    // bevor der Initial-Load seinen Zweig waehlt
+    let resolveCacheGet: (v: any) => void;
+    mockCacheGet.mockImplementation(
+      () => new Promise((resolve) => { resolveCacheGet = resolve; })
+    );
+    const fetcher = vi.fn().mockResolvedValue({ v: 'frisch' });
+
+    const { result } = renderHook(() => useOfflineQuery('viewenter-key', fetcher));
+
+    // refresh() (entspricht useIonViewWillEnter) laeuft durch, waehrend
+    // der Initial-Load noch im cache.get haengt
+    await result.current.refresh();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+
+    // Jetzt kommt der Initial-Load aus dem Cache-Lookup zurueck (Cache leer)
+    resolveCacheGet!(null);
+    await new Promise((r) => setTimeout(r, 50));
+
+    // KEIN zweiter identischer Request; die Daten aus refresh() stehen bereit
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(result.current.data).toEqual({ v: 'frisch' }));
+    expect(result.current.loading).toBe(false);
+  });
+
+  it('sequentielles refresh() nach abgeschlossenem Fetch laedt erneut', async () => {
+    const fetcher = vi.fn()
+      .mockResolvedValueOnce({ v: 1 })
+      .mockResolvedValueOnce({ v: 2 });
+
+    const { result } = renderHook(() => useOfflineQuery('sequential-key', fetcher));
+
+    await waitFor(() => expect(result.current.data).toEqual({ v: 1 }));
+    expect(fetcher).toHaveBeenCalledTimes(1);
+
+    await result.current.refresh();
+
+    await waitFor(() => expect(result.current.data).toEqual({ v: 2 }));
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
 });

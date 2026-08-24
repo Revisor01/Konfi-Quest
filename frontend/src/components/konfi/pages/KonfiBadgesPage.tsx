@@ -76,11 +76,23 @@ const KonfiBadgesPage: React.FC = () => {
   };
   useLiveRefresh('badges', refreshAll);
 
-  // Mark badges as seen (Write-Aktion, nicht cachen)
+  // Mark badges as seen (Write-Aktion, nicht cachen).
+  // Dedupe über die Signatur der ungesehenen Badge-IDs: badgeData ändert sich
+  // beim Öffnen zweimal (erst Cache, dann Netz-Revalidierung) mit identischen
+  // unseen-Badges — gemessen am 24.08.2026 gingen dadurch pro Tab-Öffnen ZWEI
+  // POST /konfi/badges/mark-seen raus. Kommen später NEUE Badges dazu, ändert
+  // sich die Signatur und es wird erneut markiert.
+  const lastMarkedRef = React.useRef<string>('');
   useEffect(() => {
     if (badgeData) {
-      const hasUnseenBadges = badgeData.earned.some((badge: any) => !badge.seen);
+      const unseenIds = badgeData.earned
+        .filter((badge: any) => !badge.seen)
+        .map((badge: any) => badge.id)
+        .sort((a: number, b: number) => a - b)
+        .join(',');
+      const hasUnseenBadges = unseenIds.length > 0 && unseenIds !== lastMarkedRef.current;
       if (hasUnseenBadges) {
+        lastMarkedRef.current = unseenIds;
         if (!networkMonitor.isOnline) {
           writeQueue.enqueue({
             method: 'POST',
