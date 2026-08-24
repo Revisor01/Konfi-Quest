@@ -42,6 +42,7 @@ import {
 interface DashboardConfig {
   show_konfirmation: boolean;
   show_challenges: boolean;
+  show_konfispruch: boolean;
   show_events: boolean;
   show_losung: boolean;
   show_badges: boolean;
@@ -51,6 +52,7 @@ interface DashboardConfig {
 interface TeamerDashboardConfig {
   show_zertifikate: boolean;
   show_challenges: boolean;
+  show_konfispruch: boolean;
   show_events: boolean;
   show_badges: boolean;
   show_losung: boolean;
@@ -69,6 +71,7 @@ const KONFI_LABELS: Record<string, string> = {
 const TEAMER_LABELS: Record<string, string> = {
   zertifikate: 'Zertifikate',
   challenges: 'Challenges',
+  konfispruch: 'Konfispruch',
   events: 'Events',
   badges: 'Badges',
   losung: 'Tageslosung'
@@ -87,6 +90,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
   const [dashboardConfig, setDashboardConfig] = useState<DashboardConfig>({
     show_konfirmation: true,
     show_challenges: true,
+    show_konfispruch: true,
     show_events: true,
     show_losung: true,
     show_badges: true,
@@ -96,6 +100,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
   const [teamerDashboardConfig, setTeamerDashboardConfig] = useState<TeamerDashboardConfig>({
     show_zertifikate: true,
     show_challenges: true,
+    show_konfispruch: true,
     show_events: true,
     show_badges: true,
     show_losung: true
@@ -133,6 +138,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
         setDashboardConfig({
           show_konfirmation: data.dashboard_show_konfirmation ?? true,
           show_challenges: data.dashboard_show_challenges ?? true,
+          show_konfispruch: data.dashboard_show_konfispruch ?? true,
           show_events: data.dashboard_show_events ?? true,
           show_losung: data.dashboard_show_losung ?? true,
           show_badges: data.dashboard_show_badges ?? true,
@@ -141,6 +147,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
         setTeamerDashboardConfig({
           show_zertifikate: data.teamer_dashboard_show_zertifikate ?? true,
           show_challenges: data.teamer_dashboard_show_challenges ?? true,
+          show_konfispruch: data.teamer_dashboard_show_konfispruch ?? true,
           show_events: data.teamer_dashboard_show_events ?? true,
           show_badges: data.teamer_dashboard_show_badges ?? true,
           show_losung: data.teamer_dashboard_show_losung ?? true

@@ -79,7 +79,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
     <p class="marke-unter">API-Referenz</p>
     <p class="marke-unter" style="margin-bottom:20px"><a href="./swagger.html" style="color:var(--akzent)">Swagger-Ansicht</a> · <a href="/docs/" style="color:var(--akzent)">Handbuch</a></p>
     <p class="nav-titel">Bereiche</p>
-    <ul><li class="nav-gruppe"><a href="#chat-challenges"><span class="nav-punkt" style="background:#06b6d4"></span>Chat &amp; Challenges<span class="nav-zahl">43</span></a></li><li class="nav-gruppe"><a href="#konfis-events"><span class="nav-punkt" style="background:#5b21b6"></span>Konfis &amp; Termine<span class="nav-zahl">72</span></a></li><li class="nav-gruppe"><a href="#verwaltung-auth"><span class="nav-punkt" style="background:#047857"></span>Verwaltung &amp; Anmeldung<span class="nav-zahl">60</span></a></li><li class="nav-gruppe"><a href="#teamer-material"><span class="nav-punkt" style="background:#be185d"></span>Teamer:innen, Material &amp; Wrapped<span class="nav-zahl">39</span></a></li><li class="nav-gruppe"><a href="#stammdaten"><span class="nav-punkt" style="background:#b45309"></span>Stammdaten<span class="nav-zahl">27</span></a></li></ul>
+    <ul><li class="nav-gruppe"><a href="#chat-challenges"><span class="nav-punkt" style="background:#06b6d4"></span>Chat &amp; Challenges<span class="nav-zahl">43</span></a></li><li class="nav-gruppe"><a href="#konfis-events"><span class="nav-punkt" style="background:#5b21b6"></span>Konfis &amp; Termine<span class="nav-zahl">72</span></a></li><li class="nav-gruppe"><a href="#verwaltung-auth"><span class="nav-punkt" style="background:#047857"></span>Verwaltung &amp; Anmeldung<span class="nav-zahl">60</span></a></li><li class="nav-gruppe"><a href="#teamer-material"><span class="nav-punkt" style="background:#be185d"></span>Teamer:innen, Material &amp; Wrapped<span class="nav-zahl">41</span></a></li><li class="nav-gruppe"><a href="#stammdaten"><span class="nav-punkt" style="background:#b45309"></span>Stammdaten<span class="nav-zahl">27</span></a></li></ul>
     <div class="legende">
       <p class="nav-titel">Methoden</p>
       <dl>
@@ -97,7 +97,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       aufrufen dürfen. Wo Hinweise stehen, sind grün markierte Punkte behobene
       Befunde aus dem Berechtigungs-Audit, graue noch offene.</p>
       <div class="kennzahlen">
-        <div class="kennzahl"><b>241</b><span>Operationen</span></div>
+        <div class="kennzahl"><b>243</b><span>Operationen</span></div>
         <div class="kennzahl"><b>5</b><span>Bereiche</span></div>
         <div class="kennzahl"><b>5</b><span>Rollen</span></div>
       </div>
@@ -812,11 +812,19 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
         <div class="zugriff"><span class="chip r-super">Super-Admin</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Inline: req.user.is_super_admin, sonst 403</div>
       </article></div>
     </section><section id="teamer-material" class="service" style="--service:#be185d">
-      <header class="service-kopf"><h2>Teamer:innen, Material &amp; Wrapped</h2><p class="service-meta">39 Operationen</p></header>
+      <header class="service-kopf"><h2>Teamer:innen, Material &amp; Wrapped</h2><p class="service-meta">41 Operationen</p></header>
       <div class="routen"><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/teamer/profile</code></div>
         <p class="summary">Eigenes Teamer-Profil inkl. eingefrorener Konfi-Vergangenheit</p>
         <div class="zugriff"><span class="chip r-teamer">Teamer:in</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>Inline-Check role_name === 'teamer'</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>nur eigene Daten (WHERE id/user_id = req.user.id)</div><div class="hinweis">Kein requireTeamer, sondern ein eigener Inline-Guard. Die User-Abfrage läuft über WHERE u.id = $1 ohne organization_id - unkritisch, da es die eigene Zeile ist.</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#b45309">PATCH</span><code class="pfad">/api/teamer/profile</code></div>
+        <p class="summary">Eigenen Konfispruch setzen (Listen-Wahl ODER Freitext)</p>
+        <div class="zugriff"><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireTeamer</code> · <code>Inline-Check role_name === 'teamer'</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>nur eigenes Profil (user_id = req.user.id); Listen-Spruch org-gescopt (organization_id IS NULL OR = eigene Org)</div>
+      </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/teamer/konfsprueche</code></div>
+        <p class="summary">Kuratierte Konfispruch-Liste für das Auswahl-Modal (Teamer-Sicht)</p>
+        <div class="zugriff"><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireTeamer</code> · <code>Inline-Check role_name === 'teamer'</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>organization_id IS NULL OR = eigene Org, nur is_active</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/teamer/konfis</code></div>
         <p class="summary">Konfis der zugewiesenen Jahrgänge (Auswahl für Direktnachrichten)</p>

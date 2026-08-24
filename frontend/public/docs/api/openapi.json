@@ -3,7 +3,7 @@
   "info": {
     "title": "Konfi Quest API",
     "version": "1.0.0",
-    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n241 Operationen."
+    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n243 Operationen."
   },
   "servers": [
     {
@@ -2846,7 +2846,8 @@
                       "type": "boolean"
                     },
                     "konfspruch_visible": {
-                      "type": "boolean"
+                      "type": "boolean",
+                      "description": "true nur wenn jahrgaenge.konfspruch_enabled UND der Org-Schalter dashboard_show_konfispruch nicht false ist"
                     },
                     "level_info": {
                       "type": "object",
@@ -9609,6 +9610,111 @@
         "tags": [
           "Teamer:innen, Material & Wrapped"
         ]
+      },
+      "patch": {
+        "summary": "Eigenen Konfispruch setzen (Listen-Wahl ODER Freitext)",
+        "description": "Gegenstueck zu PATCH /api/konfi/profile für Teamer:innen. Entweder konfspruch_id + translation (kuratierte Liste, org-gescopt und is_active geprüft) oder konfspruch_freitext + konfspruch_freitext_referenz (Referenz Pflicht, max. 100 Zeichen; Text max. 1000 Zeichen). Genau eine Quelle bleibt aktiv, die jeweils andere wird geleert. Anders als bei Konfis wird die konfi_profiles-Zeile per Upsert (ON CONFLICT user_id) angelegt: direkt als Teamer:in angelegte Accounts haben noch keine. Bestehende Zeilen befoerderter Konfis behalten ihre eingefrorenen Punkte.\n",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "konfspruch_id": {
+                    "type": "integer"
+                  },
+                  "translation": {
+                    "type": "string",
+                    "enum": [
+                      "luther2017",
+                      "bigs",
+                      "gute_nachricht",
+                      "elberfelder"
+                    ]
+                  },
+                  "konfspruch_freitext": {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "konfspruch_freitext_referenz": {
+                    "type": "string",
+                    "maxLength": 100
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "teamer"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireTeamer",
+            "Inline-Check role_name === 'teamer'"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "nur eigenes Profil (user_id = req.user.id); Listen-Spruch org-gescopt (organization_id IS NULL OR = eigene Org)"
+        },
+        "responses": {
+          "200": {
+            "description": "success + konfspruch (source liste|freitext)"
+          },
+          "400": {
+            "description": "Weder gueltige Listen-Wahl noch Freitext, leerer Text, fehlende Referenz oder Laengenlimit verletzt"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "Aufrufer ist kein Teamer"
+          },
+          "404": {
+            "description": "Listen-Spruch nicht vorhanden, inaktiv oder fremde Organisation"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Teamer:innen, Material & Wrapped"
+        ]
+      }
+    },
+    "/api/teamer/konfsprueche": {
+      "get": {
+        "summary": "Kuratierte Konfispruch-Liste für das Auswahl-Modal (Teamer-Sicht)",
+        "description": "Gegenstueck zu GET /api/konfi/konfsprueche: alle aktiven Sprueche (globale mit organization_id NULL plus eigene der Organisation) mit Referenz, Fundstelle und den vier Uebersetzungen (fehlende Texte als leerer String).\n",
+        "x-berechtigung": {
+          "rollen": [
+            "teamer"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireTeamer",
+            "Inline-Check role_name === 'teamer'"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "organization_id IS NULL OR = eigene Org, nur is_active"
+        },
+        "responses": {
+          "200": {
+            "description": "Array (id, reference, book, chapter, verse, uebersetzungen{4 Keys})"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "Aufrufer ist kein Teamer"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "tags": [
+          "Teamer:innen, Material & Wrapped"
+        ]
       }
     },
     "/api/teamer/konfis": {
@@ -10228,7 +10334,7 @@
     "/api/teamer/dashboard": {
       "get": {
         "summary": "Teamer-Dashboard (Zertifikate, Termine, Abzeichen, Konfiguration)",
-        "description": "Liefert Begruessung, alle aktiven Zertifikat-Typen der Organisation mit eigenem Status (valid | expired | not_earned), die nächsten bis zu fuenf zukuenftigen, nicht abgesagten Termine, für die die Teamer:in selbst gebucht ist, die letzten drei erreichten Teamer-Abzeichen mit Zaehlern sowie die Dashboard-Konfiguration der Organisation (show_zertifikate, show_challenges, show_events, show_badges, show_losung und section_order aus den settings-Schluesseln teamer_dashboard_*). Zuletzt wird geprüft, ob ein Teamer-Wrapped-Snapshot vorliegt. Die Challenges-Teaser selbst laedt das Frontend separat über GET /api/challenges/admin.\n",
+        "description": "Liefert Begruessung, alle aktiven Zertifikat-Typen der Organisation mit eigenem Status (valid | expired | not_earned), die nächsten bis zu fuenf zukuenftigen, nicht abgesagten Termine, für die die Teamer:in selbst gebucht ist, die letzten drei erreichten Teamer-Abzeichen mit Zaehlern sowie die Dashboard-Konfiguration der Organisation (show_zertifikate, show_challenges, show_konfispruch, show_events, show_badges, show_losung und section_order aus den settings-Schluesseln teamer_dashboard_*). Dazu kommt der eigene Konfispruch aus konfi_profiles (aufgeloeste Listen-Wahl oder Freitext, null ohne Eintrag oder bei abgeschaltetem Schalter — dann wird die Tabelle gar nicht erst abgefragt). Zuletzt wird geprüft, ob ein Teamer-Wrapped-Snapshot vorliegt. Die Challenges-Teaser selbst laedt das Frontend separat über GET /api/challenges/admin.\n",
         "x-berechtigung": {
           "rollen": [
             "teamer"
@@ -10274,10 +10380,17 @@
                     },
                     "config": {
                       "type": "object",
-                      "description": "show_zertifikate, show_challenges, show_events, show_badges, show_losung, section_order"
+                      "description": "show_zertifikate, show_challenges, show_konfispruch, show_events, show_badges, show_losung, section_order"
                     },
                     "has_wrapped": {
                       "type": "boolean"
+                    },
+                    "konfspruch": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "description": "source (liste|freitext), reference, text, ggf. id + translation"
                     }
                   }
                 }
@@ -12961,10 +13074,16 @@
                   "dashboard_show_challenges": {
                     "type": "boolean"
                   },
+                  "dashboard_show_konfispruch": {
+                    "type": "boolean"
+                  },
                   "teamer_dashboard_show_zertifikate": {
                     "type": "boolean"
                   },
                   "teamer_dashboard_show_challenges": {
+                    "type": "boolean"
+                  },
+                  "teamer_dashboard_show_konfispruch": {
                     "type": "boolean"
                   },
                   "teamer_dashboard_show_events": {

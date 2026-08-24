@@ -922,6 +922,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       const config = {
         show_zertifikate: true,
         show_challenges: true,
+        show_konfispruch: true,
         show_events: true,
         show_badges: true,
         show_losung: true
@@ -934,7 +935,15 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           config[row.key.replace('teamer_dashboard_show_', 'show_')] = row.value === 'true' || row.value === '1';
         }
       });
-      config.section_order = teamerSectionOrder || ['zertifikate', 'challenges', 'events', 'badges', 'losung'];
+      config.section_order = teamerSectionOrder || ['zertifikate', 'challenges', 'konfispruch', 'events', 'badges', 'losung'];
+
+      // 6. Konfispruch: aus konfi_profiles — beförderte Teamer:innen haben ihn
+      // aus ihrer Konfi-Zeit, direkt angelegte können ihn über PATCH /profile
+      // eintragen. Bei abgeschalteter Karte wird gar nicht erst abgefragt.
+      let konfspruch = null;
+      if (config.show_konfispruch !== false) {
+        konfspruch = await loadKonfspruch(userId, orgId);
+      }
 
       // Wrapped-Verfuegbarkeit prüfen (Teamer: direkt auf wrapped_snapshots)
       const { rows: [wrappedResult] } = await db.query(
@@ -946,10 +955,201 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       );
       const has_wrapped = wrappedResult?.has_wrapped || false;
 
-      res.json({ greeting, certificates, events, badges, config, has_wrapped });
+      res.json({ greeting, certificates, events, badges, config, has_wrapped, konfspruch });
     } catch (err) {
       console.error('Error loading teamer dashboard:', err);
       res.status(500).json({ error: 'Fehler beim Laden des Teamer-Dashboards' });
+    }
+  });
+
+  // ====================================================================
+  // KONFISPRUCH (Teamer) — gleiche Daten wie bei Konfis (konfi_profiles),
+  // damit ein bei der Beförderung mitgebrachter Spruch erhalten bleibt.
+  // ====================================================================
+
+  // Gueltige Translation-Keys wie in routes/konfi.js (deskriptive Keys der
+  // Tabelle konfspruch_uebersetzungen, NICHT die Tageslosungs-Kuerzel).
+  const KONFSPRUCH_TRANSLATIONS = ['luther2017', 'bigs', 'gute_nachricht', 'elberfelder'];
+
+  // Loest den gespeicherten Konfispruch eines Users auf (Listen-Wahl oder
+  // Freitext) — Rueckgabeform wie in GET /konfi/profile.
+  async function loadKonfspruch(userId, organizationId) {
+    const { rows: [kp] } = await db.query(
+      `SELECT konfspruch_id, konfspruch_freitext, konfspruch_freitext_referenz,
+              konfspruch_translation
+       FROM konfi_profiles WHERE user_id = $1`,
+      [userId]
+    );
+    if (!kp) return null;
+
+    if (kp.konfspruch_id) {
+      const spruchTranslation = kp.konfspruch_translation || 'luther2017';
+      const { rows: [spruch] } = await db.query(
+        `SELECT ks.id, ks.reference, ku.text
+         FROM konfsprueche ks
+         LEFT JOIN konfspruch_uebersetzungen ku
+           ON ku.spruch_id = ks.id AND ku.translation = $2
+         WHERE ks.id = $1 AND ks.is_active = true
+           AND (ks.organization_id IS NULL OR ks.organization_id = $3)`,
+        [kp.konfspruch_id, spruchTranslation, organizationId]
+      );
+      if (spruch) {
+        return {
+          source: 'liste',
+          id: spruch.id,
+          reference: spruch.reference,
+          text: spruch.text || '',
+          translation: kp.konfspruch_translation || null
+        };
+      }
+      return null;
+    }
+
+    if (kp.konfspruch_freitext) {
+      return {
+        source: 'freitext',
+        text: kp.konfspruch_freitext,
+        reference: kp.konfspruch_freitext_referenz
+      };
+    }
+    return null;
+  }
+
+  // GET /teamer/konfsprueche — kuratierte Liste für das Auswahl-Modal
+  // (org-gefiltert, gleiche Aufbereitung wie GET /konfi/konfsprueche).
+  router.get('/konfsprueche', rbacVerifier, requireTeamer, async (req, res) => {
+    if (req.user.role_name !== 'teamer') {
+      return res.status(403).json({ error: 'Nur Teamer können die Spruchliste abrufen' });
+    }
+    try {
+      const orgId = req.user.organization_id;
+      const { rows } = await db.query(
+        `SELECT ks.id, ks.reference, ks.book, ks.chapter, ks.verse,
+                COALESCE(
+                  json_object_agg(ku.translation, ku.text) FILTER (WHERE ku.translation IS NOT NULL),
+                  '{}'::json
+                ) AS uebersetzungen
+         FROM konfsprueche ks
+         LEFT JOIN konfspruch_uebersetzungen ku ON ku.spruch_id = ks.id
+         WHERE ks.is_active = true
+           AND (ks.organization_id IS NULL OR ks.organization_id = $1)
+         GROUP BY ks.id, ks.reference, ks.book, ks.chapter, ks.verse, ks.sort_order
+         ORDER BY ks.sort_order, ks.id`,
+        [orgId]
+      );
+
+      const sprueche = rows.map((row) => {
+        const uebersetzungen = {};
+        for (const key of KONFSPRUCH_TRANSLATIONS) {
+          uebersetzungen[key] = (row.uebersetzungen && row.uebersetzungen[key]) || '';
+        }
+        return {
+          id: row.id,
+          reference: row.reference,
+          book: row.book,
+          chapter: row.chapter,
+          verse: row.verse,
+          uebersetzungen
+        };
+      });
+
+      res.json(sprueche);
+    } catch (err) {
+      console.error('Database error in GET /teamer/konfsprueche:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // PATCH /teamer/profile — eigenen Konfispruch setzen (Listen-Wahl ODER
+  // Freitext, genau EINE Quelle aktiv). Anders als bei Konfis wird die
+  // konfi_profiles-Zeile per Upsert angelegt: direkt als Teamer:in angelegte
+  // Accounts haben noch keine.
+  router.patch('/profile', rbacVerifier, requireTeamer, async (req, res) => {
+    if (req.user.role_name !== 'teamer') {
+      return res.status(403).json({ error: 'Nur Teamer können ihren Konfispruch setzen' });
+    }
+    try {
+      const userId = req.user.id;
+      const orgId = req.user.organization_id;
+      const { konfspruch_id, translation, konfspruch_freitext, konfspruch_freitext_referenz } = req.body;
+
+      // Modus 1: Listen-Wahl
+      if (konfspruch_id !== undefined && konfspruch_id !== null) {
+        const spruchId = parseInt(konfspruch_id, 10);
+        if (Number.isNaN(spruchId)) {
+          return res.status(400).json({ error: 'Ungültige Spruch-ID' });
+        }
+        if (!KONFSPRUCH_TRANSLATIONS.includes(translation)) {
+          return res.status(400).json({
+            error: 'Ungültige Bibelübersetzung',
+            valid_translations: KONFSPRUCH_TRANSLATIONS
+          });
+        }
+        const { rows: [spruch] } = await db.query(
+          `SELECT id FROM konfsprueche
+           WHERE id = $1 AND is_active = true
+             AND (organization_id IS NULL OR organization_id = $2)`,
+          [spruchId, orgId]
+        );
+        if (!spruch) {
+          return res.status(404).json({ error: 'Konfispruch nicht gefunden' });
+        }
+        await db.query(
+          `INSERT INTO konfi_profiles (user_id, organization_id, konfspruch_id, konfspruch_translation)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (user_id) DO UPDATE
+           SET konfspruch_id = EXCLUDED.konfspruch_id,
+               konfspruch_translation = EXCLUDED.konfspruch_translation,
+               konfspruch_freitext = NULL, konfspruch_freitext_referenz = NULL`,
+          [userId, orgId, spruchId, translation]
+        );
+        return res.json({
+          success: true,
+          konfspruch: { source: 'liste', id: spruchId, translation }
+        });
+      }
+
+      // Modus 2: Freitext
+      if (konfspruch_freitext !== undefined && konfspruch_freitext !== null) {
+        const freitext = String(konfspruch_freitext).trim();
+        const referenz = konfspruch_freitext_referenz != null
+          ? String(konfspruch_freitext_referenz).trim()
+          : '';
+        if (!freitext) {
+          return res.status(400).json({ error: 'Der Spruchtext darf nicht leer sein' });
+        }
+        if (!referenz) {
+          return res.status(400).json({
+            error: 'Bei einem eigenen Spruch ist die Stellenangabe (Referenz) verpflichtend'
+          });
+        }
+        if (referenz.length > 100) {
+          return res.status(400).json({ error: 'Die Stellenangabe darf höchstens 100 Zeichen lang sein' });
+        }
+        if (freitext.length > 1000) {
+          return res.status(400).json({ error: 'Der Spruchtext ist zu lang' });
+        }
+        await db.query(
+          `INSERT INTO konfi_profiles (user_id, organization_id, konfspruch_freitext, konfspruch_freitext_referenz)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (user_id) DO UPDATE
+           SET konfspruch_freitext = EXCLUDED.konfspruch_freitext,
+               konfspruch_freitext_referenz = EXCLUDED.konfspruch_freitext_referenz,
+               konfspruch_id = NULL`,
+          [userId, orgId, freitext, referenz]
+        );
+        return res.json({
+          success: true,
+          konfspruch: { source: 'freitext', text: freitext, reference: referenz }
+        });
+      }
+
+      return res.status(400).json({
+        error: 'Bitte entweder einen Spruch aus der Liste (konfspruch_id + translation) oder einen eigenen Spruch (konfspruch_freitext + konfspruch_freitext_referenz) angeben'
+      });
+    } catch (err) {
+      console.error('Database error in PATCH /teamer/profile:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 

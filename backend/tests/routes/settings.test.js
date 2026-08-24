@@ -137,6 +137,23 @@ describe('Settings Routes', () => {
       expect(getRes.body.teamer_dashboard_show_challenges).toBe(false);
     });
 
+    it('Konfispruch-Schalter (Konfi + Teamer) speichern und lesen', async () => {
+      const res = await request(app)
+        .put('/api/settings')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ dashboard_show_konfispruch: false, teamer_dashboard_show_konfispruch: false });
+
+      expect(res.status).toBe(200);
+
+      const getRes = await request(app)
+        .get('/api/settings')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(getRes.status).toBe(200);
+      expect(getRes.body.dashboard_show_konfispruch).toBe(false);
+      expect(getRes.body.teamer_dashboard_show_konfispruch).toBe(false);
+    });
+
     it('teamer_dashboard_show_challenges muss Boolean sein -> 400', async () => {
       const res = await request(app)
         .put('/api/settings')

@@ -21,6 +21,11 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   Startseite der Teamer:innen, mit Restzeit und Absprung in den
   Challenges-Bereich. Die Leitung kann die Karte in den
   Dashboard-Einstellungen abschalten.
+- Teamer:innen sehen ihren Konfispruch auf der Startseite: Wer als Konfi
+  einen gewählt hatte, bringt ihn mit; alle anderen können ihn dort
+  eintragen — aus der Liste oder als eigener Spruch. Die Leitung kann die
+  Karte in den Dashboard-Einstellungen abschalten; der dortige
+  Konfispruch-Schalter wirkt jetzt auch für das Konfi-Dashboard.
 - Handbuch unter konfi-quest.de/docs: erklärt für Konfis, Teamer:innen und die
   Leitung getrennt, was sie in der App tun können. Auf der Startseite oben in
   der Navigation, bei den häufigen Fragen und im Fußbereich verlinkt. Dazu

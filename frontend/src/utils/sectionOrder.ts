@@ -22,6 +22,7 @@ export const DEFAULT_KONFI_SECTION_ORDER = [
 export const DEFAULT_TEAMER_SECTION_ORDER = [
   'zertifikate',
   'challenges',
+  'konfispruch',
   'events',
   'badges',
   'losung'

@@ -311,8 +311,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       const has_wrapped = wrappedRes.rows[0]?.has_wrapped || false;
 
       // Konfispruch-Sichtbarkeit (Backend-Gate, SPRUCH-07): Flag aus
-      // jahrgaenge.konfspruch_enabled. Frontend rendert die Card nur bei true.
-      const konfspruch_visible = konfi.konfspruch_enabled === true;
+      // jahrgaenge.konfspruch_enabled UND dem Dashboard-Schalter der Leitung
+      // (dashboard_show_konfispruch). Frontend rendert die Card nur bei true.
+      const konfspruch_visible = konfi.konfspruch_enabled === true
+        && dashboardMap.dashboard_show_konfispruch !== false;
 
       // Return dashboard data
       res.json({

@@ -39,6 +39,7 @@ import WrappedModal from '../../wrapped/WrappedModal';
 import { ProfileHeaderButton, TrialBanner } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { mergeSectionOrder, DEFAULT_TEAMER_SECTION_ORDER } from '../../../utils/sectionOrder';
+import KonfispruchSelectModal from '../../konfi/modals/KonfispruchSelectModal';
 import TeamerOnboardingModal from '../modals/TeamerOnboardingModal';
 import TeamerUpdateWalkthroughModal from '../modals/TeamerUpdateWalkthroughModal';
 import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
@@ -138,10 +139,20 @@ interface Badge {
 interface DashboardConfig {
   show_zertifikate: boolean;
   show_challenges?: boolean;
+  show_konfispruch?: boolean;
   show_events: boolean;
   show_badges: boolean;
   show_losung: boolean;
   section_order?: string[];
+}
+
+/** Gespeicherter Konfispruch (aus konfi_profiles, wie bei Konfis). */
+interface Konfspruch {
+  source: 'liste' | 'freitext';
+  id?: number;
+  reference?: string;
+  text?: string;
+  translation?: string;
 }
 
 /** Teaser-Daten einer laufenden Challenge für die Dashboard-Karte. */
@@ -171,6 +182,7 @@ interface DashboardData {
   badges: { recent: Badge[]; earned_count: number; total_count: number };
   config: DashboardConfig;
   has_wrapped?: boolean;
+  konfspruch?: Konfspruch | null;
 }
 
 interface DailyVerse {
@@ -366,6 +378,23 @@ const TeamerDashboardPage: React.FC = () => {
 
   const openWrapped = () => {
     presentWrappedModal({ cssClass: 'wrapped-modal-fullscreen' });
+  };
+
+  // Konfispruch-Modal — dieselbe Auswahl wie bei Konfis, nur gegen die
+  // Teamer-Endpunkte (GET /teamer/konfsprueche, PATCH /teamer/profile).
+  const [presentKonfispruchModal, dismissKonfispruchModal] = useIonModal(KonfispruchSelectModal, {
+    onClose: () => dismissKonfispruchModal(),
+    onSuccess: () => {
+      dismissKonfispruchModal();
+      refreshDashboard();
+    },
+    current: dashboardData?.konfspruch ?? null,
+    apiBasePath: '/teamer' as const,
+    variant: 'teamer' as const
+  });
+
+  const openKonfispruch = () => {
+    presentKonfispruchModal();
   };
 
   const getFirstName = (name: string) => name.split(' ')[0];
@@ -736,6 +765,49 @@ const TeamerDashboardPage: React.FC = () => {
                     Alle Challenges anzeigen <IonIcon icon={chevronForward} />
                   </div>
                 </div>
+              </div>
+            </div>
+              );
+            }
+            // Konfispruch — vorhandener Spruch (aus der Konfi-Zeit oder selbst
+            // eingetragen) wird gezeigt; ohne Spruch lädt die Karte zum
+            // Eintragen ein.
+            if (sectionKey === 'konfispruch') {
+              if (config?.show_konfispruch === false) return null;
+              const spruch = dashboardData?.konfspruch;
+              const spruchText = spruch?.text?.trim();
+              const spruchReference = spruch?.reference?.trim();
+              return (
+            <div
+              key="konfispruch"
+              className="app-dashboard-section app-dashboard-section--konfispruch"
+              onClick={openKonfispruch}
+              style={{ cursor: 'pointer' }}
+            >
+              <div className="app-dashboard-section__bg-text">
+                <h2 className="app-dashboard-section__bg-label">DEIN</h2>
+                <h2 className="app-dashboard-section__bg-label">KONFISPRUCH</h2>
+              </div>
+              <div className="app-dashboard-section__content">
+                {spruchReference || spruchText ? (
+                  <>
+                    {spruchText && (
+                      <p className="app-dashboard-quote">{spruchText}</p>
+                    )}
+                    {spruchReference && (
+                      <span className="app-dashboard-cite">{spruchReference}</span>
+                    )}
+                  </>
+                ) : (
+                  <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                    <div className="app-headline" style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white', marginBottom: '8px' }}>
+                      Dein Konfispruch
+                    </div>
+                    <div style={{ fontSize: '0.95rem' }}>
+                      Tippe, um deinen Konfirmationsspruch einzutragen
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
               );

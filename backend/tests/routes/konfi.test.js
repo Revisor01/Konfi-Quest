@@ -192,6 +192,21 @@ describe('Konfi Routes', () => {
       expect(res.body.konfspruch_visible).toBe(false);
     });
 
+    it('konfspruch_visible ist false wenn die Leitung dashboard_show_konfispruch abschaltet', async () => {
+      await db.query('UPDATE jahrgaenge SET konfspruch_enabled = true WHERE id = $1', [JAHRGAENGE.jahrgang1.id]);
+      await db.query(
+        `INSERT INTO settings (organization_id, key, value) VALUES (1, 'dashboard_show_konfispruch', 'false')
+         ON CONFLICT (organization_id, key) DO UPDATE SET value = EXCLUDED.value`
+      );
+
+      const res = await request(app)
+        .get('/api/konfi/dashboard')
+        .set('Authorization', `Bearer ${konfiToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.konfspruch_visible).toBe(false);
+    });
+
     it('confirmation_date stammt aus dem is_konfirmation-Event des Jahrgangs', async () => {
       // is_konfirmation-Event anlegen und jahrgang1 zuordnen.
       await db.query(

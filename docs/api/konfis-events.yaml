@@ -232,7 +232,7 @@ paths:
                   days_to_confirmation: { type: [integer, "null"] }
                   confirmation_date: { type: [string, "null"] }
                   has_wrapped: { type: boolean }
-                  konfspruch_visible: { type: boolean }
+                  konfspruch_visible: { type: boolean, description: "true nur wenn jahrgaenge.konfspruch_enabled UND der Org-Schalter dashboard_show_konfispruch nicht false ist" }
                   level_info: { type: object, description: "current_level, next_level, progress_percentage, points_to_next_level, all_levels" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }

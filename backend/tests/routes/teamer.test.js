@@ -765,6 +765,195 @@ describe('Teamer Routes', () => {
   });
 
   // ================================================================
+  // KONFISPRUCH (Teamer)
+  // ================================================================
+  describe('Konfispruch (Teamer)', () => {
+    // truncateAll leert konfsprueche — pro Test frisch anlegen (wie in konfi.test.js).
+    async function seedSpruch() {
+      const { rows: [spruch] } = await db.query(
+        `INSERT INTO konfsprueche (reference, book, chapter, verse, organization_id, sort_order)
+         VALUES ('Josua 1,9', 'Josua', 1, 9, NULL, 1)
+         RETURNING id`
+      );
+      const texte = {
+        luther2017: 'Sei getrost und unverzagt.',
+        bigs: 'Sei mutig und entschlossen.',
+        gute_nachricht: 'Sei stark und entschlossen.',
+        elberfelder: 'Sei stark und mutig.'
+      };
+      for (const [translation, text] of Object.entries(texte)) {
+        await db.query(
+          `INSERT INTO konfspruch_uebersetzungen (spruch_id, translation, text)
+           VALUES ($1, $2, $3)`,
+          [spruch.id, translation, text]
+        );
+      }
+      return spruch.id;
+    }
+
+    describe('GET /api/teamer/konfsprueche', () => {
+      it('Teamer bekommt 200 + Liste mit Referenz und 4 Uebersetzungs-Keys', async () => {
+        await seedSpruch();
+        const res = await request(app)
+          .get('/api/teamer/konfsprueche')
+          .set('Authorization', `Bearer ${teamerToken}`);
+
+        expect(res.status).toBe(200);
+        expect(Array.isArray(res.body)).toBe(true);
+        const eintrag = res.body.find((s) => s.reference === 'Josua 1,9');
+        expect(eintrag).toBeDefined();
+        expect(eintrag.uebersetzungen.luther2017).toBe('Sei getrost und unverzagt.');
+        expect(Object.keys(eintrag.uebersetzungen).sort()).toEqual(
+          ['bigs', 'elberfelder', 'gute_nachricht', 'luther2017']
+        );
+      });
+
+      it('Konfi bekommt 403', async () => {
+        const res = await request(app)
+          .get('/api/teamer/konfsprueche')
+          .set('Authorization', `Bearer ${konfiToken}`);
+        expect(res.status).toBe(403);
+      });
+    });
+
+    describe('PATCH /api/teamer/profile', () => {
+      it('Freitext legt fehlendes konfi_profiles an und erscheint im Dashboard', async () => {
+        // teamer1 hat im Seed KEIN konfi_profiles (direkt als Teamer angelegt)
+        const { rows: vorher } = await db.query(
+          'SELECT id FROM konfi_profiles WHERE user_id = $1', [3]
+        );
+        expect(vorher.length).toBe(0);
+
+        const res = await request(app)
+          .patch('/api/teamer/profile')
+          .set('Authorization', `Bearer ${teamerToken}`)
+          .send({ konfspruch_freitext: 'Der Herr ist mein Hirte.', konfspruch_freitext_referenz: 'Psalm 23,1' });
+
+        expect(res.status).toBe(200);
+        expect(res.body.konfspruch.source).toBe('freitext');
+
+        const { rows: [profil] } = await db.query(
+          'SELECT organization_id, konfspruch_freitext FROM konfi_profiles WHERE user_id = $1', [3]
+        );
+        expect(profil.konfspruch_freitext).toBe('Der Herr ist mein Hirte.');
+        expect(Number(profil.organization_id)).toBe(1);
+
+        const dashRes = await request(app)
+          .get('/api/teamer/dashboard')
+          .set('Authorization', `Bearer ${teamerToken}`);
+        expect(dashRes.status).toBe(200);
+        expect(dashRes.body.konfspruch).toEqual({
+          source: 'freitext',
+          text: 'Der Herr ist mein Hirte.',
+          reference: 'Psalm 23,1'
+        });
+      });
+
+      it('Listen-Wahl wird im Dashboard mit Text der gewaehlten Uebersetzung aufgeloest', async () => {
+        const spruchId = await seedSpruch();
+
+        const res = await request(app)
+          .patch('/api/teamer/profile')
+          .set('Authorization', `Bearer ${teamerToken}`)
+          .send({ konfspruch_id: spruchId, translation: 'luther2017' });
+
+        expect(res.status).toBe(200);
+
+        const dashRes = await request(app)
+          .get('/api/teamer/dashboard')
+          .set('Authorization', `Bearer ${teamerToken}`);
+        expect(dashRes.status).toBe(200);
+        expect(dashRes.body.konfspruch).toEqual({
+          source: 'liste',
+          id: spruchId,
+          reference: 'Josua 1,9',
+          text: 'Sei getrost und unverzagt.',
+          translation: 'luther2017'
+        });
+      });
+
+      it('Befoerderte Teamer:in behaelt beim Eintragen ihre eingefrorenen Punkte', async () => {
+        await db.query(
+          `INSERT INTO konfi_profiles (user_id, jahrgang_id, gottesdienst_points, gemeinde_points, organization_id)
+           VALUES (3, NULL, 7, 4, 1)`
+        );
+
+        const res = await request(app)
+          .patch('/api/teamer/profile')
+          .set('Authorization', `Bearer ${teamerToken}`)
+          .send({ konfspruch_freitext: 'Fürchte dich nicht.', konfspruch_freitext_referenz: 'Jesaja 41,10' });
+
+        expect(res.status).toBe(200);
+
+        const { rows: profile } = await db.query(
+          'SELECT gottesdienst_points, gemeinde_points, konfspruch_freitext FROM konfi_profiles WHERE user_id = $1', [3]
+        );
+        expect(profile.length).toBe(1);
+        expect(Number(profile[0].gottesdienst_points)).toBe(7);
+        expect(Number(profile[0].gemeinde_points)).toBe(4);
+        expect(profile[0].konfspruch_freitext).toBe('Fürchte dich nicht.');
+      });
+
+      it('Freitext ohne Stellenangabe gibt 400', async () => {
+        const res = await request(app)
+          .patch('/api/teamer/profile')
+          .set('Authorization', `Bearer ${teamerToken}`)
+          .send({ konfspruch_freitext: 'Ohne Referenz' });
+        expect(res.status).toBe(400);
+      });
+
+      it('Leerer Body gibt 400', async () => {
+        const res = await request(app)
+          .patch('/api/teamer/profile')
+          .set('Authorization', `Bearer ${teamerToken}`)
+          .send({});
+        expect(res.status).toBe(400);
+      });
+
+      it('Konfi bekommt 403', async () => {
+        const res = await request(app)
+          .patch('/api/teamer/profile')
+          .set('Authorization', `Bearer ${konfiToken}`)
+          .send({ konfspruch_freitext: 'Test', konfspruch_freitext_referenz: 'Test 1,1' });
+        expect(res.status).toBe(403);
+      });
+    });
+
+    describe('Dashboard-Schalter show_konfispruch', () => {
+      it('Default: show_konfispruch true, konfspruch null ohne Eintrag', async () => {
+        const res = await request(app)
+          .get('/api/teamer/dashboard')
+          .set('Authorization', `Bearer ${teamerToken}`);
+
+        expect(res.status).toBe(200);
+        expect(res.body.config.show_konfispruch).toBe(true);
+        expect(res.body.config.section_order).toContain('konfispruch');
+        expect(res.body.konfspruch).toBeNull();
+      });
+
+      it('Abgeschaltet: show_konfispruch false und konfspruch null trotz Eintrag', async () => {
+        await request(app)
+          .patch('/api/teamer/profile')
+          .set('Authorization', `Bearer ${teamerToken}`)
+          .send({ konfspruch_freitext: 'Der Herr ist mein Hirte.', konfspruch_freitext_referenz: 'Psalm 23,1' });
+
+        await db.query(
+          `INSERT INTO settings (organization_id, key, value) VALUES (1, 'teamer_dashboard_show_konfispruch', 'false')
+           ON CONFLICT (organization_id, key) DO UPDATE SET value = EXCLUDED.value`
+        );
+
+        const res = await request(app)
+          .get('/api/teamer/dashboard')
+          .set('Authorization', `Bearer ${teamerToken}`);
+
+        expect(res.status).toBe(200);
+        expect(res.body.config.show_konfispruch).toBe(false);
+        expect(res.body.konfspruch).toBeNull();
+      });
+    });
+  });
+
+  // ================================================================
   // TAGESLOSUNG
   // ================================================================
   describe('GET /api/teamer/tageslosung', () => {

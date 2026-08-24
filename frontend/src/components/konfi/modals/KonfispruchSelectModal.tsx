@@ -66,12 +66,17 @@ interface KonfispruchSelectModalProps {
   onClose: () => void;
   onSuccess: () => void;
   current?: CurrentKonfspruch | null;
+  /** API-Prefix: '/konfi' (Default) oder '/teamer' — beide Seiten haben
+   *  eigene, gleichförmige Endpunkte (GET .../konfsprueche, PATCH .../profile). */
+  apiBasePath?: '/konfi' | '/teamer';
+  /** Farbvariante des Speichern-Knopfs (Default: konfi). */
+  variant?: 'konfi' | 'teamer';
 }
 
 const isTranslation = (value?: string): value is Translation =>
   value === 'luther2017' || value === 'bigs' || value === 'gute_nachricht' || value === 'elberfelder';
 
-const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose, onSuccess, current }) => {
+const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose, onSuccess, current, apiBasePath = '/konfi', variant = 'konfi' }) => {
   const { isOnline } = useApp();
   const { isSubmitting, guard } = useActionGuard();
   const [presentToast] = useIonToast();
@@ -98,7 +103,7 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
   useEffect(() => {
     const loadSprueche = async () => {
       try {
-        const response = await api.get('/konfi/konfsprueche');
+        const response = await api.get(`${apiBasePath}/konfsprueche`);
         const liste = Array.isArray(response.data) ? response.data : [];
         setSprueche(liste);
         setLoadError(false);
@@ -132,7 +137,7 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
       }
       await guard(async () => {
         try {
-          await api.patch('/konfi/profile', {
+          await api.patch(`${apiBasePath}/profile`, {
             konfspruch_id: selectedSpruchId,
             translation
           });
@@ -161,7 +166,7 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
       }
       await guard(async () => {
         try {
-          await api.patch('/konfi/profile', {
+          await api.patch(`${apiBasePath}/profile`, {
             konfspruch_freitext: text,
             konfspruch_freitext_referenz: referenz
           });
@@ -186,7 +191,7 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
           </IonButtons>
           <IonButtons slot="end">
             <IonButton aria-label="Konfispruch speichern"
-              className="app-modal-submit-btn app-modal-submit-btn--konfi"
+              className={`app-modal-submit-btn app-modal-submit-btn--${variant}`}
               onClick={handleSave}
               disabled={isSubmitting || !isOnline}
             >
