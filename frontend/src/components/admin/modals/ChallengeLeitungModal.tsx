@@ -59,6 +59,7 @@ import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { istWebLink, linkBeschriftung } from '../../../utils/linkDisplay';
 import ChallengeSubmitModal from '../../konfi/modals/ChallengeSubmitModal';
 import { getChallengeStatus } from '../views/ChallengesManageView';
+import { anzahlBeitraege } from '../../../utils/challengeTexte';
 import type {
   AdminChallenge,
   KonfiChallenge,
@@ -171,14 +172,14 @@ const MEDIA_ICON: Record<string, string> = {
 // ueberall gleich aussieht.
 const STATUS_BADGE: Record<string, { label: string; icon: string; color: string }> = {
   pending: { label: 'Wartet auf Freigabe', icon: timeOutline, color: 'var(--app-color-warning)' },
-  approved: { label: 'Freigegeben', icon: checkmarkOutline, color: 'var(--app-color-success)' },
+  approved: { label: 'Freigegeben', icon: checkmarkOutline, color: 'var(--app-color-success-strong)' },
   hidden: { label: 'Ausgeblendet', icon: removeCircleOutline, color: 'var(--app-color-danger)' }
 };
 
 // Konsens NIE mit einem Haken darstellen: der Haken gehört allein dem
 // Freigabe-STATUS; der Konsens spricht in Augen-Metaphorik.
 const CONSENT_BADGE: Record<string, { label: string; icon: string; color: string }> = {
-  publish: { label: 'Mit Namen sichtbar', icon: eyeOutline, color: 'var(--app-color-success)' },
+  publish: { label: 'Mit Namen sichtbar', icon: eyeOutline, color: 'var(--app-color-success-strong)' },
   private: { label: 'Nur Leitung', icon: lockClosedOutline, color: '#6b7280' },
   anonymous: { label: 'Anonym sichtbar', icon: eyeOffOutline, color: '#7c3aed' }
 };
@@ -215,8 +216,8 @@ const buildVisibilitySubtitle = (challenge: AdminChallenge): string => {
   const sichtbarkeit = challenge.visibility === 'public'
     ? 'Für die Gruppe sichtbar'
     : challenge.visibility === 'private'
-      ? 'Nur für euch in der Leitung'
-      : 'Konfi entscheidet je Beitrag';
+      ? 'Nur Leitung'
+      : 'Wer einreicht, entscheidet je Beitrag';
   // Bei 'private' ist die Freigabe für die Gruppe bedeutungslos — dort gibt es
   // keine Galerie, in der etwas erscheinen könnte.
   if (challenge.visibility === 'private') return sichtbarkeit;
@@ -340,28 +341,30 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
   // Sind beide relevant, weicht "Gesamt" — die Gesamtzahl steht ohnehin in der
   // Listenueberschrift ("Beiträge (8)") und ist die schwaechste der Angaben.
   const headerStats = useMemo(() => {
+    // Reihenfolge wie im Feed gedacht: erst was zu sehen ist, dann was noch
+    // wartet, dann was zurueckgehalten wurde (Nutzerwunsch 24.08.2026).
+    // "Frei" war unklar — "Sichtbar" sagt, was die Gruppe erlebt, und bildet
+    // mit "Ausgeblendet" ein Paar.
+    //
     // Labels müssen KURZ sein: die Kachel ist auf 100px gedeckelt und das
     // Label steht in Grossbuchstaben mit Sperrung und ohne Umbruch
-    // (.app-stats-row__label) -> "Versteckt" / "Frei" statt der langen Woerter.
-    const optional: Array<{ value: number; label: string }> = [];
-    if (challenge?.moderated) optional.push({ value: counts.pending, label: 'Wartet' });
-    if (counts.hidden > 0) optional.push({ value: counts.hidden, label: 'Versteckt' });
+    // (.app-stats-row__label).
+    const stats: Array<{ value: number; label: string }> = [
+      { value: counts.approved, label: 'Sichtbar' }
+    ];
+    if (challenge?.moderated) stats.push({ value: counts.pending, label: 'Wartet' });
+    stats.push({ value: counts.hidden, label: 'Ausgebl.' });
 
-    const stats = optional.length >= 2
-      ? [...optional.slice(0, 2), { value: counts.approved, label: 'Frei' }]
-      : [{ value: counts.total, label: 'Gesamt' }, ...optional, { value: counts.approved, label: 'Frei' }];
-
-    // Bleiben nur zwei (keine Freigabe-Pflicht, nichts ausgeblendet), füllt
-    // "Versteckt: 0" auf — drei Kacheln sind gesetzt, zwei saehen luecken-
-    // haft aus.
-    while (stats.length < 3) stats.push({ value: counts.hidden, label: 'Versteckt' });
+    // Ohne Freigabe-Pflicht bleiben nur zwei Kacheln — die Gesamtzahl fuellt
+    // auf und beantwortet zugleich "wie viele Beitraege sind es insgesamt".
+    if (stats.length < 3) stats.splice(1, 0, { value: counts.total, label: 'Beiträge' });
 
     // Kacheln, die einem Reiter entsprechen, schalten dorthin. "Gesamt" hat
     // keinen eigenen Reiter (die Reiter sind disjunkt) und bleibt reine Anzeige.
     const filterZuLabel: Record<string, StatusFilter> = {
-      'Frei': 'feed',
+      'Sichtbar': 'feed',
       'Wartet': 'pending',
-      'Versteckt': 'hidden'
+      'Ausgebl.': 'hidden'
     };
 
     // effectiveFilter wird erst weiter unten deklariert — hier dieselbe
@@ -492,7 +495,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
     if (submission.moderation_status === 'pending') {
       actions.push({
         key: 'approve', text: 'Freigeben', icon: checkmarkCircleOutline,
-        color: 'var(--app-color-success)',
+        color: 'var(--app-color-success-strong)',
         run: () => moderate(submission, 'approve')
       });
     }
@@ -850,7 +853,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
               <div className="app-section-icon app-section-icon--challenges">
                 <IonIcon icon={albumsOutline} />
               </div>
-              <IonLabel>Beiträge ({filtered.length})</IonLabel>
+              <IonLabel>{anzahlBeitraege(filtered.length)}</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent style={{ padding: filtered.length === 0 ? '16px' : '12px' }}>
