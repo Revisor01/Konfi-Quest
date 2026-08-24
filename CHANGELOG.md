@@ -46,6 +46,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Geändert
 
+- Material mit Jahrgang sehen nur noch die Teamer:innen dieses Jahrgangs;
+  Material ohne Jahrgang weiterhin alle. Die Leitung sieht wie bisher alles.
+  Bisher war die Zuordnung nur eine Sortierhilfe, und jede Teamer:in sah jedes
+  Dokument. Beim Anlegen steht jetzt dabei, wer es dadurch zu sehen bekommt.
 - Der Tab "Events" heißt jetzt "Mitmachen" — er trägt Termine und Aktivitäten
   gemeinsam und hieß bisher wie einer seiner eigenen Bereiche.
 - Chat: Private Zweiergespräche kann nur noch lesen und exportieren, wer selbst
@@ -95,12 +99,6 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Bildschirmlesegeräte benennen jetzt alle Symbol-Schaltflächen und
   Wischaktionen mit ihrer Funktion statt nur "Schaltfläche".
 
-### Geändert
-
-- Material mit Jahrgang sehen nur noch die Teamer:innen dieses Jahrgangs;
-  Material ohne Jahrgang weiterhin alle. Die Leitung sieht wie bisher alles.
-  Bisher war die Zuordnung nur eine Sortierhilfe, und jede Teamer:in sah jedes
-  Dokument. Beim Anlegen steht jetzt dabei, wer es dadurch zu sehen bekommt.
 
 ### Behoben
 
