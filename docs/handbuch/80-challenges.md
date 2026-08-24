@@ -340,18 +340,21 @@ Zeichen) und ein Symbol aus einer Auswahl. Voreinstellung ist die Flagge.
 | | Normale Abzeichen | Challenge-Abzeichen |
 |---|---|---|
 | Wofür | eine Bedingung erfüllen (Punkte, Anzahl, Serie …) | **einen Beitrag einreichen** |
-| Wann | bei der nächsten Prüfung | **sofort beim Absenden** |
+| Wann | bei der nächsten Prüfung | beim Absenden bzw. mit der Freigabe (siehe unten) |
 | Zählen | ja, Bedingungen mit Werten | nein, es gibt nichts zu zählen |
 | Abstufungen | ja, verschiedene Abzeichen | nein, für alle dasselbe |
 | Wo es steht | in der Abzeichen-Liste | bei der Challenge, in der eigenen Sammlung |
 
-Wer einreicht, hat es. Punkt. Es hängt **nicht** davon ab, ob der Beitrag
-freigegeben wird — ein Beitrag, der noch wartet, bringt das Abzeichen genauso
-wie ein längst veröffentlichter. Und es hängt nicht an der Anzahl: Wer fünf
-Beiträge schickt, hat trotzdem genau ein Abzeichen.
+Wann es kommt, hängt an der Freigabe-Pflicht der Challenge:
 
-Beim ersten eigenen Beitrag zu einer Challenge kommt zusätzlich eine
-Benachrichtigung aufs Gerät.
+- **Ohne Freigabe-Pflicht** gibt es das Abzeichen **sofort beim Absenden**.
+- **Mit Freigabe-Pflicht** gibt es das Abzeichen erst, **wenn der Beitrag
+  freigegeben wurde** — ein wartender oder ausgeblendeter Beitrag zählt noch
+  nicht. Das gilt für alle gleich, auch für Teamer:innen und die Leitung.
+
+An der Anzahl hängt es nie: Wer fünf Beiträge schickt, hat trotzdem genau ein
+Abzeichen. Mit dem Abzeichen kommt zusätzlich eine Benachrichtigung aufs
+Gerät.
 
 > **Achtung:** Änderst du Name oder Symbol des Abzeichens nachträglich, ändert
 > sich das auch für alle, die es schon haben — es hängt an der Challenge, nicht
@@ -505,8 +508,9 @@ deine Leitung, falls ein Beitrag entfernt werden soll."*
   geplante Challenge tatsächlich startet — nicht schon beim Anlegen.
 - **Die Leitung** bekommt eine Benachrichtigung bei **jedem** neuen Beitrag —
   auch wenn er ohne Moderation sofort öffentlich ist.
-- **Der Konfi** bekommt eine Benachrichtigung beim ersten eigenen Beitrag zu
-  einer Challenge („Abzeichen erhalten").
+- **Der Konfi** bekommt eine Benachrichtigung, sobald er das Abzeichen der
+  Challenge erhält — je nach Freigabe-Pflicht direkt beim Absenden oder mit
+  der Freigabe.
 - **Alle Konfis der Jahrgänge** bekommen mit, wenn eine Challenge startet, sich
   ändert oder ein Beitrag in der Galerie erscheint — die Listen aktualisieren
   sich von selbst, ohne Neuladen.
