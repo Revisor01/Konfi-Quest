@@ -45,7 +45,8 @@ import {
   timeOutline,
   checkmarkOutline,
   lockClosedOutline,
-  removeCircleOutline
+  removeCircleOutline,
+  chatbubbleEllipsesOutline
 } from 'ionicons/icons';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
@@ -258,10 +259,13 @@ export interface ChallengeLeitungModalProps {
   presentingElement?: HTMLElement | null;
 }
 
-// Drei Filter reichen: alles sehen, sehen was noch wartet, sehen was
-// ausgeblendet wurde. Freigegebene Beitraege haben bewusst KEINEN eigenen
-// Filter: sie sind der Normalfall und stehen ohnehin unter "Alle".
-type StatusFilter = 'all' | 'pending' | 'hidden';
+// Drei Filter reichen — und sie sind DISJUNKT (jeder Beitrag steht in genau
+// einem): "Feed" zeigt nur Freigegebenes, also das, was auch die Konfis sehen
+// (sauberer Feed, User-Entscheid 24.08.2026); "Wartet" die offene Moderation;
+// "Ausgeblendet" das Weggeraeumte. Ein "Alle"-Reiter, der wartende und
+// ausgeblendete Beitraege in den normalen Feed mischt, existiert bewusst
+// nicht mehr.
+type StatusFilter = 'feed' | 'pending' | 'hidden';
 
 const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
   challenge,
@@ -276,7 +280,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
   const [submissions, setSubmissions] = useState<ChallengeSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('feed');
 
   const challengeId = challenge?.id;
 
@@ -352,10 +356,10 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
     // haft aus.
     while (stats.length < 3) stats.push({ value: counts.hidden, label: 'Versteckt' });
 
-    // Kacheln, die einem Reiter entsprechen, schalten dorthin. "Frei" hat
-    // keinen eigenen Reiter und bleibt reine Anzeige.
+    // Kacheln, die einem Reiter entsprechen, schalten dorthin. "Gesamt" hat
+    // keinen eigenen Reiter (die Reiter sind disjunkt) und bleibt reine Anzeige.
     const filterZuLabel: Record<string, StatusFilter> = {
-      'Gesamt': 'all',
+      'Frei': 'feed',
       'Wartet': 'pending',
       'Versteckt': 'hidden'
     };
@@ -363,7 +367,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
     // effectiveFilter wird erst weiter unten deklariert — hier dieselbe
     // Ableitung, damit die aktive Kachel zum tatsaechlich wirksamen Reiter passt.
     const aktiverFilter: StatusFilter =
-      statusFilter === 'pending' && !challenge?.moderated ? 'all' : statusFilter;
+      statusFilter === 'pending' && !challenge?.moderated ? 'feed' : statusFilter;
 
     return stats.slice(0, 3).map((s) => {
       const ziel = filterZuLabel[s.label];
@@ -398,23 +402,32 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
   // anderen Challenge uebernommener Filterstand wuerde sonst eine leere Liste
   // zeigen, ohne dass man den Grund sieht.
   const effectiveFilter: StatusFilter =
-    statusFilter === 'pending' && !challenge?.moderated ? 'all' : statusFilter;
+    statusFilter === 'pending' && !challenge?.moderated ? 'feed' : statusFilter;
 
   const filtered = useMemo(() => {
+    // "Feed" = nur Freigegebenes — derselbe Blick, den auch die Konfis auf die
+    // Galerie haben. Wartendes und Ausgeblendetes steht ausschliesslich in den
+    // eigenen Reitern; die Moderation bleibt darueber vollständig erreichbar.
     const active = effectiveFilter;
-    const list = active === 'all'
-      ? [...submissions]
+    const list = active === 'feed'
+      ? submissions.filter((s) => s.moderation_status === 'approved')
       : submissions.filter((s) => s.moderation_status === active);
     return list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [submissions, effectiveFilter]);
 
   const moderate = async (
     submission: ChallengeSubmission,
-    action: 'approve' | 'hide' | 'unhide' | 'anonymize'
+    action: 'approve' | 'hide' | 'unhide' | 'anonymize',
+    reason?: string
   ) => {
     setBusyId(submission.id);
     try {
-      await api.put(`/challenges/admin/submissions/${submission.id}/moderate`, { action });
+      await api.put(`/challenges/admin/submissions/${submission.id}/moderate`, {
+        action,
+        // Begruendung nur beim Ausblenden und nur, wenn eine eingetragen wurde
+        // — das Ausblenden scheitert NIE am fehlenden Grund.
+        ...(reason ? { reason } : {})
+      });
       await loadSubmissions();
       onChanged?.();
     } catch (err: any) {
@@ -429,7 +442,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
   const confirmAnonymize = (submission: ChallengeSubmission) => {
     presentAlert({
       header: 'Beitrag anonym stellen',
-      message: `Der Beitrag von ${submission.konfi_name || 'diesem Konfi'} erscheint für die Gruppe dann ohne Namen. Das lässt sich nicht rückgängig machen — ihr in der Leitung seht weiterhin, von wem er stammt.`,
+      message: `Der Beitrag von ${submission.konfi_name || 'dieser Person'} erscheint dann ohne Namen — in der Galerie wie im Export. Das lässt sich nicht rückgängig machen; ihr in der Leitung seht weiterhin, von wem er stammt.`,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         { text: 'Anonym stellen', handler: () => { moderate(submission, 'anonymize'); } }
@@ -440,10 +453,25 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
   const confirmHide = (submission: ChallengeSubmission) => {
     presentAlert({
       header: 'Beitrag ausblenden',
-      message: `Der Beitrag von ${submission.konfi_name || 'diesem Konfi'} wird für die Gruppe nicht mehr sichtbar sein. Der Konfi sieht seinen Beitrag weiterhin.`,
+      message: `Der Beitrag von ${submission.konfi_name || 'dieser Person'} wird für die Gruppe nicht mehr sichtbar sein. Die einreichende Person sieht ihren Beitrag weiterhin — und die Begründung, falls du eine einträgst.`,
+      inputs: [
+        {
+          name: 'reason',
+          type: 'textarea',
+          placeholder: 'Begründung (optional)',
+          attributes: { maxlength: 500 }
+        }
+      ],
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
-        { text: 'Ausblenden', role: 'destructive', handler: () => { moderate(submission, 'hide'); } }
+        {
+          text: 'Ausblenden',
+          role: 'destructive',
+          handler: (data) => {
+            const reason = typeof data?.reason === 'string' ? data.reason.trim() : '';
+            moderate(submission, 'hide', reason || undefined);
+          }
+        }
       ]
     });
   };
@@ -469,24 +497,35 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
       });
     }
     // Anonym stellen ist eine EINBAHNSTRASSE: einmal anonym, immer anonym —
-    // deshalb nur bei consent='publish' und mit Rueckfrage.
-    if (challenge?.visibility === 'konfi_choice' && submission.konfi_consent === 'publish') {
+    // deshalb mit Rueckfrage. Seit 24.08.2026 fuer ALLE Sichtbarkeiten
+    // (User-Entscheid, vorher nur bei 'konfi_choice'): auch bei 'public'
+    // (Name verschwindet aus der Galerie) und in Team-Runden. Nur die
+    // staerkste Konfi-Zusage 'private' und bereits anonyme Beitraege bleiben
+    // ausgenommen — das Backend lehnt beides ohnehin mit 409 ab.
+    if (submission.konfi_consent !== 'anonymous' && submission.konfi_consent !== 'private') {
       actions.push({
         key: 'anonymize', text: 'Anonym stellen', icon: eyeOffOutline,
         color: '#7c3aed',
         run: () => confirmAnonymize(submission)
       });
     }
+    // Eigene Beitraege bekommen KEIN "Ausblenden" (User-Entscheid 24.08.2026):
+    // Wer in der Leitung den eigenen Beitrag nicht zeigen will, reicht ihn
+    // nicht ein oder stellt ihn anonym. "Wieder einblenden" bleibt — falls
+    // jemand anderes aus der Leitung ihn ausgeblendet hat.
+    const isOwn = submission.user_id != null && submission.user_id === user?.id;
     if (submission.moderation_status !== 'hidden') {
-      actions.push({
-        // NICHT eyeOffOutline: das gehört dem Anonymisieren (durchgestrichenes
-        // Auge = "ohne Namen"). Ausblenden nimmt dasselbe Symbol wie sein
-        // Status-Badge, damit Aktion und Zustand zusammenpassen und die beiden
-        // Aktionen im Menue unterscheidbar sind (User-Hinweis 11.08.).
-        key: 'hide', text: 'Ausblenden', icon: removeCircleOutline,
-        color: 'var(--app-color-danger)', role: 'destructive',
-        run: () => confirmHide(submission)
-      });
+      if (!isOwn) {
+        actions.push({
+          // NICHT eyeOffOutline: das gehört dem Anonymisieren (durchgestrichenes
+          // Auge = "ohne Namen"). Ausblenden nimmt dasselbe Symbol wie sein
+          // Status-Badge, damit Aktion und Zustand zusammenpassen und die beiden
+          // Aktionen im Menue unterscheidbar sind (User-Hinweis 11.08.).
+          key: 'hide', text: 'Ausblenden', icon: removeCircleOutline,
+          color: 'var(--app-color-danger)', role: 'destructive',
+          run: () => confirmHide(submission)
+        });
+      }
     } else {
       actions.push({
         key: 'unhide', text: 'Wieder einblenden', icon: eyeOutline,
@@ -723,6 +762,23 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                             </div>
                           </div>
 
+                          {/* Wurde der eigene Beitrag (z.B. von jemand anderem
+                              aus der Leitung) ausgeblendet, steht die
+                              Begruendung hier — dieselbe Anzeige wie bei den
+                              Konfis. */}
+                          {submission.moderation_status === 'hidden' && submission.moderation_note && (
+                            <div
+                              style={{
+                                display: 'flex', alignItems: 'flex-start', gap: '6px',
+                                marginBottom: '6px', fontSize: '0.82rem',
+                                color: 'var(--app-color-danger)', lineHeight: 1.4
+                              }}
+                            >
+                              <IonIcon icon={chatbubbleEllipsesOutline} style={{ flexShrink: 0, marginTop: '2px' }} />
+                              <span>Begründung: {submission.moderation_note}</span>
+                            </div>
+                          )}
+
                           {submission.text_content && (
                             <div style={{ fontSize: '0.9rem', color: '#333', whiteSpace: 'pre-wrap', lineHeight: 1.45 }}>
                               {submission.text_content}
@@ -770,7 +826,10 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
         {/* Moderation: Filter + alle Beitraege */}
         <div style={{ margin: '16px 16px 8px 16px' }}>
           <IonSegment value={effectiveFilter} onIonChange={(e) => setStatusFilter(e.detail.value as StatusFilter)}>
-            <IonSegmentButton value="all"><IonLabel>Alle</IonLabel></IonSegmentButton>
+            {/* "Feed" zeigt nur Freigegebenes — denselben Blick, den die
+                Konfis auf die Galerie haben. Wartendes/Ausgeblendetes steht
+                ausschliesslich in den eigenen Reitern. */}
+            <IonSegmentButton value="feed"><IonLabel>Feed</IonLabel></IonSegmentButton>
             {/* "Wartet" nur bei Challenges MIT Freigabe-Pflicht — ohne
                 Moderation ist jeder Beitrag sofort freigegeben, der Filter
                 waere immer leer. */}
@@ -799,7 +858,13 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                   <EmptyState
                     icon={albumsOutline}
                     title="Keine Beiträge"
-                    message="Sobald Konfis etwas einreichen, erscheint es hier."
+                    message={
+                      effectiveFilter === 'feed' && counts.pending > 0
+                        ? 'Im Feed steht nur, was freigegeben ist. Beiträge, die noch warten, findest du unter "Wartet".'
+                        : effectiveFilter === 'feed'
+                          ? 'Sobald Beiträge freigegeben sind, erscheinen sie hier — wie bei den Konfis.'
+                          : 'Hier ist gerade nichts.'
+                    }
                     iconColor="#be185d"
                   />
                 ) : (
@@ -878,6 +943,22 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                                   </div>
                                 </div>
                               </div>
+
+                              {/* Begruendung des Ausblendens — bleibt fuer die
+                                  Leitung nachvollziehbar, bis der Beitrag
+                                  wieder eingeblendet wird. */}
+                              {submission.moderation_status === 'hidden' && submission.moderation_note && (
+                                <div
+                                  style={{
+                                    display: 'flex', alignItems: 'flex-start', gap: '6px',
+                                    marginBottom: '6px', fontSize: '0.82rem',
+                                    color: 'var(--app-color-danger)', lineHeight: 1.4
+                                  }}
+                                >
+                                  <IonIcon icon={chatbubbleEllipsesOutline} style={{ flexShrink: 0, marginTop: '2px' }} />
+                                  <span>Begründung: {submission.moderation_note}</span>
+                                </div>
+                              )}
 
                               {/* Inhalt */}
                               {submission.text_content && (

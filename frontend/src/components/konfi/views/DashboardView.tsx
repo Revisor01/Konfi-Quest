@@ -256,15 +256,17 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         const res = await api.get('/challenges/konfi');
         if (cancelled) return;
         const active = Array.isArray(res.data?.active) ? res.data.active : [];
-        const marks = Array.isArray(res.data?.marks) ? res.data.marks : [];
-        const markedIds = new Set<number>(marks.map((m: any) => m.challenge_id));
         setActiveChallenges(
           active
             .map((c: any) => ({
               id: c.id,
               title: c.title,
               ends_at: c.ends_at,
-              has_submission: markedIds.has(c.id),
+              // has_submission direkt aus der Liste — NICHT aus marks ableiten:
+              // marks sind seit 24.08.2026 die FREIGEGEBENEN Abzeichen, das
+              // Haekchen hier heisst aber "schon eingereicht" (auch wenn der
+              // Beitrag noch auf Freigabe wartet).
+              has_submission: !!c.has_submission,
               challenge_type: c.challenge_type
             }))
             .sort((a: ChallengeTeaser, b: ChallengeTeaser) =>

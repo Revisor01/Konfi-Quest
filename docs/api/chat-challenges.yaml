@@ -111,8 +111,17 @@
 #    - Export (GET /admin/:id/export): strenger als die Sammelansicht —
 #      konfi_consent='private' ("nur für die Leitung") landet NIE im Export;
 #      anonyme Beitraege erscheinen als "Anonym".
-#    - Anonymisierung ist Einbahnstrasse (anonymize ohne Gegenstueck);
+#    - Anonymisierung ist Einbahnstrasse (anonymize ohne Gegenstueck) und seit
+#      2026-08-24 fuer ALLE Sichtbarkeiten erlaubt (vorher nur konfi_choice):
+#      der Konsens 'anonymous' allein entscheidet ueber die Namens-Anzeige in
+#      Galerie und Export. Ausgenommen bleiben 'private'-Zusagen und bereits
+#      anonyme Beitraege (409).
 #      Konfis können Beitraege nicht selbst zurueckziehen (DELETE -> immer 403).
+#    - ABZEICHEN ERST NACH FREIGABE (Entscheid 2026-08-24, gleiche Regel fuer
+#      alle Rollen inkl. Leitung): has_badge/marks zaehlen nur eigene
+#      Beitraege mit moderation_status='approved'. Ohne Moderation ist jeder
+#      Beitrag sofort approved -> Abzeichen sofort. has_submission ("schon
+#      eingereicht") haengt bewusst NICHT an der Freigabe.
 #    - Dateiabruf (GET /files/:filename): Owner immer; org_admin/admin
 #      org-weit; teamer nur zugewiesene Jahrgänge bzw. 'nur_team' org-weit;
 #      Konfi nur oeffentliche Beitraege seines Jahrgangs. Auth NUR per
@@ -293,8 +302,8 @@ components:
         starts_at: { type: string, format: date-time }
         ends_at: { type: string, format: date-time }
         status: { type: string, enum: [draft, scheduled, active, ended], description: "Abgeleitet, nie gespeichert" }
-        has_badge: { type: boolean, description: Abgeleitet aus EXISTS eigener Submission }
-        has_submission: { type: boolean }
+        has_badge: { type: boolean, description: "Abgeleitet aus EXISTS eigener Submission mit moderation_status='approved' — Abzeichen erst nach Freigabe (2026-08-24, gilt fuer alle Rollen)" }
+        has_submission: { type: boolean, description: "Schon eingereicht (unabhaengig von der Freigabe)" }
         own_submission_count: { type: integer }
     Submission:
       type: object
@@ -307,8 +316,9 @@ components:
         link_url: { type: [string, "null"] }
         link_title: { type: [string, "null"], description: "Titel des verlinkten Stuecks; vom Server beim Einreichen einmalig geholt (oEmbed/iTunes-Lookup). NULL bei Alt-Beitraegen und fehlgeschlagenem Abruf." }
         link_author: { type: [string, "null"], description: "Interpret; gleiche Herkunft wie link_title. Bewusst KEIN Cover/Bild (Datenschutzentscheid 24.08.2026)." }
-        konfi_consent: { type: [string, "null"], enum: [publish, private, anonymous, null], description: Nur bei visibility=konfi_choice gesetzt }
+        konfi_consent: { type: [string, "null"], enum: [publish, private, anonymous, null], description: "Beim Einreichen nur bei visibility=konfi_choice gesetzt; 'anonymous' kann seit 2026-08-24 durch nachtraegliches Anonymisieren der Leitung bei JEDER Sichtbarkeit stehen" }
         moderation_status: { type: string, enum: [pending, approved, hidden] }
+        moderation_note: { type: [string, "null"], description: "Optionale Begruendung der Leitung beim Ausblenden (Migration 126); wird beim Freigeben/Wieder-Einblenden geleert" }
         created_at: { type: string, format: date-time }
     GallerySubmission:
       type: object
@@ -1401,7 +1411,7 @@ paths:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
         '200':
-          description: Challenge + submissions[] (mit user_id, display_name, jahrgang_name, is_public, is_anonymous)
+          description: Challenge + submissions[] (mit user_id, display_name, jahrgang_name, moderation_note, is_public, is_anonymous)
         '403': { description: requireTeamer / leadershipMayAccess }
         '404': { description: Challenge nicht in eigener Org }
         '500': { description: Datenbankfehler }
@@ -1416,11 +1426,18 @@ paths:
       tags: [Challenges-Leitung]
       summary: Beitrag moderieren (approve/hide/unhide/anonymize)
       description: >
-        approve und unhide setzen 'approved' und raeumen hidden-Metadaten ab;
-        hide setzt 'hidden' (schlägt jede Sichtbarkeit). anonymize ist eine
-        Einbahnstrasse publish->anonymous, nur bei visibility='konfi_choice';
+        approve und unhide setzen 'approved' und raeumen hidden-Metadaten
+        (inkl. moderation_note) ab; hide setzt 'hidden' (schlägt jede
+        Sichtbarkeit) und speichert optional eine Begruendung (reason), die
+        die einreichende Person bei ihrem Beitrag sieht — das Ausblenden
+        scheitert NIE am fehlenden Grund. anonymize ist eine Einbahnstrasse
+        (einmal anonym, immer anonym) und seit 2026-08-24 fuer alle
+        Sichtbarkeiten erlaubt (vorher 409 ausserhalb von 'konfi_choice');
         'private' (staerkste Konfi-Zusage) und bereits anonyme Beitraege
-        liefern 409.
+        liefern weiterhin 409. Pushes nach der Antwort: bei hide an die
+        einreichende Person (challenge_submission_hidden, nicht beim eigenen
+        Beitrag), bei approve der Abzeichen-Push (challenge_badge_earned),
+        wenn es der erste freigegebene Beitrag der Person ist.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       requestBody:
@@ -1432,12 +1449,13 @@ paths:
               required: [action]
               properties:
                 action: { type: string, enum: [approve, hide, unhide, anonymize] }
+                reason: { type: string, maxLength: 500, description: "Optionale Begruendung beim Ausblenden (nur bei action=hide gespeichert)" }
       responses:
-        '200': { description: "Neuer Status (id, moderation_status, ggf. konfi_consent)" }
-        '400': { description: Ungueltige Aktion (Validator) }
+        '200': { description: "Neuer Status (id, moderation_status, moderation_note bzw. konfi_consent)" }
+        '400': { description: Ungueltige Aktion oder reason laenger als 500 Zeichen (Validator) }
         '403': { description: requireTeamer / leadershipMayAccess }
         '404': { description: Beitrag nicht in eigener Org }
-        '409': { description: anonymize unzulaessig (falsche visibility, private-Zusage, bereits anonym) }
+        '409': { description: "anonymize unzulaessig (private-Zusage, bereits anonym)" }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer]

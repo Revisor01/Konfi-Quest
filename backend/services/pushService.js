@@ -34,6 +34,7 @@ const { sendFirebasePushNotification, sendFirebaseSilentPush } = require('../pus
  * challenge_started           | sendChallengeStartedToJahrgaenge     | Jahrgangs-Konfis| ja
  * challenge_submission        | sendChallengeSubmissionToLeadership  | Leitung         | ja
  * challenge_badge_earned      | sendChallengeBadgeEarnedToKonfi      | Konfi           | ja
+ * challenge_submission_hidden | sendChallengeSubmissionHiddenToUser  | Einreichende:r  | ja
  *
  * Helper-Methoden (nicht direkt als Push-Type):
  * - getTokensForUser(db, userId)
@@ -1024,31 +1025,82 @@ class PushService {
   }
 
   /**
-   * Abzeichen einer Challenge erhalten - Push an den Konfi. Das Abzeichen ist
-   * abgeleitet (EXISTS eigene Submission, siehe challenges.js), zählt also
-   * bereits bei der ERSTEN Submission unabhaengig vom Moderationsstatus — der
-   * Push feuert deshalb ebenfalls bei der ersten eigenen Submission, weil das
-   * Abzeichen im UI ab genau diesem Zeitpunkt erscheint.
+   * Abzeichen einer Challenge erhalten - Push an die einreichende Person.
+   * Das Abzeichen ist abgeleitet (EXISTS eigene APPROVED-Submission, siehe
+   * challenges.js) und zählt erst, wenn ein Beitrag wirklich freigegeben ist:
+   * Ohne Moderation feuert der Push bei der ersten eigenen Submission (die ist
+   * sofort approved), bei moderierten Challenges erst bei der Freigabe durch
+   * die Leitung (PUT /admin/submissions/:id/moderate, action 'approve').
    *
    * @param {object} db - DB-Pool
-   * @param {number} konfiId - Konfi User-ID
+   * @param {number} konfiId - User-ID der einreichenden Person
    * @param {number} challengeId - Challenge ID
    * @param {string} challengeTitle - Titel der Challenge
    */
   static async sendChallengeBadgeEarnedToKonfi(db, konfiId, challengeId, challengeTitle) {
     try {
+      // Content-Org der Challenge (nicht der Empfänger) für den Org-Wechsel
+      // beim Antippen (Multi-Org).
+      const { rows: [challengeRow] } = await db.query(
+        'SELECT organization_id FROM challenges WHERE id = $1',
+        [challengeId]
+      );
+
       const notification = {
         title: 'Abzeichen erhalten',
         body: `Du hast das Abzeichen für "${challengeTitle}" bekommen!`,
         data: {
           type: 'challenge_badge_earned',
-          challengeId: challengeId.toString()
+          challengeId: challengeId.toString(),
+          ...(challengeRow && challengeRow.organization_id != null
+            ? { organization_id: String(challengeRow.organization_id) }
+            : {})
         }
       };
 
       return await this.sendToUser(db, konfiId, notification);
     } catch (error) {
       console.error('sendChallengeBadgeEarnedToKonfi error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Challenge-Beitrag ausgeblendet - Push an die einreichende Person, optional
+   * mit der Begründung der Leitung. Die Aufrufstelle sendet NICHT, wenn jemand
+   * den eigenen Beitrag ausblendet (der weiss es dann ohnehin).
+   *
+   * @param {object} db - DB-Pool
+   * @param {number} userId - User-ID der einreichenden Person
+   * @param {number} challengeId - Challenge ID
+   * @param {string} challengeTitle - Titel der Challenge
+   * @param {string|null} reason - Optionale Begründung der Leitung
+   */
+  static async sendChallengeSubmissionHiddenToUser(db, userId, challengeId, challengeTitle, reason = null) {
+    try {
+      // Content-Org der Challenge für den Org-Wechsel beim Antippen (Multi-Org).
+      const { rows: [challengeRow] } = await db.query(
+        'SELECT organization_id FROM challenges WHERE id = $1',
+        [challengeId]
+      );
+
+      const notification = {
+        title: 'Beitrag nicht veröffentlicht',
+        body: reason
+          ? `Dein Beitrag zu "${challengeTitle}" wurde ausgeblendet. Begründung: ${reason}`
+          : `Dein Beitrag zu "${challengeTitle}" wurde ausgeblendet. Bei Fragen melde dich bei deiner Leitung.`,
+        data: {
+          type: 'challenge_submission_hidden',
+          challengeId: challengeId.toString(),
+          ...(challengeRow && challengeRow.organization_id != null
+            ? { organization_id: String(challengeRow.organization_id) }
+            : {})
+        }
+      };
+
+      return await this.sendToUser(db, userId, notification);
+    } catch (error) {
+      console.error('sendChallengeSubmissionHiddenToUser error:', error);
       return { success: false, error: error.message };
     }
   }

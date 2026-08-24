@@ -1009,10 +1009,13 @@ describe('Challenges Routes', () => {
       expect(res.status).toBe(403);
     });
 
-    it('Abzeichen (marks) erscheint nach erster Submission', async () => {
+    it('Abzeichen (marks) erscheint nach erster FREIGEGEBENER Submission', async () => {
       const challenge = await createChallenge();
       await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
-      await createSubmission({ challenge_id: challenge.id, user_id: USERS.konfi1.id });
+      // Seit 24.08.2026 zaehlt bei moderierten Challenges nur ein
+      // approved-Beitrag als Abzeichen — pending reicht nicht mehr
+      // (eigener Testblock "Abzeichen erst nach Freigabe" weiter unten).
+      await createSubmission({ challenge_id: challenge.id, user_id: USERS.konfi1.id, moderation_status: 'approved' });
 
       const res = await request(app)
         .get('/api/challenges/konfi')
@@ -1027,7 +1030,7 @@ describe('Challenges Routes', () => {
     it('Abzeichen bleibt bestehen, weil die Submission nicht mehr geloescht werden kann', async () => {
       const challenge = await createChallenge();
       await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
-      const submission = await createSubmission({ challenge_id: challenge.id, user_id: USERS.konfi1.id });
+      const submission = await createSubmission({ challenge_id: challenge.id, user_id: USERS.konfi1.id, moderation_status: 'approved' });
 
       // Vorher: Abzeichen da
       let res = await request(app)
@@ -1659,8 +1662,11 @@ describe('Challenges Routes', () => {
       expect(res.status).toBe(409);
     });
 
-    it('anonymize bei visibility=public -> 409 (dort gibt es keinen Konsens)', async () => {
-      const { submission } = await setupChallengeWithForeignSubmission(
+    it('anonymize bei visibility=public -> 200, Galerie zeigt keinen Namen mehr (User-Entscheid 24.08.2026)', async () => {
+      // Frueher 409 ("dort gibt es keinen Konsens") — seitdem die Leitung
+      // Beitraege ueberall nachtraeglich anonymisieren kann, gilt der Konsens
+      // 'anonymous' auch bei public-Challenges und blendet den Namen aus.
+      const { challenge, submission } = await setupChallengeWithForeignSubmission(
         { visibility: 'public' },
         { moderation_status: 'approved' }
       );
@@ -1669,7 +1675,35 @@ describe('Challenges Routes', () => {
         .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
         .set('Authorization', `Bearer ${admin1Token}`)
         .send({ action: 'anonymize' });
-      expect(res.status).toBe(409);
+      expect(res.status).toBe(200);
+      expect(res.body.konfi_consent).toBe('anonymous');
+
+      // Beitrag bleibt in der Galerie sichtbar (public), aber ohne Namen.
+      const detail = await request(app)
+        .get(`/api/challenges/konfi/${challenge.id}`)
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      expect(detail.body.gallery).toHaveLength(1);
+      expect(detail.body.gallery[0].display_name).toBeNull();
+      expect(detail.body.gallery[0].is_anonymous).toBe(true);
+    });
+
+    it('anonymize bei public wirkt auch im Export (Name wird zu "Anonym")', async () => {
+      const { challenge, submission } = await setupChallengeWithForeignSubmission(
+        { visibility: 'public' },
+        { moderation_status: 'approved', text_content: 'Exporttext ohne Namen' }
+      );
+
+      await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ action: 'anonymize' });
+
+      const res = await request(app)
+        .get(`/api/challenges/admin/${challenge.id}/export`)
+        .set('Authorization', `Bearer ${admin1Token}`);
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('Anonym');
+      expect(res.text).not.toContain(USERS.konfi2.display_name);
     });
 
     it('anonymize aendert den Freigabe-Status NICHT', async () => {
@@ -1697,6 +1731,268 @@ describe('Challenges Routes', () => {
         .set('Authorization', `Bearer ${konfi1Token}`)
         .send({ action: 'anonymize' });
       expect(res.status).toBe(403);
+    });
+  });
+
+  // ================================================================
+  // Abzeichen erst nach Freigabe (User-Entscheid 24.08.2026):
+  // Bei moderierten Challenges zaehlt NUR ein approved-Beitrag als Abzeichen;
+  // ohne Moderation sofort (der Beitrag wird direkt approved gespeichert).
+  // Die Regel gilt fuer ALLE Rollen gleich, auch fuer die Leitung
+  // ("Gleiche Regel fuer alle").
+  // ================================================================
+  describe('Abzeichen erst nach Freigabe', () => {
+    it('moderiert + pending -> KEIN Abzeichen, aber has_submission bleibt true', async () => {
+      const challenge = await createChallenge({ moderated: true });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      await createSubmission({
+        challenge_id: challenge.id, user_id: USERS.konfi1.id, moderation_status: 'pending'
+      });
+
+      const res = await request(app)
+        .get('/api/challenges/konfi')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      expect(res.status).toBe(200);
+      const c = res.body.active.find(x => x.id === challenge.id);
+      expect(c.has_badge).toBe(false);
+      // "Schon eingereicht" haengt NICHT an der Freigabe.
+      expect(c.has_submission).toBe(true);
+      expect(c.own_submission_count).toBe(1);
+      expect(res.body.marks.some(m => m.challenge_id === challenge.id)).toBe(false);
+    });
+
+    it('moderiert + approved -> Abzeichen da (Liste UND marks)', async () => {
+      const challenge = await createChallenge({ moderated: true });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      await createSubmission({
+        challenge_id: challenge.id, user_id: USERS.konfi1.id, moderation_status: 'approved'
+      });
+
+      const res = await request(app)
+        .get('/api/challenges/konfi')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      expect(res.status).toBe(200);
+      const c = res.body.active.find(x => x.id === challenge.id);
+      expect(c.has_badge).toBe(true);
+      const mark = res.body.marks.find(m => m.challenge_id === challenge.id);
+      expect(mark).toBeDefined();
+      expect(mark.badge_name).toBe(challenge.badge_name);
+    });
+
+    it('nicht moderiert -> Einreichung per API ist sofort approved, Abzeichen sofort da', async () => {
+      const challenge = await createChallenge({ moderated: false, visibility: 'public' });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+
+      // Belegt die Annahme (nicht nur vermutet): ohne Moderation speichert die
+      // Route direkt approved.
+      const sub = await request(app)
+        .post(`/api/challenges/konfi/${challenge.id}/submissions`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({ media_type: 'text', text_content: 'Sofort frei' });
+      expect(sub.status).toBe(201);
+      expect(sub.body.moderation_status).toBe('approved');
+
+      const res = await request(app)
+        .get('/api/challenges/konfi')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      const c = res.body.active.find(x => x.id === challenge.id);
+      expect(c.has_badge).toBe(true);
+      expect(res.body.marks.some(m => m.challenge_id === challenge.id)).toBe(true);
+    });
+
+    it('Freigabe ueber die API macht das Abzeichen sichtbar (pending -> approve)', async () => {
+      const challenge = await createChallenge({ moderated: true });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      const submission = await createSubmission({
+        challenge_id: challenge.id, user_id: USERS.konfi1.id, moderation_status: 'pending'
+      });
+
+      const mod = await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ action: 'approve' });
+      expect(mod.status).toBe(200);
+
+      const res = await request(app)
+        .get('/api/challenges/konfi')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      const c = res.body.active.find(x => x.id === challenge.id);
+      expect(c.has_badge).toBe(true);
+    });
+
+    it('hidden -> kein Abzeichen (auch wenn der Beitrag frueher freigegeben war)', async () => {
+      const challenge = await createChallenge({ moderated: true });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      await createSubmission({
+        challenge_id: challenge.id, user_id: USERS.konfi1.id, moderation_status: 'hidden'
+      });
+
+      const res = await request(app)
+        .get('/api/challenges/konfi')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      const c = res.body.active.find(x => x.id === challenge.id);
+      expect(c.has_badge).toBe(false);
+      expect(res.body.marks.some(m => m.challenge_id === challenge.id)).toBe(false);
+    });
+
+    it('Detail (GET /konfi/:id): has_badge false bei pending, true nach Freigabe', async () => {
+      const challenge = await createChallenge({ moderated: true });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      const submission = await createSubmission({
+        challenge_id: challenge.id, user_id: USERS.konfi1.id, moderation_status: 'pending'
+      });
+
+      let detail = await request(app)
+        .get(`/api/challenges/konfi/${challenge.id}`)
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      expect(detail.status).toBe(200);
+      expect(detail.body.challenge.has_badge).toBe(false);
+      expect(detail.body.challenge.has_submission).toBe(true);
+
+      await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ action: 'approve' });
+
+      detail = await request(app)
+        .get(`/api/challenges/konfi/${challenge.id}`)
+        .set('Authorization', `Bearer ${konfi1Token}`);
+      expect(detail.body.challenge.has_badge).toBe(true);
+    });
+
+    it('GLEICHE Regel fuer die Leitung: eigener pending-Beitrag zaehlt in GET /admin nicht als Abzeichen', async () => {
+      // User-Entscheid 24.08.2026 ("Gleiche Regel fuer alle"): Auch wer selbst
+      // freigeben koennte, bekommt das Abzeichen erst nach der Freigabe.
+      const challenge = await createChallenge({ moderated: true, audience: 'konfis_und_team' });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+      const submission = await createSubmission({
+        challenge_id: challenge.id, user_id: USERS.admin1.id, moderation_status: 'pending'
+      });
+
+      let res = await request(app)
+        .get('/api/challenges/admin')
+        .set('Authorization', `Bearer ${admin1Token}`);
+      expect(res.status).toBe(200);
+      let c = res.body.find(x => x.id === challenge.id);
+      expect(c.has_badge).toBe(false);
+      expect(c.own_submission_count).toBe(1);
+
+      await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ action: 'approve' });
+
+      res = await request(app)
+        .get('/api/challenges/admin')
+        .set('Authorization', `Bearer ${admin1Token}`);
+      c = res.body.find(x => x.id === challenge.id);
+      expect(c.has_badge).toBe(true);
+    });
+  });
+
+  // ================================================================
+  // Begruendung beim Ausblenden (moderation_note, Migration 126)
+  // ================================================================
+  describe('Begruendung beim Ausblenden (moderation_note)', () => {
+    it('hide mit reason speichert die Begruendung; die einreichende Person sieht sie bei ihren Beitraegen', async () => {
+      const { challenge, submission } = await setupChallengeWithForeignSubmission(
+        { visibility: 'public' },
+        { moderation_status: 'approved' }
+      );
+
+      const res = await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ action: 'hide', reason: 'Bitte ohne Nachnamen einreichen.' });
+      expect(res.status).toBe(200);
+      expect(res.body.moderation_status).toBe('hidden');
+      expect(res.body.moderation_note).toBe('Bitte ohne Nachnamen einreichen.');
+
+      // Die einreichende Person (konfi2) sieht die Begruendung an ihrem Beitrag.
+      const detail = await request(app)
+        .get(`/api/challenges/konfi/${challenge.id}`)
+        .set('Authorization', `Bearer ${konfi2Token}`);
+      expect(detail.status).toBe(200);
+      expect(detail.body.own_submissions).toHaveLength(1);
+      expect(detail.body.own_submissions[0].moderation_status).toBe('hidden');
+      expect(detail.body.own_submissions[0].moderation_note).toBe('Bitte ohne Nachnamen einreichen.');
+    });
+
+    it('hide OHNE reason funktioniert genauso -> moderation_note bleibt NULL (Begruendung ist optional)', async () => {
+      const { submission } = await setupChallengeWithForeignSubmission(
+        { visibility: 'public' },
+        { moderation_status: 'approved' }
+      );
+
+      const res = await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ action: 'hide' });
+      expect(res.status).toBe(200);
+      expect(res.body.moderation_status).toBe('hidden');
+      expect(res.body.moderation_note).toBeNull();
+    });
+
+    it('unhide raeumt die Begruendung ab (sie gehoert zum hidden-Zustand)', async () => {
+      const { challenge, submission } = await setupChallengeWithForeignSubmission(
+        { visibility: 'public' },
+        { moderation_status: 'approved' }
+      );
+
+      await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ action: 'hide', reason: 'Kurz geprueft.' });
+
+      const res = await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ action: 'unhide' });
+      expect(res.status).toBe(200);
+      expect(res.body.moderation_status).toBe('approved');
+      expect(res.body.moderation_note).toBeNull();
+
+      // Auch in der Sammelansicht der Leitung ist die Notiz weg.
+      const list = await request(app)
+        .get(`/api/challenges/admin/${challenge.id}/submissions`)
+        .set('Authorization', `Bearer ${admin1Token}`);
+      expect(list.body.submissions[0].moderation_note).toBeNull();
+    });
+
+    it('Sammelansicht der Leitung liefert moderation_note mit', async () => {
+      const { challenge, submission } = await setupChallengeWithForeignSubmission(
+        { visibility: 'public' },
+        { moderation_status: 'approved' }
+      );
+
+      await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ action: 'hide', reason: 'Passt nicht zur Aufgabe.' });
+
+      const list = await request(app)
+        .get(`/api/challenges/admin/${challenge.id}/submissions`)
+        .set('Authorization', `Bearer ${admin1Token}`);
+      expect(list.status).toBe(200);
+      expect(list.body.submissions[0].moderation_note).toBe('Passt nicht zur Aufgabe.');
+    });
+
+    it('reason laenger als 500 Zeichen -> 400, Beitrag bleibt sichtbar', async () => {
+      const { challenge, submission } = await setupChallengeWithForeignSubmission(
+        { visibility: 'public' },
+        { moderation_status: 'approved' }
+      );
+
+      const res = await request(app)
+        .put(`/api/challenges/admin/submissions/${submission.id}/moderate`)
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ action: 'hide', reason: 'x'.repeat(501) });
+      expect(res.status).toBe(400);
+
+      const list = await request(app)
+        .get(`/api/challenges/admin/${challenge.id}/submissions`)
+        .set('Authorization', `Bearer ${admin1Token}`);
+      expect(list.body.submissions[0].moderation_status).toBe('approved');
     });
   });
 });

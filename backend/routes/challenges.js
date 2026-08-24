@@ -6,8 +6,14 @@
 //
 // Kernentscheidungen:
 // - Status wird ABGELEITET (is_draft / starts_at / ends_at), nie gespeichert.
-// - Abzeichen wird ABGELEITET (EXISTS eigene Submission); badge_icon/badge_name
-//   hängen an der Challenge.
+// - Abzeichen wird ABGELEITET (EXISTS eigene Submission mit
+//   moderation_status='approved' — bei moderierten Challenges zählt ein
+//   Beitrag erst NACH der Freigabe, ohne Moderation sofort, weil er dann
+//   direkt approved gespeichert wird); badge_icon/badge_name hängen an der
+//   Challenge. Die Freigabe-Regel gilt BEWUSST für ALLE Rollen gleich, auch
+//   für Leitung und Teamer:innen, die selbst freigeben (User-Entscheid
+//   24.08.2026: "Gleiche Regel für alle") — die Gleichbehandlung ist Absicht,
+//   keine vergessene Sonderrolle.
 // - Sichtbarkeit läuft über GENAU EINE Helper-Funktion (isSubmissionPublic /
 //   PUBLIC_SUBMISSION_SQL), damit Galerie, Datei-Auslieferung und Export nie
 //   auseinanderlaufen können.
@@ -110,10 +116,15 @@ function isSubmissionPublic(submission, challenge) {
   return false;
 }
 
-// Anonyme Beitraege duerfen in der Galerie KEINEN Namen tragen — das Backend
-// schickt display_name gar nicht erst mit (nicht erst das Frontend blendet aus).
+// Anonyme Beitraege duerfen in Galerie und Export KEINEN Namen tragen — das
+// Backend schickt display_name gar nicht erst mit (nicht erst das Frontend
+// blendet aus). Der Konsens allein entscheidet: Seit dem nachträglichen
+// Anonymisieren durch die Leitung (24.08.2026) kann konfi_consent='anonymous'
+// auch bei visibility='public' (Galerie ohne Namen) und 'private' (Export
+// ohne Namen) stehen — die fruehere Kopplung an 'konfi_choice' haette diese
+// Beitraege faelschlich MIT Namen ausgeliefert.
 function isAnonymous(submission, challenge) {
-  return challenge.visibility === 'konfi_choice' && submission.konfi_consent === 'anonymous';
+  return submission.konfi_consent === 'anonymous';
 }
 
 // Abgeleiteter Status (nie als Spalte gespeichert).
@@ -291,12 +302,16 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
       starts_at: row.starts_at,
       ends_at: row.ends_at,
       status: deriveStatus(row, now),
+      // has_badge zählt seit 24.08.2026 nur FREIGEGEBENE eigene Beitraege
+      // (moderation_status='approved'): Bei moderierten Challenges gibt es das
+      // Abzeichen erst, wenn wirklich etwas erschienen ist; ohne Moderation
+      // sofort (dort wird jeder Beitrag direkt approved gespeichert).
       has_badge: row.has_badge === true || row.has_badge === 't',
       // has_submission ist der Frontend-Vertrag (types/challenges.ts, KonfiChallenge)
       // für das Corner-Badge "bereits eingereicht" in Liste/Archiv/Dashboard —
-      // deckungsgleich mit has_badge (dieselbe EXISTS-Bedingung), aber unter dem
-      // Namen, den das Frontend tatsaechlich liest.
-      has_submission: row.has_badge === true || row.has_badge === 't',
+      // bewusst NICHT an die Freigabe gekoppelt: eingereicht ist eingereicht,
+      // auch wenn der Beitrag noch auf Freigabe wartet.
+      has_submission: (parseInt(row.own_submission_count, 10) || 0) > 0,
       own_submission_count: parseInt(row.own_submission_count, 10) || 0
     };
   }
@@ -392,6 +407,10 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
     body('action').isIn(['approve', 'hide', 'unhide', 'anonymize'])
       .withMessage('Ungültige Moderations-Aktion'),
+    // Begruendung beim Ausblenden — OPTIONAL: Das Ausblenden scheitert nie
+    // daran, dass kein Grund eingetragen wurde (Entscheid 24.08.2026).
+    body('reason').optional({ nullable: true }).isString().trim()
+      .isLength({ max: 500 }).withMessage('Begründung max. 500 Zeichen'),
     handleValidationErrors
   ];
 
@@ -459,6 +478,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
                 EXISTS (
                   SELECT 1 FROM challenge_submissions s
                   WHERE s.challenge_id = c.id AND s.user_id = $2
+                    AND s.moderation_status = 'approved'
                 ) AS has_badge,
                 (
                   SELECT COUNT(*) FROM challenge_submissions s2
@@ -542,13 +562,13 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         const { rows: gallery } = await db.query(
           `SELECT cs.id, cs.media_type, cs.text_content, cs.file_path, cs.file_name,
                   cs.link_url, cs.link_title, cs.link_author, cs.created_at,
-                  CASE WHEN c.visibility = 'konfi_choice' AND cs.konfi_consent = 'anonymous'
+                  CASE WHEN cs.konfi_consent = 'anonymous'
                        THEN NULL ELSE u.display_name END AS display_name,
-                  CASE WHEN c.visibility = 'konfi_choice' AND cs.konfi_consent = 'anonymous'
+                  CASE WHEN cs.konfi_consent = 'anonymous'
                        THEN NULL ELSE r.name END AS role_name,
-                  CASE WHEN c.visibility = 'konfi_choice' AND cs.konfi_consent = 'anonymous'
+                  CASE WHEN cs.konfi_consent = 'anonymous'
                        THEN NULL ELSE j.name END AS jahrgang_name,
-                  (c.visibility = 'konfi_choice' AND cs.konfi_consent = 'anonymous') AS is_anonymous
+                  COALESCE(cs.konfi_consent = 'anonymous', false) AS is_anonymous
            FROM challenge_submissions cs
            JOIN challenges c ON cs.challenge_id = c.id
            JOIN users u ON cs.user_id = u.id
@@ -564,7 +584,8 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
 
         const { rows: own } = await db.query(
           `SELECT id, media_type, text_content, file_path, file_name, link_url,
-                  link_title, link_author, konfi_consent, moderation_status, created_at
+                  link_title, link_author, konfi_consent, moderation_status,
+                  moderation_note, created_at
            FROM challenge_submissions
            WHERE challenge_id = $1 AND user_id = $2
            ORDER BY created_at DESC`,
@@ -574,7 +595,9 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         res.json({
           challenge: mapChallengeForKonfi({
             ...challenge,
-            has_badge: own.length > 0,
+            // Abzeichen erst nach Freigabe — dieselbe Regel wie in der Liste
+            // (GET /konfi): nur ein approved-Beitrag zählt.
+            has_badge: own.some(s => s.moderation_status === 'approved'),
             own_submission_count: own.length
           }),
           gallery,
@@ -740,10 +763,13 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         res.status(201).json(created);
 
         // Fire-and-forget NACH der Antwort: Push an die Leitung (immer, auch
-        // wenn der Beitrag sofort oeffentlich ist) und — bei der ERSTEN eigenen
-        // Submission zu dieser Challenge — der "Abzeichen erhalten"-Push an den
-        // Konfi. Das Abzeichen ist abgeleitet (EXISTS eigene Submission, s.o.),
-        // erscheint im UI also schon jetzt, unabhaengig vom Moderationsstatus.
+        // wenn der Beitrag sofort oeffentlich ist) und — bei der ERSTEN
+        // FREIGEGEBENEN eigenen Submission zu dieser Challenge — der
+        // "Abzeichen erhalten"-Push. Das Abzeichen ist abgeleitet (EXISTS
+        // eigene approved-Submission, s.o.): Ohne Moderation ist der Beitrag
+        // sofort approved, der Push feuert hier. Bei moderierten Challenges
+        // gibt es das Abzeichen erst mit der Freigabe — der Push feuert dann
+        // in PUT /admin/submissions/:id/moderate.
         (async () => {
           try {
             await PushService.sendChallengeSubmissionToLeadership(
@@ -759,19 +785,22 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           }
 
           try {
-            const { rows: [{ count: ownCount }] } = await db.query(
-              `SELECT COUNT(*)::int AS count FROM challenge_submissions
-               WHERE challenge_id = $1 AND user_id = $2`,
-              [challengeId, req.user.id]
-            );
-            // Genau 1 => die soeben erstellte Submission ist die erste überhaupt.
-            if (ownCount === 1) {
-              await PushService.sendChallengeBadgeEarnedToKonfi(
-                db,
-                req.user.id,
-                challengeId,
-                challenge.title
+            if (moderationStatus === 'approved') {
+              const { rows: [{ count: approvedCount }] } = await db.query(
+                `SELECT COUNT(*)::int AS count FROM challenge_submissions
+                 WHERE challenge_id = $1 AND user_id = $2
+                   AND moderation_status = 'approved'`,
+                [challengeId, req.user.id]
               );
+              // Genau 1 => die soeben erstellte Submission ist die erste freigegebene.
+              if (approvedCount === 1) {
+                await PushService.sendChallengeBadgeEarnedToKonfi(
+                  db,
+                  req.user.id,
+                  challengeId,
+                  challenge.title
+                );
+              }
             }
           } catch (badgeErr) {
             console.error('Abzeichen-Push für Challenge-Beitrag fehlgeschlagen:', badgeErr.message);
@@ -1065,6 +1094,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
                 EXISTS (
                   SELECT 1 FROM challenge_submissions s
                   WHERE s.challenge_id = c.id AND s.user_id = $2
+                    AND s.moderation_status = 'approved'
                 ) AS has_badge,
                 (SELECT COUNT(*) FROM challenge_submissions s
                   WHERE s.challenge_id = c.id AND s.user_id = $2) AS own_submission_count,
@@ -1089,6 +1119,9 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         allowed_media: parseAllowedMedia(row.allowed_media),
         submission_count: parseInt(row.submission_count, 10) || 0,
         pending_count: parseInt(row.pending_count, 10) || 0,
+        // COUNT kommt vom Treiber als String — ohne Parsen liefe '1' ins
+        // Frontend, obwohl der Typ (AdminChallenge) eine Zahl verspricht.
+        own_submission_count: parseInt(row.own_submission_count, 10) || 0,
         status: deriveStatus(row, now),
         locked: hasStarted(row, now)
       })));
@@ -1451,7 +1484,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           `SELECT cs.id, cs.user_id, cs.media_type, cs.text_content, cs.file_path,
                   cs.file_name, cs.link_url, cs.link_title, cs.link_author,
                   cs.konfi_consent, cs.moderation_status,
-                  cs.hidden_at, cs.created_at,
+                  cs.hidden_at, cs.moderation_note, cs.created_at,
                   u.display_name,
                   j.name AS jahrgang_name
            FROM challenge_submissions cs
@@ -1485,8 +1518,11 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     }
   );
 
-  // PUT /admin/submissions/:id/moderate — { action: 'approve'|'hide'|'unhide' }.
+  // PUT /admin/submissions/:id/moderate —
+  // { action: 'approve'|'hide'|'unhide'|'anonymize', reason? }.
   // Ausblenden geht IMMER, auch bei visibility='public' — hidden schlägt alles.
+  // reason (optional, nur bei 'hide'): Begruendung, die die einreichende
+  // Person bei ihrem Beitrag sieht.
   router.put('/admin/submissions/:id/moderate',
     rbacVerifier,
     requireTeamer,
@@ -1494,11 +1530,12 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     async (req, res) => {
       try {
         const submissionId = parseInt(req.params.id, 10);
-        const { action } = req.body;
+        const { action, reason } = req.body;
+        const note = typeof reason === 'string' && reason.trim() ? reason.trim() : null;
 
         const { rows: [submission] } = await db.query(
-          `SELECT cs.id, cs.challenge_id, cs.moderation_status, cs.konfi_consent,
-                  c.visibility
+          `SELECT cs.id, cs.challenge_id, cs.user_id, cs.moderation_status,
+                  cs.konfi_consent, c.visibility, c.title AS challenge_title
            FROM challenge_submissions cs
            JOIN challenges c ON cs.challenge_id = c.id
            WHERE cs.id = $1 AND cs.organization_id = $2`,
@@ -1512,13 +1549,12 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         }
 
         // Anonymisieren betrifft NUR den Konsens, nicht den Freigabe-Status.
-        // Einbahnstrasse: publish -> anonymous. Rueckweg gibt es nicht.
+        // Einbahnstrasse: einmal anonym, immer anonym. Rueckweg gibt es nicht.
+        // Gilt seit 24.08.2026 fuer ALLE Sichtbarkeiten (User-Entscheid):
+        // bei 'public' verschwindet der Name aus der Galerie, bei 'private'
+        // aus dem Export — die fruehere Kopplung an 'konfi_choice' machte das
+        // Anonymisieren z.B. in reinen Team-Runden unmoeglich.
         if (action === 'anonymize') {
-          if (submission.visibility !== 'konfi_choice') {
-            return res.status(409).json({
-              error: 'Anonymität lässt sich nur bei Challenges einstellen, bei denen der Konfi selbst entscheidet.'
-            });
-          }
           // 'private' ist die staerkste Zusage des Konfi ("nur die Leitung") —
           // die darf die Moderation NICHT aufweichen.
           if (submission.konfi_consent === 'private') {
@@ -1546,22 +1582,67 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         if (action === 'hide') {
           ({ rows: [updated] } = await db.query(
             `UPDATE challenge_submissions
-             SET moderation_status = 'hidden', hidden_by = $2, hidden_at = NOW()
-             WHERE id = $1 RETURNING id, moderation_status`,
-            [submissionId, req.user.id]
+             SET moderation_status = 'hidden', hidden_by = $2, hidden_at = NOW(),
+                 moderation_note = $3
+             WHERE id = $1 RETURNING id, moderation_status, moderation_note`,
+            [submissionId, req.user.id, note]
           ));
         } else {
           // approve und unhide fuehren beide zu 'approved' und raeumen die
-          // hidden-Metadaten ab (ein wieder eingeblendeter Beitrag ist freigegeben).
+          // hidden-Metadaten ab (ein wieder eingeblendeter Beitrag ist
+          // freigegeben) — inklusive der Ausblende-Begruendung.
           ({ rows: [updated] } = await db.query(
             `UPDATE challenge_submissions
-             SET moderation_status = 'approved', hidden_by = NULL, hidden_at = NULL
-             WHERE id = $1 RETURNING id, moderation_status`,
+             SET moderation_status = 'approved', hidden_by = NULL, hidden_at = NULL,
+                 moderation_note = NULL
+             WHERE id = $1 RETURNING id, moderation_status, moderation_note`,
             [submissionId]
           ));
         }
 
         res.json(updated);
+
+        // Fire-and-forget NACH der Antwort: Pushes an die einreichende Person.
+        (async () => {
+          try {
+            // Ausgeblendet: die einreichende Person erfaehrt es (mit
+            // Begruendung, falls eine eingetragen wurde) — ausser jemand
+            // blendet den EIGENEN Beitrag aus, dann weiss er es ohnehin.
+            if (action === 'hide' && submission.user_id !== req.user.id) {
+              await PushService.sendChallengeSubmissionHiddenToUser(
+                db,
+                submission.user_id,
+                submission.challenge_id,
+                submission.challenge_title,
+                note
+              );
+            }
+            // Abzeichen erst nach Freigabe: Ist die soeben freigegebene
+            // Submission die ERSTE freigegebene dieser Person bei dieser
+            // Challenge, ist das Abzeichen jetzt verdient -> Push. Bewusst nur
+            // bei 'approve' (nicht 'unhide'): ein wieder eingeblendeter
+            // Beitrag war schon einmal freigegeben.
+            if (action === 'approve') {
+              const { rows: [{ count: approvedCount }] } = await db.query(
+                `SELECT COUNT(*)::int AS count FROM challenge_submissions
+                 WHERE challenge_id = $1 AND user_id = $2
+                   AND moderation_status = 'approved'`,
+                [submission.challenge_id, submission.user_id]
+              );
+              if (approvedCount === 1) {
+                await PushService.sendChallengeBadgeEarnedToKonfi(
+                  db,
+                  submission.user_id,
+                  submission.challenge_id,
+                  submission.challenge_title
+                );
+              }
+            }
+          } catch (pushErr) {
+            console.error('Push nach Challenge-Moderation fehlgeschlagen:', pushErr.message);
+          }
+        })();
+
         notifyJahrgaenge(submission.challenge_id, 'submission_update', { challengeId: submission.challenge_id });
         notifyLeadership(req.user.organization_id, 'submission_update', { challengeId: submission.challenge_id });
       } catch (err) {
