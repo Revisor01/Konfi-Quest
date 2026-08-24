@@ -53,7 +53,12 @@ module.exports = () => {
   function abweisen(req, res, grund) {
     const ziel = req.headers['x-forwarded-uri'];
     if (ziel) {
-      return res.redirect(302, `/docs/api/login.html?weiter=${encodeURIComponent(ziel)}`);
+      // Location von Hand setzen statt res.redirect(): Express macht daraus
+      // sonst eine absolute URL mit dem Host DIESER Anfrage — und die kommt
+      // bei Forward-Auth vom Proxy, lautet also "backend:5000". Im Browser
+      // waere das eine tote Weiterleitung ins Container-Netz.
+      res.setHeader('Location', `/docs/api/login.html?weiter=${encodeURIComponent(ziel)}`);
+      return res.status(302).end();
     }
     return res.status(401).json({ error: grund });
   }

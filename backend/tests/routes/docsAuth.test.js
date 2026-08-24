@@ -82,6 +82,23 @@ describe('Docs-Auth Routes', () => {
       );
     });
 
+    it('die Weiterleitung bleibt relativ — nie auf den Container-Host', async () => {
+      // res.redirect() wuerde hier eine absolute URL aus dem Host DIESER
+      // Anfrage bauen. Bei Forward-Auth ist das der interne Name des
+      // Backends ("backend:5000"), und die Weiterleitung liefe im Browser
+      // ins Leere. Genau das ist in Produktion einmal passiert.
+      const res = await request(app)
+        .get('/api/docs-auth/pruefen')
+        .set('Host', 'backend:5000')
+        .set('X-Forwarded-Uri', '/docs/api/');
+
+      expect(res.status).toBe(302);
+      expect(res.headers.location).toBe('/docs/api/login.html?weiter=%2Fdocs%2Fapi%2F');
+      expect(res.headers.location.startsWith('/')).toBe(true);
+      expect(res.headers.location).not.toContain('backend:5000');
+      expect(res.headers.location).not.toContain('://');
+    });
+
     it('mit gültigem Cookie: 200', async () => {
       const anmeldung = await request(app)
         .post('/api/docs-auth/anmelden')
