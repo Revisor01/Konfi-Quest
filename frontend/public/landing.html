@@ -196,24 +196,28 @@ a{text-decoration:none;color:inherit}
 /* NAV */
 nav{position:fixed;inset:0 0 auto 0;z-index:100;background:rgba(255,255,255,.8);backdrop-filter:blur(16px);border-bottom:1px solid rgba(15,23,42,.06);transition:box-shadow .3s}
 .nav-in{max-width:1180px;margin:0 auto;padding:.8rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
-.brand{display:flex;align-items:center;gap:.55rem;font-family:var(--display);font-weight:800;font-size:1.25rem}
+.brand{display:flex;align-items:center;gap:.55rem;font-family:var(--display);font-weight:800;font-size:1.25rem;white-space:nowrap;flex-shrink:0}
 .brand img{width:34px;height:34px}
-.nav-links{display:flex;gap:2rem;align-items:center}
-.nav-links a{font-weight:500;color:var(--ink-soft);transition:color .2s}
+.nav-links{display:flex;gap:1.4rem;align-items:center}
+.nav-links a{font-weight:500;color:var(--ink-soft);transition:color .2s;white-space:nowrap}
 .nav-links a:hover{color:var(--purple)}
-.nav-cta{background:var(--grad);color:#fff!important;padding:.6rem 1.3rem;border-radius:999px;font-weight:600;transition:transform .2s,box-shadow .2s;background-size:160% 160%}
+.nav-cta{background:var(--grad);color:#fff!important;padding:.6rem 1.3rem;border-radius:999px;font-weight:600;transition:transform .2s,box-shadow .2s;background-size:160% 160%;white-space:nowrap}
 .nav-cta:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(91,33,182,.32)}
 /* Oben rechts: Store-Icons + Web-App — bleiben auch mobil sichtbar */
-.nav-right{display:flex;align-items:center;gap:1.6rem}
+.nav-right{display:flex;align-items:center;gap:1.1rem}
 .nav-actions{display:flex;align-items:center;gap:.55rem}
 .nav-store{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:11px;border:1px solid rgba(15,23,42,.12);color:var(--ink-soft);transition:color .2s,border-color .2s,transform .2s}
 .nav-store:hover{color:var(--purple);border-color:var(--purple);transform:translateY(-1px)}
 /* Handbuch-Symbol: Auf breiten Schirmen steht "Handbuch" im Textmenue, dort
-   waere das Symbol doppelt. Unter 980px blendet die Seite .nav-links aus —
-   dann uebernimmt das Symbol, damit das Handbuch auch mobil sofort da ist. */
+   waere das Symbol doppelt. Sobald die Textnavigation verschwindet (unter
+   1250px, siehe unten), uebernimmt das Symbol — so ist das Handbuch auch auf
+   Tablet und Handy sofort da. */
 .nav-docs{display:none}
-@media(max-width:980px){.nav-docs{display:flex}}
-.nav-app{display:flex;align-items:center;gap:.45rem;border:1.5px solid var(--purple);color:var(--purple)!important;padding:.5rem 1.05rem;border-radius:999px;font-weight:600;transition:background .2s,color .2s,transform .2s}
+/* Textnavigation braucht gemessen ~1150px plus Logo-Abstand — unterhalb von
+   1250px stand sie schon vorher nur scheinbar: Logo und erster Link kollidierten,
+   die Buttons brachen zweizeilig um. Darum frueher ausblenden, Icons uebernehmen. */
+@media(max-width:1249px){.nav-links{display:none}.nav-docs{display:flex}}
+.nav-app{display:flex;align-items:center;gap:.45rem;border:1.5px solid var(--purple);color:var(--purple)!important;padding:.5rem 1.05rem;border-radius:999px;font-weight:600;transition:background .2s,color .2s,transform .2s;white-space:nowrap}
 .nav-app:hover{background:var(--purple);color:#fff!important;transform:translateY(-1px)}
 @media(max-width:480px){.nav-app span{display:none}.nav-app{width:36px;height:36px;padding:0;justify-content:center;border-radius:11px}}
 
@@ -483,7 +487,7 @@ footer a:hover{color:#fff}
  .price-grid{grid-template-columns:repeat(2,1fr)}.steps{grid-template-columns:repeat(2,1fr)}
  .rose-in{grid-template-columns:1fr;text-align:center;gap:2rem}.rose-art{order:-1}.rose-p{margin-left:auto;margin-right:auto}.rose-ring{width:220px;height:220px}.rose-logo{width:160px;height:160px}
  .sec-banner{grid-template-columns:1fr;text-align:center;justify-items:center}
- .foot-grid{grid-template-columns:1fr 1fr}.nav-links{display:none}
+ .foot-grid{grid-template-columns:1fr 1fr}
 }
 /* Smartphone: Feature-Karten-Zeilen umbrechen, kein Overflow */
 @media(max-width:640px){
@@ -516,7 +520,7 @@ footer a:hover{color:#fff}
   <a href="#top" class="brand"><img src="/assets/icon/logo-mark-512.png" width="34" height="34" alt="Konfi Quest Logo">Konfi&nbsp;Quest</a>
   <div class="nav-right">
    <div class="nav-links">
-    <a href="#problem">Warum</a><a href="#challenges">Challenges</a><a href="#features">Funktionen</a><a href="#sicherheit">Sicherheit</a><a href="#faq">FAQ</a><a href="/docs">Handbuch</a><a href="#preise">Preise</a>
+    <a href="#challenges">Challenges</a><a href="#features">Funktionen</a><a href="#sicherheit">Sicherheit</a><a href="#faq">FAQ</a><a href="/docs">Handbuch</a><a href="#preise">Preise</a>
     <a href="#kontakt" class="nav-cta">Kostenlos testen</a>
    </div>
    <div class="nav-actions">

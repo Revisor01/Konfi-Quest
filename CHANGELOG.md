@@ -15,9 +15,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 ### Hinzugefügt
 
 - Handbuch unter konfi-quest.de/docs: erklärt für Konfis, Teamer:innen und die
-  Leitung getrennt, was sie in der App tun können. Verlinkt im Fußbereich der
-  Startseite. Dazu Nachschlage-Kapitel zu Passwörtern und Zugängen sowie zu
-  den Abzeichen und ihren Bedingungen.
+  Leitung getrennt, was sie in der App tun können. Auf der Startseite oben in
+  der Navigation, bei den häufigen Fragen und im Fußbereich verlinkt. Dazu
+  Nachschlage-Kapitel zu Passwörtern und Zugängen sowie zu den Abzeichen und
+  ihren Bedingungen.
 - Chat-Verlauf exportieren: Die Leitung kann einen kompletten Chat als
   Textdatei sichern — etwa um Beiträge für einen Gottesdienst zu sammeln.
   Zu finden über das Menü oben rechts im Chat.
@@ -114,6 +115,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Auf der Startseite lief die obere Navigation auf üblichen Bildschirmbreiten
+  über: Das Logo stieß an den ersten Menüpunkt, die Knöpfe brachen zweizeilig
+  um. Die Navigation hält jetzt in jeder Breite eine Zeile; auf schmaleren
+  Bildschirmen führt ein Buch-Symbol zum Handbuch.
 - Wer in mehreren Gemeinden zur Leitung gehört, landete beim Antippen einer
   Push-Nachricht aus der anderen Gemeinde in der falschen — im Chat stand dann
   nur eine Fehlermeldung. Die App wechselt jetzt automatisch in die richtige
