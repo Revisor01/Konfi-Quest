@@ -751,7 +751,7 @@ describe('Challenges Routes', () => {
       const res = await request(app)
         .post(`/api/challenges/konfi/${challenge.id}/submissions`)
         .set('Authorization', `Bearer ${konfi1Token}`)
-        .send({ media_type: 'link', link_url: 'https://example.org' });
+        .send({ media_type: 'link', link_url: 'https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC' });
 
       expect(res.status).toBe(400);
     });
@@ -792,7 +792,59 @@ describe('Challenges Routes', () => {
       expect(res.status).toBe(400);
     });
 
-    it('media_type=link mit gueltiger URL -> 201', async () => {
+    // ----------------------------------------------------------------
+    // Erlaubnisliste fuer Link-Beitraege (utils/musikLinks): nur Spotify,
+    // Apple Music, YouTube Music und Deezer. Der Metadaten-Abruf laeuft
+    // ueber global fetch — hier gestubbt, damit kein Test ins Netz geht.
+    // ----------------------------------------------------------------
+    const FEHLERTEXT_MUSIK = 'Hier gehen nur Musik-Links: Spotify, Apple Music, YouTube Music und Deezer. Bitte teile den Link direkt aus einer dieser Apps.';
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('media_type=link mit Spotify-URL -> 201, Titel/Interpret aus oEmbed gespeichert', async () => {
+      vi.stubGlobal('fetch', vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ title: 'Testlied', author_name: 'Testband' })
+      })));
+      const challenge = await createChallenge({ allowed_media: ['link'], moderated: false, visibility: 'public' });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+
+      const res = await request(app)
+        .post(`/api/challenges/konfi/${challenge.id}/submissions`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({ media_type: 'link', link_url: 'https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.link_url).toBe('https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC');
+      expect(res.body.link_title).toBe('Testlied');
+      expect(res.body.link_author).toBe('Testband');
+
+      const { rows: [gespeichert] } = await db.query(
+        'SELECT link_title, link_author FROM challenge_submissions WHERE id = $1',
+        [res.body.id]
+      );
+      expect(gespeichert.link_title).toBe('Testlied');
+      expect(gespeichert.link_author).toBe('Testband');
+    });
+
+    it('Metadaten-Abruf scheitert -> Beitrag wird TROTZDEM gespeichert, ohne Titel', async () => {
+      vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('ECONNREFUSED'); }));
+      const challenge = await createChallenge({ allowed_media: ['link'], moderated: false, visibility: 'public' });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+
+      const res = await request(app)
+        .post(`/api/challenges/konfi/${challenge.id}/submissions`)
+        .set('Authorization', `Bearer ${konfi1Token}`)
+        .send({ media_type: 'link', link_url: 'https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.link_title).toBeNull();
+      expect(res.body.link_author).toBeNull();
+    });
+
+    it('Link von fremder Domain -> 400 mit Nennung der erlaubten Dienste', async () => {
       const challenge = await createChallenge({ allowed_media: ['link'], moderated: false, visibility: 'public' });
       await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
 
@@ -801,8 +853,33 @@ describe('Challenges Routes', () => {
         .set('Authorization', `Bearer ${konfi1Token}`)
         .send({ media_type: 'link', link_url: 'https://example.org/song' });
 
-      expect(res.status).toBe(201);
-      expect(res.body.link_url).toBe('https://example.org/song');
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe(FEHLERTEXT_MUSIK);
+    });
+
+    it('Umgehungsversuche (Host im Query, fremde Subdomain, Userinfo, javascript:) -> 400', async () => {
+      const challenge = await createChallenge({ allowed_media: ['link'], moderated: false, visibility: 'public' });
+      await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
+
+      const angriffe = [
+        'https://boese.de/?x=open.spotify.com',
+        'https://open.spotify.com.boese.de/track/x',
+        'https://open.spotify.com@boese.de/track/x',
+        'javascript:alert(1)'
+      ];
+      for (const linkUrl of angriffe) {
+        const res = await request(app)
+          .post(`/api/challenges/konfi/${challenge.id}/submissions`)
+          .set('Authorization', `Bearer ${konfi1Token}`)
+          .send({ media_type: 'link', link_url: linkUrl });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toBe(FEHLERTEXT_MUSIK);
+      }
+      const { rows: [{ n }] } = await db.query(
+        'SELECT COUNT(*)::int AS n FROM challenge_submissions WHERE challenge_id = $1',
+        [challenge.id]
+      );
+      expect(n).toBe(0);
     });
 
     it('media_type=photo ohne Datei -> 400', async () => {

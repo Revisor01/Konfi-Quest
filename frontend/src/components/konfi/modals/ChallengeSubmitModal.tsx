@@ -27,6 +27,7 @@ import {
   micOutline,
   videocamOutline,
   linkOutline,
+  musicalNotesOutline,
   camera,
   imagesOutline,
   trash,
@@ -43,6 +44,7 @@ import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import { track } from '../../../services/analytics';
 import { compressImage } from '../../../services/mediaCompression';
+import { pruefeMusikLink, ERLAUBTE_DIENSTE_TEXT } from '../../../utils/musikLinks';
 import { AudioPlayer } from '../../shared';
 import type {
   KonfiChallenge,
@@ -61,7 +63,7 @@ const MEDIA_OPTIONS: { value: ChallengeMediaType; label: string; icon: string; h
   { value: 'photo', label: 'Foto', icon: imageOutline, hint: 'Aufnehmen oder aus der Galerie' },
   { value: 'audio', label: 'Audio', icon: micOutline, hint: 'Direkt aufnehmen' },
   { value: 'video', label: 'Video', icon: videocamOutline, hint: 'Aufnehmen oder aus der Galerie' },
-  { value: 'link', label: 'Link', icon: linkOutline, hint: 'Ein Lied, ein Video, eine Seite' }
+  { value: 'link', label: 'Link', icon: linkOutline, hint: 'Ein Lied von Spotify, Apple Music, YouTube Music oder Deezer' }
 ];
 
 // Kurze Labels + kurzer Untertitel statt langer Erklaersaetze.
@@ -394,6 +396,13 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
       else setError('Bitte wähle eine Datei aus');
       return;
     }
+    // Vorab-Pruefung gegen die Erlaubnisliste — verbindlich prueft der Server
+    // noch einmal dasselbe. So kommt die Rueckmeldung, ohne dass der Beitrag
+    // erst abgeschickt werden muss.
+    if (mediaType === 'link' && !pruefeMusikLink(linkUrl).ok) {
+      setError(`Hier gehen nur Musik-Links: ${ERLAUBTE_DIENSTE_TEXT}. Bitte teile den Link direkt aus einer dieser Apps.`);
+      return;
+    }
 
     guard(async () => {
       setUploadProgress(0);
@@ -584,6 +593,21 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
 
               {mediaType === 'link' && (
                 <>
+                  {/* Was geht, steht HIER — bevor jemand einen Link einwirft
+                      und erst die Fehlermeldung es ihm sagt. */}
+                  <div
+                    style={{
+                      display: 'flex', alignItems: 'flex-start', gap: '6px',
+                      padding: '2px 16px 6px 16px',
+                      fontSize: '0.8rem', color: 'var(--ion-color-medium)', lineHeight: 1.4
+                    }}
+                  >
+                    <IonIcon icon={musicalNotesOutline} style={{ flexShrink: 0, marginTop: '2px' }} />
+                    <span>
+                      Erlaubt sind Musik-Links von {ERLAUBTE_DIENSTE_TEXT}.
+                      Titel und Interpret werden automatisch dazugeschrieben.
+                    </span>
+                  </div>
                   <IonItem lines="none" style={{ '--background': 'transparent' }}>
                     <IonInput
                       type="url"

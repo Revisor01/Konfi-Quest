@@ -55,7 +55,7 @@ import api from '../../../services/api';
 import { EmptyState, SectionHeader, AudioPlayer } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
-import { hostAus, istWebLink } from '../../../utils/linkDisplay';
+import { istWebLink, linkBeschriftung } from '../../../utils/linkDisplay';
 import ChallengeSubmitModal from '../../konfi/modals/ChallengeSubmitModal';
 import { getChallengeStatus } from '../views/ChallengesManageView';
 import type {
@@ -745,7 +745,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                             >
                               <IonIcon icon={linkOutline} style={{ flexShrink: 0 }} />
                               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {hostAus(submission.link_url!)}
+                                {linkBeschriftung(submission)}
                               </span>
                             </a>
                           )}
@@ -906,7 +906,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                                 >
                                   <IonIcon icon={linkOutline} style={{ flexShrink: 0 }} />
                                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {hostAus(submission.link_url!)}
+                                    {linkBeschriftung(submission)}
                                   </span>
                                 </a>
                               )}

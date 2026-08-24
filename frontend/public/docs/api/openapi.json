@@ -8361,7 +8361,7 @@
           "Challenges-Teilnehmer"
         ],
         "summary": "Beitrag einreichen",
-        "description": "multipart (Feld 'file') für photo/audio/video, JSON für text/link. Nur bei Status 'active'. audience steuert, wer einreichen darf (maySubmit): konfi bei 'konfis'/'konfis_und_team', Team bei 'konfis_und_team'/'nur_team'. konfi_consent nur bei visibility='konfi_choice' (Default 'publish'). Ohne Moderation Auto-Approve. Magic-Bytes-Prüfung der Datei; verschluesselte Ablage.\n",
+        "description": "multipart (Feld 'file') für photo/audio/video, JSON für text/link. Links nur von Musikdiensten (Erlaubnisliste utils/musikLinks auf Hostname-Basis): Spotify, Apple Music, YouTube Music, Deezer — alles andere wird mit 400 abgelehnt (seit 24.08.2026). Der Server holt beim Einreichen einmalig Titel/Interpret (link_title, link_author); scheitert der Abruf, wird ohne Metadaten gespeichert. Nur bei Status 'active'. audience steuert, wer einreichen darf (maySubmit): konfi bei 'konfis'/'konfis_und_team', Team bei 'konfis_und_team'/'nur_team'. konfi_consent nur bei visibility='konfi_choice' (Default 'publish'). Ohne Moderation Auto-Approve. Magic-Bytes-Prüfung der Datei; verschluesselte Ablage.\n",
         "parameters": [
           {
             "name": "id",
@@ -8397,7 +8397,7 @@
                   },
                   "link_url": {
                     "type": "string",
-                    "description": "Pflicht bei media_type=link (http/https)"
+                    "description": "Pflicht bei media_type=link. Nur Musikdienst-Hosts: open.spotify.com, spotify.link, music.apple.com, geo.music.apple.com, music.youtube.com, deezer.com, www.deezer.com, link.deezer.com, dzr.page.link, deezer.page.link"
                   },
                   "konfi_consent": {
                     "type": "string",
@@ -8428,7 +8428,7 @@
             }
           },
           "400": {
-            "description": "Ungueltige Medienart / Pflichtfeld fehlt / Consent ungueltig"
+            "description": "Ungueltige Medienart / Pflichtfeld fehlt / Consent ungueltig / Link nicht von einem erlaubten Musikdienst"
           },
           "403": {
             "description": "Kein Zugriff auf die Challenge ODER Rolle darf bei dieser audience nicht einreichen"
@@ -13572,6 +13572,20 @@
               "null"
             ]
           },
+          "link_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Titel des verlinkten Stuecks; vom Server beim Einreichen einmalig geholt (oEmbed/iTunes-Lookup). NULL bei Alt-Beitraegen und fehlgeschlagenem Abruf."
+          },
+          "link_author": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Interpret; gleiche Herkunft wie link_title. Bewusst KEIN Cover/Bild (Datenschutzentscheid 24.08.2026)."
+          },
           "konfi_consent": {
             "type": [
               "string",
@@ -13628,6 +13642,18 @@
             ]
           },
           "link_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "link_title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "link_author": {
             "type": [
               "string",
               "null"

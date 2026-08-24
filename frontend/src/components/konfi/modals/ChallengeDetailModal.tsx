@@ -39,7 +39,7 @@ import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { EmptyState, AudioPlayer } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
-import { hostAus, istWebLink } from '../../../utils/linkDisplay';
+import { istWebLink, linkBeschriftung } from '../../../utils/linkDisplay';
 import { getChallengeBadgeIcon, getAuthorLabel, formatRemaining } from '../views/ChallengesView';
 import type {
   KonfiChallenge,
@@ -267,7 +267,7 @@ const SubmissionCard: React.FC<{
             >
               <IonIcon icon={openOutline} style={{ flexShrink: 0 }} />
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {hostAus(submission.link_url!)} — Link öffnen
+                {linkBeschriftung(submission)} — Link öffnen
               </span>
             </a>
           )}

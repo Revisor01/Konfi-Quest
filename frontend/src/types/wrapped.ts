@@ -70,6 +70,9 @@ export interface KonfiChallengeMoment {
   file_name?: string | null;
   text_content?: string | null;
   link_url?: string | null;
+  /** Musikdienst-Metadaten; in Snapshots vor der Erlaubnisliste nicht enthalten. */
+  link_title?: string | null;
+  link_author?: string | null;
   created_at: string;
 }
 

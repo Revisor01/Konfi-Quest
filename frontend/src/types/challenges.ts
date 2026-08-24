@@ -91,6 +91,10 @@ export interface ChallengeSubmission {
   file_path?: string | null;
   file_name?: string | null;
   link_url?: string | null;
+  /** Vom Server beim Einreichen einmalig geholt (Musikdienst-Metadaten).
+      Alt-Beitraege haben null — die Anzeige faellt dann auf die Domain zurueck. */
+  link_title?: string | null;
+  link_author?: string | null;
   konfi_consent?: ChallengeConsent | null;
   moderation_status: ChallengeModerationStatus;
   created_at: string;

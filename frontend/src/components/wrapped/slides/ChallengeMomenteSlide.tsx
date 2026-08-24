@@ -11,7 +11,7 @@ import {
 import SlideBase from './SlideBase';
 import api from '../../../services/api';
 import { getIconFromString } from '../../../utils/badgeIcons';
-import { hostAus } from '../../../utils/linkDisplay';
+import { linkBeschriftung } from '../../../utils/linkDisplay';
 import type { SlideProps, KonfiChallengeMoment } from '../../../types/wrapped';
 
 interface ChallengeMomenteSlideProps extends SlideProps {
@@ -137,7 +137,7 @@ const ChallengeMomenteSlide: React.FC<ChallengeMomenteSlideProps> = ({ isActive,
             {moment.media_type === 'link' && moment.link_url && (
               <div className="challenge-moment-link">
                 <IonIcon icon={linkOutline} />
-                <span>{hostAus(moment.link_url)}</span>
+                <span>{linkBeschriftung(moment)}</span>
               </div>
             )}
 

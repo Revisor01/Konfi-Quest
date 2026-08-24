@@ -29,6 +29,7 @@ const { allIdsBelongToOrg } = require('../utils/orgOwnership');
 const { deleteChallengeFile } = require('../utils/photoStorage');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
+const { pruefeMusikLink, holeLinkMetadaten, ERLAUBTE_DIENSTE_TEXT } = require('../utils/musikLinks');
 
 const MEDIA_TYPES = ['text', 'photo', 'audio', 'video', 'link'];
 const VISIBILITIES = ['public', 'konfi_choice', 'private'];
@@ -540,7 +541,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         // (User-Entscheid 08.08.) — bei anonymen Beitraegen bleibt beides NULL.
         const { rows: gallery } = await db.query(
           `SELECT cs.id, cs.media_type, cs.text_content, cs.file_path, cs.file_name,
-                  cs.link_url, cs.created_at,
+                  cs.link_url, cs.link_title, cs.link_author, cs.created_at,
                   CASE WHEN c.visibility = 'konfi_choice' AND cs.konfi_consent = 'anonymous'
                        THEN NULL ELSE u.display_name END AS display_name,
                   CASE WHEN c.visibility = 'konfi_choice' AND cs.konfi_consent = 'anonymous'
@@ -563,7 +564,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
 
         const { rows: own } = await db.query(
           `SELECT id, media_type, text_content, file_path, file_name, link_url,
-                  konfi_consent, moderation_status, created_at
+                  link_title, link_author, konfi_consent, moderation_status, created_at
            FROM challenge_submissions
            WHERE challenge_id = $1 AND user_id = $2
            ORDER BY created_at DESC`,
@@ -650,10 +651,14 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         if (media_type === 'text' && !trimmedText) {
           return res.status(400).json({ error: 'Bitte schreibe einen Text.' });
         }
-        if (media_type === 'link') {
-          if (!link_url || !/^https?:\/\/\S+$/i.test(link_url)) {
-            return res.status(400).json({ error: 'Bitte gib einen gültigen Link an (beginnend mit http:// oder https://).' });
-          }
+        // Erlaubnisliste (utils/musikLinks): Link-Beitraege nehmen nur noch
+        // Musikdienste an. Die Pruefung laeuft auf Hostname-Basis, damit
+        // Umgehungen wie ?x=open.spotify.com oder fremde Subdomains nicht
+        // durchrutschen.
+        if (media_type === 'link' && !pruefeMusikLink(link_url).ok) {
+          return res.status(400).json({
+            error: `Hier gehen nur Musik-Links: ${ERLAUBTE_DIENSTE_TEXT}. Bitte teile den Link direkt aus einer dieser Apps.`
+          });
         }
         if (['photo', 'audio', 'video'].includes(media_type) && !req.file) {
           return res.status(400).json({ error: 'Bitte wähle eine Datei aus.' });
@@ -698,13 +703,24 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         // Auto-Approve: ohne Moderation gilt der Beitrag sofort als freigegeben.
         const moderationStatus = challenge.moderated ? 'pending' : 'approved';
 
+        // Titel/Interpret EINMALIG serverseitig holen (oEmbed bzw. iTunes-
+        // Lookup) und speichern. Kein Cover, keine Bild-URL — beim Betrachten
+        // der Beitraege soll kein Musikdienst kontaktiert werden. Schlaegt der
+        // Abruf fehl (Timeout, Kurzlink, Dienst down), wird der Beitrag
+        // trotzdem gespeichert — das Einreichen scheitert nie an Fremdservern.
+        let linkMeta = null;
+        if (media_type === 'link') {
+          linkMeta = await holeLinkMetadaten(link_url);
+        }
+
         const { rows: [created] } = await db.query(
           `INSERT INTO challenge_submissions
              (challenge_id, user_id, organization_id, media_type, text_content,
-              file_path, file_name, link_url, konfi_consent, moderation_status)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+              file_path, file_name, link_url, link_title, link_author,
+              konfi_consent, moderation_status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
            RETURNING id, media_type, text_content, file_path, file_name, link_url,
-                     konfi_consent, moderation_status, created_at`,
+                     link_title, link_author, konfi_consent, moderation_status, created_at`,
           [
             challengeId,
             req.user.id,
@@ -714,6 +730,8 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
             filePath,
             fileName,
             media_type === 'link' ? link_url : null,
+            linkMeta ? linkMeta.title : null,
+            linkMeta ? linkMeta.author : null,
             consent,
             moderationStatus
           ]
@@ -1431,7 +1449,8 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
 
         const { rows } = await db.query(
           `SELECT cs.id, cs.user_id, cs.media_type, cs.text_content, cs.file_path,
-                  cs.file_name, cs.link_url, cs.konfi_consent, cs.moderation_status,
+                  cs.file_name, cs.link_url, cs.link_title, cs.link_author,
+                  cs.konfi_consent, cs.moderation_status,
                   cs.hidden_at, cs.created_at,
                   u.display_name,
                   j.name AS jahrgang_name
@@ -1580,8 +1599,8 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         // - private Challenge: alle nicht-ausgeblendeten — hier IST der Export
         //   der in der Beschreibung angekuendigte Rueckkanal (z.B. Fuerbitten).
         const { rows } = await db.query(
-          `SELECT cs.media_type, cs.text_content, cs.link_url, cs.file_name,
-                  cs.konfi_consent, cs.moderation_status, cs.created_at,
+          `SELECT cs.media_type, cs.text_content, cs.link_url, cs.link_title,
+                  cs.link_author, cs.konfi_consent, cs.moderation_status, cs.created_at,
                   u.display_name
            FROM challenge_submissions cs
            JOIN users u ON cs.user_id = u.id
@@ -1618,6 +1637,12 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
             lines.push(row.text_content);
           }
           if (row.link_url) {
+            // Titel/Interpret machen die Playlist-Datei lesbar — die URL
+            // bleibt trotzdem drin, sie ist der eigentliche Inhalt.
+            const meta = [row.link_title, row.link_author].filter(Boolean).join(' – ');
+            if (meta) {
+              lines.push(meta);
+            }
             lines.push(row.link_url);
           }
           if (!row.text_content && !row.link_url && row.file_name) {

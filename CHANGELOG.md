@@ -430,6 +430,11 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Android: App-Daten wie Chats und Anmeldedaten werden nicht mehr ins
   Google-Konto gesichert.
 - Challenges: Links aus Beiträgen öffnen nur noch reguläre Web-Adressen.
+- Challenges: Link-Beiträge nehmen nur noch Musik-Links von Spotify,
+  Apple Music, YouTube Music und Deezer an; das Einreichen-Formular sagt das
+  vorher an. Titel und Interpret werden automatisch dazugeschrieben — ein
+  Cover wird bewusst nicht geladen, damit der Musikdienst beim Ansehen der
+  Beiträge nichts mitbekommt.
 
 ### Sonstiges
 

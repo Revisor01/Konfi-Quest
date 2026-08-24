@@ -224,6 +224,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
                 cs.file_name,
                 cs.text_content,
                 cs.link_url,
+                cs.link_title,
+                cs.link_author,
                 cs.created_at
            FROM challenge_submissions cs
            JOIN challenges c ON cs.challenge_id = c.id
@@ -246,6 +248,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           ? (s.text_content.length > 200 ? `${s.text_content.slice(0, 200)}...` : s.text_content)
           : null,
         link_url: s.link_url,
+        link_title: s.link_title,
+        link_author: s.link_author,
         created_at: s.created_at
       }));
     } catch (challengeErr) {
