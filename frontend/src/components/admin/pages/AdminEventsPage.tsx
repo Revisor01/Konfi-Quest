@@ -525,9 +525,9 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   const canCancel = canEdit;
 
   const isAntraege = mainSegment === 'antraege';
-  // Der Seitentitel bleibt beim Segmentwechsel STABIL ("Events"). Waechselte er
-  // mit, sprang der Large-Title beim Umschalten - siehe KonfiEventsPage.
-  const pageTitle = 'Events';
+  // Der Titel folgt dem Segment — siehe KonfiEventsPage: im iOS-Modus
+  // nachgemessen, der Large-Title springt beim Umschalten nicht mehr.
+  const pageTitle = isAntraege ? 'Aktivitäten' : 'Events';
 
   // Oberste Segment-Ebene (Events | Aktivitäten) + einmaliger Umzugs-Hinweis. Wird
   // als headerSlot an die jeweils aktive View gereicht und dort DIREKT UNTER

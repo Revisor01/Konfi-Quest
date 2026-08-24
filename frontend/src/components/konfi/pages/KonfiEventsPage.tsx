@@ -360,11 +360,12 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
   };
 
   const isAntraege = mainSegment === 'antraege';
-  // Der Seitentitel bleibt beim Segmentwechsel STABIL ("Events"). Waechselte er
-  // mit, sprang der Large-Title beim Umschalten und der Header sass optisch an
-  // einer anderen Stelle als auf den Nachbar-Tabs (Chat, Badges, Dashboard).
-  // Welcher Bereich gerade offen ist, sagt das Segment direkt unter dem Header.
-  const pageTitle = 'Events';
+  // Der Titel folgt dem Segment. Ein frueherer Anlauf wurde zurueckgenommen,
+  // weil der Large-Title dabei sprang — damals hing der Grafik-Header noch auf
+  // Page-Ebene. Seit er in der View sitzt, ist das nicht mehr so: im
+  // iOS-Modus nachgemessen, Titel (y=12), Large-Title (y=75) und
+  // Condense-Header (52 px) bleiben beim Umschalten unveraendert.
+  const pageTitle = isAntraege ? 'Aktivitäten' : 'Events';
 
   // Oberste Segment-Ebene (Events | Aktivitäten) + einmaliger Umzugs-Hinweis. Wird
   // als headerSlot an die jeweils aktive View gereicht und dort DIREKT UNTER

@@ -1062,9 +1062,8 @@ const TeamerEventsPage: React.FC = () => {
   };
 
   const isAntraege = mainSegment === 'antraege';
-  // Der Seitentitel bleibt beim Segmentwechsel STABIL ("Events") — analog zu
-  // KonfiEventsPage/AdminEventsPage.
-  const pageTitle = 'Events';
+  // Der Titel folgt dem Segment — analog zu KonfiEventsPage/AdminEventsPage.
+  const pageTitle = isAntraege ? 'Aktivitäten' : 'Events';
 
   // Oberste Segment-Ebene (Events | Aktivitäten) + einmaliger Umzugs-Hinweis. Wird
   // DIREKT UNTER dem Grafik-/Stats-Header gerendert (gleiches Muster wie bei
