@@ -1457,11 +1457,34 @@ ion-button.app-action-button {
   min-width: 24px;
   text-align: center;
 }
+/* Hoechstwert rechts — GRAU wie das Minimum links, damit die Skala als Skala
+   lesbar bleibt. Frueher stand rechts der farbige Wert (oder, im BonusModal,
+   sogar der fest verdrahtete Hoechstwert in Farbe): beides sah aus wie der
+   eingestellte Wert. Die Skalenenden gehoeren in Grau, der echte Wert in Farbe. */
+.app-range-row__max {
+  font-size: 0.75rem;
+  color: #8e8e93;
+  min-width: 24px;
+  text-align: center;
+}
+/* Der eingestellte Wert — farbig und fett, deutlich vom Skalenende abgesetzt.
+   Sitzt bei der Beschriftung ueber dem Regler, nicht am Skalenende. */
 .app-range-row__value {
   font-size: 0.85rem;
   font-weight: 600;
   min-width: 28px;
   text-align: center;
+}
+.app-range-label {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.app-range-label__wert {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ion-color-primary);
 }
 ion-range.app-range {
   flex: 1;

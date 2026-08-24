@@ -513,7 +513,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       case 'time_based':
         return (
           <IonItem lines="none" style={{ '--background': 'transparent', marginTop: '16px' }}>
-            <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Zeitraum (Wochen)</IonLabel>
+            <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Zeitraum (Wochen) <span style={{ fontWeight: 700, color: 'var(--ion-color-primary)' }}>{extraCriteria.weeks || 4}</span></IonLabel>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>1</span>
               <IonRange
@@ -524,7 +524,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 disabled={loading}
                 style={{ flex: 1 }}
               />
-              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ion-color-primary)', minWidth: '28px', textAlign: 'center' }}>{extraCriteria.weeks || 4}</span>
+              <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>26</span>
             </div>
           </IonItem>
         );
@@ -599,6 +599,15 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         return null;
     }
   };
+
+  // Hoechstwert des Reglers. Normalfall 20, waechst aber mit, wenn ein
+  // bestehendes Abzeichen darueber liegt: In Produktion gibt es Abzeichen mit
+  // 25, 26 und 30 (nachgemessen 25.08.2026, vier Organisationen betroffen) —
+  // das Backend kennt keine Obergrenze, nur der Regler. Ohne das Mitwachsen
+  // klemmt Ionic den Wert beim ersten Anfassen auf 20 herunter (ionChange ->
+  // ensureValueInBounds), und das Abzeichen ginge schlagartig an alle mit
+  // 20 Punkten — nicht rueckholbar, da es keinen Entzug gibt.
+  const reglerMax = Math.max(20, formData.criteria_value || 0);
 
   const getValueLabel = () => {
     switch (formData.criteria_type) {
@@ -983,18 +992,20 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px', marginTop: '16px' }}>
-                <IonLabel position="stacked" style={{ marginBottom: '8px' }}>{getValueLabel()}</IonLabel>
+                <IonLabel position="stacked" style={{ marginBottom: '8px' }}>
+                  {getValueLabel()} <span style={{ fontWeight: 700, color: 'var(--ion-color-primary)' }}>{formData.criteria_value}</span>
+                </IonLabel>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
                   <span style={{ fontSize: '0.75rem', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>1</span>
                   <IonRange
-                    min={1} max={20} step={1}
+                    min={1} max={reglerMax} step={1}
                     pin={true} pinFormatter={(value: number) => `${value}`}
                     value={formData.criteria_value}
                     onIonChange={(e) => setFormData({ ...formData, criteria_value: e.detail.value as number })}
                     disabled={loading}
                     style={{ flex: 1 }}
                   />
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ion-color-primary)', minWidth: '28px', textAlign: 'center' }}>{formData.criteria_value}</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>{reglerMax}</span>
                 </div>
               </IonItem>
 

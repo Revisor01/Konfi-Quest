@@ -177,6 +177,18 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Änderungen erscheinen wieder zuverlässig sofort bei allen Beteiligten. Traf
+  eine Änderung ein, während die Seite gerade lud, blieb sie unsichtbar, bis
+  jemand die Ansicht neu öffnete — betroffen waren alle drei Rollen.
+- Die Punkte-Regler zeigen jetzt links den kleinsten und rechts den größten
+  wählbaren Wert in Grau; der eingestellte Wert steht farbig in der
+  Überschrift. Bisher stand rechts der eingestellte Wert farbig — beim
+  Vergeben von Bonuspunkten sogar dauerhaft die 10, die aussah wie eine
+  Einstellung, sich aber nie änderte.
+- Abzeichen mit einem Wert über 20 lassen sich wieder gefahrlos bearbeiten.
+  Der Regler reichte nur bis 20 und hätte einen höheren Wert beim ersten
+  Anfassen darauf heruntergesetzt — das Abzeichen wäre sofort an alle
+  gegangen, die 20 Punkte haben.
 - Der Chat öffnet schneller: Beim Wechsel in den Chat-Bereich wurde die
   Raumliste bisher zweimal hintereinander geladen — in allen drei Rollen.
   Jetzt nur noch einmal.

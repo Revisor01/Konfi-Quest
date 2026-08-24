@@ -200,7 +200,20 @@ Erledigten.
       bei Pflichtterminen drin bleiben. *(Teilweise am 24.08. behoben —
       prüfen, was noch offen ist.)*
 - [ ] **Abzeichen: sind alle Bedingungen korrekt?** Was liegt überflüssig in
-      der Datenbank?
+      der Datenbank? *(Geprüft am 25.08.: alle 15 Bedingungstypen werten das,
+      was ihr Hilfetext verspricht — keine Lücke in der Logik. Die Befunde
+      liegen in den DATEN und wurden in Produktion belegt:*
+      - *Namenskopplung wirkt tatsächlich: Abzeichen 36 sucht die Kategorie
+        `Senior:innen`, die heute `Seniorinnen` heißt; 35 sucht `Jugend`, das
+        es nicht mehr gibt; 197 liegt im Altformat. Alle aktiv, nie vergeben.*
+      - *4 aktive Abzeichen ohne jede Bedingung (40, 41, 43, 50) — Altbestand,
+        neu anlegbar seit `9d3eeeb3` nicht mehr.*
+      - *3 `mandatory_event_count`-Abzeichen mit Schwellen, die die Daten nicht
+        hergeben (Org 4: Schwelle 5 bei 3 Pflichtterminen).*
+      - *Verwaiste Zeilen: keine (drei Gegenproben, alle null).*
+      *Offen: die sechs kaputten Datensätze geradeziehen — braucht Simons
+      Entscheidung, welcher Name jeweils richtig ist. Der Umbau von Namen auf
+      IDs ist ein größerer Eingriff und gehört nach 2.0.0.)*
 - [x] **API-Doku** — 98 Pfade zeigten auf falsche Adressen (fehlendes
       `/api`-Praefix), behoben und gegen die echte API geprueft. Alle 238
       Routen dokumentiert, keine tote, 243 Berechtigungen maschinell gegen
@@ -216,6 +229,24 @@ Erledigten.
 - [x] **Abzeichen-Pruefung nachgemessen** — 2 bis 3,5 Sekunden pro Stunde
       fuer 86 Personen. Der frueher vermutete Engpass besteht nicht.
 - [ ] **Socket.IO** — Pushes nach dem Abmelden.
+- [ ] **Live-Aktualisierung: fehlende Empfänger** (geprüft 25.08.). Das Senden
+      im Backend ist gut ausgebaut (rund 130 Sendepunkte, saubere Raum-
+      Auflösung). Die Lücken sitzen bei den EMPFÄNGERN — von 17 Admin-Seiten
+      hören 11, von 8 Teamer-Seiten nur 3, von 6 Konfi-Seiten 5:
+      - *Konfi-Detail der Leitung hört auf gar nichts — ausgerechnet die
+        Ansicht, in der Punkte vergeben werden.*
+      - *Termin-Detail hört in BEIDEN Bäumen nicht. 32 gesendete Ereignisse
+        kommen nicht an, QR-Check-in inklusive: Der Server sendet bei jedem
+        Scan, der Zähler auf dem offenen QR-Code steht still.*
+      - *Teamer-Baum systematisch unterversorgt: Dashboard, Abzeichen und
+        Konfi-Statistik gehen leer aus. Beim Abzeichen sendet das Backend
+        sogar gezielt richtig, nur der Empfänger fehlt.*
+      - *Anwesenheit: `'konfi'` ist hart verdrahtet (`events.js:2786/2788`),
+        teilnehmende Teamer:innen sitzen im falschen Raum.*
+      *Sauber sind Anträge, Challenges, Chat, Rollen-Raum-Auflösung und
+      Mehrfach-Organisationen. Webhooks: keine vorhanden.*
+      *Noch als UNSICHER markiert und vor einem Fix nachzusehen: ob
+      `events.js:1791` und `:2137` in der Praxis auch Teamer treffen können.*
 - [x] **Dashboard-Schalter** — zwei waren wirkungslos (`dashboard_show_challenges`
       kam im Backend nie vor, der Konfispruch-Schalter wurde ignoriert). Beide
       wirken jetzt, und bei "aus" wird die Route gar nicht erst abgefragt
@@ -228,13 +259,17 @@ Erledigten.
 
 ## Bekannte Fehler, Ursache belegt, Fix offen
 
-- [ ] **Testläufe brechen sporadisch ab** (etwa jeder vierte). Ursache belegt:
-      `backend/database.js` ruft beim Laden `process.exit(1)`, wenn die
-      Datenbank nicht sofort antwortet. `utils/liveUpdate.js` lädt dieses
-      Produktions-Singleton und öffnet damit einen zweiten Pool — kommt dessen
-      Start-Ping unter Last ins Timeout, stirbt der Testlauf, ohne dass ein
-      Test schuld ist. Fix: `liveUpdate` den Pool übergeben statt ihn zu holen.
-      Eine zweite Spur (Transportebene der Testverbindungen) ist offen.
+- [ ] **Testläufe brechen sporadisch ab** (etwa jeder vierte). Ursache belegt
+      und am 25.08. präzisiert: `backend/database.js` feuert beim MODUL-LADEN
+      einen unbeaufsichtigten Selbsttest ab, der im Fehlerfall `process.exit(1)`
+      ruft — das killt den ganzen vitest-Worker. `utils/liveUpdate.js` lädt das
+      Singleton NICHT beim Import, sondern lazy in den Funktionen (Zeilen 49,
+      111, 164, 233); es entsteht also mitten im Testlauf. Daher die Sporadik.
+      *Teilfix am 25.08.: `process.exit(1)` greift nur noch außerhalb von Tests
+      (`NODE_ENV !== 'test'`). Nachgemessen wird noch — erst danach abhaken.*
+      Der saubere Fix bleibt offen: `liveUpdate` den Pool übergeben statt ihn
+      zu holen. Für die zweite Spur (Transportebene) fand sich beim Nachsehen
+      am 25.08. kein Beleg — erst messen, ob überhaupt noch etwas abbricht.
 - [ ] **`notifications.test.js` macht echte FCM-Netzwerkaufrufe** aus der
       Testsuite, mit der echten Firebase-Datei. Langsam und fragwürdig.
 

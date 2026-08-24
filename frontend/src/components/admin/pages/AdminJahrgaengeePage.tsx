@@ -331,7 +331,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                 )}
                 {formData.gottesdienst_enabled && (
                   <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                    <IonLabel position="stacked">Ziel Gottesdienst</IonLabel>
+                    <IonLabel position="stacked">Ziel Gottesdienst <span style={{ fontWeight: 700, color: 'var(--ion-color-primary)' }}>{formData.target_gottesdienst}</span></IonLabel>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
                       <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>1</span>
                       <IonRange
@@ -342,7 +342,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                         disabled={loading}
                         style={{ flex: 1 }}
                       />
-                      <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ion-color-primary)', minWidth: '28px', textAlign: 'center' }}>{formData.target_gottesdienst}</span>
+                      <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>20</span>
                     </div>
                   </IonItem>
                 )}
@@ -363,7 +363,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                 )}
                 {formData.gemeinde_enabled && (
                   <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                    <IonLabel position="stacked">Ziel Gemeinde</IonLabel>
+                    <IonLabel position="stacked">Ziel Gemeinde <span style={{ fontWeight: 700, color: 'var(--ion-color-primary)' }}>{formData.target_gemeinde}</span></IonLabel>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
                       <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>1</span>
                       <IonRange
@@ -374,7 +374,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                         disabled={loading}
                         style={{ flex: 1 }}
                       />
-                      <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ion-color-primary)', minWidth: '28px', textAlign: 'center' }}>{formData.target_gemeinde}</span>
+                      <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>20</span>
                     </div>
                   </IonItem>
                 )}
@@ -446,7 +446,7 @@ const AdminJahrgaengeePage: React.FC = () => {
   const { user, setError, isOnline } = useApp();
 
   // Offline-Query: Jahrgänge
-  const { data: jahrgaenge, loading, refresh: refreshJahrgaenge } = useOfflineQuery<Jahrgang[]>(
+  const { data: jahrgaenge, loading, refresh: refreshJahrgaenge, refreshLive: refreshJahrgaengeLive } = useOfflineQuery<Jahrgang[]>(
     'admin:jahrgaenge-detail:' + user?.organization_id,
     async () => { const res = await api.get('/admin/jahrgaenge'); return res.data; },
     { ttl: CACHE_TTL.STAMMDATEN }
@@ -471,7 +471,7 @@ const AdminJahrgaengeePage: React.FC = () => {
   });
 
   // Subscribe to live updates for jahrgaenge
-  useLiveRefresh('jahrgaenge', refreshJahrgaenge);
+  useLiveRefresh('jahrgaenge', refreshJahrgaengeLive);
 
   const handleRefresh = async (event: CustomEvent) => {
     await refreshJahrgaenge();

@@ -155,7 +155,9 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                 />
               </IonModal>
 
-              <p className="app-text-sub" style={{ marginTop: '16px', marginBottom: '4px' }}>Punkte * ({points})</p>
+              <p className="app-text-sub" style={{ marginTop: '16px', marginBottom: '4px' }}>
+                Punkte * <span style={{ fontWeight: 700, color: 'var(--app-color-bonus)' }}>{points}</span>
+              </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 8px' }}>
                 <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>1</span>
                 <IonRange
@@ -172,7 +174,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                     '--pin-background': 'var(--app-color-bonus)',
                   } as any}
                 />
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--app-color-bonus)', minWidth: '28px', textAlign: 'center' }}>10</span>
+                <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>10</span>
               </div>
 
               <div style={{ marginTop: '16px', marginBottom: '8px' }}>

@@ -368,7 +368,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
 
                 {formData.target_role !== 'teamer' && (
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                  <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Punkte *</IonLabel>
+                  <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Punkte * <span style={{ fontWeight: 700, color: 'var(--ion-color-primary)' }}>{formData.points}</span></IonLabel>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
                     <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>1</span>
                     <IonRange
@@ -379,7 +379,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                       disabled={loading}
                       style={{ flex: 1 }}
                     />
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ion-color-primary)', minWidth: '28px', textAlign: 'center' }}>{formData.points}</span>
+                    <span style={{ fontSize: '0.75rem', color: '#8e8e93', minWidth: '24px', textAlign: 'center' }}>5</span>
                   </div>
                 </IonItem>
                 )}
