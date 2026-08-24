@@ -1,221 +1,215 @@
-# Handoff — Stand 24.08.2026, abends
+# Handoff — Stand 25.08.2026, nachts
 
-Alles Beschriebene ist auf `main` und gepusht. **Produktion hinkt vier Commits
-hinterher**: live läuft `e18bdad`, `main` steht auf `3e59d9c1`.
+Alles Beschriebene ist auf `main` und gepusht. **33 Commits** seit dem letzten
+Handoff (78e618c0).
+
+Das laufende Register der offenen Punkte steht in **`BAUSTELLEN.md`** — dort
+auch die Arbeitsregel, auf die Simon Wert legt: prüfen statt glauben, mit
+Tests härten samt Gegenprobe, und **erst nach Ausrollen und Nachmessen
+abhaken**. Ein Punkt verschwindet nie, er wandert zu den Erledigten.
 
 Nächste Schritte in dieser Reihenfolge, so von Simon festgelegt:
-**deployen → TestFlight → Rückzug auf den alten Server samt Datenbank.**
+**zwei Agenten durchziehen → TestFlight → neue Sammelrunde.**
 
 ---
 
-## 1. Sofort: deployen
+## 1. Zuerst: die zwei abgestürzten Agenten neu starten
 
-Der CI-Lauf für `3e59d9c1` war beim Übergeben noch nicht durch. Erst prüfen:
+Beide sind gegen Ende der letzten Sitzung an einem Infrastrukturproblem
+gestorben ("no progress for 600s"), nicht an ihrer Aufgabe.
 
-```
-gh run list --workflow="CI Pipeline" --limit 1
-```
+### a) Live-Aktualisierung vollständig prüfen — noch ohne jedes Ergebnis
 
-Dann ausrollen (Backup nicht vergessen, der Compose-Stand trägt bereits
-`DOCS_PASSWORD`):
+Simons Auftrag wörtlich: *"Socket.io soll alle Socket-Verbindungen und
+Webhooks prüfen. Damit die App immer live aktuell ist bei allen!"*
 
-```
-ssh root@kkd-fahrtenbuch.de
-cd /opt/konfi-quest
-docker exec kq-postgres pg_dump -U konfi_user konfi_db | gzip > dump/vor-<SHA>-$(date +%Y%m%d-%H%M%S).sql.gz
-sed -i 's|konfi-quest-backend:[a-f0-9]\{7\}|konfi-quest-backend:<SHA>|; s|konfi-quest-frontend:[a-f0-9]\{7\}|konfi-quest-frontend:<SHA>|' docker-compose.yml
-docker compose pull backend frontend && docker compose up -d backend frontend
-curl -sS http://127.0.0.1:5055/api/status
-```
+Es geht um **Vollständigkeit**: Wenn irgendwo etwas passiert, müssen es alle
+Beteiligten sofort sehen — ohne Neuladen, in allen drei Rollen.
 
-**Danach zwingend prüfen** — die Anmeldung für die API-Doku ist neu und kann
-einen aussperren:
+Vorgehen für den neuen Anlauf:
+1. Bestandsaufnahme über `backend/utils/liveUpdate.js` und alle Aufrufstellen
+   (`grep -rn "liveUpdate\." backend/`).
+2. Die Vorgänge durchgehen, bei denen mehrere Menschen dasselbe sehen:
+   Termine (anlegen, absagen, Warteliste, Anwesenheit, QR-Check-in), Anträge
+   (sieht die Leitung ihn sofort? sieht die Konfi die Bestätigung sofort?),
+   Punkte, Level, Abzeichen, Challenges, Verwaltung.
+3. **Lücken entstehen meist bei den EMPFÄNGERN**, nicht beim Senden. Ein
+   Ereignis, das nur an die Leitung geht, aber Teamer:innen betrifft, ist eine
+   Lücke — und die drei Komponentenbäume verarbeiten Ereignisse womöglich
+   unterschiedlich.
+4. **Wichtiger Verdacht:** Am 24.08. kam eine Doppelabfrage-Bremse in
+   `frontend/src/services/useOfflineQuery.ts` (`53e45f27`, In-flight-Dedupe
+   plus Frische-Drossel). Die könnte Live-Ereignisse verschlucken: Wenn ein
+   Ereignis ein Neuladen auslöst, die Drossel es aber als "zu frisch" abweist,
+   sieht niemand die Änderung. **Das wäre eine frische Regression und ist
+   vorrangig zu prüfen.**
+5. Webhooks: Prüfen, ob es überhaupt welche gibt. Wenn nicht, klar sagen.
 
-```
-curl -sS -o /dev/null -w "%{http_code}\n" https://konfi-quest.de/docs/api/          # 302 erwartet
-curl -sS -o /dev/null -w "%{http_code}\n" https://konfi-quest.de/docs/api/login.html # 200 erwartet
-curl -sS -o /dev/null -w "%{http_code}\n" https://konfi-quest.de/docs/              # 200, Handbuch bleibt offen
-```
+### b) Abzeichen-Bedingungen zu Ende prüfen
 
-Fällt die Anmeldung aus, liegt in `/etc/caddy/Caddyfile.bak-vor-docslogin-*`
-der Stand mit Basic-Auth.
+Der erste Anlauf hat zwei Befunde geliefert, die gerettet und committet sind
+(`9d3eeeb3`, siehe unten). **Nicht abgeschlossen** war der systematische
+Durchgang durch ALLE Bedingungstypen und die Frage, was überflüssig in der
+Datenbank liegt.
 
----
+Startpunkte: `docs/wissen/abzeichen.md` (alle Typen, 13 frühere Befunde) und
+`backend/routes/badges.js` (`checkAndAwardBadges`, ab ca. Zeile 104).
 
-## 2. TestFlight (Build 140)
-
-Erst nach dem Deploy. Build 139 ist von `bc4168a8` — inzwischen über 30 Commits
-alt, was heute getestet würde, wäre nicht das, was ausgeliefert wird.
-
-**Regeln:** nur auf Zuruf dispatchen, beim Bauen den Commit nennen, und die
-Testinfos ("Was ist neu") sind Pflicht — mit Klickpfad und Erwartet-Zeile.
-Version steht überall noch auf 1.5.3; `frontend/scripts/apply-version.sh` setzt
-sie zuverlässig (der alte Fehler ist behoben und auf `main`).
-
----
-
-## 3. Rückzug auf den alten Server
-
-Der Abuse-Fall ist erledigt, der ursprüngliche Server wieder frei. Konfi Quest
-läuft aktuell übergangsweise auf dem Fahrtenbuch-Server:
-
-- SSH: `ssh root@kkd-fahrtenbuch.de` (185.248.143.234)
-- Stack: `/opt/konfi-quest/docker-compose.yml`
-- Container: `kq-backend`, `kq-frontend`, `kq-postgres`
-- Daten: `/opt/konfi-quest/uploads`, `/opt/konfi-quest/push/`, Dumps in `dump/`
-
-**Vor dem Umzug klären** (mit Simon):
-- Ist der alte Server erreichbar, und in welchem Zustand?
-- Soll die Tageslosung (`ketiv`) mit zurück oder im Notbetrieb bleiben?
-  Sie läuft derzeit unter `/opt/ketiv/docker-compose.notbetrieb.yml`,
-  zusätzlich im Netz `konfi-quest_internal` — wird dieses Netz neu angelegt,
-  muss der ketiv-Stack neu verbunden werden.
-
-**Was mitmuss:** Datenbank (pg_dump), `uploads/`, die Firebase-Datei unter
-`push/`, die Umgebungsvariablen aus der Compose-Datei (darunter das neue
-`DOCS_PASSWORD`), der Caddy-Block samt forward_auth für `/docs/api`, und die
-DNS-Umstellung bei Netcup.
+Offene Fragen: Funktioniert jeder Typ? Gibt es in Produktion Abzeichen, die
+durch die **Namenskopplung** tot sind (`specific_activity`,
+`activity_combination`, `category_activities` speichern NAMEN — wird eine
+Aktivität umbenannt, wird das Abzeichen still unerreichbar)?
 
 ---
 
-## Was heute entstanden ist (15 Commits)
+## 2. Dann TestFlight
 
-### Sicherheit und Datenschutz
-- **Event-Chat:** Wer sich abmeldet, verlässt ihn — galt vorher nur bei der
-  Selbstabmeldung von Teamer:innen, nicht im Weg der Konfi-App und nicht beim
-  Austragen durch die Leitung. Konfis lasen also weiter mit und konnten den
-  Chat nicht einmal selbst verlassen.
-- **Material** mit Jahrgang sehen nur noch dessen Teamer:innen; ohne Jahrgang
-  alle, die Leitung immer. Vorher war die Zuordnung reine Suchhilfe.
-- **Geheime Abzeichen** für Teamer:innen wurden mit Namen, Beschreibung und
-  Fortschritt ausgeliefert, bevor sie verdient waren.
-- **API-Doku** hinter einer Anmeldung (vorher öffentlich).
+**Build 140 ist draußen, hat aber den Multi-Org-Push NICHT** — er wurde davor
+gebaut. Der nächste Build braucht also `iosBuildNumber` 141 in
+`frontend/version.json`.
 
-### Fehler, die Nutzer:innen trafen
-- **Zwei Teamer:innen ließen sich gar nicht löschen** (Urkunden-Fremdschlüssel),
-  ebenso jede Person, die je einen Termin angelegt hatte.
-- **Pflichttermine:** Ein nachträglich ergänzter Jahrgang buchte niemanden nach;
-  beim Jahrgangswechsel blieben die alten Termine stehen.
-- **Abzeichen:** Pflicht-Anwesenheit war in der Konfi-Liste unsichtbar, die
-  Statistik zählte Teamer-Abzeichen mit (56 statt 50 in Org 1), verdiente
-  Abzeichen verschwanden beim Abschalten, die Teamer-Kombination zeigte 100 %
-  ohne zu vergeben, der Hilfetext zu Bonuspunkten war falsch.
-- **Android:** Der erste und letzte Reiter waren halb abgeschnitten
-  (`safe-area-inset-left/right` kam im ganzen Projekt nicht vor). Die eigene
-  letzte Nachricht zählte als ungelesen; die Zahl am App-Symbol wurde nie auf
-  null zurückgenommen.
-- **Aktivität zuweisen:** Bei einer Ablehnung des Servers blieb das Fenster
-  wortlos stehen (`setError` war gar nicht geholt).
-- **Chat-Zugriff:** Mehr-Organisations-Leitungen kamen nach einem Wechsel in
-  keinen Chat der zweiten Gemeinde — der pg-Treiber liefert `bigint` als String,
-  die Socket-Anmeldung setzte eine Zahl.
-
-### Leistung
-- Der Hintergrunddienst hätte bei 1000 Konfis **63 % Dauerlast** erzeugt
-  (24 Abfragen und 95–292 ms pro Person, alle 5 Minuten). Jetzt getrennt: der
-  App-Zähler läuft weiter alle 5 Minuten und kostet 2 Abfragen und 140 ms
-  **unabhängig von der Personenzahl**; die Abzeichen-Prüfung läuft stündlich,
-  weil ihre Kriterien an Wochen und Jahren hängen. Bei 1000 Personen: 5,3 %.
-- Die Prüfung lief zuvor nur für Leute mit Push-Token — 41 von 82.
-
-### Doku
-- **Handbuch neu gebaut:** ein Kapitel je Seite statt 1171 Zeilen am Stück,
-  durchnummeriert 1 bis 12, unten vor/zurück, davor eine Übersicht mit Karten.
-- **Echte Umlaute** in 194 Quelldateien und allen fünf OpenAPI-Dateien.
-- Zwei Wissensdokumente: `docs/wissen/abzeichen.md` (alle Bedingungstypen,
-  13 Befunde) und `docs/wissen/zaehler.md`.
-- Die Doku-Generatoren tragen kein Stand-Datum mehr — es kam aus dem letzten
-  Commit der Quellen und konnte nie den Commit kennen, der es erzeugt; die CI
-  wurde dadurch nach jeder Doku-Änderung grundlos rot.
-
-### Daten
-- **Demo-Gemeinde (Org 4)** gefüllt: 12 Konfis, 10 Termine, 4 Challenges mit
-  Beiträgen in allen drei Sichtbarkeiten, Anträge in allen drei Zuständen.
-  Konten `demo.emilia` bis `demo.malte`, Passwort `KonfiDemo2026!`.
-  Die `review-*`-Konten wurden **nicht** angefasst (könnten beim App-Review
-  hinterlegt sein).
-- **Fünf leere Abzeichen in Org 1 eingestellt** (Tauferinnerung,
-  Kasualien-Kenner, Freizeitguru, Adventskalender, Neujahrs-Starter), neue
-  Aktivitäten `Adventsgottesdienst` und `Jahreswechsel-Gottesdienst`.
-  `Lebensbegleiter` gelöscht (deckungsgleich mit Kasualien-Kenner).
-  Alle fünf gegen Produktion gemessen, jeweils mit Gegenprobe.
+Regeln: nur auf Zuruf dispatchen, Commit nennen, Testinfos sind Pflicht (mit
+Klickpfad und Erwartet-Zeile, per ASC-API). `frontend/scripts/apply-version.sh`
+wird von der CI selbst aufgerufen.
 
 ---
 
-## Offen
+## Was in dieser Sitzung entstanden ist
 
-### Abzeichen: zwei bleiben leer
-`Osterlachen` (40) und `Weihnachts-Insider` (41) haben weiter keine Bedingung
-und sind damit unerreichbar — sie erscheinen aber nicht mehr unter
-"erreichbar". Ostern ist fachlich komplex (Gründonnerstag, Karfreitag,
-Ostersonntag, Ostermontag), Weihnachten hat Simon noch nicht entschieden.
-Ebenfalls offen: `Kirchenjahr-Experte` (43) und `Undercover-Konfi` (50).
+### Der Umzug ist durch
+Konfi Quest läuft wieder auf **server.godsapp.de**. Datenbank vollständig
+übertragen (alle 57 Tabellen deckungsgleich geprüft, nicht stichprobenartig),
+Uploads (151 MB, alle 48 Antragsfotos und 14 Chat-Dateien gegengeprüft), DNS
+umgestellt, TLS gültig bis Oktober.
 
-Für Undercover-Konfi wäre "Bestimmte Aktivität: Gottesdienstbesuch, Wert 8"
-inhaltlich richtig, solange die Aktivität 1 Punkt gibt — ändert sich das, stimmt
-das Abzeichen nicht mehr. Die Beschreibung müsste dann auf "8 Sonntags-
-gottesdienste" lauten.
+Der Fahrtenbuch-Server bleibt als **Rückfallebene**: Er reicht Aufrufe
+transparent durch (wer noch die alte IP im Cache hat, merkt nichts) und holt
+sich nächtlich um 3:30 Datenbank, Uploads und Image-Tag. Anleitung für den
+Ernstfall: `/opt/konfi-quest/NOTFALL.md` auf dem Server.
 
-### Blinde Flecken — nie systematisch geprüft
-- **Challenges** (der neueste und größte Bereich)
-- **Wrapped**
-- **Anwesenheit** und **Benachrichtigungen**
+**Staging ist ersatzlos entfernt** — Stack, Verzeichnis, Domain, Images,
+Build-Workflow. Es war seit dem Notumzug ohnehin tot (die Domain zeigte auf
+einen Server, auf dem es den Stack nie gab).
 
-### Bekannt, bewusst liegengelassen
-- **Namenskopplung bei Abzeichen:** `specific_activity`,
-  `activity_combination` und `category_activities` speichern NAMEN. Wird eine
-  Aktivität umbenannt, wird das Abzeichen still unerreichbar und der
-  Fortschritt fällt auf null. Kein Hinweis im Editor. Ein Umbau, kein Fix.
-- **Android-Zähler:** `aps.badge` wirkt nur auf iOS; Android kennt kein
-  Betriebssystem-Abzeichen. Die Zahl kann dort nur die laufende App setzen,
-  ein stiller Push weckt sie nicht. Vollständig lösen ließe sich das nur mit
-  einer sichtbaren Benachrichtigung oder einem Hintergrunddienst — eine
-  Produktentscheidung. Details in `docs/wissen/zaehler.md`.
-- **Opt-out bei Pflichtterminen** lässt bewusst im Chat (Entscheidung Simon).
-- Weitere Kleinbefunde: `docs/wissen/abzeichen.md`, Nummern 8 bis 13.
+### Ernste Funde
+- **Verschwindende Nachrichten: vier echte Verlustwege** (`5932c9a2`). Der
+  schlimmste: Im `writeQueue` stand `if (item.metadata.type === 'chat')
+  continue;` — kein Fehlerhinweis, weil "die Blase zeigt es ja". Nach einem
+  Neustart war die Blase weg und die Nachricht **spurlos verschwunden**. Dazu:
+  Sendefehler nur im Arbeitsspeicher, kein Nachsenden beim Kaltstart, und der
+  Org-Wechsel leerte die Warteschlange kommentarlos (Nachrichten hätten unter
+  fremdem Konto rausgehen können). 26 Tests mit Gegenprobe.
+  *Grenze bleibt:* Absturz exakt während des ersten Sendeversuchs.
+- **Socket blieb nach Sitzungsablauf angemeldet** (`cda3d1f5`). Beim bewussten
+  Abmelden war alles dicht — aber wenn die Anmeldung von selbst ablief, blieb
+  die Verbindung serverseitig als die abgemeldete Person bestehen. Die nächste
+  Person am selben Gerät bekam den alten Socket samt Räumen.
+- **98 API-Pfade zeigten auf falsche Adressen** (`b5d76109`). Drei von fünf
+  YAML-Dateien setzten `/api` in die Serveradresse, zwei in den Pfad; beim
+  Zusammenführen gewann eine Variante. Gegen die echte API geprüft: alte
+  Adresse 405, korrigierte 400.
+- **Abzeichen mit Wert 0 hätten sofort für alle ausgelöst** (`9d3eeeb3`) —
+  `x >= null` ist in JavaScript wahr. In Produktion aktuell kein solcher Fall.
+- **`/organizations/current` brauchte 189 ms** (`bde959a3`): fünf unverbundene
+  Joins bildeten ein Kreuzprodukt mit 77.376 Zwischenzeilen. Nach dem Umbau
+  **0,95 ms**, gemessen mit EXPLAIN ANALYZE gegen Produktionsdaten.
+- **Zwei Dashboard-Schalter waren wirkungslos** (`03a20a09`, `3439e9ed`):
+  `dashboard_show_challenges` kam im Backend gar nicht vor, der
+  Konfispruch-Schalter wurde serverseitig ignoriert.
+- **Zwei Falschaussagen im Handbuch**: Es behauptete, die Leitung könne fremde
+  Zweiergespräche lesen (seit 23.08. ausdrücklich nicht) und die
+  Ablehnungs-Begründung sei freiwillig (ist Pflicht).
+- **Der Handbuch-Renderer konnte keine nummerierten Listen** — alle
+  Schritt-Anleitungen wurden seit jeher zu einem Absatz zusammengezogen.
 
-### Für 2.0.0 noch nötig
-- Screenshots aus Org 4 (als Skript, damit sie nach einem UI-Umbau neu
-  entstehen statt still zu veralten)
-- Store-Texte: 157 Changelog-Einträge sind für Nutzer:innen zu viel
-- Version setzen, Git-Tag, GitHub-Release (Tag-Schema ohne `v`-Präfix)
+### Challenges (Simons Sammlung)
+Abzeichen erst nach Freigabe (`3443df5b`, **gleiche Regel für alle**, im Code
+als Absicht kommentiert), sauberer Feed (Feed/Wartet/Ausgeblendet),
+nachträgliches Anonymisieren war serverseitig auf "Konfi entscheidet"
+beschränkt — daher fehlte es im Teamer-Event; optionale Begründung beim
+Ausblenden; Links nur noch von Musikdiensten mit Titel und Interpret
+(`4bf2b7d7`); Entwürfe unter "Geplant" ohne Datumszwang (`f3d06c29`);
+Beschriftungen und Grammatik (`99d0ba4e`).
+
+### Website und Handbuch
+Handbuch verlinkt (Navigation, Fließtext, Mobil-Symbol) und aus dem Handbuch
+ein Verweis zur API-Referenz. **Die Navigation der Startseite war kaputt** —
+das Logo klebte am ersten Menüpunkt, die Knöpfe brachen zweizeilig um; behoben,
+"Warum" ist dafür aus der Leiste geflogen (`7561d331`). Handbuch-Navigation
+auf dem Handy: **449 px auf 53 px**, jetzt einklappbar und mitlaufend
+(`debc8af3`). Wiki-Querverweise samt Build-Abbruch bei toten Links
+(`623c0f96`).
+
+### Sicherheit
+CodeQL: 6 Meldungen geprüft, **eine echt** — die Doku-Anmeldung hatte kein
+Rate-Limit (`9e665197`, jetzt 20 Fehlversuche/15 min). Fünf begründet als
+Fehlalarm geschlossen. Dependabot: null offene Meldungen.
 
 ---
 
-## Zugänge
+## Offen (Auszug — vollständig in BAUSTELLEN.md)
 
+**Vor 2.0.0:**
+- Live-Aktualisierung prüfen (siehe oben, vorrangig)
+- Abzeichen-Bedingungen zu Ende prüfen
+- Handbuch mit Bildschirmfotos
+- Store-Texte (157 Changelog-Einträge sind für Nutzer:innen zu viel)
+- Bildschirmfotos aus Org 4 (als Skript, damit sie nicht veralten)
+- Version, Git-Tag, GitHub-Release (Tag ohne `v`-Präfix)
+
+**Bewusst nach 2.0.0:**
+- **Das 3-MB-Bundle aufteilen** (697 kB gepackt, ein Monolith). Größter Hebel
+  für den Kaltstart im Web (geschätzt auf 400–450 kB je Rolle), aber der Umbau
+  fasst die Wurzel des Routings an und trifft damit jede Nutzerin; nachladbare
+  Teile brechen typischerweise erst im Betrieb bei schlechtem Netz. Nutzen
+  einmalig (danach Cache, nativ ohnehin im Paket), Fehler dauerhaft.
+
+**Bekannter Fehler, Ursache belegt, Fix offen:**
+- Testläufe brechen sporadisch ab (etwa jeder vierte). `backend/database.js`
+  ruft beim Modul-Laden `process.exit(1)`, wenn die Datenbank nicht sofort
+  antwortet; `utils/liveUpdate.js` lädt dieses Produktions-Singleton und
+  öffnet einen zweiten Pool. Fix: den Pool übergeben statt ihn zu holen.
+  Eine zweite Spur (Transportebene der Testverbindungen) ist offen.
+
+---
+
+## Zugänge und Testkonten
+
+- **Demo-Gemeinde (Org 4)**, Passwort überall `KonfiDemo2026!`:
+  `demo.leitung` (Pastorin Kathrin Möller), `demo.teamer` (Lasse Brandt),
+  `demo.emilia` bis `demo.malte` (Konfis).
+  **Nicht anfassen:** `review-*` und `google-test-*` — bei Apple und Google
+  für die App-Prüfung hinterlegt.
 - **API-Doku:** https://konfi-quest.de/docs/api/ — Passwort in
-  `~/.claude/secrets.env` unter `KONFI_QUEST_DOCS_PASSWORD`, serverseitig als
-  `DOCS_PASSWORD` in der Compose-Datei. Kein Benutzername mehr.
-- **Handbuch:** https://konfi-quest.de/docs/ — offen
-- **Demo-Gemeinde:** `demo.<vorname>` / `KonfiDemo2026!`
+  `~/.claude/secrets.env` als `KONFI_QUEST_DOCS_PASSWORD`.
+- **Handbuch:** https://konfi-quest.de/docs/ — offen.
+- **Server:** `ssh root@server.godsapp.de`, Stack über Portainer 249
+  (`/opt/stacks/portainer/compose/249/v220/docker-compose.yml`).
+  Deploy: Image-Tags per sed ersetzen, `docker compose -p konfi_quest pull`
+  und `up -d`. Backup vorher nicht vergessen (`/opt/Konfi-Quest/dump/`).
 
 ---
 
-## Fallen, die heute Zeit gekostet haben
+## Fallen, die diese Sitzung gekostet haben
 
-- **Der pg-Treiber liefert `bigint` als String.** Zweimal zugeschlagen: einmal
-  im Chat-Zugriff (Produktionsfehler), einmal in meinem eigenen Testskript, wo
-  `Number(r.id)` gegen ein String-Set nie traf und ein Abzeichen als "fehlend"
-  erschien, das längst da war. Bei Vergleichen immer `Number()` auf beiden
-  Seiten oder `String()`.
-- **Ein Abzeichen kann vergeben werden und trotzdem unsichtbar sein.** Vergabe,
-  Fortschrittsanzeige und Kategorienliste sind drei getrennte Codestellen. Wer
-  nur eine prüft, hat nichts geprüft.
-- **`criteria_type` und `criteria_extra` müssen zusammenpassen.**
-  `specific_activity` will `required_activity_name`, `activity_combination`
-  will `required_activities`. Passt es nicht, löst das Abzeichen nie aus — ohne
-  jede Fehlermeldung. Ist mir beim Einstellen selbst passiert.
-- **Agentenbefunde sind Behauptungen.** Von 13 Badge-Befunden waren zwei falsch
-  (die Wertung erwartet keine IDs mehr; geheime Teamer-Abzeichen gibt es gar
-  nicht), und der schwerste Befund — zehn Abzeichen mit leerer Bedingung — stand
-  gar nicht im Bericht. Beim Zähler-Agenten war die Hauptthese widerlegbar.
-- **Vor dem Behaupten messen.** "5 Sekunden sind unproblematisch" war voreilig;
-  hochgerechnet auf 1000 Konfis waren es 63 % Dauerlast. Simons Nachfrage hat
-  einen echten Fehler aufgedeckt.
-- **Der Pfadfilter der CI kannte `scripts/` nicht.** Ein Commit nur an den
-  Generatoren löste keinen Lauf aus — und ohne Lauf entstehen keine Images, der
-  Deploy lief in `manifest unknown`. Behoben.
-- **Backups vor jedem Schreibzugriff**, und Messungen gegen Produktion in einer
-  Transaktion mit `ROLLBACK`. Hat heute mehrfach verhindert, dass Testdaten
-  liegenbleiben.
+- **API-Pfade nie raten.** Es gibt eine vollständige OpenAPI-Doku in
+  `docs/api/*.yaml`. Ich habe viermal geraten und viermal 404 bekommen — der
+  Mountpunkt weicht oft vom Dateinamen ab (`routes/activities.js` hängt unter
+  `/api/admin/activities`).
+- **An vHosts nur über die KeyHelp-API arbeiten.** Ein `mv` auf eine
+  Custom-vHost-Datei machte die Apache-Konfiguration ungültig — beim nächsten
+  Neustart wäre die Seite ausgefallen. Die API räumt sauber selbst auf.
+- **Nicht zu viele Agenten gleichzeitig.** Bei acht parallel kam es zu
+  Git-Kollisionen: Ein Commit trägt Dateien, die nicht zu seiner Beschreibung
+  passen (`623c0f96`). Nichts ging verloren, aber die Historie ist unsauber.
+  Künftig strikt nach Dateien aufteilen, nicht nach Themen.
+- **Agentenbefunde bleiben Behauptungen.** Zwei Beispiele aus dieser Sitzung:
+  Ein Agent meldete ein "echtes Produktivkonto" im Browser — es war ein
+  Demo-Konto. Ein anderer meldete zwei Payloads ohne `organization_id` — die
+  wurde zentral ergänzt. Beides fiel beim Nachprüfen auf.
+- **Im richtigen Modus messen.** Der springende Large-Title existiert nur im
+  iOS-Modus; meine erste Messung lief im Android-Modus und wäre wertlos
+  gewesen.
+- **Horizontaler Seitenüberlauf ist nicht dasselbe wie Überlauf in einer
+  Leiste.** Ich hielt die Startseiten-Navigation für in Ordnung, weil die
+  Seite nicht seitlich scrollte — sie brach aber innerhalb der Leiste um.
