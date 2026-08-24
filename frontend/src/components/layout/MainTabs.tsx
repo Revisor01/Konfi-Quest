@@ -70,7 +70,7 @@ import TeamerBadgesPage from '../teamer/pages/TeamerBadgesPage';
 import TeamerKonfiStatsPage from '../teamer/pages/TeamerKonfiStatsPage';
 import TeamerChallengesPage from '../teamer/pages/TeamerChallengesPage';
 
-// Wrapper-Komponenten fuer Route render-props (migriert von props.history.goBack())
+// Wrapper-Komponenten für Route render-props (migriert von props.history.goBack())
 const KonfiDetailRoute: React.FC<RouteComponentProps<{ id: string }>> = ({ match }) => {
   const router = useIonRouter();
   return <KonfiDetailView konfiId={parseInt(match.params.id)} onBack={() => router.goBack()} />;
@@ -105,8 +105,8 @@ const MainTabs: React.FC = () => {
   const location = useLocation(); // Hook, um den aktuellen Pfad zu erhalten
 
   // Anonyme Nutzungsmessung: WELCHER Bereich wird geoeffnet. Zentral am
-  // Routenwechsel statt an 15 einzelnen Tab-Buttons — so zaehlt auch
-  // Navigation, die nicht ueber die Tab-Leiste laeuft. Uebertragen wird nur
+  // Routenwechsel statt an 15 einzelnen Tab-Buttons — so zählt auch
+  // Navigation, die nicht über die Tab-Leiste läuft. Uebertragen wird nur
   // der Bereichsname (z.B. "challenges") plus die Rolle, NIE die volle Route:
   // die kann IDs enthalten (/admin/konfis/42).
   useEffect(() => {
@@ -167,9 +167,9 @@ const MainTabs: React.FC = () => {
     };
   }, [user?.role_name, user?.type]);
 
-  // Zaehler ungesehener Badges (Konfi). KEIN 60s-Polling mehr: Der Server sendet
+  // Zähler ungesehener Badges (Konfi). KEIN 60s-Polling mehr: Der Server sendet
   // beim Vergeben eines Badges ein LiveUpdate ('badges'), das checkAndAwardBadges
-  // an genau den Punktevergabe-Stellen (Aktivitaet/Bonus/Event) ausloest. Bei
+  // an genau den Punktevergabe-Stellen (Aktivität/Bonus/Event) ausloest. Bei
   // Verbindungsabriss/Push feuert zusaetzlich der initiale Load beim Reconnect.
   const loadNewBadgesCount = useCallback(async () => {
     if (user?.type !== 'konfi') return;

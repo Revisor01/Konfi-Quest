@@ -1,5 +1,5 @@
 // backend/tests/utils/konfiLimit.test.js
-// Tests fuer die gemeinsame Limit-Pruef-Funktion checkKonfiLimit (Single Source of Truth).
+// Tests für die gemeinsame Limit-Pruef-Funktion checkKonfiLimit (Single Source of Truth).
 // Per D-05/D-06/D-07: 4-Stufen-Logik (NULL/under_limit/grace/hard_block),
 // COUNT nur Rolle 'konfi' der Org mit deleted_at IS NULL, org-isoliert.
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
@@ -26,7 +26,7 @@ describe('checkKonfiLimit', () => {
     await closePool();
   });
 
-  // Hilfsfunktion: setzt max_konfis fuer eine Org.
+  // Hilfsfunktion: setzt max_konfis für eine Org.
   async function setLimit(orgId, value) {
     await db.query('UPDATE organizations SET max_konfis = $1 WHERE id = $2', [value, orgId]);
   }
@@ -87,7 +87,7 @@ describe('checkKonfiLimit', () => {
   });
 
   it('Test 6: soft-geloeschter Konfi (deleted_at gesetzt) zaehlt NICHT', async () => {
-    // konfi2 soft-loeschen -> count sinkt von 2 auf 1.
+    // konfi2 soft-löschen -> count sinkt von 2 auf 1.
     await db.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [USERS.konfi2.id]);
     await setLimit(ORG_ID, 2);
     const result = await checkKonfiLimit(db, ORG_ID);

@@ -32,7 +32,7 @@ interface ActivityRequest {
   id: number;
   activity_id: number;
   activity_name: string;
-  // Punkte und Typ gibt es NUR bei Konfi-Aktivitaeten. Bei Teamer-Antraegen
+  // Punkte und Typ gibt es NUR bei Konfi-Aktivitäten. Bei Teamer-Anträgen
   // ist points 0 und type NULL — deshalb hier nullable, sonst zeigt die
   // Ansicht "(Gemeinde)" und "0 Punkte" (User-Hinweis 11.08.).
   activity_points?: number | null;
@@ -64,8 +64,8 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
   const [photoLoadFailed, setPhotoLoadFailed] = useState(false);
 
   // Dieses Modal wird auch von der Teamer-Seite genutzt (TeamerEventsPage).
-  // Teamer-Antraege haben weder Punkte noch Gottesdienst/Gemeinde — die Rolle
-  // kommt aus den Daten, damit die Aufrufer nichts setzen muessen.
+  // Teamer-Anträge haben weder Punkte noch Gottesdienst/Gemeinde — die Rolle
+  // kommt aus den Daten, damit die Aufrufer nichts setzen müssen.
   const isTeamerRequest = request?.activity_target_role === 'teamer';
 
   useEffect(() => {
@@ -89,7 +89,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
       const url = URL.createObjectURL(response.data);
       setPhotoUrl(url);
     } catch (err) {
-      // Ladefehler MERKEN: sonst faellt die Anzeige unten in den Leerzustand
+      // Ladefehler MERKEN: sonst fällt die Anzeige unten in den Leerzustand
       // und behauptet "Kein Foto hochgeladen", obwohl eines existiert
       // (Audit 10.08.).
       console.error('Error loading photo:', err);

@@ -25,8 +25,8 @@ interface EventModalProps {
   onClose: () => void;
   onSuccess: () => void;
   dismiss?: () => void;
-  // Meldet den "ungespeicherte Aenderungen"-Stand nach aussen, damit die
-  // praesentierende Seite ueber canDismiss auch Swipe/Backdrop-Schliessen abfangen kann.
+  // Meldet den "ungespeicherte Änderungen"-Stand nach aussen, damit die
+  // praesentierende Seite über canDismiss auch Swipe/Backdrop-Schliessen abfangen kann.
   onDirtyChange?: (dirty: boolean) => void;
 }
 
@@ -45,12 +45,12 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
   // zeigt das IonDatetime-Wheel nur einen schmalen Bereich des laufenden Jahres.
   const datePickerMax = `${new Date().getFullYear() + 2}-12-31T23:59:59`;
 
-  // Schliessen anstossen. Die "ungespeicherte Aenderungen"-Nachfrage laeuft
-  // zentral ueber canDismiss der praesentierenden Seite (faengt X-Button, Swipe
+  // Schliessen anstossen. Die "ungespeicherte Änderungen"-Nachfrage läuft
+  // zentral über canDismiss der praesentierenden Seite (faengt X-Button, Swipe
   // UND Backdrop einheitlich ab) — daher hier keine zweite Abfrage.
   const handleClose = () => { doClose(); };
 
-  // isDirty-Stand nach aussen melden (fuer canDismiss der praesentierenden Seite).
+  // isDirty-Stand nach aussen melden (für canDismiss der praesentierenden Seite).
   useEffect(() => { onDirtyChange?.(isDirty); }, [isDirty, onDirtyChange]);
 
   const [formData, setFormData] = useState<EventFormData>({
@@ -140,7 +140,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         event_end_time: toIonDatetimeISO(eventEnd), location: '', points: 1,
         point_type: 'gemeinde', category_ids: [], jahrgang_ids: [], type: 'event',
         // Anmeldung standardmaessig AB SOFORT (leer = kein Startzeitpunkt) —
-        // der Normalfall ist "Event steht, Anmeldung laeuft"; ein Startdatum in
+        // der Normalfall ist "Event steht, Anmeldung läuft"; ein Startdatum in
         // der Zukunft ist die Ausnahme und lässt sich per Schalter setzen.
         max_participants: 5, registration_opens_at: '',
         registration_closes_at: toIonDatetimeISO(regCloses), has_timeslots: false,
@@ -196,7 +196,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
   };
 
   const handleSubmit = async () => {
-    // Pflichtfelder pruefen und SAGEN, was fehlt. Vorher brach die Funktion
+    // Pflichtfelder prüfen und SAGEN, was fehlt. Vorher brach die Funktion
     // hier stumm ab (return ohne Meldung) — man tippte auf Speichern und es
     // passierte sichtbar nichts (User-Hinweis 10.08.).
     if (!formData.name.trim()) { setError('Bitte gib dem Event einen Namen'); return; }
@@ -205,8 +205,8 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
       setError('Pflicht-Events brauchen mindestens einen Jahrgang');
       return;
     }
-    // guard() wirft, wenn schon eine Speicherung laeuft (Doppel-Tap). Dieser
-    // Wurf lag bisher ausserhalb jedes catch -> unbehandelte Rejection, kein
+    // guard() wirft, wenn schon eine Speicherung läuft (Doppel-Tap). Dieser
+    // Wurf lag bisher außerhalb jedes catch -> unbehandelte Rejection, kein
     // Hinweis an die Nutzerin. Hier abfangen statt durchschlagen lassen.
     try {
       await guard(async () => {
@@ -224,7 +224,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         location: formData.location.trim() || null,
         // Reine Teamer-Events vergeben keine Konfi-Punkte (das Formular zeigt
         // die Konfis-Karte dort gar nicht) — sonst bliebe ein alter Punktwert
-        // an einem umgestellten Event haengen.
+        // an einem umgestellten Event hängen.
         points: (formData.mandatory || formData.is_konfirmation || isTeamerOnly) ? 0 : formData.points,
         point_type: isTeamerOnly ? 'gemeinde' : formData.point_type,
         category_ids: formData.category_ids,
@@ -250,7 +250,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
         is_series: formData.is_series,
         series_count: formData.is_series ? formData.series_count : undefined,
         series_interval: formData.is_series ? formData.series_interval : undefined,
-        // "Nur Teamer:innen" schliesst Pflicht-Event und Konfirmation aus
+        // "Nur Teamer:innen" schließt Pflicht-Event und Konfirmation aus
         // (beides sind Konfi-Kategorien) — das Formular blendet sie dort aus,
         // der Payload haelt es konsistent, auch bei umgestellten Bestands-Events.
         mandatory: isTeamerOnly ? false : formData.mandatory,
@@ -291,12 +291,12 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
           setSuccess('Event wird erstellt sobald du wieder online bist');
         }
       }
-      // Dirty-Stand SYNCHRON nach aussen melden, bevor onSuccess/doClose ueber
-      // canDismiss schliesst (sonst blockiert canDismiss -> Modal bleibt offen).
+      // Dirty-Stand SYNCHRON nach aussen melden, bevor onSuccess/doClose über
+      // canDismiss schließt (sonst blockiert canDismiss -> Modal bleibt offen).
       setIsDirty(false); onDirtyChange?.(false); onSuccess(); doClose();
     } catch (error: any) {
       // Validierungsfehler des Backends kommen als { error, details: [...] } —
-      // ohne die details liest man nur "Validierungsfehler" und weiss nicht,
+      // ohne die details liest man nur "Validierungsfehler" und weiß nicht,
       // welches Feld gemeint ist.
       const data = error.response?.data;
       const details = Array.isArray(data?.details)
@@ -308,8 +308,8 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
     } finally { setLoading(false); }
       });
     } catch {
-      // guard() hat abgelehnt: es laeuft bereits eine Speicherung. Nichts tun —
-      // der Button ist ohnehin disabled, das ist kein Fehler fuer die Nutzerin.
+      // guard() hat abgelehnt: es läuft bereits eine Speicherung. Nichts tun —
+      // der Button ist ohnehin disabled, das ist kein Fehler für die Nutzerin.
     }
   };
 
@@ -415,7 +415,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onSuccess, dism
                           if (e.detail.checked) {
                             setFormData({ ...formData, registration_opens_at: '' });
                           } else {
-                            // Zurueck auf einen sinnvollen Startwert: jetzt.
+                            // Zurück auf einen sinnvollen Startwert: jetzt.
                             const now = new Date();
                             const pad = (n: number) => n.toString().padStart(2, '0');
                             setFormData({

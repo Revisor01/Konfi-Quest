@@ -46,9 +46,9 @@ const KonfiChallengesPage: React.FC = () => {
 
   const [presentSubmitModal, dismissSubmitModal] = useIonModal(ChallengeSubmitModal, {
     challenge: selectedChallenge,
-    // selectedChallenge wird beim Schliessen bewusst NICHT zurueckgesetzt: das
-    // Modal ist waehrend der Dismiss-Animation noch gemountet und wuerde bei
-    // null kurz den Ladezustand aufblitzen lassen. Der naechste Aufruf setzt die
+    // selectedChallenge wird beim Schliessen bewusst NICHT zurückgesetzt: das
+    // Modal ist während der Dismiss-Animation noch gemountet und wuerde bei
+    // null kurz den Ladezustand aufblitzen lassen. Der nächste Aufruf setzt die
     // Challenge ohnehin neu.
     onClose: () => dismissSubmitModal(),
     onSuccess: () => {

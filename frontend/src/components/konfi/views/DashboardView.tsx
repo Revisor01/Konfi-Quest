@@ -117,7 +117,7 @@ interface DailyVerse {
   cached?: boolean;
 }
 
-/** Minimaldaten der Dashboard-Karte fuer aktive Challenges. */
+/** Minimaldaten der Dashboard-Karte für aktive Challenges. */
 interface ChallengeTeaser {
   id: number;
   title: string;
@@ -149,7 +149,7 @@ interface DashboardConfig {
 
 const DEFAULT_KONFI_ORDER = DEFAULT_KONFI_SECTION_ORDER;
 
-/** Icon je Challenge-Typ fuer die Dashboard-Karte (Schluessel: challenge_type). */
+/** Icon je Challenge-Typ für die Dashboard-Karte (Schlüssel: challenge_type). */
 const CHALLENGE_TYPE_ICON: Record<string, string> = {
   wahrnehmung: eyeOutline,
   beitrag: megaphoneOutline,
@@ -162,7 +162,7 @@ const getChallengeTypeIcon = (type?: string): string =>
 interface DashboardViewProps {
   dashboardData: DashboardData;
   // Wird von der Page nicht mehr uebergeben — die View laedt selbst
-  // (siehe Kommentar in KonfiDashboardPage). Bleibt optional fuer Aufrufer,
+  // (siehe Kommentar in KonfiDashboardPage). Bleibt optional für Aufrufer,
   // die sie noch setzen.
   dailyVerse?: DailyVerse | null;
   badgeStats: BadgeStats;
@@ -241,9 +241,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   });
   const [showLosung, setShowLosung] = useState(true);
 
-  // Aktive Challenges fuer die Dashboard-Karte. Der Dashboard-Endpoint liefert
+  // Aktive Challenges für die Dashboard-Karte. Der Dashboard-Endpoint liefert
   // sie nicht mit, deshalb ein eigener, schlanker Abruf — nur wenn die Karte
-  // ueberhaupt eingeschaltet ist.
+  // überhaupt eingeschaltet ist.
   const [activeChallenges, setActiveChallenges] = useState<ChallengeTeaser[]>([]);
   useEffect(() => {
     if (dashboardConfig?.show_challenges === false) {
@@ -340,7 +340,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     .sort((a, b) => new Date(a.event_date || a.date || '').getTime() - new Date(b.event_date || b.date || '').getTime()),
   [upcomingEvents]);
 
-  // Konfirmations-Termin ueber das is_konfirmation-Flag (Phase 117, Migration 091).
+  // Konfirmations-Termin über das is_konfirmation-Flag (Phase 117, Migration 091).
   const isKonfirmation = (e: typeof myRegisteredEvents[number]) =>
     e.is_konfirmation === true;
 
@@ -500,7 +500,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             ) : null
           ),
           challenges: () => {
-            // Bewusst ohne Zaehler/Fortschritt: nur die laufenden Challenges und
+            // Bewusst ohne Zähler/Fortschritt: nur die laufenden Challenges und
             // der Weg hinein. Ohne aktive Challenge verschwindet die Karte ganz.
             if (dashboardConfig?.show_challenges === false || activeChallenges.length === 0) {
               return null;
@@ -522,7 +522,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 
             return (
               // Farbverlauf kommt aus der gemeinsamen Klasse — jede
-              // Dashboard-Sektion traegt ihre Bereichsfarbe, dort waere ein
+              // Dashboard-Sektion trägt ihre Bereichsfarbe, dort wäre ein
               // neutraler Sonderweg der Bruch.
               <div className="app-dashboard-section app-dashboard-section--challenges" key="challenges">
                 <div className="app-dashboard-section__bg-text">

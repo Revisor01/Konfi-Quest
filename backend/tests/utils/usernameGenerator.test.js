@@ -1,5 +1,5 @@
 // backend/tests/utils/usernameGenerator.test.js
-// Tests fuer die Username-Generierung aus Anzeigenamen (Admin-Anlage).
+// Tests für die Username-Generierung aus Anzeigenamen (Admin-Anlage).
 // Muss dieselben Zeichenregeln erfuellen wie die Selbstregistrierung
 // (commonValidations.username): nur a-z, 0-9, Punkt, Bindestrich.
 const { generateUsernameFromName, generateUniqueUsername } = require('../../utils/usernameGenerator');

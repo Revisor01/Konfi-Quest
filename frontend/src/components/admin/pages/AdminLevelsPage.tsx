@@ -76,8 +76,8 @@ const AdminLevelsPage: React.FC = () => {
     }
   });
 
-  // Live-Updates fuer Level abonnieren: der Server sendet nach Anlegen/Aendern/
-  // Loeschen ein 'levels'-Event (levels.js). Ohne dieses Abo blieb die Liste auf
+  // Live-Updates für Level abonnieren: der Server sendet nach Anlegen/Ändern/
+  // Löschen ein 'levels'-Event (levels.js). Ohne dieses Abo blieb die Liste auf
   // anderen Geraeten/Sitzungen bis zum manuellen Refresh veraltet (toter Sender).
   useLiveRefresh('levels', refreshLevels);
 

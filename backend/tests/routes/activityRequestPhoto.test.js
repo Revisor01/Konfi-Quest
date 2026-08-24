@@ -1,8 +1,8 @@
-// Integrationstests fuer Antrags-Nachweisfotos:
-// - Upload wird AES-verschluesselt auf die Platte geschrieben
+// Integrationstests für Antrags-Nachweisfotos:
+// - Upload wird AES-verschlüsselt auf die Platte geschrieben
 // - Abruf entschluesselt zum Originalinhalt (Roundtrip), Admin + Konfi
 // - Status-Gate: Konfi sieht das Foto NUR bei pending, Admin immer
-// - Admin kann das Foto manuell loeschen (Datei weg + photo_filename = NULL)
+// - Admin kann das Foto manuell löschen (Datei weg + photo_filename = NULL)
 const request = require('supertest');
 const fs = require('fs');
 const path = require('path');
@@ -23,7 +23,7 @@ describe('Activity Request Photo', () => {
   let db;
   let konfi1Token;
   let admin1Token;
-  // Im Test erzeugte Dateinamen, damit afterEach sie aufraeumen kann.
+  // Im Test erzeugte Dateinamen, damit afterEach sie aufräumen kann.
   const createdFiles = [];
 
   beforeAll(async () => {
@@ -50,7 +50,7 @@ describe('Activity Request Photo', () => {
     await closePool();
   });
 
-  // Foto hochladen + Antrag damit anlegen. Gibt { requestId, filename } zurueck.
+  // Foto hochladen + Antrag damit anlegen. Gibt { requestId, filename } zurück.
   async function createRequestWithPhoto() {
     const up = await request(app)
       .post('/api/konfi/upload-photo')

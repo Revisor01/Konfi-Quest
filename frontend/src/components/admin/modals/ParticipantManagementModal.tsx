@@ -209,8 +209,8 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
       return;
     }
 
-    // guard() wirft bei Doppel-Tap ('Aktion laeuft bereits'). Ungefangen
-    // bliebe loading auf true haengen — dann liess sich das Modal nur
+    // guard() wirft bei Doppel-Tap ('Aktion läuft bereits'). Ungefangen
+    // bliebe loading auf true hängen — dann liess sich das Modal nur
     // noch per Swipe schliessen (User-Hinweis 12.08.).
     try {
       await guard(async () => {

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import React from 'react';
 
-// --- Mocks fuer alle Capacitor-Plugins und Services ---
+// --- Mocks für alle Capacitor-Plugins und Services ---
 
 vi.mock('@capacitor/core', () => ({
   Capacitor: {
@@ -108,7 +108,7 @@ import { BaseUser } from '../../types/user';
 // Test-Consumer-Komponente
 const TestConsumer: React.FC<{ onContext?: (ctx: ReturnType<typeof useApp>) => void }> = ({ onContext }) => {
   const ctx = useApp();
-  // Callback fuer Tests die den Context direkt brauchen
+  // Callback für Tests die den Context direkt brauchen
   React.useEffect(() => {
     onContext?.(ctx);
   });
@@ -149,7 +149,7 @@ describe('AppContext', () => {
   });
 
   it('useApp() wirft Fehler ausserhalb von AppProvider', () => {
-    // Console.error unterdruecken fuer den erwarteten Fehler
+    // Console.error unterdruecken für den erwarteten Fehler
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     expect(() => {

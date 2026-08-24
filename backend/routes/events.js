@@ -82,9 +82,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         : "AND e.event_date >= NOW() - INTERVAL '1 year'";
 
       // Restrukturierte Query (Audit Achse 4, Fund 9):
-      // Keine Join-Explosion mehr ueber bookings/users/roles/categories/jahrgaenge.
+      // Keine Join-Explosion mehr über bookings/users/roles/categories/jahrgaenge.
       // Stattdessen pro Anliegen ein LATERAL-Aggregat bzw. Sub-Select — kein
-      // GROUP BY ueber die ganze Breite noetig.
+      // GROUP BY über die ganze Breite nötig.
       const query = `
         SELECT e.*,
                 bstats.registered_count,
@@ -105,7 +105,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
                 jgs.jahrgang_ids,
                 jgs.jahrgang_names,
                 CASE
-                  -- Abgesagt schlaegt alles: sonst meldete ein abgesagtes Event
+                  -- Abgesagt schlägt alles: sonst meldete ein abgesagtes Event
                   -- weiterhin 'open'/'closed' und wurde in der Leitungssicht
                   -- nicht als abgesagt erkannt (keine Durchstreichung, Fund
                   -- 22.08.2026). Die Konfi-Sicht nutzt dafuer e.cancelled direkt.
@@ -129,8 +129,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           SELECT
             -- registered_count/waitlist_count sind KONFI-Zahlen (Migration 120:
             -- Teamer haben ein eigenes Kontingent). Ohne den Rollenfilter
-            -- zaehlten angemeldete Teamer gegen die Konfi-Plaetze, und
-            -- registration_status meldete "ausgebucht", obwohl fuer Konfis noch
+            -- zählten angemeldete Teamer gegen die Konfi-Plaetze, und
+            -- registration_status meldete "ausgebucht", obwohl für Konfis noch
             -- Plaetze frei waren.
             COUNT(*) FILTER (WHERE eb.status = 'confirmed' AND COALESCE(r_book.name, '') <> 'teamer') as registered_count,
             COUNT(*) FILTER (WHERE eb.status = 'waitlist' AND COALESCE(r_book.name, '') <> 'teamer') as waitlist_count,
@@ -185,11 +185,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // ODER die teamer_only/teamer_needed sind (immer sichtbar für Teamer)
       let filteredRows = rows;
       if (req.user.role_name === 'teamer') {
-        // Ohne jede Zuweisung griff der Filter frueher gar nicht (die Bedingung
+        // Ohne jede Zuweisung griff der Filter früher gar nicht (die Bedingung
         // verlangte length > 0) — eine Teamer:in ohne Jahrgang sah damit ALLE
         // Events der Organisation statt keiner jahrgangsgebundenen (Audit
         // 22.08.2026). Jetzt greift der Filter immer; ohne Zuweisung bleibt die
-        // Liste der sichtbaren Jahrgaenge schlicht leer.
+        // Liste der sichtbaren Jahrgänge schlicht leer.
         const viewableJahrgaenge = (req.user.assigned_jahrgaenge || [])
           .filter(j => j.can_view)
           .map(j => j.id);
@@ -237,14 +237,14 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         
         const unprocessedCount = parseInt(row.unprocessed_count, 10) || 0;
 
-        // qr_token gehoert NICHT in die Liste (Audit 22.08.2026): Die Query
+        // qr_token gehört NICHT in die Liste (Audit 22.08.2026): Die Query
         // holt e.*, damit lag der Check-in-Token jedes Events in der Antwort —
-        // fuer ALLE Rollen, auch Konfis. Ein Konfi konnte sich damit per
+        // für ALLE Rollen, auch Konfis. Ein Konfi konnte sich damit per
         // POST /events/qr-checkin von zu Hause als anwesend eintragen und
         // Punkte gutschreiben. GET /events/:id filterte den Token bereits,
-        // ueber die Liste war dieser Schutz umgehbar.
+        // über die Liste war dieser Schutz umgehbar.
         // Teamer und Leitung brauchen den Token nur zum Anzeigen des QR-Codes
-        // und holen ihn dort ueber die Detail- bzw. generate-Route.
+        // und holen ihn dort über die Detail- bzw. generate-Route.
         const { qr_token: _qrToken, ...rowOhneToken } = row;
 
         return {
@@ -728,12 +728,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       const registeredCount = participants.filter(p => p.status === 'confirmed').length;
       const pendingCount = participants.filter(p => p.status === 'waitlist').length;
 
-      // Teamer-Kontingent: eigene Zaehler, getrennt vom Konfi-Kontingent
+      // Teamer-Kontingent: eigene Zähler, getrennt vom Konfi-Kontingent
       const teamerCount = participants.filter(p => p.status === 'confirmed' && p.role_name === 'teamer').length;
       const teamerWaitlistCount = participants.filter(p => p.status === 'waitlist' && p.role_name === 'teamer').length;
 
-      // Buchungsstatus des eingeloggten Users (fuer Konfis UND Teamer:innen —
-      // Teamer koennen seit dem Teamer-Kontingent ebenfalls 'waitlist' haben)
+      // Buchungsstatus des eingeloggten Users (für Konfis UND Teamer:innen —
+      // Teamer können seit dem Teamer-Kontingent ebenfalls 'waitlist' haben)
       const ownBooking = participants.find(p => p.user_id === req.user.id);
 
       // For timeslot events, calculate total capacity and availability
@@ -744,7 +744,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       
       // Konfis bekommen diese Route zwar (sie ist nur mit rbacVerifier
       // geschuetzt), duerfen aber NICHT alles sehen (Audit 22.08.2026):
-      //  - qr_token: damit koennte sich ein Konfi per POST /qr-checkin von zu
+      //  - qr_token: damit könnte sich ein Konfi per POST /qr-checkin von zu
       //    Hause selbst als anwesend eintragen und Punkte gutschreiben.
       //  - participants/unregistrations: enthalten Klarnamen, Jahrgang,
       //    Anwesenheitsstatus und opt_out_reason (Entschuldigungsgruende
@@ -813,7 +813,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     // truthy-Check wie !max_participants verwirft die 0 zusammen mit
     // undefined/null und lehnte damit genau den Fall ab, den die Oberflaeche
     // anbietet: unbegrenzte Events liessen sich nicht anlegen (22.08.).
-    // Deshalb explizit auf "nicht angegeben" pruefen statt auf falsy.
+    // Deshalb explizit auf "nicht angegeben" prüfen statt auf falsy.
     const maxParticipantsFehlt = max_participants === undefined
       || max_participants === null
       || max_participants === '';
@@ -955,7 +955,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             });
           }
         }
-        // Freiwillige Events: KEIN direkter "Anmeldung moeglich"-Push hier.
+        // Freiwillige Events: KEIN direkter "Anmeldung möglich"-Push hier.
         // Das Flag registration_open_notified bleibt false (Default) -> der Cron
         // (backgroundService, atomar, alle 1 Min) sendet GENAU EINEN Push, sobald
         // das Event anmeldbar ist. Verhindert Doppel-Pushes (POST + Cron).
@@ -1028,16 +1028,16 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     try {
       await client.query('BEGIN');
 
-      // Alte Werte lesen: mandatory/registration_open_notified fuer Auto-Enrollment-Logik,
-      // name/event_date/event_end_time/location/cancelled fuer den Aenderungs-Push-Vergleich unten,
-      // teamer_max_participants fuer das Teamer-Nachruecken bei Kapazitaetserhoehung
+      // Alte Werte lesen: mandatory/registration_open_notified für Auto-Enrollment-Logik,
+      // name/event_date/event_end_time/location/cancelled für den Aenderungs-Push-Vergleich unten,
+      // teamer_max_participants für das Teamer-Nachruecken bei Kapazitaetserhoehung
       const { rows: [oldEvent] } = await client.query(
         'SELECT mandatory, registration_open_notified, name, event_date, event_end_time, location, cancelled, teamer_max_participants FROM events WHERE id = $1',
         [id]
       );
 
-      // Teamer-Kontingent: nachtraeglich editierbar. Wird ein Feld nicht mitgeschickt,
-      // bleibt der bisherige Wert erhalten (COALESCE ueber den Parameter).
+      // Teamer-Kontingent: nachträglich editierbar. Wird ein Feld nicht mitgeschickt,
+      // bleibt der bisherige Wert erhalten (COALESCE über den Parameter).
       const effectiveTeamerMax = (teamer_max_participants === undefined || teamer_max_participants === null)
         ? null
         : parseInt(teamer_max_participants, 10);
@@ -1092,7 +1092,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         await client.query(jahrgangQuery, [id, jahrgang_ids]);
       }
 
-      // Auto-Enrollment fuer Pflicht-Events. Frueher haing das an
+      // Auto-Enrollment für Pflicht-Events. Frueher haing das an
       // `!oldEvent.mandatory` und griff damit nur bei der Umwandlung
       // freiwillig -> Pflicht. Kam zu einem Termin, der schon Pflicht war, ein
       // weiterer Jahrgang dazu, blieben dessen Konfis still ungebucht
@@ -1112,7 +1112,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           ON CONFLICT (user_id, event_id) DO NOTHING
         `;
         await client.query(enrollQuery, [id, jahrgang_ids, req.user.organization_id]);
-        // Die frisch Eingebuchten gehoeren auch in den Chat, falls es einen gibt.
+        // Die frisch Eingebuchten gehören auch in den Chat, falls es einen gibt.
         await syncEventChat(client, id, req.user.organization_id);
       }
 
@@ -1206,7 +1206,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           }
         }
       } else if (max_participants > 0) {
-        // Bei normalen Events: Gesamtkapazität prüfen (Teamer zaehlen nicht mit)
+        // Bei normalen Events: Gesamtkapazität prüfen (Teamer zählen nicht mit)
         const { rows: [currentCounts] } = await client.query(
           `SELECT COUNT(*)::int as confirmed_count FROM event_bookings eb
            JOIN users u ON eb.user_id = u.id
@@ -1233,7 +1233,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         }
       }
 
-      // Teamer-Nachruecken bei Erhoehung von teamer_max_participants.
+      // Teamer-Nachruecken bei Erhöhung von teamer_max_participants.
       // Bestandsschutz bei Reduktion: bereits bestaetigte Teamer werden NIE
       // zurueckgestuft (identisch zum Konfi-Verhalten). 0 = unbegrenzt -> alle
       // Wartenden ruecken nach.
@@ -1248,7 +1248,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
              AND r.name = 'teamer' AND u.deleted_at IS NULL`,
           [id]
         );
-        // 0 = unbegrenzt -> keine Obergrenze fuer die Anzahl der Nachruecker
+        // 0 = unbegrenzt -> keine Obergrenze für die Anzahl der Nachruecker
         const freeTeamerSlots = newTeamerMax === 0
           ? null
           : newTeamerMax - teamerCounts.confirmed_count;
@@ -1309,11 +1309,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // Live Update: Notify all konfis and admins about the event update
       liveUpdate.sendToOrg(req.user.organization_id, 'events', 'update', { eventId: id });
 
-      // "Anmeldung moeglich"-Push beim AENDERN — KEIN direkter Push hier, nur Flag
+      // "Anmeldung möglich"-Push beim AENDERN — KEIN direkter Push hier, nur Flag
       // pflegen (Flankenerkennung). Den Push sendet allein der Cron (atomar) ->
       // keine Doppel-Pushes.
       // - Wird das Event NICHT-anmeldbar (Anmeldung in Zukunft/zu/abgesagt) ->
-      //   Flag auf false zuruecksetzen, damit beim naechsten Oeffnen erneut
+      //   Flag auf false zuruecksetzen, damit beim nächsten Oeffnen erneut
       //   gepusht wird.
       // - Wird es anmeldbar, ist das Flag aber noch false (z.B. neu geoeffnet),
       //   greift der Cron automatisch.
@@ -1332,10 +1332,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         }
       }
 
-      // Push an gebuchte Teilnehmer bei relevanter Aenderung (Termin/Uhrzeit/Ort).
-      // Normalisierung noetig: DB liefert Date-Objekte (event_date/event_end_time),
+      // Push an gebuchte Teilnehmer bei relevanter Änderung (Termin/Uhrzeit/Ort).
+      // Normalisierung nötig: DB liefert Date-Objekte (event_date/event_end_time),
       // der Request liefert Strings -> ohne Normalisierung wuerde der Vergleich bei
-      // JEDEM Speichern (auch ohne inhaltliche Aenderung) als "geaendert" durchgehen.
+      // JEDEM Speichern (auch ohne inhaltliche Änderung) als "geändert" durchgehen.
       try {
         const normalizeDate = (value) => {
           if (!value) return null;
@@ -1399,9 +1399,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         return res.status(404).json({ error: 'Event nicht gefunden' });
       }
 
-      // Events MIT Anmeldungen duerfen geloescht werden — aber nur ausdruecklich
-      // bestaetigt (?force=true). Fachlich waere "absagen" der saubere Weg,
-      // praktisch ist Loeschen oft das, was gemeint ist (User-Entscheid
+      // Events MIT Anmeldungen duerfen gelöscht werden — aber nur ausdruecklich
+      // bestaetigt (?force=true). Fachlich wäre "absagen" der saubere Weg,
+      // praktisch ist Löschen oft das, was gemeint ist (User-Entscheid
       // 10.08.2026). Ohne force liefert die Route 409 samt Anzahl, damit das
       // Frontend eine Rueckfrage mit konkreter Zahl stellen kann.
       // Abgesagte Events waren schon vorher immer loeschbar.
@@ -1423,10 +1423,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         }
       }
 
-      // Push an angemeldete Konfis wenn abgesagtes Event geloescht wird
+      // Push an angemeldete Konfis wenn abgesagtes Event gelöscht wird
       // IMMER einsammeln (nicht nur bei abgesagten Events): wer angemeldet war,
       // muss erfahren, dass der Termin weg ist — egal ob vorher abgesagt oder
-      // direkt geloescht.
+      // direkt gelöscht.
       const { rows: bookedKonfis } = await client.query(
         `SELECT eb.user_id FROM event_bookings eb
          JOIN users u ON eb.user_id = u.id
@@ -1520,7 +1520,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
       res.json({ message: 'Event erfolgreich gelöscht' });
 
-      // Push an Konfis wenn abgesagtes Event mit Buchungen geloescht wurde
+      // Push an Konfis wenn abgesagtes Event mit Buchungen gelöscht wurde
       if (bookedKonfiUserIds.length > 0) {
         const eventDateFormatted = new Date(event.event_date).toLocaleDateString('de-DE');
         try { await PushService.sendEventCancellationToKonfis(db, bookedKonfiUserIds, event.name, eventDateFormatted); } catch (e) { console.error('Push notification failed:', e); }
@@ -1588,8 +1588,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           return res.status(409).json({ error: 'Du bist bereits für dieses Event angemeldet' });
         }
 
-        // Teamer-Kontingent zaehlen: NUR Buchungen von Teamer:innen (Konfis
-        // zaehlen hier nicht, sie haben ihr eigenes Kontingent).
+        // Teamer-Kontingent zählen: NUR Buchungen von Teamer:innen (Konfis
+        // zählen hier nicht, sie haben ihr eigenes Kontingent).
         const { rows: [teamerCounts] } = await client.query(
           `SELECT COUNT(*) FILTER (WHERE eb.status = 'confirmed') as confirmed_count,
                   COUNT(*) FILTER (WHERE eb.status = 'waitlist') as waitlist_count
@@ -1615,7 +1615,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         const teamerBookingStatus = teamerStatusResult;
         const teamerMessage = teamerBookingStatus === 'confirmed' ? 'Erfolgreich angemeldet' : 'Auf die Warteliste gesetzt';
 
-        // KEIN Timeslot fuer Teamer-Buchungen
+        // KEIN Timeslot für Teamer-Buchungen
         const insertQuery = "INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id) VALUES ($1, $2, $3, NOW(), $4) RETURNING id";
         const { rows: [newBooking] } = await client.query(insertQuery, [eventId, userId, teamerBookingStatus, req.user.organization_id]);
 
@@ -1707,9 +1707,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
       // 3. Kapazität + Warteliste bestimmen (gilt nur für Konfis).
       // WICHTIG: Bei Timeslot-Events zählt die Kapazität PRO SLOT, nicht event-weit.
-      // Frueher entschied die Summe aller Slots ueber confirmed/waitlist — dadurch
+      // Frueher entschied die Summe aller Slots über confirmed/waitlist — dadurch
       // wurde ein voller Slot als "noch Platz" gewertet (Gesamt hatte ja Luft) und
-      // die Warteliste griff nie; die nachgelagerte Slot-Pruefung warf dann nur ein
+      // die Warteliste griff nie; die nachgelagerte Slot-Prüfung warf dann nur ein
       // hartes "ausgebucht" ohne Wartelisten-Option. Jetzt entscheidet der Slot.
       let bookingStatus;
       if (event.has_timeslots) {
@@ -1730,7 +1730,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           client.release();
           return res.status(400).json({ error: 'Ungültiger Zeitslot' });
         }
-        // confirmed/waitlist NUR fuer diesen Slot zaehlen (Teamer zaehlen nicht)
+        // confirmed/waitlist NUR für diesen Slot zählen (Teamer zählen nicht)
         const { rows: [slotCounts] } = await client.query(
           `SELECT COUNT(*) FILTER (WHERE eb.status = 'confirmed') as confirmed_count,
                   COUNT(*) FILTER (WHERE eb.status = 'waitlist') as waitlist_count
@@ -1743,7 +1743,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         const slotConfirmed = parseInt(slotCounts.confirmed_count, 10);
         const slotWaitlist = parseInt(slotCounts.waitlist_count, 10);
 
-        // determineBookingStatus mit der SLOT-Kapazitaet: voller Slot + Warteliste
+        // determineBookingStatus mit der SLOT-Kapazität: voller Slot + Warteliste
         // aktiv -> 'waitlist'; voller Slot ohne/volle Warteliste -> 400.
         const statusResult = determineBookingStatus(event, slotConfirmed, slotWaitlist, slot.max_participants);
         if (typeof statusResult === 'object') {
@@ -1759,7 +1759,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           client.release();
           return res.status(400).json({ error: 'Dieses Event hat keine Zeitslots' });
         }
-        // Event-weite Kapazitaet (Teamer zaehlen nicht)
+        // Event-weite Kapazität (Teamer zählen nicht)
         const { rows: [counts] } = await client.query(
           `SELECT COUNT(*) FILTER (WHERE eb.status = 'confirmed') as confirmed_count,
                   COUNT(*) FILTER (WHERE eb.status = 'waitlist') as waitlist_count
@@ -1821,7 +1821,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     let promotedUserId = null;
     let promotedEventName = null;
     try {
-      // Stornierung + Nachruecken atomar in EINER Transaktion (verhindert stale Kapazitaet
+      // Stornierung + Nachruecken atomar in EINER Transaktion (verhindert stale Kapazität
       // bei gleichzeitiger Buchung/Stornierung).
       const client = await db.getClient();
       try {
@@ -1857,13 +1857,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         // Delete the booking
         await client.query("DELETE FROM event_bookings WHERE event_id = $1 AND user_id = $2 AND organization_id = $3", [eventId, userId, req.user.organization_id]);
 
-        // Wer sich vom Event abmeldet, fliegt auch aus dem zugehoerigen Event-Chat.
+        // Wer sich vom Event abmeldet, fliegt auch aus dem zugehörigen Event-Chat.
         // Sonst bleibt man im Chat, obwohl man nicht mehr teilnimmt.
         await removeFromEventChat(client, eventId, userId, req.user.organization_id);
 
         // If a confirmed Konfi-spot was opened, auto-promote from waitlist (nur für Konfis relevant).
-        // Kapazitaet wird SLOT-bezogen geprueft, wenn die Buchung an einem Timeslot hing —
-        // sonst (event-weite Zaehlung) waere bei mehreren Slots die falsche Grenze massgeblich
+        // Kapazität wird SLOT-bezogen geprüft, wenn die Buchung an einem Timeslot hing —
+        // sonst (event-weite Zählung) wäre bei mehreren Slots die falsche Grenze massgeblich
         // und es rueckte niemand oder der Falsche nach.
         if (booking.status === 'confirmed' && isKonfi) {
           const { rows: [eventCapInfo] } = await client.query(
@@ -1877,7 +1877,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
               "SELECT max_participants FROM event_timeslots WHERE id = $1 AND organization_id = $2",
               [booking.timeslot_id, req.user.organization_id]
             );
-            // Teamer:innen zaehlen NICHT gegen das Konfi-Kontingent (eigenes
+            // Teamer:innen zählen NICHT gegen das Konfi-Kontingent (eigenes
             // Kontingent seit Migration 120) — sonst blockiert eine bestaetigte
             // Teamer-Buchung den Nachrueckplatz eines Konfis.
             const { rows: [slotCountRes] } = await client.query(
@@ -1903,8 +1903,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             confirmedCount = parseInt(countResult?.confirmed_count || '0', 10);
           }
 
-          // Nur nachruecken wenn unter Kapazitaet (0 = unbegrenzt, immer nachruecken).
-          // promoteFromWaitlist ist timeslot-aware und nimmt den naechsten des Slots.
+          // Nur nachruecken wenn unter Kapazität (0 = unbegrenzt, immer nachruecken).
+          // promoteFromWaitlist ist timeslot-aware und nimmt den nächsten des Slots.
           // roleFilter 'not_teamer': ein frei gewordener Konfi-Platz darf NIEMALS
           // von einem Teamer der Teamer-Warteliste belegt werden.
           if (maxCapacity === 0 || confirmedCount < maxCapacity) {
@@ -1916,7 +1916,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         // TEAMER-STORNO: eigenes Kontingent, eigene Warteliste. Ein frei
         // gewordener Teamer-Platz wird ausschliesslich aus der Teamer-Warteliste
         // nachbesetzt (roleFilter 'teamer'). Teamer-Buchungen haben nie einen
-        // Timeslot -> event-weite Zaehlung.
+        // Timeslot -> event-weite Zählung.
         if (booking.status === 'confirmed' && isTeamer) {
           const { rows: [teamerCapInfo] } = await client.query(
             "SELECT teamer_max_participants, name FROM events WHERE id = $1 AND organization_id = $2",
@@ -2044,7 +2044,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       let finalStatus = status;
       if (status === 'auto') {
         // Rolle des hinzugefuegten Users bestimmt, GEGEN WELCHES Kontingent
-        // gezaehlt wird. Ohne diese Weiche landete ein per Admin hinzugefuegter
+        // gezählt wird. Ohne diese Weiche landete ein per Admin hinzugefuegter
         // Teamer im Konfi-Kontingent — und stand er auf der Warteliste, fand
         // ihn promoteFromWaitlist(...,'not_teamer') nie: eine tote Buchung.
         const { rows: [addedUser] } = await client.query(
@@ -2180,9 +2180,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         return res.status(403).json({ error: 'Zugriff verweigert' });
       }
       
-      // Falls der Konfi als ANWESEND verbucht war, beim Loeschen die vergebenen
-      // Event-Punkte zuruecknehmen (sonst behaelt er Punkte fuer ein Event, an dem
-      // er nicht mehr als Teilnehmer gefuehrt wird). Nur fuer Konfis relevant.
+      // Falls der Konfi als ANWESEND verbucht war, beim Löschen die vergebenen
+      // Event-Punkte zuruecknehmen (sonst behält er Punkte für ein Event, an dem
+      // er nicht mehr als Teilnehmer geführt wird). Nur für Konfis relevant.
       if (booking.attendance_status === 'present') {
         const { rows: [pts] } = await db.query(
           "SELECT id, points, point_type FROM event_points WHERE konfi_id = $1 AND event_id = $2",
@@ -2202,7 +2202,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // Delete the booking
       await db.query("DELETE FROM event_bookings WHERE id = $1", [bookingId]);
 
-      // Wer von der Leitung ausgetragen wird, gehoert auch nicht mehr in den
+      // Wer von der Leitung ausgetragen wird, gehört auch nicht mehr in den
       // Event-Chat. Bisher tat das nur die Selbstabmeldung der Teamer
       // (Befund 24.08.2026).
       await removeFromEventChat(db, eventId, booking.user_id, req.user.organization_id);
@@ -2210,7 +2210,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // Auto-promote from waitlist if the deleted booking was confirmed.
       // Konfi- und Teamer-Kontingent sind strikt getrennt: ein frei gewordener
       // Konfi-Platz wird nur aus der Konfi-Warteliste nachbesetzt und umgekehrt.
-      // promoteFromWaitlist filtert die Rolle und schliesst geloeschte User aus.
+      // promoteFromWaitlist filtert die Rolle und schließt geloeschte User aus.
       if (booking.status === 'confirmed') {
         const removedIsTeamer = booking.is_teamer_booking === true;
         try {
@@ -2218,7 +2218,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           let confirmedCount = 0;
 
           if (removedIsTeamer) {
-            // Teamer-Buchungen haben nie einen Timeslot -> event-weite Zaehlung.
+            // Teamer-Buchungen haben nie einen Timeslot -> event-weite Zählung.
             const { rows: [teamerCapInfo] } = await db.query(
               "SELECT teamer_max_participants FROM events WHERE id = $1 AND organization_id = $2",
               [eventId, req.user.organization_id]
@@ -2239,7 +2239,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
               "SELECT max_participants FROM event_timeslots WHERE id = $1 AND organization_id = $2",
               [booking.timeslot_id, req.user.organization_id]
             );
-            // Teamer:innen zaehlen NICHT gegen das Konfi-Kontingent (sie haben
+            // Teamer:innen zählen NICHT gegen das Konfi-Kontingent (sie haben
             // ihr eigenes) — sonst blockiert eine bestaetigte Teamer-Buchung
             // den Nachrueckplatz eines Konfis.
             const { rows: [slotCountRes] } = await db.query(
@@ -2269,7 +2269,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             confirmedCount = parseInt(countResult?.confirmed_count || '0', 10);
           }
 
-          // Nur nachruecken wenn unter Kapazitaet (0 = unbegrenzt, immer nachruecken).
+          // Nur nachruecken wenn unter Kapazität (0 = unbegrenzt, immer nachruecken).
           if (maxCapacity === 0 || confirmedCount < maxCapacity) {
             const promotedUserId = await promoteFromWaitlist(
               db,
@@ -2339,7 +2339,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
   // Create series events
   router.post('/series', rbacVerifier, requireTeamer, async (req, res) => {
     // WICHTIG: Diese Liste muss mit POST / (Einzel-Event) synchron bleiben.
-    // Fehlende Felder wurden hier frueher stillschweigend auf den Spalten-
+    // Fehlende Felder wurden hier früher stillschweigend auf den Spalten-
     // Default gesetzt — eine Serie kam damit ohne Teamer-Kontingent, ohne
     // Pflicht-/Konfirmations-Flag, ohne Mitbringen und ohne Check-in-Fenster
     // heraus, obwohl das Formular sie mitgeschickt hat (Bugreport 09.08.).
@@ -2352,7 +2352,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       mandatory, is_konfirmation, bring_items, checkin_window
     } = req.body;
 
-    // Gleiche Kontingent-Pruefung wie beim Einzel-Event.
+    // Gleiche Kontingent-Prüfung wie beim Einzel-Event.
     const seriesTeamerQuotaCheck = validateTeamerQuota(teamer_max_participants, teamer_max_waitlist_size);
     if (seriesTeamerQuotaCheck) {
       return res.status(400).json({ error: seriesTeamerQuotaCheck });
@@ -2583,7 +2583,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         // Wait for all relations of THIS event to be created before moving to next event
         await Promise.all(relationPromises);
 
-        // Auto-Enrollment fuer Pflicht-Events — wie in POST / (dort Z. 858ff).
+        // Auto-Enrollment für Pflicht-Events — wie in POST / (dort Z. 858ff).
         // Fehlte hier komplett: eine Pflicht-SERIE hatte in keinem Termin
         // Teilnehmer, obwohl Pflicht bedeutet "der ganze Jahrgang ist dabei".
         if (mandatory && jahrgang_ids && jahrgang_ids.length > 0) {
@@ -2642,7 +2642,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
       // Vorheriger Status: bei Wechsel von 'waitlist' -> 'confirmed' ist es eine
       // Wartelisten-Befoerderung (Push an die betroffene Person). Bei 'confirmed'
-      // -> 'waitlist' werden ggf. Punkte entzogen (Dashboard-Refresh noetig).
+      // -> 'waitlist' werden ggf. Punkte entzogen (Dashboard-Refresh nötig).
       const wasWaitlist = booking.status === 'waitlist';
       let pointsRemoved = false;
 
@@ -2700,10 +2700,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
   // Bulk-Verbuchung: ALLE angemeldeten (status=confirmed) Konfis ohne
   // Anwesenheits-Status auf einmal als anwesend verbuchen — inkl. Punkte- und
   // Badge-Logik identisch zum Einzel-Handler unten. Die WARTELISTE bleibt
-  // bewusst unberuehrt (Nachruecken laeuft automatisch FIFO bzw. einzeln).
+  // bewusst unberuehrt (Nachruecken läuft automatisch FIFO bzw. einzeln).
   // Bereits verbuchte (present/absent) werden NICHT angefasst.
   // Hintergrund: Der fruehere "confirm-all"-Bulk befoerderte die komplette
-  // Warteliste (Kapazitaet uebersteuert) — fachlich war mit "Alle bestaetigen"
+  // Warteliste (Kapazität uebersteuert) — fachlich war mit "Alle bestaetigen"
   // aber immer das VERBUCHEN der Angemeldeten gemeint (Betreiber-Entscheid 03.07.).
   router.put('/:id/participants/attendance-all', rbacVerifier, requireTeamer, async (req, res) => {
     const { id: eventId } = req.params;
@@ -2824,7 +2824,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     try {
       await client.query('BEGIN');
 
-      // Teilnehmer-Typ ueber roles.name (event_bookings.user_type wird beim Insert
+      // Teilnehmer-Typ über roles.name (event_bookings.user_type wird beim Insert
       // NICHT gesetzt und ist unzuverlaessig).
       const eventDataQuery = `
         SELECT e.name, e.points, e.point_type, e.mandatory, eb.user_id, r.name AS participant_role
@@ -2841,7 +2841,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         return res.status(404).json({ error: 'Event oder Teilnehmer nicht gefunden, oder Zugriff verweigert' });
       }
 
-      // Punkte gibt es NUR fuer Konfis. Teamer:innen nehmen zwar teil (Anwesenheit
+      // Punkte gibt es NUR für Konfis. Teamer:innen nehmen zwar teil (Anwesenheit
       // wird gesetzt), bekommen aber keine Punkte -> Punkte-Logik (inkl.
       // checkPointTypeEnabled, das ein konfi_profile voraussetzt) ueberspringen.
       const isKonfiParticipant = eventData.participant_role === 'konfi';
@@ -2919,7 +2919,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       }
 
       // Push und LiveUpdate NACH COMMIT und client.release() - nutzt pool (db) statt client.
-      // Konfi-spezifische Pushes/Dashboard-Updates nur fuer Konfis; das Admin-
+      // Konfi-spezifische Pushes/Dashboard-Updates nur für Konfis; das Admin-
       // LiveUpdate (Liste/Badge) feuert immer.
       try {
         if (attendance_status === 'present') {
@@ -2982,7 +2982,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       const chatRoomId = newChat.id;
 
       // user_type des Erstellers aus dem Token — hartes 'admin' machte den Raum
-      // fuer Teamer:innen (duerfen Event-Chats erstellen) unsichtbar.
+      // für Teamer:innen (duerfen Event-Chats erstellen) unsichtbar.
       await client.query("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, $3)", [chatRoomId, req.user.id, req.user.type]);
 
       // Alle Gebuchten aufnehmen — dieselbe Regel wie beim Anmelden, damit sich

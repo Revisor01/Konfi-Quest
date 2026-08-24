@@ -64,7 +64,7 @@ const getBadgeColor = (badge: TeamerBadgeFull): string => {
   return '#f59e0b';
 };
 
-// Badge Popover Content fuer Teamer-Dashboard
+// Badge Popover Content für Teamer-Dashboard
 const BadgePopoverContent: React.FC<{
   dataRef: React.RefObject<{ badge: TeamerBadgeFull | null; isEarned: boolean }>;
 }> = ({ dataRef }) => {
@@ -120,7 +120,7 @@ interface Certificate {
   status: 'valid' | 'expired' | 'not_earned';
 }
 
-// DashboardEvent kommt aus types/event ueber types/dashboard Re-Export
+// DashboardEvent kommt aus types/event über types/dashboard Re-Export
 type DashboardEvent = import('../../../types/event').Event;
 
 interface Badge {
@@ -201,7 +201,7 @@ const TeamerDashboardPage: React.FC = () => {
   const { user, setError } = useApp();
   const [showLosung] = useState(() => Math.random() > 0.5);
   // Onboarding-Tour einmal pro Teamer-Account (beim ersten Betreten der
-  // Startseite) — bzw. fuer Bestandsnutzer stattdessen einmalig der
+  // Startseite) — bzw. für Bestandsnutzer stattdessen einmalig der
   // Update-Walkthrough 2.0 (Challenges). Nie beides gleichzeitig.
   const {
     showOnboarding, closeOnboarding,
@@ -229,7 +229,7 @@ const TeamerDashboardPage: React.FC = () => {
     { ttl: CACHE_TTL.DASHBOARD }
   );
 
-  // Offline-Query: Alle Teamer-Badges (fuer vollstaendige Badge-Sektion)
+  // Offline-Query: Alle Teamer-Badges (für vollstaendige Badge-Sektion)
   const { data: allTeamerBadges, refresh: refreshBadges } = useOfflineQuery<TeamerBadgeFull[]>(
     'teamer:all-badges:' + user?.id,
     async () => {
@@ -237,7 +237,7 @@ const TeamerDashboardPage: React.FC = () => {
       const liste: TeamerBadgeFull[] = res.data || [];
       // Unverdiente geheime Abzeichen kommen nicht mehr mit; ihre Gesamtzahl
       // steht in der Kopfzeile und wird an die Liste geheftet, damit sie den
-      // Zwischenspeicher uebersteht.
+      // Zwischenspeicher übersteht.
       const geheim = Number(res.headers?.['x-badges-secret-total']);
       if (Number.isFinite(geheim)) (liste as any).geheimGesamt = geheim;
       return liste;
@@ -372,7 +372,7 @@ const TeamerDashboardPage: React.FC = () => {
     ...(allTeamerBadges || []).filter((b) => !b.earned && !b.is_hidden)
   ];
   const secretEarned = earnedBadges.filter((b) => b.is_hidden);
-  // Aus der Kopfzeile: Die Liste enthaelt nur noch verdiente Geheimnisse.
+  // Aus der Kopfzeile: Die Liste enthält nur noch verdiente Geheimnisse.
   const secretTotal = (allTeamerBadges as any)?.geheimGesamt
     ?? (allTeamerBadges || []).filter((b) => b.is_hidden).length;
   const secretNotEarnedCount = secretTotal - secretEarned.length;

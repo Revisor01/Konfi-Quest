@@ -92,7 +92,7 @@ interface EventDetailViewProps {
   eventId: number;
   onBack: () => void;
   // Im iPad-Split-View ist die Liste links dauerhaft sichtbar -> kein
-  // Zurueck-Button noetig.
+  // Zurück-Button nötig.
   hideBackButton?: boolean;
 }
 
@@ -120,7 +120,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   });
 
   // Event Modal mit useIonModal Hook
-  // Haelt den "ungespeicherte Aenderungen"-Stand des EventModals fuer canDismiss.
+  // Haelt den "ungespeicherte Änderungen"-Stand des EventModals für canDismiss.
   const eventModalDirtyRef = useRef(false);
 
   const [presentEventModalHook, dismissEventModalHook] = useIonModal(EventModal, {
@@ -135,7 +135,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   });
 
   // Faengt JEDEN Schliess-Weg ab (Swipe, Backdrop): bei ungespeicherten
-  // Aenderungen erst nachfragen, sonst direkt schliessen lassen.
+  // Änderungen erst nachfragen, sonst direkt schliessen lassen.
   const eventModalCanDismiss = async (): Promise<boolean> => {
     if (!eventModalDirtyRef.current) return true;
     return new Promise<boolean>((resolve) => {
@@ -149,7 +149,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           { text: 'Abbrechen', role: 'cancel', handler: () => decide(false) },
           { text: 'Verwerfen', role: 'destructive', handler: () => decide(true) }
         ],
-        // Fallback: schliesst der Alert ohne Button, Promise nie haengen lassen.
+        // Fallback: schließt der Alert ohne Button, Promise nie hängen lassen.
         onDidDismiss: () => { if (!decided) resolve(false); }
       });
     });
@@ -249,7 +249,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
   const getStatusColors = (): { primary: string; secondary: string } => {
     // Alle Status-Farben kommen aus globalen CSS-Token (--app-color-*).
-    // Aenderung der Domain-Farbe im CSS wirkt hier automatisch.
+    // Änderung der Domain-Farbe im CSS wirkt hier automatisch.
     const events = { primary: 'var(--app-color-events)', secondary: 'var(--app-color-events)' };
     const danger = { primary: 'var(--app-color-danger)', secondary: 'var(--app-color-danger)' };
     const konfirm = { primary: 'var(--app-color-konfis)', secondary: 'var(--app-color-konfis)' }; // Konfirmation = lila
@@ -400,8 +400,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     }
   };
 
-  // Rueckfrage vor dem Verschieben auf die Warteliste: ausgeloest wird das per
-  // Wisch-Geste, ein Fehlwisch haette sonst still eine Anmeldung zurueckgestuft
+  // Rueckfrage vor dem Verschieben auf die Warteliste: ausgelöst wird das per
+  // Wisch-Geste, ein Fehlwisch hätte sonst still eine Anmeldung zurueckgestuft
   // (Audit 10.08.). Das Absagen des Events fragt hier laengst nach.
   const handleDemoteParticipant = (participant: Participant) => {
     presentAlert({
@@ -662,7 +662,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             const konfiConfirmed = konfiOnly.filter(p => p.status === 'confirmed').length;
 
             // "Nur Teamer:innen": es gibt gar keine Konfi-Teilnahme -> die
-            // Kacheln muessen komplett vom Team erzaehlen (vorher stand hier
+            // Kacheln müssen komplett vom Team erzaehlen (vorher stand hier
             // "0 von 0 TN" und die Teamer tauchten nirgends auf).
             if (eventData?.teamer_only) {
               const teamerPresent = teamerOnly.filter(p => p.attendance_status === 'present').length;

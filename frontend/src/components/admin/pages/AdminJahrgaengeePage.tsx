@@ -445,7 +445,7 @@ const AdminJahrgaengeePage: React.FC = () => {
   const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-jahrgaenge');
   const { user, setError, isOnline } = useApp();
 
-  // Offline-Query: Jahrgaenge
+  // Offline-Query: Jahrgänge
   const { data: jahrgaenge, loading, refresh: refreshJahrgaenge } = useOfflineQuery<Jahrgang[]>(
     'admin:jahrgaenge-detail:' + user?.organization_id,
     async () => { const res = await api.get('/admin/jahrgaenge'); return res.data; },

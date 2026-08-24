@@ -38,7 +38,7 @@ describe('writeQueue — Chat-Bild Offline-Upload (Datenverlust-Regression)', ()
   });
 
   it('behaelt _localFilePath im persistierten Item und loescht die Datei NICHT bei transientem Fehler (5xx)', async () => {
-    // Request schlaegt mit 5xx fehl -> Item muss fuer Retry erhalten bleiben
+    // Request schlägt mit 5xx fehl -> Item muss für Retry erhalten bleiben
     mockPost.mockRejectedValue({ response: { status: 503 }, message: 'Service Unavailable' });
 
     const { writeQueue } = await import('../../services/writeQueue');
@@ -54,7 +54,7 @@ describe('writeQueue — Chat-Bild Offline-Upload (Datenverlust-Regression)', ()
 
     await writeQueue.flush();
 
-    // Datei darf NICHT geloescht worden sein (sonst beim Retry unwiederbringlich weg)
+    // Datei darf NICHT gelöscht worden sein (sonst beim Retry unwiederbringlich weg)
     expect(mockDeleteFile).not.toHaveBeenCalled();
 
     // Persistiertes Item muss _localFilePath noch enthalten (nicht durch FormData ersetzt)

@@ -202,7 +202,7 @@ export const EventInfoCard = React.memo<EventInfoCardProps>(({
           const konfiPresent = konfiOnly.filter(p => p.attendance_status === 'present').length;
           const konfiConfirmed = konfiOnly.filter(p => p.status === 'confirmed').length;
           const teamerMax = eventData.teamer_max_participants || 0;
-          // Anzeige haengt an der EINSTELLUNG des Events, nicht daran, ob sich
+          // Anzeige hängt an der EINSTELLUNG des Events, nicht daran, ob sich
           // schon jemand angemeldet hat \u2014 sonst fehlen bei einem frischen Event
           // genau die Zeilen, die man braucht (Bugreport 09.08.).
           const teamerErlaubt = !!(eventData.teamer_needed || eventData.teamer_only);
@@ -640,7 +640,7 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
         {timeslots.map((timeslot) => {
           const slotStartFormatted = formatTime(timeslot.start_time);
           const slotEndFormatted = formatTime(timeslot.end_time);
-          // Teilnehmer diesem Slot zuordnen (per timeslot_id, Fallback ueber Zeit).
+          // Teilnehmer diesem Slot zuordnen (per timeslot_id, Fallback über Zeit).
           const matchesSlot = (p: Participant) => {
             if ((p as any).timeslot_id && (timeslot as any).id) return (p as any).timeslot_id === (timeslot as any).id;
             if (p.timeslot_start_time && p.timeslot_end_time) {
@@ -746,7 +746,7 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
                     Warteliste
                   </div>
                   {slotWaitlist.map((participant, wIndex) => (
-                    // Anders als die bestaetigten Teilnehmer:innen darueber laeuft
+                    // Anders als die bestaetigten Teilnehmer:innen darueber läuft
                     // die Slot-Warteliste ohne IonItemSliding — damit fehlte auch
                     // die Klasse app-event-detail__sliding-item, die den Abstand
                     // liefert, und die Zeilen klebten aneinander (Fund 22.08.2026).

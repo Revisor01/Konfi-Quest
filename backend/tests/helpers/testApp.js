@@ -1,5 +1,5 @@
-// backend/tests/helpers/testApp.js — createTestApp Wrapper fuer supertest
-// Per D-09: Tests rufen createApp(testDb) auf fuer saubere Express-App
+// backend/tests/helpers/testApp.js — createTestApp Wrapper für supertest
+// Per D-09: Tests rufen createApp(testDb) auf für saubere Express-App
 const { createApp } = require('../../createApp');
 const os = require('os');
 const path = require('path');
@@ -10,7 +10,7 @@ const path = require('path');
  * Upload-Verzeichnis im OS-Temp (per Pitfall 6).
  *
  * @param {object} db - Test-DB Pool (aus getTestPool())
- * @returns {express.Application} Express-App fuer supertest
+ * @returns {express.Application} Express-App für supertest
  */
 function getTestApp(db) {
   const uploadsDir = path.join(os.tmpdir(), 'konfi-test-uploads');

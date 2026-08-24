@@ -9,14 +9,14 @@
 // vier Abmelde-Routen — ausgerechnet nicht in der, die die Konfi-App benutzt.
 // Konfis blieben nach der Abmeldung im Chat und lasen dort weiter mit. Manuell
 // verlassen konnten sie ihn auch nicht: chat.js verweigert das mit dem Hinweis,
-// Event-Chats verlasse man ueber die Abmeldung. Genau die tat es nicht.
+// Event-Chats verlasse man über die Abmeldung. Genau die tat es nicht.
 //
-// user_type muss dem Wert entsprechen, mit dem spaeter gelesen wird:
+// user_type muss dem Wert entsprechen, mit dem später gelesen wird:
 // konfi -> 'konfi', teamer -> 'teamer', org_admin/admin -> 'admin'
 // (dieselbe Abbildung wie in jahrgangChat.js).
 
 /**
- * Entfernt eine Person aus allen Chat-Raeumen eines Termins.
+ * Entfernt eine Person aus allen Chat-Räumen eines Termins.
  * Idempotent: Ist sie nicht drin, passiert nichts.
  *
  * @param {object} db   Pool ODER Client (muss .query haben). Innerhalb einer
@@ -39,7 +39,7 @@ async function removeFromEventChat(db, eventId, userId, organizationId) {
 }
 
 /**
- * Traegt eine Person in alle Chat-Raeume eines Termins ein.
+ * Traegt eine Person in alle Chat-Räume eines Termins ein.
  * Idempotent: Ist sie schon drin, passiert nichts. Existiert kein Chat, auch
  * nicht — der Chat wird bewusst nur auf Wunsch der Leitung angelegt.
  *
@@ -73,11 +73,11 @@ async function addToEventChat(db, eventId, userId, organizationId) {
 
 /**
  * Gleicht die Mitgliedschaft im Chat eines Termins an die Buchungen an:
- * Jede gebuchte Person (jeder Status ausser 'cancelled') kommt hinein.
+ * Jede gebuchte Person (jeder Status außer 'cancelled') kommt hinein.
  * Entfernt niemanden — das macht removeFromEventChat beim Austragen.
  *
- * Fuer Mengen gedacht (Pflicht-Event-Automatik), wo einzelne Aufrufe je Person
- * unnoetig viele Abfragen waeren. Idempotent.
+ * Für Mengen gedacht (Pflicht-Event-Automatik), wo einzelne Aufrufe je Person
+ * unnötig viele Abfragen wären. Idempotent.
  *
  * @param {object} db   Pool ODER Client (muss .query haben).
  * @param {number} eventId

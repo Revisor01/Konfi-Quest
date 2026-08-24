@@ -44,10 +44,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
   // SHA-256 Hash für DB-Speicherung (konsistent mit Phase 66)
   const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
-  // Frisches Token-Paar fuer einen User erzeugen. Wird nach dem Passwortwechsel
+  // Frisches Token-Paar für einen User erzeugen. Wird nach dem Passwortwechsel
   // gebraucht: dort werden alle Sitzungen invalidiert, und ohne neues Paar
   // wuerde der eigene Client sofort mitfliegen.
-  // Gibt null zurueck, wenn der User nicht (mehr) ladbar ist — der Aufrufer
+  // Gibt null zurück, wenn der User nicht (mehr) ladbar ist — der Aufrufer
   // antwortet dann ohne Token, der Wechsel selbst bleibt gueltig.
   const erstelleTokenPaarFuerUser = async (dbConn, userId) => {
     try {
@@ -63,10 +63,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       const userType = u.role_name === 'konfi' ? 'konfi'
         : u.role_name === 'teamer' ? 'teamer' : 'admin';
 
-      // iat bewusst eine Sekunde in die Zukunft: Die Soft-Revoke-Pruefung in
+      // iat bewusst eine Sekunde in die Zukunft: Die Soft-Revoke-Prüfung in
       // rbac.js arbeitet auf Sekunden (iat < token_invalidated_at). Ein in
       // derselben Sekunde wie die Invalidierung ausgestelltes Token laege sonst
-      // auf der Kippe und koennte sich selbst aussperren.
+      // auf der Kippe und könnte sich selbst aussperren.
       const iatVordatiert = Math.floor(Date.now() / 1000) + 1;
 
       const accessToken = jwt.sign({
@@ -148,7 +148,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     // Eingabe daher case-insensitiv machen: trim + lowercase, sonst scheitert
     // der Login wenn jemand z.B. "Anna.Schmidt" statt "anna.schmidt" tippt
     // (iOS schreibt das erste Zeichen automatisch gross). Der Username wird NICHT
-    // mehr veraendert gespeichert -> Login case-insensitiv per LOWER-Vergleich.
+    // mehr verändert gespeichert -> Login case-insensitiv per LOWER-Vergleich.
     const username = (req.body.username || '').trim();
     const { password } = req.body;
  console.warn(`Login-Versuch: ${username}`);
@@ -287,13 +287,13 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
       // Alle anderen Sitzungen beenden (Audit 22.08.2026, LÜCKE N2). Vorher
       // blieben bestehende Access- und Refresh-Tokens nach einem Passwort-
-      // wechsel weiter gueltig — bis zu 90 Tage. Wer sein Passwort aendert,
+      // wechsel weiter gueltig — bis zu 90 Tage. Wer sein Passwort ändert,
       // weil jemand Zugriff hat, sperrte den Fremdzugriff damit NICHT aus.
       //
-      // Die Pruefung in rbac.js vergleicht token_invalidated_at gegen den
+      // Die Prüfung in rbac.js vergleicht token_invalidated_at gegen den
       // JWT-Claim iat, der nur SEKUNDEN-Aufloesung hat (iat < invalidatedAt).
       // Deshalb wird hier exakt auf NOW() invalidiert und das neue Token unten
-      // um eine Sekunde VORdatiert. Zurueckdatieren waere falsch herum: dann
+      // um eine Sekunde VORdatiert. Zurueckdatieren wäre falsch herum: dann
       // ueberleben Tokens aus derselben und der vorherigen Sekunde.
       await db.query(
         `UPDATE users SET password_hash = $1, token_invalidated_at = NOW() WHERE id = $2`,
@@ -305,8 +305,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       );
       invalidateUserCache(userId);
 
-      // Frisches Token-Paar fuer die AKTUELLE Sitzung: Ohne das wuerde der
-      // eigene Client beim naechsten Request am gerade gesetzten
+      // Frisches Token-Paar für die AKTUELLE Sitzung: Ohne das wuerde der
+      // eigene Client beim nächsten Request am gerade gesetzten
       // token_invalidated_at scheitern und der Passwortwechsel wuerde sich
       // wie ein unerwarteter Rauswurf anfuehlen.
       const neuesPaar = await erstelleTokenPaarFuerUser(db, userId);
@@ -323,7 +323,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
   });
 
   // Delete own account (Self-Delete, D-01/D-02/D-03)
-  // Gilt fuer ALLE Rollen (Konfi, Teamer, Admin) - nur rbacVerifier, kein requireAdmin.
+  // Gilt für ALLE Rollen (Konfi, Teamer, Admin) - nur rbacVerifier, kein requireAdmin.
   // Sofortiger kaskadierender Hard-Delete nach Passwort-Bestaetigung.
   router.post('/delete-account', rbacVerifier, async (req, res) => {
     const { password } = req.body;
@@ -470,7 +470,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       // Sonst fehlt beim ersten Login die aktive Primaer-Org in der Switcher-Liste
       // -> der Button findet currentOrg nicht und zeigt keinen Namen. Pro Org EIN
       // Eintrag (DISTINCT ON); bei Doppelung gewinnt die Rolle aus dem Mapping
-      // nicht zwingend — fuer die Primaer-Org ist die users.role_id maßgeblich,
+      // nicht zwingend — für die Primaer-Org ist die users.role_id maßgeblich,
       // daher Primaer-Zeile zuerst (is_primary DESC).
       const { rows } = await db.query(`
         SELECT DISTINCT ON (m.id)
@@ -600,7 +600,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
           // BEWUSST kein 500 nach aussen (Audit 22.08.2026): Die Antwort unten
           // ist absichtlich neutral formuliert, damit sie nicht verraet, ob es
           // ein Konto gibt. Ein Fehlerstatus genau dann, wenn ein Konto
-          // existiert, haette dieselbe Auskunft ueber die Hintertuer gegeben —
+          // existiert, hätte dieselbe Auskunft über die Hintertuer gegeben —
           // 200 = unbekannte Adresse, 500 = Adresse vorhanden.
           console.error('E-Mail-Versand fehlgeschlagen:', emailError);
         }
@@ -766,7 +766,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     }
 
     try {
-      // case-insensitiv pruefen (LOWER), damit "Anna"/"anna" nicht doppelt geht.
+      // case-insensitiv prüfen (LOWER), damit "Anna"/"anna" nicht doppelt geht.
       const { rows } = await db.query('SELECT id FROM users WHERE LOWER(username) = LOWER($1)', [trimmed]);
 
       if (rows.length > 0) {
@@ -859,7 +859,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       }
 
       // Check if username already exists (case-insensitiv, damit nicht "Anna" und
-      // "anna" parallel existieren koennen).
+      // "anna" parallel existieren können).
       const { rows: existingUsers } = await db.query(
         'SELECT id FROM users WHERE LOWER(username) = LOWER($1)',
         [username]
@@ -887,8 +887,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       try {
         await client.query('BEGIN');
 
-        // Konfi-Limit-Pruefung (Weg 2, D-08b): NUR Hard-Block ablehnen. Grace und
-        // under_limit laufen unveraendert durch — der sich selbst anmeldende Konfi
+        // Konfi-Limit-Prüfung (Weg 2, D-08b): NUR Hard-Block ablehnen. Grace und
+        // under_limit laufen unverändert durch — der sich selbst anmeldende Konfi
         // kann keinen "Trotzdem anlegen"-Dialog der Leitung bestaetigen (kein 409,
         // kein confirm). max_konfis NULL -> under_limit -> kein Block.
         const { stufe } = await checkKonfiLimit(client, invite.organization_id);
@@ -1012,10 +1012,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     
     try {
       // Ausschliesslich gegen den HASH vergleichen. Ein zusaetzlicher
-      // Klartext-Zweig (token IN (hash, klartext)) waere naheliegend fuer die
+      // Klartext-Zweig (token IN (hash, klartext)) wäre naheliegend für die
       // Uebergangszeit, hebt den Schutz aber auf: Der gespeicherte Hash ist
       // selbst ein gueltiger Klartext-Wert und wuerde damit als Token
-      // funktionieren — wer die DB lesen kann, koennte ihn direkt einsetzen.
+      // funktionieren — wer die DB lesen kann, könnte ihn direkt einsetzen.
       // Genau das hat der Test aufgedeckt. Alt-Eintraege aus der Zeit vor der
       // Umstellung werden stattdessen bei der Migration gehasht.
       const { rows: [resetRecord] } = await db.query(
@@ -1098,7 +1098,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         if (!recent) {
           return res.status(401).json({ error: 'Ungültiger oder abgelaufener Refresh-Token' });
         }
-        // Im Grace-Fenster: weiter wie mit einem gueltigen Token (kein erneutes Revoke noetig)
+        // Im Grace-Fenster: weiter wie mit einem gueltigen Token (kein erneutes Revoke nötig)
         return await issueRefreshedTokens(db, res, recent.user_id, activeOrgId);
       }
 
@@ -1112,10 +1112,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     }
   });
 
-  // Helper: laedt User (inkl. Org-Status), prueft die Zugriffs-Sperre und stellt
+  // Helper: laedt User (inkl. Org-Status), prüft die Zugriffs-Sperre und stellt
   // ein neues Token-Paar aus. Genutzt vom normalen Refresh UND vom Grace-Window.
   // activeOrgId (optional): aktive Multi-Org, kommt beim Refresh aus dem Header
-  // X-Active-Organization. Sie wird (nach Mitgliedschafts-Pruefung) als Claim ins
+  // X-Active-Organization. Sie wird (nach Mitgliedschafts-Prüfung) als Claim ins
   // neue Access-Token geschrieben, damit der Org-Kontext den Refresh ueberlebt.
   async function issueRefreshedTokens(db, res, userId, activeOrgId = null) {
     const { rows: [user] } = await db.query(`
@@ -1191,17 +1191,17 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
   router.post('/logout', rbacVerifier, async (req, res) => {
     const { refresh_token, device_id, platform } = req.body;
 
-    // Push-Token dieses Geraets loeschen (Audit 22.08.2026).
+    // Push-Token dieses Geraets löschen (Audit 22.08.2026).
     //
     // Der Client ruft dafuer zwar schon DELETE /notifications/device-token,
     // aber best-effort: mit 4s-Timeout, nur wenn networkMonitor online meldet
     // und nur wenn die Geraete-ID ermittelbar war. Schlaegt einer dieser
     // Punkte fehl, bleibt der Token registriert und das Geraet bekommt
-    // weiter Push-Nachrichten fuer das abgemeldete Konto — bis zum naechsten
+    // weiter Push-Nachrichten für das abgemeldete Konto — bis zum nächsten
     // Login auf demselben Geraet, der ihn umhaengt. Genau das wurde von einer
     // Teamer:in auf iOS berichtet.
     //
-    // Hier laeuft es in DERSELBEN Anfrage, die ohnehin gesendet wird. Kein
+    // Hier läuft es in DERSELBEN Anfrage, die ohnehin gesendet wird. Kein
     // Zusatz-Roundtrip, und ein Fehler darf den Logout nie aufhalten.
     if (device_id && platform) {
       try {
@@ -1222,8 +1222,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     try {
       const hash = hashToken(refresh_token);
       // Beim Logout zusaetzlich expires_at auf jetzt setzen, damit das Token NICHT
-      // ins Refresh-Grace-Window faellt (das verlangt expires_at > NOW()). Sonst
-      // koennte ein gerade ausgeloggter User binnen 30s noch ein Token bekommen.
+      // ins Refresh-Grace-Window fällt (das verlangt expires_at > NOW()). Sonst
+      // könnte ein gerade ausgeloggter User binnen 30s noch ein Token bekommen.
       await db.query(
         'UPDATE refresh_tokens SET revoked_at = NOW(), expires_at = NOW() WHERE token_hash = $1 AND revoked_at IS NULL',
         [hash]
@@ -1236,7 +1236,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     }
   });
 
-  // Abgelaufene + revoked Refresh-Tokens alle 24h aufraeumen
+  // Abgelaufene + revoked Refresh-Tokens alle 24h aufräumen
   setInterval(async () => {
     try {
       const { rowCount } = await db.query(

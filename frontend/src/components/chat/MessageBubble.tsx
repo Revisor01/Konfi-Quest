@@ -39,7 +39,7 @@ const getMimeFromFileName = (fileName: string): string => {
 };
 
 // Wandelt URLs (http/https und www.) in klickbare Links um. Gibt ein Array aus
-// Text-Fragmenten und <a>-Elementen zurueck, das direkt in JSX gerendert werden kann.
+// Text-Fragmenten und <a>-Elementen zurück, das direkt in JSX gerendert werden kann.
 // Links oeffnen extern (window.open _blank) und stoppen die Klick-Propagation,
 // damit nicht gleichzeitig die Nachricht selektiert/das Reaktionsmenue getriggert wird.
 const URL_REGEX = /((?:https?:\/\/|www\.)[^\s<]+[^\s<.,;:!?)\]}'"])/gi;
@@ -139,7 +139,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   const isOwnMessage = message.sender_id === user?.id && message.sender_type === user?.type;
 
   // Merkt sich, ob die aktuelle Long-Press-Geste schon behandelt wurde. Android
-  // loest bei einem langen Druck BEIDE Wege aus (eigener Touch-Timer und danach
+  // löst bei einem langen Druck BEIDE Wege aus (eigener Touch-Timer und danach
   // das native 'contextmenu'); ohne diese Sperre hob der zweite Aufruf den
   // ersten sofort wieder auf, weil onLongPress ein Toggle ist.
   const longPressFiredRef = React.useRef(false);
@@ -211,7 +211,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           e.preventDefault();
           // Android feuert nach dem eigenen 500ms-Timer ZUSAETZLICH 'contextmenu'.
           // Weil onLongPress ein Toggle ist, ging das Menue dadurch sofort wieder
-          // zu ("blitzt kurz auf"). Hat der Touch-Timer schon ausgeloest, ist die
+          // zu ("blitzt kurz auf"). Hat der Touch-Timer schon ausgelöst, ist die
           // Geste hier bereits behandelt.
           if (longPressFiredRef.current) return;
           longPressFiredRef.current = true;
@@ -396,8 +396,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               );
               const isExclusive = !!message.exclusive_options;
               const showNames = message.anonymous === false;
-              // Exklusiv: Option ist vergeben, wenn jemand sie gewaehlt hat — und
-              // fuer alle ausser dem Waehler selbst gesperrt.
+              // Exklusiv: Option ist vergeben, wenn jemand sie gewählt hat — und
+              // für alle außer dem Waehler selbst gesperrt.
               const takenByOther = isExclusive && optionVotes.length > 0 && !userVoted;
               // Namen der Waehlenden (nur wenn nicht-anonym + Namen vorhanden).
               const voterNames = optionVotes.map(v => v.user_name).filter(Boolean) as string[];

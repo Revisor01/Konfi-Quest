@@ -97,7 +97,7 @@ const TeamerMaterialPage: React.FC = () => {
   const [selectedMaterial, setSelectedMaterial] = useState<MaterialDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  // Offline-Query: Jahrgaenge
+  // Offline-Query: Jahrgänge
   const { data: jahrgaengeData, refresh: refreshJahrgaenge } = useOfflineQuery<{ id: number; name: string }[]>(
     'teamer:jahrgaenge:' + user?.organization_id,
     async () => { const res = await api.get('/admin/jahrgaenge'); return res.data; },
@@ -113,7 +113,7 @@ const TeamerMaterialPage: React.FC = () => {
   );
 
   // Material-Liste live halten: neue oder geloeschte Materialien erschienen
-  // vorher erst beim naechsten Oeffnen (Audit 22.08.2026).
+  // vorher erst beim nächsten Oeffnen (Audit 22.08.2026).
   useLiveRefresh('materials', refreshMaterial);
 
   // Clientseitiges Filtern nach Suche und Jahrgang
@@ -216,7 +216,7 @@ const TeamerMaterialPage: React.FC = () => {
   };
 
   // === INLINE DETAIL VIEW ===
-  // Detail-Ansicht als render-Funktion (statt frueher early-return), damit sie
+  // Detail-Ansicht als render-Funktion (statt früher early-return), damit sie
   // im iPad-Split-View NEBEN der Liste gerendert werden kann.
   const renderDetail = (hideBackButton?: boolean) => {
     if (!selectedMaterial) return null;

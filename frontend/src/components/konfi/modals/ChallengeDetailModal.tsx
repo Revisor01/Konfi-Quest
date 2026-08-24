@@ -48,7 +48,7 @@ import type {
   ChallengeMediaType
 } from '../../../types/challenges';
 
-// Detailansicht einer Challenge fuer Konfis: Beschreibung, oeffentliche Galerie
+// Detailansicht einer Challenge für Konfis: Beschreibung, oeffentliche Galerie
 // (anonyme Beitraege OHNE Namen — das Backend liefert dort gar keinen Namen mit)
 // und die eigenen Beitraege mit Status.
 
@@ -61,9 +61,9 @@ const MEDIA_ICON: Record<ChallengeMediaType, string> = {
 };
 
 /**
- * Status als Icon-Corner-Badge fuer eigene Beitraege (Muster wie das
+ * Status als Icon-Corner-Badge für eigene Beitraege (Muster wie das
  * Warteliste-Badge bei Events: kompaktes, farbiges Icon-only-Badge statt
- * Text). Ausgeblendet schlaegt alles; danach entscheidet die Sichtbarkeit
+ * Text). Ausgeblendet schlägt alles; danach entscheidet die Sichtbarkeit
  * der Challenge bzw. die eigene Einwilligung. Label dient nur als Titel
  * (Tooltip/Barrierefreiheit), nicht als sichtbarer Text.
  */
@@ -112,7 +112,7 @@ const GALLERY_ROLE_LABEL: Record<string, string> = {
 };
 
 // "Name · Teamer:in" bzw. "Name · Jahrgang 2026". Der Jahrgang hilft, wenn eine
-// Challenge mehrere Jahrgaenge umfasst (User-Entscheid 08.08.). Anonyme
+// Challenge mehrere Jahrgänge umfasst (User-Entscheid 08.08.). Anonyme
 // Beitraege liefert das Backend ohne Name/Rolle/Jahrgang -> nur "Anonym".
 const buildGalleryAuthorLabel = (submission: ChallengeSubmission): string => {
   const name = submission.konfi_name?.trim();
@@ -122,10 +122,10 @@ const buildGalleryAuthorLabel = (submission: ChallengeSubmission): string => {
   return suffix ? `${name} · ${suffix}` : name;
 };
 
-// Medienvorschau fuer Challenge-Dateien. Eigene, schlanke Ladefunktion statt des
+// Medienvorschau für Challenge-Dateien. Eigene, schlanke Ladefunktion statt des
 // Chat-LazyImage: der mediaCache-Service ist fest auf /chat/files/ verdrahtet,
-// Challenges liegen unter /challenges/files/. Der Abruf laeuft ueber axios (also
-// mit Auth-Header, kein ?token= noetig), die Object-URL wird beim Unmount wieder
+// Challenges liegen unter /challenges/files/. Der Abruf läuft über axios (also
+// mit Auth-Header, kein ?token= nötig), die Object-URL wird beim Unmount wieder
 // freigegeben.
 const ChallengeMedia: React.FC<{
   filePath: string;
@@ -292,7 +292,7 @@ interface ChallengeDetailModalProps {
   onClose: () => void;
   /** Oeffnet das Einreich-Modal (wird von der Seite gesteuert). */
   onSubmit?: (challenge: KonfiChallenge) => void;
-  /** Wird gerufen, wenn sich etwas geaendert hat. */
+  /** Wird gerufen, wenn sich etwas geändert hat. */
   onChanged?: () => void;
 }
 
@@ -317,7 +317,7 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
     try {
       const res = await api.get(`/challenges/konfi/${challenge.id}`);
       // Backend liefert { challenge, gallery, own_submissions } — Challenge-Felder
-      // muessen auf die oberste Ebene, sonst ist starts_at/ends_at undefined und
+      // müssen auf die oberste Ebene, sonst ist starts_at/ends_at undefined und
       // die Challenge erscheint faelschlich als beendet.
       const data = res.data;
       // Die Galerie-Query liefert den Namen als display_name (bei anonymen
@@ -344,7 +344,7 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
     loadDetail();
   }, [loadDetail]);
 
-  // Basis fuer Kopf/Status: das Detail (frisch) hat Vorrang vor der Listenkarte.
+  // Basis für Kopf/Status: das Detail (frisch) hat Vorrang vor der Listenkarte.
   const current: KonfiChallenge = detail || challenge;
   const author = getAuthorLabel(current);
   const isActive = useMemo(() => {
@@ -360,19 +360,19 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
   const canSubmitMore = isActive && (current.allow_multiple || ownSubmissions.length === 0);
 
   // Beendete Challenge ohne eigene Beitraege: der Abschnitt "Deine Beitraege"
-  // faellt komplett weg, direkt die Gruppen-Galerie folgt auf die Beschreibung.
+  // fällt komplett weg, direkt die Gruppen-Galerie folgt auf die Beschreibung.
   const showOwnSection = isActive || ownSubmissions.length > 0;
 
   // Sichtbarkeits-/Moderationshinweis als Standard-Infokasten-Text (Muster:
   // ChangeEmailModal "Hinweis"-Box). Je nach Sichtbarkeitsmodus und Moderation
   // ein kurzer, konkreter Satz.
-  // Kurzform der Sichtbarkeit fuer den Kopf: EIN knapper Halbsatz neben der
+  // Kurzform der Sichtbarkeit für den Kopf: EIN knapper Halbsatz neben der
   // Laufzeit, damit beim Mitmachen sofort klar ist, wer den Beitrag zu sehen
   // bekommt (User-Hinweis 10.08.). Der ausfuehrliche Satz steht weiterhin
   // unten im Hinweis-Kasten.
-  // Rollenneutral formulieren: Dieses Modal gehoert seit der Zusammenlegung
+  // Rollenneutral formulieren: Dieses Modal gehört seit der Zusammenlegung
   // (11.08.) allein den Konfis — Teamer und Leitung nutzen
-  // ChallengeLeitungModal. Der Text bleibt trotzdem neutral, weil hier frueher
+  // ChallengeLeitungModal. Der Text bleibt trotzdem neutral, weil hier früher
   // faelschlich "Nur für euch in der Leitung" stand (Audit 10.08.).
   const visibilityShort = useMemo(() => {
     if (current.visibility === 'private') return 'Nur das Leitungsteam sieht die Beiträge';
@@ -574,7 +574,7 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
                             // Anonyme Beitraege liefert das Backend ohne Namen —
                             // fehlt der Name, wird bewusst "Anonym" gezeigt.
                             // Sonst Name + Herkunft: Team-Beitraege als solche
-                            // erkennbar, bei mehreren Jahrgaengen der Jahrgang
+                            // erkennbar, bei mehreren Jahrgängen der Jahrgang
                             // (User-Entscheid 08.08.).
                             authorLabel={buildGalleryAuthorLabel(submission)}
                           />

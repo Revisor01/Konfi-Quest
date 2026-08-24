@@ -30,12 +30,12 @@ const FCM = registerPlugin<FCMPlugin>('FCM');
 let pushRegistrationInProgress = false;
 let pushAlreadyRegistered = false;
 
-// In-Memory Anti-Spam-State fuer FCM-Token (kein window-Zugriff noetig)
+// In-Memory Anti-Spam-State für FCM-Token (kein window-Zugriff nötig)
 let fcmTokenSent: string | null = null;
 let fcmTokenLastSent: number = 0;
 let pendingFcmToken: string | null = null;
 
-// 12 Stunden — Sendefenster fuer einen UNVERAENDERTEN Token.
+// 12 Stunden — Sendefenster für einen UNVERAENDERTEN Token.
 const TOKEN_RESEND_WINDOW_MS = 12 * 60 * 60 * 1000;
 
 // Funktion, um Duplikate zu vermeiden
@@ -53,8 +53,8 @@ const sendTokenToServer = async (token: string, retryCount = 0) => {
   // erfolgreiche Send weniger als 12h her, NICHT erneut senden (spart org-weit
   // dutzende POSTs/90min). Der persistierte Timestamp (getPushTokenTimestamp)
   // ueberlebt App-Neustarts, sodass das Fenster auch nach Kaltstart greift,
-  // sobald bekannt ist, dass sich der Token nicht geaendert hat.
-  // Bei GEAENDERTEM Token (fcmTokenSent !== token) faellt diese Sperre weg ->
+  // sobald bekannt ist, dass sich der Token nicht geändert hat.
+  // Bei GEAENDERTEM Token (fcmTokenSent !== token) fällt diese Sperre weg ->
   // sofort senden.
   if (fcmTokenSent === token) {
     const lastPersistedSend = getPushTokenTimestamp();
@@ -87,7 +87,7 @@ const sendTokenToServer = async (token: string, retryCount = 0) => {
     if (retryCount < retryDelays.length) {
       setTimeout(() => sendTokenToServer(token, retryCount + 1), retryDelays[retryCount]);
     } else {
-      // Alle Retries fehlgeschlagen — Token fuer Reconnect-Retry merken
+      // Alle Retries fehlgeschlagen — Token für Reconnect-Retry merken
       pendingFcmToken = token;
     }
   }
@@ -149,26 +149,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
-  // Rolle fuer die anonyme Nutzungsmessung mitfuehren (konfi/teamer/admin) —
-  // die EINZIGE Eigenschaft, die dorthin uebertragen wird. Zentral hier, damit
+  // Rolle für die anonyme Nutzungsmessung mitfuehren (konfi/teamer/admin) —
+  // die EINZIGE Eigenschaft, die dorthin übertragen wird. Zentral hier, damit
   // sie bei Login, Logout und Organisationswechsel automatisch stimmt.
   useEffect(() => {
     setAnalyticsRole(user?.role_name);
-    // Sitzungsbeginn als Seitenaufruf melden — ohne den zaehlt Umami weder
+    // Sitzungsbeginn als Seitenaufruf melden — ohne den zählt Umami weder
     // Besucher noch Sitzungen, die Ereignisse allein erscheinen im Dashboard
     // nicht (11.08.: 130 Ereignisse, aber 0 Besucher). Nur bei vorhandener
-    // Rolle, sonst wuerde der Logout als weiterer Besuch gezaehlt.
+    // Rolle, sonst wuerde der Logout als weiterer Besuch gezählt.
     if (user?.role_name) trackSitzungsstart();
   }, [user?.role_name]);
 
   // Push notifications state
   const [pushNotificationsPermission, setPushNotificationsPermission] = useState<string>('prompt');
 
-  // Account-Wechsel-Erkennung fuer den FCM-Token: Nach Logout+Login mit einem
-  // ANDEREN Account haengt der Token serverseitig noch am alten User (das
+  // Account-Wechsel-Erkennung für den FCM-Token: Nach Logout+Login mit einem
+  // ANDEREN Account hängt der Token serverseitig noch am alten User (das
   // 12h-Sendefenster verhindert den erneuten POST). Bei einem Wechsel innerhalb
-  // der Session das Fenster aufheben und den bekannten Token sofort fuer den
-  // neuen User registrieren — der Server haengt ihn dabei um (DELETE fremder
+  // der Session das Fenster aufheben und den bekannten Token sofort für den
+  // neuen User registrieren — der Server hängt ihn dabei um (DELETE fremder
   // Bindungen in POST /device-token).
   const prevPushUserIdRef = useRef<number | null>(null);
   useEffect(() => {
@@ -185,11 +185,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Multi-Org Switcher state
   const [organizations, setOrganizations] = useState<UserOrganization[]>([]);
   const [activeOrgId, setActiveOrgIdState] = useState<number | null>(getActiveOrgId());
-  // Bei Org-Wechsel und 403-Fallback erhoeht; dient als React-key am Router
+  // Bei Org-Wechsel und 403-Fallback erhöht; dient als React-key am Router
   // (App.tsx) -> kompletter Remount des Subtrees. Zusammen mit dem
   // 'org:switched'-Event: das Event revalidiert useOfflineQuery-Daten (auch in
   // gecachten Pages), der Remount erwischt zusaetzlich alles, was seinen State
-  // selbst haelt. Beides ist noetig — mit dem Event allein blieben Views mit
+  // selbst haelt. Beides ist nötig — mit dem Event allein blieben Views mit
   // eigenem useState auf den Daten der alten Org stehen.
   // KEIN window.location-Reload (zerschiesst nativen WebView).
   const [orgVersion, setOrgVersion] = useState(0);
@@ -226,7 +226,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // User-Daten frisch von /me ziehen (Trial-Status, Rolle etc.) und in State +
   // Cache mergen. Wird beim App-Start aufgerufen UND nach Aktionen, die den
-  // eigenen User betreffen koennen (z.B. eigene Org auf Test stellen) — damit
+  // eigenen User betreffen können (z.B. eigene Org auf Test stellen) — damit
   // der Trial-Banner sofort erscheint/verschwindet, ohne Logout/Neustart.
   const refreshUser = useCallback(async () => {
     const cached = getUser();
@@ -303,7 +303,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!res?.data?.token) {
         throw new Error('Kein Token in switch-org Response');
       }
-      // 1. Neues Access-Token (traegt active_organization_id als Claim)
+      // 1. Neues Access-Token (trägt active_organization_id als Claim)
       await setToken(res.data.token);
 
       // 2. Aktive Org persistieren (oder entfernen, wenn es die Primaer-Org ist).
@@ -332,7 +332,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       // AB HIER ist der Wechsel ERFOLGREICH abgeschlossen (Token + aktive Org +
       // User-State stehen). Die folgenden Schritte sind nur noch Revalidierung
-      // und duerfen NICHT mehr den Fehler-Toast ausloesen: durch das gleich
+      // und duerfen NICHT mehr den Fehler-Toast auslösen: durch das gleich
       // gefeuerte 'org:switched' starten viele parallele Requests, von denen
       // einer kurz in ein Token-Refresh-Race laufen kann. Frueher lag
       // loadOrganizations() im try-Block -> ein solcher transienter 401 warf
@@ -346,7 +346,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // 4b. Socket mit dem NEUEN Token neu aufbauen. Ohne diesen Schritt lief der
     // Socket mit dem Token der alten Organisation weiter: initializeWebSocket
-    // gibt einen bereits bestehenden Socket unveraendert zurueck, das frische
+    // gibt einen bereits bestehenden Socket unverändert zurück, das frische
     // Token aus switch-org erreichte die Verbindung also nie. Folge: in der
     // Zweit-Organisation kamen gar keine Live-Updates an (Audit 22.08.).
     try {
@@ -354,7 +354,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (frischesToken) reconnectWithToken(frischesToken);
     } catch (socketErr) {
       // Live-Updates sind Komfort — ein Fehler hier darf den bereits
-      // erfolgreichen Org-Wechsel nicht nachtraeglich als gescheitert melden.
+      // erfolgreichen Org-Wechsel nicht nachträglich als gescheitert melden.
       console.error('Socket-Neuaufbau nach Org-Wechsel fehlgeschlagen:', socketErr);
     }
 
@@ -370,10 +370,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Komponenten, die useOfflineQuery benutzen UND gerade gemountet sind. Alles,
     // was seine Daten im eigenen useState/useEffect haelt (oder im
     // IonRouterOutlet-Stack geparkt ist), behielt die Daten der alten Org — die
-    // Ansicht sah nach dem Umschalten unveraendert aus.
+    // Ansicht sah nach dem Umschalten unverändert aus.
     setOrgVersion(v => v + 1);
 
-    // 6. Switcher-Liste fuer die neue Org neu laden (Rollen/Namen koennen sich
+    // 6. Switcher-Liste für die neue Org neu laden (Rollen/Namen können sich
     // unterscheiden) — best-effort, Fehler hier sind unkritisch und duerfen den
     // bereits erfolgreichen Wechsel nicht als Fehlschlag melden.
     try {
@@ -383,9 +383,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [organizations, loadOrganizations]);
 
-  // Sauberes Abmelden — GARANTIERT zurueck zum Login, egal wie verkorkst der
+  // Sauberes Abmelden — GARANTIERT zurück zum Login, egal wie verkorkst der
   // Zustand ist. Kein window.location-Reload (zerschiesst den nativen WebView).
-  // Reihenfolge: aktive Org weg, logout() (best-effort, raeumt Token+Cache),
+  // Reihenfolge: aktive Org weg, logout() (best-effort, räumt Token+Cache),
   // dann IMMER setUser(null) -> AppContent rendert sofort die Login-Route.
   // Selbst wenn logout() wirft, kommt der User raus (clearAuth im catch).
   const signOut = useCallback(async () => {
@@ -502,7 +502,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const unsubscribe = networkMonitor.subscribe((online) => {
       setIsOnline(online);
       // Beim Wiedererlangen der Verbindung (z.B. nach Netzwerkwechsel WLAN<->LTE)
-      // den WebSocket aktiv anstossen — er haengt sonst manchmal getrennt fest.
+      // den WebSocket aktiv anstossen — er hängt sonst manchmal getrennt fest.
       if (online) {
         ensureSocketConnected();
       }
@@ -546,7 +546,7 @@ useEffect(() => {
   // Hinweis: Das fruehere (App as any).fireRestoredResult()-Workaround zum
   // Antriggern des Token-Sends ist in Capacitor 8 entfernt und warf eine
   // unhandled Promise-Rejection ("not implemented on android"). Der Token-Send
-  // erfolgt ohnehin ueber das AppDelegate bei App-Aktivierung sowie ueber den
+  // erfolgt ohnehin über das AppDelegate bei App-Aktivierung sowie über den
   // 'fcmToken'-Listener oben — der Workaround ist damit ersatzlos entfallen.
 
 
@@ -598,16 +598,16 @@ useEffect(() => {
       stateChangeListener = await App.addListener('appStateChange', async ({ isActive }) => {
         if (isActive) {
           // Beim Wechsel in den Vordergrund zuerst den Socket aktiv anstossen:
-          // Nach laengerem Hintergrund (oder Deploy-Downtime) haengt er oft im
+          // Nach laengerem Hintergrund (oder Deploy-Downtime) hängt er oft im
           // getrennten Zustand fest, ohne von selbst neu zu verbinden. Der
-          // anschliessende Reconnect loest die 'sync:reconnect'-Sequenz (flush ->
+          // anschliessende Reconnect löst die 'sync:reconnect'-Sequenz (flush ->
           // invalidate -> Badge/View-Refresh) ohnehin aus.
           ensureSocketConnected();
 
           handleAppActive();
 
           // Admins bekommen ohnehin laufend Erinnerungen -> beim Aktiv-werden
-          // global aufraeumen. Konfis/Teamer NICHT (dort gezielt pro Bereich/
+          // global aufräumen. Konfis/Teamer NICHT (dort gezielt pro Bereich/
           // beim Antippen, damit ungelesene Erinnerungen nicht verschwinden).
           if (user?.type === 'admin') {
             removeAllDelivered();
@@ -690,7 +690,7 @@ useEffect(() => {
               case 'chat':
                 // Direkt in den Raum: Die Route ist /chat/room/:roomId — der
                 // fruehere Query-Parameter (?room=) wurde von keiner Seite
-                // konsumiert, der Tap landete nur auf der Chat-Uebersicht.
+                // konsumiert, der Tap landete nur auf der Chat-Übersicht.
                 if (action.notification.data?.roomId) {
                   targetUrl = `${routePrefix}/chat/room/${action.notification.data.roomId}`;
                 } else {
@@ -710,7 +710,7 @@ useEffect(() => {
                 break;
 
               case 'new_event': {
-                // "Anmeldung moeglich"-Push: direkt zum Event-Detail, wenn die ID
+                // "Anmeldung möglich"-Push: direkt zum Event-Detail, wenn die ID
                 // mitkommt (Konfi hat eine Detail-Route). Sonst zur Events-Liste.
                 const evId = action.notification.data?.event_id || action.notification.data?.eventId;
                 if (evId && userType === 'konfi') {
@@ -751,8 +751,8 @@ useEffect(() => {
 
               case 'challenge_started':
                 // Neue Challenge gestartet -> Challenge-Tab des Konfi (Leitung
-                // bekommt diesen Push nicht, faellt aber sauber auf ihre
-                // Challenge-Verwaltung zurueck).
+                // bekommt diesen Push nicht, fällt aber sauber auf ihre
+                // Challenge-Verwaltung zurück).
                 targetUrl = `${routePrefix}/challenges`;
                 break;
 

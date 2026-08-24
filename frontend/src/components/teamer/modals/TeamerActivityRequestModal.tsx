@@ -50,10 +50,10 @@ interface Activity {
   id: number;
   name: string;
   description?: string;
-  // Teamer-Aktivitaeten haben KEINE Punkte und KEINEN Typ: points ist 0,
+  // Teamer-Aktivitäten haben KEINE Punkte und KEINEN Typ: points ist 0,
   // type ist in der Datenbank NULL. Die Deklaration als non-nullable war
   // schlicht falsch — genau dieses Muster (null dort annehmen, wo ein Wert
-  // versprochen wird) hat schon zweimal zum Absturz gefuehrt.
+  // versprochen wird) hat schon zweimal zum Absturz geführt.
   points?: number | null;
   type?: 'gottesdienst' | 'gemeinde' | null;
   category_names?: string;

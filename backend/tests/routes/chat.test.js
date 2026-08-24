@@ -77,7 +77,7 @@ describe('Chat Routes', () => {
 
       expect(res.status).toBe(200);
       const roomIds = res.body.map(r => r.id);
-      // Konfi3 darf Org-1-Raeume nicht sehen
+      // Konfi3 darf Org-1-Räume nicht sehen
       expect(roomIds).not.toContain(CHAT_ROOMS.jahrgang.id);
       expect(roomIds).not.toContain(CHAT_ROOMS.direct.id);
       expect(roomIds).not.toContain(CHAT_ROOMS.group.id);
@@ -129,9 +129,9 @@ describe('Chat Routes', () => {
   // POST /api/chat/direct
   // ================================================================
   describe('POST /api/chat/rooms — Konfi-zu-Konfi', () => {
-    // POST /direct lehnt die Kombination korrekt ab; ueber POST /rooms mit
+    // POST /direct lehnt die Kombination korrekt ab; über POST /rooms mit
     // type='direct' und einer Konfi in participants liess sie sich umgehen —
-    // geprueft wurde nur der Raum-Typ, nicht die Rolle der Teilnehmer
+    // geprüft wurde nur der Raum-Typ, nicht die Rolle der Teilnehmer
     // (Audit 22.08.2026).
     it('Konfi kann KEINEN Raum mit einer anderen Konfi anlegen', async () => {
       const vorher = await db.query('SELECT COUNT(*)::int AS c FROM chat_rooms');
@@ -158,7 +158,7 @@ describe('Chat Routes', () => {
     });
   });
 
-  // Teamer:innen duerfen nur Konfis ihrer zugewiesenen Jahrgaenge direkt
+  // Teamer:innen duerfen nur Konfis ihrer zugewiesenen Jahrgänge direkt
   // anschreiben — dieselbe Grenze, die checkJahrgangAccess im Rest des Systems
   // zieht. Der Chat war die einzige Stelle ohne sie (Nutzerhinweis 23.08.2026).
   // Alle Konfis erreichen nur org_admin und admin.
@@ -193,7 +193,7 @@ describe('Chat Routes', () => {
     });
 
     // Neue Teamer:innen sind bewusst keinem Jahrgang zugewiesen. Sie sollen
-    // deshalb GAR KEINE Konfis direkt anschreiben koennen.
+    // deshalb GAR KEINE Konfis direkt anschreiben können.
     it('Teamer:in OHNE Jahrgangs-Zuweisung erreicht keinen Konfi -> 403', async () => {
       const { invalidateUserCache } = require('../../middleware/rbac');
       await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.teamer1.id]);
@@ -228,9 +228,9 @@ describe('Chat Routes', () => {
   // ================================================================
   // Gegenrichtung: Konfi -> Team
   //
-  // Nutzerhinweis 23.08.2026: Konfis sollen Teamer:innen ebenfalls nur ueber
+  // Nutzerhinweis 23.08.2026: Konfis sollen Teamer:innen ebenfalls nur über
   // einen gemeinsamen Jahrgang erreichen. Leitung (org_admin), Admins und
-  // Super-Admins bleiben fuer jeden Konfi erreichbar.
+  // Super-Admins bleiben für jeden Konfi erreichbar.
   // ================================================================
   describe('Jahrgangsgrenze fuer Konfis in Richtung Team', () => {
     // teamer1 aus dem Jahrgang von konfi1 herausnehmen.
@@ -278,7 +278,7 @@ describe('Chat Routes', () => {
 
     it('Konfi erreicht Admins immer -> 200', async () => {
       // Mit admin1 besteht laut Seed schon ein Chat — die Route gaebe dann
-      // auch ohne Berechtigungspruefung den vorhandenen Raum zurueck. Deshalb
+      // auch ohne Berechtigungspruefung den vorhandenen Raum zurück. Deshalb
       // hier orgAdminSuper, mit dem noch kein Raum existiert: So beweist der
       // 200 wirklich die Berechtigung und nicht nur den Dedup-Pfad.
       const { rows: [vorher] } = await db.query(
@@ -333,7 +333,7 @@ describe('Chat Routes', () => {
       expect(res.status).toBe(200);
       const treffer = res.body.users.find(u => u.id === USERS.teamer1.id);
       expect(treffer).toBeDefined();
-      // Frueher kam hier hart 'admin' zurueck.
+      // Frueher kam hier hart 'admin' zurück.
       expect(treffer.type).toBe('teamer');
       expect(treffer.role_description).toBe('Teamer:in');
     });
@@ -381,7 +381,7 @@ describe('Chat Routes', () => {
       expect(res.status).toBe(200);
     });
 
-    // Ohne diese Pruefung waere die Regel oben wertlos — derselbe Umgehungsweg
+    // Ohne diese Prüfung wäre die Regel oben wertlos — derselbe Umgehungsweg
     // wie beim Konfi-zu-Konfi-Fall (Audit 22.08.2026).
     it('die Grenze laesst sich nicht ueber POST /rooms umgehen -> 403', async () => {
       const { invalidateUserCache } = require('../../middleware/rbac');
@@ -434,7 +434,7 @@ describe('Chat Routes', () => {
     });
 
     it('Direct-Chat mit Teamerin: user_type wird serverseitig als teamer gespeichert, Raum fuer Teamerin sichtbar', async () => {
-      // Client schickt (wie frueher) target_user_type 'admin' — der Server MUSS
+      // Client schickt (wie früher) target_user_type 'admin' — der Server MUSS
       // die echte Rolle nehmen, sonst findet die Teamerin den Raum nicht.
       const res = await request(app)
         .post('/api/chat/direct')
@@ -750,7 +750,7 @@ describe('Chat Routes', () => {
         });
 
       // Magic-Bytes von Buffer.from('PNG test content') sind keine echten PNG Magic-Bytes
-      // validateMagicBytes gibt 415 bei falschen Magic-Bytes zurueck
+      // validateMagicBytes gibt 415 bei falschen Magic-Bytes zurück
       expect([200, 400, 415]).toContain(res.status);
     });
 
@@ -790,8 +790,8 @@ describe('Chat Routes', () => {
       expect(onDisk.subarray(0, 8).equals(pngBuffer.subarray(0, 8))).toBe(false);
     });
 
-    // Die Route prueft den Token von Hand (Video-Elemente koennen keine Header
-    // senden). Frueher hiess das `req.user = decoded`: Angaben ungeprueft fuer
+    // Die Route prüft den Token von Hand (Video-Elemente können keine Header
+    // senden). Frueher hiess das `req.user = decoded`: Angaben ungeprueft für
     // die volle Token-Laufzeit, und organization_id immer die PRIMAER-Org —
     // in einer Zweit-Gemeinde bekam man die eigenen Dateien nicht
     // (Audit 22.08.2026).
@@ -887,7 +887,7 @@ describe('Chat Routes', () => {
   // ================================================================
   describe('POST /api/chat/rooms/:roomId/polls', () => {
     it('Admin erstellt Umfrage -> 201 (Socket-Emit kippt ohne io nicht)', async () => {
-      // Regression fuer Audit Achse 2, Luecke 10a: Der Poll-Handler emittet nun
+      // Regression für Audit Achse 2, Luecke 10a: Der Poll-Handler emittet nun
       // 'newMessage' + Push. In Tests ist io=null -> alle Emits sind No-ops und
       // duerfen den 201-Pfad nicht stoeren.
       const res = await request(app)
@@ -1008,12 +1008,12 @@ describe('Chat Routes', () => {
   });
 
   // ================================================================
-  // Exklusive Umfragen ueber BEIDE Abstimm-Routen
+  // Exklusive Umfragen über BEIDE Abstimm-Routen
   //
   // Befund 23.08.2026: POST /messages/:messageId/vote hatte eine eigene,
   // unvollstaendige Kopie der Abstimmlogik und ignorierte exclusive_options
-  // vollstaendig — ueber sie konnten mehrere Personen dieselbe Option belegen,
-  // waehrend /polls/:pollId/vote das korrekt mit 409 ablehnt.
+  // vollstaendig — über sie konnten mehrere Personen dieselbe Option belegen,
+  // während /polls/:pollId/vote das korrekt mit 409 ablehnt.
   // ================================================================
   describe('Exklusive Umfragen — beide Abstimm-Routen', () => {
     const exklusiveUmfrageAnlegen = async () => {
@@ -1111,7 +1111,7 @@ describe('Chat Routes', () => {
       expect(zurueck.status).toBe(200);
       expect(zurueck.body.action).toBe('removed');
 
-      // Jetzt ist sie fuer Konfi2 frei.
+      // Jetzt ist sie für Konfi2 frei.
       const andere = await request(app)
         .post(`/api/chat/messages/${poll.message_id}/vote`)
         .set('Authorization', `Bearer ${konfi2Token}`)
@@ -1124,8 +1124,8 @@ describe('Chat Routes', () => {
   // Anonyme Umfragen: Kennungen fremder Stimmen
   //
   // Befund 23.08.2026: Bei anonymous=true fehlte zwar der Name, user_id und
-  // user_type kamen aber je Stimme weiterhin mit. Ueber die Teilnehmerliste
-  // liess sich daraus aufloesen, wer was gewaehlt hat.
+  // user_type kamen aber je Stimme weiterhin mit. Über die Teilnehmerliste
+  // liess sich daraus aufloesen, wer was gewählt hat.
   // ================================================================
   describe('GET /api/chat/rooms/:roomId/messages — Anonymitaet von Umfragen', () => {
     const umfrageAnlegen = async (anonymous) => {
@@ -1166,7 +1166,7 @@ describe('Chat Routes', () => {
       expect(msg.votes[0].user_id).toBeNull();
       expect(msg.votes[0].user_type).toBeNull();
       expect(msg.votes[0].user_name).toBeUndefined();
-      // Die Zaehlung bleibt erhalten — nur die Zuordnung faellt weg.
+      // Die Zählung bleibt erhalten — nur die Zuordnung fällt weg.
       expect(msg.votes[0].option_index).toBe(0);
     });
 

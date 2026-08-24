@@ -52,7 +52,7 @@ interface UserManagementModalProps {
   userId?: number | null;
   // Rolle fest vorgeben (Rollenname, z.B. 'teamer'). Dann entfaellt die
   // Rollenauswahl komplett und der Dialog fuehrt genau eine Sache aus.
-  // Gedacht fuer den Plus-Button in der Konfi-Uebersicht: der heisst dort
+  // Gedacht für den Plus-Button in der Konfi-Übersicht: der heißt dort
   // "Neue Teamer:in anlegen", zeigte aber die volle Rollenauswahl inklusive
   // Admin — und ein so angelegter Admin tauchte in der Teamer-Liste gar nicht
   // auf (Nutzerhinweis 22.08.2026). Ohne diese Prop bleibt alles wie bisher.
@@ -167,7 +167,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
       setJahrgaenge(jahrgaengeResponse.data);
 
       // Feste Rolle direkt setzen — der Dialog zeigt dann keine Auswahl mehr,
-      // das Feld muss aber trotzdem befuellt sein (isValid prueft role_id > 0).
+      // das Feld muss aber trotzdem befuellt sein (isValid prüft role_id > 0).
       if (festeRolle && !isEditMode) {
         const rolle = rolesResponse.data.find((r: Role) => r.name === festeRolle);
         if (rolle) setFormData(prev => ({ ...prev, role_id: rolle.id }));

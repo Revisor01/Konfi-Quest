@@ -68,7 +68,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
 
   // GET settings (alle authentifizierten User der eigenen Org)
   // Auch super_admin wird auf die aktuelle Organisation gescopt: ohne Filter
-  // wuerden Settings ALLER Orgs vermischt zurueckgegeben (key-Kollision ueberschreibt Werte).
+  // wuerden Settings ALLER Orgs vermischt zurueckgegeben (key-Kollision überschreibt Werte).
   router.get('/', rbacVerifier, async (req, res) => {
     try {
       const { rows } = await db.query(

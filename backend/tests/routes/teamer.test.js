@@ -53,7 +53,7 @@ describe('Teamer Routes', () => {
 
     it('Befoerderter Konfi sieht seine Werte AUCH ohne Jahrgang (jahrgang_id NULL)', async () => {
       // teamer1 (id 3) bekommt ein konfi_profiles mit Werten, aber OHNE Jahrgang
-      // (simuliert: alter Jahrgang wurde geloescht -> jahrgang_id = NULL).
+      // (simuliert: alter Jahrgang wurde gelöscht -> jahrgang_id = NULL).
       await db.query(
         `INSERT INTO konfi_profiles (user_id, jahrgang_id, gottesdienst_points, gemeinde_points, organization_id)
          VALUES (3, NULL, 7, 4, 1)`
@@ -126,7 +126,7 @@ describe('Teamer Routes', () => {
       expect(before.status).toBe(200);
       expect(before.body.length).toBe(2);
 
-      // Konfi1 soft-loeschen
+      // Konfi1 soft-löschen
       await db.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [USERS.konfi1.id]);
 
       // Nachher: nur der aktive Konfi (konfi2) ist sichtbar
@@ -167,7 +167,7 @@ describe('Teamer Routes', () => {
         .get('/api/teamer/konfi-history')
         .set('Authorization', `Bearer ${adminToken}`);
 
-      // requireTeamer erlaubt Admin, aber der route-interne check prueft role_name === 'teamer'
+      // requireTeamer erlaubt Admin, aber der route-interne check prüft role_name === 'teamer'
       expect(res.status).toBe(403);
     });
   });
@@ -194,7 +194,7 @@ describe('Teamer Routes', () => {
     });
 
     // Befund 24.08.2026: Die Route lieferte geheime Abzeichen ungefiltert aus.
-    // Die Ansicht verlaesst sich darauf, dass sie gar nicht erst kommen — beim
+    // Die Ansicht verlässt sich darauf, dass sie gar nicht erst kommen — beim
     // Konfi tut das Backend das, hier fehlte es. Name, Beschreibung und
     // Fortschritt standen damit offen da.
     it('Ein unverdientes geheimes Abzeichen wird nicht ausgeliefert', async () => {
@@ -250,7 +250,7 @@ describe('Teamer Routes', () => {
       expect(res.status).toBe(200);
       // Beide sind unverdient, stehen also nicht in der Liste...
       expect(res.body.filter(b => b.is_hidden).length).toBe(0);
-      // ...werden aber gezaehlt, damit "x Geheimnisse" stimmt.
+      // ...werden aber gezählt, damit "x Geheimnisse" stimmt.
       expect(res.headers['x-badges-secret-total']).toBe('2');
     });
   });
@@ -259,7 +259,7 @@ describe('Teamer Routes', () => {
   // GET /api/teamer/badges - teamer_year-Progress mit Startjahr (Phase 116-02)
   // ================================================================
   describe('GET /api/teamer/badges teamer_year-Progress', () => {
-    // Teamer-Aktivitaet in einem bestimmten Jahr fuer teamer1 anlegen
+    // Teamer-Aktivität in einem bestimmten Jahr für teamer1 anlegen
     async function createTeamerActivityInYear(year) {
       const { rows: [act] } = await db.query(
         `INSERT INTO activities (name, points, type, organization_id, target_role)
@@ -333,7 +333,7 @@ describe('Teamer Routes', () => {
     });
 
     it('Keine Regression: event_count-Progress zaehlt weiterhin besuchte Events', async () => {
-      // 2 besuchte Events fuer teamer1
+      // 2 besuchte Events für teamer1
       for (let i = 0; i < 2; i++) {
         const { rows: [ev] } = await db.query(
           `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants, point_type, points)
@@ -633,7 +633,7 @@ describe('Teamer Routes', () => {
     let teamerActivityId;
 
     beforeEach(async () => {
-      // Teamer-Aktivitaet (target_role='teamer') in Org 1 anlegen — nur solche
+      // Teamer-Aktivität (target_role='teamer') in Org 1 anlegen — nur solche
       // duerfen Teamer:innen beantragen.
       const { rows: [act] } = await db.query(
         `INSERT INTO activities (name, points, type, target_role, organization_id)
@@ -821,7 +821,7 @@ describe('Teamer Routes', () => {
         .set('Authorization', `Bearer ${admin2Token}`);
 
       expect(res.status).toBe(200);
-      // Gibt leere Liste zurueck (gefiltert nach org_id)
+      // Gibt leere Liste zurück (gefiltert nach org_id)
       expect(res.body.length).toBe(0);
     });
   });

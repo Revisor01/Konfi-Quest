@@ -15,17 +15,17 @@ const pool = new Pool({
   connectionTimeoutMillis: parseInt(process.env.PG_CONN_TIMEOUT || '5000', 10),
 });
 
-// App-weite Lock-ID fuer den Migrations-Advisory-Lock (beliebig, aber fest).
+// App-weite Lock-ID für den Migrations-Advisory-Lock (beliebig, aber fest).
 const MIGRATION_ADVISORY_LOCK_ID = 723001;
 
 async function runMigrations(pool) {
   // Advisory-Lock (Audit 03.07.2026): Beide Backend-Replikas starten beim Deploy
   // PARALLEL und rasten sonst um neue Migrationen (beobachtet bei Migration 109:
   // eine Replika gewann, die andere warf duplicate-key auf pg_type). Der Lock
-  // serialisiert die Laeufe; die zweite Replika liest danach die frisch
+  // serialisiert die Läufe; die zweite Replika liest danach die frisch
   // eingetragenen schema_migrations und ueberspringt sauber.
   // Session-Lock auf dedizierter Connection — wird im finally freigegeben,
-  // bei Prozess-Tod raeumt Postgres den Lock automatisch.
+  // bei Prozess-Tod räumt Postgres den Lock automatisch.
   const lockClient = await pool.connect();
   try {
     await lockClient.query('SELECT pg_advisory_lock($1)', [MIGRATION_ADVISORY_LOCK_ID]);
@@ -69,11 +69,11 @@ async function runMigrationsLocked(pool) {
     }
     const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
 
-    // Jede Migration laeuft in EINER Transaktion auf EINER dedizierten Connection
+    // Jede Migration läuft in EINER Transaktion auf EINER dedizierten Connection
     // (pool.query() kann sonst verschiedene Connections nutzen -> Multi-Statement-SQL
-    // waere nicht transaktional). Schlaegt eine Migration mittendrin fehl, wird sie
+    // wäre nicht transaktional). Schlaegt eine Migration mittendrin fehl, wird sie
     // KOMPLETT zurueckgerollt — kein Halb-Zustand mehr (Lehre aus Incident 13.06.2026:
-    // 097/098/099 wurden ausgefuehrt aber nicht sauber als applied vermerkt).
+    // 097/098/099 wurden ausgeführt aber nicht sauber als applied vermerkt).
     // Migration + schema_migrations-INSERT liegen in DERSELBEN Transaktion, damit
     // beides atomar gemeinsam committed oder gemeinsam verworfen wird.
     const client = await pool.connect();
@@ -89,9 +89,9 @@ async function runMigrationsLocked(pool) {
       // NICHT-BLOCKIEREND (User-Forderung, Incident 13.06.2026): eine fehlerhafte
       // Migration darf NIE den Serverstart killen und damit alle Logins blockieren.
       // Wir loggen laut, merken sie als fehlgeschlagen vor und machen mit den
-      // naechsten Migrationen weiter. Der Server kommt hoch, App bleibt erreichbar.
+      // nächsten Migrationen weiter. Der Server kommt hoch, App bleibt erreichbar.
       // Fehlgeschlagene Migration wird NICHT als applied vermerkt -> wird beim
-      // naechsten Start (nach Fix) erneut versucht.
+      // nächsten Start (nach Fix) erneut versucht.
       console.error(`Migration FAILED (uebersprungen, Server startet trotzdem): ${file}`, err.message);
       failed.push({ file, message: err.message });
     } finally {

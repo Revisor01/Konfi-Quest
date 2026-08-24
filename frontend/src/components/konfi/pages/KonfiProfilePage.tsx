@@ -85,7 +85,7 @@ const KonfiProfilePage: React.FC = () => {
 
   // Subscribe to live updates for points and badges
   // 'dashboard' MUSS mit dabei sein: Bonuspunkte und von der Leitung vergebene
-  // Aktivitaeten melden 'dashboard', nicht 'points' — ohne das blieb das Profil
+  // Aktivitäten melden 'dashboard', nicht 'points' — ohne das blieb das Profil
   // bei genau diesen Vergabewegen stehen (Audit 22.08.2026).
   useLiveRefresh(['points', 'dashboard', 'badges'], refresh);
 

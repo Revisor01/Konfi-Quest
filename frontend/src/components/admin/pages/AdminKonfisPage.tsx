@@ -67,7 +67,7 @@ interface AdminKonfisPageProps {
   // navigieren). Fehlt der Callback (iPhone/Portrait), wird wie bisher
   // per Route auf die Detail-Seite navigiert.
   onSelectKonfi?: (konfiId: number) => void;
-  // Aktuell ausgewaehlter Konfi (fuer Highlighting im Split-View).
+  // Aktuell ausgewaehlter Konfi (für Highlighting im Split-View).
   selectedKonfiId?: number | null;
 }
 
@@ -76,7 +76,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   const router = useIonRouter();
   const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-konfis');
   // Onboarding-Tour einmal pro Admin-Account (beim ersten Betreten der Konfis-Seite,
-  // der Landing-Page fuer Admins/Org-Admins) — bzw. fuer Bestandsnutzer
+  // der Landing-Page für Admins/Org-Admins) — bzw. für Bestandsnutzer
   // stattdessen einmalig der Update-Walkthrough 2.0 (Challenges).
   const {
     showOnboarding, closeOnboarding,
@@ -90,7 +90,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
     { ttl: CACHE_TTL.KONFIS }
   );
 
-  // Offline-Query: Jahrgaenge
+  // Offline-Query: Jahrgänge
   const { data: jahrgaenge, refresh: refreshJahrgaenge } = useOfflineQuery<Jahrgang[]>(
     'admin:jahrgaenge:' + user?.organization_id,
     async () => { const res = await api.get('/admin/jahrgaenge'); return res.data; },
@@ -131,9 +131,9 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   // Teamer-Modus faelschlich das Konfi-Formular (Nutzerhinweis 22.08.2026).
   const [viewMode, setViewMode] = useState<'konfis' | 'teamer'>('konfis');
 
-  // Teamer:innen laufen ueber dasselbe Formular wie in der Benutzerverwaltung
+  // Teamer:innen laufen über dasselbe Formular wie in der Benutzerverwaltung
   // (Rollenauswahl inklusive) — kein zweites Formular, das auseinanderlaufen kann.
-  // festeRolle: Der Button heisst "Neue Teamer:in anlegen" — dann soll der
+  // festeRolle: Der Button heißt "Neue Teamer:in anlegen" — dann soll der
   // Dialog auch genau das tun. Vorher kam die volle Rollenauswahl inklusive
   // Admin, und ein so angelegter Admin tauchte in der Teamer-Liste nicht auf
   // (Nutzerhinweis 22.08.2026). Admins legt man in der Nutzerverwaltung an.
@@ -180,7 +180,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
     });
   };
 
-  // Gibt ein Promise zurueck, das erst nach abgeschlossenem Delete (oder Abbruch)
+  // Gibt ein Promise zurück, das erst nach abgeschlossenem Delete (oder Abbruch)
   // resolved — so kann KonfisView danach die lokale Teamer-Liste neu laden.
   const handleDeleteTeamer = (teamer: any): Promise<void> => {
     if (!isOnline) return Promise.resolve();

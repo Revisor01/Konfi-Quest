@@ -20,7 +20,7 @@ interface LegendEntry {
   description: string;
 }
 
-// Status-Legende fuer die Challenge-Verwaltung. Farbe UND Icon muessen mit
+// Status-Legende für die Challenge-Verwaltung. Farbe UND Icon müssen mit
 // ChallengesManageView (Listen-Badges) und ChallengeLeitungModal
 // (STATUS_BADGE/CONSENT_BADGE) uebereinstimmen.
 
@@ -53,7 +53,7 @@ const STATUS_ENTRIES: LegendEntry[] = [
   },
 ];
 
-// Oranges Zaehler-Badge in der Liste (pending_count).
+// Oranges Zähler-Badge in der Liste (pending_count).
 const COUNTER_ENTRY: LegendEntry = {
   color: '#ff9500',
   icon: timeOutline,
@@ -137,7 +137,7 @@ const renderRow = (entry: LegendEntry, i: number) => (
   </div>
 );
 
-// Erklaert Farben + Icons der Challenge-Verwaltung. Wird ueber das (i)-Symbol
+// Erklaert Farben + Icons der Challenge-Verwaltung. Wird über das (i)-Symbol
 // im Challenges-Header geoeffnet (analog EventLegendModal).
 const ChallengeLegendModal: React.FC<ChallengeLegendModalProps> = ({ onClose }) => {
   return (

@@ -13,9 +13,9 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
 
   // SICHTBARKEIT VON MATERIAL (Entscheidung Simon, 24.08.2026)
   //
-  //   Material MIT Jahrgang  -> nur Teamer:innen dieser Jahrgaenge
+  //   Material MIT Jahrgang  -> nur Teamer:innen dieser Jahrgänge
   //   Material OHNE Jahrgang -> alle Teamer:innen der Gemeinde
-  //   Leitung (admin, org_admin) -> immer alles, sonst waere es nicht verwaltbar
+  //   Leitung (admin, org_admin) -> immer alles, sonst wäre es nicht verwaltbar
   //
   // Vorher war die Jahrgangs-Bindung reine Suchhilfe: Gelesen wurde nur die
   // Organisation, also sah jede Teamer:in jedes Material. Zum Zeitpunkt der
@@ -25,7 +25,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   // Die Bindung an einen Termin (material_events) bleibt bewusst reine
   // Suchhilfe und grenzt nichts ab.
   //
-  // Gibt eine SQL-Bedingung auf `m` zurueck, oder null, wenn nicht
+  // Gibt eine SQL-Bedingung auf `m` zurück, oder null, wenn nicht
   // eingeschraenkt werden muss.
   const jahrgangsSchranke = (user, platzhalter) => {
     if (user.type !== 'teamer') return null;
@@ -97,7 +97,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       );
       res.status(201).json(tag);
       // Material-Listen bei Leitung und Teamer:innen aktuell halten — vorher gab
-      // es fuer Material ueberhaupt kein Live-Update (Audit 22.08.2026).
+      // es für Material überhaupt kein Live-Update (Audit 22.08.2026).
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'materials', 'refresh');
     } catch (err) {
       if (err.code === '23505') {
@@ -126,7 +126,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       }
       res.json(tag);
       // Material-Listen bei Leitung und Teamer:innen aktuell halten — vorher gab
-      // es fuer Material ueberhaupt kein Live-Update (Audit 22.08.2026).
+      // es für Material überhaupt kein Live-Update (Audit 22.08.2026).
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'materials', 'refresh');
     } catch (err) {
       if (err.code === '23505') {
@@ -150,7 +150,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       }
       res.json({ message: 'Tag gelöscht' });
       // Material-Listen bei Leitung und Teamer:innen aktuell halten — vorher gab
-      // es fuer Material ueberhaupt kein Live-Update (Audit 22.08.2026).
+      // es für Material überhaupt kein Live-Update (Audit 22.08.2026).
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'materials', 'refresh');
     } catch (err) {
       console.error('Fehler beim Löschen des Tags:', err.message);
@@ -353,7 +353,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       );
       material.events = matEvents;
 
-      // Jahrgaenge laden (Many-to-Many)
+      // Jahrgänge laden (Many-to-Many)
       const { rows: matJahrgaenge } = await db.query(
         `SELECT j.id, j.name
          FROM material_jahrgaenge mj
@@ -419,7 +419,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         );
       }
 
-      // Jahrgaenge zuordnen (Many-to-Many)
+      // Jahrgänge zuordnen (Many-to-Many)
       const resolvedJahrgangIds = jahrgang_ids || [];
       if (resolvedJahrgangIds.length > 0) {
         const jgValues = resolvedJahrgangIds.map((_, i) => `($1, $${i + 2})`).join(', ');
@@ -442,7 +442,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
 
       res.status(201).json(material);
       // Material-Listen bei Leitung und Teamer:innen aktuell halten — vorher gab
-      // es fuer Material ueberhaupt kein Live-Update (Audit 22.08.2026).
+      // es für Material überhaupt kein Live-Update (Audit 22.08.2026).
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'materials', 'refresh');
     } catch (err) {
       console.error('Fehler beim Erstellen des Materials:', err.message);
@@ -516,7 +516,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         }
       }
 
-      // Jahrgaenge aktualisieren (DELETE + INSERT)
+      // Jahrgänge aktualisieren (DELETE + INSERT)
       const resolvedJahrgangIds = jahrgang_ids;
       if (resolvedJahrgangIds !== undefined) {
         await db.query('DELETE FROM material_jahrgaenge WHERE material_id = $1', [materialId]);
@@ -545,7 +545,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
 
       res.json({ message: 'Material aktualisiert' });
       // Material-Listen bei Leitung und Teamer:innen aktuell halten — vorher gab
-      // es fuer Material ueberhaupt kein Live-Update (Audit 22.08.2026).
+      // es für Material überhaupt kein Live-Update (Audit 22.08.2026).
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'materials', 'refresh');
     } catch (err) {
       console.error('Fehler beim Bearbeiten des Materials:', err.message);
@@ -559,7 +559,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       const orgId = req.user.organization_id;
       const materialId = req.params.id;
 
-      // Dateien vom Dateisystem holen bevor CASCADE loescht
+      // Dateien vom Dateisystem holen bevor CASCADE löscht
       const { rows: files } = await db.query(
         `SELECT mf.stored_name FROM material_files mf
          JOIN materials m ON mf.material_id = m.id
@@ -591,7 +591,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
 
       res.json({ message: 'Material gelöscht' });
       // Material-Listen bei Leitung und Teamer:innen aktuell halten — vorher gab
-      // es fuer Material ueberhaupt kein Live-Update (Audit 22.08.2026).
+      // es für Material überhaupt kein Live-Update (Audit 22.08.2026).
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'materials', 'refresh');
     } catch (err) {
       console.error('Fehler beim Löschen des Materials:', err.message);
@@ -603,7 +603,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   // DATEI ENDPOINTS
   // ====================================================================
 
-  // POST /:id/files - Dateien zu Material hochladen (AES-256-GCM verschluesselt)
+  // POST /:id/files - Dateien zu Material hochladen (AES-256-GCM verschlüsselt)
   router.post('/:id/files', rbacVerifier, requireAdmin, materialUpload.array('files', 10), async (req, res) => {
     try {
       const orgId = req.user.organization_id;
@@ -650,7 +650,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
 
       const insertedFiles = [];
       for (const file of req.files) {
-        // Zufaelliger Hex-Dateiname; verschluesselt schreiben
+        // Zufaelliger Hex-Dateiname; verschlüsselt schreiben
         const storedName = crypto.randomBytes(32).toString('hex');
         const storedPath = path.join(materialDir, storedName);
         await fs.promises.writeFile(storedPath, encryptBuffer(file.buffer));
@@ -669,7 +669,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
 
       res.status(201).json(insertedFiles);
       // Material-Listen bei Leitung und Teamer:innen aktuell halten — vorher gab
-      // es fuer Material ueberhaupt kein Live-Update (Audit 22.08.2026).
+      // es für Material überhaupt kein Live-Update (Audit 22.08.2026).
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'materials', 'refresh');
     } catch (err) {
       console.error('Fehler beim Hochladen der Dateien:', err.message);
@@ -688,8 +688,8 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         return res.status(400).json({ error: 'Ungültiger Dateiname' });
       }
 
-      // Prüfen ob Datei existiert, zur gleichen Organisation gehört und fuer
-      // diese Teamer:in ueberhaupt sichtbar ist (Jahrgangs-Schranke).
+      // Prüfen ob Datei existiert, zur gleichen Organisation gehört und für
+      // diese Teamer:in überhaupt sichtbar ist (Jahrgangs-Schranke).
       const schranke = jahrgangsSchranke(req.user, '$3');
       const { rows: [fileRecord] } = await db.query(
         `SELECT mf.id, mf.original_name, mf.mime_type, mf.file_size
@@ -716,7 +716,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       }
       res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileRecord.original_name)}"`);
 
-      // Datei lesen und (falls verschluesselt) entschluesseln, dann senden.
+      // Datei lesen und (falls verschlüsselt) entschluesseln, dann senden.
       const fileBuffer = await fs.promises.readFile(filePath);
       let dataBuffer;
       try {
@@ -770,7 +770,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
 
       res.json({ message: 'Datei gelöscht' });
       // Material-Listen bei Leitung und Teamer:innen aktuell halten — vorher gab
-      // es fuer Material ueberhaupt kein Live-Update (Audit 22.08.2026).
+      // es für Material überhaupt kein Live-Update (Audit 22.08.2026).
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'materials', 'refresh');
     } catch (err) {
       console.error('Fehler beim Löschen der Datei:', err.message);

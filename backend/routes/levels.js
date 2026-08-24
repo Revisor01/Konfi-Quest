@@ -218,7 +218,7 @@ router.delete('/:id', verifyTokenRBAC, validateLevelId, async (req, res) => {
 // Produktion nachgewiesen, 23.08.2026). Das widerspricht der Rangliste, die
 // Nachbarplaetze bewusst OHNE fremde Punktzahlen zeigt.
 //
-// Jetzt: eigene Daten immer, fremde nur fuer Leitung und Teamer:innen. Die
+// Jetzt: eigene Daten immer, fremde nur für Leitung und Teamer:innen. Die
 // Route hat derzeit keinen Aufrufer im Frontend.
 router.get('/konfi/:userId', verifyTokenRBAC, async (req, res) => {
   try {
@@ -230,9 +230,9 @@ router.get('/konfi/:userId', verifyTokenRBAC, async (req, res) => {
     }
 
     // Hole Konfi-Infos mit aktuellen Punkten.
-    // total_points zaehlt nur AKTIVIERTE Punkt-Kategorien des Jahrgangs
+    // total_points zählt nur AKTIVIERTE Punkt-Kategorien des Jahrgangs
     // (gottesdienst_enabled/gemeinde_enabled) — sonst falsches Level bei
-    // Single-Kategorie-Jahrgaengen. Identisch zur Dashboard-/pushService-Logik.
+    // Single-Kategorie-Jahrgängen. Identisch zur Dashboard-/pushService-Logik.
     const konfiResult = await db.query(`
       SELECT
         u.id,

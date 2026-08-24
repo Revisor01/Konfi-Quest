@@ -21,7 +21,7 @@ test.describe('Chat', () => {
     // 4. Nachricht eingeben — IonTextarea mit placeholder "Nachricht schreiben..."
     const textarea = konfiPage.locator('ion-textarea[placeholder="Nachricht schreiben..."]');
     await textarea.waitFor({ state: 'visible', timeout: 10_000 });
-    // IonTextarea: Wert ueber native textarea setzen
+    // IonTextarea: Wert über native textarea setzen
     const nativeTextarea = textarea.locator('textarea');
     await nativeTextarea.fill(uniqueMsg);
 
@@ -35,7 +35,7 @@ test.describe('Chat', () => {
     ).toBeVisible({ timeout: 10_000 });
     await konfiPage.close();
 
-    // 7. Als admin1 einloggen und Nachricht pruefen
+    // 7. Als admin1 einloggen und Nachricht prüfen
     const adminPage = await browser.newPage();
     await loginAs(adminPage, 'admin1');
 

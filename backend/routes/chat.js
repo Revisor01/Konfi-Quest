@@ -49,17 +49,17 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   // identisch zu GET /messages: options als Array, anonymitaets-bewusste Votes
   // (bei anonymen Umfragen ohne user_name). messageId ist die message_id der
   // Poll-Nachricht, damit der Client die richtige Nachricht im State findet.
-  // Stimmen einer Umfrage fuer die Auslieferung aufbereiten.
+  // Stimmen einer Umfrage für die Auslieferung aufbereiten.
   //
   // Bei anonymen Umfragen wurde bisher nur der Name weggelassen, user_id und
-  // user_type aber weiterhin je Stimme mitgeliefert. Ueber die Teilnehmerliste
-  // (GET /rooms/:id/participants) liess sich daraus aufloesen, wer was gewaehlt
+  // user_type aber weiterhin je Stimme mitgeliefert. Über die Teilnehmerliste
+  // (GET /rooms/:id/participants) liess sich daraus aufloesen, wer was gewählt
   // hat — die zugesagte Anonymitaet war nur kosmetisch (Befund 23.08.2026).
   //
   // Das Frontend braucht die Kennung ausschliesslich, um die EIGENE Stimme zu
   // markieren (MessageBubble: vote.user_id === user.id && vote.user_type ===
   // user.type). Deshalb wird bei anonymen Umfragen nur noch die eigene Stimme
-  // mit Kennung ausgeliefert; fremde zaehlen anonym mit.
+  // mit Kennung ausgeliefert; fremde zählen anonym mit.
   const stimmenAufbereiten = (rawVotes, anonym, empfaengerId, empfaengerTyp) =>
     rawVotes.map(v => {
       const eigene = v.user_id === empfaengerId && v.user_type === empfaengerTyp;
@@ -114,7 +114,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         // Broadcast an den ganzen Raum: Es gibt keinen einzelnen Empfaenger,
         // also kann hier keine "eigene" Stimme markiert werden. Bei anonymen
         // Umfragen fallen alle Kennungen weg; der Client holt seine eigene
-        // Markierung ueber GET /rooms/:id/messages.
+        // Markierung über GET /rooms/:id/messages.
         votes: stimmenAufbereiten(rawVotes, isAnonymous, null, null),
       };
 
@@ -128,10 +128,10 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
     }
   };
 
-  // Hilfsfunktion: 'roomsChanged' an die persoenlichen User-Raeume der
+  // Hilfsfunktion: 'roomsChanged' an die persoenlichen User-Räume der
   // betroffenen Nutzer senden, damit deren ChatOverview die Raumliste neu laedt
-  // (Audit Achse 2, Luecke 14). Nur die einfachen Faelle (Raum erstellt/
-  // geloescht, Teilnehmer hinzugefuegt/entfernt/verlassen). targets ist eine
+  // (Audit Achse 2, Luecke 14). Nur die einfachen Fälle (Raum erstellt/
+  // gelöscht, Teilnehmer hinzugefuegt/entfernt/verlassen). targets ist eine
   // Liste von { user_id, user_type }.
   const emitRoomsChanged = (targets) => {
     if (!io || !Array.isArray(targets)) return; // io-defensiv: in Tests No-op
@@ -146,15 +146,15 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
     }
   };
 
-  // Team-Kontaktliste fuer Direktchats: alle Admins, Org-Admins und Teamer:innen
+  // Team-Kontaktliste für Direktchats: alle Admins, Org-Admins und Teamer:innen
   // der eigenen Organisation.
   //
-  // Warum eine eigene Route: Das Chat-Modal hat die Team-Mitglieder bisher ueber
+  // Warum eine eigene Route: Das Chat-Modal hat die Team-Mitglieder bisher über
   // /admin/users geladen — die Route ist aber mit requireOrgAdmin geschuetzt.
   // Teamer:innen liefen dort in einen 403, den das Frontend still verschluckt hat;
   // ihre Kontaktliste blieb dadurch leer und sie konnten niemanden aus dem Team
-  // anschreiben. Diese Route gibt bewusst NUR die fuer einen Chat noetigen Felder
-  // heraus (keine E-Mail, keine Login-Zeitpunkte) und ist fuer das ganze Team offen.
+  // anschreiben. Diese Route gibt bewusst NUR die für einen Chat noetigen Felder
+  // heraus (keine E-Mail, keine Login-Zeitpunkte) und ist für das ganze Team offen.
   router.get('/team-contacts', verifyTokenRBAC, async (req, res) => {
     try {
       if (!['admin', 'org_admin', 'teamer'].includes(req.user.role_name)) {
@@ -198,7 +198,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       // Teamer:innen nur mit gemeinsamem Jahrgang (KONFI_SIEHT_TEAMMITGLIED),
       // Leitung und Admins immer. is_active/deleted_at filtern wie in
       // /team-contacts — die Route tat das bisher als einzige nicht.
-      // username wird nicht mehr ausgeliefert: fuer einen Chat unnoetig, und
+      // username wird nicht mehr ausgeliefert: für einen Chat unnötig, und
       // es ist der Login-Name.
       const query = `
         SELECT u.id, u.display_name
@@ -224,13 +224,13 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   // Darf der Anfragende diesen Konfi anschreiben?
   //
   // Leitung (org_admin) und Admins erreichen alle Konfis der Organisation.
-  // Teamer:innen NUR die Konfis ihrer zugewiesenen Jahrgaenge — dieselbe
+  // Teamer:innen NUR die Konfis ihrer zugewiesenen Jahrgänge — dieselbe
   // Regel, die checkJahrgangAccess (rbac.js:280) im Rest des Systems
   // durchsetzt. Der Chat war die einzige Stelle ohne diese Grenze: eine
   // Teamer:in konnte jeden Konfi der Organisation direkt anschreiben, auch
   // ohne einen einzigen zugewiesenen Jahrgang (Nutzerhinweis 23.08.2026).
   //
-  // Gibt null zurueck, wenn erlaubt, sonst eine Fehlermeldung.
+  // Gibt null zurück, wenn erlaubt, sonst eine Fehlermeldung.
   const konfiAnschreibenVerboten = async (anfragender, zielUserId) => {
     if (anfragender.role_name !== 'teamer') return null;
 
@@ -258,7 +258,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   //
   // Grundregel: Teilnehmerschaft. Leitung und Admins (type 'admin', also
   // admin/org_admin/super_admin) duerfen zusaetzlich gemeindeweit — sie
-  // verantworten die Gemeinde und muessen im Zweifel eingreifen koennen.
+  // verantworten die Gemeinde und müssen im Zweifel eingreifen können.
   //
   // AUSNAHME Direktchats: Ein Zweiergespraech ist privat. Wer nicht selbst
   // darin steht, kommt nicht hinein — auch die Leitung nicht (Entscheidung
@@ -266,10 +266,10 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   // Gemeinde lesen und exportieren; betroffen waren vor allem Gespraeche
   // zwischen Teamer:innen und Konfis, also gerade die vertraulichen.
   //
-  // Gruppen-, Jahrgangs-, Team- und Termin-Chats bleiben fuer die Leitung
-  // offen: Das sind gemeinschaftliche Raeume, keine Zwiegespraeche.
+  // Gruppen-, Jahrgangs-, Team- und Termin-Chats bleiben für die Leitung
+  // offen: Das sind gemeinschaftliche Räume, keine Zwiegespraeche.
   //
-  // Gibt true zurueck, wenn der Zugriff erlaubt ist.
+  // Gibt true zurück, wenn der Zugriff erlaubt ist.
   const darfRaumOeffnen = async (roomId, user) => {
     const { rows: [raum] } = await db.query(
       'SELECT type FROM chat_rooms WHERE id = $1 AND organization_id = $2',
@@ -290,15 +290,15 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   // Gegenrichtung: Darf dieser Konfi dieses Team-Mitglied anschreiben?
   //
   // Symmetrisch zu konfiAnschreibenVerboten: Teamer:innen und Konfis erreichen
-  // einander nur ueber einen gemeinsamen Jahrgang. Leitung (org_admin), Admins
-  // und Super-Admins sind fuer jeden Konfi der Gemeinde erreichbar — sie
+  // einander nur über einen gemeinsamen Jahrgang. Leitung (org_admin), Admins
+  // und Super-Admins sind für jeden Konfi der Gemeinde erreichbar — sie
   // verantworten die Gemeinde als Ganzes und haben im uebrigen System ohnehin
-  // Zugriff auf alle Jahrgaenge (rbac.js:331).
+  // Zugriff auf alle Jahrgänge (rbac.js:331).
   //
-  // Eine Teamer:in OHNE Jahrgangszuweisung ist fuer Konfis unsichtbar. Das ist
+  // Eine Teamer:in OHNE Jahrgangszuweisung ist für Konfis unsichtbar. Das ist
   // die konsequente Gegenseite: sie erreicht ihrerseits keinen einzigen Konfi.
   //
-  // Gibt null zurueck, wenn erlaubt, sonst eine Fehlermeldung.
+  // Gibt null zurück, wenn erlaubt, sonst eine Fehlermeldung.
   const teamAnschreibenVerboten = async (konfiUserId, zielRolle, zielUserId) => {
     if (zielRolle !== 'teamer') return null;
 
@@ -318,13 +318,13 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
     return null;
   };
 
-  // SQL-Bedingung fuer Kontaktlisten von Konfis: Team-Mitglied ist erreichbar,
+  // SQL-Bedingung für Kontaktlisten von Konfis: Team-Mitglied ist erreichbar,
   // wenn es NICHT teamer ist (Leitung/Admin -> immer) ODER einen gemeinsamen
   // Jahrgang mit dem Konfi hat. $1 muss die User-ID des Konfis sein.
   //
   // Bewusst als geteilter Baustein: Die Regel gilt an drei Stellen (/admins,
   // /available-users, POST /direct). Stand sie mehrfach im Code, blieb bisher
-  // regelmaessig eine Stelle zurueck.
+  // regelmäßig eine Stelle zurück.
   const KONFI_SIEHT_TEAMMITGLIED = `(
     r.name <> 'teamer'
     OR EXISTS (
@@ -346,9 +346,9 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       }
 
       // user_type des Ziels IMMER serverseitig aus der echten Rolle ableiten —
-      // NIE vom Client uebernehmen. Der Client schickte fuer Teamer:innen
+      // NIE vom Client uebernehmen. Der Client schickte für Teamer:innen
       // 'admin' (die API kannte nur admin|konfi), der Raum wurde dann mit
-      // user_type='admin' gespeichert und war fuer den Teamer (liest als
+      // user_type='admin' gespeichert und war für den Teamer (liest als
       // 'teamer') unsichtbar. Gleiche Fehlerklasse wie Migration 098.
       const { rows: [validUser] } = await db.query(
         `SELECT u.id, u.display_name, r.name AS role_name
@@ -365,7 +365,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.status(403).json({ error: 'Konfis können keine anderen Konfis anschreiben' });
       }
 
-      // Konfis erreichen Teamer:innen nur ueber einen gemeinsamen Jahrgang.
+      // Konfis erreichen Teamer:innen nur über einen gemeinsamen Jahrgang.
       // Leitung, Admins und Super-Admins erreichen sie immer.
       if (req.user.type === 'konfi') {
         const verboten = await teamAnschreibenVerboten(req.user.id, validUser.role_name, target_user_id);
@@ -374,7 +374,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         }
       }
 
-      // Teamer:innen erreichen nur Konfis ihrer zugewiesenen Jahrgaenge.
+      // Teamer:innen erreichen nur Konfis ihrer zugewiesenen Jahrgänge.
       if (validUser.role_name === 'konfi') {
         const verboten = await konfiAnschreibenVerboten(req.user, target_user_id);
         if (verboten) {
@@ -486,7 +486,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           );
 
           // Konfi-zu-Konfi bleibt verboten — auch hier. Geprueft wurde oben nur
-          // der Raum-TYP ('direct'), nicht WEN eine Konfi eintraegt. Ueber
+          // der Raum-TYP ('direct'), nicht WEN eine Konfi eintraegt. Über
           // participants liess sich POST /direct (das die Kombination korrekt
           // mit 403 ablehnt) damit umgehen und ein Raum mit einer anderen Konfi
           // anlegen (Audit 22.08.2026). Der Kommentar oben versprach das bereits.
@@ -498,7 +498,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           }
 
           // Gegenrichtung: Ein Konfi darf hier keine fremdjahrgaengige
-          // Teamer:in eintragen — sonst waere die Regel in POST /direct auf
+          // Teamer:in eintragen — sonst wäre die Regel in POST /direct auf
           // demselben Weg zu umgehen wie beim Konfi-zu-Konfi-Fall oben.
           if (req.user.type === 'konfi') {
             for (const pu of partUsers) {
@@ -510,8 +510,8 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
             }
           }
 
-          // Jahrgangsgrenze fuer Teamer:innen — wie in POST /direct. Ohne diese
-          // Pruefung waere die Regel dort wertlos: ein Raum mit demselben Konfi
+          // Jahrgangsgrenze für Teamer:innen — wie in POST /direct. Ohne diese
+          // Prüfung wäre die Regel dort wertlos: ein Raum mit demselben Konfi
           // liesse sich hier einfach anlegen (gleiche Umgehung wie beim
           // Konfi-zu-Konfi-Fall oben).
           if (req.user.role_name === 'teamer') {
@@ -577,8 +577,8 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       
       // Mitgliedschafts-Sync (Jahrgangs- + Team-Chat) NICHT mehr bei jedem Aufruf:
       // Das war Schreibarbeit auf dem meistgerufenen Lesepfad (25-35 Queries bei
-      // einem Org-Admin mit 5 Jahrgaengen, Hauptursache p95 ~919ms). Jetzt laeuft
-      // der Sync pro User hoechstens 1x je TTL (10 Min) — neuer User ohne
+      // einem Org-Admin mit 5 Jahrgängen, Hauptursache p95 ~919ms). Jetzt läuft
+      // der Sync pro User höchstens 1x je TTL (10 Min) — neuer User ohne
       // Cache-Eintrag synct beim ERSTEN Aufruf sofort; Jahrgang-/Rollenwechsel
       // korrigieren die Mitgliedschaft ohnehin INLINE in ihren Handlern
       // (Details: utils/chatSyncCache.js).
@@ -587,8 +587,8 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
 
         // Jahrgangs-Chat-Mitgliedschaft synchronisieren (zentral, user_type-konsistent).
         // - konfi: genau sein Jahrgang
-        // - teamer/admin: alle zugewiesenen Jahrgaenge
-        // - org_admin: alle Jahrgaenge der Org (immer drin)
+        // - teamer/admin: alle zugewiesenen Jahrgänge
+        // - org_admin: alle Jahrgänge der Org (immer drin)
         try {
           let jahrgangIds = [];
           if (userType === 'konfi') {
@@ -604,7 +604,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
             );
             jahrgangIds = rows.map(r => r.id);
           } else {
-            // admin / teamer -> zugewiesene Jahrgaenge
+            // admin / teamer -> zugewiesene Jahrgänge
             const { rows } = await db.query(
               'SELECT jahrgang_id FROM user_jahrgang_assignments WHERE user_id = $1 AND can_view = true',
               [userId]
@@ -619,7 +619,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           console.error('Jahrgangs-Chat-Sync beim Laden der Raeume fehlgeschlagen:', syncErr.message);
         }
 
-        // Team-Chat-Mitgliedschaft synchronisieren (nur fuer Team-Mitglieder, nie Konfis).
+        // Team-Chat-Mitgliedschaft synchronisieren (nur für Team-Mitglieder, nie Konfis).
         // Stellt sicher, dass der "Team"-Chat existiert und alle Admins/Teamer drin sind.
         if (userType !== 'konfi') {
           try {
@@ -630,7 +630,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           }
         }
 
-        // Nur bei fehlerfreiem Sync merken — sonst beim naechsten Aufruf erneut versuchen.
+        // Nur bei fehlerfreiem Sync merken — sonst beim nächsten Aufruf erneut versuchen.
         if (syncOk) {
           chatSyncCache.markSynced(organizationId, userId);
         }
@@ -649,11 +649,11 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
               FROM chat_participants cp
               WHERE cp.room_id = r.id
           ) as participant_count,
-          -- Rolle des Direktchat-Partners fuer Chat-Farbe/Filter. Drei moegliche
+          -- Rolle des Direktchat-Partners für Chat-Farbe/Filter. Drei moegliche
           -- Werte: 'admin' (Leitung/Admin), 'teamer', 'konfi'.
           dm.partner_user_type,
           -- Reiner Team-Gruppenchat: KEIN Konfi unter den Teilnehmern. Vorher
-          -- wurde auf user_type <> 'admin' geprueft — eine Gruppe mit
+          -- wurde auf user_type <> 'admin' geprüft — eine Gruppe mit
           -- Teamer:innen galt dadurch nie als Team-Gruppe, obwohl
           -- chat_participants.user_type 'teamer' als eigenen Wert fuehrt.
           (
@@ -841,7 +841,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
 
       const { rows: messages } = await db.query(messagesQuery, queryParams);
 
-      // Bulk-Query fuer Reactions und Poll-Votes (statt N+1 Queries)
+      // Bulk-Query für Reactions und Poll-Votes (statt N+1 Queries)
       const messageIds = messages.map(m => m.id);
 
       let processedMessages = [];
@@ -900,8 +900,8 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
             msg.anonymous = Boolean(msg.anonymous);
             msg.exclusive_options = Boolean(msg.exclusive_options);
             // Votes anreichern: voter_name -> user_name. Bei anonymen Umfragen die
-            // Namen NICHT ausliefern (nur Zaehlung), damit niemand sehen kann, wer
-            // was gewaehlt hat.
+            // Namen NICHT ausliefern (nur Zählung), damit niemand sehen kann, wer
+            // was gewählt hat.
             const rawVotes = votesMap[msg.poll_id] || [];
             msg.votes = stimmenAufbereiten(rawVotes, msg.anonymous, userId, userType);
           }
@@ -909,7 +909,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         });
       }
       
-      // Bei ?after ist die Query bereits ASC sortiert, kein reverse noetig
+      // Bei ?after ist die Query bereits ASC sortiert, kein reverse nötig
       res.json(after ? processedMessages : processedMessages.reverse());
     } catch (err) {
  console.error('Database error in GET /rooms/:roomId/messages:', req.params.roomId, err);
@@ -946,7 +946,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         }
       }
 
-      // Check access (mit Organisations-Pruefung)
+      // Check access (mit Organisations-Prüfung)
       if (!await darfRaumOeffnen(roomId, req.user)) {
         return res.status(403).json({ error: 'Zugriff verweigert' });
       }
@@ -959,7 +959,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           return res.status(400).json({ error: 'Datei konnte nicht gelesen werden' });
         }
 
-        // Magic-Bytes-Pruefung direkt auf dem Buffer (echte Dateitypen erzwingen).
+        // Magic-Bytes-Prüfung direkt auf dem Buffer (echte Dateitypen erzwingen).
         // Text-Formate (txt/csv) haben keine Magic Bytes -> Header vertrauen.
         const textMimes = ['text/plain', 'text/csv'];
         if (!textMimes.includes(req.file.mimetype)) {
@@ -1150,7 +1150,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       const userType = req.user.type;
       const organizationId = req.user.organization_id;
 
-      // Zugriff pruefen (mit Organisations-Pruefung)
+      // Zugriff prüfen (mit Organisations-Prüfung)
       if (!await darfRaumOeffnen(roomId, req.user)) {
         return res.status(403).json({ error: 'Zugriff verweigert' });
       }
@@ -1176,13 +1176,13 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   // Get room participants
   // ============================================================
   // Chat-Export (nur Leitung): kompletter Verlauf eines Raums als
-  // lesbarer Text oder JSON. Anlass: Inhalte aus Konfi-Chats fuer die
+  // lesbarer Text oder JSON. Anlass: Inhalte aus Konfi-Chats für die
   // Gottesdienst-Vorbereitung aufbereiten (Nutzerwunsch 22.08.2026).
   //
-  // Bewusst NUR fuer admin/org_admin — nicht fuer Teamer:innen und Konfis.
+  // Bewusst NUR für admin/org_admin — nicht für Teamer:innen und Konfis.
   // Ein Export nimmt den gesamten Verlauf aus dem Kontext des Chats heraus;
   // wer ihn ziehen darf, sollte dieselbe Verantwortung tragen wie beim
-  // Loeschen eines Raums.
+  // Löschen eines Raums.
   // ============================================================
   router.get('/rooms/:roomId/export', verifyTokenRBAC, async (req, res) => {
     try {
@@ -1195,7 +1195,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       const roleName = req.user.role_name;
       const organizationId = req.user.organization_id;
 
-      // Rollenpruefung: nur Leitung. type ist fuer alles ausser konfi/teamer
+      // Rollenpruefung: nur Leitung. type ist für alles außer konfi/teamer
       // 'admin', deshalb zusaetzlich der Rollenname.
       const istLeitung = userType === 'admin'
         && ['admin', 'org_admin', 'super_admin'].includes(roleName);
@@ -1203,7 +1203,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.status(403).json({ error: 'Nur die Leitung darf Chats exportieren' });
       }
 
-      // Raum muss zur eigenen Organisation gehoeren — 404 statt 403, damit der
+      // Raum muss zur eigenen Organisation gehören — 404 statt 403, damit der
       // Export nicht verraet, ob eine fremde Raum-ID existiert.
       const { rows: [room] } = await db.query(
         `SELECT cr.id, cr.name, cr.type, cr.created_at, j.name AS jahrgang_name
@@ -1217,7 +1217,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       }
 
       // Ein Zweiergespraech laesst sich nur exportieren, wenn man selbst darin
-      // steht — sonst waere der Schutz aus darfRaumOeffnen hier zu umgehen und
+      // steht — sonst wäre der Schutz aus darfRaumOeffnen hier zu umgehen und
       // der ganze Verlauf als Textdatei abrufbar (Entscheidung 23.08.2026).
       if (!await darfRaumOeffnen(roomId, req.user)) {
         return res.status(403).json({ error: 'Private Zweiergespräche lassen sich nicht exportieren' });
@@ -1272,7 +1272,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         }, null, 2));
       }
 
-      // Textformat: fuer Menschen zum Lesen und Weiterverarbeiten.
+      // Textformat: für Menschen zum Lesen und Weiterverarbeiten.
       const zeit = (d) => new Date(d).toLocaleString('de-DE', {
         day: '2-digit', month: '2-digit', year: 'numeric',
         hour: '2-digit', minute: '2-digit'
@@ -1340,7 +1340,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       const userType = req.user.type;
       const organizationId = req.user.organization_id;
 
-      // Check if user has access to this room (mit Organisations-Pruefung)
+      // Check if user has access to this room (mit Organisations-Prüfung)
       if (!await darfRaumOeffnen(roomId, req.user)) {
         return res.status(403).json({ error: 'Zugriff verweigert' });
       }
@@ -1355,7 +1355,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         u.role_title,
         r.name as role_name,
         r.display_name as role_display_name,
-        -- Jahrgang nur fuer echte Konfis; Team-Mitglieder (admin/teamer) haben keinen.
+        -- Jahrgang nur für echte Konfis; Team-Mitglieder (admin/teamer) haben keinen.
         CASE
           WHEN cp.user_type = 'konfi' THEN kp.jahrgang_id
           ELSE NULL
@@ -1519,7 +1519,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
 
       // Event-Chats sind an die Event-Teilnahme gekoppelt: Konfis verlassen sie
       // NICHT manuell, sondern ausschliesslich durch Abmelden vom Event. Sonst
-      // waere man am Event angemeldet, aber nicht im Chat.
+      // wäre man am Event angemeldet, aber nicht im Chat.
       if (userType === 'konfi' && room.event_id) {
         return res.status(400).json({ error: 'Event-Chats werden über die Event-Abmeldung verlassen, nicht direkt.' });
       }
@@ -1561,13 +1561,13 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       return res.status(401).json({ error: 'Kein Token vorhanden' });
     }
     
-    // Token von Hand pruefen, weil die Middleware den Query-Parameter nicht
-    // unterstuetzt (Video-Elemente koennen keine Header senden).
+    // Token von Hand prüfen, weil die Middleware den Query-Parameter nicht
+    // unterstuetzt (Video-Elemente können keine Header senden).
     //
     // Frueher stand hier schlicht `req.user = decoded`. Zwei Folgen
     // (Audit 22.08.2026):
-    //  1. Die Angaben im Token galten ungeprueft fuer die volle Laufzeit —
-    //     15 Minuten ohne Abgleich mit der Datenbank, auch fuer geloeschte
+    //  1. Die Angaben im Token galten ungeprueft für die volle Laufzeit —
+    //     15 Minuten ohne Abgleich mit der Datenbank, auch für geloeschte
     //     oder gesperrte Konten.
     //  2. organization_id kam aus dem Token und war damit immer die
     //     PRIMAER-Organisation. Wer per Umschalter in einer Zweit-Gemeinde
@@ -1593,7 +1593,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       }
 
       // Soft-Revoke wie in rbac.js: nach einem Passwortwechsel ausgestellte
-      // Sperren muessen auch hier greifen.
+      // Sperren müssen auch hier greifen.
       if (nutzer.token_invalidated_at) {
         const ausgestellt = decoded.iat;
         const gesperrtAb = Math.floor(new Date(nutzer.token_invalidated_at).getTime() / 1000);
@@ -1691,8 +1691,8 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           }
         }
 
-        // Datei lesen und (falls verschluesselt) entschluesseln, dann senden.
-        // Alte Klartext-Dateien werden vom decryptBuffer unveraendert
+        // Datei lesen und (falls verschlüsselt) entschluesseln, dann senden.
+        // Alte Klartext-Dateien werden vom decryptBuffer unverändert
         // durchgereicht (Abwaertskompatibilitaet bis zur Migration).
         const fileBuffer = await fs.promises.readFile(filePath);
         let mediaBuffer;
@@ -1851,7 +1851,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       // WebSocket + Push: Umfrage wie eine normale Nachricht live verteilen.
       // Ohne dies sehen Teilnehmer die Umfrage erst nach Reload/Fallback-Poll
       // (Audit Achse 2, Luecke 10a). Wir bauen ein message-Objekt in derselben
-      // Struktur, die GET /messages fuer Poll-Nachrichten liefert (message_type
+      // Struktur, die GET /messages für Poll-Nachrichten liefert (message_type
       // 'poll', options als Array, Poll-Metadaten, leere votes), damit der
       // ChatRoom-newMessage-Handler die Umfrage sofort rendern kann.
       if (io) {
@@ -1884,7 +1884,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
             reactions: []
           };
 
-          // An den Raum (offene Chats) UND an alle Teilnehmer-User-Raeume
+          // An den Raum (offene Chats) UND an alle Teilnehmer-User-Räume
           // (Badge/Overview), exakt nach dem Muster des Nachrichten-Handlers.
           io.to(`room_${roomId}`).emit('newMessage', {
             roomId: parseInt(roomId),
@@ -2058,7 +2058,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
 
       if (existingVote) {
         // If already voted for this option, remove the vote (toggle off).
-        // Gilt auch fuer exklusive Umfragen: die eigene Wahl wieder freigeben.
+        // Gilt auch für exklusive Umfragen: die eigene Wahl wieder freigeben.
         await client.query(
           "DELETE FROM chat_poll_votes WHERE poll_id = $1 AND user_id = $2 AND user_type = $3 AND option_index = $4",
           [actualPollId, userId, userType, option_index]
@@ -2154,7 +2154,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       }
       
       // Eigene Nachricht: immer. Fremde Nachricht: nur Leitung/Admins, und nur
-      // in Raeumen, die sie ueberhaupt oeffnen duerfen — in einem fremden
+      // in Räumen, die sie überhaupt oeffnen duerfen — in einem fremden
       // Zweiergespraech also nicht (Entscheidung 23.08.2026).
       const eigene = message.user_id == userId && message.user_type === userType;
       const canDelete = eigene || await darfRaumOeffnen(message.room_id, req.user);
@@ -2182,12 +2182,12 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
     }
   });
 
-  // Abstimmen ueber die Nachrichten-ID (aeltere Adressform).
+  // Abstimmen über die Nachrichten-ID (aeltere Adressform).
   //
   // Diese Route hatte eine eigene, unvollstaendige Kopie der Abstimmlogik:
   // exclusive_options wurde komplett ignoriert, es gab weder den FOR-UPDATE-Lock
-  // noch die Belegt-Pruefung. Bei einer exklusiven Umfrage ("wer macht welche
-  // Tour?") konnten hierueber mehrere Personen dieselbe Option belegen, waehrend
+  // noch die Belegt-Prüfung. Bei einer exklusiven Umfrage ("wer macht welche
+  // Tour?") konnten hierueber mehrere Personen dieselbe Option belegen, während
   // /polls/:pollId/vote das korrekt mit 409 ablehnt (Befund 23.08.2026).
   //
   // Statt die Logik zu duplizieren, wird an den einen Handler weitergereicht:
@@ -2236,8 +2236,8 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       
       // Direct chats can be deleted by admins (no restrictions)
 
-      // Teilnehmer VOR dem Loeschen einsammeln, damit wir sie danach ueber die
-      // entfernte Raumliste informieren koennen (nach dem Delete sind die
+      // Teilnehmer VOR dem Löschen einsammeln, damit wir sie danach über die
+      // entfernte Raumliste informieren können (nach dem Delete sind die
       // Teilnehmerzeilen weg).
       const { rows: participantsBeforeDelete } = await db.query(
         'SELECT user_id, user_type FROM chat_participants WHERE room_id = $1',
@@ -2430,7 +2430,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
     const organizationId = req.user.organization_id;
 
     try {
-      // Zugriff pruefen: Nachricht muss in der eigenen Organisation liegen
+      // Zugriff prüfen: Nachricht muss in der eigenen Organisation liegen
       const messageQuery = `
         SELECT m.room_id, cr.organization_id
         FROM chat_messages m
@@ -2446,7 +2446,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       }
 
       // Dieselbe Regel wie beim Lesen der Nachrichten selbst: Teilnehmerschaft,
-      // Leitung zusaetzlich gemeindeweit — ausser in fremden Zweiergespraechen.
+      // Leitung zusaetzlich gemeindeweit — außer in fremden Zweiergespraechen.
       if (!await darfRaumOeffnen(message.room_id, req.user)) {
         return res.status(403).json({ error: 'Zugriff verweigert' });
       }
@@ -2497,7 +2497,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       // Alle Admins, Org-Admins und Teamer der Organisation
       // role_title ist die selbst gewählte Rollenbezeichnung (z.B. "Pastorin", "Teamerin")
       // Teamer:innen nur mit gemeinsamem Jahrgang, Leitung/Admins immer
-      // (KONFI_SIEHT_TEAMMITGLIED). type kam bisher hart als 'admin' zurueck —
+      // (KONFI_SIEHT_TEAMMITGLIED). type kam bisher hart als 'admin' zurück —
       // damit landeten Teamer:innen im Konfi-Modal als Admin, obwohl
       // chat_participants sie als 'teamer' fuehrt.
       const adminQuery = `

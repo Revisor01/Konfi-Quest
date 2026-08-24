@@ -65,9 +65,9 @@ interface EventsViewProps {
   onJahrgangChange?: (jahrgangId: number | null) => void;
   searchText?: string;
   onSearchChange?: (text: string) => void;
-  // Fuer Card-Modal-Optik (Sheet ueber der Seite statt Vollbild).
+  // Für Card-Modal-Optik (Sheet über der Seite statt Vollbild).
   presentingElement?: HTMLElement | null;
-  // Im iPad-Split-View aktuell rechts geoeffnetes Event (fuer Highlighting).
+  // Im iPad-Split-View aktuell rechts geoeffnetes Event (für Highlighting).
   selectedEventId?: number | null;
   // Zusaetzlicher Inhalt DIREKT UNTER dem SectionHeader (z.B. das Events|Aktivitäten-
   // Hauptsegment der Page, analog zum Konfi-Pattern in KonfiEventsPage).
@@ -157,7 +157,7 @@ const EventsView: React.FC<EventsViewProps> = ({
   };
 
   const getAverageParticipation = () => {
-    // Nur Events mit echter Kapazitaet (max_participants > 0) zaehlen in die
+    // Nur Events mit echter Kapazität (max_participants > 0) zählen in die
     // Auslastungs-Statistik. Unbegrenzte Events (max_participants = 0) wuerden
     // sonst eine Division durch 0 (-> NaN) verursachen.
     const capped = events.filter(event => (event.max_participants || 0) > 0);
@@ -175,8 +175,8 @@ const EventsView: React.FC<EventsViewProps> = ({
         preset="events"
         onInfo={() => presentLegend({ presentingElement: presentingElement || undefined })}
         stats={[
-          // Stats GLOBAL ueber alle Events zaehlen (eventCounts von der Page),
-          // NICHT nur ueber die Events des aktiven Tabs (`events`) — sonst waren
+          // Stats GLOBAL über alle Events zählen (eventCounts von der Page),
+          // NICHT nur über die Events des aktiven Tabs (`events`) — sonst waren
           // zwei der drei Werte je nach Tab faelschlich 0.
           // Die drei Kacheln entsprechen genau den drei Reitern und schalten
           // beim Antippen dorthin.
@@ -286,7 +286,7 @@ const EventsView: React.FC<EventsViewProps> = ({
         {filteredAndSortedEvents.map((event, index) => {
               const isPastEvent = new Date(event.event_date) < new Date();
               const isCancelled = event.registration_status === 'cancelled';
-              // Konfirmations-Event ueber das is_konfirmation-Flag (Phase 117, Migration 091).
+              // Konfirmations-Event über das is_konfirmation-Flag (Phase 117, Migration 091).
               const isKonfirmationEvent = event.is_konfirmation === true;
               const hasUnprocessedBookings = isPastEvent && event.registered_count > 0 && event.pending_bookings_count && event.pending_bookings_count > 0;
               const isFullyProcessed = isPastEvent && event.registered_count > 0 && (!event.pending_bookings_count || event.pending_bookings_count === 0);
@@ -297,7 +297,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                 if (isCancelled) return '#dc3545';
                 if (event.mandatory && isPastEvent && hasUnprocessedBookings) return '#007aff';
                 if (event.mandatory && isPastEvent) return '#6c757d';
-                // KEIN pauschales Rot fuer Pflicht-Events: Pflicht ist ein eigenes
+                // KEIN pauschales Rot für Pflicht-Events: Pflicht ist ein eigenes
                 // Badge. Die Farbe richtet sich nach dem Anmeldestatus (offen=gruen,
                 // nur-Warteliste=orange, ausgebucht-ohne-Warteliste=rot) — wie im
                 // Detail. Sonst war jedes offene Pflicht-Event faelschlich rot.
@@ -306,7 +306,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                 if (hasUnprocessedBookings) return '#007aff'; // Blau für Verbuchen
                 if (isPastEvent) return '#6c757d';
                 // Pflicht-Events haben registration_status='mandatory' (Backend) — sie
-                // werden wie 'open' nach Kapazitaet gefaerbt (sonst fielen sie unten
+                // werden wie 'open' nach Kapazität gefaerbt (sonst fielen sie unten
                 // auf Rot durch). Anmeldbar = open ODER mandatory.
                 const regStatus = calculateRegistrationStatus(event);
                 const isAnmeldbar = regStatus === 'open' || regStatus === 'mandatory';

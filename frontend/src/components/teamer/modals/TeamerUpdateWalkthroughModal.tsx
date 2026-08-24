@@ -6,7 +6,7 @@ interface TeamerUpdateWalkthroughModalProps {
   onClose: () => void;
 }
 
-// Kurzvariante des Update-Walkthroughs 2.0 fuer Teamer:innen — was neu ist und
+// Kurzvariante des Update-Walkthroughs 2.0 für Teamer:innen — was neu ist und
 // wo es liegt. Gleicher Stil wie die normale Teamer-Tour.
 const SLIDES: OnboardingSlide[] = [
   {

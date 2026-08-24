@@ -62,9 +62,9 @@ describe('Konfi Routes', () => {
     });
 
     it('Struktur-Kontrakt: alle Kern-Felder der (parallelisierten) Response vorhanden', async () => {
-      // Absicherung fuer die Query-Parallelisierung (Audit Achse 4, Fund 8):
+      // Absicherung für die Query-Parallelisierung (Audit Achse 4, Fund 8):
       // Nach dem Umbau auf Promise.all muss die Response-Struktur byte-identisch
-      // bleiben. Dieser Test prueft, dass JEDES Feld aus den parallelisierten
+      // bleiben. Dieser Test prüft, dass JEDES Feld aus den parallelisierten
       // Queries weiterhin an derselben Stelle steht.
       const res = await request(app)
         .get('/api/konfi/dashboard')
@@ -133,7 +133,7 @@ describe('Konfi Routes', () => {
       expect(before.status).toBe(200);
       expect(Number(before.body.total_in_jahrgang)).toBe(2);
 
-      // konfi2 soft-loeschen
+      // konfi2 soft-löschen
       await db.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [USERS.konfi2.id]);
 
       const after = await request(app)
@@ -428,7 +428,7 @@ describe('Konfi Routes', () => {
         .set('Authorization', `Bearer ${konfiToken}`);
 
       expect(res.status).toBe(200);
-      // Seed hat bonus_points fuer konfi1 (3 Punkte Sonderpunkte Weihnachten)
+      // Seed hat bonus_points für konfi1 (3 Punkte Sonderpunkte Weihnachten)
       const bonusEntries = res.body.history.filter(h => h.source_type === 'bonus');
       expect(bonusEntries.length).toBeGreaterThanOrEqual(1);
       expect(bonusEntries[0].title).toBe('Sonderpunkte Weihnachten');
@@ -454,7 +454,7 @@ describe('Konfi Routes', () => {
 
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
-      // Org 1 hat 4 Aktivitaeten
+      // Org 1 hat 4 Aktivitäten
       expect(res.body.length).toBe(4);
       const names = res.body.map(a => a.name);
       expect(names).toContain('Sonntagsgottesdienst');
@@ -467,7 +467,7 @@ describe('Konfi Routes', () => {
         .set('Authorization', `Bearer ${konfi3Token}`);
 
       expect(res.status).toBe(200);
-      // Org 2 hat 2 Aktivitaeten
+      // Org 2 hat 2 Aktivitäten
       expect(res.body.length).toBe(2);
     });
   });
@@ -494,7 +494,7 @@ describe('Konfi Routes', () => {
       expect(res.status).toBe(403);
     });
 
-    // Befund 24.08.2026: Die Gesamtzahl zaehlte die Teamer-Abzeichen mit. In
+    // Befund 24.08.2026: Die Gesamtzahl zählte die Teamer-Abzeichen mit. In
     // Org 1 standen dadurch 56 statt 50, der Fortschritt wirkte dauerhaft
     // schlechter als er war.
     it('Die Gesamtzahl zaehlt nur Konfi-Abzeichen, keine Teamer-Abzeichen', async () => {
@@ -516,10 +516,10 @@ describe('Konfi Routes', () => {
       expect(nachher.body.stats.totalVisible).toBe(zuvor);
     });
 
-    // Befund 24.08.2026: Die Konfi-Abfrage verlangte is_active auch fuer bereits
+    // Befund 24.08.2026: Die Konfi-Abfrage verlangte is_active auch für bereits
     // VERDIENTE Abzeichen. Schaltet die Leitung eines ab (Saisonende), verlor
     // der Konfi es aus der Ansicht, obwohl der Eintrag bestehen blieb — und die
-    // Zaehler auf dem Dashboard zaehlten es weiter mit.
+    // Zähler auf dem Dashboard zählten es weiter mit.
     it('Ein verdientes Abzeichen bleibt sichtbar, auch wenn es abgeschaltet wird', async () => {
       const { rows: [badge] } = await db.query(
         `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
@@ -590,7 +590,7 @@ describe('Konfi Routes', () => {
   // GET /api/konfi/badges - Progress-Berechnung (Prozent-Bug-Fix, Phase 116-02)
   // ================================================================
   describe('GET /api/konfi/badges Progress-Berechnung', () => {
-    // Hilfsfunktion: Badge fuer Org 1, target_role=konfi anlegen
+    // Hilfsfunktion: Badge für Org 1, target_role=konfi anlegen
     async function createKonfiBadge(criteriaType, criteriaValue, criteriaExtra = null) {
       const { rows: [badge] } = await db.query(
         `INSERT INTO custom_badges (name, criteria_type, criteria_value, criteria_extra, icon, color, organization_id, target_role, is_active)
@@ -618,7 +618,7 @@ describe('Konfi Routes', () => {
       }
     }
 
-    // Hilfsfunktion: Aktivitaet mit exaktem Namen anlegen und konfi1 N-mal zuweisen
+    // Hilfsfunktion: Aktivität mit exaktem Namen anlegen und konfi1 N-mal zuweisen
     async function createActivityWithCompletions(name, count) {
       const { rows: [act] } = await db.query(
         `INSERT INTO activities (name, points, type, organization_id, target_role)
@@ -731,7 +731,7 @@ describe('Konfi Routes', () => {
     });
 
     it('activity_count: zaehlt Aktivitaeten + besuchte Events (konsistent zur Wertung)', async () => {
-      // 2 Aktivitaeten + 3 besuchte Events -> current=5
+      // 2 Aktivitäten + 3 besuchte Events -> current=5
       await createActivityWithCompletions('Akt-Count', 2);
       await createEventsWithPresence(3, false, true);
       const badgeId = await createKonfiBadge('activity_count', 10);
@@ -749,7 +749,7 @@ describe('Konfi Routes', () => {
     // ================================================================
     // Preload-Refactor: vormals per-Badge-Queries, jetzt Vorab-Aggregate.
     // Deckt die umgestellten Cases ab + die zwei Org-Filter-Angleichungen
-    // (unique_activities/bonus_points zaehlten vorher org-uebergreifend,
+    // (unique_activities/bonus_points zählten vorher org-uebergreifend,
     // die Wertung in badges.js aber org-gefiltert).
     // ================================================================
 
@@ -769,7 +769,7 @@ describe('Konfi Routes', () => {
 
     it('unique_activities: Aktivitaeten fremder Organisationen zaehlen NICHT (Org-Filter wie Wertung)', async () => {
       await createActivityWithCompletions('Unique-Eigene-Org', 1);
-      // Aktivitaet + Erledigung in Org 2 fuer denselben User (Multi-Org-Szenario)
+      // Aktivität + Erledigung in Org 2 für denselben User (Multi-Org-Szenario)
       const { rows: [fremdAct] } = await db.query(
         `INSERT INTO activities (name, points, type, organization_id, target_role)
          VALUES ('Unique-Fremde-Org', 1, 'gottesdienst', $1, 'konfi') RETURNING id`,
@@ -788,13 +788,13 @@ describe('Konfi Routes', () => {
 
       const badge = findBadge(res.body, badgeId);
       expect(badge).toBeDefined();
-      // Vor dem Fix: 2 (org-uebergreifend). Wertung zaehlt 1 -> Progress muss 1 zeigen.
+      // Vor dem Fix: 2 (org-uebergreifend). Wertung zählt 1 -> Progress muss 1 zeigen.
       expect(badge.progress.current).toBe(1);
     });
 
     it('bonus_points: summiert Punkte (3+4=7), Fremd-Org-Bonus zaehlt nicht', async () => {
-      // Seed legt fuer konfi1 bereits Bonuspunkte an (seed.js Schritt 14) —
-      // fuer deterministische Summen erst aufraeumen.
+      // Seed legt für konfi1 bereits Bonuspunkte an (seed.js Schritt 14) —
+      // für deterministische Summen erst aufräumen.
       await db.query('DELETE FROM bonus_points WHERE konfi_id = $1', [USERS.konfi1.id]);
       await db.query(
         `INSERT INTO bonus_points (konfi_id, points, type, description, admin_id, organization_id)
@@ -988,7 +988,7 @@ describe('Konfi Routes', () => {
       expect(evt.name).toBe(EVENTS.gottesdienstEvent.name);
       expect(evt.registration_status).toBeDefined();
       expect(evt.registered_count).toBeDefined();
-      // COUNT() liefert bigint -> pg gibt Strings zurueck (Shape unveraendert zur alten Query)
+      // COUNT() liefert bigint -> pg gibt Strings zurück (Shape unverändert zur alten Query)
       expect(Number(evt.waitlist_count)).toBe(0);
       expect(Number(evt.teamer_count)).toBe(0);
       expect(evt.is_registered).toBe(false);
@@ -1023,7 +1023,7 @@ describe('Konfi Routes', () => {
   // verweist.
   describe('DELETE /api/konfi/events/:id/register — Event-Chat', () => {
     // Hilfsfunktion: Termin weit genug in der Zukunft (die Abmeldung ist nur
-    // bis zwei Tage vorher moeglich), dazu ein Chat und eine Buchung.
+    // bis zwei Tage vorher möglich), dazu ein Chat und eine Buchung.
     const terminMitChat = async () => {
       const zukunft = new Date();
       zukunft.setDate(zukunft.getDate() + 20);

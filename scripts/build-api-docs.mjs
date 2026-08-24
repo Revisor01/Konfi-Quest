@@ -5,12 +5,12 @@
  * Aufruf:  node scripts/build-api-docs.mjs [zielverzeichnis]
  * Standard-Ziel: frontend/public/docs/api/index.html
  *
- * Warum public/: Vite kopiert alles aus public/ unveraendert nach dist/, und
+ * Warum public/: Vite kopiert alles aus public/ unverändert nach dist/, und
  * dist/ landet im nginx-Container (frontend/Dockerfile). Die Seite ist damit
  * ohne weiteren Schritt Teil des Deployments.
  *
- * Gestaltung folgt der App (CLAUDE.md): Bebas Neue fuer Ueberschriften,
- * Plus Jakarta Sans fuer Text, Bereichsfarben aus theme/variables.css.
+ * Gestaltung folgt der App (CLAUDE.md): Bebas Neue für Ueberschriften,
+ * Plus Jakarta Sans für Text, Bereichsfarben aus theme/variables.css.
  */
 import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -141,9 +141,9 @@ async function main() {
 
   const gesamt = bereiche.reduce((n, b) => n + b.routen.length, 0);
   // Datum NICHT aus der Uhr: Die CI erzeugt die Seite neu und vergleicht sie
-  // per git diff mit der eingecheckten. Ein Tageswechsel haette den Vergleich
-  // rot gemacht, ohne dass sich etwas geaendert hat. Quelle ist deshalb der
-  // Zeitpunkt der letzten Aenderung an den Quellen (git), mit der Uhr als
+  // per git diff mit der eingecheckten. Ein Tageswechsel hätte den Vergleich
+  // rot gemacht, ohne dass sich etwas geändert hat. Quelle ist deshalb der
+  // Zeitpunkt der letzten Änderung an den Quellen (git), mit der Uhr als
   // Rueckfall, falls git nicht verfuegbar ist.
 
   const nav = bereiche.map((b) =>

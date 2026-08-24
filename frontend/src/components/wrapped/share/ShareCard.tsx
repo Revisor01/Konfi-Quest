@@ -106,7 +106,7 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
 
         // Challenge-Momente: BEWUSST nur Text und Challenge-Titel. Fotos, Audio
         // und Video der Konfis werden NIE in ein Teilen-Bild eingebettet
-        // (Datenschutz — das Bild verlaesst die App).
+        // (Datenschutz — das Bild verlässt die App).
         case 'challenge-momente': {
           if (!konfi) return null;
           const momente = (konfi.slides.challenge_momente || []).slice(0, 4);

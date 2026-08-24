@@ -5,17 +5,17 @@
  *
  * Aufruf:  node scripts/build-handbuch.mjs [zielverzeichnis]
  *
- * Warum public/: Vite kopiert alles aus public/ unveraendert nach dist/, und
+ * Warum public/: Vite kopiert alles aus public/ unverändert nach dist/, und
  * dist/ landet im nginx-Container. Die Seite ist damit ohne weiteren Schritt
  * Teil des Deployments — dasselbe Vorgehen wie bei der API-Referenz
  * (build-api-docs.mjs), inklusive des Grundes: Der Docker-Kontext ist
  * ./frontend, docs/ und scripts/ liegen darueber und sind im Build nicht
  * erreichbar. Deshalb wird das Ergebnis eingecheckt.
  *
- * Gestaltung folgt der App (CLAUDE.md): Bebas Neue fuer Ueberschriften,
- * Plus Jakarta Sans fuer Text, Bereichsfarben aus theme/variables.css.
+ * Gestaltung folgt der App (CLAUDE.md): Bebas Neue für Ueberschriften,
+ * Plus Jakarta Sans für Text, Bereichsfarben aus theme/variables.css.
  *
- * Kein Markdown-Paket: Die Quellen sind bewusst einfach gehalten (Ueberschrift,
+ * Kein Markdown-Paket: Die Quellen sind bewusst einfach gehalten (Überschrift,
  * Absatz, Liste, Tabelle, Zitat, Betonung, Code). Ein eigener kleiner Renderer
  * spart eine Abhaengigkeit, die sonst nur hier gebraucht wuerde.
  */
@@ -26,10 +26,10 @@ import { fileURLToPath } from 'node:url';
 const WURZEL = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const QUELLE = join(WURZEL, 'docs', 'handbuch');
 // Ein Verzeichnis, nicht eine Datei: Seit dem 24.08.2026 bekommt jedes Kapitel
-// eine eigene Seite. Zwoelf Kapitel in einem Dokument waren fuer Lesende zu
+// eine eigene Seite. Zwoelf Kapitel in einem Dokument waren für Lesende zu
 // viel — man fand nicht wieder, wo man war, und konnte sich auf nichts
 // beziehen. Jetzt: nummerierte Kapitel, eine Seite pro Kapitel, unten
-// vor/zurueck, davor eine Uebersicht (index.html).
+// vor/zurück, davor eine Übersicht (index.html).
 const ZIEL_VERZ = process.argv[2]
   ? resolve(process.argv[2])
   : join(WURZEL, 'frontend', 'public', 'docs');
@@ -45,7 +45,7 @@ function e(text) {
  * Inline-Auszeichnung: Code wird zuerst herausgeloest, damit darin nichts
  * weiter ersetzt wird. Der Platzhalter klammert mit einem Steuerzeichen —
  * eine blosse Ziffer wuerde echte Zahlen im Text zerstoeren ("zwischen 5
- * und 10 Punkte" haette dort einen Code-Platzhalter gesehen).
+ * und 10 Punkte" hätte dort einen Code-Platzhalter gesehen).
  */
 const PLATZ = String.fromCharCode(0);
 
@@ -63,7 +63,7 @@ function inline(text) {
   return s;
 }
 
-/** Sehr kleiner Markdown-Renderer fuer die hier genutzten Konstrukte. */
+/** Sehr kleiner Markdown-Renderer für die hier genutzten Konstrukte. */
 function markdown(quelle) {
   const zeilen = quelle.split('\n');
   const teile = [];
@@ -105,7 +105,7 @@ function markdown(quelle) {
       continue;
     }
 
-    // Codeblock (```): fuer Ablauf-Schemata. Ohne diesen Zweig landeten die
+    // Codeblock (```): für Ablauf-Schemata. Ohne diesen Zweig landeten die
     // Zeilen als Absatz im HTML — mitsamt sichtbarer Backticks.
     if (z.trim().startsWith('```')) {
       i++;
@@ -256,7 +256,7 @@ tbody tr:last-child td { border-bottom:none; }
 .kapitel-zaehler { font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:0 0 6px; }
 .kapitel-nr { font-size:1.5rem; color:var(--kapitel); }
 
-/* Blaettern unten: die eigentliche Neuerung. Wer ein Kapitel gelesen hat,
+/* Blättern unten: die eigentliche Neuerung. Wer ein Kapitel gelesen hat,
    soll nicht in die Navigation zurueckmuessen. */
 .blaettern { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:44px; padding-top:26px; border-top:1px solid var(--rand); }
 .blatt { display:flex; flex-direction:column; gap:3px; padding:14px 16px; border:1px solid var(--rand); border-radius:11px; background:var(--flaeche); text-decoration:none; color:var(--text); }
@@ -290,7 +290,7 @@ function main() {
 
   // Durchnummerieren in Dateireihenfolge. Die Nummer ist das, worauf sich
   // Lesende untereinander beziehen ("steht in Kapitel 7") — sie steht deshalb
-  // in der Navigation, in der Ueberschrift und im Seitentitel.
+  // in der Navigation, in der Überschrift und im Seitentitel.
   const seiten = dateien.map((d, i) => ({ ...lesen(d), nr: i + 1, datei: `${lesen(d).id}.html` }));
 
   const gruppen = [];
@@ -387,7 +387,7 @@ ${blaettern}`;
     }), 'utf8');
   }
 
-  // --- Uebersicht ---
+  // --- Übersicht ---
   const karten = seiten.map((s) => `      <li>
         <a class="karte" href="./${e(s.datei)}" style="--kapitel:${e(s.farbe)}">
           <span class="karte-nr">${s.nr}</span>

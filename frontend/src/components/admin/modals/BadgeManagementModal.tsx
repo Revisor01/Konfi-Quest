@@ -80,8 +80,8 @@ interface BadgeManagementModalProps {
   targetRole?: 'konfi' | 'teamer';
   onClose: () => void;
   onSuccess: () => void;
-  // Meldet den "ungespeicherte Aenderungen"-Stand nach aussen, damit die
-  // praesentierende Seite ueber canDismiss auch Swipe/Backdrop-Schliessen abfangen kann.
+  // Meldet den "ungespeicherte Änderungen"-Stand nach aussen, damit die
+  // praesentierende Seite über canDismiss auch Swipe/Backdrop-Schliessen abfangen kann.
   onDirtyChange?: (dirty: boolean) => void;
 }
 
@@ -100,12 +100,12 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
   const doClose = () => onClose();
 
-  // Schliessen anstossen. Die "ungespeicherte Aenderungen"-Nachfrage laeuft zentral
-  // ueber canDismiss der praesentierenden Seite (faengt X-Button, Swipe UND Backdrop
+  // Schliessen anstossen. Die "ungespeicherte Änderungen"-Nachfrage läuft zentral
+  // über canDismiss der praesentierenden Seite (faengt X-Button, Swipe UND Backdrop
   // einheitlich ab) -> hier keine zweite Abfrage.
   const handleClose = () => { doClose(); };
 
-  // isDirty-Stand nach aussen melden (fuer canDismiss der praesentierenden Seite).
+  // isDirty-Stand nach aussen melden (für canDismiss der praesentierenden Seite).
   useEffect(() => { onDirtyChange?.(isDirty); }, [isDirty, onDirtyChange]);
 
   // Punkte-basierte Kriterien - bei Teamer ausblenden
@@ -161,9 +161,9 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
     try {
       setInitialDataLoading(true);
 
-      // Aktivitaeten NUR aus der Zielgruppe des Badges: ein Teamer-Badge darf
-      // nicht auf Konfi-Aktivitaeten verweisen (und umgekehrt) — die Wertung in
-      // badges.js zaehlt ohnehin nur die passende target_role.
+      // Aktivitäten NUR aus der Zielgruppe des Badges: ein Teamer-Badge darf
+      // nicht auf Konfi-Aktivitäten verweisen (und umgekehrt) — die Wertung in
+      // badges.js zählt ohnehin nur die passende target_role.
       const activitiesResponse = await api.get(`/admin/activities?target_role=${targetRole}`);
       setActivities(Array.isArray(activitiesResponse.data) ? activitiesResponse.data : []);
 
@@ -213,11 +213,11 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           extra.weeks = Math.round(extra.days / 7) || 1;
         }
 
-        // Aktivitaeten: DB speichert NAMEN, die Auswahl arbeitet mit IDs.
-        // Ohne diese Rueckuebersetzung stuende die Auswahl beim Bearbeiten
-        // leer da und ein Speichern wuerde die Angabe loeschen.
+        // Aktivitäten: DB speichert NAMEN, die Auswahl arbeitet mit IDs.
+        // Ohne diese Rueckuebersetzung stünde die Auswahl beim Bearbeiten
+        // leer da und ein Speichern wuerde die Angabe löschen.
         // activity_id/activity_ids werden weiter gelesen: Badges aus der Zeit
-        // vor dem Fix (23.08.2026) tragen noch die alten Schluessel.
+        // vor dem Fix (23.08.2026) tragen noch die alten Schlüssel.
         if (badge.criteria_type === 'specific_activity' && !extra.activity_id) {
           const treffer = activities.find(a => a.name === extra.required_activity_name);
           if (treffer) extra.activity_id = treffer.id;
@@ -240,7 +240,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           is_hidden: badge.is_hidden !== undefined ? badge.is_hidden : false,
           // MUSS ein Hex-Wert bleiben: der Wert landet in <input type="color">
           // und wird so in der Datenbank gespeichert. Eine CSS-Variable ist
-          // dort ungueltig (Regression vom 11.08., wieder zurueckgenommen).
+          // dort ungueltig (Regression vom 11.08., wieder zurückgenommen).
           color: badge.color || CRITERIA_FALLBACK_COLOR,
           target_role: badge.target_role || targetRole
         };
@@ -262,11 +262,11 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       return;
     }
 
-    // guard() wirft, wenn bereits ein Speichern laeuft ("Aktion laeuft
+    // guard() wirft, wenn bereits ein Speichern läuft ("Aktion läuft
     // bereits"). Ohne dieses catch flog der Fehler ungefangen nach oben —
     // und weil setLoading(true) INNERHALB des Guards steht, blieb loading
-    // dann auf true haengen. Der X-Button ist mit disabled={loading}
-    // verknuepft und liess sich danach nicht mehr druecken, waehrend der
+    // dann auf true hängen. Der X-Button ist mit disabled={loading}
+    // verknuepft und liess sich danach nicht mehr druecken, während der
     // Swipe weiter ging (User-Hinweis 12.08.).
     try {
       await guard(async () => {
@@ -277,9 +277,9 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       
       // Die Auswahl arbeitet intern mit IDs, gespeichert werden aber NAMEN:
       // Das Backend wertet `required_activity_name` bzw. `required_activities`
-      // ueber activities.name aus (badges.js:216,227). Vorher schrieb das
+      // über activities.name aus (badges.js:216,227). Vorher schrieb das
       // Formular activity_id/activity_ids — diese Badges wurden nie vergeben,
-      // weil der Schluessel serverseitig gar nicht gelesen wird
+      // weil der Schlüssel serverseitig gar nicht gelesen wird
       // (Befund 23.08.2026, in Produktion nachgewiesen).
       switch (formData.criteria_type) {
         case 'specific_activity': {
@@ -349,7 +349,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
       setIsDirty(false);
       // WICHTIG: Dirty-Stand SYNCHRON nach aussen melden, bevor onSuccess() das Modal
-      // ueber dismiss()/canDismiss schliesst. Sonst sieht canDismiss noch isDirty=true,
+      // über dismiss()/canDismiss schließt. Sonst sieht canDismiss noch isDirty=true,
       // blockiert das programmatische Schliessen -> Modal bleibt offen, erneutes
       // Speichern legt das Badge mehrfach an.
       onDirtyChange?.(false);
@@ -367,7 +367,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
     }
   };
 
-  // Gottesdienst/Gemeinde gibt es NUR bei Konfis — bei Teamer-Aktivitaeten ist
+  // Gottesdienst/Gemeinde gibt es NUR bei Konfis — bei Teamer-Aktivitäten ist
   // `type` bedeutungslos und wuerde als Untertitel nur in die Irre fuehren
   // (User-Hinweis 11.08.). Deshalb dort neutral in der Teamer-Farbe.
   const isTeamerBadge = targetRole === 'teamer';
@@ -384,8 +384,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   const activitySubtitle = (activity: Activity): string | null =>
     isTeamerBadge ? null : activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde';
 
-  // Auswahl wird wie ueberall sonst ueber die Bereichsklasse dargestellt
-  // (eingefaerbter Hintergrund), NICHT ueber ein Haekchen — siehe die
+  // Auswahl wird wie ueberall sonst über die Bereichsklasse dargestellt
+  // (eingefaerbter Hintergrund), NICHT über ein Haekchen — siehe die
   // Kategorie- und Jahrgangs-Auswahl im Event-Formular (User-Hinweis 11.08.).
   const activityItemClass = (activity: Activity, isSelected: boolean): string => {
     const bereich = isTeamerBadge
@@ -954,7 +954,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                             opacity: loading ? 0.6 : 1,
                             marginBottom: '0',
                             // Jeder Kriterientyp hat seine eigene Farbe (dieselbe,
-                            // die das fertige Badge traegt) — vorher war die
+                            // die das fertige Badge trägt) — vorher war die
                             // ganze Liste pauschal orange.
                             borderLeftColor: typColor,
                             background: isSelected ? `${typColor}14` : undefined

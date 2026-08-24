@@ -124,7 +124,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
         } catch (err: any) {
           // Ohne diese Meldung blieb das Modal bei einer Ablehnung des Servers
           // einfach offen stehen — etwa wenn die Punktart im Jahrgang
-          // abgeschaltet ist. Fuer die Leitung sah das so aus, als passiere
+          // abgeschaltet ist. Für die Leitung sah das so aus, als passiere
           // nichts (Befund 24.08.2026).
           console.error('Error saving activity:', err);
           setError(err?.response?.data?.error || 'Aktivität konnte nicht gespeichert werden');
@@ -232,7 +232,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {[...activities]
                   .sort((a, b) => {
-                    // NULL-SICHER: Teamer-Aktivitaeten duerfen type = NULL haben
+                    // NULL-SICHER: Teamer-Aktivitäten duerfen type = NULL haben
                     // ("Konfi-Wochenende", "Konfi-Freizeit begleitet"). Ein
                     // direktes a.type.localeCompare() warf dort sofort, der
                     // Render brach ab und die ErrorBoundary loggte aus — das war

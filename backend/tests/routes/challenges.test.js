@@ -1,4 +1,4 @@
-// Integrationstests fuer Challenges 2.0 (backend/routes/challenges.js).
+// Integrationstests für Challenges 2.0 (backend/routes/challenges.js).
 //
 // Schwerpunkt liegt auf der zentralen Sichtbarkeitslogik (PUBLIC_SUBMISSION_SQL /
 // isSubmissionPublic), weil Galerie, Datei-Auslieferung und Export alle darauf
@@ -11,8 +11,8 @@ const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, ORGS, JAHRGAENGE } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 
-// Echte gueltige 1x1-PNG (file-type verlangt valide Struktur fuer die
-// Magic-Bytes-Pruefung in challenges.js).
+// Echte gueltige 1x1-PNG (file-type verlangt valide Struktur für die
+// Magic-Bytes-Prüfung in challenges.js).
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
 
 describe('Challenges Routes', () => {
@@ -44,7 +44,7 @@ describe('Challenges Routes', () => {
   });
 
   // ================================================================
-  // Helper: Challenge direkt in der DB anlegen (volle Kontrolle ueber
+  // Helper: Challenge direkt in der DB anlegen (volle Kontrolle über
   // starts_at/visibility/moderated, die per API nach Start gesperrt sind).
   // ================================================================
   async function createChallenge(overrides = {}) {
@@ -90,7 +90,7 @@ describe('Challenges Routes', () => {
     );
   }
 
-  // Submission direkt in der DB anlegen (volle Kontrolle ueber moderation_status,
+  // Submission direkt in der DB anlegen (volle Kontrolle über moderation_status,
   // konfi_consent — Kombinationen, die per API nicht in dieser Form erreichbar sind).
   async function createSubmission(overrides = {}) {
     const opts = {
@@ -123,7 +123,7 @@ describe('Challenges Routes', () => {
 
   // Baut eine aktive Challenge (jahrgang1, Org 1) + eine Submission von konfi2
   // (damit konfi1 sie in der Galerie als FREMDEN Beitrag sehen kann) und liefert
-  // beide IDs zurueck.
+  // beide IDs zurück.
   async function setupChallengeWithForeignSubmission(challengeOverrides, submissionOverrides) {
     const challenge = await createChallenge(challengeOverrides);
     await assignJahrgang(challenge.id, JAHRGAENGE.jahrgang1.id);
@@ -238,7 +238,7 @@ describe('Challenges Routes', () => {
     });
 
     it('moderated=false -> Submission bereits als approved erfasst, ist sofort in der Galerie sichtbar', async () => {
-      // moderated=false gilt fuer die Challenge; die Submission wird ueber die
+      // moderated=false gilt für die Challenge; die Submission wird über die
       // API angelegt (Auto-Approve, siehe Block 2), hier direkt approved geseedet.
       const { challenge } = await setupChallengeWithForeignSubmission(
         { visibility: 'public', moderated: false },
@@ -459,8 +459,8 @@ describe('Challenges Routes', () => {
     });
 
     it('Konfi sieht keine Challenges fremder Jahrgaenge (nicht in GET /konfi)', async () => {
-      // Challenge fuer Org 1, aber NUR jahrgang2 zugeordnet (jahrgang2 ist Org 2 -
-      // in derselben Org waere das ein zweiter Jahrgang; hier reicht: konfi1 ist
+      // Challenge für Org 1, aber NUR jahrgang2 zugeordnet (jahrgang2 ist Org 2 -
+      // in derselben Org wäre das ein zweiter Jahrgang; hier reicht: konfi1 ist
       // jahrgang1, die Challenge ist keinem Jahrgang von konfi1 zugeordnet).
       const { rows: [ownJahrgang] } = await db.query(
         `INSERT INTO jahrgaenge (name, organization_id, confirmation_date) VALUES ('Anderer Jahrgang', $1, '2026-05-01') RETURNING id`,
@@ -859,8 +859,8 @@ describe('Challenges Routes', () => {
         .post(`/api/challenges/konfi/${challenge.id}/submissions`)
         .set('Authorization', `Bearer ${konfi1Token}`)
         .send({ media_type: 'text', text_content: 'Zu frueh' });
-      // Route liefert 404 fuer is_draft, aber fuer "gestartet in der Zukunft, kein Draft"
-      // greift die isActive()-Pruefung -> 409.
+      // Route liefert 404 für is_draft, aber für "gestartet in der Zukunft, kein Draft"
+      // greift die isActive()-Prüfung -> 409.
       expect(res.status).toBe(409);
     });
 
@@ -910,7 +910,7 @@ describe('Challenges Routes', () => {
       const submission = await createSubmission({ challenge_id: challenge.id, user_id: USERS.konfi2.id });
 
       // Die Sperre greift bereits vor jedem Eigentuems-Check: Ergebnis ist
-      // fuer eigene und fremde Submissions identisch (403), es gibt keinen
+      // für eigene und fremde Submissions identisch (403), es gibt keinen
       // Unterschied mehr zu verraten.
       const res = await request(app)
         .delete(`/api/challenges/konfi/submissions/${submission.id}`)
@@ -1069,7 +1069,7 @@ describe('Challenges Routes', () => {
         { konfi_consent: null, moderation_status: 'approved' }
       );
 
-      // Vorher: in der Galerie fuer konfi1 sichtbar
+      // Vorher: in der Galerie für konfi1 sichtbar
       let galleryRes = await request(app)
         .get(`/api/challenges/konfi/${challenge.id}`)
         .set('Authorization', `Bearer ${konfi1Token}`);
@@ -1418,7 +1418,7 @@ describe('Challenges Routes', () => {
     });
 
     it("audience='nur_team' ist ORG-WEIT: Teamer OHNE Jahrgangs-Zuordnung darf einreichen", async () => {
-      // Bewusst KEIN assignJahrgang — 'nur_team' laeuft ueber die Rolle.
+      // Bewusst KEIN assignJahrgang — 'nur_team' läuft über die Rolle.
       const challenge = await createChallenge({ audience: 'nur_team' });
 
       const res = await request(app)

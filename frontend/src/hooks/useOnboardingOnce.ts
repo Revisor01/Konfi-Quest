@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useIonViewDidEnter } from '@ionic/react';
 import { Preferences } from '@capacitor/preferences';
 
-// Flag-Praefix des Update-Walkthroughs 2.0 (Challenges + Umzug der Antraege in
+// Flag-Praefix des Update-Walkthroughs 2.0 (Challenges + Umzug der Anträge in
 // den Events-Tab). Rollenuebergreifend derselbe Praefix, der Account-Suffix
 // trennt die Nutzer.
 export const UPDATE_WALKTHROUGH_KEY = 'update_walkthrough_2_0_gesehen';
@@ -10,7 +10,7 @@ export const UPDATE_WALKTHROUGH_KEY = 'update_walkthrough_2_0_gesehen';
 // Zeigt eine Onboarding-Tour EINMAL pro Account (geraetelokal via Preferences).
 // `keyPrefix` trennt die Rollen (z.B. 'admin_onboarding_seen'), `userId` macht
 // den Marker accountspezifisch. Rueckgabe: [show, close] — `show` rendert das
-// Tour-Overlay, `close` schliesst es. Der Marker wird beim ERSTEN Anzeigen
+// Tour-Overlay, `close` schließt es. Der Marker wird beim ERSTEN Anzeigen
 // gesetzt (nicht erst beim Schliessen), damit die Tour nicht doppelt aufpoppt.
 export function useOnboardingOnce(keyPrefix: string, userId?: number | string): [boolean, () => void] {
   const [show, setShow] = useState(false);
@@ -34,7 +34,7 @@ export interface OnboardingWithUpdate {
   // Normale Rollen-Tour (erster Start eines Accounts).
   showOnboarding: boolean;
   closeOnboarding: () => void;
-  // Einmaliger Update-Hinweis, NUR fuer Bestandsnutzer.
+  // Einmaliger Update-Hinweis, NUR für Bestandsnutzer.
   showUpdateWalkthrough: boolean;
   closeUpdateWalkthrough: () => void;
 }

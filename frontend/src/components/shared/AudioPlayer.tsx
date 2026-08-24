@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { IonIcon } from '@ionic/react';
 import { play, pause } from 'ionicons/icons';
 
-// Gestylter, kompakter Audio-Player fuer Challenge-Beitraege (Galerie, eigene
+// Gestylter, kompakter Audio-Player für Challenge-Beitraege (Galerie, eigene
 // Beitraege, Aufnahme-Vorschau). Ersetzt den nackten <audio controls>-Player.
 //
 // iOS-WebView-Falle: "duration" kann direkt nach dem Setzen von src erstmal
@@ -16,7 +16,7 @@ import { play, pause } from 'ionicons/icons';
 // auf iOS verfaelscht. Deshalb wird die Seekbar komplett selbst gestylt: der
 // abgespielte Teil bekommt per Gradient-Overlay (Inline-Style) die echte
 // Challenge-Farbe (color-Prop, Default var(--app-color-challenges)), der
-// Rest-Track bleibt neutral grau. Der Thumb wird ueber die CSS-Variable
+// Rest-Track bleibt neutral grau. Der Thumb wird über die CSS-Variable
 // --app-audio-seek-color in derselben Farbe gehalten (siehe .app-audio-seekbar
 // in variables.css).
 
@@ -29,7 +29,7 @@ const formatTime = (seconds: number): string => {
 
 interface AudioPlayerProps {
   src: string;
-  /** Akzentfarbe fuer den Play/Pause-Button. */
+  /** Akzentfarbe für den Play/Pause-Button. */
   color?: string;
 }
 

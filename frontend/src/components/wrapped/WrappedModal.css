@@ -330,7 +330,7 @@ ion-modal.wrapped-modal-fullscreen {
   animation: wrapped-number-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-/* Animation-Delays fuer gestaffeltes Einblenden */
+/* Animation-Delays für gestaffeltes Einblenden */
 .wrapped-slide--active .wrapped-anim-delay-1 {
   animation-delay: 0.2s;
 }

@@ -8,9 +8,9 @@ import { disconnectWebSocket } from './websocket';
 import { networkMonitor } from './networkMonitor';
 import { BaseUser } from '../types/user';
 
-// Race Condition User-Wechsel: Backend POST /device-token loescht alte Tokens
+// Race Condition User-Wechsel: Backend POST /device-token löscht alte Tokens
 // (anderer user_id mit gleichem device_token) automatisch VOR dem INSERT.
-// Frontend-seitig wird logout() mit await ausgefuehrt und blockiert bis DELETE durch ist.
+// Frontend-seitig wird logout() mit await ausgeführt und blockiert bis DELETE durch ist.
 export const loginWithAutoDetection = async (username: string, password: string): Promise<BaseUser> => {
 
   try {
@@ -42,7 +42,7 @@ export const loginWithAutoDetection = async (username: string, password: string)
 let logoutInProgress = false;
 
 // Erlaubt anderen Modulen (api.ts 401-Interceptor) zu erkennen, dass gerade ein
-// BEWUSSTER Logout laeuft — dann darf ein 401 NICHT als "Sitzung abgelaufen"
+// BEWUSSTER Logout läuft — dann darf ein 401 NICHT als "Sitzung abgelaufen"
 // gemeldet werden (der User loggt sich ja absichtlich aus).
 export const isLoggingOut = (): boolean => logoutInProgress;
 
@@ -53,28 +53,28 @@ export const logout = async (): Promise<void> => {
   }
   
   logoutInProgress = true;
-  // 401-Interceptor (api.ts) soll waehrend des bewussten Logouts NICHT
-  // "Sitzung abgelaufen" melden — der Push-Cleanup-Call nach clearAuth() laeuft
+  // 401-Interceptor (api.ts) soll während des bewussten Logouts NICHT
+  // "Sitzung abgelaufen" melden — der Push-Cleanup-Call nach clearAuth() läuft
   // ohne Token und liefert sonst einen 401.
   setLoggingOut(true);
 
   // WICHTIG: Der LOKALE Logout (clearAuth) darf NIEMALS an haengenden
-  // Netzwerk-Calls scheitern (frueher blieb der User offline nach Reload
+  // Netzwerk-Calls scheitern (früher blieb der User offline nach Reload
   // eingeloggt). Alle Server-Calls laufen mit hartem Timeout.
   //
   // REIHENFOLGE: Push-Token-DELETE MUSS VOR clearAuth laufen — der Endpoint
   // verlangt Auth (verifyTokenRBAC). Frueher lief er danach, bekam 401, der
   // Token blieb registriert und der alte Account erhielt nach Account-Wechsel
-  // weiter Pushes auf diesem Geraet. Best-effort: schlaegt der DELETE fehl
-  // (offline/Timeout), haengt POST /device-token den Token beim naechsten
+  // weiter Pushes auf diesem Geraet. Best-effort: schlägt der DELETE fehl
+  // (offline/Timeout), hängt POST /device-token den Token beim nächsten
   // Login serverseitig an den neuen User um.
 
   // Helper: Request mit hartem Timeout, damit ein falsch-positives isOnline
-  // (Network-Plugin meldet sporadisch connected trotz keiner Verbindung) nicht haengt.
+  // (Network-Plugin meldet sporadisch connected trotz keiner Verbindung) nicht hängt.
   const withTimeout = <T>(p: Promise<T>, ms = 4000): Promise<T | undefined> =>
     Promise.race([p, new Promise<undefined>((resolve) => setTimeout(() => resolve(undefined), ms))]);
 
-  // Push-Token serverseitig loeschen (best-effort, mit Timeout, NOCH authentifiziert)
+  // Push-Token serverseitig löschen (best-effort, mit Timeout, NOCH authentifiziert)
   let deviceId: string | undefined;
   try {
     if (Capacitor.isNativePlatform()) {
@@ -102,10 +102,10 @@ export const logout = async (): Promise<void> => {
   try {
     const refreshToken = getRefreshToken();
     if (refreshToken && networkMonitor.isOnline) {
-      // Geraetedaten mitschicken: Die Logout-Route loescht den Push-Token in
+      // Geraetedaten mitschicken: Die Logout-Route löscht den Push-Token in
       // derselben Anfrage. Der DELETE oben ist best-effort (Timeout, nur
-      // online, nur mit ermittelter Geraete-ID) — schlaegt er fehl, bekam das
-      // Geraet weiter Pushes fuer das abgemeldete Konto (Bericht einer
+      // online, nur mit ermittelter Geraete-ID) — schlägt er fehl, bekam das
+      // Geraet weiter Pushes für das abgemeldete Konto (Bericht einer
       // Teamer:in auf iOS, 22.08.2026). Zwei Wege auf dasselbe Ziel, ohne
       // zusaetzlichen Roundtrip.
       await withTimeout(api.post('/auth/logout', {
@@ -118,12 +118,12 @@ export const logout = async (): Promise<void> => {
     console.warn('Serverseitiges Token-Revoke fehlgeschlagen (wird lokal geloescht):', error);
   }
 
-  // GARANTIERT: lokale Auth-Daten loeschen. Ab hier ist der User ausgeloggt.
+  // GARANTIERT: lokale Auth-Daten löschen. Ab hier ist der User ausgeloggt.
   await clearAuth();
 
   // Socket trennen: ohne das ueberlebt die Verbindung den Logout und der
-  // naechste angemeldete Nutzer sitzt weiter in den Raeumen des vorherigen
-  // (Fund Audit 22.08.2026). Der Aufbau erfolgt beim naechsten Login neu.
+  // nächste angemeldete Nutzer sitzt weiter in den Räumen des vorherigen
+  // (Fund Audit 22.08.2026). Der Aufbau erfolgt beim nächsten Login neu.
   try {
     disconnectWebSocket();
   } catch (error) {
@@ -135,7 +135,7 @@ export const logout = async (): Promise<void> => {
     console.warn('Cache-Clear beim Logout fehlgeschlagen:', error);
   }
 
-  // Device ID NICHT loeschen - bleibt fuer das Geraet persistent
+  // Device ID NICHT löschen - bleibt für das Geraet persistent
   logoutInProgress = false;
   // Kurz verzoegert zuruecksetzen, damit auch ein knapp nachlaufender 401 vom
   // Push-Cleanup noch unterdrueckt wird, dann wieder normales Verhalten.

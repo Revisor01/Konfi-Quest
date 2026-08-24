@@ -1,19 +1,19 @@
 // Challenges 2.0 — der erste NICHT-quantitative Baustein der App.
 //
 // Konfis produzieren eigene Deutungen (Foto, Text, Audio, Video, Link) statt
-// Teilnahme zu zaehlen. Bewusst OHNE Punkte, OHNE custom_badges-Eintrag, OHNE
-// Zaehler/Ranglisten in der Konfi-Sicht.
+// Teilnahme zu zählen. Bewusst OHNE Punkte, OHNE custom_badges-Eintrag, OHNE
+// Zähler/Ranglisten in der Konfi-Sicht.
 //
 // Kernentscheidungen:
 // - Status wird ABGELEITET (is_draft / starts_at / ends_at), nie gespeichert.
 // - Abzeichen wird ABGELEITET (EXISTS eigene Submission); badge_icon/badge_name
-//   haengen an der Challenge.
-// - Sichtbarkeit laeuft ueber GENAU EINE Helper-Funktion (isSubmissionPublic /
+//   hängen an der Challenge.
+// - Sichtbarkeit läuft über GENAU EINE Helper-Funktion (isSubmissionPublic /
 //   PUBLIC_SUBMISSION_SQL), damit Galerie, Datei-Auslieferung und Export nie
-//   auseinanderlaufen koennen.
+//   auseinanderlaufen können.
 // - visibility / moderated / starts_at / allowed_media sind nach Start
 //   unveraenderbar (Konsens-Integritaet): ein Konfi, der unter Zusage X
-//   eingereicht hat, darf nicht nachtraeglich unter Zusage Y veroeffentlicht
+//   eingereicht hat, darf nicht nachträglich unter Zusage Y veroeffentlicht
 //   werden.
 
 const express = require('express');
@@ -52,7 +52,7 @@ function maySubmit(roleName, audience) {
   return false;
 }
 
-// Content-Type-Mapping fuer die Datei-Auslieferung (inkl. Audio/Video, weil
+// Content-Type-Mapping für die Datei-Auslieferung (inkl. Audio/Video, weil
 // Challenges anders als Chat-Bilder auch Sprachaufnahmen und Clips tragen).
 const CONTENT_TYPES = {
   '.jpg': 'image/jpeg',
@@ -78,16 +78,16 @@ const CONTENT_TYPES = {
 // ZENTRALE SICHTBARKEITSLOGIK — hier und NUR hier
 // ====================================================================
 //
-// Eine Submission ist oeffentlich sichtbar (Galerie fuer die Konfis der
-// zugewiesenen Jahrgaenge) genau dann, wenn:
+// Eine Submission ist oeffentlich sichtbar (Galerie für die Konfis der
+// zugewiesenen Jahrgänge) genau dann, wenn:
 //   moderation_status = 'approved'
 //   UND ( challenge.visibility = 'public'
 //         ODER (challenge.visibility = 'konfi_choice'
 //               UND konfi_consent IN ('publish','anonymous')) )
 //
-// visibility='private' ist NIE oeffentlich. 'hidden' schlaegt alles.
+// visibility='private' ist NIE oeffentlich. 'hidden' schlägt alles.
 //
-// SQL-Fragment fuer Queries, die challenges als "c" und challenge_submissions
+// SQL-Fragment für Queries, die challenges als "c" und challenge_submissions
 // als "cs" aliasieren.
 const PUBLIC_SUBMISSION_SQL = `(
   cs.moderation_status = 'approved'
@@ -97,7 +97,7 @@ const PUBLIC_SUBMISSION_SQL = `(
   )
 )`;
 
-// JS-Pendant fuer bereits geladene Zeilen (Datei-Auslieferung, Export).
+// JS-Pendant für bereits geladene Zeilen (Datei-Auslieferung, Export).
 // Erwartet { moderation_status, konfi_consent } und { visibility }.
 function isSubmissionPublic(submission, challenge) {
   if (!submission || !challenge) return false;
@@ -135,7 +135,7 @@ function isActive(challenge, now = new Date()) {
   return deriveStatus(challenge, now) === 'active';
 }
 
-// allowed_media kommt je nach Treiber als Array oder als JSON-String zurueck.
+// allowed_media kommt je nach Treiber als Array oder als JSON-String zurück.
 function parseAllowedMedia(raw) {
   if (Array.isArray(raw)) return raw;
   if (typeof raw === 'string') {
@@ -157,7 +157,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   // HELFER
   // ====================================================================
 
-  // Jahrgaenge, die ein Teamer sehen darf. org_admin/admin sehen alles (null =
+  // Jahrgänge, die ein Teamer sehen darf. org_admin/admin sehen alles (null =
   // keine Einschraenkung), super_admin nichts (leeres Array).
   function viewableJahrgangIds(req) {
     if (req.user.role_name === 'super_admin') return [];
@@ -168,12 +168,12 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   // Darf die Leitung diese Challenge sehen/bearbeiten? org_admin/admin immer,
   // Teamer nur wenn mindestens ein zugewiesener Jahrgang zugeordnet ist.
   // Challenges ohne Jahrgangs-Zuordnung sind reine Leitungs-Entwuerfe und nur
-  // fuer org_admin/admin sichtbar (sonst koennte ein Teamer fremde Entwuerfe sehen).
+  // für org_admin/admin sichtbar (sonst könnte ein Teamer fremde Entwuerfe sehen).
   async function leadershipMayAccess(req, challengeId) {
     const viewable = viewableJahrgangIds(req);
     if (viewable === null) return true;
 
-    // 'nur_team'-Challenges laufen org-weit ueber die Rolle (Migration 121) —
+    // 'nur_team'-Challenges laufen org-weit über die Rolle (Migration 121) —
     // jeder Teamer der Org darf sie sehen und verwalten, auch ohne
     // Jahrgangs-Zuordnung (die es dort per Definition nicht gibt).
     const { rows: [teamRow] } = await db.query(
@@ -204,10 +204,10 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   // Regeln:
   //   audience 'nur_team'        -> Team der Org, ORG-WEIT (keine Jahrgangspruefung)
   //   audience 'konfis*'         -> Jahrgangsbindung:
-  //                                 Konfi ueber konfi_profiles.jahrgang_id,
-  //                                 Teamer ueber zugewiesene Jahrgaenge,
+  //                                 Konfi über konfi_profiles.jahrgang_id,
+  //                                 Teamer über zugewiesene Jahrgänge,
   //                                 org_admin/admin immer (sehen alles ihrer Org)
-  // Gibt { allowed, reason } zurueck, damit die Route 403 vs. 404 unterscheiden kann.
+  // Gibt { allowed, reason } zurück, damit die Route 403 vs. 404 unterscheiden kann.
   async function participantMayAccess(req, challenge) {
     const role = req.user.role_name;
     const audience = challenge.audience || 'konfis';
@@ -259,7 +259,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     return rows.map(r => r.jahrgang_id);
   }
 
-  // Einheitliche Aufbereitung einer Challenge fuer die Konfi-Sicht.
+  // Einheitliche Aufbereitung einer Challenge für die Konfi-Sicht.
   // author_freetext und author_display_name werden GETRENNT ausgeliefert
   // (statt bereits serverseitig zu einem Namen gecoalesct) — das entspricht
   // dem Vertrag in frontend/src/types/challenges.ts (ChallengeBase) und dem,
@@ -292,7 +292,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
       status: deriveStatus(row, now),
       has_badge: row.has_badge === true || row.has_badge === 't',
       // has_submission ist der Frontend-Vertrag (types/challenges.ts, KonfiChallenge)
-      // fuer das Corner-Badge "bereits eingereicht" in Liste/Archiv/Dashboard —
+      // für das Corner-Badge "bereits eingereicht" in Liste/Archiv/Dashboard —
       // deckungsgleich mit has_badge (dieselbe EXISTS-Bedingung), aber unter dem
       // Namen, den das Frontend tatsaechlich liest.
       has_submission: row.has_badge === true || row.has_badge === 't',
@@ -300,7 +300,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     };
   }
 
-  // Live-Update an alle Konfis der zugewiesenen Jahrgaenge.
+  // Live-Update an alle Konfis der zugewiesenen Jahrgänge.
   // Wird bewusst OHNE await aufgerufen (fire-and-forget, immer nach der
   // Response) — deshalb faengt die Funktion jeden Fehler selbst ab und darf
   // NIE rejecten, sonst kippt der Prozess mit einer unhandled rejection.
@@ -308,7 +308,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     try {
       const jahrgangIds = await challengeJahrgangIds(challengeId);
       for (const jahrgangId of jahrgangIds) {
-        // Typ MUSS 'challenges' heissen — das ist der LiveUpdateType, auf den
+        // Typ MUSS 'challenges' heißen — das ist der LiveUpdateType, auf den
         // das Frontend subscribed (LiveUpdateContext). Mit dem frueheren
         // 'challenge' (Singular) kam kein einziges Update an.
         await liveUpdate.sendToJahrgang(jahrgangId, 'challenges', action, data);
@@ -329,8 +329,8 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     }
   }
 
-  // Datei aus dem Upload-Buffer verschluesselt ablegen. Gibt den Hex-Dateinamen
-  // zurueck (die Abruf-Route akzeptiert nur [a-f0-9]+).
+  // Datei aus dem Upload-Buffer verschlüsselt ablegen. Gibt den Hex-Dateinamen
+  // zurück (die Abruf-Route akzeptiert nur [a-f0-9]+).
   async function storeUploadedFile(buffer) {
     const filename = crypto.randomBytes(32).toString('hex');
     await fs.promises.mkdir(challengeDir, { recursive: true });
@@ -381,12 +381,12 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     handleValidationErrors
   ];
 
-  // anonymize: die Leitung kann einen Beitrag nachtraeglich anonym stellen, um
+  // anonymize: die Leitung kann einen Beitrag nachträglich anonym stellen, um
   // jemanden zu schuetzen. BEWUSST OHNE Gegenstueck — einmal anonym, immer
   // anonym (User-Entscheid 09.08.2026): Wer anonym eingereicht hat (oder von der
-  // Leitung anonymisiert wurde), darf NIE nachtraeglich mit Namen erscheinen,
-  // das waere ein Bruch der Zusage. Die Leitung sieht in dieser Ansicht ohnehin
-  // immer den echten Namen — fuer Rueckfragen reicht das, ohne die Gruppe.
+  // Leitung anonymisiert wurde), darf NIE nachträglich mit Namen erscheinen,
+  // das wäre ein Bruch der Zusage. Die Leitung sieht in dieser Ansicht ohnehin
+  // immer den echten Namen — für Rueckfragen reicht das, ohne die Gruppe.
   const validateModerate = [
     param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
     body('action').isIn(['approve', 'hide', 'unhide', 'anonymize'])
@@ -399,9 +399,9 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   // ====================================================================
 
   // GET /konfi — aktive Challenges, Archiv und eigene Abzeichen.
-  // Konfi sieht ausschliesslich Challenges seiner Jahrgaenge, nie Entwuerfe.
-  // Auch fuer Teamer/Admins: sie nehmen bei audience 'konfis_und_team' und
-  // 'nur_team' selbst teil (User-Entscheid 08.08.). Der Pfad heisst weiterhin
+  // Konfi sieht ausschliesslich Challenges seiner Jahrgänge, nie Entwuerfe.
+  // Auch für Teamer/Admins: sie nehmen bei audience 'konfis_und_team' und
+  // 'nur_team' selbst teil (User-Entscheid 08.08.). Der Pfad heißt weiterhin
   // /konfi — er ist der TEILNEHMER-Einstieg, nicht der Rollen-Einstieg.
   router.get('/konfi', rbacVerifier, async (req, res) => {
     try {
@@ -411,8 +411,8 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         return res.status(403).json({ error: 'Kein Zugriff auf Challenges' });
       }
 
-      // Konfi: genau ein Jahrgang. Teamer: zugewiesene Jahrgaenge.
-      // org_admin/admin: alle Jahrgaenge der Org (viewable === null).
+      // Konfi: genau ein Jahrgang. Teamer: zugewiesene Jahrgänge.
+      // org_admin/admin: alle Jahrgänge der Org (viewable === null).
       let jahrgangIds = null;
       if (role === 'konfi') {
         const jahrgangId = await konfiJahrgangId(req.user.id);
@@ -424,8 +424,8 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         jahrgangIds = viewableJahrgangIds(req) || [];
       }
 
-      // Sichtbare Challenges: entweder ueber die Jahrgangs-Zuordnung
-      // (audience 'konfis'/'konfis_und_team') oder org-weit fuer das Team
+      // Sichtbare Challenges: entweder über die Jahrgangs-Zuordnung
+      // (audience 'konfis'/'konfis_und_team') oder org-weit für das Team
       // (audience 'nur_team'). Konfis sehen 'nur_team' NIE.
       const params = [req.user.organization_id, req.user.id];
       let scopeCondition;
@@ -439,7 +439,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         // org_admin/admin: alles der Org, aber nur wo das Team mitmachen darf
         scopeCondition = `c.audience IN ('konfis_und_team', 'nur_team')`;
       } else if (jahrgangIds.length === 0) {
-        // Teamer ohne Jahrgaenge: nur die org-weiten Team-Challenges
+        // Teamer ohne Jahrgänge: nur die org-weiten Team-Challenges
         scopeCondition = `c.audience = 'nur_team'`;
       } else {
         params.push(jahrgangIds);
@@ -533,9 +533,9 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
 
         // Galerie: NUR oeffentliche Beitraege (zentrale Logik), fremde
         // Beitraege. Bei 'anonymous' wird der Name in SQL bereits auf NULL
-        // gesetzt — display_name verlaesst das Backend gar nicht erst.
+        // gesetzt — display_name verlässt das Backend gar nicht erst.
         // role_label/jahrgang_name machen transparent, wer schreibt: bei
-        // mehreren Jahrgaengen sehen die Konfis so, dass ein Beitrag aus einem
+        // mehreren Jahrgängen sehen die Konfis so, dass ein Beitrag aus einem
         // anderen Jahrgang kommt, und Team-Beitraege sind als solche erkennbar
         // (User-Entscheid 08.08.) — bei anonymen Beitraegen bleibt beides NULL.
         const { rows: gallery } = await db.query(
@@ -587,7 +587,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   );
 
   // POST /konfi/:id/submissions — Beitrag einreichen.
-  // multipart (Feld 'file') fuer photo/audio/video, JSON fuer text/link.
+  // multipart (Feld 'file') für photo/audio/video, JSON für text/link.
   router.post('/konfi/:id/submissions',
     rbacVerifier,
     challengeUpload.single('file'),
@@ -611,7 +611,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           return res.status(404).json({ error: 'Challenge nicht gefunden' });
         }
 
-        // Teilnahme-Kreis pruefen (audience). Erst der Zugriff auf die
+        // Teilnahme-Kreis prüfen (audience). Erst der Zugriff auf die
         // Challenge, dann die Frage, ob diese Rolle hier einreichen darf.
         const access = await participantMayAccess(req, challenge);
         if (!access.allowed) {
@@ -671,7 +671,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           }
         }
 
-        // Datei verarbeiten (Magic-Bytes-Pruefung wie im Chat: der Header eines
+        // Datei verarbeiten (Magic-Bytes-Prüfung wie im Chat: der Header eines
         // Uploads ist Client-Angabe, der echte Typ steht in den ersten Bytes).
         let filePath = null;
         let fileName = null;
@@ -746,7 +746,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
                WHERE challenge_id = $1 AND user_id = $2`,
               [challengeId, req.user.id]
             );
-            // Genau 1 => die soeben erstellte Submission ist die erste ueberhaupt.
+            // Genau 1 => die soeben erstellte Submission ist die erste überhaupt.
             if (ownCount === 1) {
               await PushService.sendChallengeBadgeEarnedToKonfi(
                 db,
@@ -777,9 +777,9 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   // Konfis duerfen eingereichte Beitraege NICHT mehr eigenstaendig zurueckziehen.
   // Ein einmal eingereichter Beitrag ist verbindlich; das Ausblenden bleibt
   // Sache der Leitung (PUT /admin/submissions/:id/moderate). Der Endpoint
-  // bleibt als Route bestehen (stabile URL, klarer Fehlercode statt 404 fuer
+  // bleibt als Route bestehen (stabile URL, klarer Fehlercode statt 404 für
   // alle Aufrufer), antwortet aber immer mit 403 — unabhaengig davon, ob die
-  // Submission existiert oder wem sie gehoert.
+  // Submission existiert oder wem sie gehört.
   router.delete('/konfi/submissions/:id',
     rbacVerifier,
     param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
@@ -796,7 +796,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   // ====================================================================
   //
   // Auth NUR per Authorization-Header. Alle Frontend-Abrufe laden per
-  // axios-Blob mit Header; ein ?token=-Fallback (Chat-Pattern) waere hier
+  // axios-Blob mit Header; ein ?token=-Fallback (Chat-Pattern) wäre hier
   // reine Angriffsflaeche — Tokens in Query-Strings landen in Access-Logs
   // und Referrern (Security-Review 04.08.2026).
   // Zugriff hat: org_admin/admin der (aktiven) Org immer, ein Teamer nur bei
@@ -804,7 +804,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   // immer, sowie Konfis eines zugewiesenen Jahrgangs, wenn der Beitrag
   // oeffentlich ist. Beruecksichtigt X-Active-Organization wie rbacVerifier
   // (Multi-Org-Fix 06.08.2026 — vorher wurde hier immer die Primaer-Org
-  // geprueft, was Dateien einer aktiven Sekundaer-Org faelschlich als 404
+  // geprüft, was Dateien einer aktiven Sekundaer-Org faelschlich als 404
   // meldete).
   router.get('/files/:filename', async (req, res) => {
     const token = req.headers.authorization?.replace('Bearer ', '');
@@ -825,10 +825,10 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         return res.status(400).json({ error: 'Ungültiger Dateiname' });
       }
 
-      // AKTIVE Org beruecksichtigen (Multi-Org, Org-Switcher) — derselbe Header
+      // AKTIVE Org berücksichtigen (Multi-Org, Org-Switcher) — derselbe Header
       // wie rbacVerifier (X-Active-Organization). Ohne das wuerde ein Multi-Org-
       // Admin, der auf eine Sekundaer-Org umgeschaltet hat, hier weiterhin gegen
-      // seine PRIMAER-Org geprueft und faende jede Datei der aktiven Org nicht
+      // seine PRIMAER-Org geprüft und faende jede Datei der aktiven Org nicht
       // (404), obwohl alle anderen Admin-Endpoints korrekt die aktive Org sehen.
       // LEFT JOIN auf roles (statt INNER JOIN): konsistent zu verifyTokenRBAC —
       // ein User ohne (aufloesbare) Rolle soll nicht 401 "Nicht angemeldet"
@@ -865,7 +865,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         requester.role_name = membership.role_name;
       }
 
-      // Fuer Teamer die zugewiesenen Jahrgaenge DER AKTIVEN ORG nachladen —
+      // Für Teamer die zugewiesenen Jahrgänge DER AKTIVEN ORG nachladen —
       // gebraucht, um leadershipMayAccess/viewableJahrgangIds unten identisch
       // zur rbacVerifier-Logik im Rest der Datei anzuwenden.
       if (requester.role_name === 'teamer') {
@@ -900,15 +900,15 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         mayAccess = true;
       } else if (!mayAccess && requester.role_name === 'teamer') {
         // 'nur_team'-Challenges sind org-weit (keine Jahrgangs-Zuordnung) —
-        // dort darf jeder Teamer der Org die Dateien sehen, sonst koennte er
+        // dort darf jeder Teamer der Org die Dateien sehen, sonst könnte er
         // seine eigene Team-Runde nicht anschauen (Migration 121).
         if (row.audience === 'nur_team') {
           mayAccess = true;
         } else {
-          // Sonst nur fuer Submissions aus einem seiner zugewiesenen Jahrgaenge —
+          // Sonst nur für Submissions aus einem seiner zugewiesenen Jahrgänge —
           // konsistent zu leadershipMayAccess()/viewableJahrgangIds() oben in
           // dieser Datei (Moderations-Sicht ist sonst weiter als die restlichen
-          // Leitungs-Endpunkte, ueber die der Teamer die Challenge erst findet).
+          // Leitungs-Endpunkte, über die der Teamer die Challenge erst findet).
           const viewable = (requester.assigned_jahrgaenge || [])
             .filter(j => j.can_view)
             .map(j => j.id);
@@ -919,10 +919,10 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         }
       }
 
-      // 'nur_team' ist fuer Konfis unsichtbar — auch die Dateien (Migration 121).
+      // 'nur_team' ist für Konfis unsichtbar — auch die Dateien (Migration 121).
       if (!mayAccess && requester.role_name === 'konfi' && row.audience !== 'nur_team') {
         // Konfi darf nur oeffentliche Beitraege aus seinem Jahrgang sehen.
-        // row traegt sowohl Submission- als auch Challenge-Felder (ein JOIN),
+        // row trägt sowohl Submission- als auch Challenge-Felder (ein JOIN),
         // die zentrale Logik bekommt beide Sichten explizit uebergeben.
         const submissionView = { moderation_status: row.moderation_status, konfi_consent: row.konfi_consent };
         const challengeView = { visibility: row.visibility };
@@ -968,11 +968,11 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   // ====================================================================
 
   // GET /admin/authors — Personen der Org, die als Urheber:in einer Challenge
-  // ausgewaehlt werden koennen. Bewusst ALLE Rollen (auch Konfis) — eine
+  // ausgewaehlt werden können. Bewusst ALLE Rollen (auch Konfis) — eine
   // Challenge kann ausdruecklich von einem Konfi stammen (anders als
   // GET /admin/users, das Konfis kategorisch ausschliesst und org_admin
   // vorbehalten ist). Teamer sehen dabei nur Konfis ihrer zugewiesenen
-  // Jahrgaenge (gleiche Sichtbarkeitsgrenze wie sonst in dieser Datei),
+  // Jahrgänge (gleiche Sichtbarkeitsgrenze wie sonst in dieser Datei),
   // org_admin/admin sehen alle Konfis der Organisation.
   router.get('/admin/authors', rbacVerifier, requireTeamer, async (req, res) => {
     try {
@@ -1009,11 +1009,11 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   });
 
   // GET /admin — alle Challenges der Org (inkl. Entwuerfe) mit Zaehlern.
-  // Teamer sehen nur Challenges ihrer zugewiesenen Jahrgaenge.
+  // Teamer sehen nur Challenges ihrer zugewiesenen Jahrgänge.
   router.get('/admin', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       const viewable = viewableJahrgangIds(req);
-      // $1 = Organisation, $2 = eigene User-ID (fuer die Teilnahme-Felder,
+      // $1 = Organisation, $2 = eigene User-ID (für die Teilnahme-Felder,
       // deshalb IMMER belegt), $3 = optionale Jahrgangs-Liste.
       const params = [req.user.organization_id, req.user.id];
       let jahrgangFilter = '';
@@ -1022,8 +1022,8 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           return res.json([]);
         }
         params.push(viewable);
-        // 'nur_team' ist org-weit ohne Jahrgangs-Zuordnung -> fuer jeden Teamer
-        // sichtbar, sonst koennte er seine eigene Team-Runde nicht verwalten.
+        // 'nur_team' ist org-weit ohne Jahrgangs-Zuordnung -> für jeden Teamer
+        // sichtbar, sonst könnte er seine eigene Team-Runde nicht verwalten.
         jahrgangFilter = `AND (
           c.audience = 'nur_team'
           OR EXISTS (
@@ -1041,8 +1041,8 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
                 (SELECT COUNT(*) FROM challenge_submissions s WHERE s.challenge_id = c.id AND s.moderation_status = 'pending') AS pending_count,
                 -- Eigene Teilnahme: Seit der Zusammenlegung von "Verwalten" und
                 -- "Mitmachen" (11.08.) zeigt EINE Liste beides. Deshalb liefert
-                -- dieser Endpunkt zusaetzlich, was GET /challenges/konfi fuer
-                -- die Teilnehmer-Sicht liefert — sonst muesste das Frontend
+                -- dieser Endpunkt zusaetzlich, was GET /challenges/konfi für
+                -- die Teilnehmer-Sicht liefert — sonst müsste das Frontend
                 -- zwei Listen mischen.
                 EXISTS (
                   SELECT 1 FROM challenge_submissions s
@@ -1094,7 +1094,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         return res.status(400).json({ error: 'Das Ende muss nach dem Start liegen.' });
       }
 
-      // 'nur_team' laeuft org-weit ueber die Rolle — Jahrgaenge werden dort
+      // 'nur_team' läuft org-weit über die Rolle — Jahrgänge werden dort
       // bewusst NICHT gespeichert (sonst wuerde die Zuordnung suggerieren, sie
       // wuerde den Kreis einschraenken).
       // Default 'konfis_und_team' (Migration 122): das Team ist immer dabei.
@@ -1108,12 +1108,12 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         return res.status(400).json({ error: 'Ungültige Medienart' });
       }
 
-      // Org-Isolation: fremde Jahrgaenge/Urheber abweisen.
+      // Org-Isolation: fremde Jahrgänge/Urheber abweisen.
       if (!teamOnly && jahrgang_ids && jahrgang_ids.length > 0) {
         if (!(await allIdsBelongToOrg(db, 'jahrgaenge', jahrgang_ids, req.user.organization_id))) {
           return res.status(403).json({ error: 'Ungültige Jahrgänge' });
         }
-        // Teamer duerfen nur ihre eigenen Jahrgaenge bespielen.
+        // Teamer duerfen nur ihre eigenen Jahrgänge bespielen.
         const viewable = viewableJahrgangIds(req);
         if (viewable !== null && !jahrgang_ids.every(id => viewable.includes(Number(id)))) {
           return res.status(403).json({ error: 'Kein Zugriff auf einen der gewählten Jahrgänge' });
@@ -1339,8 +1339,8 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
 
       notifyJahrgaenge(challengeId, 'challenge_update', { challengeId });
       // Auch die Leitung benachrichtigen: sonst sieht die Verwaltungsliste die
-      // Aenderung nicht — und reine Team-Challenges (ohne Jahrgaenge) erreichten
-      // ueberhaupt niemanden (Audit 22.08.2026).
+      // Änderung nicht — und reine Team-Challenges (ohne Jahrgänge) erreichten
+      // überhaupt niemanden (Audit 22.08.2026).
       notifyLeadership(req.user.organization_id, 'challenge_update', { challengeId });
     } catch (err) {
       await client.query('ROLLBACK').catch(() => {});
@@ -1352,7 +1352,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   });
 
   // DELETE /admin/:id — Entwuerfe direkt; gestartete Challenges nur mit
-  // ?force=true (loescht dann Beitraege inkl. Dateien mit).
+  // ?force=true (löscht dann Beitraege inkl. Dateien mit).
   router.delete('/admin/:id',
     rbacVerifier,
     requireTeamer,
@@ -1370,7 +1370,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           return res.status(403).json({ error: 'Kein Zugriff auf diese Challenge' });
         }
 
-        // Jahrgaenge VOR dem Loeschen merken: danach sind die Zuordnungen weg
+        // Jahrgänge VOR dem Löschen merken: danach sind die Zuordnungen weg
         // und notifyJahrgaenge findet niemanden mehr.
         const betroffeneJahrgaenge = await challengeJahrgangIds(challengeId);
 
@@ -1410,7 +1410,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     }
   );
 
-  // GET /admin/:id/submissions — Sammelansicht fuer die Leitung: ALLE Beitraege
+  // GET /admin/:id/submissions — Sammelansicht für die Leitung: ALLE Beitraege
   // mit Konfi-Name, Konsens und Status (die Leitung sieht immer alles, auch
   // anonyme Beitraege mit Namen — Anonymitaet gilt gegenueber der Gruppe).
   router.get('/admin/:id/submissions',
@@ -1453,7 +1453,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           },
           submissions: rows.map(row => ({
             ...row,
-            // Fuer die Leitung transparent machen, ob dieser Beitrag in der
+            // Für die Leitung transparent machen, ob dieser Beitrag in der
             // Gruppen-Galerie mit oder ohne Namen erscheint.
             is_public: isSubmissionPublic(row, challenge),
             is_anonymous: isAnonymous(row, challenge)
@@ -1467,7 +1467,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   );
 
   // PUT /admin/submissions/:id/moderate — { action: 'approve'|'hide'|'unhide' }.
-  // Ausblenden geht IMMER, auch bei visibility='public' — hidden schlaegt alles.
+  // Ausblenden geht IMMER, auch bei visibility='public' — hidden schlägt alles.
   router.put('/admin/submissions/:id/moderate',
     rbacVerifier,
     requireTeamer,
@@ -1571,10 +1571,10 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           return res.status(403).json({ error: 'Kein Zugriff auf diese Challenge' });
         }
 
-        // Export verlaesst typischerweise die Leitungssphaere (Liturgie-Blatt,
+        // Export verlässt typischerweise die Leitungssphaere (Liturgie-Blatt,
         // Playlist, Wand) — deshalb strenger als die Sammelansicht:
         // - konfi_choice: NUR freigegebene Beitraege mit Veroeffentlichungs-
-        //   Konsens. "Nur fuer die Leitung" (private) ist die staerkste Zusage
+        //   Konsens. "Nur für die Leitung" (private) ist die staerkste Zusage
         //   des Konfi und landet NIE im Export (Security-Review 04.08.2026).
         // - public: nur freigegebene Beitraege (pending bleibt draussen).
         // - private Challenge: alle nicht-ausgeblendeten — hier IST der Export
@@ -1640,7 +1640,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
   return router;
 };
 
-// Sichtbarkeitslogik auch fuer Tests und andere Module exportierbar machen,
+// Sichtbarkeitslogik auch für Tests und andere Module exportierbar machen,
 // ohne dass jemand sie nachbaut.
 module.exports.PUBLIC_SUBMISSION_SQL = PUBLIC_SUBMISSION_SQL;
 module.exports.isSubmissionPublic = isSubmissionPublic;

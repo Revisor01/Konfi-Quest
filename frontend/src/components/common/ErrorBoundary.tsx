@@ -38,9 +38,9 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   // WICHTIG (Incident 13.06.2026): Der offlineCache MUSS mit geleert werden.
   // Ein kaputter/riesiger gecachter Response (z.B. Chat-rooms mit 2520 Teilnehmern)
   // ueberlebt sonst im persistenten Capacitor-Preferences-Cache, crasht beim
-  // naechsten Render sofort wieder — und nur eine Neuinstallation half. clearAll()
-  // raeumt das Gift mit raus. Beide Aufrufe sind async; wir reloaden im finally,
-  // damit es auch bei einem Fehler darin nicht haengt.
+  // nächsten Render sofort wieder — und nur eine Neuinstallation half. clearAll()
+  // räumt das Gift mit raus. Beide Aufrufe sind async; wir reloaden im finally,
+  // damit es auch bei einem Fehler darin nicht hängt.
   private handleBackToLogin = () => {
     Promise.allSettled([
       import('../../services/tokenStore').then((m) => m.clearAuth()),

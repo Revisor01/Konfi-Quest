@@ -21,14 +21,14 @@ test.describe('Event-Buchung', () => {
     await registerBtn.waitFor({ state: 'visible', timeout: 10_000 });
     await registerBtn.click();
 
-    // 5. Buchungsbestaetigung pruefen
-    //    Nach erfolgreicher Anmeldung aendert sich der Status auf der Seite
+    // 5. Buchungsbestaetigung prüfen
+    //    Nach erfolgreicher Anmeldung ändert sich der Status auf der Seite
     //    Entweder Toast oder Button wechselt zu "Abmelden"
     await expect(
       page.locator('ion-button, ion-toast, .app-action-button', { hasText: /Abmelden|Gebucht|Angemeldet/i })
     ).toBeVisible({ timeout: 10_000 });
 
-    // 6. Zurueck zur Event-Liste — Event sichtbar
+    // 6. Zurück zur Event-Liste — Event sichtbar
     await page.goto('/konfi/events');
     const eventEntry = page.locator('ion-item, ion-card', { hasText: /Weihnachtsgottesdienst/i });
     await expect(eventEntry).toBeVisible({ timeout: 10_000 });

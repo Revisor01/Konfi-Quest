@@ -221,7 +221,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
         emptyIconColor="#059669"
       >
         {filteredAndSortedActivities.map((activity, index) => {
-              // Teamer:innen-Aktivitaeten haben keine Kategorie/keinen Typ und
+              // Teamer:innen-Aktivitäten haben keine Kategorie/keinen Typ und
               // keine Punkte -> einheitlich Teamer-Farbe (nicht Gemeinde-Gruen).
               const isTeamerActivity = activity.target_role === 'teamer';
               const typeColor = isTeamerActivity

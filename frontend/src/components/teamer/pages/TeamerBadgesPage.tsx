@@ -48,7 +48,7 @@ const TeamerBadgesPage: React.FC = () => {
       const liste: TeamerBadgeAPI[] = res.data || [];
       // Unverdiente geheime Abzeichen liefert der Server nicht mehr mit; ihre
       // Gesamtzahl steht in der Kopfzeile. An die Liste geheftet, damit sie den
-      // Zwischenspeicher uebersteht (der sichert nur die Daten, keine Header).
+      // Zwischenspeicher übersteht (der sichert nur die Daten, keine Header).
       const geheim = Number(res.headers?.['x-badges-secret-total']);
       if (Number.isFinite(geheim)) (liste as any).geheimGesamt = geheim;
       return liste;
@@ -78,7 +78,7 @@ const TeamerBadgesPage: React.FC = () => {
 
   const badgeStats = {
     totalVisible: badges.filter((b) => !b.is_hidden).length,
-    // Aus der Kopfzeile, nicht aus der Liste: Diese enthaelt nur noch die
+    // Aus der Kopfzeile, nicht aus der Liste: Diese enthält nur noch die
     // bereits verdienten Geheimnisse, sonst staende hier immer die eigene
     // Trefferzahl statt der Gesamtzahl.
     totalSecret: (badges as any).geheimGesamt ?? badges.filter((b) => b.is_hidden).length

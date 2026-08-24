@@ -14,8 +14,8 @@ const { allIdsBelongToOrg } = require('../utils/orgOwnership');
 module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwardBadges, io) => {
 
   // Validierungsregeln
-  // Hinweis: type ist bei Teamer-Aktivitaeten bewusst null (kein Punkt-Typ).
-  // optional({ values: 'null' }) ueberspringt die Pruefung auch bei explizitem
+  // Hinweis: type ist bei Teamer-Aktivitäten bewusst null (kein Punkt-Typ).
+  // optional({ values: 'null' }) ueberspringt die Prüfung auch bei explizitem
   // null (nicht nur bei undefined) -> sonst 400 "Validierungsfehler" beim Speichern.
   const validateCreateActivity = [
     commonValidations.name,
@@ -51,7 +51,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
     body('status').isIn(['approved', 'rejected']).withMessage('Status muss "approved" oder "rejected" sein'),
     // Beim Ablehnen ist eine Begruendung Pflicht. Die Oberflaeche verlangt sie
-    // laengst (ActivityRequestModal.tsx:148), der Server bisher nicht — ueber
+    // laengst (ActivityRequestModal.tsx:148), der Server bisher nicht — über
     // die API liess sich kommentarlos ablehnen, und der Konfi las dann nur
     // "wurde leider abgelehnt" ohne zu erfahren warum (Befund 23.08.2026).
     body('admin_comment')
@@ -106,8 +106,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
           points: row.points,
           type: row.type,
           // target_role MUSS mit raus: das Frontend faerbt/markiert Teamer-
-          // Aktivitaeten darueber (pink, ohne Punkte). Fehlte es, wurden Teamer-
-          // Aktivitaeten faelschlich wie Konfi-Aktivitaeten (blau/gruen + Punkte) gezeigt.
+          // Aktivitäten darueber (pink, ohne Punkte). Fehlte es, wurden Teamer-
+          // Aktivitäten faelschlich wie Konfi-Aktivitäten (blau/gruen + Punkte) gezeigt.
           target_role: row.target_role,
           categories: categories,
           created_at: row.created_at
@@ -227,19 +227,19 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         return res.status(409).json({ error: `Aktivität kann nicht gelöscht werden: ${usage.count} Zuordnung(en) zu Konfis vorhanden.` });
       }
 
-      // Antraege pruefen. Der Fremdschluessel activity_requests.activity_id hat
+      // Anträge prüfen. Der Fremdschlüssel activity_requests.activity_id hat
       // kein ON DELETE, deshalb muss vorher aufgeraeumt werden — sonst gaebe es
       // statt einer verstaendlichen Meldung einen 500er.
       //
       // Unterschieden wird dabei nach dem Gewicht des Antrags:
       //   - OFFEN oder GENEHMIGT: blockiert. Ein offener Antrag wartet auf eine
       //     Entscheidung, ein genehmigter ist Teil der Punktegeschichte.
-      //   - ABGELEHNT: blockiert NICHT mehr, wird beim Loeschen mit entfernt.
-      //     Ein abgelehnter Antrag hat nie zu Punkten gefuehrt; ihn als Grund
-      //     zu nehmen, eine ueberfluessige oder doppelt angelegte Aktivitaet
+      //   - ABGELEHNT: blockiert NICHT mehr, wird beim Löschen mit entfernt.
+      //     Ein abgelehnter Antrag hat nie zu Punkten geführt; ihn als Grund
+      //     zu nehmen, eine ueberfluessige oder doppelt angelegte Aktivität
       //     dauerhaft zu behalten, war unverhaeltnismaessig (Nutzerhinweis
-      //     23.08.2026). In Produktion betraf das 4 Aktivitaeten, darunter drei
-      //     Teamer-Aktivitaeten mit je genau einer Ablehnung.
+      //     23.08.2026). In Produktion betraf das 4 Aktivitäten, darunter drei
+      //     Teamer-Aktivitäten mit je genau einer Ablehnung.
       const { rows: [requestCheck] } = await db.query(
         `SELECT COUNT(*) FILTER (WHERE ar.status = 'pending')::int as pending,
                 COUNT(*) FILTER (WHERE ar.status = 'approved')::int as approved,
@@ -257,8 +257,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         });
       }
 
-      // Abgelehnte Antraege samt ihrer Nachweisfotos entfernen, dann die
-      // Aktivitaet. In einer Transaktion, damit bei einem Fehler nichts
+      // Abgelehnte Anträge samt ihrer Nachweisfotos entfernen, dann die
+      // Aktivität. In einer Transaktion, damit bei einem Fehler nichts
       // halb Geloeschtes zurueckbleibt.
       const client = await db.getClient();
       let rowCount = 0;
@@ -296,7 +296,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       }
 
       // Nachweisfotos erst NACH dem Commit vom Datentraeger nehmen: Schlaegt das
-      // fehl, bleibt hoechstens eine verwaiste Datei zurueck — kein halb
+      // fehl, bleibt höchstens eine verwaiste Datei zurück — kein halb
       // geloeschter Datenbestand.
       for (const datei of fotosZumLoeschen) {
         await deletePhotoFile(datei).catch(err =>
@@ -347,8 +347,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
   // Pfad: PUT /api/activities/requests/:id/reset
   // Einen abgelehnten Antrag endgueltig entfernen.
   //
-  // Abgelehnte Antraege sammeln sich an: Fehleingaben, doppelte Meldungen,
-  // Versehen. Sie haben nie zu Punkten gefuehrt und tragen keine Geschichte —
+  // Abgelehnte Anträge sammeln sich an: Fehleingaben, doppelte Meldungen,
+  // Versehen. Sie haben nie zu Punkten geführt und tragen keine Geschichte —
   // sie dauerhaft aufzubewahren, hat keinen Wert (Nutzerhinweis 23.08.2026).
   //
   // Bewusst NUR abgelehnte: Ein offener Antrag wartet auf eine Entscheidung
@@ -415,7 +415,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         // SCHRITT 1: Alte Entscheidung rückgängig machen
         if (oldStatus === 'approved') {
 
-          // Punkte abziehen nur fuer Konfi-Activities (Teamer haben keine bekommen)
+          // Punkte abziehen nur für Konfi-Activities (Teamer haben keine bekommen)
           if (!isTeamerActivity) {
             const pointField = getPointField(request.type);
             await client.query(`UPDATE konfi_profiles SET ${pointField} = GREATEST(0, ${pointField} - $1) WHERE user_id = $2`, [request.points, request.user_id]);
@@ -453,10 +453,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
       // Live-Updates analog zum Genehmigungs-Handler (Z.492ff). Antragsliste an
       // Admins/Org-Admins/Teamer:innen der Org; Antragsteller:in (Konfi ODER
-      // Teamer:in) ueber den korrekten Socket-Raum per Rolle.
+      // Teamer:in) über den korrekten Socket-Raum per Rolle.
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'update');
       liveUpdate.sendToUserByRole(request.user_id, 'requests', 'update');
-      // Wurde ein genehmigter Antrag zurueckgesetzt, wurden Punkte entzogen
+      // Wurde ein genehmigter Antrag zurückgesetzt, wurden Punkte entzogen
       // (nur bei Konfi-Activities) -> Punkte-/Dashboard-Ansicht aktualisieren.
       if (oldStatus === 'approved' && !isTeamerActivity) {
         liveUpdate.sendToUserByRole(request.user_id, 'points', 'update');
@@ -493,7 +493,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
       const isTeamerActivity = request.target_role === 'teamer';
 
-      // Guard: Bei Genehmigung prüfen ob Punkte-Typ aktiviert ist (nur fuer Konfi-Activities)
+      // Guard: Bei Genehmigung prüfen ob Punkte-Typ aktiviert ist (nur für Konfi-Activities)
       if (status === 'approved' && !isTeamerActivity) {
         const { enabled, error } = await checkPointTypeEnabled(db, request.user_id, request.type);
         if (!enabled) return res.status(400).json({ error });
@@ -511,7 +511,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         if (status === 'approved') {
           await client.query("INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5)", [request.user_id, request.activity_id, req.user.id, request.requested_date, req.user.organization_id]);
 
-          // Punkte nur fuer Konfi-Activities (Teamer-Activities sind nur Nachweis)
+          // Punkte nur für Konfi-Activities (Teamer-Activities sind nur Nachweis)
           if (!isTeamerActivity) {
             const pointField = getPointField(request.type);
             await client.query(
@@ -523,9 +523,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
           }
 
           // VORUEBERGEHEND DEAKTIVIERT (28.06.2026): Foto-Referenz NICHT entfernen.
-          // Grund: Admins muessen genehmigte Antrags-Fotos weiter sehen koennen,
+          // Grund: Admins müssen genehmigte Antrags-Fotos weiter sehen können,
           // sonst reichen Konfis dasselbe Foto doppelt ein (festgestellt in der
-          // Praxis). Datensparsamkeit bleibt das Ziel — Loeschung erfolgt spaeter
+          // Praxis). Datensparsamkeit bleibt das Ziel — Löschung erfolgt später
           // (z.B. zeitversetzt per Cron), aber NICHT sofort bei Genehmigung.
           // if (request.photo_filename) {
           //   await client.query("UPDATE activity_requests SET photo_filename = NULL WHERE id = $1", [requestId]);
@@ -551,10 +551,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
           console.error('Level-up check failed:', levelErr);
         }
 
-        // VORUEBERGEHEND DEAKTIVIERT (28.06.2026): Foto-Datei NICHT sofort loeschen.
-        // Grund: Admins muessen genehmigte Antrags-Fotos weiter sehen koennen,
+        // VORUEBERGEHEND DEAKTIVIERT (28.06.2026): Foto-Datei NICHT sofort löschen.
+        // Grund: Admins müssen genehmigte Antrags-Fotos weiter sehen können,
         // sonst reichen Konfis dasselbe Foto doppelt ein. Datensparsamkeit bleibt
-        // das Ziel — physische Loeschung erfolgt spaeter (z.B. zeitversetzt per
+        // das Ziel — physische Löschung erfolgt später (z.B. zeitversetzt per
         // Cron), aber NICHT sofort bei Genehmigung.
         // if (request.photo_filename) {
         //   const fs = require('fs');
@@ -615,16 +615,16 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
       res.json({ message: 'Antragsstatus aktualisiert', newBadges });
 
-      // Live-Update fuer Antragsliste an alle Admins/Org-Admins/Teamer:innen der
+      // Live-Update für Antragsliste an alle Admins/Org-Admins/Teamer:innen der
       // Org (sendToOrgAdmins adressiert seit dem Raum-Fix auch Teamer:innen). Der
-      // frueher hier stehende globale io.emit('konfisUpdate'/'requestsUpdate') war
+      // früher hier stehende globale io.emit('konfisUpdate'/'requestsUpdate') war
       // ein Broadcast an ALLE Orgs (Isolation-Verletzung) und ist redundant: die
       // Legacy-Listener in LiveUpdateContext bekommen dieselbe Aktualisierung nun
-      // ueber das reguläre 'liveUpdate'-Event (type 'requests') dieser Sendung.
+      // über das reguläre 'liveUpdate'-Event (type 'requests') dieser Sendung.
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'update');
       // Antragsteller:in kann Konfi ODER Teamer:in sein (target_role='teamer'):
       // sendToUserByRole trifft den korrekten Socket-Raum, sendToKonfi wuerde bei
-      // Teamer-Antraegen in den leeren Konfi-Raum senden.
+      // Teamer-Anträgen in den leeren Konfi-Raum senden.
       liveUpdate.sendToUserByRole(request.user_id, 'points', 'update');
       liveUpdate.sendToUserByRole(request.user_id, 'requests', 'update');
     } catch (err) {
@@ -648,11 +648,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       const { rows: [activity] } = await db.query("SELECT * FROM activities WHERE id = $1 AND organization_id = $2", [activityId, req.user.organization_id]);
       if (!activity) return res.status(404).json({ error: 'Aktivität nicht gefunden' });
 
-      // Der Ziel-Konfi MUSS zur eigenen Organisation gehoeren. Geprueft wurde
-      // bisher nur die Aktivitaet — ein Admin konnte damit ueber eine fremde
-      // konfiId Punkte und Aktivitaeten bei Konfis ANDERER Gemeinden setzen und
-      // dort Badge-/Level-Berechnung ausloesen (Audit 22.08.2026). Der
-      // Teamer-Zweig darunter war ueber den Jahrgangs-Check zufaellig gedeckt,
+      // Der Ziel-Konfi MUSS zur eigenen Organisation gehören. Geprueft wurde
+      // bisher nur die Aktivität — ein Admin konnte damit über eine fremde
+      // konfiId Punkte und Aktivitäten bei Konfis ANDERER Gemeinden setzen und
+      // dort Badge-/Level-Berechnung auslösen (Audit 22.08.2026). Der
+      // Teamer-Zweig darunter war über den Jahrgangs-Check zufaellig gedeckt,
       // admin/org_admin nicht.
       const { rows: [zielUser] } = await db.query(
         "SELECT 1 FROM users WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL",
@@ -726,7 +726,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       }
 
       // Live-Update an Ziel senden — sendToUserByRole (statt sendToKonfi), weil
-      // Aktivitaeten auch an Teamer:innen vergeben werden koennen (isTeamerActivity)
+      // Aktivitäten auch an Teamer:innen vergeben werden können (isTeamerActivity)
       liveUpdate.sendToUserByRole(konfiId, 'points', 'update');
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update');
     } catch (err) {
@@ -775,7 +775,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         return res.status(404).json({ error: 'Foto-Datei nicht gefunden' });
       }
 
-      // Datei lesen und (falls verschluesselt) entschluesseln, dann senden.
+      // Datei lesen und (falls verschlüsselt) entschluesseln, dann senden.
       // Admins sehen das Foto unabhaengig vom Status (auch verbucht/abgelehnt).
       const fileBuffer = await fs.promises.readFile(photoPath);
       let imageBuffer;
@@ -794,7 +794,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     }
   });
 
-  // Nachweisfoto eines Antrags manuell loeschen (Admin/Org-Admin).
+  // Nachweisfoto eines Antrags manuell löschen (Admin/Org-Admin).
   // Setzt photo_filename = NULL und entfernt die Datei vom Dateisystem.
   // Der Antrag selbst bleibt erhalten (nur das Foto wird entfernt).
   router.delete('/requests/:id/photo', rbacVerifier, async (req, res) => {
@@ -825,7 +825,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         return res.status(404).json({ error: 'Kein Foto vorhanden' });
       }
 
-      // Erst DB-Referenz entfernen, dann Datei loeschen
+      // Erst DB-Referenz entfernen, dann Datei löschen
       await db.query("UPDATE activity_requests SET photo_filename = NULL WHERE id = $1", [requestId]);
       await deletePhotoFile(request.photo_filename);
 

@@ -23,7 +23,7 @@ import {
 } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { useLocation } from 'react-router-dom';
-// useLocation fuer die Auswertung von ?segment=... (React Router v5 API)
+// useLocation für die Auswertung von ?segment=... (React Router v5 API)
 import { add, ban, closeOutline, informationCircleOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -103,7 +103,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     { ttl: CACHE_TTL.SETTINGS }
   );
 
-  // Offline-Query: Jahrgaenge
+  // Offline-Query: Jahrgänge
   const { data: jahrgaenge, refresh: refreshJahrgaenge } = useOfflineQuery<Array<{id: number; name: string}>>(
     'admin:jahrgaenge:' + user?.organization_id,
     async () => { const res = await api.get('/admin/jahrgaenge'); return res.data; },
@@ -130,7 +130,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   const [modalRequestId, setModalRequestId] = useState<number | null>(null);
 
   // Modal mit useIonModal Hook - löst Tab-Navigation Problem
-  // Haelt den "ungespeicherte Aenderungen"-Stand des EventModals, damit canDismiss
+  // Haelt den "ungespeicherte Änderungen"-Stand des EventModals, damit canDismiss
   // auch Swipe-/Backdrop-Schliessen abfangen und nachfragen kann (nicht nur der X-Button).
   const eventModalDirtyRef = useRef(false);
 
@@ -161,18 +161,18 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
       setSelectedRequest(null);
       setModalRequestId(null);
       refreshRequests();
-      // Genehmigen/Ablehnen aendert die Anzahl offener Antraege -> 'requests'
+      // Genehmigen/Ablehnen ändert die Anzahl offener Anträge -> 'requests'
       // triggern, damit das Events-Tab-Badge (BadgeContext) sofort aktualisiert
       // statt erst beim 30s-Poll.
       triggerRefresh('requests');
-      // Genehmigen/Ablehnen aendert Konfi-Punkte -> Admin-Konfi-Liste live
+      // Genehmigen/Ablehnen ändert Konfi-Punkte -> Admin-Konfi-Liste live
       // aktualisieren, damit man nicht manuell refreshen muss.
       triggerRefresh('konfis');
     }
   });
 
   // Faengt JEDEN Schliess-Weg ab (Swipe, Backdrop, programmatisch): bei
-  // ungespeicherten Aenderungen erst nachfragen, sonst direkt schliessen lassen.
+  // ungespeicherten Änderungen erst nachfragen, sonst direkt schliessen lassen.
   const eventModalCanDismiss = async (): Promise<boolean> => {
     if (!eventModalDirtyRef.current) return true;
     return new Promise<boolean>((resolve) => {
@@ -186,8 +186,8 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
           { text: 'Abbrechen', role: 'cancel', handler: () => decide(false) },
           { text: 'Verwerfen', role: 'destructive', handler: () => decide(true) }
         ],
-        // Fallback: schliesst der Alert ohne Button (z.B. Hardware-Back),
-        // niemals das canDismiss-Promise haengen lassen -> als "nicht verwerfen".
+        // Fallback: schließt der Alert ohne Button (z.B. Hardware-Back),
+        // niemals das canDismiss-Promise hängen lassen -> als "nicht verwerfen".
         onDidDismiss: () => { if (!decided) resolve(false); }
       });
     });
@@ -212,7 +212,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     });
   };
 
-  // Massgeblicher Zeitpunkt fuer "vergangen?": bei mehrtaegigen Events das ENDE
+  // Massgeblicher Zeitpunkt für "vergangen?": bei mehrtaegigen Events das ENDE
   // (event_end_time), sonst der Start. So rutscht ein Event erst NACH dem letzten
   // Tag aus "Aktuell" und ins "Verbuchen"/"Vergangen" — nicht schon nach dem Start.
   const eventEndDate = (event: Event) =>
@@ -221,7 +221,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   // Tab "Aktuell": zukuenftige/laufende Events, ABGESAGTE EINGESCHLOSSEN.
   // Sie stehen dort durchgestrichen — verschwinden sie ganz, sieht die Leitung
   // nicht mehr, dass der Termin existierte und abgesagt wurde (Fund 22.08.2026).
-  // `events` enthaelt sie nicht mehr (Zeile mit dem cancelled-Filter), deshalb
+  // `events` enthält sie nicht mehr (Zeile mit dem cancelled-Filter), deshalb
   // kommen sie aus der separaten Abfrage dazu.
   const getAktuellEvents = () => {
     const now = new Date();
@@ -313,8 +313,8 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   };
 
   // Events mit Anmeldungen sind loeschbar — mit ausdruecklicher Rueckfrage und
-  // Push an alle Angemeldeten (User-Entscheid 10.08.). Fachlich waere "absagen"
-  // sauberer, praktisch ist Loeschen das, was gemeint ist.
+  // Push an alle Angemeldeten (User-Entscheid 10.08.). Fachlich wäre "absagen"
+  // sauberer, praktisch ist Löschen das, was gemeint ist.
   const deleteSingleEvent = async (event: Event) => {
     const anmeldungen = (event.registered_count || 0) + (event.waitlist_count || 0);
     presentAlert({
@@ -496,7 +496,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
               await api.put(`/admin/activities/requests/${request.id}/reset`);
               await refreshRequests();
               // Zuruecksetzen macht die Aktivität wieder offen -> Badge muss
-              // hochzaehlen; Punkte werden zurueckgenommen -> Konfi-Liste.
+              // hochzaehlen; Punkte werden zurückgenommen -> Konfi-Liste.
               triggerRefresh('requests');
               triggerRefresh('konfis');
             } catch (err: any) {

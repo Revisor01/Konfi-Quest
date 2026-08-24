@@ -2,15 +2,15 @@
  * Offene Wisch-Aktionen (IonItemSliding) schliessen.
  *
  * Problem (User-Hinweis 11.08.): Wischt man ein Listen-Element auf und tippt
- * dann eine der Aktionen an, bleibt das Element offen zurueck — die Aktion
- * laeuft, aber die halb weggeschobene Zeile steht weiter da. Das betraf
+ * dann eine der Aktionen an, bleibt das Element offen zurück — die Aktion
+ * läuft, aber die halb weggeschobene Zeile steht weiter da. Das betraf
  * praktisch alle Listen der App; nur zwei Views hatten sich dafuer eigene
  * Refs gebaut (UsersView, OrganizationView).
  *
  * Statt in jeder Liste Refs auf jedes Element zu halten, greifen wir das
- * tatsaechlich geoeffnete Element direkt im DOM ab: Ionic haengt ihm die
+ * tatsaechlich geoeffnete Element direkt im DOM ab: Ionic hängt ihm die
  * Klasse `item-sliding-active-options-end` (bzw. `-start`) an. Dessen
- * `closeOpened()` schliesst es.
+ * `closeOpened()` schließt es.
  *
  * Bewusst tolerant: Gibt es nichts Offenes, passiert nichts. Fehler werden
  * verschluckt — ein nicht geschlossenes Sliding darf nie eine Aktion

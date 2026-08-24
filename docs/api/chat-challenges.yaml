@@ -9,11 +9,11 @@
 #   /api/notifications  -> routes/notifications.js  ( 6 Routen)
 #
 # ROLLEN-MODELL (middleware/rbac.js):
-#   req.user.type = 'konfi'  fuer Rolle konfi
-#                   'teamer' fuer Rolle teamer
-#                   'admin'  fuer Rollen admin, org_admin UND super_admin
-#   Alle "Admin-Bypass"-Pruefungen im Chat (userType === 'admin') gelten also
-#   fuer admin + org_admin (+ super_admin), NIE fuer teamer.
+#   req.user.type = 'konfi'  für Rolle konfi
+#                   'teamer' für Rolle teamer
+#                   'admin'  für Rollen admin, org_admin UND super_admin
+#   Alle "Admin-Bypass"-Prüfungen im Chat (userType === 'admin') gelten also
+#   für admin + org_admin (+ super_admin), NIE für teamer.
 #   requireTeamer = requireRole('org_admin', 'admin', 'teamer').
 #
 # ============================================================================
@@ -30,23 +30,23 @@
 #      derzeit keine Aufrufer, das Frontend nutzt /available-users.
 #    - GET /chat/available-users: nur Konfis. Wie /admins, aber ohne bereits
 #      bestehende Direktchats; liefert NIE andere Konfis. type ist dreiwertig
-#      ('admin' | 'teamer' | 'konfi') — vorher kam hart 'admin' zurueck.
+#      ('admin' | 'teamer' | 'konfi') — vorher kam hart 'admin' zurück.
 #    Direktchat (POST /chat/direct):
 #    - Ziel muss in derselben Organisation liegen (Org-Grenze hart).
-#    - Konfi -> Konfi: 403 ("Konfis koennen keine anderen Konfis anschreiben").
+#    - Konfi -> Konfi: 403 ("Konfis können keine anderen Konfis anschreiben").
 #    - Konfi -> admin/org_admin: erlaubt, immer.
 #    - Konfi -> teamer: NUR Teamer:innen mit gemeinsamem Jahrgang. Eine
-#      Teamer:in ohne Zuweisung ist fuer Konfis unsichtbar und nicht
+#      Teamer:in ohne Zuweisung ist für Konfis unsichtbar und nicht
 #      erreichbar. Die Grenze gilt in /admins, /available-users, POST /direct
 #      UND POST /rooms (participants). (Neu 2026-08-23, Gegenstueck zur
 #      Teamer-Grenze unten — die Regel gilt jetzt symmetrisch.)
 #    - admin/org_admin -> Konfi: erlaubt, jeder Konfi der Org.
-#    - teamer -> Konfi: NUR Konfis der zugewiesenen Jahrgaenge (can_view).
-#      Konfi ohne Jahrgang ist fuer teamer nicht erreichbar. Dieselbe Grenze
-#      gilt in POST /chat/rooms fuer Konfis in der participants-Liste.
+#    - teamer -> Konfi: NUR Konfis der zugewiesenen Jahrgänge (can_view).
+#      Konfi ohne Jahrgang ist für teamer nicht erreichbar. Dieselbe Grenze
+#      gilt in POST /chat/rooms für Konfis in der participants-Liste.
 #      (BEHOBEN 2026-08-23; vorher erreichte jede Teamer:in jeden Konfi.)
 #    - teamer <-> teamer/admin: erlaubt.
-#    - Ueber Organisationsgrenzen: nie (Ziel-Lookup ist org-gescopt -> 403).
+#    - Über Organisationsgrenzen: nie (Ziel-Lookup ist org-gescopt -> 403).
 #    ABER siehe LUECKE 1: POST /chat/rooms umgeht das Konfi-Konfi-Verbot.
 #
 # 2. WER SIEHT WEN in Mitgliederlisten (GET /chat/rooms/:roomId/participants)?
@@ -56,18 +56,18 @@
 #      auch ohne selbst Teilnehmer zu sein (Admin-Bypass).
 #    - Konfis sehen also in Jahrgangs-/Gruppen-/Event-Chats die anderen
 #      Konfis des Raums namentlich — das ist die einzige Stelle, an der
-#      Konfis andere Konfis "sehen" (anschreiben koennen sie sie nicht).
+#      Konfis andere Konfis "sehen" (anschreiben können sie sie nicht).
 #
 # 3. WER DARF WELCHEN RAUM SEHEN / BETRETEN?
 #    - GET /chat/rooms (Liste): strikt teilnahmebasiert — jeder (auch
-#      admin/org_admin) sieht in der LISTE nur Raeume, in denen er selbst
+#      admin/org_admin) sieht in der LISTE nur Räume, in denen er selbst
 #      chat_participants-Eintrag hat (org-gescopt). Jahrgangs- und Team-Chat-
 #      Mitgliedschaft wird beim Aufruf per TTL-Sync (10 Min) nachgezogen:
 #      konfi -> eigener Jahrgangs-Chat; teamer/admin -> zugewiesene
-#      Jahrgaenge + Team-Chat; org_admin -> ALLE Jahrgangs-Chats + Team-Chat.
-#    - Betreten/Lesen einzelner Raeume (GET /rooms/:roomId, /messages,
+#      Jahrgänge + Team-Chat; org_admin -> ALLE Jahrgangs-Chats + Team-Chat.
+#    - Betreten/Lesen einzelner Räume (GET /rooms/:roomId, /messages,
 #      mark-read, POST /messages): Teilnehmer ODER Admin-Bypass —
-#      admin/org_admin koennen JEDEN Raum ihrer Org oeffnen, lesen und darin
+#      admin/org_admin können JEDEN Raum ihrer Org oeffnen, lesen und darin
 #      schreiben — AUSSER fremde Direktchats (GEAENDERT 2026-08-23: ein
 #      Zwiegespraech ist privat, dort greift der Admin-Bypass nicht mehr).
 #      Gruppen-, Jahrgangs-, Team- und Termin-Chats bleiben offen.
@@ -76,22 +76,22 @@
 #      /messages (GET+POST), mark-read, participants, reactions, polls,
 #      DELETE /messages/:id und dem Export.
 #    - Export (GET /rooms/:roomId/export): nur admin/org_admin (explizit
-#      NICHT teamer), kompletter Verlauf — aber nur fuer Raeume, die man
+#      NICHT teamer), kompletter Verlauf — aber nur für Räume, die man
 #      oeffnen darf (403 bei fremdem Direktchat).
-#    - Org-Grenze: ueberall hart (jede Query prueft organization_id).
+#    - Org-Grenze: ueberall hart (jede Query prüft organization_id).
 #    - Socket-Raum `room_<id>` (joinRoom/typing/stopTyping, server.js):
 #      dieselbe Regel wie oben — Teilnehmer ODER Admin-Bypass, dazu die
 #      Org-Grenze. (BEHOBEN 2026-08-23; vorher wurde NUR die Organisation
-#      geprueft, jeder Angemeldete derselben Gemeinde konnte damit jedem Raum
-#      beitreten und ueber newMessage/pollUpdated/reactionAdded alle neuen
+#      geprüft, jeder Angemeldete derselben Gemeinde konnte damit jedem Raum
+#      beitreten und über newMessage/pollUpdated/reactionAdded alle neuen
 #      Nachrichten fremder Chats mitlesen.)
 #
 # 4. WER DARF NACHRICHTEN LOESCHEN (DELETE /chat/messages/:messageId)?
 #    - Eigene Nachrichten: jede Rolle (auch Konfi), Soft-Delete.
-#    - Fremde Nachrichten: nur admin/org_admin, und nur in Raeumen, die sie
+#    - Fremde Nachrichten: nur admin/org_admin, und nur in Räumen, die sie
 #      oeffnen duerfen — in fremden Direktchats also nicht mehr
-#      (GEAENDERT 2026-08-23). teamer duerfen NUR eigene loeschen.
-#    - Raum loeschen (DELETE /rooms/:roomId): nur admin/org_admin; mit
+#      (GEAENDERT 2026-08-23). teamer duerfen NUR eigene löschen.
+#    - Raum löschen (DELETE /rooms/:roomId): nur admin/org_admin; mit
 #      Nachrichten nur per ?force=true; Jahrgangs-Chats nie direkt.
 #
 # 5. CHALLENGES — WER SIEHT WELCHE BEITRAEGE / ANONYMITAET?
@@ -99,60 +99,60 @@
 #      oeffentlich = moderation_status='approved' UND (visibility='public'
 #      ODER (visibility='konfi_choice' UND konfi_consent IN
 #      ('publish','anonymous'))). visibility='private' ist NIE oeffentlich,
-#      'hidden' schlaegt alles.
+#      'hidden' schlägt alles.
 #    - Galerie (GET /konfi/:id): nur fremde OEFFENTLICHE Beitraege; bei
 #      anonymen Beitraegen werden display_name, role_name UND jahrgang_name
-#      bereits im SQL auf NULL gesetzt — der Name verlaesst das Backend nie.
+#      bereits im SQL auf NULL gesetzt — der Name verlässt das Backend nie.
 #    - Eigene Beitraege: immer sichtbar (mit Moderationsstatus).
 #    - Leitung (GET /admin/:id/submissions): sieht IMMER alles inkl. Namen —
 #      Anonymitaet gilt gegenueber der Gruppe, nicht gegenueber der Leitung.
 #      org_admin/admin org-weit; teamer nur Challenges seiner zugewiesenen
-#      Jahrgaenge ('nur_team'-Challenges org-weit fuer jeden Teamer).
+#      Jahrgänge ('nur_team'-Challenges org-weit für jeden Teamer).
 #    - Export (GET /admin/:id/export): strenger als die Sammelansicht —
-#      konfi_consent='private' ("nur fuer die Leitung") landet NIE im Export;
+#      konfi_consent='private' ("nur für die Leitung") landet NIE im Export;
 #      anonyme Beitraege erscheinen als "Anonym".
 #    - Anonymisierung ist Einbahnstrasse (anonymize ohne Gegenstueck);
-#      Konfis koennen Beitraege nicht selbst zurueckziehen (DELETE -> immer 403).
+#      Konfis können Beitraege nicht selbst zurueckziehen (DELETE -> immer 403).
 #    - Dateiabruf (GET /files/:filename): Owner immer; org_admin/admin
-#      org-weit; teamer nur zugewiesene Jahrgaenge bzw. 'nur_team' org-weit;
+#      org-weit; teamer nur zugewiesene Jahrgänge bzw. 'nur_team' org-weit;
 #      Konfi nur oeffentliche Beitraege seines Jahrgangs. Auth NUR per
 #      Authorization-Header (bewusst kein ?token= wie im Chat).
 #
 # ============================================================================
 # GEFUNDENE LUECKEN (Details als "# LUECKE:" an den betroffenen Routen)
 # ============================================================================
-# LUECKE 1 (POST /chat/rooms): Konfis koennen das Konfi-zu-Konfi-Verbot
-#   umgehen: type='direct' ist fuer Konfis erlaubt, und die participants-Liste
-#   wird NUR gegen die Org geprueft, nicht gegen Rollen. Ein Konfi kann so
+# LUECKE 1 (POST /chat/rooms): Konfis können das Konfi-zu-Konfi-Verbot
+#   umgehen: type='direct' ist für Konfis erlaubt, und die participants-Liste
+#   wird NUR gegen die Org geprüft, nicht gegen Rollen. Ein Konfi kann so
 #   einen "direct"-Raum mit anderen Konfis (auch mehreren) anlegen und mit
 #   ihnen chatten — POST /direct blockiert genau das.
 # LUECKE 2 (anonyme Umfragen) — BEHOBEN 2026-08-23: GET /rooms/:roomId/messages
 #   und das pollUpdated-Event lieferten bei anonymous=true zwar keinen
-#   user_name, aber weiterhin user_id und user_type JEDER Stimme. Ueber die
-#   Teilnehmerliste (Frage 2) liess sich daraus aufloesen, wer was gewaehlt
+#   user_name, aber weiterhin user_id und user_type JEDER Stimme. Über die
+#   Teilnehmerliste (Frage 2) liess sich daraus aufloesen, wer was gewählt
 #   hat. Jetzt kommen fremde Stimmen mit user_id=null und user_type=null; nur
-#   die EIGENE Stimme behaelt ihre Kennung, damit der Client sie markieren
+#   die EIGENE Stimme behält ihre Kennung, damit der Client sie markieren
 #   kann. Das gilt auch gegenueber der Leitung — anders als bei Challenges,
 #   wo sie bewusst alles sieht.
 # LUECKE 4 (POST /chat/messages/:messageId/vote) — BEHOBEN 2026-08-23: Die
 #   Route hatte eine eigene, unvollstaendige Kopie der Abstimmlogik und
 #   ignorierte exclusive_options komplett (kein FOR-UPDATE-Lock, keine
-#   Belegt-Pruefung). Bei einer exklusiven Umfrage liess sich darueber dieselbe
-#   Option mehrfach belegen, waehrend /polls/:pollId/vote korrekt 409 liefert.
+#   Belegt-Prüfung). Bei einer exklusiven Umfrage liess sich darueber dieselbe
+#   Option mehrfach belegen, während /polls/:pollId/vote korrekt 409 liefert.
 #   Beide Routen teilen sich jetzt denselben Handler; /polls/:pollId/vote sucht
 #   die Umfrage ohnehin per poll_id UND per message_id.
 # LUECKE 3 (GET /chat/files/:filename): Token wird auch als ?token=
 #   Query-Parameter akzeptiert (landet in Access-Logs/Referrern). Die
 #   Challenges-Route verzichtet aus genau diesem Grund bewusst darauf.
-#   Ausserdem prueft die Mitgliedschaft hier nur user_id (ohne user_type) und
+#   Ausserdem prüft die Mitgliedschaft hier nur user_id (ohne user_type) und
 #   es gibt KEINEN Admin-Bypass: ein Admin, der Nachrichten eines fremden
 #   Raums lesen darf, kann dessen Dateien nicht abrufen (Inkonsistenz, keine
 #   Rechteausweitung).
 # HINWEIS — ERLEDIGT 2026-08-23: admin/org_admin konnten JEDEN Raum der Org
 #   lesen, beschreiben und exportieren, auch private Direktchats zweier
-#   anderer Nutzer. Direktchats sind davon jetzt ausgenommen. Teamer koennen ueber POST /chat/rooms
-#   Gruppenraeume mit beliebigen Org-Nutzern (auch Konfis fremder Jahrgaenge)
-#   anlegen und Jahrgangs-Chats fuer JEDEN Jahrgang der Org erstellen
+#   anderer Nutzer. Direktchats sind davon jetzt ausgenommen. Teamer können über POST /chat/rooms
+#   Gruppenraeume mit beliebigen Org-Nutzern (auch Konfis fremder Jahrgänge)
+#   anlegen und Jahrgangs-Chats für JEDEN Jahrgang der Org erstellen
 #   (keine Zuweisungspruefung beim Anlegen).
 # ============================================================================
 
@@ -182,7 +182,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT, geprueft von verifyTokenRBAC (Org-Kontext via X-Active-Organization-Header moeglich).
+      description: JWT, geprüft von verifyTokenRBAC (Org-Kontext via X-Active-Organization-Header möglich).
   schemas:
     Error:
       type: object
@@ -333,10 +333,10 @@ paths:
   /chat/team-contacts:
     get:
       tags: [Chat]
-      summary: Team-Kontaktliste fuer Direktchats
+      summary: Team-Kontaktliste für Direktchats
       description: >
         Liefert alle aktiven Admins, Org-Admins und Teamer:innen der eigenen
-        Organisation (ohne den Aufrufer selbst) — bewusst nur die fuer einen
+        Organisation (ohne den Aufrufer selbst) — bewusst nur die für einen
         Chat noetigen Felder, keine E-Mail/Login-Daten.
       responses:
         '200':
@@ -352,7 +352,7 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Explizite role_name-Pruefung im Handler (admin/org_admin/teamer), sonst 403"
+        objekt-pruefung: "Explizite role_name-Prüfung im Handler (admin/org_admin/teamer), sonst 403"
         hinweis: "Konfis nutzen stattdessen GET /chat/admins bzw. /chat/available-users"
 
   /chat/admins:
@@ -360,8 +360,8 @@ paths:
       tags: [Chat]
       summary: Anschreibbare Team-Mitglieder (Konfi-Sicht)
       description: >
-        Nur fuer Konfis: alle admin/org_admin/teamer der eigenen Organisation.
-        Konfis koennen ausschliesslich diese Personen anschreiben.
+        Nur für Konfis: alle admin/org_admin/teamer der eigenen Organisation.
+        Konfis können ausschliesslich diese Personen anschreiben.
       responses:
         '200':
           description: Liste (id, display_name, username)
@@ -389,7 +389,7 @@ paths:
       tags: [Chat]
       summary: Noch nicht angeschriebene Chat-Partner (Konfi-Sicht)
       description: >
-        Nur fuer Konfis: Team-Mitglieder der Org, mit denen noch KEIN
+        Nur für Konfis: Team-Mitglieder der Org, mit denen noch KEIN
         Direktchat besteht. Liefert nie andere Konfis
         (permissions: direct_only_admin).
       responses:
@@ -430,7 +430,7 @@ paths:
         bestehenden Raum). user_type des Ziels wird IMMER serverseitig aus
         der echten Rolle abgeleitet. Konfi-zu-Konfi ist verboten.
         Seit 23.08.2026 gilt zusaetzlich die Jahrgangsgrenze: Teamer:innen
-        erreichen nur Konfis ihrer zugewiesenen Jahrgaenge, org_admin und
+        erreichen nur Konfis ihrer zugewiesenen Jahrgänge, org_admin und
         admin alle Konfis der Organisation. Eine Teamer:in ohne Zuweisung
         erreicht gar keinen Konfi — Team-Kontakte bleiben unberuehrt.
       requestBody:
@@ -460,14 +460,14 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: >
-          Ziel-User muss zur eigenen Org gehoeren (sonst 403); konfi->konfi
+          Ziel-User muss zur eigenen Org gehören (sonst 403); konfi->konfi
           wird geblockt; teamer->konfi nur bei passender Jahrgangs-Zuweisung
-          (can_view). Dieselbe Pruefung greift in POST /chat/rooms, sonst
-          waere sie ueber das participants-Feld umgehbar.
-        hinweis: "Team -> Konfi ohne Jahrgangspruefung erlaubt (jeder Konfi der Org, auch fremde Jahrgaenge)"
+          (can_view). Dieselbe Prüfung greift in POST /chat/rooms, sonst
+          wäre sie über das participants-Feld umgehbar.
+        hinweis: "Team -> Konfi ohne Jahrgangspruefung erlaubt (jeder Konfi der Org, auch fremde Jahrgänge)"
 
   # ==========================================================================
-  # CHAT — Raeume
+  # CHAT — Räume
   # ==========================================================================
 
   /chat/rooms:
@@ -513,25 +513,25 @@ paths:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC, validateCreateRoom]
         org-scope: true
-        objekt-pruefung: "Konfis nur type='direct'; jahrgang_id und participants werden gegen die Org geprueft"
-        # LUECKE: Konfis koennen hier mit type='direct' + participants=[andere
+        objekt-pruefung: "Konfis nur type='direct'; jahrgang_id und participants werden gegen die Org geprüft"
+        # LUECKE: Konfis können hier mit type='direct' + participants=[andere
         # Konfi-IDs] das Konfi-zu-Konfi-Verbot aus POST /chat/direct umgehen —
-        # die participants-Liste wird nur gegen die Org geprueft, nicht gegen
-        # Rollen; auch mehr als 2 Teilnehmer in einem "direct"-Raum moeglich.
-        # Ausserdem: teamer koennen Gruppenraeume mit beliebigen Org-Nutzern
-        # und Jahrgangs-Chats fuer JEDEN Jahrgang der Org anlegen (keine
+        # die participants-Liste wird nur gegen die Org geprüft, nicht gegen
+        # Rollen; auch mehr als 2 Teilnehmer in einem "direct"-Raum möglich.
+        # Ausserdem: teamer können Gruppenraeume mit beliebigen Org-Nutzern
+        # und Jahrgangs-Chats für JEDEN Jahrgang der Org anlegen (keine
         # Zuweisungspruefung).
         hinweis: "Siehe LUECKE-Kommentar; emitRoomsChanged an alle finalen Teilnehmer"
     get:
       tags: [Chat]
-      summary: Eigene Chat-Raeume auflisten
+      summary: Eigene Chat-Räume auflisten
       description: >
-        Liefert alle Raeume, in denen der Nutzer Teilnehmer ist, mit
+        Liefert alle Räume, in denen der Nutzer Teilnehmer ist, mit
         unread_count, letzter Nachricht und Direktchat-Partnername. Beim
-        Aufruf laeuft hoechstens 1x je 10 Min ein Mitgliedschafts-Sync
+        Aufruf läuft höchstens 1x je 10 Min ein Mitgliedschafts-Sync
         (Jahrgangs-Chats + Team-Chat): konfi -> eigener Jahrgang,
-        teamer/admin -> zugewiesene Jahrgaenge, org_admin -> alle Jahrgaenge
-        der Org; Team-Chat fuer alle Nicht-Konfis.
+        teamer/admin -> zugewiesene Jahrgänge, org_admin -> alle Jahrgänge
+        der Org; Team-Chat für alle Nicht-Konfis.
       responses:
         '200':
           description: Raumliste (nach letzter Nachricht sortiert)
@@ -545,8 +545,8 @@ paths:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Nur Raeume mit eigenem chat_participants-Eintrag (KEIN Admin-Bypass in der Liste)"
-        hinweis: "Admins sehen fremde Raeume zwar nicht in der Liste, koennen sie aber per ID oeffnen (siehe /rooms/{roomId})"
+        objekt-pruefung: "Nur Räume mit eigenem chat_participants-Eintrag (KEIN Admin-Bypass in der Liste)"
+        hinweis: "Admins sehen fremde Räume zwar nicht in der Liste, können sie aber per ID oeffnen (siehe /rooms/{roomId})"
 
   /chat/rooms/{roomId}:
     get:
@@ -583,11 +583,11 @@ paths:
         hinweis: "Admin-Bypass umfasst auch fremde Direktchats"
     delete:
       tags: [Chat]
-      summary: Chat-Raum loeschen (nur Admins)
+      summary: Chat-Raum löschen (nur Admins)
       description: >
         Loescht Raum inkl. Nachrichten, Umfragen, Dateien. Mit vorhandenen
         Nachrichten nur mit ?force=true. Jahrgangs-Chats sind nie direkt
-        loeschbar (nur ueber das Loeschen des Jahrgangs).
+        loeschbar (nur über das Löschen des Jahrgangs).
       parameters:
         - { name: roomId, in: path, required: true, schema: { type: integer } }
         - { name: force, in: query, required: false, schema: { type: string, enum: ["true", "false"] } }
@@ -601,7 +601,7 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "req.user.type muss 'admin' sein; Raum muss zur eigenen Org gehoeren"
+        objekt-pruefung: "req.user.type muss 'admin' sein; Raum muss zur eigenen Org gehören"
         hinweis: "teamer und konfi nie; auch fremde Direktchats loeschbar"
 
   # ==========================================================================
@@ -638,14 +638,14 @@ paths:
         objekt-pruefung: "Teilnehmer ODER Admin-Bypass (admin/org_admin lesen jeden Raum der Org)"
         # LUECKE: Bei anonymen Umfragen (anonymous=true) fehlt in votes zwar
         # user_name, user_id/user_type jeder Stimme werden aber ausgeliefert —
-        # ueber die Teilnehmerliste namentlich aufloesbar (LUECKE 2 im Kopf).
+        # über die Teilnehmerliste namentlich aufloesbar (LUECKE 2 im Kopf).
         hinweis: "Geloeschte Nachrichten kommen als Platzhalter (is_deleted=true) mit"
     post:
       tags: [Chat]
       summary: Nachricht senden (Text oder Datei)
       description: >
         multipart/form-data mit optionalem Feld 'file' (verschluesselte
-        Ablage, Magic-Bytes-Pruefung) oder JSON mit content. client_id (UUID)
+        Ablage, Magic-Bytes-Prüfung) oder JSON mit content. client_id (UUID)
         macht den Aufruf idempotent. reply_to wird gegen den Raum validiert.
         Verteilt via WebSocket und Push an alle Teilnehmer.
       parameters:
@@ -676,7 +676,7 @@ paths:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC, chatUpload.single, validateSendMessage, rateLimiters.chatMessageLimiter, rateLimiters.uploadLimiter]
         org-scope: true
-        objekt-pruefung: "Teilnehmer ODER Admin-Bypass — admin/org_admin koennen in JEDEN Raum der Org schreiben (auch fremde Direktchats)"
+        objekt-pruefung: "Teilnehmer ODER Admin-Bypass — admin/org_admin können in JEDEN Raum der Org schreiben (auch fremde Direktchats)"
 
   /chat/rooms/{roomId}/mark-read:
     post:
@@ -720,12 +720,12 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: "type='admin' UND role_name in (admin, org_admin, super_admin); Raum org-gescopt"
-        hinweis: "Keine Teilnahme noetig — jeder Raum der Org exportierbar, auch fremde Direktchats"
+        hinweis: "Keine Teilnahme nötig — jeder Raum der Org exportierbar, auch fremde Direktchats"
 
   /chat/messages/{messageId}:
     delete:
       tags: [Chat]
-      summary: Nachricht loeschen (Soft-Delete)
+      summary: Nachricht löschen (Soft-Delete)
       parameters:
         - { name: messageId, in: path, required: true, schema: { type: integer } }
       responses:
@@ -802,7 +802,7 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: "type='admin'; nur room.type='group'; Ziel-User org-gescopt"
-        hinweis: "teamer koennen keine Teilnehmer hinzufuegen (wohl aber Raeume mit Teilnehmern ANLEGEN, siehe POST /rooms)"
+        hinweis: "teamer können keine Teilnehmer hinzufuegen (wohl aber Räume mit Teilnehmern ANLEGEN, siehe POST /rooms)"
 
   /chat/rooms/{roomId}/participants/{userId}/{userType}:
     delete:
@@ -829,8 +829,8 @@ paths:
       tags: [Chat]
       summary: Raum selbst verlassen (teamer/konfi)
       description: >
-        Admins koennen nie verlassen; jahrgang- und direct-Raeume sind
-        generell nicht verlassbar; Event-Chats verlassen Konfis nur ueber
+        Admins können nie verlassen; jahrgang- und direct-Räume sind
+        generell nicht verlassbar; Event-Chats verlassen Konfis nur über
         die Event-Abmeldung.
       parameters:
         - { name: roomId, in: path, required: true, schema: { type: integer } }
@@ -856,11 +856,11 @@ paths:
       summary: Chat-Datei abrufen (entschluesselt)
       description: >
         Liefert eine im Chat hochgeladene Datei. Auth per
-        Authorization-Header ODER ?token= (fuer Video-Elemente). Nur
+        Authorization-Header ODER ?token= (für Video-Elemente). Nur
         Hex-Dateinamen; Path-Traversal-Schutz via basename.
-        Seit 22.08.2026 wird der Token gegen die Datenbank geprueft (Konto
-        aktiv, nicht geloescht, kein Soft-Revoke) und die aktive Organisation
-        ueber user_organizations aufgeloest — Multi-Org-Nutzer erreichen ihre
+        Seit 22.08.2026 wird der Token gegen die Datenbank geprüft (Konto
+        aktiv, nicht gelöscht, kein Soft-Revoke) und die aktive Organisation
+        über user_organizations aufgeloest — Multi-Org-Nutzer erreichen ihre
         Dateien damit auch in der Zweit-Organisation.
       security: []
       parameters:
@@ -879,14 +879,14 @@ paths:
         org-scope: true
         objekt-pruefung: "Nachricht mit file_path muss in der AKTIVEN Org liegen UND Aufrufer muss chat_participants-Eintrag im Raum haben (nur user_id, ohne user_type)"
         # BEHOBEN 22.08.2026: Frueher `req.user = decoded` — Token-Angaben
-        # galten ungeprueft fuer die volle Laufzeit (geloeschte/gesperrte
+        # galten ungeprueft für die volle Laufzeit (geloeschte/gesperrte
         # Konten kamen weiter an Dateien), und organization_id war immer die
         # PRIMAER-Org, weshalb Multi-Org-Nutzer in der Zweit-Organisation 404
         # bekamen. Jetzt DB-Abgleich inkl. Soft-Revoke und Aufloesung der
         # aktiven Org (403 bei fehlender Mitgliedschaft).
         # LUECKE (offen): Token auch als Query-Parameter akzeptiert
-        # (Access-Logs/Referrer); kein Admin-Bypass (Admins koennen
-        # Nachrichten fremder Raeume lesen, deren Dateien aber nicht abrufen —
+        # (Access-Logs/Referrer); kein Admin-Bypass (Admins können
+        # Nachrichten fremder Räume lesen, deren Dateien aber nicht abrufen —
         # Inkonsistenz); Mitgliedschafts-Check ohne user_type (unkritisch,
         # user_id global eindeutig).
 
@@ -896,7 +896,7 @@ paths:
       summary: Badge-Zahl neu berechnen und als Push senden (Background Refresh)
       responses:
         '200':
-          description: Ungelesen-Zaehler
+          description: Ungelesen-Zähler
           content:
             application/json:
               schema:
@@ -911,7 +911,7 @@ paths:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
         org-scope: false
-        objekt-pruefung: "Nur eigene Daten (Zaehler ueber eigene chat_participants)"
+        objekt-pruefung: "Nur eigene Daten (Zähler über eigene chat_participants)"
 
   /chat/rooms/{roomId}/polls:
     post:
@@ -948,8 +948,8 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, validateCreatePoll]
         org-scope: true
-        objekt-pruefung: "type='admin'; Raum muss zur Org gehoeren (Teilnahme nicht noetig)"
-        hinweis: "teamer koennen keine Umfragen erstellen"
+        objekt-pruefung: "type='admin'; Raum muss zur Org gehören (Teilnahme nicht nötig)"
+        hinweis: "teamer können keine Umfragen erstellen"
 
   /chat/polls/{pollId}/vote:
     post:
@@ -981,14 +981,14 @@ paths:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "NUR Teilnehmer des Raums (hier KEIN Admin-Bypass — auch Admins muessen Teilnehmer sein)"
+        objekt-pruefung: "NUR Teilnehmer des Raums (hier KEIN Admin-Bypass — auch Admins müssen Teilnehmer sein)"
 
   /chat/messages/{messageId}/vote:
     post:
       tags: [Chat-Umfragen]
       summary: Abstimmen per Message-ID (Frontend-Kompatibilitaet)
       description: >
-        Wie /polls/{pollId}/vote, aber Lookup nur ueber message_id und OHNE
+        Wie /polls/{pollId}/vote, aber Lookup nur über message_id und OHNE
         Toggle-off bei Mehrfachauswahl (doppelte Stimme -> 400) und ohne
         exclusive_options-Sperrlogik.
       parameters:
@@ -1061,7 +1061,7 @@ paths:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Org-Check; Teilnehmer-Pflicht nur fuer Nicht-Admins (admin/org_admin lesen org-weit)"
+        objekt-pruefung: "Org-Check; Teilnehmer-Pflicht nur für Nicht-Admins (admin/org_admin lesen org-weit)"
 
   # ==========================================================================
   # CHALLENGES — Teilnehmer-Endpunkte (Konfis UND Team je nach audience)
@@ -1072,9 +1072,9 @@ paths:
       tags: [Challenges-Teilnehmer]
       summary: Aktive Challenges, Archiv und eigene Abzeichen
       description: >
-        Teilnehmer-Einstieg (trotz Pfadname auch fuer das Team). Nie
+        Teilnehmer-Einstieg (trotz Pfadname auch für das Team). Nie
         Entwuerfe, nie ungestartete. Scope: Konfi -> Challenges seines
-        Jahrgangs (nie 'nur_team'); teamer -> zugewiesene Jahrgaenge
+        Jahrgangs (nie 'nur_team'); teamer -> zugewiesene Jahrgänge
         ('konfis_und_team') + org-weite 'nur_team'; admin/org_admin -> alle
         der Org mit Team-Beteiligung ('konfis_und_team', 'nur_team').
       responses:
@@ -1113,10 +1113,10 @@ paths:
       tags: [Challenges-Teilnehmer]
       summary: Challenge-Detail mit Galerie und eigenen Beitraegen
       description: >
-        Galerie enthaelt NUR fremde oeffentliche Beitraege
+        Galerie enthält NUR fremde oeffentliche Beitraege
         (PUBLIC_SUBMISSION_SQL); bei anonymen Beitraegen sind display_name,
         role_name, jahrgang_name serverseitig NULL. Eigene Beitraege immer,
-        inkl. Moderationsstatus. 'nur_team'-Challenges liefern fuer Konfis
+        inkl. Moderationsstatus. 'nur_team'-Challenges liefern für Konfis
         404 (Existenz soll nicht durchsickern), ebenso Entwuerfe und noch
         nicht gestartete Challenges.
       parameters:
@@ -1144,19 +1144,19 @@ paths:
         middleware: [rbacVerifier]
         org-scope: true
         objekt-pruefung: "participantMayAccess: konfi -> eigener Jahrgang zugeordnet; teamer -> zugewiesener Jahrgang oder 'nur_team'; admin/org_admin immer"
-        hinweis: "Anonymitaet wird serverseitig durchgesetzt (Name verlaesst das Backend nicht)"
+        hinweis: "Anonymitaet wird serverseitig durchgesetzt (Name verlässt das Backend nicht)"
 
   /challenges/konfi/{id}/submissions:
     post:
       tags: [Challenges-Teilnehmer]
       summary: Beitrag einreichen
       description: >
-        multipart (Feld 'file') fuer photo/audio/video, JSON fuer text/link.
+        multipart (Feld 'file') für photo/audio/video, JSON für text/link.
         Nur bei Status 'active'. audience steuert, wer einreichen darf
         (maySubmit): konfi bei 'konfis'/'konfis_und_team', Team bei
         'konfis_und_team'/'nur_team'. konfi_consent nur bei
         visibility='konfi_choice' (Default 'publish'). Ohne Moderation
-        Auto-Approve. Magic-Bytes-Pruefung der Datei; verschluesselte Ablage.
+        Auto-Approve. Magic-Bytes-Prüfung der Datei; verschluesselte Ablage.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       requestBody:
@@ -1207,7 +1207,7 @@ paths:
         rollen: []
         middleware: [rbacVerifier]
         org-scope: false
-        objekt-pruefung: "Keine — pauschale 403 fuer alle"
+        objekt-pruefung: "Keine — pauschale 403 für alle"
 
   /challenges/files/{filename}:
     get:
@@ -1232,7 +1232,7 @@ paths:
         org-scope: true
         objekt-pruefung: >-
           Owner immer; admin/org_admin org-weit; teamer bei 'nur_team' org-weit,
-          sonst nur zugewiesene Jahrgaenge der Challenge; konfi nur oeffentliche
+          sonst nur zugewiesene Jahrgänge der Challenge; konfi nur oeffentliche
           Beitraege (isSubmissionPublic) aus seinem Jahrgang und nie 'nur_team'
 
   # ==========================================================================
@@ -1246,7 +1246,7 @@ paths:
       description: >
         Alle Rollen der Org inkl. Konfis (eine Challenge kann von einem
         Konfi stammen). Teamer sehen nur Konfis ihrer zugewiesenen
-        Jahrgaenge; Team-Mitglieder sehen sie immer.
+        Jahrgänge; Team-Mitglieder sehen sie immer.
       responses:
         '200':
           description: Liste (id, display_name, role_name), Konfis zuletzt
@@ -1266,7 +1266,7 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [rbacVerifier, requireTeamer]
         org-scope: true
-        objekt-pruefung: "Konfi-Eintraege auf zugewiesene Jahrgaenge des Teamers gefiltert"
+        objekt-pruefung: "Konfi-Eintraege auf zugewiesene Jahrgänge des Teamers gefiltert"
 
   /challenges/admin:
     get:
@@ -1275,7 +1275,7 @@ paths:
       description: >
         Verwaltungsliste inkl. submission_count, pending_count, eigener
         Teilnahme (has_badge/own_submission_count) und Jahrgangs-Zuordnung.
-        Teamer sehen nur Challenges ihrer zugewiesenen Jahrgaenge plus
+        Teamer sehen nur Challenges ihrer zugewiesenen Jahrgänge plus
         org-weite 'nur_team'-Challenges; ohne Zuweisungen leere Liste.
       responses:
         '200':
@@ -1294,8 +1294,8 @@ paths:
         Defaults: audience 'konfis_und_team', visibility 'konfi_choice',
         moderated true, allow_multiple true, is_draft true, allowed_media
         [text, photo]. Bei 'nur_team' werden jahrgang_ids ignoriert/nicht
-        gespeichert. Teamer duerfen nur eigene (zugewiesene) Jahrgaenge
-        bespielen; Jahrgaenge und Urheber werden org-gescopt validiert.
+        gespeichert. Teamer duerfen nur eigene (zugewiesene) Jahrgänge
+        bespielen; Jahrgänge und Urheber werden org-gescopt validiert.
       requestBody:
         required: true
         content:
@@ -1329,7 +1329,7 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [rbacVerifier, requireTeamer, validateCreate]
         org-scope: true
-        objekt-pruefung: "jahrgang_ids muessen zur Org UND (bei Teamern) zu den eigenen Zuweisungen gehoeren; author_user_id org-gescopt"
+        objekt-pruefung: "jahrgang_ids müssen zur Org UND (bei Teamern) zu den eigenen Zuweisungen gehören; author_user_id org-gescopt"
 
   /challenges/admin/{id}:
     put:
@@ -1360,10 +1360,10 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [rbacVerifier, requireTeamer, validateUpdate]
         org-scope: true
-        objekt-pruefung: "leadershipMayAccess: org_admin/admin immer; teamer nur zugewiesene Jahrgaenge bzw. 'nur_team' org-weit"
+        objekt-pruefung: "leadershipMayAccess: org_admin/admin immer; teamer nur zugewiesene Jahrgänge bzw. 'nur_team' org-weit"
     delete:
       tags: [Challenges-Leitung]
-      summary: Challenge loeschen (gestartete nur mit force)
+      summary: Challenge löschen (gestartete nur mit force)
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
         - { name: force, in: query, required: false, schema: { type: string, enum: ["true", "false"] } }
@@ -1400,7 +1400,7 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [rbacVerifier, requireTeamer]
         org-scope: true
-        objekt-pruefung: "leadershipMayAccess (Teamer nur zugewiesene Jahrgaenge / 'nur_team')"
+        objekt-pruefung: "leadershipMayAccess (Teamer nur zugewiesene Jahrgänge / 'nur_team')"
 
   /challenges/admin/submissions/{id}/moderate:
     put:
@@ -1408,7 +1408,7 @@ paths:
       summary: Beitrag moderieren (approve/hide/unhide/anonymize)
       description: >
         approve und unhide setzen 'approved' und raeumen hidden-Metadaten ab;
-        hide setzt 'hidden' (schlaegt jede Sichtbarkeit). anonymize ist eine
+        hide setzt 'hidden' (schlägt jede Sichtbarkeit). anonymize ist eine
         Einbahnstrasse publish->anonymous, nur bei visibility='konfi_choice';
         'private' (staerkste Konfi-Zusage) und bereits anonyme Beitraege
         liefern 409.
@@ -1442,7 +1442,7 @@ paths:
       summary: Beitraege als Text exportieren (Liturgie/Playlist/Wand)
       description: >
         text/plain-Download. Strenger als die Sammelansicht, weil der Export
-        die Leitungssphaere verlaesst — konfi_choice: nur approved mit
+        die Leitungssphaere verlässt — konfi_choice: nur approved mit
         publish/anonymous-Konsens ('private' NIE); public: nur approved;
         private Challenge: alle nicht-ausgeblendeten (Export ist dort der
         angekuendigte Rueckkanal). Anonyme Beitraege als "Anonym".
@@ -1457,7 +1457,7 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [rbacVerifier, requireTeamer]
         org-scope: true
-        objekt-pruefung: "leadershipMayAccess; hidden-Beitraege und 'private'-Konsens (ausser bei privater Challenge) bleiben draussen"
+        objekt-pruefung: "leadershipMayAccess; hidden-Beitraege und 'private'-Konsens (außer bei privater Challenge) bleiben draussen"
 
   # ==========================================================================
   # NOTIFICATIONS
@@ -1466,19 +1466,19 @@ paths:
   /notifications/badge-counts:
     get:
       tags: [Notifications]
-      summary: Leichtgewichtige Badge-Zaehler fuer die Tab-Leiste
+      summary: Leichtgewichtige Badge-Zähler für die Tab-Leiste
       description: >
-        Chat-Ungelesen-Zaehler je Raum (Semantik identisch zu GET
-        /chat/rooms) plus Pending-Zaehler: pendingRequests/pendingEvents nur
-        fuer Admin-Typen; pendingChallenges fuer Admins org-weit, fuer
-        Teamer auf zugewiesene Jahrgaenge begrenzt, fuer Konfis 0.
-        Seit 24.08.2026 zaehlen EIGENE Nachrichten nicht mehr als ungelesen —
+        Chat-Ungelesen-Zähler je Raum (Semantik identisch zu GET
+        /chat/rooms) plus Pending-Zähler: pendingRequests/pendingEvents nur
+        für Admin-Typen; pendingChallenges für Admins org-weit, für
+        Teamer auf zugewiesene Jahrgänge begrenzt, für Konfis 0.
+        Seit 24.08.2026 zählen EIGENE Nachrichten nicht mehr als ungelesen —
         vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter,
         bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie
-        seit jeher ausgeschlossen; die beiden Zaehlungen sind damit gleich.
+        seit jeher ausgeschlossen; die beiden Zählungen sind damit gleich.
       responses:
         '200':
-          description: Zaehler
+          description: Zähler
           content:
             application/json:
               schema:
@@ -1499,7 +1499,7 @@ paths:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Nur eigene Raeume (chat_participants); Pending-Zaehler rollenabhaengig gefiltert"
+        objekt-pruefung: "Nur eigene Räume (chat_participants); Pending-Zähler rollenabhaengig gefiltert"
 
   /notifications/preferences:
     get:
@@ -1549,7 +1549,7 @@ paths:
       description: >
         Upsert auf (user_id, platform, device_id). Ein Token existiert
         global genau einmal: Vorkommen bei anderen Usern/Geraeten werden
-        vorher geloescht (Account-Wechsel, Neuinstallation).
+        vorher gelöscht (Account-Wechsel, Neuinstallation).
       requestBody:
         required: true
         content:

@@ -6,7 +6,7 @@ interface AdminUpdateWalkthroughModalProps {
   onClose: () => void;
 }
 
-// Kurzvariante des Update-Walkthroughs 2.0 fuer Admins/Org-Admins.
+// Kurzvariante des Update-Walkthroughs 2.0 für Admins/Org-Admins.
 // Gleicher Stil wie die normale Admin-Tour.
 const SLIDES: OnboardingSlide[] = [
   {

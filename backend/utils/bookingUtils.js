@@ -1,11 +1,11 @@
 const { addToEventChat } = require('./eventChat');
 
-// Shared Booking-Logik fuer Event-Buchungen
+// Shared Booking-Logik für Event-Buchungen
 // Wird von konfi.js und events.js genutzt
 // Keine Push-Notifications oder liveUpdate-Aufrufe — nur Datenbank-Logik
 
 /**
- * Prueft ob ein User bereits fuer ein Event gebucht ist
+ * Prueft ob ein User bereits für ein Event gebucht ist
  * @param {object} client - DB-Client (innerhalb Transaktion)
  * @param {number} userId - User ID
  * @param {number} eventId - Event ID
@@ -31,7 +31,7 @@ async function getEventWithCounts(client, eventId, orgId, options = {}) {
   const { excludeTeamers = false } = options;
 
   // Postgres erlaubt FOR UPDATE nicht mit GROUP BY.
-  // Loesung: Event zuerst mit FOR UPDATE sperren, Counts als Subqueries.
+  // Lösung: Event zuerst mit FOR UPDATE sperren, Counts als Subqueries.
   const confirmedCountSql = excludeTeamers
     ? `(SELECT COUNT(*) FROM event_bookings eb
          LEFT JOIN users u ON eb.user_id = u.id
@@ -62,17 +62,17 @@ async function getEventWithCounts(client, eventId, orgId, options = {}) {
 }
 
 /**
- * Bestimmt den Buchungsstatus basierend auf Kapazitaet und Warteliste
+ * Bestimmt den Buchungsstatus basierend auf Kapazität und Warteliste
  *
- * Rollenagnostisch: ueber `options` laesst sich waehlen, welche Wartelisten-
- * Felder des Events gelten. Fuer das Teamer-Kontingent sind das
- * teamer_waitlist_enabled / teamer_max_waitlist_size, fuer Konfis die
+ * Rollenagnostisch: über `options` laesst sich waehlen, welche Wartelisten-
+ * Felder des Events gelten. Für das Teamer-Kontingent sind das
+ * teamer_waitlist_enabled / teamer_max_waitlist_size, für Konfis die
  * unpraefixierten Felder.
  *
  * @param {object} event - Event-Objekt
  * @param {number} confirmedCount - Anzahl bestaetigter Buchungen
  * @param {number} waitlistCount - Anzahl Wartelisten-Eintraege
- * @param {number} maxCapacity - Maximale Kapazitaet (0 = unbegrenzt)
+ * @param {number} maxCapacity - Maximale Kapazität (0 = unbegrenzt)
  * @param {object} options - { waitlistEnabledField, maxWaitlistSizeField }
  * @returns {string|object} 'confirmed', 'waitlist', oder { error: string, status: number }
  */
@@ -110,7 +110,7 @@ function determineBookingStatus(event, confirmedCount, waitlistCount, maxCapacit
  *
  * @param {object} db - DB-Pool oder Client (innerhalb Transaktion)
  * @param {number} eventId - Event ID
- * @param {number|null} timeslotId - Timeslot ID (null fuer Events ohne Timeslots)
+ * @param {number|null} timeslotId - Timeslot ID (null für Events ohne Timeslots)
  * @param {'teamer'|'not_teamer'} roleFilter - Welche Warteliste nachruecken soll
  * @returns {number|null} User-ID des nachgerueckten Users oder null
  */
@@ -126,9 +126,9 @@ async function promoteFromWaitlist(db, eventId, timeslotId, roleFilter) {
     : `EXISTS (SELECT 1 FROM users u JOIN roles r ON u.role_id = r.id
                 WHERE u.id = eb.user_id AND r.name != 'teamer' AND u.deleted_at IS NULL)`;
 
-  // Atomar: SELECT des naechsten Wartelisten-Eintrags und UPDATE in EINEM Statement.
+  // Atomar: SELECT des nächsten Wartelisten-Eintrags und UPDATE in EINEM Statement.
   // FOR UPDATE SKIP LOCKED verhindert, dass zwei gleichzeitige Stornierungen
-  // denselben Wartelistenplatz nachruecken (Race -> Doppel-Promotion ueber Kapazitaet).
+  // denselben Wartelistenplatz nachruecken (Race -> Doppel-Promotion über Kapazität).
   const subSelect = timeslotId
     ? `SELECT eb.id FROM event_bookings eb
         WHERE eb.event_id = $1 AND eb.timeslot_id = $2 AND eb.status = 'waitlist'
@@ -149,7 +149,7 @@ async function promoteFromWaitlist(db, eventId, timeslotId, roleFilter) {
 
   if (!promoted) return null;
 
-  // Wer nachrueckt, gehoert auch in den Chat zum Termin. Bewusst hier und nicht
+  // Wer nachrueckt, gehört auch in den Chat zum Termin. Bewusst hier und nicht
   // an den vier Aufrufstellen: Als kopierter Block war genau diese Regel schon
   // einmal auseinandergelaufen (Befund 24.08.2026, Abmelde-Seite).
   await addToEventChat(db, eventId, promoted.user_id, promoted.organization_id);
@@ -158,7 +158,7 @@ async function promoteFromWaitlist(db, eventId, timeslotId, roleFilter) {
 }
 
 /**
- * Prueft ob das Anmeldezeitraum fuer ein Event offen ist
+ * Prueft ob das Anmeldezeitraum für ein Event offen ist
  * @param {object} event - Event-Objekt mit registration_opens_at und registration_closes_at
  * @returns {object} { valid: boolean, error?: string }
  */
@@ -174,9 +174,9 @@ function validateRegistrationWindow(event) {
 }
 
 /**
- * Ist das Event JETZT fuer Konfis anmeldbar? Grundlage fuer den
- * "Anmeldung moeglich"-Push. Anmeldbar = Anmeldefenster offen UND nicht abgesagt
- * UND nicht reines Teamer-Event (Konfis koennen sich da nicht anmelden).
+ * Ist das Event JETZT für Konfis anmeldbar? Grundlage für den
+ * "Anmeldung möglich"-Push. Anmeldbar = Anmeldefenster offen UND nicht abgesagt
+ * UND nicht reines Teamer-Event (Konfis können sich da nicht anmelden).
  * @param {object} event - Event mit registration_opens_at/closes_at, cancelled, teamer_only
  * @returns {boolean}
  */

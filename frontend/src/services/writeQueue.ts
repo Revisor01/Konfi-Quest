@@ -37,7 +37,7 @@ export interface FlushResult {
 //
 // Gibt die Queue nach maxRetries auf, verschwindet das Item — die Nachricht
 // blieb in der Chat-Bubble aber auf 'pending' stehen, ohne Hinweis und ohne
-// Moeglichkeit zum echten Neuversand (Fund Hennstedt 22.08.2026). Ueber diese
+// Moeglichkeit zum echten Neuversand (Fund Hennstedt 22.08.2026). Über diese
 // Melder erfaehrt die Ansicht davon und kann die Bubble auf 'error' setzen.
 type FailedListener = (item: FailedQueueItem) => void;
 const failedListeners = new Set<FailedListener>();
@@ -182,11 +182,11 @@ async function resolveLocalPhoto(body: any): Promise<void> {
 
 // --- Chat-Bild-Upload Helfer für Queue-Items mit _localFilePath ---
 
-// Konvertiert die lokal gespeicherte Chat-Datei zu FormData fuer den Request.
+// Konvertiert die lokal gespeicherte Chat-Datei zu FormData für den Request.
 // WICHTIG: Ueberschreibt NICHT item.body (FormData ist nicht serialisierbar und
-// wuerde beim _save zu {} werden -> Datenverlust bei Retry). Gibt FormData zurueck;
-// das persistierte Item behaelt _localFilePath, damit ein Retry erneut lesen kann.
-// Die lokale Datei wird erst nach erfolgreichem Request geloescht (siehe flush()).
+// wuerde beim _save zu {} werden -> Datenverlust bei Retry). Gibt FormData zurück;
+// das persistierte Item behält _localFilePath, damit ein Retry erneut lesen kann.
+// Die lokale Datei wird erst nach erfolgreichem Request gelöscht (siehe flush()).
 async function resolveLocalFile(item: QueueItem): Promise<FormData | null> {
   const body = item.body;
   if (!body?._localFilePath) return null;
@@ -225,7 +225,7 @@ async function cleanupLocalFile(item: QueueItem): Promise<void> {
   try {
     await Filesystem.deleteFile({ path, directory: Directory.Data });
   } catch {
-    // Ignorieren — wird beim naechsten Cleanup aufgeraeumt
+    // Ignorieren — wird beim nächsten Cleanup aufgeraeumt
   }
 }
 
@@ -265,7 +265,7 @@ async function flush(): Promise<FlushResult> {
         }
 
         // Chat-Bild aus lokalem Filesystem zu FormData konvertieren.
-        // requestBody ist FLUECHTIG — item.body bleibt unveraendert (serialisierbar),
+        // requestBody ist FLUECHTIG — item.body bleibt unverändert (serialisierbar),
         // damit ein Retry nach transientem Fehler die Datei erneut lesen kann.
         let requestBody: any = item.body;
         let requestHeaders = item.headers;
@@ -292,7 +292,7 @@ async function flush(): Promise<FlushResult> {
           await api.post(item.url, requestBody, config);
         }
 
-        // Erfolg: lokale Datei aufraeumen, dann Item entfernen
+        // Erfolg: lokale Datei aufräumen, dann Item entfernen
         await cleanupLocalFile(item);
         result.succeeded.push(item);
         items.shift();
@@ -302,7 +302,7 @@ async function flush(): Promise<FlushResult> {
         const message = err?.response?.data?.error || err?.message || 'Unbekannter Fehler';
 
         if (status >= 400 && status < 500 && status !== 408 && status !== 429) {
-          // 4xx (ausser 408/429): Item entfernen, als failed markieren
+          // 4xx (außer 408/429): Item entfernen, als failed markieren
           const failedItem: FailedQueueItem = { ...item, error: { status, message } };
           result.failed.push(failedItem);
           notifyFailed(failedItem);

@@ -5,7 +5,7 @@ const { handleValidationErrors, commonValidations } = require('../middleware/val
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { computeCurrentStreak } = require('../utils/streakCalculation');
-// Single Source of Truth: welche Events zaehlen fuer Badges (Konfi vs. Teamer).
+// Single Source of Truth: welche Events zählen für Badges (Konfi vs. Teamer).
 const { KONFI_BADGE_EVENT_CONDITION } = require('../utils/badgeEventRule');
 
 // Badge criteria types
@@ -367,8 +367,8 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
     { rows: teamerUniqueActs }
   ] = await Promise.all([
     db.query(`SELECT COUNT(*) as count FROM user_activities ua JOIN activities a ON ua.activity_id = a.id WHERE ua.user_id = $1 AND ua.organization_id = $2 AND a.target_role = 'teamer'`, [userId, organizationId]),
-    // Teamer: ALLE bestaetigten Events zaehlen (inkl. Pflicht/Konfirmation) — Teamer
-    // arbeiten dort mit, das ist eine legitime Zaehlung. (Anders als bei Konfis.)
+    // Teamer: ALLE bestaetigten Events zählen (inkl. Pflicht/Konfirmation) — Teamer
+    // arbeiten dort mit, das ist eine legitime Zählung. (Anders als bei Konfis.)
     db.query("SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2", [userId, organizationId]),
     db.query(`SELECT DISTINCT a.name FROM user_activities ua JOIN activities a ON ua.activity_id = a.id WHERE ua.user_id = $1 AND a.organization_id = $2 AND a.target_role = 'teamer'`, [userId, organizationId]),
     db.query(`SELECT DISTINCT ua.activity_id FROM user_activities ua JOIN activities a ON ua.activity_id = a.id WHERE ua.user_id = $1 AND ua.organization_id = $2 AND a.target_role = 'teamer'`, [userId, organizationId])
@@ -422,7 +422,7 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
             .filter(req => teamerPreloaded.completedActivityNames.includes(req)).length;
         }
 
-        // Termine zaehlen mit, wenn welche hinterlegt sind. Die Spalte heisst
+        // Termine zählen mit, wenn welche hinterlegt sind. Die Spalte heißt
         // 'name' (nicht 'title') -> als title aliasen.
         if (criteria.required_events && criteria.required_events.length > 0) {
           gefordert += criteria.required_events.length;
@@ -437,7 +437,7 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
         }
 
         // Ohne hinterlegte Bedingung wird nichts vergeben. Der Wert 0 oder
-        // fehlend faellt auf "alle noetig" zurueck, damit ein unausgefuelltes
+        // fehlend fällt auf "alle nötig" zurück, damit ein unausgefuelltes
         // Feld nicht versehentlich jedem das Abzeichen gibt.
         const noetig = badge.criteria_value > 0 ? badge.criteria_value : gefordert;
         badgeEarned = gefordert > 0 && treffer >= noetig;
@@ -593,7 +593,7 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
 // Shared: Streak-Prüfung (Konfi + Teamer)
 // =====================================================================
 async function checkStreakCriteria(db, userId, organizationId, criteriaValue, isTeamer = false) {
-  // Konfis: Pflicht/Konfirmation zaehlen nicht. Teamer: alle bestaetigten Events.
+  // Konfis: Pflicht/Konfirmation zählen nicht. Teamer: alle bestaetigten Events.
   const eventCond = isTeamer ? "eb.attendance_status = 'present'" : KONFI_BADGE_EVENT_CONDITION;
   const streakQuery = `
     SELECT completed_date as date FROM user_activities WHERE user_id = $1 AND organization_id = $2
@@ -643,11 +643,11 @@ async function insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds,
       await PushService.sendBadgeEarnedToKonfi(db, userId, badge.name, badge.icon, badge.description);
     }
 
-    // Live-Update an den Empfaenger selbst: Badge-Zaehler sofort aktualisieren,
+    // Live-Update an den Empfaenger selbst: Badge-Zähler sofort aktualisieren,
     // ohne dass die App dafuer alle 60s /konfi/badges pollen muss.
-    // earnedBadgeDetails ist hier immer nicht-leer (Aufrufer prueft das).
+    // earnedBadgeDetails ist hier immer nicht-leer (Aufrufer prüft das).
     // sendToUserByRole (statt sendToKonfi), weil Badges auch an Teamer:innen
-    // vergeben werden koennen und deren Socket im Raum user_teamer_ sitzt.
+    // vergeben werden können und deren Socket im Raum user_teamer_ sitzt.
     // Fire-and-forget.
     liveUpdate.sendToUserByRole(userId, 'badges', 'earned', { count: earnedBadgeDetails.length });
   } catch (notifErr) {

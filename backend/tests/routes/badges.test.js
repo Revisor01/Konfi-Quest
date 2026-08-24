@@ -102,7 +102,7 @@ describe('Badges Routes', () => {
 
     it('Badge aus anderer Org gibt 404', async () => {
       const token = generateToken('admin1');
-      // Badge streak2 gehoert Org 2
+      // Badge streak2 gehört Org 2
       const res = await request(app)
         .get(`/api/admin/badges/${BADGES.streak2.id}`)
         .set('Authorization', `Bearer ${token}`);
@@ -250,14 +250,14 @@ describe('Badges Routes', () => {
       );
       expect(before.rows.length).toBe(1);
 
-      // Badge loeschen
+      // Badge löschen
       const token = generateToken('admin1');
       const res = await request(app)
         .delete(`/api/admin/badges/${BADGES.streak.id}`)
         .set('Authorization', `Bearer ${token}`);
       expect(res.status).toBe(200);
 
-      // user_badges Eintrag muss auch geloescht sein
+      // user_badges Eintrag muss auch gelöscht sein
       const after = await db.query(
         'SELECT * FROM user_badges WHERE badge_id = $1',
         [BADGES.streak.id]
@@ -580,7 +580,7 @@ describe('Badges Routes', () => {
   // ================================================================
   describe('activity_combination Wertung bei Teamer:innen', () => {
     // Befund 24.08.2026: Der Teamer-Zweig verlangte ALLE hinterlegten
-    // Aktivitaeten und ignorierte criteria_value, waehrend Formular, Hilfetext
+    // Aktivitäten und ignorierte criteria_value, während Formular, Hilfetext
     // und Fortschrittsanzeige die Mindestanzahl beschreiben (so wie es der
     // Konfi-Zweig auch macht). Der Fortschritt konnte 100 Prozent zeigen, ohne
     // dass das Abzeichen kam.
@@ -655,7 +655,7 @@ describe('Badges Routes', () => {
   // teamer_year-Startjahr aus users.teamer_since
   // ================================================================
   describe('teamer_year Startjahr aus teamer_since', () => {
-    // Legt eine Teamer-Aktivitaet in einem bestimmten Jahr an
+    // Legt eine Teamer-Aktivität in einem bestimmten Jahr an
     async function createTeamerActivityInYear(orgId, teamerId, year) {
       const { rows: [act] } = await db.query(
         `INSERT INTO activities (name, points, type, organization_id, target_role)

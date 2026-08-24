@@ -76,9 +76,9 @@ interface KonfisViewProps {
   onSelectKonfi: (konfi: Konfi) => void;
   onDeleteKonfi: (konfi: Konfi) => void;
   onDeleteTeamer: (teamer: any) => void | Promise<void>;
-  // Im iPad-Split-View aktuell rechts geoeffneter Konfi (fuer Highlighting).
+  // Im iPad-Split-View aktuell rechts geoeffneter Konfi (für Highlighting).
   selectedKonfiId?: number | null;
-  // Meldet den Umschalter nach oben: der Plus-Button in der Kopfzeile gehoert
+  // Meldet den Umschalter nach oben: der Plus-Button in der Kopfzeile gehört
   // der Seite, muss aber wissen, ob gerade Konfis oder Teamer:innen angezeigt
   // werden — sonst legt er im Teamer-Modus einen Konfi an (Fund 22.08.2026).
   onViewModeChange?: (mode: 'konfis' | 'teamer') => void;
@@ -125,7 +125,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
     return () => { cancelled = true; };
   }, [user?.organization_id]);
 
-  // Teamer laden (wiederverwendbar: Segment-Wechsel + Reload nach Loeschen)
+  // Teamer laden (wiederverwendbar: Segment-Wechsel + Reload nach Löschen)
   const loadTeamers = useCallback(async () => {
     setTeamerLoading(true);
     try {

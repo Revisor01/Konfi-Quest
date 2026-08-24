@@ -59,7 +59,7 @@ interface Participant {
 
 // Team-Mitglied = Admin/Org-Admin ODER Teamer:in (NICHT Konfi). Teamer wurden bisher
 // faelschlich wie Konfis dargestellt (lila, ohne Funktion), weil nur auf 'admin'
-// geprueft wurde. Diese Helfer behandeln 'teamer' konsistent als Team.
+// geprüft wurde. Diese Helfer behandeln 'teamer' konsistent als Team.
 const isTeamType = istTeamTyp;
 const isTeamUser = (u: { user_type?: string; type?: string }) =>
   isTeamType('user_type' in u ? u.user_type : u.type);

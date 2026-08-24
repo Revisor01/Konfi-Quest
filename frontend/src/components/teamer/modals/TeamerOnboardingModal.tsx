@@ -11,12 +11,12 @@ interface TeamerOnboardingModalProps {
 }
 
 // Teamer-Tour: folgt den Teamer-Tabs (Start · Chat · Events · Challenges ·
-// Badges). Die Aktivitaeten sind seit dem Tab-Umbau ein Segment IM Events-Tab
+// Badges). Die Aktivitäten sind seit dem Tab-Umbau ein Segment IM Events-Tab
 // (kein eigener Tab mehr) und bekommen einen EIGENEN Slide direkt hinter den
-// Events (User-Entscheid 10.08.) — im Events-Slide nur nebenbei erwaehnt ging
-// unter, was Aktivitaeten ueberhaupt sind. Die Beispiele stammen aus den
-// echten Teamer-Antraegen (Gottesdienst mitgestalten, Andacht, Schulung) —
-// "Gottesdienstbesuch" waere die Konfi-Welt, nicht die des Teams.
+// Events (User-Entscheid 10.08.) — im Events-Slide nur nebenbei erwähnt ging
+// unter, was Aktivitäten überhaupt sind. Die Beispiele stammen aus den
+// echten Teamer-Anträgen (Gottesdienst mitgestalten, Andacht, Schulung) —
+// "Gottesdienstbesuch" wäre die Konfi-Welt, nicht die des Teams.
 const SLIDES: OnboardingSlide[] = [
   {
     icon: sparklesOutline,

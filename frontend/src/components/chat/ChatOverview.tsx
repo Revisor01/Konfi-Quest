@@ -60,7 +60,7 @@ import { istTeamTyp } from '../../utils/chatRoles';
 
 interface ChatOverviewProps {
   onSelectRoom: (room: ChatRoomOverview) => void;
-  // Im iPad-Split-View aktuell rechts geoeffneter Raum (fuer Highlighting).
+  // Im iPad-Split-View aktuell rechts geoeffneter Raum (für Highlighting).
   selectedRoomId?: number | null;
 }
 
@@ -79,22 +79,22 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   const [searchText, setSearchText] = useState('');
   const [filterType, setFilterType] = useState<string>('alle');
 
-  // Loeschrecht: nur Leitung/Admins (so prueft es auch das Backend,
+  // Loeschrecht: nur Leitung/Admins (so prüft es auch das Backend,
   // DELETE /chat/rooms/:roomId verlangt type === 'admin').
   const isAdmin = user?.type === 'admin';
-  // Reiter "Team": alle, die selbst zum Team gehoeren — also auch Teamer:innen.
+  // Reiter "Team": alle, die selbst zum Team gehören — also auch Teamer:innen.
   // Sie sind in Produktion in 4 Team-Chats, sahen den Reiter aber nicht, weil
-  // hier auf 'admin' geprueft wurde (gleiche Verwechslung wie in chatRoles).
+  // hier auf 'admin' geprüft wurde (gleiche Verwechslung wie in chatRoles).
   const gehoertZumTeam = istTeamTyp(user?.type);
 
-  // Zentrale Logik: Ist das ein Team-Chat (= pink, gehoert in den Team-Tab)?
-  // - Direktchat: Partner gehoert zum Team (partner_user_type 'admin' ODER 'teamer')
+  // Zentrale Logik: Ist das ein Team-Chat (= pink, gehört in den Team-Tab)?
+  // - Direktchat: Partner gehört zum Team (partner_user_type 'admin' ODER 'teamer')
   // - type='admin': ausdrueckliche Team-Gruppe
   // - type='group': reiner Team-Gruppenchat (alle Teilnehmer Teamer:innen)
   // Konfi-Direktchats + gemischte/Konfi-Gruppen sind KEINE Team-Chats.
   //
   // chat_participants.user_type speichert 'teamer' als eigenen Wert (nicht als
-  // 'admin'). Die Pruefung nur auf 'admin' sortierte Direktchats mit
+  // 'admin'). Die Prüfung nur auf 'admin' sortierte Direktchats mit
   // Teamer:innen deshalb in den falschen Reiter.
   const isTeamChat = (room: ChatRoomOverview): boolean => {
     if (room.event_id) return false;
@@ -124,7 +124,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
 
   // --- useOfflineQuery: Chat Rooms ---
   // Defensiver select-Transform (Incident 13.06.2026): gecachte rooms-Responses
-  // koennen kaputt/unplausibel sein (z.B. nach der Teilnehmer-Explosion oder bei
+  // können kaputt/unplausibel sein (z.B. nach der Teilnehmer-Explosion oder bei
   // einem korrupten Cache-Eintrag). Statt beim Rendern zu crashen normalisieren
   // wir hier: kein Array -> [], jeder Eintrag bekommt garantiert name/type/
   // participant_count in sinnvoller Form. So kann kein einzelner Datensatz die
@@ -156,10 +156,10 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   // Live-Update der Chat-Räume wenn Badge Count sich ändert.
   // Das ist der EINZIGE newMessage-getriebene Refresh-Trigger der Overview:
   // BadgeContext haelt einen eigenen (socketEpoch-rebindenden) 'newMessage'-
-  // Listener, der refreshAllCounts() ruft -> chatUnreadByRoom aendert sich ->
+  // Listener, der refreshAllCounts() ruft -> chatUnreadByRoom ändert sich ->
   // dieser Effect feuert refresh(). Ein zusaetzlicher eigener socket.on(
-  // 'newMessage')-Handler waere redundant (3x /chat/rooms pro Nachricht) und
-  // haette zudem KEIN socketEpoch-Rebind nach Reconnect -- deshalb bewusst
+  // 'newMessage')-Handler wäre redundant (3x /chat/rooms pro Nachricht) und
+  // hätte zudem KEIN socketEpoch-Rebind nach Reconnect -- deshalb bewusst
   // entfernt (Audit Achse 4, Fund 2).
   useEffect(() => {
     if (rooms && rooms.length > 0) { // Nur wenn bereits Räume geladen sind
@@ -175,9 +175,9 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     return () => { unsubReconnect(); };
   }, [refresh]);
 
-  // Live-Update der Raumliste bei Raum-Aenderungen (Raum erstellt/geloescht,
+  // Live-Update der Raumliste bei Raum-Änderungen (Raum erstellt/gelöscht,
   // Teilnehmer hinzugefuegt/entfernt/verlassen). Der Server sendet 'roomsChanged'
-  // an die persoenlichen User-Raeume der betroffenen Nutzer (Audit Achse 2,
+  // an die persoenlichen User-Räume der betroffenen Nutzer (Audit Achse 2,
   // Luecke 14). socketEpoch in den Deps -> Rebind am frischen Socket nach
   // Reconnect-mit-neuem-Token (gleiche Disziplin wie der BadgeContext-Listener).
   useEffect(() => {
@@ -290,8 +290,8 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
       // Typ-Filter
       if (filterType === 'alle') return true;
       // Ungelesen statt Direkt: Nach Chat-ART zu filtern hilft beim Wiederfinden
-      // kaum — man weiss ohnehin, wen man sucht, und dafuer gibt es die Suche.
-      // Die eigentliche Frage beim Oeffnen der Uebersicht ist "wo muss ich
+      // kaum — man weiß ohnehin, wen man sucht, und dafuer gibt es die Suche.
+      // Die eigentliche Frage beim Oeffnen der Übersicht ist "wo muss ich
       // ran?". Genau das beantwortet dieser Filter.
       if (filterType === 'ungelesen') return (chatUnreadByRoom[room.id] || 0) > 0;
       // Konfis-Tab: Jahrgangs-/Gruppenchats mit Konfis, KEINE reinen Team-Gruppen.

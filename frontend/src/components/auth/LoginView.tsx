@@ -79,7 +79,7 @@ const LoginView: React.FC = () => {
       const errorCode: string = err?.response?.data?.error_code || '';
       let displayError: string;
 
-      // Rate-Limit (429) ZUERST pruefen — ein 429 ist KEINE fehlende Verbindung.
+      // Rate-Limit (429) ZUERST prüfen — ein 429 ist KEINE fehlende Verbindung.
       // Sonst zeigt die App bei "zu viele Versuche" faelschlich "Keine Verbindung".
       if (err.response?.status === 429 || err.rateLimitMessage) {
         displayError = err.rateLimitMessage || err?.response?.data?.error || 'Zu viele Login-Versuche. Bitte warte einen Moment.';

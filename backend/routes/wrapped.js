@@ -58,7 +58,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     );
     const gottesdienstCount = parseInt(gdCountRow.count, 10) || 0;
 
-    // Kategorie-Verteilung (Aktivitaeten nach Kategorie)
+    // Kategorie-Verteilung (Aktivitäten nach Kategorie)
     const { rows: kategorieVerteilung } = await client.query(
       `SELECT COALESCE(a.category, a.type) as kategorie, COUNT(*) as count
        FROM user_activities ua
@@ -69,7 +69,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       [userId, orgId]
     );
 
-    // Gesamt-Events verfuegbar fuer diesen Jahrgang
+    // Gesamt-Events verfuegbar für diesen Jahrgang
     const { rows: [totalEventsRow] } = await client.query(
       `SELECT COUNT(DISTINCT e.id) as count FROM events e
        JOIN event_jahrgang_assignments eja ON e.id = eja.event_id AND eja.jahrgang_id = $2
@@ -127,7 +127,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     );
     const eventAbgesagt = parseInt(cancelRow.count, 10) || 0;
 
-    // Aktivster Monat (Aktivitaeten + Events kombiniert)
+    // Aktivster Monat (Aktivitäten + Events kombiniert)
     const { rows: monatRows } = await client.query(
       `SELECT monat, COUNT(*) as count FROM (
          SELECT EXTRACT(MONTH FROM completed_date)::int as monat
@@ -330,7 +330,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       ? { name: topEventRows[0].name, count: parseInt(topEventRows[0].teilnehmer, 10) }
       : null;
 
-    // Konfis betreut (ueber zugewiesene Jahrgaenge)
+    // Konfis betreut (über zugewiesene Jahrgänge)
     const { rows: konfiRows } = await client.query(
       `SELECT COUNT(DISTINCT kp.user_id) as total,
               ARRAY_AGG(DISTINCT j.name) as jahrgaenge
@@ -405,7 +405,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
   /**
    * Parallele Hilfsfunktion: Generiert und speichert einen Konfi-Snapshot.
-   * Holt eigenen DB-Client aus dem Pool (kein geteilter Client fuer parallele Queries).
+   * Holt eigenen DB-Client aus dem Pool (kein geteilter Client für parallele Queries).
    */
   async function generateAndSaveKonfiSnapshot(dbRef, userId, orgId, jahrgangId, year) {
     const konfiClient = await dbRef.getClient();
@@ -461,7 +461,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     }
   });
 
-  // POST /generate/:jahrgangId - Konfi-Snapshots fuer alle Konfis eines Jahrgangs generieren
+  // POST /generate/:jahrgangId - Konfi-Snapshots für alle Konfis eines Jahrgangs generieren
   router.post('/generate/:jahrgangId',
     rbacVerifier,
     requireAdmin,
@@ -472,7 +472,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       try {
         const jahrgangId = parseInt(req.params.jahrgangId, 10);
 
-        // Jahrgang validieren: gehoert zur Org des Admins
+        // Jahrgang validieren: gehört zur Org des Admins
         const { rows: [jahrgang] } = await client.query(
           `SELECT id, name FROM jahrgaenge WHERE id = $1 AND organization_id = $2`,
           [jahrgangId, req.user.organization_id]
@@ -538,7 +538,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     }
   );
 
-  // POST /generate-teamer - Teamer-Snapshots fuer alle Teamer der Organisation generieren
+  // POST /generate-teamer - Teamer-Snapshots für alle Teamer der Organisation generieren
   router.post('/generate-teamer',
     rbacVerifier,
     requireOrgAdmin,
@@ -608,7 +608,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     }
   );
 
-  // DELETE /:jahrgangId - Wrapped-Snapshots fuer einen Jahrgang loeschen
+  // DELETE /:jahrgangId - Wrapped-Snapshots für einen Jahrgang löschen
   router.delete('/:jahrgangId',
     rbacVerifier,
     requireOrgAdmin,
@@ -666,7 +666,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           if (roleName !== 'admin' && roleName !== 'org_admin') {
             return res.status(403).json({ error: 'Keine Berechtigung' });
           }
-          // Admin: Pruefen ob User zur gleichen Org gehoert
+          // Admin: Pruefen ob User zur gleichen Org gehört
           const { rows: [targetUser] } = await db.query(
             'SELECT organization_id FROM users WHERE id = $1', [targetUserId]
           );
@@ -692,11 +692,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   );
 
   // ====================================================================
-  // BATCH-GENERIERUNG (fuer backgroundService Cron)
+  // BATCH-GENERIERUNG (für backgroundService Cron)
   // ====================================================================
 
   /**
-   * Generiert Konfi-Wrapped fuer alle Konfis eines Jahrgangs.
+   * Generiert Konfi-Wrapped für alle Konfis eines Jahrgangs.
    * Wird vom Cron oder Admin-Endpoint aufgerufen.
    */
   router.generateAllKonfiWrapped = async (dbRef, jahrgangId, orgId, year) => {
@@ -749,7 +749,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   };
 
   /**
-   * Generiert Teamer-Wrapped fuer alle Teamer einer Organisation.
+   * Generiert Teamer-Wrapped für alle Teamer einer Organisation.
    * Wird vom Cron oder Admin-Endpoint aufgerufen.
    */
   router.generateAllTeamerWrapped = async (dbRef, orgId, year) => {

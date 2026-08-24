@@ -1,5 +1,5 @@
 // backend/utils/konfiDeletion.js
-// Gemeinsame kaskadierende Loesch-Funktion fuer Konfis (D-04).
+// Gemeinsame kaskadierende Loesch-Funktion für Konfis (D-04).
 // Single Source of Truth: wird von Admin-Delete, Self-Delete (Plan 02)
 // und Auto-Delete (Plan 05) genutzt, damit die Loesch-Pfade nicht
 // auseinanderlaufen.
@@ -12,7 +12,7 @@ const { deletePhotoFile, deleteChallengeFile } = require('./photoStorage');
  *
  * WICHTIG: Diese Funktion fuehrt KEIN BEGIN/COMMIT/ROLLBACK aus. Der Aufrufer
  * steuert die Transaktion und uebergibt einen client (aus db.getClient()).
- * So koennen Admin/Self/Auto-Delete die Loeschung in ihre eigene Transaktion
+ * So können Admin/Self/Auto-Delete die Löschung in ihre eigene Transaktion
  * einbetten.
  *
  * organization_id wird nur bei Tabellen mitgegeben, die die Spalte besitzen
@@ -29,8 +29,8 @@ async function deleteKonfiCascade(client, userId, organizationId) {
   await client.query("DELETE FROM event_points WHERE konfi_id = $1 AND organization_id = $2", [userId, organizationId]);
   await client.query("DELETE FROM event_bookings WHERE user_id = $1 AND organization_id = $2", [userId, organizationId]);
   await client.query("DELETE FROM user_badges WHERE user_id = $1", [userId]);
-  // Nachweisfotos der Antraege dieses Konfis vor dem DB-Delete einsammeln,
-  // damit die Dateien anschliessend vom Dateisystem entfernt werden koennen.
+  // Nachweisfotos der Anträge dieses Konfis vor dem DB-Delete einsammeln,
+  // damit die Dateien anschliessend vom Dateisystem entfernt werden können.
   const { rows: photoRows } = await client.query(
     "SELECT photo_filename FROM activity_requests WHERE user_id = $1 AND organization_id = $2 AND photo_filename IS NOT NULL",
     [userId, organizationId]
@@ -63,26 +63,26 @@ async function deleteKonfiCascade(client, userId, organizationId) {
   await client.query("DELETE FROM chat_poll_votes WHERE user_id = $1", [userId]);
   await client.query("DELETE FROM push_tokens WHERE user_id = $1", [userId]);
   await client.query("DELETE FROM konfi_profiles WHERE user_id = $1", [userId]);
-  // Verliehene Urkunden. Der Fremdschluessel auf users(id) hat KEIN ON DELETE
-  // und blockierte damit jede Loeschung einer Person, die je eine Urkunde
+  // Verliehene Urkunden. Der Fremdschlüssel auf users(id) hat KEIN ON DELETE
+  // und blockierte damit jede Löschung einer Person, die je eine Urkunde
   // bekommen hat — gegen Produktion nachgewiesen (Befund 24.08.2026). Weiter
   // unten wird nur user_certificates.admin_id genullt, also die verleihende
   // Seite; die empfangende fehlte.
   await client.query("DELETE FROM user_certificates WHERE user_id = $1", [userId]);
-  // URHEBERSCHAFT anonymisieren statt loeschen.
+  // URHEBERSCHAFT anonymisieren statt löschen.
   //
-  // Siebzehn Fremdschluessel zeigen auf users(id) — die meisten OHNE
+  // Siebzehn Fremdschlüssel zeigen auf users(id) — die meisten OHNE
   // ON DELETE. Bleibt auch nur einer stehen, scheitert das DELETE auf users
   // mit einem 500er. Betroffen ist nicht nur der geloeschte Konfi selbst:
-  // Diese Funktion loescht auch Teamer- und Admin-Konten (Selbstloeschung
-  // ueber /auth/delete-account, alle Rollen). Wer je Punkte vergeben, ein
+  // Diese Funktion löscht auch Teamer- und Admin-Konten (Selbstloeschung
+  // über /auth/delete-account, alle Rollen). Wer je Punkte vergeben, ein
   // Event angelegt oder ein Abzeichen erstellt hat, konnte seinen Account
-  // deshalb GAR NICHT loeschen (Audit 22.08.2026 — vorher unsichtbar, weil
+  // deshalb GAR NICHT löschen (Audit 22.08.2026 — vorher unsichtbar, weil
   // dem Test-Schema diese Constraints fehlten).
   //
   // Die Eintraege selbst bleiben erhalten: Vergebene Punkte, angelegte Events
-  // und Materialien gehoeren der Gemeinde, nicht der Person. Nur der Bezug auf
-  // das geloeschte Konto faellt weg — dieselbe Logik wie bei chat_rooms.
+  // und Materialien gehören der Gemeinde, nicht der Person. Nur der Bezug auf
+  // das geloeschte Konto fällt weg — dieselbe Logik wie bei chat_rooms.
   const urheberFelder = [
     ['bonus_points', 'admin_id'],
     ['event_points', 'admin_id'],
@@ -102,13 +102,13 @@ async function deleteKonfiCascade(client, userId, organizationId) {
 
   // invite_codes.created_by ist NOT NULL — hier geht kein Anonymisieren.
   // Einladungscodes sind kurzlebig und an die einladende Person gebunden;
-  // ohne sie ergeben sie keinen Sinn mehr, also loeschen.
+  // ohne sie ergeben sie keinen Sinn mehr, also löschen.
   await client.query("DELETE FROM invite_codes WHERE created_by = $1", [userId]);
 
   await client.query("DELETE FROM users WHERE id = $1", [userId]);
 
   // Nachweisfotos vom Dateisystem entfernen (nach dem DB-Delete, nicht
-  // blockierend — ein fehlendes File darf die Loeschung nicht scheitern lassen).
+  // blockierend — ein fehlendes File darf die Löschung nicht scheitern lassen).
   for (const row of photoRows) {
     await deletePhotoFile(row.photo_filename);
   }

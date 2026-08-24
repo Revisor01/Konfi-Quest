@@ -1,11 +1,11 @@
 // backend/tests/services/losungService.test.js
-// Tests fuer den Negativ-Cache im Losung-Dienst (Audit 22.08.).
+// Tests für den Negativ-Cache im Losung-Dienst (Audit 22.08.).
 //
 // Hintergrund: Faellt die Losungen-API aus, lief JEDE Anfrage erneut in beide
 // Timeouts (2s interner Endpunkt + 5s oeffentlicher = bis zu 7s). Das Dashboard
 // laedt die Losung beim Oeffnen, also traf das jede Nutzerin bei jedem Start.
 // Der Negativ-Cache merkt sich den Fehlschlag und ueberspringt den externen Weg
-// fuer eine Sperrfrist, sodass die aufrufende Route sofort ihren DB-Fallback
+// für eine Sperrfrist, sodass die aufrufende Route sofort ihren DB-Fallback
 // zieht statt zu warten.
 //
 // Der Dienst wird bewusst OHNE echte DB getestet: die Sperrlogik ist reine
@@ -81,7 +81,7 @@ describe('losungService: Negativ-Cache', () => {
 
     await expect(losungService.fetchTageslosung(db, 'LUT')).rejects.toThrow();
 
-    // Andere Uebersetzung -> eigener Schluessel, also KEINE Sperre. Der Fehler
+    // Andere Uebersetzung -> eigener Schlüssel, also KEINE Sperre. Der Fehler
     // muss deshalb der Abruf-Fehler sein, nicht die Sperrmeldung.
     await expect(losungService.fetchTageslosung(db, 'BIGS'))
       .rejects.toThrow(/nicht erreichbar/);
@@ -104,7 +104,7 @@ describe('losungService: Negativ-Cache', () => {
   it('greift auch dann, wenn die Sperre vor dem Cache-Treffer gesetzt wurde', async () => {
     // Erst scheitern lassen (Sperre setzen), dann DB-Cache befuellen:
     // der Cache-Treffer muss VOR der Sperrpruefung greifen, sonst bliebe eine
-    // inzwischen verfuegbare Losung waehrend der Sperrfrist unerreichbar.
+    // inzwischen verfuegbare Losung während der Sperrfrist unerreichbar.
     const kalteDb = createFakeDb();
     await expect(losungService.fetchTageslosung(kalteDb, 'LUT')).rejects.toThrow();
 

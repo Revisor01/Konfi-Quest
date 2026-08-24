@@ -129,8 +129,8 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
             onIonChange={(e) => {
               const value = e.detail.value;
               setTeamerAccess(value);
-              // "Nur Teamer:innen" schliesst Pflicht-Event und Konfirmation aus:
-              // beides sind Konfi-Kategorien (Pflicht fuer den Jahrgang bzw. der
+              // "Nur Teamer:innen" schließt Pflicht-Event und Konfirmation aus:
+              // beides sind Konfi-Kategorien (Pflicht für den Jahrgang bzw. der
               // Konfirmationstermin) und ergeben ohne Konfis keinen Sinn.
               if (value === 'teamer_only') {
                 setFormData({ ...formData, mandatory: false, is_konfirmation: false, has_timeslots: false });
@@ -155,7 +155,7 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
             checked={formData.mandatory}
             onIonChange={(e) => {
               const mandatory = e.detail.checked;
-              // Pflicht-Event schliesst Timeslots aus -> beim Aktivieren abschalten
+              // Pflicht-Event schließt Timeslots aus -> beim Aktivieren abschalten
               setFormData({ ...formData, mandatory, ...(mandatory ? { has_timeslots: false } : {}) });
             }}
             disabled={loading}
@@ -169,7 +169,7 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
             checked={formData.is_konfirmation}
             onIonChange={(e) => {
               const is_konfirmation = e.detail.checked;
-              // Konfirmation schliesst Timeslots aus (feste Termine) -> beim Aktivieren abschalten
+              // Konfirmation schließt Timeslots aus (feste Termine) -> beim Aktivieren abschalten
               setFormData({ ...formData, is_konfirmation, ...(is_konfirmation ? { has_timeslots: false } : {}) });
             }}
             disabled={loading}
@@ -491,10 +491,10 @@ export const CategoriesTargetSection = React.memo<CategoriesTargetSectionProps>(
   </IonList>
 ));
 
-// ---- TeamerSection (Plaetze + Warteliste fuer Teamer:innen) ----
-// Der Zugang ("Fuer wen ist das Event?") steht in den GRUNDDATEN, weil er den
+// ---- TeamerSection (Plaetze + Warteliste für Teamer:innen) ----
+// Der Zugang ("Für wen ist das Event?") steht in den GRUNDDATEN, weil er den
 // weiteren Formularverlauf steuert (User-Entscheid 09.08.). Diese Karte wird
-// von EventModal nur gerendert, wenn Teamer:innen ueberhaupt teilnehmen —
+// von EventModal nur gerendert, wenn Teamer:innen überhaupt teilnehmen —
 // Aufbau identisch zur Konfis-Karte, nur ohne Punkte.
 
 interface TeamerSectionProps {

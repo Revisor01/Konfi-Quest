@@ -19,16 +19,16 @@ module.exports = (db, verifyTokenRBAC) => {
     handleValidationErrors
   ];
 
-  // Leichtgewichtige Badge-Zaehler fuer die Tab-Leiste (Audit Achse 4, Fund 3).
+  // Leichtgewichtige Badge-Zähler für die Tab-Leiste (Audit Achse 4, Fund 3).
   // Ersetzt im BadgeContext die frueheren Voll-Fetches von /chat/rooms +
-  // /admin/activities/requests + /events, die nur fuer Zaehler geladen wurden.
-  // WICHTIG fuer Konsistenz mit den Listen-Ansichten:
+  // /admin/activities/requests + /events, die nur für Zähler geladen wurden.
+  // WICHTIG für Konsistenz mit den Listen-Ansichten:
   // - chat.byRoom repliziert EXAKT die unread_count-Semantik der
   //   GET /chat/rooms-Query (inkl. Mitzaehlen eigener Nachrichten) — die Werte
   //   speisen chatUnreadByRoom, das ChatRoom/ChatOverview konsumieren.
-  //   BEWUSST OHNE Mitgliedschafts-Sync (der laeuft TTL-gesteuert in /rooms).
+  //   BEWUSST OHNE Mitgliedschafts-Sync (der läuft TTL-gesteuert in /rooms).
   // - pendingRequests entspricht dem pending-Filter der Admin-Antragsliste
-  //   (GET /admin/activities/requests ist org-weit ueber activities.organization_id).
+  //   (GET /admin/activities/requests ist org-weit über activities.organization_id).
   // - pendingEvents entspricht der Frontend-Logik "unprocessed_count > 0 UND
   //   event_date < jetzt" (unprocessed = bestaetigte Buchung ohne attendance_status).
   router.get('/badge-counts', verifyTokenRBAC, async (req, res) => {
@@ -45,11 +45,11 @@ module.exports = (db, verifyTokenRBAC) => {
                  WHERE m.room_id = r.id
                  AND m.deleted_at IS NULL
                  AND m.created_at > COALESCE(crs.last_read_at, '1970-01-01')
-                 -- Eigene Nachrichten zaehlen nicht als ungelesen. Ohne diese
+                 -- Eigene Nachrichten zählen nicht als ungelesen. Ohne diese
                  -- Zeile stand nach der eigenen letzten Nachricht eine Eins am
                  -- Reiter, die erst beim Oeffnen des Raums verschwand — und wer
-                 -- ihn nicht mehr oeffnete, sah sie dauerhaft. Die Zaehlung im
-                 -- Hintergrunddienst schliesst sie seit jeher aus
+                 -- ihn nicht mehr oeffnete, sah sie dauerhaft. Die Zählung im
+                 -- Hintergrunddienst schließt sie seit jeher aus
                  -- (backgroundService.js), diese hier nicht (Befund 24.08.2026).
                  AND NOT (m.user_id = $1 AND m.user_type = $2)
                ) AS unread_count
@@ -59,13 +59,13 @@ module.exports = (db, verifyTokenRBAC) => {
         WHERE r.organization_id = $3
       `;
 
-      // Pending-Zaehler nur fuer Admin-Typen (Konfis/Teamer nutzen sie im
-      // Frontend nicht — BadgeContext zeigt sie nur fuer isAdmin).
+      // Pending-Zähler nur für Admin-Typen (Konfis/Teamer nutzen sie im
+      // Frontend nicht — BadgeContext zeigt sie nur für isAdmin).
       const isAdminType = userType === 'admin';
       const zero = Promise.resolve({ rows: [{ c: 0 }] });
 
-      // Offene Challenge-Freigaben: Admin org-weit; Teamer nur fuer Challenges
-      // ihrer zugewiesenen Jahrgaenge (gleiche Grenze wie viewableJahrgangIds
+      // Offene Challenge-Freigaben: Admin org-weit; Teamer nur für Challenges
+      // ihrer zugewiesenen Jahrgänge (gleiche Grenze wie viewableJahrgangIds
       // in routes/challenges.js — der Teamer soll nicht auf Freigaben gestupst
       // werden, deren Challenge er gar nicht oeffnen darf).
       const teamerJahrgangIds = userType === 'teamer'

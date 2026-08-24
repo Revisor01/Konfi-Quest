@@ -8,7 +8,7 @@
 #
 # Rollen: super_admin, org_admin, admin, teamer, konfi
 # Middleware (backend/middleware/rbac.js):
-#   verifyTokenRBAC  = JWT pruefen, User inkl. aktiver Organisation (Header
+#   verifyTokenRBAC  = JWT prüfen, User inkl. aktiver Organisation (Header
 #                      X-Active-Organization) und assigned_jahrgaenge laden.
 #                      req.user.type: konfi | teamer | admin (admin = alles andere,
 #                      auch super_admin!)
@@ -21,19 +21,19 @@
 #
 # 1. WELCHE DATEN SIEHT EIN KONFI VON ANDEREN KONFIS?
 #    - GET /api/konfi/dashboard: Top-3-Ranking des eigenen Jahrgangs. Die
-#      Response enthaelt pro Rang id, initials UND den VOLLEN display_name
+#      Response enthält pro Rang id, initials UND den VOLLEN display_name
 #      samt exakter Punktzahl (Spread `...r` uebernimmt display_name).
 #      # LÜCKE (Datenminimierung): Das Frontend zeigt nur Initialen, die API
 #      liefert aber Klarnamen + Punkte der drei Punktbesten an jeden Konfi
 #      des Jahrgangs.
 #    - GET /api/konfi/events/:id/participants: bewusst anonymisiert zu
-#      "Vorname N.", Teamer werden herausgefiltert, Organisation wird geprueft
+#      "Vorname N.", Teamer werden herausgefiltert, Organisation wird geprüft
 #      (Fix 22.08.2026). KEIN Jahrgang-Check: ein Konfi kann die anonymisierte
 #      Teilnehmerliste JEDES Events der eigenen Org abrufen (auch fremder
-#      Jahrgaenge). Nur Hinweis, da anonymisiert.
-#    - GET /api/events/:id: fuer Konfis werden qr_token entfernt sowie
+#      Jahrgänge). Nur Hinweis, da anonymisiert.
+#    - GET /api/events/:id: für Konfis werden qr_token entfernt sowie
 #      participants und unregistrations geleert (Fix 22.08.2026, dokumentiert).
-#    - GET /api/events (Liste): liefert nur Zaehler (registered_count etc.),
+#    - GET /api/events (Liste): liefert nur Zähler (registered_count etc.),
 #      keine Namen anderer Konfis - ABER siehe LÜCKE qr_token unten.
 #    - rank_in_jahrgang / total_in_jahrgang (dashboard, profile): nur Aggregat.
 #    - Alle uebrigen /api/konfi-Routen liefern ausschliesslich eigene Daten
@@ -41,30 +41,30 @@
 #
 # 2. TEAMER-ZUGRIFF (assigned_jahrgaenge)
 #    Jahrgangs-Beschraenkung GREIFT bei:
-#    - GET /api/admin/konfis (Liste): nur can_view-Jahrgaenge; keine Zuweisung
-#      -> leere Liste. ACHTUNG: Der Filter greift fuer ALLE Rollen ausser
-#      org_admin/super_admin, also auch fuer Rolle "admin" - ein admin ohne
+#    - GET /api/admin/konfis (Liste): nur can_view-Jahrgänge; keine Zuweisung
+#      -> leere Liste. ACHTUNG: Der Filter greift für ALLE Rollen außer
+#      org_admin/super_admin, also auch für Rolle "admin" - ein admin ohne
 #      Jahrgangs-Zuweisungen sieht hier NICHTS (Abweichung vom sonstigen
 #      Muster, wo admin org-weit sieht).
-#    - POST /api/admin/activities/assign-activity: Teamer nur fuer Konfis in
-#      can_view-Jahrgaengen (403 sonst).
+#    - POST /api/admin/activities/assign-activity: Teamer nur für Konfis in
+#      can_view-Jahrgängen (403 sonst).
 #    - GET /api/events (Liste): Teamer sieht jahrgangs-gebundene Events nur
-#      fuer zugewiesene Jahrgaenge (+ allgemeine + teamer_only/teamer_needed).
+#      für zugewiesene Jahrgänge (+ allgemeine + teamer_only/teamer_needed).
 #      # LÜCKE (klein): Der Filter greift nur bei assigned_jahrgaenge.length > 0.
 #      Ein Teamer OHNE jede Zuweisung sieht die komplette Event-Liste der Org.
 #    Jahrgangs-Beschraenkung GREIFT NICHT (nur Org-Scope) bei:
-#    - # LÜCKE: GET /api/admin/konfis/:id - Teamer erhaelt das VOLLE Detail-
-#      Profil jedes Konfis der Org (Punkte, Aktivitaeten, Bonuspunkte,
-#      Konfispruch, Konfirmationstermin), auch ausserhalb der eigenen
-#      Jahrgaenge. Die Listen-Route filtert, die Detail-Route nicht.
+#    - # LÜCKE: GET /api/admin/konfis/:id - Teamer erhält das VOLLE Detail-
+#      Profil jedes Konfis der Org (Punkte, Aktivitäten, Bonuspunkte,
+#      Konfispruch, Konfirmationstermin), auch außerhalb der eigenen
+#      Jahrgänge. Die Listen-Route filtert, die Detail-Route nicht.
 #    - # LÜCKE: GET /api/admin/konfis/:id/event-points und
 #      GET /api/admin/konfis/:id/badges - gleiche Klasse, kein Jahrgang-Check.
 #    - # LÜCKE: POST /api/admin/konfis/:id/bonus-points - ein Teamer kann
 #      Konfis JEDES Jahrgangs der Org Bonuspunkte geben. Inkonsistent zu
-#      assign-activity, das den Jahrgang prueft.
+#      assign-activity, das den Jahrgang prüft.
 #    - GET /api/events/:id (Detail): Teamer sieht Teilnehmerliste (Klarnamen,
 #      Anwesenheit, Opt-out-Gruende) und Abmeldungen ALLER Events der Org,
-#      auch solcher, die die Listen-Route fuer ihn ausblendet. Ebenso alle
+#      auch solcher, die die Listen-Route für ihn ausblendet. Ebenso alle
 #      Teilnehmer-/Anwesenheits-/Buchungs-Verwaltungsrouten (requireTeamer,
 #      nur Org-Scope).
 #    - GET /api/admin/konfis/teamer: alle Teamer der Org (unkritisch).
@@ -72,11 +72,11 @@
 # 3. WER DARF PUNKTE VERGEBEN UND ENTZIEHEN? (vollstaendige Liste)
 #    VERGEBEN:
 #    a) POST /api/admin/activities/assign-activity
-#       org_admin, admin, teamer (Teamer nur eigene can_view-Jahrgaenge).
+#       org_admin, admin, teamer (Teamer nur eigene can_view-Jahrgänge).
 #    b) PUT /api/admin/activities/requests/:id mit status=approved
 #       org_admin, admin (Antrag genehmigen -> user_activities + Punkte).
 #    c) POST /api/admin/konfis/:id/activities
-#       org_admin, admin (Aktivitaet direkt zuweisen).
+#       org_admin, admin (Aktivität direkt zuweisen).
 #    d) POST /api/admin/konfis/:id/bonus-points
 #       org_admin, admin, teamer (OHNE Jahrgang-Check, siehe LÜCKE oben).
 #    e) PUT /api/events/:id/participants/:participantId/attendance
@@ -90,33 +90,33 @@
 #    h) DELETE /api/admin/konfis/:id/activities/:activityId  org_admin, admin.
 #    i) DELETE /api/admin/konfis/:id/bonus-points/:bonusId   org_admin, admin.
 #    j) PUT /api/admin/activities/requests/:id/reset         org_admin, admin
-#       (Reset eines genehmigten Antrags zieht die Punkte zurueck).
+#       (Reset eines genehmigten Antrags zieht die Punkte zurück).
 #    k) PUT .../attendance (attendance_status=absent)        org_admin, admin, teamer.
 #    l) PUT /api/events/:id/participants/:participantId/status (-> waitlist)
-#       org_admin, admin, teamer (Degradierung loescht event_points).
+#       org_admin, admin, teamer (Degradierung löscht event_points).
 #    m) DELETE /api/events/:id/bookings/:bookingId           org_admin, admin, teamer
-#       (war der Konfi 'present', werden die Event-Punkte zurueckgenommen).
+#       (war der Konfi 'present', werden die Event-Punkte zurückgenommen).
 #    n) DELETE /api/events/:id/book - Konfi/Teamer selbst; war der Konfi
-#       'present', werden die eigenen Event-Punkte zurueckgenommen.
-#    Loeschen eines Konfis (DELETE /api/admin/konfis/:id, org_admin/admin)
+#       'present', werden die eigenen Event-Punkte zurückgenommen.
+#    Löschen eines Konfis (DELETE /api/admin/konfis/:id, org_admin/admin)
 #    entfernt kaskadiert alle Punkte.
 #
-# 4. FOTOS (Nachweisfotos zu Aktivitaets-Antraegen)
+# 4. FOTOS (Nachweisfotos zu Aktivitaets-Anträgen)
 #    - Upload: POST /api/konfi/upload-photo (konfi ODER teamer). Magic-Bytes-
-#      Pruefung (nur echte Bilder), AES-256-GCM-verschluesselt at-rest,
+#      Prüfung (nur echte Bilder), AES-256-GCM-verschlüsselt at-rest,
 #      zufaelliger 64-Hex-Dateiname. uploads/ wird NICHT statisch ausgeliefert
-#      - Abruf ausschliesslich ueber die zwei geschuetzten Routen unten.
+#      - Abruf ausschliesslich über die zwei geschuetzten Routen unten.
 #    - GET /api/konfi/activity-requests/:id/photo: Eigentuemer (konfi/teamer)
 #      sieht das eigene Foto NUR solange der Antrag 'pending' ist; danach 403.
 #      req.user.type==='admin' (org_admin/admin) sieht es immer. Org-Scope
-#      ueber activity_requests.organization_id.
+#      über activity_requests.organization_id.
 #    - GET /api/admin/activities/requests/:id/photo: NUR admin/org_admin
 #      (explizite Rollenpruefung, Teamer 403), Org-Scope, statusunabhaengig.
 #      Foto-Referenz bleibt nach Genehmigung bewusst erhalten (Duplikats-
-#      Erkennung), Loeschung manuell per DELETE .../photo.
+#      Erkennung), Löschung manuell per DELETE .../photo.
 #    - DELETE /api/admin/activities/requests/:id/photo: admin/org_admin.
-#    -> Konfis koennen NIE Fotos anderer Konfis abrufen (user_id-Check).
-#       Teamer koennen ausschliesslich ihre EIGENEN Antragsfotos sehen.
+#    -> Konfis können NIE Fotos anderer Konfis abrufen (user_id-Check).
+#       Teamer können ausschliesslich ihre EIGENEN Antragsfotos sehen.
 #
 # NEUE LÜCKEN IN DIESEM BLOCK (zusammengefasst):
 #   L1  BEHOBEN 22.08.2026. GET /api/events lieferte e.* inklusive qr_token an
@@ -125,11 +125,11 @@
 #       GET /events/:id war so umgehbar. Live nachgewiesen (2 Token sichtbar),
 #       jetzt aus allen Listen-Responses entfernt.
 #   L2  GET /api/admin/konfis/:id (+ /event-points, /badges): Teamer sieht
-#       Konfis ausserhalb der zugewiesenen Jahrgaenge im Detail.
+#       Konfis außerhalb der zugewiesenen Jahrgänge im Detail.
 #   L3  POST /api/admin/konfis/:id/bonus-points: Teamer ohne Jahrgang-Check.
 #   L4  GET /api/konfi/dashboard: Klarnamen + Punkte der Top 3 an alle Konfis.
 #   L5  BEHOBEN 22.08.2026. Der Jahrgangs-Filter verlangte length > 0 und
-#       entfiel damit fuer Teamer:innen ohne jede Zuweisung - sie sahen alle
+#       entfiel damit für Teamer:innen ohne jede Zuweisung - sie sahen alle
 #       Events der Organisation. Der Filter greift jetzt immer.
 # =====================================================================
 openapi: 3.1.0
@@ -139,7 +139,7 @@ info:
   description: >
     Teil 2 der API-Dokumentation: Konfi-Selbstbedienung (/api/konfi),
     Events (/api/events), Konfi-Verwaltung (/api/admin/konfis) und
-    Aktivitaeten/Antraege (/api/admin/activities). Berechtigungen sind je
+    Aktivitäten/Antraege (/api/admin/activities). Berechtigungen sind je
     Route in der Erweiterung x-berechtigung dokumentiert.
 servers:
   - url: https://konfi-quest.de
@@ -202,9 +202,9 @@ paths:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "nur eigene Daten (user_id = Token); Ranking aggregiert ueber den eigenen Jahrgang"
+        objekt-pruefung: "nur eigene Daten (user_id = Token); Ranking aggregiert über den eigenen Jahrgang"
         hinweis: >
-          # LÜCKE L4: ranking[] enthaelt display_name (Klarname) und exakte
+          # LÜCKE L4: ranking[] enthält display_name (Klarname) und exakte
           Punktzahl der drei Punktbesten des Jahrgangs - zusaetzlich zu den
           im Frontend genutzten Initialen.
       responses:
@@ -244,7 +244,7 @@ paths:
       summary: Eigenes Konfi-Profil
       description: >
         Profil des eingeloggten Konfis mit Punkten (inkl. Bonus-Summe),
-        Statistiken (Badges, Aktivitaeten, Events, offene Antraege), Rang im
+        Statistiken (Badges, Aktivitäten, Events, offene Anträge), Rang im
         Jahrgang, Konfirmationstermin/-ort und aufgeloestem Konfispruch.
       x-berechtigung:
         rollen: [konfi]
@@ -315,7 +315,7 @@ paths:
 
   /api/konfi/points-history:
     get:
-      summary: Eigene Punkte-Historie (Aktivitaeten, Bonus, Events)
+      summary: Eigene Punkte-Historie (Aktivitäten, Bonus, Events)
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
@@ -330,12 +330,12 @@ paths:
 
   /api/konfi/requests:
     get:
-      summary: Eigene Aktivitaets-Antraege auflisten
+      summary: Eigene Aktivitaets-Anträge auflisten
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "nur eigene Antraege (user_id = Token)"
+        objekt-pruefung: "nur eigene Anträge (user_id = Token)"
       responses:
         "200": { description: "Array von Antraegen (ar.* + activity_name, activity_points, activity_type)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
@@ -344,14 +344,14 @@ paths:
     post:
       summary: Neuen Aktivitaets-Antrag einreichen
       description: >
-        Legt einen Antrag (status pending) an. Idempotent ueber optionale
+        Legt einen Antrag (status pending) an. Idempotent über optionale
         client_id (UUID): existiert der Antrag bereits, kommt 200 mit dem
         bestehenden Datensatz. Benachrichtigt Admins (Notification + Push).
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC, validateCreateRequest]
         org-scope: true
-        objekt-pruefung: "Aktivitaet muss zur eigenen Org gehoeren (404 sonst)"
+        objekt-pruefung: "Aktivität muss zur eigenen Org gehören (404 sonst)"
       requestBody:
         required: true
         content:
@@ -376,8 +376,8 @@ paths:
 
   /api/konfi/requests/{id}:
     delete:
-      summary: Eigenen offenen Antrag loeschen
-      description: Nur Antraege mit status pending; zugehoeriges Nachweisfoto wird mitgeloescht.
+      summary: Eigenen offenen Antrag löschen
+      description: Nur Anträge mit status pending; zugehoeriges Nachweisfoto wird mitgeloescht.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
@@ -394,11 +394,11 @@ paths:
 
   /api/konfi/upload-photo:
     post:
-      summary: Nachweisfoto fuer Antrag hochladen (verschluesselt at-rest)
+      summary: Nachweisfoto für Antrag hochladen (verschlüsselt at-rest)
       description: >
-        multipart/form-data, Feld "photo". Magic-Bytes-Pruefung (nur echte
+        multipart/form-data, Feld "photo". Magic-Bytes-Prüfung (nur echte
         Bilder, sonst 415), AES-256-GCM-Verschluesselung, zufaelliger
-        64-Hex-Dateiname wird zurueckgegeben (fuer POST /api/konfi/requests).
+        64-Hex-Dateiname wird zurueckgegeben (für POST /api/konfi/requests).
       x-berechtigung:
         rollen: [konfi, teamer]
         middleware: [verifyTokenRBAC, "multer requestUpload.single('photo')"]
@@ -436,9 +436,9 @@ paths:
 
   /api/konfi/activities:
     get:
-      summary: Beantragbare Aktivitaeten auflisten
+      summary: Beantragbare Aktivitäten auflisten
       description: >
-        Aktivitaeten der Org mit target_role konfi (oder NULL), gefiltert auf
+        Aktivitäten der Org mit target_role konfi (oder NULL), gefiltert auf
         die im Jahrgang aktivierten Punkt-Typen.
       x-berechtigung:
         rollen: [konfi]
@@ -500,9 +500,9 @@ paths:
       description: >
         Events, die dem Jahrgang des Konfis zugewiesen sind, ohne teamer_only;
         abgesagte nur, wenn der Konfi gebucht war. Standard-Datumsfenster:
-        letzte 12 Monate + Zukunft (?all=true fuer alles). Enthaelt eigene
+        letzte 12 Monate + Zukunft (?all=true für alles). Enthaelt eigene
         Buchung (booking_status, attendance_status, Timeslot,
-        waitlist_position) und Konfi-Zaehler (Teamer-Kontingent getrennt).
+        waitlist_position) und Konfi-Zähler (Teamer-Kontingent getrennt).
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
@@ -523,12 +523,12 @@ paths:
 
   /api/konfi/events/{id}/status:
     get:
-      summary: Eigener Anmeldestatus fuer ein Event
+      summary: Eigener Anmeldestatus für ein Event
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Event org-gescopt; Buchungsdaten nur eigene; kein Jahrgang-Check (nur Zaehler)"
+        objekt-pruefung: "Event org-gescopt; Buchungsdaten nur eigene; kein Jahrgang-Check (nur Zähler)"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: "is_registered, registration_status, can_register, event_status, confirmed_count, waitlist_count, waitlist_position, max_participants, waitlist_enabled" }
@@ -542,12 +542,12 @@ paths:
       summary: Anonymisierte Teilnehmerliste eines Events (Konfi-Sicht)
       description: >
         Bestaetigte Teilnehmer als "Vorname N." (anonymisiert), Teamer werden
-        herausgefiltert. Organisation wird geprueft (Fix 22.08.2026).
+        herausgefiltert. Organisation wird geprüft (Fix 22.08.2026).
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Event muss zur eigenen Org gehoeren; Namen anonymisiert"
+        objekt-pruefung: "Event muss zur eigenen Org gehören; Namen anonymisiert"
         hinweis: "Kein Jahrgang-Check - anonymisierte Listen beliebiger Org-Events abrufbar (nur Hinweis)."
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
@@ -563,7 +563,7 @@ paths:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Event org-gescopt; nur Slot-Daten + Zaehler"
+        objekt-pruefung: "Event org-gescopt; nur Slot-Daten + Zähler"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: "Array von Timeslots (et.*, registered_count, waitlist_count); leer wenn has_timeslots=false" }
@@ -574,11 +574,11 @@ paths:
 
   /api/konfi/events/{id}/register:
     post:
-      summary: Fuer Event anmelden (primaere Konfi-Buchungsroute)
+      summary: Für Event anmelden (primaere Konfi-Buchungsroute)
       description: >
         Transaktional (FOR UPDATE). Prueft Doppelbuchung (409),
         Konfirmations-Sperre (nur EIN Konfirmationstermin, 409),
-        Registrierungsfenster, Timeslot-Pflicht und Kapazitaet (Konfi- und
+        Registrierungsfenster, Timeslot-Pflicht und Kapazität (Konfi- und
         Teamer-Kontingent getrennt). Ergebnis confirmed oder waitlist. Traegt
         die Person seit 24.08.2026 in den Chat zum Termin ein, falls es einen
         gibt (idempotent) — vorher kam nur hinein, wer beim Anlegen des Chats
@@ -588,7 +588,7 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: "bucht nur sich selbst; Event + Timeslot org-gescopt"
-        hinweis: "Kein Jahrgang-Check - Konfi kann sich per API auch fuer Events fremder Jahrgaenge der Org anmelden (nur Hinweis)."
+        hinweis: "Kein Jahrgang-Check - Konfi kann sich per API auch für Events fremder Jahrgänge der Org anmelden (nur Hinweis)."
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         content:
@@ -697,7 +697,7 @@ paths:
 
   /api/konfi/bible-translation:
     put:
-      summary: Bibeluebersetzung fuer Tageslosung setzen
+      summary: Bibeluebersetzung für Tageslosung setzen
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC, validateBibleTranslation]
@@ -744,11 +744,11 @@ paths:
       summary: Alle Events der Organisation (rollenabhaengig gefiltert)
       description: >
         Liefert Events der aktiven Org mit Zaehlern (Konfi- und Teamer-Kontingent
-        getrennt), Kategorien, Jahrgaengen, registration_status und eigener
+        getrennt), Kategorien, Jahrgängen, registration_status und eigener
         Buchung (is_registered, booking_status, attendance_status).
-        Datumsfenster: letzte 12 Monate + Zukunft (?all=true fuer alles).
+        Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles).
         Nachgelagerte Filter: Teamer mit Jahrgangs-Zuweisungen sehen
-        jahrgangs-gebundene Events nur fuer can_view-Jahrgaenge (allgemeine,
+        jahrgangs-gebundene Events nur für can_view-Jahrgänge (allgemeine,
         teamer_only- und teamer_needed-Events immer); Konfis sehen keine
         teamer_only-Events.
       x-berechtigung:
@@ -759,9 +759,9 @@ paths:
         hinweis: >
           # BEHOBEN 22.08.2026 (war LÜCKE L1): qr_token wird nicht mehr
           ausgeliefert - weder an Konfis noch an die Leitung. Der Token kommt
-          ausschliesslich ueber POST /api/events/:id/generate-qr, das die
+          ausschliesslich über POST /api/events/:id/generate-qr, das die
           QR-Anzeige ohnehin nutzt. Vorher lag er in der Liste und war damit
-          fuer jeden Konfi lesbar (Selbst-Checkin aus der Ferne).
+          für jeden Konfi lesbar (Selbst-Checkin aus der Ferne).
           # BEHOBEN 22.08.2026 (war LÜCKE L5): Der Jahrgangs-Filter greift
           jetzt IMMER. Vorher entfiel er ohne jede Zuweisung und die Teamer:in
           sah alle Events der Organisation.
@@ -777,18 +777,18 @@ paths:
     post:
       summary: Event erstellen
       description: >
-        Legt ein Event an inkl. Kategorien, Jahrgaengen und optionalen
+        Legt ein Event an inkl. Kategorien, Jahrgängen und optionalen
         Timeslots. Serverseitige Zwangsregeln: Pflicht-/Konfirmations-Events
         ohne Punkte und ohne Timeslots; Pflicht-Events ohne Warteliste und mit
-        Auto-Enrollment aller Konfis der Jahrgaenge; teamer_needed/teamer_only
+        Auto-Enrollment aller Konfis der Jahrgänge; teamer_needed/teamer_only
         schliessen sich aus; checkin_window 5-120 Minuten. Cross-Org-Referenzen
         (jahrgang_ids, category_ids) werden abgewiesen.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer, validateCreateEvent]
         org-scope: true
-        objekt-pruefung: "jahrgang_ids/category_ids muessen der eigenen Org gehoeren"
-        hinweis: "Teamer duerfen Events fuer ALLE Jahrgaenge der Org anlegen (kein Jahrgang-Check beim Schreiben)."
+        objekt-pruefung: "jahrgang_ids/category_ids müssen der eigenen Org gehören"
+        hinweis: "Teamer duerfen Events für ALLE Jahrgänge der Org anlegen (kein Jahrgang-Check beim Schreiben)."
       requestBody:
         required: true
         content:
@@ -862,7 +862,7 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: "nur eigene Buchung (event_bookings des Token-Users); Event-Org muss der aktiven Org entsprechen"
-        hinweis: "Punkte-Selbstvergabe-Weg g) der Analyse. Sicherheit haengt an der Geheimhaltung des qr_token; seit 22.08.2026 wird dieser nur noch ueber generate-qr ausgegeben (siehe BEHOBEN L1 in GET /api/events)."
+        hinweis: "Punkte-Selbstvergabe-Weg g) der Analyse. Sicherheit hängt an der Geheimhaltung des qr_token; seit 22.08.2026 wird dieser nur noch über generate-qr ausgegeben (siehe BEHOBEN L1 in GET /api/events)."
       requestBody:
         required: true
         content:
@@ -881,8 +881,8 @@ paths:
 
   /api/events/{id}/generate-qr:
     post:
-      summary: QR-Token fuer Event erzeugen/abrufen
-      description: Gibt vorhandenen qr_token zurueck oder erzeugt einen neuen (HS256, kein Ablauf - Zeitfenster laeuft ueber event_date).
+      summary: QR-Token für Event erzeugen/abrufen
+      description: Gibt vorhandenen qr_token zurück oder erzeugt einen neuen (HS256, kein Ablauf - Zeitfenster läuft über event_date).
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
@@ -898,7 +898,7 @@ paths:
 
   /api/events/{id}/attendance-count:
     get:
-      summary: Live-Zaehler eingecheckter Teilnehmer
+      summary: Live-Zähler eingecheckter Teilnehmer
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
@@ -918,7 +918,7 @@ paths:
         rollen: [org_admin, admin, teamer, konfi]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Event org-gescopt; nur Slot-Daten + Zaehler"
+        objekt-pruefung: "Event org-gescopt; nur Slot-Daten + Zähler"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: "Array von Timeslots (et.*, registered_count, waitlist_count); leer wenn keine Timeslots" }
@@ -930,11 +930,11 @@ paths:
     get:
       summary: Event-Details mit Teilnehmern (rollenabhaengig reduziert)
       description: >
-        Volle Event-Details inkl. Timeslots, Serien-Events, Jahrgaengen,
-        Kategorien, Zaehlern, eigener Buchung und chat_room_id. Fuer
+        Volle Event-Details inkl. Timeslots, Serien-Events, Jahrgängen,
+        Kategorien, Zaehlern, eigener Buchung und chat_room_id. Für
         Leitungsrollen zusaetzlich: participants[] (Klarname, Jahrgang,
         Timeslot, attendance_status, opt_out_reason/-date) und
-        unregistrations[] (Klarname, Grund). Fuer KONFIS werden qr_token
+        unregistrations[] (Klarname, Grund). Für KONFIS werden qr_token
         entfernt sowie participants und unregistrations geleert
         (Fix 22.08.2026) - Konfis nutzen die anonymisierte Route
         /api/konfi/events/:id/participants.
@@ -953,20 +953,20 @@ paths:
     put:
       summary: Event aktualisieren (inkl. Nachrueck-Logik)
       description: >
-        Aktualisiert alle Event-Felder, Kategorien, Jahrgaenge und Timeslots
+        Aktualisiert alle Event-Felder, Kategorien, Jahrgänge und Timeslots
         (buchungserhaltend). Zwangsregeln wie beim Erstellen. Bei
         Kapazitaetserhoehung ruecken Wartelisten-Eintraege nach (Konfi- und
-        Teamer-Kontingent strikt getrennt). Bei einem Pflicht-Event laeuft das
+        Teamer-Kontingent strikt getrennt). Bei einem Pflicht-Event läuft das
         Auto-Enrollment bei JEDEM Speichern (idempotent, ON CONFLICT DO
         NOTHING): seit 24.08.2026 werden damit auch die Konfis eines
-        nachtraeglich ergaenzten Jahrgangs gebucht — vorher nur bei der
+        nachträglich ergaenzten Jahrgangs gebucht — vorher nur bei der
         Umwandlung freiwillig -> Pflicht. Abgemeldete (opted_out) bleiben
-        abgemeldet. Relevante Aenderungen (Termin/Ort) pushen an Gebuchte.
+        abgemeldet. Relevante Änderungen (Termin/Ort) pushen an Gebuchte.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer, validateUpdateEvent]
         org-scope: true
-        objekt-pruefung: "UPDATE mit organization_id-Bedingung (404 sonst); jahrgang_ids/category_ids org-geprueft"
+        objekt-pruefung: "UPDATE mit organization_id-Bedingung (404 sonst); jahrgang_ids/category_ids org-geprüft"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         required: true
@@ -981,7 +981,7 @@ paths:
         "404": { $ref: '#/components/responses/NotFound' }
         "500": { $ref: '#/components/responses/ServerError' }
     delete:
-      summary: Event loeschen (mit force-Bestaetigung)
+      summary: Event löschen (mit force-Bestaetigung)
       description: >
         Loescht Event samt Buchungen, Timeslots, Kategorien, Jahrgangs-
         Zuweisungen und Event-Chat (inkl. Dateien). Ohne ?force=true blockt
@@ -1042,7 +1042,7 @@ paths:
       description: >
         Loescht die eigene Buchung transaktional, entfernt den User aus dem
         Event-Chat, nimmt bei attendance_status='present' die Event-Punkte
-        zurueck und laesst rollenrichtig aus der passenden Warteliste
+        zurück und laesst rollenrichtig aus der passenden Warteliste
         nachruecken (Konfi-Platz nur an Konfis, Teamer-Platz nur an Teamer).
       x-berechtigung:
         rollen: [konfi, teamer]
@@ -1064,12 +1064,12 @@ paths:
       description: >
         Fuegt einen User der eigenen Org zum Event hinzu. status='auto'
         entscheidet rollenrichtig (Konfi- vs. Teamer-Kontingent, Timeslot-
-        Kapazitaet, Warteliste); explizites status wird uebernommen.
+        Kapazität, Warteliste); explizites status wird uebernommen.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "Event UND Ziel-User muessen zur eigenen Org gehoeren; kein Jahrgang-Check"
+        objekt-pruefung: "Event UND Ziel-User müssen zur eigenen Org gehören; kein Jahrgang-Check"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         required: true
@@ -1096,14 +1096,14 @@ paths:
       summary: Buchung eines Teilnehmers entfernen (Leitung)
       description: >
         Loescht eine fremde Buchung; war der Konfi als anwesend verbucht,
-        werden die Event-Punkte zurueckgenommen. Die Person wird zudem aus dem
+        werden die Event-Punkte zurückgenommen. Die Person wird zudem aus dem
         Event-Chat entfernt (seit 24.08.2026). Danach rollenrichtiges
         Nachruecken aus der passenden Warteliste.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "User-Org UND Event-Org muessen der eigenen Org entsprechen (403 sonst); kein Jahrgang-Check"
+        objekt-pruefung: "User-Org UND Event-Org müssen der eigenen Org entsprechen (403 sonst); kein Jahrgang-Check"
         hinweis: "Punkte-Entzugs-Weg m) der Analyse."
       parameters:
         - { $ref: '#/components/parameters/pathId' }
@@ -1143,7 +1143,7 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "jahrgang_ids/category_ids org-geprueft"
+        objekt-pruefung: "jahrgang_ids/category_ids org-geprüft"
       requestBody:
         required: true
         content:
@@ -1166,14 +1166,14 @@ paths:
     put:
       summary: Teilnehmer zwischen bestaetigt und Warteliste verschieben
       description: >
-        status confirmed <-> waitlist. Degradierung auf waitlist loescht
-        attendance_status und nimmt vergebene Event-Punkte zurueck;
+        status confirmed <-> waitlist. Degradierung auf waitlist löscht
+        attendance_status und nimmt vergebene Event-Punkte zurück;
         Befoerderung von der Warteliste pusht an die betroffene Person.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "Buchung muss zu Event der eigenen Org gehoeren (403 sonst); kein Jahrgang-Check"
+        objekt-pruefung: "Buchung muss zu Event der eigenen Org gehören (403 sonst); kein Jahrgang-Check"
         hinweis: "Punkte-Entzugs-Weg l) der Analyse."
       parameters:
         - { $ref: '#/components/parameters/pathId' }
@@ -1202,7 +1202,7 @@ paths:
     put:
       summary: Alle unverbuchten Angemeldeten als anwesend verbuchen (Bulk)
       description: >
-        Setzt fuer alle bestaetigten Konfis ohne attendance_status 'present'
+        Setzt für alle bestaetigten Konfis ohne attendance_status 'present'
         und vergibt (bei points > 0, nicht-Pflicht, aktiviertem Punkt-Typ)
         die Event-Punkte inkl. Badge-/Level-Check. Warteliste und bereits
         Verbuchte bleiben unberuehrt.
@@ -1227,7 +1227,7 @@ paths:
         attendance_status present | absent. present: Konfis erhalten einmalig
         die Event-Punkte (nicht bei Pflicht-Events; 400 bei deaktiviertem
         Punkt-Typ), Teamer nur Anwesenheit. absent: vergebene Event-Punkte
-        werden zurueckgenommen.
+        werden zurückgenommen.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
@@ -1259,13 +1259,13 @@ paths:
 
   /api/events/{id}/chat:
     post:
-      summary: Gruppenchat fuer Event erstellen
+      summary: Gruppenchat für Event erstellen
       description: >
         Legt den Event-Chat an und fuegt Ersteller plus alle Gebuchten hinzu
-        (rollenrichtiger user_type). Seit 24.08.2026 zaehlen dabei auch
+        (rollenrichtiger user_type). Seit 24.08.2026 zählen dabei auch
         Wartende — vorher nur bestaetigte, obwohl Wartende beim Anmelden
         hineinkommen. Pro Event nur ein Chat. Die Mitgliedschaft wird ab jetzt
-        laufend gepflegt: Anmelden traegt ein, Abmelden traegt aus.
+        laufend gepflegt: Anmelden trägt ein, Abmelden trägt aus.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
@@ -1307,7 +1307,7 @@ paths:
 
   # ===================================================================
   # backend/routes/activities.js  (Prefix /api/admin/activities)
-  # Masterliste der Aktivitaeten + Antragsverwaltung.
+  # Masterliste der Aktivitäten + Antragsverwaltung.
   # Lesen der Masterliste und Direktvergabe: requireTeamer.
   # Anlegen/Aendern/Loeschen und Antragsentscheidung: requireAdmin.
   # Die beiden Foto-Routen haben KEINE Rollen-Middleware, sondern einen
@@ -1316,18 +1316,18 @@ paths:
   # ===================================================================
   /api/admin/activities:
     get:
-      summary: Masterliste aller Aktivitaeten der eigenen Organisation
+      summary: Masterliste aller Aktivitäten der eigenen Organisation
       description: >
-        Liefert alle Aktivitaeten der aktiven Organisation samt zugeordneten
+        Liefert alle Aktivitäten der aktiven Organisation samt zugeordneten
         Kategorien. Optionaler Query-Parameter target_role filtert auf
-        Konfi- bzw. Teamer-Aktivitaeten.
+        Konfi- bzw. Teamer-Aktivitäten.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
         objekt-pruefung: "WHERE a.organization_id = req.user.organization_id"
         hinweis: >
-          super_admin faellt durch requireTeamer auf 403, ausser er agiert per
+          super_admin fällt durch requireTeamer auf 403, außer er agiert per
           Multi-Org-Switch als org_admin/admin/teamer.
       parameters:
         - name: target_role
@@ -1340,9 +1340,9 @@ paths:
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
     post:
-      summary: Neue Aktivitaet anlegen
+      summary: Neue Aktivität anlegen
       description: >
-        Legt eine Aktivitaet in der aktiven Organisation an. Bei
+        Legt eine Aktivität in der aktiven Organisation an. Bei
         target_role=teamer sind points und type optional, sonst Pflicht.
         Uebergebene category_ids werden zugeordnet.
       x-berechtigung:
@@ -1371,15 +1371,15 @@ paths:
 
   /api/admin/activities/{id}:
     put:
-      summary: Aktivitaet aendern
+      summary: Aktivität ändern
       description: >
-        Aendert Name, Punkte, Typ, Zielrolle und Kategorien einer Aktivitaet
+        Aendert Name, Punkte, Typ, Zielrolle und Kategorien einer Aktivität
         der eigenen Organisation.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateUpdateActivity]
         org-scope: true
-        objekt-pruefung: "Aktivitaet muss zur eigenen Organisation gehoeren"
+        objekt-pruefung: "Aktivität muss zur eigenen Organisation gehören"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         required: true
@@ -1401,16 +1401,16 @@ paths:
         "404": { $ref: '#/components/responses/NotFound' }
         "500": { $ref: '#/components/responses/ServerError' }
     delete:
-      summary: Aktivitaet loeschen (nur ohne Zuordnungen)
+      summary: Aktivität löschen (nur ohne Zuordnungen)
       description: >
-        Loescht eine Aktivitaet. Existieren bereits Zuordnungen zu Konfis
-        (user_activities), wird mit 409 abgelehnt. Antraege werden nach
-        Gewicht unterschieden aufgeraeumt bzw. blockieren das Loeschen.
+        Loescht eine Aktivität. Existieren bereits Zuordnungen zu Konfis
+        (user_activities), wird mit 409 abgelehnt. Anträge werden nach
+        Gewicht unterschieden aufgeraeumt bzw. blockieren das Löschen.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateDeleteActivity]
         org-scope: true
-        objekt-pruefung: "Zuordnungspruefung ueber JOIN activities mit organization_id"
+        objekt-pruefung: "Zuordnungspruefung über JOIN activities mit organization_id"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: "Aktivitaet geloescht" }
@@ -1422,7 +1422,7 @@ paths:
 
   /api/admin/activities/requests:
     get:
-      summary: Alle Antraege der Organisation
+      summary: Alle Anträge der Organisation
       description: >
         Liefert alle Aktivitaetsantraege der aktiven Organisation samt
         Konfi-Name, Aktivitaetsdaten und genehmigender Person.
@@ -1432,8 +1432,8 @@ paths:
         org-scope: true
         objekt-pruefung: "WHERE a.organization_id = req.user.organization_id"
         hinweis: >
-          Kein Jahrgangs-Filter: org_admin und admin sehen die Antraege ALLER
-          Jahrgaenge der Organisation. Teamer:innen haben hier keinen Zugriff
+          Kein Jahrgangs-Filter: org_admin und admin sehen die Anträge ALLER
+          Jahrgänge der Organisation. Teamer:innen haben hier keinen Zugriff
           (dafuer gibt es GET /api/teamer/requests).
       responses:
         "200": { description: "Array von Antraegen (ar.* + konfi_name, activity_name, activity_points, activity_type, activity_target_role, approved_by_name)" }
@@ -1447,12 +1447,12 @@ paths:
       description: >
         Setzt den Status eines ausstehenden Antrags auf approved oder
         rejected. Bei approved werden die Punkte gutgeschrieben und Badges
-        geprueft. Bereits entschiedene Antraege werden mit 400 abgelehnt.
+        geprüft. Bereits entschiedene Anträge werden mit 400 abgelehnt.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateRequestUpdate]
         org-scope: true
-        objekt-pruefung: "Antrag ueber JOIN activities auf die eigene Organisation eingegrenzt; nur status=pending aenderbar"
+        objekt-pruefung: "Antrag über JOIN activities auf die eigene Organisation eingegrenzt; nur status=pending aenderbar"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         required: true
@@ -1472,16 +1472,16 @@ paths:
         "404": { $ref: '#/components/responses/NotFound' }
         "500": { $ref: '#/components/responses/ServerError' }
     delete:
-      summary: Abgelehnten Antrag endgueltig loeschen
+      summary: Abgelehnten Antrag endgueltig löschen
       description: >
-        Entfernt einen abgelehnten Antrag samt Nachweisfoto. Offene Antraege
-        (409) und genehmigte Antraege (409) sind bewusst geschuetzt:
-        offene werden entschieden, genehmigte zuerst zurueckgesetzt.
+        Entfernt einen abgelehnten Antrag samt Nachweisfoto. Offene Anträge
+        (409) und genehmigte Anträge (409) sind bewusst geschuetzt:
+        offene werden entschieden, genehmigte zuerst zurückgesetzt.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]
         org-scope: true
-        objekt-pruefung: "Antrag ueber JOIN activities org-gescopt; nur status=rejected loeschbar"
+        objekt-pruefung: "Antrag über JOIN activities org-gescopt; nur status=rejected loeschbar"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: "Antrag geloescht" }
@@ -1495,14 +1495,14 @@ paths:
     put:
       summary: Entschiedenen Antrag auf ausstehend zuruecksetzen
       description: >
-        Setzt einen genehmigten oder abgelehnten Antrag zurueck auf pending.
-        Bei zuvor genehmigten Antraegen werden die gutgeschriebenen Punkte
+        Setzt einen genehmigten oder abgelehnten Antrag zurück auf pending.
+        Bei zuvor genehmigten Anträgen werden die gutgeschriebenen Punkte
         wieder abgezogen.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]
         org-scope: true
-        objekt-pruefung: "Antrag ueber JOIN activities org-gescopt; bereits ausstehende Antraege ergeben 400"
+        objekt-pruefung: "Antrag über JOIN activities org-gescopt; bereits ausstehende Anträge ergeben 400"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: "Antrag zurueckgesetzt, Punkte ggf. abgezogen" }
@@ -1516,7 +1516,7 @@ paths:
     get:
       summary: Nachweisfoto eines Antrags abrufen
       description: >
-        Liefert das (verschluesselt gespeicherte) Nachweisfoto entschluesselt
+        Liefert das (verschlüsselt gespeicherte) Nachweisfoto entschluesselt
         als image/jpeg aus, unabhaengig vom Status des Antrags.
       x-berechtigung:
         rollen: [org_admin, admin]
@@ -1538,7 +1538,7 @@ paths:
         "404": { description: Antrag, Foto-Eintrag oder Datei nicht gefunden }
         "500": { description: Foto konnte nicht entschluesselt werden }
     delete:
-      summary: Nachweisfoto eines Antrags loeschen
+      summary: Nachweisfoto eines Antrags löschen
       description: >
         Setzt photo_filename auf NULL und entfernt die Datei. Der Antrag
         selbst bleibt erhalten.
@@ -1546,7 +1546,7 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Inline-Rollencheck role_name in ['admin','org_admin']; danach Org-Vergleich ueber den antragstellenden User"
+        objekt-pruefung: "Inline-Rollencheck role_name in ['admin','org_admin']; danach Org-Vergleich über den antragstellenden User"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: "Foto geloescht" }
@@ -1557,17 +1557,17 @@ paths:
 
   /api/admin/activities/assign-activity:
     post:
-      summary: Aktivitaet direkt einem Konfi zuweisen
+      summary: Aktivität direkt einem Konfi zuweisen
       description: >
-        Vergibt eine Aktivitaet ohne Antragsweg. Punkte werden gutgeschrieben
-        und die Badge-Pruefung ausgeloest.
+        Vergibt eine Aktivität ohne Antragsweg. Punkte werden gutgeschrieben
+        und die Badge-Prüfung ausgelöst.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer, validateAssignActivity]
         org-scope: true
         objekt-pruefung: >
-          Aktivitaet UND Ziel-User muessen zur eigenen Organisation gehoeren
-          (Org-Pruefung des Ziel-Users ergaenzt 22.08.2026). Teamer:innen
+          Aktivität UND Ziel-User müssen zur eigenen Organisation gehören
+          (Org-Prüfung des Ziel-Users ergaenzt 22.08.2026). Teamer:innen
           zusaetzlich: der Jahrgang des Konfis muss in assigned_jahrgaenge mit
           can_view liegen.
       requestBody:
@@ -1596,23 +1596,23 @@ paths:
   # requireAdmin. Bonuspunkte VERGEBEN duerfen auch Teamer:innen,
   # ZURUECKNEHMEN nur org_admin/admin.
   #
-  # JAHRGANGS-FILTER: Nur die Liste GET /api/admin/konfis filtert fuer
+  # JAHRGANGS-FILTER: Nur die Liste GET /api/admin/konfis filtert für
   # Teamer:innen (und admin) auf assigned_jahrgaenge mit can_view. Alle
-  # Detail-Routen mit :id pruefen ausschliesslich die organization_id.
+  # Detail-Routen mit :id prüfen ausschliesslich die organization_id.
   # ===================================================================
   /api/admin/konfis:
     get:
-      summary: Liste der Konfis (fuer Teamer:innen auf eigene Jahrgaenge gefiltert)
+      summary: Liste der Konfis (für Teamer:innen auf eigene Jahrgänge gefiltert)
       description: >
         Liefert die Konfis der aktiven Organisation mit Punkten, Jahrgang und
-        Zaehlern. Fuer alle ausser super_admin und org_admin wird auf die
-        Jahrgaenge aus assigned_jahrgaenge mit can_view eingeschraenkt.
+        Zaehlern. Für alle außer super_admin und org_admin wird auf die
+        Jahrgänge aus assigned_jahrgaenge mit can_view eingeschraenkt.
         Geloeschte Konfis (deleted_at) sind ausgeschlossen.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "u.organization_id = Token-Org; zusaetzlich Jahrgangs-Filter fuer alle ausser is_super_admin/org_admin"
+        objekt-pruefung: "u.organization_id = Token-Org; zusaetzlich Jahrgangs-Filter für alle außer is_super_admin/org_admin"
       responses:
         "200": { description: "Array von Konfis (id, name, username, Punkte, Jahrgang, badge_count, activity_count)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
@@ -1622,16 +1622,16 @@ paths:
       summary: Neuen Konfi anlegen
       description: >
         Legt User + konfi_profiles an, erzeugt Username und Startpasswort,
-        haengt den Konfi an den Jahrgangs-Chat und bucht ihn in kuenftige
+        hängt den Konfi an den Jahrgangs-Chat und bucht ihn in kuenftige
         Pflicht-Events des Jahrgangs ein. Das Konfi-Limit der Organisation
-        wird geprueft.
+        wird geprüft.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateCreateKonfi]
         org-scope: true
-        objekt-pruefung: "jahrgang_id muss zur eigenen Organisation gehoeren; Rolle konfi wird org-spezifisch aufgeloest; Limitpruefung ueber checkKonfiLimit"
+        objekt-pruefung: "jahrgang_id muss zur eigenen Organisation gehören; Rolle konfi wird org-spezifisch aufgeloest; Limitpruefung über checkKonfiLimit"
         hinweis: >
-          Teamer:innen koennen keine Konfis anlegen (requireAdmin).
+          Teamer:innen können keine Konfis anlegen (requireAdmin).
       requestBody:
         required: true
         content:
@@ -1665,8 +1665,8 @@ paths:
         objekt-pruefung: "WHERE r.name = 'teamer' AND u.organization_id = Token-Org"
         hinweis: >
           Kein Jahrgangs-Filter: Teamer:innen sehen hier alle Kolleg:innen der
-          Organisation, auch aus fremden Jahrgaengen. Es werden keine
-          Login-Daten ausser dem username ausgeliefert.
+          Organisation, auch aus fremden Jahrgängen. Es werden keine
+          Login-Daten außer dem username ausgeliefert.
       responses:
         "200": { description: "Array (id, name, username, teamer_since, jahrgang_name, badge_count, cert_count)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
@@ -1677,8 +1677,8 @@ paths:
     get:
       summary: Einzelner Konfi oder Teamer mit voller Historie
       description: >
-        Detailansicht: Stammdaten, Punkte, Aktivitaeten, Bonuspunkte, Events,
-        Abzeichen und aufgeloester Konfispruch. Fuer Teamer:innen als
+        Detailansicht: Stammdaten, Punkte, Aktivitäten, Bonuspunkte, Events,
+        Abzeichen und aufgeloester Konfispruch. Für Teamer:innen als
         Zielobjekt zusaetzlich Zertifikate und Teamer-Historie.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
@@ -1687,9 +1687,9 @@ paths:
         objekt-pruefung: "WHERE u.id = :id AND u.organization_id = Token-Org AND r.name IN ('konfi','teamer') AND deleted_at IS NULL"
         hinweis: >
           # HINWEIS: Diese Route hat KEINEN Jahrgangs-Check. Eine Teamer:in
-          kann ueber eine direkt geratene ID das vollstaendige Profil samt
+          kann über eine direkt geratene ID das vollstaendige Profil samt
           Punktehistorie jedes Konfis der Organisation abrufen, auch aus
-          Jahrgaengen ohne Zuweisung. Die Liste GET /api/admin/konfis filtert
+          Jahrgängen ohne Zuweisung. Die Liste GET /api/admin/konfis filtert
           dagegen korrekt.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
@@ -1699,14 +1699,14 @@ paths:
         "404": { $ref: '#/components/responses/NotFound' }
         "500": { $ref: '#/components/responses/ServerError' }
     put:
-      summary: Konfi aendern (Name, Jahrgang)
+      summary: Konfi ändern (Name, Jahrgang)
       description: >
         Aendert Anzeigename und/oder Jahrgang. Bei Jahrgangswechsel wird die
         Chat-Mitgliedschaft synchronisiert und der Konfi in kuenftige
         Pflicht-Events des neuen Jahrgangs eingebucht. Seit 24.08.2026 werden
         dabei auch die kuenftigen Pflicht-Events des ALTEN Jahrgangs
         ausgetragen — nur solange keine Anwesenheit erfasst ist und der Termin
-        nicht auch zum neuen Jahrgang gehoert. Vergangene Termine und erfasste
+        nicht auch zum neuen Jahrgang gehört. Vergangene Termine und erfasste
         Anwesenheiten bleiben unberuehrt.
       x-berechtigung:
         rollen: [org_admin, admin]
@@ -1731,19 +1731,19 @@ paths:
         "404": { $ref: '#/components/responses/NotFound' }
         "500": { $ref: '#/components/responses/ServerError' }
     delete:
-      summary: Konfi loeschen (inkl. abhaengiger Daten)
+      summary: Konfi löschen (inkl. abhaengiger Daten)
       description: >
-        Loescht den Konfi und die daran haengenden Daten ueber
-        deleteKonfiCascade (Aktivitaeten, Bonuspunkte, Buchungen, Antraege,
+        Loescht den Konfi und die daran haengenden Daten über
+        deleteKonfiCascade (Aktivitäten, Bonuspunkte, Buchungen, Anträge,
         Chat-Mitgliedschaften, seit 24.08.2026 auch erhaltene Urkunden —
-        deren Fremdschluessel blockierte das Loeschen vorher mit 500).
-        Dieselbe Funktion traegt die Selbstloeschung ueber
-        POST /auth/delete-account, dort fuer jede Rolle.
+        deren Fremdschlüssel blockierte das Löschen vorher mit 500).
+        Dieselbe Funktion trägt die Selbstloeschung über
+        POST /auth/delete-account, dort für jede Rolle.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]
         org-scope: true
-        objekt-pruefung: "Ziel muss Rolle konfi haben, zur eigenen Organisation gehoeren und darf nicht bereits geloescht sein"
+        objekt-pruefung: "Ziel muss Rolle konfi haben, zur eigenen Organisation gehören und darf nicht bereits gelöscht sein"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: Konfi geloescht }
@@ -1754,8 +1754,8 @@ paths:
 
   /api/admin/konfis/{id}/regenerate-password:
     post:
-      summary: Neues Startpasswort fuer einen Konfi erzeugen
-      description: Erzeugt ein neues Passwort, speichert den Hash und gibt das Klartext-Passwort einmalig zurueck.
+      summary: Neues Startpasswort für einen Konfi erzeugen
+      description: Erzeugt ein neues Passwort, speichert den Hash und gibt das Klartext-Passwort einmalig zurück.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]
@@ -1763,7 +1763,7 @@ paths:
         objekt-pruefung: "UPDATE ... WHERE id = :id AND organization_id = Token-Org"
         hinweis: >
           Kein Rollen-Check auf das Zielobjekt: die Route setzt das Passwort
-          jedes Users der eigenen Organisation zurueck, nicht nur von Konfis.
+          jedes Users der eigenen Organisation zurück, nicht nur von Konfis.
           Da nur org_admin/admin zugreifen duerfen, bleibt der Effekt
           innerhalb der Leitungsrechte.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
@@ -1777,7 +1777,7 @@ paths:
   /api/admin/konfis/{id}/event-points:
     get:
       summary: Event-Punkte eines Konfis
-      description: Liefert alle ueber Events vergebenen Punkte samt Event-Name und vergebender Person.
+      description: Liefert alle über Events vergebenen Punkte samt Event-Name und vergebender Person.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
@@ -1802,9 +1802,9 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "Ziel muss Rolle konfi haben, zur eigenen Organisation gehoeren und nicht geloescht sein"
+        objekt-pruefung: "Ziel muss Rolle konfi haben, zur eigenen Organisation gehören und nicht gelöscht sein"
         hinweis: >
-          Nur fuer Konfis; Teamer-Abzeichen laufen ueber /api/teamer/badges.
+          Nur für Konfis; Teamer-Abzeichen laufen über /api/teamer/badges.
           Kein Jahrgangs-Check.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
@@ -1824,10 +1824,10 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
-        objekt-pruefung: "Events sind org-gescopt (e.organization_id); der Jahrgang wird ueber konfi_profiles des Ziel-Konfis ermittelt"
+        objekt-pruefung: "Events sind org-gescopt (e.organization_id); der Jahrgang wird über konfi_profiles des Ziel-Konfis ermittelt"
         hinweis: >
-          Die Vorab-Abfrage auf konfi_profiles prueft NUR die user_id, nicht
-          die Organisation. Fuer eine fremde ID wird der Jahrgang also
+          Die Vorab-Abfrage auf konfi_profiles prüft NUR die user_id, nicht
+          die Organisation. Für eine fremde ID wird der Jahrgang also
           ermittelt, die eigentliche Auswertung filtert danach aber auf die
           eigene Organisation und liefert deshalb Nullwerte statt fremder
           Daten. Teamer:innen haben hier keinen Zugriff.
@@ -1844,12 +1844,12 @@ paths:
       summary: Bonuspunkte vergeben
       description: >
         Traegt Bonuspunkte ein und schreibt sie dem passenden Punktekonto gut.
-        Der Punkte-Typ muss fuer den Jahrgang des Konfis aktiviert sein.
+        Der Punkte-Typ muss für den Jahrgang des Konfis aktiviert sein.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer, validateBonusPoints]
         org-scope: true
-        objekt-pruefung: "Gutschrift laeuft ueber JOIN users mit organization_id = Token-Org; checkPointTypeEnabled prueft den Punkte-Typ gegen den Jahrgang"
+        objekt-pruefung: "Gutschrift läuft über JOIN users mit organization_id = Token-Org; checkPointTypeEnabled prüft den Punkte-Typ gegen den Jahrgang"
         hinweis: >
           Vergeben duerfen auch Teamer:innen, zuruecknehmen nur org_admin und
           admin (DELETE unten). Ein Jahrgangs-Check auf die Ziel-ID findet
@@ -1898,19 +1898,19 @@ paths:
 
   /api/admin/konfis/{id}/activities:
     post:
-      summary: Aktivitaet nachtragen
+      summary: Aktivität nachtragen
       description: >
-        Traegt eine erledigte Aktivitaet nach, schreibt die Punkte gut und
-        loest die Badge-Pruefung aus. Bei Konfi-Aktivitaeten muss der
-        Punkte-Typ fuer den Jahrgang aktiviert sein.
+        Traegt eine erledigte Aktivität nach, schreibt die Punkte gut und
+        löst die Badge-Prüfung aus. Bei Konfi-Aktivitäten muss der
+        Punkte-Typ für den Jahrgang aktiviert sein.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateAddActivity]
         org-scope: true
-        objekt-pruefung: "Aktivitaet muss zur eigenen Organisation gehoeren; checkPointTypeEnabled bei Konfi-Aktivitaeten"
+        objekt-pruefung: "Aktivität muss zur eigenen Organisation gehören; checkPointTypeEnabled bei Konfi-Aktivitäten"
         hinweis: >
           Anders als POST /api/admin/activities/assign-activity verlangt diese
-          Route requireAdmin — Teamer:innen tragen ueber assign-activity nach.
+          Route requireAdmin — Teamer:innen tragen über assign-activity nach.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         required: true
@@ -1933,14 +1933,14 @@ paths:
 
   /api/admin/konfis/{id}/activities/{activityId}:
     delete:
-      summary: Nachgetragene Aktivitaet entfernen
+      summary: Nachgetragene Aktivität entfernen
       description: Loescht die Zuordnung und zieht die gutgeschriebenen Punkte wieder ab.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
         objekt-pruefung: >
-          SELECT ueber JOIN users mit organization_id — die Org-Bedingung
+          SELECT über JOIN users mit organization_id — die Org-Bedingung
           wurde 22.08.2026 ergaenzt. Ohne sie fand der SELECT auch fremde
           Eintraege und der Punktabzug lief auf einem fremden Konfi.
       parameters:
@@ -1990,14 +1990,14 @@ paths:
     post:
       summary: Konfi zur Teamer:in befoerdern
       description: >
-        Setzt die Rolle auf teamer und teamer_since auf heute, loescht
-        Event-Buchungen und offene Antraege und uebertraegt den Jahrgang aus
+        Setzt die Rolle auf teamer und teamer_since auf heute, löscht
+        Event-Buchungen und offene Anträge und uebertraegt den Jahrgang aus
         konfi_profiles in user_jahrgang_assignments.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]
         org-scope: true
-        objekt-pruefung: "Ziel-User muss zur eigenen Organisation gehoeren und aktuell Rolle konfi haben (sonst 400)"
+        objekt-pruefung: "Ziel-User muss zur eigenen Organisation gehören und aktuell Rolle konfi haben (sonst 400)"
         hinweis: >
           Die Teamer-Rolle wird org-spezifisch gesucht, mit Rueckfall auf die
           globale Rolle (organization_id IS NULL).

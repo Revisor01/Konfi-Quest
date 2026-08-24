@@ -2,14 +2,14 @@
  * Nutzertyp im Chat: DREI Werte, wie sie chat_participants.user_type,
  * chat_poll_votes.user_type und chat_message_reactions.user_type fuehren.
  * 'teamer' fehlte in mehreren Typen unten, obwohl die Datenbank ihn speichert —
- * dadurch fielen Vergleiche wie `=== 'admin'` fuer "gehoert zum Team" nicht auf.
+ * dadurch fielen Vergleiche wie `=== 'admin'` für "gehört zum Team" nicht auf.
  */
 export type ChatUserType = 'admin' | 'teamer' | 'konfi';
 
 export interface PollVote {
-  // Bei anonymen Umfragen liefert der Server fuer FREMDE Stimmen null: sonst
-  // liesse sich ueber die Teilnehmerliste aufloesen, wer was gewaehlt hat. Die
-  // eigene Stimme behaelt ihre Kennung, damit sie markiert werden kann.
+  // Bei anonymen Umfragen liefert der Server für FREMDE Stimmen null: sonst
+  // liesse sich über die Teilnehmerliste aufloesen, wer was gewählt hat. Die
+  // eigene Stimme behält ihre Kennung, damit sie markiert werden kann.
   user_id: number | null;
   user_type: ChatUserType | null;
   option_index: number;
@@ -61,7 +61,7 @@ export interface Message {
   queueStatus?: 'pending' | 'error';
   localId?: string;
   // client_id der eigenen optimistischen Nachricht — Match gegen das
-  // newMessage-Event (message.client_id) fuer In-Place-Ersetzen ohne Flackern
+  // newMessage-Event (message.client_id) für In-Place-Ersetzen ohne Flackern
   clientId?: string;
   client_id?: string;
 }

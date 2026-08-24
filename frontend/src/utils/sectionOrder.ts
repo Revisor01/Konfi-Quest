@@ -1,9 +1,9 @@
 // Reihenfolge der Dashboard-Sektionen.
 //
 // Organisationen speichern ihre eigene Sortierung (dashboard_section_order bzw.
-// teamer_dashboard_section_order). Kommt spaeter eine NEUE Sektion dazu, steht
+// teamer_dashboard_section_order). Kommt später eine NEUE Sektion dazu, steht
 // sie in diesen gespeicherten Listen natuerlich nicht drin — und weil die
-// Dashboards nur ueber die gespeicherte Liste rendern, waere die neue Sektion
+// Dashboards nur über die gespeicherte Liste rendern, wäre die neue Sektion
 // bei allen Bestands-Orgs unsichtbar, bis jemand die Einstellungen neu
 // speichert. Deshalb wird beim Laden gemergt statt ersetzt.
 

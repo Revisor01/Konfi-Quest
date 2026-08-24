@@ -40,7 +40,7 @@ const BadgeContext = createContext<BadgeContextType | undefined>(undefined);
 export const BadgeProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useApp();
   // Erhoeht sich nach Socket-Reconnect-mit-neuem-Token (LiveUpdateContext). Als
-  // Dependency des newMessage-Effekts unten noetig, damit der Listener nach
+  // Dependency des newMessage-Effekts unten nötig, damit der Listener nach
   // reconnectWithToken am NEUEN Socket-Objekt neu gebunden wird (der alte Socket
   // wurde verworfen -> ohne Neubindung kaeme kein 'newMessage' mehr an).
   const { socketEpoch } = useLiveUpdate();
@@ -53,7 +53,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
 
   const isAdmin = user?.type === 'admin' && user?.role_name !== 'super_admin';
   // Challenge-Freigaben betreffen die ganze Leitung — Teamer moderieren ihre
-  // zugewiesenen Jahrgaenge selbst (das Backend zaehlt entsprechend gefiltert).
+  // zugewiesenen Jahrgänge selbst (das Backend zählt entsprechend gefiltert).
   const isLeadership = isAdmin || user?.type === 'teamer';
 
   // totalBadgeCount: Admin = chat + requests + events + challenges,
@@ -68,11 +68,11 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     return chatUnreadTotal;
   }, [chatUnreadTotal, pendingRequestsCount, pendingEventsCount, pendingChallengesCount, isAdmin, isLeadership]);
 
-  // Zentraler Refresh aller Counts. Nutzt den leichtgewichtigen Zaehler-Endpoint
+  // Zentraler Refresh aller Counts. Nutzt den leichtgewichtigen Zähler-Endpoint
   // (Audit Achse 4, Fund 3) statt der frueheren drei Voll-Fetches (/chat/rooms +
-  // /admin/activities/requests + /events), die nur fuer Zahlen geladen wurden.
-  // Die Semantik der Zaehler repliziert der Server exakt aus den Listen-Queries
-  // (unread pro Raum, pending-Antraege, unverarbeitete vergangene Events).
+  // /admin/activities/requests + /events), die nur für Zahlen geladen wurden.
+  // Die Semantik der Zähler repliziert der Server exakt aus den Listen-Queries
+  // (unread pro Raum, pending-Anträge, unverarbeitete vergangene Events).
   const refreshAllCounts = useCallback(async () => {
     if (!user) return;
 
@@ -80,7 +80,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       const { data } = await api.get('/notifications/badge-counts');
 
       // chatUnreadByRoom-Struktur (Record<number, number>) beibehalten —
-      // ChatRoom (initialUnreadRef) und ChatOverview (Effect-Trigger) haengen dran.
+      // ChatRoom (initialUnreadRef) und ChatOverview (Effect-Trigger) hängen dran.
       const byRoomRaw: Record<string, number> = data?.chat?.byRoom || {};
       const unreadByRoom: Record<number, number> = {};
       let totalUnread = 0;
@@ -184,7 +184,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
 
     // Push-Empfang/-Tap: Counts sofort aktualisieren. Der Push-Listener
     // (inkl. Navigation) liegt zentral in AppContext und feuert dieses Event,
-    // damit hier KEIN zweiter PushNotifications-Listener noetig ist.
+    // damit hier KEIN zweiter PushNotifications-Listener nötig ist.
     window.addEventListener('sync:reconnect', handleSyncReconnect);
     window.addEventListener('push:received', handleSyncReconnect);
     return () => {

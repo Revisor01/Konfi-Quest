@@ -7,11 +7,11 @@ interface KonfiUpdateWalkthroughModalProps {
   displayName?: string;
 }
 
-// Update-Walkthrough 2.0 fuer BESTANDS-Konfis: erklaert einmalig, was sich mit
-// dem Update geaendert hat. Gleicher Stil/Technik wie die normale Tour
+// Update-Walkthrough 2.0 für BESTANDS-Konfis: erklärt einmalig, was sich mit
+// dem Update geändert hat. Gleicher Stil/Technik wie die normale Tour
 // (OnboardingTour = Vollbild-Overlay, KEIN Modal).
 // Reihenfolge bewusst: erst das Neue (Challenges), dann der wichtigste
-// Umlern-Punkt (Antraege heissen jetzt Aktivitaeten und sind umgezogen),
+// Umlern-Punkt (Anträge heißen jetzt Aktivitäten und sind umgezogen),
 // zum Schluss kurz das Wrapped.
 const SLIDES: OnboardingSlide[] = [
   {

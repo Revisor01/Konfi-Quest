@@ -47,7 +47,7 @@ class PushService {
    */
   static async getTokensForUser(db, userId) {
     // Master-Schalter: Hat der User Push global deaktiviert, gar keine Tokens
-    // zurueckgeben -> es wird nichts gesendet (gilt fuer alle Push-Typen).
+    // zurueckgeben -> es wird nichts gesendet (gilt für alle Push-Typen).
     // DISTINCT ON (token): derselbe FCM-Token darf nie mehrfach beliefert werden,
     // auch wenn er (noch) unter mehreren device_ids gespeichert ist (Alt-Daten).
     const query = `
@@ -160,7 +160,7 @@ class PushService {
 
       // Neuestes Token pro Device verwenden
       // UND Sender-Tokens ausschließen (für den Fall dass gleicher Token bei verschiedenen Accounts)
-      // UND Master-Schalter pruefen (u.push_enabled): bei false keine Tokens.
+      // UND Master-Schalter prüfen (u.push_enabled): bei false keine Tokens.
       // DISTINCT ON (token): nie denselben FCM-Token doppelt beliefern (Alt-Daten
       // mit gleichem Token unter mehreren device_ids).
       let query = `
@@ -612,7 +612,7 @@ class PushService {
   static async checkAndSendLevelUp(db, konfiId, organizationId) {
     try {
       // 1. Aktuelle Punkte, gespeichertes Level UND Jahrgang-Config holen.
-      // WICHTIG: nur AKTIVIERTE Punkt-Kategorien zaehlen (gemeinde_enabled /
+      // WICHTIG: nur AKTIVIERTE Punkt-Kategorien zählen (gemeinde_enabled /
       // gottesdienst_enabled des Jahrgangs) — sonst wuerde ein Single-Kategorie-
       // Jahrgang anhand zu hoher Punkte ins falsche Level eingestuft (+ falsche
       // Level-Up-Pushes). Identische Logik wie der Dashboard-Endpoint.
@@ -759,7 +759,7 @@ class PushService {
    * Von der Teamer-Warteliste aufgerückt - Push an Teamer:in
    *
    * Gleiche Nachricht wie bei Konfis (sendWaitlistPromotionToKonfi ist
-   * rollenagnostisch), eigener Einstiegspunkt fuer die Lesbarkeit der
+   * rollenagnostisch), eigener Einstiegspunkt für die Lesbarkeit der
    * Aufrufstellen und der Registry oben.
    */
   static async sendWaitlistPromotionToTeamer(db, teamerId, eventName, eventDate = null, eventId = null) {
@@ -795,8 +795,8 @@ class PushService {
   }
 
   /**
-   * Event geaendert (Termin/Uhrzeit/Ort) - Push an alle gebuchten Teilnehmer
-   * @param {Object} changes - { newDate, newEndTime, newLocation } - nur gesetzte Felder haben sich geaendert
+   * Event geändert (Termin/Uhrzeit/Ort) - Push an alle gebuchten Teilnehmer
+   * @param {Object} changes - { newDate, newEndTime, newLocation } - nur gesetzte Felder haben sich geändert
    */
   static async sendEventChangedToKonfis(db, userIds, eventName, changes = {}, eventId = null) {
     try {
@@ -886,10 +886,10 @@ class PushService {
   // ====================================================================
 
   /**
-   * Challenge gestartet - Push an alle Konfis der zugewiesenen Jahrgaenge.
-   * Empfaenger kommen ueber challenge_jahrgang_assignments, NICHT ueber die
-   * ganze Organisation: eine Challenge laeuft immer nur fuer bestimmte
-   * Jahrgaenge.
+   * Challenge gestartet - Push an alle Konfis der zugewiesenen Jahrgänge.
+   * Empfaenger kommen über challenge_jahrgang_assignments, NICHT über die
+   * ganze Organisation: eine Challenge läuft immer nur für bestimmte
+   * Jahrgänge.
    *
    * @param {object} db - DB-Pool
    * @param {number} challengeId - Challenge ID
@@ -932,7 +932,7 @@ class PushService {
 
   /**
    * Abzeichen einer Challenge erhalten - Push an den Konfi. Das Abzeichen ist
-   * abgeleitet (EXISTS eigene Submission, siehe challenges.js), zaehlt also
+   * abgeleitet (EXISTS eigene Submission, siehe challenges.js), zählt also
    * bereits bei der ERSTEN Submission unabhaengig vom Moderationsstatus — der
    * Push feuert deshalb ebenfalls bei der ersten eigenen Submission, weil das
    * Abzeichen im UI ab genau diesem Zeitpunkt erscheint.
@@ -962,7 +962,7 @@ class PushService {
 
   /**
    * Neuer Challenge-Beitrag - Push an die Leitung (Org-Admins + die Teamer der
-   * zugewiesenen Jahrgaenge). Wird bei JEDER Challenge gesendet (auch wenn der
+   * zugewiesenen Jahrgänge). Wird bei JEDER Challenge gesendet (auch wenn der
    * Beitrag sofort oeffentlich ist) — bei moderierten Challenges mit Zusatz-
    * Hinweis, dass eine Freigabe noch aussteht.
    *
@@ -971,8 +971,8 @@ class PushService {
    * @param {number} challengeId - Challenge ID
    * @param {string} challengeTitle - Titel der Challenge
    * @param {string} konfiName - Anzeigename des einreichenden Konfis (die
-   *   Leitung sieht IMMER den echten Namen — Anonymitaet gilt nur fuer die Galerie)
-   * @param {boolean} moderated - Ob die Challenge moderiert ist (Freigabe noetig)
+   *   Leitung sieht IMMER den echten Namen — Anonymitaet gilt nur für die Galerie)
+   * @param {boolean} moderated - Ob die Challenge moderiert ist (Freigabe nötig)
    */
   static async sendChallengeSubmissionToLeadership(db, organizationId, challengeId, challengeTitle, konfiName, moderated = false) {
     try {
@@ -989,7 +989,7 @@ class PushService {
 
       await this.sendToOrgAdmins(db, organizationId, notification);
 
-      // Teamer haengen ueber user_jahrgang_assignments an den Jahrgaengen der
+      // Teamer hängen über user_jahrgang_assignments an den Jahrgängen der
       // Challenge und werden von sendToOrgAdmins nicht erfasst.
       const { rows: teamers } = await db.query(
         `SELECT DISTINCT u.id
@@ -1079,7 +1079,7 @@ class PushService {
 
   /**
    * "Letzte Chance"-Warnung an Org-Admins: ein Jahrgang wird in wenigen Tagen
-   * automatisch geloescht. Wir nennen es bewusst "geloescht" (das interne Archiv
+   * automatisch gelöscht. Wir nennen es bewusst "gelöscht" (das interne Archiv
    * bleibt unerwaehnt). Hinweis aufs Befoerdern der Konfis zu Teamer:innen.
    */
   static async sendJahrgangDeletionWarningToAdmins(db, organizationId, jahrgangName, daysLeft) {

@@ -77,7 +77,7 @@ const AdminMaterialPage: React.FC = () => {
     setPresentingElement(pageRef.current);
   }, []);
 
-  // Offline-Query: Jahrgaenge
+  // Offline-Query: Jahrgänge
   const { data: jahrgaenge } = useOfflineQuery<{ id: number; name: string }[]>(
     'admin:jahrgaenge:' + user?.organization_id,
     async () => { const res = await api.get('/admin/jahrgaenge'); return res.data; },
@@ -100,7 +100,7 @@ const AdminMaterialPage: React.FC = () => {
   );
 
   // Material-Liste live halten: neue oder geloeschte Materialien erschienen
-  // vorher erst beim naechsten Oeffnen (Audit 22.08.2026).
+  // vorher erst beim nächsten Oeffnen (Audit 22.08.2026).
   useLiveRefresh('materials', refreshMaterial);
 
   const filteredMaterials = materials || [];

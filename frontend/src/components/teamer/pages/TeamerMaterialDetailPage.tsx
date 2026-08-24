@@ -33,7 +33,7 @@ import {
   create
 } from 'ionicons/icons';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
-// Native FileViewer ueber openFileNatively, FileViewerModal als Web-Fallback
+// Native FileViewer über openFileNatively, FileViewerModal als Web-Fallback
 import { openFileNatively } from '../../../utils/nativeFileViewer';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';

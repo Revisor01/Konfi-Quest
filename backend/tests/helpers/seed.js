@@ -1,5 +1,5 @@
-// backend/tests/helpers/seed.js — Realistische Seed-Fixtures fuer Integration-Tests
-// Per D-05/D-06: JS-Modul (nicht SQL) fuer referenzierbare IDs
+// backend/tests/helpers/seed.js — Realistische Seed-Fixtures für Integration-Tests
+// Per D-05/D-06: JS-Modul (nicht SQL) für referenzierbare IDs
 const bcrypt = require('bcrypt');
 
 const PASSWORD = 'testpasswort123';
@@ -22,7 +22,7 @@ const ROLES = {
   admin: { id: 3, name: 'admin', display_name: 'Admin', org_id: 1 },
   orgAdmin: { id: 4, name: 'org_admin', display_name: 'Org-Admin', org_id: 1 },
   superAdmin: { id: 5, name: 'super_admin', display_name: 'Super-Admin', org_id: 1 },
-  // Rollen fuer Org 2
+  // Rollen für Org 2
   konfi2: { id: 6, name: 'konfi', display_name: 'Konfi', org_id: 2 },
   teamer2: { id: 7, name: 'teamer', display_name: 'Teamer:in', org_id: 2 },
   admin2: { id: 8, name: 'admin', display_name: 'Admin', org_id: 2 },
@@ -153,7 +153,7 @@ async function seed(db) {
     );
   }
 
-  // 4. Jahrgaenge (FK: organizations)
+  // 4. Jahrgänge (FK: organizations)
   for (const jg of Object.values(JAHRGAENGE)) {
     await db.query(
       // is_active existiert in Produktion nicht (nur im alten Test-Schema).
@@ -198,7 +198,7 @@ async function seed(db) {
 
   // 8. Activities (FK: organizations)
   for (const act of Object.values(ACTIVITIES)) {
-    // type + points (neue Spalten) muessen gesetzt sein, damit assign-activity funktioniert
+    // type + points (neue Spalten) müssen gesetzt sein, damit assign-activity funktioniert
     const actType = act.gp > 0 ? 'gottesdienst' : 'gemeinde';
     const actPoints = act.gp > 0 ? act.gp : act.gep;
     // gottesdienst_points/gemeinde_points gab es nur im alten, handgepflegten
@@ -242,7 +242,7 @@ async function seed(db) {
     );
   }
 
-  // 13. Event-Timeslots (fuer timeslotEvent)
+  // 13. Event-Timeslots (für timeslotEvent)
   await db.query(
     `INSERT INTO event_timeslots (event_id, start_time, end_time, max_participants, organization_id)
      VALUES ($1, NOW() + interval '7 days', NOW() + interval '7 days' + interval '2 hours', 10, $2)`,
@@ -256,7 +256,7 @@ async function seed(db) {
     [USERS.konfi1.id, USERS.admin1.id, ORGS.testGemeinde.id]
   );
 
-  // 15. Chat-Raeume
+  // 15. Chat-Räume
   for (const room of Object.values(CHAT_ROOMS)) {
     await db.query(
       `INSERT INTO chat_rooms (id, name, type, jahrgang_id, created_by, organization_id)
@@ -268,7 +268,7 @@ async function seed(db) {
   // 16. Chat-Teilnehmer (Jahrgangs-Chat: alle Konfis + Teamer aus Org 1)
   //
   // user_type fuehrt DREI Werte, wie in Produktion: 'konfi', 'teamer', 'admin'.
-  // Teamer:innen standen hier frueher als 'admin' — dadurch trat der Unterschied
+  // Teamer:innen standen hier früher als 'admin' — dadurch trat der Unterschied
   // zwischen den beiden Team-Typen in keinem Test zutage, obwohl Produktion 39
   // 'teamer'-Eintraege fuehrt (Fehlerbild vom 23.08.2026).
   const chatParticipants = [

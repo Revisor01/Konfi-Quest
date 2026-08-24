@@ -230,10 +230,10 @@ const toIonDatetimeISO = (date: Date) => {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
 };
 
-// Fuer den Versand ans Backend: die lokale Wandzeit aus dem Picker in einen
+// Für den Versand ans Backend: die lokale Wandzeit aus dem Picker in einen
 // echten UTC-Zeitstempel wandeln. Ohne diese Wandlung landet der naive String
 // in einer TIMESTAMPTZ-Spalte und wird in der Server-Zeitzone interpretiert —
-// auf einem Geraet ausserhalb Europe/Berlin verschiebt sich die Challenge
+// auf einem Geraet außerhalb Europe/Berlin verschiebt sich die Challenge
 // dadurch bei jeder Bearbeitung. Gleiches Muster wie im EventModal.
 const toBackendTimestamp = (localTimeString: string) => {
   if (!localTimeString) return null;
@@ -306,7 +306,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
           description: challenge.description || '',
           // Alt-Challenges ohne Team-Teilnahme ('konfis') gibt es noch in der DB;
           // im Formular werden sie als "Jahrgang und Team" angezeigt und beim
-          // naechsten Speichern (vor Start) auch so uebernommen.
+          // nächsten Speichern (vor Start) auch so uebernommen.
           audience: challenge.audience === 'nur_team' ? 'nur_team' : 'konfis_und_team',
           visibility: (challenge.visibility as ChallengeVisibility) || 'konfi_choice',
           moderated: challenge.moderated !== false,
@@ -372,7 +372,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
     }));
   };
 
-  // Bei 'nur_team' gibt es keine Jahrgangs-Auswahl (org-weit ueber die Rolle),
+  // Bei 'nur_team' gibt es keine Jahrgangs-Auswahl (org-weit über die Rolle),
   // deshalb ist die Jahrgangs-Pflicht dort aufgehoben.
   const isTeamOnly = formData.audience === 'nur_team';
 
@@ -402,9 +402,9 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
     };
 
     // Gesperrte Felder nach dem Start GAR NICHT mitsenden. Das Backend vergleicht
-    // sie auf Gleichheit — und weil das Formular die Zeitstempel ueber die lokale
-    // IonDatetime-Darstellung (ohne Sekunden/Zeitzone) fuehrt, koennte ein
-    // unveraendertes starts_at sonst als Aenderung gelten und faelschlich 409 werfen.
+    // sie auf Gleichheit — und weil das Formular die Zeitstempel über die lokale
+    // IonDatetime-Darstellung (ohne Sekunden/Zeitzone) fuehrt, könnte ein
+    // unveraendertes starts_at sonst als Änderung gelten und faelschlich 409 werfen.
     if (!isStarted) {
       payload.audience = formData.audience;
       payload.visibility = formData.visibility;
@@ -428,8 +428,8 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
       return;
     }
 
-    // guard() wirft bei Doppel-Tap ('Aktion laeuft bereits'). Ungefangen
-    // bliebe loading auf true haengen — dann liess sich das Modal nur
+    // guard() wirft bei Doppel-Tap ('Aktion läuft bereits'). Ungefangen
+    // bliebe loading auf true hängen — dann liess sich das Modal nur
     // noch per Swipe schliessen (User-Hinweis 12.08.).
     try {
       await guard(async () => {
@@ -442,12 +442,12 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
           await api.post('/challenges/admin', payload);
         }
         setIsDirty(false);
-        // Dirty-Stand SYNCHRON melden, bevor onSuccess() ueber canDismiss schliesst
+        // Dirty-Stand SYNCHRON melden, bevor onSuccess() über canDismiss schließt
         // (sonst blockiert canDismiss das Schliessen -> doppeltes Anlegen).
         onDirtyChange?.(false);
         onSuccess();
       } catch (err: any) {
-        // 409 = nach Start gesperrtes Feld geaendert (Backend erzwingt Konsens-Integritaet)
+        // 409 = nach Start gesperrtes Feld geändert (Backend erzwingt Konsens-Integritaet)
         setError(err.response?.data?.error || 'Fehler beim Speichern der Challenge');
       } finally {
         setLoading(false);

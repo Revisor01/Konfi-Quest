@@ -121,14 +121,14 @@ interface KonfiBadgesSectionProps {
   /**
    * Rolle der angezeigten Person. Teamer:innen haben ein EIGENES Badge-System
    * (target_role='teamer', eigene Kriterien ohne Punkte) und einen eigenen
-   * Endpunkt — der Konfi-Endpunkt antwortet fuer sie mit 404. Darstellung und
+   * Endpunkt — der Konfi-Endpunkt antwortet für sie mit 404. Darstellung und
    * Popover sind identisch, deshalb dieselbe Komponente (User-Wunsch 11.08.).
    */
   role?: 'konfi' | 'teamer';
 }
 
 // Zeigt die erreichten Badges als klickbare Kreis-Symbole an — analog zur
-// jeweiligen eigenen BadgesView, aber kompakt fuer die Admin-Detailseite.
+// jeweiligen eigenen BadgesView, aber kompakt für die Admin-Detailseite.
 // Klick auf ein Badge oeffnet ein Detail-Popover.
 const KonfiBadgesSection: React.FC<KonfiBadgesSectionProps> = ({ konfiId, role = 'konfi' }) => {
   const [earnedBadges, setEarnedBadges] = useState<Badge[]>([]);

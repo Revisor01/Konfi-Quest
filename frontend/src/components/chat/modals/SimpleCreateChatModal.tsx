@@ -196,7 +196,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           }));
 
         // Auch die anderen Team-Mitglieder (Admins, Org-Admins, Teamer:innen) laden.
-        // Bewusst ueber /chat/team-contacts statt /admin/users: Letztere ist mit
+        // Bewusst über /chat/team-contacts statt /admin/users: Letztere ist mit
         // requireOrgAdmin geschuetzt, Teamer:innen liefen dort in einen 403 und
         // bekamen deshalb gar keine Team-Kontakte angezeigt.
         let adminUsers: ChatUser[] = [];
@@ -556,7 +556,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                     {filteredUsers.map((targetUser) => {
                       const participantId = `${targetUser.type}-${targetUser.id}`;
                       const isSelected = selectedParticipants.has(participantId);
-                      // Teamer:innen gehoeren zum Team, nicht zu den Konfis —
+                      // Teamer:innen gehören zum Team, nicht zu den Konfis —
                       // sonst Konfi-Farbe und keine Funktionsbezeichnung.
                       const isAdmin = istTeamTyp(targetUser.type);
 

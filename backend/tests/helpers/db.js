@@ -5,7 +5,7 @@ const { Pool } = require('pg');
 // backend/database.js:7, das die Produktion konfiguriert.
 //
 // Ohne diese Zeile verhaelt sich der Test-Pool ANDERS als die Anwendung: pg
-// gibt bigint per Default als String zurueck (JavaScript-Zahlen koennen nicht
+// gibt bigint per Default als String zurück (JavaScript-Zahlen können nicht
 // jeden bigint-Wert darstellen). Das alte Test-Schema nutzte durchgaengig
 // integer und verdeckte den Unterschied; das Produktions-Schema hat 111
 // bigint-Spalten, und plötzlich verglichen Tests '1' gegen 1
@@ -19,7 +19,7 @@ const TEST_DB_URL = ADMIN_URL.replace(/\/[^/]+$/, `/${TEST_DB_NAME}`);
 let pool = null;
 
 /**
- * Gibt Test-DB-Pool zurueck (Singleton).
+ * Gibt Test-DB-Pool zurück (Singleton).
  * Interface identisch mit backend/database.js: query(), getClient(), end()
  */
 function getTestPool() {
@@ -40,18 +40,18 @@ const TRUNCATE_LOCK_ID = 4711;
 
 /**
  * TRUNCATE alle Tabellen mit CASCADE und RESTART IDENTITY.
- * Per D-01: TRUNCATE CASCADE vor jedem Test fuer sauberen Zustand.
+ * Per D-01: TRUNCATE CASCADE vor jedem Test für sauberen Zustand.
  * schema_migrations wird NICHT truncated (soll bestehen bleiben).
  *
  * Laeuft in EINER Transaktion mit vorgeschaltetem Advisory-Lock: parallele
- * vitest-Suites serialisieren so ihr TRUNCATE und koennen nicht mehr in einen
+ * vitest-Suites serialisieren so ihr TRUNCATE und können nicht mehr in einen
  * "deadlock detected" laufen. Der Lock wird beim COMMIT/ROLLBACK autom. frei.
  */
 // Die Liste muss ALLE Tabellen der Produktion abdecken (Stand 22.08.2026):
 // Fehlt eine, bleiben ihre Daten zwischen den Suites stehen und erzeugen
 // Abhaengigkeiten von der Testreihenfolge. konfi_activities/konfi_badges sind
 // hier bewusst NICHT mehr aufgefuehrt — die Tabellen gab es nur im alten,
-// handgepflegten Test-Schema; in Produktion heissen sie user_activities /
+// handgepflegten Test-Schema; in Produktion heißen sie user_activities /
 // user_badges (nur die alten Sequenz-Namen leben dort als Altlast weiter).
 const TRUNCATE_SQL = `TRUNCATE
     chat_poll_votes, chat_polls, chat_read_status,
@@ -82,7 +82,7 @@ async function truncateAll(db) {
   // Der Advisory-Lock serialisiert TRUNCATE zwischen parallelen Suites — er
   // schuetzt aber NICHT gegen Deadlocks mit fire-and-forget-Queries DESSELBEN
   // Tests (z.B. die nicht-awaited Push-Notification in chat.js:654, die noch
-  // einen Share-Lock auf push_tokens/chat_messages haelt, waehrend TRUNCATE den
+  // einen Share-Lock auf push_tokens/chat_messages haelt, während TRUNCATE den
   // Exclusive-Lock will). Deshalb: kurzer lock_timeout + Retry bei
   // Deadlock (40P01) / Lock-Timeout (55P03). So wartet TRUNCATE den Background-
   // Query ab, statt die Suite mit "deadlock detected" rot zu faerben.

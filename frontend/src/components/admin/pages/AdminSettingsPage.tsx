@@ -43,7 +43,7 @@ import InfoModal from '../../shared/InfoModal';
 import AdminOnboardingModal from '../modals/AdminOnboardingModal';
 import AdminUpdateWalkthroughModal from '../modals/AdminUpdateWalkthroughModal';
 import { useApp } from '../../../contexts/AppContext';
-// logout/clearAuth werden jetzt zentral ueber useApp().signOut() abgewickelt
+// logout/clearAuth werden jetzt zentral über useApp().signOut() abgewickelt
 import { useModalPage } from '../../../contexts/ModalContext';
 import SpiritFooter from '../../shared/SpiritFooter';
 import { useIonRouter } from '@ionic/react';
@@ -65,8 +65,8 @@ const AdminSettingsPage: React.FC = () => {
     dismiss: () => dismissInviteModal()
   });
 
-  // Info-Modal (Erklaerung) — exemplarisch fuer Jahrgaenge. Inhalt wird per State
-  // gesetzt, damit derselbe Hook spaeter fuer weitere Bereiche genutzt werden kann.
+  // Info-Modal (Erklaerung) — exemplarisch für Jahrgänge. Inhalt wird per State
+  // gesetzt, damit derselbe Hook später für weitere Bereiche genutzt werden kann.
   const [infoContent, setInfoContent] = React.useState<{ title: string; icon: string; color: string; paragraphs: string[] } | null>(null);
   const [presentInfoModal, dismissInfoModal] = useIonModal(InfoModal, {
     onClose: () => dismissInfoModal(),
@@ -78,12 +78,12 @@ const AdminSettingsPage: React.FC = () => {
 
   const openInfo = (content: { title: string; icon: string; color: string; paragraphs: string[] }) => {
     setInfoContent(content);
-    // im naechsten Tick praesentieren, damit der State sicher gesetzt ist
+    // im nächsten Tick praesentieren, damit der State sicher gesetzt ist
     setTimeout(() => presentInfoModal({ presentingElement: presentingElement || undefined }), 0);
   };
 
   // Erklaerungen je Bereich der "Mehr"-Seite. Fokus: WOFUER braucht man das +
-  // wie haengt es mit anderen Bereichen zusammen.
+  // wie hängt es mit anderen Bereichen zusammen.
   const INFOS: Record<string, { title: string; icon: string; color: string; paragraphs: string[] }> = {
     users: {
       title: 'Benutzer:innen', icon: people, color: 'var(--app-color-users)',

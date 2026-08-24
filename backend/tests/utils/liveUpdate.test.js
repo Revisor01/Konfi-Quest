@@ -1,5 +1,5 @@
 // backend/tests/utils/liveUpdate.test.js
-// Tests fuer den LiveUpdate-Helper, insbesondere die korrekte Socket-Raum-
+// Tests für den LiveUpdate-Helper, insbesondere die korrekte Socket-Raum-
 // Adressierung. Kernregression (Audit ACHSE 2): sendToOrgAdmins muss Teamer:innen
 // in den Raum user_teamer_<id> statt user_admin_<id> emittieren, sonst sind
 // Teamer:innen vom gesamten LiveUpdate-System abgeschnitten.
@@ -8,7 +8,7 @@ const { seed, USERS } = require('../helpers/seed');
 
 // WICHTIG: liveUpdate.js macht intern `require('../database')` (lazy in den
 // Funktionen). Der Pool dort liest process.env.DATABASE_URL beim ersten Laden.
-// Fuer den Test muss DATABASE_URL auf die Test-DB zeigen, damit die Rollen-
+// Für den Test muss DATABASE_URL auf die Test-DB zeigen, damit die Rollen-
 // Lookups gegen die geseedete Test-DB laufen. TEST_DATABASE_URL wird von der
 // vitest-Config gesetzt; wir leiten daraus die konfi_test-URL ab (identisch zur
 // Ableitung in tests/helpers/db.js).
@@ -19,8 +19,8 @@ const liveUpdate = require('../../utils/liveUpdate');
 
 const ORG_ID = 1;
 
-// Fake-io: sammelt alle to(room).emit(event, payload)-Aufrufe fuer Assertions.
-// Zusaetzlich in(room).disconnectSockets(close) fuer disconnectUserSockets-Tests:
+// Fake-io: sammelt alle to(room).emit(event, payload)-Aufrufe für Assertions.
+// Zusaetzlich in(room).disconnectSockets(close) für disconnectUserSockets-Tests:
 // sammelt jeden getrennten Raum inkl. close-Flag.
 function createFakeIo() {
   const emits = []; // { room, event, payload }
@@ -44,7 +44,7 @@ function createFakeIo() {
   return { io, emits, disconnects };
 }
 
-// Hilfsfunktion: liefert alle Raeume, an die 'liveUpdate' emittiert wurde.
+// Hilfsfunktion: liefert alle Räume, an die 'liveUpdate' emittiert wurde.
 function roomsFor(emits) {
   return emits.filter(e => e.event === 'liveUpdate').map(e => e.room);
 }
@@ -122,7 +122,7 @@ describe('liveUpdate: Socket-Raum-Adressierung', () => {
   // Mehrfach-Zugehoerigkeit: users.organization_id haelt nur die Primaer-Org.
   // Wer per Umschalter in einer Zweit-Organisation arbeitet, steht dort nur in
   // user_organizations. Vor dem Fix (22.08.) loesten sendToOrgAdmins/-Konfis
-  // ausschliesslich ueber users.organization_id auf — in der Zweit-Org kam
+  // ausschliesslich über users.organization_id auf — in der Zweit-Org kam
   // deshalb kein einziges Live-Update an.
   describe('Mehrfach-Organisationen (user_organizations)', () => {
     it('erreicht einen Org-Admin auch in seiner ZWEIT-Organisation', async () => {
@@ -178,7 +178,7 @@ describe('liveUpdate: Socket-Raum-Adressierung', () => {
 
     it('nutzt die Rolle AUS der Zweit-Organisation fuer die Raumwahl', async () => {
       // admin1 ist in Org 1 Admin, in Org 2 aber nur Teamer:in -> das Update
-      // fuer Org 2 muss in den Teamer-Raum gehen, nicht in den Admin-Raum.
+      // für Org 2 muss in den Teamer-Raum gehen, nicht in den Admin-Raum.
       await db.query(
         'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
         [USERS.admin1.id, 2, 7]
@@ -276,7 +276,7 @@ describe('liveUpdate: Socket-Raum-Adressierung', () => {
       expect(rooms).toContain('user_teamer_42');
       expect(rooms).toContain('user_admin_42');
       expect(disconnects.length).toBe(3);
-      // close=true schliesst auch den zugrundeliegenden Transport
+      // close=true schließt auch den zugrundeliegenden Transport
       for (const d of disconnects) {
         expect(d.close).toBe(true);
       }

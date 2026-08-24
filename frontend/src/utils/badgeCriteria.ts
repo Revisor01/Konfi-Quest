@@ -1,5 +1,5 @@
 /**
- * Farbe und Symbol je Badge-Kriterientyp — gemeinsame Quelle fuer die
+ * Farbe und Symbol je Badge-Kriterientyp — gemeinsame Quelle für die
  * Badge-Liste (admin/BadgesView) und das Anlege-Formular
  * (admin/modals/BadgeManagementModal).
  *
@@ -25,7 +25,7 @@ import {
   sparkles
 } from 'ionicons/icons';
 
-/** Standardfarbe eines Kriterientyps. Auch die Vorgabe fuer die Badge-Farbe. */
+/** Standardfarbe eines Kriterientyps. Auch die Vorgabe für die Badge-Farbe. */
 export const CRITERIA_COLORS: Record<string, string> = {
   total_points: '#ffd700',
   gottesdienst_points: '#ff9500',
@@ -62,7 +62,7 @@ const CRITERIA_ICONS: Record<string, string> = {
   teamer_year: calendar
 };
 
-/** Farbe fuer Kriterientypen ohne eigenen Eintrag (entspricht --app-color-users). */
+/** Farbe für Kriterientypen ohne eigenen Eintrag (entspricht --app-color-users). */
 export const CRITERIA_FALLBACK_COLOR = '#667eea';
 
 export const getCriteriaColor = (criteriaType: string): string =>

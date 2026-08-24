@@ -11,7 +11,7 @@
  * Warum eine zusammengefuehrte Datei: Die Quellen sind nach Themen getrennt
  * (chat, konfis-events, verwaltung-auth, teamer-material, stammdaten), damit
  * sie handhabbar bleiben. Swagger UI zeigt aber eine Spezifikation; die
- * Themen bleiben ueber tags sichtbar.
+ * Themen bleiben über tags sichtbar.
  *
  * Warum eingecheckt: wie bei den uebrigen Doku-Dateien — der Docker-Kontext
  * ist ./frontend, docs/ und scripts/ liegen darueber.
@@ -98,7 +98,7 @@ async function main() {
 
     // Operationen ohne eigenes Tag bekommen den Bereich ihrer Quelldatei.
     // Ohne das landen sie in Swagger UI alle im Sammelblock "default" — bei
-    // 154 von 197 Operationen waere die Gliederung wertlos. Vorhandene Tags
+    // 154 von 197 Operationen wäre die Gliederung wertlos. Vorhandene Tags
     // bleiben unangetastet, die feinere Gliederung gewinnt.
     if (!tagNamen.has(bereich)) {
       tagNamen.add(bereich);
@@ -114,7 +114,7 @@ async function main() {
     for (const [pfad, ops] of Object.entries(spec.paths ?? {})) {
       if (zusammen.paths[pfad]) {
         // Gleicher Pfad in zwei Dateien: Operationen zusammenlegen, aber
-        // dieselbe Methode doppelt waere ein echter Widerspruch.
+        // dieselbe Methode doppelt wäre ein echter Widerspruch.
         for (const [methode, op] of Object.entries(ops)) {
           if (zusammen.paths[pfad][methode]) {
             kollisionen.push(`${methode.toUpperCase()} ${pfad}`);
@@ -148,7 +148,7 @@ async function main() {
 
   // Bewusst OHNE Datum: Es kam aus dem letzten Commit der Quellen und konnte
   // damit nie den Commit kennen, der es gerade erzeugt — der Frischecheck der
-  // CI wurde nach jeder Doku-Aenderung einmal grundlos rot (24.08.2026).
+  // CI wurde nach jeder Doku-Änderung einmal grundlos rot (24.08.2026).
   // Wie alt die Doku ist, sagt die git-Historie genauer.
   zusammen.info.description += `\n\n${anzahl} Operationen.`;
 
@@ -204,7 +204,7 @@ async function main() {
     defaultModelsExpandDepth: 0,
     tagsSorter: 'alpha',
     operationsSorter: 'alpha',
-    // Ausprobieren gegen die Produktion waere aus der Doku heraus zu
+    // Ausprobieren gegen die Produktion wäre aus der Doku heraus zu
     // gefaehrlich — es sind echte Daten. Die Beschreibung bleibt lesbar.
     supportedSubmitMethods: [],
   });

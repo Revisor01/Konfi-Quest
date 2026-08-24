@@ -37,7 +37,7 @@ test.describe('Login-Flow', () => {
     // Fehlermeldung wird angezeigt
     await expect(page.locator('.app-auth-error')).toBeVisible({ timeout: 10_000 });
 
-    // Fehlertext enthaelt relevante Meldung
+    // Fehlertext enthält relevante Meldung
     await expect(page.locator('.app-auth-error')).toContainText(/fehlgeschlagen|falsches passwort/i);
 
     // Bleibt auf Login-Seite

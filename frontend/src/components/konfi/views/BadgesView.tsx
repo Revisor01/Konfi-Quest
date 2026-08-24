@@ -59,9 +59,9 @@ interface Badge {
   progress_percentage?: number;
 }
 
-// Zeitfenster-Hinweis fuer zeitbasierte Badges (time_based) und Serien (streak).
-// Erklaert, ab wann / in welchem Zeitraum der Fortschritt zaehlt, damit der
-// schwankende Fortschritt (Aktivitaeten fallen aus dem Fenster) verstaendlich ist.
+// Zeitfenster-Hinweis für zeitbasierte Badges (time_based) und Serien (streak).
+// Erklaert, ab wann / in welchem Zeitraum der Fortschritt zählt, damit der
+// schwankende Fortschritt (Aktivitäten fallen aus dem Fenster) verstaendlich ist.
 const getTimeWindowHint = (badge: Badge): string | null => {
   const fmt = (d: Date) => d.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' });
   if (badge.criteria_type === 'time_based') {

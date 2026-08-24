@@ -1,4 +1,4 @@
-// Gemeinsame Datums-/Zeit-Formatierung fuer Events (zuvor in jeder Rolle
+// Gemeinsame Datums-/Zeit-Formatierung für Events (zuvor in jeder Rolle
 // dupliziert: Konfi/Admin/Teamer Views + DetailViews). Deutsche Locale.
 
 // 14.06.2026

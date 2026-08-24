@@ -179,7 +179,7 @@ describe('Auth Routes', () => {
     // Ursache: Der Client ruft zwar DELETE /notifications/device-token, aber
     // best-effort — mit 4s-Timeout, nur online, nur mit ermittelbarer
     // Geraete-ID. Schlaegt einer dieser Punkte fehl, blieb der Token
-    // registriert. Die Logout-Route raeumt ihn jetzt selbst ab
+    // registriert. Die Logout-Route räumt ihn jetzt selbst ab
     // (Audit 22.08.2026).
     it('Logout entfernt den Push-Token dieses Geraets', async () => {
       await db.query(
@@ -324,14 +324,14 @@ describe('Auth Routes', () => {
     });
 
     // Vorher blieben bestehende Access- und Refresh-Tokens nach einem
-    // Passwortwechsel bis zu 90 Tage gueltig. Wer sein Passwort aendert, weil
+    // Passwortwechsel bis zu 90 Tage gueltig. Wer sein Passwort ändert, weil
     // jemand Zugriff hat, sperrte den Fremdzugriff damit nicht aus
     // (Audit 22.08.2026, LÜCKE N2).
     it('beendet bestehende Sitzungen: altes Token wird abgewiesen', async () => {
       // Token bewusst mit aelterem iat: In der Praxis stammt die bestehende
       // Sitzung immer aus der Vergangenheit. Ohne dies laege das Token in
       // derselben Sekunde wie die Invalidierung und der Test wuerde die
-      // Sekundengrenze pruefen statt die Sperre selbst.
+      // Sekundengrenze prüfen statt die Sperre selbst.
       const altesToken = generateTokenMitAlter('konfi1', 60);
 
       // Belegt, dass das Token VORHER funktioniert.
@@ -454,7 +454,7 @@ describe('Auth Routes', () => {
     });
 
     // Ein Reset erfolgt typischerweise, WEIL der Zugang nicht mehr sicher ist.
-    // Bestehende Sitzungen muessen dabei enden (LÜCKE N2).
+    // Bestehende Sitzungen müssen dabei enden (LÜCKE N2).
     it('beendet bestehende Sitzungen des Users', async () => {
       const altesToken = generateTokenMitAlter('konfi1', 60);
 
@@ -502,7 +502,7 @@ describe('Auth Routes', () => {
     // Refresh-Tokens werden laengst gehasht abgelegt (Audit 22.08.2026).
     it('speichert den Reset-Token nur als Hash und loest ihn per Klartext ein', async () => {
       // Seed-User haben keine E-Mail — ohne die legt die Route gar keinen
-      // Eintrag an und der Test wuerde nichts pruefen.
+      // Eintrag an und der Test wuerde nichts prüfen.
       await db.query('UPDATE users SET email = $1 WHERE id = $2',
         ['reset-hash@test.de', USERS.konfi1.id]);
 
@@ -529,8 +529,8 @@ describe('Auth Routes', () => {
       expect(mitGespeichertem.status).toBe(400);
     });
 
-    // Der Mail-Versand darf die Existenz einer Adresse nicht ueber den Status
-    // verraten: 200 = unbekannt, 500 = vorhanden waere dieselbe Auskunft ueber
+    // Der Mail-Versand darf die Existenz einer Adresse nicht über den Status
+    // verraten: 200 = unbekannt, 500 = vorhanden wäre dieselbe Auskunft über
     // die Hintertuer (LÜCKE, Audit 22.08.2026).
     it('antwortet auch bei unbekannter Adresse neutral mit 200', async () => {
       const res = await request(app)
@@ -778,7 +778,7 @@ describe('Auth Routes', () => {
   // MULTI-ORG: my-organizations + switch-org + X-Active-Organization
   // ================================================================
   describe('Multi-Org Switcher', () => {
-    // admin1 (id 4) hat Primaer-Org 1. Fuer die Tests wird er zusaetzlich Org 2
+    // admin1 (id 4) hat Primaer-Org 1. Für die Tests wird er zusaetzlich Org 2
     // (teamer-Rolle id 7) zugewiesen. user_organizations ist nach truncate+seed
     // leer, daher beide Mitgliedschaften hier explizit anlegen.
     async function makeMultiOrgAdmin() {

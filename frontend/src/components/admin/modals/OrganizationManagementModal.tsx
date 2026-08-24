@@ -127,7 +127,7 @@ interface OrganizationManagementModalProps {
 }
 
 // Tarif-Stufen wie auf der Website (landing.html / marketing-copy.md).
-// value als String fuer direkten Vergleich mit dem maxKonfis-Feld; '' = unbegrenzt.
+// value als String für direkten Vergleich mit dem maxKonfis-Feld; '' = unbegrenzt.
 const KONFI_TARIFE: { label: string; value: string }[] = [
   { label: 'Klein', value: '15' },
   { label: 'Standard', value: '50' },
@@ -150,7 +150,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   onSuccess
 }) => {
   const { setError, isOnline, user } = useApp();
-  // Super-Admin ist das Flag is_super_admin (org_admins koennen es zusaetzlich haben),
+  // Super-Admin ist das Flag is_super_admin (org_admins können es zusaetzlich haben),
   // NICHT role_name==='super_admin' — sonst sieht ein org_admin mit Flag die Limit-Sektion nie.
   const isSuperAdmin = user?.is_super_admin === true || user?.role_name === 'super_admin';
   const { isSubmitting, guard } = useActionGuard();
@@ -213,7 +213,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   const [trialEndsAt, setTrialEndsAt] = useState<string>('');
   // is_trial: true = Testphase (Dashboard-Hinweis), false = Lizenz/unbegrenzt (kein Hinweis)
   const [isTrial, setIsTrial] = useState<boolean>(false);
-  // "Eigenes Datum"-Modus fuer den Zeitraum (Datepicker statt Schnellauswahl)
+  // "Eigenes Datum"-Modus für den Zeitraum (Datepicker statt Schnellauswahl)
   const [isCustomTrialDate, setIsCustomTrialDate] = useState<boolean>(false);
 
   const handleTrialChange = (value: string) => {
@@ -243,11 +243,11 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
 
   const isEditMode = !!organizationId;
 
-  // View/Edit-Modus: bestehende Org startet als read-only Uebersicht ('view'),
+  // View/Edit-Modus: bestehende Org startet als read-only Übersicht ('view'),
   // neue Org direkt im Formular ('edit'). Bearbeiten-Button oben wechselt um.
   const [viewMode, setViewMode] = useState<'view' | 'edit'>(organizationId ? 'view' : 'edit');
 
-  // Neue Org: Default 30-Tage-Testphase vorbelegen (super_admin kann es aendern)
+  // Neue Org: Default 30-Tage-Testphase vorbelegen (super_admin kann es ändern)
   useEffect(() => {
     if (!organizationId) {
       setTrialEndsAt(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString());
@@ -256,13 +256,13 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
     }
   }, [organizationId]);
 
-  // maxKonfis-Aenderung markiert das Modal als dirty (aktiviert Speichern-Button)
+  // maxKonfis-Änderung markiert das Modal als dirty (aktiviert Speichern-Button)
   const handleMaxKonfisChange = (value: string) => {
     setMaxKonfis(value);
     if (initializedRef.current) setIsDirty(true);
   };
 
-  // Passwort-Aendern-Modal (useIonModal, Konventions-Muster)
+  // Passwort-Ändern-Modal (useIonModal, Konventions-Muster)
   const [presentPasswordModal, dismissPasswordModal] = useIonModal(AdminPasswordResetModal, {
     adminId: passwordAdmin?.id ?? 0,
     adminName: passwordAdmin?.display_name ?? '',
@@ -368,7 +368,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
       }
       // Dieselbe Policy wie ueberall sonst (Audit 22.08.2026): Hier galten
       // bisher nur 6 Zeichen, obwohl der Server inzwischen die volle Policy
-      // erzwingt — ohne diese Pruefung kaeme die Ablehnung erst vom Server.
+      // erzwingt — ohne diese Prüfung kaeme die Ablehnung erst vom Server.
       const pw = formData.admin_password;
       const passwortFehler =
         pw.length < 8 ? 'Das Passwort muss mindestens 8 Zeichen lang sein'
@@ -462,7 +462,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
     });
   };
 
-  // Passwort aendern als eigenes Modal (useIonModal — Konventions-Muster mit
+  // Passwort ändern als eigenes Modal (useIonModal — Konventions-Muster mit
   // Anforderungs-Anzeige, Augen-Toggle und Vorschlag-Funktion).
   const openPasswordModal = (admin: OrgAdmin) => {
     if (!isOnline) {
@@ -506,7 +506,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
       const res = await api.get(`/organizations/${organizationId}/members`);
       setMembers(Array.isArray(res.data) ? res.data : []);
     } catch {
-      // still: Sektion zeigt dann "keine Mitglieder"; kein Stoer-Toast noetig
+      // still: Sektion zeigt dann "keine Mitglieder"; kein Stoer-Toast nötig
       setMembers([]);
     } finally {
       setMembersLoading(false);
@@ -1327,7 +1327,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                           setIsCustomTrialDate(true);
                           if (!trialEndsAt) handleTrialChange(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString());
                         } else if (days === -2) {
-                          // no-op (Platzhalter fuer bereits gesetztes eigenes Datum)
+                          // no-op (Platzhalter für bereits gesetztes eigenes Datum)
                         } else if (days === 0) {
                           setIsCustomTrialDate(false);
                           handleTrialChange('');

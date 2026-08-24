@@ -18,11 +18,11 @@ interface KonfiOnboardingModalProps {
 
 // Inhalt der Tab-Tour. Reihenfolge nach Nutzerfeedback:
 // Willkommen · Dein Start (Dashboard) · Deine Chats · Deine Events · Deine
-// Antraege (Segment IM Events-Tab, seit 2.0 kein eigener Tab mehr) · Deine
-// Badges · Deine Challenges. Die Antraege folgen bewusst direkt auf die Events,
+// Anträge (Segment IM Events-Tab, seit 2.0 kein eigener Tab mehr) · Deine
+// Badges · Deine Challenges. Die Anträge folgen bewusst direkt auf die Events,
 // weil sie dort wohnen; die Challenges stehen als Neuheit am Schluss.
 // rgb = Name der -rgb-CSS-Variable (z.B. "konfis" -> --app-color-konfis-rgb),
-// noetig fuer rgba()-Alphastufen im Gradient. `${color}d9` (Hex anhaengen)
+// nötig für rgba()-Alphastufen im Gradient. `${color}d9` (Hex anhaengen)
 // funktioniert NICHT mit var() -> ungueltiges CSS -> kein Hintergrund.
 const SLIDES: { icon: string; color: string; rgb: string; title: string; text: string }[] = [
   {
@@ -76,8 +76,8 @@ const SLIDES: { icon: string; color: string; rgb: string; title: string; text: s
   },
 ];
 
-// Wechselnde Positionen fuer das grosse Ghost-Logo — eine je Slide, damit es
-// ueber die Tour wandert (oben rechts, oben links, mittig, unten ...).
+// Wechselnde Positionen für das grosse Ghost-Logo — eine je Slide, damit es
+// über die Tour wandert (oben rechts, oben links, mittig, unten ...).
 const ROSE_POSITIONS: React.CSSProperties[] = [
   { top: '-14vh', right: '-26vw', transform: 'rotate(-10deg)' },
   { top: '-16vh', left: '-28vw', transform: 'rotate(12deg)' },
@@ -130,17 +130,17 @@ const KonfiOnboardingModal: React.FC<KonfiOnboardingModalProps> = ({ onClose, di
   // Farbe der AKTUELLEN Slide als Vollbild-Hintergrund. VOLL DECKEND (kein Alpha
   // < 1, sonst schimmert die App durch) und nach unten abgedunkelt, damit die
   // weisse Schrift ueberall lesbar bleibt: volle Farbe oben, dann ein dunkler
-  // Schwarz-Layer DARUEBER (color-mix waere ideal, aber wir bleiben bei zwei
-  // Layern fuer maximale Browser-Kompatibilitaet). 1. Layer = dunkler Verlauf
+  // Schwarz-Layer DARUEBER (color-mix wäre ideal, aber wir bleiben bei zwei
+  // Layern für maximale Browser-Kompatibilitaet). 1. Layer = dunkler Verlauf
   // (transparent->schwarz), 2. Layer = DECKENDE Bereichsfarbe als Basis.
   const rgb = SLIDES[index].rgb;
   const activeGradient =
     `linear-gradient(165deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.18) 70%, rgba(0,0,0,0.5) 100%), rgb(var(${rgb}))`;
   // Per Portal an document.body: so liegt das Overlay AUSSERHALB des Tab-Outlets
-  // und damit garantiert ueber der Ionic-Tab-Bar (die sonst durchscheint).
+  // und damit garantiert über der Ionic-Tab-Bar (die sonst durchscheint).
   return createPortal(
     // Vollbild-Overlay (KEIN Modal): randlos bis an den Bildschirmrand. zIndex
-    // sehr hoch, damit es AUCH ueber der Tab-Bar liegt (die hat einen hohen
+    // sehr hoch, damit es AUCH über der Tab-Bar liegt (die hat einen hohen
     // z-index). Safe-Area-Padding sitzt am INNEREN Container.
     <div
       className="konfi-onboarding-content"
@@ -208,7 +208,7 @@ const KonfiOnboardingModal: React.FC<KonfiOnboardingModalProps> = ({ onClose, di
               key={i}
               style={{
                 // Transparent: die Farbe kommt vom IonContent-Hintergrund (robust
-                // gegen kollabierende Slide-Hoehe). Slide traegt nur den Inhalt.
+                // gegen kollabierende Slide-Hoehe). Slide trägt nur den Inhalt.
                 height: '100%', minHeight: '100%', alignSelf: 'stretch',
                 background: 'transparent'
               }}

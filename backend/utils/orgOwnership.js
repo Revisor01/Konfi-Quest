@@ -1,8 +1,8 @@
 // Schutz gegen Cross-Org-Referenzen in Request-Bodies (Org-Isolation).
 //
 // Endpoints, die ID-Arrays entgegennehmen (jahrgang_ids, category_ids,
-// event_ids, tag_ids, ...), muessen pruefen, dass ALLE IDs zur Organisation
-// des Aufrufers gehoeren — sonst kann ein Admin aus Org A Zuordnungen auf
+// event_ids, tag_ids, ...), müssen prüfen, dass ALLE IDs zur Organisation
+// des Aufrufers gehören — sonst kann ein Admin aus Org A Zuordnungen auf
 // Datensaetze aus Org B anlegen (gefunden 05.07.2026: Event in Org 4 mit
 // Jahrgang aus Org 1).
 //

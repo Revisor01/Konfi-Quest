@@ -108,7 +108,7 @@ const AdminProfilePage: React.FC = () => {
     });
   };
 
-  // Account-Loeschung (D-01)
+  // Account-Löschung (D-01)
   const [presentDeleteAccount, dismissDeleteAccount] = useIonModal(DeleteAccountModal, {
     onClose: () => dismissDeleteAccount()
   });

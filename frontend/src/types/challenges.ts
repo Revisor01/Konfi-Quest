@@ -1,4 +1,4 @@
-// Typen fuer das Challenges-Feature (Konfi-Sicht + Leitungs-Verwaltung).
+// Typen für das Challenges-Feature (Konfi-Sicht + Leitungs-Verwaltung).
 //
 // Quelle: SPEC Challenges 2.0 (Datenmodell + API-Vertrag). Der Status einer
 // Challenge ist NICHT gespeichert, sondern wird aus is_draft/starts_at/ends_at
@@ -11,7 +11,7 @@ export type ChallengeVisibility = 'public' | 'konfi_choice' | 'private';
 /**
  * Teilnahme-Kreis (Migration 121) — WER einreichen darf. Nicht zu verwechseln
  * mit ChallengeVisibility, die regelt, wer die Beitraege SIEHT.
- * 'nur_team' laeuft org-weit ueber die Rolle, ohne Jahrgangs-Zuordnung.
+ * 'nur_team' läuft org-weit über die Rolle, ohne Jahrgangs-Zuordnung.
  */
 export type ChallengeAudience = 'konfis' | 'konfis_und_team' | 'nur_team';
 
@@ -104,7 +104,7 @@ export interface ChallengeSubmission {
   role_name?: string | null;
 }
 
-/** Eigenes Challenge-Abzeichen (bewusst ohne Zaehler/Fortschritt). */
+/** Eigenes Challenge-Abzeichen (bewusst ohne Zähler/Fortschritt). */
 export interface ChallengeMark {
   challenge_id: number;
   badge_icon: string;
@@ -112,7 +112,7 @@ export interface ChallengeMark {
   title: string;
 }
 
-/** Challenge in der Konfi-Uebersicht (GET /challenges/konfi). */
+/** Challenge in der Konfi-Übersicht (GET /challenges/konfi). */
 export interface KonfiChallenge extends ChallengeBase {
   /** Hat der Konfi bereits mindestens einen eigenen Beitrag? */
   has_submission?: boolean;
@@ -127,7 +127,7 @@ export interface KonfiChallengesResponse {
 
 /** Detail-Antwort (GET /challenges/konfi/:id). */
 export interface KonfiChallengeDetail extends KonfiChallenge {
-  /** Oeffentlich sichtbare Beitraege gemaess Sichtbarkeitslogik. */
+  /** Oeffentlich sichtbare Beitraege gemäß Sichtbarkeitslogik. */
   gallery: ChallengeSubmission[];
   /** Eigene Beitraege des Konfi — immer sichtbar, mit Status. */
   own_submissions: ChallengeSubmission[];

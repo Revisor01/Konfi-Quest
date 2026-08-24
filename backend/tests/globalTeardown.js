@@ -1,6 +1,6 @@
-// backend/tests/globalTeardown.js — Test-DB droppen (standalone, fuer manuelle Nutzung)
+// backend/tests/globalTeardown.js — Test-DB droppen (standalone, für manuelle Nutzung)
 // Vitest nutzt die Teardown-Funktion aus globalSetup.js (Return-Value).
-// Diese Datei ist fuer manuelles Aufraeumen: node tests/globalTeardown.js
+// Diese Datei ist für manuelles Aufräumen: node tests/globalTeardown.js
 const { Pool } = require('pg');
 
 const TEST_DB_NAME = 'konfi_test';

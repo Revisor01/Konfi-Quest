@@ -26,7 +26,7 @@ describe('Konfi-Management Routes', () => {
     teamerToken = generateToken('teamer1');
     konfiToken = generateToken('konfi1');
     admin2Token = generateToken('admin2');
-    // Admins brauchen Jahrgang-Zuordnung fuer konfi-management GET
+    // Admins brauchen Jahrgang-Zuordnung für konfi-management GET
     await db.query(
       'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, true)',
       [USERS.admin1.id, JAHRGAENGE.jahrgang1.id]
@@ -353,7 +353,7 @@ describe('Konfi-Management Routes', () => {
   // ================================================================
   describe('POST /api/admin/konfis — Konfi-Limit (Weg 1)', () => {
     // Org 1 hat im Seed 2 aktive Konfis (konfi1, konfi2). max_konfis wird je
-    // Test direkt gesetzt; zusaetzliche Konfis fuer den Hard-Block-Bereich
+    // Test direkt gesetzt; zusaetzliche Konfis für den Hard-Block-Bereich
     // werden inline angelegt (Rolle 'konfi' = role_id 1, Org 1).
     const setLimit = async (max) => {
       await db.query('UPDATE organizations SET max_konfis = $1 WHERE id = 1', [max]);
@@ -443,7 +443,7 @@ describe('Konfi-Management Routes', () => {
 
     it('Username-Kollision bekommt Suffix statt 409 (anna.musterfrau2-Schema)', async () => {
       await setLimit(10); // under_limit, damit der Limit-Check nicht zuerst greift
-      // Gleicher Name -> generateUniqueUsername zaehlt hoch statt am
+      // Gleicher Name -> generateUniqueUsername zählt hoch statt am
       // UNIQUE-Index (23505) zu scheitern. Der 23505->409-Fallback in der
       // Route bleibt nur als Race-Absicherung bestehen.
       const first = await request(app)
@@ -559,7 +559,7 @@ describe('Konfi-Management Routes', () => {
       expect(res.status).toBe(201);
       expect(res.body.message).toContain('Bonuspunkte');
 
-      // Punkte pruefen
+      // Punkte prüfen
       const after = await db.query(
         'SELECT gottesdienst_points FROM konfi_profiles WHERE user_id = $1',
         [USERS.konfi1.id]
@@ -598,7 +598,7 @@ describe('Konfi-Management Routes', () => {
   // ================================================================
   describe('DELETE /api/admin/konfis/:id/bonus-points/:bonusId', () => {
     it('Admin loescht Bonus -> 200', async () => {
-      // Erst Bonus-ID finden (seed hat einen Bonus fuer konfi1)
+      // Erst Bonus-ID finden (seed hat einen Bonus für konfi1)
       const bonusRes = await db.query(
         'SELECT id FROM bonus_points WHERE konfi_id = $1',
         [USERS.konfi1.id]
@@ -638,7 +638,7 @@ describe('Konfi-Management Routes', () => {
       expect(res.status).toBe(201);
       expect(res.body.message).toContain('Aktivität');
 
-      // Punkte pruefen
+      // Punkte prüfen
       const after = await db.query(
         'SELECT gottesdienst_points FROM konfi_profiles WHERE user_id = $1',
         [USERS.konfi1.id]
@@ -896,11 +896,11 @@ describe('Konfi-Management Routes', () => {
   });
   // Befund 24.08.2026: Der Wechsel buchte die Pflichttermine des NEUEN
   // Jahrgangs dazu, raeumte die des alten aber nicht ab. Der Konfi stand
-  // danach in den Pflichtterminen beider Jahrgaenge.
+  // danach in den Pflichtterminen beider Jahrgänge.
   describe('PUT /api/admin/konfis/:id — Jahrgangswechsel und Pflicht-Events', () => {
     let zweiterJahrgang;
 
-    // Der Seed hat je Organisation nur einen Jahrgang; fuer einen Wechsel
+    // Der Seed hat je Organisation nur einen Jahrgang; für einen Wechsel
     // innerhalb derselben Organisation braucht es einen zweiten.
     beforeEach(async () => {
       const { rows: [jg] } = await db.query(

@@ -14,21 +14,21 @@
 #      requireOrgAdmin = requireRole('org_admin')
 #      requireAdmin    = requireRole('org_admin', 'admin')
 #      requireTeamer   = requireRole('org_admin', 'admin', 'teamer')
-#      requireSuperAdmin prueft req.user.is_super_admin (Rolle ODER DB-Flag)
+#      requireSuperAdmin prüft req.user.is_super_admin (Rolle ODER DB-Flag)
 #    Wichtig: die Rolle super_admin steht in KEINER dieser drei Whitelists.
-#    Sie faellt in badges, categories und jahrgaenge deshalb mit 403 durch,
-#    ausser sie agiert per Multi-Org-Switch als org_admin/admin/teamer.
+#    Sie fällt in badges, categories und jahrgaenge deshalb mit 403 durch,
+#    außer sie agiert per Multi-Org-Switch als org_admin/admin/teamer.
 #
 # 2. LESE-/SCHREIB-MUSTER DER STAMMDATEN:
 #    - badges, categories, jahrgaenge: lesen requireTeamer, schreiben
 #      requireAdmin. Einheitliches Muster, ueberall zusaetzlich
-#      organization_id im WHERE (kein Cross-Org-Zugriff moeglich).
+#      organization_id im WHERE (kein Cross-Org-Zugriff möglich).
 #    - levels: KEINE Rollen-Middleware. Lesen darf jede authentifizierte
-#      Rolle der Org (auch konfi), Schreiben prueft der Handler inline gegen
+#      Rolle der Org (auch konfi), Schreiben prüft der Handler inline gegen
 #      ['org_admin','admin'] — dieselbe Menge wie requireAdmin, nur anders
-#      formuliert. Anders als bei den uebrigen Dateien faellt die Rolle
+#      formuliert. Anders als bei den uebrigen Dateien fällt die Rolle
 #      super_admin hier NICHT durch, weil es keinen requireRole-Guard gibt;
-#      sie erhaelt beim Schreiben aber trotzdem 403 (Inline-Check).
+#      sie erhält beim Schreiben aber trotzdem 403 (Inline-Check).
 #    - settings: lesen jede authentifizierte Rolle der Org, schreiben
 #      requireOrgAdmin.
 #    - roles: read-only, Inline-Rollen-Checks statt Middleware
@@ -37,9 +37,9 @@
 #
 # 3. ORG-SCOPING: Alle 27 Routen dieser Datei filtern auf
 #    req.user.organization_id — es gibt in diesem Block KEINE Route, die
-#    Daten ueber Organisationsgrenzen hinweg liefert. Ausnahme in der
+#    Daten über Organisationsgrenzen hinweg liefert. Ausnahme in der
 #    Wirkung, nicht im Scope: DELETE /levels/:id und DELETE
-#    /admin/categories/:id pruefen die Verwendung ueber Zaehl-Queries, die
+#    /admin/categories/:id prüfen die Verwendung über Zaehl-Queries, die
 #    NICHT auf organization_id filtern (siehe S2/S3 unten).
 #
 # 4. TARGET_ROLE BEI BADGES: custom_badges kennt target_role
@@ -49,37 +49,37 @@
 #    nicht umgewidmet werden (siehe S4).
 #
 # BEFUNDE DIESES BLOCKS:
-#  S1  GET /levels/konfi/{userId}: keinerlei Rollen- oder Selbst-Pruefung.
+#  S1  GET /levels/konfi/{userId}: keinerlei Rollen- oder Selbst-Prüfung.
 #      Jede authentifizierte Person der Organisation — auch jeder Konfi —
 #      kann Punktestand, Level und Fortschritt JEDES anderen Konfis derselben
 #      Organisation abrufen. Entspricht Befund N4 aus verwaltung-auth.yaml
 #      und ist weiterhin offen.
-#  S2  DELETE /levels/{id}: die Verwendungs-Pruefung zaehlt ueber
-#      users.organization_id — korrekt org-gescopt. Aber der Zaehler
-#      beruecksichtigt nur konfi_profiles.current_level_id; das Level wird
-#      geloescht, obwohl noch Konfis knapp darunter/darueber liegen. Fachlich
+#  S2  DELETE /levels/{id}: die Verwendungs-Prüfung zählt über
+#      users.organization_id — korrekt org-gescopt. Aber der Zähler
+#      berücksichtigt nur konfi_profiles.current_level_id; das Level wird
+#      gelöscht, obwohl noch Konfis knapp darunter/darueber liegen. Fachlich
 #      gewollt, hier nur zur Klarstellung dokumentiert.
-#  S3  DELETE /admin/categories/{id}: die Verwendungs-Pruefung
+#  S3  DELETE /admin/categories/{id}: die Verwendungs-Prüfung
 #      (activity_categories/event_categories) filtert NICHT auf
 #      organization_id. Da category_id systemweit eindeutig ist und die
 #      DELETE-Query selbst org-gescopt ist, entsteht daraus KEIN
-#      Datenabfluss und kein Fremdzugriff — die Pruefung kann aber theoretisch
+#      Datenabfluss und kein Fremdzugriff — die Prüfung kann aber theoretisch
 #      zu streng sein, wenn dieselbe ID in einer anderen Org verwendet wuerde.
 #      Praktisch nicht erreichbar (IDs sind global vergeben).
 #  S4  PUT /admin/badges/{id}: das Feld target_role fehlt im UPDATE. Ein
 #      versehentlich als 'konfi' angelegter Teamer-Badge laesst sich nur
-#      durch Loeschen und Neuanlegen korrigieren.
+#      durch Löschen und Neuanlegen korrigieren.
 #  S5  PUT /admin/badges/{id}: is_active und is_hidden werden mit `!!wert`
 #      gesetzt. Fehlt das Feld im Body, wird es still auf false gesetzt —
 #      ein Teil-Update deaktiviert den Badge also unbeabsichtigt. Clients
-#      muessen immer das vollstaendige Objekt senden.
+#      müssen immer das vollstaendige Objekt senden.
 #  S6  GET /settings: liefert alle Settings-Keys der Org an JEDE
 #      authentifizierte Rolle, auch an Konfis. Inhaltlich sind das
 #      Dashboard-Schalter und Wartelisten-Groessen — keine personenbezogenen
 #      Daten; bewusst offen, damit das Konfi-Dashboard seine Widgets kennt.
-#  S7  DELETE /admin/jahrgaenge/{id}?force=true loescht Chat-Raeume samt
+#  S7  DELETE /admin/jahrgaenge/{id}?force=true löscht Chat-Räume samt
 #      Nachrichten unwiderruflich. Der zugehoerige Datei-Cleanup (uploads/chat)
-#      laeuft ohne Entschluesselungs-Pfadpruefung und ignoriert Fehler still.
+#      läuft ohne Entschluesselungs-Pfadpruefung und ignoriert Fehler still.
 #  S8  POST /admin/jahrgaenge/{id}/matrix-email versendet Konfispruch- bzw.
 #      Anwesenheitslisten ausschliesslich an die in users.email hinterlegte
 #      Adresse der aufrufenden Person — kein frei waehlbarer Empfaenger. Das
@@ -91,9 +91,9 @@ info:
   title: Konfi Quest API — Stammdaten (Block 4)
   version: "1.0"
   description: >
-    Abzeichen (Badges), Level, Kategorien, Jahrgaenge, Organisations-
+    Abzeichen (Badges), Level, Kategorien, Jahrgänge, Organisations-
     Einstellungen und Rollen. Alle Routen verlangen einen Bearer-JWT
-    (15 Min), der von verifyTokenRBAC geprueft wird; die aktive Organisation
+    (15 Min), der von verifyTokenRBAC geprüft wird; die aktive Organisation
     kann per Header X-Active-Organization gewechselt werden. Saemtliche
     Abfragen sind auf req.user.organization_id gescopt.
 servers:
@@ -133,11 +133,11 @@ paths:
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: false
         objekt-pruefung: "keine (statische Konstante)"
-        hinweis: "Die Rolle super_admin steht nicht in der requireTeamer-Whitelist und erhaelt 403"
+        hinweis: "Die Rolle super_admin steht nicht in der requireTeamer-Whitelist und erhält 403"
 
   /admin/badges:
     get:
-      summary: Alle Abzeichen der eigenen Organisation mit Vergabe-Zaehler
+      summary: Alle Abzeichen der eigenen Organisation mit Vergabe-Zähler
       parameters:
         - name: target_role
           in: query
@@ -146,7 +146,7 @@ paths:
           description: >
             Optionaler Filter auf custom_badges.target_role. Ohne Angabe
             werden Konfi- UND Teamer-Abzeichen gemeinsam geliefert. Der Wert
-            wird nicht gegen eine Whitelist geprueft, sondern als Parameter
+            wird nicht gegen eine Whitelist geprüft, sondern als Parameter
             in die WHERE-Klausel gegeben (kein SQL-Injection-Risiko); ein
             unbekannter Wert liefert schlicht ein leeres Array.
       responses:
@@ -159,7 +159,7 @@ paths:
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
         objekt-pruefung: "WHERE cb.organization_id = req.user.organization_id"
-        hinweis: "earned_count zaehlt user_badges OHNE Org-Filter — bei systemweit eindeutigen badge_id ist das korrekt, haengt aber an dieser Annahme"
+        hinweis: "earned_count zählt user_badges OHNE Org-Filter — bei systemweit eindeutigen badge_id ist das korrekt, hängt aber an dieser Annahme"
     post:
       summary: Neues Abzeichen anlegen
       requestBody:
@@ -244,9 +244,9 @@ paths:
           Anlagewert. S5: is_active/is_hidden werden per !!wert gesetzt —
           ein Teil-Update ohne diese Felder deaktiviert das Abzeichen still.
           criteria_value wird hier (anders als beim POST) nicht auf >= 0
-          geprueft.
+          geprüft.
     delete:
-      summary: Abzeichen loeschen (inklusive aller bereits vergebenen Exemplare)
+      summary: Abzeichen löschen (inklusive aller bereits vergebenen Exemplare)
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
@@ -261,7 +261,7 @@ paths:
         objekt-pruefung: >
           Transaktional: erst DELETE FROM user_badges WHERE badge_id = :id
           (OHNE Org-Filter), dann DELETE FROM custom_badges WHERE id AND
-          organization_id. Greift die zweite Loeschung nicht (fremde Org),
+          organization_id. Greift die zweite Löschung nicht (fremde Org),
           wird die Transaktion zurueckgerollt — die vergebenen Exemplare
           bleiben also erhalten.
         hinweis: "Bereits verdiente Abzeichen verschwinden bei allen Konfis ohne Rueckfrage; es gibt keine Verwendungs-Sperre wie bei Levels oder Kategorien"
@@ -282,7 +282,7 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: "WHERE organization_id = req.user.organization_id"
-        hinweis: "Bewusst offen fuer Konfis — die Level-Leiste ist Teil des Konfi-Dashboards. Anders als GET /admin/badges liefert diese Route auch is_active = false"
+        hinweis: "Bewusst offen für Konfis — die Level-Leiste ist Teil des Konfi-Dashboards. Anders als GET /admin/badges liefert diese Route auch is_active = false"
     post:
       summary: Neues Level anlegen
       requestBody:
@@ -311,7 +311,7 @@ paths:
         middleware: [verifyTokenRBAC, validateCreateLevel]
         org-scope: true
         objekt-pruefung: "Inline: ['org_admin','admin'].includes(req.user.role_name); organization_id und created_by aus dem Token"
-        hinweis: "Der Inline-Check prueft strikt role_name — ein org_admin mit is_super_admin-Flag kommt durch (role_name bleibt org_admin), die Rolle super_admin selbst nicht"
+        hinweis: "Der Inline-Check prüft strikt role_name — ein org_admin mit is_super_admin-Flag kommt durch (role_name bleibt org_admin), die Rolle super_admin selbst nicht"
 
   /levels/{id}:
     put:
@@ -348,7 +348,7 @@ paths:
         objekt-pruefung: "Inline-Rollen-Check; Existenz-Query und UPDATE beide mit organization_id"
         hinweis: "icon und color werden ohne Fallback geschrieben — fehlen sie im Body, werden sie auf NULL gesetzt (anders als beim POST, der Defaults setzt)"
     delete:
-      summary: Level loeschen (nur wenn kein Konfi es aktuell traegt)
+      summary: Level löschen (nur wenn kein Konfi es aktuell trägt)
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
@@ -363,7 +363,7 @@ paths:
         org-scope: true
         objekt-pruefung: >
           Inline-Rollen-Check; Existenz-Query mit organization_id; die
-          Verwendungs-Pruefung zaehlt konfi_profiles.current_level_id ueber
+          Verwendungs-Prüfung zählt konfi_profiles.current_level_id über
           users.organization_id (org-gescopt, deleted_at IS NULL).
 
   /levels/konfi/{userId}:
@@ -384,7 +384,7 @@ paths:
         rollen: [alle authentifizierten]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "NUR WHERE u.id = :userId AND u.organization_id = req.user.organization_id AND u.deleted_at IS NULL — keine Rollen- und keine Selbst-Pruefung"
+        objekt-pruefung: "NUR WHERE u.id = :userId AND u.organization_id = req.user.organization_id AND u.deleted_at IS NULL — keine Rollen- und keine Selbst-Prüfung"
         # LUECKE (S1, identisch mit N4 aus verwaltung-auth.yaml, weiterhin offen):
         # jede authentifizierte Person der Organisation — auch jeder Konfi —
         # kann den Punktestand und Level-Fortschritt jedes anderen Konfis
@@ -463,7 +463,7 @@ paths:
         objekt-pruefung: "WHERE id = :id AND organization_id = req.user.organization_id"
         hinweis: "type ist im Body optional, wird aber ohne Fallback geschrieben — fehlt es, wird die Spalte auf NULL gesetzt"
     delete:
-      summary: Kategorie loeschen (nur wenn keiner Aktivitaet und keinem Event zugeordnet)
+      summary: Kategorie löschen (nur wenn keiner Aktivität und keinem Event zugeordnet)
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
@@ -476,8 +476,8 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateCategoryId]
         org-scope: true
-        objekt-pruefung: "DELETE mit organization_id im WHERE; die vorgelagerte Verwendungs-Pruefung zaehlt activity_categories und event_categories"
-        hinweis: "S3: die Verwendungs-Pruefung filtert NICHT auf organization_id. Da category_id systemweit vergeben wird, ist das praktisch folgenlos — es entsteht kein Fremdzugriff, weil das DELETE selbst org-gescopt bleibt"
+        objekt-pruefung: "DELETE mit organization_id im WHERE; die vorgelagerte Verwendungs-Prüfung zählt activity_categories und event_categories"
+        hinweis: "S3: die Verwendungs-Prüfung filtert NICHT auf organization_id. Da category_id systemweit vergeben wird, ist das praktisch folgenlos — es entsteht kein Fremdzugriff, weil das DELETE selbst org-gescopt bleibt"
 
   # ==========================================================================
   # JAHRGAENGE (backend/routes/jahrgaenge.js — 7 Routen,
@@ -485,7 +485,7 @@ paths:
   # ==========================================================================
   /admin/jahrgaenge:
     get:
-      summary: Alle Jahrgaenge der eigenen Organisation mit Konfi- und Punkte-Zaehlern
+      summary: Alle Jahrgänge der eigenen Organisation mit Konfi- und Punkte-Zaehlern
       responses:
         "200": { description: "Array jahrgaenge.* + konfi_count, gottesdienst_points_total, gemeinde_points_total; sortiert nach name DESC" }
         "401": { $ref: "#/components/responses/Unauthorized" }
@@ -497,10 +497,10 @@ paths:
         org-scope: true
         objekt-pruefung: "WHERE j.organization_id = req.user.organization_id"
         hinweis: >
-          KEINE Jahrgangs-Einschraenkung: ein Teamer sieht alle Jahrgaenge
+          KEINE Jahrgangs-Einschraenkung: ein Teamer sieht alle Jahrgänge
           der Organisation, nicht nur die ihm zugewiesenen
           (filterByJahrgangAccess wird hier nicht verwendet). Die
-          Punkte-Summen zaehlen ueber konfi_profiles.jahrgang_id ohne
+          Punkte-Summen zählen über konfi_profiles.jahrgang_id ohne
           eigenen Org-Filter — bei org-eindeutigen jahrgang_id korrekt.
     post:
       summary: Neuen Jahrgang anlegen (legt zugleich den Jahrgangs-Chat an)
@@ -556,7 +556,7 @@ paths:
             { message } und optional warnings[] — je ein Eintrag
             { type, affected_count, message }, wenn eine Punkt-Kategorie
             deaktiviert wird, obwohl Konfis darin bereits Punkte haben. Die
-            Aenderung wird trotzdem durchgefuehrt; die Warnung ist rein
+            Änderung wird trotzdem durchgeführt; die Warnung ist rein
             informativ.
         "400": { description: "Name fehlt / Validierung verletzt" }
         "401": { $ref: "#/components/responses/Unauthorized" }
@@ -568,17 +568,17 @@ paths:
         middleware: [verifyTokenRBAC, requireAdmin, validateUpdateJahrgang]
         org-scope: true
         objekt-pruefung: "Vorab-Lookup und UPDATE beide mit organization_id"
-        hinweis: "Das Konfirmationsdatum wird seit Phase 119 nicht mehr beschrieben; der Termin haengt am gebuchten is_konfirmation-Event des einzelnen Konfis"
+        hinweis: "Das Konfirmationsdatum wird seit Phase 119 nicht mehr beschrieben; der Termin hängt am gebuchten is_konfirmation-Event des einzelnen Konfis"
     delete:
-      summary: Jahrgang loeschen (blockiert bei aktiven Konfis, Chat-Nachrichten nur per force)
+      summary: Jahrgang löschen (blockiert bei aktiven Konfis, Chat-Nachrichten nur per force)
       description: >
-        Aktive Konfis (Rolle konfi) blockieren die Loeschung immer.
+        Aktive Konfis (Rolle konfi) blockieren die Löschung immer.
         Befoerderte Ex-Konfis (Rolle teamer/admin) blockieren nicht — ihr
         konfi_profiles-Eintrag bleibt erhalten und wird lediglich vom
-        Jahrgang geloest (jahrgang_id = NULL), damit Punkte-Historie und
+        Jahrgang gelöst (jahrgang_id = NULL), damit Punkte-Historie und
         Konfispruch weiter einsehbar bleiben. Enthaelt der Jahrgangs-Chat
-        Nachrichten, ist force=true noetig; dann werden Chat-Raum,
-        Nachrichten, Umfragen, Lesestatus und die zugehoerigen Dateien
+        Nachrichten, ist force=true nötig; dann werden Chat-Raum,
+        Nachrichten, Umfragen, Lesestatus und die zugehörigen Dateien
         entfernt.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
@@ -586,7 +586,7 @@ paths:
           in: query
           required: false
           schema: { type: string, enum: ["true"] }
-          description: "force=true loescht den Jahrgangs-Chat samt aller Nachrichten unwiderruflich"
+          description: "force=true löscht den Jahrgangs-Chat samt aller Nachrichten unwiderruflich"
       responses:
         "200": { description: "Geloescht; Live-Update an Org-Admins" }
         "401": { $ref: "#/components/responses/Unauthorized" }
@@ -599,15 +599,15 @@ paths:
         org-scope: true
         objekt-pruefung: >
           Das abschliessende DELETE ist mit organization_id gescopt. Die
-          vorgelagerten Pruefungen und Chat-Loeschungen laufen ueber
+          vorgelagerten Prüfungen und Chat-Loeschungen laufen über
           jahrgang_id OHNE eigenen Org-Filter — bei org-eindeutigen
           Jahrgangs-IDs korrekt, aber eine Reihenfolgen-Abhaengigkeit:
           faende der Handler den Jahrgang erst am Ende nicht in der eigenen
-          Org, waeren die Chat-Daten bereits geloescht.
+          Org, wären die Chat-Daten bereits gelöscht.
         hinweis: >
-          S7: Die Chat-Loeschung laeuft NICHT in einer Transaktion
+          S7: Die Chat-Löschung läuft NICHT in einer Transaktion
           (Einzel-Queries ohne BEGIN/COMMIT). Bricht sie in der Mitte ab,
-          bleibt ein halb abgeraeumter Chat zurueck. Datei-Loeschfehler
+          bleibt ein halb abgeraeumter Chat zurück. Datei-Loeschfehler
           werden nur geloggt.
 
   /admin/jahrgaenge/{id}/attendance-matrix:
@@ -629,8 +629,8 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateJahrgangId]
         org-scope: true
-        objekt-pruefung: "Jahrgang, Konfis und Events werden alle drei mit organization_id geprueft; die Buchungs-Query ist ueber die zuvor org-gefilterten Event- und User-IDs eingegrenzt"
-        hinweis: "teamer erhaelt hier 403 — die Anwesenheitsuebersicht ist bewusst auf org_admin und admin beschraenkt, obwohl GET /admin/jahrgaenge fuer teamer offen ist"
+        objekt-pruefung: "Jahrgang, Konfis und Events werden alle drei mit organization_id geprüft; die Buchungs-Query ist über die zuvor org-gefilterten Event- und User-IDs eingegrenzt"
+        hinweis: "teamer erhält hier 403 — die Anwesenheitsuebersicht ist bewusst auf org_admin und admin beschraenkt, obwohl GET /admin/jahrgaenge für teamer offen ist"
 
   /admin/jahrgaenge/{id}/sprueche:
     get:
@@ -655,13 +655,13 @@ paths:
         middleware: [verifyTokenRBAC, requireAdmin, validateJahrgangId]
         org-scope: true
         objekt-pruefung: >
-          Jahrgang und Konfis mit organization_id geprueft (u.deleted_at IS
+          Jahrgang und Konfis mit organization_id geprüft (u.deleted_at IS
           NULL, Rolle konfi). Die Konfispruch-Texte kommen aus
           konfsprueche mit is_active = true UND (organization_id IS NULL
           ODER organization_id = eigene Org) — der globale Spruch-Katalog
-          ist bewusst org-uebergreifend lesbar, enthaelt aber nur
+          ist bewusst org-uebergreifend lesbar, enthält aber nur
           Bibeltexte, keine personenbezogenen Daten.
-        hinweis: "teamer erhaelt 403 — Konfisprueche sind persoenliche Angaben und bleiben auf org_admin/admin beschraenkt"
+        hinweis: "teamer erhält 403 — Konfisprueche sind persoenliche Angaben und bleiben auf org_admin/admin beschraenkt"
 
   /admin/jahrgaenge/{id}/matrix-email:
     post:
@@ -680,7 +680,7 @@ paths:
                   type: string
                   enum: [anwesenheit, sprueche]
                   description: >
-                    anwesenheit = je Konfi present_count/total_count ueber
+                    anwesenheit = je Konfi present_count/total_count über
                     alle nicht abgesagten Pflicht-Events des Jahrgangs;
                     sprueche = Konfispruch-Liste wie GET /sprueche.
       responses:
@@ -724,13 +724,13 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: "WHERE organization_id = req.user.organization_id — auch super_admin wird auf die aktive Org gescopt, sonst wuerden Keys mehrerer Orgs kollidieren"
-        hinweis: "S6: bewusst fuer alle Rollen offen, weil Konfi- und Teamer-Dashboards ihre Widget-Schalter daraus lesen. Inhalt sind Anzeige-Einstellungen, keine personenbezogenen Daten"
+        hinweis: "S6: bewusst für alle Rollen offen, weil Konfi- und Teamer-Dashboards ihre Widget-Schalter daraus lesen. Inhalt sind Anzeige-Einstellungen, keine personenbezogenen Daten"
     put:
       summary: Einstellungen der eigenen Organisation setzen (Teil-Update)
       description: >
         Nur die im Body vorhandenen Felder werden per Upsert geschrieben
         (ON CONFLICT (organization_id, key)); nicht uebergebene Keys bleiben
-        unveraendert. Anschliessend geht ein Live-Update 'dashboard' an die
+        unverändert. Anschliessend geht ein Live-Update 'dashboard' an die
         gesamte Organisation.
       requestBody:
         content:
@@ -766,7 +766,7 @@ paths:
         hinweis: >
           waitlist_enabled wird nicht validiert (steht in validateSettings
           nicht drin) und landet per String(wert) in der Spalte; ein
-          Nicht-Boolean wuerde beim Lesen zu false. Die Schreib-Vorgaenge
+          Nicht-Boolean wuerde beim Lesen zu false. Die Schreib-Vorgänge
           laufen als Einzel-Queries ohne Transaktion — ein Fehler in der
           Mitte hinterlaesst ein Teil-Update.
 
@@ -776,7 +776,7 @@ paths:
   # ==========================================================================
   /roles:
     get:
-      summary: Alle Rollen der eigenen Organisation mit Nutzer-Zaehler
+      summary: Alle Rollen der eigenen Organisation mit Nutzer-Zähler
       responses:
         "200": { description: "Array (id, name, display_name, description, is_system_role, is_active, created_at, user_count), sortiert org_admin > admin > teamer > konfi" }
         "401": { $ref: "#/components/responses/Unauthorized" }
@@ -788,12 +788,12 @@ paths:
         org-scope: true
         objekt-pruefung: "Inline: ['super_admin','org_admin'].includes(req.user.role_name); WHERE r.organization_id = req.user.organization_id"
         hinweis: >
-          Der Inline-Check prueft strikt role_name und NICHT das
+          Der Inline-Check prüft strikt role_name und NICHT das
           is_super_admin-Flag — abweichend von der Projekt-Regel und von
-          GET /roles/list/assignable, das beides beruecksichtigt. Praktisch
-          folgenlos, weil ein org_admin mit Flag ohnehin ueber role_name
+          GET /roles/list/assignable, das beides berücksichtigt. Praktisch
+          folgenlos, weil ein org_admin mit Flag ohnehin über role_name
           durchkommt. Die Rolle super_admin selbst hat keine
-          organization_id, erhaelt hier also ein leeres Array.
+          organization_id, erhält hier also ein leeres Array.
     # Hinweis: Es gibt bewusst KEINE Schreib-Routen. Rollen sind 5 hardcodete
     # Systemrollen, die beim Anlegen einer Organisation erzeugt werden
     # (organizations.js POST /); Permissions sind statisch pro Rollenname.
@@ -817,7 +817,7 @@ paths:
         hinweis: >
           permissions kommt NICHT aus der Datenbank, sondern aus einer
           Konstante im Code (getRolePermissions). Sie beschreibt die
-          Rechtevergabe rein deklarativ fuer die Anzeige; durchgesetzt wird
+          Rechtevergabe rein deklarativ für die Anzeige; durchgesetzt wird
           sie an den Routen selbst per requireRole. Die Liste kann daher von
           der tatsaechlichen Durchsetzung abweichen.
 
@@ -842,7 +842,7 @@ paths:
         hinweis: >
           Einzige Route dieser Datei, die das is_super_admin-Flag korrekt
           mitprueft (role_name === 'super_admin' || req.user.is_super_admin).
-          Der Rueckgabewert ist nur eine Anzeige-Hilfe fuer die
+          Der Rueckgabewert ist nur eine Anzeige-Hilfe für die
           Nutzerverwaltung — die tatsaechliche Durchsetzung der Hierarchie
           leistet checkUserHierarchy in routes/users.js (siehe
           verwaltung-auth.yaml).
@@ -874,9 +874,9 @@ paths:
 #   - GET /organizations liefert JEDE Organisation samt Kontakt-, Trial- und
 #     Lizenzdaten (nur super_admin).
 #   - GET /organizations/search-users durchsucht ALLE Organisationen nach
-#     Nicht-Konfi-Usern (nur super_admin, bewusst org-uebergreifend fuer die
+#     Nicht-Konfi-Usern (nur super_admin, bewusst org-uebergreifend für die
 #     Multi-Org-Zuweisung).
-# Alle uebrigen organizations-Routen pruefen inline
+# Alle uebrigen organizations-Routen prüfen inline
 # "is_super_admin ODER eigene Organisation".
 #
 # Ebenfalls nicht hier: auth.js und users.js (verwaltung-auth.yaml),

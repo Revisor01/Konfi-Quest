@@ -79,7 +79,7 @@ const AdminOrganizationsPage: React.FC = () => {
       // User-State neu laden -> Trial-Banner erscheint/verschwindet sofort
       // (ohne Logout/Neustart). Bedingungslos: ein /me-Call ist guenstig, und
       // der Vergleich auf die eigene Org war fehleranfaellig (modalOrganizationId
-      // wurde teils schon zurueckgesetzt). super_admin ohne Org schadet es nicht.
+      // wurde teils schon zurückgesetzt). super_admin ohne Org schadet es nicht.
       refreshUser();
       setSelectedOrganization(null);
       setModalOrganizationId(null);

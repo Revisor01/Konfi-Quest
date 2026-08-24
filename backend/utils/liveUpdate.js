@@ -49,7 +49,7 @@ async function sendToOrgAdmins(organizationId, updateType, action = 'refresh', d
     const db = require('../database');
     // Hole alle Admins, Org-Admins und Teamer:innen dieser Organisation.
     // Rollenname wird mitgeholt, weil Teamer-Sockets in einem EIGENEN Raum
-    // (user_teamer_<id>) sitzen, waehrend admin/org_admin im Raum
+    // (user_teamer_<id>) sitzen, während admin/org_admin im Raum
     // user_admin_<id> sitzen (Socket-Join-Typ aus dem JWT, server.js:75f).
     // Nur nicht-geloeschte User (deleted_at IS NULL) sollen Updates bekommen.
     //
@@ -57,7 +57,7 @@ async function sendToOrgAdmins(organizationId, updateType, action = 'refresh', d
     // Wer per Umschalter in einer Zweit-Organisation arbeitet, steht dort
     // ausschliesslich in user_organizations — und bekam deshalb in dieser Org
     // gar keine Live-Updates (Audit 22.08.). Deshalb beide Quellen vereinen.
-    // Die Rolle wird je Quelle getrennt gezogen: user_organizations traegt ein
+    // Die Rolle wird je Quelle getrennt gezogen: user_organizations trägt ein
     // eigenes role_id, die Rolle kann sich also je Gemeinde unterscheiden.
     const adminsResult = await db.query(`
       SELECT u.id, r.name AS role_name FROM users u
@@ -111,7 +111,7 @@ async function sendToOrgKonfis(organizationId, updateType, action = 'refresh', d
     const db = require('../database');
     // Hole alle Konfis dieser Organisation. Wie bei sendToOrgAdmins beide
     // Quellen vereinen: users.organization_id (Primaer-Org) und
-    // user_organizations (Zweit-Organisationen ueber den Umschalter).
+    // user_organizations (Zweit-Organisationen über den Umschalter).
     const konfisResult = await db.query(`
       SELECT u.id FROM users u
       JOIN roles r ON u.role_id = r.id
@@ -211,7 +211,7 @@ function sendToAdmin(adminId, updateType, action = 'refresh', data = null) {
 /**
  * Sendet ein Live-Update an einen User anhand seiner DB-Rolle in den KORREKTEN
  * Socket-Raum. Notwendig, weil ein Empfaenger sowohl Konfi als auch Teamer:in
- * oder Admin sein kann und die Sockets je nach Typ in verschiedenen Raeumen
+ * oder Admin sein kann und die Sockets je nach Typ in verschiedenen Räumen
  * sitzen (user_konfi_/user_teamer_/user_admin_, server.js:75f). Ein blindes
  * sendToKonfi() an z.B. einen Teamer landet sonst im leeren Konfi-Raum.
  *
@@ -261,15 +261,15 @@ async function sendToUserByRole(userId, updateType, action = 'refresh', data = n
 
 /**
  * Trennt ALLE aktiven Socket.io-Verbindungen eines Users sofort. Notwendig bei
- * User-Loeschung, Passwort-Reset und Deaktivierung: Ohne aktives Trennen bleibt
+ * User-Löschung, Passwort-Reset und Deaktivierung: Ohne aktives Trennen bleibt
  * ein bereits verbundener Socket bestehen und empfaengt weiter Live-Updates, bis
  * der Client von selbst neu verbindet (oder nie). Der User kann so mit einer
  * toten/entzogenen Session weiter mitlesen.
  *
- * Trennt die drei moeglichen Raeume (user_konfi_/user_teamer_/user_admin_<id>),
+ * Trennt die drei moeglichen Räume (user_konfi_/user_teamer_/user_admin_<id>),
  * weil der Raum-Typ vom Login-Typ im JWT abhaengt und hier nicht sicher bekannt
- * ist. disconnectSockets(true) schliesst auch den zugrundeliegenden Transport
- * (close=true). Ueber den @socket.io/postgres-adapter wirkt das replika-
+ * ist. disconnectSockets(true) schließt auch den zugrundeliegenden Transport
+ * (close=true). Über den @socket.io/postgres-adapter wirkt das replika-
  * uebergreifend (auch Sockets an der anderen Backend-Instanz werden getrennt).
  * Still bei fehlendem _io; Fehler werden gefangen (darf einen Request nie kippen).
  *

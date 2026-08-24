@@ -55,7 +55,7 @@ describe('Events Routes', () => {
 
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
-      // Events haben booking_status fuer den aktuellen User
+      // Events haben booking_status für den aktuellen User
       const evt = res.body[0];
       expect(evt.id).toBeDefined();
       expect(evt.name).toBeDefined();
@@ -93,7 +93,7 @@ describe('Events Routes', () => {
       }
     });
 
-    // Der Jahrgangs-Filter fuer Teamer:innen griff nur, wenn ueberhaupt
+    // Der Jahrgangs-Filter für Teamer:innen griff nur, wenn überhaupt
     // Zuweisungen vorhanden waren (Bedingung length > 0). Ohne jede Zuweisung
     // fiel der Filter weg und die Teamer:in sah ALLE Events der Organisation
     // (Audit 22.08.2026, LÜCKE L5).
@@ -155,7 +155,7 @@ describe('Events Routes', () => {
       expect(evt.name).toBe(EVENTS.gottesdienstEvent.name);
       expect(evt.max_participants).toBeDefined();
       expect(evt.point_type).toBeDefined();
-      // Abgeleitete Buchungs-Zaehler
+      // Abgeleitete Buchungs-Zähler
       expect(evt.registered_count).toBeDefined();
       expect(evt.waitlist_count).toBe(0);
       expect(evt.teamer_count).toBe(0);
@@ -171,7 +171,7 @@ describe('Events Routes', () => {
   // Datumsfenster (Audit Achse 4, Fund 9): Default 1 Jahr, ?all=true = alles
   // ================================================================
   describe('GET /api/events Datumsfenster', () => {
-    // Legt ein Event an, das aelter als 1 Jahr ist (ausserhalb des Standardfensters)
+    // Legt ein Event an, das aelter als 1 Jahr ist (außerhalb des Standardfensters)
     async function seedAltesEvent() {
       const { rows } = await db.query(
         `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants, point_type, points, has_timeslots)
@@ -451,7 +451,7 @@ describe('Events Routes', () => {
   // ================================================================
   // Regression (Audit 09.08.2026): Konfi- und Teamer-Kontingent sind strikt
   // getrennt (Migration 120). Angemeldete Teamer duerfen NICHT gegen die
-  // Konfi-Plaetze zaehlen — sonst gilt ein Event fuer Konfis als ausgebucht,
+  // Konfi-Plaetze zählen — sonst gilt ein Event für Konfis als ausgebucht,
   // obwohl dort noch Plaetze frei sind.
   describe('Kontingent-Trennung Konfi/Teamer', () => {
     it('Zwei getrennte Wartelisten: Konfi voll -> Teamer bekommt trotzdem einen Platz', async () => {
@@ -663,7 +663,7 @@ describe('Events Routes', () => {
   });
 
   // ================================================================
-  // Teamer-Kontingent (eigene Kapazitaet + eigene Warteliste)
+  // Teamer-Kontingent (eigene Kapazität + eigene Warteliste)
   //
   // Kern-Invariante: Konfi- und Teamer-Kontingent sind strikt getrennt.
   // Ein frei gewordener Konfi-Platz darf NIE von einem Teamer belegt werden
@@ -673,7 +673,7 @@ describe('Events Routes', () => {
     const jwt = require('jsonwebtoken');
     const JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key-for-vitest';
 
-    // Der Seed hat nur EINE Teamer:in pro Org — fuer Wartelisten-Tests braucht
+    // Der Seed hat nur EINE Teamer:in pro Org — für Wartelisten-Tests braucht
     // es mehrere. Zusatz-Teamer bekommen hohe IDs, damit sie nicht mit den
     // festen Seed-IDs (1..11) kollidieren.
     const EXTRA_TEAMERS = [
@@ -783,7 +783,7 @@ describe('Events Routes', () => {
     });
 
     it('Teamer-Storno: naechste Teamer:in rueckt nach, Konfi-Warteliste bleibt unberuehrt', async () => {
-      // Teamer-Kontingent 1, Konfi-Kontingent 1 -> beide Wartelisten gefuellt
+      // Teamer-Kontingent 1, Konfi-Kontingent 1 -> beide Wartelisten gefüllt
       const eventId = await createTeamerEvent({ teamerMax: 1, maxParticipants: 1 });
 
       await request(app).post(`/api/events/${eventId}/book`)
@@ -795,7 +795,7 @@ describe('Events Routes', () => {
       await request(app).post(`/api/events/${eventId}/book`)
         .set('Authorization', `Bearer ${konfi2Token}`);
 
-      // Ausgangslage pruefen
+      // Ausgangslage prüfen
       const { rows: before } = await db.query(
         'SELECT user_id, status FROM event_bookings WHERE event_id = $1 ORDER BY user_id',
         [eventId]
@@ -967,7 +967,7 @@ describe('Events Routes', () => {
   // einhalten. Frueher nahm die Route den aeltesten Wartenden OHNE Rollenfilter:
   // beim Entfernen eines Teamers rueckte ein Konfi auf den Teamer-Platz
   // (Konfi-Kontingent ueberbucht, Teamer-Platz blieb leer) und der Push ging
-  // ueber den falschen Kanal.
+  // über den falschen Kanal.
   // ================================================================
   describe('DELETE /:id/bookings/:bookingId - rollenrichtiges Nachruecken', () => {
     const jwt = require('jsonwebtoken');
@@ -1108,7 +1108,7 @@ describe('Events Routes', () => {
     it('Konfi storniert selbst -> bestaetigte Teamer blockieren das Nachruecken nicht', async () => {
       const eventId = await createMixedEvent();
 
-      // Teamer-Platz belegt: zaehlte frueher gegen max_participants=1 und
+      // Teamer-Platz belegt: zählte früher gegen max_participants=1 und
       // verhinderte damit das Nachruecken auf dem Konfi-Platz.
       await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${teamerToken}`);
       await request(app).post(`/api/events/${eventId}/book`).set('Authorization', `Bearer ${konfiToken}`);
@@ -1146,13 +1146,13 @@ describe('Events Routes', () => {
 
   // ================================================================
   // Timeslot-Warteliste (Fund 05.07.2026): voller Slot -> Warteliste PRO SLOT,
-  // frueher setzte die event-weite Gesamtkapazitaet die Warteliste ausser Kraft
+  // früher setzte die event-weite Gesamtkapazitaet die Warteliste außer Kraft
   // (voller Slot wurde als "noch Platz" gewertet -> hartes "ausgebucht" ohne
   // Wartelisten-Option).
   // ================================================================
   describe('Timeslot-Warteliste (pro Slot)', () => {
-    // Timeslot-Event mit einem Slot der Kapazitaet 1 + Warteliste anlegen.
-    // Direkt in der DB, weil der Slot-Kapazitaet=1 gezielt gesetzt wird.
+    // Timeslot-Event mit einem Slot der Kapazität 1 + Warteliste anlegen.
+    // Direkt in der DB, weil der Slot-Kapazität=1 gezielt gesetzt wird.
     async function createTimeslotEventWithCapacity1() {
       const { rows: [ev] } = await db.query(
         `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants,
@@ -1245,7 +1245,7 @@ describe('Events Routes', () => {
 
     it('Zweiter Slot bleibt frei buchbar, während der erste voll ist', async () => {
       const { eventId, slotId } = await createTimeslotEventWithCapacity1();
-      // zweiten Slot (Kapazitaet 1) am selben Event anlegen
+      // zweiten Slot (Kapazität 1) am selben Event anlegen
       const { rows: [slot2] } = await db.query(
         `INSERT INTO event_timeslots (event_id, start_time, end_time, max_participants, organization_id)
          VALUES ($1, NOW() + interval '7 days' + interval '3 hours', NOW() + interval '7 days' + interval '5 hours', 1, $2)
@@ -1345,7 +1345,7 @@ describe('Events Routes', () => {
   // die Warteliste bleibt unberuehrt (Betreiber-Entscheid 03.07.2026).
   // ================================================================
   describe('PUT /api/events/:id/participants/attendance-all', () => {
-    // Event mit Kapazitaet 1 + Punkten: konfi1 angemeldet (confirmed),
+    // Event mit Kapazität 1 + Punkten: konfi1 angemeldet (confirmed),
     // konfi2 auf der Warteliste.
     async function setupEventWithWaitlist() {
       const futureDate = new Date();
@@ -1476,7 +1476,7 @@ describe('Events Routes', () => {
       expect(pflicht.registration_status).toBe('mandatory');
     });
 
-    // Abgesagt schlaegt jeden anderen Status — auch 'mandatory'. Vorher kannte
+    // Abgesagt schlägt jeden anderen Status — auch 'mandatory'. Vorher kannte
     // die CASE-Anweisung gar keinen cancelled-Fall, ein abgesagtes Event meldete
     // weiter 'open'/'mandatory' und wurde in der Leitungssicht nicht als
     // abgesagt erkannt (Fund 22.08.2026).
@@ -1535,7 +1535,7 @@ describe('Events Routes', () => {
       expect(konfi2Booking.status).toBe('confirmed');
     });
 
-    // Befund 24.08.2026: Das Nachbuchen haengt an `!oldEvent.mandatory` und
+    // Befund 24.08.2026: Das Nachbuchen hängt an `!oldEvent.mandatory` und
     // greift damit NUR bei der Umwandlung freiwillig -> Pflicht. Wird zu einem
     // Termin, der schon Pflicht ist, ein weiterer Jahrgang ergaenzt, blieben
     // dessen Konfis ungebucht — still, ohne Hinweis in der Leitungsansicht.
@@ -1572,7 +1572,7 @@ describe('Events Routes', () => {
       expect(createRes.status).toBe(201);
       const eventId = createRes.body.id;
 
-      // Der neue Jahrgang haengt noch nicht dran, also darf hier nichts stehen.
+      // Der neue Jahrgang hängt noch nicht dran, also darf hier nichts stehen.
       const { rows: vorher } = await db.query(
         'SELECT 1 FROM event_bookings WHERE event_id = $1 AND user_id = $2',
         [eventId, neuerKonfi.id]
@@ -1606,7 +1606,7 @@ describe('Events Routes', () => {
       expect(alte.length).toBe(1);
     });
 
-    // Gegenprobe zum Fix oben: Der Enroll laeuft jetzt bei JEDEM Speichern
+    // Gegenprobe zum Fix oben: Der Enroll läuft jetzt bei JEDEM Speichern
     // eines Pflicht-Termins. Wer sich abgemeldet hat (Status 'opted_out'),
     // darf dadurch nicht stillschweigend zurueckgeholt werden.
     it('Ein abgemeldeter Konfi wird beim Speichern nicht zurueckgeholt', async () => {
@@ -1825,7 +1825,7 @@ describe('Events Routes', () => {
 
   // ================================================================
   // Timeslot-Sperre bei Pflicht-Events und Konfirmationen
-  // (fachliche Regel: beide haben feste Termine fuer den ganzen Jahrgang,
+  // (fachliche Regel: beide haben feste Termine für den ganzen Jahrgang,
   //  daher KEINE Zeitfenster — serverseitig erzwungen, nicht nur im Frontend)
   // ================================================================
   describe('Timeslots bei mandatory/is_konfirmation gesperrt', () => {
@@ -1926,7 +1926,7 @@ describe('Events Routes', () => {
   });
 
   // ================================================================
-  // Event-Kapazitaet (ausgebucht)
+  // Event-Kapazität (ausgebucht)
   // ================================================================
   describe('Kapazitaetsgrenze', () => {
     it('Bei vollem Event ohne Warteliste gibt es 400', async () => {
@@ -2000,7 +2000,7 @@ describe('Events Routes', () => {
       expect(beforeIds).toContain(USERS.konfi1.id);
       expect(beforeIds).toContain(USERS.konfi2.id);
 
-      // Konfi1 soft-loeschen (deleted_at setzen)
+      // Konfi1 soft-löschen (deleted_at setzen)
       await db.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [USERS.konfi1.id]);
 
       // Nachher: nur der aktive Konfi (konfi2) ist sichtbar
@@ -2011,13 +2011,13 @@ describe('Events Routes', () => {
     });
 
     it('Auto-Enroll fuer Pflicht-Event erstellt KEINE Buchung fuer soft-geloeschte Konfis', async () => {
-      // Konfi1 soft-loeschen
+      // Konfi1 soft-löschen
       await db.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [USERS.konfi1.id]);
 
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 14);
 
-      // Pflicht-Event fuer jahrgang1 anlegen -> Auto-Enroll greift
+      // Pflicht-Event für jahrgang1 anlegen -> Auto-Enroll greift
       const createRes = await request(app)
         .post('/api/events')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -2071,14 +2071,14 @@ describe('Events Routes', () => {
         [ORGS.testGemeinde.id]
       );
       expect(rows.length).toBe(4);
-      // Alle Events haengen an derselben series_id
+      // Alle Events hängen an derselben series_id
       expect(new Set(rows.map(r => String(r.series_id))).size).toBe(1);
     });
 
     // Regression (Bugreport 09.08.2026): Die Serien-Route destrukturierte die
     // Teamer-Kontingent-Felder, mandatory/is_konfirmation, bring_items und
     // checkin_window gar nicht aus dem Body — jede Serie fiel still auf die
-    // Spalten-Defaults zurueck, obwohl das Formular alles mitschickt.
+    // Spalten-Defaults zurück, obwohl das Formular alles mitschickt.
     it('Serie uebernimmt Teamer-Kontingent, Flags, Mitbringen und Check-in-Fenster', async () => {
       const res = await request(app)
         .post('/api/events/series')
@@ -2301,9 +2301,9 @@ describe('Events Routes', () => {
       return d.toISOString();
     };
 
-    // Der Push-Aufruf laeuft im Handler NACH res.json() weiter (fire-and-forget).
+    // Der Push-Aufruf läuft im Handler NACH res.json() weiter (fire-and-forget).
     // supertest bekommt die Response bereits, bevor der Handler den Push-Block
-    // fertig ausgefuehrt hat -> kurz pollen statt fest zu warten.
+    // fertig ausgeführt hat -> kurz pollen statt fest zu warten.
     const waitForCall = async (spy, timeoutMs = 1000) => {
       const start = Date.now();
       while (spy.mock.calls.length === 0 && Date.now() - start < timeoutMs) {

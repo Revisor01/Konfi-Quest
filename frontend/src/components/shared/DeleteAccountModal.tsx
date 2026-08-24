@@ -54,7 +54,7 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ onClose, onDele
       try {
         await api.post('/auth/delete-account', { password });
 
-        // Account geloescht: sauber ausloggen (raeumt Token/Cache + State -> Login).
+        // Account gelöscht: sauber ausloggen (räumt Token/Cache + State -> Login).
         onDeleted?.();
         onClose();
         await signOut();

@@ -236,10 +236,10 @@ describe('Activities Routes', () => {
   // POST /api/admin/activities/assign-activity (Punkte-Vergabe)
   // ================================================================
   describe('POST /api/admin/activities/assign-activity', () => {
-    // Mandantentrennung: Geprueft wurde bisher nur die Aktivitaet gegen die
-    // eigene Org, NICHT der Ziel-Konfi. Ein Admin konnte damit ueber eine
+    // Mandantentrennung: Geprueft wurde bisher nur die Aktivität gegen die
+    // eigene Org, NICHT der Ziel-Konfi. Ein Admin konnte damit über eine
     // fremde konfiId Punkte bei Konfis anderer Gemeinden setzen und dort
-    // Badge-/Level-Berechnung ausloesen (Audit 22.08.2026).
+    // Badge-/Level-Berechnung auslösen (Audit 22.08.2026).
     it('Admin kann KEINE Punkte an Konfi einer fremden Organisation vergeben', async () => {
       const vorher = await db.query(
         'SELECT gottesdienst_points, gemeinde_points FROM konfi_profiles WHERE user_id = $1',
@@ -257,7 +257,7 @@ describe('Activities Routes', () => {
 
       expect(res.status).toBe(404);
 
-      // Punkte des fremden Konfis unveraendert
+      // Punkte des fremden Konfis unverändert
       const nachher = await db.query(
         'SELECT gottesdienst_points, gemeinde_points FROM konfi_profiles WHERE user_id = $1',
         [USERS.konfi3.id]
@@ -265,7 +265,7 @@ describe('Activities Routes', () => {
       expect(nachher.rows[0].gottesdienst_points).toBe(vorher.rows[0].gottesdienst_points);
       expect(nachher.rows[0].gemeinde_points).toBe(vorher.rows[0].gemeinde_points);
 
-      // Und keine Aktivitaet eingetragen
+      // Und keine Aktivität eingetragen
       const { rows } = await db.query(
         'SELECT COUNT(*)::int AS c FROM user_activities WHERE user_id = $1',
         [USERS.konfi3.id]
@@ -293,7 +293,7 @@ describe('Activities Routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.message).toContain('zugewiesen');
 
-      // Nachher: gottesdienst_points pruefen
+      // Nachher: gottesdienst_points prüfen
       const after = await db.query(
         'SELECT gottesdienst_points FROM konfi_profiles WHERE user_id = $1',
         [USERS.konfi1.id]
@@ -387,11 +387,11 @@ describe('Activities Routes', () => {
   });
 
   // ================================================================
-  // Loeschen: abgelehnte Antraege blockieren nicht mehr
+  // Löschen: abgelehnte Anträge blockieren nicht mehr
   //
-  // Nutzerhinweis 23.08.2026: Eine Teamer-Aktivitaet mit ausschliesslich
-  // abgelehnten Antraegen liess sich nicht loeschen. Abgelehnte Antraege haben
-  // nie zu Punkten gefuehrt — sie duerfen kein Dauerhindernis sein.
+  // Nutzerhinweis 23.08.2026: Eine Teamer-Aktivität mit ausschliesslich
+  // abgelehnten Anträgen liess sich nicht löschen. Abgelehnte Anträge haben
+  // nie zu Punkten geführt — sie duerfen kein Dauerhindernis sein.
   // ================================================================
   describe('DELETE /admin/activities/:id — Antragshistorie', () => {
     const antragAnlegen = async (status) => {
@@ -444,7 +444,7 @@ describe('Activities Routes', () => {
   });
 
   // ================================================================
-  // Abgelehnte Antraege einzeln loeschen
+  // Abgelehnte Anträge einzeln löschen
   // ================================================================
   describe('DELETE /admin/activities/requests/:id', () => {
     const antragAnlegen = async (status) => {

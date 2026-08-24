@@ -24,7 +24,7 @@ import { useChallengeDelete } from '../../../hooks/useChallengeDelete';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 // Bewusst dieselbe View und dieselben Modals wie die Admin-Seite — Teamer sehen
-// nur ihre zugewiesenen Jahrgaenge, das filtert das Backend.
+// nur ihre zugewiesenen Jahrgänge, das filtert das Backend.
 import ChallengesManageView from '../../admin/views/ChallengesManageView';
 import ChallengeManageModal from '../../admin/modals/ChallengeManageModal';
 import ChallengeLeitungModal from '../../admin/modals/ChallengeLeitungModal';
@@ -64,9 +64,9 @@ const TeamerChallengesPage: React.FC = () => {
   const manageDirtyRef = useRef(false);
 
   // WICHTIG: Beim Schliessen wird der Challenge-State NICHT auf null gesetzt.
-  // useIonModal rendert das Modal waehrend der Dismiss-Animation weiter — ein
+  // useIonModal rendert das Modal während der Dismiss-Animation weiter — ein
   // null-Render liefe dort in die ErrorBoundary (clearAuth => "Rauswurf zur
-  // Anmeldung"). Der State wird beim naechsten Oeffnen ohnehin neu gesetzt.
+  // Anmeldung"). Der State wird beim nächsten Oeffnen ohnehin neu gesetzt.
   const [presentManageModal, dismissManageModal] = useIonModal(ChallengeManageModal, {
     challenge: editChallenge,
     onDirtyChange: (dirty: boolean) => { manageDirtyRef.current = dirty; },
@@ -79,7 +79,7 @@ const TeamerChallengesPage: React.FC = () => {
 
   const [presentModerationModal, dismissModerationModal] = useIonModal(ChallengeLeitungModal, {
     challenge: moderationChallenge,
-    // Fuer die Card-Optik des Einreichen-Modals (schiebt die Seite nach hinten).
+    // Für die Card-Optik des Einreichen-Modals (schiebt die Seite nach hinten).
     get presentingElement() { return pageRef.current || presentingElement; },
     onClose: () => { dismissModerationModal(); },
     onChanged: () => {

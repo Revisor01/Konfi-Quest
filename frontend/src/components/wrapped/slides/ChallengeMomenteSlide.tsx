@@ -33,9 +33,9 @@ function iconFuerMedienart(mediaType: string): string {
 }
 
 /**
- * Laedt ein Challenge-Foto ueber GET /api/challenges/files/:filename.
+ * Laedt ein Challenge-Foto über GET /api/challenges/files/:filename.
  * Der Auth-Header kommt automatisch aus dem api-Interceptor (services/api.ts),
- * daher ist KEIN ?token=-Parameter noetig. Die erzeugte Object-URL wird beim
+ * daher ist KEIN ?token=-Parameter nötig. Die erzeugte Object-URL wird beim
  * Unmount wieder freigegeben (kein geteilter Cache wie bei den Chat-Medien —
  * Wrapped-Bilder werden genau einmal angezeigt).
  */

@@ -116,7 +116,7 @@ describe('Organizations Routes', () => {
         .set('Authorization', `Bearer ${superAdminToken}`);
       const org2Before = before.body.find(o => o.id === 2).user_count;
 
-      // admin2 ist bereits Primaer in Org 2; zusaetzliches Mapping darf NICHT zaehlen
+      // admin2 ist bereits Primaer in Org 2; zusaetzliches Mapping darf NICHT zählen
       await db.query(`INSERT INTO user_organizations (user_id, organization_id, role_id)
         VALUES (8, 2, 8) ON CONFLICT DO NOTHING`);
 
@@ -205,7 +205,7 @@ describe('Organizations Routes', () => {
     });
 
     // /current liefert denselben Datensatz wie GET /:id. Ohne eigenen Guard
-    // waere der Schutz dort wirkungslos (LÜCKE N5).
+    // wäre der Schutz dort wirkungslos (LÜCKE N5).
     it('Konfi bekommt ueber /current KEINE Org-Stammdaten -> 403', async () => {
       const res = await request(app)
         .get('/api/organizations/current')
@@ -248,7 +248,7 @@ describe('Organizations Routes', () => {
       expect(res.body.default_levels_created).toBeGreaterThan(0);
       expect(res.body.default_challenges_created).toBe(3);
 
-      // Alle 4 System-Rollen muessen existieren — insbesondere 'konfi',
+      // Alle 4 System-Rollen müssen existieren — insbesondere 'konfi',
       // sonst kann die neue Org keine Konfis anlegen (Bug bis 06/2026).
       const { rows: roles } = await db.query(
         'SELECT name FROM roles WHERE organization_id = $1 ORDER BY name',
@@ -264,7 +264,7 @@ describe('Organizations Routes', () => {
       expect(levels[0].c).toBe(6);
 
       // Drei Beispiel-Challenges als Entwuerfe, ohne Jahrgangs-Zuweisung
-      // (neue Org hat noch keine Jahrgaenge).
+      // (neue Org hat noch keine Jahrgänge).
       const { rows: challenges } = await db.query(
         `SELECT title, challenge_type, is_draft FROM challenges
          WHERE organization_id = $1 ORDER BY id`,
@@ -412,9 +412,9 @@ describe('Organizations Routes', () => {
   // ================================================================
   // DELETE /api/organizations/:id
   // ================================================================
-  // Eine inaktive Organisation fuehrt in rbac.js fuer JEDEN Zugang zu 401.
+  // Eine inaktive Organisation fuehrt in rbac.js für JEDEN Zugang zu 401.
   // Ein org_admin konnte damit sich selbst und die ganze Gemeinde aussperren,
-  // ohne den Schritt zurueckdrehen zu koennen (Audit 22.08.2026).
+  // ohne den Schritt zurueckdrehen zu können (Audit 22.08.2026).
   describe('PUT /api/organizations/:id — is_active', () => {
     const basisDaten = {
       name: 'Test-Gemeinde',
@@ -430,7 +430,7 @@ describe('Organizations Routes', () => {
 
       expect(res.status).toBe(200);
 
-      // Entscheidend ist nicht der Status, sondern dass is_active unveraendert
+      // Entscheidend ist nicht der Status, sondern dass is_active unverändert
       // blieb: Das Feld wird stillschweigend ignoriert statt abgelehnt.
       const { rows } = await db.query(
         'SELECT is_active FROM organizations WHERE id = $1',
@@ -509,7 +509,7 @@ describe('Organizations Routes', () => {
         .set('Authorization', `Bearer ${superAdminToken}`);
       expect(res.status).toBe(200);
 
-      // Stichprobe ueber org-isolierte + user-abhaengige Tabellen: 0 Reste
+      // Stichprobe über org-isolierte + user-abhaengige Tabellen: 0 Reste
       const checks = [
         ['users', 'SELECT count(*)::int c FROM users WHERE organization_id=2'],
         ['roles', 'SELECT count(*)::int c FROM roles WHERE organization_id=2'],
@@ -542,7 +542,7 @@ describe('Organizations Routes', () => {
         .set('Authorization', `Bearer ${superAdminToken}`);
       expect(res.status).toBe(200);
 
-      // admin1 existiert noch (gehoert Org 1)
+      // admin1 existiert noch (gehört Org 1)
       const { rows: [user] } = await db.query('SELECT id FROM users WHERE id=4');
       expect(user).toBeDefined();
       // Aber seine Gast-Mitgliedschaft in Org 2 ist weg
@@ -636,7 +636,7 @@ describe('Organizations Routes', () => {
 
     // Diese Route pruefte nur eine Mindestlaenge von 6 Zeichen — schwaecher
     // als jede andere Stelle, an der Passwoerter gesetzt werden, und das
-    // ausgerechnet fuer org_admin-Konten (Audit 22.08.2026, LÜCKE N6).
+    // ausgerechnet für org_admin-Konten (Audit 22.08.2026, LÜCKE N6).
     it('schwaches Passwort wird abgelehnt -> 400', async () => {
       const res = await request(app)
         .post(`/api/organizations/${ORGS.testGemeinde.id}/admins`)
@@ -750,7 +750,7 @@ describe('Organizations Routes', () => {
         .send({ max_konfis: 999 });
 
       expect(res.status).toBe(403);
-      // Limit darf nicht veraendert worden sein.
+      // Limit darf nicht verändert worden sein.
       expect(await readLimit(ORGS.testGemeinde.id)).toBeNull();
     });
 
@@ -834,7 +834,7 @@ describe('Organizations Routes', () => {
   });
 
   // ================================================================
-  // GET /api/organizations/:id liefert max_konfis (fuer Plan 03)
+  // GET /api/organizations/:id liefert max_konfis (für Plan 03)
   // ================================================================
   describe('GET /api/organizations/:id enthaelt max_konfis', () => {
     it('Response enthaelt das Feld max_konfis', async () => {
@@ -845,7 +845,7 @@ describe('Organizations Routes', () => {
 
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('max_konfis', 30);
-      // konfi_count fuer die "X von Y"-Anzeige ist ebenfalls vorhanden.
+      // konfi_count für die "X von Y"-Anzeige ist ebenfalls vorhanden.
       expect(res.body).toHaveProperty('konfi_count');
     });
 
@@ -938,7 +938,7 @@ describe('Organizations Routes', () => {
 
       it('listet Primaer-Admins der Org auch OHNE user_organizations-Mapping', async () => {
         // Org 2 hat als Primaer-User teamer2(7), admin2(8), orgAdmin2(9) — keiner
-        // hat einen user_organizations-Eintrag. Sie muessen trotzdem erscheinen.
+        // hat einen user_organizations-Eintrag. Sie müssen trotzdem erscheinen.
         const res = await request(app)
           .get(`/api/organizations/2/members`)
           .set('Authorization', `Bearer ${superAdminToken}`);

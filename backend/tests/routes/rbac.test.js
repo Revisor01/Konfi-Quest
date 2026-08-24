@@ -402,7 +402,7 @@ describe('RBAC-Matrix + Cross-Org-Isolation', () => {
         .get('/api/konfi/dashboard')
         .set('Authorization', `Bearer ${tokens.konfi}`);
       expect(res.status).toBe(200);
-      // Dashboard enthaelt Konfi-Daten aus eigener Org
+      // Dashboard enthält Konfi-Daten aus eigener Org
       expect(res.body).toBeDefined();
     });
 
@@ -441,7 +441,7 @@ describe('RBAC-Matrix + Cross-Org-Isolation', () => {
   });
 
   // ====================================================================
-  // CROSS-ORG-ISOLATION: Admin kann Org-fremde Daten nicht aendern
+  // CROSS-ORG-ISOLATION: Admin kann Org-fremde Daten nicht ändern
   // ====================================================================
 
   describe('Cross-Org-Isolation: Admin kann Org-fremde Daten nicht aendern', () => {
@@ -450,7 +450,7 @@ describe('RBAC-Matrix + Cross-Org-Isolation', () => {
         .delete(`/api/admin/activities/${ACTIVITIES.gottesdienst2.id}`)
         .set('Authorization', `Bearer ${tokens.admin}`);
       // DELETE filtert WHERE organization_id = req.user.organization_id
-      // Activity mit ID 5 gehoert zu Org 2 -> rowCount=0 -> 404
+      // Activity mit ID 5 gehört zu Org 2 -> rowCount=0 -> 404
       expect(res.status).toBe(404);
     });
 
@@ -467,7 +467,7 @@ describe('RBAC-Matrix + Cross-Org-Isolation', () => {
         .set('Authorization', `Bearer ${tokens.admin}`)
         .send({ name: 'Manipuliert', points: 99 });
       // PUT filtert ebenfalls WHERE organization_id = req.user.organization_id
-      // Entweder 404 (nicht gefunden) oder keine Aenderung
+      // Entweder 404 (nicht gefunden) oder keine Änderung
       expect([404, 400, 500]).toContain(res.status);
     });
   });

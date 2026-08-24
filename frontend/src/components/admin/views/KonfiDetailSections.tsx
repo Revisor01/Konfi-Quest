@@ -753,7 +753,7 @@ export const ActivitiesSection = React.memo<ActivitiesSectionProps>(({
               const isActivityTypeDisabled = !activity.isPending
                 && ((activity.type === 'gottesdienst' && currentKonfi?.gottesdienst_enabled === false)
                 || (activity.type === 'gemeinde' && currentKonfi?.gemeinde_enabled === false));
-              // Einheitliche Typ-Farbe fuer BEIDE vorderen Elemente (Eselsohr-Badge
+              // Einheitliche Typ-Farbe für BEIDE vorderen Elemente (Eselsohr-Badge
               // UND Icon-Kreis/Border): Gottesdienst=blau, Gemeinde=gruen, Teamer=pink.
               // Pending = Warning-Orange.
               const typeColor = activity.isPending

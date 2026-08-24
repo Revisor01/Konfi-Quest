@@ -3,7 +3,7 @@ import { istTeamTyp, istKonfiTyp } from '../../utils/chatRoles';
 
 /**
  * Regressionstests zum Fehlerbild vom 23.08.2026: Der Chat pruefte an mehreren
- * Stellen `=== 'admin'`, um "gehoert zum Team" zu bestimmen. Teamer:innen tragen
+ * Stellen `=== 'admin'`, um "gehört zum Team" zu bestimmen. Teamer:innen tragen
  * aber den eigenen Typ 'teamer' — sowohl in chat_participants.user_type als auch
  * in den API-Antworten. Folgen: Der Rollenfilter "Team" im Anlegen-Modal blendete
  * Teamer:innen aus, die Liste stellte sie in Konfi-Farbe ohne Funktionsbezeichnung

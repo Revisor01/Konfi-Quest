@@ -1,4 +1,4 @@
-// Gemeinsamer Icon-Vorrat fuer Badges, Level und Zertifikate.
+// Gemeinsamer Icon-Vorrat für Badges, Level und Zertifikate.
 //
 // Bis 11.08. lag `getIconFromString` NEUNMAL im Baum, mit drei Map-Namen
 // (BADGE_ICONS / LEVEL_ICONS / ICON_MAP), zwei Formaten und zwei Fallbacks.
@@ -6,7 +6,7 @@
 // entstanden, nicht aus einem fachlichen Grund. Ab jetzt nur noch hier.
 //
 // ZWEI FORMATE, beide gebraucht:
-//   ICON_CHOICES — mit Name und Kategorie, fuer die Auswahl-Dialoge
+//   ICON_CHOICES — mit Name und Kategorie, für die Auswahl-Dialoge
 //   ICON_MAP     — flach (Name -> Icon), zum Rendern
 // ICON_MAP wird aus ICON_CHOICES abgeleitet, damit sie nicht auseinanderlaufen.
 import {
@@ -141,7 +141,7 @@ export const ICON_MAP: Record<string, string> = Object.fromEntries(
 
 /**
  * Loest einen gespeicherten Icon-Namen auf. Fallback ist die Trophaee —
- * eine der neun alten Kopien fiel auf `ribbon` zurueck (admin/BadgesView),
+ * eine der neun alten Kopien fiel auf `ribbon` zurück (admin/BadgesView),
  * das war die einzige Abweichung und ist bewusst vereinheitlicht.
  */
 export const getIconFromString = (iconName?: string | null): string => {

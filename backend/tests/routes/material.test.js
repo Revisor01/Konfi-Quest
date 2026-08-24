@@ -576,7 +576,7 @@ describe('Material Routes', () => {
         .set('Authorization', `Bearer ${teamerToken}`);
       expect(res.status).toBe(404);
 
-      // Die Leitung kommt dagegen bis zur Datei-Pruefung durch (404 erst,
+      // Die Leitung kommt dagegen bis zur Datei-Prüfung durch (404 erst,
       // weil die Datei auf der Platte fehlt — nicht wegen fehlender Rechte).
       const resAdmin = await request(app)
         .get(`/api/material/files/${stored}`)

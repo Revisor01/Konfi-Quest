@@ -143,7 +143,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
         });
         // Mergen statt ersetzen: gespeicherte Reihenfolgen aus Bestands-Orgs
         // kennen neuere Sektionen (z.B. 'challenges') nicht. Ohne Merge fehlten
-        // sie hier in der Liste — und wuerden beim naechsten Speichern dauerhaft
+        // sie hier in der Liste — und wuerden beim nächsten Speichern dauerhaft
         // aus der Reihenfolge verschwinden.
         setKonfiOrder(mergeSectionOrder(data.dashboard_section_order, DEFAULT_KONFI_ORDER));
         setTeamerOrder(mergeSectionOrder(data.teamer_dashboard_section_order, DEFAULT_TEAMER_ORDER));

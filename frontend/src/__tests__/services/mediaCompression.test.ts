@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-// jsdom hat kein URL.createObjectURL/revokeObjectURL — fuer die Tests stubben.
+// jsdom hat kein URL.createObjectURL/revokeObjectURL — für die Tests stubben.
 // Der Bild-Pfad (Canvas) laesst sich in jsdom nicht sinnvoll testen; die Tests
 // nutzen den Nicht-Bild-Durchreich-Pfad von compressImage, der dieselbe
 // compressForUpload-Logik (Groessen-Gate, URL-Freigabe) abdeckt.

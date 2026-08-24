@@ -1,5 +1,5 @@
 // backend/tests/globalSetup.js — Test-DB erstellen, Schema + Migrationen ausfuehren
-// Gibt Teardown-Funktion zurueck (Vitest-Pattern)
+// Gibt Teardown-Funktion zurück (Vitest-Pattern)
 const { Pool } = require('pg');
 const path = require('path');
 const fs = require('fs');
@@ -32,7 +32,7 @@ module.exports = async function globalSetup() {
   //    die Suite gruen war (Audit 22.08.2026).
   //
   //    Warum ein Dump und nicht die Migrationen? Das Repo KANN Produktion
-  //    nicht reproduzieren: Die Kette beginnt erst bei 064, und fuer mehrere
+  //    nicht reproduzieren: Die Kette beginnt erst bei 064, und für mehrere
   //    Objekte (daily_verses, activities.category, konfi_profiles.password_plain)
   //    gibt es nirgends ein DDL. Wer aus den Migrationen baut, testet ein
   //    Schema, das es so nie gab.

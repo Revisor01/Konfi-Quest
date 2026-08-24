@@ -377,7 +377,7 @@ export const EventCard = React.memo<EventCardProps>(({ event, onClick }) => {
 // --- RankingSection ---
 import { RankingEntry as RankingEntryType } from '../../../types/dashboard';
 import { getIconFromString } from '../../../utils/badgeIcons';
-// Re-Export fuer bestehende Verwender (Wrapped-Slides, KonfiDetailSections).
+// Re-Export für bestehende Verwender (Wrapped-Slides, KonfiDetailSections).
 export { getIconFromString };
 
 interface RankingSectionProps {
@@ -431,7 +431,7 @@ export const RankingSection = React.memo<RankingSectionProps>(({
         });
       } else {
         // Nachbarplaetze OHNE Punktzahl: die Punkte der anderen Konfis liefert
-        // das Backend nicht, sie wurden hier frueher aus dem eigenen Stand
+        // das Backend nicht, sie wurden hier früher aus dem eigenen Stand
         // hochgerechnet — also frei erfunden. Zusammen mit "??" als Initialen
         // sah das aus wie ein Ladefehler (Audit 10.08.). Jetzt steht dort nur
         // der Platz, und der stimmt.

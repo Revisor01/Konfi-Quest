@@ -133,8 +133,8 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         });
 
         // Der Passwortwechsel beendet serverseitig ALLE Sitzungen. Die Antwort
-        // liefert dafuer ein frisches Token-Paar fuer diese Sitzung — ohne
-        // Uebernahme wuerde der naechste Request am invalidierten Token
+        // liefert dafuer ein frisches Token-Paar für diese Sitzung — ohne
+        // Uebernahme wuerde der nächste Request am invalidierten Token
         // scheitern und sich wie ein grundloser Rauswurf anfuehlen.
         if (res.data?.token) {
           await setToken(res.data.token);

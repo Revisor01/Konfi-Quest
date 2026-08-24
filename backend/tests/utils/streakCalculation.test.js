@@ -1,6 +1,6 @@
 // backend/tests/utils/streakCalculation.test.js
-// Unit-Tests fuer computeCurrentStreak (gemeinsame Streak-Berechnung,
-// Single Source of Truth fuer Badge-Wertung badges.js und Progress konfi.js).
+// Unit-Tests für computeCurrentStreak (gemeinsame Streak-Berechnung,
+// Single Source of Truth für Badge-Wertung badges.js und Progress konfi.js).
 // Reine Funktion ohne DB: berechnet den aktuellen Streak (Anzahl aufeinander-
 // folgender aktiver ISO-Wochen bis zur neuesten aktiven Woche).
 const { computeCurrentStreak, getYearWeek } = require('../../utils/streakCalculation');
@@ -14,7 +14,7 @@ describe('computeCurrentStreak', () => {
 
   it('eine aktive Woche ergibt 1', () => {
     expect(computeCurrentStreak(['2026-03-02'])).toBe(1);
-    // Mehrere Datumswerte in derselben Woche zaehlen trotzdem als 1
+    // Mehrere Datumswerte in derselben Woche zählen trotzdem als 1
     expect(computeCurrentStreak(['2026-03-02', '2026-03-04'])).toBe(1);
   });
 

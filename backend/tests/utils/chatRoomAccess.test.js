@@ -1,8 +1,8 @@
 // backend/tests/utils/chatRoomAccess.test.js
 //
 // Regression zum Befund vom 23.08.2026: Der Socket-Beitritt (joinRoom, typing,
-// stopTyping in server.js) prueft nur die Organisation, nicht die
-// Teilnehmerschaft. Ueber `room_<id>` verteilt chat.js das vollstaendige
+// stopTyping in server.js) prüft nur die Organisation, nicht die
+// Teilnehmerschaft. Über `room_<id>` verteilt chat.js das vollstaendige
 // Nachrichtenobjekt — jeder angemeldete Nutzer derselben Gemeinde konnte damit
 // fremde Direktchats live mitlesen.
 //
@@ -88,7 +88,7 @@ describe('darfRaumBetreten (Socket-Raum-Zugriff)', () => {
 
     it('Teamer1 darf in die Team-Gruppe, in der er als user_type "teamer" steht', async () => {
       // Kernpunkt: chat_participants fuehrt 'teamer' als eigenen Wert. Wuerde
-      // hier auf 'admin' geprueft, faende die Teamer:in ihren eigenen Raum nicht.
+      // hier auf 'admin' geprüft, faende die Teamer:in ihren eigenen Raum nicht.
       const res = await darfRaumBetreten(db, CHAT_ROOMS.group.id, alsNutzer(USERS.teamer1));
       expect(res.ok).toBe(true);
     });
@@ -100,7 +100,7 @@ describe('darfRaumBetreten (Socket-Raum-Zugriff)', () => {
 
     it('Admin darf NICHT in einen fremden Direktchat — auch nicht per Socket', async () => {
       // Befund 24.08.2026: Die HTTP-Historie war gesperrt, der Live-Kanal aber
-      // offen. Ueber newMessage waeren alle neuen Nachrichten mitlesbar
+      // offen. Über newMessage wären alle neuen Nachrichten mitlesbar
       // gewesen. orgAdmin1 steht nicht in Raum 2 (konfi1 <-> admin1).
       const res = await darfRaumBetreten(db, CHAT_ROOMS.direct.id, alsNutzer(USERS.orgAdmin1));
       expect(res.ok).toBe(false);
@@ -120,7 +120,7 @@ describe('darfRaumBetreten (Socket-Raum-Zugriff)', () => {
       expect(fremd.ok).toBe(false);
 
       // In der eigenen Org greift der Bypass: Admin2 ist nicht Teilnehmer von
-      // Raum 4, gehoert aber zu Org 2.
+      // Raum 4, gehört aber zu Org 2.
       const eigen = await darfRaumBetreten(db, CHAT_ROOMS.jahrgang2.id, alsNutzer(USERS.admin2, ORG_2));
       expect(eigen.ok).toBe(true);
     });

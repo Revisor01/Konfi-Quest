@@ -139,7 +139,7 @@ describe('Users Routes', () => {
       expect(res.status).toBe(201);
       const newUserId = res.body.id;
 
-      // Der Sync laeuft im Handler NACH res.json (fire-and-forget) -> kurz pollen.
+      // Der Sync läuft im Handler NACH res.json (fire-and-forget) -> kurz pollen.
       const findParticipant = async () => {
         const { rows } = await db.query(
           `SELECT cp.user_type FROM chat_participants cp
@@ -291,8 +291,8 @@ describe('Users Routes', () => {
       expect(res.status).toBe(200);
     });
 
-    // Das optionale password-Feld wurde ungeprueft gehasht — weder ueber den
-    // Validator noch inline. Beim Anlegen gilt die Policy laengst, ueber den
+    // Das optionale password-Feld wurde ungeprueft gehasht — weder über den
+    // Validator noch inline. Beim Anlegen gilt die Policy laengst, über den
     // Bearbeiten-Weg liess sie sich umgehen (Audit 22.08.2026, LÜCKE N7).
     it('schwaches Passwort beim Bearbeiten wird abgelehnt -> 400', async () => {
       const res = await request(app)
@@ -362,9 +362,9 @@ describe('Users Routes', () => {
 
     it('User MIT Konfi-History (Badge/Aktivitaet/Bonus/Antrag) loeschen -> 200, History mit weg', async () => {
       // Regression: Diese 4 Tabellen tragen aus der SQLite-Altlast einen zweiten
-      // NO-ACTION-FK auf users(id). Ohne explizites Aufraeumen im Delete-Handler
-      // blockierte der FK das Loeschen mit 500 "Datenbankfehler" (z.B. Ex-Konfi,
-      // der zum Teamer befoerdert wurde und noch Antraege/Badges hatte).
+      // NO-ACTION-FK auf users(id). Ohne explizites Aufräumen im Delete-Handler
+      // blockierte der FK das Löschen mit 500 "Datenbankfehler" (z.B. Ex-Konfi,
+      // der zum Teamer befoerdert wurde und noch Anträge/Badges hatte).
       const konfiId = USERS.konfi1.id;
       await db.query(
         "INSERT INTO user_badges (user_id, badge_id, awarded_date, organization_id) VALUES ($1, 1, CURRENT_DATE, 1)",
@@ -378,7 +378,7 @@ describe('Users Routes', () => {
         "INSERT INTO activity_requests (user_id, activity_id, organization_id) VALUES ($1, 1, 1)",
         [konfiId]
       );
-      // bonus_points fuer Konfis legt bereits der Seed an.
+      // bonus_points für Konfis legt bereits der Seed an.
 
       const res = await request(app)
         .delete(`/api/admin/users/${konfiId}`)
@@ -394,10 +394,10 @@ describe('Users Routes', () => {
       }
     });
 
-    // Befund 24.08.2026, gegen Produktion nachgewiesen: Der Fremdschluessel
+    // Befund 24.08.2026, gegen Produktion nachgewiesen: Der Fremdschlüssel
     // user_certificates.user_id hat kein ON DELETE, und aufgeraeumt wurde nur
     // admin_id — also die verleihende, nicht die empfangende Seite. Wer je eine
-    // Urkunde bekommen hatte, liess sich damit gar nicht mehr loeschen.
+    // Urkunde bekommen hatte, liess sich damit gar nicht mehr löschen.
     it('Wer eine Urkunde bekommen hat, laesst sich trotzdem loeschen', async () => {
       const { rows: [typ] } = await db.query(
         `INSERT INTO certificate_types (name, organization_id) VALUES ('Konfi-Teamer:in', $1) RETURNING id`,
@@ -447,9 +447,9 @@ describe('Users Routes', () => {
     });
 
     // Der Fix vom 22.08.2026 lag nur in konfiDeletion.js (Selbstloeschung) und
-    // war nie in diese Route uebertragen: Wer als Teamer:in einen Termin
-    // angelegt oder jemandem einen Jahrgang zugewiesen hatte, war fuer die
-    // Leitung unloeschbar.
+    // war nie in diese Route übertragen: Wer als Teamer:in einen Termin
+    // angelegt oder jemandem einen Jahrgang zugewiesen hatte, war für die
+    // Leitung unlöschbar.
     it('Wer Termine angelegt und Jahrgaenge zugewiesen hat, laesst sich loeschen', async () => {
       const zukunft = new Date();
       zukunft.setDate(zukunft.getDate() + 7);

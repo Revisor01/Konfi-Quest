@@ -1,13 +1,13 @@
 // backend/tests/services/badgeUpdateService.test.js
 //
 // Der Hintergrunddienst tut zwei Dinge mit sehr verschiedenen Kosten:
-// den App-Icon-Zaehler setzen (billig, eine Bulk-Abfrage fuer alle) und die
-// Abzeichen pruefen (teuer, rund 24 Abfragen PRO PERSON).
+// den App-Icon-Zähler setzen (billig, eine Bulk-Abfrage für alle) und die
+// Abzeichen prüfen (teuer, rund 24 Abfragen PRO PERSON).
 //
 // Gemessen am 24.08.2026: 95 bis 292 ms je Person. Bei 82 Personen sind das
-// 5 Sekunden, bei 1000 waeren es rund drei Minuten — in einem
+// 5 Sekunden, bei 1000 wären es rund drei Minuten — in einem
 // Fuenf-Minuten-Takt liefe der Dienst sich selbst hinterher (63 Prozent
-// Dauerlast). Deshalb laeuft die Pruefung stuendlich und der Zaehler
+// Dauerlast). Deshalb läuft die Prüfung stündlich und der Zähler
 // weiterhin alle fuenf Minuten.
 //
 // Diese Tests halten die Trennung fest, damit sie nicht versehentlich
@@ -60,7 +60,7 @@ describe('Hintergrunddienst: Zaehler und Abzeichen-Pruefung sind getrennt', () =
 
     await BackgroundService.updateAllUserBadges(db, { nurZaehler: true });
 
-    // Die Abzeichen-Pruefung liest custom_badges — im Zaehler-Lauf darf das
+    // Die Abzeichen-Prüfung liest custom_badges — im Zähler-Lauf darf das
     // nicht vorkommen.
     expect(abfragen.some(q => /custom_badges/.test(q))).toBe(false);
   });

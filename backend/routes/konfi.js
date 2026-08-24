@@ -13,7 +13,7 @@ const { checkExistingBooking, getEventWithCounts, validateRegistrationWindow, de
 const { removeFromEventChat, addToEventChat } = require('../utils/eventChat');
 const { computeCurrentStreak } = require('../utils/streakCalculation');
 const { getKonfiBadgeProgress } = require('../utils/konfiBadgeProgress');
-// Single Source of Truth: welche Events zaehlen fuer Konfi-Badges (kein Pflicht/Konfirmation).
+// Single Source of Truth: welche Events zählen für Konfi-Badges (kein Pflicht/Konfirmation).
 const { KONFI_BADGE_EVENT_CONDITION } = require('../utils/badgeEventRule');
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -87,7 +87,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       const totalPoints = (konfi.gottesdienst_enabled ? (konfi.gottesdienst_points || 0) : 0)
                         + (konfi.gemeinde_enabled ? (konfi.gemeinde_points || 0) : 0);
 
-      // Performance (Audit Achse 4, Fund 8): Die folgenden Queries haengen alle NUR
+      // Performance (Audit Achse 4, Fund 8): Die folgenden Queries hängen alle NUR
       // vom bereits geladenen konfi-Objekt (bzw. dem daraus berechneten totalPoints)
       // ab, NICHT voneinander. Frueher liefen sie sequentiell (~9 Roundtrips in
       // Reihe, p95 ~1010ms). Jetzt gebuendelt in EIN Promise.all -> Latenz ~=
@@ -97,7 +97,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       // und existiert dauerhaft. Die ungenutzte bonus_points-Summe (bonusPointsTotal
       // floss nie in die Response) wurde ersatzlos gestrichen -> ein Roundtrip weniger.
 
-      // SQL-Konstanten fuer die parallelen Queries
+      // SQL-Konstanten für die parallelen Queries
       const badgeCountSql =
         'SELECT COUNT(*) as count FROM user_badges kb JOIN users u ON kb.user_id = u.id WHERE kb.user_id = $1 AND kb.organization_id = $2';
       const badgesSql = `
@@ -303,7 +303,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         section_order: sectionOrder || ['konfirmation', 'konfispruch', 'events', 'losung', 'badges', 'ranking']
       };
 
-      // Wrapped-Verfuegbarkeit (ueber wrapped_released_at auf Jahrgang) — bereits
+      // Wrapped-Verfuegbarkeit (über wrapped_released_at auf Jahrgang) — bereits
       // im Promise.all oben geladen.
       const has_wrapped = wrappedRes.rows[0]?.has_wrapped || false;
 
@@ -747,7 +747,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       });
 
       // Admin-Benachrichtigungen NACH der Antwort (Performance-Audit 10.08.):
-      // Der Push-Versand laeuft seriell ueber alle Admins und deren Geraete —
+      // Der Push-Versand läuft seriell über alle Admins und deren Geraete —
       // je Token ein FCM-Roundtrip. Lief das vor res.json(), wartete der Konfi
       // darauf (gemessen ~1,5 s p95 auf dem haeufigsten Antrags-Endpunkt).
       // Muster wie in routes/chat.js: Block in eine selbst aufgerufene
@@ -823,7 +823,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
     }
   });
 
-  // Upload photo for activity request (AES-256-GCM verschluesselt at-rest)
+  // Upload photo for activity request (AES-256-GCM verschlüsselt at-rest)
   // memoryStorage liefert req.file.buffer; wir validieren die Magic Bytes auf
   // dem Buffer, verschluesseln und schreiben dann erst auf die Platte.
   router.post('/upload-photo', verifyTokenRBAC, requestUpload.single('photo'), async (req, res) => {
@@ -836,7 +836,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         return res.status(400).json({ error: 'Kein Foto hochgeladen' });
       }
 
-      // Magic-Bytes-Pruefung direkt auf dem Buffer (nur echte Bilder zulassen)
+      // Magic-Bytes-Prüfung direkt auf dem Buffer (nur echte Bilder zulassen)
       const { fileTypeFromBuffer } = await import('file-type');
       const detected = await fileTypeFromBuffer(req.file.buffer);
       if (!detected || !detected.mime.startsWith('image/')) {
@@ -896,7 +896,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
       // Status-Gate: Konfi/Teamer (Eigentuemer) sehen das Nachweisfoto NUR
       // solange der Antrag offen ist. Nach Bearbeitung (verbucht/abgelehnt)
-      // bleibt das Foto allein fuer Admins sichtbar (eigene Admin-Route).
+      // bleibt das Foto allein für Admins sichtbar (eigene Admin-Route).
       if (!isAdmin && request.status !== 'pending') {
         return res.status(403).json({ error: 'Foto nach Bearbeitung nicht mehr verfügbar' });
       }
@@ -909,7 +909,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         return res.status(404).json({ error: 'Foto-Datei nicht gefunden' });
       }
 
-      // Datei lesen und (falls verschluesselt) entschluesseln, dann senden
+      // Datei lesen und (falls verschlüsselt) entschluesseln, dann senden
       const fileBuffer = await fs.promises.readFile(photoPath);
       let imageBuffer;
       try {
@@ -981,7 +981,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
     
     try {
       // Jahrgang-Config des Konfis: nur AKTIVIERTE Punkt-Typen anbieten, sonst
-      // koennte der Konfi eine Aktivitaet einreichen, die der Admin nie genehmigen
+      // könnte der Konfi eine Aktivität einreichen, die der Admin nie genehmigen
       // kann (Punkt-Typ im Jahrgang deaktiviert -> 400 beim Genehmigen).
       const { rows: [cfg] } = await db.query(
         `SELECT COALESCE(j.gottesdienst_enabled, true) AS gottesdienst_enabled,
@@ -1110,9 +1110,9 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         : "AND e.event_date >= NOW() - INTERVAL '1 year'";
 
       // Restrukturierte Query (Audit Achse 4, Fund 9):
-      // Keine Join-Explosion mehr ueber bookings/users/roles/categories.
+      // Keine Join-Explosion mehr über bookings/users/roles/categories.
       // Buchungs-Statistik und Wartelisten-Position als LATERAL-Aggregate,
-      // eigene Buchung als LEFT JOIN LATERAL mit LIMIT 1 — kein GROUP BY noetig.
+      // eigene Buchung als LEFT JOIN LATERAL mit LIMIT 1 — kein GROUP BY nötig.
       const query = `
         SELECT e.*,
                bstats.registered_count,
@@ -1159,10 +1159,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         INNER JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
         LEFT JOIN LATERAL (
           SELECT
-            -- Konfi-Sicht: registered_count UND waitlist_count zaehlen NUR
+            -- Konfi-Sicht: registered_count UND waitlist_count zählen NUR
             -- Konfis. Teamer haben ein eigenes Kontingent mit eigener
             -- Warteliste (Migration 120) — sie mitzuzaehlen liesse Plaetze und
-            -- Warteliste voll erscheinen, obwohl fuer Konfis noch frei ist,
+            -- Warteliste voll erscheinen, obwohl für Konfis noch frei ist,
             -- und die Anmeldung galt faelschlich als geschlossen.
             COUNT(*) FILTER (WHERE eb_all.status = 'confirmed' AND COALESCE(r_book.name, '') <> 'teamer') as registered_count,
             COUNT(*) FILTER (WHERE eb_all.status = 'waitlist' AND COALESCE(r_book.name, '') <> 'teamer') as waitlist_count,
@@ -1392,7 +1392,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         [konfiId]
       );
 
-      // Ist die Losung fuer diese Gemeinde abgeschaltet, gar nicht erst
+      // Ist die Losung für diese Gemeinde abgeschaltet, gar nicht erst
       // abrufen (Nutzerwunsch 23.08.2026). Vorher haing das allein am
       // Frontend — und dort prueften nicht alle Aufrufer den Schalter, sodass
       // trotz "aus" weiterhin die externe API befragt wurde.
@@ -1551,8 +1551,8 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
       // Get event details and current registration count (FOR UPDATE sperrt die Event-Zeile).
       // excludeTeamers: Konfi- und Teamer-Plaetze sind strikt getrennt (Migration
-      // 120). Ohne den Filter zaehlten angemeldete Teamer gegen das KONFI-
-      // Kontingent — ein Event mit 5 Konfi-Plaetzen und 3 Teamern haette nur noch
+      // 120). Ohne den Filter zählten angemeldete Teamer gegen das KONFI-
+      // Kontingent — ein Event mit 5 Konfi-Plaetzen und 3 Teamern hätte nur noch
       // 2 Konfis aufgenommen und danach faelschlich "ausgebucht" gemeldet.
       const event = await getEventWithCounts(client, eventId, req.user.organization_id, { excludeTeamers: true });
 
@@ -1621,7 +1621,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       const status = statusResult;
 
       // Register for event (with optional timeslot_id).
-      // organization_id MUSS gesetzt sein, sonst zaehlen Badge-Queries (event_count,
+      // organization_id MUSS gesetzt sein, sonst zählen Badge-Queries (event_count,
       // activity_count, ...) die Buchung nicht (sie filtern auf organization_id).
       const insertQuery = `
         INSERT INTO event_bookings (user_id, event_id, timeslot_id, status, booking_date, organization_id)
@@ -1703,9 +1703,9 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       }
       
       // Check if event exists and get event details.
-      // max_participants/has_timeslots werden fuer den Kapazitaetscheck beim
+      // max_participants/has_timeslots werden für den Kapazitaetscheck beim
       // Nachruecken gebraucht — fehlten sie hier, war max_participants
-      // undefined und es wurde IMMER nachgerueckt (auch ueber die Kapazitaet
+      // undefined und es wurde IMMER nachgerueckt (auch über die Kapazität
       // hinaus).
       const { rows: [event] } = await db.query(
         'SELECT name, event_date, max_participants, has_timeslots FROM events WHERE id = $1 AND organization_id = $2',
@@ -1733,7 +1733,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         [konfiId, eventId]
       );
 
-      // Auch aus dem Event-Chat entfernen. Fehlte hier bisher, waehrend die
+      // Auch aus dem Event-Chat entfernen. Fehlte hier bisher, während die
       // Teamer-Abmeldung es tat — Konfis blieben nach der Abmeldung im Chat
       // und konnten ihn nicht einmal manuell verlassen (Befund 24.08.2026).
       await removeFromEventChat(db, eventId, konfiId, req.user.organization_id);
@@ -1741,10 +1741,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       // Nachrücken von Warteliste wenn ein bestätigter Platz frei wird
       if (registration.status === 'confirmed') {
         try {
-          // Kapazitaet pruefen: Nur nachruecken wenn confirmedCount < maxCapacity.
-          // Bei Timeslot-Events gilt die SLOT-Kapazitaet (dort wird auch
-          // slot-genau nachgerueckt), sonst die Event-Kapazitaet.
-          // Teamer zaehlen NIE mit: sie haben ein eigenes Kontingent, und
+          // Kapazität prüfen: Nur nachruecken wenn confirmedCount < maxCapacity.
+          // Bei Timeslot-Events gilt die SLOT-Kapazität (dort wird auch
+          // slot-genau nachgerueckt), sonst die Event-Kapazität.
+          // Teamer zählen NIE mit: sie haben ein eigenes Kontingent, und
           // nachgerueckt wird hier ausschliesslich aus der Konfi-Warteliste.
           let maxCapacity = event.max_participants || 0;
           let confirmedCount = 0;
@@ -2007,13 +2007,13 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
     }
   });
 
-  // Gueltige Translation-Keys fuer den Konfispruch (deskriptiv, NICHT die Kuerzel
+  // Gueltige Translation-Keys für den Konfispruch (deskriptiv, NICHT die Kuerzel
   // aus PUT /bible-translation). Diese Werte landen in der DEDIZIERTEN Spalte
   // konfspruch_translation - getrennt von der Tageslosungs-Praeferenz bible_translation,
   // damit sich die beiden Features nicht gegenseitig ueberschreiben.
   const KONFSPRUCH_TRANSLATIONS = ['luther2017', 'bigs', 'gute_nachricht', 'elberfelder'];
 
-  // Kuratierte Konfsprueche fuer das Auswahl-Modal (org-gefiltert)
+  // Kuratierte Konfsprueche für das Auswahl-Modal (org-gefiltert)
   router.get('/konfsprueche', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
@@ -2083,7 +2083,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
             valid_translations: KONFSPRUCH_TRANSLATIONS
           });
         }
-        // Spruch muss existieren und fuer die Org sichtbar sein
+        // Spruch muss existieren und für die Org sichtbar sein
         const { rows: [spruch] } = await db.query(
           `SELECT id FROM konfsprueche
            WHERE id = $1 AND is_active = true
@@ -2093,7 +2093,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         if (!spruch) {
           return res.status(404).json({ error: 'Konfispruch nicht gefunden' });
         }
-        // Listen-Wahl setzen, Freitext loeschen (Exklusivitaet).
+        // Listen-Wahl setzen, Freitext löschen (Exklusivitaet).
         // konfspruch_translation ist die DEDIZIERTE Spalte - bible_translation (Tageslosung)
         // wird hier bewusst NICHT angefasst.
         await db.query(
@@ -2131,8 +2131,8 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         if (freitext.length > 1000) {
           return res.status(400).json({ error: 'Der Spruchtext ist zu lang' });
         }
-        // Freitext setzen, Listen-Wahl loeschen (Exklusivitaet).
-        // konfspruch_translation bleibt unveraendert (Freitext hat keine Uebersetzungs-Tabs).
+        // Freitext setzen, Listen-Wahl löschen (Exklusivitaet).
+        // konfspruch_translation bleibt unverändert (Freitext hat keine Uebersetzungs-Tabs).
         await db.query(
           `UPDATE konfi_profiles
            SET konfspruch_freitext = $1, konfspruch_freitext_referenz = $2,

@@ -50,7 +50,7 @@ describe('Jahrgaenge Routes', () => {
       // Org 1 hat 1 Jahrgang
       expect(res.body.length).toBe(1);
       expect(res.body[0].name).toBe(JAHRGAENGE.jahrgang1.name);
-      // Aggregierte Felder pruefen
+      // Aggregierte Felder prüfen
       expect(res.body[0].konfi_count).toBeDefined();
       // konfspruch_enabled wird pro Jahrgang geliefert (D-01)
       expect(res.body[0].konfspruch_enabled).toBe(true);
@@ -317,14 +317,14 @@ describe('Jahrgaenge Routes', () => {
         [newId]
       );
 
-      // Loeschung muss durchgehen (kein 409), trotz vorhandenem konfi_profiles.
+      // Löschung muss durchgehen (kein 409), trotz vorhandenem konfi_profiles.
       const res = await request(app)
         .delete(`/api/admin/jahrgaenge/${newId}`)
         .set('Authorization', `Bearer ${adminToken}`);
       expect(res.status).toBe(200);
 
       // WICHTIG: Profil bleibt ERHALTEN (Werte einsehbar), nur Jahrgang-Bindung
-      // geloest (jahrgang_id = NULL). Punkte unveraendert. User bleibt.
+      // gelöst (jahrgang_id = NULL). Punkte unverändert. User bleibt.
       const { rows: profiles } = await db.query(
         'SELECT jahrgang_id, gottesdienst_points, gemeinde_points FROM konfi_profiles WHERE user_id = 3'
       );
@@ -483,7 +483,7 @@ describe('Jahrgaenge Routes', () => {
       expect(konfi1Entry.konfspruch).not.toBeNull();
       expect(konfi1Entry.konfspruch.source).toBe('liste');
       expect(konfi1Entry.konfspruch.text).toBe('Der Herr ist mein Hirte.');
-      // konfi2 hat keinen Spruch gewaehlt
+      // konfi2 hat keinen Spruch gewählt
       expect(konfi2Entry).toBeDefined();
       expect(konfi2Entry.konfspruch).toBeNull();
     });
@@ -541,7 +541,7 @@ describe('Jahrgaenge Routes', () => {
         .mockResolvedValue({ success: true, messageId: 'test' });
       // Admin1 eine E-Mail-Adresse geben (Seed setzt keine)
       await db.query(`UPDATE users SET email = 'admin1@example.com' WHERE id = $1`, [USERS.admin1.id]);
-      // Konfirmations-Event fuer Jahrgang1 anlegen + zuordnen (is_konfirmation)
+      // Konfirmations-Event für Jahrgang1 anlegen + zuordnen (is_konfirmation)
       await db.query(
         `UPDATE events SET is_konfirmation = true WHERE id = $1`,
         [EVENTS.gottesdienstEvent.id]
@@ -586,7 +586,7 @@ describe('Jahrgaenge Routes', () => {
       const rows = args[4];
       expect(Array.isArray(rows)).toBe(true);
       expect(rows.length).toBeGreaterThan(0);
-      // jede Zeile traegt Name, Konfirmationstermin und Spruch-Feld
+      // jede Zeile trägt Name, Konfirmationstermin und Spruch-Feld
       expect(rows[0]).toHaveProperty('display_name');
       expect(rows[0]).toHaveProperty('konfirmation_date');
       expect(rows[0]).toHaveProperty('konfspruch');
@@ -629,7 +629,7 @@ describe('Jahrgaenge Routes', () => {
   // Mindestens eine Punktart muss aktiv bleiben (Befund 24.08.2026)
   //
   // Die Sperre existierte nur in der Oberflaeche. Per API liess sich ein
-  // Jahrgang erzeugen, in dem gar keine Punkte mehr vergeben werden koennen.
+  // Jahrgang erzeugen, in dem gar keine Punkte mehr vergeben werden können.
   // ================================================================
   describe('PUT /admin/jahrgaenge/:id — beide Punktarten aus', () => {
     it('beide zugleich abschalten -> 400', async () => {
@@ -646,7 +646,7 @@ describe('Jahrgaenge Routes', () => {
       await db.query('UPDATE jahrgaenge SET gottesdienst_enabled = false WHERE id = $1',
         [JAHRGAENGE.jahrgang1.id]);
 
-      // Nur gemeinde mitschicken: der Endzustand zaehlt, nicht die Eingabe.
+      // Nur gemeinde mitschicken: der Endzustand zählt, nicht die Eingabe.
       const res = await request(app)
         .put(`/api/admin/jahrgaenge/${JAHRGAENGE.jahrgang1.id}`)
         .set('Authorization', `Bearer ${adminToken}`)

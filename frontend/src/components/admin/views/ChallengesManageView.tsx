@@ -33,7 +33,7 @@ import { getChallengeBadgeIcon } from '../../konfi/views/ChallengesView';
 import type { AdminChallenge, ChallengeStatus, ChallengeMark } from '../../../types/challenges';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 
-// Gemeinsame Verwaltungs-Ansicht fuer Admin UND Teamer. Bewusst ohne eigenen
+// Gemeinsame Verwaltungs-Ansicht für Admin UND Teamer. Bewusst ohne eigenen
 // Datenzugriff: Laden/Modale liegen in der jeweiligen Seite, hier nur Darstellung
 // und Filter — so teilen sich AdminChallengesPage und TeamerChallengesPage
 // exakt dieselbe UI (keine Kopie).
@@ -43,7 +43,7 @@ interface ChallengesManageViewProps {
   onSelectChallenge: (challenge: AdminChallenge) => void;
   onEditChallenge: (challenge: AdminChallenge) => void;
   onDeleteChallenge: (challenge: AdminChallenge) => void;
-  // Fuer Card-Modal-Optik der Legende (Sheet ueber der Seite statt Vollbild).
+  // Für Card-Modal-Optik der Legende (Sheet über der Seite statt Vollbild).
   presentingElement?: HTMLElement | null;
   // Zusaetzlicher Inhalt DIREKT UNTER dem SectionHeader (Verwalten|Mitmachen der
   // Page) — gleiches Muster wie EventsView/RequestsView, damit der Switcher das
@@ -133,7 +133,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
   });
 
   // Offene Freigaben erscheinen NICHT mehr als vierte Kachel — die Anzeige
-  // laeuft ueber das Tab-Badge (BadgeContext, wie Chat) und den orangen
+  // läuft über das Tab-Badge (BadgeContext, wie Chat) und den orangen
   // Corner-Badge am jeweiligen Listeneintrag.
   // Reiter wie in der Konfi-Sicht (Nutzerwunsch 22.08.2026). Vorher standen
   // "Aktuelle Challenges" und "Archiv" untereinander — bei vielen beendeten
@@ -152,7 +152,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
   // Abschnitte statt Segment-Filter — laufend, Abzeichen, Archiv. Aktiv,
   // geplant und Entwurf stehen dabei in EINER Liste; welcher Status gilt,
   // sagt das Badge am Eintrag. Konfis sehen dieselben drei Abschnitte, dort
-  // enthaelt der erste nur Aktive (geplant/Entwurf liefert das Backend nicht).
+  // enthält der erste nur Aktive (geplant/Entwurf liefert das Backend nicht).
   const { current, planned, archived } = useMemo(() => {
     // Sortierung innerhalb der laufenden Liste: aktive zuerst, dann geplante,
     // zuletzt Entwuerfe; bei gleichem Status das juengste Startdatum oben.
@@ -165,12 +165,12 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
     return {
       // Aktuell: laufende Challenges und Entwuerfe — alles, woran gerade
       // gearbeitet wird. Geplante haben einen eigenen Reiter, weil sie einen
-      // anderen Blick verlangen: nicht "was laeuft", sondern "was kommt"
+      // anderen Blick verlangen: nicht "was läuft", sondern "was kommt"
       // (Nutzerwunsch 23.08.2026).
       current: challenges
         .filter((c) => ['active', 'draft'].includes(getChallengeStatus(c)))
         .sort(byStatusThenStart),
-      // Geplant: das naechste Startdatum oben.
+      // Geplant: das nächste Startdatum oben.
       planned: challenges
         .filter((c) => getChallengeStatus(c) === 'scheduled')
         .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime()),

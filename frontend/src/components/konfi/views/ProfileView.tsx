@@ -207,7 +207,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
   const [selectedTranslation, setSelectedTranslation] = useState<string>(profile.bible_translation || 'LUT');
   const [earnedBadgesCount, setEarnedBadgesCount] = useState<number>(0);
   // Anzahl der eigenen Challenge-Abzeichen (marks). Schlanker Zusatzabruf —
-  // faellt er aus, bleibt die Kachel bei 0 statt das Profil zu stoeren.
+  // fällt er aus, bleibt die Kachel bei 0 statt das Profil zu stoeren.
   const [challengeMarksCount, setChallengeMarksCount] = useState<number>(0);
   const { cacheLabel, clearMediaCache: handleClearMediaCache } = useMediaCacheControl();
   const [wrappedHistory, setWrappedHistory] = useState<WrappedHistoryEntry[]>([]);
@@ -255,7 +255,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     loadBadges();
   }, []);
 
-  // Challenge-Abzeichen zaehlen. Fehler bewusst still: die Kachel zeigt dann 0.
+  // Challenge-Abzeichen zählen. Fehler bewusst still: die Kachel zeigt dann 0.
   React.useEffect(() => {
     api.get('/challenges/konfi')
       .then(res => {
@@ -314,7 +314,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
           role: 'destructive',
           handler: async () => {
             // signOut() ist failsafe (kein throw, erzwingt intern clearAuth +
-            // setUser(null) -> Login-Route). Kein window.location-Reload noetig.
+            // setUser(null) -> Login-Route). Kein window.location-Reload nötig.
             await signOut();
           }
         }
@@ -435,7 +435,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         preset="konfis"
         // Bewusst nur DREI Kacheln: sechs Zahlen nebeneinander waren zu eng und
         // die Aufteilung (GD/Gemeinde/Bonus) steht ohnehin in der
-        // Punkte-Uebersicht weiter unten. Hier zaehlt der Ueberblick.
+        // Punkte-Übersicht weiter unten. Hier zählt der Ueberblick.
         stats={[
           { value: profile.total_points || 0, label: 'PUNKTE' },
           { value: earnedBadgesCount, label: 'BADGES' },

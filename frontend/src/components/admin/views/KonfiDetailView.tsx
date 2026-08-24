@@ -38,7 +38,7 @@ interface KonfiDetailViewProps {
   konfiId: number;
   onBack: () => void;
   // Im iPad-Split-View ist die Liste links dauerhaft sichtbar -> kein
-  // Zurueck-Button noetig.
+  // Zurück-Button nötig.
   hideBackButton?: boolean;
 }
 
@@ -216,7 +216,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
       setTargetRole(konfiData.role_name || 'konfi');
 
       // Teamer-Daten aus dem Detail-Response. IMMER setzen, auch auf leer:
-      // Vorher wurde nur bei vorhandenen Daten geschrieben, nie zurueckgesetzt —
+      // Vorher wurde nur bei vorhandenen Daten geschrieben, nie zurückgesetzt —
       // beim Wechsel zwischen zwei Personen blieben die Werte der vorigen
       // stehen (Teamer ohne Konfi-Zeit erbte die Historie des vorigen).
       if (konfiData.role_name === 'teamer') {

@@ -167,7 +167,7 @@ const TeamerProfilePage: React.FC = () => {
     infoBoxClass: 'app-info-box--teamer'
   });
 
-  // Account-Loeschung (D-01)
+  // Account-Löschung (D-01)
   const [presentDeleteAccount, dismissDeleteAccount] = useIonModal(DeleteAccountModal, {
     onClose: () => dismissDeleteAccount()
   });
@@ -211,7 +211,7 @@ const TeamerProfilePage: React.FC = () => {
           text: 'Abmelden',
           role: 'destructive',
           handler: async () => {
-            // signOut() ist failsafe -> garantiert zurueck zur Login-Route.
+            // signOut() ist failsafe -> garantiert zurück zur Login-Route.
             await signOut();
           }
         }

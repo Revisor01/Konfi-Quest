@@ -28,7 +28,7 @@ import {
   useIonViewWillEnter
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
-// useLocation bleibt fuer Query-Parameter Auswertung (React Router v5 API)
+// useLocation bleibt für Query-Parameter Auswertung (React Router v5 API)
 import {
   calendar,
   time,
@@ -83,7 +83,7 @@ import { Event } from '../../../types/event';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
 
-// Einmaliger Hinweis nach dem Tab-Umbau: die Aktivitaeten/Antraege sind aus
+// Einmaliger Hinweis nach dem Tab-Umbau: die Aktivitäten/Anträge sind aus
 // ihrem eigenen Tab in dieses Segment gewandert (analog zu Admin/Konfi).
 const UMZUG_HINWEIS_KEY = 'teamer_antraege_umzug_hinweis_gesehen';
 
@@ -145,7 +145,7 @@ const TeamerEventsPage: React.FC = () => {
     try {
       localStorage.setItem(UMZUG_HINWEIS_KEY, 'true');
     } catch {
-      // Speicher nicht verfuegbar — Hinweis erscheint dann beim naechsten Mal erneut.
+      // Speicher nicht verfuegbar — Hinweis erscheint dann beim nächsten Mal erneut.
     }
     setShowUmzugHinweis(false);
   };
@@ -246,8 +246,8 @@ const TeamerEventsPage: React.FC = () => {
   };
 
   // RequestsView verlangt diese Props, nutzt sie im teamerMode aber NICHT —
-  // Gottesdienst/Gemeinde gibt es bei Teamer-Aktivitaeten nicht. Deshalb
-  // bewusst neutral: wuerde die View sie eines Tages doch auswerten, stuende
+  // Gottesdienst/Gemeinde gibt es bei Teamer-Aktivitäten nicht. Deshalb
+  // bewusst neutral: wuerde die View sie eines Tages doch auswerten, stünde
   // hier kein falsches "Gemeinde".
   const getRequestTypeIcon = (_type: string) => ribbon;
   const getRequestTypeText = (_type: string) => 'Aktivität';
@@ -338,7 +338,7 @@ const TeamerEventsPage: React.FC = () => {
     }
   }, [selectedEvent?.id]);
 
-  // Zeitslots (samt Belegung + Warteliste) fuer ausgewaehltes Timeslot-Event laden
+  // Zeitslots (samt Belegung + Warteliste) für ausgewaehltes Timeslot-Event laden
   useEffect(() => {
     if (selectedEvent?.has_timeslots) {
       api.get(`/events/${selectedEvent.id}/timeslots`)
@@ -449,7 +449,7 @@ const TeamerEventsPage: React.FC = () => {
   // Status-Infos für Event-Karten
   const getEventStatusInfo = (event: Event) => {
     const isPastEvent = new Date(event.event_date) < new Date();
-    // Darf sich der Teamer hier ueberhaupt anmelden? Nur bei teamer_needed/teamer_only.
+    // Darf sich der Teamer hier überhaupt anmelden? Nur bei teamer_needed/teamer_only.
     const canRegister = !!(event.teamer_needed || event.teamer_only);
     const isOnWaitlist = event.booking_status === 'waitlist' || event.booking_status === 'pending';
 
@@ -512,7 +512,7 @@ const TeamerEventsPage: React.FC = () => {
       if (networkMonitor.isOnline) {
         const res = await api.post(`/events/${event.id}/book`);
         // Bei voller Buchung kann der Status confirmed ODER waitlist sein -
-        // fuer die Warteliste braucht der Teamer eine sichtbare Rueckmeldung.
+        // für die Warteliste braucht der Teamer eine sichtbare Rueckmeldung.
         if (res.data?.status === 'waitlist') {
           setSuccess('Du stehst auf der Warteliste. Wird ein Platz frei, rückst du automatisch nach.');
         }
@@ -572,8 +572,8 @@ const TeamerEventsPage: React.FC = () => {
     }
   };
 
-  // Status-Farben fuer SectionHeader — globale Tokens
-  // Darf sich ein Teamer zu diesem Event ueberhaupt anmelden? Nur bei
+  // Status-Farben für SectionHeader — globale Tokens
+  // Darf sich ein Teamer zu diesem Event überhaupt anmelden? Nur bei
   // teamer_needed/teamer_only. Reine Konfi-Events sieht der Teamer zwar (zur
   // Info), aber er kann sich NICHT anmelden -> nicht "offen" faerben.
   const teamerCanRegister = (event: Event): boolean => !!(event.teamer_needed || event.teamer_only);
@@ -637,9 +637,9 @@ const TeamerEventsPage: React.FC = () => {
   };
 
   // Event Detail Ansicht - 1:1 wie Konfi EventDetailView
-  // Detail-Ansicht als render-Funktion (statt frueher early-return), damit sie
+  // Detail-Ansicht als render-Funktion (statt früher early-return), damit sie
   // im iPad-Split-View NEBEN der Liste gerendert werden kann.
-  // hideBackButton blendet den Zurueck-Button im Split-View aus (Liste sichtbar).
+  // hideBackButton blendet den Zurück-Button im Split-View aus (Liste sichtbar).
   const renderDetail = (hideBackButton?: boolean) => {
     if (!selectedEvent) return null;
     const isPast = new Date(selectedEvent.event_date) < new Date();
@@ -679,7 +679,7 @@ const TeamerEventsPage: React.FC = () => {
           {/* SectionHeader mit Status-Farben */}
           {(() => {
             const konfiCount = selectedEvent.registered_count - (selectedEvent.teamer_count || 0);
-            // Punkte-Kachel nur, wenn es ueberhaupt Punkte gibt — dieselbe
+            // Punkte-Kachel nur, wenn es überhaupt Punkte gibt — dieselbe
             // Bedingung wie die Punkte-Zeile weiter unten. Bei Terminen nur
             // fuers Team, Pflichtterminen und Konfirmationen stand hier sonst
             // "0 Punkte" (User-Hinweis 11.08.).
@@ -1120,7 +1120,7 @@ const TeamerEventsPage: React.FC = () => {
     </>
   );
 
-  // Events-Liste als render-Funktion (frueher early-return).
+  // Events-Liste als render-Funktion (früher early-return).
   const renderList = () => (
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
@@ -1292,7 +1292,7 @@ const TeamerEventsPage: React.FC = () => {
                 const showBadge = !isPastEvent || event.is_registered;
 
                 // Kein IonItemSliding: es gab hier nie IonItemOptions, das Item
-                // liess sich also anwischen und federte wirkungslos zurueck —
+                // liess sich also anwischen und federte wirkungslos zurück —
                 // das wirkt kaputt (Audit 10.08.).
                 return (
                     <IonItem

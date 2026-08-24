@@ -4,16 +4,16 @@ import api from '../services/api';
 import { getChallengeStatus } from '../components/admin/views/ChallengesManageView';
 import type { AdminChallenge } from '../types/challenges';
 
-// Gemeinsame Loesch-Logik fuer Admin- und Teamer-Challenges-Seite (identischer
+// Gemeinsame Loesch-Logik für Admin- und Teamer-Challenges-Seite (identischer
 // Bestaetigungsdialog und identische Backend-Anfrage in beiden Seiten -> hier
 // einmal zusammengefasst statt dupliziert).
 //
-// Entwuerfe koennen ohne Weiteres weg. Alles, was schon laeuft oder lief,
-// haengt an echten Beitraegen von Konfis -> destruktive Nachfrage mit
-// force=true (Backend loescht dann auch hochgeladene Dateien mit).
+// Entwuerfe können ohne Weiteres weg. Alles, was schon läuft oder lief,
+// hängt an echten Beitraegen von Konfis -> destruktive Nachfrage mit
+// force=true (Backend löscht dann auch hochgeladene Dateien mit).
 
 interface UseChallengeDeleteOptions {
-  /** Wird nach erfolgreichem Loeschen gerufen, um die Liste neu zu laden. */
+  /** Wird nach erfolgreichem Löschen gerufen, um die Liste neu zu laden. */
   onDeleted: () => void | Promise<void>;
 }
 

@@ -86,7 +86,7 @@ describe('networkMonitor', () => {
     // 'unknown' optimistisch online bleiben. Manche Plattformen (Android-
     // Emulator, Google-Play-Review-Umgebung) melden connected=false, obwohl
     // Netz da ist — ein faelschliches Offline blockt sonst den Login vor dem
-    // ersten Request und fuehrte zu Play-Rejections. Ein echter Fehler faellt
+    // ersten Request und fuehrte zu Play-Rejections. Ein echter Fehler fällt
     // ohnehin in den Request-Fehler-Handler.
     const { Capacitor } = await import('@capacitor/core');
     (Capacitor.isNativePlatform as any).mockReturnValue(true);

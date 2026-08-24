@@ -140,7 +140,7 @@ describe('Roles Routes', () => {
       expect(roleNames).toContain('admin');
       expect(roleNames).toContain('teamer');
       expect(roleNames).toContain('konfi');
-      // OrgAdmin sollte org_admin NICHT zuweisen koennen
+      // OrgAdmin sollte org_admin NICHT zuweisen können
       expect(roleNames).not.toContain('org_admin');
     });
 

@@ -81,7 +81,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
 
       // Jahrgangs-Chat sofort anlegen + Mitglieder synchronisieren (Org-Admins,
       // zugewiesene Admins/Teamer, Konfis). Frueher entstand der Chat erst lazy
-      // beim ersten Chat-Tab-Aufruf eines Konfis — neue Orgs/Jahrgaenge hatten
+      // beim ersten Chat-Tab-Aufruf eines Konfis — neue Orgs/Jahrgänge hatten
       // dadurch gar keinen Chat. Fehler hier darf die Anlage nicht scheitern lassen.
       try {
         await syncJahrgangChat(db, newJahrgang.id, req.user.organization_id, req.user.id);
@@ -145,11 +145,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
 
       // Das Konfirmationsdatum wird ab Phase 119 (D-04) nicht mehr beschrieben/erzwungen.
       // konfspruch_enabled via COALESCE: ein nicht uebergebenes Feld laesst den
-      // bestehenden Wert unveraendert.
+      // bestehenden Wert unverändert.
       // Mindestens eine Punktart muss aktiv bleiben. Die Oberflaeche sperrt den
       // jeweils letzten Schalter (AdminJahrgaengeePage.tsx:324/356), der Server
       // tat es bisher nicht — per API liess sich ein Jahrgang erzeugen, in dem
-      // gar keine Punkte mehr vergeben werden koennen (pointTypeGuard blockt
+      // gar keine Punkte mehr vergeben werden können (pointTypeGuard blockt
       // dann beide Arten). Geprueft wird der ENDZUSTAND, nicht die Eingabe:
       // nicht mitgeschickte Felder behalten ihren bisherigen Wert.
       const endzustandGottesdienst = gottesdienst_enabled !== undefined
@@ -207,7 +207,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       // Blockieren NUR AKTIVE Konfis (Rolle = konfi). Beförderte Ex-Konfis
       // (jetzt teamer/admin) behalten beim Befördern bewusst ihr konfi_profiles
       // (Punkte-Historie), sind aber keine aktiven Konfis mehr und duerfen die
-      // Loeschung NICHT blockieren. Ihre (verwaisten) Profile werden unten vor
+      // Löschung NICHT blockieren. Ihre (verwaisten) Profile werden unten vor
       // dem Jahrgang-Delete entfernt (User + Badges + Historie bleiben).
       const checkKonfisQuery = `
         SELECT COUNT(*)::int as count
@@ -285,12 +285,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       }
 
       // konfi_profiles beförderter Ex-Konfis (Rolle != konfi) werden vom Jahrgang
-      // GELOEST (jahrgang_id = NULL), NICHT geloescht. Sonst blockiert der
+      // GELOEST (jahrgang_id = NULL), NICHT gelöscht. Sonst blockiert der
       // NO-ACTION-FK konfi_profiles.jahrgang_id den Jahrgang-Delete. WICHTIG:
       // Die WERTE des beförderten Konfis (gottesdienst_points/gemeinde_points,
       // current_level_id, konfspruch_*) stehen IN konfi_profiles -> das Profil
-      // MUSS erhalten bleiben, damit er seine Werte spaeter noch einsehen kann.
-      // Nur die Bindung an den geloeschten Jahrgang faellt weg.
+      // MUSS erhalten bleiben, damit er seine Werte später noch einsehen kann.
+      // Nur die Bindung an den geloeschten Jahrgang fällt weg.
       await db.query(`
         UPDATE konfi_profiles kp
         SET jahrgang_id = NULL
@@ -368,10 +368,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
   });
 
   // ------------------------------------------------------------------
-  // Hilfsfunktionen fuer die Konfispruch-Liste + den Konfirmationstermin
+  // Hilfsfunktionen für die Konfispruch-Liste + den Konfirmationstermin
   // ------------------------------------------------------------------
 
-  // Loest fuer jeden Konfi eines Jahrgangs den gewaehlten Konfispruch auf
+  // Loest für jeden Konfi eines Jahrgangs den gewaehlten Konfispruch auf
   // (Listen-Wahl ODER Freitext, genau wie der Builder in konfi.js:486-522).
   // WICHTIG (W1): Die Uebersetzung kommt aus der DEDIZIERTEN Spalte
   // kp.konfspruch_translation (NICHT kp.bible_translation -- das ist die
@@ -482,7 +482,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       );
       if (!jahrgang) return res.status(404).json({ error: 'Jahrgang nicht gefunden' });
 
-      // E-Mail-Adresse der Admin:in laden (req.user enthaelt KEINE email -> aus users-Tabelle).
+      // E-Mail-Adresse der Admin:in laden (req.user enthält KEINE email -> aus users-Tabelle).
       const { rows: [adminRow] } = await db.query(
         'SELECT display_name, email FROM users WHERE id = $1',
         [req.user.id]

@@ -1,4 +1,4 @@
-// backend/tests/helpers/auth.js — Token-Factory fuer alle RBAC-Rollen
+// backend/tests/helpers/auth.js — Token-Factory für alle RBAC-Rollen
 // Per D-10: RBAC wird NIEMALS gemockt. Tokens enthalten echte User-IDs aus dem Seed.
 const jwt = require('jsonwebtoken');
 const { USERS } = require('./seed');
@@ -6,7 +6,7 @@ const { USERS } = require('./seed');
 const JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key-for-vitest';
 
 /**
- * Generiert einen gueltigen JWT fuer einen Seed-User.
+ * Generiert einen gueltigen JWT für einen Seed-User.
  * Token-Payload identisch mit Produktion (auth.js + rbac.js).
  *
  * @param {string} userKey - Key aus USERS (z.B. 'konfi1', 'admin1', 'superAdmin')
@@ -27,9 +27,9 @@ function generateToken(userKey, expiresIn = '1h') {
 }
 
 /**
- * Wie generateToken, aber mit zurueckdatiertem iat — fuer Tests, die eine
- * BESTEHENDE Sitzung nachstellen muessen (z.B. Soft-Revoke nach Passwort-
- * wechsel). Die Pruefung in rbac.js vergleicht iat sekundengenau gegen
+ * Wie generateToken, aber mit zurueckdatiertem iat — für Tests, die eine
+ * BESTEHENDE Sitzung nachstellen müssen (z.B. Soft-Revoke nach Passwort-
+ * wechsel). Die Prüfung in rbac.js vergleicht iat sekundengenau gegen
  * users.token_invalidated_at; ein frisch erzeugtes Token laege in derselben
  * Sekunde wie die Invalidierung und wuerde die Sekundengrenze testen statt
  * die Sperre.
@@ -55,7 +55,7 @@ function generateTokenMitAlter(userKey, alterSekunden = 60) {
 }
 
 /**
- * Generiert Tokens fuer alle Seed-Users.
+ * Generiert Tokens für alle Seed-Users.
  * @returns {Object} { konfi1: 'token...', admin1: 'token...', ... }
  */
 function getAllTokens() {

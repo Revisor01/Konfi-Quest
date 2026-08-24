@@ -81,7 +81,7 @@ describe('Notifications Routes', () => {
         .set('Authorization', `Bearer ${konfiToken}`)
         .send({ token: 'fcm-same-token', platform: 'ios', device_id: 'vendor-id-alt' });
 
-      // Neuinstallation: identifierForVendor hat sich geaendert, FCM-Token blieb gleich
+      // Neuinstallation: identifierForVendor hat sich geändert, FCM-Token blieb gleich
       const res = await request(app)
         .post('/api/notifications/device-token')
         .set('Authorization', `Bearer ${konfiToken}`)
@@ -148,7 +148,7 @@ describe('Notifications Routes', () => {
         .set('Authorization', `Bearer ${konfiToken}`)
         .send({ token: 'fcm-to-delete', platform: 'android', device_id: 'device-del' });
 
-      // Dann loeschen
+      // Dann löschen
       const res = await request(app)
         .delete('/api/notifications/device-token')
         .set('Authorization', `Bearer ${konfiToken}`)
@@ -219,7 +219,7 @@ describe('Notifications Routes', () => {
         .send({ message: 'Test Push' });
 
       expect(res.status).toBe(200);
-      // Entweder Tokens gesendet oder Fehler gezaehlt, aber kein 500
+      // Entweder Tokens gesendet oder Fehler gezählt, aber kein 500
       expect(res.body.total).toBe(1);
     });
   });
@@ -297,13 +297,13 @@ describe('Notifications Routes', () => {
 
   // ================================================================
   // GET /api/notifications/badge-counts (Audit Achse 4, Fund 3)
-  // Leichtgewichtiger Zaehler-Endpoint, ersetzt die frueheren Voll-Fetches
+  // Leichtgewichtiger Zähler-Endpoint, ersetzt die frueheren Voll-Fetches
   // im BadgeContext. Semantik muss den Listen-Ansichten entsprechen.
   // ================================================================
   describe('GET /api/notifications/badge-counts', () => {
     it('Konfi bekommt unread pro Raum + Gesamt (Seed: konfi1 in Raum 1 und 2)', async () => {
       // 2 Nachrichten von admin1 in Raum 1, 1 Nachricht in Raum 2 — kein
-      // read_status fuer konfi1 -> alles ungelesen.
+      // read_status für konfi1 -> alles ungelesen.
       await db.query(
         `INSERT INTO chat_messages (room_id, user_id, user_type, content) VALUES
          (1, $1, 'admin', 'Nachricht 1'), (1, $1, 'admin', 'Nachricht 2'), (2, $1, 'admin', 'Nachricht 3')`,
@@ -318,7 +318,7 @@ describe('Notifications Routes', () => {
       expect(res.body.chat.total).toBe(3);
       expect(res.body.chat.byRoom['1']).toBe(2);
       expect(res.body.chat.byRoom['2']).toBe(1);
-      // Konfi bekommt keine Admin-Zaehler
+      // Konfi bekommt keine Admin-Zähler
       expect(res.body.pendingRequests).toBe(0);
       expect(res.body.pendingEvents).toBe(0);
     });
@@ -344,7 +344,7 @@ describe('Notifications Routes', () => {
     });
 
     it('Admin bekommt pending-Antraege und unverarbeitete vergangene Events', async () => {
-      // Pending-Antrag von konfi1 auf Aktivitaet 1 (Org 1)
+      // Pending-Antrag von konfi1 auf Aktivität 1 (Org 1)
       await db.query(
         `INSERT INTO activity_requests (user_id, activity_id, status, organization_id, requested_date)
          VALUES ($1, 1, 'pending', 1, CURRENT_DATE)`,
@@ -375,7 +375,7 @@ describe('Notifications Routes', () => {
          VALUES ($1, 1, 'approved', 1, CURRENT_DATE)`,
         [USERS.konfi1.id]
       );
-      // Seed-Events liegen alle in der Zukunft; Buchung ohne attendance zaehlt
+      // Seed-Events liegen alle in der Zukunft; Buchung ohne attendance zählt
       // trotzdem nicht, weil event_date > NOW().
       await db.query(
         `INSERT INTO event_bookings (user_id, event_id, status, organization_id)

@@ -15,12 +15,12 @@ test.describe('Punkte-Vergabe', () => {
     await konfiItem.waitFor({ state: 'visible', timeout: 10_000 });
     await konfiItem.click();
 
-    // 4. Konfi-Detailseite: "Aktivitaet hinzufuegen" Button klicken
+    // 4. Konfi-Detailseite: "Aktivität hinzufuegen" Button klicken
     const addActivityBtn = page.locator('ion-button', { hasText: /Aktivit.t hinzuf.gen/i });
     await addActivityBtn.waitFor({ state: 'visible', timeout: 10_000 });
     await addActivityBtn.click();
 
-    // 5. ActivityModal: Sonntagsgottesdienst auswaehlen
+    // 5. ActivityModal: Sonntagsgottesdienst auswählen
     //    Modal zeigt IonList mit Activities — klicke auf das Item
     const activityItem = page.locator('ion-item, ion-card', { hasText: /Sonntagsgottesdienst/i });
     await activityItem.waitFor({ state: 'visible', timeout: 10_000 });
@@ -30,19 +30,19 @@ test.describe('Punkte-Vergabe', () => {
     const submitBtn = page.locator('.app-modal-submit-btn--activities');
     await submitBtn.click();
 
-    // 7. Warten auf Erfolgsmeldung oder Modal schliesst sich
+    // 7. Warten auf Erfolgsmeldung oder Modal schließt sich
     await page.waitForTimeout(2_000);
 
     // 8. Abmelden und als Konfi einloggen
     await page.goto('/login');
     await loginAs(page, 'konfi1');
 
-    // 9. Konfi-Dashboard pruefen (Route: /konfi/dashboard)
+    // 9. Konfi-Dashboard prüfen (Route: /konfi/dashboard)
     await expect(page).toHaveURL(/\/konfi\/dashboard/);
     await expect(page.locator('ion-content')).toBeVisible();
 
-    // 10. Punkte muessen sichtbar sein — mindestens "1" Gottesdienst-Punkt
-    //     (Bonus-Punkte aus Seed: 3 GP, plus 1 aus Aktivitaet = mindestens 1 sichtbar)
+    // 10. Punkte müssen sichtbar sein — mindestens "1" Gottesdienst-Punkt
+    //     (Bonus-Punkte aus Seed: 3 GP, plus 1 aus Aktivität = mindestens 1 sichtbar)
     const content = page.locator('ion-content');
     await expect(content).toContainText(/[1-9]/);
   });

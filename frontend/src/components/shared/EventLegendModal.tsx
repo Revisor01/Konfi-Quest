@@ -25,7 +25,7 @@ interface LegendEntry {
   variants: EventLegendVariant[];
 }
 
-// Status-Legende fuer Events. Farbe UND Icon muessen mit den EventsViews
+// Status-Legende für Events. Farbe UND Icon müssen mit den EventsViews
 // uebereinstimmen (gleiche --app-color-Tokens, Icons aus StatusBadge-Map).
 // Reihenfolge: erst "Zusatz-Marker" (Team/Konfirmation/Pflicht als Eck-Badges),
 // dann die eigentlichen Status-Farben des Balkens.

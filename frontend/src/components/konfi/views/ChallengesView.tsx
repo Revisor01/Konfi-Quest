@@ -73,9 +73,9 @@ import { EmptyState, SectionHeader } from '../../shared';
 import type { KonfiChallenge, ChallengeMark } from '../../../types/challenges';
 
 // Icon-Vorrat der Challenge-Abzeichen. Bewusst als eigene, schlanke Map hier —
-// der Admin-Auswahldialog (ChallengeManageModal) haelt denselben Schluessel-
+// der Admin-Auswahldialog (ChallengeManageModal) haelt denselben Schlüssel-
 // Vorrat, aber ihn zu importieren wuerde das komplette Verwaltungs-Modal in das
-// Konfi-Bundle ziehen. Schluessel muessen mit dem Admin-Vorrat uebereinstimmen.
+// Konfi-Bundle ziehen. Schlüssel müssen mit dem Admin-Vorrat uebereinstimmen.
 const CHALLENGE_BADGE_ICONS: Record<string, string> = {
   flag, sparkles, compass, rocket, flame,
   trophy, medal, ribbon, star, checkmarkCircle, diamond, shield,
@@ -92,7 +92,7 @@ const CHALLENGE_BADGE_ICONS: Record<string, string> = {
 export const getChallengeBadgeIcon = (iconName?: string | null): string =>
   CHALLENGE_BADGE_ICONS[iconName || ''] || flag;
 
-// Konfi-Sicht der Challenges. Bewusst OHNE Zaehler/Fortschritt/Rangliste — der
+// Konfi-Sicht der Challenges. Bewusst OHNE Zähler/Fortschritt/Rangliste — der
 // Kern des Features ist die eigene Deutung, nicht die Menge (siehe Konzept).
 // Aufbau immer: (1) aktive Challenges als grosse Karten, (2) eigene Abzeichen
 // als Icon-Reihe, (3) Archiv.
@@ -143,9 +143,9 @@ const formatDate = (value?: string | null): string => {
 
 /**
  * Laufzeitraum einer beendeten Challenge: "14.07. – 21.07.2026". Liegt der
- * Start im selben Jahr wie das Ende, faellt das Jahr beim Start weg — nur
- * das Enddatum traegt es dann. Bei fehlendem/ungueltigem Start faellt die
- * Funktion auf das reine Enddatum zurueck.
+ * Start im selben Jahr wie das Ende, fällt das Jahr beim Start weg — nur
+ * das Enddatum trägt es dann. Bei fehlendem/ungueltigem Start fällt die
+ * Funktion auf das reine Enddatum zurück.
  */
 const formatDateRange = (startValue?: string | null, endValue?: string | null): string => {
   const end = formatDate(endValue);

@@ -1,6 +1,6 @@
 // backend/tests/utils/photoCrypto.test.js
-// Unit-Tests fuer die AES-256-GCM-Verschluesselung der Antrags-Nachweisfotos.
-// Reine Funktion ohne DB. Der Schluessel wird vor dem Require gesetzt.
+// Unit-Tests für die AES-256-GCM-Verschluesselung der Antrags-Nachweisfotos.
+// Reine Funktion ohne DB. Der Schlüssel wird vor dem Require gesetzt.
 
 // 32-Byte-Testschluessel (64 Hex). Muss vor dem ersten getKey()-Aufruf stehen.
 process.env.ACTIVITY_PHOTO_ENCRYPTION_KEY =

@@ -18,11 +18,11 @@ export default defineConfig({
       // UTC wie in CI und in den Prod-/Staging-Containern: event_date ist eine
       // naive TIMESTAMP-Spalte — liest der pg-Treiber sie in einer anderen
       // Prozess-Zeitzone (z.B. Europe/Berlin lokal), verschiebt sich der Wert
-      // beim Roundtrip und der Aenderungs-Vergleich im Events-PUT schlaegt an.
+      // beim Roundtrip und der Aenderungs-Vergleich im Events-PUT schlägt an.
       TZ: 'UTC',
       JWT_SECRET: 'test-secret-key-for-vitest',
       QR_SECRET: 'test-qr-secret-for-vitest',
-      // 64 Hex-Zeichen (32 Byte) — fester Testschluessel fuer Medien-Verschluesselung
+      // 64 Hex-Zeichen (32 Byte) — fester Testschluessel für Medien-Verschluesselung
       ACTIVITY_PHOTO_ENCRYPTION_KEY: '0000000000000000000000000000000000000000000000000000000000000000',
       NODE_ENV: 'test',
       TEST_DATABASE_URL: process.env.TEST_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5433/postgres',

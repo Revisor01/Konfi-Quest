@@ -1,5 +1,5 @@
 // backend/utils/konfiBadgeProgress.js
-// Berechnet fuer EINEN Konfi (beliebige user_id in einer Organisation) die
+// Berechnet für EINEN Konfi (beliebige user_id in einer Organisation) die
 // vollstaendige Badge-Liste inkl. Fortschritt — identisch zur Anzeige, die der
 // Konfi selbst unter GET /konfi/badges sieht.
 //
@@ -8,15 +8,15 @@
 // wie die Konfi-App — EINE Quelle statt zweier auseinanderlaufender Kopien.
 //
 // KONSISTENZ-VERTRAG: Die Zaehl-Semantik jeder Query bleibt identisch zur
-// Wertung in badges.js (checkAndAwardBadges). Progress und Vergabe muessen
-// exakt gleich zaehlen, sonst zeigt die App 10/10 ohne dass der Badge kommt.
+// Wertung in badges.js (checkAndAwardBadges). Progress und Vergabe müssen
+// exakt gleich zählen, sonst zeigt die App 10/10 ohne dass der Badge kommt.
 
 const { computeCurrentStreak } = require('./streakCalculation');
 const { KONFI_BADGE_EVENT_CONDITION } = require('./badgeEventRule');
 
-// Ermittelt Badges (earned + available + Fortschritt) fuer einen Konfi.
+// Ermittelt Badges (earned + available + Fortschritt) für einen Konfi.
 // Erwartet: db (pg Pool), konfiId (users.id), organizationId.
-// Gibt { available, earned, stats } zurueck — dasselbe Shape wie GET /konfi/badges.
+// Gibt { available, earned, stats } zurück — dasselbe Shape wie GET /konfi/badges.
 async function getKonfiBadgeProgress(db, konfiId, organizationId) {
   // Der to_regclass-Legacy-Check auf custom_badges wurde entfernt (Audit
   // 10.08.): Die Tabelle ist seit Migration 076/090 der aktive Badge-Pfad und
@@ -31,9 +31,9 @@ async function getKonfiBadgeProgress(db, konfiId, organizationId) {
            COALESCE(kb.seen, false) as seen
     FROM custom_badges cb
     LEFT JOIN user_badges kb ON cb.id = kb.badge_id AND kb.user_id = $1 AND kb.organization_id = $2
-    -- Verdiente Abzeichen bleiben, auch wenn die Leitung sie spaeter
+    -- Verdiente Abzeichen bleiben, auch wenn die Leitung sie später
     -- abschaltet (etwa zum Saisonende): Sonst verschwaende ein einmal
-    -- erreichtes Abzeichen aus der Ansicht, waehrend die Zaehler auf dem
+    -- erreichtes Abzeichen aus der Ansicht, während die Zähler auf dem
     -- Dashboard es weiter mitzaehlen — die Zahlen widersprechen dann der
     -- Liste. Der Teamer-Pfad macht es seit jeher so (teamer.js:282),
     -- der Konfi-Pfad nicht (Befund 24.08.2026).
@@ -115,7 +115,7 @@ async function getKonfiBadgeProgress(db, konfiId, organizationId) {
       [konfiId, organizationId]
     ),
     db.query(
-      // target_role gehoert dazu: Ohne den Filter zaehlten die Teamer-Abzeichen
+      // target_role gehört dazu: Ohne den Filter zählten die Teamer-Abzeichen
       // in der Konfi-Statistik mit. In Org 1 standen so 56 statt 50, der
       // Fortschritt wirkte dauerhaft schlechter als er war (Befund 24.08.2026).
       `SELECT
@@ -147,7 +147,7 @@ async function getKonfiBadgeProgress(db, konfiId, organizationId) {
   const activityNameCounts = new Map(activityNameCountsRes.rows.map(r => [r.name, parseInt(r.count)]));
 
   // Ein Abzeichen ohne hinterlegte Bedingung kann niemand erreichen: Die
-  // Wertung prueft required_activity_name bzw. required_activities, und ohne
+  // Wertung prüft required_activity_name bzw. required_activities, und ohne
   // die passiert schlicht nichts. In Org 1 standen so zehn aktive Abzeichen,
   // von denen keines je vergeben wurde (Befund 24.08.2026). Sie tauchen jetzt
   // nicht mehr unter "erreichbar" auf, statt Konfis raetseln zu lassen.

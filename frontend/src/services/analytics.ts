@@ -10,27 +10,27 @@
  * Organisation, keine Beitragsinhalte, keine Chat-Nachrichten. Die Nutzenden
  * sind ueberwiegend minderjaehrig — die Zahlen sollen zeigen, was die App
  * taugt, nicht was einzelne Personen tun. Bewusst auch KEINE Organisation:
- * bei einer Gemeinde mit drei Teamern waere das faktisch personenbezogen.
+ * bei einer Gemeinde mit drei Teamern wäre das faktisch personenbezogen.
  *
  * Umami setzt keine Cookies und speichert keine IP-Adressen; die Zuordnung
- * einer Sitzung passiert serverseitig ueber einen taeglich wechselnden Hash.
+ * einer Sitzung passiert serverseitig über einen täglich wechselnden Hash.
  *
- * In der nativen App gibt es keine Domain, an der das Umami-Script haengen
- * koennte — deshalb sprechen wir die /api/send-Schnittstelle direkt an.
+ * In der nativen App gibt es keine Domain, an der das Umami-Script hängen
+ * könnte — deshalb sprechen wir die /api/send-Schnittstelle direkt an.
  *
  * ACHTUNG bei der Fehlersuche: Umami antwortet auf JEDE Anfrage mit HTTP 200,
  * verwirft sie aber still, wenn der User-Agent nicht nach einem echten Browser
  * aussieht (Bot-Filter). Ein erfolgreicher curl-Test ohne Browser-User-Agent
  * beweist also gar nichts — nachsehen, ob das Ereignis wirklich in
  * `website_event` steht. Aus der App heraus liefert der WebView einen echten
- * User-Agent, dort greift der Filter nicht (geprueft 10.08.2026).
+ * User-Agent, dort greift der Filter nicht (geprüft 10.08.2026).
  */
 
 const UMAMI_URL = 'https://t.godsapp.de/api/send';
 const WEBSITE_ID = '72da966c-4b34-41f8-9dbe-e7fb7397f6d6';
 
 // Rolle der aktuellen Sitzung. Wird beim Login gesetzt und ist die EINZIGE
-// Eigenschaft, die etwas ueber die Person aussagt — bewusst grob gehalten.
+// Eigenschaft, die etwas über die Person aussagt — bewusst grob gehalten.
 let aktuelleRolle: string | null = null;
 
 // Messung abschaltbar (z.B. Entwicklung), ohne alle Aufrufe anzufassen.
@@ -86,21 +86,21 @@ export function track(ereignis: string, daten?: Record<string, string | number |
 /**
  * Sitzungsbeginn als Seitenaufruf melden.
  *
- * WARUM DAS NOETIG IST: Umami zaehlt Besucher und Sitzungen ausschliesslich
- * ueber SEITENAUFRUFE. Wir haben anfangs nur benannte Ereignisse gesendet —
+ * WARUM DAS NOETIG IST: Umami zählt Besucher und Sitzungen ausschliesslich
+ * über SEITENAUFRUFE. Wir haben anfangs nur benannte Ereignisse gesendet —
  * die kamen alle an, aber das Dashboard zeigte 0 Besucher und 0 Seitenaufrufe,
- * weil dort nichts zu zaehlen war (nachgesehen 11.08.: 130 Ereignisse, 0
+ * weil dort nichts zu zählen war (nachgesehen 11.08.: 130 Ereignisse, 0
  * Seitenaufrufe).
  *
  * WIE EIN SEITENAUFRUF GESENDET WIRD: als `type: 'event'` OHNE `name`.
  * Das ist der Unterschied — mit `name` wird daraus ein benanntes Ereignis
  * (event_type=2), ohne `name` ein Seitenaufruf (event_type=1). Ein
  * `type: 'pageview'` lehnt diese Umami-Version mit HTTP 400 ab; erlaubt sind
- * nur 'event', 'identify' und 'performance' (am Server geprueft 11.08.).
+ * nur 'event', 'identify' und 'performance' (am Server geprüft 11.08.).
  *
- * Ein Aufruf je Sitzung genuegt; die Ereignisse haengen sich ueber die
+ * Ein Aufruf je Sitzung genuegt; die Ereignisse hängen sich über die
  * Session daran. Bewusst dieselbe feste URL wie bei den Ereignissen — echte
- * Routen koennen Namen oder IDs enthalten.
+ * Routen können Namen oder IDs enthalten.
  */
 export function trackSitzungsstart(): void {
   if (!AKTIV) return;

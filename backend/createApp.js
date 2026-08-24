@@ -1,6 +1,6 @@
 // --- START OF FILE createApp.js ---
 // Express-App Factory ohne Seiteneffekte (kein listen, Socket.IO, SMTP, Cron, Firebase)
-// Tests rufen createApp(testDb) auf und bekommen saubere Express-App fuer supertest.
+// Tests rufen createApp(testDb) auf und bekommen saubere Express-App für supertest.
 
 const express = require('express');
 const helmet = require('helmet');
@@ -9,8 +9,8 @@ const path = require('path');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
 
-// Upload-Limit fuer Challenge-Beitraege (Audio/Video sind deutlich groesser als
-// Chat-Anhaenge). Als Konstante, weil der zentrale Multer-Error-Handler weiter
+// Upload-Limit für Challenge-Beitraege (Audio/Video sind deutlich größer als
+// Chat-Anhänge). Als Konstante, weil der zentrale Multer-Error-Handler weiter
 // unten die Fehlermeldung anhand der betroffenen Route differenzieren muss.
 const CHALLENGE_UPLOAD_LIMIT = 50 * 1024 * 1024;
 
@@ -45,7 +45,7 @@ function createApp(db, options = {}) {
   // kein HTML — die SPA kommt aus einem eigenen Container und ist von dieser
   // CSP unberuehrt. Die strikte Policy greift nur, wenn eine Response direkt
   // als Dokument geoeffnet wird, und verhindert dort Script-Ausfuehrung
-  // (z.B. ueber eine hochgeladene SVG-/HTML-Datei).
+  // (z.B. über eine hochgeladene SVG-/HTML-Datei).
   // HSTS wird von Apache/KeyHelp gesetzt, daher hier nicht doppelt konfigurieren.
   app.use(helmet({
     contentSecurityPolicy: {
@@ -116,7 +116,7 @@ function createApp(db, options = {}) {
 
   // Chat Upload Config (verschluesselte Dateinamen)
   // memoryStorage: Chat-Datei landet als Buffer in req.file.buffer und wird im
-  // Route-Handler (chat.js) verschluesselt auf die Platte geschrieben.
+  // Route-Handler (chat.js) verschlüsselt auf die Platte geschrieben.
   const chatUpload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 5 * 1024 * 1024 },
@@ -145,7 +145,7 @@ function createApp(db, options = {}) {
 
   // Material Upload Config (20MB Limit)
   // memoryStorage: Datei landet als Buffer in req.file.buffer und wird im
-  // Route-Handler (material.js) verschluesselt auf die Platte geschrieben.
+  // Route-Handler (material.js) verschlüsselt auf die Platte geschrieben.
   const materialUpload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 20 * 1024 * 1024 },
@@ -179,7 +179,7 @@ function createApp(db, options = {}) {
 
   // Request Upload Config (nur Bilder, 5MB)
   // memoryStorage: Foto landet als Buffer in req.file.buffer und wird im
-  // Route-Handler (konfi.js /upload-photo) verschluesselt auf die Platte
+  // Route-Handler (konfi.js /upload-photo) verschlüsselt auf die Platte
   // geschrieben. Der Dateiname wird dort nach erfolgreicher Validierung erzeugt.
   const requestUpload = multer({
     storage: multer.memoryStorage(),
@@ -196,7 +196,7 @@ function createApp(db, options = {}) {
   // Challenge Upload Config (50MB Limit — Konfis reichen auch Sprachaufnahmen
   // und kurze Videoclips ein, nicht nur Fotos).
   // memoryStorage: Datei landet als Buffer in req.file.buffer und wird im
-  // Route-Handler (challenges.js) nach der Magic-Bytes-Pruefung verschluesselt
+  // Route-Handler (challenges.js) nach der Magic-Bytes-Prüfung verschlüsselt
   // auf die Platte geschrieben.
   const challengeUpload = multer({
     storage: multer.memoryStorage(),
@@ -276,15 +276,15 @@ function createApp(db, options = {}) {
   // ROUTE MOUNTING
   // ====================================================================
 
-  // Health-Endpoint — BEWUSST minimal (Liveness fuer Docker-Healthcheck +
+  // Health-Endpoint — BEWUSST minimal (Liveness für Docker-Healthcheck +
   // Traefik). NICHT mit DB-Checks aufblaehen: ein haengender DB-Check wuerde
   // sonst den gesunden Container vom Healthcheck killen lassen.
   app.get('/api/health', (req, res) => {
     res.json({ status: 'OK', message: 'Konfi Points API is running' });
   });
 
-  // Status-Endpoint — Detail-Readiness fuer Status-Page / Uptime Kuma.
-  // Getrennt von /health, weil er echte Abhaengigkeiten prueft (DB) und damit
+  // Status-Endpoint — Detail-Readiness für Status-Page / Uptime Kuma.
+  // Getrennt von /health, weil er echte Abhaengigkeiten prüft (DB) und damit
   // langsamer/haengbar ist. Gibt 200 bei gesunder DB, sonst 503.
   app.get('/api/status', async (req, res) => {
     const startedAt = Date.now();
@@ -308,7 +308,7 @@ function createApp(db, options = {}) {
     res.status(dbOk ? 200 : 503).json(body);
   });
 
-  // Roh-Snapshot NUR dieser Replica (fuer die Peer-Aggregation; auch direkt nutzbar).
+  // Roh-Snapshot NUR dieser Replica (für die Peer-Aggregation; auch direkt nutzbar).
   app.get('/api/metrics/local', rbacVerifier, (req, res) => {
     if (!req.user?.is_super_admin) {
       return res.status(403).json({ error: 'Zugriff verweigert' });
@@ -358,7 +358,7 @@ function createApp(db, options = {}) {
     res.json(merged);
   });
 
-  // Persistente APM-Historie (ueber Deploys hinweg). Liefert die gespeicherten
+  // Persistente APM-Historie (über Deploys hinweg). Liefert die gespeicherten
   // Snapshots der letzten N Tage; das Dashboard bildet daraus Deltas pro Intervall.
   app.get('/api/metrics/history', rbacVerifier, async (req, res) => {
     if (!req.user?.is_super_admin) {
@@ -381,6 +381,10 @@ function createApp(db, options = {}) {
   });
 
   // Auth Routes
+  // Anmeldung für die API-Doku. Bewusst ohne rbacVerifier: Die Doku hängt nicht
+  // an einem Konto, sondern an einem gemeinsamen Passwort (DOCS_PASSWORD).
+  app.use('/api/docs-auth', require('./routes/docsAuth')());
+
   app.use('/api/auth', require('./routes/auth')(db, verifyToken, transporterOrDummy, smtpConfig, {
     authLimiter: rateLimiters.authLimiter,
     registerLimiter: rateLimiters.registerLimiter,
@@ -410,7 +414,7 @@ function createApp(db, options = {}) {
   }
 
   // Challenge-Einreichungen: 50-MB-Uploads laufen durch multer.memoryStorage —
-  // ohne Limiter koennte ein einzelner Konfi per Parallel-Uploads den Heap
+  // ohne Limiter könnte ein einzelner Konfi per Parallel-Uploads den Heap
   // fluten (Security-Review 04.08.2026).
   if (rateLimiters.uploadLimiter) {
     app.post('/api/challenges/konfi/:id/submissions', rateLimiters.uploadLimiter);
@@ -470,7 +474,7 @@ function createApp(db, options = {}) {
     res.status(500).json({ error: 'Something went wrong!' });
   });
 
-  // wrappedRouter fuer BackgroundService in server.js verfuegbar machen
+  // wrappedRouter für BackgroundService in server.js verfuegbar machen
   app.wrappedRouter = wrappedRouter;
 
   return app;

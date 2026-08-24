@@ -56,10 +56,10 @@ interface RequestsViewProps {
   getStatusText: (status: string) => string;
   getTypeIcon: (type: string) => string;
   getTypeText: (type: string) => string;
-  // Teamer-Aktivitaeten haben keine Gottesdienst/Gemeinde-Punkte-Logik —
+  // Teamer-Aktivitäten haben keine Gottesdienst/Gemeinde-Punkte-Logik —
   // im Teamer-Modus wird stattdessen "Team" gezeigt und die Punktzahl ausgeblendet.
   teamerMode?: boolean;
-  // Haupt-Segment der Page (Events | Antraege) - wird direkt unter dem
+  // Haupt-Segment der Page (Events | Anträge) - wird direkt unter dem
   // Grafik-Header gerendert, damit die Seitenstruktur zu den anderen Tabs passt.
   headerSlot?: React.ReactNode;
 }

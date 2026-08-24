@@ -64,7 +64,7 @@ const PasswordCheckItem: React.FC<{ label: string; checked: boolean }> = ({ labe
 );
 
 // Kryptographisch sicherer Zufallswert in [0, max) — Rejection-Sampling
-// gegen Modulo-Bias (Math.random ist fuer Passwoerter nicht geeignet)
+// gegen Modulo-Bias (Math.random ist für Passwoerter nicht geeignet)
 const randomInt = (max: number): number => {
   const limit = Math.floor(0x100000000 / max) * max;
   const buf = new Uint32Array(1);

@@ -54,11 +54,11 @@ const io = new Server(server, {
 // Request verarbeitet hat, erreichte Clients auf der anderen Replika NIE
 // (betraf alle LiveUpdates und Chat-Events). Der postgres-adapter nutzt die
 // vorhandene DB als Event-Bus (NOTIFY/LISTEN); Payloads > ~8000 Bytes laufen
-// ueber die Tabelle socket_io_attachments (Migration 109).
+// über die Tabelle socket_io_attachments (Migration 109).
 const { createAdapter: createPgAdapter } = require('@socket.io/postgres-adapter');
 const { Pool: PgPool } = require('pg');
 
-// Eigener kleiner Pool fuer den Adapter (dedizierte LISTEN-Connection + Queries),
+// Eigener kleiner Pool für den Adapter (dedizierte LISTEN-Connection + Queries),
 // getrennt vom App-Pool in database.js, damit die dauerhafte LISTEN-Verbindung
 // keinen App-Slot belegt.
 const socketAdapterPool = new PgPool({
@@ -83,7 +83,7 @@ io.engine.on('connection_error', (err) => {
 // galten damit ungeprueft, und ein Socket lebt deutlich laenger als die
 // 15 Minuten Token-Laufzeit. Ein geloeschtes, deaktiviertes oder per
 // Passwortwechsel gesperrtes Konto behielt seine Live-Verbindung
-// (Audit 22.08.2026). Die Pruefung kostet EINE Query je Verbindungsaufbau,
+// (Audit 22.08.2026). Die Prüfung kostet EINE Query je Verbindungsaufbau,
 // nicht je Nachricht — der Socket verbindet sich einmal und bleibt dann.
 io.use(async (socket, next) => {
   const token = socket.handshake.auth.token;
@@ -122,7 +122,7 @@ io.use(async (socket, next) => {
     }
 
     // Aktive Organisation aufloesen (Umschalter). Ohne das arbeitet der Socket
-    // immer in der Primaer-Org — die Raum-Pruefungen unten (joinRoom) haetten
+    // immer in der Primaer-Org — die Raum-Prüfungen unten (joinRoom) hätten
     // in einer Zweit-Gemeinde die falsche Organisation verglichen.
     let orgId = nutzer.organization_id;
     let rolle = nutzer.role_name;
@@ -178,7 +178,7 @@ io.on('connection', (socket) => {
     socket.leave(`room_${roomId}`);
   });
 
-  // Auch hier Teilnehmerschaft pruefen: Ohne sie liesse sich ueber die
+  // Auch hier Teilnehmerschaft prüfen: Ohne sie liesse sich über die
   // Tipp-Anzeige verraten, wer gerade in einem fremden Raum schreibt.
   socket.on('typing', async (roomId) => {
     try {
@@ -249,14 +249,14 @@ transporter.verify(function(error, success) {
 
 const { ipKeyGenerator } = require('express-rate-limit');
 
-// Gemeinsamer Key-Generator: zaehlt PRO eingeloggtem User (aus dem JWT), nicht
+// Gemeinsamer Key-Generator: zählt PRO eingeloggtem User (aus dem JWT), nicht
 // pro IP. Sonst teilen sich alle Konfis/Teamer einer Gemeinde hinter EINER
 // WLAN-IP dasselbe Kontingent -> ein volles WLAN sperrt alle aus ("Zu viele
 // Anfragen", scheinbar zufaellig). Unauthentifizierte Requests (Login/Register)
-// fallen auf die IP zurueck (IPv6-sicher via ipKeyGenerator).
+// fallen auf die IP zurück (IPv6-sicher via ipKeyGenerator).
 // Echte Client-IP: Apache (KeyHelp) setzt X-Real-IP = %{REMOTE_ADDR}, ABER kein
-// trust-proxy-konformes X-Forwarded-For -> req.ip war fuer ALLE die Proxy-IP
-// (gleicher Key) -> der Limiter zaehlte GLOBAL ueber alle Nutzer -> eine Gruppe
+// trust-proxy-konformes X-Forwarded-For -> req.ip war für ALLE die Proxy-IP
+// (gleicher Key) -> der Limiter zählte GLOBAL über alle Nutzer -> eine Gruppe
 // flog gleichzeitig mit 429. Daher X-Real-IP bevorzugen, dann erst req.ip.
 const clientIp = (req) => {
   const real = req.headers['x-real-ip'];
@@ -286,11 +286,11 @@ const generalLimiter = rateLimit({
 });
 
 // ACHTUNG: Hinter dem Reverse-Proxy (Apache->Traefik) wird die echte Client-IP
-// derzeit nicht zuverlaessig unterschieden -> der Limiter zaehlt faktisch GLOBAL
-// ueber alle Nutzer. Bei einer Konfi-Gruppe (viele Logins/Token-Refreshes
+// derzeit nicht zuverlaessig unterschieden -> der Limiter zählt faktisch GLOBAL
+// über alle Nutzer. Bei einer Konfi-Gruppe (viele Logins/Token-Refreshes
 // gleichzeitig) war max:30 viel zu niedrig -> ALLE flogen gleichzeitig mit 429.
-// Hoch auf 300 Fehlversuche/15min (skipSuccessfulRequests: Erfolge zaehlen NICHT)
-// -> Gruppen-Onboarding laeuft, echter Brute-Force wird weiter gebremst.
+// Hoch auf 300 Fehlversuche/15min (skipSuccessfulRequests: Erfolge zählen NICHT)
+// -> Gruppen-Onboarding läuft, echter Brute-Force wird weiter gebremst.
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 300,
@@ -303,7 +303,7 @@ const authLimiter = rateLimit({
 
 // Registrierung: Beim Onboarding einer Konfi-Gruppe registrieren sich viele
 // hintereinander aus DEMSELBEN Gemeinde-WLAN (gleiche IP). 5/Stunde war viel
-// zu eng. Erfolgreiche Registrierungen zaehlen nicht mit, damit nur echte
+// zu eng. Erfolgreiche Registrierungen zählen nicht mit, damit nur echte
 // Missbrauchs-Schleifen (Fehlversuche) gebremst werden.
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
@@ -344,8 +344,8 @@ const uploadLimiter = rateLimit({
 
 const orgLimiter = rateLimit({
   // Deckt ALLE /api/organizations-Routen ab. GET (Lesen: Liste, Detail, Admins)
-  // wird per skip ausgenommen und faellt auf den generalLimiter. Nur Schreib-Ops
-  // (POST/PUT/PATCH/DELETE) zaehlen hier, pro User (nicht pro IP).
+  // wird per skip ausgenommen und fällt auf den generalLimiter. Nur Schreib-Ops
+  // (POST/PUT/PATCH/DELETE) zählen hier, pro User (nicht pro IP).
   windowMs: 15 * 60 * 1000,
   max: 500,
   keyGenerator: userOrIpKey,
@@ -394,7 +394,7 @@ setImmediate(() => initializeChatRooms(db));
 // Wrapped) duerfen bei MEHREREN Backend-Replicas (Zero-Downtime-Setup) nur EINMAL
 // laufen, sonst gibt es Doppel-Pushes/-Loeschungen/-Snapshots. Nur die Replica mit
 // RUN_BACKGROUND_JOBS!=='false' startet sie. Default = an (Single-Replica/lokal
-// unveraendert); im 2-Replica-Stack setzt nur backend2 RUN_BACKGROUND_JOBS=false.
+// unverändert); im 2-Replica-Stack setzt nur backend2 RUN_BACKGROUND_JOBS=false.
 const BackgroundService = require('./services/backgroundService');
 if (process.env.RUN_BACKGROUND_JOBS !== 'false') {
   BackgroundService.startAllServices(db, { wrappedRouter: app.wrappedRouter });

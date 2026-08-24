@@ -62,7 +62,7 @@ interface EventDetailViewProps {
   eventId: number;
   onBack: () => void;
   // Im iPad-Split-View ist die Liste links dauerhaft sichtbar -> kein
-  // Zurueck-Button noetig.
+  // Zurück-Button nötig.
   hideBackButton?: boolean;
 }
 
@@ -88,7 +88,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   const [presentAlert] = useIonAlert();
   const [presentActionSheet] = useIonActionSheet();
 
-  // Event-Daten ueber useOfflineQuery mit 10min TTL Cache
+  // Event-Daten über useOfflineQuery mit 10min TTL Cache
   const { data: allEvents, loading, refresh: refreshEvents } = useOfflineQuery<Event[]>(
     `konfi:event-detail:${eventId}`,
     () => api.get('/konfi/events').then(r => r.data),
@@ -208,7 +208,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   });
 
   // Timeslots, Participants und Konfirmations-Check separat laden (nicht gecacht).
-  // Ein Fehler beim Laden der ZEITFENSTER wird gemerkt: ohne sie waere
+  // Ein Fehler beim Laden der ZEITFENSTER wird gemerkt: ohne sie wäre
   // timeslots=[] und die Anmeldung wuerde unten am Zeitfenster-Dialog
   // vorbeilaufen — der Konfi landete ohne Slot im Event (Audit 10.08.).
   useEffect(() => {
@@ -226,7 +226,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         setTimeslots([]);
         setTimeslotsLoadFailed(true);
       }
-      // Teilnehmerliste und Konfirmations-Check sind fuer die Anmeldung nicht
+      // Teilnehmerliste und Konfirmations-Check sind für die Anmeldung nicht
       // kritisch — sie duerfen weiterhin still fehlschlagen.
       try {
         const partRes = await api.get(`/konfi/events/${eventId}/participants`);
@@ -238,7 +238,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         const hasKonf = await checkExistingKonfirmation();
         setHasExistingKonfirmation(hasKonf);
       } catch (err) {
-        // Konfirmations-Check wird bei der Anmeldung erneut geprueft
+        // Konfirmations-Check wird bei der Anmeldung erneut geprüft
       }
     };
     loadDetails();
@@ -252,7 +252,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     return now < twoDaysBeforeEvent;
   };
 
-  // Konfirmations-Event ueber das is_konfirmation-Flag (Phase 117, Migration 091).
+  // Konfirmations-Event über das is_konfirmation-Flag (Phase 117, Migration 091).
   const isKonfirmationEvent = (event: Event) => {
     return event.is_konfirmation === true;
   };
@@ -379,7 +379,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     doRegister();
   };
 
-  // Status-Farben fuer SectionHeader — alle aus globalen Tokens
+  // Status-Farben für SectionHeader — alle aus globalen Tokens
   const getStatusColors = (): { primary: string; secondary: string } => {
     const events = { primary: 'var(--app-color-events)', secondary: 'var(--app-color-events)' };
     const danger = { primary: 'var(--app-color-danger)', secondary: 'var(--app-color-danger)' };
@@ -480,7 +480,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   }
 
   // Freie Plaetze aus KONFI-Sicht: Teamer haben ein eigenes Kontingent und
-  // duerfen hier nicht mitzaehlen. max_participants = 0 heisst unbegrenzt —
+  // duerfen hier nicht mitzaehlen. max_participants = 0 heißt unbegrenzt —
   // dort ergab die Rechnung negative Werte und zeigte faelschlich "0 Frei".
   const konfiRegistered = eventData.registered_count - (eventData.teamer_count || 0);
   const isUnlimited = (eventData.max_participants || 0) === 0;

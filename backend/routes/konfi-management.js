@@ -170,8 +170,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 return res.status(500).json({ error: 'Konfi-Rolle nicht gefunden' });
             }
 
-            // Konfi-Limit-Pruefung (3-Stufen-Grace, D-05). Single Source of Truth.
-            // max_konfis NULL -> stufe 'under_limit', laeuft normal durch (D-06).
+            // Konfi-Limit-Prüfung (3-Stufen-Grace, D-05). Single Source of Truth.
+            // max_konfis NULL -> stufe 'under_limit', läuft normal durch (D-06).
             const { count, limit, stufe } = await checkKonfiLimit(client, req.user.organization_id);
 
             if (stufe === 'hard_block') {
@@ -239,7 +239,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             res.status(201).json({ id: userId, username, temporaryPassword: password, message: 'Konfi erfolgreich erstellt' });
 
             // Live-Update NACH der Response: neuer Konfi taucht in der Admin-Liste auf.
-            // Ausserhalb des try/catch waere ideal, hier aber unkritisch, da der Send
+            // Ausserhalb des try/catch wäre ideal, hier aber unkritisch, da der Send
             // selbst gefangen ist (No-op ohne io) und die Response bereits raus ist.
             liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'create');
 
@@ -303,10 +303,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             if (currentProfile && currentProfile.jahrgang_id !== parseInt(jahrgang_id)) {
               // Zuerst die Pflichttermine des ALTEN Jahrgangs abraeumen. Ohne das
               // blieb der Konfi dort gebucht und stand anschliessend in den
-              // Pflichtterminen beider Jahrgaenge (Befund 24.08.2026).
+              // Pflichtterminen beider Jahrgänge (Befund 24.08.2026).
               // Bewusst eng gefasst: nur kuenftige Pflichttermine, nur solange
               // keine Anwesenheit erfasst ist und der Termin nicht auch zum
-              // neuen Jahrgang gehoert — Historie bleibt damit unberuehrt.
+              // neuen Jahrgang gehört — Historie bleibt damit unberuehrt.
               if (currentProfile.jahrgang_id) {
                 try {
                   await db.query(
@@ -383,7 +383,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 return res.status(404).json({ error: 'Konfi nicht gefunden' });
             }
 
-            // Kaskadierende Loeschung ueber gemeinsame Funktion (D-04, Single Source of Truth)
+            // Kaskadierende Löschung über gemeinsame Funktion (D-04, Single Source of Truth)
             await deleteKonfiCascade(client, userId, req.user.organization_id);
 
             await client.query('COMMIT');
@@ -459,7 +459,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 LEFT JOIN (
                   -- Konfirmationstermin/-ort PRO KONFI: das is_konfirmation-Event, zu dem
                   -- der Konfi mit status='confirmed' gebucht ist (mehrere Termine je Jahrgang
-                  -- moeglich, jeder Konfi bucht genau einen). Keine Buchung -> kein Termin.
+                  -- möglich, jeder Konfi bucht genau einen). Keine Buchung -> kein Termin.
                   SELECT eb.user_id, e.location, e.event_date
                   FROM event_bookings eb
                   JOIN events e ON e.id = eb.event_id
@@ -655,8 +655,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         const konfiId = req.params.id;
 
         try {
-            // Org-Zugehoerigkeit + Konfi-Rolle pruefen (Badge-Progress ist
-            // konfi-spezifisch; Teamer haben eigene Badges ueber teamer.js).
+            // Org-Zugehoerigkeit + Konfi-Rolle prüfen (Badge-Progress ist
+            // konfi-spezifisch; Teamer haben eigene Badges über teamer.js).
             const { rows: [konfi] } = await db.query(
                 `SELECT u.id FROM users u
                  JOIN roles r ON u.role_id = r.id
@@ -972,7 +972,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 'DELETE FROM user_activities WHERE id = $1 AND organization_id = $2',
                 [req.params.activityId, req.user.organization_id]
             );
-            // Nur dekrementieren, wenn wirklich etwas geloescht wurde.
+            // Nur dekrementieren, wenn wirklich etwas gelöscht wurde.
             if (geloescht === 0) {
                 await client.query('ROLLBACK');
                 return res.status(404).json({ error: 'Aktivität nicht gefunden' });
@@ -1122,7 +1122,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update', { konfiId });
             liveUpdate.sendToOrgAdmins(req.user.organization_id, 'users', 'update', { userId: konfiId });
             // Rollenwechsel: Socket ZULETZT trennen, sonst bleibt die/der
-            // Befoerderte im Konfi-Raum haengen und bekommt als Teamer:in gar
+            // Befoerderte im Konfi-Raum hängen und bekommt als Teamer:in gar
             // keine Updates mehr, bis sie/er sich neu anmeldet (Audit 22.08.2026).
             liveUpdate.disconnectUserSockets(konfiId);
 

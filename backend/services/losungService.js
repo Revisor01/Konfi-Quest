@@ -1,16 +1,16 @@
 /**
  * Losung-Service: Tageslosung abrufen mit DB-Cache
  *
- * Die Losungen-API ist ketiv.de ("was geschrieben steht"). Sie laeuft als
+ * Die Losungen-API ist ketiv.de ("was geschrieben steht"). Sie läuft als
  * Container `ketiv-api` auf demselben Server wie dieses Backend, im selben
  * Docker-Netzwerk `traefik`.
  *
  * Deshalb wird zuerst der containerinterne Weg versucht und erst danach die
  * oeffentliche Domain. Gemessener Unterschied: ~19ms intern gegen ~87ms
- * ueber die oeffentliche Domain — der Aufschlag ist fast vollstaendig der
+ * über die oeffentliche Domain — der Aufschlag ist fast vollstaendig der
  * TLS-Handshake, der intern entfaellt.
  *
- * Der Fallback bleibt wichtig: laeuft das Backend ausserhalb von Docker
+ * Der Fallback bleibt wichtig: läuft das Backend außerhalb von Docker
  * (lokale Entwicklung, Tests) oder wird der Container umbenannt, ist der
  * interne Name nicht aufloesbar und die oeffentliche Domain uebernimmt.
  */
@@ -28,16 +28,16 @@ const TIMEOUT_OEFFENTLICH_MS = 5000;
 
 // Laufende Abrufe je Datum+Uebersetzung. Ohne dieses Register feuert JEDER
 // Request bei kaltem Cache einen eigenen externen API-Call: morgens oeffnen
-// alle gleichzeitig die App, keiner findet den Cache gefuellt, und die
+// alle gleichzeitig die App, keiner findet den Cache gefüllt, und die
 // Losungen-API bekommt einen Schwall identischer Anfragen (Cache-Stampede).
 // Mit Register wartet der zweite bis n-te Request auf denselben Promise.
 const laufendeAbrufe = new Map();
 
 // Negativ-Cache: Datum+Uebersetzung, bei denen der externe Abruf gescheitert ist.
-// Ohne diesen Merker laeuft JEDE Anfrage erneut in beide Timeouts (2s intern +
+// Ohne diesen Merker läuft JEDE Anfrage erneut in beide Timeouts (2s intern +
 // 5s oeffentlich = bis zu 7s), solange die Losungen-API nicht erreichbar ist.
 // Das Dashboard laedt die Losung beim Oeffnen, also traf das jede Nutzerin bei
-// jedem Start. Mit Merker wird der externe Weg fuer eine Sperrfrist uebersprungen
+// jedem Start. Mit Merker wird der externe Weg für eine Sperrfrist übersprungen
 // und sofort der DB-Fallback der aufrufenden Route gezogen.
 const gescheiterteAbrufe = new Map();
 const NEGATIV_CACHE_MS = 30 * 60 * 1000;
@@ -67,7 +67,7 @@ async function fetchTageslosung(db, translation) {
 
 async function holeTageslosung(db, translation, today) {
 
-  // Cache pruefen
+  // Cache prüfen
   const { rows: [cachedVerse] } = await db.query(
     'SELECT verse_data FROM daily_verses WHERE date = $1 AND translation = $2',
     [today, translation]
@@ -130,8 +130,8 @@ async function holeTageslosung(db, translation, today) {
   }
 
   if (!losungData) {
-    // Sperrfrist setzen, damit die naechsten Anfragen nicht erneut in die
-    // Timeouts laufen. Faellt die API zurueck, greift sie nach Ablauf wieder.
+    // Sperrfrist setzen, damit die nächsten Anfragen nicht erneut in die
+    // Timeouts laufen. Faellt die API zurück, greift sie nach Ablauf wieder.
     gescheiterteAbrufe.set(`${today}:${translation}`, Date.now() + NEGATIV_CACHE_MS);
     console.warn(`Losungen-API nicht erreichbar, Sperrfrist ${NEGATIV_CACHE_MS / 60000} Min fuer ${today}:${translation}`);
     throw new Error(`Losungen API nicht erreichbar: ${letzterFehler ? letzterFehler.message : 'unbekannter Fehler'}`);

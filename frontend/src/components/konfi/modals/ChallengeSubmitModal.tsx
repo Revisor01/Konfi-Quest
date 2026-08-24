@@ -50,9 +50,9 @@ import type {
   ChallengeConsent
 } from '../../../types/challenges';
 
-// Einreich-Modal fuer eine Challenge. Zeigt nur die von der Challenge erlaubten
+// Einreich-Modal für eine Challenge. Zeigt nur die von der Challenge erlaubten
 // Medienarten (allowed_media). Bei visibility='konfi_choice' entscheidet der
-// Konfi selbst ueber die Sichtbarkeit — Voreinstellung ist "Mit meinem Namen
+// Konfi selbst über die Sichtbarkeit — Voreinstellung ist "Mit meinem Namen
 // veroeffentlichen". Bei 'public'/'private' gibt es keine Wahl, sondern einen
 // kompakten Hinweis-Chip im Kopf.
 
@@ -71,7 +71,7 @@ const CONSENT_OPTIONS: { value: ChallengeConsent; label: string; hint: string; i
   { value: 'private', label: 'Nur Leitung', hint: 'nicht in der Galerie', icon: lockClosedOutline }
 ];
 
-/** Behandlungs-Info als Satz fuer den Standard-Infokasten. Erscheint IMMER —
+/** Behandlungs-Info als Satz für den Standard-Infokasten. Erscheint IMMER —
  *  auch wenn der Konfi nichts einstellen kann, muss die geltende Einstellung
  *  benannt werden (User-Vorgabe). */
 const getVisibilityInfo = (challenge: KonfiChallenge): string => {
@@ -105,7 +105,7 @@ const getSuccessMessage = (challenge: KonfiChallenge, consent: ChallengeConsent)
 // Serverlimit laut Spec: 50 MB pro Datei.
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 
-// Bevorzugter MIME-Type fuer die Audioaufnahme: audio/mp4 laeuft auf iOS-WebView
+// Bevorzugter MIME-Type für die Audioaufnahme: audio/mp4 läuft auf iOS-WebView
 // zuverlaessig (AVFoundation-Unterbau), audio/webm ist der Chromium/Android-Fallback.
 const AUDIO_MIME_CANDIDATES = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'];
 
@@ -124,7 +124,7 @@ interface ChallengeSubmitModalProps {
   // Kann im ersten Render-Frame null sein: useIonModal reicht die Props des
   // Renders durch, in dem present() gerufen wurde — die im selben Handler
   // gesetzte Challenge kommt erst im Folge-Render an (Ionic rendert den
-  // Modal-Inhalt bei Prop-Aenderung neu). Deshalb ueberall null-sicher.
+  // Modal-Inhalt bei Prop-Änderung neu). Deshalb ueberall null-sicher.
   challenge: KonfiChallenge | null;
   onClose: () => void;
   onSuccess: () => void;
@@ -196,7 +196,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
     audioStreamRef.current = null;
   };
 
-  // Aufraeumen beim Unmount (Modal geschlossen waehrend Aufnahme laeuft).
+  // Aufräumen beim Unmount (Modal geschlossen während Aufnahme läuft).
   useEffect(() => {
     return () => {
       stopRecordingTimer();
@@ -216,7 +216,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
     setMediaType(value);
   };
 
-  // --- Gemeinsamer Datei-Picker fuer Foto und Video.
+  // --- Gemeinsamer Datei-Picker für Foto und Video.
   //
   // Der Abbruch muss erkannt werden, weil manche WebViews kein 'cancel'-Event
   // feuern — sonst bliebe der Spinner nach einem Abbruch stehen. Frueher loeste
@@ -224,8 +224,8 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
   // (iOS-HEIC-Konvertierung, grosse Videos), war das Promise bereits erledigt und
   // die Auswahl wurde still verworfen — ohne Datei, ohne Fehlermeldung.
   //
-  // Jetzt gewinnt immer die echte Auswahl: das native 'cancel'-Event loest sofort
-  // auf, der Fokus-Fallback wartet grosszuegig (15 s) und prueft davor noch
+  // Jetzt gewinnt immer die echte Auswahl: das native 'cancel'-Event löst sofort
+  // auf, der Fokus-Fallback wartet grosszuegig (15 s) und prüft davor noch
   // einmal, ob inzwischen doch eine Datei angekommen ist.
   const openFilePicker = (accept: string): Promise<File | null> => {
     return new Promise<File | null>((resolve) => {
@@ -245,10 +245,10 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
       };
 
       const onFocus = () => {
-        // Fokus zurueck in der App: entweder wurde abgebrochen, oder die Auswahl
-        // laeuft noch (Konvertierung/Kopieren). Den Spinner nach kurzer Zeit
+        // Fokus zurück in der App: entweder wurde abgebrochen, oder die Auswahl
+        // läuft noch (Konvertierung/Kopieren). Den Spinner nach kurzer Zeit
         // beenden, damit die Oberflaeche bei einem Abbruch nicht blockiert —
-        // das Warten auf die Datei laeuft davon unabhaengig weiter.
+        // das Warten auf die Datei läuft davon unabhaengig weiter.
         setTimeout(() => { if (!settled) setPickingMedia(false); }, 1200);
         // Erst nach grosszuegiger Frist als Abbruch werten; 'onchange' darf
         // jederzeit vorher gewinnen.
@@ -272,7 +272,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
 
   // --- Foto: verstecktes <input type="file"> statt Capacitor Camera.getPhoto.
   // Camera.getPhoto mit CameraSource.Prompt schlug in TestFlight beim Antippen
-  // sofort mit "Foto konnte nicht ausgewaehlt werden" fehl. Die Antraege
+  // sofort mit "Foto konnte nicht ausgewaehlt werden" fehl. Die Anträge
   // (ActivityRequestModal) nutzen erwiesenermassen zuverlaessig dieses
   // input-file-Muster — iOS zeigt damit nativ Fotomediathek/Kamera/Datei an. ---
   const pickPhoto = async () => {
@@ -281,7 +281,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
       const selected = await openFilePicker('image/*');
       if (!selected) return;
       // Spaet eingetroffene Auswahl: Spinner wieder anzeigen (der Fokus-Fallback
-      // hat ihn ggf. schon beendet), das finally setzt ihn zuverlaessig zurueck.
+      // hat ihn ggf. schon beendet), das finally setzt ihn zuverlaessig zurück.
       setPickingMedia(true);
       const { file: compressed, previewUrl } = await compressImage(selected);
       if (compressed.size > MAX_UPLOAD_BYTES) {
@@ -416,7 +416,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
 
           await api.post(`/challenges/konfi/${challenge.id}/submissions`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
-            // Medien-Uploads koennen auf Mobilfunk deutlich laenger dauern als
+            // Medien-Uploads können auf Mobilfunk deutlich laenger dauern als
             // die globalen 20s.
             timeout: 180000,
             onUploadProgress: (event) => {
@@ -442,7 +442,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
         setUploadProgress(0);
       }
     }).catch(() => {
-      // guard wirft, wenn bereits eine Aktion laeuft — bewusst ignorieren.
+      // guard wirft, wenn bereits eine Aktion läuft — bewusst ignorieren.
     });
   };
 
@@ -868,7 +868,7 @@ const ChallengeSubmitForm: React.FC<ChallengeSubmitFormProps> = ({
 
 /**
  * Huelle um das Formular. Solange die Challenge noch nicht durchgereicht ist,
- * wird nur ein leerer Rahmen gezeigt; ueber den key remountet das Formular
+ * wird nur ein leerer Rahmen gezeigt; über den key remountet das Formular
  * sauber, sobald (bzw. wenn eine andere) Challenge ankommt — so starten
  * Medienauswahl und Sichtbarkeits-Vorauswahl mit den richtigen Werten.
  */

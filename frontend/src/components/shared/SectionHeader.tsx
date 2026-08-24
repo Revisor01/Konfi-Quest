@@ -8,7 +8,7 @@ interface SectionHeaderProps {
   icon: string;
   preset?: 'events' | 'activities' | 'konfis' | 'teamer' | 'users' | 'organizations' | 'badges' | 'requests' | 'jahrgang' | 'konfi-requests' | 'categories' | 'level' | 'challenges';
   colors?: { primary: string; secondary: string };
-  // string erlaubt, damit Kacheln auch "∞" (unbegrenzte Plaetze) zeigen koennen.
+  // string erlaubt, damit Kacheln auch "∞" (unbegrenzte Plaetze) zeigen können.
   // onClick optional: Kacheln, die einem Reiter entsprechen, springen dorthin.
   // Ohne onClick bleibt die Kachel reine Anzeige (Standard).
   stats: Array<{ value: number | string; label: string; onClick?: () => void; active?: boolean }>;
@@ -16,7 +16,7 @@ interface SectionHeaderProps {
   onInfo?: () => void;
 }
 
-// Liest --app-color-XYZ aus :root, mit Hex-Fallback fuer SSR/Initial-Render
+// Liest --app-color-XYZ aus :root, mit Hex-Fallback für SSR/Initial-Render
 const cssColor = (token: string, fallback: string): string => {
   if (typeof window === 'undefined') return fallback;
   const v = getComputedStyle(document.documentElement).getPropertyValue(`--app-color-${token}`).trim();

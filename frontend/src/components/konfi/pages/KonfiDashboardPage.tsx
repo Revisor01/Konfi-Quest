@@ -124,7 +124,7 @@ const KonfiDashboardPage: React.FC = () => {
   const pageRef = useRef<HTMLElement>(null);
 
   // Anonyme Messung der Scroll-Tiefe: Sehen die Konfis die unteren Abschnitte
-  // des Dashboards ueberhaupt? Je Sitzung wird jede Marke NUR EINMAL gemeldet
+  // des Dashboards überhaupt? Je Sitzung wird jede Marke NUR EINMAL gemeldet
   // (Ref statt State, damit das Scrollen kein Rendern ausloest).
   const scrollMarken = useRef<Set<number>>(new Set());
   const handleScrollTiefe = useCallback((ev: CustomEvent) => {
@@ -148,7 +148,7 @@ const KonfiDashboardPage: React.FC = () => {
     { ttl: CACHE_TTL.DASHBOARD }
   );
 
-  // --- useOfflineQuery: Profil (fuer gewaehlten Konfispruch) ---
+  // --- useOfflineQuery: Profil (für gewaehlten Konfispruch) ---
   const { data: konfiProfile, refresh: refreshProfile } = useOfflineQuery<KonfiProfile>(
     'konfi:profile:' + user?.id,
     () => api.get('/konfi/profile').then(r => r.data),
@@ -160,7 +160,7 @@ const KonfiDashboardPage: React.FC = () => {
   // Fallback-Logik). Vorher lud diese Seite sie zusaetzlich und reichte sie
   // als Prop durch — die View benutzte die Prop aber nur als useEffect-
   // Trigger und zeigte immer ihren eigenen Stand. Ergebnis waren ZWEI Abrufe
-  // pro Oeffnen (Aufraeumen 23.08.2026).
+  // pro Oeffnen (Aufräumen 23.08.2026).
 
 
   // --- useOfflineQuery: Events ---
@@ -248,9 +248,9 @@ const KonfiDashboardPage: React.FC = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const onboardingKey = `konfi_onboarding_seen_${user?.id ?? 'x'}`;
 
-  // --- Update-Walkthrough 2.0 — nur fuer BESTANDS-Konfis, einmalig ---
+  // --- Update-Walkthrough 2.0 — nur für BESTANDS-Konfis, einmalig ---
   // Frische Accounts sehen die normale Tour (inkl. Challenges-Schritt) und
-  // bekommen den Update-Hinweis NICHT zusaetzlich; das Flag wird fuer sie
+  // bekommen den Update-Hinweis NICHT zusaetzlich; das Flag wird für sie
   // direkt als gesehen markiert. Beide Entscheidungen laufen in EINEM Ablauf,
   // damit der Update-Hinweis nie gleichzeitig mit der Tour aufpoppt.
   const [showUpdateWalkthrough, setShowUpdateWalkthrough] = useState(false);
@@ -286,7 +286,7 @@ const KonfiDashboardPage: React.FC = () => {
   }, [refreshDashboard, refreshEvents, refreshBadges]);
 
   // Subscribe to live updates for dashboard and events
-  // 'points' MUSS mit dabei sein: genehmigte Aktivitaeten melden 'points',
+  // 'points' MUSS mit dabei sein: genehmigte Aktivitäten melden 'points',
   // nicht 'dashboard' — ohne das blieben Punkte und Level auf der Startseite
   // stehen, bis man die App neu oeffnete (Audit 22.08.2026).
   useLiveRefresh(['dashboard', 'points', 'events', 'badges'], refreshAllData);
@@ -333,7 +333,7 @@ const KonfiDashboardPage: React.FC = () => {
 
   // Gespeicherte Reihenfolge mit der Default-Reihenfolge MERGEN: Bestands-Orgs
   // haben eine dashboard_section_order ohne die neueren Keys (z.B. 'challenges')
-  // gespeichert. Wuerde nur die gespeicherte Liste gerendert, faellt jede neu
+  // gespeichert. Wuerde nur die gespeicherte Liste gerendert, fällt jede neu
   // hinzugekommene Sektion bei ihnen stillschweigend unter den Tisch. Fehlende
   // Keys werden deshalb an ihrer Default-Position wieder eingefuegt.
   const sectionOrder: string[] = mergeSectionOrder(
@@ -342,7 +342,7 @@ const KonfiDashboardPage: React.FC = () => {
   );
 
   // Gewaehlten Konfispruch (aus Profil-Query) in die Dashboard-Daten mergen,
-  // damit die Card den Spruch anzeigt. Dashboard-Endpoint traegt ihn nicht.
+  // damit die Card den Spruch anzeigt. Dashboard-Endpoint trägt ihn nicht.
   const dashboardDataWithKonfspruch: DashboardData = {
     ...dashboardData,
     konfspruch: konfiProfile?.konfspruch ?? null

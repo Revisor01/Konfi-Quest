@@ -1,8 +1,8 @@
 // backend/tests/utils/chatMembershipSync.test.js
-// Tests fuer die Multi-Org-Faehigkeit des Chat-Mitgliedschafts-Syncs:
-// Mitglieder via user_organizations (Org-Switcher, Migration 101) muessen von
+// Tests für die Multi-Org-Faehigkeit des Chat-Mitgliedschafts-Syncs:
+// Mitglieder via user_organizations (Org-Switcher, Migration 101) müssen von
 // syncJahrgangChat/syncTeamChat als Soll-Mitglieder erkannt werden — sonst
-// wirft der Sync eingewechselte Org-Admins/Teamer:innen aus den Raeumen
+// wirft der Sync eingewechselte Org-Admins/Teamer:innen aus den Räumen
 // (Bug: Jahrgangschat der Zweit-Org verschwand nach dem ersten Sync).
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, ROLES, JAHRGAENGE } = require('../helpers/seed');
@@ -54,7 +54,7 @@ describe('Chat-Mitgliedschafts-Sync mit user_organizations (Multi-Org)', () => {
     let rows = await participants(roomId);
     expect(rows).toContainEqual({ user_id: USERS.orgAdmin1.id, user_type: 'admin' });
 
-    // Zweiter Sync-Lauf (Regression: frueher wurde er hier als Nicht-Soll entfernt)
+    // Zweiter Sync-Lauf (Regression: früher wurde er hier als Nicht-Soll entfernt)
     await syncJahrgangChat(db, JAHRGAENGE.jahrgang2.id, ORG2, USERS.orgAdmin2.id);
     rows = await participants(roomId);
     expect(rows).toContainEqual({ user_id: USERS.orgAdmin1.id, user_type: 'admin' });

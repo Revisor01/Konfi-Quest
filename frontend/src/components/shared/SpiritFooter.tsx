@@ -1,7 +1,7 @@
 import React from 'react';
 
 /**
- * Einheitlicher Branding-Footer fuer alle Apps ("Made with Spirit in Hennstedt").
+ * Einheitlicher Branding-Footer für alle Apps ("Made with Spirit in Hennstedt").
  * Die Taube symbolisiert den Heiligen Geist, "Friede. Schalom. Salam." ist der
  * Friedensgruss in drei Sprachen. Schlicht ohne Card, am Ende der Profil-Seiten.
  * Vogel als PNG (wie die anderen Apps).

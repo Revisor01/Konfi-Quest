@@ -38,7 +38,7 @@ interface WrappedModalProps {
   displayName: string;
   jahrgangName?: string;
   wrappedType?: 'konfi' | 'teamer';
-  // Fuer Wiederansicht — wenn gesetzt, wird NICHT /api/wrapped/me geladen
+  // Für Wiederansicht — wenn gesetzt, wird NICHT /api/wrapped/me geladen
   initialData?: KonfiWrappedData | TeamerWrappedData;
   initialYear?: number;
 }
@@ -165,7 +165,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
   // Konfi-Slides aufbauen.
   //
   // Ab Snapshot-Version 2 gibt es eine FESTE Reihenfolge (Challenge-Momente statt
-  // Highlight-Slot). Fuer aeltere Snapshots (Version 1 aus der History) bleibt die
+  // Highlight-Slot). Für aeltere Snapshots (Version 1 aus der History) bleibt die
   // bisherige highlight_type-Logik als Fallback erhalten — allerdings ohne die
   // entfernten Slides rank/chat/pflicht. Alte JSONB-Felder dieser Slides werden
   // dabei einfach ignoriert und fuehren zu keinem Fehler.
@@ -221,7 +221,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
 
       addSlide('aktivster-monat');
 
-      // "Dein Weg": Punkte, danach Endspurt ODER (bei erreichtem Ziel) Ueber-das-Ziel.
+      // "Dein Weg": Punkte, danach Endspurt ODER (bei erreichtem Ziel) Über-das-Ziel.
       addSlide('punkte');
       if (endspurt?.aktiv) {
         addSlide('endspurt');
@@ -241,7 +241,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
       addSlide('intro');
 
       // Slide 2: Highlight-Slide basierend auf highlight_type.
-      // 'chat_champion' hat keinen Renderer mehr und faellt auf 'events' zurueck.
+      // 'chat_champion' hat keinen Renderer mehr und fällt auf 'events' zurück.
       const highlightKeyMap: Record<string, string> = {
         ueber_das_ziel: 'ueber-das-ziel',
         events_held: 'events',

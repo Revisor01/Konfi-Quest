@@ -3,7 +3,7 @@
 // diese Umstellung scheitert der Start mit "Cannot read properties of
 // undefined (reading 'cert')" und es geht KEIN Push mehr raus (Prod 21.08.2026).
 const { initializeApp, cert } = require('firebase-admin/app');
-// Gleiches gilt fuer admin.messaging() — in v14 nur noch ueber getMessaging().
+// Gleiches gilt für admin.messaging() — in v14 nur noch über getMessaging().
 const { getMessaging } = require('firebase-admin/messaging');
 
 // Firebase Admin initialisieren (Service Account wird später hinzugefügt)
@@ -93,14 +93,14 @@ const sendFirebaseSilentPush = async (deviceToken, badgeCount) => {
     }
 
     // Auf iOS setzt aps.badge die Zahl am App-Icon direkt — Android kennt so
-    // etwas nicht. Dort muesste die App das Paket entgegennehmen und die Zahl
-    // selbst ans Badge-Plugin geben; einen Empfaenger fuer 'badge_update' gibt
+    // etwas nicht. Dort müsste die App das Paket entgegennehmen und die Zahl
+    // selbst ans Badge-Plugin geben; einen Empfaenger für 'badge_update' gibt
     // es im Frontend derzeit nicht (nachgesehen am 24.08.2026). Der
     // android-Block mit hoher Prioritaet ist die Voraussetzung dafuer, dass
-    // ein solcher Empfaenger das Paket ueberhaupt erreichen wuerde; ohne ihn
-    // stuft FCM Datenpakete an schlafende Geraete zurueck. Solange der
-    // Empfaenger fehlt, bleibt der Android-Zaehler das, was die laufende App
-    // ueber BadgeContext setzt.
+    // ein solcher Empfaenger das Paket überhaupt erreichen wuerde; ohne ihn
+    // stuft FCM Datenpakete an schlafende Geraete zurück. Solange der
+    // Empfaenger fehlt, bleibt der Android-Zähler das, was die laufende App
+    // über BadgeContext setzt.
     const message = {
       token: deviceToken,
       apns: {

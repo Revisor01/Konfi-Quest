@@ -71,10 +71,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       `;
       const { rows: [konfiProfile] } = await db.query(profileQuery, [userId]);
 
-      // Beförderter Teamer = hat ueberhaupt ein konfi_profiles (Konfi-Vergangenheit).
-      // NICHT am jahrgang_name festmachen: wird der alte Jahrgang geloescht, ist
+      // Beförderter Teamer = hat überhaupt ein konfi_profiles (Konfi-Vergangenheit).
+      // NICHT am jahrgang_name festmachen: wird der alte Jahrgang gelöscht, ist
       // jahrgang_id=NULL -> jahrgang_name=NULL, aber die WERTE (Punkte/Badges)
-      // bleiben und muessen weiter sichtbar sein. Reine Teamer ohne Konfi-
+      // bleiben und müssen weiter sichtbar sein. Reine Teamer ohne Konfi-
       // Vergangenheit haben kein konfi_profiles -> konfi_data=null.
       const isPromotedKonfi = !!konfiProfile;
       let badges = [];
@@ -326,7 +326,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           "SELECT teamer_since FROM users WHERE id = $1",
           [userId]
         ),
-        // Pro Kategorie: Anzahl Teamer-Aktivitaeten + anwesende Events (fuer
+        // Pro Kategorie: Anzahl Teamer-Aktivitäten + anwesende Events (für
         // category_activities-Progress). Identische Logik wie die Wertung in
         // badges.js (checkAndAwardTeamerBadges, case 'category_activities').
         db.query(
@@ -344,7 +344,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           GROUP BY c.name`,
           [userId, orgId]
         ),
-        // Teamer-Aktivitaets-Namen + Anzahl (fuer specific_activity / activity_combination).
+        // Teamer-Aktivitaets-Namen + Anzahl (für specific_activity / activity_combination).
         db.query(
           `SELECT a.name, COUNT(*) AS count FROM user_activities ua
            JOIN activities a ON ua.activity_id = a.id
@@ -352,15 +352,15 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
            GROUP BY a.name`,
           [userId, orgId]
         ),
-        // Besuchte Event-Namen (fuer activity_combination required_events).
-        // events-Spalte heisst 'name' (nicht 'title') -> als title aliasen.
+        // Besuchte Event-Namen (für activity_combination required_events).
+        // events-Spalte heißt 'name' (nicht 'title') -> als title aliasen.
         db.query(
           `SELECT DISTINCT e.name AS title FROM event_bookings eb
            JOIN events e ON eb.event_id = e.id
            WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2`,
           [userId, orgId]
         ),
-        // Alle Aktivitaets-/Event-Daten (fuer streak / time_based).
+        // Alle Aktivitaets-/Event-Daten (für streak / time_based).
         db.query(
           `SELECT ua.completed_date AS date FROM user_activities ua
            JOIN activities a ON ua.activity_id = a.id
@@ -376,7 +376,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       const activityCount = parseInt(actCountRes.rows[0].count);
       const eventCount = parseInt(evCountRes.rows[0].count);
       const uniqueActivities = parseInt(uniqueActRes.rows[0].count);
-      // Map Kategorie-Name -> Anzahl (fuer category_activities-Progress).
+      // Map Kategorie-Name -> Anzahl (für category_activities-Progress).
       const categoryCounts = {};
       for (const row of categoryCountsRes.rows) {
         categoryCounts[row.category] = parseInt(row.count);
@@ -388,13 +388,13 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       }
       const completedActivityNames = actNamesRes.rows.map(r => r.name);
       const attendedEventTitles = eventTitlesRes.rows.map(r => r.title);
-      // Datums-Liste (Strings/Dates) fuer streak / time_based.
+      // Datums-Liste (Strings/Dates) für streak / time_based.
       const allDates = allDatesRes.rows.map(r => r.date).filter(Boolean);
-      // Array der aktiven Jahre (INTEGER) — fuer Startjahr-Filter im teamer_year-Case.
+      // Array der aktiven Jahre (INTEGER) — für Startjahr-Filter im teamer_year-Case.
       const activeYearValues = activeYearsRes.rows.map(r => r.year);
 
-      // Startjahr fuer teamer_year (konsistent zur Wertung badges.js):
-      // 1. users.teamer_since; 2. Fallback aelteste aktive Jahr (entspricht aelteste Teamer-Aktivitaet).
+      // Startjahr für teamer_year (konsistent zur Wertung badges.js):
+      // 1. users.teamer_since; 2. Fallback aelteste aktive Jahr (entspricht aelteste Teamer-Aktivität).
       let teamerStartYear = null;
       const teamerSince = teamerSinceRes.rows[0]?.teamer_since;
       if (teamerSince) {
@@ -429,13 +429,13 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
               progressPoints = uniqueActivities;
               break;
             case 'teamer_year':
-              // Nur Jahre ab Startjahr (teamer_since) zaehlen — identisch zur Wertung (kein Mismatch).
+              // Nur Jahre ab Startjahr (teamer_since) zählen — identisch zur Wertung (kein Mismatch).
               progressPoints = teamerStartYear === null
                 ? 0
                 : activeYearValues.filter(y => y >= teamerStartYear).length;
               break;
             case 'category_activities': {
-              // Echter Progress: Anzahl Teamer-Aktivitaeten + anwesende Events der
+              // Echter Progress: Anzahl Teamer-Aktivitäten + anwesende Events der
               // geforderten Kategorie (deckungsgleich mit der Wertung in badges.js).
               const extra = typeof badge.criteria_extra === 'object' && badge.criteria_extra !== null
                 ? badge.criteria_extra
@@ -446,7 +446,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
               break;
             }
             case 'specific_activity': {
-              // Anzahl der geforderten Teamer-Aktivitaet (Name), wie Wertung badges.js:476.
+              // Anzahl der geforderten Teamer-Aktivität (Name), wie Wertung badges.js:476.
               const extra = typeof badge.criteria_extra === 'object' && badge.criteria_extra !== null
                 ? badge.criteria_extra : JSON.parse(badge.criteria_extra || '{}');
               progressPoints = extra.required_activity_name
@@ -455,7 +455,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
               break;
             }
             case 'activity_combination': {
-              // Anzahl erfuellter Teilbedingungen (Aktivitaeten + Events), wie Wertung
+              // Anzahl erfuellter Teilbedingungen (Aktivitäten + Events), wie Wertung
               // badges.js:391. Ziel ist die Gesamtanzahl der geforderten Eintraege.
               const extra = typeof badge.criteria_extra === 'object' && badge.criteria_extra !== null
                 ? badge.criteria_extra : JSON.parse(badge.criteria_extra || '{}');
@@ -471,7 +471,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
               progressPoints = computeCurrentStreak(allDates);
               break;
             case 'time_based': {
-              // Anzahl Aktivitaeten/Events im Zeitfenster, wie Wertung badges.js:522.
+              // Anzahl Aktivitäten/Events im Zeitfenster, wie Wertung badges.js:522.
               const extra = typeof badge.criteria_extra === 'object' && badge.criteria_extra !== null
                 ? badge.criteria_extra : JSON.parse(badge.criteria_extra || '{}');
               const days = extra.days || (extra.weeks ? extra.weeks * 7 : null);
@@ -498,18 +498,18 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       });
 
       // Geheime Abzeichen erst zeigen, wenn sie verdient sind. Die Ansicht
-      // verlaesst sich darauf, dass sie gar nicht erst geliefert werden — beim
+      // verlässt sich darauf, dass sie gar nicht erst geliefert werden — beim
       // Konfi tut das Backend das (konfiBadgeProgress.js), hier fehlte es, und
       // Name, Beschreibung und Fortschritt standen offen da (Befund 24.08.2026).
       const sichtbareBadges = enrichedBadges.filter(b => !b.is_hidden || b.earned);
 
-      // Die Gesamtzahl der Geheimnisse gehoert MIT in die Antwort: Die Ansicht
-      // zaehlte sie bisher aus der Liste, und die enthaelt jetzt nur noch die
-      // verdienten. Ohne diese Zahl haette der Hinweis "x Geheimnisse zu
+      // Die Gesamtzahl der Geheimnisse gehört MIT in die Antwort: Die Ansicht
+      // zählte sie bisher aus der Liste, und die enthält jetzt nur noch die
+      // verdienten. Ohne diese Zahl hätte der Hinweis "x Geheimnisse zu
       // entdecken" nach dem Filtern still auf null gestanden.
       // Bewusst als Kopfzeile und nicht im Rumpf: Die Antwort ist ein Array,
       // und zwei Ansichten lesen sie so (TeamerBadgesPage, TeamerDashboardPage).
-      // Eine neue Huelle haette beide gebrochen.
+      // Eine neue Huelle hätte beide gebrochen.
       res.set('X-Badges-Secret-Total', String(enrichedBadges.filter(b => b.is_hidden).length));
       res.set('X-Badges-Visible-Total', String(enrichedBadges.filter(b => !b.is_hidden).length));
 
@@ -557,15 +557,15 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   });
 
   // GET /teamer/:userId/badges - Erreichte Badges EINER Teamer:in (Leitungs-
-  // Einsicht fuer die Detailseite). Bewusst ohne Fortschritt zu den noch
+  // Einsicht für die Detailseite). Bewusst ohne Fortschritt zu den noch
   // offenen Badges: die Detailseite zeigt nur, was erreicht wurde — die
-  // Fortschrittsberechnung in GET /teamer/badges ist teuer und waere hier
+  // Fortschrittsberechnung in GET /teamer/badges ist teuer und wäre hier
   // ungenutzt. Zugriff wie bei den Zertifikaten: requireAdmin.
   router.get('/:userId/badges', rbacVerifier, requireAdmin, async (req, res) => {
     try {
       const { userId } = req.params;
 
-      // Org-Zugehoerigkeit + Teamer-Rolle pruefen (analog zur Konfi-Variante
+      // Org-Zugehoerigkeit + Teamer-Rolle prüfen (analog zur Konfi-Variante
       // in konfi-management.js, die auf r.name = 'konfi' filtert).
       const { rows: [teamer] } = await db.query(
         `SELECT u.id FROM users u
@@ -796,7 +796,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       } catch (pushErr) {
         console.error('Error sending certificate push:', pushErr);
       }
-      // Zertifikate haengen an den Teamer-Badge-/Dashboard-Ansichten -> 'badges'.
+      // Zertifikate hängen an den Teamer-Badge-/Dashboard-Ansichten -> 'badges'.
       liveUpdate.sendToUserByRole(req.params.userId, 'badges', 'update');
     } catch (err) {
       if (err.code === '23505') {
@@ -939,7 +939,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       });
       config.section_order = teamerSectionOrder || ['zertifikate', 'events', 'badges', 'losung'];
 
-      // Wrapped-Verfuegbarkeit pruefen (Teamer: direkt auf wrapped_snapshots)
+      // Wrapped-Verfuegbarkeit prüfen (Teamer: direkt auf wrapped_snapshots)
       const { rows: [wrappedResult] } = await db.query(
         `SELECT EXISTS(
           SELECT 1 FROM wrapped_snapshots
@@ -1051,7 +1051,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     }
   });
 
-  // GET /teamer/requests — eigene Antraege (nur Teamer-Aktivitaeten)
+  // GET /teamer/requests — eigene Anträge (nur Teamer-Aktivitäten)
   router.get('/requests', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       const userId = req.user.id;
@@ -1147,13 +1147,13 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     }
   });
 
-  // DELETE /teamer/requests/:id — eigenen Antrag loeschen
+  // DELETE /teamer/requests/:id — eigenen Antrag löschen
   router.delete('/requests/:id', rbacVerifier, requireTeamer, [param('id').isInt({ min: 1 }), handleValidationErrors], async (req, res) => {
     try {
       const userId = req.user.id;
       const requestId = req.params.id;
 
-      // Nur pending eigene Antraege darf der Teamer selbst loeschen
+      // Nur pending eigene Anträge darf der Teamer selbst löschen
       const { rows: [existing] } = await db.query(
         "SELECT id, status FROM activity_requests WHERE id = $1 AND user_id = $2 AND organization_id = $3",
         [requestId, userId, req.user.organization_id]

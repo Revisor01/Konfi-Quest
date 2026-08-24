@@ -5,41 +5,41 @@
 #   backend/routes/material.js -> Prefix /api/material (13 Routen)
 #   backend/routes/wrapped.js  -> Prefix /api/wrapped  (5 Routen)
 #
-# Mount-Prefixe geprueft in backend/createApp.js (Zeilen 442-446):
+# Mount-Prefixe geprüft in backend/createApp.js (Zeilen 442-446):
 #   app.use('/api/teamer',   require('./routes/teamer')(...))
 #   app.use('/api/wrapped',  wrappedRouter)          // aus routes/wrapped.js
 #   app.use('/api/material', require('./routes/material')(...))
 #
 # Rollen: super_admin, org_admin, admin, teamer, konfi
 # Middleware (backend/middleware/rbac.js):
-#   verifyTokenRBAC  = JWT pruefen, User inkl. aktiver Organisation (Header
+#   verifyTokenRBAC  = JWT prüfen, User inkl. aktiver Organisation (Header
 #                      X-Active-Organization) und assigned_jahrgaenge laden.
-#                      In den Route-Dateien heisst dieselbe Middleware
+#                      In den Route-Dateien heißt dieselbe Middleware
 #                      "rbacVerifier".
 #   requireOrgAdmin  = requireRole('org_admin')
 #   requireAdmin     = requireRole('org_admin', 'admin')
 #   requireTeamer    = requireRole('org_admin', 'admin', 'teamer')
-#   requireRole prueft ausschliesslich req.user.role_name - super_admin faellt
-#   damit ueberall auf 403, ausser die Route hat gar keinen Rollen-Guard.
+#   requireRole prüft ausschliesslich req.user.role_name - super_admin fällt
+#   damit ueberall auf 403, außer die Route hat gar keinen Rollen-Guard.
 #
 # =====================================================================
 # SCHWERPUNKT-ANALYSE (alle Aussagen am Code verifiziert)
 # =====================================================================
 #
 # 1. ZWEI SORTEN "TEAMER-ROUTEN" IN EINER DATEI
-#    /api/teamer enthaelt zwei voellig verschiedene Gruppen:
+#    /api/teamer enthält zwei voellig verschiedene Gruppen:
 #    a) SELBSTBEDIENUNG der Teamer:in (profile, konfi-history, badges,
 #       badges/unseen, badges/mark-seen, dashboard, tageslosung,
-#       bible-translation, activities, requests). Diese Routen haengen zwar
+#       bible-translation, activities, requests). Diese Routen hängen zwar
 #       an requireTeamer (org_admin/admin/teamer), fuenf von ihnen haben aber
 #       zusaetzlich einen Inline-Check `role_name !== 'teamer' -> 403`:
 #       /profile, /konfi-history, /badges, /badges/unseen, /badges/mark-seen,
-#       /dashboard. Fuer org_admin/admin sind diese Routen also faktisch
+#       /dashboard. Für org_admin/admin sind diese Routen also faktisch
 #       gesperrt.
 #       # INKONSISTENZ: /teamer/activities, /teamer/requests (GET/POST/DELETE),
 #       /teamer/tageslosung und PUT /teamer/bible-translation haben diesen
-#       Inline-Check NICHT. Ein org_admin/admin kann dort Teamer-Antraege
-#       stellen und loeschen und seine Bibeluebersetzung setzen. Praktisch
+#       Inline-Check NICHT. Ein org_admin/admin kann dort Teamer-Anträge
+#       stellen und löschen und seine Bibeluebersetzung setzen. Praktisch
 #       harmlos (immer nur eigene Daten), aber das Muster ist uneinheitlich.
 #    b) LEITUNGS-EINSICHT in Teamer:innen (/:userId/badges,
 #       /:userId/certificates, /certificate-types/*). requireAdmin bzw.
@@ -48,105 +48,105 @@
 # 2. JAHRGANGSGRENZE (assigned_jahrgaenge)
 #    GREIFT genau EINMAL in diesen drei Dateien:
 #    - GET /api/teamer/konfis: Rolle 'teamer' sieht nur Konfis der
-#      can_view-Jahrgaenge; ohne Zuweisung kommt eine LEERE Liste. Fuer
+#      can_view-Jahrgänge; ohne Zuweisung kommt eine LEERE Liste. Für
 #      org_admin/admin entfaellt der Filter (alle Konfis der Org).
 #    GREIFT NIRGENDS SONST. Insbesondere:
-#    - /api/material/* kennt ueberhaupt keine Jahrgangsgrenze. Material kann
-#      zwar Jahrgaengen zugeordnet werden (material_jahrgaenge, Filter
+#    - /api/material/* kennt überhaupt keine Jahrgangsgrenze. Material kann
+#      zwar Jahrgängen zugeordnet werden (material_jahrgaenge, Filter
 #      ?jahrgang_id), das ist aber reine Ablage-Struktur: GET /api/material
 #      liefert ohne Query-Filter ALLE Materialien der Organisation an jede
-#      Teamer:in, auch solche, die ausschliesslich fremden Jahrgaengen
-#      zugeordnet sind. Gleiches gilt fuer GET /api/material/{id} und den
+#      Teamer:in, auch solche, die ausschliesslich fremden Jahrgängen
+#      zugeordnet sind. Gleiches gilt für GET /api/material/{id} und den
 #      Datei-Download GET /api/material/files/{fileRef}.
-#      # HINWEIS M1: Wer Material als "nur fuer Jahrgang X" ablegt, sollte
+#      # HINWEIS M1: Wer Material als "nur für Jahrgang X" ablegt, sollte
 #      wissen, dass die Zuordnung nicht als Berechtigung wirkt.
 #    - POST /api/wrapped/generate/{jahrgangId}: requireAdmin, Jahrgang nur
-#      org-geprueft. Ein 'admin' kann fuer JEDEN Jahrgang der Org Wrapped
+#      org-geprüft. Ein 'admin' kann für JEDEN Jahrgang der Org Wrapped
 #      erzeugen und damit freigeben - passt zum Muster der uebrigen
 #      Admin-Routen, ist aber keine Jahrgangs-Beschraenkung.
 #
 # 3. ORG-SCOPE - WO ER FEHLT ODER ANDERS GREIFT
 #    Fast alle Routen filtern konsequent auf req.user.organization_id.
 #    Abweichungen (am Code belegt):
-#    - # HINWEIS W1: GET /api/wrapped/me liest wrapped_snapshots NUR ueber
-#      user_id + wrapped_type, ohne organization_id. Fuer Multi-Org-User
+#    - # HINWEIS W1: GET /api/wrapped/me liest wrapped_snapshots NUR über
+#      user_id + wrapped_type, ohne organization_id. Für Multi-Org-User
 #      (Header X-Active-Organization) kommt damit der neueste Snapshot
-#      zurueck, egal aus welcher Organisation er stammt. Es sind immer die
+#      zurück, egal aus welcher Organisation er stammt. Es sind immer die
 #      EIGENEN Daten, aber der Org-Kontext wird ignoriert.
-#    - # HINWEIS W2: GET /api/wrapped/history/{userId} prueft die
+#    - # HINWEIS W2: GET /api/wrapped/history/{userId} prüft die
 #      Org-Zugehoerigkeit der Zielperson gegen users.organization_id, also
 #      gegen die PRIMAER-Organisation, nicht gegen die aktive Org aus dem
 #      Header. Die Snapshot-Query selbst filtert ebenfalls nur auf user_id.
 #      Bei Multi-Org-Setups kann ein Admin damit Snapshots sehen, die in einer
 #      anderen Organisation entstanden sind.
-#    - # HINWEIS W3: DELETE /api/wrapped/{jahrgangId} loescht ueber
+#    - # HINWEIS W3: DELETE /api/wrapped/{jahrgangId} löscht über
 #      `jahrgang_id = $1 AND organization_id = $2`. Teamer-Snapshots haben
 #      kein jahrgang_id (der Teamer-INSERT setzt die Spalte nicht) und werden
-#      deshalb von dieser Route nie geloescht. Es gibt keinen Endpunkt, der
+#      deshalb von dieser Route nie gelöscht. Es gibt keinen Endpunkt, der
 #      Teamer-Wrapped wieder entfernt.
-#    - # HINWEIS T1: POST /api/teamer/requests prueft die Idempotenz-client_id
+#    - # HINWEIS T1: POST /api/teamer/requests prüft die Idempotenz-client_id
 #      per `WHERE client_id = $1` OHNE user_id/organization_id. Existiert die
 #      UUID bereits, wird der fremde Datensatz mit 200 zurueckgegeben (er
-#      enthaelt user_id, comment, photo_filename, status). Da client_id eine
+#      enthält user_id, comment, photo_filename, status). Da client_id eine
 #      clientseitig erzeugte UUIDv4 ist, ist das praktisch nicht erratbar -
 #      aber die Konfi-Variante in routes/konfi.js hat denselben Schnitt, es
 #      ist also ein durchgaengiges Muster, kein Einzelfall.
 #    - # HINWEIS T2: GET /api/teamer/{userId}/certificates filtert
-#      user_certificates auf user_id + organization_id, prueft aber NICHT,
-#      ob der Ziel-User ueberhaupt die Rolle 'teamer' hat - anders als
+#      user_certificates auf user_id + organization_id, prüft aber NICHT,
+#      ob der Ziel-User überhaupt die Rolle 'teamer' hat - anders als
 #      GET /api/teamer/{userId}/badges und POST /api/teamer/{userId}/certificates,
-#      die auf r.name = 'teamer' pruefen. Folge ist lediglich, dass ein Admin
-#      fuer beliebige User-IDs der eigenen Org eine (in der Praxis leere)
+#      die auf r.name = 'teamer' prüfen. Folge ist lediglich, dass ein Admin
+#      für beliebige User-IDs der eigenen Org eine (in der Praxis leere)
 #      Zertifikatsliste abrufen kann.
-#    - # HINWEIS T3: DELETE /api/teamer/certificate-types/{id} zaehlt die
+#    - # HINWEIS T3: DELETE /api/teamer/certificate-types/{id} zählt die
 #      Verwendung mit `SELECT COUNT(*) FROM user_certificates WHERE
 #      certificate_type_id = $1` OHNE organization_id. Der Typ selbst wird
-#      org-gescopt geloescht, aber die 409-Sperre kann durch Zertifikate einer
-#      FREMDEN Organisation ausgeloest werden. Auswirkung: ein org-eigener Typ
-#      laesst sich unter Umstaenden nicht loeschen, obwohl er in der eigenen
+#      org-gescopt gelöscht, aber die 409-Sperre kann durch Zertifikate einer
+#      FREMDEN Organisation ausgelöst werden. Auswirkung: ein org-eigener Typ
+#      laesst sich unter Umstaenden nicht löschen, obwohl er in der eigenen
 #      Org unbenutzt ist. Kein Datenabfluss, aber ein Fehlverhalten.
 #
 # 4. DATEIEN (Material-Uploads)
 #    - Upload: POST /api/material/{id}/files, requireAdmin, multer
 #      memoryStorage, Limit 20 MB, max 10 Dateien pro Request
-#      (createApp.js:149). Zweistufige Pruefung: multer-fileFilter auf die
-#      gemeldete MIME-Liste, danach Magic-Bytes-Pruefung mit file-type auf
+#      (createApp.js:149). Zweistufige Prüfung: multer-fileFilter auf die
+#      gemeldete MIME-Liste, danach Magic-Bytes-Prüfung mit file-type auf
 #      dem Buffer (415 bei Nichtuebereinstimmung). text/plain und text/csv
-#      sind von der Magic-Bytes-Pruefung ausgenommen, weil sie keine Signatur
+#      sind von der Magic-Bytes-Prüfung ausgenommen, weil sie keine Signatur
 #      haben.
-#    - Ablage: AES-256-GCM-verschluesselt (utils/photoCrypto), zufaelliger
+#    - Ablage: AES-256-GCM-verschlüsselt (utils/photoCrypto), zufaelliger
 #      64-Hex-Dateiname in backend/uploads/material. Das Verzeichnis wird
 #      nicht statisch ausgeliefert.
 #    - Abruf: GET /api/material/files/{fileRef}, requireTeamer. Der Dateiname
-#      wird durch path.basename und einen /^[a-f0-9]{64}$/-Test gefuehrt
-#      (Path-Traversal-Schutz), die Org-Zugehoerigkeit ueber den JOIN auf
-#      materials.organization_id geprueft.
+#      wird durch path.basename und einen /^[a-f0-9]{64}$/-Test geführt
+#      (Path-Traversal-Schutz), die Org-Zugehoerigkeit über den JOIN auf
+#      materials.organization_id geprüft.
 #    -> Konfis haben auf /api/material KEINEN Zugriff (requireTeamer auf allen
 #       13 Routen).
 #
-# 5. WER DARF WAS SCHREIBEN (Kurzfassung ueber alle drei Dateien)
+# 5. WER DARF WAS SCHREIBEN (Kurzfassung über alle drei Dateien)
 #    org_admin allein: Zertifikat-Typen anlegen/aendern/loeschen, Zertifikate
 #      zuweisen/entfernen, Teamer-Wrapped generieren, Wrapped eines Jahrgangs
-#      loeschen.
+#      löschen.
 #    org_admin + admin: Material und Material-Tags anlegen/aendern/loeschen,
-#      Dateien hoch- und wieder herunterladen bzw. loeschen, Konfi-Wrapped
+#      Dateien hoch- und wieder herunterladen bzw. löschen, Konfi-Wrapped
 #      eines Jahrgangs generieren, Teamer-Badges und -Zertifikate einsehen.
 #    org_admin + admin + teamer: Material und Tags LESEN, Dateien
-#      herunterladen, Teamer-Aktivitaeten sehen und Antraege stellen/loeschen.
+#      herunterladen, Teamer-Aktivitäten sehen und Anträge stellen/loeschen.
 #    Punkte werden in diesen drei Dateien NICHT direkt vergeben. Teamer-Punkte
-#    entstehen erst, wenn ein Antrag aus POST /api/teamer/requests ueber
+#    entstehen erst, wenn ein Antrag aus POST /api/teamer/requests über
 #    PUT /api/admin/activities/requests/{id} (Block 2) genehmigt wird.
 #
 # ZUSAMMENFASSUNG DER BEFUNDE IN DIESEM BLOCK:
 #   M1  Material kennt keine Jahrgangsgrenze - jede Teamer:in sieht und laedt
-#       alles Material der Organisation, auch fremden Jahrgaengen zugeordnetes.
+#       alles Material der Organisation, auch fremden Jahrgängen zugeordnetes.
 #   W1  GET /api/wrapped/me ohne organization_id-Filter (Multi-Org).
-#   W2  GET /api/wrapped/history/{userId} prueft Primaer-Org statt aktiver Org.
+#   W2  GET /api/wrapped/history/{userId} prüft Primaer-Org statt aktiver Org.
 #   W3  DELETE /api/wrapped/{jahrgangId} erreicht Teamer-Snapshots nicht -
 #       Teamer-Wrapped ist nicht loeschbar.
 #   T1  POST /api/teamer/requests: client_id-Idempotenz ohne user/org-Scope.
-#   T2  GET /api/teamer/{userId}/certificates ohne Rollen-Pruefung.
-#   T3  DELETE /api/teamer/certificate-types/{id}: 409-Sperre zaehlt
+#   T2  GET /api/teamer/{userId}/certificates ohne Rollen-Prüfung.
+#   T3  DELETE /api/teamer/certificate-types/{id}: 409-Sperre zählt
 #       organisationsuebergreifend.
 #   T4  Inline-Check "nur Rolle teamer" nur auf 6 von 12 Selbstbedienungs-
 #       Routen - uneinheitlich.
@@ -229,7 +229,7 @@ paths:
         role_title, teamer_since, Organisation, bible_translation). Existiert
         ein konfi_profiles-Datensatz aus der Konfi-Zeit, wird er als
         konfi_data mitgeliefert (eingefrorene Punkte, Jahrgangsname, damals
-        erreichte Badges); sonst ist konfi_data null. Die Erkennung haengt am
+        erreichte Badges); sonst ist konfi_data null. Die Erkennung hängt am
         Vorhandensein des Profils, nicht am Jahrgangsnamen - ein geloeschter
         Jahrgang setzt nur jahrgang_name auf leer, die Punkte bleiben sichtbar.
       x-berechtigung:
@@ -239,7 +239,7 @@ paths:
         objekt-pruefung: "nur eigene Daten (WHERE id/user_id = req.user.id)"
         hinweis: >
           Kein requireTeamer, sondern ein eigener Inline-Guard. Die
-          User-Abfrage laeuft ueber WHERE u.id = $1 ohne organization_id -
+          User-Abfrage läuft über WHERE u.id = $1 ohne organization_id -
           unkritisch, da es die eigene Zeile ist.
       responses:
         "200":
@@ -268,17 +268,17 @@ paths:
 
   /api/teamer/konfis:
     get:
-      summary: Konfis der zugewiesenen Jahrgaenge (Auswahl fuer Direktnachrichten)
+      summary: Konfis der zugewiesenen Jahrgänge (Auswahl für Direktnachrichten)
       description: >
-        Liste der Konfis fuer die Chat-Auswahl. Fuer die Rolle teamer werden
-        nur Konfis der can_view-Jahrgaenge geliefert; ohne jede Zuweisung
+        Liste der Konfis für die Chat-Auswahl. Für die Rolle teamer werden
+        nur Konfis der can_view-Jahrgänge geliefert; ohne jede Zuweisung
         kommt eine leere Liste. org_admin und admin erhalten alle Konfis der
         Organisation. Geloeschte Konfis (deleted_at) sind ausgeschlossen.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "Rolle teamer: Jahrgangsgrenze ueber assigned_jahrgaenge mit can_view; org_admin/admin: kein Jahrgangsfilter"
+        objekt-pruefung: "Rolle teamer: Jahrgangsgrenze über assigned_jahrgaenge mit can_view; org_admin/admin: kein Jahrgangsfilter"
         hinweis: >
           Die einzige Route dieser drei Dateien, in der die Jahrgangsgrenze
           tatsaechlich greift. Anders als bei GET /api/events greift sie hier
@@ -293,7 +293,7 @@ paths:
     get:
       summary: Eigene Punkte-Historie aus der Konfi-Zeit
       description: >
-        Fuer befoerderte Teamer:innen: alle Aktivitaeten, Bonuspunkte und
+        Für befoerderte Teamer:innen: alle Aktivitäten, Bonuspunkte und
         Event-Punkte aus der Konfi-Zeit, nach Datum absteigend
         zusammengefuehrt, plus die eingefrorenen Summen aus konfi_profiles.
       x-berechtigung:
@@ -318,12 +318,12 @@ paths:
         activity_count, event_count, unique_activities, teamer_year (nur Jahre
         ab users.teamer_since), category_activities, specific_activity,
         activity_combination, streak und time_based. Punkte-Kriterien
-        (total_points etc.) sind fuer Teamer irrelevant und liefern 0;
+        (total_points etc.) sind für Teamer irrelevant und liefern 0;
         collection und yearly sind in der Wertung noch nicht implementiert und
         liefern ebenfalls 0.
         Seit 24.08.2026 werden UNVERDIENTE geheime Abzeichen (is_hidden) nicht
         mehr ausgeliefert — vorher standen Name, Beschreibung und Fortschritt
-        offen da, waehrend der Konfi-Pfad sie korrekt zurueckhielt. Verdiente
+        offen da, während der Konfi-Pfad sie korrekt zurückhielt. Verdiente
         geheime Abzeichen kommen weiterhin mit. Die Gesamtzahlen stehen in den
         Kopfzeilen X-Badges-Secret-Total und X-Badges-Visible-Total, damit die
         Anzeige "x Geheimnisse zu entdecken" weiter stimmt; der Rumpf bleibt
@@ -357,7 +357,7 @@ paths:
         objekt-pruefung: "nur eigene user_badges (user_id + organization_id)"
         hinweis: >
           Zaehlt alle ungesehenen user_badges, ohne auf target_role='teamer'
-          einzuschraenken. Bei befoerderten Konfis koennen darin auch alte
+          einzuschraenken. Bei befoerderten Konfis können darin auch alte
           Konfi-Abzeichen stecken.
       responses:
         "200": { description: "unseen (Anzahl)" }
@@ -383,16 +383,16 @@ paths:
     get:
       summary: Erreichte Abzeichen einer Teamer:in (Leitungs-Einsicht)
       description: >
-        Fuer die Teamer-Detailseite der Leitung. Liefert bewusst nur die
+        Für die Teamer-Detailseite der Leitung. Liefert bewusst nur die
         erreichten Abzeichen ohne Fortschrittsberechnung - die teure Berechnung
-        aus GET /api/teamer/badges waere hier ungenutzt. Der Zielbenutzer muss
-        die Rolle teamer haben, zur eigenen Organisation gehoeren und darf
-        nicht geloescht sein.
+        aus GET /api/teamer/badges wäre hier ungenutzt. Der Zielbenutzer muss
+        die Rolle teamer haben, zur eigenen Organisation gehören und darf
+        nicht gelöscht sein.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
-        objekt-pruefung: "Ziel-User muss Rolle 'teamer' haben, zur aktiven Org gehoeren und deleted_at IS NULL (sonst 404); Abzeichen nur target_role='teamer'"
+        objekt-pruefung: "Ziel-User muss Rolle 'teamer' haben, zur aktiven Org gehören und deleted_at IS NULL (sonst 404); Abzeichen nur target_role='teamer'"
       parameters: [ { $ref: '#/components/parameters/pathUserId' } ]
       responses:
         "200": { description: "earned[] (id, name, description, icon, color, criteria_type, criteria_value, is_hidden, earned_at)" }
@@ -411,7 +411,7 @@ paths:
         objekt-pruefung: "nur is_active = true der eigenen Org; keine personenbezogenen Daten"
         hinweis: >
           Lesen ist requireAdmin, Schreiben requireOrgAdmin. Teamer:innen sehen
-          ihre Zertifikate ausschliesslich ueber GET /api/teamer/dashboard.
+          ihre Zertifikate ausschliesslich über GET /api/teamer/dashboard.
       responses:
         "200": { description: "Array (id, name, icon, is_active, created_at)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
@@ -472,9 +472,9 @@ paths:
         "409": { description: Name in dieser Organisation bereits vergeben }
         "500": { $ref: '#/components/responses/ServerError' }
     delete:
-      summary: Zertifikat-Typ loeschen (nur wenn nirgends vergeben)
+      summary: Zertifikat-Typ löschen (nur wenn nirgends vergeben)
       description: >
-        Vor dem Loeschen wird geprueft, ob der Typ bereits an Teamer:innen
+        Vor dem Löschen wird geprüft, ob der Typ bereits an Teamer:innen
         vergeben wurde; in dem Fall kommt 409.
       x-berechtigung:
         rollen: [org_admin]
@@ -482,11 +482,11 @@ paths:
         org-scope: true
         objekt-pruefung: "DELETE mit organization_id-Bedingung (404 sonst)"
         hinweis: >
-          # BEFUND T3: Die Verwendungspruefung zaehlt user_certificates nur
-          ueber certificate_type_id, ohne organization_id. Zertifikate einer
-          fremden Organisation koennen die 409-Sperre ausloesen, obwohl der Typ
+          # BEFUND T3: Die Verwendungspruefung zählt user_certificates nur
+          über certificate_type_id, ohne organization_id. Zertifikate einer
+          fremden Organisation können die 409-Sperre auslösen, obwohl der Typ
           in der eigenen Org unbenutzt ist. Kein Datenabfluss, aber der Typ
-          laesst sich dann nicht loeschen.
+          laesst sich dann nicht löschen.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: Geloescht }
@@ -505,8 +505,8 @@ paths:
         org-scope: true
         objekt-pruefung: "user_certificates gefiltert auf user_id + organization_id"
         hinweis: >
-          # BEFUND T2: Anders als die Badge- und die POST-Variante prueft diese
-          Route NICHT, ob der Ziel-User die Rolle 'teamer' hat. Fuer beliebige
+          # BEFUND T2: Anders als die Badge- und die POST-Variante prüft diese
+          Route NICHT, ob der Ziel-User die Rolle 'teamer' hat. Für beliebige
           User-IDs der eigenen Org kommt daher 200 mit (in der Praxis) leerer
           Liste statt 404.
       parameters: [ { $ref: '#/components/parameters/pathUserId' } ]
@@ -518,8 +518,8 @@ paths:
     post:
       summary: Zertifikat an eine Teamer:in vergeben
       description: >
-        Prueft, dass der Ziel-User zur eigenen Organisation gehoert und die
-        Rolle teamer hat, und dass der Zertifikat-Typ zur Organisation gehoert
+        Prueft, dass der Ziel-User zur eigenen Organisation gehört und die
+        Rolle teamer hat, und dass der Zertifikat-Typ zur Organisation gehört
         und aktiv ist. Nach dem Speichern gehen eine Push-Nachricht und ein
         Live-Update an die Empfaenger:in; Fehler dabei kippen die Vergabe nicht.
       x-berechtigung:
@@ -574,20 +574,20 @@ paths:
       summary: Teamer-Dashboard (Zertifikate, Termine, Abzeichen, Konfiguration)
       description: >
         Liefert Begruessung, alle aktiven Zertifikat-Typen der Organisation mit
-        eigenem Status (valid | expired | not_earned), die naechsten bis zu
-        fuenf zukuenftigen, nicht abgesagten Termine, fuer die die Teamer:in
+        eigenem Status (valid | expired | not_earned), die nächsten bis zu
+        fuenf zukuenftigen, nicht abgesagten Termine, für die die Teamer:in
         selbst gebucht ist, die letzten drei erreichten Teamer-Abzeichen mit
         Zaehlern sowie die Dashboard-Konfiguration der Organisation
         (show_zertifikate, show_events, show_badges, show_losung und
         section_order aus den settings-Schluesseln teamer_dashboard_*). Zuletzt
-        wird geprueft, ob ein Teamer-Wrapped-Snapshot vorliegt.
+        wird geprüft, ob ein Teamer-Wrapped-Snapshot vorliegt.
       x-berechtigung:
         rollen: [teamer]
         middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]
         org-scope: true
         objekt-pruefung: "nur eigene Daten; Zertifikate/Abzeichen/Termine mit user_id + organization_id"
         hinweis: >
-          Die Wrapped-Pruefung fragt wrapped_snapshots nur ueber user_id +
+          Die Wrapped-Prüfung fragt wrapped_snapshots nur über user_id +
           wrapped_type ab, ohne organization_id - dieselbe Multi-Org-Unschaerfe
           wie in GET /api/wrapped/me (Befund W1).
       responses:
@@ -625,7 +625,7 @@ paths:
         hinweis: >
           # BEFUND T4: Kein Inline-Check auf role_name === 'teamer', anders als
           bei /profile, /dashboard und den Badge-Routen. org_admin und admin
-          koennen diese Route ebenfalls aufrufen. Gegenstueck fuer Konfis ist
+          können diese Route ebenfalls aufrufen. Gegenstueck für Konfis ist
           GET /api/konfi/tageslosung mit eigenem Schalter.
       responses:
         "200": { description: "success, data (losung, lehrtext), translation, ggf. fallback: true" }
@@ -636,14 +636,14 @@ paths:
 
   /api/teamer/bible-translation:
     put:
-      summary: Bibeluebersetzung fuer die Tageslosung setzen (Teamer-Sicht)
+      summary: Bibeluebersetzung für die Tageslosung setzen (Teamer-Sicht)
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: false
         objekt-pruefung: "UPDATE users SET bible_translation WHERE id = req.user.id - nur das eigene Profil"
         hinweis: >
-          # BEFUND T4: kein Inline-Teamer-Check. Die Pruefung der Uebersetzung
+          # BEFUND T4: kein Inline-Teamer-Check. Die Prüfung der Uebersetzung
           erfolgt inline im Handler (keine validateBibleTranslation-Middleware
           wie in der Konfi-Route).
       requestBody:
@@ -664,8 +664,8 @@ paths:
 
   /api/teamer/activities:
     get:
-      summary: Beantragbare Teamer-Aktivitaeten auflisten
-      description: Aktivitaeten der Organisation mit target_role='teamer', mit zusammengefassten Kategorienamen.
+      summary: Beantragbare Teamer-Aktivitäten auflisten
+      description: Aktivitäten der Organisation mit target_role='teamer', mit zusammengefassten Kategorienamen.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
@@ -673,7 +673,7 @@ paths:
         objekt-pruefung: "keine personenbezogenen Daten"
         hinweis: >
           Anders als GET /api/konfi/activities wird hier NICHT auf die im
-          Jahrgang aktivierten Punkt-Typen gefiltert - Teamer haengen an keinem
+          Jahrgang aktivierten Punkt-Typen gefiltert - Teamer hängen an keinem
           Jahrgang.
       responses:
         "200": { description: "Array (id, name, points, type, category_names)" }
@@ -683,13 +683,13 @@ paths:
 
   /api/teamer/requests:
     get:
-      summary: Eigene Teamer-Antraege auflisten
-      description: Nur Antraege zu Aktivitaeten mit target_role='teamer', neueste zuerst.
+      summary: Eigene Teamer-Anträge auflisten
+      description: Nur Anträge zu Aktivitäten mit target_role='teamer', neueste zuerst.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "nur eigene Antraege (user_id = Token, organization_id)"
+        objekt-pruefung: "nur eigene Anträge (user_id = Token, organization_id)"
       responses:
         "200": { description: "Array (activity_requests.* + activity_name, activity_points, activity_type, activity_target_role)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
@@ -698,21 +698,21 @@ paths:
     post:
       summary: Neuen Teamer-Antrag einreichen
       description: >
-        Legt einen Antrag mit status pending an. Idempotent ueber optionale
+        Legt einen Antrag mit status pending an. Idempotent über optionale
         client_id (UUID): existiert der Antrag bereits, kommt 200 mit dem
         bestehenden Datensatz. Danach werden eine Bestaetigungs-Benachrichtigung
         an die Antragstellerin, eine Push-Nachricht an alle Admins der
-        Organisation und ein Live-Update ausgeloest; Fehler dabei kippen den
+        Organisation und ein Live-Update ausgelöst; Fehler dabei kippen den
         Antrag nicht.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer, validateCreateTeamerRequest]
         org-scope: true
-        objekt-pruefung: "Aktivitaet muss zur eigenen Org gehoeren UND target_role='teamer' haben (404 sonst); user_id wird aus dem Token gesetzt"
+        objekt-pruefung: "Aktivität muss zur eigenen Org gehören UND target_role='teamer' haben (404 sonst); user_id wird aus dem Token gesetzt"
         hinweis: >
-          # BEFUND T1: Der Idempotenz-Check laeuft ueber
+          # BEFUND T1: Der Idempotenz-Check läuft über
           `WHERE client_id = $1` ohne user_id/organization_id. Eine bereits
-          vergebene UUID liefert den fremden Datensatz mit 200 zurueck. In der
+          vergebene UUID liefert den fremden Datensatz mit 200 zurück. In der
           Praxis nicht erratbar (UUIDv4) und identisch zur Konfi-Route
           POST /api/konfi/requests.
       requestBody:
@@ -739,8 +739,8 @@ paths:
 
   /api/teamer/requests/{id}:
     delete:
-      summary: Eigenen offenen Teamer-Antrag loeschen
-      description: Nur Antraege mit status pending. Danach Live-Update an die Leitung.
+      summary: Eigenen offenen Teamer-Antrag löschen
+      description: Nur Anträge mit status pending. Danach Live-Update an die Leitung.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer, "param('id').isInt", handleValidationErrors]
@@ -831,7 +831,7 @@ paths:
         "409": { description: Tag mit diesem Namen existiert bereits }
         "500": { $ref: '#/components/responses/ServerError' }
     delete:
-      summary: Material-Tag loeschen
+      summary: Material-Tag löschen
       description: Die Zuordnungen zu Materialien werden per CASCADE mitgeloescht; die Materialien selbst bleiben erhalten.
       x-berechtigung:
         rollen: [org_admin, admin]
@@ -851,23 +851,23 @@ paths:
       summary: Materialien der Organisation auflisten (mit Filtern)
       description: >
         Alle Materialien der aktiven Organisation, neueste zuerst, jeweils mit
-        Zaehlern (Dateien, Termine, Jahrgaenge) sowie den zugeordneten Tags,
-        Terminen und Jahrgaengen. Optionale Filter: tag_id, event_id,
-        jahrgang_id und eine Volltextsuche (search) ueber Titel und
+        Zaehlern (Dateien, Termine, Jahrgänge) sowie den zugeordneten Tags,
+        Terminen und Jahrgängen. Optionale Filter: tag_id, event_id,
+        jahrgang_id und eine Volltextsuche (search) über Titel und
         Beschreibung.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "materials.organization_id UND Jahrgangs-Schranke fuer Teamer:innen"
+        objekt-pruefung: "materials.organization_id UND Jahrgangs-Schranke für Teamer:innen"
         hinweis: >
           # BEFUND M1 BEHOBEN am 24.08.2026: Material mit Jahrgang sehen nur
           Teamer:innen, die diesem Jahrgang mit can_view zugewiesen sind;
           Material ohne Jahrgang sehen alle. Leitung (admin, org_admin) sieht
-          weiterhin alles, sonst waere es nicht verwaltbar. Die Bindung an
+          weiterhin alles, sonst wäre es nicht verwaltbar. Die Bindung an
           einen Termin (material_events) bleibt bewusst reine Suchhilfe und
           grenzt nichts ab. Die Filter-Parameter selbst werden nicht auf die
-          Organisation geprueft, was folgenlos ist, da die Zuordnungstabellen
+          Organisation geprüft, was folgenlos ist, da die Zuordnungstabellen
           ohnehin nur org-eigene Materialien treffen.
       parameters:
         - name: tag_id
@@ -895,15 +895,15 @@ paths:
     post:
       summary: Material anlegen
       description: >
-        Legt ein Material an und verknuepft es mit Terminen, Jahrgaengen und
+        Legt ein Material an und verknuepft es mit Terminen, Jahrgängen und
         Tags. Alle uebergebenen IDs werden gegen die eigene Organisation
-        geprueft (utils/orgOwnership.allIdsBelongToOrg); fremde IDs fuehren zu
+        geprüft (utils/orgOwnership.allIdsBelongToOrg); fremde IDs fuehren zu
         400. Danach Live-Update an die Leitung.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateCreateMaterial]
         org-scope: true
-        objekt-pruefung: "event_ids, jahrgang_ids und tag_ids muessen der eigenen Org gehoeren (400 sonst); organization_id und created_by aus dem Token"
+        objekt-pruefung: "event_ids, jahrgang_ids und tag_ids müssen der eigenen Org gehören (400 sonst); organization_id und created_by aus dem Token"
       requestBody:
         required: true
         content:
@@ -931,8 +931,8 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "materials.organization_id; der Termin selbst wird nicht separat geprueft - ein fremder eventId liefert schlicht eine leere Liste"
-        hinweis: "Jahrgangs-Schranke fuer Teamer:innen (Befund M1 behoben am 24.08.2026): Material mit Jahrgang nur fuer dessen Teamer:innen, ohne Jahrgang fuer alle; Leitung sieht alles."
+        objekt-pruefung: "materials.organization_id; der Termin selbst wird nicht separat geprüft - ein fremder eventId liefert schlicht eine leere Liste"
+        hinweis: "Jahrgangs-Schranke für Teamer:innen (Befund M1 behoben am 24.08.2026): Material mit Jahrgang nur für dessen Teamer:innen, ohne Jahrgang für alle; Leitung sieht alles."
       parameters:
         - name: eventId
           in: path
@@ -946,13 +946,13 @@ paths:
 
   /api/material/{id}:
     get:
-      summary: Einzelnes Material mit Dateien, Tags, Terminen und Jahrgaengen
+      summary: Einzelnes Material mit Dateien, Tags, Terminen und Jahrgängen
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
         objekt-pruefung: "Material org-gescopt (404 sonst)"
-        hinweis: "Jahrgangs-Schranke fuer Teamer:innen (Befund M1 behoben am 24.08.2026): Material mit Jahrgang nur fuer dessen Teamer:innen, ohne Jahrgang fuer alle; Leitung sieht alles."
+        hinweis: "Jahrgangs-Schranke für Teamer:innen (Befund M1 behoben am 24.08.2026): Material mit Jahrgang nur für dessen Teamer:innen, ohne Jahrgang für alle; Leitung sieht alles."
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: "id, title, description, created_at, created_by_name, tags[], events[], jahrgaenge[], files[] (id, original_name, stored_name, mime_type, file_size, created_at)" }
@@ -965,14 +965,14 @@ paths:
       description: >
         Teilaktualisierung von Titel und Beschreibung. Werden event_ids,
         jahrgang_ids oder tag_ids uebergeben, werden die jeweiligen Zuordnungen
-        komplett ersetzt (loeschen und neu setzen); nicht uebergebene Felder
-        bleiben unveraendert. Alle IDs werden gegen die eigene Organisation
-        geprueft.
+        komplett ersetzt (löschen und neu setzen); nicht uebergebene Felder
+        bleiben unverändert. Alle IDs werden gegen die eigene Organisation
+        geprüft.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateUpdateMaterial]
         org-scope: true
-        objekt-pruefung: "Material muss zur eigenen Org gehoeren (404 sonst); event_ids/jahrgang_ids/tag_ids org-geprueft (400 sonst)"
+        objekt-pruefung: "Material muss zur eigenen Org gehören (404 sonst); event_ids/jahrgang_ids/tag_ids org-geprüft (400 sonst)"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         required: true
@@ -994,16 +994,16 @@ paths:
         "404": { $ref: '#/components/responses/NotFound' }
         "500": { $ref: '#/components/responses/ServerError' }
     delete:
-      summary: Material samt Dateien loeschen
+      summary: Material samt Dateien löschen
       description: >
         Loescht das Material (Zuordnungen und material_files per CASCADE) und
         entfernt anschliessend die verschluesselten Dateien vom Dateisystem.
-        Ein Fehler beim Loeschen einer Datei wird nur protokolliert.
+        Ein Fehler beim Löschen einer Datei wird nur protokolliert.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
-        objekt-pruefung: "DELETE mit organization_id-Bedingung (404 sonst); die Dateiliste wird ueber denselben Org-JOIN ermittelt"
+        objekt-pruefung: "DELETE mit organization_id-Bedingung (404 sonst); die Dateiliste wird über denselben Org-JOIN ermittelt"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
         "200": { description: Geloescht }
@@ -1014,21 +1014,21 @@ paths:
 
   /api/material/{id}/files:
     post:
-      summary: Dateien zu einem Material hochladen (verschluesselt at-rest)
+      summary: Dateien zu einem Material hochladen (verschlüsselt at-rest)
       description: >
         multipart/form-data, Feld "files", bis zu 10 Dateien pro Request, je
-        max. 20 MB (multer memoryStorage, createApp.js). Zweistufige Pruefung:
+        max. 20 MB (multer memoryStorage, createApp.js). Zweistufige Prüfung:
         erst der MIME-Filter von multer (Bilder, PDF, Video, Audio,
         Office- und OpenDocument-Formate, ZIP, text/plain, text/csv), dann eine
-        Magic-Bytes-Pruefung auf dem Buffer (415 bei Nichtuebereinstimmung;
+        Magic-Bytes-Prüfung auf dem Buffer (415 bei Nichtuebereinstimmung;
         text/plain und text/csv sind ausgenommen, weil sie keine Signatur
-        haben). Gespeichert wird AES-256-GCM-verschluesselt unter einem
+        haben). Gespeichert wird AES-256-GCM-verschlüsselt unter einem
         zufaelligen 64-Hex-Dateinamen.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "multer materialUpload.array('files', 10)"]
         org-scope: true
-        objekt-pruefung: "Material muss zur eigenen Org gehoeren (404 sonst)"
+        objekt-pruefung: "Material muss zur eigenen Org gehören (404 sonst)"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         required: true
@@ -1057,13 +1057,13 @@ paths:
       description: >
         Liefert die entschluesselte Datei als Download mit dem urspruenglichen
         Dateinamen und dem gespeicherten MIME-Typ. Der Pfadparameter wird durch
-        path.basename und einen Test auf genau 64 Hex-Zeichen gefuehrt
+        path.basename und einen Test auf genau 64 Hex-Zeichen geführt
         (Path-Traversal-Schutz).
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
         org-scope: true
-        objekt-pruefung: "Datei wird ueber JOIN auf materials.organization_id geprueft (404 bei fremder Org); Dateiname muss /^[a-f0-9]{64}$/ erfuellen"
+        objekt-pruefung: "Datei wird über JOIN auf materials.organization_id geprüft (404 bei fremder Org); Dateiname muss /^[a-f0-9]{64}$/ erfuellen"
         hinweis: >
           # BEFUND M1 BEHOBEN am 24.08.2026: Der Download unterliegt derselben
           Jahrgangs-Schranke wie die Liste - eine Teamer:in bekommt Dateien
@@ -1085,21 +1085,21 @@ paths:
         "404": { description: Datei nicht gefunden (fremde Org oder auf dem Server nicht vorhanden) }
         "500": { description: Datei konnte nicht entschluesselt werden / Serverfehler }
     delete:
-      summary: Einzelne Material-Datei loeschen
+      summary: Einzelne Material-Datei löschen
       description: >
         Loescht den Datenbankeintrag und die Datei vom Dateisystem und setzt
-        updated_at des Materials neu. Ein Fehler beim Loeschen der Datei wird
+        updated_at des Materials neu. Ein Fehler beim Löschen der Datei wird
         nur protokolliert.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin]
         org-scope: true
-        objekt-pruefung: "Datei wird ueber JOIN auf materials.organization_id geprueft (404 sonst)"
+        objekt-pruefung: "Datei wird über JOIN auf materials.organization_id geprüft (404 sonst)"
         hinweis: >
           Achtung, derselbe Pfad wird mit ZWEI verschiedenen Kennungen
           bedient: der GET erwartet den 64-stelligen stored_name, der DELETE
           die numerische material_files.id. Im Code sind das zwei getrennte
-          Routen (/files/:filename und /files/:fileId); in OpenAPI muessen sie
+          Routen (/files/:filename und /files/:fileId); in OpenAPI müssen sie
           sich einen Pfad teilen, daher der neutrale Name fileRef.
       parameters:
         - name: fileRef
@@ -1117,7 +1117,7 @@ paths:
   # ===================================================================
   # backend/routes/wrapped.js  (Prefix /api/wrapped)
   # Der Router exportiert zusaetzlich generateAllKonfiWrapped und
-  # generateAllTeamerWrapped als Funktionen fuer den Cron
+  # generateAllTeamerWrapped als Funktionen für den Cron
   # (backgroundService) - das sind KEINE HTTP-Routen und daher hier nicht
   # dokumentiert.
   # ===================================================================
@@ -1126,7 +1126,7 @@ paths:
       summary: Eigenen Jahresrueckblick abrufen
       description: >
         Liefert den neuesten eigenen Wrapped-Snapshot. Die Art richtet sich
-        nach der Rolle: role_name 'teamer' erhaelt wrapped_type 'teamer', alle
+        nach der Rolle: role_name 'teamer' erhält wrapped_type 'teamer', alle
         anderen 'konfi'. Ohne Snapshot kommt 404.
       x-berechtigung:
         rollen: ["alle authentifizierten"]
@@ -1136,9 +1136,9 @@ paths:
         hinweis: >
           # BEFUND W1: Die Abfrage filtert NICHT auf organization_id. Bei
           Multi-Org-Nutzung kommt der neueste Snapshot unabhaengig von der
-          aktiven Organisation zurueck. Es sind immer eigene Daten, aber der
+          aktiven Organisation zurück. Es sind immer eigene Daten, aber der
           Org-Kontext wird ignoriert. Ausserdem gibt es keinen Rollen-Guard:
-          jede authentifizierte Rolle darf die Route aufrufen (fuer
+          jede authentifizierte Rolle darf die Route aufrufen (für
           org_admin/admin/super_admin ist das Ergebnis in aller Regel 404).
       responses:
         "200": { description: "data (Snapshot-JSON), computed_at, year, wrapped_type" }
@@ -1148,22 +1148,22 @@ paths:
 
   /api/wrapped/generate/{jahrgangId}:
     post:
-      summary: Konfi-Jahresrueckblick fuer einen ganzen Jahrgang erzeugen und freigeben
+      summary: Konfi-Jahresrueckblick für einen ganzen Jahrgang erzeugen und freigeben
       description: >
-        Erzeugt (oder ueberschreibt) die Snapshots aller nicht geloeschten
+        Erzeugt (oder überschreibt) die Snapshots aller nicht geloeschten
         Konfis des Jahrgangs parallel, setzt jahrgaenge.wrapped_released_at auf
-        jetzt - damit ist der Rueckblick fuer die Konfis sichtbar - und schickt
+        jetzt - damit ist der Rueckblick für die Konfis sichtbar - und schickt
         allen Konfis eine Push-Nachricht. Laeuft in einer Transaktion; ein
-        Fehler bei einzelnen Konfis wird nur gezaehlt (errors), nicht
+        Fehler bei einzelnen Konfis wird nur gezählt (errors), nicht
         zurueckgerollt.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "param('jahrgangId').isInt", handleValidationErrors]
         org-scope: true
-        objekt-pruefung: "Jahrgang muss zur aktiven Org gehoeren (404 sonst); organization_id der Snapshots kommt aus dem Token"
+        objekt-pruefung: "Jahrgang muss zur aktiven Org gehören (404 sonst); organization_id der Snapshots kommt aus dem Token"
         hinweis: >
-          Keine Jahrgangsgrenze: ein 'admin' kann fuer JEDEN Jahrgang der
-          Organisation den Rueckblick erzeugen und freigeben, auch ausserhalb
+          Keine Jahrgangsgrenze: ein 'admin' kann für JEDEN Jahrgang der
+          Organisation den Rueckblick erzeugen und freigeben, auch außerhalb
           der eigenen Zuweisungen. Teamer:innen haben keinen Zugriff (403).
       parameters: [ { $ref: '#/components/parameters/pathJahrgangId' } ]
       responses:
@@ -1176,12 +1176,12 @@ paths:
 
   /api/wrapped/generate-teamer:
     post:
-      summary: Teamer-Jahresrueckblick fuer alle Teamer:innen der Organisation erzeugen
+      summary: Teamer-Jahresrueckblick für alle Teamer:innen der Organisation erzeugen
       description: >
-        Erzeugt (oder ueberschreibt) die Snapshots aller Teamer:innen der
+        Erzeugt (oder überschreibt) die Snapshots aller Teamer:innen der
         Organisation nacheinander und schickt ihnen eine Push-Nachricht. Es
-        gibt keine Freigabe-Markierung wie bei den Jahrgaengen - der Rueckblick
-        ist sofort ueber GET /api/wrapped/me abrufbar.
+        gibt keine Freigabe-Markierung wie bei den Jahrgängen - der Rueckblick
+        ist sofort über GET /api/wrapped/me abrufbar.
       x-berechtigung:
         rollen: [org_admin]
         middleware: [verifyTokenRBAC, requireOrgAdmin]
@@ -1199,19 +1199,19 @@ paths:
 
   /api/wrapped/{jahrgangId}:
     delete:
-      summary: Jahresrueckblick eines Jahrgangs loeschen und Freigabe zuruecknehmen
+      summary: Jahresrueckblick eines Jahrgangs löschen und Freigabe zuruecknehmen
       description: >
         Loescht alle Snapshots des Jahrgangs und setzt
-        jahrgaenge.wrapped_released_at auf NULL, womit der Rueckblick fuer die
+        jahrgaenge.wrapped_released_at auf NULL, womit der Rueckblick für die
         Konfis wieder verschwindet.
       x-berechtigung:
         rollen: [org_admin]
         middleware: [verifyTokenRBAC, requireOrgAdmin, "param('jahrgangId').isInt", handleValidationErrors]
         org-scope: true
-        objekt-pruefung: "Jahrgang muss zur aktiven Org gehoeren (404 sonst); DELETE mit jahrgang_id + organization_id"
+        objekt-pruefung: "Jahrgang muss zur aktiven Org gehören (404 sonst); DELETE mit jahrgang_id + organization_id"
         hinweis: >
           # BEFUND W3: Teamer-Snapshots werden ohne jahrgang_id gespeichert und
-          von dieser Route deshalb nie erfasst. Einen Endpunkt zum Loeschen des
+          von dieser Route deshalb nie erfasst. Einen Endpunkt zum Löschen des
           Teamer-Rueckblicks gibt es nicht.
       parameters: [ { $ref: '#/components/parameters/pathJahrgangId' } ]
       responses:
@@ -1238,14 +1238,14 @@ paths:
           req.user.id === userId erlaubt immer; sonst muss role_name 'admin'
           oder 'org_admin' sein UND users.organization_id des Ziels der eigenen
           organization_id entsprechen (403 sonst). Kein requireAdmin-Guard,
-          die Pruefung steht inline im Handler.
+          die Prüfung steht inline im Handler.
         hinweis: >
-          # BEFUND W2: Die Org-Pruefung nutzt users.organization_id, also die
+          # BEFUND W2: Die Org-Prüfung nutzt users.organization_id, also die
           PRIMAER-Organisation der Zielperson, nicht die aktive Org aus dem
           Header X-Active-Organization. Die Snapshot-Abfrage selbst filtert
           ausserdem nur auf user_id, ohne organization_id - bei Multi-Org
-          koennen also Snapshots aus einer anderen Organisation mitkommen.
-          Teamer:innen erhalten fuer fremde userIds 403.
+          können also Snapshots aus einer anderen Organisation mitkommen.
+          Teamer:innen erhalten für fremde userIds 403.
       parameters: [ { $ref: '#/components/parameters/pathUserId' } ]
       responses:
         "200": { description: "Array (id, wrapped_type, year, data, computed_at)" }

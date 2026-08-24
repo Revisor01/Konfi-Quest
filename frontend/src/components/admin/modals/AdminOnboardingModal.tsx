@@ -13,11 +13,11 @@ interface AdminOnboardingModalProps {
 
 // Admin-Tour: erst die 5 Tabs (Konfis · Chat · Events · Challenges · Mehr), dann
 // die wichtigsten Verwaltungs-Aufgaben (Jahrgang, Badges, Wrapped, Material).
-// Die Aktivitaeten haben einen EIGENEN Slide DIREKT hinter den Events
+// Die Aktivitäten haben einen EIGENEN Slide DIREKT hinter den Events
 // (User-Entscheid 10.08.): sie wohnen als Segment im Events-Tab, und nur
-// nebenbei erwaehnt ging unter, was sie von Events unterscheidet (kein
+// nebenbei erwähnt ging unter, was sie von Events unterscheidet (kein
 // Anmelden, sondern Meldung hinterher). Das Anlegen selbst bleibt im Mehr-Tab
-// und wird dort genannt. Beispiele stammen aus echten Aktivitaeten der
+// und wird dort genannt. Beispiele stammen aus echten Aktivitäten der
 // Produktivdaten.
 const SLIDES: OnboardingSlide[] = [
   {

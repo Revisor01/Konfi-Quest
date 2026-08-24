@@ -21,7 +21,7 @@ describe('useActionGuard', () => {
       guardPromise = result.current.guard(action);
     });
 
-    // Waehrend die Action laeuft: isSubmitting true
+    // Waehrend die Action läuft: isSubmitting true
     expect(result.current.isSubmitting).toBe(true);
 
     // Action abschliessen
@@ -52,7 +52,7 @@ describe('useActionGuard', () => {
       resolveFirst = resolve;
     });
 
-    // Erste Action starten (laeuft noch)
+    // Erste Action starten (läuft noch)
     let firstPromise: Promise<void>;
     act(() => {
       firstPromise = result.current.guard(firstAction);

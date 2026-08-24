@@ -53,7 +53,7 @@ describe('Wrapped Routes', () => {
     });
 
     // Frueher stand hier "200 oder 404" mit dem Hinweis "wenn Snapshot
-    // fehlschlaegt". Genau das trat immer ein: activities.category fehlte im
+    // fehlschlägt". Genau das trat immer ein: activities.category fehlte im
     // Test-Schema, jeder Snapshot scheiterte still, und die gesamte
     // Wrapped-Inhaltslogik war ungetestet. Seit das Schema aus Produktion
     // kommt, muss die Generierung wirklich durchlaufen (Audit 22.08.2026).

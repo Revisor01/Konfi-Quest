@@ -44,7 +44,7 @@ const AdminChallengesPage: React.FC = () => {
 
   // Eigene Abzeichen aus der EINEN Liste ableiten: has_badge liefert
   // GET /challenges/admin seit der Zusammenlegung mit (11.08.) — dadurch
-  // braucht es keinen zweiten Endpunkt fuer die Teilnehmer-Sicht.
+  // braucht es keinen zweiten Endpunkt für die Teilnehmer-Sicht.
   const marks = useMemo(
     () => (Array.isArray(challenges) ? challenges : [])
       .filter((c) => c.has_badge)
@@ -61,14 +61,14 @@ const AdminChallengesPage: React.FC = () => {
   const [editChallenge, setEditChallenge] = useState<AdminChallenge | null>(null);
   const [moderationChallenge, setModerationChallenge] = useState<AdminChallenge | null>(null);
 
-  // "Ungespeicherte Aenderungen"-Stand des Formular-Modals, damit canDismiss
+  // "Ungespeicherte Änderungen"-Stand des Formular-Modals, damit canDismiss
   // auch Swipe-/Backdrop-Schliessen abfangen kann.
   const manageDirtyRef = useRef(false);
 
   // WICHTIG: Beim Schliessen wird der Challenge-State NICHT auf null gesetzt.
-  // useIonModal rendert das Modal waehrend der Dismiss-Animation weiter — ein
+  // useIonModal rendert das Modal während der Dismiss-Animation weiter — ein
   // null-Render liefe dort in die ErrorBoundary (clearAuth => "Rauswurf zur
-  // Anmeldung"). Der State wird beim naechsten Oeffnen ohnehin neu gesetzt.
+  // Anmeldung"). Der State wird beim nächsten Oeffnen ohnehin neu gesetzt.
   const [presentManageModal, dismissManageModal] = useIonModal(ChallengeManageModal, {
     challenge: editChallenge,
     onDirtyChange: (dirty: boolean) => { manageDirtyRef.current = dirty; },
@@ -81,7 +81,7 @@ const AdminChallengesPage: React.FC = () => {
 
   const [presentModerationModal, dismissModerationModal] = useIonModal(ChallengeLeitungModal, {
     challenge: moderationChallenge,
-    // Fuer die Card-Optik des Einreichen-Modals (schiebt die Seite nach hinten).
+    // Für die Card-Optik des Einreichen-Modals (schiebt die Seite nach hinten).
     get presentingElement() { return pageRef.current || presentingElement; },
     onClose: () => { dismissModerationModal(); },
     onChanged: () => {

@@ -24,7 +24,7 @@ import {
 } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { useLocation } from 'react-router-dom';
-// useLocation fuer die Auswertung von ?segment=... (React Router v5 API)
+// useLocation für die Auswertung von ?segment=... (React Router v5 API)
 import {
   qrCodeOutline,
   add,
@@ -150,7 +150,7 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
     try {
       localStorage.setItem(UMZUG_HINWEIS_KEY, 'true');
     } catch {
-      // Speicher nicht verfuegbar — Hinweis erscheint dann beim naechsten Mal erneut.
+      // Speicher nicht verfuegbar — Hinweis erscheint dann beim nächsten Mal erneut.
     }
     setShowUmzugHinweis(false);
   };

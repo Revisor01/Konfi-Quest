@@ -62,15 +62,15 @@ import type {
   ChallengeSubmission
 } from '../../../types/challenges';
 
-// VEREINTES Challenge-Detail fuer Leitung und Teamer:innen (11.08.): Verwalten
+// VEREINTES Challenge-Detail für Leitung und Teamer:innen (11.08.): Verwalten
 // UND Mitmachen in EINEM Modal, statt eines Segments, das die ganze Seite
 // umschaltet. Enthaelt die Moderation aus ChallengeModerationModal und den
 // Abschnitt "Dein Beitrag" aus der Konfi-Detailansicht.
 //
-// Die beiden Ursprungs-Modals bleiben unveraendert bestehen:
+// Die beiden Ursprungs-Modals bleiben unverändert bestehen:
 // ChallengeDetailModal wird weiterhin von Konfis genutzt.
 
-// Medienvorschau fuer Challenge-Beitraege (Foto/Audio/Video). Bewusst eine
+// Medienvorschau für Challenge-Beitraege (Foto/Audio/Video). Bewusst eine
 // eigene, schlanke Variante statt des Chat-LazyImage: der mediaCache-Service
 // ist fest auf /chat/files/ verdrahtet, Challenges liegen unter
 // /challenges/files/. Geladen wird per axios (Auth-Header) in eine
@@ -163,7 +163,7 @@ const MEDIA_ICON: Record<string, string> = {
   link: linkOutline
 };
 
-// Icon/Farb-Zuordnung fuer Corner-Badges — dieselbe Zuordnung wie in
+// Icon/Farb-Zuordnung für Corner-Badges — dieselbe Zuordnung wie in
 // ChallengeModerationModal und getOwnStatus (Konfi-Seite), damit Status
 // ueberall gleich aussieht.
 const STATUS_BADGE: Record<string, { label: string; icon: string; color: string }> = {
@@ -172,7 +172,7 @@ const STATUS_BADGE: Record<string, { label: string; icon: string; color: string 
   hidden: { label: 'Ausgeblendet', icon: removeCircleOutline, color: 'var(--app-color-danger)' }
 };
 
-// Konsens NIE mit einem Haken darstellen: der Haken gehoert allein dem
+// Konsens NIE mit einem Haken darstellen: der Haken gehört allein dem
 // Freigabe-STATUS; der Konsens spricht in Augen-Metaphorik.
 const CONSENT_BADGE: Record<string, { label: string; icon: string; color: string }> = {
   publish: { label: 'Mit Namen sichtbar', icon: eyeOutline, color: 'var(--app-color-success)' },
@@ -181,13 +181,13 @@ const CONSENT_BADGE: Record<string, { label: string; icon: string; color: string
 };
 
 /**
- * Status-Badge unter Beruecksichtigung der Sichtbarkeit.
+ * Status-Badge unter Berücksichtigung der Sichtbarkeit.
  *
  * "Freigegeben" mit gruenem Haken hiess bisher nur: die Leitung hat den Beitrag
- * durchgewinkt. Ob ihn danach ueberhaupt jemand ausser der Leitung sieht, stand
+ * durchgewinkt. Ob ihn danach überhaupt jemand außer der Leitung sieht, stand
  * allein im zweiten Badge — ein freigegebener Beitrag mit consent='private' trug
  * also einen gruenen Haken, obwohl er nirgends erscheint (User-Hinweis 11.08.).
- * Jetzt schlaegt die Sichtbarkeit den Haken: bleibt der Beitrag bei der Leitung,
+ * Jetzt schlägt die Sichtbarkeit den Haken: bleibt der Beitrag bei der Leitung,
  * zeigt das Badge das Schloss.
  */
 const getStatusBadge = (
@@ -214,8 +214,8 @@ const buildVisibilitySubtitle = (challenge: AdminChallenge): string => {
     : challenge.visibility === 'private'
       ? 'Nur für euch in der Leitung'
       : 'Konfi entscheidet je Beitrag';
-  // Bei 'private' ist die Freigabe fuer die Gruppe bedeutungslos — dort gibt es
-  // keine Galerie, in der etwas erscheinen koennte.
+  // Bei 'private' ist die Freigabe für die Gruppe bedeutungslos — dort gibt es
+  // keine Galerie, in der etwas erscheinen könnte.
   if (challenge.visibility === 'private') return sichtbarkeit;
   return `${sichtbarkeit} · ${challenge.moderated ? 'nach Freigabe' : 'sofort'}`;
 };
@@ -230,17 +230,17 @@ const formatDateTime = (value?: string) => {
 
 export interface ChallengeLeitungModalProps {
   // NULL-SICHER: Die Seite dahinter fuehrt die Challenge als State und rendert
-  // dieses Modal ueber useIonModal auch waehrend der Dismiss-Animation weiter.
+  // dieses Modal über useIonModal auch während der Dismiss-Animation weiter.
   // Wuerde der State dort auf null gesetzt (oder ein kaputter Cache ein
   // undefined liefern), darf das hier NICHT werfen — ein Render-Fehler landet
   // sonst in der ErrorBoundary, die Auth + Cache leert ("Rauswurf zur Anmeldung").
   challenge?: AdminChallenge | null;
   onClose: () => void;
   // Wird nach jeder Moderations-Aktion und nach eigenem Einreichen gerufen,
-  // damit die Liste dahinter (Pending-Zaehler) aktuell bleibt.
+  // damit die Liste dahinter (Pending-Zähler) aktuell bleibt.
   onChanged?: () => void;
   /**
-   * Element fuer die Card-Optik des Einreichen-Modals. Ohne dieses schiebt die
+   * Element für die Card-Optik des Einreichen-Modals. Ohne dieses schiebt die
    * Ansicht darunter nicht nach hinten, das Sheet legt sich hart darueber
    * (User-Hinweis 11.08.).
    */
@@ -294,7 +294,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
   }, [loadSubmissions]);
 
   // Einreich-Modal: erwartet eine KonfiChallenge. Die AdminChallenge erweitert
-  // dieselbe Basis (ChallengeBase) und traegt alle vom Formular gelesenen
+  // dieselbe Basis (ChallengeBase) und trägt alle vom Formular gelesenen
   // Felder (allowed_media, visibility, moderated) — deshalb genuegt die
   // Zuweisung ohne Nachbau.
   const submitChallenge: KonfiChallenge | null = challenge ?? null;
@@ -324,7 +324,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
   // Sind beide relevant, weicht "Gesamt" — die Gesamtzahl steht ohnehin in der
   // Listenueberschrift ("Beiträge (8)") und ist die schwaechste der Angaben.
   const headerStats = useMemo(() => {
-    // Labels muessen KURZ sein: die Kachel ist auf 100px gedeckelt und das
+    // Labels müssen KURZ sein: die Kachel ist auf 100px gedeckelt und das
     // Label steht in Grossbuchstaben mit Sperrung und ohne Umbruch
     // (.app-stats-row__label) -> "Versteckt" / "Frei" statt der langen Woerter.
     const optional: Array<{ value: number; label: string }> = [];
@@ -335,7 +335,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
       ? [...optional.slice(0, 2), { value: counts.approved, label: 'Frei' }]
       : [{ value: counts.total, label: 'Gesamt' }, ...optional, { value: counts.approved, label: 'Frei' }];
 
-    // Bleiben nur zwei (keine Freigabe-Pflicht, nichts ausgeblendet), fuellt
+    // Bleiben nur zwei (keine Freigabe-Pflicht, nichts ausgeblendet), füllt
     // "Versteckt: 0" auf — drei Kacheln sind gesetzt, zwei saehen luecken-
     // haft aus.
     while (stats.length < 3) stats.push({ value: counts.hidden, label: 'Versteckt' });
@@ -380,7 +380,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
 
   const canSubmitMore = isActive && (challenge?.allow_multiple || ownSubmissions.length === 0);
 
-  // Beendete Challenge ohne eigene Beitraege: der Abschnitt faellt komplett weg.
+  // Beendete Challenge ohne eigene Beitraege: der Abschnitt fällt komplett weg.
   const showOwnSection = isActive || ownSubmissions.length > 0;
 
   // Ohne Freigabe-Pflicht gibt es das "Wartet"-Segment nicht — ein von einer
@@ -437,7 +437,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
     });
   };
 
-  // Welche Aktionen ein Beitrag gerade zulaesst — EINE Quelle fuer Tippen
+  // Welche Aktionen ein Beitrag gerade zulaesst — EINE Quelle für Tippen
   // (ActionSheet) und Wischen (Swipe-Icons), damit beide Wege nie auseinander
   // laufen. Reihenfolge = Reihenfolge im ActionSheet.
   const availableActions = (submission: ChallengeSubmission) => {
@@ -468,7 +468,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
     }
     if (submission.moderation_status !== 'hidden') {
       actions.push({
-        // NICHT eyeOffOutline: das gehoert dem Anonymisieren (durchgestrichenes
+        // NICHT eyeOffOutline: das gehört dem Anonymisieren (durchgestrichenes
         // Auge = "ohne Namen"). Ausblenden nimmt dasselbe Symbol wie sein
         // Status-Badge, damit Aktion und Zustand zusammenpassen und die beiden
         // Aktionen im Menue unterscheidbar sind (User-Hinweis 11.08.).
@@ -709,7 +709,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                               href={submission.link_url!}
                               target="_blank"
                               rel="noopener noreferrer"
-                              // Volle Adresse im title: fuer die Freigabe muss
+                              // Volle Adresse im title: für die Freigabe muss
                               // pruefbar bleiben, wohin der Link fuehrt.
                               title={submission.link_url!}
                               style={{
@@ -866,11 +866,11 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                                   href={submission.link_url!}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  // Der Link gehoert dem Link — sonst faengt das
+                                  // Der Link gehört dem Link — sonst faengt das
                                   // umgebende IonItem den Tap ab und oeffnet statt
                                   // der Seite das Aktions-Menue.
                                   onClick={(e) => e.stopPropagation()}
-                                  // Volle Adresse im title: fuer die Freigabe muss
+                                  // Volle Adresse im title: für die Freigabe muss
                                   // pruefbar bleiben, wohin der Link fuehrt.
                                   title={submission.link_url!}
                                   style={{
@@ -912,8 +912,8 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
                               <IonItemOption
                                 key={action.key}
                                 // Zuerst das aufgewischte Element schliessen,
-                                // sonst bleibt die Zeile offen stehen, waehrend
-                                // die Aktion laeuft (User-Hinweis 11.08.).
+                                // sonst bleibt die Zeile offen stehen, während
+                                // die Aktion läuft (User-Hinweis 11.08.).
                                 onClick={() => { closeOpenSlidingItems(); action.run(); }}
                                 className="app-swipe-action"
                                 aria-label={action.text}

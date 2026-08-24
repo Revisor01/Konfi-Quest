@@ -10,7 +10,7 @@
 //
 // Seitdem wird das Test-Schema aus einem Produktions-Dump geladen
 // (tests/schema/prod-schema.sql). Diese Tests stellen sicher, dass das auch
-// so bleibt: Sie pruefen die Objekte, an denen der Drift damals aufgefallen
+// so bleibt: Sie prüfen die Objekte, an denen der Drift damals aufgefallen
 // ist, und bilden damit die Klasse "Spalte/Tabelle existiert nur in
 // Produktion" ab.
 const { getTestPool, closePool } = require('../helpers/db');
@@ -74,7 +74,7 @@ describe('Schema-Drift: Test-DB gegen Produktion', () => {
   });
 
   it('konfi_profiles.password_plain existiert', async () => {
-    // Wurde frueher von einem Test per ALTER TABLE zur Laufzeit selbst
+    // Wurde früher von einem Test per ALTER TABLE zur Laufzeit selbst
     // angelegt — ein Workaround, der das Schema von der Testreihenfolge
     // abhaengig machte.
     expect(await spalteExistiert('konfi_profiles', 'password_plain')).toBe(true);
@@ -100,10 +100,10 @@ describe('Schema-Drift: Test-DB gegen Produktion', () => {
   it('die TRUNCATE-Liste deckt alle Tabellen ab', async () => {
     // Fehlt eine Tabelle, bleiben ihre Daten zwischen den Suites stehen und
     // erzeugen Abhaengigkeiten von der Testreihenfolge — schwer zu finden.
-    // Steht eine drin, die es nicht gibt, schlaegt jedes truncateAll fehl.
+    // Steht eine drin, die es nicht gibt, schlägt jedes truncateAll fehl.
     // Beides ist beim Umstieg auf das Produktions-Schema aufgetreten:
     // konfi_activities/konfi_badges existierten nur im alten Test-Schema,
-    // waehrend settings, daily_verses und drei weitere nie geleert wurden.
+    // während settings, daily_verses und drei weitere nie geleert wurden.
     const fs = require('fs');
     const path = require('path');
     const dbHelper = fs.readFileSync(

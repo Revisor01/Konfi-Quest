@@ -1,7 +1,7 @@
-// Dateisystem-Helfer fuer hochgeladene Medien (Antrags-Nachweisfotos in
+// Dateisystem-Helfer für hochgeladene Medien (Antrags-Nachweisfotos in
 // uploads/requests/, Challenge-Beitraege in uploads/challenges/).
-// Zentralisiert das Loeschen, damit alle Aufrufer (Konfi-Antrag-Loeschen,
-// User-Loeschung, manuelles Admin-Loeschen, Orphan-Cleanup, Challenge-Beitrag
+// Zentralisiert das Löschen, damit alle Aufrufer (Konfi-Antrag-Löschen,
+// User-Löschung, manuelles Admin-Löschen, Orphan-Cleanup, Challenge-Beitrag
 // zuruecknehmen) dieselbe sichere Logik verwenden.
 
 const fs = require('fs');
@@ -11,9 +11,9 @@ const REQUESTS_DIR = path.join(__dirname, '../uploads/requests');
 const CHALLENGES_DIR = path.join(__dirname, '../uploads/challenges');
 
 // Loescht eine Datei aus einem der Upload-Verzeichnisse anhand des in der DB
-// gespeicherten Dateinamens. Gibt true zurueck, wenn geloescht wurde, false
+// gespeicherten Dateinamens. Gibt true zurück, wenn gelöscht wurde, false
 // wenn nichts zu tun war. Wirft NICHT — Fehler werden geloggt, damit ein
-// fehlendes File nie eine DB-Operation (Antrag/User/Beitrag loeschen) blockiert.
+// fehlendes File nie eine DB-Operation (Antrag/User/Beitrag löschen) blockiert.
 async function deleteFileInDir(dir, filename, label) {
   if (!filename) return false;
 
@@ -41,7 +41,7 @@ async function deletePhotoFile(filename) {
   return deleteFileInDir(REQUESTS_DIR, filename, 'deletePhotoFile');
 }
 
-// Challenge-Beitraege (Foto/Audio/Video) liegen verschluesselt in
+// Challenge-Beitraege (Foto/Audio/Video) liegen verschlüsselt in
 // uploads/challenges/ unter einem zufaelligen Hex-Namen.
 async function deleteChallengeFile(filename) {
   return deleteFileInDir(CHALLENGES_DIR, filename, 'deleteChallengeFile');

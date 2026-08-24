@@ -235,7 +235,7 @@ describe('useOfflineQuery', () => {
 
     await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1));
 
-    // Offline: der Reconnect-Handler darf keinen Fetch ausloesen
+    // Offline: der Reconnect-Handler darf keinen Fetch auslösen
     mockIsOnline = false;
     window.dispatchEvent(new CustomEvent('sync:reconnect'));
 

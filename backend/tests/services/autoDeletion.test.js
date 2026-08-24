@@ -1,16 +1,16 @@
 // backend/tests/services/autoDeletion.test.js
-// Tests fuer die Auto-Loeschung (D-13/14/15): runAutoDeletion prueft je Jahrgang
-// ab dem Stichtag (is_konfirmation-Event) -> Tag 60 Soft-Loeschung, Tag 120
-// kaskadierende Hard-Loeschung. Teamer-Ausnahme (D-10), Idempotenz und
+// Tests für die Auto-Löschung (D-13/14/15): runAutoDeletion prüft je Jahrgang
+// ab dem Stichtag (is_konfirmation-Event) -> Tag 60 Soft-Löschung, Tag 120
+// kaskadierende Hard-Löschung. Teamer-Ausnahme (D-10), Idempotenz und
 // Fehler-Isolation (D-15) werden abgedeckt. Sicherer Default: Jahrgang ohne
-// is_konfirmation-Event wird uebersprungen (keine Loeschung).
+// is_konfirmation-Event wird übersprungen (keine Löschung).
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, ROLES, JAHRGAENGE } = require('../helpers/seed');
 const BackgroundService = require('../../services/backgroundService');
 
 const ORG_ID = 1;
 
-// Event-IDs ausserhalb des Seed-Bereichs (Seed nutzt 1-4), um Kollisionen zu vermeiden.
+// Event-IDs außerhalb des Seed-Bereichs (Seed nutzt 1-4), um Kollisionen zu vermeiden.
 let nextKonfirmationEventId = 9001;
 
 describe('runAutoDeletion (Auto-Loeschung)', () => {
@@ -29,9 +29,9 @@ describe('runAutoDeletion (Auto-Loeschung)', () => {
     await closePool();
   });
 
-  // Legt fuer einen Jahrgang ein is_konfirmation-Event an, dessen event_date
-  // `days` Tage in der Vergangenheit liegt, und ordnet es dem Jahrgang ueber
-  // event_jahrgang_assignments zu. Das ist die Stichtag-Quelle der Auto-Loeschung
+  // Legt für einen Jahrgang ein is_konfirmation-Event an, dessen event_date
+  // `days` Tage in der Vergangenheit liegt, und ordnet es dem Jahrgang über
+  // event_jahrgang_assignments zu. Das ist die Stichtag-Quelle der Auto-Löschung
   // (analog dem Service-Pfad: MIN(event_date) der nicht-cancelled is_konfirmation-Events).
   async function setKonfirmationEventDaysAgo(jahrgangId, days) {
     // Org des Jahrgangs aus den Seed-Fixtures ableiten (jahrgang1=Org1, jahrgang2=Org2).
@@ -50,7 +50,7 @@ describe('runAutoDeletion (Auto-Loeschung)', () => {
   }
 
   it('Test 1: Konfi mit Konfirmations-Event vor 60 Tagen wird soft-geloescht (deleted_at + archived_at gesetzt)', async () => {
-    // jahrgang1 (Org 1) auf 60 Tage zurueck setzen -> Soft-Bucket
+    // jahrgang1 (Org 1) auf 60 Tage zurück setzen -> Soft-Bucket
     await setKonfirmationEventDaysAgo(JAHRGAENGE.jahrgang1.id, 60);
 
     await BackgroundService.runAutoDeletion(db);
@@ -67,7 +67,7 @@ describe('runAutoDeletion (Auto-Loeschung)', () => {
   it('Test 2: Konfi mit Konfirmations-Event vor 120 Tagen wird kaskadierend hart geloescht', async () => {
     await setKonfirmationEventDaysAgo(JAHRGAENGE.jahrgang1.id, 120);
 
-    // Abhaengige Daten anlegen, um die Kaskade zu pruefen
+    // Abhaengige Daten anlegen, um die Kaskade zu prüfen
     await db.query(
       `INSERT INTO user_badges (user_id, badge_id, organization_id) VALUES ($1, 1, $2)`,
       [USERS.konfi1.id, ORG_ID]
@@ -132,7 +132,7 @@ describe('runAutoDeletion (Auto-Loeschung)', () => {
     await BackgroundService.runAutoDeletion(db);
     const secondRun = await db.query('SELECT deleted_at FROM users WHERE id = $1', [USERS.konfi1.id]);
     expect(secondRun.rows[0].deleted_at).not.toBeNull();
-    // deleted_at bleibt unveraendert (idempotent: nur WHERE deleted_at IS NULL)
+    // deleted_at bleibt unverändert (idempotent: nur WHERE deleted_at IS NULL)
     expect(secondRun.rows[0].deleted_at.getTime()).toBe(erstesDeletedAt.getTime());
 
     // Hard-Bucket-Idempotenz: 120 Tage, zweiter Lauf findet die Zeile nicht mehr -> kein Fehler
@@ -150,7 +150,7 @@ describe('runAutoDeletion (Auto-Loeschung)', () => {
     await setKonfirmationEventDaysAgo(JAHRGAENGE.jahrgang2.id, 120);
 
     // Simulierter Fehler: ein db-Wrapper, der beim ERSTEN getClient()-Aufruf
-    // (Hard-Delete fuer jahrgang2) wirft, danach normal weiterarbeitet.
+    // (Hard-Delete für jahrgang2) wirft, danach normal weiterarbeitet.
     let clientCalls = 0;
     const flakyDb = {
       query: (text, params) => db.query(text, params),
@@ -166,7 +166,7 @@ describe('runAutoDeletion (Auto-Loeschung)', () => {
     // Darf NICHT werfen (Fehler pro Jahrgang/Konfi isoliert)
     await expect(BackgroundService.runAutoDeletion(flakyDb)).resolves.not.toThrow();
 
-    // Trotz Fehler beim Hard-Delete-Kandidaten wurde der Soft-Delete (jahrgang1) ausgefuehrt
+    // Trotz Fehler beim Hard-Delete-Kandidaten wurde der Soft-Delete (jahrgang1) ausgeführt
     const softRows = await db.query(
       'SELECT deleted_at FROM users WHERE id = $1',
       [USERS.konfi1.id]
@@ -175,8 +175,8 @@ describe('runAutoDeletion (Auto-Loeschung)', () => {
   });
 
   it('Test 7: Jahrgang OHNE is_konfirmation-Event wird uebersprungen (sicherer Default, kein Datenverlust)', async () => {
-    // Kein Konfirmations-Event fuer jahrgang1 -> kein Stichtag -> keine Aufbewahrungs-
-    // frist -> KEINE Auto-Loeschung, egal wie alt die Daten sind.
+    // Kein Konfirmations-Event für jahrgang1 -> kein Stichtag -> keine Aufbewahrungs-
+    // frist -> KEINE Auto-Löschung, egal wie alt die Daten sind.
     await BackgroundService.runAutoDeletion(db);
 
     const { rows } = await db.query(

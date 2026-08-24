@@ -15,10 +15,10 @@ describe('ListSection', () => {
         <div>Kind-Inhalt</div>
       </ListSection>
     );
-    // IonListHeader enthaelt den Titel — Ionic Custom Elements in jsdom
+    // IonListHeader enthält den Titel — Ionic Custom Elements in jsdom
     const listHeader = container.querySelector('ion-list-header');
     expect(listHeader).toBeTruthy();
-    // IonLabel rendert als Shadow-Host; innerHTML enthaelt den Text
+    // IonLabel rendert als Shadow-Host; innerHTML enthält den Text
     expect(listHeader?.innerHTML).toContain('Aktivitaeten (3)');
   });
 

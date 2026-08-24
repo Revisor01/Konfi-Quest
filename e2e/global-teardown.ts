@@ -1,4 +1,4 @@
-// E2E Global Teardown: Docker-Compose Stack stoppen und aufraeumen
+// E2E Global Teardown: Docker-Compose Stack stoppen und aufräumen
 import { execSync } from 'child_process';
 
 const COMPOSE_FILE = 'docker-compose.e2e.yml';

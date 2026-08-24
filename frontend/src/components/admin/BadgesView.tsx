@@ -77,7 +77,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
 
   // Aktivitaetsnamen zum Aufloesen der IDs aus criteria_extra: ohne sie stand
   // in der Liste "Aktivität #58", und mehrere solche Badges sahen identisch
-  // aus (User-Hinweis 11.08.). Nur die Aktivitaeten der jeweiligen Zielgruppe.
+  // aus (User-Hinweis 11.08.). Nur die Aktivitäten der jeweiligen Zielgruppe.
   const [activityNames, setActivityNames] = useState<Record<number, string>>({});
 
   useEffect(() => {
@@ -109,7 +109,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
     // Sort by criteria_type first, then by name.
     // NULL-SICHER: custom_badges.criteria_type und .name duerfen laut Schema
     // NULL sein. Aktuell gibt es keinen solchen Datensatz, aber genau dieses
-    // Muster hat bei den Aktivitaeten zum Rauswurf gefuehrt (11.08.):
+    // Muster hat bei den Aktivitäten zum Rauswurf geführt (11.08.):
     // null.localeCompare() wirft, der Render bricht ab, die ErrorBoundary
     // leert Auth + Cache.
     result = result.sort((a, b) => {
@@ -181,8 +181,8 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       case 'specific_activity': {
         // Seit dem 23.08.2026 speichert das Formular den NAMEN
         // (required_activity_name) — die Wertung liest ihn so. Diese Liste las
-        // weiter activity_id und zeigte fuer alles neu Gespeicherte gar nichts
-        // an. Beide Formen werden jetzt gelesen, die alte fuer Altbestand.
+        // weiter activity_id und zeigte für alles neu Gespeicherte gar nichts
+        // an. Beide Formen werden jetzt gelesen, die alte für Altbestand.
         if (extra.required_activity_name) {
           return `${badge.criteria_value}x ${extra.required_activity_name}`;
         }
@@ -201,7 +201,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
             : `${n.length} Aktivitäten, min. ${badge.criteria_value}x`;
         }
         if (!extra.activity_ids?.length) return null;
-        // Bis zu zwei Namen ausschreiben, danach zaehlen — sonst sprengt die
+        // Bis zu zwei Namen ausschreiben, danach zählen — sonst sprengt die
         // Zeile die Listenbreite.
         const names = extra.activity_ids
           .map((id: number) => activityNames[id])
@@ -253,7 +253,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         stats={[
           { value: badges.length, label: 'GESAMT', onClick: () => setSelectedFilter('alle'), active: selectedFilter === 'alle' },
           { value: getActiveBadges().length, label: 'AKTIV', onClick: () => setSelectedFilter('aktiv'), active: selectedFilter === 'aktiv' },
-          // "Verliehen" ist eine Summe ueber alle Abzeichen, kein Filterzustand
+          // "Verliehen" ist eine Summe über alle Abzeichen, kein Filterzustand
           // -> bleibt bewusst reine Anzeige.
           { value: getTotalEarnedCount(), label: 'VERLIEHEN' }
         ]}

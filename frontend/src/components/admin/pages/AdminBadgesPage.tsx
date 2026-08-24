@@ -62,7 +62,7 @@ const AdminBadgesPage: React.FC = () => {
   const [presentAlert] = useIonAlert();
 
   // Modal mit useIonModal Hook
-  // Haelt den "ungespeicherte Aenderungen"-Stand des Badge-Modals, damit canDismiss
+  // Haelt den "ungespeicherte Änderungen"-Stand des Badge-Modals, damit canDismiss
   // auch Swipe-/Backdrop-Schliessen abfangen und nachfragen kann (nicht nur der X-Button).
   const badgeModalDirtyRef = useRef(false);
 
@@ -84,7 +84,7 @@ const AdminBadgesPage: React.FC = () => {
   });
 
   // Faengt JEDEN Schliess-Weg ab (Swipe, Backdrop): bei ungespeicherten
-  // Aenderungen erst nachfragen, sonst direkt schliessen lassen.
+  // Änderungen erst nachfragen, sonst direkt schliessen lassen.
   const badgeModalCanDismiss = async (): Promise<boolean> => {
     if (!badgeModalDirtyRef.current) return true;
     return new Promise<boolean>((resolve) => {
@@ -98,7 +98,7 @@ const AdminBadgesPage: React.FC = () => {
           { text: 'Abbrechen', role: 'cancel', handler: () => decide(false) },
           { text: 'Verwerfen', role: 'destructive', handler: () => decide(true) }
         ],
-        // Fallback: schliesst der Alert ohne Button, Promise nie haengen lassen.
+        // Fallback: schließt der Alert ohne Button, Promise nie hängen lassen.
         onDidDismiss: () => { if (!decided) resolve(false); }
       });
     });

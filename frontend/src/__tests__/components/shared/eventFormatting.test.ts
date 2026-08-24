@@ -5,8 +5,8 @@ import {
   formatEventDateLong,
 } from '../../../components/shared/eventFormatting';
 
-// Fixe Zeit fuer deterministische Erwartungen (lokale Zeitzone-unabhaengig
-// pruefen wir nur Format/Stabilitaet, nicht exakte Uhrzeit-Verschiebung).
+// Fixe Zeit für deterministische Erwartungen (lokale Zeitzone-unabhaengig
+// prüfen wir nur Format/Stabilitaet, nicht exakte Uhrzeit-Verschiebung).
 const ISO = '2026-06-14T18:30:00';
 
 describe('formatEventDate', () => {

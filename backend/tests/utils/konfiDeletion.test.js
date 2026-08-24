@@ -1,6 +1,6 @@
 // backend/tests/utils/konfiDeletion.test.js
-// Tests fuer die gemeinsame kaskadierende Loesch-Funktion deleteKonfiCascade.
-// Per D-04: einzige Quelle der kaskadierenden Loeschung (Admin/Self/Auto).
+// Tests für die gemeinsame kaskadierende Loesch-Funktion deleteKonfiCascade.
+// Per D-04: einzige Quelle der kaskadierenden Löschung (Admin/Self/Auto).
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, ACTIVITIES, JAHRGAENGE } = require('../helpers/seed');
 const { deleteKonfiCascade } = require('../../utils/konfiDeletion');
@@ -23,10 +23,10 @@ describe('deleteKonfiCascade', () => {
     await closePool();
   });
 
-  // Hilfsfunktion: seedet zusaetzliche abhaengige Daten fuer einen Konfi,
+  // Hilfsfunktion: seedet zusaetzliche abhaengige Daten für einen Konfi,
   // damit moeglichst viele der 16 Tabellen Zeilen enthalten.
   async function seedKonfiDependencies(konfiId) {
-    // bonus_points wird bereits in seed.js fuer konfi1 angelegt; fuer andere ergaenzen
+    // bonus_points wird bereits in seed.js für konfi1 angelegt; für andere ergaenzen
     await db.query(
       `INSERT INTO bonus_points (konfi_id, points, type, description, admin_id, organization_id)
        VALUES ($1, 2, 'gemeinde', 'Testpunkte', $2, $3)`,

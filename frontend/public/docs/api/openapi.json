@@ -53,7 +53,7 @@
   "paths": {
     "/auth/login": {
       "post": {
-        "summary": "Login fuer alle Rollen (case-insensitiver Username)",
+        "summary": "Login für alle Rollen (case-insensitiver Username)",
         "requestBody": {
           "required": true,
           "content": {
@@ -99,7 +99,7 @@
             "validateLogin"
           ],
           "org-scope": false,
-          "objekt-pruefung": "Org-Aktiv- und Trial-Pruefung im Handler; super_admin (Rolle oder Flag) umgeht beide",
+          "objekt-pruefung": "Org-Aktiv- und Trial-Prüfung im Handler; super_admin (Rolle oder Flag) umgeht beide",
           "hinweis": "Offene Route; setzt last_login_at"
         },
         "tags": [
@@ -109,7 +109,7 @@
     },
     "/auth/change-password": {
       "post": {
-        "summary": "Eigenes Passwort aendern (mit aktuellem Passwort)",
+        "summary": "Eigenes Passwort ändern (mit aktuellem Passwort)",
         "requestBody": {
           "required": true,
           "content": {
@@ -162,7 +162,7 @@
     },
     "/auth/delete-account": {
       "post": {
-        "summary": "Eigenen Account sofort und kaskadierend loeschen (alle Rollen)",
+        "summary": "Eigenen Account sofort und kaskadierend löschen (alle Rollen)",
         "requestBody": {
           "required": true,
           "content": {
@@ -202,7 +202,7 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "Nur eigener Account; Passwort-Bestaetigung im Handler",
-          "hinweis": "Auch org_admin kann sich selbst loeschen — der Letzter-org_admin-Schutz greift nur in DELETE /users/:id, nicht hier"
+          "hinweis": "Auch org_admin kann sich selbst löschen — der Letzter-org_admin-Schutz greift nur in DELETE /users/:id, nicht hier"
         },
         "tags": [
           "Anmeldung & Verwaltung"
@@ -393,7 +393,7 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "Mitgliedschaft in user_organizations + is_active der Ziel-Org",
-          "hinweis": "Trial-Ablauf der Ziel-Org wird hier NICHT geprueft (nur is_active); bekannte Claim-Nachwirkung nach Mitgliedschafts-Entzug bis Token-Ablauf"
+          "hinweis": "Trial-Ablauf der Ziel-Org wird hier NICHT geprüft (nur is_active); bekannte Claim-Nachwirkung nach Mitgliedschafts-Entzug bis Token-Ablauf"
         },
         "tags": [
           "Anmeldung & Verwaltung"
@@ -452,7 +452,7 @@
     },
     "/auth/invite-code": {
       "post": {
-        "summary": "Einladungscode fuer einen Jahrgang erzeugen (8 Hex-Zeichen, 7 Tage)",
+        "summary": "Einladungscode für einen Jahrgang erzeugen (8 Hex-Zeichen, 7 Tage)",
         "requestBody": {
           "required": true,
           "content": {
@@ -491,7 +491,7 @@
             "validateInviteCode"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Jahrgang muss zur eigenen Org gehoeren",
+          "objekt-pruefung": "Jahrgang muss zur eigenen Org gehören",
           "hinweis": "Inline-Check erlaubt auch is_super_admin-Flag (abweichend von den drei anderen Invite-Routen, die strikt role_name==='org_admin' verlangen)"
         },
         "tags": [
@@ -501,7 +501,7 @@
     },
     "/auth/invite-codes": {
       "get": {
-        "summary": "Aktive Einladungscodes der eigenen Org (inkl. Nutzungs-Zaehler)",
+        "summary": "Aktive Einladungscodes der eigenen Org (inkl. Nutzungs-Zähler)",
         "responses": {
           "200": {
             "description": "Array mit code, jahrgang, expires_at, used_count"
@@ -560,7 +560,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Code muss zur eigenen Org gehoeren"
+          "objekt-pruefung": "Code muss zur eigenen Org gehören"
         },
         "tags": [
           "Anmeldung & Verwaltung"
@@ -569,7 +569,7 @@
     },
     "/auth/invite-codes/{id}": {
       "delete": {
-        "summary": "Einladungscode loeschen",
+        "summary": "Einladungscode löschen",
         "parameters": [
           {
             "name": "id",
@@ -599,7 +599,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Code muss zur eigenen Org gehoeren"
+          "objekt-pruefung": "Code muss zur eigenen Org gehören"
         },
         "tags": [
           "Anmeldung & Verwaltung"
@@ -608,7 +608,7 @@
     },
     "/auth/check-username/{username}": {
       "get": {
-        "summary": "Username-Verfuegbarkeit pruefen (oeffentlich, case-insensitiv)",
+        "summary": "Username-Verfuegbarkeit prüfen (oeffentlich, case-insensitiv)",
         "parameters": [
           {
             "name": "username",
@@ -644,7 +644,7 @@
     },
     "/auth/validate-invite/{code}": {
       "get": {
-        "summary": "Einladungscode pruefen (oeffentlich) — liefert Jahrgang + Org-Name",
+        "summary": "Einladungscode prüfen (oeffentlich) — liefert Jahrgang + Org-Name",
         "parameters": [
           {
             "name": "code",
@@ -855,7 +855,7 @@
           "middleware": [],
           "org-scope": false,
           "objekt-pruefung": "SHA-256-Hash-Lookup in refresh_tokens; Sperr-Checks wie beim Login",
-          "hinweis": "token_invalidated_at (Soft-Revoke) wird beim Refresh nicht geprueft — Soft-Revoke wirkt nur auf Access-Tokens, nicht auf die Refresh-Kette"
+          "hinweis": "token_invalidated_at (Soft-Revoke) wird beim Refresh nicht geprüft — Soft-Revoke wirkt nur auf Access-Tokens, nicht auf die Refresh-Kette"
         },
         "tags": [
           "Anmeldung & Verwaltung"
@@ -876,7 +876,7 @@
                   },
                   "device_id": {
                     "type": "string",
-                    "description": "Geraete-ID. Wird sie zusammen mit platform mitgesendet, entfernt die Route den Push-Token dieses Geraets fuer den angemeldeten User. Seit 22.08.2026: Der Client ruft dafuer zwar auch DELETE /notifications/device-token, aber best-effort (Timeout, nur online, nur mit ermittelbarer Geraete-ID) — schlug das fehl, kamen weiter Push-Nachrichten an das abgemeldete Geraet.\n"
+                    "description": "Geraete-ID. Wird sie zusammen mit platform mitgesendet, entfernt die Route den Push-Token dieses Geraets für den angemeldeten User. Seit 22.08.2026: Der Client ruft dafuer zwar auch DELETE /notifications/device-token, aber best-effort (Timeout, nur online, nur mit ermittelbarer Geraete-ID) — schlug das fehl, kamen weiter Push-Nachrichten an das abgemeldete Geraet.\n"
                   },
                   "platform": {
                     "type": "string",
@@ -937,7 +937,7 @@
         ]
       },
       "post": {
-        "summary": "Organisation anlegen inkl. erstem org_admin und Standard-Daten (Rollen, 27 Badges, 4 Zertifikat-Typen, 6 Levels, 5 Kategorien, 5 Aktivitaeten, 3 Beispiel-Challenges)",
+        "summary": "Organisation anlegen inkl. erstem org_admin und Standard-Daten (Rollen, 27 Badges, 4 Zertifikat-Typen, 6 Levels, 5 Kategorien, 5 Aktivitäten, 3 Beispiel-Challenges)",
         "requestBody": {
           "required": true,
           "content": {
@@ -1032,7 +1032,7 @@
     },
     "/organizations/search-users": {
       "get": {
-        "summary": "Systemweite User-Suche fuer Multi-Org-Zuweisung (ohne Konfis)",
+        "summary": "Systemweite User-Suche für Multi-Org-Zuweisung (ohne Konfis)",
         "parameters": [
           {
             "name": "q",
@@ -1230,14 +1230,14 @@
             "validateUpdateOrg"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Inline: is_super_admin ODER (eigene Org UND role_name==='org_admin'); Trial-Felder werden fuer org_admin ignoriert"
+          "objekt-pruefung": "Inline: is_super_admin ODER (eigene Org UND role_name==='org_admin'); Trial-Felder werden für org_admin ignoriert"
         },
         "tags": [
           "Anmeldung & Verwaltung"
         ]
       },
       "delete": {
-        "summary": "Organisation vollstaendig loeschen (explizite CASCADE-Kette in einer Transaktion, inkl. Datei-Cleanup nach COMMIT)",
+        "summary": "Organisation vollstaendig löschen (explizite CASCADE-Kette in einer Transaktion, inkl. Datei-Cleanup nach COMMIT)",
         "parameters": [
           {
             "name": "id",
@@ -1336,7 +1336,7 @@
     },
     "/organizations/{id}/users": {
       "get": {
-        "summary": "Alle User einer Organisation (inkl. Konfis) mit Rolle und Jahrgangs-Zaehler",
+        "summary": "Alle User einer Organisation (inkl. Konfis) mit Rolle und Jahrgangs-Zähler",
         "parameters": [
           {
             "name": "id",
@@ -1633,7 +1633,7 @@
     },
     "/organizations/{id}/stats": {
       "get": {
-        "summary": "Statistiken einer Organisation (Konfis, Aktivitaeten, Events, Badges, Antraege)",
+        "summary": "Statistiken einer Organisation (Konfis, Aktivitäten, Events, Badges, Anträge)",
         "parameters": [
           {
             "name": "id",
@@ -1761,7 +1761,7 @@
             "validateCreateUser"
           ],
           "org-scope": true,
-          "objekt-pruefung": "role_id muss zur eigenen Org gehoeren; Hierarchie prueft Ziel-Rolle"
+          "objekt-pruefung": "role_id muss zur eigenen Org gehören; Hierarchie prüft Ziel-Rolle"
         },
         "tags": [
           "Anmeldung & Verwaltung"
@@ -1885,15 +1885,15 @@
             "validateUpdateUser"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Ziel-User in eigener Org; canManageRole + canCreateRole fuer neue Rolle"
+          "objekt-pruefung": "Ziel-User in eigener Org; canManageRole + canCreateRole für neue Rolle"
         },
         "tags": [
           "Anmeldung & Verwaltung"
         ]
       },
       "delete": {
-        "summary": "User loeschen (Hard-Delete mit Referenz-Anonymisierung und History-Purge)",
-        "description": "Anonymisiert die Urheberschaft (admin_id/created_by/approved_by -> NULL, seit 24.08.2026 auch events.created_by, custom_badges.created_by, levels.created_by und user_jahrgang_assignments.assigned_by — vorher blockierten diese Fremdschluessel das Loeschen mit 500) und raeumt die eigene Historie ab, inkl. user_certificates.user_id (ebenfalls seit 24.08.2026, vorher war jede ausgezeichnete Person unloeschbar). Nachweisfotos UND Challenge-Dateien werden nach dem COMMIT von der Platte entfernt.\n",
+        "summary": "User löschen (Hard-Delete mit Referenz-Anonymisierung und History-Purge)",
+        "description": "Anonymisiert die Urheberschaft (admin_id/created_by/approved_by -> NULL, seit 24.08.2026 auch events.created_by, custom_badges.created_by, levels.created_by und user_jahrgang_assignments.assigned_by — vorher blockierten diese Fremdschlüssel das Löschen mit 500) und räumt die eigene Historie ab, inkl. user_certificates.user_id (ebenfalls seit 24.08.2026, vorher war jede ausgezeichnete Person unlöschbar). Nachweisfotos UND Challenge-Dateien werden nach dem COMMIT von der Platte entfernt.\n",
         "parameters": [
           {
             "name": "id",
@@ -1966,7 +1966,7 @@
             "requireOrgAdmin"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Jahrgaenge auf eigene Org gefiltert"
+          "objekt-pruefung": "Jahrgänge auf eigene Org gefiltert"
         },
         "tags": [
           "Anmeldung & Verwaltung"
@@ -2042,7 +2042,7 @@
             "validateJahrgangAssignments"
           ],
           "org-scope": true,
-          "objekt-pruefung": "User + alle Jahrgang-IDs muessen zur eigenen Org gehoeren",
+          "objekt-pruefung": "User + alle Jahrgang-IDs müssen zur eigenen Org gehören",
           "hinweis": "KEIN checkUserHierarchy — org_admin darf ohnehin alle; Route wird aber nicht durch andere Rollen erreichbar"
         },
         "tags": [
@@ -2052,7 +2052,7 @@
     },
     "/users/me/jahrgaenge": {
       "get": {
-        "summary": "Eigene Jahrgangs-Zuweisungen (fuer Teamer-UI)",
+        "summary": "Eigene Jahrgangs-Zuweisungen (für Teamer-UI)",
         "responses": {
           "200": {
             "description": "Array der eigenen Zuweisungen (auf aktive Org gescopt)"
@@ -2158,7 +2158,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "wie GET /users",
-          "hinweis": "Alias-Mount, kein eigener Code. super_admin faellt durch requireOrgAdmin auf 403, ausser er agiert per Multi-Org-Switch als org_admin."
+          "hinweis": "Alias-Mount, kein eigener Code. super_admin fällt durch requireOrgAdmin auf 403, außer er agiert per Multi-Org-Switch als org_admin."
         },
         "tags": [
           "Anmeldung & Verwaltung"
@@ -2285,7 +2285,7 @@
         ]
       },
       "delete": {
-        "summary": "User loeschen (Alias von DELETE /users/{id})",
+        "summary": "User löschen (Alias von DELETE /users/{id})",
         "description": "Identischer Handler wie DELETE /users/{id}.",
         "parameters": [
           {
@@ -2319,7 +2319,7 @@
             "validateUserId"
           ],
           "org-scope": true,
-          "objekt-pruefung": "wie DELETE /users/{id}; Selbst-Loeschung blockiert",
+          "objekt-pruefung": "wie DELETE /users/{id}; Selbst-Löschung blockiert",
           "hinweis": "Alias-Mount, kein eigener Code."
         },
         "tags": [
@@ -2500,7 +2500,7 @@
     "/health": {
       "get": {
         "summary": "Liveness-Check (ohne Anmeldung)",
-        "description": "Minimaler Endpunkt fuer Docker-Healthcheck und Traefik. Bewusst ohne Datenbank-Pruefung: ein haengender DB-Check wuerde einen gesunden Container vom Healthcheck killen lassen.\n",
+        "description": "Minimaler Endpunkt für Docker-Healthcheck und Traefik. Bewusst ohne Datenbank-Prüfung: ein haengender DB-Check wuerde einen gesunden Container vom Healthcheck killen lassen.\n",
         "security": [],
         "responses": {
           "200": {
@@ -2514,7 +2514,7 @@
           "middleware": [],
           "org-scope": false,
           "objekt-pruefung": "keine",
-          "hinweis": "Keine Authentifizierung. Gibt keine Daten preis ausser der Tatsache, dass der Dienst laeuft."
+          "hinweis": "Keine Authentifizierung. Gibt keine Daten preis außer der Tatsache, dass der Dienst läuft."
         },
         "tags": [
           "Anmeldung & Verwaltung"
@@ -2523,8 +2523,8 @@
     },
     "/status": {
       "get": {
-        "summary": "Readiness-Check mit Datenbank-Pruefung (ohne Anmeldung)",
-        "description": "Prueft die Datenbank mit SELECT 1 und liefert 200 bei gesunder DB, sonst 503. Getrennt von /health, weil er echte Abhaengigkeiten prueft.\n",
+        "summary": "Readiness-Check mit Datenbank-Prüfung (ohne Anmeldung)",
+        "description": "Prueft die Datenbank mit SELECT 1 und liefert 200 bei gesunder DB, sonst 503. Getrennt von /health, weil er echte Abhaengigkeiten prüft.\n",
         "security": [],
         "responses": {
           "200": {
@@ -2541,7 +2541,7 @@
           "middleware": [],
           "org-scope": false,
           "objekt-pruefung": "keine",
-          "hinweis": "# HINWEIS: Ohne Anmeldung erreichbar und gibt version und commit (GIT_SHA) preis. Bewusst so fuer die Status-Seite / Uptime Kuma.\n"
+          "hinweis": "# HINWEIS: Ohne Anmeldung erreichbar und gibt version und commit (GIT_SHA) preis. Bewusst so für die Status-Seite / Uptime Kuma.\n"
         },
         "tags": [
           "Anmeldung & Verwaltung"
@@ -2551,7 +2551,7 @@
     "/metrics": {
       "get": {
         "summary": "APM-Kennzahlen aller Replicas (nur super_admin)",
-        "description": "Aggregierte Laufzeitdaten: langsamste und meistgenutzte Routen, parallele Requests, Live-Verlauf, letzte Fehler. Ist METRICS_PEERS gesetzt, werden alle Peers ueber /metrics/local abgefragt und zu einem Gesamtbild inklusive Lastverteilung gemergt.\n",
+        "description": "Aggregierte Laufzeitdaten: langsamste und meistgenutzte Routen, parallele Requests, Live-Verlauf, letzte Fehler. Ist METRICS_PEERS gesetzt, werden alle Peers über /metrics/local abgefragt und zu einem Gesamtbild inklusive Lastverteilung gemergt.\n",
         "responses": {
           "200": {
             "description": "Zusammengefuehrter APM-Snapshot inkl. replicas"
@@ -2582,7 +2582,7 @@
     "/metrics/local": {
       "get": {
         "summary": "APM-Rohdaten nur dieser Replica (nur super_admin)",
-        "description": "Unaggregierter In-Memory-Snapshot der antwortenden Replica. Wird von /metrics fuer die Peer-Aggregation genutzt, ist aber auch direkt aufrufbar.\n",
+        "description": "Unaggregierter In-Memory-Snapshot der antwortenden Replica. Wird von /metrics für die Peer-Aggregation genutzt, ist aber auch direkt aufrufbar.\n",
         "responses": {
           "200": {
             "description": "APM-Snapshot dieser Replica"
@@ -2612,7 +2612,7 @@
     "/metrics/history": {
       "get": {
         "summary": "Gespeicherte APM-Historie (nur super_admin)",
-        "description": "Liefert die persistierten Snapshots aus apm_snapshots der letzten N Tage, damit das Dashboard Deltas ueber Deploys hinweg bilden kann.\n",
+        "description": "Liefert die persistierten Snapshots aus apm_snapshots der letzten N Tage, damit das Dashboard Deltas über Deploys hinweg bilden kann.\n",
         "parameters": [
           {
             "name": "days",
@@ -2624,7 +2624,7 @@
               "maximum": 30,
               "default": 7
             },
-            "description": "Auf 1..30 begrenzt; ungueltige Werte fallen auf 7 zurueck."
+            "description": "Auf 1..30 begrenzt; ungueltige Werte fallen auf 7 zurück."
           }
         ],
         "responses": {
@@ -2668,8 +2668,8 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "nur eigene Daten (user_id = Token); Ranking aggregiert ueber den eigenen Jahrgang",
-          "hinweis": "# LÜCKE L4: ranking[] enthaelt display_name (Klarname) und exakte Punktzahl der drei Punktbesten des Jahrgangs - zusaetzlich zu den im Frontend genutzten Initialen.\n"
+          "objekt-pruefung": "nur eigene Daten (user_id = Token); Ranking aggregiert über den eigenen Jahrgang",
+          "hinweis": "# LÜCKE L4: ranking[] enthält display_name (Klarname) und exakte Punktzahl der drei Punktbesten des Jahrgangs - zusaetzlich zu den im Frontend genutzten Initialen.\n"
         },
         "responses": {
           "200": {
@@ -2779,7 +2779,7 @@
     "/api/konfi/profile": {
       "get": {
         "summary": "Eigenes Konfi-Profil",
-        "description": "Profil des eingeloggten Konfis mit Punkten (inkl. Bonus-Summe), Statistiken (Badges, Aktivitaeten, Events, offene Antraege), Rang im Jahrgang, Konfirmationstermin/-ort und aufgeloestem Konfispruch.\n",
+        "description": "Profil des eingeloggten Konfis mit Punkten (inkl. Bonus-Summe), Statistiken (Badges, Aktivitäten, Events, offene Anträge), Rang im Jahrgang, Konfirmationstermin/-ort und aufgeloestem Konfispruch.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -2967,7 +2967,7 @@
     },
     "/api/konfi/points-history": {
       "get": {
-        "summary": "Eigene Punkte-Historie (Aktivitaeten, Bonus, Events)",
+        "summary": "Eigene Punkte-Historie (Aktivitäten, Bonus, Events)",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -2999,7 +2999,7 @@
     },
     "/api/konfi/requests": {
       "get": {
-        "summary": "Eigene Aktivitaets-Antraege auflisten",
+        "summary": "Eigene Aktivitaets-Anträge auflisten",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3008,7 +3008,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "nur eigene Antraege (user_id = Token)"
+          "objekt-pruefung": "nur eigene Anträge (user_id = Token)"
         },
         "responses": {
           "200": {
@@ -3030,7 +3030,7 @@
       },
       "post": {
         "summary": "Neuen Aktivitaets-Antrag einreichen",
-        "description": "Legt einen Antrag (status pending) an. Idempotent ueber optionale client_id (UUID): existiert der Antrag bereits, kommt 200 mit dem bestehenden Datensatz. Benachrichtigt Admins (Notification + Push).\n",
+        "description": "Legt einen Antrag (status pending) an. Idempotent über optionale client_id (UUID): existiert der Antrag bereits, kommt 200 mit dem bestehenden Datensatz. Benachrichtigt Admins (Notification + Push).\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3040,7 +3040,7 @@
             "validateCreateRequest"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Aktivitaet muss zur eigenen Org gehoeren (404 sonst)"
+          "objekt-pruefung": "Aktivität muss zur eigenen Org gehören (404 sonst)"
         },
         "requestBody": {
           "required": true,
@@ -3107,8 +3107,8 @@
     },
     "/api/konfi/requests/{id}": {
       "delete": {
-        "summary": "Eigenen offenen Antrag loeschen",
-        "description": "Nur Antraege mit status pending; zugehoeriges Nachweisfoto wird mitgeloescht.",
+        "summary": "Eigenen offenen Antrag löschen",
+        "description": "Nur Anträge mit status pending; zugehoeriges Nachweisfoto wird mitgeloescht.",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3151,8 +3151,8 @@
     },
     "/api/konfi/upload-photo": {
       "post": {
-        "summary": "Nachweisfoto fuer Antrag hochladen (verschluesselt at-rest)",
-        "description": "multipart/form-data, Feld \"photo\". Magic-Bytes-Pruefung (nur echte Bilder, sonst 415), AES-256-GCM-Verschluesselung, zufaelliger 64-Hex-Dateiname wird zurueckgegeben (fuer POST /api/konfi/requests).\n",
+        "summary": "Nachweisfoto für Antrag hochladen (verschlüsselt at-rest)",
+        "description": "multipart/form-data, Feld \"photo\". Magic-Bytes-Prüfung (nur echte Bilder, sonst 415), AES-256-GCM-Verschluesselung, zufaelliger 64-Hex-Dateiname wird zurueckgegeben (für POST /api/konfi/requests).\n",
         "x-berechtigung": {
           "rollen": [
             "konfi",
@@ -3241,8 +3241,8 @@
     },
     "/api/konfi/activities": {
       "get": {
-        "summary": "Beantragbare Aktivitaeten auflisten",
-        "description": "Aktivitaeten der Org mit target_role konfi (oder NULL), gefiltert auf die im Jahrgang aktivierten Punkt-Typen.\n",
+        "summary": "Beantragbare Aktivitäten auflisten",
+        "description": "Aktivitäten der Org mit target_role konfi (oder NULL), gefiltert auf die im Jahrgang aktivierten Punkt-Typen.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3372,7 +3372,7 @@
     "/api/konfi/events": {
       "get": {
         "summary": "Events des eigenen Jahrgangs (Konfi-Sicht)",
-        "description": "Events, die dem Jahrgang des Konfis zugewiesen sind, ohne teamer_only; abgesagte nur, wenn der Konfi gebucht war. Standard-Datumsfenster: letzte 12 Monate + Zukunft (?all=true fuer alles). Enthaelt eigene Buchung (booking_status, attendance_status, Timeslot, waitlist_position) und Konfi-Zaehler (Teamer-Kontingent getrennt).\n",
+        "description": "Events, die dem Jahrgang des Konfis zugewiesen sind, ohne teamer_only; abgesagte nur, wenn der Konfi gebucht war. Standard-Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles). Enthaelt eigene Buchung (booking_status, attendance_status, Timeslot, waitlist_position) und Konfi-Zähler (Teamer-Kontingent getrennt).\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3419,7 +3419,7 @@
     },
     "/api/konfi/events/{id}/status": {
       "get": {
-        "summary": "Eigener Anmeldestatus fuer ein Event",
+        "summary": "Eigener Anmeldestatus für ein Event",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3428,7 +3428,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Event org-gescopt; Buchungsdaten nur eigene; kein Jahrgang-Check (nur Zaehler)"
+          "objekt-pruefung": "Event org-gescopt; Buchungsdaten nur eigene; kein Jahrgang-Check (nur Zähler)"
         },
         "parameters": [
           {
@@ -3460,7 +3460,7 @@
     "/api/konfi/events/{id}/participants": {
       "get": {
         "summary": "Anonymisierte Teilnehmerliste eines Events (Konfi-Sicht)",
-        "description": "Bestaetigte Teilnehmer als \"Vorname N.\" (anonymisiert), Teamer werden herausgefiltert. Organisation wird geprueft (Fix 22.08.2026).\n",
+        "description": "Bestaetigte Teilnehmer als \"Vorname N.\" (anonymisiert), Teamer werden herausgefiltert. Organisation wird geprüft (Fix 22.08.2026).\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3469,7 +3469,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Event muss zur eigenen Org gehoeren; Namen anonymisiert",
+          "objekt-pruefung": "Event muss zur eigenen Org gehören; Namen anonymisiert",
           "hinweis": "Kein Jahrgang-Check - anonymisierte Listen beliebiger Org-Events abrufbar (nur Hinweis)."
         },
         "parameters": [
@@ -3507,7 +3507,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Event org-gescopt; nur Slot-Daten + Zaehler"
+          "objekt-pruefung": "Event org-gescopt; nur Slot-Daten + Zähler"
         },
         "parameters": [
           {
@@ -3538,8 +3538,8 @@
     },
     "/api/konfi/events/{id}/register": {
       "post": {
-        "summary": "Fuer Event anmelden (primaere Konfi-Buchungsroute)",
-        "description": "Transaktional (FOR UPDATE). Prueft Doppelbuchung (409), Konfirmations-Sperre (nur EIN Konfirmationstermin, 409), Registrierungsfenster, Timeslot-Pflicht und Kapazitaet (Konfi- und Teamer-Kontingent getrennt). Ergebnis confirmed oder waitlist. Traegt die Person seit 24.08.2026 in den Chat zum Termin ein, falls es einen gibt (idempotent) — vorher kam nur hinein, wer beim Anlegen des Chats schon gebucht war.\n",
+        "summary": "Für Event anmelden (primaere Konfi-Buchungsroute)",
+        "description": "Transaktional (FOR UPDATE). Prueft Doppelbuchung (409), Konfirmations-Sperre (nur EIN Konfirmationstermin, 409), Registrierungsfenster, Timeslot-Pflicht und Kapazität (Konfi- und Teamer-Kontingent getrennt). Ergebnis confirmed oder waitlist. Traegt die Person seit 24.08.2026 in den Chat zum Termin ein, falls es einen gibt (idempotent) — vorher kam nur hinein, wer beim Anlegen des Chats schon gebucht war.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3549,7 +3549,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "bucht nur sich selbst; Event + Timeslot org-gescopt",
-          "hinweis": "Kein Jahrgang-Check - Konfi kann sich per API auch fuer Events fremder Jahrgaenge der Org anmelden (nur Hinweis)."
+          "hinweis": "Kein Jahrgang-Check - Konfi kann sich per API auch für Events fremder Jahrgänge der Org anmelden (nur Hinweis)."
         },
         "parameters": [
           {
@@ -3800,7 +3800,7 @@
     },
     "/api/konfi/bible-translation": {
       "put": {
-        "summary": "Bibeluebersetzung fuer Tageslosung setzen",
+        "summary": "Bibeluebersetzung für Tageslosung setzen",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -3897,7 +3897,7 @@
     "/api/events": {
       "get": {
         "summary": "Alle Events der Organisation (rollenabhaengig gefiltert)",
-        "description": "Liefert Events der aktiven Org mit Zaehlern (Konfi- und Teamer-Kontingent getrennt), Kategorien, Jahrgaengen, registration_status und eigener Buchung (is_registered, booking_status, attendance_status). Datumsfenster: letzte 12 Monate + Zukunft (?all=true fuer alles). Nachgelagerte Filter: Teamer mit Jahrgangs-Zuweisungen sehen jahrgangs-gebundene Events nur fuer can_view-Jahrgaenge (allgemeine, teamer_only- und teamer_needed-Events immer); Konfis sehen keine teamer_only-Events.\n",
+        "description": "Liefert Events der aktiven Org mit Zaehlern (Konfi- und Teamer-Kontingent getrennt), Kategorien, Jahrgängen, registration_status und eigener Buchung (is_registered, booking_status, attendance_status). Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles). Nachgelagerte Filter: Teamer mit Jahrgangs-Zuweisungen sehen jahrgangs-gebundene Events nur für can_view-Jahrgänge (allgemeine, teamer_only- und teamer_needed-Events immer); Konfis sehen keine teamer_only-Events.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -3910,7 +3910,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Teamer: Jahrgangs-Filter (nur wenn Zuweisungen vorhanden); Konfi: teamer_only ausgeblendet",
-          "hinweis": "# BEHOBEN 22.08.2026 (war LÜCKE L1): qr_token wird nicht mehr ausgeliefert - weder an Konfis noch an die Leitung. Der Token kommt ausschliesslich ueber POST /api/events/:id/generate-qr, das die QR-Anzeige ohnehin nutzt. Vorher lag er in der Liste und war damit fuer jeden Konfi lesbar (Selbst-Checkin aus der Ferne). # BEHOBEN 22.08.2026 (war LÜCKE L5): Der Jahrgangs-Filter greift jetzt IMMER. Vorher entfiel er ohne jede Zuweisung und die Teamer:in sah alle Events der Organisation.\n"
+          "hinweis": "# BEHOBEN 22.08.2026 (war LÜCKE L1): qr_token wird nicht mehr ausgeliefert - weder an Konfis noch an die Leitung. Der Token kommt ausschliesslich über POST /api/events/:id/generate-qr, das die QR-Anzeige ohnehin nutzt. Vorher lag er in der Liste und war damit für jeden Konfi lesbar (Selbst-Checkin aus der Ferne). # BEHOBEN 22.08.2026 (war LÜCKE L5): Der Jahrgangs-Filter greift jetzt IMMER. Vorher entfiel er ohne jede Zuweisung und die Teamer:in sah alle Events der Organisation.\n"
         },
         "parameters": [
           {
@@ -3942,7 +3942,7 @@
       },
       "post": {
         "summary": "Event erstellen",
-        "description": "Legt ein Event an inkl. Kategorien, Jahrgaengen und optionalen Timeslots. Serverseitige Zwangsregeln: Pflicht-/Konfirmations-Events ohne Punkte und ohne Timeslots; Pflicht-Events ohne Warteliste und mit Auto-Enrollment aller Konfis der Jahrgaenge; teamer_needed/teamer_only schliessen sich aus; checkin_window 5-120 Minuten. Cross-Org-Referenzen (jahrgang_ids, category_ids) werden abgewiesen.\n",
+        "description": "Legt ein Event an inkl. Kategorien, Jahrgängen und optionalen Timeslots. Serverseitige Zwangsregeln: Pflicht-/Konfirmations-Events ohne Punkte und ohne Timeslots; Pflicht-Events ohne Warteliste und mit Auto-Enrollment aller Konfis der Jahrgänge; teamer_needed/teamer_only schliessen sich aus; checkin_window 5-120 Minuten. Cross-Org-Referenzen (jahrgang_ids, category_ids) werden abgewiesen.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -3955,8 +3955,8 @@
             "validateCreateEvent"
           ],
           "org-scope": true,
-          "objekt-pruefung": "jahrgang_ids/category_ids muessen der eigenen Org gehoeren",
-          "hinweis": "Teamer duerfen Events fuer ALLE Jahrgaenge der Org anlegen (kein Jahrgang-Check beim Schreiben)."
+          "objekt-pruefung": "jahrgang_ids/category_ids müssen der eigenen Org gehören",
+          "hinweis": "Teamer duerfen Events für ALLE Jahrgänge der Org anlegen (kein Jahrgang-Check beim Schreiben)."
         },
         "requestBody": {
           "required": true,
@@ -4173,7 +4173,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "nur eigene Buchung (event_bookings des Token-Users); Event-Org muss der aktiven Org entsprechen",
-          "hinweis": "Punkte-Selbstvergabe-Weg g) der Analyse. Sicherheit haengt an der Geheimhaltung des qr_token; seit 22.08.2026 wird dieser nur noch ueber generate-qr ausgegeben (siehe BEHOBEN L1 in GET /api/events)."
+          "hinweis": "Punkte-Selbstvergabe-Weg g) der Analyse. Sicherheit hängt an der Geheimhaltung des qr_token; seit 22.08.2026 wird dieser nur noch über generate-qr ausgegeben (siehe BEHOBEN L1 in GET /api/events)."
         },
         "requestBody": {
           "required": true,
@@ -4218,8 +4218,8 @@
     },
     "/api/events/{id}/generate-qr": {
       "post": {
-        "summary": "QR-Token fuer Event erzeugen/abrufen",
-        "description": "Gibt vorhandenen qr_token zurueck oder erzeugt einen neuen (HS256, kein Ablauf - Zeitfenster laeuft ueber event_date).",
+        "summary": "QR-Token für Event erzeugen/abrufen",
+        "description": "Gibt vorhandenen qr_token zurück oder erzeugt einen neuen (HS256, kein Ablauf - Zeitfenster läuft über event_date).",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -4262,7 +4262,7 @@
     },
     "/api/events/{id}/attendance-count": {
       "get": {
-        "summary": "Live-Zaehler eingecheckter Teilnehmer",
+        "summary": "Live-Zähler eingecheckter Teilnehmer",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -4314,7 +4314,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Event org-gescopt; nur Slot-Daten + Zaehler"
+          "objekt-pruefung": "Event org-gescopt; nur Slot-Daten + Zähler"
         },
         "parameters": [
           {
@@ -4343,7 +4343,7 @@
     "/api/events/{id}": {
       "get": {
         "summary": "Event-Details mit Teilnehmern (rollenabhaengig reduziert)",
-        "description": "Volle Event-Details inkl. Timeslots, Serien-Events, Jahrgaengen, Kategorien, Zaehlern, eigener Buchung und chat_room_id. Fuer Leitungsrollen zusaetzlich: participants[] (Klarname, Jahrgang, Timeslot, attendance_status, opt_out_reason/-date) und unregistrations[] (Klarname, Grund). Fuer KONFIS werden qr_token entfernt sowie participants und unregistrations geleert (Fix 22.08.2026) - Konfis nutzen die anonymisierte Route /api/konfi/events/:id/participants.\n",
+        "description": "Volle Event-Details inkl. Timeslots, Serien-Events, Jahrgängen, Kategorien, Zaehlern, eigener Buchung und chat_room_id. Für Leitungsrollen zusaetzlich: participants[] (Klarname, Jahrgang, Timeslot, attendance_status, opt_out_reason/-date) und unregistrations[] (Klarname, Grund). Für KONFIS werden qr_token entfernt sowie participants und unregistrations geleert (Fix 22.08.2026) - Konfis nutzen die anonymisierte Route /api/konfi/events/:id/participants.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -4383,7 +4383,7 @@
       },
       "put": {
         "summary": "Event aktualisieren (inkl. Nachrueck-Logik)",
-        "description": "Aktualisiert alle Event-Felder, Kategorien, Jahrgaenge und Timeslots (buchungserhaltend). Zwangsregeln wie beim Erstellen. Bei Kapazitaetserhoehung ruecken Wartelisten-Eintraege nach (Konfi- und Teamer-Kontingent strikt getrennt). Bei einem Pflicht-Event laeuft das Auto-Enrollment bei JEDEM Speichern (idempotent, ON CONFLICT DO NOTHING): seit 24.08.2026 werden damit auch die Konfis eines nachtraeglich ergaenzten Jahrgangs gebucht — vorher nur bei der Umwandlung freiwillig -> Pflicht. Abgemeldete (opted_out) bleiben abgemeldet. Relevante Aenderungen (Termin/Ort) pushen an Gebuchte.\n",
+        "description": "Aktualisiert alle Event-Felder, Kategorien, Jahrgänge und Timeslots (buchungserhaltend). Zwangsregeln wie beim Erstellen. Bei Kapazitaetserhoehung ruecken Wartelisten-Eintraege nach (Konfi- und Teamer-Kontingent strikt getrennt). Bei einem Pflicht-Event läuft das Auto-Enrollment bei JEDEM Speichern (idempotent, ON CONFLICT DO NOTHING): seit 24.08.2026 werden damit auch die Konfis eines nachträglich ergaenzten Jahrgangs gebucht — vorher nur bei der Umwandlung freiwillig -> Pflicht. Abgemeldete (opted_out) bleiben abgemeldet. Relevante Änderungen (Termin/Ort) pushen an Gebuchte.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -4396,7 +4396,7 @@
             "validateUpdateEvent"
           ],
           "org-scope": true,
-          "objekt-pruefung": "UPDATE mit organization_id-Bedingung (404 sonst); jahrgang_ids/category_ids org-geprueft"
+          "objekt-pruefung": "UPDATE mit organization_id-Bedingung (404 sonst); jahrgang_ids/category_ids org-geprüft"
         },
         "parameters": [
           {
@@ -4439,7 +4439,7 @@
         ]
       },
       "delete": {
-        "summary": "Event loeschen (mit force-Bestaetigung)",
+        "summary": "Event löschen (mit force-Bestaetigung)",
         "description": "Loescht Event samt Buchungen, Timeslots, Kategorien, Jahrgangs- Zuweisungen und Event-Chat (inkl. Dateien). Ohne ?force=true blockt die Route mit 409, wenn Anmeldungen (error_code event_has_bookings) oder Chat-Nachrichten (event_has_chat) existieren. Gebuchte Konfis werden per Push informiert.\n",
         "x-berechtigung": {
           "rollen": [
@@ -4559,7 +4559,7 @@
       },
       "delete": {
         "summary": "Eigene Buchung stornieren",
-        "description": "Loescht die eigene Buchung transaktional, entfernt den User aus dem Event-Chat, nimmt bei attendance_status='present' die Event-Punkte zurueck und laesst rollenrichtig aus der passenden Warteliste nachruecken (Konfi-Platz nur an Konfis, Teamer-Platz nur an Teamer).\n",
+        "description": "Loescht die eigene Buchung transaktional, entfernt den User aus dem Event-Chat, nimmt bei attendance_status='present' die Event-Punkte zurück und laesst rollenrichtig aus der passenden Warteliste nachruecken (Konfi-Platz nur an Konfis, Teamer-Platz nur an Teamer).\n",
         "x-berechtigung": {
           "rollen": [
             "konfi",
@@ -4602,7 +4602,7 @@
     "/api/events/{id}/participants": {
       "post": {
         "summary": "Teilnehmer manuell hinzufuegen (Leitung)",
-        "description": "Fuegt einen User der eigenen Org zum Event hinzu. status='auto' entscheidet rollenrichtig (Konfi- vs. Teamer-Kontingent, Timeslot- Kapazitaet, Warteliste); explizites status wird uebernommen.\n",
+        "description": "Fuegt einen User der eigenen Org zum Event hinzu. status='auto' entscheidet rollenrichtig (Konfi- vs. Teamer-Kontingent, Timeslot- Kapazität, Warteliste); explizites status wird uebernommen.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -4614,7 +4614,7 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Event UND Ziel-User muessen zur eigenen Org gehoeren; kein Jahrgang-Check"
+          "objekt-pruefung": "Event UND Ziel-User müssen zur eigenen Org gehören; kein Jahrgang-Check"
         },
         "parameters": [
           {
@@ -4686,7 +4686,7 @@
     "/api/events/{id}/bookings/{bookingId}": {
       "delete": {
         "summary": "Buchung eines Teilnehmers entfernen (Leitung)",
-        "description": "Loescht eine fremde Buchung; war der Konfi als anwesend verbucht, werden die Event-Punkte zurueckgenommen. Die Person wird zudem aus dem Event-Chat entfernt (seit 24.08.2026). Danach rollenrichtiges Nachruecken aus der passenden Warteliste.\n",
+        "description": "Loescht eine fremde Buchung; war der Konfi als anwesend verbucht, werden die Event-Punkte zurückgenommen. Die Person wird zudem aus dem Event-Chat entfernt (seit 24.08.2026). Danach rollenrichtiges Nachruecken aus der passenden Warteliste.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -4698,7 +4698,7 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "User-Org UND Event-Org muessen der eigenen Org entsprechen (403 sonst); kein Jahrgang-Check",
+          "objekt-pruefung": "User-Org UND Event-Org müssen der eigenen Org entsprechen (403 sonst); kein Jahrgang-Check",
           "hinweis": "Punkte-Entzugs-Weg m) der Analyse."
         },
         "parameters": [
@@ -4784,7 +4784,7 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "jahrgang_ids/category_ids org-geprueft"
+          "objekt-pruefung": "jahrgang_ids/category_ids org-geprüft"
         },
         "requestBody": {
           "required": true,
@@ -4844,7 +4844,7 @@
     "/api/events/{id}/participants/{participantId}/status": {
       "put": {
         "summary": "Teilnehmer zwischen bestaetigt und Warteliste verschieben",
-        "description": "status confirmed <-> waitlist. Degradierung auf waitlist loescht attendance_status und nimmt vergebene Event-Punkte zurueck; Befoerderung von der Warteliste pusht an die betroffene Person.\n",
+        "description": "status confirmed <-> waitlist. Degradierung auf waitlist löscht attendance_status und nimmt vergebene Event-Punkte zurück; Befoerderung von der Warteliste pusht an die betroffene Person.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -4856,7 +4856,7 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Buchung muss zu Event der eigenen Org gehoeren (403 sonst); kein Jahrgang-Check",
+          "objekt-pruefung": "Buchung muss zu Event der eigenen Org gehören (403 sonst); kein Jahrgang-Check",
           "hinweis": "Punkte-Entzugs-Weg l) der Analyse."
         },
         "parameters": [
@@ -4923,7 +4923,7 @@
     "/api/events/{id}/participants/attendance-all": {
       "put": {
         "summary": "Alle unverbuchten Angemeldeten als anwesend verbuchen (Bulk)",
-        "description": "Setzt fuer alle bestaetigten Konfis ohne attendance_status 'present' und vergibt (bei points > 0, nicht-Pflicht, aktiviertem Punkt-Typ) die Event-Punkte inkl. Badge-/Level-Check. Warteliste und bereits Verbuchte bleiben unberuehrt.\n",
+        "description": "Setzt für alle bestaetigten Konfis ohne attendance_status 'present' und vergibt (bei points > 0, nicht-Pflicht, aktiviertem Punkt-Typ) die Event-Punkte inkl. Badge-/Level-Check. Warteliste und bereits Verbuchte bleiben unberuehrt.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -4968,7 +4968,7 @@
     "/api/events/{id}/participants/{participantId}/attendance": {
       "put": {
         "summary": "Anwesenheit eines Teilnehmers setzen (vergibt/entzieht Punkte)",
-        "description": "attendance_status present | absent. present: Konfis erhalten einmalig die Event-Punkte (nicht bei Pflicht-Events; 400 bei deaktiviertem Punkt-Typ), Teamer nur Anwesenheit. absent: vergebene Event-Punkte werden zurueckgenommen.\n",
+        "description": "attendance_status present | absent. present: Konfis erhalten einmalig die Event-Punkte (nicht bei Pflicht-Events; 400 bei deaktiviertem Punkt-Typ), Teamer nur Anwesenheit. absent: vergebene Event-Punkte werden zurückgenommen.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5046,8 +5046,8 @@
     },
     "/api/events/{id}/chat": {
       "post": {
-        "summary": "Gruppenchat fuer Event erstellen",
-        "description": "Legt den Event-Chat an und fuegt Ersteller plus alle Gebuchten hinzu (rollenrichtiger user_type). Seit 24.08.2026 zaehlen dabei auch Wartende — vorher nur bestaetigte, obwohl Wartende beim Anmelden hineinkommen. Pro Event nur ein Chat. Die Mitgliedschaft wird ab jetzt laufend gepflegt: Anmelden traegt ein, Abmelden traegt aus.\n",
+        "summary": "Gruppenchat für Event erstellen",
+        "description": "Legt den Event-Chat an und fuegt Ersteller plus alle Gebuchten hinzu (rollenrichtiger user_type). Seit 24.08.2026 zählen dabei auch Wartende — vorher nur bestaetigte, obwohl Wartende beim Anmelden hineinkommen. Pro Event nur ein Chat. Die Mitgliedschaft wird ab jetzt laufend gepflegt: Anmelden trägt ein, Abmelden trägt aus.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5155,8 +5155,8 @@
     },
     "/api/admin/activities": {
       "get": {
-        "summary": "Masterliste aller Aktivitaeten der eigenen Organisation",
-        "description": "Liefert alle Aktivitaeten der aktiven Organisation samt zugeordneten Kategorien. Optionaler Query-Parameter target_role filtert auf Konfi- bzw. Teamer-Aktivitaeten.\n",
+        "summary": "Masterliste aller Aktivitäten der eigenen Organisation",
+        "description": "Liefert alle Aktivitäten der aktiven Organisation samt zugeordneten Kategorien. Optionaler Query-Parameter target_role filtert auf Konfi- bzw. Teamer-Aktivitäten.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5169,7 +5169,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "WHERE a.organization_id = req.user.organization_id",
-          "hinweis": "super_admin faellt durch requireTeamer auf 403, ausser er agiert per Multi-Org-Switch als org_admin/admin/teamer.\n"
+          "hinweis": "super_admin fällt durch requireTeamer auf 403, außer er agiert per Multi-Org-Switch als org_admin/admin/teamer.\n"
         },
         "parameters": [
           {
@@ -5204,8 +5204,8 @@
         ]
       },
       "post": {
-        "summary": "Neue Aktivitaet anlegen",
-        "description": "Legt eine Aktivitaet in der aktiven Organisation an. Bei target_role=teamer sind points und type optional, sonst Pflicht. Uebergebene category_ids werden zugeordnet.\n",
+        "summary": "Neue Aktivität anlegen",
+        "description": "Legt eine Aktivität in der aktiven Organisation an. Bei target_role=teamer sind points und type optional, sonst Pflicht. Uebergebene category_ids werden zugeordnet.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5282,8 +5282,8 @@
     },
     "/api/admin/activities/{id}": {
       "put": {
-        "summary": "Aktivitaet aendern",
-        "description": "Aendert Name, Punkte, Typ, Zielrolle und Kategorien einer Aktivitaet der eigenen Organisation.\n",
+        "summary": "Aktivität ändern",
+        "description": "Aendert Name, Punkte, Typ, Zielrolle und Kategorien einer Aktivität der eigenen Organisation.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5295,7 +5295,7 @@
             "validateUpdateActivity"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Aktivitaet muss zur eigenen Organisation gehoeren"
+          "objekt-pruefung": "Aktivität muss zur eigenen Organisation gehören"
         },
         "parameters": [
           {
@@ -5361,8 +5361,8 @@
         ]
       },
       "delete": {
-        "summary": "Aktivitaet loeschen (nur ohne Zuordnungen)",
-        "description": "Loescht eine Aktivitaet. Existieren bereits Zuordnungen zu Konfis (user_activities), wird mit 409 abgelehnt. Antraege werden nach Gewicht unterschieden aufgeraeumt bzw. blockieren das Loeschen.\n",
+        "summary": "Aktivität löschen (nur ohne Zuordnungen)",
+        "description": "Loescht eine Aktivität. Existieren bereits Zuordnungen zu Konfis (user_activities), wird mit 409 abgelehnt. Anträge werden nach Gewicht unterschieden aufgeraeumt bzw. blockieren das Löschen.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5374,7 +5374,7 @@
             "validateDeleteActivity"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Zuordnungspruefung ueber JOIN activities mit organization_id"
+          "objekt-pruefung": "Zuordnungspruefung über JOIN activities mit organization_id"
         },
         "parameters": [
           {
@@ -5408,7 +5408,7 @@
     },
     "/api/admin/activities/requests": {
       "get": {
-        "summary": "Alle Antraege der Organisation",
+        "summary": "Alle Anträge der Organisation",
         "description": "Liefert alle Aktivitaetsantraege der aktiven Organisation samt Konfi-Name, Aktivitaetsdaten und genehmigender Person.\n",
         "x-berechtigung": {
           "rollen": [
@@ -5421,7 +5421,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "WHERE a.organization_id = req.user.organization_id",
-          "hinweis": "Kein Jahrgangs-Filter: org_admin und admin sehen die Antraege ALLER Jahrgaenge der Organisation. Teamer:innen haben hier keinen Zugriff (dafuer gibt es GET /api/teamer/requests).\n"
+          "hinweis": "Kein Jahrgangs-Filter: org_admin und admin sehen die Anträge ALLER Jahrgänge der Organisation. Teamer:innen haben hier keinen Zugriff (dafuer gibt es GET /api/teamer/requests).\n"
         },
         "responses": {
           "200": {
@@ -5445,7 +5445,7 @@
     "/api/admin/activities/requests/{id}": {
       "put": {
         "summary": "Antrag genehmigen oder ablehnen",
-        "description": "Setzt den Status eines ausstehenden Antrags auf approved oder rejected. Bei approved werden die Punkte gutgeschrieben und Badges geprueft. Bereits entschiedene Antraege werden mit 400 abgelehnt.\n",
+        "description": "Setzt den Status eines ausstehenden Antrags auf approved oder rejected. Bei approved werden die Punkte gutgeschrieben und Badges geprüft. Bereits entschiedene Anträge werden mit 400 abgelehnt.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5457,7 +5457,7 @@
             "validateRequestUpdate"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Antrag ueber JOIN activities auf die eigene Organisation eingegrenzt; nur status=pending aenderbar"
+          "objekt-pruefung": "Antrag über JOIN activities auf die eigene Organisation eingegrenzt; nur status=pending aenderbar"
         },
         "parameters": [
           {
@@ -5514,8 +5514,8 @@
         ]
       },
       "delete": {
-        "summary": "Abgelehnten Antrag endgueltig loeschen",
-        "description": "Entfernt einen abgelehnten Antrag samt Nachweisfoto. Offene Antraege (409) und genehmigte Antraege (409) sind bewusst geschuetzt: offene werden entschieden, genehmigte zuerst zurueckgesetzt.\n",
+        "summary": "Abgelehnten Antrag endgueltig löschen",
+        "description": "Entfernt einen abgelehnten Antrag samt Nachweisfoto. Offene Anträge (409) und genehmigte Anträge (409) sind bewusst geschuetzt: offene werden entschieden, genehmigte zuerst zurückgesetzt.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5527,7 +5527,7 @@
             "param-id-Validierung"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Antrag ueber JOIN activities org-gescopt; nur status=rejected loeschbar"
+          "objekt-pruefung": "Antrag über JOIN activities org-gescopt; nur status=rejected loeschbar"
         },
         "parameters": [
           {
@@ -5562,7 +5562,7 @@
     "/api/admin/activities/requests/{id}/reset": {
       "put": {
         "summary": "Entschiedenen Antrag auf ausstehend zuruecksetzen",
-        "description": "Setzt einen genehmigten oder abgelehnten Antrag zurueck auf pending. Bei zuvor genehmigten Antraegen werden die gutgeschriebenen Punkte wieder abgezogen.\n",
+        "description": "Setzt einen genehmigten oder abgelehnten Antrag zurück auf pending. Bei zuvor genehmigten Anträgen werden die gutgeschriebenen Punkte wieder abgezogen.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5574,7 +5574,7 @@
             "param-id-Validierung"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Antrag ueber JOIN activities org-gescopt; bereits ausstehende Antraege ergeben 400"
+          "objekt-pruefung": "Antrag über JOIN activities org-gescopt; bereits ausstehende Anträge ergeben 400"
         },
         "parameters": [
           {
@@ -5609,7 +5609,7 @@
     "/api/admin/activities/requests/{id}/photo": {
       "get": {
         "summary": "Nachweisfoto eines Antrags abrufen",
-        "description": "Liefert das (verschluesselt gespeicherte) Nachweisfoto entschluesselt als image/jpeg aus, unabhaengig vom Status des Antrags.\n",
+        "description": "Liefert das (verschlüsselt gespeicherte) Nachweisfoto entschluesselt als image/jpeg aus, unabhaengig vom Status des Antrags.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5658,7 +5658,7 @@
         ]
       },
       "delete": {
-        "summary": "Nachweisfoto eines Antrags loeschen",
+        "summary": "Nachweisfoto eines Antrags löschen",
         "description": "Setzt photo_filename auf NULL und entfernt die Datei. Der Antrag selbst bleibt erhalten.\n",
         "x-berechtigung": {
           "rollen": [
@@ -5669,7 +5669,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Inline-Rollencheck role_name in ['admin','org_admin']; danach Org-Vergleich ueber den antragstellenden User"
+          "objekt-pruefung": "Inline-Rollencheck role_name in ['admin','org_admin']; danach Org-Vergleich über den antragstellenden User"
         },
         "parameters": [
           {
@@ -5700,8 +5700,8 @@
     },
     "/api/admin/activities/assign-activity": {
       "post": {
-        "summary": "Aktivitaet direkt einem Konfi zuweisen",
-        "description": "Vergibt eine Aktivitaet ohne Antragsweg. Punkte werden gutgeschrieben und die Badge-Pruefung ausgeloest.\n",
+        "summary": "Aktivität direkt einem Konfi zuweisen",
+        "description": "Vergibt eine Aktivität ohne Antragsweg. Punkte werden gutgeschrieben und die Badge-Prüfung ausgelöst.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5714,7 +5714,7 @@
             "validateAssignActivity"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Aktivitaet UND Ziel-User muessen zur eigenen Organisation gehoeren (Org-Pruefung des Ziel-Users ergaenzt 22.08.2026). Teamer:innen zusaetzlich: der Jahrgang des Konfis muss in assigned_jahrgaenge mit can_view liegen.\n"
+          "objekt-pruefung": "Aktivität UND Ziel-User müssen zur eigenen Organisation gehören (Org-Prüfung des Ziel-Users ergaenzt 22.08.2026). Teamer:innen zusaetzlich: der Jahrgang des Konfis muss in assigned_jahrgaenge mit can_view liegen.\n"
         },
         "requestBody": {
           "required": true,
@@ -5769,8 +5769,8 @@
     },
     "/api/admin/konfis": {
       "get": {
-        "summary": "Liste der Konfis (fuer Teamer:innen auf eigene Jahrgaenge gefiltert)",
-        "description": "Liefert die Konfis der aktiven Organisation mit Punkten, Jahrgang und Zaehlern. Fuer alle ausser super_admin und org_admin wird auf die Jahrgaenge aus assigned_jahrgaenge mit can_view eingeschraenkt. Geloeschte Konfis (deleted_at) sind ausgeschlossen.\n",
+        "summary": "Liste der Konfis (für Teamer:innen auf eigene Jahrgänge gefiltert)",
+        "description": "Liefert die Konfis der aktiven Organisation mit Punkten, Jahrgang und Zaehlern. Für alle außer super_admin und org_admin wird auf die Jahrgänge aus assigned_jahrgaenge mit can_view eingeschraenkt. Geloeschte Konfis (deleted_at) sind ausgeschlossen.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5782,7 +5782,7 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "u.organization_id = Token-Org; zusaetzlich Jahrgangs-Filter fuer alle ausser is_super_admin/org_admin"
+          "objekt-pruefung": "u.organization_id = Token-Org; zusaetzlich Jahrgangs-Filter für alle außer is_super_admin/org_admin"
         },
         "responses": {
           "200": {
@@ -5804,7 +5804,7 @@
       },
       "post": {
         "summary": "Neuen Konfi anlegen",
-        "description": "Legt User + konfi_profiles an, erzeugt Username und Startpasswort, haengt den Konfi an den Jahrgangs-Chat und bucht ihn in kuenftige Pflicht-Events des Jahrgangs ein. Das Konfi-Limit der Organisation wird geprueft.\n",
+        "description": "Legt User + konfi_profiles an, erzeugt Username und Startpasswort, hängt den Konfi an den Jahrgangs-Chat und bucht ihn in kuenftige Pflicht-Events des Jahrgangs ein. Das Konfi-Limit der Organisation wird geprüft.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5816,8 +5816,8 @@
             "validateCreateKonfi"
           ],
           "org-scope": true,
-          "objekt-pruefung": "jahrgang_id muss zur eigenen Organisation gehoeren; Rolle konfi wird org-spezifisch aufgeloest; Limitpruefung ueber checkKonfiLimit",
-          "hinweis": "Teamer:innen koennen keine Konfis anlegen (requireAdmin).\n"
+          "objekt-pruefung": "jahrgang_id muss zur eigenen Organisation gehören; Rolle konfi wird org-spezifisch aufgeloest; Limitpruefung über checkKonfiLimit",
+          "hinweis": "Teamer:innen können keine Konfis anlegen (requireAdmin).\n"
         },
         "requestBody": {
           "required": true,
@@ -5889,7 +5889,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "WHERE r.name = 'teamer' AND u.organization_id = Token-Org",
-          "hinweis": "Kein Jahrgangs-Filter: Teamer:innen sehen hier alle Kolleg:innen der Organisation, auch aus fremden Jahrgaengen. Es werden keine Login-Daten ausser dem username ausgeliefert.\n"
+          "hinweis": "Kein Jahrgangs-Filter: Teamer:innen sehen hier alle Kolleg:innen der Organisation, auch aus fremden Jahrgängen. Es werden keine Login-Daten außer dem username ausgeliefert.\n"
         },
         "responses": {
           "200": {
@@ -5913,7 +5913,7 @@
     "/api/admin/konfis/{id}": {
       "get": {
         "summary": "Einzelner Konfi oder Teamer mit voller Historie",
-        "description": "Detailansicht: Stammdaten, Punkte, Aktivitaeten, Bonuspunkte, Events, Abzeichen und aufgeloester Konfispruch. Fuer Teamer:innen als Zielobjekt zusaetzlich Zertifikate und Teamer-Historie.\n",
+        "description": "Detailansicht: Stammdaten, Punkte, Aktivitäten, Bonuspunkte, Events, Abzeichen und aufgeloester Konfispruch. Für Teamer:innen als Zielobjekt zusaetzlich Zertifikate und Teamer-Historie.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -5926,7 +5926,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "WHERE u.id = :id AND u.organization_id = Token-Org AND r.name IN ('konfi','teamer') AND deleted_at IS NULL",
-          "hinweis": "# HINWEIS: Diese Route hat KEINEN Jahrgangs-Check. Eine Teamer:in kann ueber eine direkt geratene ID das vollstaendige Profil samt Punktehistorie jedes Konfis der Organisation abrufen, auch aus Jahrgaengen ohne Zuweisung. Die Liste GET /api/admin/konfis filtert dagegen korrekt.\n"
+          "hinweis": "# HINWEIS: Diese Route hat KEINEN Jahrgangs-Check. Eine Teamer:in kann über eine direkt geratene ID das vollstaendige Profil samt Punktehistorie jedes Konfis der Organisation abrufen, auch aus Jahrgängen ohne Zuweisung. Die Liste GET /api/admin/konfis filtert dagegen korrekt.\n"
         },
         "parameters": [
           {
@@ -5955,8 +5955,8 @@
         ]
       },
       "put": {
-        "summary": "Konfi aendern (Name, Jahrgang)",
-        "description": "Aendert Anzeigename und/oder Jahrgang. Bei Jahrgangswechsel wird die Chat-Mitgliedschaft synchronisiert und der Konfi in kuenftige Pflicht-Events des neuen Jahrgangs eingebucht. Seit 24.08.2026 werden dabei auch die kuenftigen Pflicht-Events des ALTEN Jahrgangs ausgetragen — nur solange keine Anwesenheit erfasst ist und der Termin nicht auch zum neuen Jahrgang gehoert. Vergangene Termine und erfasste Anwesenheiten bleiben unberuehrt.\n",
+        "summary": "Konfi ändern (Name, Jahrgang)",
+        "description": "Aendert Anzeigename und/oder Jahrgang. Bei Jahrgangswechsel wird die Chat-Mitgliedschaft synchronisiert und der Konfi in kuenftige Pflicht-Events des neuen Jahrgangs eingebucht. Seit 24.08.2026 werden dabei auch die kuenftigen Pflicht-Events des ALTEN Jahrgangs ausgetragen — nur solange keine Anwesenheit erfasst ist und der Termin nicht auch zum neuen Jahrgang gehört. Vergangene Termine und erfasste Anwesenheiten bleiben unberuehrt.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -6018,8 +6018,8 @@
         ]
       },
       "delete": {
-        "summary": "Konfi loeschen (inkl. abhaengiger Daten)",
-        "description": "Loescht den Konfi und die daran haengenden Daten ueber deleteKonfiCascade (Aktivitaeten, Bonuspunkte, Buchungen, Antraege, Chat-Mitgliedschaften, seit 24.08.2026 auch erhaltene Urkunden — deren Fremdschluessel blockierte das Loeschen vorher mit 500). Dieselbe Funktion traegt die Selbstloeschung ueber POST /auth/delete-account, dort fuer jede Rolle.\n",
+        "summary": "Konfi löschen (inkl. abhaengiger Daten)",
+        "description": "Loescht den Konfi und die daran haengenden Daten über deleteKonfiCascade (Aktivitäten, Bonuspunkte, Buchungen, Anträge, Chat-Mitgliedschaften, seit 24.08.2026 auch erhaltene Urkunden — deren Fremdschlüssel blockierte das Löschen vorher mit 500). Dieselbe Funktion trägt die Selbstloeschung über POST /auth/delete-account, dort für jede Rolle.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -6031,7 +6031,7 @@
             "param-id-Validierung"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Ziel muss Rolle konfi haben, zur eigenen Organisation gehoeren und darf nicht bereits geloescht sein"
+          "objekt-pruefung": "Ziel muss Rolle konfi haben, zur eigenen Organisation gehören und darf nicht bereits gelöscht sein"
         },
         "parameters": [
           {
@@ -6062,8 +6062,8 @@
     },
     "/api/admin/konfis/{id}/regenerate-password": {
       "post": {
-        "summary": "Neues Startpasswort fuer einen Konfi erzeugen",
-        "description": "Erzeugt ein neues Passwort, speichert den Hash und gibt das Klartext-Passwort einmalig zurueck.",
+        "summary": "Neues Startpasswort für einen Konfi erzeugen",
+        "description": "Erzeugt ein neues Passwort, speichert den Hash und gibt das Klartext-Passwort einmalig zurück.",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -6076,7 +6076,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "UPDATE ... WHERE id = :id AND organization_id = Token-Org",
-          "hinweis": "Kein Rollen-Check auf das Zielobjekt: die Route setzt das Passwort jedes Users der eigenen Organisation zurueck, nicht nur von Konfis. Da nur org_admin/admin zugreifen duerfen, bleibt der Effekt innerhalb der Leitungsrechte.\n"
+          "hinweis": "Kein Rollen-Check auf das Zielobjekt: die Route setzt das Passwort jedes Users der eigenen Organisation zurück, nicht nur von Konfis. Da nur org_admin/admin zugreifen duerfen, bleibt der Effekt innerhalb der Leitungsrechte.\n"
         },
         "parameters": [
           {
@@ -6108,7 +6108,7 @@
     "/api/admin/konfis/{id}/event-points": {
       "get": {
         "summary": "Event-Punkte eines Konfis",
-        "description": "Liefert alle ueber Events vergebenen Punkte samt Event-Name und vergebender Person.",
+        "description": "Liefert alle über Events vergebenen Punkte samt Event-Name und vergebender Person.",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -6162,8 +6162,8 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Ziel muss Rolle konfi haben, zur eigenen Organisation gehoeren und nicht geloescht sein",
-          "hinweis": "Nur fuer Konfis; Teamer-Abzeichen laufen ueber /api/teamer/badges. Kein Jahrgangs-Check.\n"
+          "objekt-pruefung": "Ziel muss Rolle konfi haben, zur eigenen Organisation gehören und nicht gelöscht sein",
+          "hinweis": "Nur für Konfis; Teamer-Abzeichen laufen über /api/teamer/badges. Kein Jahrgangs-Check.\n"
         },
         "parameters": [
           {
@@ -6206,8 +6206,8 @@
             "requireAdmin"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Events sind org-gescopt (e.organization_id); der Jahrgang wird ueber konfi_profiles des Ziel-Konfis ermittelt",
-          "hinweis": "Die Vorab-Abfrage auf konfi_profiles prueft NUR die user_id, nicht die Organisation. Fuer eine fremde ID wird der Jahrgang also ermittelt, die eigentliche Auswertung filtert danach aber auf die eigene Organisation und liefert deshalb Nullwerte statt fremder Daten. Teamer:innen haben hier keinen Zugriff.\n"
+          "objekt-pruefung": "Events sind org-gescopt (e.organization_id); der Jahrgang wird über konfi_profiles des Ziel-Konfis ermittelt",
+          "hinweis": "Die Vorab-Abfrage auf konfi_profiles prüft NUR die user_id, nicht die Organisation. Für eine fremde ID wird der Jahrgang also ermittelt, die eigentliche Auswertung filtert danach aber auf die eigene Organisation und liefert deshalb Nullwerte statt fremder Daten. Teamer:innen haben hier keinen Zugriff.\n"
         },
         "parameters": [
           {
@@ -6239,7 +6239,7 @@
     "/api/admin/konfis/{id}/bonus-points": {
       "post": {
         "summary": "Bonuspunkte vergeben",
-        "description": "Traegt Bonuspunkte ein und schreibt sie dem passenden Punktekonto gut. Der Punkte-Typ muss fuer den Jahrgang des Konfis aktiviert sein.\n",
+        "description": "Traegt Bonuspunkte ein und schreibt sie dem passenden Punktekonto gut. Der Punkte-Typ muss für den Jahrgang des Konfis aktiviert sein.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -6252,7 +6252,7 @@
             "validateBonusPoints"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Gutschrift laeuft ueber JOIN users mit organization_id = Token-Org; checkPointTypeEnabled prueft den Punkte-Typ gegen den Jahrgang",
+          "objekt-pruefung": "Gutschrift läuft über JOIN users mit organization_id = Token-Org; checkPointTypeEnabled prüft den Punkte-Typ gegen den Jahrgang",
           "hinweis": "Vergeben duerfen auch Teamer:innen, zuruecknehmen nur org_admin und admin (DELETE unten). Ein Jahrgangs-Check auf die Ziel-ID findet nicht statt.\n"
         },
         "parameters": [
@@ -6369,8 +6369,8 @@
     },
     "/api/admin/konfis/{id}/activities": {
       "post": {
-        "summary": "Aktivitaet nachtragen",
-        "description": "Traegt eine erledigte Aktivitaet nach, schreibt die Punkte gut und loest die Badge-Pruefung aus. Bei Konfi-Aktivitaeten muss der Punkte-Typ fuer den Jahrgang aktiviert sein.\n",
+        "summary": "Aktivität nachtragen",
+        "description": "Traegt eine erledigte Aktivität nach, schreibt die Punkte gut und löst die Badge-Prüfung aus. Bei Konfi-Aktivitäten muss der Punkte-Typ für den Jahrgang aktiviert sein.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -6382,8 +6382,8 @@
             "validateAddActivity"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Aktivitaet muss zur eigenen Organisation gehoeren; checkPointTypeEnabled bei Konfi-Aktivitaeten",
-          "hinweis": "Anders als POST /api/admin/activities/assign-activity verlangt diese Route requireAdmin — Teamer:innen tragen ueber assign-activity nach.\n"
+          "objekt-pruefung": "Aktivität muss zur eigenen Organisation gehören; checkPointTypeEnabled bei Konfi-Aktivitäten",
+          "hinweis": "Anders als POST /api/admin/activities/assign-activity verlangt diese Route requireAdmin — Teamer:innen tragen über assign-activity nach.\n"
         },
         "parameters": [
           {
@@ -6443,7 +6443,7 @@
     },
     "/api/admin/konfis/{id}/activities/{activityId}": {
       "delete": {
-        "summary": "Nachgetragene Aktivitaet entfernen",
+        "summary": "Nachgetragene Aktivität entfernen",
         "description": "Loescht die Zuordnung und zieht die gutgeschriebenen Punkte wieder ab.",
         "x-berechtigung": {
           "rollen": [
@@ -6455,7 +6455,7 @@
             "requireAdmin"
           ],
           "org-scope": true,
-          "objekt-pruefung": "SELECT ueber JOIN users mit organization_id — die Org-Bedingung wurde 22.08.2026 ergaenzt. Ohne sie fand der SELECT auch fremde Eintraege und der Punktabzug lief auf einem fremden Konfi.\n"
+          "objekt-pruefung": "SELECT über JOIN users mit organization_id — die Org-Bedingung wurde 22.08.2026 ergaenzt. Ohne sie fand der SELECT auch fremde Eintraege und der Punktabzug lief auf einem fremden Konfi.\n"
         },
         "parameters": [
           {
@@ -6563,7 +6563,7 @@
     "/api/admin/konfis/{id}/promote-teamer": {
       "post": {
         "summary": "Konfi zur Teamer:in befoerdern",
-        "description": "Setzt die Rolle auf teamer und teamer_since auf heute, loescht Event-Buchungen und offene Antraege und uebertraegt den Jahrgang aus konfi_profiles in user_jahrgang_assignments.\n",
+        "description": "Setzt die Rolle auf teamer und teamer_since auf heute, löscht Event-Buchungen und offene Anträge und uebertraegt den Jahrgang aus konfi_profiles in user_jahrgang_assignments.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -6575,7 +6575,7 @@
             "param-id-Validierung"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Ziel-User muss zur eigenen Organisation gehoeren und aktuell Rolle konfi haben (sonst 400)",
+          "objekt-pruefung": "Ziel-User muss zur eigenen Organisation gehören und aktuell Rolle konfi haben (sonst 400)",
           "hinweis": "Die Teamer-Rolle wird org-spezifisch gesucht, mit Rueckfall auf die globale Rolle (organization_id IS NULL).\n"
         },
         "parameters": [
@@ -6613,8 +6613,8 @@
         "tags": [
           "Chat"
         ],
-        "summary": "Team-Kontaktliste fuer Direktchats",
-        "description": "Liefert alle aktiven Admins, Org-Admins und Teamer:innen der eigenen Organisation (ohne den Aufrufer selbst) — bewusst nur die fuer einen Chat noetigen Felder, keine E-Mail/Login-Daten.\n",
+        "summary": "Team-Kontaktliste für Direktchats",
+        "description": "Liefert alle aktiven Admins, Org-Admins und Teamer:innen der eigenen Organisation (ohne den Aufrufer selbst) — bewusst nur die für einen Chat noetigen Felder, keine E-Mail/Login-Daten.\n",
         "responses": {
           "200": {
             "description": "Liste der Team-Mitglieder",
@@ -6653,7 +6653,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Explizite role_name-Pruefung im Handler (admin/org_admin/teamer), sonst 403",
+          "objekt-pruefung": "Explizite role_name-Prüfung im Handler (admin/org_admin/teamer), sonst 403",
           "hinweis": "Konfis nutzen stattdessen GET /chat/admins bzw. /chat/available-users"
         }
       }
@@ -6664,7 +6664,7 @@
           "Chat"
         ],
         "summary": "Anschreibbare Team-Mitglieder (Konfi-Sicht)",
-        "description": "Nur fuer Konfis: alle admin/org_admin/teamer der eigenen Organisation. Konfis koennen ausschliesslich diese Personen anschreiben.\n",
+        "description": "Nur für Konfis: alle admin/org_admin/teamer der eigenen Organisation. Konfis können ausschliesslich diese Personen anschreiben.\n",
         "responses": {
           "200": {
             "description": "Liste (id, display_name, username)",
@@ -6716,7 +6716,7 @@
           "Chat"
         ],
         "summary": "Noch nicht angeschriebene Chat-Partner (Konfi-Sicht)",
-        "description": "Nur fuer Konfis: Team-Mitglieder der Org, mit denen noch KEIN Direktchat besteht. Liefert nie andere Konfis (permissions: direct_only_admin).\n",
+        "description": "Nur für Konfis: Team-Mitglieder der Org, mit denen noch KEIN Direktchat besteht. Liefert nie andere Konfis (permissions: direct_only_admin).\n",
         "responses": {
           "200": {
             "description": "Verfuegbare Partner plus Jahrgangsname",
@@ -6789,7 +6789,7 @@
           "Chat"
         ],
         "summary": "Direktchat erstellen oder vorhandenen zurueckgeben",
-        "description": "Legt einen 1:1-Direktchat mit target_user_id an (oder liefert den bestehenden Raum). user_type des Ziels wird IMMER serverseitig aus der echten Rolle abgeleitet. Konfi-zu-Konfi ist verboten. Seit 23.08.2026 gilt zusaetzlich die Jahrgangsgrenze: Teamer:innen erreichen nur Konfis ihrer zugewiesenen Jahrgaenge, org_admin und admin alle Konfis der Organisation. Eine Teamer:in ohne Zuweisung erreicht gar keinen Konfi — Team-Kontakte bleiben unberuehrt.\n",
+        "description": "Legt einen 1:1-Direktchat mit target_user_id an (oder liefert den bestehenden Raum). user_type des Ziels wird IMMER serverseitig aus der echten Rolle abgeleitet. Konfi-zu-Konfi ist verboten. Seit 23.08.2026 gilt zusaetzlich die Jahrgangsgrenze: Teamer:innen erreichen nur Konfis ihrer zugewiesenen Jahrgänge, org_admin und admin alle Konfis der Organisation. Eine Teamer:in ohne Zuweisung erreicht gar keinen Konfi — Team-Kontakte bleiben unberuehrt.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -6848,8 +6848,8 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Ziel-User muss zur eigenen Org gehoeren (sonst 403); konfi->konfi wird geblockt; teamer->konfi nur bei passender Jahrgangs-Zuweisung (can_view). Dieselbe Pruefung greift in POST /chat/rooms, sonst waere sie ueber das participants-Feld umgehbar.\n",
-          "hinweis": "Team -> Konfi ohne Jahrgangspruefung erlaubt (jeder Konfi der Org, auch fremde Jahrgaenge)"
+          "objekt-pruefung": "Ziel-User muss zur eigenen Org gehören (sonst 403); konfi->konfi wird geblockt; teamer->konfi nur bei passender Jahrgangs-Zuweisung (can_view). Dieselbe Prüfung greift in POST /chat/rooms, sonst wäre sie über das participants-Feld umgehbar.\n",
+          "hinweis": "Team -> Konfi ohne Jahrgangspruefung erlaubt (jeder Konfi der Org, auch fremde Jahrgänge)"
         }
       }
     },
@@ -6948,7 +6948,7 @@
             "validateCreateRoom"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Konfis nur type='direct'; jahrgang_id und participants werden gegen die Org geprueft",
+          "objekt-pruefung": "Konfis nur type='direct'; jahrgang_id und participants werden gegen die Org geprüft",
           "hinweis": "Siehe LUECKE-Kommentar; emitRoomsChanged an alle finalen Teilnehmer"
         }
       },
@@ -6956,8 +6956,8 @@
         "tags": [
           "Chat"
         ],
-        "summary": "Eigene Chat-Raeume auflisten",
-        "description": "Liefert alle Raeume, in denen der Nutzer Teilnehmer ist, mit unread_count, letzter Nachricht und Direktchat-Partnername. Beim Aufruf laeuft hoechstens 1x je 10 Min ein Mitgliedschafts-Sync (Jahrgangs-Chats + Team-Chat): konfi -> eigener Jahrgang, teamer/admin -> zugewiesene Jahrgaenge, org_admin -> alle Jahrgaenge der Org; Team-Chat fuer alle Nicht-Konfis.\n",
+        "summary": "Eigene Chat-Räume auflisten",
+        "description": "Liefert alle Räume, in denen der Nutzer Teilnehmer ist, mit unread_count, letzter Nachricht und Direktchat-Partnername. Beim Aufruf läuft höchstens 1x je 10 Min ein Mitgliedschafts-Sync (Jahrgangs-Chats + Team-Chat): konfi -> eigener Jahrgang, teamer/admin -> zugewiesene Jahrgänge, org_admin -> alle Jahrgänge der Org; Team-Chat für alle Nicht-Konfis.\n",
         "responses": {
           "200": {
             "description": "Raumliste (nach letzter Nachricht sortiert)",
@@ -6987,8 +6987,8 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Nur Raeume mit eigenem chat_participants-Eintrag (KEIN Admin-Bypass in der Liste)",
-          "hinweis": "Admins sehen fremde Raeume zwar nicht in der Liste, koennen sie aber per ID oeffnen (siehe /rooms/{roomId})"
+          "objekt-pruefung": "Nur Räume mit eigenem chat_participants-Eintrag (KEIN Admin-Bypass in der Liste)",
+          "hinweis": "Admins sehen fremde Räume zwar nicht in der Liste, können sie aber per ID oeffnen (siehe /rooms/{roomId})"
         }
       }
     },
@@ -7074,8 +7074,8 @@
         "tags": [
           "Chat"
         ],
-        "summary": "Chat-Raum loeschen (nur Admins)",
-        "description": "Loescht Raum inkl. Nachrichten, Umfragen, Dateien. Mit vorhandenen Nachrichten nur mit ?force=true. Jahrgangs-Chats sind nie direkt loeschbar (nur ueber das Loeschen des Jahrgangs).\n",
+        "summary": "Chat-Raum löschen (nur Admins)",
+        "description": "Loescht Raum inkl. Nachrichten, Umfragen, Dateien. Mit vorhandenen Nachrichten nur mit ?force=true. Jahrgangs-Chats sind nie direkt loeschbar (nur über das Löschen des Jahrgangs).\n",
         "parameters": [
           {
             "name": "roomId",
@@ -7124,7 +7124,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "req.user.type muss 'admin' sein; Raum muss zur eigenen Org gehoeren",
+          "objekt-pruefung": "req.user.type muss 'admin' sein; Raum muss zur eigenen Org gehören",
           "hinweis": "teamer und konfi nie; auch fremde Direktchats loeschbar"
         }
       }
@@ -7214,7 +7214,7 @@
           "Chat"
         ],
         "summary": "Nachricht senden (Text oder Datei)",
-        "description": "multipart/form-data mit optionalem Feld 'file' (verschluesselte Ablage, Magic-Bytes-Pruefung) oder JSON mit content. client_id (UUID) macht den Aufruf idempotent. reply_to wird gegen den Raum validiert. Verteilt via WebSocket und Push an alle Teilnehmer.\n",
+        "description": "multipart/form-data mit optionalem Feld 'file' (verschluesselte Ablage, Magic-Bytes-Prüfung) oder JSON mit content. client_id (UUID) macht den Aufruf idempotent. reply_to wird gegen den Raum validiert. Verteilt via WebSocket und Push an alle Teilnehmer.\n",
         "parameters": [
           {
             "name": "roomId",
@@ -7295,7 +7295,7 @@
             "rateLimiters.uploadLimiter"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Teilnehmer ODER Admin-Bypass — admin/org_admin koennen in JEDEN Raum der Org schreiben (auch fremde Direktchats)"
+          "objekt-pruefung": "Teilnehmer ODER Admin-Bypass — admin/org_admin können in JEDEN Raum der Org schreiben (auch fremde Direktchats)"
         }
       }
     },
@@ -7411,7 +7411,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "type='admin' UND role_name in (admin, org_admin, super_admin); Raum org-gescopt",
-          "hinweis": "Keine Teilnahme noetig — jeder Raum der Org exportierbar, auch fremde Direktchats"
+          "hinweis": "Keine Teilnahme nötig — jeder Raum der Org exportierbar, auch fremde Direktchats"
         }
       }
     },
@@ -7420,7 +7420,7 @@
         "tags": [
           "Chat"
         ],
-        "summary": "Nachricht loeschen (Soft-Delete)",
+        "summary": "Nachricht löschen (Soft-Delete)",
         "parameters": [
           {
             "name": "messageId",
@@ -7614,7 +7614,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "type='admin'; nur room.type='group'; Ziel-User org-gescopt",
-          "hinweis": "teamer koennen keine Teilnehmer hinzufuegen (wohl aber Raeume mit Teilnehmern ANLEGEN, siehe POST /rooms)"
+          "hinweis": "teamer können keine Teilnehmer hinzufuegen (wohl aber Räume mit Teilnehmern ANLEGEN, siehe POST /rooms)"
         }
       }
     },
@@ -7691,7 +7691,7 @@
           "Chat"
         ],
         "summary": "Raum selbst verlassen (teamer/konfi)",
-        "description": "Admins koennen nie verlassen; jahrgang- und direct-Raeume sind generell nicht verlassbar; Event-Chats verlassen Konfis nur ueber die Event-Abmeldung.\n",
+        "description": "Admins können nie verlassen; jahrgang- und direct-Räume sind generell nicht verlassbar; Event-Chats verlassen Konfis nur über die Event-Abmeldung.\n",
         "parameters": [
           {
             "name": "roomId",
@@ -7738,7 +7738,7 @@
           "Chat"
         ],
         "summary": "Chat-Datei abrufen (entschluesselt)",
-        "description": "Liefert eine im Chat hochgeladene Datei. Auth per Authorization-Header ODER ?token= (fuer Video-Elemente). Nur Hex-Dateinamen; Path-Traversal-Schutz via basename. Seit 22.08.2026 wird der Token gegen die Datenbank geprueft (Konto aktiv, nicht geloescht, kein Soft-Revoke) und die aktive Organisation ueber user_organizations aufgeloest — Multi-Org-Nutzer erreichen ihre Dateien damit auch in der Zweit-Organisation.\n",
+        "description": "Liefert eine im Chat hochgeladene Datei. Auth per Authorization-Header ODER ?token= (für Video-Elemente). Nur Hex-Dateinamen; Path-Traversal-Schutz via basename. Seit 22.08.2026 wird der Token gegen die Datenbank geprüft (Konto aktiv, nicht gelöscht, kein Soft-Revoke) und die aktive Organisation über user_organizations aufgeloest — Multi-Org-Nutzer erreichen ihre Dateien damit auch in der Zweit-Organisation.\n",
         "security": [],
         "parameters": [
           {
@@ -7811,7 +7811,7 @@
         "summary": "Badge-Zahl neu berechnen und als Push senden (Background Refresh)",
         "responses": {
           "200": {
-            "description": "Ungelesen-Zaehler",
+            "description": "Ungelesen-Zähler",
             "content": {
               "application/json": {
                 "schema": {
@@ -7849,7 +7849,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": false,
-          "objekt-pruefung": "Nur eigene Daten (Zaehler ueber eigene chat_participants)"
+          "objekt-pruefung": "Nur eigene Daten (Zähler über eigene chat_participants)"
         }
       }
     },
@@ -7938,8 +7938,8 @@
             "validateCreatePoll"
           ],
           "org-scope": true,
-          "objekt-pruefung": "type='admin'; Raum muss zur Org gehoeren (Teilnahme nicht noetig)",
-          "hinweis": "teamer koennen keine Umfragen erstellen"
+          "objekt-pruefung": "type='admin'; Raum muss zur Org gehören (Teilnahme nicht nötig)",
+          "hinweis": "teamer können keine Umfragen erstellen"
         }
       }
     },
@@ -8010,7 +8010,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "NUR Teilnehmer des Raums (hier KEIN Admin-Bypass — auch Admins muessen Teilnehmer sein)"
+          "objekt-pruefung": "NUR Teilnehmer des Raums (hier KEIN Admin-Bypass — auch Admins müssen Teilnehmer sein)"
         }
       }
     },
@@ -8020,7 +8020,7 @@
           "Chat-Umfragen"
         ],
         "summary": "Abstimmen per Message-ID (Frontend-Kompatibilitaet)",
-        "description": "Wie /polls/{pollId}/vote, aber Lookup nur ueber message_id und OHNE Toggle-off bei Mehrfachauswahl (doppelte Stimme -> 400) und ohne exclusive_options-Sperrlogik.\n",
+        "description": "Wie /polls/{pollId}/vote, aber Lookup nur über message_id und OHNE Toggle-off bei Mehrfachauswahl (doppelte Stimme -> 400) und ohne exclusive_options-Sperrlogik.\n",
         "parameters": [
           {
             "name": "messageId",
@@ -8206,7 +8206,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Org-Check; Teilnehmer-Pflicht nur fuer Nicht-Admins (admin/org_admin lesen org-weit)"
+          "objekt-pruefung": "Org-Check; Teilnehmer-Pflicht nur für Nicht-Admins (admin/org_admin lesen org-weit)"
         }
       }
     },
@@ -8216,7 +8216,7 @@
           "Challenges-Teilnehmer"
         ],
         "summary": "Aktive Challenges, Archiv und eigene Abzeichen",
-        "description": "Teilnehmer-Einstieg (trotz Pfadname auch fuer das Team). Nie Entwuerfe, nie ungestartete. Scope: Konfi -> Challenges seines Jahrgangs (nie 'nur_team'); teamer -> zugewiesene Jahrgaenge ('konfis_und_team') + org-weite 'nur_team'; admin/org_admin -> alle der Org mit Team-Beteiligung ('konfis_und_team', 'nur_team').\n",
+        "description": "Teilnehmer-Einstieg (trotz Pfadname auch für das Team). Nie Entwuerfe, nie ungestartete. Scope: Konfi -> Challenges seines Jahrgangs (nie 'nur_team'); teamer -> zugewiesene Jahrgänge ('konfis_und_team') + org-weite 'nur_team'; admin/org_admin -> alle der Org mit Team-Beteiligung ('konfis_und_team', 'nur_team').\n",
         "responses": {
           "200": {
             "description": "Gruppierte Challenge-Listen",
@@ -8290,7 +8290,7 @@
           "Challenges-Teilnehmer"
         ],
         "summary": "Challenge-Detail mit Galerie und eigenen Beitraegen",
-        "description": "Galerie enthaelt NUR fremde oeffentliche Beitraege (PUBLIC_SUBMISSION_SQL); bei anonymen Beitraegen sind display_name, role_name, jahrgang_name serverseitig NULL. Eigene Beitraege immer, inkl. Moderationsstatus. 'nur_team'-Challenges liefern fuer Konfis 404 (Existenz soll nicht durchsickern), ebenso Entwuerfe und noch nicht gestartete Challenges.\n",
+        "description": "Galerie enthält NUR fremde oeffentliche Beitraege (PUBLIC_SUBMISSION_SQL); bei anonymen Beitraegen sind display_name, role_name, jahrgang_name serverseitig NULL. Eigene Beitraege immer, inkl. Moderationsstatus. 'nur_team'-Challenges liefern für Konfis 404 (Existenz soll nicht durchsickern), ebenso Entwuerfe und noch nicht gestartete Challenges.\n",
         "parameters": [
           {
             "name": "id",
@@ -8351,7 +8351,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "participantMayAccess: konfi -> eigener Jahrgang zugeordnet; teamer -> zugewiesener Jahrgang oder 'nur_team'; admin/org_admin immer",
-          "hinweis": "Anonymitaet wird serverseitig durchgesetzt (Name verlaesst das Backend nicht)"
+          "hinweis": "Anonymitaet wird serverseitig durchgesetzt (Name verlässt das Backend nicht)"
         }
       }
     },
@@ -8361,7 +8361,7 @@
           "Challenges-Teilnehmer"
         ],
         "summary": "Beitrag einreichen",
-        "description": "multipart (Feld 'file') fuer photo/audio/video, JSON fuer text/link. Nur bei Status 'active'. audience steuert, wer einreichen darf (maySubmit): konfi bei 'konfis'/'konfis_und_team', Team bei 'konfis_und_team'/'nur_team'. konfi_consent nur bei visibility='konfi_choice' (Default 'publish'). Ohne Moderation Auto-Approve. Magic-Bytes-Pruefung der Datei; verschluesselte Ablage.\n",
+        "description": "multipart (Feld 'file') für photo/audio/video, JSON für text/link. Nur bei Status 'active'. audience steuert, wer einreichen darf (maySubmit): konfi bei 'konfis'/'konfis_und_team', Team bei 'konfis_und_team'/'nur_team'. konfi_consent nur bei visibility='konfi_choice' (Default 'publish'). Ohne Moderation Auto-Approve. Magic-Bytes-Prüfung der Datei; verschluesselte Ablage.\n",
         "parameters": [
           {
             "name": "id",
@@ -8492,7 +8492,7 @@
             "rbacVerifier"
           ],
           "org-scope": false,
-          "objekt-pruefung": "Keine — pauschale 403 fuer alle"
+          "objekt-pruefung": "Keine — pauschale 403 für alle"
         }
       }
     },
@@ -8561,7 +8561,7 @@
             "manuelle JWT-Pruefung + eigener Org-/Rollen-Lookup (identisch zur rbacVerifier-Logik)"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Owner immer; admin/org_admin org-weit; teamer bei 'nur_team' org-weit, sonst nur zugewiesene Jahrgaenge der Challenge; konfi nur oeffentliche Beitraege (isSubmissionPublic) aus seinem Jahrgang und nie 'nur_team'"
+          "objekt-pruefung": "Owner immer; admin/org_admin org-weit; teamer bei 'nur_team' org-weit, sonst nur zugewiesene Jahrgänge der Challenge; konfi nur oeffentliche Beitraege (isSubmissionPublic) aus seinem Jahrgang und nie 'nur_team'"
         }
       }
     },
@@ -8571,7 +8571,7 @@
           "Challenges-Leitung"
         ],
         "summary": "Moegliche Urheber:innen einer Challenge",
-        "description": "Alle Rollen der Org inkl. Konfis (eine Challenge kann von einem Konfi stammen). Teamer sehen nur Konfis ihrer zugewiesenen Jahrgaenge; Team-Mitglieder sehen sie immer.\n",
+        "description": "Alle Rollen der Org inkl. Konfis (eine Challenge kann von einem Konfi stammen). Teamer sehen nur Konfis ihrer zugewiesenen Jahrgänge; Team-Mitglieder sehen sie immer.\n",
         "responses": {
           "200": {
             "description": "Liste (id, display_name, role_name), Konfis zuletzt",
@@ -8621,7 +8621,7 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Konfi-Eintraege auf zugewiesene Jahrgaenge des Teamers gefiltert"
+          "objekt-pruefung": "Konfi-Eintraege auf zugewiesene Jahrgänge des Teamers gefiltert"
         }
       }
     },
@@ -8631,7 +8631,7 @@
           "Challenges-Leitung"
         ],
         "summary": "Alle Challenges der Org (inkl. Entwuerfe) mit Zaehlern",
-        "description": "Verwaltungsliste inkl. submission_count, pending_count, eigener Teilnahme (has_badge/own_submission_count) und Jahrgangs-Zuordnung. Teamer sehen nur Challenges ihrer zugewiesenen Jahrgaenge plus org-weite 'nur_team'-Challenges; ohne Zuweisungen leere Liste.\n",
+        "description": "Verwaltungsliste inkl. submission_count, pending_count, eigener Teilnahme (has_badge/own_submission_count) und Jahrgangs-Zuordnung. Teamer sehen nur Challenges ihrer zugewiesenen Jahrgänge plus org-weite 'nur_team'-Challenges; ohne Zuweisungen leere Liste.\n",
         "responses": {
           "200": {
             "description": "Challenge-Liste mit status (abgeleitet) und locked (nach Start)"
@@ -8662,7 +8662,7 @@
           "Challenges-Leitung"
         ],
         "summary": "Challenge anlegen (Entwurf oder geplant)",
-        "description": "Defaults: audience 'konfis_und_team', visibility 'konfi_choice', moderated true, allow_multiple true, is_draft true, allowed_media [text, photo]. Bei 'nur_team' werden jahrgang_ids ignoriert/nicht gespeichert. Teamer duerfen nur eigene (zugewiesene) Jahrgaenge bespielen; Jahrgaenge und Urheber werden org-gescopt validiert.\n",
+        "description": "Defaults: audience 'konfis_und_team', visibility 'konfi_choice', moderated true, allow_multiple true, is_draft true, allowed_media [text, photo]. Bei 'nur_team' werden jahrgang_ids ignoriert/nicht gespeichert. Teamer duerfen nur eigene (zugewiesene) Jahrgänge bespielen; Jahrgänge und Urheber werden org-gescopt validiert.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -8805,7 +8805,7 @@
             "validateCreate"
           ],
           "org-scope": true,
-          "objekt-pruefung": "jahrgang_ids muessen zur Org UND (bei Teamern) zu den eigenen Zuweisungen gehoeren; author_user_id org-gescopt"
+          "objekt-pruefung": "jahrgang_ids müssen zur Org UND (bei Teamern) zu den eigenen Zuweisungen gehören; author_user_id org-gescopt"
         }
       }
     },
@@ -8870,14 +8870,14 @@
             "validateUpdate"
           ],
           "org-scope": true,
-          "objekt-pruefung": "leadershipMayAccess: org_admin/admin immer; teamer nur zugewiesene Jahrgaenge bzw. 'nur_team' org-weit"
+          "objekt-pruefung": "leadershipMayAccess: org_admin/admin immer; teamer nur zugewiesene Jahrgänge bzw. 'nur_team' org-weit"
         }
       },
       "delete": {
         "tags": [
           "Challenges-Leitung"
         ],
-        "summary": "Challenge loeschen (gestartete nur mit force)",
+        "summary": "Challenge löschen (gestartete nur mit force)",
         "parameters": [
           {
             "name": "id",
@@ -8974,7 +8974,7 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "leadershipMayAccess (Teamer nur zugewiesene Jahrgaenge / 'nur_team')"
+          "objekt-pruefung": "leadershipMayAccess (Teamer nur zugewiesene Jahrgänge / 'nur_team')"
         }
       }
     },
@@ -8984,7 +8984,7 @@
           "Challenges-Leitung"
         ],
         "summary": "Beitrag moderieren (approve/hide/unhide/anonymize)",
-        "description": "approve und unhide setzen 'approved' und raeumen hidden-Metadaten ab; hide setzt 'hidden' (schlaegt jede Sichtbarkeit). anonymize ist eine Einbahnstrasse publish->anonymous, nur bei visibility='konfi_choice'; 'private' (staerkste Konfi-Zusage) und bereits anonyme Beitraege liefern 409.\n",
+        "description": "approve und unhide setzen 'approved' und raeumen hidden-Metadaten ab; hide setzt 'hidden' (schlägt jede Sichtbarkeit). anonymize ist eine Einbahnstrasse publish->anonymous, nur bei visibility='konfi_choice'; 'private' (staerkste Konfi-Zusage) und bereits anonyme Beitraege liefern 409.\n",
         "parameters": [
           {
             "name": "id",
@@ -9063,7 +9063,7 @@
           "Challenges-Leitung"
         ],
         "summary": "Beitraege als Text exportieren (Liturgie/Playlist/Wand)",
-        "description": "text/plain-Download. Strenger als die Sammelansicht, weil der Export die Leitungssphaere verlaesst — konfi_choice: nur approved mit publish/anonymous-Konsens ('private' NIE); public: nur approved; private Challenge: alle nicht-ausgeblendeten (Export ist dort der angekuendigte Rueckkanal). Anonyme Beitraege als \"Anonym\".\n",
+        "description": "text/plain-Download. Strenger als die Sammelansicht, weil der Export die Leitungssphaere verlässt — konfi_choice: nur approved mit publish/anonymous-Konsens ('private' NIE); public: nur approved; private Challenge: alle nicht-ausgeblendeten (Export ist dort der angekuendigte Rueckkanal). Anonyme Beitraege als \"Anonym\".\n",
         "parameters": [
           {
             "name": "id",
@@ -9106,7 +9106,7 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "leadershipMayAccess; hidden-Beitraege und 'private'-Konsens (ausser bei privater Challenge) bleiben draussen"
+          "objekt-pruefung": "leadershipMayAccess; hidden-Beitraege und 'private'-Konsens (außer bei privater Challenge) bleiben draussen"
         }
       }
     },
@@ -9115,11 +9115,11 @@
         "tags": [
           "Notifications"
         ],
-        "summary": "Leichtgewichtige Badge-Zaehler fuer die Tab-Leiste",
-        "description": "Chat-Ungelesen-Zaehler je Raum (Semantik identisch zu GET /chat/rooms) plus Pending-Zaehler: pendingRequests/pendingEvents nur fuer Admin-Typen; pendingChallenges fuer Admins org-weit, fuer Teamer auf zugewiesene Jahrgaenge begrenzt, fuer Konfis 0. Seit 24.08.2026 zaehlen EIGENE Nachrichten nicht mehr als ungelesen — vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter, bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie seit jeher ausgeschlossen; die beiden Zaehlungen sind damit gleich.\n",
+        "summary": "Leichtgewichtige Badge-Zähler für die Tab-Leiste",
+        "description": "Chat-Ungelesen-Zähler je Raum (Semantik identisch zu GET /chat/rooms) plus Pending-Zähler: pendingRequests/pendingEvents nur für Admin-Typen; pendingChallenges für Admins org-weit, für Teamer auf zugewiesene Jahrgänge begrenzt, für Konfis 0. Seit 24.08.2026 zählen EIGENE Nachrichten nicht mehr als ungelesen — vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter, bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie seit jeher ausgeschlossen; die beiden Zählungen sind damit gleich.\n",
         "responses": {
           "200": {
-            "description": "Zaehler",
+            "description": "Zähler",
             "content": {
               "application/json": {
                 "schema": {
@@ -9168,7 +9168,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Nur eigene Raeume (chat_participants); Pending-Zaehler rollenabhaengig gefiltert"
+          "objekt-pruefung": "Nur eigene Räume (chat_participants); Pending-Zähler rollenabhaengig gefiltert"
         }
       }
     },
@@ -9267,7 +9267,7 @@
           "Notifications"
         ],
         "summary": "Push-Token registrieren/aktualisieren",
-        "description": "Upsert auf (user_id, platform, device_id). Ein Token existiert global genau einmal: Vorkommen bei anderen Usern/Geraeten werden vorher geloescht (Account-Wechsel, Neuinstallation).\n",
+        "description": "Upsert auf (user_id, platform, device_id). Ein Token existiert global genau einmal: Vorkommen bei anderen Usern/Geraeten werden vorher gelöscht (Account-Wechsel, Neuinstallation).\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -9431,7 +9431,7 @@
     "/api/teamer/profile": {
       "get": {
         "summary": "Eigenes Teamer-Profil inkl. eingefrorener Konfi-Vergangenheit",
-        "description": "Stammdaten der eingeloggten Teamer:in (display_name, username, E-Mail, role_title, teamer_since, Organisation, bible_translation). Existiert ein konfi_profiles-Datensatz aus der Konfi-Zeit, wird er als konfi_data mitgeliefert (eingefrorene Punkte, Jahrgangsname, damals erreichte Badges); sonst ist konfi_data null. Die Erkennung haengt am Vorhandensein des Profils, nicht am Jahrgangsnamen - ein geloeschter Jahrgang setzt nur jahrgang_name auf leer, die Punkte bleiben sichtbar.\n",
+        "description": "Stammdaten der eingeloggten Teamer:in (display_name, username, E-Mail, role_title, teamer_since, Organisation, bible_translation). Existiert ein konfi_profiles-Datensatz aus der Konfi-Zeit, wird er als konfi_data mitgeliefert (eingefrorene Punkte, Jahrgangsname, damals erreichte Badges); sonst ist konfi_data null. Die Erkennung hängt am Vorhandensein des Profils, nicht am Jahrgangsnamen - ein geloeschter Jahrgang setzt nur jahrgang_name auf leer, die Punkte bleiben sichtbar.\n",
         "x-berechtigung": {
           "rollen": [
             "teamer"
@@ -9442,7 +9442,7 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "nur eigene Daten (WHERE id/user_id = req.user.id)",
-          "hinweis": "Kein requireTeamer, sondern ein eigener Inline-Guard. Die User-Abfrage laeuft ueber WHERE u.id = $1 ohne organization_id - unkritisch, da es die eigene Zeile ist.\n"
+          "hinweis": "Kein requireTeamer, sondern ein eigener Inline-Guard. Die User-Abfrage läuft über WHERE u.id = $1 ohne organization_id - unkritisch, da es die eigene Zeile ist.\n"
         },
         "responses": {
           "200": {
@@ -9511,8 +9511,8 @@
     },
     "/api/teamer/konfis": {
       "get": {
-        "summary": "Konfis der zugewiesenen Jahrgaenge (Auswahl fuer Direktnachrichten)",
-        "description": "Liste der Konfis fuer die Chat-Auswahl. Fuer die Rolle teamer werden nur Konfis der can_view-Jahrgaenge geliefert; ohne jede Zuweisung kommt eine leere Liste. org_admin und admin erhalten alle Konfis der Organisation. Geloeschte Konfis (deleted_at) sind ausgeschlossen.\n",
+        "summary": "Konfis der zugewiesenen Jahrgänge (Auswahl für Direktnachrichten)",
+        "description": "Liste der Konfis für die Chat-Auswahl. Für die Rolle teamer werden nur Konfis der can_view-Jahrgänge geliefert; ohne jede Zuweisung kommt eine leere Liste. org_admin und admin erhalten alle Konfis der Organisation. Geloeschte Konfis (deleted_at) sind ausgeschlossen.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -9524,7 +9524,7 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Rolle teamer: Jahrgangsgrenze ueber assigned_jahrgaenge mit can_view; org_admin/admin: kein Jahrgangsfilter",
+          "objekt-pruefung": "Rolle teamer: Jahrgangsgrenze über assigned_jahrgaenge mit can_view; org_admin/admin: kein Jahrgangsfilter",
           "hinweis": "Die einzige Route dieser drei Dateien, in der die Jahrgangsgrenze tatsaechlich greift. Anders als bei GET /api/events greift sie hier auch bei leerer Zuweisung (leere Liste statt Vollzugriff).\n"
         },
         "responses": {
@@ -9549,7 +9549,7 @@
     "/api/teamer/konfi-history": {
       "get": {
         "summary": "Eigene Punkte-Historie aus der Konfi-Zeit",
-        "description": "Fuer befoerderte Teamer:innen: alle Aktivitaeten, Bonuspunkte und Event-Punkte aus der Konfi-Zeit, nach Datum absteigend zusammengefuehrt, plus die eingefrorenen Summen aus konfi_profiles.\n",
+        "description": "Für befoerderte Teamer:innen: alle Aktivitäten, Bonuspunkte und Event-Punkte aus der Konfi-Zeit, nach Datum absteigend zusammengefuehrt, plus die eingefrorenen Summen aus konfi_profiles.\n",
         "x-berechtigung": {
           "rollen": [
             "teamer"
@@ -9584,7 +9584,7 @@
     "/api/teamer/badges": {
       "get": {
         "summary": "Eigene Teamer-Abzeichen mit Fortschritt",
-        "description": "Alle Abzeichen der Organisation mit target_role='teamer' (aktive plus bereits erreichte inaktive) samt earned-Status und berechnetem Fortschritt. Der Fortschritt wird pro Kriterium bestimmt und ist bewusst deckungsgleich mit der Wertung in routes/badges.js: activity_count, event_count, unique_activities, teamer_year (nur Jahre ab users.teamer_since), category_activities, specific_activity, activity_combination, streak und time_based. Punkte-Kriterien (total_points etc.) sind fuer Teamer irrelevant und liefern 0; collection und yearly sind in der Wertung noch nicht implementiert und liefern ebenfalls 0. Seit 24.08.2026 werden UNVERDIENTE geheime Abzeichen (is_hidden) nicht mehr ausgeliefert — vorher standen Name, Beschreibung und Fortschritt offen da, waehrend der Konfi-Pfad sie korrekt zurueckhielt. Verdiente geheime Abzeichen kommen weiterhin mit. Die Gesamtzahlen stehen in den Kopfzeilen X-Badges-Secret-Total und X-Badges-Visible-Total, damit die Anzeige \"x Geheimnisse zu entdecken\" weiter stimmt; der Rumpf bleibt bewusst ein Array, weil zwei Ansichten ihn so lesen.\n",
+        "description": "Alle Abzeichen der Organisation mit target_role='teamer' (aktive plus bereits erreichte inaktive) samt earned-Status und berechnetem Fortschritt. Der Fortschritt wird pro Kriterium bestimmt und ist bewusst deckungsgleich mit der Wertung in routes/badges.js: activity_count, event_count, unique_activities, teamer_year (nur Jahre ab users.teamer_since), category_activities, specific_activity, activity_combination, streak und time_based. Punkte-Kriterien (total_points etc.) sind für Teamer irrelevant und liefern 0; collection und yearly sind in der Wertung noch nicht implementiert und liefern ebenfalls 0. Seit 24.08.2026 werden UNVERDIENTE geheime Abzeichen (is_hidden) nicht mehr ausgeliefert — vorher standen Name, Beschreibung und Fortschritt offen da, während der Konfi-Pfad sie korrekt zurückhielt. Verdiente geheime Abzeichen kommen weiterhin mit. Die Gesamtzahlen stehen in den Kopfzeilen X-Badges-Secret-Total und X-Badges-Visible-Total, damit die Anzeige \"x Geheimnisse zu entdecken\" weiter stimmt; der Rumpf bleibt bewusst ein Array, weil zwei Ansichten ihn so lesen.\n",
         "x-berechtigung": {
           "rollen": [
             "teamer"
@@ -9644,7 +9644,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "nur eigene user_badges (user_id + organization_id)",
-          "hinweis": "Zaehlt alle ungesehenen user_badges, ohne auf target_role='teamer' einzuschraenken. Bei befoerderten Konfis koennen darin auch alte Konfi-Abzeichen stecken.\n"
+          "hinweis": "Zaehlt alle ungesehenen user_badges, ohne auf target_role='teamer' einzuschraenken. Bei befoerderten Konfis können darin auch alte Konfi-Abzeichen stecken.\n"
         },
         "responses": {
           "200": {
@@ -9702,7 +9702,7 @@
     "/api/teamer/{userId}/badges": {
       "get": {
         "summary": "Erreichte Abzeichen einer Teamer:in (Leitungs-Einsicht)",
-        "description": "Fuer die Teamer-Detailseite der Leitung. Liefert bewusst nur die erreichten Abzeichen ohne Fortschrittsberechnung - die teure Berechnung aus GET /api/teamer/badges waere hier ungenutzt. Der Zielbenutzer muss die Rolle teamer haben, zur eigenen Organisation gehoeren und darf nicht geloescht sein.\n",
+        "description": "Für die Teamer-Detailseite der Leitung. Liefert bewusst nur die erreichten Abzeichen ohne Fortschrittsberechnung - die teure Berechnung aus GET /api/teamer/badges wäre hier ungenutzt. Der Zielbenutzer muss die Rolle teamer haben, zur eigenen Organisation gehören und darf nicht gelöscht sein.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -9713,7 +9713,7 @@
             "requireAdmin"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Ziel-User muss Rolle 'teamer' haben, zur aktiven Org gehoeren und deleted_at IS NULL (sonst 404); Abzeichen nur target_role='teamer'"
+          "objekt-pruefung": "Ziel-User muss Rolle 'teamer' haben, zur aktiven Org gehören und deleted_at IS NULL (sonst 404); Abzeichen nur target_role='teamer'"
         },
         "parameters": [
           {
@@ -9756,7 +9756,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "nur is_active = true der eigenen Org; keine personenbezogenen Daten",
-          "hinweis": "Lesen ist requireAdmin, Schreiben requireOrgAdmin. Teamer:innen sehen ihre Zertifikate ausschliesslich ueber GET /api/teamer/dashboard.\n"
+          "hinweis": "Lesen ist requireAdmin, Schreiben requireOrgAdmin. Teamer:innen sehen ihre Zertifikate ausschliesslich über GET /api/teamer/dashboard.\n"
         },
         "responses": {
           "200": {
@@ -9914,8 +9914,8 @@
         ]
       },
       "delete": {
-        "summary": "Zertifikat-Typ loeschen (nur wenn nirgends vergeben)",
-        "description": "Vor dem Loeschen wird geprueft, ob der Typ bereits an Teamer:innen vergeben wurde; in dem Fall kommt 409.\n",
+        "summary": "Zertifikat-Typ löschen (nur wenn nirgends vergeben)",
+        "description": "Vor dem Löschen wird geprüft, ob der Typ bereits an Teamer:innen vergeben wurde; in dem Fall kommt 409.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin"
@@ -9926,7 +9926,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "DELETE mit organization_id-Bedingung (404 sonst)",
-          "hinweis": "# BEFUND T3: Die Verwendungspruefung zaehlt user_certificates nur ueber certificate_type_id, ohne organization_id. Zertifikate einer fremden Organisation koennen die 409-Sperre ausloesen, obwohl der Typ in der eigenen Org unbenutzt ist. Kein Datenabfluss, aber der Typ laesst sich dann nicht loeschen.\n"
+          "hinweis": "# BEFUND T3: Die Verwendungspruefung zählt user_certificates nur über certificate_type_id, ohne organization_id. Zertifikate einer fremden Organisation können die 409-Sperre auslösen, obwohl der Typ in der eigenen Org unbenutzt ist. Kein Datenabfluss, aber der Typ laesst sich dann nicht löschen.\n"
         },
         "parameters": [
           {
@@ -9972,7 +9972,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "user_certificates gefiltert auf user_id + organization_id",
-          "hinweis": "# BEFUND T2: Anders als die Badge- und die POST-Variante prueft diese Route NICHT, ob der Ziel-User die Rolle 'teamer' hat. Fuer beliebige User-IDs der eigenen Org kommt daher 200 mit (in der Praxis) leerer Liste statt 404.\n"
+          "hinweis": "# BEFUND T2: Anders als die Badge- und die POST-Variante prüft diese Route NICHT, ob der Ziel-User die Rolle 'teamer' hat. Für beliebige User-IDs der eigenen Org kommt daher 200 mit (in der Praxis) leerer Liste statt 404.\n"
         },
         "parameters": [
           {
@@ -9999,7 +9999,7 @@
       },
       "post": {
         "summary": "Zertifikat an eine Teamer:in vergeben",
-        "description": "Prueft, dass der Ziel-User zur eigenen Organisation gehoert und die Rolle teamer hat, und dass der Zertifikat-Typ zur Organisation gehoert und aktiv ist. Nach dem Speichern gehen eine Push-Nachricht und ein Live-Update an die Empfaenger:in; Fehler dabei kippen die Vergabe nicht.\n",
+        "description": "Prueft, dass der Ziel-User zur eigenen Organisation gehört und die Rolle teamer hat, und dass der Zertifikat-Typ zur Organisation gehört und aktiv ist. Nach dem Speichern gehen eine Push-Nachricht und ein Live-Update an die Empfaenger:in; Fehler dabei kippen die Vergabe nicht.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin"
@@ -10126,7 +10126,7 @@
     "/api/teamer/dashboard": {
       "get": {
         "summary": "Teamer-Dashboard (Zertifikate, Termine, Abzeichen, Konfiguration)",
-        "description": "Liefert Begruessung, alle aktiven Zertifikat-Typen der Organisation mit eigenem Status (valid | expired | not_earned), die naechsten bis zu fuenf zukuenftigen, nicht abgesagten Termine, fuer die die Teamer:in selbst gebucht ist, die letzten drei erreichten Teamer-Abzeichen mit Zaehlern sowie die Dashboard-Konfiguration der Organisation (show_zertifikate, show_events, show_badges, show_losung und section_order aus den settings-Schluesseln teamer_dashboard_*). Zuletzt wird geprueft, ob ein Teamer-Wrapped-Snapshot vorliegt.\n",
+        "description": "Liefert Begruessung, alle aktiven Zertifikat-Typen der Organisation mit eigenem Status (valid | expired | not_earned), die nächsten bis zu fuenf zukuenftigen, nicht abgesagten Termine, für die die Teamer:in selbst gebucht ist, die letzten drei erreichten Teamer-Abzeichen mit Zaehlern sowie die Dashboard-Konfiguration der Organisation (show_zertifikate, show_events, show_badges, show_losung und section_order aus den settings-Schluesseln teamer_dashboard_*). Zuletzt wird geprüft, ob ein Teamer-Wrapped-Snapshot vorliegt.\n",
         "x-berechtigung": {
           "rollen": [
             "teamer"
@@ -10138,7 +10138,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "nur eigene Daten; Zertifikate/Abzeichen/Termine mit user_id + organization_id",
-          "hinweis": "Die Wrapped-Pruefung fragt wrapped_snapshots nur ueber user_id + wrapped_type ab, ohne organization_id - dieselbe Multi-Org-Unschaerfe wie in GET /api/wrapped/me (Befund W1).\n"
+          "hinweis": "Die Wrapped-Prüfung fragt wrapped_snapshots nur über user_id + wrapped_type ab, ohne organization_id - dieselbe Multi-Org-Unschaerfe wie in GET /api/wrapped/me (Befund W1).\n"
         },
         "responses": {
           "200": {
@@ -10213,7 +10213,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "liest den Org-Schalter und die eigene Uebersetzungs-Praeferenz",
-          "hinweis": "# BEFUND T4: Kein Inline-Check auf role_name === 'teamer', anders als bei /profile, /dashboard und den Badge-Routen. org_admin und admin koennen diese Route ebenfalls aufrufen. Gegenstueck fuer Konfis ist GET /api/konfi/tageslosung mit eigenem Schalter.\n"
+          "hinweis": "# BEFUND T4: Kein Inline-Check auf role_name === 'teamer', anders als bei /profile, /dashboard und den Badge-Routen. org_admin und admin können diese Route ebenfalls aufrufen. Gegenstueck für Konfis ist GET /api/konfi/tageslosung mit eigenem Schalter.\n"
         },
         "responses": {
           "200": {
@@ -10239,7 +10239,7 @@
     },
     "/api/teamer/bible-translation": {
       "put": {
-        "summary": "Bibeluebersetzung fuer die Tageslosung setzen (Teamer-Sicht)",
+        "summary": "Bibeluebersetzung für die Tageslosung setzen (Teamer-Sicht)",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -10252,7 +10252,7 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "UPDATE users SET bible_translation WHERE id = req.user.id - nur das eigene Profil",
-          "hinweis": "# BEFUND T4: kein Inline-Teamer-Check. Die Pruefung der Uebersetzung erfolgt inline im Handler (keine validateBibleTranslation-Middleware wie in der Konfi-Route).\n"
+          "hinweis": "# BEFUND T4: kein Inline-Teamer-Check. Die Prüfung der Uebersetzung erfolgt inline im Handler (keine validateBibleTranslation-Middleware wie in der Konfi-Route).\n"
         },
         "requestBody": {
           "required": true,
@@ -10305,8 +10305,8 @@
     },
     "/api/teamer/activities": {
       "get": {
-        "summary": "Beantragbare Teamer-Aktivitaeten auflisten",
-        "description": "Aktivitaeten der Organisation mit target_role='teamer', mit zusammengefassten Kategorienamen.",
+        "summary": "Beantragbare Teamer-Aktivitäten auflisten",
+        "description": "Aktivitäten der Organisation mit target_role='teamer', mit zusammengefassten Kategorienamen.",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -10319,7 +10319,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "keine personenbezogenen Daten",
-          "hinweis": "Anders als GET /api/konfi/activities wird hier NICHT auf die im Jahrgang aktivierten Punkt-Typen gefiltert - Teamer haengen an keinem Jahrgang.\n"
+          "hinweis": "Anders als GET /api/konfi/activities wird hier NICHT auf die im Jahrgang aktivierten Punkt-Typen gefiltert - Teamer hängen an keinem Jahrgang.\n"
         },
         "responses": {
           "200": {
@@ -10342,8 +10342,8 @@
     },
     "/api/teamer/requests": {
       "get": {
-        "summary": "Eigene Teamer-Antraege auflisten",
-        "description": "Nur Antraege zu Aktivitaeten mit target_role='teamer', neueste zuerst.",
+        "summary": "Eigene Teamer-Anträge auflisten",
+        "description": "Nur Anträge zu Aktivitäten mit target_role='teamer', neueste zuerst.",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -10355,7 +10355,7 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "nur eigene Antraege (user_id = Token, organization_id)"
+          "objekt-pruefung": "nur eigene Anträge (user_id = Token, organization_id)"
         },
         "responses": {
           "200": {
@@ -10377,7 +10377,7 @@
       },
       "post": {
         "summary": "Neuen Teamer-Antrag einreichen",
-        "description": "Legt einen Antrag mit status pending an. Idempotent ueber optionale client_id (UUID): existiert der Antrag bereits, kommt 200 mit dem bestehenden Datensatz. Danach werden eine Bestaetigungs-Benachrichtigung an die Antragstellerin, eine Push-Nachricht an alle Admins der Organisation und ein Live-Update ausgeloest; Fehler dabei kippen den Antrag nicht.\n",
+        "description": "Legt einen Antrag mit status pending an. Idempotent über optionale client_id (UUID): existiert der Antrag bereits, kommt 200 mit dem bestehenden Datensatz. Danach werden eine Bestaetigungs-Benachrichtigung an die Antragstellerin, eine Push-Nachricht an alle Admins der Organisation und ein Live-Update ausgelöst; Fehler dabei kippen den Antrag nicht.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -10390,8 +10390,8 @@
             "validateCreateTeamerRequest"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Aktivitaet muss zur eigenen Org gehoeren UND target_role='teamer' haben (404 sonst); user_id wird aus dem Token gesetzt",
-          "hinweis": "# BEFUND T1: Der Idempotenz-Check laeuft ueber `WHERE client_id = $1` ohne user_id/organization_id. Eine bereits vergebene UUID liefert den fremden Datensatz mit 200 zurueck. In der Praxis nicht erratbar (UUIDv4) und identisch zur Konfi-Route POST /api/konfi/requests.\n"
+          "objekt-pruefung": "Aktivität muss zur eigenen Org gehören UND target_role='teamer' haben (404 sonst); user_id wird aus dem Token gesetzt",
+          "hinweis": "# BEFUND T1: Der Idempotenz-Check läuft über `WHERE client_id = $1` ohne user_id/organization_id. Eine bereits vergebene UUID liefert den fremden Datensatz mit 200 zurück. In der Praxis nicht erratbar (UUIDv4) und identisch zur Konfi-Route POST /api/konfi/requests.\n"
         },
         "requestBody": {
           "required": true,
@@ -10461,8 +10461,8 @@
     },
     "/api/teamer/requests/{id}": {
       "delete": {
-        "summary": "Eigenen offenen Teamer-Antrag loeschen",
-        "description": "Nur Antraege mit status pending. Danach Live-Update an die Leitung.",
+        "summary": "Eigenen offenen Teamer-Antrag löschen",
+        "description": "Nur Anträge mit status pending. Danach Live-Update an die Leitung.",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -10673,7 +10673,7 @@
         ]
       },
       "delete": {
-        "summary": "Material-Tag loeschen",
+        "summary": "Material-Tag löschen",
         "description": "Die Zuordnungen zu Materialien werden per CASCADE mitgeloescht; die Materialien selbst bleiben erhalten.",
         "x-berechtigung": {
           "rollen": [
@@ -10717,7 +10717,7 @@
     "/api/material": {
       "get": {
         "summary": "Materialien der Organisation auflisten (mit Filtern)",
-        "description": "Alle Materialien der aktiven Organisation, neueste zuerst, jeweils mit Zaehlern (Dateien, Termine, Jahrgaenge) sowie den zugeordneten Tags, Terminen und Jahrgaengen. Optionale Filter: tag_id, event_id, jahrgang_id und eine Volltextsuche (search) ueber Titel und Beschreibung.\n",
+        "description": "Alle Materialien der aktiven Organisation, neueste zuerst, jeweils mit Zaehlern (Dateien, Termine, Jahrgänge) sowie den zugeordneten Tags, Terminen und Jahrgängen. Optionale Filter: tag_id, event_id, jahrgang_id und eine Volltextsuche (search) über Titel und Beschreibung.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -10729,8 +10729,8 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "materials.organization_id UND Jahrgangs-Schranke fuer Teamer:innen",
-          "hinweis": "# BEFUND M1 BEHOBEN am 24.08.2026: Material mit Jahrgang sehen nur Teamer:innen, die diesem Jahrgang mit can_view zugewiesen sind; Material ohne Jahrgang sehen alle. Leitung (admin, org_admin) sieht weiterhin alles, sonst waere es nicht verwaltbar. Die Bindung an einen Termin (material_events) bleibt bewusst reine Suchhilfe und grenzt nichts ab. Die Filter-Parameter selbst werden nicht auf die Organisation geprueft, was folgenlos ist, da die Zuordnungstabellen ohnehin nur org-eigene Materialien treffen.\n"
+          "objekt-pruefung": "materials.organization_id UND Jahrgangs-Schranke für Teamer:innen",
+          "hinweis": "# BEFUND M1 BEHOBEN am 24.08.2026: Material mit Jahrgang sehen nur Teamer:innen, die diesem Jahrgang mit can_view zugewiesen sind; Material ohne Jahrgang sehen alle. Leitung (admin, org_admin) sieht weiterhin alles, sonst wäre es nicht verwaltbar. Die Bindung an einen Termin (material_events) bleibt bewusst reine Suchhilfe und grenzt nichts ab. Die Filter-Parameter selbst werden nicht auf die Organisation geprüft, was folgenlos ist, da die Zuordnungstabellen ohnehin nur org-eigene Materialien treffen.\n"
         },
         "parameters": [
           {
@@ -10787,7 +10787,7 @@
       },
       "post": {
         "summary": "Material anlegen",
-        "description": "Legt ein Material an und verknuepft es mit Terminen, Jahrgaengen und Tags. Alle uebergebenen IDs werden gegen die eigene Organisation geprueft (utils/orgOwnership.allIdsBelongToOrg); fremde IDs fuehren zu 400. Danach Live-Update an die Leitung.\n",
+        "description": "Legt ein Material an und verknuepft es mit Terminen, Jahrgängen und Tags. Alle uebergebenen IDs werden gegen die eigene Organisation geprüft (utils/orgOwnership.allIdsBelongToOrg); fremde IDs fuehren zu 400. Danach Live-Update an die Leitung.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -10799,7 +10799,7 @@
             "validateCreateMaterial"
           ],
           "org-scope": true,
-          "objekt-pruefung": "event_ids, jahrgang_ids und tag_ids muessen der eigenen Org gehoeren (400 sonst); organization_id und created_by aus dem Token"
+          "objekt-pruefung": "event_ids, jahrgang_ids und tag_ids müssen der eigenen Org gehören (400 sonst); organization_id und created_by aus dem Token"
         },
         "requestBody": {
           "required": true,
@@ -10878,8 +10878,8 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "materials.organization_id; der Termin selbst wird nicht separat geprueft - ein fremder eventId liefert schlicht eine leere Liste",
-          "hinweis": "Jahrgangs-Schranke fuer Teamer:innen (Befund M1 behoben am 24.08.2026): Material mit Jahrgang nur fuer dessen Teamer:innen, ohne Jahrgang fuer alle; Leitung sieht alles."
+          "objekt-pruefung": "materials.organization_id; der Termin selbst wird nicht separat geprüft - ein fremder eventId liefert schlicht eine leere Liste",
+          "hinweis": "Jahrgangs-Schranke für Teamer:innen (Befund M1 behoben am 24.08.2026): Material mit Jahrgang nur für dessen Teamer:innen, ohne Jahrgang für alle; Leitung sieht alles."
         },
         "parameters": [
           {
@@ -10913,7 +10913,7 @@
     },
     "/api/material/{id}": {
       "get": {
-        "summary": "Einzelnes Material mit Dateien, Tags, Terminen und Jahrgaengen",
+        "summary": "Einzelnes Material mit Dateien, Tags, Terminen und Jahrgängen",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -10926,7 +10926,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Material org-gescopt (404 sonst)",
-          "hinweis": "Jahrgangs-Schranke fuer Teamer:innen (Befund M1 behoben am 24.08.2026): Material mit Jahrgang nur fuer dessen Teamer:innen, ohne Jahrgang fuer alle; Leitung sieht alles."
+          "hinweis": "Jahrgangs-Schranke für Teamer:innen (Befund M1 behoben am 24.08.2026): Material mit Jahrgang nur für dessen Teamer:innen, ohne Jahrgang für alle; Leitung sieht alles."
         },
         "parameters": [
           {
@@ -10956,7 +10956,7 @@
       },
       "put": {
         "summary": "Material bearbeiten",
-        "description": "Teilaktualisierung von Titel und Beschreibung. Werden event_ids, jahrgang_ids oder tag_ids uebergeben, werden die jeweiligen Zuordnungen komplett ersetzt (loeschen und neu setzen); nicht uebergebene Felder bleiben unveraendert. Alle IDs werden gegen die eigene Organisation geprueft.\n",
+        "description": "Teilaktualisierung von Titel und Beschreibung. Werden event_ids, jahrgang_ids oder tag_ids uebergeben, werden die jeweiligen Zuordnungen komplett ersetzt (löschen und neu setzen); nicht uebergebene Felder bleiben unverändert. Alle IDs werden gegen die eigene Organisation geprüft.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -10968,7 +10968,7 @@
             "validateUpdateMaterial"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Material muss zur eigenen Org gehoeren (404 sonst); event_ids/jahrgang_ids/tag_ids org-geprueft (400 sonst)"
+          "objekt-pruefung": "Material muss zur eigenen Org gehören (404 sonst); event_ids/jahrgang_ids/tag_ids org-geprüft (400 sonst)"
         },
         "parameters": [
           {
@@ -11038,8 +11038,8 @@
         ]
       },
       "delete": {
-        "summary": "Material samt Dateien loeschen",
-        "description": "Loescht das Material (Zuordnungen und material_files per CASCADE) und entfernt anschliessend die verschluesselten Dateien vom Dateisystem. Ein Fehler beim Loeschen einer Datei wird nur protokolliert.\n",
+        "summary": "Material samt Dateien löschen",
+        "description": "Loescht das Material (Zuordnungen und material_files per CASCADE) und entfernt anschliessend die verschluesselten Dateien vom Dateisystem. Ein Fehler beim Löschen einer Datei wird nur protokolliert.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -11050,7 +11050,7 @@
             "requireAdmin"
           ],
           "org-scope": true,
-          "objekt-pruefung": "DELETE mit organization_id-Bedingung (404 sonst); die Dateiliste wird ueber denselben Org-JOIN ermittelt"
+          "objekt-pruefung": "DELETE mit organization_id-Bedingung (404 sonst); die Dateiliste wird über denselben Org-JOIN ermittelt"
         },
         "parameters": [
           {
@@ -11081,8 +11081,8 @@
     },
     "/api/material/{id}/files": {
       "post": {
-        "summary": "Dateien zu einem Material hochladen (verschluesselt at-rest)",
-        "description": "multipart/form-data, Feld \"files\", bis zu 10 Dateien pro Request, je max. 20 MB (multer memoryStorage, createApp.js). Zweistufige Pruefung: erst der MIME-Filter von multer (Bilder, PDF, Video, Audio, Office- und OpenDocument-Formate, ZIP, text/plain, text/csv), dann eine Magic-Bytes-Pruefung auf dem Buffer (415 bei Nichtuebereinstimmung; text/plain und text/csv sind ausgenommen, weil sie keine Signatur haben). Gespeichert wird AES-256-GCM-verschluesselt unter einem zufaelligen 64-Hex-Dateinamen.\n",
+        "summary": "Dateien zu einem Material hochladen (verschlüsselt at-rest)",
+        "description": "multipart/form-data, Feld \"files\", bis zu 10 Dateien pro Request, je max. 20 MB (multer memoryStorage, createApp.js). Zweistufige Prüfung: erst der MIME-Filter von multer (Bilder, PDF, Video, Audio, Office- und OpenDocument-Formate, ZIP, text/plain, text/csv), dann eine Magic-Bytes-Prüfung auf dem Buffer (415 bei Nichtuebereinstimmung; text/plain und text/csv sind ausgenommen, weil sie keine Signatur haben). Gespeichert wird AES-256-GCM-verschlüsselt unter einem zufaelligen 64-Hex-Dateinamen.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -11094,7 +11094,7 @@
             "multer materialUpload.array('files', 10)"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Material muss zur eigenen Org gehoeren (404 sonst)"
+          "objekt-pruefung": "Material muss zur eigenen Org gehören (404 sonst)"
         },
         "parameters": [
           {
@@ -11155,7 +11155,7 @@
     "/api/material/files/{fileRef}": {
       "get": {
         "summary": "Material-Datei herunterladen (entschluesselt)",
-        "description": "Liefert die entschluesselte Datei als Download mit dem urspruenglichen Dateinamen und dem gespeicherten MIME-Typ. Der Pfadparameter wird durch path.basename und einen Test auf genau 64 Hex-Zeichen gefuehrt (Path-Traversal-Schutz).\n",
+        "description": "Liefert die entschluesselte Datei als Download mit dem urspruenglichen Dateinamen und dem gespeicherten MIME-Typ. Der Pfadparameter wird durch path.basename und einen Test auf genau 64 Hex-Zeichen geführt (Path-Traversal-Schutz).\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -11167,7 +11167,7 @@
             "requireTeamer"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Datei wird ueber JOIN auf materials.organization_id geprueft (404 bei fremder Org); Dateiname muss /^[a-f0-9]{64}$/ erfuellen",
+          "objekt-pruefung": "Datei wird über JOIN auf materials.organization_id geprüft (404 bei fremder Org); Dateiname muss /^[a-f0-9]{64}$/ erfuellen",
           "hinweis": "# BEFUND M1 BEHOBEN am 24.08.2026: Der Download unterliegt derselben Jahrgangs-Schranke wie die Liste - eine Teamer:in bekommt Dateien eines fremden Jahrgangs mit 404 verweigert, auch bei bekanntem stored_name. Die stored_name-Werte stehen in GET /api/material/{id}.\n"
         },
         "parameters": [
@@ -11208,8 +11208,8 @@
         ]
       },
       "delete": {
-        "summary": "Einzelne Material-Datei loeschen",
-        "description": "Loescht den Datenbankeintrag und die Datei vom Dateisystem und setzt updated_at des Materials neu. Ein Fehler beim Loeschen der Datei wird nur protokolliert.\n",
+        "summary": "Einzelne Material-Datei löschen",
+        "description": "Loescht den Datenbankeintrag und die Datei vom Dateisystem und setzt updated_at des Materials neu. Ein Fehler beim Löschen der Datei wird nur protokolliert.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -11220,8 +11220,8 @@
             "requireAdmin"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Datei wird ueber JOIN auf materials.organization_id geprueft (404 sonst)",
-          "hinweis": "Achtung, derselbe Pfad wird mit ZWEI verschiedenen Kennungen bedient: der GET erwartet den 64-stelligen stored_name, der DELETE die numerische material_files.id. Im Code sind das zwei getrennte Routen (/files/:filename und /files/:fileId); in OpenAPI muessen sie sich einen Pfad teilen, daher der neutrale Name fileRef.\n"
+          "objekt-pruefung": "Datei wird über JOIN auf materials.organization_id geprüft (404 sonst)",
+          "hinweis": "Achtung, derselbe Pfad wird mit ZWEI verschiedenen Kennungen bedient: der GET erwartet den 64-stelligen stored_name, der DELETE die numerische material_files.id. Im Code sind das zwei getrennte Routen (/files/:filename und /files/:fileId); in OpenAPI müssen sie sich einen Pfad teilen, daher der neutrale Name fileRef.\n"
         },
         "parameters": [
           {
@@ -11260,7 +11260,7 @@
     "/api/wrapped/me": {
       "get": {
         "summary": "Eigenen Jahresrueckblick abrufen",
-        "description": "Liefert den neuesten eigenen Wrapped-Snapshot. Die Art richtet sich nach der Rolle: role_name 'teamer' erhaelt wrapped_type 'teamer', alle anderen 'konfi'. Ohne Snapshot kommt 404.\n",
+        "description": "Liefert den neuesten eigenen Wrapped-Snapshot. Die Art richtet sich nach der Rolle: role_name 'teamer' erhält wrapped_type 'teamer', alle anderen 'konfi'. Ohne Snapshot kommt 404.\n",
         "x-berechtigung": {
           "rollen": [
             "alle authentifizierten"
@@ -11270,7 +11270,7 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "nur eigene Daten (WHERE user_id = req.user.id)",
-          "hinweis": "# BEFUND W1: Die Abfrage filtert NICHT auf organization_id. Bei Multi-Org-Nutzung kommt der neueste Snapshot unabhaengig von der aktiven Organisation zurueck. Es sind immer eigene Daten, aber der Org-Kontext wird ignoriert. Ausserdem gibt es keinen Rollen-Guard: jede authentifizierte Rolle darf die Route aufrufen (fuer org_admin/admin/super_admin ist das Ergebnis in aller Regel 404).\n"
+          "hinweis": "# BEFUND W1: Die Abfrage filtert NICHT auf organization_id. Bei Multi-Org-Nutzung kommt der neueste Snapshot unabhaengig von der aktiven Organisation zurück. Es sind immer eigene Daten, aber der Org-Kontext wird ignoriert. Ausserdem gibt es keinen Rollen-Guard: jede authentifizierte Rolle darf die Route aufrufen (für org_admin/admin/super_admin ist das Ergebnis in aller Regel 404).\n"
         },
         "responses": {
           "200": {
@@ -11293,8 +11293,8 @@
     },
     "/api/wrapped/generate/{jahrgangId}": {
       "post": {
-        "summary": "Konfi-Jahresrueckblick fuer einen ganzen Jahrgang erzeugen und freigeben",
-        "description": "Erzeugt (oder ueberschreibt) die Snapshots aller nicht geloeschten Konfis des Jahrgangs parallel, setzt jahrgaenge.wrapped_released_at auf jetzt - damit ist der Rueckblick fuer die Konfis sichtbar - und schickt allen Konfis eine Push-Nachricht. Laeuft in einer Transaktion; ein Fehler bei einzelnen Konfis wird nur gezaehlt (errors), nicht zurueckgerollt.\n",
+        "summary": "Konfi-Jahresrueckblick für einen ganzen Jahrgang erzeugen und freigeben",
+        "description": "Erzeugt (oder überschreibt) die Snapshots aller nicht geloeschten Konfis des Jahrgangs parallel, setzt jahrgaenge.wrapped_released_at auf jetzt - damit ist der Rueckblick für die Konfis sichtbar - und schickt allen Konfis eine Push-Nachricht. Laeuft in einer Transaktion; ein Fehler bei einzelnen Konfis wird nur gezählt (errors), nicht zurueckgerollt.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -11307,8 +11307,8 @@
             "handleValidationErrors"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Jahrgang muss zur aktiven Org gehoeren (404 sonst); organization_id der Snapshots kommt aus dem Token",
-          "hinweis": "Keine Jahrgangsgrenze: ein 'admin' kann fuer JEDEN Jahrgang der Organisation den Rueckblick erzeugen und freigeben, auch ausserhalb der eigenen Zuweisungen. Teamer:innen haben keinen Zugriff (403).\n"
+          "objekt-pruefung": "Jahrgang muss zur aktiven Org gehören (404 sonst); organization_id der Snapshots kommt aus dem Token",
+          "hinweis": "Keine Jahrgangsgrenze: ein 'admin' kann für JEDEN Jahrgang der Organisation den Rueckblick erzeugen und freigeben, auch außerhalb der eigenen Zuweisungen. Teamer:innen haben keinen Zugriff (403).\n"
         },
         "parameters": [
           {
@@ -11342,8 +11342,8 @@
     },
     "/api/wrapped/generate-teamer": {
       "post": {
-        "summary": "Teamer-Jahresrueckblick fuer alle Teamer:innen der Organisation erzeugen",
-        "description": "Erzeugt (oder ueberschreibt) die Snapshots aller Teamer:innen der Organisation nacheinander und schickt ihnen eine Push-Nachricht. Es gibt keine Freigabe-Markierung wie bei den Jahrgaengen - der Rueckblick ist sofort ueber GET /api/wrapped/me abrufbar.\n",
+        "summary": "Teamer-Jahresrueckblick für alle Teamer:innen der Organisation erzeugen",
+        "description": "Erzeugt (oder überschreibt) die Snapshots aller Teamer:innen der Organisation nacheinander und schickt ihnen eine Push-Nachricht. Es gibt keine Freigabe-Markierung wie bei den Jahrgängen - der Rueckblick ist sofort über GET /api/wrapped/me abrufbar.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin"
@@ -11377,8 +11377,8 @@
     },
     "/api/wrapped/{jahrgangId}": {
       "delete": {
-        "summary": "Jahresrueckblick eines Jahrgangs loeschen und Freigabe zuruecknehmen",
-        "description": "Loescht alle Snapshots des Jahrgangs und setzt jahrgaenge.wrapped_released_at auf NULL, womit der Rueckblick fuer die Konfis wieder verschwindet.\n",
+        "summary": "Jahresrueckblick eines Jahrgangs löschen und Freigabe zuruecknehmen",
+        "description": "Loescht alle Snapshots des Jahrgangs und setzt jahrgaenge.wrapped_released_at auf NULL, womit der Rueckblick für die Konfis wieder verschwindet.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin"
@@ -11390,8 +11390,8 @@
             "handleValidationErrors"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Jahrgang muss zur aktiven Org gehoeren (404 sonst); DELETE mit jahrgang_id + organization_id",
-          "hinweis": "# BEFUND W3: Teamer-Snapshots werden ohne jahrgang_id gespeichert und von dieser Route deshalb nie erfasst. Einen Endpunkt zum Loeschen des Teamer-Rueckblicks gibt es nicht.\n"
+          "objekt-pruefung": "Jahrgang muss zur aktiven Org gehören (404 sonst); DELETE mit jahrgang_id + organization_id",
+          "hinweis": "# BEFUND W3: Teamer-Snapshots werden ohne jahrgang_id gespeichert und von dieser Route deshalb nie erfasst. Einen Endpunkt zum Löschen des Teamer-Rueckblicks gibt es nicht.\n"
         },
         "parameters": [
           {
@@ -11440,8 +11440,8 @@
             "Inline-Check Eigentuemer ODER admin/org_admin derselben Org"
           ],
           "org-scope": true,
-          "objekt-pruefung": "req.user.id === userId erlaubt immer; sonst muss role_name 'admin' oder 'org_admin' sein UND users.organization_id des Ziels der eigenen organization_id entsprechen (403 sonst). Kein requireAdmin-Guard, die Pruefung steht inline im Handler.\n",
-          "hinweis": "# BEFUND W2: Die Org-Pruefung nutzt users.organization_id, also die PRIMAER-Organisation der Zielperson, nicht die aktive Org aus dem Header X-Active-Organization. Die Snapshot-Abfrage selbst filtert ausserdem nur auf user_id, ohne organization_id - bei Multi-Org koennen also Snapshots aus einer anderen Organisation mitkommen. Teamer:innen erhalten fuer fremde userIds 403.\n"
+          "objekt-pruefung": "req.user.id === userId erlaubt immer; sonst muss role_name 'admin' oder 'org_admin' sein UND users.organization_id des Ziels der eigenen organization_id entsprechen (403 sonst). Kein requireAdmin-Guard, die Prüfung steht inline im Handler.\n",
+          "hinweis": "# BEFUND W2: Die Org-Prüfung nutzt users.organization_id, also die PRIMAER-Organisation der Zielperson, nicht die aktive Org aus dem Header X-Active-Organization. Die Snapshot-Abfrage selbst filtert ausserdem nur auf user_id, ohne organization_id - bei Multi-Org können also Snapshots aus einer anderen Organisation mitkommen. Teamer:innen erhalten für fremde userIds 403.\n"
         },
         "parameters": [
           {
@@ -11497,7 +11497,7 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "keine (statische Konstante)",
-          "hinweis": "Die Rolle super_admin steht nicht in der requireTeamer-Whitelist und erhaelt 403"
+          "hinweis": "Die Rolle super_admin steht nicht in der requireTeamer-Whitelist und erhält 403"
         },
         "tags": [
           "Stammdaten"
@@ -11506,7 +11506,7 @@
     },
     "/admin/badges": {
       "get": {
-        "summary": "Alle Abzeichen der eigenen Organisation mit Vergabe-Zaehler",
+        "summary": "Alle Abzeichen der eigenen Organisation mit Vergabe-Zähler",
         "parameters": [
           {
             "name": "target_role",
@@ -11519,7 +11519,7 @@
                 "teamer"
               ]
             },
-            "description": "Optionaler Filter auf custom_badges.target_role. Ohne Angabe werden Konfi- UND Teamer-Abzeichen gemeinsam geliefert. Der Wert wird nicht gegen eine Whitelist geprueft, sondern als Parameter in die WHERE-Klausel gegeben (kein SQL-Injection-Risiko); ein unbekannter Wert liefert schlicht ein leeres Array.\n"
+            "description": "Optionaler Filter auf custom_badges.target_role. Ohne Angabe werden Konfi- UND Teamer-Abzeichen gemeinsam geliefert. Der Wert wird nicht gegen eine Whitelist geprüft, sondern als Parameter in die WHERE-Klausel gegeben (kein SQL-Injection-Risiko); ein unbekannter Wert liefert schlicht ein leeres Array.\n"
           }
         ],
         "responses": {
@@ -11548,7 +11548,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "WHERE cb.organization_id = req.user.organization_id",
-          "hinweis": "earned_count zaehlt user_badges OHNE Org-Filter — bei systemweit eindeutigen badge_id ist das korrekt, haengt aber an dieser Annahme"
+          "hinweis": "earned_count zählt user_badges OHNE Org-Filter — bei systemweit eindeutigen badge_id ist das korrekt, hängt aber an dieser Annahme"
         },
         "tags": [
           "Stammdaten"
@@ -11784,14 +11784,14 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "WHERE id = :id AND organization_id = req.user.organization_id",
-          "hinweis": "S4: target_role wird vom UPDATE nicht erfasst und bleibt beim Anlagewert. S5: is_active/is_hidden werden per !!wert gesetzt — ein Teil-Update ohne diese Felder deaktiviert das Abzeichen still. criteria_value wird hier (anders als beim POST) nicht auf >= 0 geprueft.\n"
+          "hinweis": "S4: target_role wird vom UPDATE nicht erfasst und bleibt beim Anlagewert. S5: is_active/is_hidden werden per !!wert gesetzt — ein Teil-Update ohne diese Felder deaktiviert das Abzeichen still. criteria_value wird hier (anders als beim POST) nicht auf >= 0 geprüft.\n"
         },
         "tags": [
           "Stammdaten"
         ]
       },
       "delete": {
-        "summary": "Abzeichen loeschen (inklusive aller bereits vergebenen Exemplare)",
+        "summary": "Abzeichen löschen (inklusive aller bereits vergebenen Exemplare)",
         "parameters": [
           {
             "name": "id",
@@ -11827,7 +11827,7 @@
             "validateBadgeId"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Transaktional: erst DELETE FROM user_badges WHERE badge_id = :id (OHNE Org-Filter), dann DELETE FROM custom_badges WHERE id AND organization_id. Greift die zweite Loeschung nicht (fremde Org), wird die Transaktion zurueckgerollt — die vergebenen Exemplare bleiben also erhalten.\n",
+          "objekt-pruefung": "Transaktional: erst DELETE FROM user_badges WHERE badge_id = :id (OHNE Org-Filter), dann DELETE FROM custom_badges WHERE id AND organization_id. Greift die zweite Löschung nicht (fremde Org), wird die Transaktion zurueckgerollt — die vergebenen Exemplare bleiben also erhalten.\n",
           "hinweis": "Bereits verdiente Abzeichen verschwinden bei allen Konfis ohne Rueckfrage; es gibt keine Verwendungs-Sperre wie bei Levels oder Kategorien"
         },
         "tags": [
@@ -11858,7 +11858,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "WHERE organization_id = req.user.organization_id",
-          "hinweis": "Bewusst offen fuer Konfis — die Level-Leiste ist Teil des Konfi-Dashboards. Anders als GET /admin/badges liefert diese Route auch is_active = false"
+          "hinweis": "Bewusst offen für Konfis — die Level-Leiste ist Teil des Konfi-Dashboards. Anders als GET /admin/badges liefert diese Route auch is_active = false"
         },
         "tags": [
           "Stammdaten"
@@ -11936,7 +11936,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Inline: ['org_admin','admin'].includes(req.user.role_name); organization_id und created_by aus dem Token",
-          "hinweis": "Der Inline-Check prueft strikt role_name — ein org_admin mit is_super_admin-Flag kommt durch (role_name bleibt org_admin), die Rolle super_admin selbst nicht"
+          "hinweis": "Der Inline-Check prüft strikt role_name — ein org_admin mit is_super_admin-Flag kommt durch (role_name bleibt org_admin), die Rolle super_admin selbst nicht"
         },
         "tags": [
           "Stammdaten"
@@ -12036,7 +12036,7 @@
         ]
       },
       "delete": {
-        "summary": "Level loeschen (nur wenn kein Konfi es aktuell traegt)",
+        "summary": "Level löschen (nur wenn kein Konfi es aktuell trägt)",
         "parameters": [
           {
             "name": "id",
@@ -12074,7 +12074,7 @@
             "validateLevelId"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Inline-Rollen-Check; Existenz-Query mit organization_id; die Verwendungs-Pruefung zaehlt konfi_profiles.current_level_id ueber users.organization_id (org-gescopt, deleted_at IS NULL).\n"
+          "objekt-pruefung": "Inline-Rollen-Check; Existenz-Query mit organization_id; die Verwendungs-Prüfung zählt konfi_profiles.current_level_id über users.organization_id (org-gescopt, deleted_at IS NULL).\n"
         },
         "tags": [
           "Stammdaten"
@@ -12114,7 +12114,7 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "NUR WHERE u.id = :userId AND u.organization_id = req.user.organization_id AND u.deleted_at IS NULL — keine Rollen- und keine Selbst-Pruefung"
+          "objekt-pruefung": "NUR WHERE u.id = :userId AND u.organization_id = req.user.organization_id AND u.deleted_at IS NULL — keine Rollen- und keine Selbst-Prüfung"
         },
         "tags": [
           "Stammdaten"
@@ -12309,7 +12309,7 @@
         ]
       },
       "delete": {
-        "summary": "Kategorie loeschen (nur wenn keiner Aktivitaet und keinem Event zugeordnet)",
+        "summary": "Kategorie löschen (nur wenn keiner Aktivität und keinem Event zugeordnet)",
         "parameters": [
           {
             "name": "id",
@@ -12348,8 +12348,8 @@
             "validateCategoryId"
           ],
           "org-scope": true,
-          "objekt-pruefung": "DELETE mit organization_id im WHERE; die vorgelagerte Verwendungs-Pruefung zaehlt activity_categories und event_categories",
-          "hinweis": "S3: die Verwendungs-Pruefung filtert NICHT auf organization_id. Da category_id systemweit vergeben wird, ist das praktisch folgenlos — es entsteht kein Fremdzugriff, weil das DELETE selbst org-gescopt bleibt"
+          "objekt-pruefung": "DELETE mit organization_id im WHERE; die vorgelagerte Verwendungs-Prüfung zählt activity_categories und event_categories",
+          "hinweis": "S3: die Verwendungs-Prüfung filtert NICHT auf organization_id. Da category_id systemweit vergeben wird, ist das praktisch folgenlos — es entsteht kein Fremdzugriff, weil das DELETE selbst org-gescopt bleibt"
         },
         "tags": [
           "Stammdaten"
@@ -12358,7 +12358,7 @@
     },
     "/admin/jahrgaenge": {
       "get": {
-        "summary": "Alle Jahrgaenge der eigenen Organisation mit Konfi- und Punkte-Zaehlern",
+        "summary": "Alle Jahrgänge der eigenen Organisation mit Konfi- und Punkte-Zaehlern",
         "responses": {
           "200": {
             "description": "Array jahrgaenge.* + konfi_count, gottesdienst_points_total, gemeinde_points_total; sortiert nach name DESC"
@@ -12385,7 +12385,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "WHERE j.organization_id = req.user.organization_id",
-          "hinweis": "KEINE Jahrgangs-Einschraenkung: ein Teamer sieht alle Jahrgaenge der Organisation, nicht nur die ihm zugewiesenen (filterByJahrgangAccess wird hier nicht verwendet). Die Punkte-Summen zaehlen ueber konfi_profiles.jahrgang_id ohne eigenen Org-Filter — bei org-eindeutigen jahrgang_id korrekt.\n"
+          "hinweis": "KEINE Jahrgangs-Einschraenkung: ein Teamer sieht alle Jahrgänge der Organisation, nicht nur die ihm zugewiesenen (filterByJahrgangAccess wird hier nicht verwendet). Die Punkte-Summen zählen über konfi_profiles.jahrgang_id ohne eigenen Org-Filter — bei org-eindeutigen jahrgang_id korrekt.\n"
         },
         "tags": [
           "Stammdaten"
@@ -12526,7 +12526,7 @@
         },
         "responses": {
           "200": {
-            "description": "{ message } und optional warnings[] — je ein Eintrag { type, affected_count, message }, wenn eine Punkt-Kategorie deaktiviert wird, obwohl Konfis darin bereits Punkte haben. Die Aenderung wird trotzdem durchgefuehrt; die Warnung ist rein informativ.\n"
+            "description": "{ message } und optional warnings[] — je ein Eintrag { type, affected_count, message }, wenn eine Punkt-Kategorie deaktiviert wird, obwohl Konfis darin bereits Punkte haben. Die Änderung wird trotzdem durchgeführt; die Warnung ist rein informativ.\n"
           },
           "400": {
             "description": "Name fehlt / Validierung verletzt"
@@ -12556,15 +12556,15 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Vorab-Lookup und UPDATE beide mit organization_id",
-          "hinweis": "Das Konfirmationsdatum wird seit Phase 119 nicht mehr beschrieben; der Termin haengt am gebuchten is_konfirmation-Event des einzelnen Konfis"
+          "hinweis": "Das Konfirmationsdatum wird seit Phase 119 nicht mehr beschrieben; der Termin hängt am gebuchten is_konfirmation-Event des einzelnen Konfis"
         },
         "tags": [
           "Stammdaten"
         ]
       },
       "delete": {
-        "summary": "Jahrgang loeschen (blockiert bei aktiven Konfis, Chat-Nachrichten nur per force)",
-        "description": "Aktive Konfis (Rolle konfi) blockieren die Loeschung immer. Befoerderte Ex-Konfis (Rolle teamer/admin) blockieren nicht — ihr konfi_profiles-Eintrag bleibt erhalten und wird lediglich vom Jahrgang geloest (jahrgang_id = NULL), damit Punkte-Historie und Konfispruch weiter einsehbar bleiben. Enthaelt der Jahrgangs-Chat Nachrichten, ist force=true noetig; dann werden Chat-Raum, Nachrichten, Umfragen, Lesestatus und die zugehoerigen Dateien entfernt.\n",
+        "summary": "Jahrgang löschen (blockiert bei aktiven Konfis, Chat-Nachrichten nur per force)",
+        "description": "Aktive Konfis (Rolle konfi) blockieren die Löschung immer. Befoerderte Ex-Konfis (Rolle teamer/admin) blockieren nicht — ihr konfi_profiles-Eintrag bleibt erhalten und wird lediglich vom Jahrgang gelöst (jahrgang_id = NULL), damit Punkte-Historie und Konfispruch weiter einsehbar bleiben. Enthaelt der Jahrgangs-Chat Nachrichten, ist force=true nötig; dann werden Chat-Raum, Nachrichten, Umfragen, Lesestatus und die zugehörigen Dateien entfernt.\n",
         "parameters": [
           {
             "name": "id",
@@ -12584,7 +12584,7 @@
                 "true"
               ]
             },
-            "description": "force=true loescht den Jahrgangs-Chat samt aller Nachrichten unwiderruflich"
+            "description": "force=true löscht den Jahrgangs-Chat samt aller Nachrichten unwiderruflich"
           }
         ],
         "responses": {
@@ -12615,8 +12615,8 @@
             "validateJahrgangId"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Das abschliessende DELETE ist mit organization_id gescopt. Die vorgelagerten Pruefungen und Chat-Loeschungen laufen ueber jahrgang_id OHNE eigenen Org-Filter — bei org-eindeutigen Jahrgangs-IDs korrekt, aber eine Reihenfolgen-Abhaengigkeit: faende der Handler den Jahrgang erst am Ende nicht in der eigenen Org, waeren die Chat-Daten bereits geloescht.\n",
-          "hinweis": "S7: Die Chat-Loeschung laeuft NICHT in einer Transaktion (Einzel-Queries ohne BEGIN/COMMIT). Bricht sie in der Mitte ab, bleibt ein halb abgeraeumter Chat zurueck. Datei-Loeschfehler werden nur geloggt.\n"
+          "objekt-pruefung": "Das abschliessende DELETE ist mit organization_id gescopt. Die vorgelagerten Prüfungen und Chat-Loeschungen laufen über jahrgang_id OHNE eigenen Org-Filter — bei org-eindeutigen Jahrgangs-IDs korrekt, aber eine Reihenfolgen-Abhaengigkeit: faende der Handler den Jahrgang erst am Ende nicht in der eigenen Org, wären die Chat-Daten bereits gelöscht.\n",
+          "hinweis": "S7: Die Chat-Löschung läuft NICHT in einer Transaktion (Einzel-Queries ohne BEGIN/COMMIT). Bricht sie in der Mitte ab, bleibt ein halb abgeraeumter Chat zurück. Datei-Loeschfehler werden nur geloggt.\n"
         },
         "tags": [
           "Stammdaten"
@@ -12662,8 +12662,8 @@
             "validateJahrgangId"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Jahrgang, Konfis und Events werden alle drei mit organization_id geprueft; die Buchungs-Query ist ueber die zuvor org-gefilterten Event- und User-IDs eingegrenzt",
-          "hinweis": "teamer erhaelt hier 403 — die Anwesenheitsuebersicht ist bewusst auf org_admin und admin beschraenkt, obwohl GET /admin/jahrgaenge fuer teamer offen ist"
+          "objekt-pruefung": "Jahrgang, Konfis und Events werden alle drei mit organization_id geprüft; die Buchungs-Query ist über die zuvor org-gefilterten Event- und User-IDs eingegrenzt",
+          "hinweis": "teamer erhält hier 403 — die Anwesenheitsuebersicht ist bewusst auf org_admin und admin beschraenkt, obwohl GET /admin/jahrgaenge für teamer offen ist"
         },
         "tags": [
           "Stammdaten"
@@ -12709,8 +12709,8 @@
             "validateJahrgangId"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Jahrgang und Konfis mit organization_id geprueft (u.deleted_at IS NULL, Rolle konfi). Die Konfispruch-Texte kommen aus konfsprueche mit is_active = true UND (organization_id IS NULL ODER organization_id = eigene Org) — der globale Spruch-Katalog ist bewusst org-uebergreifend lesbar, enthaelt aber nur Bibeltexte, keine personenbezogenen Daten.\n",
-          "hinweis": "teamer erhaelt 403 — Konfisprueche sind persoenliche Angaben und bleiben auf org_admin/admin beschraenkt"
+          "objekt-pruefung": "Jahrgang und Konfis mit organization_id geprüft (u.deleted_at IS NULL, Rolle konfi). Die Konfispruch-Texte kommen aus konfsprueche mit is_active = true UND (organization_id IS NULL ODER organization_id = eigene Org) — der globale Spruch-Katalog ist bewusst org-uebergreifend lesbar, enthält aber nur Bibeltexte, keine personenbezogenen Daten.\n",
+          "hinweis": "teamer erhält 403 — Konfisprueche sind persoenliche Angaben und bleiben auf org_admin/admin beschraenkt"
         },
         "tags": [
           "Stammdaten"
@@ -12746,7 +12746,7 @@
                       "anwesenheit",
                       "sprueche"
                     ],
-                    "description": "anwesenheit = je Konfi present_count/total_count ueber alle nicht abgesagten Pflicht-Events des Jahrgangs; sprueche = Konfispruch-Liste wie GET /sprueche.\n"
+                    "description": "anwesenheit = je Konfi present_count/total_count über alle nicht abgesagten Pflicht-Events des Jahrgangs; sprueche = Konfispruch-Liste wie GET /sprueche.\n"
                   }
                 }
               }
@@ -12819,7 +12819,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "WHERE organization_id = req.user.organization_id — auch super_admin wird auf die aktive Org gescopt, sonst wuerden Keys mehrerer Orgs kollidieren",
-          "hinweis": "S6: bewusst fuer alle Rollen offen, weil Konfi- und Teamer-Dashboards ihre Widget-Schalter daraus lesen. Inhalt sind Anzeige-Einstellungen, keine personenbezogenen Daten"
+          "hinweis": "S6: bewusst für alle Rollen offen, weil Konfi- und Teamer-Dashboards ihre Widget-Schalter daraus lesen. Inhalt sind Anzeige-Einstellungen, keine personenbezogenen Daten"
         },
         "tags": [
           "Stammdaten"
@@ -12827,7 +12827,7 @@
       },
       "put": {
         "summary": "Einstellungen der eigenen Organisation setzen (Teil-Update)",
-        "description": "Nur die im Body vorhandenen Felder werden per Upsert geschrieben (ON CONFLICT (organization_id, key)); nicht uebergebene Keys bleiben unveraendert. Anschliessend geht ein Live-Update 'dashboard' an die gesamte Organisation.\n",
+        "description": "Nur die im Body vorhandenen Felder werden per Upsert geschrieben (ON CONFLICT (organization_id, key)); nicht uebergebene Keys bleiben unverändert. Anschliessend geht ein Live-Update 'dashboard' an die gesamte Organisation.\n",
         "requestBody": {
           "content": {
             "application/json": {
@@ -12912,7 +12912,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "orgId ausschliesslich aus dem Token — der Body kann keine fremde Organisation adressieren",
-          "hinweis": "waitlist_enabled wird nicht validiert (steht in validateSettings nicht drin) und landet per String(wert) in der Spalte; ein Nicht-Boolean wuerde beim Lesen zu false. Die Schreib-Vorgaenge laufen als Einzel-Queries ohne Transaktion — ein Fehler in der Mitte hinterlaesst ein Teil-Update.\n"
+          "hinweis": "waitlist_enabled wird nicht validiert (steht in validateSettings nicht drin) und landet per String(wert) in der Spalte; ein Nicht-Boolean wuerde beim Lesen zu false. Die Schreib-Vorgänge laufen als Einzel-Queries ohne Transaktion — ein Fehler in der Mitte hinterlaesst ein Teil-Update.\n"
         },
         "tags": [
           "Stammdaten"
@@ -12921,7 +12921,7 @@
     },
     "/roles": {
       "get": {
-        "summary": "Alle Rollen der eigenen Organisation mit Nutzer-Zaehler",
+        "summary": "Alle Rollen der eigenen Organisation mit Nutzer-Zähler",
         "responses": {
           "200": {
             "description": "Array (id, name, display_name, description, is_system_role, is_active, created_at, user_count), sortiert org_admin > admin > teamer > konfi"
@@ -12946,7 +12946,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Inline: ['super_admin','org_admin'].includes(req.user.role_name); WHERE r.organization_id = req.user.organization_id",
-          "hinweis": "Der Inline-Check prueft strikt role_name und NICHT das is_super_admin-Flag — abweichend von der Projekt-Regel und von GET /roles/list/assignable, das beides beruecksichtigt. Praktisch folgenlos, weil ein org_admin mit Flag ohnehin ueber role_name durchkommt. Die Rolle super_admin selbst hat keine organization_id, erhaelt hier also ein leeres Array.\n"
+          "hinweis": "Der Inline-Check prüft strikt role_name und NICHT das is_super_admin-Flag — abweichend von der Projekt-Regel und von GET /roles/list/assignable, das beides berücksichtigt. Praktisch folgenlos, weil ein org_admin mit Flag ohnehin über role_name durchkommt. Die Rolle super_admin selbst hat keine organization_id, erhält hier also ein leeres Array.\n"
         },
         "tags": [
           "Stammdaten"
@@ -12996,7 +12996,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Inline-Rollen-Check; WHERE r.id = :id AND r.organization_id = req.user.organization_id",
-          "hinweis": "permissions kommt NICHT aus der Datenbank, sondern aus einer Konstante im Code (getRolePermissions). Sie beschreibt die Rechtevergabe rein deklarativ fuer die Anzeige; durchgesetzt wird sie an den Routen selbst per requireRole. Die Liste kann daher von der tatsaechlichen Durchsetzung abweichen.\n"
+          "hinweis": "permissions kommt NICHT aus der Datenbank, sondern aus einer Konstante im Code (getRolePermissions). Sie beschreibt die Rechtevergabe rein deklarativ für die Anzeige; durchgesetzt wird sie an den Routen selbst per requireRole. Die Liste kann daher von der tatsaechlichen Durchsetzung abweichen.\n"
         },
         "tags": [
           "Stammdaten"
@@ -13032,7 +13032,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Inline-Rollen-Check; WHERE r.organization_id = req.user.organization_id AND r.name = ANY(erlaubte)",
-          "hinweis": "Einzige Route dieser Datei, die das is_super_admin-Flag korrekt mitprueft (role_name === 'super_admin' || req.user.is_super_admin). Der Rueckgabewert ist nur eine Anzeige-Hilfe fuer die Nutzerverwaltung — die tatsaechliche Durchsetzung der Hierarchie leistet checkUserHierarchy in routes/users.js (siehe verwaltung-auth.yaml).\n"
+          "hinweis": "Einzige Route dieser Datei, die das is_super_admin-Flag korrekt mitprueft (role_name === 'super_admin' || req.user.is_super_admin). Der Rueckgabewert ist nur eine Anzeige-Hilfe für die Nutzerverwaltung — die tatsaechliche Durchsetzung der Hierarchie leistet checkUserHierarchy in routes/users.js (siehe verwaltung-auth.yaml).\n"
         },
         "tags": [
           "Stammdaten"

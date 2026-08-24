@@ -12,22 +12,22 @@
 #      super_admin(5) > org_admin(4) > admin(3) > teamer(2) > konfi(1)
 #    - User-Verwaltung (/api/users bzw. /api/admin/users) ist komplett
 #      requireOrgAdmin; zusaetzlich checkUserHierarchy pro Operation:
-#        * super_admin darf alle Rollen ausser super_admin verwalten
+#        * super_admin darf alle Rollen außer super_admin verwalten
 #        * org_admin darf ALLE Rollen der eigenen Org verwalten,
 #          AUCH andere org_admins (explizite Regel im Code)
 #        * admin duerfte teamer/konfi verwalten, teamer nur konfi —
 #          praktisch irrelevant, da die Routen requireOrgAdmin verlangen
-#    - Rollen-Zuweisung: role_id wird gegen roles der eigenen Org geprueft;
-#      bei Update mit Rollenwechsel prueft canCreateRole die Ziel-Rolle.
+#    - Rollen-Zuweisung: role_id wird gegen roles der eigenen Org geprüft;
+#      bei Update mit Rollenwechsel prüft canCreateRole die Ziel-Rolle.
 #      GET /roles/list/assignable liefert nur zuweisbare Rollen
 #      (org_admin: admin/teamer/konfi; super_admin: +org_admin).
 #    - Rollen selbst sind hardcoded (5 Systemrollen), routes/roles.js ist
 #      read-only; Permissions sind statisch pro Rollenname.
 #    - org_admins anlegen: super_admin (jede Org) ODER org_admin (eigene Org)
 #      via POST /organizations/:id/admins.
-#    - Letzter org_admin einer Org ist gegen Loeschen geschuetzt (409).
-#    - Selbst-Loeschung: ueber POST /auth/delete-account (jede Rolle, mit
-#      Passwort-Bestaetigung); DELETE /users/:id blockt Selbst-Loeschung.
+#    - Letzter org_admin einer Org ist gegen Löschen geschuetzt (409).
+#    - Selbst-Löschung: über POST /auth/delete-account (jede Rolle, mit
+#      Passwort-Bestaetigung); DELETE /users/:id blockt Selbst-Löschung.
 #    - Multi-Org-Mitgliedschaften (user_organizations) vergibt NUR der
 #      super_admin (POST/DELETE /organizations/:id/members); konfi und
 #      super_admin sind als Mitglieds-Rolle explizit verboten.
@@ -49,7 +49,7 @@
 #    # LÜCKE (NEU): check-username, validate-invite, reset-password und
 #    # refresh haben keinen eigenen (strengeren) Rate-Limiter — Username-
 #    # Enumeration und Invite-Code-Bruteforce (nur 8 Hex-Zeichen = 4 Byte
-#    # Entropie) sind mit bis zu 2000 Requests/15min/IP moeglich.
+#    # Entropie) sind mit bis zu 2000 Requests/15min/IP möglich.
 #
 # 3. SUPER_ADMIN — Sonderbehandlung:
 #    - requireSuperAdmin akzeptiert Rolle 'super_admin' ODER das DB-Flag
@@ -63,30 +63,30 @@
 #      Sperren beim Login/Refresh ausgenommen; checkJahrgangAccess und
 #      filterByJahrgangAccess sperren ihn bewusst von Jahrgangs-Daten aus.
 #    - Fachrouten (badges, levels, material, ...) nutzen requireAdmin/
-#      requireTeamer (Rollennamen-Whitelists) — die Rolle super_admin faellt
-#      dort durch (403), ausser sie agiert via Multi-Org-Switch als org_admin.
+#      requireTeamer (Rollennamen-Whitelists) — die Rolle super_admin fällt
+#      dort durch (403), außer sie agiert via Multi-Org-Switch als org_admin.
 #
 # 4. MATERIAL UND ZERTIFIKATE:
 #    - Material sehen/herunterladen: requireTeamer (org_admin, admin, teamer)
 #      — ALLE Materialien der eigenen Org, KEINE Jahrgangs-Einschraenkung
 #      (Jahrgangs-/Event-Zuordnung ist nur Filter-Metadatum). Konfis haben
 #      keinerlei Material-Zugriff.
-#    - Material/Tags anlegen, aendern, loeschen, Dateien hochladen/loeschen:
+#    - Material/Tags anlegen, ändern, löschen, Dateien hochladen/loeschen:
 #      requireAdmin (org_admin, admin). Dateien liegen AES-256-GCM-
-#      verschluesselt unter Zufalls-Hex-Namen; Download prueft Hex-Format
+#      verschlüsselt unter Zufalls-Hex-Namen; Download prüft Hex-Format
 #      (Path-Traversal-Schutz) + Org-Zugehoerigkeit der Datei.
 #    - Zertifikat-Typen: lesen requireAdmin, CRUD requireOrgAdmin.
 #    - Zertifikate VERGIBT/entzieht nur der org_admin
 #      (POST/DELETE /teamer/:userId/certificates); Empfaenger muss Rolle
-#      teamer in derselben Org haben; Typ muss zur Org gehoeren und aktiv
+#      teamer in derselben Org haben; Typ muss zur Org gehören und aktiv
 #      sein. Ansehen der Zertifikate eines Teamers: requireAdmin.
-#      Teamer sehen die eigenen Zertifikate ueber ihr Dashboard.
+#      Teamer sehen die eigenen Zertifikate über ihr Dashboard.
 #
 # NEUE LUECKEN (zusaetzlich zu den bekannten, Details an den Routen):
 #  N1  PUT /users/:id/reset-password schuetzt Ziel-User mit is_super_admin-
 #      Flag NICHT: org_admin derselben Org kann dessen Passwort setzen und
 #      so Super-Admin-Rechte uebernehmen (Privilege Escalation).
-#  N2  Passwort-Aenderung/-Reset (change-password, reset-password,
+#  N2  Passwort-Änderung/-Reset (change-password, reset-password,
 #      users/:id/reset-password) revoziert bestehende Refresh-Tokens (90 Tage)
 #      nicht und setzt kein token_invalidated_at — gekaperte Sessions
 #      ueberleben den Passwortwechsel.
@@ -95,12 +95,12 @@
 #      jeder Konfi) kann Punkte/Level JEDES Konfis abrufen — kein Selbst-
 #      oder Rollen-Check.
 #  N5  GET /organizations/:id und /:id/stats: JEDE Rolle der eigenen Org
-#      (auch konfi/teamer) erhaelt SELECT * der Organisation inkl. Kontakt-,
+#      (auch konfi/teamer) erhält SELECT * der Organisation inkl. Kontakt-,
 #      Trial- und Limit-Daten.
 #  N6  POST /organizations/:id/admins: org_admin legt weitere org_admins mit
 #      6-Zeichen-Passwort an — die strenge validatePassword-Policy (8+,
 #      Gross/Klein/Zahl/Sonderzeichen) wird hier NICHT angewandt.
-#  N7  PUT /users/:id: Passwort-Feld ohne jede Policy-Pruefung (weder
+#  N7  PUT /users/:id: Passwort-Feld ohne jede Policy-Prüfung (weder
 #      validatePassword noch Mindestlaenge) — beliebig schwache Passwoerter.
 #  N8  POST /auth/update-email: keine Besitz-Verifikation der E-Mail; 409 bei
 #      Unique-Kollision erlaubt E-Mail-Enumeration durch eingeloggte User.
@@ -119,10 +119,10 @@ info:
   description: >
     Auth/Session, Teamer-Bereich, Organisations-, User-, Jahrgangs-,
     Badge-, Wrapped-, Level-, Kategorie-, Rollen- und Settings-Verwaltung.
-    Alle Routen (ausser den offenen Auth-Routen) verlangen einen Bearer-JWT
-    (15 Min), der von verifyTokenRBAC geprueft wird; die aktive Organisation
+    Alle Routen (außer den offenen Auth-Routen) verlangen einen Bearer-JWT
+    (15 Min), der von verifyTokenRBAC geprüft wird; die aktive Organisation
     kann per Header X-Active-Organization gewechselt werden (Mitgliedschaft
-    wird gegen user_organizations geprueft, 30s-User-Cache).
+    wird gegen user_organizations geprüft, 30s-User-Cache).
 servers:
   - url: https://konfi-quest.de/api
 components:
@@ -140,7 +140,7 @@ paths:
   # ==========================================================================
   /auth/login:
     post:
-      summary: Login fuer alle Rollen (case-insensitiver Username)
+      summary: Login für alle Rollen (case-insensitiver Username)
       requestBody:
         required: true
         content:
@@ -161,12 +161,12 @@ paths:
         rollen: [oeffentlich]
         middleware: [authLimiter, validateLogin]
         org-scope: false
-        objekt-pruefung: "Org-Aktiv- und Trial-Pruefung im Handler; super_admin (Rolle oder Flag) umgeht beide"
+        objekt-pruefung: "Org-Aktiv- und Trial-Prüfung im Handler; super_admin (Rolle oder Flag) umgeht beide"
         hinweis: "Offene Route; setzt last_login_at"
 
   /auth/change-password:
     post:
-      summary: Eigenes Passwort aendern (mit aktuellem Passwort)
+      summary: Eigenes Passwort ändern (mit aktuellem Passwort)
       requestBody:
         required: true
         content:
@@ -187,13 +187,13 @@ paths:
         org-scope: false
         objekt-pruefung: "Nur eigener Account (userId aus Token)"
         # BEHOBEN 22.08.2026 (war N2): setzt token_invalidated_at und
-        # revoziert alle offenen Refresh-Tokens. Die Antwort enthaelt ein
-        # frisches Token-Paar fuer die aufrufende Sitzung, damit der eigene
+        # revoziert alle offenen Refresh-Tokens. Die Antwort enthält ein
+        # frisches Token-Paar für die aufrufende Sitzung, damit der eigene
         # Client nicht mitfliegt.
 
   /auth/delete-account:
     post:
-      summary: Eigenen Account sofort und kaskadierend loeschen (alle Rollen)
+      summary: Eigenen Account sofort und kaskadierend löschen (alle Rollen)
       requestBody:
         required: true
         content:
@@ -212,7 +212,7 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: false
         objekt-pruefung: "Nur eigener Account; Passwort-Bestaetigung im Handler"
-        hinweis: "Auch org_admin kann sich selbst loeschen — der Letzter-org_admin-Schutz greift nur in DELETE /users/:id, nicht hier"
+        hinweis: "Auch org_admin kann sich selbst löschen — der Letzter-org_admin-Schutz greift nur in DELETE /users/:id, nicht hier"
 
   /auth/update-email:
     post:
@@ -236,7 +236,7 @@ paths:
         # HINWEIS (N8, bewusst so belassen): keine Besitz-Verifikation der
         # E-Mail. Der 409 verraet eingeloggten Usern, dass eine Adresse
         # vergeben ist — hier ueberwiegt die Bedienbarkeit: ohne die Meldung
-        # bliebe unklar, warum die Aenderung nicht greift. Anders als bei
+        # bliebe unklar, warum die Änderung nicht greift. Anders als bei
         # request-password-reset, wo der Aufrufer NICHT angemeldet ist.
 
   /auth/update-role-title:
@@ -302,7 +302,7 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: false
         objekt-pruefung: "Mitgliedschaft in user_organizations + is_active der Ziel-Org"
-        hinweis: "Trial-Ablauf der Ziel-Org wird hier NICHT geprueft (nur is_active); bekannte Claim-Nachwirkung nach Mitgliedschafts-Entzug bis Token-Ablauf"
+        hinweis: "Trial-Ablauf der Ziel-Org wird hier NICHT geprüft (nur is_active); bekannte Claim-Nachwirkung nach Mitgliedschafts-Entzug bis Token-Ablauf"
 
   /auth/request-password-reset:
     post:
@@ -329,7 +329,7 @@ paths:
 
   /auth/invite-code:
     post:
-      summary: Einladungscode fuer einen Jahrgang erzeugen (8 Hex-Zeichen, 7 Tage)
+      summary: Einladungscode für einen Jahrgang erzeugen (8 Hex-Zeichen, 7 Tage)
       requestBody:
         required: true
         content:
@@ -347,12 +347,12 @@ paths:
         rollen: [org_admin]
         middleware: [verifyTokenRBAC, validateInviteCode]
         org-scope: true
-        objekt-pruefung: "Jahrgang muss zur eigenen Org gehoeren"
+        objekt-pruefung: "Jahrgang muss zur eigenen Org gehören"
         hinweis: "Inline-Check erlaubt auch is_super_admin-Flag (abweichend von den drei anderen Invite-Routen, die strikt role_name==='org_admin' verlangen)"
 
   /auth/invite-codes:
     get:
-      summary: Aktive Einladungscodes der eigenen Org (inkl. Nutzungs-Zaehler)
+      summary: Aktive Einladungscodes der eigenen Org (inkl. Nutzungs-Zähler)
       responses:
         "200": { description: "Array mit code, jahrgang, expires_at, used_count" }
         "403": { description: "Nur org_admin (strikt role_name, OHNE Super-Admin-Flag)" }
@@ -376,11 +376,11 @@ paths:
         rollen: [org_admin]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Code muss zur eigenen Org gehoeren"
+        objekt-pruefung: "Code muss zur eigenen Org gehören"
 
   /auth/invite-codes/{id}:
     delete:
-      summary: Einladungscode loeschen
+      summary: Einladungscode löschen
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
@@ -391,11 +391,11 @@ paths:
         rollen: [org_admin]
         middleware: [verifyTokenRBAC]
         org-scope: true
-        objekt-pruefung: "Code muss zur eigenen Org gehoeren"
+        objekt-pruefung: "Code muss zur eigenen Org gehören"
 
   /auth/check-username/{username}:
     get:
-      summary: Username-Verfuegbarkeit pruefen (oeffentlich, case-insensitiv)
+      summary: Username-Verfuegbarkeit prüfen (oeffentlich, case-insensitiv)
       parameters:
         - { name: username, in: path, required: true, schema: { type: string, minLength: 3, pattern: "^[a-zA-Z0-9.-]+$" } }
       responses:
@@ -407,11 +407,11 @@ paths:
         org-scope: false
         objekt-pruefung: "keine"
         # LÜCKE (N3): kein eigener Rate-Limiter — systemweite Username-
-        # Enumeration mit bis zu 2000 Requests/15min/IP moeglich.
+        # Enumeration mit bis zu 2000 Requests/15min/IP möglich.
 
   /auth/validate-invite/{code}:
     get:
-      summary: Einladungscode pruefen (oeffentlich) — liefert Jahrgang + Org-Name
+      summary: Einladungscode prüfen (oeffentlich) — liefert Jahrgang + Org-Name
       parameters:
         - { name: code, in: path, required: true, schema: { type: string } }
       responses:
@@ -504,7 +504,7 @@ paths:
         middleware: []
         org-scope: false
         objekt-pruefung: "SHA-256-Hash-Lookup in refresh_tokens; Sperr-Checks wie beim Login"
-        hinweis: "token_invalidated_at (Soft-Revoke) wird beim Refresh nicht geprueft — Soft-Revoke wirkt nur auf Access-Tokens, nicht auf die Refresh-Kette"
+        hinweis: "token_invalidated_at (Soft-Revoke) wird beim Refresh nicht geprüft — Soft-Revoke wirkt nur auf Access-Tokens, nicht auf die Refresh-Kette"
 
   /auth/logout:
     post:
@@ -520,7 +520,7 @@ paths:
                   type: string
                   description: >
                     Geraete-ID. Wird sie zusammen mit platform mitgesendet,
-                    entfernt die Route den Push-Token dieses Geraets fuer den
+                    entfernt die Route den Push-Token dieses Geraets für den
                     angemeldeten User. Seit 22.08.2026: Der Client ruft dafuer
                     zwar auch DELETE /notifications/device-token, aber
                     best-effort (Timeout, nur online, nur mit ermittelbarer
@@ -556,7 +556,7 @@ paths:
         org-scope: false
         objekt-pruefung: "keine (org-uebergreifend)"
     post:
-      summary: Organisation anlegen inkl. erstem org_admin und Standard-Daten (Rollen, 27 Badges, 4 Zertifikat-Typen, 6 Levels, 5 Kategorien, 5 Aktivitaeten, 3 Beispiel-Challenges)
+      summary: Organisation anlegen inkl. erstem org_admin und Standard-Daten (Rollen, 27 Badges, 4 Zertifikat-Typen, 6 Levels, 5 Kategorien, 5 Aktivitäten, 3 Beispiel-Challenges)
       requestBody:
         required: true
         content:
@@ -590,7 +590,7 @@ paths:
 
   /organizations/search-users:
     get:
-      summary: Systemweite User-Suche fuer Multi-Org-Zuweisung (ohne Konfis)
+      summary: Systemweite User-Suche für Multi-Org-Zuweisung (ohne Konfis)
       parameters:
         - { name: q, in: query, required: true, schema: { type: string, minLength: 2 } }
       responses:
@@ -665,9 +665,9 @@ paths:
         rollen: [super_admin, org_admin]
         middleware: [verifyTokenRBAC, validateUpdateOrg]
         org-scope: true
-        objekt-pruefung: "Inline: is_super_admin ODER (eigene Org UND role_name==='org_admin'); Trial-Felder werden fuer org_admin ignoriert"
+        objekt-pruefung: "Inline: is_super_admin ODER (eigene Org UND role_name==='org_admin'); Trial-Felder werden für org_admin ignoriert"
     delete:
-      summary: Organisation vollstaendig loeschen (explizite CASCADE-Kette in einer Transaktion, inkl. Datei-Cleanup nach COMMIT)
+      summary: Organisation vollstaendig löschen (explizite CASCADE-Kette in einer Transaktion, inkl. Datei-Cleanup nach COMMIT)
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
@@ -704,7 +704,7 @@ paths:
 
   /organizations/{id}/users:
     get:
-      summary: Alle User einer Organisation (inkl. Konfis) mit Rolle und Jahrgangs-Zaehler
+      summary: Alle User einer Organisation (inkl. Konfis) mit Rolle und Jahrgangs-Zähler
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
@@ -813,7 +813,7 @@ paths:
 
   /organizations/{id}/stats:
     get:
-      summary: Statistiken einer Organisation (Konfis, Aktivitaeten, Events, Badges, Antraege)
+      summary: Statistiken einer Organisation (Konfis, Aktivitäten, Events, Badges, Anträge)
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
@@ -867,7 +867,7 @@ paths:
         rollen: [org_admin]
         middleware: [verifyTokenRBAC, requireOrgAdmin, "checkUserHierarchy('create')", validateCreateUser]
         org-scope: true
-        objekt-pruefung: "role_id muss zur eigenen Org gehoeren; Hierarchie prueft Ziel-Rolle"
+        objekt-pruefung: "role_id muss zur eigenen Org gehören; Hierarchie prüft Ziel-Rolle"
 
   /users/{id}:
     get:
@@ -910,18 +910,18 @@ paths:
         rollen: [org_admin]
         middleware: [verifyTokenRBAC, requireOrgAdmin, "checkUserHierarchy('update')", validateUpdateUser]
         org-scope: true
-        objekt-pruefung: "Ziel-User in eigener Org; canManageRole + canCreateRole fuer neue Rolle"
+        objekt-pruefung: "Ziel-User in eigener Org; canManageRole + canCreateRole für neue Rolle"
         # BEHOBEN 22.08.2026 (war N7): das optionale password-Feld wird vor
-        # dem Hashen gegen validatePassword geprueft.
+        # dem Hashen gegen validatePassword geprüft.
     delete:
-      summary: User loeschen (Hard-Delete mit Referenz-Anonymisierung und History-Purge)
+      summary: User löschen (Hard-Delete mit Referenz-Anonymisierung und History-Purge)
       description: >
         Anonymisiert die Urheberschaft (admin_id/created_by/approved_by ->
         NULL, seit 24.08.2026 auch events.created_by, custom_badges.created_by,
         levels.created_by und user_jahrgang_assignments.assigned_by — vorher
-        blockierten diese Fremdschluessel das Loeschen mit 500) und raeumt die
+        blockierten diese Fremdschlüssel das Löschen mit 500) und räumt die
         eigene Historie ab, inkl. user_certificates.user_id (ebenfalls seit
-        24.08.2026, vorher war jede ausgezeichnete Person unloeschbar).
+        24.08.2026, vorher war jede ausgezeichnete Person unlöschbar).
         Nachweisfotos UND Challenge-Dateien werden nach dem COMMIT von der
         Platte entfernt.
       parameters:
@@ -949,7 +949,7 @@ paths:
         rollen: [org_admin]
         middleware: [verifyTokenRBAC, requireOrgAdmin]
         org-scope: true
-        objekt-pruefung: "Jahrgaenge auf eigene Org gefiltert"
+        objekt-pruefung: "Jahrgänge auf eigene Org gefiltert"
     post:
       summary: Jahrgangs-Zuweisungen komplett ersetzen (delete + insert, transaktional, Chat-Sync)
       parameters:
@@ -979,12 +979,12 @@ paths:
         rollen: [org_admin]
         middleware: [verifyTokenRBAC, requireOrgAdmin, validateJahrgangAssignments]
         org-scope: true
-        objekt-pruefung: "User + alle Jahrgang-IDs muessen zur eigenen Org gehoeren"
+        objekt-pruefung: "User + alle Jahrgang-IDs müssen zur eigenen Org gehören"
         hinweis: "KEIN checkUserHierarchy — org_admin darf ohnehin alle; Route wird aber nicht durch andere Rollen erreichbar"
 
   /users/me/jahrgaenge:
     get:
-      summary: Eigene Jahrgangs-Zuweisungen (fuer Teamer-UI)
+      summary: Eigene Jahrgangs-Zuweisungen (für Teamer-UI)
       responses:
         "200": { description: "Array der eigenen Zuweisungen (auf aktive Org gescopt)" }
       x-berechtigung:
@@ -1018,11 +1018,11 @@ paths:
         org-scope: true
         objekt-pruefung: "Inline: is_super_admin (org-uebergreifend, auch per Flag) ODER org_admin derselben Org; org_admin darf auch andere org_admins resetten"
         # LÜCKE (N1): der Ziel-User wird NICHT auf is_super_admin/super_admin
-        # geprueft. Ein org_admin kann so das Passwort eines org_admins MIT
+        # geprüft. Ein org_admin kann so das Passwort eines org_admins MIT
         # is_super_admin-Flag in seiner Org setzen und dessen Super-Admin-
         # Rechte uebernehmen (Privilege Escalation). Der Kommentar "nur
-        # super_admin ist geschuetzt" stimmt nur fuer die Rolle (org=NULL),
-        # nicht fuer das Flag.
+        # super_admin ist geschuetzt" stimmt nur für die Rolle (org=NULL),
+        # nicht für das Flag.
         # LÜCKE (N2): bestehende Refresh-Tokens des Ziel-Users bleiben gueltig.
 
   # ==========================================================================
@@ -1046,7 +1046,7 @@ paths:
         middleware: [verifyTokenRBAC, requireOrgAdmin]
         org-scope: true
         objekt-pruefung: "wie GET /users"
-        hinweis: "Alias-Mount, kein eigener Code. super_admin faellt durch requireOrgAdmin auf 403, ausser er agiert per Multi-Org-Switch als org_admin."
+        hinweis: "Alias-Mount, kein eigener Code. super_admin fällt durch requireOrgAdmin auf 403, außer er agiert per Multi-Org-Switch als org_admin."
     post:
       summary: Verwaltungs-User anlegen (Alias von POST /users)
       description: Identischer Handler wie POST /users.
@@ -1094,7 +1094,7 @@ paths:
         objekt-pruefung: "wie PUT /users/{id}"
         hinweis: "Alias-Mount, kein eigener Code."
     delete:
-      summary: User loeschen (Alias von DELETE /users/{id})
+      summary: User löschen (Alias von DELETE /users/{id})
       description: Identischer Handler wie DELETE /users/{id}.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
@@ -1106,7 +1106,7 @@ paths:
         rollen: [org_admin]
         middleware: [verifyTokenRBAC, requireOrgAdmin, userHierarchyMiddleware('delete'), validateUserId]
         org-scope: true
-        objekt-pruefung: "wie DELETE /users/{id}; Selbst-Loeschung blockiert"
+        objekt-pruefung: "wie DELETE /users/{id}; Selbst-Löschung blockiert"
         hinweis: "Alias-Mount, kein eigener Code."
 
   /admin/users/{id}/jahrgaenge:
@@ -1190,8 +1190,8 @@ paths:
     get:
       summary: Liveness-Check (ohne Anmeldung)
       description: >
-        Minimaler Endpunkt fuer Docker-Healthcheck und Traefik. Bewusst ohne
-        Datenbank-Pruefung: ein haengender DB-Check wuerde einen gesunden
+        Minimaler Endpunkt für Docker-Healthcheck und Traefik. Bewusst ohne
+        Datenbank-Prüfung: ein haengender DB-Check wuerde einen gesunden
         Container vom Healthcheck killen lassen.
       security: []
       responses:
@@ -1201,14 +1201,14 @@ paths:
         middleware: []
         org-scope: false
         objekt-pruefung: "keine"
-        hinweis: "Keine Authentifizierung. Gibt keine Daten preis ausser der Tatsache, dass der Dienst laeuft."
+        hinweis: "Keine Authentifizierung. Gibt keine Daten preis außer der Tatsache, dass der Dienst läuft."
 
   /status:
     get:
-      summary: Readiness-Check mit Datenbank-Pruefung (ohne Anmeldung)
+      summary: Readiness-Check mit Datenbank-Prüfung (ohne Anmeldung)
       description: >
         Prueft die Datenbank mit SELECT 1 und liefert 200 bei gesunder DB,
-        sonst 503. Getrennt von /health, weil er echte Abhaengigkeiten prueft.
+        sonst 503. Getrennt von /health, weil er echte Abhaengigkeiten prüft.
       security: []
       responses:
         "200": { description: "status, version, commit, uptimeSeconds, checks.database, responseTimeMs" }
@@ -1220,7 +1220,7 @@ paths:
         objekt-pruefung: "keine"
         hinweis: >
           # HINWEIS: Ohne Anmeldung erreichbar und gibt version und commit
-          (GIT_SHA) preis. Bewusst so fuer die Status-Seite / Uptime Kuma.
+          (GIT_SHA) preis. Bewusst so für die Status-Seite / Uptime Kuma.
 
   /metrics:
     get:
@@ -1228,7 +1228,7 @@ paths:
       description: >
         Aggregierte Laufzeitdaten: langsamste und meistgenutzte Routen,
         parallele Requests, Live-Verlauf, letzte Fehler. Ist METRICS_PEERS
-        gesetzt, werden alle Peers ueber /metrics/local abgefragt und zu einem
+        gesetzt, werden alle Peers über /metrics/local abgefragt und zu einem
         Gesamtbild inklusive Lastverteilung gemergt.
       responses:
         "200": { description: "Zusammengefuehrter APM-Snapshot inkl. replicas" }
@@ -1249,7 +1249,7 @@ paths:
       summary: APM-Rohdaten nur dieser Replica (nur super_admin)
       description: >
         Unaggregierter In-Memory-Snapshot der antwortenden Replica. Wird von
-        /metrics fuer die Peer-Aggregation genutzt, ist aber auch direkt
+        /metrics für die Peer-Aggregation genutzt, ist aber auch direkt
         aufrufbar.
       responses:
         "200": { description: "APM-Snapshot dieser Replica" }
@@ -1266,13 +1266,13 @@ paths:
       summary: Gespeicherte APM-Historie (nur super_admin)
       description: >
         Liefert die persistierten Snapshots aus apm_snapshots der letzten N
-        Tage, damit das Dashboard Deltas ueber Deploys hinweg bilden kann.
+        Tage, damit das Dashboard Deltas über Deploys hinweg bilden kann.
       parameters:
         - name: days
           in: query
           required: false
           schema: { type: integer, minimum: 1, maximum: 30, default: 7 }
-          description: Auf 1..30 begrenzt; ungueltige Werte fallen auf 7 zurueck.
+          description: Auf 1..30 begrenzt; ungueltige Werte fallen auf 7 zurück.
       responses:
         "200": { description: "days und snapshots[] (captured_at, total_requests, total_errors, max_in_flight, worst_p95_ms, worst_route)" }
         "401": { $ref: "#/components/responses/Unauthorized" }

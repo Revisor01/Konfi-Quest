@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Anmelden — Konfi Quest API</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Bebas+Neue&display=swap">
+<style>
+:root {
+  --ground:#fbfaf9; --flaeche:#fff; --rand:#e7e3e8; --text:#1c1a1f;
+  --text-leise:#6b6470; --akzent:#5b21b6; --akzent-weich:#f3eefc;
+  --fehler:#be123c; --fehler-weich:#fdeaef;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:#161419; --flaeche:#1e1b22; --rand:#322c38; --text:#ece9ef;
+    --text-leise:#a49cab; --akzent:#c4a8f5; --akzent-weich:#2a1f3d;
+    --fehler:#fb7185; --fehler-weich:#331520;
+  }
+}
+:root[data-theme="dark"] {
+  --ground:#161419; --flaeche:#1e1b22; --rand:#322c38; --text:#ece9ef;
+  --text-leise:#a49cab; --akzent:#c4a8f5; --akzent-weich:#2a1f3d;
+  --fehler:#fb7185; --fehler-weich:#331520;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; min-height:100vh; background:var(--ground); color:var(--text);
+  font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
+  font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased;
+  display:grid; place-items:center; padding:24px;
+}
+.karte {
+  width:100%; max-width:24rem; background:var(--flaeche);
+  border:1px solid var(--rand); border-radius:16px; padding:32px 28px 28px;
+}
+.marke {
+  font-family:'Bebas Neue',Impact,sans-serif; font-size:2rem; letter-spacing:3px;
+  margin:0 0 2px; line-height:1;
+}
+.marke-unter { font-size:.82rem; color:var(--text-leise); margin:0 0 24px; }
+h1 { font-size:1.05rem; margin:0 0 6px; }
+.hinweis { font-size:.88rem; color:var(--text-leise); margin:0 0 22px; }
+label { display:block; font-size:.78rem; font-weight:600; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--text-leise); margin:0 0 7px; }
+input {
+  width:100%; padding:12px 14px; font:inherit; color:var(--text);
+  background:var(--ground); border:1px solid var(--rand); border-radius:10px;
+}
+input:focus { outline:2px solid var(--akzent); outline-offset:1px; border-color:transparent; }
+button {
+  width:100%; margin-top:16px; padding:13px 16px; font:inherit; font-weight:600;
+  color:#fff; background:var(--akzent); border:none; border-radius:10px; cursor:pointer;
+}
+button:hover:not(:disabled) { filter:brightness(1.08); }
+button:disabled { opacity:.6; cursor:default; }
+button:focus-visible { outline:2px solid var(--text); outline-offset:2px; }
+.meldung {
+  margin-top:16px; padding:11px 14px; border-radius:9px; font-size:.88rem;
+  background:var(--fehler-weich); color:var(--fehler);
+}
+.meldung[hidden] { display:none; }
+.fuss { margin-top:22px; padding-top:18px; border-top:1px solid var(--rand);
+  font-size:.8rem; color:var(--text-leise); }
+.fuss a { color:var(--akzent); }
+</style>
+</head>
+<body>
+  <main class="karte">
+    <p class="marke">Konfi Quest</p>
+    <p class="marke-unter">Schnittstellen-Dokumentation</p>
+
+    <h1>Anmeldung erforderlich</h1>
+    <p class="hinweis">Diese Seiten beschreiben jede Route der Anwendung samt
+    ihren Berechtigungen. Sie sind deshalb nicht öffentlich.</p>
+
+    <form id="formular">
+      <label for="passwort">Passwort</label>
+      <input id="passwort" name="passwort" type="password" autocomplete="current-password"
+             required autofocus>
+      <button type="submit" id="knopf">Anmelden</button>
+    </form>
+
+    <p class="meldung" id="meldung" hidden role="alert"></p>
+
+    <p class="fuss"><a href="/docs/">Zum Handbuch</a> · <a href="/">Zur Startseite</a></p>
+  </main>
+
+<script>
+const formular = document.getElementById('formular');
+const knopf = document.getElementById('knopf');
+const meldung = document.getElementById('meldung');
+
+// Wohin es nach dem Anmelden geht: der ursprünglich gewünschte Pfad, sonst die
+// Übersicht. Nur eigene Pfade zulassen, sonst wäre das eine offene Weiterleitung.
+const ziel = (() => {
+  const p = new URLSearchParams(location.search).get('weiter');
+  return p && p.startsWith('/docs/api') ? p : '/docs/api/';
+})();
+
+formular.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  meldung.hidden = true;
+  knopf.disabled = true;
+  knopf.textContent = 'Einen Moment …';
+
+  try {
+    const antwort = await fetch('/api/docs-auth/anmelden', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ passwort: document.getElementById('passwort').value }),
+    });
+
+    if (antwort.ok) {
+      location.href = ziel;
+      return;
+    }
+
+    const daten = await antwort.json().catch(() => ({}));
+    meldung.textContent = daten.error || 'Die Anmeldung hat nicht geklappt.';
+    meldung.hidden = false;
+  } catch {
+    meldung.textContent = 'Keine Verbindung zum Server.';
+    meldung.hidden = false;
+  }
+
+  knopf.disabled = false;
+  knopf.textContent = 'Anmelden';
+  document.getElementById('passwort').select();
+});
+</script>
+</body>
+</html>
