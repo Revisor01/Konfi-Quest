@@ -32,6 +32,7 @@ import { OrgSwitcherButton } from '../../shared';
 import AdminOnboardingModal from '../modals/AdminOnboardingModal';
 import AdminUpdateWalkthroughModal from '../modals/AdminUpdateWalkthroughModal';
 import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
+import UpdateHinweisKarte from '../../shared/UpdateHinweisKarte';
 
 interface Konfi {
   id: number;
@@ -76,12 +77,14 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   const router = useIonRouter();
   const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-konfis');
   // Onboarding-Tour einmal pro Admin-Account (beim ersten Betreten der Konfis-Seite,
-  // der Landing-Page für Admins/Org-Admins) — bzw. für Bestandsnutzer
-  // stattdessen einmalig der Update-Walkthrough 2.0 (Challenges).
+  // der Landing-Page für Admins/Org-Admins) — bzw. für Bestandsnutzer die
+  // Neuigkeiten-Karte "Was ist neu in Version 2.0". Der Walkthrough öffnet
+  // sich über die Karte oder dauerhaft über "Was ist neu?" in den Einstellungen.
   const {
     showOnboarding, closeOnboarding,
-    showUpdateWalkthrough, closeUpdateWalkthrough
+    showUpdateHinweis, markUpdateHinweisGesehen
   } = useOnboardingWithUpdateOnce('admin_onboarding_seen', user?.id);
+  const [showUpdateWalkthrough, setShowUpdateWalkthrough] = useState(false);
   
   // Offline-Query: Konfis
   const { data: konfis, loading: konfisLoading, refresh: refreshKonfis } = useOfflineQuery<Konfi[]>(
@@ -375,7 +378,16 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
         }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
-        
+
+        {/* Neuigkeiten-Karte: einmalig nach dem Update, X blendet dauerhaft aus */}
+        {showUpdateHinweis && (
+          <UpdateHinweisKarte
+            style={{ margin: '8px 16px 12px' }}
+            onOpen={() => { markUpdateHinweisGesehen(); setShowUpdateWalkthrough(true); }}
+            onDismiss={markUpdateHinweisGesehen}
+          />
+        )}
+
         {loading ? (
           <LoadingSpinner message="Konfis werden geladen..." />
         ) : (
@@ -401,9 +413,9 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
         />
       )}
 
-      {/* Update-Walkthrough 2.0 — nur fuer Bestandsnutzer */}
+      {/* "Was ist neu"-Walkthrough — geöffnet über die Neuigkeiten-Karte */}
       {showUpdateWalkthrough && (
-        <AdminUpdateWalkthroughModal onClose={closeUpdateWalkthrough} />
+        <AdminUpdateWalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
       )}
     </IonPage>
   );

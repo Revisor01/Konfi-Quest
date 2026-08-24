@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { useIonViewDidEnter } from '@ionic/react';
 import { Preferences } from '@capacitor/preferences';
 
-// Flag-Praefix des Update-Walkthroughs 2.0 (Challenges + der neue
+// Flag-Praefix des Update-Hinweises 2.0 (Challenges + der neue
 // Mitmachen-Tab, der Events und Aktivitäten bündelt). Rollenuebergreifend
-// derselbe Praefix, der Account-Suffix trennt die Nutzer.
+// derselbe Praefix, der Account-Suffix trennt die Nutzer. Dasselbe Flag
+// steuert Karte UND Walkthrough — es gibt bewusst nur EIN Erinnerungssystem.
 export const UPDATE_WALKTHROUGH_KEY = 'update_walkthrough_2_0_gesehen';
 
 // Zeigt eine Onboarding-Tour EINMAL pro Account (geraetelokal via Preferences).
@@ -34,30 +35,37 @@ export interface OnboardingWithUpdate {
   // Normale Rollen-Tour (erster Start eines Accounts).
   showOnboarding: boolean;
   closeOnboarding: () => void;
-  // Einmaliger Update-Hinweis, NUR für Bestandsnutzer.
-  showUpdateWalkthrough: boolean;
-  closeUpdateWalkthrough: () => void;
+  // Neuigkeiten-Karte auf der Startseite, NUR für Bestandsnutzer.
+  showUpdateHinweis: boolean;
+  // Markiert den Hinweis dauerhaft als gesehen (X gedrückt ODER Walkthrough
+  // über die Karte geöffnet) und blendet die Karte aus.
+  markUpdateHinweisGesehen: () => void;
 }
 
-// Entscheidet in EINEM Ablauf, ob die normale Onboarding-Tour oder der
-// Update-Walkthrough gezeigt wird — nie beides gleichzeitig:
+// Entscheidet in EINEM Ablauf, ob die normale Onboarding-Tour oder die
+// Neuigkeiten-Karte ("Was ist neu in Version 2.0") gezeigt wird — nie beides:
 //
 // - Onboarding-Flag fehlt  -> frischer Account: volle Tour zeigen und den
-//   Update-Hinweis direkt als gesehen markieren. Neue Nutzer lernen Challenges
-//   ohnehin in der Tour kennen und sollen nicht zusaetzlich "was ist neu" lesen.
-// - Onboarding-Flag gesetzt, Update-Flag fehlt -> Bestandsnutzer: einmalig den
-//   Update-Walkthrough zeigen.
+//   Update-Hinweis direkt als gesehen markieren. Neue Nutzer lernen die
+//   Neuerungen ohnehin in der Tour kennen und brauchen keine Karte.
+// - Onboarding-Flag gesetzt, Update-Flag fehlt -> Bestandsnutzer: die Karte
+//   auf der Startseite zeigen. Das Flag wird dabei NICHT gesetzt — die Karte
+//   bleibt über App-Starts hinweg stehen, bis die Person sie mit dem X
+//   ausblendet oder darüber den "Was ist neu"-Walkthrough öffnet
+//   (markUpdateHinweisGesehen). Erst dann verschwindet sie dauerhaft.
 // - beide gesetzt -> nichts.
 //
-// Mechanik identisch zu useOnboardingOnce (Preferences, Marker beim ERSTEN
-// Anzeigen gesetzt). Beide Flags werden in EINEM Promise.all gelesen, damit
-// sich Lese-/Schreibzugriffe der beiden Entscheidungen nicht ueberholen.
+// Der Walkthrough poppt damit NICHT mehr von selbst auf (Nutzerwunsch
+// 24.08.2026): Bestandsnutzer erreichen ihn über die Karte oder dauerhaft
+// über den "Was ist neu?"-Banner im Profil.
+// Beide Flags werden in EINEM Promise.all gelesen, damit sich Lese-/
+// Schreibzugriffe der beiden Entscheidungen nicht ueberholen.
 export function useOnboardingWithUpdateOnce(
   onboardingKeyPrefix: string,
   userId?: number | string
 ): OnboardingWithUpdate {
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [showUpdateWalkthrough, setShowUpdateWalkthrough] = useState(false);
+  const [showUpdateHinweis, setShowUpdateHinweis] = useState(false);
   const onboardingKey = `${onboardingKeyPrefix}_${userId ?? 'x'}`;
   const updateKey = `${UPDATE_WALKTHROUGH_KEY}_${userId ?? 'x'}`;
 
@@ -74,17 +82,21 @@ export function useOnboardingWithUpdateOnce(
         return;
       }
       if (!update.value) {
-        Preferences.set({ key: updateKey, value: '1' });
-        // Etwas mehr Versatz als bei der Tour, damit die Seite steht.
-        setTimeout(() => setShowUpdateWalkthrough(true), 600);
+        // Karte zeigen, Flag NICHT setzen — erst eine bewusste Aktion
+        // (X oder Öffnen) markiert den Hinweis als gesehen.
+        setShowUpdateHinweis(true);
       }
-    }).catch(() => { /* Preferences nicht verfuegbar -> Touren ueberspringen */ });
+    }).catch(() => { /* Preferences nicht verfuegbar -> Hinweise ueberspringen */ });
   });
 
   return {
     showOnboarding,
     closeOnboarding: () => setShowOnboarding(false),
-    showUpdateWalkthrough,
-    closeUpdateWalkthrough: () => setShowUpdateWalkthrough(false)
+    showUpdateHinweis,
+    markUpdateHinweisGesehen: () => {
+      setShowUpdateHinweis(false);
+      Preferences.set({ key: updateKey, value: '1' })
+        .catch(() => { /* Preferences nicht verfuegbar -> beim naechsten Start erneut */ });
+    }
   };
 }

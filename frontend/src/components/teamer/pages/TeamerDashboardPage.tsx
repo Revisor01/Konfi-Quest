@@ -43,6 +43,7 @@ import KonfispruchSelectModal from '../../konfi/modals/KonfispruchSelectModal';
 import TeamerOnboardingModal from '../modals/TeamerOnboardingModal';
 import TeamerUpdateWalkthroughModal from '../modals/TeamerUpdateWalkthroughModal';
 import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
+import UpdateHinweisKarte from '../../shared/UpdateHinweisKarte';
 import { getIconFromString } from '../../../utils/badgeIcons';
 
 
@@ -237,12 +238,14 @@ const TeamerDashboardPage: React.FC = () => {
   const { user, setError } = useApp();
   const [showLosung] = useState(() => Math.random() > 0.5);
   // Onboarding-Tour einmal pro Teamer-Account (beim ersten Betreten der
-  // Startseite) — bzw. für Bestandsnutzer stattdessen einmalig der
-  // Update-Walkthrough 2.0 (Challenges). Nie beides gleichzeitig.
+  // Startseite) — bzw. für Bestandsnutzer die Neuigkeiten-Karte "Was ist neu
+  // in Version 2.0". Nie beides gleichzeitig; der Walkthrough öffnet sich
+  // über die Karte oder dauerhaft über "Was ist neu?" im Profil.
   const {
     showOnboarding, closeOnboarding,
-    showUpdateWalkthrough, closeUpdateWalkthrough
+    showUpdateHinweis, markUpdateHinweisGesehen
   } = useOnboardingWithUpdateOnce('teamer_onboarding_seen', user?.id);
+  const [showUpdateWalkthrough, setShowUpdateWalkthrough] = useState(false);
 
   // Certificate Popover
   const certPopoverRef = React.useRef<Certificate | null>(null);
@@ -510,6 +513,15 @@ const TeamerDashboardPage: React.FC = () => {
         </IonRefresher>
 
         <TrialBanner style={{ marginTop: '8px' }} />
+
+        {/* Neuigkeiten-Karte: einmalig nach dem Update, X blendet dauerhaft aus */}
+        {showUpdateHinweis && (
+          <UpdateHinweisKarte
+            style={{ margin: '8px 16px 0' }}
+            onOpen={() => { markUpdateHinweisGesehen(); setShowUpdateWalkthrough(true); }}
+            onDismiss={markUpdateHinweisGesehen}
+          />
+        )}
 
         <div style={{ padding: '16px' }}>
           {/* Begruessung */}
@@ -1152,9 +1164,9 @@ const TeamerDashboardPage: React.FC = () => {
         />
       )}
 
-      {/* Update-Walkthrough 2.0 — nur fuer Bestandsnutzer */}
+      {/* "Was ist neu"-Walkthrough — geöffnet über die Neuigkeiten-Karte */}
       {showUpdateWalkthrough && (
-        <TeamerUpdateWalkthroughModal onClose={closeUpdateWalkthrough} />
+        <TeamerUpdateWalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
       )}
     </IonPage>
   );

@@ -59,6 +59,11 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Geändert
 
+- Nach dem Update begrüßt die Startseite mit einer Karte "Was ist neu in
+  Version 2.0?": Antippen öffnet den Überblick über die Neuerungen, das X
+  blendet sie dauerhaft aus. Der Überblick springt nicht mehr von selbst auf
+  und bleibt über "Was ist neu?" im Profil jederzeit erreichbar.
+
 - Umfrage im Chat: Die Einstellungs-Schalter sehen jetzt aus wie beim
   Challenge-Erstellen, und die Erklärungstexte brechen mehrzeilig um, statt
   auf schmalen Bildschirmen abgeschnitten zu werden.
