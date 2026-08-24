@@ -46,6 +46,10 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Geändert
 
+- Das Handbuch steht jetzt Kapitel für Kapitel auf eigenen Seiten statt
+  gesammelt auf einer. Die Kapitel sind nummeriert, sodass man sich darauf
+  beziehen kann ("steht in Kapitel 7"), und unten geht es mit einem Klick zum
+  vorherigen oder nächsten weiter.
 - Material mit Jahrgang sehen nur noch die Teamer:innen dieses Jahrgangs;
   Material ohne Jahrgang weiterhin alle. Die Leitung sieht wie bisher alles.
   Bisher war die Zuordnung nur eine Sortierhilfe, und jede Teamer:in sah jedes

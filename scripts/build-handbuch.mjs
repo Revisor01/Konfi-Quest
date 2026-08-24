@@ -25,9 +25,14 @@ import { fileURLToPath } from 'node:url';
 
 const WURZEL = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const QUELLE = join(WURZEL, 'docs', 'handbuch');
-const ZIEL = process.argv[2]
+// Ein Verzeichnis, nicht eine Datei: Seit dem 24.08.2026 bekommt jedes Kapitel
+// eine eigene Seite. Zwoelf Kapitel in einem Dokument waren fuer Lesende zu
+// viel — man fand nicht wieder, wo man war, und konnte sich auf nichts
+// beziehen. Jetzt: nummerierte Kapitel, eine Seite pro Kapitel, unten
+// vor/zurueck, davor eine Uebersicht (index.html).
+const ZIEL_VERZ = process.argv[2]
   ? resolve(process.argv[2])
-  : join(WURZEL, 'frontend', 'public', 'docs', 'index.html');
+  : join(WURZEL, 'frontend', 'public', 'docs');
 
 
 function e(text) {
@@ -176,54 +181,7 @@ function lesen(datei) {
   };
 }
 
-function main() {
-  const dateien = readdirSync(QUELLE).filter((f) => f.endsWith('.md')).sort();
-  if (!dateien.length) throw new Error('Keine Markdown-Dateien in docs/handbuch/');
-
-  const seiten = dateien.map(lesen);
-  // Datum aus git statt aus der Uhr — sonst erzeugt die CI bei jedem
-  // Tageswechsel eine abweichende Seite und der Frischecheck schlaegt an,
-  // ohne dass sich etwas geaendert hat.
-
-  // Navigation nach Gruppen: Kapitel ohne "gruppe" stehen oben, die
-  // Nachschlage-Kapitel darunter unter ihrer Ueberschrift. Bei elf Kapiteln
-  // waere eine flache Liste unuebersichtlich.
-  const eintrag = (s) =>
-    `<li><a href="#${s.id}"><span class="nav-punkt" style="background:${e(s.farbe)}"></span>${e(s.titel)}</a></li>`;
-
-  const gruppen = [];
-  for (const s of seiten) {
-    let g = gruppen.find((x) => x.name === s.gruppe);
-    if (!g) { g = { name: s.gruppe, seiten: [] }; gruppen.push(g); }
-    g.seiten.push(s);
-  }
-
-  const nav = gruppen.map((g) =>
-    (g.name ? `<p class="nav-gruppe">${e(g.name)}</p>` : '')
-    + `<ul>${g.seiten.map(eintrag).join('')}</ul>`
-  ).join('');
-
-  const abschnitte = seiten.map((s) => `<section id="${s.id}" class="kapitel" style="--kapitel:${e(s.farbe)}">
-      <header class="kapitel-kopf">
-        <h2>${e(s.titel)}</h2>
-        <p class="kapitel-meta">${e(s.untertitel)}</p>
-      </header>
-      ${markdown(s.rumpf)}
-    </section>`).join('\n    ');
-
-  const html = `<!doctype html>
-<html lang="de">
-<head>
-<meta charset="utf-8">
-<title>Konfi Quest — Handbuch</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Handbuch für Konfi Quest: was Konfis, Teamer:innen und die Leitung in der App tun können.">
-<link rel="icon" type="image/png" href="/favicon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Bebas+Neue&family=JetBrains+Mono:wght@400;500&display=swap">
-<style>
-:root { --ground:#fbfaf9; --flaeche:#fff; --flaeche-2:#f4f1f6; --rand:#e7e3e8; --text:#1c1a1f; --text-leise:#6b6470; --akzent:#5b21b6; --akzent-weich:#f3eefc; --code-grund:#f5f2f7; }
+const STIL = `:root { --ground:#fbfaf9; --flaeche:#fff; --flaeche-2:#f4f1f6; --rand:#e7e3e8; --text:#1c1a1f; --text-leise:#6b6470; --akzent:#5b21b6; --akzent-weich:#f3eefc; --code-grund:#f5f2f7; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#161419; --flaeche:#1e1b22; --flaeche-2:#241f2a; --rand:#322c38; --text:#ece9ef; --text-leise:#a49cab; --akzent:#c4a8f5; --akzent-weich:#2a1f3d; --code-grund:#241f2a; } }
 :root[data-theme="dark"] { --ground:#161419; --flaeche:#1e1b22; --flaeche-2:#241f2a; --rand:#322c38; --text:#ece9ef; --text-leise:#a49cab; --akzent:#c4a8f5; --akzent-weich:#2a1f3d; --code-grund:#241f2a; }
 * { box-sizing:border-box; }
@@ -245,9 +203,9 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
 .kopf { margin-bottom:40px; padding-bottom:26px; border-bottom:1px solid var(--rand); }
 .kopf h1 { font-family:'Bebas Neue',Impact,sans-serif; font-weight:400; font-size:3.1rem; line-height:1; letter-spacing:4px; margin:0 0 14px; text-wrap:balance; }
 .kopf p { margin:0; color:var(--text-leise); max-width:64ch; }
-.kapitel { margin-bottom:56px; scroll-margin-top:20px; }
+.kapitel { margin-bottom:40px; }
 .kapitel-kopf { margin-bottom:20px; padding-left:13px; border-left:3px solid var(--kapitel); }
-.kapitel-kopf h2 { font-family:'Bebas Neue',Impact,sans-serif; font-weight:400; font-size:1.9rem; margin:0; letter-spacing:2.5px; }
+.kapitel-kopf h1 { font-family:'Bebas Neue',Impact,sans-serif; font-weight:400; font-size:2.3rem; margin:0; letter-spacing:2.5px; line-height:1.05; display:flex; align-items:baseline; gap:11px; }
 .kapitel-meta { margin:2px 0 0; font-size:.78rem; color:var(--text-leise); }
 .kapitel h3 { font-size:1.06rem; margin:30px 0 10px; letter-spacing:-.01em; }
 .kapitel h4 { font-size:.95rem; margin:22px 0 8px; color:var(--text-leise); }
@@ -284,35 +242,180 @@ tbody tr:last-child td { border-bottom:none; }
   .inhalt { padding:28px 20px 72px; }
   .kopf h1 { font-size:2.4rem; }
 }
+
+/* --- Seit 24.08.2026: eine Seite je Kapitel --- */
+.marke a { color:inherit; text-decoration:none; }
+.marke a:hover { color:var(--akzent); }
+
+/* Nummer in der Navigation: gibt jedem Kapitel eine feste Kennung, auf die
+   man sich beziehen kann ("steht in Kapitel 7"). */
+.nav-nr { flex:none; width:20px; font-size:.74rem; font-variant-numeric:tabular-nums; color:var(--text-leise); text-align:right; }
+.seitenleiste ul a.ist-hier { background:var(--akzent-weich); font-weight:600; }
+.seitenleiste ul a.ist-hier .nav-nr { color:var(--akzent); }
+
+.kapitel-zaehler { font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:0 0 6px; }
+.kapitel-nr { font-size:1.5rem; color:var(--kapitel); }
+
+/* Blaettern unten: die eigentliche Neuerung. Wer ein Kapitel gelesen hat,
+   soll nicht in die Navigation zurueckmuessen. */
+.blaettern { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:44px; padding-top:26px; border-top:1px solid var(--rand); }
+.blatt { display:flex; flex-direction:column; gap:3px; padding:14px 16px; border:1px solid var(--rand); border-radius:11px; background:var(--flaeche); text-decoration:none; color:var(--text); }
+.blatt:hover { border-color:var(--akzent); background:var(--akzent-weich); }
+.blatt:focus-visible { outline:2px solid var(--akzent); outline-offset:2px; }
+.blatt--weiter { text-align:right; }
+.blatt--leer { border:none; background:none; }
+.blatt-hin { font-size:.7rem; text-transform:uppercase; letter-spacing:.09em; color:var(--text-leise); font-weight:700; }
+.blatt-titel { font-weight:600; font-size:.95rem; }
+
+/* Uebersichtsseite */
+.karten { list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+.karte { display:flex; align-items:flex-start; gap:14px; padding:15px 17px; border:1px solid var(--rand); border-left:3px solid var(--kapitel); border-radius:11px; background:var(--flaeche); text-decoration:none; color:var(--text); }
+.karte:hover { border-color:var(--akzent); border-left-color:var(--kapitel); background:var(--akzent-weich); }
+.karte:focus-visible { outline:2px solid var(--akzent); outline-offset:2px; }
+.karte-nr { font-family:'Bebas Neue',Impact,sans-serif; font-size:1.5rem; line-height:1; color:var(--kapitel); min-width:26px; font-variant-numeric:tabular-nums; }
+.karte-text { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.karte-text strong { font-size:1rem; }
+.karte-text span { font-size:.84rem; color:var(--text-leise); }
+
+@media (max-width:860px) {
+  .blaettern { grid-template-columns:1fr; }
+  .blatt--weiter { text-align:left; }
+  .blatt--leer { display:none; }
+  .kapitel-kopf h1 { font-size:1.9rem; }
+}`;
+
+function main() {
+  const dateien = readdirSync(QUELLE).filter((f) => f.endsWith('.md')).sort();
+  if (!dateien.length) throw new Error('Keine Markdown-Dateien in docs/handbuch/');
+
+  // Durchnummerieren in Dateireihenfolge. Die Nummer ist das, worauf sich
+  // Lesende untereinander beziehen ("steht in Kapitel 7") — sie steht deshalb
+  // in der Navigation, in der Ueberschrift und im Seitentitel.
+  const seiten = dateien.map((d, i) => ({ ...lesen(d), nr: i + 1, datei: `${lesen(d).id}.html` }));
+
+  const gruppen = [];
+  for (const s of seiten) {
+    let g = gruppen.find((x) => x.name === s.gruppe);
+    if (!g) { g = { name: s.gruppe, seiten: [] }; gruppen.push(g); }
+    g.seiten.push(s);
+  }
+
+  /** Navigation, in jeder Seite gleich; die aktuelle Seite ist markiert. */
+  const navFuer = (aktuell) => gruppen.map((g) =>
+    (g.name ? `<p class="nav-gruppe">${e(g.name)}</p>` : '')
+    + `<ul>${g.seiten.map((s) => {
+        const hier = aktuell && s.id === aktuell.id;
+        return `<li><a href="./${e(s.datei)}"${hier ? ' aria-current="page" class="ist-hier"' : ''}>`
+          + `<span class="nav-nr">${s.nr}</span>${e(s.titel)}</a></li>`;
+      }).join('')}</ul>`
+  ).join('');
+
+  /** Gemeinsame Huelle. `stand` bleibt bewusst leer (siehe Commit vom 24.08.). */
+  const huelle = ({ titel, beschreibung, aktuell, inhalt }) => `<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>${e(titel)}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="${e(beschreibung)}">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Bebas+Neue&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+${STIL}
 </style>
 </head>
 <body>
 <div class="huelle">
   <nav class="seitenleiste">
-    <p class="marke">Konfi Quest</p>
+    <p class="marke"><a href="./">Konfi Quest</a></p>
     <p class="marke-unter">Handbuch</p>
     <p class="nav-titel">Inhalt</p>
-    ${nav}
+    ${navFuer(aktuell)}
     <div class="fuss">
       <p><a href="/">Zur Startseite</a></p>
     </div>
   </nav>
   <main class="inhalt">
-    <header class="kopf">
-      <h1>Handbuch</h1>
-      <p>Was ihr mit Konfi Quest tun könnt — nach Rollen sortiert. Jede Rolle
-      sieht eine eigene Ansicht, deshalb steht hier für jede ein eigener Teil.</p>
-    </header>
-    ${abschnitte}
+${inhalt}
   </main>
 </div>
 </body>
 </html>
 `;
 
-  mkdirSync(dirname(ZIEL), { recursive: true });
-  writeFileSync(ZIEL, html, 'utf8');
-  console.log(`Handbuch geschrieben: ${ZIEL} (${seiten.length} Kapitel)`);
+  mkdirSync(ZIEL_VERZ, { recursive: true });
+
+  // --- Kapitelseiten ---
+  for (let i = 0; i < seiten.length; i++) {
+    const s = seiten[i];
+    const vor = seiten[i - 1];
+    const zurueck = seiten[i + 1];
+
+    const blaettern = `
+    <nav class="blaettern" aria-label="Weitere Kapitel">
+      ${vor
+        ? `<a class="blatt blatt--vor" href="./${e(vor.datei)}">
+             <span class="blatt-hin">Vorheriges Kapitel</span>
+             <span class="blatt-titel">${vor.nr}. ${e(vor.titel)}</span>
+           </a>`
+        : '<span class="blatt blatt--leer"></span>'}
+      ${zurueck
+        ? `<a class="blatt blatt--weiter" href="./${e(zurueck.datei)}">
+             <span class="blatt-hin">Nächstes Kapitel</span>
+             <span class="blatt-titel">${zurueck.nr}. ${e(zurueck.titel)}</span>
+           </a>`
+        : '<span class="blatt blatt--leer"></span>'}
+    </nav>`;
+
+    const inhalt = `    <article class="kapitel" style="--kapitel:${e(s.farbe)}">
+      <header class="kapitel-kopf">
+        <p class="kapitel-zaehler">Kapitel ${s.nr} von ${seiten.length}</p>
+        <h1><span class="kapitel-nr">${s.nr}</span>${e(s.titel)}</h1>
+        <p class="kapitel-meta">${e(s.untertitel)}</p>
+      </header>
+      ${markdown(s.rumpf)}
+    </article>
+${blaettern}`;
+
+    writeFileSync(join(ZIEL_VERZ, s.datei), huelle({
+      titel: `${s.nr}. ${s.titel} — Konfi Quest Handbuch`,
+      beschreibung: s.untertitel,
+      aktuell: s,
+      inhalt,
+    }), 'utf8');
+  }
+
+  // --- Uebersicht ---
+  const karten = seiten.map((s) => `      <li>
+        <a class="karte" href="./${e(s.datei)}" style="--kapitel:${e(s.farbe)}">
+          <span class="karte-nr">${s.nr}</span>
+          <span class="karte-text">
+            <strong>${e(s.titel)}</strong>
+            <span>${e(s.untertitel)}</span>
+          </span>
+        </a>
+      </li>`).join('\n');
+
+  const uebersicht = `    <header class="kopf">
+      <h1>Handbuch</h1>
+      <p>Was ihr mit Konfi Quest tun könnt — nach Rollen sortiert. Jede Rolle
+      sieht eine eigene Ansicht, deshalb steht hier für jede ein eigener Teil.
+      Die Kapitel sind nummeriert, damit ihr euch darauf beziehen könnt.</p>
+    </header>
+    <ol class="karten">
+${karten}
+    </ol>`;
+
+  writeFileSync(join(ZIEL_VERZ, 'index.html'), huelle({
+    titel: 'Konfi Quest — Handbuch',
+    beschreibung: 'Handbuch für Konfi Quest: was Konfis, Teamer:innen und die Leitung in der App tun können.',
+    aktuell: null,
+    inhalt: uebersicht,
+  }), 'utf8');
+
+  console.log(`Handbuch geschrieben: ${ZIEL_VERZ} (${seiten.length} Kapitel + Übersicht)`);
 }
 
 main();

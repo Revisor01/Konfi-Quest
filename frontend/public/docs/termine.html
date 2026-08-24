@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>9. Termine — Konfi Quest Handbuch</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Anlegen, Anmeldung, Anwesenheit und Punkte">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Bebas+Neue&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root { --ground:#fbfaf9; --flaeche:#fff; --flaeche-2:#f4f1f6; --rand:#e7e3e8; --text:#1c1a1f; --text-leise:#6b6470; --akzent:#5b21b6; --akzent-weich:#f3eefc; --code-grund:#f5f2f7; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#161419; --flaeche:#1e1b22; --flaeche-2:#241f2a; --rand:#322c38; --text:#ece9ef; --text-leise:#a49cab; --akzent:#c4a8f5; --akzent-weich:#2a1f3d; --code-grund:#241f2a; } }
+:root[data-theme="dark"] { --ground:#161419; --flaeche:#1e1b22; --flaeche-2:#241f2a; --rand:#322c38; --text:#ece9ef; --text-leise:#a49cab; --akzent:#c4a8f5; --akzent-weich:#2a1f3d; --code-grund:#241f2a; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif; font-size:15px; line-height:1.65; -webkit-font-smoothing:antialiased; }
+.huelle { display:grid; grid-template-columns:264px minmax(0,1fr); max-width:1180px; margin:0 auto; }
+.seitenleiste { position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto; padding:32px 24px 40px; border-right:1px solid var(--rand); }
+.marke { font-family:'Bebas Neue',Impact,sans-serif; font-size:1.5rem; letter-spacing:3px; margin:0 0 2px; }
+.marke-unter { font-size:.78rem; color:var(--text-leise); margin:0 0 28px; }
+.nav-titel { font-size:.68rem; text-transform:uppercase; letter-spacing:.09em; color:var(--text-leise); margin:0 0 10px; font-weight:600; }
+.seitenleiste ul { list-style:none; margin:0 0 26px; padding:0; display:flex; flex-direction:column; gap:2px; }
+.seitenleiste ul a { display:flex; align-items:center; gap:9px; padding:7px 9px; border-radius:7px; text-decoration:none; color:var(--text); font-size:.87rem; }
+.seitenleiste ul a:hover { background:var(--akzent-weich); }
+.seitenleiste ul a:focus-visible { outline:2px solid var(--akzent); outline-offset:1px; }
+.nav-punkt { width:8px; height:8px; border-radius:50%; flex:none; }
+.nav-gruppe { font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:18px 0 6px; padding-left:9px; }
+.seitenleiste .fuss { border-top:1px solid var(--rand); padding-top:18px; font-size:.75rem; color:var(--text-leise); }
+.seitenleiste .fuss a { color:var(--akzent); }
+.inhalt { padding:40px 44px 96px; min-width:0; }
+.kopf { margin-bottom:40px; padding-bottom:26px; border-bottom:1px solid var(--rand); }
+.kopf h1 { font-family:'Bebas Neue',Impact,sans-serif; font-weight:400; font-size:3.1rem; line-height:1; letter-spacing:4px; margin:0 0 14px; text-wrap:balance; }
+.kopf p { margin:0; color:var(--text-leise); max-width:64ch; }
+.kapitel { margin-bottom:40px; }
+.kapitel-kopf { margin-bottom:20px; padding-left:13px; border-left:3px solid var(--kapitel); }
+.kapitel-kopf h1 { font-family:'Bebas Neue',Impact,sans-serif; font-weight:400; font-size:2.3rem; margin:0; letter-spacing:2.5px; line-height:1.05; display:flex; align-items:baseline; gap:11px; }
+.kapitel-meta { margin:2px 0 0; font-size:.78rem; color:var(--text-leise); }
+.kapitel h3 { font-size:1.06rem; margin:30px 0 10px; letter-spacing:-.01em; }
+.kapitel h4 { font-size:.95rem; margin:22px 0 8px; color:var(--text-leise); }
+.kapitel p { margin:0 0 13px; max-width:66ch; }
+.kapitel ul { margin:0 0 15px; padding-left:20px; max-width:66ch; display:flex; flex-direction:column; gap:6px; }
+.kapitel li { margin:0; }
+blockquote { margin:0 0 15px; padding:13px 17px; background:var(--flaeche); border:1px solid var(--rand); border-left:3px solid var(--kapitel); border-radius:8px; color:var(--text-leise); font-size:.92rem; max-width:66ch; }
+code { font-family:'JetBrains Mono',monospace; font-size:.85em; background:var(--code-grund); padding:1px 5px; border-radius:4px; }
+pre { background:var(--flaeche); border:1px solid var(--rand); border-radius:10px; padding:14px 16px; overflow-x:auto; margin:0 0 16px; max-width:66ch; }
+pre code { background:none; padding:0; font-size:.82rem; line-height:1.6; white-space:pre; }
+.tabelle-huelle { overflow-x:auto; border:1px solid var(--rand); border-radius:10px; background:var(--flaeche); margin:0 0 18px; }
+table { border-collapse:collapse; width:100%; font-size:.88rem; }
+th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand); vertical-align:top; }
+thead th { background:var(--flaeche-2); font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-leise); white-space:nowrap; }
+tbody tr:last-child td { border-bottom:none; }
+@media (max-width:860px) {
+  /* Auf dem Handy nahm das Inhaltsverzeichnis untereinander fast den ganzen
+     ersten Bildschirm ein — man musste scrollen, bevor Inhalt kam. Die Punkte
+     stehen deshalb nebeneinander und umbrechen bei Bedarf. Bewusst kein
+     Ausklapp-Element: <details> ohne open-Attribut versteckt den Inhalt auch
+     auf dem Desktop, und das per CSS zurueckzuholen ist unzuverlaessig. */
+  .huelle { grid-template-columns:1fr; }
+  .seitenleiste { position:static; height:auto; border-right:none; border-bottom:1px solid var(--rand); padding:20px 20px 14px; }
+  .marke-unter { margin-bottom:14px; }
+  .nav-titel { margin-bottom:7px; }
+  /* Gruppen-Ueberschriften kosten mobil zu viel Hoehe — die Chips stehen
+     ohnehin in derselben Reihenfolge beieinander. */
+  .nav-gruppe { display:none; }
+  .seitenleiste ul + ul { margin-top:0; }
+  .seitenleiste ul { flex-direction:row; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+  .seitenleiste ul a { padding:5px 10px; border:1px solid var(--rand); border-radius:999px; font-size:.82rem; }
+  .seitenleiste .fuss { border-top:none; padding-top:0; display:flex; gap:16px; }
+  .seitenleiste .fuss p { margin:0; }
+  .inhalt { padding:28px 20px 72px; }
+  .kopf h1 { font-size:2.4rem; }
+}
+
+/* --- Seit 24.08.2026: eine Seite je Kapitel --- */
+.marke a { color:inherit; text-decoration:none; }
+.marke a:hover { color:var(--akzent); }
+
+/* Nummer in der Navigation: gibt jedem Kapitel eine feste Kennung, auf die
+   man sich beziehen kann ("steht in Kapitel 7"). */
+.nav-nr { flex:none; width:20px; font-size:.74rem; font-variant-numeric:tabular-nums; color:var(--text-leise); text-align:right; }
+.seitenleiste ul a.ist-hier { background:var(--akzent-weich); font-weight:600; }
+.seitenleiste ul a.ist-hier .nav-nr { color:var(--akzent); }
+
+.kapitel-zaehler { font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:0 0 6px; }
+.kapitel-nr { font-size:1.5rem; color:var(--kapitel); }
+
+/* Blaettern unten: die eigentliche Neuerung. Wer ein Kapitel gelesen hat,
+   soll nicht in die Navigation zurueckmuessen. */
+.blaettern { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:44px; padding-top:26px; border-top:1px solid var(--rand); }
+.blatt { display:flex; flex-direction:column; gap:3px; padding:14px 16px; border:1px solid var(--rand); border-radius:11px; background:var(--flaeche); text-decoration:none; color:var(--text); }
+.blatt:hover { border-color:var(--akzent); background:var(--akzent-weich); }
+.blatt:focus-visible { outline:2px solid var(--akzent); outline-offset:2px; }
+.blatt--weiter { text-align:right; }
+.blatt--leer { border:none; background:none; }
+.blatt-hin { font-size:.7rem; text-transform:uppercase; letter-spacing:.09em; color:var(--text-leise); font-weight:700; }
+.blatt-titel { font-weight:600; font-size:.95rem; }
+
+/* Uebersichtsseite */
+.karten { list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+.karte { display:flex; align-items:flex-start; gap:14px; padding:15px 17px; border:1px solid var(--rand); border-left:3px solid var(--kapitel); border-radius:11px; background:var(--flaeche); text-decoration:none; color:var(--text); }
+.karte:hover { border-color:var(--akzent); border-left-color:var(--kapitel); background:var(--akzent-weich); }
+.karte:focus-visible { outline:2px solid var(--akzent); outline-offset:2px; }
+.karte-nr { font-family:'Bebas Neue',Impact,sans-serif; font-size:1.5rem; line-height:1; color:var(--kapitel); min-width:26px; font-variant-numeric:tabular-nums; }
+.karte-text { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.karte-text strong { font-size:1rem; }
+.karte-text span { font-size:.84rem; color:var(--text-leise); }
+
+@media (max-width:860px) {
+  .blaettern { grid-template-columns:1fr; }
+  .blatt--weiter { text-align:left; }
+  .blatt--leer { display:none; }
+  .kapitel-kopf h1 { font-size:1.9rem; }
+}
+</style>
+</head>
+<body>
+<div class="huelle">
+  <nav class="seitenleiste">
+    <p class="marke"><a href="./">Konfi Quest</a></p>
+    <p class="marke-unter">Handbuch</p>
+    <p class="nav-titel">Inhalt</p>
+    <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./konfis.html"><span class="nav-nr">2</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">3</span>Für Teamer:innen</a></li><li><a href="./leitung.html"><span class="nav-nr">4</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html"><span class="nav-nr">5</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html"><span class="nav-nr">6</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html"><span class="nav-nr">7</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">8</span>Abzeichen</a></li><li><a href="./termine.html" aria-current="page" class="ist-hier"><span class="nav-nr">9</span>Termine</a></li><li><a href="./challenges.html"><span class="nav-nr">10</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">11</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">12</span>Jahresrückblick (Wrapped)</a></li></ul>
+    <div class="fuss">
+      <p><a href="/">Zur Startseite</a></p>
+    </div>
+  </nav>
+  <main class="inhalt">
+    <article class="kapitel" style="--kapitel:#dc2626">
+      <header class="kapitel-kopf">
+        <p class="kapitel-zaehler">Kapitel 9 von 12</p>
+        <h1><span class="kapitel-nr">9</span>Termine</h1>
+        <p class="kapitel-meta">Anlegen, Anmeldung, Anwesenheit und Punkte</p>
+      </header>
+      <p>Termine (im System „Events&quot;) sind alles, wozu man kommen kann: Gottesdienste, Ausflüge, Konfi-Tage, die Konfirmation selbst. Ein Termin regelt <strong>wer sich anmelden darf</strong>, <strong>wie viele mitkommen können</strong>, <strong>ob es Punkte gibt</strong> und <strong>wie du hinterher die Anwesenheit verbuchst</strong>.</p>
+      <p>Dieses Kapitel geht das Anlege-Formular Abschnitt für Abschnitt durch. Fast jede Einstellung schaltet andere Einstellungen ab — deshalb lohnt es sich, die Reihenfolge einzuhalten: <strong>erst die Zielgruppe, dann alles andere.</strong></p>
+      <h2>Der schnellste Weg zum ersten Termin</h2>
+      <p>1. Name und Datum eintragen 2. „Für wen ist das Event?&quot; auf <strong>Nur Konfis</strong> lassen 3. Plätze festlegen (oder „Unbegrenzte Teilnehmer:innen&quot; einschalten) 4. Punkte festlegen 5. Speichern</p>
+      <p>Alles andere — Warteliste, Zeitfenster, Serie, QR-Check-in — ist optional und hat sinnvolle Voreinstellungen.</p>
+      <p>---</p>
+      <h2>Zielgruppe: „Für wen ist das Event?&quot;</h2>
+      <p><strong>Diese Auswahl steht ganz oben und entscheidet über alles Weitere.</strong> Sie legt fest, welche Abschnitte im Formular überhaupt erscheinen.</p>
+      <div class="tabelle-huelle"><table><thead><tr><th></th><th>Nur Konfis</th><th>Konfis, Teamer:innen gesucht</th><th>Nur Teamer:innen</th></tr></thead><tbody><tr><td>Konfis sehen den Termin</td><td>ja</td><td>ja</td><td><strong>nein</strong></td></tr><tr><td>Konfis können sich anmelden</td><td>ja</td><td>ja</td><td>nein</td></tr><tr><td>Teamer:innen können sich anmelden</td><td><strong>nein</strong></td><td>ja</td><td>ja</td></tr><tr><td>Abschnitt „Konfis&quot; (Plätze, Punkte)</td><td>ja</td><td>ja</td><td><strong>weg</strong></td></tr><tr><td>Abschnitt „Teamer:innen&quot; (Kontingent)</td><td><strong>weg</strong></td><td>ja</td><td>ja</td></tr><tr><td>Pflicht-Event möglich</td><td>ja</td><td>ja</td><td><strong>weg</strong></td></tr><tr><td>Konfirmation möglich</td><td>ja</td><td>ja</td><td><strong>weg</strong></td></tr><tr><td>Anmeldezeitraum möglich</td><td>ja</td><td>ja</td><td><strong>weg</strong></td></tr><tr><td>Zeitfenster möglich</td><td>ja</td><td>ja</td><td><strong>weg</strong></td></tr></tbody></table></div>
+      <h3>Nur Konfis</h3>
+      <p>Der Normalfall. Teamer:innen können sich hier <strong>nicht</strong> anmelden — auch nicht über einen Umweg; der Server lehnt es ab („Dieses Event ist nicht für Teamer:innen buchbar&quot;). Sie sehen den Termin nur, wenn er einem Jahrgang zugeordnet ist, den sie betreuen, oder wenn er gar keinem Jahrgang zugeordnet ist.</p>
+      <h3>Konfis, Teamer:innen gesucht</h3>
+      <p>Beide Gruppen können mitmachen — mit <strong>zwei völlig getrennten Kontingenten</strong>. Zehn Konfi-Plätze und drei Teamer-Plätze sind zehn und drei, nicht dreizehn. Ein freigewordener Konfi-Platz geht nie an eine wartende Teamer:in und umgekehrt.</p>
+      <p>Der Termin ist für <strong>alle</strong> Teamer:innen sichtbar, unabhängig davon, welche Jahrgänge sie betreuen.</p>
+      <h3>Nur Teamer:innen</h3>
+      <p>Zum Beispiel eine Teamer-Schulung oder Vorbereitungsrunde. Konfis sehen den Termin gar nicht — er wird aus ihrer Liste herausgefiltert.</p>
+      <p>Umschalten auf „Nur Teamer:innen&quot; setzt sofort <strong>Pflicht-Event aus, Konfirmation aus und Zeitfenster aus</strong> — alle drei sind Konfi-Angelegenheiten. Beim Speichern werden zusätzlich Punkte, Konfi-Plätze, Jahrgänge und das Anmeldefenster auf null gesetzt.</p>
+      <blockquote><strong>Achtung:</strong> „Konfis, Teamer:innen gesucht&quot; und „Nur Teamer:innen&quot; schließen sich gegenseitig aus — das erzwingt auch die Datenbank. Es gibt kein „irgendwie beides&quot;.</blockquote>
+      <p>---</p>
+      <h2>Pflicht-Event</h2>
+      <p>Ein Pflicht-Event ist ein Termin, zu dem <strong>der ganze Jahrgang automatisch angemeldet ist</strong>. Niemand muss sich anmelden, weil alle schon drin sind.</p>
+      <h3>Was „automatisch angemeldet&quot; konkret heißt</h3>
+      <p>In dem Moment, in dem du speicherst, legt das System für <strong>jeden Konfi der ausgewählten Jahrgänge</strong> eine bestätigte Anmeldung an. Alle bekommen einen Push: „Neues Pflicht-Event&quot;.</p>
+      <p>Deshalb gilt: <strong>Pflicht-Events brauchen mindestens einen Jahrgang.</strong> Ohne Jahrgang wüsste das System nicht, wen es anmelden soll — das Formular verweigert das Speichern mit „Pflicht-Events brauchen mindestens einen Jahrgang&quot;.</p>
+      <h3>Welche Optionen dadurch wegfallen</h3>
+      <p>Sobald du „Pflicht-Event&quot; einschaltest, sind folgende Einstellungen wirkungslos — das System setzt sie beim Speichern hart auf null, egal was im Formular stand:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th>Einstellung</th><th>Was passiert</th></tr></thead><tbody><tr><td><strong>Punkte</strong></td><td>werden auf 0 gesetzt</td></tr><tr><td><strong>Max. Teilnehmer:innen</strong></td><td>auf 0 (= keine Begrenzung)</td></tr><tr><td><strong>Warteliste</strong></td><td>ausgeschaltet</td></tr><tr><td><strong>Zeitfenster</strong></td><td>ausgeschaltet, das Formular blendet den Abschnitt aus</td></tr><tr><td><strong>Anmeldung ab / Anmeldeschluss</strong></td><td>entfallen, der Abschnitt verschwindet</td></tr></tbody></table></div>
+      <p>Der Grund ist bei allen derselbe: Wenn ohnehin der ganze Jahrgang angemeldet ist, gibt es nichts zu begrenzen, keine Reihenfolge zu verwalten und keinen Anmeldezeitraum zu öffnen.</p>
+      <blockquote><strong>Warum keine Punkte?</strong> Für etwas, wozu man verpflichtet ist, gibt es keine Belohnung. Das ist eine bewusste Entscheidung und lässt sich nicht umstellen. Die Anwesenheit wird trotzdem erfasst — sie zählt für das Abzeichen „Pflicht-Anwesenheit&quot; (siehe Kapitel Abzeichen).</blockquote>
+      <h3>Abmelden mit Begründung</h3>
+      <p>Konfis können sich von einem Pflicht-Event abmelden — aber nur <strong>mit Begründung</strong>, und die muss <strong>mindestens 5 Zeichen</strong> lang sein. Ein leeres Feld oder ein „ok&quot; wird abgelehnt.</p>
+      <p><em>Beispiel:</em> „Bin krank&quot; oder „Familienfeier, war lange geplant&quot;.</p>
+      <p>Was dann passiert:</p>
+      <p>1. Die Anmeldung wechselt von „angemeldet&quot; auf „abgemeldet&quot; 2. Die Leitung bekommt einen Push mit Namen, Termin und Begründung 3. Beim Konfi steht „Du hast dich abgemeldet&quot;</p>
+      <p>Abmelden geht <strong>nur, solange der Termin in der Zukunft liegt</strong>. Ist er vorbei, lehnt das System es ab.</p>
+      <h3>Wieder rein kommen</h3>
+      <p>Ein Knopf: <strong>„Wieder anmelden&quot;.</strong> Die Anmeldung wechselt zurück auf „angemeldet&quot;, die Leitung bekommt wieder einen Push. Auch das geht nur, solange der Termin noch nicht vorbei ist.</p>
+      <p>Die ursprüngliche Begründung bleibt gespeichert — sie verschwindet nicht, wenn jemand sich wieder anmeldet.</p>
+      <blockquote><strong>Achtung:</strong> Wer sich abgemeldet hat, kann sich <strong>nicht per QR-Code einchecken</strong>. Der Scanner meldet „Du hast dich von diesem Event abgemeldet&quot;. Wer doch spontan kommt, muss sich vorher in der App wieder anmelden oder von dir von Hand als anwesend verbucht werden.</blockquote>
+      <h3>Nachträglich zum Pflicht-Event machen</h3>
+      <p>Machst du einen bestehenden Termin nachträglich zum Pflicht-Event, wird der ganze Jahrgang <strong>jetzt</strong> angemeldet. Wer sich vorher schon angemeldet hatte, bleibt einfach angemeldet — es entstehen keine Doppelanmeldungen.</p>
+      <p>Vorhandene Zeitfenster werden entfernt, sofern keine Anmeldung daran hängt. Hängen Anmeldungen daran, bleiben die Zeitfenster in der Datenbank stehen, werden aber nicht mehr angezeigt.</p>
+      <p>---</p>
+      <h2>Konfirmation</h2>
+      <p>Das Häkchen „Konfirmation&quot; markiert einen Termin als Konfirmationstermin. Es tut <strong>etwas ganz anderes</strong> als „Pflicht-Event&quot;:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th></th><th>Pflicht-Event</th><th>Konfirmation</th></tr></thead><tbody><tr><td>Alle automatisch angemeldet</td><td><strong>ja</strong></td><td>nein — jede:r meldet sich selbst an</td></tr><tr><td>Jahrgang zwingend nötig</td><td>ja</td><td>nein</td></tr><tr><td>Punkte</td><td>0 (erzwungen)</td><td>0 (erzwungen)</td></tr><tr><td>Zeitfenster möglich</td><td>nein</td><td>nein</td></tr><tr><td>Plätze begrenzbar</td><td>nein</td><td><strong>ja</strong></td></tr><tr><td>Warteliste möglich</td><td>nein</td><td><strong>ja</strong></td></tr><tr><td>Anmeldezeitraum</td><td>entfällt</td><td><strong>möglich</strong></td></tr><tr><td>Abmelden</td><td>nur mit Begründung</td><td>ganz normal</td></tr></tbody></table></div>
+      <p>Die eigentliche Wirkung: <strong>Ein Konfi kann sich nur zu genau einem Konfirmationstermin anmelden.</strong> Versucht jemand, einen zweiten zu buchen, lehnt das System es ab:</p>
+      <blockquote>„Du bist bereits zu einem Konfirmationstermin angemeldet (…). Melde dich dort zuerst ab, um einen anderen Termin zu wählen.&quot;</blockquote>
+      <p>In der App sind die anderen Konfirmationstermine dann ausgegraut.</p>
+      <p><em>Typischer Einsatz:</em> Drei Konfirmationsgottesdienste an zwei Wochenenden, je 15 Plätze. Die Konfis verteilen sich selbst, und niemand landet versehentlich in zweien.</p>
+      <blockquote><strong>Achtung:</strong> Abgesagte Konfirmationstermine zählen nicht mit. Wer zu einem abgesagten Termin angemeldet ist, kann sich ohne Weiteres einen neuen aussuchen.</blockquote>
+      <p>---</p>
+      <h2>Anmeldezeitraum</h2>
+      <p>Der Anmeldezeitraum besteht aus zwei Zeitpunkten: <strong>Anmeldung ab</strong> und <strong>Anmeldeschluss</strong>.</p>
+      <blockquote><strong>Das Wichtigste zuerst:</strong> Das Anmeldefenster gilt <strong>ausschließlich für Konfis</strong>. Teamer:innen können sich jederzeit anmelden — vor Öffnung, nach Schluss, egal. Sie begrenzt allein ihr Kontingent. Deshalb blendet das Formular den Abschnitt bei „Nur Teamer:innen&quot; komplett aus: Die Felder wären dort wirkungslos.</blockquote>
+      <h3>„Anmeldung ab sofort&quot;</h3>
+      <p>Der Schalter steht standardmäßig <strong>an</strong>. Das heißt: Es gibt keinen Startzeitpunkt — sobald der Termin gespeichert ist, kann man sich anmelden. Das ist der Normalfall.</p>
+      <p>Schaltest du ihn aus, erscheint ein Datumsfeld, vorbelegt mit „jetzt&quot;. Setz es auf den gewünschten Zeitpunkt.</p>
+      <p><em>Beispiel:</em> Anmeldung ab 1. September, 18 Uhr → vorher sehen die Konfis den Termin zwar, bekommen aber „Anmeldung noch nicht geöffnet&quot; beim Versuch. In der Liste steht der Termin auf „Bald&quot;.</p>
+      <h3>Anmeldeschluss</h3>
+      <p>Ist beim Anlegen automatisch auf <strong>eine Stunde vor Terminbeginn</strong> vorbelegt. Nach diesem Zeitpunkt gibt es „Anmeldung bereits geschlossen&quot;; in der Liste steht „Geschlossen&quot;.</p>
+      <h3>Voreinstellungen beim Anlegen im Überblick</h3>
+      <div class="tabelle-huelle"><table><thead><tr><th>Feld</th><th>Voreinstellung</th></tr></thead><tbody><tr><td>Termin-Beginn</td><td>die nächste volle Stunde</td></tr><tr><td>Endzeit</td><td>zwei Stunden nach Beginn</td></tr><tr><td>Anmeldung ab</td><td>sofort (kein Startzeitpunkt)</td></tr><tr><td>Anmeldeschluss</td><td>eine Stunde vor Beginn</td></tr><tr><td>Max. Teilnehmer:innen</td><td>5</td></tr><tr><td>Punkte</td><td>1, Typ Gemeinde</td></tr><tr><td>Warteliste</td><td>an, 3 Plätze</td></tr><tr><td>Check-in-Fenster</td><td>30 Minuten</td></tr></tbody></table></div>
+      <h3>Der „Anmeldung möglich&quot;-Push</h3>
+      <p>Sobald ein freiwilliger Termin anmeldbar wird, geht <strong>genau ein</strong> Push an die Konfis. Er wird nicht beim Speichern verschickt, sondern von einem Hintergrundlauf, der jede Minute prüft — so kann er nicht doppelt kommen.</p>
+      <p>Schließt du die Anmeldung wieder (Fenster in die Zukunft verschoben, Termin abgesagt), wird die Merkung zurückgesetzt: Beim nächsten Öffnen kommt wieder ein Push.</p>
+      <p>Pflicht-Events haben ihren eigenen Push beim Anlegen und sind hiervon ausgenommen.</p>
+      <p>---</p>
+      <h2>Plätze und Warteliste</h2>
+      <p>Konfis und Teamer:innen haben <strong>je ein eigenes Kontingent</strong> mit <strong>je eigener Warteliste</strong>. Beide Abschnitte sind gleich aufgebaut.</p>
+      <h3>„Unbegrenzte Teilnehmer:innen&quot; und die Null</h3>
+      <p>Die Zahl <strong>0 bedeutet überall im System: unbegrenzt.</strong> Der Schalter „Unbegrenzte Teilnehmer:innen&quot; setzt genau das.</p>
+      <p>Ist er an, verschwindet der Warteliste-Schalter — bei unbegrenzten Plätzen gibt es nichts zu warten, jede Anmeldung wird sofort bestätigt.</p>
+      <h3>Warteliste</h3>
+      <p>Ist die Warteliste an und alle Plätze belegt, landet die nächste Anmeldung auf der Warteliste statt abgewiesen zu werden. Die Person sieht: „Du bist auf der Warteliste. Wird ein Platz frei, rückst du automatisch nach.&quot;</p>
+      <p><strong>Max. Wartelisten-Plätze</strong> begrenzt auch die Warteliste. Ist sie voll, kommt „Event ist voll und Warteliste ist auch voll&quot;. Ist die Warteliste ganz aus, kommt stattdessen „Das Event ist leider bereits ausgebucht&quot;.</p>
+      <h3>Wann wird nachgerückt?</h3>
+      <p>Das passiert <strong>automatisch, ohne dein Zutun</strong>, in vier Fällen:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th>Auslöser</th><th>Was passiert</th></tr></thead><tbody><tr><td>Jemand meldet sich ab</td><td>die erste wartende Person rückt nach</td></tr><tr><td>Du erhöhst die Teilnehmerzahl</td><td>so viele rücken nach, wie neue Plätze da sind</td></tr><tr><td>Du erhöhst die Plätze eines Zeitfensters</td><td>dasselbe, aber nur in diesem Zeitfenster</td></tr><tr><td>Du erhöhst das Teamer-Kontingent</td><td>die wartenden Teamer:innen rücken nach</td></tr></tbody></table></div>
+      <p>Nachgerückt wird immer <strong>in der Reihenfolge der Anmeldung</strong> (wer zuerst kam, rückt zuerst nach). Die nachgerückte Person bekommt einen Push.</p>
+      <blockquote><strong>Die wichtigste Regel:</strong> Ein frei gewordener <strong>Konfi-Platz geht niemals an eine wartende Teamer:in</strong> — und umgekehrt. Die beiden Wartelisten werden strikt getrennt geführt.</blockquote>
+      <p>Gelöschte Nutzer:innen rücken nie nach.</p>
+      <h3>Wenn du die Plätze reduzierst</h3>
+      <p><strong>Niemand wird zurückgestuft.</strong> Wer schon bestätigt ist, bleibt bestätigt — auch wenn dadurch mehr Leute drin sind, als die neue Zahl erlaubt. Das gilt für Konfis und Teamer:innen gleichermaßen.</p>
+      <p><em>Beispiel:</em> 20 Plätze, 20 Anmeldungen, du reduzierst auf 15 → alle 20 bleiben drin. Erst wenn sich fünf abmelden, greift die neue Grenze.</p>
+      <h3>Teamer-Kontingent</h3>
+      <p>Der Abschnitt „Teamer:innen&quot; erscheint nur bei „Konfis, Teamer:innen gesucht&quot; und „Nur Teamer:innen&quot;. Er hat dieselben drei Einstellungen: unbegrenzt / Zahl, Warteliste an-aus, Wartelisten-Plätze.</p>
+      <p>Meldet sich eine Teamer:in an oder ab, bekommt die Leitung einen Push. Bei Konfi-Anmeldungen ist das nicht so — sonst wäre die Leitung mit Meldungen zugeschüttet.</p>
+      <p>---</p>
+      <h2>Zeitfenster (Timeslots)</h2>
+      <p>Zeitfenster sind für Termine, bei denen die Leute <strong>nacheinander in kleinen Gruppen</strong> kommen: Vorstellungsgespräche, Fototermine, Beichtgespräche.</p>
+      <h3>Wie das aussieht</h3>
+      <p>Du legst mehrere Fenster an, jedes mit eigener Uhrzeit und <strong>eigener Platzzahl</strong>:</p>
+      <pre><code>Fototermin
+  ├─ 14:00 – 14:30   4 Plätze
+  ├─ 14:30 – 15:00   4 Plätze
+  └─ 15:00 – 15:30   4 Plätze</code></pre>
+      <p>Ein neues Fenster schließt zeitlich ans letzte an und übernimmt dessen Platzzahl — du musst also nur die erste Zeile einstellen und dann auf „Zeitfenster hinzufügen&quot; tippen.</p>
+      <h3>Wie das Buchen läuft</h3>
+      <p>Der Konfi <strong>muss</strong> ein Fenster auswählen; ohne kommt „Bitte einen Zeitslot auswählen&quot;. Beim Buchen zählt <strong>die Kapazität des einzelnen Fensters</strong>, nicht die Gesamtzahl.</p>
+      <p>Ist ein Fenster voll und die Warteliste an, steht in der Auswahlliste zum Beispiel: „14:00 - 14:30 (voll — auf Warteliste, 2 warten)&quot;. Man kann sich also gezielt auf die Warteliste <strong>dieses einen Fensters</strong> setzen. Wird dort ein Platz frei, rückt genau von dieser Warteliste jemand nach — nicht von einer anderen.</p>
+      <p>Ist das Fenster voll und die Warteliste aus, kommt „Dieser Zeitslot ist ausgebucht und hat keine Warteliste.&quot;</p>
+      <p>Die in der Übersicht angezeigte Gesamt-Teilnehmerzahl ist bei Zeitfenster-Terminen die <strong>Summe aller Fensterplätze</strong>.</p>
+      <h3>Was beim Bearbeiten passiert</h3>
+      <p>Beim Speichern werden vorhandene Fenster <strong>aktualisiert</strong>, nicht neu angelegt — bestehende Anmeldungen bleiben also an ihrem Fenster hängen.</p>
+      <p>Entfernst du ein Fenster:</p>
+      <ul><li><strong>ohne Anmeldungen</strong> → es wird gelöscht</li><li><strong>mit Anmeldungen</strong> → es bleibt bestehen, verschwindet aber aus der Anzeige</li></ul>
+      <blockquote><strong>Achtung:</strong> Ein Zeitfenster mit Anmeldungen lässt sich nicht wirklich loswerden. Willst du es weg haben, melde erst die Leute ab oder verschiebe sie in ein anderes Fenster.</blockquote>
+      <p>Schaltest du Zeitfenster ganz aus, werden alle Fenster gelöscht — <strong>außer</strong>, es hängt mindestens eine Anmeldung dran. Dann bleiben sie alle stehen.</p>
+      <h3>Warum es bei Pflicht und Konfirmation nicht geht</h3>
+      <p>Das Formular blendet den Abschnitt aus, sobald „Pflicht-Event&quot; oder „Konfirmation&quot; gesetzt ist, und der Server erzwingt es zusätzlich.</p>
+      <p>Der Grund ist inhaltlich: Ein Pflicht-Event gilt für den ganzen Jahrgang zur selben Zeit, eine Konfirmation hat einen festen Termin. In beiden Fällen gibt es nichts zu verteilen.</p>
+      <p>Auch bei „Nur Teamer:innen&quot; gibt es keine Zeitfenster: Teamer-Anmeldungen hängen grundsätzlich an keinem Zeitfenster.</p>
+      <p>---</p>
+      <h2>Punkte</h2>
+      <h3>Wann es Punkte gibt</h3>
+      <p>Punkte werden vergeben, wenn <strong>alle fünf</strong> Bedingungen erfüllt sind:</p>
+      <p>1. Die Person ist als <strong>anwesend</strong> verbucht (per QR-Check-in oder von Hand) 2. Der Termin hat eine <strong>Punktzahl größer 0</strong> 3. Es ist <strong>kein Pflicht-Event</strong> (dort sind die Punkte auf 0 erzwungen) 4. Die Person ist ein <strong>Konfi</strong> — Teamer:innen bekommen für Termine keine Punkte 5. Der gewählte <strong>Punkt-Typ ist im Jahrgang eingeschaltet</strong> (Gottesdienst oder Gemeinde)</p>
+      <p>Fehlt eine davon, wird die Anwesenheit trotzdem gesetzt — nur eben ohne Punkte.</p>
+      <p>Pro Person und Termin gibt es die Punkte <strong>genau einmal</strong>. Doppelt einchecken oder zweimal verbuchen ändert nichts.</p>
+      <p>Nach der Punktevergabe wird geprüft, ob neue Abzeichen fällig sind, und ob jemand ein Level aufgestiegen ist. Beides läuft automatisch.</p>
+      <h3>Punkt-Typ</h3>
+      <p>Jeder Termin gibt entweder <strong>Gottesdienst-</strong> oder <strong>Gemeindepunkte</strong>; Voreinstellung ist Gemeinde. Ist der gewählte Typ im Jahrgang des Konfis abgeschaltet, gibt es keine Punkte.</p>
+      <blockquote><strong>Unterschied, den du kennen solltest:</strong> Verbuchst du eine Person <strong>einzeln</strong> und der Punkt-Typ ist in ihrem Jahrgang abgeschaltet, bricht der Vorgang mit einer Fehlermeldung ab. Beim Sammel-Verbuchen („Alle bestätigen&quot;) wird die Person dagegen als anwesend verbucht und einfach übersprungen — sonst würde ein einziger Sonderfall die ganze Liste blockieren.</blockquote>
+      <h3>Wann Punkte zurückgenommen werden</h3>
+      <p>In zwei Fällen — jeweils vollständig, inklusive Abzug vom Punktestand:</p>
+      <ul><li>Du stellst die Anwesenheit von <strong>anwesend auf fehlend</strong></li><li>Die Person <strong>meldet sich ab</strong>, obwohl sie schon als anwesend verbucht war</li></ul>
+      <p>Der Punktestand fällt dabei nie unter null.</p>
+      <blockquote><strong>Achtung:</strong> Ein Abzeichen, das durch diese Punkte ausgelöst wurde, <strong>bleibt bestehen.</strong> Abzeichen werden nie aberkannt (siehe Kapitel Abzeichen).</blockquote>
+      <p>---</p>
+      <h2>Anwesenheit</h2>
+      <p>Nach dem Termin trägst du ein, wer da war. Es gibt drei Wege.</p>
+      <h3>Einzeln</h3>
+      <p>In der Teilnehmerliste über den jeweiligen Eintrag wischen und <strong>Anwesend</strong> oder <strong>Fehlend</strong> wählen. Punkte werden dabei sofort vergeben oder abgezogen, und die Person bekommt einen Push.</p>
+      <h3>„Verbuchen&quot; — alle auf einmal</h3>
+      <p>Liegt ein Termin in der Vergangenheit und es gibt noch unverbuchte Anmeldungen, zeigt der Termin oben den Status <strong>„Verbuchen&quot;</strong>. Der Knopf „Alle bestätigen&quot; setzt dann in einem Rutsch:</p>
+      <ul><li><strong>alle bestätigt angemeldeten Konfis</strong> ohne Anwesenheitsstatus auf „anwesend&quot;</li><li>inklusive Punkten, Abzeichen-Prüfung, Level-Prüfung und Push</li></ul>
+      <p>Was dabei <strong>nicht</strong> angefasst wird:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th></th><th>wird verbucht</th></tr></thead><tbody><tr><td>Angemeldete Konfis ohne Status</td><td><strong>ja</strong></td></tr><tr><td>Bereits verbuchte (anwesend oder fehlend)</td><td>nein, bleiben wie sie sind</td></tr><tr><td>Wartelisten-Einträge</td><td><strong>nein</strong></td></tr><tr><td>Abgemeldete (Pflicht-Event)</td><td>nein</td></tr><tr><td>Teamer:innen</td><td><strong>nein — die verbuchst du einzeln</strong></td></tr></tbody></table></div>
+      <p>Sind alle verbucht, wechselt der Status auf <strong>„Verbucht&quot;</strong>.</p>
+      <blockquote><strong>Achtung:</strong> „Alle bestätigen&quot; heißt „alle waren da&quot;. Wer gefehlt hat, muss <strong>danach</strong> einzeln auf „Fehlend&quot; gestellt werden — dabei werden die gerade vergebenen Punkte wieder abgezogen. Bei vielen Fehlenden ist einzeln verbuchen der schnellere Weg.</blockquote>
+      <h3>QR-Check-in</h3>
+      <p>Die Leute checken sich selbst ein. Siehe nächster Abschnitt.</p>
+      <p>---</p>
+      <h2>QR-Check-in</h2>
+      <p>Du zeigst einen QR-Code (auf dem Handy, am Beamer, ausgedruckt), die Konfis scannen ihn in der App und sind eingecheckt — inklusive Punkten.</p>
+      <h3>Das Zeitfenster</h3>
+      <p>Beim Anlegen stellst du das <strong>Check-in-Fenster</strong> ein: 5 bis 60 Minuten, Voreinstellung 30.</p>
+      <p><strong>Die Zahl gilt in beide Richtungen — vor und nach dem Terminbeginn.</strong></p>
+      <p><em>Beispiel:</em> Termin um 18:00 Uhr, Fenster 30 Minuten → Check-in ist von <strong>17:30 bis 18:30</strong> möglich. Das sind eine ganze Stunde, nicht dreißig Minuten.</p>
+      <p>Davor: „Check-in ist noch nicht möglich&quot;. Danach: „Der Check-in-Zeitraum ist abgelaufen&quot;. Gerechnet wird immer ab dem <strong>Terminbeginn</strong>, nie ab der Endzeit.</p>
+      <blockquote><strong>Achtung:</strong> Für einen dreistündigen Konfi-Tag ist ein 30-Minuten-Fenster knapp — wer eine Stunde später dazustößt, kommt nicht mehr rein. Plane das Fenster nach der erwarteten Ankunftszeit, nicht nach der Länge des Termins. Über die App sind maximal 60 Minuten einstellbar.</blockquote>
+      <h3>Wer sich einchecken kann</h3>
+      <p>Der Scan funktioniert nur, wenn die Person <strong>bestätigt angemeldet</strong> ist. Andernfalls:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th>Situation</th><th>Meldung</th></tr></thead><tbody><tr><td>gar nicht angemeldet</td><td>„Du bist nicht für dieses Event angemeldet&quot;</td></tr><tr><td>auf der Warteliste</td><td>„Deine Anmeldung ist nicht bestätigt&quot;</td></tr><tr><td>von einem Pflicht-Event abgemeldet</td><td>„Du hast dich von diesem Event abgemeldet&quot;</td></tr><tr><td>schon eingecheckt</td><td>„Du bist bereits eingecheckt&quot; (kein Fehler, keine zweiten Punkte)</td></tr><tr><td>Code einer anderen Gemeinde</td><td>„Kein Zugriff auf dieses Event&quot;</td></tr></tbody></table></div>
+      <p>Teamer:innen können sich ebenfalls einchecken — sie werden als anwesend verbucht, bekommen aber keine Punkte.</p>
+      <h3>Warum Konfis den Code nicht sehen</h3>
+      <p>Der QR-Code ist ein Geheimnis. Würde er in der Konfi-App auftauchen, könnte sich jeder von zu Hause aus als anwesend eintragen und sich die Punkte selbst gutschreiben.</p>
+      <p>Deshalb wird der Code <strong>ausschließlich</strong> an Leitung und Teamer:innen ausgeliefert, und auch dort nur in der Detailansicht des einzelnen Termins — nie in der Terminliste.</p>
+      <p>Der Code wird beim ersten Anzeigen erzeugt und bleibt danach gleich. Er läuft nicht ab; die zeitliche Begrenzung macht allein das Check-in-Fenster.</p>
+      <p>---</p>
+      <h2>Serien</h2>
+      <p>Statt zwölf Konfi-Stunden einzeln anzulegen, legst du eine <strong>Serie</strong> an.</p>
+      <p>Der Abschnitt erscheint nur <strong>beim Anlegen</strong>, nicht beim Bearbeiten.</p>
+      <h3>Einstellungen und Grenzen</h3>
+      <div class="tabelle-huelle"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Anzahl Termine</td><td><strong>2 bis 26</strong> (bei „Monatlich&quot; höchstens 12)</td></tr><tr><td>Intervall</td><td>Täglich · Wöchentlich · Alle 2 Wochen · Monatlich</td></tr><tr><td>Zeitspanne</td><td><strong>höchstens 12 Monate</strong> vom ersten bis zum letzten Termin</td></tr></tbody></table></div>
+      <p>Unter den Einstellungen steht immer das Datum des letzten Termins — so siehst du sofort, worauf du dich einlässt.</p>
+      <p>Reißt du die 12-Monats-Grenze, verweigert das System das Speichern und nennt das Datum, das zu weit läge.</p>
+      <h3>Benennung</h3>
+      <p>Die Termine werden <strong>durchnummeriert</strong>: aus „Konfi-Stunde&quot; wird „Konfi-Stunde #1&quot;, „Konfi-Stunde #2&quot; und so weiter. Das lässt sich nicht abschalten.</p>
+      <h3>Alle Einstellungen gelten für alle Termine</h3>
+      <p>Punkte, Plätze, Warteliste, Kategorien, Jahrgänge, Pflicht-Häkchen, Check-in-Fenster, Teamer-Kontingent — alles wird auf jeden Termin der Serie übertragen, mit denselben Zwangsregeln wie beim Einzeltermin.</p>
+      <h3>Was danach passiert</h3>
+      <p><strong>Es gibt keine Serien-Bearbeitung.</strong> Nach dem Anlegen sind es ganz normale einzelne Termine, die nur eine gemeinsame Kennung teilen:</p>
+      <ul><li>Einen Termin bearbeiten ändert <strong>nur diesen einen</strong></li><li>Einen Termin löschen löscht <strong>nur diesen einen</strong>, die übrigen bleiben</li><li>Einen Termin absagen sagt <strong>nur diesen einen</strong> ab</li></ul>
+      <blockquote><strong>Achtung:</strong> Willst du an einer zwölfteiligen Serie den Ort ändern, sind das zwölf Bearbeitungen. Prüfe die Einstellungen also lieber einmal zu viel, bevor du eine lange Serie speicherst.</blockquote>
+      <p>---</p>
+      <h2>Absagen oder Löschen?</h2>
+      <p>Zwei verschiedene Dinge, die oft verwechselt werden.</p>
+      <div class="tabelle-huelle"><table><thead><tr><th></th><th>Absagen</th><th>Löschen</th></tr></thead><tbody><tr><td>Termin bleibt sichtbar</td><td><strong>ja, durchgestrichen als „Abgesagt&quot;</strong></td><td>nein, weg</td></tr><tr><td>Anmeldungen</td><td>bleiben erhalten</td><td><strong>werden mitgelöscht</strong></td></tr><tr><td>Event-Chat und Nachrichten</td><td>bleiben</td><td><strong>werden mitgelöscht</strong></td></tr><tr><td>Wer wird benachrichtigt</td><td>Angemeldete <strong>und</strong> Wartende</td><td>Angemeldete und Wartende (Konfis)</td></tr><tr><td>Rückgängig</td><td>nein, aber der Termin ist noch da</td><td><strong>nein</strong></td></tr><tr><td>Neue Anmeldungen möglich</td><td>nein</td><td>—</td></tr></tbody></table></div>
+      <h3>Absagen</h3>
+      <p>Der saubere Weg. Der Termin wird als abgesagt markiert, alle Angemeldeten <strong>und alle auf der Warteliste</strong> bekommen einen Push. Der Termin bleibt in der Liste stehen, durchgestrichen, und taucht in der Leitungsansicht unter den abgesagten Terminen auf.</p>
+      <p>Ein bereits abgesagter Termin lässt sich nicht nochmal absagen.</p>
+      <p>Ein abgesagter Konfirmationstermin blockiert niemanden mehr: Die Betroffenen können sich einen anderen aussuchen.</p>
+      <h3>Löschen</h3>
+      <p>Endgültig. Gelöscht werden dabei: der Termin selbst, alle Anmeldungen, alle Zeitfenster, die Zuordnung zu Kategorien und Jahrgängen sowie <strong>der komplette Event-Chat mit allen Nachrichten, Umfragen und hochgeladenen Dateien</strong>.</p>
+      <p>Damit das nicht versehentlich passiert, fragt das System zweimal nach:</p>
+      <ul><li>Gibt es Anmeldungen → „Für dieses Event gibt es 12 Anmeldung(en). Beim Löschen werden alle benachrichtigt.&quot;</li><li>Gibt es Chat-Nachrichten → „Der Event-Chat enthält 34 Nachricht(en). Beim Löschen gehen sie verloren.&quot;</li></ul>
+      <p>Erst nach der Bestätigung wird gelöscht. Angemeldete und wartende Konfis bekommen dann einen Push — auch dann, wenn der Termin vorher schon abgesagt war.</p>
+      <blockquote><strong>Faustregel:</strong> Ein Termin, der stattfinden sollte und ausfällt, wird <strong>abgesagt</strong>. Ein Termin, den es nie hätte geben sollen (Tippfehler, versehentlich angelegt), wird <strong>gelöscht</strong>.</blockquote>
+      <p>---</p>
+      <h2>Automatische Änderungs-Meldungen</h2>
+      <p>Änderst du an einem <strong>zukünftigen, nicht abgesagten</strong> Termin</p>
+      <ul><li>das Datum oder die Uhrzeit,</li><li>die Endzeit oder</li><li>den Ort,</li></ul>
+      <p>bekommen <strong>alle Angemeldeten und alle auf der Warteliste</strong> automatisch einen Push mit der Änderung. Das musst du nicht auslösen — es passiert beim Speichern.</p>
+      <p>Änderst du nur den Namen, die Beschreibung, die Punkte oder die Platzzahl, kommt kein Push. Bei vergangenen Terminen ebenfalls nicht.</p>
+      <p>---</p>
+      <h2>Event-Chat</h2>
+      <p>Zu jedem Termin lässt sich ein Gruppenchat einrichten.</p>
+      <h3>Wann er entsteht</h3>
+      <p><strong>Nicht automatisch.</strong> Jemand aus Leitung oder Teamer-Team muss ihn in der Detailansicht des Termins über den Chat-Knopf anlegen und die Rückfrage bestätigen. Pro Termin gibt es genau einen — ein zweiter Versuch meldet „Chat existiert bereits für dieses Event&quot;.</p>
+      <h3>Wer reinkommt</h3>
+      <p>Beim Anlegen kommen hinein:</p>
+      <ul><li>die Person, die den Chat erstellt</li><li><strong>alle, die zu diesem Zeitpunkt bestätigt angemeldet sind</strong> — Konfis, Teamer:innen und Leitung gleichermaßen</li></ul>
+      <h3>Wer nicht nachkommt</h3>
+      <blockquote><strong>Das ist der wichtigste Punkt:</strong> Wer sich <strong>nach</strong> dem Anlegen des Chats anmeldet, wird <strong>nicht</strong> automatisch hinzugefügt. Auch nicht, wer von der Warteliste nachrückt.  Lege den Chat also möglichst <strong>spät</strong> an — am besten erst, wenn die Anmeldefrist durch ist. Sonst fehlt die Hälfte drin.</blockquote>
+      <p>Ebenfalls nicht dabei: alle, die zum Zeitpunkt des Anlegens auf der Warteliste standen.</p>
+      <h3>Wer rausfliegt</h3>
+      <p>Wer sich vom Termin <strong>abmeldet</strong>, wird gleichzeitig aus dem Event-Chat entfernt. Das passiert automatisch — sonst bliebe man in einem Chat zu einem Termin, an dem man nicht teilnimmt.</p>
+      <h3>Was beim Löschen passiert</h3>
+      <p>Wird der Termin gelöscht, verschwindet der Chat mitsamt allen Nachrichten, Umfragen und Dateien. Beim <strong>Absagen</strong> bleibt er dagegen bestehen.</p>
+      <p>---</p>
+      <h2>Teilnehmende von Hand hinzufügen</h2>
+      <p>In der Detailansicht kannst du Leute selbst eintragen — praktisch für alle, die keine App haben oder die Frist verpasst haben.</p>
+      <p>Dabei gelten dieselben Regeln wie bei der Selbstanmeldung:</p>
+      <ul><li>Eine Teamer:in lässt sich nur eintragen, wenn der Termin „Konfis, Teamer:innen gesucht&quot; oder „Nur Teamer:innen&quot; ist</li><li>Ein Konfi lässt sich nicht in einen reinen Teamer-Termin eintragen</li><li>Bei Zeitfenster-Terminen musst du ein Fenster auswählen</li><li>Doppelte Anmeldungen werden abgewiesen</li></ul>
+      <p>Das <strong>Anmeldefenster gilt hier nicht</strong> — du kannst also auch nach Anmeldeschluss noch jemanden eintragen.</p>
+      <p>---</p>
+      <h2>Häufige Stolpersteine auf einen Blick</h2>
+      <blockquote><strong>„Ich habe Punkte eingetragen, aber es gibt keine.&quot;</strong> Prüfe die fünf Bedingungen oben. Am häufigsten: Es ist ein Pflicht-Event oder eine Konfirmation (dort sind Punkte immer 0), oder der Punkt-Typ ist im Jahrgang abgeschaltet.</blockquote>
+      <blockquote><strong>„Die Teamer:innen sehen den Termin nicht.&quot;</strong> Bei „Nur Konfis&quot; sehen Teamer:innen den Termin nur, wenn er einem ihrer Jahrgänge zugeordnet ist oder gar keinem Jahrgang. Bei „Teamer:innen gesucht&quot; sehen ihn alle.</blockquote>
+      <blockquote><strong>„Der Termin ist ausgebucht, obwohl noch Plätze frei sind.&quot;</strong> Bei Zeitfenster-Terminen zählt das einzelne Fenster, nicht die Summe. Ein volles Fenster ist voll, auch wenn nebenan noch Platz ist.</blockquote>
+      <blockquote><strong>„Ich habe die Teilnehmerzahl reduziert, es sind aber immer noch zu viele drin.&quot;</strong> So ist es gedacht: Bestätigte Anmeldungen werden nie zurückgestuft.</blockquote>
+      <blockquote><strong>„Die Hälfte fehlt im Event-Chat.&quot;</strong> Der Chat nimmt nur mit, wer beim Anlegen schon angemeldet war. Später Angemeldete und Nachrücker kommen nicht dazu.</blockquote>
+      <blockquote><strong>„Der Konfi kann sich nicht abmelden.&quot;</strong> Bei freiwilligen Terminen geht Abmelden nur <strong>bis 2 Tage vor</strong> dem Termin. Danach steht in der App „Abmelden geht nur bis 2 Tage vorher&quot;. Du selbst kannst die Anmeldung in der Detailansicht trotzdem entfernen.</blockquote>
+    </article>
+
+    <nav class="blaettern" aria-label="Weitere Kapitel">
+      <a class="blatt blatt--vor" href="./badges.html">
+             <span class="blatt-hin">Vorheriges Kapitel</span>
+             <span class="blatt-titel">8. Abzeichen</span>
+           </a>
+      <a class="blatt blatt--weiter" href="./challenges.html">
+             <span class="blatt-hin">Nächstes Kapitel</span>
+             <span class="blatt-titel">10. Challenges</span>
+           </a>
+    </nav>
+  </main>
+</div>
+</body>
+</html>

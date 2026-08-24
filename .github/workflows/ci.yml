@@ -128,10 +128,15 @@ jobs:
       - name: Handbuch aktuell?
         run: |
           node scripts/build-handbuch.mjs
-          if ! git diff --quiet -- frontend/public/docs/index.html; then
+          # Seit dem 24.08.2026 hat jedes Kapitel eine eigene Seite. Der Check
+          # muss deshalb das ganze Verzeichnis pruefen — nur index.html haette
+          # Aenderungen an einem einzelnen Kapitel durchgelassen. Neue Dateien
+          # zaehlen mit (--intent-to-add macht sie fuer git diff sichtbar).
+          git add -N frontend/public/docs/
+          if ! git diff --quiet -- frontend/public/docs/ ':!frontend/public/docs/api'; then
             echo "::error::Das Handbuch ist nicht auf dem Stand von docs/handbuch/."
             echo "Neu erzeugen und mitcommitten:  npm --prefix frontend run docs:handbuch"
-            git diff --stat -- frontend/public/docs/index.html
+            git diff --stat -- frontend/public/docs/ ':!frontend/public/docs/api'
             exit 1
           fi
           echo "Handbuch ist aktuell."

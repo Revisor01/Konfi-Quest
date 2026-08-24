@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>11. Chat — Konfi Quest Handbuch</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Wer mit wem, Umfragen, Dateien und Reaktionen">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Bebas+Neue&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root { --ground:#fbfaf9; --flaeche:#fff; --flaeche-2:#f4f1f6; --rand:#e7e3e8; --text:#1c1a1f; --text-leise:#6b6470; --akzent:#5b21b6; --akzent-weich:#f3eefc; --code-grund:#f5f2f7; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#161419; --flaeche:#1e1b22; --flaeche-2:#241f2a; --rand:#322c38; --text:#ece9ef; --text-leise:#a49cab; --akzent:#c4a8f5; --akzent-weich:#2a1f3d; --code-grund:#241f2a; } }
+:root[data-theme="dark"] { --ground:#161419; --flaeche:#1e1b22; --flaeche-2:#241f2a; --rand:#322c38; --text:#ece9ef; --text-leise:#a49cab; --akzent:#c4a8f5; --akzent-weich:#2a1f3d; --code-grund:#241f2a; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif; font-size:15px; line-height:1.65; -webkit-font-smoothing:antialiased; }
+.huelle { display:grid; grid-template-columns:264px minmax(0,1fr); max-width:1180px; margin:0 auto; }
+.seitenleiste { position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto; padding:32px 24px 40px; border-right:1px solid var(--rand); }
+.marke { font-family:'Bebas Neue',Impact,sans-serif; font-size:1.5rem; letter-spacing:3px; margin:0 0 2px; }
+.marke-unter { font-size:.78rem; color:var(--text-leise); margin:0 0 28px; }
+.nav-titel { font-size:.68rem; text-transform:uppercase; letter-spacing:.09em; color:var(--text-leise); margin:0 0 10px; font-weight:600; }
+.seitenleiste ul { list-style:none; margin:0 0 26px; padding:0; display:flex; flex-direction:column; gap:2px; }
+.seitenleiste ul a { display:flex; align-items:center; gap:9px; padding:7px 9px; border-radius:7px; text-decoration:none; color:var(--text); font-size:.87rem; }
+.seitenleiste ul a:hover { background:var(--akzent-weich); }
+.seitenleiste ul a:focus-visible { outline:2px solid var(--akzent); outline-offset:1px; }
+.nav-punkt { width:8px; height:8px; border-radius:50%; flex:none; }
+.nav-gruppe { font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:18px 0 6px; padding-left:9px; }
+.seitenleiste .fuss { border-top:1px solid var(--rand); padding-top:18px; font-size:.75rem; color:var(--text-leise); }
+.seitenleiste .fuss a { color:var(--akzent); }
+.inhalt { padding:40px 44px 96px; min-width:0; }
+.kopf { margin-bottom:40px; padding-bottom:26px; border-bottom:1px solid var(--rand); }
+.kopf h1 { font-family:'Bebas Neue',Impact,sans-serif; font-weight:400; font-size:3.1rem; line-height:1; letter-spacing:4px; margin:0 0 14px; text-wrap:balance; }
+.kopf p { margin:0; color:var(--text-leise); max-width:64ch; }
+.kapitel { margin-bottom:40px; }
+.kapitel-kopf { margin-bottom:20px; padding-left:13px; border-left:3px solid var(--kapitel); }
+.kapitel-kopf h1 { font-family:'Bebas Neue',Impact,sans-serif; font-weight:400; font-size:2.3rem; margin:0; letter-spacing:2.5px; line-height:1.05; display:flex; align-items:baseline; gap:11px; }
+.kapitel-meta { margin:2px 0 0; font-size:.78rem; color:var(--text-leise); }
+.kapitel h3 { font-size:1.06rem; margin:30px 0 10px; letter-spacing:-.01em; }
+.kapitel h4 { font-size:.95rem; margin:22px 0 8px; color:var(--text-leise); }
+.kapitel p { margin:0 0 13px; max-width:66ch; }
+.kapitel ul { margin:0 0 15px; padding-left:20px; max-width:66ch; display:flex; flex-direction:column; gap:6px; }
+.kapitel li { margin:0; }
+blockquote { margin:0 0 15px; padding:13px 17px; background:var(--flaeche); border:1px solid var(--rand); border-left:3px solid var(--kapitel); border-radius:8px; color:var(--text-leise); font-size:.92rem; max-width:66ch; }
+code { font-family:'JetBrains Mono',monospace; font-size:.85em; background:var(--code-grund); padding:1px 5px; border-radius:4px; }
+pre { background:var(--flaeche); border:1px solid var(--rand); border-radius:10px; padding:14px 16px; overflow-x:auto; margin:0 0 16px; max-width:66ch; }
+pre code { background:none; padding:0; font-size:.82rem; line-height:1.6; white-space:pre; }
+.tabelle-huelle { overflow-x:auto; border:1px solid var(--rand); border-radius:10px; background:var(--flaeche); margin:0 0 18px; }
+table { border-collapse:collapse; width:100%; font-size:.88rem; }
+th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand); vertical-align:top; }
+thead th { background:var(--flaeche-2); font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-leise); white-space:nowrap; }
+tbody tr:last-child td { border-bottom:none; }
+@media (max-width:860px) {
+  /* Auf dem Handy nahm das Inhaltsverzeichnis untereinander fast den ganzen
+     ersten Bildschirm ein — man musste scrollen, bevor Inhalt kam. Die Punkte
+     stehen deshalb nebeneinander und umbrechen bei Bedarf. Bewusst kein
+     Ausklapp-Element: <details> ohne open-Attribut versteckt den Inhalt auch
+     auf dem Desktop, und das per CSS zurueckzuholen ist unzuverlaessig. */
+  .huelle { grid-template-columns:1fr; }
+  .seitenleiste { position:static; height:auto; border-right:none; border-bottom:1px solid var(--rand); padding:20px 20px 14px; }
+  .marke-unter { margin-bottom:14px; }
+  .nav-titel { margin-bottom:7px; }
+  /* Gruppen-Ueberschriften kosten mobil zu viel Hoehe — die Chips stehen
+     ohnehin in derselben Reihenfolge beieinander. */
+  .nav-gruppe { display:none; }
+  .seitenleiste ul + ul { margin-top:0; }
+  .seitenleiste ul { flex-direction:row; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+  .seitenleiste ul a { padding:5px 10px; border:1px solid var(--rand); border-radius:999px; font-size:.82rem; }
+  .seitenleiste .fuss { border-top:none; padding-top:0; display:flex; gap:16px; }
+  .seitenleiste .fuss p { margin:0; }
+  .inhalt { padding:28px 20px 72px; }
+  .kopf h1 { font-size:2.4rem; }
+}
+
+/* --- Seit 24.08.2026: eine Seite je Kapitel --- */
+.marke a { color:inherit; text-decoration:none; }
+.marke a:hover { color:var(--akzent); }
+
+/* Nummer in der Navigation: gibt jedem Kapitel eine feste Kennung, auf die
+   man sich beziehen kann ("steht in Kapitel 7"). */
+.nav-nr { flex:none; width:20px; font-size:.74rem; font-variant-numeric:tabular-nums; color:var(--text-leise); text-align:right; }
+.seitenleiste ul a.ist-hier { background:var(--akzent-weich); font-weight:600; }
+.seitenleiste ul a.ist-hier .nav-nr { color:var(--akzent); }
+
+.kapitel-zaehler { font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:0 0 6px; }
+.kapitel-nr { font-size:1.5rem; color:var(--kapitel); }
+
+/* Blaettern unten: die eigentliche Neuerung. Wer ein Kapitel gelesen hat,
+   soll nicht in die Navigation zurueckmuessen. */
+.blaettern { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:44px; padding-top:26px; border-top:1px solid var(--rand); }
+.blatt { display:flex; flex-direction:column; gap:3px; padding:14px 16px; border:1px solid var(--rand); border-radius:11px; background:var(--flaeche); text-decoration:none; color:var(--text); }
+.blatt:hover { border-color:var(--akzent); background:var(--akzent-weich); }
+.blatt:focus-visible { outline:2px solid var(--akzent); outline-offset:2px; }
+.blatt--weiter { text-align:right; }
+.blatt--leer { border:none; background:none; }
+.blatt-hin { font-size:.7rem; text-transform:uppercase; letter-spacing:.09em; color:var(--text-leise); font-weight:700; }
+.blatt-titel { font-weight:600; font-size:.95rem; }
+
+/* Uebersichtsseite */
+.karten { list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+.karte { display:flex; align-items:flex-start; gap:14px; padding:15px 17px; border:1px solid var(--rand); border-left:3px solid var(--kapitel); border-radius:11px; background:var(--flaeche); text-decoration:none; color:var(--text); }
+.karte:hover { border-color:var(--akzent); border-left-color:var(--kapitel); background:var(--akzent-weich); }
+.karte:focus-visible { outline:2px solid var(--akzent); outline-offset:2px; }
+.karte-nr { font-family:'Bebas Neue',Impact,sans-serif; font-size:1.5rem; line-height:1; color:var(--kapitel); min-width:26px; font-variant-numeric:tabular-nums; }
+.karte-text { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.karte-text strong { font-size:1rem; }
+.karte-text span { font-size:.84rem; color:var(--text-leise); }
+
+@media (max-width:860px) {
+  .blaettern { grid-template-columns:1fr; }
+  .blatt--weiter { text-align:left; }
+  .blatt--leer { display:none; }
+  .kapitel-kopf h1 { font-size:1.9rem; }
+}
+</style>
+</head>
+<body>
+<div class="huelle">
+  <nav class="seitenleiste">
+    <p class="marke"><a href="./">Konfi Quest</a></p>
+    <p class="marke-unter">Handbuch</p>
+    <p class="nav-titel">Inhalt</p>
+    <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./konfis.html"><span class="nav-nr">2</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">3</span>Für Teamer:innen</a></li><li><a href="./leitung.html"><span class="nav-nr">4</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html"><span class="nav-nr">5</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html"><span class="nav-nr">6</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html"><span class="nav-nr">7</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html"><span class="nav-nr">8</span>Abzeichen</a></li><li><a href="./termine.html"><span class="nav-nr">9</span>Termine</a></li><li><a href="./challenges.html"><span class="nav-nr">10</span>Challenges</a></li><li><a href="./chat.html" aria-current="page" class="ist-hier"><span class="nav-nr">11</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">12</span>Jahresrückblick (Wrapped)</a></li></ul>
+    <div class="fuss">
+      <p><a href="/">Zur Startseite</a></p>
+    </div>
+  </nav>
+  <main class="inhalt">
+    <article class="kapitel" style="--kapitel:#06b6d4">
+      <header class="kapitel-kopf">
+        <p class="kapitel-zaehler">Kapitel 11 von 12</p>
+        <h1><span class="kapitel-nr">11</span>Chat</h1>
+        <p class="kapitel-meta">Wer mit wem, Umfragen, Dateien und Reaktionen</p>
+      </header>
+      <p>Der Chat ist der geschützte Nachrichtenraum der Gemeinde. Er hat keine Verbindung nach außen: Wer nicht in eurer Organisation ist, kommt nicht hinein, und wer drin ist, erreicht nicht automatisch jede andere Person.</p>
+      <p>Diese Grenzen sind der eigentliche Inhalt dieses Kapitels — sie sind der Unterschied zwischen einem Gemeindechat und einer WhatsApp-Gruppe.</p>
+      <p>---</p>
+      <h2>Die fünf Chat-Arten</h2>
+      <div class="tabelle-huelle"><table><thead><tr><th>Art</th><th>Wer ist drin</th><th>Wie er entsteht</th><th>Verlassbar</th></tr></thead><tbody><tr><td><strong>Direktnachricht</strong></td><td>genau zwei Personen</td><td>jemand schreibt jemanden an</td><td><strong>nein</strong></td></tr><tr><td><strong>Gruppe</strong></td><td>frei zusammengestellt</td><td>die Leitung legt sie an</td><td>ja (außer Leitung)</td></tr><tr><td><strong>Jahrgangs-Chat</strong></td><td>alle Konfis des Jahrgangs plus zuständige Begleitung</td><td><strong>automatisch</strong> mit dem Jahrgang</td><td><strong>nein</strong></td></tr><tr><td><strong>Team-Chat</strong></td><td>die ganze Leitung und alle Teamer:innen</td><td><strong>automatisch</strong>, einer pro Gemeinde</td><td>ja (außer Leitung)</td></tr><tr><td><strong>Termin-Chat</strong></td><td>wer zum Termin angemeldet ist</td><td>das Team schaltet ihn beim Termin frei</td><td>nur übers Abmelden</td></tr></tbody></table></div>
+      <h3>Direktnachricht</h3>
+      <p>Ein Zweiergespräch. Es entsteht, sobald jemand jemanden zum ersten Mal anschreibt — es gibt keinen Anlege-Schritt und keine zweite Direktnachricht zwischen denselben zwei Personen: Wer ein bestehendes Gespräch erneut öffnet, landet im alten.</p>
+      <p>Ein Zweiergespräch lässt sich <strong>nicht verlassen</strong>. Die Leitung kann es löschen, aber nicht lesen (siehe unten).</p>
+      <h3>Gruppe</h3>
+      <p>Der einzige frei zusammenstellbare Raum. Nur die Leitung legt Gruppen an, gibt ihnen einen Namen und wählt die Personen aus. Nur hier lassen sich später Mitglieder hinzufügen und entfernen.</p>
+      <h3>Jahrgangs-Chat</h3>
+      <p>Pro Jahrgang gibt es genau einen, und er entsteht <strong>von selbst</strong> — niemand legt ihn an, niemand lädt jemanden ein. Er heißt „Jahrgang 2026&quot; und pflegt seine Mitglieder selbst:</p>
+      <ul><li><strong>Alle Konfis des Jahrgangs</strong> sind drin. Neue Konfis kommen automatisch dazu.</li><li><strong>Die Leitung (Org-Admin)</strong> ist immer in allen Jahrgangs-Chats der Gemeinde.</li><li><strong>Teamer:innen und weitere Admins</strong> sind drin, solange ihnen der Jahrgang zugewiesen ist. Wird die Zuweisung entzogen, fliegen sie wieder heraus.</li></ul>
+      <p>Er lässt sich nicht verlassen: Wer im Jahrgang ist, ist im Chat. Und er lässt sich nicht einzeln löschen — das geht nur über den Jahrgang selbst (<em>„Bitte den Jahrgang löschen&quot;</em>).</p>
+      <h3>Team-Chat</h3>
+      <p>Ein Raum pro Gemeinde, schlicht „Team&quot; genannt, ebenfalls <strong>automatisch</strong>. Drin sind alle aktiven Personen mit Leitungs-, Admin- oder Teamer-Rolle. Konfis sind nie drin und sehen ihn nicht.</p>
+      <p>Wer eine Teamer-Rolle bekommt, ist beim nächsten Öffnen der Chat-Übersicht automatisch dabei; wer die Rolle verliert, ist wieder draußen.</p>
+      <blockquote><strong>Achtung:</strong> Eine Teamer:in kann den Team-Chat zwar verlassen — beim nächsten Abgleich ist sie aber wieder drin, weil sie weiter zum Team gehört. Wer dauerhaft heraus soll, braucht eine Rollenänderung, kein Verlassen.</blockquote>
+      <h3>Termin-Chat</h3>
+      <p>Gehört zu einem Termin und muss vom Team beim Termin einmal freigeschaltet werden — es gibt nicht automatisch zu jedem Termin einen. Danach füllt er sich über die Anmeldungen: Wer eine bestätigte Anmeldung hat, ist im Chat; wer sich abmeldet, fliegt wieder heraus.</p>
+      <blockquote><strong>Achtung:</strong> Konfis können einen Termin-Chat <strong>nicht direkt verlassen</strong>. Die App sagt: <em>„Event-Chats werden über die Event-Abmeldung verlassen, nicht direkt.&quot;</em> Das ist so gewollt — sonst wäre jemand zum Termin angemeldet, bekäme aber die Absprachen dazu nicht mit.</blockquote>
+      <p>---</p>
+      <h2>Wer wen anschreiben darf</h2>
+      <p>Das ist die wichtigste Tabelle des Kapitels. <strong>Stand 23.08.2026:</strong></p>
+      <div class="tabelle-huelle"><table><thead><tr><th>↓ schreibt an →</th><th>Konfi</th><th>Teamer:in</th><th>Leitung / Admin</th></tr></thead><tbody><tr><td><strong>Konfi</strong></td><td><strong>nie</strong></td><td>nur bei <strong>gemeinsamem Jahrgang</strong></td><td>immer</td></tr><tr><td><strong>Teamer:in</strong></td><td>nur bei <strong>gemeinsamem Jahrgang</strong></td><td>ja</td><td>ja</td></tr><tr><td><strong>Leitung / Admin</strong></td><td>immer</td><td>ja</td><td>ja</td></tr></tbody></table></div>
+      <p>Drei Regeln stecken darin:</p>
+      <p><strong>1. Konfis erreichen einander nie.</strong> Konfi-zu-Konfi-Direktnachrichten gibt es nicht, und Konfis können auch keine Gruppen anlegen. Sie können ausschließlich Personen aus dem Team anschreiben. Miteinander reden sie im Jahrgangs-Chat — also dort, wo die Leitung mitliest.</p>
+      <p><strong>2. Teamer:innen und Konfis erreichen einander nur über einen gemeinsamen Jahrgang — in beide Richtungen.</strong> Eine Teamer:in sieht in ihrer Kontaktliste nur die Konfis der Jahrgänge, die ihr zugewiesen sind, und umgekehrt sehen Konfis nur die Teamer:innen, die für ihren Jahrgang zuständig sind.</p>
+      <p>Die Fehlermeldungen, wenn es doch jemand versucht:</p>
+      <ul><li><em>„Du kannst nur Konfirmand:innen aus deinen Jahrgängen anschreiben&quot;</em></li><li><em>„Diese Teamer:in ist nicht für deinen Jahrgang zuständig&quot;</em></li></ul>
+      <p><strong>3. Leitung und Admins erreichen alle und sind für alle erreichbar.</strong> Sie verantworten die Gemeinde als Ganzes und haben ohnehin Zugriff auf alle Jahrgänge.</p>
+      <blockquote><strong>Achtung, häufiger Anruf:</strong> Eine Teamer:in <strong>ohne zugewiesenen Jahrgang</strong> ist für Konfis unsichtbar — und erreicht ihrerseits keinen einzigen Konfi. Wenn jemand meldet „ich sehe meine Konfis nicht im Chat&quot;, ist fast immer die Jahrgangs-Zuweisung die Ursache, nicht der Chat. Prüf sie in der Nutzerverwaltung.</blockquote>
+      <blockquote><strong>Achtung:</strong> Ein Konfi <strong>ohne Jahrgang</strong> ist nur für Leitung und Admins erreichbar. Bis der Jahrgang gesetzt ist, kommt keine Teamer:in an ihn heran.</blockquote>
+      <p>---</p>
+      <h2>Was die Leitung darf — und was seit dem 23.08.2026 nicht mehr</h2>
+      <p>Die Leitung kann jeden <strong>gemeinschaftlichen</strong> Raum ihrer Gemeinde öffnen, auch ohne selbst Mitglied zu sein: Gruppen, Jahrgangs-Chats, Team-Chats und Termin-Chats. Das ist Absicht — für diese Räume trägt sie die Verantwortung und muss im Zweifel eingreifen können.</p>
+      <p><strong>Fremde Zweiergespräche kann sie nicht mehr öffnen.</strong> Wer nicht selbst in einem Direktchat steht, kommt nicht hinein.</p>
+      <div class="tabelle-huelle"><table><thead><tr><th></th><th>Vor dem 23.08.2026</th><th>Jetzt</th></tr></thead><tbody><tr><td>Fremdes Zweiergespräch lesen</td><td>ja</td><td><strong>nein</strong></td></tr><tr><td>Fremdes Zweiergespräch exportieren</td><td>ja</td><td><strong>nein</strong></td></tr><tr><td>Nachricht in einem fremden Zweiergespräch löschen</td><td>ja</td><td><strong>nein</strong></td></tr><tr><td>Umfrage in ein fremdes Zweiergespräch stellen</td><td>ja</td><td><strong>nein</strong></td></tr><tr><td>Gruppen-, Jahrgangs-, Team-, Termin-Chat</td><td>ja</td><td>ja, unverändert</td></tr></tbody></table></div>
+      <p>Der Grund: Betroffen waren vor allem die Gespräche zwischen Teamer:innen und Konfis — also gerade die vertraulichen. Ein Zweiergespräch ist privat, auch in einer Gemeinde.</p>
+      <blockquote><strong>Achtung:</strong> Die Leitung kann einen Direktchat weiterhin <strong>löschen</strong> (siehe unten) — lesen kann sie ihn nicht. Wer als Leitung an einem Zweiergespräch beteiligt ist, sieht es natürlich ganz normal.</blockquote>
+      <p>---</p>
+      <h2>Nachrichten</h2>
+      <h3>Schreiben</h3>
+      <p>Text eintippen und senden, <strong>höchstens 4000 Zeichen</strong>. Alle im Raum sehen die Nachricht sofort, ohne Neuladen, und bekommen eine Benachrichtigung aufs Gerät — bei einem Zweiergespräch mit dem Namen des Absenders als Überschrift, sonst mit dem Namen des Chats.</p>
+      <p>Ohne Netz bleibt die Nachricht in einer Warteschlange und geht los, sobald es wieder geht. Ein kleines Uhr-Symbol heißt „wartet noch&quot;, ein Haken heißt „angekommen&quot;, ein rotes Ausrufezeichen heißt „fehlgeschlagen&quot; — antippen sendet erneut.</p>
+      <blockquote><strong>Achtung:</strong> Der Haken bedeutet <strong>nicht</strong> „gelesen&quot;. Lesebestätigungen gibt es im Konfi Quest Chat nicht, und es gibt auch keine „schreibt gerade…&quot;-Anzeige. Niemand kann sehen, ob du eine Nachricht geöffnet hast.</blockquote>
+      <h3>Antworten (Zitat)</h3>
+      <p>Auf eine Nachricht antworten heißt: Sie wird über der eigenen Antwort als kurzes Zitat mit Namen angezeigt. Das hilft, wenn in einem Jahrgangs-Chat mehrere Fäden nebeneinander laufen.</p>
+      <p>Der Bezug bleibt auch dann erhalten, wenn die zitierte Nachricht später gelöscht wird — dann steht dort das Zitat ohne Inhalt.</p>
+      <h3>Löschen</h3>
+      <div class="tabelle-huelle"><table><thead><tr><th>Wer</th><th>Darf löschen</th></tr></thead><tbody><tr><td><strong>Leitung / Admin</strong></td><td>eigene und <strong>fremde</strong> Nachrichten — aber nur in Räumen, die sie öffnen dürfen, also nicht in fremden Zweiergesprächen</td></tr><tr><td><strong>Teamer:innen</strong></td><td>nur eigene</td></tr><tr><td><strong>Konfis</strong></td><td>nur eigene — sie sehen den Papierkorb gar nicht erst</td></tr></tbody></table></div>
+      <p>Wer es trotzdem versucht, bekommt: <em>„Du kannst nur eigene Nachrichten löschen.&quot;</em></p>
+      <p><strong>Gelöscht heißt nicht weg.</strong> An der Stelle bleibt ein Platzhalter stehen:</p>
+      <blockquote>Diese Nachricht wurde gelöscht</blockquote>
+      <p>Der Inhalt wird nicht mehr ausgeliefert, aber die Lücke im Gespräch bleibt sichtbar. Das ist Absicht: Ein Verlauf, aus dem einzelne Beiträge spurlos verschwinden, lässt sich nicht mehr nachvollziehen — und im Export steht der Platzhalter ebenfalls.</p>
+      <p>---</p>
+      <h2>Reaktionen</h2>
+      <p>Auf jede Nachricht lässt sich reagieren. Es gibt genau <strong>sechs</strong> Möglichkeiten — keine freie Auswahl:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th>Reaktion</th><th>Gemeint als</th></tr></thead><tbody><tr><td><strong>Gefällt mir</strong></td><td>Zustimmung, gelesen und einverstanden</td></tr><tr><td><strong>Liebe</strong></td><td>Zuneigung, „schön&quot;</td></tr><tr><td><strong>Lustig</strong></td><td>Humor</td></tr><tr><td><strong>Wow</strong></td><td>Überraschung</td></tr><tr><td><strong>Traurig</strong></td><td>Anteilnahme</td></tr><tr><td><strong>Beten</strong></td><td>„ich denke an dich&quot;, „ich bete dafür&quot;</td></tr></tbody></table></div>
+      <p>Die Auswahl ist bewusst klein und ohne Ablehnungs-Reaktion: Es gibt kein „Daumen runter&quot; und kein „wütend&quot;. In einem Konfi-Chat soll niemand mit einem Tipp abgewatscht werden können.</p>
+      <p><strong>Umschalten:</strong> Ein Tipp setzt die Reaktion, ein zweiter Tipp auf dieselbe nimmt sie wieder zurück. Man kann mehrere verschiedene Reaktionen auf dieselbe Nachricht setzen. Unter der Nachricht steht, wie oft jede Reaktion gewählt wurde; die eigenen sind hervorgehoben.</p>
+      <p>Alle im Raum dürfen reagieren, auch Konfis.</p>
+      <p>---</p>
+      <h2>Dateien senden</h2>
+      <p>An jede Nachricht lässt sich eine Datei hängen. Ein Text darf dabei stehen, muss aber nicht.</p>
+      <p><strong>Höchstens 5 MB pro Datei.</strong> Das ist bewusst klein gehalten — der Chat ist kein Ablageort. Für größere Dateien gibt es den Material-Bereich.</p>
+      <blockquote><strong>Achtung, bekannter Stolperstein:</strong> Die App warnt erst ab 10 MB, der Server nimmt aber nur 5 MB an. Eine Datei dazwischen scheitert deshalb ohne verständliche Meldung — es sieht aus, als wäre das Senden einfach fehlgeschlagen. Wenn eine Datei sich partout nicht schicken lässt: auf die Größe schauen.</blockquote>
+      <div class="tabelle-huelle"><table><thead><tr><th>Was</th><th>Formate</th></tr></thead><tbody><tr><td><strong>Bilder</strong></td><td>JPG, PNG, GIF, WebP, HEIC/HEIF</td></tr><tr><td><strong>Videos</strong></td><td>MP4, MOV, WebM</td></tr><tr><td><strong>Audio</strong></td><td>MP3, M4A, OGG, WAV</td></tr><tr><td><strong>Dokumente</strong></td><td>PDF, Word, PowerPoint, TXT, CSV</td></tr></tbody></table></div>
+      <p>Bilder und Videos werden direkt im Chat angezeigt; alles andere erscheint als Anhang mit Dateinamen zum Antippen. Bilder werden vor dem Senden automatisch verkleinert, damit sie nicht unnötig groß hochgeladen werden.</p>
+      <blockquote><strong>Achtung:</strong> <strong>Excel-Tabellen gehen nicht</strong> — weder XLS noch XLSX, und auch keine OpenDocument-Dateien. Das ist einer der häufigsten Stolpersteine: Die Datei wird kommentarlos nicht mitgeschickt. Wandle sie in ein PDF um oder leg sie im Material-Bereich ab, der mehr Formate annimmt.</blockquote>
+      <blockquote><strong>Achtung:</strong> Eine Sprachnachricht lässt sich im Chat <strong>nicht aufnehmen</strong>. Eine fertige Audiodatei kannst du zwar schicken, sie erscheint dann aber als normaler Anhang zum Herunterladen, nicht als abspielbare Sprachnachricht. (Aufnehmen geht nur bei Challenges.)</blockquote>
+      <h3>Was mit der Datei passiert</h3>
+      <ul><li>Sie wird beim Hochladen <strong>auf ihren echten Typ geprüft</strong> — nicht am Dateinamen, sondern an den ersten Bytes. Ein umbenanntes Programm, das als <code>bild.jpg</code> hochgeladen wird, kommt nicht durch („Dateityp konnte nicht verifiziert werden&quot;). Nur bei reinen Textdateien (TXT, CSV) geht das nicht, weil sie keine solche Kennung haben.</li><li>Sie liegt danach <strong>verschlüsselt</strong> auf dem Server, unter einem zufälligen Namen ohne Bezug zum Inhalt oder zum Absender.</li><li>Abrufen kann sie nur, wer angemeldet ist und den Chat öffnen darf. Es gibt keine offene Adresse, die man weiterschicken könnte.</li></ul>
+      <blockquote><strong>Achtung:</strong> Weil Dateien verschlüsselt und zufällig benannt gespeichert werden, gibt es keinen Weg, sie außerhalb der App zu durchsuchen oder wiederherzustellen. Was im Chat wichtig ist und bleiben soll, gehört ins Material oder in einen Termin.</blockquote>
+      <p>---</p>
+      <h2>Umfragen</h2>
+      <p>In jedem Chat lässt sich eine Umfrage stellen — praktisch für „Wer kann am Samstag?&quot; oder „Welches Lied nehmen wir?&quot;.</p>
+      <p><strong>Anlegen darf sie nur die Leitung.</strong> Teamer:innen und Konfis können abstimmen, aber keine Umfrage erstellen („Nur Admins können Umfragen erstellen&quot;).</p>
+      <p>Beim Anlegen:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th>Feld</th><th>Regel</th></tr></thead><tbody><tr><td><strong>Frage</strong></td><td>Pflicht, höchstens 500 Zeichen</td></tr><tr><td><strong>Antwortmöglichkeiten</strong></td><td>mindestens 2, höchstens 10, je höchstens 200 Zeichen</td></tr><tr><td><strong>Mehrfachauswahl</strong></td><td>aus / an</td></tr><tr><td><strong>Namen anzeigen</strong></td><td>aus / an</td></tr><tr><td><strong>Exklusive Optionen</strong></td><td>aus / an</td></tr><tr><td><strong>Ablaufdatum</strong></td><td>aus, oder 1 Stunde / 8 Stunden / 1 Tag / 7 Tage</td></tr></tbody></table></div>
+      <h3>Mehrfachauswahl</h3>
+      <p>Ist sie <strong>aus</strong> (Voreinstellung), zählt pro Person eine Stimme — wer eine andere Option wählt, gibt die alte automatisch zurück.</p>
+      <p>Ist sie <strong>an</strong>, darf jede:r beliebig viele Optionen ankreuzen. Jede einzelne lässt sich durch nochmaliges Antippen wieder abwählen.</p>
+      <h3>Ablaufdatum</h3>
+      <p>Solange die Umfrage läuft, steht die Restzeit dabei; danach steht dort in Rot <strong>„Beendet&quot;</strong>. Sie nimmt dann keine Stimmen mehr an („Umfrage ist abgelaufen&quot;). Das Ergebnis bleibt im Chat stehen und lesbar.</p>
+      <p>Ohne Ablaufdatum bleibt die Umfrage dauerhaft offen. Es gibt keinen Weg, eine Umfrage von Hand zu schließen oder zu bearbeiten — wenn das nötig wird, hilft nur, die Nachricht zu löschen und eine neue Umfrage zu stellen.</p>
+      <h3>Namen anzeigen</h3>
+      <p>Der Schalter heißt in der App <strong>„Namen anzeigen&quot;</strong> — „Sichtbar machen, wer welche Antwort gewählt hat&quot;.</p>
+      <p><strong>Er ist standardmäßig AUS.</strong> Eine neue Umfrage ist also von Haus aus anonym; du musst dich aktiv dafür entscheiden, die Namen zu zeigen.</p>
+      <blockquote><strong>Achtung:</strong> Genau umgekehrt, als die meisten es erwarten. Wenn du bei einer Terminabfrage wissen musst, wer kann, schalt „Namen anzeigen&quot; ein — sonst siehst du nur Zahlen und kannst niemanden mehr zuordnen. Nachträglich lässt sich das nicht ändern.</blockquote>
+      <p>---</p>
+      <h2>Anonyme Umfragen: was „anonym&quot; seit dem 23.08.2026 heißt</h2>
+      <p>Bei einer anonymen Umfrage sieht <strong>wirklich niemand</strong>, wer was gewählt hat — auch die Leitung nicht, auch nicht die Person, die die Umfrage gestellt hat.</p>
+      <p>Das war nicht immer so. Vorher wurde zwar der Name weggelassen, aber zu jeder Stimme weiterhin eine Benutzerkennung mitgeschickt. Über die Mitgliederliste des Chats ließ sich daraus zusammensetzen, wer wie abgestimmt hatte — die zugesagte Anonymität war nur kosmetisch.</p>
+      <p>Jetzt verlässt bei einer anonymen Umfrage <strong>nur die eigene Stimme</strong> den Server mit einer Kennung — damit man die eigene Wahl markiert sieht. Alle anderen Stimmen zählen anonym mit, ohne Kennung.</p>
+      <p>Auch im Export einer anonymen Umfrage stehen keine Stimmen — nur die Frage und die Antwortmöglichkeiten.</p>
+      <blockquote><strong>Achtung:</strong> Es gibt trotzdem eine Grenze, die keine Technik aufheben kann: In einer Umfrage mit drei Teilnehmenden ist auch die anonymste Abstimmung nicht wirklich anonym. Bei heiklen Fragen in kleinen Runden hilft nur, sie gar nicht erst als Umfrage zu stellen.</blockquote>
+      <p>---</p>
+      <h2>Exklusive Optionen: jede Antwort nur einmal</h2>
+      <p>„Exklusive Optionen&quot; heißt: <strong>Jede Option kann nur von einer Person gewählt werden.</strong> Damit wird aus der Umfrage eine Aufgabenverteilung.</p>
+      <p><em>Beispiel:</em> „Wer übernimmt welchen Teil?&quot; mit den Optionen Begrüßung, Lesung, Fürbitten, Segen. Wer zuerst tippt, hat den Teil — die Option ist danach für alle anderen belegt.</p>
+      <p>Statt der üblichen Balken steht bei jeder Option eines von drei Worten: <strong>Frei</strong>, <strong>Deine Wahl</strong> oder <strong>Vergeben</strong>. Vergebene Optionen sind ausgegraut und lassen sich nicht antippen.</p>
+      <p>So funktioniert es:</p>
+      <ul><li>Wer eine <strong>schon vergebene</strong> Option antippt, bekommt: <em>„Diese Option ist bereits vergeben.&quot;</em> Es entsteht keine zweite Stimme darauf.</li><li><strong>Die Wahl wechseln</strong> geht jederzeit: Tippst du eine andere freie Option an, wird deine alte automatisch wieder freigegeben.</li><li><strong>Die Wahl ganz zurückgeben</strong> geht, indem du deine eigene Option noch einmal antippst. Sie ist dann sofort wieder für alle frei.</li><li><strong>Mehrfachauswahl ist dabei ausgeschlossen.</strong> Der Schalter wird grau, sobald du „Exklusive Optionen&quot; einschaltest — mehrere Aufgaben gleichzeitig zu belegen ergäbe keinen Sinn.</li></ul>
+      <p>Zwei Personen, die im selben Moment auf dieselbe Option tippen, bekommen nicht beide den Zuschlag: Das System lässt die Anfragen nacheinander durch, die zweite bekommt „bereits vergeben&quot;.</p>
+      <blockquote><strong>Achtung:</strong> Es gibt keine Warteliste. Ist alles vergeben, und jemand kommt zu spät, muss die Absprache im Chat geklärt werden — die Umfrage hilft dabei nicht weiter.</blockquote>
+      <p>---</p>
+      <h2>Mitglieder verwalten</h2>
+      <p><strong>Nur die Leitung, und nur in Gruppen.</strong> In allen anderen Chat-Arten ergibt es sich aus der Sache selbst, wer drin ist: aus dem Jahrgang, aus der Rolle, aus der Terminanmeldung.</p>
+      <p>Wer es anderswo versucht, bekommt: <em>„Teilnehmer können nur zu Gruppenchats hinzugefügt werden&quot;</em> beziehungsweise <em>„… aus Gruppenchats entfernt werden&quot;</em>.</p>
+      <p>Nur Personen aus der eigenen Organisation lassen sich hinzufügen.</p>
+      <blockquote>Die Rolle einer hinzugefügten Person wird immer aus ihrem echten Konto ermittelt, nicht aus der Anfrage. Niemand landet dadurch mit falschen Rechten in einer Gruppe.</blockquote>
+      <blockquote><strong>Achtung:</strong> Beim <strong>nachträglichen</strong> Hinzufügen zu einer Gruppe gelten die Jahrgangsgrenzen aus der Tabelle oben <strong>nicht</strong>. Die Leitung kann also einen Konfi und eine fachfremde Teamer:in in dieselbe Gruppe setzen, obwohl die beiden einander nicht direkt anschreiben könnten. Beim Anlegen einer Gruppe wird das dagegen geprüft. Wer eine Gruppe zusammenstellt, sollte also selbst hinschauen, wer dort zusammentrifft.</blockquote>
+      <p>Die Mitgliederliste öffnet sich über das Personen-Symbol oben im Chat.</p>
+      <blockquote><strong>Achtung:</strong> Dieses Symbol sehen <strong>nur Leitung und Admins</strong>. Teamer:innen und Konfis kommen an die Mitgliederliste nicht heran — sie sehen nur, wer tatsächlich schreibt. Wenn jemand fragt „wer ist eigentlich alles in dieser Gruppe?&quot;, muss die Leitung das beantworten.</blockquote>
+      <p>---</p>
+      <h2>Chat verlassen und Chat löschen</h2>
+      <h3>Verlassen</h3>
+      <div class="tabelle-huelle"><table><thead><tr><th>Art</th><th>Verlassbar</th></tr></thead><tbody><tr><td>Gruppe</td><td>ja</td></tr><tr><td>Team-Chat</td><td>ja</td></tr><tr><td>Termin-Chat</td><td>Konfis nur übers Abmelden vom Termin; Team direkt</td></tr><tr><td>Jahrgangs-Chat</td><td><strong>nein</strong></td></tr><tr><td>Direktnachricht</td><td><strong>nein</strong></td></tr></tbody></table></div>
+      <p><strong>Die Leitung kann gar keinen Chat verlassen</strong> — <em>„Admins können Chats nicht verlassen.&quot;</em> Wer die Verantwortung trägt, bleibt in den Räumen.</p>
+      <h3>Löschen</h3>
+      <p>Einen ganzen Chat löschen darf <strong>nur die Leitung</strong>.</p>
+      <p>Enthält er noch Nachrichten, kommt zuerst eine Rückfrage: <em>„Chat-Raum kann nicht gelöscht werden: 47 Nachricht(en) vorhanden.&quot;</em> Erst mit ausdrücklicher Bestätigung wird gelöscht — dann sind der Raum, alle Nachrichten, alle Umfragen und alle Dateien weg. Es gibt keinen Papierkorb.</p>
+      <p>Jahrgangs-Chats sind davon ausgenommen: Sie verschwinden nur mit ihrem Jahrgang.</p>
+      <p>---</p>
+      <h2>Chat exportieren</h2>
+      <p>Ein ganzer Chatverlauf lässt sich als Datei herunterladen — gedacht dafür, aus einem Gespräch etwas weiterzuarbeiten, etwa eine Gottesdienst-Vorbereitung.</p>
+      <p><strong>Nur die Leitung darf das.</strong> Teamer:innen und Konfis nicht — <em>„Nur die Leitung darf Chats exportieren.&quot;</em> Ein Export nimmt den ganzen Verlauf aus dem Zusammenhang des Chats heraus; wer ihn zieht, soll dieselbe Verantwortung tragen wie beim Löschen.</p>
+      <p><strong>Fremde Zweiergespräche lassen sich nicht exportieren</strong> — <em>„Private Zweiergespräche lassen sich nicht exportieren.&quot;</em> Auch nicht von der Leitung.</p>
+      <p>Im Export steht der vollständige Verlauf, älteste Nachricht zuerst, nach Tagen gegliedert:</p>
+      <pre><code>Chat-Verlauf: Jahrgang 2026
+Exportiert am 23.08.2026, 14:12 — 138 Nachrichten
+============================================================
+
+--- Montag, 12.05.2026 ---
+14:03  Simon Luthe (org_admin): Denkt an die Zettel für Samstag!
+14:07  Lena M. (konfi): Ich hab meinen schon
+14:09  Jonas K. (konfi): [Bild: zettel.jpg]
+14:11  Simon Luthe (org_admin): [Diese Nachricht wurde gelöscht]</code></pre>
+      <p>Mit dabei: Datum und Uhrzeit, Absender mit Rolle, der Text, bei Anhängen der Dateiname, bei Umfragen Frage und Antwortmöglichkeiten und bei Antworten der Bezug auf die zitierte Nachricht. Gelöschte Nachrichten bleiben als Platzhalter stehen, damit der Verlauf nachvollziehbar bleibt.</p>
+      <p>Nicht im Export stehen: die <strong>Dateien selbst</strong> (nur ihre Namen), die <strong>Reaktionen</strong> und die <strong>abgegebenen Stimmen</strong> einer Umfrage — von einer Umfrage kommen nur Frage und Antwortmöglichkeiten mit, keine Ergebnisse.</p>
+      <p>Auf einem Handy landet der Export im Teilen-Menü, am Rechner im Download-Ordner.</p>
+      <p>---</p>
+      <h2>Übersicht, Reiter und Ungelesen-Zähler</h2>
+      <h3>Der Zähler</h3>
+      <p>Neben jedem Chat steht, wie viele Nachrichten du dort noch nicht gesehen hast. Gezählt wird alles, was <strong>seit deinem letzten Besuch in diesem Raum</strong> geschrieben wurde — pro Raum getrennt, für jede Person eigen.</p>
+      <p>Die Summe aller Räume erscheint als Zahl am Chat-Symbol in der unteren Leiste.</p>
+      <p><strong>Zurückgesetzt wird beim Öffnen des Chats.</strong> Es gibt keinen Knopf „alles als gelesen markieren&quot; und kein Wieder-auf-ungelesen-Setzen.</p>
+      <blockquote><strong>Achtung:</strong> Kurz in einen Chat hineinschauen setzt den Zähler zurück, auch wenn du nicht bis nach unten gescrollt hast. Wer eine Nachricht später beantworten will, sollte sie sich anders merken.</blockquote>
+      <blockquote><strong>Achtung, verwirrende Kleinigkeit:</strong> In der Chat-Liste zählen auch <strong>deine eigenen</strong> Nachrichten mit. Wer etwas schreibt und den Chat sofort verlässt, sieht dort eine „1&quot; — obwohl es nichts Neues zu lesen gibt. Einmal öffnen räumt sie weg.</blockquote>
+      <h3>Die Reiter</h3>
+      <p>Oben in der Übersicht:</p>
+      <div class="tabelle-huelle"><table><thead><tr><th>Reiter</th><th>Zeigt</th></tr></thead><tbody><tr><td><strong>Alle</strong></td><td>alle deine Chats</td></tr><tr><td><strong>Ungelesen</strong></td><td>nur Chats mit ungelesenen Nachrichten</td></tr><tr><td><strong>Konfis</strong></td><td>Jahrgangs- und Gruppenchats mit Konfis</td></tr><tr><td><strong>Team</strong></td><td>Team-Gruppen und Direktchats mit Teamer:innen — nur für das Team sichtbar</td></tr></tbody></table></div>
+      <p>Sortiert wird immer nach der letzten Nachricht: Der aktuellste Chat steht oben, unabhängig vom Reiter. Zusätzlich gibt es ein Suchfeld über die Chat-Namen.</p>
+      <p>Über der Liste stehen drei Zahlen: <strong>Chats</strong> (wie viele du hast), <strong>Ungelesen</strong> (die Summe aller Zähler) und <strong>Aktiv</strong> (Chats mit einer Nachricht in den letzten sieben Tagen). Chats und Ungelesen sind anklickbar und schalten auf den passenden Reiter; Aktiv ist nur eine Anzeige.</p>
+    </article>
+
+    <nav class="blaettern" aria-label="Weitere Kapitel">
+      <a class="blatt blatt--vor" href="./challenges.html">
+             <span class="blatt-hin">Vorheriges Kapitel</span>
+             <span class="blatt-titel">10. Challenges</span>
+           </a>
+      <a class="blatt blatt--weiter" href="./wrapped.html">
+             <span class="blatt-hin">Nächstes Kapitel</span>
+             <span class="blatt-titel">12. Jahresrückblick (Wrapped)</span>
+           </a>
+    </nav>
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>8. Abzeichen — Konfi Quest Handbuch</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Wie Badges funktionieren und welche Bedingungen es gibt">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Bebas+Neue&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root { --ground:#fbfaf9; --flaeche:#fff; --flaeche-2:#f4f1f6; --rand:#e7e3e8; --text:#1c1a1f; --text-leise:#6b6470; --akzent:#5b21b6; --akzent-weich:#f3eefc; --code-grund:#f5f2f7; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#161419; --flaeche:#1e1b22; --flaeche-2:#241f2a; --rand:#322c38; --text:#ece9ef; --text-leise:#a49cab; --akzent:#c4a8f5; --akzent-weich:#2a1f3d; --code-grund:#241f2a; } }
+:root[data-theme="dark"] { --ground:#161419; --flaeche:#1e1b22; --flaeche-2:#241f2a; --rand:#322c38; --text:#ece9ef; --text-leise:#a49cab; --akzent:#c4a8f5; --akzent-weich:#2a1f3d; --code-grund:#241f2a; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif; font-size:15px; line-height:1.65; -webkit-font-smoothing:antialiased; }
+.huelle { display:grid; grid-template-columns:264px minmax(0,1fr); max-width:1180px; margin:0 auto; }
+.seitenleiste { position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto; padding:32px 24px 40px; border-right:1px solid var(--rand); }
+.marke { font-family:'Bebas Neue',Impact,sans-serif; font-size:1.5rem; letter-spacing:3px; margin:0 0 2px; }
+.marke-unter { font-size:.78rem; color:var(--text-leise); margin:0 0 28px; }
+.nav-titel { font-size:.68rem; text-transform:uppercase; letter-spacing:.09em; color:var(--text-leise); margin:0 0 10px; font-weight:600; }
+.seitenleiste ul { list-style:none; margin:0 0 26px; padding:0; display:flex; flex-direction:column; gap:2px; }
+.seitenleiste ul a { display:flex; align-items:center; gap:9px; padding:7px 9px; border-radius:7px; text-decoration:none; color:var(--text); font-size:.87rem; }
+.seitenleiste ul a:hover { background:var(--akzent-weich); }
+.seitenleiste ul a:focus-visible { outline:2px solid var(--akzent); outline-offset:1px; }
+.nav-punkt { width:8px; height:8px; border-radius:50%; flex:none; }
+.nav-gruppe { font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:18px 0 6px; padding-left:9px; }
+.seitenleiste .fuss { border-top:1px solid var(--rand); padding-top:18px; font-size:.75rem; color:var(--text-leise); }
+.seitenleiste .fuss a { color:var(--akzent); }
+.inhalt { padding:40px 44px 96px; min-width:0; }
+.kopf { margin-bottom:40px; padding-bottom:26px; border-bottom:1px solid var(--rand); }
+.kopf h1 { font-family:'Bebas Neue',Impact,sans-serif; font-weight:400; font-size:3.1rem; line-height:1; letter-spacing:4px; margin:0 0 14px; text-wrap:balance; }
+.kopf p { margin:0; color:var(--text-leise); max-width:64ch; }
+.kapitel { margin-bottom:40px; }
+.kapitel-kopf { margin-bottom:20px; padding-left:13px; border-left:3px solid var(--kapitel); }
+.kapitel-kopf h1 { font-family:'Bebas Neue',Impact,sans-serif; font-weight:400; font-size:2.3rem; margin:0; letter-spacing:2.5px; line-height:1.05; display:flex; align-items:baseline; gap:11px; }
+.kapitel-meta { margin:2px 0 0; font-size:.78rem; color:var(--text-leise); }
+.kapitel h3 { font-size:1.06rem; margin:30px 0 10px; letter-spacing:-.01em; }
+.kapitel h4 { font-size:.95rem; margin:22px 0 8px; color:var(--text-leise); }
+.kapitel p { margin:0 0 13px; max-width:66ch; }
+.kapitel ul { margin:0 0 15px; padding-left:20px; max-width:66ch; display:flex; flex-direction:column; gap:6px; }
+.kapitel li { margin:0; }
+blockquote { margin:0 0 15px; padding:13px 17px; background:var(--flaeche); border:1px solid var(--rand); border-left:3px solid var(--kapitel); border-radius:8px; color:var(--text-leise); font-size:.92rem; max-width:66ch; }
+code { font-family:'JetBrains Mono',monospace; font-size:.85em; background:var(--code-grund); padding:1px 5px; border-radius:4px; }
+pre { background:var(--flaeche); border:1px solid var(--rand); border-radius:10px; padding:14px 16px; overflow-x:auto; margin:0 0 16px; max-width:66ch; }
+pre code { background:none; padding:0; font-size:.82rem; line-height:1.6; white-space:pre; }
+.tabelle-huelle { overflow-x:auto; border:1px solid var(--rand); border-radius:10px; background:var(--flaeche); margin:0 0 18px; }
+table { border-collapse:collapse; width:100%; font-size:.88rem; }
+th,td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--rand); vertical-align:top; }
+thead th { background:var(--flaeche-2); font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-leise); white-space:nowrap; }
+tbody tr:last-child td { border-bottom:none; }
+@media (max-width:860px) {
+  /* Auf dem Handy nahm das Inhaltsverzeichnis untereinander fast den ganzen
+     ersten Bildschirm ein — man musste scrollen, bevor Inhalt kam. Die Punkte
+     stehen deshalb nebeneinander und umbrechen bei Bedarf. Bewusst kein
+     Ausklapp-Element: <details> ohne open-Attribut versteckt den Inhalt auch
+     auf dem Desktop, und das per CSS zurueckzuholen ist unzuverlaessig. */
+  .huelle { grid-template-columns:1fr; }
+  .seitenleiste { position:static; height:auto; border-right:none; border-bottom:1px solid var(--rand); padding:20px 20px 14px; }
+  .marke-unter { margin-bottom:14px; }
+  .nav-titel { margin-bottom:7px; }
+  /* Gruppen-Ueberschriften kosten mobil zu viel Hoehe — die Chips stehen
+     ohnehin in derselben Reihenfolge beieinander. */
+  .nav-gruppe { display:none; }
+  .seitenleiste ul + ul { margin-top:0; }
+  .seitenleiste ul { flex-direction:row; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+  .seitenleiste ul a { padding:5px 10px; border:1px solid var(--rand); border-radius:999px; font-size:.82rem; }
+  .seitenleiste .fuss { border-top:none; padding-top:0; display:flex; gap:16px; }
+  .seitenleiste .fuss p { margin:0; }
+  .inhalt { padding:28px 20px 72px; }
+  .kopf h1 { font-size:2.4rem; }
+}
+
+/* --- Seit 24.08.2026: eine Seite je Kapitel --- */
+.marke a { color:inherit; text-decoration:none; }
+.marke a:hover { color:var(--akzent); }
+
+/* Nummer in der Navigation: gibt jedem Kapitel eine feste Kennung, auf die
+   man sich beziehen kann ("steht in Kapitel 7"). */
+.nav-nr { flex:none; width:20px; font-size:.74rem; font-variant-numeric:tabular-nums; color:var(--text-leise); text-align:right; }
+.seitenleiste ul a.ist-hier { background:var(--akzent-weich); font-weight:600; }
+.seitenleiste ul a.ist-hier .nav-nr { color:var(--akzent); }
+
+.kapitel-zaehler { font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-leise); font-weight:700; margin:0 0 6px; }
+.kapitel-nr { font-size:1.5rem; color:var(--kapitel); }
+
+/* Blaettern unten: die eigentliche Neuerung. Wer ein Kapitel gelesen hat,
+   soll nicht in die Navigation zurueckmuessen. */
+.blaettern { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:44px; padding-top:26px; border-top:1px solid var(--rand); }
+.blatt { display:flex; flex-direction:column; gap:3px; padding:14px 16px; border:1px solid var(--rand); border-radius:11px; background:var(--flaeche); text-decoration:none; color:var(--text); }
+.blatt:hover { border-color:var(--akzent); background:var(--akzent-weich); }
+.blatt:focus-visible { outline:2px solid var(--akzent); outline-offset:2px; }
+.blatt--weiter { text-align:right; }
+.blatt--leer { border:none; background:none; }
+.blatt-hin { font-size:.7rem; text-transform:uppercase; letter-spacing:.09em; color:var(--text-leise); font-weight:700; }
+.blatt-titel { font-weight:600; font-size:.95rem; }
+
+/* Uebersichtsseite */
+.karten { list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+.karte { display:flex; align-items:flex-start; gap:14px; padding:15px 17px; border:1px solid var(--rand); border-left:3px solid var(--kapitel); border-radius:11px; background:var(--flaeche); text-decoration:none; color:var(--text); }
+.karte:hover { border-color:var(--akzent); border-left-color:var(--kapitel); background:var(--akzent-weich); }
+.karte:focus-visible { outline:2px solid var(--akzent); outline-offset:2px; }
+.karte-nr { font-family:'Bebas Neue',Impact,sans-serif; font-size:1.5rem; line-height:1; color:var(--kapitel); min-width:26px; font-variant-numeric:tabular-nums; }
+.karte-text { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.karte-text strong { font-size:1rem; }
+.karte-text span { font-size:.84rem; color:var(--text-leise); }
+
+@media (max-width:860px) {
+  .blaettern { grid-template-columns:1fr; }
+  .blatt--weiter { text-align:left; }
+  .blatt--leer { display:none; }
+  .kapitel-kopf h1 { font-size:1.9rem; }
+}
+</style>
+</head>
+<body>
+<div class="huelle">
+  <nav class="seitenleiste">
+    <p class="marke"><a href="./">Konfi Quest</a></p>
+    <p class="marke-unter">Handbuch</p>
+    <p class="nav-titel">Inhalt</p>
+    <ul><li><a href="./start.html"><span class="nav-nr">1</span>Überblick</a></li><li><a href="./konfis.html"><span class="nav-nr">2</span>Für Konfis</a></li><li><a href="./teamer.html"><span class="nav-nr">3</span>Für Teamer:innen</a></li><li><a href="./leitung.html"><span class="nav-nr">4</span>Für die Leitung</a></li></ul><p class="nav-gruppe">Nachschlagen</p><ul><li><a href="./passwoerter.html"><span class="nav-nr">5</span>Passwörter und Zugänge</a></li><li><a href="./punkte.html"><span class="nav-nr">6</span>Punkte, Level und Ziele</a></li><li><a href="./jahrgaenge.html"><span class="nav-nr">7</span>Jahrgänge und Kategorien</a></li><li><a href="./badges.html" aria-current="page" class="ist-hier"><span class="nav-nr">8</span>Abzeichen</a></li><li><a href="./termine.html"><span class="nav-nr">9</span>Termine</a></li><li><a href="./challenges.html"><span class="nav-nr">10</span>Challenges</a></li><li><a href="./chat.html"><span class="nav-nr">11</span>Chat</a></li><li><a href="./wrapped.html"><span class="nav-nr">12</span>Jahresrückblick (Wrapped)</a></li></ul>
+    <div class="fuss">
+      <p><a href="/">Zur Startseite</a></p>
+    </div>
+  </nav>
+  <main class="inhalt">
+    <article class="kapitel" style="--kapitel:#b45309">
+      <header class="kapitel-kopf">
+        <p class="kapitel-zaehler">Kapitel 8 von 12</p>
+        <h1><span class="kapitel-nr">8</span>Abzeichen</h1>
+        <p class="kapitel-meta">Wie Badges funktionieren und welche Bedingungen es gibt</p>
+      </header>
+      <p>Abzeichen (im System „Badges&quot;) bekommen Konfis und Teamer:innen <strong>automatisch</strong>, sobald sie eine Bedingung erfüllen. Es gibt keine Möglichkeit, ein Abzeichen von Hand zu verleihen oder wieder abzuerkennen.</p>
+      <h2>Der Grundgedanke</h2>
+      <p>Du legst ein Abzeichen einmal an und beschreibst dabei, <strong>wofür</strong> es vergeben wird. Ab dann prüft das System selbst — bei jeder Punktevergabe und zusätzlich alle fünf Minuten im Hintergrund.</p>
+      <p>Ein Abzeichen besteht aus vier Dingen:</p>
+      <ul><li><strong>Name und Beschreibung</strong> — was drauf steht</li><li><strong>Symbol und Farbe</strong> — wie es aussieht</li><li><strong>Bedingung</strong> — wofür es vergeben wird (die 15 Möglichkeiten unten)</li><li><strong>Zielgruppe</strong> — für Konfis oder für Teamer:innen</li></ul>
+      <h2>Wichtig zu wissen, bevor du anfängst</h2>
+      <h3>Vergangenes zählt immer mit</h3>
+      <p>Ein heute angelegtes Abzeichen „10 Aktivitäten&quot; geht <strong>sofort</strong> an alle, die das längst erfüllen. Es gibt keine Möglichkeit, es nur ab heute gelten zu lassen.</p>
+      <p>Plane das ein: Wenn du mitten im Jahr ein Abzeichen einführst, haben es einige sofort — das ist so gewollt, wirkt aber überraschend, wenn man es nicht erwartet.</p>
+      <h3>Einmal verliehen, immer verliehen</h3>
+      <p>Wird ein Abzeichen vergeben und die Person verliert später Punkte, <strong>bleibt das Abzeichen</strong>. Es gibt keinen Entzug. Das ist Absicht: Was jemand einmal geschafft hat, bleibt geschafft.</p>
+      <h3>Zielgruppe lässt sich nachträglich nicht ändern</h3>
+      <p>Beim Anlegen wählst du Konfis oder Teamer:innen. Beim Bearbeiten ist diese Auswahl weg — das Feld wird gar nicht mehr mitgespeichert. Willst du wechseln, musst du ein neues Abzeichen anlegen.</p>
+      <h3>Deaktivieren ist nicht dasselbe wie Löschen</h3>
+      <div class="tabelle-huelle"><table><thead><tr><th></th><th>Deaktivieren</th><th>Löschen</th></tr></thead><tbody><tr><td>Neue Vergabe</td><td>stoppt</td><td>stoppt</td></tr><tr><td>Bereits Verliehene</td><td>bleiben in der Datenbank</td><td><strong>werden mitgelöscht</strong></td></tr><tr><td>Konfi sieht es weiter</td><td><strong>nein, es verschwindet</strong></td><td>nein</td></tr><tr><td>Teamer:in sieht es weiter</td><td>ja</td><td>nein</td></tr><tr><td>Rückgängig</td><td>ja</td><td>nein</td></tr></tbody></table></div>
+      <blockquote><strong>Unstimmigkeit, die du kennen solltest:</strong> Deaktivierst du ein Abzeichen, verschwindet es bei <strong>Konfis</strong> auch dann aus der App, wenn sie es schon hatten. Bei <strong>Teamer:innen</strong> bleibt es sichtbar. Wenn du ein Abzeichen aus dem Verkehr ziehen willst, ohne jemandem etwas wegzunehmen, ist das derzeit nicht zufriedenstellend lösbar.</blockquote>
+      <h3>Geheime Abzeichen</h3>
+      <p>Ein „geheimes&quot; Abzeichen sehen Konfis erst, <strong>wenn sie es haben</strong>. Vorher taucht es weder in der Liste noch als Fortschritt auf — nur die Anzahl unentdeckter Geheimnisse wird angezeigt („3 geheime Abzeichen&quot;).</p>
+      <p>Die Bedingung wird ganz normal geprüft. „Geheim&quot; betrifft nur die Anzeige.</p>
+      <p>---</p>
+      <h2>Die 15 Bedingungen</h2>
+      <p>Der Zahlenwert wird immer über einen Schieberegler von <strong>1 bis 20</strong> eingestellt. Höhere Werte sind über die App nicht möglich.</p>
+      <h3>Nach Punkten</h3>
+      <h4>Gesamtpunkte</h4>
+      <p>Gottesdienst- und Gemeindepunkte zusammen erreichen den Wert.</p>
+      <p><em>Beispiel:</em> Wert 20 → sobald jemand insgesamt 20 Punkte hat.</p>
+      <p>Gezählt werden <strong>nur die Punktarten, die im Jahrgang eingeschaltet sind</strong>. Ist Gemeinde abgeschaltet, zählen nur Gottesdienstpunkte. Sind beide aus, ist das Abzeichen unerreichbar und wird Konfis gar nicht erst angezeigt.</p>
+      <h4>Gottesdienst-Punkte · Gemeinde-Punkte</h4>
+      <p>Wie oben, aber nur die jeweilige Art. Ist sie im Jahrgang abgeschaltet, wird das Abzeichen nicht vergeben.</p>
+      <h4>Beide Kategorien</h4>
+      <p>Der Wert muss in <strong>beiden</strong> Bereichen einzeln erreicht sein.</p>
+      <p><em>Beispiel:</em> Wert 5 → mindestens 5 Gottesdienstpunkte <strong>und</strong> mindestens 5 Gemeindepunkte.</p>
+      <blockquote><strong>Achtung, Wortfalle:</strong> „Kategorien&quot; meint hier <strong>Gottesdienst und Gemeinde</strong>, nicht die Kategorien, die du selbst anlegst. Wer Kategorie-Abzeichen will, nimmt „Kategorie-Aktivitäten&quot; (siehe unten).</blockquote>
+      <h4>Bonuspunkte</h4>
+      <p>Die <strong>Summe</strong> aller vergebenen Bonuspunkte erreicht den Wert.</p>
+      <p><em>Beispiel:</em> Wert 2 → sobald du insgesamt 2 Bonuspunkte vergeben hast.</p>
+      <blockquote>Der Hilfetext in der App sagt „Anzahl der Vergaben&quot; — das stimmt nicht, gezählt wird die Punktesumme. Zwei Bonuspunkte auf einmal erfüllen die Bedingung also genauso wie zweimal ein Punkt.</blockquote>
+      <h3>Nach Anzahl</h3>
+      <h4>Aktivitäten &amp; Events</h4>
+      <p>Erledigte Aktivitäten <strong>plus</strong> besuchte Termine zusammen.</p>
+      <p><em>Beispiel:</em> Wert 10 → 10 Einträge insgesamt, egal in welcher Mischung.</p>
+      <h4>Event-Teilnahmen</h4>
+      <p>Nur besuchte Termine.</p>
+      <h4>Verschiedene Aktivitäten</h4>
+      <p>Wie viele <strong>unterschiedliche</strong> Aktivitäten jemand gemacht hat.</p>
+      <p><em>Beispiel:</em> Wert 3 → drei verschiedene Aktivitäten. Fünfmal dieselbe zählt als eine. Termine zählen hier <strong>nicht</strong> mit.</p>
+      <h4>Pflicht-Anwesenheit</h4>
+      <p>Besuchte <strong>Pflicht-Termine</strong>.</p>
+      <p><em>Beispiel:</em> Wert 12 → 12 besuchte Pflichttermine.</p>
+      <blockquote>Das ist die einzige Bedingung, die Pflichttermine zählt. Bei allen anderen zählen Pflichttermine und Konfirmationen <strong>nicht</strong> mit — sonst bekäme man Abzeichen für etwas, wozu man ohnehin verpflichtet ist.</blockquote>
+      <h3>Nach Inhalt</h3>
+      <h4>Spezifische Aktivität</h4>
+      <p>Eine bestimmte Aktivität, so oft wie eingestellt.</p>
+      <p><em>Beispiel:</em> Wert 5 + „Sonntagsgottesdienst&quot; → fünfmal daran teilgenommen.</p>
+      <h4>Aktivitäts-Kombination</h4>
+      <p>Von mehreren ausgewählten Aktivitäten muss eine Mindestanzahl erledigt sein.</p>
+      <p><em>Beispiel:</em> Zehn Aktivitäten ausgewählt, Wert 3 → drei davon reichen.</p>
+      <h4>Kategorie-Aktivitäten</h4>
+      <p><strong>Das ist die Bedingung, die deine selbst angelegten Kategorien nutzt.</strong></p>
+      <p>Gezählt wird alles aus einer Kategorie — <strong>Aktivitäten und Termine zusammen</strong>.</p>
+      <p><em>Beispiel:</em> Wert 3 + Kategorie „Kasualien&quot; → drei Kasualien, egal ob als Aktivität gemeldet oder als Termin besucht.</p>
+      <p>So hängt es zusammen:</p>
+      <pre><code>Kategorie &quot;Kasualien&quot; anlegen
+   ├─ der Aktivität &quot;Taufe begleiten&quot; zuordnen
+   ├─ der Aktivität &quot;Beerdigung besuchen&quot; zuordnen
+   └─ dem Termin &quot;Trauung Familie Meier&quot; zuordnen
+                    ↓
+Abzeichen &quot;Kasualien-Kenner&quot;: 3 aus Kategorie &quot;Kasualien&quot;</code></pre>
+      <blockquote><strong>Wichtige Falle:</strong> Das Abzeichen merkt sich den <strong>Namen</strong> der Kategorie, nicht die Kategorie selbst. Benennst du „Kasualien&quot; später in „Kasualien &amp; Begleitung&quot; um, findet das Abzeichen nichts mehr — stillschweigend, ohne Fehlermeldung. Bereits verliehene bleiben. <strong>Kategorien, auf die Abzeichen zeigen, also besser nicht umbenennen.</strong></blockquote>
+      <h3>Nach Zeit</h3>
+      <h4>Zeitbasiert</h4>
+      <p>So viele Aktivitäten oder Termine innerhalb der letzten X Wochen.</p>
+      <p><em>Beispiel:</em> Wert 2 + 4 Wochen → zwei Einträge in den letzten vier Wochen.</p>
+      <p>Das Fenster wandert immer mit — es ist kein fester Zeitraum, sondern „ab jetzt rückwärts&quot;. Einstellbar sind 1 bis 26 Wochen.</p>
+      <h4>Serie</h4>
+      <p>Wochen <strong>in Folge</strong> mit mindestens einem Eintrag.</p>
+      <p><em>Beispiel:</em> Wert 4 → vier Wochen am Stück aktiv.</p>
+      <blockquote>Gezählt wird ab der <strong>letzten aktiven Woche</strong> rückwärts, nicht ab heute. Wer vor einem Jahr vier Wochen am Stück aktiv war und seitdem nichts, erfüllt die Bedingung weiterhin und bekommt das Abzeichen beim nächsten Anlegen sofort.</blockquote>
+      <h3>Nur für Teamer:innen</h3>
+      <h4>Teamer-Jahr</h4>
+      <p>Kalenderjahre mit mindestens einer Aktivität oder einem Termin.</p>
+      <p><em>Beispiel:</em> Wert 3 → in drei Jahren aktiv gewesen.</p>
+      <p><strong>Lücken sind erlaubt:</strong> Wer 2024 und 2026 aktiv war, aber 2025 nicht, hat zwei Jahre. Gezählt wird ab dem Eintrittsdatum („Teamer:in seit&quot;). Fehlt das, wird das Jahr der ältesten Aktivität genommen; fehlt auch das, zählt es null.</p>
+      <p>---</p>
+      <h2>Welche Bedingung für welche Zielgruppe?</h2>
+      <div class="tabelle-huelle"><table><thead><tr><th>Bedingung</th><th>Konfis</th><th>Teamer:innen</th></tr></thead><tbody><tr><td>Gesamtpunkte, Gottesdienst, Gemeinde, Beide Kategorien</td><td>ja</td><td>nein</td></tr><tr><td>Bonuspunkte</td><td>ja</td><td>nein</td></tr><tr><td>Aktivitäten &amp; Events</td><td>ja</td><td>ja</td></tr><tr><td>Event-Teilnahmen</td><td>ja</td><td>nein</td></tr><tr><td>Verschiedene Aktivitäten</td><td>ja</td><td>ja</td></tr><tr><td>Pflicht-Anwesenheit</td><td>ja</td><td>nein</td></tr><tr><td>Spezifische Aktivität</td><td>ja</td><td>ja</td></tr><tr><td>Aktivitäts-Kombination</td><td>ja</td><td>ja</td></tr><tr><td>Kategorie-Aktivitäten</td><td>ja</td><td>ja</td></tr><tr><td>Zeitbasiert, Serie</td><td>ja</td><td>nein</td></tr><tr><td>Teamer-Jahr</td><td>nein</td><td>ja</td></tr></tbody></table></div>
+      <p>Teamer:innen sammeln keine Punkte — deshalb entfallen alle punktebasierten Bedingungen. Bei Termin-Bedingungen zählen für Teamer:innen <strong>alle</strong> besuchten Termine, auch Pflichttermine: Sie arbeiten dort mit.</p>
+      <h2>Wann wird geprüft?</h2>
+      <p>Sofort bei:</p>
+      <ul><li>einer genehmigten Aktivitäts-Meldung</li><li>einer direkt zugewiesenen Aktivität</li><li>vergebenen Bonuspunkten</li><li>eingetragener Anwesenheit bei einem Termin</li></ul>
+      <p>Zusätzlich alle fünf Minuten im Hintergrund.</p>
+      <blockquote>Der Hintergrundlauf erfasst <strong>nur Geräte mit eingeschalteten Mitteilungen</strong>. Wer die App nie installiert oder Mitteilungen abgelehnt hat, bekommt zeitliche Abzeichen („Serie&quot;, „Zeitbasiert&quot;, „Teamer-Jahr&quot;) erst bei der nächsten Punktevergabe. Die anderen Bedingungen greifen ohnehin sofort.</blockquote>
+      <h2>Was beim Verleihen passiert</h2>
+      <p>1. Das Abzeichen wird eingetragen 2. Mitteilung in der App: „Neues Badge erhalten!&quot; 3. Push aufs Gerät 4. Der Zähler in der Tab-Leiste aktualisiert sich</p>
+      <p>Ein Abzeichen kann nie doppelt vergeben werden.</p>
+    </article>
+
+    <nav class="blaettern" aria-label="Weitere Kapitel">
+      <a class="blatt blatt--vor" href="./jahrgaenge.html">
+             <span class="blatt-hin">Vorheriges Kapitel</span>
+             <span class="blatt-titel">7. Jahrgänge und Kategorien</span>
+           </a>
+      <a class="blatt blatt--weiter" href="./termine.html">
+             <span class="blatt-hin">Nächstes Kapitel</span>
+             <span class="blatt-titel">9. Termine</span>
+           </a>
+    </nav>
+  </main>
+</div>
+</body>
+</html>
