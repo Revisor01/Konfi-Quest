@@ -15,7 +15,6 @@
 import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execFileSync } from 'node:child_process';
 
 const WURZEL = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const QUELLE = join(WURZEL, 'docs', 'api');
@@ -49,21 +48,6 @@ const ROLLEN_KLASSE = {
   'alle authentifizierten': 'r-alle', oeffentlich: 'r-offen',
 };
 
-/**
- * Datum der letzten Aenderung eines Verzeichnisses laut git — reproduzierbar,
- * anders als new Date(). Faellt auf das heutige Datum zurueck, wenn git fehlt.
- */
-function standAusGit(pfad) {
-  try {
-    const iso = execFileSync('git', ['log', '-1', '--format=%cI', '--', pfad], {
-      cwd: WURZEL, encoding: 'utf8',
-    }).trim();
-    if (iso) {
-      return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Berlin' });
-    }
-  } catch { /* git nicht verfuegbar -> Rueckfall */ }
-  return new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Berlin' });
-}
 
 function e(text) {
   return String(text ?? '')
@@ -161,7 +145,6 @@ async function main() {
   // rot gemacht, ohne dass sich etwas geaendert hat. Quelle ist deshalb der
   // Zeitpunkt der letzten Aenderung an den Quellen (git), mit der Uhr als
   // Rueckfall, falls git nicht verfuegbar ist.
-  const stand = standAusGit(join(WURZEL, 'docs', 'api'));
 
   const nav = bereiche.map((b) =>
     `<li class="nav-gruppe"><a href="#${b.id}"><span class="nav-punkt" style="background:${b.farbe}"></span>${e(b.titel)}<span class="nav-zahl">${b.routen.length}</span></a></li>`
@@ -250,7 +233,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
 <div class="huelle">
   <nav class="seitenleiste">
     <p class="marke">Konfi Quest</p>
-    <p class="marke-unter">API-Referenz · Stand ${stand}</p>
+    <p class="marke-unter">API-Referenz</p>
     <p class="marke-unter" style="margin-bottom:20px"><a href="./swagger.html" style="color:var(--akzent)">Swagger-Ansicht</a> · <a href="/docs/" style="color:var(--akzent)">Handbuch</a></p>
     <p class="nav-titel">Bereiche</p>
     <ul>${nav}</ul>

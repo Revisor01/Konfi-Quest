@@ -22,7 +22,6 @@
 import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execFileSync } from 'node:child_process';
 
 const WURZEL = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const QUELLE = join(WURZEL, 'docs', 'api');
@@ -47,16 +46,6 @@ async function ladeYamlParser() {
   throw new Error('js-yaml nicht gefunden. Installieren mit:  npm --prefix frontend install js-yaml');
 }
 
-/** Datum der letzten Aenderung laut git — reproduzierbar, anders als new Date(). */
-function standAusGit(pfad) {
-  try {
-    const iso = execFileSync('git', ['log', '-1', '--format=%cI', '--', pfad], {
-      cwd: WURZEL, encoding: 'utf8',
-    }).trim();
-    if (iso) return new Date(iso).toISOString().slice(0, 10);
-  } catch { /* Rueckfall */ }
-  return new Date().toISOString().slice(0, 10);
-}
 
 function e(text) {
   return String(text ?? '')
@@ -157,8 +146,11 @@ async function main() {
     0
   );
 
-  const stand = standAusGit(QUELLE);
-  zusammen.info.description += `\n\nStand ${stand}. ${anzahl} Operationen.`;
+  // Bewusst OHNE Datum: Es kam aus dem letzten Commit der Quellen und konnte
+  // damit nie den Commit kennen, der es gerade erzeugt — der Frischecheck der
+  // CI wurde nach jeder Doku-Aenderung einmal grundlos rot (24.08.2026).
+  // Wie alt die Doku ist, sagt die git-Historie genauer.
+  zusammen.info.description += `\n\n${anzahl} Operationen.`;
 
   mkdirSync(ZIEL_DIR, { recursive: true });
   writeFileSync(join(ZIEL_DIR, 'openapi.json'), JSON.stringify(zusammen, null, 2), 'utf8');
@@ -194,7 +186,7 @@ async function main() {
 <body>
 <div class="kopf">
   <b>Konfi Quest API</b>
-  <span>${anzahl} Operationen &middot; Stand ${e(stand)}</span>
+  <span>${anzahl} Operationen</span>
   <a href="./index.html">Kompakte Uebersicht</a>
   <a href="/docs/">Handbuch</a>
   <a href="./openapi.json">openapi.json</a>

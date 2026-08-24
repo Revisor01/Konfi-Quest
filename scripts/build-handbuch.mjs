@@ -22,7 +22,6 @@
 import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execFileSync } from 'node:child_process';
 
 const WURZEL = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const QUELLE = join(WURZEL, 'docs', 'handbuch');
@@ -30,21 +29,6 @@ const ZIEL = process.argv[2]
   ? resolve(process.argv[2])
   : join(WURZEL, 'frontend', 'public', 'docs', 'index.html');
 
-/**
- * Datum der letzten Aenderung eines Verzeichnisses laut git — reproduzierbar,
- * anders als new Date(). Faellt auf das heutige Datum zurueck, wenn git fehlt.
- */
-function standAusGit(pfad) {
-  try {
-    const iso = execFileSync('git', ['log', '-1', '--format=%cI', '--', pfad], {
-      cwd: WURZEL, encoding: 'utf8',
-    }).trim();
-    if (iso) {
-      return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Berlin' });
-    }
-  } catch { /* git nicht verfuegbar -> Rueckfall */ }
-  return new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Berlin' });
-}
 
 function e(text) {
   return String(text ?? '')
@@ -200,7 +184,6 @@ function main() {
   // Datum aus git statt aus der Uhr — sonst erzeugt die CI bei jedem
   // Tageswechsel eine abweichende Seite und der Frischecheck schlaegt an,
   // ohne dass sich etwas geaendert hat.
-  const stand = standAusGit(QUELLE);
 
   // Navigation nach Gruppen: Kapitel ohne "gruppe" stehen oben, die
   // Nachschlage-Kapitel darunter unter ihrer Ueberschrift. Bei elf Kapiteln
@@ -311,7 +294,6 @@ tbody tr:last-child td { border-bottom:none; }
     <p class="nav-titel">Inhalt</p>
     ${nav}
     <div class="fuss">
-      <p>Stand ${e(stand)}</p>
       <p><a href="/">Zur Startseite</a></p>
     </div>
   </nav>
