@@ -318,4 +318,103 @@ describe('PushService: organization_id in jedem Payload', () => {
       });
     }
   });
+
+  // Diese fuenf Meldungen standen bis 24.08.2026 als fertige Payloads in den
+  // Routen (events.js, teamer.js, wrapped.js) und waren dadurch weder zentral
+  // auffindbar noch getestet. Jetzt sind es benannte Methoden — die Tests
+  // pruefen Text UND Payload, damit beim Umzug nichts still verrutscht ist.
+  describe('Meldungen, die vorher direkt in den Routen standen', () => {
+    it('sendMandatoryEventCreated: Titel, Datum und Event-Id', async () => {
+      await PushService.sendMandatoryEventCreated(
+        db, [USERS.konfi1.id], 'Vorstellungsgottesdienst', '2026-09-13T10:00:00Z', 77, ORGS.testGemeinde.id
+      );
+
+      const [push] = gesendete();
+      expect(push.title).toBe('Neues Pflicht-Event');
+      expect(push.data.type).toBe('mandatory_event_created');
+      expect(push.data.eventId).toBe('77');
+      expect(push.data.organization_id).toBe('1');
+    });
+
+    it('sendMandatoryEventCreated: ohne Empfaenger wird nichts gesendet', async () => {
+      const ergebnis = await PushService.sendMandatoryEventCreated(
+        db, [], 'Event', '2026-09-13T10:00:00Z', 77, ORGS.testGemeinde.id
+      );
+
+      expect(ergebnis).toEqual({ success: true, sent: 0 });
+      expect(gesendete()).toHaveLength(0);
+    });
+
+    it('sendTeamerEventBookingToAdmins: angemeldet', async () => {
+      await PushService.sendTeamerEventBookingToAdmins(
+        db, ORGS.testGemeinde.id, 'Lasse Brandt', 'Konfi-Freizeit', 'confirmed', 42
+      );
+
+      const [push] = gesendete();
+      expect(push.title).toBe('Teamer:in angemeldet');
+      expect(push.data.type).toBe('teamer_event_booking');
+      expect(push.data.eventId).toBe('42');
+      expect(push.data.organization_id).toBe('1');
+    });
+
+    it('sendTeamerEventBookingToAdmins: Warteliste hat einen eigenen Text', async () => {
+      await PushService.sendTeamerEventBookingToAdmins(
+        db, ORGS.testGemeinde.id, 'Lasse Brandt', 'Konfi-Freizeit', 'waitlist', 42
+      );
+
+      const [push] = gesendete();
+      expect(push.data.type).toBe('teamer_event_booking');
+      expect(push.data.organization_id).toBe('1');
+    });
+
+    it('sendTeamerEventCancellationToAdmins: Abmeldung', async () => {
+      await PushService.sendTeamerEventCancellationToAdmins(
+        db, ORGS.testGemeinde.id, 'Lasse Brandt', 'Konfi-Freizeit', 42
+      );
+
+      const [push] = gesendete();
+      expect(push.title).toBe('Teamer:in abgemeldet');
+      expect(push.data.type).toBe('teamer_event_cancellation');
+      expect(push.data.eventId).toBe('42');
+      expect(push.data.organization_id).toBe('1');
+    });
+
+    it('sendCertificateToTeamer: Zertifikat an die Teamer:in', async () => {
+      await PushService.sendCertificateToTeamer(
+        db, USERS.teamer1.id, 'Erste Hilfe', ORGS.testGemeinde.id
+      );
+
+      const [push] = gesendete();
+      expect(push.title).toBe('Neues Zertifikat');
+      expect(push.data.type).toBe('certificate');
+      expect(push.data.organization_id).toBe('1');
+    });
+
+    it('sendWrappedReleased: Konfi-Variante', async () => {
+      await PushService.sendWrappedReleased(db, [USERS.konfi1.id], 'konfi', ORGS.testGemeinde.id);
+
+      const [push] = gesendete();
+      expect(push.title).toBe('Dein Konfi-Jahr ist da!');
+      expect(push.data.type).toBe('wrapped');
+      expect(push.data.wrappedType).toBe('konfi');
+      expect(push.data.organization_id).toBe('1');
+    });
+
+    it('sendWrappedReleased: Teamer-Variante hat einen eigenen Titel', async () => {
+      await PushService.sendWrappedReleased(db, [USERS.teamer1.id], 'teamer', ORGS.testGemeinde.id);
+
+      const [push] = gesendete();
+      expect(push.title).toBe('Dein Teamer-Jahr ist da!');
+      expect(push.data.type).toBe('wrapped');
+      expect(push.data.wrappedType).toBe('teamer');
+      expect(push.data.organization_id).toBe('1');
+    });
+
+    it('sendWrappedReleased: Org 2 traegt "2", nicht die Primaer-Org des Aufrufers', async () => {
+      await PushService.sendWrappedReleased(db, [USERS.konfi3.id], 'konfi', ORGS.andereGemeinde.id);
+
+      const [push] = gesendete();
+      expect(push.data.organization_id).toBe('2');
+    });
+  });
 });

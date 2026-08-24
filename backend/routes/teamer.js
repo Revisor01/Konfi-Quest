@@ -788,11 +788,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       // Push + Live-Update an die Empfaenger:in (Teamer:in). Seiteneffekt NACH res,
       // in try/catch — ein Push-Fehler darf die erfolgreiche Zuweisung nicht kippen.
       try {
-        await PushService.sendToUser(db, req.params.userId, {
-          title: 'Neues Zertifikat',
-          body: `Du hast das Zertifikat "${certType.name}" erhalten.`,
-          data: { type: 'certificate', organization_id: String(req.user.organization_id) }
-        });
+        await PushService.sendCertificateToTeamer(db, req.params.userId, certType.name, req.user.organization_id);
       } catch (pushErr) {
         console.error('Error sending certificate push:', pushErr);
       }

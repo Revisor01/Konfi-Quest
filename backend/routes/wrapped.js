@@ -512,11 +512,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // Push-Notification an alle Konfis
         try {
           const konfiIds = konfis.map(k => k.user_id);
-          await PushService.sendToMultipleUsers(db, konfiIds, {
-            title: 'Dein Konfi-Jahr ist da!',
-            body: 'Schau dir jetzt deinen persönlichen Jahresrückblick an!',
-            data: { type: 'wrapped', wrappedType: 'konfi', organization_id: String(req.user.organization_id) }
-          });
+          await PushService.sendWrappedReleased(db, konfiIds, 'konfi', req.user.organization_id);
         } catch (pushErr) {
           console.error('Push-Notification für Konfi-Wrapped fehlgeschlagen:', pushErr);
         }
@@ -583,11 +579,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // Push-Notification an alle Teamer:innen
         try {
           const teamerIds = teamers.map(t => t.user_id);
-          await PushService.sendToMultipleUsers(db, teamerIds, {
-            title: 'Dein Teamer-Jahr ist da!',
-            body: 'Schau dir jetzt deinen persönlichen Jahresrückblick an!',
-            data: { type: 'wrapped', wrappedType: 'teamer', organization_id: String(req.user.organization_id) }
-          });
+          await PushService.sendWrappedReleased(db, teamerIds, 'teamer', req.user.organization_id);
         } catch (pushErr) {
           console.error('Push-Notification für Teamer-Wrapped fehlgeschlagen:', pushErr);
         }
@@ -730,11 +722,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       // Push (fire-and-forget, dbRef statt client da client released wird)
       try {
         const konfiIds = konfis.map(k => k.user_id);
-        await PushService.sendToMultipleUsers(dbRef, konfiIds, {
-          title: 'Dein Konfi-Jahr ist da!',
-          body: 'Schau dir jetzt deinen persönlichen Jahresrückblick an!',
-          data: { type: 'wrapped', wrappedType: 'konfi', organization_id: String(orgId) }
-        });
+        await PushService.sendWrappedReleased(dbRef, konfiIds, 'konfi', orgId);
       } catch (pushErr) {
         console.error('Wrapped-Cron Push fehlgeschlagen:', pushErr);
       }
@@ -789,11 +777,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       // Push (fire-and-forget)
       try {
         const teamerIds = teamers.map(t => t.user_id);
-        await PushService.sendToMultipleUsers(dbRef, teamerIds, {
-          title: 'Dein Teamer-Jahr ist da!',
-          body: 'Schau dir jetzt deinen persönlichen Jahresrückblick an!',
-          data: { type: 'wrapped', wrappedType: 'teamer', organization_id: String(orgId) }
-        });
+        await PushService.sendWrappedReleased(dbRef, teamerIds, 'teamer', orgId);
       } catch (pushErr) {
         console.error('Wrapped-Cron Push fehlgeschlagen:', pushErr);
       }

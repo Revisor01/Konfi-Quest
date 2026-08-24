@@ -1333,6 +1333,128 @@ class PushService {
       return { success: false, error: error.message };
     }
   }
+
+  // ==========================================================================
+  // Die folgenden Meldungen standen bis 24.08.2026 als fertige Payloads direkt
+  // in den Routen (events.js, teamer.js, wrapped.js). Das ging jahrelang gut
+  // und fiel erst auf, als jeder Push eine organization_id bekommen sollte:
+  // Solche Stellen findet man beim Suchen nach "PushService." schlicht nicht
+  // als Meldung wieder, und jede musste einzeln nachgezogen werden. Der
+  // Wrapped-Text stand dabei zweimal im Code (Freigabe von Hand und per Cron)
+  // und haette bei einer Aenderung auseinanderlaufen koennen.
+  //
+  // Deshalb gilt jetzt: KEIN Payload ausserhalb dieser Datei. Wer eine neue
+  // Meldung braucht, legt hier eine Methode an.
+  // ==========================================================================
+
+  /**
+   * Neues Pflicht-Event - Push an die Konfis der betroffenen Jahrgaenge.
+   */
+  static async sendMandatoryEventCreated(db, userIds, eventName, eventDate, eventId, organizationId) {
+    try {
+      if (!userIds || userIds.length === 0) return { success: true, sent: 0 };
+
+      return await this.sendToMultipleUsers(db, userIds, {
+        title: 'Neues Pflicht-Event',
+        body: `${eventName} am ${new Date(eventDate).toLocaleDateString('de-DE')}`,
+        data: {
+          type: 'mandatory_event_created',
+          eventId: String(eventId),
+          organization_id: String(organizationId)
+        }
+      });
+    } catch (error) {
+      console.error('sendMandatoryEventCreated error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Teamer:in hat sich zu einem Event angemeldet - Push an die Leitung.
+   * @param {string} status 'confirmed' oder 'waitlist'
+   */
+  static async sendTeamerEventBookingToAdmins(db, organizationId, teamerName, eventName, status, eventId) {
+    try {
+      return await this.sendToOrgAdmins(db, organizationId, {
+        title: 'Teamer:in angemeldet',
+        body: status === 'confirmed'
+          ? `${teamerName} hat sich für '${eventName}' angemeldet`
+          : `${teamerName} steht auf der Warteliste für '${eventName}'`,
+        data: {
+          type: 'teamer_event_booking',
+          eventId: String(eventId),
+          organization_id: String(organizationId)
+        }
+      });
+    } catch (error) {
+      console.error('sendTeamerEventBookingToAdmins error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Teamer:in hat sich von einem Event abgemeldet - Push an die Leitung.
+   */
+  static async sendTeamerEventCancellationToAdmins(db, organizationId, teamerName, eventName, eventId) {
+    try {
+      return await this.sendToOrgAdmins(db, organizationId, {
+        title: 'Teamer:in abgemeldet',
+        body: `${teamerName} hat sich von '${eventName}' abgemeldet`,
+        data: {
+          type: 'teamer_event_cancellation',
+          eventId: String(eventId),
+          organization_id: String(organizationId)
+        }
+      });
+    } catch (error) {
+      console.error('sendTeamerEventCancellationToAdmins error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Zertifikat vergeben - Push an die Teamer:in.
+   */
+  static async sendCertificateToTeamer(db, userId, certificateName, organizationId) {
+    try {
+      return await this.sendToUser(db, userId, {
+        title: 'Neues Zertifikat',
+        body: `Du hast das Zertifikat "${certificateName}" erhalten.`,
+        data: {
+          type: 'certificate',
+          organization_id: String(organizationId)
+        }
+      });
+    } catch (error) {
+      console.error('sendCertificateToTeamer error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Jahresrueckblick freigegeben - Push an Konfis oder Teamer:innen.
+   * Wird an zwei Stellen gebraucht: bei der Freigabe von Hand und im Cron.
+   * @param {'konfi'|'teamer'} wrappedType
+   */
+  static async sendWrappedReleased(db, userIds, wrappedType, organizationId) {
+    try {
+      if (!userIds || userIds.length === 0) return { success: true, sent: 0 };
+
+      const istKonfi = wrappedType === 'konfi';
+      return await this.sendToMultipleUsers(db, userIds, {
+        title: istKonfi ? 'Dein Konfi-Jahr ist da!' : 'Dein Teamer-Jahr ist da!',
+        body: 'Schau dir jetzt deinen persönlichen Jahresrückblick an!',
+        data: {
+          type: 'wrapped',
+          wrappedType,
+          organization_id: String(organizationId)
+        }
+      });
+    } catch (error) {
+      console.error('sendWrappedReleased error:', error);
+      return { success: false, error: error.message };
+    }
+  }
 }
 
 module.exports = PushService;

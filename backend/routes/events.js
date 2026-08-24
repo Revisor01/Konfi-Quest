@@ -948,11 +948,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
           if (enrolledUsers.length > 0) {
             const userIds = enrolledUsers.map(u => u.id);
-            await PushService.sendToMultipleUsers(db, userIds, {
-              title: 'Neues Pflicht-Event',
-              body: `${name} am ${new Date(event_date).toLocaleDateString('de-DE')}`,
-              data: { type: 'mandatory_event_created', eventId: String(eventId), organization_id: String(req.user.organization_id) }
-            });
+            await PushService.sendMandatoryEventCreated(db, userIds, name, event_date, eventId, req.user.organization_id);
           }
         }
         // Freiwillige Events: KEIN direkter "Anmeldung möglich"-Push hier.
@@ -1632,13 +1628,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'teamer_booking' });
 
         try {
-          await PushService.sendToOrgAdmins(db, req.user.organization_id, {
-            title: 'Teamer:in angemeldet',
-            body: teamerBookingStatus === 'confirmed'
-              ? `${req.user.display_name} hat sich für '${event.name}' angemeldet`
-              : `${req.user.display_name} steht auf der Warteliste für '${event.name}'`,
-            data: { type: 'teamer_event_booking', eventId: String(eventId) }
-          });
+          await PushService.sendTeamerEventBookingToAdmins(
+            db, req.user.organization_id, req.user.display_name, event.name, teamerBookingStatus, eventId
+          );
         } catch (pushErr) {
           console.error('Push notification failed for teamer booking:', pushErr);
         }
@@ -1973,11 +1965,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       if (isTeamer) {
         try {
           const { rows: [eventInfo] } = await db.query("SELECT name FROM events WHERE id = $1", [eventId]);
-          await PushService.sendToOrgAdmins(db, req.user.organization_id, {
-            title: 'Teamer:in abgemeldet',
-            body: `${req.user.display_name} hat sich von '${eventInfo ? eventInfo.name : 'Event'}' abgemeldet`,
-            data: { type: 'teamer_event_cancellation', eventId: String(eventId) }
-          });
+          await PushService.sendTeamerEventCancellationToAdmins(
+            db, req.user.organization_id, req.user.display_name,
+            eventInfo ? eventInfo.name : 'Event', eventId
+          );
         } catch (pushErr) {
           console.error('Push notification failed for teamer cancellation:', pushErr);
         }
