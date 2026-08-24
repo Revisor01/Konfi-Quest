@@ -265,8 +265,11 @@ Erledigten.
       ruft — das killt den ganzen vitest-Worker. `utils/liveUpdate.js` lädt das
       Singleton NICHT beim Import, sondern lazy in den Funktionen (Zeilen 49,
       111, 164, 233); es entsteht also mitten im Testlauf. Daher die Sporadik.
-      *Teilfix am 25.08.: `process.exit(1)` greift nur noch außerhalb von Tests
-      (`NODE_ENV !== 'test'`). Nachgemessen wird noch — erst danach abhaken.*
+      *Teilfix am 25.08. (`8fc097ce`): `process.exit(1)` greift nur noch
+      außerhalb von Tests (`NODE_ENV !== 'test'`). Nachgemessen: fünf Läufe
+      hintereinander grün, je 1167 Tests. Bei einer Rate von "jeder vierte"
+      wäre das zu rund 24 % auch Zufall — gutes Indiz, kein Beweis. Bleibt
+      offen, bis die CI weitere Läufe geliefert hat.*
       Der saubere Fix bleibt offen: `liveUpdate` den Pool übergeben statt ihn
       zu holen. Für die zweite Spur (Transportebene) fand sich beim Nachsehen
       am 25.08. kein Beleg — erst messen, ob überhaupt noch etwas abbricht.
