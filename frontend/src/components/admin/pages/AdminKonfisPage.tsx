@@ -87,21 +87,21 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   const [showUpdateWalkthrough, setShowUpdateWalkthrough] = useState(false);
   
   // Offline-Query: Konfis
-  const { data: konfis, loading: konfisLoading, refresh: refreshKonfis } = useOfflineQuery<Konfi[]>(
+  const { data: konfis, loading: konfisLoading, refresh: refreshKonfis, refreshLive: refreshKonfisLive } = useOfflineQuery<Konfi[]>(
     'admin:konfis:' + user?.organization_id,
     async () => { const res = await api.get('/admin/konfis'); return res.data; },
     { ttl: CACHE_TTL.KONFIS }
   );
 
   // Offline-Query: Jahrgänge
-  const { data: jahrgaenge, refresh: refreshJahrgaenge } = useOfflineQuery<Jahrgang[]>(
+  const { data: jahrgaenge, refresh: refreshJahrgaenge, refreshLive: refreshJahrgaengeLive } = useOfflineQuery<Jahrgang[]>(
     'admin:jahrgaenge:' + user?.organization_id,
     async () => { const res = await api.get('/admin/jahrgaenge'); return res.data; },
     { ttl: CACHE_TTL.STAMMDATEN }
   );
 
   // Offline-Query: Settings
-  const { data: settings, refresh: refreshSettings } = useOfflineQuery<Settings>(
+  const { data: settings, refresh: refreshSettings, refreshLive: refreshSettingsLive } = useOfflineQuery<Settings>(
     'admin:settings:' + user?.organization_id,
     async () => { const res = await api.get('/settings'); return res.data; },
     { ttl: CACHE_TTL.SETTINGS }
@@ -152,10 +152,10 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
 
   // Memoized refresh function for live updates
   const refreshAll = useCallback(() => {
-    refreshKonfis();
-    refreshJahrgaenge();
-    refreshSettings();
-  }, [refreshKonfis, refreshJahrgaenge, refreshSettings]);
+    refreshKonfisLive();
+    refreshJahrgaengeLive();
+    refreshSettingsLive();
+  }, [refreshKonfisLive, refreshJahrgaengeLive, refreshSettingsLive]);
 
   // Subscribe to live updates for konfis
   useLiveRefresh('konfis', refreshAll);

@@ -34,7 +34,7 @@ const AdminChallengesPage: React.FC = () => {
   const { refreshAllCounts } = useBadge();
   const { pageRef, presentingElement } = useModalPage('admin-challenges');
 
-  const { data: challenges, loading, refresh: refreshChallenges } = useOfflineQuery<AdminChallenge[]>(
+  const { data: challenges, loading, refresh: refreshChallenges, refreshLive: refreshChallengesLive } = useOfflineQuery<AdminChallenge[]>(
     'admin:challenges:' + user?.organization_id,
     async () => { const res = await api.get('/challenges/admin'); return res.data; },
     { ttl: CACHE_TTL.REQUESTS }
@@ -113,7 +113,7 @@ const AdminChallengesPage: React.FC = () => {
     });
   };
 
-  useLiveRefresh('challenges', refreshChallenges);
+  useLiveRefresh('challenges', refreshChallengesLive);
 
   // Die geöffnete Beitrags-Ansicht hält ihre Challenge als eigenen State.
   // Nach einem Bearbeiten (oder Live-Refresh) käme sonst weiter der alte

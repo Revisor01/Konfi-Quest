@@ -61,7 +61,7 @@ const AdminLevelsPage: React.FC = () => {
   const [editLevel, setEditLevel] = useState<Level | undefined>(undefined);
 
   // Offline-Query: Levels
-  const { data: levels, loading, refresh: refreshLevels } = useOfflineQuery<Level[]>(
+  const { data: levels, loading, refresh: refreshLevels, refreshLive: refreshLevelsLive } = useOfflineQuery<Level[]>(
     'admin:levels:' + user?.organization_id,
     async () => { const res = await api.get('/levels'); return res.data; },
     { ttl: CACHE_TTL.STAMMDATEN }
@@ -79,7 +79,7 @@ const AdminLevelsPage: React.FC = () => {
   // Live-Updates für Level abonnieren: der Server sendet nach Anlegen/Ändern/
   // Löschen ein 'levels'-Event (levels.js). Ohne dieses Abo blieb die Liste auf
   // anderen Geraeten/Sitzungen bis zum manuellen Refresh veraltet (toter Sender).
-  useLiveRefresh('levels', refreshLevels);
+  useLiveRefresh('levels', refreshLevelsLive);
 
   const handleAdd = () => {
     setEditLevel(undefined);

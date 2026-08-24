@@ -89,7 +89,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
 
 
   // Offline-Query: Events
-  const { data: allEventsRaw, loading: eventsLoading, refresh: refreshEvents } = useOfflineQuery<Event[]>(
+  const { data: allEventsRaw, loading: eventsLoading, refresh: refreshEvents, refreshLive: refreshEventsLive } = useOfflineQuery<Event[]>(
     'admin:events:' + user?.organization_id,
     async () => { const res = await api.get('/events'); return res.data; },
     { ttl: CACHE_TTL.EVENTS }
@@ -97,7 +97,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   const events = allEventsRaw?.filter((e: Event) => e.registration_status !== 'cancelled') || [];
 
   // Offline-Query: Abgesagte Events
-  const { data: cancelledEvents, refresh: refreshCancelled } = useOfflineQuery<Event[]>(
+  const { data: cancelledEvents, refresh: refreshCancelled, refreshLive: refreshCancelledLive } = useOfflineQuery<Event[]>(
     'admin:events-cancelled:' + user?.organization_id,
     async () => { const res = await api.get('/events/cancelled'); return res.data; },
     { ttl: CACHE_TTL.SETTINGS }
@@ -111,7 +111,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   );
 
   // Offline-Query: Aktivitäten (aus AdminActivityRequestsPage uebernommen)
-  const { data: requests, loading: requestsLoading, refresh: refreshRequests } = useOfflineQuery<ActivityRequest[]>(
+  const { data: requests, loading: requestsLoading, refresh: refreshRequests, refreshLive: refreshRequestsLive } = useOfflineQuery<ActivityRequest[]>(
     'admin:requests:' + user?.organization_id,
     async () => { const res = await api.get('/admin/activities/requests'); return res.data; },
     { ttl: CACHE_TTL.REQUESTS }
@@ -195,13 +195,13 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
 
   // Memoized refresh function for live updates
   const refreshAllEvents = useCallback(() => {
-    refreshEvents();
-    refreshCancelled();
-  }, [refreshEvents, refreshCancelled]);
+    refreshEventsLive();
+    refreshCancelledLive();
+  }, [refreshEventsLive, refreshCancelledLive]);
 
   // Subscribe to live updates for events + requests
   useLiveRefresh('events', refreshAllEvents);
-  useLiveRefresh('requests', refreshRequests);
+  useLiveRefresh('requests', refreshRequestsLive);
 
   const filterByJahrgang = (eventList: Event[]) => {
     if (!selectedJahrgang) return eventList;

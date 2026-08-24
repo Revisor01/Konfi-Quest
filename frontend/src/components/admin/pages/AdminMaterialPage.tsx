@@ -85,7 +85,7 @@ const AdminMaterialPage: React.FC = () => {
   );
 
   // Offline-Query: Material (cache-key enthält search + jahrgang filter)
-  const { data: materials, loading, refresh: refreshMaterial } = useOfflineQuery<Material[]>(
+  const { data: materials, loading, refresh: refreshMaterial, refreshLive: refreshMaterialLive } = useOfflineQuery<Material[]>(
     `admin:material:${user?.organization_id}:${search}:${activeJahrgangId || ''}`,
     async () => {
       const res = await api.get('/material', {
@@ -101,7 +101,7 @@ const AdminMaterialPage: React.FC = () => {
 
   // Material-Liste live halten: neue oder geloeschte Materialien erschienen
   // vorher erst beim nächsten Oeffnen (Audit 22.08.2026).
-  useLiveRefresh('materials', refreshMaterial);
+  useLiveRefresh('materials', refreshMaterialLive);
 
   const filteredMaterials = materials || [];
 

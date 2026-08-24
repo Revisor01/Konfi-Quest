@@ -48,7 +48,7 @@ const AdminBadgesPage: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState<'konfi' | 'teamer'>('konfi');
 
   // Offline-Query: Badges (key enthält selectedRole)
-  const { data: badges, loading, refresh: refreshBadges } = useOfflineQuery<Badge[]>(
+  const { data: badges, loading, refresh: refreshBadges, refreshLive: refreshBadgesLive } = useOfflineQuery<Badge[]>(
     `admin:badges:${user?.organization_id}:${selectedRole}`,
     async () => { const res = await api.get(`/admin/badges?target_role=${selectedRole}`); return res.data; },
     { ttl: CACHE_TTL.STAMMDATEN }
@@ -105,7 +105,7 @@ const AdminBadgesPage: React.FC = () => {
   };
 
   // Subscribe to live updates for badges
-  useLiveRefresh('badges', refreshBadges);
+  useLiveRefresh('badges', refreshBadgesLive);
 
   const handleDeleteBadge = async (badge: Badge) => {
     if (!isOnline) return;

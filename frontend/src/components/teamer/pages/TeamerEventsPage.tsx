@@ -133,14 +133,14 @@ const TeamerEventsPage: React.FC = () => {
 
 
   // Offline-Query: Events
-  const { data: events, loading, refresh } = useOfflineQuery<Event[]>(
+  const { data: events, loading, refresh, refreshLive } = useOfflineQuery<Event[]>(
     'teamer:events:' + user?.id,
     async () => { const res = await api.get('/events'); return res.data; },
     { ttl: CACHE_TTL.EVENTS }
   );
 
   // --- Offline-Query: Aktivitäten (aus TeamerRequestsPage uebernommen) ---
-  const { data: requests, loading: requestsLoading, refresh: refreshRequests } = useOfflineQuery<ActivityRequest[]>(
+  const { data: requests, loading: requestsLoading, refresh: refreshRequests, refreshLive: refreshRequestsLive } = useOfflineQuery<ActivityRequest[]>(
     'teamer:requests:' + user?.id,
     () => api.get('/teamer/requests').then(r => r.data),
     { ttl: CACHE_TTL.REQUESTS }
@@ -186,7 +186,7 @@ const TeamerEventsPage: React.FC = () => {
     }
   );
 
-  useLiveRefresh('requests', refreshRequests);
+  useLiveRefresh('requests', refreshRequestsLive);
 
   const handleAddRequest = () => {
     presentRequestModal({
@@ -307,7 +307,7 @@ const TeamerEventsPage: React.FC = () => {
     }
   });
 
-  useLiveRefresh('events', refresh);
+  useLiveRefresh('events', refreshLive);
 
   // Material für ausgewähltes Event laden
   useEffect(() => {

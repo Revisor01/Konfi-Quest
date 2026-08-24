@@ -106,7 +106,7 @@ const TeamerMaterialPage: React.FC = () => {
   const jahrgaenge = jahrgaengeData || [];
 
   // Offline-Query: Material (alle Materialien, clientseitig gefiltert)
-  const { data: allMaterials, loading, refresh: refreshMaterial } = useOfflineQuery<Material[]>(
+  const { data: allMaterials, loading, refresh: refreshMaterial, refreshLive: refreshMaterialLive } = useOfflineQuery<Material[]>(
     'teamer:material:' + user?.organization_id,
     async () => { const res = await api.get('/material'); return res.data; },
     { ttl: CACHE_TTL.PROFILE }
@@ -114,7 +114,7 @@ const TeamerMaterialPage: React.FC = () => {
 
   // Material-Liste live halten: neue oder geloeschte Materialien erschienen
   // vorher erst beim nächsten Oeffnen (Audit 22.08.2026).
-  useLiveRefresh('materials', refreshMaterial);
+  useLiveRefresh('materials', refreshMaterialLive);
 
   // Clientseitiges Filtern nach Suche und Jahrgang
   const materials = useMemo(() => {

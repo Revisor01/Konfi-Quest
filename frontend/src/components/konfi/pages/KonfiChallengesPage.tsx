@@ -28,7 +28,7 @@ const KonfiChallengesPage: React.FC = () => {
   const { user } = useApp();
   const { pageRef, presentingElement } = useModalPage('konfi-challenges');
 
-  const { data, loading, refresh } = useOfflineQuery<KonfiChallengesResponse>(
+  const { data, loading, refresh, refreshLive } = useOfflineQuery<KonfiChallengesResponse>(
     'konfi:challenges:' + user?.id,
     () => api.get('/challenges/konfi').then((r) => r.data),
     { ttl: CACHE_TTL.REQUESTS }
@@ -72,7 +72,7 @@ const KonfiChallengesPage: React.FC = () => {
     }
   });
 
-  useLiveRefresh('challenges', refresh);
+  useLiveRefresh('challenges', refreshLive);
 
   const handleSelectChallenge = useCallback((challenge: KonfiChallenge) => {
     setSelectedChallenge(challenge);

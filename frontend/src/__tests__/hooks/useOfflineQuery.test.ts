@@ -300,6 +300,58 @@ describe('useOfflineQuery', () => {
     expect(result.current.loading).toBe(false);
   });
 
+  // Regression 25.08.2026: Das In-flight-Dedupe verschluckte Live-Ereignisse.
+  // Trifft ein Socket-Ereignis ein, waehrend fuer denselben Key schon ein Abruf
+  // laeuft, gab revalidate() dessen Promise zurueck — der aber VOR der Aenderung
+  // startete und den alten Stand liefert. Ein Nachfolge-Abruf entstand nie, die
+  // Aenderung war fuer alle unsichtbar.
+  // Verbotener Fall: nach dem Dedupe bleibt der veraltete Stand stehen.
+  // Erlaubter Fall (Test darueber): Mount-Load + useIonViewWillEnter bleiben dedupt.
+  it('refreshLive() waehrend laufendem Fetch laedt danach den NEUEN Stand nach', async () => {
+    let resolveErster: (v: any) => void;
+    const fetcher = vi.fn()
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveErster = resolve; }))
+      .mockResolvedValueOnce({ v: 'NEU' });
+
+    const { result } = renderHook(() => useOfflineQuery('live-key', fetcher));
+
+    // Mount-Load haengt noch im fetcher (Server-Stand zu diesem Zeitpunkt: ALT)
+    await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1));
+
+    // Jemand aendert etwas -> Socket-Ereignis loest refreshLive() aus
+    const live = result.current.refreshLive();
+
+    // Der laufende Abruf kommt mit dem alten Stand zurueck
+    resolveErster!({ v: 'ALT' });
+    await live;
+
+    // Der neue Stand muss ankommen, nicht der alte.
+    await waitFor(() => expect(result.current.data).toEqual({ v: 'NEU' }));
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it('mehrere Live-Ereignisse waehrend eines Abrufs loesen nur EINEN Nachfolge-Abruf aus', async () => {
+    let resolveErster: (v: any) => void;
+    const fetcher = vi.fn()
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveErster = resolve; }))
+      .mockResolvedValueOnce({ v: 'NEU' });
+
+    const { result } = renderHook(() => useOfflineQuery('live-burst-key', fetcher));
+    await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1));
+
+    // Drei Ereignisse in schneller Folge (z.B. Sammel-Anwesenheit)
+    const a = result.current.refreshLive();
+    const b = result.current.refreshLive();
+    const c = result.current.refreshLive();
+
+    resolveErster!({ v: 'ALT' });
+    await Promise.all([a, b, c]);
+
+    await waitFor(() => expect(result.current.data).toEqual({ v: 'NEU' }));
+    // Genau ein Nachfolge-Abruf, kein Sturm
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
   it('sequentielles refresh() nach abgeschlossenem Fetch laedt erneut', async () => {
     const fetcher = vi.fn()
       .mockResolvedValueOnce({ v: 1 })

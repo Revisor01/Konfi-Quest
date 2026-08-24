@@ -44,7 +44,7 @@ const AdminActivitiesPage: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState<'konfi' | 'teamer'>('konfi');
 
   // Offline-Query: Activities (key enthält selectedRole)
-  const { data: activities, loading, refresh: refreshActivities } = useOfflineQuery<Activity[]>(
+  const { data: activities, loading, refresh: refreshActivities, refreshLive: refreshActivitiesLive } = useOfflineQuery<Activity[]>(
     `admin:activities:${user?.organization_id}:${selectedRole}`,
     async () => { const res = await api.get(`/admin/activities?target_role=${selectedRole}`); return res.data; },
     { ttl: CACHE_TTL.STAMMDATEN }
@@ -69,7 +69,7 @@ const AdminActivitiesPage: React.FC = () => {
   });
 
   // Subscribe to live updates for activities
-  useLiveRefresh('activities', refreshActivities);
+  useLiveRefresh('activities', refreshActivitiesLive);
 
   const handleDeleteActivity = async (activity: Activity) => {
     if (!isOnline) return;

@@ -31,7 +31,7 @@ const AdminUsersPage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-users');
   
   // Offline-Query: Users
-  const { data: users, loading, refresh: refreshUsers } = useOfflineQuery<AdminUser[]>(
+  const { data: users, loading, refresh: refreshUsers, refreshLive: refreshUsersLive } = useOfflineQuery<AdminUser[]>(
     'admin:users:' + user?.organization_id,
     async () => { const res = await api.get('/users'); return res.data; },
     { ttl: CACHE_TTL.KONFIS }
@@ -61,7 +61,7 @@ const AdminUsersPage: React.FC = () => {
   });
 
   // Subscribe to live updates for users
-  useLiveRefresh('users', refreshUsers);
+  useLiveRefresh('users', refreshUsersLive);
 
   const handleDeleteUser = async (userToDelete: AdminUser) => {
     if (!isOnline) return;

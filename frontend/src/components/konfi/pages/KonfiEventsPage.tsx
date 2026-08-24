@@ -88,14 +88,14 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
   const [mainSegment, setMainSegment] = useState<'events' | 'antraege'>('events');
 
   // --- useOfflineQuery: Events ---
-  const { data: events, loading, refresh } = useOfflineQuery<Event[]>(
+  const { data: events, loading, refresh, refreshLive } = useOfflineQuery<Event[]>(
     'konfi:events:' + user?.id,
     () => api.get('/konfi/events').then(r => r.data),
     { ttl: CACHE_TTL.EVENTS }
   );
 
   // --- useOfflineQuery: Aktivitäten (aus KonfiRequestsPage uebernommen) ---
-  const { data: requests, loading: requestsLoading, refresh: refreshRequests } = useOfflineQuery<ActivityRequest[]>(
+  const { data: requests, loading: requestsLoading, refresh: refreshRequests, refreshLive: refreshRequestsLive } = useOfflineQuery<ActivityRequest[]>(
     'konfi:requests:' + user?.id,
     () => api.get('/konfi/requests').then(r => r.data),
     { ttl: CACHE_TTL.REQUESTS }
@@ -174,8 +174,8 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
   );
 
   // Subscribe to live updates
-  useLiveRefresh('events', refresh);
-  useLiveRefresh('requests', refreshRequests);
+  useLiveRefresh('events', refreshLive);
+  useLiveRefresh('requests', refreshRequestsLive);
 
   const handleAddRequest = () => {
     presentRequestModal({

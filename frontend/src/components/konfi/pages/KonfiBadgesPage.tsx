@@ -54,14 +54,14 @@ const KonfiBadgesPage: React.FC = () => {
   const [selectedFilter, setSelectedFilter] = useState('alle');
 
   // --- useOfflineQuery: Badges ---
-  const { data: badgeData, loading: badgesLoading, refresh: refreshBadges } = useOfflineQuery<BadgeData>(
+  const { data: badgeData, loading: badgesLoading, refresh: refreshBadges, refreshLive: refreshBadgesLive } = useOfflineQuery<BadgeData>(
     'konfi:badges:' + user?.id,
     () => api.get('/konfi/badges').then(r => r.data),
     { ttl: CACHE_TTL.BADGES }
   );
 
   // --- useOfflineQuery: Profile (für Punkte-Progress) ---
-  const { data: konfiData, refresh: refreshProfile } = useOfflineQuery<any>(
+  const { data: konfiData, refresh: refreshProfile, refreshLive: refreshProfileLive } = useOfflineQuery<any>(
     'konfi:profile:' + user?.id,
     () => api.get('/konfi/profile').then(r => r.data),
     { ttl: CACHE_TTL.PROFILE }
@@ -71,8 +71,8 @@ const KonfiBadgesPage: React.FC = () => {
 
   // Subscribe to live updates for badges
   const refreshAll = () => {
-    refreshBadges();
-    refreshProfile();
+    refreshBadgesLive();
+    refreshProfileLive();
   };
   useLiveRefresh('badges', refreshAll);
 

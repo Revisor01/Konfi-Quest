@@ -221,7 +221,7 @@ const AdminCategoriesPage: React.FC = () => {
   const { user, setSuccess, setError, isOnline } = useApp();
 
   // Offline-Query: Categories
-  const { data: categories, loading, refresh: refreshCategories } = useOfflineQuery<Category[]>(
+  const { data: categories, loading, refresh: refreshCategories, refreshLive: refreshCategoriesLive } = useOfflineQuery<Category[]>(
     'admin:categories:' + user?.organization_id,
     async () => { const res = await api.get('/admin/categories'); return res.data; },
     { ttl: CACHE_TTL.STAMMDATEN }
@@ -244,7 +244,7 @@ const AdminCategoriesPage: React.FC = () => {
   });
 
   // Subscribe to live updates for categories
-  useLiveRefresh('categories', refreshCategories);
+  useLiveRefresh('categories', refreshCategoriesLive);
 
   const handleRefresh = async (event: CustomEvent) => {
     await refreshCategories();

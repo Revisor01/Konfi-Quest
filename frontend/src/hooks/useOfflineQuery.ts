@@ -17,6 +17,7 @@ interface UseOfflineQueryResult<T> {
   isStale: boolean;
   isOffline: boolean;
   refresh: () => Promise<void>;
+  refreshLive: () => Promise<void>;
 }
 
 const DEFAULT_TTL = 5 * 60 * 1000; // 5 Min
@@ -54,6 +55,14 @@ export function useOfflineQuery<T>(
   const inflightRef = useRef<Promise<void> | null>(null);
   const inflightKeyRef = useRef<string | null>(null);
 
+  // Wurde waehrend eines laufenden Abrufs ein WEITERER angefordert (typisch:
+  // ein Live-Ereignis per Socket), reicht dessen Promise nicht — der laufende
+  // Abruf startete VOR der Aenderung und liefert den alten Stand. Wir merken
+  // die Anforderung hier und haengen nach Abschluss genau EINEN Nachfolge-
+  // Abruf an. Regression vom 24.08.2026 (53e45f27), nachgemessen 25.08.2026:
+  // ohne den Nachfolge-Abruf blieb die Aenderung fuer alle unsichtbar.
+  const nachfolgeRef = useRef(false);
+
   // Zeitpunkt des letzten ERFOLGREICHEN Fetches je Key: Der automatische
   // Initial-Load (SWR) überspringt seine Revalidierung, wenn gerade eben —
   // z.B. durch useIonViewWillEnter(refresh) VOR dem Mount-Effekt — frisch
@@ -73,10 +82,15 @@ export function useOfflineQuery<T>(
   selectRef.current = select;
   fetcherRef.current = fetcher;
 
-  const revalidate = useCallback(async () => {
+  const revalidate = useCallback(async (istLive = false) => {
     // Läuft bereits ein Fetch für DENSELBEN Key, dessen Ergebnis abwarten
     // statt einen zweiten identischen Request zu starten.
     if (inflightRef.current && inflightKeyRef.current === cacheKey) {
+      // Mitwarten. Bei einem Live-Ereignis zusaetzlich einen Nachfolge-Abruf
+      // vormerken: Der laufende Abruf startete VOR der Aenderung und kann sie
+      // noch nicht enthalten. Beim Mount-Pfad (gleicher Stand, nur doppelt
+      // angefordert) waere ein Nachfolge-Abruf dagegen reine Verschwendung.
+      if (istLive) nachfolgeRef.current = true;
       return inflightRef.current;
     }
 
@@ -116,12 +130,29 @@ export function useOfflineQuery<T>(
           inflightKeyRef.current = null;
         }
       }
+
+      // Waehrend des Abrufs kam mindestens eine weitere Anforderung herein.
+      // Genau EINEN Nachfolge-Abruf starten — egal wie viele es waren, sonst
+      // loest eine Ereignis-Salve (z.B. Sammel-Anwesenheit) einen Abruf-Sturm
+      // aus. Das Flag wird VOR dem Abruf zurueckgesetzt, damit Anforderungen
+      // waehrend des Nachfolge-Abrufs erneut greifen koennen.
+      if (nachfolgeRef.current && mountedRef.current && currentKeyRef.current === cacheKey) {
+        nachfolgeRef.current = false;
+        await revalidateRef.current(true);
+      }
     };
 
+    // Frischer Abruf: dieser Stand ist aktuell, alte Vormerkung verfaellt.
+    nachfolgeRef.current = false;
     inflightKeyRef.current = cacheKey;
     inflightRef.current = doFetch();
     return inflightRef.current;
   }, [cacheKey, ttl]);
+
+  // Selbstbezug fuer den Nachfolge-Abruf in doFetch (revalidate referenziert
+  // sich sonst in seiner eigenen Definition).
+  const revalidateRef = useRef(revalidate);
+  revalidateRef.current = revalidate;
 
   // Initial Load
   useEffect(() => {
@@ -245,5 +276,13 @@ export function useOfflineQuery<T>(
     await revalidate();
   }, [revalidate]);
 
-  return { data, loading, error, isStale, isOffline, refresh };
+  // Fuer Live-Ereignisse (Socket). Anders als refresh() sorgt es dafuer, dass
+  // die Aenderung auch dann ankommt, wenn beim Eintreffen gerade schon ein
+  // Abruf laeuft — der wuerde sonst den Stand VON VOR der Aenderung liefern.
+  const refreshLive = useCallback(async () => {
+    if (!networkMonitor.isOnline) return;
+    await revalidate(true);
+  }, [revalidate]);
+
+  return { data, loading, error, isStale, isOffline, refresh, refreshLive };
 }

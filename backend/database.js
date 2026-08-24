@@ -117,7 +117,15 @@ pool.query('SELECT NOW()')
   .then(() => runMigrations(pool))
   .catch(err => {
     console.error('Database startup failed (DB nicht erreichbar):', err);
-    process.exit(1);
+    // In Tests NICHT den Prozess killen: Dieser Selbsttest laeuft beim
+    // MODUL-LADEN als unbeaufsichtigter Promise. utils/liveUpdate.js laedt das
+    // Singleton lazy mitten im Testlauf; schlaegt der Test dann fehl (z.B.
+    // weil globalTeardown die Test-DB gerade droppt), riss process.exit(1)
+    // den ganzen vitest-Worker mit — etwa jeder vierte Lauf brach so ohne
+    // Fehlermeldung ab. In Produktion bleibt der harte Abbruch gewollt.
+    if (process.env.NODE_ENV !== 'test') {
+      process.exit(1);
+    }
   });
 
 module.exports = {

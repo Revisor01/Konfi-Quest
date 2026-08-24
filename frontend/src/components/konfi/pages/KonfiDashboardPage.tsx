@@ -142,7 +142,7 @@ const KonfiDashboardPage: React.FC = () => {
   }, []);
 
   // --- useOfflineQuery: Dashboard ---
-  const { data: dashboardData, loading: dashLoading, refresh: refreshDashboard } = useOfflineQuery<DashboardData>(
+  const { data: dashboardData, loading: dashLoading, refresh: refreshDashboard, refreshLive: refreshDashboardLive } = useOfflineQuery<DashboardData>(
     'konfi:dashboard:' + user?.id,
     () => api.get('/konfi/dashboard').then(r => r.data),
     { ttl: CACHE_TTL.DASHBOARD }
@@ -164,7 +164,7 @@ const KonfiDashboardPage: React.FC = () => {
 
 
   // --- useOfflineQuery: Events ---
-  const { data: upcomingEvents, refresh: refreshEvents } = useOfflineQuery<Event[]>(
+  const { data: upcomingEvents, refresh: refreshEvents, refreshLive: refreshEventsLive } = useOfflineQuery<Event[]>(
     'konfi:events:' + user?.id,
     () => api.get('/konfi/events').then(r => r.data),
     {
@@ -177,7 +177,7 @@ const KonfiDashboardPage: React.FC = () => {
   );
 
   // --- useOfflineQuery: Badges ---
-  const { data: badgesRaw, refresh: refreshBadges } = useOfflineQuery<any>(
+  const { data: badgesRaw, refresh: refreshBadges, refreshLive: refreshBadgesLive } = useOfflineQuery<any>(
     'konfi:badges:' + user?.id,
     () => api.get('/konfi/badges').then(r => r.data),
     { ttl: CACHE_TTL.BADGES }
@@ -255,10 +255,10 @@ const KonfiDashboardPage: React.FC = () => {
 
   // Memoized refresh function for live updates
   const refreshAllData = useCallback(() => {
-    refreshDashboard();
-    refreshEvents();
-    refreshBadges();
-  }, [refreshDashboard, refreshEvents, refreshBadges]);
+    refreshDashboardLive();
+    refreshEventsLive();
+    refreshBadgesLive();
+  }, [refreshDashboardLive, refreshEventsLive, refreshBadgesLive]);
 
   // Subscribe to live updates for dashboard and events
   // 'points' MUSS mit dabei sein: genehmigte Aktivitäten melden 'points',

@@ -77,7 +77,7 @@ const KonfiProfilePage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('profile');
 
   // --- useOfflineQuery: Profile ---
-  const { data: profile, loading, refresh } = useOfflineQuery<KonfiProfile>(
+  const { data: profile, loading, refresh, refreshLive } = useOfflineQuery<KonfiProfile>(
     'konfi:profile:' + user?.id,
     () => api.get('/konfi/profile').then(r => r.data),
     { ttl: CACHE_TTL.PROFILE }
@@ -87,7 +87,7 @@ const KonfiProfilePage: React.FC = () => {
   // 'dashboard' MUSS mit dabei sein: Bonuspunkte und von der Leitung vergebene
   // Aktivitäten melden 'dashboard', nicht 'points' — ohne das blieb das Profil
   // bei genau diesen Vergabewegen stehen (Audit 22.08.2026).
-  useLiveRefresh(['points', 'dashboard', 'badges'], refresh);
+  useLiveRefresh(['points', 'dashboard', 'badges'], refreshLive);
 
   if (loading) {
     return <LoadingSpinner message="Profil wird geladen..." />;
