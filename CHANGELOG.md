@@ -508,6 +508,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Sicherheit
 
+- Läuft die Sitzung ab, trennt die App jetzt auch die Live-Verbindung. Vorher
+  konnte auf einem geteilten Gerät die nächste angemeldete Person noch
+  Live-Nachrichten des vorherigen Kontos empfangen.
 - Android: App-Daten wie Chats und Anmeldedaten werden nicht mehr ins
   Google-Konto gesichert.
 - Die Anmeldung zur API-Dokumentation bremst wiederholte Fehlversuche jetzt

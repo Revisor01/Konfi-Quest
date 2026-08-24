@@ -118,6 +118,20 @@ export const disconnectWebSocket = () => {
   _hasConnectedOnce = false;
 };
 
+// Sitzung endgültig abgelaufen: api.ts hat clearAuth() ausgelöst und meldet
+// 'auth:relogin-required'. Ohne Trennung bliebe die bestehende Verbindung
+// serverseitig als die ABGEMELDETE Person authentifiziert — und weil
+// initializeWebSocket einen vorhandenen Socket wiederverwendet, bekäme die
+// nächste angemeldete Person (Kontowechsel am selben Gerät) den alten Socket
+// samt dessen Live-Update-Räumen. Der bewusste Logout trennt in
+// services/auth.ts; dieser Listener schließt den Session-Ablauf-Pfad.
+// (Fund 24.08.2026)
+if (typeof window !== 'undefined') {
+  window.addEventListener('auth:relogin-required', () => {
+    disconnectWebSocket();
+  });
+}
+
 // Socket mit frischem Token neu aufbauen (nach erfolgreichem Token-Refresh).
 // Der alte Socket wird verworfen, damit die Listener im LiveUpdateContext beim
 // nächsten initializeWebSocket sauber neu gebunden werden.
