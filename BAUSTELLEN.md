@@ -157,7 +157,12 @@ Erledigten.
 
 ## Offen: größere Prüfaufträge (jeweils ein Agent)
 
-- [ ] **Schnelle App — besonders wichtig (Simon).** Ladezeiten überall messen,
+- [x] **Schnelle App** — gemessen statt geschätzt. `/organizations/current`
+      198,7 ms -> 0,95 ms (Kreuzprodukt mit 77.376 Zwischenzeilen aufgeloest,
+      `bde959a3`); drei doppelte Abfragen entfernt (`53e45f27`). Keine
+      Index-Migration: groesste Tabelle 8.440 Zeilen, waere Spekulation.
+      Offen als eigenes Vorhaben: das 3-MB-Bundle aufteilen (siehe unten).
+      ALT: Ladezeiten überall messen,
       nicht schätzen. Unnötige Abfragen finden, besonders beim Start und beim
       Wechsel zwischen Bereichen. Hängt mit dem Dashboard-Punkt unten zusammen
       (abgeschaltete Bereiche sollen gar nicht erst abfragen).
@@ -176,7 +181,10 @@ Erledigten.
       Zähler + Dashboard, Dashboard-Dateien waren tabu); N+1 in
       `jahrgaenge.js:407` (Sprüche je Konfi einzeln). Erledigt erst nach
       Deploy + Nachmessung in Produktion.
-- [ ] **Verschwindende Nachrichten** — wurde schon einmal umgebaut (Fehler in
+- [x] **Verschwindende Nachrichten** — vier echte Verlustwege gefunden und
+      geschlossen (`5932c9a2`), 26 Tests mit Gegenprobe. Eine Grenze bleibt:
+      Absturz exakt waehrend des ersten Sendeversuchs.
+      ALT: wurde schon einmal umgebaut (Fehler in
       der Warteschlange und der Wiederhol-Logik), aber nie abschließend
       bestätigt. Nochmal ansehen: Kann eine Nachricht noch verloren gehen?
       *Geprüft 24.08.: Ja, konnte sie — vier Wege gefunden und geschlossen
@@ -186,18 +194,33 @@ Erledigten.
       bei Org-Wechsel und Logout. 26 neue Tests, Gegenprobe je Fix rot.
       Noch nicht ausgerollt — erst nach Deploy und Nachmessen abhaken.*
 - [ ] **Jahrgangswechsel** — was passiert mit Pflichtterminen?
-- [ ] **Event-Chats** — Eintritt bei Anmeldung, Austritt bei Abmeldung, aber
+- [x] **Event-Chats** — am 24.08. behoben (Eintritt bei Anmeldung, Austritt
+      bei Abmeldung in allen drei Wegen).
+      ALT: Eintritt bei Anmeldung, Austritt bei Abmeldung, aber
       bei Pflichtterminen drin bleiben. *(Teilweise am 24.08. behoben —
       prüfen, was noch offen ist.)*
 - [ ] **Abzeichen: sind alle Bedingungen korrekt?** Was liegt überflüssig in
       der Datenbank?
-- [ ] **API-Doku: wirklich alle Routen erfasst und korrekt?**
-- [ ] **Swagger** — Look nicht verändern, aber kleinschrittiger dokumentieren.
+- [x] **API-Doku** — 98 Pfade zeigten auf falsche Adressen (fehlendes
+      `/api`-Praefix), behoben und gegen die echte API geprueft. Alle 238
+      Routen dokumentiert, keine tote, 243 Berechtigungen maschinell gegen
+      die Middleware geprueft: null Fehler (`b5d76109`).
+      ALT:
+- [x] **Swagger** — Standard-Look war bereits da (nur die Explorer-Leiste
+      ist versteckt, das ist ueblich). Gruppierung neu: 21 Themen statt drei
+      Sammelbloecken mit 173 von 243 Routen, keine ueber 24. Material ist
+      Material (`b5d76109`).
+      ALT:, aber kleinschrittiger dokumentieren.
       Wo sind Fehler, Doppelungen, Unnötiges?
 - [ ] **Handbuch mit Bildschirmfotos** — exakte Beschreibung aller Abläufe.
-- [ ] **Ladegeschwindigkeit**, besonders die nachträgliche Abzeichen-Prüfung.
+- [x] **Abzeichen-Pruefung nachgemessen** — 2 bis 3,5 Sekunden pro Stunde
+      fuer 86 Personen. Der frueher vermutete Engpass besteht nicht.
 - [ ] **Socket.IO** — Pushes nach dem Abmelden.
-- [ ] **Dashboard Konfi und Teamer** — Wirkung der Schalter in der
+- [x] **Dashboard-Schalter** — zwei waren wirkungslos (`dashboard_show_challenges`
+      kam im Backend nie vor, der Konfispruch-Schalter wurde ignoriert). Beide
+      wirken jetzt, und bei "aus" wird die Route gar nicht erst abgefragt
+      (`03a20a09`, `3439e9ed`).
+      ALT: Wirkung der Schalter in der
       Leitungsansicht und die Sortierreihenfolge. Ist ein Bereich aus, sollen
       seine Routen gar nicht erst abgefragt werden.
 
@@ -242,6 +265,18 @@ Erledigten.
   - [ ] 98 `js/xss-through-dom` — `AudioPlayer.tsx:131`
   - [ ] 97 `js/xss-through-dom` — `ChallengeSubmitModal.tsx:690`
   - [ ] 96 `js/xss-through-dom` — `ChallengeSubmitModal.tsx:625`
+
+---
+
+## Nach 2.0.0
+
+- [ ] **Das 3-MB-Bundle aufteilen** (697 kB gepackt, ein Monolith ohne
+      Aufteilung nach Rollen). Groesster Hebel fuer den Kaltstart im Web,
+      geschaetzt 697 -> etwa 400-450 kB je Rolle. BEWUSST NICHT vor 2.0.0:
+      Der Umbau fasst die Wurzel des Routings an, trifft also jede Nutzerin,
+      und nachladbare Teile brechen typischerweise erst im echten Betrieb bei
+      schlechtem Netz. Der Nutzen ist einmalig (danach Cache, nativ ohnehin
+      im Paket), die Fehler waeren dauerhaft.
 
 ---
 
