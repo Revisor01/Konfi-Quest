@@ -8,6 +8,7 @@ const { generateUniqueUsername } = require('../utils/usernameGenerator');
 const { deleteKonfiCascade } = require('../utils/konfiDeletion');
 const { checkKonfiLimit, nextTier } = require('../utils/konfiLimit');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
+const { removeFromEventChat, addToEventChat } = require('../utils/eventChat');
 const { getKonfiBadgeProgress } = require('../utils/konfiBadgeProgress');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
@@ -230,8 +231,15 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                   AND e.organization_id = $2
                   AND e.cancelled IS NOT TRUE
                 ON CONFLICT (user_id, event_id) DO NOTHING
+                RETURNING event_id
               `;
-              await db.query(enrollFutureEventsQuery, [userId, req.user.organization_id, jahrgang_id]);
+              const { rows: gebucht } = await db.query(enrollFutureEventsQuery, [userId, req.user.organization_id, jahrgang_id]);
+              // Auch in die Chats der Pflichttermine eintreten (falls die
+              // Leitung dort einen angelegt hat) — sonst fehlt der neue Konfi
+              // in Chats, in denen sein ganzer Jahrgang sitzt.
+              for (const row of gebucht) {
+                await addToEventChat(db, row.event_id, userId, req.user.organization_id);
+              }
             } catch (enrollErr) {
               console.error('Auto-enrollment für Pflicht-Events fehlgeschlagen:', enrollErr);
             }
@@ -309,7 +317,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
               // neuen Jahrgang gehört — Historie bleibt damit unberuehrt.
               if (currentProfile.jahrgang_id) {
                 try {
-                  await db.query(
+                  const { rows: abgemeldet } = await db.query(
                     `DELETE FROM event_bookings eb
                      USING events e
                      WHERE eb.event_id = e.id
@@ -325,9 +333,18 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                        AND NOT EXISTS (
                          SELECT 1 FROM event_jahrgang_assignments eja
                          WHERE eja.event_id = e.id AND eja.jahrgang_id = $4
-                       )`,
+                       )
+                     RETURNING eb.event_id`,
                     [req.params.id, req.user.organization_id, currentProfile.jahrgang_id, jahrgang_id]
                   );
+                  // Wer nicht mehr gebucht ist, gehört auch nicht mehr in den
+                  // Event-Chat — dieselbe Regel wie bei der Abmeldung
+                  // (eventChat.js). Ohne das las der Konfi im Chat eines
+                  // Pflichttermins mit, den er gar nicht mehr sieht
+                  // (Befund 24.08.2026).
+                  for (const row of abgemeldet) {
+                    await removeFromEventChat(db, row.event_id, parseInt(req.params.id, 10), req.user.organization_id);
+                  }
                 } catch (unenrollErr) {
                   console.error('Abmelden von Pflicht-Events des alten Jahrgangs fehlgeschlagen:', unenrollErr);
                 }
@@ -344,8 +361,16 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                     AND e.organization_id = $2
                     AND e.cancelled IS NOT TRUE
                   ON CONFLICT (user_id, event_id) DO NOTHING
+                  RETURNING event_id
                 `;
-                await db.query(enrollFutureEventsQuery, [req.params.id, req.user.organization_id, jahrgang_id]);
+                const { rows: gebucht } = await db.query(enrollFutureEventsQuery, [req.params.id, req.user.organization_id, jahrgang_id]);
+                // In die Chats der neu gebuchten Pflichttermine eintreten —
+                // dieselbe Regel wie beim Nachbuchen eines Jahrgangs am Event
+                // (events.js: syncEventChat). Existiert kein Chat, passiert
+                // nichts (Anlage bleibt Sache der Leitung).
+                for (const row of gebucht) {
+                  await addToEventChat(db, row.event_id, parseInt(req.params.id, 10), req.user.organization_id);
+                }
               } catch (enrollErr) {
                 console.error('Auto-enrollment für Pflicht-Events fehlgeschlagen:', enrollErr);
               }

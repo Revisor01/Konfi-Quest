@@ -206,14 +206,14 @@ paths:
                 icon: { type: string, description: "IonIcon-Name, z.B. trophy-outline" }
                 description: { type: string }
                 criteria_type: { type: string, description: "Einer der Werte aus GET /admin/badges/criteria-types" }
-                criteria_value: { type: integer, minimum: 0 }
-                criteria_extra: { type: object, description: "Zusatzparameter je Kriterientyp, wird als JSON gespeichert" }
+                criteria_value: { type: integer, minimum: 1, description: "Seit 24.08.2026 min. 1 — Wert 0 löste jedes Zähl-Kriterium sofort für alle aus" }
+                criteria_extra: { type: object, description: "Zusatzparameter je Kriterientyp, wird als JSON gespeichert. Pflicht je nach Typ: specific_activity -> required_activity_name, activity_combination -> required_activities (nicht leer), category_activities -> required_category, time_based -> days oder weeks (seit 24.08.2026 validiert; vorher entstanden still unerreichbare Abzeichen)" }
                 is_hidden: { type: boolean, default: false }
                 color: { type: string, default: "#667eea" }
                 target_role: { type: string, enum: [konfi, teamer], default: konfi }
       responses:
         "201": { description: "{ id, message }; Live-Update an Org-Admins UND Org-Konfis" }
-        "400": { description: "Pflichtfeld fehlt oder Validierung verletzt (Name 2-100 Zeichen, criteria_value >= 0)" }
+        "400": { description: "Pflichtfeld fehlt oder Validierung verletzt (Name 2-100 Zeichen, criteria_value >= 1, fehlende Auswahl in criteria_extra je nach criteria_type)" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "500": { $ref: "#/components/responses/ServerError" }
@@ -257,8 +257,8 @@ paths:
                 icon: { type: string }
                 description: { type: string }
                 criteria_type: { type: string }
-                criteria_value: { type: integer }
-                criteria_extra: { type: object }
+                criteria_value: { type: integer, minimum: 1 }
+                criteria_extra: { type: object, description: "Pflichtauswahl je nach criteria_type, wie beim POST" }
                 is_active: { type: boolean, description: "Fehlt das Feld, wird es auf false gesetzt (siehe S5)" }
                 is_hidden: { type: boolean, description: "Fehlt das Feld, wird es auf false gesetzt (siehe S5)" }
                 color: { type: string, default: "#667eea" }
@@ -277,8 +277,10 @@ paths:
           S4: target_role wird vom UPDATE nicht erfasst und bleibt beim
           Anlagewert. S5: is_active/is_hidden werden per !!wert gesetzt —
           ein Teil-Update ohne diese Felder deaktiviert das Abzeichen still.
-          criteria_value wird hier (anders als beim POST) nicht auf >= 0
-          geprüft.
+          criteria_value wurde hier (anders als beim POST) lange gar nicht
+          geprüft — ohne Wert wurde NULL gespeichert und das Abzeichen ging
+          an alle. Behoben 24.08.2026: jetzt wie beim POST >= 1 plus
+          Pflichtauswahl in criteria_extra.
     delete:
       tags: ["Abzeichen"]
       summary: Abzeichen löschen (inklusive aller bereits vergebenen Exemplare)

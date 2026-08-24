@@ -1001,6 +1001,94 @@ describe('Konfi-Management Routes', () => {
       expect(gebucht.status).toBe('confirmed');
     });
 
+    // Befund 24.08.2026: Der Wechsel buchte um, liess die EVENT-CHATS aber
+    // unangetastet — der Konfi las im Chat eines Pflichttermins mit, den er
+    // gar nicht mehr sah, und fehlte im Chat der neuen Pflichttermine.
+    const eventChatRaum = async (eventId) => {
+      const { rows: [raum] } = await db.query(
+        `INSERT INTO chat_rooms (name, type, event_id, created_by, organization_id)
+         VALUES ('Event-Chat', 'group', $1, $2, $3) RETURNING id`,
+        [eventId, USERS.orgAdmin1.id, ORGS.testGemeinde.id]
+      );
+      return raum.id;
+    };
+
+    const teilnahme = async (roomId, userId) => {
+      const { rows } = await db.query(
+        'SELECT user_type FROM chat_participants WHERE room_id = $1 AND user_id = $2',
+        [roomId, userId]
+      );
+      return rows[0] || null;
+    };
+
+    it('Beim Wechsel verlässt der Konfi den Chat des alten Pflichttermins', async () => {
+      const alterTermin = await pflichtTermin(JAHRGAENGE.jahrgang1.id);
+      await db.query(
+        `INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
+         VALUES ($1, $2, 'confirmed', NOW(), $3)`,
+        [alterTermin, USERS.konfi1.id, ORGS.testGemeinde.id]
+      );
+      const raumId = await eventChatRaum(alterTermin);
+      await db.query(
+        `INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, 'konfi')`,
+        [raumId, USERS.konfi1.id]
+      );
+
+      const res = await wechsleJahrgang(USERS.konfi1.id, zweiterJahrgang);
+      expect(res.status).toBe(200);
+
+      expect(await teilnahme(raumId, USERS.konfi1.id)).toBeNull();
+    });
+
+    it('Beim Wechsel tritt der Konfi dem Chat des neuen Pflichttermins bei', async () => {
+      const neuerTermin = await pflichtTermin(zweiterJahrgang);
+      const raumId = await eventChatRaum(neuerTermin);
+
+      const res = await wechsleJahrgang(USERS.konfi1.id, zweiterJahrgang);
+      expect(res.status).toBe(200);
+
+      const drin = await teilnahme(raumId, USERS.konfi1.id);
+      expect(drin).not.toBeNull();
+      expect(drin.user_type).toBe('konfi');
+    });
+
+    it('Jahrgangs-Chat: raus aus dem alten, rein in den neuen', async () => {
+      // Seed: Raum 1 ist der Jahrgangs-Chat von Jahrgang 1, konfi1 ist drin.
+      const alterRaum = 1;
+      const vorher = await teilnahme(alterRaum, USERS.konfi1.id);
+      expect(vorher).not.toBeNull();
+
+      const res = await wechsleJahrgang(USERS.konfi1.id, zweiterJahrgang);
+      expect(res.status).toBe(200);
+
+      expect(await teilnahme(alterRaum, USERS.konfi1.id)).toBeNull();
+
+      const { rows: [neuerRaum] } = await db.query(
+        `SELECT id FROM chat_rooms WHERE type = 'jahrgang' AND jahrgang_id = $1 AND organization_id = $2`,
+        [zweiterJahrgang, ORGS.testGemeinde.id]
+      );
+      expect(neuerRaum).toBeDefined();
+      const drin = await teilnahme(neuerRaum.id, USERS.konfi1.id);
+      expect(drin).not.toBeNull();
+      expect(drin.user_type).toBe('konfi');
+    });
+
+    it('Neu angelegter Konfi kommt in den Chat seines Pflichttermins', async () => {
+      const termin = await pflichtTermin(JAHRGAENGE.jahrgang1.id);
+      const raumId = await eventChatRaum(termin);
+
+      const res = await request(app)
+        .post('/api/admin/konfis')
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ name: 'Chat Neuling', jahrgang_id: JAHRGAENGE.jahrgang1.id });
+      expect(res.status).toBe(201);
+
+      expect(await buchung(termin, res.body.id)).not.toBeNull();
+      const drin = await teilnahme(raumId, res.body.id);
+      expect(drin).not.toBeNull();
+      expect(drin.user_type).toBe('konfi');
+    });
+
     it('Ein vergangener Pflichttermin bleibt in der Historie stehen', async () => {
       const vergangen = await pflichtTermin(JAHRGAENGE.jahrgang1.id, -30);
       await db.query(

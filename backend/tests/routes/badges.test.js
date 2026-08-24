@@ -177,6 +177,116 @@ describe('Badges Routes', () => {
 
       expect([400, 422]).toContain(res.status);
     });
+
+    // Befund 24.08.2026: Wert 0 (oder fehlend) liesse jedes Zähl-Kriterium
+    // sofort für alle auslösen (`x >= null` ist in JavaScript wahr).
+    it('criteria_value 0 wird abgelehnt -> 400', async () => {
+      const token = generateToken('admin1');
+      const res = await request(app)
+        .post('/api/admin/badges')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'Sofort-Badge',
+          criteria_type: 'total_points',
+          criteria_value: 0,
+          icon: 'star',
+        });
+
+      expect(res.status).toBe(400);
+    });
+
+    // Befund 24.08.2026: Auswahl-Typen ohne Auswahl erzeugten still
+    // unerreichbare Abzeichen (4 Altfälle in Produktion).
+    it('specific_activity ohne Aktivitätsauswahl wird abgelehnt -> 400', async () => {
+      const token = generateToken('admin1');
+      const res = await request(app)
+        .post('/api/admin/badges')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'Ohne Aktivität',
+          criteria_type: 'specific_activity',
+          criteria_value: 3,
+          icon: 'star',
+          criteria_extra: {},
+        });
+
+      expect(res.status).toBe(400);
+      expect(JSON.stringify(res.body)).toContain('Aktivität');
+    });
+
+    it('specific_activity MIT Aktivitätsname wird angelegt -> 201', async () => {
+      const token = generateToken('admin1');
+      const res = await request(app)
+        .post('/api/admin/badges')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'Mit Aktivität',
+          criteria_type: 'specific_activity',
+          criteria_value: 3,
+          icon: 'star',
+          criteria_extra: { required_activity_name: 'Gottesdienstbesuch' },
+        });
+
+      expect(res.status).toBe(201);
+    });
+
+    it('activity_combination mit leerer Liste wird abgelehnt -> 400', async () => {
+      const token = generateToken('admin1');
+      const res = await request(app)
+        .post('/api/admin/badges')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'Leere Kombination',
+          criteria_type: 'activity_combination',
+          criteria_value: 2,
+          icon: 'star',
+          criteria_extra: { required_activities: [] },
+        });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('category_activities ohne Kategorie wird abgelehnt -> 400', async () => {
+      const token = generateToken('admin1');
+      const res = await request(app)
+        .post('/api/admin/badges')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'Ohne Kategorie',
+          criteria_type: 'category_activities',
+          criteria_value: 2,
+          icon: 'star',
+        });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('time_based ohne Zeitraum wird abgelehnt, mit Wochen angelegt', async () => {
+      const token = generateToken('admin1');
+      const ohne = await request(app)
+        .post('/api/admin/badges')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'Ohne Zeitraum',
+          criteria_type: 'time_based',
+          criteria_value: 4,
+          icon: 'star',
+          criteria_extra: {},
+        });
+      expect(ohne.status).toBe(400);
+
+      const mit = await request(app)
+        .post('/api/admin/badges')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'Mit Zeitraum',
+          criteria_type: 'time_based',
+          criteria_value: 4,
+          icon: 'star',
+          criteria_extra: { days: 28 },
+        });
+      expect(mit.status).toBe(201);
+    });
   });
 
   // ================================================================
@@ -214,6 +324,63 @@ describe('Badges Routes', () => {
         });
 
       expect(res.status).toBe(404);
+    });
+
+    // Befund 24.08.2026: Der PUT validierte criteria_value GAR nicht. Ohne
+    // Wert wurde NULL gespeichert — und `punkte >= null` ist in JavaScript
+    // wahr: das Badge wäre an ALLE gegangen.
+    it('PUT ohne criteria_value wird abgelehnt -> 400, Wert bleibt unangetastet', async () => {
+      const token = generateToken('admin1');
+      const res = await request(app)
+        .put(`/api/admin/badges/${BADGES.streak.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'Ohne Wert',
+          icon: 'ribbon',
+          criteria_type: 'streak',
+          is_active: true,
+        });
+
+      expect(res.status).toBe(400);
+
+      const { rows: [row] } = await db.query(
+        'SELECT criteria_value::int AS wert FROM custom_badges WHERE id = $1',
+        [BADGES.streak.id]
+      );
+      expect(row.wert).toBe(BADGES.streak.criteria_value);
+    });
+
+    it('PUT mit criteria_value 0 wird abgelehnt -> 400', async () => {
+      const token = generateToken('admin1');
+      const res = await request(app)
+        .put(`/api/admin/badges/${BADGES.streak.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'Wert Null',
+          icon: 'ribbon',
+          criteria_type: 'streak',
+          criteria_value: 0,
+          is_active: true,
+        });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('PUT auf Auswahl-Typ ohne Auswahl wird abgelehnt -> 400', async () => {
+      const token = generateToken('admin1');
+      const res = await request(app)
+        .put(`/api/admin/badges/${BADGES.streak.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'Typwechsel ohne Auswahl',
+          icon: 'ribbon',
+          criteria_type: 'activity_combination',
+          criteria_value: 2,
+          criteria_extra: {},
+          is_active: true,
+        });
+
+      expect(res.status).toBe(400);
     });
   });
 

@@ -661,12 +661,43 @@ async function insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds,
 // Badges: Teamer darf ansehen, Admin darf bearbeiten
 module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
 
-  // Validierungsregeln
+  // Validierungsregeln.
+  // criteria_value: min 1 — Wert 0 (oder fehlend -> NULL) liesse jedes
+  // Zähl-Kriterium sofort für alle auslösen, denn in JavaScript ist
+  // `x >= null` wahr (Befund 24.08.2026). Der PUT validierte den Wert
+  // vorher GAR nicht.
+  // criteria_extra: Typen mit Auswahl (Aktivität, Kombination, Kategorie,
+  // Zeitraum) brauchen ihre Auswahl — ohne sie entsteht ein still
+  // unerreichbares Abzeichen; in Produktion lagen 4 solche Altfälle
+  // (Befund 24.08.2026).
+  const validateCriteriaExtra = body('criteria_extra').custom((extra, { req }) => {
+    const type = req.body.criteria_type;
+    const e = (typeof extra === 'object' && extra !== null) ? extra : {};
+    if (type === 'specific_activity'
+        && !(typeof e.required_activity_name === 'string' && e.required_activity_name.trim())) {
+      throw new Error('Bitte eine Aktivität auswählen');
+    }
+    if (type === 'activity_combination'
+        && !(Array.isArray(e.required_activities) && e.required_activities.length > 0)) {
+      throw new Error('Bitte mindestens eine Aktivität auswählen');
+    }
+    if (type === 'category_activities'
+        && !(typeof e.required_category === 'string' && e.required_category.trim())) {
+      throw new Error('Bitte eine Kategorie auswählen');
+    }
+    if (type === 'time_based'
+        && !(parseInt(e.days, 10) >= 1 || parseInt(e.weeks, 10) >= 1)) {
+      throw new Error('Bitte einen Zeitraum angeben');
+    }
+    return true;
+  });
+
   const validateCreateBadge = [
     commonValidations.name,
     body('icon').trim().notEmpty().withMessage('Icon ist erforderlich'),
     body('criteria_type').notEmpty().withMessage('Kriterientyp ist erforderlich'),
-    body('criteria_value').isInt({ min: 0 }).withMessage('Kriterienwert muss eine nicht-negative Ganzzahl sein'),
+    body('criteria_value').isInt({ min: 1 }).withMessage('Kriterienwert muss eine positive Ganzzahl sein'),
+    validateCriteriaExtra,
     handleValidationErrors
   ];
 
@@ -675,6 +706,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
     commonValidations.name,
     body('icon').trim().notEmpty().withMessage('Icon ist erforderlich'),
     body('criteria_type').notEmpty().withMessage('Kriterientyp ist erforderlich'),
+    body('criteria_value').isInt({ min: 1 }).withMessage('Kriterienwert muss eine positive Ganzzahl sein'),
+    validateCriteriaExtra,
     handleValidationErrors
   ];
 
