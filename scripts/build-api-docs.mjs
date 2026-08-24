@@ -22,14 +22,41 @@ const ZIEL = process.argv[2]
   ? resolve(process.argv[2])
   : join(WURZEL, 'frontend', 'public', 'docs', 'api', 'index.html');
 
-// Reihenfolge und Farbe je Datei. Farben aus theme/variables.css:
-// chat #06b6d4, konfis #5b21b6, activities #047857.
-const BEREICHE = [
-  { datei: 'chat-challenges.yaml', titel: 'Chat & Challenges', farbe: '#06b6d4' },
-  { datei: 'konfis-events.yaml', titel: 'Konfis & Termine', farbe: '#5b21b6' },
-  { datei: 'verwaltung-auth.yaml', titel: 'Verwaltung & Anmeldung', farbe: '#047857' },
-  { datei: 'teamer-material.yaml', titel: 'Teamer:innen, Material & Wrapped', farbe: '#be185d' },
-  { datei: 'stammdaten.yaml', titel: 'Stammdaten', farbe: '#b45309' },
+// Quelldateien (reine Datei-Organisation, KEINE thematische Gliederung).
+const DATEIEN = [
+  'chat-challenges.yaml',
+  'konfis-events.yaml',
+  'verwaltung-auth.yaml',
+  'teamer-material.yaml',
+  'stammdaten.yaml',
+];
+
+// Thematische Gruppen = die tags der Operationen (ein Thema pro Gruppe).
+// Reihenfolge bestimmt die Seite; Farben aus theme/variables.css bzw. der
+// App-Palette: chat #06b6d4, events #dc2626, konfis #5b21b6,
+// teamer #be185d, activities #047857.
+const GRUPPEN = [
+  { tag: 'Anmeldung & Konto', farbe: '#047857' },
+  { tag: 'Passwörter & Einladungen', farbe: '#b45309' },
+  { tag: 'Organisationen', farbe: '#0369a1' },
+  { tag: 'Benutzer & Rollen', farbe: '#7c3aed' },
+  { tag: 'Konfis (Verwaltung)', farbe: '#5b21b6' },
+  { tag: 'Konfi-Profil & Dashboard', farbe: '#5b21b6' },
+  { tag: 'Aktivitäten & Anträge', farbe: '#047857' },
+  { tag: 'Abzeichen', farbe: '#d97706' },
+  { tag: 'Jahrgänge', farbe: '#0e7490' },
+  { tag: 'Termine (Verwaltung)', farbe: '#dc2626' },
+  { tag: 'Termine (Konfis)', farbe: '#dc2626' },
+  { tag: 'Challenges (Leitung)', farbe: '#ea580c' },
+  { tag: 'Challenges (Konfis)', farbe: '#ea580c' },
+  { tag: 'Chat', farbe: '#06b6d4' },
+  { tag: 'Benachrichtigungen', farbe: '#64748b' },
+  { tag: 'Teamer:innen', farbe: '#be185d' },
+  { tag: 'Material', farbe: '#15803d' },
+  { tag: 'Wrapped', farbe: '#9333ea' },
+  { tag: 'Stammdaten & Einstellungen', farbe: '#78716c' },
+  { tag: 'System & Monitoring', farbe: '#57534e' },
+  { tag: 'Doku-Zugang', farbe: '#57534e' },
 ];
 
 const METHODEN = {
@@ -106,25 +133,32 @@ async function main() {
   const ladeYaml = await ladeYamlParser();
 
   const vorhanden = new Set(readdirSync(QUELLE).filter((f) => f.endsWith('.yaml')));
-  for (const b of BEREICHE) {
-    if (!vorhanden.has(b.datei)) {
-      throw new Error(`Erwartete Datei fehlt: docs/api/${b.datei}`);
+  for (const datei of DATEIEN) {
+    if (!vorhanden.has(datei)) {
+      throw new Error(`Erwartete Datei fehlt: docs/api/${datei}`);
     }
   }
   // Nicht gelistete Dateien sollen auffallen, statt still zu fehlen.
-  const unbekannt = [...vorhanden].filter((f) => !BEREICHE.some((b) => b.datei === f));
+  const unbekannt = [...vorhanden].filter((f) => !DATEIEN.includes(f));
   if (unbekannt.length) {
-    console.warn(`Hinweis: nicht in BEREICHE gelistet und daher NICHT in der Seite: ${unbekannt.join(', ')}`);
+    console.warn(`Hinweis: nicht in DATEIEN gelistet und daher NICHT in der Seite: ${unbekannt.join(', ')}`);
   }
 
-  const bereiche = BEREICHE.map(({ datei, titel, farbe }) => {
+  // Alle Routen einlesen und nach Tag (= thematischer Gruppe) einsortieren.
+  const jeTag = new Map(GRUPPEN.map((g) => [g.tag, []]));
+  const fremdeTags = new Set();
+  for (const datei of DATEIEN) {
     const spec = ladeYaml(readFileSync(join(QUELLE, datei), 'utf8'));
-    const routen = [];
     for (const [pfad, methoden] of Object.entries(spec.paths ?? {})) {
       for (const [methode, op] of Object.entries(methoden ?? {})) {
         if (!METHODEN[methode.toUpperCase()]) continue;
+        const tag = op.tags?.[0];
+        if (!tag || !jeTag.has(tag)) {
+          fremdeTags.add(`${tag ?? '(ohne Tag)'} — ${methode.toUpperCase()} ${pfad} (${datei})`);
+          continue;
+        }
         const b = op['x-berechtigung'] ?? {};
-        routen.push({
+        jeTag.get(tag).push({
           methode: methode.toUpperCase(),
           pfad,
           summary: (op.summary ?? '').trim(),
@@ -136,8 +170,22 @@ async function main() {
         });
       }
     }
-    return { id: datei.replace(/\.yaml$/, ''), titel, farbe, routen };
-  });
+  }
+  if (fremdeTags.size) {
+    throw new Error(
+      'Tags ohne Eintrag in GRUPPEN (bitte dort ergänzen):\n  ' + [...fremdeTags].join('\n  ')
+    );
+  }
+
+  const bereiche = GRUPPEN
+    .map(({ tag, farbe }) => ({
+      id: tag.toLowerCase().replace(/[^a-z0-9äöü]+/g, '-').replace(/^-|-$/g, ''),
+      titel: tag,
+      farbe,
+      routen: jeTag.get(tag).sort((a, b2) =>
+        a.pfad.localeCompare(b2.pfad) || a.methode.localeCompare(b2.methode)),
+    }))
+    .filter((b) => b.routen.length > 0);
 
   const gesamt = bereiche.reduce((n, b) => n + b.routen.length, 0);
   // Datum NICHT aus der Uhr: Die CI erzeugt die Seite neu und vergleicht sie

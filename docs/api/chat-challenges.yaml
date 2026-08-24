@@ -174,16 +174,18 @@ info:
     Push-/Badge-Notifications. Schwerpunkt: Berechtigungen (x-berechtigung
     je Route). Rollen: super_admin, org_admin, admin, teamer, konfi.
 servers:
-  - url: https://konfi-quest.de/api
+  - url: https://konfi-quest.de
 security:
   - bearerAuth: []
 tags:
-  - name: Chat
-  - name: Chat-Umfragen
-  - name: Chat-Reaktionen
-  - name: Challenges-Teilnehmer
-  - name: Challenges-Leitung
-  - name: Notifications
+  - name: "Benachrichtigungen"
+    description: "Push-Gerätetokens, Benachrichtigungs-Einstellungen, Badge-Zähler."
+  - name: "Challenges (Konfis)"
+    description: "Challenges aus Teilnehmenden-Sicht: ansehen, Beiträge einreichen und zurückziehen."
+  - name: "Challenges (Leitung)"
+    description: "Challenges anlegen, moderieren und auswerten."
+  - name: "Chat"
+    description: "Chaträume, Nachrichten, Dateien, Umfragen und Reaktionen."
 
 components:
   securitySchemes:
@@ -191,7 +193,10 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT, geprüft von verifyTokenRBAC (Org-Kontext via X-Active-Organization-Header möglich).
+      description: >
+        JWT im Authorization-Header. Optional Header X-Active-Organization
+        (Multi-Org): schaltet die aktive Organisation um, sofern der User dort
+        Mitglied ist (sonst 403).
   schemas:
     Error:
       type: object
@@ -344,9 +349,9 @@ paths:
   # CHAT — Kontaktlisten und Direktchats
   # ==========================================================================
 
-  /chat/team-contacts:
+  /api/chat/team-contacts:
     get:
-      tags: [Chat]
+      tags: ["Chat"]
       summary: Team-Kontaktliste für Direktchats
       description: >
         Liefert alle aktiven Admins, Org-Admins und Teamer:innen der eigenen
@@ -369,9 +374,9 @@ paths:
         objekt-pruefung: "Explizite role_name-Prüfung im Handler (admin/org_admin/teamer), sonst 403"
         hinweis: "Konfis nutzen stattdessen GET /chat/admins bzw. /chat/available-users"
 
-  /chat/admins:
+  /api/chat/admins:
     get:
-      tags: [Chat]
+      tags: ["Chat"]
       summary: Anschreibbare Team-Mitglieder (Konfi-Sicht)
       description: >
         Nur für Konfis: alle admin/org_admin/teamer der eigenen Organisation.
@@ -398,9 +403,9 @@ paths:
         objekt-pruefung: "req.user.type muss 'konfi' sein"
         hinweis: "Liefert den username (Login-Name) der Team-Mitglieder mit — mehr als die Team-Sicht (/team-contacts) preisgibt"
 
-  /chat/available-users:
+  /api/chat/available-users:
     get:
-      tags: [Chat]
+      tags: ["Chat"]
       summary: Noch nicht angeschriebene Chat-Partner (Konfi-Sicht)
       description: >
         Nur für Konfis: Team-Mitglieder der Org, mit denen noch KEIN
@@ -435,9 +440,9 @@ paths:
         org-scope: true
         objekt-pruefung: "req.user.type muss 'konfi' sein; Jahrgang muss existieren"
 
-  /chat/direct:
+  /api/chat/direct:
     post:
-      tags: [Chat]
+      tags: ["Chat"]
       summary: Direktchat erstellen oder vorhandenen zurueckgeben
       description: >
         Legt einen 1:1-Direktchat mit target_user_id an (oder liefert den
@@ -484,9 +489,9 @@ paths:
   # CHAT — Räume
   # ==========================================================================
 
-  /chat/rooms:
+  /api/chat/rooms:
     post:
-      tags: [Chat]
+      tags: ["Chat"]
       summary: Chat-Raum erstellen (group/direct/jahrgang)
       description: >
         Erstellt einen Raum. Konfis duerfen nur type='direct'. Bei
@@ -537,7 +542,7 @@ paths:
         # Zuweisungspruefung).
         hinweis: "Siehe LUECKE-Kommentar; emitRoomsChanged an alle finalen Teilnehmer"
     get:
-      tags: [Chat]
+      tags: ["Chat"]
       summary: Eigene Chat-Räume auflisten
       description: >
         Liefert alle Räume, in denen der Nutzer Teilnehmer ist, mit
@@ -562,12 +567,12 @@ paths:
         objekt-pruefung: "Nur Räume mit eigenem chat_participants-Eintrag (KEIN Admin-Bypass in der Liste)"
         hinweis: "Admins sehen fremde Räume zwar nicht in der Liste, können sie aber per ID oeffnen (siehe /rooms/{roomId})"
 
-  /chat/rooms/{roomId}:
+  /api/chat/rooms/{roomId}:
     get:
-      tags: [Chat]
+      tags: ["Chat"]
       summary: Raum-Details inkl. Teilnehmerliste
       parameters:
-        - { name: roomId, in: path, required: true, schema: { type: integer } }
+        - { name: roomId, in: path, required: true, schema: { type: integer }, description: "ID des Chatraums" }
       responses:
         '200':
           description: Raum mit participants-Array
@@ -596,15 +601,15 @@ paths:
         objekt-pruefung: "Teilnehmer des Raums ODER Admin-Bypass (type 'admin' = admin/org_admin: jeder Raum der eigenen Org)"
         hinweis: "Admin-Bypass umfasst auch fremde Direktchats"
     delete:
-      tags: [Chat]
+      tags: ["Chat"]
       summary: Chat-Raum löschen (nur Admins)
       description: >
         Loescht Raum inkl. Nachrichten, Umfragen, Dateien. Mit vorhandenen
         Nachrichten nur mit ?force=true. Jahrgangs-Chats sind nie direkt
         loeschbar (nur über das Löschen des Jahrgangs).
       parameters:
-        - { name: roomId, in: path, required: true, schema: { type: integer } }
-        - { name: force, in: query, required: false, schema: { type: string, enum: ["true", "false"] } }
+        - { name: roomId, in: path, required: true, schema: { type: integer }, description: "ID des Chatraums" }
+        - { name: force, in: query, required: false, schema: { type: string, enum: ["true", "false"] }, description: "true: Raum trotz vorhandener Nachrichten löschen" }
       responses:
         '200': { description: Geloescht }
         '403': { description: Aufrufer ist kein Admin-Typ }
@@ -622,18 +627,18 @@ paths:
   # CHAT — Nachrichten
   # ==========================================================================
 
-  /chat/rooms/{roomId}/messages:
+  /api/chat/rooms/{roomId}/messages:
     get:
-      tags: [Chat]
+      tags: ["Chat"]
       summary: Nachrichten eines Raums laden
       description: >
         Paginiert (limit/offset, neueste zuerst, Antwort chronologisch) oder
         inkrementell per ?after=messageId (bis 200 neue Nachrichten).
         Enthaelt Reactions, Reply-Daten und Poll-Daten inkl. Votes.
       parameters:
-        - { name: roomId, in: path, required: true, schema: { type: integer } }
-        - { name: limit, in: query, required: false, schema: { type: integer, default: 50 } }
-        - { name: offset, in: query, required: false, schema: { type: integer, default: 0 } }
+        - { name: roomId, in: path, required: true, schema: { type: integer }, description: "ID des Chatraums" }
+        - { name: limit, in: query, required: false, schema: { type: integer, default: 50 }, description: "Anzahl Nachrichten pro Seite" }
+        - { name: offset, in: query, required: false, schema: { type: integer, default: 0 }, description: "Anzahl zu überspringender Nachrichten (Blättern)" }
         - { name: after, in: query, required: false, schema: { type: integer }, description: Nur Nachrichten mit id > after (Live-Nachladen) }
       responses:
         '200':
@@ -655,7 +660,7 @@ paths:
         # über die Teilnehmerliste namentlich aufloesbar (LUECKE 2 im Kopf).
         hinweis: "Geloeschte Nachrichten kommen als Platzhalter (is_deleted=true) mit"
     post:
-      tags: [Chat]
+      tags: ["Chat"]
       summary: Nachricht senden (Text oder Datei)
       description: >
         multipart/form-data mit optionalem Feld 'file' (verschluesselte
@@ -663,7 +668,7 @@ paths:
         macht den Aufruf idempotent. reply_to wird gegen den Raum validiert.
         Verteilt via WebSocket und Push an alle Teilnehmer.
       parameters:
-        - { name: roomId, in: path, required: true, schema: { type: integer } }
+        - { name: roomId, in: path, required: true, schema: { type: integer }, description: "ID des Chatraums" }
       requestBody:
         required: true
         content:
@@ -692,12 +697,12 @@ paths:
         org-scope: true
         objekt-pruefung: "Teilnehmer ODER Admin-Bypass — admin/org_admin können in JEDEN Raum der Org schreiben (auch fremde Direktchats)"
 
-  /chat/rooms/{roomId}/mark-read:
+  /api/chat/rooms/{roomId}/mark-read:
     post:
-      tags: [Chat]
+      tags: ["Chat"]
       summary: Raum als gelesen markieren
       parameters:
-        - { name: roomId, in: path, required: true, schema: { type: integer } }
+        - { name: roomId, in: path, required: true, schema: { type: integer }, description: "ID des Chatraums" }
       responses:
         '200': { description: "Upsert von chat_read_status.last_read_at = NOW()" }
         '403': { description: Kein Teilnehmer und kein Admin der Org }
@@ -708,17 +713,17 @@ paths:
         org-scope: true
         objekt-pruefung: "Teilnehmer ODER Admin-Bypass"
 
-  /chat/rooms/{roomId}/export:
+  /api/chat/rooms/{roomId}/export:
     get:
-      tags: [Chat]
+      tags: ["Chat"]
       summary: Kompletten Chat-Verlauf exportieren (nur Leitung)
       description: >
         Gesamter Verlauf als Text (default) oder JSON, geloeschte Nachrichten
         als Platzhalter. Bewusst NUR admin/org_admin (super_admin technisch
         eingeschlossen) — nicht teamer, nicht konfi.
       parameters:
-        - { name: roomId, in: path, required: true, schema: { type: integer } }
-        - { name: format, in: query, required: false, schema: { type: string, enum: [txt, json], default: txt } }
+        - { name: roomId, in: path, required: true, schema: { type: integer }, description: "ID des Chatraums" }
+        - { name: format, in: query, required: false, schema: { type: string, enum: [txt, json], default: txt }, description: "Export-Format: txt (Standard) oder json" }
       responses:
         '200':
           description: Download (Content-Disposition attachment)
@@ -736,12 +741,12 @@ paths:
         objekt-pruefung: "type='admin' UND role_name in (admin, org_admin, super_admin); Raum org-gescopt"
         hinweis: "Keine Teilnahme nötig — jeder Raum der Org exportierbar, auch fremde Direktchats"
 
-  /chat/messages/{messageId}:
+  /api/chat/messages/{messageId}:
     delete:
-      tags: [Chat]
+      tags: ["Chat"]
       summary: Nachricht löschen (Soft-Delete)
       parameters:
-        - { name: messageId, in: path, required: true, schema: { type: integer } }
+        - { name: messageId, in: path, required: true, schema: { type: integer }, description: "ID der Nachricht" }
       responses:
         '200': { description: Geloescht (deleted_at gesetzt); WebSocket-Event messageDeleted }
         '403': { description: Weder eigene Nachricht noch Admin der Org }
@@ -758,12 +763,12 @@ paths:
   # CHAT — Teilnehmerverwaltung
   # ==========================================================================
 
-  /chat/rooms/{roomId}/participants:
+  /api/chat/rooms/{roomId}/participants:
     get:
-      tags: [Chat]
+      tags: ["Chat"]
       summary: Teilnehmerliste eines Raums
       parameters:
-        - { name: roomId, in: path, required: true, schema: { type: integer } }
+        - { name: roomId, in: path, required: true, schema: { type: integer }, description: "ID des Chatraums" }
       responses:
         '200':
           description: Teilnehmer mit Name, Rolle, role_title, Jahrgang (nur Konfis)
@@ -791,10 +796,10 @@ paths:
         org-scope: true
         objekt-pruefung: "Teilnehmer ODER Admin-Bypass (admin/org_admin: jeder Raum der Org)"
     post:
-      tags: [Chat]
+      tags: ["Chat"]
       summary: Teilnehmer zu Gruppenchat hinzufuegen (nur Admins)
       parameters:
-        - { name: roomId, in: path, required: true, schema: { type: integer } }
+        - { name: roomId, in: path, required: true, schema: { type: integer }, description: "ID des Chatraums" }
       requestBody:
         required: true
         content:
@@ -818,14 +823,14 @@ paths:
         objekt-pruefung: "type='admin'; nur room.type='group'; Ziel-User org-gescopt"
         hinweis: "teamer können keine Teilnehmer hinzufuegen (wohl aber Räume mit Teilnehmern ANLEGEN, siehe POST /rooms)"
 
-  /chat/rooms/{roomId}/participants/{userId}/{userType}:
+  /api/chat/rooms/{roomId}/participants/{userId}/{userType}:
     delete:
-      tags: [Chat]
+      tags: ["Chat"]
       summary: Teilnehmer aus Gruppenchat entfernen (nur Admins)
       parameters:
-        - { name: roomId, in: path, required: true, schema: { type: integer } }
-        - { name: userId, in: path, required: true, schema: { type: integer } }
-        - { name: userType, in: path, required: true, schema: { type: string, enum: [admin, teamer, konfi] } }
+        - { name: roomId, in: path, required: true, schema: { type: integer }, description: "ID des Chatraums" }
+        - { name: userId, in: path, required: true, schema: { type: integer }, description: "User-ID der zu entfernenden Person" }
+        - { name: userType, in: path, required: true, schema: { type: string, enum: [admin, teamer, konfi] }, description: "Typ des Eintrags: konfi, teamer oder admin" }
       responses:
         '200': { description: Entfernt }
         '400': { description: Raum ist kein Gruppenchat }
@@ -838,16 +843,16 @@ paths:
         org-scope: true
         objekt-pruefung: "type='admin'; nur room.type='group'"
 
-  /chat/rooms/{roomId}/leave:
+  /api/chat/rooms/{roomId}/leave:
     delete:
-      tags: [Chat]
+      tags: ["Chat"]
       summary: Raum selbst verlassen (teamer/konfi)
       description: >
         Admins können nie verlassen; jahrgang- und direct-Räume sind
         generell nicht verlassbar; Event-Chats verlassen Konfis nur über
         die Event-Abmeldung.
       parameters:
-        - { name: roomId, in: path, required: true, schema: { type: integer } }
+        - { name: roomId, in: path, required: true, schema: { type: integer }, description: "ID des Chatraums" }
       responses:
         '200': { description: Verlassen }
         '400': { description: Raumtyp nicht verlassbar (jahrgang/direct) ODER Event-Chat als Konfi }
@@ -864,9 +869,9 @@ paths:
   # CHAT — Dateien, Badge, Umfragen, Reaktionen
   # ==========================================================================
 
-  /chat/files/{filename}:
+  /api/chat/files/{filename}:
     get:
-      tags: [Chat]
+      tags: ["Chat"]
       summary: Chat-Datei abrufen (entschluesselt)
       description: >
         Liefert eine im Chat hochgeladene Datei. Auth per
@@ -878,7 +883,7 @@ paths:
         Dateien damit auch in der Zweit-Organisation.
       security: []
       parameters:
-        - { name: filename, in: path, required: true, schema: { type: string, pattern: "^[a-f0-9]+$" } }
+        - { name: filename, in: path, required: true, schema: { type: string, pattern: "^[a-f0-9]+$" }, description: "Serverseitiger Dateiname (Hex) aus der Upload-Antwort bzw. Nachricht" }
         - { name: token, in: query, required: false, schema: { type: string }, description: JWT-Fallback fuer Media-Tags }
       responses:
         '200': { description: "Dateiinhalt (Content-Type aus Original-Dateiname)", content: { application/octet-stream: { schema: { type: string, format: binary } } } }
@@ -904,9 +909,9 @@ paths:
         # Inkonsistenz); Mitgliedschafts-Check ohne user_type (unkritisch,
         # user_id global eindeutig).
 
-  /chat/badge-update:
+  /api/chat/badge-update:
     post:
-      tags: [Chat]
+      tags: ["Chat"]
       summary: Badge-Zahl neu berechnen und als Push senden (Background Refresh)
       responses:
         '200':
@@ -926,17 +931,18 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: false
         objekt-pruefung: "Nur eigene Daten (Zähler über eigene chat_participants)"
+        hinweis: "Derzeit von keinem Client aufgerufen; Kandidat für Rückbau."
 
-  /chat/rooms/{roomId}/polls:
+  /api/chat/rooms/{roomId}/polls:
     post:
-      tags: [Chat-Umfragen]
+      tags: ["Chat"]
       summary: Umfrage in einem Raum erstellen (nur Admins)
       description: >
         Legt eine Poll-Nachricht an. exclusive_options (jede Option max. 1
         Person) erzwingt Einzelauswahl. anonymous default true. Verteilung
         via WebSocket und Push wie normale Nachrichten.
       parameters:
-        - { name: roomId, in: path, required: true, schema: { type: integer } }
+        - { name: roomId, in: path, required: true, schema: { type: integer }, description: "ID des Chatraums" }
       requestBody:
         required: true
         content:
@@ -965,9 +971,9 @@ paths:
         objekt-pruefung: "type='admin'; Raum muss zur Org gehören (Teilnahme nicht nötig)"
         hinweis: "teamer können keine Umfragen erstellen"
 
-  /chat/polls/{pollId}/vote:
+  /api/chat/polls/{pollId}/vote:
     post:
-      tags: [Chat-Umfragen]
+      tags: ["Chat"]
       summary: Abstimmen (per Poll-ID oder Message-ID)
       description: >
         Toggle-Semantik: erneutes Abstimmen auf dieselbe Option entfernt die
@@ -997,16 +1003,16 @@ paths:
         org-scope: true
         objekt-pruefung: "NUR Teilnehmer des Raums (hier KEIN Admin-Bypass — auch Admins müssen Teilnehmer sein)"
 
-  /chat/messages/{messageId}/vote:
+  /api/chat/messages/{messageId}/vote:
     post:
-      tags: [Chat-Umfragen]
+      tags: ["Chat"]
       summary: Abstimmen per Message-ID (Frontend-Kompatibilitaet)
       description: >
         Wie /polls/{pollId}/vote, aber Lookup nur über message_id und OHNE
         Toggle-off bei Mehrfachauswahl (doppelte Stimme -> 400) und ohne
         exclusive_options-Sperrlogik.
       parameters:
-        - { name: messageId, in: path, required: true, schema: { type: integer } }
+        - { name: messageId, in: path, required: true, schema: { type: integer }, description: "ID der Nachricht" }
       requestBody:
         required: true
         content:
@@ -1029,12 +1035,12 @@ paths:
         objekt-pruefung: "NUR Teilnehmer des Raums (kein Admin-Bypass)"
         hinweis: "Aeltere Schwester-Route ohne exclusive_options-Behandlung"
 
-  /chat/messages/{messageId}/reactions:
+  /api/chat/messages/{messageId}/reactions:
     post:
-      tags: [Chat-Reaktionen]
+      tags: ["Chat"]
       summary: Reaktion setzen/entfernen (Toggle)
       parameters:
-        - { name: messageId, in: path, required: true, schema: { type: integer } }
+        - { name: messageId, in: path, required: true, schema: { type: integer }, description: "ID der Nachricht" }
       requestBody:
         required: true
         content:
@@ -1056,10 +1062,10 @@ paths:
         org-scope: true
         objekt-pruefung: "Org-Check der Nachricht + Teilnehmer-Pflicht (kein Admin-Bypass beim SETZEN)"
     get:
-      tags: [Chat-Reaktionen]
+      tags: ["Chat"]
       summary: Reaktionen einer Nachricht lesen
       parameters:
-        - { name: messageId, in: path, required: true, schema: { type: integer } }
+        - { name: messageId, in: path, required: true, schema: { type: integer }, description: "ID der Nachricht" }
       responses:
         '200':
           description: Reaktionsliste mit user_name
@@ -1081,9 +1087,9 @@ paths:
   # CHALLENGES — Teilnehmer-Endpunkte (Konfis UND Team je nach audience)
   # ==========================================================================
 
-  /challenges/konfi:
+  /api/challenges/konfi:
     get:
-      tags: [Challenges-Teilnehmer]
+      tags: ["Challenges (Konfis)"]
       summary: Aktive Challenges, Archiv und eigene Abzeichen
       description: >
         Teilnehmer-Einstieg (trotz Pfadname auch für das Team). Nie
@@ -1122,9 +1128,9 @@ paths:
         org-scope: true
         objekt-pruefung: "Jahrgangs-Scoping je Rolle (s. Beschreibung); super_admin explizit ausgeschlossen"
 
-  /challenges/konfi/{id}:
+  /api/challenges/konfi/{id}:
     get:
-      tags: [Challenges-Teilnehmer]
+      tags: ["Challenges (Konfis)"]
       summary: Challenge-Detail mit Galerie und eigenen Beitraegen
       description: >
         Galerie enthält NUR fremde oeffentliche Beitraege
@@ -1134,7 +1140,7 @@ paths:
         404 (Existenz soll nicht durchsickern), ebenso Entwuerfe und noch
         nicht gestartete Challenges.
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Challenge" }
       responses:
         '200':
           description: Detail
@@ -1160,9 +1166,9 @@ paths:
         objekt-pruefung: "participantMayAccess: konfi -> eigener Jahrgang zugeordnet; teamer -> zugewiesener Jahrgang oder 'nur_team'; admin/org_admin immer"
         hinweis: "Anonymitaet wird serverseitig durchgesetzt (Name verlässt das Backend nicht)"
 
-  /challenges/konfi/{id}/submissions:
+  /api/challenges/konfi/{id}/submissions:
     post:
-      tags: [Challenges-Teilnehmer]
+      tags: ["Challenges (Konfis)"]
       summary: Beitrag einreichen
       description: >
         multipart (Feld 'file') für photo/audio/video, JSON für text/link.
@@ -1177,7 +1183,7 @@ paths:
         visibility='konfi_choice' (Default 'publish'). Ohne Moderation
         Auto-Approve. Magic-Bytes-Prüfung der Datei; verschluesselte Ablage.
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Beitrags" }
       requestBody:
         required: true
         content:
@@ -1210,16 +1216,16 @@ paths:
         objekt-pruefung: "participantMayAccess + maySubmit(role, audience); Aktivitaets- und Mehrfach-Check"
         hinweis: "Push an Leitung immer; Abzeichen-Push an Einreicher bei erster Submission"
 
-  /challenges/konfi/submissions/{id}:
+  /api/challenges/konfi/submissions/{id}:
     delete:
-      tags: [Challenges-Teilnehmer]
+      tags: ["Challenges (Konfis)"]
       summary: Beitrag zurueckziehen — bewusst gesperrt
       description: >
         Antwortet IMMER 403, unabhaengig von Existenz und Eigentum
         (Design-Entscheidung: eingereichte Beitraege sind verbindlich;
         Ausblenden ist Sache der Leitung).
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Beitrags" }
       responses:
         '403': { description: Immer — Route ist absichtlich deaktiviert }
       x-berechtigung:
@@ -1228,16 +1234,16 @@ paths:
         org-scope: false
         objekt-pruefung: "Keine — pauschale 403 für alle"
 
-  /challenges/files/{filename}:
+  /api/challenges/files/{filename}:
     get:
-      tags: [Challenges-Teilnehmer]
+      tags: ["Challenges (Konfis)"]
       summary: Challenge-Datei abrufen (entschluesselt)
       description: >
         Auth NUR per Authorization-Header (bewusst KEIN ?token=-Fallback).
         Beruecksichtigt X-Active-Organization (Multi-Org) wie rbacVerifier.
       parameters:
-        - { name: filename, in: path, required: true, schema: { type: string, pattern: "^[a-f0-9]+$" } }
-        - { name: X-Active-Organization, in: header, required: false, schema: { type: integer } }
+        - { name: filename, in: path, required: true, schema: { type: string, pattern: "^[a-f0-9]+$" }, description: "Serverseitiger Dateiname (Hex) aus der Upload-Antwort bzw. Nachricht" }
+        - { name: X-Active-Organization, in: header, required: false, schema: { type: integer }, description: "Aktive Organisation für Multi-Org-Konten (wie beim übrigen API-Zugriff)" }
       responses:
         '200': { description: Dateiinhalt, content: { application/octet-stream: { schema: { type: string, format: binary } } } }
         '400': { description: Ungueltiger Dateiname }
@@ -1258,9 +1264,9 @@ paths:
   # CHALLENGES — Leitungs-Endpunkte (org_admin / admin / teamer)
   # ==========================================================================
 
-  /challenges/admin/authors:
+  /api/challenges/admin/authors:
     get:
-      tags: [Challenges-Leitung]
+      tags: ["Challenges (Leitung)"]
       summary: Moegliche Urheber:innen einer Challenge
       description: >
         Alle Rollen der Org inkl. Konfis (eine Challenge kann von einem
@@ -1287,9 +1293,9 @@ paths:
         org-scope: true
         objekt-pruefung: "Konfi-Eintraege auf zugewiesene Jahrgänge des Teamers gefiltert"
 
-  /challenges/admin:
+  /api/challenges/admin:
     get:
-      tags: [Challenges-Leitung]
+      tags: ["Challenges (Leitung)"]
       summary: Alle Challenges der Org (inkl. Entwuerfe) mit Zaehlern
       description: >
         Verwaltungsliste inkl. submission_count, pending_count, eigener
@@ -1307,7 +1313,7 @@ paths:
         org-scope: true
         objekt-pruefung: "Teamer: Jahrgangs-Filter via viewableJahrgangIds; org_admin/admin org-weit"
     post:
-      tags: [Challenges-Leitung]
+      tags: ["Challenges (Leitung)"]
       summary: Challenge anlegen (Entwurf oder geplant)
       description: >
         Defaults: audience 'konfis_und_team', visibility 'konfi_choice',
@@ -1350,9 +1356,9 @@ paths:
         org-scope: true
         objekt-pruefung: "jahrgang_ids müssen zur Org UND (bei Teamern) zu den eigenen Zuweisungen gehören; author_user_id org-gescopt"
 
-  /challenges/admin/{id}:
+  /api/challenges/admin/{id}:
     put:
-      tags: [Challenges-Leitung]
+      tags: ["Challenges (Leitung)"]
       summary: Challenge bearbeiten (Konsens-Felder nach Start eingefroren)
       description: >
         Vor Start: alles aenderbar. Nach Start (kein Draft, starts_at
@@ -1360,7 +1366,7 @@ paths:
         allowed_media eingefroren (409 mit Klartext); auch challenge_type,
         allow_multiple und is_draft werden dann nicht mehr uebernommen.
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Challenge" }
       requestBody:
         required: true
         content:
@@ -1381,11 +1387,11 @@ paths:
         org-scope: true
         objekt-pruefung: "leadershipMayAccess: org_admin/admin immer; teamer nur zugewiesene Jahrgänge bzw. 'nur_team' org-weit"
     delete:
-      tags: [Challenges-Leitung]
+      tags: ["Challenges (Leitung)"]
       summary: Challenge löschen (gestartete nur mit force)
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
-        - { name: force, in: query, required: false, schema: { type: string, enum: ["true", "false"] } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Challenge" }
+        - { name: force, in: query, required: false, schema: { type: string, enum: ["true", "false"] }, description: "true: auch eine bereits gestartete Challenge löschen — samt Beiträgen und Dateien" }
       responses:
         '200': { description: Geloescht inkl. aller Beitraege und Dateien }
         '403': { description: requireTeamer / leadershipMayAccess }
@@ -1398,9 +1404,9 @@ paths:
         org-scope: true
         objekt-pruefung: "leadershipMayAccess (wie PUT)"
 
-  /challenges/admin/{id}/submissions:
+  /api/challenges/admin/{id}/submissions:
     get:
-      tags: [Challenges-Leitung]
+      tags: ["Challenges (Leitung)"]
       summary: Alle Beitraege einer Challenge (Leitungs-Sicht, immer mit Namen)
       description: >
         Sammelansicht: ALLE Beitraege inkl. Konsens, Status, hidden_at und
@@ -1408,7 +1414,7 @@ paths:
         der Leitung. is_public/is_anonymous machen transparent, wie der
         Beitrag in der Galerie erscheint.
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Beitrags" }
       responses:
         '200':
           description: Challenge + submissions[] (mit user_id, display_name, jahrgang_name, moderation_note, is_public, is_anonymous)
@@ -1421,9 +1427,9 @@ paths:
         org-scope: true
         objekt-pruefung: "leadershipMayAccess (Teamer nur zugewiesene Jahrgänge / 'nur_team')"
 
-  /challenges/admin/submissions/{id}/moderate:
+  /api/challenges/admin/submissions/{id}/moderate:
     put:
-      tags: [Challenges-Leitung]
+      tags: ["Challenges (Leitung)"]
       summary: Beitrag moderieren (approve/hide/unhide/anonymize)
       description: >
         approve und unhide setzen 'approved' und raeumen hidden-Metadaten
@@ -1439,7 +1445,7 @@ paths:
         Beitrag), bei approve der Abzeichen-Push (challenge_badge_earned),
         wenn es der erste freigegebene Beitrag der Person ist.
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Beitrags" }
       requestBody:
         required: true
         content:
@@ -1463,9 +1469,9 @@ paths:
         org-scope: true
         objekt-pruefung: "Submission org-gescopt + leadershipMayAccess auf die zugehoerige Challenge"
 
-  /challenges/admin/{id}/export:
+  /api/challenges/admin/{id}/export:
     get:
-      tags: [Challenges-Leitung]
+      tags: ["Challenges (Leitung)"]
       summary: Beitraege als Text exportieren (Liturgie/Playlist/Wand)
       description: >
         text/plain-Download. Strenger als die Sammelansicht, weil der Export
@@ -1474,7 +1480,7 @@ paths:
         private Challenge: alle nicht-ausgeblendeten (Export ist dort der
         angekuendigte Rueckkanal). Anonyme Beitraege als "Anonym".
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Challenge" }
       responses:
         '200': { description: Text-Datei (Content-Disposition attachment), content: { text/plain: { schema: { type: string } } } }
         '403': { description: requireTeamer / leadershipMayAccess }
@@ -1490,9 +1496,9 @@ paths:
   # NOTIFICATIONS
   # ==========================================================================
 
-  /notifications/badge-counts:
+  /api/notifications/badge-counts:
     get:
-      tags: [Notifications]
+      tags: ["Benachrichtigungen"]
       summary: Leichtgewichtige Badge-Zähler für die Tab-Leiste
       description: >
         Chat-Ungelesen-Zähler je Raum (Semantik identisch zu GET
@@ -1528,9 +1534,9 @@ paths:
         org-scope: true
         objekt-pruefung: "Nur eigene Räume (chat_participants); Pending-Zähler rollenabhaengig gefiltert"
 
-  /notifications/preferences:
+  /api/notifications/preferences:
     get:
-      tags: [Notifications]
+      tags: ["Benachrichtigungen"]
       summary: Push-Master-Schalter lesen
       responses:
         '200':
@@ -1548,7 +1554,7 @@ paths:
         org-scope: false
         objekt-pruefung: "Nur eigener User-Datensatz"
     put:
-      tags: [Notifications]
+      tags: ["Benachrichtigungen"]
       summary: Push-Master-Schalter setzen
       requestBody:
         required: true
@@ -1569,9 +1575,9 @@ paths:
         org-scope: false
         objekt-pruefung: "Nur eigener User-Datensatz"
 
-  /notifications/device-token:
+  /api/notifications/device-token:
     post:
-      tags: [Notifications]
+      tags: ["Benachrichtigungen"]
       summary: Push-Token registrieren/aktualisieren
       description: >
         Upsert auf (user_id, platform, device_id). Ein Token existiert
@@ -1599,7 +1605,7 @@ paths:
         org-scope: false
         objekt-pruefung: "Token wird immer dem eigenen User zugeordnet"
     delete:
-      tags: [Notifications]
+      tags: ["Benachrichtigungen"]
       summary: Push-Token entfernen (Logout)
       requestBody:
         required: true
@@ -1621,9 +1627,9 @@ paths:
         org-scope: true
         objekt-pruefung: "Nur eigene Tokens der eigenen Org"
 
-  /notifications/test-push:
+  /api/notifications/test-push:
     post:
-      tags: [Notifications]
+      tags: ["Benachrichtigungen"]
       summary: Test-Push an alle eigenen Geraete
       requestBody:
         required: false
@@ -1642,3 +1648,4 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: "Nur eigene Tokens (user_id + Org-Filter)"
+        hinweis: "Reines Diagnose-Werkzeug; wird von keinem Client aufgerufen, nur vom Backend-Test abgedeckt."

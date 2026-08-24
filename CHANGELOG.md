@@ -519,6 +519,8 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 Betrifft nicht die App, gehört nicht in die Store-Release-Notes.
 
 - Zugangsdaten werden nicht mehr in der Projektdatei hinterlegt, sondern getrennt konfiguriert.
+- API-Referenz neu gegliedert: 21 Themen statt 5 Sammelblöcke, einheitliche
+  Adressen, Parameter und Fehlerfälle genauer beschrieben.
 - Startseite um einen Abschnitt zu den Challenges erweitert.
 - Startseite: Klick-Auswertung erkennt die Ziel-Adresse jetzt zuverlässig —
   fremde Adressen konnten sich zuvor als App-Store-Link ausgeben.

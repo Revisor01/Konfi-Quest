@@ -17,42 +17,96 @@
   ],
   "tags": [
     {
-      "name": "Anmeldung & Verwaltung"
+      "name": "Anmeldung & Konto",
+      "description": "Login, Logout, Token-Refresh, eigenes Profil, Organisationswechsel."
     },
     {
-      "name": "Konfis & Termine"
+      "name": "Benutzer & Rollen",
+      "description": "Team-Konten der Leitung: anlegen, ändern, Jahrgangszuweisung, Rollen. /admin/users und /users sind derselbe Router (Alias-Mount)."
     },
     {
-      "name": "Chat"
+      "name": "Doku-Zugang",
+      "description": "Anmeldung für die passwortgeschützte API-Dokumentation."
     },
     {
-      "name": "Chat-Umfragen"
+      "name": "Organisationen",
+      "description": "Gemeinden anlegen und verwalten, Mitglieder und Limits (Super-Admin und Leitung)."
     },
     {
-      "name": "Chat-Reaktionen"
+      "name": "Passwörter & Einladungen",
+      "description": "Passwort vergessen und zurücksetzen, Einladungs-Codes, Konfi-Registrierung."
     },
     {
-      "name": "Challenges-Teilnehmer"
+      "name": "System & Monitoring",
+      "description": "Health-Check, Status und Metriken des Servers."
     },
     {
-      "name": "Challenges-Leitung"
+      "name": "Abzeichen",
+      "description": "Abzeichen-Verwaltung und die verdienten Abzeichen von Konfis und Teamer:innen."
     },
     {
-      "name": "Notifications"
+      "name": "Aktivitäten & Anträge",
+      "description": "Aktivitäten-Katalog, Punkte-Anträge der Konfis und ihre Bearbeitung durch die Leitung."
     },
     {
-      "name": "Chat & Challenges"
+      "name": "Konfi-Profil & Dashboard",
+      "description": "Eigene Daten der Konfis: Profil, Dashboard, Konfispruch, Tageslosung."
     },
     {
-      "name": "Teamer:innen, Material & Wrapped"
+      "name": "Konfis (Verwaltung)",
+      "description": "Konfi-Konten aus Sicht der Leitung: anlegen, Punkte, Passwort, Beförderung zu Teamer:in."
     },
     {
-      "name": "Stammdaten"
+      "name": "Termine (Konfis)",
+      "description": "Termine aus Konfi-Sicht: ansehen, anmelden, abmelden, Warteliste, Zeitfenster."
+    },
+    {
+      "name": "Termine (Verwaltung)",
+      "description": "Termine und Serien anlegen, Teilnahme und Anwesenheit pflegen, QR-Check-in, Absagen."
+    },
+    {
+      "name": "Benachrichtigungen",
+      "description": "Push-Gerätetokens, Benachrichtigungs-Einstellungen, Badge-Zähler."
+    },
+    {
+      "name": "Challenges (Konfis)",
+      "description": "Challenges aus Teilnehmenden-Sicht: ansehen, Beiträge einreichen und zurückziehen."
+    },
+    {
+      "name": "Challenges (Leitung)",
+      "description": "Challenges anlegen, moderieren und auswerten."
+    },
+    {
+      "name": "Chat",
+      "description": "Chaträume, Nachrichten, Dateien, Umfragen und Reaktionen."
+    },
+    {
+      "name": "Material",
+      "description": "Materialablage: Dateien, Tags, Verknüpfung mit Terminen."
+    },
+    {
+      "name": "Teamer:innen",
+      "description": "Eigener Bereich der Teamer:innen: Dashboard, Konfis, Anträge, Zertifikate, Konfi-Historie."
+    },
+    {
+      "name": "Wrapped",
+      "description": "Jahresrückblick: erzeugen, ansehen, löschen."
+    },
+    {
+      "name": "Jahrgänge",
+      "description": "Jahrgänge anlegen und verwalten, Anwesenheits-Matrix, Konfisprüche des Jahrgangs."
+    },
+    {
+      "name": "Stammdaten & Einstellungen",
+      "description": "Kategorien, Level und Organisations-Einstellungen."
     }
   ],
   "paths": {
-    "/auth/login": {
+    "/api/auth/login": {
       "post": {
+        "tags": [
+          "Anmeldung & Konto"
+        ],
         "summary": "Login für alle Rollen (case-insensitiver Username)",
         "requestBody": {
           "required": true,
@@ -101,14 +155,14 @@
           "org-scope": false,
           "objekt-pruefung": "Org-Aktiv- und Trial-Prüfung im Handler; super_admin (Rolle oder Flag) umgeht beide",
           "hinweis": "Offene Route; setzt last_login_at"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/auth/change-password": {
+    "/api/auth/change-password": {
       "post": {
+        "tags": [
+          "Anmeldung & Konto"
+        ],
         "summary": "Eigenes Passwort ändern (mit aktuellem Passwort)",
         "requestBody": {
           "required": true,
@@ -154,14 +208,14 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "Nur eigener Account (userId aus Token)"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/auth/delete-account": {
+    "/api/auth/delete-account": {
       "post": {
+        "tags": [
+          "Anmeldung & Konto"
+        ],
         "summary": "Eigenen Account sofort und kaskadierend löschen (alle Rollen)",
         "requestBody": {
           "required": true,
@@ -203,14 +257,14 @@
           "org-scope": false,
           "objekt-pruefung": "Nur eigener Account; Passwort-Bestaetigung im Handler",
           "hinweis": "Auch org_admin kann sich selbst löschen — der Letzter-org_admin-Schutz greift nur in DELETE /users/:id, nicht hier"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/auth/update-email": {
+    "/api/auth/update-email": {
       "post": {
+        "tags": [
+          "Anmeldung & Konto"
+        ],
         "summary": "Eigene E-Mail-Adresse setzen/entfernen (optional, ohne Verifikation)",
         "requestBody": {
           "content": {
@@ -251,14 +305,14 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "Nur eigener Account"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/auth/update-role-title": {
+    "/api/auth/update-role-title": {
       "post": {
+        "tags": [
+          "Anmeldung & Konto"
+        ],
         "summary": "Eigene Funktionsbeschreibung (role_title) setzen",
         "requestBody": {
           "content": {
@@ -297,14 +351,14 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "Inline-Check: role_name !== 'konfi'"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/auth/me": {
+    "/api/auth/me": {
       "get": {
+        "tags": [
+          "Anmeldung & Konto"
+        ],
         "summary": "Eigenes Profil (inkl. is_super_admin-Flag, Trial-Status der Org)",
         "responses": {
           "200": {
@@ -323,18 +377,21 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "Nur eigene Daten"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/auth/my-organizations": {
+    "/api/auth/my-organizations": {
       "get": {
+        "tags": [
+          "Anmeldung & Konto"
+        ],
         "summary": "Alle Organisationen des Users (Primaer-Org + Multi-Org-Mappings) mit Rolle",
         "responses": {
           "200": {
             "description": "Array (id, name, slug, display_name, role_name, is_active); nur aktive Orgs, dedupliziert"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
           }
         },
         "x-berechtigung": {
@@ -346,14 +403,14 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "Nur eigene Mitgliedschaften"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/auth/switch-org": {
+    "/api/auth/switch-org": {
       "post": {
+        "tags": [
+          "Anmeldung & Konto"
+        ],
         "summary": "Aktive Organisation wechseln — neues Access-Token mit active_organization_id-Claim",
         "requestBody": {
           "required": true,
@@ -394,14 +451,14 @@
           "org-scope": false,
           "objekt-pruefung": "Mitgliedschaft in user_organizations + is_active der Ziel-Org",
           "hinweis": "Trial-Ablauf der Ziel-Org wird hier NICHT geprüft (nur is_active); bekannte Claim-Nachwirkung nach Mitgliedschafts-Entzug bis Token-Ablauf"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/auth/request-password-reset": {
+    "/api/auth/request-password-reset": {
       "post": {
+        "tags": [
+          "Passwörter & Einladungen"
+        ],
         "summary": "Passwort-Reset-Mail anfordern (immer neutrale Antwort)",
         "requestBody": {
           "required": true,
@@ -444,14 +501,14 @@
           "org-scope": false,
           "objekt-pruefung": "Token 32 Byte Hex, 24h gueltig",
           "hinweis": "BEKANNT: Token wird unhashed in password_resets gespeichert"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/auth/invite-code": {
+    "/api/auth/invite-code": {
       "post": {
+        "tags": [
+          "Passwörter & Einladungen"
+        ],
         "summary": "Einladungscode für einen Jahrgang erzeugen (8 Hex-Zeichen, 7 Tage)",
         "requestBody": {
           "required": true,
@@ -493,14 +550,14 @@
           "org-scope": true,
           "objekt-pruefung": "Jahrgang muss zur eigenen Org gehören",
           "hinweis": "Inline-Check erlaubt auch is_super_admin-Flag (abweichend von den drei anderen Invite-Routen, die strikt role_name==='org_admin' verlangen)"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/auth/invite-codes": {
+    "/api/auth/invite-codes": {
       "get": {
+        "tags": [
+          "Passwörter & Einladungen"
+        ],
         "summary": "Aktive Einladungscodes der eigenen Org (inkl. Nutzungs-Zähler)",
         "responses": {
           "200": {
@@ -519,14 +576,14 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Nur Codes der eigenen Org, nur nicht-abgelaufene"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/auth/invite-codes/{id}/extend": {
+    "/api/auth/invite-codes/{id}/extend": {
       "post": {
+        "tags": [
+          "Passwörter & Einladungen"
+        ],
         "summary": "Einladungscode um 7 Tage verlaengern",
         "parameters": [
           {
@@ -535,7 +592,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Einladungs-Codes"
           }
         ],
         "responses": {
@@ -561,14 +619,14 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Code muss zur eigenen Org gehören"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/auth/invite-codes/{id}": {
+    "/api/auth/invite-codes/{id}": {
       "delete": {
+        "tags": [
+          "Passwörter & Einladungen"
+        ],
         "summary": "Einladungscode löschen",
         "parameters": [
           {
@@ -577,7 +635,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Einladungs-Codes"
           }
         ],
         "responses": {
@@ -600,14 +659,14 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Code muss zur eigenen Org gehören"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/auth/check-username/{username}": {
+    "/api/auth/check-username/{username}": {
       "get": {
+        "tags": [
+          "Passwörter & Einladungen"
+        ],
         "summary": "Username-Verfuegbarkeit prüfen (oeffentlich, case-insensitiv)",
         "parameters": [
           {
@@ -618,7 +677,8 @@
               "type": "string",
               "minLength": 3,
               "pattern": "^[a-zA-Z0-9.-]+$"
-            }
+            },
+            "description": "Zu prüfender Benutzername (case-insensitiv)"
           }
         ],
         "responses": {
@@ -636,14 +696,14 @@
           "middleware": [],
           "org-scope": false,
           "objekt-pruefung": "keine"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/auth/validate-invite/{code}": {
+    "/api/auth/validate-invite/{code}": {
       "get": {
+        "tags": [
+          "Passwörter & Einladungen"
+        ],
         "summary": "Einladungscode prüfen (oeffentlich) — liefert Jahrgang + Org-Name",
         "parameters": [
           {
@@ -652,7 +712,8 @@
             "required": true,
             "schema": {
               "type": "string"
-            }
+            },
+            "description": "Einladungs-Code"
           }
         ],
         "responses": {
@@ -673,14 +734,14 @@
           "middleware": [],
           "org-scope": false,
           "objekt-pruefung": "Nur Existenz + Ablauf"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/auth/register-konfi": {
+    "/api/auth/register-konfi": {
       "post": {
+        "tags": [
+          "Passwörter & Einladungen"
+        ],
         "summary": "Selbst-Registrierung als Konfi mit Einladungscode (inkl. Auto-Login)",
         "requestBody": {
           "required": true,
@@ -750,14 +811,14 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "Invite-Code bestimmt Org + Jahrgang; konfi-Rolle wird org-gescopt aufgeloest; Konfi-Limit (max_konfis) hard_block"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/auth/reset-password": {
+    "/api/auth/reset-password": {
       "post": {
+        "tags": [
+          "Passwörter & Einladungen"
+        ],
         "summary": "Passwort mit Reset-Token setzen (oeffentlich)",
         "requestBody": {
           "required": true,
@@ -799,14 +860,14 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "Token-Lookup in password_resets (used_at IS NULL, expires_at > NOW)"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/auth/refresh": {
+    "/api/auth/refresh": {
       "post": {
+        "tags": [
+          "Anmeldung & Konto"
+        ],
         "summary": "Access-Token per Refresh-Token erneuern (Rotation, 5-Min-Grace-Window)",
         "parameters": [
           {
@@ -856,14 +917,14 @@
           "org-scope": false,
           "objekt-pruefung": "SHA-256-Hash-Lookup in refresh_tokens; Sperr-Checks wie beim Login",
           "hinweis": "token_invalidated_at (Soft-Revoke) wird beim Refresh nicht geprüft — Soft-Revoke wirkt nur auf Access-Tokens, nicht auf die Refresh-Kette"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/auth/logout": {
+    "/api/auth/logout": {
       "post": {
+        "tags": [
+          "Anmeldung & Konto"
+        ],
         "summary": "Logout — Refresh-Token revozieren und Push-Token des Geraets entfernen (best effort, immer 200)",
         "requestBody": {
           "content": {
@@ -904,14 +965,14 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "Revoziert nur das mitgesendete Token (Hash-Match). Der Push-Token-Cleanup ist auf user_id des Tokens gescopt — fremde Geraete und andere Nutzer auf demselben Geraet bleiben unberuehrt.\n"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/docs-auth/pruefen": {
+    "/api/docs-auth/pruefen": {
       "get": {
+        "tags": [
+          "Doku-Zugang"
+        ],
         "summary": "Forward-Auth-Check des Reverse-Proxys für /docs/api/*",
         "responses": {
           "200": {
@@ -932,14 +993,14 @@
           "org-scope": false,
           "objekt-pruefung": "JWT-Verify des kq_docs-Cookies; App-Anmeldetokens werden abgelehnt (Zweck-Claim)",
           "hinweis": "Wird vom Proxy bei JEDEM Doku-Aufruf gerufen — bewusst ohne eigenes Limit (nur generalLimiter)"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/docs-auth/anmelden": {
+    "/api/docs-auth/anmelden": {
       "post": {
+        "tags": [
+          "Doku-Zugang"
+        ],
         "summary": "Anmeldung mit dem gemeinsamen Doku-Passwort, setzt das Doku-Cookie",
         "requestBody": {
           "required": true,
@@ -982,14 +1043,14 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "timingSafeEqual gegen DOCS_PASSWORD (SHA-256 nur zur Puffer-Angleichung, nichts wird gespeichert)"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/docs-auth/abmelden": {
+    "/api/docs-auth/abmelden": {
       "post": {
+        "tags": [
+          "Doku-Zugang"
+        ],
         "summary": "Doku-Cookie löschen",
         "responses": {
           "200": {
@@ -1003,14 +1064,14 @@
           "middleware": [],
           "org-scope": false,
           "objekt-pruefung": "Keine — loescht nur das eigene Cookie"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/organizations": {
+    "/api/organizations": {
       "get": {
+        "tags": [
+          "Organisationen"
+        ],
         "summary": "Alle Organisationen mit Team-/Konfi-Zaehlern (nur Super-Admin)",
         "responses": {
           "200": {
@@ -1030,12 +1091,12 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "keine (org-uebergreifend)"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       },
       "post": {
+        "tags": [
+          "Organisationen"
+        ],
         "summary": "Organisation anlegen inkl. erstem org_admin und Standard-Daten (Rollen, 27 Badges, 4 Zertifikat-Typen, 6 Levels, 5 Kategorien, 5 Aktivitäten, 3 Beispiel-Challenges)",
         "requestBody": {
           "required": true,
@@ -1123,14 +1184,14 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "keine"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/organizations/search-users": {
+    "/api/organizations/search-users": {
       "get": {
+        "tags": [
+          "Organisationen"
+        ],
         "summary": "Systemweite User-Suche für Multi-Org-Zuweisung (ohne Konfis)",
         "parameters": [
           {
@@ -1140,12 +1201,16 @@
             "schema": {
               "type": "string",
               "minLength": 2
-            }
+            },
+            "description": "Suchbegriff"
           }
         ],
         "responses": {
           "200": {
             "description": "Max. 20 aktive Nicht-Konfi-User (username, display_name, email, Primaer-Org, Rolle)"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
           }
         },
         "x-berechtigung": {
@@ -1158,14 +1223,14 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "keine (org-uebergreifend, bewusst)"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/organizations/current": {
+    "/api/organizations/current": {
       "get": {
+        "tags": [
+          "Organisationen"
+        ],
         "summary": "Eigene (aktive) Organisation mit Statistiken",
         "responses": {
           "200": {
@@ -1185,14 +1250,14 @@
           "org-scope": true,
           "objekt-pruefung": "Immer req.user.organization_id",
           "hinweis": "Auch Konfis/Teamer sehen den vollen Org-Datensatz (Kontakt-/Trial-/Limit-Felder) — siehe N5"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/organizations/{id}": {
+    "/api/organizations/{id}": {
       "get": {
+        "tags": [
+          "Organisationen"
+        ],
         "summary": "Einzelne Organisation mit Zaehlern",
         "parameters": [
           {
@@ -1201,7 +1266,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID der Organisation"
           }
         ],
         "responses": {
@@ -1225,12 +1291,12 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Inline: is_super_admin ODER organization_id === id"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       },
       "put": {
+        "tags": [
+          "Organisationen"
+        ],
         "summary": "Organisation bearbeiten (Stammdaten; trial_ends_at/is_trial nur Super-Admin)",
         "parameters": [
           {
@@ -1239,7 +1305,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID der Organisation"
           }
         ],
         "requestBody": {
@@ -1330,12 +1397,12 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Inline: is_super_admin ODER (eigene Org UND role_name==='org_admin'); Trial-Felder werden für org_admin ignoriert"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       },
       "delete": {
+        "tags": [
+          "Organisationen"
+        ],
         "summary": "Organisation vollstaendig löschen (explizite CASCADE-Kette in einer Transaktion, inkl. Datei-Cleanup nach COMMIT)",
         "parameters": [
           {
@@ -1344,7 +1411,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID der Organisation"
           }
         ],
         "responses": {
@@ -1366,14 +1434,14 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "Existenz der Org"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/organizations/{id}/limit": {
+    "/api/organizations/{id}/limit": {
       "patch": {
+        "tags": [
+          "Organisationen"
+        ],
         "summary": "Konfi-Limit (max_konfis) setzen — bewusst eigener Super-Admin-Endpunkt, damit org_admin den Tarif nicht aushebeln kann",
         "parameters": [
           {
@@ -1382,7 +1450,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID der Organisation"
           }
         ],
         "requestBody": {
@@ -1427,14 +1496,14 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "Existenz der Org"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/organizations/{id}/users": {
+    "/api/organizations/{id}/users": {
       "get": {
+        "tags": [
+          "Organisationen"
+        ],
         "summary": "Alle User einer Organisation (inkl. Konfis) mit Rolle und Jahrgangs-Zähler",
         "parameters": [
           {
@@ -1443,7 +1512,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID der Organisation"
           }
         ],
         "responses": {
@@ -1464,14 +1534,14 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Inline: super_admin ODER (org_admin UND eigene Org)"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/organizations/{id}/admins": {
+    "/api/organizations/{id}/admins": {
       "get": {
+        "tags": [
+          "Organisationen"
+        ],
         "summary": "org_admins einer Organisation auflisten",
         "parameters": [
           {
@@ -1480,7 +1550,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID der Organisation"
           }
         ],
         "responses": {
@@ -1501,12 +1572,12 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Inline: super_admin ODER (org_admin UND eigene Org)"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       },
       "post": {
+        "tags": [
+          "Organisationen"
+        ],
         "summary": "Neuen org_admin in einer Organisation anlegen",
         "parameters": [
           {
@@ -1515,7 +1586,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID der Organisation"
           }
         ],
         "requestBody": {
@@ -1574,14 +1646,14 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Inline: super_admin (jede Org) ODER org_admin der eigenen Org; org_admin-Rolle wird in der Ziel-Org aufgeloest"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/organizations/{id}/members": {
+    "/api/organizations/{id}/members": {
       "get": {
+        "tags": [
+          "Organisationen"
+        ],
         "summary": "Multi-Org-Mitglieder einer Organisation (Primaer-User + Mappings, dedupliziert)",
         "parameters": [
           {
@@ -1590,12 +1662,16 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID der Organisation"
           }
         ],
         "responses": {
           "200": {
             "description": "Array mit is_primary-Kennzeichnung"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
           }
         },
         "x-berechtigung": {
@@ -1609,12 +1685,12 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "keine"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       },
       "post": {
+        "tags": [
+          "Organisationen"
+        ],
         "summary": "Bestehenden User als Multi-Org-Mitglied zuweisen (Upsert der Rolle)",
         "parameters": [
           {
@@ -1623,7 +1699,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID der Organisation"
           }
         ],
         "requestBody": {
@@ -1675,14 +1752,14 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "Ziel-Rolle wird in der Ziel-Org aufgeloest; Konfis explizit ausgeschlossen"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/organizations/{id}/members/{userId}": {
+    "/api/organizations/{id}/members/{userId}": {
       "delete": {
+        "tags": [
+          "Organisationen"
+        ],
         "summary": "Multi-Org-Mitgliedschaft entziehen (Primaer-Org nicht entfernbar)",
         "parameters": [
           {
@@ -1691,7 +1768,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID der Organisation"
           },
           {
             "name": "userId",
@@ -1699,7 +1777,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "User-ID des Mitglieds"
           }
         ],
         "responses": {
@@ -1724,14 +1803,14 @@
           "org-scope": false,
           "objekt-pruefung": "users.organization_id !== id (Primaer-Org-Schutz)",
           "hinweis": "BEKANNT: laufende Access-Tokens mit active_organization_id-Claim wirken bis Ablauf nach (max 15 Min + 30s Cache)"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/organizations/{id}/stats": {
+    "/api/organizations/{id}/stats": {
       "get": {
+        "tags": [
+          "Organisationen"
+        ],
         "summary": "Statistiken einer Organisation (Konfis, Aktivitäten, Events, Badges, Anträge)",
         "parameters": [
           {
@@ -1740,7 +1819,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID der Organisation"
           }
         ],
         "responses": {
@@ -1761,14 +1841,14 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Inline: is_super_admin ODER eigene Org"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/users": {
+    "/api/users": {
       "get": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
         "summary": "Alle Verwaltungs-User der eigenen Org (ohne Konfis/super_admin), mit can_edit-Flag aus der Hierarchie",
         "responses": {
           "200": {
@@ -1788,12 +1868,12 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "keine weitere"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       },
       "post": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
         "summary": "Verwaltungs-User anlegen (Rolle aus eigener Org, volle Passwort-Policy)",
         "requestBody": {
           "required": true,
@@ -1861,14 +1941,14 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "role_id muss zur eigenen Org gehören; Hierarchie prüft Ziel-Rolle"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/users/{id}": {
+    "/api/users/{id}": {
       "get": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
         "summary": "Einzelnen User mit Jahrgangs-Zuweisungen laden",
         "parameters": [
           {
@@ -1877,7 +1957,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "User-ID"
           }
         ],
         "responses": {
@@ -1902,12 +1983,12 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Ziel-User muss in eigener Org sein; canManageRole(eigene Rolle, Ziel-Rolle)"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       },
       "put": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
         "summary": "User bearbeiten (Felder optional; Rolle, is_active, Passwort)",
         "parameters": [
           {
@@ -1916,7 +1997,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "User-ID"
           }
         ],
         "requestBody": {
@@ -1985,12 +2067,12 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Ziel-User in eigener Org; canManageRole + canCreateRole für neue Rolle"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       },
       "delete": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
         "summary": "User löschen (Hard-Delete mit Referenz-Anonymisierung und History-Purge)",
         "description": "Anonymisiert die Urheberschaft (admin_id/created_by/approved_by -> NULL, seit 24.08.2026 auch events.created_by, custom_badges.created_by, levels.created_by und user_jahrgang_assignments.assigned_by — vorher blockierten diese Fremdschlüssel das Löschen mit 500) und räumt die eigene Historie ab, inkl. user_certificates.user_id (ebenfalls seit 24.08.2026, vorher war jede ausgezeichnete Person unlöschbar). Nachweisfotos UND Challenge-Dateien werden nach dem COMMIT von der Platte entfernt.\n",
         "parameters": [
@@ -2000,7 +2082,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "User-ID"
           }
         ],
         "responses": {
@@ -2032,14 +2115,14 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Eigene Org; Selbst-Loeschungs-Sperre; Letzter-org_admin-Schutz"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/users/{id}/jahrgaenge": {
+    "/api/users/{id}/jahrgaenge": {
       "get": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
         "summary": "Jahrgangs-Zuweisungen eines Users",
         "parameters": [
           {
@@ -2048,12 +2131,16 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "User-ID"
           }
         ],
         "responses": {
           "200": {
             "description": "Array (jahrgang, can_view, can_edit, assigned_by_name)"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
           }
         },
         "x-berechtigung": {
@@ -2066,12 +2153,12 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Jahrgänge auf eigene Org gefiltert"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       },
       "post": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
         "summary": "Jahrgangs-Zuweisungen komplett ersetzen (delete + insert, transaktional, Chat-Sync)",
         "parameters": [
           {
@@ -2080,7 +2167,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "User-ID"
           }
         ],
         "requestBody": {
@@ -2143,18 +2231,21 @@
           "org-scope": true,
           "objekt-pruefung": "User + alle Jahrgang-IDs müssen zur eigenen Org gehören",
           "hinweis": "KEIN checkUserHierarchy — org_admin darf ohnehin alle; Route wird aber nicht durch andere Rollen erreichbar"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/users/me/jahrgaenge": {
+    "/api/users/me/jahrgaenge": {
       "get": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
         "summary": "Eigene Jahrgangs-Zuweisungen (für Teamer-UI)",
         "responses": {
           "200": {
             "description": "Array der eigenen Zuweisungen (auf aktive Org gescopt)"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
           }
         },
         "x-berechtigung": {
@@ -2166,14 +2257,14 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Nur eigene Daten"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/users/{id}/reset-password": {
+    "/api/users/{id}/reset-password": {
       "put": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
         "summary": "Passwort eines Users administrativ setzen",
         "parameters": [
           {
@@ -2182,7 +2273,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "User-ID"
           }
         ],
         "requestBody": {
@@ -2229,14 +2321,14 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Inline: is_super_admin (org-uebergreifend, auch per Flag) ODER org_admin derselben Org; org_admin darf auch andere org_admins resetten"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/admin/users": {
+    "/api/admin/users": {
       "get": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
         "summary": "Alle Verwaltungs-User der eigenen Org (Alias von GET /users)",
         "description": "Identischer Handler wie GET /users.",
         "responses": {
@@ -2258,12 +2350,12 @@
           "org-scope": true,
           "objekt-pruefung": "wie GET /users",
           "hinweis": "Alias-Mount, kein eigener Code. super_admin fällt durch requireOrgAdmin auf 403, außer er agiert per Multi-Org-Switch als org_admin."
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       },
       "post": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
         "summary": "Verwaltungs-User anlegen (Alias von POST /users)",
         "description": "Identischer Handler wie POST /users.",
         "responses": {
@@ -2290,14 +2382,14 @@
           "org-scope": true,
           "objekt-pruefung": "wie POST /users (Rollenhierarchie via canCreateRole)",
           "hinweis": "Alias-Mount, kein eigener Code."
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/admin/users/{id}": {
+    "/api/admin/users/{id}": {
       "get": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
         "summary": "Einzelnen User laden (Alias von GET /users/{id})",
         "description": "Identischer Handler wie GET /users/{id}.",
         "parameters": [
@@ -2307,7 +2399,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "User-ID"
           }
         ],
         "responses": {
@@ -2333,12 +2426,12 @@
           "org-scope": true,
           "objekt-pruefung": "wie GET /users/{id}",
           "hinweis": "Alias-Mount, kein eigener Code."
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       },
       "put": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
         "summary": "User bearbeiten (Alias von PUT /users/{id})",
         "description": "Identischer Handler wie PUT /users/{id}.",
         "parameters": [
@@ -2348,7 +2441,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "User-ID"
           }
         ],
         "responses": {
@@ -2378,12 +2472,12 @@
           "org-scope": true,
           "objekt-pruefung": "wie PUT /users/{id}",
           "hinweis": "Alias-Mount, kein eigener Code."
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       },
       "delete": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
         "summary": "User löschen (Alias von DELETE /users/{id})",
         "description": "Identischer Handler wie DELETE /users/{id}.",
         "parameters": [
@@ -2393,7 +2487,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "User-ID"
           }
         ],
         "responses": {
@@ -2420,14 +2515,14 @@
           "org-scope": true,
           "objekt-pruefung": "wie DELETE /users/{id}; Selbst-Löschung blockiert",
           "hinweis": "Alias-Mount, kein eigener Code."
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/admin/users/{id}/jahrgaenge": {
+    "/api/admin/users/{id}/jahrgaenge": {
       "get": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
         "summary": "Jahrgangs-Zuweisungen eines Users (Alias von GET /users/{id}/jahrgaenge)",
         "description": "Identischer Handler wie GET /users/{id}/jahrgaenge.",
         "parameters": [
@@ -2437,7 +2532,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "User-ID"
           }
         ],
         "responses": {
@@ -2459,12 +2555,12 @@
           "org-scope": true,
           "objekt-pruefung": "wie GET /users/{id}/jahrgaenge",
           "hinweis": "Alias-Mount, kein eigener Code."
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       },
       "post": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
         "summary": "Jahrgangs-Zuweisungen ersetzen (Alias von POST /users/{id}/jahrgaenge)",
         "description": "Identischer Handler wie POST /users/{id}/jahrgaenge.",
         "parameters": [
@@ -2474,7 +2570,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "User-ID"
           }
         ],
         "responses": {
@@ -2500,19 +2597,22 @@
           "org-scope": true,
           "objekt-pruefung": "wie POST /users/{id}/jahrgaenge",
           "hinweis": "Alias-Mount, kein eigener Code."
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/admin/users/me/jahrgaenge": {
+    "/api/admin/users/me/jahrgaenge": {
       "get": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
         "summary": "Eigene Jahrgangs-Zuweisungen (Alias von GET /users/me/jahrgaenge)",
         "description": "Identischer Handler wie GET /users/me/jahrgaenge.",
         "responses": {
           "200": {
             "description": "Array der eigenen Zuweisungen (auf aktive Org gescopt)"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
           }
         },
         "x-berechtigung": {
@@ -2525,14 +2625,14 @@
           "org-scope": true,
           "objekt-pruefung": "Nur eigene Daten",
           "hinweis": "Alias-Mount, kein eigener Code. Kein Rollen-Guard — auch Konfis erreichen diesen Pfad und bekommen ihre eigenen (in der Regel leeren) Zuweisungen."
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/admin/users/{id}/reset-password": {
+    "/api/admin/users/{id}/reset-password": {
       "put": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
         "summary": "Passwort administrativ setzen (Alias von PUT /users/{id}/reset-password)",
         "description": "Identischer Handler wie PUT /users/{id}/reset-password.",
         "parameters": [
@@ -2542,7 +2642,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "User-ID"
           }
         ],
         "requestBody": {
@@ -2590,14 +2691,14 @@
           "org-scope": true,
           "objekt-pruefung": "wie PUT /users/{id}/reset-password (Inline-Check statt requireOrgAdmin)",
           "hinweis": "Alias-Mount, kein eigener Code."
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/health": {
+    "/api/health": {
       "get": {
+        "tags": [
+          "System & Monitoring"
+        ],
         "summary": "Liveness-Check (ohne Anmeldung)",
         "description": "Minimaler Endpunkt für Docker-Healthcheck und Traefik. Bewusst ohne Datenbank-Prüfung: ein haengender DB-Check wuerde einen gesunden Container vom Healthcheck killen lassen.\n",
         "security": [],
@@ -2614,14 +2715,14 @@
           "org-scope": false,
           "objekt-pruefung": "keine",
           "hinweis": "Keine Authentifizierung. Gibt keine Daten preis außer der Tatsache, dass der Dienst läuft."
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/status": {
+    "/api/status": {
       "get": {
+        "tags": [
+          "System & Monitoring"
+        ],
         "summary": "Readiness-Check mit Datenbank-Prüfung (ohne Anmeldung)",
         "description": "Prueft die Datenbank mit SELECT 1 und liefert 200 bei gesunder DB, sonst 503. Getrennt von /health, weil er echte Abhaengigkeiten prüft.\n",
         "security": [],
@@ -2641,14 +2742,14 @@
           "org-scope": false,
           "objekt-pruefung": "keine",
           "hinweis": "# HINWEIS: Ohne Anmeldung erreichbar und gibt version und commit (GIT_SHA) preis. Bewusst so für die Status-Seite / Uptime Kuma.\n"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/metrics": {
+    "/api/metrics": {
       "get": {
+        "tags": [
+          "System & Monitoring"
+        ],
         "summary": "APM-Kennzahlen aller Replicas (nur super_admin)",
         "description": "Aggregierte Laufzeitdaten: langsamste und meistgenutzte Routen, parallele Requests, Live-Verlauf, letzte Fehler. Ist METRICS_PEERS gesetzt, werden alle Peers über /metrics/local abgefragt und zu einem Gesamtbild inklusive Lastverteilung gemergt.\n",
         "responses": {
@@ -2672,14 +2773,14 @@
           "org-scope": false,
           "objekt-pruefung": "Inline: req.user.is_super_admin, sonst 403",
           "hinweis": "Bewusst org-uebergreifend — die Daten sind organisationsunabhaengige Betriebskennzahlen. Der Authorization-Header wird an die Peers weitergereicht.\n"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/metrics/local": {
+    "/api/metrics/local": {
       "get": {
+        "tags": [
+          "System & Monitoring"
+        ],
         "summary": "APM-Rohdaten nur dieser Replica (nur super_admin)",
         "description": "Unaggregierter In-Memory-Snapshot der antwortenden Replica. Wird von /metrics für die Peer-Aggregation genutzt, ist aber auch direkt aufrufbar.\n",
         "responses": {
@@ -2702,14 +2803,14 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "Inline: req.user.is_super_admin, sonst 403"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
-    "/metrics/history": {
+    "/api/metrics/history": {
       "get": {
+        "tags": [
+          "System & Monitoring"
+        ],
         "summary": "Gespeicherte APM-Historie (nur super_admin)",
         "description": "Liefert die persistierten Snapshots aus apm_snapshots der letzten N Tage, damit das Dashboard Deltas über Deploys hinweg bilden kann.\n",
         "parameters": [
@@ -2749,14 +2850,14 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "Inline: req.user.is_super_admin, sonst 403"
-        },
-        "tags": [
-          "Anmeldung & Verwaltung"
-        ]
+        }
       }
     },
     "/api/konfi/dashboard": {
       "get": {
+        "tags": [
+          "Konfi-Profil & Dashboard"
+        ],
         "summary": "Konfi-Dashboard (eigene Punkte, Level, Ranking, Badges, Termine)",
         "description": "Liefert das komplette Dashboard des eingeloggten Konfis: Stammdaten, Punkte, Level-Fortschritt, Konfirmationstermin (aus gebuchtem is_konfirmation-Event), Dashboard-Konfiguration der Org, Top-3-Ranking des Jahrgangs, letzte Badges und Events, Wrapped-Verfuegbarkeit.\n",
         "x-berechtigung": {
@@ -2870,14 +2971,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/konfi/profile": {
       "get": {
+        "tags": [
+          "Konfi-Profil & Dashboard"
+        ],
         "summary": "Eigenes Konfi-Profil",
         "description": "Profil des eingeloggten Konfis mit Punkten (inkl. Bonus-Summe), Statistiken (Badges, Aktivitäten, Events, offene Anträge), Rang im Jahrgang, Konfirmationstermin/-ort und aufgeloestem Konfispruch.\n",
         "x-berechtigung": {
@@ -2988,12 +3089,12 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       },
       "patch": {
+        "tags": [
+          "Konfi-Profil & Dashboard"
+        ],
         "summary": "Eigenen Konfispruch setzen (Listen-Wahl oder Freitext)",
         "description": "Setzt den Konfispruch: entweder konfspruch_id + translation (luther2017 | bigs | gute_nachricht | elberfelder) aus der kuratierten Liste ODER konfspruch_freitext + konfspruch_freitext_referenz (Pflicht, max 100 Zeichen; Freitext max 1000). Genau eine Quelle aktiv.\n",
         "x-berechtigung": {
@@ -3059,14 +3160,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/konfi/points-history": {
       "get": {
+        "tags": [
+          "Aktivitäten & Anträge"
+        ],
         "summary": "Eigene Punkte-Historie (Aktivitäten, Bonus, Events)",
         "x-berechtigung": {
           "rollen": [
@@ -3091,14 +3192,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/konfi/requests": {
       "get": {
+        "tags": [
+          "Aktivitäten & Anträge"
+        ],
         "summary": "Eigene Aktivitaets-Anträge auflisten",
         "x-berechtigung": {
           "rollen": [
@@ -3123,12 +3224,12 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       },
       "post": {
+        "tags": [
+          "Aktivitäten & Anträge"
+        ],
         "summary": "Neuen Aktivitaets-Antrag einreichen",
         "description": "Legt einen Antrag (status pending) an. Idempotent über optionale client_id (UUID): existiert der Antrag bereits, kommt 200 mit dem bestehenden Datensatz. Benachrichtigt Admins (Notification + Push).\n",
         "x-berechtigung": {
@@ -3199,14 +3300,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/konfi/requests/{id}": {
       "delete": {
+        "tags": [
+          "Aktivitäten & Anträge"
+        ],
         "summary": "Eigenen offenen Antrag löschen",
         "description": "Nur Anträge mit status pending; zugehoeriges Nachweisfoto wird mitgeloescht.",
         "x-berechtigung": {
@@ -3243,16 +3344,36 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/konfi/upload-photo": {
       "post": {
+        "tags": [
+          "Aktivitäten & Anträge"
+        ],
         "summary": "Nachweisfoto für Antrag hochladen (verschlüsselt at-rest)",
         "description": "multipart/form-data, Feld \"photo\". Magic-Bytes-Prüfung (nur echte Bilder, sonst 415), AES-256-GCM-Verschluesselung, zufaelliger 64-Hex-Dateiname wird zurueckgegeben (für POST /api/konfi/requests).\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "photo"
+                ],
+                "properties": {
+                  "photo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Bilddatei, max. 5 MB"
+                  }
+                }
+              }
+            }
+          }
+        },
         "x-berechtigung": {
           "rollen": [
             "konfi",
@@ -3285,14 +3406,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/konfi/activity-requests/{id}/photo": {
       "get": {
+        "tags": [
+          "Aktivitäten & Anträge"
+        ],
         "summary": "Nachweisfoto eines Antrags abrufen (Eigentuemer/Admin)",
         "description": "Liefert das entschluesselte Bild (image/jpeg).",
         "x-berechtigung": {
@@ -3333,14 +3454,14 @@
           "500": {
             "description": "Entschluesselung fehlgeschlagen / Serverfehler"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/konfi/activities": {
       "get": {
+        "tags": [
+          "Aktivitäten & Anträge"
+        ],
         "summary": "Beantragbare Aktivitäten auflisten",
         "description": "Aktivitäten der Org mit target_role konfi (oder NULL), gefiltert auf die im Jahrgang aktivierten Punkt-Typen.\n",
         "x-berechtigung": {
@@ -3366,14 +3487,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/konfi/badges": {
       "get": {
+        "tags": [
+          "Abzeichen"
+        ],
         "summary": "Eigene Badges mit Fortschritt",
         "description": "Gemeinsame Berechnung mit Admin-Sicht (utils/konfiBadgeProgress.js).",
         "x-berechtigung": {
@@ -3399,14 +3520,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/konfi/badges/stats": {
       "get": {
+        "tags": [
+          "Abzeichen"
+        ],
         "summary": "Eigene Badge-Statistik (total/earned)",
         "x-berechtigung": {
           "rollen": [
@@ -3431,14 +3552,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/konfi/badges/mark-seen": {
       "post": {
+        "tags": [
+          "Abzeichen"
+        ],
         "summary": "Eigene Badges als gesehen markieren",
         "x-berechtigung": {
           "rollen": [
@@ -3463,14 +3584,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/konfi/events": {
       "get": {
+        "tags": [
+          "Termine (Konfis)"
+        ],
         "summary": "Events des eigenen Jahrgangs (Konfi-Sicht)",
         "description": "Events, die dem Jahrgang des Konfis zugewiesen sind, ohne teamer_only; abgesagte nur, wenn der Konfi gebucht war. Standard-Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles). Enthaelt eigene Buchung (booking_status, attendance_status, Timeslot, waitlist_position) und Konfi-Zähler (Teamer-Kontingent getrennt).\n",
         "x-berechtigung": {
@@ -3511,14 +3632,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/konfi/events/{id}/status": {
       "get": {
+        "tags": [
+          "Termine (Konfis)"
+        ],
         "summary": "Eigener Anmeldestatus für ein Event",
         "x-berechtigung": {
           "rollen": [
@@ -3551,14 +3672,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/konfi/events/{id}/participants": {
       "get": {
+        "tags": [
+          "Termine (Konfis)"
+        ],
         "summary": "Anonymisierte Teilnehmerliste eines Events (Konfi-Sicht)",
         "description": "Bestaetigte Teilnehmer als \"Vorname N.\" (anonymisiert), Teamer werden herausgefiltert. Organisation wird geprüft (Fix 22.08.2026).\n",
         "x-berechtigung": {
@@ -3590,14 +3711,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/konfi/events/{id}/timeslots": {
       "get": {
+        "tags": [
+          "Termine (Konfis)"
+        ],
         "summary": "Zeitslots eines Events (Konfi-Sicht)",
         "x-berechtigung": {
           "rollen": [
@@ -3630,14 +3751,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/konfi/events/{id}/register": {
       "post": {
+        "tags": [
+          "Termine (Konfis)"
+        ],
         "summary": "Für Event anmelden (primaere Konfi-Buchungsroute)",
         "description": "Transaktional (FOR UPDATE). Prueft Doppelbuchung (409), Konfirmations-Sperre (nur EIN Konfirmationstermin, 409), Registrierungsfenster, Timeslot-Pflicht und Kapazität (Konfi- und Teamer-Kontingent getrennt). Ergebnis confirmed oder waitlist. Traegt die Person seit 24.08.2026 in den Chat zum Termin ein, falls es einen gibt (idempotent) — vorher kam nur hinein, wer beim Anlegen des Chats schon gebucht war.\n",
         "x-berechtigung": {
@@ -3694,12 +3815,12 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       },
       "delete": {
+        "tags": [
+          "Termine (Konfis)"
+        ],
         "summary": "Von Event abmelden (bis 2 Tage vorher)",
         "description": "Loescht die eigene Buchung (Pflicht-Events nur per Opt-out, 400), entfernt die Person aus dem Event-Chat (seit 24.08.2026 — vorher blieb sie dort Teilnehmerin; wer nachrueckt, wird umgekehrt eingetragen), protokolliert die Abmeldung (event_unregistrations, optionaler reason), laesst bei freiem bestaetigtem Platz von der Konfi-Warteliste nachruecken und benachrichtigt Admins.\n",
         "x-berechtigung": {
@@ -3752,14 +3873,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/konfi/events/{id}/opt-out": {
       "post": {
+        "tags": [
+          "Termine (Konfis)"
+        ],
         "summary": "Von Pflicht-Event abmelden (Opt-out mit Begruendung)",
         "description": "Status confirmed -> opted_out. Begruendung min. 5 Zeichen. Nur zukuenftige Pflicht-Events.",
         "x-berechtigung": {
@@ -3817,14 +3938,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/konfi/events/{id}/opt-in": {
       "post": {
+        "tags": [
+          "Termine (Konfis)"
+        ],
         "summary": "Opt-out bei Pflicht-Event rueckgaengig machen",
         "description": "Status opted_out -> confirmed (Begruendung bleibt gespeichert).",
         "x-berechtigung": {
@@ -3862,14 +3983,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/konfi/tageslosung": {
       "get": {
+        "tags": [
+          "Konfi-Profil & Dashboard"
+        ],
         "summary": "Tageslosung in der eigenen Bibeluebersetzung",
         "description": "Mit DB-Cache und mehrstufigem Fallback (letzte gecachte Losung, statischer Vers).",
         "x-berechtigung": {
@@ -3892,14 +4013,14 @@
           "403": {
             "$ref": "#/components/responses/Forbidden"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/konfi/bible-translation": {
       "put": {
+        "tags": [
+          "Konfi-Profil & Dashboard"
+        ],
         "summary": "Bibeluebersetzung für Tageslosung setzen",
         "x-berechtigung": {
           "rollen": [
@@ -3955,14 +4076,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/konfi/konfsprueche": {
       "get": {
+        "tags": [
+          "Konfi-Profil & Dashboard"
+        ],
         "summary": "Kuratierte Konfsprueche auflisten (org-gefiltert)",
         "description": "Aktive Sprueche (global oder org-eigen) mit allen 4 Uebersetzungen (fehlende als leerer String).",
         "x-berechtigung": {
@@ -3988,14 +4109,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/events": {
       "get": {
+        "tags": [
+          "Termine (Verwaltung)"
+        ],
         "summary": "Alle Events der Organisation (rollenabhaengig gefiltert)",
         "description": "Liefert Events der aktiven Org mit Zaehlern (Konfi- und Teamer-Kontingent getrennt), Kategorien, Jahrgängen, registration_status und eigener Buchung (is_registered, booking_status, attendance_status). Datumsfenster: letzte 12 Monate + Zukunft (?all=true für alles). Nachgelagerte Filter: Teamer mit Jahrgangs-Zuweisungen sehen jahrgangs-gebundene Events nur für can_view-Jahrgänge (allgemeine, teamer_only- und teamer_needed-Events immer); Konfis sehen keine teamer_only-Events.\n",
         "x-berechtigung": {
@@ -4022,7 +4143,8 @@
               "enum": [
                 "true"
               ]
-            }
+            },
+            "description": "true: gesamte Termin-Historie statt nur letztes Jahr plus Zukunft"
           }
         ],
         "responses": {
@@ -4035,12 +4157,12 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       },
       "post": {
+        "tags": [
+          "Termine (Verwaltung)"
+        ],
         "summary": "Event erstellen",
         "description": "Legt ein Event an inkl. Kategorien, Jahrgängen und optionalen Timeslots. Serverseitige Zwangsregeln: Pflicht-/Konfirmations-Events ohne Punkte und ohne Timeslots; Pflicht-Events ohne Warteliste und mit Auto-Enrollment aller Konfis der Jahrgänge; teamer_needed/teamer_only schliessen sich aus; checkin_window 5-120 Minuten. Cross-Org-Referenzen (jahrgang_ids, category_ids) werden abgewiesen.\n",
         "x-berechtigung": {
@@ -4216,14 +4338,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/events/cancelled": {
       "get": {
+        "tags": [
+          "Termine (Verwaltung)"
+        ],
         "summary": "Abgesagte Events auflisten (Leitungssicht)",
         "x-berechtigung": {
           "rollen": [
@@ -4251,14 +4373,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/events/qr-checkin": {
       "post": {
+        "tags": [
+          "Termine (Verwaltung)"
+        ],
         "summary": "Selbst-Check-in per QR-Token (vergibt Event-Punkte)",
         "description": "Der eingeloggte User checkt sich mit dem QR-Token des Events ein. Prueft Token-Signatur (QR_SECRET) UND Abgleich mit events.qr_token, Organisation, Zeitfenster (event_date +/- checkin_window Minuten) und bestaetigte Buchung. Setzt attendance_status='present'. Konfis erhalten bei points > 0 und nicht-Pflicht-Event die Event-Punkte (einmalig, ON CONFLICT DO NOTHING) inkl. Badge-/Level-Check; Teamer werden nur als anwesend verbucht.\n",
         "x-berechtigung": {
@@ -4310,14 +4432,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/events/{id}/generate-qr": {
       "post": {
+        "tags": [
+          "Termine (Verwaltung)"
+        ],
         "summary": "QR-Token für Event erzeugen/abrufen",
         "description": "Gibt vorhandenen qr_token zurück oder erzeugt einen neuen (HS256, kein Ablauf - Zeitfenster läuft über event_date).",
         "x-berechtigung": {
@@ -4354,14 +4476,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/events/{id}/attendance-count": {
       "get": {
+        "tags": [
+          "Termine (Verwaltung)"
+        ],
         "summary": "Live-Zähler eingecheckter Teilnehmer",
         "x-berechtigung": {
           "rollen": [
@@ -4394,14 +4516,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/events/{id}/timeslots": {
       "get": {
+        "tags": [
+          "Termine (Verwaltung)"
+        ],
         "summary": "Zeitslots eines Events (alle Rollen)",
         "x-berechtigung": {
           "rollen": [
@@ -4434,14 +4556,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/events/{id}": {
       "get": {
+        "tags": [
+          "Termine (Verwaltung)"
+        ],
         "summary": "Event-Details mit Teilnehmern (rollenabhaengig reduziert)",
         "description": "Volle Event-Details inkl. Timeslots, Serien-Events, Jahrgängen, Kategorien, Zaehlern, eigener Buchung und chat_room_id. Für Leitungsrollen zusaetzlich: participants[] (Klarname, Jahrgang, Timeslot, attendance_status, opt_out_reason/-date) und unregistrations[] (Klarname, Grund). Für KONFIS werden qr_token entfernt sowie participants und unregistrations geleert (Fix 22.08.2026) - Konfis nutzen die anonymisierte Route /api/konfi/events/:id/participants.\n",
         "x-berechtigung": {
@@ -4476,12 +4598,12 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       },
       "put": {
+        "tags": [
+          "Termine (Verwaltung)"
+        ],
         "summary": "Event aktualisieren (inkl. Nachrueck-Logik)",
         "description": "Aktualisiert alle Event-Felder, Kategorien, Jahrgänge und Timeslots (buchungserhaltend). Zwangsregeln wie beim Erstellen. Bei Kapazitaetserhoehung ruecken Wartelisten-Eintraege nach (Konfi- und Teamer-Kontingent strikt getrennt). Bei einem Pflicht-Event läuft das Auto-Enrollment bei JEDEM Speichern (idempotent, ON CONFLICT DO NOTHING): seit 24.08.2026 werden damit auch die Konfis eines nachträglich ergaenzten Jahrgangs gebucht — vorher nur bei der Umwandlung freiwillig -> Pflicht. Abgemeldete (opted_out) bleiben abgemeldet. Relevante Änderungen (Termin/Ort) pushen an Gebuchte.\n",
         "x-berechtigung": {
@@ -4533,12 +4655,12 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       },
       "delete": {
+        "tags": [
+          "Termine (Verwaltung)"
+        ],
         "summary": "Event löschen (mit force-Bestaetigung)",
         "description": "Loescht Event samt Buchungen, Timeslots, Kategorien, Jahrgangs- Zuweisungen und Event-Chat (inkl. Dateien). Ohne ?force=true blockt die Route mit 409, wenn Anmeldungen (error_code event_has_bookings) oder Chat-Nachrichten (event_has_chat) existieren. Gebuchte Konfis werden per Push informiert.\n",
         "x-berechtigung": {
@@ -4568,7 +4690,8 @@
               "enum": [
                 "true"
               ]
-            }
+            },
+            "description": "true: nicht abgesagten Termin trotz Anmeldungen löschen (sonst 409 mit Anzahl)"
           }
         ],
         "responses": {
@@ -4590,14 +4713,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/events/{id}/book": {
       "post": {
+        "tags": [
+          "Termine (Verwaltung)"
+        ],
         "summary": "Event selbst buchen (Konfi- oder Teamer-Kontingent)",
         "description": "Aeltere Buchungsroute (Admin-Frontend/Teamer). Konfi-Pfad: wie /api/konfi/events/:id/register inkl. Anmeldefenster, Timeslot- und Kapazitaets-/Wartelistenlogik sowie Konfirmations-Sperre. Teamer-Pfad: eigenes Kontingent (teamer_max_participants, eigene Warteliste), ohne Anmeldefenster- und Timeslot-Logik; nur bei teamer_needed/teamer_only.\n",
         "x-berechtigung": {
@@ -4652,12 +4775,12 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       },
       "delete": {
+        "tags": [
+          "Termine (Verwaltung)"
+        ],
         "summary": "Eigene Buchung stornieren",
         "description": "Loescht die eigene Buchung transaktional, entfernt den User aus dem Event-Chat, nimmt bei attendance_status='present' die Event-Punkte zurück und laesst rollenrichtig aus der passenden Warteliste nachruecken (Konfi-Platz nur an Konfis, Teamer-Platz nur an Teamer).\n",
         "x-berechtigung": {
@@ -4693,14 +4816,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/events/{id}/participants": {
       "post": {
+        "tags": [
+          "Termine (Verwaltung)"
+        ],
         "summary": "Teilnehmer manuell hinzufuegen (Leitung)",
         "description": "Fuegt einen User der eigenen Org zum Event hinzu. status='auto' entscheidet rollenrichtig (Konfi- vs. Teamer-Kontingent, Timeslot- Kapazität, Warteliste); explizites status wird uebernommen.\n",
         "x-berechtigung": {
@@ -4777,14 +4900,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/events/{id}/bookings/{bookingId}": {
       "delete": {
+        "tags": [
+          "Termine (Verwaltung)"
+        ],
         "summary": "Buchung eines Teilnehmers entfernen (Leitung)",
         "description": "Loescht eine fremde Buchung; war der Konfi als anwesend verbucht, werden die Event-Punkte zurückgenommen. Die Person wird zudem aus dem Event-Chat entfernt (seit 24.08.2026). Danach rollenrichtiges Nachruecken aus der passenden Warteliste.\n",
         "x-berechtigung": {
@@ -4811,7 +4934,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Buchungs-Eintrags (event_bookings.id)"
           }
         ],
         "responses": {
@@ -4830,14 +4954,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/events/user/bookings": {
       "get": {
+        "tags": [
+          "Termine (Verwaltung)"
+        ],
         "summary": "Eigene Buchungen auflisten (Konfi/Teamer)",
         "x-berechtigung": {
           "rollen": [
@@ -4863,14 +4987,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/events/series": {
       "post": {
+        "tags": [
+          "Termine (Verwaltung)"
+        ],
         "summary": "Event-Serie erstellen (2-26 Termine, max 12 Monate)",
         "description": "Erzeugt eine Serie (\"Name #n\") mit Intervall day | week | 2weeks | month. Gleiche Zwangsregeln und Org-Checks wie POST /api/events, inkl. Auto-Enrollment bei Pflicht-Serien.\n",
         "x-berechtigung": {
@@ -4935,14 +5059,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/events/{id}/participants/{participantId}/status": {
       "put": {
+        "tags": [
+          "Termine (Verwaltung)"
+        ],
         "summary": "Teilnehmer zwischen bestaetigt und Warteliste verschieben",
         "description": "status confirmed <-> waitlist. Degradierung auf waitlist löscht attendance_status und nimmt vergebene Event-Punkte zurück; Befoerderung von der Warteliste pusht an die betroffene Person.\n",
         "x-berechtigung": {
@@ -4970,7 +5094,8 @@
             "schema": {
               "type": "integer",
               "description": "ID der Buchung (event_bookings.id)"
-            }
+            },
+            "description": "ID des Buchungs-Eintrags (event_bookings.id), nicht die User-ID"
           }
         ],
         "requestBody": {
@@ -5014,14 +5139,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/events/{id}/participants/attendance-all": {
       "put": {
+        "tags": [
+          "Termine (Verwaltung)"
+        ],
         "summary": "Alle unverbuchten Angemeldeten als anwesend verbuchen (Bulk)",
         "description": "Setzt für alle bestaetigten Konfis ohne attendance_status 'present' und vergibt (bei points > 0, nicht-Pflicht, aktiviertem Punkt-Typ) die Event-Punkte inkl. Badge-/Level-Check. Warteliste und bereits Verbuchte bleiben unberuehrt.\n",
         "x-berechtigung": {
@@ -5059,14 +5184,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/events/{id}/participants/{participantId}/attendance": {
       "put": {
+        "tags": [
+          "Termine (Verwaltung)"
+        ],
         "summary": "Anwesenheit eines Teilnehmers setzen (vergibt/entzieht Punkte)",
         "description": "attendance_status present | absent. present: Konfis erhalten einmalig die Event-Punkte (nicht bei Pflicht-Events; 400 bei deaktiviertem Punkt-Typ), Teamer nur Anwesenheit. absent: vergebene Event-Punkte werden zurückgenommen.\n",
         "x-berechtigung": {
@@ -5094,7 +5219,8 @@
             "schema": {
               "type": "integer",
               "description": "ID der Buchung (event_bookings.id)"
-            }
+            },
+            "description": "ID des Buchungs-Eintrags (event_bookings.id), nicht die User-ID"
           }
         ],
         "requestBody": {
@@ -5138,14 +5264,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/events/{id}/chat": {
       "post": {
+        "tags": [
+          "Termine (Verwaltung)"
+        ],
         "summary": "Gruppenchat für Event erstellen",
         "description": "Legt den Event-Chat an und fuegt Ersteller plus alle Gebuchten hinzu (rollenrichtiger user_type). Seit 24.08.2026 zählen dabei auch Wartende — vorher nur bestaetigte, obwohl Wartende beim Anmelden hineinkommen. Pro Event nur ein Chat. Die Mitgliedschaft wird ab jetzt laufend gepflegt: Anmelden trägt ein, Abmelden trägt aus.\n",
         "x-berechtigung": {
@@ -5185,14 +5311,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/events/{id}/cancel": {
       "put": {
+        "tags": [
+          "Termine (Verwaltung)"
+        ],
         "summary": "Event absagen (mit Teilnehmer-Benachrichtigung)",
         "description": "Setzt cancelled=true + cancelled_at und pusht an alle Gebuchten (confirmed + waitlist).",
         "x-berechtigung": {
@@ -5247,14 +5373,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/admin/activities": {
       "get": {
+        "tags": [
+          "Aktivitäten & Anträge"
+        ],
         "summary": "Masterliste aller Aktivitäten der eigenen Organisation",
         "description": "Liefert alle Aktivitäten der aktiven Organisation samt zugeordneten Kategorien. Optionaler Query-Parameter target_role filtert auf Konfi- bzw. Teamer-Aktivitäten.\n",
         "x-berechtigung": {
@@ -5282,7 +5408,8 @@
                 "konfi",
                 "teamer"
               ]
-            }
+            },
+            "description": "Filter nach Zielgruppe: konfi oder teamer"
           }
         ],
         "responses": {
@@ -5298,12 +5425,12 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       },
       "post": {
+        "tags": [
+          "Aktivitäten & Anträge"
+        ],
         "summary": "Neue Aktivität anlegen",
         "description": "Legt eine Aktivität in der aktiven Organisation an. Bei target_role=teamer sind points und type optional, sonst Pflicht. Uebergebene category_ids werden zugeordnet.\n",
         "x-berechtigung": {
@@ -5374,14 +5501,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/admin/activities/{id}": {
       "put": {
+        "tags": [
+          "Aktivitäten & Anträge"
+        ],
         "summary": "Aktivität ändern",
         "description": "Aendert Name, Punkte, Typ, Zielrolle und Kategorien einer Aktivität der eigenen Organisation.\n",
         "x-berechtigung": {
@@ -5455,12 +5582,12 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       },
       "delete": {
+        "tags": [
+          "Aktivitäten & Anträge"
+        ],
         "summary": "Aktivität löschen (nur ohne Zuordnungen)",
         "description": "Loescht eine Aktivität. Existieren bereits Zuordnungen zu Konfis (user_activities), wird mit 409 abgelehnt. Anträge werden nach Gewicht unterschieden aufgeraeumt bzw. blockieren das Löschen.\n",
         "x-berechtigung": {
@@ -5500,14 +5627,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/admin/activities/requests": {
       "get": {
+        "tags": [
+          "Aktivitäten & Anträge"
+        ],
         "summary": "Alle Anträge der Organisation",
         "description": "Liefert alle Aktivitaetsantraege der aktiven Organisation samt Konfi-Name, Aktivitaetsdaten und genehmigender Person.\n",
         "x-berechtigung": {
@@ -5536,14 +5663,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/admin/activities/requests/{id}": {
       "put": {
+        "tags": [
+          "Aktivitäten & Anträge"
+        ],
         "summary": "Antrag genehmigen oder ablehnen",
         "description": "Setzt den Status eines ausstehenden Antrags auf approved oder rejected. Bei approved werden die Punkte gutgeschrieben und Badges geprüft. Bereits entschiedene Anträge werden mit 400 abgelehnt.\n",
         "x-berechtigung": {
@@ -5608,12 +5735,12 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       },
       "delete": {
+        "tags": [
+          "Aktivitäten & Anträge"
+        ],
         "summary": "Abgelehnten Antrag endgueltig löschen",
         "description": "Entfernt einen abgelehnten Antrag samt Nachweisfoto. Offene Anträge (409) und genehmigte Anträge (409) sind bewusst geschuetzt: offene werden entschieden, genehmigte zuerst zurückgesetzt.\n",
         "x-berechtigung": {
@@ -5653,14 +5780,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/admin/activities/requests/{id}/reset": {
       "put": {
+        "tags": [
+          "Aktivitäten & Anträge"
+        ],
         "summary": "Entschiedenen Antrag auf ausstehend zuruecksetzen",
         "description": "Setzt einen genehmigten oder abgelehnten Antrag zurück auf pending. Bei zuvor genehmigten Anträgen werden die gutgeschriebenen Punkte wieder abgezogen.\n",
         "x-berechtigung": {
@@ -5700,14 +5827,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/admin/activities/requests/{id}/photo": {
       "get": {
+        "tags": [
+          "Aktivitäten & Anträge"
+        ],
         "summary": "Nachweisfoto eines Antrags abrufen",
         "description": "Liefert das (verschlüsselt gespeicherte) Nachweisfoto entschluesselt als image/jpeg aus, unabhaengig vom Status des Antrags.\n",
         "x-berechtigung": {
@@ -5752,12 +5879,12 @@
           "500": {
             "description": "Foto konnte nicht entschluesselt werden"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       },
       "delete": {
+        "tags": [
+          "Aktivitäten & Anträge"
+        ],
         "summary": "Nachweisfoto eines Antrags löschen",
         "description": "Setzt photo_filename auf NULL und entfernt die Datei. Der Antrag selbst bleibt erhalten.\n",
         "x-berechtigung": {
@@ -5792,14 +5919,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/admin/activities/assign-activity": {
       "post": {
+        "tags": [
+          "Aktivitäten & Anträge"
+        ],
         "summary": "Aktivität direkt einem Konfi zuweisen",
         "description": "Vergibt eine Aktivität ohne Antragsweg. Punkte werden gutgeschrieben und die Badge-Prüfung ausgelöst.\n",
         "x-berechtigung": {
@@ -5861,14 +5988,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/admin/konfis": {
       "get": {
+        "tags": [
+          "Konfis (Verwaltung)"
+        ],
         "summary": "Liste der Konfis (für Teamer:innen auf eigene Jahrgänge gefiltert)",
         "description": "Liefert die Konfis der aktiven Organisation mit Punkten, Jahrgang und Zaehlern. Für alle außer super_admin und org_admin wird auf die Jahrgänge aus assigned_jahrgaenge mit can_view eingeschraenkt. Geloeschte Konfis (deleted_at) sind ausgeschlossen.\n",
         "x-berechtigung": {
@@ -5897,12 +6024,12 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       },
       "post": {
+        "tags": [
+          "Konfis (Verwaltung)"
+        ],
         "summary": "Neuen Konfi anlegen",
         "description": "Legt User + konfi_profiles an, erzeugt Username und Startpasswort, hängt den Konfi an den Jahrgangs-Chat und bucht ihn in kuenftige Pflicht-Events des Jahrgangs ein. Das Konfi-Limit der Organisation wird geprüft.\n",
         "x-berechtigung": {
@@ -5967,14 +6094,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/admin/konfis/teamer": {
       "get": {
+        "tags": [
+          "Konfis (Verwaltung)"
+        ],
         "summary": "Liste der Teamer:innen der Organisation",
         "description": "Liefert alle User mit Rolle teamer der aktiven Organisation samt Jahrgangsnamen, Abzeichen- und Zertifikatszaehler.\n",
         "x-berechtigung": {
@@ -6004,14 +6131,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/admin/konfis/{id}": {
       "get": {
+        "tags": [
+          "Konfis (Verwaltung)"
+        ],
         "summary": "Einzelner Konfi oder Teamer mit voller Historie",
         "description": "Detailansicht: Stammdaten, Punkte, Aktivitäten, Bonuspunkte, Events, Abzeichen und aufgeloester Konfispruch. Für Teamer:innen als Zielobjekt zusaetzlich Zertifikate und Teamer-Historie.\n",
         "x-berechtigung": {
@@ -6049,12 +6176,12 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       },
       "put": {
+        "tags": [
+          "Konfis (Verwaltung)"
+        ],
         "summary": "Konfi ändern (Name, Jahrgang)",
         "description": "Aendert Anzeigename und/oder Jahrgang. Bei Jahrgangswechsel wird die Chat-Mitgliedschaft synchronisiert und der Konfi in kuenftige Pflicht-Events des neuen Jahrgangs eingebucht. Seit 24.08.2026 werden dabei auch die kuenftigen Pflicht-Events des ALTEN Jahrgangs ausgetragen — nur solange keine Anwesenheit erfasst ist und der Termin nicht auch zum neuen Jahrgang gehört. Vergangene Termine und erfasste Anwesenheiten bleiben unberuehrt.\n",
         "x-berechtigung": {
@@ -6112,12 +6239,12 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       },
       "delete": {
+        "tags": [
+          "Konfis (Verwaltung)"
+        ],
         "summary": "Konfi löschen (inkl. abhaengiger Daten)",
         "description": "Loescht den Konfi und die daran haengenden Daten über deleteKonfiCascade (Aktivitäten, Bonuspunkte, Buchungen, Anträge, Chat-Mitgliedschaften, seit 24.08.2026 auch erhaltene Urkunden — deren Fremdschlüssel blockierte das Löschen vorher mit 500). Dieselbe Funktion trägt die Selbstloeschung über POST /auth/delete-account, dort für jede Rolle.\n",
         "x-berechtigung": {
@@ -6154,14 +6281,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/admin/konfis/{id}/regenerate-password": {
       "post": {
+        "tags": [
+          "Konfis (Verwaltung)"
+        ],
         "summary": "Neues Startpasswort für einen Konfi erzeugen",
         "description": "Erzeugt ein neues Passwort, speichert den Hash und gibt das Klartext-Passwort einmalig zurück.",
         "x-berechtigung": {
@@ -6199,14 +6326,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/admin/konfis/{id}/event-points": {
       "get": {
+        "tags": [
+          "Konfis (Verwaltung)"
+        ],
         "summary": "Event-Punkte eines Konfis",
         "description": "Liefert alle über Events vergebenen Punkte samt Event-Name und vergebender Person.",
         "x-berechtigung": {
@@ -6241,14 +6368,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/admin/konfis/{id}/badges": {
       "get": {
+        "tags": [
+          "Konfis (Verwaltung)"
+        ],
         "summary": "Abzeichen und Fortschritt eines Konfis (Leitungs-Einsicht)",
         "description": "Gleiche Wertung und gleicher Fortschritt wie die Konfi-eigene Ansicht (gemeinsame Quelle utils/konfiBadgeProgress.js).\n",
         "x-berechtigung": {
@@ -6286,14 +6413,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/admin/konfis/{id}/attendance-stats": {
       "get": {
+        "tags": [
+          "Konfis (Verwaltung)"
+        ],
         "summary": "Anwesenheitsstatistik bei Pflicht-Events",
         "description": "Zaehlt Pflicht-Events des Jahrgangs, tatsaechliche Teilnahmen, Quote und verpasste Termine.\n",
         "x-berechtigung": {
@@ -6330,14 +6457,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/admin/konfis/{id}/bonus-points": {
       "post": {
+        "tags": [
+          "Konfis (Verwaltung)"
+        ],
         "summary": "Bonuspunkte vergeben",
         "description": "Traegt Bonuspunkte ein und schreibt sie dem passenden Punktekonto gut. Der Punkte-Typ muss für den Jahrgang des Konfis aktiviert sein.\n",
         "x-berechtigung": {
@@ -6409,14 +6536,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/admin/konfis/{id}/bonus-points/{bonusId}": {
       "delete": {
+        "tags": [
+          "Konfis (Verwaltung)"
+        ],
         "summary": "Bonuspunkte zuruecknehmen",
         "description": "Loescht den Bonuseintrag und zieht die Punkte wieder ab.",
         "x-berechtigung": {
@@ -6442,7 +6569,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1
-            }
+            },
+            "description": "ID des Bonuspunkte-Eintrags"
           }
         ],
         "responses": {
@@ -6461,14 +6589,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/admin/konfis/{id}/activities": {
       "post": {
+        "tags": [
+          "Konfis (Verwaltung)"
+        ],
         "summary": "Aktivität nachtragen",
         "description": "Traegt eine erledigte Aktivität nach, schreibt die Punkte gut und löst die Badge-Prüfung aus. Bei Konfi-Aktivitäten muss der Punkte-Typ für den Jahrgang aktiviert sein.\n",
         "x-berechtigung": {
@@ -6535,14 +6663,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/admin/konfis/{id}/activities/{activityId}": {
       "delete": {
+        "tags": [
+          "Konfis (Verwaltung)"
+        ],
         "summary": "Nachgetragene Aktivität entfernen",
         "description": "Loescht die Zuordnung und zieht die gutgeschriebenen Punkte wieder ab.",
         "x-berechtigung": {
@@ -6568,7 +6696,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1
-            }
+            },
+            "description": "ID des Punkte-Eintrags (user_activities.id), nicht der Aktivität"
           }
         ],
         "responses": {
@@ -6587,14 +6716,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/admin/konfis/{id}/teamer-since": {
       "put": {
+        "tags": [
+          "Konfis (Verwaltung)"
+        ],
         "summary": "Aktiv-seit-Datum einer Teamer:in setzen",
         "description": "Setzt das Feld teamer_since des Ziel-Users.",
         "x-berechtigung": {
@@ -6654,14 +6783,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
     "/api/admin/konfis/{id}/promote-teamer": {
       "post": {
+        "tags": [
+          "Konfis (Verwaltung)"
+        ],
         "summary": "Konfi zur Teamer:in befoerdern",
         "description": "Setzt die Rolle auf teamer und teamer_since auf heute, löscht Event-Buchungen und offene Anträge und uebertraegt den Jahrgang aus konfi_profiles in user_jahrgang_assignments.\n",
         "x-berechtigung": {
@@ -6702,13 +6831,10 @@
           "500": {
             "description": "Teamer-Rolle nicht gefunden oder Datenbankfehler"
           }
-        },
-        "tags": [
-          "Konfis & Termine"
-        ]
+        }
       }
     },
-    "/chat/team-contacts": {
+    "/api/chat/team-contacts": {
       "get": {
         "tags": [
           "Chat"
@@ -6758,7 +6884,7 @@
         }
       }
     },
-    "/chat/admins": {
+    "/api/chat/admins": {
       "get": {
         "tags": [
           "Chat"
@@ -6810,7 +6936,7 @@
         }
       }
     },
-    "/chat/available-users": {
+    "/api/chat/available-users": {
       "get": {
         "tags": [
           "Chat"
@@ -6883,7 +7009,7 @@
         }
       }
     },
-    "/chat/direct": {
+    "/api/chat/direct": {
       "post": {
         "tags": [
           "Chat"
@@ -6953,7 +7079,7 @@
         }
       }
     },
-    "/chat/rooms": {
+    "/api/chat/rooms": {
       "post": {
         "tags": [
           "Chat"
@@ -7092,7 +7218,7 @@
         }
       }
     },
-    "/chat/rooms/{roomId}": {
+    "/api/chat/rooms/{roomId}": {
       "get": {
         "tags": [
           "Chat"
@@ -7105,7 +7231,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Chatraums"
           }
         ],
         "responses": {
@@ -7183,7 +7310,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Chatraums"
           },
           {
             "name": "force",
@@ -7195,7 +7323,8 @@
                 "true",
                 "false"
               ]
-            }
+            },
+            "description": "true: Raum trotz vorhandener Nachrichten löschen"
           }
         ],
         "responses": {
@@ -7229,7 +7358,7 @@
         }
       }
     },
-    "/chat/rooms/{roomId}/messages": {
+    "/api/chat/rooms/{roomId}/messages": {
       "get": {
         "tags": [
           "Chat"
@@ -7243,7 +7372,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Chatraums"
           },
           {
             "name": "limit",
@@ -7252,7 +7382,8 @@
             "schema": {
               "type": "integer",
               "default": 50
-            }
+            },
+            "description": "Anzahl Nachrichten pro Seite"
           },
           {
             "name": "offset",
@@ -7261,7 +7392,8 @@
             "schema": {
               "type": "integer",
               "default": 0
-            }
+            },
+            "description": "Anzahl zu überspringender Nachrichten (Blättern)"
           },
           {
             "name": "after",
@@ -7322,7 +7454,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Chatraums"
           }
         ],
         "requestBody": {
@@ -7399,7 +7532,7 @@
         }
       }
     },
-    "/chat/rooms/{roomId}/mark-read": {
+    "/api/chat/rooms/{roomId}/mark-read": {
       "post": {
         "tags": [
           "Chat"
@@ -7412,7 +7545,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Chatraums"
           }
         ],
         "responses": {
@@ -7441,7 +7575,7 @@
         }
       }
     },
-    "/chat/rooms/{roomId}/export": {
+    "/api/chat/rooms/{roomId}/export": {
       "get": {
         "tags": [
           "Chat"
@@ -7455,7 +7589,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Chatraums"
           },
           {
             "name": "format",
@@ -7468,7 +7603,8 @@
                 "json"
               ],
               "default": "txt"
-            }
+            },
+            "description": "Export-Format: txt (Standard) oder json"
           }
         ],
         "responses": {
@@ -7515,7 +7651,7 @@
         }
       }
     },
-    "/chat/messages/{messageId}": {
+    "/api/chat/messages/{messageId}": {
       "delete": {
         "tags": [
           "Chat"
@@ -7528,7 +7664,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID der Nachricht"
           }
         ],
         "responses": {
@@ -7561,7 +7698,7 @@
         }
       }
     },
-    "/chat/rooms/{roomId}/participants": {
+    "/api/chat/rooms/{roomId}/participants": {
       "get": {
         "tags": [
           "Chat"
@@ -7574,7 +7711,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Chatraums"
           }
         ],
         "responses": {
@@ -7663,7 +7801,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Chatraums"
           }
         ],
         "requestBody": {
@@ -7718,7 +7857,7 @@
         }
       }
     },
-    "/chat/rooms/{roomId}/participants/{userId}/{userType}": {
+    "/api/chat/rooms/{roomId}/participants/{userId}/{userType}": {
       "delete": {
         "tags": [
           "Chat"
@@ -7731,7 +7870,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Chatraums"
           },
           {
             "name": "userId",
@@ -7739,7 +7879,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "User-ID der zu entfernenden Person"
           },
           {
             "name": "userType",
@@ -7752,7 +7893,8 @@
                 "teamer",
                 "konfi"
               ]
-            }
+            },
+            "description": "Typ des Eintrags: konfi, teamer oder admin"
           }
         ],
         "responses": {
@@ -7785,7 +7927,7 @@
         }
       }
     },
-    "/chat/rooms/{roomId}/leave": {
+    "/api/chat/rooms/{roomId}/leave": {
       "delete": {
         "tags": [
           "Chat"
@@ -7799,7 +7941,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Chatraums"
           }
         ],
         "responses": {
@@ -7832,7 +7975,7 @@
         }
       }
     },
-    "/chat/files/{filename}": {
+    "/api/chat/files/{filename}": {
       "get": {
         "tags": [
           "Chat"
@@ -7848,7 +7991,8 @@
             "schema": {
               "type": "string",
               "pattern": "^[a-f0-9]+$"
-            }
+            },
+            "description": "Serverseitiger Dateiname (Hex) aus der Upload-Antwort bzw. Nachricht"
           },
           {
             "name": "token",
@@ -7903,7 +8047,7 @@
         }
       }
     },
-    "/chat/badge-update": {
+    "/api/chat/badge-update": {
       "post": {
         "tags": [
           "Chat"
@@ -7949,14 +8093,15 @@
             "verifyTokenRBAC"
           ],
           "org-scope": false,
-          "objekt-pruefung": "Nur eigene Daten (Zähler über eigene chat_participants)"
+          "objekt-pruefung": "Nur eigene Daten (Zähler über eigene chat_participants)",
+          "hinweis": "Derzeit von keinem Client aufgerufen; Kandidat für Rückbau."
         }
       }
     },
-    "/chat/rooms/{roomId}/polls": {
+    "/api/chat/rooms/{roomId}/polls": {
       "post": {
         "tags": [
-          "Chat-Umfragen"
+          "Chat"
         ],
         "summary": "Umfrage in einem Raum erstellen (nur Admins)",
         "description": "Legt eine Poll-Nachricht an. exclusive_options (jede Option max. 1 Person) erzwingt Einzelauswahl. anonymous default true. Verteilung via WebSocket und Push wie normale Nachrichten.\n",
@@ -7967,7 +8112,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Chatraums"
           }
         ],
         "requestBody": {
@@ -8043,10 +8189,10 @@
         }
       }
     },
-    "/chat/polls/{pollId}/vote": {
+    "/api/chat/polls/{pollId}/vote": {
       "post": {
         "tags": [
-          "Chat-Umfragen"
+          "Chat"
         ],
         "summary": "Abstimmen (per Poll-ID oder Message-ID)",
         "description": "Toggle-Semantik: erneutes Abstimmen auf dieselbe Option entfernt die Stimme. Einzelauswahl ersetzt vorhandene Stimme. Bei exclusive_options ist eine belegte Option gesperrt (409).\n",
@@ -8114,10 +8260,10 @@
         }
       }
     },
-    "/chat/messages/{messageId}/vote": {
+    "/api/chat/messages/{messageId}/vote": {
       "post": {
         "tags": [
-          "Chat-Umfragen"
+          "Chat"
         ],
         "summary": "Abstimmen per Message-ID (Frontend-Kompatibilitaet)",
         "description": "Wie /polls/{pollId}/vote, aber Lookup nur über message_id und OHNE Toggle-off bei Mehrfachauswahl (doppelte Stimme -> 400) und ohne exclusive_options-Sperrlogik.\n",
@@ -8128,7 +8274,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID der Nachricht"
           }
         ],
         "requestBody": {
@@ -8183,10 +8330,10 @@
         }
       }
     },
-    "/chat/messages/{messageId}/reactions": {
+    "/api/chat/messages/{messageId}/reactions": {
       "post": {
         "tags": [
-          "Chat-Reaktionen"
+          "Chat"
         ],
         "summary": "Reaktion setzen/entfernen (Toggle)",
         "parameters": [
@@ -8196,7 +8343,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID der Nachricht"
           }
         ],
         "requestBody": {
@@ -8258,7 +8406,7 @@
       },
       "get": {
         "tags": [
-          "Chat-Reaktionen"
+          "Chat"
         ],
         "summary": "Reaktionen einer Nachricht lesen",
         "parameters": [
@@ -8268,7 +8416,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID der Nachricht"
           }
         ],
         "responses": {
@@ -8310,10 +8459,10 @@
         }
       }
     },
-    "/challenges/konfi": {
+    "/api/challenges/konfi": {
       "get": {
         "tags": [
-          "Challenges-Teilnehmer"
+          "Challenges (Konfis)"
         ],
         "summary": "Aktive Challenges, Archiv und eigene Abzeichen",
         "description": "Teilnehmer-Einstieg (trotz Pfadname auch für das Team). Nie Entwuerfe, nie ungestartete. Scope: Konfi -> Challenges seines Jahrgangs (nie 'nur_team'); teamer -> zugewiesene Jahrgänge ('konfis_und_team') + org-weite 'nur_team'; admin/org_admin -> alle der Org mit Team-Beteiligung ('konfis_und_team', 'nur_team').\n",
@@ -8384,10 +8533,10 @@
         }
       }
     },
-    "/challenges/konfi/{id}": {
+    "/api/challenges/konfi/{id}": {
       "get": {
         "tags": [
-          "Challenges-Teilnehmer"
+          "Challenges (Konfis)"
         ],
         "summary": "Challenge-Detail mit Galerie und eigenen Beitraegen",
         "description": "Galerie enthält NUR fremde oeffentliche Beitraege (PUBLIC_SUBMISSION_SQL); bei anonymen Beitraegen sind display_name, role_name, jahrgang_name serverseitig NULL. Eigene Beitraege immer, inkl. Moderationsstatus. 'nur_team'-Challenges liefern für Konfis 404 (Existenz soll nicht durchsickern), ebenso Entwuerfe und noch nicht gestartete Challenges.\n",
@@ -8398,7 +8547,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID der Challenge"
           }
         ],
         "responses": {
@@ -8455,10 +8605,10 @@
         }
       }
     },
-    "/challenges/konfi/{id}/submissions": {
+    "/api/challenges/konfi/{id}/submissions": {
       "post": {
         "tags": [
-          "Challenges-Teilnehmer"
+          "Challenges (Konfis)"
         ],
         "summary": "Beitrag einreichen",
         "description": "multipart (Feld 'file') für photo/audio/video, JSON für text/link. Links nur von Musikdiensten (Erlaubnisliste utils/musikLinks auf Hostname-Basis): Spotify, Apple Music, YouTube Music, Deezer — alles andere wird mit 400 abgelehnt (seit 24.08.2026). Der Server holt beim Einreichen einmalig Titel/Interpret (link_title, link_author); scheitert der Abruf, wird ohne Metadaten gespeichert. Nur bei Status 'active'. audience steuert, wer einreichen darf (maySubmit): konfi bei 'konfis'/'konfis_und_team', Team bei 'konfis_und_team'/'nur_team'. konfi_consent nur bei visibility='konfi_choice' (Default 'publish'). Ohne Moderation Auto-Approve. Magic-Bytes-Prüfung der Datei; verschluesselte Ablage.\n",
@@ -8469,7 +8619,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Beitrags"
           }
         ],
         "requestBody": {
@@ -8564,10 +8715,10 @@
         }
       }
     },
-    "/challenges/konfi/submissions/{id}": {
+    "/api/challenges/konfi/submissions/{id}": {
       "delete": {
         "tags": [
-          "Challenges-Teilnehmer"
+          "Challenges (Konfis)"
         ],
         "summary": "Beitrag zurueckziehen — bewusst gesperrt",
         "description": "Antwortet IMMER 403, unabhaengig von Existenz und Eigentum (Design-Entscheidung: eingereichte Beitraege sind verbindlich; Ausblenden ist Sache der Leitung).\n",
@@ -8578,7 +8729,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Beitrags"
           }
         ],
         "responses": {
@@ -8596,10 +8748,10 @@
         }
       }
     },
-    "/challenges/files/{filename}": {
+    "/api/challenges/files/{filename}": {
       "get": {
         "tags": [
-          "Challenges-Teilnehmer"
+          "Challenges (Konfis)"
         ],
         "summary": "Challenge-Datei abrufen (entschluesselt)",
         "description": "Auth NUR per Authorization-Header (bewusst KEIN ?token=-Fallback). Beruecksichtigt X-Active-Organization (Multi-Org) wie rbacVerifier.\n",
@@ -8611,7 +8763,8 @@
             "schema": {
               "type": "string",
               "pattern": "^[a-f0-9]+$"
-            }
+            },
+            "description": "Serverseitiger Dateiname (Hex) aus der Upload-Antwort bzw. Nachricht"
           },
           {
             "name": "X-Active-Organization",
@@ -8619,7 +8772,8 @@
             "required": false,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "Aktive Organisation für Multi-Org-Konten (wie beim übrigen API-Zugriff)"
           }
         ],
         "responses": {
@@ -8665,10 +8819,10 @@
         }
       }
     },
-    "/challenges/admin/authors": {
+    "/api/challenges/admin/authors": {
       "get": {
         "tags": [
-          "Challenges-Leitung"
+          "Challenges (Leitung)"
         ],
         "summary": "Moegliche Urheber:innen einer Challenge",
         "description": "Alle Rollen der Org inkl. Konfis (eine Challenge kann von einem Konfi stammen). Teamer sehen nur Konfis ihrer zugewiesenen Jahrgänge; Team-Mitglieder sehen sie immer.\n",
@@ -8725,10 +8879,10 @@
         }
       }
     },
-    "/challenges/admin": {
+    "/api/challenges/admin": {
       "get": {
         "tags": [
-          "Challenges-Leitung"
+          "Challenges (Leitung)"
         ],
         "summary": "Alle Challenges der Org (inkl. Entwuerfe) mit Zaehlern",
         "description": "Verwaltungsliste inkl. submission_count, pending_count, eigener Teilnahme (has_badge/own_submission_count) und Jahrgangs-Zuordnung. Teamer sehen nur Challenges ihrer zugewiesenen Jahrgänge plus org-weite 'nur_team'-Challenges; ohne Zuweisungen leere Liste.\n",
@@ -8759,7 +8913,7 @@
       },
       "post": {
         "tags": [
-          "Challenges-Leitung"
+          "Challenges (Leitung)"
         ],
         "summary": "Challenge anlegen (Entwurf oder geplant)",
         "description": "Defaults: audience 'konfis_und_team', visibility 'konfi_choice', moderated true, allow_multiple true, is_draft true, allowed_media [text, photo]. Bei 'nur_team' werden jahrgang_ids ignoriert/nicht gespeichert. Teamer duerfen nur eigene (zugewiesene) Jahrgänge bespielen; Jahrgänge und Urheber werden org-gescopt validiert.\n",
@@ -8909,10 +9063,10 @@
         }
       }
     },
-    "/challenges/admin/{id}": {
+    "/api/challenges/admin/{id}": {
       "put": {
         "tags": [
-          "Challenges-Leitung"
+          "Challenges (Leitung)"
         ],
         "summary": "Challenge bearbeiten (Konsens-Felder nach Start eingefroren)",
         "description": "Vor Start: alles aenderbar. Nach Start (kein Draft, starts_at erreicht) sind audience, visibility, moderated, starts_at und allowed_media eingefroren (409 mit Klartext); auch challenge_type, allow_multiple und is_draft werden dann nicht mehr uebernommen.\n",
@@ -8923,7 +9077,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID der Challenge"
           }
         ],
         "requestBody": {
@@ -8975,7 +9130,7 @@
       },
       "delete": {
         "tags": [
-          "Challenges-Leitung"
+          "Challenges (Leitung)"
         ],
         "summary": "Challenge löschen (gestartete nur mit force)",
         "parameters": [
@@ -8985,7 +9140,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID der Challenge"
           },
           {
             "name": "force",
@@ -8997,7 +9153,8 @@
                 "true",
                 "false"
               ]
-            }
+            },
+            "description": "true: auch eine bereits gestartete Challenge löschen — samt Beiträgen und Dateien"
           }
         ],
         "responses": {
@@ -9032,10 +9189,10 @@
         }
       }
     },
-    "/challenges/admin/{id}/submissions": {
+    "/api/challenges/admin/{id}/submissions": {
       "get": {
         "tags": [
-          "Challenges-Leitung"
+          "Challenges (Leitung)"
         ],
         "summary": "Alle Beitraege einer Challenge (Leitungs-Sicht, immer mit Namen)",
         "description": "Sammelansicht: ALLE Beitraege inkl. Konsens, Status, hidden_at und Klarnamen — Anonymitaet gilt gegenueber der Gruppe, nicht gegenueber der Leitung. is_public/is_anonymous machen transparent, wie der Beitrag in der Galerie erscheint.\n",
@@ -9046,7 +9203,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Beitrags"
           }
         ],
         "responses": {
@@ -9078,10 +9236,10 @@
         }
       }
     },
-    "/challenges/admin/submissions/{id}/moderate": {
+    "/api/challenges/admin/submissions/{id}/moderate": {
       "put": {
         "tags": [
-          "Challenges-Leitung"
+          "Challenges (Leitung)"
         ],
         "summary": "Beitrag moderieren (approve/hide/unhide/anonymize)",
         "description": "approve und unhide setzen 'approved' und raeumen hidden-Metadaten (inkl. moderation_note) ab; hide setzt 'hidden' (schlägt jede Sichtbarkeit) und speichert optional eine Begruendung (reason), die die einreichende Person bei ihrem Beitrag sieht — das Ausblenden scheitert NIE am fehlenden Grund. anonymize ist eine Einbahnstrasse (einmal anonym, immer anonym) und seit 2026-08-24 fuer alle Sichtbarkeiten erlaubt (vorher 409 ausserhalb von 'konfi_choice'); 'private' (staerkste Konfi-Zusage) und bereits anonyme Beitraege liefern weiterhin 409. Pushes nach der Antwort: bei hide an die einreichende Person (challenge_submission_hidden, nicht beim eigenen Beitrag), bei approve der Abzeichen-Push (challenge_badge_earned), wenn es der erste freigegebene Beitrag der Person ist.\n",
@@ -9092,7 +9250,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Beitrags"
           }
         ],
         "requestBody": {
@@ -9160,10 +9319,10 @@
         }
       }
     },
-    "/challenges/admin/{id}/export": {
+    "/api/challenges/admin/{id}/export": {
       "get": {
         "tags": [
-          "Challenges-Leitung"
+          "Challenges (Leitung)"
         ],
         "summary": "Beitraege als Text exportieren (Liturgie/Playlist/Wand)",
         "description": "text/plain-Download. Strenger als die Sammelansicht, weil der Export die Leitungssphaere verlässt — konfi_choice: nur approved mit publish/anonymous-Konsens ('private' NIE); public: nur approved; private Challenge: alle nicht-ausgeblendeten (Export ist dort der angekuendigte Rueckkanal). Anonyme Beitraege als \"Anonym\".\n",
@@ -9174,7 +9333,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID der Challenge"
           }
         ],
         "responses": {
@@ -9213,10 +9373,10 @@
         }
       }
     },
-    "/notifications/badge-counts": {
+    "/api/notifications/badge-counts": {
       "get": {
         "tags": [
-          "Notifications"
+          "Benachrichtigungen"
         ],
         "summary": "Leichtgewichtige Badge-Zähler für die Tab-Leiste",
         "description": "Chat-Ungelesen-Zähler je Raum (Semantik identisch zu GET /chat/rooms) plus Pending-Zähler: pendingRequests/pendingEvents nur für Admin-Typen; pendingChallenges für Admins org-weit, für Teamer auf zugewiesene Jahrgänge begrenzt, für Konfis 0. Seit 24.08.2026 zählen EIGENE Nachrichten nicht mehr als ungelesen — vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter, bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie seit jeher ausgeschlossen; die beiden Zählungen sind damit gleich.\n",
@@ -9275,10 +9435,10 @@
         }
       }
     },
-    "/notifications/preferences": {
+    "/api/notifications/preferences": {
       "get": {
         "tags": [
-          "Notifications"
+          "Benachrichtigungen"
         ],
         "summary": "Push-Master-Schalter lesen",
         "responses": {
@@ -9317,7 +9477,7 @@
       },
       "put": {
         "tags": [
-          "Notifications"
+          "Benachrichtigungen"
         ],
         "summary": "Push-Master-Schalter setzen",
         "requestBody": {
@@ -9364,10 +9524,10 @@
         }
       }
     },
-    "/notifications/device-token": {
+    "/api/notifications/device-token": {
       "post": {
         "tags": [
-          "Notifications"
+          "Benachrichtigungen"
         ],
         "summary": "Push-Token registrieren/aktualisieren",
         "description": "Upsert auf (user_id, platform, device_id). Ein Token existiert global genau einmal: Vorkommen bei anderen Usern/Geraeten werden vorher gelöscht (Account-Wechsel, Neuinstallation).\n",
@@ -9434,7 +9594,7 @@
       },
       "delete": {
         "tags": [
-          "Notifications"
+          "Benachrichtigungen"
         ],
         "summary": "Push-Token entfernen (Logout)",
         "requestBody": {
@@ -9486,10 +9646,10 @@
         }
       }
     },
-    "/notifications/test-push": {
+    "/api/notifications/test-push": {
       "post": {
         "tags": [
-          "Notifications"
+          "Benachrichtigungen"
         ],
         "summary": "Test-Push an alle eigenen Geraete",
         "requestBody": {
@@ -9527,12 +9687,16 @@
             "verifyTokenRBAC"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Nur eigene Tokens (user_id + Org-Filter)"
+          "objekt-pruefung": "Nur eigene Tokens (user_id + Org-Filter)",
+          "hinweis": "Reines Diagnose-Werkzeug; wird von keinem Client aufgerufen, nur vom Backend-Test abgedeckt."
         }
       }
     },
     "/api/teamer/profile": {
       "get": {
+        "tags": [
+          "Teamer:innen"
+        ],
         "summary": "Eigenes Teamer-Profil inkl. eingefrorener Konfi-Vergangenheit",
         "description": "Stammdaten der eingeloggten Teamer:in (display_name, username, E-Mail, role_title, teamer_since, Organisation, bible_translation). Existiert ein konfi_profiles-Datensatz aus der Konfi-Zeit, wird er als konfi_data mitgeliefert (eingefrorene Punkte, Jahrgangsname, damals erreichte Badges); sonst ist konfi_data null. Die Erkennung hängt am Vorhandensein des Profils, nicht am Jahrgangsnamen - ein geloeschter Jahrgang setzt nur jahrgang_name auf leer, die Punkte bleiben sichtbar.\n",
         "x-berechtigung": {
@@ -9606,12 +9770,12 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       },
       "patch": {
+        "tags": [
+          "Teamer:innen"
+        ],
         "summary": "Eigenen Konfispruch setzen (Listen-Wahl ODER Freitext)",
         "description": "Gegenstueck zu PATCH /api/konfi/profile für Teamer:innen. Entweder konfspruch_id + translation (kuratierte Liste, org-gescopt und is_active geprüft) oder konfspruch_freitext + konfspruch_freitext_referenz (Referenz Pflicht, max. 100 Zeichen; Text max. 1000 Zeichen). Genau eine Quelle bleibt aktiv, die jeweils andere wird geleert. Anders als bei Konfis wird die konfi_profiles-Zeile per Upsert (ON CONFLICT user_id) angelegt: direkt als Teamer:in angelegte Accounts haben noch keine. Bestehende Zeilen befoerderter Konfis behalten ihre eingefrorenen Punkte.\n",
         "requestBody": {
@@ -9676,14 +9840,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/teamer/konfsprueche": {
       "get": {
+        "tags": [
+          "Teamer:innen"
+        ],
         "summary": "Kuratierte Konfispruch-Liste für das Auswahl-Modal (Teamer-Sicht)",
         "description": "Gegenstueck zu GET /api/konfi/konfsprueche: alle aktiven Sprueche (globale mit organization_id NULL plus eigene der Organisation) mit Referenz, Fundstelle und den vier Uebersetzungen (fehlende Texte als leerer String).\n",
         "x-berechtigung": {
@@ -9711,14 +9875,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/teamer/konfis": {
       "get": {
+        "tags": [
+          "Teamer:innen"
+        ],
         "summary": "Konfis der zugewiesenen Jahrgänge (Auswahl für Direktnachrichten)",
         "description": "Liste der Konfis für die Chat-Auswahl. Für die Rolle teamer werden nur Konfis der can_view-Jahrgänge geliefert; ohne jede Zuweisung kommt eine leere Liste. org_admin und admin erhalten alle Konfis der Organisation. Geloeschte Konfis (deleted_at) sind ausgeschlossen.\n",
         "x-berechtigung": {
@@ -9748,14 +9912,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/teamer/konfi-history": {
       "get": {
+        "tags": [
+          "Teamer:innen"
+        ],
         "summary": "Eigene Punkte-Historie aus der Konfi-Zeit",
         "description": "Für befoerderte Teamer:innen: alle Aktivitäten, Bonuspunkte und Event-Punkte aus der Konfi-Zeit, nach Datum absteigend zusammengefuehrt, plus die eingefrorenen Summen aus konfi_profiles.\n",
         "x-berechtigung": {
@@ -9783,14 +9947,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/teamer/badges": {
       "get": {
+        "tags": [
+          "Abzeichen"
+        ],
         "summary": "Eigene Teamer-Abzeichen mit Fortschritt",
         "description": "Alle Abzeichen der Organisation mit target_role='teamer' (aktive plus bereits erreichte inaktive) samt earned-Status und berechnetem Fortschritt. Der Fortschritt wird pro Kriterium bestimmt und ist bewusst deckungsgleich mit der Wertung in routes/badges.js: activity_count, event_count, unique_activities, teamer_year (nur Jahre ab users.teamer_since), category_activities, specific_activity, activity_combination, streak und time_based. Punkte-Kriterien (total_points etc.) sind für Teamer irrelevant und liefern 0; collection und yearly sind in der Wertung noch nicht implementiert und liefern ebenfalls 0. Seit 24.08.2026 werden UNVERDIENTE geheime Abzeichen (is_hidden) nicht mehr ausgeliefert — vorher standen Name, Beschreibung und Fortschritt offen da, während der Konfi-Pfad sie korrekt zurückhielt. Verdiente geheime Abzeichen kommen weiterhin mit. Die Gesamtzahlen stehen in den Kopfzeilen X-Badges-Secret-Total und X-Badges-Visible-Total, damit die Anzeige \"x Geheimnisse zu entdecken\" weiter stimmt; der Rumpf bleibt bewusst ein Array, weil zwei Ansichten ihn so lesen.\n",
         "x-berechtigung": {
@@ -9832,14 +9996,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/teamer/badges/unseen": {
       "get": {
+        "tags": [
+          "Abzeichen"
+        ],
         "summary": "Anzahl der noch nicht gesehenen eigenen Abzeichen",
         "x-berechtigung": {
           "rollen": [
@@ -9867,14 +10031,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/teamer/badges/mark-seen": {
       "put": {
+        "tags": [
+          "Abzeichen"
+        ],
         "summary": "Eigene Abzeichen als gesehen markieren",
         "x-berechtigung": {
           "rollen": [
@@ -9901,14 +10065,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/teamer/{userId}/badges": {
       "get": {
+        "tags": [
+          "Abzeichen"
+        ],
         "summary": "Erreichte Abzeichen einer Teamer:in (Leitungs-Einsicht)",
         "description": "Für die Teamer-Detailseite der Leitung. Liefert bewusst nur die erreichten Abzeichen ohne Fortschrittsberechnung - die teure Berechnung aus GET /api/teamer/badges wäre hier ungenutzt. Der Zielbenutzer muss die Rolle teamer haben, zur eigenen Organisation gehören und darf nicht gelöscht sein.\n",
         "x-berechtigung": {
@@ -9944,14 +10108,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/teamer/certificate-types": {
       "get": {
+        "tags": [
+          "Teamer:innen"
+        ],
         "summary": "Aktive Zertifikat-Typen der Organisation auflisten",
         "x-berechtigung": {
           "rollen": [
@@ -9979,12 +10143,12 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       },
       "post": {
+        "tags": [
+          "Teamer:innen"
+        ],
         "summary": "Zertifikat-Typ anlegen",
         "description": "Icon-Vorgabe 'ribbon', wenn nichts angegeben wird. Der Name ist je Organisation eindeutig.",
         "x-berechtigung": {
@@ -10043,14 +10207,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/teamer/certificate-types/{id}": {
       "put": {
+        "tags": [
+          "Teamer:innen"
+        ],
         "summary": "Zertifikat-Typ bearbeiten",
         "description": "Teilaktualisierung von name, icon und is_active. Ohne aenderbares Feld kommt 400.",
         "x-berechtigung": {
@@ -10116,12 +10280,12 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       },
       "delete": {
+        "tags": [
+          "Teamer:innen"
+        ],
         "summary": "Zertifikat-Typ löschen (nur wenn nirgends vergeben)",
         "description": "Vor dem Löschen wird geprüft, ob der Typ bereits an Teamer:innen vergeben wurde; in dem Fall kommt 409.\n",
         "x-berechtigung": {
@@ -10160,14 +10324,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/teamer/{userId}/certificates": {
       "get": {
+        "tags": [
+          "Teamer:innen"
+        ],
         "summary": "Zertifikate einer Teamer:in auflisten (Leitungs-Einsicht)",
         "x-berechtigung": {
           "rollen": [
@@ -10200,12 +10364,12 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       },
       "post": {
+        "tags": [
+          "Teamer:innen"
+        ],
         "summary": "Zertifikat an eine Teamer:in vergeben",
         "description": "Prueft, dass der Ziel-User zur eigenen Organisation gehört und die Rolle teamer hat, und dass der Zertifikat-Typ zur Organisation gehört und aktiv ist. Nach dem Speichern gehen eine Push-Nachricht und ein Live-Update an die Empfaenger:in; Fehler dabei kippen die Vergabe nicht.\n",
         "x-berechtigung": {
@@ -10275,14 +10439,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/teamer/{userId}/certificates/{certId}": {
       "delete": {
+        "tags": [
+          "Teamer:innen"
+        ],
         "summary": "Zertifikat einer Teamer:in entfernen",
         "x-berechtigung": {
           "rollen": [
@@ -10306,7 +10470,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1
-            }
+            },
+            "description": "ID des Zertifikats"
           }
         ],
         "responses": {
@@ -10325,14 +10490,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/teamer/dashboard": {
       "get": {
+        "tags": [
+          "Teamer:innen"
+        ],
         "summary": "Teamer-Dashboard (Zertifikate, Termine, Abzeichen, Konfiguration)",
         "description": "Liefert Begruessung, alle aktiven Zertifikat-Typen der Organisation mit eigenem Status (valid | expired | not_earned), die nächsten bis zu fuenf zukuenftigen, nicht abgesagten Termine, für die die Teamer:in selbst gebucht ist, die letzten drei erreichten Teamer-Abzeichen mit Zaehlern sowie die Dashboard-Konfiguration der Organisation (show_zertifikate, show_challenges, show_konfispruch, show_events, show_badges, show_losung und section_order aus den settings-Schluesseln teamer_dashboard_*). Dazu kommt der eigene Konfispruch aus konfi_profiles (aufgeloeste Listen-Wahl oder Freitext, null ohne Eintrag oder bei abgeschaltetem Schalter — dann wird die Tabelle gar nicht erst abgefragt). Zuletzt wird geprüft, ob ein Teamer-Wrapped-Snapshot vorliegt. Die Challenges-Teaser selbst laedt das Frontend separat über GET /api/challenges/admin.\n",
         "x-berechtigung": {
@@ -10406,14 +10571,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/teamer/tageslosung": {
       "get": {
+        "tags": [
+          "Teamer:innen"
+        ],
         "summary": "Tageslosung in der eigenen Bibeluebersetzung (Teamer-Sicht)",
         "description": "Beachtet den Organisations-Schalter teamer_dashboard_show_losung: ist er auf false oder 0 gesetzt, kommt 204 ohne Inhalt. Sonst wird die Losung in der eigenen Uebersetzung geladen (DB-Cache im Service). Bei einem Fehler wird die zuletzt gecachte Losung mit fallback: true ausgeliefert, statt die Karte leer zu lassen.\n",
         "x-berechtigung": {
@@ -10446,14 +10611,14 @@
           "500": {
             "description": "Losung konnte nicht geladen werden und es lag keine gecachte Losung vor"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/teamer/bible-translation": {
       "put": {
+        "tags": [
+          "Teamer:innen"
+        ],
         "summary": "Bibeluebersetzung für die Tageslosung setzen (Teamer-Sicht)",
         "x-berechtigung": {
           "rollen": [
@@ -10512,14 +10677,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/teamer/activities": {
       "get": {
+        "tags": [
+          "Teamer:innen"
+        ],
         "summary": "Beantragbare Teamer-Aktivitäten auflisten",
         "description": "Aktivitäten der Organisation mit target_role='teamer', mit zusammengefassten Kategorienamen.",
         "x-berechtigung": {
@@ -10549,14 +10714,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/teamer/requests": {
       "get": {
+        "tags": [
+          "Teamer:innen"
+        ],
         "summary": "Eigene Teamer-Anträge auflisten",
         "description": "Nur Anträge zu Aktivitäten mit target_role='teamer', neueste zuerst.",
         "x-berechtigung": {
@@ -10585,12 +10750,12 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       },
       "post": {
+        "tags": [
+          "Teamer:innen"
+        ],
         "summary": "Neuen Teamer-Antrag einreichen",
         "description": "Legt einen Antrag mit status pending an. Idempotent über optionale client_id (UUID): existiert der Antrag bereits, kommt 200 mit dem bestehenden Datensatz. Danach werden eine Bestaetigungs-Benachrichtigung an die Antragstellerin, eine Push-Nachricht an alle Admins der Organisation und ein Live-Update ausgelöst; Fehler dabei kippen den Antrag nicht.\n",
         "x-berechtigung": {
@@ -10668,14 +10833,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/teamer/requests/{id}": {
       "delete": {
+        "tags": [
+          "Teamer:innen"
+        ],
         "summary": "Eigenen offenen Teamer-Antrag löschen",
         "description": "Nur Anträge mit status pending. Danach Live-Update an die Leitung.",
         "x-berechtigung": {
@@ -10718,14 +10883,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/material/tags": {
       "get": {
+        "tags": [
+          "Material"
+        ],
         "summary": "Material-Tags der Organisation auflisten",
         "x-berechtigung": {
           "rollen": [
@@ -10753,12 +10918,12 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       },
       "post": {
+        "tags": [
+          "Material"
+        ],
         "summary": "Material-Tag anlegen",
         "description": "Der Name ist je Organisation eindeutig. Danach Live-Update an die Leitung.",
         "x-berechtigung": {
@@ -10813,14 +10978,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/material/tags/{id}": {
       "put": {
+        "tags": [
+          "Material"
+        ],
         "summary": "Material-Tag umbenennen",
         "x-berechtigung": {
           "rollen": [
@@ -10882,12 +11047,12 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       },
       "delete": {
+        "tags": [
+          "Material"
+        ],
         "summary": "Material-Tag löschen",
         "description": "Die Zuordnungen zu Materialien werden per CASCADE mitgeloescht; die Materialien selbst bleiben erhalten.",
         "x-berechtigung": {
@@ -10923,14 +11088,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/material": {
       "get": {
+        "tags": [
+          "Material"
+        ],
         "summary": "Materialien der Organisation auflisten (mit Filtern)",
         "description": "Alle Materialien der aktiven Organisation, neueste zuerst, jeweils mit Zaehlern (Dateien, Termine, Jahrgänge) sowie den zugeordneten Tags, Terminen und Jahrgängen. Optionale Filter: tag_id, event_id, jahrgang_id und eine Volltextsuche (search) über Titel und Beschreibung.\n",
         "x-berechtigung": {
@@ -10954,7 +11119,8 @@
             "required": false,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "Nur Material mit diesem Tag"
           },
           {
             "name": "search",
@@ -10971,7 +11137,8 @@
             "required": false,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "Nur Material zu diesem Termin"
           },
           {
             "name": "jahrgang_id",
@@ -10979,7 +11146,8 @@
             "required": false,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "Nur Material dieses Jahrgangs"
           }
         ],
         "responses": {
@@ -10995,12 +11163,12 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       },
       "post": {
+        "tags": [
+          "Material"
+        ],
         "summary": "Material anlegen",
         "description": "Legt ein Material an und verknuepft es mit Terminen, Jahrgängen und Tags. Alle uebergebenen IDs werden gegen die eigene Organisation geprüft (utils/orgOwnership.allIdsBelongToOrg); fremde IDs fuehren zu 400. Danach Live-Update an die Leitung.\n",
         "x-berechtigung": {
@@ -11073,14 +11241,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/material/by-event/{eventId}": {
       "get": {
+        "tags": [
+          "Material"
+        ],
         "summary": "Materialien zu einem Termin auflisten",
         "x-berechtigung": {
           "rollen": [
@@ -11104,7 +11272,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1
-            }
+            },
+            "description": "ID des Termins"
           }
         ],
         "responses": {
@@ -11120,14 +11289,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/material/{id}": {
       "get": {
+        "tags": [
+          "Material"
+        ],
         "summary": "Einzelnes Material mit Dateien, Tags, Terminen und Jahrgängen",
         "x-berechtigung": {
           "rollen": [
@@ -11164,12 +11333,12 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       },
       "put": {
+        "tags": [
+          "Material"
+        ],
         "summary": "Material bearbeiten",
         "description": "Teilaktualisierung von Titel und Beschreibung. Werden event_ids, jahrgang_ids oder tag_ids uebergeben, werden die jeweiligen Zuordnungen komplett ersetzt (löschen und neu setzen); nicht uebergebene Felder bleiben unverändert. Alle IDs werden gegen die eigene Organisation geprüft.\n",
         "x-berechtigung": {
@@ -11247,12 +11416,12 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       },
       "delete": {
+        "tags": [
+          "Material"
+        ],
         "summary": "Material samt Dateien löschen",
         "description": "Loescht das Material (Zuordnungen und material_files per CASCADE) und entfernt anschliessend die verschluesselten Dateien vom Dateisystem. Ein Fehler beim Löschen einer Datei wird nur protokolliert.\n",
         "x-berechtigung": {
@@ -11288,14 +11457,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/material/{id}/files": {
       "post": {
+        "tags": [
+          "Material"
+        ],
         "summary": "Dateien zu einem Material hochladen (verschlüsselt at-rest)",
         "description": "multipart/form-data, Feld \"files\", bis zu 10 Dateien pro Request, je max. 20 MB (multer memoryStorage, createApp.js). Zweistufige Prüfung: erst der MIME-Filter von multer (Bilder, PDF, Video, Audio, Office- und OpenDocument-Formate, ZIP, text/plain, text/csv), dann eine Magic-Bytes-Prüfung auf dem Buffer (415 bei Nichtuebereinstimmung; text/plain und text/csv sind ausgenommen, weil sie keine Signatur haben). Gespeichert wird AES-256-GCM-verschlüsselt unter einem zufaelligen 64-Hex-Dateinamen.\n",
         "x-berechtigung": {
@@ -11361,14 +11530,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/material/files/{fileRef}": {
       "get": {
+        "tags": [
+          "Material"
+        ],
         "summary": "Material-Datei herunterladen (entschluesselt)",
         "description": "Liefert die entschluesselte Datei als Download mit dem urspruenglichen Dateinamen und dem gespeicherten MIME-Typ. Der Pfadparameter wird durch path.basename und einen Test auf genau 64 Hex-Zeichen geführt (Path-Traversal-Schutz).\n",
         "x-berechtigung": {
@@ -11417,12 +11586,12 @@
           "500": {
             "description": "Datei konnte nicht entschluesselt werden / Serverfehler"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       },
       "delete": {
+        "tags": [
+          "Material"
+        ],
         "summary": "Einzelne Material-Datei löschen",
         "description": "Loescht den Datenbankeintrag und die Datei vom Dateisystem und setzt updated_at des Materials neu. Ein Fehler beim Löschen der Datei wird nur protokolliert.\n",
         "x-berechtigung": {
@@ -11466,14 +11635,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/wrapped/me": {
       "get": {
+        "tags": [
+          "Wrapped"
+        ],
         "summary": "Eigenen Jahresrueckblick abrufen",
         "description": "Liefert den neuesten eigenen Wrapped-Snapshot. Die Art richtet sich nach der Rolle: role_name 'teamer' erhält wrapped_type 'teamer', alle anderen 'konfi'. Ohne Snapshot kommt 404.\n",
         "x-berechtigung": {
@@ -11500,14 +11669,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/wrapped/generate/{jahrgangId}": {
       "post": {
+        "tags": [
+          "Wrapped"
+        ],
         "summary": "Konfi-Jahresrueckblick für einen ganzen Jahrgang erzeugen und freigeben",
         "description": "Erzeugt (oder überschreibt) die Snapshots aller nicht geloeschten Konfis des Jahrgangs parallel, setzt jahrgaenge.wrapped_released_at auf jetzt - damit ist der Rueckblick für die Konfis sichtbar - und schickt allen Konfis eine Push-Nachricht. Laeuft in einer Transaktion; ein Fehler bei einzelnen Konfis wird nur gezählt (errors), nicht zurueckgerollt.\n",
         "x-berechtigung": {
@@ -11549,14 +11718,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/wrapped/generate-teamer": {
       "post": {
+        "tags": [
+          "Wrapped"
+        ],
         "summary": "Teamer-Jahresrueckblick für alle Teamer:innen der Organisation erzeugen",
         "description": "Erzeugt (oder überschreibt) die Snapshots aller Teamer:innen der Organisation nacheinander und schickt ihnen eine Push-Nachricht. Es gibt keine Freigabe-Markierung wie bei den Jahrgängen - der Rueckblick ist sofort über GET /api/wrapped/me abrufbar.\n",
         "x-berechtigung": {
@@ -11584,14 +11753,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/wrapped/{jahrgangId}": {
       "delete": {
+        "tags": [
+          "Wrapped"
+        ],
         "summary": "Jahresrueckblick eines Jahrgangs löschen und Freigabe zuruecknehmen",
         "description": "Loescht alle Snapshots des Jahrgangs und setzt jahrgaenge.wrapped_released_at auf NULL, womit der Rueckblick für die Konfis wieder verschwindet.\n",
         "x-berechtigung": {
@@ -11632,14 +11801,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
     "/api/wrapped/history/{userId}": {
       "get": {
+        "tags": [
+          "Wrapped"
+        ],
         "summary": "Alle Jahresrueckblicke einer Person auflisten",
         "description": "Alle Snapshots (beide Arten, alle Jahre) der angefragten Person, nach Jahr absteigend. Jede Person darf ihre eigene Historie abrufen; daneben duerfen admin und org_admin die Historie von Personen der eigenen Organisation abrufen.\n",
         "x-berechtigung": {
@@ -11679,14 +11848,14 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        },
-        "tags": [
-          "Teamer:innen, Material & Wrapped"
-        ]
+        }
       }
     },
-    "/admin/badges/criteria-types": {
+    "/api/admin/badges/criteria-types": {
       "get": {
+        "tags": [
+          "Abzeichen"
+        ],
         "summary": "Katalog der verfuegbaren Badge-Kriterientypen (statisch, keine DB)",
         "description": "Liefert das im Code hinterlegte CRITERIA_TYPES-Objekt mit label, description und help je Kriterientyp. Enthaelt punktebasierte (total_points, gottesdienst_points, gemeinde_points, both_categories), aktivitaetsbasierte (activity_count, event_count, mandatory_event_count, unique_activities), spezifische (specific_activity, category_activities, activity_combination, time_based, streak, bonus_points) und den teamer-spezifischen Typ teamer_year. Rein statisch — kein Org-Bezug.\n",
         "responses": {
@@ -11713,14 +11882,14 @@
           "org-scope": false,
           "objekt-pruefung": "keine (statische Konstante)",
           "hinweis": "Die Rolle super_admin steht nicht in der requireTeamer-Whitelist und erhält 403"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       }
     },
-    "/admin/badges": {
+    "/api/admin/badges": {
       "get": {
+        "tags": [
+          "Abzeichen"
+        ],
         "summary": "Alle Abzeichen der eigenen Organisation mit Vergabe-Zähler",
         "parameters": [
           {
@@ -11764,12 +11933,12 @@
           "org-scope": true,
           "objekt-pruefung": "WHERE cb.organization_id = req.user.organization_id",
           "hinweis": "earned_count zählt user_badges OHNE Org-Filter — bei systemweit eindeutigen badge_id ist das korrekt, hängt aber an dieser Annahme"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       },
       "post": {
+        "tags": [
+          "Abzeichen"
+        ],
         "summary": "Neues Abzeichen anlegen",
         "requestBody": {
           "required": true,
@@ -11859,14 +12028,14 @@
           "org-scope": true,
           "objekt-pruefung": "organization_id und created_by werden aus dem Token gesetzt, nicht aus dem Body",
           "hinweis": "criteria_type wird NICHT gegen CRITERIA_TYPES validiert — ein Tippfehler legt ein Abzeichen an, das nie vergeben wird"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       }
     },
-    "/admin/badges/{id}": {
+    "/api/admin/badges/{id}": {
       "get": {
+        "tags": [
+          "Abzeichen"
+        ],
         "summary": "Einzelnes Abzeichen der eigenen Organisation",
         "parameters": [
           {
@@ -11875,7 +12044,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Abzeichens"
           }
         ],
         "responses": {
@@ -11904,12 +12074,12 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "WHERE cb.id = :id AND cb.organization_id = req.user.organization_id — fremde Org liefert 404, nicht 403"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       },
       "put": {
+        "tags": [
+          "Abzeichen"
+        ],
         "summary": "Abzeichen bearbeiten",
         "parameters": [
           {
@@ -11918,7 +12088,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Abzeichens"
           }
         ],
         "requestBody": {
@@ -12000,12 +12171,12 @@
           "org-scope": true,
           "objekt-pruefung": "WHERE id = :id AND organization_id = req.user.organization_id",
           "hinweis": "S4: target_role wird vom UPDATE nicht erfasst und bleibt beim Anlagewert. S5: is_active/is_hidden werden per !!wert gesetzt — ein Teil-Update ohne diese Felder deaktiviert das Abzeichen still. criteria_value wird hier (anders als beim POST) nicht auf >= 0 geprüft.\n"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       },
       "delete": {
+        "tags": [
+          "Abzeichen"
+        ],
         "summary": "Abzeichen löschen (inklusive aller bereits vergebenen Exemplare)",
         "parameters": [
           {
@@ -12014,7 +12185,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Abzeichens"
           }
         ],
         "responses": {
@@ -12044,14 +12216,14 @@
           "org-scope": true,
           "objekt-pruefung": "Transaktional: erst DELETE FROM user_badges WHERE badge_id = :id (OHNE Org-Filter), dann DELETE FROM custom_badges WHERE id AND organization_id. Greift die zweite Löschung nicht (fremde Org), wird die Transaktion zurueckgerollt — die vergebenen Exemplare bleiben also erhalten.\n",
           "hinweis": "Bereits verdiente Abzeichen verschwinden bei allen Konfis ohne Rueckfrage; es gibt keine Verwendungs-Sperre wie bei Levels oder Kategorien"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       }
     },
-    "/levels": {
+    "/api/levels": {
       "get": {
+        "tags": [
+          "Stammdaten & Einstellungen"
+        ],
         "summary": "Alle Level der eigenen Organisation (aufsteigend nach Punktgrenze)",
         "responses": {
           "200": {
@@ -12074,12 +12246,12 @@
           "org-scope": true,
           "objekt-pruefung": "WHERE organization_id = req.user.organization_id",
           "hinweis": "Bewusst offen für Konfis — die Level-Leiste ist Teil des Konfi-Dashboards. Anders als GET /admin/badges liefert diese Route auch is_active = false"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       },
       "post": {
+        "tags": [
+          "Stammdaten & Einstellungen"
+        ],
         "summary": "Neues Level anlegen",
         "requestBody": {
           "required": true,
@@ -12152,14 +12324,14 @@
           "org-scope": true,
           "objekt-pruefung": "Inline: ['org_admin','admin'].includes(req.user.role_name); organization_id und created_by aus dem Token",
           "hinweis": "Der Inline-Check prüft strikt role_name — ein org_admin mit is_super_admin-Flag kommt durch (role_name bleibt org_admin), die Rolle super_admin selbst nicht"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       }
     },
-    "/levels/{id}": {
+    "/api/levels/{id}": {
       "put": {
+        "tags": [
+          "Stammdaten & Einstellungen"
+        ],
         "summary": "Level bearbeiten",
         "parameters": [
           {
@@ -12168,7 +12340,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Levels"
           }
         ],
         "requestBody": {
@@ -12245,12 +12418,12 @@
           "org-scope": true,
           "objekt-pruefung": "Inline-Rollen-Check; Existenz-Query und UPDATE beide mit organization_id",
           "hinweis": "icon und color werden ohne Fallback geschrieben — fehlen sie im Body, werden sie auf NULL gesetzt (anders als beim POST, der Defaults setzt)"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       },
       "delete": {
+        "tags": [
+          "Stammdaten & Einstellungen"
+        ],
         "summary": "Level löschen (nur wenn kein Konfi es aktuell trägt)",
         "parameters": [
           {
@@ -12259,7 +12432,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Levels"
           }
         ],
         "responses": {
@@ -12290,14 +12464,14 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Inline-Rollen-Check; Existenz-Query mit organization_id; die Verwendungs-Prüfung zählt konfi_profiles.current_level_id über users.organization_id (org-gescopt, deleted_at IS NULL).\n"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       }
     },
-    "/levels/konfi/{userId}": {
+    "/api/levels/konfi/{userId}": {
       "get": {
+        "tags": [
+          "Stammdaten & Einstellungen"
+        ],
         "summary": "Level-Fortschritt eines Konfis (aktuelles Level, naechstes Level, Prozent)",
         "description": "Berechnet total_points aus gottesdienst_points und gemeinde_points, wobei nur die im Jahrgang aktivierten Kategorien (gottesdienst_enabled / gemeinde_enabled) mitzaehlen. Liefert zusaetzlich all_levels (nur is_active = true).\n",
         "parameters": [
@@ -12307,7 +12481,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "User-ID des Konfis"
           }
         ],
         "responses": {
@@ -12330,14 +12505,14 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "NUR WHERE u.id = :userId AND u.organization_id = req.user.organization_id AND u.deleted_at IS NULL — keine Rollen- und keine Selbst-Prüfung"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       }
     },
-    "/admin/categories": {
+    "/api/admin/categories": {
       "get": {
+        "tags": [
+          "Stammdaten & Einstellungen"
+        ],
         "summary": "Alle Kategorien der eigenen Organisation (alphabetisch)",
         "responses": {
           "200": {
@@ -12365,12 +12540,12 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "WHERE organization_id = req.user.organization_id"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       },
       "post": {
+        "tags": [
+          "Stammdaten & Einstellungen"
+        ],
         "summary": "Neue Kategorie anlegen",
         "requestBody": {
           "required": true,
@@ -12434,14 +12609,14 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "organization_id aus dem Token"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       }
     },
-    "/admin/categories/{id}": {
+    "/api/admin/categories/{id}": {
       "put": {
+        "tags": [
+          "Stammdaten & Einstellungen"
+        ],
         "summary": "Kategorie bearbeiten",
         "parameters": [
           {
@@ -12450,7 +12625,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID der Kategorie"
           }
         ],
         "requestBody": {
@@ -12518,12 +12694,12 @@
           "org-scope": true,
           "objekt-pruefung": "WHERE id = :id AND organization_id = req.user.organization_id",
           "hinweis": "type ist im Body optional, wird aber ohne Fallback geschrieben — fehlt es, wird die Spalte auf NULL gesetzt"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       },
       "delete": {
+        "tags": [
+          "Stammdaten & Einstellungen"
+        ],
         "summary": "Kategorie löschen (nur wenn keiner Aktivität und keinem Event zugeordnet)",
         "parameters": [
           {
@@ -12532,7 +12708,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID der Kategorie"
           }
         ],
         "responses": {
@@ -12565,14 +12742,14 @@
           "org-scope": true,
           "objekt-pruefung": "DELETE mit organization_id im WHERE; die vorgelagerte Verwendungs-Prüfung zählt activity_categories und event_categories",
           "hinweis": "S3: die Verwendungs-Prüfung filtert NICHT auf organization_id. Da category_id systemweit vergeben wird, ist das praktisch folgenlos — es entsteht kein Fremdzugriff, weil das DELETE selbst org-gescopt bleibt"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       }
     },
-    "/admin/jahrgaenge": {
+    "/api/admin/jahrgaenge": {
       "get": {
+        "tags": [
+          "Jahrgänge"
+        ],
         "summary": "Alle Jahrgänge der eigenen Organisation mit Konfi- und Punkte-Zaehlern",
         "responses": {
           "200": {
@@ -12601,12 +12778,12 @@
           "org-scope": true,
           "objekt-pruefung": "WHERE j.organization_id = req.user.organization_id",
           "hinweis": "KEINE Jahrgangs-Einschraenkung: ein Teamer sieht alle Jahrgänge der Organisation, nicht nur die ihm zugewiesenen (filterByJahrgangAccess wird hier nicht verwendet). Die Punkte-Summen zählen über konfi_profiles.jahrgang_id ohne eigenen Org-Filter — bei org-eindeutigen jahrgang_id korrekt.\n"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       },
       "post": {
+        "tags": [
+          "Jahrgänge"
+        ],
         "summary": "Neuen Jahrgang anlegen (legt zugleich den Jahrgangs-Chat an)",
         "requestBody": {
           "required": true,
@@ -12680,14 +12857,14 @@
           "org-scope": true,
           "objekt-pruefung": "organization_id aus dem Token; syncJahrgangChat legt den Chat an und synchronisiert Org-Admins, zugewiesene Admins/Teamer und Konfis",
           "hinweis": "Ein Fehler beim Chat-Anlegen wird geloggt, laesst die Jahrgangs-Anlage aber bewusst nicht scheitern — der Jahrgang existiert dann ohne Chat"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       }
     },
-    "/admin/jahrgaenge/{id}": {
+    "/api/admin/jahrgaenge/{id}": {
       "put": {
+        "tags": [
+          "Jahrgänge"
+        ],
         "summary": "Jahrgang bearbeiten (mit Warnungen bei Deaktivierung belegter Punkt-Kategorien)",
         "parameters": [
           {
@@ -12696,7 +12873,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Jahrgangs"
           }
         ],
         "requestBody": {
@@ -12772,12 +12950,12 @@
           "org-scope": true,
           "objekt-pruefung": "Vorab-Lookup und UPDATE beide mit organization_id",
           "hinweis": "Das Konfirmationsdatum wird seit Phase 119 nicht mehr beschrieben; der Termin hängt am gebuchten is_konfirmation-Event des einzelnen Konfis"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       },
       "delete": {
+        "tags": [
+          "Jahrgänge"
+        ],
         "summary": "Jahrgang löschen (blockiert bei aktiven Konfis, Chat-Nachrichten nur per force)",
         "description": "Aktive Konfis (Rolle konfi) blockieren die Löschung immer. Befoerderte Ex-Konfis (Rolle teamer/admin) blockieren nicht — ihr konfi_profiles-Eintrag bleibt erhalten und wird lediglich vom Jahrgang gelöst (jahrgang_id = NULL), damit Punkte-Historie und Konfispruch weiter einsehbar bleiben. Enthaelt der Jahrgangs-Chat Nachrichten, ist force=true nötig; dann werden Chat-Raum, Nachrichten, Umfragen, Lesestatus und die zugehörigen Dateien entfernt.\n",
         "parameters": [
@@ -12787,7 +12965,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Jahrgangs"
           },
           {
             "name": "force",
@@ -12832,14 +13011,14 @@
           "org-scope": true,
           "objekt-pruefung": "Das abschliessende DELETE ist mit organization_id gescopt. Die vorgelagerten Prüfungen und Chat-Loeschungen laufen über jahrgang_id OHNE eigenen Org-Filter — bei org-eindeutigen Jahrgangs-IDs korrekt, aber eine Reihenfolgen-Abhaengigkeit: faende der Handler den Jahrgang erst am Ende nicht in der eigenen Org, wären die Chat-Daten bereits gelöscht.\n",
           "hinweis": "S7: Die Chat-Löschung läuft NICHT in einer Transaktion (Einzel-Queries ohne BEGIN/COMMIT). Bricht sie in der Mitte ab, bleibt ein halb abgeraeumter Chat zurück. Datei-Loeschfehler werden nur geloggt.\n"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       }
     },
-    "/admin/jahrgaenge/{id}/attendance-matrix": {
+    "/api/admin/jahrgaenge/{id}/attendance-matrix": {
       "get": {
+        "tags": [
+          "Jahrgänge"
+        ],
         "summary": "Anwesenheitsmatrix eines Jahrgangs (Pflicht-Events x Konfis)",
         "description": "Liefert alle aktiven Konfis des Jahrgangs, alle nicht abgesagten Pflicht-Events mit Jahrgangs-Zuweisung und die dazugehoerigen Buchungen (status, attendance_status) als drei getrennte Arrays; die Matrix baut das Frontend daraus zusammen.\n",
         "parameters": [
@@ -12849,7 +13028,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Jahrgangs"
           }
         ],
         "responses": {
@@ -12879,14 +13059,14 @@
           "org-scope": true,
           "objekt-pruefung": "Jahrgang, Konfis und Events werden alle drei mit organization_id geprüft; die Buchungs-Query ist über die zuvor org-gefilterten Event- und User-IDs eingegrenzt",
           "hinweis": "teamer erhält hier 403 — die Anwesenheitsuebersicht ist bewusst auf org_admin und admin beschraenkt, obwohl GET /admin/jahrgaenge für teamer offen ist"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       }
     },
-    "/admin/jahrgaenge/{id}/sprueche": {
+    "/api/admin/jahrgaenge/{id}/sprueche": {
       "get": {
+        "tags": [
+          "Jahrgänge"
+        ],
         "summary": "Konfisprueche aller Konfis eines Jahrgangs (Listen-Wahl oder Freitext)",
         "description": "Loest je Konfi den gewaehlten Konfispruch auf: bei Listen-Wahl wird die Uebersetzung aus konfspruch_uebersetzungen nachgeladen (Spalte kp.konfspruch_translation, NICHT die Tageslosungs-Praeferenz kp.bible_translation; Standard luther2017), bei Freitext werden Text und Pflicht-Referenz direkt geliefert. konfirmation_date stammt aus dem individuell gebuchten is_konfirmation-Event, nicht aus dem Jahrgang.\n",
         "parameters": [
@@ -12896,7 +13076,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Jahrgangs"
           }
         ],
         "responses": {
@@ -12926,14 +13107,14 @@
           "org-scope": true,
           "objekt-pruefung": "Jahrgang und Konfis mit organization_id geprüft (u.deleted_at IS NULL, Rolle konfi). Die Konfispruch-Texte kommen aus konfsprueche mit is_active = true UND (organization_id IS NULL ODER organization_id = eigene Org) — der globale Spruch-Katalog ist bewusst org-uebergreifend lesbar, enthält aber nur Bibeltexte, keine personenbezogenen Daten.\n",
           "hinweis": "teamer erhält 403 — Konfisprueche sind persoenliche Angaben und bleiben auf org_admin/admin beschraenkt"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       }
     },
-    "/admin/jahrgaenge/{id}/matrix-email": {
+    "/api/admin/jahrgaenge/{id}/matrix-email": {
       "post": {
+        "tags": [
+          "Jahrgänge"
+        ],
         "summary": "Anwesenheits- oder Spruchliste per E-Mail an die eigene Adresse senden",
         "parameters": [
           {
@@ -12942,7 +13123,8 @@
             "required": true,
             "schema": {
               "type": "integer"
-            }
+            },
+            "description": "ID des Jahrgangs"
           }
         ],
         "requestBody": {
@@ -13004,14 +13186,14 @@
           "org-scope": true,
           "objekt-pruefung": "S8: Der Empfaenger ist NICHT frei waehlbar — es wird ausschliesslich users.email der aufrufenden Person geladen und angeschrieben. Fehlt sie, bricht die Route mit 400 ab. Damit laesst sich die Route nicht als Versand-Relais missbrauchen.\n",
           "hinweis": "Kein eigener Rate-Limiter; nur der globale General-Limiter (2000/15min). Ein Admin kann sich also viele Mails schicken — Missbrauchspotenzial gegen Dritte besteht wegen S8 nicht"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       }
     },
-    "/settings": {
+    "/api/settings": {
       "get": {
+        "tags": [
+          "Stammdaten & Einstellungen"
+        ],
         "summary": "Einstellungen der eigenen Organisation (typisiert aufbereitet)",
         "description": "Liefert alle settings-Zeilen der Organisation als flaches Objekt. max_waitlist_size wird als Integer geparst, dashboard_section_order und teamer_dashboard_section_order als JSON (mit Fallback auf die Standard-Reihenfolgen), waitlist_enabled und alle Keys mit Praefix dashboard_show_ / teamer_dashboard_show_ als Boolean. Alles Uebrige bleibt String.\n",
         "responses": {
@@ -13035,12 +13217,12 @@
           "org-scope": true,
           "objekt-pruefung": "WHERE organization_id = req.user.organization_id — auch super_admin wird auf die aktive Org gescopt, sonst wuerden Keys mehrerer Orgs kollidieren",
           "hinweis": "S6: bewusst für alle Rollen offen, weil Konfi- und Teamer-Dashboards ihre Widget-Schalter daraus lesen. Inhalt sind Anzeige-Einstellungen, keine personenbezogenen Daten"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       },
       "put": {
+        "tags": [
+          "Stammdaten & Einstellungen"
+        ],
         "summary": "Einstellungen der eigenen Organisation setzen (Teil-Update)",
         "description": "Nur die im Body vorhandenen Felder werden per Upsert geschrieben (ON CONFLICT (organization_id, key)); nicht uebergebene Keys bleiben unverändert. Anschliessend geht ein Live-Update 'dashboard' an die gesamte Organisation.\n",
         "requestBody": {
@@ -13137,14 +13319,14 @@
           "org-scope": true,
           "objekt-pruefung": "orgId ausschliesslich aus dem Token — der Body kann keine fremde Organisation adressieren",
           "hinweis": "waitlist_enabled wird nicht validiert (steht in validateSettings nicht drin) und landet per String(wert) in der Spalte; ein Nicht-Boolean wuerde beim Lesen zu false. Die Schreib-Vorgänge laufen als Einzel-Queries ohne Transaktion — ein Fehler in der Mitte hinterlaesst ein Teil-Update.\n"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       }
     },
-    "/roles": {
+    "/api/roles": {
       "get": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
         "summary": "Alle Rollen der eigenen Organisation mit Nutzer-Zähler",
         "responses": {
           "200": {
@@ -13171,14 +13353,14 @@
           "org-scope": true,
           "objekt-pruefung": "Inline: ['super_admin','org_admin'].includes(req.user.role_name); WHERE r.organization_id = req.user.organization_id",
           "hinweis": "Der Inline-Check prüft strikt role_name und NICHT das is_super_admin-Flag — abweichend von der Projekt-Regel und von GET /roles/list/assignable, das beides berücksichtigt. Praktisch folgenlos, weil ein org_admin mit Flag ohnehin über role_name durchkommt. Die Rolle super_admin selbst hat keine organization_id, erhält hier also ein leeres Array.\n"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       }
     },
-    "/roles/{id}": {
+    "/api/roles/{id}": {
       "get": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
         "summary": "Einzelne Rolle mit statischer Berechtigungsliste",
         "parameters": [
           {
@@ -13188,7 +13370,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1
-            }
+            },
+            "description": "ID der Rolle"
           }
         ],
         "responses": {
@@ -13221,14 +13404,14 @@
           "org-scope": true,
           "objekt-pruefung": "Inline-Rollen-Check; WHERE r.id = :id AND r.organization_id = req.user.organization_id",
           "hinweis": "permissions kommt NICHT aus der Datenbank, sondern aus einer Konstante im Code (getRolePermissions). Sie beschreibt die Rechtevergabe rein deklarativ für die Anzeige; durchgesetzt wird sie an den Routen selbst per requireRole. Die Liste kann daher von der tatsaechlichen Durchsetzung abweichen.\n"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       }
     },
-    "/roles/list/assignable": {
+    "/api/roles/list/assignable": {
       "get": {
+        "tags": [
+          "Benutzer & Rollen"
+        ],
         "summary": "Rollen, die die aufrufende Person zuweisen darf",
         "description": "Whitelist nach eigener Rolle: super_admin (oder is_super_admin-Flag) darf org_admin, admin, teamer, konfi zuweisen; org_admin darf admin, teamer, konfi; admin darf teamer, konfi. Die Namen werden gegen die roles-Tabelle der eigenen Organisation aufgeloest.\n",
         "responses": {
@@ -13257,10 +13440,7 @@
           "org-scope": true,
           "objekt-pruefung": "Inline-Rollen-Check; WHERE r.organization_id = req.user.organization_id AND r.name = ANY(erlaubte)",
           "hinweis": "Einzige Route dieser Datei, die das is_super_admin-Flag korrekt mitprueft (role_name === 'super_admin' || req.user.is_super_admin). Der Rueckgabewert ist nur eine Anzeige-Hilfe für die Nutzerverwaltung — die tatsaechliche Durchsetzung der Hierarchie leistet checkUserHierarchy in routes/users.js (siehe verwaltung-auth.yaml).\n"
-        },
-        "tags": [
-          "Stammdaten"
-        ]
+        }
       }
     }
   },
@@ -13269,50 +13449,8 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "bearerFormat": "JWT"
-      }
-    },
-    "responses": {
-      "Unauthorized": {
-        "description": "401 — Kein/ungueltiges/abgelaufenes Token"
-      },
-      "Forbidden": {
-        "description": "403 — Rolle nicht erlaubt / fremde Org"
-      },
-      "NotFound": {
-        "description": "404 — Objekt nicht (in dieser Org) gefunden"
-      },
-      "ServerError": {
-        "description": "500 — Datenbank-/Serverfehler"
-      }
-    },
-    "parameters": {
-      "pathId": {
-        "name": "id",
-        "in": "path",
-        "required": true,
-        "schema": {
-          "type": "integer",
-          "minimum": 1
-        }
-      },
-      "pathUserId": {
-        "name": "userId",
-        "in": "path",
-        "required": true,
-        "schema": {
-          "type": "integer",
-          "minimum": 1
-        }
-      },
-      "pathJahrgangId": {
-        "name": "jahrgangId",
-        "in": "path",
-        "required": true,
-        "schema": {
-          "type": "integer",
-          "minimum": 1
-        }
+        "bearerFormat": "JWT",
+        "description": "JWT im Authorization-Header. Optional Header X-Active-Organization (Multi-Org): schaltet die aktive Organisation um, sofern der User dort Mitglied ist (sonst 403).\n"
       }
     },
     "schemas": {
@@ -13916,6 +14054,80 @@
           "is_anonymous": {
             "type": "boolean"
           }
+        }
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Kein/ungueltiges/abgelaufenes Token, inaktiver Account oder inaktive Organisation",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Rolle nicht erlaubt oder kein Zugriff auf das Objekt",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Objekt nicht gefunden (in der aktiven Organisation)",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "ServerError": {
+        "description": "Datenbank-/Serverfehler",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "pathId": {
+        "description": "Numerische ID des Objekts im Pfad (welches Objekt, sagt die jeweilige Route)",
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "pathUserId": {
+        "description": "User-ID der Teamerin / des Teamers",
+        "name": "userId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "pathJahrgangId": {
+        "description": "ID des Jahrgangs",
+        "name": "jahrgangId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "minimum": 1
         }
       }
     }

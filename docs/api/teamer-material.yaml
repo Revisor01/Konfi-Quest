@@ -162,6 +162,15 @@ info:
     je Route in der Erweiterung x-berechtigung dokumentiert.
 servers:
   - url: https://konfi-quest.de
+tags:
+  - name: "Abzeichen"
+    description: "Abzeichen-Verwaltung und die verdienten Abzeichen von Konfis und Teamer:innen."
+  - name: "Material"
+    description: "Materialablage: Dateien, Tags, Verknüpfung mit Terminen."
+  - name: "Teamer:innen"
+    description: "Eigener Bereich der Teamer:innen: Dashboard, Konfis, Anträge, Zertifikate, Konfi-Historie."
+  - name: "Wrapped"
+    description: "Jahresrückblick: erzeugen, ansehen, löschen."
 security:
   - bearerAuth: []
 components:
@@ -176,16 +185,19 @@ components:
         Mitglied ist (sonst 403).
   parameters:
     pathId:
+      description: "Numerische ID des Objekts im Pfad (welches Objekt, sagt die jeweilige Route)"
       name: id
       in: path
       required: true
       schema: { type: integer, minimum: 1 }
     pathUserId:
+      description: "User-ID der Teamerin / des Teamers"
       name: userId
       in: path
       required: true
       schema: { type: integer, minimum: 1 }
     pathJahrgangId:
+      description: "ID des Jahrgangs"
       name: jahrgangId
       in: path
       required: true
@@ -223,6 +235,7 @@ paths:
   # ===================================================================
   /api/teamer/profile:
     get:
+      tags: ["Teamer:innen"]
       summary: Eigenes Teamer-Profil inkl. eingefrorener Konfi-Vergangenheit
       description: >
         Stammdaten der eingeloggten Teamer:in (display_name, username, E-Mail,
@@ -266,6 +279,7 @@ paths:
         "403": { description: "Aufrufer ist kein Teamer (org_admin/admin bekommen hier 403)" }
         "500": { $ref: '#/components/responses/ServerError' }
     patch:
+      tags: ["Teamer:innen"]
       summary: Eigenen Konfispruch setzen (Listen-Wahl ODER Freitext)
       description: >
         Gegenstueck zu PATCH /api/konfi/profile für Teamer:innen. Entweder
@@ -302,6 +316,7 @@ paths:
 
   /api/teamer/konfsprueche:
     get:
+      tags: ["Teamer:innen"]
       summary: Kuratierte Konfispruch-Liste für das Auswahl-Modal (Teamer-Sicht)
       description: >
         Gegenstueck zu GET /api/konfi/konfsprueche: alle aktiven Sprueche
@@ -321,6 +336,7 @@ paths:
 
   /api/teamer/konfis:
     get:
+      tags: ["Teamer:innen"]
       summary: Konfis der zugewiesenen Jahrgänge (Auswahl für Direktnachrichten)
       description: >
         Liste der Konfis für die Chat-Auswahl. Für die Rolle teamer werden
@@ -344,6 +360,7 @@ paths:
 
   /api/teamer/konfi-history:
     get:
+      tags: ["Teamer:innen"]
       summary: Eigene Punkte-Historie aus der Konfi-Zeit
       description: >
         Für befoerderte Teamer:innen: alle Aktivitäten, Bonuspunkte und
@@ -362,6 +379,7 @@ paths:
 
   /api/teamer/badges:
     get:
+      tags: ["Abzeichen"]
       summary: Eigene Teamer-Abzeichen mit Fortschritt
       description: >
         Alle Abzeichen der Organisation mit target_role='teamer' (aktive plus
@@ -402,6 +420,7 @@ paths:
 
   /api/teamer/badges/unseen:
     get:
+      tags: ["Abzeichen"]
       summary: Anzahl der noch nicht gesehenen eigenen Abzeichen
       x-berechtigung:
         rollen: [teamer]
@@ -420,6 +439,7 @@ paths:
 
   /api/teamer/badges/mark-seen:
     put:
+      tags: ["Abzeichen"]
       summary: Eigene Abzeichen als gesehen markieren
       x-berechtigung:
         rollen: [teamer]
@@ -434,6 +454,7 @@ paths:
 
   /api/teamer/{userId}/badges:
     get:
+      tags: ["Abzeichen"]
       summary: Erreichte Abzeichen einer Teamer:in (Leitungs-Einsicht)
       description: >
         Für die Teamer-Detailseite der Leitung. Liefert bewusst nur die
@@ -456,6 +477,7 @@ paths:
 
   /api/teamer/certificate-types:
     get:
+      tags: ["Teamer:innen"]
       summary: Aktive Zertifikat-Typen der Organisation auflisten
       x-berechtigung:
         rollen: [org_admin, admin]
@@ -471,6 +493,7 @@ paths:
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
     post:
+      tags: ["Teamer:innen"]
       summary: Zertifikat-Typ anlegen
       description: Icon-Vorgabe 'ribbon', wenn nichts angegeben wird. Der Name ist je Organisation eindeutig.
       x-berechtigung:
@@ -498,6 +521,7 @@ paths:
 
   /api/teamer/certificate-types/{id}:
     put:
+      tags: ["Teamer:innen"]
       summary: Zertifikat-Typ bearbeiten
       description: Teilaktualisierung von name, icon und is_active. Ohne aenderbares Feld kommt 400.
       x-berechtigung:
@@ -525,6 +549,7 @@ paths:
         "409": { description: Name in dieser Organisation bereits vergeben }
         "500": { $ref: '#/components/responses/ServerError' }
     delete:
+      tags: ["Teamer:innen"]
       summary: Zertifikat-Typ löschen (nur wenn nirgends vergeben)
       description: >
         Vor dem Löschen wird geprüft, ob der Typ bereits an Teamer:innen
@@ -551,6 +576,7 @@ paths:
 
   /api/teamer/{userId}/certificates:
     get:
+      tags: ["Teamer:innen"]
       summary: Zertifikate einer Teamer:in auflisten (Leitungs-Einsicht)
       x-berechtigung:
         rollen: [org_admin, admin]
@@ -569,6 +595,7 @@ paths:
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
     post:
+      tags: ["Teamer:innen"]
       summary: Zertifikat an eine Teamer:in vergeben
       description: >
         Prueft, dass der Ziel-User zur eigenen Organisation gehört und die
@@ -603,6 +630,7 @@ paths:
 
   /api/teamer/{userId}/certificates/{certId}:
     delete:
+      tags: ["Teamer:innen"]
       summary: Zertifikat einer Teamer:in entfernen
       x-berechtigung:
         rollen: [org_admin]
@@ -615,6 +643,7 @@ paths:
           in: path
           required: true
           schema: { type: integer, minimum: 1 }
+          description: "ID des Zertifikats"
       responses:
         "200": { description: Entfernt }
         "401": { $ref: '#/components/responses/Unauthorized' }
@@ -624,6 +653,7 @@ paths:
 
   /api/teamer/dashboard:
     get:
+      tags: ["Teamer:innen"]
       summary: Teamer-Dashboard (Zertifikate, Termine, Abzeichen, Konfiguration)
       description: >
         Liefert Begruessung, alle aktiven Zertifikat-Typen der Organisation mit
@@ -669,6 +699,7 @@ paths:
 
   /api/teamer/tageslosung:
     get:
+      tags: ["Teamer:innen"]
       summary: Tageslosung in der eigenen Bibeluebersetzung (Teamer-Sicht)
       description: >
         Beachtet den Organisations-Schalter teamer_dashboard_show_losung: ist
@@ -695,6 +726,7 @@ paths:
 
   /api/teamer/bible-translation:
     put:
+      tags: ["Teamer:innen"]
       summary: Bibeluebersetzung für die Tageslosung setzen (Teamer-Sicht)
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
@@ -723,6 +755,7 @@ paths:
 
   /api/teamer/activities:
     get:
+      tags: ["Teamer:innen"]
       summary: Beantragbare Teamer-Aktivitäten auflisten
       description: Aktivitäten der Organisation mit target_role='teamer', mit zusammengefassten Kategorienamen.
       x-berechtigung:
@@ -742,6 +775,7 @@ paths:
 
   /api/teamer/requests:
     get:
+      tags: ["Teamer:innen"]
       summary: Eigene Teamer-Anträge auflisten
       description: Nur Anträge zu Aktivitäten mit target_role='teamer', neueste zuerst.
       x-berechtigung:
@@ -755,6 +789,7 @@ paths:
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
     post:
+      tags: ["Teamer:innen"]
       summary: Neuen Teamer-Antrag einreichen
       description: >
         Legt einen Antrag mit status pending an. Idempotent über optionale
@@ -798,6 +833,7 @@ paths:
 
   /api/teamer/requests/{id}:
     delete:
+      tags: ["Teamer:innen"]
       summary: Eigenen offenen Teamer-Antrag löschen
       description: Nur Anträge mit status pending. Danach Live-Update an die Leitung.
       x-berechtigung:
@@ -827,6 +863,7 @@ paths:
   # ===================================================================
   /api/material/tags:
     get:
+      tags: ["Material"]
       summary: Material-Tags der Organisation auflisten
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
@@ -839,6 +876,7 @@ paths:
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
     post:
+      tags: ["Material"]
       summary: Material-Tag anlegen
       description: Der Name ist je Organisation eindeutig. Danach Live-Update an die Leitung.
       x-berechtigung:
@@ -865,6 +903,7 @@ paths:
 
   /api/material/tags/{id}:
     put:
+      tags: ["Material"]
       summary: Material-Tag umbenennen
       x-berechtigung:
         rollen: [org_admin, admin]
@@ -890,6 +929,7 @@ paths:
         "409": { description: Tag mit diesem Namen existiert bereits }
         "500": { $ref: '#/components/responses/ServerError' }
     delete:
+      tags: ["Material"]
       summary: Material-Tag löschen
       description: Die Zuordnungen zu Materialien werden per CASCADE mitgeloescht; die Materialien selbst bleiben erhalten.
       x-berechtigung:
@@ -907,6 +947,7 @@ paths:
 
   /api/material:
     get:
+      tags: ["Material"]
       summary: Materialien der Organisation auflisten (mit Filtern)
       description: >
         Alle Materialien der aktiven Organisation, neueste zuerst, jeweils mit
@@ -933,6 +974,7 @@ paths:
           in: query
           required: false
           schema: { type: integer }
+          description: Nur Material mit diesem Tag
         - name: search
           in: query
           required: false
@@ -942,16 +984,19 @@ paths:
           in: query
           required: false
           schema: { type: integer }
+          description: Nur Material zu diesem Termin
         - name: jahrgang_id
           in: query
           required: false
           schema: { type: integer }
+          description: Nur Material dieses Jahrgangs
       responses:
         "200": { description: "Array (id, title, description, created_at, created_by_name, file_count, event_count, jahrgang_count, tags[], events[], jahrgaenge[])" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
     post:
+      tags: ["Material"]
       summary: Material anlegen
       description: >
         Legt ein Material an und verknuepft es mit Terminen, Jahrgängen und
@@ -985,6 +1030,7 @@ paths:
 
   /api/material/by-event/{eventId}:
     get:
+      tags: ["Material"]
       summary: Materialien zu einem Termin auflisten
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
@@ -997,6 +1043,7 @@ paths:
           in: path
           required: true
           schema: { type: integer, minimum: 1 }
+          description: "ID des Termins"
       responses:
         "200": { description: "Array (id, title, description, created_at, created_by_name, file_count)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
@@ -1005,6 +1052,7 @@ paths:
 
   /api/material/{id}:
     get:
+      tags: ["Material"]
       summary: Einzelnes Material mit Dateien, Tags, Terminen und Jahrgängen
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
@@ -1020,6 +1068,7 @@ paths:
         "404": { $ref: '#/components/responses/NotFound' }
         "500": { $ref: '#/components/responses/ServerError' }
     put:
+      tags: ["Material"]
       summary: Material bearbeiten
       description: >
         Teilaktualisierung von Titel und Beschreibung. Werden event_ids,
@@ -1053,6 +1102,7 @@ paths:
         "404": { $ref: '#/components/responses/NotFound' }
         "500": { $ref: '#/components/responses/ServerError' }
     delete:
+      tags: ["Material"]
       summary: Material samt Dateien löschen
       description: >
         Loescht das Material (Zuordnungen und material_files per CASCADE) und
@@ -1073,6 +1123,7 @@ paths:
 
   /api/material/{id}/files:
     post:
+      tags: ["Material"]
       summary: Dateien zu einem Material hochladen (verschlüsselt at-rest)
       description: >
         multipart/form-data, Feld "files", bis zu 10 Dateien pro Request, je
@@ -1112,6 +1163,7 @@ paths:
 
   /api/material/files/{fileRef}:
     get:
+      tags: ["Material"]
       summary: Material-Datei herunterladen (entschluesselt)
       description: >
         Liefert die entschluesselte Datei als Download mit dem urspruenglichen
@@ -1144,6 +1196,7 @@ paths:
         "404": { description: Datei nicht gefunden (fremde Org oder auf dem Server nicht vorhanden) }
         "500": { description: Datei konnte nicht entschluesselt werden / Serverfehler }
     delete:
+      tags: ["Material"]
       summary: Einzelne Material-Datei löschen
       description: >
         Loescht den Datenbankeintrag und die Datei vom Dateisystem und setzt
@@ -1182,6 +1235,7 @@ paths:
   # ===================================================================
   /api/wrapped/me:
     get:
+      tags: ["Wrapped"]
       summary: Eigenen Jahresrueckblick abrufen
       description: >
         Liefert den neuesten eigenen Wrapped-Snapshot. Die Art richtet sich
@@ -1207,6 +1261,7 @@ paths:
 
   /api/wrapped/generate/{jahrgangId}:
     post:
+      tags: ["Wrapped"]
       summary: Konfi-Jahresrueckblick für einen ganzen Jahrgang erzeugen und freigeben
       description: >
         Erzeugt (oder überschreibt) die Snapshots aller nicht geloeschten
@@ -1235,6 +1290,7 @@ paths:
 
   /api/wrapped/generate-teamer:
     post:
+      tags: ["Wrapped"]
       summary: Teamer-Jahresrueckblick für alle Teamer:innen der Organisation erzeugen
       description: >
         Erzeugt (oder überschreibt) die Snapshots aller Teamer:innen der
@@ -1258,6 +1314,7 @@ paths:
 
   /api/wrapped/{jahrgangId}:
     delete:
+      tags: ["Wrapped"]
       summary: Jahresrueckblick eines Jahrgangs löschen und Freigabe zuruecknehmen
       description: >
         Loescht alle Snapshots des Jahrgangs und setzt
@@ -1283,6 +1340,7 @@ paths:
 
   /api/wrapped/history/{userId}:
     get:
+      tags: ["Wrapped"]
       summary: Alle Jahresrueckblicke einer Person auflisten
       description: >
         Alle Snapshots (beide Arten, alle Jahre) der angefragten Person, nach

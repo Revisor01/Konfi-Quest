@@ -27,13 +27,15 @@ const WURZEL = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const QUELLE = join(WURZEL, 'docs', 'api');
 const ZIEL_DIR = join(WURZEL, 'frontend', 'public', 'docs', 'api');
 
-// Reihenfolge bestimmt die Reihenfolge der Themenbloecke in Swagger UI.
+// Die Dateiaufteilung ist reine Quell-Organisation; die thematische
+// Gliederung kommt aus den tags der einzelnen Operationen (ein Thema pro
+// Tag, Swagger UI sortiert alphabetisch).
 const DATEIEN = [
-  { datei: 'verwaltung-auth.yaml', bereich: 'Anmeldung & Verwaltung' },
-  { datei: 'konfis-events.yaml', bereich: 'Konfis & Termine' },
-  { datei: 'chat-challenges.yaml', bereich: 'Chat & Challenges' },
-  { datei: 'teamer-material.yaml', bereich: 'Teamer:innen, Material & Wrapped' },
-  { datei: 'stammdaten.yaml', bereich: 'Stammdaten' },
+  { datei: 'verwaltung-auth.yaml' },
+  { datei: 'konfis-events.yaml' },
+  { datei: 'chat-challenges.yaml' },
+  { datei: 'teamer-material.yaml' },
+  { datei: 'stammdaten.yaml' },
 ];
 
 async function ladeYamlParser() {
@@ -85,8 +87,9 @@ async function main() {
 
   const tagNamen = new Set();
   const kollisionen = [];
+  const ohneTag = [];
 
-  for (const { datei, bereich } of DATEIEN) {
+  for (const { datei } of DATEIEN) {
     const spec = ladeYaml(readFileSync(join(QUELLE, datei), 'utf8'));
 
     for (const t of spec.tags ?? []) {
@@ -96,18 +99,15 @@ async function main() {
       }
     }
 
-    // Operationen ohne eigenes Tag bekommen den Bereich ihrer Quelldatei.
-    // Ohne das landen sie in Swagger UI alle im Sammelblock "default" — bei
-    // 154 von 197 Operationen wäre die Gliederung wertlos. Vorhandene Tags
-    // bleiben unangetastet, die feinere Gliederung gewinnt.
-    if (!tagNamen.has(bereich)) {
-      tagNamen.add(bereich);
-      zusammen.tags.push({ name: bereich });
-    }
-    for (const ops of Object.values(spec.paths ?? {})) {
+    // Jede Operation MUSS ein Tag tragen — sonst landet sie in Swagger UI
+    // im Sammelblock "default" und die thematische Gliederung bekommt
+    // still ein Loch. Deshalb harter Fehler statt Datei-Fallback.
+    for (const [pfad, ops] of Object.entries(spec.paths ?? {})) {
       for (const [methode, op] of Object.entries(ops)) {
         if (!['get', 'post', 'put', 'patch', 'delete'].includes(methode)) continue;
-        if (!op.tags || op.tags.length === 0) op.tags = [bereich];
+        if (!op.tags || op.tags.length === 0) {
+          ohneTag.push(`${methode.toUpperCase()} ${pfad} (${datei})`);
+        }
       }
     }
 
@@ -126,10 +126,25 @@ async function main() {
       }
     }
 
-    // Eigener Name: "bereich" ist oben schon die Themenbezeichnung der Datei.
+    // Gleichnamige Komponenten aus mehreren Dateien: die letzte gewinnt.
+    // Bei abweichendem Inhalt (mehr als nur Beschreibungstext waere riskant)
+    // wenigstens sichtbar warnen statt still zu ueberschreiben.
     for (const [komponentenArt, inhalt] of Object.entries(spec.components ?? {})) {
-      zusammen.components[komponentenArt] = { ...(zusammen.components[komponentenArt] ?? {}), ...inhalt };
+      const ziel = zusammen.components[komponentenArt] ?? {};
+      for (const [name, def] of Object.entries(inhalt)) {
+        if (ziel[name] && JSON.stringify(ziel[name]) !== JSON.stringify(def)) {
+          console.warn(`Hinweis: components.${komponentenArt}.${name} weicht zwischen den Dateien ab — ${datei} ueberschreibt.`);
+        }
+        ziel[name] = def;
+      }
+      zusammen.components[komponentenArt] = ziel;
     }
+  }
+
+  if (ohneTag.length) {
+    throw new Error(
+      'Operationen ohne tags (bitte thematisches Tag vergeben):\n  ' + ohneTag.join('\n  ')
+    );
   }
 
   if (kollisionen.length) {

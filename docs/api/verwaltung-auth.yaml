@@ -124,22 +124,56 @@ info:
     kann per Header X-Active-Organization gewechselt werden (Mitgliedschaft
     wird gegen user_organizations geprüft, 30s-User-Cache).
 servers:
-  - url: https://konfi-quest.de/api
+  - url: https://konfi-quest.de
+tags:
+  - name: "Anmeldung & Konto"
+    description: "Login, Logout, Token-Refresh, eigenes Profil, Organisationswechsel."
+  - name: "Benutzer & Rollen"
+    description: "Team-Konten der Leitung: anlegen, ändern, Jahrgangszuweisung, Rollen. /admin/users und /users sind derselbe Router (Alias-Mount)."
+  - name: "Doku-Zugang"
+    description: "Anmeldung für die passwortgeschützte API-Dokumentation."
+  - name: "Organisationen"
+    description: "Gemeinden anlegen und verwalten, Mitglieder und Limits (Super-Admin und Leitung)."
+  - name: "Passwörter & Einladungen"
+    description: "Passwort vergessen und zurücksetzen, Einladungs-Codes, Konfi-Registrierung."
+  - name: "System & Monitoring"
+    description: "Health-Check, Status und Metriken des Servers."
 components:
   securitySchemes:
-    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        JWT im Authorization-Header. Optional Header X-Active-Organization
+        (Multi-Org): schaltet die aktive Organisation um, sofern der User dort
+        Mitglied ist (sonst 403).
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: { type: string }
   responses:
-    Unauthorized: { description: "401 — Kein/ungueltiges/abgelaufenes Token" }
-    Forbidden: { description: "403 — Rolle nicht erlaubt / fremde Org" }
-    NotFound: { description: "404 — Objekt nicht (in dieser Org) gefunden" }
-    ServerError: { description: "500 — Datenbank-/Serverfehler" }
+    Unauthorized:
+      description: Kein/ungueltiges/abgelaufenes Token, inaktiver Account oder inaktive Organisation
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Forbidden:
+      description: Rolle nicht erlaubt oder kein Zugriff auf das Objekt
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    NotFound:
+      description: Objekt nicht gefunden (in der aktiven Organisation)
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    ServerError:
+      description: Datenbank-/Serverfehler
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
 
 paths:
   # ==========================================================================
   # AUTH (backend/routes/auth.js — 19 Routen, Mount /api/auth)
   # ==========================================================================
-  /auth/login:
+  /api/auth/login:
     post:
+      tags: ["Anmeldung & Konto"]
       summary: Login für alle Rollen (case-insensitiver Username)
       requestBody:
         required: true
@@ -164,8 +198,9 @@ paths:
         objekt-pruefung: "Org-Aktiv- und Trial-Prüfung im Handler; super_admin (Rolle oder Flag) umgeht beide"
         hinweis: "Offene Route; setzt last_login_at"
 
-  /auth/change-password:
+  /api/auth/change-password:
     post:
+      tags: ["Anmeldung & Konto"]
       summary: Eigenes Passwort ändern (mit aktuellem Passwort)
       requestBody:
         required: true
@@ -191,8 +226,9 @@ paths:
         # frisches Token-Paar für die aufrufende Sitzung, damit der eigene
         # Client nicht mitfliegt.
 
-  /auth/delete-account:
+  /api/auth/delete-account:
     post:
+      tags: ["Anmeldung & Konto"]
       summary: Eigenen Account sofort und kaskadierend löschen (alle Rollen)
       requestBody:
         required: true
@@ -214,8 +250,9 @@ paths:
         objekt-pruefung: "Nur eigener Account; Passwort-Bestaetigung im Handler"
         hinweis: "Auch org_admin kann sich selbst löschen — der Letzter-org_admin-Schutz greift nur in DELETE /users/:id, nicht hier"
 
-  /auth/update-email:
+  /api/auth/update-email:
     post:
+      tags: ["Anmeldung & Konto"]
       summary: Eigene E-Mail-Adresse setzen/entfernen (optional, ohne Verifikation)
       requestBody:
         content:
@@ -239,8 +276,9 @@ paths:
         # bliebe unklar, warum die Änderung nicht greift. Anders als bei
         # request-password-reset, wo der Aufrufer NICHT angemeldet ist.
 
-  /auth/update-role-title:
+  /api/auth/update-role-title:
     post:
+      tags: ["Anmeldung & Konto"]
       summary: Eigene Funktionsbeschreibung (role_title) setzen
       requestBody:
         content:
@@ -258,8 +296,9 @@ paths:
         org-scope: false
         objekt-pruefung: "Inline-Check: role_name !== 'konfi'"
 
-  /auth/me:
+  /api/auth/me:
     get:
+      tags: ["Anmeldung & Konto"]
       summary: Eigenes Profil (inkl. is_super_admin-Flag, Trial-Status der Org)
       responses:
         "200": { description: "id, username, display_name, email, role_title, role_name, is_super_admin, trial_ends_at, is_trial" }
@@ -270,19 +309,22 @@ paths:
         org-scope: false
         objekt-pruefung: "Nur eigene Daten"
 
-  /auth/my-organizations:
+  /api/auth/my-organizations:
     get:
+      tags: ["Anmeldung & Konto"]
       summary: Alle Organisationen des Users (Primaer-Org + Multi-Org-Mappings) mit Rolle
       responses:
         "200": { description: "Array (id, name, slug, display_name, role_name, is_active); nur aktive Orgs, dedupliziert" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
       x-berechtigung:
         rollen: [alle authentifizierten]
         middleware: [verifyTokenRBAC]
         org-scope: false
         objekt-pruefung: "Nur eigene Mitgliedschaften"
 
-  /auth/switch-org:
+  /api/auth/switch-org:
     post:
+      tags: ["Anmeldung & Konto"]
       summary: Aktive Organisation wechseln — neues Access-Token mit active_organization_id-Claim
       requestBody:
         required: true
@@ -304,8 +346,9 @@ paths:
         objekt-pruefung: "Mitgliedschaft in user_organizations + is_active der Ziel-Org"
         hinweis: "Trial-Ablauf der Ziel-Org wird hier NICHT geprüft (nur is_active); bekannte Claim-Nachwirkung nach Mitgliedschafts-Entzug bis Token-Ablauf"
 
-  /auth/request-password-reset:
+  /api/auth/request-password-reset:
     post:
+      tags: ["Passwörter & Einladungen"]
       summary: Passwort-Reset-Mail anfordern (immer neutrale Antwort)
       requestBody:
         required: true
@@ -327,8 +370,9 @@ paths:
         objekt-pruefung: "Token 32 Byte Hex, 24h gueltig"
         hinweis: "BEKANNT: Token wird unhashed in password_resets gespeichert"
 
-  /auth/invite-code:
+  /api/auth/invite-code:
     post:
+      tags: ["Passwörter & Einladungen"]
       summary: Einladungscode für einen Jahrgang erzeugen (8 Hex-Zeichen, 7 Tage)
       requestBody:
         required: true
@@ -350,8 +394,9 @@ paths:
         objekt-pruefung: "Jahrgang muss zur eigenen Org gehören"
         hinweis: "Inline-Check erlaubt auch is_super_admin-Flag (abweichend von den drei anderen Invite-Routen, die strikt role_name==='org_admin' verlangen)"
 
-  /auth/invite-codes:
+  /api/auth/invite-codes:
     get:
+      tags: ["Passwörter & Einladungen"]
       summary: Aktive Einladungscodes der eigenen Org (inkl. Nutzungs-Zähler)
       responses:
         "200": { description: "Array mit code, jahrgang, expires_at, used_count" }
@@ -362,11 +407,12 @@ paths:
         org-scope: true
         objekt-pruefung: "Nur Codes der eigenen Org, nur nicht-abgelaufene"
 
-  /auth/invite-codes/{id}/extend:
+  /api/auth/invite-codes/{id}/extend:
     post:
+      tags: ["Passwörter & Einladungen"]
       summary: Einladungscode um 7 Tage verlaengern
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Einladungs-Codes" }
       responses:
         "200": { description: "Neues expires_at" }
         "400": { description: "Abgelaufene Codes nicht verlaengerbar" }
@@ -378,11 +424,12 @@ paths:
         org-scope: true
         objekt-pruefung: "Code muss zur eigenen Org gehören"
 
-  /auth/invite-codes/{id}:
+  /api/auth/invite-codes/{id}:
     delete:
+      tags: ["Passwörter & Einladungen"]
       summary: Einladungscode löschen
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Einladungs-Codes" }
       responses:
         "200": { description: "Geloescht" }
         "403": { description: "Nur org_admin" }
@@ -393,11 +440,12 @@ paths:
         org-scope: true
         objekt-pruefung: "Code muss zur eigenen Org gehören"
 
-  /auth/check-username/{username}:
+  /api/auth/check-username/{username}:
     get:
+      tags: ["Passwörter & Einladungen"]
       summary: Username-Verfuegbarkeit prüfen (oeffentlich, case-insensitiv)
       parameters:
-        - { name: username, in: path, required: true, schema: { type: string, minLength: 3, pattern: "^[a-zA-Z0-9.-]+$" } }
+        - { name: username, in: path, required: true, schema: { type: string, minLength: 3, pattern: "^[a-zA-Z0-9.-]+$" }, description: "Zu prüfender Benutzername (case-insensitiv)" }
       responses:
         "200": { description: "{ available: bool, message }" }
         "400": { description: "Zu kurz / ungueltige Zeichen" }
@@ -409,11 +457,12 @@ paths:
         # LÜCKE (N3): kein eigener Rate-Limiter — systemweite Username-
         # Enumeration mit bis zu 2000 Requests/15min/IP möglich.
 
-  /auth/validate-invite/{code}:
+  /api/auth/validate-invite/{code}:
     get:
+      tags: ["Passwörter & Einladungen"]
       summary: Einladungscode prüfen (oeffentlich) — liefert Jahrgang + Org-Name
       parameters:
-        - { name: code, in: path, required: true, schema: { type: string } }
+        - { name: code, in: path, required: true, schema: { type: string }, description: "Einladungs-Code" }
       responses:
         "200": { description: "{ valid: true, jahrgang_name, organization_name }" }
         "404": { description: "Code existiert nicht (error_code: not_found)" }
@@ -426,8 +475,9 @@ paths:
         # LÜCKE (N3): kein eigener Rate-Limiter — 8-Hex-Codes (4 Byte) sind
         # theoretisch bruteforcebar; gueltiger Code leakt Org-/Jahrgangsname.
 
-  /auth/register-konfi:
+  /api/auth/register-konfi:
     post:
+      tags: ["Passwörter & Einladungen"]
       summary: Selbst-Registrierung als Konfi mit Einladungscode (inkl. Auto-Login)
       requestBody:
         required: true
@@ -455,8 +505,9 @@ paths:
         org-scope: false
         objekt-pruefung: "Invite-Code bestimmt Org + Jahrgang; konfi-Rolle wird org-gescopt aufgeloest; Konfi-Limit (max_konfis) hard_block"
 
-  /auth/reset-password:
+  /api/auth/reset-password:
     post:
+      tags: ["Passwörter & Einladungen"]
       summary: Passwort mit Reset-Token setzen (oeffentlich)
       requestBody:
         required: true
@@ -481,8 +532,9 @@ paths:
         # ausserdem nur noch gehasht in der DB. HINWEIS (war N3): bestehende Refresh-Tokens des Users werden NICHT
         # revoziert; kein eigener Rate-Limiter (Token allerdings 32 Byte Hex).
 
-  /auth/refresh:
+  /api/auth/refresh:
     post:
+      tags: ["Anmeldung & Konto"]
       summary: Access-Token per Refresh-Token erneuern (Rotation, 5-Min-Grace-Window)
       parameters:
         - { name: X-Active-Organization, in: header, required: false, schema: { type: integer }, description: "Aktive Multi-Org — wird nach Mitgliedschafts-Pruefung als Claim uebernommen" }
@@ -506,8 +558,9 @@ paths:
         objekt-pruefung: "SHA-256-Hash-Lookup in refresh_tokens; Sperr-Checks wie beim Login"
         hinweis: "token_invalidated_at (Soft-Revoke) wird beim Refresh nicht geprüft — Soft-Revoke wirkt nur auf Access-Tokens, nicht auf die Refresh-Kette"
 
-  /auth/logout:
+  /api/auth/logout:
     post:
+      tags: ["Anmeldung & Konto"]
       summary: Logout — Refresh-Token revozieren und Push-Token des Geraets entfernen (best effort, immer 200)
       requestBody:
         content:
@@ -546,8 +599,9 @@ paths:
   # (DOCS_PASSWORD), kein Benutzerkonto. Der Reverse-Proxy fragt per
   # Forward-Auth bei /pruefen nach. Neu 2026-08-24.
   # ==========================================================================
-  /docs-auth/pruefen:
+  /api/docs-auth/pruefen:
     get:
+      tags: ["Doku-Zugang"]
       summary: Forward-Auth-Check des Reverse-Proxys für /docs/api/*
       responses:
         "200": { description: "Doku-Cookie (signiertes JWT, Zweck 'docs') ist gueltig" }
@@ -560,8 +614,9 @@ paths:
         objekt-pruefung: "JWT-Verify des kq_docs-Cookies; App-Anmeldetokens werden abgelehnt (Zweck-Claim)"
         hinweis: "Wird vom Proxy bei JEDEM Doku-Aufruf gerufen — bewusst ohne eigenes Limit (nur generalLimiter)"
 
-  /docs-auth/anmelden:
+  /api/docs-auth/anmelden:
     post:
+      tags: ["Doku-Zugang"]
       summary: Anmeldung mit dem gemeinsamen Doku-Passwort, setzt das Doku-Cookie
       requestBody:
         required: true
@@ -586,8 +641,9 @@ paths:
         # generalLimiter (2000/15min) gedeckt — bei einem einzelnen Passwort
         # ohne Benutzernamen praktisch durchprobierbar. Jetzt strenges Limit.
 
-  /docs-auth/abmelden:
+  /api/docs-auth/abmelden:
     post:
+      tags: ["Doku-Zugang"]
       summary: Doku-Cookie löschen
       responses:
         "200": { description: "Cookie geloescht (Max-Age=0)" }
@@ -601,8 +657,9 @@ paths:
   # ORGANIZATIONS (backend/routes/organizations.js — 15 Routen,
   # Mount /api/organizations, optional orgLimiter davor)
   # ==========================================================================
-  /organizations:
+  /api/organizations:
     get:
+      tags: ["Organisationen"]
       summary: Alle Organisationen mit Team-/Konfi-Zaehlern (nur Super-Admin)
       responses:
         "200": { description: "Array aller Orgs inkl. user_count/konfi_count" }
@@ -613,6 +670,7 @@ paths:
         org-scope: false
         objekt-pruefung: "keine (org-uebergreifend)"
     post:
+      tags: ["Organisationen"]
       summary: Organisation anlegen inkl. erstem org_admin und Standard-Daten (Rollen, 27 Badges, 4 Zertifikat-Typen, 6 Levels, 5 Kategorien, 5 Aktivitäten, 3 Beispiel-Challenges)
       requestBody:
         required: true
@@ -645,21 +703,24 @@ paths:
         org-scope: false
         objekt-pruefung: "keine"
 
-  /organizations/search-users:
+  /api/organizations/search-users:
     get:
+      tags: ["Organisationen"]
       summary: Systemweite User-Suche für Multi-Org-Zuweisung (ohne Konfis)
       parameters:
-        - { name: q, in: query, required: true, schema: { type: string, minLength: 2 } }
+        - { name: q, in: query, required: true, schema: { type: string, minLength: 2 }, description: "Suchbegriff" }
       responses:
         "200": { description: "Max. 20 aktive Nicht-Konfi-User (username, display_name, email, Primaer-Org, Rolle)" }
+        "403": { $ref: "#/components/responses/Forbidden" }
       x-berechtigung:
         rollen: [super_admin]
         middleware: [verifyTokenRBAC, requireSuperAdmin]
         org-scope: false
         objekt-pruefung: "keine (org-uebergreifend, bewusst)"
 
-  /organizations/current:
+  /api/organizations/current:
     get:
+      tags: ["Organisationen"]
       summary: Eigene (aktive) Organisation mit Statistiken
       responses:
         "200": { description: "SELECT * der Org + user/konfi/jahrgang/activity/event/badge_count" }
@@ -671,11 +732,12 @@ paths:
         objekt-pruefung: "Immer req.user.organization_id"
         hinweis: "Auch Konfis/Teamer sehen den vollen Org-Datensatz (Kontakt-/Trial-/Limit-Felder) — siehe N5"
 
-  /organizations/{id}:
+  /api/organizations/{id}:
     get:
+      tags: ["Organisationen"]
       summary: Einzelne Organisation mit Zaehlern
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Organisation" }
       responses:
         "200": { description: "SELECT * + user/teamer/admin/konfi/... counts" }
         "403": { $ref: "#/components/responses/Forbidden" }
@@ -689,9 +751,10 @@ paths:
         # Verwaltungsrolle). Konfis erhalten 403 statt Kontakt-, Trial- und
         # Lizenzdaten der Gemeinde.
     put:
+      tags: ["Organisationen"]
       summary: Organisation bearbeiten (Stammdaten; trial_ends_at/is_trial nur Super-Admin)
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Organisation" }
       requestBody:
         required: true
         content:
@@ -724,9 +787,10 @@ paths:
         org-scope: true
         objekt-pruefung: "Inline: is_super_admin ODER (eigene Org UND role_name==='org_admin'); Trial-Felder werden für org_admin ignoriert"
     delete:
+      tags: ["Organisationen"]
       summary: Organisation vollstaendig löschen (explizite CASCADE-Kette in einer Transaktion, inkl. Datei-Cleanup nach COMMIT)
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Organisation" }
       responses:
         "200": { description: "Org und alle zugehoerigen Daten geloescht; Gast-User fremder Orgs bleiben" }
         "404": { $ref: "#/components/responses/NotFound" }
@@ -736,11 +800,12 @@ paths:
         org-scope: false
         objekt-pruefung: "Existenz der Org"
 
-  /organizations/{id}/limit:
+  /api/organizations/{id}/limit:
     patch:
+      tags: ["Organisationen"]
       summary: Konfi-Limit (max_konfis) setzen — bewusst eigener Super-Admin-Endpunkt, damit org_admin den Tarif nicht aushebeln kann
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Organisation" }
       requestBody:
         required: true
         content:
@@ -759,11 +824,12 @@ paths:
         org-scope: false
         objekt-pruefung: "Existenz der Org"
 
-  /organizations/{id}/users:
+  /api/organizations/{id}/users:
     get:
+      tags: ["Organisationen"]
       summary: Alle User einer Organisation (inkl. Konfis) mit Rolle und Jahrgangs-Zähler
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Organisation" }
       responses:
         "200": { description: "User-Array" }
         "403": { $ref: "#/components/responses/Forbidden" }
@@ -773,11 +839,12 @@ paths:
         org-scope: true
         objekt-pruefung: "Inline: super_admin ODER (org_admin UND eigene Org)"
 
-  /organizations/{id}/admins:
+  /api/organizations/{id}/admins:
     get:
+      tags: ["Organisationen"]
       summary: org_admins einer Organisation auflisten
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Organisation" }
       responses:
         "200": { description: "Admin-Array" }
         "403": { $ref: "#/components/responses/Forbidden" }
@@ -787,9 +854,10 @@ paths:
         org-scope: true
         objekt-pruefung: "Inline: super_admin ODER (org_admin UND eigene Org)"
     post:
+      tags: ["Organisationen"]
       summary: Neuen org_admin in einer Organisation anlegen
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Organisation" }
       requestBody:
         required: true
         content:
@@ -815,22 +883,25 @@ paths:
         # BEHOBEN 22.08.2026 (war N6): die zentrale validatePassword-Policy
         # gilt jetzt auch hier (8 Zeichen, Gross/Klein, Ziffer, Sonderzeichen).
 
-  /organizations/{id}/members:
+  /api/organizations/{id}/members:
     get:
+      tags: ["Organisationen"]
       summary: Multi-Org-Mitglieder einer Organisation (Primaer-User + Mappings, dedupliziert)
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Organisation" }
       responses:
         "200": { description: "Array mit is_primary-Kennzeichnung" }
+        "403": { $ref: "#/components/responses/Forbidden" }
       x-berechtigung:
         rollen: [super_admin]
         middleware: [verifyTokenRBAC, requireSuperAdmin, validateOrgId]
         org-scope: false
         objekt-pruefung: "keine"
     post:
+      tags: ["Organisationen"]
       summary: Bestehenden User als Multi-Org-Mitglied zuweisen (Upsert der Rolle)
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Organisation" }
       requestBody:
         required: true
         content:
@@ -851,12 +922,13 @@ paths:
         org-scope: false
         objekt-pruefung: "Ziel-Rolle wird in der Ziel-Org aufgeloest; Konfis explizit ausgeschlossen"
 
-  /organizations/{id}/members/{userId}:
+  /api/organizations/{id}/members/{userId}:
     delete:
+      tags: ["Organisationen"]
       summary: Multi-Org-Mitgliedschaft entziehen (Primaer-Org nicht entfernbar)
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
-        - { name: userId, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Organisation" }
+        - { name: userId, in: path, required: true, schema: { type: integer }, description: "User-ID des Mitglieds" }
       responses:
         "200": { description: "Mitgliedschaft entfernt; Chat-Sync raeumt Team-/Jahrgangs-Chats auf; Cache invalidiert" }
         "400": { description: "Primaer-Org kann hier nicht entfernt werden" }
@@ -868,11 +940,12 @@ paths:
         objekt-pruefung: "users.organization_id !== id (Primaer-Org-Schutz)"
         hinweis: "BEKANNT: laufende Access-Tokens mit active_organization_id-Claim wirken bis Ablauf nach (max 15 Min + 30s Cache)"
 
-  /organizations/{id}/stats:
+  /api/organizations/{id}/stats:
     get:
+      tags: ["Organisationen"]
       summary: Statistiken einer Organisation (Konfis, Aktivitäten, Events, Badges, Anträge)
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Organisation" }
       responses:
         "200": { description: "Zaehler-Objekt" }
         "403": { $ref: "#/components/responses/Forbidden" }
@@ -888,8 +961,9 @@ paths:
   # USERS (backend/routes/users.js — 9 Routen, Mount /api/users UND
   # /api/admin/users; komplette Verwaltung nur org_admin + Rollenhierarchie)
   # ==========================================================================
-  /users:
+  /api/users:
     get:
+      tags: ["Benutzer & Rollen"]
       summary: Alle Verwaltungs-User der eigenen Org (ohne Konfis/super_admin), mit can_edit-Flag aus der Hierarchie
       responses:
         "200": { description: "User-Array (Rolle, Jahrgangs-Zaehler, can_edit)" }
@@ -900,6 +974,7 @@ paths:
         org-scope: true
         objekt-pruefung: "keine weitere"
     post:
+      tags: ["Benutzer & Rollen"]
       summary: Verwaltungs-User anlegen (Rolle aus eigener Org, volle Passwort-Policy)
       requestBody:
         required: true
@@ -926,11 +1001,12 @@ paths:
         org-scope: true
         objekt-pruefung: "role_id muss zur eigenen Org gehören; Hierarchie prüft Ziel-Rolle"
 
-  /users/{id}:
+  /api/users/{id}:
     get:
+      tags: ["Benutzer & Rollen"]
       summary: Einzelnen User mit Jahrgangs-Zuweisungen laden
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID" }
       responses:
         "200": { description: "User + assigned_jahrgaenge (can_view/can_edit, assigned_by)" }
         "403": { description: "Hierarchie: Ziel-Rolle nicht einsehbar" }
@@ -941,9 +1017,10 @@ paths:
         org-scope: true
         objekt-pruefung: "Ziel-User muss in eigener Org sein; canManageRole(eigene Rolle, Ziel-Rolle)"
     put:
+      tags: ["Benutzer & Rollen"]
       summary: User bearbeiten (Felder optional; Rolle, is_active, Passwort)
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID" }
       requestBody:
         content:
           application/json:
@@ -971,6 +1048,7 @@ paths:
         # BEHOBEN 22.08.2026 (war N7): das optionale password-Feld wird vor
         # dem Hashen gegen validatePassword geprüft.
     delete:
+      tags: ["Benutzer & Rollen"]
       summary: User löschen (Hard-Delete mit Referenz-Anonymisierung und History-Purge)
       description: >
         Anonymisiert die Urheberschaft (admin_id/created_by/approved_by ->
@@ -982,7 +1060,7 @@ paths:
         Nachweisfotos UND Challenge-Dateien werden nach dem COMMIT von der
         Platte entfernt.
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID" }
       responses:
         "200": { description: "Geloescht; Sockets getrennt; Nachweisfotos und Challenge-Dateien nach COMMIT entfernt" }
         "400": { description: "Selbst-Loeschung verboten" }
@@ -995,22 +1073,25 @@ paths:
         org-scope: true
         objekt-pruefung: "Eigene Org; Selbst-Loeschungs-Sperre; Letzter-org_admin-Schutz"
 
-  /users/{id}/jahrgaenge:
+  /api/users/{id}/jahrgaenge:
     get:
+      tags: ["Benutzer & Rollen"]
       summary: Jahrgangs-Zuweisungen eines Users
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID" }
       responses:
         "200": { description: "Array (jahrgang, can_view, can_edit, assigned_by_name)" }
+        "403": { $ref: "#/components/responses/Forbidden" }
       x-berechtigung:
         rollen: [org_admin]
         middleware: [verifyTokenRBAC, requireOrgAdmin]
         org-scope: true
         objekt-pruefung: "Jahrgänge auf eigene Org gefiltert"
     post:
+      tags: ["Benutzer & Rollen"]
       summary: Jahrgangs-Zuweisungen komplett ersetzen (delete + insert, transaktional, Chat-Sync)
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID" }
       requestBody:
         required: true
         content:
@@ -1039,22 +1120,25 @@ paths:
         objekt-pruefung: "User + alle Jahrgang-IDs müssen zur eigenen Org gehören"
         hinweis: "KEIN checkUserHierarchy — org_admin darf ohnehin alle; Route wird aber nicht durch andere Rollen erreichbar"
 
-  /users/me/jahrgaenge:
+  /api/users/me/jahrgaenge:
     get:
+      tags: ["Benutzer & Rollen"]
       summary: Eigene Jahrgangs-Zuweisungen (für Teamer-UI)
       responses:
         "200": { description: "Array der eigenen Zuweisungen (auf aktive Org gescopt)" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
       x-berechtigung:
         rollen: [alle authentifizierten]
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: "Nur eigene Daten"
 
-  /users/{id}/reset-password:
+  /api/users/{id}/reset-password:
     put:
+      tags: ["Benutzer & Rollen"]
       summary: Passwort eines Users administrativ setzen
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID" }
       requestBody:
         required: true
         content:
@@ -1091,8 +1175,9 @@ paths:
   # erreichbaren Endpunkte abdeckt; die Beschreibungen verweisen jeweils auf
   # den /users-Eintrag.
   # ==========================================================================
-  /admin/users:
+  /api/admin/users:
     get:
+      tags: ["Benutzer & Rollen"]
       summary: Alle Verwaltungs-User der eigenen Org (Alias von GET /users)
       description: Identischer Handler wie GET /users.
       responses:
@@ -1105,6 +1190,7 @@ paths:
         objekt-pruefung: "wie GET /users"
         hinweis: "Alias-Mount, kein eigener Code. super_admin fällt durch requireOrgAdmin auf 403, außer er agiert per Multi-Org-Switch als org_admin."
     post:
+      tags: ["Benutzer & Rollen"]
       summary: Verwaltungs-User anlegen (Alias von POST /users)
       description: Identischer Handler wie POST /users.
       responses:
@@ -1118,12 +1204,13 @@ paths:
         objekt-pruefung: "wie POST /users (Rollenhierarchie via canCreateRole)"
         hinweis: "Alias-Mount, kein eigener Code."
 
-  /admin/users/{id}:
+  /api/admin/users/{id}:
     get:
+      tags: ["Benutzer & Rollen"]
       summary: Einzelnen User laden (Alias von GET /users/{id})
       description: Identischer Handler wie GET /users/{id}.
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID" }
       responses:
         "200": { description: "User inkl. Jahrgangs-Zuweisungen" }
         "403": { $ref: "#/components/responses/Forbidden" }
@@ -1135,10 +1222,11 @@ paths:
         objekt-pruefung: "wie GET /users/{id}"
         hinweis: "Alias-Mount, kein eigener Code."
     put:
+      tags: ["Benutzer & Rollen"]
       summary: User bearbeiten (Alias von PUT /users/{id})
       description: Identischer Handler wie PUT /users/{id}.
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID" }
       responses:
         "200": { description: "User aktualisiert" }
         "400": { description: "Validierung/Passwort-Policy" }
@@ -1151,10 +1239,11 @@ paths:
         objekt-pruefung: "wie PUT /users/{id}"
         hinweis: "Alias-Mount, kein eigener Code."
     delete:
+      tags: ["Benutzer & Rollen"]
       summary: User löschen (Alias von DELETE /users/{id})
       description: Identischer Handler wie DELETE /users/{id}.
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID" }
       responses:
         "200": { description: "User geloescht" }
         "403": { $ref: "#/components/responses/Forbidden" }
@@ -1166,12 +1255,13 @@ paths:
         objekt-pruefung: "wie DELETE /users/{id}; Selbst-Löschung blockiert"
         hinweis: "Alias-Mount, kein eigener Code."
 
-  /admin/users/{id}/jahrgaenge:
+  /api/admin/users/{id}/jahrgaenge:
     get:
+      tags: ["Benutzer & Rollen"]
       summary: Jahrgangs-Zuweisungen eines Users (Alias von GET /users/{id}/jahrgaenge)
       description: Identischer Handler wie GET /users/{id}/jahrgaenge.
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID" }
       responses:
         "200": { description: "Array der Zuweisungen" }
         "403": { $ref: "#/components/responses/Forbidden" }
@@ -1182,10 +1272,11 @@ paths:
         objekt-pruefung: "wie GET /users/{id}/jahrgaenge"
         hinweis: "Alias-Mount, kein eigener Code."
     post:
+      tags: ["Benutzer & Rollen"]
       summary: Jahrgangs-Zuweisungen ersetzen (Alias von POST /users/{id}/jahrgaenge)
       description: Identischer Handler wie POST /users/{id}/jahrgaenge.
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID" }
       responses:
         "200": { description: "Zuweisungen ersetzt, Chat synchronisiert" }
         "400": { description: "Validierung" }
@@ -1197,12 +1288,14 @@ paths:
         objekt-pruefung: "wie POST /users/{id}/jahrgaenge"
         hinweis: "Alias-Mount, kein eigener Code."
 
-  /admin/users/me/jahrgaenge:
+  /api/admin/users/me/jahrgaenge:
     get:
+      tags: ["Benutzer & Rollen"]
       summary: Eigene Jahrgangs-Zuweisungen (Alias von GET /users/me/jahrgaenge)
       description: Identischer Handler wie GET /users/me/jahrgaenge.
       responses:
         "200": { description: "Array der eigenen Zuweisungen (auf aktive Org gescopt)" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
       x-berechtigung:
         rollen: [alle authentifizierten]
         middleware: [verifyTokenRBAC]
@@ -1210,12 +1303,13 @@ paths:
         objekt-pruefung: "Nur eigene Daten"
         hinweis: "Alias-Mount, kein eigener Code. Kein Rollen-Guard — auch Konfis erreichen diesen Pfad und bekommen ihre eigenen (in der Regel leeren) Zuweisungen."
 
-  /admin/users/{id}/reset-password:
+  /api/admin/users/{id}/reset-password:
     put:
+      tags: ["Benutzer & Rollen"]
       summary: Passwort administrativ setzen (Alias von PUT /users/{id}/reset-password)
       description: Identischer Handler wie PUT /users/{id}/reset-password.
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID" }
       requestBody:
         required: true
         content:
@@ -1243,8 +1337,9 @@ paths:
   # und Uptime-Monitoring). Die drei Metrics-Endpunkte verlangen ein Token und
   # zusaetzlich req.user.is_super_admin.
   # ==========================================================================
-  /health:
+  /api/health:
     get:
+      tags: ["System & Monitoring"]
       summary: Liveness-Check (ohne Anmeldung)
       description: >
         Minimaler Endpunkt für Docker-Healthcheck und Traefik. Bewusst ohne
@@ -1260,8 +1355,9 @@ paths:
         objekt-pruefung: "keine"
         hinweis: "Keine Authentifizierung. Gibt keine Daten preis außer der Tatsache, dass der Dienst läuft."
 
-  /status:
+  /api/status:
     get:
+      tags: ["System & Monitoring"]
       summary: Readiness-Check mit Datenbank-Prüfung (ohne Anmeldung)
       description: >
         Prueft die Datenbank mit SELECT 1 und liefert 200 bei gesunder DB,
@@ -1279,8 +1375,9 @@ paths:
           # HINWEIS: Ohne Anmeldung erreichbar und gibt version und commit
           (GIT_SHA) preis. Bewusst so für die Status-Seite / Uptime Kuma.
 
-  /metrics:
+  /api/metrics:
     get:
+      tags: ["System & Monitoring"]
       summary: APM-Kennzahlen aller Replicas (nur super_admin)
       description: >
         Aggregierte Laufzeitdaten: langsamste und meistgenutzte Routen,
@@ -1301,8 +1398,9 @@ paths:
           Betriebskennzahlen. Der Authorization-Header wird an die Peers
           weitergereicht.
 
-  /metrics/local:
+  /api/metrics/local:
     get:
+      tags: ["System & Monitoring"]
       summary: APM-Rohdaten nur dieser Replica (nur super_admin)
       description: >
         Unaggregierter In-Memory-Snapshot der antwortenden Replica. Wird von
@@ -1318,8 +1416,9 @@ paths:
         org-scope: false
         objekt-pruefung: "Inline: req.user.is_super_admin, sonst 403"
 
-  /metrics/history:
+  /api/metrics/history:
     get:
+      tags: ["System & Monitoring"]
       summary: Gespeicherte APM-Historie (nur super_admin)
       description: >
         Liefert die persistierten Snapshots aus apm_snapshots der letzten N

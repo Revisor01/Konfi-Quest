@@ -97,23 +97,53 @@ info:
     kann per Header X-Active-Organization gewechselt werden. Saemtliche
     Abfragen sind auf req.user.organization_id gescopt.
 servers:
-  - url: https://konfi-quest.de/api
+  - url: https://konfi-quest.de
+tags:
+  - name: "Abzeichen"
+    description: "Abzeichen-Verwaltung und die verdienten Abzeichen von Konfis und Teamer:innen."
+  - name: "Benutzer & Rollen"
+    description: "Team-Konten der Leitung: anlegen, ändern, Jahrgangszuweisung, Rollen. /admin/users und /users sind derselbe Router (Alias-Mount)."
+  - name: "Jahrgänge"
+    description: "Jahrgänge anlegen und verwalten, Anwesenheits-Matrix, Konfisprüche des Jahrgangs."
+  - name: "Stammdaten & Einstellungen"
+    description: "Kategorien, Level und Organisations-Einstellungen."
 components:
   securitySchemes:
-    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        JWT im Authorization-Header. Optional Header X-Active-Organization
+        (Multi-Org): schaltet die aktive Organisation um, sofern der User dort
+        Mitglied ist (sonst 403).
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: { type: string }
   responses:
-    Unauthorized: { description: "401 — Kein/ungueltiges/abgelaufenes Token" }
-    Forbidden: { description: "403 — Rolle nicht erlaubt / fremde Org" }
-    NotFound: { description: "404 — Objekt nicht (in dieser Org) gefunden" }
-    ServerError: { description: "500 — Datenbank-/Serverfehler" }
+    Unauthorized:
+      description: Kein/ungueltiges/abgelaufenes Token, inaktiver Account oder inaktive Organisation
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Forbidden:
+      description: Rolle nicht erlaubt oder kein Zugriff auf das Objekt
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    NotFound:
+      description: Objekt nicht gefunden (in der aktiven Organisation)
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    ServerError:
+      description: Datenbank-/Serverfehler
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
 
 paths:
   # ==========================================================================
   # BADGES (backend/routes/badges.js — 6 Routen, Mount /api/admin/badges)
   # Muster: lesen requireTeamer, schreiben requireAdmin.
   # ==========================================================================
-  /admin/badges/criteria-types:
+  /api/admin/badges/criteria-types:
     get:
+      tags: ["Abzeichen"]
       summary: Katalog der verfuegbaren Badge-Kriterientypen (statisch, keine DB)
       description: >
         Liefert das im Code hinterlegte CRITERIA_TYPES-Objekt mit label,
@@ -135,8 +165,9 @@ paths:
         objekt-pruefung: "keine (statische Konstante)"
         hinweis: "Die Rolle super_admin steht nicht in der requireTeamer-Whitelist und erhält 403"
 
-  /admin/badges:
+  /api/admin/badges:
     get:
+      tags: ["Abzeichen"]
       summary: Alle Abzeichen der eigenen Organisation mit Vergabe-Zähler
       parameters:
         - name: target_role
@@ -161,6 +192,7 @@ paths:
         objekt-pruefung: "WHERE cb.organization_id = req.user.organization_id"
         hinweis: "earned_count zählt user_badges OHNE Org-Filter — bei systemweit eindeutigen badge_id ist das korrekt, hängt aber an dieser Annahme"
     post:
+      tags: ["Abzeichen"]
       summary: Neues Abzeichen anlegen
       requestBody:
         required: true
@@ -192,11 +224,12 @@ paths:
         objekt-pruefung: "organization_id und created_by werden aus dem Token gesetzt, nicht aus dem Body"
         hinweis: "criteria_type wird NICHT gegen CRITERIA_TYPES validiert — ein Tippfehler legt ein Abzeichen an, das nie vergeben wird"
 
-  /admin/badges/{id}:
+  /api/admin/badges/{id}:
     get:
+      tags: ["Abzeichen"]
       summary: Einzelnes Abzeichen der eigenen Organisation
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Abzeichens" }
       responses:
         "200": { description: "custom_badges.* + created_by_name + earned_count" }
         "401": { $ref: "#/components/responses/Unauthorized" }
@@ -208,9 +241,10 @@ paths:
         org-scope: true
         objekt-pruefung: "WHERE cb.id = :id AND cb.organization_id = req.user.organization_id — fremde Org liefert 404, nicht 403"
     put:
+      tags: ["Abzeichen"]
       summary: Abzeichen bearbeiten
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Abzeichens" }
       requestBody:
         required: true
         content:
@@ -246,9 +280,10 @@ paths:
           criteria_value wird hier (anders als beim POST) nicht auf >= 0
           geprüft.
     delete:
+      tags: ["Abzeichen"]
       summary: Abzeichen löschen (inklusive aller bereits vergebenen Exemplare)
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Abzeichens" }
       responses:
         "200": { description: "Geloescht; Live-Update an Org-Admins UND Org-Konfis" }
         "401": { $ref: "#/components/responses/Unauthorized" }
@@ -270,8 +305,9 @@ paths:
   # LEVELS (backend/routes/levels.js — 5 Routen, Mount /api/levels)
   # Abweichendes Muster: KEINE Rollen-Middleware, Inline-Checks im Handler.
   # ==========================================================================
-  /levels:
+  /api/levels:
     get:
+      tags: ["Stammdaten & Einstellungen"]
       summary: Alle Level der eigenen Organisation (aufsteigend nach Punktgrenze)
       responses:
         "200": { description: "Array levels.* (inkl. inaktiver Level), sortiert nach points_required ASC" }
@@ -284,6 +320,7 @@ paths:
         objekt-pruefung: "WHERE organization_id = req.user.organization_id"
         hinweis: "Bewusst offen für Konfis — die Level-Leiste ist Teil des Konfi-Dashboards. Anders als GET /admin/badges liefert diese Route auch is_active = false"
     post:
+      tags: ["Stammdaten & Einstellungen"]
       summary: Neues Level anlegen
       requestBody:
         required: true
@@ -313,11 +350,12 @@ paths:
         objekt-pruefung: "Inline: ['org_admin','admin'].includes(req.user.role_name); organization_id und created_by aus dem Token"
         hinweis: "Der Inline-Check prüft strikt role_name — ein org_admin mit is_super_admin-Flag kommt durch (role_name bleibt org_admin), die Rolle super_admin selbst nicht"
 
-  /levels/{id}:
+  /api/levels/{id}:
     put:
+      tags: ["Stammdaten & Einstellungen"]
       summary: Level bearbeiten
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Levels" }
       requestBody:
         required: true
         content:
@@ -348,9 +386,10 @@ paths:
         objekt-pruefung: "Inline-Rollen-Check; Existenz-Query und UPDATE beide mit organization_id"
         hinweis: "icon und color werden ohne Fallback geschrieben — fehlen sie im Body, werden sie auf NULL gesetzt (anders als beim POST, der Defaults setzt)"
     delete:
+      tags: ["Stammdaten & Einstellungen"]
       summary: Level löschen (nur wenn kein Konfi es aktuell trägt)
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Levels" }
       responses:
         "200": { description: "Geloescht; Live-Update an Org-Admins" }
         "401": { $ref: "#/components/responses/Unauthorized" }
@@ -366,8 +405,9 @@ paths:
           Verwendungs-Prüfung zählt konfi_profiles.current_level_id über
           users.organization_id (org-gescopt, deleted_at IS NULL).
 
-  /levels/konfi/{userId}:
+  /api/levels/konfi/{userId}:
     get:
+      tags: ["Stammdaten & Einstellungen"]
       summary: Level-Fortschritt eines Konfis (aktuelles Level, naechstes Level, Prozent)
       description: >
         Berechnet total_points aus gottesdienst_points und gemeinde_points,
@@ -375,7 +415,7 @@ paths:
         (gottesdienst_enabled / gemeinde_enabled) mitzaehlen. Liefert
         zusaetzlich all_levels (nur is_active = true).
       parameters:
-        - { name: userId, in: path, required: true, schema: { type: integer } }
+        - { name: userId, in: path, required: true, schema: { type: integer }, description: "User-ID des Konfis" }
       responses:
         "200": { description: "{ konfi_id, display_name, total_points, current_level, next_level, progress_percentage, points_to_next_level, all_levels }" }
         "401": { $ref: "#/components/responses/Unauthorized" }
@@ -395,8 +435,9 @@ paths:
   # CATEGORIES (backend/routes/categories.js — 4 Routen,
   # Mount /api/admin/categories)
   # ==========================================================================
-  /admin/categories:
+  /api/admin/categories:
     get:
+      tags: ["Stammdaten & Einstellungen"]
       summary: Alle Kategorien der eigenen Organisation (alphabetisch)
       responses:
         "200": { description: "Array categories.* (id, name, description, type, organization_id)" }
@@ -409,6 +450,7 @@ paths:
         org-scope: true
         objekt-pruefung: "WHERE organization_id = req.user.organization_id"
     post:
+      tags: ["Stammdaten & Einstellungen"]
       summary: Neue Kategorie anlegen
       requestBody:
         required: true
@@ -433,11 +475,12 @@ paths:
         org-scope: true
         objekt-pruefung: "organization_id aus dem Token"
 
-  /admin/categories/{id}:
+  /api/admin/categories/{id}:
     put:
+      tags: ["Stammdaten & Einstellungen"]
       summary: Kategorie bearbeiten
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Kategorie" }
       requestBody:
         required: true
         content:
@@ -463,9 +506,10 @@ paths:
         objekt-pruefung: "WHERE id = :id AND organization_id = req.user.organization_id"
         hinweis: "type ist im Body optional, wird aber ohne Fallback geschrieben — fehlt es, wird die Spalte auf NULL gesetzt"
     delete:
+      tags: ["Stammdaten & Einstellungen"]
       summary: Kategorie löschen (nur wenn keiner Aktivität und keinem Event zugeordnet)
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Kategorie" }
       responses:
         "200": { description: "Geloescht; Live-Update an Org-Admins" }
         "401": { $ref: "#/components/responses/Unauthorized" }
@@ -483,8 +527,9 @@ paths:
   # JAHRGAENGE (backend/routes/jahrgaenge.js — 7 Routen,
   # Mount /api/admin/jahrgaenge)
   # ==========================================================================
-  /admin/jahrgaenge:
+  /api/admin/jahrgaenge:
     get:
+      tags: ["Jahrgänge"]
       summary: Alle Jahrgänge der eigenen Organisation mit Konfi- und Punkte-Zaehlern
       responses:
         "200": { description: "Array jahrgaenge.* + konfi_count, gottesdienst_points_total, gemeinde_points_total; sortiert nach name DESC" }
@@ -503,6 +548,7 @@ paths:
           Punkte-Summen zählen über konfi_profiles.jahrgang_id ohne
           eigenen Org-Filter — bei org-eindeutigen jahrgang_id korrekt.
     post:
+      tags: ["Jahrgänge"]
       summary: Neuen Jahrgang anlegen (legt zugleich den Jahrgangs-Chat an)
       requestBody:
         required: true
@@ -531,11 +577,12 @@ paths:
         objekt-pruefung: "organization_id aus dem Token; syncJahrgangChat legt den Chat an und synchronisiert Org-Admins, zugewiesene Admins/Teamer und Konfis"
         hinweis: "Ein Fehler beim Chat-Anlegen wird geloggt, laesst die Jahrgangs-Anlage aber bewusst nicht scheitern — der Jahrgang existiert dann ohne Chat"
 
-  /admin/jahrgaenge/{id}:
+  /api/admin/jahrgaenge/{id}:
     put:
+      tags: ["Jahrgänge"]
       summary: Jahrgang bearbeiten (mit Warnungen bei Deaktivierung belegter Punkt-Kategorien)
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Jahrgangs" }
       requestBody:
         required: true
         content:
@@ -570,6 +617,7 @@ paths:
         objekt-pruefung: "Vorab-Lookup und UPDATE beide mit organization_id"
         hinweis: "Das Konfirmationsdatum wird seit Phase 119 nicht mehr beschrieben; der Termin hängt am gebuchten is_konfirmation-Event des einzelnen Konfis"
     delete:
+      tags: ["Jahrgänge"]
       summary: Jahrgang löschen (blockiert bei aktiven Konfis, Chat-Nachrichten nur per force)
       description: >
         Aktive Konfis (Rolle konfi) blockieren die Löschung immer.
@@ -581,7 +629,7 @@ paths:
         Nachrichten, Umfragen, Lesestatus und die zugehörigen Dateien
         entfernt.
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Jahrgangs" }
         - name: force
           in: query
           required: false
@@ -610,8 +658,9 @@ paths:
           bleibt ein halb abgeraeumter Chat zurück. Datei-Loeschfehler
           werden nur geloggt.
 
-  /admin/jahrgaenge/{id}/attendance-matrix:
+  /api/admin/jahrgaenge/{id}/attendance-matrix:
     get:
+      tags: ["Jahrgänge"]
       summary: Anwesenheitsmatrix eines Jahrgangs (Pflicht-Events x Konfis)
       description: >
         Liefert alle aktiven Konfis des Jahrgangs, alle nicht abgesagten
@@ -619,7 +668,7 @@ paths:
         Buchungen (status, attendance_status) als drei getrennte Arrays; die
         Matrix baut das Frontend daraus zusammen.
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Jahrgangs" }
       responses:
         "200": { description: "{ jahrgang: { id, name }, konfis[], events[], bookings[] }" }
         "401": { $ref: "#/components/responses/Unauthorized" }
@@ -632,8 +681,9 @@ paths:
         objekt-pruefung: "Jahrgang, Konfis und Events werden alle drei mit organization_id geprüft; die Buchungs-Query ist über die zuvor org-gefilterten Event- und User-IDs eingegrenzt"
         hinweis: "teamer erhält hier 403 — die Anwesenheitsuebersicht ist bewusst auf org_admin und admin beschraenkt, obwohl GET /admin/jahrgaenge für teamer offen ist"
 
-  /admin/jahrgaenge/{id}/sprueche:
+  /api/admin/jahrgaenge/{id}/sprueche:
     get:
+      tags: ["Jahrgänge"]
       summary: Konfisprueche aller Konfis eines Jahrgangs (Listen-Wahl oder Freitext)
       description: >
         Loest je Konfi den gewaehlten Konfispruch auf: bei Listen-Wahl wird
@@ -644,7 +694,7 @@ paths:
         dem individuell gebuchten is_konfirmation-Event, nicht aus dem
         Jahrgang.
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Jahrgangs" }
       responses:
         "200": { description: "Array { user_id, display_name, konfspruch, konfirmation_date }; konfspruch kann null sein" }
         "401": { $ref: "#/components/responses/Unauthorized" }
@@ -663,11 +713,12 @@ paths:
           Bibeltexte, keine personenbezogenen Daten.
         hinweis: "teamer erhält 403 — Konfisprueche sind persoenliche Angaben und bleiben auf org_admin/admin beschraenkt"
 
-  /admin/jahrgaenge/{id}/matrix-email:
+  /api/admin/jahrgaenge/{id}/matrix-email:
     post:
+      tags: ["Jahrgänge"]
       summary: Anwesenheits- oder Spruchliste per E-Mail an die eigene Adresse senden
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Jahrgangs" }
       requestBody:
         required: true
         content:
@@ -705,8 +756,9 @@ paths:
   # ==========================================================================
   # SETTINGS (backend/routes/settings.js — 2 Routen, Mount /api/settings)
   # ==========================================================================
-  /settings:
+  /api/settings:
     get:
+      tags: ["Stammdaten & Einstellungen"]
       summary: Einstellungen der eigenen Organisation (typisiert aufbereitet)
       description: >
         Liefert alle settings-Zeilen der Organisation als flaches Objekt.
@@ -726,6 +778,7 @@ paths:
         objekt-pruefung: "WHERE organization_id = req.user.organization_id — auch super_admin wird auf die aktive Org gescopt, sonst wuerden Keys mehrerer Orgs kollidieren"
         hinweis: "S6: bewusst für alle Rollen offen, weil Konfi- und Teamer-Dashboards ihre Widget-Schalter daraus lesen. Inhalt sind Anzeige-Einstellungen, keine personenbezogenen Daten"
     put:
+      tags: ["Stammdaten & Einstellungen"]
       summary: Einstellungen der eigenen Organisation setzen (Teil-Update)
       description: >
         Nur die im Body vorhandenen Felder werden per Upsert geschrieben
@@ -777,8 +830,9 @@ paths:
   # ROLES (backend/routes/roles.js — 3 Routen, Mount /api/roles)
   # Read-only: die 5 Systemrollen sind hardcoded, Permissions statisch.
   # ==========================================================================
-  /roles:
+  /api/roles:
     get:
+      tags: ["Benutzer & Rollen"]
       summary: Alle Rollen der eigenen Organisation mit Nutzer-Zähler
       responses:
         "200": { description: "Array (id, name, display_name, description, is_system_role, is_active, created_at, user_count), sortiert org_admin > admin > teamer > konfi" }
@@ -801,11 +855,12 @@ paths:
     # Systemrollen, die beim Anlegen einer Organisation erzeugt werden
     # (organizations.js POST /); Permissions sind statisch pro Rollenname.
 
-  /roles/{id}:
+  /api/roles/{id}:
     get:
+      tags: ["Benutzer & Rollen"]
       summary: Einzelne Rolle mit statischer Berechtigungsliste
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 }, description: "ID der Rolle" }
       responses:
         "200": { description: "Rolle + permissions[] ({ name, description }) aus der hardcodeten getRolePermissions-Tabelle" }
         "400": { description: "Ungueltige ID" }
@@ -824,8 +879,9 @@ paths:
           sie an den Routen selbst per requireRole. Die Liste kann daher von
           der tatsaechlichen Durchsetzung abweichen.
 
-  /roles/list/assignable:
+  /api/roles/list/assignable:
     get:
+      tags: ["Benutzer & Rollen"]
       summary: Rollen, die die aufrufende Person zuweisen darf
       description: >
         Whitelist nach eigener Rolle: super_admin (oder is_super_admin-Flag)

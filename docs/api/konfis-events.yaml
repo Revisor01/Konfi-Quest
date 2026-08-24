@@ -143,6 +143,19 @@ info:
     Route in der Erweiterung x-berechtigung dokumentiert.
 servers:
   - url: https://konfi-quest.de
+tags:
+  - name: "Abzeichen"
+    description: "Abzeichen-Verwaltung und die verdienten Abzeichen von Konfis und Teamer:innen."
+  - name: "Aktivitäten & Anträge"
+    description: "Aktivitäten-Katalog, Punkte-Anträge der Konfis und ihre Bearbeitung durch die Leitung."
+  - name: "Konfi-Profil & Dashboard"
+    description: "Eigene Daten der Konfis: Profil, Dashboard, Konfispruch, Tageslosung."
+  - name: "Konfis (Verwaltung)"
+    description: "Konfi-Konten aus Sicht der Leitung: anlegen, Punkte, Passwort, Beförderung zu Teamer:in."
+  - name: "Termine (Konfis)"
+    description: "Termine aus Konfi-Sicht: ansehen, anmelden, abmelden, Warteliste, Zeitfenster."
+  - name: "Termine (Verwaltung)"
+    description: "Termine und Serien anlegen, Teilnahme und Anwesenheit pflegen, QR-Check-in, Absagen."
 security:
   - bearerAuth: []
 components:
@@ -157,6 +170,7 @@ components:
         Mitglied ist (sonst 403).
   parameters:
     pathId:
+      description: "Numerische ID des Objekts im Pfad (welches Objekt, sagt die jeweilige Route)"
       name: id
       in: path
       required: true
@@ -192,6 +206,7 @@ paths:
   # ===================================================================
   /api/konfi/dashboard:
     get:
+      tags: ["Konfi-Profil & Dashboard"]
       summary: Konfi-Dashboard (eigene Punkte, Level, Ranking, Badges, Termine)
       description: >
         Liefert das komplette Dashboard des eingeloggten Konfis: Stammdaten,
@@ -241,6 +256,7 @@ paths:
 
   /api/konfi/profile:
     get:
+      tags: ["Konfi-Profil & Dashboard"]
       summary: Eigenes Konfi-Profil
       description: >
         Profil des eingeloggten Konfis mit Punkten (inkl. Bonus-Summe),
@@ -282,6 +298,7 @@ paths:
         "404": { $ref: '#/components/responses/NotFound' }
         "500": { $ref: '#/components/responses/ServerError' }
     patch:
+      tags: ["Konfi-Profil & Dashboard"]
       summary: Eigenen Konfispruch setzen (Listen-Wahl oder Freitext)
       description: >
         Setzt den Konfispruch: entweder konfspruch_id + translation
@@ -315,6 +332,7 @@ paths:
 
   /api/konfi/points-history:
     get:
+      tags: ["Aktivitäten & Anträge"]
       summary: Eigene Punkte-Historie (Aktivitäten, Bonus, Events)
       x-berechtigung:
         rollen: [konfi]
@@ -330,6 +348,7 @@ paths:
 
   /api/konfi/requests:
     get:
+      tags: ["Aktivitäten & Anträge"]
       summary: Eigene Aktivitaets-Anträge auflisten
       x-berechtigung:
         rollen: [konfi]
@@ -342,6 +361,7 @@ paths:
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
     post:
+      tags: ["Aktivitäten & Anträge"]
       summary: Neuen Aktivitaets-Antrag einreichen
       description: >
         Legt einen Antrag (status pending) an. Idempotent über optionale
@@ -376,6 +396,7 @@ paths:
 
   /api/konfi/requests/{id}:
     delete:
+      tags: ["Aktivitäten & Anträge"]
       summary: Eigenen offenen Antrag löschen
       description: Nur Anträge mit status pending; zugehoeriges Nachweisfoto wird mitgeloescht.
       x-berechtigung:
@@ -394,11 +415,21 @@ paths:
 
   /api/konfi/upload-photo:
     post:
+      tags: ["Aktivitäten & Anträge"]
       summary: Nachweisfoto für Antrag hochladen (verschlüsselt at-rest)
       description: >
         multipart/form-data, Feld "photo". Magic-Bytes-Prüfung (nur echte
         Bilder, sonst 415), AES-256-GCM-Verschluesselung, zufaelliger
         64-Hex-Dateiname wird zurueckgegeben (für POST /api/konfi/requests).
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [photo]
+              properties:
+                photo: { type: string, format: binary, description: "Bilddatei, max. 5 MB" }
       x-berechtigung:
         rollen: [konfi, teamer]
         middleware: [verifyTokenRBAC, "multer requestUpload.single('photo')"]
@@ -415,6 +446,7 @@ paths:
 
   /api/konfi/activity-requests/{id}/photo:
     get:
+      tags: ["Aktivitäten & Anträge"]
       summary: Nachweisfoto eines Antrags abrufen (Eigentuemer/Admin)
       description: Liefert das entschluesselte Bild (image/jpeg).
       x-berechtigung:
@@ -436,6 +468,7 @@ paths:
 
   /api/konfi/activities:
     get:
+      tags: ["Aktivitäten & Anträge"]
       summary: Beantragbare Aktivitäten auflisten
       description: >
         Aktivitäten der Org mit target_role konfi (oder NULL), gefiltert auf
@@ -453,6 +486,7 @@ paths:
 
   /api/konfi/badges:
     get:
+      tags: ["Abzeichen"]
       summary: Eigene Badges mit Fortschritt
       description: Gemeinsame Berechnung mit Admin-Sicht (utils/konfiBadgeProgress.js).
       x-berechtigung:
@@ -468,6 +502,7 @@ paths:
 
   /api/konfi/badges/stats:
     get:
+      tags: ["Abzeichen"]
       summary: Eigene Badge-Statistik (total/earned)
       x-berechtigung:
         rollen: [konfi]
@@ -482,6 +517,7 @@ paths:
 
   /api/konfi/badges/mark-seen:
     post:
+      tags: ["Abzeichen"]
       summary: Eigene Badges als gesehen markieren
       x-berechtigung:
         rollen: [konfi]
@@ -496,6 +532,7 @@ paths:
 
   /api/konfi/events:
     get:
+      tags: ["Termine (Konfis)"]
       summary: Events des eigenen Jahrgangs (Konfi-Sicht)
       description: >
         Events, die dem Jahrgang des Konfis zugewiesen sind, ohne teamer_only;
@@ -523,6 +560,7 @@ paths:
 
   /api/konfi/events/{id}/status:
     get:
+      tags: ["Termine (Konfis)"]
       summary: Eigener Anmeldestatus für ein Event
       x-berechtigung:
         rollen: [konfi]
@@ -539,6 +577,7 @@ paths:
 
   /api/konfi/events/{id}/participants:
     get:
+      tags: ["Termine (Konfis)"]
       summary: Anonymisierte Teilnehmerliste eines Events (Konfi-Sicht)
       description: >
         Bestaetigte Teilnehmer als "Vorname N." (anonymisiert), Teamer werden
@@ -558,6 +597,7 @@ paths:
 
   /api/konfi/events/{id}/timeslots:
     get:
+      tags: ["Termine (Konfis)"]
       summary: Zeitslots eines Events (Konfi-Sicht)
       x-berechtigung:
         rollen: [konfi]
@@ -574,6 +614,7 @@ paths:
 
   /api/konfi/events/{id}/register:
     post:
+      tags: ["Termine (Konfis)"]
       summary: Für Event anmelden (primaere Konfi-Buchungsroute)
       description: >
         Transaktional (FOR UPDATE). Prueft Doppelbuchung (409),
@@ -606,6 +647,7 @@ paths:
         "409": { description: Bereits angemeldet oder bereits ein Konfirmationstermin gebucht }
         "500": { $ref: '#/components/responses/ServerError' }
     delete:
+      tags: ["Termine (Konfis)"]
       summary: Von Event abmelden (bis 2 Tage vorher)
       description: >
         Loescht die eigene Buchung (Pflicht-Events nur per Opt-out, 400),
@@ -638,6 +680,7 @@ paths:
 
   /api/konfi/events/{id}/opt-out:
     post:
+      tags: ["Termine (Konfis)"]
       summary: Von Pflicht-Event abmelden (Opt-out mit Begruendung)
       description: Status confirmed -> opted_out. Begruendung min. 5 Zeichen. Nur zukuenftige Pflicht-Events.
       x-berechtigung:
@@ -665,6 +708,7 @@ paths:
 
   /api/konfi/events/{id}/opt-in:
     post:
+      tags: ["Termine (Konfis)"]
       summary: Opt-out bei Pflicht-Event rueckgaengig machen
       description: Status opted_out -> confirmed (Begruendung bleibt gespeichert).
       x-berechtigung:
@@ -683,6 +727,7 @@ paths:
 
   /api/konfi/tageslosung:
     get:
+      tags: ["Konfi-Profil & Dashboard"]
       summary: Tageslosung in der eigenen Bibeluebersetzung
       description: Mit DB-Cache und mehrstufigem Fallback (letzte gecachte Losung, statischer Vers).
       x-berechtigung:
@@ -697,6 +742,7 @@ paths:
 
   /api/konfi/bible-translation:
     put:
+      tags: ["Konfi-Profil & Dashboard"]
       summary: Bibeluebersetzung für Tageslosung setzen
       x-berechtigung:
         rollen: [konfi]
@@ -721,6 +767,7 @@ paths:
 
   /api/konfi/konfsprueche:
     get:
+      tags: ["Konfi-Profil & Dashboard"]
       summary: Kuratierte Konfsprueche auflisten (org-gefiltert)
       description: Aktive Sprueche (global oder org-eigen) mit allen 4 Uebersetzungen (fehlende als leerer String).
       x-berechtigung:
@@ -741,6 +788,7 @@ paths:
   # ===================================================================
   /api/events:
     get:
+      tags: ["Termine (Verwaltung)"]
       summary: Alle Events der Organisation (rollenabhaengig gefiltert)
       description: >
         Liefert Events der aktiven Org mit Zaehlern (Konfi- und Teamer-Kontingent
@@ -770,11 +818,13 @@ paths:
           in: query
           required: false
           schema: { type: string, enum: ["true"] }
+          description: "true: gesamte Termin-Historie statt nur letztes Jahr plus Zukunft"
       responses:
         "200": { description: "Array von Events (e.* inkl. qr_token, Zaehler, categories[], jahrgaenge[], registration_status, is_registered, booking_status, attendance_status, material_count, pending_bookings_count)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "500": { $ref: '#/components/responses/ServerError' }
     post:
+      tags: ["Termine (Verwaltung)"]
       summary: Event erstellen
       description: >
         Legt ein Event an inkl. Kategorien, Jahrgängen und optionalen
@@ -834,6 +884,7 @@ paths:
 
   /api/events/cancelled:
     get:
+      tags: ["Termine (Verwaltung)"]
       summary: Abgesagte Events auflisten (Leitungssicht)
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
@@ -848,6 +899,7 @@ paths:
 
   /api/events/qr-checkin:
     post:
+      tags: ["Termine (Verwaltung)"]
       summary: Selbst-Check-in per QR-Token (vergibt Event-Punkte)
       description: >
         Der eingeloggte User checkt sich mit dem QR-Token des Events ein.
@@ -881,6 +933,7 @@ paths:
 
   /api/events/{id}/generate-qr:
     post:
+      tags: ["Termine (Verwaltung)"]
       summary: QR-Token für Event erzeugen/abrufen
       description: Gibt vorhandenen qr_token zurück oder erzeugt einen neuen (HS256, kein Ablauf - Zeitfenster läuft über event_date).
       x-berechtigung:
@@ -898,6 +951,7 @@ paths:
 
   /api/events/{id}/attendance-count:
     get:
+      tags: ["Termine (Verwaltung)"]
       summary: Live-Zähler eingecheckter Teilnehmer
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
@@ -913,6 +967,7 @@ paths:
 
   /api/events/{id}/timeslots:
     get:
+      tags: ["Termine (Verwaltung)"]
       summary: Zeitslots eines Events (alle Rollen)
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
@@ -928,6 +983,7 @@ paths:
 
   /api/events/{id}:
     get:
+      tags: ["Termine (Verwaltung)"]
       summary: Event-Details mit Teilnehmern (rollenabhaengig reduziert)
       description: >
         Volle Event-Details inkl. Timeslots, Serien-Events, Jahrgängen,
@@ -951,6 +1007,7 @@ paths:
         "404": { $ref: '#/components/responses/NotFound' }
         "500": { $ref: '#/components/responses/ServerError' }
     put:
+      tags: ["Termine (Verwaltung)"]
       summary: Event aktualisieren (inkl. Nachrueck-Logik)
       description: >
         Aktualisiert alle Event-Felder, Kategorien, Jahrgänge und Timeslots
@@ -981,6 +1038,7 @@ paths:
         "404": { $ref: '#/components/responses/NotFound' }
         "500": { $ref: '#/components/responses/ServerError' }
     delete:
+      tags: ["Termine (Verwaltung)"]
       summary: Event löschen (mit force-Bestaetigung)
       description: >
         Loescht Event samt Buchungen, Timeslots, Kategorien, Jahrgangs-
@@ -999,6 +1057,7 @@ paths:
           in: query
           required: false
           schema: { type: string, enum: ["true"] }
+          description: "true: nicht abgesagten Termin trotz Anmeldungen löschen (sonst 409 mit Anzahl)"
       responses:
         "200": { description: Geloescht }
         "401": { $ref: '#/components/responses/Unauthorized' }
@@ -1009,6 +1068,7 @@ paths:
 
   /api/events/{id}/book:
     post:
+      tags: ["Termine (Verwaltung)"]
       summary: Event selbst buchen (Konfi- oder Teamer-Kontingent)
       description: >
         Aeltere Buchungsroute (Admin-Frontend/Teamer). Konfi-Pfad: wie
@@ -1038,6 +1098,7 @@ paths:
         "409": { description: Bereits gebucht oder Konfirmations-Sperre }
         "500": { $ref: '#/components/responses/ServerError' }
     delete:
+      tags: ["Termine (Verwaltung)"]
       summary: Eigene Buchung stornieren
       description: >
         Loescht die eigene Buchung transaktional, entfernt den User aus dem
@@ -1060,6 +1121,7 @@ paths:
 
   /api/events/{id}/participants:
     post:
+      tags: ["Termine (Verwaltung)"]
       summary: Teilnehmer manuell hinzufuegen (Leitung)
       description: >
         Fuegt einen User der eigenen Org zum Event hinzu. status='auto'
@@ -1093,6 +1155,7 @@ paths:
 
   /api/events/{id}/bookings/{bookingId}:
     delete:
+      tags: ["Termine (Verwaltung)"]
       summary: Buchung eines Teilnehmers entfernen (Leitung)
       description: >
         Loescht eine fremde Buchung; war der Konfi als anwesend verbucht,
@@ -1111,6 +1174,7 @@ paths:
           in: path
           required: true
           schema: { type: integer }
+          description: "ID des Buchungs-Eintrags (event_bookings.id)"
       responses:
         "200": { description: Teilnehmer entfernt }
         "401": { $ref: '#/components/responses/Unauthorized' }
@@ -1120,6 +1184,7 @@ paths:
 
   /api/events/user/bookings:
     get:
+      tags: ["Termine (Verwaltung)"]
       summary: Eigene Buchungen auflisten (Konfi/Teamer)
       x-berechtigung:
         rollen: [konfi, teamer]
@@ -1134,6 +1199,7 @@ paths:
 
   /api/events/series:
     post:
+      tags: ["Termine (Verwaltung)"]
       summary: Event-Serie erstellen (2-26 Termine, max 12 Monate)
       description: >
         Erzeugt eine Serie ("Name #n") mit Intervall day | week | 2weeks |
@@ -1164,6 +1230,7 @@ paths:
 
   /api/events/{id}/participants/{participantId}/status:
     put:
+      tags: ["Termine (Verwaltung)"]
       summary: Teilnehmer zwischen bestaetigt und Warteliste verschieben
       description: >
         status confirmed <-> waitlist. Degradierung auf waitlist löscht
@@ -1181,6 +1248,7 @@ paths:
           in: path
           required: true
           schema: { type: integer, description: "ID der Buchung (event_bookings.id)" }
+          description: "ID des Buchungs-Eintrags (event_bookings.id), nicht die User-ID"
       requestBody:
         required: true
         content:
@@ -1200,6 +1268,7 @@ paths:
 
   /api/events/{id}/participants/attendance-all:
     put:
+      tags: ["Termine (Verwaltung)"]
       summary: Alle unverbuchten Angemeldeten als anwesend verbuchen (Bulk)
       description: >
         Setzt für alle bestaetigten Konfis ohne attendance_status 'present'
@@ -1222,6 +1291,7 @@ paths:
 
   /api/events/{id}/participants/{participantId}/attendance:
     put:
+      tags: ["Termine (Verwaltung)"]
       summary: Anwesenheit eines Teilnehmers setzen (vergibt/entzieht Punkte)
       description: >
         attendance_status present | absent. present: Konfis erhalten einmalig
@@ -1240,6 +1310,7 @@ paths:
           in: path
           required: true
           schema: { type: integer, description: "ID der Buchung (event_bookings.id)" }
+          description: "ID des Buchungs-Eintrags (event_bookings.id), nicht die User-ID"
       requestBody:
         required: true
         content:
@@ -1259,6 +1330,7 @@ paths:
 
   /api/events/{id}/chat:
     post:
+      tags: ["Termine (Verwaltung)"]
       summary: Gruppenchat für Event erstellen
       description: >
         Legt den Event-Chat an und fuegt Ersteller plus alle Gebuchten hinzu
@@ -1282,6 +1354,7 @@ paths:
 
   /api/events/{id}/cancel:
     put:
+      tags: ["Termine (Verwaltung)"]
       summary: Event absagen (mit Teilnehmer-Benachrichtigung)
       description: Setzt cancelled=true + cancelled_at und pusht an alle Gebuchten (confirmed + waitlist).
       x-berechtigung:
@@ -1316,6 +1389,7 @@ paths:
   # ===================================================================
   /api/admin/activities:
     get:
+      tags: ["Aktivitäten & Anträge"]
       summary: Masterliste aller Aktivitäten der eigenen Organisation
       description: >
         Liefert alle Aktivitäten der aktiven Organisation samt zugeordneten
@@ -1334,12 +1408,14 @@ paths:
           in: query
           required: false
           schema: { type: string, enum: [konfi, teamer] }
+          description: "Filter nach Zielgruppe: konfi oder teamer"
       responses:
         "200": { description: "Array von Aktivitaeten (id, name, points, type, target_role, categories)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
     post:
+      tags: ["Aktivitäten & Anträge"]
       summary: Neue Aktivität anlegen
       description: >
         Legt eine Aktivität in der aktiven Organisation an. Bei
@@ -1371,6 +1447,7 @@ paths:
 
   /api/admin/activities/{id}:
     put:
+      tags: ["Aktivitäten & Anträge"]
       summary: Aktivität ändern
       description: >
         Aendert Name, Punkte, Typ, Zielrolle und Kategorien einer Aktivität
@@ -1401,6 +1478,7 @@ paths:
         "404": { $ref: '#/components/responses/NotFound' }
         "500": { $ref: '#/components/responses/ServerError' }
     delete:
+      tags: ["Aktivitäten & Anträge"]
       summary: Aktivität löschen (nur ohne Zuordnungen)
       description: >
         Loescht eine Aktivität. Existieren bereits Zuordnungen zu Konfis
@@ -1422,6 +1500,7 @@ paths:
 
   /api/admin/activities/requests:
     get:
+      tags: ["Aktivitäten & Anträge"]
       summary: Alle Anträge der Organisation
       description: >
         Liefert alle Aktivitaetsantraege der aktiven Organisation samt
@@ -1443,6 +1522,7 @@ paths:
 
   /api/admin/activities/requests/{id}:
     put:
+      tags: ["Aktivitäten & Anträge"]
       summary: Antrag genehmigen oder ablehnen
       description: >
         Setzt den Status eines ausstehenden Antrags auf approved oder
@@ -1472,6 +1552,7 @@ paths:
         "404": { $ref: '#/components/responses/NotFound' }
         "500": { $ref: '#/components/responses/ServerError' }
     delete:
+      tags: ["Aktivitäten & Anträge"]
       summary: Abgelehnten Antrag endgueltig löschen
       description: >
         Entfernt einen abgelehnten Antrag samt Nachweisfoto. Offene Anträge
@@ -1493,6 +1574,7 @@ paths:
 
   /api/admin/activities/requests/{id}/reset:
     put:
+      tags: ["Aktivitäten & Anträge"]
       summary: Entschiedenen Antrag auf ausstehend zuruecksetzen
       description: >
         Setzt einen genehmigten oder abgelehnten Antrag zurück auf pending.
@@ -1514,6 +1596,7 @@ paths:
 
   /api/admin/activities/requests/{id}/photo:
     get:
+      tags: ["Aktivitäten & Anträge"]
       summary: Nachweisfoto eines Antrags abrufen
       description: >
         Liefert das (verschlüsselt gespeicherte) Nachweisfoto entschluesselt
@@ -1538,6 +1621,7 @@ paths:
         "404": { description: Antrag, Foto-Eintrag oder Datei nicht gefunden }
         "500": { description: Foto konnte nicht entschluesselt werden }
     delete:
+      tags: ["Aktivitäten & Anträge"]
       summary: Nachweisfoto eines Antrags löschen
       description: >
         Setzt photo_filename auf NULL und entfernt die Datei. Der Antrag
@@ -1557,6 +1641,7 @@ paths:
 
   /api/admin/activities/assign-activity:
     post:
+      tags: ["Aktivitäten & Anträge"]
       summary: Aktivität direkt einem Konfi zuweisen
       description: >
         Vergibt eine Aktivität ohne Antragsweg. Punkte werden gutgeschrieben
@@ -1602,6 +1687,7 @@ paths:
   # ===================================================================
   /api/admin/konfis:
     get:
+      tags: ["Konfis (Verwaltung)"]
       summary: Liste der Konfis (für Teamer:innen auf eigene Jahrgänge gefiltert)
       description: >
         Liefert die Konfis der aktiven Organisation mit Punkten, Jahrgang und
@@ -1619,6 +1705,7 @@ paths:
         "403": { $ref: '#/components/responses/Forbidden' }
         "500": { $ref: '#/components/responses/ServerError' }
     post:
+      tags: ["Konfis (Verwaltung)"]
       summary: Neuen Konfi anlegen
       description: >
         Legt User + konfi_profiles an, erzeugt Username und Startpasswort,
@@ -1654,6 +1741,7 @@ paths:
 
   /api/admin/konfis/teamer:
     get:
+      tags: ["Konfis (Verwaltung)"]
       summary: Liste der Teamer:innen der Organisation
       description: >
         Liefert alle User mit Rolle teamer der aktiven Organisation samt
@@ -1675,6 +1763,7 @@ paths:
 
   /api/admin/konfis/{id}:
     get:
+      tags: ["Konfis (Verwaltung)"]
       summary: Einzelner Konfi oder Teamer mit voller Historie
       description: >
         Detailansicht: Stammdaten, Punkte, Aktivitäten, Bonuspunkte, Events,
@@ -1699,6 +1788,7 @@ paths:
         "404": { $ref: '#/components/responses/NotFound' }
         "500": { $ref: '#/components/responses/ServerError' }
     put:
+      tags: ["Konfis (Verwaltung)"]
       summary: Konfi ändern (Name, Jahrgang)
       description: >
         Aendert Anzeigename und/oder Jahrgang. Bei Jahrgangswechsel wird die
@@ -1731,6 +1821,7 @@ paths:
         "404": { $ref: '#/components/responses/NotFound' }
         "500": { $ref: '#/components/responses/ServerError' }
     delete:
+      tags: ["Konfis (Verwaltung)"]
       summary: Konfi löschen (inkl. abhaengiger Daten)
       description: >
         Loescht den Konfi und die daran haengenden Daten über
@@ -1754,6 +1845,7 @@ paths:
 
   /api/admin/konfis/{id}/regenerate-password:
     post:
+      tags: ["Konfis (Verwaltung)"]
       summary: Neues Startpasswort für einen Konfi erzeugen
       description: Erzeugt ein neues Passwort, speichert den Hash und gibt das Klartext-Passwort einmalig zurück.
       x-berechtigung:
@@ -1776,6 +1868,7 @@ paths:
 
   /api/admin/konfis/{id}/event-points:
     get:
+      tags: ["Konfis (Verwaltung)"]
       summary: Event-Punkte eines Konfis
       description: Liefert alle über Events vergebenen Punkte samt Event-Name und vergebender Person.
       x-berechtigung:
@@ -1794,6 +1887,7 @@ paths:
 
   /api/admin/konfis/{id}/badges:
     get:
+      tags: ["Konfis (Verwaltung)"]
       summary: Abzeichen und Fortschritt eines Konfis (Leitungs-Einsicht)
       description: >
         Gleiche Wertung und gleicher Fortschritt wie die Konfi-eigene Ansicht
@@ -1816,6 +1910,7 @@ paths:
 
   /api/admin/konfis/{id}/attendance-stats:
     get:
+      tags: ["Konfis (Verwaltung)"]
       summary: Anwesenheitsstatistik bei Pflicht-Events
       description: >
         Zaehlt Pflicht-Events des Jahrgangs, tatsaechliche Teilnahmen, Quote
@@ -1841,6 +1936,7 @@ paths:
 
   /api/admin/konfis/{id}/bonus-points:
     post:
+      tags: ["Konfis (Verwaltung)"]
       summary: Bonuspunkte vergeben
       description: >
         Traegt Bonuspunkte ein und schreibt sie dem passenden Punktekonto gut.
@@ -1876,6 +1972,7 @@ paths:
 
   /api/admin/konfis/{id}/bonus-points/{bonusId}:
     delete:
+      tags: ["Konfis (Verwaltung)"]
       summary: Bonuspunkte zuruecknehmen
       description: Loescht den Bonuseintrag und zieht die Punkte wieder ab.
       x-berechtigung:
@@ -1889,6 +1986,7 @@ paths:
           in: path
           required: true
           schema: { type: integer, minimum: 1 }
+          description: "ID des Bonuspunkte-Eintrags"
       responses:
         "200": { description: Bonuspunkte entfernt }
         "401": { $ref: '#/components/responses/Unauthorized' }
@@ -1898,6 +1996,7 @@ paths:
 
   /api/admin/konfis/{id}/activities:
     post:
+      tags: ["Konfis (Verwaltung)"]
       summary: Aktivität nachtragen
       description: >
         Traegt eine erledigte Aktivität nach, schreibt die Punkte gut und
@@ -1933,6 +2032,7 @@ paths:
 
   /api/admin/konfis/{id}/activities/{activityId}:
     delete:
+      tags: ["Konfis (Verwaltung)"]
       summary: Nachgetragene Aktivität entfernen
       description: Loescht die Zuordnung und zieht die gutgeschriebenen Punkte wieder ab.
       x-berechtigung:
@@ -1949,6 +2049,7 @@ paths:
           in: path
           required: true
           schema: { type: integer, minimum: 1 }
+          description: "ID des Punkte-Eintrags (user_activities.id), nicht der Aktivität"
       responses:
         "200": { description: Aktivitaet entfernt }
         "401": { $ref: '#/components/responses/Unauthorized' }
@@ -1958,6 +2059,7 @@ paths:
 
   /api/admin/konfis/{id}/teamer-since:
     put:
+      tags: ["Konfis (Verwaltung)"]
       summary: Aktiv-seit-Datum einer Teamer:in setzen
       description: Setzt das Feld teamer_since des Ziel-Users.
       x-berechtigung:
@@ -1988,6 +2090,7 @@ paths:
 
   /api/admin/konfis/{id}/promote-teamer:
     post:
+      tags: ["Konfis (Verwaltung)"]
       summary: Konfi zur Teamer:in befoerdern
       description: >
         Setzt die Rolle auf teamer und teamer_since auf heute, löscht
