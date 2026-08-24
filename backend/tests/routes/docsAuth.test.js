@@ -71,32 +71,67 @@ describe('Docs-Auth Routes', () => {
       expect(res.status).toBe(401);
     });
 
-    it('ohne Cookie mit X-Forwarded-Uri: 302 auf die Anmeldeseite (Traefik)', async () => {
+    it('ohne Cookie mit den Proxy-Headern: 302 auf die Anmeldeseite (Traefik)', async () => {
       const res = await request(app)
         .get('/api/docs-auth/pruefen')
+        .set('X-Forwarded-Proto', 'https')
+        .set('X-Forwarded-Host', 'konfi-quest.de')
         .set('X-Forwarded-Uri', '/docs/api/berechtigungen.html');
 
       expect(res.status).toBe(302);
       expect(res.headers.location).toBe(
-        '/docs/api/login.html?weiter=%2Fdocs%2Fapi%2Fberechtigungen.html'
+        'https://konfi-quest.de/docs/api/login.html?weiter=%2Fdocs%2Fapi%2Fberechtigungen.html'
       );
     });
 
-    it('die Weiterleitung bleibt relativ — nie auf den Container-Host', async () => {
-      // res.redirect() wuerde hier eine absolute URL aus dem Host DIESER
-      // Anfrage bauen. Bei Forward-Auth ist das der interne Name des
-      // Backends ("backend:5000"), und die Weiterleitung liefe im Browser
-      // ins Leere. Genau das ist in Produktion einmal passiert.
+    it('die Weiterleitung zeigt nie auf den Container-Host', async () => {
+      // Bei Forward-Auth kommt die Anfrage vom Proxy, der Host-Header lautet
+      // also "backend:5000". Sowohl res.redirect() als auch ein relativer
+      // Location-Header endeten dadurch im Container-Netz — beides in
+      // Produktion beobachtet. Massgeblich ist X-Forwarded-Host.
       const res = await request(app)
         .get('/api/docs-auth/pruefen')
         .set('Host', 'backend:5000')
+        .set('X-Forwarded-Proto', 'https')
+        .set('X-Forwarded-Host', 'konfi-quest.de')
         .set('X-Forwarded-Uri', '/docs/api/');
 
       expect(res.status).toBe(302);
-      expect(res.headers.location).toBe('/docs/api/login.html?weiter=%2Fdocs%2Fapi%2F');
-      expect(res.headers.location.startsWith('/')).toBe(true);
+      expect(res.headers.location).toBe(
+        'https://konfi-quest.de/docs/api/login.html?weiter=%2Fdocs%2Fapi%2F'
+      );
       expect(res.headers.location).not.toContain('backend:5000');
-      expect(res.headers.location).not.toContain('://');
+      expect(res.headers.location).not.toContain('http://backend');
+    });
+
+    it('ohne X-Forwarded-Host wird der Host-Header genommen', async () => {
+      // Fallback fuer Proxys, die nur die URI mitschicken.
+      const res = await request(app)
+        .get('/api/docs-auth/pruefen')
+        .set('Host', 'konfi-quest.de')
+        .set('X-Forwarded-Uri', '/docs/api/');
+
+      expect(res.status).toBe(302);
+      expect(res.headers.location).toBe(
+        'https://konfi-quest.de/docs/api/login.html?weiter=%2Fdocs%2Fapi%2F'
+      );
+    });
+
+    it('bleibt bei https, auch wenn der Proxy http meldet', async () => {
+      // Auf godsapp steht Apache (TLS) vor Traefik und setzt
+      // X-Forwarded-Proto nicht; Traefik meldet daraufhin "http". Ein
+      // http-Redirect schickt den Browser ueber einen ueberfluessigen Umweg.
+      const res = await request(app)
+        .get('/api/docs-auth/pruefen')
+        .set('X-Forwarded-Proto', 'http')
+        .set('X-Forwarded-Host', 'konfi-quest.de')
+        .set('X-Forwarded-Uri', '/docs/api/');
+
+      expect(res.status).toBe(302);
+      expect(res.headers.location).toBe(
+        'https://konfi-quest.de/docs/api/login.html?weiter=%2Fdocs%2Fapi%2F'
+      );
+      expect(res.headers.location.startsWith('https://')).toBe(true);
     });
 
     it('mit gültigem Cookie: 200', async () => {

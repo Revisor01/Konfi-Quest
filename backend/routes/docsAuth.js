@@ -52,15 +52,30 @@ module.exports = () => {
    */
   function abweisen(req, res, grund) {
     const ziel = req.headers['x-forwarded-uri'];
-    if (ziel) {
-      // Location von Hand setzen statt res.redirect(): Express macht daraus
-      // sonst eine absolute URL mit dem Host DIESER Anfrage — und die kommt
-      // bei Forward-Auth vom Proxy, lautet also "backend:5000". Im Browser
-      // waere das eine tote Weiterleitung ins Container-Netz.
-      res.setHeader('Location', `/docs/api/login.html?weiter=${encodeURIComponent(ziel)}`);
-      return res.status(302).end();
+    if (!ziel) {
+      // Kein Proxy-Header: Caddy-Weg. Dort baut der Proxy den Redirect selbst.
+      return res.status(401).json({ error: grund });
     }
-    return res.status(401).json({ error: grund });
+
+    // Traefik-Weg. Das Ziel muss ABSOLUT und auf die oeffentliche Adresse
+    // zeigen — ein relativer Pfad reicht hier nicht:
+    //   - res.redirect() ergaenzt den Host DIESER Anfrage, und die kommt vom
+    //     Proxy: "backend:5000", also das Container-Netz.
+    //   - Ein von Hand gesetzter relativer Pfad wird von Traefik beim
+    //     Durchreichen ebenfalls gegen die Adresse der Auth-Anfrage
+    //     aufgeloest — dasselbe kaputte Ergebnis.
+    // Beides in Produktion beobachtet (24.08.2026). Deshalb bauen wir die
+    // URL aus den Headern, die der Proxy ueber den urspruenglichen Aufruf
+    // mitschickt, und fallen nur zur Not auf den Host-Header zurueck.
+    // Schema fest https: Die Doku ist oeffentlich nur ueber HTTPS erreichbar.
+    // X-Forwarded-Proto taugt hier nicht als Quelle — auf godsapp steht
+    // Apache (TLS) vor Traefik und setzt den Header nicht, Traefik meldet
+    // deshalb "http". Ein http-Redirect schickt den Browser dann ueber einen
+    // ueberfluessigen Umweg zurueck nach https.
+    const host = req.headers['x-forwarded-host'] || req.headers.host;
+    const pfad = `/docs/api/login.html?weiter=${encodeURIComponent(ziel)}`;
+    res.setHeader('Location', host ? `https://${host}${pfad}` : pfad);
+    return res.status(302).end();
   }
 
   /** Prüft das Cookie. Vom Reverse-Proxy per Forward-Auth aufgerufen. */
