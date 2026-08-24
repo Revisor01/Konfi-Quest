@@ -409,13 +409,15 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 Betrifft nicht die App, gehört nicht in die Store-Release-Notes.
 
 - Zugangsdaten werden nicht mehr in der Projektdatei hinterlegt, sondern getrennt konfiguriert.
-- Eigene Staging-Umgebung mit getrennter Datenbank für interne Tests.
 - Startseite um einen Abschnitt zu den Challenges erweitert.
 - Startseite: Klick-Auswertung erkennt die Ziel-Adresse jetzt zuverlässig —
   fremde Adressen konnten sich zuvor als App-Store-Link ausgeben.
 - Sicherheitsaktualisierung veralteter Entwicklungs-Pakete.
 - Die Schnittstellen-Referenz beschreibt jetzt alle Endpunkte der App samt der
   jeweils nötigen Berechtigungen.
+- Die Anmeldung zur Schnittstellen-Referenz funktioniert unabhängig davon,
+  über welchen Weg die Seite ausgeliefert wird.
+- Die getrennte Testumgebung wurde abgebaut; sie wurde nicht mehr genutzt.
 
 ## [1.5.3] - 2026-08-04
 

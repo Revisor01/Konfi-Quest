@@ -24,6 +24,9 @@ export default defineConfig({
       QR_SECRET: 'test-qr-secret-for-vitest',
       // 64 Hex-Zeichen (32 Byte) — fester Testschluessel für Medien-Verschluesselung
       ACTIVITY_PHOTO_ENCRYPTION_KEY: '0000000000000000000000000000000000000000000000000000000000000000',
+      // Passwort der API-Doku. Ohne die Variable bleibt die Doku bewusst
+      // gesperrt — dann koennte der Test den erlaubten Fall nicht pruefen.
+      DOCS_PASSWORD: 'test-docs-passwort',
       NODE_ENV: 'test',
       TEST_DATABASE_URL: process.env.TEST_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5433/postgres',
     },

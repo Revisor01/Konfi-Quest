@@ -5,9 +5,15 @@
 // Simon wollte eine Anmeldung im Look von Konfi Quest (24.08.2026).
 //
 // Wie es zusammenspielt:
-//   1. Caddy fragt bei jedem Aufruf von /docs/api/* per forward_auth hier nach
-//      (GET /api/docs-auth/pruefen). Antwortet die Route mit 200, liefert Caddy
-//      die Datei aus; bei 401 schickt es auf die Anmeldeseite.
+//   1. Der Reverse-Proxy fragt bei jedem Aufruf von /docs/api/* per Forward-Auth
+//      hier nach (GET /api/docs-auth/pruefen). Antwortet die Route mit 200,
+//      liefert der Proxy die Datei aus; bei 401 geht es zur Anmeldeseite.
+//
+//      Caddy baut den Redirect selbst (handle_response). Traefik kann das nicht
+//      — es reicht die Antwort der Auth-Route unveraendert durch. Damit dieselbe
+//      Route hinter beiden Proxys funktioniert, antwortet sie mit 302 statt 401,
+//      sobald der Proxy per X-Forwarded-Uri sagt, welche Seite gemeint war.
+//      Ohne diesen Header bleibt es bei 401 (Caddy-Weg, unveraendert).
 //   2. Die Anmeldeseite (/docs/api/login.html) sendet das Passwort an
 //      POST /api/docs-auth/anmelden und bekommt ein Cookie.
 //   3. Das Cookie ist ein signiertes JWT — kein Passwort im Klartext, und der
@@ -39,16 +45,29 @@ module.exports = () => {
   const PASSWORT = process.env.DOCS_PASSWORD || '';
   const SECRET = process.env.JWT_SECRET;
 
-  /** Prüft das Cookie. Von Caddy per forward_auth aufgerufen. */
+  /**
+   * Weist den Aufruf ab: 302 auf die Anmeldeseite, wenn der Proxy per
+   * X-Forwarded-Uri mitteilt, welche Seite gemeint war (Traefik), sonst 401
+   * und der Proxy leitet selbst um (Caddy).
+   */
+  function abweisen(req, res, grund) {
+    const ziel = req.headers['x-forwarded-uri'];
+    if (ziel) {
+      return res.redirect(302, `/docs/api/login.html?weiter=${encodeURIComponent(ziel)}`);
+    }
+    return res.status(401).json({ error: grund });
+  }
+
+  /** Prüft das Cookie. Vom Reverse-Proxy per Forward-Auth aufgerufen. */
   router.get('/pruefen', (req, res) => {
     const wert = cookieLesen(req.headers.cookie, COOKIE);
-    if (!wert) return res.status(401).json({ error: 'Nicht angemeldet' });
+    if (!wert) return abweisen(req, res, 'Nicht angemeldet');
     try {
       const inhalt = jwt.verify(wert, SECRET);
       if (inhalt.zweck !== 'docs') throw new Error('falscher Zweck');
       return res.status(200).json({ ok: true });
     } catch {
-      return res.status(401).json({ error: 'Anmeldung abgelaufen' });
+      return abweisen(req, res, 'Anmeldung abgelaufen');
     }
   });
 
