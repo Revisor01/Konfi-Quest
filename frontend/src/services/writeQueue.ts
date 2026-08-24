@@ -152,8 +152,14 @@ async function _load(): Promise<QueueItem[]> {
     _items = JSON.parse(result.value) as QueueItem[];
     return _items;
   } catch {
-    // Korruptes JSON — zurücksetzen
-    await Preferences.remove({ key: QUEUE_KEY });
+    // Korruptes JSON — zuruecksetzen. Das Aufraeumen darf selbst nicht werfen:
+    // Beim Beenden (und in Tests nach dem Abbau der Speicher-Simulation) ist
+    // der Speicher schon weg, und ein Fehler hier riss den ganzen Lauf mit.
+    try {
+      await Preferences.remove({ key: QUEUE_KEY });
+    } catch {
+      // Speicher nicht mehr verfuegbar — die Warteschlange ist ohnehin leer.
+    }
     _items = [];
     return _items;
   }
