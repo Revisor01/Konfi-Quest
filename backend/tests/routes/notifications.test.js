@@ -183,44 +183,16 @@ describe('Notifications Routes', () => {
   });
 
   // ================================================================
-  // POST /api/notifications/test-push
+  // POST /api/notifications/test-push — entfernt (24.08.2026)
   // ================================================================
-  describe('POST /api/notifications/test-push', () => {
-    it('User ohne gespeicherte Tokens bekommt success:false (keine Tokens)', async () => {
+  describe('POST /api/notifications/test-push (entfernte Route)', () => {
+    it('Route existiert nicht mehr -> 404, auch mit gültigem Token', async () => {
       const res = await request(app)
         .post('/api/notifications/test-push')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ message: 'Test-Nachricht' });
-
-      expect(res.status).toBe(200);
-      expect(res.body.success).toBe(false);
-      expect(res.body.message).toContain('Keine Push-Tokens');
-    });
-
-    it('Ohne Auth-Token -> 401', async () => {
-      const res = await request(app)
-        .post('/api/notifications/test-push')
         .send({ message: 'Test' });
 
-      expect(res.status).toBe(401);
-    });
-
-    it('User mit gespeichertem Token: Endpoint antwortet ohne 500 crash', async () => {
-      // Token direkt in DB speichern (umgeht Route-Validierung)
-      await db.query(
-        `INSERT INTO push_tokens (user_id, user_type, token, platform, device_id) VALUES ($1, $2, $3, $4, $5)`,
-        [USERS.admin1.id, 'admin', 'fcm-admin-token', 'ios', 'admin-device']
-      );
-
-      // Test-Push senden (Firebase nicht konfiguriert -> graceful error, kein crash)
-      const res = await request(app)
-        .post('/api/notifications/test-push')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ message: 'Test Push' });
-
-      expect(res.status).toBe(200);
-      // Entweder Tokens gesendet oder Fehler gezählt, aber kein 500
-      expect(res.body.total).toBe(1);
+      expect(res.status).toBe(404);
     });
   });
 
@@ -258,7 +230,7 @@ describe('Notifications Routes', () => {
       expect(rows[0].push_enabled).toBe(false);
     });
 
-    it('Deaktivierter User bekommt keine Tokens via test-push (Master-Schalter greift)', async () => {
+    it('Deaktivierter User liefert keine Tokens für den Versand (Master-Schalter greift)', async () => {
       // Token speichern
       await db.query(
         `INSERT INTO push_tokens (user_id, user_type, token, platform, device_id) VALUES ($1, $2, $3, $4, $5)`,
@@ -267,8 +239,8 @@ describe('Notifications Routes', () => {
       // Push deaktivieren
       await db.query('UPDATE users SET push_enabled = false WHERE id = $1', [USERS.konfi1.id]);
 
-      // test-push nutzt eigene Query (ohne Master-Schalter) -> Token wird gefunden,
-      // aber PushService.getTokensForUser (regulaerer Versand) wuerde 0 liefern.
+      // Query wie in PushService.getTokensForUser (regulärer Versand): der
+      // Master-Schalter filtert den Token trotz Registrierung heraus.
       const { rows } = await db.query(`
         SELECT pt.* FROM push_tokens pt
         JOIN users u ON pt.user_id = u.id

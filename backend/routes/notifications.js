@@ -1,7 +1,6 @@
 const express = require('express');
 const { body } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
-const { sendFirebasePushNotification } = require('../push/firebase');
 
 module.exports = (db, verifyTokenRBAC) => {
   const router = express.Router();
@@ -221,56 +220,6 @@ module.exports = (db, verifyTokenRBAC) => {
       if (err.code === '23505') {
         return res.status(409).json({ error: 'Token für diesen Benutzer und dieses Gerät existiert bereits.' });
       }
-      res.status(500).json({ error: 'Datenbankfehler' });
-    }
-  });
-
-  // Sendet eine Test-Push-Benachrichtigung an alle Geräte eines Benutzers
-  router.post('/test-push', verifyTokenRBAC, async (req, res) => {
-    const userId = req.user.id;
-    const { message = 'Test Push Notification' } = req.body;
-
-    try {
-      // Org-gefiltert: Nur Tokens des eigenen Users innerhalb der eigenen Organisation
-      const { rows: tokens } = await db.query(
-        `SELECT pt.* FROM push_tokens pt
-         JOIN users u ON pt.user_id = u.id
-         WHERE pt.user_id = $1 AND u.organization_id = $2`,
-        [userId, req.user.organization_id]
-      );
-
-      if (!tokens || tokens.length === 0) {
-        return res.json({ success: false, message: 'Keine Push-Tokens gefunden' });
-      }
-
-      let sentCount = 0;
-      let errorCount = 0;
-
-      for (const tokenRow of tokens) {
-        try {
-          await sendFirebasePushNotification(tokenRow.token, {
-            title: 'Test Push',
-            body: message,
-            badge: 1,
-            sound: 'default'
-          });
-          sentCount++;
-        } catch (error) {
-          console.error('Error sending to token:', error.message);
-          errorCount++;
-        }
-      }
-
-      res.json({
-        success: true,
-        sent: sentCount,
-        errors: errorCount,
-        total: tokens.length,
-        message: `Test-Push an ${sentCount} Gerät(e) gesendet`
-      });
-
-    } catch (err) {
-      console.error('Database error in POST /test-push:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });

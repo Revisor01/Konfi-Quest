@@ -1221,4 +1221,17 @@ describe('Chat Routes', () => {
       expect(msg.votes[0].user_type).toBeNull();
     });
   });
+  // ================================================================
+  // POST /api/chat/badge-update — entfernt (24.08.2026)
+  // ================================================================
+  describe('POST /api/chat/badge-update (entfernte Route)', () => {
+    it('Route existiert nicht mehr -> 404, auch mit gültigem Token', async () => {
+      const res = await request(app)
+        .post('/api/chat/badge-update')
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({});
+
+      expect(res.status).toBe(404);
+    });
+  });
 });

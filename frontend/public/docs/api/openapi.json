@@ -3,7 +3,7 @@
   "info": {
     "title": "Konfi Quest API",
     "version": "1.0.0",
-    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n243 Operationen."
+    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n241 Operationen."
   },
   "servers": [
     {
@@ -8047,57 +8047,6 @@
         }
       }
     },
-    "/api/chat/badge-update": {
-      "post": {
-        "tags": [
-          "Chat"
-        ],
-        "summary": "Badge-Zahl neu berechnen und als Push senden (Background Refresh)",
-        "responses": {
-          "200": {
-            "description": "Ungelesen-Zähler",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "badgeCount": {
-                      "type": "integer"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Interner Serverfehler"
-          },
-          "502": {
-            "description": "Push-Dienst fehlgeschlagen"
-          }
-        },
-        "x-berechtigung": {
-          "rollen": [
-            "org_admin",
-            "admin",
-            "teamer",
-            "konfi"
-          ],
-          "middleware": [
-            "verifyTokenRBAC"
-          ],
-          "org-scope": false,
-          "objekt-pruefung": "Nur eigene Daten (Zähler über eigene chat_participants)",
-          "hinweis": "Derzeit von keinem Client aufgerufen; Kandidat für Rückbau."
-        }
-      }
-    },
     "/api/chat/rooms/{roomId}/polls": {
       "post": {
         "tags": [
@@ -9643,52 +9592,6 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Nur eigene Tokens der eigenen Org"
-        }
-      }
-    },
-    "/api/notifications/test-push": {
-      "post": {
-        "tags": [
-          "Benachrichtigungen"
-        ],
-        "summary": "Test-Push an alle eigenen Geraete",
-        "requestBody": {
-          "required": false,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "message": {
-                    "type": "string",
-                    "default": "Test Push Notification"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Versandergebnis (sent/errors/total) oder success=false ohne Tokens"
-          },
-          "500": {
-            "description": "Datenbankfehler"
-          }
-        },
-        "x-berechtigung": {
-          "rollen": [
-            "org_admin",
-            "admin",
-            "teamer",
-            "konfi"
-          ],
-          "middleware": [
-            "verifyTokenRBAC"
-          ],
-          "org-scope": true,
-          "objekt-pruefung": "Nur eigene Tokens (user_id + Org-Filter)",
-          "hinweis": "Reines Diagnose-Werkzeug; wird von keinem Client aufgerufen, nur vom Backend-Test abgedeckt."
         }
       }
     },

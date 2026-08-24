@@ -1712,51 +1712,6 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
     }
   });
 
-  // Badge update endpoint for Background Refresh
-  router.post('/badge-update', verifyTokenRBAC, async (req, res) => {
-    try {
-      const userId = req.user.id;
-      const userType = req.user.type;
-      
-      // Use the consistent query for unread counts, referencing chat_read_status
-      const badgeQuery = `
-      SELECT COUNT(DISTINCT m.id) as total_unread
-      FROM chat_messages m
-      JOIN chat_participants p ON m.room_id = p.room_id
-      LEFT JOIN chat_read_status crs ON m.room_id = crs.room_id AND p.user_id = crs.user_id AND p.user_type = crs.user_type
-      WHERE p.user_id = $1
-        AND p.user_type = $2
-        AND m.created_at > COALESCE(crs.last_read_at, '1970-01-01')
-        AND m.deleted_at IS NULL
-        AND m.user_id != $1
-    `;
-      const { rows: [result] } = await db.query(badgeQuery, [userId, userType]);
-      const badgeCount = parseInt(result?.total_unread || '0', 10);
-      
-      // Send badge update via Push Notification
-      await PushService.sendBadgeUpdate(db, userId, badgeCount);
-      
-      res.json({
-        success: true,
-        badgeCount: badgeCount,
-        message: `Badge updated to ${badgeCount}`
-      });
-      
-    } catch (error) {
-      // The push service might throw an error, which should be caught but not treated as a 500
-      if (error.isPushServiceError) {
- console.error('Push badge update failed:', error);
-        res.status(502).json({ 
-          success: false, 
-          error: 'Push-Benachrichtigung fehlgeschlagen'
-        });
-      } else {
- console.error('Badge update endpoint error:', error);
-        res.status(500).json({ error: 'Interner Serverfehler' });
-      }
-    }
-  });
-
   // Create poll for a room
   router.post('/rooms/:roomId/polls', verifyTokenRBAC, validateCreatePoll, async (req, res) => {
     const roomId = req.params.roomId;
