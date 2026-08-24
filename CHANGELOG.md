@@ -102,6 +102,12 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Behoben
 
+- Ein verdientes Abzeichen bleibt jetzt sichtbar, auch wenn die Leitung es
+  später abschaltet — etwa zum Saisonende. Bisher verschwand es aus der Liste,
+  während die Zähler es weiter mitzählten.
+- Abzeichen vom Typ "Aktivitäts-Kombination" verlangten bei Teamer:innen alle
+  hinterlegten Aktivitäten statt der eingestellten Mindestanzahl. Der
+  Fortschritt konnte dadurch 100 Prozent anzeigen, ohne dass es vergeben wurde.
 - Abzeichen für Pflicht-Anwesenheit tauchten in der Liste der Konfis nie auf,
   obwohl sie vergeben wurden und die Meldung kam. Drei Abzeichen betroffen.
 - Geheime Abzeichen für Teamer:innen wurden mit Namen, Beschreibung und

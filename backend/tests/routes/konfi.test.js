@@ -516,6 +516,47 @@ describe('Konfi Routes', () => {
       expect(nachher.body.stats.totalVisible).toBe(zuvor);
     });
 
+    // Befund 24.08.2026: Die Konfi-Abfrage verlangte is_active auch fuer bereits
+    // VERDIENTE Abzeichen. Schaltet die Leitung eines ab (Saisonende), verlor
+    // der Konfi es aus der Ansicht, obwohl der Eintrag bestehen blieb — und die
+    // Zaehler auf dem Dashboard zaehlten es weiter mit.
+    it('Ein verdientes Abzeichen bleibt sichtbar, auch wenn es abgeschaltet wird', async () => {
+      const { rows: [badge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ('Saison 2026', 'total_points', 1, 'trophy', '#ffd700', $1, 'konfi', true)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO user_badges (user_id, badge_id, awarded_date, organization_id)
+         VALUES ($1, $2, CURRENT_DATE, $3)`,
+        [USERS.konfi1.id, badge.id, ORGS.testGemeinde.id]
+      );
+      await db.query('UPDATE custom_badges SET is_active = false WHERE id = $1', [badge.id]);
+
+      const res = await request(app)
+        .get('/api/konfi/badges')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.earned.map(b => b.id)).toContain(badge.id);
+    });
+
+    it('Ein abgeschaltetes Abzeichen ohne Traeger bleibt verschwunden', async () => {
+      const { rows: [badge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, icon, color, organization_id, target_role, is_active)
+         VALUES ('Eingestellt', 'total_points', 5, 'trophy', '#ffd700', $1, 'konfi', false)
+         RETURNING id`,
+        [ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .get('/api/konfi/badges')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(res.status).toBe(200);
+      const alle = [...res.body.earned, ...res.body.available].map(b => b.id);
+      expect(alle).not.toContain(badge.id);
+    });
+
     // Befund 24.08.2026: Zehn aktive Abzeichen in Org 1 hatten eine leere
     // Bedingung und konnten deshalb nie vergeben werden — sie standen aber
     // unter "erreichbar" und liessen Konfis raetseln.

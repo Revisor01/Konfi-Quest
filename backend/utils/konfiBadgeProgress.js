@@ -31,7 +31,14 @@ async function getKonfiBadgeProgress(db, konfiId, organizationId) {
            COALESCE(kb.seen, false) as seen
     FROM custom_badges cb
     LEFT JOIN user_badges kb ON cb.id = kb.badge_id AND kb.user_id = $1 AND kb.organization_id = $2
-    WHERE cb.is_active = TRUE AND cb.organization_id = $2 AND cb.target_role = 'konfi'
+    -- Verdiente Abzeichen bleiben, auch wenn die Leitung sie spaeter
+    -- abschaltet (etwa zum Saisonende): Sonst verschwaende ein einmal
+    -- erreichtes Abzeichen aus der Ansicht, waehrend die Zaehler auf dem
+    -- Dashboard es weiter mitzaehlen — die Zahlen widersprechen dann der
+    -- Liste. Der Teamer-Pfad macht es seit jeher so (teamer.js:282),
+    -- der Konfi-Pfad nicht (Befund 24.08.2026).
+    WHERE (cb.is_active = TRUE OR kb.id IS NOT NULL)
+      AND cb.organization_id = $2 AND cb.target_role = 'konfi'
     ORDER BY earned DESC, cb.name
   `;
   // Streak- und time_based-Badges teilen sich dieselbe Datumsliste.

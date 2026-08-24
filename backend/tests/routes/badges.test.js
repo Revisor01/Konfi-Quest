@@ -576,6 +576,82 @@ describe('Badges Routes', () => {
   });
 
   // ================================================================
+  // activity_combination bei Teamer:innen
+  // ================================================================
+  describe('activity_combination Wertung bei Teamer:innen', () => {
+    // Befund 24.08.2026: Der Teamer-Zweig verlangte ALLE hinterlegten
+    // Aktivitaeten und ignorierte criteria_value, waehrend Formular, Hilfetext
+    // und Fortschrittsanzeige die Mindestanzahl beschreiben (so wie es der
+    // Konfi-Zweig auch macht). Der Fortschritt konnte 100 Prozent zeigen, ohne
+    // dass das Abzeichen kam.
+    async function teamerAktivitaet(orgId, teamerId, name) {
+      const { rows: [act] } = await db.query(
+        `INSERT INTO activities (name, points, type, organization_id, target_role)
+         VALUES ($1, 1, 'gemeinde', $2, 'teamer') RETURNING id`,
+        [name, orgId]
+      );
+      await db.query(
+        `INSERT INTO user_activities (user_id, activity_id, completed_date, admin_id, organization_id)
+         VALUES ($1, $2, CURRENT_DATE, $3, $4)`,
+        [teamerId, act.id, USERS.admin1.id, orgId]
+      );
+    }
+
+    const kombiBadge = async (wert, namen) => {
+      const { rows: [badge] } = await db.query(
+        `INSERT INTO custom_badges (name, criteria_type, criteria_value, criteria_extra, icon, color, organization_id, target_role, is_active)
+         VALUES ($1, 'activity_combination', $2, $3, 'prism', '#7044ff', $4, 'teamer', true)
+         RETURNING id`,
+        [`Kombi ${Math.random()}`, wert, JSON.stringify({ required_activities: namen }), ORGS.testGemeinde.id]
+      );
+      return badge.id;
+    };
+
+    it('Zwei von drei Aktivitaeten reichen, wenn der Wert 2 ist', async () => {
+      await teamerAktivitaet(ORGS.testGemeinde.id, USERS.teamer1.id, 'Andacht halten');
+      await teamerAktivitaet(ORGS.testGemeinde.id, USERS.teamer1.id, 'Freizeit begleiten');
+      const badgeId = await kombiBadge(2, ['Andacht halten', 'Freizeit begleiten', 'Kochdienst']);
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.teamer1.id);
+
+      const { rows } = await db.query(
+        'SELECT 1 FROM user_badges WHERE user_id = $1 AND badge_id = $2',
+        [USERS.teamer1.id, badgeId]
+      );
+      expect(rows.length).toBe(1);
+    });
+
+    it('Eine von drei reicht NICHT, wenn der Wert 2 ist', async () => {
+      await teamerAktivitaet(ORGS.testGemeinde.id, USERS.teamer1.id, 'Andacht halten');
+      const badgeId = await kombiBadge(2, ['Andacht halten', 'Freizeit begleiten', 'Kochdienst']);
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.teamer1.id);
+
+      const { rows } = await db.query(
+        'SELECT 1 FROM user_badges WHERE user_id = $1 AND badge_id = $2',
+        [USERS.teamer1.id, badgeId]
+      );
+      expect(rows.length).toBe(0);
+    });
+
+    it('Ohne Wert gelten weiterhin alle als noetig', async () => {
+      await teamerAktivitaet(ORGS.testGemeinde.id, USERS.teamer1.id, 'Andacht halten');
+      const badgeId = await kombiBadge(0, ['Andacht halten', 'Kochdienst']);
+
+      const { checkAndAwardBadges } = require('../../routes/badges');
+      await checkAndAwardBadges(db, USERS.teamer1.id);
+
+      const { rows } = await db.query(
+        'SELECT 1 FROM user_badges WHERE user_id = $1 AND badge_id = $2',
+        [USERS.teamer1.id, badgeId]
+      );
+      expect(rows.length).toBe(0);
+    });
+  });
+
+  // ================================================================
   // teamer_year-Startjahr aus users.teamer_since
   // ================================================================
   describe('teamer_year Startjahr aus teamer_since', () => {

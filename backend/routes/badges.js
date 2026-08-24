@@ -406,17 +406,26 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
         break;
 
       case 'activity_combination': {
-        let allMet = true;
+        // Dieselbe Regel wie bei den Konfis (siehe oben, badges.js im
+        // Konfi-Zweig): "mindestens criteria_value aus der Liste". Vorher
+        // verlangte der Teamer-Zweig ALLE und ignorierte den Wert — Formular,
+        // Hilfetext und Fortschrittsanzeige beschreiben aber die
+        // Mindestanzahl. Der Fortschritt konnte dadurch 100 Prozent zeigen,
+        // ohne dass das Abzeichen kam (Befund 24.08.2026). In Produktion gab
+        // es zum Zeitpunkt der Umstellung kein einziges solches Abzeichen.
+        let treffer = 0;
+        let gefordert = 0;
 
-        // Aktivitäten-Namen prüfen
         if (criteria.required_activities && criteria.required_activities.length > 0) {
-          const actMatch = criteria.required_activities.filter(req => teamerPreloaded.completedActivityNames.includes(req)).length;
-          if (actMatch < criteria.required_activities.length) allMet = false;
+          gefordert += criteria.required_activities.length;
+          treffer += criteria.required_activities
+            .filter(req => teamerPreloaded.completedActivityNames.includes(req)).length;
         }
 
-        // Event-Namen prüfen (falls vorhanden). events-Spalte heisst 'name'
-        // (nicht 'title') -> als title aliasen.
-        if (allMet && criteria.required_events && criteria.required_events.length > 0) {
+        // Termine zaehlen mit, wenn welche hinterlegt sind. Die Spalte heisst
+        // 'name' (nicht 'title') -> als title aliasen.
+        if (criteria.required_events && criteria.required_events.length > 0) {
+          gefordert += criteria.required_events.length;
           const { rows: attendedEvents } = await db.query(
             `SELECT DISTINCT e.name AS title FROM event_bookings eb
              JOIN events e ON eb.event_id = e.id
@@ -424,11 +433,14 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId) {
             [userId, organizationId]
           );
           const evNames = attendedEvents.map(r => r.title);
-          const evMatch = criteria.required_events.filter(req => evNames.includes(req)).length;
-          if (evMatch < criteria.required_events.length) allMet = false;
+          treffer += criteria.required_events.filter(req => evNames.includes(req)).length;
         }
 
-        badgeEarned = allMet && (criteria.required_activities || criteria.required_events);
+        // Ohne hinterlegte Bedingung wird nichts vergeben. Der Wert 0 oder
+        // fehlend faellt auf "alle noetig" zurueck, damit ein unausgefuelltes
+        // Feld nicht versehentlich jedem das Abzeichen gibt.
+        const noetig = badge.criteria_value > 0 ? badge.criteria_value : gefordert;
+        badgeEarned = gefordert > 0 && treffer >= noetig;
         break;
       }
 
