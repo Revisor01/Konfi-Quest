@@ -10,7 +10,7 @@ const { fetchTageslosung } = require('../services/losungService');
 const { encryptBuffer, decryptBuffer } = require('../utils/photoCrypto');
 const { deletePhotoFile } = require('../utils/photoStorage');
 const { checkExistingBooking, getEventWithCounts, validateRegistrationWindow, determineBookingStatus, promoteFromWaitlist } = require('../utils/bookingUtils');
-const { removeFromEventChat } = require('../utils/eventChat');
+const { removeFromEventChat, addToEventChat } = require('../utils/eventChat');
 const { computeCurrentStreak } = require('../utils/streakCalculation');
 const { getKonfiBadgeProgress } = require('../utils/konfiBadgeProgress');
 // Single Source of Truth: welche Events zaehlen fuer Konfi-Badges (kein Pflicht/Konfirmation).
@@ -1630,6 +1630,11 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       `;
       const { rows: [newBooking] } = await client.query(insertQuery, [konfiId, eventId, timeslot_id || null, status, req.user.organization_id]);
 
+      // In den Chat zum Termin eintragen, falls es einen gibt. Bisher nahm der
+      // Chat beim Anlegen einen einmaligen Schnappschuss der Gebuchten — wer
+      // sich danach anmeldete, kam nie hinein (Befund 24.08.2026).
+      await addToEventChat(client, eventId, konfiId, req.user.organization_id);
+
       // Transaktion abschliessen
       await client.query('COMMIT');
       client.release();
@@ -1940,6 +1945,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       if (rowCount === 0) {
         return res.status(400).json({ error: 'Keine Opt-out-Anmeldung gefunden' });
       }
+
+      // Meist schon drin — beim Opt-out bleibt man bewusst im Chat. Greift nur,
+      // wenn der Chat erst nach der Abmeldung angelegt wurde; idempotent.
+      await addToEventChat(db, eventId, konfiId, req.user.organization_id);
 
       res.json({ message: 'Wieder angemeldet' });
 

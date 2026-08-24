@@ -579,7 +579,10 @@ paths:
         Transaktional (FOR UPDATE). Prueft Doppelbuchung (409),
         Konfirmations-Sperre (nur EIN Konfirmationstermin, 409),
         Registrierungsfenster, Timeslot-Pflicht und Kapazitaet (Konfi- und
-        Teamer-Kontingent getrennt). Ergebnis confirmed oder waitlist.
+        Teamer-Kontingent getrennt). Ergebnis confirmed oder waitlist. Traegt
+        die Person seit 24.08.2026 in den Chat zum Termin ein, falls es einen
+        gibt (idempotent) — vorher kam nur hinein, wer beim Anlegen des Chats
+        schon gebucht war.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]
@@ -607,7 +610,8 @@ paths:
       description: >
         Loescht die eigene Buchung (Pflicht-Events nur per Opt-out, 400),
         entfernt die Person aus dem Event-Chat (seit 24.08.2026 — vorher
-        blieb sie dort Teilnehmerin), protokolliert die Abmeldung
+        blieb sie dort Teilnehmerin; wer nachrueckt, wird umgekehrt
+        eingetragen), protokolliert die Abmeldung
         (event_unregistrations, optionaler reason), laesst bei freiem
         bestaetigtem Platz von der Konfi-Warteliste nachruecken und
         benachrichtigt Admins.
@@ -1257,8 +1261,11 @@ paths:
     post:
       summary: Gruppenchat fuer Event erstellen
       description: >
-        Legt den Event-Chat an und fuegt Ersteller plus alle bestaetigten
-        Teilnehmer (rollenrichtiger user_type) hinzu. Pro Event nur ein Chat.
+        Legt den Event-Chat an und fuegt Ersteller plus alle Gebuchten hinzu
+        (rollenrichtiger user_type). Seit 24.08.2026 zaehlen dabei auch
+        Wartende — vorher nur bestaetigte, obwohl Wartende beim Anmelden
+        hineinkommen. Pro Event nur ein Chat. Die Mitgliedschaft wird ab jetzt
+        laufend gepflegt: Anmelden traegt ein, Abmelden traegt aus.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]

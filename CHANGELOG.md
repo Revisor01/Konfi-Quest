@@ -110,6 +110,12 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
   Zuweisungen bleiben erhalten, nur der Name der anlegenden Person entfällt.
 - Beim Löschen einer Teamer:in blieben deren Dateien aus Challenge-Beiträgen
   auf dem Server liegen. Sie werden jetzt mit entfernt.
+- Wer sich zu einem Termin anmeldet, kommt jetzt in den Chat dazu — auf allen
+  Wegen: eigene Anmeldung, Eintragen durch die Leitung und Nachrücken von der
+  Warteliste. Bisher nahm der Chat beim Anlegen einmalig die damals
+  Angemeldeten auf; wer später dazukam, blieb draußen.
+- Wird der Chat zu einem Termin nachträglich angelegt, sind auch die Wartenden
+  darin. Bisher kamen nur die bestätigten Anmeldungen hinein.
 - Wer sich von einem Termin abmeldet, verlässt jetzt auch den zugehörigen
   Chat. Bisher galt das nur, wenn Teamer:innen sich selbst abmeldeten — Konfis
   blieben im Chat und lasen dort weiter mit, obwohl sie nicht mehr dabei waren.

@@ -1,3 +1,5 @@
+const { addToEventChat } = require('./eventChat');
+
 // Shared Booking-Logik fuer Event-Buchungen
 // Wird von konfi.js und events.js genutzt
 // Keine Push-Notifications oder liveUpdate-Aufrufe — nur Datenbank-Logik
@@ -141,11 +143,18 @@ async function promoteFromWaitlist(db, eventId, timeslotId, roleFilter) {
   const { rows: [promoted] } = await db.query(
     `UPDATE event_bookings SET status = 'confirmed'
      WHERE id = (${subSelect})
-     RETURNING user_id`,
+     RETURNING user_id, organization_id`,
     params
   );
 
-  return promoted ? promoted.user_id : null;
+  if (!promoted) return null;
+
+  // Wer nachrueckt, gehoert auch in den Chat zum Termin. Bewusst hier und nicht
+  // an den vier Aufrufstellen: Als kopierter Block war genau diese Regel schon
+  // einmal auseinandergelaufen (Befund 24.08.2026, Abmelde-Seite).
+  await addToEventChat(db, eventId, promoted.user_id, promoted.organization_id);
+
+  return promoted.user_id;
 }
 
 /**

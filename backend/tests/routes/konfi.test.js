@@ -990,6 +990,88 @@ describe('Konfi Routes', () => {
       expect(await imChat(roomId, USERS.admin1.id)).toBe(true);
     });
 
+    it('Wer sich anmeldet, kommt in den Event-Chat', async () => {
+      const { eventId, roomId } = await terminMitChat();
+
+      // konfi1 ist schon gebucht; konfi2 meldet sich neu an, NACHDEM der Chat
+      // existiert — genau der Fall, der bisher nie im Chat ankam.
+      expect(await imChat(roomId, USERS.konfi2.id)).toBe(false);
+
+      const res = await request(app)
+        .post(`/api/konfi/events/${eventId}/register`)
+        .set('Authorization', `Bearer ${generateToken('konfi2')}`)
+        .send({});
+      expect(res.status).toBe(200);
+
+      expect(await imChat(roomId, USERS.konfi2.id)).toBe(true);
+    });
+
+    it('Ohne Chat zum Termin laeuft die Anmeldung normal durch', async () => {
+      const zukunft = new Date();
+      zukunft.setDate(zukunft.getDate() + 20);
+      const { rows: [event] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, max_participants, registration_opens_at)
+         VALUES ('Termin ohne Chat', $1, $2, 20, NOW() - INTERVAL '1 day') RETURNING id`,
+        [zukunft.toISOString(), ORGS.testGemeinde.id]
+      );
+
+      const res = await request(app)
+        .post(`/api/konfi/events/${event.id}/register`)
+        .set('Authorization', `Bearer ${konfiToken}`)
+        .send({});
+      expect(res.status).toBe(200);
+
+      const { rows } = await db.query(
+        "SELECT status FROM event_bookings WHERE event_id = $1 AND user_id = $2",
+        [event.id, USERS.konfi1.id]
+      );
+      expect(rows.length).toBe(1);
+      expect(rows[0].status).toBe('confirmed');
+    });
+
+    it('Wer von der Warteliste nachrueckt, kommt in den Event-Chat', async () => {
+      const zukunft = new Date();
+      zukunft.setDate(zukunft.getDate() + 20);
+
+      // Ein Platz, konfi1 hat ihn, konfi2 wartet.
+      const { rows: [event] } = await db.query(
+        `INSERT INTO events (name, event_date, organization_id, max_participants, waitlist_enabled, registration_opens_at)
+         VALUES ('Ein Platz', $1, $2, 1, true, NOW() - INTERVAL '1 day') RETURNING id`,
+        [zukunft.toISOString(), ORGS.testGemeinde.id]
+      );
+      const { rows: [raum] } = await db.query(
+        `INSERT INTO chat_rooms (name, type, event_id, created_by, organization_id)
+         VALUES ('Ein Platz - Chat', 'group', $1, $2, $3) RETURNING id`,
+        [event.id, USERS.admin1.id, ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
+         VALUES ($1, $2, 'confirmed', NOW(), $4), ($1, $3, 'waitlist', NOW(), $4)`,
+        [event.id, USERS.konfi1.id, USERS.konfi2.id, ORGS.testGemeinde.id]
+      );
+      await db.query(
+        `INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, 'konfi')`,
+        [raum.id, USERS.konfi1.id]
+      );
+
+      expect(await imChat(raum.id, USERS.konfi2.id)).toBe(false);
+
+      // konfi1 meldet sich ab -> konfi2 rueckt nach
+      const res = await request(app)
+        .delete(`/api/konfi/events/${event.id}/register`)
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(res.status).toBe(200);
+
+      const { rows: [nach] } = await db.query(
+        'SELECT status FROM event_bookings WHERE event_id = $1 AND user_id = $2',
+        [event.id, USERS.konfi2.id]
+      );
+      expect(nach.status).toBe('confirmed');
+      expect(await imChat(raum.id, USERS.konfi2.id)).toBe(true);
+      // Die abgemeldete Person ist raus.
+      expect(await imChat(raum.id, USERS.konfi1.id)).toBe(false);
+    });
+
     it('Chats anderer Termine bleiben unberuehrt', async () => {
       const { eventId } = await terminMitChat();
       const zweiter = await terminMitChat();

@@ -8,7 +8,7 @@ const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { checkExistingBooking, validateRegistrationWindow, determineBookingStatus, promoteFromWaitlist, isRegistrationOpenForKonfis } = require('../utils/bookingUtils');
 const { allIdsBelongToOrg } = require('../utils/orgOwnership');
-const { removeFromEventChat } = require('../utils/eventChat');
+const { removeFromEventChat, addToEventChat, syncEventChat } = require('../utils/eventChat');
 
 const QR_SECRET = process.env.QR_SECRET;
 if (!QR_SECRET) {
@@ -1112,6 +1112,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           ON CONFLICT (user_id, event_id) DO NOTHING
         `;
         await client.query(enrollQuery, [id, jahrgang_ids, req.user.organization_id]);
+        // Die frisch Eingebuchten gehoeren auch in den Chat, falls es einen gibt.
+        await syncEventChat(client, id, req.user.organization_id);
       }
 
       // Handle timeslots - intelligent update to preserve booking references.
@@ -1617,6 +1619,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         const insertQuery = "INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id) VALUES ($1, $2, $3, NOW(), $4) RETURNING id";
         const { rows: [newBooking] } = await client.query(insertQuery, [eventId, userId, teamerBookingStatus, req.user.organization_id]);
 
+        // In den Chat zum Termin, falls es einen gibt (idempotent).
+        await addToEventChat(client, eventId, userId, req.user.organization_id);
+
         await client.query('COMMIT');
         client.release();
 
@@ -1780,6 +1785,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // 4. Create booking
       const insertBookingQuery = "INSERT INTO event_bookings (event_id, user_id, timeslot_id, status, booking_date, organization_id) VALUES ($1, $2, $3, $4, NOW(), $5) RETURNING id";
       const { rows: [newBooking] } = await client.query(insertBookingQuery, [eventId, userId, timeslot_id, bookingStatus, req.user.organization_id]);
+
+      // In den Chat zum Termin, falls es einen gibt (idempotent).
+      await addToEventChat(client, eventId, userId, req.user.organization_id);
 
       // Transaktion abschließen
       await client.query('COMMIT');
@@ -2115,6 +2123,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // 6. Create booking
       const insertQuery = "INSERT INTO event_bookings (event_id, user_id, timeslot_id, status, booking_date, organization_id) VALUES ($1, $2, $3, $4, NOW(), $5) RETURNING id";
       const { rows: [newBooking] } = await client.query(insertQuery, [eventId, user_id, timeslot_id, finalStatus, req.user.organization_id]);
+
+      // In den Chat zum Termin, falls es einen gibt (idempotent).
+      await addToEventChat(client, eventId, user_id, req.user.organization_id);
 
       // Transaktion abschliessen
       await client.query('COMMIT');
@@ -2653,6 +2664,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         await db.query("UPDATE event_bookings SET status = $1 WHERE id = $2", [status, participantId]);
       }
 
+      // In den Chat zum Termin, falls es einen gibt. Auch bei der Rueckstufung
+      // auf die Warteliste: angemeldet ist angemeldet, entfernt wird erst beim
+      // Austragen (idempotent, meist schon drin).
+      await addToEventChat(db, eventId, booking.user_id, req.user.organization_id);
+
       const action = status === 'confirmed' ? 'Teilnehmer:in von Warteliste bestätigt' : 'Teilnehmer:in auf Warteliste gesetzt';
       res.json({ message: action, status });
 
@@ -2969,26 +2985,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // fuer Teamer:innen (duerfen Event-Chats erstellen) unsichtbar.
       await client.query("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, $3)", [chatRoomId, req.user.id, req.user.type]);
 
-      const { rows: participants } = await client.query(`
-        SELECT DISTINCT eb.user_id, r.name as role_name
-        FROM event_bookings eb
-        JOIN users u ON eb.user_id = u.id
-        JOIN roles r ON u.role_id = r.id
-        WHERE eb.event_id = $1 AND eb.status = 'confirmed' AND u.deleted_at IS NULL
-      `, [eventId]);
-
-      if (participants.length > 0) {
-        for (const p of participants) {
-          if (p.user_id === req.user.id) continue; // Creator already added
-          // konfi->konfi, teamer->teamer, admin/org_admin->admin (gebuchte
-          // Admins wurden vorher faelschlich als 'konfi' eingetragen)
-          const userType = p.role_name === 'konfi' ? 'konfi' : p.role_name === 'teamer' ? 'teamer' : 'admin';
-          await client.query(
-            "INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
-            [chatRoomId, p.user_id, userType]
-          );
-        }
-      }
+      // Alle Gebuchten aufnehmen — dieselbe Regel wie beim Anmelden, damit sich
+      // beides nicht auseinanderentwickelt. Vorher standen hier nur die
+      // bestaetigten, und Wartende blieben aussen vor, obwohl sie beim Anmelden
+      // hineinkommen (24.08.2026 vereinheitlicht).
+      const hinzugefuegt = await syncEventChat(client, eventId, req.user.organization_id);
 
       await client.query('COMMIT');
       client.release();
@@ -2996,7 +2997,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       res.status(201).json({
         chat_room_id: chatRoomId,
         message: 'Chat erstellt und Teilnehmer erfolgreich hinzugefügt',
-        participants_added: participants.length
+        participants_added: hinzugefuegt
       });
 
     } catch (err) {
