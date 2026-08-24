@@ -11,17 +11,14 @@ import {
   IonItem,
   IonLabel,
   IonInput,
-  IonSelect,
-  IonSelectOption,
   IonList,
   IonListHeader,
   IonIcon,
   IonCard,
   IonCardContent,
-  IonSpinner,
-  IonText
+  IonSpinner
 } from '@ionic/react';
-import { closeOutline, checkmarkOutline, personOutline, informationCircleOutline, cloudOfflineOutline } from 'ionicons/icons';
+import { closeOutline, checkmarkOutline, personOutline, informationCircleOutline, cloudOfflineOutline, schoolOutline, checkmark } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 
 interface Jahrgang {
@@ -39,7 +36,7 @@ interface KonfiModalProps {
 const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, dismiss }) => {
   const { isOnline } = useApp();
   const [name, setName] = useState('');
-  const [jahrgang, setJahrgang] = useState('');
+  const [jahrgangId, setJahrgangId] = useState<number | null>(null);
   const { isSubmitting, guard } = useActionGuard();
 
   const handleClose = () => {
@@ -51,19 +48,19 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
   };
 
   const handleSave = async () => {
-    if (!name.trim() || !jahrgang) return;
+    if (!name.trim() || jahrgangId === null) return;
 
     await guard(async () => {
       const konfiData = {
         name: name.trim(),
-        jahrgang_id: jahrgaenge.find(jg => jg.name === jahrgang)?.id || 1
+        jahrgang_id: jahrgangId
       };
 
       await onSave(konfiData);
     });
   };
 
-  const isValid = name.trim().length > 0 && jahrgang;
+  const isValid = name.trim().length > 0 && jahrgangId !== null;
 
   return (
     <IonPage>
@@ -95,7 +92,7 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px' }}>
               <IonList style={{ background: 'transparent' }}>
-                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                <IonItem lines="none" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Name *</IonLabel>
                   <IonInput
                     value={name}
@@ -105,24 +102,70 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
                     clearInput={true}
                   />
                 </IonItem>
-
-                <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                  <IonLabel position="stacked">Jahrgang *</IonLabel>
-                  <IonSelect
-                    value={jahrgang}
-                    onIonChange={(e) => setJahrgang(e.detail.value)}
-                    placeholder="Jahrgang wählen"
-                    disabled={isSubmitting}
-                    interface="popover"
-                  >
-                    {jahrgaenge.map(jg => (
-                      <IonSelectOption key={jg.id} value={jg.name}>
-                        {jg.name}
-                      </IonSelectOption>
-                    ))}
-                  </IonSelect>
-                </IonItem>
               </IonList>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
+
+        {/* Jahrgang - als antippbare Liste wie beim Anlegen von Teamer:innen.
+            Anders als dort ist es eine EINFACH-Auswahl: Ein Konfi gehoert zu
+            genau einem Jahrgang (jahrgang_id). */}
+        <IonList inset={true} className="app-modal-section">
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--purple">
+              <IonIcon icon={schoolOutline} />
+            </div>
+            <IonLabel>Jahrgang *</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '16px' }}>
+              {jahrgaenge.length === 0 ? (
+                <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonLabel style={{ textAlign: 'center' }}>
+                    <p style={{ color: '#999', margin: 0 }}>Keine Jahrgänge verfügbar</p>
+                  </IonLabel>
+                </IonItem>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  {jahrgaenge.map((jg, index) => {
+                    const isSelected = jahrgangId === jg.id;
+
+                    return (
+                      <div
+                        key={jg.id}
+                        className={`app-list-item app-list-item--purple${isSelected ? ' app-list-item--selected' : ''}`}
+                        onClick={() => !isSubmitting && setJahrgangId(jg.id)}
+                        style={{
+                          cursor: isSubmitting ? 'default' : 'pointer',
+                          opacity: isSubmitting ? 0.6 : 1,
+                          position: 'relative',
+                          overflow: 'hidden',
+                          marginBottom: index < jahrgaenge.length - 1 ? '8px' : '0'
+                        }}
+                      >
+                        {isSelected && (
+                          <div className="app-corner-badges">
+                            <div
+                              className="app-corner-badge"
+                              style={{ backgroundColor: 'var(--app-color-konfis)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px' }}
+                              title="Ausgewählt"
+                            >
+                              <IonIcon icon={checkmark} style={{ color: '#fff', fontSize: '0.85rem' }} />
+                            </div>
+                          </div>
+                        )}
+                        <div className="app-list-item__row">
+                          <div className="app-list-item__main">
+                            <div className="app-list-item__content">
+                              <div className="app-list-item__title" style={{ paddingRight: isSelected ? '40px' : '0' }}>{jg.name}</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </IonCardContent>
           </IonCard>
         </IonList>

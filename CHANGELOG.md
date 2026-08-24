@@ -46,6 +46,8 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Geändert
 
+- Beim Anlegen eines Konfis wird der Jahrgang jetzt aus einer Liste ausgewählt
+  statt aus einem Aufklappmenü — wie beim Anlegen von Teamer:innen.
 - Das Handbuch steht jetzt Kapitel für Kapitel auf eigenen Seiten statt
   gesammelt auf einer. Die Kapitel sind nummeriert, sodass man sich darauf
   beziehen kann ("steht in Kapitel 7"), und unten geht es mit einem Klick zum
