@@ -50,7 +50,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
 .kapitel h3 { font-size:1.06rem; margin:30px 0 10px; letter-spacing:-.01em; }
 .kapitel h4 { font-size:.95rem; margin:22px 0 8px; color:var(--text-leise); }
 .kapitel p { margin:0 0 13px; max-width:66ch; }
-.kapitel ul { margin:0 0 15px; padding-left:20px; max-width:66ch; display:flex; flex-direction:column; gap:6px; }
+.kapitel ul, .kapitel ol { margin:0 0 15px; padding-left:20px; max-width:66ch; display:flex; flex-direction:column; gap:6px; }
 .kapitel li { margin:0; }
 blockquote { margin:0 0 15px; padding:13px 17px; background:var(--flaeche); border:1px solid var(--rand); border-left:3px solid var(--kapitel); border-radius:8px; color:var(--text-leise); font-size:.92rem; max-width:66ch; }
 code { font-family:'JetBrains Mono',monospace; font-size:.85em; background:var(--code-grund); padding:1px 5px; border-radius:4px; }
@@ -88,6 +88,8 @@ tbody tr:last-child td { border-bottom:none; }
   .nav-uebersicht a { color:var(--akzent); text-decoration:none; font-weight:600; }
   .inhalt { padding:26px 20px 72px; }
   .kopf h1 { font-size:2.4rem; }
+  /* Anker-Spruenge sollen nicht unter der mitlaufenden Leiste landen. */
+  .kapitel h2[id], .kapitel h3[id], .kapitel h4[id] { scroll-margin-top:58px; }
 }
 
 /* --- Seit 24.08.2026: eine Seite je Kapitel --- */
@@ -215,7 +217,7 @@ tbody tr:last-child td { border-bottom:none; }
       <p>Der zweite Schalter im selben Abschnitt gibt den Jahresrückblick frei. Er erscheint erst, wenn du einen bestehenden Jahrgang <strong>bearbeitest</strong>.</p>
       <p><strong>Beim Einschalten</strong> fragt die App nach: „Wrapped wird für alle Konfis dieses Jahrgangs generiert und sie erhalten eine Push-Benachrichtigung. Fortfahren?“</p>
       <p>Bestätigst du, passiert beides:</p>
-      <p>1. Für <strong>jeden aktiven Konfi</strong> des Jahrgangs wird der Rückblick berechnet und als feste Momentaufnahme gespeichert. 2. Alle bekommen einen Push: <strong>„Dein Konfi-Jahr ist da!“</strong> mit dem Text „Schau dir jetzt deinen persönlichen Jahresrückblick an!“</p>
+      <ol><li>Für <strong>jeden aktiven Konfi</strong> des Jahrgangs wird der Rückblick berechnet und als feste Momentaufnahme gespeichert.</li><li>Alle bekommen einen Push: <strong>„Dein Konfi-Jahr ist da!“</strong> mit dem Text „Schau dir jetzt deinen persönlichen Jahresrückblick an!“</li></ol>
       <p><strong>Beim Ausschalten</strong> — Rückfrage „Wrapped-Rückblick für diesen Jahrgang löschen? Die Konfis sehen den Rückblick dann nicht mehr.“ — werden die gespeicherten Rückblicke <strong>wirklich gelöscht</strong>, nicht nur ausgeblendet.</p>
       <p>Mehr dazu im Kapitel <a href="./wrapped.html">Jahresrückblick (Wrapped)</a>.</p>
       <h2 id="was-die-jahrgangs-zuweisung-von-teamer-innen-steuert">Was die Jahrgangs-Zuweisung von Teamer:innen steuert</h2>

@@ -116,28 +116,88 @@ Die App zeigt beim Eintippen an, was noch fehlt.
 
 ## Konfis kommen neu dazu: der Einladungscode
 
-Neue Konfis legen ihr Passwort **selbst** fest. Sie brauchen dafür einen
-Einladungscode.
+Neue Konfis muss niemand von Hand anlegen: Die Leitung erzeugt eine Einladung,
+die Konfis registrieren sich damit selbst — und legen ihr Passwort dabei gleich
+selbst fest. Kein Einmalpasswort, kein Zettelchaos.
 
-1. **Mehr → Konfis einladen** (nur Org-Admins)
-2. Jahrgang wählen
-3. Der QR-Code und der Code darunter sind die Einladung — ausdrucken, zeigen
-   oder teilen
+### Die Einladung erzeugen (Leitung)
 
-Die Konfis scannen den Code, geben Name, Benutzernamen, E-Mail und ihr Passwort
-ein und sind fertig. Du musst niemanden von Hand anlegen.
+1. **Mehr → Konfis einladen** — das kann nur ein **Org-Admin**
+2. **Jahrgang wählen.** Jede Einladung gehört zu genau einem Jahrgang; wer sich
+   damit registriert, landet automatisch darin.
+3. **„Einladungslink generieren"** antippen
 
-Der Code gilt **7 Tage**. Du kannst ihn in derselben Ansicht verlängern oder
-löschen. Ein Code lässt sich beliebig oft verwenden — er ist für eine ganze
-Gruppe gedacht, nicht für eine Person.
+Die App zeigt dann beides zusammen: einen **QR-Code** und darunter den
+**Einladungscode** — acht Zeichen aus Großbuchstaben und Ziffern, etwa
+`A3F09C21`. Beide sind dieselbe Einladung: Der QR-Code enthält nur den Link
+`konfi-quest.de/register` mit dem Code darin.
+
+Zum Weitergeben gibt es drei Wege:
+
+- **QR-Code zeigen** — am Beamer, auf dem eigenen Handy oder ausgedruckt, etwa
+  beim Elternabend oder in der ersten Konfi-Stunde
+- **Link kopieren** und in eine E-Mail oder einen Elternbrief setzen
+- **Teilen** über das Teilen-Menü des Geräts
+
+**Ein Code ist für die ganze Gruppe gedacht, nicht für eine Person.** Er lässt
+sich beliebig oft verwenden — du erzeugst also eine Einladung pro Jahrgang. In
+der Übersicht der aktiven Einladungen steht, wie oft jeder Code schon benutzt
+wurde.
+
+### Wie lange die Einladung gilt
+
+Ein Code gilt **7 Tage**. In der Übersicht kannst du ihn um **jeweils 7 Tage
+verlängern** — aber nur, solange er noch gültig ist. Ein abgelaufener Code
+verschwindet aus der Liste und lässt sich nicht wiederbeleben („Abgelaufene
+Codes können nicht verlängert werden"); dann erzeugst du einfach einen neuen.
+
+Löschen geht jederzeit. Beides ist gefahrlos für die, die schon drin sind: Die
+Einladung ist nur die Eintrittstür — wer sich registriert hat, behält sein
+Konto, egal was mit dem Code passiert.
+
+### Was die Konfis dann tun
+
+1. **QR-Code scannen** — die normale Kamera reicht, es öffnet sich die
+   Registrierungsseite im Browser. Wer nur den Code als Text hat: auf der
+   Anmeldeseite auf **„Mit Einladungscode registrieren"** tippen und ihn dort
+   eingeben.
+2. Die Seite zeigt zur Kontrolle **Jahrgang und Gemeinde** an — so sieht man
+   sofort, ob man richtig ist.
+3. **Name, Benutzername und Passwort** eingeben. Der Benutzername wird beim
+   Eintippen sofort geprüft (mindestens 3 Zeichen, nur Buchstaben, Zahlen,
+   Punkt und Bindestrich), das Passwort muss die Regeln oben erfüllen.
+4. Die **E-Mail-Adresse ist freiwillig** — aber dringend zu empfehlen: Nur mit
+   ihr funktioniert später „Passwort vergessen" (Weg 2 oben). Ohne E-Mail
+   bleibt bei vergessenem Passwort nur der Weg über die Leitung.
+5. Absenden — fertig und **sofort angemeldet**. Es gibt keine Freischaltung
+   und keine Wartezeit.
+
+### Was dabei automatisch passiert
+
+- Der Konfi ist im **Jahrgang** der Einladung und damit auch in dessen
+  [Jahrgangs-Chat](90-chat.md#jahrgangs-chat).
+- Er wird zu allen **zukünftigen [Pflicht-Terminen](70-termine.md#pflicht-event)**
+  seines Jahrgangs angemeldet — als wäre er von Anfang an dabei gewesen.
+- Die **Leitung des Jahrgangs bekommt einen Push** über die neue Registrierung,
+  und die Person erscheint sofort in der Konfi-Liste.
+
+### Wenn es hakt
+
+| Meldung | Ursache und Ausweg |
+|---|---|
+| „Dieser Einladungscode existiert nicht" | Vertipper oder gelöschter Code — Groß-/Kleinschreibung ist egal, aber jede Stelle zählt. Zur Not neue Einladung erzeugen. |
+| „Dieser Einladungscode ist abgelaufen" | Die 7 Tage sind um. Die Leitung erzeugt einen neuen Code. |
+| „Benutzername bereits vergeben" | Einen anderen wählen — die Prüfung läuft schon beim Eintippen, nicht erst beim Absenden. |
+| „Die Anzahl der Konfis ist erreicht …" | Das Konfi-Kontingent des Tarifs ist voll. Da hilft nur die Leitung — sie muss den Tarif anpassen. |
 
 ---
 
 ## Benutzernamen
 
-Der Benutzername wird beim Anlegen **automatisch aus dem Namen gebildet**:
-`Noémi Burau` wird zu `noemi.burau`. Akzente und Umlaute werden dabei
-umgeschrieben.
+Legt die Leitung ein Konto an, wird der Benutzername **automatisch aus dem
+Namen gebildet**: `Noémi Burau` wird zu `noemi.burau`. Akzente und Umlaute
+werden dabei umgeschrieben. Bei der Selbstregistrierung per Einladungscode
+wählen Konfis ihren Benutzernamen dagegen selbst.
 
 Beim Anmelden ist **Groß- und Kleinschreibung egal**. `Noemi.Burau` funktioniert
 genauso wie `noemi.burau`.

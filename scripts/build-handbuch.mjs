@@ -170,6 +170,22 @@ function markdown(quelle, anker = new Set()) {
       continue;
     }
 
+    // Nummerierte Liste (1. 2. 3. …) — bisher landeten die Schritte als EIN
+    // zusammengezogener Absatz im HTML ("… öffnen 2. Die Person antippen …").
+    if (/^\d+\.\s+/.test(z)) {
+      const punkte = [];
+      while (i < zeilen.length && (/^\d+\.\s+/.test(zeilen[i]) || /^\s{2,}\S/.test(zeilen[i]))) {
+        if (/^\d+\.\s+/.test(zeilen[i])) {
+          punkte.push(zeilen[i].replace(/^\d+\.\s+/, ''));
+        } else {
+          punkte[punkte.length - 1] += ' ' + zeilen[i].trim();
+        }
+        i++;
+      }
+      teile.push(`<ol>${punkte.map((p) => `<li>${inline(p)}</li>`).join('')}</ol>`);
+      continue;
+    }
+
     // Liste (nur eine Ebene, Fortsetzungszeilen eingerueckt)
     if (/^[-*]\s+/.test(z)) {
       const punkte = [];
@@ -187,7 +203,7 @@ function markdown(quelle, anker = new Set()) {
 
     // Absatz
     const absatz = [];
-    while (i < zeilen.length && zeilen[i].trim() && !/^([-*]\s|>|#{2,4}\s|\||```)/.test(zeilen[i].trim())) {
+    while (i < zeilen.length && zeilen[i].trim() && !/^([-*]\s|\d+\.\s|>|#{2,4}\s|\||```)/.test(zeilen[i].trim())) {
       absatz.push(zeilen[i].trim());
       i++;
     }
@@ -261,7 +277,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
 .kapitel h3 { font-size:1.06rem; margin:30px 0 10px; letter-spacing:-.01em; }
 .kapitel h4 { font-size:.95rem; margin:22px 0 8px; color:var(--text-leise); }
 .kapitel p { margin:0 0 13px; max-width:66ch; }
-.kapitel ul { margin:0 0 15px; padding-left:20px; max-width:66ch; display:flex; flex-direction:column; gap:6px; }
+.kapitel ul, .kapitel ol { margin:0 0 15px; padding-left:20px; max-width:66ch; display:flex; flex-direction:column; gap:6px; }
 .kapitel li { margin:0; }
 blockquote { margin:0 0 15px; padding:13px 17px; background:var(--flaeche); border:1px solid var(--rand); border-left:3px solid var(--kapitel); border-radius:8px; color:var(--text-leise); font-size:.92rem; max-width:66ch; }
 code { font-family:'JetBrains Mono',monospace; font-size:.85em; background:var(--code-grund); padding:1px 5px; border-radius:4px; }
@@ -299,6 +315,8 @@ tbody tr:last-child td { border-bottom:none; }
   .nav-uebersicht a { color:var(--akzent); text-decoration:none; font-weight:600; }
   .inhalt { padding:26px 20px 72px; }
   .kopf h1 { font-size:2.4rem; }
+  /* Anker-Spruenge sollen nicht unter der mitlaufenden Leiste landen. */
+  .kapitel h2[id], .kapitel h3[id], .kapitel h4[id] { scroll-margin-top:58px; }
 }
 
 /* --- Seit 24.08.2026: eine Seite je Kapitel --- */

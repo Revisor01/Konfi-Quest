@@ -50,7 +50,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
 .kapitel h3 { font-size:1.06rem; margin:30px 0 10px; letter-spacing:-.01em; }
 .kapitel h4 { font-size:.95rem; margin:22px 0 8px; color:var(--text-leise); }
 .kapitel p { margin:0 0 13px; max-width:66ch; }
-.kapitel ul { margin:0 0 15px; padding-left:20px; max-width:66ch; display:flex; flex-direction:column; gap:6px; }
+.kapitel ul, .kapitel ol { margin:0 0 15px; padding-left:20px; max-width:66ch; display:flex; flex-direction:column; gap:6px; }
 .kapitel li { margin:0; }
 blockquote { margin:0 0 15px; padding:13px 17px; background:var(--flaeche); border:1px solid var(--rand); border-left:3px solid var(--kapitel); border-radius:8px; color:var(--text-leise); font-size:.92rem; max-width:66ch; }
 code { font-family:'JetBrains Mono',monospace; font-size:.85em; background:var(--code-grund); padding:1px 5px; border-radius:4px; }
@@ -88,6 +88,8 @@ tbody tr:last-child td { border-bottom:none; }
   .nav-uebersicht a { color:var(--akzent); text-decoration:none; font-weight:600; }
   .inhalt { padding:26px 20px 72px; }
   .kopf h1 { font-size:2.4rem; }
+  /* Anker-Spruenge sollen nicht unter der mitlaufenden Leiste landen. */
+  .kapitel h2[id], .kapitel h3[id], .kapitel h4[id] { scroll-margin-top:58px; }
 }
 
 /* --- Seit 24.08.2026: eine Seite je Kapitel --- */
@@ -268,7 +270,7 @@ Abzeichen &quot;Kasualien-Kenner&quot;: 3 aus Kategorie &quot;Kasualien&quot;</c
       <p>Zusätzlich alle fünf Minuten im Hintergrund.</p>
       <blockquote>Der Hintergrundlauf erfasst <strong>nur Geräte mit eingeschalteten Mitteilungen</strong>. Wer die App nie installiert oder Mitteilungen abgelehnt hat, bekommt zeitliche Abzeichen („Serie&quot;, „Zeitbasiert&quot;, „Teamer-Jahr&quot;) erst bei der nächsten Punktevergabe. Die anderen Bedingungen greifen ohnehin sofort.</blockquote>
       <h2 id="was-beim-verleihen-passiert">Was beim Verleihen passiert</h2>
-      <p>1. Das Abzeichen wird eingetragen 2. Mitteilung in der App: „Neues Badge erhalten!&quot; 3. Push aufs Gerät 4. Der Zähler in der Tab-Leiste aktualisiert sich</p>
+      <ol><li>Das Abzeichen wird eingetragen</li><li>Mitteilung in der App: „Neues Badge erhalten!&quot;</li><li>Push aufs Gerät</li><li>Der Zähler in der Tab-Leiste aktualisiert sich</li></ol>
       <p>Ein Abzeichen kann nie doppelt vergeben werden.</p>
     </article>
 

@@ -14,6 +14,9 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 
 ### Hinzugefügt
 
+- Challenges: Beim Ausblenden eines Beitrags kann die Leitung eine Begründung
+  eintragen — die einreichende Person sieht sie bei ihrem Beitrag und bekommt
+  eine Mitteilung. Die Begründung ist freiwillig, Ausblenden geht auch ohne.
 - Teamer-Dashboard: Laufende Challenges erscheinen jetzt auch auf der
   Startseite der Teamer:innen, mit Restzeit und Absprung in den
   Challenges-Bereich. Die Leitung kann die Karte in den
@@ -58,6 +61,17 @@ Diese Version setzt iPhone und iPad mit iOS 16.4 oder neuer voraus. Auf
 - Handbuch: Die Kapitel verweisen aufeinander wie in einem Wiki — wo ein
   Begriff in einem anderen Kapitel erklärt wird, führt jetzt ein Link direkt
   zum passenden Abschnitt.
+- Challenges: Das Abzeichen fürs Mitmachen gibt es bei moderierten Challenges
+  erst, wenn der Beitrag freigegeben wurde; ohne Freigabe-Pflicht weiterhin
+  sofort. Gilt für alle gleich, auch für Teamer:innen und Leitung.
+- Challenges: Die Beitragsliste der Leitung zeigt im Reiter "Feed" nur noch,
+  was auch die Konfis sehen — Wartendes und Ausgeblendetes steht in eigenen
+  Reitern.
+- Challenges: Die Leitung kann jetzt jeden Beitrag nachträglich anonym
+  stellen, auch in Runden ohne eigene Sichtbarkeits-Wahl und bei Beiträgen
+  von Teamer:innen. Wie bisher gilt: Das lässt sich nicht rückgängig machen.
+- Challenges: Eigene Beiträge der Leitung haben keine "Ausblenden"-Aktion
+  mehr — sie war dort ohne Nutzen.
 - Challenges: Entwürfe stehen jetzt im Reiter "Geplant" statt unter "Aktuell" —
   dort steht nur noch, was wirklich läuft.
 - Challenges: In der geöffneten Challenge gibt es oben einen Bearbeiten-Knopf —

@@ -50,7 +50,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
 .kapitel h3 { font-size:1.06rem; margin:30px 0 10px; letter-spacing:-.01em; }
 .kapitel h4 { font-size:.95rem; margin:22px 0 8px; color:var(--text-leise); }
 .kapitel p { margin:0 0 13px; max-width:66ch; }
-.kapitel ul { margin:0 0 15px; padding-left:20px; max-width:66ch; display:flex; flex-direction:column; gap:6px; }
+.kapitel ul, .kapitel ol { margin:0 0 15px; padding-left:20px; max-width:66ch; display:flex; flex-direction:column; gap:6px; }
 .kapitel li { margin:0; }
 blockquote { margin:0 0 15px; padding:13px 17px; background:var(--flaeche); border:1px solid var(--rand); border-left:3px solid var(--kapitel); border-radius:8px; color:var(--text-leise); font-size:.92rem; max-width:66ch; }
 code { font-family:'JetBrains Mono',monospace; font-size:.85em; background:var(--code-grund); padding:1px 5px; border-radius:4px; }
@@ -88,6 +88,8 @@ tbody tr:last-child td { border-bottom:none; }
   .nav-uebersicht a { color:var(--akzent); text-decoration:none; font-weight:600; }
   .inhalt { padding:26px 20px 72px; }
   .kopf h1 { font-size:2.4rem; }
+  /* Anker-Spruenge sollen nicht unter der mitlaufenden Leiste landen. */
+  .kapitel h2[id], .kapitel h3[id], .kapitel h4[id] { scroll-margin-top:58px; }
 }
 
 /* --- Seit 24.08.2026: eine Seite je Kapitel --- */
@@ -178,7 +180,7 @@ tbody tr:last-child td { border-bottom:none; }
       <p>Termine (im System „Events&quot;) sind alles, wozu man kommen kann: Gottesdienste, Ausflüge, Konfi-Tage, die Konfirmation selbst. Ein Termin regelt <strong>wer sich anmelden darf</strong>, <strong>wie viele mitkommen können</strong>, <strong>ob es Punkte gibt</strong> und <strong>wie du hinterher die Anwesenheit verbuchst</strong>.</p>
       <p>Dieses Kapitel geht das Anlege-Formular Abschnitt für Abschnitt durch. Fast jede Einstellung schaltet andere Einstellungen ab — deshalb lohnt es sich, die Reihenfolge einzuhalten: <strong>erst die Zielgruppe, dann alles andere.</strong></p>
       <h2 id="der-schnellste-weg-zum-ersten-termin">Der schnellste Weg zum ersten Termin</h2>
-      <p>1. Name und Datum eintragen 2. „Für wen ist das Event?&quot; auf <strong>Nur Konfis</strong> lassen 3. Plätze festlegen (oder „Unbegrenzte Teilnehmer:innen&quot; einschalten) 4. Punkte festlegen 5. Speichern</p>
+      <ol><li>Name und Datum eintragen</li><li>„Für wen ist das Event?&quot; auf <strong>Nur Konfis</strong> lassen</li><li>Plätze festlegen (oder „Unbegrenzte Teilnehmer:innen&quot; einschalten)</li><li>Punkte festlegen</li><li>Speichern</li></ol>
       <p>Alles andere — Warteliste, Zeitfenster, Serie, QR-Check-in — ist optional und hat sinnvolle Voreinstellungen.</p>
       <p>---</p>
       <h2 id="zielgruppe-fuer-wen-ist-das-event">Zielgruppe: „Für wen ist das Event?&quot;</h2>
@@ -208,7 +210,7 @@ tbody tr:last-child td { border-bottom:none; }
       <p>Konfis können sich von einem Pflicht-Event abmelden — aber nur <strong>mit Begründung</strong>, und die muss <strong>mindestens 5 Zeichen</strong> lang sein. Ein leeres Feld oder ein „ok&quot; wird abgelehnt.</p>
       <p><em>Beispiel:</em> „Bin krank&quot; oder „Familienfeier, war lange geplant&quot;.</p>
       <p>Was dann passiert:</p>
-      <p>1. Die Anmeldung wechselt von „angemeldet&quot; auf „abgemeldet&quot; 2. Die Leitung bekommt einen Push mit Namen, Termin und Begründung 3. Beim Konfi steht „Du hast dich abgemeldet&quot;</p>
+      <ol><li>Die Anmeldung wechselt von „angemeldet&quot; auf „abgemeldet&quot;</li><li>Die Leitung bekommt einen Push mit Namen, Termin und Begründung</li><li>Beim Konfi steht „Du hast dich abgemeldet&quot;</li></ol>
       <p>Abmelden geht <strong>nur, solange der Termin in der Zukunft liegt</strong>. Ist er vorbei, lehnt das System es ab.</p>
       <h3 id="wieder-rein-kommen">Wieder rein kommen</h3>
       <p>Ein Knopf: <strong>„Wieder anmelden&quot;.</strong> Die Anmeldung wechselt zurück auf „angemeldet&quot;, die Leitung bekommt wieder einen Push. Auch das geht nur, solange der Termin noch nicht vorbei ist.</p>
@@ -292,7 +294,7 @@ tbody tr:last-child td { border-bottom:none; }
       <h2 id="punkte">Punkte</h2>
       <h3 id="wann-es-punkte-gibt">Wann es Punkte gibt</h3>
       <p>Punkte werden vergeben, wenn <strong>alle fünf</strong> Bedingungen erfüllt sind:</p>
-      <p>1. Die Person ist als <strong>anwesend</strong> verbucht (per QR-Check-in oder von Hand) 2. Der Termin hat eine <strong>Punktzahl größer 0</strong> 3. Es ist <strong>kein Pflicht-Event</strong> (dort sind die Punkte auf 0 erzwungen) 4. Die Person ist ein <strong>Konfi</strong> — Teamer:innen bekommen für Termine keine Punkte 5. Der gewählte <strong>Punkt-Typ ist <a href="./jahrgaenge.html#wenn-eine-punktart-abgeschaltet-ist">im Jahrgang eingeschaltet</a></strong> (Gottesdienst oder Gemeinde)</p>
+      <ol><li>Die Person ist als <strong>anwesend</strong> verbucht (per QR-Check-in oder von Hand)</li><li>Der Termin hat eine <strong>Punktzahl größer 0</strong></li><li>Es ist <strong>kein Pflicht-Event</strong> (dort sind die Punkte auf 0 erzwungen)</li><li>Die Person ist ein <strong>Konfi</strong> — Teamer:innen bekommen für Termine keine Punkte</li><li>Der gewählte <strong>Punkt-Typ ist <a href="./jahrgaenge.html#wenn-eine-punktart-abgeschaltet-ist">im Jahrgang eingeschaltet</a></strong> (Gottesdienst oder Gemeinde)</li></ol>
       <p>Fehlt eine davon, wird die Anwesenheit trotzdem gesetzt — nur eben ohne Punkte.</p>
       <p>Pro Person und Termin gibt es die Punkte <strong>genau einmal</strong>. Doppelt einchecken oder zweimal verbuchen ändert nichts.</p>
       <p>Nach der Punktevergabe wird geprüft, ob neue <a href="./badges.html">Abzeichen</a> fällig sind, und ob jemand ein <a href="./punkte.html#level">Level</a> aufgestiegen ist. Beides läuft automatisch.</p>

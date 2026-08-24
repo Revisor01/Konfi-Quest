@@ -50,7 +50,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
 .kapitel h3 { font-size:1.06rem; margin:30px 0 10px; letter-spacing:-.01em; }
 .kapitel h4 { font-size:.95rem; margin:22px 0 8px; color:var(--text-leise); }
 .kapitel p { margin:0 0 13px; max-width:66ch; }
-.kapitel ul { margin:0 0 15px; padding-left:20px; max-width:66ch; display:flex; flex-direction:column; gap:6px; }
+.kapitel ul, .kapitel ol { margin:0 0 15px; padding-left:20px; max-width:66ch; display:flex; flex-direction:column; gap:6px; }
 .kapitel li { margin:0; }
 blockquote { margin:0 0 15px; padding:13px 17px; background:var(--flaeche); border:1px solid var(--rand); border-left:3px solid var(--kapitel); border-radius:8px; color:var(--text-leise); font-size:.92rem; max-width:66ch; }
 code { font-family:'JetBrains Mono',monospace; font-size:.85em; background:var(--code-grund); padding:1px 5px; border-radius:4px; }
@@ -88,6 +88,8 @@ tbody tr:last-child td { border-bottom:none; }
   .nav-uebersicht a { color:var(--akzent); text-decoration:none; font-weight:600; }
   .inhalt { padding:26px 20px 72px; }
   .kopf h1 { font-size:2.4rem; }
+  /* Anker-Spruenge sollen nicht unter der mitlaufenden Leiste landen. */
+  .kapitel h2[id], .kapitel h3[id], .kapitel h4[id] { scroll-margin-top:58px; }
 }
 
 /* --- Seit 24.08.2026: eine Seite je Kapitel --- */
@@ -182,7 +184,7 @@ tbody tr:last-child td { border-bottom:none; }
       <h2 id="weg-1-die-leitung-setzt-ein-neues-passwort">Weg 1: Die Leitung setzt ein neues Passwort</h2>
       <p><strong>Das ist der Normalfall bei Konfis.</strong> Die meisten haben keine E-Mail-Adresse hinterlegt und können sich deshalb nicht selbst helfen.</p>
       <p>So geht es:</p>
-      <p>1. Reiter <strong>Konfis</strong> öffnen 2. Die Person antippen 3. Oben rechts auf das <strong>Schlüssel-Symbol</strong> 4. Bestätigen</p>
+      <ol><li>Reiter <strong>Konfis</strong> öffnen</li><li>Die Person antippen</li><li>Oben rechts auf das <strong>Schlüssel-Symbol</strong></li><li>Bestätigen</li></ol>
       <p>Die App zeigt dann ein <strong>Einmalpasswort</strong>, das du direkt kopieren kannst. Gib es weiter — es steht danach nirgends mehr, auch du kannst es nicht noch einmal abrufen. Ist es verloren, erzeugst du einfach ein neues.</p>
       <p>Dasselbe funktioniert bei Teamer:innen.</p>
       <h3 id="wie-die-einmalpasswoerter-aussehen">Wie die Einmalpasswörter aussehen</h3>
@@ -192,7 +194,7 @@ tbody tr:last-child td { border-bottom:none; }
       <p>---</p>
       <h2 id="weg-2-passwort-vergessen-per-e-mail">Weg 2: „Passwort vergessen&quot; per E-Mail</h2>
       <p>Funktioniert für <strong>alle Rollen</strong>, aber nur, wenn eine E-Mail-Adresse hinterlegt ist.</p>
-      <p>1. Auf der Anmeldeseite auf <strong>„Passwort vergessen&quot;</strong> 2. E-Mail-Adresse eingeben 3. Die Mail enthält einen Link, der zu einem Formular für das neue Passwort führt</p>
+      <ol><li>Auf der Anmeldeseite auf <strong>„Passwort vergessen&quot;</strong></li><li>E-Mail-Adresse eingeben</li><li>Die Mail enthält einen Link, der zu einem Formular für das neue Passwort führt</li></ol>
       <h3 id="was-du-wissen-solltest">Was du wissen solltest</h3>
       <p><strong>Die Antwort ist immer gleich.</strong> Egal ob die Adresse bekannt ist oder nicht — die App sagt immer dasselbe. Das ist Absicht: Sonst könnte man ausprobieren, welche Adressen ein Konto haben. Wenn also keine Mail ankommt, kann es auch heißen, dass die Adresse gar nicht hinterlegt ist.</p>
       <p><strong>Der Link gilt 24 Stunden</strong> und lässt sich nur einmal verwenden. Kommt jemand zu spät, fordert er einfach einen neuen an.</p>
@@ -212,13 +214,25 @@ tbody tr:last-child td { border-bottom:none; }
       <blockquote>Die von der App erzeugten Einmalpasswörter (<code>Jesaja41,10</code>) erfüllen diese Regeln übrigens nicht vollständig — sie sind ein Sonderfall fürs erste Anmelden.</blockquote>
       <p>---</p>
       <h2 id="konfis-kommen-neu-dazu-der-einladungscode">Konfis kommen neu dazu: der Einladungscode</h2>
-      <p>Neue Konfis legen ihr Passwort <strong>selbst</strong> fest. Sie brauchen dafür einen Einladungscode.</p>
-      <p>1. <strong>Mehr → Konfis einladen</strong> (nur Org-Admins) 2. Jahrgang wählen 3. Der QR-Code und der Code darunter sind die Einladung — ausdrucken, zeigen oder teilen</p>
-      <p>Die Konfis scannen den Code, geben Name, Benutzernamen, E-Mail und ihr Passwort ein und sind fertig. Du musst niemanden von Hand anlegen.</p>
-      <p>Der Code gilt <strong>7 Tage</strong>. Du kannst ihn in derselben Ansicht verlängern oder löschen. Ein Code lässt sich beliebig oft verwenden — er ist für eine ganze Gruppe gedacht, nicht für eine Person.</p>
+      <p>Neue Konfis muss niemand von Hand anlegen: Die Leitung erzeugt eine Einladung, die Konfis registrieren sich damit selbst — und legen ihr Passwort dabei gleich selbst fest. Kein Einmalpasswort, kein Zettelchaos.</p>
+      <h3 id="die-einladung-erzeugen-leitung">Die Einladung erzeugen (Leitung)</h3>
+      <ol><li><strong>Mehr → Konfis einladen</strong> — das kann nur ein <strong>Org-Admin</strong></li><li><strong>Jahrgang wählen.</strong> Jede Einladung gehört zu genau einem Jahrgang; wer sich damit registriert, landet automatisch darin.</li><li><strong>„Einladungslink generieren&quot;</strong> antippen</li></ol>
+      <p>Die App zeigt dann beides zusammen: einen <strong>QR-Code</strong> und darunter den <strong>Einladungscode</strong> — acht Zeichen aus Großbuchstaben und Ziffern, etwa <code>A3F09C21</code>. Beide sind dieselbe Einladung: Der QR-Code enthält nur den Link <code>konfi-quest.de/register</code> mit dem Code darin.</p>
+      <p>Zum Weitergeben gibt es drei Wege:</p>
+      <ul><li><strong>QR-Code zeigen</strong> — am Beamer, auf dem eigenen Handy oder ausgedruckt, etwa beim Elternabend oder in der ersten Konfi-Stunde</li><li><strong>Link kopieren</strong> und in eine E-Mail oder einen Elternbrief setzen</li><li><strong>Teilen</strong> über das Teilen-Menü des Geräts</li></ul>
+      <p><strong>Ein Code ist für die ganze Gruppe gedacht, nicht für eine Person.</strong> Er lässt sich beliebig oft verwenden — du erzeugst also eine Einladung pro Jahrgang. In der Übersicht der aktiven Einladungen steht, wie oft jeder Code schon benutzt wurde.</p>
+      <h3 id="wie-lange-die-einladung-gilt">Wie lange die Einladung gilt</h3>
+      <p>Ein Code gilt <strong>7 Tage</strong>. In der Übersicht kannst du ihn um <strong>jeweils 7 Tage verlängern</strong> — aber nur, solange er noch gültig ist. Ein abgelaufener Code verschwindet aus der Liste und lässt sich nicht wiederbeleben („Abgelaufene Codes können nicht verlängert werden&quot;); dann erzeugst du einfach einen neuen.</p>
+      <p>Löschen geht jederzeit. Beides ist gefahrlos für die, die schon drin sind: Die Einladung ist nur die Eintrittstür — wer sich registriert hat, behält sein Konto, egal was mit dem Code passiert.</p>
+      <h3 id="was-die-konfis-dann-tun">Was die Konfis dann tun</h3>
+      <ol><li><strong>QR-Code scannen</strong> — die normale Kamera reicht, es öffnet sich die Registrierungsseite im Browser. Wer nur den Code als Text hat: auf der Anmeldeseite auf <strong>„Mit Einladungscode registrieren&quot;</strong> tippen und ihn dort eingeben.</li><li>Die Seite zeigt zur Kontrolle <strong>Jahrgang und Gemeinde</strong> an — so sieht man sofort, ob man richtig ist.</li><li><strong>Name, Benutzername und Passwort</strong> eingeben. Der Benutzername wird beim Eintippen sofort geprüft (mindestens 3 Zeichen, nur Buchstaben, Zahlen, Punkt und Bindestrich), das Passwort muss die Regeln oben erfüllen.</li><li>Die <strong>E-Mail-Adresse ist freiwillig</strong> — aber dringend zu empfehlen: Nur mit ihr funktioniert später „Passwort vergessen&quot; (Weg 2 oben). Ohne E-Mail bleibt bei vergessenem Passwort nur der Weg über die Leitung.</li><li>Absenden — fertig und <strong>sofort angemeldet</strong>. Es gibt keine Freischaltung und keine Wartezeit.</li></ol>
+      <h3 id="was-dabei-automatisch-passiert">Was dabei automatisch passiert</h3>
+      <ul><li>Der Konfi ist im <strong>Jahrgang</strong> der Einladung und damit auch in dessen <a href="./chat.html#jahrgangs-chat">Jahrgangs-Chat</a>.</li><li>Er wird zu allen <strong>zukünftigen <a href="./termine.html#pflicht-event">Pflicht-Terminen</a></strong> seines Jahrgangs angemeldet — als wäre er von Anfang an dabei gewesen.</li><li>Die <strong>Leitung des Jahrgangs bekommt einen Push</strong> über die neue Registrierung, und die Person erscheint sofort in der Konfi-Liste.</li></ul>
+      <h3 id="wenn-es-hakt">Wenn es hakt</h3>
+      <div class="tabelle-huelle"><table><thead><tr><th>Meldung</th><th>Ursache und Ausweg</th></tr></thead><tbody><tr><td>„Dieser Einladungscode existiert nicht&quot;</td><td>Vertipper oder gelöschter Code — Groß-/Kleinschreibung ist egal, aber jede Stelle zählt. Zur Not neue Einladung erzeugen.</td></tr><tr><td>„Dieser Einladungscode ist abgelaufen&quot;</td><td>Die 7 Tage sind um. Die Leitung erzeugt einen neuen Code.</td></tr><tr><td>„Benutzername bereits vergeben&quot;</td><td>Einen anderen wählen — die Prüfung läuft schon beim Eintippen, nicht erst beim Absenden.</td></tr><tr><td>„Die Anzahl der Konfis ist erreicht …&quot;</td><td>Das Konfi-Kontingent des Tarifs ist voll. Da hilft nur die Leitung — sie muss den Tarif anpassen.</td></tr></tbody></table></div>
       <p>---</p>
       <h2 id="benutzernamen">Benutzernamen</h2>
-      <p>Der Benutzername wird beim Anlegen <strong>automatisch aus dem Namen gebildet</strong>: <code>Noémi Burau</code> wird zu <code>noemi.burau</code>. Akzente und Umlaute werden dabei umgeschrieben.</p>
+      <p>Legt die Leitung ein Konto an, wird der Benutzername <strong>automatisch aus dem Namen gebildet</strong>: <code>Noémi Burau</code> wird zu <code>noemi.burau</code>. Akzente und Umlaute werden dabei umgeschrieben. Bei der Selbstregistrierung per Einladungscode wählen Konfis ihren Benutzernamen dagegen selbst.</p>
       <p>Beim Anmelden ist <strong>Groß- und Kleinschreibung egal</strong>. <code>Noemi.Burau</code> funktioniert genauso wie <code>noemi.burau</code>.</p>
       <p>Ist ein Benutzername schon vergeben, hängt die App eine Zahl an.</p>
       <p>---</p>
